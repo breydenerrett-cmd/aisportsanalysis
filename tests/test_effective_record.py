@@ -1,0 +1,464 @@
+"""src/report/effective_record.py -- task B1/B2's reconciled record surface.
+
+Every test builds its own temporary ledger file(s) via `HashChainLedger.
+append` directly (the same primitive `card_ledger._ledger(...).append`
+itself calls) rather than going through `publish`/`settle`: this module
+only READS `record`/`record_v2`/`history`/`history_v2`/`verify`, so a
+fixture only has to match the ROW SHAPE those functions read, and building
+rows directly keeps these tests independent of publish/settle's own lock-
+window and grading rules (including an unrelated, currently in-progress,
+uncommitted change to `src/appstate/card_ledger.py`'s grading internals
+that this file never exercises). None of these tests touch a real
+evidence/*.jsonl file.
+"""
+
+from __future__ import annotations
+
+import os
+import tempfile
+import unittest
+from datetime import datetime, timezone
+
+from src.appstate import card_ledger
+from src.ledger.chain import HashChainLedger
+from src.report import effective_record as er
+
+
+# ---------------------------------------------------------------------------
+# fixture builders -- V1-style (MLB-v1, NFL, MMA all share this row shape)
+# ---------------------------------------------------------------------------
+
+def _pick(result="WIN", profit_units=0.91, market="moneyline", game_pk=1):
+    return {"rank": 1, "bet": "Take it", "label": "STRONG", "market": market,
+            "price": -110, "game_pk": game_pk, "result": result,
+            "profit_units": profit_units}
+
+
+def _published_row(date, *, rule, n_picks=1, n_prop_picks=0, n_total_picks=0):
+    mk = lambda n, prefix: [{"rank": i + 1, "bet": f"{prefix} {i}",
+                             "game_pk": 1000 + i} for i in range(n)]
+    return {
+        "date": date, "kind": card_ledger.KIND_PUBLISHED, "rule": rule,
+        "published_utc": f"{date}T18:00:00Z", "n_filled": 0,
+        "picks": mk(n_picks, "game"),
+        "prop_picks": mk(n_prop_picks, "prop"),
+        "total_picks": mk(n_total_picks, "total"),
+    }
+
+
+def _settled_row(date, *, published_row_hash=None,
+                  wins=0, losses=0, pushes=0, voids=0, unresolved=0,
+                  profit_units=0.0, picks=None,
+                  prop_wins=0, prop_losses=0, prop_pushes=0, prop_voids=0,
+                  prop_unresolved=0, prop_profit_units=0.0, prop_picks=None,
+                  total_wins=0, total_losses=0, total_pushes=0, total_voids=0,
+                  total_unresolved=0, total_profit_units=0.0, total_picks=None):
+    n_staked = wins + losses
+    n_prop_staked = prop_wins + prop_losses
+    n_total_staked = total_wins + total_losses
+    return {
+        "date": date, "kind": card_ledger.KIND_SETTLED,
+        "settled_utc": f"{date}T06:00:00Z",
+        "published_row_hash": published_row_hash,
+        "wins": wins, "losses": losses, "pushes": pushes, "voids": voids,
+        "unresolved": unresolved, "n_staked": n_staked,
+        "profit_units": profit_units,
+        "picks": picks if picks is not None else [],
+        "prop_wins": prop_wins, "prop_losses": prop_losses,
+        "prop_pushes": prop_pushes, "prop_voids": prop_voids,
+        "prop_unresolved": prop_unresolved, "n_prop_staked": n_prop_staked,
+        "prop_profit_units": prop_profit_units,
+        "prop_picks": prop_picks if prop_picks is not None else [],
+        "total_wins": total_wins, "total_losses": total_losses,
+        "total_pushes": total_pushes, "total_voids": total_voids,
+        "total_unresolved": total_unresolved, "n_total_staked": n_total_staked,
+        "total_profit_units": total_profit_units,
+        "total_picks": total_picks if total_picks is not None else [],
+    }
+
+
+def _write_v1_night(path, date, *, rule, wins, losses, profit_units,
+                     prop_wins=0, prop_losses=0, prop_profit_units=0.0,
+                     voids=0, unresolved=0):
+    """One published-and-settled night, correctly joined by
+    `published_row_hash` -- the join `record(rule=...)`'s own filter
+    depends on."""
+    ledger = HashChainLedger(path)
+    published = ledger.append(_published_row(date, rule=rule,
+                                              n_picks=wins + losses,
+                                              n_prop_picks=prop_wins + prop_losses))
+    ledger.append(_settled_row(
+        date, published_row_hash=published["row_hash"],
+        wins=wins, losses=losses, voids=voids, unresolved=unresolved,
+        profit_units=profit_units,
+        prop_wins=prop_wins, prop_losses=prop_losses,
+        prop_profit_units=prop_profit_units))
+
+
+def _write_v1_pending(path, date, *, rule, n_picks=2):
+    """A published-but-never-settled night."""
+    HashChainLedger(path).append(_published_row(date, rule=rule, n_picks=n_picks))
+
+
+class _TempPathCase(unittest.TestCase):
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+
+    def _path(self, name):
+        return os.path.join(self._tmp.name, name)
+
+
+# ---------------------------------------------------------------------------
+# 1. profit-sign reversal renders identically (same shape, sign is just data)
+# ---------------------------------------------------------------------------
+
+class ProfitSignReversal(_TempPathCase):
+    def _cohort(self, profit_units):
+        path = self._path("nfl.jsonl")
+        _write_v1_night(path, "2026-09-17", rule="R", wins=1, losses=2,
+                        profit_units=profit_units)
+        return er._v1_style_cohort(sport="nfl", path=path, rule_id="R",
+                                   filter_rule="R", status="current", label="x")
+
+    def test_losing_and_winning_cohorts_share_every_key(self):
+        losing = self._cohort(-1.15)
+        winning = self._cohort(+1.15)
+        self.assertEqual(set(losing.keys()), set(winning.keys()))
+        self.assertEqual(losing["market_breakdown"].keys(),
+                         winning["market_breakdown"].keys())
+        for kind in losing["market_breakdown"]:
+            self.assertEqual(set(losing["market_breakdown"][kind].keys()),
+                             set(winning["market_breakdown"][kind].keys()))
+
+    def test_only_the_sign_and_derived_figures_differ(self):
+        losing = self._cohort(-1.15)
+        winning = self._cohort(+1.15)
+        self.assertEqual(losing["profit_units"], -1.15)
+        self.assertEqual(winning["profit_units"], 1.15)
+        # Everything that does not depend on the sign of profit is IDENTICAL.
+        for key in ("wins", "losses", "pushes", "voids", "unresolved",
+                   "n_staked", "win_rate", "days", "grading_state",
+                   "published_count", "settled_count"):
+            self.assertEqual(losing[key], winning[key], key)
+
+    def test_roi_pct_flips_sign_with_profit(self):
+        losing = self._cohort(-1.15)
+        winning = self._cohort(+1.15)
+        self.assertLess(losing["roi_pct"], 0)
+        self.assertGreater(winning["roi_pct"], 0)
+        self.assertAlmostEqual(losing["roi_pct"], -winning["roi_pct"], places=6)
+
+
+# ---------------------------------------------------------------------------
+# 2. current ungraded + previous graded (NFL's real 2026-09-24 shape)
+# ---------------------------------------------------------------------------
+
+class CurrentUngradedPreviousGraded(_TempPathCase):
+    def test_nfl_snapshot_when_only_the_retired_rule_has_settled(self):
+        from src.report import nfl_card as nfl_report
+        path = self._path("nfl.jsonl")
+        _write_v1_night(path, "2026-09-17", rule=nfl_report.RETIRED_RULE,
+                        wins=1, losses=0, profit_units=0.91)
+        _write_v1_night(path, "2026-09-20", rule=nfl_report.RETIRED_RULE,
+                        wins=0, losses=1, profit_units=-1.0)
+        # The live rule has published nothing at all on this ledger.
+
+        snap = er.nfl_snapshot(path=path)
+        current, previous = snap["current"], snap["previous"]
+
+        self.assertEqual(current["rule_id"], nfl_report.LIVE_RULE)
+        self.assertEqual(current["grading_state"], "no_publications_yet")
+        self.assertEqual(current["days"], 0)
+        self.assertIsNone(current["date_span"])
+        self.assertIsNotNone(current["reason"])
+
+        self.assertEqual(previous["rule_id"], nfl_report.RETIRED_RULE)
+        self.assertEqual(previous["grading_state"], "graded")
+        self.assertEqual(previous["days"], 2)
+        self.assertEqual(previous["wins"], 1)
+        self.assertEqual(previous["losses"], 1)
+        self.assertEqual(previous["date_span"],
+                         {"first": "2026-09-17", "last": "2026-09-20"})
+
+    def test_current_ungraded_cohort_is_never_a_bare_zero_zero(self):
+        """B1's honest-absence rule: a cohort with zero settlements must
+        name why, not just report 0-0."""
+        path = self._path("mma.jsonl")
+        _write_v1_pending(path, "2026-09-22", rule="UFC_CARD_V1", n_picks=2)
+        snap = er.mma_snapshot(path=path)
+        current = snap["current"]
+        self.assertEqual(current["wins"], 0)
+        self.assertEqual(current["losses"], 0)
+        self.assertEqual(current["grading_state"], "published_not_settled")
+        self.assertIn("2 picks published", current["reason"])
+        self.assertIn("hand", current["reason"])  # the actual UFC reason, not a guess
+        self.assertIsNone(snap["previous"])
+
+
+# ---------------------------------------------------------------------------
+# 3. both missing -- a ledger this process cannot read
+# ---------------------------------------------------------------------------
+
+class BothMissing(_TempPathCase):
+    def test_an_unreadable_ledger_is_unavailable_never_a_guessed_zero(self):
+        path = self._path("corrupt.jsonl")
+        with open(path, "w", encoding="utf-8") as fh:
+            fh.write("{this is not valid json\n")
+
+        snap = er.mlb_snapshot(v1_path=path, v2_path=path)
+        for cohort in (snap["current"], snap["previous"]):
+            self.assertFalse(cohort["available"])
+            self.assertEqual(cohort["grading_state"], "unavailable")
+            self.assertIsNone(cohort["wins"])
+            self.assertIsNone(cohort["losses"])
+            self.assertIsNone(cohort["days"])
+            self.assertIn("unavailable", cohort["reason"])
+
+    def test_a_file_that_simply_does_not_exist_yet_is_a_real_empty_cohort(self):
+        """Distinct from 'unavailable': a path with nothing written yet
+        reads as zero rows (HashChainLedger's own contract), which this
+        module reports as an honest, explained 'no publications yet' --
+        not a read failure."""
+        path = self._path("never_written.jsonl")
+        snap = er.nfl_snapshot(path=path)
+        for cohort in (snap["current"], snap["previous"]):
+            self.assertTrue(cohort["available"])
+            self.assertEqual(cohort["grading_state"], "no_publications_yet")
+
+
+# ---------------------------------------------------------------------------
+# 4. mixed pending/settled
+# ---------------------------------------------------------------------------
+
+class MixedPendingSettled(_TempPathCase):
+    def test_pending_and_settled_counts_are_both_explicit(self):
+        path = self._path("nfl.jsonl")
+        _write_v1_night(path, "2026-09-17", rule="R", wins=1, losses=1,
+                        profit_units=-0.09)
+        _write_v1_pending(path, "2026-09-24", rule="R", n_picks=3)
+
+        cohort = er._v1_style_cohort(sport="nfl", path=path, rule_id="R",
+                                     filter_rule="R", status="current", label="x")
+        self.assertEqual(cohort["days"], 1)          # settled nights only
+        self.assertEqual(cohort["settled_count"], 2)  # 1 win + 1 loss
+        self.assertEqual(cohort["pending_count"], 3)  # the 2026-09-24 night
+        self.assertEqual(cohort["published_count"], 5)
+        self.assertEqual(cohort["grading_state"], "graded")
+
+    def test_v2_pending_count_excludes_already_settled_dates(self):
+        v2_path = self._path("cards_v2.jsonl")
+        ledger = HashChainLedger(v2_path)
+        ledger.append({"date": "2026-09-22", "kind": card_ledger.KIND_PUBLISHED,
+                       "rule": "DAILY_CARD_BEST_BETS_V2",
+                       "picks": [{"a": 1}], "prop_picks": []})
+        ledger.append({
+            "date": "2026-09-22", "kind": card_ledger.KIND_SETTLED,
+            "rule": "DAILY_CARD_BEST_BETS_V2", "wins": 1, "losses": 0,
+            "pushes": 0, "voids": 0, "n_staked": 1, "profit_units": 0.87,
+            "graded": [{"kind": "game", "price_class": "MAIN",
+                       "entry_class": "pick", "result": "WIN",
+                       "profit_units": 0.87}],
+        })
+        ledger.append({"date": "2026-09-23", "kind": card_ledger.KIND_PUBLISHED,
+                       "rule": "DAILY_CARD_BEST_BETS_V2",
+                       "picks": [{"a": 1}, {"a": 2}], "prop_picks": [{"a": 3}]})
+
+        snap = er.mlb_snapshot(v1_path=self._path("v1_empty.jsonl"), v2_path=v2_path)
+        current = snap["current"]
+        self.assertEqual(current["settled_count"], 1)
+        self.assertEqual(current["pending_count"], 3)  # only 2026-09-23's picks
+        self.assertEqual(current["days"], 1)
+
+
+# ---------------------------------------------------------------------------
+# 5. per-sport separation
+# ---------------------------------------------------------------------------
+
+class PerSportSeparation(_TempPathCase):
+    def test_three_sports_read_three_independent_files(self):
+        nfl_path = self._path("nfl.jsonl")
+        mma_path = self._path("mma.jsonl")
+        _write_v1_night(nfl_path, "2026-09-17", rule="NFL_R", wins=3, losses=0,
+                        profit_units=2.7)
+        _write_v1_pending(mma_path, "2026-09-22", rule="UFC_CARD_V1", n_picks=2)
+
+        nfl_current = er._v1_style_cohort(sport="nfl", path=nfl_path,
+                                          rule_id="NFL_R", filter_rule="NFL_R",
+                                          status="current", label="x")
+        mma_snap = er.mma_snapshot(path=mma_path)
+
+        self.assertEqual(nfl_current["wins"], 3)
+        self.assertEqual(nfl_current["sport"], "nfl")
+        self.assertEqual(mma_snap["current"]["sport"], "mma")
+        # NFL's wins never leak into MMA's cohort, whose file never
+        # mentions a settled pick at all.
+        self.assertEqual(mma_snap["current"]["wins"], 0)
+        self.assertEqual(mma_snap["current"]["settled_count"], 0)
+
+    def test_build_covers_exactly_the_three_public_sports(self):
+        out = er.build()
+        self.assertEqual(set(out["sports"].keys()), {"mlb", "nfl", "mma"})
+        for sport, snap in out["sports"].items():
+            self.assertEqual(snap["sport"], sport)
+
+
+# ---------------------------------------------------------------------------
+# 6. all-market vs market-filtered totals (the B1 mismatch, resolved)
+# ---------------------------------------------------------------------------
+
+class MarketBreakdownVsHeadline(_TempPathCase):
+    def test_headline_is_the_sum_of_every_market_never_game_only(self):
+        path = self._path("v1.jsonl")
+        _write_v1_night(path, "2026-09-10", rule="R", wins=2, losses=1,
+                        profit_units=1.5, prop_wins=3, prop_losses=1,
+                        prop_profit_units=0.8)
+        cohort = er._v1_style_cohort(sport="mlb", path=path, rule_id="R",
+                                     filter_rule="R", status="current", label="x")
+        game_only = cohort["market_breakdown"]["game"]
+        prop_only = cohort["market_breakdown"]["prop"]
+        self.assertEqual(game_only["wins"], 2)
+        self.assertEqual(game_only["losses"], 1)
+        self.assertEqual(prop_only["wins"], 3)
+        self.assertEqual(prop_only["losses"], 1)
+        # The headline is neither slice alone -- it is BOTH, pooled, so a
+        # game-only V1 number is never compared against an all-markets V2
+        # number under the same "wins"/"losses" label again.
+        self.assertEqual(cohort["wins"], 5)
+        self.assertEqual(cohort["losses"], 2)
+        self.assertAlmostEqual(cohort["profit_units"], 2.3, places=6)
+        self.assertIn("game", cohort["market_note"])
+        self.assertIn("prop", cohort["market_note"])
+
+    def test_v2_headline_matches_its_own_market_breakdown_sum(self):
+        """Sanity invariant: record_v2()'s own `combined` figure (this
+        module's V2 headline) must never silently disagree with the
+        independently-rebuilt per-kind breakdown this module computes from
+        the same settled entries."""
+        v2_path = self._path("cards_v2.jsonl")
+        ledger = HashChainLedger(v2_path)
+        ledger.append({
+            "date": "2026-09-22", "kind": card_ledger.KIND_SETTLED,
+            "rule": "DAILY_CARD_BEST_BETS_V2",
+            "wins": 3, "losses": 2, "pushes": 0, "voids": 0, "n_staked": 5,
+            "profit_units": 1.05,
+            "graded": [
+                {"kind": "game", "price_class": "MAIN", "entry_class": "pick",
+                 "result": "WIN", "profit_units": 0.91},
+                {"kind": "game", "price_class": "MAIN", "entry_class": "pick",
+                 "result": "LOSS", "profit_units": -1.0},
+                {"kind": "prop", "price_class": "PLUS_MONEY", "entry_class": "pick",
+                 "result": "WIN", "profit_units": 1.20},
+                {"kind": "prop", "price_class": "PLUS_MONEY", "entry_class": "pick",
+                 "result": "WIN", "profit_units": 1.14},
+                {"kind": "prop", "price_class": "MAIN", "entry_class": "pick",
+                 "result": "LOSS", "profit_units": -1.0},
+                # A fill and a withdrawn pick must never enter EITHER the
+                # headline or the breakdown.
+                {"kind": "game", "price_class": "MAIN", "entry_class": "fill",
+                 "result": "WIN", "profit_units": 5.0},
+                {"kind": "prop", "price_class": "MAIN", "entry_class": "pick",
+                 "result": "WIN", "profit_units": 9.0, "withdrawn": True},
+            ],
+        })
+        snap = er.mlb_snapshot(v1_path=self._path("v1_empty.jsonl"), v2_path=v2_path)
+        current = snap["current"]
+        breakdown_sum_wins = sum(fig["wins"] for fig in current["market_breakdown"].values())
+        breakdown_sum_losses = sum(fig["losses"] for fig in current["market_breakdown"].values())
+        self.assertEqual(current["wins"], 3)
+        self.assertEqual(current["losses"], 2)
+        self.assertEqual(breakdown_sum_wins, 3)
+        self.assertEqual(breakdown_sum_losses, 2)
+        self.assertAlmostEqual(current["profit_units"], 1.25, places=6)
+
+
+# ---------------------------------------------------------------------------
+# 7. date boundaries
+# ---------------------------------------------------------------------------
+
+class DateBoundaries(_TempPathCase):
+    def test_date_span_is_correct_regardless_of_file_order(self):
+        path = self._path("nfl.jsonl")
+        # Written out of chronological order on purpose.
+        _write_v1_night(path, "2026-09-20", rule="R", wins=1, losses=0, profit_units=0.9)
+        _write_v1_night(path, "2026-09-10", rule="R", wins=0, losses=1, profit_units=-1.0)
+        _write_v1_night(path, "2026-09-17", rule="R", wins=1, losses=0, profit_units=0.9)
+
+        cohort = er._v1_style_cohort(sport="nfl", path=path, rule_id="R",
+                                     filter_rule="R", status="current", label="x")
+        self.assertEqual(cohort["date_span"], {"first": "2026-09-10", "last": "2026-09-20"})
+        self.assertEqual(cohort["days"], 3)
+        self.assertEqual(cohort["first_published"], "2026-09-10")
+
+
+# ---------------------------------------------------------------------------
+# 9. trustworthy as-of timestamps
+# ---------------------------------------------------------------------------
+
+class AsOfTimestamps(_TempPathCase):
+    def test_generated_at_is_the_injected_now(self):
+        fixed = datetime(2026, 9, 24, 12, 0, 0, tzinfo=timezone.utc)
+        out = er.build(now=fixed)
+        self.assertEqual(out["generated_at"], fixed.isoformat())
+
+    def test_generated_at_defaults_to_a_real_utc_now(self):
+        before = datetime.now(timezone.utc)
+        out = er.build()
+        parsed = datetime.fromisoformat(out["generated_at"])
+        after = datetime.now(timezone.utc)
+        self.assertIsNotNone(parsed.tzinfo)
+        self.assertLessEqual(before, parsed)
+        self.assertLessEqual(parsed, after)
+
+    def test_chain_ok_surfaces_from_verify_for_a_readable_ledger(self):
+        path = self._path("nfl.jsonl")
+        _write_v1_night(path, "2026-09-17", rule="R", wins=1, losses=0, profit_units=0.9)
+        cohort = er._v1_style_cohort(sport="nfl", path=path, rule_id="R",
+                                     filter_rule="R", status="current", label="x")
+        self.assertIs(cohort["chain_ok"], True)
+        self.assertIsInstance(cohort["rows_checked"], int)
+
+    def test_a_tampered_chain_is_reported_not_hidden(self):
+        path = self._path("nfl.jsonl")
+        _write_v1_night(path, "2026-09-17", rule="R", wins=1, losses=0, profit_units=0.9)
+        # Tamper with the file directly, after the fact -- the same attack
+        # `card_ledger.verify()` exists to catch.
+        with open(path, "r", encoding="utf-8") as fh:
+            lines = fh.readlines()
+        import json as _json
+        row = _json.loads(lines[-1])
+        row["wins"] = 99
+        lines[-1] = _json.dumps(row) + "\n"
+        with open(path, "w", encoding="utf-8") as fh:
+            fh.writelines(lines)
+
+        cohort = er._v1_style_cohort(sport="nfl", path=path, rule_id="R",
+                                     filter_rule="R", status="current", label="x")
+        self.assertIs(cohort["chain_ok"], False)
+
+
+# ---------------------------------------------------------------------------
+# stake/ROI denominator consistency (metric contract)
+# ---------------------------------------------------------------------------
+
+class StakeBasisConsistency(_TempPathCase):
+    def test_roi_denominator_is_n_staked_never_published_or_pending(self):
+        path = self._path("nfl.jsonl")
+        _write_v1_night(path, "2026-09-17", rule="R", wins=1, losses=1,
+                        profit_units=-0.09)
+        _write_v1_pending(path, "2026-09-24", rule="R", n_picks=10)
+        cohort = er._v1_style_cohort(sport="nfl", path=path, rule_id="R",
+                                     filter_rule="R", status="current", label="x")
+        # n_staked is 2 (the settled night only); 10 pending picks must
+        # never dilute or inflate the ROI denominator.
+        self.assertEqual(cohort["n_staked"], 2)
+        self.assertAlmostEqual(cohort["roi_pct"], -0.09 / 2 * 100.0, places=6)
+
+    def test_stake_basis_is_stated_once_and_reused(self):
+        out = er.build()
+        self.assertIn("1 unit", out["stake_basis"])
+        self.assertIn("profit units", out["stake_basis"].lower())
+
+
+if __name__ == "__main__":
+    unittest.main()

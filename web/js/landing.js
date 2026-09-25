@@ -261,6 +261,136 @@ async function fillCardRecord() {
   }
 }
 
+/**
+ * THE PER-SPORT RECORD TILES (task B1/B2, 2026-09-24).
+ *
+ * The owner opened staging and saw one MLB-only proof panel under a hero
+ * strapline that names MLB, NFL and UFC. These three tiles are the fix:
+ * one per sport, each filled from GET /meta's `effective_record` (built
+ * by src/report/effective_record.py, read-only over the same ledgers
+ * /card/record already serves) with that sport's CURRENT rule and, right
+ * beside it, the rule immediately before it -- never pooled, never
+ * re-ordered by which one's return looks better (owner instruction).
+ *
+ * THE SAME HONEST-ABSENCE RULE AS `fillProofPanel` ABOVE. A cohort whose
+ * `grading_state` is not "graded" (nothing published yet, or published
+ * but not one settled night -- UFC's actual state today) never gets a
+ * won-lost/units/nights figure: those three stat cells stay the markup's
+ * own dashes, exactly like `recordLine` in web/js/card.js already leaves
+ * them for a small sample. What DOES change is the state sentence, which
+ * becomes the server's own `reason` string, rendered verbatim -- never a
+ * sentence composed here about our own confidence.
+ */
+const SPORT_TILES = [
+  { sport: "mlb", prefix: "sport-tile-mlb" },
+  { sport: "nfl", prefix: "sport-tile-nfl" },
+  { sport: "mma", prefix: "sport-tile-ufc" },
+];
+
+const MARKET_NAME = { game: "game", prop: "player prop", total: "run/point total" };
+
+function tileSet(root, hook, text) {
+  const node = root.querySelector(`[data-hook='${hook}']`);
+  if (node && text) node.textContent = text;
+  return node;
+}
+
+function cohortWL(cohort) {
+  if (!cohort || typeof cohort.wins !== "number" || typeof cohort.losses !== "number") return null;
+  return `${cohort.wins}–${cohort.losses}${cohort.pushes ? `-${cohort.pushes}` : ""}`;
+}
+
+function cohortUnitsText(cohort) {
+  if (!cohort || typeof cohort.profit_units !== "number") return null;
+  const sign = cohort.profit_units >= 0 ? "+" : "−";
+  return `${sign}${Math.abs(cohort.profit_units).toFixed(2)}`;
+}
+
+/** "By market: game 3-2, player prop 5-1." -- only the markets this
+ * cohort actually staked a pick in, in a fixed order, so a rule that has
+ * never carried totals never shows an empty "run/point total 0-0". */
+export function marketBreakdownSentence(breakdown) {
+  if (!breakdown) return null;
+  const parts = [];
+  for (const kind of ["game", "prop", "total"]) {
+    const fig = breakdown[kind];
+    if (fig && fig.n_staked) parts.push(`${MARKET_NAME[kind] || kind} ${fig.wins}-${fig.losses}`);
+  }
+  return parts.length ? `By market: ${parts.join(", ")}.` : null;
+}
+
+/** "Our first card rule (retired): 73-40, +7.61u over 13 nights. Counted
+ * separately." -- the exact sentence shape `fillProofPanel`'s own
+ * previous-rule line already uses for MLB, reused here for every sport
+ * that carries one, so the same rule reads the same way everywhere it
+ * appears on this page. */
+export function previousRuleSentence(previous) {
+  if (!previous || !previous.available) return null;
+  const wl = cohortWL(previous);
+  if (!wl) return null;
+  const units = cohortUnitsText(previous);
+  const days = typeof previous.days === "number" ? previous.days : null;
+  const label = previous.label || "The previous rule";
+  return `${label} (retired): ${wl}${units ? `, ${units}u` : ""}`
+    + `${days ? ` over ${days} night${days === 1 ? "" : "s"}` : ""}. Counted separately.`;
+}
+
+function fillSportTile(root, prefix, snapshot) {
+  const current = snapshot && snapshot.current;
+  const previous = snapshot && snapshot.previous;
+
+  if (current && current.label) tileSet(root, `${prefix}-current-label`, current.label);
+
+  const graded = current && current.available && current.grading_state === "graded";
+  if (graded) {
+    tileSet(root, `${prefix}-current-wl`, cohortWL(current));
+    const unitsNode = tileSet(root, `${prefix}-current-units`, cohortUnitsText(current));
+    if (unitsNode && typeof current.profit_units === "number") {
+      unitsNode.classList.add(current.profit_units >= 0 ? "is-up" : "is-down");
+    }
+    tileSet(root, `${prefix}-current-days`, String(current.days));
+    const dateSpan = current.date_span;
+    const stateNode = root.querySelector(`[data-hook='${prefix}-current-state']`);
+    if (stateNode) {
+      stateNode.textContent = dateSpan && dateSpan.first && dateSpan.last
+        ? `Graded nightly, ${dateSpan.first} through ${dateSpan.last}.`
+        : "Graded nightly.";
+    }
+    const marketsNode = root.querySelector(`[data-hook='${prefix}-markets']`);
+    const sentence = marketBreakdownSentence(current.market_breakdown);
+    if (marketsNode && sentence) { marketsNode.textContent = sentence; marketsNode.hidden = false; }
+  } else if (current && current.reason) {
+    // UNGRADED, PUBLISHED, OR UNAVAILABLE -- the server's own reason,
+    // verbatim, in place of the static marketing sentence. Never a
+    // fabricated 0-0: the stat cells above are left exactly as the
+    // markup's own dashes.
+    const stateNode = root.querySelector(`[data-hook='${prefix}-current-state']`);
+    if (stateNode) stateNode.textContent = current.reason;
+  }
+
+  const prevSentence = previousRuleSentence(previous);
+  if (prevSentence) {
+    const prevNode = root.querySelector(`[data-hook='${prefix}-previous']`);
+    if (prevNode) { prevNode.textContent = prevSentence; prevNode.hidden = false; }
+  }
+}
+
+async function fillSportTiles() {
+  const host = document.querySelector("[data-hook='sport-record-tiles']");
+  if (!host) return;
+  try {
+    const meta = await fetchMeta();
+    const sports = meta && meta.effective_record && meta.effective_record.sports;
+    if (!sports) return;
+    for (const { sport, prefix } of SPORT_TILES) {
+      const tile = host.querySelector(`[data-hook='${prefix}']`);
+      if (tile && sports[sport]) fillSportTile(tile, prefix, sports[sport]);
+    }
+  } catch (err) {
+    // Leave every tile's static fallback copy in place -- never a guess.
+  }
+}
+
 function boot() {
   const disclaimerHost = document.querySelector("[data-hook='disclaimer-host']");
   const pricingHost = document.querySelector("[data-hook='pricing-host']");
@@ -270,6 +400,7 @@ function boot() {
   fillResearchCounts();
   fillCardRecord();
   fillProofPanel();
+  fillSportTiles();
   // Tonight's real slate replaces the hardcoded Aug 28 sample matchup, or
   // degrades to an honest labelled-sample state on failure -- see
   // landing-live.js's module docstring. Fire-and-forget, same rule as

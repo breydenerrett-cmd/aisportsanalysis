@@ -243,28 +243,91 @@
   </div>
 </section>
 
-<!-- SPORTS COVERED -->
+<!-- SPORTS COVERED -- per-sport record tiles (task B1/B2, 2026-09-24).
+     REPLACES four static "Live"/"Research" cards that claimed all three
+     live sports were graded in public with no figures behind any of
+     them except MLB's hero panel above. Each tile below is filled from
+     GET /meta's `effective_record` (landing.js's fillSportTiles) with
+     the CURRENT rule's own record, the rule right before it shown
+     adjacent and labelled historical, and a market breakdown -- reusing
+     the same .hero__proof/.hero__stat markup and is-up/is-down rule the
+     hero panel above already uses, so no sport or version reads as more
+     prominent than another by anything other than its own real number.
+     The no-JS fallback text below names no figure, matching every other
+     record surface on this page. -->
 <section class="section section--tight" aria-label="sports covered" data-hook="sports-covered">
   <div class="section__head" data-rise>
     <span class="eyebrow">Sports covered</span>
   </div>
   <h2 class="section__title" data-rise data-delay="60">Where we're live, and where we're not.</h2>
-  <div class="story-grid" style="margin-top:28px">
-    <div class="story-card panel chamfer" data-rise data-delay="60">
-      <div class="story-card__kicker">Live</div>
-      <div class="story-card__title">MLB</div>
-      <p class="story-card__body">The full card, every night of the season.</p>
+  <div class="story-grid" style="margin-top:28px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))" data-hook="sport-record-tiles">
+
+    <div class="hero__proof" style="margin-top:0" data-rise data-delay="60" data-hook="sport-tile-mlb" aria-label="MLB record">
+      <span class="eyebrow eyebrow--money">MLB &middot; <span data-hook="sport-tile-mlb-current-label">current rule</span></span>
+      <div class="hero__proof-grid">
+        <div class="hero__stat">
+          <span class="hero__stat-value" data-hook="sport-tile-mlb-current-wl">&mdash;</span>
+          <span class="hero__stat-label">Won&ndash;lost</span>
+        </div>
+        <div class="hero__stat">
+          <span class="hero__stat-value" data-hook="sport-tile-mlb-current-units">&mdash;</span>
+          <span class="hero__stat-label">Units</span>
+        </div>
+        <div class="hero__stat">
+          <span class="hero__stat-value" data-hook="sport-tile-mlb-current-days">&mdash;</span>
+          <span class="hero__stat-label">Nights graded</span>
+        </div>
+      </div>
+      <p class="hero__proof-sub" data-hook="sport-tile-mlb-current-state">The full card, every night of the season.</p>
+      <p class="hero__proof-sub" data-hook="sport-tile-mlb-previous" hidden></p>
+      <p class="hero__proof-note" data-hook="sport-tile-mlb-markets" hidden></p>
+      <a class="hero__proof-link" href="index.html#/record-card" data-hook="sport-tile-mlb-link">See every MLB pick, graded &rarr;</a>
     </div>
-    <div class="story-card panel chamfer" data-rise data-delay="100">
-      <div class="story-card__kicker">Live</div>
-      <div class="story-card__title">NFL</div>
-      <p class="story-card__body">Picks published and graded each week, on the same record.</p>
+
+    <div class="hero__proof" style="margin-top:0" data-rise data-delay="100" data-hook="sport-tile-nfl" aria-label="NFL record">
+      <span class="eyebrow eyebrow--money">NFL &middot; <span data-hook="sport-tile-nfl-current-label">current rule</span></span>
+      <div class="hero__proof-grid">
+        <div class="hero__stat">
+          <span class="hero__stat-value" data-hook="sport-tile-nfl-current-wl">&mdash;</span>
+          <span class="hero__stat-label">Won&ndash;lost</span>
+        </div>
+        <div class="hero__stat">
+          <span class="hero__stat-value" data-hook="sport-tile-nfl-current-units">&mdash;</span>
+          <span class="hero__stat-label">Units</span>
+        </div>
+        <div class="hero__stat">
+          <span class="hero__stat-value" data-hook="sport-tile-nfl-current-days">&mdash;</span>
+          <span class="hero__stat-label">Nights graded</span>
+        </div>
+      </div>
+      <p class="hero__proof-sub" data-hook="sport-tile-nfl-current-state">Picks published and graded each week, on the same record.</p>
+      <p class="hero__proof-sub" data-hook="sport-tile-nfl-previous" hidden></p>
+      <p class="hero__proof-note" data-hook="sport-tile-nfl-markets" hidden></p>
+      <a class="hero__proof-link" href="index.html#/nfl/record" data-hook="sport-tile-nfl-link">See every NFL pick, graded &rarr;</a>
     </div>
-    <div class="story-card panel chamfer" data-rise data-delay="140">
-      <div class="story-card__kicker">Live</div>
-      <div class="story-card__title">UFC</div>
-      <p class="story-card__body">Picks published and graded on event nights.</p>
+
+    <div class="hero__proof" style="margin-top:0" data-rise data-delay="140" data-hook="sport-tile-ufc" aria-label="UFC record">
+      <span class="eyebrow eyebrow--money">UFC &middot; <span data-hook="sport-tile-ufc-current-label">current rule</span></span>
+      <div class="hero__proof-grid">
+        <div class="hero__stat">
+          <span class="hero__stat-value" data-hook="sport-tile-ufc-current-wl">&mdash;</span>
+          <span class="hero__stat-label">Won&ndash;lost</span>
+        </div>
+        <div class="hero__stat">
+          <span class="hero__stat-value" data-hook="sport-tile-ufc-current-units">&mdash;</span>
+          <span class="hero__stat-label">Units</span>
+        </div>
+        <div class="hero__stat">
+          <span class="hero__stat-value" data-hook="sport-tile-ufc-current-days">&mdash;</span>
+          <span class="hero__stat-label">Nights graded</span>
+        </div>
+      </div>
+      <p class="hero__proof-sub" data-hook="sport-tile-ufc-current-state">Picks published on event nights.</p>
+      <p class="hero__proof-sub" data-hook="sport-tile-ufc-previous" hidden></p>
+      <p class="hero__proof-note" data-hook="sport-tile-ufc-markets" hidden></p>
+      <a class="hero__proof-link" href="index.html#/ufc/record" data-hook="sport-tile-ufc-link">See every UFC pick &rarr;</a>
     </div>
+
     <div class="story-card panel chamfer" data-rise data-delay="180">
       <div class="story-card__kicker">Research</div>
       <div class="story-card__title">Tennis</div>

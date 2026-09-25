@@ -98,6 +98,40 @@ def _resolve_rule(rule: Optional[str]) -> str:
     return resolved
 
 
+def _previous_rule_cohort(sport: str, live_rule: Optional[str]) -> Optional[dict]:
+    """The prior rule's reconciled record, read-only (task B1/B2, owner
+    instruction: no version gets prominence because its return is better --
+    the record route hands the page both the current rule's figures, built
+    above exactly as before, AND the rule right before it, so a page never
+    has to choose one to show).
+
+    Only populated on the response for the CURRENTLY LIVE rule -- a caller
+    that explicitly asked for the retired rule's own record (`?rule=v1` /
+    `?rule=NFL_CARD_V1`) is already looking at the oldest rule this sport
+    has, which has no predecessor of its own. `live_rule` is the caller's
+    resolved rule id (None for MLB's own v1/v2 shorthand, meaning "compare
+    to ACTIVE_CARD_RULE inside effective_record"); MMA never has a previous
+    rule (a brand-new test, see src.report.ufc_card).
+
+    A read failure here must never break the record this route has always
+    served -- `effective_record`'s own cohort builders already contain
+    every ledger-read exception; this is one more layer of the same
+    honest-absence rule, for the one failure mode entirely outside the
+    ledger (an import cycle, a renamed constant): return None, not a 500.
+    """
+    if sport == "mma":
+        return None
+    try:
+        from src.report import effective_record
+        snapshot = effective_record.sport_snapshot(sport)
+    except Exception:  # noqa: BLE001
+        return None
+    current = snapshot.get("current") or {}
+    if sport == "nfl" and live_rule not in (None, current.get("rule_id")):
+        return None
+    return snapshot.get("previous")
+
+
 def _resolve_nfl_rule(rule: Optional[str]) -> str:
     """`?rule=` for sport=nfl: one of src/report/nfl_card.RULES, default the
     live rule. ADDED 2026-09-20: the NFL ledger holds NFL_CARD_V1 (retired)
@@ -321,6 +355,7 @@ def get_card_record(request: Request = None, sport: str = "mlb",
         payload["rule"] = "v2"
         payload["basis"] = best_bets_card.BASIS
         payload["disclaimer"] = best_bets_card.DISCLAIMER
+        payload.update(_effective_record_extras("mlb", None))
         _record_page_view(request, "card_record", None)
         return payload
 
@@ -343,11 +378,17 @@ def get_card_record(request: Request = None, sport: str = "mlb",
     if sport == "mlb":
         payload["disclaimer"] = daily_card.CARD_DISCLAIMER
         payload["basis"] = daily_card.CARD_BASIS
+        # This branch only serves V1's OWN record (either ACTIVE_CARD_RULE
+        # is still "v1", or the caller explicitly asked for the retired
+        # rule via ?rule=v1) -- V1 was the first rule this product ever
+        # published under, so it has no rule before it.
+        payload["previous_rule"] = None
     elif sport == "nfl":
         payload["sport"] = "nfl"
         payload["rule"] = nfl_rule
         payload["live_rule"] = nfl_report.LIVE_RULE
         payload["notice"] = nfl_report.NOTICE
+        payload["previous_rule"] = _previous_rule_cohort("nfl", nfl_rule)
     elif sport == "mma":
         from src.report import ufc_card as ufc_report
         payload["sport"] = "mma"
@@ -355,6 +396,9 @@ def get_card_record(request: Request = None, sport: str = "mlb",
         payload["notice"] = ufc_report.NOTICE
         payload["basis"] = ufc_report.ufc_rule.CARD_BASIS
         payload["disclaimer"] = ufc_report.ufc_rule.CARD_DISCLAIMER
+        # UFC_CARD_V1 is the only rule UFC has ever published under (see
+        # src.report.ufc_card's module docstring) -- never a previous one.
+        payload["previous_rule"] = None
     _record_page_view(request, "card_record", None)
     return payload
 

@@ -109,6 +109,24 @@ def _research_counts() -> dict:
                 "surviving": None}
 
 
+def _effective_record() -> dict:
+    """The B1/B2 reconciled record surface: current-vs-previous, per
+    sport, market breakdown included -- `src.report.effective_record.
+    build()`, read-only. Additive to this payload (a NEW key, never a
+    replacement for `card_record` below, whose exact shape existing tests
+    and the hero proof panel already pin). Same honest-absence rule as
+    every other field on this route: an unreadable ledger reports `None`
+    per sport, never a guessed or zeroed figure that could pass for a
+    real one.
+    """
+    try:
+        from src.report import effective_record
+        return effective_record.build()
+    except Exception:  # noqa: BLE001
+        return {"generated_at": None, "stake_basis": None,
+                "sports": {sport: None for sport in ("mlb", "nfl", "mma")}}
+
+
 def _card_record() -> dict:
     """The card's running record -- days, wins, losses, pushes, voids -- or
     explicit nulls, never a guessed figure.
@@ -181,4 +199,11 @@ def get_meta() -> dict:
         # landing page fills its record sentence from this instead of a
         # typed figure that is stale after the next settlement.
         "card_record": _card_record(),
+        # 2026-09-24 (task B1/B2): the reconciled, per-sport current-vs-
+        # previous record the landing page's sport tiles and the in-app
+        # record strip both read -- MLB/NFL/UFC, current rule and the one
+        # right before it, market breakdown included. `card_record` above
+        # stays exactly as it was (MLB only, one figure) for every
+        # existing reader; this is a separate, additive key.
+        "effective_record": _effective_record(),
     }
