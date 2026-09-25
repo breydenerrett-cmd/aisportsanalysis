@@ -176,7 +176,7 @@ fi
 # scripts, so it runs the same rotation under the same GIT_LOCK, strictly
 # before `git add`. GIT_FAILED, not just echo (2026-09-21 fact-check): an
 # ESCALATE line alone does not fail this script by itself.
-python3 -m src.cli store rotate --all --if-over-mb 60 --keep-days 3 \
+python3 -m src.cli store rotate --all --if-over-mb 60 --keep-days 1 \
     || { echo "ESCALATE: store rotation failed -- a rotatable store may be approaching GitHub's 100MB push limit unrotated"; GIT_FAILED=1; }
 . "$(dirname "$0")/lib_shrink_guard.sh"
 

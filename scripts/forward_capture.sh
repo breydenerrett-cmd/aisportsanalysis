@@ -187,7 +187,7 @@ fi
 # Under the same GIT_LOCK the commit below uses, strictly before `git add`.
 # GIT_FAILED, not just echo (2026-09-21 fact-check, capture_slot.sh's copy
 # of this comment): an ESCALATE line alone does not fail this script.
-python3 -m src.cli store rotate --all --if-over-mb 60 --keep-days 3 \
+python3 -m src.cli store rotate --all --if-over-mb 60 --keep-days 1 \
     || { echo "ESCALATE: store rotation failed -- a rotatable store may be approaching GitHub's 100MB push limit unrotated"; GIT_FAILED=1; }
 
 # Explicit paths, never bare `data`: data/app (customer/auth state) and

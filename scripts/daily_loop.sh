@@ -590,7 +590,7 @@ fi
 # echo (2026-09-21 fact-check): an ESCALATE line alone does not fail this
 # script (escalations.py --check would eventually surface it, up to 24h
 # later -- GIT_FAILED makes it visible in THIS run instead).
-python3 -m src.cli store rotate --all --if-over-mb 60 --keep-days 3 \
+python3 -m src.cli store rotate --all --if-over-mb 60 --keep-days 1 \
     || { echo "ESCALATE: store rotation failed -- a rotatable store may be approaching GitHub's 100MB push limit unrotated"; GIT_FAILED=1; }
 . "$(dirname "$0")/lib_shrink_guard.sh"
 
