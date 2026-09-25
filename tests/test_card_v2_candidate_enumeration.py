@@ -80,8 +80,17 @@ V2_CONTENT_FINGERPRINT = (
 # code_fingerprint is untouched and V2's counted sample does NOT restart.
 # That is why the V2 constant above is unchanged, and why these two are
 # asserted separately rather than as one "nothing moved" check.
+# CHANGED AGAIN 2026-09-25, and again deliberately. The delayed-settlement
+# repair edits `src/appstate/card_ledger.py`, another V1_FINGERPRINT_FILES
+# member, so the V1 content fingerprint moves from
+# ea858a545afbd2ecd981a951841cb537fb32bfcc085f8d3deecbdeafa3f793d7
+# to the value below. Recorded in PREREG_CARD_V2 section 16 under the entry
+# 11.6 permits. V2's code_fingerprint is again UNCHANGED -- card_ledger.py is
+# not in V2_FINGERPRINT_FILES -- so V2's counted sample still does not
+# restart. That this test fired on a change made by a different lane is the
+# guard working, not a defect in it.
 V1_CONTENT_FINGERPRINT = (
-    "ea858a545afbd2ecd981a951841cb537fb32bfcc085f8d3deecbdeafa3f793d7")
+    "fd31a26c2ac4e004f76f582ccafcedf79f6ebf2d5f1152fa3b07125f7a60eaa6")
 
 
 def _content_fingerprint(paths) -> str:

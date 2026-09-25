@@ -56,11 +56,40 @@ LOCK_LEAD_HOURS_DEFAULT = 4.0
 
 KIND_PUBLISHED = "card_published"
 KIND_SETTLED = "card_settled"
+# A correction never edits or replaces a settled row (rule 2 above) -- it is
+# a SEPARATE, linked event appended on top of one, carrying its own reason
+# and source. See `correct_pick`/`effective_settled_row`.
+KIND_CORRECTION = "card_pick_correction"
 
 RESULT_WIN = "WIN"
 RESULT_LOSS = "LOSS"
 RESULT_PUSH = "PUSH"
 RESULT_VOID = "VOID"
+# NOT a terminal outcome -- a pick that cannot be graded YET. Distinct from
+# VOID (a genuine, documented, permanent house-rule refusal to grade at
+# all) precisely so a missing score or a missing box row never becomes a
+# zero-profit result that sticks forever. See `grade_pick`'s docstring and
+# the two UNRESOLVED_* reason codes below.
+RESULT_UNRESOLVED = "UNRESOLVED"
+
+# THE TWO REASONS A PICK IS UNRESOLVED, fixed and documented rather than
+# free text, so a reader (or an ops dashboard) can act on WHY without
+# parsing English:
+#
+#   awaiting_result  the ordinary wait for a game/player result to become
+#                     final -- expected, needs no attention, resolves on a
+#                     later settle() pass with no action from anyone.
+#   unresolved_data   something narrower than "hasn't happened yet": the
+#                     pick itself carries no identifiable game to look up
+#                     (see grade_pick's identity check) -- a data-pipeline
+#                     condition, not a clock condition.
+#
+# A results-feed fetch failure is caught and reported at the settle_recent
+# layer (REASON_FEED_ERROR below) and never reaches grade_pick with a
+# partial map at all, so it is not a third code here -- see that constant's
+# own docstring.
+UNRESOLVED_AWAITING_RESULT = "awaiting_result"
+UNRESOLVED_DATA = "unresolved_data"
 
 # The fields of a pick that are frozen. Deliberately a fixed list rather than
 # "whatever the card happened to carry": a ledger whose columns drift with
@@ -419,11 +448,46 @@ def published_versions(date: str, *, path: Optional[str] = None,
 
 def settled_row(date: str, *, path: Optional[str] = None,
                 sport: Optional[str] = None) -> Optional[dict]:
+    """The NEWEST settlement row for `date`, or None -- `published_row`'s own
+    pattern applied here (see its docstring).
+
+    A date used to get exactly one `card_settled` row, ever, so "first" and
+    "newest" were the same row and this distinction was invisible. `settle`
+    now appends a FRESH row on any pass that resolves something new (partial
+    settlement, see its docstring's "Support partial settlement" section),
+    carrying every already-terminal pick forward untouched and re-grading
+    only what was still UNRESOLVED -- so the newest row is, by construction,
+    the fullest current picture, exactly like a published row's own newest-
+    version rule. A single-row date (every date settled before this change,
+    and any date that resolved in one pass) reads identically either way.
+    """
     resolved_path = path if path is not None else store_path(sport)
+    newest = None
     for row in _ledger(resolved_path).read():
         if row.get("kind") == KIND_SETTLED and row.get("date") == date:
-            return row
-    return None
+            newest = row
+    return newest
+
+
+def has_unresolved_picks(row: Optional[Mapping]) -> bool:
+    """True if a settled row (from `settled_row`/`settle`) still carries at
+    least one UNRESOLVED pick, prop pick, or total pick.
+
+    Public so a caller can build the "fully done, do not re-settle" gate
+    `_settle_one_date` uses internally:
+    `settled_row(date) is not None and not has_unresolved_picks(row)`.
+    `src/report/nfl_card.py` and `src/report/ufc_card.py` currently gate on
+    `settled_row(...) is not None` alone (their own settle_for_date
+    wrappers) -- see this task's report for why that is now imprecise and
+    an interface request rather than something fixed here.
+    """
+    if not row:
+        return False
+    for scope in ("picks", "prop_picks", "total_picks"):
+        for pick in row.get(scope) or ():
+            if pick.get("result") == RESULT_UNRESOLVED:
+                return True
+    return False
 
 
 # The rule an NFL row with no `rule` field was published under -- every NFL
@@ -781,10 +845,22 @@ def grade_pick(pick: Mapping, result: Mapping) -> dict:
     """One frozen pick against one final score.
 
     `result` is a `src.pipeline.history` row: `away_score`, `home_score`,
-    `home_won`. A game with no final score grades VOID, never LOSS -- an
-    ungraded pick counted as a loss would make a postponed slate look like a
-    bad night, which is the single easiest way for a public record to become
-    quietly wrong in the flattering direction's opposite.
+    `home_won`. A game with no final score grades UNRESOLVED, never LOSS and
+    never VOID -- an ungraded pick counted as a loss would make a postponed
+    slate look like a bad night, and one counted as a permanent VOID would
+    make a game still in progress look like a settled push-to-zero forever.
+    Neither is honest: `src.pipeline.history.read_results` only ever stores
+    GENUINELY FINAL games (its own module docstring), so a missing key here
+    is silent about whether the game is still to be played or was never
+    coming -- the one thing this function must not do is guess which. A pick
+    that stays UNRESOLVED is picked back up by `settle`'s carry-forward on
+    its next pass; see the module docstring's "Support partial settlement".
+
+    VOID here is reserved for the pick's OWN frozen data being unbettable
+    (an unrecognised side, no line, an unusable price) -- a documented
+    house-rule refusal that no amount of waiting will change. That is a
+    genuinely different fact from "we do not have this game's result yet",
+    which is why the two are no longer the same return value.
     """
     # A game total on the main card (NFL_CARD_V2 publishes spreads, totals
     # and moneylines as ONE system, so they share `picks`). Routed before the
@@ -793,11 +869,23 @@ def grade_pick(pick: Mapping, result: Mapping) -> dict:
     if pick.get("market") == "total":
         return grade_total_pick(pick, result)
 
+    # UNRESOLVED GAME IDENTITY. A frozen pick with no game key of its own
+    # cannot be looked up at all -- distinct from "looked up and found
+    # nothing" (the missing-score branch just below): this is a data
+    # condition on the PICK, not on the clock. See UNRESOLVED_DATA's
+    # docstring.
+    identity = pick.get("game_id") if pick.get("sport") else pick.get("game_pk")
+    if identity is None:
+        return {"result": RESULT_UNRESOLVED, "profit_units": 0.0,
+                "unresolved_kind": UNRESOLVED_DATA,
+                "reason": "pick carries no game identity to look up a result"}
+
     away = _score(result.get("away_score"))
     home = _score(result.get("home_score"))
     if away is None or home is None:
-        return {"result": RESULT_VOID, "profit_units": 0.0,
-                "reason": "no final score stored for this game"}
+        return {"result": RESULT_UNRESOLVED, "profit_units": 0.0,
+                "unresolved_kind": UNRESOLVED_AWAITING_RESULT,
+                "reason": "no final score stored for this game yet"}
 
     side = pick.get("side")
     if side not in ("away", "home"):
@@ -859,17 +947,48 @@ def _index_prop_box_rows(rows: Optional[Sequence]) -> dict:
     return out
 
 
-def grade_prop_pick(pick: Mapping, box_by_game_and_player: Mapping) -> dict:
+def _box_captured_game_pks(rows: Optional[Sequence]) -> frozenset:
+    """Every game_pk (stringified) that has AT LEAST ONE box row of ANY type
+    -- batter, pitcher, or linescore -- in `rows`.
+
+    `src.pipeline.boxscores.ingest_date` writes rows "for every FINAL game
+    on one date" (its own docstring): a game_pk present here, with a NAMED
+    player absent from the batter rows specifically, means the box for that
+    game IS captured and that player genuinely has no recorded plate
+    appearance in it -- not merely that nobody has looked yet. A game_pk
+    ABSENT here could mean the game is not final, or its box has not been
+    ingested; `grade_prop_pick` treats that as UNRESOLVED, never a guessed
+    VOID (see this module's "Missing player data is NOT proof a player did
+    not play").
+    """
+    return frozenset(str(row.get("game_pk")) for row in (rows or ())
+                     if row.get("game_pk") is not None)
+
+
+def grade_prop_pick(pick: Mapping, box_by_game_and_player: Mapping, *,
+                    box_captured_game_pks: Optional[frozenset] = None) -> dict:
     """One frozen prop pick against one date's batter box rows.
 
     Delegates the actual over/under/push arithmetic to
     `src.board.settle_props.settle` -- the same settlement rule a backtest
-    would use for the same market -- rather than re-deriving it here. A
-    batter with no box row for this game (didn't play, game postponed) grades
-    VOID, never LOSS, for the same reason `grade_pick` refuses to guess a
-    missing final score.
+    would use for the same market -- rather than re-deriving it here.
+
+    A batter with NO box row for this game is UNRESOLVED, not VOID, UNLESS
+    `box_captured_game_pks` proves the game's box was actually captured (see
+    `_box_captured_game_pks`) -- only then does "this player has no row in
+    it" become genuine evidence he did not play, which is the participation
+    condition this function must verify before voiding rather than assume
+    from silence. `box_captured_game_pks=None` (the default, e.g. an older
+    caller that has not been updated to pass it) means "cannot verify
+    either way", which fails toward UNRESOLVED, never toward a guessed VOID.
     """
     from src.board import settle_props
+
+    # UNRESOLVED GAME IDENTITY -- see grade_pick's identical check.
+    if pick.get("game_pk") is None:
+        return {"result": RESULT_UNRESOLVED, "profit_units": 0.0,
+                "unresolved_kind": UNRESOLVED_DATA,
+                "reason": "prop pick carries no game_pk to look up a box score"}
 
     market = pick.get("market")
     stat = settle_props.PROP_STAT_RULES.get(market)
@@ -887,8 +1006,17 @@ def grade_prop_pick(pick: Mapping, box_by_game_and_player: Mapping) -> dict:
         return {"result": RESULT_VOID, "profit_units": 0.0,
                 "reason": f"unknown side {pick.get('side')!r} on a frozen prop pick"}
 
-    row = box_by_game_and_player.get(
-        (str(pick.get("game_pk")), pick.get("player")))
+    game_pk_str = str(pick.get("game_pk"))
+    row = box_by_game_and_player.get((game_pk_str, pick.get("player")))
+    if row is None:
+        if box_captured_game_pks is not None and game_pk_str in box_captured_game_pks:
+            return {"result": RESULT_VOID, "profit_units": 0.0,
+                    "reason": ("player has no recorded plate appearance in "
+                              "this game's completed box score")}
+        return {"result": RESULT_UNRESOLVED, "profit_units": 0.0,
+                "unresolved_kind": UNRESOLVED_AWAITING_RESULT,
+                "reason": "no box score captured yet for this game"}
+
     try:
         outcome = settle_props.settle(
             row, {"subject_id": None, "stat": stat,
@@ -897,8 +1025,14 @@ def grade_prop_pick(pick: Mapping, box_by_game_and_player: Mapping) -> dict:
         return {"result": RESULT_VOID, "profit_units": 0.0, "reason": str(exc)}
 
     if outcome == "void":
+        # `row` is not None here (handled above), so this is a row that
+        # EXISTS but still cannot support the grade -- wrong row type for
+        # this stat, a subject_id mismatch, or the stat field itself is
+        # None on an existing row. That is a structural mismatch in data we
+        # DO have, not a "wait for more data" case, so it stays a
+        # documented VOID rather than UNRESOLVED.
         return {"result": RESULT_VOID, "profit_units": 0.0,
-                "reason": "no box score found for this player in this game"}
+                "reason": "box row exists but does not support this stat/selection"}
     if outcome == "push":
         return {"result": RESULT_PUSH, "profit_units": 0.0}
 
@@ -919,17 +1053,26 @@ def grade_total_pick(pick: Mapping, result: Mapping) -> dict:
 
     Same shape as `grade_pick`: `result` carries `away_score`/`home_score`
     from the same `src.pipeline.history` row, and a missing score grades
-    VOID rather than a guessed LOSS, for the same reason. Over/under/push
-    reads exactly `src.board.settle._settle_totals`'s arithmetic -- not
-    called directly (that function wants a `GameResult`, this a frozen
-    pick), but the same three comparisons: total runs above the line wins
-    Over, below wins Under, exactly on it pushes.
+    UNRESOLVED rather than a guessed LOSS or a permanent VOID, for the same
+    reason `grade_pick` does (see its docstring). Over/under/push reads
+    exactly `src.board.settle._settle_totals`'s arithmetic -- not called
+    directly (that function wants a `GameResult`, this a frozen pick), but
+    the same three comparisons: total runs above the line wins Over, below
+    wins Under, exactly on it pushes.
     """
+    # UNRESOLVED GAME IDENTITY -- see grade_pick's identical check.
+    identity = pick.get("game_id") if pick.get("sport") else pick.get("game_pk")
+    if identity is None:
+        return {"result": RESULT_UNRESOLVED, "profit_units": 0.0,
+                "unresolved_kind": UNRESOLVED_DATA,
+                "reason": "pick carries no game identity to look up a result"}
+
     away = _score(result.get("away_score"))
     home = _score(result.get("home_score"))
     if away is None or home is None:
-        return {"result": RESULT_VOID, "profit_units": 0.0,
-                "reason": "no final score stored for this game"}
+        return {"result": RESULT_UNRESOLVED, "profit_units": 0.0,
+                "unresolved_kind": UNRESOLVED_AWAITING_RESULT,
+                "reason": "no final score stored for this game yet"}
 
     line = pick.get("line")
     if not isinstance(line, (int, float)):
@@ -963,23 +1106,81 @@ def grade_total_pick(pick: Mapping, result: Mapping) -> dict:
     }
 
 
+# The three graded-picks lists a settled row carries, each with its own
+# identity key function -- the SAME keys `_lock_and_merge` already uses to
+# decide "is this the same bet as before" for a PUBLISHED row (see
+# `_pick_key`'s own docstring on why rank can never be that key). `settle`'s
+# carry-forward and `correct_pick`/`_apply_corrections` both need to answer
+# the identical question -- "which entry in an OLDER graded list is THIS
+# entry in a newer one" -- so both read off this one table.
+_SCOPE_KEY_FNS = {"picks": _pick_key, "prop_picks": _prop_pick_key,
+                  "total_picks": _total_pick_key}
+
+
+def _index_by_key(picks: Optional[Sequence[Mapping]], key_fn) -> dict:
+    return {key_fn(p): p for p in (picks or ())}
+
+
+def _tally(graded: Sequence[Mapping]) -> dict:
+    """wins/losses/pushes/voids/unresolved/staked/profit/roi from one
+    already-graded picks list -- the one place this arithmetic lives, so
+    `settle`'s first pass and `_apply_corrections`'s recompute (after an
+    operator corrects one pick) can never quietly disagree about how to add
+    up the same shape of row. FLAT ONE-UNIT STAKES throughout (module
+    docstring); UNRESOLVED, like VOID, is never staked and never profits.
+    """
+    wins = sum(1 for g in graded if g.get("result") == RESULT_WIN)
+    losses = sum(1 for g in graded if g.get("result") == RESULT_LOSS)
+    pushes = sum(1 for g in graded if g.get("result") == RESULT_PUSH)
+    voids = sum(1 for g in graded if g.get("result") == RESULT_VOID)
+    unresolved = sum(1 for g in graded if g.get("result") == RESULT_UNRESOLVED)
+    staked = wins + losses
+    profit = round(sum(g.get("profit_units") or 0.0 for g in graded
+                       if g.get("result") in (RESULT_WIN, RESULT_LOSS)), 4)
+    return {"n_picks": len(graded), "n_staked": staked, "wins": wins,
+            "losses": losses, "pushes": pushes, "voids": voids,
+            "unresolved": unresolved, "profit_units": profit,
+            "roi_pct": round(profit / staked * 100.0, 3) if staked else None}
+
+
 def settle(date: str, results_by_game_pk: Mapping, *,
            prop_box_rows: Optional[Sequence] = None,
            now: Optional[str] = None, path: Optional[str] = None,
            sport: Optional[str] = None, results_by_game_id: Optional[Mapping] = None) -> Optional[dict]:
-    """Grade one published card and append the outcome as a NEW row.
+    """Grade one published card's currently-gradable picks and append the
+    outcome as a NEW row -- SUPPORTING PARTIAL SETTLEMENT, so a card is
+    never sealed on a pick whose result just is not in yet.
 
     `prop_box_rows` is this date's batter box-score rows (the same shape
     `src.pipeline.boxscores.read` yields), used to grade the card's prop
     picks alongside the game picks -- see `grade_prop_pick`. Omitted or
-    empty, every prop pick grades VOID rather than guessing, exactly like a
-    game pick with no final score in `results_by_game_pk`.
+    empty, every prop pick stays UNRESOLVED rather than guessing, exactly
+    like a game pick with no final score in `results_by_game_pk`.
 
     `results_by_game_id` is an alias for `results_by_game_pk` for non-MLB sports
     where game_id is used instead of game_pk.
 
-    Returns None when there is nothing to do -- no card for that date, or it
-    is already settled. Never edits the published row.
+    THE STATE MACHINE THIS FUNCTION RUNS, PER PICK, ACROSS REPEATED CALLS:
+    a pick graded WIN/LOSS/PUSH/VOID on an earlier pass is TERMINAL and is
+    carried forward on this and every later pass byte-for-byte -- it is
+    never re-graded, so a retry (or a caller that does not know whether an
+    earlier call actually committed -- see "interrupted/replayed write" in
+    this task's tests) can never double-count it or flip it. A pick that
+    was UNRESOLVED (or is new since the last pass) is graded fresh against
+    THIS call's `results_by_game_pk`/`prop_box_rows`, and may land on
+    WIN/LOSS/PUSH/VOID (now terminal) or UNRESOLVED again (tried again next
+    pass). If nothing on this date changed since the last settled row --
+    every pick's fresh-or-carried result is identical to what is already
+    there -- nothing is appended and this returns None, exactly like the
+    original "already settled" no-op it replaces; a date with no PRIOR
+    settled row always appends, even if every pick comes back UNRESOLVED,
+    so the first pass leaves a receipt that grading was attempted.
+
+    Returns None when there is nothing to do -- no card for that date, the
+    date already settled with nothing left UNRESOLVED, or this pass changed
+    nothing. Never edits the published row, and never edits or replaces an
+    earlier settled row (rule 2, module docstring) -- a correction goes
+    through `correct_pick` instead.
     """
     resolved_path = path if path is not None else store_path(sport)
 
@@ -989,136 +1190,340 @@ def settle(date: str, results_by_game_pk: Mapping, *,
     published = published_row(date, path=resolved_path)
     if published is None:
         return None
-    if settled_row(date, path=resolved_path) is not None:
+    prior = settled_row(date, path=resolved_path)
+    if prior is not None and not has_unresolved_picks(prior):
         return None
 
-    graded, staked, profit = [], 0, 0.0
-    for pick in published.get("picks") or ():
-        # For result lookup, use game_id only for non-MLB (when "sport" is present).
-        # For MLB, always use game_pk (even if game_id is in FROZEN_FIELDS).
-        if pick.get("sport"):
-            lookup_key = pick.get("game_id")
-        else:
-            lookup_key = pick.get("game_pk")
-        result = (results_map.get(lookup_key)
-                  or results_map.get(str(lookup_key))
-                  or {})
-        grade = grade_pick(pick, result)
-        graded_pick = {"rank": pick.get("rank"), "bet": pick.get("bet"),
-                       "label": pick.get("label"), "market": pick.get("market"),
-                       "price": pick.get("price"), "game_pk": pick.get("game_pk"), **grade}
-        # For non-MLB sports, preserve game_id and sport
-        if "game_id" in pick:
-            graded_pick["game_id"] = pick["game_id"]
-        if "sport" in pick:
-            graded_pick["sport"] = pick["sport"]
-        graded.append(graded_pick)
-        if grade["result"] in (RESULT_WIN, RESULT_LOSS):
-            staked += 1
-            profit += grade["profit_units"]
+    prior_by = {scope: _index_by_key(prior.get(scope) if prior else None, key_fn)
+               for scope, key_fn in _SCOPE_KEY_FNS.items()}
 
-    wins = sum(1 for g in graded if g["result"] == RESULT_WIN)
-    losses = sum(1 for g in graded if g["result"] == RESULT_LOSS)
+    def _carried_or_fresh(scope, key_fn, pick, fresh_grade_fn):
+        """TERMINAL carries forward untouched; UNRESOLVED (or never before
+        seen) is (re)graded now. See settle's own docstring."""
+        carried = prior_by[scope].get(key_fn(pick))
+        if carried is not None and carried.get("result") != RESULT_UNRESOLVED:
+            return dict(carried)
+        return fresh_grade_fn()
+
+    graded = []
+    for pick in published.get("picks") or ():
+        def _fresh(pick=pick):
+            if pick.get("sport"):
+                lookup_key = pick.get("game_id")
+            else:
+                lookup_key = pick.get("game_pk")
+            result = (results_map.get(lookup_key)
+                     or results_map.get(str(lookup_key))
+                     or {})
+            grade = grade_pick(pick, result)
+            row = {"rank": pick.get("rank"), "bet": pick.get("bet"),
+                  "label": pick.get("label"), "market": pick.get("market"),
+                  "price": pick.get("price"), "game_pk": pick.get("game_pk"), **grade}
+            if "game_id" in pick:
+                row["game_id"] = pick["game_id"]
+            if "sport" in pick:
+                row["sport"] = pick["sport"]
+            return row
+        graded.append(_carried_or_fresh("picks", _pick_key, pick, _fresh))
 
     box_by_game_and_player = _index_prop_box_rows(prop_box_rows)
-    prop_graded, prop_staked, prop_profit = [], 0, 0.0
+    box_captured = _box_captured_game_pks(prop_box_rows)
+    prop_graded = []
     for pick in published.get("prop_picks") or ():
-        grade = grade_prop_pick(pick, box_by_game_and_player)
-        prop_graded_pick = {
-            "rank": pick.get("rank"), "bet": pick.get("bet"),
-            "label": pick.get("label"), "player": pick.get("player"),
-            "market": pick.get("market"), "line": pick.get("line"),
-            "side": pick.get("side"), "price": pick.get("price"),
-            "game_pk": pick.get("game_pk"), **grade}
-        # For non-MLB sports, preserve game_id and sport
-        if "game_id" in pick:
-            prop_graded_pick["game_id"] = pick["game_id"]
-        if "sport" in pick:
-            prop_graded_pick["sport"] = pick["sport"]
-        prop_graded.append(prop_graded_pick)
-        if grade["result"] in (RESULT_WIN, RESULT_LOSS):
-            prop_staked += 1
-            prop_profit += grade["profit_units"]
-
-    prop_wins = sum(1 for g in prop_graded if g["result"] == RESULT_WIN)
-    prop_losses = sum(1 for g in prop_graded if g["result"] == RESULT_LOSS)
+        def _fresh(pick=pick):
+            grade = grade_prop_pick(pick, box_by_game_and_player,
+                                    box_captured_game_pks=box_captured)
+            row = {"rank": pick.get("rank"), "bet": pick.get("bet"),
+                  "label": pick.get("label"), "player": pick.get("player"),
+                  "market": pick.get("market"), "line": pick.get("line"),
+                  "side": pick.get("side"), "price": pick.get("price"),
+                  "game_pk": pick.get("game_pk"), **grade}
+            if "game_id" in pick:
+                row["game_id"] = pick["game_id"]
+            if "sport" in pick:
+                row["sport"] = pick["sport"]
+            return row
+        prop_graded.append(_carried_or_fresh("prop_picks", _prop_pick_key, pick, _fresh))
 
     # TOTAL PICKS, graded from the SAME results map the game picks above
     # use -- a total is graded off the same final score, so there is no
     # second results argument to thread through.
-    total_graded, total_staked, total_profit = [], 0, 0.0
+    total_graded = []
     for pick in published.get("total_picks") or ():
-        # For result lookup, use game_id only for non-MLB (when "sport" is present).
-        # For MLB, always use game_pk (even if game_id is in FROZEN_FIELDS).
-        if pick.get("sport"):
-            lookup_key = pick.get("game_id")
-        else:
-            lookup_key = pick.get("game_pk")
-        result = (results_map.get(lookup_key)
-                  or results_map.get(str(lookup_key))
-                  or {})
-        grade = grade_total_pick(pick, result)
-        total_graded_pick = {
-            "rank": pick.get("rank"), "bet": pick.get("bet"),
-            "label": pick.get("label"), "line": pick.get("line"),
-            "side": pick.get("side"), "price": pick.get("price"),
-            "game_pk": pick.get("game_pk"), **grade}
-        # For non-MLB sports, preserve game_id and sport
-        if "game_id" in pick:
-            total_graded_pick["game_id"] = pick["game_id"]
-        if "sport" in pick:
-            total_graded_pick["sport"] = pick["sport"]
-        total_graded.append(total_graded_pick)
-        if grade["result"] in (RESULT_WIN, RESULT_LOSS):
-            total_staked += 1
-            total_profit += grade["profit_units"]
+        def _fresh(pick=pick):
+            if pick.get("sport"):
+                lookup_key = pick.get("game_id")
+            else:
+                lookup_key = pick.get("game_pk")
+            result = (results_map.get(lookup_key)
+                     or results_map.get(str(lookup_key))
+                     or {})
+            grade = grade_total_pick(pick, result)
+            row = {"rank": pick.get("rank"), "bet": pick.get("bet"),
+                  "label": pick.get("label"), "line": pick.get("line"),
+                  "side": pick.get("side"), "price": pick.get("price"),
+                  "game_pk": pick.get("game_pk"), **grade}
+            if "game_id" in pick:
+                row["game_id"] = pick["game_id"]
+            if "sport" in pick:
+                row["sport"] = pick["sport"]
+            return row
+        total_graded.append(_carried_or_fresh("total_picks", _total_pick_key, pick, _fresh))
 
-    total_wins = sum(1 for g in total_graded if g["result"] == RESULT_WIN)
-    total_losses = sum(1 for g in total_graded if g["result"] == RESULT_LOSS)
+    def _unchanged(scope, key_fn, fresh_list):
+        # KEYED, not positional -- a published row's own pick ORDER is not
+        # guaranteed stable across two settle() calls (a fresh publish in
+        # between can reorder or add picks; `_lock_and_merge` does not
+        # promise position), so this must ask "same picks, same results" by
+        # IDENTITY, the same rule `_same_picks`/`_pick_key` already apply to
+        # a published row, never "same list at the same index".
+        old_list = prior.get(scope) or [] if prior else []
+        if len(fresh_list) != len(old_list):
+            return False
+        return ({key_fn(p): p for p in fresh_list}
+                == {key_fn(p): p for p in old_list})
+
+    if prior is not None and (
+            _unchanged("picks", _pick_key, graded)
+            and _unchanged("prop_picks", _prop_pick_key, prop_graded)
+            and _unchanged("total_picks", _total_pick_key, total_graded)):
+        # NOTHING NEW. Every pick this pass produced -- carried or freshly
+        # re-graded -- reads identically to the last settled row. Appending
+        # here would write a pure-timestamp-noise row on every retry of a
+        # still-partially-unresolved date; see "duplicate retry" and
+        # "interrupted/replayed write" in this task's tests.
+        return None
+
+    stats = _tally(graded)
+    prop_stats = _tally(prop_graded)
+    total_stats = _tally(total_graded)
 
     payload = {
         "kind": KIND_SETTLED,
         "date": date,
         "settled_utc": now or datetime.now(timezone.utc).isoformat(),
         "published_row_hash": published.get("row_hash"),
-        "n_picks": len(graded),
-        "n_staked": staked,
-        "wins": wins,
-        "losses": losses,
-        "pushes": sum(1 for g in graded if g["result"] == RESULT_PUSH),
-        "voids": sum(1 for g in graded if g["result"] == RESULT_VOID),
-        "profit_units": round(profit, 4),
-        "roi_pct": round(profit / staked * 100.0, 3) if staked else None,
+        # WHICH PASS THIS IS, and what it extends -- a semantic link
+        # (this is NOT the hash chain's own prev_hash/row_hash, which
+        # HashChainLedger.append computes over EVERY row regardless of
+        # kind) so a reader can walk a date's settlement history without
+        # re-deriving it from physical file order.
+        "settlement_pass": (prior.get("settlement_pass", 0) + 1) if prior else 0,
+        "supersedes_row_hash": prior.get("row_hash") if prior else None,
+        "n_picks": stats["n_picks"],
+        "n_staked": stats["n_staked"],
+        "wins": stats["wins"],
+        "losses": stats["losses"],
+        "pushes": stats["pushes"],
+        "voids": stats["voids"],
+        "unresolved": stats["unresolved"],
+        "profit_units": stats["profit_units"],
+        "roi_pct": stats["roi_pct"],
         "picks": graded,
         # PROP PICKS, graded and totalled the same way, flat one-unit stakes
         # -- kept under their own keys rather than pooled into the numbers
         # above so a game pick's win rate is never diluted by a prop pick's,
         # or the reverse (see `record`'s `by_kind`).
         "prop_picks": prop_graded,
-        "n_prop_picks": len(prop_graded),
-        "n_prop_staked": prop_staked,
-        "prop_wins": prop_wins,
-        "prop_losses": prop_losses,
-        "prop_pushes": sum(1 for g in prop_graded if g["result"] == RESULT_PUSH),
-        "prop_voids": sum(1 for g in prop_graded if g["result"] == RESULT_VOID),
-        "prop_profit_units": round(prop_profit, 4),
-        "prop_roi_pct": (round(prop_profit / prop_staked * 100.0, 3)
-                         if prop_staked else None),
+        "n_prop_picks": prop_stats["n_picks"],
+        "n_prop_staked": prop_stats["n_staked"],
+        "prop_wins": prop_stats["wins"],
+        "prop_losses": prop_stats["losses"],
+        "prop_pushes": prop_stats["pushes"],
+        "prop_voids": prop_stats["voids"],
+        "prop_unresolved": prop_stats["unresolved"],
+        "prop_profit_units": prop_stats["profit_units"],
+        "prop_roi_pct": prop_stats["roi_pct"],
         # TOTAL PICKS, graded and totalled the same way, under their own
         # keys for the same reason the prop keys above are separate --
         # ADDED 2026-09-14.
         "total_picks": total_graded,
-        "n_total_picks": len(total_graded),
-        "n_total_staked": total_staked,
-        "total_wins": total_wins,
-        "total_losses": total_losses,
-        "total_pushes": sum(1 for g in total_graded if g["result"] == RESULT_PUSH),
-        "total_voids": sum(1 for g in total_graded if g["result"] == RESULT_VOID),
-        "total_profit_units": round(total_profit, 4),
-        "total_roi_pct": (round(total_profit / total_staked * 100.0, 3)
-                          if total_staked else None),
+        "n_total_picks": total_stats["n_picks"],
+        "n_total_staked": total_stats["n_staked"],
+        "total_wins": total_stats["wins"],
+        "total_losses": total_stats["losses"],
+        "total_pushes": total_stats["pushes"],
+        "total_voids": total_stats["voids"],
+        "total_unresolved": total_stats["unresolved"],
+        "total_profit_units": total_stats["profit_units"],
+        "total_roi_pct": total_stats["roi_pct"],
     }
     return _ledger(resolved_path).append(payload)
+
+
+# ---------------------------------------------------------------------------
+# Corrections -- fixing an earlier ERRONEOUS terminal result
+# ---------------------------------------------------------------------------
+#
+# WHY THIS IS SEPARATE FROM settle()'S OWN CARRY-FORWARD. settle() only ever
+# advances a pick that is still UNRESOLVED; once a pick reads WIN/LOSS/PUSH/
+# VOID it is carried forward untouched forever (rule 2, module docstring --
+# a settled row is graded, never re-scored). That is correct for the normal
+# case, but it means an entry that was WRONGLY made terminal -- a bad VOID
+# under the pre-fix rule this task replaces, a box score later corrected by
+# the provider, a suspended game ruled resumed-and-completed after the fact
+# -- has no path back to being graded correctly through settle() alone.
+#
+# A correction is a SEPARATE, append-only event, never an edit: it names
+# the one pick it corrects (by the SAME identity key settle()'s own carry-
+# forward uses -- see _SCOPE_KEY_FNS), carries a mandatory reason and
+# source, and is folded onto the settled row it corrects only at READ time
+# (`effective_settled_row`, and `record`/`history` below). The original
+# settled row is untouched -- read it raw and the old, wrong result is
+# still exactly what it said, which is the point: this is a correction on
+# the record, not a rewrite of it.
+#
+# THIS IS DELIBERATELY NOT AN AUTOMATIC RE-INTERPRETATION TOOL. Nothing
+# here scans the ledger and reclassifies old VOIDs under the new rule --
+# see this task's report for the specific, bounded set of entries (if any)
+# a real run of this repo's evidence found affected, identified by hand for
+# the parent to correct one at a time, not a bulk rewrite under a new
+# theory of what should have happened.
+
+
+def corrections_for(date: str, *, path: Optional[str] = None,
+                    sport: Optional[str] = None) -> list:
+    """Every correction event appended for `date`, oldest first -- the
+    versions `effective_settled_row` folds onto the newest settled row."""
+    resolved_path = path if path is not None else store_path(sport)
+    return [row for row in _ledger(resolved_path).read()
+            if row.get("kind") == KIND_CORRECTION and row.get("date") == date]
+
+
+# The graded-result fields a correction may override on the pick it
+# targets -- deliberately the same shape `grade_pick`/`grade_prop_pick`/
+# `grade_total_pick` return, so a caller builds `result` the same way
+# settle() itself would have, never a bespoke correction-only shape.
+_CORRECTABLE_FIELDS = ("result", "profit_units", "reason", "away_score",
+                       "home_score", "margin", "total_runs")
+
+
+def correct_pick(date: str, pick_key: Sequence, *, scope: str, result: Mapping,
+                 correction_reason: str, source: str,
+                 now: Optional[str] = None, path: Optional[str] = None,
+                 sport: Optional[str] = None) -> dict:
+    """APPEND a versioned correction for ONE already-graded pick.
+
+    `scope` is `"picks"`, `"prop_picks"`, or `"total_picks"` -- which of the
+    settled row's three lists `pick_key` (built the same way `_pick_key`/
+    `_prop_pick_key`/`_total_pick_key` would) identifies into. `result` is a
+    full grade dict, exactly what `grade_pick` et al. return (must carry at
+    least `"result"`) -- the corrected verdict; nothing here re-derives it,
+    because a correction is asserting a specific, already-checked answer,
+    not re-running the automatic grader.
+
+    `correction_reason` and `source` are BOTH REQUIRED and BOTH STORED: a
+    correction with no documented cause is exactly the "invent a terminal
+    result" this ledger exists to refuse (see grade_pick/settle's identical
+    refusal on the automatic path). This is the ONLY sanctioned way to
+    change what an already-settled pick reads as, and it corrects exactly
+    the one named pick -- see the section docstring above on why this is
+    not a bulk re-interpretation tool.
+
+    Raises CardLedgerError if `date` has never been settled, or if
+    `pick_key`/`scope` does not name a pick on its newest settled row (never
+    silently corrects the wrong entry, or creates one that was never
+    graded).
+    """
+    resolved_path = path if path is not None else store_path(sport)
+    if scope not in _SCOPE_KEY_FNS:
+        raise CardLedgerError(f"unknown correction scope {scope!r}")
+    if not correction_reason or not str(correction_reason).strip():
+        raise CardLedgerError("correct_pick requires a non-empty correction_reason")
+    if not source or not str(source).strip():
+        raise CardLedgerError("correct_pick requires a non-empty source")
+    if not isinstance(result, Mapping) or not result.get("result"):
+        raise CardLedgerError("correct_pick requires a result dict carrying 'result'")
+
+    prior = settled_row(date, path=resolved_path)
+    if prior is None:
+        raise CardLedgerError(f"cannot correct {date}: no settled row exists yet")
+    key_t = tuple(pick_key)
+    existing = _index_by_key(prior.get(scope), _SCOPE_KEY_FNS[scope])
+    if key_t not in existing:
+        raise CardLedgerError(
+            f"cannot correct {date}/{scope}/{pick_key!r}: no such pick on "
+            "the newest settled row for this date")
+
+    payload = {
+        "kind": KIND_CORRECTION,
+        "date": date,
+        "corrected_utc": now or datetime.now(timezone.utc).isoformat(),
+        "scope": scope,
+        "pick_key": list(key_t),
+        "corrects_row_hash": prior.get("row_hash"),
+        "previous_result": existing[key_t].get("result"),
+        "correction_reason": str(correction_reason),
+        "source": str(source),
+    }
+    for field in _CORRECTABLE_FIELDS:
+        if field in result:
+            payload[field] = result[field]
+    return _ledger(resolved_path).append(payload)
+
+
+def _apply_corrections(row: Mapping, corrections: Sequence[Mapping]) -> dict:
+    """`row` (a settled row) with every correction in `corrections` (oldest
+    first) applied on top, and every count/total recomputed fresh from the
+    corrected picks via `_tally` -- never trust the stored aggregate once a
+    correction exists. The row this reads is never mutated; this returns a
+    NEW dict, so a caller holding the raw settled row (settle()'s own
+    carry-forward, or a reader of the raw ledger) still sees exactly what
+    was originally graded.
+    """
+    if not corrections:
+        return dict(row)
+    out = dict(row)
+    applied = 0
+    for scope, key_fn in _SCOPE_KEY_FNS.items():
+        picks = [dict(p) for p in (row.get(scope) or ())]
+        index = {key_fn(p): i for i, p in enumerate(picks)}
+        for corr in corrections:
+            if corr.get("scope") != scope:
+                continue
+            i = index.get(tuple(corr.get("pick_key") or ()))
+            if i is None:
+                continue  # names a pick this row does not carry -- ignore, never guess
+            patched = picks[i]
+            for field in _CORRECTABLE_FIELDS:
+                if field in corr:
+                    patched[field] = corr[field]
+            patched["corrected"] = True
+            patched["correction_reason"] = corr.get("correction_reason")
+            patched["correction_source"] = corr.get("source")
+            applied += 1
+        out[scope] = picks
+
+    for prefix, scope in (("", "picks"), ("prop_", "prop_picks"), ("total_", "total_picks")):
+        stats = _tally(out[scope])
+        out[f"n_{prefix}picks" if prefix else "n_picks"] = stats["n_picks"]
+        out[f"n_{prefix}staked"] = stats["n_staked"]
+        out[f"{prefix}wins"] = stats["wins"]
+        out[f"{prefix}losses"] = stats["losses"]
+        out[f"{prefix}pushes"] = stats["pushes"]
+        out[f"{prefix}voids"] = stats["voids"]
+        out[f"{prefix}unresolved"] = stats["unresolved"]
+        out[f"{prefix}profit_units"] = stats["profit_units"]
+        out[f"{prefix}roi_pct"] = stats["roi_pct"]
+    out["corrected"] = applied > 0
+    out["correction_count"] = applied
+    return out
+
+
+def effective_settled_row(date: str, *, path: Optional[str] = None,
+                          sport: Optional[str] = None) -> Optional[dict]:
+    """The newest settled row for `date`, with every correction event for
+    that date folded on top -- ONE effective result per pick, even after a
+    correction (module docstring, rule 2). Never edits the ledger; this is
+    a pure read. `history`/`record` below call this (or its inlined
+    equivalent, batched over every date for efficiency) so the public
+    record reflects a correction automatically.
+    """
+    resolved_path = path if path is not None else store_path(sport)
+    row = settled_row(date, path=resolved_path)
+    if row is None:
+        return None
+    return _apply_corrections(row, corrections_for(date, path=resolved_path))
 
 
 # ---------------------------------------------------------------------------
@@ -1175,6 +1580,13 @@ REASON_RESULTS_UNMATCHED = ("results feed returned {n_results} final(s) but none
                             "matched this date's {n_picks} pick(s) -- check the join, "
                             "not the feed (see src/joins.py)")
 REASON_FEED_ERROR = "results feed error: {error}"
+# A pass reached settle() (at least one key matched, see below) but every
+# pick's fresh-or-carried grade came back identical to the last settled
+# row -- a date that is PARTIALLY resolved and still has an UNRESOLVED pick
+# whose OWN game this pass's feed did not cover. Distinct from
+# REASON_ALREADY_SETTLED, which now means "nothing left UNRESOLVED at all".
+REASON_NO_NEW_PROGRESS = ("settle ran but no picks changed state -- still "
+                          "awaiting the rest of this date's results")
 
 
 def _pick_lookup_keys(published: Mapping) -> set:
@@ -1213,7 +1625,13 @@ def _settle_one_date(date: str, *, path: str, sport: Optional[str],
     published = published_row(date, path=path)
     if published is None:
         return {"date": date, "settled": False, "reason": REASON_NO_PUBLISHED_ROW}
-    if settled_row(date, path=path) is not None:
+    # FULLY settled means "nothing left UNRESOLVED" now, not merely "a
+    # settled row exists" -- a date that resolved partially on an earlier
+    # pass (see settle()'s own docstring on partial settlement) must stay
+    # eligible for a retry within the window, same as a date settle() has
+    # never touched at all.
+    existing = settled_row(date, path=path)
+    if existing is not None and not has_unresolved_picks(existing):
         return {"date": date, "settled": False, "reason": REASON_ALREADY_SETTLED}
 
     try:
@@ -1238,11 +1656,13 @@ def _settle_one_date(date: str, *, path: str, sport: Optional[str],
     row = settle(date, results, prop_box_rows=prop_box_rows, now=now,
                  path=path, sport=sport)
     if row is None:
-        # The guards above already confirmed published-and-unsettled, so
-        # this should not happen -- but a walker that ASSUMES success
-        # instead of checking it is exactly the kind of silent gap this
-        # whole feature exists to remove.
-        return {"date": date, "settled": False, "reason": REASON_ALREADY_SETTLED}
+        # The guards above already confirmed published-and-eligible, so this
+        # is a genuine no-progress retry (settle() ran, carried every
+        # terminal pick forward, and found nothing new for whatever is
+        # still UNRESOLVED) rather than the "should not happen" case this
+        # branch used to be the only way to reach -- see settle()'s own
+        # docstring and REASON_NO_NEW_PROGRESS.
+        return {"date": date, "settled": False, "reason": REASON_NO_NEW_PROGRESS}
     return {"date": date, "settled": True, "row": row}
 
 
@@ -1254,8 +1674,10 @@ def settle_recent(*, sport: Optional[str] = None, fetch_results,
     """What a daily loop should call instead of one `settle()` per date
     (R-2026-09-19, the card ledger's counterpart to
     `live_ledger.settle_recent`): grade yesterday, plus every date in the
-    last `window_days` days that still carries a published row and no
-    settled row.
+    last `window_days` days that still carries a published row and is not
+    YET FULLY settled -- no settled row at all, or a settled row that still
+    has an UNRESOLVED pick on it (see `settle`'s own docstring on partial
+    settlement, and `has_unresolved_picks`).
 
     `fetch_results(date_str) -> Mapping` is called once per date this pass
     actually checks -- NEVER once per date in the whole window regardless
@@ -1296,7 +1718,16 @@ def settle_recent(*, sport: Optional[str] = None, fetch_results,
         if offset != 1:
             if published_row(d, path=resolved_path) is None:
                 continue
-            if settled_row(d, path=resolved_path) is not None:
+            # "not yet settled" now means "not FULLY settled" -- a date
+            # that resolved PARTIALLY on an earlier pass (settle()'s own
+            # docstring on partial settlement) still needs its own retry
+            # within the window, same as a date settle() never touched.
+            # Matches _settle_one_date's identical gate; see that
+            # function's own comment for why a bare `is not None` check
+            # here used to stop this window from ever revisiting a
+            # partially-resolved older date.
+            existing = settled_row(d, path=resolved_path)
+            if existing is not None and not has_unresolved_picks(existing):
                 continue
         outcome = _settle_one_date(
             d, path=resolved_path, sport=sport, fetch_results=fetch_results,
@@ -1341,18 +1772,41 @@ def record(*, path: Optional[str] = None, since: Optional[str] = None,
     rule_of_published = {r.get("row_hash"): r.get("rule") for r in all_rows
                          if r.get("kind") == KIND_PUBLISHED}
 
-    days, wins, losses, pushes, voids, staked = 0, 0, 0, 0, 0, 0
+    # ONE ROW PER DATE, EFFECTIVE. `settle` can now append more than one
+    # `card_settled` row for the same date (partial settlement -- see its
+    # own docstring), and a correction (see `correct_pick`) appends a
+    # DIFFERENT kind again for the same date. Summing every KIND_SETTLED row
+    # blindly, as this loop used to, would double-count a date across its
+    # own settlement passes and would never see a correction at all. Physical
+    # order = newest last (same rule `settled_row`/`published_row` use), so
+    # a walk keeping the last match per date is the newest raw row; folding
+    # that date's corrections on top (`_apply_corrections`) is the same
+    # derivation `effective_settled_row` does for one date, done once here
+    # for every date this ledger has ever settled.
+    latest_settled: dict = {}
+    corrections_by_date: dict = {}
+    for row in all_rows:
+        kind = row.get("kind")
+        if kind == KIND_SETTLED:
+            latest_settled[row.get("date")] = row
+        elif kind == KIND_CORRECTION:
+            corrections_by_date.setdefault(row.get("date"), []).append(row)
+    effective_rows = [
+        _apply_corrections(row, corrections_by_date.get(date)) if date in corrections_by_date
+        else row
+        for date, row in latest_settled.items()
+    ]
+
+    days, wins, losses, pushes, voids, unresolved, staked = 0, 0, 0, 0, 0, 0, 0
     profit = 0.0
     by_label = {}
-    prop_wins = prop_losses = prop_pushes = prop_voids = prop_staked = 0
+    prop_wins = prop_losses = prop_pushes = prop_voids = prop_unresolved = prop_staked = 0
     prop_profit = 0.0
     prop_by_label = {}
-    total_wins = total_losses = total_pushes = total_voids = total_staked = 0
+    total_wins = total_losses = total_pushes = total_voids = total_unresolved = total_staked = 0
     total_profit = 0.0
     total_by_label = {}
-    for row in all_rows:
-        if row.get("kind") != KIND_SETTLED:
-            continue
+    for row in effective_rows:
         if since and (row.get("date") or "") < since:
             continue
         if rule is not None and rule_of_published.get(row.get("published_row_hash")) != rule:
@@ -1362,6 +1816,7 @@ def record(*, path: Optional[str] = None, since: Optional[str] = None,
         losses += row.get("losses") or 0
         pushes += row.get("pushes") or 0
         voids += row.get("voids") or 0
+        unresolved += row.get("unresolved") or 0
         staked += row.get("n_staked") or 0
         profit += row.get("profit_units") or 0.0
         for pick in row.get("picks") or ():
@@ -1383,6 +1838,7 @@ def record(*, path: Optional[str] = None, since: Optional[str] = None,
         prop_losses += row.get("prop_losses") or 0
         prop_pushes += row.get("prop_pushes") or 0
         prop_voids += row.get("prop_voids") or 0
+        prop_unresolved += row.get("prop_unresolved") or 0
         prop_staked += row.get("n_prop_staked") or 0
         prop_profit += row.get("prop_profit_units") or 0.0
         for pick in row.get("prop_picks") or ():
@@ -1403,6 +1859,7 @@ def record(*, path: Optional[str] = None, since: Optional[str] = None,
         total_losses += row.get("total_losses") or 0
         total_pushes += row.get("total_pushes") or 0
         total_voids += row.get("total_voids") or 0
+        total_unresolved += row.get("total_unresolved") or 0
         total_staked += row.get("n_total_staked") or 0
         total_profit += row.get("total_profit_units") or 0.0
         for pick in row.get("total_picks") or ():
@@ -1436,6 +1893,7 @@ def record(*, path: Optional[str] = None, since: Optional[str] = None,
         "losses": losses,
         "pushes": pushes,
         "voids": voids,
+        "unresolved": unresolved,
         "n_staked": staked,
         "win_rate": round(wins / staked, 4) if staked else None,
         "profit_units": round(profit, 4),
@@ -1448,6 +1906,7 @@ def record(*, path: Optional[str] = None, since: Optional[str] = None,
         "losses": prop_losses,
         "pushes": prop_pushes,
         "voids": prop_voids,
+        "unresolved": prop_unresolved,
         "n_staked": prop_staked,
         "win_rate": round(prop_wins / prop_staked, 4) if prop_staked else None,
         "profit_units": round(prop_profit, 4),
@@ -1461,6 +1920,7 @@ def record(*, path: Optional[str] = None, since: Optional[str] = None,
         "losses": total_losses,
         "pushes": total_pushes,
         "voids": total_voids,
+        "unresolved": total_unresolved,
         "n_staked": total_staked,
         "win_rate": round(total_wins / total_staked, 4) if total_staked else None,
         "profit_units": round(total_profit, 4),
@@ -1480,6 +1940,7 @@ def record(*, path: Optional[str] = None, since: Optional[str] = None,
         "losses": losses,
         "pushes": pushes,
         "voids": voids,
+        "unresolved": unresolved,
         "n_staked": staked,
         "win_rate": game_summary["win_rate"],
         "profit_units": game_summary["profit_units"],
@@ -1574,7 +2035,8 @@ def history(*, path: Optional[str] = None, limit: Optional[int] = 60,
     published_by_date: dict = {}
     published_by_hash: dict = {}
     rule_of_published: dict = {}
-    settled: list = []
+    latest_settled: dict = {}
+    corrections_by_date: dict = {}
     for row in ledger.read():
         kind = row.get("kind")
         if kind == KIND_PUBLISHED:
@@ -1582,7 +2044,23 @@ def history(*, path: Optional[str] = None, limit: Optional[int] = 60,
             published_by_hash[row.get("row_hash")] = row
             rule_of_published[row.get("row_hash")] = row.get("rule")
         elif kind == KIND_SETTLED:
-            settled.append(row)
+            # NEWEST ROW PER DATE, not every row -- `settle` can append more
+            # than one `card_settled` row for a date under partial
+            # settlement (see its docstring); physical order = newest last,
+            # so overwriting on each match leaves the newest here exactly
+            # like `settled_row`'s own walk.
+            latest_settled[row.get("date")] = row
+        elif kind == KIND_CORRECTION:
+            corrections_by_date.setdefault(row.get("date"), []).append(row)
+    # EFFECTIVE ROWS: one per date, corrections folded on top -- see
+    # `effective_settled_row`. This is what "days" below is built from, so
+    # a correction changes the public record automatically, without ever
+    # editing the settled row it corrects.
+    settled: list = [
+        _apply_corrections(row, corrections_by_date.get(date)) if date in corrections_by_date
+        else row
+        for date, row in latest_settled.items()
+    ]
     # EVERY graded date, whatever its rule, before the rule filter below. A
     # date that settled under another rule is still a GRADED date: built
     # from the filtered list instead, every settled NFL_CARD_V1 day came back
@@ -1628,9 +2106,21 @@ def history(*, path: Optional[str] = None, limit: Optional[int] = 60,
                 "profit_units": graded.get("profit_units"),
                 "away_score": graded.get("away_score"),
                 "home_score": graded.get("home_score"),
-                # Populated only for a VOID pick (see grade_pick) -- the
-                # plain-English reason nothing here could be graded.
+                # Populated only for a VOID or UNRESOLVED pick (see
+                # grade_pick) -- the plain-English reason nothing here could
+                # be graded yet, or ever.
                 "reason": graded.get("reason"),
+                # Populated only when result == UNRESOLVED (see
+                # UNRESOLVED_AWAITING_RESULT/UNRESOLVED_DATA) -- lets a
+                # reader tell "just wait" from "something needs a look"
+                # without parsing `reason`'s English.
+                "unresolved_kind": graded.get("unresolved_kind"),
+                # Populated only once `correct_pick` has corrected this
+                # pick (see effective_settled_row) -- the ORIGINAL settled
+                # row this was read from is untouched; this is the folded
+                # effective view.
+                "corrected": graded.get("corrected", False),
+                "correction_reason": graded.get("correction_reason"),
             })
 
         # PROP PICKS, joined the same way -- keyed by (game_pk, player) per
@@ -1663,9 +2153,13 @@ def history(*, path: Optional[str] = None, limit: Optional[int] = 60,
                 "home_team": frozen.get("home_team"),
                 "result": graded.get("result"),
                 "profit_units": graded.get("profit_units"),
-                # Populated only for a VOID pick (see grade_prop_pick) -- the
-                # plain-English reason nothing here could be graded.
+                # Populated only for a VOID or UNRESOLVED pick (see
+                # grade_prop_pick) -- the plain-English reason nothing here
+                # could be graded yet, or ever.
                 "reason": graded.get("reason"),
+                "unresolved_kind": graded.get("unresolved_kind"),
+                "corrected": graded.get("corrected", False),
+                "correction_reason": graded.get("correction_reason"),
             })
 
         # TOTAL PICKS, joined the same way -- keyed by (game_pk, line, side)
@@ -1689,9 +2183,13 @@ def history(*, path: Optional[str] = None, limit: Optional[int] = 60,
                 "home_team": frozen.get("home_team"),
                 "result": graded.get("result"),
                 "profit_units": graded.get("profit_units"),
-                # Populated only for a VOID pick (see grade_total_pick) --
-                # the plain-English reason nothing here could be graded.
+                # Populated only for a VOID or UNRESOLVED pick (see
+                # grade_total_pick) -- the plain-English reason nothing here
+                # could be graded yet, or ever.
                 "reason": graded.get("reason"),
+                "unresolved_kind": graded.get("unresolved_kind"),
+                "corrected": graded.get("corrected", False),
+                "correction_reason": graded.get("correction_reason"),
             })
 
         days.append({
@@ -1701,9 +2199,17 @@ def history(*, path: Optional[str] = None, limit: Optional[int] = 60,
             "losses": row.get("losses") or 0,
             "pushes": row.get("pushes") or 0,
             "voids": row.get("voids") or 0,
+            "unresolved": row.get("unresolved") or 0,
             "n_staked": row.get("n_staked") or 0,
             "profit_units": row.get("profit_units"),
             "roi_pct": row.get("roi_pct"),
+            # True once ANY pick on this date has gone through
+            # correct_pick -- see effective_settled_row. The raw settled
+            # row `row_hash` below still names the ORIGINAL, uncorrected
+            # entry; this flag is the only thing that says a reader is
+            # looking at a folded, not a raw, result.
+            "corrected": row.get("corrected", False),
+            "correction_count": row.get("correction_count", 0),
             # This settled row's own hash, and the PUBLISHED row's hash it
             # was graded against -- two different receipts. The published
             # hash is the one a reader wants: "this is what was claimed,
@@ -1716,6 +2222,7 @@ def history(*, path: Optional[str] = None, limit: Optional[int] = 60,
             "prop_losses": row.get("prop_losses") or 0,
             "prop_pushes": row.get("prop_pushes") or 0,
             "prop_voids": row.get("prop_voids") or 0,
+            "prop_unresolved": row.get("prop_unresolved") or 0,
             "n_prop_staked": row.get("n_prop_staked") or 0,
             "prop_profit_units": row.get("prop_profit_units"),
             "prop_roi_pct": row.get("prop_roi_pct"),
@@ -1724,6 +2231,7 @@ def history(*, path: Optional[str] = None, limit: Optional[int] = 60,
             "total_losses": row.get("total_losses") or 0,
             "total_pushes": row.get("total_pushes") or 0,
             "total_voids": row.get("total_voids") or 0,
+            "total_unresolved": row.get("total_unresolved") or 0,
             "n_total_staked": row.get("n_total_staked") or 0,
             "total_profit_units": row.get("total_profit_units"),
             "total_roi_pct": row.get("total_roi_pct"),

@@ -161,18 +161,34 @@ class GradingIsHonest(LedgerCase):
             card_ledger.grade_pick(laying, {"away_score": "3",
                                             "home_score": "4"})["result"])
 
-    def test_a_non_numeric_score_is_void_not_a_crash(self):
+    def test_a_non_numeric_score_is_unresolved_not_a_crash(self):
+        """UPDATED for the delayed-settlement state machine (this task): an
+        unparseable score used to grade a permanent VOID, indistinguishable
+        from a genuine house-rule refusal. `src.pipeline.history.
+        read_results` only ever stores genuinely final games, so a bad or
+        missing score here is a DATA condition -- possibly still to come --
+        never proof the game will never have a result. See grade_pick's
+        docstring and RESULT_UNRESOLVED."""
         for bad in ("", "  ", "PPD", None, True):
             grade = card_ledger.grade_pick(
                 _pick(), {"away_score": bad, "home_score": 4})
-            self.assertEqual(card_ledger.RESULT_VOID, grade["result"], bad)
+            self.assertEqual(card_ledger.RESULT_UNRESOLVED, grade["result"], bad)
+            self.assertEqual(card_ledger.UNRESOLVED_AWAITING_RESULT,
+                             grade["unresolved_kind"], bad)
 
-    def test_a_game_with_no_score_is_void_and_never_a_loss(self):
+    def test_a_game_with_no_score_is_unresolved_and_never_a_loss_or_a_void(self):
         """A postponed slate graded as losses makes a public record wrong in
-        the one direction nobody would ever check."""
+        one direction nobody would ever check; graded as a permanent VOID it
+        is wrong in the other -- a game still to be played reads as settled
+        at zero profit forever. UPDATED for the delayed-settlement state
+        machine (this task, TASK A1): this used to assert RESULT_VOID, which
+        was the bug -- a missing score is not evidence the game has no
+        result coming, so it must stay UNRESOLVED until it does."""
         grade = card_ledger.grade_pick(_pick(), {"away_score": None,
                                                  "home_score": None})
-        self.assertEqual(card_ledger.RESULT_VOID, grade["result"])
+        self.assertEqual(card_ledger.RESULT_UNRESOLVED, grade["result"])
+        self.assertEqual(card_ledger.UNRESOLVED_AWAITING_RESULT,
+                         grade["unresolved_kind"])
         self.assertEqual(0.0, grade["profit_units"])
 
     def test_an_unusable_price_is_void_not_a_silent_zero(self):
@@ -234,7 +250,19 @@ class SettleNeverRewrites(LedgerCase):
         self.assertEqual(0, row["voids"], "the int/str game_pk join failed")
         self.assertEqual(1, row["wins"])
 
-    def test_voids_are_excluded_from_the_return_but_reported(self):
+    def test_a_missing_result_is_unresolved_excluded_but_reported(self):
+        """UPDATED for the delayed-settlement state machine (this task,
+        TASK A1): this used to assert `row["voids"] == 1` for the game with
+        no score, on the assumption that an empty result dict meant
+        "postponed". It does not: `src.pipeline.history.read_results` only
+        ever stores genuinely FINAL games (never pending or cancelled ones,
+        by that module's own contract), so an absent game_pk is silent about
+        WHY -- not yet played is indistinguishable, from here, from anything
+        else. The old assertion was pinning the exact bug this task fixes:
+        a game still to be played settling as a permanent zero-profit VOID.
+        It now stays UNRESOLVED, excluded from n_staked/wins exactly like a
+        VOID always was, but eligible to be picked up and graded on a later
+        settle() pass (see test_card_ledger_delayed_settlement.py)."""
         card_ledger.publish(
             _card(picks=[_pick(rank=1, game_pk=1001),
                          _pick(rank=2, game_pk=1002)]),
@@ -242,11 +270,14 @@ class SettleNeverRewrites(LedgerCase):
         row = card_ledger.settle(
             "2026-09-10",
             {1001: {"away_score": 1, "home_score": 4},
-             1002: {}},  # postponed
+             1002: {}},  # not yet final -- game_pk 1002 has no row at all
             path=self.path)
-        self.assertEqual(1, row["voids"])
+        self.assertEqual(0, row["voids"])
+        self.assertEqual(1, row["unresolved"])
         self.assertEqual(1, row["n_staked"])
         self.assertEqual(1, row["wins"])
+        self.assertEqual(card_ledger.RESULT_UNRESOLVED,
+                         row["picks"][1]["result"])
 
 
 class TheRunningRecord(LedgerCase):

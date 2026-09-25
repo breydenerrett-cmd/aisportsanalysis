@@ -318,15 +318,25 @@ class TotalPicksAreGatedTheSameWayGamePicksAre(SettleRecentCase):
                                                             "away_score": 5}},
             path=self.path, today="2026-09-18")
 
-        # game pick 1 has no matching result (feed only carries 9006) --
-        # but the TOTAL pick's key (9006) does match, so at least one key
-        # matched overall and settle() runs; the game pick grades VOID on
-        # its own (existing settle() behaviour, unchanged by this feature)
-        # while the total pick grades normally.
+        # game pick 1 has no matching result (feed only carries 9006) -- but
+        # the TOTAL pick's key (9006) does match, so at least one key
+        # matched overall and settle() runs; the total pick grades normally
+        # while the game pick, with no result of its own yet, stays
+        # UNRESOLVED (UPDATED for the delayed-settlement state machine,
+        # TASK A1 -- this used to assert row["voids"] == 1 with a comment
+        # calling that "unchanged by this feature", which was exactly the
+        # gap this task closes: a pick with no result of its own must stay
+        # retryable, not settle as a permanent VOID just because some OTHER
+        # pick on the same date happened to have a result this pass).
         self.assertEqual(totals["settled"], 1)
         row = card_ledger.settled_row("2026-09-17", path=self.path, sport="nfl")
-        self.assertEqual(row["voids"], 1)
+        self.assertEqual(row["voids"], 0)
+        self.assertEqual(row["unresolved"], 1)
+        self.assertEqual(row["picks"][0]["result"], card_ledger.RESULT_UNRESOLVED)
         self.assertEqual(row["total_picks"][0]["result"], "WIN")
+        # ...and this date is correctly still NOT fully settled -- a later
+        # pass with game_pk 1's own result must be able to retry it.
+        self.assertTrue(card_ledger.has_unresolved_picks(row))
 
 
 if __name__ == "__main__":
