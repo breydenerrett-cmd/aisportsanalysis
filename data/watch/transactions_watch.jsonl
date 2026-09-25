@@ -1958,3 +1958,7 @@
 {"fetched_utc": "2026-09-25T16:01:02.771825+00:00", "game_date": "2026-09-25", "poll": true}
 {"fetched_utc": "2026-09-25T16:09:37.712467+00:00", "game_date": "2026-09-25", "poll": true}
 {"fetched_utc": "2026-09-25T16:09:40.269986+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T16:39:41.221198+00:00", "game_date": "2026-09-25", "poll": true}
+{"category": "recalled", "date": "2026-09-25", "first_seen_utc": "2026-09-25T16:39:41.221198+00:00", "player": "Brendan Beck", "player_id": 694341, "team": "NYY", "transaction_id": 943913}
+{"category": "recalled", "date": "2026-09-25", "first_seen_utc": "2026-09-25T16:39:41.221198+00:00", "player": "Yerry De los Santos", "player_id": 660787, "team": "NYY", "transaction_id": 943914}
+{"fetched_utc": "2026-09-25T16:39:43.489509+00:00", "game_date": "2026-09-25", "poll": true}
