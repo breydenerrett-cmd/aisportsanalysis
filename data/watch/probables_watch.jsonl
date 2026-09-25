@@ -1538,3 +1538,22 @@
 {"fetched_utc": "2026-09-25T03:11:43.606739+00:00", "game_date": "2026-09-24", "poll": true}
 {"fetched_utc": "2026-09-25T03:22:18.785910+00:00", "game_date": "2026-09-24", "poll": true}
 {"fetched_utc": "2026-09-25T03:48:12.044094+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-25T04:00:31.391239+00:00", "game_date": "2026-09-25", "poll": true}
+{"away_probable_id": 605280, "fetched_utc": "2026-09-25T04:00:31.391239+00:00", "game_pk": 824703, "home_probable_id": null}
+{"away_probable_id": 656849, "fetched_utc": "2026-09-25T04:00:31.391239+00:00", "game_pk": 824706, "home_probable_id": 678394}
+{"away_probable_id": 669432, "fetched_utc": "2026-09-25T04:00:31.391239+00:00", "game_pk": 823489, "home_probable_id": 694341}
+{"away_probable_id": 687064, "fetched_utc": "2026-09-25T04:00:31.391239+00:00", "game_pk": 823491, "home_probable_id": null}
+{"away_probable_id": 696149, "fetched_utc": "2026-09-25T04:00:31.391239+00:00", "game_pk": 824220, "home_probable_id": 695549}
+{"away_probable_id": 642547, "fetched_utc": "2026-09-25T04:00:31.391239+00:00", "game_pk": 823409, "home_probable_id": 650911}
+{"away_probable_id": null, "fetched_utc": "2026-09-25T04:00:31.391239+00:00", "game_pk": 822681, "home_probable_id": 674841}
+{"away_probable_id": 666157, "fetched_utc": "2026-09-25T04:00:31.391239+00:00", "game_pk": 822760, "home_probable_id": null}
+{"away_probable_id": null, "fetched_utc": "2026-09-25T04:00:31.391239+00:00", "game_pk": 823816, "home_probable_id": 691587}
+{"away_probable_id": 668909, "fetched_utc": "2026-09-25T04:00:31.391239+00:00", "game_pk": 824058, "home_probable_id": 702070}
+{"away_probable_id": 608372, "fetched_utc": "2026-09-25T04:00:31.391239+00:00", "game_pk": 824544, "home_probable_id": 680732}
+{"away_probable_id": 700241, "fetched_utc": "2026-09-25T04:00:31.391239+00:00", "game_pk": 823735, "home_probable_id": 688107}
+{"away_probable_id": 594798, "fetched_utc": "2026-09-25T04:00:31.391239+00:00", "game_pk": 823652, "home_probable_id": 657746}
+{"away_probable_id": null, "fetched_utc": "2026-09-25T04:00:31.391239+00:00", "game_pk": 824947, "home_probable_id": 682052}
+{"away_probable_id": 694297, "fetched_utc": "2026-09-25T04:00:31.391239+00:00", "game_pk": 823248, "home_probable_id": null}
+{"away_probable_id": 672282, "fetched_utc": "2026-09-25T04:00:31.391239+00:00", "game_pk": 823085, "home_probable_id": 682243}
+{"away_probable_id": 669373, "fetched_utc": "2026-09-25T04:00:31.391239+00:00", "game_pk": 823167, "home_probable_id": 805074}
+{"fetched_utc": "2026-09-25T04:00:33.560779+00:00", "game_date": "2026-09-25", "poll": true}
