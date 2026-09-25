@@ -1977,3 +1977,9 @@
 {"category": "designated", "date": "2026-09-25", "first_seen_utc": "2026-09-25T19:55:10.717307+00:00", "player": "Jake Woodford", "player_id": 663765, "team": "TB", "transaction_id": 943931}
 {"category": "il_activation", "date": "2026-09-25", "first_seen_utc": "2026-09-25T19:55:10.717307+00:00", "player": "Manuel Rodr\u00edguez", "player_id": 655889, "team": "TB", "transaction_id": 943932}
 {"fetched_utc": "2026-09-25T19:55:12.495031+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T20:52:43.712512+00:00", "game_date": "2026-09-25", "poll": true}
+{"category": "il_placement", "date": "2026-09-22", "first_seen_utc": "2026-09-25T20:52:43.712512+00:00", "player": "Corbin Burnes", "player_id": 669203, "team": "ARI", "transaction_id": 943959}
+{"category": "recalled", "date": "2026-09-25", "first_seen_utc": "2026-09-25T20:52:43.712512+00:00", "player": "Jedixson Paez", "player_id": 699151, "team": "BOS", "transaction_id": 943955}
+{"category": "optioned", "date": "2026-09-25", "first_seen_utc": "2026-09-25T20:52:43.712512+00:00", "player": "Raymond Burgos", "player_id": 670103, "team": "BOS", "transaction_id": 943956}
+{"category": "recalled", "date": "2026-09-25", "first_seen_utc": "2026-09-25T20:52:43.712512+00:00", "player": "Jose Cabrera", "player_id": 703615, "team": "ARI", "transaction_id": 943958}
+{"fetched_utc": "2026-09-25T20:52:45.931083+00:00", "game_date": "2026-09-25", "poll": true}
