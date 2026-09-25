@@ -30,16 +30,27 @@ values rather than trusting that claim.
 
 WHAT IS AND IS NOT CORRECTED HERE
 ---------------------------------
-Corrected: game moneyline, both sides.
-NOT corrected, still open and still departing from section 2:
-  * run line -- section 2 registers "both sides at exactly +1.5 and -1.5";
-    the live path attaches the favoured side's run line as a display
-    alternative only (`daily_card._attach_run_line`), so no run line is ever
-    a candidate for either side;
-  * player props -- section 2 registers "both sides of every contract";
-    `src/report/props.py:148` keeps only `propboard.most_likely`'s side.
+Corrected, each its own explicitly versioned arm, default OFF except the
+first (already collecting a forward record since 2026-09-23):
+  * game moneyline, both sides (`ENUMERATION_ID`);
+  * player props, both sides of every registered contract, when
+    `enumerate_props=True` (`ENUMERATION_ID_PROPS`; `src/report/props.py:148`
+    keeps only `propboard.most_likely`'s side on the live path);
+  * the standard run line, both REAL quoted sides, when
+    `enumerate_run_line=True` (`ENUMERATION_ID_RUNLINE`, added 2026-09-24,
+    D1a) -- section 2 registers "both sides at exactly +1.5 and -1.5"; the
+    live path only ever attaches the FAVOURED side's run line as a display
+    alternative (`daily_card._attach_run_line`), with the market's own price
+    and no model number, never as a candidate either side could be picked
+    from.
+Each arm is a SEPARATE id on purpose (see `ENUMERATION_ID_PROPS`'s own
+comment) -- a registered experiment may never change what it measures
+mid-sample, so widening one arm's pool can never be folded into another's id
+or turned on by another arm's flag.
+
 Nothing in this file should be read as "V2's candidate set now matches its
-registration".
+registration": every arm above still runs through the unedited registered
+gates, ranking and thresholds, and none is wired to anything that publishes.
 
 THIS IS NOT APPROVED TO PUBLISH
 -------------------------------
@@ -51,10 +62,11 @@ id"), a new rule id rather than an amendment to V2.
 
 from __future__ import annotations
 
+from collections import Counter
 from datetime import datetime, timezone
 from typing import Mapping, Optional, Sequence
 
-from src.analysis import best_bets_card, daily_card
+from src.analysis import best_bets_card, calibrate, daily_card, strength
 from src.report import card as card_v1
 from src.report import card_v2
 
@@ -285,6 +297,383 @@ def both_sides_prop_board(date: str, **kwargs) -> dict:
     }
 
 
+# ---------------------------------------------------------------------------
+# D1a: the run-line arm. Added 2026-09-24, its own explicitly versioned id,
+# default OFF. Unlike the two arms above, this one applies a calibration
+# this module reads itself rather than reusing one the registered candidate
+# already carries -- read `_runline_calibration`'s docstring before touching
+# any of this. Applying the WRONG calibration here would be worse than
+# applying none.
+# ---------------------------------------------------------------------------
+
+ENUMERATION_ID_RUNLINE = "run_line_both_sides_v1"
+
+# Why a run-line side was not built. Distinct names from NO_OPPOSITE_* (the
+# moneyline arm's reasons) on purpose -- see that block's comment. These
+# candidates are built from scratch, not mirrored from an existing one, so
+# the failure modes differ: a whole GAME can be excluded before either side
+# is even attempted (no model output at all), which cannot happen to the
+# moneyline mirror -- a favoured-side candidate already existing there is
+# itself the proof the model succeeded for that game.
+RL_ALREADY_STARTED = "run_line_game_already_started"
+RL_NO_LEAGUE_RATE = "run_line_no_league_runs_per_game"
+RL_MODEL_REFUSED = "run_line_model_refused"
+RL_NO_QUOTE_ROW = "run_line_no_quote_row"
+RL_NO_PRICE = "run_line_no_best_price"
+RL_NOT_STANDARD_LINE = "run_line_not_standard_line"
+RL_FUTURE_QUOTE = "run_line_quote_observed_after_now"
+
+
+def _runline_calibration(frozen: Mapping) -> Optional[calibrate.Calibration]:
+    """The frozen run-line COVER calibration, or `None` if the frozen file's
+    own fit failed -- mirrors `card_v2._moneyline_calibration`'s "None is a
+    real answer" contract exactly, one level down in this file because
+    `card_v2.py` may not be edited to add it there.
+
+    A DIFFERENT NUMBER FROM THE MONEYLINE FIT, on purpose. Registration 11.2
+    lists both as separate fitted numbers the frozen file holds: "the
+    moneyline Platt `a` and `b`, **the side-level run-line cover
+    calibration**". G9's own row names it too: "holds the moneyline
+    calibration (for a moneyline) or the run-line cover calibration (for a
+    run line)". Both are fit by the same T0a script on the same 2025 games,
+    but one is fit on which team wins and the other on which side covers a
+    spread -- applying the moneyline pair to a run-line probability is
+    exactly the category error the module docstring warns against, and
+    nowhere in this function does `card_v2._moneyline_calibration` or its
+    `cal.apply` ever touch a run-line number.
+
+    LIVE, THIS IS TRUE AND UNUSED TODAY. `data/processed/
+    card_v2_frozen_params.json` already carries `"runline_calibration":
+    {"a": 0.0, "b": 0.950892, "n": 8108, "fitted": true, ...}` -- fit,
+    frozen, sitting there since T0a, applied by NO code anywhere in this
+    repo until this function, because no code anywhere else ever builds a
+    run-line CANDIDATE for it to be applied to
+    (`daily_card._attach_run_line` only ever displays the market's own
+    price, never a model number). Section 2's "today no calibration touches
+    run-line numbers" describes that gap, not an absent registration -- 11.2
+    registers this number on equal footing with `DISPERSION`, the moneyline
+    fit, `RHO` and the slot table, all of which other code in this repo
+    already applies.
+
+    `a == 0.0` IS LOAD-BEARING. `Calibration.apply` is
+    `sigmoid(a + b*logit(p_raw))`; for two probabilities that are exact
+    complements (`p + q == 1`), `sigmoid(b*logit(p)) + sigmoid(b*logit(1-p))
+    == 1` for ANY `b` only when `a == 0` (`logit(1-p) == -logit(p)`, so a
+    nonzero `a` breaks the symmetry). The two REAL quoted sides of one
+    game's standard run line are exact complements by construction (the two
+    `market_probabilities` pairs `strength.py`'s own module docstring names,
+    read in `_run_line_side_candidate` via `strength.run_line_probability`
+    on the same `line_dist`), so applying this SAME `(a, b)` pair
+    independently to each side keeps them summing to 1 after calibration,
+    exactly as before it.
+    `tests.test_card_v2_candidate_enumeration.RunLineCalibrationStaysComplementary`
+    measures this rather than assuming it.
+    """
+    blob = frozen.get("runline_calibration") or {}
+    if not blob.get("fitted"):
+        return None
+    try:
+        return calibrate.Calibration(
+            float(blob["a"]), float(blob["b"]), int(blob["n"]),
+            float(blob.get("base_rate", 0.5)))
+    except (KeyError, TypeError, ValueError):
+        return None
+
+
+def _run_line_bet_sentence(candidate: Mapping) -> str:
+    """Mirrors `card_v2._bet_sentence`'s convention: no "Take " prefix --
+    `best_bets_card.bet_sentence` adds that at render time, and this module
+    publishes nothing that would ever call it."""
+    line = candidate.get("line") or 0.0
+    sign = "+" if line > 0 else ""
+    price_txt = daily_card._fmt_price(candidate.get("price"))
+    return f"{candidate.get('team_name')} {sign}{line:g} at {price_txt}"
+
+
+def _run_line_side_candidate(game: Mapping, line_dist: Mapping, side: str,
+                             row: Mapping, *, now: datetime,
+                             cal: Optional[calibrate.Calibration]):
+    """`(candidate, None)` or `(None, reason)` for ONE real quoted run-line
+    side.
+
+    Split out of `build_run_line_candidates`'s loop so the two checks that
+    protect against a bad quote row -- "is this really the standard line"
+    and "is this quote from the future" -- are each one small function a
+    test can drive with a hand-built `row`, without needing a live board or
+    a monkeypatched store.
+
+    THE LINE IS READ, NEVER INFERRED -- same rule and same reason as
+    `daily_card._attach_run_line`'s own comment. `row["line"]` comes
+    straight off `card.run_line_rows`'s own signed value for this side
+    (`home_line` if `side == "home"` else `-home_line`), never derived from
+    a price's sign or a moneyline favourite. `card.run_line_rows` already
+    filters to exactly +-1.5 (registration section 2: "no alternate
+    lines"), so the isinstance-and-tolerance check below is
+    belt-and-suspenders against a caller that bypasses it -- and it is
+    exactly what lets a test exercise the defence directly, by calling this
+    function with a hand-built `row` rather than through
+    `card.run_line_rows`.
+    """
+    price = row.get("best_price")
+    if price is None:
+        return None, RL_NO_PRICE
+
+    line = row.get("line")
+    if not isinstance(line, (int, float)) or isinstance(line, bool):
+        return None, RL_NOT_STANDARD_LINE
+    line = float(line)
+    if abs(abs(line) - card_v1.RUN_LINE) > 1e-9:
+        return None, RL_NOT_STANDARD_LINE
+
+    observed = card_v2._observed_dt(row.get("observed_utc"))
+    if observed is not None and observed > now:
+        # D1c: `best_bets_card.quote_age_seconds` is `(now - observed_utc)
+        # .total_seconds()`, and G3 fails only when that is None or GREATER
+        # than the freshness bound -- a NEGATIVE age (a quote timestamped
+        # after `now`) is neither, so it would read as the freshest possible
+        # quote rather than as the error it is. This module cannot edit G3
+        # (`best_bets_card.py` is not in its write area), so the guard has
+        # to live here: a future-dated quote never becomes a candidate at
+        # all, in either a live or a `--now` retrospective run.
+        return None, RL_FUTURE_QUOTE
+
+    underdog = line > 0
+    raw_p = strength.run_line_probability(line_dist, side, underdog=underdog)
+    calibrated_p = cal.apply(raw_p) if cal is not None else None
+    our_p = calibrated_p if calibrated_p is not None else raw_p
+
+    team_name = ((game.get("home_name") if side == "home"
+                 else game.get("away_name"))
+                or (game.get("home_team") if side == "home"
+                    else game.get("away_team")))
+
+    candidate = {
+        "kind": "game",
+        "game_id": game.get("game_id"),
+        "game_pk": game.get("game_pk"),
+        "player_id": None,
+        "player": None,
+        "price": price,
+        "book": row.get("best_book"),
+        "books": row.get("books"),
+        "market_probability": row.get("consensus_probability"),
+        "our_probability": our_p,
+        # Provenance (D1a): the number BEFORE any calibration touched it,
+        # kept on every candidate regardless of whether `cal` was available,
+        # so a reader never has to trust `calibrated` alone to know what
+        # `our_probability` would have been without it.
+        "our_probability_raw": raw_p,
+        "model_probability": our_p,
+        "books_observed_utc": row.get("observed_utc"),
+        "observed_utc": observed,
+        "has_started": False,  # the caller already excludes started games
+        "calibrated": cal is not None,
+        "first_pitch": game.get("first_pitch_utc"),
+        "first_pitch_utc": game.get("first_pitch_utc"),
+        "team_name": team_name,
+        "away_team": game.get("away_team"),
+        "home_team": game.get("home_team"),
+        "game_type": game.get("game_type", "R"),
+        "market": "run_line",
+        "side": side,
+        "line": line,
+        "underdog": underdog,
+        "market_underdog": (row.get("consensus_probability") is not None
+                            and row.get("consensus_probability") < 0.50),
+        "positive_price": (price is not None and price > 0),
+        "enumeration": ENUMERATION_ID_RUNLINE,
+    }
+    candidate["bet_sentence"] = _run_line_bet_sentence(candidate)
+    return candidate, None
+
+
+def build_run_line_candidates(entries: Sequence, *, date: str, now: datetime,
+                              frozen: Mapping, multibook_rows=None) -> tuple:
+    """`(candidates, raw_pool_size, not_built)` -- both REAL quoted sides of
+    the standard run line (registration section 2: "Both sides at exactly
+    +1.5 and -1.5, no alternate lines") for every game this snapshot
+    supports.
+
+    A candidate is "supported" when: the game has not started as of `now`;
+    `strength.league_runs_per_game` and `strength.model_line` both succeed on
+    it (the same frozen `DISPERSION` `card_v2._build_game_candidates` uses,
+    read from the SAME `frozen` mapping every other arm reads, so all arms
+    stay comparable on one snapshot); and `card.run_line_rows` carries a
+    priced quote for that side with a real price and the standard line.
+
+    WHY THIS DUPLICATES PART OF `card_v2._build_game_candidates`'s OWN LOOP.
+    That function computes a `strength.model_line(...)` per game and then
+    THROWS IT AWAY -- it returns only `(candidates, raw_pool_size)`, never
+    the model line itself, so `strength.run_line_probability` (which needs
+    the full joint distribution's `p_*_plus`/`p_*_minus`, not the `p_home`/
+    `p_away` the returned candidate carries) has nothing to read. `card_v2.py`
+    is fingerprinted and may not be edited to return it. So this recomputes
+    the same call, on the same inputs, in the same order (`_flatten` ->
+    `league_runs_per_game` -> `relief_rates_for` -> `model_line`) -- read-only
+    duplication of a CALL, not a second implementation of the model. If
+    `card_v2._build_game_candidates` ever changes how it builds `features`
+    this function has to be re-read against it; that risk is inherent to a
+    shadow-only module that may not edit the file it shadows (module
+    docstring, "THE CORRECTION THEREFORE CANNOT BE MADE IN PLACE").
+
+    CALIBRATION IS APPLIED HERE, deliberately unlike section 2's own
+    illustration (2026-09-15, before T0a existed -- see
+    `_runline_calibration`). `our_probability` is calibrated when the frozen
+    fit is present (`calibrated: True`, so G9 can pass) and left raw
+    otherwise (`calibrated: False`, so G9 refuses it, exactly as
+    `card_v2._build_game_candidates` leaves a moneyline candidate raw and
+    G9-failing when ITS calibration is missing). `our_probability_raw` is
+    kept on every candidate regardless.
+
+    `raw_pool_size` is the count of candidates actually constructed (both
+    real sides, summed over every supported game) -- the same meaning
+    `build_game_candidates`'s own `raw_pool_size` has for the moneyline arm,
+    so the two numbers can be added or compared directly.
+    """
+    dispersion = frozen.get("DISPERSION")
+    cal = _runline_calibration(frozen)
+
+    feature_rows = [card_v1._flatten(e) for e in entries or ()]
+    league_rpg = strength.league_runs_per_game(feature_rows)
+    relief = card_v1.relief_rates_for(date)
+
+    games, model_lines, not_built = [], {}, []
+    for entry in entries or ():
+        game = card_v1._game_identity(entry, date=date)
+        gid = game.get("game_id")
+        if card_v1._has_started(game["first_pitch_utc"], now):
+            not_built.append({"game_id": gid, "side": "home",
+                              "reason": RL_ALREADY_STARTED})
+            not_built.append({"game_id": gid, "side": "away",
+                              "reason": RL_ALREADY_STARTED})
+            continue
+        if not league_rpg:
+            not_built.append({"game_id": gid, "side": "home",
+                              "reason": RL_NO_LEAGUE_RATE})
+            not_built.append({"game_id": gid, "side": "away",
+                              "reason": RL_NO_LEAGUE_RATE})
+            continue
+        game["features"]["away_bullpen_rate"] = relief.get(game["away_team"])
+        game["features"]["home_bullpen_rate"] = relief.get(game["home_team"])
+        game["game_type"] = card_v2._game_type(entry)
+        try:
+            line_dist = strength.model_line(
+                game["features"], league_rpg=league_rpg,
+                run_line=card_v1.RUN_LINE, dispersion=dispersion)
+        except strength.StrengthError:
+            not_built.append({"game_id": gid, "side": "home",
+                              "reason": RL_MODEL_REFUSED})
+            not_built.append({"game_id": gid, "side": "away",
+                              "reason": RL_MODEL_REFUSED})
+            continue
+        games.append(game)
+        model_lines[gid] = line_dist
+
+    rl_rows = card_v1.run_line_rows(date, rows=multibook_rows)
+
+    candidates = []
+    for game in games:
+        gid = game["game_id"]
+        line_dist = model_lines[gid]
+        sides = rl_rows.get(gid) or {}
+        for side in ("home", "away"):
+            row = sides.get(side)
+            if not row:
+                not_built.append({"game_id": gid, "side": side,
+                                  "reason": RL_NO_QUOTE_ROW})
+                continue
+            candidate, reason = _run_line_side_candidate(
+                game, line_dist, side, row, now=now, cal=cal)
+            if candidate is None:
+                not_built.append({"game_id": gid, "side": side,
+                                  "reason": reason})
+                continue
+            candidates.append(candidate)
+
+    return candidates, len(candidates), not_built
+
+
+def reconcile_identity_sets(before: Sequence, after: Sequence, *,
+                            identity=None) -> dict:
+    """EXACT set reconciliation between two candidate/row pools, keyed by a
+    stable identity -- added, removed and unchanged, never a subtraction of
+    totals (D1b).
+
+    WHY THIS FUNCTION EXISTS. `len(after) - len(before)` is a NET number: it
+    is silent about rows that left the pool, and silent about which of the
+    surviving rows are the same ones. Two pools that differ by 90 in total
+    size can do that with 90 added and 0 removed, or with 117 added and 27
+    removed (both net to 90) -- and only the second is what actually
+    happened between `evidence/shadow_enumeration`'s 2026-09-23 144- and
+    234-candidate prop-pool runs (see
+    `evidence/shadow_enumeration/PROP_POOL_RECONCILIATION_2026-09-23.md`).
+    "234 - 144 = 90" and "117 added" are BOTH true and do not contradict
+    each other once removals are counted separately; treating either one
+    alone as "the" count of what changed is the reporting error this
+    function exists to make impossible to repeat.
+
+    `identity` defaults to `(player, market, line, side)` -- D1b's own
+    "stable contract identity" -- read with `.get` so a row missing a key
+    contributes `None` there rather than raising. A caller reconciling game
+    markets instead of props passes its own, e.g. `(game_id, market, side,
+    line)`, since props carry no `game_id` and games carry no `player`.
+
+    Returns `added`/`removed`/`unchanged` as lists of the IDENTITY tuples
+    (not the rows -- two pools may serialise the same identity's row
+    differently, e.g. a refreshed price, and this function only answers "is
+    this contract present", not "did its row change"), the three counts,
+    the two input sizes, and the duplicate-identity counts a caller must see
+    rather than have silently absorbed into a `set` built over the same
+    keys.
+    """
+    if identity is None:
+        def identity(row):
+            return (row.get("player"), row.get("market"), row.get("line"),
+                    row.get("side"))
+
+    before_ids = [identity(r) for r in before]
+    after_ids = [identity(r) for r in after]
+    before_set, after_set = set(before_ids), set(after_ids)
+
+    added = sorted(after_set - before_set, key=repr)
+    removed = sorted(before_set - after_set, key=repr)
+    unchanged = sorted(before_set & after_set, key=repr)
+
+    return {
+        "added": added,
+        "removed": removed,
+        "unchanged": unchanged,
+        "n_added": len(added),
+        "n_removed": len(removed),
+        "n_unchanged": len(unchanged),
+        "n_before": len(before_ids),
+        "n_after": len(after_ids),
+        "duplicate_identities_before": len(before_ids) - len(before_set),
+        "duplicate_identities_after": len(after_ids) - len(after_set),
+    }
+
+
+def primary_gate_rejection_counts(census: Sequence) -> dict:
+    """Exclusive PRIMARY-reason counts over a `gate_census` result (D1b):
+    one bucket per candidate, its FIRST failed gate (`census`'s own
+    `primary_reason`, already `fails[0]` in `best_bets_card`'s gate order --
+    see `gate_census`'s docstring for why a candidate must be counted once,
+    not once per gate it fails). `None` (passed every gate) counts under
+    `"PASSED_ALL_GATES"` so the buckets always sum to `len(census)`.
+
+    A caller wanting the overlapping SECONDARY failures reads each row's own
+    `also_failed` instead -- deliberately NOT summarised here, since summing
+    across every row's `also_failed` double- (or triple-, or more-) counts a
+    candidate that fails several gates, which is exactly the pooling
+    mistake this function exists to refuse to make. `also_failed` counts,
+    when reported, must say so out loud, the same way this function's
+    docstring does.
+    """
+    counts = Counter(row.get("primary_reason") or "PASSED_ALL_GATES"
+                     for row in census)
+    return dict(sorted(counts.items(), key=lambda kv: (-kv[1], kv[0])))
+
+
 def gate_census(candidates: Sequence, *, now: datetime,
                 params: best_bets_card.RuleParams) -> list:
     """Per-candidate gate outcome, for candidates `select` throws away.
@@ -332,8 +721,10 @@ def card_v2_for_date_shadow(entries: Sequence, opportunity_rows: Sequence, *,
                             frozen: Optional[Mapping] = None,
                             prior: Optional[Mapping] = None,
                             multibook_rows=None, prop_board=None,
-                            event_map=None, enumerate_props: bool = False) -> dict:
-    """`card_v2.card_v2_for_date`'s payload with both moneyline sides.
+                            event_map=None, enumerate_props: bool = False,
+                            enumerate_run_line: bool = False) -> dict:
+    """`card_v2.card_v2_for_date`'s payload with both moneyline sides, and
+    optionally both prop sides and both run-line sides.
 
     Deliberately a copy of that function's post-`select` assembly rather
     than a call into it: calling it would rebuild the one-sided game pool
@@ -341,6 +732,16 @@ def card_v2_for_date_shadow(entries: Sequence, opportunity_rows: Sequence, *,
     builder untouched, and the rule itself (`best_bets_card.select`) is the
     registered, unedited one. The ONLY difference from the live path is
     which candidates are handed to it.
+
+    `enumerate_run_line` (D1a, added 2026-09-24): default OFF. When True,
+    `build_run_line_candidates` widens the pool with both real quoted run-line
+    sides of every supported game, using the SAME `multibook_rows` snapshot
+    the moneyline arm reads, so game-market coverage stays comparable across
+    arms (task constraint: "All arms consume the SAME snapshot"). Both a
+    run-line and a moneyline candidate for one game carry the SAME `game_id`,
+    so G11 (`best_bets_card._game_key`, unedited) still keeps at most one
+    entry per game across the two markets, exactly as registered -- no new
+    dedup logic is needed here or anywhere in this file for that to hold.
     """
     now = now or datetime.now(timezone.utc)
     frozen = frozen if frozen is not None else card_v2.load_frozen_params()
@@ -360,8 +761,20 @@ def card_v2_for_date_shadow(entries: Sequence, opportunity_rows: Sequence, *,
         entries, date=date, now=now, prop_board=prop_board,
         event_map=event_map)
 
-    candidates = game_candidates + prop_candidates
-    raw_pool_size = game_pool + prop_pool
+    # OFF BY DEFAULT, same discipline as props immediately above: with
+    # `enumerate_run_line=False` the three lines below never run, so this
+    # arm cannot affect the moneyline arm's already-collecting sample no
+    # matter what `multibook_rows` contains.
+    if enumerate_run_line:
+        run_line_candidates, run_line_pool, run_line_not_built = (
+            build_run_line_candidates(
+                entries, date=date, now=now, frozen=frozen,
+                multibook_rows=multibook_rows))
+    else:
+        run_line_candidates, run_line_pool, run_line_not_built = [], 0, []
+
+    candidates = game_candidates + prop_candidates + run_line_candidates
+    raw_pool_size = game_pool + prop_pool + run_line_pool
 
     result = best_bets_card.select(candidates, now=now, params=params,
                                    prior=prior)
@@ -372,6 +785,12 @@ def card_v2_for_date_shadow(entries: Sequence, opportunity_rows: Sequence, *,
             entry.setdefault("lineup_posted",
                              entry.get("expected_pa_source") == "batting_slot")
 
+    parts = [ENUMERATION_ID]
+    if enumerate_props:
+        parts.append(ENUMERATION_ID_PROPS)
+    if enumerate_run_line:
+        parts.append(ENUMERATION_ID_RUNLINE)
+
     result.update({
         "date": date,
         "generated_at": now.astimezone(timezone.utc).isoformat(),
@@ -380,13 +799,15 @@ def card_v2_for_date_shadow(entries: Sequence, opportunity_rows: Sequence, *,
         # Shadow-only provenance. `rule` still carries the registered rule
         # id because the RULE is unchanged -- only the candidate set differs
         # -- and a reader who sees this payload must be able to tell that
-        # apart from a published V2 card at a glance.
-        "enumeration": (
-            f"{ENUMERATION_ID}+{ENUMERATION_ID_PROPS}" if enumerate_props
-            else ENUMERATION_ID),
+        # apart from a published V2 card at a glance. With both new flags at
+        # their default False this is exactly "+".join([ENUMERATION_ID]) ==
+        # ENUMERATION_ID, byte-identical to before either flag existed.
+        "enumeration": "+".join(parts),
         "enumerate_props": enumerate_props,
+        "enumerate_run_line": enumerate_run_line,
         "shadow": True,
         "sides_not_built": not_built,
+        "run_line_sides_not_built": run_line_not_built,
         "gate_census": gate_census(candidates, now=now, params=params),
     })
 
