@@ -1686,3 +1686,264 @@
 {"category": "optioned", "date": "2026-09-23", "first_seen_utc": "2026-09-23T15:59:44.376471+00:00", "player": "Jackson Kent", "player_id": 800600, "team": "WSH", "transaction_id": 943708}
 {"category": "recalled", "date": "2026-09-23", "first_seen_utc": "2026-09-23T15:59:44.376471+00:00", "player": "Gus Varland", "player_id": 681402, "team": "WSH", "transaction_id": 943709}
 {"fetched_utc": "2026-09-23T15:59:46.399136+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T17:02:06.023216+00:00", "game_date": "2026-09-23", "poll": true}
+{"category": "il_placement", "date": "2026-09-22", "first_seen_utc": "2026-09-23T17:02:06.023216+00:00", "player": "Samuel Basallo", "player_id": 694212, "team": "BAL", "transaction_id": 943711}
+{"category": "recalled", "date": "2026-09-23", "first_seen_utc": "2026-09-23T17:02:06.023216+00:00", "player": "Heston Kjerstad", "player_id": 677008, "team": "BAL", "transaction_id": 943710}
+{"fetched_utc": "2026-09-23T17:02:07.369447+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T18:01:01.860476+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T18:01:03.365902+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T19:02:41.513968+00:00", "game_date": "2026-09-23", "poll": true}
+{"category": "other", "date": "2026-09-23", "first_seen_utc": "2026-09-23T19:02:41.513968+00:00", "player": "Lyon Richardson", "player_id": 680689, "team": "MIL", "transaction_id": 943750}
+{"category": "optioned", "date": "2026-09-23", "first_seen_utc": "2026-09-23T19:02:41.513968+00:00", "player": "Colton Gordon", "player_id": 676467, "team": "MIL", "transaction_id": 943751}
+{"fetched_utc": "2026-09-23T19:02:43.431955+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T19:06:59.968364+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T19:07:01.912056+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T20:02:53.524136+00:00", "game_date": "2026-09-23", "poll": true}
+{"category": "optioned", "date": "2026-09-23", "first_seen_utc": "2026-09-23T20:02:53.524136+00:00", "player": "Owen Murphy", "player_id": 702566, "team": "ATL", "transaction_id": 943752}
+{"category": "il_activation", "date": "2026-09-23", "first_seen_utc": "2026-09-23T20:02:53.524136+00:00", "player": "Robert Suarez", "player_id": 663158, "team": "ATL", "transaction_id": 943753}
+{"fetched_utc": "2026-09-23T20:02:55.795520+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T20:52:00.702285+00:00", "game_date": "2026-09-23", "poll": true}
+{"category": "il_activation", "date": "2026-09-23", "first_seen_utc": "2026-09-23T20:52:00.702285+00:00", "player": "Shawn Armstrong", "player_id": 542888, "team": "CLE", "transaction_id": 943754}
+{"category": "designated", "date": "2026-09-23", "first_seen_utc": "2026-09-23T20:52:00.702285+00:00", "player": "Connor Brogdon", "player_id": 641401, "team": "CLE", "transaction_id": 943755}
+{"category": "il_activation", "date": "2026-09-23", "first_seen_utc": "2026-09-23T20:52:00.702285+00:00", "player": "Ceddanne Rafaela", "player_id": 678882, "team": "BOS", "transaction_id": 943756}
+{"category": "optioned", "date": "2026-09-23", "first_seen_utc": "2026-09-23T20:52:00.702285+00:00", "player": "Nate Eaton", "player_id": 681987, "team": "BOS", "transaction_id": 943757}
+{"fetched_utc": "2026-09-23T20:52:02.851218+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T21:42:37.010756+00:00", "game_date": "2026-09-23", "poll": true}
+{"category": "il_placement", "date": "2026-09-20", "first_seen_utc": "2026-09-23T21:42:37.010756+00:00", "player": "Dylan Cease", "player_id": 656302, "team": "TOR", "transaction_id": 943767}
+{"category": "recalled", "date": "2026-09-23", "first_seen_utc": "2026-09-23T21:42:37.010756+00:00", "player": "Mason Englert", "player_id": 669438, "team": "TB", "transaction_id": 943759}
+{"category": "optioned", "date": "2026-09-23", "first_seen_utc": "2026-09-23T21:42:37.010756+00:00", "player": "Alex Cook", "player_id": 702047, "team": "TB", "transaction_id": 943760}
+{"category": "optioned", "date": "2026-09-23", "first_seen_utc": "2026-09-23T21:42:37.010756+00:00", "player": "Luis De Le\u00f3n", "player_id": 801725, "team": "BAL", "transaction_id": 943761}
+{"category": "recalled", "date": "2026-09-23", "first_seen_utc": "2026-09-23T21:42:37.010756+00:00", "player": "Trey Gibson", "player_id": 694346, "team": "BAL", "transaction_id": 943762}
+{"category": "other", "date": "2026-09-23", "first_seen_utc": "2026-09-23T21:42:37.010756+00:00", "player": "Philip Abner", "player_id": 691769, "team": "NYM", "transaction_id": 943764}
+{"category": "optioned", "date": "2026-09-23", "first_seen_utc": "2026-09-23T21:42:37.010756+00:00", "player": "Jos\u00e9 Rodr\u00edguez", "player_id": 692064, "team": "TOR", "transaction_id": 943765}
+{"category": "recalled", "date": "2026-09-23", "first_seen_utc": "2026-09-23T21:42:37.010756+00:00", "player": "Chase Lee", "player_id": 695445, "team": "TOR", "transaction_id": 943766}
+{"category": "recalled", "date": "2026-09-23", "first_seen_utc": "2026-09-23T21:42:37.010756+00:00", "player": "CJ Van Eyk", "player_id": 669310, "team": "TOR", "transaction_id": 943769}
+{"category": "il_placement", "date": "2026-09-23", "first_seen_utc": "2026-09-23T21:42:37.010756+00:00", "player": "Cristian Javier", "player_id": 664299, "team": "HOU", "transaction_id": 943770}
+{"category": "il_placement", "date": "2026-09-23", "first_seen_utc": "2026-09-23T21:42:37.010756+00:00", "player": "Jake Meyers", "player_id": 676694, "team": "HOU", "transaction_id": 943771}
+{"category": "other", "date": "2026-09-23", "first_seen_utc": "2026-09-23T21:42:37.010756+00:00", "player": "Josh Hendrickson", "player_id": 681973, "team": "HOU", "transaction_id": 943772}
+{"fetched_utc": "2026-09-23T21:42:39.020625+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T23:27:17.320917+00:00", "game_date": "2026-09-23", "poll": true}
+{"category": "other", "date": "2026-09-23", "first_seen_utc": "2026-09-23T23:27:17.320917+00:00", "player": "Alex Jackson", "player_id": 656577, "team": "MIN", "transaction_id": 943773}
+{"category": "optioned", "date": "2026-09-23", "first_seen_utc": "2026-09-23T23:27:17.320917+00:00", "player": "Josue De Paula", "player_id": 800543, "team": "LAD", "transaction_id": 943774}
+{"category": "optioned", "date": "2026-09-23", "first_seen_utc": "2026-09-23T23:27:17.320917+00:00", "player": "Kyle Hurt", "player_id": 669165, "team": "LAD", "transaction_id": 943775}
+{"category": "il_activation", "date": "2026-09-23", "first_seen_utc": "2026-09-23T23:27:17.320917+00:00", "player": "Shohei Ohtani", "player_id": 660271, "team": "LAD", "transaction_id": 943776}
+{"category": "il_activation", "date": "2026-09-23", "first_seen_utc": "2026-09-23T23:27:17.320917+00:00", "player": "Tarik Skubal", "player_id": 669373, "team": "LAD", "transaction_id": 943777}
+{"category": "designated", "date": "2026-09-23", "first_seen_utc": "2026-09-23T23:27:17.320917+00:00", "player": "Xzavion Curry", "player_id": 675540, "team": "NYM", "transaction_id": 943778}
+{"category": "optioned", "date": "2026-09-23", "first_seen_utc": "2026-09-23T23:27:17.320917+00:00", "player": "Winston Santos", "player_id": 692437, "team": "TEX", "transaction_id": 943779}
+{"category": "recalled", "date": "2026-09-23", "first_seen_utc": "2026-09-23T23:27:17.320917+00:00", "player": "Gavin Collyer", "player_id": 686560, "team": "TEX", "transaction_id": 943780}
+{"fetched_utc": "2026-09-23T23:27:18.999372+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-24T00:37:15.799406+00:00", "game_date": "2026-09-23", "poll": true}
+{"category": "recalled", "date": "2026-09-23", "first_seen_utc": "2026-09-24T00:37:15.799406+00:00", "player": "Lucas Spence", "player_id": 828599, "team": "HOU", "transaction_id": 943784}
+{"category": "il_placement", "date": "2026-09-23", "first_seen_utc": "2026-09-24T00:37:15.799406+00:00", "player": "Brice Matthews", "player_id": 694728, "team": "HOU", "transaction_id": 943785}
+{"fetched_utc": "2026-09-24T00:37:17.539412+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-24T01:36:59.697822+00:00", "game_date": "2026-09-23", "poll": true}
+{"category": "il_activation", "date": "2026-09-23", "first_seen_utc": "2026-09-24T01:36:59.697822+00:00", "player": "Jason Adam", "player_id": 592094, "team": "SD", "transaction_id": 943787}
+{"category": "optioned", "date": "2026-09-23", "first_seen_utc": "2026-09-24T01:36:59.697822+00:00", "player": "Griffin Canning", "player_id": 656288, "team": "SD", "transaction_id": 943788}
+{"category": "designated", "date": "2026-09-23", "first_seen_utc": "2026-09-24T01:36:59.697822+00:00", "player": "Alek Jacob", "player_id": 689690, "team": "SD", "transaction_id": 943789}
+{"fetched_utc": "2026-09-24T01:37:01.776656+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-24T02:06:06.259127+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-24T02:29:52.857065+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-24T02:39:57.327436+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-24T03:08:18.164318+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-24T03:08:20.387148+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-24T03:18:59.319617+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-24T03:31:58.244089+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-24T03:44:55.419886+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-24T03:58:02.612534+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-24T04:10:57.570426+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T04:10:58.855177+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T04:24:07.677777+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T04:36:39.904776+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T04:49:56.809878+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T05:03:02.435512+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T05:03:04.693527+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T05:15:23.123286+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T05:28:44.604303+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T05:42:09.153624+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T05:54:43.656909+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T06:07:53.140006+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T06:07:54.932342+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T06:20:59.527773+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T06:30:46.119014+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T06:34:05.101414+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T06:47:22.257340+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T07:00:04.900096+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T07:00:06.643083+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T07:13:00.157167+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T07:26:08.330441+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T07:38:59.853609+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T07:52:15.152839+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T08:04:58.666743+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T08:05:00.996341+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T08:18:07.236550+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T08:31:08.904612+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T08:43:24.271767+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T08:56:49.009295+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T09:10:08.818172+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T09:10:10.717079+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T09:23:10.206043+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T09:36:06.072505+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T09:48:30.187693+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T10:01:45.164583+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T10:01:46.479791+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T10:38:16.620730+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T10:40:44.683475+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T10:54:32.253240+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T11:07:10.691322+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T11:07:12.206802+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T11:20:05.576840+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T11:32:57.437061+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T11:45:53.152507+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T11:59:35.016308+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T12:09:11.332332+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T12:09:13.279766+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T12:12:13.326432+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T12:12:14.701167+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T12:24:28.878194+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T12:37:30.282514+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T12:51:07.244253+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T13:04:17.805207+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T13:04:19.963014+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T13:16:59.242548+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T13:30:06.184915+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T13:43:12.750812+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T13:43:15.174076+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T13:56:07.765032+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T13:56:09.368658+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T14:27:46.569498+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T14:27:47.917482+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T14:57:03.893325+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T14:57:05.428709+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T15:01:19.172813+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T15:01:20.848392+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T15:58:35.866414+00:00", "game_date": "2026-09-24", "poll": true}
+{"category": "other", "date": "2026-09-24", "first_seen_utc": "2026-09-24T15:58:35.866414+00:00", "player": "Steven Cruz", "player_id": 674444, "team": "KC", "transaction_id": 943791}
+{"category": "recalled", "date": "2026-09-24", "first_seen_utc": "2026-09-24T15:58:35.866414+00:00", "player": "Spencer Bivens", "player_id": 702352, "team": "KC", "transaction_id": 943792}
+{"category": "optioned", "date": "2026-09-24", "first_seen_utc": "2026-09-24T15:58:35.866414+00:00", "player": "Khristian Curtis", "player_id": 694753, "team": "PIT", "transaction_id": 943817}
+{"category": "recalled", "date": "2026-09-24", "first_seen_utc": "2026-09-24T15:58:35.866414+00:00", "player": "Evan Sisk", "player_id": 681895, "team": "PIT", "transaction_id": 943818}
+{"fetched_utc": "2026-09-24T15:58:37.873309+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T16:06:08.895760+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T16:58:59.709713+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T16:59:01.980193+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T17:41:46.821734+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T17:41:48.440014+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T18:06:21.452523+00:00", "game_date": "2026-09-24", "poll": true}
+{"category": "il_placement", "date": "2026-09-24", "first_seen_utc": "2026-09-24T18:06:21.452523+00:00", "player": "Luis Castillo", "player_id": 622491, "team": "CWS", "transaction_id": 943833}
+{"category": "recalled", "date": "2026-09-24", "first_seen_utc": "2026-09-24T18:06:21.452523+00:00", "player": "Tyler Davis", "player_id": 699823, "team": "CWS", "transaction_id": 943834}
+{"fetched_utc": "2026-09-24T18:06:23.284371+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T18:36:47.549905+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T18:36:49.174179+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T18:42:20.528166+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T18:42:22.451321+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T19:12:05.513216+00:00", "game_date": "2026-09-24", "poll": true}
+{"category": "other", "date": "2026-09-24", "first_seen_utc": "2026-09-24T19:12:05.513216+00:00", "player": "Camilo Doval", "player_id": 666808, "team": "SF", "transaction_id": 943835}
+{"category": "il_transfer", "date": "2026-09-24", "first_seen_utc": "2026-09-24T19:12:05.513216+00:00", "player": "Blade Tidwell", "player_id": 694918, "team": "SF", "transaction_id": 943836}
+{"fetched_utc": "2026-09-24T19:12:07.372327+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T19:21:38.713522+00:00", "game_date": "2026-09-24", "poll": true}
+{"category": "other", "date": "2026-09-24", "first_seen_utc": "2026-09-24T19:21:38.713522+00:00", "player": "Jake Woodford", "player_id": 663765, "team": "TB", "transaction_id": 943841}
+{"category": "optioned", "date": "2026-09-24", "first_seen_utc": "2026-09-24T19:21:38.713522+00:00", "player": "Mason Englert", "player_id": 669438, "team": "TB", "transaction_id": 943842}
+{"fetched_utc": "2026-09-24T19:59:18.652376+00:00", "game_date": "2026-09-24", "poll": true}
+{"category": "il_placement", "date": "2026-09-21", "first_seen_utc": "2026-09-24T19:59:18.652376+00:00", "player": "Clarke Schmidt", "player_id": 657376, "team": "NYY", "transaction_id": 943846}
+{"category": "il_placement", "date": "2026-09-23", "first_seen_utc": "2026-09-24T19:59:18.652376+00:00", "player": "Brock Rodden", "player_id": 801126, "team": "SEA", "transaction_id": 943848}
+{"category": "recalled", "date": "2026-09-24", "first_seen_utc": "2026-09-24T19:59:18.652376+00:00", "player": "Bradley Hanner", "player_id": 690440, "team": "NYY", "transaction_id": 943845}
+{"category": "recalled", "date": "2026-09-24", "first_seen_utc": "2026-09-24T19:59:18.652376+00:00", "player": "Leo Rivas", "player_id": 660844, "team": "SEA", "transaction_id": 943847}
+{"fetched_utc": "2026-09-24T19:59:20.957086+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T20:40:06.599869+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T20:40:09.082512+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T21:28:08.067802+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T21:28:10.419996+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T21:32:48.465896+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T21:32:50.563282+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T22:33:15.465350+00:00", "game_date": "2026-09-24", "poll": true}
+{"category": "il_placement", "date": "2026-09-21", "first_seen_utc": "2026-09-24T22:33:15.465350+00:00", "player": "Ben Joyce", "player_id": 690829, "team": "LAA", "transaction_id": 943873}
+{"category": "recalled", "date": "2026-09-24", "first_seen_utc": "2026-09-24T22:33:15.465350+00:00", "player": "Trevor Martin", "player_id": 694680, "team": "LAA", "transaction_id": 943872}
+{"fetched_utc": "2026-09-24T22:33:17.089267+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T23:26:39.457365+00:00", "game_date": "2026-09-24", "poll": true}
+{"category": "il_placement", "date": "2026-09-21", "first_seen_utc": "2026-09-24T23:26:39.457365+00:00", "player": "Mart\u00edn P\u00e9rez", "player_id": 527048, "team": "ATL", "transaction_id": 943877}
+{"category": "il_placement", "date": "2026-09-23", "first_seen_utc": "2026-09-24T23:26:39.457365+00:00", "player": "Daulton Varsho", "player_id": 662139, "team": "HOU", "transaction_id": 943880}
+{"category": "other", "date": "2026-09-24", "first_seen_utc": "2026-09-24T23:26:39.457365+00:00", "player": "Elieser Hern\u00e1ndez", "player_id": 622694, "team": "ATL", "transaction_id": 943874}
+{"category": "recalled", "date": "2026-09-24", "first_seen_utc": "2026-09-24T23:26:39.457365+00:00", "player": "Hurston Waldrep", "player_id": 694462, "team": "ATL", "transaction_id": 943875}
+{"category": "il_placement", "date": "2026-09-24", "first_seen_utc": "2026-09-24T23:26:39.457365+00:00", "player": "Hurston Waldrep", "player_id": 694462, "team": "ATL", "transaction_id": 943876}
+{"category": "il_activation", "date": "2026-09-24", "first_seen_utc": "2026-09-24T23:26:39.457365+00:00", "player": "Elieser Hern\u00e1ndez", "player_id": 622694, "team": "ATL", "transaction_id": 943878}
+{"category": "other", "date": "2026-09-24", "first_seen_utc": "2026-09-24T23:26:39.457365+00:00", "player": "Jorge Barrosa", "player_id": 678489, "team": "HOU", "transaction_id": 943879}
+{"category": "designated", "date": "2026-09-24", "first_seen_utc": "2026-09-24T23:26:39.457365+00:00", "player": "Jason Alexander", "player_id": 669920, "team": "HOU", "transaction_id": 943881}
+{"category": "other", "date": "2026-09-24", "first_seen_utc": "2026-09-24T23:26:39.457365+00:00", "player": "Albert Su\u00e1rez", "player_id": 544150, "team": "BAL", "transaction_id": 943894}
+{"category": "optioned", "date": "2026-09-24", "first_seen_utc": "2026-09-24T23:26:39.457365+00:00", "player": "Trey Gibson", "player_id": 694346, "team": "BAL", "transaction_id": 943895}
+{"category": "il_transfer", "date": "2026-09-24", "first_seen_utc": "2026-09-24T23:26:39.457365+00:00", "player": "Kyle Bradish", "player_id": 680694, "team": "BAL", "transaction_id": 943896}
+{"fetched_utc": "2026-09-24T23:26:40.901085+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T23:50:33.406785+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T23:54:27.669373+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-25T00:48:43.167554+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-25T00:48:45.074281+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-25T01:36:45.386349+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-25T01:36:47.752576+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-25T01:41:10.496513+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-25T02:36:33.965202+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-25T03:07:30.026530+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-25T03:07:31.962685+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-25T03:11:44.068676+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-25T03:22:18.994394+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-25T03:48:12.160274+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-25T04:00:31.753184+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T04:00:33.705085+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T04:14:21.295332+00:00", "game_date": "2026-09-25", "poll": true}
+{"category": "optioned", "date": "2026-09-25", "first_seen_utc": "2026-09-25T04:14:21.295332+00:00", "player": "Luis Gil", "player_id": 661563, "team": "NYY", "transaction_id": 943906}
+{"category": "optioned", "date": "2026-09-25", "first_seen_utc": "2026-09-25T04:14:21.295332+00:00", "player": "Bradley Hanner", "player_id": 690440, "team": "NYY", "transaction_id": 943907}
+{"fetched_utc": "2026-09-25T04:27:13.813030+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T04:39:32.614294+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T04:53:15.873205+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T05:06:18.021109+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T05:06:19.560109+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T05:19:13.873511+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T05:32:23.168183+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T05:45:15.366682+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T05:57:51.549533+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T06:11:16.977980+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T06:11:18.393121+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T06:25:05.606602+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T06:37:36.326288+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T06:50:31.812351+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T07:03:23.714466+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T07:03:25.680931+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T07:09:43.807926+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T07:16:02.207205+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T07:29:22.353833+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T07:42:19.346692+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T07:55:09.356736+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T08:08:37.548465+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T08:08:39.184626+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T08:21:30.903980+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T08:34:57.047175+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T08:46:59.134254+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T09:00:42.680033+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T09:00:45.345097+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T09:13:23.499909+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T09:26:04.078845+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T09:39:50.876037+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T09:51:59.494628+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T10:05:30.526817+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T10:05:32.515420+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T10:40:22.021423+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T10:44:04.287161+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T10:57:29.414307+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T11:10:51.397896+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T11:10:53.597176+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T11:22:58.428859+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T11:36:25.840077+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T11:49:24.372724+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T12:02:33.886987+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T12:02:36.160564+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T12:15:24.799027+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T12:28:31.461359+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T12:41:06.658647+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T12:47:53.488877+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T12:54:44.077722+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T13:07:23.569106+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T13:07:24.938504+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T13:20:27.759653+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T13:33:27.267012+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T13:46:17.220048+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T13:59:33.662683+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T14:12:56.211634+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T14:12:58.645231+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T14:25:56.221043+00:00", "game_date": "2026-09-25", "poll": true}
