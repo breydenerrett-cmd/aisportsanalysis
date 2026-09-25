@@ -109,9 +109,29 @@ class MetaServesTheLedgerRecord(unittest.TestCase):
         self.assertEqual(got, {k: blank.get(k) for k in
                                ("days", "wins", "losses", "pushes", "voids", "profit_units")})
         self.assertEqual(prev["label"], "Our first card rule")
-        v1 = card_ledger.record()
-        self.assertEqual(prev["wins"], v1.get("wins"))
-        self.assertEqual(prev["losses"], v1.get("losses"))
+        # UPDATED, owner review 2026-09-25: this assertion used to compare
+        # `prev` against `card_ledger.record()` directly -- V1's GAME-ONLY
+        # figure (73-40) -- and passed, because that WAS what `_card_record`
+        # built `previous_rule` from. That was the exact bug the review
+        # caught: the hero panel (this payload) said "73-40, +7.61u" while
+        # the MLB sport tile, reading `src.report.effective_record`'s V1
+        # cohort (game PLUS prop pooled), said "151-79, +7.98u" for the
+        # same rule, same 13 nights. `_card_record` now sources
+        # `previous_rule` from that same effective_record cohort, so this
+        # test now asserts equality against IT, not against the game-only
+        # figure that caused the mismatch. See
+        # tests/test_api_meta_card_record_v2.py's
+        # HeroPreviousRuleEqualsSportTilePrevious for the live-ledger
+        # version of this same check.
+        from src.report import effective_record
+        v1_cohort = effective_record.mlb_snapshot().get("previous") or {}
+        self.assertEqual(prev["wins"], v1_cohort.get("wins"))
+        self.assertEqual(prev["losses"], v1_cohort.get("losses"))
+        # And explicitly NOT the game-only figure whenever prop picks
+        # exist to make the two differ -- the population bug, pinned.
+        v1_game_only = card_ledger.record()
+        if (v1_cohort.get("market_breakdown") or {}).get("prop", {}).get("n_staked"):
+            self.assertNotEqual(prev["wins"], v1_game_only.get("wins"))
 
     def test_meta_reads_v1_record_when_active_card_rule_is_v1(self):
         from api import meta as meta_api

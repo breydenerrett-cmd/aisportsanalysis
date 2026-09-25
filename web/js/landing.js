@@ -179,75 +179,6 @@ export function recordSentence(rec) {
   return `Across ${nights} graded so far: ${parts.join(", ")}. Every one of them is on the record page.`;
 }
 
-/**
- * The hero's proof panel (2026-09-22 redesign), filled from the same
- * GET /meta card_record the record sentence reads. Figures come ONLY from
- * the ledger: on a failed fetch or a null field the markup's dashes stay.
- *
- * `profit_units` and `previous_rule` are optional. When the public card
- * changes rule, the new rule's record starts fresh, and the earlier rule's
- * figures show on their own labelled line, never added into the new one.
- */
-export function proofFigures(rec) {
-  if (!rec || typeof rec.wins !== "number" || typeof rec.losses !== "number") return null;
-  const units = typeof rec.profit_units === "number" ? rec.profit_units : null;
-  return {
-    wl: `${rec.wins}–${rec.losses}`,
-    units: units === null ? null : `${units >= 0 ? "+" : "−"}${Math.abs(units).toFixed(2)}`,
-    unitsSign: units === null ? 0 : Math.sign(units),
-    days: typeof rec.days === "number" ? String(rec.days) : null,
-  };
-}
-
-async function fillProofPanel() {
-  const panel = document.querySelector("[data-hook='hero-proof']");
-  if (!panel) return;
-  try {
-    const meta = await fetchMeta();
-    const current = meta && meta.card_record;
-    const prevRec = current && current.previous_rule;
-    // Until the current card rule has graded a night, the tiles show the
-    // previous rule's record, under its own label. The new rule is still
-    // named and counts separately from zero. Never merged.
-    const currentUngraded = !current || !(current.days > 0);
-    const showPrev = currentUngraded && proofFigures(prevRec);
-    const rec = showPrev ? prevRec : current;
-    const figs = proofFigures(rec);
-    if (!figs) return;
-    if (showPrev) {
-      const title = panel.querySelector("[data-hook='proof-title']");
-      if (title) title.textContent = (prevRec.label || "Our first card rule");
-      const sub = panel.querySelector("[data-hook='proof-sub']");
-      if (sub) {
-        sub.textContent = "Our new value card has started. Its record counts separately, from zero.";
-        sub.hidden = false;
-      }
-    }
-    const set = (hook, text) => {
-      const node = panel.querySelector(`[data-hook='${hook}']`);
-      if (node && text) node.textContent = text;
-      return node;
-    };
-    set("proof-wl", figs.wl);
-    const unitsNode = set("proof-units", figs.units);
-    if (unitsNode && figs.units) unitsNode.classList.add(figs.unitsSign >= 0 ? "is-up" : "is-down");
-    set("proof-days", figs.days);
-    const prev = showPrev ? null : current && current.previous_rule;
-    const prevFigs = proofFigures(prev);
-    if (prevFigs) {
-      const sub = panel.querySelector("[data-hook='proof-sub']");
-      if (sub) {
-        const label = (prev && prev.label) || "Our first card rule";
-        sub.textContent = `${label}: ${prevFigs.wl}${prevFigs.units ? `, ${prevFigs.units}u` : ""}`
-          + `${prevFigs.days ? ` over ${prevFigs.days} nights` : ""}. Counted separately.`;
-        sub.hidden = false;
-      }
-    }
-  } catch (err) {
-    // Leave the dashes in place -- never a guessed figure.
-  }
-}
-
 async function fillCardRecord() {
   const nodes = document.querySelectorAll("[data-hook='card-record']");
   if (!nodes.length) return;
@@ -262,7 +193,8 @@ async function fillCardRecord() {
 }
 
 /**
- * THE PER-SPORT RECORD TILES (task B1/B2, 2026-09-24).
+ * THE PER-SPORT RECORD TILES (task B1/B2, 2026-09-24; unified with the
+ * hero panel 2026-09-25 per owner review).
  *
  * The owner opened staging and saw one MLB-only proof panel under a hero
  * strapline that names MLB, NFL and UFC. These three tiles are the fix:
@@ -272,15 +204,67 @@ async function fillCardRecord() {
  * beside it, the rule immediately before it -- never pooled, never
  * re-ordered by which one's return looks better (owner instruction).
  *
- * THE SAME HONEST-ABSENCE RULE AS `fillProofPanel` ABOVE. A cohort whose
- * `grading_state` is not "graded" (nothing published yet, or published
- * but not one settled night -- UFC's actual state today) never gets a
- * won-lost/units/nights figure: those three stat cells stay the markup's
- * own dashes, exactly like `recordLine` in web/js/card.js already leaves
- * them for a small sample. What DOES change is the state sentence, which
- * becomes the server's own `reason` string, rendered verbatim -- never a
- * sentence composed here about our own confidence.
+ * OWNER REVIEW, 2026-09-25 -- TWO BUGS IN THE FIRST VERSION OF THIS
+ * SECTION, BOTH FIXED HERE TOGETHER:
+ *
+ * 1. PROMINENCE WAS NOT IDENTICAL. The current rule got three large
+ *    `.hero__stat` cells; the previous rule got one small grey sentence
+ *    (`previousRuleSentence`, rendered into a `<p class="hero__proof-sub">`
+ *    with no stat cells of its own) -- in the hero panel and every sport
+ *    tile alike. `fillRuleBlock` below is now the ONE renderer for BOTH
+ *    roles: current and previous each get the identical
+ *    `.hero__proof-grid` of three `.hero__stat` cells, at the identical
+ *    size, the only difference being which `data-hook` prefix
+ *    ("...-current-..." vs "...-previous-...") and role label ("Current
+ *    rule" vs "Previous rule (retired)") it is called with. The two
+ *    blocks are always both present in the markup, in the SAME FIXED
+ *    ORDER (current first, then previous -- see web/landing.html), which
+ *    never depends on which one is currently profitable.
+ *
+ * 2. ASYMMETRIC COLOUR. is-up/is-down was only ever applied to the
+ *    CURRENT cohort's units cell; the previous cohort's units rendered in
+ *    plain white regardless of sign. `fillRuleBlock` applies the exact
+ *    same `cohort.profit_units >= 0 ? "is-up" : "is-down"` rule to
+ *    whichever cohort it is called with -- current and previous both, no
+ *    special-casing either.
+ *
+ * THE HERO PANEL NOW READS `meta.effective_record.sports.mlb` AND CALLS
+ * THIS SAME `fillRuleBlock` (see `fillProofPanel` below), not a
+ * separately-derived `meta.card_record`. This is what makes "the hero's
+ * previous-rule figure equals the MLB tile's previous-rule figure" true
+ * by construction rather than by two independently-written formulas
+ * happening to agree -- the root cause of the 73-40/151-79 mismatch this
+ * review found (see api/meta.py's `_card_record` for the matching API-
+ * level fix, which keeps GET /meta's `card_record.previous_rule` field
+ * itself correct for any other reader).
+ *
+ * THE SAME HONEST-ABSENCE RULE AS ALWAYS, FOR A COHORT THAT EXISTS. A
+ * cohort whose `grading_state` is not "graded" (nothing published yet,
+ * or published but not one settled night -- NFL's real current state
+ * today) never gets a won-lost/units/nights figure: those three stat
+ * cells stay the markup's own dashes, exactly like `recordLine` in
+ * web/js/card.js already leaves them for a small sample. What DOES
+ * change is the state sentence, which becomes the server's own `reason`
+ * string, rendered verbatim -- never a sentence composed here about our
+ * own confidence.
+ *
+ * A DIFFERENT RULE FOR A PREDECESSOR THAT DOES NOT EXIST AT ALL (owner
+ * review, 2026-09-25, second pass). UFC has never had a previous rule --
+ * `effective_record.mma_snapshot`'s `previous` is `None`, not an
+ * unavailable/ungraded cohort. Rendering a dash-filled "PREVIOUS RULE
+ * (RETIRED)" block for that case would imply a rule that never existed,
+ * so `fillRuleSet` (below) omits the previous block ENTIRELY -- `hidden
+ * = true` on the block itself -- whenever `snapshot.previous` is
+ * null/undefined, and never calls `fillRuleBlock` for it at all. This is
+ * the one place role (current vs previous) is allowed to change WHETHER
+ * a block renders; `fillRuleBlock` itself still never branches on role
+ * once a block reaches it.
  */
+const RULE_BLOCKS = [
+  { role: "current", label: "Current rule" },
+  { role: "previous", label: "Previous rule (retired)" },
+];
+
 const SPORT_TILES = [
   { sport: "mlb", prefix: "sport-tile-mlb" },
   { sport: "nfl", prefix: "sport-tile-nfl" },
@@ -319,59 +303,112 @@ export function marketBreakdownSentence(breakdown) {
   return parts.length ? `By market: ${parts.join(", ")}.` : null;
 }
 
-/** "Our first card rule (retired): 73-40, +7.61u over 13 nights. Counted
- * separately." -- the exact sentence shape `fillProofPanel`'s own
- * previous-rule line already uses for MLB, reused here for every sport
- * that carries one, so the same rule reads the same way everywhere it
- * appears on this page. */
-export function previousRuleSentence(previous) {
-  if (!previous || !previous.available) return null;
-  const wl = cohortWL(previous);
-  if (!wl) return null;
-  const units = cohortUnitsText(previous);
-  const days = typeof previous.days === "number" ? previous.days : null;
-  const label = previous.label || "The previous rule";
-  return `${label} (retired): ${wl}${units ? `, ${units}u` : ""}`
-    + `${days ? ` over ${days} night${days === 1 ? "" : "s"}` : ""}. Counted separately.`;
-}
+/**
+ * Fills ONE rule-block -- `${prefix}-wl` / `${prefix}-units` /
+ * `${prefix}-days` stat cells, `${prefix}-label` and `${prefix}-state` --
+ * from ONE cohort. Called identically for "current" and "previous" (see
+ * `fillRuleSet` below): there is no branch anywhere in this function on
+ * WHICH role it is filling, only on whether the cohort it was GIVEN is
+ * graded -- the one asymmetry this page is allowed to have, and it is a
+ * data fact (a rule that hasn't graded a night has no W-L to show),
+ * never a role-based styling decision.
+ */
+function fillRuleBlock(root, prefix, cohort, roleLabel) {
+  const labelNode = root.querySelector(`[data-hook='${prefix}-label']`);
+  if (labelNode) labelNode.textContent = roleLabel;
 
-function fillSportTile(root, prefix, snapshot) {
-  const current = snapshot && snapshot.current;
-  const previous = snapshot && snapshot.previous;
+  const stateNode = root.querySelector(`[data-hook='${prefix}-state']`);
+  const graded = cohort && cohort.available && cohort.grading_state === "graded";
 
-  if (current && current.label) tileSet(root, `${prefix}-current-label`, current.label);
-
-  const graded = current && current.available && current.grading_state === "graded";
   if (graded) {
-    tileSet(root, `${prefix}-current-wl`, cohortWL(current));
-    const unitsNode = tileSet(root, `${prefix}-current-units`, cohortUnitsText(current));
-    if (unitsNode && typeof current.profit_units === "number") {
-      unitsNode.classList.add(current.profit_units >= 0 ? "is-up" : "is-down");
+    tileSet(root, `${prefix}-wl`, cohortWL(cohort));
+    const unitsNode = tileSet(root, `${prefix}-units`, cohortUnitsText(cohort));
+    if (unitsNode && typeof cohort.profit_units === "number") {
+      unitsNode.classList.add(cohort.profit_units >= 0 ? "is-up" : "is-down");
     }
-    tileSet(root, `${prefix}-current-days`, String(current.days));
-    const dateSpan = current.date_span;
-    const stateNode = root.querySelector(`[data-hook='${prefix}-current-state']`);
+    tileSet(root, `${prefix}-days`, String(cohort.days));
     if (stateNode) {
-      stateNode.textContent = dateSpan && dateSpan.first && dateSpan.last
-        ? `Graded nightly, ${dateSpan.first} through ${dateSpan.last}.`
-        : "Graded nightly.";
+      const dateSpan = cohort.date_span;
+      const span = dateSpan && dateSpan.first && dateSpan.last
+        ? `${dateSpan.first} through ${dateSpan.last}` : null;
+      const named = cohort.label ? `${cohort.label}. ` : "";
+      stateNode.textContent = `${named}Graded nightly${span ? `, ${span}` : ""}.`;
     }
     const marketsNode = root.querySelector(`[data-hook='${prefix}-markets']`);
-    const sentence = marketBreakdownSentence(current.market_breakdown);
-    if (marketsNode && sentence) { marketsNode.textContent = sentence; marketsNode.hidden = false; }
-  } else if (current && current.reason) {
-    // UNGRADED, PUBLISHED, OR UNAVAILABLE -- the server's own reason,
-    // verbatim, in place of the static marketing sentence. Never a
-    // fabricated 0-0: the stat cells above are left exactly as the
-    // markup's own dashes.
-    const stateNode = root.querySelector(`[data-hook='${prefix}-current-state']`);
-    if (stateNode) stateNode.textContent = current.reason;
+    const sentence = marketBreakdownSentence(cohort.market_breakdown);
+    if (marketsNode) {
+      if (sentence) { marketsNode.textContent = sentence; marketsNode.hidden = false; }
+      else { marketsNode.hidden = true; }
+    }
+  } else if (cohort && cohort.reason) {
+    // UNGRADED, PUBLISHED, OR UNAVAILABLE -- a predecessor EXISTS (this
+    // is a real cohort object, just not a graded one -- e.g. a rule that
+    // was retired before it ever settled a night) -- the server's own
+    // reason, verbatim, in place of the static marketing sentence. Never
+    // a fabricated 0-0: the stat cells above are left exactly as the
+    // markup's own dashes. This block stays VISIBLE -- see fillRuleSet,
+    // which is the only place that decides whether a block renders at
+    // all; a cohort reaching this function at all means it should.
+    if (stateNode) stateNode.textContent = cohort.reason;
   }
+}
 
-  const prevSentence = previousRuleSentence(previous);
-  if (prevSentence) {
-    const prevNode = root.querySelector(`[data-hook='${prefix}-previous']`);
-    if (prevNode) { prevNode.textContent = prevSentence; prevNode.hidden = false; }
+/**
+ * Fills BOTH rule-blocks (current, then previous -- RULE_BLOCKS' own
+ * fixed order) for one snapshot (`{current, previous}`, MLB/NFL/UFC's own
+ * shape from `effective_record`) under one root -- the hero panel and
+ * every sport tile all call this same function, so "the hero and the
+ * tile show the same number for the same rule" is true by construction --
+ * sharing the renderer, not two call sites staying in sync by hand.
+ *
+ * OWNER REVIEW, 2026-09-25 (second pass) -- THE PREVIOUS BLOCK IS OMITTED
+ * ENTIRELY WHEN NO PREDECESSOR EXISTS, NEVER RENDERED DASH-FILLED.
+ * UFC's `previous` is `null` -- not an unavailable/ungraded cohort object,
+ * an actual `None` -- because `src.report.effective_record.mma_snapshot`
+ * returns `"previous": None` BY DESIGN: UFC_CARD_V1 is the only rule this
+ * sport has ever published under, so there is no predecessor to describe
+ * at all. Rendering a full "PREVIOUS RULE (RETIRED)" block of dashes for
+ * that case implies a rule that never existed -- a fabrication by
+ * omission, the same category of mistake this whole surface exists to
+ * refuse. `snapshot.previous === null/undefined` is the ONLY signal this
+ * function uses to decide that -- it is a structural fact from the
+ * server (this sport's snapshot never carries a predecessor), never a
+ * data quality judgement made here.
+ *
+ * THIS IS DISTINCT FROM a predecessor that EXISTS but has not graded a
+ * night (MLB and NFL's `previous` are never `null` -- `_v1_style_cohort`
+ * always returns a real cohort dict, even one with `available: false` or
+ * `grading_state !== "graded"`). That case still renders the block, with
+ * dashes and the cohort's own `reason`, exactly as `fillRuleBlock`
+ * already handled it before this review -- see that function's own
+ * `cohort.reason` branch just above. Only `cohort === null/undefined`
+ * -- never `available: false`, never an ungraded `grading_state` -- hides
+ * the block.
+ */
+function fillRuleSet(root, prefix, snapshot) {
+  const bySlot = { current: snapshot && snapshot.current, previous: snapshot && snapshot.previous };
+  for (const { role, label } of RULE_BLOCKS) {
+    const blockNode = root.querySelector(`[data-hook='${prefix}-${role}-block']`);
+    if (role === "previous" && !bySlot.previous) {
+      if (blockNode) blockNode.hidden = true;
+      continue;
+    }
+    if (blockNode) blockNode.hidden = false;
+    fillRuleBlock(root, `${prefix}-${role}`, bySlot[role], label);
+  }
+}
+
+async function fillProofPanel() {
+  const panel = document.querySelector("[data-hook='hero-proof']");
+  if (!panel) return;
+  try {
+    const meta = await fetchMeta();
+    const mlb = meta && meta.effective_record && meta.effective_record.sports
+      && meta.effective_record.sports.mlb;
+    if (!mlb) return;
+    fillRuleSet(panel, "hero", mlb);
+  } catch (err) {
+    // Leave the dashes in place -- never a guessed figure.
   }
 }
 
@@ -384,7 +421,7 @@ async function fillSportTiles() {
     if (!sports) return;
     for (const { sport, prefix } of SPORT_TILES) {
       const tile = host.querySelector(`[data-hook='${prefix}']`);
-      if (tile && sports[sport]) fillSportTile(tile, prefix, sports[sport]);
+      if (tile && sports[sport]) fillRuleSet(tile, prefix, sports[sport]);
     }
   } catch (err) {
     // Leave every tile's static fallback copy in place -- never a guess.

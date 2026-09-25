@@ -447,6 +447,19 @@
 .hero__proof-sub {
   margin-top: 14px; font-size: 13px; line-height: 1.5; color: rgba(255, 255, 255, .6);
 }
+/* CURRENT AND PREVIOUS, THE SAME SIZE (owner review, 2026-09-25). Both
+   rules render through the identical `.hero__proof-grid`/`.hero__stat`
+   markup at identical size -- this rule ONLY separates the two stacked
+   blocks visually (a top border + gap), it changes no size, weight or
+   colour of either block's own content. The first `.hero__rule-block` on
+   a page (current) gets no extra rule above it; only the SECOND one
+   (previous) does, which is a stacking-order fact, not a prominence
+   decision -- the selector would apply identically if the fixed order
+   were ever reversed. */
+.hero__rule-block + .hero__rule-block {
+  margin-top: 22px; padding-top: 22px;
+  border-top: 1px solid rgba(255, 255, 255, .08);
+}
 .hero__proof-note {
   margin-top: 16px; font-size: 14px; line-height: 1.55; color: rgba(255, 255, 255, .72);
 }

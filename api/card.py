@@ -132,6 +132,47 @@ def _previous_rule_cohort(sport: str, live_rule: Optional[str]) -> Optional[dict
     return snapshot.get("previous")
 
 
+def _effective_record_extras(sport: str, live_rule: Optional[str]) -> dict:
+    """The fields the MLB-v2 branch of `get_card_record` needs but cannot
+    reach by falling through to the shared block below (that branch
+    `return`s its payload early -- see the `if sport == "mlb" and
+    resolved_rule == "v2":` branch above -- because V2's payload is
+    already assembled by hand with its own `rule`/`basis`/`disclaimer`
+    keys). Without this, `GET /card/record` for MLB 500s with a
+    NameError on every call that resolves to "v2" -- which, since
+    `card_mod.ACTIVE_CARD_RULE` flipped to "v2" at CUTOVER_DATE
+    (2026-09-23), is now every call with no explicit `?rule=` at all,
+    i.e. the record page's default request.
+
+    Mirrors exactly what the non-early-return branch below sets for
+    every other sport: chain_ok/chain_detail/rows_checked and
+    previous_rule -- read-only, same shape, same honest-absence rule
+    (an unreadable chain reports `None`, never a guessed "ok").
+
+    THE CHAIN VERIFIED HERE IS V2's OWN (`card_ledger.CARD_STORE_V2`),
+    NOT `verify()`'s bare default. A bare `card_ledger.verify(sport=
+    "mlb")` (or `sport=None`) resolves through `store_path`, which is
+    V1's file -- exactly the MLB/NFL chain-mismatch bug `_previous_rule_
+    cohort`'s sibling code above already had to fix once (see that
+    block's own comment, and `docs/` review 2026-09-20). Naming the path
+    explicitly is what keeps this from repeating it for V2.
+    """
+    from src.appstate import card_ledger
+
+    extras: dict = {"sport": sport}
+    try:
+        chain = card_ledger.verify(path=card_ledger.CARD_STORE_V2)
+        extras["chain_ok"] = bool(getattr(chain, "ok", True))
+        extras["chain_detail"] = None if extras["chain_ok"] else str(chain)
+        extras["rows_checked"] = getattr(chain, "rows_checked", None)
+    except Exception:  # noqa: BLE001 -- honest-absence, never a 500
+        extras["chain_ok"] = None
+        extras["chain_detail"] = None
+        extras["rows_checked"] = None
+    extras["previous_rule"] = _previous_rule_cohort(sport, live_rule)
+    return extras
+
+
 def _resolve_nfl_rule(rule: Optional[str]) -> str:
     """`?rule=` for sport=nfl: one of src/report/nfl_card.RULES, default the
     live rule. ADDED 2026-09-20: the NFL ledger holds NFL_CARD_V1 (retired)
@@ -356,6 +397,38 @@ def get_card_record(request: Request = None, sport: str = "mlb",
         payload["basis"] = best_bets_card.BASIS
         payload["disclaimer"] = best_bets_card.DISCLAIMER
         payload.update(_effective_record_extras("mlb", None))
+        # FLAT ALIASES ONTO `combined` (found during task B1's verification
+        # pass, 2026-09-25; not introduced by it). Three separate readers of
+        # this exact route -- web/js/card.js's recordLine (the strip under
+        # tonight's picks), web/js/recordstrip.js's renderCardRecordStrip
+        # (the picks-page strip) and web/js/cardrecord.js's detail page --
+        # all read `rec.wins`/`rec.losses`/`rec.n_staked`/`rec.days`/
+        # `rec.profit_units`/`rec.win_rate`/`rec.roi_pct` at the TOP level.
+        # That was true for V1's `record()`, which has always returned that
+        # shape flat. `record_v2()` never did -- it reports main-band,
+        # plus-money and fills apart under `main`/`plus_money`/`fills`/
+        # `combined` on purpose (R5: never pooled into one misleading
+        # figure) -- so every one of those three readers silently read
+        # `undefined` for `n_staked`/`days` the moment `ACTIVE_CARD_RULE`
+        # became "v2" (CUTOVER_DATE 2026-09-23) and this became the
+        # DEFAULT response for `GET /card/record` with no `?rule=` at all.
+        # `recordLine`'s own `!rec.n_staked` guard then rendered "Nothing
+        # graded yet" -- FALSE; MLB's real V2 record right now is 14-15,
+        # -4.73u over 3 nights -- exactly the kind of confident-but-wrong
+        # claim this product exists to never make.
+        #
+        # `combined` (main-band + plus-money PICKS, pooled, fills excluded)
+        # is the correct population for this alias: it is the same "every
+        # settled pick, every market kind this rule carries, pooled" figure
+        # `src.report.effective_record`'s V2 headline already uses for the
+        # identical reason (see that module's own "MARKET-SET MISMATCH"
+        # docstring section). The nested `main`/`plus_money`/`fills`/
+        # `combined` breakdown stays exactly as `record_v2()` returns it --
+        # this only ADDS flat keys, it changes no existing key's meaning.
+        combined = payload.get("combined") or {}
+        for _key in ("days", "wins", "losses", "pushes", "voids",
+                    "n_staked", "profit_units", "win_rate", "roi_pct"):
+            payload[_key] = combined.get(_key)
         _record_page_view(request, "card_record", None)
         return payload
 

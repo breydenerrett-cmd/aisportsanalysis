@@ -441,6 +441,112 @@ class AsOfTimestamps(_TempPathCase):
 # stake/ROI denominator consistency (metric contract)
 # ---------------------------------------------------------------------------
 
+class ExactGamePlusPropReconciliation(_TempPathCase):
+    """Owner review, 2026-09-25: the hero panel and the MLB sport tile
+    showed two different numbers for "Our first card rule" on the same
+    page -- the hero said 73-40, +7.61u (GAME picks only, from
+    `card_ledger.record()`'s bare default); the tile said 151-79, +7.98u
+    (this module's V1 cohort, GAME PLUS PROP pooled). Both were real
+    numbers; neither was wrong on its own terms. The bug was that ONE
+    LABEL ("Our first card rule: 73-40 ... 13 nights") pointed at two
+    different populations depending which component of the page rendered
+    it -- see api/meta.py's `_card_record` for the fix that makes every
+    surface read this module's cohort instead of re-deriving its own
+    figure.
+
+    This test is the reconciliation THIS module's own headline promises
+    (effective_record.py's own "MARKET-SET MISMATCH, RESOLVED NOT JUST
+    LABELLED" docstring section): the cohort's `wins`/`losses`/`pushes`/
+    `voids`/`profit_units`/`n_staked` are each EXACTLY the sum of the
+    `game` and `prop` slices of its own `market_breakdown` -- not
+    approximately, not "close enough", every one of the six figures.
+
+    THE FIXTURE BELOW USES THE REAL NUMBERS FROM THE LIVE LEDGER READ
+    DURING THIS REVIEW (2026-09-25, evidence/cards_v1.jsonl, V1's frozen
+    13-night record) so this test's own assertions double as the
+    reconciliation reported alongside it: game 73-40, +7.6063u, 113
+    staked, 0 pushes/voids; prop 78-39, +0.3758u, 117 staked, 0 pushes,
+    1 void. 73+78=151, 40+39=79, 0+0=0, 0+1=1, 230 staked,
+    7.6063+0.3758=7.9821u -- matching the live headline exactly. This
+    file's own convention (module docstring) is that no test here touches
+    a real evidence/*.jsonl file, so the real figures are reproduced as
+    this test's OWN fixture rather than read from disk; a live
+    confirmation that today's actual ledger reconciles the same way lives
+    in tests/test_api_meta_card_record_v2.py, which already reads the
+    real ledger for other assertions in this same review.
+    """
+
+    GAME = {"wins": 73, "losses": 40, "pushes": 0, "voids": 0, "profit_units": 7.6063}
+    PROP = {"wins": 78, "losses": 39, "pushes": 0, "voids": 1, "profit_units": 0.3758}
+
+    def _cohort(self):
+        path = self._path("v1.jsonl")
+        ledger = HashChainLedger(path)
+        published = ledger.append(_published_row(
+            "2026-09-10", rule="R",
+            n_picks=self.GAME["wins"] + self.GAME["losses"],
+            n_prop_picks=self.PROP["wins"] + self.PROP["losses"]))
+        ledger.append(_settled_row(
+            "2026-09-10", published_row_hash=published["row_hash"],
+            wins=self.GAME["wins"], losses=self.GAME["losses"],
+            pushes=self.GAME["pushes"], voids=self.GAME["voids"],
+            profit_units=self.GAME["profit_units"],
+            prop_wins=self.PROP["wins"], prop_losses=self.PROP["losses"],
+            prop_pushes=self.PROP["pushes"], prop_voids=self.PROP["voids"],
+            prop_profit_units=self.PROP["profit_units"]))
+        return er._v1_style_cohort(sport="mlb", path=path, rule_id="R",
+                                   filter_rule="R", status="previous", label="x")
+
+    def test_game_and_prop_breakdown_matches_the_real_ledger_figures(self):
+        """Sanity check on the fixture itself before trusting anything
+        built from it: the breakdown this cohort reports for each market
+        must be exactly what was written in, unchanged."""
+        cohort = self._cohort()
+        game, prop = cohort["market_breakdown"]["game"], cohort["market_breakdown"]["prop"]
+        self.assertEqual((game["wins"], game["losses"], game["voids"]), (73, 40, 0))
+        self.assertAlmostEqual(game["profit_units"], 7.6063, places=4)
+        self.assertEqual((prop["wins"], prop["losses"], prop["voids"]), (78, 39, 1))
+        self.assertAlmostEqual(prop["profit_units"], 0.3758, places=4)
+
+    def test_headline_wins_losses_pushes_voids_exactly_sum_game_plus_prop(self):
+        cohort = self._cohort()
+        game, prop = cohort["market_breakdown"]["game"], cohort["market_breakdown"]["prop"]
+        self.assertEqual(cohort["wins"], game["wins"] + prop["wins"])
+        self.assertEqual(cohort["losses"], game["losses"] + prop["losses"])
+        self.assertEqual(cohort["pushes"], game["pushes"] + prop["pushes"])
+        self.assertEqual(cohort["voids"], game["voids"] + prop["voids"])
+        # The exact real numbers, stated plainly rather than only derived:
+        self.assertEqual((cohort["wins"], cohort["losses"]), (151, 79))
+        self.assertEqual(cohort["voids"], 1)
+
+    def test_headline_n_staked_exactly_sums_game_plus_prop(self):
+        cohort = self._cohort()
+        game, prop = cohort["market_breakdown"]["game"], cohort["market_breakdown"]["prop"]
+        self.assertEqual(cohort["n_staked"], game["n_staked"] + prop["n_staked"])
+        self.assertEqual(cohort["n_staked"], 230)
+
+    def test_headline_profit_units_exactly_sums_game_plus_prop(self):
+        cohort = self._cohort()
+        game, prop = cohort["market_breakdown"]["game"], cohort["market_breakdown"]["prop"]
+        self.assertAlmostEqual(cohort["profit_units"],
+                               round(game["profit_units"] + prop["profit_units"], 4),
+                               places=4)
+        self.assertAlmostEqual(cohort["profit_units"], 7.9821, places=4)
+
+    def test_this_pooled_figure_is_the_one_every_surface_must_show(self):
+        """The number this test reconciles (151-79, +7.98u) is NOT a
+        second, competing figure alongside the game-only 73-40 -- it is
+        the one this module's own docstring says every surface must use
+        as "the rule's headline" (see the module docstring's "MARKET-SET
+        MISMATCH" section). 73-40 stays real and visible, but only inside
+        `market_breakdown["game"]`, never as the top-level `wins`/
+        `losses` a reader would read as the rule's whole record."""
+        cohort = self._cohort()
+        self.assertNotEqual((cohort["wins"], cohort["losses"]),
+                            (cohort["market_breakdown"]["game"]["wins"],
+                             cohort["market_breakdown"]["game"]["losses"]))
+
+
 class StakeBasisConsistency(_TempPathCase):
     def test_roi_denominator_is_n_staked_never_published_or_pending(self):
         path = self._path("nfl.jsonl")

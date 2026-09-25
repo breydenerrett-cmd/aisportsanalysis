@@ -28,6 +28,7 @@ from __future__ import annotations
 import os
 import subprocess
 from pathlib import Path
+from typing import Optional
 
 from fastapi import APIRouter
 
@@ -127,6 +128,27 @@ def _effective_record() -> dict:
                 "sports": {sport: None for sport in ("mlb", "nfl", "mma")}}
 
 
+def _effective_record_previous_cohort(sport: str) -> Optional[dict]:
+    """The ONE source every surface's "previous rule" figure reads from
+    (owner review, 2026-09-25) -- `src.report.effective_record`'s own
+    cohort for `sport`, which pools every market kind that rule carries
+    (game + prop for MLB's V1), never re-derived a second time from
+    `card_ledger.record()`'s game-only default. Read-only; an unreadable
+    or unavailable cohort returns `None`, never a guessed figure -- the
+    caller (`_card_record` today) is responsible for leaving its own
+    `previous_rule` key out entirely in that case.
+    """
+    try:
+        from src.report import effective_record
+        snapshot = effective_record.sport_snapshot(sport)
+    except Exception:  # noqa: BLE001
+        return None
+    previous = snapshot.get("previous")
+    if not previous or not previous.get("available"):
+        return None
+    return previous
+
+
 def _card_record() -> dict:
     """The card's running record -- days, wins, losses, pushes, voids -- or
     explicit nulls, never a guessed figure.
@@ -161,14 +183,37 @@ def _card_record() -> dict:
         keys = ("days", "wins", "losses", "pushes", "voids", "profit_units")
         out = {key: rec.get(key) for key in keys}
         if card_mod.ACTIVE_CARD_RULE == "v2":
-            # The rule that preceded V2 on the public card, from its own
-            # frozen ledger (cards_v1.jsonl never gains a row after the
-            # cutover). Shown on its own labelled line and never added into
-            # V2's figures, which start from zero.
-            prev = card_ledger.record()
-            out["previous_rule"] = dict(
-                {key: prev.get(key) for key in keys},
-                label="Our first card rule")
+            # THE PREVIOUS RULE'S FIGURE, FROM effective_record -- THE ONE
+            # SOURCE (owner review, 2026-09-25). This used to call
+            # `card_ledger.record()` a second time here, which pools GAME
+            # picks only (see that function's own docstring). The MLB sport
+            # tile on this same page reads its previous-rule figure from
+            # `src.report.effective_record`'s V1 cohort, which pools GAME
+            # PLUS PROP picks -- the exact population V1's own headline
+            # always meant (see effective_record.py's "MARKET-SET MISMATCH"
+            # section). Two different populations under one label ("Our
+            # first card rule: 73-40, +7.61u" in the hero vs "151-79,
+            # +7.98u" on the sport tile, same rule, same 13 nights) is
+            # false precision -- a reader cannot tell which number is real
+            # because both are, they're just answering different
+            # questions. This route now reads the exact same cohort the
+            # sport tile reads, so the two can never diverge again by
+            # construction, not by two independently-written formulas
+            # happening to agree.
+            prev_cohort = _effective_record_previous_cohort("mlb")
+            if prev_cohort is not None:
+                out["previous_rule"] = {
+                    "days": prev_cohort.get("days"),
+                    "wins": prev_cohort.get("wins"),
+                    "losses": prev_cohort.get("losses"),
+                    "pushes": prev_cohort.get("pushes"),
+                    "voids": prev_cohort.get("voids"),
+                    "profit_units": prev_cohort.get("profit_units"),
+                    "label": prev_cohort.get("label") or "Our first card rule",
+                }
+            # else: honest-absence -- no previous_rule key at all, never a
+            # guessed figure and never a fallback to the game-only number
+            # this fix exists to retire.
         return out
     except Exception:  # noqa: BLE001
         return {"days": None, "wins": None, "losses": None,

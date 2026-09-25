@@ -95,23 +95,59 @@
        the live ledger record from GET /meta (landing.js fillProofPanel). The
        dashes are the honest no-JS / failed-fetch state: no figure is ever
        typed into this markup (see api/meta.py _card_record). -->
+  <!-- CURRENT AND PREVIOUS, THE SAME COMPONENT AT THE SAME SIZE (owner
+       review, 2026-09-25: "the current rule gets three large tiles and
+       the previous rule gets one small grey sentence" -- neither rule may
+       gain prominence for being profitable). Both blocks are
+       `.hero__rule-block`s carrying an identical `.hero__proof-grid` of
+       three `.hero__stat` cells, in a FIXED order (current, then
+       previous) that never depends on which one is winning. Filled by
+       landing.js's fillProofPanel, which reads the exact same
+       `meta.effective_record.sports.mlb` object and the exact same
+       fillRuleBlock() the MLB sport tile below uses -- one renderer, one
+       data source, so the hero and the tile cannot disagree by
+       construction. -->
   <aside class="hero__proof" data-rise data-delay="120" data-hook="hero-proof" aria-label="The record so far">
-    <span class="eyebrow eyebrow--money" data-hook="proof-title">The record so far</span>
-    <div class="hero__proof-grid">
-      <div class="hero__stat">
-        <span class="hero__stat-value" data-hook="proof-wl">&mdash;</span>
-        <span class="hero__stat-label">Won&ndash;lost</span>
+    <span class="eyebrow eyebrow--money">The record so far</span>
+
+    <div class="hero__rule-block" data-hook="hero-current-block">
+      <p class="eyebrow eyebrow--muted" data-hook="hero-current-label">Current rule</p>
+      <div class="hero__proof-grid">
+        <div class="hero__stat">
+          <span class="hero__stat-value" data-hook="hero-current-wl">&mdash;</span>
+          <span class="hero__stat-label">Won&ndash;lost</span>
+        </div>
+        <div class="hero__stat">
+          <span class="hero__stat-value" data-hook="hero-current-units">&mdash;</span>
+          <span class="hero__stat-label">Units</span>
+        </div>
+        <div class="hero__stat">
+          <span class="hero__stat-value" data-hook="hero-current-days">&mdash;</span>
+          <span class="hero__stat-label">Nights graded</span>
+        </div>
       </div>
-      <div class="hero__stat">
-        <span class="hero__stat-value" data-hook="proof-units">&mdash;</span>
-        <span class="hero__stat-label">Units</span>
-      </div>
-      <div class="hero__stat">
-        <span class="hero__stat-value" data-hook="proof-days">&mdash;</span>
-        <span class="hero__stat-label">Nights graded</span>
-      </div>
+      <p class="hero__proof-sub" data-hook="hero-current-state">Every graded night is posted on the record page, losses included.</p>
     </div>
-    <p class="hero__proof-sub" data-hook="proof-sub" hidden></p>
+
+    <div class="hero__rule-block" data-hook="hero-previous-block">
+      <p class="eyebrow eyebrow--muted" data-hook="hero-previous-label">Previous rule (retired)</p>
+      <div class="hero__proof-grid">
+        <div class="hero__stat">
+          <span class="hero__stat-value" data-hook="hero-previous-wl">&mdash;</span>
+          <span class="hero__stat-label">Won&ndash;lost</span>
+        </div>
+        <div class="hero__stat">
+          <span class="hero__stat-value" data-hook="hero-previous-units">&mdash;</span>
+          <span class="hero__stat-label">Units</span>
+        </div>
+        <div class="hero__stat">
+          <span class="hero__stat-value" data-hook="hero-previous-days">&mdash;</span>
+          <span class="hero__stat-label">Nights graded</span>
+        </div>
+      </div>
+      <p class="hero__proof-sub" data-hook="hero-previous-state">Counted separately.</p>
+    </div>
+
     <p class="hero__proof-note" data-hook="hero-claim-record"><span data-hook="card-record">Every graded night is posted on the record page, losses included.</span></p>
     <a class="hero__proof-link" href="index.html#/record-card">See every pick &rarr;</a>
   </aside>
@@ -263,67 +299,143 @@
   <div class="story-grid" style="margin-top:28px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))" data-hook="sport-record-tiles">
 
     <div class="hero__proof" style="margin-top:0" data-rise data-delay="60" data-hook="sport-tile-mlb" aria-label="MLB record">
-      <span class="eyebrow eyebrow--money">MLB &middot; <span data-hook="sport-tile-mlb-current-label">current rule</span></span>
-      <div class="hero__proof-grid">
-        <div class="hero__stat">
-          <span class="hero__stat-value" data-hook="sport-tile-mlb-current-wl">&mdash;</span>
-          <span class="hero__stat-label">Won&ndash;lost</span>
+      <span class="eyebrow eyebrow--money">MLB</span>
+
+      <div class="hero__rule-block" data-hook="sport-tile-mlb-current-block">
+        <p class="eyebrow eyebrow--muted" data-hook="sport-tile-mlb-current-label">Current rule</p>
+        <div class="hero__proof-grid">
+          <div class="hero__stat">
+            <span class="hero__stat-value" data-hook="sport-tile-mlb-current-wl">&mdash;</span>
+            <span class="hero__stat-label">Won&ndash;lost</span>
+          </div>
+          <div class="hero__stat">
+            <span class="hero__stat-value" data-hook="sport-tile-mlb-current-units">&mdash;</span>
+            <span class="hero__stat-label">Units</span>
+          </div>
+          <div class="hero__stat">
+            <span class="hero__stat-value" data-hook="sport-tile-mlb-current-days">&mdash;</span>
+            <span class="hero__stat-label">Nights graded</span>
+          </div>
         </div>
-        <div class="hero__stat">
-          <span class="hero__stat-value" data-hook="sport-tile-mlb-current-units">&mdash;</span>
-          <span class="hero__stat-label">Units</span>
-        </div>
-        <div class="hero__stat">
-          <span class="hero__stat-value" data-hook="sport-tile-mlb-current-days">&mdash;</span>
-          <span class="hero__stat-label">Nights graded</span>
-        </div>
+        <p class="hero__proof-sub" data-hook="sport-tile-mlb-current-state">The full card, every night of the season.</p>
       </div>
-      <p class="hero__proof-sub" data-hook="sport-tile-mlb-current-state">The full card, every night of the season.</p>
-      <p class="hero__proof-sub" data-hook="sport-tile-mlb-previous" hidden></p>
+
+      <div class="hero__rule-block" data-hook="sport-tile-mlb-previous-block">
+        <p class="eyebrow eyebrow--muted" data-hook="sport-tile-mlb-previous-label">Previous rule (retired)</p>
+        <div class="hero__proof-grid">
+          <div class="hero__stat">
+            <span class="hero__stat-value" data-hook="sport-tile-mlb-previous-wl">&mdash;</span>
+            <span class="hero__stat-label">Won&ndash;lost</span>
+          </div>
+          <div class="hero__stat">
+            <span class="hero__stat-value" data-hook="sport-tile-mlb-previous-units">&mdash;</span>
+            <span class="hero__stat-label">Units</span>
+          </div>
+          <div class="hero__stat">
+            <span class="hero__stat-value" data-hook="sport-tile-mlb-previous-days">&mdash;</span>
+            <span class="hero__stat-label">Nights graded</span>
+          </div>
+        </div>
+        <p class="hero__proof-sub" data-hook="sport-tile-mlb-previous-state">Counted separately.</p>
+      </div>
+
       <p class="hero__proof-note" data-hook="sport-tile-mlb-markets" hidden></p>
       <a class="hero__proof-link" href="index.html#/record-card" data-hook="sport-tile-mlb-link">See every MLB pick, graded &rarr;</a>
     </div>
 
     <div class="hero__proof" style="margin-top:0" data-rise data-delay="100" data-hook="sport-tile-nfl" aria-label="NFL record">
-      <span class="eyebrow eyebrow--money">NFL &middot; <span data-hook="sport-tile-nfl-current-label">current rule</span></span>
-      <div class="hero__proof-grid">
-        <div class="hero__stat">
-          <span class="hero__stat-value" data-hook="sport-tile-nfl-current-wl">&mdash;</span>
-          <span class="hero__stat-label">Won&ndash;lost</span>
+      <span class="eyebrow eyebrow--money">NFL</span>
+
+      <div class="hero__rule-block" data-hook="sport-tile-nfl-current-block">
+        <p class="eyebrow eyebrow--muted" data-hook="sport-tile-nfl-current-label">Current rule</p>
+        <div class="hero__proof-grid">
+          <div class="hero__stat">
+            <span class="hero__stat-value" data-hook="sport-tile-nfl-current-wl">&mdash;</span>
+            <span class="hero__stat-label">Won&ndash;lost</span>
+          </div>
+          <div class="hero__stat">
+            <span class="hero__stat-value" data-hook="sport-tile-nfl-current-units">&mdash;</span>
+            <span class="hero__stat-label">Units</span>
+          </div>
+          <div class="hero__stat">
+            <span class="hero__stat-value" data-hook="sport-tile-nfl-current-days">&mdash;</span>
+            <span class="hero__stat-label">Nights graded</span>
+          </div>
         </div>
-        <div class="hero__stat">
-          <span class="hero__stat-value" data-hook="sport-tile-nfl-current-units">&mdash;</span>
-          <span class="hero__stat-label">Units</span>
-        </div>
-        <div class="hero__stat">
-          <span class="hero__stat-value" data-hook="sport-tile-nfl-current-days">&mdash;</span>
-          <span class="hero__stat-label">Nights graded</span>
-        </div>
+        <p class="hero__proof-sub" data-hook="sport-tile-nfl-current-state">Picks published and graded each week, on the same record.</p>
       </div>
-      <p class="hero__proof-sub" data-hook="sport-tile-nfl-current-state">Picks published and graded each week, on the same record.</p>
-      <p class="hero__proof-sub" data-hook="sport-tile-nfl-previous" hidden></p>
+
+      <div class="hero__rule-block" data-hook="sport-tile-nfl-previous-block">
+        <p class="eyebrow eyebrow--muted" data-hook="sport-tile-nfl-previous-label">Previous rule (retired)</p>
+        <div class="hero__proof-grid">
+          <div class="hero__stat">
+            <span class="hero__stat-value" data-hook="sport-tile-nfl-previous-wl">&mdash;</span>
+            <span class="hero__stat-label">Won&ndash;lost</span>
+          </div>
+          <div class="hero__stat">
+            <span class="hero__stat-value" data-hook="sport-tile-nfl-previous-units">&mdash;</span>
+            <span class="hero__stat-label">Units</span>
+          </div>
+          <div class="hero__stat">
+            <span class="hero__stat-value" data-hook="sport-tile-nfl-previous-days">&mdash;</span>
+            <span class="hero__stat-label">Nights graded</span>
+          </div>
+        </div>
+        <p class="hero__proof-sub" data-hook="sport-tile-nfl-previous-state">Counted separately.</p>
+      </div>
+
       <p class="hero__proof-note" data-hook="sport-tile-nfl-markets" hidden></p>
       <a class="hero__proof-link" href="index.html#/nfl/record" data-hook="sport-tile-nfl-link">See every NFL pick, graded &rarr;</a>
     </div>
 
     <div class="hero__proof" style="margin-top:0" data-rise data-delay="140" data-hook="sport-tile-ufc" aria-label="UFC record">
-      <span class="eyebrow eyebrow--money">UFC &middot; <span data-hook="sport-tile-ufc-current-label">current rule</span></span>
-      <div class="hero__proof-grid">
-        <div class="hero__stat">
-          <span class="hero__stat-value" data-hook="sport-tile-ufc-current-wl">&mdash;</span>
-          <span class="hero__stat-label">Won&ndash;lost</span>
+      <span class="eyebrow eyebrow--money">UFC</span>
+
+      <div class="hero__rule-block" data-hook="sport-tile-ufc-current-block">
+        <p class="eyebrow eyebrow--muted" data-hook="sport-tile-ufc-current-label">Current rule</p>
+        <div class="hero__proof-grid">
+          <div class="hero__stat">
+            <span class="hero__stat-value" data-hook="sport-tile-ufc-current-wl">&mdash;</span>
+            <span class="hero__stat-label">Won&ndash;lost</span>
+          </div>
+          <div class="hero__stat">
+            <span class="hero__stat-value" data-hook="sport-tile-ufc-current-units">&mdash;</span>
+            <span class="hero__stat-label">Units</span>
+          </div>
+          <div class="hero__stat">
+            <span class="hero__stat-value" data-hook="sport-tile-ufc-current-days">&mdash;</span>
+            <span class="hero__stat-label">Nights graded</span>
+          </div>
         </div>
-        <div class="hero__stat">
-          <span class="hero__stat-value" data-hook="sport-tile-ufc-current-units">&mdash;</span>
-          <span class="hero__stat-label">Units</span>
-        </div>
-        <div class="hero__stat">
-          <span class="hero__stat-value" data-hook="sport-tile-ufc-current-days">&mdash;</span>
-          <span class="hero__stat-label">Nights graded</span>
-        </div>
+        <p class="hero__proof-sub" data-hook="sport-tile-ufc-current-state">Picks published on event nights.</p>
       </div>
-      <p class="hero__proof-sub" data-hook="sport-tile-ufc-current-state">Picks published on event nights.</p>
-      <p class="hero__proof-sub" data-hook="sport-tile-ufc-previous" hidden></p>
+
+      <!-- HIDDEN BY DEFAULT: UFC has never had a previous rule
+           (UFC_CARD_V1 is its only rule -- src.report.effective_record.
+           mma_snapshot's own "previous": None). Rendering this block
+           dash-filled would imply a retired rule that never existed;
+           landing.js's fillRuleSet un-hides it only if a sport's
+           `previous` is ever a real (non-null) cohort object -- never
+           for UFC as this product exists today. -->
+      <div class="hero__rule-block" data-hook="sport-tile-ufc-previous-block" hidden>
+        <p class="eyebrow eyebrow--muted" data-hook="sport-tile-ufc-previous-label">Previous rule (retired)</p>
+        <div class="hero__proof-grid">
+          <div class="hero__stat">
+            <span class="hero__stat-value" data-hook="sport-tile-ufc-previous-wl">&mdash;</span>
+            <span class="hero__stat-label">Won&ndash;lost</span>
+          </div>
+          <div class="hero__stat">
+            <span class="hero__stat-value" data-hook="sport-tile-ufc-previous-units">&mdash;</span>
+            <span class="hero__stat-label">Units</span>
+          </div>
+          <div class="hero__stat">
+            <span class="hero__stat-value" data-hook="sport-tile-ufc-previous-days">&mdash;</span>
+            <span class="hero__stat-label">Nights graded</span>
+          </div>
+        </div>
+        <p class="hero__proof-sub" data-hook="sport-tile-ufc-previous-state">No previous rule yet.</p>
+      </div>
+
       <p class="hero__proof-note" data-hook="sport-tile-ufc-markets" hidden></p>
       <a class="hero__proof-link" href="index.html#/ufc/record" data-hook="sport-tile-ufc-link">See every UFC pick &rarr;</a>
     </div>
