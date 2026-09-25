@@ -1966,3 +1966,14 @@
 {"fetched_utc": "2026-09-25T17:05:36.856129+00:00", "game_date": "2026-09-25", "poll": true}
 {"fetched_utc": "2026-09-25T18:42:52.230009+00:00", "game_date": "2026-09-25", "poll": true}
 {"fetched_utc": "2026-09-25T18:42:54.477882+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T19:55:10.717307+00:00", "game_date": "2026-09-25", "poll": true}
+{"category": "optioned", "date": "2026-09-25", "first_seen_utc": "2026-09-25T19:55:10.717307+00:00", "player": "CJ Van Eyk", "player_id": 669310, "team": "TOR", "transaction_id": 943919}
+{"category": "recalled", "date": "2026-09-25", "first_seen_utc": "2026-09-25T19:55:10.717307+00:00", "player": "John Klein", "player_id": 804619, "team": "TOR", "transaction_id": 943920}
+{"category": "recalled", "date": "2026-09-25", "first_seen_utc": "2026-09-25T19:55:10.717307+00:00", "player": "Justin Hagenman", "player_id": 663795, "team": "NYM", "transaction_id": 943924}
+{"category": "optioned", "date": "2026-09-25", "first_seen_utc": "2026-09-25T19:55:10.717307+00:00", "player": "Jack Weisenburger", "player_id": 674073, "team": "NYM", "transaction_id": 943925}
+{"category": "other", "date": "2026-09-25", "first_seen_utc": "2026-09-25T19:55:10.717307+00:00", "player": "Xzavion Curry", "player_id": 675540, "team": "NYM", "transaction_id": 943926}
+{"category": "recalled", "date": "2026-09-25", "first_seen_utc": "2026-09-25T19:55:10.717307+00:00", "player": "Hancel Rincon", "player_id": 684516, "team": "STL", "transaction_id": 943929}
+{"category": "optioned", "date": "2026-09-25", "first_seen_utc": "2026-09-25T19:55:10.717307+00:00", "player": "Cooper Hjerpe", "player_id": 687309, "team": "STL", "transaction_id": 943930}
+{"category": "designated", "date": "2026-09-25", "first_seen_utc": "2026-09-25T19:55:10.717307+00:00", "player": "Jake Woodford", "player_id": 663765, "team": "TB", "transaction_id": 943931}
+{"category": "il_activation", "date": "2026-09-25", "first_seen_utc": "2026-09-25T19:55:10.717307+00:00", "player": "Manuel Rodr\u00edguez", "player_id": 655889, "team": "TB", "transaction_id": 943932}
+{"fetched_utc": "2026-09-25T19:55:12.495031+00:00", "game_date": "2026-09-25", "poll": true}
