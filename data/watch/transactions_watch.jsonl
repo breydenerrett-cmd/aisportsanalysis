@@ -1948,3 +1948,7 @@
 {"fetched_utc": "2026-09-25T14:12:58.645231+00:00", "game_date": "2026-09-25", "poll": true}
 {"fetched_utc": "2026-09-25T14:25:56.221043+00:00", "game_date": "2026-09-25", "poll": true}
 {"fetched_utc": "2026-09-25T14:38:31.621726+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T15:30:08.716782+00:00", "game_date": "2026-09-25", "poll": true}
+{"category": "il_activation", "date": "2026-09-25", "first_seen_utc": "2026-09-25T15:30:08.716782+00:00", "player": "Gavin Hollowell", "player_id": 668970, "team": "CHC", "transaction_id": 943911}
+{"category": "other", "date": "2026-09-25", "first_seen_utc": "2026-09-25T15:30:08.716782+00:00", "player": "Edward Cabrera", "player_id": 665795, "team": "CHC", "transaction_id": 943912}
+{"fetched_utc": "2026-09-25T15:30:10.740306+00:00", "game_date": "2026-09-25", "poll": true}
