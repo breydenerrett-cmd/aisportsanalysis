@@ -1983,3 +1983,7 @@
 {"category": "optioned", "date": "2026-09-25", "first_seen_utc": "2026-09-25T20:52:43.712512+00:00", "player": "Raymond Burgos", "player_id": 670103, "team": "BOS", "transaction_id": 943956}
 {"category": "recalled", "date": "2026-09-25", "first_seen_utc": "2026-09-25T20:52:43.712512+00:00", "player": "Jose Cabrera", "player_id": 703615, "team": "ARI", "transaction_id": 943958}
 {"fetched_utc": "2026-09-25T20:52:45.931083+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T21:24:49.840403+00:00", "game_date": "2026-09-25", "poll": true}
+{"category": "optioned", "date": "2026-09-25", "first_seen_utc": "2026-09-25T21:24:49.840403+00:00", "player": "Alex Freeland", "player_id": 690976, "team": "LAD", "transaction_id": 943963}
+{"category": "il_activation", "date": "2026-09-25", "first_seen_utc": "2026-09-25T21:24:49.840403+00:00", "player": "Dalton Rushing", "player_id": 687221, "team": "LAD", "transaction_id": 943964}
+{"fetched_utc": "2026-09-25T21:24:52.566968+00:00", "game_date": "2026-09-25", "poll": true}
