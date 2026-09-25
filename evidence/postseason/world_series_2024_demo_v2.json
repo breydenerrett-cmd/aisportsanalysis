@@ -1,0 +1,744 @@
+{
+  "demonstration": "2024 World Series v2 -- per-factor attribution, a hindsight-free pre-series forecast, and a k=0..5 state table. MECHANICS VALIDATION ONLY.",
+  "fixes_applied": {
+    "1_per_factor_attribution": "attribution_by_game",
+    "2_hindsight_leak": "pre_series_forecast (honest) vs hindsight_series_solve (relabeled, kept for comparison)",
+    "3_state_evolution": "state_table"
+  },
+  "series_start_cutoff": "2024-10-25",
+  "league_rpg_as_of_cutoff": 4.386004056795132,
+  "designated_team": "LAD",
+  "actual_result": "LAD won the series 4-1",
+  "actual_game_winners": [
+    "LAD",
+    "LAD",
+    "LAD",
+    "NYY",
+    "LAD"
+  ],
+  "attribution_by_game": [
+    {
+      "game_number": 1,
+      "date": "2024-10-25",
+      "away": "NYY",
+      "home": "LAD",
+      "venue": "Dodger Stadium",
+      "away_team": "NYY",
+      "home_team": "LAD",
+      "game_date": "2024-10-25",
+      "p_home_by_variant": {
+        "baseline": 0.5266,
+        "plus_starter": 0.5409,
+        "plus_bullpen": 0.5512,
+        "plus_park": 0.5263,
+        "all_three": 0.5487
+      },
+      "error_by_variant": {
+        "baseline": null,
+        "plus_starter": null,
+        "plus_bullpen": null,
+        "plus_park": null,
+        "all_three": null
+      },
+      "delta_from_baseline": {
+        "plus_starter": 0.0142,
+        "plus_bullpen": 0.0246,
+        "plus_park": -0.0004,
+        "all_three": 0.0221
+      },
+      "inputs": {
+        "away_sp_id": 543037,
+        "home_sp_id": 656427,
+        "away_sp_known": true,
+        "home_sp_known": true,
+        "away_sp_fip": 3.6873,
+        "home_sp_fip": 3.5851,
+        "away_bullpen_rate": 3.9762,
+        "home_bullpen_rate": 3.8302,
+        "away_bullpen_innings": 581.34,
+        "home_bullpen_innings": 636.0,
+        "away_bullpen_thin": false,
+        "home_bullpen_thin": false,
+        "park_factor": 0.966,
+        "park_thin": false
+      },
+      "factor_dispositions": {
+        "starting_pitcher": "MODEL-USED",
+        "bullpen_quality": "MODEL-USED",
+        "park_factor": "MODEL-USED",
+        "bullpen_recent_availability": "CONTEXT ONLY",
+        "rest_travel": "CONTEXT ONLY",
+        "lineup_composition": "UNAVAILABLE",
+        "documented_injuries": "UNAVAILABLE"
+      }
+    },
+    {
+      "game_number": 2,
+      "date": "2024-10-26",
+      "away": "NYY",
+      "home": "LAD",
+      "venue": "Dodger Stadium",
+      "away_team": "NYY",
+      "home_team": "LAD",
+      "game_date": "2024-10-25",
+      "p_home_by_variant": {
+        "baseline": 0.5266,
+        "plus_starter": 0.603,
+        "plus_bullpen": 0.5512,
+        "plus_park": 0.5263,
+        "all_three": 0.614
+      },
+      "error_by_variant": {
+        "baseline": null,
+        "plus_starter": null,
+        "plus_bullpen": null,
+        "plus_park": null,
+        "all_three": null
+      },
+      "delta_from_baseline": {
+        "plus_starter": 0.0764,
+        "plus_bullpen": 0.0246,
+        "plus_park": -0.0004,
+        "all_three": 0.0874
+      },
+      "inputs": {
+        "away_sp_id": 607074,
+        "home_sp_id": 808967,
+        "away_sp_known": true,
+        "home_sp_known": true,
+        "away_sp_fip": 4.4019,
+        "home_sp_fip": 2.7616,
+        "away_bullpen_rate": 3.9762,
+        "home_bullpen_rate": 3.8302,
+        "away_bullpen_innings": 581.34,
+        "home_bullpen_innings": 636.0,
+        "away_bullpen_thin": false,
+        "home_bullpen_thin": false,
+        "park_factor": 0.966,
+        "park_thin": false
+      },
+      "factor_dispositions": {
+        "starting_pitcher": "MODEL-USED",
+        "bullpen_quality": "MODEL-USED",
+        "park_factor": "MODEL-USED",
+        "bullpen_recent_availability": "CONTEXT ONLY",
+        "rest_travel": "CONTEXT ONLY",
+        "lineup_composition": "UNAVAILABLE",
+        "documented_injuries": "UNAVAILABLE"
+      }
+    },
+    {
+      "game_number": 3,
+      "date": "2024-10-28",
+      "away": "LAD",
+      "home": "NYY",
+      "venue": "Yankee Stadium",
+      "away_team": "LAD",
+      "home_team": "NYY",
+      "game_date": "2024-10-25",
+      "p_home_by_variant": {
+        "baseline": 0.51,
+        "plus_starter": 0.5781,
+        "plus_bullpen": 0.4867,
+        "plus_park": 0.51,
+        "all_three": 0.5678
+      },
+      "error_by_variant": {
+        "baseline": null,
+        "plus_starter": null,
+        "plus_bullpen": null,
+        "plus_park": null,
+        "all_three": null
+      },
+      "delta_from_baseline": {
+        "plus_starter": 0.0682,
+        "plus_bullpen": -0.0233,
+        "plus_park": 0.0,
+        "all_three": 0.0579
+      },
+      "inputs": {
+        "away_sp_id": 621111,
+        "home_sp_id": 657376,
+        "away_sp_known": true,
+        "home_sp_known": true,
+        "away_sp_fip": 5.5275,
+        "home_sp_fip": 3.4442,
+        "away_bullpen_rate": 3.8302,
+        "home_bullpen_rate": 3.9762,
+        "away_bullpen_innings": 636.0,
+        "home_bullpen_innings": 581.34,
+        "away_bullpen_thin": false,
+        "home_bullpen_thin": false,
+        "park_factor": 1.0043,
+        "park_thin": false
+      },
+      "factor_dispositions": {
+        "starting_pitcher": "MODEL-USED",
+        "bullpen_quality": "MODEL-USED",
+        "park_factor": "MODEL-USED",
+        "bullpen_recent_availability": "CONTEXT ONLY",
+        "rest_travel": "CONTEXT ONLY",
+        "lineup_composition": "UNAVAILABLE",
+        "documented_injuries": "UNAVAILABLE"
+      }
+    },
+    {
+      "game_number": 4,
+      "date": "2024-10-29",
+      "away": "LAD",
+      "home": "NYY",
+      "venue": "Yankee Stadium",
+      "away_team": "LAD",
+      "home_team": "NYY",
+      "game_date": "2024-10-25",
+      "p_home_by_variant": {
+        "baseline": 0.51,
+        "plus_starter": 0.4892,
+        "plus_bullpen": 0.4867,
+        "plus_park": 0.51,
+        "all_three": 0.4559
+      },
+      "error_by_variant": {
+        "baseline": null,
+        "plus_starter": null,
+        "plus_bullpen": null,
+        "plus_park": null,
+        "all_three": null
+      },
+      "delta_from_baseline": {
+        "plus_starter": -0.0208,
+        "plus_bullpen": -0.0233,
+        "plus_park": 0.0,
+        "all_three": -0.0541
+      },
+      "inputs": {
+        "away_sp_id": 676508,
+        "home_sp_id": 661563,
+        "away_sp_known": false,
+        "home_sp_known": true,
+        "away_sp_fip": null,
+        "home_sp_fip": 4.1615,
+        "away_bullpen_rate": 3.8302,
+        "home_bullpen_rate": 3.9762,
+        "away_bullpen_innings": 636.0,
+        "home_bullpen_innings": 581.34,
+        "away_bullpen_thin": false,
+        "home_bullpen_thin": false,
+        "park_factor": 1.0043,
+        "park_thin": false
+      },
+      "factor_dispositions": {
+        "starting_pitcher": "MODEL-USED",
+        "bullpen_quality": "MODEL-USED",
+        "park_factor": "MODEL-USED",
+        "bullpen_recent_availability": "CONTEXT ONLY",
+        "rest_travel": "CONTEXT ONLY",
+        "lineup_composition": "UNAVAILABLE",
+        "documented_injuries": "UNAVAILABLE"
+      }
+    },
+    {
+      "game_number": 5,
+      "date": "2024-10-30",
+      "away": "LAD",
+      "home": "NYY",
+      "venue": "Yankee Stadium",
+      "away_team": "LAD",
+      "home_team": "NYY",
+      "game_date": "2024-10-25",
+      "p_home_by_variant": {
+        "baseline": 0.51,
+        "plus_starter": 0.4961,
+        "plus_bullpen": 0.4867,
+        "plus_park": 0.51,
+        "all_three": 0.488
+      },
+      "error_by_variant": {
+        "baseline": null,
+        "plus_starter": null,
+        "plus_bullpen": null,
+        "plus_park": null,
+        "all_three": null
+      },
+      "delta_from_baseline": {
+        "plus_starter": -0.0139,
+        "plus_bullpen": -0.0233,
+        "plus_park": 0.0,
+        "all_three": -0.0219
+      },
+      "inputs": {
+        "away_sp_id": 656427,
+        "home_sp_id": 543037,
+        "away_sp_known": true,
+        "home_sp_known": true,
+        "away_sp_fip": 3.5851,
+        "home_sp_fip": 3.6873,
+        "away_bullpen_rate": 3.8302,
+        "home_bullpen_rate": 3.9762,
+        "away_bullpen_innings": 636.0,
+        "home_bullpen_innings": 581.34,
+        "away_bullpen_thin": false,
+        "home_bullpen_thin": false,
+        "park_factor": 1.0043,
+        "park_thin": false
+      },
+      "factor_dispositions": {
+        "starting_pitcher": "MODEL-USED",
+        "bullpen_quality": "MODEL-USED",
+        "park_factor": "MODEL-USED",
+        "bullpen_recent_availability": "CONTEXT ONLY",
+        "rest_travel": "CONTEXT ONLY",
+        "lineup_composition": "UNAVAILABLE",
+        "documented_injuries": "UNAVAILABLE"
+      }
+    }
+  ],
+  "pre_series_forecast": {
+    "label": "HONEST PRE-SERIES FORECAST -- game 1 uses the real announced starters; every other game is projected from each team's own active rotation as of 2024-10-25 (>=2 starts in the trailing 30 days), assigning the pool member rested longest and never repeating a starter within 3 team games (never a future appearance)",
+    "rotation_pool": {
+      "LAD": [
+        656427,
+        808967,
+        621111,
+        518489
+      ],
+      "NYY": [
+        607074,
+        661563,
+        657376,
+        543037
+      ]
+    },
+    "per_game": [
+      {
+        "game_number": 1,
+        "home": "LAD",
+        "away": "NYY",
+        "home_sp_id": 656427,
+        "home_sp_source": "actual_announced_game1",
+        "away_sp_id": 543037,
+        "away_sp_source": "actual_announced_game1",
+        "p_lad": 0.5487
+      },
+      {
+        "game_number": 2,
+        "home": "LAD",
+        "away": "NYY",
+        "home_sp_id": 518489,
+        "home_sp_source": "projected",
+        "away_sp_id": 657376,
+        "away_sp_source": "projected",
+        "p_lad": 0.5459
+      },
+      {
+        "game_number": 3,
+        "home": "NYY",
+        "away": "LAD",
+        "home_sp_id": 661563,
+        "home_sp_source": "projected",
+        "away_sp_id": 621111,
+        "away_sp_source": "projected",
+        "p_lad": 0.4634
+      },
+      {
+        "game_number": 4,
+        "home": "NYY",
+        "away": "LAD",
+        "home_sp_id": 607074,
+        "home_sp_source": "projected",
+        "away_sp_id": 808967,
+        "away_sp_source": "projected",
+        "p_lad": 0.5793
+      },
+      {
+        "game_number": 5,
+        "home": "NYY",
+        "away": "LAD",
+        "home_sp_id": 543037,
+        "home_sp_source": "projected",
+        "away_sp_id": 656427,
+        "away_sp_source": "projected",
+        "p_lad": 0.512
+      },
+      {
+        "game_number": 6,
+        "home": "LAD",
+        "away": "NYY",
+        "home_sp_id": 518489,
+        "home_sp_source": "projected",
+        "away_sp_id": 657376,
+        "away_sp_source": "projected",
+        "p_lad": 0.5459
+      },
+      {
+        "game_number": 7,
+        "home": "LAD",
+        "away": "NYY",
+        "home_sp_id": 621111,
+        "home_sp_source": "projected",
+        "away_sp_id": 661563,
+        "away_sp_source": "projected",
+        "p_lad": 0.4988
+      }
+    ],
+    "p_lad_wins_series": 0.5606,
+    "length_probs": {
+      "4": 0.1267,
+      "5": 0.2509,
+      "6": 0.313,
+      "7": 0.3095
+    },
+    "monte_carlo_cross_check": {
+      "p_lad_wins_series": 0.5607,
+      "standard_error_SAMPLING_ONLY": 0.00111,
+      "n_sims": 200000,
+      "seed": 20260925
+    }
+  },
+  "hindsight_series_solve": {
+    "label": "HINDSIGHT STARTERS, NOT A FORECAST -- every real game (1-5) uses the starter who ACTUALLY pitched, which was not knowable before that game; kept only for comparison against pre_series_forecast, never the headline number. This is v1's 0.5788.",
+    "p_lad_wins_series": 0.5788,
+    "length_probs": {
+      "4": 0.1243,
+      "5": 0.2509,
+      "6": 0.3143,
+      "7": 0.3104
+    },
+    "monte_carlo_cross_check": {
+      "p_lad_wins_series": 0.5796,
+      "standard_error_SAMPLING_ONLY": 0.0011,
+      "n_sims": 200000,
+      "seed": 20260925
+    }
+  },
+  "state_table": [
+    {
+      "k": 0,
+      "lad_wins": 0,
+      "lad_losses": 0,
+      "p_lad_wins_series": 0.5606,
+      "remaining_games": [
+        {
+          "game_number": 1,
+          "home": "LAD",
+          "away": "NYY",
+          "home_sp_id": 656427,
+          "home_sp_source": "actual_announced_game1",
+          "away_sp_id": 543037,
+          "away_sp_source": "actual_announced_game1",
+          "p_lad": 0.5487
+        },
+        {
+          "game_number": 2,
+          "home": "LAD",
+          "away": "NYY",
+          "home_sp_id": 518489,
+          "home_sp_source": "projected",
+          "away_sp_id": 657376,
+          "away_sp_source": "projected",
+          "p_lad": 0.5459
+        },
+        {
+          "game_number": 3,
+          "home": "NYY",
+          "away": "LAD",
+          "home_sp_id": 661563,
+          "home_sp_source": "projected",
+          "away_sp_id": 621111,
+          "away_sp_source": "projected",
+          "p_lad": 0.4634
+        },
+        {
+          "game_number": 4,
+          "home": "NYY",
+          "away": "LAD",
+          "home_sp_id": 607074,
+          "home_sp_source": "projected",
+          "away_sp_id": 808967,
+          "away_sp_source": "projected",
+          "p_lad": 0.5793
+        },
+        {
+          "game_number": 5,
+          "home": "NYY",
+          "away": "LAD",
+          "home_sp_id": 543037,
+          "home_sp_source": "projected",
+          "away_sp_id": 656427,
+          "away_sp_source": "projected",
+          "p_lad": 0.512
+        },
+        {
+          "game_number": 6,
+          "home": "LAD",
+          "away": "NYY",
+          "home_sp_id": 518489,
+          "home_sp_source": "projected",
+          "away_sp_id": 657376,
+          "away_sp_source": "projected",
+          "p_lad": 0.5459
+        },
+        {
+          "game_number": 7,
+          "home": "LAD",
+          "away": "NYY",
+          "home_sp_id": 621111,
+          "home_sp_source": "projected",
+          "away_sp_id": 661563,
+          "away_sp_source": "projected",
+          "p_lad": 0.4988
+        }
+      ]
+    },
+    {
+      "k": 1,
+      "lad_wins": 1,
+      "lad_losses": 0,
+      "p_lad_wins_series": 0.7011,
+      "remaining_games": [
+        {
+          "game_number": 2,
+          "home": "LAD",
+          "away": "NYY",
+          "home_sp_id": 518489,
+          "home_sp_source": "projected",
+          "away_sp_id": 657376,
+          "away_sp_source": "projected",
+          "p_lad": 0.5459
+        },
+        {
+          "game_number": 3,
+          "home": "NYY",
+          "away": "LAD",
+          "home_sp_id": 661563,
+          "home_sp_source": "projected",
+          "away_sp_id": 621111,
+          "away_sp_source": "projected",
+          "p_lad": 0.4634
+        },
+        {
+          "game_number": 4,
+          "home": "NYY",
+          "away": "LAD",
+          "home_sp_id": 607074,
+          "home_sp_source": "projected",
+          "away_sp_id": 808967,
+          "away_sp_source": "projected",
+          "p_lad": 0.5793
+        },
+        {
+          "game_number": 5,
+          "home": "NYY",
+          "away": "LAD",
+          "home_sp_id": 543037,
+          "home_sp_source": "projected",
+          "away_sp_id": 656427,
+          "away_sp_source": "projected",
+          "p_lad": 0.512
+        },
+        {
+          "game_number": 6,
+          "home": "LAD",
+          "away": "NYY",
+          "home_sp_id": 518489,
+          "home_sp_source": "projected",
+          "away_sp_id": 657376,
+          "away_sp_source": "projected",
+          "p_lad": 0.5459
+        },
+        {
+          "game_number": 7,
+          "home": "LAD",
+          "away": "NYY",
+          "home_sp_id": 621111,
+          "home_sp_source": "projected",
+          "away_sp_id": 661563,
+          "away_sp_source": "projected",
+          "p_lad": 0.4988
+        }
+      ]
+    },
+    {
+      "k": 2,
+      "lad_wins": 2,
+      "lad_losses": 0,
+      "p_lad_wins_series": 0.848,
+      "remaining_games": [
+        {
+          "game_number": 3,
+          "home": "NYY",
+          "away": "LAD",
+          "home_sp_id": 657376,
+          "home_sp_source": "projected",
+          "away_sp_id": 518489,
+          "away_sp_source": "projected",
+          "p_lad": 0.5086
+        },
+        {
+          "game_number": 4,
+          "home": "NYY",
+          "away": "LAD",
+          "home_sp_id": 661563,
+          "home_sp_source": "projected",
+          "away_sp_id": 621111,
+          "away_sp_source": "projected",
+          "p_lad": 0.4634
+        },
+        {
+          "game_number": 5,
+          "home": "NYY",
+          "away": "LAD",
+          "home_sp_id": 543037,
+          "home_sp_source": "projected",
+          "away_sp_id": 656427,
+          "away_sp_source": "projected",
+          "p_lad": 0.512
+        },
+        {
+          "game_number": 6,
+          "home": "LAD",
+          "away": "NYY",
+          "home_sp_id": 808967,
+          "home_sp_source": "projected",
+          "away_sp_id": 607074,
+          "away_sp_source": "projected",
+          "p_lad": 0.614
+        },
+        {
+          "game_number": 7,
+          "home": "LAD",
+          "away": "NYY",
+          "home_sp_id": 518489,
+          "home_sp_source": "projected",
+          "away_sp_id": 657376,
+          "away_sp_source": "projected",
+          "p_lad": 0.5459
+        }
+      ]
+    },
+    {
+      "k": 3,
+      "lad_wins": 3,
+      "lad_losses": 0,
+      "p_lad_wins_series": 0.954,
+      "remaining_games": [
+        {
+          "game_number": 4,
+          "home": "NYY",
+          "away": "LAD",
+          "home_sp_id": 661563,
+          "home_sp_source": "projected",
+          "away_sp_id": 518489,
+          "away_sp_source": "projected",
+          "p_lad": 0.5401
+        },
+        {
+          "game_number": 5,
+          "home": "NYY",
+          "away": "LAD",
+          "home_sp_id": 543037,
+          "home_sp_source": "projected",
+          "away_sp_id": 656427,
+          "away_sp_source": "projected",
+          "p_lad": 0.512
+        },
+        {
+          "game_number": 6,
+          "home": "LAD",
+          "away": "NYY",
+          "home_sp_id": 808967,
+          "home_sp_source": "projected",
+          "away_sp_id": 607074,
+          "away_sp_source": "projected",
+          "p_lad": 0.614
+        },
+        {
+          "game_number": 7,
+          "home": "LAD",
+          "away": "NYY",
+          "home_sp_id": 621111,
+          "home_sp_source": "projected",
+          "away_sp_id": 657376,
+          "away_sp_source": "projected",
+          "p_lad": 0.4685
+        }
+      ]
+    },
+    {
+      "k": 4,
+      "lad_wins": 3,
+      "lad_losses": 1,
+      "p_lad_wins_series": 0.9138,
+      "remaining_games": [
+        {
+          "game_number": 5,
+          "home": "NYY",
+          "away": "LAD",
+          "home_sp_id": 543037,
+          "home_sp_source": "projected",
+          "away_sp_id": 518489,
+          "away_sp_source": "projected",
+          "p_lad": 0.5192
+        },
+        {
+          "game_number": 6,
+          "home": "LAD",
+          "away": "NYY",
+          "home_sp_id": 656427,
+          "home_sp_source": "projected",
+          "away_sp_id": 607074,
+          "away_sp_source": "projected",
+          "p_lad": 0.5823
+        },
+        {
+          "game_number": 7,
+          "home": "LAD",
+          "away": "NYY",
+          "home_sp_id": 808967,
+          "home_sp_source": "projected",
+          "away_sp_id": 657376,
+          "away_sp_source": "projected",
+          "p_lad": 0.5711
+        }
+      ]
+    },
+    {
+      "k": 5,
+      "lad_wins": 4,
+      "lad_losses": 1,
+      "p_lad_wins_series": 1.0,
+      "remaining_games": [
+        {
+          "game_number": 6,
+          "home": "LAD",
+          "away": "NYY",
+          "home_sp_id": 518489,
+          "home_sp_source": "projected",
+          "away_sp_id": 607074,
+          "away_sp_source": "projected",
+          "p_lad": 0.5894
+        },
+        {
+          "game_number": 7,
+          "home": "LAD",
+          "away": "NYY",
+          "home_sp_id": 808967,
+          "home_sp_source": "projected",
+          "away_sp_id": 657376,
+          "away_sp_source": "projected",
+          "p_lad": 0.5711
+        }
+      ]
+    }
+  ],
+  "state_table_note": "Row k is conditioned on the REAL record after k games, via mm.conditional_series_win_prob -- k certain wins/losses padded onto postseason.exact_series_probability, which is otherwise unmodified. Games already played (and game 1 always) use real starters; every other remaining game, including 6 and 7, is assigned to whichever rotation-pool member has rested longest as of right after game k, excluding anyone who started in the previous 3 team games -- never left as 'unknown', never a repeat within 4 consecutive team games.",
+  "factor_dispositions": {
+    "starting_pitcher": "MODEL-USED",
+    "bullpen_quality": "MODEL-USED",
+    "park_factor": "MODEL-USED",
+    "bullpen_recent_availability": "CONTEXT ONLY",
+    "rest_travel": "CONTEXT ONLY",
+    "lineup_composition": "UNAVAILABLE",
+    "documented_injuries": "UNAVAILABLE"
+  }
+}

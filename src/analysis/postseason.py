@@ -67,10 +67,10 @@ class PostseasonError(ValueError):
 def _check_game_prob(p, game_index: int) -> None:
     if isinstance(p, bool) or not isinstance(p, (int, float)):
         raise PostseasonError(
-            f"game {game_index + 1}: win probability must be a number, got {p!r}")
+            f"game {game_index + 1}: per-game probability must be a number, got {p!r}")
     if not (0.0 <= p <= 1.0) or (isinstance(p, float) and math.isnan(p)):
         raise PostseasonError(
-            f"game {game_index + 1}: win probability out of [0, 1]: {p!r}")
+            f"game {game_index + 1}: per-game probability out of [0, 1]: {p!r}")
 
 
 def _validate_series_inputs(game_probs: Sequence[float], k: int) -> None:
@@ -190,7 +190,7 @@ def simulate_series(game_probs: Sequence[float], k: int, *,
     """
     _validate_series_inputs(game_probs, k)
     if isinstance(n_sims, bool) or not isinstance(n_sims, int) or n_sims < 1:
-        raise PostseasonError(f"n_sims must be a positive integer, got {n_sims!r}")
+        raise PostseasonError(f"number of simulations must be a positive integer, got {n_sims!r}")
     rng = random.Random(seed)
     wins = 0
     length_counts: dict = {}
@@ -243,11 +243,11 @@ def game_probs_from_pattern(p_neutral: float, home_flags: Sequence[bool], *,
     value this project's evidence rules forbid. Callers own that number.
     """
     if isinstance(p_neutral, bool) or not isinstance(p_neutral, (int, float)):
-        raise PostseasonError(f"p_neutral must be a number, got {p_neutral!r}")
+        raise PostseasonError(f"neutral-site probability must be a number, got {p_neutral!r}")
     if not (0.0 <= p_neutral <= 1.0):
-        raise PostseasonError(f"p_neutral out of [0, 1]: {p_neutral!r}")
+        raise PostseasonError(f"neutral-site probability out of [0, 1]: {p_neutral!r}")
     if isinstance(home_edge, bool) or not isinstance(home_edge, (int, float)):
-        raise PostseasonError(f"home_edge must be a number, got {home_edge!r}")
+        raise PostseasonError(f"home-field adjustment must be a number, got {home_edge!r}")
     out = []
     for is_home in home_flags:
         p = p_neutral + (home_edge if is_home else -home_edge)
@@ -302,16 +302,17 @@ def _home_field_holder(a_info: TeamInfo, b_info: TeamInfo, round_format: dict) -
         if wa is None or wb is None:
             raise PostseasonError(
                 f"{round_format['name']} home field is record-based but "
-                f"win_pct is missing for {a_info.get('team')!r} or "
+                f"win percentage is missing for {a_info.get('team')!r} or "
                 f"{b_info.get('team')!r}")
         if wa == wb:
             raise PostseasonError(
                 f"{round_format['name']}: {a_info['team']!r} and "
-                f"{b_info['team']!r} are tied on regular-season win_pct "
-                f"({wa!r}); MLB's real tiebreak (head-to-head, then "
-                f"division record, then intraleague record) needs data "
-                f"this engine does not model -- resolve it explicitly "
-                f"rather than let this guess (see postseason_config.py)")
+                f"{b_info['team']!r} are tied on regular-season win "
+                f"percentage ({wa!r}); MLB's real tiebreak (head-to-head, "
+                f"then division record, then intraleague record) needs "
+                f"data this engine does not model -- resolve it explicitly "
+                f"rather than let this guess (see this project's postseason "
+                f"configuration file)")
         return "a" if wa > wb else "b"
     raise PostseasonError(f"unknown home_field_by rule: {rule!r}")
 
@@ -375,7 +376,7 @@ def _require_league_seeds(league_seeds: Mapping[int, TeamInfo]) -> None:
             raise PostseasonError(f"missing seed {seed} in league_seeds")
     teams = [info["team"] for info in league_seeds.values()]
     if len(set(teams)) != len(teams):
-        raise PostseasonError(f"duplicate team name(s) in league_seeds: {teams!r}")
+        raise PostseasonError(f"duplicate team name(s) in the supplied league seeds: {teams!r}")
 
 
 def league_pennant_probabilities(league_seeds: Mapping[int, TeamInfo],
