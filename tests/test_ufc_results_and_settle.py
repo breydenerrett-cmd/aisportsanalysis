@@ -191,12 +191,19 @@ class SettleForDate(unittest.TestCase):
         self.assertEqual(row["wins"], 0)
         self.assertEqual(row["losses"], 0)
 
-    def test_no_result_entered_yet_voids_rather_than_loses(self):
+    def test_no_result_entered_yet_stays_unresolved_never_a_loss_or_void(self):
+        """A bout with genuinely NOTHING entered for it is not yet a VERIFIED
+        terminal non-result (see card_ledger._explicit_void and
+        _results_by_game_id's own docstring on the four cases that ARE) --
+        it stays UNRESOLVED and is retried on a later settle_for_date call,
+        never guessed as a loss and never sealed as a permanent void."""
         self._publish_one_pick()
         row = ufc_report.settle_for_date(DATE, now=NOW, path=self.ledger_path,
                                          results_path=self.results_path)
-        self.assertEqual(row["voids"], 1)
+        self.assertEqual(row["unresolved"], 1)
+        self.assertEqual(row["voids"], 0)
         self.assertEqual(row["losses"], 0)
+        self.assertEqual(card_ledger.RESULT_UNRESOLVED, row["picks"][0]["result"])
 
     def test_settling_twice_is_a_noop(self):
         self._publish_one_pick()

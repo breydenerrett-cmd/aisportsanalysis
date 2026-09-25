@@ -470,16 +470,22 @@ def settled_row(date: str, *, path: Optional[str] = None,
 
 
 def has_unresolved_picks(row: Optional[Mapping]) -> bool:
-    """True if a settled row (from `settled_row`/`settle`) still carries at
-    least one UNRESOLVED pick, prop pick, or total pick.
+    """True if a V1-SHAPED settled row (from `settled_row`/`settle`) still
+    carries at least one UNRESOLVED pick, prop pick, or total pick.
 
     Public so a caller can build the "fully done, do not re-settle" gate
     `_settle_one_date` uses internally:
     `settled_row(date) is not None and not has_unresolved_picks(row)`.
-    `src/report/nfl_card.py` and `src/report/ufc_card.py` currently gate on
-    `settled_row(...) is not None` alone (their own settle_for_date
-    wrappers) -- see this task's report for why that is now imprecise and
-    an interface request rather than something fixed here.
+    `src/report/nfl_card.py` and `src/report/ufc_card.py` gate their own
+    settle_for_date wrappers on exactly this, since both call V1's `settle`.
+
+    READS ONLY `picks`/`prop_picks`/`total_picks`. A V2 settled row (from
+    `settle_v2`) carries its entries in one `graded` list instead and has
+    none of those three keys -- calling this on a V2 row silently returns
+    False (nothing to iterate, not an error), which would make a V2 date
+    with a genuinely UNRESOLVED entry look "fully done" forever. `settle_v2`
+    uses its own `_v2_has_unresolved` below for exactly that reason -- never
+    this function.
     """
     if not row:
         return False
@@ -841,6 +847,39 @@ def _score(value) -> Optional[int]:
         return None
 
 
+def _explicit_void(result: Optional[Mapping]) -> Optional[dict]:
+    """A VERIFIED terminal non-result the CALLER has already confirmed --
+    an official draw/no-contest/cancellation, a bout whose fighter pairing
+    changed since the pick locked, a game officially called and never made
+    up -- as opposed to "no result yet", which stays UNRESOLVED (see
+    `grade_pick`'s docstring). Distinct from both: a missing/None `result`
+    is the ordinary "nothing to look at yet" case and must NOT self-void.
+
+    The signal is `result["void"]` truthy on the SAME mapping a caller would
+    otherwise have handed in with `away_score`/`home_score` (or, for
+    `grade_prop_pick`, the box row it looked up) -- ADDED for
+    `src.report.ufc_card`'s draw/no-contest/cancelled/fighter-change cases
+    (found 2026-09-25: bb15ffa3 made a missing result UNRESOLVED rather than
+    VOID, which is correct for "no result yet" but left these four VERIFIED
+    terminal outcomes sitting UNRESOLVED forever in production, since UFC
+    never reaches a final score for any of them). `reason`, when given, is
+    carried through so the VOID pick still explains itself -- an
+    unexplained VOID is exactly what this ledger's history/record pages
+    refuse to show (see `tests/test_card_record_page.py`'s
+    "a VOID pick must explain itself, not read blank").
+
+    Callers: `if (explicit := _explicit_void(result)) is not None: return
+    explicit`, before falling through to their own missing-data UNRESOLVED
+    path. `grade_pick`/`grade_total_pick` check this after the identity gate
+    (a pick with no game identity is a DATA problem regardless of what the
+    caller signals); `grade_prop_pick` checks it on the looked-up box row.
+    """
+    if not isinstance(result, Mapping) or not result.get("void"):
+        return None
+    return {"result": RESULT_VOID, "profit_units": 0.0,
+            "reason": result.get("reason") or "result marked void"}
+
+
 def grade_pick(pick: Mapping, result: Mapping) -> dict:
     """One frozen pick against one final score.
 
@@ -857,10 +896,12 @@ def grade_pick(pick: Mapping, result: Mapping) -> dict:
     its next pass; see the module docstring's "Support partial settlement".
 
     VOID here is reserved for the pick's OWN frozen data being unbettable
-    (an unrecognised side, no line, an unusable price) -- a documented
-    house-rule refusal that no amount of waiting will change. That is a
-    genuinely different fact from "we do not have this game's result yet",
-    which is why the two are no longer the same return value.
+    (an unrecognised side, no line, an unusable price) OR a caller's
+    EXPLICIT, verified signal that this game will never produce a score --
+    see `_explicit_void` -- a documented house-rule refusal that no amount
+    of waiting will change. That is a genuinely different fact from "we do
+    not have this game's result yet", which is why the two are no longer
+    the same return value.
     """
     # A game total on the main card (NFL_CARD_V2 publishes spreads, totals
     # and moneylines as ONE system, so they share `picks`). Routed before the
@@ -879,6 +920,10 @@ def grade_pick(pick: Mapping, result: Mapping) -> dict:
         return {"result": RESULT_UNRESOLVED, "profit_units": 0.0,
                 "unresolved_kind": UNRESOLVED_DATA,
                 "reason": "pick carries no game identity to look up a result"}
+
+    explicit = _explicit_void(result)
+    if explicit is not None:
+        return explicit
 
     away = _score(result.get("away_score"))
     home = _score(result.get("home_score"))
@@ -981,6 +1026,11 @@ def grade_prop_pick(pick: Mapping, box_by_game_and_player: Mapping, *,
     from silence. `box_captured_game_pks=None` (the default, e.g. an older
     caller that has not been updated to pass it) means "cannot verify
     either way", which fails toward UNRESOLVED, never toward a guessed VOID.
+
+    A caller with a VERIFIED reason this player will never get a box row
+    (see `_explicit_void`) passes it as the "box row" itself, shaped
+    `{"void": True, "reason": ...}`, keyed the same way a real batter row
+    would be -- checked before the None/participation branches below.
     """
     from src.board import settle_props
 
@@ -1008,6 +1058,9 @@ def grade_prop_pick(pick: Mapping, box_by_game_and_player: Mapping, *,
 
     game_pk_str = str(pick.get("game_pk"))
     row = box_by_game_and_player.get((game_pk_str, pick.get("player")))
+    explicit = _explicit_void(row)
+    if explicit is not None:
+        return explicit
     if row is None:
         if box_captured_game_pks is not None and game_pk_str in box_captured_game_pks:
             return {"result": RESULT_VOID, "profit_units": 0.0,
@@ -1066,6 +1119,10 @@ def grade_total_pick(pick: Mapping, result: Mapping) -> dict:
         return {"result": RESULT_UNRESOLVED, "profit_units": 0.0,
                 "unresolved_kind": UNRESOLVED_DATA,
                 "reason": "pick carries no game identity to look up a result"}
+
+    explicit = _explicit_void(result)
+    if explicit is not None:
+        return explicit
 
     away = _score(result.get("away_score"))
     home = _score(result.get("home_score"))
@@ -3025,21 +3082,70 @@ def publish_v1_shadow(card: Mapping, *, now: Optional[str] = None,
     return _ledger(resolved_path).append(payload)
 
 
+def _v2_has_unresolved(row: Optional[Mapping]) -> bool:
+    """True if a V2 settled row (`settle_v2`'s own shape -- one `graded`
+    list holding both former-all_bets and former-withdrawn entries, tagged
+    by their own `withdrawn` bool, NOT V1's `picks`/`prop_picks`/
+    `total_picks` split) still carries an UNRESOLVED entry.
+
+    `has_unresolved_picks` above reads V1's shape and would silently return
+    False here (a V2 row has no `picks` key at all) -- that is exactly the
+    bug this task fixes: reusing it would leave `settle_v2`'s own re-entrant
+    gate believing a date with a genuinely UNRESOLVED entry was already
+    "fully done", the same permanent-seal defect as the `settled_row(...)
+    is not None` check this replaces, just one layer deeper.
+    """
+    if not row:
+        return False
+    for entry in row.get("graded") or ():
+        if entry.get("result") == RESULT_UNRESOLVED:
+            return True
+    return False
+
+
 def settle_v2(date: str, results_by_game_pk: Mapping, *,
               prop_box_rows: Optional[Sequence] = None,
               now: Optional[str] = None,
               path: Optional[str] = None) -> Optional[dict]:
-    """Grade one published V2 card and append the outcome as a NEW row.
+    """Grade one published V2 card's currently-gradable entries and append
+    the outcome as a NEW row -- SUPPORTING PARTIAL SETTLEMENT, mirroring
+    V1's `settle` (see its docstring's "state machine" section) rather than
+    V2's own original one-shot version.
 
-    Grades every entry on the newest row for date: every entry in all_bets
-    (locked picks AND locked/provisional fills -- a provisional entry left
-    on the last row because no lock run ever happened for it is graded and
-    flagged graded_without_lock_run, never silently skipped) and every entry
-    in withdrawn, each exactly once, each carrying the entry_class and
-    price_class it held at ITS OWN graded version. close_calls_not_shown is
-    never graded -- those were never shown to a reader and are not bets of
-    record.
+    WHY THIS CHANGED (bb15ffa3 made grade_pick/grade_prop_pick return
+    UNRESOLVED instead of a permanent VOID on a missing result, and V1's
+    `settle` was made re-entrant to match -- see that function's docstring.
+    `settle_v2` was NOT updated then: it still refused to run a second time
+    for any date that already had a settled row at all, so a V2 entry
+    missing its result on the FIRST settlement attempt was recorded
+    UNRESOLVED and the date was sealed -- never graded again. That is worse
+    than the old pre-bb15ffa3 behaviour, where it at least became a counted
+    VOID. This restores re-entrancy for the public V2 card the same way V1
+    already has it.)
 
+    Grades every entry on the newest PUBLISHED row for date: every entry in
+    all_bets (locked picks AND locked/provisional fills -- a provisional
+    entry left on the last row because no lock run ever happened for it is
+    graded and flagged graded_without_lock_run, never silently skipped) and
+    every entry in withdrawn, each exactly once, each carrying the
+    entry_class and price_class it held at ITS OWN graded version.
+    close_calls_not_shown is never graded -- those were never shown to a
+    reader and are not bets of record.
+
+    THE STATE MACHINE, PER ENTRY, ACROSS REPEATED CALLS -- identical to
+    V1's: an entry graded WIN/LOSS/PUSH/VOID on an earlier pass is TERMINAL
+    and is carried forward byte-for-byte on this and every later pass (never
+    re-graded, so a retry can never double-count or flip it); an entry that
+    was UNRESOLVED (or is new since the last pass) is graded fresh against
+    THIS call's `results_by_game_pk`/`prop_box_rows`. Identity across passes
+    is `_v2_entry_key` -- the same identity `_lock_and_merge_v2`/
+    `_apply_g11_v2` already use for "is this the same bet" -- so a carried
+    entry is found by WHAT it is, never by its position in the list.
+
+    Returns None when there is nothing to do: no card for that date, the
+    date already settled with nothing left UNRESOLVED, or this pass changed
+    nothing (every entry's fresh-or-carried grade reads identically to the
+    last settled row -- see `settle`'s identical "nothing new" guard).
     Reuses grade_pick and grade_prop_pick unmodified: V2's grading
     arithmetic (moneyline/run-line win-loss-push, prop over/under/push, flat
     one-unit stakes) is identical to V1's, only the population and the price
@@ -3049,14 +3155,23 @@ def settle_v2(date: str, results_by_game_pk: Mapping, *,
     row = published_row(date, path=resolved_path)
     if row is None:
         return None
-    if settled_row(date, path=resolved_path) is not None:
+    prior = settled_row(date, path=resolved_path)
+    if prior is not None and not _v2_has_unresolved(prior):
         return None
 
     all_bets = row.get("all_bets") or ()
     graded_without_lock_run = bool(all_bets) and not any(e.get("locked") for e in all_bets)
     box_index = _index_prop_box_rows(prop_box_rows)
 
+    prior_by_key = _index_by_key(prior.get("graded") if prior else None, _v2_entry_key)
+
     def _grade_one(entry: Mapping, *, withdrawn: bool) -> dict:
+        # TERMINAL carries forward untouched -- see this function's own
+        # docstring on the state machine, and settle()'s _carried_or_fresh,
+        # which this mirrors exactly.
+        carried = prior_by_key.get(_v2_entry_key(entry))
+        if carried is not None and carried.get("result") != RESULT_UNRESOLVED:
+            return dict(carried)
         if entry.get("kind") == "prop":
             grade = grade_prop_pick(entry, box_index)
         else:
@@ -3073,29 +3188,65 @@ def settle_v2(date: str, results_by_game_pk: Mapping, *,
     graded = [_grade_one(e, withdrawn=False) for e in all_bets]
     graded += [_grade_one(e, withdrawn=True) for e in (row.get("withdrawn") or ())]
 
+    old_graded = prior.get("graded") or [] if prior else []
+    if prior is not None and len(graded) == len(old_graded) and (
+            {_v2_entry_key(g): g for g in graded}
+            == {_v2_entry_key(g): g for g in old_graded}):
+        # NOTHING NEW -- see settle()'s identical "_unchanged" guard. Without
+        # this, a blind retry of a still-partially-UNRESOLVED date would
+        # append a pure-timestamp-noise row every time it is called.
+        return None
+
     def _tally(entries):
         wins = sum(1 for g in entries if g["result"] == RESULT_WIN)
         losses = sum(1 for g in entries if g["result"] == RESULT_LOSS)
         pushes = sum(1 for g in entries if g["result"] == RESULT_PUSH)
         voids = sum(1 for g in entries if g["result"] == RESULT_VOID)
+        unresolved = sum(1 for g in entries if g["result"] == RESULT_UNRESOLVED)
         staked = wins + losses
         profit = round(sum(g.get("profit_units") or 0.0 for g in entries
                            if g["result"] in (RESULT_WIN, RESULT_LOSS)), 4)
-        return wins, losses, pushes, voids, staked, profit
+        return wins, losses, pushes, voids, unresolved, staked, profit
 
-    wins, losses, pushes, voids, staked, profit = _tally(graded)
+    wins, losses, pushes, voids, unresolved, staked, profit = _tally(graded)
 
     payload = {
         "kind": KIND_SETTLED,
         "date": date,
         "settled_utc": now or datetime.now(timezone.utc).isoformat(),
         "rule": row.get("rule"),
+        "published_row_hash": row.get("row_hash"),
+        # WHICH PASS THIS IS, and what it extends -- V1's identical fields
+        # (see `settle`'s own docstring), so a reader can walk a V2 date's
+        # settlement history without re-deriving it from physical file order.
+        "settlement_pass": (prior.get("settlement_pass", 0) + 1) if prior else 0,
+        "supersedes_row_hash": prior.get("row_hash") if prior else None,
         "graded": graded,
         "wins": wins, "losses": losses, "pushes": pushes, "voids": voids,
+        "unresolved": unresolved,
         "n_staked": staked, "profit_units": profit,
         "graded_without_lock_run": graded_without_lock_run,
     }
     return _ledger(resolved_path).append(payload)
+
+
+def latest_settled_rows_v2(rows) -> list:
+    """The NEWEST `card_settled` row per date, in first-settled date order.
+
+    `settle_v2` is re-entrant (2026-09-25): a date with an UNRESOLVED entry
+    is settled again once its result arrives, and every pass writes a FULL
+    row (terminal entries carried forward byte-identical, the newly graded
+    ones added). So the newest row per date is that date's complete
+    effective record, and summing every physical row would count the
+    carried-forward entries once per pass. Physical order is newest last,
+    the same rule `settled_row` uses. Every V2 reader that aggregates
+    settled rows goes through this, never a raw KIND_SETTLED walk.
+    """
+    latest: dict = {}
+    for row in rows:
+        if row.get("kind") == KIND_SETTLED:
+            latest[row.get("date")] = row
+    return list(latest.values())
 
 
 def record_v2(*, path: Optional[str] = None, since: Optional[str] = None,
@@ -3136,9 +3287,7 @@ def record_v2(*, path: Optional[str] = None, since: Optional[str] = None,
             fig["n_staked"] += 1
             fig["profit_units"] += entry.get("profit_units") or 0.0
 
-    for row in _ledger(resolved_path).read():
-        if row.get("kind") != KIND_SETTLED:
-            continue
+    for row in latest_settled_rows_v2(_ledger(resolved_path).read()):
         date = row.get("date") or ""
         if since and date < since:
             continue
@@ -3191,8 +3340,7 @@ def history_v2(*, path: Optional[str] = None, limit: Optional[int] = 60) -> dict
     `truncated` the same honest way `history` does, never silently.
     """
     resolved_path = path if path is not None else CARD_STORE_V2
-    settled = [row for row in _ledger(resolved_path).read()
-              if row.get("kind") == KIND_SETTLED]
+    settled = latest_settled_rows_v2(_ledger(resolved_path).read())
     settled.sort(key=lambda r: r.get("date") or "", reverse=True)
     total_days = len(settled)
     capped = settled if limit is None else settled[:max(limit, 0)]

@@ -18,14 +18,20 @@ results API to settle against: `settle_for_date` reads
 `src.pipeline.ufc_results`, the manually-entered store `ufc result` writes
 to, keyed by FIGHTER NAMES rather than a provider id.
 
-FIGHTER-CHANGE VOID, FOR FREE. `ufc_results.result_for_fight` only matches
-a manual result to a bout when the two fighter names agree (in either
-order) with what was published. If a fighter pair changed after a pick
-locked, whoever enters the result types the fighters who actually fought --
-which will not match the locked pick's names, so no result is found for
-that bout, and `card_ledger.grade_pick` VOIDs it exactly as it VOIDs any
-pick with no final score. No separate "did the fighters change" check is
-needed; the name-matched lookup IS that check.
+VERIFIED-TERMINAL BOUTS VOID EXPLICITLY, "NO RESULT YET" STAYS OPEN.
+`ufc_results.result_for_fight` only matches a manual result to a bout when
+the two fighter names agree (in either order) with what was published. A
+draw, no-contest, or cancellation is a definitive outcome the moment it is
+entered (`ufc_results.record_result`'s own `outcome` field), and a fighter
+pair that changed after a pick locked is provable the moment EITHER
+originally-named fighter turns up in some OTHER entered result for the same
+date -- see `_results_by_game_id`/`_fighter_names_seen`'s own docstrings for
+exactly how. Both signal an EXPLICIT VOID (`card_ledger._explicit_void`) to
+`card_ledger.grade_pick`, never a guess. A bout with genuinely nothing
+entered for it anywhere on the date is absent from the results map and
+reads UNRESOLVED (bb15ffa3), retried on the next `settle_for_date` call --
+that is the ordinary "no result yet" case, not a terminal one, and must
+never be voided.
 """
 
 from __future__ import annotations
@@ -222,29 +228,89 @@ def publish_for_date(date_str: str, *, now: Optional[datetime] = None,
     return card_ledger.publish(card, now=now.isoformat(), path=path, sport="mma")
 
 
+def _fighter_names_seen(date_str: str, results_path=None) -> set:
+    """Every fighter name (normalized), from EVERY manually-entered result
+    on this date, win or void-outcome alike -- `_results_by_game_id`'s way
+    of telling "nothing recorded for this bout yet" (stays UNRESOLVED) from
+    "a result WAS recorded for this date, just not for this bout's own
+    pairing" (a verified late fighter change -- see that function's own
+    docstring). Reading every row rather than only this one pick's own
+    lookup is deliberate: a name that shows up in SOME other bout's result
+    proves that fighter fought SOMEONE on this date, which the exact-match
+    lookup alone cannot tell a genuinely-not-entered-yet bout from.
+    """
+    kwargs = {"path": results_path} if results_path is not None else {}
+    names = set()
+    for row in ufc_results.results_for_date(date_str, **kwargs):
+        parsed = ufc_results.split_fight(row.get("fight") or "")
+        if parsed is None:
+            continue
+        names.add(ufc_results.normalize_name(parsed[0]))
+        names.add(ufc_results.normalize_name(parsed[1]))
+    return names
+
+
 def _results_by_game_id(date_str: str, picks: list,
                         results_path=None) -> dict:
-    """{game_id: {"home_score", "away_score"}} synthesized from manual
-    results, so this can be graded through `card_ledger.grade_pick`'s
-    existing moneyline arithmetic unchanged (winner's side scores 1, the
-    other 0). A bout with no matching result -- not yet entered, OR its
-    fighter pair changed since lock (see module docstring) -- is simply
-    absent from this map, which `grade_pick` already treats as VOID. A
-    draw/no-contest/cancelled result is also left absent, for the same
-    reason: none of those settle a moneyline bet either way.
+    """{game_id: result} synthesized from manual results, graded through
+    `card_ledger.grade_pick` -- a WIN/LOSS entry ({"home_score",
+    "away_score"}, winner's side scores 1, the other 0) for a matched bout,
+    or an explicit VOID entry ({"void": True, "reason": ...}, see
+    `card_ledger._explicit_void`) for one of three VERIFIED terminal
+    non-results:
+
+      * the bout was ruled a draw, no-contest, or cancelled -- a definitive
+        outcome `ufc_results.record_result` already captures structurally
+        (its own `outcome` field), so this is not a guess;
+      * the fighter pairing changed since this pick locked -- proven by
+        `_fighter_names_seen` above: this pick's own bout has no exact
+        match, but ONE of its two fighters turns up in some OTHER entered
+        result for the same date, which can only mean that fighter faced a
+        replacement opponent.
+
+    FOUND 2026-09-25 (Opus integration review of bb15ffa3): before this
+    fix, all four cases above left the bout absent from this map, which
+    `grade_pick` used to treat as VOID but now (bb15ffa3 -- see its own
+    docstring) treats as UNRESOLVED, correctly, for the ordinary "no result
+    entered yet" case. But these four are not "not yet" -- they are
+    definitively never going to produce a moneyline winner, and the old
+    behaviour left them UNRESOLVED FOREVER in production (nothing ever
+    re-grades them, since no later settle_for_date call can ever discover a
+    score that will never exist). A bout with genuinely NOTHING entered for
+    it anywhere on the date stays absent from this map, exactly as before --
+    `grade_pick` reads that as UNRESOLVED and retries on the next call.
     """
     kwargs = {"path": results_path} if results_path is not None else {}
     out = {}
+    seen_names = None  # lazily computed -- only needed on a lookup miss
     for pick in picks:
         home, away = pick.get("home_team"), pick.get("away_team")
-        result = ufc_results.result_for_fight(date_str, home, away, **kwargs)
-        if result is None or result.get("outcome") in ufc_results.VOID_OUTCOMES:
-            continue
-        winner = result.get("winner")
-        home_won = ufc_results.normalize_name(winner) == ufc_results.normalize_name(home)
         gid = pick.get("game_id")
-        out[gid] = {"home_score": 1 if home_won else 0,
-                    "away_score": 0 if home_won else 1}
+        result = ufc_results.result_for_fight(date_str, home, away, **kwargs)
+        if result is not None:
+            outcome = result.get("outcome")
+            if outcome in ufc_results.VOID_OUTCOMES:
+                out[gid] = {"void": True,
+                           "reason": f"bout ruled {outcome.replace('_', ' ')}"}
+                continue
+            winner = result.get("winner")
+            home_won = ufc_results.normalize_name(winner) == ufc_results.normalize_name(home)
+            out[gid] = {"home_score": 1 if home_won else 0,
+                        "away_score": 0 if home_won else 1}
+            continue
+
+        # NO EXACT MATCH for this pick's own pairing. If EITHER named
+        # fighter shows up in some OTHER result entered for this date, that
+        # fighter fought someone else -- a verified pairing change, not a
+        # "not yet" (see _fighter_names_seen's docstring). Neither name
+        # appearing anywhere just means this bout has not been entered at
+        # all yet, which must stay absent (UNRESOLVED), not void.
+        if seen_names is None:
+            seen_names = _fighter_names_seen(date_str, results_path=results_path)
+        if (ufc_results.normalize_name(home) in seen_names
+                or ufc_results.normalize_name(away) in seen_names):
+            out[gid] = {"void": True,
+                       "reason": "fighter pairing changed since this pick locked"}
     return out
 
 
@@ -254,12 +320,19 @@ def settle_for_date(date_str: str, *, now: Optional[datetime] = None,
     """Settle one date's UFC card against manually-entered results.
 
     Returns None when there is nothing to settle (no published card, or
-    already settled) -- same contract as `nfl_card.settle_for_date`.
+    already FULLY settled -- nothing left UNRESOLVED) -- same contract as
+    `nfl_card.settle_for_date`. Re-entrant: a date with an UNRESOLVED pick
+    (a bout with no result entered yet) is retried on a later call, same as
+    `card_ledger.settle()`'s own partial-settlement support.
     """
     published = card_ledger.published_row(date_str, sport="mma", path=path)
     if published is None:
         return None
-    if card_ledger.settled_row(date_str, sport="mma", path=path) is not None:
+    # FULLY settled means "nothing left UNRESOLVED" now, not merely "a
+    # settled row exists" -- see nfl_card.settle_for_date's identical fix
+    # and card_ledger.settle()'s own docstring on partial settlement.
+    existing = card_ledger.settled_row(date_str, sport="mma", path=path)
+    if existing is not None and not card_ledger.has_unresolved_picks(existing):
         return None
 
     results_map = _results_by_game_id(

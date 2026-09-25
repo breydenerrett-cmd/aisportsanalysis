@@ -258,18 +258,27 @@ class Selection(unittest.TestCase):
 
 class GradingAndRecord(unittest.TestCase):
     def test_spread_and_total_picks_grade_on_the_main_card(self):
+        # Every real NFL pick carries sport="nfl" + game_id (grade_pick's
+        # identity gate reads game_id for a non-MLB sport) -- the fixture
+        # must too, or the identity gate itself (not the grading arithmetic
+        # this test names) is what fires, UNRESOLVED_DATA rather than a
+        # graded result.
         result = {"away_score": 24, "home_score": 21}          # home lost by 3
         spread = card_ledger.grade_pick(
-            {"market": "spread", "side": "home", "line": 3.5, "price": -110}, result)
+            {"sport": "nfl", "game_id": "g1", "market": "spread", "side": "home",
+             "line": 3.5, "price": -110}, result)
         self.assertEqual(spread["result"], card_ledger.RESULT_WIN)
         pushed = card_ledger.grade_pick(
-            {"market": "spread", "side": "home", "line": 3.0, "price": -110}, result)
+            {"sport": "nfl", "game_id": "g1", "market": "spread", "side": "home",
+             "line": 3.0, "price": -110}, result)
         self.assertEqual(pushed["result"], card_ledger.RESULT_PUSH)
         over = card_ledger.grade_pick(
-            {"market": "total", "side": "over", "line": 44.5, "price": -110}, result)
+            {"sport": "nfl", "game_id": "g1", "market": "total", "side": "over",
+             "line": 44.5, "price": -110}, result)
         self.assertEqual(over["result"], card_ledger.RESULT_WIN)
         under = card_ledger.grade_pick(
-            {"market": "total", "side": "under", "line": 45.0, "price": -110}, result)
+            {"sport": "nfl", "game_id": "g1", "market": "total", "side": "under",
+             "line": 45.0, "price": -110}, result)
         self.assertEqual(under["result"], card_ledger.RESULT_PUSH)
 
     def _ledger_with_both_rules(self, folder):

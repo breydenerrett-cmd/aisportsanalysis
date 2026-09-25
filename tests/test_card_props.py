@@ -390,15 +390,23 @@ class LedgerSettle(unittest.TestCase):
         self.assertAlmostEqual(0.7143, by_player["Winner"]["profit_units"], places=3)
         self.assertEqual(-1.0, by_player["Loser"]["profit_units"])
 
-    def test_settling_with_no_box_rows_voids_every_prop_pick_not_a_crash(self):
+    def test_settling_with_no_box_rows_leaves_every_prop_pick_unresolved_not_a_crash(self):
+        # No box rows captured for this game at all -- not the same as a
+        # captured box that proves this player did not play (see
+        # test_win_loss_push_void_from_synthetic_box_rows's "Ghost" case,
+        # which DOES void). With nothing captured yet, this is the ordinary
+        # "no result yet" case and must stay UNRESOLVED, never a guessed
+        # LOSS and never a permanent VOID.
         pick = daily_card._build_prop_pick(
             _contract(player="Nobody Home", game_pk=2001), position=1)
         self._publish([pick])
         row = card_ledger.settle(
             "2026-09-12", {1001: {"away_score": 1, "home_score": 4}},
             path=self.path)
-        self.assertEqual(1, row["prop_voids"])
+        self.assertEqual(1, row["prop_unresolved"])
+        self.assertEqual(0, row["prop_voids"])
         self.assertEqual(0, row["prop_wins"])
+        self.assertEqual(0, row["prop_losses"])
 
     def test_the_published_prop_picks_are_never_rewritten_by_settle(self):
         pick = daily_card._build_prop_pick(

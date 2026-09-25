@@ -942,11 +942,15 @@ def grade_decision(decision: Mapping, box: BoxIndex, results: Mapping, *,
 
     score = {"away_score": away, "home_score": home}
     if arm.grade_as == GRADE_RUN_LINE:
-        graded = card_ledger.grade_pick({"market": "run_line", "side": decision.get("side"),
+        # game_pk: card_ledger's graders now return UNRESOLVED for a pick with
+        # no game identity (2026-09-25), even when the caller hands them the
+        # score it already looked up by that identity.
+        graded = card_ledger.grade_pick({"market": "run_line", "game_pk": gpk,
+                                         "side": decision.get("side"),
                                          "line": float(decision["line"]),
                                          "price": decision.get("price")}, score)
     else:
-        graded = card_ledger.grade_total_pick({"side": decision.get("side"),
+        graded = card_ledger.grade_total_pick({"game_pk": gpk, "side": decision.get("side"),
                                                "line": float(decision["line"]),
                                                "price": decision.get("price")}, score)
     out = {"result": graded["result"],

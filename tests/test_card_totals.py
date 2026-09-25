@@ -519,9 +519,13 @@ class LedgerSettle(unittest.TestCase):
         over_win = self._pick(2001, line=8.5, side="over")     # 5+6=11 > 8.5
         over_loss = self._pick(2002, line=8.5, side="over")    # 2+3=5 < 8.5
         under_push = self._pick(2003, line=9.0, side="under")  # 4+5=9 == 9.0
-        void_pick = self._pick(2004, line=8.5, side="over")    # no result
+        # No entry at all for 2004 -- NOT a verified terminal non-result
+        # (contrast card_ledger._explicit_void's draw/no-contest/cancelled/
+        # fighter-change cases), so this stays UNRESOLVED, never a guessed
+        # LOSS and never a permanent VOID, and is retried on a later pass.
+        unresolved_pick = self._pick(2004, line=8.5, side="over")
 
-        self._publish([over_win, over_loss, under_push, void_pick])
+        self._publish([over_win, over_loss, under_push, unresolved_pick])
 
         row = card_ledger.settle(
             "2026-09-14", {
@@ -535,11 +539,12 @@ class LedgerSettle(unittest.TestCase):
         self.assertEqual(card_ledger.RESULT_WIN, by_game[2001]["result"])
         self.assertEqual(card_ledger.RESULT_LOSS, by_game[2002]["result"])
         self.assertEqual(card_ledger.RESULT_PUSH, by_game[2003]["result"])
-        self.assertEqual(card_ledger.RESULT_VOID, by_game[2004]["result"])
+        self.assertEqual(card_ledger.RESULT_UNRESOLVED, by_game[2004]["result"])
         self.assertEqual(1, row["total_wins"])
         self.assertEqual(1, row["total_losses"])
         self.assertEqual(1, row["total_pushes"])
-        self.assertEqual(1, row["total_voids"])
+        self.assertEqual(0, row["total_voids"])
+        self.assertEqual(1, row["total_unresolved"])
         self.assertAlmostEqual(
             0.9091, by_game[2001]["profit_units"], places=3)
         self.assertEqual(-1.0, by_game[2002]["profit_units"])
@@ -552,12 +557,14 @@ class LedgerSettle(unittest.TestCase):
             path=self.path)
         self.assertEqual(card_ledger.RESULT_WIN, row["total_picks"][0]["result"])
 
-    def test_settling_with_no_results_voids_every_total_pick_not_a_crash(self):
+    def test_settling_with_no_results_leaves_every_total_pick_unresolved_not_a_crash(self):
         pick = self._pick(4001)
         self._publish([pick])
         row = card_ledger.settle("2026-09-14", {}, path=self.path)
-        self.assertEqual(1, row["total_voids"])
+        self.assertEqual(1, row["total_unresolved"])
+        self.assertEqual(0, row["total_voids"])
         self.assertEqual(0, row["total_wins"])
+        self.assertEqual(0, row["total_losses"])
 
     def test_the_published_total_picks_are_never_rewritten_by_settle(self):
         pick = self._pick(5001, price=-110)

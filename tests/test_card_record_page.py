@@ -110,43 +110,51 @@ class LossesAndVoidsSurface(LedgerCase):
             _pick(1, 111, side="home", price=-150, book="draftkings", books=9),   # will WIN
             _pick(2, 222, side="home", price=-120, book="fanduel", books=7),      # will LOSE
             _pick(3, 333, side="away", price=+110, book="betmgm", books=6),       # will LOSE
-            _pick(4, 444, side="home", price=-105, book="caesars", books=5),      # no result -> VOID
+            _pick(4, 444, side="home", price=-105, book="caesars", books=5),      # no result -> UNRESOLVED
         ]
         card_ledger.publish(_card("2026-09-08", picks), path=self.path)
         results = {
             111: {"away_score": "2", "home_score": "5"},  # home wins
             222: {"away_score": "6", "home_score": "1"},  # home loses
             333: {"away_score": "1", "home_score": "4"},  # away side loses
-            # 444 deliberately has no entry -> grade_pick sees no score -> VOID
+            # 444 deliberately has no entry -- not a VERIFIED terminal
+            # non-result (see card_ledger._explicit_void), so grade_pick
+            # leaves it UNRESOLVED rather than guessing VOID; it is retried
+            # on a later settle() pass (module docstring, "Support partial
+            # settlement").
         }
         self.settled = card_ledger.settle("2026-09-08", results, path=self.path)
 
-    def test_settle_itself_keeps_every_pick_including_the_loss_and_the_void(self):
+    def test_settle_itself_keeps_every_pick_including_the_loss_and_the_unresolved_one(self):
         results = [p["result"] for p in self.settled["picks"]]
         self.assertEqual(4, len(results), "a pick went missing during settlement")
-        self.assertEqual(["WIN", "LOSS", "LOSS", "VOID"], results)
+        self.assertEqual(["WIN", "LOSS", "LOSS", "UNRESOLVED"], results)
 
-    def test_record_counts_losses_and_voids_rather_than_hiding_them(self):
+    def test_record_counts_losses_and_unresolved_rather_than_hiding_them(self):
         rec = card_ledger.record(path=self.path)
         self.assertEqual(1, rec["wins"])
         self.assertEqual(2, rec["losses"])
-        self.assertEqual(1, rec["voids"], "the postponed/unscored pick must still be counted")
-        self.assertEqual(3, rec["n_staked"], "voids must not be counted as staked bets")
+        self.assertEqual(0, rec["voids"])
+        self.assertEqual(1, rec["unresolved"],
+                         "the still-pending pick must still be counted, not hidden")
+        self.assertEqual(3, rec["n_staked"], "an unresolved pick must not be counted as staked")
 
-    def test_history_carries_the_loss_and_void_picks_with_their_reasons(self):
+    def test_history_carries_the_loss_and_unresolved_picks_with_their_reasons(self):
         hist = card_ledger.history(path=self.path)
         self.assertEqual(1, len(hist["days"]))
         day = hist["days"][0]
         self.assertEqual(2, day["losses"])
-        self.assertEqual(1, day["voids"])
+        self.assertEqual(0, day["voids"])
+        self.assertEqual(1, day["unresolved"])
         picks_by_result = {}
         for p in day["picks"]:
             picks_by_result.setdefault(p["result"], []).append(p)
         self.assertEqual(1, len(picks_by_result.get("WIN", [])))
         self.assertEqual(2, len(picks_by_result.get("LOSS", [])))
-        void_picks = picks_by_result.get("VOID", [])
-        self.assertEqual(1, len(void_picks))
-        self.assertTrue(void_picks[0]["reason"], "a VOID pick must explain itself, not read blank")
+        unresolved_picks = picks_by_result.get("UNRESOLVED", [])
+        self.assertEqual(1, len(unresolved_picks))
+        self.assertTrue(unresolved_picks[0]["reason"],
+                        "an UNRESOLVED pick must explain itself, not read blank")
 
     def test_history_joins_book_and_team_names_from_the_published_row(self):
         """The settled row alone does not carry book/team names (see

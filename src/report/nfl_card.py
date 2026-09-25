@@ -486,7 +486,16 @@ def settle_for_date(date_str: str, *, now: Optional[datetime] = None,
     # published -- most days.
     if card_ledger.published_row(date_str, sport="nfl", path=path) is None:
         return None
-    if card_ledger.settled_row(date_str, sport="nfl", path=path) is not None:
+    # FULLY settled means "nothing left UNRESOLVED" now, not merely "a
+    # settled row exists" -- card_ledger.settle() below is re-entrant (its
+    # own docstring's "Support partial settlement") and re-grades an
+    # UNRESOLVED pick on a later pass; gating on `is not None` alone sealed
+    # a date the moment ANY settled row existed, even one still carrying an
+    # UNRESOLVED pick, which is the exact permanent-seal defect this task
+    # fixes one layer up in card_ledger.settle_v2. See
+    # card_ledger.has_unresolved_picks and settle()'s own identical gate.
+    existing = card_ledger.settled_row(date_str, sport="nfl", path=path)
+    if existing is not None and not card_ledger.has_unresolved_picks(existing):
         return None
 
     if results is None:

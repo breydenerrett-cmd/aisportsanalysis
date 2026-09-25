@@ -229,9 +229,9 @@ def measure_ledger(path: str, index: Mapping) -> list:
     by class from one pass, per registration 11.1 and 11.3.
     """
     out: list = []
-    for row in HashChainLedger(path).read():
-        if row.get("kind") != card_ledger.KIND_SETTLED:
-            continue
+    # Newest settled row per date only: a re-entrant settle_v2 pass rewrites
+    # the whole date, so older rows for the same date are superseded.
+    for row in card_ledger.latest_settled_rows_v2(HashChainLedger(path).read()):
         date = row.get("date")
         for entry in row.get("graded") or ():
             measurement = measure_pick(entry, index)
