@@ -1987,3 +1987,9 @@
 {"category": "optioned", "date": "2026-09-25", "first_seen_utc": "2026-09-25T21:24:49.840403+00:00", "player": "Alex Freeland", "player_id": 690976, "team": "LAD", "transaction_id": 943963}
 {"category": "il_activation", "date": "2026-09-25", "first_seen_utc": "2026-09-25T21:24:49.840403+00:00", "player": "Dalton Rushing", "player_id": 687221, "team": "LAD", "transaction_id": 943964}
 {"fetched_utc": "2026-09-25T21:24:52.566968+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T22:39:54.011689+00:00", "game_date": "2026-09-25", "poll": true}
+{"category": "il_placement", "date": "2026-09-22", "first_seen_utc": "2026-09-25T22:39:54.011689+00:00", "player": "Andrew Vaughn", "player_id": 683734, "team": "MIL", "transaction_id": 943990}
+{"category": "il_activation", "date": "2026-09-25", "first_seen_utc": "2026-09-25T22:39:54.011689+00:00", "player": "Bryse Wilson", "player_id": 669060, "team": "MIL", "transaction_id": 943987}
+{"category": "designated", "date": "2026-09-25", "first_seen_utc": "2026-09-25T22:39:54.011689+00:00", "player": "Lyon Richardson", "player_id": 680689, "team": "MIL", "transaction_id": 943988}
+{"category": "recalled", "date": "2026-09-25", "first_seen_utc": "2026-09-25T22:39:54.011689+00:00", "player": "Brandon Lockridge", "player_id": 663604, "team": "MIL", "transaction_id": 943989}
+{"fetched_utc": "2026-09-25T22:39:56.241932+00:00", "game_date": "2026-09-25", "poll": true}
