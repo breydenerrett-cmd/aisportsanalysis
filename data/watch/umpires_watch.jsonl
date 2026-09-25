@@ -1725,3 +1725,6 @@
 {"game_date": "2026-09-26", "observed_utc": "2026-09-25T13:46:17.807479+00:00", "poll": true}
 {"game_date": "2026-09-25", "observed_utc": "2026-09-25T13:59:33.934241+00:00", "poll": true}
 {"game_date": "2026-09-26", "observed_utc": "2026-09-25T13:59:34.096206+00:00", "poll": true}
+{"game_date": "2026-09-25", "observed_utc": "2026-09-25T14:12:56.574720+00:00", "poll": true}
+{"commence_time": "2026-09-25T17:05:00Z", "crew": [{"id": 427139, "name": "Doug Eddings", "officialType": "Home Plate"}, {"id": 665576, "name": "Brock Ballou", "officialType": "First Base"}, {"id": 621660, "name": "Emil Jimenez", "officialType": "Second Base"}, {"id": 483912, "name": "Mike Muchlinski", "officialType": "Third Base"}], "game_date": "2026-09-25", "game_pk": 824703, "game_state": "Pre-Game", "home_plate_umpire": "Doug Eddings", "observed_utc": "2026-09-25T14:12:56.574720+00:00", "prev_poll_utc": "2026-09-25T13:59:33.934241+00:00", "revealed": true}
+{"game_date": "2026-09-26", "observed_utc": "2026-09-25T14:12:56.881365+00:00", "poll": true}
