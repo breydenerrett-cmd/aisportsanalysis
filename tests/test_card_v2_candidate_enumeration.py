@@ -21,6 +21,7 @@ later model change could move.
 
 from __future__ import annotations
 
+import json
 import math
 import unittest
 from datetime import datetime, timedelta, timezone
@@ -779,6 +780,467 @@ class BothSidesPropBoard(unittest.TestCase):
         self.assertEqual(("batter_hits", "batter_total_bases"),
                          dc.PROP_MARKETS)
         self.assertNotIn("batter_home_runs", dc.PROP_MARKETS)
+
+
+# ---------------------------------------------------------------------------
+# 7. The run-line arm (D1a). A THIRD separate arm -- neither the moneyline
+#    nor the prop arm may move when it exists, whether it is on or off.
+# ---------------------------------------------------------------------------
+
+COL_NAME = "Colorado Rockies"
+NYY_NAME = "New York Yankees"
+
+
+def _rl_rows(away_name, home_name, *, home_line=-1.5, home_price=-150,
+            away_price=130, books=6, commence=FUTURE, observed=None):
+    """Multibook `spreads` rows for the standard run line, shaped exactly as
+    `card_v1.run_line_rows` reads them -- field list pinned by
+    `tests/test_snapshots_streaming.py`'s own fixture, not reinvented here.
+
+    `books` distinct book names all quoting the SAME instant, so
+    `prices.snapshot` clears `MIN_BOOKS` (6) and both sides get a real
+    consensus instead of `{"skipped": ...}`. Team names are FULL club names
+    -- `card_v1._run_line_rows_uncached` resolves them through
+    `slate.team_abbrev_from_name`, the same table this repo uses everywhere
+    else, so "Colorado Rockies"/"New York Yankees" round-trip to the COL/NYY
+    abbreviations `_entry`/`_game_id` already use.
+    """
+    observed = observed or NOW.isoformat()
+    names = ["fd", "dk", "mgm", "czr", "pinn", "bet365", "espn", "wynn"]
+    return [
+        {"market": "spreads", "event_id": "rl1", "book": book,
+         "home_price": home_price, "away_price": away_price,
+         "home_line": str(home_line), "away_line": str(-home_line),
+         "commence_time": commence, "observed_utc": observed,
+         "away_team": away_name, "home_team": home_name}
+        for book in names[:books]
+    ]
+
+
+def _rl_frozen(*, our_home_cover=None, dispersion=2.3352):
+    """A frozen mapping carrying only `DISPERSION` (no calibration) unless
+    `our_home_cover` is given, in which case `runline_calibration` is set up
+    with `b=0` -- the same "pin the output at sigmoid(a)" trick `_frozen`
+    uses for the moneyline fit, so a test can choose exactly what
+    `_run_line_side_candidate`'s CALIBRATED `our_probability` will be without
+    depending on the model's raw output."""
+    out = {"DISPERSION": dispersion}
+    if our_home_cover is not None:
+        out["runline_calibration"] = {
+            "fitted": True,
+            "a": math.log(our_home_cover / (1.0 - our_home_cover)),
+            "b": 0.0, "n": 8108, "base_rate": 0.5,
+        }
+    return out
+
+
+def _line_dist_at_margin(margin: float) -> dict:
+    """A joint distribution with ALL its mass on one margin (home_score -
+    away_score), so a test can pin `run_line_probability`'s two boundary
+    inequalities (strict `>`, never `>=`) at an EXACT integer margin instead
+    of trusting a fitted Poisson grid to land on one."""
+    return {
+        "p_home_minus": 1.0 if margin > 1.5 else 0.0,
+        "p_home_plus": 1.0 if margin > -1.5 else 0.0,
+        "p_away_minus": 1.0 if margin < -1.5 else 0.0,
+        "p_away_plus": 1.0 if margin < 1.5 else 0.0,
+    }
+
+
+def _rl_game(away=COL_NAME, home=NYY_NAME, away_abbrev="COL",
+            home_abbrev="NYY"):
+    return {"home_name": home, "away_name": away,
+            "home_team": home_abbrev, "away_team": away_abbrev,
+            "first_pitch_utc": FUTURE, "game_pk": 744001,
+            "game_id": f"{away_abbrev}-{home_abbrev}-2026-09-20-1"}
+
+
+def _rl_row(*, line, price=-150, observed=None):
+    return {"best_price": price, "line": line, "best_book": "fd",
+           "books": 6, "consensus_probability": 0.5,
+           "observed_utc": observed or NOW.isoformat()}
+
+
+class RunLineSideCandidateBoundaries(unittest.TestCase):
+    """`_run_line_side_candidate`, isolated from the model and the board.
+    Required test: "margins of exactly one and two runs"."""
+
+    def test_margin_of_one_does_not_cover_the_favourites_minus_side(self):
+        """Home wins by exactly 1: home -1.5 (favourite) never covers."""
+        line_dist = _line_dist_at_margin(1.0)
+        cand, reason = shadow._run_line_side_candidate(
+            _rl_game(), line_dist, "home", _rl_row(line=-1.5), now=NOW,
+            cal=None)
+        self.assertIsNone(reason)
+        self.assertEqual(0.0, cand["our_probability_raw"])
+        self.assertFalse(cand["underdog"])
+
+    def test_margin_of_one_covers_the_underdogs_plus_side(self):
+        """Same game: away +1.5 (underdog, lost by only 1) covers."""
+        line_dist = _line_dist_at_margin(1.0)
+        cand, reason = shadow._run_line_side_candidate(
+            _rl_game(), line_dist, "away", _rl_row(line=1.5), now=NOW,
+            cal=None)
+        self.assertIsNone(reason)
+        self.assertEqual(1.0, cand["our_probability_raw"])
+        self.assertTrue(cand["underdog"])
+
+    def test_margin_of_two_covers_the_favourites_minus_side(self):
+        """Home wins by exactly 2: home -1.5 now covers -- the boundary the
+        margin-of-one case sits just below."""
+        line_dist = _line_dist_at_margin(2.0)
+        cand, reason = shadow._run_line_side_candidate(
+            _rl_game(), line_dist, "home", _rl_row(line=-1.5), now=NOW,
+            cal=None)
+        self.assertIsNone(reason)
+        self.assertEqual(1.0, cand["our_probability_raw"])
+
+    def test_margin_of_two_does_not_cover_the_underdogs_plus_side(self):
+        line_dist = _line_dist_at_margin(2.0)
+        cand, reason = shadow._run_line_side_candidate(
+            _rl_game(), line_dist, "away", _rl_row(line=1.5), now=NOW,
+            cal=None)
+        self.assertIsNone(reason)
+        self.assertEqual(0.0, cand["our_probability_raw"])
+
+    def test_a_non_standard_line_is_refused_before_the_model_is_read(self):
+        line_dist = _line_dist_at_margin(2.0)
+        cand, reason = shadow._run_line_side_candidate(
+            _rl_game(), line_dist, "home", _rl_row(line=-2.5), now=NOW,
+            cal=None)
+        self.assertIsNone(cand)
+        self.assertEqual(shadow.RL_NOT_STANDARD_LINE, reason)
+
+    def test_a_quote_observed_after_now_is_refused_not_treated_as_fresh(self):
+        """D1c: a negative age must never read as the freshest possible
+        quote. `_run_line_side_candidate` guards it directly since G3
+        (best_bets_card.py) is outside this module's write area."""
+        line_dist = _line_dist_at_margin(2.0)
+        future_quote = (NOW + timedelta(hours=1)).isoformat()
+        cand, reason = shadow._run_line_side_candidate(
+            _rl_game(), line_dist, "home",
+            _rl_row(line=-1.5, observed=future_quote), now=NOW, cal=None)
+        self.assertIsNone(cand)
+        self.assertEqual(shadow.RL_FUTURE_QUOTE, reason)
+
+
+class RunLineCalibrationStaysComplementary(unittest.TestCase):
+    """`_runline_calibration`'s own docstring names this class: `a == 0` is
+    load-bearing for two complementary raw probabilities to stay
+    complementary after calibration, for ANY `b`. Measured here, not
+    assumed."""
+
+    def test_calibrated_complements_still_sum_to_one(self):
+        from src.analysis import calibrate
+
+        for b in (0.0, 0.4, 1.0, 2.3, -0.7):
+            cal = calibrate.Calibration(a=0.0, b=b, n=8108, base_rate=0.5)
+            for p in (0.01, 0.2, 0.5, 0.73, 0.99):
+                self.assertAlmostEqual(
+                    1.0, cal.apply(p) + cal.apply(1.0 - p), places=9,
+                    msg=f"b={b} p={p}")
+
+    def test_a_nonzero_a_breaks_the_symmetry(self):
+        """The negative case, so the property above is not vacuous."""
+        from src.analysis import calibrate
+
+        cal = calibrate.Calibration(a=0.3, b=0.8, n=8108, base_rate=0.5)
+        total = cal.apply(0.4) + cal.apply(0.6)
+        self.assertNotAlmostEqual(1.0, total, places=6)
+
+    def test_the_frozen_fit_is_read_separately_from_the_moneyline_one(self):
+        frozen = {
+            "moneyline_calibration": {"fitted": True, "a": 1.0, "b": 1.0,
+                                      "n": 1, "base_rate": 0.5},
+            "runline_calibration": {"fitted": True, "a": 0.0, "b": 0.95,
+                                    "n": 8108, "base_rate": 0.5},
+        }
+        cal = shadow._runline_calibration(frozen)
+        self.assertEqual(0.0, cal.a)
+        self.assertEqual(0.95, cal.b)
+
+    def test_an_unfitted_frozen_file_is_none_not_a_default(self):
+        cal = shadow._runline_calibration(
+            {"runline_calibration": {"fitted": False}})
+        self.assertIsNone(cal)
+        self.assertIsNone(shadow._runline_calibration({}))
+
+
+class RunLineCandidatesFromABoard(unittest.TestCase):
+    """`build_run_line_candidates`, end to end on injected fixtures -- the
+    same discipline `ShadowEnumeratesBothSides` uses for the moneyline arm."""
+
+    def _build(self, *, entries=None, multibook_rows=None, frozen=None,
+              now=NOW, date="2026-09-20"):
+        entries = entries if entries is not None else [_entry()]
+        multibook_rows = (multibook_rows if multibook_rows is not None
+                          else _rl_rows(COL_NAME, NYY_NAME))
+        frozen = frozen if frozen is not None else _rl_frozen()
+        return shadow.build_run_line_candidates(
+            entries, date=date, now=now, frozen=frozen,
+            multibook_rows=multibook_rows)
+
+    def test_both_real_quoted_sides_are_built(self):
+        candidates, pool, not_built = self._build()
+        self.assertEqual({"home", "away"}, {c["side"] for c in candidates})
+        self.assertEqual(2, len(candidates))
+        self.assertEqual(2, pool)
+        self.assertEqual([], not_built)
+        for c in candidates:
+            self.assertEqual("run_line", c["market"])
+            self.assertEqual(shadow.ENUMERATION_ID_RUNLINE, c["enumeration"])
+
+    def test_home_away_reversal_swaps_team_names_not_the_line_convention(self):
+        """Required test: home/away reversal. Whichever club is the standard
+        line's favourite, the HOME side always carries -1.5 and the AWAY
+        side always carries +1.5 -- reversing which real club is home must
+        swap the team names on each candidate and nothing else."""
+        forward, _p1, _nb1 = self._build(
+            entries=[_entry(away="COL", home="NYY")],
+            multibook_rows=_rl_rows(COL_NAME, NYY_NAME))
+        f_home = next(c for c in forward if c["side"] == "home")
+        f_away = next(c for c in forward if c["side"] == "away")
+        self.assertEqual("NYY", f_home["home_team"])
+        self.assertEqual("COL", f_away["away_team"])
+        self.assertEqual(-1.5, f_home["line"])
+        self.assertEqual(1.5, f_away["line"])
+
+        reversed_, _p2, _nb2 = self._build(
+            entries=[_entry(away="NYY", home="COL")],
+            multibook_rows=_rl_rows(NYY_NAME, COL_NAME))
+        r_home = next(c for c in reversed_ if c["side"] == "home")
+        r_away = next(c for c in reversed_ if c["side"] == "away")
+        self.assertEqual("COL", r_home["home_team"])
+        self.assertEqual("NYY", r_away["away_team"])
+        self.assertEqual(-1.5, r_home["line"])
+        self.assertEqual(1.5, r_away["line"])
+
+    def test_duplicate_quote_rows_do_not_inflate_the_book_count_or_the_pool(self):
+        """Required test: duplicate quote rejection. The same six books,
+        each listed TWICE (a plausible capture-retry artefact), must still
+        clear `MIN_BOOKS` as six books and produce exactly one candidate per
+        side -- never two, and never a twelve-book consensus."""
+        rows = _rl_rows(COL_NAME, NYY_NAME)
+        candidates, pool, not_built = self._build(multibook_rows=rows + rows)
+        self.assertEqual(2, len(candidates))
+        self.assertEqual(2, pool)
+        for c in candidates:
+            self.assertEqual(6, c["books"])
+
+    def test_a_missing_league_run_rate_refuses_both_sides_of_every_game(self):
+        # No usable scoring rate anywhere on the slate at all: league_rpg
+        # itself comes back falsy, refusing every game before the model is
+        # even called -- distinct from RL_MODEL_REFUSED below.
+        entry = _entry()
+        entry["dossier"]["sections"]["teams"] = {
+            "away_runs_scored_pg": None, "away_runs_allowed_pg": None,
+            "away_games_played": 0,
+            "home_runs_scored_pg": None, "home_runs_allowed_pg": None,
+            "home_games_played": 0,
+        }
+        candidates, pool, not_built = self._build(entries=[entry])
+        self.assertEqual([], candidates)
+        self.assertEqual(0, pool)
+        reasons = {nb["reason"] for nb in not_built}
+        self.assertEqual({shadow.RL_NO_LEAGUE_RATE}, reasons)
+        self.assertEqual(2, len(not_built))
+
+    def test_unavailable_model_output_refuses_only_the_affected_game(self):
+        """Required test: unavailable model output. One game on the slate
+        has no scoring rate on EITHER side -- `strength.run_means` raises
+        `StrengthError` for that game alone (module docstring: "this game
+        has no team scoring rates on either side"). `league_rpg` is real
+        (the other game supplies it), so this is RL_MODEL_REFUSED, a
+        different fact from RL_NO_LEAGUE_RATE above."""
+        healthy = _entry(away="COL", home="NYY", game_pk=744001)
+        broken = _entry(away="PIT", home="CHC", game_pk=744002)
+        broken["dossier"]["sections"]["teams"] = {
+            "away_runs_scored_pg": None, "away_runs_allowed_pg": None,
+            "away_games_played": 0,
+            "home_runs_scored_pg": None, "home_runs_allowed_pg": None,
+            "home_games_played": 0,
+        }
+        rows = _rl_rows(COL_NAME, NYY_NAME)
+        candidates, pool, not_built = self._build(
+            entries=[healthy, broken], multibook_rows=rows)
+        self.assertEqual(2, len(candidates))
+        broken_gid = "PIT-CHC-2026-09-20-1"
+        broken_reasons = [nb for nb in not_built
+                          if nb["game_id"] == broken_gid]
+        self.assertEqual(2, len(broken_reasons))
+        self.assertTrue(all(nb["reason"] == shadow.RL_MODEL_REFUSED
+                            for nb in broken_reasons))
+
+    def test_a_stale_quote_is_built_and_left_for_the_gate_to_refuse(self):
+        """Required test: stale quotes. Staleness is a GATE outcome here
+        too, mirroring `test_a_stale_opposite_quote_is_enumerated_and_
+        refused_by_g3` for the moneyline mirror: the candidate is built (so
+        the coverage ledger counts it) and G3 is what refuses it -- this
+        arm's own construction-time guard only ever refuses a FUTURE quote
+        (RL_FUTURE_QUOTE), never an old one.
+
+        Driven through `_run_line_side_candidate` directly (like the
+        boundary tests above) rather than a full model-computed board, so
+        the ONLY gate a tame, well-inside-the-bands candidate can fail is
+        G3 -- a real model's raw run-line probability is not tunable to an
+        exact value the way `_frozen`'s `b=0` trick pins a moneyline one,
+        so pinning it here is what keeps this test about G3, not about
+        which other gate a real distribution happens to also trip.
+        """
+        from src.analysis import calibrate as calibrate_mod
+
+        stale = (NOW - timedelta(hours=6)).isoformat()
+        row = {"best_price": -150, "line": -1.5, "best_book": "fd",
+              "books": 6, "consensus_probability": 0.60,
+              "observed_utc": stale}
+        cal = calibrate_mod.Calibration(a=math.log(0.53 / 0.47), b=0.0,
+                                        n=8108, base_rate=0.5)
+        cand, reason = shadow._run_line_side_candidate(
+            _rl_game(), {"p_home_minus": 0.53, "p_home_plus": 0.53,
+                        "p_away_minus": 0.47, "p_away_plus": 0.47},
+            "home", row, now=NOW, cal=cal)
+        self.assertIsNone(reason)
+        census = shadow.gate_census([cand], now=NOW, params=best_bets_card.V2)
+        self.assertEqual(best_bets_card.G3_STALE, census[0]["primary_reason"])
+        self.assertTrue(census[0]["fill_eligible"])
+
+    def test_exact_contract_identity_via_reconcile_identity_sets(self):
+        """Required test: exact contract identity. `reconcile_identity_sets`
+        keyed on `(game_id, market, side, line)` -- the game-market analogue
+        of the prop identity -- must report the ONE side that disappears
+        when a book drops out from under it as REMOVED, not silently netted
+        against the sides that are unchanged."""
+        entries = [_entry(away="COL", home="NYY", game_pk=744001),
+                  _entry(away="PIT", home="CHC", game_pk=744002)]
+        before_rows = (_rl_rows(COL_NAME, NYY_NAME)
+                      + _rl_rows("Pittsburgh Pirates", "Chicago Cubs"))
+        before, _p1, _nb1 = self._build(
+            entries=entries, multibook_rows=before_rows)
+
+        # After: the second game's board drops below MIN_BOOKS on both
+        # sides, so it contributes no candidate at all -- only the first
+        # game's two sides remain.
+        after_rows = (_rl_rows(COL_NAME, NYY_NAME)
+                     + _rl_rows("Pittsburgh Pirates", "Chicago Cubs",
+                               books=3))
+        after, _p2, _nb2 = self._build(
+            entries=entries, multibook_rows=after_rows)
+
+        def identity(c):
+            return (c.get("game_id"), c.get("market"), c.get("side"),
+                    c.get("line"))
+
+        rec = shadow.reconcile_identity_sets(before, after, identity=identity)
+        self.assertEqual(4, rec["n_before"])
+        self.assertEqual(2, rec["n_after"])
+        self.assertEqual(0, rec["n_added"])
+        self.assertEqual(2, rec["n_removed"])
+        self.assertEqual(2, rec["n_unchanged"])
+        removed_games = {ident[0] for ident in rec["removed"]}
+        self.assertEqual({"PIT-CHC-2026-09-20-1"}, removed_games)
+
+
+class RunLineArmIsSeparate(unittest.TestCase):
+    """Required: "The existing moneyline and prop arms must produce
+    byte-identical output with the new arm present but off." Neither the
+    moneyline arm (already collecting a forward record) nor the prop arm
+    may be able to tell this arm's code exists when `enumerate_run_line`
+    is left at its default."""
+
+    def _card(self, *, enumerate_props=False, enumerate_run_line=False,
+             multibook_rows=None):
+        entries, rows, frozen = _slate(1, our_home=0.47)
+        frozen = {**frozen, **_rl_frozen(our_home_cover=0.55)}
+        return shadow.card_v2_for_date_shadow(
+            entries, rows, date="2026-09-20", now=NOW, frozen=frozen,
+            prop_board=_no_props, event_map={},
+            enumerate_props=enumerate_props,
+            enumerate_run_line=enumerate_run_line,
+            multibook_rows=multibook_rows)
+
+    def test_the_default_omits_run_line_and_matches_the_explicit_off_call(self):
+        default = self._card()
+        explicit_off = self._card(enumerate_run_line=False)
+        self.assertEqual(
+            json.dumps(default, sort_keys=True, default=str),
+            json.dumps(explicit_off, sort_keys=True, default=str))
+        self.assertFalse(default["enumerate_run_line"])
+        self.assertNotIn("run_line", default["enumeration"])
+        self.assertEqual([], default["run_line_sides_not_built"])
+        self.assertEqual(
+            [], [row for row in default["gate_census"]
+                if row.get("market") == "run_line"])
+
+    def test_moneyline_and_prop_output_is_identical_whether_or_not_the_run_line_arm_code_runs(self):
+        """The strongest form of the requirement: reconstruct what the
+        payload would be with `build_run_line_candidates` never called at
+        all (the two arms' own builders, fed straight to `select`), and
+        compare it field for field against the real function with the arm
+        left off."""
+        entries, rows, frozen = _slate(1, our_home=0.47)
+        frozen = {**frozen, **_rl_frozen(our_home_cover=0.55)}
+
+        game_candidates, game_pool, _nb = shadow.build_game_candidates(
+            entries, rows, date="2026-09-20", now=NOW, frozen=frozen)
+        prop_candidates, prop_pool = card_v2._build_prop_candidates(
+            entries, date="2026-09-20", now=NOW, prop_board=_no_props,
+            event_map={})
+        candidates = game_candidates + prop_candidates
+        reconstructed = best_bets_card.select(
+            candidates, now=NOW, params=best_bets_card.V2)
+
+        actual = self._card()
+        self.assertEqual(reconstructed["n_picks"], actual["n_picks"])
+        self.assertEqual(reconstructed["n_fills"], actual["n_fills"])
+        self.assertEqual(game_pool + prop_pool, actual["raw_pool_size"])
+        self.assertEqual(
+            [e.get("bet_sentence") for e in reconstructed["all_bets"]],
+            [e.get("bet_sentence") for e in actual["all_bets"]])
+
+    def test_turning_run_line_on_gives_the_run_its_own_identity(self):
+        on = self._card(enumerate_run_line=True,
+                        multibook_rows=_rl_rows(COL_NAME, NYY_NAME))
+        self.assertIn(shadow.ENUMERATION_ID_RUNLINE, on["enumeration"])
+        self.assertTrue(on["enumerate_run_line"])
+        self.assertNotEqual(shadow.ENUMERATION_ID, on["enumeration"])
+
+    def test_the_prop_arm_is_unaffected_by_the_run_line_flag(self):
+        props_only = self._card(enumerate_props=True)
+        both = self._card(enumerate_props=True, enumerate_run_line=True,
+                          multibook_rows=_rl_rows(COL_NAME, NYY_NAME))
+        # The prop arm's own contribution (raw_pool_size minus whatever the
+        # run-line arm added) must be the same whether or not run_line ran.
+        self.assertEqual(props_only["raw_pool_size"],
+                         both["raw_pool_size"] - 2)
+        self.assertIn(shadow.ENUMERATION_ID_PROPS, props_only["enumeration"])
+        self.assertNotIn(shadow.ENUMERATION_ID_RUNLINE,
+                         props_only["enumeration"])
+        self.assertIn(shadow.ENUMERATION_ID_PROPS, both["enumeration"])
+        self.assertIn(shadow.ENUMERATION_ID_RUNLINE, both["enumeration"])
+
+    def test_g11_still_keeps_one_entry_per_game_with_two_markets_in_play(self):
+        """Required test: game-level dedup after ranking. Both a run-line
+        and a moneyline candidate for the SAME game can pass their gates
+        under SHADOW_A (module docstring: they carry the same `game_id`, so
+        G11 -- unedited -- still keeps at most one entry per game)."""
+        entries = [_entry(away="COL", home="NYY")]
+        ml_rows = _rows(_game_id())
+        rl_rows_ = _rl_rows(COL_NAME, NYY_NAME)
+        frozen = {**_frozen(0.47), **_rl_frozen(our_home_cover=0.6)}
+        payload = shadow.card_v2_for_date_shadow(
+            entries, ml_rows, date="2026-09-20", now=NOW, frozen=frozen,
+            prop_board=_no_props, event_map={},
+            params=best_bets_card.SHADOW_A, enumerate_run_line=True,
+            multibook_rows=rl_rows_)
+        game_ids = [e.get("game_id") for e in payload["all_bets"]]
+        self.assertEqual(len(game_ids), len(set(game_ids)))
+        markets = {e.get("market") for e in payload["all_bets"]}
+        # Not asserting which market wins -- only that whichever markets
+        # cleared their gates, the game appears at most once. If both a
+        # moneyline and a run-line entry survived selection, they would
+        # show up here as two markets for the SAME one game_id, which the
+        # assertion above already forbids.
+        self.assertTrue(markets <= {"moneyline", "run_line"})
 
 
 if __name__ == "__main__":  # pragma: no cover

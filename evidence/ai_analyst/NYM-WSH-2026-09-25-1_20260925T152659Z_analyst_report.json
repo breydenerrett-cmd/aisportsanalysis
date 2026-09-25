@@ -1,0 +1,336 @@
+{
+  "game_id": "NYM-WSH-2026-09-25-1",
+  "date": "2026-09-25",
+  "built_at": "2026-09-25T15:26:56.080360+00:00",
+  "recommendation": {
+    "game_id": "NYM-WSH-2026-09-25-1",
+    "market": "moneyline",
+    "side": "home",
+    "price": 118,
+    "our_probability": 0.5488894693325361,
+    "market_probability": 0.45276,
+    "source_artifact": "evidence/shadow_enumeration/2026-09-25_20260925T143000Z_moneyline-run_line.json",
+    "bet_sentence": "Nationals moneyline at +118"
+  },
+  "evidence": [
+    {
+      "claim_id": "model_input:NYM-WSH-2026-09-25-1:home_sp_known",
+      "entity": "WSH",
+      "event": "starter_known_to_model",
+      "text": "home starter known to the model: True (ERA 3.6, 14 starts, 14 days rest)",
+      "source_ref": "evidence/shadow_enumeration/2026-09-25_20260925T143000Z_moneyline-run_line.json#board.models_by_game.NYM-WSH-2026-09-25-1.model_inputs.home_sp_known",
+      "retrieved_at": "2026-09-25T15:26:56.080360+00:00",
+      "status": "CONFIRMED",
+      "uncertainty": "model's own point-in-time capture; not a probability, a boolean the pipeline recorded",
+      "intended_use": "verify the starter assumption behind the model's probability",
+      "published_at": null,
+      "independent": true
+    },
+    {
+      "claim_id": "model_input:NYM-WSH-2026-09-25-1:away_sp_known",
+      "entity": "NYM",
+      "event": "starter_known_to_model",
+      "text": "away starter known to the model: False -- no probable pitcher posted at capture time; the team's blended offence/defence rate stands in for the whole game (strength.run_means's own fallback, not this module's invention)",
+      "source_ref": "evidence/shadow_enumeration/2026-09-25_20260925T143000Z_moneyline-run_line.json#board.models_by_game.NYM-WSH-2026-09-25-1.model_inputs.away_sp_known",
+      "retrieved_at": "2026-09-25T15:26:56.080360+00:00",
+      "status": "CONFIRMED",
+      "uncertainty": "model's own point-in-time capture; not a probability, a boolean the pipeline recorded",
+      "intended_use": "verify the starter assumption behind the model's probability",
+      "published_at": null,
+      "independent": true
+    },
+    {
+      "claim_id": "market:NYM-WSH-2026-09-25-1:home",
+      "entity": "home",
+      "event": "market_quote",
+      "text": "Best price 118 at betus, 9 books, implied probability 0.45276",
+      "source_ref": "shadow artifact quotes_by_game.NYM-WSH-2026-09-25-1.home",
+      "retrieved_at": "2026-09-25T15:26:56.080360+00:00",
+      "status": "CONFIRMED",
+      "uncertainty": "a quote, not a forecast -- no uncertainty beyond staleness, which G3 already governs",
+      "intended_use": "anchor the recommendation's market_probability to its own source",
+      "published_at": "2026-09-25T14:12:58.155367+00:00",
+      "independent": true
+    },
+    {
+      "claim_id": "mlb_news:943069",
+      "entity": "Josiah Gray",
+      "event": "il_activation",
+      "text": "Washington Nationals activated RHP Josiah Gray from the 60-day injured list.",
+      "source_ref": "MLB transactions feed, transaction_id=943069",
+      "retrieved_at": "2026-09-25T15:26:56.080360+00:00",
+      "status": "CONFIRMED",
+      "uncertainty": "primary source (the league's own transaction record); no independent confirmation sought",
+      "intended_use": "verify lineup/availability assumptions against sourced evidence",
+      "published_at": "2026-09-17",
+      "independent": true
+    },
+    {
+      "claim_id": "mlb_news:943070",
+      "entity": "Wyatt Mills",
+      "event": "other",
+      "text": "Washington Nationals released RHP Wyatt Mills.",
+      "source_ref": "MLB transactions feed, transaction_id=943070",
+      "retrieved_at": "2026-09-25T15:26:56.080360+00:00",
+      "status": "CONFIRMED",
+      "uncertainty": "primary source (the league's own transaction record); no independent confirmation sought",
+      "intended_use": "verify lineup/availability assumptions against sourced evidence",
+      "published_at": "2026-09-17",
+      "independent": true
+    },
+    {
+      "claim_id": "mlb_news:943072",
+      "entity": "Andrew Pinckney",
+      "event": "optioned",
+      "text": "Washington Nationals optioned LF Andrew Pinckney to Rochester Red Wings.",
+      "source_ref": "MLB transactions feed, transaction_id=943072",
+      "retrieved_at": "2026-09-25T15:26:56.080360+00:00",
+      "status": "CONFIRMED",
+      "uncertainty": "primary source (the league's own transaction record); no independent confirmation sought",
+      "intended_use": "verify lineup/availability assumptions against sourced evidence",
+      "published_at": "2026-09-17",
+      "independent": true
+    },
+    {
+      "claim_id": "mlb_news:943088",
+      "entity": "Xzavion Curry",
+      "event": "optioned",
+      "text": "New York Mets optioned RHP Xzavion Curry to Syracuse Mets.",
+      "source_ref": "MLB transactions feed, transaction_id=943088",
+      "retrieved_at": "2026-09-25T15:26:56.080360+00:00",
+      "status": "CONFIRMED",
+      "uncertainty": "primary source (the league's own transaction record); no independent confirmation sought",
+      "intended_use": "verify lineup/availability assumptions against sourced evidence",
+      "published_at": "2026-09-17",
+      "independent": true
+    },
+    {
+      "claim_id": "mlb_news:943089",
+      "entity": "Cameron Weston",
+      "event": "recalled",
+      "text": "New York Mets recalled RHP Cameron Weston from Syracuse Mets.",
+      "source_ref": "MLB transactions feed, transaction_id=943089",
+      "retrieved_at": "2026-09-25T15:26:56.080360+00:00",
+      "status": "CONFIRMED",
+      "uncertainty": "primary source (the league's own transaction record); no independent confirmation sought",
+      "intended_use": "verify lineup/availability assumptions against sourced evidence",
+      "published_at": "2026-09-17",
+      "independent": true
+    },
+    {
+      "claim_id": "mlb_news:943151",
+      "entity": "Ronny Mauricio",
+      "event": "recalled",
+      "text": "New York Mets recalled SS Ronny Mauricio from Syracuse Mets.",
+      "source_ref": "MLB transactions feed, transaction_id=943151",
+      "retrieved_at": "2026-09-25T15:26:56.080360+00:00",
+      "status": "CONFIRMED",
+      "uncertainty": "primary source (the league's own transaction record); no independent confirmation sought",
+      "intended_use": "verify lineup/availability assumptions against sourced evidence",
+      "published_at": "2026-09-18",
+      "independent": true
+    },
+    {
+      "claim_id": "mlb_news:943152",
+      "entity": "Jared Young",
+      "event": "il_placement",
+      "text": "New York Mets placed 1B Jared Young on the 7-day injured list. Concussion.",
+      "source_ref": "MLB transactions feed, transaction_id=943152",
+      "retrieved_at": "2026-09-25T15:26:56.080360+00:00",
+      "status": "CONFIRMED",
+      "uncertainty": "primary source (the league's own transaction record); no independent confirmation sought",
+      "intended_use": "verify lineup/availability assumptions against sourced evidence",
+      "published_at": "2026-09-18",
+      "independent": true
+    },
+    {
+      "claim_id": "mlb_news:943224",
+      "entity": "Cameron Weston",
+      "event": "optioned",
+      "text": "New York Mets optioned RHP Cameron Weston to Syracuse Mets.",
+      "source_ref": "MLB transactions feed, transaction_id=943224",
+      "retrieved_at": "2026-09-25T15:26:56.080360+00:00",
+      "status": "CONFIRMED",
+      "uncertainty": "primary source (the league's own transaction record); no independent confirmation sought",
+      "intended_use": "verify lineup/availability assumptions against sourced evidence",
+      "published_at": "2026-09-19",
+      "independent": true
+    },
+    {
+      "claim_id": "mlb_news:943225",
+      "entity": "Cionel P\u00e9rez",
+      "event": "il_activation",
+      "text": "New York Mets activated LHP Cionel P\u00e9rez from the 15-day injured list.",
+      "source_ref": "MLB transactions feed, transaction_id=943225",
+      "retrieved_at": "2026-09-25T15:26:56.080360+00:00",
+      "status": "CONFIRMED",
+      "uncertainty": "primary source (the league's own transaction record); no independent confirmation sought",
+      "intended_use": "verify lineup/availability assumptions against sourced evidence",
+      "published_at": "2026-09-19",
+      "independent": true
+    },
+    {
+      "claim_id": "mlb_news:943391",
+      "entity": "DJ Herz",
+      "event": "il_activation",
+      "text": "Washington Nationals activated LHP DJ Herz from the 60-day injured list.",
+      "source_ref": "MLB transactions feed, transaction_id=943391",
+      "retrieved_at": "2026-09-25T15:26:56.080360+00:00",
+      "status": "CONFIRMED",
+      "uncertainty": "primary source (the league's own transaction record); no independent confirmation sought",
+      "intended_use": "verify lineup/availability assumptions against sourced evidence",
+      "published_at": "2026-09-21",
+      "independent": true
+    },
+    {
+      "claim_id": "mlb_news:943392",
+      "entity": "Jared Simpson",
+      "event": "optioned",
+      "text": "Washington Nationals optioned LHP Jared Simpson to Rochester Red Wings.",
+      "source_ref": "MLB transactions feed, transaction_id=943392",
+      "retrieved_at": "2026-09-25T15:26:56.080360+00:00",
+      "status": "CONFIRMED",
+      "uncertainty": "primary source (the league's own transaction record); no independent confirmation sought",
+      "intended_use": "verify lineup/availability assumptions against sourced evidence",
+      "published_at": "2026-09-21",
+      "independent": true
+    },
+    {
+      "claim_id": "mlb_news:943393",
+      "entity": "Cole Henry",
+      "event": "other",
+      "text": "Washington Nationals released RHP Cole Henry.",
+      "source_ref": "MLB transactions feed, transaction_id=943393",
+      "retrieved_at": "2026-09-25T15:26:56.080360+00:00",
+      "status": "CONFIRMED",
+      "uncertainty": "primary source (the league's own transaction record); no independent confirmation sought",
+      "intended_use": "verify lineup/availability assumptions against sourced evidence",
+      "published_at": "2026-09-21",
+      "independent": true
+    },
+    {
+      "claim_id": "mlb_news:943654",
+      "entity": "Devin Williams",
+      "event": "il_activation",
+      "text": "New York Mets activated RHP Devin Williams from the 15-day injured list.",
+      "source_ref": "MLB transactions feed, transaction_id=943654",
+      "retrieved_at": "2026-09-25T15:26:56.080360+00:00",
+      "status": "CONFIRMED",
+      "uncertainty": "primary source (the league's own transaction record); no independent confirmation sought",
+      "intended_use": "verify lineup/availability assumptions against sourced evidence",
+      "published_at": "2026-09-22",
+      "independent": true
+    },
+    {
+      "claim_id": "mlb_news:943655",
+      "entity": "Christian Scott",
+      "event": "il_placement",
+      "text": "New York Mets placed RHP Christian Scott on the 15-day injured list. Left knee inflammation.",
+      "source_ref": "MLB transactions feed, transaction_id=943655",
+      "retrieved_at": "2026-09-25T15:26:56.080360+00:00",
+      "status": "CONFIRMED",
+      "uncertainty": "primary source (the league's own transaction record); no independent confirmation sought",
+      "intended_use": "verify lineup/availability assumptions against sourced evidence",
+      "published_at": "2026-09-22",
+      "independent": true
+    },
+    {
+      "claim_id": "mlb_news:943708",
+      "entity": "Jackson Kent",
+      "event": "optioned",
+      "text": "Washington Nationals optioned LHP Jackson Kent to Rochester Red Wings.",
+      "source_ref": "MLB transactions feed, transaction_id=943708",
+      "retrieved_at": "2026-09-25T15:26:56.080360+00:00",
+      "status": "CONFIRMED",
+      "uncertainty": "primary source (the league's own transaction record); no independent confirmation sought",
+      "intended_use": "verify lineup/availability assumptions against sourced evidence",
+      "published_at": "2026-09-23",
+      "independent": true
+    },
+    {
+      "claim_id": "mlb_news:943709",
+      "entity": "Gus Varland",
+      "event": "recalled",
+      "text": "Washington Nationals recalled RHP Gus Varland from Rochester Red Wings.",
+      "source_ref": "MLB transactions feed, transaction_id=943709",
+      "retrieved_at": "2026-09-25T15:26:56.080360+00:00",
+      "status": "CONFIRMED",
+      "uncertainty": "primary source (the league's own transaction record); no independent confirmation sought",
+      "intended_use": "verify lineup/availability assumptions against sourced evidence",
+      "published_at": "2026-09-23",
+      "independent": true
+    },
+    {
+      "claim_id": "mlb_news:943764",
+      "entity": "Philip Abner",
+      "event": "other",
+      "text": "New York Mets claimed LHP Philip Abner off waivers from San Francisco Giants.",
+      "source_ref": "MLB transactions feed, transaction_id=943764",
+      "retrieved_at": "2026-09-25T15:26:56.080360+00:00",
+      "status": "CONFIRMED",
+      "uncertainty": "primary source (the league's own transaction record); no independent confirmation sought",
+      "intended_use": "verify lineup/availability assumptions against sourced evidence",
+      "published_at": "2026-09-23",
+      "independent": true
+    },
+    {
+      "claim_id": "mlb_news:943778",
+      "entity": "Xzavion Curry",
+      "event": "designated",
+      "text": "New York Mets designated RHP Xzavion Curry for assignment.",
+      "source_ref": "MLB transactions feed, transaction_id=943778",
+      "retrieved_at": "2026-09-25T15:26:56.080360+00:00",
+      "status": "CONFIRMED",
+      "uncertainty": "primary source (the league's own transaction record); no independent confirmation sought",
+      "intended_use": "verify lineup/availability assumptions against sourced evidence",
+      "published_at": "2026-09-23",
+      "independent": true
+    }
+  ],
+  "finding": {
+    "game_id": "NYM-WSH-2026-09-25-1",
+    "verified_assumptions": [
+      [
+        "home_sp_known=True carries a real, dated starter profile (ERA 3.6, FIP 3.437, 14 starts / 22 appearances, 95.0 IP) rather than a placeholder team average.",
+        "VERIFIED -- present on the model's own recorded input for this game, not asserted from outside it.",
+        [
+          "model_input:NYM-WSH-2026-09-25-1:home_sp_known"
+        ]
+      ],
+      [
+        "away_sp_known=False -- the model has no probable-starter data for NYM and is pricing the away side entirely off team-level rates.",
+        "VERIFIED -- same source, opposite value. Consistent with the Mets' pitching staff having three transactions in the trailing week (one IL placement, one activation, one DFA), i.e. real churn, not a feed outage.",
+        [
+          "model_input:NYM-WSH-2026-09-25-1:away_sp_known",
+          "mlb_news:943654",
+          "mlb_news:943655",
+          "mlb_news:943778"
+        ]
+      ],
+      [
+        "The home starter's underlying favourable rate stats come from a durable, healthy workload.",
+        "NOT VERIFIED -- an independent source (MLB's own transactions feed, not the model's input) shows a Nationals LHP (DJ Herz) activated from the 60-day injured list four days before this game. The model carries no pitcher NAME, so this cannot be confirmed as the SAME pitcher with certainty -- but the model's own recorded profile for its known starter (only 3 recent starts, ~5.0 IP/start against a 4.881 season average, 14 days rest) is independently consistent with a starter being managed on an innings limit post-injury, whichever pitcher he is. Two independent facts pointing the same direction, not confirmed identical.",
+        [
+          "model_input:NYM-WSH-2026-09-25-1:home_sp_known",
+          "mlb_news:943391"
+        ]
+      ]
+    ],
+    "challenged_assumption": "The STRONGEST assumption behind this pick is not the missing away starter (the model is explicit that it has nothing there, and prices it as team-average by design) -- it is the home side's starter profile, because that is the one input the model trusts MOST (full ERA/FIP/WHIP/K-BB%, not a fallback). That is exactly the assumption this review challenges: is a 3.6 ERA / 3.437 FIP over only 3 recent starts and ~5.0 innings each, for a pitcher activated from a 60-day IL stint four days ago, a number the model should be weighting as heavily as a full, healthy season's starter would earn? A short, injury-interrupted sample can flatter an ERA (fewer innings against fewer full lineup turns) without saying anything about true talent or how many innings he actually throws tonight -- and if he is pulled at 5 innings, the game is handed to WASHINGTON'S bullpen at a 5.3228 runs/9 rate, WORSE than New York's own bullpen rate of 4.1159 (same model_inputs record) -- the opposite of what a 'home starter is the edge' story implies for the back half of the game.",
+    "alternate_market": "First-5-innings (F5) moneyline or run line on the SAME game. If the sporting thesis is genuinely 'Washington's starter is better than New York's for the innings he actually throws,' F5 isolates exactly that -- it removes the bullpen innings where this review's own case against argues the home side's edge reverses (5.32 vs 4.12 pen rate). This repo already carries an F5 evaluation family (src/research/f5_eval.py) this suggestion does not touch or invoke -- naming the market, not building a price for it, is this review's job.",
+    "recalculation_request": {
+      "reason": "The model has no feature for 'starter workload-limited after injury return' -- home_sp_days_rest and home_sp_recent_ip_per_start are recorded but nothing in run_means/model_line currently down-weights a short recent outing pattern the way it would down-weight a small sample via _shrink's regression toward the league mean for a rate with few games behind it.",
+      "scenario": "Recompute this game's model_line with the home starter's expected innings capped near his recent actual rate (~5 innings) rather than a full-outing assumption, and compare the calibrated home win probability against the 0.5489 this review is reading now.",
+      "game_id": "NYM-WSH-2026-09-25-1"
+    },
+    "case_against": "1) The home side's starter edge -- the single most load-bearing input behind this pick -- rests on a short, possibly injury-shortened recent sample (3 starts, ~5.0 IP each) that the model has no mechanism to discount for durability, only for sample size on the RATE itself. 2) The away side is entirely unmodeled at the starter level, on a team with three pitching transactions in the trailing week -- real uncertainty, not reassurance that 'nothing is wrong there.' 3) Washington's own bullpen rate (5.3228) is worse than New York's (4.1159) by the model's own recorded inputs, so any game that goes long past the home starter's likely workload limit works against the recommended side, not for it. 4) The edge that cleared gates here was one of the smaller scores on this slate's three picks (score 0.0964, versus 0.0842 and 0.0508 for the other two) -- not a case of an overwhelming number surviving a weak objection.",
+    "verdict": "RECALCULATION_REQUESTED",
+    "contribution_kind": "session_assisted",
+    "notes": "Not NO_ADJUSTMENT: a real, sourced gap exists between what the model's own recorded inputs show about the home starter's recent workload and what the model's feature set can currently account for. Not ADJUSTMENT_REQUESTED: this review computed no replacement probability and is not entitled to -- the fix, if any, belongs in a recalculation of the model itself, or a decision to prefer the F5 market, not a number typed here."
+  },
+  "experimental_contribution": {
+    "contribution_kind": "session_assisted",
+    "verdict": "RECALCULATION_REQUESTED",
+    "disclaimer": "This is an experimental LLM/session contribution, logged separately from the model's own published or shadow output. It carries no authority over anything published and was never merged into `recommendation` above -- compare the two objects field by field to see that nothing here overwrote anything there."
+  }
+}

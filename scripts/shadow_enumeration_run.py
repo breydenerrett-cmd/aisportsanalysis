@@ -286,6 +286,7 @@ def _selection_record(payload):
             "kind": entry.get("kind"),
             "game_id": entry.get("game_id"),
             "player_id": entry.get("player_id"),
+            "market": entry.get("market"),
             "side": entry.get("side"),
             "price": entry.get("price"),
             "price_class": entry.get("price_class"),
@@ -315,12 +316,20 @@ def main(argv=None) -> int:
                          "inside a capture's freshness window that the wall "
                          "clock has already left.")
     ap.add_argument("--arm", default="moneyline",
-                    choices=("moneyline", "moneyline+props"),
-                    help="which enumeration arm to run. 'moneyline' is the "
-                         "arm already collecting a forward record and its "
-                         "behaviour must not change; 'moneyline+props' also "
-                         "enumerates both sides of every registered prop "
-                         "contract and is a separate arm with its own id.")
+                    choices=("moneyline", "moneyline+props",
+                             "moneyline+run_line",
+                             "moneyline+props+run_line"),
+                    help="which enumeration arm(s) to run. 'moneyline' is "
+                         "the arm already collecting a forward record and "
+                         "its behaviour must not change; 'moneyline+props' "
+                         "also enumerates both sides of every registered "
+                         "prop contract; 'moneyline+run_line' also "
+                         "enumerates both REAL quoted sides of the standard "
+                         "run line (D1a, ENUMERATION_ID_RUNLINE); the last "
+                         "choice runs all three. Each is a separate arm "
+                         "with its own id -- see card_v2_enum_shadow's "
+                         "module docstring for why they may never share "
+                         "one.")
     args = ap.parse_args(argv)
 
     wall_clock = datetime.now(timezone.utc)
@@ -372,12 +381,41 @@ def main(argv=None) -> int:
     reg_candidates, reg_pool = card_v2._build_game_candidates(
         entries, opportunity_rows, date=args.date, now=now, frozen=frozen)
 
-    enumerate_props = args.arm == "moneyline+props"
+    # ARMS ARE TOKENS, not a fixed enum. "moneyline" is always the base --
+    # the choices list above enforces that every string still starts with
+    # it -- and each of "props"/"run_line" after it turns ONE more arm on,
+    # off by default, exactly matching `card_v2_for_date_shadow`'s own
+    # `enumerate_props`/`enumerate_run_line` flags. Widening this set can
+    # never change what "moneyline" alone measures: see this module's own
+    # docstring and `PropArmIsSeparate`/`RunLineArmIsSeparate` in
+    # tests/test_card_v2_candidate_enumeration.py, which assert exactly that.
+    arm_tokens = set(args.arm.split("+"))
+    enumerate_props = "props" in arm_tokens
+    enumerate_run_line = "run_line" in arm_tokens
     corrected = shadow.card_v2_for_date_shadow(
         entries, opportunity_rows, date=args.date, now=now, frozen=frozen,
-        params=params, enumerate_props=enumerate_props)
+        params=params, enumerate_props=enumerate_props,
+        enumerate_run_line=enumerate_run_line)
     cor_candidates, cor_pool, not_built = shadow.build_game_candidates(
         entries, opportunity_rows, date=args.date, now=now, frozen=frozen)
+
+    # ALL ARMS CONSUME THE SAME SNAPSHOT. `entries`, `opportunity_rows` and
+    # `frozen` are each built exactly once above and passed unchanged into
+    # every arm's candidate builder -- the moneyline mirror, the prop
+    # board and the run-line builder below all read the identical board
+    # this run captured, so a coverage difference between arms is never an
+    # artifact of reading the odds store twice at two different instants.
+    # `build_run_line_candidates` reads its own quote source
+    # (`card.run_line_rows`, a DIFFERENT multibook market than the h2h rows
+    # above) with `multibook_rows=None` -- the same "read the live store"
+    # default every other run-line caller in this repo uses -- so the run
+    # line side of the board is current as of this same run, never a stale
+    # value pinned by a widened-scope `entries`/`opportunity_rows` build.
+    if enumerate_run_line:
+        rl_candidates, rl_pool, rl_not_built = shadow.build_run_line_candidates(
+            entries, date=args.date, now=now, frozen=frozen)
+    else:
+        rl_candidates, rl_pool, rl_not_built = [], 0, []
 
     # PROP CANDIDATES ARE PART OF "EVERY GATE RESULT". Rebuilt here so the
     # artifact records them with their own gate outcomes -- an earlier
@@ -462,6 +500,7 @@ def main(argv=None) -> int:
             "registered": "consensus_side_favourite_only",
             "corrected": corrected.get("enumeration"),
             "enumerate_props": enumerate_props,
+            "enumerate_run_line": enumerate_run_line,
             "runner": "scripts/shadow_enumeration_run.py",
         },
         "identity": {
@@ -547,6 +586,20 @@ def main(argv=None) -> int:
             "prop_candidate_rows": [_candidate_record(c, census_by_id)
                                     for c in cor_props],
             "prop_gates": _prop_gate_summary(cor_props, census_by_id),
+            # RUN LINE HAS NO REGISTERED COUNTERPART. Unlike the moneyline
+            # mirror and the prop board, `card_v2.card_v2_for_date` never
+            # builds a run-line candidate at all (module docstring, D1a) --
+            # so there is nothing in `registered_path` to compare this
+            # against. `rl_pool` is 0 with `sides_not_built` empty when
+            # `--arm` did not ask for this arm, which is what makes the
+            # moneyline and moneyline+props runs byte-identical to before
+            # this arm existed (`RunLineArmIsSeparate` in
+            # tests/test_card_v2_candidate_enumeration.py pins that).
+            "run_line_candidates": rl_pool,
+            "run_line_sides_not_built": rl_not_built,
+            "run_line_candidate_rows": [_candidate_record(c, census_by_id)
+                                        for c in rl_candidates],
+            "run_line_gates": _prop_gate_summary(rl_candidates, census_by_id),
             "selections": _selection_record(corrected),
         },
         "difference": {
@@ -565,10 +618,18 @@ def main(argv=None) -> int:
             "number keeps our_probability=None, fails those gates and is "
             "refused; `model_input_missing` marks it so a refusal is never "
             "read as a model opinion.",
-            "Prop candidates are the registered builder's, unchanged. Props "
-            "still enumerate one side per contract and run lines are still "
-            "not candidates at all -- both still depart from registration "
-            "section 2.",
+            "Prop candidates are the registered builder's, unchanged unless "
+            "--arm turns the prop arm on. With the run-line arm off, run "
+            "lines are still not candidates at all on either path -- both "
+            "still depart from registration section 2 by default.",
+            "The run-line arm (D1a) has no registered counterpart: "
+            "registered_path never carries a run-line row, so "
+            "corrected_path.run_line_candidates is compared to zero, not "
+            "to a registered count the way the moneyline and prop arms "
+            "are. Its own calibration (`_runline_calibration`) is a "
+            "SEPARATE fitted number from the moneyline Platt fit -- see "
+            "that function's docstring before reading `our_probability` "
+            "on a run_line row as if it came from the same fit.",
             "Zero candidates does NOT mean zero opportunities refused. Read "
             "board.games_without_a_priced_board first: a game with no "
             "multi-book consensus never reached either path, so neither "
@@ -593,6 +654,13 @@ def main(argv=None) -> int:
         f"missing model input {len(added_missing_model)}  "
         f"gates {payload['corrected_path']['added_sides_by_gate_primary_reason']}"
     )
+    if enumerate_run_line:
+        rl_gate_summary = payload["corrected_path"]["run_line_gates"][
+            "by_primary_reason"]
+        summary += (
+            f"\n  run line   : candidates {rl_pool:>3}  "
+            f"not built {len(rl_not_built)}  "
+            f"gates {rl_gate_summary}")
     print(summary, file=sys.stderr)
 
     if args.dry_run:
