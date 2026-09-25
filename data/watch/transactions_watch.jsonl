@@ -1886,3 +1886,6 @@
 {"fetched_utc": "2026-09-25T03:48:12.160274+00:00", "game_date": "2026-09-24", "poll": true}
 {"fetched_utc": "2026-09-25T04:00:31.753184+00:00", "game_date": "2026-09-25", "poll": true}
 {"fetched_utc": "2026-09-25T04:00:33.705085+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T04:14:21.295332+00:00", "game_date": "2026-09-25", "poll": true}
+{"category": "optioned", "date": "2026-09-25", "first_seen_utc": "2026-09-25T04:14:21.295332+00:00", "player": "Luis Gil", "player_id": 661563, "team": "NYY", "transaction_id": 943906}
+{"category": "optioned", "date": "2026-09-25", "first_seen_utc": "2026-09-25T04:14:21.295332+00:00", "player": "Bradley Hanner", "player_id": 690440, "team": "NYY", "transaction_id": 943907}
