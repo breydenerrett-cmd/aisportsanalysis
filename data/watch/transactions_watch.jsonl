@@ -1993,3 +1993,13 @@
 {"category": "designated", "date": "2026-09-25", "first_seen_utc": "2026-09-25T22:39:54.011689+00:00", "player": "Lyon Richardson", "player_id": 680689, "team": "MIL", "transaction_id": 943988}
 {"category": "recalled", "date": "2026-09-25", "first_seen_utc": "2026-09-25T22:39:54.011689+00:00", "player": "Brandon Lockridge", "player_id": 663604, "team": "MIL", "transaction_id": 943989}
 {"fetched_utc": "2026-09-25T22:39:56.241932+00:00", "game_date": "2026-09-25", "poll": true}
+{"fetched_utc": "2026-09-25T23:37:28.147929+00:00", "game_date": "2026-09-25", "poll": true}
+{"category": "il_placement", "date": "2026-09-25", "first_seen_utc": "2026-09-25T23:37:28.147929+00:00", "player": "Tyler Zuber", "player_id": 676604, "team": "MIA", "transaction_id": 943991}
+{"category": "recalled", "date": "2026-09-25", "first_seen_utc": "2026-09-25T23:37:28.147929+00:00", "player": "Wikelman Gonz\u00e1lez", "player_id": 682790, "team": "MIA", "transaction_id": 943992}
+{"category": "other", "date": "2026-09-25", "first_seen_utc": "2026-09-25T23:37:28.147929+00:00", "player": "Connor Brogdon", "player_id": 641401, "team": "CLE", "transaction_id": 943993}
+{"category": "other", "date": "2026-09-25", "first_seen_utc": "2026-09-25T23:37:28.147929+00:00", "player": "Alexander Cornielle", "player_id": 529017, "team": "NYY", "transaction_id": 943995}
+{"category": "optioned", "date": "2026-09-25", "first_seen_utc": "2026-09-25T23:37:28.147929+00:00", "player": "Brendan Beck", "player_id": 694341, "team": "NYY", "transaction_id": 943996}
+{"category": "il_transfer", "date": "2026-09-25", "first_seen_utc": "2026-09-25T23:37:28.147929+00:00", "player": "Fernando Cruz", "player_id": 518585, "team": "NYY", "transaction_id": 943997}
+{"category": "optioned", "date": "2026-09-25", "first_seen_utc": "2026-09-25T23:37:28.147929+00:00", "player": "Cesar Perdomo", "player_id": 702885, "team": "SF", "transaction_id": 943998}
+{"category": "il_activation", "date": "2026-09-25", "first_seen_utc": "2026-09-25T23:37:28.147929+00:00", "player": "Camilo Doval", "player_id": 666808, "team": "SF", "transaction_id": 943999}
+{"fetched_utc": "2026-09-25T23:37:30.785678+00:00", "game_date": "2026-09-25", "poll": true}
