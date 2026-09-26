@@ -2132,3 +2132,6 @@
 {"category": "il_placement", "date": "2026-09-26", "first_seen_utc": "2026-09-26T22:09:14.408415+00:00", "player": "Casey Mize", "player_id": 663554, "team": "SD", "transaction_id": 944135}
 {"category": "optioned", "date": "2026-09-26", "first_seen_utc": "2026-09-26T22:09:14.408415+00:00", "player": "Kyle Hart", "player_id": 606996, "team": "SD", "transaction_id": 944136}
 {"fetched_utc": "2026-09-26T22:09:16.398504+00:00", "game_date": "2026-09-26", "poll": true}
+{"fetched_utc": "2026-09-26T23:12:59.285268+00:00", "game_date": "2026-09-26", "poll": true}
+{"category": "other", "date": "2026-09-26", "first_seen_utc": "2026-09-26T23:12:59.285268+00:00", "player": "Alek Jacob", "player_id": 689690, "team": "SD", "transaction_id": 944137}
+{"fetched_utc": "2026-09-26T23:13:00.899546+00:00", "game_date": "2026-09-26", "poll": true}
