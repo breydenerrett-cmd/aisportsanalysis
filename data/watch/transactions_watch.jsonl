@@ -2120,3 +2120,7 @@
 {"category": "recalled", "date": "2026-09-26", "first_seen_utc": "2026-09-26T19:21:00.910430+00:00", "player": "Matthew Lugo", "player_id": 683090, "team": "KC", "transaction_id": 944129}
 {"category": "other", "date": "2026-09-26", "first_seen_utc": "2026-09-26T19:21:00.910430+00:00", "player": "Nick Loftin", "player_id": 679845, "team": "KC", "transaction_id": 944130}
 {"fetched_utc": "2026-09-26T19:21:02.538285+00:00", "game_date": "2026-09-26", "poll": true}
+{"fetched_utc": "2026-09-26T20:10:06.360021+00:00", "game_date": "2026-09-26", "poll": true}
+{"category": "recalled", "date": "2026-09-26", "first_seen_utc": "2026-09-26T20:10:06.360021+00:00", "player": "Adrian Del Castillo", "player_id": 680728, "team": "ARI", "transaction_id": 944131}
+{"category": "designated", "date": "2026-09-26", "first_seen_utc": "2026-09-26T20:10:06.360021+00:00", "player": "Jes\u00fas S\u00e1nchez", "player_id": 660821, "team": "ARI", "transaction_id": 944132}
+{"fetched_utc": "2026-09-26T20:10:08.153849+00:00", "game_date": "2026-09-26", "poll": true}
