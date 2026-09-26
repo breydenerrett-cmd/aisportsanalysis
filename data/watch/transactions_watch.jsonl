@@ -2090,3 +2090,14 @@
 {"fetched_utc": "2026-09-26T14:54:53.040515+00:00", "game_date": "2026-09-26", "poll": true}
 {"fetched_utc": "2026-09-26T15:07:52.442678+00:00", "game_date": "2026-09-26", "poll": true}
 {"fetched_utc": "2026-09-26T15:07:54.059197+00:00", "game_date": "2026-09-26", "poll": true}
+{"fetched_utc": "2026-09-26T15:57:30.597065+00:00", "game_date": "2026-09-26", "poll": true}
+{"category": "il_placement", "date": "2026-09-23", "first_seen_utc": "2026-09-26T15:57:30.597065+00:00", "player": "Jeff Hoffman", "player_id": 656546, "team": "MIN", "transaction_id": 944111}
+{"category": "recalled", "date": "2026-09-26", "first_seen_utc": "2026-09-26T15:57:30.597065+00:00", "player": "Chayce McDermott", "player_id": 694646, "team": "NYM", "transaction_id": 944075}
+{"category": "optioned", "date": "2026-09-26", "first_seen_utc": "2026-09-26T15:57:30.597065+00:00", "player": "Jefry Yan", "player_id": 642376, "team": "NYM", "transaction_id": 944076}
+{"category": "optioned", "date": "2026-09-26", "first_seen_utc": "2026-09-26T15:57:30.597065+00:00", "player": "Andrew Sears", "player_id": 808825, "team": "DET", "transaction_id": 944102}
+{"category": "il_activation", "date": "2026-09-26", "first_seen_utc": "2026-09-26T15:57:30.597065+00:00", "player": "Connelly Early", "player_id": 813349, "team": "WSH", "transaction_id": 944103}
+{"category": "optioned", "date": "2026-09-26", "first_seen_utc": "2026-09-26T15:57:30.597065+00:00", "player": "Luis Perales", "player_id": 691384, "team": "WSH", "transaction_id": 944104}
+{"category": "designated", "date": "2026-09-26", "first_seen_utc": "2026-09-26T15:57:30.597065+00:00", "player": "Chase Hampton", "player_id": 694633, "team": "WSH", "transaction_id": 944105}
+{"category": "il_transfer", "date": "2026-09-26", "first_seen_utc": "2026-09-26T15:57:30.597065+00:00", "player": "Kerry Carpenter", "player_id": 681481, "team": "DET", "transaction_id": 944107}
+{"category": "il_activation", "date": "2026-09-26", "first_seen_utc": "2026-09-26T15:57:30.597065+00:00", "player": "Kaelen Culpepper", "player_id": 701785, "team": "MIN", "transaction_id": 944108}
+{"fetched_utc": "2026-09-26T15:57:32.147596+00:00", "game_date": "2026-09-26", "poll": true}
