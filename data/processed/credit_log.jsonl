@@ -6047,3 +6047,9 @@
 {"budget_band": "live_capture", "caller": "batter_props.run", "credits_remaining": 6084, "credits_used_last": 0, "utc": "2026-09-26T05:23:06.881035Z"}
 {"budget_band": "live_capture", "caller": "nfl_capture.run", "credits_remaining": 6081, "credits_used_last": 0, "utc": "2026-09-26T05:23:34.775237Z"}
 {"budget_band": "live_capture", "caller": "mma_capture.run", "credits_remaining": 6080, "credits_used_last": 0, "utc": "2026-09-26T05:23:35.066346Z"}
+{"budget_band": "live_capture", "caller": "dense.run", "credits_remaining": 6080, "credits_used_last": 0, "utc": "2026-09-26T05:35:43.565451Z"}
+{"budget_band": "live_capture", "caller": "prop_listing.run", "credits_remaining": 6080, "credits_used_last": 0, "utc": "2026-09-26T05:35:44.937589Z"}
+{"budget_band": "live_capture", "caller": "prop_prices.run", "credits_remaining": 6080, "credits_used_last": 0, "utc": "2026-09-26T05:36:16.602915Z"}
+{"budget_band": "live_capture", "caller": "batter_props.run", "credits_remaining": 6080, "credits_used_last": 0, "utc": "2026-09-26T05:36:17.069715Z"}
+{"budget_band": "live_capture", "caller": "nfl_capture.run", "credits_remaining": 6077, "credits_used_last": 0, "utc": "2026-09-26T05:36:46.596445Z"}
+{"budget_band": "live_capture", "caller": "mma_capture.run", "credits_remaining": 6076, "credits_used_last": 0, "utc": "2026-09-26T05:36:46.962425Z"}
