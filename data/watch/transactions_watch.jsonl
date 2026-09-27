@@ -2246,3 +2246,4 @@
 {"category": "optioned", "date": "2026-09-27", "first_seen_utc": "2026-09-27T19:40:53.891493+00:00", "player": "Brant Hurter", "player_id": 676428, "team": "DET", "transaction_id": 944170}
 {"category": "recalled", "date": "2026-09-27", "first_seen_utc": "2026-09-27T19:40:53.891493+00:00", "player": "Raynel Delgado", "player_id": 669384, "team": "HOU", "transaction_id": 944171}
 {"category": "optioned", "date": "2026-09-27", "first_seen_utc": "2026-09-27T19:40:53.891493+00:00", "player": "Ronel Blanco", "player_id": 669854, "team": "HOU", "transaction_id": 944172}
+{"fetched_utc": "2026-09-27T19:52:02.015440+00:00", "game_date": "2026-09-27", "poll": true}
