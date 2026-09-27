@@ -2216,3 +2216,33 @@
 {"fetched_utc": "2026-09-27T14:32:06.923278+00:00", "game_date": "2026-09-27", "poll": true}
 {"fetched_utc": "2026-09-27T14:44:09.727759+00:00", "game_date": "2026-09-27", "poll": true}
 {"fetched_utc": "2026-09-27T14:44:11.710170+00:00", "game_date": "2026-09-27", "poll": true}
+{"fetched_utc": "2026-09-27T19:40:53.891493+00:00", "game_date": "2026-09-27", "poll": true}
+{"category": "il_placement", "date": "2026-09-24", "first_seen_utc": "2026-09-27T19:40:53.891493+00:00", "player": "Tyron Guerrero", "player_id": 594027, "team": "BOS", "transaction_id": 944154}
+{"category": "il_placement", "date": "2026-09-26", "first_seen_utc": "2026-09-27T19:40:53.891493+00:00", "player": "Mickey Gasper", "player_id": 681508, "team": "BOS", "transaction_id": 944153}
+{"category": "recalled", "date": "2026-09-27", "first_seen_utc": "2026-09-27T19:40:53.891493+00:00", "player": "Jefry Yan", "player_id": 642376, "team": "NYM", "transaction_id": 944141}
+{"category": "il_placement", "date": "2026-09-27", "first_seen_utc": "2026-09-27T19:40:53.891493+00:00", "player": "Jonathan Pintaro", "player_id": 702752, "team": "NYM", "transaction_id": 944142}
+{"category": "recalled", "date": "2026-09-27", "first_seen_utc": "2026-09-27T19:40:53.891493+00:00", "player": "Jesse Scholtens", "player_id": 669947, "team": "TB", "transaction_id": 944144}
+{"category": "optioned", "date": "2026-09-27", "first_seen_utc": "2026-09-27T19:40:53.891493+00:00", "player": "Ty Johnson", "player_id": 694494, "team": "TB", "transaction_id": 944145}
+{"category": "recalled", "date": "2026-09-27", "first_seen_utc": "2026-09-27T19:40:53.891493+00:00", "player": "Nate Eaton", "player_id": 681987, "team": "BOS", "transaction_id": 944146}
+{"category": "recalled", "date": "2026-09-27", "first_seen_utc": "2026-09-27T19:40:53.891493+00:00", "player": "Wyatt Olds", "player_id": 681544, "team": "BOS", "transaction_id": 944147}
+{"category": "optioned", "date": "2026-09-27", "first_seen_utc": "2026-09-27T19:40:53.891493+00:00", "player": "Jedixson Paez", "player_id": 699151, "team": "BOS", "transaction_id": 944148}
+{"category": "il_transfer", "date": "2026-09-27", "first_seen_utc": "2026-09-27T19:40:53.891493+00:00", "player": "Eli White", "player_id": 642201, "team": "BOS", "transaction_id": 944149}
+{"category": "il_activation", "date": "2026-09-27", "first_seen_utc": "2026-09-27T19:40:53.891493+00:00", "player": "Tanner Houck", "player_id": 656557, "team": "BOS", "transaction_id": 944150}
+{"category": "designated", "date": "2026-09-27", "first_seen_utc": "2026-09-27T19:40:53.891493+00:00", "player": "Jos\u00e9 Urquidy", "player_id": 664353, "team": "PHI", "transaction_id": 944155}
+{"category": "il_activation", "date": "2026-09-27", "first_seen_utc": "2026-09-27T19:40:53.891493+00:00", "player": "Jes\u00fas Luzardo", "player_id": 666200, "team": "PHI", "transaction_id": 944156}
+{"category": "optioned", "date": "2026-09-27", "first_seen_utc": "2026-09-27T19:40:53.891493+00:00", "player": "Craig Yoho", "player_id": 684974, "team": "CLE", "transaction_id": 944157}
+{"category": "recalled", "date": "2026-09-27", "first_seen_utc": "2026-09-27T19:40:53.891493+00:00", "player": "Austin Peterson", "player_id": 804926, "team": "CLE", "transaction_id": 944158}
+{"category": "optioned", "date": "2026-09-27", "first_seen_utc": "2026-09-27T19:40:53.891493+00:00", "player": "Evan Sisk", "player_id": 681895, "team": "PIT", "transaction_id": 944159}
+{"category": "recalled", "date": "2026-09-27", "first_seen_utc": "2026-09-27T19:40:53.891493+00:00", "player": "Noah Murdock", "player_id": 668716, "team": "PIT", "transaction_id": 944160}
+{"category": "il_placement", "date": "2026-09-27", "first_seen_utc": "2026-09-27T19:40:53.891493+00:00", "player": "Tony Gonsolin", "player_id": 664062, "team": "KC", "transaction_id": 944161}
+{"category": "il_activation", "date": "2026-09-27", "first_seen_utc": "2026-09-27T19:40:53.891493+00:00", "player": "James McArthur", "player_id": 663704, "team": "KC", "transaction_id": 944162}
+{"category": "optioned", "date": "2026-09-27", "first_seen_utc": "2026-09-27T19:40:53.891493+00:00", "player": "Logan O'Hoppe", "player_id": 681351, "team": "TEX", "transaction_id": 944163}
+{"category": "recalled", "date": "2026-09-27", "first_seen_utc": "2026-09-27T19:40:53.891493+00:00", "player": "Cam Cauley", "player_id": 695508, "team": "TEX", "transaction_id": 944164}
+{"category": "recalled", "date": "2026-09-27", "first_seen_utc": "2026-09-27T19:40:53.891493+00:00", "player": "Bobby Miller", "player_id": 676272, "team": "LAD", "transaction_id": 944165}
+{"category": "il_placement", "date": "2026-09-27", "first_seen_utc": "2026-09-27T19:40:53.891493+00:00", "player": "Blake Treinen", "player_id": 595014, "team": "LAD", "transaction_id": 944166}
+{"category": "recalled", "date": "2026-09-27", "first_seen_utc": "2026-09-27T19:40:53.891493+00:00", "player": "Braxton Garrett", "player_id": 666129, "team": "CHC", "transaction_id": 944167}
+{"category": "optioned", "date": "2026-09-27", "first_seen_utc": "2026-09-27T19:40:53.891493+00:00", "player": "Gavin Hollowell", "player_id": 668970, "team": "CHC", "transaction_id": 944168}
+{"category": "il_activation", "date": "2026-09-27", "first_seen_utc": "2026-09-27T19:40:53.891493+00:00", "player": "Jack Flaherty", "player_id": 656427, "team": "DET", "transaction_id": 944169}
+{"category": "optioned", "date": "2026-09-27", "first_seen_utc": "2026-09-27T19:40:53.891493+00:00", "player": "Brant Hurter", "player_id": 676428, "team": "DET", "transaction_id": 944170}
+{"category": "recalled", "date": "2026-09-27", "first_seen_utc": "2026-09-27T19:40:53.891493+00:00", "player": "Raynel Delgado", "player_id": 669384, "team": "HOU", "transaction_id": 944171}
+{"category": "optioned", "date": "2026-09-27", "first_seen_utc": "2026-09-27T19:40:53.891493+00:00", "player": "Ronel Blanco", "player_id": 669854, "team": "HOU", "transaction_id": 944172}
