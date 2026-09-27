@@ -3773,3 +3773,29 @@ end-to-end confirmation (above).
 - 2026-09-27T10:38Z daily_loop: test_tier_ladder exit=0
 - 2026-09-27T10:38Z daily_loop: research-readiness exit=0
 - 2026-09-27T10:39Z daily_loop: prereg-clv exit=0
+- 2026-09-27T14:56Z daily_loop: standings catchup end=2026-09-27
+- 2026-09-27T14:56Z daily_loop: lineups+matchup_history date=2026-09-27
+- 2026-09-27T14:56Z daily_loop: pitcher splits date=2026-09-27
+- 2026-09-27T14:56Z daily_loop: pitch arsenals season=2026
+- 2026-09-27T14:56Z daily_loop: statcast --catchup exit=0
+- 2026-09-27T14:56Z daily_loop: gamekey --date 2026-09-26 --end 2026-09-27 exit=0
+- 2026-09-27T14:56Z daily_loop: gameflow --date 2026-09-26 exit=0
+- 2026-09-27T15:14Z daily_loop: engine slate --date 2026-09-27 exit=0
+- 2026-09-27T15:14Z daily_loop: engine slip --date 2026-09-27
+- 2026-09-27T15:14Z daily_loop: engine settle --date 2026-09-26 exit=0
+- 2026-09-27T15:14Z daily_loop: card settle --recent exit=0
+- 2026-09-27T15:14Z daily_loop: card settle --rule all --date 2026-09-26 exit=0
+- 2026-09-27T15:14Z daily_loop: nfl card settle --recent exit=0
+- 2026-09-27T15:14Z daily_loop: mlb value shadow settle --recent exit=0 (counts only)
+- 2026-09-27T15:14Z daily_loop: tennis discover
+- 2026-09-27T15:14Z daily_loop: tennis results --date 2026-09-26
+- 2026-09-27T15:14Z daily_loop: live settle (counts only)
+- 2026-09-27T15:14Z daily_loop: card calibration frozen 2026-09-15 (docs/CARD_CALIBRATION_FREEZE_2026-09-15.md), refit skipped
+- 2026-09-27T15:14Z daily_loop: eod --date 2026-09-26 exit=0
+- 2026-09-27T15:14Z daily_loop: postmortem --date 2026-09-26 exit=0
+- 2026-09-27T15:16Z daily_loop: train exit=0
+- 2026-09-27T15:16Z daily_loop: closing-audit exit=0
+- 2026-09-27T15:16Z daily_loop: calibration_drift_audit exit=1
+- 2026-09-27T15:16Z daily_loop: test_tier_ladder exit=0
+- 2026-09-27T15:16Z daily_loop: research-readiness exit=0
+- 2026-09-27T15:17Z daily_loop: prereg-clv exit=0
