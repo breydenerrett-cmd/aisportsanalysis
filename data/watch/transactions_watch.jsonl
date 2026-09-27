@@ -2140,3 +2140,4 @@
 {"category": "optioned", "date": "2026-09-26", "first_seen_utc": "2026-09-27T00:19:31.452501+00:00", "player": "Julian Aguiar", "player_id": 687924, "team": "CHC", "transaction_id": 944139}
 {"category": "designated", "date": "2026-09-26", "first_seen_utc": "2026-09-27T00:19:31.452501+00:00", "player": "Antoine Kelly", "player_id": 681520, "team": "CHC", "transaction_id": 944140}
 {"fetched_utc": "2026-09-27T00:19:33.617217+00:00", "game_date": "2026-09-26", "poll": true}
+{"fetched_utc": "2026-09-27T00:26:54.506458+00:00", "game_date": "2026-09-26", "poll": true}
