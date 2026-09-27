@@ -2051,3 +2051,6 @@
 {"game_date": "2026-09-28", "observed_utc": "2026-09-27T13:53:33.045123+00:00", "poll": true}
 {"game_date": "2026-09-27", "observed_utc": "2026-09-27T14:05:58.375048+00:00", "poll": true}
 {"game_date": "2026-09-28", "observed_utc": "2026-09-27T14:05:58.412627+00:00", "poll": true}
+{"game_date": "2026-09-27", "observed_utc": "2026-09-27T14:19:06.500918+00:00", "poll": true}
+{"commence_time": "2026-09-27T17:05:00Z", "crew": [{"id": 668921, "name": "Jen Pawol", "officialType": "Home Plate"}, {"id": 428442, "name": "James Hoye", "officialType": "First Base"}, {"id": 503493, "name": "Sean Barber", "officialType": "Second Base"}, {"id": 658536, "name": "Austin Jones", "officialType": "Third Base"}], "game_date": "2026-09-27", "game_pk": 822679, "game_state": "Pre-Game", "home_plate_umpire": "Jen Pawol", "observed_utc": "2026-09-27T14:19:06.500918+00:00", "prev_poll_utc": "2026-09-27T14:05:58.375048+00:00", "revealed": true}
+{"game_date": "2026-09-28", "observed_utc": "2026-09-27T14:19:06.685674+00:00", "poll": true}
