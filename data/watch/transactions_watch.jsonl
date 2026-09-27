@@ -2251,3 +2251,6 @@
 {"fetched_utc": "2026-09-27T20:54:32.223077+00:00", "game_date": "2026-09-27", "poll": true}
 {"fetched_utc": "2026-09-27T22:05:29.626253+00:00", "game_date": "2026-09-27", "poll": true}
 {"fetched_utc": "2026-09-27T22:35:23.083438+00:00", "game_date": "2026-09-27", "poll": true}
+{"fetched_utc": "2026-09-27T23:22:31.856624+00:00", "game_date": "2026-09-27", "poll": true}
+{"category": "other", "date": "2026-09-27", "first_seen_utc": "2026-09-27T23:22:31.856624+00:00", "player": "Jason Alexander", "player_id": 669920, "team": "HOU", "transaction_id": 944173}
+{"category": "other", "date": "2026-09-27", "first_seen_utc": "2026-09-27T23:22:31.856624+00:00", "player": "Steven Cruz", "player_id": 674444, "team": "KC", "transaction_id": 944174}
