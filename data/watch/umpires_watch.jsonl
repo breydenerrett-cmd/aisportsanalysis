@@ -2057,3 +2057,5 @@
 {"game_date": "2026-09-27", "observed_utc": "2026-09-27T14:32:05.358396+00:00", "poll": true}
 {"commence_time": "2026-09-27T17:05:00Z", "crew": [{"id": 483569, "name": "Vic Carapazza", "officialType": "Home Plate"}, {"id": 605673, "name": "Alex Tosi", "officialType": "First Base"}, {"id": 554242, "name": "Edwin Moscoso", "officialType": "Second Base"}, {"id": 544728, "name": "Nic Lentz", "officialType": "Third Base"}], "game_date": "2026-09-27", "game_pk": 823490, "game_state": "Pre-Game", "home_plate_umpire": "Vic Carapazza", "observed_utc": "2026-09-27T14:32:05.358396+00:00", "prev_poll_utc": "2026-09-27T14:19:06.500918+00:00", "revealed": true}
 {"game_date": "2026-09-28", "observed_utc": "2026-09-27T14:32:05.514803+00:00", "poll": true}
+{"game_date": "2026-09-27", "observed_utc": "2026-09-27T14:44:10.110494+00:00", "poll": true}
+{"game_date": "2026-09-28", "observed_utc": "2026-09-27T14:44:10.303787+00:00", "poll": true}
