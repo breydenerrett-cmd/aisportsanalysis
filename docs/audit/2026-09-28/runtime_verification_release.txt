@@ -19,3 +19,8 @@ deploy	Health check	2026-09-28T20:48:16.0619117Z   /today -> 000000
 Revenue push d7837cce (feed, offer, checklist, honest copy):
   tests workflow: SUCCESS run 36484434795
   deploy-staging: FAILED run 36484434831 (same OOM; streaming fix in progress, docs/audit/2026-09-28/api_memory_profile.md)
+
+Streaming fix 4521080e (slice 3):
+  tests workflow: SUCCESS run 36495100076
+  deploy-staging: SUCCESS run 36495100095 -- first green deploy since 2026-09-23; health passed, /card/record /today /card /opportunities /games /changed /odds all 200
+  warm-up peak measured 540 MB (was 1,471 MB) on a 1,024 MB VM
