@@ -643,25 +643,23 @@ python3 -m src.cli store rotate --all --if-over-mb 60 --keep-days 3 \
 # config/capture_families.json is staged because `budget --probe` records a
 # family's measured cost there; without it the runner's fresh checkout
 # forgets the measurement and the loop would spend a credit re-probing daily.
-# data/historical IS NOT COMMITTED WHOLESALE, and the three files added on
-# 2026-09-23 are the exception rather than a change of policy. The directory
-# holds ~45MB of statcast plus multi-megabyte bullpen/lineup/pitcher stores;
-# committing those daily is what the run-scoped Actions cache exists to
-# avoid, and this repo has already had one 100MB push outage.
+# data/historical IS NOT COMMITTED FROM THIS LOOP -- including the results
+# store, its manifest and standings.jsonl, which the results catch-up at the
+# top of this script refreshes every run.
 #
-# But the cache is restored with `restore-keys: daily-loop-data-` AFTER the
-# checkout, so a cached copy silently overwrites whatever git holds. That is
-# fine for a store only this loop writes, and wrong for one a human or a
-# backfill also edits: on 2026-09-23 the results store was 13 days stale in
-# git while CI ran on a current cached copy, standings read `dates_built: 0`
-# against a git copy 15 days old, and a postseason backfill committed to git
-# would have been discarded by the next restore.
-#
-# These three are small (results ~1.2MB, manifest ~110KB, standings ~14KB),
-# they are the ones settlement and any bracket forecast depend on, and they
-# are the ones that must survive a cache miss. Committing them makes git and
-# the cache converge instead of diverge.
-git add data/processed data/watch data/research data/raw/oddsapi evidence data/paper_accounts docs/eod docs/OVERNIGHT_RUN.md artifacts config/capture_families.json data/historical/mlb_results.csv data/historical/mlb_results.manifest.json data/historical/standings.jsonl 2>/dev/null || true
+# All three are in daily-loop.yml's actions/cache path list, and that cache
+# is restored with `restore-keys: daily-loop-data-` AFTER the checkout, so
+# the copy on disk here is the CACHE's copy, not git's. Committing it would
+# make git converge on the cache by DELETING whatever only git holds. That is
+# not hypothetical: the 2023-2025 postseason backfill (131 games, 33 series)
+# exists only in git, and a cache-restore simulation (2026-09-25 integration
+# review) showed the first loop after it lands would have committed it away.
+# The runner does not need those rows -- the catch-up above stores this
+# window's postseason games in the cached copy, which is what settlement
+# reads -- and git keeps the backfill because nothing here overwrites it.
+# Making git authoritative for these stores needs a union of both copies
+# before ingest, not a blind `git add`; until that exists, do not stage them.
+git add data/processed data/watch data/research data/raw/oddsapi evidence data/paper_accounts docs/eod docs/OVERNIGHT_RUN.md artifacts config/capture_families.json 2>/dev/null || true
 git reset -q artifacts/demo_latest.html 2>/dev/null || true
 # GUARD (2026-09-21 incident): size-gate backstop for whatever store
 # rotation above did not catch -- prints WARN/ESCALATE, never blocks.

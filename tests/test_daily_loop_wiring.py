@@ -199,6 +199,21 @@ class DailyLoopScriptWiringTest(unittest.TestCase):
         self.assertIn("data/paper_accounts", joined)
         self.assertIn("docs/eod", joined)
 
+    def test_cache_restored_results_stores_are_never_staged(self):
+        # daily-loop.yml restores these from actions/cache AFTER checkout, so
+        # the copy on disk is the cache's. Staging it would delete rows only
+        # git holds -- the 2023-2025 postseason backfill (integration review,
+        # 2026-09-25). The results catch-up must still run.
+        add_lines = [line for line in self.text.splitlines()
+                     if line.strip().startswith("git add ")]
+        joined = "\n".join(add_lines)
+        for path in ("data/historical/mlb_results.csv",
+                     "data/historical/mlb_results.manifest.json",
+                     "data/historical/standings.jsonl"):
+            self.assertNotIn(path, joined)
+        self.assertNotIn("data/historical ", joined + " ")
+        self.assertIn("--game-types decisive", self.text)
+
     def test_output_captured_into_the_run_note(self):
         for var in ("SLATE_STATUS", "SETTLE_STATUS", "EOD_STATUS"):
             self.assertIn(f"exit=${var}", self.text)
