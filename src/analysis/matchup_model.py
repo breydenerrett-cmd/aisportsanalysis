@@ -514,8 +514,84 @@ def attribution_breakdown(store: Mapping, pitcher_logs: Mapping, bullpen_log,
             "park_factor": park_factor_value,
             "park_thin": (pf.get(home_team) or {}).get("thin"),
         },
-        "factor_dispositions": dict(FACTOR_DISPOSITIONS),
+        # THIS GAME'S OWN starting_pitcher disposition, not the module
+        # default (owner requirement, third review, 2026-09-27): a static
+        # `dict(FACTOR_DISPOSITIONS)` here would claim MODEL-USED even when
+        # neither probable id was ever supplied. `attribution_breakdown`
+        # has no notion of "projected" (it only ever receives a concrete id
+        # or `None`), so its own disposition can only distinguish
+        # MODEL-USED (both ids given) from UNAVAILABLE (either missing) --
+        # a caller pricing a PROJECTED starter through this function must
+        # override the returned "starting_pitcher" entry itself (see
+        # `per_game_factor_dispositions` below, which every caller in this
+        # project that DOES have a projected/actual distinction uses
+        # instead).
+        "factor_dispositions": {
+            **FACTOR_DISPOSITIONS,
+            "starting_pitcher": (
+                MODEL_USED if (away_probable_id is not None and home_probable_id is not None)
+                else UNAVAILABLE),
+        },
     }
+
+
+# ---------------------------------------------------------------------------
+# Per-game factor dispositions -- owner requirement, third review
+# (2026-09-27): MODEL-USED, SCENARIO INPUT, CONTEXT ONLY and UNAVAILABLE
+# must stay DISTINCT in every output. A single artifact-level
+# `factor_dispositions` cannot honestly say "starting_pitcher: MODEL-USED"
+# when some of the games it covers used a real, confirmed starter and
+# others used a starter PROJECTED from a rotation -- those are exactly the
+# MODEL-USED/SCENARIO-INPUT distinction this project's evidence rules
+# exist to keep visible. This function is the one place that distinction
+# is computed from a game's own starter sources, and is what actually PUTS
+# `SCENARIO_INPUT` into a real output (before this fix, `matchup_model`
+# defined the constant but never returned it).
+# ---------------------------------------------------------------------------
+
+_KNOWN_STARTER_SOURCES = frozenset({"actual", "actual_announced_game1"})
+
+
+def per_game_factor_dispositions(away_sp_source: Optional[str],
+                                 home_sp_source: Optional[str]) -> dict:
+    """One game's own factor-disposition map. Every entry except
+    `starting_pitcher` is copied from the module-wide `FACTOR_DISPOSITIONS`
+    unchanged (bullpen_quality and park_factor are always real, point-in-
+    time data regardless of which game; bullpen_recent_availability and
+    rest_travel are always CONTEXT ONLY; lineup_composition and
+    documented_injuries are always UNAVAILABLE -- none of that varies game
+    to game). `starting_pitcher` is computed fresh from each side's own
+    SOURCE label:
+
+      MODEL_USED      both sides are a real, already-known starter --
+                      `"actual"` (already played) or
+                      `"actual_announced_game1"` (a series opener's
+                      starters are always announced before it begins).
+      SCENARIO_INPUT  either side is `"projected"` -- a rotation guess,
+                      never a fact, even though it is grounded in that
+                      team's own real recency data (see
+                      `project_team_rotation`).
+      UNAVAILABLE     either side's source is `None` / unrecognized --
+                      no starter identity exists to price at all.
+
+    Raises `MatchupModelError` on a source string this function does not
+    recognize, rather than silently defaulting to any of the four labels --
+    a new source spelling introduced elsewhere in this project must be
+    taught to this function explicitly, not absorbed by a fallback that
+    could quietly mislabel a factor.
+    """
+    sources = (away_sp_source, home_sp_source)
+    if any(s is None for s in sources):
+        starting_pitcher = UNAVAILABLE
+    elif any(s == "projected" for s in sources):
+        starting_pitcher = SCENARIO_INPUT
+    elif all(s in _KNOWN_STARTER_SOURCES for s in sources):
+        starting_pitcher = MODEL_USED
+    else:
+        raise MatchupModelError(f"unrecognized starter source(s): {sources!r}")
+    out = dict(FACTOR_DISPOSITIONS)
+    out["starting_pitcher"] = starting_pitcher
+    return out
 
 
 # ---------------------------------------------------------------------------

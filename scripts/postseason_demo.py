@@ -604,17 +604,136 @@ def run_2026_conditional_bracket_demo(store, bullpen_log) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# v3 -- third review, 2026-09-27. Owner requirement: MODEL-USED, SCENARIO
+# INPUT, CONTEXT ONLY and UNAVAILABLE must stay DISTINCT in every output.
+# Neither v2's World Series artifact-level `factor_dispositions` nor the
+# (not-yet-written-by-main) 2026 bracket's correctly reflected that most of
+# the games they cover use a PROJECTED starter, not a confirmed one -- both
+# claimed a flat "starting_pitcher: MODEL-USED" regardless.
+#
+# LABELS ONLY. Both functions below call the EXISTING v2/v1 builder AS IS
+# and only ever read or copy its return value -- neither one calls
+# strength.model_line, postseason.exact_series_probability,
+# postseason.simulate_series, or any other probability-producing code a
+# second time with different inputs. Every probability, length_probs entry
+# and Monte Carlo figure in a v3 artifact is therefore IDENTICAL to the
+# corresponding v2/v1 one by construction, not merely by having been
+# checked once -- asserted directly in
+# tests/test_postseason_demo.py::V3ProbabilitiesMatchEarlierVersionTests.
+# ---------------------------------------------------------------------------
+
+def _labelled_starter_row(game_row: dict) -> dict:
+    """One pre_series_forecast/state_table game row, with its OWN
+    per-game `factor_dispositions` attached (`mm.per_game_factor_
+    dispositions`, computed from that row's own `*_sp_source`). A shallow
+    copy plus one new key -- every existing value in `game_row`, including
+    its `p_lad`, is carried over untouched."""
+    out = dict(game_row)
+    out["factor_dispositions"] = mm.per_game_factor_dispositions(
+        game_row["away_sp_source"], game_row["home_sp_source"])
+    return out
+
+
+def run_world_series_2024_demo_v3(store, pitcher_logs, bullpen_log) -> dict:
+    """v2, relabelled. `attribution_by_game` needs no change here: it comes
+    from `mm.attribution_breakdown`, itself fixed (third review) to say
+    MODEL-USED only when both probable ids are real, so v2's own
+    attribution rows are already correct and are carried over as is.
+    `pre_series_forecast` and `state_table` get a per-game
+    `factor_dispositions` each; the artifact-level `factor_dispositions`
+    drops `starting_pitcher` entirely rather than default to one label for
+    an artifact that mixes MODEL-USED and SCENARIO INPUT games.
+    """
+    v2 = run_world_series_2024_demo_v2(store, pitcher_logs, bullpen_log)
+
+    v3 = dict(v2)
+    v3["pre_series_forecast"] = dict(
+        v2["pre_series_forecast"],
+        per_game=[_labelled_starter_row(g) for g in v2["pre_series_forecast"]["per_game"]])
+    v3["state_table"] = [
+        dict(row, remaining_games=[_labelled_starter_row(g) for g in row["remaining_games"]])
+        for row in v2["state_table"]
+    ]
+
+    top_level = dict(v2["factor_dispositions"])
+    del top_level["starting_pitcher"]
+    v3["factor_dispositions"] = top_level
+    v3["factor_dispositions_note"] = (
+        "starting_pitcher has NO single artifact-level disposition here -- "
+        "this artifact mixes real, already-played games with a projected "
+        "rotation. attribution_by_game's 5 real games are MODEL-USED "
+        "(see each row's own factor_dispositions); game 1 of "
+        "pre_series_forecast and of every state_table row is MODEL-USED "
+        "for the same reason a series opener's starters are always "
+        "announced; every OTHER game in pre_series_forecast and in "
+        "state_table is SCENARIO INPUT, never MODEL-USED, because its "
+        "starter is a rotation projection, not a fact. Read each game's "
+        "own factor_dispositions.starting_pitcher rather than this "
+        "artifact-level map for that factor.")
+    v3["evidence_scope_note"] = (
+        "The 131 games / 33 series in data/historical/mlb_results.csv "
+        "(2023-2025) are an EVALUATION SUBSTRATE for exercising this "
+        "project's series and bracket mechanics -- observed history, not "
+        "evidence of predictive skill. Nothing in this demonstration "
+        "claims otherwise.")
+    v3["labelling_fix_note"] = (
+        "v3 changes LABELS ONLY, per the 2026-09-27 review. Every "
+        "probability, length_probs entry and Monte Carlo figure in this "
+        "file is copied unchanged from run_world_series_2024_demo_v2's own "
+        "return value -- see this script's v3 section header and "
+        "tests/test_postseason_demo.py's byte-identical-probability check.")
+    v3["demonstration"] = v2["demonstration"] + " v3 adds a per-game factor_dispositions map to every game."
+    return v3
+
+
+def run_2026_conditional_bracket_demo_v3(store, bullpen_log) -> dict:
+    """The bracket, relabelled. Every round here is an unscheduled future
+    game, so `starting_pitcher` is uniformly UNAVAILABLE -- not MODEL-USED
+    (the bug) and not SCENARIO INPUT (no rotation projection is attempted
+    for a round this far out; see `richer_factors_not_used_in_bracket`,
+    already present in v1/this function's own output).
+    """
+    v1 = run_2026_conditional_bracket_demo(store, bullpen_log)
+
+    v3 = dict(v1)
+    top_level = dict(v1["factor_dispositions"])
+    top_level["starting_pitcher"] = mm.UNAVAILABLE
+    v3["factor_dispositions"] = top_level
+    v3["evidence_scope_note"] = (
+        "The 131 games / 33 series in data/historical/mlb_results.csv "
+        "(2023-2025) are an EVALUATION SUBSTRATE for exercising this "
+        "project's series and bracket mechanics -- observed history, not "
+        "evidence of predictive skill. Nothing in this demonstration "
+        "claims otherwise.")
+    v3["labelling_fix_note"] = (
+        "v3 changes LABELS ONLY, per the 2026-09-27 review: "
+        "factor_dispositions.starting_pitcher now says UNAVAILABLE, "
+        "matching what richer_factors_not_used_in_bracket already said, "
+        "instead of the module-default MODEL-USED this artifact incorrectly "
+        "carried before. Every probability in AL/NL/world_series below is "
+        "copied unchanged from run_2026_conditional_bracket_demo's own "
+        "return value.")
+    v3["demonstration"] = v1["demonstration"] + " -- v3 corrects factor_dispositions.starting_pitcher to UNAVAILABLE."
+    return v3
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
 def main() -> int:
-    """2026-09-25 Opus review: only the v2 World Series demonstration is
-    (re)built by this entry point now. `run_world_series_2024_demo` and
-    `run_2026_conditional_bracket_demo` (v1) are left fully defined above,
-    unmodified, but are no longer called here, so
-    evidence/postseason/world_series_2024_demo.json and
-    evidence/postseason/bracket_2026_conditional_demo.json -- both written
-    by an earlier run of this script -- are never rewritten by this one.
+    """2026-09-27 third review: only the v3 artifacts are (re)built by this
+    entry point now. `run_world_series_2024_demo` (v1),
+    `run_2026_conditional_bracket_demo` (v1) and
+    `run_world_series_2024_demo_v2` are all left fully defined above,
+    unmodified, and `run_world_series_2024_demo_v2` / `run_2026_conditional_
+    bracket_demo` are still CALLED (by the two `_v3` functions, to build on
+    their output) -- but nothing here writes to
+    evidence/postseason/world_series_2024_demo.json,
+    evidence/postseason/world_series_2024_demo_v2.json, or
+    evidence/postseason/bracket_2026_conditional_demo.json. All three were
+    written by earlier runs of this script and are left untouched by this
+    one.
     """
     EVIDENCE_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -622,18 +741,27 @@ def main() -> int:
     pitcher_logs = pitchers_mod.read_logs()
     bullpen_log = bullpen_mod.read_log()
 
-    print("Building 2024 World Series demonstration v2 (attribution + "
-          "hindsight-free pre-series forecast + state table)...")
-    ws_demo_v2 = run_world_series_2024_demo_v2(store, pitcher_logs, bullpen_log)
-    ws_v2_path = EVIDENCE_DIR / "world_series_2024_demo_v2.json"
-    ws_v2_path.write_text(json.dumps(ws_demo_v2, indent=2, sort_keys=False), encoding="utf-8")
-    print(f"  wrote {ws_v2_path}")
+    print("Building 2024 World Series demonstration v3 (per-game factor_dispositions)...")
+    ws_demo_v3 = run_world_series_2024_demo_v3(store, pitcher_logs, bullpen_log)
+    ws_v3_path = EVIDENCE_DIR / "world_series_2024_demo_v3.json"
+    ws_v3_path.write_text(json.dumps(ws_demo_v3, indent=2, sort_keys=False), encoding="utf-8")
+    print(f"  wrote {ws_v3_path}")
     print(f"  pre-series forecast P(LAD wins series) = "
-          f"{ws_demo_v2['pre_series_forecast']['p_lad_wins_series']}")
+          f"{ws_demo_v3['pre_series_forecast']['p_lad_wins_series']}")
     print(f"  hindsight (not a forecast) P(LAD wins series) = "
-          f"{ws_demo_v2['hindsight_series_solve']['p_lad_wins_series']}")
-    print(f"  actual result: {ws_demo_v2['actual_result']}")
-    print(f"  state table: {[(r['k'], r['lad_wins'], r['lad_losses'], r['p_lad_wins_series']) for r in ws_demo_v2['state_table']]}")
+          f"{ws_demo_v3['hindsight_series_solve']['p_lad_wins_series']}")
+    print(f"  actual result: {ws_demo_v3['actual_result']}")
+    print(f"  state table: {[(r['k'], r['lad_wins'], r['lad_losses'], r['p_lad_wins_series']) for r in ws_demo_v3['state_table']]}")
+    print(f"  artifact-level factor_dispositions has starting_pitcher: "
+          f"{'starting_pitcher' in ws_demo_v3['factor_dispositions']} (should be False -- dropped)")
+
+    print("\nBuilding conditional 2026 bracket demonstration v3 (starting_pitcher disposition fix)...")
+    bracket_demo_v3 = run_2026_conditional_bracket_demo_v3(store, bullpen_log)
+    bracket_v3_path = EVIDENCE_DIR / "bracket_2026_conditional_demo_v3.json"
+    bracket_v3_path.write_text(json.dumps(bracket_demo_v3, indent=2, sort_keys=False), encoding="utf-8")
+    print(f"  wrote {bracket_v3_path}")
+    print(f"  factor_dispositions.starting_pitcher = "
+          f"{bracket_demo_v3['factor_dispositions']['starting_pitcher']}")
 
     return 0
 

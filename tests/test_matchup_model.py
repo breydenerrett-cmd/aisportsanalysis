@@ -139,6 +139,55 @@ class FactorDispositionTests(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
+# per_game_factor_dispositions -- third review, 2026-09-27: MODEL-USED,
+# SCENARIO INPUT, CONTEXT ONLY and UNAVAILABLE must stay distinct in every
+# output, and `SCENARIO_INPUT` (defined since the first review, never
+# returned by anything until now) must actually appear when a game's
+# starter is a projection rather than a fact.
+# ---------------------------------------------------------------------------
+
+class PerGameFactorDispositionsTests(unittest.TestCase):
+    def test_both_actual_is_model_used(self):
+        out = mm.per_game_factor_dispositions("actual", "actual")
+        self.assertEqual(mm.MODEL_USED, out["starting_pitcher"])
+
+    def test_game_one_exception_label_is_also_model_used(self):
+        out = mm.per_game_factor_dispositions("actual_announced_game1", "actual_announced_game1")
+        self.assertEqual(mm.MODEL_USED, out["starting_pitcher"])
+
+    def test_mixed_actual_and_projected_is_scenario_input(self):
+        out = mm.per_game_factor_dispositions("actual", "projected")
+        self.assertEqual(mm.SCENARIO_INPUT, out["starting_pitcher"])
+
+    def test_both_projected_is_scenario_input(self):
+        out = mm.per_game_factor_dispositions("projected", "projected")
+        self.assertEqual(mm.SCENARIO_INPUT, out["starting_pitcher"])
+
+    def test_either_side_none_is_unavailable(self):
+        for away, home in ((None, "actual"), ("actual", None), (None, None)):
+            out = mm.per_game_factor_dispositions(away, home)
+            self.assertEqual(mm.UNAVAILABLE, out["starting_pitcher"], msg=f"{away},{home}")
+
+    def test_unrecognized_source_raises_rather_than_silently_labelling(self):
+        with self.assertRaises(mm.MatchupModelError):
+            mm.per_game_factor_dispositions("guessed", "actual")
+
+    def test_the_other_six_factors_are_copied_unchanged(self):
+        out = mm.per_game_factor_dispositions("projected", "projected")
+        for factor in ("bullpen_quality", "park_factor", "bullpen_recent_availability",
+                      "rest_travel", "lineup_composition", "documented_injuries"):
+            self.assertEqual(mm.FACTOR_DISPOSITIONS[factor], out[factor])
+
+    def test_every_returned_label_is_one_of_the_four_constants(self):
+        allowed = {mm.MODEL_USED, mm.SCENARIO_INPUT, mm.CONTEXT_ONLY, mm.UNAVAILABLE}
+        for away, home in (("actual", "actual"), ("actual", "projected"),
+                          ("projected", "projected"), (None, "actual"), (None, None)):
+            out = mm.per_game_factor_dispositions(away, home)
+            for factor, disposition in out.items():
+                self.assertIn(disposition, allowed, msg=f"{factor}={disposition!r}")
+
+
+# ---------------------------------------------------------------------------
 # Feature construction
 # ---------------------------------------------------------------------------
 
@@ -346,6 +395,31 @@ class AttributionBreakdownTests(SyntheticFixtureMixin, unittest.TestCase):
         self.assertIsNotNone(inputs["away_bullpen_rate"])
         self.assertIsNotNone(inputs["home_bullpen_rate"])
         self.assertIsNotNone(inputs["park_factor"])
+
+    def test_own_factor_dispositions_say_model_used_when_both_starters_known(self):
+        att = mm.attribution_breakdown(self.store, self.pitcher_logs, self.bullpen_log,
+                                       "AAA", "BBB", 9001, 9002, self.test_date,
+                                       league_rpg=self.league_rpg)
+        self.assertEqual(mm.MODEL_USED, att["factor_dispositions"]["starting_pitcher"])
+
+    def test_own_factor_dispositions_say_unavailable_when_either_starter_unknown(self):
+        """Third review, 2026-09-27: a static `dict(FACTOR_DISPOSITIONS)`
+        used to claim MODEL-USED here even with no probable id at all."""
+        for away_id, home_id in ((None, None), (9001, None), (None, 9002)):
+            att = mm.attribution_breakdown(self.store, self.pitcher_logs, self.bullpen_log,
+                                           "AAA", "BBB", away_id, home_id, self.test_date,
+                                           league_rpg=self.league_rpg)
+            self.assertEqual(mm.UNAVAILABLE, att["factor_dispositions"]["starting_pitcher"],
+                             msg=f"away={away_id} home={home_id}")
+
+    def test_own_factor_dispositions_never_drop_the_other_six_factors(self):
+        att = mm.attribution_breakdown(self.store, self.pitcher_logs, self.bullpen_log,
+                                       "AAA", "BBB", 9001, 9002, self.test_date,
+                                       league_rpg=self.league_rpg)
+        self.assertEqual(set(mm.FACTOR_DISPOSITIONS), set(att["factor_dispositions"]))
+        for factor in ("bullpen_quality", "park_factor", "bullpen_recent_availability",
+                      "rest_travel", "lineup_composition", "documented_injuries"):
+            self.assertEqual(mm.FACTOR_DISPOSITIONS[factor], att["factor_dispositions"][factor])
 
     # ---- starter: isolation ----
     def test_starter_alone_moves_p_when_fip_differs(self):

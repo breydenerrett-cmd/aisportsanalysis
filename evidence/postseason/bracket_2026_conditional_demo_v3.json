@@ -1,0 +1,230 @@
+{
+  "demonstration": "CONDITIONAL 2026 postseason bracket -- NOT the final field -- v3 corrects factor_dispositions.starting_pitcher to UNAVAILABLE.",
+  "seeding_snapshot_captured_at": "2026-09-08T20:36:38.925644+00:00",
+  "seeding_source": "data/historical/standings.jsonl (one snapshot)",
+  "seeding": {
+    "AL": {
+      "1": "TB",
+      "2": "CWS",
+      "3": "HOU",
+      "4": "NYY",
+      "5": "BOS",
+      "6": "CLE"
+    },
+    "NL": {
+      "1": "MIL",
+      "2": "LAD",
+      "3": "ATL",
+      "4": "PHI",
+      "5": "CHC",
+      "6": "AZ"
+    }
+  },
+  "seeding_caveat": "Derived from the single 2026-09-08 standings.jsonl snapshot. The regular season does not end until 2026-09-27 (docs/SEASON_END_PLAN.md) -- games played after 2026-09-08 are NOT reflected in this seeding, and no fresher snapshot was available in this store. This bracket is CONDITIONAL on that snapshot, not a claim about the real 2026-09-29 field.",
+  "features_as_of": "2026-09-23",
+  "league_rpg_as_of": 4.5541,
+  "sealed_window_excluded": "[2026-01-01, 2026-08-28)",
+  "home_edge_scenario_input": 0.03,
+  "neutral_win_prob_note": "win_prob_fn is an APPROXIMATE neutral-site estimate (average of pricing the matchup with each side at home) -- see matchup_model.neutral_win_prob's docstring for why it cannot be exact without editing the frozen strength.py module.",
+  "baseline_bracket": {
+    "AL_reaches_lcs": {
+      "TB": 0.5704,
+      "CWS": 0.5369,
+      "HOU": 0.2186,
+      "NYY": 0.3266,
+      "BOS": 0.103,
+      "CLE": 0.2445
+    },
+    "AL_wins_pennant": {
+      "TB": 0.3459,
+      "CWS": 0.2343,
+      "HOU": 0.0831,
+      "NYY": 0.1915,
+      "BOS": 0.04,
+      "CLE": 0.1052
+    },
+    "NL_reaches_lcs": {
+      "MIL": 0.5267,
+      "LAD": 0.6073,
+      "ATL": 0.2372,
+      "PHI": 0.199,
+      "CHC": 0.2743,
+      "AZ": 0.1555
+    },
+    "NL_wins_pennant": {
+      "MIL": 0.2555,
+      "LAD": 0.3487,
+      "ATL": 0.1136,
+      "PHI": 0.0795,
+      "CHC": 0.1375,
+      "AZ": 0.0652
+    },
+    "wins_world_series": {
+      "TB": 0.1785,
+      "MIL": 0.1352,
+      "LAD": 0.207,
+      "ATL": 0.0564,
+      "PHI": 0.0355,
+      "CHC": 0.0757,
+      "AZ": 0.029,
+      "CWS": 0.0986,
+      "HOU": 0.0302,
+      "NYY": 0.097,
+      "BOS": 0.0123,
+      "CLE": 0.0445
+    }
+  },
+  "richer_bracket": {
+    "AL_reaches_lcs": {
+      "TB": 0.5105,
+      "CWS": 0.65,
+      "HOU": 0.1478,
+      "NYY": 0.4243,
+      "BOS": 0.0652,
+      "CLE": 0.2022
+    },
+    "AL_wins_pennant": {
+      "TB": 0.2069,
+      "CWS": 0.417,
+      "HOU": 0.0625,
+      "NYY": 0.1976,
+      "BOS": 0.012,
+      "CLE": 0.1041
+    },
+    "NL_reaches_lcs": {
+      "MIL": 0.5807,
+      "LAD": 0.4866,
+      "ATL": 0.2943,
+      "PHI": 0.1585,
+      "CHC": 0.2608,
+      "AZ": 0.2191
+    },
+    "NL_wins_pennant": {
+      "MIL": 0.3127,
+      "LAD": 0.2351,
+      "ATL": 0.1544,
+      "PHI": 0.0588,
+      "CHC": 0.1317,
+      "AZ": 0.1074
+    },
+    "wins_world_series": {
+      "TB": 0.0865,
+      "MIL": 0.1659,
+      "LAD": 0.1148,
+      "ATL": 0.0808,
+      "PHI": 0.0221,
+      "CHC": 0.0665,
+      "AZ": 0.0531,
+      "CWS": 0.2409,
+      "HOU": 0.0221,
+      "NYY": 0.0979,
+      "BOS": 0.0022,
+      "CLE": 0.0471
+    }
+  },
+  "richer_factors_used_in_bracket": [
+    "park_factor",
+    "bullpen_quality"
+  ],
+  "richer_factors_not_used_in_bracket": {
+    "starting_pitcher": "no probable pitchers exist yet for a round that has not been scheduled -- UNAVAILABLE for this bracket, unlike the World Series demo where real historical starters were confirmed facts"
+  },
+  "richer_data_quality_by_team": {
+    "ATL": {
+      "bullpen_rate": 4.1636,
+      "bullpen_thin": true,
+      "bullpen_innings": 34.66,
+      "park_factor": 1.0,
+      "park_thin": true
+    },
+    "AZ": {
+      "bullpen_rate": 4.1274,
+      "bullpen_thin": true,
+      "bullpen_innings": 33.67,
+      "park_factor": 1.0,
+      "park_thin": true
+    },
+    "BOS": {
+      "bullpen_rate": 5.3116,
+      "bullpen_thin": true,
+      "bullpen_innings": 39.67,
+      "park_factor": 1.0,
+      "park_thin": true
+    },
+    "CHC": {
+      "bullpen_rate": 4.9683,
+      "bullpen_thin": true,
+      "bullpen_innings": 37.0,
+      "park_factor": 1.0,
+      "park_thin": true
+    },
+    "CLE": {
+      "bullpen_rate": 4.3741,
+      "bullpen_thin": true,
+      "bullpen_innings": 38.33,
+      "park_factor": 1.0,
+      "park_thin": true
+    },
+    "CWS": {
+      "bullpen_rate": 3.8362,
+      "bullpen_thin": true,
+      "bullpen_innings": 45.33,
+      "park_factor": 1.0,
+      "park_thin": true
+    },
+    "HOU": {
+      "bullpen_rate": 4.2767,
+      "bullpen_thin": true,
+      "bullpen_innings": 39.66,
+      "park_factor": 1.0,
+      "park_thin": true
+    },
+    "LAD": {
+      "bullpen_rate": 4.5364,
+      "bullpen_thin": true,
+      "bullpen_innings": 32.67,
+      "park_factor": 1.0394,
+      "park_thin": true
+    },
+    "MIL": {
+      "bullpen_rate": 4.7126,
+      "bullpen_thin": true,
+      "bullpen_innings": 39.33,
+      "park_factor": 1.0,
+      "park_thin": true
+    },
+    "NYY": {
+      "bullpen_rate": 4.3804,
+      "bullpen_thin": true,
+      "bullpen_innings": 33.66,
+      "park_factor": 0.9951,
+      "park_thin": true
+    },
+    "PHI": {
+      "bullpen_rate": 4.529,
+      "bullpen_thin": true,
+      "bullpen_innings": 24.33,
+      "park_factor": 1.0,
+      "park_thin": true
+    },
+    "TB": {
+      "bullpen_rate": 4.6588,
+      "bullpen_thin": true,
+      "bullpen_innings": 37.0,
+      "park_factor": 1.0,
+      "park_thin": true
+    }
+  },
+  "richer_data_quality_caveat": "The unsealed window backing bullpen_rate and park_factor above runs only from 2026-08-28 to 2026-09-23 (~26 days) -- most or all teams' park_factor comes back neutral/thin at that sample size (see park_thin), and several bullpen_rate values are themselves flagged thin. Where thin is true, treat that team's richer-vs-baseline movement as a real but noisy short-sample signal, not a settled read.",
+  "factor_dispositions": {
+    "starting_pitcher": "UNAVAILABLE",
+    "bullpen_quality": "MODEL-USED",
+    "park_factor": "MODEL-USED",
+    "bullpen_recent_availability": "CONTEXT ONLY",
+    "rest_travel": "CONTEXT ONLY",
+    "lineup_composition": "UNAVAILABLE",
+    "documented_injuries": "UNAVAILABLE"
+  },
+  "evidence_scope_note": "The 131 games / 33 series in data/historical/mlb_results.csv (2023-2025) are an EVALUATION SUBSTRATE for exercising this project's series and bracket mechanics -- observed history, not evidence of predictive skill. Nothing in this demonstration claims otherwise.",
+  "labelling_fix_note": "v3 changes LABELS ONLY, per the 2026-09-27 review: factor_dispositions.starting_pitcher now says UNAVAILABLE, matching what richer_factors_not_used_in_bracket already said, instead of the module-default MODEL-USED this artifact incorrectly carried before. Every probability in AL/NL/world_series below is copied unchanged from run_2026_conditional_bracket_demo's own return value."
+}

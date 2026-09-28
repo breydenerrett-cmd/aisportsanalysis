@@ -295,5 +295,113 @@ class StateTableConsistencyTests(unittest.TestCase):
         self.assertNotIn(573186, pool["NYY"])
 
 
+ALLOWED_DISPOSITIONS = {"MODEL-USED", "SCENARIO INPUT", "CONTEXT ONLY", "UNAVAILABLE"}
+
+
+def _strip_label_only_keys(obj):
+    """Deep-copy `obj` with every labelling-only key removed, so what is
+    left is exactly the numeric/structural content a v3 artifact must share
+    byte-for-byte with the v2/v1 call it was built from."""
+    drop = {"factor_dispositions", "factor_dispositions_note", "evidence_scope_note",
+           "labelling_fix_note", "demonstration"}
+    if isinstance(obj, dict):
+        return {k: _strip_label_only_keys(v) for k, v in obj.items() if k not in drop}
+    if isinstance(obj, list):
+        return [_strip_label_only_keys(x) for x in obj]
+    return obj
+
+
+class V3LabellingTests(unittest.TestCase):
+    """Third review, 2026-09-27: MODEL-USED/SCENARIO INPUT/CONTEXT ONLY/
+    UNAVAILABLE must stay distinct, and a v3 relabelling must never change
+    a single probability. Real data, same justification as
+    StateTableConsistencyTests above."""
+
+    @classmethod
+    def setUpClass(cls):
+        from src.pipeline import bullpen, history, pitchers
+        store = history.read_results()
+        pitcher_logs = pitchers.read_logs()
+        bullpen_log = bullpen.read_log()
+        cls.v2 = demo.run_world_series_2024_demo_v2(store, pitcher_logs, bullpen_log)
+        cls.v3 = demo.run_world_series_2024_demo_v3(store, pitcher_logs, bullpen_log)
+        cls.bracket_v1 = demo.run_2026_conditional_bracket_demo(store, bullpen_log)
+        cls.bracket_v3 = demo.run_2026_conditional_bracket_demo_v3(store, bullpen_log)
+
+    # ---- WORLD SERIES v3 ----
+
+    def test_ws_v3_probabilities_are_byte_identical_to_v2(self):
+        self.assertEqual(_strip_label_only_keys(self.v2), _strip_label_only_keys(self.v3))
+
+    def test_ws_v3_top_level_drops_starting_pitcher_rather_than_default_it(self):
+        self.assertNotIn("starting_pitcher", self.v3["factor_dispositions"])
+        # the other six are untouched
+        for factor in ("bullpen_quality", "park_factor", "bullpen_recent_availability",
+                      "rest_travel", "lineup_composition", "documented_injuries"):
+            self.assertEqual(self.v2["factor_dispositions"][factor],
+                             self.v3["factor_dispositions"][factor])
+
+    def test_no_row_labels_a_projected_starter_model_used(self):
+        rows = list(self.v3["pre_series_forecast"]["per_game"])
+        for row in self.v3["state_table"]:
+            rows += row["remaining_games"]
+        for row in rows:
+            is_projected = "projected" in (row["home_sp_source"], row["away_sp_source"])
+            label = row["factor_dispositions"]["starting_pitcher"]
+            if is_projected:
+                self.assertNotEqual("MODEL-USED", label, msg=row)
+                self.assertEqual("SCENARIO INPUT", label, msg=row)
+
+    def test_every_per_row_label_is_one_of_the_four_constants(self):
+        rows = list(self.v3["attribution_by_game"]) + list(self.v3["pre_series_forecast"]["per_game"])
+        for row in self.v3["state_table"]:
+            rows += row["remaining_games"]
+        for row in rows:
+            for factor, label in row["factor_dispositions"].items():
+                self.assertIn(label, ALLOWED_DISPOSITIONS, msg=f"{factor}={label!r} in {row}")
+
+    def test_attribution_rows_are_model_used_not_scenario(self):
+        """The 5 real, already-played games are facts, not projections."""
+        for row in self.v3["attribution_by_game"]:
+            self.assertEqual("MODEL-USED", row["factor_dispositions"]["starting_pitcher"])
+
+    def test_evidence_scope_note_present_and_correct(self):
+        note = self.v3["evidence_scope_note"]
+        self.assertIn("131", note)
+        self.assertIn("33", note)
+        self.assertIn("evaluation substrate".upper(), note.upper())
+        self.assertIn("predictive skill", note)
+
+    # ---- 2026 BRACKET v3 ----
+
+    def test_bracket_v3_probabilities_are_byte_identical_to_v1(self):
+        self.assertEqual(_strip_label_only_keys(self.bracket_v1), _strip_label_only_keys(self.bracket_v3))
+
+    def test_bracket_v3_starting_pitcher_is_unavailable(self):
+        self.assertEqual("UNAVAILABLE", self.bracket_v3["factor_dispositions"]["starting_pitcher"])
+
+    def test_bracket_never_shows_model_used_starters_anywhere(self):
+        """The bracket has no per-round starter breakdown (no probables
+        exist for an unscheduled round), so the ONE place this factor is
+        labelled is the artifact-level map checked above -- this test pins
+        that nothing else in the artifact contradicts it."""
+        def walk(obj):
+            if isinstance(obj, dict):
+                if obj.get("starting_pitcher") == "MODEL-USED":
+                    self.fail(f"found MODEL-USED starting_pitcher in bracket v3: {obj}")
+                for v in obj.values():
+                    walk(v)
+            elif isinstance(obj, list):
+                for item in obj:
+                    walk(item)
+        walk(self.bracket_v3)
+
+    def test_bracket_v3_evidence_scope_note_present(self):
+        note = self.bracket_v3["evidence_scope_note"]
+        self.assertIn("131", note)
+        self.assertIn("33", note)
+        self.assertIn("predictive skill", note)
+
+
 if __name__ == "__main__":
     unittest.main()
