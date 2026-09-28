@@ -1,0 +1,452 @@
+{
+  "game_id": "CLE-KC-2026-09-25-1",
+  "date": "2026-09-25",
+  "built_at": "2026-09-28T03:02:26.746275+00:00",
+  "source_shadow_artifact": "evidence/shadow_enumeration/2026-09-25_20260925T144500Z_moneyline-run_line.json",
+  "recommendation": {
+    "game_id": "CLE-KC-2026-09-25-1",
+    "market": "moneyline",
+    "side": "home",
+    "price": 122,
+    "our_probability": 0.5091036472401836,
+    "market_probability": 0.44358,
+    "source_artifact": "evidence/shadow_enumeration/2026-09-25_20260925T144500Z_moneyline-run_line.json",
+    "bet_sentence": "Royals moneyline at +122"
+  },
+  "evidence": [
+    {
+      "claim_id": "model_input:CLE-KC-2026-09-25-1:home_sp_known",
+      "entity": "KC",
+      "event": "starter_known_to_model",
+      "text": "home starter known to the model: True (ERA 3.9293, 27 starts, 14 days rest)",
+      "source_ref": "evidence/shadow_enumeration/2026-09-25_20260925T144500Z_moneyline-run_line.json#board.models_by_game.CLE-KC-2026-09-25-1.model_inputs.home_sp_known",
+      "retrieved_at": "2026-09-28T03:02:26.746275+00:00",
+      "status": "CONFIRMED",
+      "uncertainty": "model's own point-in-time capture; not a probability, a boolean the pipeline recorded",
+      "intended_use": "verify the starter assumption behind the model's probability",
+      "published_at": null,
+      "independent": true,
+      "data": {
+        "home_sp_known": true,
+        "home_sp_era": 3.9293,
+        "home_sp_whip": 1.2037,
+        "home_sp_k9": 8.1393,
+        "home_sp_bb9": 2.8628,
+        "home_sp_hr9": 0.8981,
+        "home_sp_fip": 3.7535,
+        "home_sp_k_bb_pct": 0.1405,
+        "home_sp_ip_per_start": 5.679,
+        "home_sp_starts": 27,
+        "home_sp_appearances": 28,
+        "home_sp_innings": 160.33,
+        "home_sp_days_rest": 14,
+        "home_sp_recent_starts": 3,
+        "home_sp_recent_era": 3.1765,
+        "home_sp_recent_ip_per_start": 5.667,
+        "home_sp_thin": false,
+        "home_bullpen_rate": 5.2329,
+        "away_bullpen_rate": 4.0748,
+        "home_runs_scored_pg": 4.258,
+        "home_runs_allowed_pg": 4.929,
+        "home_run_diff_pg": -0.671,
+        "home_win_pct": 0.4323,
+        "home_games_played": 155,
+        "home_last5_run_diff_pg": -1.4,
+        "home_last10_run_diff_pg": -1.7,
+        "home_last5_runs_scored_pg": 5.8,
+        "home_last10_runs_scored_pg": 4.0,
+        "home_streak": 1,
+        "away_runs_scored_pg": 4.09,
+        "away_runs_allowed_pg": 4.065,
+        "away_run_diff_pg": 0.026,
+        "away_win_pct": 0.5226,
+        "away_games_played": 155,
+        "away_last5_run_diff_pg": 1.8,
+        "away_last10_run_diff_pg": 1.5,
+        "away_last5_runs_scored_pg": 4.2,
+        "away_last10_runs_scored_pg": 4.9,
+        "away_streak": -1
+      }
+    },
+    {
+      "claim_id": "model_input:CLE-KC-2026-09-25-1:away_sp_known",
+      "entity": "CLE",
+      "event": "starter_known_to_model",
+      "text": "away starter known to the model: True (ERA 3.7811, 29 starts, 14 days rest)",
+      "source_ref": "evidence/shadow_enumeration/2026-09-25_20260925T144500Z_moneyline-run_line.json#board.models_by_game.CLE-KC-2026-09-25-1.model_inputs.away_sp_known",
+      "retrieved_at": "2026-09-28T03:02:26.746275+00:00",
+      "status": "CONFIRMED",
+      "uncertainty": "model's own point-in-time capture; not a probability, a boolean the pipeline recorded",
+      "intended_use": "verify the starter assumption behind the model's probability",
+      "published_at": null,
+      "independent": true,
+      "data": {
+        "away_sp_known": true,
+        "away_sp_era": 3.7811,
+        "away_sp_whip": 1.0947,
+        "away_sp_k9": 12.142,
+        "away_sp_bb9": 2.8225,
+        "away_sp_hr9": 1.4379,
+        "away_sp_fip": 3.6302,
+        "away_sp_k_bb_pct": 0.257,
+        "away_sp_ip_per_start": 5.828,
+        "away_sp_starts": 29,
+        "away_sp_appearances": 29,
+        "away_sp_innings": 169.0,
+        "away_sp_days_rest": 14,
+        "away_sp_recent_starts": 3,
+        "away_sp_recent_era": 4.3953,
+        "away_sp_recent_ip_per_start": 4.778,
+        "away_sp_thin": false,
+        "home_bullpen_rate": 5.2329,
+        "away_bullpen_rate": 4.0748,
+        "home_runs_scored_pg": 4.258,
+        "home_runs_allowed_pg": 4.929,
+        "home_run_diff_pg": -0.671,
+        "home_win_pct": 0.4323,
+        "home_games_played": 155,
+        "home_last5_run_diff_pg": -1.4,
+        "home_last10_run_diff_pg": -1.7,
+        "home_last5_runs_scored_pg": 5.8,
+        "home_last10_runs_scored_pg": 4.0,
+        "home_streak": 1,
+        "away_runs_scored_pg": 4.09,
+        "away_runs_allowed_pg": 4.065,
+        "away_run_diff_pg": 0.026,
+        "away_win_pct": 0.5226,
+        "away_games_played": 155,
+        "away_last5_run_diff_pg": 1.8,
+        "away_last10_run_diff_pg": 1.5,
+        "away_last5_runs_scored_pg": 4.2,
+        "away_last10_runs_scored_pg": 4.9,
+        "away_streak": -1
+      }
+    },
+    {
+      "claim_id": "market:CLE-KC-2026-09-25-1:home",
+      "entity": "home",
+      "event": "market_quote",
+      "text": "Best price 122 at lowvig, 11 books, implied probability 0.44358",
+      "source_ref": "shadow artifact quotes_by_game.CLE-KC-2026-09-25-1.home",
+      "retrieved_at": "2026-09-28T03:02:26.746275+00:00",
+      "status": "CONFIRMED",
+      "uncertainty": "a quote, not a forecast -- no uncertainty beyond staleness, which G3 already governs",
+      "intended_use": "anchor the recommendation's market_probability to its own source",
+      "published_at": "2026-09-25T14:12:58.155367+00:00",
+      "independent": true,
+      "data": {
+        "best_price": 122,
+        "books": 11,
+        "market_implied_probability": 0.44358
+      }
+    },
+    {
+      "claim_id": "probable:CLE-KC-2026-09-25-1:home",
+      "entity": "Noah Cameron",
+      "event": "probable_pitcher",
+      "text": "MLB's schedule feed lists the home probable starter as Noah Cameron (id 702070).",
+      "source_ref": "MLB schedule feed (mlb.fetch_games, hydrate=probablePitcher)",
+      "retrieved_at": "2026-09-28T03:02:26.746275+00:00",
+      "status": "CONFIRMED",
+      "uncertainty": "primary source -- the league's own probable-pitcher listing",
+      "intended_use": "verify starter identity before attributing anything to a named pitcher",
+      "published_at": null,
+      "independent": true,
+      "data": {
+        "probable_id": 702070,
+        "probable_name": "Noah Cameron"
+      }
+    },
+    {
+      "claim_id": "probable:CLE-KC-2026-09-25-1:away",
+      "entity": "Gavin Williams",
+      "event": "probable_pitcher",
+      "text": "MLB's schedule feed lists the away probable starter as Gavin Williams (id 668909).",
+      "source_ref": "MLB schedule feed (mlb.fetch_games, hydrate=probablePitcher)",
+      "retrieved_at": "2026-09-28T03:02:26.746275+00:00",
+      "status": "CONFIRMED",
+      "uncertainty": "primary source -- the league's own probable-pitcher listing",
+      "intended_use": "verify starter identity before attributing anything to a named pitcher",
+      "published_at": null,
+      "independent": true,
+      "data": {
+        "probable_id": 668909,
+        "probable_name": "Gavin Williams"
+      }
+    },
+    {
+      "claim_id": "mlb_news:943065",
+      "entity": "Colin Holderman",
+      "event": "rehab",
+      "text": "Cleveland Guardians sent RHP Colin Holderman on a rehab assignment to Columbus Clippers.",
+      "source_ref": "MLB transactions feed, transaction_id=943065",
+      "retrieved_at": "2026-09-28T03:02:26.746275+00:00",
+      "status": "CONFIRMED",
+      "uncertainty": "primary source (the league's own transaction record); no independent confirmation sought",
+      "intended_use": "verify lineup/availability assumptions against sourced evidence",
+      "published_at": "2026-09-17",
+      "independent": true,
+      "data": null
+    },
+    {
+      "claim_id": "mlb_news:943938",
+      "entity": "Colin Holderman",
+      "event": "rehab",
+      "text": "Cleveland Guardians sent RHP Colin Holderman on a rehab assignment to Columbus Clippers.",
+      "source_ref": "MLB transactions feed, transaction_id=943938",
+      "retrieved_at": "2026-09-28T03:02:26.746275+00:00",
+      "status": "CONFIRMED",
+      "uncertainty": "primary source (the league's own transaction record); no independent confirmation sought",
+      "intended_use": "verify lineup/availability assumptions against sourced evidence",
+      "published_at": "2026-09-17",
+      "independent": true,
+      "data": null
+    },
+    {
+      "claim_id": "mlb_news:943244",
+      "entity": "Spencer Bivens",
+      "event": "recalled",
+      "text": "Kansas City Royals recalled RHP Spencer Bivens from Omaha Storm Chasers.",
+      "source_ref": "MLB transactions feed, transaction_id=943244",
+      "retrieved_at": "2026-09-28T03:02:26.746275+00:00",
+      "status": "CONFIRMED",
+      "uncertainty": "primary source (the league's own transaction record); no independent confirmation sought",
+      "intended_use": "verify lineup/availability assumptions against sourced evidence",
+      "published_at": "2026-09-19",
+      "independent": true,
+      "data": null
+    },
+    {
+      "claim_id": "mlb_news:943245",
+      "entity": "Craig Kimbrel",
+      "event": "other",
+      "text": "Kansas City Royals placed RHP Craig Kimbrel on the bereavement list.",
+      "source_ref": "MLB transactions feed, transaction_id=943245",
+      "retrieved_at": "2026-09-28T03:02:26.746275+00:00",
+      "status": "CONFIRMED",
+      "uncertainty": "primary source (the league's own transaction record); no independent confirmation sought",
+      "intended_use": "verify lineup/availability assumptions against sourced evidence",
+      "published_at": "2026-09-19",
+      "independent": true,
+      "data": null
+    },
+    {
+      "claim_id": "mlb_news:943405",
+      "entity": "Tony Gonsolin",
+      "event": "il_activation",
+      "text": "Kansas City Royals activated RHP Tony Gonsolin from the 15-day injured list.",
+      "source_ref": "MLB transactions feed, transaction_id=943405",
+      "retrieved_at": "2026-09-28T03:02:26.746275+00:00",
+      "status": "CONFIRMED",
+      "uncertainty": "primary source (the league's own transaction record); no independent confirmation sought",
+      "intended_use": "verify lineup/availability assumptions against sourced evidence",
+      "published_at": "2026-09-21",
+      "independent": true,
+      "data": {
+        "il_days": 15
+      }
+    },
+    {
+      "claim_id": "mlb_news:943406",
+      "entity": "Spencer Bivens",
+      "event": "optioned",
+      "text": "Kansas City Royals optioned RHP Spencer Bivens to ACL Royals.",
+      "source_ref": "MLB transactions feed, transaction_id=943406",
+      "retrieved_at": "2026-09-28T03:02:26.746275+00:00",
+      "status": "CONFIRMED",
+      "uncertainty": "primary source (the league's own transaction record); no independent confirmation sought",
+      "intended_use": "verify lineup/availability assumptions against sourced evidence",
+      "published_at": "2026-09-21",
+      "independent": true,
+      "data": null
+    },
+    {
+      "claim_id": "mlb_news:943754",
+      "entity": "Shawn Armstrong",
+      "event": "il_activation",
+      "text": "Cleveland Guardians activated RHP Shawn Armstrong from the 60-day injured list.",
+      "source_ref": "MLB transactions feed, transaction_id=943754",
+      "retrieved_at": "2026-09-28T03:02:26.746275+00:00",
+      "status": "CONFIRMED",
+      "uncertainty": "primary source (the league's own transaction record); no independent confirmation sought",
+      "intended_use": "verify lineup/availability assumptions against sourced evidence",
+      "published_at": "2026-09-23",
+      "independent": true,
+      "data": {
+        "il_days": 60
+      }
+    },
+    {
+      "claim_id": "mlb_news:943755",
+      "entity": "Connor Brogdon",
+      "event": "designated",
+      "text": "Cleveland Guardians designated RHP Connor Brogdon for assignment.",
+      "source_ref": "MLB transactions feed, transaction_id=943755",
+      "retrieved_at": "2026-09-28T03:02:26.746275+00:00",
+      "status": "CONFIRMED",
+      "uncertainty": "primary source (the league's own transaction record); no independent confirmation sought",
+      "intended_use": "verify lineup/availability assumptions against sourced evidence",
+      "published_at": "2026-09-23",
+      "independent": true,
+      "data": null
+    },
+    {
+      "claim_id": "mlb_news:943791",
+      "entity": "Steven Cruz",
+      "event": "other",
+      "text": "Kansas City Royals placed RHP Steven Cruz on the paternity list.",
+      "source_ref": "MLB transactions feed, transaction_id=943791",
+      "retrieved_at": "2026-09-28T03:02:26.746275+00:00",
+      "status": "CONFIRMED",
+      "uncertainty": "primary source (the league's own transaction record); no independent confirmation sought",
+      "intended_use": "verify lineup/availability assumptions against sourced evidence",
+      "published_at": "2026-09-24",
+      "independent": true,
+      "data": null
+    },
+    {
+      "claim_id": "mlb_news:943792",
+      "entity": "Spencer Bivens",
+      "event": "recalled",
+      "text": "Kansas City Royals recalled RHP Spencer Bivens from ACL Royals.",
+      "source_ref": "MLB transactions feed, transaction_id=943792",
+      "retrieved_at": "2026-09-28T03:02:26.746275+00:00",
+      "status": "CONFIRMED",
+      "uncertainty": "primary source (the league's own transaction record); no independent confirmation sought",
+      "intended_use": "verify lineup/availability assumptions against sourced evidence",
+      "published_at": "2026-09-24",
+      "independent": true,
+      "data": null
+    },
+    {
+      "claim_id": "mlb_news:943993",
+      "entity": "Connor Brogdon",
+      "event": "other",
+      "text": "Cleveland Guardians sent RHP Connor Brogdon outright to Columbus Clippers.",
+      "source_ref": "MLB transactions feed, transaction_id=943993",
+      "retrieved_at": "2026-09-28T03:02:26.746275+00:00",
+      "status": "CONFIRMED",
+      "uncertainty": "primary source (the league's own transaction record); no independent confirmation sought",
+      "intended_use": "verify lineup/availability assumptions against sourced evidence",
+      "published_at": "2026-09-25",
+      "independent": true,
+      "data": null
+    }
+  ],
+  "finding": {
+    "game_id": "CLE-KC-2026-09-25-1",
+    "verified_assumptions": [
+      [
+        "Both starters are known to the model from a real, non-trivial sample of appearances on each side, not a placeholder team-average fallback.",
+        "VERIFIED -- both_sp_known is true on this game's own model input, backed by full ERA/FIP/appearance counts on each side, not a boolean alone.",
+        [
+          "model_input:CLE-KC-2026-09-25-1:home_sp_known",
+          "model_input:CLE-KC-2026-09-25-1:away_sp_known"
+        ]
+      ],
+      [
+        "MLB's own schedule feed independently confirms a specific named starter for both sides, a different and more authoritative source than the model's own internal aggregate.",
+        "VERIFIED -- MLB's schedule feed (mlb.fetch_games) lists a confirmed probable starter with a real id on both sides.",
+        [
+          "probable:CLE-KC-2026-09-25-1:home",
+          "probable:CLE-KC-2026-09-25-1:away"
+        ]
+      ],
+      [
+        "No roster-move evidence ties either CONFIRMED starter to a recent injury, IL stint or workload limitation the model's aggregate ERA might be hiding -- the exact category of gap that undermined the earlier NYM-WSH review.",
+        "VERIFIED -- every MLB transaction for these two clubs in the trailing eight days names a DIFFERENT player (bullpen depth, bereavement/paternity list, a rehab assignment), never either confirmed starter.",
+        [
+          "mlb_news:943065",
+          "mlb_news:943938",
+          "mlb_news:943244",
+          "mlb_news:943245",
+          "mlb_news:943405",
+          "mlb_news:943406",
+          "mlb_news:943754",
+          "mlb_news:943755",
+          "mlb_news:943791",
+          "mlb_news:943792",
+          "mlb_news:943993"
+        ]
+      ]
+    ],
+    "challenged_assumption": "The strongest assumption behind this pick is that SEASON-LONG, regressed scoring rates are the right level to price this game at, rather than each side's sharply diverging recent form: Kansas City's trailing ten-game run rate sits -1.7 runs/game worse than its own season average while Cleveland's sits +1.5 runs/game better -- a real, sourced split pointing the OPPOSITE way from the recommended side. This review checked whether that divergence should move the number and concludes it should not: a short recent window is exactly the small, noisy sample `strength._shrink`'s games-played-weighted regression toward the league mean exists to discount, `strength.run_means` never reads a last10/last5/streak field at all (verified directly against src/analysis/strength.py, which contains none of those names), and treating a hot-or-cold short stretch as the sharper signal than a full season's regressed rate is the recency-bias mistake regression toward the mean is designed to correct for, not a gap in the model's design.",
+    "case_against": "The strongest case against this pick: recent form flatly contradicts the recommended side (Kansas City -1.7 runs/game over its trailing ten-game window against Cleveland's +1.5), Kansas City's own starter carries a HIGHER (worse) ERA than Cleveland's confirmed starter (3.9293 against 3.7811), and Kansas City's bullpen rate (5.2329) is also worse than Cleveland's (4.0748) -- three separate numbers that all point away from the home side. And unlike the other two picks the corrected arm produced from tonight's board, this one's score is the SMALLEST of the three, not one of the larger two -- so there is the least room for the recommendation to be wrong before it stops clearing the gates it barely cleared. None of that, however, is evidence the MODEL'S OWN number is mistaken -- it is evidence that the market and recent results disagree with the model in the usual, expected way a regressed rate sometimes will, which is what NO_ADJUSTMENT below concludes.",
+    "action": "NO_ADJUSTMENT",
+    "action_payload": {
+      "checked_claim_ids": [
+        "model_input:CLE-KC-2026-09-25-1:home_sp_known",
+        "model_input:CLE-KC-2026-09-25-1:away_sp_known",
+        "probable:CLE-KC-2026-09-25-1:home",
+        "probable:CLE-KC-2026-09-25-1:away",
+        "market:CLE-KC-2026-09-25-1:home",
+        "mlb_news:943065",
+        "mlb_news:943938",
+        "mlb_news:943244",
+        "mlb_news:943245",
+        "mlb_news:943405",
+        "mlb_news:943406",
+        "mlb_news:943754",
+        "mlb_news:943755",
+        "mlb_news:943791",
+        "mlb_news:943792",
+        "mlb_news:943993"
+      ]
+    },
+    "facts": [
+      {
+        "claim_id": "model_input:CLE-KC-2026-09-25-1:home_sp_known",
+        "field_path": "home_sp_era",
+        "value": 3.9293
+      },
+      {
+        "claim_id": "model_input:CLE-KC-2026-09-25-1:home_sp_known",
+        "field_path": "home_bullpen_rate",
+        "value": 5.2329
+      },
+      {
+        "claim_id": "model_input:CLE-KC-2026-09-25-1:away_sp_known",
+        "field_path": "away_sp_era",
+        "value": 3.7811
+      },
+      {
+        "claim_id": "model_input:CLE-KC-2026-09-25-1:away_sp_known",
+        "field_path": "away_bullpen_rate",
+        "value": 4.0748
+      },
+      {
+        "claim_id": "model_input:CLE-KC-2026-09-25-1:home_sp_known",
+        "field_path": "home_last10_run_diff_pg",
+        "value": -1.7
+      },
+      {
+        "claim_id": "model_input:CLE-KC-2026-09-25-1:away_sp_known",
+        "field_path": "away_last10_run_diff_pg",
+        "value": 1.5
+      }
+    ],
+    "rankings": [
+      {
+        "metric": "pick_score",
+        "subject_value": 0.03758204661738335,
+        "compared_values": [
+          0.09638901961434626,
+          0.08422589582018003
+        ],
+        "claimed_rank": 3
+      }
+    ],
+    "pitcher_attribution": {
+      "side": "home",
+      "name": "Noah Cameron",
+      "identity_claim_id": "probable:CLE-KC-2026-09-25-1:home"
+    },
+    "contribution_kind": "session_assisted",
+    "notes": "The model's own home-starter aggregate carries no pitcher name or id, so this review cannot independently confirm from this packet alone that the ERA/FIP figures cited above describe Noah Cameron specifically rather than a blended starter figure -- MLB's schedule feed confirms only that he is tonight's probable starter, which is a DIFFERENT fact from the model's own internal attribution of that ERA. Cleveland's confirmed starter is not named in this note because this finding declares only one pitcher_attribution and does not need his identity to make its case."
+  },
+  "experimental_contribution": {
+    "contribution_kind": "session_assisted",
+    "action": "NO_ADJUSTMENT",
+    "disclaimer": "This is an experimental LLM/session contribution, logged separately from the model's own published or shadow output. It carries no authority over anything published and was never merged into `recommendation` above -- compare the two objects field by field to see that nothing here overwrote anything there."
+  }
+}

@@ -1,0 +1,73 @@
+{
+  "game_id": "CLE-KC-2026-09-25-1",
+  "checked_at": "2026-09-28T03:02:27.272881+00:00",
+  "report_file": "CLE-KC-2026-09-25-1_20260928T030227Z_analyst_report.json",
+  "all_passed": true,
+  "n_checks": 16,
+  "checks": [
+    {
+      "check": "action_payload_shape",
+      "result": "PASS"
+    },
+    {
+      "check": "no_forbidden_field_names",
+      "result": "PASS"
+    },
+    {
+      "check": "source_claims_exist",
+      "result": "PASS"
+    },
+    {
+      "check": "verified_assumptions_cite_real_claims",
+      "result": "PASS"
+    },
+    {
+      "check": "correct_input_confirmed",
+      "result": "PASS"
+    },
+    {
+      "check": "correct_input_values_are_verified_facts",
+      "result": "PASS"
+    },
+    {
+      "check": "identity_gate",
+      "result": "PASS"
+    },
+    {
+      "check": "named_persons_are_attributed",
+      "result": "PASS"
+    },
+    {
+      "check": "fact[0] model_input:CLE-KC-2026-09-25-1:home_sp_known#home_sp_era",
+      "result": "PASS"
+    },
+    {
+      "check": "fact[1] model_input:CLE-KC-2026-09-25-1:home_sp_known#home_bullpen_rate",
+      "result": "PASS"
+    },
+    {
+      "check": "fact[2] model_input:CLE-KC-2026-09-25-1:away_sp_known#away_sp_era",
+      "result": "PASS"
+    },
+    {
+      "check": "fact[3] model_input:CLE-KC-2026-09-25-1:away_sp_known#away_bullpen_rate",
+      "result": "PASS"
+    },
+    {
+      "check": "fact[4] model_input:CLE-KC-2026-09-25-1:home_sp_known#home_last10_run_diff_pg",
+      "result": "PASS"
+    },
+    {
+      "check": "fact[5] model_input:CLE-KC-2026-09-25-1:away_sp_known#away_last10_run_diff_pg",
+      "result": "PASS"
+    },
+    {
+      "check": "ranking[0] pick_score",
+      "result": "PASS"
+    },
+    {
+      "check": "numbers_in_prose",
+      "result": "PASS"
+    }
+  ]
+}
