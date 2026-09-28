@@ -1,0 +1,14 @@
+0006 rotation: parent 5d1acec1 logical 215,247,491 B / 649,642 rows -> child e6e387e0 logical 215,730,505 B / 651,096 rows
+   new segment(s) ['data/processed/archive/odds_multibook/0006_2026-09-22_2026-09-23.jsonl.gz']: 50,924,475 B, 152,264 rows, taken from the start of the parent's hot file: True
+   hot 101,701,017 -> 51,259,556 B; parent logical is a byte-prefix of child logical: True; appended after: 483,014 B
+0007 rotation: parent 77ae90f8 logical 227,076,484 B / 685,191 rows -> child 1781f000 logical 227,392,173 B / 686,130 rows
+   new segment(s) ['data/processed/archive/odds_multibook/0007_2026-09-24_2026-09-24.jsonl.gz']: 29,938,146 B, 89,302 rows, taken from the start of the parent's hot file: True
+   hot 62,605,535 -> 32,983,078 B; parent logical is a byte-prefix of child logical: True; appended after: 315,689 B
+0008 rotation: parent ef0699ce logical 257,186,113 B / 774,876 rows -> child 1fed5255 logical 257,450,187 B / 775,647 rows
+   new segment(s) ['data/processed/archive/odds_multibook/0008_2026-09-25_2026-09-25.jsonl.gz']: 27,541,160 B, 82,387 rows, taken from the start of the parent's hot file: True
+   hot 62,777,018 -> 35,499,932 B; parent logical is a byte-prefix of child logical: True; appended after: 264,074 B
+END-TO-END 8aea5e90 -> origin tip (prefix check only; later segments also hold rows appended after 8aea5e90): parent 8aea5e90 logical 215,074,671 B / 649,109 rows -> child fad7847a logical 268,844,679 B / 809,234 rows
+   new segment(s) ['data/processed/archive/odds_multibook/0006_2026-09-22_2026-09-23.jsonl.gz', 'data/processed/archive/odds_multibook/0007_2026-09-24_2026-09-24.jsonl.gz', 'data/processed/archive/odds_multibook/0008_2026-09-25_2026-09-25.jsonl.gz']: 108,403,781 B, 323,953 rows, taken from the start of the parent's hot file: False
+   hot 101,528,197 -> 46,894,424 B; parent logical is a byte-prefix of child logical: True; appended after: 53,770,008 B
+origin tip: 8 segments, hot 46,894,424 B, logical rows 809,234, unparseable lines 0
+ALL PRESERVED
