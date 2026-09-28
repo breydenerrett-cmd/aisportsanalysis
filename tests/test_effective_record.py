@@ -18,6 +18,7 @@ import os
 import tempfile
 import unittest
 from datetime import datetime, timezone
+from unittest import mock
 
 from src.appstate import card_ledger
 from src.ledger.chain import HashChainLedger
@@ -564,6 +565,83 @@ class StakeBasisConsistency(_TempPathCase):
         out = er.build()
         self.assertIn("1 unit", out["stake_basis"])
         self.assertIn("profit units", out["stake_basis"].lower())
+
+
+# ---------------------------------------------------------------------------
+# postseason, graded but not counted (owner ruling, registration 11.1;
+# docs/PREREG_CARD_V2.md lines 1087-1089 and 3203-3205). The scenario-level
+# reconciliation lives in tests/test_postseason_not_counted.py; these test
+# the small pure helpers this module's postseason split is built from, in
+# isolation, the same way every other helper in this file's "small pure
+# helpers" section is tested elsewhere in this suite.
+# ---------------------------------------------------------------------------
+
+class PostseasonGamePksHelper(unittest.TestCase):
+    def test_only_non_regular_game_types_are_collected(self):
+        store = {
+            "1": {"game_pk": "1", "game_type": "R"},
+            "2": {"game_pk": "2", "game_type": "F"},
+            "3": {"game_pk": "3", "game_type": None},
+            "4": {"game_pk": "4", "game_type": ""},
+        }
+        pks = er._postseason_game_pks(store)
+        self.assertIn("2", pks)
+        self.assertNotIn("1", pks)
+        self.assertNotIn("3", pks)
+        self.assertNotIn("4", pks)
+
+    def test_both_str_and_int_forms_are_present(self):
+        """The exact join `src.cli`'s `_results_and_box_rows` uses for MLB
+        -- a caller with either an int or a str game_pk finds it."""
+        store = {"717465": {"game_pk": "717465", "game_type": "D"}}
+        pks = er._postseason_game_pks(store)
+        self.assertIn("717465", pks)
+        self.assertIn(717465, pks)
+
+    def test_a_row_with_no_game_pk_is_skipped_not_a_crash(self):
+        store = {"1": {"game_pk": None, "game_type": "F"}}
+        self.assertEqual(er._postseason_game_pks(store), frozenset())
+
+    def test_an_unreadable_store_is_an_empty_set_not_a_500(self):
+        """`results_store=None` reads the real file by default; a
+        `history.read_results` that raises must degrade to "nothing known
+        to be postseason", never propagate into a record route."""
+        with mock.patch("src.pipeline.history.read_results",
+                        side_effect=RuntimeError("gone")):
+            self.assertEqual(er._postseason_game_pks(None), frozenset())
+
+
+class IsPostseasonEntryHelper(unittest.TestCase):
+    def test_frozen_game_type_wins_even_with_no_pks_set(self):
+        self.assertTrue(er._is_postseason_entry({"game_type": "F"}, frozenset()))
+
+    def test_frozen_r_falls_through_to_the_pks_set(self):
+        self.assertFalse(er._is_postseason_entry({"game_type": "R"}, frozenset()))
+        self.assertTrue(er._is_postseason_entry(
+            {"game_type": "R", "game_pk": "9"}, frozenset({"9"})))
+
+    def test_game_id_is_checked_the_same_as_game_pk(self):
+        """MLB's game_id is str(game_pk) (src/sports/mlb.py's own
+        `_schedule`) -- a V2 entry that only carries `game_id` still
+        classifies correctly."""
+        self.assertTrue(er._is_postseason_entry(
+            {"game_id": "717465"}, frozenset({"717465"})))
+
+    def test_neither_key_present_is_never_postseason(self):
+        self.assertFalse(er._is_postseason_entry({}, frozenset({"1", "2"})))
+
+
+class MlbSnapshotAcceptsAnInjectedResultsStore(_TempPathCase):
+    def test_results_store_is_never_read_from_disk_when_injected(self):
+        """A caller (this test) supplies its own results store; the real
+        data/historical/mlb_results.csv must never be touched."""
+        v2_path = self._path("cards_v2.jsonl")
+        with mock.patch("src.pipeline.history.read_results",
+                        side_effect=AssertionError(
+                            "read_results() called despite an injected results_store")):
+            snap = er.mlb_snapshot(v1_path=self._path("v1_empty.jsonl"),
+                                   v2_path=v2_path, results_store={})
+        self.assertTrue(snap["current"]["available"])
 
 
 if __name__ == "__main__":

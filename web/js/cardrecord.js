@@ -368,6 +368,49 @@ function voidsNote(record) {
   return el("p", { class: "crp-voids", "data-hook": "record-voids-note", text });
 }
 
+/**
+ * POSTSEASON, GRADED BUT NOT COUNTED (owner ruling, registration 11.1;
+ * docs/PREREG_CARD_V2.md lines 1087-1089 and 3203-3205). Every figure
+ * above this panel -- headline(), propHeadline(), totalHeadline(),
+ * combinedHeadline() -- is the COUNTED record (regular season only,
+ * api/card.py's own `counted_scope`), so a postseason pick that graded
+ * WIN or LOSS never moves any of them. This is the one panel that shows
+ * it happened at all: published and graded exactly like every other
+ * pick, receipts and all, just never pooled into the record above.
+ *
+ * Returns null (renders nothing) whenever `record.postseason` is absent
+ * (an older /card/record, a non-MLB-V2 payload -- NFL, UFC and the V1
+ * shadow rule never carry this key) or genuinely empty (no postseason
+ * pick has graded yet, true for every real ledger until 2026-09-29's
+ * Wild Card round) -- never an empty panel announcing nothing.
+ */
+function postseasonNote(record) {
+  const postseason = record && record.postseason;
+  if (!postseason) return null;
+  const staked = typeof postseason.n_staked === "number" ? postseason.n_staked : 0;
+  const days = typeof postseason.days === "number" ? postseason.days : 0;
+  if (!staked && !days) return null;
+
+  const wrap = el("div", { class: "crp-headline crp-headline--postseason panel chamfer",
+    "data-hook": "record-postseason-headline" });
+  wrap.appendChild(el("span", { class: "crp-chain__label", text: "POSTSEASON (GRADED, NOT COUNTED)" }));
+  const grid = el("div", { class: "crp-stats" });
+  const wlp = `${postseason.wins ?? 0}-${postseason.losses ?? 0}-${postseason.pushes ?? 0}`;
+  grid.appendChild(statTile("POSTSEASON (W-L-P)", figure(wlp)));
+  grid.appendChild(statTile("VOIDS", figure(String(postseason.voids || 0), postseason.voids ? "warn" : null)));
+  grid.appendChild(statTile("UNITS NET", staked
+    ? figure(unitsFmt(postseason.profit_units),
+             postseason.profit_units > 0 ? "pos" : postseason.profit_units < 0 ? "neg" : null)
+    : absentFigure()));
+  grid.appendChild(statTile("NIGHTS", figure(String(days))));
+  wrap.appendChild(grid);
+  wrap.appendChild(el("p", { class: "crp-chain__body",
+    text: "Postseason picks are published and graded exactly like every other pick, but they are not part "
+        + "of the counted record above (registration 11.1) -- the regular season and the postseason are "
+        + "kept apart here, never pooled into one number." }));
+  return wrap;
+}
+
 /* ---------------------------------------------------------------------
  * Hash-chain status, in plain English.
  * ------------------------------------------------------------------- */
@@ -913,6 +956,14 @@ export async function renderCardRecord(container, options = {}) {
     }
     screen.appendChild(tableSection);
   }
+
+  // OUTSIDE the nothingSettled/else split on purpose: `record.days` above
+  // is the COUNTED days figure (registration 11.1), so a slate with
+  // postseason activity but nothing counted yet would otherwise take the
+  // `nothingSettled` branch and never reach this panel -- postseason
+  // picks are shown whether or not anything counted has graded.
+  const postseason = postseasonNote(record);
+  if (postseason) screen.appendChild(postseason);
 
   if (record.disclaimer) {
     screen.appendChild(el("p", { class: "crp-disclaimer", "data-hook": "record-disclaimer", text: record.disclaimer }));

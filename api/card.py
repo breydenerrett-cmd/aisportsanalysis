@@ -397,12 +397,23 @@ def get_card_record(request: Request = None, sport: str = "mlb",
         payload["basis"] = best_bets_card.BASIS
         payload["disclaimer"] = best_bets_card.DISCLAIMER
         payload.update(_effective_record_extras("mlb", None))
-        # FLAT ALIASES ONTO `combined` (found during task B1's verification
-        # pass, 2026-09-25; not introduced by it). Three separate readers of
-        # this exact route -- web/js/card.js's recordLine (the strip under
-        # tonight's picks), web/js/recordstrip.js's renderCardRecordStrip
-        # (the picks-page strip) and web/js/cardrecord.js's detail page --
-        # all read `rec.wins`/`rec.losses`/`rec.n_staked`/`rec.days`/
+        # POSTSEASON, GRADED BUT NOT COUNTED (owner ruling, registration
+        # 11.1; docs/PREREG_CARD_V2.md lines 1087-1089 and 3203-3205).
+        # `effective_record`'s V2 cohort already keeps the counted and
+        # postseason slices apart (read once here, rather than re-deriving
+        # a second split of the same graded entries by hand) -- see that
+        # module's own `_v2_cohort`/`_postseason_game_pks`.
+        from src.report import effective_record
+        current_cohort = effective_record.sport_snapshot("mlb").get("current") or {}
+        payload["postseason"] = current_cohort.get("postseason")
+        payload["counted_scope"] = current_cohort.get("counted_scope")
+        # FLAT ALIASES (found during task B1's verification pass,
+        # 2026-09-25; not introduced by it; extended 2026-09-28 for the
+        # postseason split above). Three separate readers of this exact
+        # route -- web/js/card.js's recordLine (the strip under tonight's
+        # picks), web/js/recordstrip.js's renderCardRecordStrip (the
+        # picks-page strip) and web/js/cardrecord.js's detail page -- all
+        # read `rec.wins`/`rec.losses`/`rec.n_staked`/`rec.days`/
         # `rec.profit_units`/`rec.win_rate`/`rec.roi_pct` at the TOP level.
         # That was true for V1's `record()`, which has always returned that
         # shape flat. `record_v2()` never did -- it reports main-band,
@@ -417,18 +428,20 @@ def get_card_record(request: Request = None, sport: str = "mlb",
         # -4.73u over 3 nights -- exactly the kind of confident-but-wrong
         # claim this product exists to never make.
         #
-        # `combined` (main-band + plus-money PICKS, pooled, fills excluded)
-        # is the correct population for this alias: it is the same "every
-        # settled pick, every market kind this rule carries, pooled" figure
-        # `src.report.effective_record`'s V2 headline already uses for the
-        # identical reason (see that module's own "MARKET-SET MISMATCH"
-        # docstring section). The nested `main`/`plus_money`/`fills`/
-        # `combined` breakdown stays exactly as `record_v2()` returns it --
-        # this only ADDS flat keys, it changes no existing key's meaning.
-        combined = payload.get("combined") or {}
+        # THESE ALIASES NOW READ THE COUNTED FIGURE (regular season only),
+        # not `combined` -- `combined` still pools postseason in (main-band
+        # + plus-money PICKS, fills excluded), unchanged, exactly as
+        # `record_v2()` returns it, so a caller reading the nested shape
+        # directly sees no change; only what the FLAT top-level keys alias
+        # to has moved, from `combined` to `effective_record`'s counted V2
+        # headline -- the same population `src.report.effective_record`'s
+        # cohort now reports for the identical "never let a postseason
+        # pick inflate the public record" reason (see that module's
+        # `counted_scope`). On today's ledger, with no postseason picks
+        # graded yet, the two are numerically identical.
         for _key in ("days", "wins", "losses", "pushes", "voids",
                     "n_staked", "profit_units", "win_rate", "roi_pct"):
-            payload[_key] = combined.get(_key)
+            payload[_key] = current_cohort.get(_key)
         _record_page_view(request, "card_record", None)
         return payload
 

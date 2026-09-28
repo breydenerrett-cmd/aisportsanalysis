@@ -243,3 +243,71 @@ corrected enumeration is ever published, section 16's own rule applies: it is
 a new rule id, with its own registration, its own fingerprint and its own
 count, and pre-fix and post-fix records are never pooled into one performance
 claim.
+
+---
+
+## E6 — The frozen `game_type` field cannot be used to classify postseason picks (2026-09-28)
+
+**SOURCE-CODE VERIFIED.**
+
+Registration 11.1 counts a V2 pick only if "its game is a regular-season game
+(MLB `gameType` `R`, read from the `game_type` frozen on the pick)" and states
+postseason picks are "published, graded and shown on the record, but not
+counted." Implementing that rule (the public-record split described below)
+found that the frozen field itself cannot do the job it is named for.
+
+`src/report/card_v2.py:275` freezes every PROP candidate's `game_type`
+unconditionally:
+
+```python
+            "game_type": "R",
+```
+
+with no read of the candidate's own game at all -- every prop entry this repo
+has ever written to `evidence/cards_v2.jsonl` carries `"game_type": "R"`,
+postseason or not.
+
+`src/report/card_v2.py:100-116` (`_game_type`) is more careful for GAME
+candidates -- it reads the dossier's own `game.get("game_type")` first -- but
+falls back to `"R"` the moment that key is absent:
+
+```python
+    return game.get("game_type") or entry.get("game_type") or "R"
+```
+
+and that function's own docstring says why the fallback has never mattered
+before now: "this project has never captured a live postseason slate." MLB's
+2026 regular season ends 2026-09-27 (`docs/SEASON_END_PLAN.md`); the Wild
+Card round starts 2026-09-29. Nothing upstream of this freeze (the dossier
+builder, the schedule adapter) was ever exercised against a postseason game,
+so whether the fallback fires in practice for a real postseason candidate is
+untested, not merely untrusted.
+
+**The correction applied (in scope for this task, unlike E1-E5).** Unlike
+E1-E5 above, which are recorded findings against the registered implementation
+and stop there, this one has a live consequence the owner ruled on directly
+(docs/PREREG_CARD_V2.md lines 1087-1089 and 3203-3205): postseason picks must
+still be excluded from the counted record starting with the 2026-09-29 Wild
+Card round, whether or not `card_v2.py`'s frozen field can be trusted by then.
+`src/report/effective_record.py` (`_postseason_game_pks`,
+`_is_postseason_entry`) classifies a graded V2 entry as postseason from the
+historical RESULTS STORE's own `game_type` column
+(`src.pipeline.history.read_results()`, keyed by `game_pk`, populated once a
+game's final score is ingested) -- not the frozen field -- and only falls
+back to the frozen `game_type` as a second, OR'd check, so a future fix to
+`card_v2.py`'s freezing needs no change on the reading side.
+
+**Deferred to the off-season.** The `card_v2.py:275` and `card_v2.py:116`
+fixes themselves (freezing the pick's real `game_type` instead of a literal
+or an untested fallback) are NOT made here -- `src/report/card_v2.py` is a
+fingerprinted file (`V2_FROZEN_FIELDS`, `code_fingerprint`), and E1-E5's own
+section on why an implementation erratum is not a registration edit applies
+identically to this file. Fixing it now, mid-season, would change the
+fingerprint every already-published and every future row is checked against.
+The correct fix -- and a live postseason slate to test it against, which does
+not exist yet -- waits for the off-season fingerprint change
+(`docs/CARD_V2_IMPLEMENTATION_ERRATUM_2026-09-22.md`'s own E1-E5 findings are
+folded into the same future commit; see docs/CARD_V2_BUILD_PLAN.md's T0a).
+Until then, `src/report/effective_record.py` is the one place a reader of the
+public record can trust to have gotten this right, and it does not depend on
+`card_v2.py` changing to keep being right.

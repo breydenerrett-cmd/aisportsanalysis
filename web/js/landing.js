@@ -351,6 +351,33 @@ function fillRuleBlock(root, prefix, cohort, roleLabel) {
     // all; a cohort reaching this function at all means it should.
     if (stateNode) stateNode.textContent = cohort.reason;
   }
+
+  // POSTSEASON, GRADED BUT NOT COUNTED (owner ruling, registration 11.1;
+  // docs/PREREG_CARD_V2.md lines 1087-1089 and 3203-3205). Every stat cell
+  // above (`${prefix}-wl`/`-units`/`-days`) is the COUNTED figure --
+  // effective_record.py's own `counted_scope` -- so a postseason pick
+  // never moves them. This is the one line that shows it happened at
+  // all: independent of `graded` above (a cohort can, in principle, have
+  // postseason activity for a night that itself reads ungraded/
+  // unavailable), driven only by whether `cohort.postseason` itself has
+  // anything in it. Uses the SAME `cohortWL`/`cohortUnitsText` helpers
+  // every other figure on this page uses, so a postseason W-L/units
+  // string is formatted identically to a counted one.
+  const postseasonNode = root.querySelector(`[data-hook='${prefix}-postseason']`);
+  if (postseasonNode) {
+    const postseason = cohort && cohort.postseason;
+    const active = postseason && ((postseason.n_staked > 0) || (postseason.days > 0));
+    if (active) {
+      const wl = cohortWL(postseason);
+      const units = cohortUnitsText(postseason);
+      const nights = postseason.days || 0;
+      postseasonNode.textContent = `Postseason: ${wl}, ${units}u over ${nights} `
+        + `night${nights === 1 ? "" : "s"}. Graded, not counted.`;
+      postseasonNode.hidden = false;
+    } else {
+      postseasonNode.hidden = true;
+    }
+  }
 }
 
 /**

@@ -86,10 +86,19 @@ class LandingJsFillsItFromMeta(unittest.TestCase):
 class MetaServesTheLedgerRecord(unittest.TestCase):
     """`api.meta._card_record` follows `card.ACTIVE_CARD_RULE` (its own
     docstring, written at T5): V1's `record()` while V1 is the published
-    card, V2's `record_v2()["combined"]` from the T13 cutover on. Both
-    paths are covered here rather than just whichever one happens to be
-    active in this checkout, since ACTIVE_CARD_RULE itself is what this
-    build changes."""
+    card, `effective_record`'s COUNTED V2 cohort from the T13 cutover on.
+
+    UPDATED 2026-09-28 (postseason ruling, registration 11.1). This used
+    to read `record_v2()["combined"]` directly, which pools postseason
+    picks in -- see `_card_record`'s own comment. It now reads
+    `effective_record.sport_snapshot("mlb")["current"]`, the one place
+    postseason is already excluded, so mocking `record_v2` alone no
+    longer fully determines the v2 figure: `history_v2` (which carries
+    the per-entry `game_pk`/`result`/`profit_units` this module's headline
+    is rebuilt from) has to be mocked too, consistently. Both paths are
+    covered here rather than just whichever one happens to be active in
+    this checkout, since ACTIVE_CARD_RULE itself is what this build
+    changes."""
 
     def test_meta_carries_v2s_combined_figures_since_the_t13_cutover(self):
         from api import meta as meta_api
@@ -99,15 +108,44 @@ class MetaServesTheLedgerRecord(unittest.TestCase):
         blank = {"days": 3, "wins": 2, "losses": 1, "pushes": 0, "voids": 0,
                 "n_staked": 3, "profit_units": 1.0, "win_rate": 0.667,
                 "roi_pct": 10.0}
+        # `history_v2`'s own shape (three settled nights, no `game_pk` on
+        # any entry -- so none classifies as postseason, see
+        # effective_record._is_postseason_entry) tallying to EXACTLY
+        # `blank`'s wins/losses/profit_units/days above: 2 wins (+0.8,
+        # +0.6), 1 loss (-0.4), 3 distinct dates.
+        history_fixture = {
+            "days": [
+                {"date": "2026-09-01", "graded": [
+                    {"kind": "game", "price_class": "MAIN", "entry_class": "pick",
+                     "result": "WIN", "profit_units": 0.8}]},
+                {"date": "2026-09-02", "graded": [
+                    {"kind": "game", "price_class": "MAIN", "entry_class": "pick",
+                     "result": "WIN", "profit_units": 0.6}]},
+                {"date": "2026-09-03", "graded": [
+                    {"kind": "game", "price_class": "MAIN", "entry_class": "pick",
+                     "result": "LOSS", "profit_units": -0.4}]},
+            ],
+            "total_days": 3, "truncated": False,
+        }
         with mock.patch.object(card_ledger, "record_v2",
-                              return_value={"combined": blank}):
+                              return_value={"combined": blank, "fills": {}, "withdrawn": 0}), \
+             mock.patch.object(card_ledger, "history_v2", return_value=history_fixture):
             payload = meta_api.get_meta()
         # profit_units added 2026-09-22 for the landing hero's proof panel;
         # previous_rule carries V1's frozen record on its own labelled line.
         got = dict(payload["card_record"])
         prev = got.pop("previous_rule")
+        # POSTSEASON, GRADED BUT NOT COUNTED (registration 11.1) -- this
+        # fixture carries none (no entry's `game_pk` is in the postseason
+        # set), so the sub-figure is present but empty, and `counted_scope`
+        # names the population the flat figures above now are.
+        postseason = got.pop("postseason")
+        counted_scope = got.pop("counted_scope")
         self.assertEqual(got, {k: blank.get(k) for k in
                                ("days", "wins", "losses", "pushes", "voids", "profit_units")})
+        self.assertIsNotNone(postseason)
+        self.assertEqual(postseason.get("n_staked"), 0)
+        self.assertIn("regular season only", counted_scope)
         self.assertEqual(prev["label"], "Our first card rule")
         # UPDATED, owner review 2026-09-25: this assertion used to compare
         # `prev` against `card_ledger.record()` directly -- V1's GAME-ONLY
@@ -145,13 +183,29 @@ class MetaServesTheLedgerRecord(unittest.TestCase):
                           ("days", "wins", "losses", "pushes", "voids", "profit_units")})
 
     def test_meta_never_guesses_when_the_ledger_is_unreadable(self):
+        """UPDATED 2026-09-28: a V2 read failure now degrades to
+        `effective_record`'s own honest-absence cohort (that module's own
+        docstring: "available: False and every figure None -- never an
+        invented 0-0") rather than `_card_record`'s outer `except`
+        catching a raised exception directly -- `_v2_cohort` already
+        catches `record_v2`/`history_v2` failures itself and returns that
+        cohort, so `_card_record` never sees the exception at all any
+        more. The days/wins/losses/pushes/voids/profit_units figures are
+        still every one of them None, exactly as before: only the
+        MECHANISM changed. `previous_rule` (V1, a separate ledger this
+        mock never touches) is a deliberate improvement -- it still
+        carries a real figure, because a V2 failure and a V1 read are no
+        longer one shared failure domain."""
         from api import meta as meta_api
         with mock.patch("src.appstate.card_ledger.record_v2",
                         side_effect=RuntimeError("gone")):
             payload = meta_api.get_meta()
-        self.assertEqual(payload["card_record"],
-                         {"days": None, "wins": None, "losses": None,
-                          "pushes": None, "voids": None, "profit_units": None})
+        got = dict(payload["card_record"])
+        self.assertIsNone(got.pop("postseason"))
+        self.assertIsNone(got.pop("counted_scope"))
+        self.assertIsNotNone(got.pop("previous_rule"))
+        self.assertEqual(got, {"days": None, "wins": None, "losses": None,
+                              "pushes": None, "voids": None, "profit_units": None})
 
 
 if __name__ == "__main__":

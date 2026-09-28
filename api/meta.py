@@ -174,8 +174,20 @@ def _card_record() -> dict:
         # figure there and are deliberately excluded from what this
         # single-sentence fallback calls "the record", the same way a fill
         # is never a pick anywhere else on this surface.
+        #
+        # POSTSEASON, GRADED BUT NOT COUNTED (owner ruling, registration
+        # 11.1; docs/PREREG_CARD_V2.md lines 1087-1089 and 3203-3205).
+        # `record_v2()["combined"]` still pools postseason picks in -- it
+        # is `card_ledger`'s own read, untouched by this task -- so the
+        # hero panel must NOT read it directly any more. Route through
+        # `effective_record`'s V2 cohort instead, the one place that
+        # already excludes postseason from its counted headline (see that
+        # module's own `counted_scope`); this keeps exactly the same
+        # `out` keys, just sourced from the counted figure rather than the
+        # gross one.
         if card_mod.ACTIVE_CARD_RULE == "v2":
-            rec = card_ledger.record_v2()["combined"]
+            from src.report import effective_record
+            rec = effective_record.sport_snapshot("mlb").get("current") or {}
         else:
             rec = card_ledger.record()
         # profit_units added 2026-09-22 for the landing hero's proof panel:
@@ -183,6 +195,10 @@ def _card_record() -> dict:
         keys = ("days", "wins", "losses", "pushes", "voids", "profit_units")
         out = {key: rec.get(key) for key in keys}
         if card_mod.ACTIVE_CARD_RULE == "v2":
+            # Postseason shown apart, never folded into the figure above --
+            # same rule as every other surface this task touches.
+            out["postseason"] = rec.get("postseason")
+            out["counted_scope"] = rec.get("counted_scope")
             # THE PREVIOUS RULE'S FIGURE, FROM effective_record -- THE ONE
             # SOURCE (owner review, 2026-09-25). This used to call
             # `card_ledger.record()` a second time here, which pools GAME

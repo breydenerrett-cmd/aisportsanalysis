@@ -59,7 +59,7 @@ class CardRecordMlbV2DoesNotRaise(unittest.TestCase):
         from api.card import get_card_record
         payload = get_card_record(request=None, sport="mlb", rule="v2")
         for key in ("sport", "chain_ok", "chain_detail", "rows_checked",
-                   "previous_rule"):
+                   "previous_rule", "postseason", "counted_scope"):
             self.assertIn(key, payload, key)
         self.assertEqual(payload["sport"], "mlb")
 
@@ -206,6 +206,43 @@ class HeroPreviousRuleEqualsSportTilePrevious(unittest.TestCase):
                             "re-verify this fixture still reflects real prop activity")
         self.assertEqual(pooled_wl[0], game_only_wl[0] + prop_breakdown["wins"])
         self.assertEqual(pooled_wl[1], game_only_wl[1] + prop_breakdown["losses"])
+
+
+@unittest.skipUnless(HAS_FASTAPI, "fastapi not installed")
+class RecordFlatFieldsEqualEffectiveRecordsCountedCohort(unittest.TestCase):
+    """Owner ruling, 2026-09-28 (registration 11.1): postseason picks are
+    published, graded and shown, but not counted. Live-ledger version of
+    tests/test_postseason_not_counted.py's mocked
+    `ApiCardV2ExposesPostseasonSplit` -- on TODAY's real ledger (MLB's
+    2026 regular season ends 2026-09-27, the Wild Card round starts
+    2026-09-29, docs/SEASON_END_PLAN.md) there is no real postseason
+    activity yet, so `postseason` reads zero and the counted figure
+    equals the same real numbers `CardRecordMlbV2FlatAliasesMatchRecord
+    LinesExpectation` already pins against `combined` above -- but the
+    SOURCE has to be effective_record's counted cohort, not `combined`
+    directly, by construction, so a real postseason night from
+    2026-09-29 on cannot silently re-inflate this route's headline
+    again."""
+
+    def test_flat_fields_match_effective_records_counted_v2_cohort(self):
+        from api.card import get_card_record
+        from src.report import effective_record
+        payload = get_card_record(request=None, sport="mlb", rule="v2")
+        current = effective_record.sport_snapshot("mlb").get("current") or {}
+        for key in ("days", "wins", "losses", "pushes", "voids", "profit_units"):
+            self.assertEqual(payload.get(key), current.get(key), key)
+        self.assertEqual(payload.get("postseason"), current.get("postseason"))
+        self.assertEqual(payload.get("counted_scope"), current.get("counted_scope"))
+
+    def test_postseason_key_has_the_headline_shape(self):
+        from api.card import get_card_record
+        payload = get_card_record(request=None, sport="mlb", rule="v2")
+        postseason = payload.get("postseason")
+        self.assertIsNotNone(postseason)
+        for key in ("wins", "losses", "pushes", "voids", "unresolved",
+                   "n_staked", "profit_units", "days", "date_span", "label"):
+            self.assertIn(key, postseason, key)
+        self.assertEqual(postseason["label"], "Postseason (graded, not counted)")
 
 
 if __name__ == "__main__":

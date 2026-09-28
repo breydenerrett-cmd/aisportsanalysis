@@ -216,6 +216,7 @@ def _unavailable_cohort(*, sport: str, rule_id: str, status: str, label: str,
         "roi_pct": None,
         "market_breakdown": None, "market_note": None,
         "fills": None, "fills_tracked": False, "withdrawn": None,
+        "postseason": None, "counted_scope": None,
         "published_count": None, "pending_count": None,
         "settled_count": None, "unresolved_count": None,
         "chain_ok": None, "rows_checked": None,
@@ -238,14 +239,183 @@ def _grading_state(*, published_dates: set, settled_days: int,
 
 
 # ---------------------------------------------------------------------------
+# POSTSEASON, GRADED BUT NOT COUNTED (owner ruling, registration 11.1;
+# docs/PREREG_CARD_V2.md lines 1087-1089 and 3203-3205). A postseason pick
+# is published and graded exactly like any other -- it just never enters
+# the counted win-loss/units figure. The frozen `game_type` field on a V2
+# entry cannot be trusted for this today: `src/report/card_v2.py` freezes
+# every prop candidate "R" unconditionally (line 275) and defaults every
+# game candidate to "R" when the field is absent (line 116) -- see
+# docs/CARD_V2_IMPLEMENTATION_ERRATUM_2026-09-22.md's postseason item. The
+# authoritative source is instead the historical RESULTS store
+# (`src.pipeline.history.read_results()`), which carries a real `game_type`
+# per `game_pk` once that game's final score is ingested -- the frozen
+# field is kept as a second, OR'd check so a future fix to card_v2.py's
+# freezing needs no change here.
+# ---------------------------------------------------------------------------
+
+def _postseason_game_pks(results_store: Optional[Mapping] = None) -> frozenset:
+    """Every `game_pk` the results store marks as NOT regular season, in
+    both str AND int form -- the same double-keyed join
+    `src.cli`'s `_results_and_box_rows` already uses for MLB, so a caller
+    on either side of that str/int split finds it. `results_store` is
+    `history.read_results()`'s own return (game_pk -> row, `game_type`
+    among its columns); a caller (a test) injects its own mapping of that
+    exact shape rather than this function ever reading a real file, or
+    omits it to read `data/historical/mlb_results.csv` fresh. This never
+    reads a result's score/winner/margin -- only the one column that says
+    which season a game belongs to (see this module's own "PUBLIC ONLY"
+    rule: nothing here peeks at a sealed evaluation window's outcomes for
+    any other reason). An unreadable store is treated as "nothing known to
+    be postseason" (an empty set), never a 500 on the record route.
+    """
+    if results_store is None:
+        from src.pipeline import history as history_mod
+        try:
+            results_store = history_mod.read_results()
+        except Exception:  # noqa: BLE001 -- honest-absence, never a 500
+            results_store = {}
+    pks: set = set()
+    for row in (results_store or {}).values():
+        game_type = (row or {}).get("game_type")
+        if not game_type or game_type == "R":
+            continue
+        pk = (row or {}).get("game_pk")
+        if pk is None:
+            continue
+        pks.add(pk)
+        pks.add(str(pk))
+        try:
+            pks.add(int(pk))
+        except (TypeError, ValueError):
+            pass
+    return frozenset(pks)
+
+
+def _is_postseason_entry(entry: Mapping, postseason_pks: frozenset) -> bool:
+    """True if a graded pick/fill (V1's settled-row shape or V2's frozen
+    entry shape) belongs to a postseason game: its own frozen `game_type`
+    is a real, non-"R" value (see this section's own note on why that is
+    checked but not relied on today), OR its `game_pk` -- or, for a V2
+    entry, its `game_id` (MLB's `game_id` is `str(game_pk)`, see
+    `src/sports/mlb.py`'s `_schedule`) -- is in `postseason_pks`. Checking
+    both keys means a prop pick (which carries the game it belongs to
+    under the same `game_pk` field as a game pick -- both are in
+    `V2_FROZEN_FIELDS`/`FROZEN_FIELDS`) classifies correctly without any
+    special-casing for kind.
+    """
+    frozen_type = entry.get("game_type")
+    if frozen_type and frozen_type != "R":
+        return True
+    if not postseason_pks:
+        return False
+    for key in ("game_pk", "game_id"):
+        value = entry.get(key)
+        if value is not None and value in postseason_pks:
+            return True
+    return False
+
+
+def _subtract_fig(total: Mapping, sub: Mapping) -> dict:
+    """`total` minus `sub`, component-wise, re-finished (`win_rate`/
+    `roi_pct` recomputed from the subtracted counts, never carried over
+    stale). The one arithmetic op that turns a gross per-kind figure and
+    its postseason slice into the counted slice -- used for V1, whose
+    `record()` totals are row-level scalars this module never re-derives
+    from scratch (see `_v1_postseason_breakdown`'s own docstring)."""
+    out = _blank_fig()
+    for key in ("wins", "losses", "pushes", "voids", "unresolved", "n_staked"):
+        out[key] = (total.get(key) or 0) - (sub.get(key) or 0)
+    out["profit_units"] = (total.get("profit_units") or 0.0) - (sub.get("profit_units") or 0.0)
+    return _finish_fig(out)
+
+
+# ---------------------------------------------------------------------------
 # V1-shaped cohorts (MLB-v1, NFL either rule, MMA) -- all read through the
 # same generic `record()`/`history()` pair, which already pools game/prop/
 # total apart via `by_kind` regardless of sport.
 # ---------------------------------------------------------------------------
 
+def _v1_postseason_breakdown(path: str, filter_rule: Optional[str],
+                              postseason_pks: frozenset) -> tuple:
+    """(postseason_breakdown, postseason_dates) -- the postseason SLICE of
+    a V1-style ledger's settled picks, by kind (game/prop/total), read
+    from the RAW settled rows' own `picks`/`prop_picks`/`total_picks`
+    lists.
+
+    WHY THE RAW LEDGER, NOT `record()`/`history()`. `record()`'s by-kind
+    totals are read straight off each settled row's own SCALAR
+    wins/losses/.../profit_units fields (see that function's own loop over
+    `row.get("wins")` etc) -- the `picks` list is not what those totals
+    sum, so it can be empty on a real row without the row's own totals
+    being wrong (nothing before this task ever needed a pick-level
+    `game_pk` at grading time). `history()`'s own per-pick view drops
+    `game_pk` entirely (not one of the fields its own `picks.append({...})`
+    carries). The raw settled row is the only place `game_pk` and
+    `result`/`profit_units` are both present on the same pick dict -- see
+    `settle()`'s own `row = {..., "game_pk": pick.get("game_pk"), **grade}`.
+
+    Corrections are deliberately NOT folded in here (contrast the V2 path,
+    which has no row/pick split to begin with): `_apply_corrections` only
+    ever patches `result`/`profit_units`/score fields, never `game_pk`
+    (`_CORRECTABLE_FIELDS`), so this can only go stale in the combination
+    of "a corrected pick" AND "a postseason pick" -- for V1 (frozen
+    2026-09-23, entirely regular-season picks, see this module's own
+    docstring) that combination has never occurred and cannot occur on the
+    frozen 13 nights; a caller that ever points this at a ledger where it
+    could should treat this as a documented limitation, not a silently
+    wrong number.
+
+    Returns EMPTY (`{}`, `set()`) whenever a settled row's `picks`/
+    `prop_picks`/`total_picks` lists are not populated -- the normal shape
+    for every ledger built before this task (nothing needed `game_pk` at
+    the pick level until now). An empty result makes the subtraction in
+    `_v1_style_cohort` below a genuine no-op, never a guess.
+    """
+    latest_settled: dict = {}
+    rule_of_published: dict = {}
+    for row in HashChainLedger(path).read():
+        kind = row.get("kind")
+        if kind == card_ledger.KIND_SETTLED:
+            latest_settled[row.get("date")] = row
+        elif kind == card_ledger.KIND_PUBLISHED:
+            rule_of_published[row.get("row_hash")] = row.get("rule")
+
+    breakdown: dict = {}
+    dates: set = set()
+    unresolved_value = getattr(card_ledger, "RESULT_UNRESOLVED", "UNRESOLVED")
+    for date, row in latest_settled.items():
+        if filter_rule is not None and rule_of_published.get(
+                row.get("published_row_hash")) != filter_rule:
+            continue
+        for scope, kind_name in (("picks", "game"), ("prop_picks", "prop"),
+                                 ("total_picks", "total")):
+            for pick in row.get(scope) or ():
+                if not _is_postseason_entry(pick, postseason_pks):
+                    continue
+                slot = breakdown.setdefault(kind_name, _blank_fig())
+                result = pick.get("result")
+                if result == card_ledger.RESULT_WIN:
+                    slot["wins"] += 1
+                elif result == card_ledger.RESULT_LOSS:
+                    slot["losses"] += 1
+                elif result == card_ledger.RESULT_PUSH:
+                    slot["pushes"] += 1
+                elif result == card_ledger.RESULT_VOID:
+                    slot["voids"] += 1
+                elif result == unresolved_value:
+                    slot["unresolved"] += 1
+                if result in (card_ledger.RESULT_WIN, card_ledger.RESULT_LOSS):
+                    slot["n_staked"] += 1
+                    slot["profit_units"] += pick.get("profit_units") or 0.0
+                dates.add(date)
+    return {k: _finish_fig(v) for k, v in breakdown.items()}, dates
+
+
 def _v1_style_cohort(*, sport: str, path: str, rule_id: str, filter_rule: Optional[str],
                       status: str, label: str, notice: Optional[str] = None,
-                      ungraded_reason: Optional[str] = None) -> dict:
+                      ungraded_reason: Optional[str] = None,
+                      postseason_pks: frozenset = frozenset()) -> dict:
     try:
         rec = card_ledger.record(path=path, rule=filter_rule)
         hist = card_ledger.history(path=path, rule=filter_rule, limit=None)
@@ -253,9 +423,28 @@ def _v1_style_cohort(*, sport: str, path: str, rule_id: str, filter_rule: Option
         return _unavailable_cohort(sport=sport, rule_id=rule_id, status=status,
                                     label=label, error=str(exc))
 
-    breakdown = {kind: _fig_from_summary(summary)
-                 for kind, summary in (rec.get("by_kind") or {}).items()}
+    # GROSS (every settled pick, postseason included) -- exactly what this
+    # function has always computed, kept under its own name so
+    # `settled_count`/`unresolved_count` below (which describe GRADING
+    # activity, not the counted record) are provably unaffected by the
+    # postseason split.
+    gross_breakdown = {kind: _fig_from_summary(summary)
+                       for kind, summary in (rec.get("by_kind") or {}).items()}
+    gross_headline = _sum_figs(list(gross_breakdown.values())) if gross_breakdown else _blank_fig()
+
+    # COUNTED (regular season only, registration 11.1) -- gross minus the
+    # postseason slice, per kind. A no-op subtraction (breakdown ==
+    # gross_breakdown) whenever `_v1_postseason_breakdown` finds nothing,
+    # which is every ledger this module has ever been tested against.
+    postseason_breakdown, postseason_dates = _v1_postseason_breakdown(
+        path, filter_rule, postseason_pks)
+    breakdown = {kind: _subtract_fig(fig, postseason_breakdown.get(kind, _blank_fig()))
+                for kind, fig in gross_breakdown.items()}
     headline = _sum_figs(list(breakdown.values())) if breakdown else _blank_fig()
+    postseason_fig = (_sum_figs(list(postseason_breakdown.values()))
+                      if postseason_breakdown else _blank_fig())
+    postseason_date_span = ({"first": min(postseason_dates), "last": max(postseason_dates)}
+                            if postseason_dates else None)
 
     settled_days = hist.get("days") or []
     pending_days = hist.get("pending_days") or []
@@ -270,9 +459,12 @@ def _v1_style_cohort(*, sport: str, path: str, rule_id: str, filter_rule: Option
     # but could not yet resolve (a partial-settlement carry-forward --
     # neither a final result nor "not attempted"). `pending_count`: picks
     # published but not in ANY settled row yet. Three distinct, explicit
-    # counts -- never one silently folded into another.
-    settled_count = headline["wins"] + headline["losses"] + headline["pushes"] + headline["voids"]
-    unresolved_count = headline["unresolved"]
+    # counts -- never one silently folded into another. GROSS on purpose
+    # (see `gross_headline`'s own comment above): postseason picks are
+    # graded same as any other, they just do not COUNT.
+    settled_count = (gross_headline["wins"] + gross_headline["losses"]
+                     + gross_headline["pushes"] + gross_headline["voids"])
+    unresolved_count = gross_headline["unresolved"]
 
     grading_state, reason = _grading_state(
         published_dates=published_dates, settled_days=len(settled_dates),
@@ -296,6 +488,10 @@ def _v1_style_cohort(*, sport: str, path: str, rule_id: str, filter_rule: Option
             "win_rate", "profit_units", "roi_pct")},
         "market_breakdown": breakdown, "market_note": _market_note(breakdown),
         "fills": None, "fills_tracked": False, "withdrawn": None,
+        "postseason": {**postseason_fig, "days": len(postseason_dates),
+                       "date_span": postseason_date_span,
+                       "label": "Postseason (graded, not counted)"},
+        "counted_scope": "regular season only (registration 11.1)",
         "published_count": settled_count + unresolved_count + pending_count,
         "pending_count": pending_count, "settled_count": settled_count,
         "unresolved_count": unresolved_count,
@@ -312,37 +508,99 @@ def _v1_style_cohort(*, sport: str, path: str, rule_id: str, filter_rule: Option
 # already-settled rows and sums them, it never grades or writes anything.
 # ---------------------------------------------------------------------------
 
-def _v2_market_breakdown(hist_v2: Mapping) -> dict:
-    # RESULT_UNRESOLVED: read via getattr, not a direct attribute
-    # reference. card_ledger may or may not carry this constant depending
-    # on when this module is imported against it (a third, non-terminal
-    # grading outcome for a pick a settle pass could not yet resolve --
-    # distinct from a permanent VOID); this module never writes to
-    # card_ledger.py, so it degrades to the documented literal instead of
-    # raising if the constant is absent.
+def _v2_tally_one(slot: dict, entry: Mapping) -> None:
+    """Add one graded V2 entry's result into `slot` (a `_blank_fig()`) --
+    the WIN/LOSS/PUSH/VOID/UNRESOLVED/staked/profit arithmetic every V2
+    walk in this module needs, factored out once rather than re-typed by
+    `_v2_market_breakdown` and `_v2_fills_split` separately.
+
+    RESULT_UNRESOLVED is read via getattr, not a direct attribute
+    reference. card_ledger may or may not carry this constant depending on
+    when this module is imported against it (a third, non-terminal grading
+    outcome for a pick a settle pass could not yet resolve -- distinct
+    from a permanent VOID); this module never writes to card_ledger.py, so
+    it degrades to the documented literal instead of raising if the
+    constant is absent.
+    """
     unresolved_value = getattr(card_ledger, "RESULT_UNRESOLVED", "UNRESOLVED")
-    breakdown: dict = {}
+    result = entry.get("result")
+    if result == card_ledger.RESULT_WIN:
+        slot["wins"] += 1
+    elif result == card_ledger.RESULT_LOSS:
+        slot["losses"] += 1
+    elif result == card_ledger.RESULT_PUSH:
+        slot["pushes"] += 1
+    elif result == card_ledger.RESULT_VOID:
+        slot["voids"] += 1
+    elif result == unresolved_value:
+        slot["unresolved"] += 1
+    if result in (card_ledger.RESULT_WIN, card_ledger.RESULT_LOSS):
+        slot["n_staked"] += 1
+        slot["profit_units"] += entry.get("profit_units") or 0.0
+
+
+def _v2_market_breakdown(hist_v2: Mapping, postseason_pks: frozenset = frozenset()) -> tuple:
+    """(counted_breakdown, postseason_breakdown), each per-kind (game/
+    prop/total), built in one pass over `history_v2`'s own settled
+    `graded` entries and split by `_is_postseason_entry` -- the results
+    store's `game_type` (registration 11.1: postseason picks are graded
+    and shown, never counted). Fills and withdrawn entries are excluded
+    from both, exactly as this function always excluded them; a caller
+    that wants the old single, unsplit figure back sums the two
+    (`_sum_figs`)."""
+    counted: dict = {}
+    postseason: dict = {}
     for day in hist_v2.get("days") or ():
         for entry in day.get("graded") or ():
             if entry.get("entry_class") == "fill" or entry.get("withdrawn"):
                 continue
             kind = entry.get("kind") or "game"
-            slot = breakdown.setdefault(kind, _blank_fig())
-            result = entry.get("result")
-            if result == card_ledger.RESULT_WIN:
-                slot["wins"] += 1
-            elif result == card_ledger.RESULT_LOSS:
-                slot["losses"] += 1
-            elif result == card_ledger.RESULT_PUSH:
-                slot["pushes"] += 1
-            elif result == card_ledger.RESULT_VOID:
-                slot["voids"] += 1
-            elif result == unresolved_value:
-                slot["unresolved"] += 1
-            if result in (card_ledger.RESULT_WIN, card_ledger.RESULT_LOSS):
-                slot["n_staked"] += 1
-                slot["profit_units"] += entry.get("profit_units") or 0.0
-    return {kind: _finish_fig(fig) for kind, fig in breakdown.items()}
+            bucket = postseason if _is_postseason_entry(entry, postseason_pks) else counted
+            slot = bucket.setdefault(kind, _blank_fig())
+            _v2_tally_one(slot, entry)
+    finish = lambda bucket: {kind: _finish_fig(fig) for kind, fig in bucket.items()}
+    return finish(counted), finish(postseason)
+
+
+def _v2_fills_split(hist_v2: Mapping, postseason_pks: frozenset = frozenset()) -> tuple:
+    """(counted_fills, postseason_fills) -- the same fills population
+    `fills_tracked` has always meant (`entry_class == "fill"`, withdrawn
+    excluded), split by `_is_postseason_entry` the same way
+    `_v2_market_breakdown` splits picks. Fills are never a counted PICK
+    either way (11.1's own "fills are never counted picks" rule) -- this
+    only keeps a postseason fill from inflating the COUNTED fills figure,
+    the same "exclude postseason" rule applied to every other counted
+    figure this module reports."""
+    counted, postseason = _blank_fig(), _blank_fig()
+    for day in hist_v2.get("days") or ():
+        for entry in day.get("graded") or ():
+            if entry.get("entry_class") != "fill" or entry.get("withdrawn"):
+                continue
+            slot = postseason if _is_postseason_entry(entry, postseason_pks) else counted
+            _v2_tally_one(slot, entry)
+    return _finish_fig(counted), _finish_fig(postseason)
+
+
+def _v2_date_split(hist_v2: Mapping, postseason_pks: frozenset = frozenset()) -> tuple:
+    """(counted_dates, postseason_dates) -- every settled date that has at
+    least one non-withdrawn graded entry (pick OR fill) in each
+    population. A date can, in principle, land in both sets (a slate that
+    settles a carried-forward regular-season entry and a postseason entry
+    the same night)."""
+    counted: set = set()
+    postseason: set = set()
+    for day in hist_v2.get("days") or ():
+        date = day.get("date")
+        if not date:
+            continue
+        for entry in day.get("graded") or ():
+            if entry.get("withdrawn"):
+                continue
+            if _is_postseason_entry(entry, postseason_pks):
+                postseason.add(date)
+            else:
+                counted.add(date)
+    return counted, postseason
 
 
 def _v2_published_rows(path: str) -> tuple:
@@ -362,7 +620,8 @@ def _v2_published_rows(path: str) -> tuple:
 
 
 def _v2_cohort(*, path: str, rule_id: str, status: str, label: str,
-               notice: Optional[str] = None) -> dict:
+               notice: Optional[str] = None,
+               postseason_pks: frozenset = frozenset()) -> dict:
     try:
         rec = card_ledger.record_v2(path=path)
         hist = card_ledger.history_v2(path=path, limit=None)
@@ -370,18 +629,32 @@ def _v2_cohort(*, path: str, rule_id: str, status: str, label: str,
         return _unavailable_cohort(sport="mlb", rule_id=rule_id, status=status,
                                     label=label, error=str(exc))
 
-    # `combined` already pools MAIN + PLUS_MONEY across every kind (never
-    # fills) -- exactly the "all markets, picks only" population V1's
-    # summed by_kind produces above, so both rules' headlines describe the
-    # same population (B1's resolved-not-labelled market-set mismatch).
-    headline = _fig_from_summary(rec.get("combined"))
-    fills = _fig_from_summary(rec.get("fills"))
-    breakdown = _v2_market_breakdown(hist)
+    # COUNTED (regular season only, registration 11.1) vs POSTSEASON
+    # (graded and shown, never counted) -- both breakdowns come from the
+    # SAME single walk over history_v2's settled entries
+    # (`_v2_market_breakdown`/`_v2_fills_split`), so `headline` here is
+    # provably the sum of `market_breakdown`'s own slices (never a second,
+    # possibly-drifting figure from `record_v2()["combined"]`, which still
+    # pools postseason in -- see `counted_scope`).
+    market_breakdown, postseason_breakdown = _v2_market_breakdown(hist, postseason_pks)
+    fills, postseason_fills = _v2_fills_split(hist, postseason_pks)
+    headline = _sum_figs(list(market_breakdown.values())) if market_breakdown else _blank_fig()
+    postseason_fig = (_sum_figs(list(postseason_breakdown.values()))
+                      if postseason_breakdown else _blank_fig())
 
+    # GROSS settled dates (unchanged from before this task) feed
+    # `grading_state` below exactly as they always have -- "has this rule
+    # settled anything at all" does not depend on counted-vs-postseason.
     settled_days = hist.get("days") or []
     settled_dates = {d.get("date") for d in settled_days if d.get("date")}
-    date_span = ({"first": min(settled_dates), "last": max(settled_dates)}
-                 if settled_dates else None)
+
+    # COUNTED/POSTSEASON dates, for the `days`/`date_span` THIS cohort
+    # reports and for the `postseason` sub-cohort's own `days`/`date_span`.
+    counted_dates, postseason_dates = _v2_date_split(hist, postseason_pks)
+    date_span = ({"first": min(counted_dates), "last": max(counted_dates)}
+                 if counted_dates else None)
+    postseason_date_span = ({"first": min(postseason_dates), "last": max(postseason_dates)}
+                            if postseason_dates else None)
 
     latest_published, ledger_settled_dates = _v2_published_rows(path)
     published_dates = set(latest_published.keys())
@@ -389,11 +662,12 @@ def _v2_cohort(*, path: str, rule_id: str, status: str, label: str,
         len(row.get("picks") or ()) + len(row.get("prop_picks") or ())
         for date, row in latest_published.items()
         if date not in ledger_settled_dates)
-    settled_count = (headline["wins"] + headline["losses"]
-                     + headline["pushes"] + headline["voids"]
-                     + fills["wins"] + fills["losses"]
-                     + fills["pushes"] + fills["voids"])
-    unresolved_count = headline["unresolved"] + fills["unresolved"]
+    # GROSS (counted + postseason, picks + fills) -- "settled"/"unresolved"
+    # describe grading activity, not the counted record (same rule as
+    # V1's `_v1_style_cohort`, see its own comment).
+    gross = _sum_figs([headline, postseason_fig, fills, postseason_fills])
+    settled_count = gross["wins"] + gross["losses"] + gross["pushes"] + gross["voids"]
+    unresolved_count = gross["unresolved"]
 
     grading_state, reason = _grading_state(
         published_dates=published_dates, settled_days=len(settled_dates),
@@ -410,14 +684,18 @@ def _v2_cohort(*, path: str, rule_id: str, status: str, label: str,
         "sport": "mlb", "rule_id": rule_id, "status": status, "label": label,
         "public": True, "available": True,
         "grading_state": grading_state, "reason": reason, "notice": notice,
-        "days": len(settled_dates), "date_span": date_span,
+        "days": len(counted_dates), "date_span": date_span,
         "first_published": min(published_dates) if published_dates else None,
         **{k: headline[k] for k in
            ("wins", "losses", "pushes", "voids", "unresolved", "n_staked",
             "win_rate", "profit_units", "roi_pct")},
-        "market_breakdown": breakdown, "market_note": _market_note(breakdown),
+        "market_breakdown": market_breakdown, "market_note": _market_note(market_breakdown),
         "fills": fills, "fills_tracked": True,
         "withdrawn": rec.get("withdrawn"),
+        "postseason": {**postseason_fig, "days": len(postseason_dates),
+                       "date_span": postseason_date_span,
+                       "label": "Postseason (graded, not counted)"},
+        "counted_scope": "regular season only (registration 11.1)",
         "published_count": settled_count + unresolved_count + pending_count,
         "pending_count": pending_count, "settled_count": settled_count,
         "unresolved_count": unresolved_count,
@@ -429,10 +707,20 @@ def _v2_cohort(*, path: str, rule_id: str, status: str, label: str,
 # Per-sport snapshots (current + previous, where a previous rule exists)
 # ---------------------------------------------------------------------------
 
-def mlb_snapshot(*, v1_path: Optional[str] = None, v2_path: Optional[str] = None) -> dict:
+def mlb_snapshot(*, v1_path: Optional[str] = None, v2_path: Optional[str] = None,
+                 results_store: Optional[Mapping] = None) -> dict:
     """MLB's current rule (V2 since `card.CUTOVER_DATE`) and V1, its
     frozen predecessor, always shown adjacent -- V1 keeps its own record
-    forever; nothing here ever pools the two."""
+    forever; nothing here ever pools the two.
+
+    `results_store` is `_postseason_game_pks`'s own injection point
+    (`history.read_results()`'s shape) -- a test builds a small fake
+    mapping rather than this function ever touching a real file; a live
+    caller omits it and this reads `data/historical/mlb_results.csv`
+    once, HERE, and threads the same `postseason_pks` set into both
+    cohorts below, rather than each computing (and each re-reading the
+    results file) independently.
+    """
     from src.analysis import best_bets_card, daily_card
     from src.report import card as card_mod
 
@@ -441,15 +729,17 @@ def mlb_snapshot(*, v1_path: Optional[str] = None, v2_path: Optional[str] = None
     v1_rule_id = daily_card.CARD_RULE
     v2_rule_id = best_bets_card.V2.rule_id
 
+    postseason_pks = _postseason_game_pks(results_store)
+
     current_is_v2 = card_mod.ACTIVE_CARD_RULE == "v2"
     v2_cohort = _v2_cohort(
         path=v2_path, rule_id=v2_rule_id,
         status="current" if current_is_v2 else "previous",
-        label="Our value card")
+        label="Our value card", postseason_pks=postseason_pks)
     v1_cohort = _v1_style_cohort(
         sport="mlb", path=v1_path, rule_id=v1_rule_id, filter_rule=None,
         status="previous" if current_is_v2 else "current",
-        label="Our first card rule")
+        label="Our first card rule", postseason_pks=postseason_pks)
 
     return {
         "sport": "mlb", "sport_label": SPORT_LABEL["mlb"],
