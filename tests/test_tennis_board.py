@@ -306,14 +306,26 @@ class TestBoardSaysWhetherAnyTennisPriceIsCaptured(unittest.TestCase):
         self.assertIsNone(payload["last_captured_utc"])
 
     def test_default_read_ignores_other_sports_rows(self):
-        # The default path reads the whole multibook store; MLB/NFL rows in
-        # it are not tennis captures. Injected, never read from disk.
+        # The default path streams the whole multibook store (2026-09-28:
+        # `iter_multibook(sport=None, keep=...)`, not a
+        # `read_multibook(sport=None)` + list filter -- see
+        # src/report/tennis_board.py); MLB/NFL rows in it are not tennis
+        # captures. Injected, never read from disk. The fake still applies
+        # the `keep` predicate `board_for_date` passes in, the same way the
+        # real `iter_multibook` does, so this stays a faithful stand-in
+        # rather than skipping the filtering under test.
         from unittest import mock
         from src.report import tennis_board
         nfl = dict(_tennis_row("2026-09-21T00:09:43+00:00", "2026-09-21T17:00:00Z"),
                    sport="americanfootball_nfl")
-        with mock.patch.object(tennis_board.snapshots, "read_multibook",
-                               return_value=[nfl]):
+
+        def _fake_iter_multibook(*args, keep=None, **kwargs):
+            for row in (nfl,):
+                if keep is None or keep(row):
+                    yield row
+
+        with mock.patch.object(tennis_board.snapshots, "iter_multibook",
+                               side_effect=_fake_iter_multibook):
             payload = tennis_board.board_for_date("2026-09-21", tournaments=[])
         self.assertIs(payload["captured_any"], False)
         self.assertEqual(payload["tournaments"], [])

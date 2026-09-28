@@ -40,6 +40,9 @@ from typing import Optional
 
 from src.data import parks
 from src.engine.settle_slate import load_decisions, wagers_for_date
+from src.ledger.bridge import V2_LEDGER_PATH
+from src.ledger.chain import HashChainLedger
+from src.ledger.records import DecisionRecord
 from src.pipeline import slate as slate_mod
 from src.pipeline import snapshots
 
@@ -177,29 +180,62 @@ def _wager_lookup(wagers) -> dict:
     return out
 
 
+def _stream_decisions_for_event_ids(event_ids, path=None):
+    """`DecisionRecord`s from the V2 ledger whose `event_id` is in
+    `event_ids`, read one row at a time (`HashChainLedger.iter_rows()`)
+    rather than materialising every row `settle_slate.load_decisions()`
+    would (measured 33,252 rows / +351 MB to keep ~400 for one date).
+
+    Mirrors `load_decisions()`'s own two filters (skip a genesis row; skip
+    a row with no `decision_utc`) and its own row -> record transform
+    (`DecisionRecord.from_row`) exactly, so the records this yields are
+    exactly the subset `load_decisions()` would produce for these event
+    ids -- `load_decisions()` itself is never called or changed here;
+    settlement's own full read keeps working exactly as it does today.
+    """
+    path = str(path or V2_LEDGER_PATH)
+    for row in HashChainLedger(path).iter_rows():
+        if row.get("event_id") not in event_ids:
+            continue
+        if row.get("kind") == "genesis" or "decision_utc" not in row:
+            continue
+        yield DecisionRecord.from_row(row)
+
+
 def decisions_for_date(date, decisions=None, wagers=None) -> dict:
     """`{(away_abbrev, home_abbrev, date): [summary, ...]}` for every
     engine decision whose event resolves to a game on `date`.
 
     `decisions`/`wagers` are dependency-injected (default: the real
-    ledgers, `load_decisions()` / `wagers_for_date(date)`) so a caller --
-    tests above all -- can pass a small fixture instead of touching disk.
-    Both reads, and the `event_index()` join, are wrapped so a missing or
-    unreadable store degrades to "no engine decisions joined" rather than
-    a 500 reaching a customer.
+    ledgers) so a caller -- tests above all -- can pass a small fixture
+    instead of touching disk. Both reads, and the `event_index()` join,
+    are wrapped so a missing or unreadable store degrades to "no engine
+    decisions joined" rather than a 500 reaching a customer.
+
+    When `decisions` is NOT injected (the production default), the V2
+    ledger is streamed rather than materialised: `event_index(date=date)`
+    below is already a WINDOWED read (`since`/`until` around `date`, not
+    the whole store), so the set of event ids it resolves to `date` is
+    known before the ledger is ever opened, and `_stream_decisions_for_event_ids`
+    parses only the lines whose `event_id` is in that set. An explicitly
+    injected `decisions` list (tests) is used as-is and still filtered by
+    the per-decision loop below, exactly as before.
     """
-    try:
-        decisions = load_decisions() if decisions is None else decisions
-    except Exception:
-        decisions = ()
-    try:
-        wagers = wagers_for_date(date) if wagers is None else wagers
-    except Exception:
-        wagers = ()
     try:
         idx = event_index(date=date)
     except Exception:
         idx = {}
+    try:
+        wagers = wagers_for_date(date) if wagers is None else wagers
+    except Exception:
+        wagers = ()
+
+    if decisions is None:
+        event_ids = {eid for eid, info in idx.items() if info.get("date") == date}
+        try:
+            decisions = list(_stream_decisions_for_event_ids(event_ids))
+        except Exception:
+            decisions = ()
 
     wager_idx = _wager_lookup(wagers)
     out: dict = {}

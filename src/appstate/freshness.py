@@ -176,9 +176,18 @@ class SingleFlightTTLCache:
         self.policy = policy or FreshnessPolicy()
         self._entries: dict = {}
         self._locks: dict = {}
-        # Keys with a background refresh already in flight. Guarded by
+        # The key currently mid-background-refresh for THIS CACHE, if any --
+        # at most one at a time (2026-09-28), not one per key. Guarded by
         # `_locks_guard` -- never by a per-key lock, because the whole point
         # is to decide WITHOUT waiting on the thread doing the rebuild.
+        # Measured: overlapping background rebuilds for different keys of
+        # the same cache (e.g. a warm-up pass touching several dates back
+        # to back, each one going stale while an earlier date's rebuild was
+        # still running) pushed peak working set to 1,029 MB against the
+        # 1,024 MB deploy VM. A stale hit that finds this cache's one
+        # rebuild slot already taken -- by this key or another -- serves
+        # its own stale value and starts nothing new, rather than starting
+        # a second build alongside the one already in flight.
         self._refreshing: set = set()
         # Guards only the _locks dict itself (creating/looking-up the
         # per-key lock) -- the actual rebuild work happens under the
@@ -293,7 +302,16 @@ class SingleFlightTTLCache:
 
     def _start_background_refresh(self, key: Any,
                                   builder: Callable[[], Any]) -> None:
-        """Rebuild `key` off the request thread, at most one at a time.
+        """Rebuild `key` off the request thread -- at most one background
+        rebuild in flight for this whole cache at a time, not one per key.
+
+        A stale hit for a DIFFERENT key than the one already refreshing
+        serves its own stale value and starts nothing: two full slate
+        builds running at once is exactly the overlap that pushed peak
+        working set past the deploy VM's 1,024 MB (see `__init__`'s
+        `_refreshing` comment). The key left idle simply keeps ageing and
+        gets its own turn once the rebuild in flight finishes and a later
+        stale hit for it finds the slot free again.
 
         A FAILURE HERE IS SWALLOWED, deliberately and narrowly. The caller
         has already been handed a stale-flagged value and has gone; there is
@@ -305,7 +323,7 @@ class SingleFlightTTLCache:
         contract applies.
         """
         with self._locks_guard:
-            if key in self._refreshing:
+            if self._refreshing:
                 return
             self._refreshing.add(key)
 

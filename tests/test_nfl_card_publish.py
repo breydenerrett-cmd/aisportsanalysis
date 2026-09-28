@@ -309,18 +309,24 @@ class NFLCardIntegrationTests(unittest.TestCase):
         fetch_injuries). That seam is patched here so this stays a network-
         free unit test per the HARD RULES (inject or patch every provider
         call); the patch simulates "no games on the slate" for this date.
+
+        2026-09-28: the store read itself is now `_nfl_rows_for_date`'s
+        streamed `snapshots.iter_multibook(sport="nfl", keep=...)`, not
+        `read_multibook(sport="nfl")` -- see src/report/nfl_card.py -- so
+        that is the call mocked to simulate an empty store.
         """
         with mock.patch("src.report.nfl_card.nfl_slate.entries_for_date",
                         return_value=[]) as mock_entries, \
-             mock.patch("src.report.nfl_card.snapshots.read_multibook",
-                        return_value=[]) as mock_rows:
+             mock.patch("src.report.nfl_card.snapshots.iter_multibook",
+                        return_value=iter([])) as mock_rows:
             card = nfl_card.card_for_date(
                 "2026-09-14", now=self.now, entries=None,
                 path=str(self.card_path))
 
-        # Nothing injected -> the store is read ONCE and the same rows are
-        # handed to the slate builder (never a second read).
-        mock_rows.assert_called_once_with(sport="nfl")
+        # Nothing injected -> the store is read ONCE (streamed) and the
+        # same rows are handed to the slate builder (never a second read).
+        mock_rows.assert_called_once()
+        self.assertEqual(mock_rows.call_args.kwargs.get("sport"), "nfl")
         mock_entries.assert_called_once_with("2026-09-14", now=self.now, rows=[])
         self.assertIsNotNone(card)
         self.assertEqual(card["date"], "2026-09-14")

@@ -21,6 +21,13 @@ from src.analysis import prices as prices_mod
 from src.pipeline import snapshots, tennis_discovery
 
 
+def _is_tennis_row(row: dict) -> bool:
+    """Same predicate `board_for_date` always filtered the full store with
+    (`sport` a string starting `tennis_`), now applied while the store
+    streams instead of after it is fully materialised."""
+    return isinstance(row.get("sport"), str) and row.get("sport", "").startswith("tennis_")
+
+
 def board_for_date(date_str: str, *, rows=None, tournaments=None, now=None) -> dict:
     """Tennis research board: matches grouped by tournament.
 
@@ -64,10 +71,15 @@ def board_for_date(date_str: str, *, rows=None, tournaments=None, now=None) -> d
         }
     """
     if rows is None:
-        # Read multibook rows and filter for tennis sports
-        all_rows = snapshots.read_multibook(sport=None)
-        rows = [r for r in all_rows if isinstance(r.get("sport"), str)
-                and r.get("sport", "").startswith("tennis_")]
+        # STREAMED, not `read_multibook(sport=None)` + a list filter: the
+        # full store is 809k+ rows (259 MB of JSON) to keep the ~2,475 that
+        # are tennis. `sport=None` still means "every sport" to
+        # `iter_multibook` (it has no notion of a "tennis_*" prefix), so the
+        # same startswith predicate that used to run over the materialised
+        # list now runs as `keep=` while the store streams -- same rows,
+        # same order, never all of them resident at once (measured
+        # +1,295 MB -> single digits on the 2026-09-28 warm-up pass).
+        rows = list(snapshots.iter_multibook(sport=None, keep=_is_tennis_row))
 
     # WHETHER ANY TENNIS PRICE HAS BEEN CAPTURED, AT ALL (2026-09-20). An
     # empty board meant two different things and the page said only one:

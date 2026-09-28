@@ -151,6 +151,15 @@ def build_today_payload(games: list, store: dict, *, date: Optional[str] = None,
     inputs_date = date or (games[0].get("date") if games else None)
     inputs = enrichment.enrichment_inputs(games, inputs_date, store)
     inputs.update(build_slate_kwargs)
+    # `date=inputs_date` (memory fix, 2026-09-28): windows build_slate's own
+    # multibook read to this one date instead of the whole store -- see
+    # briefing.build_slate's and prices.boards_by_matchup's docstrings, and
+    # api/games.py's `_build_entries` (`inputs.setdefault("date", date)`),
+    # which already does this. `build_slate_kwargs` still wins if a caller
+    # ever passes its own `date` (dict-unpack order: `inputs` was updated
+    # with build_slate_kwargs above), guarded via setdefault rather than
+    # risking a duplicate-keyword TypeError if one ever does.
+    inputs.setdefault("date", inputs_date)
     slate = briefing.build_slate(games, store, **inputs)
     resolved_date = date or inputs_date or slate.get("date")
     return {

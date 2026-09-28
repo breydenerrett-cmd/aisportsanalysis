@@ -38,9 +38,15 @@ from src import cli
 # failing the day it passed.
 KICKOFF = (datetime.now(timezone.utc) + timedelta(days=2)).replace(microsecond=0)
 KICKOFF_ISO = KICKOFF.isoformat().replace("+00:00", "Z")
+# The card date is the game's own official date: since 2026-09-28 the NFL
+# card streams only that date's rows (src/report/nfl_card.py), so a card
+# asked for another date correctly sees no board for this game.
+from src.pipeline import snapshots as _snapshots
+KICKOFF_DATE = _snapshots.official_date(KICKOFF_ISO)
 
 
-def _args(date_str="2026-09-17", dry_run=False):
+def _args(date_str=None, dry_run=False):
+    date_str = KICKOFF_DATE if date_str is None else date_str
     return argparse.Namespace(card_command="publish", sport="nfl",
                               date=date_str, dry_run=dry_run)
 
@@ -59,6 +65,17 @@ def _value_rows():
 
     return [row(f"book{i}", -150, 130) for i in range(6)] + [row("soft", -130, 105)]
 
+
+
+def _fake_iter_multibook(rows):
+    """Stand-in for `snapshots.iter_multibook`: yields the fixture rows that
+    pass the caller's own `keep` predicate, the way the real streaming read
+    does (src/report/nfl_card.py reads the store this way since 2026-09-28,
+    not through `read_multibook`)."""
+    def _iter(**kwargs):
+        keep = kwargs.get("keep")
+        return iter([r for r in rows if keep is None or keep(r)])
+    return _iter
 
 class CmdCardNFLBranchTests(unittest.TestCase):
     def _entry_with_board(self):
@@ -83,8 +100,7 @@ class CmdCardNFLBranchTests(unittest.TestCase):
         """
         with mock.patch("src.pipeline.nfl_slate.entries_for_date",
                         return_value=self._entry_with_board()), \
-             mock.patch("src.pipeline.snapshots.read_multibook",
-                        return_value=_value_rows()), \
+             mock.patch("src.pipeline.snapshots.iter_multibook", side_effect=_fake_iter_multibook(_value_rows())), \
              mock.patch("src.appstate.card_ledger._ledger") as mock_ledger_cls:
             mock_ledger = mock.MagicMock()
             mock_ledger.append.side_effect = lambda payload: dict(
@@ -111,8 +127,7 @@ class CmdCardNFLBranchTests(unittest.TestCase):
         against evidence/cards_nfl_v1.jsonl on 2026-09-16."""
         with mock.patch("src.pipeline.nfl_slate.entries_for_date",
                         return_value=self._entry_with_board()), \
-             mock.patch("src.pipeline.snapshots.read_multibook",
-                        return_value=_value_rows()), \
+             mock.patch("src.pipeline.snapshots.iter_multibook", side_effect=_fake_iter_multibook(_value_rows())), \
              mock.patch("src.appstate.card_ledger._ledger") as mock_ledger_cls:
             mock_ledger_cls.return_value = mock.MagicMock()
 
@@ -141,7 +156,7 @@ class CmdCardNFLBranchTests(unittest.TestCase):
         failed by whatever that file held."""
         with mock.patch("src.pipeline.nfl_slate.entries_for_date",
                         return_value=self._entry_with_board()), \
-             mock.patch("src.pipeline.snapshots.read_multibook", return_value=[]), \
+             mock.patch("src.pipeline.snapshots.iter_multibook", side_effect=_fake_iter_multibook([])), \
              mock.patch("src.appstate.card_ledger._ledger") as mock_ledger_cls:
             mock_ledger_cls.return_value.read.return_value = []
             out = io.StringIO()

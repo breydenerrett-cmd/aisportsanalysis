@@ -232,6 +232,24 @@ class HashChainLedger:
             return []
         return [row for _, row in _read_lines(self.path)]
 
+    def iter_rows(self) -> Iterator[dict]:
+        """Every row, one at a time -- `read()` without materialising the
+        whole logical store first. Same walk `read()`/`_read_lines` always
+        does (archive-aware via `store_archive.iter_lines`; strip/skip-blank
+        /`json.loads` unchanged), so a caller that only needs a small subset
+        of a large ledger (a few hundred rows out of tens of thousands) can
+        filter while streaming instead of paying to hold every row in
+        memory just to throw most of them away. `read()` itself is
+        unchanged and keeps materialising a full list -- callers that
+        genuinely need the whole ledger (settlement) are untouched.
+        """
+        from src.pipeline import store_archive
+
+        if not store_archive.exists(self.path):
+            return
+        for _, row in _read_lines(self.path):
+            yield row
+
     def __iter__(self) -> Iterator[dict]:
         return iter(self.read())
 

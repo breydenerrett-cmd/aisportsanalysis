@@ -55,6 +55,53 @@ _NOTE_BY_RULE = {
 }
 
 
+def _nfl_line_key(row: dict):
+    """The betting line a row quotes, for de-duplication -- the same value
+    `nfl_value._two_way` treats as a market's line (home_line for spreads,
+    total for totals, None for h2h/first-five, which carry no line)."""
+    market = row.get("market")
+    if market == "spreads":
+        return row.get("home_line")
+    if market == "totals":
+        return row.get("total")
+    return None
+
+
+def _nfl_rows_for_date(date_str: str) -> list:
+    """This date's NFL multi-book rows, streamed rather than materialising
+    the whole store (measured +771 MB on a Sunday's 254,602-row date slice;
+    single digits streamed).
+
+    Only rows whose game falls on `date_str` (`snapshots.official_date`)
+    can ever matter to a reader of this list -- `boards_by_matchup` (inside
+    `nfl_slate.entries_for_date`) groups by that exact same official date
+    and only this date's bucket is ever looked up, and `nfl_value.select`
+    judges only games that have not kicked off on this date's own board.
+    Within that, only each (event, book, market, line)'s NEWEST observation
+    is ever used: `boards_by_matchup.latest_instant` keeps only the rows at
+    a matchup's single freshest capture instant, and `nfl_value.latest_quotes`
+    keeps only the newest row per (event, market, book). Keeping the newest
+    per (event, book, market, line) while streaming can only ever DROP a
+    row that an older, fully-superseded observation of the exact same line
+    would have contributed -- never a row either consumer would still
+    reach for -- so this is behaviour-preserving; it just never holds the
+    superseded observations in memory at all, which is what made a
+    Sunday's date slice cost hundreds of MB."""
+    latest: dict = {}
+
+    def _for_date(row):
+        return snapshots.official_date(row.get("commence_time")) == date_str
+
+    for row in snapshots.iter_multibook(sport="nfl", keep=_for_date):
+        key = (row.get("event_id"), row.get("book"), row.get("market"),
+              _nfl_line_key(row))
+        seen = latest.get(key)
+        if seen is None or (str(row.get("observed_utc") or "")
+                            >= str(seen.get("observed_utc") or "")):
+            latest[key] = row
+    return list(latest.values())
+
+
 def _parse_utc(value) -> Optional[datetime]:
     if not value:
         return None
@@ -283,7 +330,7 @@ def card_for_date(date_str: str, *, now: Optional[datetime] = None,
     # a test that hands in `entries` without `rows` gets an empty board, never
     # whatever happens to be in data/processed on the machine running it.
     if rows is None and entries is None:
-        rows = snapshots.read_multibook(sport="nfl")
+        rows = _nfl_rows_for_date(date_str)
     if entries is None:
         entries = nfl_slate.entries_for_date(date_str, now=now, rows=rows)
     rows = list(rows or ())
