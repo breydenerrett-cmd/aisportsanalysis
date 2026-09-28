@@ -24,7 +24,7 @@ import json
 import os
 import tempfile
 import unittest
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from unittest import mock
 
@@ -535,6 +535,178 @@ class RegistryTestCase(unittest.TestCase):
         self.assertIn("odds_multibook", store_archive.ROTATABLE_STORES)
         cfg = store_archive.ROTATABLE_STORES["odds_multibook"]
         self.assertEqual(cfg["stamp_field"], "observed_utc")
+
+
+class DecisionsV2RegistryTestCase(unittest.TestCase):
+    """The decisions_v2 registry entry added for the hash-chained ledger
+    (evidence/decisions_v2.jsonl, 104,665,523 bytes against GitHub's
+    104,857,600-byte limit) -- registered via `stamp_of`, not `stamp_field`
+    (its stamp, `recorded_utc`, is not monotone in file order), with
+    `min_hot_rows=1` so `HashChainLedger.append()` always has a hot-file row
+    to chain the next append to."""
+
+    def test_decisions_v2_is_registered_with_stamp_of_and_min_hot_rows(self):
+        self.assertIn("decisions_v2", store_archive.ROTATABLE_STORES)
+        cfg = store_archive.ROTATABLE_STORES["decisions_v2"]
+        self.assertNotIn("stamp_field", cfg)
+        self.assertTrue(callable(cfg["stamp_of"]))
+        self.assertEqual(cfg["min_hot_rows"], 1)
+
+    def test_decisions_v2_path_resolves_under_evidence(self):
+        cfg = store_archive.ROTATABLE_STORES["decisions_v2"]
+        path = cfg["path"]()
+        self.assertEqual(path.name, "decisions_v2.jsonl")
+        self.assertEqual(path.parent.name, "evidence")
+
+    def test_stamp_of_maps_genesis_to_undated(self):
+        stamp_of = store_archive.ROTATABLE_STORES["decisions_v2"]["stamp_of"]
+        self.assertIs(stamp_of({"kind": "genesis", "v1_ledger_sha256": None}),
+                      store_archive.UNDATED)
+
+    def test_stamp_of_prefers_recorded_utc_then_corrected_utc_then_created_utc(self):
+        stamp_of = store_archive.ROTATABLE_STORES["decisions_v2"]["stamp_of"]
+        self.assertEqual(
+            stamp_of({"recorded_utc": "2026-09-20T00:00:00+00:00",
+                     "corrected_utc": "2026-09-01T00:00:00+00:00"}),
+            date(2026, 9, 20))
+        self.assertEqual(
+            stamp_of({"kind": "correction", "corrected_utc": "2026-09-21T00:00:00+00:00"}),
+            date(2026, 9, 21))
+        self.assertEqual(
+            stamp_of({"kind": "correction", "created_utc": "2026-09-22T00:00:00+00:00"}),
+            date(2026, 9, 22))
+
+    def test_stamp_of_returns_none_when_no_recognised_field_parses(self):
+        stamp_of = store_archive.ROTATABLE_STORES["decisions_v2"]["stamp_of"]
+        self.assertIsNone(stamp_of({"kind": "correction", "note": "no timestamp here"}))
+        self.assertIsNone(stamp_of({"recorded_utc": "not-a-date"}))
+
+
+class StampOfOverridesStampField(TempStoreTestCase):
+    """`stamp_of`, when given, REPLACES `stamp_field` entirely -- for
+    monotone dates (every existing caller) it must produce IDENTICAL results
+    to the `stamp_field` path it replaces."""
+
+    def test_stamp_of_equivalent_to_stamp_field_for_monotone_dates(self):
+        rows = [_row("2026-09-01"), _row("2026-09-02"), _row("2026-09-21")]
+        _write_rows(self.hot, rows)
+
+        def stamp_of(row):
+            value = row.get("observed_utc")
+            return None if value is None else date.fromisoformat(value[:10])
+
+        by_field = store_archive.rotate(self.hot, keep_days=3, now=NOW, threshold_bytes=1)
+        # Independent store, same input, rotated via stamp_of instead.
+        other_hot = self.root / "other" / "odds_multibook.jsonl"
+        _write_rows(other_hot, rows)
+        by_stamp_of = store_archive.rotate(
+            other_hot, keep_days=3, now=NOW, threshold_bytes=1, stamp_of=stamp_of)
+
+        self.assertEqual(by_field["archived_lines"], by_stamp_of["archived_lines"])
+        self.assertEqual(Path(by_field["segment"]).name, Path(by_stamp_of["segment"]).name)
+
+
+class UndatedRowsAreArchivableButContributeNoDate(TempStoreTestCase):
+    def test_undated_row_is_archived_and_excluded_from_the_date_range(self):
+        rows = [{"marker": "genesis"},  # UNDATED via stamp_of below
+                _row("2026-09-01"), _row("2026-09-02")]
+        _write_rows(self.hot, rows)
+
+        def stamp_of(row):
+            if row.get("marker") == "genesis":
+                return store_archive.UNDATED
+            value = row.get("observed_utc")
+            return None if value is None else date.fromisoformat(value[:10])
+
+        report = store_archive.rotate(
+            self.hot, keep_days=3, now=NOW, threshold_bytes=1, stamp_of=stamp_of)
+        self.assertTrue(report["rotated"])
+        self.assertEqual(report["archived_lines"], 3)  # genesis + both dated rows
+        segs = store_archive.segments(self.hot)
+        # Both dates are 09-01/09-02 -- the UNDATED marker row must not
+        # widen or otherwise corrupt the range.
+        self.assertEqual(segs[0].name, "0001_2026-09-01_2026-09-02.jsonl.gz")
+
+        rebuilt = "".join(store_archive.iter_lines(self.hot)).encode("utf-8")
+        original = "".join(json.dumps(r, separators=(",", ":")) + "\n" for r in rows).encode("utf-8")
+        self.assertEqual(rebuilt, original)
+
+    def test_an_entirely_undated_capped_prefix_is_a_clear_no_op(self):
+        rows = [{"marker": "genesis"}, {"marker": "undated2"}, _row("2026-09-01")]
+        _write_rows(self.hot, rows)
+
+        def stamp_of(row):
+            if row.get("marker") in ("genesis", "undated2"):
+                return store_archive.UNDATED
+            value = row.get("observed_utc")
+            return None if value is None else date.fromisoformat(value[:10])
+
+        # min_hot_rows=1 caps the prefix at the two UNDATED rows, excluding
+        # the one dated row that would otherwise give the segment a name.
+        report = store_archive.rotate(
+            self.hot, keep_days=3, now=NOW, threshold_bytes=1,
+            stamp_of=stamp_of, min_hot_rows=1)
+        self.assertFalse(report["rotated"])
+        self.assertIn("UNDATED", report["reason"])
+        self.assertEqual(store_archive.segments(self.hot), [])
+        self.assertEqual(self.hot.read_bytes(),
+                         "".join(json.dumps(r, separators=(",", ":")) + "\n"
+                                 for r in rows).encode("utf-8"))
+
+
+class MinHotRowsCapsThePrefix(TempStoreTestCase):
+    def test_min_hot_rows_keeps_the_last_n_complete_lines_regardless_of_cutoff(self):
+        # Every row is dated 2026-09-01, far before the 2026-09-18 cutoff --
+        # the cutoff-date rule alone would archive all four.
+        rows = [_row("2026-09-01", i) for i in range(4)]
+        _write_rows(self.hot, rows)
+        report = store_archive.rotate(
+            self.hot, keep_days=3, now=NOW, threshold_bytes=1, min_hot_rows=2)
+        self.assertTrue(report["rotated"])
+        self.assertEqual(report["archived_lines"], 2)
+        remaining = [json.loads(l) for l in
+                     self.hot.read_text(encoding="utf-8").splitlines()]
+        self.assertEqual(len(remaining), 2)
+        self.assertEqual([r["event_id"] for r in remaining],
+                         [rows[2]["event_id"], rows[3]["event_id"]])
+        self.assertEqual([r["book"] for r in remaining],
+                         ["fanduel", "fanduel"])
+        # Reconstructed hour ordering confirms these are truly the LAST two.
+        hours = [json.loads(l)["observed_utc"][11:13] for l in
+                 self.hot.read_text(encoding="utf-8").splitlines()]
+        self.assertEqual(hours, ["02", "03"])
+
+    def test_min_hot_rows_zero_is_the_untouched_default(self):
+        rows = [_row("2026-09-01", i) for i in range(4)]
+        _write_rows(self.hot, rows)
+        report = store_archive.rotate(
+            self.hot, keep_days=3, now=NOW, threshold_bytes=1, min_hot_rows=0)
+        self.assertTrue(report["rotated"])
+        self.assertEqual(report["archived_lines"], 4)
+        self.assertEqual(self.hot.read_bytes(), b"")
+
+
+class SegmentNamingUsesMinMaxOfDatedRows(TempStoreTestCase):
+    """DESIGN: segment filename dates are the MIN/MAX of the dated rows
+    actually archived, not the first/last row processed -- required once a
+    store's stamp is not monotone in file order (decisions_v2's
+    `recorded_utc`), and provably identical to the old "first/last row"
+    behaviour for monotone data (every other test in this file)."""
+
+    def test_an_interior_row_can_set_the_min_or_the_max(self):
+        # Non-monotone, and every date well before the 2026-09-18 cutoff so
+        # all four archive: the file's first row is 08-10, an interior row
+        # dips to 08-01 (the true min), another interior row peaks at 08-20
+        # (the true max), and the last row returns to 08-05. A first/last-row
+        # naming scheme would wrongly produce 0001_2026-08-10_2026-08-05.
+        rows = [_row("2026-08-10"), _row("2026-08-01"), _row("2026-08-20"),
+                _row("2026-08-05")]
+        _write_rows(self.hot, rows)
+        report = store_archive.rotate(self.hot, keep_days=3, now=NOW, threshold_bytes=1)
+        self.assertTrue(report["rotated"])
+        self.assertEqual(report["archived_lines"], 4)
+        segs = store_archive.segments(self.hot)
+        self.assertEqual(segs[0].name, "0001_2026-08-01_2026-08-20.jsonl.gz")
 
 
 if __name__ == "__main__":

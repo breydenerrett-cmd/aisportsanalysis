@@ -80,6 +80,30 @@ def _rows(path):
     return out
 
 
+def _decision_rows(path):
+    """Same tolerance as `_rows` above (a missing file or a bad line
+    silently ends the read, returning whatever was already collected) but
+    archive-aware via `src.pipeline.store_archive`. Used ONLY for
+    `decisions_path`: `evidence/decisions_v2.jsonl` is the one store this
+    module reads that is eligible for hot/cold rotation, so its logical rows
+    can live partly in gzip segments under `evidence/archive/decisions_v2/`.
+    `_rows` itself stays a plain file read -- it is also used for
+    `paper_wagers_v2.jsonl` and the per-system paper-account ledgers glob,
+    none of which rotate.
+    """
+    from src.pipeline import store_archive
+
+    out = []
+    try:
+        for line in store_archive.iter_lines(path):
+            line = line.strip()
+            if line:
+                out.append(json.loads(line))
+    except (OSError, json.JSONDecodeError):
+        pass
+    return out
+
+
 def graded_by_system(*, wagers_path=None, decisions_path=None,
                       paper_accounts_glob=None):
     """Graded selections per system, in the shape src/research/battery.py
@@ -103,7 +127,7 @@ def graded_by_system(*, wagers_path=None, decisions_path=None,
 
     wagers = {w["bet_id"]: w for w in _rows(wagers_path) if w.get("bet_id")}
     consensus = {}
-    for d in _rows(decisions_path):
+    for d in _decision_rows(decisions_path):
         if d.get("consensus_fair") is None:
             continue
         consensus[(d.get("event_id"), d.get("market_key"),

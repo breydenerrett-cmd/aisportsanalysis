@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import gzip
 import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from src.ledger import chain as chain_module
 from src.ledger.chain import (
@@ -14,6 +16,7 @@ from src.ledger.chain import (
     canonical_bytes,
     row_hash,
 )
+from src.pipeline import store_archive
 
 
 class CanonicalisationTests(unittest.TestCase):
@@ -225,6 +228,96 @@ class FileSha256Tests(unittest.TestCase):
         self.path.write_text("world")
         h2 = chain_module.file_sha256(self.path)
         self.assertNotEqual(h1, h2)
+
+
+class ArchiveAwareTests(unittest.TestCase):
+    """`HashChainLedger.read()`/`verify()`/`last_hash()` against a manually
+    laid-out archive segment + hot file -- never via
+    `src.pipeline.store_archive.rotate()` itself, which is
+    `tests/test_store_archive.py`'s job to prove correct. This isolates
+    chain.py's OWN read/verify/last_hash contract (DESIGN: archive-aware via
+    a lazy `store_archive` import) from whatever mechanism actually produced
+    the split.
+    """
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.path = Path(self.tmp.name) / "chain.jsonl"
+
+    def _split_into_segment_and_hot(self, n_in_segment: int):
+        """A 5-row chain, built with real `append()` calls, then the first
+        `n_in_segment` complete lines moved by hand into a gzip segment --
+        the same shape a real rotation leaves behind, laid out directly so
+        this test does not depend on `rotate()`'s own logic.
+        """
+        ledger = HashChainLedger(self.path)
+        rows = [ledger.append({"n": i}) for i in range(5)]
+        raw_lines = self.path.read_bytes().splitlines(keepends=True)
+
+        seg_dir = self.path.parent / "archive" / self.path.stem
+        seg_dir.mkdir(parents=True)
+        segment = seg_dir / "0001_2026-01-01_2026-01-01.jsonl.gz"
+        with open(segment, "wb") as raw:
+            with gzip.GzipFile(filename="", mode="wb", fileobj=raw, mtime=0) as gz:
+                gz.write(b"".join(raw_lines[:n_in_segment]))
+        self.path.write_bytes(b"".join(raw_lines[n_in_segment:]))
+        return rows, segment
+
+    def test_read_and_verify_span_a_manually_built_segment_and_hot_file(self):
+        rows, _ = self._split_into_segment_and_hot(3)
+        self.assertEqual(HashChainLedger(self.path).read(), rows)
+        self.assertEqual(list(HashChainLedger(self.path)), rows)
+
+        result = HashChainLedger(self.path).verify()
+        self.assertTrue(result.ok)
+        self.assertEqual(result.rows_checked, 5)
+
+    def test_tampering_a_row_inside_the_segment_reports_its_logical_line(self):
+        rows, segment = self._split_into_segment_and_hot(3)
+        with gzip.open(segment, "rt", encoding="utf-8") as fh:
+            seg_rows = [json.loads(line) for line in fh if line.strip()]
+        seg_rows[1]["n"] = 999  # tamper row 2 (logical line 2) without rehashing
+        body = "".join(json.dumps(r, sort_keys=True) + "\n" for r in seg_rows).encode()
+        with open(segment, "wb") as raw:
+            with gzip.GzipFile(filename="", mode="wb", fileobj=raw, mtime=0) as gz:
+                gz.write(body)
+
+        result = HashChainLedger(self.path).verify()
+        self.assertFalse(result.ok)
+        self.assertEqual(result.broken_at_line, 2)
+
+    def test_last_hash_uses_the_hot_file_alone_without_opening_the_archive(self):
+        rows, _ = self._split_into_segment_and_hot(3)
+        with mock.patch("gzip.open",
+                        side_effect=AssertionError("must not open the archive "
+                                                   "when the hot file has a row")):
+            self.assertEqual(HashChainLedger(self.path).last_hash(), rows[-1]["row_hash"])
+
+    def test_last_hash_falls_back_to_the_last_segment_when_hot_file_is_empty(self):
+        rows, _ = self._split_into_segment_and_hot(5)  # everything moved to the segment
+        self.path.write_bytes(b"")
+        self.assertEqual(HashChainLedger(self.path).last_hash(), rows[-1]["row_hash"])
+
+    def test_last_hash_falls_back_to_the_last_segment_when_hot_file_is_absent(self):
+        rows, _ = self._split_into_segment_and_hot(5)
+        self.path.unlink()
+        self.assertEqual(HashChainLedger(self.path).last_hash(), rows[-1]["row_hash"])
+
+    def test_append_after_a_manual_split_chains_to_the_true_last_row(self):
+        rows, _ = self._split_into_segment_and_hot(3)
+        new_row = HashChainLedger(self.path).append({"n": "new"})
+        self.assertEqual(new_row["prev_hash"], rows[-1]["row_hash"])
+        self.assertTrue(HashChainLedger(self.path).verify().ok)
+
+    def test_a_path_with_no_archive_directory_is_completely_unaffected(self):
+        ledger = HashChainLedger(self.path)
+        rows = [ledger.append({"n": i}) for i in range(3)]
+        self.assertEqual(store_archive.segments(self.path), [])
+        self.assertFalse((self.path.parent / "archive").exists())
+        self.assertEqual(ledger.read(), rows)
+        self.assertEqual(ledger.last_hash(), rows[-1]["row_hash"])
+        self.assertTrue(ledger.verify().ok)
 
 
 if __name__ == "__main__":

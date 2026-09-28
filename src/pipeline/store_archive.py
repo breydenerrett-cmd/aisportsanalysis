@@ -108,7 +108,7 @@ import re
 import tempfile
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
-from typing import Iterable, Iterator
+from typing import Callable, Iterable, Iterator
 
 
 class StoreArchiveError(RuntimeError):
@@ -277,9 +277,82 @@ def _parse_stamp_date(value, stamp_field: str) -> date | None:
         return None
 
 
+class _UndatedRow:
+    """Sentinel a `stamp_of` callable returns (the default `stamp_field`
+    path never produces this -- only `date` or `None`) for a row that is
+    legitimately archivable but names no calendar date of its own. The
+    motivating case is a hash chain's genesis row (`src.ledger.chain`):
+    it must be eligible to move into a segment along with the dated rows
+    around it, but it has no `observed_utc`-shaped field to name a segment
+    after.
+
+    Deliberately NOT `None` -- `None` already means "stop the archivable
+    prefix scan here, this row cannot be confidently classified" (module
+    docstring). UNDATED is the opposite: never a reason to stop, only a
+    reason not to update the segment's date-range name. A dedicated class
+    (one module-level instance, below) rather than a bare `object()` so a
+    test failure or debugger repr reads as `UNDATED`, not
+    `<object object at 0x...>`.
+    """
+
+    def __repr__(self) -> str:
+        return "UNDATED"
+
+
+UNDATED = _UndatedRow()
+
+
+def _stamp_getter(stamp_field: str, stamp_of):
+    """The per-row date function `rotate`'s scan actually calls.
+
+    `stamp_of`, verbatim, when given -- it REPLACES `stamp_field` entirely
+    (rotate's own docstring/parameter list). Otherwise a closure over
+    `_parse_stamp_date`/`stamp_field` that reproduces the pre-`stamp_of`
+    behaviour exactly, which is what keeps every existing caller --
+    `odds_multibook`, which never passes `stamp_of` -- byte-for-byte
+    unaffected by this parameter's addition.
+    """
+    if stamp_of is not None:
+        return stamp_of
+
+    def _default(row: dict) -> date | None:
+        return _parse_stamp_date(row.get(stamp_field), stamp_field)
+
+    return _default
+
+
 def rotate(path: Path | str, *, keep_days: int, now: datetime,
-           threshold_bytes: int, stamp_field: str = "observed_utc") -> dict:
+           threshold_bytes: int, stamp_field: str = "observed_utc",
+           stamp_of: Callable[[dict], date | None | UNDATED] | None = None,
+           min_hot_rows: int = 0) -> dict:
     """Move the old prefix of `path`'s hot file into a new cold segment.
+
+    `stamp_of` (added for `decisions_v2`, a hash-chained ledger whose
+    `recorded_utc` is NOT monotone in file order): when given, REPLACES
+    `stamp_field` as the per-row date function -- it receives the parsed
+    row dict and returns a `date`, `None` (unparseable/missing -- stop the
+    archivable prefix here, same as the default path), or `UNDATED` (this
+    module's sentinel: archivable, but names no date of its own -- a hash
+    chain's genesis row is the motivating case). Segment filenames are named
+    from the MIN and MAX of the DATED rows actually archived, not from the
+    first/last row -- identical to "first row's date, last row's date" when
+    stamps are monotone (every existing caller, e.g. odds_multibook) but
+    correct when they are not. `stamp_of=None` (the default) leaves every
+    existing caller's behaviour byte-for-byte unchanged.
+
+    `min_hot_rows` (default 0, unchanged existing behaviour): never archive
+    the last `min_hot_rows` COMPLETE lines of the hot file, however far the
+    cutoff-date scan would otherwise reach -- a floor under the prefix, on
+    top of (not instead of) the existing cutoff-date ceiling. `decisions_v2`
+    passes 1 so the hot file always holds at least one row for `append()`'s
+    `last_hash()` to chain the next row to without ever touching the
+    archive.
+
+    If the capped prefix (after both the cutoff-date ceiling and the
+    `min_hot_rows` floor) contains no dated row at all -- e.g. it is a lone
+    UNDATED genesis row -- `rotate` is a no-op: a segment filename requires
+    at least one dated row to name its range after, so this never invents
+    one.
 
     No-op (returns `{"rotated": False, "reason": ...}`, touches nothing) when
     the hot file is absent, or smaller than `threshold_bytes`, or when no
@@ -375,10 +448,47 @@ def rotate(path: Path | str, *, keep_days: int, now: datetime,
     old_hot = path.read_bytes()
     lines = old_hot.splitlines(keepends=True)
 
+    # DUPLICATE-PREFIX GUARD (2026-09-28 design review of the decisions_v2
+    # rotation). `rotate` makes the segment durable first (`os.replace` below)
+    # and the shrunk hot file second; a hard kill between the two -- SIGKILL,
+    # an OOM kill, a runner's timeout-minutes -- leaves the archived prefix in
+    # BOTH places. The chain's verify() catches that state, but a LATER
+    # rotation would not: it would archive the same prefix again into the next
+    # segment and make the duplication permanent. So before anything else:
+    # if the hot file still begins with the exact line the newest segment
+    # begins with, refuse loudly and touch nothing. The reason starts with
+    # "ESCALATE" so `src.cli`'s `store rotate` fails the run instead of
+    # printing a quiet no-op.
+    existing = segments(path)
+    if existing and lines and lines[0].endswith(b"\n"):
+        with gzip.open(existing[-1], "rb") as newest:
+            newest_first_line = newest.readline()
+        if newest_first_line == lines[0]:
+            report["reason"] = (
+                f"ESCALATE duplicate prefix: the hot file still begins with the "
+                f"first line of {existing[-1].name}; a previous rotation was "
+                f"interrupted after its segment was made durable. Nothing "
+                f"archived; recover by hand before rotating again")
+            return report
+
+    # `min_hot_rows` caps the prefix from the OTHER end: however many
+    # complete lines the cutoff-date scan below would archive, the last
+    # `min_hot_rows` of them are kept regardless. The trailing incomplete
+    # line, if any, is excluded from `n_complete` FIRST -- it was never a
+    # candidate anyway (the scan stops there regardless of this cap, exactly
+    # as before) -- so it is never double-counted as one of the rows
+    # `min_hot_rows` is keeping.
+    n_complete = len(lines)
+    if n_complete and not lines[-1].endswith(b"\n"):
+        n_complete -= 1
+    max_archivable = max(n_complete - min_hot_rows, 0)
+
+    get_stamp = _stamp_getter(stamp_field, stamp_of)
+
     archive_upto = 0
     first_date: date | None = None
     last_date: date | None = None
-    for line in lines:
+    for line in lines[:max_archivable]:
         if not line.endswith(b"\n"):
             break  # incomplete trailing line -- an interrupted append, never touched
         try:
@@ -393,18 +503,44 @@ def rotate(path: Path | str, *, keep_days: int, now: datetime,
             break  # unparseable -- stop the prefix here, per the module docstring
         if not isinstance(row, dict):
             break
-        line_date = _parse_stamp_date(row.get(stamp_field), stamp_field)
-        if line_date is None or line_date >= cutoff_date:
+        line_date = get_stamp(row)
+        if line_date is None:
+            break  # unparseable/missing stamp -- stop the prefix here
+        if line_date is UNDATED:
+            # Archivable, but names no date of its own -- never a reason to
+            # stop, never a contribution to the segment's date range either.
+            archive_upto += 1
+            continue
+        if line_date >= cutoff_date:
             break
         archive_upto += 1
-        if first_date is None:
+        if first_date is None or line_date < first_date:
             first_date = line_date
-        last_date = line_date
+        if last_date is None or line_date > last_date:
+            last_date = line_date
 
     if archive_upto == 0:
+        if min_hot_rows > 0 and max_archivable == 0:
+            report["reason"] = (
+                f"min_hot_rows={min_hot_rows} leaves no line eligible to "
+                f"archive (hot file has {n_complete} complete line(s))")
+        else:
+            report["reason"] = (
+                f"no complete, parseable line at the start of the hot file is "
+                f"dated before cutoff {cutoff_date.isoformat()}")
+        return report
+
+    if first_date is None:
+        # Every line in the capped, archivable prefix was UNDATED -- a
+        # segment filename requires at least one dated row to name its
+        # range after (module docstring: `NNNN_<first-date>_<last-date>.
+        # jsonl.gz`), so this refuses to invent one. The prefix (e.g. a lone
+        # genesis row) stays in the hot file until a later rotation's capped
+        # prefix also reaches a dated row.
         report["reason"] = (
-            f"no complete, parseable line at the start of the hot file is "
-            f"dated before cutoff {cutoff_date.isoformat()}")
+            f"the archivable prefix ({archive_upto} line(s)) is entirely "
+            f"UNDATED rows -- no dated row to name a segment after; "
+            f"nothing archived")
         return report
 
     archive_bytes = b"".join(lines[:archive_upto])
@@ -625,13 +761,19 @@ def snapshot_full(path: Path | str, *, now: datetime) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# The registry `src.cli`'s `store rotate` command drives. Starting with just
-# odds_multibook (the store that is actually over GitHub's limit right now)
-# rather than every append-only store this project has -- derivative_markets
-# .jsonl (63 MB), evidence/decisions_v2.jsonl (57 MB) and batter_props.jsonl
-# (40 MB) are growing toward the same wall (module docstring) but are not on
-# fire TODAY, and adding a store here is a one-line, low-risk follow-up once
-# this fix is proven in production against the one store that is.
+# The registry `src.cli`'s `store rotate` command drives. Started with just
+# odds_multibook (the store that was actually over GitHub's limit,
+# 2026-09-21) -- derivative_markets.jsonl (63 MB) and batter_props.jsonl
+# (40 MB) are growing toward the same wall (module docstring) but were not on
+# fire that day. `decisions_v2` (the hash-chained decisions ledger,
+# src/ledger/chain.py) was added next, once GitHub actually started rejecting
+# pushes for it too (104,665,523 bytes against a 104,857,600-byte hard
+# limit): it needs `stamp_of` rather than a bare `stamp_field` because its
+# `recorded_utc` is NOT monotone in file order (~1,739 decreases, mostly
+# within a day) and because its genesis row (no timestamp at all) must still
+# be archivable, and it needs `min_hot_rows=1` so the hot file always has a
+# row for `HashChainLedger.append()`'s `last_hash()` to chain the next row to
+# without ever reading the archive.
 # ---------------------------------------------------------------------------
 
 def _odds_multibook_path() -> Path:
@@ -645,9 +787,38 @@ def _odds_multibook_path() -> Path:
     return processed_path("odds_multibook.jsonl")
 
 
+def _decisions_v2_path() -> Path:
+    # Local import, same reasoning as `_odds_multibook_path` above.
+    from src.paths import evidence_path
+
+    return evidence_path("decisions_v2.jsonl")
+
+
+def _decisions_v2_stamp_of(row: dict):
+    """genesis -> UNDATED (archivable, but the genesis row carries no
+    timestamp at all); otherwise the first parseable of `recorded_utc`
+    (decision rows), `corrected_utc`/`created_utc` (correction rows --
+    scripts/append_edge_withdrawal_corrections.py writes one or the other);
+    otherwise None, which stops the archivable prefix scan there rather than
+    guess. Every non-genesis row in this ledger carries at least one of the
+    three (verified fact, not an assumption this function makes)."""
+    if row.get("kind") == "genesis":
+        return UNDATED
+    for field in ("recorded_utc", "corrected_utc", "created_utc"):
+        parsed = _parse_stamp_date(row.get(field), field)
+        if parsed is not None:
+            return parsed
+    return None
+
+
 ROTATABLE_STORES: dict[str, dict] = {
     "odds_multibook": {
         "path": _odds_multibook_path,
         "stamp_field": "observed_utc",
+    },
+    "decisions_v2": {
+        "path": _decisions_v2_path,
+        "stamp_of": _decisions_v2_stamp_of,
+        "min_hot_rows": 1,
     },
 }

@@ -215,10 +215,22 @@ def _cmd_store_rotate(args) -> int:
             failed = True
             continue
         path = cfg["path"]() if callable(cfg["path"]) else Path(cfg["path"])
+        # Only the keys a registry entry actually sets are passed through --
+        # `decisions_v2` has no "stamp_field" (it uses "stamp_of" instead),
+        # so passing that unconditionally (as before this store existed)
+        # would KeyError for it; odds_multibook has no "stamp_of"/
+        # "min_hot_rows" and keeps behaving exactly as it always has.
+        rotate_kwargs = {}
+        if "stamp_field" in cfg:
+            rotate_kwargs["stamp_field"] = cfg["stamp_field"]
+        if "stamp_of" in cfg:
+            rotate_kwargs["stamp_of"] = cfg["stamp_of"]
+        if "min_hot_rows" in cfg:
+            rotate_kwargs["min_hot_rows"] = cfg["min_hot_rows"]
         try:
             report = store_archive.rotate(
                 path, keep_days=args.keep_days, now=now,
-                threshold_bytes=threshold_bytes, stamp_field=cfg["stamp_field"])
+                threshold_bytes=threshold_bytes, **rotate_kwargs)
         # OSError and ValueError too, not just StoreArchiveError (2026-09-21
         # review): a bad --keep-days raises ValueError, and a disk-level
         # failure (ENOSPC, EIO, or -- realistic on a Windows checkout with a
@@ -238,6 +250,13 @@ def _cmd_store_rotate(args) -> int:
                   f"row(s), {report['archived_bytes']} byte(s), into "
                   f"{report['segment']} -- hot file "
                   f"{report['hot_size_before']} -> {report['hot_size_after']} bytes")
+        elif report["reason"].startswith("ESCALATE"):
+            # store_archive.rotate refused because the store is in a state
+            # only a person should touch (a duplicated prefix left by an
+            # interrupted rotation). Same exit as a failed proof: the
+            # caller must not trust this run to have shrunk anything.
+            print(f"store rotate {name}: {report['reason']}")
+            failed = True
         elif report["reason"].startswith("no complete, parseable line"):
             # WARN, not a quiet no-op (2026-09-21 review): this reason only
             # ever comes back when the hot file IS over threshold (rotate

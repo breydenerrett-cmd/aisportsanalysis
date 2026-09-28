@@ -133,19 +133,27 @@ echo "- $(date -u +%Y-%m-%dT%H:%MZ) afternoon_slate: engine slip --date $TODAY" 
 # ledger by hand.
 python3 - "$TODAY" <<'PYEOF' 2>&1 | sed 's/^/  /'
 import collections, json, sys
+from src.pipeline import store_archive
 from src.report.engine_bridge import system_class
 date = sys.argv[1]
 counts = collections.Counter()
 try:
-    with open("evidence/decisions_v2.jsonl", encoding="utf-8") as fh:
-        for line in fh:
-            try:
-                row = json.loads(line)
-            except json.JSONDecodeError:
-                continue
-            if (row.get("decision_utc") or "")[:10] != date:
-                continue
-            counts[system_class(row.get("system_id"))] += 1
+    # Archive-aware: evidence/decisions_v2.jsonl is rotated by the
+    # `store rotate` step above, so its logical rows can live partly in
+    # gzip segments under evidence/archive/decisions_v2/ -- a plain
+    # open()/for-line-in-fh here would silently undercount every date whose
+    # decisions have already been archived.
+    for line in store_archive.iter_lines("evidence/decisions_v2.jsonl"):
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if (row.get("decision_utc") or "")[:10] != date:
+            continue
+        counts[system_class(row.get("system_id"))] += 1
 except OSError as exc:
     print(f"could not read the decision ledger: {exc}")
 else:

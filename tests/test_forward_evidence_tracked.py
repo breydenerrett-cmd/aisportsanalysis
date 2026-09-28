@@ -217,6 +217,23 @@ class ForwardEvidenceIsTrackedTests(unittest.TestCase):
             _is_ignored("data/processed/archive/odds_multibook/tmpab12cd.tmp"),
             "rotate()'s orphan temp segment file must be gitignored")
 
+    def test_evidence_archive_segments_are_tracked_but_rotation_tmp_files_are_not(self):
+        """evidence/decisions_v2.jsonl rotates the same way (2026-09-28):
+        its segments live under evidence/archive/decisions_v2/ and are
+        evidence, and rotate()'s temp files (the in-progress segment inside
+        that tree, and the in-progress hot file beside the store) must never
+        be committed as if they were."""
+        self.assertFalse(
+            _is_ignored("evidence/archive/decisions_v2/"
+                        "0001_2023-04-17_2026-09-26.jsonl.gz"),
+            "a decisions ledger archive segment must not be gitignored")
+        self.assertTrue(
+            _is_ignored("evidence/archive/decisions_v2/tmpab12cd.tmp"),
+            "rotate()'s orphan temp segment must be gitignored")
+        self.assertTrue(
+            _is_ignored("evidence/tmpef34gh.tmp"),
+            "rotate()'s orphan temp hot file beside the ledger must be gitignored")
+
     def test_the_capture_script_commits_the_store_directories(self):
         """The hourly script is what actually persists the evidence.
 
