@@ -611,8 +611,6 @@ class NoArchiveDirectoryBehavesExactlyAsBefore(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-<<<<<<< HEAD
-=======
 
 
 # ---------------------------------------------------------------------------
@@ -734,4 +732,3 @@ class L_BridgeVerifyAfterRotation(DecisionsLedgerRotationTestCase):
         self.assertEqual(report["v2_rows_checked"], len(rows))
         self.assertEqual(HashChainLedger(self.path).read()[0]["row_hash"],
                          self.genesis["row_hash"])
->>>>>>> origin/claude/sports-betting-analysis-review-g1o0co

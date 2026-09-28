@@ -448,8 +448,6 @@ def rotate(path: Path | str, *, keep_days: int, now: datetime,
     old_hot = path.read_bytes()
     lines = old_hot.splitlines(keepends=True)
 
-<<<<<<< HEAD
-=======
     # DUPLICATE-PREFIX GUARD (2026-09-28 design review of the decisions_v2
     # rotation). `rotate` makes the segment durable first (`os.replace` below)
     # and the shrunk hot file second; a hard kill between the two -- SIGKILL,
@@ -473,7 +471,6 @@ def rotate(path: Path | str, *, keep_days: int, now: datetime,
                 f"archived; recover by hand before rotating again")
             return report
 
->>>>>>> origin/claude/sports-betting-analysis-review-g1o0co
     # `min_hot_rows` caps the prefix from the OTHER end: however many
     # complete lines the cutoff-date scan below would archive, the last
     # `min_hot_rows` of them are kept regardless. The trailing incomplete
