@@ -120,6 +120,17 @@ elif echo "$CARD_OUT" | grep -q "^  no card:"; then
 fi
 echo "- $(date -u +%Y-%m-%dT%H:%MZ) afternoon_slate: card publish --date $TODAY exit=$CARD_STATUS" >> "$RUN_NOTE"
 
+# DISCORD COMMUNITY FEED (scripts/discord_feed.py), right after the card
+# publish above: posts today's frozen public card plus the public graded
+# record to a Discord channel via an incoming webhook. Gated on the env var
+# existing at all -- unset on any runner without a webhook configured, and
+# unconfigured must never fail the slate. Idempotent per (sport, date,
+# row_hash), so a card publish above that changed nothing (already_published)
+# posts nothing new here either.
+if [ -n "${DISCORD_WEBHOOK_URL:-}" ]; then
+    python3 scripts/discord_feed.py --sport mlb || echo "ESCALATE: discord feed failed"
+fi
+
 # engine slip RANKS what engine slate just froze (src/engine/slip.py) --
 # ENRICHMENT, never a blocker: a ranking failure must never escalate over
 # decisions and wagers that are already committed.
@@ -191,8 +202,10 @@ python3 -m src.cli store rotate --all --if-over-mb 60 --keep-days 1 \
 # Explicit paths, never bare `data`: data/app (customer/auth state) and
 # data/raw must never be staged by an automated pass. This pass writes
 # decisions and paper wagers, and refreshes the stores `engine slate` itself
-# rebuilds on the way in.
-git add data/processed evidence data/paper_accounts docs/OVERNIGHT_RUN.md 2>/dev/null || true
+# rebuilds on the way in. data/watch added for discord_feed.py's own
+# idempotency marker (data/watch/discord_feed_posted.jsonl), staged the same
+# way scripts/daily_loop.sh already stages the rest of data/watch.
+git add data/processed evidence data/paper_accounts docs/OVERNIGHT_RUN.md data/watch 2>/dev/null || true
 # GUARD (2026-09-21 incident): size-gate backstop for whatever store
 # rotation above did not catch -- prints WARN/ESCALATE, never blocks.
 guard_staged_size

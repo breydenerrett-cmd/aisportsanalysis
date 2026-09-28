@@ -425,6 +425,18 @@ echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: live settle (counts only)" >> "$
 # without anyone opening the ledger. Read-only, never escalates.
 echo "== card record (running) =="
 python3 -m src.cli card record 2>&1 | sed 's/^/  /' || true
+
+# DISCORD COMMUNITY FEED (scripts/discord_feed.py): posts today's frozen
+# public card plus the public graded record to a Discord channel via an
+# incoming webhook. Gated on the env var existing at all -- unset on any
+# runner without a webhook configured, and unconfigured must never fail the
+# loop. discord_feed.py itself reads the frozen ledger row only (never a
+# live build) and exits 0 with nothing posted when today's card is not
+# published yet, so this is safe to run before the day's first publish.
+if [ -n "${DISCORD_WEBHOOK_URL:-}" ]; then
+    python3 scripts/discord_feed.py --sport mlb || echo "ESCALATE: discord feed failed"
+fi
+
 # The shadow arms' records, one line per arm, never pooled. Run log only.
 echo "== mlb value shadow record (per arm, shadow only) =="
 python3 -m src.analysis.mlb_value_shadow record 2>&1 | sed 's/^/  /' || true
