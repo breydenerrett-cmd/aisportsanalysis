@@ -599,15 +599,30 @@ class DesignSystemDescribesThePerSportMenus(unittest.TestCase):
 
 
 class TennisNewsItemIsTrue(unittest.TestCase):
-    """Finding 22: the banner advertised a board that has shown nothing
-    since tennis capture stalled on 2026-09-16."""
+    """Finding 22 (2026-09-20): the banner advertised a board that has shown
+    nothing since tennis capture stalled on 2026-09-16 -- fixed then by
+    saying the board "fills in as prices are captured".
 
-    def test_tennis_item_says_the_board_fills_as_prices_are_captured(self):
+    UPDATED 2026-09-28 (customer-language audit): capture was STILL paused
+    eight days later -- TENNIS_CAPTURE_PAUSED defaults true in
+    src/pipeline/tennis_capture.py (BALLDONTLIE's ATP/WTA results endpoint
+    still returns 401) and nothing had re-enabled it -- so "fills in as
+    prices are captured" had itself become the same drift Finding 22 fixed,
+    one level up: present-tense activity that was not actually happening.
+    The item now says plainly that capture is paused instead of implying
+    it is running.
+    """
+
+    def test_tennis_item_says_capture_is_paused_not_silently_running(self):
         news = (WEB_JS / "news.js").read_text(encoding="utf-8")
         start = news.index('href: "#/tennis"')
         item = news[news.rindex("{", 0, start):start]
-        self.assertIn("as prices are captured", item)
+        self.assertIn("paused", item)
         self.assertIn("No picks", item)
+        # The exact false claim this fix replaced -- regression guard, not
+        # just a positive check, so a future edit cannot quietly bring back
+        # a present-tense "capture is happening" claim under new wording.
+        self.assertNotIn("as prices are captured", item)
 
 
 if __name__ == "__main__":

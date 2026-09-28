@@ -247,8 +247,8 @@ function priceWindowNote(rows, freshestObservedUtc) {
   const minutesToFirstPitch = (nextStart - Date.now()) / 60000;
   if (minutesToFirstPitch <= PRICE_WINDOW_MINUTES) return null;
   const clock = et(new Date(nextStart).toISOString());
-  return `Prices are bought from three hours before first pitch, so the board `
-    + `above is the last one captured${clock ? `. First game ${clock}` : ""}.`;
+  return `Capture is scheduled to start three hours before first pitch, so a quiet `
+    + `board like this may just be waiting on that window${clock ? `. First game ${clock}` : ""}.`;
 }
 
 function renderSlateBanner(dateIso, rows, freshestObservedUtc) {
@@ -357,10 +357,10 @@ function checkedTonightPanel(aggregates) {
   // fillResearchCount.
   programme.appendChild(fillResearchCount(
     el("span", { class: "gv2-checked__programme-body" }),
-    (n, surviving) => `${n} hypotheses pre-registered across this product's `
+    (n, surviving) => `${n} hypotheses tested in this product's `
       + `research record, ${surviving === 0 ? "zero" : surviving} surviving. `
       + `The closed research record, not tonight's count.`,
-    "Every hypothesis in this product's research record is pre-registered, "
+    "Every hypothesis in this product's research record has been tested, "
     + "and none has survived. The closed research record, not tonight's "
     + "count."));
   panel.appendChild(programme);

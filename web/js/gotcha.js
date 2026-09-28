@@ -146,7 +146,7 @@ function actOne(stage, onProceed) {
     text: "THE MODEL FINALLY BROKE." }));
 
   card.appendChild(el("p", { class: "gotcha-sub",
-    text: "After 40 pre-registered hypotheses and zero survivors, one "
+    text: "After a stack of pre-registered hypotheses and zero survivors, one "
         + "strategy just cleared every gate at once. We have never seen a "
         + "number like this. Legal has advised us not to publish it." }));
 

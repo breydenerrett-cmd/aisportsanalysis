@@ -299,6 +299,29 @@ class LandingIntegrityTests(unittest.TestCase):
         self.assertIn('data-hook="disclaimer-host"', self.html)
         self.assertIn("renderDisclaimerFooter", self.landing_js)
 
+    def test_ufc_copy_says_results_are_entered_by_hand_not_graded_automatically(self):
+        """2026-09-28 customer-language audit: UFC has never graded a pick.
+        Results go into src/pipeline/ufc_results.py's manual store by
+        hand -- src.report.effective_record's own UFC `reason` string
+        says so verbatim ("results are entered by hand and none have
+        been entered for these picks yet") -- while MLB and NFL settle
+        automatically. The page must say so, and must never fold UFC
+        into a blanket "graded automatically"/"graded the same way"
+        claim that actually only holds for MLB and NFL."""
+        self.assertIn("entered by hand", self.html)
+        lowered = self.html.lower()
+        # The exact false claims this fix replaced: a blanket "all three
+        # sports grade/are graded the same way" statement that lumped
+        # hand-graded, never-yet-graded UFC in with MLB/NFL's automatic
+        # settlement.
+        self.assertNotIn(
+            "mlb, nfl and ufc picks, published before every game and graded "
+            "in public the next morning", lowered)
+        self.assertNotIn(
+            "mlb, nfl and ufc carry live picks, published and graded the "
+            "same way on the same record", lowered)
+        self.assertNotIn("mlb · nfl · ufc — graded in public", lowered)
+
 
 class SignupRouteWiredIntoMainTests(unittest.TestCase):
     def setUp(self):

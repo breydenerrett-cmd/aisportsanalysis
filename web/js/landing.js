@@ -15,7 +15,7 @@
  * and BETA_TIER already state; this file wires DOM plumbing, not copy.
  */
 
-import { trackFunnelEvent } from "./api.js";
+import { apiGet, trackFunnelEvent } from "./api.js";
 import { el, clear } from "./dom.js";
 import { renderDisclaimerFooter, meta as fetchMeta } from "./meta.js";
 import { BETA_TIER } from "./pricing.js";
@@ -455,6 +455,32 @@ async function fillSportTiles() {
   }
 }
 
+/**
+ * Replace the closing CTA's headline with the truth about whether
+ * tonight's MLB card has actually posted -- GET /card's own `frozen`
+ * flag (src/report/card.py: True only once the afternoon pass has
+ * published a row; False while the page would still be building live).
+ * "Tonight's card is already up" was a static claim that read as false
+ * for roughly the first half of every day, before that pass runs. The
+ * markup's own fallback already states the always-true "before first
+ * pitch" promise instead, so a slow or failed fetch never overclaims --
+ * same honest-absence rule as fillResearchCounts/fillCardRecord above.
+ */
+async function fillClosingCta() {
+  const node = document.querySelector("[data-hook='closing-cta-title']");
+  if (!node) return;
+  try {
+    const card = await apiGet("/card");
+    if (!card || card.frozen !== true) return;
+    clear(node);
+    node.appendChild(document.createTextNode("Tonight's card is already up."));
+    node.appendChild(el("br"));
+    node.appendChild(document.createTextNode("See what it says."));
+  } catch (err) {
+    // Leave the markup's conservative fallback in place.
+  }
+}
+
 function boot() {
   const disclaimerHost = document.querySelector("[data-hook='disclaimer-host']");
   const pricingHost = document.querySelector("[data-hook='pricing-host']");
@@ -465,6 +491,7 @@ function boot() {
   fillCardRecord();
   fillProofPanel();
   fillSportTiles();
+  fillClosingCta();
   // Tonight's real slate replaces the hardcoded Aug 28 sample matchup, or
   // degrades to an honest labelled-sample state on failure -- see
   // landing-live.js's module docstring. Fire-and-forget, same rule as

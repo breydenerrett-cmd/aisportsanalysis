@@ -33,7 +33,7 @@
      type as everything else. tests/test_web_structure.py enforces that
      mechanically. -->
 <title>LINEHOUND — tonight's picks, frozen before first pitch</title>
-<meta name="description" content="Every pick posted before the game, graded win or lose, losses included. MLB, NFL and UFC — tennis in research. 7-day free trial, then $19.99/month.">
+<meta name="description" content="MLB and NFL picks posted before the game, graded automatically the next morning. UFC picks are graded once results are entered by hand. Every loss stays on the record. Tennis is research only. 7-day free trial, then $19.99/month.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,500;0,600;0,700;1,600;1,700;1,800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -81,9 +81,9 @@
        stale number on the page. -->
   <div class="hero__top">
   <div class="hero__claim" data-rise data-delay="40" data-hook="hero-claim">
-    <span class="eyebrow eyebrow--money">MLB · NFL · UFC — graded in public</span>
+    <span class="eyebrow eyebrow--money">MLB · NFL · UFC — every pick published</span>
     <h1 class="hero__claim-title">Every pick posted before the game.<br>Every loss kept on the record.</h1>
-    <p class="hero__claim-body">MLB, NFL and UFC picks, published before every game and graded in public the next morning.</p>
+    <p class="hero__claim-body">MLB and NFL grade automatically the next morning. UFC picks publish before the event and grade in public once results are entered by hand.</p>
     <div class="hero__cta-group" data-rise data-delay="160">
       <a class="btn btn--primary" href="index.html#/signup" data-hook="cta-signup-hero">Start your 7-day free trial</a>
       <a class="btn btn--ghost" href="index.html#/record-card" data-hook="cta-record-secondary">See every pick, graded</a>
@@ -274,8 +274,8 @@
     <!-- COUNT READ FROM THE REGISTRY at runtime (landing.js -> GET /meta ->
          data/research/alpha_registry.jsonl). The figure written here is the
          no-JS fallback and must match the registry. -->
-    <p>Between 2023 and 2024 we pre-registered a long list of separate research ideas against MLB
-      moneyline betting — <span data-hook="research-count">37</span> tested so far, from bullpen workload
+    <p>In 2026 we pre-registered a long list of separate research ideas and tested them against 2023–2024 MLB
+      moneyline games — <span data-hook="research-count">37</span> read so far, from bullpen workload
       and platoon matchups to market-structure effects like fading recent price moves. Zero have survived
       our own falsification checks. We publish that too, at the same size as everything else.</p>
   </div>
@@ -518,15 +518,16 @@
     </details>
     <details class="faq-item panel chamfer" data-hook="faq-no-edge">
       <summary>No betting edge found yet — what does that mean?</summary>
-      <p class="faq-item__body">Exactly what it says. We've pre-registered and tested
+      <p class="faq-item__body">Exactly what it says. In 2026 we pre-registered and tested
         <span data-hook="research-count">37</span> distinct research hypotheses against real MLB games from
         2023–2024, and none survived our falsification tests. We publish the losers, including the one
         that looked promising until we checked it properly.</p>
     </details>
     <details class="faq-item panel chamfer" data-hook="faq-sports-covered">
       <summary>Which sports do you cover?</summary>
-      <p class="faq-item__body">MLB, NFL and UFC carry live picks, published and graded the same way on the same
-        record. Tennis is research-stage — a match board, not picks yet.</p>
+      <p class="faq-item__body">MLB, NFL and UFC all carry live picks, published before the game or event. MLB and NFL
+        grade automatically the next morning; UFC picks grade once results are entered by hand. Tennis is
+        research-stage — a match board, not picks yet.</p>
     </details>
     <details class="faq-item panel chamfer" data-hook="faq-cancel">
       <summary>Can I cancel anytime?</summary>
@@ -535,16 +536,16 @@
     </details>
     <details class="faq-item panel chamfer" data-hook="faq-hit-rate">
       <summary>Why don't you show a win percentage like other apps do?</summary>
-      <p class="faq-item__body">Because we do not have one we can stand behind. Our own research found zero surviving
-        betting ideas against real games. We will not publish a win probability that has never been
-        validated.</p>
+      <p class="faq-item__body">We do — our own number sits right next to the market's on every pick. It is
+        unvalidated: our own research found zero surviving betting ideas against real games, and every
+        pick is graded in public regardless.</p>
     </details>
   </div>
 </section>
 
 <!-- CLOSING CTA -->
 <section class="closing-band" aria-label="call to action" data-view="cta" data-hook="cta-bottom">
-  <div class="closing-band__title">Tonight's card is already up.<br>See what it says.</div>
+  <div class="closing-band__title" data-hook="closing-cta-title">The next card posts before first pitch.<br>See what it says.</div>
   <div class="closing-band__cta">
     <a class="btn btn--primary btn--lg" href="index.html#/signup" data-hook="cta-signup-bottom">Start your 7-day free trial</a>
   </div>

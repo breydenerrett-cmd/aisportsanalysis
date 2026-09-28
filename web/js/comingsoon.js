@@ -10,10 +10,13 @@
  * and main.js started sending them to `card.js`'s `renderCard`/
  * `renderCardRecord` and `tennis.js`'s `renderTennisBoard` instead (see
  * docs/DESIGN_SYSTEM.md section 6's "NFL and Tennis" paragraph, updated in
- * the same change). `COPY.nfl`/`COPY.tennis` below are unreachable through
- * the router now and kept only as `copyFor`'s named entries for those
- * keys, in case either sport is ever taken back off live for some reason;
- * deleting them buys nothing this file's tests check for.
+ * the same change). `COPY.nfl`/`COPY.tennis` themselves were deleted
+ * 2026-09-28 (customer-language audit): main.js's router can no longer
+ * reach either key -- verified against main.js's own dispatch, not just
+ * this docstring -- and the copy they held had gone stale regardless:
+ * NFL's "being tested privately" line stopped being true the day NFL
+ * went live. Re-add a named entry here, with copy checked against that
+ * day's facts, if either sport is ever taken off live again.
  *
  * NEVER SHOWN: a pick, a figure, a price, a percentage, a count or a
  * subscribe action (shell-09). NO API CALLS OF ANY KIND -- this module
@@ -21,10 +24,6 @@
  * the live MLB product.
  *
  * COPY, VERIFIED TRUE TODAY:
- *   - NFL/Tennis text is DESIGN_SYSTEM.md section 4's own corrected
- *     wording verbatim (the first draft's "with a page for every matchup"
- *     promised an unbuilt feature and was dropped there; not reintroduced
- *     here).
  *   - NBA/NHL are written in the same shape. docs/ROADMAP.md Stage 16
  *     (R16-26) is the only place season timing for either sport is stated
  *     at all -- and it states an approximate MONTH, not a date, a price or
@@ -41,21 +40,6 @@ import { el, clear } from "./dom.js";
 import { pageHeader, chip } from "./layout.js";
 
 const COPY = {
-  nfl: {
-    label: "NFL",
-    title: "NFL is coming soon.",
-    purpose: "NFL picks are not published yet.",
-    coming: "Daily picks published before each game and graded in public, win or lose.",
-    testing: "Picks for this season are being tested privately on this week's games. "
-      + "None are on the record, and none are shown here.",
-  },
-  tennis: {
-    label: "TENNIS",
-    title: "Tennis is coming soon.",
-    purpose: "Tennis picks are not published yet.",
-    coming: "A match board for ATP and WTA events.",
-    testing: "Match prices are being collected privately.",
-  },
   nba: {
     label: "NBA",
     title: "NBA is coming soon.",
@@ -97,9 +81,10 @@ function section(heading, itemText) {
 }
 
 /**
- * Renders the coming-soon page for `sport` (e.g. "nfl", "tennis", "nba",
- * "nhl") into `container`. Clears and fully owns `container` -- there is
- * no loading state, because there is nothing to fetch.
+ * Renders the coming-soon page for `sport` (e.g. "nba", "nhl", or any
+ * future not-yet-live sport) into `container`. Clears and fully owns
+ * `container` -- there is no loading state, because there is nothing to
+ * fetch.
  */
 export function renderComingSoon(container, sport) {
   if (!container) return;

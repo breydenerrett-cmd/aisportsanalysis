@@ -261,8 +261,9 @@ function totalHeadline(record) {
   const graded = staked + (total.pushes || 0) + (total.voids || 0);
   if (!graded) {
     wrap.appendChild(el("p", { class: "crp-chain__body", "data-hook": "record-total-none",
-      text: "No total has graded yet. Totals are on the card from 2026-09-14, frozen and graded "
-          + "the same way as the game picks, and their record is kept here on its own." }));
+      text: "No total has graded yet. Totals are paused on the card: our run numbers read high "
+          + "against the market, and we are checking that against finished games before turning "
+          + "them back on. Their record will be kept here, apart from the game picks, once they are." }));
     return wrap;
   }
   const grid = el("div", { class: "crp-stats" });

@@ -14,11 +14,13 @@
  *   2. TENNIS LIVE, RESEARCH ONLY -- tennis is `status: "live"` too, but
  *      `#/tennis` is tennis.js's match board, which never publishes a
  *      pick (see that module's own notice, unchanged by this). CORRECTED
- *      2026-09-20: the item advertised the board as if it had matches on
- *      it. Tennis capture was halted from 2026-09-16, the store held no
- *      tennis prices, and the board was empty for every date -- so the
- *      item now says the board fills in as prices are captured, which is
- *      true whether or not any are on file yet.
+ *      2026-09-28: capture has been paused since 2026-09-16
+ *      (TENNIS_CAPTURE_PAUSED defaults true in
+ *      src/pipeline/tennis_capture.py -- BALLDONTLIE's ATP/WTA results
+ *      endpoint returns 401) and nothing has re-enabled it, so "fills in
+ *      as prices are captured" read as an ongoing activity that was not
+ *      happening. The item now says plainly that capture is paused,
+ *      rather than implying it is running.
  *   3. Player props on the card -- src/analysis/daily_card.py's
  *      "PLAYER PROPS ON THE CARD" section (`select_props`,
  *      `_build_prop_pick`, `merge_card_and_props`) genuinely merges prop
@@ -68,7 +70,7 @@ const STORAGE_KEY = "lh.news.dismissed";
  * Tennis were routed to their real pages. Bumped 2026-09-20: NFL switched
  * from the market favourite to value lines (NFL_CARD_V2), and its record
  * restarts with the new rule. */
-export const NEWS_VERSION = "2026-09-20";
+export const NEWS_VERSION = "2026-09-28";
 
 /** `href` is the bare app hash; `mountNews` applies `linkPrefix` at render
  * time so the same list works from `index.html` and, prefixed, from
@@ -82,7 +84,7 @@ export const NEWS_ITEMS = [
   },
   {
     tag: "NEW",
-    text: "Tennis: a research match board for ATP and WTA events. It fills in as prices are captured. No picks until results can be graded.",
+    text: "Tennis: a research match board for ATP and WTA events. Price capture is paused, so the board may be empty for now. No picks until results can be graded.",
     href: "#/tennis",
   },
   {

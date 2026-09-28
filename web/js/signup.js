@@ -50,7 +50,7 @@ import { BETA_TIER } from "./pricing.js";
 // which is the register he retired.
 const BENEFITS = [
   "Each pick starts with who is more likely to win — by the whole market and by our own numbers — then what the price needs to break even.",
-  "Every pick frozen before first pitch, so there's no changing the call after it's made.",
+  "Every pick published before first pitch; locked at the last price check, so the call doesn't change after that.",
   "Results published win or lose — the record is checkable, not curated.",
   "Player props on the same footing: how often it actually happens first, what the price needs second.",
 ];
