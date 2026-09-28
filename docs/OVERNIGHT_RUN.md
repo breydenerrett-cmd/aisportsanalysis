@@ -4217,3 +4217,15 @@ end-to-end confirmation (above).
 - 2026-09-28T20:18Z afternoon_slate: engine slate --date 2026-09-28 exit=0
 - 2026-09-28T20:18Z afternoon_slate: card publish --date 2026-09-28 exit=0
 - 2026-09-28T20:18Z afternoon_slate: engine slip --date 2026-09-28
+- 2026-09-28T20:40Z afternoon_slate: engine slate --date 2026-09-28 exit=0
+- 2026-09-28T20:40Z afternoon_slate: card publish --date 2026-09-28 exit=0
+- 2026-09-28T20:41Z afternoon_slate: engine slip --date 2026-09-28
+- 2026-09-28T20:44Z afternoon_slate: engine slate --date 2026-09-28 exit=0
+- 2026-09-28T20:44Z afternoon_slate: card publish --date 2026-09-28 exit=0
+- 2026-09-28T20:44Z afternoon_slate: engine slip --date 2026-09-28
+- 2026-09-28T20:53Z afternoon_slate: engine slate --date 2026-09-28 exit=0
+- 2026-09-28T20:53Z afternoon_slate: card publish --date 2026-09-28 exit=0
+- 2026-09-28T20:53Z afternoon_slate: engine slip --date 2026-09-28
+- 2026-09-28T21:06Z afternoon_slate: engine slate --date 2026-09-28 exit=2
+- 2026-09-28T21:06Z afternoon_slate: card publish --date 2026-09-28 exit=0
+- 2026-09-28T21:07Z afternoon_slate: engine slip --date 2026-09-28
