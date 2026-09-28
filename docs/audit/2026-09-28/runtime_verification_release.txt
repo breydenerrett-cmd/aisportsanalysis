@@ -15,3 +15,7 @@ Origin ledger after the release: evidence/decisions_v2.jsonl 1,153,025 bytes + e
 Staging failure lines:
 deploy	Health check	2026-09-28T20:47:31.0506158Z   /card/record -> 000000
 deploy	Health check	2026-09-28T20:48:16.0619117Z   /today -> 000000
+
+Revenue push d7837cce (feed, offer, checklist, honest copy):
+  tests workflow: SUCCESS run 36484434795
+  deploy-staging: FAILED run 36484434831 (same OOM; streaming fix in progress, docs/audit/2026-09-28/api_memory_profile.md)
