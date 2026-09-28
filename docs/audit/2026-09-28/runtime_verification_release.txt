@@ -1,0 +1,17 @@
+Runtime verification after the two pushes (0a11b84d slice 1, b5fba8fa slice 2), 2026-09-28
+
+tests workflow (b5fba8fa, Linux 3.10/3.11/3.12): SUCCESS  run 36479068473
+deploy-staging (b5fba8fa):                        FAILED   run 36479068535 -- health check, same OOM as before the release
+first forward-capture slot on the new code:       SUCCESS  run 36480403534 (created 20:36:30Z, sha f52b99cf)
+  20:53:11Z store rotate decisions_v2: no-op (hot size 1153025 bytes < threshold 62914560 bytes)
+  20:53:11Z store rotate odds_multibook: no-op (hot size 46970071 bytes < threshold 62914560 bytes)
+  20:53:16Z == committed ==
+  20:53:16Z ESCALATE: credit floor reached -- stop spending, tell Brey (x4; balance 4,941 < 5,000; owner decision pending)
+daily-loop on the new code:                       SCHEDULED 2026-09-29 ~10:10Z (results catch-up incl. postseason, pitcher refresh, settlement)
+afternoon-slate:                                  SUCCESS twice on 2026-09-28 (no games); next real pass on 09-29
+Origin ledger after the release: evidence/decisions_v2.jsonl 1,153,025 bytes + evidence/archive/decisions_v2/0001_2023-04-17_2026-09-26.jsonl.gz (4,897,050 bytes);
+  sha256(segment + hot) == the pre-rotation file (1ccee141...), chain verified over 33,252 rows from origin's own bytes.
+
+Staging failure lines:
+deploy	Health check	2026-09-28T20:47:31.0506158Z   /card/record -> 000000
+deploy	Health check	2026-09-28T20:48:16.0619117Z   /today -> 000000
