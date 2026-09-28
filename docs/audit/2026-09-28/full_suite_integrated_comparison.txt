@@ -1,0 +1,9 @@
+Slice 2 (reviewed release + postseason rule), integrated tree 1169b2d6 = local branch merged with origin 0a11b84d
+Full suite by test identity (scripts/test_parallel.py, Windows, Python 3.14): 8676 tests, failures=17 errors=1
+NEW vs pre-lane baseline 9de735a8 (20 real failures): none
+NEW vs origin-tip baseline b5d81872 (21 real failures): none
+FIXED vs pre-lane baseline: tests.test_nfl_v2_integration.NflRecordRoutes.test_a_broken_nfl_chain_is_reported_broken_on_the_nfl_record
+  (the /card/record NameError, commit 76cd527f); test_daily_bootstrap seed test (load-sensitive 30 s timeout, passes here)
+Remaining 18: PRE_EXISTING_ENVIRONMENTAL on this Windows checkout (executable bits x11, fcntl import in
+capture health, RSS measurement, memory-budget RSS, APP_DB_PATH env override, f5_eval frozen-path check,
+capture_no_set_time window). Zero NEW_REGRESSION. Fingerprint tests pass with the committed values.

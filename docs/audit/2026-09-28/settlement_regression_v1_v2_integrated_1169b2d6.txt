@@ -1,0 +1,24 @@
+=== LEVEL 1: per-entry grade, old vs new ===
+  v2        {'identical': 375, 'VOID/0.0 -> UNRESOLVED/0.0': 149}
+  shadow-a  {'VOID/0.0 -> UNRESOLVED/0.0': 102, 'identical': 853}
+  shadow-c  {'identical': 368, 'VOID/0.0 -> UNRESOLVED/0.0': 113}
+  shadow-e  {'identical': 174, 'VOID/0.0 -> UNRESOLVED/0.0': 40}
+  v1        {'identical': 4820, 'VOID/0.0 -> UNRESOLVED/0.0': 46}
+  ALL: {'identical': 6590, 'VOID/0.0 -> UNRESOLVED/0.0': 450}
+  unexpected transitions: none
+
+=== LEVEL 2: end-to-end settle, old vs new, temp copies ===
+  v2        dates 6: W/L/P/units identical on 6; differing 0 []
+  shadow-a  dates 6: W/L/P/units identical on 6; differing 0 []
+  shadow-c  dates 6: W/L/P/units identical on 6; differing 0 []
+  shadow-e  dates 6: W/L/P/units identical on 6; differing 0 []
+  v1        dates 13: W/L/P/units identical on 13; differing 0 []
+
+=== LEVEL 3: re-entry on real rows (NEW only) ===
+  v2        date 2026-09-23, withheld game 824785: pass1 unresolved=3, pass2 (8, 3, 0, 2.7532) vs one-pass (8, 3, 0, 2.7532), pass3 no-op, settled rows 2, linked=True, reader twopass (3, 2, 0, 5, 0.1927) == onepass (3, 2, 0, 5, 0.1927): True -> PASS
+  shadow-a  date 2026-09-22, withheld game 823543: pass1 unresolved=2, pass2 (31, 20, 0, 3.563) vs one-pass (31, 20, 0, 3.563), pass3 no-op, settled rows 2, linked=True, reader twopass (31, 19, 0, 50, 4.563) == onepass (31, 19, 0, 50, 4.563): True -> PASS
+  shadow-c  date 2026-09-23, withheld game 823327: pass1 unresolved=1, pass2 (9, 2, 0, 4.8811) vs one-pass (9, 2, 0, 4.8811), pass3 no-op, settled rows 2, linked=True, reader twopass (1, 0, 0, 1, 0.7042) == onepass (1, 0, 0, 1, 0.7042): True -> PASS
+  shadow-e  no date with a gradable game entry -- skipped
+  v1        date 2026-09-16, withheld game 824306: pass1 unresolved=1, pass2 (6, 7, 0, -3.1518) vs one-pass (6, 7, 0, -3.1518), pass3 no-op, settled rows 2, linked=True, reader twopass (6, 7, 0, 13, -3.1518) == onepass (6, 7, 0, 13, -3.1518): True -> PASS
+
+RESULT: PASS
