@@ -279,3 +279,21 @@ intervals. Zero survivors is an acceptable outcome.
 Decision waiting on the owner: the credit floor. The balance is 4,941 against
 5,000 and the reset has not appeared in the log; the Wild Card round is priced
 only if the floor is lowered through the reset or the quota resets first.
+
+## Addendum, later on 2026-09-28
+
+- The staging OOM is measured, not inferred any more: the startup warm-up
+  pass peaks at 1,479 MB because whole stores are materialised and filtered
+  afterwards (tennis board +1,295 MB to keep 2,475 rows; NFL card +753 MB;
+  `/today` unwindowed +523 MB; the engine join +351 MB). Streaming with the
+  same filters brings the pass to ~540 MB with byte-identical payloads on
+  twelve route/date pairs (`docs/audit/2026-09-28/api_memory_profile.md`)
+  `[verified]`.
+- `src/report/daily_record.py` `day_record()` returns differently ordered
+  content across two fresh processes on unmodified code and data (hash-seed
+  dependent iteration; identical within one process) `[recon]`. A
+  reproducibility defect on a public surface; not fixed in this cycle.
+- `.github/workflows/deploy-staging.yml:206-212` waits up to six minutes for
+  a warm-up pass and then continues without failing, so a process that
+  never completes warm-up reaches the page checks anyway `[recon]`. Default-
+  branch YAML; owner action.
