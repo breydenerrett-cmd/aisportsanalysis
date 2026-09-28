@@ -90,8 +90,23 @@ V2_CONTENT_FINGERPRINT = (
 # not in V2_FINGERPRINT_FILES -- so V2's counted sample still does not
 # restart. That this test fired on a change made by a different lane is the
 # guard working, not a defect in it.
+# CHANGED A THIRD TIME 2026-09-26, deliberately and on the owner's
+# instruction. Three settlement fixes in `src/appstate/card_ledger.py`
+# move the V1 content fingerprint from
+# fd31a26c2ac4e004f76f582ccafcedf79f6ebf2d5f1152fa3b07125f7a60eaa6
+# to the value below. The fixes:
+#   - `settle_v2` is re-entrant, mirroring V1's `settle()` partial
+#     settlement, so an UNRESOLVED V2 entry can settle on a later pass.
+#   - The V2 readers use only the newest settled row per date
+#     (`latest_settled_rows_v2`).
+#   - The graders honour an explicit verified void, used for UFC draws, no
+#     contests, cancellations and changed pairings.
+# This is the recorded v1_code_fingerprint change that registration 11.6
+# permits and section 16 names. V2's code_fingerprint is again UNCHANGED,
+# because card_ledger.py is not in V2_FINGERPRINT_FILES, so V2's counted
+# sample does not restart.
 V1_CONTENT_FINGERPRINT = (
-    "fd31a26c2ac4e004f76f582ccafcedf79f6ebf2d5f1152fa3b07125f7a60eaa6")
+    "9099215574e5ce84ea5ace0718810f329c54e3b1e0831f91efa7caf20a96508b")
 
 
 def _content_fingerprint(paths) -> str:
