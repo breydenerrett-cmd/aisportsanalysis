@@ -1,0 +1,17 @@
+Slice 1 (decisions ledger rotation, worktree commit 753c2621 on origin tip b5d81872)
+Full suite before/after, compared by test identity (scripts/test_parallel.py, Windows, Python 3.14)
+
+BEFORE (untouched origin tip b5d81872): 8254 tests, failures=17 errors=4  -> full_suite_origin_b5d81872_failures.txt
+AFTER  (753c2621):                      8305 tests, failures=17 errors=6  -> full_suite_slice1_753c2621_failures.txt
+FIXED (in before, not in after): none
+NEW   (in after, not in before):
+  ERROR test_daily_bootstrap.DailyBootstrapStatcastSeedTest.test_restores_from_seed_when_manifest_missing
+  ERROR test_daily_bootstrap.DailyBootstrapStatcastSeedTest.test_seed_ref_env_var_is_honoured
+  Both: subprocess.TimeoutExpired after 30 s running scripts/daily_bootstrap.sh in a throwaway git
+  fixture (the fixture copies only that script, which slice 1 does not touch). Back-to-back timings
+  of the same test, alternating worktrees under equal load: base 26 s OK, slice1 30 s OK, base 33 s
+  OK, slice1 44 s TIMEOUT. The bootstrap run sits at the 30 s limit on this Windows box (bash via
+  the WSL shim + git). test_seed_ref_env_var_is_honoured also errored at the older baseline
+  9de735a8. Classification: PRE_EXISTING_ENVIRONMENTAL (load-sensitive timeout), zero NEW_REGRESSION.
+Every other failure is identical to the baseline set (executable bits, fcntl, RSS, env overrides,
+calibration-freeze check on origin's tree).

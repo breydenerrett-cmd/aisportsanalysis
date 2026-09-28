@@ -1,0 +1,157 @@
+simulate_rotation.py -- run at 2026-09-28T19:17:06.612117+00:00
+repo root: C:\Users\KC\Desktop\aisportsanalysis
+
+origin file: C:\Users\KC\AppData\Local\Temp\claude\C--Users-KC-Desktop\afe385e5-2330-4bd1-aff8-b1c5fc4415ae\scratchpad\p1\decisions_v2.origin.jsonl
+  size=104665523 (expected 104665523: True)
+  sha256=1ccee141ba0e751e3b82888609e64c7c6bf81543560fbd0af505e79e629a5721 (expected match: True)
+  rows (from FACTS, not re-derived here): 33252
+
+================================================================================================
+SIMULATION now=2026-09-28T15:00:00+00:00 keep_days=1 threshold_bytes=62914560 (60 MiB) registry=decisions_v2
+================================================================================================
+
+-- BEFORE --
+  bytes=104665523
+  rows=33252
+  sha256=1ccee141ba0e751e3b82888609e64c7c6bf81543560fbd0af505e79e629a5721
+  verify: ok=True rows_checked=33252 broken_at_line=None reason=None
+
+-- BEFORE readers --
+  [BEFORE] load_decisions: count=33193 identity_hash=b48c04868ae0388b5e12f24df099c2de2c0b9176510bcecabda1c9e3290a28f4 (4.434s)
+  [BEFORE] dedupe keys: count=33193 hash=b48c04868ae0388b5e12f24df099c2de2c0b9176510bcecabda1c9e3290a28f4 (2.776s)
+  [BEFORE] ensure_genesis row_hash=f9b1e0ae91043fdb5bf803eee95738344542f434d2f7f27b0f18a35f004fc1f6 (2.419s)
+  [BEFORE] slate_due last_decision_utc=2026-09-27T15:06:37.502800+00:00 (0.898s)
+  [BEFORE] research_readiness._decision_rows: count=33252 (1.323s)
+  [BEFORE] test_tier_ladder._load_plays: dates=['2026-08-31', '2026-09-01', '2026-09-02', '2026-09-03', '2026-09-07', '2026-09-08', '2026-09-09', '2026-09-10', '2026-09-11', '2026-09-12', '2026-09-13', '2026-09-14', '2026-09-21', '2026-09-22', '2026-09-23', '2026-09-24', '2026-09-25', '2026-09-26'] (1.256s)
+
+-- ROTATE report --
+  rotated=True
+  segment=C:\Users\KC\AppData\Local\Temp\decisions_rotation_sim__sbhd87l\main\archive\decisions_v2\0001_2023-04-17_2026-09-26.jsonl.gz
+  archived_lines=32859
+  archived_bytes=103512498
+  hot_size_before=104665523
+  hot_size_after=1153025
+  cutoff_date=2026-09-27
+
+-- AFTER --
+  segments: [('0001_2023-04-17_2026-09-26.jsonl.gz', 4897050)]
+  hot_bytes=1153025
+  hot_rows=393
+  logical_rows=33252
+  sha256(concat(decompressed segments) + hot) == original sha256: True
+  verify: ok=True rows_checked=33252 broken_at_line=None reason=None
+
+-- AFTER readers --
+  [AFTER] load_decisions: count=33193 identity_hash=b48c04868ae0388b5e12f24df099c2de2c0b9176510bcecabda1c9e3290a28f4 (3.625s)
+  [AFTER] dedupe keys: count=33193 hash=b48c04868ae0388b5e12f24df099c2de2c0b9176510bcecabda1c9e3290a28f4 (2.206s)
+  [AFTER] ensure_genesis row_hash=f9b1e0ae91043fdb5bf803eee95738344542f434d2f7f27b0f18a35f004fc1f6 (2.651s)
+  [AFTER] slate_due last_decision_utc=2026-09-27T15:06:37.502800+00:00 (1.325s)
+  [AFTER] research_readiness._decision_rows: count=33252 (1.426s)
+  [AFTER] test_tier_ladder._load_plays: dates=['2026-08-31', '2026-09-01', '2026-09-02', '2026-09-03', '2026-09-07', '2026-09-08', '2026-09-09', '2026-09-10', '2026-09-11', '2026-09-12', '2026-09-13', '2026-09-14', '2026-09-21', '2026-09-22', '2026-09-23', '2026-09-24', '2026-09-25', '2026-09-26'] (1.876s)
+
+-- READER EQUALITY (before vs after) --
+  load_decisions_count: equal=True
+  load_decisions_identity_hash: equal=True
+  dedupe_key_count: equal=True
+  dedupe_key_hash: equal=True
+  ensure_genesis_row_hash: equal=True
+  slate_due_last_decision_utc: equal=True
+  research_readiness_decision_rows_count: equal=True
+  test_tier_ladder_plays_dates: equal=True
+  ALL READER OUTPUTS IDENTICAL: True
+
+-- SECOND rotate() (identical now/keep_days/threshold) --
+  rotated=False reason=hot size 1153025 bytes < threshold 62914560 bytes
+  segments unchanged: True
+  hot file unchanged: True
+
+-- SYNTHETIC APPEND after rotation, then verify() --
+  prev_hash used for the new row == last_hash() just before appending: True
+  new row_hash=c851198a451d4c412449a4c3c2d17e13c87eea8729b466f4e2d22e3baa806466
+  verify after append: ok=True rows_checked=33253 (before-append logical rows + 1 = 33253, match=True)
+
+-- TIMING: last_hash() and one append(), before vs after rotation --
+  last_hash() BEFORE rotation (whole ~100MB file): 2.1814s (last_hash=ccc4b1de74a15427...)
+  append()    BEFORE rotation:                     1.3703s
+  [rotation itself, for reference]:                3.2167s
+  last_hash() AFTER  rotation (hot file only):     0.0932s (last_hash=ccc4b1de74a15427...)
+  append()    AFTER  rotation:                     0.0296s
+  last_hash() speedup (before/after): 23.4x
+
+================================================================================================
+SIMULATION now=2026-09-29T13:00:00+00:00 keep_days=1 threshold_bytes=62914560 (60 MiB) registry=decisions_v2
+================================================================================================
+
+-- BEFORE --
+  bytes=104665523
+  rows=33252
+  sha256=1ccee141ba0e751e3b82888609e64c7c6bf81543560fbd0af505e79e629a5721
+  verify: ok=True rows_checked=33252 broken_at_line=None reason=None
+
+-- BEFORE readers --
+  [BEFORE] load_decisions: count=33193 identity_hash=b48c04868ae0388b5e12f24df099c2de2c0b9176510bcecabda1c9e3290a28f4 (2.893s)
+  [BEFORE] dedupe keys: count=33193 hash=b48c04868ae0388b5e12f24df099c2de2c0b9176510bcecabda1c9e3290a28f4 (2.302s)
+  [BEFORE] ensure_genesis row_hash=f9b1e0ae91043fdb5bf803eee95738344542f434d2f7f27b0f18a35f004fc1f6 (2.127s)
+  [BEFORE] slate_due last_decision_utc=2026-09-27T15:06:37.502800+00:00 (0.857s)
+  [BEFORE] research_readiness._decision_rows: count=33252 (1.561s)
+  [BEFORE] test_tier_ladder._load_plays: dates=['2026-08-31', '2026-09-01', '2026-09-02', '2026-09-03', '2026-09-07', '2026-09-08', '2026-09-09', '2026-09-10', '2026-09-11', '2026-09-12', '2026-09-13', '2026-09-14', '2026-09-21', '2026-09-22', '2026-09-23', '2026-09-24', '2026-09-25', '2026-09-26'] (1.154s)
+
+-- ROTATE report --
+  rotated=True
+  segment=C:\Users\KC\AppData\Local\Temp\decisions_rotation_sim_56kio5qd\main\archive\decisions_v2\0001_2023-04-17_2026-09-27.jsonl.gz
+  archived_lines=33251
+  archived_bytes=104662393
+  hot_size_before=104665523
+  hot_size_after=3130
+  cutoff_date=2026-09-28
+
+-- AFTER --
+  segments: [('0001_2023-04-17_2026-09-27.jsonl.gz', 4945983)]
+  hot_bytes=3130
+  hot_rows=1
+  logical_rows=33252
+  sha256(concat(decompressed segments) + hot) == original sha256: True
+  verify: ok=True rows_checked=33252 broken_at_line=None reason=None
+
+-- AFTER readers --
+  [AFTER] load_decisions: count=33193 identity_hash=b48c04868ae0388b5e12f24df099c2de2c0b9176510bcecabda1c9e3290a28f4 (3.378s)
+  [AFTER] dedupe keys: count=33193 hash=b48c04868ae0388b5e12f24df099c2de2c0b9176510bcecabda1c9e3290a28f4 (2.066s)
+  [AFTER] ensure_genesis row_hash=f9b1e0ae91043fdb5bf803eee95738344542f434d2f7f27b0f18a35f004fc1f6 (1.636s)
+  [AFTER] slate_due last_decision_utc=2026-09-27T15:06:37.502800+00:00 (0.778s)
+  [AFTER] research_readiness._decision_rows: count=33252 (1.166s)
+  [AFTER] test_tier_ladder._load_plays: dates=['2026-08-31', '2026-09-01', '2026-09-02', '2026-09-03', '2026-09-07', '2026-09-08', '2026-09-09', '2026-09-10', '2026-09-11', '2026-09-12', '2026-09-13', '2026-09-14', '2026-09-21', '2026-09-22', '2026-09-23', '2026-09-24', '2026-09-25', '2026-09-26'] (1.122s)
+
+-- READER EQUALITY (before vs after) --
+  load_decisions_count: equal=True
+  load_decisions_identity_hash: equal=True
+  dedupe_key_count: equal=True
+  dedupe_key_hash: equal=True
+  ensure_genesis_row_hash: equal=True
+  slate_due_last_decision_utc: equal=True
+  research_readiness_decision_rows_count: equal=True
+  test_tier_ladder_plays_dates: equal=True
+  ALL READER OUTPUTS IDENTICAL: True
+
+-- SECOND rotate() (identical now/keep_days/threshold) --
+  rotated=False reason=hot size 3130 bytes < threshold 62914560 bytes
+  segments unchanged: True
+  hot file unchanged: True
+
+-- SYNTHETIC APPEND after rotation, then verify() --
+  prev_hash used for the new row == last_hash() just before appending: True
+  new row_hash=b13150a0b87313749b9030b9d517b563884e3ef50a98b79f8d09cd750b2cc3a7
+  verify after append: ok=True rows_checked=33253 (before-append logical rows + 1 = 33253, match=True)
+
+-- TIMING: last_hash() and one append(), before vs after rotation --
+  last_hash() BEFORE rotation (whole ~100MB file): 1.0387s (last_hash=ccc4b1de74a15427...)
+  append()    BEFORE rotation:                     0.9260s
+  [rotation itself, for reference]:                2.1911s
+  last_hash() AFTER  rotation (hot file only):     0.0034s (last_hash=ccc4b1de74a15427...)
+  append()    AFTER  rotation:                     0.0055s
+  last_hash() speedup (before/after): 307.9x
+
+================================================================================================
+SIMULATION COMPLETE -- origin file never modified (re-checking):
+origin file: C:\Users\KC\AppData\Local\Temp\claude\C--Users-KC-Desktop\afe385e5-2330-4bd1-aff8-b1c5fc4415ae\scratchpad\p1\decisions_v2.origin.jsonl
+  size=104665523 (expected 104665523: True)
+  sha256=1ccee141ba0e751e3b82888609e64c7c6bf81543560fbd0af505e79e629a5721 (expected match: True)
