@@ -611,3 +611,127 @@ class NoArchiveDirectoryBehavesExactlyAsBefore(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+<<<<<<< HEAD
+=======
+
+
+# ---------------------------------------------------------------------------
+# Additions from the 2026-09-28 design review: a second segment, the
+# interrupted-rotation duplicate prefix, a non-vacuous tier-ladder parity
+# check, and bridge.verify across the boundary.
+# ---------------------------------------------------------------------------
+
+class I_SecondSegment(DecisionsLedgerRotationTestCase):
+    def _two_segments(self):
+        rows = self.build_fixture()
+        self.rotate()  # -> 0001 (rows 1-8 archived; d7, d8 stay hot)
+        ledger = HashChainLedger(self.path)
+        later = [ledger.append(_decision_row(f"late{i}", "sysA", f"{day}T10:00:00+00:00"))
+                 for i, day in enumerate(("2026-09-29", "2026-09-30", "2026-10-01"))]
+        report = self.rotate(now=datetime(2026, 10, 3, 12, 0, tzinfo=timezone.utc))
+        self.assertTrue(report["rotated"], report)
+        return rows, later
+
+    def test_a_later_day_rotation_creates_0002_named_from_its_own_dates(self):
+        self._two_segments()
+        names = [s.name for s in store_archive.segments(self.path)]
+        self.assertEqual(names[0][:4], "0001")
+        # d7 (09-27), d8 (09-28), late0 (09-29), late1 (09-30) are archived;
+        # min_hot_rows=1 keeps late2 (10-01) in the hot file.
+        self.assertEqual(names[1], "0002_2026-09-27_2026-09-30.jsonl.gz")
+
+    def test_readers_span_both_segments_in_order_and_the_chain_verifies(self):
+        rows, later = self._two_segments()
+        expected = [r["row_hash"] for r in rows + later]
+        self.assertEqual([r["row_hash"] for r in HashChainLedger(self.path).read()], expected)
+        result = HashChainLedger(self.path).verify()
+        self.assertTrue(result.ok, result)
+        self.assertEqual(result.rows_checked, len(expected))
+
+    def test_last_hash_prefers_the_hot_file_then_the_newest_segment(self):
+        rows, later = self._two_segments()
+        ledger = HashChainLedger(self.path)
+        self.assertEqual(ledger.last_hash(), later[2]["row_hash"])
+        self.path.write_bytes(b"")  # forced empty hot file
+        self.assertEqual(ledger.last_hash(), later[1]["row_hash"],
+                         "must fall back to the NEWEST segment's last row, not 0001's")
+
+
+class J_InterruptedRotationDuplicatePrefix(DecisionsLedgerRotationTestCase):
+    """A hard kill between rotate()'s two os.replace calls leaves the
+    archived prefix in the segment AND still in the hot file. verify() must
+    see it, and the next rotate() must refuse rather than archive the same
+    prefix a second time."""
+
+    def _duplicate_state(self):
+        self.build_fixture()
+        report = self.rotate()
+        self.assertTrue(report["rotated"])
+        # the segment is durable; the hot file was never replaced
+        self.path.write_bytes(self.original_bytes)
+        return report
+
+    def test_verify_reports_the_break_at_the_first_hot_row(self):
+        report = self._duplicate_state()
+        result = HashChainLedger(self.path).verify()
+        self.assertFalse(result.ok)
+        self.assertEqual(result.broken_at_line, report["archived_lines"] + 1)
+
+    def test_a_second_rotate_refuses_and_touches_nothing(self):
+        self._duplicate_state()
+        segments_before = store_archive.segments(self.path)
+        report = self.rotate()
+        self.assertFalse(report["rotated"])
+        self.assertTrue(report["reason"].startswith("ESCALATE duplicate prefix"), report["reason"])
+        self.assertEqual(store_archive.segments(self.path), segments_before)
+        self.assertEqual(self.path.read_bytes(), self.original_bytes)
+
+    def test_the_cli_treats_the_refusal_as_a_failure(self):
+        import io
+        from contextlib import redirect_stdout
+        from src import cli
+        self._duplicate_state()
+        registry = {"tmpledger": {"path": self.path, "stamp_of": STAMP_OF,
+                                  "min_hot_rows": MIN_HOT_ROWS}}
+        out = io.StringIO()
+        with mock.patch.object(store_archive, "ROTATABLE_STORES", registry), \
+             redirect_stdout(out):
+            code = cli.main(["store", "rotate", "--store", "tmpledger",
+                             "--if-over-mb", "0.000001", "--keep-days", str(KEEP_DAYS),
+                             "--now", NOW.isoformat()])
+        self.assertEqual(code, cli.EXIT_ERROR)
+        self.assertIn("ESCALATE duplicate prefix", out.getvalue())
+        self.assertEqual(self.path.read_bytes(), self.original_bytes)
+
+
+class K_TierLadderParityIsNotVacuous(DecisionsLedgerRotationTestCase):
+    def test_a_forward_test_play_inside_the_archived_prefix_is_still_read(self):
+        from scripts import test_tier_ladder
+        self.build_fixture()
+        # A real play row, dated inside the prefix the rotation will archive.
+        HashChainLedger(self.path).append(_decision_row(
+            "e9", "sysF", "2026-09-26T11:00:00+00:00", verdict="play",
+            market_key="h2h", selection_id="sel-9", price_american=-110,
+            stake_units=1.0))
+        with mock.patch.object(test_tier_ladder, "DECISIONS", str(self.path)), \
+             mock.patch.object(test_tier_ladder, "system_class",
+                               lambda sid: "FORWARD_TEST"):
+            before = {k: dict(v) for k, v in test_tier_ladder._load_plays().items()}
+            report = self.rotate(now=datetime(2026, 9, 29, 15, 0, tzinfo=timezone.utc))
+            self.assertTrue(report["rotated"])
+            after = {k: dict(v) for k, v in test_tier_ladder._load_plays().items()}
+        self.assertEqual(list(before), ["2026-09-26"])
+        self.assertEqual(list(before["2026-09-26"].values()), [["sysF"]])
+        self.assertEqual(after, before)
+
+
+class L_BridgeVerifyAfterRotation(DecisionsLedgerRotationTestCase):
+    def test_bridge_verify_walks_the_whole_logical_chain(self):
+        rows = self.build_fixture()
+        self.rotate()
+        report = bridge.verify(v1_path=self.v1_path, v2_path=self.path)
+        self.assertTrue(report["v2_chain_ok"], report)
+        self.assertEqual(report["v2_rows_checked"], len(rows))
+        self.assertEqual(HashChainLedger(self.path).read()[0]["row_hash"],
+                         self.genesis["row_hash"])
+>>>>>>> origin/claude/sports-betting-analysis-review-g1o0co

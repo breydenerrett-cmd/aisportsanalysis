@@ -63,6 +63,11 @@ _REAL_DATA = _REPO_ROOT / "data"
 PROTECTED_STORES = frozenset({
     _REAL_DATA / "processed" / "odds_snapshots.jsonl",
     _REAL_DATA / "processed" / "odds_multibook.jsonl",
+    # evidence/decisions_v2.jsonl is a hash-chained, git-tracked evidence
+    # ledger that rotates through src/pipeline/store_archive.py (2026-09-28):
+    # the same "a buggy test must never rotate or append to the real store"
+    # rule as the odds stores above.
+    _REPO_ROOT / "evidence" / "decisions_v2.jsonl",
     _REAL_DATA / "processed" / "f5_close.jsonl",
     _REAL_DATA / "processed" / "prop_listing.jsonl",
     # Added with the weather/credit-log/prop-price capture streams: the same
@@ -95,6 +100,8 @@ PROTECTED_DIRS = frozenset({
     # file first). Same failure mode this file exists to prevent, just in
     # the archive half of a store instead of the hot half.
     _REAL_DATA / "processed" / "archive",
+    # Same guard for the evidence ledgers' archive tree (2026-09-28).
+    _REPO_ROOT / "evidence" / "archive",
 })
 
 

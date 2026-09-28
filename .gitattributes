@@ -16,3 +16,8 @@
 # store_archive.py's own module docstring explicitly supports that case
 # ("Windows dev boxes included").
 data/processed/*.jsonl text eol=lf
+# evidence/*.jsonl are LF-only append/rotation stores: a CRLF working copy
+# rotated into a gzip segment would bake CR bytes into immutable evidence
+# (2026-09-28 design review). Segments are binary.
+evidence/*.jsonl text eol=lf
+*.jsonl.gz binary

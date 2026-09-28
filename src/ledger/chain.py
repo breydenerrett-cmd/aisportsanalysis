@@ -176,9 +176,21 @@ class HashChainLedger:
         """
         from src.pipeline import store_archive
 
+<<<<<<< HEAD
         if self.path.exists():
             with self.path.open("r", encoding="utf-8") as fh:
                 last, saw_row = _scan_last_row_hash(fh)
+=======
+        # Binary reads, split on b"\n" only, decoded per line: the SAME
+        # line rule `_read_lines` gets from `store_archive.iter_lines`, so
+        # `last_hash()` and `verify()`/`read()` can never disagree about
+        # where a row ends (a text-mode read would also split on a bare
+        # "\r", which the binary walk does not; 2026-09-28 validation).
+        if self.path.exists():
+            with self.path.open("rb") as fh:
+                last, saw_row = _scan_last_row_hash(
+                    raw.decode("utf-8") for raw in fh)
+>>>>>>> origin/claude/sports-betting-analysis-review-g1o0co
             if saw_row:
                 return last
 
@@ -186,8 +198,14 @@ class HashChainLedger:
         if segments:
             import gzip
 
+<<<<<<< HEAD
             with gzip.open(segments[-1], "rt", encoding="utf-8") as fh:
                 last, saw_row = _scan_last_row_hash(fh)
+=======
+            with gzip.open(segments[-1], "rb") as fh:
+                last, saw_row = _scan_last_row_hash(
+                    raw.decode("utf-8") for raw in fh)
+>>>>>>> origin/claude/sports-betting-analysis-review-g1o0co
             if saw_row:
                 return last
 

@@ -677,7 +677,7 @@ fi
 # guard_staged_size's 95 MiB line finally blocked a push outright. Setting
 # GIT_FAILED makes THIS failure visible the same run it happens, not only
 # once the size guard catches its consequence.
-python3 -m src.cli store rotate --all --if-over-mb 60 --keep-days 3 \
+python3 -m src.cli store rotate --all --if-over-mb 60 --keep-days 1 \
     || { echo "ESCALATE: store rotation failed -- a rotatable store may be approaching GitHub's 100MB push limit unrotated"; GIT_FAILED=1; }
 
 # evidence/ and data/paper_accounts are staged because the gated slate pass

@@ -448,6 +448,32 @@ def rotate(path: Path | str, *, keep_days: int, now: datetime,
     old_hot = path.read_bytes()
     lines = old_hot.splitlines(keepends=True)
 
+<<<<<<< HEAD
+=======
+    # DUPLICATE-PREFIX GUARD (2026-09-28 design review of the decisions_v2
+    # rotation). `rotate` makes the segment durable first (`os.replace` below)
+    # and the shrunk hot file second; a hard kill between the two -- SIGKILL,
+    # an OOM kill, a runner's timeout-minutes -- leaves the archived prefix in
+    # BOTH places. The chain's verify() catches that state, but a LATER
+    # rotation would not: it would archive the same prefix again into the next
+    # segment and make the duplication permanent. So before anything else:
+    # if the hot file still begins with the exact line the newest segment
+    # begins with, refuse loudly and touch nothing. The reason starts with
+    # "ESCALATE" so `src.cli`'s `store rotate` fails the run instead of
+    # printing a quiet no-op.
+    existing = segments(path)
+    if existing and lines and lines[0].endswith(b"\n"):
+        with gzip.open(existing[-1], "rb") as newest:
+            newest_first_line = newest.readline()
+        if newest_first_line == lines[0]:
+            report["reason"] = (
+                f"ESCALATE duplicate prefix: the hot file still begins with the "
+                f"first line of {existing[-1].name}; a previous rotation was "
+                f"interrupted after its segment was made durable. Nothing "
+                f"archived; recover by hand before rotating again")
+            return report
+
+>>>>>>> origin/claude/sports-betting-analysis-review-g1o0co
     # `min_hot_rows` caps the prefix from the OTHER end: however many
     # complete lines the cutoff-date scan below would archive, the last
     # `min_hot_rows` of them are kept regardless. The trailing incomplete

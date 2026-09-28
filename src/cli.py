@@ -250,6 +250,13 @@ def _cmd_store_rotate(args) -> int:
                   f"row(s), {report['archived_bytes']} byte(s), into "
                   f"{report['segment']} -- hot file "
                   f"{report['hot_size_before']} -> {report['hot_size_after']} bytes")
+        elif report["reason"].startswith("ESCALATE"):
+            # store_archive.rotate refused because the store is in a state
+            # only a person should touch (a duplicated prefix left by an
+            # interrupted rotation). Same exit as a failed proof: the
+            # caller must not trust this run to have shrunk anything.
+            print(f"store rotate {name}: {report['reason']}")
+            failed = True
         elif report["reason"].startswith("no complete, parseable line"):
             # WARN, not a quiet no-op (2026-09-21 review): this reason only
             # ever comes back when the hot file IS over threshold (rotate
