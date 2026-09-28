@@ -322,3 +322,43 @@ class ArchiveAwareTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class LastHashSplitsLinesLikeEveryOtherReader(unittest.TestCase):
+    """2026-09-28 validation: last_hash() reads the hot file with the same
+    b"\n"-only line rule as read()/verify() (store_archive.iter_lines). A
+    bare carriage return inside a physical line, a torn CRLF write followed
+    by an append, must look the same to all three: one merged line, never a
+    clean boundary for one reader and a merged line for another."""
+
+    def test_a_bare_carriage_return_is_not_a_line_boundary_for_last_hash(self):
+        import tempfile
+        from pathlib import Path
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "chain.jsonl"
+            ledger = HashChainLedger(path)
+            ledger.append({"n": 1})
+            second = ledger.append({"n": 2})
+            raw = path.read_bytes()
+            # The torn CRLF tail: the last row ends in a lone CR and the next
+            # physical bytes are another row with no separator.
+            torn = raw[:-1] + b"\r" + json.dumps(
+                {"n": 3, "prev_hash": "x", "row_hash": "y"}).encode() + b"\n"
+            path.write_bytes(torn)
+            try:
+                rows_seen = len(ledger.read())
+            except ValueError:
+                read_raised, rows_seen = True, None
+            else:
+                read_raised = False
+            try:
+                last = ledger.last_hash()
+            except ValueError:
+                last_raised, last = True, None
+            else:
+                last_raised = False
+            self.assertEqual(read_raised, last_raised,
+                             "read() and last_hash() must agree on the merged line")
+            if not read_raised:
+                self.assertEqual(rows_seen, 2)
+                self.assertEqual(last, second["row_hash"])
