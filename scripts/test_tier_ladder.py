@@ -102,31 +102,38 @@ def _percentile(sorted_values, pct):
 
 
 def _load_plays():
-    """{date: {wager_id: [system_id, ...]}} for FORWARD_TEST plays only."""
+    """{date: {wager_id: [system_id, ...]}} for FORWARD_TEST plays only.
+
+    Archive-aware (src.pipeline.store_archive), same reasoning as
+    `_family_map`'s HashChainLedger read above: `evidence/decisions_v2.jsonl`
+    is eligible for hot/cold rotation, so its logical rows can live partly in
+    gzip segments under `evidence/archive/decisions_v2/`.
+    """
+    from src.pipeline import store_archive
+
     by_date = defaultdict(lambda: defaultdict(list))
-    if not os.path.exists(DECISIONS):
+    if not store_archive.exists(DECISIONS):
         return by_date
-    with open(DECISIONS, encoding="utf-8") as fh:
-        for line in fh:
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                row = json.loads(line)
-            except ValueError:
-                continue
-            if row.get("verdict") != "play":
-                continue
-            system_id = row.get("system_id") or ""
-            if system_class(system_id) != "FORWARD_TEST":
-                continue
-            date = (row.get("decision_utc") or "")[:10]
-            if not date:
-                continue
-            wager = families_mod.wager_id(row.get("event_id"),
-                                          row.get("market_key"),
-                                          row.get("selection_id"))
-            by_date[date][wager].append(system_id)
+    for line in store_archive.iter_lines(DECISIONS):
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            row = json.loads(line)
+        except ValueError:
+            continue
+        if row.get("verdict") != "play":
+            continue
+        system_id = row.get("system_id") or ""
+        if system_class(system_id) != "FORWARD_TEST":
+            continue
+        date = (row.get("decision_utc") or "")[:10]
+        if not date:
+            continue
+        wager = families_mod.wager_id(row.get("event_id"),
+                                      row.get("market_key"),
+                                      row.get("selection_id"))
+        by_date[date][wager].append(system_id)
     return by_date
 
 

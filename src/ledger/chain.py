@@ -98,12 +98,50 @@ class VerifyResult:
 
 
 def _read_lines(path: Path) -> Iterator[tuple[int, dict]]:
-    with path.open("r", encoding="utf-8") as fh:
-        for lineno, line in enumerate(fh, start=1):
-            line = line.strip()
-            if not line:
-                continue
-            yield lineno, json.loads(line)
+    """Every row of the LOGICAL store at `path`, 1-indexed.
+
+    Archive-aware via a LAZY import of `src.pipeline.store_archive` (never
+    at module level -- this file must not force the rest of `src/pipeline`
+    to import just to use a hash chain): `store_archive.iter_lines` walks
+    every cold archive segment oldest-first, then the hot file, so `lineno`
+    here is the row's LOGICAL position in the store, not its position within
+    whichever physical file (a segment or the hot file) happens to hold it.
+    For a path with no `archive/<stem>/` directory -- every one of this
+    class's 80+ other call sites (card ledgers, paper accounts, and more)
+    -- `iter_lines` falls through to a plain read of `path` alone, so this
+    is byte-for-byte the same walk `_read_lines` always did. `strip()`,
+    skip-blank, and `json.loads` raising on a malformed line are all
+    unchanged.
+    """
+    from src.pipeline import store_archive
+
+    for lineno, line in enumerate(store_archive.iter_lines(path), start=1):
+        line = line.strip()
+        if not line:
+            continue
+        yield lineno, json.loads(line)
+
+
+def _scan_last_row_hash(lines: Iterable[str]) -> tuple[str, bool]:
+    """Walk one already-open source of text lines and return `(last,
+    saw_row)`: `last` is the most recent row's `row_hash`, carrying the
+    previous value forward across a row that happens to omit it (the same
+    defensive `row.get(ROW_HASH_FIELD, last)` fallback `last_hash()` has
+    always used) starting from GENESIS_HASH; `saw_row` is whether any
+    non-blank line was seen at all, which is what `last_hash()` uses to
+    decide whether this source answered the question or it must fall
+    through to the next one.
+    """
+    last = GENESIS_HASH
+    saw_row = False
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+        saw_row = True
+        row = json.loads(line)
+        last = row.get(ROW_HASH_FIELD, last)
+    return last, saw_row
 
 
 class HashChainLedger:
@@ -121,14 +159,39 @@ class HashChainLedger:
     # -- writing ----------------------------------------------------------
 
     def last_hash(self) -> str:
-        """The `row_hash` of the last row, or GENESIS_HASH if the file is
-        empty or does not exist yet."""
-        if not self.path.exists():
-            return GENESIS_HASH
-        last = GENESIS_HASH
-        for _, row in _read_lines(self.path):
-            last = row.get(ROW_HASH_FIELD, last)
-        return last
+        """The `row_hash` of the last row: the hot file's last row if it has
+        one, else the last archive segment's last row, else GENESIS_HASH.
+
+        Deliberately NOT a full walk of the logical store (`_read_lines`,
+        which visits every segment): `append()` calls this on every single
+        call, and once a store has been rotated, decompressing every cold
+        segment just to find the one hash at the very end would turn an
+        O(hot file size) operation into an O(whole store size) one -- the
+        exact cost rotation exists to avoid. Only the (small) hot file and,
+        when it has nothing to say, the single most recently created segment
+        (`store_archive.segments(...)[-1]` -- sorted by creation order, per
+        that module's own docstring, regardless of the stamps inside it) are
+        ever read. Lazy import of `src.pipeline.store_archive`, same
+        reasoning as `_read_lines`.
+        """
+        from src.pipeline import store_archive
+
+        if self.path.exists():
+            with self.path.open("r", encoding="utf-8") as fh:
+                last, saw_row = _scan_last_row_hash(fh)
+            if saw_row:
+                return last
+
+        segments = store_archive.segments(self.path)
+        if segments:
+            import gzip
+
+            with gzip.open(segments[-1], "rt", encoding="utf-8") as fh:
+                last, saw_row = _scan_last_row_hash(fh)
+            if saw_row:
+                return last
+
+        return GENESIS_HASH
 
     def append(self, payload: Mapping[str, Any]) -> dict:
         """Append one row, chaining it to the current last hash.
@@ -156,7 +219,9 @@ class HashChainLedger:
     # -- reading ------------------------------------------------------------
 
     def read(self) -> list[dict]:
-        if not self.path.exists():
+        from src.pipeline import store_archive
+
+        if not store_archive.exists(self.path):
             return []
         return [row for _, row in _read_lines(self.path)]
 
@@ -174,7 +239,9 @@ class HashChainLedger:
         of the row's own payload. Verification stops at the first failure so
         the report always names the earliest tampering, not the last.
         """
-        if not self.path.exists():
+        from src.pipeline import store_archive
+
+        if not store_archive.exists(self.path):
             return VerifyResult(ok=True, rows_checked=0)
 
         expected_prev = GENESIS_HASH

@@ -328,16 +328,22 @@ def _iter_jsonl(path):
     bug worth stopping for) and wrong for `slate_due`, which reads two stores
     it does not own and whose job is to answer a scheduling question without
     ever being the reason a capture pass fails.
+
+    Archive-aware (`src.pipeline.store_archive`): `decisions_path` (one of
+    the two stores `slate_due` reads) is a rotatable store, so its logical
+    rows can live partly in gzip segments under
+    `evidence/archive/decisions_v2/`. `store_archive.exists`/`iter_lines`
+    fall through to a plain read for `watch_path`, which has no archive
+    directory -- unaffected. Lazy import, same reasoning as
+    `src.ledger.chain`: this module must not require the rest of
+    `src/pipeline` to import just to read a JSONL store.
     """
-    target = Path(path)
-    if not target.exists():
+    from src.pipeline import store_archive
+
+    if not store_archive.exists(path):
         return
     try:
-        handle = target.open(encoding="utf-8")
-    except OSError:
-        return
-    with handle:
-        for line in handle:
+        for line in store_archive.iter_lines(path):
             line = line.strip()
             if not line:
                 continue
@@ -345,6 +351,8 @@ def _iter_jsonl(path):
                 yield json.loads(line)
             except json.JSONDecodeError:
                 continue
+    except OSError:
+        return
 
 
 def _read_rows(path) -> list:

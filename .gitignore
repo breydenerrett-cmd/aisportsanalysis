@@ -61,6 +61,22 @@ data/app/*
 # `git add`/commit one as if it were real archive data.
 data/processed/archive/**/*.tmp
 
+# decisions_v2 ROTATION TEMP FILES (the same 100MB-push wall as odds_
+# multibook, hit 2026-09-2x for evidence/decisions_v2.jsonl: 104,665,523
+# bytes against GitHub's 104,857,600-byte hard limit). evidence/ needs no
+# `!data/processed/archive/`-style negation -- it is never ignored in the
+# first place (see "evidence/ is deliberately NOT ignored" above), so
+# evidence/archive/decisions_v2/*.jsonl.gz segments are already tracked by
+# default. Only `rotate`'s own tempfile.mkstemp leftovers need excluding,
+# same reasoning as data/processed/archive/**/*.tmp above: a hard kill
+# between a temp file's write and its os.replace into a real name (segment
+# or hot file) can leave one sitting there, and `segments()`/the hot-file
+# path both already ignore these by name, so no reader is affected -- this
+# just keeps a persistent checkout from `git add`/committing one as if it
+# were real evidence.
+evidence/archive/**/*.tmp
+evidence/tmp*.tmp
+
 # THE CARD'S CALIBRATION IS A DEPLOY INPUT, not a scratch file. Two numbers,
 # refit nightly by scripts/fit_card_calibration.py -- and without them
 # src/report/card.py serves the RAW model, which says 73% about games that
