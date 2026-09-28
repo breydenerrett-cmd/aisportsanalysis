@@ -1,0 +1,49 @@
+SIGN-REVERSAL COMPARISON -- case1 (current+/previous-) vs case2 (current-/previous+)
+Payload injection: window.fetch override on /meta, installed via CDP
+Page.addScriptToEvaluateOnNewDocument (runs before any page script).
+No ledger, data file, or repo source file was edited to produce this test.
+
+==============================================================================
+WIDTH 1440px
+==============================================================================
+
+-- root: hero --
+
+-- root: sport-tile-mlb --
+
+-- root: sport-tile-nfl --
+==============================================================================
+WIDTH 390px
+==============================================================================
+
+-- root: hero --
+
+-- root: sport-tile-mlb --
+
+-- root: sport-tile-nfl --
+
+==============================================================================
+EXPECTED DIFFERENCES (glyph + colour class on the units cell only)
+==============================================================================
+  hero/hero-current-units (inner value span): classes 'hero__stat-value is-up' -> 'hero__stat-value is-down', colour 'rgb(79, 227, 164)' -> 'rgb(255, 107, 107)', text '+4.73' -> '−4.73'
+  hero/hero-previous-units (inner value span): classes 'hero__stat-value is-down' -> 'hero__stat-value is-up', colour 'rgb(255, 107, 107)' -> 'rgb(79, 227, 164)', text '−7.98' -> '+7.98'
+  sport-tile-mlb/sport-tile-mlb-current-units (inner value span): classes 'hero__stat-value is-up' -> 'hero__stat-value is-down', colour 'rgb(79, 227, 164)' -> 'rgb(255, 107, 107)', text '+4.73' -> '−4.73'
+  sport-tile-mlb/sport-tile-mlb-previous-units (inner value span): classes 'hero__stat-value is-down' -> 'hero__stat-value is-up', colour 'rgb(255, 107, 107)' -> 'rgb(79, 227, 164)', text '−7.98' -> '+7.98'
+  sport-tile-nfl/sport-tile-nfl-current-units (inner value span): classes 'hero__stat-value is-up' -> 'hero__stat-value is-down', colour 'rgb(79, 227, 164)' -> 'rgb(255, 107, 107)', text '+3.05' -> '−3.05'
+  sport-tile-nfl/sport-tile-nfl-previous-units (inner value span): classes 'hero__stat-value is-down' -> 'hero__stat-value is-up', colour 'rgb(255, 107, 107)' -> 'rgb(79, 227, 164)', text '−0.26' -> '+0.26'
+  hero/hero-current-units (inner value span): classes 'hero__stat-value is-up' -> 'hero__stat-value is-down', colour 'rgb(79, 227, 164)' -> 'rgb(255, 107, 107)', text '+4.73' -> '−4.73'
+  hero/hero-previous-units (inner value span): classes 'hero__stat-value is-down' -> 'hero__stat-value is-up', colour 'rgb(255, 107, 107)' -> 'rgb(79, 227, 164)', text '−7.98' -> '+7.98'
+  sport-tile-mlb/sport-tile-mlb-current-units (inner value span): classes 'hero__stat-value is-up' -> 'hero__stat-value is-down', colour 'rgb(79, 227, 164)' -> 'rgb(255, 107, 107)', text '+4.73' -> '−4.73'
+  sport-tile-mlb/sport-tile-mlb-previous-units (inner value span): classes 'hero__stat-value is-down' -> 'hero__stat-value is-up', colour 'rgb(255, 107, 107)' -> 'rgb(79, 227, 164)', text '−7.98' -> '+7.98'
+  sport-tile-nfl/sport-tile-nfl-current-units (inner value span): classes 'hero__stat-value is-up' -> 'hero__stat-value is-down', colour 'rgb(79, 227, 164)' -> 'rgb(255, 107, 107)', text '+3.05' -> '−3.05'
+  sport-tile-nfl/sport-tile-nfl-previous-units (inner value span): classes 'hero__stat-value is-down' -> 'hero__stat-value is-up', colour 'rgb(255, 107, 107)' -> 'rgb(79, 227, 164)', text '−0.26' -> '+0.26'
+
+==============================================================================
+SUMMARY
+==============================================================================
+Elements checked (both widths, both cases): 96
+Geometry/typography mismatches: 0
+Unexpected style/text mismatches outside units cells: 0
+Expected sign-only differences (units cells): 12
+
+RESULT: IDENTICAL -- every geometry and typography value matches between case1 and case2 at both widths, for every hero__rule-block and hero__stat element in the hero, MLB tile and NFL tile. The only differences anywhere are the glyph and is-up/is-down colour class on each rule's own units cell, listed above.

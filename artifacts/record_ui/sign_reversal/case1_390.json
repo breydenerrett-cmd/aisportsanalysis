@@ -1,0 +1,728 @@
+{
+ "hero": [
+  {
+   "hook": "hero-current-block",
+   "tag": "DIV",
+   "classes": "hero__rule-block",
+   "text": "Current rule\n      \n        \n          14–15\n          Won–l",
+   "rect": {
+    "x": 35,
+    "y": 470.6875,
+    "width": 320,
+    "height": 179.5
+   },
+   "fontSize": "17px",
+   "fontWeight": "400",
+   "color": "rgb(242, 244, 248)",
+   "valueEl": {
+    "hook": "hero-current-label",
+    "tag": "P",
+    "classes": "eyebrow eyebrow--muted",
+    "text": "Current rule",
+    "rect": {
+     "x": 35,
+     "y": 470.6875,
+     "width": 320,
+     "height": 19.5
+    },
+    "fontSize": "13px",
+    "fontWeight": "700",
+    "color": "rgb(138, 145, 158)"
+   }
+  },
+  {
+   "hook": "hero-current-wl",
+   "tag": "DIV",
+   "classes": "hero__stat",
+   "text": "14–15\n          Won–lost",
+   "rect": {
+    "x": 35,
+    "y": 508.1875,
+    "width": 101.328125,
+    "height": 89
+   },
+   "fontSize": "17px",
+   "fontWeight": "400",
+   "color": "rgb(242, 244, 248)",
+   "valueEl": {
+    "hook": "hero-current-wl",
+    "tag": "SPAN",
+    "classes": "hero__stat-value",
+    "text": "14–15",
+    "rect": {
+     "x": 46,
+     "y": 521.1875,
+     "width": 79.328125,
+     "height": 24
+    },
+    "fontSize": "24px",
+    "fontWeight": "800",
+    "color": "rgb(255, 255, 255)"
+   }
+  },
+  {
+   "hook": "hero-current-units",
+   "tag": "DIV",
+   "classes": "hero__stat",
+   "text": "+4.73\n          Units",
+   "rect": {
+    "x": 144.328125,
+    "y": 508.1875,
+    "width": 101.328125,
+    "height": 89
+   },
+   "fontSize": "17px",
+   "fontWeight": "400",
+   "color": "rgb(242, 244, 248)",
+   "valueEl": {
+    "hook": "hero-current-units",
+    "tag": "SPAN",
+    "classes": "hero__stat-value is-up",
+    "text": "+4.73",
+    "rect": {
+     "x": 155.328125,
+     "y": 521.1875,
+     "width": 79.328125,
+     "height": 24
+    },
+    "fontSize": "24px",
+    "fontWeight": "800",
+    "color": "rgb(79, 227, 164)"
+   }
+  },
+  {
+   "hook": "hero-current-days",
+   "tag": "DIV",
+   "classes": "hero__stat",
+   "text": "3\n          Nights graded",
+   "rect": {
+    "x": 253.65625,
+    "y": 508.1875,
+    "width": 101.34375,
+    "height": 89
+   },
+   "fontSize": "17px",
+   "fontWeight": "400",
+   "color": "rgb(242, 244, 248)",
+   "valueEl": {
+    "hook": "hero-current-days",
+    "tag": "SPAN",
+    "classes": "hero__stat-value",
+    "text": "3",
+    "rect": {
+     "x": 264.65625,
+     "y": 521.1875,
+     "width": 79.34375,
+     "height": 24
+    },
+    "fontSize": "24px",
+    "fontWeight": "800",
+    "color": "rgb(255, 255, 255)"
+   }
+  },
+  {
+   "hook": "hero-previous-block",
+   "tag": "DIV",
+   "classes": "hero__rule-block",
+   "text": "Previous rule (retired)\n      \n        \n          151–79\n   ",
+   "rect": {
+    "x": 35,
+    "y": 672.1875,
+    "width": 320,
+    "height": 202.5
+   },
+   "fontSize": "17px",
+   "fontWeight": "400",
+   "color": "rgb(242, 244, 248)",
+   "valueEl": {
+    "hook": "hero-previous-label",
+    "tag": "P",
+    "classes": "eyebrow eyebrow--muted",
+    "text": "Previous rule (retired)",
+    "rect": {
+     "x": 35,
+     "y": 695.1875,
+     "width": 320,
+     "height": 19.5
+    },
+    "fontSize": "13px",
+    "fontWeight": "700",
+    "color": "rgb(138, 145, 158)"
+   }
+  },
+  {
+   "hook": "hero-previous-wl",
+   "tag": "DIV",
+   "classes": "hero__stat",
+   "text": "151–79\n          Won–lost",
+   "rect": {
+    "x": 35,
+    "y": 732.6875,
+    "width": 101.328125,
+    "height": 89
+   },
+   "fontSize": "17px",
+   "fontWeight": "400",
+   "color": "rgb(242, 244, 248)",
+   "valueEl": {
+    "hook": "hero-previous-wl",
+    "tag": "SPAN",
+    "classes": "hero__stat-value",
+    "text": "151–79",
+    "rect": {
+     "x": 46,
+     "y": 745.6875,
+     "width": 79.328125,
+     "height": 24
+    },
+    "fontSize": "24px",
+    "fontWeight": "800",
+    "color": "rgb(255, 255, 255)"
+   }
+  },
+  {
+   "hook": "hero-previous-units",
+   "tag": "DIV",
+   "classes": "hero__stat",
+   "text": "−7.98\n          Units",
+   "rect": {
+    "x": 144.328125,
+    "y": 732.6875,
+    "width": 101.328125,
+    "height": 89
+   },
+   "fontSize": "17px",
+   "fontWeight": "400",
+   "color": "rgb(242, 244, 248)",
+   "valueEl": {
+    "hook": "hero-previous-units",
+    "tag": "SPAN",
+    "classes": "hero__stat-value is-down",
+    "text": "−7.98",
+    "rect": {
+     "x": 155.328125,
+     "y": 745.6875,
+     "width": 79.328125,
+     "height": 24
+    },
+    "fontSize": "24px",
+    "fontWeight": "800",
+    "color": "rgb(255, 107, 107)"
+   }
+  },
+  {
+   "hook": "hero-previous-days",
+   "tag": "DIV",
+   "classes": "hero__stat",
+   "text": "13\n          Nights graded",
+   "rect": {
+    "x": 253.65625,
+    "y": 732.6875,
+    "width": 101.34375,
+    "height": 89
+   },
+   "fontSize": "17px",
+   "fontWeight": "400",
+   "color": "rgb(242, 244, 248)",
+   "valueEl": {
+    "hook": "hero-previous-days",
+    "tag": "SPAN",
+    "classes": "hero__stat-value",
+    "text": "13",
+    "rect": {
+     "x": 264.65625,
+     "y": 745.6875,
+     "width": 79.34375,
+     "height": 24
+    },
+    "fontSize": "24px",
+    "fontWeight": "800",
+    "color": "rgb(255, 255, 255)"
+   }
+  }
+ ],
+ "sport-tile-mlb": [
+  {
+   "hook": "sport-tile-mlb-current-block",
+   "tag": "DIV",
+   "classes": "hero__rule-block",
+   "text": "Current rule\n        \n          \n            14–15\n         ",
+   "rect": {
+    "x": 51,
+    "y": 2906.640625,
+    "width": 288,
+    "height": 179.5
+   },
+   "fontSize": "17px",
+   "fontWeight": "400",
+   "color": "rgb(242, 244, 248)",
+   "valueEl": {
+    "hook": "sport-tile-mlb-current-label",
+    "tag": "P",
+    "classes": "eyebrow eyebrow--muted",
+    "text": "Current rule",
+    "rect": {
+     "x": 51,
+     "y": 2906.640625,
+     "width": 288,
+     "height": 19.5
+    },
+    "fontSize": "13px",
+    "fontWeight": "700",
+    "color": "rgb(138, 145, 158)"
+   }
+  },
+  {
+   "hook": "sport-tile-mlb-current-wl",
+   "tag": "DIV",
+   "classes": "hero__stat",
+   "text": "14–15\n            Won–lost",
+   "rect": {
+    "x": 51,
+    "y": 2944.140625,
+    "width": 90.65625,
+    "height": 89
+   },
+   "fontSize": "17px",
+   "fontWeight": "400",
+   "color": "rgb(242, 244, 248)",
+   "valueEl": {
+    "hook": "sport-tile-mlb-current-wl",
+    "tag": "SPAN",
+    "classes": "hero__stat-value",
+    "text": "14–15",
+    "rect": {
+     "x": 62,
+     "y": 2957.140625,
+     "width": 68.65625,
+     "height": 24
+    },
+    "fontSize": "24px",
+    "fontWeight": "800",
+    "color": "rgb(255, 255, 255)"
+   }
+  },
+  {
+   "hook": "sport-tile-mlb-current-units",
+   "tag": "DIV",
+   "classes": "hero__stat",
+   "text": "+4.73\n            Units",
+   "rect": {
+    "x": 149.65625,
+    "y": 2944.140625,
+    "width": 90.671875,
+    "height": 89
+   },
+   "fontSize": "17px",
+   "fontWeight": "400",
+   "color": "rgb(242, 244, 248)",
+   "valueEl": {
+    "hook": "sport-tile-mlb-current-units",
+    "tag": "SPAN",
+    "classes": "hero__stat-value is-up",
+    "text": "+4.73",
+    "rect": {
+     "x": 160.65625,
+     "y": 2957.140625,
+     "width": 68.671875,
+     "height": 24
+    },
+    "fontSize": "24px",
+    "fontWeight": "800",
+    "color": "rgb(79, 227, 164)"
+   }
+  },
+  {
+   "hook": "sport-tile-mlb-current-days",
+   "tag": "DIV",
+   "classes": "hero__stat",
+   "text": "3\n            Nights graded",
+   "rect": {
+    "x": 248.328125,
+    "y": 2944.140625,
+    "width": 90.65625,
+    "height": 89
+   },
+   "fontSize": "17px",
+   "fontWeight": "400",
+   "color": "rgb(242, 244, 248)",
+   "valueEl": {
+    "hook": "sport-tile-mlb-current-days",
+    "tag": "SPAN",
+    "classes": "hero__stat-value",
+    "text": "3",
+    "rect": {
+     "x": 259.328125,
+     "y": 2957.140625,
+     "width": 68.65625,
+     "height": 24
+    },
+    "fontSize": "24px",
+    "fontWeight": "800",
+    "color": "rgb(255, 255, 255)"
+   }
+  },
+  {
+   "hook": "sport-tile-mlb-previous-block",
+   "tag": "DIV",
+   "classes": "hero__rule-block",
+   "text": "Previous rule (retired)\n        \n          \n            151–",
+   "rect": {
+    "x": 51,
+    "y": 3108.140625,
+    "width": 288,
+    "height": 202.5
+   },
+   "fontSize": "17px",
+   "fontWeight": "400",
+   "color": "rgb(242, 244, 248)",
+   "valueEl": {
+    "hook": "sport-tile-mlb-previous-label",
+    "tag": "P",
+    "classes": "eyebrow eyebrow--muted",
+    "text": "Previous rule (retired)",
+    "rect": {
+     "x": 51,
+     "y": 3131.140625,
+     "width": 288,
+     "height": 19.5
+    },
+    "fontSize": "13px",
+    "fontWeight": "700",
+    "color": "rgb(138, 145, 158)"
+   }
+  },
+  {
+   "hook": "sport-tile-mlb-previous-wl",
+   "tag": "DIV",
+   "classes": "hero__stat",
+   "text": "151–79\n            Won–lost",
+   "rect": {
+    "x": 51,
+    "y": 3168.640625,
+    "width": 90.65625,
+    "height": 89
+   },
+   "fontSize": "17px",
+   "fontWeight": "400",
+   "color": "rgb(242, 244, 248)",
+   "valueEl": {
+    "hook": "sport-tile-mlb-previous-wl",
+    "tag": "SPAN",
+    "classes": "hero__stat-value",
+    "text": "151–79",
+    "rect": {
+     "x": 62,
+     "y": 3181.640625,
+     "width": 68.65625,
+     "height": 24
+    },
+    "fontSize": "24px",
+    "fontWeight": "800",
+    "color": "rgb(255, 255, 255)"
+   }
+  },
+  {
+   "hook": "sport-tile-mlb-previous-units",
+   "tag": "DIV",
+   "classes": "hero__stat",
+   "text": "−7.98\n            Units",
+   "rect": {
+    "x": 149.65625,
+    "y": 3168.640625,
+    "width": 90.671875,
+    "height": 89
+   },
+   "fontSize": "17px",
+   "fontWeight": "400",
+   "color": "rgb(242, 244, 248)",
+   "valueEl": {
+    "hook": "sport-tile-mlb-previous-units",
+    "tag": "SPAN",
+    "classes": "hero__stat-value is-down",
+    "text": "−7.98",
+    "rect": {
+     "x": 160.65625,
+     "y": 3181.640625,
+     "width": 68.671875,
+     "height": 24
+    },
+    "fontSize": "24px",
+    "fontWeight": "800",
+    "color": "rgb(255, 107, 107)"
+   }
+  },
+  {
+   "hook": "sport-tile-mlb-previous-days",
+   "tag": "DIV",
+   "classes": "hero__stat",
+   "text": "13\n            Nights graded",
+   "rect": {
+    "x": 248.328125,
+    "y": 3168.640625,
+    "width": 90.65625,
+    "height": 89
+   },
+   "fontSize": "17px",
+   "fontWeight": "400",
+   "color": "rgb(242, 244, 248)",
+   "valueEl": {
+    "hook": "sport-tile-mlb-previous-days",
+    "tag": "SPAN",
+    "classes": "hero__stat-value",
+    "text": "13",
+    "rect": {
+     "x": 259.328125,
+     "y": 3181.640625,
+     "width": 68.65625,
+     "height": 24
+    },
+    "fontSize": "24px",
+    "fontWeight": "800",
+    "color": "rgb(255, 255, 255)"
+   }
+  }
+ ],
+ "sport-tile-nfl": [
+  {
+   "hook": "sport-tile-nfl-current-block",
+   "tag": "DIV",
+   "classes": "hero__rule-block",
+   "text": "Current rule\n        \n          \n            10–5\n          ",
+   "rect": {
+    "x": 51,
+    "y": 3435.140625,
+    "width": 288,
+    "height": 179.5
+   },
+   "fontSize": "17px",
+   "fontWeight": "400",
+   "color": "rgb(242, 244, 248)",
+   "valueEl": {
+    "hook": "sport-tile-nfl-current-label",
+    "tag": "P",
+    "classes": "eyebrow eyebrow--muted",
+    "text": "Current rule",
+    "rect": {
+     "x": 51,
+     "y": 3435.140625,
+     "width": 288,
+     "height": 19.5
+    },
+    "fontSize": "13px",
+    "fontWeight": "700",
+    "color": "rgb(138, 145, 158)"
+   }
+  },
+  {
+   "hook": "sport-tile-nfl-current-wl",
+   "tag": "DIV",
+   "classes": "hero__stat",
+   "text": "10–5\n            Won–lost",
+   "rect": {
+    "x": 51,
+    "y": 3472.640625,
+    "width": 90.65625,
+    "height": 89
+   },
+   "fontSize": "17px",
+   "fontWeight": "400",
+   "color": "rgb(242, 244, 248)",
+   "valueEl": {
+    "hook": "sport-tile-nfl-current-wl",
+    "tag": "SPAN",
+    "classes": "hero__stat-value",
+    "text": "10–5",
+    "rect": {
+     "x": 62,
+     "y": 3485.640625,
+     "width": 68.65625,
+     "height": 24
+    },
+    "fontSize": "24px",
+    "fontWeight": "800",
+    "color": "rgb(255, 255, 255)"
+   }
+  },
+  {
+   "hook": "sport-tile-nfl-current-units",
+   "tag": "DIV",
+   "classes": "hero__stat",
+   "text": "+3.05\n            Units",
+   "rect": {
+    "x": 149.65625,
+    "y": 3472.640625,
+    "width": 90.671875,
+    "height": 89
+   },
+   "fontSize": "17px",
+   "fontWeight": "400",
+   "color": "rgb(242, 244, 248)",
+   "valueEl": {
+    "hook": "sport-tile-nfl-current-units",
+    "tag": "SPAN",
+    "classes": "hero__stat-value is-up",
+    "text": "+3.05",
+    "rect": {
+     "x": 160.65625,
+     "y": 3485.640625,
+     "width": 68.671875,
+     "height": 24
+    },
+    "fontSize": "24px",
+    "fontWeight": "800",
+    "color": "rgb(79, 227, 164)"
+   }
+  },
+  {
+   "hook": "sport-tile-nfl-current-days",
+   "tag": "DIV",
+   "classes": "hero__stat",
+   "text": "4\n            Nights graded",
+   "rect": {
+    "x": 248.328125,
+    "y": 3472.640625,
+    "width": 90.65625,
+    "height": 89
+   },
+   "fontSize": "17px",
+   "fontWeight": "400",
+   "color": "rgb(242, 244, 248)",
+   "valueEl": {
+    "hook": "sport-tile-nfl-current-days",
+    "tag": "SPAN",
+    "classes": "hero__stat-value",
+    "text": "4",
+    "rect": {
+     "x": 259.328125,
+     "y": 3485.640625,
+     "width": 68.65625,
+     "height": 24
+    },
+    "fontSize": "24px",
+    "fontWeight": "800",
+    "color": "rgb(255, 255, 255)"
+   }
+  },
+  {
+   "hook": "sport-tile-nfl-previous-block",
+   "tag": "DIV",
+   "classes": "hero__rule-block",
+   "text": "Previous rule (retired)\n        \n          \n            7–3\n",
+   "rect": {
+    "x": 51,
+    "y": 3636.640625,
+    "width": 288,
+    "height": 202.5
+   },
+   "fontSize": "17px",
+   "fontWeight": "400",
+   "color": "rgb(242, 244, 248)",
+   "valueEl": {
+    "hook": "sport-tile-nfl-previous-label",
+    "tag": "P",
+    "classes": "eyebrow eyebrow--muted",
+    "text": "Previous rule (retired)",
+    "rect": {
+     "x": 51,
+     "y": 3659.640625,
+     "width": 288,
+     "height": 19.5
+    },
+    "fontSize": "13px",
+    "fontWeight": "700",
+    "color": "rgb(138, 145, 158)"
+   }
+  },
+  {
+   "hook": "sport-tile-nfl-previous-wl",
+   "tag": "DIV",
+   "classes": "hero__stat",
+   "text": "7–3\n            Won–lost",
+   "rect": {
+    "x": 51,
+    "y": 3697.140625,
+    "width": 90.65625,
+    "height": 89
+   },
+   "fontSize": "17px",
+   "fontWeight": "400",
+   "color": "rgb(242, 244, 248)",
+   "valueEl": {
+    "hook": "sport-tile-nfl-previous-wl",
+    "tag": "SPAN",
+    "classes": "hero__stat-value",
+    "text": "7–3",
+    "rect": {
+     "x": 62,
+     "y": 3710.140625,
+     "width": 68.65625,
+     "height": 24
+    },
+    "fontSize": "24px",
+    "fontWeight": "800",
+    "color": "rgb(255, 255, 255)"
+   }
+  },
+  {
+   "hook": "sport-tile-nfl-previous-units",
+   "tag": "DIV",
+   "classes": "hero__stat",
+   "text": "−0.26\n            Units",
+   "rect": {
+    "x": 149.65625,
+    "y": 3697.140625,
+    "width": 90.671875,
+    "height": 89
+   },
+   "fontSize": "17px",
+   "fontWeight": "400",
+   "color": "rgb(242, 244, 248)",
+   "valueEl": {
+    "hook": "sport-tile-nfl-previous-units",
+    "tag": "SPAN",
+    "classes": "hero__stat-value is-down",
+    "text": "−0.26",
+    "rect": {
+     "x": 160.65625,
+     "y": 3710.140625,
+     "width": 68.671875,
+     "height": 24
+    },
+    "fontSize": "24px",
+    "fontWeight": "800",
+    "color": "rgb(255, 107, 107)"
+   }
+  },
+  {
+   "hook": "sport-tile-nfl-previous-days",
+   "tag": "DIV",
+   "classes": "hero__stat",
+   "text": "3\n            Nights graded",
+   "rect": {
+    "x": 248.328125,
+    "y": 3697.140625,
+    "width": 90.65625,
+    "height": 89
+   },
+   "fontSize": "17px",
+   "fontWeight": "400",
+   "color": "rgb(242, 244, 248)",
+   "valueEl": {
+    "hook": "sport-tile-nfl-previous-days",
+    "tag": "SPAN",
+    "classes": "hero__stat-value",
+    "text": "3",
+    "rect": {
+     "x": 259.328125,
+     "y": 3710.140625,
+     "width": 68.65625,
+     "height": 24
+    },
+    "fontSize": "24px",
+    "fontWeight": "800",
+    "color": "rgb(255, 255, 255)"
+   }
+  }
+ ]
+}
