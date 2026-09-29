@@ -2446,3 +2446,5 @@
 {"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T14:38:27.543862+00:00", "player": "Tanner Houck", "player_id": 656557, "team": "BOS", "transaction_id": 944335}
 {"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T14:38:27.543862+00:00", "player": "Jovani Mor\u00e1n", "player_id": 663558, "team": "BOS", "transaction_id": 944337}
 {"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T14:38:27.543862+00:00", "player": "Patrick Sandoval", "player_id": 663776, "team": "BOS", "transaction_id": 944339}
+{"fetched_utc": "2026-09-29T14:51:40.814736+00:00", "game_date": "2026-09-29", "poll": true}
+{"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T14:51:40.814736+00:00", "player": "Justin Slaten", "player_id": 686580, "team": "BOS", "transaction_id": 944357}
