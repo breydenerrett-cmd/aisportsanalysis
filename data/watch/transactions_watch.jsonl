@@ -2465,3 +2465,4 @@
 {"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T15:20:58.439015+00:00", "player": "Zach Dezenzo", "player_id": 701305, "team": "HOU", "transaction_id": 944408}
 {"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T15:20:58.439015+00:00", "player": "LaMonte Wade Jr.", "player_id": 664774, "team": "HOU", "transaction_id": 944412}
 {"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T15:20:58.439015+00:00", "player": "Zach Cole", "player_id": 805904, "team": "HOU", "transaction_id": 944414}
+{"fetched_utc": "2026-09-29T15:30:29.267347+00:00", "game_date": "2026-09-29", "poll": true}
