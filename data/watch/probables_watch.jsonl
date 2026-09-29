@@ -1998,3 +1998,8 @@
 {"fetched_utc": "2026-09-29T03:22:15.091235+00:00", "game_date": "2026-09-28", "poll": true}
 {"fetched_utc": "2026-09-29T03:34:11.696650+00:00", "game_date": "2026-09-28", "poll": true}
 {"fetched_utc": "2026-09-29T03:48:09.072717+00:00", "game_date": "2026-09-28", "poll": true}
+{"fetched_utc": "2026-09-29T04:01:52.594627+00:00", "game_date": "2026-09-29", "poll": true}
+{"away_probable_id": 666200, "fetched_utc": "2026-09-29T04:01:52.594627+00:00", "game_pk": 849845, "home_probable_id": 519242}
+{"away_probable_id": 696146, "fetched_utc": "2026-09-29T04:01:52.594627+00:00", "game_pk": 849849, "home_probable_id": 805123}
+{"away_probable_id": 801139, "fetched_utc": "2026-09-29T04:01:52.594627+00:00", "game_pk": 849851, "home_probable_id": 693645}
+{"away_probable_id": 571510, "fetched_utc": "2026-09-29T04:01:52.594627+00:00", "game_pk": 849843, "home_probable_id": 650633}
