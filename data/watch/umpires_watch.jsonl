@@ -2441,3 +2441,5 @@
 {"game_date": "2026-09-29", "observed_utc": "2026-09-29T14:51:41.062132+00:00", "poll": true}
 {"commence_time": "2026-09-29T18:00:00Z", "crew": [{"id": 605670, "name": "Dan Merzel", "officialType": "Home Plate"}, {"id": 644760, "name": "Adam Beck", "officialType": "First Base"}, {"id": 483919, "name": "Mark Ripperger", "officialType": "Second Base"}, {"id": 490319, "name": "Jordan Baker", "officialType": "Third Base"}, {"id": 598411, "name": "Nestor Ceja", "officialType": "Left Field"}, {"id": 605671, "name": "Charlie Ramos", "officialType": "Right Field"}], "game_date": "2026-09-29", "game_pk": 849845, "game_state": "Pre-Game", "home_plate_umpire": "Dan Merzel", "observed_utc": "2026-09-29T14:51:41.062132+00:00", "prev_poll_utc": "2026-09-29T14:38:27.876707+00:00", "revealed": true}
 {"game_date": "2026-09-30", "observed_utc": "2026-09-29T14:51:41.264004+00:00", "poll": true}
+{"game_date": "2026-09-29", "observed_utc": "2026-09-29T15:04:22.284247+00:00", "poll": true}
+{"game_date": "2026-09-30", "observed_utc": "2026-09-29T15:04:22.353977+00:00", "poll": true}
