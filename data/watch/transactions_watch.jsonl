@@ -2506,3 +2506,5 @@
 {"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T17:01:19.527196+00:00", "player": "Will Wagner", "player_id": 695238, "team": "SD", "transaction_id": 944718}
 {"category": "il_placement", "date": "2026-09-29", "first_seen_utc": "2026-09-29T17:01:19.527196+00:00", "player": "Rodolfo Dur\u00e1n", "player_id": 660710, "team": "SD", "transaction_id": 944719}
 {"fetched_utc": "2026-09-29T17:16:41.135974+00:00", "game_date": "2026-09-29", "poll": true}
+{"fetched_utc": "2026-09-29T17:27:30.113248+00:00", "game_date": "2026-09-29", "poll": true}
+{"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T17:27:30.113248+00:00", "player": "Julian Aguiar", "player_id": 687924, "team": "CHC", "transaction_id": 944731}
