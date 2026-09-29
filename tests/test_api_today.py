@@ -71,7 +71,10 @@ class BuildTodayPayloadTests(unittest.TestCase):
         and age_seconds=None, not a fabricated fresh quote."""
         store = history.read_results()
         games = [_today_game()]
-        payload = build_today_payload(games, store)
+        # The board is injected EMPTY. Left to read the real odds store, this
+        # fixture (BOS at NYY, today) finds a real market on any day those
+        # clubs actually play, as on 2026-09-29 (Wild Card).
+        payload = build_today_payload(games, store, price_boards_by_key={})
         meta = payload["games"][0]["odds_meta"]
         self.assertFalse(meta["has_market"])
         self.assertIsNone(meta["age_seconds"])

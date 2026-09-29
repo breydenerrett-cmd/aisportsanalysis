@@ -49,6 +49,15 @@ def _today_game(game_pk=990501):
 
 class TodayPayloadCachedTests(unittest.TestCase):
 
+    def setUp(self):
+        # No real odds board: the fixture is BOS at NYY on today's date, and
+        # the real store holds that matchup whenever those clubs actually
+        # play (2026-09-29, Wild Card), which made these tests depend on the
+        # schedule.
+        boards = patch("src.analysis.prices.boards_by_matchup", return_value={})
+        boards.start()
+        self.addCleanup(boards.stop)
+
     def _cache(self):
         # Every test gets its own cache -- the module-level
         # api.today._today_cache is only for real request traffic, and
