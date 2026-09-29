@@ -2489,3 +2489,19 @@
 {"fetched_utc": "2026-09-29T16:35:20.483150+00:00", "game_date": "2026-09-29", "poll": true}
 {"fetched_utc": "2026-09-29T16:48:51.272052+00:00", "game_date": "2026-09-29", "poll": true}
 {"category": "il_activation", "date": "2026-09-29", "first_seen_utc": "2026-09-29T16:48:51.272052+00:00", "player": "Luis Ur\u00edas", "player_id": 649966, "team": "TOR", "transaction_id": 944656}
+{"fetched_utc": "2026-09-29T17:01:19.527196+00:00", "game_date": "2026-09-29", "poll": true}
+{"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T17:01:19.527196+00:00", "player": "Jhony Brito", "player_id": 666745, "team": "SD", "transaction_id": 944701}
+{"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T17:01:19.527196+00:00", "player": "Griffin Canning", "player_id": 656288, "team": "SD", "transaction_id": 944702}
+{"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T17:01:19.527196+00:00", "player": "Jeremiah Estrada", "player_id": 669093, "team": "SD", "transaction_id": 944704}
+{"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T17:01:19.527196+00:00", "player": "Garrett Hawkins", "player_id": 678184, "team": "SD", "transaction_id": 944705}
+{"category": "il_activation", "date": "2026-09-29", "first_seen_utc": "2026-09-29T17:01:19.527196+00:00", "player": "Joe Musgrove", "player_id": 605397, "team": "SD", "transaction_id": 944709}
+{"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T17:01:19.527196+00:00", "player": "Wandy Peralta", "player_id": 593974, "team": "SD", "transaction_id": 944710}
+{"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T17:01:19.527196+00:00", "player": "Hunter Stratton", "player_id": 676702, "team": "SD", "transaction_id": 944711}
+{"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T17:01:19.527196+00:00", "player": "Randy V\u00e1squez", "player_id": 681190, "team": "SD", "transaction_id": 944712}
+{"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T17:01:19.527196+00:00", "player": "JP Sears", "player_id": 676664, "team": "SD", "transaction_id": 944713}
+{"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T17:01:19.527196+00:00", "player": "Rodolfo Dur\u00e1n", "player_id": 660710, "team": "SD", "transaction_id": 944714}
+{"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T17:01:19.527196+00:00", "player": "Mason McCoy", "player_id": 669200, "team": "SD", "transaction_id": 944715}
+{"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T17:01:19.527196+00:00", "player": "Sung-Mun Song", "player_id": 823550, "team": "SD", "transaction_id": 944716}
+{"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T17:01:19.527196+00:00", "player": "Gage Workman", "player_id": 669398, "team": "SD", "transaction_id": 944717}
+{"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T17:01:19.527196+00:00", "player": "Will Wagner", "player_id": 695238, "team": "SD", "transaction_id": 944718}
+{"category": "il_placement", "date": "2026-09-29", "first_seen_utc": "2026-09-29T17:01:19.527196+00:00", "player": "Rodolfo Dur\u00e1n", "player_id": 660710, "team": "SD", "transaction_id": 944719}
