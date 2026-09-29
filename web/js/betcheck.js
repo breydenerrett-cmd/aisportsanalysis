@@ -472,9 +472,9 @@ function renderEvidenceStatus(result) {
       + "is never assumed.");
     section.appendChild(fillResearchCount(
       el("p", { class: "bc2-na__body" }),
-      (n, surviving) => `${n} pre-registered hypotheses have been measured `
+      (n, surviving) => `${n} hypotheses tested `
         + `and ${surviving === 0 ? "none has" : `${surviving} have`} survived.`,
-      "Every hypothesis in our research record is pre-registered, and none "
+      "Every hypothesis in our research record has been tested, and none "
       + "has survived."));
     return section;
   }
