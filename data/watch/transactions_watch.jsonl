@@ -2487,3 +2487,5 @@
 {"fetched_utc": "2026-09-29T16:22:24.282503+00:00", "game_date": "2026-09-29", "poll": true}
 {"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T16:22:24.282503+00:00", "player": "Otto Kemp", "player_id": 805249, "team": "PHI", "transaction_id": 944585}
 {"fetched_utc": "2026-09-29T16:35:20.483150+00:00", "game_date": "2026-09-29", "poll": true}
+{"fetched_utc": "2026-09-29T16:48:51.272052+00:00", "game_date": "2026-09-29", "poll": true}
+{"category": "il_activation", "date": "2026-09-29", "first_seen_utc": "2026-09-29T16:48:51.272052+00:00", "player": "Luis Ur\u00edas", "player_id": 649966, "team": "TOR", "transaction_id": 944656}
