@@ -2439,3 +2439,10 @@
 {"category": "designated", "date": "2026-09-29", "first_seen_utc": "2026-09-29T14:25:31.686389+00:00", "player": "Ricky Vanasco", "player_id": 676568, "team": "ATL", "transaction_id": 944322}
 {"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T14:25:31.686389+00:00", "player": "Max Lazar", "player_id": 676661, "team": "PHI", "transaction_id": 944323}
 {"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T14:25:31.686389+00:00", "player": "Brooks Raley", "player_id": 548384, "team": "PHI", "transaction_id": 944325}
+{"fetched_utc": "2026-09-29T14:38:27.543862+00:00", "game_date": "2026-09-29", "poll": true}
+{"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T14:38:27.543862+00:00", "player": "Luis Arraez", "player_id": 650333, "team": "PHI", "transaction_id": 944329}
+{"category": "il_transfer", "date": "2026-09-29", "first_seen_utc": "2026-09-29T14:38:27.543862+00:00", "player": "Justin Slaten", "player_id": 686580, "team": "BOS", "transaction_id": 944332}
+{"category": "il_activation", "date": "2026-09-29", "first_seen_utc": "2026-09-29T14:38:27.543862+00:00", "player": "Garrett Crochet", "player_id": 676979, "team": "BOS", "transaction_id": 944333}
+{"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T14:38:27.543862+00:00", "player": "Tanner Houck", "player_id": 656557, "team": "BOS", "transaction_id": 944335}
+{"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T14:38:27.543862+00:00", "player": "Jovani Mor\u00e1n", "player_id": 663558, "team": "BOS", "transaction_id": 944337}
+{"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T14:38:27.543862+00:00", "player": "Patrick Sandoval", "player_id": 663776, "team": "BOS", "transaction_id": 944339}
