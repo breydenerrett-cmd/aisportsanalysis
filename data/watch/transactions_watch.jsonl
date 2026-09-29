@@ -2434,3 +2434,8 @@
 {"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T14:12:28.331603+00:00", "player": "Kyle Farmer", "player_id": 571657, "team": "ATL", "transaction_id": 944319}
 {"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T14:12:28.331603+00:00", "player": "Rowdy Tellez", "player_id": 642133, "team": "ATL", "transaction_id": 944320}
 {"fetched_utc": "2026-09-29T14:17:04.040463+00:00", "game_date": "2026-09-29", "poll": true}
+{"fetched_utc": "2026-09-29T14:25:31.686389+00:00", "game_date": "2026-09-29", "poll": true}
+{"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T14:25:31.686389+00:00", "player": "Luke Williams", "player_id": 663897, "team": "ATL", "transaction_id": 944321}
+{"category": "designated", "date": "2026-09-29", "first_seen_utc": "2026-09-29T14:25:31.686389+00:00", "player": "Ricky Vanasco", "player_id": 676568, "team": "ATL", "transaction_id": 944322}
+{"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T14:25:31.686389+00:00", "player": "Max Lazar", "player_id": 676661, "team": "PHI", "transaction_id": 944323}
+{"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T14:25:31.686389+00:00", "player": "Brooks Raley", "player_id": 548384, "team": "PHI", "transaction_id": 944325}
