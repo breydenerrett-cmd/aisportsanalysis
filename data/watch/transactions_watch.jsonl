@@ -2555,3 +2555,4 @@
 {"category": "designated", "date": "2026-09-29", "first_seen_utc": "2026-09-29T23:17:36.834781+00:00", "player": "Elieser Hern\u00e1ndez", "player_id": 622694, "team": "ATL", "transaction_id": 944751}
 {"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T23:17:36.834781+00:00", "player": "Antoine Kelly", "player_id": 681520, "team": "CHC", "transaction_id": 944752}
 {"category": "il_activation", "date": "2026-09-29", "first_seen_utc": "2026-09-29T23:17:36.834781+00:00", "player": "Edgardo Henriquez", "player_id": 683618, "team": "LAD", "transaction_id": 944755}
+{"fetched_utc": "2026-09-29T23:31:18.712068+00:00", "game_date": "2026-09-29", "poll": true}
