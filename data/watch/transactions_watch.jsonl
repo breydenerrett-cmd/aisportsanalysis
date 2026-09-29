@@ -2451,3 +2451,17 @@
 {"fetched_utc": "2026-09-29T15:04:22.116279+00:00", "game_date": "2026-09-29", "poll": true}
 {"category": "designated", "date": "2026-09-29", "first_seen_utc": "2026-09-29T15:04:22.116279+00:00", "player": "Alexander Cornielle", "player_id": 529017, "team": "NYY", "transaction_id": 944375}
 {"category": "il_activation", "date": "2026-09-29", "first_seen_utc": "2026-09-29T15:04:22.116279+00:00", "player": "Giancarlo Stanton", "player_id": 519317, "team": "NYY", "transaction_id": 944377}
+{"fetched_utc": "2026-09-29T15:20:58.439015+00:00", "game_date": "2026-09-29", "poll": true}
+{"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T15:20:58.439015+00:00", "player": "Yerry De los Santos", "player_id": 660787, "team": "NYY", "transaction_id": 944381}
+{"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T15:20:58.439015+00:00", "player": "Tim Hill", "player_id": 657612, "team": "NYY", "transaction_id": 944382}
+{"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T15:20:58.439015+00:00", "player": "Michael Fulmer", "player_id": 605242, "team": "NYY", "transaction_id": 944385}
+{"category": "il_activation", "date": "2026-09-29", "first_seen_utc": "2026-09-29T15:20:58.439015+00:00", "player": "Trent Grisham", "player_id": 663757, "team": "NYY", "transaction_id": 944386}
+{"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T15:20:58.439015+00:00", "player": "Steven Okert", "player_id": 595345, "team": "HOU", "transaction_id": 944402}
+{"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T15:20:58.439015+00:00", "player": "Ethan Pecko", "player_id": 814490, "team": "HOU", "transaction_id": 944403}
+{"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T15:20:58.439015+00:00", "player": "Alimber Santa", "player_id": 695001, "team": "HOU", "transaction_id": 944404}
+{"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T15:20:58.439015+00:00", "player": "Kai-Wei Teng", "player_id": 678906, "team": "HOU", "transaction_id": 944405}
+{"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T15:20:58.439015+00:00", "player": "Collin Price", "player_id": 805672, "team": "HOU", "transaction_id": 944406}
+{"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T15:20:58.439015+00:00", "player": "Jorge Barrosa", "player_id": 678489, "team": "HOU", "transaction_id": 944407}
+{"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T15:20:58.439015+00:00", "player": "Zach Dezenzo", "player_id": 701305, "team": "HOU", "transaction_id": 944408}
+{"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T15:20:58.439015+00:00", "player": "LaMonte Wade Jr.", "player_id": 664774, "team": "HOU", "transaction_id": 944412}
+{"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T15:20:58.439015+00:00", "player": "Zach Cole", "player_id": 805904, "team": "HOU", "transaction_id": 944414}
