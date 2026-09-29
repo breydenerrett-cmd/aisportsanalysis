@@ -2427,3 +2427,9 @@
 {"fetched_utc": "2026-09-29T13:32:48.127823+00:00", "game_date": "2026-09-29", "poll": true}
 {"fetched_utc": "2026-09-29T13:46:27.093728+00:00", "game_date": "2026-09-29", "poll": true}
 {"fetched_utc": "2026-09-29T13:59:18.988987+00:00", "game_date": "2026-09-29", "poll": true}
+{"fetched_utc": "2026-09-29T14:12:28.331603+00:00", "game_date": "2026-09-29", "poll": true}
+{"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T14:12:28.331603+00:00", "player": "Elieser Hern\u00e1ndez", "player_id": 622694, "team": "ATL", "transaction_id": 944316}
+{"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T14:12:28.331603+00:00", "player": "JR Ritchie", "player_id": 702275, "team": "ATL", "transaction_id": 944317}
+{"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T14:12:28.331603+00:00", "player": "AJ Smith-Shawver", "player_id": 700363, "team": "ATL", "transaction_id": 944318}
+{"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T14:12:28.331603+00:00", "player": "Kyle Farmer", "player_id": 571657, "team": "ATL", "transaction_id": 944319}
+{"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T14:12:28.331603+00:00", "player": "Rowdy Tellez", "player_id": 642133, "team": "ATL", "transaction_id": 944320}
