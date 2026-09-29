@@ -2471,3 +2471,16 @@
 {"fetched_utc": "2026-09-29T15:56:29.258249+00:00", "game_date": "2026-09-29", "poll": true}
 {"category": "il_activation", "date": "2026-09-29", "first_seen_utc": "2026-09-29T15:56:29.258249+00:00", "player": "Craig Kimbrel", "player_id": 518886, "team": "KC", "transaction_id": 944483}
 {"category": "il_activation", "date": "2026-09-29", "first_seen_utc": "2026-09-29T15:56:29.258249+00:00", "player": "Jung Hoo Lee", "player_id": 808982, "team": "SF", "transaction_id": 944488}
+{"fetched_utc": "2026-09-29T16:09:03.251142+00:00", "game_date": "2026-09-29", "poll": true}
+{"category": "il_activation", "date": "2026-09-29", "first_seen_utc": "2026-09-29T16:09:03.251142+00:00", "player": "Reiver Sanmartin", "player_id": 665665, "team": "SF", "transaction_id": 944490}
+{"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T16:09:03.251142+00:00", "player": "Joey Bart", "player_id": 663698, "team": "CWS", "transaction_id": 944519}
+{"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T16:09:03.251142+00:00", "player": "Drew Romo", "player_id": 691011, "team": "CWS", "transaction_id": 944521}
+{"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T16:09:03.251142+00:00", "player": "Edgar Quero", "player_id": 700337, "team": "CWS", "transaction_id": 944522}
+{"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T16:09:03.251142+00:00", "player": "Rikuu Nishida", "player_id": 807747, "team": "CWS", "transaction_id": 944525}
+{"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T16:09:03.251142+00:00", "player": "Junior Perez", "player_id": 678577, "team": "CWS", "transaction_id": 944527}
+{"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T16:09:03.251142+00:00", "player": "Jonathan Cannon", "player_id": 686563, "team": "CWS", "transaction_id": 944530}
+{"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T16:09:03.251142+00:00", "player": "Tyler Davis", "player_id": 699823, "team": "CWS", "transaction_id": 944532}
+{"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T16:09:03.251142+00:00", "player": "Tanner McDougal", "player_id": 701780, "team": "CWS", "transaction_id": 944534}
+{"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T16:09:03.251142+00:00", "player": "Tyler Schweitzer", "player_id": 805326, "team": "CWS", "transaction_id": 944535}
+{"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T16:09:03.251142+00:00", "player": "Shane Smith", "player_id": 681343, "team": "CWS", "transaction_id": 944536}
+{"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T16:09:03.251142+00:00", "player": "Trevor Richards", "player_id": 670950, "team": "CWS", "transaction_id": 944539}
