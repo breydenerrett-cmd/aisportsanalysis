@@ -2522,3 +2522,5 @@
 {"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T17:39:19.945671+00:00", "player": "BJ Murray Jr.", "player_id": 681230, "team": "CHC", "transaction_id": 944742}
 {"category": "other", "date": "2026-09-29", "first_seen_utc": "2026-09-29T17:39:19.945671+00:00", "player": "James Triantos", "player_id": 701649, "team": "CHC", "transaction_id": 944743}
 {"fetched_utc": "2026-09-29T17:52:56.119888+00:00", "game_date": "2026-09-29", "poll": true}
+{"fetched_utc": "2026-09-29T18:05:51.849865+00:00", "game_date": "2026-09-29", "poll": true}
+{"category": "il_placement", "date": "2026-09-29", "first_seen_utc": "2026-09-29T18:05:51.849865+00:00", "player": "Rodolfo Dur\u00e1n", "player_id": 660710, "team": "SD", "transaction_id": 944744}
