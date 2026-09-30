@@ -2661,3 +2661,6 @@
 {"fetched_utc": "2026-09-30T21:03:09.284910+00:00", "game_date": "2026-09-30", "poll": true}
 {"fetched_utc": "2026-09-30T21:11:32.237154+00:00", "game_date": "2026-09-30", "poll": true}
 {"fetched_utc": "2026-09-30T21:23:56.258871+00:00", "game_date": "2026-09-30", "poll": true}
+{"fetched_utc": "2026-09-30T21:38:00.618348+00:00", "game_date": "2026-09-30", "poll": true}
+{"category": "il_activation", "date": "2026-09-30", "first_seen_utc": "2026-09-30T21:38:00.618348+00:00", "player": "Curtis Mead", "player_id": 678554, "team": "BOS", "transaction_id": 944763}
+{"category": "other", "date": "2026-09-30", "first_seen_utc": "2026-09-30T21:38:00.618348+00:00", "player": "Roman Anthony", "player_id": 701350, "team": "BOS", "transaction_id": 944764}
