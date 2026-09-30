@@ -2699,3 +2699,6 @@
 {"game_date": "2026-10-01", "observed_utc": "2026-09-30T17:17:46.597721+00:00", "poll": true}
 {"game_date": "2026-09-30", "observed_utc": "2026-09-30T17:30:31.948002+00:00", "poll": true}
 {"game_date": "2026-10-01", "observed_utc": "2026-09-30T17:30:32.030267+00:00", "poll": true}
+{"game_date": "2026-09-30", "observed_utc": "2026-09-30T17:47:40.852453+00:00", "poll": true}
+{"commence_time": "2026-09-30T21:00:00Z", "crew": [{"id": 605673, "name": "Alex Tosi", "officialType": "Home Plate"}, {"id": 596809, "name": "Ryan Additon", "officialType": "First Base"}, {"id": 484198, "name": "Alan Porter", "officialType": "Second Base"}, {"id": 554242, "name": "Edwin Moscoso", "officialType": "Third Base"}, {"id": 607884, "name": "Paul Clemons", "officialType": "Left Field"}, {"id": 623945, "name": "Alex MacKay", "officialType": "Right Field"}], "game_date": "2026-09-30", "game_pk": 849846, "game_state": "Pre-Game", "home_plate_umpire": "Alex Tosi", "observed_utc": "2026-09-30T17:47:40.852453+00:00", "prev_poll_utc": "2026-09-30T17:30:31.948002+00:00", "revealed": true}
+{"game_date": "2026-10-01", "observed_utc": "2026-09-30T17:47:40.926910+00:00", "poll": true}
