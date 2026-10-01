@@ -96,13 +96,17 @@ show as a new `started_utc`, a smaller `uptime_s` and a reset pass count.
 | 22:15:35 | 34 min 25 s | 4 | 340.0 | 588.6 | 61 | 1 |
 | 22:23:33 | 42 min 24 s | 5 | 344.0 | 588.6 | 73 | 1 |
 | 22:26:50 | 45 min 41 s | 5 | 347.0 | 588.6 | 76 | 1 |
+| 22:31:16 | 50 min 07 s | 5 | 347.0 | 588.6 | 76 | 1 |
+| 22:38:57 | 57 min 48 s | 6 | 359.0 | 588.6 | 91 | 1 |
+| 22:41:36 | 60 min 27 s | 6 | 358.0 | 588.6 | 91 | 1 |
 
-- **Uptime:** one process, started 21:41:05Z, never restarted in 45 minutes (the old build was killed at 658 s and 666 s). Restart count 0. Fly machine version 12, last updated 21:41:03Z, health check passing; the last 100 log lines (22:05Z to 22:26Z) contain no "Out of memory", SIGKILL or restart line.
+- **60-minute result (22:41:36Z):** same process (`started_utc` 21:41:05Z), uptime 3,627 s, restart count 0, six refresh cycles, 91 cache builds, never more than one at a time. Peak 588.6 MB, unchanged since the third cycle. Resident memory between cycles: 347.0 -> 359.0 -> 358.0 MB, so the rise has slowed to about 12 MB over the last two cycles; it is flattening, not yet flat.
+- **Uptime:** one process, started 21:41:05Z, never restarted in 60 minutes (the old build was killed at 658 s and 666 s). Restart count 0. Fly machine version 12, last updated 21:41:03Z, health check passing; the last 100 log lines (22:05Z to 22:26Z) contain no "Out of memory", SIGKILL or restart line.
 - **Old failure point passed:** the second warm-up pass, the one that killed the old build, completed at about 697 s of uptime with the builds still one at a time.
 - **Memory:** 234.6 MB after the first pass; peak during the first pass 572.5 MB, during later passes 588.6 MB (machine: 1,024 MB). Between passes it sits at 292.4 to 347.0 MB.
 - **Not a clean plateau:** resident memory between passes has risen with each cycle (234.6 -> 292.4 -> 317.6 -> 340.0 -> 344.0 -> 347.0 MB), about 20 MB a cycle at first and less in the last two. The peak has not moved since the third pass. At this rate it is hours from the limit, and the hourly refresh restarts the process anyway, but a level-off has not been shown yet.
 - **Serialised:** `builds.max_running` is 1 after 76 cache builds.
-- **Verdict:** the memory incident is production-verified for the 45-minute soak the owner set: no restart, no memory kill, five refresh cycles completed. The slow rise between passes is left open and is watched on `/health`.
+- **Verdict:** the memory incident is production-verified for the 60-minute soak the owner preferred (45 was the minimum): no restart, no memory kill, six refresh cycles completed. The slow rise between passes is left open and is watched on `/health`.
 
 
 ## Credit change: not confirmed

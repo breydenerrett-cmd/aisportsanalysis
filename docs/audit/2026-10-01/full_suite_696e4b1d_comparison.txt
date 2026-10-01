@@ -1,0 +1,21 @@
+Full suite at 696e4b1d (second batch, held commits), Windows, run in two halves: 4,304 + 5,007 = 9,311 tests.
+Half A: failures=16 errors=1 skipped=28. Half B: failures=1 errors=0 skipped=8.
+Compared by test identity with docs/audit/2026-09-28/full_suite_integrated_1169b2d6_failures.txt:
+PRE_EXISTING 8 identities (18 failure lines; all Windows-environment), FIXED 0, NEW_EXPECTED 0, NEW_REGRESSION 0, UNKNOWN 0.
+Changed test modules also run with FastAPI blocked (as Linux CI): 365 run, 0 failures, 0 errors, 68 skipped.
+
+failures now: 8  baseline: 8
+
+STILL FAILING (in baseline):
+   tests.test_appstate_users.UserStoreTests.test_db_path_honours_the_env_override
+   tests.test_capture_no_set_time.DenseWindowStalenessFallback.test_a_recent_capture_stays_at_the_narrow_window
+   tests.test_card_memory_budget.ThePageDoesNotEatTheContainer.test_the_relief_rates_stay_within_budget
+   tests.test_daily_bootstrap.DailyBootstrapParsesTest.test_is_executable
+   tests.test_deploy_scripts.ShellScriptsParseTest.test_scripts_are_executable
+   tests.test_f5_eval.TestM1FreezeFamily.test_freeze_family_never_targets_the_real_frozen_family_path
+   tests.test_timing.TestStage.test_peak_rss_mb_is_positive
+   unittest.loader._FailedTest.test_capture_health
+
+NOT IN BASELINE (new):
+
+IN BASELINE, PASSING NOW:
