@@ -101,7 +101,9 @@
     "Public record, access delivery, cancel link, attribution (buying-path worker)",
     "Free public postseason odds page (lead magnet)",
     "Outreach targets, channel rules and scripts",
-    "Loss diagnosis: done, filed in docs/audit/2026-10-01/"
+    "Loss diagnosis: done, filed in docs/audit/2026-10-01/",
+    "Independent attack on the buying path: 1 blocker and 9 other findings; blocker fixed, rest fixed or listed above",
+    "Independent check of the postseason page: bracket and sums correct; 10 defects being fixed before it ships"
   ],
   "next_customer_action": "Brey: finish Stripe verification, then send the first 20 messages from docs/sales/targets.csv using docs/sales/scripts.md.",
   "next_research_action": "No rule has shown positive expected value (docs/audit/2026-10-01/LOSS_DIAGNOSIS.md). Pre-register one forward test: do entries that pass V2's value gate do worse than entries that fail it? No gate or threshold changes until that test reports.",
@@ -110,7 +112,11 @@
     "V2 has published zero MAIN picks since 2026-09-26; every entry since is a fill. The public MAIN record is frozen at 4 dates.",
     "Shadow ledgers hold one wrong permanent VOID (game 824785, played a day late). Append-only correction pending.",
     "NFL picks store no model probability or observation time, so NFL calibration and closing-line value cannot be measured.",
-    "Daily loop red on 'settlement gap': cause found (a cancelled game and a rain-out played a day late could never settle). Fix pushed 2026-10-01 (eb850168); confirm on the 2026-10-02 10:10Z run."
+    "Daily loop red on 'settlement gap': cause found (a cancelled game and a rain-out played a day late could never settle). Fix pushed 2026-10-01 (eb850168); confirm on the 2026-10-02 10:10Z run.",
+    "Billing, deferred (review 2026-10-01): a failed renewal keeps access until the new period ends, and a redelivered or out-of-order Stripe event can restore access after a cancellation. Signatures are enforced, so only Stripe can trigger it. Fix before the first renewal date, about 37 days after the first sale.",
+    "Public record, deferred: while a day is only partly graded the headline counts its graded picks but the day list withholds the whole day, so the two cannot be reconciled until it resolves.",
+    "Sign-in, deferred: a link carrying a token signs the reader into that token's account; a crafted link could sign someone into an account that is not theirs.",
+    "Lost access token: no email sender exists, so recovery is by support only (admin re-issue route being added 2026-10-01)."
   ],
   "record_reading": [
     "V2 MAIN picks 16-17, -5.05u; 19 of the 33 are one day (2026-09-22, cap breach, -5.14u).",

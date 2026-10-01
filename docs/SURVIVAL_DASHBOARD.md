@@ -1,6 +1,6 @@
 # LineHound survival dashboard
 
-Generated 2026-10-01 19:13Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and `docs/sales/pipeline.csv`, not this file.
+Generated 2026-10-01 19:28Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and `docs/sales/pipeline.csv`, not this file.
 
 | | |
 |---|---|
@@ -44,10 +44,10 @@ Generated 2026-10-01 19:13Z by `scripts/survival_dashboard.py`. Edit `config/bus
 
 ## Public record by sport and market (counted picks; never pooled)
 
-- **MLB current** (Our value card; 2026-09-22..2026-09-30): 16-17, -5.05u, ROI -15.3% (n=33)
+- **MLB current** (Our value card; 2026-09-22..2026-09-27): 16-17, -5.05u, ROI -15.3% (n=33)
   - game: 2-1, +0.69u, ROI +23.2% (n=3)
   - prop: 14-16, -5.74u, ROI -19.1% (n=30)
-  - fills (shown apart, never counted): 22-10, +6.32u, ROI +19.8% (n=32)
+  - fills (shown apart, never counted): 21-8, +7.68u, ROI +26.5% (n=29)
 - **MLB previous** (Our first card rule; 2026-09-10..2026-09-22): 151-79, +7.98u, ROI +3.5% (n=230)
   - game: 73-40, +7.61u, ROI +6.7% (n=113)
   - prop: 78-39, +0.38u, ROI +0.3% (n=117)
@@ -71,6 +71,10 @@ No rule here has evidence of an edge. Closing-line value and calibration: see `d
 - Shadow ledgers hold one wrong permanent VOID (game 824785, played a day late). Append-only correction pending.
 - NFL picks store no model probability or observation time, so NFL calibration and closing-line value cannot be measured.
 - Daily loop red on 'settlement gap': cause found (a cancelled game and a rain-out played a day late could never settle). Fix pushed 2026-10-01 (eb850168); confirm on the 2026-10-02 10:10Z run.
+- Billing, deferred (review 2026-10-01): a failed renewal keeps access until the new period ends, and a redelivered or out-of-order Stripe event can restore access after a cancellation. Signatures are enforced, so only Stripe can trigger it. Fix before the first renewal date, about 37 days after the first sale.
+- Public record, deferred: while a day is only partly graded the headline counts its graded picks but the day list withholds the whole day, so the two cannot be reconciled until it resolves.
+- Sign-in, deferred: a link carrying a token signs the reader into that token's account; a crafted link could sign someone into an account that is not theirs.
+- Lost access token: no email sender exists, so recovery is by support only (admin re-issue route being added 2026-10-01).
 
 ## Top blockers
 
@@ -87,6 +91,8 @@ No rule here has evidence of an edge. Closing-line value and calibration: see `d
 - Free public postseason odds page (lead magnet)
 - Outreach targets, channel rules and scripts
 - Loss diagnosis: done, filed in docs/audit/2026-10-01/
+- Independent attack on the buying path: 1 blocker and 9 other findings; blocker fixed, rest fixed or listed above
+- Independent check of the postseason page: bracket and sums correct; 10 defects being fixed before it ships
 
 **Next customer action:** Brey: finish Stripe verification, then send the first 20 messages from docs/sales/targets.csv using docs/sales/scripts.md.
 
