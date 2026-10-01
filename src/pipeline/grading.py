@@ -542,9 +542,13 @@ def find_backfillable_closings(ledger_entries, snapshot_rows, *, market="h2h",
             no_recommendation.append(pk)
             continue
 
-        closing, reason = _ledger_closing(rec, snapshot_series, market=market)
         identity = {"game_pk": pk, "away_team": rec.get("away_team"),
                     "home_team": rec.get("home_team"), "date": rec.get("date")}
+        no_close = settlement_has_no_close(settlement)
+        if no_close:
+            not_derivable.append({**identity, "reason": no_close})
+            continue
+        closing, reason = _ledger_closing(rec, snapshot_series, market=market)
         if closing is None:
             not_derivable.append({**identity, "reason": reason})
             continue
@@ -856,6 +860,10 @@ def ledger_closing_coverage(ledger_entries, snapshot_rows=None, f5_rows=None) ->
                 reason = "no matching recommendation row"
                 bucket["not_derivable"][reason] = bucket["not_derivable"].get(reason, 0) + 1
                 continue
+            no_close = settlement_has_no_close(settlement)
+            if no_close:
+                bucket["not_derivable"][no_close] = bucket["not_derivable"].get(no_close, 0) + 1
+                continue
 
             observation, reason = snapshots.market_closing_observation(
                 index, rec.get("away_team"), rec.get("home_team"), rec.get("commence_time"))
@@ -865,6 +873,22 @@ def ledger_closing_coverage(ledger_entries, snapshot_rows=None, f5_rows=None) ->
                 bucket["not_derivable"][reason] = bucket["not_derivable"].get(reason, 0) + 1
         by_market[market] = bucket
     return by_market
+
+
+def settlement_has_no_close(settlement) -> "str | None":
+    """Why no closing price can ever be derived for this settlement, or None.
+
+    The recommendation row stores the ORIGINAL first pitch. For a game that
+    was cancelled there is no close at all, and for one played on a later
+    date the last price before the original first pitch is a stale quote.
+    Deriving a "close" from it would put a wrong number on the ledger.
+    """
+    result = (settlement or {}).get("result") or {}
+    if result.get("void"):
+        return "game cancelled, never played"
+    if result.get("played_date"):
+        return "game played on a later date than recorded"
+    return None
 
 
 def append_ledger_rows(rows, path) -> None:

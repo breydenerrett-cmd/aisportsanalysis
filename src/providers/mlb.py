@@ -502,6 +502,30 @@ def fetch_games(game_date, timeout: float = DEFAULT_TIMEOUT) -> list:
     return [parse_game(g) for g in fetch_schedule(game_date, timeout=timeout)]
 
 
+def fetch_game_instances(game_pk, timeout: float = DEFAULT_TIMEOUT) -> list:
+    """Every schedule entry for one gamePk, parsed, in the API's date order.
+
+    A postponed game keeps its gamePk: the original date stays on the schedule
+    as "Postponed" and the makeup is a second entry under its own date. A
+    single-date fetch (`fetch_games`) sees only the first, so a game that was
+    rained out and played the next day looks unfinished forever. A cancelled
+    game has one entry, "Cancelled", and no makeup.
+    """
+    payload = _get_json(
+        "schedule",
+        {
+            "sportId": SPORT_ID,
+            "gamePk": int(game_pk),
+            "hydrate": "probablePitcher,team,linescore",
+        },
+        timeout=timeout,
+    )
+    games = []
+    for entry in payload.get("dates") or []:
+        games.extend(entry.get("games") or [])
+    return [parse_game(g) for g in games if g.get("gamePk") == int(game_pk)]
+
+
 def fetch_results(game_date, timeout: float = DEFAULT_TIMEOUT) -> dict:
     """Games for one date, split by state, with counts.
 

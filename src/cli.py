@@ -1011,6 +1011,7 @@ def cmd_ledger(args) -> int:
 
     settled = 0
     unresolved = 0
+    voided = 0
     for game_date in sorted(by_date):
         try:
             games = {g["game_pk"]: g for g in mlb_provider.fetch_games(game_date)}
@@ -1019,15 +1020,42 @@ def cmd_ledger(args) -> int:
             continue
         for row in by_date[game_date]:
             game = games.get(row["game_pk"])
+            moved_from = None
             if not game or game.get("state") != "final":
-                # Not a failure. A postponed or in-progress game is simply not
-                # settleable yet, and writing a settlement now would freeze a
-                # non-result into the record.
-                unresolved += 1
-                continue
+                # Not on its own date. Before calling it "not final yet", ask
+                # the schedule about the game itself: a rain-out played the
+                # next day is final under ANOTHER date, and a cancelled game
+                # will never be final at all. Left alone, both sit here
+                # unsettled forever and the loop escalates every morning.
+                outcome, found = _moved_game_resolution(
+                    row, game, mlb_provider.fetch_game_instances)
+                if outcome == "void":
+                    ledger.settle(row["game_pk"], {
+                        "void": True, "void_reason": found,
+                        "away_score": None, "home_score": None,
+                        "winner": None, "home_won": None, "total_runs": None,
+                    }, closing=None,
+                        closing_reason="game cancelled, never played")
+                    voided += 1
+                    continue
+                if outcome != "final":
+                    # Not a failure. A postponed or in-progress game is simply
+                    # not settleable yet, and writing a settlement now would
+                    # freeze a non-result into the record.
+                    unresolved += 1
+                    continue
+                game, moved_from = found, row["date"]
             five = game.get("first_five") or {}
-            closing, closing_reason = _settlement_closing(row, snapshot_series)
+            if moved_from is None:
+                closing, closing_reason = _settlement_closing(row, snapshot_series)
+            else:
+                # The stored first pitch is the ORIGINAL one. The last price
+                # before it is a day-old quote, not this game's close.
+                closing, closing_reason = None, (
+                    f"postponed from {moved_from}, played {game.get('date')}; "
+                    "no close was captured against the actual first pitch")
             ledger.settle(row["game_pk"], {
+                **({"played_date": game.get("date")} if moved_from else {}),
                 "away_score": game.get("away_score"),
                 "home_score": game.get("home_score"),
                 "winner": game.get("winner"),
@@ -1044,8 +1072,35 @@ def cmd_ledger(args) -> int:
             }, closing=closing, closing_reason=closing_reason)
             settled += 1
 
-    print(f"settled {settled} game(s); {unresolved} not final yet")
+    print(f"settled {settled} game(s); {unresolved} not final yet"
+          + (f"; {voided} cancelled, recorded as void" if voided else ""))
     return EXIT_OK
+
+
+def _moved_game_resolution(row, game_on_date, fetch_instances):
+    """What became of a game that is not final on its own date.
+
+    Returns ("final", game) when the same gamePk is final under another date
+    (postponed and made up), ("void", reason) when every schedule entry for it
+    says Cancelled, and ("pending", None) otherwise -- including when the
+    lookup itself fails, because an unanswered question is never a void.
+
+    The by-game lookup is only made for a game the date's own schedule calls
+    cancelled/postponed or no longer lists; an in-progress or not-yet-started
+    game costs no extra request.
+    """
+    if game_on_date is not None and game_on_date.get("state") != "cancelled":
+        return "pending", None
+    try:
+        instances = fetch_instances(row["game_pk"])
+    except Exception:  # noqa: BLE001 -- any provider failure means "ask again tomorrow"
+        return "pending", None
+    finals = [g for g in instances if g.get("state") == "final"]
+    if finals:
+        return "final", finals[-1]
+    if instances and all(g.get("detailed_state") == "Cancelled" for g in instances):
+        return "void", "game cancelled, never played (schedule state: Cancelled)"
+    return "pending", None
 
 
 def _settlement_closing(rec, snapshot_series):
