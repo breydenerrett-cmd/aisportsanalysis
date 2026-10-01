@@ -2676,3 +2676,8 @@
 {"fetched_utc": "2026-09-30T23:47:36.053475+00:00", "game_date": "2026-09-30", "poll": true}
 {"fetched_utc": "2026-09-30T23:55:25.319497+00:00", "game_date": "2026-09-30", "poll": true}
 {"fetched_utc": "2026-10-01T00:00:06.421471+00:00", "game_date": "2026-09-30", "poll": true}
+{"fetched_utc": "2026-10-01T00:17:36.547504+00:00", "game_date": "2026-09-30", "poll": true}
+{"category": "other", "date": "2026-09-30", "first_seen_utc": "2026-10-01T00:17:36.547504+00:00", "player": "Elieser Hern\u00e1ndez", "player_id": 622694, "team": "ATL", "transaction_id": 944785}
+{"category": "other", "date": "2026-09-30", "first_seen_utc": "2026-10-01T00:17:36.547504+00:00", "player": "Ricky Vanasco", "player_id": 676568, "team": "ATL", "transaction_id": 944786}
+{"category": "other", "date": "2026-09-30", "first_seen_utc": "2026-10-01T00:17:36.547504+00:00", "player": "Elieser Hern\u00e1ndez", "player_id": 622694, "team": "ATL", "transaction_id": 944787}
+{"fetched_utc": "2026-10-01T00:17:38.350415+00:00", "game_date": "2026-09-30", "poll": true}
