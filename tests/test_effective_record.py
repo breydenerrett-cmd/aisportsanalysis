@@ -644,5 +644,54 @@ class MlbSnapshotAcceptsAnInjectedResultsStore(_TempPathCase):
         self.assertTrue(snap["current"]["available"])
 
 
+
+class LedgerItselfShowsPostseasonTest(unittest.TestCase):
+    """The results store in a deployed image can be weeks behind, so the
+    postseason split must not depend on it. Found 2026-10-01: three prop
+    fills on a Wild Card game were counted as regular season because a prop
+    entry freezes no game_type and the store knew no postseason game."""
+
+    def _hist(self):
+        return {"days": [
+            {"date": "2026-09-27", "graded": [
+                {"kind": "prop", "game_pk": 823400, "entry_class": "fill", "result": "WIN",
+                 "price": -120}]},
+            {"date": "2026-09-30", "graded": [
+                {"kind": "game", "game_pk": 849842, "game_type": "F", "entry_class": "fill",
+                 "result": "WIN", "price": -134},
+                {"kind": "prop", "game_pk": 849842, "entry_class": "fill", "result": "LOSS",
+                 "price": -130},
+                # a props-only night: nothing on the card freezes a game_type
+                {"kind": "prop", "game_pk": 849999, "result": "WIN", "price": -110}]},
+        ]}
+
+    def test_props_on_a_postseason_game_classify_without_the_results_store(self):
+        from src.report import effective_record as er
+        hist = self._hist()
+        pks = er._ledger_postseason_pks(hist)
+        self.assertIn(849842, pks)
+        self.assertIn("849842", pks)
+        self.assertIn(849999, pks)
+        self.assertNotIn(823400, pks)
+        counted, postseason = er._v2_date_split(hist, pks)
+        self.assertEqual(counted, {"2026-09-27"})
+        self.assertEqual(postseason, {"2026-09-30"})
+        counted_picks, postseason_picks = er._v2_market_breakdown(hist, pks)
+        self.assertEqual(counted_picks, {})
+        self.assertEqual(sum(f["n_staked"] for f in postseason_picks.values()), 1)
+
+    def test_without_it_the_same_props_are_counted(self):
+        # The defect, pinned: an empty store-derived set counts the prop.
+        from src.report import effective_record as er
+        counted, _ = er._v2_date_split(self._hist(), frozenset())
+        self.assertIn("2026-09-30", counted)
+
+    def test_a_date_outside_this_seasons_window_is_not_swept_in(self):
+        from src.report import effective_record as er
+        hist = {"days": [{"date": "2027-04-10", "graded": [
+            {"kind": "prop", "game_pk": 900001, "result": "WIN", "price": -110}]}]}
+        self.assertEqual(er._ledger_postseason_pks(hist), frozenset())
+
+
 if __name__ == "__main__":
     unittest.main()

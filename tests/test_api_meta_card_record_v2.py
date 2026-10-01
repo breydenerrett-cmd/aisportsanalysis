@@ -112,12 +112,20 @@ class CardRecordMlbV2FlatAliasesMatchRecordLinesExpectation(unittest.TestCase):
 
     def test_every_flat_alias_matches_the_combined_figure_it_mirrors(self):
         from api.card import get_card_record
+        # CHANGED 2026-10-01. The flat keys used to mirror `combined`, and
+        # this test said so. api/card.py moved them to effective_record's
+        # counted cohort (regular season only, registration 11.1) because
+        # `combined` pools postseason entries in; the two were equal only
+        # while the ledger held no postseason card. It has held some since
+        # 2026-09-29, so the assertion that matters is the documented one:
+        # the flat keys equal the counted record the rest of the site shows.
+        from src.report import effective_record
         payload = get_card_record(request=None, sport="mlb", rule="v2")
-        combined = payload.get("combined") or {}
+        counted = effective_record.build()["sports"]["mlb"]["current"]
         for key in self.ALIAS_KEYS:
             self.assertIn(key, payload, f"flat `{key}` missing from the v2 record payload")
-            self.assertEqual(payload[key], combined.get(key),
-                             f"flat `{key}` disagrees with combined.{key}")
+            self.assertEqual(payload[key], counted.get(key),
+                             f"flat `{key}` disagrees with the counted record's {key}")
 
     def test_the_nested_shape_is_untouched(self):
         """This fix only ADDS flat keys -- main/plus_money/fills/combined

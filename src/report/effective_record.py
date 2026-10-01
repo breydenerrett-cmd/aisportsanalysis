@@ -539,6 +539,75 @@ def _v2_tally_one(slot: dict, entry: Mapping) -> None:
         slot["profit_units"] += entry.get("profit_units") or 0.0
 
 
+def _regular_game_pks(results_store: Mapping) -> frozenset:
+    """Every `game_pk` the results store explicitly marks regular season
+    ("R"), in str and int form. Where the store has an opinion it outranks
+    the calendar rule in `_ledger_postseason_pks`."""
+    pks: set = set()
+    for row in (results_store or {}).values():
+        if (row or {}).get("game_type") != "R":
+            continue
+        pk = (row or {}).get("game_pk")
+        if pk is None:
+            continue
+        pks.add(pk)
+        pks.add(str(pk))
+        try:
+            pks.add(int(pk))
+        except (TypeError, ValueError):
+            pass
+    return frozenset(pks)
+
+
+def _ledger_postseason_pks(hist: Mapping) -> frozenset:
+    """Game ids the LEDGER ITSELF shows to be postseason, in str and int form.
+
+    `_postseason_game_pks` reads the results store, and the store a deployed
+    image carries can be weeks behind (found 2026-10-01: it stopped at 09-23,
+    so it knew no postseason game at all). A game entry freezes its own
+    `game_type`, so it classified anyway; a prop entry does not, so the three
+    prop fills on 2026-09-30 were counted as regular season, and the public
+    record said "7 days through 09-30" when the counted record is 6 days
+    through 09-27. Had one of them been a pick it would have been counted,
+    against registration 11.1.
+
+    Two sources, neither needing the results store: a game id seen on any
+    entry whose frozen `game_type` is not "R" (a prop on the same game then
+    classifies with it), and every game id on a card dated inside this
+    season's postseason calendar (`postseason_config`), which covers a night
+    that publishes props only. The frozen field alone is not enough: it is
+    "R" on every prop and on any game whose dossier named no type
+    (docs/CARD_V2_IMPLEMENTATION_ERRATUM_2026-09-22.md, E6).
+
+    The caller subtracts every id the results store explicitly calls
+    regular season, so where the store knows a game it still decides.
+    """
+    try:
+        from src.analysis import postseason_config as pc
+        first, last = pc.REGULAR_SEASON_ENDS, pc.CALENDAR["world_series"]["end"]
+    except Exception:  # noqa: BLE001 -- the frozen game_type rule still applies
+        first, last = None, None
+    pks: set = set()
+    for day in hist.get("days") or ():
+        date = str(day.get("date") or "")
+        in_window = bool(first and last and first < date <= last)
+        for entry in day.get("graded") or ():
+            frozen_type = entry.get("game_type")
+            if not (in_window or (frozen_type and frozen_type != "R")):
+                continue
+            for key in ("game_pk", "game_id"):
+                value = entry.get(key)
+                if value is None:
+                    continue
+                pks.add(value)
+                pks.add(str(value))
+                try:
+                    pks.add(int(value))
+                except (TypeError, ValueError):
+                    pass
+    return frozenset(pks)
+
+
 def _v2_market_breakdown(hist_v2: Mapping, postseason_pks: frozenset = frozenset()) -> tuple:
     """(counted_breakdown, postseason_breakdown), each per-kind (game/
     prop/total), built in one pass over `history_v2`'s own settled
@@ -621,7 +690,8 @@ def _v2_published_rows(path: str) -> tuple:
 
 def _v2_cohort(*, path: str, rule_id: str, status: str, label: str,
                notice: Optional[str] = None,
-               postseason_pks: frozenset = frozenset()) -> dict:
+               postseason_pks: frozenset = frozenset(),
+               known_regular_pks: frozenset = frozenset()) -> dict:
     try:
         rec = card_ledger.record_v2(path=path)
         hist = card_ledger.history_v2(path=path, limit=None)
@@ -636,6 +706,8 @@ def _v2_cohort(*, path: str, rule_id: str, status: str, label: str,
     # provably the sum of `market_breakdown`'s own slices (never a second,
     # possibly-drifting figure from `record_v2()["combined"]`, which still
     # pools postseason in -- see `counted_scope`).
+    postseason_pks = frozenset(postseason_pks) | (
+        _ledger_postseason_pks(hist) - frozenset(known_regular_pks))
     market_breakdown, postseason_breakdown = _v2_market_breakdown(hist, postseason_pks)
     fills, postseason_fills = _v2_fills_split(hist, postseason_pks)
     headline = _sum_figs(list(market_breakdown.values())) if market_breakdown else _blank_fig()
@@ -729,13 +801,23 @@ def mlb_snapshot(*, v1_path: Optional[str] = None, v2_path: Optional[str] = None
     v1_rule_id = daily_card.CARD_RULE
     v2_rule_id = best_bets_card.V2.rule_id
 
+    # Read the store once: it answers both "which games are postseason" and
+    # "which games are known to be regular season".
+    if results_store is None:
+        from src.pipeline import history as history_mod
+        try:
+            results_store = history_mod.read_results()
+        except Exception:  # noqa: BLE001 -- honest-absence, never a 500
+            results_store = {}
     postseason_pks = _postseason_game_pks(results_store)
+    regular_pks = _regular_game_pks(results_store)
 
     current_is_v2 = card_mod.ACTIVE_CARD_RULE == "v2"
     v2_cohort = _v2_cohort(
         path=v2_path, rule_id=v2_rule_id,
         status="current" if current_is_v2 else "previous",
-        label="Our value card", postseason_pks=postseason_pks)
+        label="Our value card", postseason_pks=postseason_pks,
+        known_regular_pks=regular_pks)
     v1_cohort = _v1_style_cohort(
         sport="mlb", path=v1_path, rule_id=v1_rule_id, filter_rule=None,
         status="previous" if current_is_v2 else "current",
