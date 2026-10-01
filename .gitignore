@@ -195,6 +195,11 @@ evidence/tmp*.tmp
 # bought back later" reasoning as the prop-price block above.
 !data/processed/batter_props_raw.jsonl
 !data/processed/batter_props.jsonl
+# Per-phase capture done-state for NFL and MMA. Ignored until 2026-10-01, so
+# every fresh runner started with an empty list and re-bought the same board
+# on almost every slot (about 240 credits a day, 34% of live spend).
+!data/processed/nfl_capture_done.jsonl
+!data/processed/mma_capture_done.jsonl
 # Added with packet W6 (InformationEvent free-environment layer,
 # src/board/events.py): a projected event is a deterministic re-derivation
 # of rows already tracked above, but the ids/dedup state it accumulates are

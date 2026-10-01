@@ -97,7 +97,7 @@ def poll(*, live_dir=DEFAULT_LIVE_DIR, fetch_scores=None, spend_guard=None,
             spend_guard = refuse_spend
 
     # Check budget
-    decision = spend_guard(SCORES_FAMILY, 1, now=now, env=env)
+    decision = spend_guard(SCORES_FAMILY, 1, now=now)
     if not decision.allowed:
         return {"skipped": decision.reason}
 

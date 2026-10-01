@@ -134,6 +134,9 @@ PROP_STAT_RULES: dict[str, str] = {
     "batter_home_runs": "hr",
     "batter_rbis": "rbi",
     "batter_runs": "r",
+    # The odds feed and the card name this market batter_runs_scored; without
+    # the alias every such pick graded VOID "no settlement rule" (4 on V2).
+    "batter_runs_scored": "r",
     "batter_walks": "bb",
     "batter_strikeouts": "k",
     "batter_stolen_bases": "sb",
