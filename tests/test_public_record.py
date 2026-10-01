@@ -280,5 +280,32 @@ class PublicRoutesAreBuiltOncePerLedgerState(unittest.TestCase):
             self.assertNotIn(("history", (0, "mlb", None)), card_api._PUBLIC_MEMO)
 
 
+
+@unittest.skipUnless(_HAVE_FASTAPI, "fastapi not installed")
+class PostseasonIsMarkedByTheServer(unittest.TestCase):
+    """A prop entry freezes game_type "R" even on a postseason game, so the
+    page cannot tell. The public history says it for each V2 entry."""
+
+    def test_a_prop_on_a_postseason_game_is_marked_with_its_game(self):
+        payload = {"days": [
+            {"date": "2026-09-30", "graded": [
+                {"kind": "game", "game_pk": 849842, "game_type": "F", "result": "WIN"},
+                {"kind": "prop", "game_pk": 849842, "game_type": "R", "result": "LOSS"}]},
+            {"date": "2026-09-20", "graded": [
+                {"kind": "prop", "game_pk": 823000, "game_type": "R", "result": "WIN"}]},
+        ]}
+        with mock.patch.object(card_api, "_results_store", return_value={}):
+            marked = card_api._mark_postseason(payload)
+        late, early = marked["days"]
+        self.assertEqual([e["postseason"] for e in late["graded"]], [True, True])
+        self.assertEqual([e["postseason"] for e in early["graded"]], [False])
+        # the input rows are not modified
+        self.assertNotIn("postseason", payload["days"][0]["graded"][0])
+
+    def test_a_fault_leaves_the_payload_as_it_came(self):
+        payload = {"days": "not a list"}
+        self.assertEqual(card_api._mark_postseason(payload), payload)
+
+
 if __name__ == "__main__":
     unittest.main()

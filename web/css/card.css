@@ -528,6 +528,9 @@
   word-break: break-all;
 }
 
+/* V2 day: fills sit apart from the picks, under their own heading (cardrecord.js dayRows). */
+.crp-day__group--fills { margin-top: var(--sp-4); padding-top: var(--sp-5); border-top: 1px dashed var(--v-edge, var(--edge-1)); }
+
 .crp-pick-bet { display: flex; flex-direction: column; gap: 2px; max-width: 320px; }
 .crp-pick-bet__text { font-size: 14.5px; font-weight: 600; color: var(--text-2); }
 .crp-pick-bet__label { font-family: var(--font-mono); font-size: 12px; letter-spacing: .1em; color: var(--text-dim); }

@@ -45,6 +45,7 @@ import { el, clear, renderError, renderLoading, notYetAvailable, formatAmerican 
 import { bookLabel } from "./labels.js";
 import { loadCheckoutState, NOT_ON, recordCtaLabel } from "./checkout.js";
 import { NFL_NOTICE, NFL_RETIRED_RULE, MLB_SHADOW_RULE } from "./sport.js";
+import { FILL_TAG, POSTSEASON_TAG_RECORD, entryRow } from "./entrytext.js";
 
 // GET /card/history's own default (api/card.py's DEFAULT_HISTORY_LIMIT) --
 // kept in sync by eye rather than fetched, since it only ever changes the
@@ -509,7 +510,172 @@ function pickRow(pick, kind = "game") {
   return tr;
 }
 
-function dayBlock(day) {
+/* ---------------------------------------------------------------------
+ * V2 DAYS. GET /card/history?rule=v2 sends each day as `graded`: one entry
+ * per published item (`entry_class` "pick" or "fill"), with no `bet`
+ * sentence, usually no single book name and no receipt hash on the day. The
+ * words for an entry come from web/js/entrytext.js, the same module the
+ * landing page's sample card uses. This page is the ledger, so nothing is
+ * hidden from it except a withdrawn entry, which is counted in one line
+ * instead of listed as a bet. An entry priced at -200 or shorter IS listed.
+ * ------------------------------------------------------------------- */
+
+const V1_PICK_LISTS = ["picks", "prop_picks", "total_picks"];
+
+function hasV1Picks(day) {
+  return V1_PICK_LISTS.some((key) => Array.isArray(day[key]) && day[key].length > 0);
+}
+
+function tallyRows(rows) {
+  const count = (outcome) => rows.filter((r) => r.outcome === outcome).length;
+  const units = rows.reduce((sum, r) => sum + (r.returnUnits !== null ? r.returnUnits : 0), 0);
+  return {
+    n: rows.length,
+    wins: count("WIN"), losses: count("LOSS"), pushes: count("PUSH"), voids: count("VOID"),
+    units: Math.round(units * 10000) / 10000,
+  };
+}
+
+/** The pure half of a V2 day: which rows the reader sees, in stored order,
+ * split into picks and fills, plus the withdrawn count and a tally of each
+ * group computed from the LISTED rows. `shape` is "v2" (a `graded` list with
+ * something in it), "empty" (`graded` is an empty list and the older rule's
+ * lists are absent too) or "v1" (everything else: the retired rule, NFL, UFC,
+ * which keep their own rendering path untouched). */
+export function dayRows(day) {
+  const entries = Array.isArray(day && day.graded) ? day.graded : null;
+  if (!entries || (!entries.length && hasV1Picks(day))) return { shape: "v1" };
+  if (!entries.length) {
+    return { shape: "empty", picks: [], fills: [], withdrawn: 0,
+      picksTally: tallyRows([]), fillsTally: tallyRows([]), hash: null };
+  }
+  const picks = [];
+  const fills = [];
+  let withdrawn = 0;
+  for (const raw of entries) {
+    const entry = raw && typeof raw === "object" ? raw : {};
+    if (entry.withdrawn) { withdrawn += 1; continue; }
+    const row = entryRow(entry, { lenient: true });
+    (row.fill ? fills : picks).push(row);
+  }
+  return {
+    shape: "v2", picks, fills, withdrawn,
+    picksTally: tallyRows(picks), fillsTally: tallyRows(fills),
+    // history_v2 sends no hash on a day today; one that arrives under the
+    // name the older rule uses is shown, and an absent one prints nothing.
+    hash: day.published_row_hash || null,
+  };
+}
+
+function wlpText(t) {
+  return `${t.wins}-${t.losses}-${t.pushes}${t.voids ? `, ${t.voids} void${t.voids === 1 ? "" : "s"}` : ""}`;
+}
+
+/** "Picks: 2-1-0, +1.20u. Fills: 3-2-0, +0.13u." -- from the listed rows, so
+ * a reader can reconcile them with the day figure in the header above. */
+export function reconcileText(model) {
+  const p = model.picksTally;
+  const f = model.fillsTally;
+  const parts = [p.n ? `Picks: ${wlpText(p)}, ${unitsFmt(p.units)}.` : "Picks: none."];
+  if (f.n) parts.push(`Fills (never counted in the record): ${wlpText(f)}, ${unitsFmt(f.units)}.`);
+  if (model.withdrawn) {
+    parts.push(`The figure above also includes the ${model.withdrawn === 1 ? "1 withdrawn entry"
+      : `${model.withdrawn} withdrawn entries`}.`);
+  }
+  return parts.join(" ");
+}
+
+export function withdrawnText(n) {
+  return `${n} ${n === 1 ? "entry was" : "entries were"} withdrawn before the game and `
+    + `${n === 1 ? "is" : "are"} not counted in the record.`;
+}
+
+function entryRowNode(row) {
+  const tr = el("tr", { "data-hook": "record-entry-row", "data-kind": row.fill ? "fill" : "pick",
+    "data-result": row.outcome || "" });
+  const betCell = el("td", { class: "crp-pick-bet" });
+  betCell.appendChild(el("span", { class: "crp-pick-bet__text", text: row.bet }));
+  if (row.fill) {
+    betCell.appendChild(el("span", { class: "crp-pick-bet__kind", "data-hook": "record-fill-tag", text: FILL_TAG }));
+  }
+  if (row.postseason) {
+    betCell.appendChild(el("span", { class: "crp-pick-bet__kind", "data-hook": "record-postseason-tag",
+      text: POSTSEASON_TAG_RECORD }));
+  }
+  tr.appendChild(betCell);
+
+  const chip = RESULT_CHIP[row.outcome] || { cls: "day-settle--pending" };
+  const resultCell = el("td", { class: "crp-pick-result" });
+  resultCell.appendChild(el("span", { class: `day-settle ${chip.cls}`, "data-hook": "record-pick-outcome",
+    text: row.resultWord }));
+  if (row.reason) {
+    resultCell.appendChild(el("p", { class: "crp-pick-reason", text: row.reason }));
+  } else if (row.score) {
+    resultCell.appendChild(el("p", { class: "crp-pick-score", text: row.score }));
+  }
+  tr.appendChild(resultCell);
+
+  tr.appendChild(el("td", { text: row.price || "—" }));
+  tr.appendChild(el("td", { text: row.bookText || "—" }));
+  const ret = row.returnUnits;
+  const tone = ret === null ? "" : ret > 0 ? "crp-figure--pos" : ret < 0 ? "crp-figure--neg" : "";
+  tr.appendChild(el("td", { class: tone || null, text: ret === null ? "—" : unitsFmt(ret) }));
+  return tr;
+}
+
+function entryTable(rows) {
+  const wrap = el("div", { class: "ov2-table-wrap" });
+  const table = el("table", { class: "ov2-table" });
+  const thead = el("thead");
+  const hr = el("tr");
+  for (const label of ["BET", "RESULT", "PRICE", "BOOK", "RETURN"]) {
+    hr.appendChild(el("th", { scope: "col", text: label }));
+  }
+  thead.appendChild(hr);
+  table.appendChild(thead);
+  const tbody = el("tbody");
+  for (const row of rows) tbody.appendChild(entryRowNode(row));
+  table.appendChild(tbody);
+  wrap.appendChild(table);
+  return wrap;
+}
+
+/** Everything under a V2 (or empty) day's header. */
+function v2DayBody(card, model) {
+  if (model.shape === "empty") {
+    card.appendChild(el("p", { class: "crp-voids", "data-hook": "record-day-empty",
+      text: "No entries were published this day." }));
+    return;
+  }
+  card.appendChild(el("p", { class: "crp-voids", "data-hook": "record-day-reconcile",
+    text: reconcileText(model) }));
+  if (model.picks.length) {
+    const group = el("div", { class: "crp-day__group", "data-hook": "record-picks" });
+    group.appendChild(entryTable(model.picks));
+    card.appendChild(group);
+  } else if (model.fills.length) {
+    card.appendChild(el("p", { class: "crp-voids", "data-hook": "record-day-no-picks",
+      text: "No pick passed every check that night, so the card listed fills only." }));
+  }
+  if (model.fills.length) {
+    const group = el("div", { class: "crp-day__group crp-day__group--fills", "data-hook": "record-fills" });
+    group.appendChild(el("span", { class: "crp-chain__label", text: "Fills, not picks" }));
+    group.appendChild(el("p", { class: "crp-voids", "data-hook": "record-fills-note",
+      text: "Fills are shown and graded here, but they are never counted in the record." }));
+    group.appendChild(entryTable(model.fills));
+    card.appendChild(group);
+  }
+  if (model.withdrawn > 0) {
+    card.appendChild(el("p", { class: "crp-voids", "data-hook": "record-day-withdrawn",
+      text: withdrawnText(model.withdrawn) }));
+  }
+  if (model.hash) {
+    card.appendChild(el("p", { class: "crp-day__hash", "data-hook": "record-day-hash",
+      text: `Published receipt hash: ${model.hash}` }));
+  }
+}
+
+export function dayBlock(day) {
   // `data-date` is the calendar's jump target -- see `calendarDayCell`.
   const card = el("article", { class: "crp-day panel chamfer", "data-hook": "record-day",
     "data-date": day.date || "" });
@@ -531,6 +697,14 @@ function dayBlock(day) {
     head.appendChild(el("span", { class: `crp-day__net ${tone}`.trim(), text: net }));
   }
   card.appendChild(head);
+
+  // V2 days carry `graded`; the retired rule, NFL and UFC carry the three
+  // pick lists and keep the table below exactly as it was.
+  const model = dayRows(day);
+  if (model.shape !== "v1") {
+    v2DayBody(card, model);
+    return card;
+  }
 
   const wrap = el("div", { class: "ov2-table-wrap" });
   const table = el("table", { class: "ov2-table" });

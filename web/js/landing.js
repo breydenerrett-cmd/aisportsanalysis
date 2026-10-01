@@ -17,6 +17,9 @@
 
 import { apiGet, trackFunnelEvent } from "./api.js";
 import { el, clear } from "./dom.js";
+import {
+  FILL_TAG, POSTSEASON_TAG_SAMPLE, dayEntries, entryRow, isHeavyFavourite, tallyText,
+} from "./entrytext.js";
 import { renderDisclaimerFooter, meta as fetchMeta } from "./meta.js";
 import { BETA_TIER } from "./pricing.js";
 import {
@@ -532,6 +535,249 @@ async function fillClosingCta() {
   }
 }
 
+/* =====================================================================
+ * WHAT IS PROVEN AND WHAT IS NOT; THE FREE SAMPLE (2026-10-01)
+ *
+ * Two blocks a stranger needs before the pricing card. Both follow the same
+ * rule as every other record surface on this page: the markup carries
+ * sentences with NO figure in them, and a number appears only when GET /meta
+ * (or the public GET /card/history) has actually answered. A slow or failed
+ * fetch leaves true words, or -- for the sample -- no block at all.
+ * ===================================================================== */
+
+/** The record line of "what is proven": the current MLB rule's own cohort,
+ * the same object the hero panel reads (effective_record.sports.mlb.current).
+ * Says "negative" only when the units are negative, and never implies the
+ * picks make money when they are not. Null for a cohort that has not graded
+ * a night, so the markup's figure-free sentence stays. */
+export function provenRecordSentence(cohort) {
+  if (!cohort || !cohort.available || cohort.grading_state !== "graded") return null;
+  const wl = cohortWL(cohort);
+  const units = cohortUnitsText(cohort);
+  if (!wl || !units || typeof cohort.days !== "number" || cohort.days < 1) return null;
+  const nights = `${cohort.days} night${cohort.days === 1 ? "" : "s"}`;
+  const figures = `${wl}, ${units} units over ${nights} graded`;
+  // The sign picks words through ternaries only -- never a branch that
+  // builds different markup (tests/test_landing_profit_sign_rendering.py).
+  const negative = cohort.profit_units < 0;
+  const lead = negative ? "The record so far is negative for the current rule"
+    : "The record so far for the current rule";
+  const tail = negative ? "."
+    : ". That is a result so far, not evidence that the picks make money.";
+  return `${lead}: ${figures}${tail}`;
+}
+
+/** The research line of "what is proven", from /meta.research -- the same
+ * registry counts fillResearchCounts reads. */
+export function researchSentence(research) {
+  if (!research || typeof research.read !== "number" || research.read < 1
+      || typeof research.surviving !== "number") return null;
+  if (research.surviving === 0) {
+    return `No research idea has survived testing: ${research.read} tested, none survived.`;
+  }
+  return `${research.surviving} of ${research.read} research ideas tested have survived our checks.`;
+}
+
+async function fillProvenBlock() {
+  const recordNode = document.querySelector("[data-hook='proven-record-text']");
+  const researchNode = document.querySelector("[data-hook='proven-research-text']");
+  if (!recordNode && !researchNode) return;
+  try {
+    const meta = await fetchMeta();
+    const sports = meta && meta.effective_record && meta.effective_record.sports;
+    const mlb = sports && sports.mlb;
+    const recordText = provenRecordSentence(mlb && mlb.current);
+    if (recordNode && recordText) recordNode.textContent = recordText;
+    const researchText = researchSentence(meta && meta.research);
+    if (researchNode && researchText) researchNode.textContent = researchText;
+  } catch (err) {
+    // Leave the markup's own figure-free sentences in place.
+  }
+}
+
+/**
+ * THE FREE SAMPLE: the most recent fully graded card, from the public
+ * GET /card/history?limit=1 (api/card.py `_public_history` -- settled days
+ * only, newest first).
+ *
+ * TWO PAYLOAD SHAPES, ONE RENDERER. The live MLB rule (V2) sends each day as
+ * `graded`: every entry the card showed, picks AND fills, each carrying
+ * `entry_class` ("pick" or "fill"), its price, result and profit. The older
+ * rule sends `picks`/`prop_picks`/`total_picks` with a server-written `bet`
+ * sentence and a `book`. The V2 entries carry neither a `bet` sentence nor a
+ * book name today, so the bet line is composed from the entry's own fields
+ * (team, player, side, line, market); a `bet` or `book` that arrives later is
+ * used as sent.
+ *
+ * The pure text half (bet words, price line, result line, fill and postseason
+ * tags, the -200 test) lives in web/js/entrytext.js, shared with the record
+ * page's day-by-day rows, so the two pages cannot word an entry differently.
+ *
+ * HONESTY RULES, each one mirrored from web/js/cardrecord.js or the owner:
+ *   - A fill is labelled a fill, listed under its own heading, summed apart
+ *     from the picks and never called a pick (cardrecord's calendar note).
+ *   - A withdrawn entry is not shown and not counted (record_v2 counts it
+ *     apart); the sample says how many there were.
+ *   - An entry priced at -200 or shorter is never shown on a public card
+ *     (owner ruling, 2026-09-22; landing-live.js `priceQualifies`). The record
+ *     page is the ledger and lists every entry as stored, so only this
+ *     sample filters, and it says how many it left out.
+ *   - A void is a void: no units, the server's reason beside it.
+ *   - Fail closed. A day with no entry, an entry with no readable bet, price
+ *     or result, or any failed fetch hides the whole block -- no empty frame,
+ *     no placeholder figure.
+ */
+const LAST_CARD_TITLE = "Last night's card, as published, with what happened";
+const LAST_CARD_TITLE_OLDER = "The most recent graded card, as published, with what happened";
+
+function lastCardDateLabel(dateIso) {
+  if (!dateIso || !/^\d{4}-\d{2}-\d{2}$/.test(dateIso)) return null;
+  const d = new Date(`${dateIso}T12:00:00Z`);
+  if (Number.isNaN(d.getTime())) return null;
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: "UTC", weekday: "long", month: "short", day: "numeric", year: "numeric",
+  }).format(d);
+}
+
+/** Yesterday's calendar date in US Eastern, as YYYY-MM-DD -- the slate dates
+ * the ledger uses are Eastern. */
+function yesterdayEastern(now) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit",
+  }).formatToParts(now);
+  const get = (type) => Number((parts.find((p) => p.type === type) || {}).value);
+  const prior = new Date(Date.UTC(get("year"), get("month") - 1, get("day") - 1));
+  return prior.toISOString().slice(0, 10);
+}
+
+/** The pure half: a /card/history payload -> what the block will say, or
+ * null (render nothing). `now` is injectable for the "last night" test. */
+export function lastCardModel(payload, now = new Date()) {
+  const days = payload && Array.isArray(payload.days) ? payload.days : [];
+  const dated = days.filter((d) => d && typeof d === "object" && /^\d{4}-\d{2}-\d{2}$/.test(d.date || ""));
+  if (!dated.length) return null;
+  const day = dated.reduce((best, d) => (d.date > best.date ? d : best));
+
+  let withdrawn = 0;
+  let heavy = 0;
+  const picks = [];
+  const fills = [];
+  for (const entry of dayEntries(day)) {
+    if (!entry || typeof entry !== "object") return null;
+    if (entry.withdrawn) { withdrawn += 1; continue; }
+    if (isHeavyFavourite(entry)) { heavy += 1; continue; }
+    const row = entryRow(entry);
+    if (!row) return null;
+    (row.fill ? fills : picks).push(row);
+  }
+  if (!picks.length && !fills.length) return null;
+
+  const dateLabel = lastCardDateLabel(day.date);
+  if (!dateLabel) return null;
+  const notes = [];
+  if (withdrawn) {
+    notes.push(`${withdrawn} ${withdrawn === 1 ? "entry was" : "entries were"} withdrawn before the game `
+      + "and is not shown or counted.");
+  }
+  if (heavy) {
+    notes.push(`${heavy} ${heavy === 1 ? "entry" : "entries"} priced at -200 or shorter ${heavy === 1 ? "is" : "are"} not shown here.`);
+  }
+  return {
+    date: day.date,
+    title: day.date === yesterdayEastern(now) ? LAST_CARD_TITLE : LAST_CARD_TITLE_OLDER,
+    dateLine: `Card for ${dateLabel}. Published before the game, graded the next morning.`,
+    picks,
+    fills,
+    noPicks: !picks.length,
+    notes,
+  };
+}
+
+function lastCardGroup(kind, head, summary, rows, explainer) {
+  const group = el("div", {
+    class: "lc-group panel chamfer", "data-hook": `last-card-${kind}`,
+  });
+  group.appendChild(el("h3", { class: "lc-group__head", text: head }));
+  group.appendChild(el("p", { class: "lc-group__sum", "data-hook": `last-card-${kind}-sum`, text: summary }));
+  if (explainer) {
+    group.appendChild(el("p", { class: "lc-note", "data-hook": `last-card-${kind}-note`, text: explainer }));
+  }
+  const list = el("ul", { class: "lc-list" });
+  for (const row of rows) {
+    const item = el("li", {
+      class: "lc-row", "data-hook": "last-card-row",
+      "data-kind": kind === "fills" ? "fill" : "pick", "data-result": row.outcome,
+    });
+    item.appendChild(el("span", { class: "lc-row__bet", text: row.bet }));
+    if (row.fill) {
+      item.appendChild(el("span", { class: "lc-row__tag", "data-hook": "last-card-fill-tag", text: FILL_TAG }));
+    }
+    if (row.postseason) {
+      item.appendChild(el("span", { class: "lc-row__tag", text: POSTSEASON_TAG_SAMPLE }));
+    }
+    item.appendChild(el("span", { class: "lc-row__meta", text: row.meta }));
+    item.appendChild(el("span", {
+      class: `lc-row__result lc-row__result--${String(row.outcome).toLowerCase()}`,
+      "data-hook": "last-card-result", text: row.result,
+    }));
+    list.appendChild(item);
+  }
+  group.appendChild(list);
+  return group;
+}
+
+/** The DOM half. Returns true when the block was filled and shown; on any
+ * payload it cannot show honestly it empties and hides the section. */
+export function renderLastCard(section, payload, now = new Date()) {
+  const body = section.querySelector("[data-hook='last-card-body']");
+  if (body) clear(body);
+  let model = null;
+  try { model = lastCardModel(payload, now); } catch (err) { model = null; }
+  if (!model || !body) {
+    section.hidden = true;
+    return false;
+  }
+  const title = section.querySelector("[data-hook='last-card-title']");
+  if (title) title.textContent = model.title;
+  const dateNode = section.querySelector("[data-hook='last-card-date']");
+  if (dateNode) dateNode.textContent = model.dateLine;
+
+  if (model.noPicks) {
+    body.appendChild(el("p", {
+      class: "lc-note", "data-hook": "last-card-no-picks",
+      text: "No pick passed every check that night, so the card listed fills only.",
+    }));
+  } else {
+    body.appendChild(lastCardGroup("picks", "Picks", tallyText(model.picks, true), model.picks, null));
+  }
+  if (model.fills.length) {
+    body.appendChild(lastCardGroup("fills", "Fills, not picks", tallyText(model.fills, false), model.fills,
+      "Fills are listed to round out the card. They did not pass every check, so they are not "
+      + "picks and are not counted in the record."));
+  }
+  for (const note of model.notes) {
+    body.appendChild(el("p", { class: "lc-note", "data-hook": "last-card-footnote", text: note }));
+  }
+  body.appendChild(el("a", {
+    class: "wyg-link", href: "index.html#/record-card", "data-hook": "last-card-link",
+    text: "See the whole record",
+  }));
+  section.hidden = false;
+  return true;
+}
+
+export async function fillLastCard() {
+  const section = document.querySelector("[data-hook='last-card']");
+  if (!section) return;
+  try {
+    const payload = await apiGet("/card/history?limit=1");
+    renderLastCard(section, payload);
+  } catch (err) {
+    // Nothing to show, so nothing is shown: the section stays hidden.
+    section.hidden = true;
+  }
+}
+
 function boot() {
   const disclaimerHost = document.querySelector("[data-hook='disclaimer-host']");
   const pricingHost = document.querySelector("[data-hook='pricing-host']");
@@ -544,6 +790,8 @@ function boot() {
   fillProofPanel();
   fillSportTiles();
   fillClosingCta();
+  fillProvenBlock();
+  fillLastCard();
   // Tonight's real slate replaces the hardcoded Aug 28 sample matchup, or
   // degrades to an honest labelled-sample state on failure -- see
   // landing-live.js's module docstring. Fire-and-forget, same rule as

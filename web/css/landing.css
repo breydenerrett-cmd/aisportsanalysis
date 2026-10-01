@@ -518,3 +518,50 @@
   .site-footer { padding: var(--sp-11) var(--gutter-mobile) var(--sp-11); }
   .site-footer__top { flex-direction: column; align-items: flex-start; }
 }
+
+/* ---- what you get / what is proven / the free sample (2026-10-01) -------
+   Reuses .story-grid, .story-card, .pricing-card__list, .callout-list and
+   .section__lede; only what those three blocks need is added here.
+   `min(100%, 300px)` keeps the two columns from forcing a sideways scroll
+   below 340px, and the long-word wrap rules do the same for a prop or team
+   name inside a narrow row. */
+.story-grid.wyg-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  margin-top: var(--sp-12);
+}
+.wyg-list li { line-height: 1.5; overflow-wrap: anywhere; }
+.wyg-name { color: var(--text-hi); font-weight: 600; }
+.wyg-link {
+  color: var(--fresh-text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.wyg-note { margin-top: var(--sp-7); }
+.callout-list li { overflow-wrap: anywhere; }
+.callout-list .story-card__kicker { margin-bottom: var(--sp-3); }
+
+.lc-group { padding: var(--sp-9); --r: var(--r-panel); margin-top: var(--sp-7); }
+.lc-group__head {
+  font-family: var(--font-mono); font-size: 12.5px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--money-label);
+}
+.lc-group__sum { font-size: 15px; line-height: 1.5; color: var(--text-2); margin-top: var(--sp-3); }
+.lc-note { font-size: 14px; line-height: 1.55; color: var(--text-mute); margin-top: var(--sp-5); }
+.lc-list { display: grid; margin-top: var(--sp-5); }
+.lc-row {
+  display: grid; gap: var(--sp-2);
+  padding: var(--sp-6) 0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06);
+  overflow-wrap: anywhere;
+}
+.lc-row:first-child { box-shadow: none; }
+.lc-row__bet { font-size: 16px; line-height: 1.4; font-weight: 600; color: var(--text-hi); }
+.lc-row__tag {
+  font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--text-faint);
+}
+.lc-row__meta { font-size: 14px; color: var(--text-mute); }
+.lc-row__result { font-size: 15px; line-height: 1.45; color: var(--text-2); font-variant-numeric: tabular-nums; }
+.lc-row__result--win { color: #4FE3A4; }
+.lc-row__result--loss { color: #FF6B6B; }
+.lc-group + .wyg-link, .lc-note + .wyg-link { display: inline-block; margin-top: var(--sp-7); }

@@ -83,7 +83,7 @@
   <div class="hero__claim" data-rise data-delay="40" data-hook="hero-claim">
     <span class="eyebrow eyebrow--money">MLB · NFL · UFC — every pick published</span>
     <h1 class="hero__claim-title">Every pick posted before the game.<br>Every loss kept on the record.</h1>
-    <p class="hero__claim-body">MLB and NFL grade automatically the next morning. UFC picks publish before the event and grade in public once results are entered by hand.</p>
+    <p class="hero__claim-body">LineHound posts its picks before the game and keeps every result public, wins and losses. MLB and NFL grade automatically the next morning. UFC picks publish before the event and grade in public once results are entered by hand.</p>
     <div class="hero__cta-group" data-rise data-delay="160">
       <a class="btn btn--primary" href="index.html#/signup" data-hook="cta-signup-hero" data-checkout-cta>Get notified when checkout opens</a>
       <a class="btn btn--ghost" href="index.html#/record-card" data-hook="cta-record-secondary">See every pick, graded</a>
@@ -210,6 +210,87 @@
       </div>
     </div>
   </div>
+</section>
+
+<!-- WHAT YOU GET (2026-10-01). Directly under the hero's record block, so a
+     stranger sees what is free and what is for subscribers before anything
+     else. Every line below names something the code really serves, checked
+     against api/app.py (the `_authed_paid` group versus the public routers)
+     and the primary navigation in web/js/main.js and web/js/sport.js. Bet
+     Check is deliberately not mentioned (owner ruling, 2026-09-22). No
+     figure is typed here. -->
+<section class="section section--tight" id="what-you-get" aria-label="what you get" data-hook="what-you-get">
+  <div class="section__head" data-rise>
+    <span class="eyebrow eyebrow--money">What you get</span>
+  </div>
+  <h2 class="section__title" data-rise data-delay="60">What is free, and what is for subscribers.</h2>
+  <div class="story-grid wyg-grid">
+    <div class="story-card panel chamfer" data-rise data-delay="80" data-hook="wyg-free">
+      <div class="story-card__kicker">Free, no account</div>
+      <ul class="pricing-card__list wyg-list">
+        <li data-hook="wyg-free-record"><span class="wyg-name">The full graded record.</span> Every past MLB, NFL and UFC card, night by night, wins and losses, with a check that the ledger has not been edited. <a class="wyg-link" href="index.html#/record-card">Open the record</a></li>
+        <li data-hook="wyg-free-postseason"><span class="wyg-name">MLB postseason odds.</span> The chances of each series and each club's chance to win the World Series, as model estimates. <a class="wyg-link" href="postseason.html">Open the odds</a></li>
+      </ul>
+    </div>
+    <div class="story-card panel chamfer" data-rise data-delay="120" data-hook="wyg-subscribers">
+      <div class="story-card__kicker">Subscribers</div>
+      <ul class="pricing-card__list wyg-list">
+        <li data-hook="wyg-sub-card"><span class="wyg-name">Tonight's card, before the game.</span> The day's bets with their prices, written to the public ledger before the game. NFL and UFC cards sit on their own pages.</li>
+        <li data-hook="wyg-sub-matchups"><span class="wyg-name">Matchups.</span> Every game on the slate, in depth.</li>
+        <li data-hook="wyg-sub-odds"><span class="wyg-name">Odds.</span> Each tracked book's price for a game, side by side.</li>
+        <li data-hook="wyg-sub-props"><span class="wyg-name">Props.</span> Player props priced for the night, ordered by how likely each one is.</li>
+        <li data-hook="wyg-sub-tennis"><span class="wyg-name">Tennis board.</span> A match board for research. It makes no picks.</li>
+      </ul>
+      <p class="story-card__body wyg-note">After the game, tonight's card joins the free record.</p>
+    </div>
+  </div>
+</section>
+
+<!-- WHAT IS PROVEN AND WHAT IS NOT (2026-10-01). The static sentences carry
+     no figure, so a slow or failed fetch leaves true words. landing.js
+     (fillProvenBlock) swaps in the record and research numbers from GET
+     /meta only. -->
+<section class="section section--tight" aria-label="what is proven and what is not" data-hook="proven-block">
+  <div class="section__head" data-rise>
+    <span class="eyebrow">Straight answers</span>
+  </div>
+  <h2 class="section__title" data-rise data-delay="60">What is proven and what is not.</h2>
+  <ul class="callout-list" data-hook="proven-list">
+    <li class="panel chamfer" data-hook="proven-published">
+      <div class="story-card__kicker">Proven</div>
+      <span data-hook="proven-published-text">Every pick is published before the game. The ledger is hash-chained, so a pick cannot be added or changed afterwards without breaking the chain.</span>
+    </li>
+    <li class="panel chamfer" data-hook="proven-graded">
+      <div class="story-card__kicker">Proven</div>
+      <span data-hook="proven-graded-text">Every pick is graded exactly as it was published. Nothing is re-graded and nothing is edited after the fact.</span>
+    </li>
+    <li class="panel chamfer" data-hook="proven-record">
+      <div class="story-card__kicker">Result so far</div>
+      <span data-hook="proven-record-text">The record so far has not shown that the picks make money. The current figures are at the top of this page.</span>
+    </li>
+    <li class="panel chamfer" data-hook="proven-research">
+      <div class="story-card__kicker">Experimental</div>
+      <span data-hook="proven-research-text">None of the research ideas we have tested has survived our own checks.</span>
+    </li>
+    <li class="panel chamfer" data-hook="proven-postseason">
+      <div class="story-card__kicker">No track record</div>
+      <span data-hook="proven-postseason-text">The postseason odds are model estimates with no track record yet.</span>
+    </li>
+  </ul>
+</section>
+
+<!-- FREE SAMPLE: THE MOST RECENT FULLY GRADED CARD (2026-10-01). HIDDEN
+     BY DEFAULT and unhidden by landing.js (fillLastCard) only when the public
+     GET /card/history?limit=1 answers with a settled day. A failed fetch or
+     an empty answer leaves this whole section hidden: no empty frame, no
+     placeholder figure. -->
+<section class="section section--tight" aria-label="last night's card" data-hook="last-card" hidden>
+  <div class="section__head">
+    <span class="eyebrow eyebrow--money">A free sample</span>
+  </div>
+  <h2 class="section__title" data-hook="last-card-title">Last night's card, as published, with what happened</h2>
+  <p class="section__lede" data-hook="last-card-date"></p>
+  <div data-hook="last-card-body"></div>
 </section>
 
 <!-- HOW IT WORKS -->
@@ -470,7 +551,7 @@
       <ul class="pricing-card__list">
         <li data-hook="pricing-cancel-line" hidden>Cancel anytime, no retention flow — access runs through what you've paid for</li>
         <li>One monthly plan today, no countdown, no percent-off badge</li>
-        <li>Every pick, every sport, the full record</li>
+        <li data-hook="pricing-includes">Tonight's cards before the game, plus Matchups, Odds, Props and the Tennis research board. The graded record stays free</li>
       </ul>
       <a class="btn btn--primary" href="index.html#/signup" data-hook="cta-signup" data-checkout-cta>Get notified when checkout opens</a>
     </div>

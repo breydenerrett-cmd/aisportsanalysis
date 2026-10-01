@@ -433,6 +433,41 @@ def _public_history(payload: dict) -> dict:
     return out
 
 
+def _mark_postseason(payload: dict) -> dict:
+    """Each V2 entry gains `postseason: true/false`, decided the way the
+    counted record decides it (src.report.effective_record: the results
+    store, plus the ledger's own evidence -- a game frozen with a non-"R"
+    type, or a card dated inside this season's postseason calendar).
+
+    The page cannot work this out itself. A prop entry freezes
+    `game_type: "R"` unconditionally, so the record page tagged the two
+    moneyline fills of 2026-09-30 "postseason, not counted" and left the three
+    prop fills on the very same games looking like regular-season entries.
+    Copies the days and entries it marks; the ledger rows are not touched. Any
+    failure leaves the payload exactly as it came."""
+    try:
+        from src.report import effective_record as er
+        days = payload.get("days") or []
+        pks = er._postseason_game_pks() | (
+            er._ledger_postseason_pks({"days": days}) - er._regular_game_pks(_results_store()))
+        marked = []
+        for day in days:
+            entries = [dict(e, postseason=er._is_postseason_entry(e, pks))
+                       for e in (day.get("graded") or [])]
+            marked.append(dict(day, graded=entries))
+        return dict(payload, days=marked)
+    except Exception:  # noqa: BLE001 -- a tag is never worth a 500 on the proof page
+        return payload
+
+
+def _results_store() -> dict:
+    try:
+        from src.pipeline import history as history_mod
+        return history_mod.read_results()
+    except Exception:  # noqa: BLE001
+        return {}
+
+
 # DECLARED BEFORE /card/{date}, because FastAPI matches routes in
 # declaration order and "record" would otherwise be captured as a date and
 # rejected by _validate_date as a 400. (Now also on a different router:
@@ -650,7 +685,7 @@ def _card_history_uncached(request: Request = None, limit: int = DEFAULT_HISTORY
             detail=f"limit must be between 1 and {MAX_HISTORY_LIMIT} (got {limit!r})")
 
     if sport == "mlb" and resolved_rule == "v2":
-        payload = _public_history(card_ledger.history_v2(limit=limit))
+        payload = _mark_postseason(_public_history(card_ledger.history_v2(limit=limit)))
         _record_page_view(request, "card_history", None)
         return payload
 
