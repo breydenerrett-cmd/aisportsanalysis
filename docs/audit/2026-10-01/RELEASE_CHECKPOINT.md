@@ -11,8 +11,8 @@ at 20:13Z. States are tracked separately; "done" is not used.
 | Full suite | 9,165 tests at `e5568bdf`: 18 failures, all in the baseline | same run | pushed earlier (19:43Z) on its module tests; in the same full run |
 | Committed | `1c1a9a60` | `e5568bdf` | `8aa3b070` |
 | Pushed | 20:13Z (`c9054371`) | 20:13Z | 19:43Z (`87237fbc`) |
-| Staging verified | see "Staging" below | see below | first refresh not yet observed |
-| Production verified | NO | NO | not applicable (runners) |
+| Staging verified | copy and public routes yes; purchase NO | yes, in the browser | first refresh not yet observed |
+| Production verified | NO (deploy stuck since 18:13Z) | NO | not applicable (runners) |
 
 ## Postseason
 
@@ -84,7 +84,7 @@ at 20:13Z. States are tracked separately; "done" is not used.
 `full_suite_e5568bdf_comparison.txt`: PRE_EXISTING 18 (identical identities,
 all Windows-environment), FIXED 0 against the baseline, NEW_EXPECTED 0
 failing (489 tests added, all passing), NEW_REGRESSION 0, UNKNOWN 0.
-Linux CI on `c9054371`: see "Staging".
+Linux CI: red on `c9054371` (12 unguarded route tests, see below), fixed in `c025c181`.
 
 ## Cost
 
@@ -103,6 +103,55 @@ Linux CI on `c9054371`: see "Staging".
   board inside the six hours before kickoff. Both NFL captures observed so
   far were phase captures; the 25-minute refresh itself has not fired yet.
 - Not measured: whether the MMA card needs the same freshness rule.
+
+## Found after the push (20:13Z to 20:40Z)
+
+1. **Correction.** Production already refreshes itself hourly: `forward-capture.yml`
+   dispatches `deploy-prod` on the first slot of each hour when the latest
+   completed tests run is green (built 2026-09-22). I had told the owner it
+   only updated by hand. So a push to the working branch reaches production
+   within the hour. The redundant draft workflow is removed.
+2. **Production has been restarting for lack of memory about every 11 minutes
+   since it was first deployed.** Fly log: `Out of memory: Killed process
+   (uvicorn) anon-rss:878524kB` at 658 s and at 666 s of uptime. That is the
+   second warm-up pass: each of eleven caches starts its own background
+   rebuild and seven run at once (replayed locally). Fix `407a9a7e`: one
+   build at a time process-wide, plus `MALLOC_ARENA_MAX=2`. Local second-pass
+   peak 598 MB -> 526 MB. NOT proven on Linux until it has run past 11
+   minutes in production. The deploy check never saw it because it watches
+   only the first minutes.
+3. **A `deploy-prod` run has been stuck in its Deploy step since 18:13Z.**
+   Every later refresh was cancelled or is waiting, so production's data is
+   from 18:04Z and nothing pushed today after that has reached production.
+4. **Linux CI was red on `c9054371`**: 12 new tests imported route modules
+   without the skip guard CI needs (it runs with no FastAPI). The Windows
+   full-suite comparison could not see that. Fixed in `c025c181`; reproduced
+   and re-checked locally with FastAPI hidden. This was a NEW_REGRESSION that
+   reached origin; the local "zero new" claim was true only for Windows.
+5. **`/meta` took 5.7 to 10.2 s on staging**, so the landing page showed the
+   cautious buttons and an empty record for that long. It rebuilt every
+   ledger figure three times per request. Fixed in `2a12e552`: built once
+   per ledger state (1.16 s -> under 1 ms locally on repeat requests).
+
+## Staging (linehound-staging.fly.dev, checked in the browser 20:31Z to 20:37Z)
+
+- Release is deployed there (`c9054371`, then `c025c181`).
+- `/card/record` and `/card/history` answer without a token; record reads
+  6 days. `/admin/revenue` answers 401 without the admin token.
+- Postseason page: renders on real data. Staging's stores are current, so
+  bullpens ARE included there ("3 of 4 inputs are current and used ...
+  bullpens through Sept 30"); starters: 1 confirmed, 15 projected, 0 stale.
+  NYY at TB shows "NYY: TBD", the no-starter estimate and a labelled
+  scenario. No banned word, nothing "undefined".
+- Checkout is ON in staging (`/meta` billing.checkout = "on", health "ok").
+  The signup page there reads "Start your 7-day free trial ... A card is
+  required to start the trial. Nothing is charged for 7 days, and you can
+  cancel before then." Not done: an actual purchase on staging (that needs a
+  person and Stripe's test card; whether staging holds test or live keys was
+  not checked).
+- Not verified on staging: the completion page after a real checkout; the
+  memory fix (needs 11+ minutes of uptime; staging redeploys more often
+  than that).
 
 ## Release
 
