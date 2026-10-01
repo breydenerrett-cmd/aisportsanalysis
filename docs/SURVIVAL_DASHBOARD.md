@@ -1,6 +1,6 @@
 # LineHound survival dashboard
 
-Generated 2026-10-01 21:56Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and `docs/sales/pipeline.csv`, not this file.
+Generated 2026-10-01 22:09Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and `docs/sales/pipeline.csv`, not this file.
 
 | | |
 |---|---|
@@ -66,6 +66,10 @@ No rule here has evidence of an edge. Closing-line value and calibration: see `d
 
 ## Product errors
 
+- Production memory incident (2026-10-01): the site restarted for lack of memory about every 11 minutes from its first deploy until 21:39Z. Fixed by serialising cache rebuilds (407a9a7e), deployed 21:41Z. Soak: see docs/audit/2026-10-01/PRODUCTION_RECOVERY.md. /health now shows uptime, memory and build concurrency.
+- Record page: for the current rule the day-by-day section lists no picks (empty table under each night's totals). This is the page outreach points people to. Fix in progress 2026-10-01.
+- Capture cadence: forward-capture slots have completed about 1.5 times an hour since 19:06Z against about 4.5 before. The afternoon-slate job takes about 20 minutes of every 30 and shares the capture job's lock, and a newer waiting slot cancels the older one. Odds on the site and the NFL card's board go stale in between. Not yet diagnosed further.
+- Hourly production refresh gate: it checks that the latest COMPLETED tests run is green, not that the commit being deployed has a green run. A push made in the first 15 minutes of an hour can reach production before its own tests finish. Workflow YAML on the default branch; owner decision.
 - UFC picks never graded (results are entered by hand).
 - V2 has published zero MAIN picks since 2026-09-26; every entry since is a fill. The public MAIN record is frozen at 4 dates.
 - Shadow ledgers hold one wrong permanent VOID (game 824785, played a day late). Append-only correction pending.
@@ -78,7 +82,6 @@ No rule here has evidence of an edge. Closing-line value and calibration: see `d
 
 ## Top blockers
 
-- Production refresh is stuck. CORRECTION (2026-10-01 20:15Z): production already refreshes itself every hour (the forward-capture workflow dispatches deploy-prod on the first slot of each hour when the latest tests run is green; built 2026-09-22). My earlier note that it only updates by hand was wrong. What is true: a deploy-prod run has been stuck in its Deploy step since 18:13Z, so production's data is from 18:04Z and every later refresh has been cancelled or is waiting behind it. Cancelling that run lets the next one deploy the current branch head, which now includes the buying path and the postseason page. Also still true: deploy-prod does not restore the historical-store cache, so production's results, pitcher and standings stores are the repository's old copies.
 - linehound.app does not load: the domain is on Cloudflare with no A, AAAA or CNAME record and Fly holds no certificate for it. Outreach links use linehound-prod.fly.dev until it does. Checkout cannot be switched on before it does, because buyers are returned to that domain. Steps: docs/GO_LIVE_2026-09-28.md section 1. Owner.
 - No distribution: zero outreach sent. The first 20 are written and ready to paste in docs/sales/batch_01.md; log each send with `python scripts/outreach_batch.py sent --batch 1 --items ...`. Owner.
 - Stripe is not live: account verification pending (date of birth, phone), then the five Fly secrets. Owner.
@@ -97,5 +100,5 @@ No rule here has evidence of an edge. Closing-line value and calibration: see `d
 
 **Next customer action:** Brey: send batch 1 (docs/sales/batch_01.md). Start with items 1 and 2 (two forums where promotion is allowed), then the four creators and five X replies; at most five Discord notes a day. Log each with scripts/outreach_batch.py.
 
-**Next research action:** No rule has shown positive expected value (docs/audit/2026-10-01/LOSS_DIAGNOSIS.md). Pre-register one forward test: do entries that pass V2's value gate do worse than entries that fail it? No gate or threshold changes until that test reports.
+**Next research action:** docs/VALUE_SCAN.md is now the standing measurement (python scripts/value_scan.py): 43 populations, 0 candidates, 6 with enough data and no evidence, 37 too few. The one hypothesis worth a pre-registered forward test is whether V2's value gate selects the worse entries (z -1.43 in shadow A). No gate or threshold changes until that test reports.
 
