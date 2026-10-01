@@ -82,5 +82,54 @@ then soak for 45 to 60 minutes.
 
 ## Soak
 
-Sampler: one `/health` read a minute from 21:43:47Z (scratch
-`soak/prod_health.jsonl`). Result recorded below when it has run.
+
+One read of production `/health` a minute at first, then every few minutes
+(25 reads from 21:43:47Z to 22:26:50Z, every one HTTP 200). The figures
+are cumulative since the process started, so a restart between reads would
+show as a new `started_utc`, a smaller `uptime_s` and a reset pass count.
+
+| Read at (Z) | Uptime | Warm-up passes done | RSS MB | Peak RSS MB | Cache builds | Most builds at once |
+|---|---|---|---|---|---|---|
+| 21:43:47 | 2 min 38 s | 1 | 234.6 | 572.5 | 15 | 1 |
+| 21:52:47 | 11 min 37 s | 2 | 292.4 | 576.5 | 31 | 1 |
+| 22:04:00 | 22 min 50 s | 3 | 317.6 | 588.6 | 46 | 1 |
+| 22:15:35 | 34 min 25 s | 4 | 340.0 | 588.6 | 61 | 1 |
+| 22:23:33 | 42 min 24 s | 5 | 344.0 | 588.6 | 73 | 1 |
+| 22:26:50 | 45 min 41 s | 5 | 347.0 | 588.6 | 76 | 1 |
+
+- **Uptime:** one process, started 21:41:05Z, never restarted in 45 minutes (the old build was killed at 658 s and 666 s). Restart count 0. Fly machine version 12, last updated 21:41:03Z, health check passing; the last 100 log lines (22:05Z to 22:26Z) contain no "Out of memory", SIGKILL or restart line.
+- **Old failure point passed:** the second warm-up pass, the one that killed the old build, completed at about 697 s of uptime with the builds still one at a time.
+- **Memory:** 234.6 MB after the first pass; peak during the first pass 572.5 MB, during later passes 588.6 MB (machine: 1,024 MB). Between passes it sits at 292.4 to 347.0 MB.
+- **Not a clean plateau:** resident memory between passes has risen with each cycle (234.6 -> 292.4 -> 317.6 -> 340.0 -> 344.0 -> 347.0 MB), about 20 MB a cycle at first and less in the last two. The peak has not moved since the third pass. At this rate it is hours from the limit, and the hourly refresh restarts the process anyway, but a level-off has not been shown yet.
+- **Serialised:** `builds.max_running` is 1 after 76 cache builds.
+- **Verdict:** the memory incident is production-verified for the 45-minute soak the owner set: no restart, no memory kill, five refresh cycles completed. The slow rise between passes is left open and is watched on `/health`.
+
+
+## Credit change: not confirmed
+
+`credit_efficiency_2026-10-01T2217Z.txt`. From 18:42Z (done markers
+committed) to 22:17Z, 3.6 hours:
+
+- Spend: 24 credits, 6.7 an hour, against 23.6 an hour before. NFL 12, prop
+  listing 9, MMA 1, prop prices 1, batter props 1.
+- NFL captures: four, at 19:06, 20:05, 21:19 and 22:16Z, each a scheduled
+  phase (t72h, t24h, t6h or t2h for some game), about 820 rows each. The
+  25-minute game-day refresh shipped at 19:43Z has NOT fired once: every
+  slot that ran either found a phase due or came less than 25 minutes after
+  one.
+- NFL card freshness (a kickoff within 6 hours and the board under 60
+  minutes old): 202 of 215 minutes, 94%. The 13 stale minutes fall between
+  the 20:05Z and 21:19Z captures.
+- That gap is not the cadence rule. Capture slots themselves stopped
+  completing: a single slot ran 44 minutes (20:55Z to 21:39Z) because
+  "engine slate" took 19 minutes, twice, and the capture job shares one lock
+  with the afternoon-slate job, which takes about 20 minutes of every 30.
+  Slots completed about 4.5 an hour before 19:06Z and about 1 an hour after.
+  So part of the lower spend is simply fewer slots, which is a loss, not a
+  saving. MLB capture instants: 3 in 3.6 hours.
+- MMA: 85 captures before, 1 after. No UFC card was due today; whether a
+  fight-week card needs more than the phase captures is not measured.
+- Verdict: keep the change (the every-slot re-buy was 80% of spend and
+  bought the same board again), but do not count the saving until the
+  refresh has fired on a game day with slots completing normally. Sunday is
+  the test. The slow engine slate is being profiled separately.
