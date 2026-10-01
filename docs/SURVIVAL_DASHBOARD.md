@@ -1,6 +1,6 @@
 # LineHound survival dashboard
 
-Generated 2026-10-01 22:55Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and `docs/sales/pipeline.csv`, not this file.
+Generated 2026-10-01 23:32Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and `docs/sales/pipeline.csv`, not this file.
 
 | | |
 |---|---|
@@ -26,7 +26,7 @@ Generated 2026-10-01 22:55Z by `scripts/survival_dashboard.py`. Edit `config/bus
 
 | Item | Monthly | Verdict | Note |
 |---|---|---|---|
-| The Odds API (100K tier) | $59.00 | KEEP | Prices every card. Measured burn before the NFL/MMA re-buy fix: about 550 credits a day (16,500 a month), 80% of it NFL and MMA boards re-bought every slot. Fix pushed 2026-10-01 18:42Z; confirm the drop over the next slots, then the $30 20K tier fits. October is already paid, so a downgrade saves from November. Owner decision. |
+| The Odds API (100K tier) | $59.00 | KEEP | Prices every card. Burn before the NFL/MMA re-buy fix: about 550 credits a day, 80% of it NFL and MMA boards re-bought every slot. After the fix: 6.7 credits an hour measured over 3.6 hours, but capture slots were starved for most of that window, so the saving is NOT confirmed. The 25-minute game-day refresh fired for the first time at 23:20Z. Re-measure after Sunday's games; if it holds, the $30 20K tier fits and saves $29 from November. Owner decision. |
 | Fly.io production (2 shared CPUs, 1 GB, 1 GB volume) | $15.00 (est.) | KEEP | Estimate. Exact figure: Fly dashboard, billing. |
 | Fly.io staging (stops when idle since 2026-10-01) | $3.00 (est.) | REDUCE | Estimate. Was always-on (about $15 estimated); now billed only while someone is using it, plus storage. Exact figure: Fly dashboard, billing. Still serves the paid product free (APP_PUBLIC_DEMO=1): turn the demo off once production is selling. |
 | Domain linehound.app | $1.00 (est.) | KEEP | Amortised estimate. |
@@ -67,8 +67,8 @@ No rule here has evidence of an edge. Closing-line value and calibration: see `d
 ## Product errors
 
 - Production memory incident (2026-10-01): the site restarted for lack of memory about every 11 minutes from its first deploy until 21:39Z. Fixed by serialising cache rebuilds, deployed 21:41Z. 60-minute soak passed: 0 restarts, peak 589 MB of 1,024, steady memory 358 MB and flattening. docs/audit/2026-10-01/PRODUCTION_RECOVERY.md.
-- Record page: fixed locally 2026-10-01, not yet in production. Every night now lists its picks and fills; on a phone the won-lost figure is on the first screen (was 1,884px down) and the result column fits. Pushed after 23:15Z; production picks it up at the next hourly refresh.
-- Capture cadence: forward-capture slots have completed about 1.5 times an hour since 19:06Z against about 4.5 before. The afternoon-slate job takes about 20 minutes of every 30 and shares the capture job's lock, and a newer waiting slot cancels the older one. Odds on the site and the NFL card's board go stale in between. Not yet diagnosed further.
+- Record page: fixed and on staging (5a85b867): every night lists its picks and fills; on a phone the won-lost figure is on the first screen and the result column fits. Production picks it up at the next hourly refresh.
+- Capture cadence: fixed 2026-10-01 23:15Z. Slots had dropped to about one an hour because one step re-read the day's raw files once per observation (21 minutes per run, growing all day). Now 65 seconds on a runner, output byte-identical. docs/audit/2026-10-01/CAPTURE_STARVATION.md. Watch that slots keep completing and production's hourly refresh resumes.
 - Hourly production refresh gate: it checks that the latest COMPLETED tests run is green, not that the commit being deployed has a green run. A push made late in an hour can reach production before its own tests finish. Proposed fix written in docs/audit/2026-10-01/PRODUCTION_RECOVERY.md; workflow edits are the owner's call. Until then: no code push between minute 45 and minute 15.
 - UFC picks never graded (results are entered by hand).
 - V2 has published zero MAIN picks since 2026-09-26; every entry since is a fill. The public MAIN record is frozen at 4 dates.
@@ -100,6 +100,8 @@ No rule here has evidence of an edge. Closing-line value and calibration: see `d
 - Outreach batch 1: 20 paste-ready messages (docs/sales/batch_01.md)
 - Production recovery: stuck deploy cancelled, reviewed release deployed, 60-minute soak passed
 - Admin page shows signups by outreach source; link previews for the landing page and the record link
+- Capture slowdown found and fixed: engine slate 21 minutes -> 65 seconds on a runner
+- Staging billing confirmed in test mode (from /health, no key shown); rehearsal purchase steps in GO_LIVE section 5
 
 **Next customer action:** Brey: send batch 1 (docs/sales/batch_01.md). Start with items 1 and 2 (two forums where promotion is allowed), then the four creators and five X replies; at most five Discord notes a day. Log each with scripts/outreach_batch.py.
 
