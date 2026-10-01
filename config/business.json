@@ -6,7 +6,7 @@
       "usd": 59.0,
       "known": true,
       "class": "KEEP",
-      "note": "Prices every card. After the NFL/MMA re-buy fix (2026-10-01) live spend should fall to about 14k credits a month, which fits the $30 20K tier: REDUCE once one clean week confirms it."
+      "note": "Prices every card. Measured burn before the NFL/MMA re-buy fix: about 550 credits a day (16,500 a month), 80% of it NFL and MMA boards re-bought every slot. Fix pushed 2026-10-01 18:42Z; confirm the drop over the next slots, then the $30 20K tier fits. October is already paid, so a downgrade saves from November. Owner decision."
     },
     {
       "item": "Fly.io production (2 shared CPUs, 1 GB, 1 GB volume)",
@@ -16,11 +16,11 @@
       "note": "Estimate. Exact figure: Fly dashboard, billing."
     },
     {
-      "item": "Fly.io staging (same size, always on, public demo)",
-      "usd": 15.0,
+      "item": "Fly.io staging (stops when idle since 2026-10-01)",
+      "usd": 3.0,
       "known": false,
       "class": "REDUCE",
-      "note": "Estimate. It serves the whole paid product free (APP_PUBLIC_DEMO=1). Stop it or turn the demo off once production is selling."
+      "note": "Estimate. Was always-on (about $15 estimated); now billed only while someone is using it, plus storage. Exact figure: Fly dashboard, billing. Still serves the paid product free (APP_PUBLIC_DEMO=1): turn the demo off once production is selling."
     },
     {
       "item": "Domain linehound.app",
@@ -90,6 +90,7 @@
     "UFC (published; graded by hand)"
   ],
   "top_blockers": [
+    "Production shows only what was in the repository when it was last deployed: tonight's card, odds and results do not reach linehound.app until someone runs deploy-prod again. Staging refreshes on every push; production is manual by design. A paying customer would see a stale card the next day. Needs an owner decision on an automatic production refresh.",
     "Stripe is not live: account verification pending (date of birth, phone), then the five Fly secrets. Owner.",
     "No distribution: zero outreach sent. Target list and scripts in docs/sales/.",
     "Discord feed not wired: needs the webhook secret and one env line on the default branch. Owner + me.",

@@ -1,34 +1,34 @@
 # LineHound survival dashboard
 
-Generated 2026-10-01 18:56Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and `docs/sales/pipeline.csv`, not this file.
+Generated 2026-10-01 19:13Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and `docs/sales/pipeline.csv`, not this file.
 
 | | |
 |---|---|
 | Days until 2026-10-31 | **30** |
-| Monthly cost (known + estimated infrastructure) | $90.00 |
-| Monthly cost incl. Claude at the planning assumption | $290.00 (unknown: Claude subscription that operates the business, BALLDONTLIE) |
+| Monthly cost (known + estimated infrastructure) | $78.00 |
+| Monthly cost incl. Claude at the planning assumption | $278.00 (unknown: Claude subscription that operates the business, BALLDONTLIE) |
 | Revenue (MRR) | $0.00 |
 | Paying customers | 0 |
 | Trials | 0 |
 | Leads contacted | 0 (replied 0, demo 0, lost 0) |
 | Lead to paid conversion | n/a (no leads yet) |
 | CAC | $0 spent on acquisition |
-| Gap to break-even | $290.00 per month |
+| Gap to break-even | $278.00 per month |
 
 ## What survival requires
 
-- Infrastructure only ($90.00): 5 x Individual, monthly at $19.99
-- Infrastructure only ($90.00): 1 x Community feed, per server at $149.00
-- Everything incl. Claude ($290.00): 16 x Individual, monthly at $19.99
-- Everything incl. Claude ($290.00): 3 x Community feed, per server at $149.00
+- Infrastructure only ($78.00): 5 x Individual, monthly at $19.99
+- Infrastructure only ($78.00): 1 x Community feed, per server at $149.00
+- Everything incl. Claude ($278.00): 15 x Individual, monthly at $19.99
+- Everything incl. Claude ($278.00): 2 x Community feed, per server at $149.00
 
 ## Costs and the kill list
 
 | Item | Monthly | Verdict | Note |
 |---|---|---|---|
-| The Odds API (100K tier) | $59.00 | KEEP | Prices every card. After the NFL/MMA re-buy fix (2026-10-01) live spend should fall to about 14k credits a month, which fits the $30 20K tier: REDUCE once one clean week confirms it. |
+| The Odds API (100K tier) | $59.00 | KEEP | Prices every card. Measured burn before the NFL/MMA re-buy fix: about 550 credits a day (16,500 a month), 80% of it NFL and MMA boards re-bought every slot. Fix pushed 2026-10-01 18:42Z; confirm the drop over the next slots, then the $30 20K tier fits. October is already paid, so a downgrade saves from November. Owner decision. |
 | Fly.io production (2 shared CPUs, 1 GB, 1 GB volume) | $15.00 (est.) | KEEP | Estimate. Exact figure: Fly dashboard, billing. |
-| Fly.io staging (same size, always on, public demo) | $15.00 (est.) | REDUCE | Estimate. It serves the whole paid product free (APP_PUBLIC_DEMO=1). Stop it or turn the demo off once production is selling. |
+| Fly.io staging (stops when idle since 2026-10-01) | $3.00 (est.) | REDUCE | Estimate. Was always-on (about $15 estimated); now billed only while someone is using it, plus storage. Exact figure: Fly dashboard, billing. Still serves the paid product free (APP_PUBLIC_DEMO=1): turn the demo off once production is selling. |
 | Domain linehound.app | $1.00 (est.) | KEEP | Amortised estimate. |
 | Claude subscription that operates the business | UNKNOWN | REDUCE | UNKNOWN. Brey to supply the monthly figure; planned against $200. |
 | BALLDONTLIE | UNKNOWN | CANCEL | UNKNOWN. The 48-hour trial ended 2026-09-17; nothing harvested is used by any model. Check the account's billing page that it did not convert to $299.99. |
@@ -74,6 +74,7 @@ No rule here has evidence of an edge. Closing-line value and calibration: see `d
 
 ## Top blockers
 
+- Production shows only what was in the repository when it was last deployed: tonight's card, odds and results do not reach linehound.app until someone runs deploy-prod again. Staging refreshes on every push; production is manual by design. A paying customer would see a stale card the next day. Needs an owner decision on an automatic production refresh.
 - Stripe is not live: account verification pending (date of birth, phone), then the five Fly secrets. Owner.
 - No distribution: zero outreach sent. Target list and scripts in docs/sales/.
 - Discord feed not wired: needs the webhook secret and one env line on the default branch. Owner + me.
