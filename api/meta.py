@@ -249,8 +249,95 @@ def _billing_summary() -> dict:
         return {"checkout": "off", "trial_days": None, "price_cents": None}
 
 
+# THE RECORD ON /meta IS BUILT ONCE PER LEDGER STATE, NOT ONCE PER PAGE LOAD.
+#
+# /meta is fetched by every page, and the landing page cannot show the record
+# or the right button until it answers. Its record figures read and
+# hash-verify every card ledger, three times over (card_record,
+# effective_record and the previous-rule cohort each build the MLB snapshot):
+# 1.1 s on a development machine, 5.7 to 10.2 s measured on the staging box on
+# 2026-10-01. The figures only change when a ledger or the research registry
+# changes, so the cache key is the size and modification time of those files:
+# a settlement is picked up on the next request, and nothing is ever served
+# from a stale ledger. Billing state, version and the demo flag are read live.
+_RECORD_PARTS: dict = {}
+_RECORD_PARTS_LOCK = __import__("threading").Lock()
+
+
+def _ledger_signature() -> tuple:
+    """(path, size, mtime_ns) for every file the record figures are read
+    from, resolved at call time so a test that points a store somewhere else
+    gets its own entry. A file that cannot be stat'ed contributes its error
+    name; that still changes the key when the file appears."""
+    paths = []
+    try:
+        from src.appstate import card_ledger
+        for name in dir(card_ledger):
+            if name.startswith("CARD_STORE") or name.endswith("_CARD_STORE"):
+                value = getattr(card_ledger, name)
+                if isinstance(value, (str, Path)):
+                    paths.append(str(value))
+        for sport in ("mlb", "nfl", "mma"):
+            try:
+                paths.append(str(card_ledger.store_path(sport)))
+            except Exception:  # noqa: BLE001
+                continue
+    except Exception:  # noqa: BLE001
+        pass
+    try:
+        from src.research import alpha_registry
+        for name in ("REGISTRY_PATH", "DEFAULT_REGISTRY_PATH", "DEFAULT_PATH"):
+            value = getattr(alpha_registry, name, None)
+            if isinstance(value, (str, Path)):
+                paths.append(str(value))
+    except Exception:  # noqa: BLE001
+        pass
+    try:
+        from src.pipeline import history
+        paths.append(str(history.DEFAULT_STORE))
+    except Exception:  # noqa: BLE001
+        pass
+    try:
+        from src.report import card as card_mod
+        active = str(getattr(card_mod, "ACTIVE_CARD_RULE", ""))
+    except Exception:  # noqa: BLE001
+        active = ""
+    out = [("active_rule", active)]
+    for path in sorted(set(paths)):
+        try:
+            stat = os.stat(path)
+            out.append((path, stat.st_size, stat.st_mtime_ns))
+        except OSError as exc:
+            out.append((path, type(exc).__name__, 0))
+    return tuple(out)
+
+
+def _record_parts() -> dict:
+    """research, card_record and effective_record for the current ledger
+    state. One build per state; concurrent callers share it."""
+    key = _ledger_signature()
+    hit = _RECORD_PARTS.get(key)
+    if hit is not None:
+        return hit
+    with _RECORD_PARTS_LOCK:
+        hit = _RECORD_PARTS.get(key)
+        if hit is not None:
+            return hit
+        built = {"research": _research_counts(), "card_record": _card_record(),
+                 "effective_record": _effective_record()}
+        _RECORD_PARTS.clear()          # one state at a time: no growth
+        _RECORD_PARTS[key] = built
+        return built
+
+
+def reset_record_cache_for_tests() -> None:
+    with _RECORD_PARTS_LOCK:
+        _RECORD_PARTS.clear()
+
+
 @router.get("/meta")
 def get_meta() -> dict:
+    record = _record_parts()
     return {
         "version": APP_VERSION,
         "product": PRODUCT_ONE_LINER,
@@ -275,16 +362,16 @@ def get_meta() -> dict:
         # read one number on the page that sold them the subscription and a
         # different one the first time they opened the app. See
         # src/research/alpha_registry.public_research_counts.
-        "research": _research_counts(),
+        "research": record["research"],
         # The card's running record, from evidence/cards_v1.jsonl -- the
         # landing page fills its record sentence from this instead of a
         # typed figure that is stale after the next settlement.
-        "card_record": _card_record(),
+        "card_record": record["card_record"],
         # 2026-09-24 (task B1/B2): the reconciled, per-sport current-vs-
         # previous record the landing page's sport tiles and the in-app
         # record strip both read -- MLB/NFL/UFC, current rule and the one
         # right before it, market breakdown included. `card_record` above
         # stays exactly as it was (MLB only, one figure) for every
         # existing reader; this is a separate, additive key.
-        "effective_record": _effective_record(),
+        "effective_record": record["effective_record"],
     }

@@ -100,6 +100,15 @@ class MetaServesTheLedgerRecord(unittest.TestCase):
     this checkout, since ACTIVE_CARD_RULE itself is what this build
     changes."""
 
+    def setUp(self):
+        # ADDED 2026-10-01: /meta now builds its record figures once per
+        # ledger state (api.meta._record_parts). These tests replace ledger
+        # FUNCTIONS in place without touching a file, so the files' state
+        # does not change between them; start each from an empty cache.
+        from api import meta as meta_api
+        meta_api.reset_record_cache_for_tests()
+        self.addCleanup(meta_api.reset_record_cache_for_tests)
+
     def test_meta_carries_v2s_combined_figures_since_the_t13_cutover(self):
         from api import meta as meta_api
         from src.appstate import card_ledger
