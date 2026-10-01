@@ -386,7 +386,11 @@ function fillRuleBlock(root, prefix, cohort, roleLabel) {
       const span = dateSpan && dateSpan.first && dateSpan.last
         ? `${dateSpan.first} through ${dateSpan.last}` : null;
       const named = cohort.label ? `${cohort.label}. ` : "";
-      stateNode.textContent = `${named}Graded nightly${span ? `, ${span}` : ""}.`;
+      // UFC has no results feed: a person enters each result after the
+      // event (src/pipeline/ufc_results.py), so "nightly" was untrue on
+      // that one tile the first time it had a graded record to show.
+      const cadence = /(^|-)ufc-/.test(prefix) ? "Graded by hand after each event" : "Graded nightly";
+      stateNode.textContent = `${named}${cadence}${span ? `, ${span}` : ""}.`;
     }
     const marketsNode = root.querySelector(`[data-hook='${prefix}-markets']`);
     const sentence = marketBreakdownSentence(cohort.market_breakdown);

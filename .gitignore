@@ -124,6 +124,10 @@ evidence/tmp*.tmp
 !data/historical/handedness.json
 !data/historical/standings.jsonl
 !data/historical/matchup_history.jsonl
+# Hand-entered UFC results (src/pipeline/ufc_results.py). Tracked so every
+# grading on the public UFC record can be traced to who typed it and when;
+# ignored, the only copy was on one PC.
+!data/historical/ufc_results.jsonl
 !data/historical/matchup_pairs.json
 !data/historical/pitcher_splits.json
 !data/historical/transactions.jsonl
