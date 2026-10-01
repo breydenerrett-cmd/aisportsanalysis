@@ -22,6 +22,44 @@ from src.appstate import apphealth
 
 router = APIRouter()
 
+# When this process started, as near as this module can know it (it is
+# imported while the app is being built). A restart shows as a new value.
+_PROCESS_STARTED = __import__("datetime").datetime.now(__import__("datetime").timezone.utc)
+
+
+def _memory_mb() -> dict:
+    """Resident memory now and its high-water mark, in MB, from
+    /proc/self/status (Linux). None on a platform without it. Reading one
+    small pseudo-file keeps /health cheap."""
+    out = {"rss_mb": None, "peak_rss_mb": None}
+    try:
+        with open("/proc/self/status", encoding="ascii") as handle:
+            for line in handle:
+                if line.startswith("VmRSS:"):
+                    out["rss_mb"] = round(int(line.split()[1]) / 1024.0, 1)
+                elif line.startswith("VmHWM:"):
+                    out["peak_rss_mb"] = round(int(line.split()[1]) / 1024.0, 1)
+    except (OSError, ValueError, IndexError):
+        pass
+    return out
+
+
+def runtime() -> dict:
+    """Uptime, memory and how many cache builds have run at once.
+
+    Added 2026-10-01 after production was found restarting for lack of memory
+    every eleven minutes with nothing on /health to show it: the deploy check
+    saw a healthy process each time because it was always a NEW process.
+    `started_utc` changing between two reads is a restart; `peak_rss_mb` is the
+    number to hold against the machine size; `builds.max_running` must be 1."""
+    from datetime import datetime, timezone
+    from src.appstate import freshness
+    now = datetime.now(timezone.utc)
+    return {"started_utc": _PROCESS_STARTED.isoformat(),
+            "uptime_s": int((now - _PROCESS_STARTED).total_seconds()),
+            **_memory_mb(),
+            "builds": freshness.build_stats()}
+
 
 def _only_checkout_is_broken(data: dict) -> bool:
     """True when the report is degraded for one reason only: billing is
@@ -58,4 +96,8 @@ def get_health(response: Response) -> dict:
     # read `passes_completed` to wait before exercising pages.
     from api import warmup
     data["warmup"] = warmup.status()
+    try:
+        data["runtime"] = runtime()
+    except Exception:  # noqa: BLE001 -- informational; never the reason /health fails
+        data["runtime"] = None
     return data

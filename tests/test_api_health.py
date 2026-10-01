@@ -73,6 +73,37 @@ class GetHealthTests(unittest.TestCase):
             get_health(response)
         self.assertEqual(response.status_code, 503)
 
+    def test_runtime_block_says_when_the_process_started_and_what_it_holds(self):
+        """A restart must be visible from outside: production restarted for
+        lack of memory every eleven minutes and /health looked fine each time."""
+        from api import health
+        from src.appstate import freshness
+        response = Response()
+        with mock.patch.object(apphealth, "report",
+                               return_value={"status": "ok", "reasons": []}):
+            first = health.get_health(response)["runtime"]
+            second = health.get_health(response)["runtime"]
+        self.assertEqual(first["started_utc"], second["started_utc"])
+        self.assertGreaterEqual(second["uptime_s"], first["uptime_s"])
+        self.assertEqual(set(first["builds"]), {"running", "max_running", "total"})
+        for key in ("rss_mb", "peak_rss_mb"):
+            self.assertIn(key, first)        # None off Linux; a number on it
+        before = freshness.build_stats()["total"]
+        freshness.SingleFlightTTLCache(ttl_s=60).get("k", lambda: 1)
+        after = health.get_health(response)["runtime"]["builds"]
+        self.assertEqual(after["total"], before + 1)
+        self.assertEqual(after["running"], 0)
+
+    def test_a_runtime_fault_never_fails_health(self):
+        from api import health
+        response = Response()
+        with mock.patch.object(apphealth, "report",
+                               return_value={"status": "ok", "reasons": []}), \
+                mock.patch.object(health, "runtime", side_effect=RuntimeError("boom")):
+            data = health.get_health(response)
+        self.assertIsNone(data["runtime"])
+        self.assertNotEqual(response.status_code, 503)
+
     def test_a_health_check_that_itself_raises_still_returns_a_response(self):
         """The one route that must never 500 unhandled -- an uptime checker
         needs a real response even when the check machinery itself breaks."""

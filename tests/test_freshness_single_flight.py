@@ -153,11 +153,18 @@ class OneRebuildPerCacheTests(unittest.TestCase):
             time.sleep(0.02)
         self.assertNotIn("k", cache._refreshing)
 
-    def test_two_caches_are_independent(self):
-        """The guard is per CACHE INSTANCE, not a process-wide singleton --
-        two separate SingleFlightTTLCache objects each get their own
-        rebuild slot, so a slow rebuild on one cache never blocks a
-        different cache's own stale hit from refreshing."""
+    def test_two_caches_each_get_their_rebuild_one_after_the_other(self):
+        """CHANGED 2026-10-01. This test used to assert that a second cache's
+        rebuild STARTS while the first cache's is still running ("the guard
+        is per cache instance, not a process-wide singleton"). That overlap
+        is what killed production for memory, so it is now forbidden
+        (`freshness._BUILD_GATE`). What must still hold is the part that
+        mattered: each cache keeps its OWN rebuild slot, so the second
+        cache's stale hit is not dropped because another cache is busy. It
+        queues, and runs as soon as the first finishes.
+
+        (The old assertion also raced a 1.0 s build against a 1.0 s wait; it
+        passed on Windows and failed on Linux CI.)"""
         cache1 = self._stale_cache()
         cache2 = self._stale_cache()
         cache1.get("k", _Builder(value="c1-first"))
@@ -165,15 +172,23 @@ class OneRebuildPerCacheTests(unittest.TestCase):
         _age(cache1, "k", 60)
         _age(cache2, "k", 60)
 
-        slow1 = _Builder(delay=1.0, value="c1-second")
+        slow1 = _Builder(delay=0.6, value="c1-second")
         cache1.get("k", slow1)
-        self.assertTrue(slow1.started.wait(1.0))
+        self.assertTrue(slow1.started.wait(2.0))
 
         slow2 = _Builder(delay=0.05, value="c2-second")
-        cache2.get("k", slow2)
-        self.assertTrue(slow2.started.wait(1.0),
-                        "a different cache's rebuild was blocked by this "
-                        "cache's own in-flight rebuild")
+        value, meta = cache2.get("k", slow2)
+        self.assertEqual(value, "c2-first")          # answered at once, stale
+        self.assertTrue(meta["stale"])
+        self.assertIn("k", cache2._refreshing)       # its own slot was taken
+        self.assertFalse(slow2.started.wait(0.2),
+                         "two caches were rebuilding at the same time")
+        self.assertTrue(slow2.started.wait(5.0),
+                        "the second cache's rebuild never ran")
+        deadline = time.time() + 5
+        while cache2._refreshing and time.time() < deadline:
+            time.sleep(0.01)
+        self.assertEqual(cache2.get("k", _Builder(value="unused"))[0], "c2-second")
 
 
 
@@ -214,6 +229,9 @@ class OneBuildInTheWholeProcessTests(unittest.TestCase):
             time.sleep(0.01)
         self.assertEqual(state["builds"], 12)     # every cache did get rebuilt
         self.assertEqual(state["most"], 1)
+        # The figure GET /health reports must say the same thing.
+        self.assertEqual(freshness.build_stats()["max_running"], 1)
+        self.assertEqual(freshness.build_stats()["running"], 0)
 
     def test_a_blocking_build_waits_for_a_background_one(self):
         state, build = self._overlap_tracker()

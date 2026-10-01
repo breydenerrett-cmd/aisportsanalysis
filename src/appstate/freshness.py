@@ -137,6 +137,43 @@ class FreshnessPolicy:
 # thread.
 _BUILD_GATE = threading.RLock()
 
+# What the gate has actually done, for GET /health. `max_running` is the proof
+# asked for in production: it must stay 1. Nested builds on one thread (a
+# builder reading another cache) count once.
+_BUILD_STATS = {"running": 0, "max_running": 0, "total": 0}
+_BUILD_STATS_LOCK = threading.Lock()
+_BUILD_DEPTH = threading.local()
+
+
+class _gated_build:
+    """`with _gated_build():` -- hold the process-wide gate and count."""
+
+    def __enter__(self):
+        _BUILD_GATE.acquire()
+        depth = getattr(_BUILD_DEPTH, "n", 0)
+        _BUILD_DEPTH.n = depth + 1
+        if depth == 0:
+            with _BUILD_STATS_LOCK:
+                _BUILD_STATS["running"] += 1
+                _BUILD_STATS["total"] += 1
+                _BUILD_STATS["max_running"] = max(
+                    _BUILD_STATS["max_running"], _BUILD_STATS["running"])
+        return self
+
+    def __exit__(self, *exc):
+        _BUILD_DEPTH.n -= 1
+        if _BUILD_DEPTH.n == 0:
+            with _BUILD_STATS_LOCK:
+                _BUILD_STATS["running"] -= 1
+        _BUILD_GATE.release()
+        return False
+
+
+def build_stats() -> dict:
+    """{"running", "max_running", "total"} since the process started."""
+    with _BUILD_STATS_LOCK:
+        return dict(_BUILD_STATS)
+
 
 @dataclass
 class _Entry:
@@ -299,7 +336,7 @@ class SingleFlightTTLCache:
                 return self._serve_hit(entry, now, odds_observed_extractor)
 
             try:
-                with _BUILD_GATE:
+                with _gated_build():
                     value = builder()
             except Exception:
                 if entry is not None:
@@ -351,7 +388,7 @@ class SingleFlightTTLCache:
 
         def _run():
             try:
-                with _BUILD_GATE:
+                with _gated_build():
                     value = builder()
                 # STORED BEFORE THE FLAG IS CLEARED. The other order leaves a
                 # window where the key looks idle but still holds the old
