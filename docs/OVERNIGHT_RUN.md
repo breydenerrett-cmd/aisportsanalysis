@@ -4964,3 +4964,6 @@ end-to-end confirmation (above).
 - 2026-10-01T16:58Z daily_loop: test_tier_ladder exit=0
 - 2026-10-01T16:58Z daily_loop: research-readiness exit=0
 - 2026-10-01T16:59Z daily_loop: prereg-clv exit=0
+- 2026-10-01T17:29Z afternoon_slate: engine slate --date 2026-10-01 exit=0
+- 2026-10-01T17:29Z afternoon_slate: card publish --date 2026-10-01 exit=0
+- 2026-10-01T17:29Z afternoon_slate: engine slip --date 2026-10-01
