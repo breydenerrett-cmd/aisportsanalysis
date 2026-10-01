@@ -2804,3 +2804,4 @@
 {"category": "il_activation", "date": "2026-10-01", "first_seen_utc": "2026-10-01T14:31:46.324902+00:00", "player": "Jorge Barrosa", "player_id": 678489, "team": "HOU", "transaction_id": 944849}
 {"category": "il_activation", "date": "2026-10-01", "first_seen_utc": "2026-10-01T14:31:46.324902+00:00", "player": "Cristian Javier", "player_id": 664299, "team": "HOU", "transaction_id": 944850}
 {"category": "il_activation", "date": "2026-10-01", "first_seen_utc": "2026-10-01T14:31:46.324902+00:00", "player": "LaMonte Wade Jr.", "player_id": 664774, "team": "HOU", "transaction_id": 944851}
+{"fetched_utc": "2026-10-01T14:44:48.781659+00:00", "game_date": "2026-10-01", "poll": true}
