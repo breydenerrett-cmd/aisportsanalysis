@@ -90,6 +90,7 @@ from __future__ import annotations
 import gzip
 import hashlib
 import json
+from bisect import bisect_left, bisect_right
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Iterable, Mapping
@@ -384,7 +385,97 @@ def _raw_outcomes(payload: Any, event_id: str, book: str, provider_market_key: s
 _OUTCOME_NAME_BY_SIDE = {"over": "Over", "under": "Under", "yes": "Yes", "no": "No"}
 
 
-def _match_raw(obs: dict, raw_root: Path) -> tuple[bool, str | None]:
+def _index_raw_capture(record: Any) -> dict | None:
+    """One loaded capture -> {(event_id, book, provider_market_key): [outcome, ...]}.
+
+    The same walk `_raw_outcomes` does, done once per capture instead of once
+    per observation, with the outcomes kept in the order that walk yields
+    them. `None` for a capture `_match_raw` would skip (unreadable, empty).
+    A bookmaker or market that is not a dict is passed over here; the
+    per-observation walk would have raised on one inside a matching event."""
+    if not record or not isinstance(record, dict):
+        return None
+    index: dict[tuple, list] = {}
+    payload = record.get("payload")
+    events = payload if isinstance(payload, list) else [payload]
+    for event in events:
+        if not isinstance(event, dict):
+            continue
+        for bookmaker in event.get("bookmakers") or []:
+            if not isinstance(bookmaker, dict):
+                continue
+            for market in bookmaker.get("markets") or []:
+                if not isinstance(market, dict):
+                    continue
+                try:
+                    bucket = index.setdefault(
+                        (event.get("id"), bookmaker.get("key"), market.get("key")), [])
+                except TypeError:        # an unhashable id can equal no observation's
+                    continue
+                bucket.extend(market.get("outcomes") or [])
+    return index
+
+
+class _RawIndex:
+    """What one `run()` has already read of the raw capture directory.
+
+    MEASURED 2026-10-01: `_match_raw` listed and sorted the day's directory
+    and re-opened, un-gzipped and re-parsed every capture in the match window
+    once PER OBSERVATION -- 191,052 observations against 233 files was 1,273
+    of the 1,286 seconds `engine slate` took on a runner, twice per capture
+    slot, and it is what starved the capture cadence. Nothing in that work
+    depends on the observation: a directory is listed once here, a file name's
+    timestamp parsed once, a capture read and indexed once.
+
+    Scoped to one run on purpose. A long-lived cache would miss captures
+    written after it was filled; a run reads the directory as it stands when
+    the run first asks, which is what one pass over the stores means anyway.
+    The answers are the ones the uncached walk gives: same files, in the same
+    (path-sorted) order, the same window test."""
+
+    def __init__(self, raw_root: Path) -> None:
+        self._raw_root = raw_root
+        self._days: dict[Any, tuple[list, list[float], list[int]]] = {}
+        self._captures: dict[Path, dict | None] = {}
+
+    def _day(self, day: str | None) -> tuple[list, list[float], list[int]]:
+        cached = self._days.get(day)
+        if cached is None:
+            entries = []
+            for path in _iter_raw_files(self._raw_root, day):
+                capture_id = path.stem.split(".")[0]
+                try:
+                    captured_at = datetime.strptime(
+                        capture_id.split("-")[0], "%Y%m%dT%H%M%SZ"
+                    ).replace(tzinfo=timezone.utc)
+                except ValueError:
+                    continue
+                entries.append((captured_at, capture_id, path))
+            by_time = sorted(range(len(entries)), key=lambda i: entries[i][0])
+            cached = (entries, [entries[i][0].timestamp() for i in by_time], by_time)
+            self._days[day] = cached
+        return cached
+
+    def near(self, day: str | None, observed: datetime) -> list:
+        """`(captured_at, capture_id, path)` for the day's captures that could
+        be inside the match window, in path-sorted order. One second wider
+        than the window: the caller applies the exact test."""
+        entries, epochs, by_time = self._day(day)
+        if observed.tzinfo is None:
+            return entries
+        centre = observed.timestamp()
+        low = bisect_left(epochs, centre - RAW_MATCH_WINDOW_SECONDS - 1)
+        high = bisect_right(epochs, centre + RAW_MATCH_WINDOW_SECONDS + 1)
+        return [entries[i] for i in sorted(by_time[low:high])]
+
+    def capture(self, path: Path) -> dict | None:
+        if path not in self._captures:
+            self._captures[path] = _index_raw_capture(_load_raw_capture(path))
+        return self._captures[path]
+
+
+def _match_raw(obs: dict, raw_root: Path,
+               index: _RawIndex | None = None) -> tuple[bool, str | None]:
     """Best-effort raw-first match. Returns (l0_available, capture_id).
 
     Untested against a real captured payload in this worktree -- no raw file
@@ -393,31 +484,27 @@ def _match_raw(obs: dict, raw_root: Path) -> tuple[bool, str | None]:
     from the documented Odds-API bookmaker/market/outcome shape
     (docs/COLLECTION_POLICY.md's raw-layer section) rather than a captured
     sample. Flagged as not verified against a real payload in the report.
+
+    `index` is the calling run's `_RawIndex`; without one, a throwaway index
+    is used and the answer is the same.
     """
+    if index is None:
+        index = _RawIndex(raw_root)
     day = _row_date(obs)
     observed = _parse_iso(obs["observed_utc"]) if obs.get("observed_utc") else None
     if observed is None:
         return False, None
     for candidate_day in {day, (observed - timedelta(days=1)).date().isoformat()}:
-        for path in _iter_raw_files(raw_root, candidate_day):
-            capture_id = path.stem.split(".")[0]
-            try:
-                captured_stamp = capture_id.split("-")[0]
-                captured_at = datetime.strptime(
-                    captured_stamp, "%Y%m%dT%H%M%SZ"
-                ).replace(tzinfo=timezone.utc)
-            except ValueError:
-                continue
+        for captured_at, capture_id, path in index.near(candidate_day, observed):
             if abs((captured_at - observed).total_seconds()) > RAW_MATCH_WINDOW_SECONDS:
                 continue
-            record = _load_raw_capture(path)
-            if not record:
+            outcomes_by_key = index.capture(path)
+            if outcomes_by_key is None:
                 continue
             side_name = obs["side"]
             want_name = _OUTCOME_NAME_BY_SIDE.get(side_name)
-            for outcome, _last_update in _raw_outcomes(
-                record.get("payload"), obs["event_id"], obs["book"],
-                obs["provider_market_key"],
+            for outcome in outcomes_by_key.get(
+                (obs["event_id"], obs["book"], obs["provider_market_key"]), ()
             ):
                 name = outcome.get("name")
                 if want_name is not None and name != want_name:
@@ -525,6 +612,7 @@ def run(
     refusals = RefusalReport()
 
     new_lines: list[str] = []
+    raw_index = _RawIndex(raw_root)
     for source in stores:
         path = Path(source["path"])
         source_name = source["name"]
@@ -623,7 +711,7 @@ def run(
                     else:
                         report["game_pk"]["resolved"] += 1
 
-                l0_available, raw_capture_id = _match_raw(obs, raw_root)
+                l0_available, raw_capture_id = _match_raw(obs, raw_root, raw_index)
                 obs["l0_available"] = l0_available
                 if l0_available:
                     obs["capture_id"] = raw_capture_id
