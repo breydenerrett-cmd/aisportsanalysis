@@ -2826,3 +2826,5 @@
 {"fetched_utc": "2026-10-01T18:39:07.391866+00:00", "game_date": "2026-10-01", "poll": true}
 {"fetched_utc": "2026-10-01T19:05:41.132963+00:00", "game_date": "2026-10-01", "poll": true}
 {"fetched_utc": "2026-10-01T19:05:42.553314+00:00", "game_date": "2026-10-01", "poll": true}
+{"fetched_utc": "2026-10-01T19:36:03.308974+00:00", "game_date": "2026-10-01", "poll": true}
+{"category": "other", "date": "2026-10-01", "first_seen_utc": "2026-10-01T19:36:03.308974+00:00", "player": "Alexander Cornielle", "player_id": 529017, "team": "NYY", "transaction_id": 944899}
