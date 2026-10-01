@@ -1,0 +1,481 @@
+/* MLB POSTSEASON (#/postseason, web/postseason.html) -- web/js/postseason.js.
+ *
+ * Mobile first: the base rules are the 390px layout and everything wider is
+ * an enhancement. Tokens only (css/tokens.css); no new colour is invented.
+ *
+ *   cyan   (--fresh)    chance bars and announced starters -- analytical
+ *   amber  (--caution)  projected starters -- waiting on an input, not a fact
+ *   red    (--primary)  the one call to action, nothing else on this page
+ *   club colour         identity only (a 3px rule beside the club's name)
+ */
+
+.ps {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: var(--sp-9) var(--gutter-mobile, 16px) var(--sp-15);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-11);
+}
+
+.ps__loading {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--fs-small);
+  color: var(--text-mute);
+}
+
+/* ---- header -------------------------------------------------------- */
+.ps-head { display: flex; flex-direction: column; gap: var(--sp-4); }
+
+.ps-head__eyebrow {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--text-mute);
+}
+
+.ps-head__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(30px, 8vw, 52px);
+  line-height: 1.02;
+  letter-spacing: .01em;
+  color: var(--text-hi);
+}
+
+.ps-head__lede {
+  margin: 0;
+  max-width: 62ch;
+  font-family: var(--font-body);
+  font-size: var(--fs-small);
+  line-height: 1.5;
+  color: var(--text-3);
+}
+
+.ps-head__asof {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--fresh-text);
+}
+
+.ps-caveat {
+  margin: var(--sp-2) 0 0;
+  padding: var(--sp-5) var(--sp-7);
+  max-width: 70ch;
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text-2);
+  background: var(--caution-soft);
+  box-shadow: inset 3px 0 0 0 var(--caution);
+}
+
+/* The sentence that says which inputs the estimates are made from: the same
+   place as the caveats, in the analytical (cyan) tone rather than amber. */
+.ps-caveat--inputs {
+  background: var(--panel-2);
+  box-shadow: inset 3px 0 0 0 var(--fresh-text);
+}
+
+/* ---- rounds and series cards -------------------------------------- */
+.ps-bracket { display: flex; flex-direction: column; gap: var(--sp-11); margin-top: var(--sp-5); }
+.ps-round { display: flex; flex-direction: column; gap: var(--sp-6); }
+.ps-round__grid { display: grid; grid-template-columns: 1fr; gap: var(--sp-6); }
+
+.ps-series {
+  padding: var(--sp-7);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+  min-width: 0;
+}
+.ps-series--waiting { opacity: .82; }
+
+.ps-series__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-5);
+}
+.ps-series__slot {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--text-mute);
+}
+.ps-series__status {
+  flex: none;
+  padding: 3px 9px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 12.5px;
+  letter-spacing: .16em;
+  color: var(--text-3);
+  box-shadow: inset 0 0 0 1px var(--edge-hi);
+}
+.ps-series__status--live { color: var(--live-ink); background: var(--fresh); box-shadow: none; }
+.ps-series__status--complete { color: var(--text-hi); }
+.ps-series__status--waiting { color: var(--text-mute); box-shadow: inset 0 0 0 1px var(--edge); }
+
+.ps-team {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  column-gap: var(--sp-7);
+  row-gap: var(--sp-3);
+  padding-left: var(--sp-5);
+  box-shadow: inset 3px 0 0 0 var(--team, var(--text-mute));
+}
+.ps-team--bye { grid-template-columns: minmax(0, 1fr); }
+
+.ps-team__who { display: flex; flex-direction: column; min-width: 0; }
+.ps-team__abbr {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 28px;
+  line-height: 1;
+  letter-spacing: .02em;
+  color: var(--text-hi);
+}
+.ps-team__sub {
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.3;
+  color: var(--text-mute);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ps-team__home {
+  margin-top: 2px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: .12em;
+  color: var(--text-3);
+}
+.ps-team__wins {
+  min-width: 1ch;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 30px;
+  line-height: 1;
+  color: var(--text-2);
+  text-align: right;
+}
+.ps-team__chance {
+  min-width: 3.4ch;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 28px;
+  line-height: 1;
+  color: var(--fresh-text);
+  text-align: right;
+}
+
+.ps-bar {
+  grid-column: 1 / -1;
+  height: 6px;
+  background: rgba(255, 255, 255, .07);
+}
+.ps-bar__fill {
+  display: block;
+  height: 100%;
+  background: var(--fresh);
+}
+
+.ps-series__score {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: .04em;
+  color: var(--text-3);
+}
+.ps-series__waiting {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--text-mute);
+}
+
+/* ---- next game -------------------------------------------------------- */
+.ps-next {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding: var(--sp-5) var(--sp-6);
+  background: var(--panel-2);
+  box-shadow: inset 0 0 0 1px var(--edge-soft);
+}
+.ps-next__head {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: .1em;
+  color: var(--fresh-text);
+}
+.ps-next__teams {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 20px;
+  line-height: 1.1;
+  color: var(--text-hi);
+}
+.ps-next__pitchers,
+.ps-next__note {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--text-3);
+}
+.ps-next__note { color: var(--caution-text); }
+.ps-next__chance {
+  margin: 0;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--fs-small);
+  color: var(--text-2);
+}
+
+/* Under the primary chance: what the estimate is made from, then (when there
+   is one) the projected-starters what-if, drawn quieter than the estimate. */
+.ps-next__inputs {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--text-mute);
+}
+.ps-next__scenario {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
+  padding: var(--sp-3) var(--sp-5);
+  border-left: 2px dashed var(--edge);
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--text-mute);
+}
+.ps-next__scenario-tag {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--caution-text);
+}
+.ps-next__scenario-label,
+.ps-next__scenario-chance { margin: 0; }
+
+.ps-tag {
+  align-self: flex-start;
+  padding: 3px 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: .08em;
+  line-height: 1.3;
+}
+.ps-tag--announced { color: var(--fresh-text); box-shadow: inset 0 0 0 1px rgba(0, 224, 255, .4); }
+.ps-tag--projected { color: var(--caution-text); background: var(--caution-soft); box-shadow: inset 0 0 0 1px rgba(255, 176, 32, .45); }
+.ps-tag--unknown { color: var(--text-mute); box-shadow: inset 0 0 0 1px var(--edge); }
+
+/* ---- every game -------------------------------------------------------- */
+.ps-games summary {
+  cursor: pointer;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--fresh-text);
+}
+.ps-games__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.ps-game {
+  display: grid;
+  grid-template-columns: 2.6ch minmax(0, 1fr);
+  column-gap: var(--sp-5);
+  row-gap: var(--sp-2);
+  padding: var(--sp-4) 0;
+  border-top: 1px solid var(--edge-soft);
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--text-2);
+}
+.ps-game__n { font-family: var(--font-mono); font-size: 12px; color: var(--text-mute); }
+.ps-game__meta {
+  grid-column: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  align-items: center;
+  font-size: 13px;
+  color: var(--text-mute);
+}
+.ps-game--final .ps-game__body { color: var(--text-hi); }
+
+/* ---- what we said before ------------------------------------------------ */
+.ps-said {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-5) var(--sp-6);
+  background: var(--panel-2);
+  box-shadow: inset 0 0 0 1px var(--edge-soft);
+}
+.ps-said__head {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: .1em;
+  color: var(--text-mute);
+}
+.ps-said__line,
+.ps-said__result,
+.ps-said__none {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--text-2);
+}
+.ps-said__result--right { color: var(--win); }
+.ps-said__none { color: var(--text-mute); }
+
+/* ---- odds table ----------------------------------------------------------- */
+.ps-odds { display: flex; flex-direction: column; gap: var(--sp-5); }
+.ps-table { width: 100%; border-collapse: collapse; }
+.ps-table th, .ps-table td { text-align: left; vertical-align: middle; }
+.ps-table thead th {
+  padding: 0 0 var(--sp-3);
+  font-family: var(--font-mono);
+  font-weight: 400;
+  font-size: 12px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--text-mute);
+}
+.ps-table thead th:not(:first-child) { text-align: right; }
+.ps-table__row > * { padding: var(--sp-4) 0; border-top: 1px solid var(--edge-soft); }
+.ps-table__team {
+  padding-left: var(--sp-5);
+  box-shadow: inset 3px 0 0 0 var(--team, var(--text-mute));
+}
+.ps-table__abbr {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--text-hi);
+}
+.ps-table__sub {
+  display: block;
+  margin-top: 2px;
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 12.5px;
+  line-height: 1.3;
+  color: var(--text-mute);
+}
+.ps-table__num {
+  text-align: right;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 22px;
+  color: var(--text-2);
+  white-space: nowrap;
+}
+.ps-table__num--main { min-width: 34%; color: var(--fresh-text); }
+.ps-table__num--main .ps-bar { margin-top: 5px; margin-left: auto; width: 100%; }
+.ps-table__row--eliminated > * { opacity: .5; }
+.ps-table__row--champion .ps-table__abbr { color: var(--fresh-text); }
+
+/* ---- record, cta, method ------------------------------------------------ */
+.ps-record { padding: var(--sp-7); display: flex; flex-direction: column; gap: var(--sp-4); }
+.ps-record__head,
+.ps-method__head {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  letter-spacing: .12em;
+  color: var(--text-mute);
+}
+.ps-record__body,
+.ps-record__tally,
+.ps-method__body {
+  margin: 0;
+  max-width: 68ch;
+  font-family: var(--font-body);
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--text-3);
+}
+.ps-record__tally { color: var(--text-2); }
+
+.ps-cta { display: flex; flex-direction: column; align-items: stretch; gap: var(--sp-4); }
+.ps-cta .btn { white-space: normal; text-align: center; padding: var(--sp-4) var(--sp-9); }
+.ps-cta__note {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--text-mute);
+  text-align: center;
+}
+
+.ps-method { display: flex; flex-direction: column; gap: var(--sp-4); }
+.ps-method__list {
+  margin: 0;
+  padding-left: 1.2em;
+  max-width: 68ch;
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-3);
+}
+
+.ps-unavailable { padding: var(--sp-9); display: flex; flex-direction: column; gap: var(--sp-4); }
+.ps-unavailable__head {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-h3);
+  letter-spacing: .04em;
+  color: var(--text-hi);
+}
+.ps-unavailable__body {
+  margin: 0;
+  max-width: 62ch;
+  font-family: var(--font-body);
+  font-size: var(--fs-small);
+  line-height: 1.5;
+  color: var(--text-3);
+}
+
+/* ---- the standalone page's own top bar -------------------------------- */
+.ps-page .site-nav { position: static; padding: 0 var(--gutter-mobile, 16px); }
+.ps-page__home { display: inline-flex; align-items: center; text-decoration: none; color: inherit; }
+
+/* ---- wider screens ------------------------------------------------------- */
+@media (min-width: 760px) {
+  .ps-page .site-nav { padding: 0 var(--gutter-desktop, 40px); }
+  .ps { padding: var(--sp-13) var(--gutter-desktop, 40px) var(--sp-16); gap: var(--sp-13); }
+  .ps-round__grid { grid-template-columns: 1fr 1fr; gap: var(--sp-7); }
+  .ps-series { padding: var(--sp-9); }
+  .ps-team__abbr { font-size: 32px; }
+  .ps-cta { align-items: flex-start; }
+  .ps-cta__note { text-align: left; }
+  .ps-cta .btn { padding: 0 var(--sp-12); }
+}
+@media (min-width: 1100px) {
+  .ps-table { max-width: 760px; }
+}

@@ -64,6 +64,10 @@
  *   #/gameday, #/matchups, #/results          Aliases for #/today, #/games,
  *                                             #/record-card (ROUTE_ALIASES
  *                                             below), resolved once here.
+ *   #/postseason                             MLB POSTSEASON (public, free:
+ *                                             series chances, GET /postseason
+ *                                             -- also served standalone at
+ *                                             postseason.html)
  *   #/live[?sport=]                          LIVE (internal testing,
  *                                             reachable by URL only)
  *   #/signin                                 SIGN IN (interim -- see signin.js)
@@ -98,6 +102,7 @@ import { renderProps } from "./props.js";
 import { renderDayDetail } from "./dayrecap.js";
 import { renderCardRecord } from "./cardrecord.js";
 import { renderLive } from "./live.js";
+import { renderPostseason } from "./postseason.js";
 import { maybeGotcha } from "./gotcha.js";
 
 // MLB's sub menu (docs/DESIGN_SYSTEM.md section 3, D7): 01 GAMEDAY, 02
@@ -111,6 +116,7 @@ const NAV_ITEMS = [
   { hash: "#/today", label: "GAMEDAY", sub: "Today's picks" },
   { hash: "#/games", label: "MATCHUPS", sub: "Every game, in depth" },
   { hash: "#/props", label: "PROPS", sub: "Priced player props" },
+  { hash: "#/postseason", label: "PLAYOFFS", sub: "Postseason odds, free" },
   { hash: "#/record-card", label: "RESULTS", sub: "Every pick, graded" },
   { hash: "#/mybets", label: "BETS", sub: "Your saved bets" },
 ];
@@ -369,6 +375,9 @@ async function _renderRouteInner(main) {
     } else {
       await renderCardRecord(main);
     }
+  } else if (route === "postseason") {
+    // Public and free: no token needed, renders for a signed-out visitor.
+    await renderPostseason(main);
   } else if (route === "live") {
     await renderLive(main);
   } else if (route === "signin") {

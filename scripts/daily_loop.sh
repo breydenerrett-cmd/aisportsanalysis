@@ -110,6 +110,17 @@ except Exception as exc:
 echo "$STANDINGS_OUT" | sed 's/^/  /'
 echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: standings catchup end=$TODAY" >> "$RUN_NOTE"
 
+# THE PUBLIC POSTSEASON FORECAST LEDGER (docs: src/report/postseason_page.py).
+# One row per day per live or upcoming series in
+# evidence/postseason_forecasts.jsonl (append-only hash chain), written BEFORE
+# the day's games so the postseason page can show what it said before game 1.
+# It needs this run's results catch-up (series scores) and the standings
+# catch-up just above (the final seeding), so it sits here, after both and
+# before the `git add evidence` at the end. Idempotent per day. Never a
+# blocker: a failure is one ESCALATE line and the loop carries on.
+echo "== postseason forecast snapshot =="
+python3 scripts/postseason_snapshot.py || echo "ESCALATE: postseason snapshot failed"
+
 # THREE MORE REQUEST-TIME STORES, same ENRICHMENT-NEVER-A-BLOCKER contract as
 # standings and weather above: api/games.py::_enrichment_inputs reads these
 # off disk with no network call on the request path, so this loop is the only

@@ -105,6 +105,7 @@ export const SPORTS = [
       { hash: "#/today", label: "GAMEDAY", sub: "Today's picks" },
       { hash: "#/games", label: "MATCHUPS", sub: "Every game, in depth" },
       { hash: "#/props", label: "PROPS", sub: "Priced player props" },
+      { hash: "#/postseason", label: "PLAYOFFS", sub: "Postseason odds, free" },
       { hash: "#/record-card", label: "RESULTS", sub: "Every pick, graded" },
       { hash: "#/mybets", label: "BETS", sub: "Your saved bets" },
     ],

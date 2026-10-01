@@ -1,0 +1,44 @@
+POSTSEASON STARTER DEMO  NYY at TB  (2026-10-01, built 20:02Z)
+==============================================================================
+REAL in every block: the results store topped up from the feed exactly as the route does (through 2026-09-30),
+  the standings, the schedule feed, the stored pitcher logs on disk (newest row 2026-09-07),
+  pitcher game logs fetched live from the MLB feed, and the page builder itself.
+FORCED: only what a block's header says. No number is invented: a forced pitcher is a real
+  member of the team's real rotation pool, priced from his real log.
+What the schedule really says about this game (2026-10-03): NYY starter = not announced, TB starter = Drew Rasmussen.
+
+(a) BOTH STARTERS CONFIRMED, CURRENT NUMBERS
+    (condition forced for the demonstration: the schedule has not announced NYY's starter, so the top of the real NYY rotation pool was named: Will Warren (701542))
+    game 1 of 2026-AL-DS-1: NYY at TB
+    away NYY  input_class = CONFIRMED_CURRENT    starter slot shows: Will Warren
+    home TB   input_class = CONFIRMED_CURRENT    starter slot shows: Drew Rasmussen
+    game starter_input_class = CONFIRMED_CURRENT
+    line under the game      = Starters confirmed, current numbers used
+    primary chance           = TB 56.3%, NYY 43.7%
+    scenario                 = none
+    inputs                   = 3 of 4 inputs are current and used: team results through Sept 30, ballpark, starting pitchers through Sept 22. Not used: bullpens (numbers on file end Sept 6).
+
+(b) STARTERS PROJECTED, NOT ANNOUNCED, CURRENT NUMBERS
+    (condition forced for the demonstration: the schedule's real announcement (Drew Rasmussen) was removed so the game has no named starter)
+    game 1 of 2026-AL-DS-1: NYY at TB
+    away NYY  input_class = PROJECTED_CURRENT    starter slot shows: TBD
+    home TB   input_class = PROJECTED_CURRENT    starter slot shows: TBD
+    game starter_input_class = PROJECTED_CURRENT
+    line under the game      = Starters not announced: estimate uses team results and ballpark only
+    primary chance           = TB 48.5%, NYY 51.5%
+    scenario (not the estimate) = If the projected starters pitch (not announced): Will Warren at Drew Rasmussen: TB 56.3%, NYY 43.7%
+    inputs                   = 2 of 4 inputs are current and used: team results through Sept 30, ballpark. Not used: starting pitchers (not announced), bullpens (numbers on file end Sept 6).
+
+(c) NO USABLE CURRENT STARTER
+    (condition forced for the demonstration: the feed lookup for fresh pitcher logs was withheld, so only the stored pitcher numbers (newest row 2026-09-07, 23 days behind the results) exist)
+    game 1 of 2026-AL-DS-1: NYY at TB
+    away NYY  input_class = STALE_REFERENCE_ONLY starter slot shows: TBD
+    home TB   input_class = STALE_REFERENCE_ONLY starter slot shows: Drew Rasmussen  [numbers on file end Sept 5, not used]
+    game starter_input_class = STALE_REFERENCE_ONLY
+    line under the game      = Announced, but pitcher numbers on file end Sept 5: not used
+    primary chance           = TB 48.5%, NYY 51.5%
+    scenario                 = none
+    inputs                   = 2 of 4 inputs are current and used: team results through Sept 30, ballpark. Not used: starting pitchers (not announced; numbers on file end Sept 5), bullpens (numbers on file end Sept 6).
+
+------------------------------------------------------------------------------
+The only block whose primary chance carries starting pitchers is (a); (b) and (c) are priced exactly like a game with no starters named, and (b)'s what-if line never changes a series number.

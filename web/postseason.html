@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MLB postseason odds, free — LINEHOUND</title>
+<meta name="description" content="The chance each MLB club has to win its series, the pennant and the World Series, with the next game of each series. Model estimates, free to read, no account needed.">
+<meta property="og:title" content="MLB postseason odds, free — LINEHOUND">
+<meta property="og:description" content="Series chances, the next game of every live series and each club's chance to win the World Series. Model estimates with no track record yet at the series level.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#0A0A0B">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230B0C0E'/%3E%3Cpath d='M6 6l8 0 0 9-8 4z' fill='%23FF3D57'/%3E%3Cpath d='M18 6l8 0 0 13-8-4z' fill='%23FF7A45'/%3E%3C/svg%3E">
+<!-- STATIC-FRIENDLY ENTRY POINT. The same view the app shell serves at
+     index.html#/postseason, on a URL that can be shared as a plain link and
+     needs no router: this page mounts web/js/postseason.js directly. It is
+     public (GET /postseason takes no token). Stylesheets are the app's own,
+     in the same order index.html loads them, with app.css included because
+     the shared footer's rules live there (tests/test_shared_footer.py). -->
+<link rel="stylesheet" href="css/fonts.css">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/nav.css">
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/postseason.css">
+<style>[hidden]{display:none}</style>
+</head>
+<body class="ps-page">
+<nav class="site-nav" aria-label="primary" data-hook="postseason-header">
+  <a class="ps-page__home" href="landing.html" aria-label="LINEHOUND home">
+    <span class="wordmark" data-hook="brand-mark">
+      <span class="wordmark__mark"><span></span></span>
+      <span class="wordmark__text" data-hook="product-name">LINEHOUND</span>
+    </span>
+  </a>
+</nav>
+
+<main class="outlet" data-hook="app-outlet" aria-label="page content" id="main-content"></main>
+
+<div class="footer-host" data-hook="disclaimer-host" aria-label="disclaimer"></div>
+
+<script type="module" src="js/postseason-page.js"></script>
+</body>
+</html>

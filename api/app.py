@@ -40,6 +40,7 @@ from api.live import router as live_router
 from api.tennis import router as tennis_router
 from api.props import router as props_router
 from api.meta import router as meta_router
+from api.postseason import router as postseason_router
 from api.web import router as web_router
 from api.odds import router as odds_router
 from api.health import router as health_router
@@ -115,6 +116,9 @@ app.include_router(props_router, dependencies=_authed_paid)
 # same paid-demo gate as the rest of the read-only game surface.
 app.include_router(daily_router, dependencies=_authed_paid)
 app.include_router(meta_router)
+# GET /postseason -- the free MLB postseason page's data. Public like /meta:
+# no auth dependency and not in the paid group (api/postseason.py).
+app.include_router(postseason_router)
 app.include_router(web_router)
 app.include_router(odds_router, dependencies=_authed_paid)
 
