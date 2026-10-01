@@ -213,7 +213,11 @@ class PublicHistoryFilterUnit(unittest.TestCase):
         """A new branch added to get_card_history must not skip it: the
         source of the route returns `_public_history(...)` on each path."""
         import inspect
-        source = inspect.getsource(card_api.get_card_history)
+        # CHANGED 2026-10-01: the route is now a thin cached wrapper; the
+        # branches (and the filter each must pass through) live in
+        # `_card_history_uncached`, and the wrapper must build from nothing else.
+        self.assertIn("_card_history_uncached(", inspect.getsource(card_api.get_card_history))
+        source = inspect.getsource(card_api._card_history_uncached)
         self.assertGreaterEqual(source.count("_public_history("), 2)
         self.assertNotIn("payload = card_ledger.history_v2(limit=limit)\n", source)
 
@@ -230,6 +234,50 @@ class PublicRoutesAreRateLimited(unittest.TestCase):
     def test_the_paid_router_holds_only_the_paid_routes(self):
         paths = {getattr(r, "path", None) for r in card_api.router.routes}
         self.assertEqual(paths, {"/card", "/card/{date}"})
+
+
+
+@unittest.skipUnless(_HAVE_FASTAPI, "fastapi not installed")
+class PublicRoutesAreBuiltOncePerLedgerState(unittest.TestCase):
+    """The landing page calls /card/history on every view; folding the ledger
+    and verifying its chain each time would let a traffic spike burn the box."""
+
+    def setUp(self):
+        card_api.reset_public_cache_for_tests()
+        self.addCleanup(card_api.reset_public_cache_for_tests)
+
+    def _patched(self, state):
+        from api import meta as meta_api
+        return mock.patch.object(meta_api, "_ledger_signature", lambda: state["sig"])
+
+    def test_a_repeat_request_does_not_rebuild_and_a_new_ledger_state_does(self):
+        calls = []
+
+        def fake(request, limit, sport, rule):
+            calls.append((limit, sport, rule))
+            return {"days": [], "n": len(calls)}
+
+        state = {"sig": ("s1",)}
+        with self._patched(state), mock.patch.object(card_api, "_card_history_uncached", fake):
+            first = card_api.get_card_history(request=None, limit=1)
+            again = card_api.get_card_history(request=None, limit=1)
+            other = card_api.get_card_history(request=None, limit=2)
+            self.assertEqual(first, again)
+            self.assertEqual(len(calls), 2)          # limit=1 once, limit=2 once
+            self.assertNotEqual(other["n"], first["n"])
+            state["sig"] = ("s2",)                   # a settlement was appended
+            fresh = card_api.get_card_history(request=None, limit=1)
+            self.assertEqual(fresh["n"], 3)
+
+    def test_a_refused_request_is_never_cached(self):
+        state = {"sig": ("s1",)}
+        with self._patched(state):
+            from fastapi import HTTPException
+            for _ in range(2):
+                with self.assertRaises(HTTPException) as bad:
+                    card_api.get_card_history(request=None, limit=0)
+                self.assertEqual(bad.exception.status_code, 400)
+            self.assertNotIn(("history", (0, "mlb", None)), card_api._PUBLIC_MEMO)
 
 
 if __name__ == "__main__":

@@ -437,9 +437,67 @@ def _public_history(payload: dict) -> dict:
 # declaration order and "record" would otherwise be captured as a date and
 # rejected by _validate_date as a 400. (Now also on a different router:
 # app.py mounts `public_router` first, for the same reason.)
+# THE TWO PUBLIC ROUTES ARE BUILT ONCE PER LEDGER STATE (2026-10-01).
+#
+# Both fold the whole ledger and verify its hash chain: about 0.15 s for the
+# first rule and 0.9 s for the current one on a development machine, several
+# times that on the one-CPU box. The landing page now calls /card/history for
+# its sample card, so every visitor would have paid that. The answer only
+# changes when a ledger changes, so it is kept under the same key GET /meta
+# uses (api.meta._ledger_signature: the size and modification time of every
+# file the record is read from) plus the request's own arguments. A
+# settlement is picked up on the next request; nothing is served from a stale
+# ledger. Page views are still recorded on every request, outside the cache.
+_PUBLIC_MEMO: dict = {}
+_PUBLIC_MEMO_LOCK = __import__("threading").Lock()
+_PUBLIC_MEMO_MAX = 256
+
+
+def _memo_public(kind: str, args: tuple, build):
+    from api import meta as meta_api
+    state = meta_api._ledger_signature()
+    key = (kind, args)
+    with _PUBLIC_MEMO_LOCK:
+        if _PUBLIC_MEMO.get("state") != state:
+            _PUBLIC_MEMO.clear()
+            _PUBLIC_MEMO["state"] = state
+        hit = _PUBLIC_MEMO.get(key)
+    if hit is not None:
+        return hit
+    value = build()           # a 400 raised here is never cached
+    with _PUBLIC_MEMO_LOCK:
+        if _PUBLIC_MEMO.get("state") == state and len(_PUBLIC_MEMO) <= _PUBLIC_MEMO_MAX:
+            _PUBLIC_MEMO[key] = value
+    return value
+
+
+def reset_public_cache_for_tests() -> None:
+    with _PUBLIC_MEMO_LOCK:
+        _PUBLIC_MEMO.clear()
+
+
 @public_router.get("/card/record", dependencies=[Depends(_rate_limit_public_record)])
 def get_card_record(request: Request = None, sport: str = "mlb",
                     rule: Optional[str] = None) -> dict:
+    """GET /card/record: `_card_record_uncached`, once per ledger state."""
+    payload = _memo_public("record", (sport, rule),
+                           lambda: _card_record_uncached(None, sport, rule))
+    _record_page_view(request, "card_record", None)
+    return payload
+
+
+@public_router.get("/card/history", dependencies=[Depends(_rate_limit_public_record)])
+def get_card_history(request: Request = None, limit: int = DEFAULT_HISTORY_LIMIT,
+                     sport: str = "mlb", rule: Optional[str] = None) -> dict:
+    """GET /card/history: `_card_history_uncached`, once per ledger state."""
+    payload = _memo_public("history", (limit, sport, rule),
+                           lambda: _card_history_uncached(None, limit, sport, rule))
+    _record_page_view(request, "card_history", None)
+    return payload
+
+
+def _card_record_uncached(request: Request = None, sport: str = "mlb",
+                          rule: Optional[str] = None) -> dict:
     """The card's public record: every settled day, pooled.
 
     Pooling is correct here and is not the pooling mistake this repo warns
@@ -568,9 +626,8 @@ def get_card_record(request: Request = None, sport: str = "mlb",
 # ALSO DECLARED BEFORE /card/{date}, for the identical reason /card/record
 # is above: "history" would otherwise be matched as a date and 400 out of
 # _validate_date. See that route's comment and tests/test_api_card.py.
-@public_router.get("/card/history", dependencies=[Depends(_rate_limit_public_record)])
-def get_card_history(request: Request = None, limit: int = DEFAULT_HISTORY_LIMIT,
-                     sport: str = "mlb", rule: Optional[str] = None) -> dict:
+def _card_history_uncached(request: Request = None, limit: int = DEFAULT_HISTORY_LIMIT,
+                           sport: str = "mlb", rule: Optional[str] = None) -> dict:
     """Every settled day, newest first -- the day-by-day detail behind
     /card/record's pooled totals: each day's picks, results, prices, books
     and profit, plus that day's published row_hash.

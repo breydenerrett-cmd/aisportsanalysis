@@ -146,6 +146,13 @@ class CardRouteRuleDispatch(unittest.TestCase):
 
 @unittest.skipUnless(_HAVE_FASTAPI, "fastapi not installed")
 class CardRecordRuleDispatch(unittest.TestCase):
+    def setUp(self):
+        # ADDED 2026-10-01: the public record routes are built once per ledger
+        # state (api.card._memo_public). These tests replace ledger functions
+        # in place without touching a file, so each starts from an empty cache.
+        card_mod.reset_public_cache_for_tests()
+        self.addCleanup(card_mod.reset_public_cache_for_tests)
+
     def _record_v2_fixture(self):
         blank = {"days": 0, "wins": 0, "losses": 0, "pushes": 0, "voids": 0,
                 "n_staked": 0, "profit_units": 0.0, "win_rate": None,
@@ -203,6 +210,13 @@ class CardRecordRuleDispatch(unittest.TestCase):
 
 @unittest.skipUnless(_HAVE_FASTAPI, "fastapi not installed")
 class CardHistoryRuleDispatch(unittest.TestCase):
+    def setUp(self):
+        # ADDED 2026-10-01: the public record routes are built once per ledger
+        # state (api.card._memo_public). These tests replace ledger functions
+        # in place without touching a file, so each starts from an empty cache.
+        card_mod.reset_public_cache_for_tests()
+        self.addCleanup(card_mod.reset_public_cache_for_tests)
+
     def test_rule_v2_calls_history_v2_not_history(self):
         with mock.patch("src.appstate.card_ledger.history_v2",
                         return_value={"days": [], "total_days": 0,
