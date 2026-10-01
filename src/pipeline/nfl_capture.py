@@ -50,6 +50,28 @@ FAMILY = "featured"
 CREDITS_PER_CAPTURE = 3
 DEFAULT_DONE_PATH = processed_path("nfl_capture_done.jsonl")
 
+# THE GAME-DAY WINDOW (added 2026-10-01).
+#
+# The five phases alone are not enough for the NFL card. It judges a price
+# only against a board no more than an hour old
+# (src/analysis/nfl_value.FRESH_BOARD_SECONDS), and it is rebuilt on every
+# capture slot, so with phase captures only it can look at a slate for five
+# separate hours and is blind in between.
+#
+# Nobody saw this, because until 2026-10-01 the done file was git-ignored:
+# every runner started from an empty one, found every phase due again and
+# bought the board on every slot, about 75 times a day at 3 credits, on
+# days with no game as well. That accident kept the card's board fresh. The
+# done file is now committed, the phases work as written, and the freshness
+# the card relied on has to be bought on purpose and only when it is used:
+# inside the six hours before a kickoff, the board is refreshed whenever the
+# last capture is 25 minutes old. Slots run about 13 minutes apart, so that
+# is every second slot and the board the card sees is never older than
+# about 40 minutes. Outside that window the phases stand alone.
+GAMEDAY_WINDOW_MINUTES = 6 * 60
+GAMEDAY_REFRESH_MINUTES = 25
+REFRESH_MARK = ("_gameday_refresh", "refresh")
+
 
 def _eastern():
     """NFL's official timezone, with a fallback for tzdata-less containers."""
@@ -173,6 +195,45 @@ def mark_done(path: str | Path, pairs: list[tuple[str, str]], now: datetime) -> 
             handle.write(json.dumps(row, sort_keys=True) + "\n")
 
 
+def last_capture_utc(path: str | Path) -> Optional[datetime]:
+    """When the board was last bought, by any phase or refresh: the newest
+    `observed_utc` in the done file. None when the file has no datable row."""
+    target = Path(path)
+    if not target.exists():
+        return None
+    newest = None
+    for line in target.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            stamp = _parse_iso(json.loads(line).get("observed_utc"))
+        except (json.JSONDecodeError, AttributeError):
+            continue
+        if stamp is not None and (newest is None or stamp > newest):
+            newest = stamp
+    return newest
+
+
+def gameday_refresh_due(games: list[dict], now: datetime,
+                        last_capture: Optional[datetime]) -> bool:
+    """True when some game kicks off within `GAMEDAY_WINDOW_MINUTES` (and has
+    not kicked off) and the last capture is at least
+    `GAMEDAY_REFRESH_MINUTES` old or unknown. See THE GAME-DAY WINDOW."""
+    window = timedelta(minutes=GAMEDAY_WINDOW_MINUTES)
+    in_window = False
+    for game in games:
+        start_utc = _parse_iso(game.get("start_utc") or "")
+        if start_utc is not None and timedelta(0) < start_utc - now <= window:
+            in_window = True
+            break
+    if not in_window:
+        return False
+    if last_capture is None:
+        return True
+    return now - last_capture >= timedelta(minutes=GAMEDAY_REFRESH_MINUTES)
+
+
 def due_phases(
     games: list[dict], done: set, now: datetime
 ) -> list[tuple[str, str]]:
@@ -285,13 +346,16 @@ def run(
     # Check which phases are due
     due_list = due_phases(games, done, clock_now)
 
+    refresh = False
     if not due_list:
-        return {
-            "due": [],
-            "captured": False,
-            "reason": "no phase due",
-            "credits": 0,
-        }
+        refresh = gameday_refresh_due(games, clock_now, last_capture_utc(done_path))
+        if not refresh:
+            return {
+                "due": [],
+                "captured": False,
+                "reason": "no phase due",
+                "credits": 0,
+            }
 
     # Default capture function
     if capture is None:
@@ -337,12 +401,17 @@ def run(
             "summary": summary,
         }
 
-    # Mark all due phases as done
-    mark_done(done_path, due_list, clock_now)
+    # Mark all due phases as done. A game-day refresh marks only itself: its
+    # row carries the time `last_capture_utc` reads on the next slot.
+    mark_done(done_path, due_list or [REFRESH_MARK], clock_now)
 
-    return {
+    result = {
         "due": due_list,
         "captured": True,
         "credits": CREDITS_PER_CAPTURE,
         "summary": summary,
     }
+    if refresh:
+        result["refresh"] = True
+        result["reason"] = "game-day refresh (a kickoff is within 6 hours)"
+    return result

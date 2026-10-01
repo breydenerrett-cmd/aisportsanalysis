@@ -513,5 +513,124 @@ class TestRun(unittest.TestCase):
             self.assertEqual(len(done), 4)
 
 
+
+class TestGameDayRefresh(unittest.TestCase):
+    """The NFL card judges only a board under an hour old, so inside the six
+    hours before a kickoff the board is re-bought every 25 minutes. Outside
+    that window the five phases stand alone (see THE GAME-DAY WINDOW in
+    src/pipeline/nfl_capture.py)."""
+
+    KICKOFF = datetime(2026, 10, 2, 0, 15, 0, tzinfo=timezone.utc)
+
+    def _games(self):
+        return [{"game_id": "2026_04_SF_LA", "away": "49ers", "home": "Rams",
+                 "start_utc": self.KICKOFF.isoformat().replace("+00:00", "Z")}]
+
+    def _run(self, done_path, now, calls, guard_ok=True, error=None):
+        def fake_capture(env=None, sport=None):
+            calls.append(now)
+            if error:
+                return {"error": error}
+            return {"captured": 800, "events": 14}
+
+        def fake_spend_guard(family, credits, now=None):
+            from src.capture.budget import Decision
+            return Decision(guard_ok, "ok" if guard_ok else "floor reached")
+
+        return nfl_capture.run(now=now, games=self._games(), capture=fake_capture,
+                               spend_guard=fake_spend_guard, done_path=done_path)
+
+    def _all_phases_done(self, done_path, at):
+        nfl_capture.mark_done(done_path, [("2026_04_SF_LA", name) for name, _ in nfl_capture.PHASES], at)
+
+    def test_one_evening_of_slots_keeps_the_board_under_an_hour_old(self):
+        # Slots 13 minutes apart from 7 hours before kickoff to kickoff.
+        with tempfile.TemporaryDirectory() as tmp:
+            done_path = Path(tmp) / "done.jsonl"
+            calls = []
+            slot = self.KICKOFF - timedelta(hours=7)
+            worst_age = timedelta(0)
+            last = None
+            while slot < self.KICKOFF:
+                self._run(done_path, slot, calls)
+                if calls:
+                    last = calls[-1]
+                if last is not None and self.KICKOFF - slot <= timedelta(hours=6):
+                    worst_age = max(worst_age, slot - last)
+                slot += timedelta(minutes=13)
+            self.assertLess(worst_age, timedelta(minutes=60))
+            # Bought far less often than once a slot (33 slots in 7 hours).
+            self.assertLessEqual(len(calls), 17)
+            self.assertGreaterEqual(len(calls), 12)
+
+    def test_no_refresh_outside_the_window(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            done_path = Path(tmp) / "done.jsonl"
+            # 10 hours out: t72h and t24h are done, t6h is not open yet.
+            early = self.KICKOFF - timedelta(hours=10)
+            nfl_capture.mark_done(done_path, [("2026_04_SF_LA", "t72h"), ("2026_04_SF_LA", "t24h")],
+                                  early - timedelta(hours=5))
+            calls = []
+            result = self._run(done_path, early, calls)
+            self.assertEqual(calls, [])
+            self.assertEqual(result["reason"], "no phase due")
+
+    def test_no_refresh_after_kickoff(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            done_path = Path(tmp) / "done.jsonl"
+            self._all_phases_done(done_path, self.KICKOFF - timedelta(hours=1))
+            calls = []
+            result = self._run(done_path, self.KICKOFF + timedelta(minutes=20), calls)
+            self.assertEqual(calls, [])
+            self.assertFalse(result["captured"])
+
+    def test_a_recent_capture_is_not_repeated(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            done_path = Path(tmp) / "done.jsonl"
+            now = self.KICKOFF - timedelta(hours=1)
+            self._all_phases_done(done_path, now - timedelta(minutes=13))
+            calls = []
+            self.assertFalse(self._run(done_path, now, calls)["captured"])
+            later = now + timedelta(minutes=13)   # 26 minutes after the last one
+            result = self._run(done_path, later, calls)
+            self.assertTrue(result["captured"])
+            self.assertTrue(result["refresh"])
+            self.assertEqual(result["credits"], nfl_capture.CREDITS_PER_CAPTURE)
+            self.assertEqual(nfl_capture.last_capture_utc(done_path), later)
+
+    def test_the_spend_guard_still_decides(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            done_path = Path(tmp) / "done.jsonl"
+            now = self.KICKOFF - timedelta(hours=1)
+            self._all_phases_done(done_path, now - timedelta(minutes=40))
+            calls = []
+            result = self._run(done_path, now, calls, guard_ok=False)
+            self.assertEqual(calls, [])
+            self.assertFalse(result["captured"])
+            self.assertEqual(result["credits"], 0)
+
+    def test_a_failed_refresh_leaves_no_mark_so_the_next_slot_retries(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            done_path = Path(tmp) / "done.jsonl"
+            now = self.KICKOFF - timedelta(hours=1)
+            before = now - timedelta(minutes=40)
+            self._all_phases_done(done_path, before)
+            calls = []
+            self.assertFalse(self._run(done_path, now, calls, error="boom")["captured"])
+            self.assertEqual(nfl_capture.last_capture_utc(done_path), before)
+
+    def test_the_refresh_mark_never_reads_as_a_done_phase(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            done_path = Path(tmp) / "done.jsonl"
+            now = self.KICKOFF - timedelta(hours=5)
+            nfl_capture.mark_done(done_path, [nfl_capture.REFRESH_MARK], now - timedelta(minutes=5))
+            # t72h, t24h and t6h are all due and none is marked: a phase capture.
+            calls = []
+            result = self._run(done_path, now, calls)
+            self.assertTrue(result["captured"])
+            self.assertNotIn("refresh", result)
+            self.assertEqual({phase for _, phase in result["due"]}, {"t72h", "t24h", "t6h"})
+
+
 if __name__ == "__main__":
     unittest.main()
