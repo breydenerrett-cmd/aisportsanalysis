@@ -176,5 +176,64 @@ class OneRebuildPerCacheTests(unittest.TestCase):
                         "cache's own in-flight rebuild")
 
 
+
+class OneBuildInTheWholeProcessTests(unittest.TestCase):
+    """Production was killed for memory at the second warm-up pass: eleven
+    caches each started their own background rebuild and seven builds ran
+    side by side. One rebuild per cache is not the limit that matters."""
+
+    def _overlap_tracker(self):
+        state = {"running": 0, "most": 0, "builds": 0}
+        guard = threading.Lock()
+
+        def build():
+            with guard:
+                state["running"] += 1
+                state["builds"] += 1
+                state["most"] = max(state["most"], state["running"])
+            time.sleep(0.05)
+            with guard:
+                state["running"] -= 1
+            return object()
+
+        return state, build
+
+    def test_background_rebuilds_in_different_caches_never_overlap(self):
+        state, build = self._overlap_tracker()
+        caches = [freshness.SingleFlightTTLCache(ttl_s=60, stale_while_revalidate_s=600)
+                  for _ in range(6)]
+        for cache in caches:
+            cache.get("k", build)
+        for cache in caches:                      # age every entry past its TTL
+            cache._entries["k"].built_at -= timedelta(seconds=61)
+        for cache in caches:                      # the second warm-up pass
+            _, meta = cache.get("k", build)
+            self.assertTrue(meta["stale"])
+        deadline = time.time() + 10
+        while any(c._refreshing for c in caches) and time.time() < deadline:
+            time.sleep(0.01)
+        self.assertEqual(state["builds"], 12)     # every cache did get rebuilt
+        self.assertEqual(state["most"], 1)
+
+    def test_a_blocking_build_waits_for_a_background_one(self):
+        state, build = self._overlap_tracker()
+        warm = freshness.SingleFlightTTLCache(ttl_s=60, stale_while_revalidate_s=600)
+        cold = freshness.SingleFlightTTLCache(ttl_s=60)
+        warm.get("k", build)
+        warm._entries["k"].built_at -= timedelta(seconds=61)
+        warm.get("k", build)                      # starts a background rebuild
+        cold.get("k", build)                      # a request on a cold cache
+        deadline = time.time() + 10
+        while warm._refreshing and time.time() < deadline:
+            time.sleep(0.01)
+        self.assertEqual(state["most"], 1)
+
+    def test_a_builder_may_read_another_cache_on_its_own_thread(self):
+        inner = freshness.SingleFlightTTLCache(ttl_s=60)
+        outer = freshness.SingleFlightTTLCache(ttl_s=60)
+        value, _ = outer.get("o", lambda: inner.get("i", lambda: 7)[0] + 1)
+        self.assertEqual(value, 8)
+
+
 if __name__ == "__main__":
     unittest.main()

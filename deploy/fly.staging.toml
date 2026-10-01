@@ -29,6 +29,12 @@ primary_region = "iad"  # US East -- change to whatever region the volume
 # since fly.toml is a file this repo tracks in git.
 [env]
   APP_DB_PATH = "/app/data/app/app.db"
+  # Added 2026-10-01 with the one-build-at-a-time gate
+  # (src/appstate/freshness.py). glibc gives each thread its own malloc arena
+  # and does not hand freed memory back between them, so a process that
+  # builds on several threads holds far more resident memory than it uses.
+  # Two arenas is the usual setting for a threaded Python server.
+  MALLOC_ARENA_MAX = "2"
   # Origin Stripe hosted Checkout redirects the browser back to
   # (src/appstate/billing.py's _public_base_url). Non-secret -- it is the
   # public hostname of this very app -- so it belongs here rather than in

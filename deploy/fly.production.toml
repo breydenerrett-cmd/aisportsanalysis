@@ -28,6 +28,12 @@ primary_region = "iad"
 
 [env]
   APP_DB_PATH = "/app/data/app/app.db"
+  # Added 2026-10-01 with the one-build-at-a-time gate
+  # (src/appstate/freshness.py). glibc gives each thread its own malloc arena
+  # and does not hand freed memory back between them, so a process that
+  # builds on several threads holds far more resident memory than it uses.
+  # Two arenas is the usual setting for a threaded Python server.
+  MALLOC_ARENA_MAX = "2"
 
   # BOUNDARY 5, and the one that costs a customer money if it is wrong.
   #

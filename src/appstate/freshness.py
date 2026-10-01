@@ -117,6 +117,27 @@ class FreshnessPolicy:
         return False, None
 
 
+# ONE BUILD AT A TIME, IN THE WHOLE PROCESS (2026-10-01).
+#
+# Each cache already allows only one background rebuild at a time. That was
+# not enough: there are eleven caches. Ten minutes after start the warm-up
+# thread walks its items a second time, every entry is past its TTL, each one
+# answers stale and starts ITS OWN cache's background rebuild, and seven full
+# builds run side by side. Production (1 GB) was killed for memory at 658 and
+# 666 seconds of uptime, twice in a row, and had been restarting every eleven
+# minutes since it was first deployed; the deploy check only watches the first
+# few minutes, so it never saw it. Replayed locally the second pass had 7
+# rebuilds alive at once against 1 on the first.
+#
+# The builds are CPU-bound Python under one interpreter lock, so running them
+# together buys no speed. It only stacks their memory. Every build, blocking
+# or background, in any cache, now takes this gate, which makes every pass
+# look like the first one: sequential, and bounded by the largest single
+# build. Re-entrant, because a builder may read another cache on the same
+# thread.
+_BUILD_GATE = threading.RLock()
+
+
 @dataclass
 class _Entry:
     """One cached value plus when it was built. No error state is kept on
@@ -278,7 +299,8 @@ class SingleFlightTTLCache:
                 return self._serve_hit(entry, now, odds_observed_extractor)
 
             try:
-                value = builder()
+                with _BUILD_GATE:
+                    value = builder()
             except Exception:
                 if entry is not None:
                     age_s = (now - entry.built_at).total_seconds()
@@ -329,7 +351,8 @@ class SingleFlightTTLCache:
 
         def _run():
             try:
-                value = builder()
+                with _BUILD_GATE:
+                    value = builder()
                 # STORED BEFORE THE FLAG IS CLEARED. The other order leaves a
                 # window where the key looks idle but still holds the old
                 # value, so the next request starts a second identical
