@@ -359,10 +359,15 @@ def report(*, data_dir: Optional[Path] = None, db_path: Optional[Path] = None,
             # return URL: with no API key, price id or webhook secret this
             # used to read "ok" (found by review 2026-10-01).
             reason = _billing.checkout_not_ready_reason()
+            # "test" / "live" / "unknown" / None, from the key's prefix only
+            # (billing.stripe_key_mode): which mode a purchase here would be
+            # in, said before anyone makes one.
+            mode = _billing.stripe_key_mode()
             if reason:
                 return {"status": "broken", "provider": provider,
-                        "reason": reason}
-            return {"status": "ok", "provider": provider, "reason": None}
+                        "reason": reason, "mode": mode}
+            return {"status": "ok", "provider": provider, "reason": None,
+                    "mode": mode}
         except Exception as exc:  # noqa: BLE001
             # A health check must never be the thing that 500s.
             return {"status": "unknown", "provider": None,

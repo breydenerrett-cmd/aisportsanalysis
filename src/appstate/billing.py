@@ -392,6 +392,24 @@ def public_checkout_status() -> str:
     return CHECKOUT_UNAVAILABLE if checkout_not_ready_reason() else CHECKOUT_ON
 
 
+def stripe_key_mode() -> Optional[str]:
+    """"test" or "live", read from the PREFIX of the configured Stripe key and
+    nothing else, or "unknown" for a key with neither prefix, or None when no
+    key is set. Stripe's own convention: secret and restricted keys begin
+    `sk_test_` / `rk_test_` in test mode and `sk_live_` / `rk_live_` in live
+    mode. Reported on GET /health so an operator can tell which mode a deploy
+    is in before anyone makes a purchase on it, without the key, or any part
+    of it beyond that fixed prefix, ever being read back."""
+    key = (os.environ.get("STRIPE_API_KEY") or "").strip()
+    if not key:
+        return None
+    if key.startswith(("sk_test_", "rk_test_")):
+        return "test"
+    if key.startswith(("sk_live_", "rk_live_")):
+        return "live"
+    return "unknown"
+
+
 def checkout_not_ready_reason() -> Optional[str]:
     """Why a switched-on Stripe deploy cannot sell right now, or None when it
     can. One list for the three places that must agree: `/meta` (which says

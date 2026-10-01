@@ -162,6 +162,23 @@ class HealthReportsItTests(unittest.TestCase):
                 for secret in ("sk_test", "whsec_", "price_synthetic"):
                     self.assertNotIn(secret, report["checkout"]["reason"])
 
+    def test_health_says_test_or_live_without_ever_echoing_the_key(self):
+        """Which mode a purchase on this deploy would be in must be readable
+        before anyone makes one. Only the prefix is ever inspected."""
+        for key, mode in (("sk_test_" + "a" * 24, "test"), ("rk_test_" + "b" * 24, "test"),
+                          ("sk_live_" + "c" * 24, "live"), ("rk_live_" + "d" * 24, "live"),
+                          ("something_else", "unknown")):
+            with self.subTest(mode=mode, prefix=key[:8]):
+                env = dict(self.SELLABLE)
+                env[billing.ENV_STRIPE_API_KEY] = key
+                checkout = self._report(env)["checkout"]
+                self.assertEqual(checkout["mode"], mode)
+                self.assertNotIn(key, repr(checkout))
+                self.assertNotIn(key[8:], repr(checkout))
+        env = dict(self.SELLABLE)
+        env[billing.ENV_STRIPE_API_KEY] = ""
+        self.assertIsNone(self._report(env)["checkout"]["mode"])
+
     def test_health_never_500s_on_this_check(self):
         """/health is the one endpoint that must always answer."""
         with mock.patch.object(billing, "checkout_not_ready_reason",
