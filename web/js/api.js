@@ -16,7 +16,25 @@
  * token on every reload.
  */
 
+import { getAnonId } from "./attribution.js";
+
 export const TOKEN_STORAGE_KEY = "aisportsanalysis.invite_token";
+
+/**
+ * Fired on `window` whenever the stored token is set or cleared, so chrome
+ * that is mounted once (the footer's Billing link, meta.js) can follow a
+ * sign-in or sign-out that happens without a page load -- the checkout
+ * success page signs the buyer in and nothing reloads.
+ */
+export const TOKEN_CHANGED_EVENT = "linehound:token-changed";
+
+function announceTokenChange() {
+  try {
+    window.dispatchEvent(new Event(TOKEN_CHANGED_EVENT));
+  } catch (err) {
+    /* no window/Event (a non-browser test harness): nothing to announce to */
+  }
+}
 
 /**
  * HOW LONG A REQUEST MAY HANG BEFORE WE GIVE UP AND SAY SO.
@@ -59,6 +77,7 @@ export function setToken(token) {
     // Storage unavailable -- the token entry form will simply not persist
     // across a reload; nothing here should crash the page over it.
   }
+  announceTokenChange();
 }
 
 export function clearToken() {
@@ -67,6 +86,7 @@ export function clearToken() {
   } catch (err) {
     /* see setToken */
   }
+  announceTokenChange();
 }
 
 /**
@@ -229,5 +249,8 @@ export function apiDelete(path) {
  * src/appstate/events.py's record_event_safe gives server-side.
  */
 export function trackFunnelEvent(kind, properties) {
-  apiPost("/funnel/event", { kind, properties }).catch(() => {});
+  // `anon_id` is the visitor's random id (attribution.js) -- sent with EVERY
+  // beacon so the server can count distinct visitors instead of hashing all
+  // anonymous traffic to one sentinel.
+  apiPost("/funnel/event", { kind, properties, anon_id: getAnonId() }).catch(() => {});
 }

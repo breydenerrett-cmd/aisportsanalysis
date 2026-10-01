@@ -91,12 +91,10 @@ def _resolve_optional_user(authorization: Optional[str] = Header(default=None),
 
 
 def _client_ip(request: Request) -> str:
-    """Copied from src.appstate.ratelimit's own client-IP fallback -- see
-    module docstring for why this route can't just reuse
-    `limiter_dependency` outright."""
-    client = getattr(request, "client", None)
-    host = getattr(client, "host", None) if client is not None else None
-    return host or "unknown"
+    """The caller's address, `Fly-Client-IP` first -- see
+    src.appstate.ratelimit.client_ip for why the socket address alone put
+    every visitor behind Fly's proxy in one shared bucket."""
+    return ratelimit.client_ip(request)
 
 
 def _rate_limit_support(request: Request,

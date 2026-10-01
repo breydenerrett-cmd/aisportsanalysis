@@ -49,6 +49,30 @@ class GetHealthTests(unittest.TestCase):
         self.assertEqual(data["status"], "degraded")
         self.assertEqual(response.status_code, 503)
 
+    def test_a_billing_misconfiguration_alone_is_degraded_but_not_a_503(self):
+        """Fly routes on this status code. A missing billing setting must be
+        loud in the payload and must not take the record page and every
+        existing subscriber offline with it."""
+        from api.health import get_health
+        response = Response()
+        degraded = {"status": "degraded",
+                    "reasons": ["checkout: STRIPE_WEBHOOK_SECRET is unset, so ..."],
+                    "checkout": {"status": "broken"}}
+        with mock.patch.object(apphealth, "report", return_value=degraded):
+            data = get_health(response)
+        self.assertEqual(data["status"], "degraded")
+        self.assertEqual(data["checkout"]["status"], "broken")
+        self.assertNotEqual(response.status_code, 503)
+
+    def test_a_billing_misconfiguration_plus_a_real_fault_is_still_a_503(self):
+        from api.health import get_health
+        response = Response()
+        degraded = {"status": "degraded",
+                    "reasons": ["checkout: STRIPE_API_KEY is unset", "app db unreachable: x"]}
+        with mock.patch.object(apphealth, "report", return_value=degraded):
+            get_health(response)
+        self.assertEqual(response.status_code, 503)
+
     def test_a_health_check_that_itself_raises_still_returns_a_response(self):
         """The one route that must never 500 unhandled -- an uptime checker
         needs a real response even when the check machinery itself breaks."""

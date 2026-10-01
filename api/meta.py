@@ -236,6 +236,19 @@ def _card_record() -> dict:
                 "pushes": None, "voids": None, "profit_units": None}
 
 
+def _billing_summary() -> dict:
+    """`{"checkout": "on"|"off"|"unavailable", "trial_days", "price_cents"}`.
+    Never raises: /meta is hit on every page load, and an unreadable billing
+    config must read as "off", never a 500 and never a guessed "on"."""
+    try:
+        from src.appstate import billing
+        return {"checkout": billing.public_checkout_status(),
+                "trial_days": billing.trial_period_days(),
+                "price_cents": billing.BETA_PLAN_PRICE_CENTS}
+    except Exception:  # noqa: BLE001
+        return {"checkout": "off", "trial_days": None, "price_cents": None}
+
+
 @router.get("/meta")
 def get_meta() -> dict:
     return {
@@ -247,6 +260,13 @@ def get_meta() -> dict:
         # without a token (hosted demo). The client hides the sign-in wall
         # and the BETS destination when this is set; see api/app.py.
         "public_demo": _public_demo(),
+        # Whether paying works on THIS deploy: "on" | "off" | "unavailable"
+        # (src.appstate.billing.public_checkout_status). The signup form and
+        # its heading read it so they promise a 7-day trial only when a
+        # checkout exists, and say the plain truth when it does not. Also
+        # carries the trial length and price the form states, from the same
+        # source Checkout charges from.
+        "billing": _billing_summary(),
         # The two research numbers the product states to customers, read
         # from data/research/alpha_registry.jsonl rather than typed into a
         # view. They used to be hardcoded in four places at three different

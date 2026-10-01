@@ -48,6 +48,7 @@ out of scope for this task.
 from __future__ import annotations
 
 import hashlib
+import ipaddress
 import threading
 import time
 from dataclasses import dataclass
@@ -78,6 +79,12 @@ def key_for(identity: str) -> str:
     return hashlib.sha256(identity.encode("utf-8")).hexdigest()
 
 
+# Upper bound on distinct keys one limiter remembers. Every key is a sha256 hex
+# digest plus a two-tuple (~250 bytes), so 10,000 keys is a few MB at most. See
+# FixedWindowLimiter._prune for what is dropped when it is exceeded.
+MAX_TRACKED_KEYS = 10_000
+
+
 class FixedWindowLimiter:
     """`limit` requests per `window_s` seconds, per key, fixed-window.
 
@@ -98,6 +105,28 @@ class FixedWindowLimiter:
         self._windows: dict = {}
         self._guard = threading.Lock()
 
+    def _prune(self, now: float) -> None:
+        """Bound the table. Called under the lock, only once the table has
+        outgrown MAX_TRACKED_KEYS, so the common path stays O(1).
+
+        Expired windows go first (a window older than `window_s` is
+        indistinguishable from no window: check() would reset it anyway, so
+        dropping it changes no answer). If the table is still over the cap
+        because every key is live -- a flood of distinct addresses inside one
+        window -- the oldest windows are dropped until it fits. That is the
+        deliberate trade: memory stays bounded and the worst case is that an
+        attacker rotating keys can reset the counter of the oldest keys, which
+        rotating a header already lets them do (see client_ip)."""
+        expired = [k for k, (start, _c) in self._windows.items()
+                   if now - start >= self.window_s]
+        for key in expired:
+            del self._windows[key]
+        overflow = len(self._windows) - MAX_TRACKED_KEYS
+        if overflow > 0:
+            oldest = sorted(self._windows, key=lambda k: self._windows[k][0])
+            for key in oldest[:overflow]:
+                del self._windows[key]
+
     def check(self, key: str, *, now: Optional[float] = None) -> LimitResult:
         """Record one request for `key` and say whether it is allowed.
 
@@ -114,6 +143,8 @@ class FixedWindowLimiter:
                 start, count = now, 0
             count += 1
             self._windows[key] = (start, count)
+            if len(self._windows) > MAX_TRACKED_KEYS:
+                self._prune(now)
             if count > self.limit:
                 retry_after = max(self.window_s - (now - start), 0.0)
                 return LimitResult(allowed=False, limit=self.limit,
@@ -122,16 +153,108 @@ class FixedWindowLimiter:
                                remaining=self.limit - count)
 
 
-def _client_identity(request) -> str:
-    """The best identity FastAPI's Request offers with no auth resolved
-    yet: the connecting client's IP, or the literal string "unknown" if
-    even that is absent (e.g. a test-built ASGI scope with no client
-    tuple) -- "unknown" collapses every such caller onto one shared
-    counter, which is a conservative (stricter, never looser) fallback,
-    not a bypass."""
+FLY_CLIENT_IP_HEADER = "fly-client-ip"
+CF_CONNECTING_IP_HEADER = "cf-connecting-ip"
+
+# Cloudflare's published proxy ranges. Source: https://www.cloudflare.com/ips/
+# (ips-v4 and ips-v6), transcribed 2026-10-01. Cloudflare changes these rarely
+# and announces it; if this list goes stale the failure is safe-ish -- a new
+# Cloudflare address is simply not recognised, so the request falls back to
+# `Fly-Client-IP` (the old shared-bucket behaviour), never to a spoofable value.
+CLOUDFLARE_IP_RANGES = tuple(ipaddress.ip_network(n) for n in (
+    # IPv4
+    "173.245.48.0/20", "103.21.244.0/22", "103.22.200.0/22", "103.31.4.0/22",
+    "141.101.64.0/18", "108.162.192.0/18", "190.93.240.0/20", "188.114.96.0/20",
+    "197.234.240.0/22", "198.41.128.0/17", "162.158.0.0/15", "104.16.0.0/13",
+    "104.24.0.0/14", "172.64.0.0/13", "131.0.72.0/22",
+    # IPv6
+    "2400:cb00::/32", "2606:4700::/32", "2803:f800::/32", "2405:b500::/32",
+    "2405:8100::/32", "2a06:98c0::/29", "2c0f:f248::/32",
+))
+
+
+def _parse_ip(value) -> Optional[ipaddress._BaseAddress]:
+    """`value` as an ip_address, or None. Never raises; an IPv4-mapped IPv6
+    address is unwrapped so one client has one spelling (and so a mapped
+    Cloudflare address is still recognised as Cloudflare)."""
+    try:
+        parsed = ipaddress.ip_address((value or "").strip())
+    except (ValueError, AttributeError, TypeError):
+        return None
+    mapped = getattr(parsed, "ipv4_mapped", None)
+    return mapped if mapped is not None else parsed
+
+
+def _is_cloudflare(address) -> bool:
+    return any(address.version == net.version and address in net
+               for net in CLOUDFLARE_IP_RANGES)
+
+
+def _header(headers, name: str) -> str:
+    try:
+        return (headers.get(name) or "").strip()
+    except Exception:  # noqa: BLE001 -- a header lookup must never 500 a route
+        return ""
+
+
+def client_ip(request) -> str:
+    """The caller's address for rate limiting and any other per-client key.
+
+    BEHIND FLY'S PROXY THE SOCKET PEER IS ALWAYS THE PROXY. The app runs on
+    Fly, so `request.client.host` is one of Fly's edge addresses for every
+    visitor on earth, and every per-IP limiter (signup 10/h, funnel 60/h,
+    support, free bet checks) collapsed the whole site onto one shared bucket.
+    Fly sets `Fly-Client-IP` on every request it forwards (overwriting any
+    value the client sent), so that header is the real address when the
+    request came to Fly directly (linehound-prod.fly.dev).
+
+    THROUGH CLOUDFLARE (linehound.app) `Fly-Client-IP` is a Cloudflare edge
+    address shared by many visitors, and the real client is in
+    `CF-Connecting-IP`. So:
+
+      1. `Fly-Client-IP` parses AND lies inside CLOUDFLARE_IP_RANGES AND
+         `CF-Connecting-IP` is present and parses as an IP address
+         -> `CF-Connecting-IP`;
+      2. else `Fly-Client-IP` if it parses as an IP address;
+      3. else the socket address;
+      4. else "unknown" (a test-built scope with no client tuple -- it
+         collapses those callers onto one counter, the conservative
+         direction, never a bypass).
+
+    `CF-Connecting-IP` is believed ONLY when Fly itself says the hop in front
+    of it was Cloudflare, so a client hitting the Fly hostname directly cannot
+    choose its bucket with that header: Fly overwrites `Fly-Client-IP` with the
+    client's own (non-Cloudflare) address, and rule 1 does not fire.
+
+    Every value is normalised through `ipaddress` before it becomes a key: a
+    malformed header (garbage, an oversize string, an embedded newline) never
+    raises and never becomes the limiter key verbatim; it falls through to the
+    next rule.
+
+    WHAT REMAINS TRUE. On a host that is NOT behind Fly's edge the
+    `Fly-Client-IP` header is client-controlled, and a caller can rotate it to
+    get a fresh bucket every request. That is an accepted limit of an
+    in-process limiter, not a security boundary: this exists to stop an honest
+    mistake or a lazy loop, not a determined abuser, and nothing sensitive may
+    rely on it alone. (The same is true of a caller rotating real source
+    addresses.)
+    """
+    headers = getattr(request, "headers", None)
+    if headers is not None:
+        fly = _parse_ip(_header(headers, FLY_CLIENT_IP_HEADER))
+        if fly is not None:
+            if _is_cloudflare(fly):
+                real = _parse_ip(_header(headers, CF_CONNECTING_IP_HEADER))
+                if real is not None:
+                    return str(real)
+            return str(fly)
     client = getattr(request, "client", None)
     host = getattr(client, "host", None) if client is not None else None
     return host or "unknown"
+
+
+# Old private name, kept so nothing importing it breaks.
+_client_identity = client_ip
 
 
 def limiter_dependency(limiter: FixedWindowLimiter, *, user_dependency=None):

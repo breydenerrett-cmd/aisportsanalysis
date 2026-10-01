@@ -266,7 +266,22 @@ class SignupFullFlowTests(unittest.TestCase):
         authed_user = get_current_user(authorization=f"Bearer {raw_token}")
         self.assertEqual(authed_user.id, user_id)
 
-        # The token is retrievable exactly once.
+        # A second read inside the re-read window (a reload, a lost response,
+        # the success page's own polling) returns the SAME token -- a paying
+        # customer is never locked out by a retry. See
+        # tests/test_signup_complete_polling.py for the window's edges.
+        again = signup_complete(session_id="cs_flow_1")
+        self.assertEqual(again["token"], raw_token)
+
+        # Once the window has closed the session id is dead: age the first
+        # read past it and the same call is refused.
+        import contextlib
+        import sqlite3
+        from datetime import datetime, timedelta, timezone
+        stale = (datetime.now(timezone.utc) - timedelta(minutes=11)).isoformat()
+        with contextlib.closing(sqlite3.connect(str(self.db))) as conn, conn:
+            conn.execute("UPDATE signup_activation_tokens SET retrieved_at = ? "
+                         "WHERE stripe_session_id = ?", (stale, "cs_flow_1"))
         with self.assertRaises(HTTPException):
             signup_complete(session_id="cs_flow_1")
 

@@ -29,16 +29,18 @@ except Exception:  # noqa: BLE001 -- fastapi lives only in api/'s deps
 
 
 def _card_router_paths():
-    """The card router's own paths, in DECLARATION order.
+    """Every card route path: the PUBLIC router's, then the paid router's --
+    the order api/app.py mounts them in, so the position of "/card/record"
+    against "/card/{date}" in this list is the order FastAPI will match them.
 
-    Read off `api.card.router` rather than `app.routes`: this FastAPI
-    version keeps an included router as a single opaque `_IncludedRouter`
-    entry instead of flattening its routes into the app, so walking
-    `app.routes` finds nothing and a test written against it would pass
-    vacuously on an empty list.
+    Read off the routers rather than `app.routes`: this FastAPI version keeps
+    an included router as a single opaque `_IncludedRouter` entry instead of
+    flattening its routes into the app, so walking `app.routes` finds nothing
+    and a test written against it would pass vacuously on an empty list.
     """
-    from api.card import router
-    return [getattr(r, "path", None) for r in router.routes]
+    from api.card import public_router, router
+    return ([getattr(r, "path", None) for r in public_router.routes]
+            + [getattr(r, "path", None) for r in router.routes])
 
 
 @unittest.skipUnless(_HAVE_FASTAPI, "fastapi not installed")
@@ -91,10 +93,11 @@ class CardRequiresAuth(unittest.TestCase):
             if message["type"] == "http.response.start":
                 captured["status"] = message["status"]
 
+        path, _, query = path.partition("?")
         scope = {
             "type": "http", "asgi": {"version": "3.0"}, "http_version": "1.1",
             "method": "GET", "scheme": "http", "path": path, "raw_path": path.encode(),
-            "query_string": b"", "root_path": "", "headers": [(b"host", b"test")],
+            "query_string": query.encode(), "root_path": "", "headers": [(b"host", b"test")],
             "client": ("test", 1), "server": ("test", 80),
         }
         asyncio.new_event_loop().run_until_complete(app(scope, receive, send))
@@ -106,17 +109,32 @@ class CardRequiresAuth(unittest.TestCase):
     def test_card_today_is_401_without_a_token(self):
         self.assertEqual(401, self._status("/card"))
 
-    def test_card_record_is_401_without_a_token(self):
-        """The record is the sales pitch, and it is still behind the gate.
-        A 400 here instead of a 401 means the route collision is back."""
-        self.assertEqual(401, self._status("/card/record"))
+    def test_card_record_is_public_without_a_token(self):
+        """The record is the proof the landing page promises "you can open
+        yourself" -- no token. A 400 here means the /card/{date} collision is
+        back; a 401 means the record went back behind the paid gate."""
+        self.assertEqual(200, self._status("/card/record"))
 
-    def test_card_history_is_401_without_a_token(self):
-        """Same reasoning as test_card_record_is_401_without_a_token: THE
-        RECORD's day-by-day detail is still the product, not a free
-        preview of it. A 400 here means the /card/{date} collision is
-        back for this route too."""
-        self.assertEqual(401, self._status("/card/history"))
+    def test_card_history_is_public_without_a_token(self):
+        """Same: the day-by-day settled detail is public. A 400 means the
+        /card/{date} collision is back for this route too."""
+        self.assertEqual(200, self._status("/card/history"))
+
+    def test_every_public_record_variant_is_open(self):
+        for path in ("/card/record?rule=v1", "/card/record?rule=v2",
+                     "/card/record?sport=nfl", "/card/record?sport=mma",
+                     "/card/history?rule=v1", "/card/history?rule=v2",
+                     "/card/history?sport=nfl", "/card/history?sport=mma"):
+            with self.subTest(path=path):
+                self.assertEqual(200, self._status(path))
+
+    def test_an_unsettled_date_stays_paid(self):
+        """Tonight's card is the product: a dated card and any `?rule=` or
+        `?sport=` variant of it still 401 without a token."""
+        for path in ("/card/2099-01-01", "/card/2099-01-01?rule=v2",
+                     "/card?sport=nfl", "/card?rule=v2"):
+            with self.subTest(path=path):
+                self.assertEqual(401, self._status(path))
 
 
 if __name__ == "__main__":

@@ -197,7 +197,7 @@ class AdminFunnelTests(unittest.TestCase):
     def test_honest_zeros_with_no_events_at_all(self):
         from api.funnel import get_admin_funnel
         result = get_admin_funnel(_admin=None)
-        self.assertEqual(len(result["steps"]), 9)
+        self.assertEqual(len(result["steps"]), 10)
         for step in result["steps"]:
             self.assertEqual(step["count"], 0)
             self.assertIsNone(step["conversion_pct_from_previous"])
@@ -207,7 +207,7 @@ class AdminFunnelTests(unittest.TestCase):
         result = get_admin_funnel(_admin=None)
         kinds = [s["kind"] for s in result["steps"]]
         self.assertEqual(kinds, [
-            "landing_view", "free_bet_check", "signup_started",
+            "landing_view", "cta_click", "free_bet_check", "signup_started",
             "account_created", "checkout_started", "checkout_completed",
             "invite_redeemed", "bet_check_run", "bet_saved",
         ])

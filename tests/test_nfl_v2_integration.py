@@ -474,7 +474,11 @@ class NflRecordRoutes(_TempLedger):
         hist_live = self.api.get_card_history(sport="nfl")
         self.assertEqual(hist_live["rule"], V2)
         self.assertEqual(hist_live["days"], [])
-        self.assertEqual([d["date"] for d in hist_live["pending_days"]], [DATE])
+        # The route is PUBLIC now (no token), so it never lists a published-but-
+        # unsettled card: that is tonight's pick. The ledger itself still holds
+        # it (asserted above, at card_ledger.history level).
+        self.assertEqual(hist_live["pending_days"], [])
+        self.assertNotIn(DATE, json.dumps(hist_live))
         hist_v1 = self.api.get_card_history(sport="nfl", rule=V1)
         self.assertEqual([d["date"] for d in hist_v1["days"]], ["2026-09-17"])
         self.assertEqual(hist_v1["pending_days"], [])

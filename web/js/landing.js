@@ -19,23 +19,74 @@ import { apiGet, trackFunnelEvent } from "./api.js";
 import { el, clear } from "./dom.js";
 import { renderDisclaimerFooter, meta as fetchMeta } from "./meta.js";
 import { BETA_TIER } from "./pricing.js";
+import {
+  loadCheckoutState, NOT_ON, ctaLabel, heroNote, pricingNote, trialPhrase, monthlyPrice,
+} from "./checkout.js";
 import { renderWordmark } from "./brand.js";
 import { armEntrances, armParallax, armCharts } from "./motion.js";
 import { mountLiveHero } from "./landing-live.js";
+import { captureFirstTouch } from "./attribution.js";
 
-function renderPricing(host) {
+function renderPricing(host, state) {
   clear(host);
+  if (!state.on) {
+    // Checkout is not open: the planned price and nothing more -- no plan
+    // story, no trial, no "cancel anytime" (checkout.js).
+    const planned = el("p", {
+      class: "pricing-tier", "data-hook": "pricing-tier",
+      "data-price": String(BETA_TIER.price_cents),
+    });
+    planned.appendChild(el("span", { "data-hook": "pricing-tier-note", text: pricingNote(state) }));
+    host.appendChild(planned);
+    return;
+  }
   const tier = el("dl", {
     class: "pricing-tier", "data-hook": "pricing-tier",
     "data-price": String(BETA_TIER.price_cents),
   });
   tier.appendChild(el("dt", { text: "Plan" }));
   tier.appendChild(el("dd", { "data-hook": "pricing-tier-name", text: BETA_TIER.name }));
-  tier.appendChild(el("dt", { text: "Price" }));
-  tier.appendChild(el("dd", { "data-hook": "pricing-tier-price", text: BETA_TIER.price_display }));
+  const price = monthlyPrice(state.priceCents);
+  if (price) {
+    tier.appendChild(el("dt", { text: "Price" }));
+    tier.appendChild(el("dd", { "data-hook": "pricing-tier-price", text: price }));
+  }
   tier.appendChild(el("dt", { text: "Note" }));
-  tier.appendChild(el("dd", { "data-hook": "pricing-tier-note", text: BETA_TIER.billing_note }));
+  tier.appendChild(el("dd", { "data-hook": "pricing-tier-note", text: pricingNote(state) }));
   host.appendChild(tier);
+}
+
+/**
+ * EVERY PAYING-RELATED WORD ON THIS PAGE, FROM /meta (2026-10-01).
+ *
+ * The markup carries the CAUTIOUS wording -- "Get notified when checkout
+ * opens", the planned price, no trial badge, no "cancel anytime" line -- so a
+ * crawler, a slow connection and a deploy with checkout off all read the true
+ * thing. This upgrades it to the trial wording only when GET /meta says
+ * checkout is "on", using that response's own trial length and price
+ * (checkout.js is the one decision shared with the signup, sign-in and record
+ * pages). The buttons keep their href: the signup page saves the email.
+ */
+export function applyCheckoutCopy(state) {
+  document.querySelectorAll("[data-checkout-cta]").forEach((node) => {
+    node.textContent = ctaLabel(state);
+  });
+  const note = document.querySelector("[data-hook='hero-cta-note']");
+  if (note) note.textContent = heroNote(state);
+  const badge = document.querySelector("[data-hook='pricing-trial-badge']");
+  if (badge) {
+    const phrase = trialPhrase(state);
+    badge.textContent = phrase || "";
+    badge.hidden = !phrase;
+  }
+  const cancelLine = document.querySelector("[data-hook='pricing-cancel-line']");
+  if (cancelLine) cancelLine.hidden = !state.on;
+  const pricingHost = document.querySelector("[data-hook='pricing-host']");
+  if (pricingHost) renderPricing(pricingHost, state);
+}
+
+async function fillCheckoutCopy() {
+  applyCheckoutCopy(await loadCheckoutState());
 }
 
 /**
@@ -485,7 +536,8 @@ function boot() {
   const disclaimerHost = document.querySelector("[data-hook='disclaimer-host']");
   const pricingHost = document.querySelector("[data-hook='pricing-host']");
   if (disclaimerHost) renderDisclaimerFooter(disclaimerHost);
-  if (pricingHost) renderPricing(pricingHost);
+  if (pricingHost) renderPricing(pricingHost, NOT_ON);
+  fillCheckoutCopy();
   revealPublicDemoEntry();
   fillResearchCounts();
   fillCardRecord();
@@ -505,6 +557,11 @@ function boot() {
   // With WHERE THEY CAME FROM attached. `properties` has been supported
   // end to end by api/funnel.py since it existed and had no caller, so
   // every landing view until now was an unattributed tally.
+  // FIRST TOUCH, KEPT. The UTM tags and referrer host used to live and die on
+  // this page's own beacons; stored here (localStorage, first touch wins) they
+  // travel with the visitor into the signup request, the account row, the
+  // Stripe Checkout metadata and the paid event. See attribution.js.
+  captureFirstTouch();
   trackFunnelEvent("landing_view", arrivalProperties());
   trackCtaClicks();
   // Design-system motion (handoff section 08) -- content renders complete

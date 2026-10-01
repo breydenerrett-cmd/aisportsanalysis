@@ -187,11 +187,16 @@ LANDING_VIEW = "landing_view"
 # cannot fill the table with junk kinds.
 CTA_CLICK = "cta_click"
 
+# Support re-issued a subscriber's access token (POST /admin/users/token).
+# Operational, not a funnel step: never recorded from the public beacon, and
+# its properties carry no token, only how many old tokens were revoked.
+SUPPORT_TOKEN_REISSUED = "support_token_reissued"
+
 EVENT_KINDS = frozenset({
     PAGE_VIEW, BET_CHECK_RUN, FREE_BET_CHECK, BET_SAVED, INVITE_REDEEMED,
     SIGNUP_STARTED, ACCOUNT_CREATED, CHECKOUT_STARTED, CHECKOUT_COMPLETED,
     SUBSCRIPTION_CANCELLED, SUBSCRIPTION_REACTIVATED,
-    DIGEST_VIEWED, LANDING_VIEW, CTA_CLICK,
+    DIGEST_VIEWED, LANDING_VIEW, CTA_CLICK, SUPPORT_TOKEN_REISSUED,
 })
 
 

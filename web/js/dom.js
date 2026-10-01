@@ -14,6 +14,8 @@
  * of composing a claim about it -- this is display, not interpretation.
  */
 
+import { loadCheckoutState, NOT_ON, gateLabel } from "./checkout.js";
+
 export function el(tag, attrs = {}, children = []) {
   const node = document.createElement(tag);
   for (const [key, value] of Object.entries(attrs)) {
@@ -395,6 +397,15 @@ function renderAuthRequired(container, err) {
   const actions = el("div", { class: "gate__actions" });
   actions.appendChild(el("a", { href: "#/signin", class: "btn btn--primary chamfer chamfer--btn",
     "data-hook": "signin-link", text: "Sign in" }));
+  // EVERY sign-in gate carries the way in for someone who has never paid:
+  // a stranger who lands on a locked page has no token to paste, and a gate
+  // with only "Sign in" is a dead end for exactly the person who would buy.
+  // Cautious wording first; "Start free trial" only when /meta says checkout is
+  // on and a trial exists (checkout.js).
+  const signupLink = el("a", { href: "#/signup", class: "btn btn--ghost chamfer chamfer--btn",
+    "data-hook": "signup-link", text: gateLabel(NOT_ON) });
+  loadCheckoutState().then((state) => { signupLink.textContent = gateLabel(state); });
+  actions.appendChild(signupLink);
   section.appendChild(actions);
   if (detail) {
     const disclosure = el("details", { class: "gate__detail", "data-hook": "auth-required-detail" });

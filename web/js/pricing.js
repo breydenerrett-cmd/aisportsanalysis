@@ -22,14 +22,41 @@
  * (same "one source, not a duplicated literal" rule as the price itself).
  */
 
+/**
+ * WHAT THIS MODULE MAY NOT SAY ON ITS OWN (2026-10-01). `billing_note` below
+ * still carries the static "7-day free trial ... Cancel anytime" sentence and
+ * is only for the in-app billing view, which a subscriber reaches after a
+ * checkout worked. Every PUBLIC page (landing, signup, sign-in, record page)
+ * builds its trial/price wording from GET /meta through web/js/checkout.js,
+ * which says no trial and no "cancel anytime" unless checkout is on, and takes
+ * the trial length and price from the server. `founding_note` is the
+ * founding-price explanation on its own so checkout.js can append it only when
+ * there is something to buy.
+ */
+const FOUNDING_NOTE =
+  "This is the founding price: it rises as the public record grows, and it can fall "
+  + "if the record does. Founding members keep $19.99 for as long as their "
+  + "subscription stays active.";
+
+/**
+ * The same explanation with the price the server reports (GET /meta
+ * `billing.price_cents`) instead of the typed $19.99. `price` is a figure like
+ * "$19.99"; with none, the sentence about keeping it is dropped rather than
+ * guessed.
+ */
+export function foundingNote(price) {
+  const head = "This is the founding price: it rises as the public record grows, and it can fall "
+    + "if the record does.";
+  return price
+    ? `${head} Founding members keep ${price} for as long as their subscription stays active.`
+    : head;
+}
+
 export const BETA_TIER = Object.freeze({
   id: "beta",
   name: "Founding access",
   price_cents: 1999,
   price_display: "$19.99/mo",
-  billing_note:
-    "7-day free trial, then $19.99/month. Cancel anytime. This is the "
-    + "founding price: it rises as the public record grows, and it can fall "
-    + "if the record does. Founding members keep $19.99 for as long as their "
-    + "subscription stays active.",
+  founding_note: FOUNDING_NOTE,
+  billing_note: "7-day free trial, then $19.99/month. Cancel anytime. " + FOUNDING_NOTE,
 });

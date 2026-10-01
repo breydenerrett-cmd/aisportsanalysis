@@ -37,9 +37,12 @@ signup_activation_tokens(stripe_session_id PK, user_id, raw_token, created_at)
     mints a fresh access token the moment a verified checkout.session
     .completed activates a pending_payment signup, and stores it here --
     the only table in this file that ever holds a RAW bearer token, which
-    is why it exists for exactly one read: take_activation_token() deletes
-    the row it returns, so a session id (visible in the browser's own
-    success-page URL) is good for exactly one retrieval, never a replay.
+    is why it is short-lived: take_activation_token() wipes the raw token,
+    so a session id (visible in the browser's own success-page URL) stops
+    working for good -- immediately by default, or once the
+    ACTIVATION_REREAD_WINDOW (10 minutes after the FIRST read) has closed
+    when GET /signup/complete asks for the re-read window its polling page
+    needs. Never a replay later.
     This is a deliberate, temporary exception to src/appstate/users.py's
     "hash at rest" rule -- the token has nowhere else to wait between the
     webhook call and the browser's own follow-up GET, since there is no
@@ -59,9 +62,9 @@ from __future__ import annotations
 import sqlite3
 import time
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Callable, Iterator, Optional
+from typing import Callable, Dict, Iterator, List, Mapping, Optional
 
 from src.appstate import users as users_store
 
@@ -197,6 +200,22 @@ def _ensure_schema(conn: sqlite3.Connection) -> None:
             raw_token TEXT,
             created_at TEXT NOT NULL,
             retrieved_at TEXT
+        )
+    """)
+    # First-touch attribution, one row per user (see record_signup_attribution).
+    # Raw user_id like every other table in this file; the analytics events
+    # table stays hash-only and carries the same values as event properties.
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS signup_attribution (
+            user_id INTEGER PRIMARY KEY,
+            utm_source TEXT,
+            utm_medium TEXT,
+            utm_campaign TEXT,
+            utm_content TEXT,
+            utm_term TEXT,
+            referrer_host TEXT,
+            anon_id TEXT,
+            created_at TEXT NOT NULL
         )
     """)
 
@@ -432,6 +451,7 @@ def has_activation_token(stripe_session_id: str, *, db: Optional[Path] = None) -
     """
     with _connect(db) as conn:
         _scrub_if_expired(conn, stripe_session_id)
+        _wipe_stale_rereads(conn)
         row = conn.execute(
             "SELECT 1 FROM signup_activation_tokens WHERE stripe_session_id = ?",
             (stripe_session_id,)).fetchone()
@@ -457,62 +477,192 @@ def record_activation_token(stripe_session_id: str, user_id: int, raw_token: str
         """, (stripe_session_id, user_id, raw_token, _now_iso()))
 
 
+# HOW LONG A SESSION ID KEEPS WORKING AFTER THE FIRST SUCCESSFUL READ.
+#
+# The success page polls GET /signup/complete (the webhook that mints the
+# token can land after the browser does), and a buyer who reloads the page, or
+# whose first response was lost on a mobile connection, makes a second read
+# for the same session id. With a strictly one-shot token that second read
+# was a 404 and a paying customer was locked out of what they had just paid
+# for, with no email and no recovery path to fall back on.
+#
+# So the raw token is kept for this long after the FIRST read and then wiped
+# for good. The property the one-shot design protected is preserved in the
+# part that matters: a session id seen in a browser URL, a history file or a
+# log is useless to anyone who finds it later than this. Inside the window
+# the session id is as good as the token itself, which is why the window is
+# short.
+ACTIVATION_REREAD_WINDOW = timedelta(minutes=10)
+
+
+# HOW LONG AN UNREAD RAW TOKEN MAY SIT IN THE TABLE.
+#
+# A buyer who pays but never opens the completion page leaves the 366-day
+# subscriber token in cleartext here. _scrub_if_expired only ever looks at the
+# one session id being asked about, so on its own an unread row could wait for
+# its 14-day invite TTL (or forever, if nobody asks). 72 hours is long enough
+# to cover a buyer who pays on a phone and opens the page on a laptop over a
+# weekend, and short enough that the table is not a standing vault of live
+# logins. Wiping the raw value costs the SUBSCRIPTION nothing: the hashed token
+# in `tokens` is untouched, so anyone who did read theirs keeps working access
+# and paid access is decided from the subscription row, not from this table.
+# An unread token is simply no longer recoverable from here (support re-mints
+# one: POST /admin/users/token).
+UNREAD_ACTIVATION_TTL = timedelta(hours=72)
+
+
+def _wipe_stale_rereads(conn: sqlite3.Connection) -> None:
+    """Erase every raw token that has no business still being here:
+
+      * a READ token whose re-read window (ACTIVATION_REREAD_WINDOW) closed,
+      * an UNREAD token older than UNREAD_ACTIVATION_TTL.
+
+    Runs on every token read and on every webhook idempotency check, so no
+    token sits in the table in the clear waiting for someone to ask for it;
+    no background sweep exists to rely on.
+
+    The unread case stamps `retrieved_at` the way _scrub_if_expired does, for
+    the same reason: a row with no raw token and no retrieved_at would let the
+    atomic claim in take_activation_token "win" and hand back a None token.
+    Stamped, an expired row is indistinguishable from a used one."""
+    now = datetime.now(timezone.utc)
+    cutoff = (now - ACTIVATION_REREAD_WINDOW).isoformat()
+    conn.execute(
+        "UPDATE signup_activation_tokens SET raw_token = NULL "
+        "WHERE raw_token IS NOT NULL AND retrieved_at IS NOT NULL "
+        "AND retrieved_at < ?", (cutoff,))
+    unread_cutoff = (now - UNREAD_ACTIVATION_TTL).isoformat()
+    conn.execute(
+        "UPDATE signup_activation_tokens SET raw_token = NULL, retrieved_at = ? "
+        "WHERE raw_token IS NOT NULL AND retrieved_at IS NULL "
+        "AND created_at < ?", (now.isoformat(), unread_cutoff))
+
+
 def take_activation_token(stripe_session_id: str, *,
+                           reread_window: Optional[timedelta] = None,
                            db: Optional[Path] = None) -> Optional[dict]:
-    """One-time retrieval: returns {"user_id", "raw_token"} and WIPES the
-    raw_token column (setting retrieved_at) on the one call that finds an
-    unretrieved row; None on every call after (already retrieved), and
+    """Retrieve the signup token: {"user_id", "raw_token"}, or None.
+
+    `reread_window` is how long after the FIRST successful read the same
+    session id may read the token again. The default (None / zero) is the
+    original strict one-time behaviour -- the first call returns the token
+    and wipes it, every later call is None. GET /signup/complete passes
+    ACTIVATION_REREAD_WINDOW so its polling page and a reload both work; see
+    that constant for why. After the window the raw token is wiped and the
+    session id is dead, exactly as under the strict rule.
+
     None for a session that never completed payment (no row was ever
-    inserted) -- the same shape either way, so GET /signup/complete can
+    inserted), for one already past its window, and for one whose token
+    expired unread -- the same shape every time, so GET /signup/complete can
     never distinguish "already used" from "never happened" for an outside
-    caller, which is the honest, safe answer for an endpoint reachable
-    with nothing but a session id from a URL.
+    caller, which is the honest, safe answer for an endpoint reachable with
+    nothing but a session id from a URL.
 
     Deliberately keeps the ROW (unlike a delete) after wiping the secret --
     see has_activation_token's docstring for why the row's continued
     existence is load-bearing for webhook-redelivery idempotency, not just
     an incidental audit trail.
 
-    ATOMIC CLAIM, NOT SELECT-THEN-UPDATE: the retrieval is a single guarded
-    UPDATE (WHERE retrieved_at IS NULL) so that two concurrent
-    GET /signup/complete calls for the same session id -- a double-click, or
-    an attacker racing the legitimate browser for a session id visible in
-    the success-page URL -- can never both come away with the raw token.
-    A prior SELECT-then-UPDATE let both callers read an unretrieved row
-    before either wrote the retrieved_at marker, handing the same one-time
-    bearer token out twice. Only the ONE caller whose UPDATE actually
-    matches the still-unretrieved row (RETURNING gives it the token before
-    the follow-up wipe) gets a result; every racing caller matches zero
-    rows and gets None, the same as a replay.
+    ATOMIC CLAIM, NOT SELECT-THEN-UPDATE: the FIRST retrieval is a single
+    guarded UPDATE (WHERE retrieved_at IS NULL) so that two concurrent calls
+    for the same session id -- a double-click, or an attacker racing the
+    legitimate browser for a session id visible in the success-page URL --
+    can never both be treated as "the first". Only the ONE caller whose
+    UPDATE matches the still-unretrieved row wins the claim; the window then
+    bounds how long the others (and the buyer's own retries) may keep
+    reading. `retrieved_at` is stamped once, by the winner, and is what the
+    window is measured from, so re-reads never extend it.
     """
+    window = reread_window if reread_window is not None else timedelta(0)
+    if window > ACTIVATION_REREAD_WINDOW:
+        window = ACTIVATION_REREAD_WINDOW
     with _connect(db) as conn:
-        # F5's TTL scrub runs first, on this same row -- if it fires (row
-        # older than users_store.DEFAULT_TOKEN_TTL and never retrieved), it
-        # sets retrieved_at itself, so the claim UPDATE just below finds no
-        # unretrieved row to match and this function returns None, same as
-        # any other already-used session id. See _scrub_if_expired's
-        # docstring.
         _scrub_if_expired(conn, stripe_session_id)
-        # Claim the row first (sets retrieved_at, still holding raw_token so
-        # RETURNING can hand it back). The WHERE guard is the whole race
-        # defense: at most one connection's UPDATE can match the
-        # retrieved_at IS NULL row, since the write lock serializes them and
-        # the loser re-reads a now-non-NULL retrieved_at.
+        _wipe_stale_rereads(conn)
         row = conn.execute(
             "UPDATE signup_activation_tokens SET retrieved_at = ? "
             "WHERE stripe_session_id = ? AND retrieved_at IS NULL "
             "RETURNING user_id, raw_token",
             (_now_iso(), stripe_session_id)).fetchone()
-        if row is None:
+        if row is not None:
+            if window <= timedelta(0):
+                # Strict one-time: wipe the secret in the same transaction
+                # as the claim.
+                conn.execute(
+                    "UPDATE signup_activation_tokens SET raw_token = NULL "
+                    "WHERE stripe_session_id = ?", (stripe_session_id,))
+            return {"user_id": row["user_id"], "raw_token": row["raw_token"]}
+        if window <= timedelta(0):
             return None
-        # Won the claim -- now wipe the raw secret (kept out of the claim
-        # UPDATE only so RETURNING above could carry it back). Same
-        # connection/transaction, so the wipe commits atomically with the
-        # claim.
-        conn.execute(
-            "UPDATE signup_activation_tokens SET raw_token = NULL "
-            "WHERE stripe_session_id = ?", (stripe_session_id,))
-        return {"user_id": row["user_id"], "raw_token": row["raw_token"]}
+        prior = conn.execute(
+            "SELECT user_id, raw_token, retrieved_at FROM signup_activation_tokens "
+            "WHERE stripe_session_id = ?", (stripe_session_id,)).fetchone()
+        if prior is None or prior["raw_token"] is None:
+            return None
+        retrieved_at = _parse_iso(prior["retrieved_at"])
+        if retrieved_at is None or datetime.now(timezone.utc) - retrieved_at > window:
+            conn.execute(
+                "UPDATE signup_activation_tokens SET raw_token = NULL "
+                "WHERE stripe_session_id = ?", (stripe_session_id,))
+            return None
+        return {"user_id": prior["user_id"], "raw_token": prior["raw_token"]}
+
+
+# -- first-touch attribution -------------------------------------------------
+
+ATTRIBUTION_COLUMNS = ("utm_source", "utm_medium", "utm_campaign",
+                       "utm_content", "utm_term", "referrer_host", "anon_id")
+
+
+def record_signup_attribution(user_id: int, attribution: Mapping, *,
+                               db: Optional[Path] = None) -> bool:
+    """Store how this user first arrived. FIRST TOUCH WINS: a user who signs
+    up again (or a pending signup retried from another campaign link) keeps
+    the row they already have, so one person is never credited to two
+    sources. Returns True only when a row was written. An empty mapping
+    writes nothing -- a direct visit is the absence of a row, not a row of
+    blanks, which is what lets 'signups by source' call it "(direct)"."""
+    values = {col: (attribution or {}).get(col) for col in ATTRIBUTION_COLUMNS}
+    if not any(values.values()):
+        return False
+    with _connect(db) as conn:
+        cur = conn.execute(
+            "INSERT INTO signup_attribution (user_id, utm_source, utm_medium, "
+            "utm_campaign, utm_content, utm_term, referrer_host, anon_id, "
+            "created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) "
+            "ON CONFLICT(user_id) DO NOTHING",
+            (user_id, *[values[c] for c in ATTRIBUTION_COLUMNS], _now_iso()))
+        return cur.rowcount > 0
+
+
+def get_signup_attribution(user_id: int, *, db: Optional[Path] = None) -> Dict[str, str]:
+    """The user's first-touch attribution, only the keys that have a value
+    ({} when none) -- the shape that rides on events and Stripe metadata."""
+    with _connect(db) as conn:
+        row = conn.execute(
+            "SELECT * FROM signup_attribution WHERE user_id = ?",
+            (user_id,)).fetchone()
+    if row is None:
+        return {}
+    return {col: row[col] for col in ATTRIBUTION_COLUMNS if row[col]}
+
+
+def all_signup_attribution(*, db: Optional[Path] = None) -> Dict[int, Dict[str, str]]:
+    """user_id -> attribution, for the admin revenue report."""
+    with _connect(db) as conn:
+        rows = conn.execute("SELECT * FROM signup_attribution").fetchall()
+    return {r["user_id"]: {c: r[c] for c in ATTRIBUTION_COLUMNS if r[c]}
+            for r in rows}
+
+
+def list_subscription_rows(*, db: Optional[Path] = None) -> List[dict]:
+    """Every subscription this app has seen a verified webhook for -- the
+    admin revenue report's one read. Small table, plain SELECT."""
+    with _connect(db) as conn:
+        rows = conn.execute(
+            "SELECT user_id, status, cancel_at, current_period_end "
+            "FROM billing_subscriptions ORDER BY user_id").fetchall()
+    return [dict(r) for r in rows]
 
 
 def get_or_create_idempotency_key(user_id: int, plan_id: str,

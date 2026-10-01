@@ -26,6 +26,7 @@
 
 import { getToken, setToken, clearToken } from "./api.js";
 import { el, clear } from "./dom.js";
+import { loadCheckoutState, NOT_ON, signinNote, signinLinkLabel } from "./checkout.js";
 
 export async function renderSignin(container, query = {}) {
   clear(container);
@@ -35,7 +36,7 @@ export async function renderSignin(container, query = {}) {
   panel.appendChild(el("p", { class: "gate__eyebrow", text: "PRIVATE BETA" }));
   panel.appendChild(el("h1", { class: "signin__title", text: "Sign in to view tonight's board." }));
   panel.appendChild(el("p", { class: "signin__body",
-    text: "Paste the invite token from your welcome email. It is stored on this "
+    text: "Paste the access token you were shown after checkout. It is stored on this "
         + "device only and is sent with each request to the board." }));
 
   const field = el("div", { class: "signin__field" });
@@ -54,8 +55,19 @@ export async function renderSignin(container, query = {}) {
   panel.appendChild(actions);
   panel.appendChild(status);
 
-  panel.appendChild(el("p", { class: "signin__note",
-    text: "NO ACCOUNT YET? THE PUBLIC PAGE HAS THE SIGN-UP FORM." }));
+  // The cautious wording first; the trial wording only when /meta says
+  // checkout is on, with its own trial length (checkout.js, one decision for
+  // every page).
+  const signupNote = el("p", { class: "signin__note", "data-hook": "signin-note",
+    text: signinNote(NOT_ON) });
+  const startTrial = el("a", { class: "gate__eyebrow", href: "#/signup",
+    "data-hook": "signin-start-trial", text: signinLinkLabel(NOT_ON) });
+  panel.appendChild(signupNote);
+  panel.appendChild(startTrial);
+  loadCheckoutState().then((state) => {
+    signupNote.textContent = signinNote(state);
+    startTrial.textContent = signinLinkLabel(state);
+  });
   const back = el("a", { class: "gate__eyebrow", href: query.next || "#/today",
     "data-hook": "signin-continue", text: "CONTINUE TO THE BOARD" });
   panel.appendChild(back);

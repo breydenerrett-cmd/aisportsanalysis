@@ -13,7 +13,7 @@
  * Summarised in the fold, never deleted, never truncated in the source.
  */
 
-import { apiGet } from "./api.js";
+import { apiGet, getToken, TOKEN_CHANGED_EVENT } from "./api.js";
 import { el, clear, renderUnknown, humanizeKey, formatEasternClock, formatAge, localZoneAbbr } from "./dom.js";
 import { BRAND_NAME } from "./brand.js";
 
@@ -201,6 +201,23 @@ export async function renderDisclaimerFooter(container, { linkPrefix = "" } = {}
   // cancellation.
   row.appendChild(el("a", { class: "sitefoot__support", href: route("#/support"),
     "data-hook": "footer-support", text: "Support" }));
+  // BILLING (#/billing), for signed-in visitors only. The cancel button lives
+  // on the billing view, and the ONLY link to that view used to be inside the
+  // lapsed-subscription gate -- so a paying subscriber had no visible way to
+  // cancel, and "cancel anytime" on the landing page was a promise with no
+  // door. Shown whenever a token is stored and kept in step with sign-in and
+  // sign-out (api.js announces both) because this footer is mounted once and
+  // survives every route change, including the one that signs the buyer in.
+  const billingLink = el("a", { class: "sitefoot__support", href: route("#/billing"),
+    "data-hook": "footer-billing", text: "Billing" });
+  const syncBillingLink = () => { billingLink.hidden = !getToken(); };
+  syncBillingLink();
+  try {
+    window.addEventListener(TOKEN_CHANGED_EVENT, syncBillingLink);
+    window.addEventListener("hashchange", syncBillingLink);
+    window.addEventListener("storage", syncBillingLink);
+  } catch (err) { /* no window: nothing to follow */ }
+  row.appendChild(billingLink);
   region.appendChild(row);
 
   region.appendChild(el("p", { class: "sitefoot__summary", "data-hook": "disclaimer-summary",

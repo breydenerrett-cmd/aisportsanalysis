@@ -134,8 +134,12 @@ def _deliverable(case):
     """
     import os
     from unittest import mock
+    # CHANGED 2026-10-01: the same precondition now includes the webhook
+    # signing secret, because a session opened without it takes a card and
+    # can never grant access (billing.webhook_can_grant_access).
     patcher = mock.patch.dict(
-        os.environ, {billing.ENV_PUBLIC_BASE_URL: "https://linehound.test"})
+        os.environ, {billing.ENV_PUBLIC_BASE_URL: "https://linehound.test",
+                     billing.ENV_STRIPE_WEBHOOK_SECRET: "whsec_test_synthetic"})
     patcher.start()
     case.addCleanup(patcher.stop)
 
@@ -446,6 +450,45 @@ class StripeWebhookPersistenceTests(unittest.TestCase):
         record = customers.get_subscription_record(42, db=self.db)
         self.assertEqual(record["status"], "active")
         self.assertEqual(record["stripe_subscription_id"], "sub_1")
+
+    def _checkout_completed(self, sub="sub_1"):
+        return {"type": "checkout.session.completed",
+                "data": {"object": {"client_reference_id": "42", "customer": "cus_1",
+                                    "subscription": sub}}}
+
+    def _subscription_event(self, kind, status, sub="sub_1"):
+        return {"type": kind,
+                "data": {"object": {"id": sub, "customer": "cus_1", "status": status}}}
+
+    def test_checkout_completed_after_a_trialing_subscription_event_keeps_trialing(self):
+        """Stripe does not order webhooks. The customer row exists from checkout
+        creation, so `.created` (trialing) lands first; the checkout event must
+        not overwrite it with "active" or /admin/revenue counts a trialing buyer
+        as paying."""
+        customers.upsert_customer(42, "cus_1", db=self.db)
+        billing.apply_stripe_webhook_event(
+            self._subscription_event("customer.subscription.created", "trialing"), db=self.db)
+        billing.apply_stripe_webhook_event(self._checkout_completed(), db=self.db)
+        self.assertEqual(customers.get_subscription_record(42, db=self.db)["status"], "trialing")
+
+    def test_checkout_completed_still_writes_active_when_nothing_set_a_status(self):
+        billing.apply_stripe_webhook_event(self._checkout_completed(), db=self.db)
+        self.assertEqual(customers.get_subscription_record(42, db=self.db)["status"], "active")
+
+    def test_checkout_completed_does_not_keep_a_trialing_status_of_another_subscription(self):
+        customers.upsert_customer(42, "cus_1", db=self.db)
+        billing.apply_stripe_webhook_event(
+            self._subscription_event("customer.subscription.created", "trialing", "sub_old"),
+            db=self.db)
+        billing.apply_stripe_webhook_event(self._checkout_completed("sub_new"), db=self.db)
+        self.assertEqual(customers.get_subscription_record(42, db=self.db)["status"], "active")
+
+    def test_checkout_completed_leaves_an_active_status_active(self):
+        customers.upsert_customer(42, "cus_1", db=self.db)
+        billing.apply_stripe_webhook_event(
+            self._subscription_event("customer.subscription.updated", "active"), db=self.db)
+        billing.apply_stripe_webhook_event(self._checkout_completed(), db=self.db)
+        self.assertEqual(customers.get_subscription_record(42, db=self.db)["status"], "active")
 
     def test_checkout_completed_missing_client_reference_id_is_ignored(self):
         event = {"type": "checkout.session.completed",

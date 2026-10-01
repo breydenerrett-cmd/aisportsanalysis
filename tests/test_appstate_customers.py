@@ -248,7 +248,7 @@ class ActivationTokenTTLTests(unittest.TestCase):
 
     def test_a_token_just_under_the_ttl_is_not_scrubbed(self):
         customers.record_activation_token("cs_edge", 7, "raw-secret", db=self.db)
-        self._age_row("cs_edge", users_store.DEFAULT_TOKEN_TTL - timedelta(seconds=5))
+        self._age_row("cs_edge", customers.UNREAD_ACTIVATION_TTL - timedelta(seconds=5))
         result = customers.take_activation_token("cs_edge", db=self.db)
         self.assertEqual(result, {"user_id": 7, "raw_token": "raw-secret"})
 

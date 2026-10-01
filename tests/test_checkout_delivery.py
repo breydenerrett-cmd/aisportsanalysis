@@ -133,16 +133,38 @@ class HealthReportsItTests(unittest.TestCase):
         self.assertEqual("degraded", report["status"])
         self.assertTrue(any("checkout" in r for r in report["reasons"]))
 
-    def test_stripe_with_a_real_base_url_reads_ok(self):
-        report = self._report({
-            billing.ENV_BILLING_PROVIDER: "stripe",
-            billing.ENV_PUBLIC_BASE_URL: "https://linehound.app"})
+    # CHANGED 2026-10-01. "ok" used to need only a real base URL, so a deploy
+    # with no API key, no price id or no webhook secret read "ok" while every
+    # buyer would have been refused or, without the webhook secret, charged
+    # for access nothing could grant. "ok" now needs everything a sale needs.
+    SELLABLE = {
+        billing.ENV_BILLING_PROVIDER: "stripe",
+        billing.ENV_PUBLIC_BASE_URL: "https://linehound.app",
+        billing.ENV_STRIPE_API_KEY: "sk_test_synthetic_health",
+        billing.ENV_STRIPE_BETA_PRICE_ID: "price_synthetic",
+        billing.ENV_STRIPE_WEBHOOK_SECRET: "whsec_test_synthetic",
+    }
+
+    def test_stripe_with_everything_a_sale_needs_reads_ok(self):
+        report = self._report(self.SELLABLE)
         self.assertEqual("ok", report["checkout"]["status"])
         self.assertFalse(any("checkout" in r for r in report["reasons"]))
 
+    def test_each_missing_piece_reads_broken_and_names_only_the_variable(self):
+        for name in (billing.ENV_STRIPE_API_KEY, billing.ENV_STRIPE_BETA_PRICE_ID,
+                     billing.ENV_STRIPE_WEBHOOK_SECRET):
+            with self.subTest(missing=name):
+                env = dict(self.SELLABLE)
+                env[name] = ""
+                report = self._report(env)
+                self.assertEqual("broken", report["checkout"]["status"])
+                self.assertIn(name, report["checkout"]["reason"])
+                for secret in ("sk_test", "whsec_", "price_synthetic"):
+                    self.assertNotIn(secret, report["checkout"]["reason"])
+
     def test_health_never_500s_on_this_check(self):
         """/health is the one endpoint that must always answer."""
-        with mock.patch.object(billing, "checkout_delivery_ready",
+        with mock.patch.object(billing, "checkout_not_ready_reason",
                                side_effect=RuntimeError("boom")):
             report = self._report({billing.ENV_BILLING_PROVIDER: "stripe"})
         self.assertEqual("unknown", report["checkout"]["status"])

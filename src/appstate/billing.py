@@ -39,7 +39,7 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Protocol
+from typing import Callable, Dict, List, Mapping, Optional, Protocol
 
 from src.appstate import customers
 from src.appstate import events
@@ -150,14 +150,18 @@ class BillingProvider(Protocol):
     later is a one-line wiring change, not a rewrite of every call site."""
 
     def create_checkout(self, user_id: int, plan_id: str, *,
-                         idempotency_key: Optional[str] = None) -> str:
+                         idempotency_key: Optional[str] = None,
+                         attribution: Optional[Mapping[str, str]] = None) -> str:
         """Return a URL (or opaque reference) the user is sent to in order
         to start paying for plan_id. Real implementations call out to the
         provider; NullBillingProvider never does. `idempotency_key` lets a
         caller retry a failed network attempt without risking a duplicate
         checkout session -- optional because NullBillingProvider (and any
         provider not yet wired to a real payment API) has nothing for it
-        to dedupe against."""
+        to dedupe against. `attribution` is the user's first-touch UTM tags
+        and referrer host (src.appstate.attribution); a provider that can
+        carry them (Stripe Checkout metadata) does, so a payment in the
+        provider's dashboard names the channel that produced it."""
         ...
 
     def subscription_status(self, user_id: int) -> Subscription:
@@ -218,7 +222,8 @@ class NullBillingProvider:
             at=datetime.now(timezone.utc).isoformat()))
 
     def create_checkout(self, user_id: int, plan_id: str, *,
-                         idempotency_key: Optional[str] = None) -> str:
+                         idempotency_key: Optional[str] = None,
+                         attribution: Optional[Mapping[str, str]] = None) -> str:
         self._record("create_checkout", user_id, plan_id)
         # No real checkout exists. The empty string (not a URL) is the
         # honest answer -- a caller that treats this as a redirect target
@@ -319,6 +324,89 @@ def checkout_delivery_ready(base_url: Optional[str] = None) -> Optional[str]:
         return (f"{ENV_PUBLIC_BASE_URL} is {resolved!r}, which is not an "
                 f"absolute http(s) URL; Stripe requires one for success_url")
     return None
+
+
+def webhook_can_grant_access() -> bool:
+    """True when the webhook signing secret is set, i.e. when a completed
+    checkout can actually be verified and turned into an access token."""
+    return bool((os.environ.get("STRIPE_WEBHOOK_SECRET") or "").strip())
+
+
+def subscription_period_end(obj) -> object:
+    """The paid-through unix time of a Stripe subscription object.
+
+    Stripe API versions before 2025-03-31 carry `current_period_end` on the
+    subscription itself. From that version on it lives on each subscription
+    ITEM (`items.data[].current_period_end`) and the top-level field is gone.
+    An account opened in 2026 sends the newer shape, and reading only the old
+    field records no period end at all: /billing/status cannot say what was
+    paid for and a past-due customer loses access at once instead of at the
+    end of the period. The latest item end is the subscription's end (one
+    item here; the max is the safe reading if there are ever several)."""
+    if not isinstance(obj, dict):
+        return None
+    top = obj.get("current_period_end")
+    if top is not None:
+        return top
+    ends = []
+    for item in ((obj.get("items") or {}).get("data") or []):
+        value = (item or {}).get("current_period_end")
+        try:
+            ends.append(int(value))
+        except (TypeError, ValueError):
+            continue
+    return max(ends) if ends else None
+
+
+CHECKOUT_ON = "on"
+CHECKOUT_OFF = "off"
+CHECKOUT_UNAVAILABLE = "unavailable"
+
+
+def public_checkout_status() -> str:
+    """The one word the public pages may say about whether paying works:
+
+      "on"          a signup right now ends at a real Stripe Checkout.
+      "off"         billing is deliberately not switched on (the null
+                    provider). Nothing can be charged; the signup form says so.
+      "unavailable" billing is switched on but cannot complete a payment
+                    (no API key, price id or webhook secret, or no
+                    PUBLIC_BASE_URL to return the buyer to). Same customer-facing words as "off" -- and the same
+                    state `GET /health` reports as `checkout.status: broken`.
+
+    Exposed on `GET /meta` as `billing.checkout`, so the landing CTA and the
+    signup form agree on one fact instead of each guessing: the form used to
+    promise a waitlist email that no code can send. Names no variable and no
+    secret, only the state."""
+    selected = (os.environ.get(ENV_BILLING_PROVIDER) or DEFAULT_BILLING_PROVIDER).strip()
+    if selected == DEFAULT_BILLING_PROVIDER:
+        return CHECKOUT_OFF
+    if selected != StripeBillingProvider.name:
+        return CHECKOUT_UNAVAILABLE
+    # "on" means a real checkout can be STARTED and its payment HONOURED:
+    # the API key creates the session, the price id is what it sells, the
+    # webhook secret is what turns the payment into access (without it
+    # api/billing.py answers 501 and the buyer is charged for nothing), and
+    # checkout_delivery_ready() is the return URL. Any one missing is
+    # "unavailable"; which one is deliberately never said on /meta.
+    return CHECKOUT_UNAVAILABLE if checkout_not_ready_reason() else CHECKOUT_ON
+
+
+def checkout_not_ready_reason() -> Optional[str]:
+    """Why a switched-on Stripe deploy cannot sell right now, or None when it
+    can. One list for the three places that must agree: `/meta` (which says
+    only "unavailable"), `GET /health` (which gives this sentence to the
+    operator) and the checkout itself (which refuses before the charge).
+    Names the VARIABLE that is missing, never a value."""
+    if not (os.environ.get("STRIPE_API_KEY") or "").strip():
+        return "STRIPE_API_KEY is unset, so no checkout session can be created"
+    if not beta_plan_stripe_price_id():
+        return (f"{ENV_STRIPE_BETA_PRICE_ID} is unset, so there is no price "
+                f"to sell")
+    if not webhook_can_grant_access():
+        return ("STRIPE_WEBHOOK_SECRET is unset, so a completed payment could "
+                "never be turned into access")
+    return checkout_delivery_ready()
 
 
 ENV_STRIPE_API_KEY = "STRIPE_API_KEY"
@@ -578,9 +666,17 @@ class StripeBillingProvider:
         return body
 
     def create_checkout(self, user_id: int, plan_id: str, *,
-                         idempotency_key: Optional[str] = None) -> str:
+                         idempotency_key: Optional[str] = None,
+                         attribution: Optional[Mapping[str, str]] = None) -> str:
         """POST /v1/checkout/sessions for a subscription to plan_id,
         return its hosted URL.
+
+        ATTRIBUTION: `attribution` (UTM tags, referrer host, anonymous visitor
+        id -- src.appstate.attribution) goes onto the Checkout Session's
+        `metadata` AND the resulting subscription's
+        `subscription_data[metadata]`, next to `app_user_id`, so the payment
+        and every later invoice in the Stripe dashboard carry the channel that
+        produced them.
 
         Idempotency-Key: an explicit `idempotency_key` argument always
         wins (a caller that needs to safely retry one specific attempt
@@ -607,6 +703,16 @@ class StripeBillingProvider:
         undeliverable = checkout_delivery_ready()
         if undeliverable:
             raise BillingProviderNotConfigured(undeliverable)
+        # The other half of "can this payment be honoured": the webhook is
+        # what turns a paid session into an access token, and without its
+        # signing secret api/billing.py answers every webhook 501. A session
+        # opened in that state takes the card and can never grant access.
+        # Found by review 2026-10-01: /meta already said "unavailable", but
+        # POST /signup still opened the checkout.
+        if not webhook_can_grant_access():
+            raise BillingProviderNotConfigured(
+                f"{ENV_STRIPE_WEBHOOK_SECRET} is unset, so a completed payment "
+                f"could never be turned into access")
         key = idempotency_key or self._resolve_idempotency_key(user_id, plan_id)
         customer_id = self._ensure_customer(user_id)
         form = {
@@ -629,6 +735,16 @@ class StripeBillingProvider:
         }
         if customer_id:
             form["customer"] = customer_id
+        form["metadata[app_user_id]"] = str(user_id)
+        form["subscription_data[metadata][app_user_id]"] = str(user_id)
+        # `field`, never `key`: `key` above is the Idempotency-Key sent with
+        # this request. A loop variable of the same name replaced it with the
+        # last attribution field ("anon_id"), so every buyer from the web
+        # signup shared one key and Stripe would have refused the second.
+        for field, value in (attribution or {}).items():
+            if value:
+                form[f"metadata[{field}]"] = str(value)
+                form[f"subscription_data[metadata][{field}]"] = str(value)
         # trial_period_days lives under subscription_data, not top-level --
         # Stripe's own Checkout Session shape for "start this subscription
         # trialing instead of charging today." Omitted entirely (not sent
@@ -684,7 +800,7 @@ class StripeBillingProvider:
                              provider_ref=sub.get("id"), created_at=None,
                              cancel_at_period_end=bool(sub.get("cancel_at_period_end")),
                              cancel_at=_epoch_to_iso(sub.get("cancel_at")),
-                             current_period_end=_epoch_to_iso(sub.get("current_period_end")))
+                             current_period_end=_epoch_to_iso(subscription_period_end(sub)))
 
     def cancel(self, user_id: int) -> Subscription:
         """SCHEDULED cancel -- `POST /v1/subscriptions/{id}` with
@@ -763,7 +879,7 @@ class StripeBillingProvider:
             # None: the update response always carries this, but a period end
             # this app already knows must never be downgraded to "unknown"
             # (which has_paid_access reads as not-entitled).
-            current_period_end=(_epoch_to_iso(body.get("current_period_end"))
+            current_period_end=(_epoch_to_iso(subscription_period_end(body))
                                 or current.current_period_end))
 
 
@@ -903,7 +1019,10 @@ def apply_stripe_webhook_event(event: dict, *, db: Optional[Path] = None) -> Non
         (the same kind GET /billing/status's own docstring already
         documents for webhook freshness generally), never an entitlement
         gap: "active" is in PAID_STATUSES exactly like "trialing" is, so
-        access is never mistakenly withheld during that window.
+        access is never mistakenly withheld during that window. When the
+        subscription event arrives FIRST (Stripe does not order webhooks) the
+        row is already "trialing" and checkout.session.completed leaves it
+        that way rather than overwriting it with "active".
 
     Any other event type, or one of these missing the fields it needs
     (e.g. no local mapping yet for a subscription.updated whose
@@ -935,8 +1054,15 @@ def apply_stripe_webhook_event(event: dict, *, db: Optional[Path] = None) -> Non
             known = customers.get_subscription_record(user_id, db=db) or {}
             if known.get("stripe_subscription_id") != subscription_id:
                 known = {}
+            # Never overwrite a status the subscription events already set:
+            # `customer.subscription.created` (trialing) can be processed
+            # BEFORE this event (Stripe does not order webhooks), and writing
+            # "active" over it would count a trialing buyer as paying in
+            # /admin/revenue. Only "trialing" is protected; anything else
+            # behaves as before.
+            status = "trialing" if known.get("status") == "trialing" else "active"
             customers.upsert_subscription(
-                user_id, subscription_id, "active",
+                user_id, subscription_id, status,
                 cancel_at=known.get("cancel_at"),
                 current_period_end=known.get("current_period_end"), db=db)
         _activate_signup(user_id, obj.get("id"), db=db)
@@ -954,7 +1080,7 @@ def apply_stripe_webhook_event(event: dict, *, db: Optional[Path] = None) -> Non
         customers.upsert_subscription(
             user_id, subscription_id, status,
             cancel_at=_epoch_to_iso(obj.get("cancel_at")),
-            current_period_end=_epoch_to_iso(obj.get("current_period_end")), db=db)
+            current_period_end=_epoch_to_iso(subscription_period_end(obj)), db=db)
 
 
 def _epoch_to_iso(epoch: object) -> Optional[str]:
@@ -994,13 +1120,26 @@ def _activate_signup(user_id: int, stripe_session_id: Optional[str], *,
         users_store.set_user_status(user_id, "active", db=db)
     if not stripe_session_id or customers.has_activation_token(stripe_session_id, db=db):
         return
-    raw_token = users_store.issue_invite_token(user_id, db=db)
+    # A PAYING CUSTOMER'S TOKEN IS THE SUBSCRIPTION'S LOGIN, NOT A 14-DAY
+    # INVITE. issue_invite_token's default TTL (14 days) fits an admin invite
+    # nobody has redeemed yet; used here it silently locked every subscriber
+    # out on day 15, with no email sender and no sign-in recovery to get
+    # back in -- while billing kept charging them. The token now lasts as long
+    # as the plan renews for a year at a time.
+    raw_token = users_store.issue_invite_token(
+        user_id, ttl=SUBSCRIBER_TOKEN_TTL, db=db)
     customers.record_activation_token(stripe_session_id, user_id, raw_token, db=db)
-    events.record_event_safe(user_id, events.CHECKOUT_COMPLETED, db=db)
+    stored = customers.get_signup_attribution(user_id, db=db)
+    events.record_event_safe(user_id, events.CHECKOUT_COMPLETED,
+                             *([stored] if stored else []), db=db)
 
 
 ENV_BILLING_PROVIDER = "BILLING_PROVIDER"
 DEFAULT_BILLING_PROVIDER = "null"
+
+# Lifetime of the access token a completed checkout mints -- see
+# _activate_signup. One year, not the 14-day invite default.
+SUBSCRIBER_TOKEN_TTL = timedelta(days=366)
 
 _BILLING_PROVIDERS: Dict[str, Callable[[], "BillingProvider"]] = {
     DEFAULT_BILLING_PROVIDER: NullBillingProvider,

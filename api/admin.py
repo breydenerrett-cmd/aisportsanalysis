@@ -21,12 +21,13 @@ suspend, who asked for an invite and never redeemed it); that need is real,
 so this one endpoint is the deliberate exception, gated by the same admin
 token as invite creation and reachable no other way.
 
-NO MUTATION ENDPOINTS HERE
------------------------------
-Both routes below are GET. Suspending a user, revoking a token, changing a
-plan -- anything that writes -- already has its own home (api/auth.py's
-invite endpoint, src/appstate/users.py's setters) or does not exist yet;
-this module is a read surface and stays one, per this task's own scope.
+ONE MUTATION ENDPOINT: POST /admin/users/token
+-------------------------------------------------
+Everything else here is a GET. The one write is the lost-token recovery below,
+because the token is a subscriber's only login and there is no email sender:
+without it a paying customer who loses their token is locked out with no
+route back. Suspending, plan changes and the invite flow keep their own homes
+(api/auth.py, src/appstate/users.py).
 """
 
 from __future__ import annotations
@@ -34,11 +35,16 @@ from __future__ import annotations
 from collections import Counter
 from typing import Dict
 
-from fastapi import APIRouter, Depends
+from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 
 from api.auth import _require_admin
 from api.meta import APP_VERSION
 from src.appstate import apphealth
+from src.appstate import billing
+from src.appstate import customers
 from src.appstate import events
 from src.appstate import users as users_store
 
@@ -92,6 +98,89 @@ def get_overview(_admin: None = Depends(_require_admin)) -> dict:
     }
 
 
+DIRECT_SOURCE = "(direct)"
+
+
+@router.get("/admin/revenue")
+def get_revenue(_admin: None = Depends(_require_admin)) -> dict:
+    """Who is paying, who is trialing, what that is worth a month, and which
+    channel each signup came from -- the answer to "is the funnel making
+    money", from the app's own tables, never a live Stripe call.
+
+    Reads `billing_subscriptions` (what verified webhooks have reported) and
+    the first-touch `signup_attribution` rows, and nothing else.
+
+      paying          subscriptions in status `active` -- billed this period.
+      trialing        status `trialing` -- inside the free trial, not yet billed.
+      cancel_scheduled  active or trialing subscriptions set to stop renewing
+                      (they still count in `paying`/`trialing` until the
+                      period ends, and are NOT in `mrr_cents` going forward).
+      canceled        status `canceled`.
+      mrr_cents       `paying` minus `cancel_scheduled` actives, times the
+                      plan price (billing.BETA_PLAN_PRICE_CENTS = 1999).
+                      Trialing is never counted: nothing has been charged.
+                      `mrr_gross_cents` is the figure without the cancel
+                      subtraction.
+
+    A checkout that just completed is recorded `active` until Stripe's
+    `customer.subscription.created` arrives moments later and corrects it to
+    `trialing` (see src.appstate.billing.apply_stripe_webhook_event), so a
+    fresh trial can read as paying for a short window when the checkout event
+    is processed first. If the subscription event arrives first the row is
+    already `trialing` and the checkout event keeps it. The reconciled number
+    is what the Stripe dashboard shows, this is the app's own view.
+
+    `signups_by_source` counts every user by the utm_source of their first
+    touch ("(direct)" when they have none); `paying_by_source` and
+    `trialing_by_source` are the same split for subscriptions.
+    """
+    price = billing.BETA_PLAN_PRICE_CENTS
+    attribution = customers.all_signup_attribution()
+
+    def source_of(user_id: int) -> str:
+        return (attribution.get(user_id) or {}).get("utm_source") or DIRECT_SOURCE
+
+    counts = Counter()
+    paying_by_source: Counter = Counter()
+    trialing_by_source: Counter = Counter()
+    cancel_scheduled = 0
+    active_not_canceling = 0
+    for row in customers.list_subscription_rows():
+        status = row["status"]
+        scheduled = bool(row.get("cancel_at"))
+        if status == "active":
+            counts["paying"] += 1
+            paying_by_source[source_of(row["user_id"])] += 1
+            if scheduled:
+                cancel_scheduled += 1
+            else:
+                active_not_canceling += 1
+        elif status == "trialing":
+            counts["trialing"] += 1
+            trialing_by_source[source_of(row["user_id"])] += 1
+            if scheduled:
+                cancel_scheduled += 1
+        else:
+            counts["canceled"] += 1
+
+    all_users = users_store.list_users()
+    signups_by_source = Counter(source_of(u.id) for u in all_users)
+    return {
+        "price_cents": price,
+        "paying": counts["paying"],
+        "trialing": counts["trialing"],
+        "cancel_scheduled": cancel_scheduled,
+        "canceled": counts["canceled"],
+        "mrr_cents": active_not_canceling * price,
+        "mrr_gross_cents": counts["paying"] * price,
+        "mrr_usd": round(active_not_canceling * price / 100.0, 2),
+        "signups_total": len(all_users),
+        "signups_by_source": dict(signups_by_source.most_common()),
+        "paying_by_source": dict(paying_by_source.most_common()),
+        "trialing_by_source": dict(trialing_by_source.most_common()),
+    }
+
+
 @router.get("/admin/users")
 def get_users(_admin: None = Depends(_require_admin)) -> dict:
     """id, email, status, plan, created_at for every user. The one place in
@@ -101,3 +190,49 @@ def get_users(_admin: None = Depends(_require_admin)) -> dict:
          "created_at": u.created_at}
         for u in users_store.list_users()
     ]}
+
+
+class ReissueTokenRequest(BaseModel):
+    """Exactly one of `email` or `user_id`."""
+    email: Optional[str] = None
+    user_id: Optional[int] = None
+
+
+@router.post("/admin/users/token")
+def reissue_subscriber_token(body: ReissueTokenRequest,
+                             _admin: None = Depends(_require_admin)) -> dict:
+    """Mint a fresh subscriber token for a paying user who lost theirs.
+
+    SUPPORT PROCEDURE (token is the only login; no email sender exists):
+      1. Confirm the person owns the account email (reply from it, or the
+         Stripe receipt email) -- never reissue on a bare request.
+      2. POST /admin/users/token with X-Admin-Token and {"email": "..."}.
+      3. 409 means no paid access (lapsed or never paid): do not work around it.
+      4. The response carries the raw token ONCE; send it over the same channel
+         the person wrote from. Every older token for that user is revoked now.
+      5. Never paste the token into a ticket, a log or a chat that persists.
+      6. The event `support_token_reissued` records that it happened, not it.
+
+    Paid access is customers.has_paid_access (trialing counts); the token
+    lives billing.SUBSCRIBER_TOKEN_TTL. The token is never logged here."""
+    if (body.email is None) == (body.user_id is None):
+        raise HTTPException(status_code=400,
+                            detail="send exactly one of email or user_id")
+    if body.email is not None:
+        # Signup stores the address lower-cased; support will paste it as written.
+        user = users_store.get_user_by_email(body.email.strip().lower())
+    else:
+        user = users_store.get_user(body.user_id)
+    if user is None:
+        raise HTTPException(status_code=404, detail="no such user")
+    if not customers.has_paid_access(user.id):
+        raise HTTPException(
+            status_code=409,
+            detail="this user has no paid access, so no subscriber token was issued")
+    revoked = users_store.revoke_all_tokens(user.id)
+    raw_token = users_store.issue_invite_token(
+        user.id, ttl=billing.SUBSCRIBER_TOKEN_TTL)
+    events.record_event_safe(user.id, events.SUPPORT_TOKEN_REISSUED,
+                             {"revoked_tokens": revoked})
+    return {"user_id": user.id, "email": user.email, "token": raw_token,
+            "revoked_tokens": revoked}

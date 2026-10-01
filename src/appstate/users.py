@@ -400,6 +400,20 @@ def revoke_token(raw_token: str, *, db: Optional[Path] = None) -> bool:
         return cur.rowcount > 0
 
 
+def revoke_all_tokens(user_id: int, *, db: Optional[Path] = None) -> int:
+    """Revoke every not-yet-revoked token belonging to user_id; returns how
+    many were revoked. Used by the support token re-issue (POST
+    /admin/users/token): a lost or leaked token must stop working at the
+    moment its replacement is minted. No schema change -- `revoked_at` is the
+    existing column revoke_token already writes."""
+    with _connect(db) as conn:
+        cur = conn.execute(
+            "UPDATE tokens SET revoked_at = ? "
+            "WHERE user_id = ? AND revoked_at IS NULL",
+            (_now_iso(), user_id))
+        return cur.rowcount
+
+
 def authenticate(raw_token: str, *, db: Optional[Path] = None,
                   now: Optional[datetime] = None) -> Optional[User]:
     """Resolve a raw bearer token to its User, or None if the token is

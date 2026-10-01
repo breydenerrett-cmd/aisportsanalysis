@@ -20,16 +20,41 @@ from __future__ import annotations
 from datetime import date as date_cls, datetime, timezone
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from api.games import _build_entries, _record_page_view
 from src.analysis import best_bets_card, daily_card, grade
 from src.analysis import opportunities as opportunities_mod
 from src.analysis import strength
 from src.appstate import freshness
+from src.appstate import ratelimit
 from src.report import card as card_mod
 
+# TWO ROUTERS, ONE PREFIX (2026-10-01). api/app.py mounts `router` behind the
+# paid gate and `public_router` behind nothing:
+#
+#   router         GET /card/{date}, GET /card          PAID  -- tonight's picks.
+#   public_router  GET /card/record, GET /card/history  PUBLIC -- the graded
+#                                                       record, settled days only.
+#
+# The landing page promises "one public page you can open yourself", and the
+# record page IS that page; behind the paid gate a stranger who followed the
+# proof link met "SIGN IN REQUIRED" and a token box, which is the opposite of
+# proof. What stays paid is the product -- the pick for a date that has not
+# been settled. `_public_history` below is what makes the public half safe:
+# it is the only thing between this unauthenticated route and tonight's card,
+# because history()/history_v2() return PUBLISHED-but-unsettled days too.
 router = APIRouter()
+public_router = APIRouter()
+
+# Per-IP, per-minute. The two public routes verify the hash chain and fold the
+# whole ledger on every call, and nobody legitimately loads a record page
+# sixty times a minute; this keeps an open route from being a free way to burn
+# the box's one CPU. Keyed on Fly-Client-IP (src.appstate.ratelimit.client_ip).
+PUBLIC_RECORD_RATE_LIMIT_PER_MIN = 60
+_public_record_limiter = ratelimit.FixedWindowLimiter(
+    limit=PUBLIC_RECORD_RATE_LIMIT_PER_MIN, window_s=60.0)
+_rate_limit_public_record = ratelimit.limiter_dependency(_public_record_limiter)
 
 # GET /card?sport=nfl had no cache at all: every request re-ran
 # nfl_card.card_for_date, which -- when the date is not yet frozen -- pays
@@ -358,10 +383,61 @@ def _build_payload_v2(date: str, request: Optional[Request], route: str) -> dict
     return payload
 
 
+def _day_is_fully_settled(day: dict) -> bool:
+    """True only for a history day with NOTHING left to grade.
+
+    A `card_settled` row can exist while some of its picks are still
+    UNRESOLVED (partial settlement: an afternoon game final, an evening game
+    not yet played). Such a row's `picks` list names the bets still awaiting
+    their game -- tonight's paid picks -- so a day is public only when no pick
+    on it is unresolved, by its own counters AND by a scan of the pick lists
+    themselves (the counters are derived by `settle`; the lists are what would
+    leak). V2's `graded` entries are scanned the same way."""
+    from src.appstate import card_ledger
+
+    for counter in ("unresolved", "prop_unresolved", "total_unresolved"):
+        if day.get(counter):
+            return False
+    for key in ("picks", "prop_picks", "total_picks", "graded"):
+        for pick in day.get(key) or ():
+            if isinstance(pick, dict) and pick.get("result") == card_ledger.RESULT_UNRESOLVED:
+                return False
+    return True
+
+
+def _public_history(payload: dict) -> dict:
+    """`payload` (a card_ledger.history / history_v2 result) reduced to what an
+    unauthenticated reader may see: SETTLED days only.
+
+      * `pending_days` -- published cards with no settlement, i.e. tonight's
+        picks with their books and prices -- is emptied. It exists for the
+        record page's calendar; the calendar simply shows no future day.
+      * a day whose settlement still has an unresolved pick is withheld
+        until it resolves (see _day_is_fully_settled).
+      * `total_days`/`truncated` are recomputed so a reader is never told
+        about days the response hides; `withheld_days` says how many there
+        were, and the page need not show it.
+
+    Fail-closed: anything unexpected about the payload's shape leaves `days`
+    as the settled-only filter produces it, never as the raw input."""
+    out = dict(payload)
+    days = list(out.get("days") or [])
+    kept = [d for d in days if isinstance(d, dict) and _day_is_fully_settled(d)]
+    withheld = len(days) - len(kept)
+    out["days"] = kept
+    out["pending_days"] = []
+    out["withheld_days"] = withheld
+    if "total_days" in out and isinstance(out["total_days"], int):
+        out["total_days"] = max(out["total_days"] - withheld, len(kept))
+    out["truncated"] = bool(out.get("truncated")) and out.get("total_days", 0) > len(kept)
+    return out
+
+
 # DECLARED BEFORE /card/{date}, because FastAPI matches routes in
 # declaration order and "record" would otherwise be captured as a date and
-# rejected by _validate_date as a 400.
-@router.get("/card/record")
+# rejected by _validate_date as a 400. (Now also on a different router:
+# app.py mounts `public_router` first, for the same reason.)
+@public_router.get("/card/record", dependencies=[Depends(_rate_limit_public_record)])
 def get_card_record(request: Request = None, sport: str = "mlb",
                     rule: Optional[str] = None) -> dict:
     """The card's public record: every settled day, pooled.
@@ -492,7 +568,7 @@ def get_card_record(request: Request = None, sport: str = "mlb",
 # ALSO DECLARED BEFORE /card/{date}, for the identical reason /card/record
 # is above: "history" would otherwise be matched as a date and 400 out of
 # _validate_date. See that route's comment and tests/test_api_card.py.
-@router.get("/card/history")
+@public_router.get("/card/history", dependencies=[Depends(_rate_limit_public_record)])
 def get_card_history(request: Request = None, limit: int = DEFAULT_HISTORY_LIMIT,
                      sport: str = "mlb", rule: Optional[str] = None) -> dict:
     """Every settled day, newest first -- the day-by-day detail behind
@@ -517,7 +593,7 @@ def get_card_history(request: Request = None, limit: int = DEFAULT_HISTORY_LIMIT
             detail=f"limit must be between 1 and {MAX_HISTORY_LIMIT} (got {limit!r})")
 
     if sport == "mlb" and resolved_rule == "v2":
-        payload = card_ledger.history_v2(limit=limit)
+        payload = _public_history(card_ledger.history_v2(limit=limit))
         _record_page_view(request, "card_history", None)
         return payload
 
@@ -539,6 +615,7 @@ def get_card_history(request: Request = None, limit: int = DEFAULT_HISTORY_LIMIT
         payload["notice"] = ufc_report.NOTICE
     else:
         payload = card_ledger.history(limit=limit, sport=sport)
+    payload = _public_history(payload)
     _record_page_view(request, "card_history", None)
     return payload
 

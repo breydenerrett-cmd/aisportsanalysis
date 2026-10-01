@@ -167,5 +167,132 @@ class AdminUsersTests(unittest.TestCase):
         self.assertEqual(row["created_at"], user.created_at)
 
 
+@unittest.skipUnless(HAS_FASTAPI, "fastapi not installed")
+class AdminReissueTokenTests(unittest.TestCase):
+    """POST /admin/users/token: lost-token recovery. The token is a
+    subscriber's only login and there is no email sender."""
+
+    def setUp(self):
+        from src.appstate import customers
+        self.customers = customers
+        self._tmp = tempfile.TemporaryDirectory()
+        self.db = Path(self._tmp.name) / "app.db"
+        self.events_db = Path(self._tmp.name) / "events.db"
+        for p in (mock.patch.object(users_store, "db_path", lambda: self.db),
+                  mock.patch.object(events, "db_path", lambda: self.events_db)):
+            p.start()
+            self.addCleanup(p.stop)
+        self.addCleanup(self._tmp.cleanup)
+        from api import admin
+        self.admin = admin
+
+    def _paying_user(self, email="payer@example.com", status="active"):
+        user = users_store.create_user(email, status="active", plan="beta")
+        self.customers.upsert_customer(user.id, "cus_" + str(user.id))
+        self.customers.upsert_subscription(user.id, "sub_" + str(user.id), status)
+        return user
+
+    def _call(self, **kw):
+        return self.admin.reissue_subscriber_token(
+            self.admin.ReissueTokenRequest(**kw), _admin=None)
+
+    def test_the_route_is_registered_behind_the_admin_gate(self):
+        import inspect
+        routes = {(r.path, tuple(sorted(r.methods))): r for r in self.admin.router.routes}
+        self.assertIn(("/admin/users/token", ("POST",)), routes)
+        default = inspect.signature(self.admin.reissue_subscriber_token).parameters["_admin"].default
+        self.assertIs(default.dependency, self.admin._require_admin)
+
+    def test_a_paying_user_gets_a_working_token_by_email_and_by_id(self):
+        user = self._paying_user()
+        by_email = self._call(email="Payer@Example.com")
+        self.assertEqual(users_store.authenticate(by_email["token"]).id, user.id)
+        by_id = self._call(user_id=user.id)
+        self.assertEqual(users_store.authenticate(by_id["token"]).id, user.id)
+
+    def test_existing_tokens_are_revoked_when_the_new_one_is_minted(self):
+        user = self._paying_user()
+        old = users_store.issue_invite_token(user.id)
+        old2 = users_store.issue_invite_token(user.id)
+        other = users_store.create_user("other@example.com", status="active")
+        other_token = users_store.issue_invite_token(other.id)
+        result = self._call(email="payer@example.com")
+        self.assertIsNone(users_store.authenticate(old))
+        self.assertIsNone(users_store.authenticate(old2))
+        self.assertIsNotNone(users_store.authenticate(result["token"]))
+        self.assertIsNotNone(users_store.authenticate(other_token), "another user's token")
+        self.assertEqual(result["revoked_tokens"], 2)
+
+    def test_the_token_lives_as_long_as_a_subscriber_token(self):
+        from datetime import datetime, timedelta, timezone
+        user = self._paying_user()
+        token = self._call(user_id=user.id)["token"]
+        from src.appstate import billing
+        inside = datetime.now(timezone.utc) + billing.SUBSCRIBER_TOKEN_TTL - timedelta(days=1)
+        outside = datetime.now(timezone.utc) + billing.SUBSCRIBER_TOKEN_TTL + timedelta(days=1)
+        self.assertIsNotNone(users_store.authenticate(token, now=inside))
+        self.assertIsNone(users_store.authenticate(token, now=outside))
+
+    def test_a_trialing_user_counts_as_paid(self):
+        user = self._paying_user(status="trialing")
+        self.assertTrue(self._call(user_id=user.id)["token"])
+
+    def test_a_user_without_paid_access_is_a_409_and_keeps_their_tokens(self):
+        user = users_store.create_user("free@example.com", status="active")
+        existing = users_store.issue_invite_token(user.id)
+        with self.assertRaises(HTTPException) as ctx:
+            self._call(email="free@example.com")
+        self.assertEqual(ctx.exception.status_code, 409)
+        self.assertIn("no paid access", str(ctx.exception.detail))
+        self.assertIsNotNone(users_store.authenticate(existing))
+
+    def test_a_canceled_user_is_a_409(self):
+        user = self._paying_user(status="canceled")
+        with self.assertRaises(HTTPException) as ctx:
+            self._call(user_id=user.id)
+        self.assertEqual(ctx.exception.status_code, 409)
+
+    def test_unknown_user_is_404_and_bad_bodies_are_400(self):
+        for kw, code in (({"email": "nobody@example.com"}, 404), ({"user_id": 9999}, 404),
+                         ({}, 400),
+                         ({"email": "a@example.com", "user_id": 1}, 400)):
+            with self.assertRaises(HTTPException) as ctx:
+                self._call(**kw)
+            self.assertEqual(ctx.exception.status_code, code, kw)
+
+    def test_an_event_is_recorded_and_never_carries_the_token(self):
+        user = self._paying_user()
+        token = self._call(user_id=user.id)["token"]
+        recorded = [e for e in events.list_events()
+                    if e.kind == events.SUPPORT_TOKEN_REISSUED]
+        self.assertEqual(len(recorded), 1)
+        self.assertEqual(recorded[0].user_hash, events.hash_user_id(user.id))
+        import json
+        self.assertNotIn(token, json.dumps(recorded[0].properties))
+        self.assertNotIn(token, str(recorded[0]))
+
+    def test_the_token_is_never_printed(self):
+        import contextlib
+        import io
+        user = self._paying_user()
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            token = self._call(user_id=user.id)["token"]
+        self.assertNotIn(token, out.getvalue() + err.getvalue())
+
+    def test_the_support_procedure_is_in_the_docstring(self):
+        doc = self.admin.reissue_subscriber_token.__doc__
+        self.assertIn("SUPPORT PROCEDURE", doc)
+        self.assertEqual(sum(1 for line in doc.splitlines() if line.strip()[:2] in
+                             ("1.", "2.", "3.", "4.", "5.", "6.")), 6)
+
+    def test_it_is_unreachable_without_the_admin_token(self):
+        os.environ[ENV_ADMIN_TOKEN] = "correct-token"
+        self.addCleanup(os.environ.pop, ENV_ADMIN_TOKEN, None)
+        with self.assertRaises(HTTPException) as ctx:
+            self.admin._require_admin(x_admin_token="nope")
+        self.assertEqual(ctx.exception.status_code, 401)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -31,9 +31,11 @@ users who close the success tab before the email arrives, or simply not
 removed at all -- that is a future call, not this task's).
 
 Never returns a token for a session that never completed payment, is
-unknown, or already had its token retrieved -- see
-src.appstate.customers.take_activation_token's docstring for why those
-three cases are deliberately indistinguishable from outside.
+unknown, or whose re-read window (10 minutes after the first successful
+read) has closed -- see src.appstate.customers.take_activation_token's
+docstring for why those cases are deliberately indistinguishable from
+outside. Inside the window the same session id returns the same token, so
+the success page can poll while the webhook is late and survive a reload.
 
 IDEMPOTENT PER EMAIL
 ----------------------
@@ -65,6 +67,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 
+from src.appstate import attribution as attribution_mod
 from src.appstate import billing
 from src.appstate import customers
 from src.appstate import events
@@ -93,17 +96,32 @@ _signup_limiter = ratelimit.FixedWindowLimiter(
 
 
 def _client_ip(request: Request) -> str:
-    """Copied from src.appstate.ratelimit's own client-IP fallback -- same
-    reason api/support.py's `_client_ip` gives for not reusing
-    `limiter_dependency` outright (this route has no user_dependency to key
-    on; it is unauthenticated by design)."""
-    client = getattr(request, "client", None)
-    host = getattr(client, "host", None) if client is not None else None
-    return host or "unknown"
+    """The caller's address, `Fly-Client-IP` first -- see
+    src.appstate.ratelimit.client_ip for why the socket address alone put
+    every visitor behind Fly's proxy in one shared bucket."""
+    return ratelimit.client_ip(request)
 
 
 def _rate_limit_signup(request: Request) -> None:
     result = _signup_limiter.check(ratelimit.key_for(f"ip:{_client_ip(request)}"))
+    if not result.allowed:
+        raise HTTPException(status_code=429, detail={
+            "error": "rate_limited", "retry_after": result.retry_after})
+
+
+# GET /signup/complete is polled by the success page every 2 seconds for up to
+# 60 seconds (web/js/signup.js: SIGNUP_POLL_INTERVAL_MS / SIGNUP_POLL_TIMEOUT_MS),
+# which is at most 30 requests from one honest buyer. 30 a minute therefore never
+# refuses one; it exists because every call writes (the stale-token sweep in
+# customers._wipe_stale_rereads) and the route has no other gate. A 429 is not
+# an error to the page: pollSignupToken treats it like a 404 and tries again.
+SIGNUP_COMPLETE_RATE_LIMIT_PER_MINUTE = 30
+_complete_limiter = ratelimit.FixedWindowLimiter(
+    limit=SIGNUP_COMPLETE_RATE_LIMIT_PER_MINUTE, window_s=60.0)
+
+
+def _rate_limit_signup_complete(request: Request) -> None:
+    result = _complete_limiter.check(ratelimit.key_for(f"ip:{_client_ip(request)}"))
     if not result.allowed:
         raise HTTPException(status_code=429, detail={
             "error": "rate_limited", "retry_after": result.retry_after})
@@ -115,6 +133,10 @@ def _valid_email(email: str) -> bool:
 
 class SignupRequest(BaseModel):
     email: str = Field(max_length=MAX_EMAIL_LENGTH)
+    # First-touch UTM tags, referrer host and the browser's random visitor id
+    # (web/js/attribution.js). Untrusted: src.appstate.attribution decides
+    # what is kept. Optional, so every older client keeps working.
+    attribution: Optional[dict] = None
 
 
 class _CheckoutProviderError(Exception):
@@ -183,8 +205,15 @@ def _attempt_checkout(user_id: int) -> Optional[str]:
             raise _CheckoutMisconfigured()
         return None
     provider = billing.get_billing_provider()
+    # The user's FIRST-touch attribution (stored at signup), so a retried
+    # checkout carries the same metadata as the first attempt -- Stripe
+    # refuses to reuse an idempotency key with different parameters.
+    kwargs = {}
+    stored = customers.get_signup_attribution(user_id)
+    if stored:
+        kwargs["attribution"] = stored
     try:
-        url = provider.create_checkout(user_id, price_id)
+        url = provider.create_checkout(user_id, price_id, **kwargs)
     except billing.BillingProviderNotConfigured as exc:
         if _billing_is_switched_on():
             # Names the variable, never a secret's value.
@@ -229,7 +258,9 @@ def _respond_for(user: users_store.User) -> dict:
     if checkout_url:
         if user.status != "pending_payment":
             users_store.set_user_status(user.id, "pending_payment")
-        events.record_event_safe(user.id, events.CHECKOUT_STARTED)
+        stored = customers.get_signup_attribution(user.id)
+        events.record_event_safe(user.id, events.CHECKOUT_STARTED,
+                                 *([stored] if stored else []))
         return {"user_id": user.id,
                 "checkout": {"status": "redirect", "checkout_url": checkout_url}}
     if user.status != "waitlisted":
@@ -243,6 +274,8 @@ def signup(body: SignupRequest, _rate_limit: None = Depends(_rate_limit_signup))
     if not _valid_email(email):
         raise HTTPException(status_code=400, detail="a valid email is required")
 
+    attribution = attribution_mod.clean_attribution(body.attribution)
+
     user = users_store.get_user_by_email(email)
     if user is None:
         try:
@@ -255,26 +288,62 @@ def signup(body: SignupRequest, _rate_limit: None = Depends(_rate_limit_signup))
             user = users_store.get_user_by_email(email)
             if user is None:
                 raise HTTPException(status_code=400, detail=str(exc))
+            _remember_attribution(user.id, attribution)
             return _respond_for(user)
+        _remember_attribution(user.id, attribution)
         # ACCOUNT_CREATED, not SIGNUP_STARTED: this is the moment a real
         # user row came into existence. SIGNUP_STARTED now belongs solely
         # to the client-side beacon that fires when a visitor REACHES the
         # form (api/funnel.py's PUBLIC_FUNNEL_KINDS) -- the two shared one
         # kind until 2026-09-01, which made the landing -> signup
         # conversion number a mixture of page-loads and real signups.
-        events.record_event_safe(user.id, events.ACCOUNT_CREATED)
+        # Attribution rides as event properties only when there is some, so a
+        # direct signup records exactly the event it always did.
+        events.record_event_safe(user.id, events.ACCOUNT_CREATED,
+                                 *([attribution] if attribution else []))
+    else:
+        # A returning signup (a pending or waitlisted email trying again)
+        # keeps the first touch it already has; this only fills a gap.
+        _remember_attribution(user.id, attribution)
     return _respond_for(user)
 
 
+def _remember_attribution(user_id: int, attribution: dict) -> None:
+    """Store first-touch attribution without ever letting analytics fail the
+    signup it rides on -- the same swallow-and-log contract
+    events.record_event_safe gives."""
+    if not attribution:
+        return
+    try:
+        customers.record_signup_attribution(user_id, attribution)
+    except Exception as exc:  # noqa: BLE001
+        print(f"signup: could not store attribution for user_id={user_id}: {exc!r}",
+              file=sys.stderr, flush=True)
+
+
 @router.get("/signup/complete")
-def signup_complete(session_id: str) -> dict:
+def signup_complete(session_id: str,
+                    _rate_limit: None = Depends(_rate_limit_signup_complete)) -> dict:
     """The no-email-sender activation bridge -- see module docstring.
     `session_id` is the Stripe Checkout Session id Stripe appends to the
     success_url redirect. A 404 covers three cases this endpoint never
     tells apart (see src.appstate.customers.take_activation_token's
-    docstring): payment never completed, session id is unknown/forged, or
-    the token was already retrieved once."""
-    result = customers.take_activation_token(session_id)
+    docstring): payment never completed (or its webhook has not landed YET --
+    web/js/signup.js polls this route for up to a minute while it 404s),
+    session id is unknown/forged, or the token's re-read window closed.
+
+    RE-READ WINDOW: the first successful read starts a 10-minute window
+    (customers.ACTIVATION_REREAD_WINDOW) in which the SAME session id returns
+    the SAME token again, so a reload or a lost response never locks a
+    paying customer out. After it the token is wiped and the session id is
+    dead -- a session id found later in a history file or a log is worth
+    nothing.
+
+    RATE LIMIT: 30 per minute per client IP (see
+    SIGNUP_COMPLETE_RATE_LIMIT_PER_MINUTE) -- one buyer's poll loop makes at
+    most 30; the page treats a 429 as "try again"."""
+    result = customers.take_activation_token(
+        session_id, reread_window=customers.ACTIVATION_REREAD_WINDOW)
     if result is None:
         raise HTTPException(status_code=404, detail={
             "error": "not_found",

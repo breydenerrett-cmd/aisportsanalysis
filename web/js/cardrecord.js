@@ -40,9 +40,10 @@
  * instead of publishing one.
  */
 
-import { apiGet } from "./api.js";
+import { apiGet, getToken } from "./api.js";
 import { el, clear, renderError, renderLoading, notYetAvailable, formatAmerican } from "./dom.js";
 import { bookLabel } from "./labels.js";
+import { loadCheckoutState, NOT_ON, recordCtaLabel } from "./checkout.js";
 import { NFL_NOTICE, NFL_RETIRED_RULE, MLB_SHADOW_RULE } from "./sport.js";
 
 // GET /card/history's own default (api/card.py's DEFAULT_HISTORY_LIMIT) --
@@ -716,6 +717,16 @@ function calendar(settledDays, pendingDays) {
     text: "Every day we published a card. Green won, red lost, and a day "
         + "still waiting on its games says PENDING. Click a graded day to "
         + "jump to its picks." }));
+  // The day rows pool everything shown that night; the record at the top of
+  // the page counts picks only. Read 2026-10-01 on the live ledger: the
+  // squares add up to about +5 units beside a headline of -5.05, with nothing
+  // on the page saying why. Both are true, so the page says which is which.
+  wrap.appendChild(el("p", { class: "crp-cal__legend", "data-hook": "calendar-scope",
+    text: "A day's figure counts every entry shown that night, including "
+        + "fills (extra entries that round out the card and are never "
+        + "counted) and postseason games. The record at the top of this page "
+        + "counts picks only, regular season only, so the two do not add up "
+        + "to the same number." }));
   for (const key of months) wrap.appendChild(calendarMonth(key, byDate));
   return wrap;
 }
@@ -741,6 +752,32 @@ function emptyRecord(sport = "mlb", rule = null) {
   actions.appendChild(el("a", { class: "btn btn--primary chamfer chamfer--btn",
     href: sport === "nfl" ? "#/nfl" : "#/today",
     text: sport === "nfl" ? "SEE THE NFL CARD" : "SEE TONIGHT'S CARD" }));
+  panel.appendChild(actions);
+  wrap.appendChild(panel);
+  return wrap;
+}
+
+/** THE SIGNED-OUT VISITOR'S WAY FORWARD (2026-10-01). This page is public --
+ * GET /card/record and GET /card/history need no token and show settled
+ * days only -- so a stranger can read the whole record, and the one thing it
+ * has to offer them is the next step: tonight's card, which is the paid part.
+ * Nothing renders for a signed-in reader, who already has it. `where` only
+ * distinguishes the top and bottom copies for the tests and the funnel. */
+export function signupCta(where) {
+  if (getToken()) return null;
+  const wrap = el("section", { class: "gutter", "data-hook": "record-signup-cta",
+    "data-position": where });
+  const panel = el("div", { class: "panel chamfer card2empty" });
+  panel.appendChild(el("p", { class: "card2empty__body",
+    text: "Every pick on this page was published before the game and graded the next morning, "
+        + "win or lose. Tonight's card is the part that is for subscribers." }));
+  const actions = el("div", { class: "card2empty__actions" });
+  // Cautious wording first; the trial wording only when /meta says checkout is
+  // on, with that response's own trial length (checkout.js).
+  const cta = el("a", { class: "btn btn--primary chamfer chamfer--btn", href: "#/signup",
+    "data-hook": "record-start-trial", text: recordCtaLabel(NOT_ON) });
+  loadCheckoutState().then((state) => { cta.textContent = recordCtaLabel(state); });
+  actions.appendChild(cta);
   panel.appendChild(actions);
   wrap.appendChild(panel);
   return wrap;
@@ -898,6 +935,8 @@ export async function renderCardRecord(container, options = {}) {
           + "be quietly edited afterward — the wins and the losses both." }));
   }
   screen.appendChild(unitsNote());
+  const topCta = signupCta("top");
+  if (topCta) screen.appendChild(topCta);
 
   // THE CALENDAR SITS ABOVE BOTH BRANCHES, because it is the one thing on
   // this page that has something to show on day one: a published card is a
@@ -965,6 +1004,9 @@ export async function renderCardRecord(container, options = {}) {
   // picks are shown whether or not anything counted has graded.
   const postseason = postseasonNote(record);
   if (postseason) screen.appendChild(postseason);
+
+  const bottomCta = signupCta("bottom");
+  if (bottomCta) screen.appendChild(bottomCta);
 
   if (record.disclaimer) {
     screen.appendChild(el("p", { class: "crp-disclaimer", "data-hook": "record-disclaimer", text: record.disclaimer }));

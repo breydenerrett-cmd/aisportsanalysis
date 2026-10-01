@@ -212,10 +212,16 @@ class HistoryPagination(LedgerCase):
 @unittest.skipUnless(_HAVE_FASTAPI, "fastapi not installed")
 class RouteOrderFromThisFeature(unittest.TestCase):
     def test_history_is_declared_before_the_date_route(self):
-        paths = [getattr(r, "path", None) for r in card_api.router.routes]
-        self.assertIn("/card/history", paths)
-        self.assertIn("/card/{date}", paths)
-        self.assertLess(paths.index("/card/history"), paths.index("/card/{date}"))
+        # /card/history is on the PUBLIC router now (api/card.py), and
+        # api/app.py mounts that router before the paid one, so the
+        # collision this guards is "public router mounted second", which
+        # tests/test_api_card.py proves through the real app. Here: the
+        # route lives on the public router and not on the paid one.
+        public = [getattr(r, "path", None) for r in card_api.public_router.routes]
+        paid = [getattr(r, "path", None) for r in card_api.router.routes]
+        self.assertIn("/card/history", public)
+        self.assertNotIn("/card/history", paid)
+        self.assertIn("/card/{date}", paid)
 
 
 @unittest.skipUnless(_HAVE_FASTAPI, "fastapi not installed")

@@ -59,6 +59,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from api.auth import _require_admin
+from src.appstate import attribution as attribution_mod
 from src.appstate import events
 from src.appstate.ratelimit import FixedWindowLimiter, limiter_dependency
 
@@ -75,8 +76,20 @@ PUBLIC_FUNNEL_KINDS = frozenset({
     events.LANDING_VIEW, events.SIGNUP_STARTED, events.CTA_CLICK,
 })
 
-# See module docstring's "WHY A FIXED SENTINEL id" section.
+# See module docstring's "WHY A FIXED SENTINEL id" section. Still the id of
+# record for a beacon that carries no (or a malformed) `anon_id` -- an older
+# cached page, a script -- so those rows stay countable exactly as before.
 ANONYMOUS_FUNNEL_USER_ID = "anonymous-funnel-visitor"
+
+# PER-VISITOR ANONYMOUS ID (2026-10-01). Every public funnel event used to hash
+# to ONE id, so "distinct visitors" collapsed to 1 and nothing could say how
+# many different people reached the signup form, or whether the one who did
+# was the one who clicked a CTA. The browser now mints a random id once
+# (web/js/attribution.js, localStorage), sends it as `anon_id` with every
+# beacon, and the event is recorded under sha256("anon:<id>"). The id is
+# random, carries nothing about the person, and is never joined to an email or
+# an IP; it exists to count visitors, not to identify them.
+ANON_ID_PREFIX = "anon:"
 
 FUNNEL_RATE_LIMIT_PER_HOUR = 60
 _funnel_limiter = FixedWindowLimiter(limit=FUNNEL_RATE_LIMIT_PER_HOUR, window_s=3600.0)
@@ -118,6 +131,8 @@ def _validated_properties(properties: Optional[dict]) -> Optional[dict]:
 class FunnelEventRequest(BaseModel):
     kind: str
     properties: Optional[dict] = None
+    # The browser's random per-visitor id; see ANON_ID_PREFIX.
+    anon_id: Optional[str] = None
 
 
 @router.post("/funnel/event", dependencies=[Depends(_rate_limit_funnel)])
@@ -135,7 +150,9 @@ def post_funnel_event(body: FunnelEventRequest) -> dict:
                        f"allowed: {sorted(PUBLIC_FUNNEL_KINDS)}"),
         })
     properties = _validated_properties(body.properties)
-    events.record_event_safe(ANONYMOUS_FUNNEL_USER_ID, body.kind, properties)
+    anon_id = attribution_mod.clean_anon_id(body.anon_id)
+    identity = f"{ANON_ID_PREFIX}{anon_id}" if anon_id else ANONYMOUS_FUNNEL_USER_ID
+    events.record_event_safe(identity, body.kind, properties)
     return {"recorded": True}
 
 
@@ -146,6 +163,7 @@ def post_funnel_event(body: FunnelEventRequest) -> dict:
 # version was actively wrong rather than merely coarse).
 FUNNEL_STEPS: List[str] = [
     events.LANDING_VIEW,
+    events.CTA_CLICK,
     events.FREE_BET_CHECK,
     events.SIGNUP_STARTED,
     events.ACCOUNT_CREATED,
@@ -167,9 +185,27 @@ FUNNEL_STEPS: List[str] = [
 # even read over 100%. Both steps therefore measure off landing_view, and
 # the response says so in `conversion_from` rather than leaving a reader to
 # assume the neighbour.
+#
+# CTA_CLICK is the same kind of branch: a count of button presses on the
+# landing page, measured against landing views. It is a raw click count, so a
+# visitor who presses two buttons is two clicks and the figure can pass 100%;
+# `unique_visitors` on the step is the per-person number.
 CONVERSION_BASELINE: Dict[str, str] = {
     events.SIGNUP_STARTED: events.LANDING_VIEW,
+    events.CTA_CLICK: events.LANDING_VIEW,
+    events.FREE_BET_CHECK: events.LANDING_VIEW,
 }
+
+# The label a step's events carry when they came with no utm_source -- a direct
+# visit, an untagged link, or an event recorded before attribution existed.
+DIRECT_SOURCE = "(direct)"
+INVALID_SOURCE = "(invalid)"
+
+# Steps whose events carry the visitor's anonymous id as their hashed user, so
+# distinct hashes ARE distinct visitors. (The other steps are per-account.)
+UNIQUE_VISITOR_STEPS = frozenset({
+    events.LANDING_VIEW, events.CTA_CLICK, events.SIGNUP_STARTED,
+})
 
 # BET_CHECK_RUN and BET_SAVED can fire many times for the same user; the
 # funnel step this task names is "first bet_check_run" / "first bet_saved",
@@ -251,6 +287,62 @@ def _step_counts(start: str, end: str, *, db=None) -> Dict[str, int]:
     return counts
 
 
+def _source_of(event) -> str:
+    """The event's utm_source as a short string, or "(direct)".
+
+    The public beacon stores whatever `properties` it is sent (size-checked
+    only), so this value is attacker-controlled. A nested object here used to
+    become a dict key and turned GET /admin/funnel into a 500 for as long as
+    the event stayed in the window. Anything that is not a plain string is
+    filed under one fixed label instead."""
+    value = (event.properties or {}).get("utm_source")
+    if value is None or value == "":
+        return DIRECT_SOURCE
+    if not isinstance(value, str):
+        return INVALID_SOURCE
+    cleaned = "".join(ch for ch in value if ch.isprintable()).strip()[:64]
+    return cleaned or DIRECT_SOURCE
+
+
+def _window_events(start: str, end: str, *, db=None):
+    return [e for e in events.list_events(db=db) if start <= e.at[:10] <= end]
+
+
+def _unique_visitor_counts(start: str, end: str, *, db=None) -> Dict[str, int]:
+    """Distinct visitor ids per public step, in range. A beacon without an
+    anon_id shares the one sentinel hash, so every such event counts as one
+    visitor in total -- the old collapse, now confined to clients that do not
+    send the id instead of being the whole table."""
+    seen: Dict[str, set] = {step: set() for step in UNIQUE_VISITOR_STEPS}
+    for event in _window_events(start, end, db=db):
+        if event.kind in seen:
+            seen[event.kind].add(event.user_hash)
+    return {kind: len(hashes) for kind, hashes in seen.items()}
+
+
+def _counts_by_source(start: str, end: str, *, db=None) -> Dict[str, Dict[str, int]]:
+    """utm_source -> {step: count} over the funnel steps, in range.
+
+    Every step is attributed by the `utm_source` on its own event: the public
+    beacons carry it from the landing page, `account_created`,
+    `checkout_started` and `checkout_completed` carry the user's stored first
+    touch (api/signup.py, src/appstate/billing.py). Events with none are
+    "(direct)". First-occurrence steps (bet_check_run, bet_saved) and
+    invite_redeemed carry no attribution and are left out rather than filed
+    under "(direct)", which would make direct traffic look like it activates
+    better than any campaign."""
+    attributed = [step for step in FUNNEL_STEPS
+                  if step not in FIRST_OCCURRENCE_STEPS
+                  and step != events.INVITE_REDEEMED]
+    out: Dict[str, Dict[str, int]] = {}
+    for event in _window_events(start, end, db=db):
+        if event.kind not in attributed:
+            continue
+        slot = out.setdefault(_source_of(event), {step: 0 for step in attributed})
+        slot[event.kind] += 1
+    return dict(sorted(out.items(), key=lambda kv: (-kv[1].get(events.LANDING_VIEW, 0), kv[0])))
+
+
 @router.get("/admin/funnel")
 def get_admin_funnel(start: Optional[str] = None, end: Optional[str] = None,
                      _admin: None = Depends(_require_admin)) -> dict:
@@ -294,4 +386,9 @@ def get_admin_funnel(start: Optional[str] = None, end: Optional[str] = None,
             "conversion_from": baseline_kind,
             "conversion_pct_from_previous": conversion_pct_from_previous,
         })
-    return {"start": start, "end": end, "steps": steps_out}
+    uniques = _unique_visitor_counts(start, end)
+    for step in steps_out:
+        if step["kind"] in uniques:
+            step["unique_visitors"] = uniques[step["kind"]]
+    return {"start": start, "end": end, "steps": steps_out,
+            "by_source": _counts_by_source(start, end)}

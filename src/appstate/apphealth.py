@@ -355,7 +355,10 @@ def report(*, data_dir: Optional[Path] = None, db_path: Optional[Path] = None,
                 return {"status": "off", "provider": provider,
                         "reason": "billing provider is the null provider; "
                                   "no payment can be taken"}
-            reason = _billing.checkout_delivery_ready()
+            # Every reason a switched-on deploy cannot sell, not only the
+            # return URL: with no API key, price id or webhook secret this
+            # used to read "ok" (found by review 2026-10-01).
+            reason = _billing.checkout_not_ready_reason()
             if reason:
                 return {"status": "broken", "provider": provider,
                         "reason": reason}

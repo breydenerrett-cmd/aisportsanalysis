@@ -101,8 +101,13 @@ def create_checkout(body: CheckoutRequest,
         return {"status": "not_configured",
                 "message": "billing is not configured yet"}
     provider = billing.get_billing_provider()
+    # First-touch attribution stored at signup, so the Stripe session and the
+    # checkout_started event name the channel. Passed only when there is one,
+    # which keeps a provider written before this argument existed working.
+    stored_attribution = customers.get_signup_attribution(current_user.id)
+    kwargs = {"attribution": stored_attribution} if stored_attribution else {}
     try:
-        url = provider.create_checkout(current_user.id, price_id)
+        url = provider.create_checkout(current_user.id, price_id, **kwargs)
     except billing.BillingProviderNotConfigured as exc:
         return {"status": "not_configured", "message": str(exc)}
     except RuntimeError as exc:
@@ -126,7 +131,8 @@ def create_checkout(body: CheckoutRequest,
     # A real checkout URL was actually handed back -- record the event
     # here, not the honest "not_configured" branches above, since those
     # never started a checkout.
-    events.record_event_safe(current_user.id, events.CHECKOUT_STARTED)
+    events.record_event_safe(current_user.id, events.CHECKOUT_STARTED,
+                             *([stored_attribution] if stored_attribution else []))
     return {"status": "redirect", "checkout_url": url}
 
 

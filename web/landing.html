@@ -33,7 +33,7 @@
      type as everything else. tests/test_web_structure.py enforces that
      mechanically. -->
 <title>LINEHOUND — tonight's picks, frozen before first pitch</title>
-<meta name="description" content="MLB and NFL picks posted before the game, graded automatically the next morning. UFC picks are graded once results are entered by hand. Every loss stays on the record. Tennis is research only. 7-day free trial, then $19.99/month.">
+<meta name="description" content="MLB and NFL picks posted before the game, graded automatically the next morning. UFC picks are graded once results are entered by hand. Every loss stays on the record. Tennis is research only. Planned price: $19.99/month.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,500;0,600;0,700;1,600;1,700;1,800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -61,7 +61,7 @@
     <a href="#pricing">Pricing</a>
     <a href="#faq">FAQ</a>
   </div>
-  <a class="btn btn--primary" href="index.html#/signup" data-hook="cta-primary">Start your 7-day free trial</a>
+  <a class="btn btn--primary" href="index.html#/signup" data-hook="cta-primary" data-checkout-cta>Get notified when checkout opens</a>
 </nav>
 
 <main>
@@ -85,9 +85,9 @@
     <h1 class="hero__claim-title">Every pick posted before the game.<br>Every loss kept on the record.</h1>
     <p class="hero__claim-body">MLB and NFL grade automatically the next morning. UFC picks publish before the event and grade in public once results are entered by hand.</p>
     <div class="hero__cta-group" data-rise data-delay="160">
-      <a class="btn btn--primary" href="index.html#/signup" data-hook="cta-signup-hero">Start your 7-day free trial</a>
+      <a class="btn btn--primary" href="index.html#/signup" data-hook="cta-signup-hero" data-checkout-cta>Get notified when checkout opens</a>
       <a class="btn btn--ghost" href="index.html#/record-card" data-hook="cta-record-secondary">See every pick, graded</a>
-      <p class="hero__cta-note">7-day free trial, then $19.99/month. Cancel anytime.</p>
+      <p class="hero__cta-note" data-hook="hero-cta-note">Planned price: $19.99/month. Checkout is not open yet.</p>
     </div>
   </div>
 
@@ -464,14 +464,14 @@
   <h2 class="section__title" data-rise data-delay="60">One plan. No tiers to compare.</h2>
   <div class="pricing-grid" style="margin-top:28px;grid-template-columns:minmax(0,1fr);max-width:460px">
     <div class="pricing-card pricing-card--founding panel chamfer" data-rise data-delay="80">
-      <span class="badge badge--money chamfer chamfer--chip pricing-card__badge">7-day free trial</span>
+      <span class="badge badge--money chamfer chamfer--chip pricing-card__badge" data-hook="pricing-trial-badge" hidden></span>
       <div data-hook="pricing-host"></div>
       <ul class="pricing-card__list">
-        <li>Cancel anytime, no retention flow — access runs through what you've paid for</li>
-        <li>No annual plan, no countdown, no percent-off badge</li>
+        <li data-hook="pricing-cancel-line" hidden>Cancel anytime, no retention flow — access runs through what you've paid for</li>
+        <li>One monthly plan today, no countdown, no percent-off badge</li>
         <li>Every pick, every sport, the full record</li>
       </ul>
-      <a class="btn btn--primary" href="index.html#/signup" data-hook="cta-signup">Start your 7-day free trial</a>
+      <a class="btn btn--primary" href="index.html#/signup" data-hook="cta-signup" data-checkout-cta>Get notified when checkout opens</a>
     </div>
   </div>
 </section>
@@ -547,7 +547,7 @@
 <section class="closing-band" aria-label="call to action" data-view="cta" data-hook="cta-bottom">
   <div class="closing-band__title" data-hook="closing-cta-title">The next card posts before first pitch.<br>See what it says.</div>
   <div class="closing-band__cta">
-    <a class="btn btn--primary btn--lg" href="index.html#/signup" data-hook="cta-signup-bottom">Start your 7-day free trial</a>
+    <a class="btn btn--primary btn--lg" href="index.html#/signup" data-hook="cta-signup-bottom" data-checkout-cta>Get notified when checkout opens</a>
   </div>
 </section>
 
