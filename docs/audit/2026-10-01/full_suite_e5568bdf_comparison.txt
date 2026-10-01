@@ -1,0 +1,14 @@
+Release train 2026-10-01 (buying path 1c1a9a60, loop feed gate dc614a5e, postseason page e5568bdf), local tree at e5568bdf
+Full suite by test identity (scripts/test_parallel.py --workers 6, Windows, Python 3.14): 9165 tests, failures=17 errors=1 skipped=36
+Forward-store fingerprint check: OK (11 stores unchanged)
+Baseline: docs/audit/2026-09-28/full_suite_integrated_1169b2d6_failures.txt (8676 tests, failures=17 errors=1)
+
+PRE_EXISTING (18, identical identities, all environmental on this Windows checkout):
+  executable bits x11 (test_deploy_scripts) + test_daily_bootstrap.test_is_executable; fcntl import in test_capture_health;
+  test_timing peak RSS; test_card_memory_budget relief rates RSS; test_appstate_users APP_DB_PATH override (drive letter);
+  test_f5_eval frozen-family path; test_capture_no_set_time narrow window
+FIXED: none against this baseline (tests.test_api_meta_card_record_v2 flat-alias test went red when the ledger first held a
+  postseason card on 2026-09-29, after the baseline was taken; corrected in f18517db and green here)
+NEW_EXPECTED: none failing. 489 tests added since the baseline, all passing.
+NEW_REGRESSION: none
+UNKNOWN: none

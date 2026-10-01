@@ -1,0 +1,25 @@
+ref FETCH_HEAD  day 2026-10-01  split 2026-10-01T18:42:00+00:00
+log covers 2026-10-01T00:00:07.121866+00:00 .. 2026-10-01T20:09:54.180996+00:00 (before 18.7 h, after 1.5 h)
+
+BEFORE: 441 credits in 18.7 h (23.6 per hour)
+  nfl_capture      266
+  mma_capture      85
+  prop_listing     59
+  dense            24
+  prop_prices      4
+  batter_props     3
+  mlb: 21 capture instants, 2167 rows
+  mma: 85 capture instants, 10957 rows
+  nfl: 85 capture instants, 68217 rows
+
+AFTER: 13 credits in 1.5 h (8.9 per hour)
+  prop_listing     6
+  nfl_capture      6
+  mma_capture      1
+  mlb: 2 capture instants, 262 rows
+  mma: 1 capture instants, 135 rows
+  nfl: 2 capture instants, 1640 rows
+
+NFL before: 27 minutes with a kickoff within 6 h; board under 60 min old for 27 of them (100%); 266 credits; 591.1 credits per card-usable hour
+
+NFL after: 88 minutes with a kickoff within 6 h; board under 60 min old for 88 of them (100%); 6 credits; 4.1 credits per card-usable hour
