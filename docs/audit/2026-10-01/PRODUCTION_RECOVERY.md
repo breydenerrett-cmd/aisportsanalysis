@@ -137,3 +137,20 @@ committed) to 22:17Z, 3.6 hours:
   bought the same board again), but do not count the saving until the
   refresh has fired on a game day with slots completing normally. Sunday is
   the test. The slow engine slate is being profiled separately.
+
+## Open: the hourly refresh can ship a push before its CI finishes (owner decision)
+
+`.github/workflows/forward-capture.yml`, step "Dispatch production data
+refresh": the gate reads the latest COMPLETED `tests` run. While a new push
+is still being tested, that is the run for the previous push, and
+`deploy-prod.yml` checks out the branch head. A capture slot in minute
+00 to 14 of that gap deploys code no suite has passed.
+
+Proposed change, not applied (workflow edits are the owner's call): before
+dispatching, also ask the same endpoint for `status=queued` and
+`status=in_progress`; if either returns a run, skip this hour's refresh.
+Capture commits never start a `tests` run, so a pending run always means a
+code push is still under test.
+
+Until then the rule is procedural: no code push between minute 45 and
+minute 15 of any hour.
