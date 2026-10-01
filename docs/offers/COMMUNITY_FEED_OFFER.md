@@ -1,4 +1,4 @@
-# Linehound Community Feed: one-page offer (draft, 2026-09-28)
+# Linehound Community Feed: one-page offer (draft, revised 2026-10-01)
 
 Status: DRAFT for Brey's sign-off. Price and guarantee are recommendations.
 Nothing here claims an edge; the product is the public grading, not a win
@@ -37,6 +37,13 @@ What the feed posts, in your channel, automatically:
 
 What it does not do: promise wins, hide losses, or place bets.
 
+What a server should expect to see, said before they pay: the rule is
+strict, so some nights the card is all labelled fills (entries shown to
+round the card out, never counted in the record), and in the NFL the
+counted picks have run at about one a week. The feed never posts an entry
+priced at -200 or shorter. In October the content is the MLB postseason
+nightly and NFL game days; after the World Series it is NFL only.
+
 ## Timeline
 
 - Day 0: you create a webhook in the channel you choose and send the URL
@@ -48,8 +55,10 @@ What it does not do: promise wins, hide losses, or place bets.
 
 ## Price (recommendation)
 
-- Founding community price: $149/month per server, month to month, cancel
-  any time. Locked for as long as the server stays subscribed.
+- 7 days free in one channel of the server. Nothing is charged and no card
+  is taken for the free week; billing starts only if the owner says yes.
+- Founding community price after that: $149/month per server, month to
+  month, cancel any time. Locked for as long as the server stays subscribed.
 - Public community price after the first six servers: $249/month.
 - No per-member fees. Members who want the full site get the consumer
   plan ($19.99/month beta, `docs/PRICING_OFFER_VALIDATION.md`) with a
@@ -65,14 +74,11 @@ Delivery, not results: if the feed posts fewer than 90% of scheduled cards
 in a calendar month, that month is free. No refund is tied to wins or units,
 because nobody can promise those, and we say so on the page.
 
-## The DM (five lines)
+## The DM
 
-Hey <name>, I run Linehound. It posts a nightly MLB/NFL card into a Discord
-channel before first pitch and grades it in public the next morning, losses
-included, on a ledger nobody can edit. Your members get a real record to
-argue about instead of tout screenshots. $149/month for the server, cancel
-any time, first month free if it misses cards. Want it in your server
-tonight?
+The scripts Brey sends, by hand, are in `docs/sales/scripts.md` (three
+variants, two follow-ups). That file is the only copy; do not paste an older
+DM from this page's history.
 
 ## Objections and honest answers
 
@@ -87,7 +93,10 @@ tonight?
 
 ## Owner steps before the first sale
 
-1. Approve the price and the guarantee above (or change them here).
-2. Add the Discord webhook secret to the runners (`docs/DISCORD_FEED.md`).
-3. Production deploy so the record page has a public URL
-   (`deploy/DEPLOY_RUNBOOK.md`; blocked today by the memory fix in progress).
+1. Approve the price, the free week and the guarantee above (or change them
+   here).
+2. Create the demo server and add the Discord webhook secret
+   (`docs/DISCORD_FEED.md`).
+3. Take the first payment by a Stripe payment link for the $149 product
+   (a link is fine here: a community has no site login to unlock, unlike
+   the $19.99 plan, which must go through the site's own checkout).
