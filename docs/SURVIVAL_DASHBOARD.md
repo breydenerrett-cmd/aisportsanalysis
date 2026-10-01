@@ -1,6 +1,6 @@
 # LineHound survival dashboard
 
-Generated 2026-10-01 18:47Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and `docs/sales/pipeline.csv`, not this file.
+Generated 2026-10-01 18:56Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and `docs/sales/pipeline.csv`, not this file.
 
 | | |
 |---|---|
@@ -66,11 +66,11 @@ No rule here has evidence of an edge. Closing-line value and calibration: see `d
 
 ## Product errors
 
-- Daily loop red on the legacy 'settlement gap' escalation (data still commits).
 - UFC picks never graded (results are entered by hand).
 - V2 has published zero MAIN picks since 2026-09-26; every entry since is a fill. The public MAIN record is frozen at 4 dates.
 - Shadow ledgers hold one wrong permanent VOID (game 824785, played a day late). Append-only correction pending.
 - NFL picks store no model probability or observation time, so NFL calibration and closing-line value cannot be measured.
+- Daily loop red on 'settlement gap': cause found (a cancelled game and a rain-out played a day late could never settle). Fix pushed 2026-10-01 (eb850168); confirm on the 2026-10-02 10:10Z run.
 
 ## Top blockers
 
@@ -78,6 +78,7 @@ No rule here has evidence of an edge. Closing-line value and calibration: see `d
 - No distribution: zero outreach sent. Target list and scripts in docs/sales/.
 - Discord feed not wired: needs the webhook secret and one env line on the default branch. Owner + me.
 - Claude monthly cost unknown, so break-even is an estimate. Owner.
+- Thin content: MLB has had no counted pick since 2026-09-26 (fills only, 2 to 4 postseason games a day); NFL has published 11 picks on 4 dates, 1 since 2026-09-21; UFC is ungraded. After the World Series (about Nov 1) only NFL remains. Gates are not being loosened to fill the card; what is sold is the nightly card with labelled fills, the price view and the public record.
 
 ## Today's execution
 
