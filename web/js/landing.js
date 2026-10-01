@@ -425,8 +425,13 @@ function fillRuleBlock(root, prefix, cohort, roleLabel) {
       const wl = cohortWL(postseason);
       const units = cohortUnitsText(postseason);
       const nights = postseason.days || 0;
-      postseasonNode.textContent = `Postseason: ${wl}, ${units}u over ${nights} `
-        + `night${nights === 1 ? "" : "s"}. Graded, not counted.`;
+      // Nights with a card but no staked pick (fills only) used to print
+      // "0–0, +0.00u over 2 nights", which reads as a result. It is the
+      // absence of one, so it says that.
+      const nightWord = `night${nights === 1 ? "" : "s"}`;
+      postseasonNode.textContent = postseason.n_staked > 0
+        ? `Postseason: ${wl}, ${units}u over ${nights} ${nightWord}. Graded, not counted.`
+        : `Postseason: no picks on ${nights} ${nightWord} so far. Graded, not counted.`;
       postseasonNode.hidden = false;
     } else {
       postseasonNode.hidden = true;
