@@ -305,7 +305,7 @@ function renderOverview(host, overview) {
   host.appendChild(wrap);
 }
 
-function renderFunnel(host, funnel) {
+export function renderFunnel(host, funnel) {
   clear(host);
   const wrap = el("div", { "data-hook": "admin-funnel" });
   wrap.appendChild(el("p", { text: `${funnel.start} to ${funnel.end}` }));
@@ -326,7 +326,48 @@ function renderFunnel(host, funnel) {
   }
   table.appendChild(body);
   wrap.appendChild(table);
+  wrap.appendChild(renderFunnelBySource(funnel.by_source));
   host.appendChild(wrap);
+}
+
+// WHICH LINK BROUGHT THEM. GET /admin/funnel has sent `by_source` (utm_source
+// -> {step: count}, api/funnel.py's _counts_by_source) since the outreach
+// links got a source each, and this page never drew it: the one question an
+// outreach batch asks -- did anyone from that server sign up -- had an answer
+// in the API and none on screen. Step columns come from the payload, in the
+// order the server sends them; a source is shown exactly as stored.
+function renderFunnelBySource(bySource) {
+  const wrap = el("div", { "data-hook": "admin-funnel-by-source" });
+  wrap.appendChild(el("h3", { text: "By source" }));
+  const sources = Object.keys(bySource || {});
+  if (!sources.length) {
+    wrap.appendChild(el("p", { "data-hook": "admin-funnel-by-source-empty",
+      text: "No attributed events in this range." }));
+    return wrap;
+  }
+  const steps = [];
+  for (const source of sources) {
+    for (const step of Object.keys(bySource[source] || {})) {
+      if (!steps.includes(step)) steps.push(step);
+    }
+  }
+  const table = el("table", { class: "admin-funnel-table", "data-hook": "admin-funnel-by-source-table" });
+  const head = el("tr");
+  head.appendChild(el("th", { text: "Source" }));
+  for (const step of steps) head.appendChild(el("th", { text: step }));
+  table.appendChild(el("thead", {}, [head]));
+  const body = el("tbody");
+  for (const source of sources) {
+    const row = el("tr", { "data-hook": "admin-funnel-source", "data-source": source });
+    row.appendChild(el("td", { text: source }));
+    for (const step of steps) {
+      row.appendChild(el("td", { text: String((bySource[source] || {})[step] || 0) }));
+    }
+    body.appendChild(row);
+  }
+  table.appendChild(body);
+  wrap.appendChild(table);
+  return wrap;
 }
 
 // support_store.VALID_STATUSES -- kept here as the fixed set of buttons a
