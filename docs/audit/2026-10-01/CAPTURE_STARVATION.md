@@ -55,9 +55,17 @@ Same replay copy, same stores, `since=2026-10-01`:
 checks the indexed answer against it on window edges, name mismatches,
 yesterday's files and unreadable captures, and that a capture is opened once.
 
-Status: IMPLEMENTED, TARGETED TESTED, REPLAY VERIFIED on real stores. Not yet
-verified on a runner: the next capture slots after the push are the test
-(expect `engine slate` in well under a minute and slots completing again).
+Status: IMPLEMENTED, TARGETED TESTED, REPLAY VERIFIED on real stores, PUSHED
+(5a85b867, 23:15:53Z), RUNNER VERIFIED:
+
+- afternoon-slate run 36940725689 (first to run the step on the new code):
+  `engine slate` 23:28:19Z to 23:29:24Z, 65 s against 1,144 s; the whole
+  slate pass 134 s against about 20 minutes; the job 5 minutes end to end.
+- forward-capture run 36937934023: "Capture one slot" 85 s (that slot
+  skipped the engine step: no new lineup), job done in 4 minutes.
+
+Still to watch: slots completing at the normal rate over the next hours, and
+production's hourly refresh firing again at 00:00Z.
 
 ## Not fixed here (measured, small)
 
