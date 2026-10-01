@@ -2010,15 +2010,20 @@ class InputsTextTests(_StarterRuleBase):
             "2 of 4 inputs are current and used: team results through Sept 30, ballpark. "
             "Not used: starting pitchers (not announced), bullpens (numbers on file end Sept 6).")
 
-    def test_all_four_current(self):
+    def test_all_current(self):
+        # CHANGED 2026-10-01: a game that uses starters has a FIFTH input, the
+        # league pitching baseline, with a status of its own (owner's rule:
+        # it must not read as current just because the starter's log is).
         payload = build(probables=self.probables, bullpen_log=bullpen_rows(28))
         g = self.game(payload)
         self.assertEqual(
             g["inputs_used_text"],
-            "All 4 inputs are current and used: team results through Sept 30, ballpark, "
-            "starting pitchers through Sept 28, bullpens through Sept 28.")
+            "All 5 inputs are current and used: team results through Sept 30, ballpark, "
+            "starting pitchers through Sept 28, bullpens through Sept 28, "
+            "league pitching baseline through Sept 28.")
         self.assertEqual([i["key"] for i in g["inputs"]],
-                         ["team_results", "park", "starters", "bullpens"])
+                         ["team_results", "park", "starters", "bullpens",
+                          "league_pitching_baseline"])
         for item in g["inputs"]:
             self.assertEqual(set(item), {"key", "label", "used", "status", "through", "note"})
 
@@ -2041,8 +2046,13 @@ class InputsTextTests(_StarterRuleBase):
             for g in games:
                 used_current = sum(1 for i in g["inputs"]
                                    if i["used"] and i["status"] in ("CURRENT", "CONFIRMED_CURRENT"))
+                # A game that uses starters lists a fifth input, the league
+                # pitching baseline (CHANGED 2026-10-01).
+                n = len(g["inputs"])
+                self.assertEqual(n, 5 if g["starter_input_class"] == "CONFIRMED_CURRENT" else 4)
                 self.assertTrue(g["inputs_used_text"].startswith(
-                    "All 4" if used_current == 4 else f"{used_current} of 4"), g["inputs_used_text"])
+                    f"All {n}" if used_current == n else f"{used_current} of {n}"),
+                    g["inputs_used_text"])
             confirmed = counts.get("CONFIRMED_CURRENT", 0)
             if confirmed:
                 self.assertIn(f"in {confirmed} of {len(games)} games", summary["text"])
@@ -2300,8 +2310,8 @@ class PageRenderTests(_StarterRuleBase):
         for name in scn_names:
             self.assertNotIn(name, pitchers)
         self.assertIn("Starters confirmed, current numbers used", shown["ps-starter-tag"])
-        self.assertTrue(all(t.startswith("3 of 4") or t.startswith("2 of 4")
-                            or t.startswith("All 4") for t in shown["ps-inputs-used"]))
+        self.assertTrue(all(_re.match(r"^(All [45]|[2-4] of [45]) inputs are current and used", t)
+                            for t in shown["ps-inputs-used"]), shown["ps-inputs-used"])
         self.assertTrue(shown["ps-scenario"])
         for text in shown["ps-scenario"]:
             self.assertIn("Scenario, not the estimate", text)
@@ -2314,6 +2324,33 @@ class PageRenderTests(_StarterRuleBase):
         self.assertIn("Announced, but pitcher numbers on file end Sept 7: not used",
                       shown["ps-starter-tag"])
         self.assertEqual(shown["ps-scenario"], [])
+
+
+
+class LeagueBaselineHasItsOwnStatusTests(_StarterRuleBase):
+    """Owner's rule, 2026-10-01: the league-wide pitching baseline, computed
+    from the STORED logs, must not read as current because the individual
+    starter's log is."""
+
+    def test_a_fresh_starter_on_a_stale_store_reports_a_stale_baseline(self):
+        # Store ends Sept 7; the announced starters' own logs arrive fresh.
+        payload = build(probables=self.probables, pitcher_logs=dense_logs(7),
+                        fresh_pitcher_logs=lambda pid: pitcher_rows(pid, days=(4, 29)))
+        g = next(g for g in all_games(payload)
+                 if g["starter_input_class"] == "CONFIRMED_CURRENT")
+        by_key = {i["key"]: i for i in g["inputs"]}
+        self.assertEqual(by_key["starters"]["status"], "CONFIRMED_CURRENT")
+        baseline = by_key["league_pitching_baseline"]
+        self.assertTrue(baseline["used"])
+        self.assertEqual(baseline["status"], "STALE_REFERENCE_ONLY")
+        self.assertEqual(baseline["through"], "2026-09-07")
+        self.assertIn("Used, but not current: league pitching baseline through Sept 7",
+                      g["inputs_used_text"])
+        self.assertFalse(g["inputs_used_text"].startswith("All"))
+
+    def test_a_game_without_starters_does_not_list_it(self):
+        for g in all_games(self.stale):
+            self.assertNotIn("league_pitching_baseline", [i["key"] for i in g["inputs"]])
 
 
 if __name__ == "__main__":

@@ -1,0 +1,11 @@
+built 2026-10-01 21:21Z
+A  stored league constant : 3.3107  (from the stored pitcher logs)
+B  current league constant: 3.2407  (30 teams, 43079.7 IP, league ERA 4.171, official 2026 regular-season totals)
+   difference B - A       : -0.0700 runs per nine
+
+2026-NL-WC-3v6 game 3: PHI at ATL
+   A stale league constant   home  63.04%
+   B current league constant home  62.75%   B - A = -0.29 points
+   C starters left out       home  58.19%   A - C = +4.85 points
+
+largest World Series change from A to B: ATL -0.033 points

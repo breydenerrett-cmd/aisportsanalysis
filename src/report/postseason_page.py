@@ -123,7 +123,8 @@ STARTER_CLASSES = (CONFIRMED_CURRENT, PROJECTED_CURRENT, STALE_REFERENCE_ONLY,
 # The four components every estimate is made of, in the order they are listed.
 INPUT_KEYS = ("team_results", "park", "starters", "bullpens")
 INPUT_LABELS = {"team_results": "team results", "park": "ballpark",
-                "starters": "starting pitchers", "bullpens": "bullpens"}
+                "starters": "starting pitchers", "bullpens": "bullpens",
+                "league_pitching_baseline": "league pitching baseline"}
 
 # What a reader sees when the page cannot be built, chosen by the builder's
 # `missing` code. The internal reason goes in the payload's `detail`, which
@@ -1136,7 +1137,34 @@ def _game_inputs(ctx: _Context, game_class: str, sides: Mapping) -> list:
         else None,
         "note": None if used else _starter_reason(sides),
     }
-    return [_results_component(ctx), _park_component(), starters, _bullpen_component(ctx)]
+    inputs = [_results_component(ctx), _park_component(), starters, _bullpen_component(ctx)]
+    if used:
+        inputs.append(_league_baseline_component(ctx))
+    return inputs
+
+
+def _league_baseline_component(ctx: _Context) -> dict:
+    """The league-wide pitching average a used starter's rate is measured
+    against (`pitchers.league_fip_constant`), as an input of its own.
+
+    Owner's rule, 2026-10-01: it must not read as current because the
+    starter's own log is. It is computed from every STORED pitcher log, so it
+    is as old as the store even when the starter was confirmed from a log
+    fetched fresh. Present only on a game whose number carries starters; a
+    game priced without them does not use it at all.
+
+    Measured the same day (docs/audit/2026-10-01/league_baseline_sensitivity
+    .txt): the stored constant was 3.3107 against 3.2407 from the official
+    season totals, which moved the one game using starters by 0.29 points and
+    no World Series chance by more than 0.04. So it is surfaced, not repaired."""
+    current = ctx.pitcher_store_current
+    through = ctx.pitcher_through
+    return {"key": "league_pitching_baseline", "label": INPUT_LABELS["league_pitching_baseline"],
+            "used": True, "status": "CURRENT" if current else STALE_REFERENCE_ONLY,
+            "through": through,
+            "note": None if current else
+            (f"computed from stored logs that end {_short_date(through)}" if through
+             else "computed from stored logs with no date")}
 
 
 def price_series(ctx: _Context, series: dict) -> dict:
