@@ -31,14 +31,33 @@ shaped and already carry a fully rendered `bet` string at publish time
 (`src/analysis/daily_card.py` sets it before the pick is frozen) -- those
 are used verbatim, never rebuilt.
 
-IDEMPOTENT, NEVER LOGS THE WEBHOOK. Every successful post appends one row to
-`data/watch/discord_feed_posted.jsonl` keyed on (sport, date, row_hash); a
-row already posted is skipped (exit 0, nothing sent). A NEW row_hash for a
-date already posted (the card republished -- a pick locked, a fill turned
-into a pick, whatever changed) posts again with a "card update" header. The
-webhook URL itself is never printed or written anywhere -- the marker keeps
-only a sha256 of it, `webhook_hash`, so a leaked marker file proves nothing
-about which webhook it was.
+IDEMPOTENT PER WEBHOOK, NEVER LOGS A WEBHOOK. One run delivers to every
+webhook in `DISCORD_WEBHOOK_URL` (one) plus `DISCORD_WEBHOOK_URLS` (comma-
+or newline-separated; blanks ignored, duplicates collapsed) plus
+`--webhook-url`. Every successful post appends one row to
+`data/watch/discord_feed_posted.jsonl` keyed on (webhook_hash, sport, date,
+row_hash); a row already posted to THAT webhook is skipped, and a new
+row_hash for a date already posted to it (the card republished -- a pick
+locked, a fill turned into a pick, whatever changed) posts again with a
+"card update" header. Webhooks are independent: one failing (network error,
+404 because a customer deleted theirs, 429) never stops the others and never
+gets a marker, so the next run retries exactly the failed ones. Exit 0 only
+when every webhook is posted-or-already-posted; otherwise one `ESCALATE:`
+line per failed webhook, naming it only by the first 8 hex characters of its
+sha256. The URL itself is never printed or written anywhere (urllib
+exceptions can carry it, so error text is scrubbed and unexpected exceptions
+are reported by class name only); the marker keeps only the sha256,
+`webhook_hash`, so a leaked marker file proves nothing about which webhook
+it was.
+
+CONTENT RULES, enforced here and not just hoped for: no entry priced at -200
+or shorter is posted (the retired NFL V1 ledger holds some); fills are posted
+under their own "Fills" heading; the footer is this file's own disclaimer
+(src/analysis/disclaimers.py's wording contains the words edge, profits and
+locked-in, which the feed may not use); those words and the other banned
+ones (see BANNED_WORD_RE) are refused anywhere in a payload except the
+sentence "No edge is claimed.", and a payload that trips the scan is not
+posted.
 """
 
 from __future__ import annotations
@@ -47,6 +66,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import sys
 from dataclasses import dataclass
 from datetime import date as date_cls
@@ -84,14 +104,46 @@ DISCORD_TITLE_LIMIT = 256
 _EMBED_SAFE_LIMIT = DISCORD_EMBED_TOTAL_LIMIT - 200
 
 
+# American odds: -200 and every price shorter than it (-250, -300 ...) is
+# refused; -199 and longer is fine.
+SHORTEST_POSTABLE_PRICE = -199
+
+# Words a community-feed payload may not contain. Whole words and their
+# plain inflections ("locked-in", "profits"), never a prefix: a prefix match
+# on "lock" refuses a whole card because Tyler Lockett or Brandon Lockridge
+# is on it.
+BANNED_WORD_RE = re.compile(
+    r"\b(?:edges?|profit(?:s|able|ably)?|lock(?:s|ed|ing)?|guarantee(?:d|s)?"
+    r"|sharps?|winning|bet\s*check)\b", re.IGNORECASE)
+ALLOWED_SENTENCE = "No edge is claimed."
+
+# The feed's own footer. src/analysis/disclaimers.BETA_DISCLAIMER says the
+# same things with the words "edge", "profits" and "locked-in" in it, which
+# this surface may not carry -- so the feed states them its own way. Still
+# marked as pending legal review, like the original.
+FEED_DISCLAIMER = (
+    "BETA -- TEMPORARY NOTICE, PENDING FINAL LEGAL REVIEW. "
+    "Sports-betting information and research only. No edge is claimed. "
+    "No outcome is promised, for any user or any bet. "
+    "You are solely responsible for your own wagering decisions, including "
+    "whether to bet at all. Not a sportsbook and not a gambling operator: "
+    "it accepts no wagers and places no bets. For users of legal wagering "
+    "age in their jurisdiction (21+ in most U.S. states). If gambling is "
+    "causing you problems, help is available from your state and national "
+    "problem-gambling resources.")
+
+
 @dataclass
 class Assembled:
     """One run's worth of Discord messages, plus the idempotency key for
-    them. `messages` is almost always length 1 -- see `_build_messages`."""
+    them. `messages` is almost always length 1 -- see `_build_messages`.
+    `skipped` is set (and `messages` empty) when a card exists but every
+    entry on it was refused by the price rule -- nothing to post."""
 
     messages: list
     row_hash: Optional[str]
     kind: str  # "card" | "record"
+    skipped: Optional[str] = None
 
 
 # ---------------------------------------------------------------------------
@@ -149,12 +201,13 @@ def _sport_label(sport: str) -> str:
 
 def _stake_basis_text() -> str:
     from src.report import effective_record
-    return effective_record.STAKE_BASIS
+    # The product's own sentence says "profit units"; the feed says "net
+    # units" (same quantity) because "profit" is not allowed here.
+    return effective_record.STAKE_BASIS.replace("profit units", "net units")
 
 
 def _footer_text(sport: str) -> str:
-    from src.analysis.disclaimers import get_disclaimer
-    disclaimer = get_disclaimer()["text"]
+    disclaimer = FEED_DISCLAIMER
     grading = ("Graded in public the next morning." if sport in GRADED_AUTOMATICALLY
                else "Results entered by hand.")
     return f"{disclaimer} {grading}"
@@ -178,11 +231,15 @@ def _entry_sentence(sport: str, entry: dict) -> str:
     from src.report import card_v2
 
     if entry.get("kind") == "prop":
-        # Mirrors src/report/card_v2.py's `_build_prop_candidates` inline
-        # formula exactly (that module has no standalone prop-sentence
-        # helper to import, unlike the game-pick case below).
-        raw = (f"{entry.get('player')} {entry.get('market')} {entry.get('line')} at "
-               f"{daily_card._fmt_price(entry.get('price'))}")
+        # The product's own prop sentence (daily_card._prop_bet_sentence,
+        # which V1 props freeze as `bet`): "Take Devers over 0.5 hits at
+        # +120" -- the side (Over/Under) and the market in plain words,
+        # read off the frozen row. The "Take " is stripped here only so
+        # best_bets_card.bet_sentence below decides it from the `take` flag,
+        # exactly as it does for a game pick.
+        raw = " ".join(daily_card._prop_bet_sentence(entry).split())
+        if raw.lower().startswith("take "):
+            raw = raw[5:]
     else:
         raw = card_v2._bet_sentence(entry)
 
@@ -217,9 +274,27 @@ def _pick_line(sport: str, entry: dict, index: int) -> str:
     return f"{index}. {_entry_sentence(sport, entry)}{_market_vs_our_suffix(entry)}"
 
 
-def _card_sections(sport: str, frozen: dict) -> tuple:
-    """(picks_lines, fills_lines). Withdrawn entries are never read from
-    `frozen` at all -- there is no code path here that could render one."""
+def _is_postable(entry: dict) -> bool:
+    """False for an entry priced at -200 or shorter. An entry with no
+    numeric price is kept (nothing to measure); the ledger's own publish
+    guard is the first line of defence, this is the second."""
+    price = entry.get("price")
+    if isinstance(price, bool) or not isinstance(price, (int, float)):
+        return True
+    return price >= SHORTEST_POSTABLE_PRICE
+
+
+def banned_words_in(payload) -> list:
+    """Every banned word found in a payload's text, after removing the one
+    allowed sentence. [] means clean."""
+    blob = json.dumps(payload, ensure_ascii=False).replace(ALLOWED_SENTENCE, "")
+    return sorted({m.group(0).lower() for m in BANNED_WORD_RE.finditer(blob)})
+
+
+def _raw_entries(sport: str, frozen: dict) -> tuple:
+    """(entries, fills) before the price rule. Withdrawn entries are never
+    read from `frozen` at all -- there is no code path here that could
+    render one."""
     if sport == "mlb":
         entries = list(frozen.get("picks") or ()) + list(frozen.get("prop_picks") or ())
         # `rank` is stamped across game AND prop picks together at publish
@@ -231,7 +306,15 @@ def _card_sections(sport: str, frozen: dict) -> tuple:
     else:
         entries = list(frozen.get("picks") or ())
         fills = []  # V1-shaped ledgers (NFL/UFC) have no fill/withdrawn concept.
+    return entries, fills
 
+
+def _card_sections(sport: str, frozen: dict) -> tuple:
+    """(picks_lines, fills_lines), every entry priced at -200 or shorter
+    left out."""
+    entries, fills = _raw_entries(sport, frozen)
+    entries = [e for e in entries if _is_postable(e)]
+    fills = [e for e in fills if _is_postable(e)]
     picks_lines = ([_pick_line(sport, e, i) for i, e in enumerate(entries, 1)]
                    or ["No picks published for this date."])
     fills_lines = [_pick_line(sport, e, i) for i, e in enumerate(fills, 1)]
@@ -364,6 +447,11 @@ def assemble(sport: str, date_str: str, *, record_only: bool = False,
         title = (f"{label} card update — {date_str}" if is_update
                   else f"{label} card — {date_str}")
         description = frozen.get("basis") or ""
+        raw_entries, raw_fills = _raw_entries(sport, frozen)
+        if (raw_entries or raw_fills) and not any(
+                _is_postable(e) for e in raw_entries + raw_fills):
+            return Assembled(messages=[], row_hash=frozen.get("row_hash"), kind="card",
+                             skipped="every entry is priced at -200 or shorter")
         picks_lines, fills_lines = _card_sections(sport, frozen)
         fields = _fields_for("Picks", picks_lines)
         if fills_lines:
@@ -402,14 +490,18 @@ def _read_markers(marker_path: str) -> list:
     return rows
 
 
-def _already_posted(rows: list, sport: str, date_str: str, row_hash) -> bool:
-    return any(r.get("sport") == sport and r.get("date") == date_str
-               and r.get("row_hash") == row_hash for r in rows)
+def _already_posted(rows: list, sport: str, date_str: str, row_hash,
+                    webhook_hash: str) -> bool:
+    return any(r.get("webhook_hash") == webhook_hash and r.get("sport") == sport
+               and r.get("date") == date_str and r.get("row_hash") == row_hash
+               for r in rows)
 
 
-def _has_prior_post(rows: list, sport: str, date_str: str, kind: str) -> bool:
-    return any(r.get("sport") == sport and r.get("date") == date_str
-               and r.get("kind") == kind for r in rows)
+def _has_prior_post(rows: list, sport: str, date_str: str, kind: str,
+                    webhook_hash: str) -> bool:
+    return any(r.get("webhook_hash") == webhook_hash and r.get("sport") == sport
+               and r.get("date") == date_str and r.get("kind") == kind
+               for r in rows)
 
 
 def _append_marker(marker_path: str, row: dict) -> None:
@@ -425,6 +517,38 @@ def _webhook_hash(url: str) -> str:
     return hashlib.sha256(url.encode("utf-8")).hexdigest()
 
 
+def _short_id(url: str) -> str:
+    """The only way a webhook is ever named in output: the first 8 hex
+    characters of its sha256."""
+    return _webhook_hash(url)[:8]
+
+
+def parse_webhook_urls(*raw_values) -> list:
+    """Every webhook URL in the given strings (each comma-, newline- or
+    whitespace-separated; None/blank items ignored), duplicates collapsed,
+    first-seen order kept."""
+    seen, urls = set(), []
+    for raw in raw_values:
+        for item in re.split(r"[,\s]+", raw or ""):
+            item = item.strip()
+            if item and item not in seen:
+                seen.add(item)
+                urls.append(item)
+    return urls
+
+
+def _scrub(text, url: str) -> str:
+    """`text` with the webhook URL -- whole, without its scheme, or just its
+    id/token path segments -- replaced by [redacted]. Applied to anything an
+    exception or an HTTP reason phrase could have put the URL into."""
+    out = str(text)
+    needles = [url, re.sub(r"^[a-z]+://", "", url)]
+    needles += [seg for seg in url.split("?")[0].split("/")[3:] if len(seg) >= 8]
+    for needle in sorted(set(n for n in needles if n), key=len, reverse=True):
+        out = out.replace(needle, "[redacted]")
+    return out
+
+
 # ---------------------------------------------------------------------------
 # HTTP -- urllib only, 15s timeout, the webhook URL is never printed.
 # ---------------------------------------------------------------------------
@@ -435,18 +559,21 @@ def _post_one(url: str, message: dict):
     pair so the caller never has to inspect an exception (which, for a
     URLError, can otherwise leak request internals) to decide what to print."""
     data = json.dumps(message).encode("utf-8")
-    request = Request(url, data=data, method="POST",
-                      headers={"Content-Type": "application/json"})
     try:
+        request = Request(url, data=data, method="POST",
+                          headers={"Content-Type": "application/json"})
         with urlopen(request, timeout=15) as response:
             status = getattr(response, "status", None)
             if status is None:
                 status = response.getcode()
             return status, None
     except HTTPError as exc:
-        return exc.code, str(exc.reason)
+        return exc.code, _scrub(exc.reason, url)
     except URLError as exc:
-        return None, str(exc.reason)
+        return None, _scrub(exc.reason, url)
+    except Exception as exc:  # timeout mid-read, reset, malformed URL ...
+        # Class name only: a ValueError from a malformed URL quotes it.
+        return None, type(exc).__name__
 
 
 def _post_all(url: str, messages: list):
@@ -464,51 +591,92 @@ def _post_all(url: str, messages: list):
 # ---------------------------------------------------------------------------
 
 def run(sport: str, date_str: str, *, webhook_url: Optional[str] = None,
+        webhook_urls: Optional[list] = None,
         dry_run: bool = False, record_only: bool = False,
         marker_path: str = DEFAULT_MARKER_PATH, card_path: Optional[str] = None,
         snapshot_provider: Optional[Callable] = None,
         snapshot_kwargs: Optional[dict] = None) -> int:
-    prior_rows = [] if dry_run else _read_markers(marker_path)
-    is_update = (not record_only) and _has_prior_post(prior_rows, sport, date_str, "card")
+    """Deliver one (sport, date) to every webhook, each independently.
+    `webhook_url` (one) and `webhook_urls` (a list, or raw comma/newline
+    text) are merged and de-duplicated. Returns 0 only when every webhook
+    is posted-or-already-posted (or there was nothing to post)."""
+    if isinstance(webhook_urls, str):
+        webhook_urls = [webhook_urls]
+    urls = parse_webhook_urls(webhook_url, *(webhook_urls or ()))
 
-    assembled = assemble(sport, date_str, record_only=record_only, is_update=is_update,
-                         card_path=card_path, snapshot_provider=snapshot_provider,
-                         snapshot_kwargs=snapshot_kwargs)
+    def build(is_update: bool):
+        return assemble(sport, date_str, record_only=record_only, is_update=is_update,
+                        card_path=card_path, snapshot_provider=snapshot_provider,
+                        snapshot_kwargs=snapshot_kwargs)
+
+    assembled = build(False)
     if assembled is None:
         print(f"no published card for {date_str}")
         return 0
+    if assembled.skipped:
+        print(f"nothing to post for {sport} {date_str}: {assembled.skipped}")
+        return 0
+
+    banned = banned_words_in(assembled.messages)
+    if banned:
+        print(f"ESCALATE: discord feed content for {sport} {date_str} contains "
+              f"banned wording ({', '.join(banned)}); nothing posted")
+        return 1
 
     if dry_run:
         for message in assembled.messages:
             print(json.dumps(message))
         return 0
 
-    if _already_posted(prior_rows, sport, date_str, assembled.row_hash):
-        print(f"already posted: {sport} {date_str} ({assembled.kind}, "
-              f"row_hash={assembled.row_hash})")
-        return 0
-
-    if not webhook_url:
+    if not urls:
         print(f"ESCALATE: discord feed for {sport} {date_str} has no webhook URL configured")
         return 1
 
-    ok, status, reason = _post_all(webhook_url, assembled.messages)
-    if not ok:
-        detail = f"HTTP {status}" if status is not None else "network error"
-        suffix = f" ({reason})" if reason else ""
-        print(f"ESCALATE: discord feed post failed for {sport} {date_str}: {detail}{suffix}")
-        return 1
+    prior_rows = _read_markers(marker_path)
+    updated = None  # the "card update" variant, built only if some webhook needs it
+    failures = 0
+    for url in urls:
+        whash = _webhook_hash(url)
+        tag = f"webhook {whash[:8]}"
+        if _already_posted(prior_rows, sport, date_str, assembled.row_hash, whash):
+            print(f"already posted: {sport} {date_str} ({assembled.kind}, "
+                  f"row_hash={assembled.row_hash}) [{tag}]")
+            continue
 
-    _append_marker(marker_path, {
-        "sport": sport,
-        "date": date_str,
-        "row_hash": assembled.row_hash,
-        "webhook_hash": _webhook_hash(webhook_url),
-        "posted_utc": datetime.now(timezone.utc).isoformat(),
-        "kind": assembled.kind,
-    })
-    print(f"posted: {sport} {date_str} ({assembled.kind})")
-    return 0
+        use = assembled
+        if (not record_only) and _has_prior_post(prior_rows, sport, date_str, "card", whash):
+            if updated is None:
+                updated = build(True)
+            use = updated
+
+        try:
+            ok, status, reason = _post_all(url, use.messages)
+        except Exception as exc:  # never let one webhook's failure stop the rest
+            ok, status, reason = False, None, type(exc).__name__
+        if not ok:
+            failures += 1
+            detail = f"HTTP {status}" if status is not None else "network error"
+            suffix = f" ({_scrub(reason, url)})" if reason else ""
+            print(f"ESCALATE: discord feed post failed for {sport} {date_str} "
+                  f"[{tag}]: {detail}{suffix}")
+            continue
+
+        try:
+            _append_marker(marker_path, {
+                "sport": sport,
+                "date": date_str,
+                "row_hash": use.row_hash,
+                "webhook_hash": whash,
+                "posted_utc": datetime.now(timezone.utc).isoformat(),
+                "kind": use.kind,
+            })
+        except OSError as exc:
+            failures += 1
+            print(f"ESCALATE: discord feed posted {sport} {date_str} [{tag}] but "
+                  f"could not record it ({type(exc).__name__}); it will post again")
+            continue
+        print(f"posted: {sport} {date_str} ({use.kind}) [{tag}]")
+    return 1 if failures else 0
 
 
 # ---------------------------------------------------------------------------
@@ -534,7 +702,8 @@ def _build_parser() -> argparse.ArgumentParser:
                         help=("YYYY-MM-DD, default: today -- the same default "
                              "api/card.py's own GET /card uses (date.today())."))
     parser.add_argument("--webhook-url", default=None,
-                        help="Discord incoming webhook URL. Falls back to $DISCORD_WEBHOOK_URL.")
+                        help=("Discord incoming webhook URL, in addition to $DISCORD_WEBHOOK_URL "
+                              "and $DISCORD_WEBHOOK_URLS (comma- or newline-separated)."))
     parser.add_argument("--dry-run", action="store_true",
                         help="Print the exact JSON payload(s) that would be posted; post nothing.")
     parser.add_argument("--record-only", action="store_true",
@@ -545,9 +714,10 @@ def _build_parser() -> argparse.ArgumentParser:
 def main(argv=None) -> int:
     argv = sys.argv[1:] if argv is None else argv
     args = _build_parser().parse_args(argv)
-    webhook_url = args.webhook_url or os.environ.get("DISCORD_WEBHOOK_URL")
+    urls = parse_webhook_urls(args.webhook_url, os.environ.get("DISCORD_WEBHOOK_URL"),
+                              os.environ.get("DISCORD_WEBHOOK_URLS"))
     date_str = args.date or date_cls.today().isoformat()
-    return run(args.sport, date_str, webhook_url=webhook_url, dry_run=args.dry_run,
+    return run(args.sport, date_str, webhook_urls=urls, dry_run=args.dry_run,
               record_only=args.record_only)
 
 

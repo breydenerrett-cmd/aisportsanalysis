@@ -22,7 +22,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from contextlib import redirect_stdout
+from contextlib import redirect_stderr, redirect_stdout
 from datetime import datetime, timezone
 from pathlib import Path
 from unittest import mock
@@ -260,18 +260,33 @@ class PropSentenceTest(unittest.TestCase):
         self.addCleanup(self._tmp.cleanup)
         self.path = os.path.join(self._tmp.name, "cards_v2.jsonl")
 
-    def test_prop_pick_sentence_reads_off_real_fields_no_rewording(self):
-        prop = prop_entry(game_pk=9101, event_id="evt-9101", player="Devers",
-                          market="batter_hits", line=0.5, price=120)
+    def _picks_text(self, *props):
         card_ledger.publish_v2(
-            {"date": DATE, "all_bets": [prop], "params": best_bets_card.V2},
+            {"date": DATE, "all_bets": list(props), "params": best_bets_card.V2},
             now=NOW1.isoformat(), path=self.path)
         assembled = discord_feed.assemble(
             sport="mlb", date_str=DATE, card_path=self.path,
             snapshot_provider=_fake_snapshot)
-        picks_field = next(f for f in assembled.messages[0]["embeds"][0]["fields"]
-                           if f["name"] == "Picks")
-        self.assertIn("Devers batter_hits 0.5 at +120", picks_field["value"])
+        return next(f for f in assembled.messages[0]["embeds"][0]["fields"]
+                    if f["name"] == "Picks")["value"]
+
+    def test_prop_pick_sentence_reads_off_real_fields_no_rewording(self):
+        # CHANGED 2026-10-01 (was: "Devers batter_hits 0.5 at +120", which
+        # left out the side and printed the raw market key). The frozen row
+        # carries `side`; the sentence now says it, in the product's own
+        # prop wording (daily_card._prop_bet_sentence).
+        text = self._picks_text(prop_entry(game_pk=9101, event_id="evt-9101",
+                                           player="Devers", market="batter_hits",
+                                           line=0.5, price=120, side="over"))
+        self.assertIn("Devers over 0.5 hits at +120", text)
+        self.assertNotIn("batter_hits", text)
+
+    def test_prop_sentence_says_under_and_names_the_market_in_plain_words(self):
+        text = self._picks_text(
+            prop_entry(game_pk=9102, event_id="evt-9102", player="Busch",
+                       market="batter_total_bases", line=1.5, price=-130, side="under"))
+        self.assertIn("Busch under 1.5 total bases at -130", text)
+        self.assertNotIn("batter_total_bases", text)
 
 
 class MarkerIdempotencyTest(unittest.TestCase):
@@ -449,10 +464,20 @@ class FooterGradingLineTest(unittest.TestCase):
         self.assertIn("Results entered by hand.", text)
         self.assertNotIn("Graded in public", text)
 
-    def test_footer_carries_the_real_beta_disclaimer_text(self):
-        from src.analysis.disclaimers import get_disclaimer
+    def test_footer_carries_the_feed_beta_disclaimer_text(self):
+        # CHANGED 2026-10-01 (was: the footer contains
+        # disclaimers.get_disclaimer()["text"] verbatim). That text says
+        # "edge", "profits" and "locked-in", which the feed's content rules
+        # forbid, so the feed carries its own wording of the same
+        # statements: still BETA / pending legal review, still the 21+ and
+        # problem-gambling lines, with the one allowed sentence.
         text = discord_feed._footer_text("mlb")
-        self.assertIn(get_disclaimer()["text"], text)
+        self.assertIn(discord_feed.FEED_DISCLAIMER, text)
+        self.assertIn("PENDING FINAL LEGAL REVIEW", text)
+        self.assertIn("No edge is claimed.", text)
+        self.assertIn("21+", text)
+        self.assertIn("problem-gambling", text)
+        self.assertEqual(discord_feed.banned_words_in(text), [])
 
 
 class MainEntryPointTest(unittest.TestCase):
@@ -488,19 +513,41 @@ class MainEntryPointTest(unittest.TestCase):
 
 
 class ShellWiringTest(unittest.TestCase):
-    GATED_CALL = (
-        'if [ -n "${DISCORD_WEBHOOK_URL:-}" ]; then\n'
-        '    python3 scripts/discord_feed.py --sport mlb || echo "ESCALATE: discord feed failed"\n'
-        'fi'
-    )
+    # What must hold, not how it is spelled: every feed call sits inside an
+    # `if` that opens only when a webhook variable is set, the MLB call is
+    # there, and a failed call escalates instead of stopping the script.
+    # (CHANGED 2026-10-01: the gate may also open on DISCORD_WEBHOOK_URLS,
+    # and an NFL call may sit beside the MLB one.)
+    def _has_gated_call(self, text):
+        lines = text.splitlines()
+        calls = [i for i, l in enumerate(lines)
+                 if l.strip().startswith("python3 scripts/discord_feed.py")]
+        if not any("--sport mlb" in lines[i] for i in calls):
+            return False
+        for i in calls:
+            if '|| echo "ESCALATE: discord feed failed"' not in lines[i]:
+                return False
+            opener = next((lines[j] for j in range(i - 1, -1, -1)
+                           if lines[j].startswith("if ") or lines[j].strip() == "fi"), "")
+            if not (opener.startswith('if [ -n "${DISCORD_WEBHOOK_URL:-}')
+                    and opener.rstrip().endswith("]; then")):
+                return False
+        return True
+
+    def test_an_ungated_call_is_refused(self):
+        self.assertFalse(self._has_gated_call(
+            'python3 scripts/discord_feed.py --sport mlb || echo "ESCALATE: discord feed failed"'))
+        self.assertFalse(self._has_gated_call(
+            'if [ -n "${DISCORD_WEBHOOK_URL:-}" ]; then\n'
+            '    python3 scripts/discord_feed.py --sport mlb\nfi'))
 
     def test_daily_loop_contains_the_gated_call(self):
         text = (REPO / "scripts" / "daily_loop.sh").read_text(encoding="utf-8")
-        self.assertIn(self.GATED_CALL, text)
+        self.assertTrue(self._has_gated_call(text))
 
     def test_afternoon_slate_contains_the_gated_call(self):
         text = (REPO / "scripts" / "afternoon_slate.sh").read_text(encoding="utf-8")
-        self.assertIn(self.GATED_CALL, text)
+        self.assertTrue(self._has_gated_call(text))
 
     def test_afternoon_slate_placed_right_after_card_publish(self):
         text = (REPO / "scripts" / "afternoon_slate.sh").read_text(encoding="utf-8")
@@ -567,6 +614,444 @@ class CustomerLanguageScanTest(unittest.TestCase):
         for pattern, label in tcl.HARD_BANNED:
             for s in strings:
                 self.assertNotRegex(s, pattern, f"banned phrase {label!r} found: {s!r}")
+
+
+URL_A = "https://discord.com/api/webhooks/1111111111/token-A-do-not-use-aaaaaaaa"
+URL_B = "https://discord.com/api/webhooks/2222222222/token-B-do-not-use-bbbbbbbb"
+URL_C = "https://discord.com/api/webhooks/3333333333/token-C-do-not-use-cccccccc"
+ALL_URLS = (URL_A, URL_B, URL_C, FAKE_URL)
+
+
+class _FeedFixture(unittest.TestCase):
+    """Temp V2 ledger + temp marker file + a recording fake `_post_one`
+    whose outcome per URL the test chooses (default: 204)."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.ledger_path = os.path.join(self._tmp.name, "cards_v2.jsonl")
+        self.marker_path = os.path.join(self._tmp.name, "watch", "discord_feed_posted.jsonl")
+        _seed_two_picks_one_fill_one_withdrawn(self.ledger_path)
+        self.posted = []   # urls successfully posted to, in order
+        self.attempted = []
+        self.outcome = {}  # url -> (status, reason) | an Exception to raise
+
+    def _fake_post_one(self, url, message):
+        self.attempted.append(url)
+        result = self.outcome.get(url, (204, None))
+        if isinstance(result, Exception):
+            raise result
+        if result[0] is not None and 200 <= result[0] < 300:
+            self.posted.append(url)
+        return result
+
+    def _run(self, **over):
+        """(rc, stdout, stderr)."""
+        kwargs = dict(sport="mlb", date_str=DATE, marker_path=self.marker_path,
+                      card_path=self.ledger_path, snapshot_provider=_fake_snapshot)
+        kwargs.update(over)
+        out, err = io.StringIO(), io.StringIO()
+        with mock.patch.object(discord_feed, "_post_one", self._fake_post_one), \
+                redirect_stdout(out), redirect_stderr(err):
+            rc = discord_feed.run(**kwargs)
+        return rc, out.getvalue(), err.getvalue()
+
+    def _marker_hashes(self):
+        return [r["webhook_hash"] for r in discord_feed._read_markers(self.marker_path)]
+
+    def _marker_text(self):
+        try:
+            with open(self.marker_path, encoding="utf-8") as fh:
+                return fh.read()
+        except FileNotFoundError:
+            return ""
+
+
+class MultiWebhookTest(_FeedFixture):
+    def test_two_webhooks_both_post_two_markers_second_run_posts_nothing(self):
+        rc, out, _ = self._run(webhook_urls=[URL_A, URL_B])
+        self.assertEqual(rc, 0)
+        self.assertEqual(self.posted, [URL_A, URL_B])
+        self.assertEqual(sorted(self._marker_hashes()),
+                         sorted(discord_feed._webhook_hash(u) for u in (URL_A, URL_B)))
+
+        rc2, out2, _ = self._run(webhook_urls=[URL_A, URL_B])
+        self.assertEqual(rc2, 0)
+        self.assertEqual(self.posted, [URL_A, URL_B], "a second run must post nothing")
+        self.assertEqual(out2.count("already posted"), 2)
+        self.assertEqual(len(self._marker_hashes()), 2)
+
+    def test_a_new_webhook_added_later_gets_the_card_and_old_ones_do_not(self):
+        self._run(webhook_urls=[URL_A])
+        self._run(webhook_urls=[URL_A, URL_B])
+        self.assertEqual(self.posted, [URL_A, URL_B])
+
+    def test_one_failing_webhook_does_not_stop_the_other_nor_get_a_marker(self):
+        failures = {
+            "http 404 (webhook deleted)": (404, "Not Found"),
+            "http 429": (429, "Too Many Requests"),
+            "network error": (None, "Name or service not known"),
+            "unexpected exception": OSError("boom"),
+        }
+        for label, failure in failures.items():
+            with self.subTest(label):
+                if os.path.exists(self.marker_path):
+                    os.remove(self.marker_path)
+                self.posted.clear()
+                self.attempted.clear()
+                self.outcome = {URL_A: failure}
+
+                rc, out, err = self._run(webhook_urls=[URL_A, URL_B])
+                self.assertNotEqual(rc, 0)
+                self.assertEqual(self.posted, [URL_B], "B must still post")
+                self.assertEqual(self._marker_hashes(), [discord_feed._webhook_hash(URL_B)],
+                                 "only the success gets a marker")
+                escalations = [l for l in out.splitlines() if l.startswith("ESCALATE:")]
+                self.assertEqual(len(escalations), 1)
+                self.assertIn(discord_feed._webhook_hash(URL_A)[:8], escalations[0])
+                self.assertNotIn(discord_feed._webhook_hash(URL_B)[:8], escalations[0])
+
+                # Re-run with A healthy: ONLY A is retried.
+                self.outcome = {}
+                self.attempted.clear()
+                rc2, _, _ = self._run(webhook_urls=[URL_A, URL_B])
+                self.assertEqual(rc2, 0)
+                self.assertEqual(self.attempted, [URL_A])
+                self.assertEqual(sorted(self._marker_hashes()),
+                                 sorted(discord_feed._webhook_hash(u) for u in (URL_A, URL_B)))
+
+    def test_every_webhook_failing_gives_one_escalate_line_each(self):
+        self.outcome = {URL_A: (404, "Not Found"), URL_B: (None, "timed out")}
+        rc, out, _ = self._run(webhook_urls=[URL_A, URL_B])
+        self.assertNotEqual(rc, 0)
+        escalations = [l for l in out.splitlines() if l.startswith("ESCALATE:")]
+        self.assertEqual(len(escalations), 2)
+        self.assertFalse(os.path.exists(self.marker_path))
+
+    def test_a_card_update_posts_only_to_the_webhooks_that_were_behind(self):
+        self._run(webhook_urls=[URL_A])
+        self.assertEqual(self.posted, [URL_A])
+        pick_a_moved = game_entry(game_pk=9001, event_id="evt-9001", price=-105, score=0.20)
+        card_ledger.publish_v2(
+            {"date": DATE, "all_bets": [pick_a_moved], "params": best_bets_card.V2},
+            now="2026-09-20T18:10:00Z", path=self.ledger_path)
+        titles = []
+        real = self._fake_post_one
+
+        def spy(url, message):
+            titles.append((url, message["embeds"][0]["title"]))
+            return real(url, message)
+        with mock.patch.object(self, "_fake_post_one", spy):
+            self._run(webhook_urls=[URL_A, URL_B])
+        by_url = dict(titles)
+        self.assertIn("card update", by_url[URL_A].lower())
+        self.assertNotIn("card update", by_url[URL_B].lower(), "B never saw the first card")
+
+
+class WebhookListParsingTest(unittest.TestCase):
+    def test_duplicates_blanks_and_separators_collapse(self):
+        raw = f"  {URL_A} ,, {URL_B}\n\n{URL_A}\r\n , {URL_C},\n  "
+        self.assertEqual(discord_feed.parse_webhook_urls(raw), [URL_A, URL_B, URL_C])
+        self.assertEqual(discord_feed.parse_webhook_urls(None, "", "  \n,"), [])
+
+    def test_run_posts_once_per_distinct_webhook(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            ledger = os.path.join(tmp, "cards_v2.jsonl")
+            marker = os.path.join(tmp, "m", "posted.jsonl")
+            _seed_two_picks_one_fill_one_withdrawn(ledger)
+            posted = []
+            with mock.patch.object(discord_feed, "_post_one",
+                                   lambda url, msg: posted.append(url) or (204, None)), \
+                    redirect_stdout(io.StringIO()):
+                rc = discord_feed.run(
+                    "mlb", DATE, webhook_url=URL_A,
+                    webhook_urls=f"{URL_A}, ,{URL_B}\n{URL_B}\n,",
+                    marker_path=marker, card_path=ledger, snapshot_provider=_fake_snapshot)
+            self.assertEqual(rc, 0)
+            self.assertEqual(posted, [URL_A, URL_B])
+            self.assertEqual(len(discord_feed._read_markers(marker)), 2)
+
+    def test_main_merges_the_single_and_the_list_env_vars_and_the_flag(self):
+        seen = {}
+
+        def fake_run(sport, date_str, **kwargs):
+            seen.update(kwargs)
+            return 0
+        env = {"DISCORD_WEBHOOK_URL": URL_A,
+               "DISCORD_WEBHOOK_URLS": f"{URL_B},\n{URL_A}\n{URL_C}"}
+        with mock.patch.dict(os.environ, env), \
+                mock.patch.object(discord_feed, "run", fake_run):
+            discord_feed.main(["--sport", "mlb", "--date", DATE, "--webhook-url", FAKE_URL])
+        self.assertEqual(seen["webhook_urls"], [FAKE_URL, URL_A, URL_B, URL_C])
+
+    def test_main_with_neither_env_var_passes_no_webhooks(self):
+        seen = {}
+
+        def fake_run(sport, date_str, **kwargs):
+            seen.update(kwargs)
+            return 0
+        env = {k: v for k, v in os.environ.items()
+               if k not in ("DISCORD_WEBHOOK_URL", "DISCORD_WEBHOOK_URLS")}
+        with mock.patch.dict(os.environ, env, clear=True), \
+                mock.patch.object(discord_feed, "run", fake_run):
+            discord_feed.main(["--sport", "mlb", "--date", DATE, "--dry-run"])
+        self.assertEqual(seen["webhook_urls"], [])
+
+
+class NoUrlAnywhereTest(_FeedFixture):
+    """The URL (and its token) must not appear in stdout, stderr or the
+    marker file on ANY path, including every failure path -- and a failure
+    path that echoes a URL into its message must be caught here."""
+
+    def _assert_clean(self, out, err):
+        blob = out + err + self._marker_text()
+        for url in ALL_URLS:
+            self.assertNotIn(url, blob)
+            for seg in url.split("/")[-2:]:
+                self.assertNotIn(seg, blob)
+
+    def test_failure_text_that_quotes_the_url_is_scrubbed(self):
+        # The fake transport itself leaks the URL in its reason text, as a
+        # urllib error can. The run must not print it.
+        self.outcome = {
+            URL_A: (None, f"cannot reach {URL_A} (via {URL_A.split('://')[1]})"),
+            URL_B: (404, f"Not Found: {URL_B}"),
+            URL_C: OSError(f"connection reset talking to {URL_C}"),
+        }
+        rc, out, err = self._run(webhook_urls=[URL_A, URL_B, URL_C, FAKE_URL])
+        self.assertNotEqual(rc, 0)
+        self.assertEqual(self.posted, [FAKE_URL])
+        self.assertEqual(len([l for l in out.splitlines() if l.startswith("ESCALATE:")]), 3)
+        self._assert_clean(out, err)
+
+    def test_success_dry_run_and_already_posted_paths_are_clean(self):
+        rc, out, err = self._run(webhook_urls=[URL_A, URL_B])
+        self._assert_clean(out, err)
+        rc, out, err = self._run(webhook_urls=[URL_A, URL_B])  # already posted
+        self._assert_clean(out, err)
+        rc, out, err = self._run(webhook_urls=[URL_A, URL_B], dry_run=True)
+        self.assertEqual(rc, 0)
+        self._assert_clean(out, err)
+
+    def test_real_post_one_scrubs_urllib_errors_and_names_unexpected_ones_by_class(self):
+        from urllib.error import HTTPError, URLError
+        cases = [
+            URLError(f"<urlopen error for {URL_A}>"),
+            HTTPError(URL_A, 404, f"Not Found for {URL_A}", {}, None),
+            ValueError(f"unknown url type: {URL_A!r}"),
+            TimeoutError(f"timed out reading {URL_A}"),
+        ]
+        for exc in cases:
+            with self.subTest(type(exc).__name__):
+                with mock.patch.object(discord_feed, "urlopen", side_effect=exc):
+                    status, reason = discord_feed._post_one(URL_A, {"content": "x"})
+                self.assertNotIn(URL_A, str(reason))
+                self.assertNotIn("token-A", str(reason))
+
+    def test_post_one_does_not_raise_on_a_malformed_url(self):
+        status, reason = discord_feed._post_one("not a url", {"content": "x"})
+        self.assertIsNone(status)
+        self.assertNotIn("not a url", str(reason))
+
+
+class LegacySingleWebhookTest(_FeedFixture):
+    def test_single_url_behaves_as_before(self):
+        rc, out, _ = self._run(webhook_url=FAKE_URL)
+        self.assertEqual(rc, 0)
+        self.assertEqual(self.posted, [FAKE_URL])
+        self.assertTrue(out.startswith("posted: mlb 2026-09-20 (card)"), out)
+        rows = discord_feed._read_markers(self.marker_path)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["webhook_hash"], discord_feed._webhook_hash(FAKE_URL))
+        rc2, out2, _ = self._run(webhook_url=FAKE_URL)
+        self.assertEqual((rc2, len(self.posted)), (0, 1))
+        self.assertTrue(out2.startswith("already posted: mlb 2026-09-20 (card"), out2)
+
+    def test_single_and_list_with_the_same_url_post_once(self):
+        self._run(webhook_url=FAKE_URL, webhook_urls=[FAKE_URL])
+        self.assertEqual(self.posted, [FAKE_URL])
+
+    def test_no_webhook_at_all_is_one_escalate_and_nonzero(self):
+        rc, out, _ = self._run()
+        self.assertEqual(rc, 1)
+        self.assertEqual(self.attempted, [])
+        self.assertEqual([l for l in out.splitlines() if l.startswith("ESCALATE:")],
+                         [l for l in out.splitlines()])
+
+
+def _snapshot_with_reason(reason):
+    snap = _fake_snapshot("nfl")
+    snap["current"] = {**snap["current"], "grading_state": "ungraded", "reason": reason}
+    return snap
+
+
+class NflFeedTest(unittest.TestCase):
+    DATE_NFL = "2026-10-04"
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.ledger_path = os.path.join(self._tmp.name, "cards_nfl_v1.jsonl")
+        self.marker_path = os.path.join(self._tmp.name, "watch", "discord_feed_posted.jsonl")
+
+    def _publish(self, picks):
+        card = {"date": self.DATE_NFL, "sport": "nfl", "rule": "NFL_CARD_V2",
+                "picks": picks, "basis": "NFL basis text", "week": 5}
+        return card_ledger.publish(card, now="2026-10-04T10:00:00+00:00",
+                                   path=self.ledger_path, sport="nfl")
+
+    @staticmethod
+    def _pick(gid, team, price, rank):
+        return {"game_id": gid, "sport": "nfl", "market": "moneyline", "side": "home",
+                "team": team, "home_team": team, "away_team": "Other", "price": price,
+                "book": "betmgm", "first_pitch_utc": "2026-10-04T17:00:00Z",
+                "market_probability": 0.55, "rank": rank,
+                "bet": f"Take {team} to win at {price:+d}"}
+
+    def _run(self, urls=(URL_A,), **over):
+        posted, out = [], io.StringIO()
+        kwargs = dict(webhook_urls=list(urls), marker_path=self.marker_path,
+                      card_path=self.ledger_path, snapshot_provider=_fake_snapshot)
+        kwargs.update(over)
+        with mock.patch.object(discord_feed, "_post_one",
+                               lambda url, msg: posted.append((url, msg)) or (204, None)), \
+                redirect_stdout(out):
+            rc = discord_feed.run("nfl", self.DATE_NFL, **kwargs)
+        return rc, posted, out.getvalue()
+
+    def test_posts_the_nfl_card_when_one_exists(self):
+        self._publish([self._pick("g1", "Buffalo Bills", -130, 1),
+                       self._pick("g2", "Miami Dolphins", 120, 2)])
+        rc, posted, out = self._run(urls=(URL_A, URL_B))
+        self.assertEqual(rc, 0)
+        self.assertEqual([u for u, _ in posted], [URL_A, URL_B])
+        embed = posted[0][1]["embeds"][0]
+        self.assertIn("NFL card", embed["title"])
+        picks = next(f for f in embed["fields"] if f["name"] == "Picks")["value"]
+        self.assertIn("Take Buffalo Bills to win at -130", picks)
+        self.assertIn("Take Miami Dolphins to win at +120", picks)
+        self.assertEqual(len(discord_feed._read_markers(self.marker_path)), 2)
+        self.assertEqual(discord_feed._read_markers(self.marker_path)[0]["sport"], "nfl")
+
+    def test_no_nfl_card_prints_one_plain_line_posts_nothing_and_is_not_an_error(self):
+        rc, posted, out = self._run()
+        self.assertEqual(rc, 0)
+        self.assertEqual(posted, [])
+        self.assertEqual(out.strip(), f"no published card for {self.DATE_NFL}")
+        self.assertFalse(os.path.exists(self.marker_path))
+
+    def test_entries_at_minus_200_or_shorter_are_never_posted(self):
+        self._publish([self._pick("g1", "Buffalo Bills", -130, 1),
+                       self._pick("g2", "Kansas City Chiefs", -200, 2),
+                       self._pick("g3", "Detroit Lions", -250, 3),
+                       self._pick("g4", "Dallas Cowboys", -199, 4)])
+        rc, posted, _ = self._run()
+        self.assertEqual(rc, 0)
+        blob = json.dumps(posted[0][1])
+        self.assertIn("Buffalo Bills", blob)
+        self.assertIn("Dallas Cowboys", blob)       # -199 is fine
+        self.assertNotIn("Kansas City Chiefs", blob)
+        self.assertNotIn("Detroit Lions", blob)
+
+    def test_a_card_whose_every_entry_is_too_short_posts_nothing_and_says_so(self):
+        self._publish([self._pick("g1", "Detroit Lions", -250, 1)])
+        rc, posted, out = self._run()
+        self.assertEqual(rc, 0)
+        self.assertEqual(posted, [])
+        self.assertIn("nothing to post", out)
+        self.assertFalse(os.path.exists(self.marker_path))
+
+
+class ContentRulesTest(unittest.TestCase):
+    def test_price_rule_boundaries(self):
+        ok = discord_feed._is_postable
+        self.assertTrue(ok({"price": -199}))
+        self.assertFalse(ok({"price": -200}))
+        self.assertFalse(ok({"price": -1000}))
+        self.assertTrue(ok({"price": 150}))
+        self.assertTrue(ok({"price": None}))
+
+    def test_banned_scan_catches_the_words_and_allows_the_one_sentence(self):
+        for word in ("edge", "profit", "profits", "locked-in", "lock", "guaranteed",
+                     "guarantee", "sharp", "winning", "Bet Check"):
+            with self.subTest(word):
+                self.assertNotEqual(discord_feed.banned_words_in({"x": f"a {word} b"}), [])
+        self.assertEqual(
+            discord_feed.banned_words_in({"x": "Fine. No edge is claimed. Fine."}), [])
+        self.assertNotEqual(
+            discord_feed.banned_words_in({"x": "No edge is claimed. We have an edge."}), [])
+
+    def test_real_payloads_are_clean_card_fills_record_and_nfl(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            ledger = os.path.join(tmp, "cards_v2.jsonl")
+            _seed_two_picks_one_fill_one_withdrawn(ledger)
+            payloads = [
+                discord_feed.assemble("mlb", DATE, card_path=ledger,
+                                      snapshot_provider=_fake_snapshot),
+                discord_feed.assemble("mlb", DATE, record_only=True,
+                                      snapshot_provider=_fake_snapshot),
+                discord_feed.assemble("nfl", DATE, record_only=True,
+                                      snapshot_provider=_fake_snapshot),
+            ]
+        for assembled in payloads:
+            self.assertEqual(discord_feed.banned_words_in(assembled.messages), [])
+            self.assertNotIn("bet check", json.dumps(assembled.messages).lower())
+
+    def test_the_record_only_description_does_not_say_profit(self):
+        text = discord_feed._stake_basis_text()
+        self.assertNotIn("profit", text.lower())
+        self.assertIn("net units", text)
+
+    def test_a_payload_that_trips_the_scan_is_not_posted(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            ledger = os.path.join(tmp, "cards_v2.jsonl")
+            marker = os.path.join(tmp, "m", "posted.jsonl")
+            _seed_two_picks_one_fill_one_withdrawn(ledger)
+            posted, out = [], io.StringIO()
+
+            def dirty_snapshot(sport, **kwargs):
+                snap = _fake_snapshot(sport)
+                snap["current"] = {**snap["current"], "grading_state": "ungraded",
+                                   "reason": "a sharp edge in the profit column"}
+                return snap
+            with mock.patch.object(discord_feed, "_post_one",
+                                   lambda url, msg: posted.append(url) or (204, None)), \
+                    redirect_stdout(out):
+                rc = discord_feed.run("mlb", DATE, webhook_urls=[URL_A], marker_path=marker,
+                                      card_path=ledger, snapshot_provider=dirty_snapshot)
+        self.assertEqual(rc, 1)
+        self.assertEqual(posted, [])
+        self.assertIn("ESCALATE", out.getvalue())
+        self.assertIn("banned wording", out.getvalue())
+
+    def test_fills_are_labelled_and_a_dry_run_posts_nothing(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            ledger = os.path.join(tmp, "cards_v2.jsonl")
+            _seed_two_picks_one_fill_one_withdrawn(ledger)
+            out = io.StringIO()
+            with mock.patch.object(discord_feed, "_post_one",
+                                   side_effect=AssertionError("dry run must not post")), \
+                    redirect_stdout(out):
+                rc = discord_feed.run("mlb", DATE, webhook_urls=[URL_A], dry_run=True,
+                                      card_path=ledger, snapshot_provider=_fake_snapshot)
+        self.assertEqual(rc, 0)
+        names = [f["name"] for f in json.loads(out.getvalue().splitlines()[0])["embeds"][0]["fields"]]
+        self.assertIn("Fills", names)
+
+
+class BannedWordsAreWholeWordsTest(unittest.TestCase):
+    """A player's surname is not a tout word."""
+
+    def test_surnames_that_start_with_a_banned_word_are_clean(self):
+        payload = {"content": "Tyler Lockett over 4.5 receptions at -120. "
+                              "Brandon Lockridge over 0.5 hits at -130. "
+                              "Edgar Quero under 1.5 total bases."}
+        self.assertEqual(discord_feed.banned_words_in(payload), [])
+
+    def test_the_words_themselves_and_their_inflections_are_caught(self):
+        for text in ("a lock tonight", "locked-in value", "profits", "an edge",
+                     "guaranteed", "sharp money", "winning picks", "Bet Check"):
+            self.assertTrue(discord_feed.banned_words_in({"content": text}), text)
 
 
 if __name__ == "__main__":

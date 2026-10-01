@@ -127,8 +127,9 @@ echo "- $(date -u +%Y-%m-%dT%H:%MZ) afternoon_slate: card publish --date $TODAY 
 # unconfigured must never fail the slate. Idempotent per (sport, date,
 # row_hash), so a card publish above that changed nothing (already_published)
 # posts nothing new here either.
-if [ -n "${DISCORD_WEBHOOK_URL:-}" ]; then
+if [ -n "${DISCORD_WEBHOOK_URL:-}${DISCORD_WEBHOOK_URLS:-}" ]; then
     python3 scripts/discord_feed.py --sport mlb || echo "ESCALATE: discord feed failed"
+    python3 scripts/discord_feed.py --sport nfl || echo "ESCALATE: discord feed failed"
 fi
 
 # engine slip RANKS what engine slate just froze (src/engine/slip.py) --
