@@ -347,6 +347,7 @@ class FlyClientIpTests(unittest.TestCase):
         req = self._Req(host="172.16.0.9", headers={"fly-client-ip": "203.0.113.7"})
         self.assertEqual(ratelimit.client_ip(req), "203.0.113.7")
 
+    @unittest.skipUnless(HAS_FASTAPI, "fastapi not installed")
     def test_header_lookup_is_case_insensitive_through_a_real_headers_object(self):
         from starlette.datastructures import Headers
         req = self._Req(headers=Headers({"Fly-Client-IP": "198.51.100.4"}))

@@ -26,6 +26,12 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
+try:
+    import fastapi  # noqa: F401 -- CI runs the suite without it; route tests skip
+    HAS_FASTAPI = True
+except ImportError:  # pragma: no cover
+    HAS_FASTAPI = False
+
 ROOT = Path(__file__).resolve().parent.parent
 WEB = ROOT / "web"
 JS = WEB / "js"
@@ -238,6 +244,7 @@ class LandingFaqDoesNotPromiseForever(unittest.TestCase):
         self.assertIn('href="index.html#/record-card"', self.html)
 
 
+@unittest.skipUnless(HAS_FASTAPI, "fastapi not installed")
 class MetaReportsWhetherCheckoutWorks(unittest.TestCase):
     def _meta(self, env):
         from api.meta import get_meta

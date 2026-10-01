@@ -944,6 +944,7 @@ class FinalStandingsFromTheFeedTest(unittest.TestCase):
             stored, self._now(), lambda *a, **k: [], lambda raw: []), stored)
 
 
+@unittest.skipUnless(HAVE_FASTAPI, "fastapi not installed")
 class RouteTopUpStartsWhereTheStoreStopsTest(unittest.TestCase):
     """A deployed image's results store is as old as its deploy. The top-up
     has to start the day after the store's coverage ends, fetch each finished
