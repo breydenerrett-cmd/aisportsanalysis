@@ -433,8 +433,9 @@ python3 -m src.cli card record 2>&1 | sed 's/^/  /' || true
 # loop. discord_feed.py itself reads the frozen ledger row only (never a
 # live build) and exits 0 with nothing posted when today's card is not
 # published yet, so this is safe to run before the day's first publish.
-if [ -n "${DISCORD_WEBHOOK_URL:-}" ]; then
+if [ -n "${DISCORD_WEBHOOK_URL:-}${DISCORD_WEBHOOK_URLS:-}" ]; then
     python3 scripts/discord_feed.py --sport mlb || echo "ESCALATE: discord feed failed"
+    python3 scripts/discord_feed.py --sport nfl || echo "ESCALATE: discord feed failed"
 fi
 
 # The shadow arms' records, one line per arm, never pooled. Run log only.
