@@ -1,0 +1,151 @@
+# DRAFT, NOT ACTIVE. Written 2026-10-01 for the owner's decision.
+#
+# It lives in deploy/ on purpose: GitHub only runs workflows from
+# .github/workflows/, and only runs a `schedule:` from the DEFAULT branch.
+# To turn it on, copy this file to .github/workflows/refresh-prod.yml on the
+# default branch (claude/cowork-session-migration-tn3sx2). Nothing else is
+# needed; it uses the secret deploy-prod.yml already uses.
+#
+# THE PROBLEM IT SOLVES
+# Every store the site reads (the card ledgers in evidence/, the odds and
+# props in data/processed/, the results in data/historical/) is copied into
+# the image when it is built. Staging is rebuilt on every push, so it follows
+# the runners. Production is rebuilt only when a person runs deploy-prod, so
+# linehound.app shows the card, the prices and the record as they were at the
+# last click. Checked 2026-10-01 19:07Z: production's newest odds row was
+# 18:04Z, the minute of its last deploy. A customer who pays today sees
+# today's card tomorrow unless someone redeploys.
+#
+# WHAT IT DOES
+# Four times a day it redeploys production from the commit staging last
+# deployed successfully, and only if the test suite passed on that exact
+# commit. So nothing reaches production that has not already (1) passed the
+# tests and (2) come up healthy on staging and served real pages there.
+# A commit that fails either gate is skipped and the next run tries again;
+# production keeps serving what it has.
+#
+# WHAT IT CHANGES ABOUT THE RULE IN deploy-prod.yml
+# deploy-prod.yml says production ships only on a human click, so a
+# work-in-progress commit is never one push away from paying customers.
+# This keeps the intent (two automatic gates stand where the click stood)
+# but it does end "a person looked first". deploy-prod.yml itself is not
+# changed and still works for a deliberate manual deploy.
+#
+# It also restores the historical stores from the daily-loop cache, which
+# deploy-prod.yml does not do: production today carries the repository's
+# copy of those stores (results to 09-23, pitcher logs to 09-15). The cache
+# lives on the default branch, which is where a scheduled run executes, so
+# the restore that cannot work for staging's push runs does work here. The
+# path list below must stay identical to daily-loop.yml's save step: the
+# list is half of the cache's identity.
+name: refresh-prod
+
+on:
+  schedule:
+    - cron: "45 10 * * *"   # after the daily loop (10:10Z): yesterday graded
+    - cron: "20 16 * * *"   # after the first afternoon slates: tonight's card
+    - cron: "20 20 * * *"   # late lineups and card updates
+    - cron: "20 0 * * *"    # evening games under way: live scores, late card
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-prod        # the same group as deploy-prod.yml: never two at once
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  BRANCH: claude/sports-betting-analysis-review-g1o0co
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Guard - secret present
+        run: |
+          if [ -z "${{ secrets.FLY_PROD_API_TOKEN || secrets.FLY_ORG_TOKEN }}" ]; then
+            echo "FLY_PROD_API_TOKEN is not set."; exit 1
+          fi
+
+      - name: Pick the commit - last one staging deployed healthy, tests green
+        id: pick
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -u
+          sha=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow deploy-staging.yml \
+                --branch "$BRANCH" --status success --limit 1 --json headSha --jq '.[0].headSha')
+          if [ -z "$sha" ] || [ "$sha" = "null" ]; then
+            echo "::notice::no successful staging deploy found; production left as it is"
+            echo "deploy=no" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          verdicts=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow tests.yml \
+                     --commit "$sha" --limit 5 --json conclusion --jq '.[].conclusion')
+          if [ -z "$verdicts" ] || [ -n "$(echo "$verdicts" | grep -v '^success$' || true)" ]; then
+            echo "::notice::tests are not green on $sha (found: $(echo $verdicts)); production left as it is"
+            echo "deploy=no" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "deploy=yes" >> "$GITHUB_OUTPUT"
+          echo "deploying $sha"
+
+      - uses: actions/checkout@v4
+        if: steps.pick.outputs.deploy == 'yes'
+        with:
+          ref: ${{ steps.pick.outputs.sha }}
+
+      - name: Restore historical stores from the daily-loop cache
+        if: steps.pick.outputs.deploy == 'yes'
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            data/historical/statcast
+            data/historical/mlb_results.csv
+            data/historical/mlb_results.manifest.json
+            data/historical/pitcher_logs.jsonl
+            data/historical/bullpen_log.jsonl
+            data/historical/lineups.jsonl
+            data/historical/handedness.json
+            data/historical/matchup_history.jsonl
+            data/historical/matchup_pairs.json
+            data/historical/pitcher_splits.json
+            data/historical/arsenals
+            data/historical/standings.jsonl
+          key: daily-loop-data-${{ github.run_id }}
+          restore-keys: |
+            daily-loop-data-
+
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+        if: steps.pick.outputs.deploy == 'yes'
+
+      - name: Deploy
+        if: steps.pick.outputs.deploy == 'yes'
+        run: flyctl deploy -c deploy/fly.production.toml -a linehound-prod --remote-only --yes
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_PROD_API_TOKEN || secrets.FLY_ORG_TOKEN }}
+
+      # The same check deploy-prod.yml runs, shortened: up, a real page
+      # answers without a 5xx, and it is still up a minute later.
+      - name: Health check
+        if: steps.pick.outputs.deploy == 'yes'
+        run: |
+          set -u
+          BASE=https://linehound-prod.fly.dev
+          up=0
+          for i in $(seq 1 18); do
+            if curl -sf "$BASE/health" >/dev/null; then up=1; break; fi
+            sleep 10
+          done
+          [ "$up" -eq 1 ] || { echo "ESCALATE: production did not come up after the refresh"; exit 1; }
+          for path in /card/record /today /postseason; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 45 "$BASE$path" || echo 000)
+            echo "  $path -> $code"
+            case "$code" in
+              5*|000) echo "ESCALATE: $path returned $code after the refresh"; exit 1 ;;
+            esac
+          done
+          sleep 60
+          curl -sf "$BASE/health" >/dev/null || { echo "ESCALATE: production stopped responding after the refresh"; exit 1; }
+          echo "refreshed and healthy"
