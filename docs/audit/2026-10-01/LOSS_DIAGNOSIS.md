@@ -11,7 +11,7 @@ Read-only audit by a separate worker of every ledger on origin's working branch 
 
 ## Open items raised by the audit
 
-- UNVERIFIED: `data/processed/card_calibration.json` says it was fitted through 2026-09-14 on n=1911 games of 2026, which on its face spans the sealed window. Needs a read of how it was built before anyone cites V1's calibration.
+- Already on record, not new: V1's moneyline calibration was fitted on games inside the sealed window (1,753 of the 1,901 rows it selects) and refit nightly until the owner froze it on 2026-09-15. `docs/PREREG_CARD_V2.md` sections 1.1 and 1.2 say so and conclude the sealed rule was already broken by V1; V2 reads no number from that file. Consequence for reading this audit: V1's record is not clean forward evidence.
 - Game 824785 (TOR@BAL, postponed 09-22, played 09-23) is a permanent VOID in two shadow ledgers under the old rule. Correction is append-only and shadows only; not yet made.
 - Game 823490 (BAL@NYY, 09-27): no result in the stores; one public fill is VOID on it.
 - `batter_runs_scored` had no settlement rule (22 VOIDs). Rule added in `4ebaaed2`; the old VOID rows stand.
@@ -251,5 +251,5 @@ I used card_clv.measure_pick read-only. It defines CLV as p_close (de-vigged) mi
 - The remaining −3.64u is a 2.1-win shortfall vs the market (z −0.74).
 - It is not a settlement bug: re-grading found 0 errors, and the runs-scored VOIDs would have added only +0.48u.
 
-### Side observation (not verified)
+### Side observation (resolved above: already recorded in PREREG_CARD_V2 1.1 and 1.2)
 `data/processed/card_calibration.json` (V1's calibration) says season 2026, fitted through 2026-09-14, n=1911 games. On its face that spans the sealed 2026-01-01..08-27 window. The daily_card.py docstring also cites a backtest on 1,896 games of 2026.
