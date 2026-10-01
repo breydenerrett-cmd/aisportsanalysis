@@ -51,23 +51,39 @@ def break_even(total: float, offers: list) -> list:
 
 
 def pipeline_counts(path: Path = PIPELINE) -> dict:
-    counts = {s: 0 for s in STAGES}
-    revenue = 0.0
-    rows = 0
+    """Leads, and where each one stands NOW.
+
+    The pipeline file is an append-only history: `outreach_batch.py reply`
+    adds a new row when a target moves from sent to replied to paid. So a
+    lead is a distinct target, its stage is the stage on its LAST row, and
+    its revenue is the revenue on that row. Counting rows would have shown 23
+    leads for 20 people after three replies, and a lower conversion rate than
+    the true one. `rows` is the number of distinct targets; `reached` counts
+    every target that ever reached a stage (a paid customer also replied)."""
+    latest: dict = {}
+    reached = {s: set() for s in STAGES}
     if path.exists():
         with path.open(encoding="utf-8", newline="") as handle:
             for row in csv.DictReader(handle):
-                if not (row.get("target") or "").strip():
+                target = " ".join((row.get("target") or "").casefold().split())
+                if not target:
                     continue
-                rows += 1
+                latest[target] = row
                 stage = (row.get("stage") or "").strip().lower()
-                if stage in counts:
-                    counts[stage] += 1
-                try:
-                    revenue += float(row.get("revenue") or 0)
-                except ValueError:
-                    pass
-    return {"rows": rows, "counts": counts, "revenue": revenue}
+                if stage in reached:
+                    reached[stage].add(target)
+    counts = {s: 0 for s in STAGES}
+    revenue = 0.0
+    for row in latest.values():
+        stage = (row.get("stage") or "").strip().lower()
+        if stage in counts:
+            counts[stage] += 1
+        try:
+            revenue += float(row.get("revenue") or 0)
+        except ValueError:
+            pass
+    return {"rows": len(latest), "counts": counts, "revenue": revenue,
+            "reached": {s: len(names) for s, names in reached.items()}}
 
 
 def _fig(fig) -> str:
@@ -131,7 +147,8 @@ def render(config: dict, today: date, now_utc: str) -> str:
     out.append(f"| Revenue (MRR) | {_money(mrr)} |")
     out.append(f"| Paying customers | {paid} |")
     out.append(f"| Trials | {max(pipe['counts']['trial'], rev.get('trials') or 0)} |")
-    out.append(f"| Leads contacted | {leads} (replied {pipe['counts']['replied']}, demo {pipe['counts']['demo']}, lost {pipe['counts']['lost']}) |")
+    out.append(f"| Leads contacted | {leads} (ever replied {pipe['reached']['replied']}, "
+               f"ever had a demo {pipe['reached']['demo']}, lost {pipe['counts']['lost']}) |")
     out.append(f"| Lead to paid conversion | {conv} |")
     out.append("| CAC | $0 spent on acquisition |")
     out.append(f"| Gap to break-even | {_money(max(costs['planning_total'] - mrr, 0.0))} per month |")

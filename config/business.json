@@ -1,5 +1,10 @@
 {
   "deadline": "2026-10-31",
+  "public_urls": {
+    "site": "https://linehound-prod.fly.dev/web/landing.html",
+    "record": "https://linehound-prod.fly.dev/web/index.html#/record-card",
+    "postseason": "https://linehound-prod.fly.dev/web/postseason.html"
+  },
   "costs_monthly": [
     {
       "item": "The Odds API (100K tier)",
@@ -91,8 +96,9 @@
   ],
   "top_blockers": [
     "Production refresh is stuck. CORRECTION (2026-10-01 20:15Z): production already refreshes itself every hour (the forward-capture workflow dispatches deploy-prod on the first slot of each hour when the latest tests run is green; built 2026-09-22). My earlier note that it only updates by hand was wrong. What is true: a deploy-prod run has been stuck in its Deploy step since 18:13Z, so production's data is from 18:04Z and every later refresh has been cancelled or is waiting behind it. Cancelling that run lets the next one deploy the current branch head, which now includes the buying path and the postseason page. Also still true: deploy-prod does not restore the historical-store cache, so production's results, pitcher and standings stores are the repository's old copies.",
+    "linehound.app does not load: the domain is on Cloudflare with no A, AAAA or CNAME record and Fly holds no certificate for it. Outreach links use linehound-prod.fly.dev until it does. Checkout cannot be switched on before it does, because buyers are returned to that domain. Steps: docs/GO_LIVE_2026-09-28.md section 1. Owner.",
+    "No distribution: zero outreach sent. The first 20 are written and ready to paste in docs/sales/batch_01.md; log each send with `python scripts/outreach_batch.py sent --batch 1 --items ...`. Owner.",
     "Stripe is not live: account verification pending (date of birth, phone), then the five Fly secrets. Owner.",
-    "No distribution: zero outreach sent. Target list and scripts in docs/sales/.",
     "Discord feed not wired: needs the webhook secret and one env line on the default branch. Owner + me.",
     "Claude monthly cost unknown, so break-even is an estimate. Owner.",
     "Thin content: MLB has had no counted pick since 2026-09-26 (fills only, 2 to 4 postseason games a day); NFL has published 11 picks on 4 dates, 1 since 2026-09-21; UFC is ungraded. After the World Series (about Nov 1) only NFL remains. Gates are not being loosened to fill the card; what is sold is the nightly card with labelled fills, the price view and the public record."
@@ -100,12 +106,12 @@
   "today": [
     "Public record, access delivery, cancel link, attribution (buying-path worker)",
     "Free public postseason odds page (lead magnet)",
-    "Outreach targets, channel rules and scripts",
     "Loss diagnosis: done, filed in docs/audit/2026-10-01/",
     "Independent attack on the buying path: 1 blocker and 9 other findings; blocker fixed, rest fixed or listed above",
-    "Independent check of the postseason page: bracket and sums correct; 10 defects being fixed before it ships"
+    "Independent check of the postseason page: bracket and sums correct; 10 defects being fixed before it ships",
+    "Outreach batch 1: 20 paste-ready messages (docs/sales/batch_01.md)"
   ],
-  "next_customer_action": "Brey: finish Stripe verification, then send the first 20 messages from docs/sales/targets.csv using docs/sales/scripts.md.",
+  "next_customer_action": "Brey: send batch 1 (docs/sales/batch_01.md). Start with items 1 and 2 (two forums where promotion is allowed), then the four creators and five X replies; at most five Discord notes a day. Log each with scripts/outreach_batch.py.",
   "next_research_action": "No rule has shown positive expected value (docs/audit/2026-10-01/LOSS_DIAGNOSIS.md). Pre-register one forward test: do entries that pass V2's value gate do worse than entries that fail it? No gate or threshold changes until that test reports.",
   "product_errors": [
     "UFC picks never graded (results are entered by hand).",
