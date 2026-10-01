@@ -154,3 +154,19 @@ code push is still under test.
 
 Until then the rule is procedural: no code push between minute 45 and
 minute 15 of any hour.
+
+## After the second push (5a85b867, 23:15:53Z)
+
+- **Staging:** deployed 23:17:58Z on 5a85b867, `/health` ok. Record page:
+  8 days, 76 rows, no empty table, the won-lost figure directly under the
+  intro. Landing: link-preview tags present; `/meta` 196 ms.
+- **Staging billing mode: `test`.** Read from staging `/health`
+  (`checkout.mode`, derived from the key's prefix inside the app; the key
+  was never printed). Checkout there is on with a 7-day trial. No purchase
+  was made: the rehearsal with Stripe's test card is the owner's step
+  (GO_LIVE section 5). STAGING BILLING IS STILL NOT VERIFIED END TO END.
+- **NFL game-day refresh fired for the first time at 23:20:23Z:**
+  `nfl capture: 0 phase(s) due, captured=True, credits=3`. One firing is not
+  a measurement; credits per useful fresh observation is read again after
+  tonight's game and on Sunday.
+- **Capture slowdown:** cause found and fixed, see `CAPTURE_STARVATION.md`.
