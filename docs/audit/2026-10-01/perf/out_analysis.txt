@@ -1,0 +1,242 @@
+== (a) CALIBRATION: our frozen number vs de-vigged market_probability on IDENTICAL staked entries
+V2 "our" = our_probability_used (after 0.038 markdown); raw = our_probability
+  V1pub games pick     n=105 WR=0.667 mOur=0.553 mMkt=0.593 Brier our=0.2306 mkt=0.2231 d=+0.0075+-0.0052 LL our=0.6536 mkt=0.6376
+  V1pub games SPLIT    n=  8 WR=0.375 mOur=0.478 mMkt=0.542 Brier our=0.2367 mkt=0.2478 d=-0.0111+-0.0253 LL our=0.6663 mkt=0.6885
+  V1pub props hits     n= 71 WR=0.634 mOur=0.728 mMkt=0.655 Brier our=0.2461 mkt=0.2329 d=+0.0132+-0.0091 LL our=0.6913 mkt=0.6587
+  V1pub props TB       n= 46 WR=0.717 mOur=0.653 mMkt=0.597 Brier our=0.2062 mkt=0.2131 d=-0.0069+-0.0083 LL our=0.6033 mkt=0.6182
+  V1shadow games pick  n= 43 WR=0.674 mOur=0.565 mMkt=0.606 Brier our=0.2347 mkt=0.2271 d=+0.0075+-0.0085 LL our=0.6619 mkt=0.6462
+  V1shadow props hits  n= 66 WR=0.636 mOur=0.708 mMkt=0.643 Brier our=0.2380 mkt=0.2309 d=+0.0071+-0.0083 LL our=0.6711 mkt=0.6543
+  V1shadow props TB    n= 26 WR=0.577 mOur=0.666 mMkt=0.604 Brier our=0.2457 mkt=0.2394 d=+0.0064+-0.0128 LL our=0.6847 mkt=0.6715
+  V2pub MAIN picks     n= 33 WR=0.485 mOur=0.594 mMkt=0.549 Brier our=0.2624 mkt=0.2522 d=+0.0102+-0.0083 LL our=0.7184 mkt=0.6975 | raw mean=0.632 Brier=0.2721 LL=0.7391
+  V2pub fills          n= 35 WR=0.714 mOur=0.557 mMkt=0.554 Brier our=0.2306 mkt=0.2298 d=+0.0008+-0.0075 LL our=0.6539 mkt=0.6526 | raw mean=0.595 Brier=0.2201 LL=0.6323
+  V2pub withdrawn      n=  4 WR=0.750 mOur=0.563 mMkt=0.518 Brier our=0.2454 mkt=0.2564 d=-0.0110+-0.0269 LL our=0.6838 mkt=0.7060 | raw mean=0.601 Brier=0.2327 LL=0.6583
+  V2shadowA picks      n=103 WR=0.650 mOur=0.579 mMkt=0.542 Brier our=0.2373 mkt=0.2373 d=+0.0000+-0.0064 LL our=0.6676 mkt=0.6676 | raw mean=0.617 Brier=0.2334 LL=0.6597
+  V2shadowA fills      n=  1 WR=0.000 mOur=0.561 mMkt=0.465 Brier our=0.3145 mkt=0.2161 d=+0.0984+-0.0000 LL our=0.8228 mkt=0.6253 | raw mean=0.599 Brier=0.3586 LL=0.9133
+  V2shadowC picks      n= 26 WR=0.500 mOur=0.591 mMkt=0.546 Brier our=0.2571 mkt=0.2514 d=+0.0057+-0.0091 LL our=0.7076 mkt=0.6959 | raw mean=0.629 Brier=0.2654 LL=0.7250
+  V2shadowC fills      n= 39 WR=0.744 mOur=0.554 mMkt=0.549 Brier our=0.2277 mkt=0.2258 d=+0.0019+-0.0062 LL our=0.6481 mkt=0.6445 | raw mean=0.592 Brier=0.2148 LL=0.6214
+  V2shadowE picks      n= 17 WR=0.529 mOur=0.646 mMkt=0.584 Brier our=0.2624 mkt=0.2546 d=+0.0077+-0.0156 LL our=0.7191 mkt=0.7026 | raw mean=0.646 Brier=0.2624 LL=0.7191
+  V2shadowE fills      n= 17 WR=0.765 mOur=0.572 mMkt=0.551 Brier our=0.2146 mkt=0.2194 d=-0.0048+-0.0101 LL our=0.6216 mkt=0.6314 | raw mean=0.572 Brier=0.2146 LL=0.6216
+  NFL_CARD_V1          n=10 no our/mkt pair (our on 0, mkt on 10)
+  NFL_CARD_V2          n=1 no our/mkt pair (our on 0, mkt on 1)
+
+-- calibration buckets on OUR number (within one population only)
+  V1pub games pick n=105
+    our [0.50,0.55): n= 56 mean_our=0.524 mean_mkt=0.571 realised=0.643 units=+6.14
+    our [0.55,0.60): n= 36 mean_our=0.571 mean_mkt=0.601 realised=0.611 units=-0.36
+    our [0.60,0.65): n=  9 mean_our=0.614 mean_mkt=0.674 realised=0.889 units=+2.57
+    our [0.65,0.70): n=  4 mean_our=0.659 mean_mkt=0.650 realised=1.000 units=+2.03
+  V1pub props hits n=71
+    our [0.60,0.65): n=  5 mean_our=0.638 mean_mkt=0.590 realised=0.800 units=+1.48
+    our [0.65,0.70): n= 12 mean_our=0.669 mean_mkt=0.621 realised=0.583 units=-1.25
+    our [0.70,0.75): n= 32 mean_our=0.729 mean_mkt=0.668 realised=0.719 units=+0.40
+    our [0.75,1.00): n= 22 mean_our=0.778 mean_mkt=0.670 realised=0.500 units=-6.46
+  V1pub props TB n=46
+    our [0.55,0.60): n=  3 mean_our=0.595 mean_mkt=0.558 realised=0.667 units=+0.40
+    our [0.60,0.65): n= 16 mean_our=0.628 mean_mkt=0.585 realised=0.688 units=+1.87
+    our [0.65,0.70): n= 25 mean_our=0.670 mean_mkt=0.607 realised=0.720 units=+2.92
+    our [0.70,0.75): n=  2 mean_our=0.714 mean_mkt=0.620 realised=1.000 units=+1.03
+  V1shadow games pick n=43
+    our [0.50,0.55): n= 14 mean_our=0.523 mean_mkt=0.577 realised=0.714 units=+3.23
+    our [0.55,0.60): n= 23 mean_our=0.574 mean_mkt=0.611 realised=0.652 units=+1.00
+    our [0.60,0.65): n=  5 mean_our=0.620 mean_mkt=0.645 realised=0.600 units=-0.34
+    our [0.65,0.70): n=  1 mean_our=0.679 mean_mkt=0.702 realised=1.000 units=+0.38
+  V1shadow props hits n=66
+    our [0.60,0.65): n=  7 mean_our=0.637 mean_mkt=0.594 realised=0.714 units=+1.01
+    our [0.65,0.70): n= 24 mean_our=0.667 mean_mkt=0.620 realised=0.625 units=-1.08
+    our [0.70,0.75): n= 17 mean_our=0.731 mean_mkt=0.668 realised=0.647 units=-1.42
+    our [0.75,1.00): n= 18 mean_our=0.770 mean_mkt=0.671 realised=0.611 units=-2.56
+  V1shadow props TB n=26
+    our [0.60,0.65): n=  5 mean_our=0.636 mean_mkt=0.578 realised=0.200 units=-3.39
+    our [0.65,0.70): n= 19 mean_our=0.668 mean_mkt=0.608 realised=0.684 units=+1.12
+    our [0.70,0.75): n=  2 mean_our=0.727 mean_mkt=0.630 realised=0.500 units=-0.51
+  V2pub MAIN picks n=33
+    our [0.55,0.60): n= 24 mean_our=0.585 mean_mkt=0.541 realised=0.458 units=-4.43
+    our [0.60,0.65): n=  9 mean_our=0.617 mean_mkt=0.570 realised=0.556 units=-0.62
+  V2pub fills n=35
+    our [0.45,0.50): n=  5 mean_our=0.483 mean_mkt=0.534 realised=1.000 units=+4.20
+    our [0.50,0.55): n=  9 mean_our=0.521 mean_mkt=0.558 realised=0.444 units=-2.12
+    our [0.55,0.60): n= 12 mean_our=0.575 mean_mkt=0.553 realised=0.750 units=+3.65
+    our [0.60,0.65): n=  9 mean_our=0.611 mean_mkt=0.563 realised=0.778 units=+2.78
+  V2shadowA picks n=103
+    our [0.00,0.45): n=  2 mean_our=0.437 mean_mkt=0.539 realised=1.000 units=+1.66
+    our [0.45,0.50): n=  9 mean_our=0.475 mean_mkt=0.518 realised=0.667 units=+2.51
+    our [0.50,0.55): n= 14 mean_our=0.528 mean_mkt=0.543 realised=0.643 units=+2.08
+    our [0.55,0.60): n= 40 mean_our=0.583 mean_mkt=0.538 realised=0.650 units=+5.63
+    our [0.60,0.65): n= 31 mean_our=0.616 mean_mkt=0.552 realised=0.645 units=+3.17
+    our [0.65,0.70): n=  6 mean_our=0.668 mean_mkt=0.555 realised=0.500 units=-0.92
+    our [0.70,0.75): n=  1 mean_our=0.737 mean_mkt=0.551 realised=1.000 units=+0.74
+
+-- calibration buckets on the MARKET number, same entries
+  V1pub games pick n=105
+    mkt [0.50,0.55): n= 24 mean_mkt=0.526 realised=0.667
+    mkt [0.55,0.60): n= 36 mean_mkt=0.574 realised=0.556
+    mkt [0.60,0.65): n= 31 mean_mkt=0.626 realised=0.710
+    mkt [0.65,0.70): n= 10 mean_mkt=0.663 realised=0.800
+    mkt [0.70,0.75): n=  3 mean_mkt=0.712 realised=1.000
+    mkt [0.75,1.00): n=  1 mean_mkt=0.766 realised=1.000
+  V1pub props hits n=71
+    mkt [0.55,0.60): n=  3 mean_mkt=0.581 realised=0.667
+    mkt [0.60,0.65): n= 19 mean_mkt=0.623 realised=0.579
+    mkt [0.65,0.70): n= 49 mean_mkt=0.672 realised=0.653
+  V1pub props TB n=46
+    mkt [0.50,0.55): n=  1 mean_mkt=0.538 realised=0.000
+    mkt [0.55,0.60): n= 20 mean_mkt=0.579 realised=0.650
+    mkt [0.60,0.65): n= 25 mean_mkt=0.613 realised=0.800
+  V2pub MAIN picks n=33
+    mkt [0.50,0.55): n= 18 mean_mkt=0.535 realised=0.500
+    mkt [0.55,0.60): n= 15 mean_mkt=0.565 realised=0.467
+  V2pub fills n=35
+    mkt [0.50,0.55): n= 11 mean_mkt=0.528 realised=0.636
+    mkt [0.55,0.60): n= 24 mean_mkt=0.566 realised=0.750
+
+-- does raw (our - market) predict (win - market)? OLS slope (1.0 = our disagreement fully real, 0 = noise)
+  V1pub games pick     n=105 mean(our_raw-mkt)=-0.040 mean(win-mkt)=+0.074 slope=+0.50 se=1.07
+  V1pub props hits     n= 71 mean(our_raw-mkt)=+0.072 mean(win-mkt)=-0.022 slope=-2.15 se=1.91
+  V1pub props TB       n= 46 mean(our_raw-mkt)=+0.056 mean(win-mkt)=+0.121 slope=-3.61 se=3.20
+  V1shadow props hits  n= 66 mean(our_raw-mkt)=+0.065 mean(win-mkt)=-0.007 slope=-0.73 se=2.11
+  V2pub MAIN picks     n= 33 mean(our_raw-mkt)=+0.083 mean(win-mkt)=-0.064 slope=-10.16 se=8.25
+  V2pub fills          n= 35 mean(our_raw-mkt)=+0.041 mean(win-mkt)=+0.160 slope=+0.06 se=1.74
+  V2shadowA picks      n=103 mean(our_raw-mkt)=+0.075 mean(win-mkt)=+0.108 slope=-0.61 se=0.86
+
+== (b) PRICE/VIG: hold = breakeven(price) - de-vigged market_probability at freeze
+  V1pub games pick     n=105 hold mean=+0.0138 [min -0.0023 max +0.0239] units=+10.38 at-fair=+13.08 (vig cost 2.70 u) E[units|mkt right]=-2.36 (-2.2%/bet)
+  V1pub games SPLIT    n=  8 hold mean=+0.0105 [min +0.0069 max +0.0144] units=-2.77 at-fair=-2.66 (vig cost 0.11 u) E[units|mkt right]=-0.15 (-1.9%/bet)
+  V1pub props hits     n= 71 hold mean=+0.0371 [min +0.0190 max +0.0477] units=-5.84 at-fair=-2.22 (vig cost 3.61 u) E[units|mkt right]=-3.79 (-5.3%/bet)
+  V1pub props TB       n= 46 hold mean=+0.0335 [min +0.0068 max +0.0421] units=+6.21 at-fair=+9.08 (vig cost 2.87 u) E[units|mkt right]=-2.44 (-5.3%/bet)
+  V1shadow games pick  n= 43 hold mean=+0.0131 [min +0.0019 max +0.0197] units=+4.27 at-fair=+5.27 (vig cost 1.00 u) E[units|mkt right]=-0.91 (-2.1%/bet)
+  V1shadow props hits  n= 66 hold mean=+0.0354 [min +0.0135 max +0.0477] units=-4.05 at-fair=-0.69 (vig cost 3.35 u) E[units|mkt right]=-3.42 (-5.2%/bet)
+  V1shadow props TB    n= 26 hold mean=+0.0367 [min +0.0224 max +0.0444] units=-2.78 at-fair=-1.37 (vig cost 1.41 u) E[units|mkt right]=-1.49 (-5.7%/bet)
+  V2pub MAIN picks     n= 33 hold mean=+0.0245 [min +0.0020 max +0.0369] units=-5.05 at-fair=-3.92 (vig cost 1.13 u) E[units|mkt right]=-1.40 (-4.3%/bet)
+  V2pub fills          n= 35 hold mean=+0.0223 [min +0.0006 max +0.0396] units=+8.51 at-fair=+10.16 (vig cost 1.65 u) E[units|mkt right]=-1.34 (-3.8%/bet)
+  V2pub withdrawn      n=  4 hold mean=+0.0277 [min +0.0227 max +0.0323] units=+1.68 at-fair=+1.97 (vig cost 0.29 u) E[units|mkt right]=-0.20 (-5.1%/bet)
+  V2shadowA picks      n=103 hold mean=+0.0263 [min +0.0032 max +0.0396] units=+14.87 at-fair=+20.44 (vig cost 5.57 u) E[units|mkt right]=-4.74 (-4.6%/bet)
+  V2shadowA fills      n=  1 hold mean=+0.0229 [min +0.0229 max +0.0229] units=-1.00 at-fair=-1.00 (vig cost 0.00 u) E[units|mkt right]=-0.05 (-4.7%/bet)
+  V2shadowC picks      n= 26 hold mean=+0.0251 [min +0.0020 max +0.0369] units=-3.18 at-fair=-2.21 (vig cost 0.97 u) E[units|mkt right]=-1.14 (-4.4%/bet)
+  V2shadowC fills      n= 39 hold mean=+0.0215 [min +0.0006 max +0.0396] units=+11.78 at-fair=+13.69 (vig cost 1.91 u) E[units|mkt right]=-1.46 (-3.7%/bet)
+  V2shadowE picks      n= 17 hold mean=+0.0309 [min +0.0135 max +0.0384] units=-2.38 at-fair=-1.54 (vig cost 0.83 u) E[units|mkt right]=-0.85 (-5.0%/bet)
+  V2shadowE fills      n= 17 hold mean=+0.0258 [min +0.0138 max +0.0389] units=+5.55 at-fair=+6.62 (vig cost 1.07 u) E[units|mkt right]=-0.76 (-4.5%/bet)
+  NFL_CARD_V1          n= 10 hold mean=+0.0218 [min +0.0144 max +0.0316] units=-0.26 at-fair=+0.02 (vig cost 0.28 u) E[units|mkt right]=-0.29 (-2.9%/bet)
+  NFL_CARD_V2          n=  1 hold mean=-0.0635 [min -0.0635 max -0.0635] units=+0.93 at-fair=+0.72 (vig cost -0.21 u) E[units|mkt right]=+0.12 (+12.2%/bet)
+
+== (e) SELECTION / POPULATION SHIFT (staked entries)
+  V1 public ALL (games+SPLIT+props)  n=230 W-L=151-79 fav=100% plus=0% prop=51% meanPx=-170 breakevenWR=0.636 realisedWR=0.657 units=+7.98 ROI=+3.5% | expected wins at mkt=140.6 actual=151  E[units|mkt]=-8.74  luck(actual-E)=+16.72
+  V1 public games (pick+SPLIT)       n=113 W-L=73-40 fav=100% plus=0% prop=0% meanPx=-149 breakevenWR=0.603 realisedWR=0.646 units=+7.61 ROI=+6.7% | expected wins at mkt=66.6 actual=73  E[units|mkt]=-2.51  luck(actual-E)=+10.12
+  V1 public props                    n=117 W-L=78-39 fav=100% plus=0% prop=100% meanPx=-199 breakevenWR=0.668 realisedWR=0.667 units=+0.38 ROI=+0.3% | expected wins at mkt=74.0 actual=78  E[units|mkt]=-6.23  luck(actual-E)=+6.61
+  V1 public games band <=-160        n= 46 W-L=35-11 fav=100% plus=0% prop=0% meanPx=-192 breakevenWR=0.659 realisedWR=0.761 units=+7.00 ROI=+15.2% | expected wins at mkt=29.5 actual=35  E[units|mkt]=-1.14  luck(actual-E)=+8.14
+  V1 public props band <=-160        n=104 W-L=69-35 fav=100% plus=0% prop=100% meanPx=-208 breakevenWR=0.677 realisedWR=0.663 units=-1.68 ROI=-1.6% | expected wins at mkt=66.6 actual=69  E[units|mkt]=-5.58  luck(actual-E)=+3.90
+  V1 public games band -159..-100    n= 67 W-L=38-29 fav=100% plus=0% prop=0% meanPx=-129 breakevenWR=0.564 realisedWR=0.567 units=+0.61 ROI=+0.9% | expected wins at mkt=37.0 actual=38  E[units|mkt]=-1.37  luck(actual-E)=+1.98
+  V1 public props band -159..-100    n= 13 W-L=9-4 fav=100% plus=0% prop=100% meanPx=-147 breakevenWR=0.595 realisedWR=0.692 units=+2.05 ROI=+15.8% | expected wins at mkt=7.4 actual=9  E[units|mkt]=-0.65  luck(actual-E)=+2.70
+  V1 shadow ALL                      n=141 W-L=89-52 fav=100% plus=0% prop=65% meanPx=-181 breakevenWR=0.649 realisedWR=0.631 units=-3.25 ROI=-2.3% | expected wins at mkt=87.5 actual=89  E[units|mkt]=-5.94  luck(actual-E)=+2.69
+  V2 public picks (MAIN+PLUS)        n= 33 W-L=16-17 fav=100% plus=0% prop=91% meanPx=-134 breakevenWR=0.573 realisedWR=0.485 units=-5.05 ROI=-15.3% | expected wins at mkt=18.1 actual=16  E[units|mkt]=-1.40  luck(actual-E)=-3.64
+  V2 public MAIN picks               n= 33 W-L=16-17 fav=100% plus=0% prop=91% meanPx=-134 breakevenWR=0.573 realisedWR=0.485 units=-5.05 ROI=-15.3% | expected wins at mkt=18.1 actual=16  E[units|mkt]=-1.40  luck(actual-E)=-3.64
+  V2 public fills                    n= 35 W-L=25-10 fav=100% plus=0% prop=54% meanPx=-135 breakevenWR=0.576 realisedWR=0.714 units=+8.51 ROI=+24.3% | expected wins at mkt=19.4 actual=25  E[units|mkt]=-1.34  luck(actual-E)=+9.85
+  V2 public picks+fills (shown)      n= 68 W-L=41-27 fav=100% plus=0% prop=72% meanPx=-135 breakevenWR=0.575 realisedWR=0.603 units=+3.46 ROI=+5.1% | expected wins at mkt=37.5 actual=41  E[units|mkt]=-2.75  luck(actual-E)=+6.21
+  V2 shadow A picks                  n=103 W-L=67-36 fav=94% plus=6% prop=82% meanPx=-131 breakevenWR=0.569 realisedWR=0.650 units=+14.87 ROI=+14.4% | expected wins at mkt=55.9 actual=67  E[units|mkt]=-4.74  luck(actual-E)=+19.62
+  V2 shadow C picks                  n= 26 W-L=13-13 fav=100% plus=0% prop=92% meanPx=-133 breakevenWR=0.571 realisedWR=0.500 units=-3.18 ROI=-12.2% | expected wins at mkt=14.2 actual=13  E[units|mkt]=-1.14  luck(actual-E)=-2.04
+  V2 shadow C fills                  n= 39 W-L=29-10 fav=100% plus=0% prop=54% meanPx=-132 breakevenWR=0.571 realisedWR=0.744 units=+11.78 ROI=+30.2% | expected wins at mkt=21.4 actual=29  E[units|mkt]=-1.46  luck(actual-E)=+13.24
+  V2 shadow E picks                  n= 17 W-L=9-8 fav=100% plus=0% prop=100% meanPx=-160 breakevenWR=0.615 realisedWR=0.529 units=-2.38 ROI=-14.0% | expected wins at mkt=9.9 actual=9  E[units|mkt]=-0.85  luck(actual-E)=-1.52
+  V2 shadow E fills                  n= 17 W-L=13-4 fav=71% plus=29% prop=88% meanPx=-132 breakevenWR=0.577 realisedWR=0.765 units=+5.55 ROI=+32.6% | expected wins at mkt=9.4 actual=13  E[units|mkt]=-0.76  luck(actual-E)=+6.31
+  V2 public shown-entry composition (all results):
+     ('fill', 'MAIN', 'batter_hits') 4
+     ('fill', 'MAIN', 'batter_runs_scored') 1
+     ('fill', 'MAIN', 'batter_total_bases') 16
+     ('fill', 'MAIN', 'moneyline') 17
+     ('pick', 'MAIN', 'batter_hits') 15
+     ('pick', 'MAIN', 'batter_runs_scored') 3
+     ('pick', 'MAIN', 'batter_total_bases') 16
+     ('pick', 'MAIN', 'moneyline') 3
+     ('pick', 'PLUS_MONEY', 'batter_hits') 1
+     ('withdrawn', 'MAIN', 'batter_hits') 1
+     ('withdrawn', 'MAIN', 'batter_total_bases') 3
+     ('withdrawn', 'PLUS_MONEY', 'batter_hits') 1
+  V2 public fills: failed_gates distribution: Counter({('G7_VALUE',): 29, ('G3_STALE',): 8, ('G3_STALE', 'G7_VALUE'): 1})
+  V2 public fills W-L by failed gate:
+    G3_STALE: n=9 W=8 units=+4.86
+    G7_VALUE: n=27 W=18 units=+4.35
+
+== (f) VARIANCE: V2 public MAIN picks
+  n staked=33 units=-5.046 ROI=-15.29%  (voids not staked: 4)
+  dates: {'2026-09-22': (19, -5.14), '2026-09-23': (5, 0.19), '2026-09-24': (5, 0.22), '2026-09-25': (4, -0.32)}
+  bootstrap over 4 dates (B=100000): ROI 95% CI [-24.6%, +4.2%], median -15.3%
+  bootstrap over picks: ROI 95% CI [-46.2%, +15.7%]
+  P(units <= -5.05 | true ROI=+0.0%) = 0.165  (MC 200000 sims, per-pick win prob=(1+ROI)/decimal)
+  P(units <= -5.05 | true ROI=-4.5%) = 0.247  (MC 200000 sims, per-pick win prob=(1+ROI)/decimal)
+  SD of units if every pick were a fair (zero-EV) bet = 4.96 u -> ROI SD 15.0%; observed ROI is -1.02 SD from 0
+
+== (g) SETTLEMENT / DATA: VOID + UNRESOLVED reasons, all card ledgers (newest settled row per date)
+    1  cards_v1.jsonl | VOID | batter_total_bases | pick | no box score found for this player in this game
+    1  cards_v1_shadow.jsonl | VOID | batter_hits | pick | no box score found for this player in this game
+    1  cards_v1_shadow.jsonl | VOID | batter_total_bases | pick | no box score found for this player in this game
+    1  cards_v2.jsonl | VOID | batter_hits | fill | no box score found for this player in this game
+    1  cards_v2.jsonl | VOID | batter_hits | pick | no box score found for this player in this game
+    1  cards_v2.jsonl | VOID | batter_runs_scored | fill | no settlement rule for market 'batter_runs_scored'
+    3  cards_v2.jsonl | VOID | batter_runs_scored | pick | no settlement rule for market 'batter_runs_scored'
+    1  cards_v2.jsonl | VOID | batter_total_bases | pick | no box score found for this player in this game
+    1  cards_v2.jsonl | VOID | batter_total_bases | withdrawn | no box score found for this player in this game
+    1  cards_v2.jsonl | VOID | moneyline | fill | no final score stored for this game
+    3  cards_v2_shadow_a.jsonl | VOID | batter_hits | pick | no box score found for this player in this game
+    6  cards_v2_shadow_a.jsonl | VOID | batter_runs_scored | pick | no settlement rule for market 'batter_runs_scored'
+    4  cards_v2_shadow_a.jsonl | VOID | batter_total_bases | pick | no box score found for this player in this game
+    1  cards_v2_shadow_a.jsonl | VOID | moneyline | pick | no final score stored for this game
+    2  cards_v2_shadow_c.jsonl | VOID | batter_hits | fill | no box score found for this player in this game
+    2  cards_v2_shadow_c.jsonl | VOID | batter_runs_scored | fill | no settlement rule for market 'batter_runs_scored'
+    3  cards_v2_shadow_c.jsonl | VOID | batter_runs_scored | pick | no settlement rule for market 'batter_runs_scored'
+    1  cards_v2_shadow_c.jsonl | VOID | moneyline | fill | no final score stored for this game
+    3  cards_v2_shadow_e.jsonl | VOID | batter_hits | fill | no box score found for this player in this game
+    1  cards_v2_shadow_e.jsonl | VOID | batter_runs_scored | fill | no settlement rule for market 'batter_runs_scored'
+    6  cards_v2_shadow_e.jsonl | VOID | batter_runs_scored | pick | no settlement rule for market 'batter_runs_scored'
+    1  cards_v2_shadow_e.jsonl | VOID | batter_total_bases | fill | no box score found for this player in this game
+    2  cards_v2_shadow_e.jsonl | VOID | batter_total_bases | withdrawn | no box score found for this player in this game
+  batter_runs_scored entries (all ledgers):
+    cards_v2.jsonl 2026-09-22 pick James Wood Under 824222 line=0.5 px=-135 -> VOID (no settlement rule for market 'batter_runs_scored')
+    cards_v2.jsonl 2026-09-22 pick Austin Riley Under 824867 line=0.5 px=-135 -> VOID (no settlement rule for market 'batter_runs_scored')
+    cards_v2.jsonl 2026-09-24 pick Nolan Arenado Under 824298 line=0.5 px=-125 -> VOID (no settlement rule for market 'batter_runs_scored')
+    cards_v2.jsonl 2026-09-26 fill Daylen Lile Under 822678 line=0.5 px=-155 -> VOID (no settlement rule for market 'batter_runs_scored')
+    cards_v2_shadow_a.jsonl 2026-09-22 pick James Wood Under 824222 line=0.5 px=-135 -> VOID (no settlement rule for market 'batter_runs_scored')
+    cards_v2_shadow_a.jsonl 2026-09-22 pick Austin Riley Under 824867 line=0.5 px=-135 -> VOID (no settlement rule for market 'batter_runs_scored')
+    cards_v2_shadow_a.jsonl 2026-09-22 pick Corbin Carroll Under 824302 line=0.5 px=100 -> VOID (no settlement rule for market 'batter_runs_scored')
+    cards_v2_shadow_a.jsonl 2026-09-22 pick Jordan Lawlar Under 824302 line=0.5 px=-110 -> VOID (no settlement rule for market 'batter_runs_scored')
+    cards_v2_shadow_a.jsonl 2026-09-22 pick Cole Carrigg Under 824302 line=0.5 px=-155 -> VOID (no settlement rule for market 'batter_runs_scored')
+    cards_v2_shadow_a.jsonl 2026-09-22 pick Christian Moore Under 824953 line=0.5 px=-160 -> VOID (no settlement rule for market 'batter_runs_scored')
+    cards_v2_shadow_c.jsonl 2026-09-22 pick James Wood Under 824222 line=0.5 px=-135 -> VOID (no settlement rule for market 'batter_runs_scored')
+    cards_v2_shadow_c.jsonl 2026-09-22 pick Austin Riley Under 824867 line=0.5 px=-135 -> VOID (no settlement rule for market 'batter_runs_scored')
+    cards_v2_shadow_c.jsonl 2026-09-23 fill Kevin McGonigle Under 824223 line=0.5 px=-125 -> VOID (no settlement rule for market 'batter_runs_scored')
+    cards_v2_shadow_c.jsonl 2026-09-24 pick Nolan Arenado Under 824298 line=0.5 px=-125 -> VOID (no settlement rule for market 'batter_runs_scored')
+    cards_v2_shadow_c.jsonl 2026-09-26 fill Juan Soto Under 822678 line=0.5 px=-115 -> VOID (no settlement rule for market 'batter_runs_scored')
+    cards_v2_shadow_e.jsonl 2026-09-22 pick Mickey Moniak Under 824302 line=0.5 px=-160 -> VOID (no settlement rule for market 'batter_runs_scored')
+    cards_v2_shadow_e.jsonl 2026-09-23 pick Tommy Edman Under 823894 line=0.5 px=-160 -> VOID (no settlement rule for market 'batter_runs_scored')
+    cards_v2_shadow_e.jsonl 2026-09-24 pick Konnor Griffin Under 823326 line=0.5 px=-160 -> VOID (no settlement rule for market 'batter_runs_scored')
+    cards_v2_shadow_e.jsonl 2026-09-24 pick Colson Montgomery Under 824059 line=0.5 px=-160 -> VOID (no settlement rule for market 'batter_runs_scored')
+    cards_v2_shadow_e.jsonl 2026-09-24 pick Cole Carrigg Under 824298 line=0.5 px=-160 -> VOID (no settlement rule for market 'batter_runs_scored')
+    cards_v2_shadow_e.jsonl 2026-09-25 fill Seiya Suzuki Under 824703 line=0.5 px=-160 -> VOID (no settlement rule for market 'batter_runs_scored')
+    cards_v2_shadow_e.jsonl 2026-09-26 pick Corbin Carroll Under 823245 line=0.5 px=-160 -> VOID (no settlement rule for market 'batter_runs_scored')
+  cards_v1.jsonl             settled rows/date max=1; published dates without settled row: []
+  cards_v1_shadow.jsonl      settled rows/date max=1; published dates without settled row: ['2026-10-01']
+  cards_v2.jsonl             settled rows/date max=1; published dates without settled row: ['2026-10-01']
+  cards_v2_shadow_a.jsonl    settled rows/date max=1; published dates without settled row: ['2026-10-01']
+  cards_v2_shadow_c.jsonl    settled rows/date max=1; published dates without settled row: ['2026-10-01']
+  cards_v2_shadow_e.jsonl    settled rows/date max=1; published dates without settled row: ['2026-10-01']
+  cards_nfl_v1.jsonl         settled rows/date max=1; published dates without settled row: []
+
+  spot-check: card game entries vs data/historical/mlb_results.csv (origin) and boxscores_2026 linescores
+    cards_v1.jsonl 2026-09-12 825035 moneyline AZ home px=-121 | ledger LOSS | csv 6-2 team_ok=True -> OK
+    cards_v1.jsonl 2026-09-12 823819 moneyline LAD away px=-182 | ledger LOSS | csv 3-4 team_ok=True -> OK
+    cards_v1.jsonl 2026-09-13 824952 moneyline SEA away px=-125 | ledger LOSS | csv 7-8 team_ok=True -> OK
+    cards_v1.jsonl 2026-09-15 823007 moneyline STL home px=-167 | ledger LOSS | csv 10-3 team_ok=True -> OK
+    cards_v1.jsonl 2026-09-19 823899 moneyline LAD home px=-375 | ledger WIN | csv 4-10 team_ok=True -> OK
+    cards_v1.jsonl 2026-09-20 822844 moneyline TEX home px=-158 | ledger LOSS | csv 7-2 team_ok=True -> OK
+    cards_v1.jsonl 2026-09-21 824221 moneyline DET home px=-128 | ledger WIN | csv 2-9 team_ok=True -> OK
+    cards_v1_shadow.jsonl 2026-09-25 823248 moneyline SD home px=-120 | ledger LOSS | linescore 11-4 team_ok=True -> OK
+    cards_v2.jsonl 2026-09-25 823489 moneyline None home px=-118 | ledger WIN | linescore 3-6 team_ok=True -> OK
+    cards_v2_shadow_c.jsonl 2026-09-24 824707 moneyline None home px=-125 | ledger LOSS | linescore 1-0 team_ok=True -> OK
+  game entries re-graded independently: 227 checked, 0 mismatches (of 227 graded game entries)
+  prop entries re-graded vs boxscores_2026: 427 checked, 0 mismatches, 0 with no box row in origin store
+
+== (h) PROPS: price level and per-market calibration
+  V1pub props hits     n= 71 W-L=45-26 WR=0.634 meanPx=-223 breakeven=0.692 mkt=0.655 our=0.728 units=-5.84 ROI=-8.2%  sides={'Under': 55, 'Over': 16} lines={1.5: 55, 0.5: 16}
+  V1pub props TB       n= 46 W-L=33-13 WR=0.717 meanPx=-170 breakeven=0.630 mkt=0.597 our=0.653 units=+6.21 ROI=+13.5%  sides={'Over': 19, 'Under': 27} lines={0.5: 19, 1.5: 27}
+  V1shadow props hits  n= 66 W-L=42-24 WR=0.636 meanPx=-209 breakeven=0.679 mkt=0.643 our=0.708 units=-4.05 ROI=-6.1%  sides={'Over': 29, 'Under': 37} lines={0.5: 29, 1.5: 37}
+  V1shadow props TB    n= 26 W-L=15-11 WR=0.577 meanPx=-178 breakeven=0.641 mkt=0.604 our=0.666 units=-2.78 ROI=-10.7%  sides={'Over': 9, 'Under': 17} lines={0.5: 9, 1.5: 17}
+  V1 public props combined: W-L 78-39 WR=0.667 vs breakeven 0.668; units +0.38; average win pays 0.505 u, loss costs 1 u
+  V1 public props: books per prop quote: {3: 32, 2: 32, 4: 39, 7: 6, 5: 5, 6: 3}
+  V2 public picks props: books per quote: {4: 17, 2: 5, 3: 6, 5: 1, 7: 5, 8: 1, 11: 2}

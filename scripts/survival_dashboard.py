@@ -162,6 +162,8 @@ def render(config: dict, today: date, now_utc: str) -> str:
     out.append("No rule here has evidence of an edge. Closing-line value and calibration: "
                "see `docs/audit/` for the latest loss diagnosis.")
     out.append("")
+    out.extend(f"- {item}" for item in config.get("record_reading", []))
+    out.append("")
     for title, key in (("Product errors", "product_errors"), ("Top blockers", "top_blockers"),
                        ("Today's execution", "today")):
         out.append(f"## {title}")

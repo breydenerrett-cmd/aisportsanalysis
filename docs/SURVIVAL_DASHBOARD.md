@@ -1,6 +1,6 @@
 # LineHound survival dashboard
 
-Generated 2026-10-01 18:43Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and `docs/sales/pipeline.csv`, not this file.
+Generated 2026-10-01 18:47Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and `docs/sales/pipeline.csv`, not this file.
 
 | | |
 |---|---|
@@ -59,10 +59,18 @@ Generated 2026-10-01 18:43Z by `scripts/survival_dashboard.py`. Edit `config/bus
 
 No rule here has evidence of an edge. Closing-line value and calibration: see `docs/audit/` for the latest loss diagnosis.
 
+- V2 MAIN picks 16-17, -5.05u; 19 of the 33 are one day (2026-09-22, cap breach, -5.14u).
+- Everything shown to readers under V2 (picks plus fills): 41-27, +3.46u.
+- Closing-line value is negative in every segment measured (V1 games -1.21 pts, n=51; props about -3.5).
+- Our number scored worse than the market's in 12 of 16 populations and never significantly better.
+
 ## Product errors
 
 - Daily loop red on the legacy 'settlement gap' escalation (data still commits).
 - UFC picks never graded (results are entered by hand).
+- V2 has published zero MAIN picks since 2026-09-26; every entry since is a fill. The public MAIN record is frozen at 4 dates.
+- Shadow ledgers hold one wrong permanent VOID (game 824785, played a day late). Append-only correction pending.
+- NFL picks store no model probability or observation time, so NFL calibration and closing-line value cannot be measured.
 
 ## Top blockers
 
@@ -76,9 +84,9 @@ No rule here has evidence of an edge. Closing-line value and calibration: see `d
 - Public record, access delivery, cancel link, attribution (buying-path worker)
 - Free public postseason odds page (lead magnet)
 - Outreach targets, channel rules and scripts
-- Loss diagnosis by rule, market and price band
+- Loss diagnosis: done, filed in docs/audit/2026-10-01/
 
 **Next customer action:** Brey: finish Stripe verification, then send the first 20 messages from docs/sales/targets.csv using docs/sales/scripts.md.
 
-**Next research action:** Read the loss diagnosis; decide which market the public card should lead with.
+**Next research action:** No rule has shown positive expected value (docs/audit/2026-10-01/LOSS_DIAGNOSIS.md). Pre-register one forward test: do entries that pass V2's value gate do worse than entries that fail it? No gate or threshold changes until that test reports.
 

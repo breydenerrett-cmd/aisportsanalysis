@@ -1,0 +1,98 @@
+multibook rows mlb=330135 (events with pre-game rows 389); nfl rows=501133 events=63
+
+== (c) CLV, game entries: card_clv.measure_pick (close = last multibook pre-game instant; de-vigged; >=6 books)
+   clv_pts = p_close(de-vigged) - breakeven(frozen price)  [positive = beat the fair close]; drift_pts = p_close - frozen market_probability
+  V1pub games pick       game n=105 measured= 51 mean clv=-1.21 pts (se 0.18) beat close=14% mean drift=+0.11 pts | absences {'CLOSING_BOARD_THIN': 2, 'CLOSE_STALE': 52}
+  V1pub games SPLIT      game n=  8 measured=  8 mean clv=-0.96 pts (se 0.50) beat close=25% mean drift=+0.09 pts | absences {}
+  V1shadow games pick    game n= 43 measured= 32 mean clv=-1.23 pts (se 0.15) beat close=3% mean drift=+0.13 pts | absences {'CLOSE_STALE': 11}
+  V2pub MAIN picks       game n=  3 measured=  2 mean clv=-1.86 pts (se 1.93) beat close=50% mean drift=-1.30 pts | absences {'NO_EVENT': 1}
+  V2pub fills            game n= 17 measured= 11 mean clv=-0.82 pts (se 0.45) beat close=18% mean drift=+0.46 pts | absences {'CLOSE_STALE': 6}
+  V2shadowA picks        game n= 20 measured= 16 mean clv=-0.44 pts (se 0.28) beat close=31% mean drift=+0.58 pts | absences {'CLOSING_BOARD_IS_DECISION_BOARD': 1, 'CLOSE_STALE': 3}
+  V2shadowC picks        game n=  2 measured=  1 mean clv=-3.79 pts (se nan) beat close=0% mean drift=-3.59 pts | absences {'NO_EVENT': 1}
+  V2shadowC fills        game n= 19 measured= 12 mean clv=-0.42 pts (se 0.51) beat close=25% mean drift=+0.83 pts | absences {'CLOSE_STALE': 7}
+  V2shadowE fills        game n=  2 measured=  2 mean clv=-0.02 pts (se 0.00) beat close=0% mean drift=+1.52 pts | absences {}
+  NFL_CARD_V1            game n= 10 measured=0 | absences {'NO_EVENT': 10}
+  NFL_CARD_V2            game n=  1 measured=0 | absences {'NO_EVENT': 1}
+  by market (V1 public games): {'moneyline': 104, 'run_line': 1}
+
+  does CLV sign predict result? (all measured MLB game entries, each ledger kept apart)
+    cards_v1.jsonl           beat   n=  9 WR=0.556 units=-0.23 ROI=-2.5%
+    cards_v1.jsonl           missed n= 50 WR=0.660 units=+5.08 ROI=+10.2%
+    cards_v1_shadow.jsonl    beat   n=  1 WR=1.000 units=+0.67 ROI=+66.7%
+    cards_v1_shadow.jsonl    missed n= 33 WR=0.576 units=-1.80 ROI=-5.5%
+    cards_v2.jsonl           beat   n=  3 WR=1.000 units=+2.33 ROI=+77.5%
+    cards_v2.jsonl           missed n= 10 WR=0.700 units=+2.51 ROI=+25.1%
+    cards_v2_shadow_a.jsonl  beat   n=  4 WR=1.000 units=+3.27 ROI=+81.8%
+    cards_v2_shadow_a.jsonl  missed n= 11 WR=0.545 units=+0.04 ROI=+0.4%
+    cards_v2_shadow_c.jsonl  beat   n=  4 WR=0.750 units=+1.33 ROI=+33.1%
+    cards_v2_shadow_c.jsonl  missed n= 10 WR=0.800 units=+4.33 ROI=+43.3%
+
+== (b2) BEST PRICE ON THE BOARD at the freeze instant vs the frozen price (game entries)
+  V1pub games pick       n=104 units frozen=+9.71 at-best-book=+9.71 (diff -0.00) mean implied-prob gap frozen-vs-best=+0.0000; frozen worse than best on 0/104; board lag 0s
+  V1pub games SPLIT      n=  8 units frozen=-2.77 at-best-book=-2.77 (diff +0.00) mean implied-prob gap frozen-vs-best=+0.0000; frozen worse than best on 0/8; board lag 0s
+  V1shadow games pick    n= 43 units frozen=+4.27 at-best-book=+4.27 (diff +0.00) mean implied-prob gap frozen-vs-best=+0.0000; frozen worse than best on 0/43; board lag 0s
+  V2pub MAIN picks       n=  2 units frozen=+1.70 at-best-book=+1.63 (diff -0.07) mean implied-prob gap frozen-vs-best=-0.0103; frozen worse than best on 0/2; board lag 0s
+  V2pub fills            n= 16 units frozen=+5.22 at-best-book=+5.22 (diff -0.00) mean implied-prob gap frozen-vs-best=+0.0000; frozen worse than best on 0/16; board lag 0s
+  V2shadowA picks        n= 19 units frozen=+4.76 at-best-book=+4.83 (diff +0.07) mean implied-prob gap frozen-vs-best=+0.0011; frozen worse than best on 1/19; board lag 0s
+  V2shadowC picks        n=  1 units frozen=+0.85 at-best-book=+0.81 (diff -0.04) mean implied-prob gap frozen-vs-best=-0.0123; frozen worse than best on 0/1; board lag 0s
+  V2shadowC fills        n= 18 units frozen=+6.83 at-best-book=+6.83 (diff -0.00) mean implied-prob gap frozen-vs-best=+0.0000; frozen worse than best on 0/18; board lag 0s
+  V2shadowE fills        n=  2 units frozen=-0.38 at-best-book=-0.38 (diff +0.00) mean implied-prob gap frozen-vs-best=+0.0000; frozen worse than best on 0/2; board lag 0s
+
+== (c2) RELAXED PROP CLOSE (NOT the project metric: card_clv refuses props, PROP_NOT_MEASURED, six-book floor)
+   close instant = last batter_props capture for (event, market) before commence; quotes for the same player+line at that instant;
+   per-book proportional de-vig of the Over/Under pair, averaged across books; >=1 two-sided book required; books reported
+  V1pub props hits       prop n= 71 measured= 14 mean clv=-3.63 pts (se 0.43) beat close=0% drift=-0.05 pts books@close median=3 lead_min median=112 | absences {'CLOSE_NOT_AFTER_DECISION': 55, 'PLAYER_LINE_NOT_TWO_SIDED_AT_CLOSE': 2}
+  V1pub props TB         prop n= 47 measured= 15 mean clv=-3.50 pts (se 0.21) beat close=0% drift=-0.19 pts books@close median=4 lead_min median=111 | absences {'CLOSE_NOT_AFTER_DECISION': 31, 'PLAYER_LINE_NOT_TWO_SIDED_AT_CLOSE': 1}
+  V1shadow props hits    prop n= 67 measured=  6 mean clv=-4.54 pts (se 0.93) beat close=0% drift=-1.09 pts books@close median=3 lead_min median=97 | absences {'CLOSE_NOT_AFTER_DECISION': 60, 'PLAYER_LINE_NOT_TWO_SIDED_AT_CLOSE': 1}
+  V1shadow props TB      prop n= 27 measured=  8 mean clv=-3.47 pts (se 0.56) beat close=0% drift=+0.12 pts books@close median=6 lead_min median=70 | absences {'CLOSE_NOT_AFTER_DECISION': 15, 'PLAYER_LINE_NOT_TWO_SIDED_AT_CLOSE': 4}
+  V2pub MAIN picks       prop n= 34 measured=0 | absences {'CLOSE_NOT_AFTER_DECISION': 33, 'NO_PROP_CAPTURE_FOR_EVENT_MARKET': 1}
+  V2pub PLUS picks       prop n=  1 measured=0 | absences {'NO_PROP_CAPTURE_FOR_EVENT_MARKET': 1}
+  V2pub fills            prop n= 21 measured= 11 mean clv=-1.71 pts (se 0.90) beat close=18% drift=+1.29 pts books@close median=6 lead_min median=83 | absences {'CLOSE_NOT_AFTER_DECISION': 7, 'PLAYER_LINE_NOT_TWO_SIDED_AT_CLOSE': 1, 'NO_PROP_CAPTURE_FOR_EVENT_MARKET': 2}
+  V2pub withdrawn        prop n=  5 measured=  3 mean clv=-3.90 pts (se 0.54) beat close=0% drift=-1.00 pts books@close median=6 lead_min median=108 | absences {'PLAYER_LINE_NOT_TWO_SIDED_AT_CLOSE': 1, 'CLOSE_NOT_AFTER_DECISION': 1}
+  V2shadowA picks        prop n= 97 measured= 28 mean clv=-2.06 pts (se 0.51) beat close=18% drift=+0.89 pts books@close median=6 lead_min median=89 | absences {'CLOSE_NOT_AFTER_DECISION': 63, 'PLAYER_LINE_NOT_TWO_SIDED_AT_CLOSE': 2, 'NO_PROP_CAPTURE_FOR_EVENT_MARKET': 4}
+  V2shadowA fills        prop n=  1 measured=  1 mean clv=-0.29 pts (se nan) beat close=0% drift=+2.01 pts books@close median=4 lead_min median=101 | absences {}
+  V2shadowC picks        prop n= 27 measured=0 | absences {'CLOSE_NOT_AFTER_DECISION': 26, 'NO_PROP_CAPTURE_FOR_EVENT_MARKET': 1}
+  V2shadowC fills        prop n= 25 measured= 12 mean clv=-1.37 pts (se 0.89) beat close=25% drift=+1.59 pts books@close median=6 lead_min median=88 | absences {'CLOSE_NOT_AFTER_DECISION': 9, 'PLAYER_LINE_NOT_TWO_SIDED_AT_CLOSE': 1, 'NO_PROP_CAPTURE_FOR_EVENT_MARKET': 3}
+  V2shadowE picks        prop n= 23 measured=0 | absences {'CLOSE_NOT_AFTER_DECISION': 21, 'NO_PROP_CAPTURE_FOR_EVENT_MARKET': 2}
+  V2shadowE fills        prop n= 20 measured= 10 mean clv=-2.70 pts (se 0.41) beat close=0% drift=+0.23 pts books@close median=4 lead_min median=101 | absences {'PLAYER_LINE_NOT_TWO_SIDED_AT_CLOSE': 1, 'CLOSE_NOT_AFTER_DECISION': 8, 'NO_PROP_CAPTURE_FOR_EVENT_MARKET': 1}
+    cards_v1.jsonl         batter_hits         picks measured= 14 mean clv=-3.63 pts beat=0%
+    cards_v1_shadow.jsonl  batter_hits         picks measured=  6 mean clv=-4.54 pts beat=0%
+    cards_v1.jsonl         batter_total_bases  picks measured= 15 mean clv=-3.50 pts beat=0%
+    cards_v1_shadow.jsonl  batter_total_bases  picks measured=  8 mean clv=-3.47 pts beat=0%
+
+== (d) STALENESS: price age = first_pitch - observed_utc (min); quote age at lock = locked_at - observed_utc (min)
+  V1pub games pick n=105  price-age-at-first-pitch median=383 min [min 14 max 1296]; quote-age-at-lock median=234 min [max 1075]
+     fresh (<= median)  n= 54 WR=0.630 mkt=0.589 win-mkt=+0.041 units=+2.73 ROI=+5.1% clv=-1.12 (n=36)
+     stale (> median)   n= 51 WR=0.706 mkt=0.597 win-mkt=+0.109 units=+7.64 ROI=+15.0% clv=-1.45 (n=15)
+     slope clv_pts per hour of price age = -0.034 (n=51)
+  V1pub props hits n=71  price-age-at-first-pitch median=113 min [min 13 max 1175]; quote-age-at-lock median=12 min [max 947]
+     fresh (<= median)  n= 37 WR=0.730 mkt=0.657 win-mkt=+0.073 units=+2.04 ROI=+5.5% clv=n/a (n=0)
+     stale (> median)   n= 34 WR=0.529 mkt=0.654 win-mkt=-0.125 units=-7.87 ROI=-23.2% clv=-3.63 (n=14)
+     slope clv_pts per hour of price age = -0.037 (n=14)
+  V1pub props TB n=46  price-age-at-first-pitch median=119 min [min 31 max 1291]; quote-age-at-lock median=97 min [max 1138]
+     fresh (<= median)  n= 24 WR=0.750 mkt=0.604 win-mkt=+0.146 units=+4.20 ROI=+17.5% clv=n/a (n=0)
+     stale (> median)   n= 22 WR=0.682 mkt=0.589 win-mkt=+0.093 units=+2.01 ROI=+9.1% clv=-3.47 (n=14)
+     slope clv_pts per hour of price age = +0.038 (n=14)
+  V1shadow games pick n=43  price-age-at-first-pitch median=266 min [min 60 max 826]; quote-age-at-lock median=86 min [max 590]
+     fresh (<= median)  n= 22 WR=0.636 mkt=0.598 win-mkt=+0.039 units=+0.79 ROI=+3.6% clv=-1.56 (n=15)
+     stale (> median)   n= 21 WR=0.714 mkt=0.614 win-mkt=+0.100 units=+3.48 ROI=+16.6% clv=-0.94 (n=17)
+     slope clv_pts per hour of price age = +0.138 (n=32)
+  V1shadow props hits n=66  price-age-at-first-pitch median=95 min [min 49 max 1179]; quote-age-at-lock median=36 min [max 987]
+     fresh (<= median)  n= 35 WR=0.543 mkt=0.644 win-mkt=-0.101 units=-7.14 ROI=-20.4% clv=n/a (n=0)
+     stale (> median)   n= 31 WR=0.742 mkt=0.643 win-mkt=+0.099 units=+3.09 ROI=+10.0% clv=-4.54 (n=6)
+     slope clv_pts per hour of price age = -1.185 (n=6)
+  V2pub MAIN picks n=33  price-age-at-first-pitch median=96 min [min 69 max 573]; quote-age-at-lock median=14 min [max 340]
+     fresh (<= median)  n= 17 WR=0.529 mkt=0.554 win-mkt=-0.025 units=-1.48 ROI=-8.7% clv=n/a (n=0)
+     stale (> median)   n= 16 WR=0.438 mkt=0.543 win-mkt=-0.106 units=-3.56 ROI=-22.3% clv=-1.86 (n=2)
+  V2pub fills n=35  price-age-at-first-pitch median=902 min [min 84 max 1804]; quote-age-at-lock median=751 min [max 1568]
+     fresh (<= median)  n= 18 WR=0.611 mkt=0.554 win-mkt=+0.057 units=+1.18 ROI=+6.6% clv=-1.61 (n=7)
+     stale (> median)   n= 17 WR=0.824 mkt=0.554 win-mkt=+0.270 units=+7.33 ROI=+43.1% clv=-1.10 (n=15)
+     slope clv_pts per hour of price age = -0.007 (n=22)
+  V2shadowA picks n=103  price-age-at-first-pitch median=165 min [min 22 max 1179]; quote-age-at-lock median=20 min [max 987]
+     fresh (<= median)  n= 53 WR=0.660 mkt=0.545 win-mkt=+0.115 units=+8.40 ROI=+15.9% clv=-0.51 (n=4)
+     stale (> median)   n= 50 WR=0.640 mkt=0.540 win-mkt=+0.100 units=+6.47 ROI=+12.9% clv=-1.62 (n=38)
+     slope clv_pts per hour of price age = -0.095 (n=42)
+  V2shadowC fills n=39  price-age-at-first-pitch median=901 min [min 84 max 1804]; quote-age-at-lock median=711 min [max 1568]
+     fresh (<= median)  n= 20 WR=0.700 mkt=0.545 win-mkt=+0.155 units=+4.79 ROI=+24.0% clv=-1.45 (n=7)
+     stale (> median)   n= 19 WR=0.789 mkt=0.553 win-mkt=+0.237 units=+6.99 ROI=+36.8% clv=-0.67 (n=17)
+     slope clv_pts per hour of price age = +0.020 (n=24)
