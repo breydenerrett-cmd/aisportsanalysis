@@ -1108,6 +1108,16 @@ export async function renderCardRecord(container, options = {}) {
       text: "Every pick this product has made, frozen before the result was known and chained so none of it can "
           + "be quietly edited afterward — the wins and the losses both." }));
   }
+  // THE NUMBERS COME FIRST. Measured 2026-10-01 on a 390px phone: the
+  // won-lost figure sat 1,884px down, under the units explainer, the signup
+  // box and the calendar -- more than two screens before the page showed the
+  // one thing its link ("See every pick, graded") promised. The explainer
+  // now follows the figure it explains.
+  const nothingSettled = !record.days;
+  if (!nothingSettled) {
+    screen.appendChild(headline(record, sport));
+    screen.appendChild(voidsNote(record));
+  }
   screen.appendChild(unitsNote());
   const topCta = signupCta("top");
   if (topCta) screen.appendChild(topCta);
@@ -1121,13 +1131,10 @@ export async function renderCardRecord(container, options = {}) {
                                  (history && history.pending_days) || []);
   if (calendarBlock) screen.appendChild(calendarBlock);
 
-  const nothingSettled = !record.days;
   if (nothingSettled) {
     screen.appendChild(chainStatus(record));
     screen.appendChild(emptyRecord(sport, rule));
   } else {
-    screen.appendChild(headline(record, sport));
-    screen.appendChild(voidsNote(record));
     // MLB-ONLY PANELS (2026-09-20). Props, totals-graded-apart and their
     // sum describe MLB's card, which splits those populations. NFL's rule
     // keeps spreads, totals and moneylines in ONE `picks` list, so on NFL

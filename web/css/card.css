@@ -588,6 +588,18 @@
   .crp-day .ov2-table td:nth-child(2), .crp-day .ov2-table td:nth-child(3) { width: auto; }
 }
 
+/* A PHONE SHOWS THE BET AND WHAT HAPPENED WITHOUT A SIDEWAYS SCROLL.
+   Measured 2026-10-01 at 390px: the bet column took 260 of the 326 visible
+   pixels, so the result column ran 34px past the edge (the final score
+   under "Won" / "Lost" was clipped) and the price was off-screen. The bet
+   wraps in a narrower column instead; book and return are still there, one
+   swipe to the right. Nothing is hidden. */
+@media (max-width: 520px) {
+  .crp-day .ov2-table { min-width: 520px; }
+  .crp-day .ov2-table .crp-pick-bet { max-width: 150px; }
+  .crp-day .ov2-table th, .crp-day .ov2-table td { padding-left: var(--sp-4); padding-right: var(--sp-4); }
+}
+
 /* =====================================================================
  * THE CALENDAR (web/js/cardrecord.js's `calendar`)
  *
