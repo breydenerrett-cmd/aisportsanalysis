@@ -1,6 +1,6 @@
 # LineHound survival dashboard
 
-Generated 2026-10-01 23:32Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and `docs/sales/pipeline.csv`, not this file.
+Generated 2026-10-01 23:59Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and `docs/sales/pipeline.csv`, not this file.
 
 | | |
 |---|---|
@@ -55,7 +55,8 @@ Generated 2026-10-01 23:32Z by `scripts/survival_dashboard.py`. Edit `config/bus
   - game: 1-0, +0.93u, ROI +92.6% (n=1)
 - **NFL previous** (Our first NFL rule; 2026-09-17..2026-09-21): 7-3, -0.26u, ROI -2.6% (n=10)
   - game: 7-3, -0.26u, ROI -2.6% (n=10)
-- **MMA current** (Our UFC card; no dates): nothing graded
+- **MMA current** (Our UFC card; 2026-09-22..2026-09-26): 5-1, +2.50u, ROI +41.7% (n=6)
+  - game: 5-1, +2.50u, ROI +41.7% (n=6)
 
 No rule here has evidence of an edge. Closing-line value and calibration: see `docs/audit/` for the latest loss diagnosis.
 
@@ -70,7 +71,7 @@ No rule here has evidence of an edge. Closing-line value and calibration: see `d
 - Record page: fixed and on staging (5a85b867): every night lists its picks and fills; on a phone the won-lost figure is on the first screen and the result column fits. Production picks it up at the next hourly refresh.
 - Capture cadence: fixed 2026-10-01 23:15Z. Slots had dropped to about one an hour because one step re-read the day's raw files once per observation (21 minutes per run, growing all day). Now 65 seconds on a runner, output byte-identical. docs/audit/2026-10-01/CAPTURE_STARVATION.md. Watch that slots keep completing and production's hourly refresh resumes.
 - Hourly production refresh gate: it checks that the latest COMPLETED tests run is green, not that the commit being deployed has a green run. A push made late in an hour can reach production before its own tests finish. Proposed fix written in docs/audit/2026-10-01/PRODUCTION_RECOVERY.md; workflow edits are the owner's call. Until then: no code push between minute 45 and minute 15.
-- UFC picks never graded (results are entered by hand).
+- UFC: the seven published picks were graded by hand on 2026-10-01 (5-1, +2.50u, 1 void; docs/audit/2026-10-01/UFC_GRADING.md). Each new event still needs its results typed in afterwards; nothing does that automatically. One pick was published on a bout whose fighter had been replaced two days earlier (graded VOID).
 - V2 has published zero MAIN picks since 2026-09-26; every entry since is a fill. The public MAIN record is frozen at 4 dates.
 - Shadow ledgers hold one wrong permanent VOID (game 824785, played a day late). Append-only correction pending.
 - NFL picks store no model probability or observation time, so NFL calibration and closing-line value cannot be measured.
@@ -102,6 +103,7 @@ No rule here has evidence of an edge. Closing-line value and calibration: see `d
 - Admin page shows signups by outreach source; link previews for the landing page and the record link
 - Capture slowdown found and fixed: engine slate 21 minutes -> 65 seconds on a runner
 - Staging billing confirmed in test mode (from /health, no key shown); rehearsal purchase steps in GO_LIVE section 5
+- UFC: seven published picks graded from two independent sources each
 
 **Next customer action:** Brey: send batch 1 (docs/sales/batch_01.md). Start with items 1 and 2 (two forums where promotion is allowed), then the four creators and five X replies; at most five Discord notes a day. Log each with scripts/outreach_batch.py.
 
