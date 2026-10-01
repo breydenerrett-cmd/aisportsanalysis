@@ -1,6 +1,6 @@
 # LineHound survival dashboard
 
-Generated 2026-10-01 19:28Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and `docs/sales/pipeline.csv`, not this file.
+Generated 2026-10-01 20:15Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and `docs/sales/pipeline.csv`, not this file.
 
 | | |
 |---|---|
@@ -78,7 +78,7 @@ No rule here has evidence of an edge. Closing-line value and calibration: see `d
 
 ## Top blockers
 
-- Production shows only what was in the repository when it was last deployed: tonight's card, odds and results do not reach linehound.app until someone runs deploy-prod again. Staging refreshes on every push; production is manual by design. A paying customer would see a stale card the next day. Needs an owner decision on an automatic production refresh.
+- Production refresh is stuck. CORRECTION (2026-10-01 20:15Z): production already refreshes itself every hour (the forward-capture workflow dispatches deploy-prod on the first slot of each hour when the latest tests run is green; built 2026-09-22). My earlier note that it only updates by hand was wrong. What is true: a deploy-prod run has been stuck in its Deploy step since 18:13Z, so production's data is from 18:04Z and every later refresh has been cancelled or is waiting behind it. Cancelling that run lets the next one deploy the current branch head, which now includes the buying path and the postseason page. Also still true: deploy-prod does not restore the historical-store cache, so production's results, pitcher and standings stores are the repository's old copies.
 - Stripe is not live: account verification pending (date of birth, phone), then the five Fly secrets. Owner.
 - No distribution: zero outreach sent. Target list and scripts in docs/sales/.
 - Discord feed not wired: needs the webhook secret and one env line on the default branch. Owner + me.
