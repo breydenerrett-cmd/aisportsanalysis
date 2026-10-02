@@ -303,7 +303,7 @@ def _step_counts(start: str, end: str, *, db=None) -> Dict[str, int]:
     """Each FUNNEL_STEPS kind's count within [start, end] inclusive --
     a raw event count for most steps, a distinct-first-occurrence count for
     FIRST_OCCURRENCE_STEPS (see that set's docstring)."""
-    all_events = events.list_events(db=db)
+    all_events = [e for e in events.list_events(db=db) if not _is_internal(e)]
     counts = {step: 0 for step in FUNNEL_STEPS}
     for step in FUNNEL_STEPS:
         if step in FIRST_OCCURRENCE_STEPS:
@@ -314,6 +314,26 @@ def _step_counts(start: str, end: str, *, db=None) -> Dict[str, int]:
                 1 for event in all_events
                 if event.kind == step and start <= event.at[:10] <= end)
     return counts
+
+
+# OUR OWN TEST TRAFFIC IS NOT A CUSTOMER (2026-10-02). Before outreach was
+# sent the funnel was walked end to end on the real domain with a labelled
+# test link. Those events have to stay visible, or the test proves nothing,
+# and must not be counted as visitors or signups, or the first real lead
+# arrives into numbers that already include us. A source that is exactly
+# "internal" or starts with "internal-" (utm_source=internal-test,
+# internal-brey, ...) keeps its own row in `by_source`, is left out of every
+# funnel step and unique-visitor count, and the response says how many events
+# were left out. The hyphen matters: "international-bettors" is a customer.
+INTERNAL_SOURCE = "internal"
+
+
+def _is_internal(event) -> bool:
+    value = (event.properties or {}).get("utm_source")
+    if not isinstance(value, str):
+        return False
+    value = value.strip().lower()
+    return value == INTERNAL_SOURCE or value.startswith(INTERNAL_SOURCE + "-")
 
 
 def _source_of(event) -> str:
@@ -344,7 +364,7 @@ def _unique_visitor_counts(start: str, end: str, *, db=None) -> Dict[str, int]:
     send the id instead of being the whole table."""
     seen: Dict[str, set] = {step: set() for step in UNIQUE_VISITOR_STEPS}
     for event in _window_events(start, end, db=db):
-        if event.kind in seen:
+        if event.kind in seen and not _is_internal(event):
             seen[event.kind].add(event.user_hash)
     return {kind: len(hashes) for kind, hashes in seen.items()}
 
@@ -422,5 +442,7 @@ def get_admin_funnel(start: Optional[str] = None, end: Optional[str] = None,
     for step in steps_out:
         if step["kind"] in uniques:
             step["unique_visitors"] = uniques[step["kind"]]
+    internal = sum(1 for event in _window_events(start, end) if _is_internal(event))
     return {"start": start, "end": end, "steps": steps_out,
-            "by_source": _counts_by_source(start, end)}
+            "by_source": _counts_by_source(start, end),
+            "internal_events_excluded": internal}

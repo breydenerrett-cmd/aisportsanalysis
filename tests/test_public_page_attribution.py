@@ -318,6 +318,36 @@ class PublicPageViewInTheAdminFunnel(_DbCase):
         self.assertEqual(funnel["by_source"]["reddit"]["landing_view"], 1)
         self.assertEqual(funnel["by_source"]["reddit"]["public_page_view"], 0)
 
+    def test_our_own_test_traffic_is_shown_in_its_row_and_left_out_of_every_total(self):
+        # One real visitor and one walk-through by us with a labelled link.
+        self._post("landing_view", {"utm_source": "l012-unit-circle"}, anon="c" * 32)
+        for kind, props in (("public_page_view", {"page": "record-card"}), ("landing_view", {}),
+                            ("cta_click", {"hook": "cta-signup-hero"}), ("signup_started", {})):
+            self._post(kind, dict(props, utm_source="internal-test"), anon="d" * 32)
+        from src.appstate import events
+        events.record_event_safe(999, events.ACCOUNT_CREATED, {"utm_source": "internal-test"})
+        funnel = self._funnel()
+        steps = {s["kind"]: s for s in funnel["steps"]}
+        self.assertEqual(steps["landing_view"]["count"], 1)
+        self.assertEqual(steps["landing_view"]["unique_visitors"], 1)
+        self.assertEqual(steps["signup_started"]["count"], 0)
+        self.assertEqual(steps["account_created"]["count"], 0)
+        row = funnel["by_source"]["internal-test"]
+        self.assertEqual((row["public_page_view"], row["landing_view"], row["signup_started"],
+                          row["account_created"]), (1, 1, 1, 1))
+        self.assertEqual(funnel["internal_events_excluded"], 5)
+        self.assertEqual(funnel["by_source"]["l012-unit-circle"]["landing_view"], 1)
+
+    def test_only_internal_or_internal_dash_something_is_excluded(self):
+        for source in ("international-bettors", "Internal-Brey", "x-internal", "internal", "", None):
+            props = {"utm_source": source} if source is not None else {}
+            self._post("landing_view", props, anon="e" * 32)
+        funnel = self._funnel()
+        steps = {s["kind"]: s for s in funnel["steps"]}
+        # "international-bettors" is a customer; the hyphen is the rule.
+        self.assertEqual(steps["landing_view"]["count"], 4)
+        self.assertEqual(funnel["internal_events_excluded"], 2)
+
     def test_the_main_funnel_steps_are_unchanged(self):
         from api.funnel import FUNNEL_STEPS
         self.assertNotIn(events.PUBLIC_PAGE_VIEW, FUNNEL_STEPS)
