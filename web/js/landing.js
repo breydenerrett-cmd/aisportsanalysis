@@ -62,8 +62,7 @@ function renderPricing(host, state) {
 /**
  * EVERY PAYING-RELATED WORD ON THIS PAGE, FROM /meta (2026-10-01).
  *
- * The markup carries the CAUTIOUS wording -- "Get notified when checkout
- * opens", the planned price, no trial badge, no "cancel anytime" line -- so a
+ * The markup carries the CAUTIOUS wording -- checkout.js's CAUTIOUS_CTA, the planned price, no trial badge, no "cancel anytime" line -- so a
  * crawler, a slow connection and a deploy with checkout off all read the true
  * thing. This upgrades it to the trial wording only when GET /meta says
  * checkout is "on", using that response's own trial length and price
@@ -315,8 +314,8 @@ async function fillCardRecord() {
  * once a block reaches it.
  */
 const RULE_BLOCKS = [
-  { role: "current", label: "Current rule" },
-  { role: "previous", label: "Previous rule (retired)" },
+  { role: "current", label: "Current method" },
+  { role: "previous", label: "Earlier method (retired)" },
 ];
 
 const SPORT_TILES = [
@@ -569,8 +568,8 @@ export function provenRecordSentence(cohort) {
   // The sign picks words through ternaries only -- never a branch that
   // builds different markup (tests/test_landing_profit_sign_rendering.py).
   const negative = cohort.profit_units < 0;
-  const lead = negative ? "The record so far is negative for the current rule"
-    : "The record so far for the current rule";
+  const lead = negative ? "The record so far is negative for the current method"
+    : "The record so far for the current method";
   const tail = negative ? "."
     : ". That is a result so far, not evidence that the picks make money.";
   return `${lead}: ${figures}${tail}`;
@@ -775,6 +774,24 @@ export function renderLastCard(section, payload, now = new Date()) {
   return true;
 }
 
+/**
+ * THE HERO'S SECOND BUTTON POINTS AT THE SAMPLE ONLY WHILE THERE IS ONE
+ * (2026-10-02). The markup says "See last night's card, graded" and jumps to
+ * #free-sample, but that section is hidden until a settled day has rendered. A
+ * button that promises a card and scrolls nowhere is worse than no button, so
+ * when the sample is not shown the button becomes the plain record link. The
+ * hook (`cta-record-secondary`) never changes: clicks are counted by hook.
+ */
+export const SAMPLE_BUTTON = "See last night's card, graded";
+export const RECORD_BUTTON = "See every pick, graded";
+
+export function pointSampleButton(sampleShown) {
+  const button = document.querySelector("[data-hook='cta-record-secondary']");
+  if (!button) return;
+  button.textContent = sampleShown ? SAMPLE_BUTTON : RECORD_BUTTON;
+  button.setAttribute("href", sampleShown ? "#free-sample" : "index.html#/record-card");
+}
+
 export async function fillLastCard() {
   const section = document.querySelector("[data-hook='last-card']");
   if (!section) return;
@@ -785,11 +802,14 @@ export async function fillLastCard() {
     // Nothing to show, so nothing is shown: the section stays hidden.
     section.hidden = true;
   }
+  pointSampleButton(!section.hidden);
 }
 
 function boot() {
   const disclaimerHost = document.querySelector("[data-hook='disclaimer-host']");
   const pricingHost = document.querySelector("[data-hook='pricing-host']");
+  // One <footer> on this page: the host sits inside it, so meta.js mounts the
+  // shared disclaimer as a group there, not as a second footer.
   if (disclaimerHost) renderDisclaimerFooter(disclaimerHost);
   if (pricingHost) renderPricing(pricingHost, NOT_ON);
   fillCheckoutCopy();

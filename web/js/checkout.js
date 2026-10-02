@@ -38,11 +38,15 @@ import { BETA_TIER, foundingNote } from "./pricing.js";
 
 /** The button text everywhere checkout is not open. The link is unchanged:
  * the signup page saves the email and nothing else (no sender exists to send
- * anything). */
-export const CAUTIOUS_CTA = "Get notified when checkout opens";
+ * anything). Reworded 2026-10-02 from "Get notified when checkout opens"
+ * (docs/CONVERSION_REVIEW_2026-10-02.md): "checkout" is our billing state, not
+ * the visitor's next step, and a waitlist is exactly what the form is. */
+export const CAUTIOUS_CTA = "Join the waitlist";
 
-/** Static-HTML default and off-state hero note. */
-export const NOT_OPEN_NOTE = "Checkout is not open yet.";
+/** Static-HTML default and off-state hero note: three plain sentences, the
+ * planned price in the middle (only when there is one to state). */
+export const NOT_OPEN_NOTE = "Not on sale yet.";
+export const FREE_NOW_NOTE = "The record and the postseason odds are free now.";
 
 /** What every page says before /meta has answered, and whenever it cannot be
  * read: not on, no trial, only the planned price. */
@@ -131,14 +135,16 @@ export function signinLinkLabel(state) {
 }
 
 /**
- * The line under the landing hero buttons. Off: the planned price and the
- * plain fact that checkout is not open. On: the trial (only if there is one),
- * the price from /meta, and the cancellation promise the billing view backs.
+ * The line under the landing hero buttons. Off: it is not on sale yet, the
+ * planned price (when there is one), and what is free now. On: the trial (only
+ * if there is one), the price from /meta, and the cancellation promise the
+ * billing view backs.
  */
 export function heroNote(state) {
   if (!state || !state.on) {
-    const planned = plannedPrice(state);
-    return planned ? `${planned}. ${NOT_OPEN_NOTE}` : NOT_OPEN_NOTE;
+    const amount = dollars(state && state.priceCents);
+    return [NOT_OPEN_NOTE, amount ? `Planned price ${amount} a month.` : "", FREE_NOW_NOTE]
+      .filter(Boolean).join(" ");
   }
   const price = monthlyPrice(state.priceCents);
   const trial = trialPhrase(state);

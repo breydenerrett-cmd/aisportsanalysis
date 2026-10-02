@@ -238,10 +238,10 @@ class CheckoutCopyInEveryState(unittest.TestCase):
             with self.subTest(state=name):
                 out = self.run_scenario(kind="helpers", meta=meta)
                 self.assertFalse(out["state"]["on"])
-                self.assertEqual(out["cta"], "Get notified when checkout opens")
-                self.assertEqual(out["gate"], "Get notified when checkout opens")
-                self.assertEqual(out["record"], "Get notified when checkout opens")
-                self.assertEqual(out["hero"], "Planned price: $19.99/month. Checkout is not open yet.")
+                self.assertEqual(out["cta"], "Join the waitlist")
+                self.assertEqual(out["gate"], "Join the waitlist")
+                self.assertEqual(out["record"], "Join the waitlist")
+                self.assertEqual(out["hero"], "Not on sale yet. Planned price $19.99 a month. The record and the postseason odds are free now.")
                 self.assertEqual(out["pricing"], "Planned price: $19.99/month")
                 self.assertIsNone(out["card"])
                 self.assertIsNone(out["started"])
@@ -361,7 +361,7 @@ class CheckoutCopyInEveryState(unittest.TestCase):
         for name, meta in NOT_ON_CASES:
             with self.subTest(state=name):
                 out = self.run_scenario(kind="signin", meta=meta)
-                self.assertEqual(out["link"], "GET NOTIFIED WHEN CHECKOUT OPENS")
+                self.assertEqual(out["link"], "JOIN THE WAITLIST")
                 self.assertIsNone(TRIAL_RE.search(out["note"]), out["note"])
         out = self.run_scenario(kind="signin", meta=ON14)
         self.assertEqual(out["link"], "START YOUR 14-DAY FREE TRIAL")
@@ -373,7 +373,7 @@ class CheckoutCopyInEveryState(unittest.TestCase):
         for name, meta in NOT_ON_CASES:
             with self.subTest(state=name):
                 self.assertEqual(self.run_scenario(kind="gate", meta=meta)["link"],
-                                 "Get notified when checkout opens")
+                                 "Join the waitlist")
         self.assertEqual(self.run_scenario(kind="gate", meta=ON7)["link"], "Start free trial")
         self.assertEqual(self.run_scenario(kind="gate", meta=ON0)["link"], "Subscribe")
 
@@ -381,10 +381,10 @@ class CheckoutCopyInEveryState(unittest.TestCase):
         for name, meta in NOT_ON_CASES:
             with self.subTest(state=name):
                 out = self.run_scenario(kind="record", meta=meta)
-                self.assertEqual(out["before"], "Get notified when checkout opens")
-                self.assertEqual(out["link"], "Get notified when checkout opens")
+                self.assertEqual(out["before"], "Join the waitlist")
+                self.assertEqual(out["link"], "Join the waitlist")
         out = self.run_scenario(kind="record", meta=ON14)
-        self.assertEqual(out["before"], "Get notified when checkout opens",
+        self.assertEqual(out["before"], "Join the waitlist",
                          "the first paint must be the cautious wording")
         self.assertEqual(out["link"], "Start your 14-day free trial to see tonight's card")
         out = self.run_scenario(kind="record", meta=ON0)
@@ -421,9 +421,9 @@ class CheckoutCopyInEveryState(unittest.TestCase):
                 out = self.run_scenario(kind="landing", meta=meta, nodes=nodes)
                 by = {n["hook"]: n for n in out["nodes"]}
                 for hook in ("cta-primary", "cta-signup-hero", "cta-signup", "cta-signup-bottom"):
-                    self.assertEqual(by[hook]["text"], "Get notified when checkout opens", hook)
+                    self.assertEqual(by[hook]["text"], "Join the waitlist", hook)
                 self.assertEqual(by["hero-cta-note"]["text"],
-                                 "Planned price: $19.99/month. Checkout is not open yet.")
+                                 "Not on sale yet. Planned price $19.99 a month. The record and the postseason odds are free now.")
                 self.assertTrue(by["pricing-trial-badge"]["hidden"])
                 self.assertTrue(by["pricing-cancel-line"]["hidden"])
                 self.assertEqual(by["pricing-host"]["text"].strip(), "Planned price: $19.99/month")

@@ -72,7 +72,7 @@
     <a href="#pricing">Pricing</a>
     <a href="#faq">FAQ</a>
   </div>
-  <a class="btn btn--primary" href="index.html#/signup" data-hook="cta-primary" data-checkout-cta>Get notified when checkout opens</a>
+  <a class="btn btn--primary" href="index.html#/signup" data-hook="cta-primary" data-checkout-cta>Join the waitlist</a>
 </nav>
 
 <main>
@@ -93,12 +93,44 @@
   <div class="hero__top">
   <div class="hero__claim" data-rise data-delay="40" data-hook="hero-claim">
     <span class="eyebrow eyebrow--money">MLB · NFL · UFC — every pick published</span>
-    <h1 class="hero__claim-title">Every pick posted before the game.<br>Every loss kept on the record.</h1>
-    <p class="hero__claim-body">LineHound posts its picks before the game and keeps every result public, wins and losses. MLB and NFL grade automatically the next morning. UFC picks publish before the event and grade in public once results are entered by hand.</p>
+    <!-- THE PRODUCT, THEN THE METHOD (2026-10-02, docs/CONVERSION_REVIEW_2026-10-02.md
+         change 1). The headline says what is offered; the lede says what a
+         card holds and that it is graded in public, wins and losses. No
+         result is promised and no edge is claimed. The grading schedule
+         (MLB/NFL next morning, UFC by hand) is no longer here; it is on the
+         page in the FAQ ("Which sports do you cover?") and in the sport tiles. -->
+    <h1 class="hero__claim-title">Tonight's MLB, NFL and UFC bets, posted before the game.</h1>
+    <p class="hero__claim-body">A short card each night: the bet, the best price and where to find it, and why. Every card is graded in public afterwards, wins and losses.</p>
     <div class="hero__cta-group" data-rise data-delay="160">
-      <a class="btn btn--primary" href="index.html#/signup" data-hook="cta-signup-hero" data-checkout-cta>Get notified when checkout opens</a>
-      <a class="btn btn--ghost" href="index.html#/record-card" data-hook="cta-record-secondary">See every pick, graded</a>
-      <p class="hero__cta-note" data-hook="hero-cta-note">Planned price: $19.99/month. Checkout is not open yet.</p>
+      <a class="btn btn--primary" href="index.html#/signup" data-hook="cta-signup-hero" data-checkout-cta>Join the waitlist</a>
+      <!-- The second button jumps to the free sample on this page while that
+           section is showing; landing.js (pointSampleButton) turns it into the
+           plain record link when the sample is hidden. The full record is also
+           linked, as text, right below. -->
+      <a class="btn btn--ghost" href="#free-sample" data-hook="cta-record-secondary">See last night's card, graded</a>
+      <p class="hero__cta-note" data-hook="hero-cta-note">Not on sale yet. Planned price $19.99 a month. The record and the postseason odds are free now.</p>
+      <a class="hero__record-link" href="index.html#/record-card" data-hook="hero-record-link">Or open the full record, every pick &rarr;</a>
+    </div>
+
+    <!-- WHAT YOU GET, IN FOUR LINES (change 3). Directly under the buttons and
+         above the record panel. The longer "What you get" section below
+         carries the detail. Bet Check is not mentioned (owner ruling,
+         2026-09-22). No figure is typed here. -->
+    <div class="hero__wyg" data-hook="hero-wyg" data-rise data-delay="200">
+      <div class="hero__wyg-col" data-hook="hero-wyg-free">
+        <p class="hero__wyg-head">Free now</p>
+        <ul class="hero__wyg-list">
+          <li><a href="index.html#/record-card">The full graded record</a></li>
+          <li><a href="postseason.html">MLB postseason odds</a></li>
+        </ul>
+      </div>
+      <div class="hero__wyg-col" data-hook="hero-wyg-subscribers">
+        <p class="hero__wyg-head">For subscribers</p>
+        <ul class="hero__wyg-list">
+          <li>Tonight's card, before the game</li>
+          <li>Matchups, odds and props</li>
+        </ul>
+      </div>
     </div>
   </div>
 
@@ -118,11 +150,12 @@
        fillRuleBlock() the MLB sport tile below uses -- one renderer, one
        data source, so the hero and the tile cannot disagree by
        construction. -->
+  <div class="hero__proof-col">
   <aside class="hero__proof" data-rise data-delay="120" data-hook="hero-proof" aria-label="The record so far">
     <span class="eyebrow eyebrow--money">The record so far</span>
 
     <div class="hero__rule-block" data-hook="hero-current-block">
-      <p class="eyebrow eyebrow--muted" data-hook="hero-current-label">Current rule</p>
+      <p class="eyebrow eyebrow--muted" data-hook="hero-current-label">Current method</p>
       <div class="hero__proof-grid">
         <div class="hero__stat">
           <span class="hero__stat-value" data-hook="hero-current-wl">&mdash;</span>
@@ -142,7 +175,7 @@
     </div>
 
     <div class="hero__rule-block" data-hook="hero-previous-block">
-      <p class="eyebrow eyebrow--muted" data-hook="hero-previous-label">Previous rule (retired)</p>
+      <p class="eyebrow eyebrow--muted" data-hook="hero-previous-label">Earlier method (retired)</p>
       <div class="hero__proof-grid">
         <div class="hero__stat">
           <span class="hero__stat-value" data-hook="hero-previous-wl">&mdash;</span>
@@ -164,6 +197,11 @@
     <p class="hero__proof-note" data-hook="hero-claim-record"><span data-hook="card-record">Every graded night is posted on the record page, losses included.</span></p>
     <a class="hero__proof-link" href="index.html#/record-card">See every pick &rarr;</a>
   </aside>
+  <!-- PROVEN AND NOT PROVEN, ONE LINE (change 5). A quick reader blurs "the
+       record is honest" with "the picks win"; this says which one the page
+       can show. No figure; nothing here says the picks make money. -->
+  <p class="hero__proven-line" data-hook="hero-proven-line"><strong>Proven:</strong> every pick is published before the game and never edited. <strong>Not proven:</strong> that the picks make money.</p>
+  </div>
   </div>
 
   <!-- THE FEATURED PICK MODULE. web/js/landing-live.js replaces this with
@@ -232,7 +270,7 @@
      figure is typed here. -->
 <section class="section section--tight" id="what-you-get" aria-label="what you get" data-hook="what-you-get">
   <div class="section__head" data-rise>
-    <span class="eyebrow eyebrow--money">What you get</span>
+    <span class="eyebrow eyebrow--money">What you get, in detail</span>
   </div>
   <h2 class="section__title" data-rise data-delay="60">What is free, and what is for subscribers.</h2>
   <div class="story-grid wyg-grid">
@@ -261,19 +299,28 @@
      no figure, so a slow or failed fetch leaves true words. landing.js
      (fillProvenBlock) swaps in the record and research numbers from GET
      /meta only. -->
-<section class="section section--tight" aria-label="what is proven and what is not" data-hook="proven-block">
+<!-- 2026-10-02 (docs/CONVERSION_REVIEW_2026-10-02.md change 6): this section now
+     also carries what "How it works" and "Why we publish the losses" used to
+     say, once each. What each pick states and how it is graded moved into the
+     two "Proven" lines; that losses stay and the research record are the
+     paragraphs under the list. The #how-it-works anchor the nav links to lives
+     here. The figures that used to sit in the research paragraph (how many
+     ideas were read, which years) are not typed here -- the sentence below is
+     filled from /meta and the FAQ ("No betting edge found yet") still states
+     them. -->
+<section class="section section--tight" id="how-it-works" aria-label="what is proven and what is not" data-hook="proven-block">
   <div class="section__head" data-rise>
-    <span class="eyebrow">Straight answers</span>
+    <span class="eyebrow">How it works, and what is proven</span>
   </div>
   <h2 class="section__title" data-rise data-delay="60">What is proven and what is not.</h2>
   <ul class="callout-list" data-hook="proven-list">
     <li class="panel chamfer" data-hook="proven-published">
       <div class="story-card__kicker">Proven</div>
-      <span data-hook="proven-published-text">Every pick is published before the game. The ledger is hash-chained, so a pick cannot be added or changed afterwards without breaking the chain.</span>
+      <span data-hook="proven-published-text">Every pick is published before the game: the pick, how likely it is by the whole market and by our own numbers, and what the price needs to break even. The ledger is hash-chained, so a pick cannot be added or changed afterwards without breaking the chain.</span>
     </li>
     <li class="panel chamfer" data-hook="proven-graded">
       <div class="story-card__kicker">Proven</div>
-      <span data-hook="proven-graded-text">Every pick is graded exactly as it was published. Nothing is re-graded and nothing is edited after the fact.</span>
+      <span data-hook="proven-graded-text">Every pick is graded exactly as it was published: a win, a loss or a void, said plainly. Nothing is re-graded, re-ranked, removed or edited after the fact.</span>
     </li>
     <li class="panel chamfer" data-hook="proven-record">
       <div class="story-card__kicker">Result so far</div>
@@ -288,6 +335,10 @@
       <span data-hook="proven-postseason-text">The postseason odds are model estimates with no track record yet.</span>
     </li>
   </ul>
+  <div class="prose" style="margin-top:20px" data-rise data-delay="60" data-hook="honesty-story">
+    <p>Losses stay on the record at the same size as the wins. Every graded night sits on one public page you can open yourself, not a highlight reel of the nights we were right.</p>
+    <p>We pre-registered a long list of separate research ideas, from bullpen workload and platoon matchups to market-structure effects like fading recent price moves, and tested them against past MLB moneyline games. We publish that too, at the same size as everything else.</p>
+  </div>
 </section>
 
 <!-- FREE SAMPLE: THE MOST RECENT FULLY GRADED CARD (2026-10-01). HIDDEN
@@ -295,7 +346,7 @@
      GET /card/history?limit=1 answers with a settled day. A failed fetch or
      an empty answer leaves this whole section hidden: no empty frame, no
      placeholder figure. -->
-<section class="section section--tight" aria-label="last night's card" data-hook="last-card" hidden>
+<section class="section section--tight" id="free-sample" aria-label="last night's card" data-hook="last-card" hidden>
   <div class="section__head">
     <span class="eyebrow eyebrow--money">A free sample</span>
   </div>
@@ -304,30 +355,22 @@
   <div data-hook="last-card-body"></div>
 </section>
 
-<!-- HOW IT WORKS -->
-<section class="section" id="how-it-works" aria-label="how it works" data-hook="how-it-works">
+<!-- PRICING -->
+<section class="section" id="pricing" aria-label="pricing" data-view="pricing" data-hook="pricing">
   <div class="section__head" data-rise>
-    <span class="eyebrow">How it works</span>
+    <span class="eyebrow eyebrow--money">Pricing</span>
   </div>
-  <h2 class="section__title" data-rise data-delay="60">Three steps. Nothing hidden.</h2>
-  <div class="story-grid" style="margin-top:32px">
-    <div class="story-card panel chamfer" data-rise data-delay="80">
-      <div class="story-card__kicker">1. Posted</div>
-      <div class="story-card__title">Every pick, before the game.</div>
-      <p class="story-card__body">The pick, how likely it is — by the whole market and by our own numbers — and
-        what the price needs to break even, written to a public, hash-chained record the moment it's made.</p>
-    </div>
-    <div class="story-card panel chamfer" data-rise data-delay="140">
-      <div class="story-card__kicker">2. Graded</div>
-      <div class="story-card__title">Win, lose, or void — said plainly.</div>
-      <p class="story-card__body">Graded exactly as it stood at its lock. Nothing is re-graded, re-ranked, or
-        quietly removed after the fact.</p>
-    </div>
-    <div class="story-card panel chamfer" data-rise data-delay="200">
-      <div class="story-card__kicker">3. Kept on the record</div>
-      <div class="story-card__title">Losses stay, same size as the wins.</div>
-      <p class="story-card__body">Every graded night sits on one public page you can open yourself — not a
-        highlight reel of the nights we were right.</p>
+  <h2 class="section__title" data-rise data-delay="60">One plan. No tiers to compare.</h2>
+  <div class="pricing-grid" style="margin-top:28px;grid-template-columns:minmax(0,1fr);max-width:460px">
+    <div class="pricing-card pricing-card--founding panel chamfer" data-rise data-delay="80">
+      <span class="badge badge--money chamfer chamfer--chip pricing-card__badge" data-hook="pricing-trial-badge" hidden></span>
+      <div data-hook="pricing-host"></div>
+      <ul class="pricing-card__list">
+        <li data-hook="pricing-cancel-line" hidden>Cancel anytime, no retention flow — access runs through what you've paid for</li>
+        <li>One monthly plan today, no countdown, no percent-off badge</li>
+        <li data-hook="pricing-includes">Tonight's cards before the game, plus Matchups, Odds, Props and the Tennis research board. The graded record stays free</li>
+      </ul>
+      <a class="btn btn--primary" href="index.html#/signup" data-hook="cta-signup" data-checkout-cta>Join the waitlist</a>
     </div>
   </div>
 </section>
@@ -357,22 +400,6 @@
   <p class="section__lede" style="max-width:none">This is one of three picks from the first night this record graded, 2026-09-10: 2 wins, 1 loss. Every night since has graded the same way, on the record page, losses included.</p>
 </section>
 
-<!-- WHY WE PUBLISH THE LOSSES -->
-<section class="section section--tight" aria-label="why we built this" data-hook="honesty-story">
-  <div class="section__head" data-rise>
-    <span class="eyebrow">Why we publish the losses</span>
-  </div>
-  <div class="prose" style="margin-top:8px" data-rise data-delay="60">
-    <!-- COUNT READ FROM THE REGISTRY at runtime (landing.js -> GET /meta ->
-         data/research/alpha_registry.jsonl). The figure written here is the
-         no-JS fallback and must match the registry. -->
-    <p>In 2026 we pre-registered a long list of separate research ideas and tested them against 2023–2024 MLB
-      moneyline games — <span data-hook="research-count">37</span> read so far, from bullpen workload
-      and platoon matchups to market-structure effects like fading recent price moves. Zero have survived
-      our own falsification checks. We publish that too, at the same size as everything else.</p>
-  </div>
-</section>
-
 <!-- SPORTS COVERED -- per-sport record tiles (task B1/B2, 2026-09-24).
      REPLACES four static "Live"/"Research" cards that claimed all three
      live sports were graded in public with no figures behind any of
@@ -397,7 +424,7 @@
       <span class="eyebrow eyebrow--money">MLB</span>
 
       <div class="hero__rule-block" data-hook="sport-tile-mlb-current-block">
-        <p class="eyebrow eyebrow--muted" data-hook="sport-tile-mlb-current-label">Current rule</p>
+        <p class="eyebrow eyebrow--muted" data-hook="sport-tile-mlb-current-label">Current method</p>
         <div class="hero__proof-grid">
           <div class="hero__stat">
             <span class="hero__stat-value" data-hook="sport-tile-mlb-current-wl">&mdash;</span>
@@ -417,7 +444,7 @@
       </div>
 
       <div class="hero__rule-block" data-hook="sport-tile-mlb-previous-block">
-        <p class="eyebrow eyebrow--muted" data-hook="sport-tile-mlb-previous-label">Previous rule (retired)</p>
+        <p class="eyebrow eyebrow--muted" data-hook="sport-tile-mlb-previous-label">Earlier method (retired)</p>
         <div class="hero__proof-grid">
           <div class="hero__stat">
             <span class="hero__stat-value" data-hook="sport-tile-mlb-previous-wl">&mdash;</span>
@@ -444,7 +471,7 @@
       <span class="eyebrow eyebrow--money">NFL</span>
 
       <div class="hero__rule-block" data-hook="sport-tile-nfl-current-block">
-        <p class="eyebrow eyebrow--muted" data-hook="sport-tile-nfl-current-label">Current rule</p>
+        <p class="eyebrow eyebrow--muted" data-hook="sport-tile-nfl-current-label">Current method</p>
         <div class="hero__proof-grid">
           <div class="hero__stat">
             <span class="hero__stat-value" data-hook="sport-tile-nfl-current-wl">&mdash;</span>
@@ -464,7 +491,7 @@
       </div>
 
       <div class="hero__rule-block" data-hook="sport-tile-nfl-previous-block">
-        <p class="eyebrow eyebrow--muted" data-hook="sport-tile-nfl-previous-label">Previous rule (retired)</p>
+        <p class="eyebrow eyebrow--muted" data-hook="sport-tile-nfl-previous-label">Earlier method (retired)</p>
         <div class="hero__proof-grid">
           <div class="hero__stat">
             <span class="hero__stat-value" data-hook="sport-tile-nfl-previous-wl">&mdash;</span>
@@ -491,7 +518,7 @@
       <span class="eyebrow eyebrow--money">UFC</span>
 
       <div class="hero__rule-block" data-hook="sport-tile-ufc-current-block">
-        <p class="eyebrow eyebrow--muted" data-hook="sport-tile-ufc-current-label">Current rule</p>
+        <p class="eyebrow eyebrow--muted" data-hook="sport-tile-ufc-current-label">Current method</p>
         <div class="hero__proof-grid">
           <div class="hero__stat">
             <span class="hero__stat-value" data-hook="sport-tile-ufc-current-wl">&mdash;</span>
@@ -518,7 +545,7 @@
            `previous` is ever a real (non-null) cohort object -- never
            for UFC as this product exists today. -->
       <div class="hero__rule-block" data-hook="sport-tile-ufc-previous-block" hidden>
-        <p class="eyebrow eyebrow--muted" data-hook="sport-tile-ufc-previous-label">Previous rule (retired)</p>
+        <p class="eyebrow eyebrow--muted" data-hook="sport-tile-ufc-previous-label">Earlier method (retired)</p>
         <div class="hero__proof-grid">
           <div class="hero__stat">
             <span class="hero__stat-value" data-hook="sport-tile-ufc-previous-wl">&mdash;</span>
@@ -533,7 +560,7 @@
             <span class="hero__stat-label">Nights graded</span>
           </div>
         </div>
-        <p class="hero__proof-sub" data-hook="sport-tile-ufc-previous-state">No previous rule yet.</p>
+        <p class="hero__proof-sub" data-hook="sport-tile-ufc-previous-state">No earlier method yet.</p>
         <p class="hero__proof-note" data-hook="sport-tile-ufc-previous-postseason" hidden></p>
       </div>
 
@@ -545,26 +572,6 @@
       <div class="story-card__kicker">Research</div>
       <div class="story-card__title">Tennis</div>
       <p class="story-card__body">A match board, not picks yet — research-stage, said plainly.</p>
-    </div>
-  </div>
-</section>
-
-<!-- PRICING -->
-<section class="section" id="pricing" aria-label="pricing" data-view="pricing" data-hook="pricing">
-  <div class="section__head" data-rise>
-    <span class="eyebrow eyebrow--money">Pricing</span>
-  </div>
-  <h2 class="section__title" data-rise data-delay="60">One plan. No tiers to compare.</h2>
-  <div class="pricing-grid" style="margin-top:28px;grid-template-columns:minmax(0,1fr);max-width:460px">
-    <div class="pricing-card pricing-card--founding panel chamfer" data-rise data-delay="80">
-      <span class="badge badge--money chamfer chamfer--chip pricing-card__badge" data-hook="pricing-trial-badge" hidden></span>
-      <div data-hook="pricing-host"></div>
-      <ul class="pricing-card__list">
-        <li data-hook="pricing-cancel-line" hidden>Cancel anytime, no retention flow — access runs through what you've paid for</li>
-        <li>One monthly plan today, no countdown, no percent-off badge</li>
-        <li data-hook="pricing-includes">Tonight's cards before the game, plus Matchups, Odds, Props and the Tennis research board. The graded record stays free</li>
-      </ul>
-      <a class="btn btn--primary" href="index.html#/signup" data-hook="cta-signup" data-checkout-cta>Get notified when checkout opens</a>
     </div>
   </div>
 </section>
@@ -640,18 +647,21 @@
 <section class="closing-band" aria-label="call to action" data-view="cta" data-hook="cta-bottom">
   <div class="closing-band__title" data-hook="closing-cta-title">The next card posts before first pitch.<br>See what it says.</div>
   <div class="closing-band__cta">
-    <a class="btn btn--primary btn--lg" href="index.html#/signup" data-hook="cta-signup-bottom" data-checkout-cta>Get notified when checkout opens</a>
+    <a class="btn btn--primary btn--lg" href="index.html#/signup" data-hook="cta-signup-bottom" data-checkout-cta>Join the waitlist</a>
   </div>
 </section>
 
 </main>
 
-<footer class="site-footer" aria-label="footer">
+<!-- ONE FOOTER (2026-10-02, change 7). This was a <footer> wrapping another
+     <footer> (the shared disclaimer, mounted by landing.js), two stacked blocks
+     that each began with the LINEHOUND mark. Now one <footer>: the page links,
+     the data note, the shared legal block (it carries the brand mark, the 21+
+     / play responsibly line, the helpline and the disclaimer, and mounts as a
+     group inside this footer) and the unadvertised Bet Check link. Every link
+     and every sentence that was in either block is still here. -->
+<footer class="site-footer" aria-label="footer" data-hook="landing-footer">
   <div class="site-footer__top">
-    <span class="wordmark" data-hook="brand-mark">
-      <span class="wordmark__mark"><span></span></span>
-      <span class="wordmark__text">LINEHOUND</span>
-    </span>
     <div class="site-nav__links" style="display:flex">
       <a href="#how-it-works">How it works</a>
       <a href="#pricing">Pricing</a>

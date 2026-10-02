@@ -179,7 +179,39 @@
 .hero__cta-group { display: flex; flex-direction: row; flex-wrap: wrap; gap: var(--sp-4) var(--sp-5); align-items: center; margin-top: var(--sp-9); }
 .hero__cta-group .hero__cta-note { flex-basis: 100%; }
 .hero__feature { position: relative; }
-.hero__cta-note { font-size: 14.5px; color: var(--text-dim); max-width: 320px; }
+.hero__cta-note { font-size: 14.5px; color: rgba(255, 255, 255, .72); max-width: 440px; }
+
+/* ---- first screen, 2026-10-02 (docs/CONVERSION_REVIEW_2026-10-02.md) -----
+   The full-record text link under the hero buttons, the four-line "what you
+   get" block, and the one-line "proven / not proven" under the record panel.
+   Plain text on the hero's dark glass; nothing here changes the size or
+   colour of any record figure. */
+.hero__cta-group .hero__record-link { flex-basis: 100%; }
+.hero__record-link {
+  font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em;
+  color: #FFFFFF; text-decoration: none;
+  border-bottom: 1px solid rgba(255, 255, 255, .35); padding-bottom: 2px;
+  justify-self: start; width: fit-content;
+}
+.hero__record-link:hover { border-bottom-color: #FFFFFF; }
+.hero__wyg {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-5) var(--sp-7);
+  margin-top: var(--sp-8); max-width: 560px;
+  padding: var(--sp-6) var(--sp-7); border-radius: 12px;
+  background: rgba(255, 255, 255, .04); border: 1px solid rgba(255, 255, 255, .08);
+}
+.hero__wyg-head {
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: .12em;
+  text-transform: uppercase; color: rgba(255, 255, 255, .55);
+}
+.hero__wyg-list { list-style: none; margin: var(--sp-3) 0 0; padding: 0; display: grid; gap: var(--sp-2); }
+.hero__wyg-list li { font-size: 14.5px; line-height: 1.4; color: rgba(255, 255, 255, .86); overflow-wrap: anywhere; }
+.hero__wyg-list a { color: #FFFFFF; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: rgba(255, 255, 255, .4); }
+.hero__proven-line {
+  margin-top: var(--sp-5); font-size: 14px; line-height: 1.55; color: rgba(255, 255, 255, .78);
+  max-width: 560px;
+}
+.hero__proven-line strong { color: #FFFFFF; font-weight: 600; }
 /* ---- public-demo front-door entry (hidden unless GET /meta says
    public_demo -- see landing.js's revealPublicDemoEntry) --------------*/
 .hero__demo-entry { display: flex; flex-direction: column; gap: var(--sp-3); align-items: flex-start; }
@@ -475,6 +507,9 @@
 @media (max-width: 899px) {
   .hero__top { grid-template-columns: 1fr; gap: var(--sp-7, 32px); padding-right: 0; }
   .hero__proof { margin: 0 var(--gutter-mobile); padding: 22px 18px; }
+  .hero__proven-line { margin: var(--sp-5) var(--gutter-mobile) 0; }
+  .hero__wyg { margin-top: var(--sp-6); padding: var(--sp-5) var(--sp-6); gap: var(--sp-4) var(--sp-5); }
+  .hero__wyg-list li { font-size: 14px; }
   .hero__proof-grid { gap: 8px; }
   .hero__stat { padding: 12px 10px; }
   .hero__stat-value { font-size: 24px; }

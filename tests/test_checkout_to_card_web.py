@@ -49,7 +49,7 @@ class SignedOutVisitorCanReadTheProof(unittest.TestCase):
     def test_the_record_page_offers_the_trial_to_a_signed_out_visitor(self):
         # CHANGED 2026-10-01: the wording is no longer a static 7-day string. It is
         # checkout.js's recordCtaLabel(): the trial length comes from /meta and the
-        # button says "Get notified when checkout opens" unless checkout is on
+        # button says "Join the waitlist" unless checkout is on
         # (behaviour pinned in tests/test_checkout_copy_states.py).
         self.assertIn("recordCtaLabel(", self.record)
         self.assertIn("-day free trial to see tonight's card", _read("checkout.js"))
@@ -74,7 +74,7 @@ class SignedOutVisitorCanReadTheProof(unittest.TestCase):
         self.assertIn('href: "#/signin"', gate)
         self.assertIn('href: "#/signup"', gate)
         # CHANGED 2026-10-01: "Start free trial" is gateLabel()'s trial-on wording;
-        # the gate says "Get notified when checkout opens" unless /meta says on.
+        # the gate says "Join the waitlist" unless /meta says on.
         self.assertIn("gateLabel(", gate)
         self.assertIn('"Start free trial"', _read("checkout.js"))
 

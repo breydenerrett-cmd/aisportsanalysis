@@ -126,9 +126,15 @@ export function fillResearchCount(node, build, fallback) {
  */
 export async function renderDisclaimerFooter(container, { linkPrefix = "" } = {}) {
   clear(container);
-  const region = el("footer", {
-    class: "sitefoot", "aria-label": "disclaimer", "data-hook": "disclaimer",
-  });
+  // When the host already sits inside the page's own <footer> (the landing
+  // page, 2026-10-02: one footer, not a <footer> inside a <footer>), the
+  // region is a labelled group rather than a second footer landmark. Every
+  // class, hook and sentence is identical either way. The app shell and the
+  // postseason page mount this outside any <footer>, so they are unchanged.
+  const nested = !!(container && typeof container.closest === "function" && container.closest("footer"));
+  const region = nested
+    ? el("div", { class: "sitefoot", role: "group", "aria-label": "disclaimer", "data-hook": "disclaimer" })
+    : el("footer", { class: "sitefoot", "aria-label": "disclaimer", "data-hook": "disclaimer" });
   const route = (hash) => `${linkPrefix}${hash}`;
 
   const row = el("div", { class: "sitefoot__row" });

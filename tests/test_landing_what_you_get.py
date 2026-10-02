@@ -250,12 +250,21 @@ class TheCopyIsPlainAndCautious(unittest.TestCase):
         # The checkout-state behaviour is untouched: every CTA still carries
         # the hook applyCheckoutCopy reads, with the cautious wording.
         for cta in re.findall(r"<a[^>]*data-checkout-cta[^>]*>(.*?)</a>", HTML, re.S):
-            self.assertEqual(cta.strip(), "Get notified when checkout opens")
+            self.assertEqual(cta.strip(), "Join the waitlist")
 
-    def test_the_hero_sub_line_keeps_the_ufc_sentence_and_adds_the_plain_one(self):
+    def test_the_hero_lede_says_what_a_card_is_and_the_grading_schedule_lives_lower(self):
+        # 2026-10-02 (docs/CONVERSION_REVIEW_2026-10-02.md change 1): the lede
+        # says what a card holds; the by-hand UFC grading fact is no longer in
+        # the hero but must still be on the page, in the FAQ and the sport tiles.
         claim = re.search(r'<p class="hero__claim-body">(.*?)</p>', HTML, re.S).group(1)
-        self.assertIn("UFC picks publish before the event and grade in public once results are entered by hand.", claim)
-        self.assertIn("posts its picks before the game and keeps every result public", claim)
+        self.assertEqual(
+            claim.strip(),
+            "A short card each night: the bet, the best price and where to find it, and why. "
+            "Every card is graded in public afterwards, wins and losses.")
+        self.assertNotIn("entered by hand", claim)
+        faq = re.sub(r"\s+", " ", _section("faq"))
+        self.assertIn("MLB and NFL grade automatically the next morning; "
+                      "UFC picks grade once results are entered by hand.", faq)
 
 
 class TheCssAddsOnlyWhatTheBlocksNeed(unittest.TestCase):
@@ -569,7 +578,7 @@ class TheSampleRendersUnderNode(unittest.TestCase):
                       {"read": None, "surviving": 0}, None])
         negative, positive, absent, none = out["record"]
         self.assertEqual(negative,
-                         "The record so far is negative for the current rule: 16–17, −5.05 units over 5 nights graded.")
+                         "The record so far is negative for the current method: 16–17, −5.05 units over 5 nights graded.")
         self.assertIn("20–13, +3.10 units over 5 nights graded", positive)
         self.assertIn("not evidence that the picks make money", positive)
         self.assertNotIn("negative", positive)
