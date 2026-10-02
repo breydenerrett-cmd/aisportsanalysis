@@ -1,0 +1,160 @@
+{
+ "game_id": "WSH-DET-2026-09-23-1",
+ "verified_assumptions": [
+  [
+   "The market probability of 0.3842 and price of 154 for the away moneyline match the quoted best price across 11 books",
+   "VERIFIED -- the recommendation's price and market_probability equal the market quote's best_price and market_implied_probability",
+   [
+    "market:WSH-DET-2026-09-23-1:away"
+   ]
+  ],
+  [
+   "The away starter's rates fed to the model are current enough to use (within 3 days of the game date)",
+   "STALE -- the pitcher-log store's newest row is 2026-09-15, 8 days before the game, beyond the 3-day currency limit the packet says applies to forecasts",
+   [
+    "pitcher_log:WSH-DET-2026-09-23-1:away_sp",
+    "model_input:WSH-DET-2026-09-23-1:away_sp_known"
+   ]
+  ],
+  [
+   "The away starter figures describe a conventional starting pitcher (ERA 3.8571 over 5 starts)",
+   "UNVERIFIED -- the same claim records 33 appearances, 30.33 innings and 1.467 innings per start, and no probable: claim names or confirms a starter, so the link between these rates and the actual starter is not supported",
+   [
+    "model_input:WSH-DET-2026-09-23-1:away_sp_known"
+   ]
+  ],
+  [
+   "The home starter's rates are current and describe a known starter (ERA 4.167, 28 starts)",
+   "MISSING -- the model records the home starter as known, but the packet has no currency claim for the home pitcher-log store and no probable: claim confirming the starter",
+   [
+    "model_input:WSH-DET-2026-09-23-1:home_sp_known"
+   ]
+  ],
+  [
+   "Days of rest of 14 for the away starter is consistent with the log",
+   "UNVERIFIED -- the model records days_rest 14 while the newest log row is 8 days before the game; the packet does not explain how the two connect",
+   [
+    "model_input:WSH-DET-2026-09-23-1:away_sp_known",
+    "pitcher_log:WSH-DET-2026-09-23-1:away_sp"
+   ]
+  ]
+ ],
+ "challenged_assumption": "That the away starter inputs behind our_probability 0.4592632175003222 are fresh and describe the pitcher who will actually start. The pitcher-log store behind them ends 2026-09-15, 8 days before the game, past the currency limit of 3 days, and the profile (5 starts, 33 appearances, 1.467 innings per start) is atypical for a starter.",
+ "case_against": "The recommendation's edge is the gap between our_probability 0.4592632175003222 and the market's 0.3842. Part of that gap may come from stale away starter inputs, which the packet says should not be used as a model input at 8 days old against a limit of 3. The 11-book market was quoted from a later vantage than the pitcher log and may reflect the real starter. The away starter's ERA of 3.8571 rests on 30.33 innings across 33 appearances with only 5 starts, and its WHIP of 1.8132 and FIP of 5.3217 are weaker than the ERA suggests, so the stated ERA may flatter that pitcher. The recent_era of 0.0 comes from 3 recent starts at 1.333 innings per start, which is a very small sample. Nothing in the packet confirms who starts for either side. The edge is not shown to survive once the stale away starter inputs are set aside, though the packet alone cannot show it disappears either.",
+ "action": "REQUEST_SCENARIO",
+ "action_payload": {
+  "scenario": "Re-run the away moneyline with the away starter inputs withheld or replaced by a neutral, clearly labelled placeholder, since they come from a pitcher log 8 days behind the game date against a 3-day limit, and report whether the recommendation still clears its own bar. No probability is supplied here.",
+  "inputs_varied": [
+   "away_sp_era",
+   "away_sp_whip",
+   "away_sp_k9",
+   "away_sp_bb9",
+   "away_sp_hr9",
+   "away_sp_fip",
+   "away_sp_k_bb_pct",
+   "away_sp_ip_per_start",
+   "away_sp_recent_era",
+   "away_sp_recent_ip_per_start",
+   "away_sp_days_rest"
+  ],
+  "source_claim_ids": [
+   "pitcher_log:WSH-DET-2026-09-23-1:away_sp",
+   "model_input:WSH-DET-2026-09-23-1:away_sp_known"
+  ]
+ },
+ "facts": [
+  {
+   "claim_id": "pitcher_log:WSH-DET-2026-09-23-1:away_sp",
+   "field_path": "data.log_through_days_before_game",
+   "value": 8
+  },
+  {
+   "claim_id": "pitcher_log:WSH-DET-2026-09-23-1:away_sp",
+   "field_path": "data.currency_limit_days",
+   "value": 3
+  },
+  {
+   "claim_id": "model_input:WSH-DET-2026-09-23-1:away_sp_known",
+   "field_path": "data.away_sp_era",
+   "value": 3.8571
+  },
+  {
+   "claim_id": "model_input:WSH-DET-2026-09-23-1:away_sp_known",
+   "field_path": "data.away_sp_whip",
+   "value": 1.8132
+  },
+  {
+   "claim_id": "model_input:WSH-DET-2026-09-23-1:away_sp_known",
+   "field_path": "data.away_sp_fip",
+   "value": 5.3217
+  },
+  {
+   "claim_id": "model_input:WSH-DET-2026-09-23-1:away_sp_known",
+   "field_path": "data.away_sp_starts",
+   "value": 5
+  },
+  {
+   "claim_id": "model_input:WSH-DET-2026-09-23-1:away_sp_known",
+   "field_path": "data.away_sp_appearances",
+   "value": 33
+  },
+  {
+   "claim_id": "model_input:WSH-DET-2026-09-23-1:away_sp_known",
+   "field_path": "data.away_sp_innings",
+   "value": 30.33
+  },
+  {
+   "claim_id": "model_input:WSH-DET-2026-09-23-1:away_sp_known",
+   "field_path": "data.away_sp_ip_per_start",
+   "value": 1.467
+  },
+  {
+   "claim_id": "model_input:WSH-DET-2026-09-23-1:away_sp_known",
+   "field_path": "data.away_sp_recent_era",
+   "value": 0.0
+  },
+  {
+   "claim_id": "model_input:WSH-DET-2026-09-23-1:away_sp_known",
+   "field_path": "data.away_sp_recent_ip_per_start",
+   "value": 1.333
+  },
+  {
+   "claim_id": "model_input:WSH-DET-2026-09-23-1:away_sp_known",
+   "field_path": "data.away_sp_recent_starts",
+   "value": 3
+  },
+  {
+   "claim_id": "model_input:WSH-DET-2026-09-23-1:away_sp_known",
+   "field_path": "data.away_sp_days_rest",
+   "value": 14
+  },
+  {
+   "claim_id": "model_input:WSH-DET-2026-09-23-1:home_sp_known",
+   "field_path": "data.home_sp_era",
+   "value": 4.167
+  },
+  {
+   "claim_id": "model_input:WSH-DET-2026-09-23-1:home_sp_known",
+   "field_path": "data.home_sp_starts",
+   "value": 28
+  },
+  {
+   "claim_id": "market:WSH-DET-2026-09-23-1:away",
+   "field_path": "data.best_price",
+   "value": 154
+  },
+  {
+   "claim_id": "market:WSH-DET-2026-09-23-1:away",
+   "field_path": "data.books",
+   "value": 11
+  },
+  {
+   "claim_id": "market:WSH-DET-2026-09-23-1:away",
+   "field_path": "data.market_implied_probability",
+   "value": 0.3842
+  }
+ ],
+ "rankings": [],
+ "pitcher_attribution": null,
+ "notes": "No probable: claim is in the packet, so no pitcher is named for either side. Not CORRECT_INPUT because no claim supplies a verified replacement value for the away starter inputs; not RECALCULATE because stale inputs are labelled, not filled. The home starter's currency is MISSING rather than stale. The market quote matches the recommendation's price and market_probability."
+}

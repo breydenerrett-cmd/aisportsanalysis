@@ -1,0 +1,140 @@
+{
+ "game_id": "NYM-WSH-2026-09-25-1",
+ "verified_assumptions": [
+  [
+   "Home starter was known to the model at capture",
+   "VERIFIED -- the pipeline's own point-in-time record has home_sp_known true with starter inputs populated",
+   [
+    "model_input:NYM-WSH-2026-09-25-1:home_sp_known"
+   ]
+  ],
+  [
+   "The home starter's identity and availability are confirmed by a sourced probable claim",
+   "MISSING -- the packet holds no probable: claim, so the home starter cannot be named or independently confirmed",
+   [
+    "model_input:NYM-WSH-2026-09-25-1:home_sp_known"
+   ]
+  ],
+  [
+   "Away side is modelled with a known starter",
+   "CONTRADICTED -- the model recorded away_sp_known false, no probable pitcher posted at capture, and the team's blended rate stood in for the whole game (status UNCONFIRMED)",
+   [
+    "model_input:NYM-WSH-2026-09-25-1:away_sp_known"
+   ]
+  ],
+  [
+   "Recommended price and market probability match the quote",
+   "VERIFIED -- best price 118 and implied probability 0.45276 match the recommendation; the quote was published before the build time, so any later move is not covered",
+   [
+    "market:NYM-WSH-2026-09-25-1:home"
+   ]
+  ],
+  [
+   "Roster transactions in the feed change the lineup or bullpen inputs used by the model",
+   "UNVERIFIED -- the transactions are confirmed as events, but the packet does not link any of them to the model's bullpen rates or starter inputs",
+   [
+    "mlb_news:943069",
+    "mlb_news:943225",
+    "mlb_news:943391",
+    "mlb_news:943654",
+    "mlb_news:943655",
+    "mlb_news:943152"
+   ]
+  ],
+  [
+   "This pick ranks first on the slate by recorded pick score",
+   "VERIFIED -- the run's recorded scores place this selection above the other two",
+   [
+    "slate_scores:2026-09-25:1430Z"
+   ]
+  ]
+ ],
+ "challenged_assumption": "That the team's blended offence/defence rate is an adequate stand-in for an away starter who was not posted at capture, so that our_probability can be compared directly with market_probability.",
+ "case_against": "The recommended probability of 0.5488894693325361 sits well above the market's 0.45276, yet the model had no away starter at all (away_sp_known false, away_sp_thin true) and fell back to a blended team rate. A large gap on a game where one side's pitching input is a fallback is more likely to reflect that missing input than a real edge. The market, with nine books, may already price a starter the model never saw, and the packet cannot tell us whether a probable was posted between the model run and the build time. The home starter averages 4.881 innings per start, so much of the game falls to a home bullpen whose recorded rate (5.3228) is higher than the away bullpen's (4.1159); the packet does not show how the model weighted that, and the roster transactions listed cannot be tied to either bullpen input. The pick's top score on the slate is a ranking of the model's own outputs, not independent evidence. I cannot say the pick is wrong, only that its key premise is unconfirmed.",
+ "action": "REQUEST_SCENARIO",
+ "action_payload": {
+  "scenario": "Re-run the moneyline for this game with the away starter supplied once a probable: claim confirms him, and compare against the current run that used the team's blended fallback for the away side",
+  "inputs_varied": [
+   "away_sp_known",
+   "away starter rate inputs (era, whip, k9, bb9, hr9, fip, ip_per_start)"
+  ],
+  "source_claim_ids": [
+   "model_input:NYM-WSH-2026-09-25-1:away_sp_known"
+  ]
+ },
+ "facts": [
+  {
+   "claim_id": "model_input:NYM-WSH-2026-09-25-1:home_sp_known",
+   "field_path": "data.home_sp_known",
+   "value": true
+  },
+  {
+   "claim_id": "model_input:NYM-WSH-2026-09-25-1:home_sp_known",
+   "field_path": "data.home_sp_ip_per_start",
+   "value": 4.881
+  },
+  {
+   "claim_id": "model_input:NYM-WSH-2026-09-25-1:home_sp_known",
+   "field_path": "data.home_bullpen_rate",
+   "value": 5.3228
+  },
+  {
+   "claim_id": "model_input:NYM-WSH-2026-09-25-1:home_sp_known",
+   "field_path": "data.away_bullpen_rate",
+   "value": 4.1159
+  },
+  {
+   "claim_id": "model_input:NYM-WSH-2026-09-25-1:away_sp_known",
+   "field_path": "data.away_sp_known",
+   "value": false
+  },
+  {
+   "claim_id": "model_input:NYM-WSH-2026-09-25-1:away_sp_known",
+   "field_path": "data.away_sp_thin",
+   "value": true
+  },
+  {
+   "claim_id": "market:NYM-WSH-2026-09-25-1:home",
+   "field_path": "data.best_price",
+   "value": 118
+  },
+  {
+   "claim_id": "market:NYM-WSH-2026-09-25-1:home",
+   "field_path": "data.books",
+   "value": 9
+  },
+  {
+   "claim_id": "market:NYM-WSH-2026-09-25-1:home",
+   "field_path": "data.market_implied_probability",
+   "value": 0.45276
+  },
+  {
+   "claim_id": "slate_scores:2026-09-25:1430Z",
+   "field_path": "data.score_nym_wsh_moneyline",
+   "value": 0.09638901961434626
+  },
+  {
+   "claim_id": "slate_scores:2026-09-25:1430Z",
+   "field_path": "data.score_hou_ath_moneyline",
+   "value": 0.08422589582018003
+  },
+  {
+   "claim_id": "slate_scores:2026-09-25:1430Z",
+   "field_path": "data.score_cin_tor_run_line",
+   "value": 0.05080994347913931
+  }
+ ],
+ "rankings": [
+  {
+   "metric": "pick score in the 2026-09-25 14:30Z run",
+   "subject_value": 0.09638901961434626,
+   "compared_values": [
+    0.08422589582018003,
+    0.05080994347913931
+   ],
+   "claimed_rank": 1
+  }
+ ],
+ "pitcher_attribution": null,
+ "notes": "No probable: claim exists in the packet, so no pitcher is named. The roster transactions are referenced by claim id only and none is linked to a starter. No input is corrected, because no confirmed claim contradicts a model input; the away starter gap is labelled MISSING and not filled. The market quote predates the build time, so a scenario run should also re-check the price before any bet."
+}

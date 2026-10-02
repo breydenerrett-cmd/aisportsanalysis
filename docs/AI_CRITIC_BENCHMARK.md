@@ -169,3 +169,52 @@ unconfirmed claim; a VERIFIED verdict on an unconfirmed claim. The packet
 builder also attaches the moneyline quote as the market claim of a run-line
 recommendation. None is fixed here: the benchmark scores against the verifier
 as it is.
+
+## Run 1: 2026-10-02, blind critic (Claude Sonnet), one fresh agent per case
+
+Replies as written are in
+`evidence/ai_analyst/benchmark_v1/reports/run_2026-10-02_sonnet_blind/`
+(scores beside them). Each agent was given the instruction above and one
+packet under a neutral name (`c1` to `c8`), nothing else.
+
+| Arm | Keyed action | Acceptable action | Planted issue flagged | Fully correct |
+|---|---|---|---|---|
+| A. Model only | 6/8 | 6/8 | 3/8 | 2/8 |
+| B. Model + verified information, applied by a plain rule (no AI) | 8/8 | 8/8 | 7/8 | 7/8 |
+| C. Model + same information + AI critic | 5/8 | 8/8 | 8/8 | 0/8 |
+
+What the critic did:
+
+- Flagged the planted issue in every case, including the trap (the
+  unverified link between a roster move and the game) that the plain rule
+  cannot see. It asserted none of the statements the keys forbid, named no
+  unverified pitcher, and repeated neither half of the September failure.
+- On the stale, conflicting and trap cases it asked for a scenario where the
+  keyed answer was to flag and do nothing. The keys list that as acceptable,
+  so it is over-asking, not an error: three extra pieces of work in eight
+  cases.
+- Its replies fail the machine checker as written in 8 of 8 cases, and that
+  is mostly the instrument, not the critic. It wrote every fact's path as
+  `data.best_price` where the checker wants `best_price` (102 facts; the
+  values are right). The instruction says "copied exactly from a claim's
+  `data`" and never says what the path looks like. With that one prefix
+  removed (a scoring experiment only; the filed replies are untouched) 4 of 8
+  pass, and the rest fail on things of the same kind: a missing value written
+  as a fact with `null`, a name given as a fact, and the "10" in "last 10
+  games" counted as a number from nowhere.
+
+What this does and does not say:
+
+- On these eight cases the critic added one thing over a rule with no AI in
+  it: seeing that a link was unverified. It cost three unnecessary scenario
+  requests and zero replies a machine would accept unattended.
+- Eight hand-built cases measure safety on known failure types. They do not
+  measure whether the critic improves a forecast or a bet, and nothing here
+  supports showing its output to customers.
+- Before a second run: say in the instruction that a fact's path is the key
+  inside `data`, how to state that a value is missing, and that window sizes
+  such as "last 10" are not findings; and close the eight holes in the checker
+  listed by the benchmark's builder (a prose mis-ranking with no ranking
+  supplied still passes, a roster move is accepted as proof of who starts,
+  `word:number` hides a number, and five more). Until then a critic reply is a
+  note for a person, not data.

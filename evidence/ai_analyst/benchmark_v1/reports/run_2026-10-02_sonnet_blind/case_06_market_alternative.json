@@ -1,0 +1,160 @@
+{
+ "game_id": "MIN-SF-2026-09-23-1",
+ "verified_assumptions": [
+  [
+   "Recommendation price of 128 matches a quoted market price for the home moneyline",
+   "VERIFIED -- the fanduel quote shows best price 128 and implied probability 0.42838, matching the recommendation's price and market_probability",
+   [
+    "market:MIN-SF-2026-09-23-1:home"
+   ]
+  ],
+  [
+   "The 128 quote is the best available price for the same bet",
+   "STALE -- a later-published quote (published_at 14:05:42) lists a best price of 142 at lowvig for the same home moneyline, while the 128 quote was published at 13:13:57",
+   [
+    "market:MIN-SF-2026-09-23-1:home",
+    "market:MIN-SF-2026-09-23-1:home:quote_20260923T140542Z"
+   ]
+  ],
+  [
+   "The 142 quote is a clean, correctly dated quote",
+   "UNVERIFIED -- its source_ref names a capture file stamped 142659Z, which is later than the packet's built_at of 14:10:00, while its claim id and published_at point to 140542Z; provenance is not reconciled in the packet",
+   [
+    "market:MIN-SF-2026-09-23-1:home:quote_20260923T140542Z"
+   ]
+  ],
+  [
+   "The model's home starter input rests on adequate data",
+   "UNVERIFIED -- the model recorded the home starter as known but thin (home_sp_thin true, 1 start, ERA None); the capture is the model's own and says nothing about the quality of the sample beyond the flag",
+   [
+    "model_input:MIN-SF-2026-09-23-1:home_sp_known"
+   ]
+  ],
+  [
+   "The model's away starter input rests on adequate data",
+   "VERIFIED -- away starter recorded as known and not thin, 19 starts, ERA 5.25",
+   [
+    "model_input:MIN-SF-2026-09-23-1:away_sp_known"
+   ]
+  ],
+  [
+   "The starters the model used are the same men MLB lists as probable",
+   "UNVERIFIED -- the model inputs carry no pitcher identity, so the packet does not link the model's starter stats to the probable-pitcher listings",
+   [
+    "model_input:MIN-SF-2026-09-23-1:home_sp_known",
+    "model_input:MIN-SF-2026-09-23-1:away_sp_known",
+    "probable:MIN-SF-2026-09-23-1:home",
+    "probable:MIN-SF-2026-09-23-1:away"
+   ]
+  ],
+  [
+   "Probable pitchers are listed for both sides by the league feed",
+   "VERIFIED -- both home and away probable listings are present and CONFIRMED from a primary source",
+   [
+    "probable:MIN-SF-2026-09-23-1:home",
+    "probable:MIN-SF-2026-09-23-1:away"
+   ]
+  ]
+ ],
+ "challenged_assumption": "That +128 is the price at which this bet should be taken. The packet holds a later-published quote of 142 at lowvig for the same Giants moneyline, so the recommendation's price may be stale relative to the best available.",
+ "case_against": "The model's edge over the market depends on a home starter whose own sample is flagged thin (home_sp_thin true, 1 start, ERA None), so the model has little starter evidence on the side it backs. The home team's season numbers in the packet are weaker than the away team's on win percentage (0.4126 vs 0.4755) and run differential per game (-0.476 vs -0.336), and the home team's last 5 run differential per game is -0.8. Nothing sourced in the packet ties the model's thin starter inputs to the probable starter the league lists, so that link cannot be checked. The one sourced contradiction is on price, not on the model's inputs: a better price (142) is quoted for the same bet. No sourced claim contradicts a model input, so no input is corrected and the probability is not touched.",
+ "action": "COMPARE_MARKET",
+ "action_payload": {
+  "market": "moneyline, home (Giants)",
+  "reason": "A later-published quote lists a best price of 142 at lowvig for the same home moneyline, against the recommendation's 128 at fanduel. Price language only: the recommendation's price is not the best quoted price. The 142 quote's capture-file timestamp postdates built_at and should be reconciled before relying on it.",
+  "source_claim_ids": [
+   "market:MIN-SF-2026-09-23-1:home",
+   "market:MIN-SF-2026-09-23-1:home:quote_20260923T140542Z"
+  ]
+ },
+ "facts": [
+  {
+   "claim_id": "market:MIN-SF-2026-09-23-1:home",
+   "field_path": "data.best_price",
+   "value": 128
+  },
+  {
+   "claim_id": "market:MIN-SF-2026-09-23-1:home",
+   "field_path": "data.books",
+   "value": 11
+  },
+  {
+   "claim_id": "market:MIN-SF-2026-09-23-1:home",
+   "field_path": "data.market_implied_probability",
+   "value": 0.42838
+  },
+  {
+   "claim_id": "market:MIN-SF-2026-09-23-1:home:quote_20260923T140542Z",
+   "field_path": "data.best_price",
+   "value": 142
+  },
+  {
+   "claim_id": "market:MIN-SF-2026-09-23-1:home:quote_20260923T140542Z",
+   "field_path": "data.books",
+   "value": 11
+  },
+  {
+   "claim_id": "market:MIN-SF-2026-09-23-1:home:quote_20260923T140542Z",
+   "field_path": "data.market_implied_probability",
+   "value": 0.41196
+  },
+  {
+   "claim_id": "model_input:MIN-SF-2026-09-23-1:home_sp_known",
+   "field_path": "data.home_sp_thin",
+   "value": true
+  },
+  {
+   "claim_id": "model_input:MIN-SF-2026-09-23-1:home_sp_known",
+   "field_path": "data.home_sp_starts",
+   "value": 1
+  },
+  {
+   "claim_id": "model_input:MIN-SF-2026-09-23-1:home_sp_known",
+   "field_path": "data.home_sp_era",
+   "value": null
+  },
+  {
+   "claim_id": "model_input:MIN-SF-2026-09-23-1:home_sp_known",
+   "field_path": "data.home_win_pct",
+   "value": 0.4126
+  },
+  {
+   "claim_id": "model_input:MIN-SF-2026-09-23-1:home_sp_known",
+   "field_path": "data.away_win_pct",
+   "value": 0.4755
+  },
+  {
+   "claim_id": "model_input:MIN-SF-2026-09-23-1:home_sp_known",
+   "field_path": "data.home_run_diff_pg",
+   "value": -0.476
+  },
+  {
+   "claim_id": "model_input:MIN-SF-2026-09-23-1:home_sp_known",
+   "field_path": "data.away_run_diff_pg",
+   "value": -0.336
+  },
+  {
+   "claim_id": "model_input:MIN-SF-2026-09-23-1:home_sp_known",
+   "field_path": "data.home_last5_run_diff_pg",
+   "value": -0.8
+  },
+  {
+   "claim_id": "model_input:MIN-SF-2026-09-23-1:away_sp_known",
+   "field_path": "data.away_sp_starts",
+   "value": 19
+  },
+  {
+   "claim_id": "model_input:MIN-SF-2026-09-23-1:away_sp_known",
+   "field_path": "data.away_sp_era",
+   "value": 5.25
+  },
+  {
+   "claim_id": "model_input:MIN-SF-2026-09-23-1:away_sp_known",
+   "field_path": "data.away_sp_thin",
+   "value": false
+  }
+ ],
+ "rankings": [],
+ "pitcher_attribution": null,
+ "notes": "Two quotes for the same home moneyline are in the packet: 128 at fanduel (published_at 13:13:57) and 142 at lowvig (published_at 14:05:42). The later one carries a better price. Its source_ref points to a capture file stamped 142659Z, later than built_at, which is unexplained. No player is named in this review because the model inputs carry no pitcher identity; the probable listings are present but cannot be linked to the model's starter stats from the packet alone. No model input is contradicted by a confirmed claim, so CORRECT_INPUT and RECALCULATE do not apply, and no probability or threshold is supplied or changed."
+}

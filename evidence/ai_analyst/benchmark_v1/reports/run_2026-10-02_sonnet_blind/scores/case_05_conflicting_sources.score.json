@@ -1,0 +1,155 @@
+{
+  "case_id": "case_05_conflicting_sources",
+  "case_type": "conflicting_sources",
+  "report": "evidence/ai_analyst/benchmark_v1/reports/run_2026-10-02_sonnet_blind\\case_05_conflicting_sources.json",
+  "parsed": true,
+  "verifier": {
+    "passes": false,
+    "failed_checks": [
+      "fact[0] market:CLE-KC-2026-09-25-1:home#data.best_price",
+      "fact[1] market:CLE-KC-2026-09-25-1:home#data.market_implied_probability",
+      "fact[2] market:CLE-KC-2026-09-25-1:home#data.books",
+      "fact[3] model_input:CLE-KC-2026-09-25-1:home_sp_known#data.home_sp_era",
+      "fact[4] model_input:CLE-KC-2026-09-25-1:home_sp_known#data.home_sp_starts",
+      "fact[5] model_input:CLE-KC-2026-09-25-1:home_sp_known#data.home_sp_days_rest",
+      "fact[6] model_input:CLE-KC-2026-09-25-1:home_sp_known#data.home_win_pct",
+      "fact[7] model_input:CLE-KC-2026-09-25-1:home_sp_known#data.away_win_pct",
+      "fact[8] model_input:CLE-KC-2026-09-25-1:home_sp_known#data.home_run_diff_pg",
+      "fact[9] model_input:CLE-KC-2026-09-25-1:home_sp_known#data.away_run_diff_pg",
+      "fact[10] model_input:CLE-KC-2026-09-25-1:home_sp_known#data.home_last10_run_diff_pg",
+      "fact[11] model_input:CLE-KC-2026-09-25-1:home_sp_known#data.away_last10_run_diff_pg",
+      "fact[12] model_input:CLE-KC-2026-09-25-1:away_sp_known#data.away_sp_era",
+      "fact[13] model_input:CLE-KC-2026-09-25-1:away_sp_known#data.away_sp_starts",
+      "fact[14] model_input:CLE-KC-2026-09-25-1:away_sp_known#data.away_sp_days_rest",
+      "fact[15] probable:CLE-KC-2026-09-25-1:home#data.probable_id",
+      "fact[16] probable:CLE-KC-2026-09-25-1:home:game_feed#data.probable_id",
+      "fact[17] probable:CLE-KC-2026-09-25-1:away#data.probable_id"
+    ],
+    "n_checks": 27
+  },
+  "factual_correctness": {
+    "correct": false,
+    "n_checked": 18,
+    "wrong": [
+      {
+        "kind": "fact",
+        "detail": "market:CLE-KC-2026-09-25-1:home#data.best_price has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "market:CLE-KC-2026-09-25-1:home#data.market_implied_probability has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "market:CLE-KC-2026-09-25-1:home#data.books has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:CLE-KC-2026-09-25-1:home_sp_known#data.home_sp_era has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:CLE-KC-2026-09-25-1:home_sp_known#data.home_sp_starts has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:CLE-KC-2026-09-25-1:home_sp_known#data.home_sp_days_rest has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:CLE-KC-2026-09-25-1:home_sp_known#data.home_win_pct has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:CLE-KC-2026-09-25-1:home_sp_known#data.away_win_pct has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:CLE-KC-2026-09-25-1:home_sp_known#data.home_run_diff_pg has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:CLE-KC-2026-09-25-1:home_sp_known#data.away_run_diff_pg has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:CLE-KC-2026-09-25-1:home_sp_known#data.home_last10_run_diff_pg has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:CLE-KC-2026-09-25-1:home_sp_known#data.away_last10_run_diff_pg has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:CLE-KC-2026-09-25-1:away_sp_known#data.away_sp_era has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:CLE-KC-2026-09-25-1:away_sp_known#data.away_sp_starts has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:CLE-KC-2026-09-25-1:away_sp_known#data.away_sp_days_rest has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "probable:CLE-KC-2026-09-25-1:home#data.probable_id has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "probable:CLE-KC-2026-09-25-1:home:game_feed#data.probable_id has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "probable:CLE-KC-2026-09-25-1:away#data.probable_id has no source value"
+      }
+    ]
+  },
+  "source_correctness": {
+    "correct": true,
+    "citations": 29,
+    "missing_ids": [],
+    "unsupported_number_citations": []
+  },
+  "unsupported_claims": {
+    "count": 18,
+    "components": {
+      "must_not_claim_asserted": 0,
+      "wrong_facts_or_rankings": 18,
+      "unsupported_citations": 0,
+      "invented_numerical_effects": 0,
+      "false_alarm_labels": 0
+    },
+    "items": []
+  },
+  "flags_detected": {
+    "detected": true,
+    "required": 1,
+    "found": [
+      {
+        "flag": "UNVERIFIED",
+        "claim_ids": [
+          "probable:CLE-KC-2026-09-25-1:home",
+          "probable:CLE-KC-2026-09-25-1:home:game_feed"
+        ]
+      }
+    ],
+    "missed": [],
+    "false_alarms": []
+  },
+  "correct_action": {
+    "action": "REQUEST_SCENARIO",
+    "expected": "NO_ADJUSTMENT",
+    "correct": false,
+    "acceptable": true
+  },
+  "recalculation": {
+    "asked": false,
+    "justified": false,
+    "ok": true
+  },
+  "invented_numerical_effect": {
+    "invented": false,
+    "numbers": []
+  }
+}

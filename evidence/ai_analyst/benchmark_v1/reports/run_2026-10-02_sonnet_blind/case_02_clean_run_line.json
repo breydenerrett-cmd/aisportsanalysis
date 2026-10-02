@@ -1,0 +1,119 @@
+{
+ "game_id": "CLE-KC-2026-09-25-1",
+ "verified_assumptions": [
+  [
+   "The best available price for the home run line (home +1.5) is -140 across 11 books, matching the recommendation's price.",
+   "VERIFIED -- market claim matches the recommendation price and market_probability; quote published 2026-09-25T14:12:58 and retrieved 2026-09-25T14:50:00, with no staleness flag in the packet",
+   [
+    "market:CLE-KC-2026-09-25-1:home"
+   ]
+  ],
+  [
+   "The model had a home starter on record when it built the probability.",
+   "VERIFIED -- the pipeline recorded home_sp_known as true; this is the model's own capture, not an independent source",
+   [
+    "model_input:CLE-KC-2026-09-25-1:home_sp_known"
+   ]
+  ],
+  [
+   "The model had an away starter on record when it built the probability.",
+   "VERIFIED -- the pipeline recorded away_sp_known as true; this is the model's own capture, not an independent source",
+   [
+    "model_input:CLE-KC-2026-09-25-1:away_sp_known"
+   ]
+  ],
+  [
+   "The starter statistics the model used belong to the same pitchers the league schedule feed lists as probable starters.",
+   "UNVERIFIED -- the model_input claims carry no pitcher identity, so the packet does not support a link between those statistics and the named probable starters",
+   [
+    "model_input:CLE-KC-2026-09-25-1:home_sp_known",
+    "model_input:CLE-KC-2026-09-25-1:away_sp_known",
+    "probable:CLE-KC-2026-09-25-1:home",
+    "probable:CLE-KC-2026-09-25-1:away"
+   ]
+  ],
+  [
+   "Both starters were on the same days of rest, as the model recorded.",
+   "UNVERIFIED -- the identical days-of-rest figure appears only in the model's own captures and no independent claim confirms it",
+   [
+    "model_input:CLE-KC-2026-09-25-1:home_sp_known",
+    "model_input:CLE-KC-2026-09-25-1:away_sp_known"
+   ]
+  ],
+  [
+   "Both probable starters are confirmed by the league's own listing at retrieval time.",
+   "VERIFIED -- primary-source listing for each side, status CONFIRMED",
+   [
+    "probable:CLE-KC-2026-09-25-1:home",
+    "probable:CLE-KC-2026-09-25-1:away"
+   ]
+  ]
+ ],
+ "challenged_assumption": "That the starter inputs behind the model's probability describe the pitchers actually listed as probable starters. The packet confirms the probable starters from the league feed and records the model's starter statistics, but nothing ties the two together, so the identity link is unsupported.",
+ "case_against": "The recommendation is the home side on the +1.5 run line, and the model's probability sits above the market-implied probability. The packet's own inputs lean the other way on several points: the home team's run differential per game is negative, its last-5 and last-10 run differentials are negative, its bullpen rate is higher than the away bullpen rate, and the away team's recent run differentials are positive. The home starter's recent ERA is better than his season ERA, which the model may be leaning on, but the packet does not show how any input is weighted. The days of rest are identical for both starters and come only from the model's own capture, so a data default cannot be ruled out from the packet. None of this is sourced as a contradiction of a model input by a confirmed claim, so it supports caution, not a correction.",
+ "action": "NO_ADJUSTMENT",
+ "action_payload": {
+  "checked_claim_ids": [
+   "model_input:CLE-KC-2026-09-25-1:home_sp_known",
+   "model_input:CLE-KC-2026-09-25-1:away_sp_known",
+   "market:CLE-KC-2026-09-25-1:home",
+   "probable:CLE-KC-2026-09-25-1:home",
+   "probable:CLE-KC-2026-09-25-1:away"
+  ]
+ },
+ "facts": [
+  {
+   "claim_id": "market:CLE-KC-2026-09-25-1:home",
+   "field_path": "data.best_price",
+   "value": -140
+  },
+  {
+   "claim_id": "market:CLE-KC-2026-09-25-1:home",
+   "field_path": "data.books",
+   "value": 11
+  },
+  {
+   "claim_id": "market:CLE-KC-2026-09-25-1:home",
+   "field_path": "data.market_implied_probability",
+   "value": 0.57109
+  },
+  {
+   "claim_id": "model_input:CLE-KC-2026-09-25-1:home_sp_known",
+   "field_path": "data.home_sp_days_rest",
+   "value": 14
+  },
+  {
+   "claim_id": "model_input:CLE-KC-2026-09-25-1:away_sp_known",
+   "field_path": "data.away_sp_days_rest",
+   "value": 14
+  },
+  {
+   "claim_id": "model_input:CLE-KC-2026-09-25-1:home_sp_known",
+   "field_path": "data.home_sp_recent_era",
+   "value": 3.1765
+  },
+  {
+   "claim_id": "model_input:CLE-KC-2026-09-25-1:home_sp_known",
+   "field_path": "data.home_sp_era",
+   "value": 3.9293
+  },
+  {
+   "claim_id": "model_input:CLE-KC-2026-09-25-1:home_sp_known",
+   "field_path": "data.home_run_diff_pg",
+   "value": -0.671
+  },
+  {
+   "claim_id": "model_input:CLE-KC-2026-09-25-1:home_sp_known",
+   "field_path": "data.home_bullpen_rate",
+   "value": 5.2329
+  },
+  {
+   "claim_id": "model_input:CLE-KC-2026-09-25-1:home_sp_known",
+   "field_path": "data.away_bullpen_rate",
+   "value": 4.0748
+  }
+ ],
+ "rankings": [],
+ "pitcher_attribution": null,
+ "notes": "No sourced claim contradicts a model input, and the market claim matches the recommended price, so no correction, scenario, market comparison or recalculation is requested. The packet holds a single best-price quote for this bet, so no better price for the same bet is shown. No probability or threshold is supplied or changed by this review."
+}

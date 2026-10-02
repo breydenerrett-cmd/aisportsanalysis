@@ -1,0 +1,104 @@
+{
+  "case_id": "case_04_wrong_starter",
+  "case_type": "wrong_starter",
+  "report": "evidence/ai_analyst/benchmark_v1/reports/run_2026-10-02_sonnet_blind\\case_04_wrong_starter.json",
+  "parsed": true,
+  "verifier": {
+    "passes": false,
+    "failed_checks": [
+      "fact[0] model_input:TB-NYY-2026-09-23-1:away_sp_known#data.away_sp_assumed_id",
+      "fact[1] probable:TB-NYY-2026-09-23-1:away#data.probable_id",
+      "fact[2] probable:TB-NYY-2026-09-23-1:away#data.probable_name",
+      "fact[3] market:TB-NYY-2026-09-23-1:home#data.best_price",
+      "fact[4] market:TB-NYY-2026-09-23-1:home#data.market_implied_probability",
+      "numbers_in_prose"
+    ],
+    "n_checks": 14
+  },
+  "factual_correctness": {
+    "correct": false,
+    "n_checked": 6,
+    "wrong": [
+      {
+        "kind": "fact",
+        "detail": "model_input:TB-NYY-2026-09-23-1:away_sp_known#data.away_sp_assumed_id has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "probable:TB-NYY-2026-09-23-1:away#data.probable_id has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "probable:TB-NYY-2026-09-23-1:away#data.probable_name has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "market:TB-NYY-2026-09-23-1:home#data.best_price has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "market:TB-NYY-2026-09-23-1:home#data.market_implied_probability has no source value"
+      }
+    ]
+  },
+  "source_correctness": {
+    "correct": false,
+    "citations": 14,
+    "missing_ids": [],
+    "unsupported_number_citations": [
+      {
+        "triple": 3,
+        "number": "16"
+      },
+      {
+        "triple": 3,
+        "number": "18"
+      },
+      {
+        "triple": 3,
+        "number": "18"
+      }
+    ]
+  },
+  "unsupported_claims": {
+    "count": 8,
+    "components": {
+      "must_not_claim_asserted": 0,
+      "wrong_facts_or_rankings": 5,
+      "unsupported_citations": 3,
+      "invented_numerical_effects": 0,
+      "false_alarm_labels": 0
+    },
+    "items": []
+  },
+  "flags_detected": {
+    "detected": true,
+    "required": 1,
+    "found": [
+      {
+        "flag": "CONTRADICTED",
+        "claim_ids": [
+          "model_input:TB-NYY-2026-09-23-1:away_sp_known",
+          "probable:TB-NYY-2026-09-23-1:away"
+        ]
+      }
+    ],
+    "missed": [],
+    "false_alarms": []
+  },
+  "correct_action": {
+    "action": "CORRECT_INPUT",
+    "expected": "CORRECT_INPUT",
+    "correct": true,
+    "acceptable": true
+  },
+  "recalculation": {
+    "asked": true,
+    "justified": true,
+    "ok": true
+  },
+  "invented_numerical_effect": {
+    "invented": false,
+    "numbers": []
+  }
+}

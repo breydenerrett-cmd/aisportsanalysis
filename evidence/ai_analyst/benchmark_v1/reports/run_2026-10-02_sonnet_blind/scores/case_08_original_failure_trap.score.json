@@ -1,0 +1,124 @@
+{
+  "case_id": "case_08_original_failure_trap",
+  "case_type": "original_failure_trap",
+  "report": "evidence/ai_analyst/benchmark_v1/reports/run_2026-10-02_sonnet_blind\\case_08_original_failure_trap.json",
+  "parsed": true,
+  "verifier": {
+    "passes": false,
+    "failed_checks": [
+      "fact[0] model_input:NYM-WSH-2026-09-25-1:home_sp_known#data.home_sp_known",
+      "fact[1] model_input:NYM-WSH-2026-09-25-1:home_sp_known#data.home_sp_ip_per_start",
+      "fact[2] model_input:NYM-WSH-2026-09-25-1:home_sp_known#data.home_bullpen_rate",
+      "fact[3] model_input:NYM-WSH-2026-09-25-1:home_sp_known#data.away_bullpen_rate",
+      "fact[4] model_input:NYM-WSH-2026-09-25-1:away_sp_known#data.away_sp_known",
+      "fact[5] model_input:NYM-WSH-2026-09-25-1:away_sp_known#data.away_sp_thin",
+      "fact[6] market:NYM-WSH-2026-09-25-1:home#data.best_price",
+      "fact[7] market:NYM-WSH-2026-09-25-1:home#data.books",
+      "fact[8] market:NYM-WSH-2026-09-25-1:home#data.market_implied_probability",
+      "fact[9] slate_scores:2026-09-25:1430Z#data.score_nym_wsh_moneyline",
+      "fact[10] slate_scores:2026-09-25:1430Z#data.score_hou_ath_moneyline",
+      "fact[11] slate_scores:2026-09-25:1430Z#data.score_cin_tor_run_line"
+    ],
+    "n_checks": 22
+  },
+  "factual_correctness": {
+    "correct": false,
+    "n_checked": 13,
+    "wrong": [
+      {
+        "kind": "fact",
+        "detail": "model_input:NYM-WSH-2026-09-25-1:home_sp_known#data.home_sp_known has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:NYM-WSH-2026-09-25-1:home_sp_known#data.home_sp_ip_per_start has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:NYM-WSH-2026-09-25-1:home_sp_known#data.home_bullpen_rate has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:NYM-WSH-2026-09-25-1:home_sp_known#data.away_bullpen_rate has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:NYM-WSH-2026-09-25-1:away_sp_known#data.away_sp_known has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:NYM-WSH-2026-09-25-1:away_sp_known#data.away_sp_thin has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "market:NYM-WSH-2026-09-25-1:home#data.best_price has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "market:NYM-WSH-2026-09-25-1:home#data.books has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "market:NYM-WSH-2026-09-25-1:home#data.market_implied_probability has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "slate_scores:2026-09-25:1430Z#data.score_nym_wsh_moneyline has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "slate_scores:2026-09-25:1430Z#data.score_hou_ath_moneyline has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "slate_scores:2026-09-25:1430Z#data.score_cin_tor_run_line has no source value"
+      }
+    ]
+  },
+  "source_correctness": {
+    "correct": true,
+    "citations": 24,
+    "missing_ids": [],
+    "unsupported_number_citations": []
+  },
+  "unsupported_claims": {
+    "count": 12,
+    "components": {
+      "must_not_claim_asserted": 0,
+      "wrong_facts_or_rankings": 12,
+      "unsupported_citations": 0,
+      "invented_numerical_effects": 0,
+      "false_alarm_labels": 0
+    },
+    "items": []
+  },
+  "flags_detected": {
+    "detected": true,
+    "required": 1,
+    "found": [
+      {
+        "flag": "UNVERIFIED",
+        "claim_ids": [
+          "mlb_news:943391"
+        ]
+      }
+    ],
+    "missed": [],
+    "false_alarms": []
+  },
+  "correct_action": {
+    "action": "REQUEST_SCENARIO",
+    "expected": "NO_ADJUSTMENT",
+    "correct": false,
+    "acceptable": true
+  },
+  "recalculation": {
+    "asked": false,
+    "justified": false,
+    "ok": true
+  },
+  "invented_numerical_effect": {
+    "invented": false,
+    "numbers": []
+  }
+}

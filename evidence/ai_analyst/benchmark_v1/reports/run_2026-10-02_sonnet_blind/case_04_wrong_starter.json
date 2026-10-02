@@ -1,0 +1,81 @@
+{
+ "game_id": "TB-NYY-2026-09-23-1",
+ "verified_assumptions": [
+  [
+   "The away starter whose rates feed the model is the starter who will actually pitch for the away side",
+   "CONTRADICTED -- the model assumed pitcher id 693855 (model_input away_sp_known), but the league's own probable listing, observed after the model's capture, now lists id 669438 as the away probable",
+   [
+    "model_input:TB-NYY-2026-09-23-1:away_sp_known",
+    "probable:TB-NYY-2026-09-23-1:away"
+   ]
+  ],
+  [
+   "The home starter rates in the model belong to the home probable starter",
+   "UNVERIFIED -- the home model-input claim records rates and a known-starter boolean but carries no pitcher id or name, so the link to the listed home probable is not supported by the packet",
+   [
+    "model_input:TB-NYY-2026-09-23-1:home_sp_known",
+    "probable:TB-NYY-2026-09-23-1:home"
+   ]
+  ],
+  [
+   "The market price and implied probability quoted in the recommendation match the quote source",
+   "VERIFIED -- best price and implied probability match the market claim; note the quote's published_at precedes the away probable change, so the packet does not show whether the market has repriced since",
+   [
+    "market:TB-NYY-2026-09-23-1:home"
+   ]
+  ],
+  [
+   "The model's inputs were current when the recommendation was built",
+   "STALE -- the model's artifact is stamped at the 16:30Z capture, while the away probable change was observed at 18:01Z, before the packet was built at 18:05Z",
+   [
+    "model_input:TB-NYY-2026-09-23-1:away_sp_known",
+    "probable:TB-NYY-2026-09-23-1:away"
+   ]
+  ]
+ ],
+ "challenged_assumption": "That the away starter behind the model's away pitching rates (assumed id 693855) is the pitcher who will start. The primary-source probable listing replaced that id with 669438 after the model captured its inputs, so the away starter rates, and the probability built on them, describe a pitcher no longer listed.",
+ "case_against": "The recommendation backs the home side on a probability edge over the market-implied probability, but part of that edge rests on away starter rates for a pitcher the league's feed no longer lists as the away probable. A confirmed, later, primary-source claim contradicts the model's assumed away starter id, so the away-side pitching inputs are wrong in identity. The packet gives no rates for the new away probable, so the direction and size of the error cannot be determined from it, and the edge could shrink, grow or vanish. Separately, the home model input has no identity attached, so it cannot be tied to the listed home probable, and the market quote predates the away change, so the price may not yet reflect it. The recommendation should not stand on the stale away starter assumption.",
+ "action": "CORRECT_INPUT",
+ "action_payload": {
+  "input_path": "model_inputs.away_sp_assumed_id",
+  "current_value": 693855,
+  "verified_value": 669438,
+  "source_claim_ids": [
+   "probable:TB-NYY-2026-09-23-1:away"
+  ]
+ },
+ "facts": [
+  {
+   "claim_id": "model_input:TB-NYY-2026-09-23-1:away_sp_known",
+   "field_path": "data.away_sp_assumed_id",
+   "value": 693855
+  },
+  {
+   "claim_id": "probable:TB-NYY-2026-09-23-1:away",
+   "field_path": "data.probable_id",
+   "value": 669438
+  },
+  {
+   "claim_id": "probable:TB-NYY-2026-09-23-1:away",
+   "field_path": "data.probable_name",
+   "value": "Mason Englert"
+  },
+  {
+   "claim_id": "market:TB-NYY-2026-09-23-1:home",
+   "field_path": "data.best_price",
+   "value": -128
+  },
+  {
+   "claim_id": "market:TB-NYY-2026-09-23-1:home",
+   "field_path": "data.market_implied_probability",
+   "value": 0.55246
+  }
+ ],
+ "rankings": [],
+ "pitcher_attribution": {
+  "side": "away",
+  "name": "Mason Englert",
+  "identity_claim_id": "probable:TB-NYY-2026-09-23-1:away"
+ },
+ "notes": "No replacement rates for the new away probable are in the packet, so none are supplied and no recalculation is attempted; the corrected identity should be fed to the model by its owner. The pitcher the model originally assumed is referred to by id only, since no probable claim confirms him as a starter. The home identity link remains UNVERIFIED rather than contradicted."
+}

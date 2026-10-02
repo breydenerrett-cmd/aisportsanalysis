@@ -1,0 +1,145 @@
+{
+  "case_id": "case_01_clean_plus_moneyline",
+  "case_type": "clean",
+  "report": "evidence/ai_analyst/benchmark_v1/reports/run_2026-10-02_sonnet_blind\\case_01_clean_plus_moneyline.json",
+  "parsed": true,
+  "verifier": {
+    "passes": false,
+    "failed_checks": [
+      "fact[0] market:HOU-ATH-2026-09-25-1:home#data.best_price",
+      "fact[1] market:HOU-ATH-2026-09-25-1:home#data.market_implied_probability",
+      "fact[2] market:HOU-ATH-2026-09-25-1:home#data.books",
+      "fact[3] model_input:HOU-ATH-2026-09-25-1:home_sp_known#data.home_sp_era",
+      "fact[4] model_input:HOU-ATH-2026-09-25-1:away_sp_known#data.away_sp_era",
+      "fact[5] model_input:HOU-ATH-2026-09-25-1:home_sp_known#data.home_win_pct",
+      "fact[6] model_input:HOU-ATH-2026-09-25-1:home_sp_known#data.away_win_pct",
+      "fact[7] model_input:HOU-ATH-2026-09-25-1:home_sp_known#data.home_run_diff_pg",
+      "fact[8] model_input:HOU-ATH-2026-09-25-1:home_sp_known#data.away_run_diff_pg",
+      "fact[9] model_input:HOU-ATH-2026-09-25-1:home_sp_known#data.home_last10_run_diff_pg",
+      "fact[10] model_input:HOU-ATH-2026-09-25-1:home_sp_known#data.away_last10_run_diff_pg",
+      "fact[11] model_input:HOU-ATH-2026-09-25-1:home_sp_known#data.home_bullpen_rate",
+      "fact[12] model_input:HOU-ATH-2026-09-25-1:home_sp_known#data.away_bullpen_rate",
+      "fact[13] model_input:HOU-ATH-2026-09-25-1:home_sp_known#data.home_sp_recent_era",
+      "fact[14] model_input:HOU-ATH-2026-09-25-1:away_sp_known#data.away_sp_recent_era"
+    ],
+    "n_checks": 27
+  },
+  "factual_correctness": {
+    "correct": false,
+    "n_checked": 18,
+    "wrong": [
+      {
+        "kind": "fact",
+        "detail": "market:HOU-ATH-2026-09-25-1:home#data.best_price has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "market:HOU-ATH-2026-09-25-1:home#data.market_implied_probability has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "market:HOU-ATH-2026-09-25-1:home#data.books has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:HOU-ATH-2026-09-25-1:home_sp_known#data.home_sp_era has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:HOU-ATH-2026-09-25-1:away_sp_known#data.away_sp_era has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:HOU-ATH-2026-09-25-1:home_sp_known#data.home_win_pct has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:HOU-ATH-2026-09-25-1:home_sp_known#data.away_win_pct has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:HOU-ATH-2026-09-25-1:home_sp_known#data.home_run_diff_pg has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:HOU-ATH-2026-09-25-1:home_sp_known#data.away_run_diff_pg has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:HOU-ATH-2026-09-25-1:home_sp_known#data.home_last10_run_diff_pg has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:HOU-ATH-2026-09-25-1:home_sp_known#data.away_last10_run_diff_pg has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:HOU-ATH-2026-09-25-1:home_sp_known#data.home_bullpen_rate has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:HOU-ATH-2026-09-25-1:home_sp_known#data.away_bullpen_rate has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:HOU-ATH-2026-09-25-1:home_sp_known#data.home_sp_recent_era has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:HOU-ATH-2026-09-25-1:away_sp_known#data.away_sp_recent_era has no source value"
+      }
+    ]
+  },
+  "source_correctness": {
+    "correct": true,
+    "citations": 33,
+    "missing_ids": [],
+    "unsupported_number_citations": []
+  },
+  "unsupported_claims": {
+    "count": 17,
+    "components": {
+      "must_not_claim_asserted": 0,
+      "wrong_facts_or_rankings": 15,
+      "unsupported_citations": 0,
+      "invented_numerical_effects": 0,
+      "false_alarm_labels": 2
+    },
+    "items": []
+  },
+  "flags_detected": {
+    "detected": true,
+    "required": 0,
+    "found": [],
+    "missed": [],
+    "false_alarms": [
+      {
+        "triple": 4,
+        "label": "STALE",
+        "claim_ids": [
+          "market:HOU-ATH-2026-09-25-1:home"
+        ]
+      },
+      {
+        "triple": 6,
+        "label": "MISSING",
+        "claim_ids": []
+      }
+    ]
+  },
+  "correct_action": {
+    "action": "NO_ADJUSTMENT",
+    "expected": "NO_ADJUSTMENT",
+    "correct": true,
+    "acceptable": true
+  },
+  "recalculation": {
+    "asked": false,
+    "justified": false,
+    "ok": true
+  },
+  "invented_numerical_effect": {
+    "invented": false,
+    "numbers": []
+  }
+}

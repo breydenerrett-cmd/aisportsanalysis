@@ -1,0 +1,99 @@
+{
+  "case_id": "case_07_missing_information",
+  "case_type": "missing_information",
+  "report": "evidence/ai_analyst/benchmark_v1/reports/run_2026-10-02_sonnet_blind\\case_07_missing_information.json",
+  "parsed": true,
+  "verifier": {
+    "passes": false,
+    "failed_checks": [
+      "fact[0] market:HOU-SEA-2026-09-23-1:away#data.best_price",
+      "fact[1] market:HOU-SEA-2026-09-23-1:away#data.market_implied_probability",
+      "fact[2] market:HOU-SEA-2026-09-23-1:away#data.books",
+      "fact[3] model_input:HOU-SEA-2026-09-23-1:away_sp_known#data.away_sp_era",
+      "fact[4] model_input:HOU-SEA-2026-09-23-1:away_sp_known#data.away_sp_thin",
+      "fact[5] model_input:HOU-SEA-2026-09-23-1:away_sp_known#data.away_sp_starts",
+      "fact[6] model_input:HOU-SEA-2026-09-23-1:home_sp_known#data.home_sp_thin"
+    ],
+    "n_checks": 16
+  },
+  "factual_correctness": {
+    "correct": false,
+    "n_checked": 7,
+    "wrong": [
+      {
+        "kind": "fact",
+        "detail": "market:HOU-SEA-2026-09-23-1:away#data.best_price has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "market:HOU-SEA-2026-09-23-1:away#data.market_implied_probability has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "market:HOU-SEA-2026-09-23-1:away#data.books has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:HOU-SEA-2026-09-23-1:away_sp_known#data.away_sp_era has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:HOU-SEA-2026-09-23-1:away_sp_known#data.away_sp_thin has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:HOU-SEA-2026-09-23-1:away_sp_known#data.away_sp_starts has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:HOU-SEA-2026-09-23-1:home_sp_known#data.home_sp_thin has no source value"
+      }
+    ]
+  },
+  "source_correctness": {
+    "correct": true,
+    "citations": 20,
+    "missing_ids": [],
+    "unsupported_number_citations": []
+  },
+  "unsupported_claims": {
+    "count": 7,
+    "components": {
+      "must_not_claim_asserted": 0,
+      "wrong_facts_or_rankings": 7,
+      "unsupported_citations": 0,
+      "invented_numerical_effects": 0,
+      "false_alarm_labels": 0
+    },
+    "items": []
+  },
+  "flags_detected": {
+    "detected": true,
+    "required": 1,
+    "found": [
+      {
+        "flag": "MISSING",
+        "claim_ids": [
+          "model_input:HOU-SEA-2026-09-23-1:away_sp_known"
+        ]
+      }
+    ],
+    "missed": [],
+    "false_alarms": []
+  },
+  "correct_action": {
+    "action": "NO_ADJUSTMENT",
+    "expected": "NO_ADJUSTMENT",
+    "correct": true,
+    "acceptable": true
+  },
+  "recalculation": {
+    "asked": false,
+    "justified": false,
+    "ok": true
+  },
+  "invented_numerical_effect": {
+    "invented": false,
+    "numbers": []
+  }
+}

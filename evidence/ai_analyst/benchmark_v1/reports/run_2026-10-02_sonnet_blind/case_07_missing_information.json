@@ -1,0 +1,95 @@
+{
+ "game_id": "HOU-SEA-2026-09-23-1",
+ "verified_assumptions": [
+  [
+   "The quoted price and market probability behind the recommendation (price 125, market_probability 0.43477) match their market source",
+   "VERIFIED -- the market quote claim records best_price 125 and market_implied_probability 0.43477, identical to the recommendation",
+   [
+    "market:HOU-SEA-2026-09-23-1:away"
+   ]
+  ],
+  [
+   "The home starter is known to the model with usable rate stats",
+   "VERIFIED -- starter flagged known, ERA, FIP and WHIP all populated, thin flag false",
+   [
+    "model_input:HOU-SEA-2026-09-23-1:home_sp_known"
+   ]
+  ],
+  [
+   "The away starter is known to the model with usable rate stats",
+   "MISSING -- flagged known, but ERA, WHIP, FIP and every other season rate field are null and the thin flag is true; only a recent-start ERA and innings are recorded",
+   [
+    "model_input:HOU-SEA-2026-09-23-1:away_sp_known"
+   ]
+  ],
+  [
+   "The starters the model priced are the same pitchers the league lists as probables",
+   "UNVERIFIED -- the model-input claims carry no pitcher identity, so the link between the model's starter records and the named probable starters is not supported by the packet",
+   [
+    "model_input:HOU-SEA-2026-09-23-1:home_sp_known",
+    "model_input:HOU-SEA-2026-09-23-1:away_sp_known",
+    "probable:HOU-SEA-2026-09-23-1:home",
+    "probable:HOU-SEA-2026-09-23-1:away"
+   ]
+  ],
+  [
+   "The market quote was still current when the recommendation was built",
+   "UNVERIFIED -- the quote's published_at is earlier than its retrieved_at, and the claim defers staleness to a separate gate (G3) whose result is not in the packet",
+   [
+    "market:HOU-SEA-2026-09-23-1:away"
+   ]
+  ]
+ ],
+ "challenged_assumption": "That the model's probability for the away side rests on a well-measured away starter. The model treats that starter as known, but the packet shows no season rate stats for him (ERA and the other rate fields are null) and flags him as thin, so the gap between our_probability and market_probability leans on an input that is mostly absent.",
+ "case_against": "The edge over the market is sourced only to the model's own output; no claim independently confirms our_probability. The away starter is the key uncertainty: the model records a known starter but supplies null season rate fields and a thin flag, leaving only a short recent sample (recent ERA and innings per start) to stand in. The home side, by contrast, has a full set of populated rate stats, so the asymmetry in input quality could by itself be producing part of the disagreement with the market, and the market's 11 books may be pricing information the model lacks. The market quote's age relative to build time is also not independently cleared in the packet. None of this is contradicted by a confirmed claim, so I do not adjust or fill the gap; I flag the thin, missing starter data as the weak point.",
+ "action": "NO_ADJUSTMENT",
+ "action_payload": {
+  "checked_claim_ids": [
+   "model_input:HOU-SEA-2026-09-23-1:home_sp_known",
+   "model_input:HOU-SEA-2026-09-23-1:away_sp_known",
+   "market:HOU-SEA-2026-09-23-1:away",
+   "probable:HOU-SEA-2026-09-23-1:home",
+   "probable:HOU-SEA-2026-09-23-1:away"
+  ]
+ },
+ "facts": [
+  {
+   "claim_id": "market:HOU-SEA-2026-09-23-1:away",
+   "field_path": "data.best_price",
+   "value": 125
+  },
+  {
+   "claim_id": "market:HOU-SEA-2026-09-23-1:away",
+   "field_path": "data.market_implied_probability",
+   "value": 0.43477
+  },
+  {
+   "claim_id": "market:HOU-SEA-2026-09-23-1:away",
+   "field_path": "data.books",
+   "value": 11
+  },
+  {
+   "claim_id": "model_input:HOU-SEA-2026-09-23-1:away_sp_known",
+   "field_path": "data.away_sp_era",
+   "value": null
+  },
+  {
+   "claim_id": "model_input:HOU-SEA-2026-09-23-1:away_sp_known",
+   "field_path": "data.away_sp_thin",
+   "value": true
+  },
+  {
+   "claim_id": "model_input:HOU-SEA-2026-09-23-1:away_sp_known",
+   "field_path": "data.away_sp_starts",
+   "value": 4
+  },
+  {
+   "claim_id": "model_input:HOU-SEA-2026-09-23-1:home_sp_known",
+   "field_path": "data.home_sp_thin",
+   "value": false
+  }
+ ],
+ "rankings": [],
+ "pitcher_attribution": null,
+ "notes": "No confirmed claim contradicts a model input, so no correction, recalculation or scenario is requested. Missing away-starter season rates are labelled MISSING and not filled. No pitcher is named; the starters are referred to by side only because the model-input claims do not tie their records to the probable-starter claims."
+}

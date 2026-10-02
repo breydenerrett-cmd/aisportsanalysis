@@ -1,0 +1,159 @@
+{
+ "game_id": "CLE-KC-2026-09-25-1",
+ "verified_assumptions": [
+  [
+   "The quoted price and market probability behind the recommendation (price 122, market_probability 0.44358) match the market quote.",
+   "VERIFIED -- the market claim shows best price 122 and implied probability 0.44358, equal to the recommendation's price and market_probability. The quote was published before the packet was retrieved; the packet gives no staleness limit to judge it against.",
+   [
+    "market:CLE-KC-2026-09-25-1:home"
+   ]
+  ],
+  [
+   "The identity of the home starter is settled.",
+   "UNVERIFIED -- two primary-source claims disagree: the schedule feed lists one home probable and the game feed lists a different home probable. Both are CONFIRMED, both are independent, both were retrieved at the same time, and neither carries a publication time, so neither outranks the other.",
+   [
+    "probable:CLE-KC-2026-09-25-1:home",
+    "probable:CLE-KC-2026-09-25-1:home:game_feed"
+   ]
+  ],
+  [
+   "The home starter the model used (ERA 3.9293, 27 starts, 14 days rest) is the pitcher who will start.",
+   "UNVERIFIED -- the model's capture records only a boolean and stats with no pitcher name or id, so the packet does not link it to either named home probable, and the two probables disagree with each other.",
+   [
+    "model_input:CLE-KC-2026-09-25-1:home_sp_known",
+    "probable:CLE-KC-2026-09-25-1:home",
+    "probable:CLE-KC-2026-09-25-1:home:game_feed"
+   ]
+  ],
+  [
+   "The away starter is identified and matches what the model used (ERA 3.7811, 29 starts, 14 days rest).",
+   "UNVERIFIED -- the schedule feed lists an away probable (one source, no conflict), but the model's away stats carry no name or id, so the packet does not link the model's away starter to that probable.",
+   [
+    "model_input:CLE-KC-2026-09-25-1:away_sp_known",
+    "probable:CLE-KC-2026-09-25-1:away"
+   ]
+  ]
+ ],
+ "challenged_assumption": "That the home starter feeding the model's home_sp_* inputs is the pitcher who actually starts. The recommended side is home, and the home probable is the one starter listing the packet cannot settle.",
+ "case_against": "The recommendation is a home moneyline whose edge is the gap between our_probability 0.5091036472401836 and market_probability 0.44358. Home-side context in the model's own inputs is weak: home_win_pct 0.4323 against away_win_pct 0.5226, home_run_diff_pg -0.671 against away_run_diff_pg 0.026, and home_last10_run_diff_pg -1.7 against away_last10_run_diff_pg 1.5. The starter is the main input that could support the home side, and the packet cannot say which pitcher the home starter inputs describe: the schedule feed and the game feed list different home probables, and the model's starter record has no name or id to match to either. If the model's home starter stats belong to a different pitcher than the one who starts, the edge rests on the wrong pitcher. Nothing in the packet shows the model used the wrong one, so I do not correct an input or fill the gap; I ask for the recommendation to be shown under both listed home probables.",
+ "action": "REQUEST_SCENARIO",
+ "action_payload": {
+  "scenario": "Re-run the home moneyline recommendation once with the home starter inputs set to the home probable from the schedule feed and once with the home probable from the game feed, and report whether the recommendation holds under both.",
+  "inputs_varied": [
+   "home_sp_known",
+   "home_sp_era",
+   "home_sp_whip",
+   "home_sp_k9",
+   "home_sp_bb9",
+   "home_sp_hr9",
+   "home_sp_fip",
+   "home_sp_k_bb_pct",
+   "home_sp_ip_per_start",
+   "home_sp_starts",
+   "home_sp_innings",
+   "home_sp_days_rest",
+   "home_sp_recent_era",
+   "home_sp_recent_ip_per_start"
+  ],
+  "source_claim_ids": [
+   "probable:CLE-KC-2026-09-25-1:home",
+   "probable:CLE-KC-2026-09-25-1:home:game_feed",
+   "model_input:CLE-KC-2026-09-25-1:home_sp_known"
+  ]
+ },
+ "facts": [
+  {
+   "claim_id": "market:CLE-KC-2026-09-25-1:home",
+   "field_path": "data.best_price",
+   "value": 122
+  },
+  {
+   "claim_id": "market:CLE-KC-2026-09-25-1:home",
+   "field_path": "data.market_implied_probability",
+   "value": 0.44358
+  },
+  {
+   "claim_id": "market:CLE-KC-2026-09-25-1:home",
+   "field_path": "data.books",
+   "value": 11
+  },
+  {
+   "claim_id": "model_input:CLE-KC-2026-09-25-1:home_sp_known",
+   "field_path": "data.home_sp_era",
+   "value": 3.9293
+  },
+  {
+   "claim_id": "model_input:CLE-KC-2026-09-25-1:home_sp_known",
+   "field_path": "data.home_sp_starts",
+   "value": 27
+  },
+  {
+   "claim_id": "model_input:CLE-KC-2026-09-25-1:home_sp_known",
+   "field_path": "data.home_sp_days_rest",
+   "value": 14
+  },
+  {
+   "claim_id": "model_input:CLE-KC-2026-09-25-1:home_sp_known",
+   "field_path": "data.home_win_pct",
+   "value": 0.4323
+  },
+  {
+   "claim_id": "model_input:CLE-KC-2026-09-25-1:home_sp_known",
+   "field_path": "data.away_win_pct",
+   "value": 0.5226
+  },
+  {
+   "claim_id": "model_input:CLE-KC-2026-09-25-1:home_sp_known",
+   "field_path": "data.home_run_diff_pg",
+   "value": -0.671
+  },
+  {
+   "claim_id": "model_input:CLE-KC-2026-09-25-1:home_sp_known",
+   "field_path": "data.away_run_diff_pg",
+   "value": 0.026
+  },
+  {
+   "claim_id": "model_input:CLE-KC-2026-09-25-1:home_sp_known",
+   "field_path": "data.home_last10_run_diff_pg",
+   "value": -1.7
+  },
+  {
+   "claim_id": "model_input:CLE-KC-2026-09-25-1:home_sp_known",
+   "field_path": "data.away_last10_run_diff_pg",
+   "value": 1.5
+  },
+  {
+   "claim_id": "model_input:CLE-KC-2026-09-25-1:away_sp_known",
+   "field_path": "data.away_sp_era",
+   "value": 3.7811
+  },
+  {
+   "claim_id": "model_input:CLE-KC-2026-09-25-1:away_sp_known",
+   "field_path": "data.away_sp_starts",
+   "value": 29
+  },
+  {
+   "claim_id": "model_input:CLE-KC-2026-09-25-1:away_sp_known",
+   "field_path": "data.away_sp_days_rest",
+   "value": 14
+  },
+  {
+   "claim_id": "probable:CLE-KC-2026-09-25-1:home",
+   "field_path": "data.probable_id",
+   "value": 702070
+  },
+  {
+   "claim_id": "probable:CLE-KC-2026-09-25-1:home:game_feed",
+   "field_path": "data.probable_id",
+   "value": 608379
+  },
+  {
+   "claim_id": "probable:CLE-KC-2026-09-25-1:away",
+   "field_path": "data.probable_id",
+   "value": 668909
+  }
+ ],
+ "rankings": [],
+ "pitcher_attribution": null,
+ "notes": "I name no pitcher in prose; the two home probables are referred to by claim id. The market claim and the recommendation agree on price and market probability, so there is no COMPARE_MARKET issue and no CORRECT_INPUT, because no confirmed claim contradicts a model input. The unresolved item is the conflict between the two home probable claims and the missing link between them and the model's starter record. I supply no probability and change no threshold."
+}

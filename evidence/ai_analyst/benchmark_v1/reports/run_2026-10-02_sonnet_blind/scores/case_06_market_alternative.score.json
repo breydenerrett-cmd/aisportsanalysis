@@ -1,0 +1,172 @@
+{
+  "case_id": "case_06_market_alternative",
+  "case_type": "market_alternative",
+  "report": "evidence/ai_analyst/benchmark_v1/reports/run_2026-10-02_sonnet_blind\\case_06_market_alternative.json",
+  "parsed": true,
+  "verifier": {
+    "passes": false,
+    "failed_checks": [
+      "fact[0] market:MIN-SF-2026-09-23-1:home#data.best_price",
+      "fact[1] market:MIN-SF-2026-09-23-1:home#data.books",
+      "fact[2] market:MIN-SF-2026-09-23-1:home#data.market_implied_probability",
+      "fact[3] market:MIN-SF-2026-09-23-1:home:quote_20260923T140542Z#data.best_price",
+      "fact[4] market:MIN-SF-2026-09-23-1:home:quote_20260923T140542Z#data.books",
+      "fact[5] market:MIN-SF-2026-09-23-1:home:quote_20260923T140542Z#data.market_implied_probability",
+      "fact[6] model_input:MIN-SF-2026-09-23-1:home_sp_known#data.home_sp_thin",
+      "fact[7] model_input:MIN-SF-2026-09-23-1:home_sp_known#data.home_sp_starts",
+      "fact[8] model_input:MIN-SF-2026-09-23-1:home_sp_known#data.home_sp_era",
+      "fact[9] model_input:MIN-SF-2026-09-23-1:home_sp_known#data.home_win_pct",
+      "fact[10] model_input:MIN-SF-2026-09-23-1:home_sp_known#data.away_win_pct",
+      "fact[11] model_input:MIN-SF-2026-09-23-1:home_sp_known#data.home_run_diff_pg",
+      "fact[12] model_input:MIN-SF-2026-09-23-1:home_sp_known#data.away_run_diff_pg",
+      "fact[13] model_input:MIN-SF-2026-09-23-1:home_sp_known#data.home_last5_run_diff_pg",
+      "fact[14] model_input:MIN-SF-2026-09-23-1:away_sp_known#data.away_sp_starts",
+      "fact[15] model_input:MIN-SF-2026-09-23-1:away_sp_known#data.away_sp_era",
+      "fact[16] model_input:MIN-SF-2026-09-23-1:away_sp_known#data.away_sp_thin",
+      "numbers_in_prose"
+    ],
+    "n_checks": 26
+  },
+  "factual_correctness": {
+    "correct": false,
+    "n_checked": 17,
+    "wrong": [
+      {
+        "kind": "fact",
+        "detail": "market:MIN-SF-2026-09-23-1:home#data.best_price has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "market:MIN-SF-2026-09-23-1:home#data.books has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "market:MIN-SF-2026-09-23-1:home#data.market_implied_probability has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "market:MIN-SF-2026-09-23-1:home:quote_20260923T140542Z#data.best_price has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "market:MIN-SF-2026-09-23-1:home:quote_20260923T140542Z#data.books has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "market:MIN-SF-2026-09-23-1:home:quote_20260923T140542Z#data.market_implied_probability has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:MIN-SF-2026-09-23-1:home_sp_known#data.home_sp_thin has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:MIN-SF-2026-09-23-1:home_sp_known#data.home_sp_starts has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:MIN-SF-2026-09-23-1:home_sp_known#data.home_sp_era has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:MIN-SF-2026-09-23-1:home_sp_known#data.home_win_pct has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:MIN-SF-2026-09-23-1:home_sp_known#data.away_win_pct has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:MIN-SF-2026-09-23-1:home_sp_known#data.home_run_diff_pg has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:MIN-SF-2026-09-23-1:home_sp_known#data.away_run_diff_pg has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:MIN-SF-2026-09-23-1:home_sp_known#data.home_last5_run_diff_pg has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:MIN-SF-2026-09-23-1:away_sp_known#data.away_sp_starts has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:MIN-SF-2026-09-23-1:away_sp_known#data.away_sp_era has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:MIN-SF-2026-09-23-1:away_sp_known#data.away_sp_thin has no source value"
+      }
+    ]
+  },
+  "source_correctness": {
+    "correct": false,
+    "citations": 31,
+    "missing_ids": [],
+    "unsupported_number_citations": [
+      {
+        "triple": 1,
+        "number": "14"
+      },
+      {
+        "triple": 1,
+        "number": "05"
+      },
+      {
+        "triple": 1,
+        "number": "13"
+      },
+      {
+        "triple": 1,
+        "number": "13"
+      },
+      {
+        "triple": 1,
+        "number": "57"
+      },
+      {
+        "triple": 2,
+        "number": "14"
+      },
+      {
+        "triple": 2,
+        "number": "10"
+      }
+    ]
+  },
+  "unsupported_claims": {
+    "count": 24,
+    "components": {
+      "must_not_claim_asserted": 0,
+      "wrong_facts_or_rankings": 17,
+      "unsupported_citations": 7,
+      "invented_numerical_effects": 0,
+      "false_alarm_labels": 0
+    },
+    "items": []
+  },
+  "flags_detected": {
+    "detected": true,
+    "required": 0,
+    "found": [],
+    "missed": [],
+    "false_alarms": []
+  },
+  "correct_action": {
+    "action": "COMPARE_MARKET",
+    "expected": "COMPARE_MARKET",
+    "correct": true,
+    "acceptable": true
+  },
+  "recalculation": {
+    "asked": false,
+    "justified": false,
+    "ok": true
+  },
+  "invented_numerical_effect": {
+    "invented": false,
+    "numbers": []
+  }
+}

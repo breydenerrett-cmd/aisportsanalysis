@@ -1,0 +1,147 @@
+{
+  "case_id": "case_02_clean_run_line",
+  "case_type": "clean",
+  "report": "evidence/ai_analyst/benchmark_v1/reports/run_2026-10-02_sonnet_blind\\case_02_clean_run_line.json",
+  "parsed": true,
+  "verifier": {
+    "passes": false,
+    "failed_checks": [
+      "fact[0] market:CLE-KC-2026-09-25-1:home#data.best_price",
+      "fact[1] market:CLE-KC-2026-09-25-1:home#data.books",
+      "fact[2] market:CLE-KC-2026-09-25-1:home#data.market_implied_probability",
+      "fact[3] model_input:CLE-KC-2026-09-25-1:home_sp_known#data.home_sp_days_rest",
+      "fact[4] model_input:CLE-KC-2026-09-25-1:away_sp_known#data.away_sp_days_rest",
+      "fact[5] model_input:CLE-KC-2026-09-25-1:home_sp_known#data.home_sp_recent_era",
+      "fact[6] model_input:CLE-KC-2026-09-25-1:home_sp_known#data.home_sp_era",
+      "fact[7] model_input:CLE-KC-2026-09-25-1:home_sp_known#data.home_run_diff_pg",
+      "fact[8] model_input:CLE-KC-2026-09-25-1:home_sp_known#data.home_bullpen_rate",
+      "fact[9] model_input:CLE-KC-2026-09-25-1:home_sp_known#data.away_bullpen_rate",
+      "numbers_in_prose"
+    ],
+    "n_checks": 19
+  },
+  "factual_correctness": {
+    "correct": false,
+    "n_checked": 10,
+    "wrong": [
+      {
+        "kind": "fact",
+        "detail": "market:CLE-KC-2026-09-25-1:home#data.best_price has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "market:CLE-KC-2026-09-25-1:home#data.books has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "market:CLE-KC-2026-09-25-1:home#data.market_implied_probability has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:CLE-KC-2026-09-25-1:home_sp_known#data.home_sp_days_rest has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:CLE-KC-2026-09-25-1:away_sp_known#data.away_sp_days_rest has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:CLE-KC-2026-09-25-1:home_sp_known#data.home_sp_recent_era has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:CLE-KC-2026-09-25-1:home_sp_known#data.home_sp_era has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:CLE-KC-2026-09-25-1:home_sp_known#data.home_run_diff_pg has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:CLE-KC-2026-09-25-1:home_sp_known#data.home_bullpen_rate has no source value"
+      },
+      {
+        "kind": "fact",
+        "detail": "model_input:CLE-KC-2026-09-25-1:home_sp_known#data.away_bullpen_rate has no source value"
+      }
+    ]
+  },
+  "source_correctness": {
+    "correct": false,
+    "citations": 26,
+    "missing_ids": [],
+    "unsupported_number_citations": [
+      {
+        "triple": 0,
+        "number": "2026"
+      },
+      {
+        "triple": 0,
+        "number": "09"
+      },
+      {
+        "triple": 0,
+        "number": "12"
+      },
+      {
+        "triple": 0,
+        "number": "58"
+      },
+      {
+        "triple": 0,
+        "number": "2026"
+      },
+      {
+        "triple": 0,
+        "number": "09"
+      },
+      {
+        "triple": 0,
+        "number": "50"
+      },
+      {
+        "triple": 0,
+        "number": "00"
+      }
+    ]
+  },
+  "unsupported_claims": {
+    "count": 19,
+    "components": {
+      "must_not_claim_asserted": 0,
+      "wrong_facts_or_rankings": 10,
+      "unsupported_citations": 8,
+      "invented_numerical_effects": 1,
+      "false_alarm_labels": 0
+    },
+    "items": []
+  },
+  "flags_detected": {
+    "detected": true,
+    "required": 0,
+    "found": [],
+    "missed": [],
+    "false_alarms": []
+  },
+  "correct_action": {
+    "action": "NO_ADJUSTMENT",
+    "expected": "NO_ADJUSTMENT",
+    "correct": true,
+    "acceptable": true
+  },
+  "recalculation": {
+    "asked": false,
+    "justified": false,
+    "ok": true
+  },
+  "invented_numerical_effect": {
+    "invented": true,
+    "numbers": [
+      {
+        "number": "10",
+        "where": "case_against",
+        "sentence": "The packet's own inputs lean the other way on several points: the home team's run differential per game is negative, its last-5 and last-10 run differentials ar"
+      }
+    ]
+  }
+}

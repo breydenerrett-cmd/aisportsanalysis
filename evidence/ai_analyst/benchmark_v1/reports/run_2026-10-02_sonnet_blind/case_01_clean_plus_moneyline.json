@@ -1,0 +1,176 @@
+{
+ "game_id": "HOU-ATH-2026-09-25-1",
+ "verified_assumptions": [
+  [
+   "The model had a home and an away starter on record when it priced the game",
+   "VERIFIED -- both starter_known_to_model claims are CONFIRMED and record the starter flag as true for each side",
+   [
+    "model_input:HOU-ATH-2026-09-25-1:home_sp_known",
+    "model_input:HOU-ATH-2026-09-25-1:away_sp_known"
+   ]
+  ],
+  [
+   "The league's probable-pitcher listing names a home and an away starter for this game",
+   "VERIFIED -- both probable claims are CONFIRMED from the league's own listing",
+   [
+    "probable:HOU-ATH-2026-09-25-1:home",
+    "probable:HOU-ATH-2026-09-25-1:away"
+   ]
+  ],
+  [
+   "The starter statistics the model used belong to the pitchers the league lists as probable",
+   "UNVERIFIED -- the model_input claims carry statistics but no pitcher name or id, so the packet does not link them to the probable claims",
+   [
+    "model_input:HOU-ATH-2026-09-25-1:home_sp_known",
+    "model_input:HOU-ATH-2026-09-25-1:away_sp_known",
+    "probable:HOU-ATH-2026-09-25-1:home",
+    "probable:HOU-ATH-2026-09-25-1:away"
+   ]
+  ],
+  [
+   "The market price and market probability in the recommendation match their source",
+   "VERIFIED -- the market quote claim shows the same best price and the same implied probability as the recommendation",
+   [
+    "market:HOU-ATH-2026-09-25-1:home"
+   ]
+  ],
+  [
+   "The market quote was still current when the recommendation was built",
+   "STALE -- the quote was published earlier than the capture time, and the packet has no first-pitch time to judge how much that matters",
+   [
+    "market:HOU-ATH-2026-09-25-1:home"
+   ]
+  ],
+  [
+   "The home side is underpriced by the market, which is what the gap between the model probability and the market probability implies",
+   "UNVERIFIED -- no claim in the packet explains what drives the model above the market, and the team-level figures in the packet point to the away side on every line shown",
+   [
+    "model_input:HOU-ATH-2026-09-25-1:home_sp_known",
+    "model_input:HOU-ATH-2026-09-25-1:away_sp_known",
+    "market:HOU-ATH-2026-09-25-1:home"
+   ]
+  ],
+  [
+   "Lineup, injury, roster-transaction and weather conditions match what the model assumed",
+   "MISSING -- the packet contains no claim on any of these",
+   []
+  ]
+ ],
+ "challenged_assumption": "That the home side is worth backing at the quoted price. The model sits above the market on the home side, yet every team-level figure the packet records (win percentage, run differential, recent run differential, bullpen rate) favors the away side, and the home starter's season ERA is worse than the away starter's. Nothing sourced in the packet supports the model's higher home figure, and the link between the starter statistics and the named probables is not established.",
+ "case_against": "The home side has the lower win percentage, the worse season run differential, the worse last-ten run differential and the higher bullpen rate, and its starter shows the higher ERA and WHIP with lower strikeout-minus-walk rate. The away side has the better figures on each of those. The model nonetheless rates the home side above the market-implied probability, and the packet offers no sourced reason for that gap: no lineup, injury, weather or transaction claim, and no claim tying the starter inputs to the named probables. The one input that leans home is the recent ERA of the home starter, which is close to the away starter's recent figure and rests on a small recent sample. The market quote was published before the capture time, so the price may have moved. This is a reason for caution, but it is not a sourced contradiction of any model input, so there is nothing to correct, vary, recompute or compare.",
+ "action": "NO_ADJUSTMENT",
+ "action_payload": {
+  "checked_claim_ids": [
+   "model_input:HOU-ATH-2026-09-25-1:home_sp_known",
+   "model_input:HOU-ATH-2026-09-25-1:away_sp_known",
+   "market:HOU-ATH-2026-09-25-1:home",
+   "probable:HOU-ATH-2026-09-25-1:home",
+   "probable:HOU-ATH-2026-09-25-1:away"
+  ]
+ },
+ "facts": [
+  {
+   "claim_id": "market:HOU-ATH-2026-09-25-1:home",
+   "field_path": "data.best_price",
+   "value": 159
+  },
+  {
+   "claim_id": "market:HOU-ATH-2026-09-25-1:home",
+   "field_path": "data.market_implied_probability",
+   "value": 0.38352
+  },
+  {
+   "claim_id": "market:HOU-ATH-2026-09-25-1:home",
+   "field_path": "data.books",
+   "value": 11
+  },
+  {
+   "claim_id": "model_input:HOU-ATH-2026-09-25-1:home_sp_known",
+   "field_path": "data.home_sp_era",
+   "value": 4.7143
+  },
+  {
+   "claim_id": "model_input:HOU-ATH-2026-09-25-1:away_sp_known",
+   "field_path": "data.away_sp_era",
+   "value": 3.3103
+  },
+  {
+   "claim_id": "model_input:HOU-ATH-2026-09-25-1:home_sp_known",
+   "field_path": "data.home_win_pct",
+   "value": 0.3935
+  },
+  {
+   "claim_id": "model_input:HOU-ATH-2026-09-25-1:home_sp_known",
+   "field_path": "data.away_win_pct",
+   "value": 0.4936
+  },
+  {
+   "claim_id": "model_input:HOU-ATH-2026-09-25-1:home_sp_known",
+   "field_path": "data.home_run_diff_pg",
+   "value": -1.406
+  },
+  {
+   "claim_id": "model_input:HOU-ATH-2026-09-25-1:home_sp_known",
+   "field_path": "data.away_run_diff_pg",
+   "value": -0.321
+  },
+  {
+   "claim_id": "model_input:HOU-ATH-2026-09-25-1:home_sp_known",
+   "field_path": "data.home_last10_run_diff_pg",
+   "value": -3.1
+  },
+  {
+   "claim_id": "model_input:HOU-ATH-2026-09-25-1:home_sp_known",
+   "field_path": "data.away_last10_run_diff_pg",
+   "value": -1.1
+  },
+  {
+   "claim_id": "model_input:HOU-ATH-2026-09-25-1:home_sp_known",
+   "field_path": "data.home_bullpen_rate",
+   "value": 5.6353
+  },
+  {
+   "claim_id": "model_input:HOU-ATH-2026-09-25-1:home_sp_known",
+   "field_path": "data.away_bullpen_rate",
+   "value": 4.3579
+  },
+  {
+   "claim_id": "model_input:HOU-ATH-2026-09-25-1:home_sp_known",
+   "field_path": "data.home_sp_recent_era",
+   "value": 2.1176
+  },
+  {
+   "claim_id": "model_input:HOU-ATH-2026-09-25-1:away_sp_known",
+   "field_path": "data.away_sp_recent_era",
+   "value": 1.9636
+  }
+ ],
+ "rankings": [
+  {
+   "metric": "season run differential per game",
+   "subject_value": -1.406,
+   "compared_values": [
+    -0.321
+   ],
+   "claimed_rank": 2
+  },
+  {
+   "metric": "win percentage",
+   "subject_value": 0.3935,
+   "compared_values": [
+    0.4936
+   ],
+   "claimed_rank": 2
+  },
+  {
+   "metric": "last-ten run differential per game",
+   "subject_value": -3.1,
+   "compared_values": [
+    -1.1
+   ],
+   "claimed_rank": 2
+  }
+ ],
+ "pitcher_attribution": null,
+ "notes": "Subject for the rankings is the home side, compared with the away side. Claim ids cited throughout are exact. No player is named in this reply. I supply no probability or threshold. NO_ADJUSTMENT is chosen because nothing sourced contradicts a model input; the gaps noted (starter link, lineup, injuries, transactions, weather, first-pitch time) are missing evidence, not contradicting evidence."
+}
