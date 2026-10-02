@@ -108,7 +108,13 @@ def fighters_match(fight: str, home_team: str, away_team: str) -> bool:
 def record_result(*, date: str, fight: str, winner: Optional[str] = None,
                   outcome: str = OUTCOME_WIN, entered_by: str,
                   now: Optional[datetime] = None,
-                  path: str | Path = DEFAULT_PATH) -> dict:
+                  path: str | Path = DEFAULT_PATH,
+                  provider: Optional[str] = None,
+                  provider_event_id: Optional[str] = None,
+                  provider_fight_id: Optional[str] = None,
+                  fetched_utc: Optional[str] = None,
+                  raw_status: Optional[str] = None,
+                  basis: Optional[str] = None) -> dict:
     """Append one manually-entered fight result. Never overwrites -- a
     correction is a new row; `result_for_fight` reads the newest match.
 
@@ -125,8 +131,26 @@ def record_result(*, date: str, fight: str, winner: Optional[str] = None,
                  (draw, no_contest, cancelled) grade every pick on the bout
                  VOID and ignore `winner`.
         entered_by: who is recording this (an email or handle) -- required,
-                    never defaulted, so every row is attributable.
+                    never defaulted, so every row is attributable. An
+                    automatic row (`src.pipeline.ufc_autograde`) uses
+                    "auto:<provider>".
+        provider, provider_event_id, provider_fight_id, fetched_utc,
+        raw_status, basis: OPTIONAL provenance for an AUTOMATIC row -- which
+                    provider said so, its own event/fight ids, when it was
+                    fetched, the provider's raw status string, and a short
+                    human-readable reason. Written only when given, so a
+                    manual row stays byte-for-byte what it always was.
+                    Adding a provider field requires `provider` itself.
     """
+    provenance = {"provider": provider, "provider_event_id": provider_event_id,
+                  "provider_fight_id": provider_fight_id,
+                  "fetched_utc": fetched_utc, "raw_status": raw_status,
+                  "basis": basis}
+    provenance = {k: (str(v) if k != "fetched_utc" else v)
+                  for k, v in provenance.items() if v is not None}
+    if provenance and not provider:
+        raise UfcResultsError(
+            "provenance fields need provider -- say which source gave the result")
     if outcome not in OUTCOMES:
         raise UfcResultsError(f"outcome must be one of {OUTCOMES}, got {outcome!r}")
     if not date:
@@ -157,6 +181,7 @@ def record_result(*, date: str, fight: str, winner: Optional[str] = None,
         "entered_by": entered_by,
         "entered_utc": moment.isoformat(),
     }
+    row.update(provenance)
 
     target = Path(path)
     target.parent.mkdir(parents=True, exist_ok=True)

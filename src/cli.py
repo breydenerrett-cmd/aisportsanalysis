@@ -3939,7 +3939,7 @@ def cmd_tennis(args) -> int:
 
 
 def cmd_ufc(args) -> int:
-    """UFC commands: bounded odds capture, and manual result entry."""
+    """UFC commands: bounded odds capture, manual result entry, autograde."""
     sub = getattr(args, "ufc_command", None)
 
     if sub == "capture":
@@ -3987,6 +3987,57 @@ def cmd_ufc(args) -> int:
         print(f"recorded: {row['date']}  {row['fight']}  outcome={row['outcome']}"
               + (f"  winner={row['winner']}" if row.get("winner") else ""))
         print(f"  entered_by={row['entered_by']}  entered_utc={row['entered_utc']}")
+        return EXIT_OK
+
+    if sub == "autograde":
+        from src.pipeline import ufc_autograde, ufc_results
+
+        if getattr(args, "fixture", None):
+            from src.providers import balldontlie_mma
+            provider = balldontlie_mma.provider_from_fixture(args.fixture)
+        else:
+            from src.providers import balldontlie_mma
+            try:
+                provider = balldontlie_mma.BallDontLieMmaProvider.from_env()
+            except ufc_autograde.ProviderError as exc:
+                print(f"BLOCKED: {exc}", file=sys.stderr)
+                return EXIT_NOT_CONFIGURED
+        kwargs = {}
+        if getattr(args, "ledger_path", None):
+            kwargs["ledger_path"] = args.ledger_path
+        if getattr(args, "results_path", None):
+            kwargs["results_path"] = args.results_path
+        dry = bool(getattr(args, "dry_run", False))
+        try:
+            decisions = ufc_autograde.autograde_date(
+                args.date, provider, dry_run=dry, **kwargs)
+        except ufc_autograde.ProviderError as exc:
+            print(f"BLOCKED: {exc}", file=sys.stderr)
+            return EXIT_ERROR
+        except ufc_results.UfcResultsError as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return EXIT_ERROR
+        if not decisions:
+            print(f"no published UFC picks needing a result for {args.date}")
+            return EXIT_OK
+        verb = {"record": "WOULD RECORD" if dry else "RECORDED",
+                "unresolved": "UNRESOLVED (human needed)",
+                "skip": "SKIPPED"}
+        for d in decisions:
+            line = f"{verb[d.action]}  {d.bout.fight}"
+            if d.action == "record":
+                line += f"  outcome={d.outcome}" + (f" winner={d.winner}" if d.winner else "")
+            print(line)
+            print(f"    why: {d.reason}")
+            if d.action == "record":
+                print(f"    provenance: {d.provenance}")
+        counts = {k: sum(1 for d in decisions if d.action == k)
+                  for k in ("record", "unresolved", "skip")}
+        print(f"{'dry run -- nothing written. ' if dry else ''}"
+              f"{counts['record']} to record, {counts['unresolved']} unresolved, "
+              f"{counts['skip']} skipped")
+        if not dry and counts["record"]:
+            print(f"next: python -m src.cli card settle --sport mma --date {args.date}")
         return EXIT_OK
 
     print(f"unknown ufc subcommand: {sub}")
@@ -4485,6 +4536,26 @@ def build_parser() -> argparse.ArgumentParser:
     ufc_result_cmd.add_argument(
         "--entered-by", dest="entered_by", required=True,
         help="who is recording this result (email or handle) -- every row is attributed")
+
+    ufc_autograde_cmd = ufc_sub.add_parser(
+        "autograde",
+        help="grade published UFC picks from a results provider "
+             "(BALLDONTLIE MMA) into the results store; --dry-run prints "
+             "what it would record and why")
+    ufc_autograde_cmd.add_argument("--date", required=True,
+                                   help="YYYY-MM-DD card date (as in the ledger)")
+    ufc_autograde_cmd.add_argument("--dry-run", dest="dry_run", action="store_true",
+                                   help="print decisions, write nothing")
+    ufc_autograde_cmd.add_argument(
+        "--fixture", default=None,
+        help="offline: read the provider response from this JSON file instead "
+             "of calling the API (no key needed)")
+    ufc_autograde_cmd.add_argument(
+        "--ledger-path", dest="ledger_path", default=None,
+        help="read the published card from this ledger file (default: the real one)")
+    ufc_autograde_cmd.add_argument(
+        "--results-path", dest="results_path", default=None,
+        help="results store to read and append (default: the real one)")
 
     eod_cmd = sub.add_parser(
         "eod", help="build and write the end-of-day self-review (S7)")

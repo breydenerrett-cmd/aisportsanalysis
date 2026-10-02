@@ -1,0 +1,312 @@
+{
+ "_provenance": "BUILT FROM THE PUBLISHED DOCUMENTATION SHAPE (https://mma.balldontlie.io, read 2026-10-01); NOT CAPTURED FROM THE LIVE API. Fighter objects are abbreviated; winners follow docs/audit/2026-10-01/UFC_GRADING.md.",
+ "events": {
+  "data": [
+   {
+    "id": 90001,
+    "name": "UFC Fight Night: Rosas Jr. vs. Barcelos",
+    "short_name": "UFC FN",
+    "date": "2026-09-26T17:00:00.000Z",
+    "venue_name": "Example Arena",
+    "venue_city": "Example",
+    "venue_state": null,
+    "venue_country": "USA",
+    "status": "completed",
+    "status_state": "final",
+    "main_card_start_time": null,
+    "prelims_start_time": null,
+    "early_prelims_start_time": null,
+    "league": {
+     "id": 1,
+     "name": "UFC",
+     "abbreviation": "UFC"
+    }
+   }
+  ],
+  "meta": {
+   "per_page": 25
+  }
+ },
+ "fights": {
+  "data": [
+   {
+    "id": 1,
+    "event": {
+     "id": 90001,
+     "name": "UFC Fight Night: Rosas Jr. vs. Barcelos",
+     "short_name": "UFC FN",
+     "date": "2026-09-26T17:00:00.000Z",
+     "venue_name": "Example Arena",
+     "venue_city": "Example",
+     "venue_state": null,
+     "venue_country": "USA",
+     "status": "completed",
+     "status_state": "final",
+     "main_card_start_time": null,
+     "prelims_start_time": null,
+     "early_prelims_start_time": null,
+     "league": {
+      "id": 1,
+      "name": "UFC",
+      "abbreviation": "UFC"
+     }
+    },
+    "fighter1": {
+     "id": 11,
+     "name": "Raul Rosas Jr",
+     "first_name": "Raul",
+     "last_name": "Jr",
+     "active": true
+    },
+    "fighter2": {
+     "id": 12,
+     "name": "Raoni Barcelos",
+     "first_name": "Raoni",
+     "last_name": "Barcelos",
+     "active": true
+    },
+    "winner": {
+     "id": 11,
+     "name": "Raul Rosas Jr",
+     "first_name": "Raul",
+     "last_name": "Jr",
+     "active": true
+    },
+    "is_main_event": false,
+    "is_title_fight": false,
+    "card_segment": "prelims",
+    "fight_order": 1,
+    "scheduled_rounds": 3,
+    "result_method": "KO/TKO",
+    "result_method_detail": null,
+    "result_round": 5,
+    "result_time": null,
+    "status": "completed",
+    "status_state": "final"
+   },
+   {
+    "id": 2,
+    "event": {
+     "id": 90001,
+     "name": "UFC Fight Night: Rosas Jr. vs. Barcelos",
+     "short_name": "UFC FN",
+     "date": "2026-09-26T17:00:00.000Z",
+     "venue_name": "Example Arena",
+     "venue_city": "Example",
+     "venue_state": null,
+     "venue_country": "USA",
+     "status": "completed",
+     "status_state": "final",
+     "main_card_start_time": null,
+     "prelims_start_time": null,
+     "early_prelims_start_time": null,
+     "league": {
+      "id": 1,
+      "name": "UFC",
+      "abbreviation": "UFC"
+     }
+    },
+    "fighter1": {
+     "id": 21,
+     "name": "Rodolfo Vieira",
+     "first_name": "Rodolfo",
+     "last_name": "Vieira",
+     "active": true
+    },
+    "fighter2": {
+     "id": 22,
+     "name": "Robert Bryczek",
+     "first_name": "Robert",
+     "last_name": "Bryczek",
+     "active": true
+    },
+    "winner": {
+     "id": 21,
+     "name": "Rodolfo Vieira",
+     "first_name": "Rodolfo",
+     "last_name": "Vieira",
+     "active": true
+    },
+    "is_main_event": false,
+    "is_title_fight": false,
+    "card_segment": "prelims",
+    "fight_order": 1,
+    "scheduled_rounds": 3,
+    "result_method": "Decision - Unanimous",
+    "result_method_detail": null,
+    "result_round": 3,
+    "result_time": null,
+    "status": "completed",
+    "status_state": "final"
+   },
+   {
+    "id": 3,
+    "event": {
+     "id": 90001,
+     "name": "UFC Fight Night: Rosas Jr. vs. Barcelos",
+     "short_name": "UFC FN",
+     "date": "2026-09-26T17:00:00.000Z",
+     "venue_name": "Example Arena",
+     "venue_city": "Example",
+     "venue_state": null,
+     "venue_country": "USA",
+     "status": "completed",
+     "status_state": "final",
+     "main_card_start_time": null,
+     "prelims_start_time": null,
+     "early_prelims_start_time": null,
+     "league": {
+      "id": 1,
+      "name": "UFC",
+      "abbreviation": "UFC"
+     }
+    },
+    "fighter1": {
+     "id": 31,
+     "name": "Christian Edwards",
+     "first_name": "Christian",
+     "last_name": "Edwards",
+     "active": true
+    },
+    "fighter2": {
+     "id": 32,
+     "name": "Rodolfo Bellato",
+     "first_name": "Rodolfo",
+     "last_name": "Bellato",
+     "active": true
+    },
+    "winner": {
+     "id": 31,
+     "name": "Christian Edwards",
+     "first_name": "Christian",
+     "last_name": "Edwards",
+     "active": true
+    },
+    "is_main_event": false,
+    "is_title_fight": false,
+    "card_segment": "prelims",
+    "fight_order": 1,
+    "scheduled_rounds": 3,
+    "result_method": "KO/TKO",
+    "result_method_detail": null,
+    "result_round": 3,
+    "result_time": null,
+    "status": "completed",
+    "status_state": "final"
+   },
+   {
+    "id": 4,
+    "event": {
+     "id": 90001,
+     "name": "UFC Fight Night: Rosas Jr. vs. Barcelos",
+     "short_name": "UFC FN",
+     "date": "2026-09-26T17:00:00.000Z",
+     "venue_name": "Example Arena",
+     "venue_city": "Example",
+     "venue_state": null,
+     "venue_country": "USA",
+     "status": "completed",
+     "status_state": "final",
+     "main_card_start_time": null,
+     "prelims_start_time": null,
+     "early_prelims_start_time": null,
+     "league": {
+      "id": 1,
+      "name": "UFC",
+      "abbreviation": "UFC"
+     }
+    },
+    "fighter1": {
+     "id": 41,
+     "name": "Ailin Perez",
+     "first_name": "Ailin",
+     "last_name": "Perez",
+     "active": true
+    },
+    "fighter2": {
+     "id": 42,
+     "name": "Norma Dumont",
+     "first_name": "Norma",
+     "last_name": "Dumont",
+     "active": true
+    },
+    "winner": {
+     "id": 41,
+     "name": "Ailin Perez",
+     "first_name": "Ailin",
+     "last_name": "Perez",
+     "active": true
+    },
+    "is_main_event": false,
+    "is_title_fight": false,
+    "card_segment": "prelims",
+    "fight_order": 1,
+    "scheduled_rounds": 3,
+    "result_method": "Decision - Unanimous",
+    "result_method_detail": null,
+    "result_round": 3,
+    "result_time": null,
+    "status": "completed",
+    "status_state": "final"
+   },
+   {
+    "id": 5,
+    "event": {
+     "id": 90001,
+     "name": "UFC Fight Night: Rosas Jr. vs. Barcelos",
+     "short_name": "UFC FN",
+     "date": "2026-09-26T17:00:00.000Z",
+     "venue_name": "Example Arena",
+     "venue_city": "Example",
+     "venue_state": null,
+     "venue_country": "USA",
+     "status": "completed",
+     "status_state": "final",
+     "main_card_start_time": null,
+     "prelims_start_time": null,
+     "early_prelims_start_time": null,
+     "league": {
+      "id": 1,
+      "name": "UFC",
+      "abbreviation": "UFC"
+     }
+    },
+    "fighter1": {
+     "id": 51,
+     "name": "Sedriques Dumas",
+     "first_name": "Sedriques",
+     "last_name": "Dumas",
+     "active": true
+    },
+    "fighter2": {
+     "id": 52,
+     "name": "Luis Hernandez",
+     "first_name": "Luis",
+     "last_name": "Hernandez",
+     "active": true
+    },
+    "winner": {
+     "id": 51,
+     "name": "Sedriques Dumas",
+     "first_name": "Sedriques",
+     "last_name": "Dumas",
+     "active": true
+    },
+    "is_main_event": false,
+    "is_title_fight": false,
+    "card_segment": "prelims",
+    "fight_order": 1,
+    "scheduled_rounds": 3,
+    "result_method": "KO/TKO",
+    "result_method_detail": null,
+    "result_round": 1,
+    "result_time": null,
+    "status": "completed",
+    "status_state": "final"
+   }
+  ],
+  "meta": {
+   "per_page": 25
+  }
+ }
+}
