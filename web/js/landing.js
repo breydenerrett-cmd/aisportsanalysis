@@ -776,11 +776,13 @@ export function renderLastCard(section, payload, now = new Date()) {
 
 /**
  * THE HERO'S SECOND BUTTON POINTS AT THE SAMPLE ONLY WHILE THERE IS ONE
- * (2026-10-02). The markup says "See last night's card, graded" and jumps to
- * #free-sample, but that section is hidden until a settled day has rendered. A
- * button that promises a card and scrolls nowhere is worse than no button, so
- * when the sample is not shown the button becomes the plain record link. The
- * hook (`cta-record-secondary`) never changes: clicks are counted by hook.
+ * (2026-10-02). The markup is the plain record link, because #free-sample is
+ * hidden until a settled day has rendered and a button that promises a card
+ * and scrolls nowhere is worse than no button (with scripts off it would
+ * never recover). Once the sample is showing the button becomes "See last
+ * night's card, graded" and jumps to it; if it is not, the button stays, or
+ * goes back to, the record link. The hook (`cta-record-secondary`) never
+ * changes: clicks are counted by hook.
  */
 export const SAMPLE_BUTTON = "See last night's card, graded";
 export const RECORD_BUTTON = "See every pick, graded";

@@ -113,10 +113,14 @@ class TheFirstScreenReadsInOrder(unittest.TestCase):
 
 
 class TheSecondButtonAndTheFullRecordLink(unittest.TestCase):
-    def test_the_secondary_button_jumps_to_the_free_sample_on_this_page(self):
+    def test_as_written_the_secondary_button_is_a_link_that_works_with_no_script(self):
+        # The sample section is hidden until a script fills it, so the markup
+        # must not point at it: with scripts off that button went nowhere.
+        # landing.js upgrades it once the sample is showing (tested below).
         tag = re.search(r'<a\b[^>]*data-hook="cta-record-secondary"[^>]*>(.*?)</a>', MARKUP, re.S)
-        self.assertEqual(tag.group(1).strip(), "See last night's card, graded")
-        self.assertIn('href="#free-sample"', tag.group(0))
+        self.assertEqual(tag.group(1).strip(), "See every pick, graded")
+        self.assertIn('href="index.html#/record-card"', tag.group(0))
+        self.assertNotIn('href="#free-sample"', tag.group(0))
         self.assertIn('id="free-sample"', MARKUP)
         self.assertIn('data-hook="last-card"', re.search(r'<section\b[^>]*id="free-sample"[^>]*>',
                                                          MARKUP).group(0))

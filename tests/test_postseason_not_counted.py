@@ -245,6 +245,18 @@ class ApiCardV2ExposesPostseasonSplit(unittest.TestCase):
     reproving classification.
     """
 
+    def setUp(self):
+        # GET /card/record is built once per ledger state (api/card.py's
+        # _memo_public). This test swaps the ledger FUNCTIONS, not the file,
+        # so without a reset it was handed whatever an earlier test in the
+        # same process had cached from the real ledger (16 wins, not 1) and
+        # passed or failed by the order the modules happened to run in.
+        from api import card as card_mod
+        from api import meta as meta_mod
+        for reset in (card_mod.reset_public_cache_for_tests, meta_mod.reset_record_cache_for_tests):
+            reset()
+            self.addCleanup(reset)
+
     def _record_v2_fixture(self):
         blank = {"days": 0, "wins": 0, "losses": 0, "pushes": 0, "voids": 0,
                 "n_staked": 0, "profit_units": 0.0, "win_rate": None,

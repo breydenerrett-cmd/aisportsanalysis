@@ -103,11 +103,13 @@
     <p class="hero__claim-body">A short card each night: the bet, the best price and where to find it, and why. Every card is graded in public afterwards, wins and losses.</p>
     <div class="hero__cta-group" data-rise data-delay="160">
       <a class="btn btn--primary" href="index.html#/signup" data-hook="cta-signup-hero" data-checkout-cta>Join the waitlist</a>
-      <!-- The second button jumps to the free sample on this page while that
-           section is showing; landing.js (pointSampleButton) turns it into the
-           plain record link when the sample is hidden. The full record is also
-           linked, as text, right below. -->
-      <a class="btn btn--ghost" href="#free-sample" data-hook="cta-record-secondary">See last night's card, graded</a>
+      <!-- As written here the second button is the plain record link, which
+           works with no script and before anything has loaded. Once the free
+           sample below has rendered, landing.js (pointSampleButton) turns it
+           into "See last night's card, graded" and points it at that section;
+           the sample is hidden until then, so the markup must not link to it.
+           The full record is also linked, as text, right below. -->
+      <a class="btn btn--ghost" href="index.html#/record-card" data-hook="cta-record-secondary">See every pick, graded</a>
       <p class="hero__cta-note" data-hook="hero-cta-note">Not on sale yet. Planned price $19.99 a month. The record and the postseason odds are free now.</p>
       <a class="hero__record-link" href="index.html#/record-card" data-hook="hero-record-link">Or open the full record, every pick &rarr;</a>
     </div>
