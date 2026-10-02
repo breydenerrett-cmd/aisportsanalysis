@@ -41,7 +41,7 @@ import urllib.request
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-BASE_URL = "https://linehound-prod.fly.dev"
+BASE_URL = "https://linehound.app"
 REPO = "breydenerrett-cmd/aisportsanalysis"
 BRANCH = "claude/sports-betting-analysis-review-g1o0co"
 STATE_PATH = Path(__file__).resolve().parent.parent / "data" / "logs" / "prod_watch_state.json"

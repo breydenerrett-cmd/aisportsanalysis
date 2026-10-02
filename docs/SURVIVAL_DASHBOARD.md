@@ -1,6 +1,6 @@
 # LineHound survival dashboard
 
-Generated 2026-10-02 03:59Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-10-02 04:29Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
@@ -67,14 +67,14 @@ Closing-line value: see `docs/VALUE_SCAN.md` (the standing measurement; no CLV f
 
 ## Top 3 blockers
 
-1. Nobody has been contacted: 40 leads are queued, 0 messages sent. Sending waits on three things, in order: the admin token (owner, 2 minutes), the domain (owner, DNS), and the source tracking reaching production.
-2. linehound.app does not load: the domain is on Cloudflare with no A, AAAA or CNAME record and Fly holds no certificate for it. Outreach links use linehound-prod.fly.dev until it does. Checkout cannot be switched on before it does, because buyers are returned to that domain. Steps: docs/GO_LIVE_2026-09-28.md section 1. Owner.
-3. Signups are invisible: production has no admin token, so nobody can read who signed up or from which outreach link. One command, no Stripe needed, before batch 1 is sent: docs/GO_LIVE_2026-09-28.md section 0. Owner.
+1. Nobody has been contacted: 40 leads are queued, 0 messages sent. The admin token is set and linehound.app is live (2026-10-02). The last thing in the way is production itself: it is still on the 00:06Z build, without the outreach tracking or the new landing page, because the hourly refresh has not fired since (docs/decisions/REFRESH_GATE.md). One refresh, then send.
+2. Stripe is not live: the account is verified (2026-10-02). Next: rehearse a purchase on staging in test mode (docs/GO_LIVE_2026-09-28.md section 5), then the Stripe secrets on production. Owner.
+3. Discord feed not wired: needs the webhook secret and one env line on the default branch. Owner + me.
 
 ## Next actions
 
-- **Owner:** Set the production admin token: docs/GO_LIVE_2026-09-28.md section 0 (two PowerShell commands, two minutes). Then DNS for linehound.app (section 1). One at a time.
-- **Customer:** Do NOT send yet. Batch 1 goes out after (1) the admin token is set, (2) linehound.app resolves and the batches are rebuilt on it, (3) the visit tracking pushed 2026-10-02 is live in production. Then: python scripts/outreach_batch.py sent --batch 1 --items ... after each hand-sent message.
+- **Owner:** Say whether production may be refreshed now (one deploy of the tested head), and approve or decline the refresh-gate change (docs/decisions/REFRESH_GATE.md). Then: rehearse a purchase on staging with Stripe's test card (GO_LIVE section 5).
+- **Customer:** Send batch 1 (docs/sales/batch_01.md) as soon as production has been refreshed: links now point at linehound.app and carry each lead's tag. Forums first (items 1 and 2), then creators and X replies; at most five Discord notes a day. After each: python scripts/outreach_batch.py sent --batch 1 --items N.
 - **Product:** Landing page rewritten for the first phone screen (what it is, what you get, waitlist button); pushed 2026-10-02, live on staging. Open decision for Brey: whether early sign-ups get free tester access (docs/CONVERSION_REVIEW_2026-10-02.md).
 - **Model:** No market shows repeatable value (docs/PERFORMANCE_MATRIX.md: 110 measured populations, 0 candidates; moneyline closing-line value negative on 26 of 26 rows). The props question cannot be answered before 2026-10-31: the best-placed family, batter total bases, reaches a minimum sample about five weeks into the 2027 season (docs/PROP_EXPERIMENT_INVENTORY.md, docs/PREREG_PROP_FAMILIES_DRAFT.md, a DRAFT with seven owner decisions). Until then: sell the public record and the price comparison, not an edge. AI critic: adds one catch over a plain rule on 8 cases and is not ready to show customers (docs/AI_CRITIC_BENCHMARK.md).
 
@@ -117,8 +117,6 @@ Closing-line value: see `docs/VALUE_SCAN.md` (the standing measurement; no CLV f
 
 ## Other blockers
 
-- Stripe is not live: account verification pending (date of birth, phone), then the five Fly secrets. Owner.
-- Discord feed not wired: needs the webhook secret and one env line on the default branch. Owner + me.
 - Claude monthly cost unknown, so break-even is an estimate. Owner.
 - Thin content: MLB has had no counted pick since 2026-09-26 (fills only, 2 to 4 postseason games a day); NFL has published 11 picks on 4 dates, 1 since 2026-09-21; UFC is ungraded. After the World Series (about Nov 1) only NFL remains. Gates are not being loosened to fill the card; what is sold is the nightly card with labelled fills, the price view and the public record.
 
