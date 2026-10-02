@@ -1,9 +1,22 @@
 /**
  * ADMIN view -- web/admin.html. A structural (zero-aesthetic) ops page
  * over the admin surface: GET /admin/overview, GET /admin/funnel,
- * GET /admin/support, GET /admin/users, POST /admin/support/{id}/status
+ * GET /admin/support, GET /admin/users, POST /admin/support/{id}/status,
+ * GET/POST /admin/testers and POST /admin/testers/extend
  * (api/admin.py, api/funnel.py, api/support.py), all gated by
  * `X-Admin-Token` (api/auth.py's `_require_admin`).
+ *
+ * THE TESTERS SECTION (owner decision, 2026-10-02)
+ * -------------------------------------------------------------------
+ * The first 20 qualified testers get 7 days of early access, no card, chosen
+ * and granted by the owner from this page. Billing is off; nothing here
+ * touches it. The 20 and the 7 are decided by the server
+ * (src/appstate/testers.py) and this file only displays what GET
+ * /admin/testers reports, so the page cannot disagree with what is enforced.
+ * A grant or an extension returns the raw access token ONCE; it is put in a
+ * read-only box for the owner to copy and send himself, and is never written
+ * to storage, never put in a URL, never logged, and is gone the moment the
+ * section is rebuilt (a reload, a new token, or clearing the admin token).
  *
  * WHY sessionStorage, NEVER localStorage, FOR THE ADMIN TOKEN
  * -------------------------------------------------------------------
@@ -448,11 +461,17 @@ async function renderSupportInbox(host) {
   await reload();
 }
 
-function renderUsers(host, users) {
+// The Testers form's "fill the email box" hook, set while that section is
+// mounted. The users list below calls it from a waitlisted user's shortcut;
+// it fills the form and does NOT submit it -- granting stays one deliberate
+// press of the grant button.
+let fillTesterForm = null;
+
+export function renderUsers(host, users) {
   clear(host);
   const table = el("table", { class: "admin-users-table", "data-hook": "admin-users-table" });
   const head = el("tr");
-  for (const column of ["id", "email", "status", "plan", "created_at"]) {
+  for (const column of ["id", "email", "status", "plan", "created_at", "tester", "action"]) {
     head.appendChild(el("th", { text: column }));
   }
   table.appendChild(el("thead", {}, [head]));
@@ -462,18 +481,226 @@ function renderUsers(host, users) {
     for (const column of ["id", "email", "status", "plan", "created_at"]) {
       row.appendChild(el("td", { text: String(user[column]) }));
     }
+    row.appendChild(el("td", { "data-hook": "admin-user-tester",
+      text: user.tester ? `until ${utcLabel(user.tester_expires_at)}` : "no" }));
+    const action = el("td");
+    if (user.status === "waitlisted" && !user.tester) {
+      const shortcut = el("button", { type: "button", "data-hook": "admin-user-grant-tester",
+        text: "Grant tester access" });
+      shortcut.addEventListener("click", () => {
+        if (fillTesterForm) fillTesterForm(user.email);
+      });
+      action.appendChild(shortcut);
+    }
+    row.appendChild(action);
     body.appendChild(row);
   }
   table.appendChild(body);
   host.appendChild(table);
 }
 
+// ---------------------------------------------------------------------------
+// TESTERS -- see the module docstring. Everything shown comes from the server.
+// ---------------------------------------------------------------------------
+
+/** "2026-10-08 14:03 UTC" from an ISO string the server wrote (always UTC);
+ * an em dash for anything missing, never a guess. */
+function utcLabel(iso) {
+  if (typeof iso !== "string" || !iso) return "—";
+  return iso.replace("T", " ").slice(0, 16) + " UTC";
+}
+
+/** The server's own words for a refusal ({error, message} on a 409/400), else
+ * whatever the error carries. A 401 is the admin token, not the tester. */
+function testerErrorText(err) {
+  if (err && err.status === 401) return "The admin token was rejected. Save the current one and try again.";
+  const detail = err && err.detail;
+  if (detail && typeof detail === "object" && typeof detail.message === "string") return detail.message;
+  if (typeof detail === "string" && detail) return detail;
+  return (err && err.message) || "The request failed.";
+}
+
+/** The ONE place a freshly issued access token is shown: a read-only box, a
+ * copy button, the expiry, and the reminder that it is not kept. */
+function renderIssuedAccess(host, issued, verb) {
+  clear(host);
+  const wrap = el("div", { "data-hook": "admin-tester-result", role: "status" });
+  wrap.appendChild(el("p", { "data-hook": "admin-tester-result-summary",
+    text: `${verb} for ${issued.email}. Expires ${utcLabel(issued.expires_at)}.` }));
+  const box = el("input", { type: "text", readonly: "readonly", size: "48",
+    value: issued.token, "aria-label": "Access token", "data-hook": "admin-tester-token" });
+  wrap.appendChild(box);
+  const copy = el("button", { type: "button", "data-hook": "admin-tester-copy", text: "Copy" });
+  copy.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(issued.token);
+      copy.textContent = "Copied";
+    } catch (err) {
+      // Clipboard blocked: the box above is selectable by hand.
+      copy.textContent = "Copy it by hand from the box";
+    }
+  });
+  wrap.appendChild(copy);
+  wrap.appendChild(el("p", { "data-hook": "admin-tester-token-note",
+    text: "Send this to them yourself; it is not stored and cannot be shown again." }));
+  host.appendChild(wrap);
+}
+
+function renderTesterCount(host, data) {
+  host.textContent = `${data.granted} of ${data.limit} granted, ${data.remaining} remaining`;
+}
+
+function renderTesterTable(host, data, onExtend) {
+  clear(host);
+  const testers = data.testers || [];
+  if (!testers.length) {
+    host.appendChild(el("p", { "data-hook": "admin-testers-empty", text: "No testers granted yet." }));
+    return;
+  }
+  const table = el("table", { class: "admin-testers-table", "data-hook": "admin-testers-table" });
+  const head = el("tr");
+  for (const column of ["email", "granted", "expires", "activated", "extensions", "extend"]) {
+    head.appendChild(el("th", { text: column }));
+  }
+  table.appendChild(el("thead", {}, [head]));
+  const body = el("tbody");
+  for (const tester of testers) {
+    const row = el("tr", { "data-hook": "admin-tester-row", "data-user-id": String(tester.user_id) });
+    row.appendChild(el("td", { text: tester.email }));
+    row.appendChild(el("td", { text: utcLabel(tester.granted_at) }));
+    row.appendChild(el("td", { "data-hook": "admin-tester-expires", text: utcLabel(tester.expires_at) }));
+    row.appendChild(el("td", { "data-hook": "admin-tester-activated",
+      text: tester.activated ? "yes" : "no" }));
+    const extensions = el("td", { "data-hook": "admin-tester-extensions" });
+    if ((tester.extensions || []).length) {
+      const list = el("ul");
+      for (const ext of tester.extensions) {
+        list.appendChild(el("li", { text: `${utcLabel(ext.extended_at)}: ${ext.reason}` }));
+      }
+      extensions.appendChild(list);
+    } else {
+      extensions.appendChild(renderAbsent());
+    }
+    row.appendChild(extensions);
+
+    const action = el("td");
+    const reason = el("input", { type: "text", maxlength: "500", autocomplete: "off",
+      placeholder: "What feedback justifies this?", "aria-label": `Reason for extending ${tester.email}`,
+      "data-hook": "admin-tester-reason" });
+    const extend = el("button", { type: "button", "data-hook": "admin-tester-extend",
+      text: `Extend ${data.ttl_days} days` });
+    const status = el("span", { role: "status", "data-hook": "admin-tester-extend-status" });
+    extend.addEventListener("click", () => onExtend(tester, reason, status));
+    action.appendChild(reason);
+    action.appendChild(extend);
+    action.appendChild(status);
+    row.appendChild(action);
+    body.appendChild(row);
+  }
+  table.appendChild(body);
+  host.appendChild(table);
+}
+
+/** Build the Testers section into `host` and load it. Rebuilding clears the
+ * host first, which is also what removes a token that was on screen. */
+export async function mountTesters(host) {
+  clear(host);
+  fillTesterForm = null;
+  const count = el("p", { role: "status", "data-hook": "admin-testers-count" });
+  const formHost = el("div", { "data-hook": "admin-tester-form-host" });
+  const resultHost = el("div", { "data-hook": "admin-tester-result-host" });
+  const listHost = el("div", { "data-hook": "admin-testers-list" });
+  for (const part of [count, formHost, resultHost, listHost]) host.appendChild(part);
+
+  async function reload() {
+    let data;
+    try {
+      data = await adminGet("/admin/testers");
+    } catch (err) {
+      renderAuthState(listHost, err);
+      return null;
+    }
+    renderTesterCount(count, data);
+    renderTesterTable(listHost, data, onExtend);
+    return data;
+  }
+
+  async function onExtend(tester, reasonInput, status) {
+    const reason = reasonInput.value.trim();
+    if (!reason) {
+      status.textContent = "Type the reason first: what feedback justified this?";
+      return;
+    }
+    status.textContent = "Extending...";
+    let issued;
+    try {
+      issued = await adminPost("/admin/testers/extend", { user_id: tester.user_id, reason });
+    } catch (err) {
+      status.textContent = testerErrorText(err);
+      return;
+    }
+    renderIssuedAccess(resultHost, issued, "Access extended");
+    await reload();
+  }
+
+  const first = await reload();
+  if (!first) return;
+
+  const days = first.ttl_days;
+  const form = el("form", { "data-hook": "admin-tester-form" });
+  form.appendChild(el("label", { for: "admin-tester-email", text: "Email" }));
+  const email = el("input", { type: "email", id: "admin-tester-email", name: "email",
+    autocomplete: "off", "data-hook": "admin-tester-email" });
+  form.appendChild(email);
+  const grant = el("button", { type: "submit", "data-hook": "admin-tester-grant",
+    text: `Grant ${days}-day tester access` });
+  form.appendChild(grant);
+  const formStatus = el("p", { role: "status", "data-hook": "admin-tester-form-status" });
+  form.appendChild(formStatus);
+  formHost.appendChild(form);
+
+  let pending = false;
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const address = email.value.trim();
+    if (!address) {
+      formStatus.textContent = "Enter an email.";
+      return;
+    }
+    if (pending) return;
+    pending = true;
+    formStatus.textContent = "Granting...";
+    try {
+      const issued = await adminPost("/admin/testers", { email: address });
+      renderIssuedAccess(resultHost, issued, "Access granted");
+      email.value = "";
+      formStatus.textContent = "";
+      await reload();
+    } catch (err) {
+      formStatus.textContent = testerErrorText(err);
+    } finally {
+      pending = false;
+    }
+  });
+
+  fillTesterForm = (address) => {
+    email.value = address;
+    formStatus.textContent = `Ready: press the grant button to give ${address} access.`;
+    if (typeof email.focus === "function") email.focus();
+    if (typeof form.scrollIntoView === "function") form.scrollIntoView();
+  };
+}
+
 async function loadAdmin(hosts) {
   clear(hosts.authState);
   for (const section of [hosts.overviewSection, hosts.funnelSection,
-                         hosts.supportSection, hosts.usersSection]) {
+                         hosts.supportSection, hosts.testersSection, hosts.usersSection]) {
     section.hidden = true;
   }
+  // Emptied, not just hidden: a token left on screen from a previous grant must
+  // not survive clearing or changing the admin token.
+  clear(hosts.testersHost);
+  fillTesterForm = null;
 
   let overview;
   try {
@@ -503,6 +730,14 @@ async function loadAdmin(hosts) {
   }
 
   try {
+    await mountTesters(hosts.testersHost);
+    hosts.testersSection.hidden = false;
+  } catch (err) {
+    renderAuthState(hosts.testersHost, err);
+    hosts.testersSection.hidden = false;
+  }
+
+  try {
     const usersResult = await adminGet("/admin/users");
     renderUsers(hosts.usersHost, usersResult.users || []);
     hosts.usersSection.hidden = false;
@@ -521,6 +756,8 @@ function boot() {
     funnelHost: document.querySelector("[data-hook='admin-funnel-host']"),
     supportSection: document.querySelector("[data-hook='admin-support-section']"),
     supportHost: document.querySelector("[data-hook='admin-support-host']"),
+    testersSection: document.querySelector("[data-hook='admin-testers-section']"),
+    testersHost: document.querySelector("[data-hook='admin-testers-host']"),
     usersSection: document.querySelector("[data-hook='admin-users-section']"),
     usersHost: document.querySelector("[data-hook='admin-users-host']"),
   };

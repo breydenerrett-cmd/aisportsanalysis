@@ -24,6 +24,19 @@
  *     too little is the recoverable mistake; promising a trial the server
  *     cannot start is not.
  *
+ * THE ONE EXCEPTION WHILE CHECKOUT IS NOT ON: EARLY ACCESS (owner decision,
+ * 2026-10-02). The first 20 qualified testers get 7 days of access, no card,
+ * chosen and granted by hand from the admin page (src/appstate/testers.py;
+ * the 20 and the 7 are TESTER_LIMIT and TESTER_ACCESS_TTL there, and
+ * tests/test_tester_access.py pins that the words below say the same
+ * numbers). It is an invitation the owner extends person by person, not a
+ * trial anyone can start, so it is worded as early access and never as a
+ * "trial": there is no card, nothing renews, nothing is charged. Everywhere the
+ * offer is described it carries the same five facts -- it is early access;
+ * performance is not proven; the analysis is informational, not advice; public
+ * results are preserved, losses included; tester access is temporary -- and it
+ * never promises profit, an edge or winning picks.
+ *
  * The static HTML on the landing page carries the CAUTIOUS wording, so a
  * crawler and the first paint before this runs never over-promise; the script
  * upgrades it only when /meta says "on".
@@ -38,15 +51,29 @@ import { BETA_TIER, foundingNote } from "./pricing.js";
 
 /** The button text everywhere checkout is not open. The link is unchanged:
  * the signup page saves the email and nothing else (no sender exists to send
- * anything). Reworded 2026-10-02 from "Get notified when checkout opens"
- * (docs/CONVERSION_REVIEW_2026-10-02.md): "checkout" is our billing state, not
- * the visitor's next step, and a waitlist is exactly what the form is. */
-export const CAUTIOUS_CTA = "Join the waitlist";
+ * anything; the owner picks testers by hand and sends each access link
+ * himself). Reworded 2026-10-02 from "Get notified when checkout opens" to
+ * "Join the waitlist" (docs/CONVERSION_REVIEW_2026-10-02.md), and the same day
+ * to "Request early access" when the owner decided who the first 20 testers
+ * are and how they get in: a request is what the form now is. */
+export const CAUTIOUS_CTA = "Request early access";
 
-/** Static-HTML default and off-state hero note: three plain sentences, the
- * planned price in the middle (only when there is one to state). */
+/** Static-HTML default and off-state hero note: the early-access offer, then
+ * the not-on-sale sentence with the planned price (only when there is one to
+ * state), then what is free now. */
+export const EARLY_ACCESS_NOTE = "Early access: the first 20 testers get 7 days free, no card.";
 export const NOT_OPEN_NOTE = "Not on sale yet.";
 export const FREE_NOW_NOTE = "The record and the postseason odds are free now.";
+
+/** What the signup page says after a waitlist signup succeeded. Plain words,
+ * the five facts of the early-access offer, and no promise beyond what the
+ * owner does by hand ("usually within a day" is his own commitment). */
+export const WAITLIST_CONFIRMATION =
+  "You're on the list. The first 20 testers get 7 days of early access, no card needed. "
+  + "If you're picked, your access link comes by email from Brey, usually within a day. "
+  + "What you should know: this is early access; performance is not proven; "
+  + "the analysis is informational, not advice; every result stays on the public record, "
+  + "losses included; tester access is temporary.";
 
 /** What every page says before /meta has answered, and whenever it cannot be
  * read: not on, no trial, only the planned price. */
@@ -135,16 +162,16 @@ export function signinLinkLabel(state) {
 }
 
 /**
- * The line under the landing hero buttons. Off: it is not on sale yet, the
- * planned price (when there is one), and what is free now. On: the trial (only
- * if there is one), the price from /meta, and the cancellation promise the
- * billing view backs.
+ * The line under the landing hero buttons. Off: the early-access offer, that it
+ * is not on sale yet with the planned price (when there is one), and what is
+ * free now. On: the trial (only if there is one), the price from /meta, and the
+ * cancellation promise the billing view backs.
  */
 export function heroNote(state) {
   if (!state || !state.on) {
     const amount = dollars(state && state.priceCents);
-    return [NOT_OPEN_NOTE, amount ? `Planned price ${amount} a month.` : "", FREE_NOW_NOTE]
-      .filter(Boolean).join(" ");
+    const sale = amount ? `Not on sale yet; planned price ${amount} a month.` : NOT_OPEN_NOTE;
+    return [EARLY_ACCESS_NOTE, sale, FREE_NOW_NOTE].join(" ");
   }
   const price = monthlyPrice(state.priceCents);
   const trial = trialPhrase(state);

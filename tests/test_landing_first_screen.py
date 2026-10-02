@@ -6,7 +6,7 @@ supporting the offer rather than being the headline. This file pins the seven
 changes of that review (written 2026-10-02):
 
   1. the headline names the product; the method is the second sentence;
-  2. the button says "Join the waitlist" in every billing-off state, and the
+  2. the button says "Request early access" in every billing-off state, and the
      on-state wording is untouched (checkout.js is the one place that decides);
   3. a compact "what you get" block sits under the buttons and above the
      record panel, in DOM order;
@@ -103,12 +103,13 @@ class TheFirstScreenReadsInOrder(unittest.TestCase):
         self.assertNotRegex(text, r"\d", "a figure typed into the what-you-get block goes stale")
         self.assertNotRegex(text.lower(), r"bet[\s-]*check|trial|cancel anytime")
 
-    def test_the_hero_note_is_the_planned_price_sentence(self):
+    def test_the_hero_note_is_the_early_access_offer_then_the_planned_price(self):
         note = re.search(r'<p class="hero__cta-note" data-hook="hero-cta-note">(.*?)</p>',
                          MARKUP, re.S).group(1).strip()
         self.assertEqual(
             note,
-            "Not on sale yet. Planned price $19.99 a month. "
+            "Early access: the first 20 testers get 7 days free, no card. "
+            "Not on sale yet; planned price $19.99 a month. "
             "The record and the postseason odds are free now.")
 
 
@@ -143,18 +144,20 @@ class TheSecondButtonAndTheFullRecordLink(unittest.TestCase):
             self.assertEqual(MARKUP.count(f'data-hook="{hook}"'), 1, hook)
 
 
-class TheWaitlistLabelIsOneDecision(unittest.TestCase):
-    def test_every_static_checkout_button_says_join_the_waitlist(self):
+class TheEarlyAccessLabelIsOneDecision(unittest.TestCase):
+    def test_every_static_checkout_button_says_request_early_access(self):
         labels = [m.strip() for m in re.findall(r"<a[^>]*data-checkout-cta[^>]*>(.*?)</a>", MARKUP, re.S)]
         self.assertEqual(len(labels), 4, "nav, hero, pricing card, closing band")
-        self.assertEqual(set(labels), {"Join the waitlist"})
+        self.assertEqual(set(labels), {"Request early access"})
         self.assertNotIn("Get notified when checkout opens", MARKUP)
 
     def test_the_label_is_decided_in_checkout_js_alone(self):
         checkout = (JS / "checkout.js").read_text(encoding="utf-8")
-        self.assertIn('export const CAUTIOUS_CTA = "Join the waitlist";', checkout)
+        self.assertIn('export const CAUTIOUS_CTA = "Request early access";', checkout)
         for name in ("landing.js", "signup.js", "signin.js", "cardrecord.js", "dom.js"):
-            self.assertNotIn("Join the waitlist", (JS / name).read_text(encoding="utf-8"), name)
+            source = (JS / name).read_text(encoding="utf-8")
+            self.assertNotIn("Request early access", source, name)
+            self.assertNotIn("Join the waitlist", source, name)
 
 
 class TheRecordPanelUsesPlainWords(unittest.TestCase):
@@ -389,7 +392,8 @@ ON7 = {"billing": {"checkout": "on", "trial_days": 7, "price_cents": 1999}}
 ON14 = {"billing": {"checkout": "on", "trial_days": 14, "price_cents": 1999}}
 ON0 = {"billing": {"checkout": "on", "trial_days": 0, "price_cents": 1999}}
 
-HERO_OFF = ("Not on sale yet. Planned price $19.99 a month. "
+HERO_OFF = ("Early access: the first 20 testers get 7 days free, no card. "
+            "Not on sale yet; planned price $19.99 a month. "
             "The record and the postseason odds are free now.")
 
 
@@ -417,14 +421,14 @@ class UnderNode(unittest.TestCase):
 
     # ---- change 2: the label in every state --------------------------------
 
-    def test_every_billing_off_state_says_join_the_waitlist_everywhere(self):
+    def test_every_billing_off_state_says_request_early_access_everywhere(self):
         for name, meta in NOT_ON_CASES:
             with self.subTest(state=name):
                 out = self.run_scenario(kind="labels", meta=meta)
                 self.assertFalse(out["on"])
                 for key in ("cta", "gate", "record"):
-                    self.assertEqual(out[key], "Join the waitlist", key)
-                self.assertEqual(out["signin"], "JOIN THE WAITLIST")
+                    self.assertEqual(out[key], "Request early access", key)
+                self.assertEqual(out["signin"], "REQUEST EARLY ACCESS")
                 self.assertEqual(out["hero"], HERO_OFF)
                 for key in ("cta", "gate", "record", "hero"):
                     self.assertIsNone(re.search(r"trial|cancel anytime|checkout", out[key], re.I),
@@ -432,7 +436,7 @@ class UnderNode(unittest.TestCase):
 
     def test_the_hero_note_takes_the_planned_price_from_meta(self):
         out = self.run_scenario(kind="labels", meta={"billing": {"checkout": "off", "price_cents": 1999}})
-        self.assertIn("Planned price $19.99 a month.", out["hero"])
+        self.assertIn("planned price $19.99 a month.", out["hero"])
 
     def test_the_on_state_wording_is_exactly_what_it_was(self):
         out = self.run_scenario(kind="labels", meta=ON14)

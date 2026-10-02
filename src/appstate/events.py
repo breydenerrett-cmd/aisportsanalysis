@@ -112,7 +112,9 @@ analytics_events(id, user_hash, kind, properties_json, at)
     kind: page_view | bet_check_run | free_bet_check | bet_saved |
           invite_redeemed | landing_view | signup_started |
           account_created | checkout_started | checkout_completed |
-          subscription_cancelled | subscription_reactivated | digest_viewed
+          subscription_cancelled | subscription_reactivated | digest_viewed |
+          cta_click | public_page_view | support_token_reissued |
+          tester_access_granted | tester_access_extended
     at:   required ISO-8601 UTC string, the instant the event happened.
 """
 
@@ -202,11 +204,22 @@ PUBLIC_PAGE_VIEW = "public_page_view"
 # its properties carry no token, only how many old tokens were revoked.
 SUPPORT_TOKEN_REISSUED = "support_token_reissued"
 
+# The owner granted, or extended, an early-access tester's access from the admin
+# page (POST /admin/testers, POST /admin/testers/extend; src/appstate/testers.py).
+# Operational like the one above: recorded server-side only and refused from the
+# public beacon (api/funnel.py's PUBLIC_FUNNEL_KINDS does not list them). The
+# properties carry the user's stored first-touch attribution on a grant (so a
+# tester can be traced to the outreach link that found them) and a counter on an
+# extension -- never the token, never the email, never the free-text reason.
+TESTER_ACCESS_GRANTED = "tester_access_granted"
+TESTER_ACCESS_EXTENDED = "tester_access_extended"
+
 EVENT_KINDS = frozenset({
     PAGE_VIEW, BET_CHECK_RUN, FREE_BET_CHECK, BET_SAVED, INVITE_REDEEMED,
     SIGNUP_STARTED, ACCOUNT_CREATED, CHECKOUT_STARTED, CHECKOUT_COMPLETED,
     SUBSCRIPTION_CANCELLED, SUBSCRIPTION_REACTIVATED,
     DIGEST_VIEWED, LANDING_VIEW, CTA_CLICK, PUBLIC_PAGE_VIEW, SUPPORT_TOKEN_REISSUED,
+    TESTER_ACCESS_GRANTED, TESTER_ACCESS_EXTENDED,
 })
 
 

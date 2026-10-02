@@ -49,7 +49,7 @@ class SignedOutVisitorCanReadTheProof(unittest.TestCase):
     def test_the_record_page_offers_the_trial_to_a_signed_out_visitor(self):
         # CHANGED 2026-10-01: the wording is no longer a static 7-day string. It is
         # checkout.js's recordCtaLabel(): the trial length comes from /meta and the
-        # button says "Join the waitlist" unless checkout is on
+        # button says "Request early access" unless checkout is on
         # (behaviour pinned in tests/test_checkout_copy_states.py).
         self.assertIn("recordCtaLabel(", self.record)
         self.assertIn("-day free trial to see tonight's card", _read("checkout.js"))
@@ -74,7 +74,7 @@ class SignedOutVisitorCanReadTheProof(unittest.TestCase):
         self.assertIn('href: "#/signin"', gate)
         self.assertIn('href: "#/signup"', gate)
         # CHANGED 2026-10-01: "Start free trial" is gateLabel()'s trial-on wording;
-        # the gate says "Join the waitlist" unless /meta says on.
+        # the gate says "Request early access" unless /meta says on.
         self.assertIn("gateLabel(", gate)
         self.assertIn('"Start free trial"', _read("checkout.js"))
 
@@ -103,16 +103,22 @@ class SignInAndSignUpCopyIsTrue(unittest.TestCase):
         self.assertIn('href: "#/signup"', self.signin)
 
     def test_the_waitlist_message_says_only_what_is_true(self):
-        self.assertIn(
-            '"Checkout is not open yet. Your email is saved; nothing has been charged."',
-            self.signup)
-        self.assertNotIn("we'll email you", self.signup.lower())
-        self.assertNotIn("on the waitlist", self.signup.lower())
-        self.assertNotIn("when a beta spot opens", self.signup.lower())
+        # CHANGED 2026-10-02 (owner: the first 20 testers get 7 days of early
+        # access): the confirmation is decided in checkout.js, not here, and it
+        # now carries the early-access facts. The three promises this test
+        # exists to forbid are still forbidden, in both files.
+        checkout = _read("checkout.js")
+        self.assertIn("export const WAITLIST_CONFIRMATION =", checkout)
+        self.assertIn("You're on the list.", checkout)
+        self.assertNotIn("Checkout is not open yet. Your email is saved", self.signup)
+        for source in (self.signup, checkout):
+            self.assertNotIn("we'll email you", source.lower())
+            self.assertNotIn("on the waitlist", source.lower())
+            self.assertNotIn("when a beta spot opens", source.lower())
 
     def test_the_waitlisted_branch_renders_that_message(self):
         branch = self.signup.split('result.status === "waitlisted"')[1].split("} else if")[0]
-        self.assertIn("CHECKOUT_NOT_OPEN_MESSAGE", branch)
+        self.assertIn("WAITLIST_CONFIRMATION", branch)
 
     def test_heading_and_button_say_the_landing_cta_when_billing_is_on(self):
         # CHANGED 2026-10-01: no static "Start your 7-day free trial" -- the heading

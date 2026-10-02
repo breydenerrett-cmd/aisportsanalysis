@@ -250,7 +250,7 @@ class TheCopyIsPlainAndCautious(unittest.TestCase):
         # The checkout-state behaviour is untouched: every CTA still carries
         # the hook applyCheckoutCopy reads, with the cautious wording.
         for cta in re.findall(r"<a[^>]*data-checkout-cta[^>]*>(.*?)</a>", HTML, re.S):
-            self.assertEqual(cta.strip(), "Join the waitlist")
+            self.assertEqual(cta.strip(), "Request early access")
 
     def test_the_hero_lede_says_what_a_card_is_and_the_grading_schedule_lives_lower(self):
         # 2026-10-02 (docs/CONVERSION_REVIEW_2026-10-02.md change 1): the lede

@@ -74,7 +74,7 @@
     <a href="#pricing">Pricing</a>
     <a href="#faq">FAQ</a>
   </div>
-  <a class="btn btn--primary" href="index.html#/signup" data-hook="cta-primary" data-checkout-cta>Join the waitlist</a>
+  <a class="btn btn--primary" href="index.html#/signup" data-hook="cta-primary" data-checkout-cta>Request early access</a>
 </nav>
 
 <main>
@@ -104,7 +104,7 @@
     <h1 class="hero__claim-title">Tonight's MLB, NFL and UFC bets, posted before the game.</h1>
     <p class="hero__claim-body">A short card each night: the bet, the best price and where to find it, and why. Every card is graded in public afterwards, wins and losses.</p>
     <div class="hero__cta-group" data-rise data-delay="160">
-      <a class="btn btn--primary" href="index.html#/signup" data-hook="cta-signup-hero" data-checkout-cta>Join the waitlist</a>
+      <a class="btn btn--primary" href="index.html#/signup" data-hook="cta-signup-hero" data-checkout-cta>Request early access</a>
       <!-- As written here the second button is the plain record link, which
            works with no script and before anything has loaded. Once the free
            sample below has rendered, landing.js (pointSampleButton) turns it
@@ -112,7 +112,7 @@
            the sample is hidden until then, so the markup must not link to it.
            The full record is also linked, as text, right below. -->
       <a class="btn btn--ghost" href="index.html#/record-card" data-hook="cta-record-secondary">See every pick, graded</a>
-      <p class="hero__cta-note" data-hook="hero-cta-note">Not on sale yet. Planned price $19.99 a month. The record and the postseason odds are free now.</p>
+      <p class="hero__cta-note" data-hook="hero-cta-note">Early access: the first 20 testers get 7 days free, no card. Not on sale yet; planned price $19.99 a month. The record and the postseason odds are free now.</p>
       <a class="hero__record-link" href="index.html#/record-card" data-hook="hero-record-link">Or open the full record, every pick &rarr;</a>
     </div>
 
@@ -374,7 +374,7 @@
         <li>One monthly plan today, no countdown, no percent-off badge</li>
         <li data-hook="pricing-includes">Tonight's cards before the game, plus Matchups, Odds, Props and the Tennis research board. The graded record stays free</li>
       </ul>
-      <a class="btn btn--primary" href="index.html#/signup" data-hook="cta-signup" data-checkout-cta>Join the waitlist</a>
+      <a class="btn btn--primary" href="index.html#/signup" data-hook="cta-signup" data-checkout-cta>Request early access</a>
     </div>
   </div>
 </section>
@@ -587,6 +587,20 @@
   </div>
   <h2 class="section__title" data-rise data-delay="60">Frequently asked questions.</h2>
   <div class="faq-list" style="margin-top:24px">
+    <!-- EARLY ACCESS (owner decision, 2026-10-02). Static text, correct with
+         JavaScript off. The numbers are the enforced ones (src/appstate/
+         testers.py; tests/test_tester_access.py pins that they agree) and the
+         five facts are the same ones web/js/checkout.js carries wherever the
+         offer is described. No promise of profit, an edge or winning picks. -->
+    <details class="faq-item panel chamfer" data-hook="faq-early-access">
+      <summary>What is early access?</summary>
+      <p class="faq-item__body">Before checkout opens, the first 20 testers get 7 days of access, no card. Brey chooses
+        who is invited and sends each access link himself. It is early access: performance is not proven, and the
+        analysis is informational, not advice. Every result stays on the public record, losses included, and nothing
+        is removed or rewritten. Tester access is temporary: it lasts 7 days, and it is extended only when a
+        tester's feedback is useful.</p>
+    </details>
+
     <details class="faq-item panel chamfer" data-hook="faq-founding-price">
       <summary>Why is this called a founding price, and will it go up?</summary>
       <p class="faq-item__body">It will move with the record, in both directions. $19.99 is what early members
@@ -651,7 +665,7 @@
 <section class="closing-band" aria-label="call to action" data-view="cta" data-hook="cta-bottom">
   <div class="closing-band__title" data-hook="closing-cta-title">The next card posts before first pitch.<br>See what it says.</div>
   <div class="closing-band__cta">
-    <a class="btn btn--primary btn--lg" href="index.html#/signup" data-hook="cta-signup-bottom" data-checkout-cta>Join the waitlist</a>
+    <a class="btn btn--primary btn--lg" href="index.html#/signup" data-hook="cta-signup-bottom" data-checkout-cta>Request early access</a>
   </div>
 </section>
 

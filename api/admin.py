@@ -21,17 +21,27 @@ suspend, who asked for an invite and never redeemed it); that need is real,
 so this one endpoint is the deliberate exception, gated by the same admin
 token as invite creation and reachable no other way.
 
-ONE MUTATION ENDPOINT: POST /admin/users/token
--------------------------------------------------
-Everything else here is a GET. The one write is the lost-token recovery below,
-because the token is a subscriber's only login and there is no email sender:
-without it a paying customer who loses their token is locked out with no
-route back. Suspending, plan changes and the invite flow keep their own homes
-(api/auth.py, src/appstate/users.py).
+TWO KINDS OF WRITE
+-------------------
+Everything else here is a GET, apart from the writes below.
+
+POST /admin/users/token is the lost-token recovery, because the token is a
+subscriber's only login and there is no email sender: without it a paying
+customer who loses their token is locked out with no route back. Suspending,
+plan changes and the invite flow keep their own homes (api/auth.py,
+src/appstate/users.py).
+
+POST /admin/testers and POST /admin/testers/extend are the early-access offer
+(src/appstate/testers.py holds the policy and the reasons): the first 20
+testers, 7 days each, no card, granted by the owner alone from the admin page.
+GET /admin/testers lists them. They reuse this module's one admin gate, return
+a raw token exactly once, and never put a token, an email or a reason into an
+event.
 """
 
 from __future__ import annotations
 
+import sys
 from collections import Counter
 from typing import Dict
 
@@ -46,6 +56,7 @@ from src.appstate import apphealth
 from src.appstate import billing
 from src.appstate import customers
 from src.appstate import events
+from src.appstate import testers
 from src.appstate import users as users_store
 
 router = APIRouter()
@@ -183,11 +194,16 @@ def get_revenue(_admin: None = Depends(_require_admin)) -> dict:
 
 @router.get("/admin/users")
 def get_users(_admin: None = Depends(_require_admin)) -> dict:
-    """id, email, status, plan, created_at for every user. The one place in
-    this API an email appears -- see module docstring."""
+    """id, email, status, plan, created_at for every user, plus whether they
+    are an early-access tester and when that access was granted and (the
+    newest token) ends. The one place in this API an email appears -- see
+    module docstring."""
+    marks = testers.tester_marks()
     return {"users": [
         {"id": u.id, "email": u.email, "status": u.status, "plan": u.plan,
-         "created_at": u.created_at}
+         "created_at": u.created_at, "tester": u.id in marks,
+         "tester_granted_at": (marks.get(u.id) or {}).get("granted_at"),
+         "tester_expires_at": (marks.get(u.id) or {}).get("expires_at")}
         for u in users_store.list_users()
     ]}
 
@@ -236,3 +252,100 @@ def reissue_subscriber_token(body: ReissueTokenRequest,
                              {"revoked_tokens": revoked})
     return {"user_id": user.id, "email": user.email, "token": raw_token,
             "revoked_tokens": revoked}
+
+
+# ---------------------------------------------------------------------------
+# Early-access testers (src/appstate/testers.py holds the policy)
+# ---------------------------------------------------------------------------
+
+class TesterGrantRequest(BaseModel):
+    """Exactly one of `email` or `user_id`."""
+    email: Optional[str] = None
+    user_id: Optional[int] = None
+
+
+class TesterExtendRequest(BaseModel):
+    user_id: Optional[int] = None
+    reason: Optional[str] = None
+
+
+def _refusal(exc: testers.TesterRefused) -> HTTPException:
+    """The policy's refusals as this API's structured error shape: the same
+    {"error", "message"} detail api/auth.py's 401s use, plus any context the
+    refusal carries (the count, for the cap)."""
+    detail = {"error": exc.code, "message": exc.message}
+    detail.update(exc.extra)
+    return HTTPException(status_code=exc.status, detail=detail)
+
+
+def _stored_attribution(user_id: int) -> dict:
+    """The user's first-touch attribution for the grant event, or {} if it
+    cannot be read. Never raises: by the time this runs the grant has committed
+    and the response must still carry the one copy of the token that will ever
+    exist -- failing here would burn a slot and lose it."""
+    try:
+        return customers.get_signup_attribution(user_id)
+    except Exception as exc:  # noqa: BLE001
+        print(f"admin: could not read attribution for user_id={user_id}: {exc!r}",
+              file=sys.stderr, flush=True)
+        return {}
+
+
+@router.post("/admin/testers")
+def grant_tester_access(body: TesterGrantRequest,
+                        _admin: None = Depends(_require_admin)) -> dict:
+    """Grant early access to one person: a new 7-day token and a slot of the 20.
+
+    Send exactly one of `email` (a new email creates the user) or `user_id`.
+    The response carries the RAW token ONCE -- the owner sends it himself;
+    nothing is stored but its hash. 409 with a structured `error` and nothing
+    written when the 20 slots are used (`tester_limit_reached`), the account is
+    suspended (`user_suspended`), a subscription record exists
+    (`has_subscription`), a checkout is open (`checkout_open`) or the person is
+    already a tester (`already_a_tester`). The event `tester_access_granted`
+    records the user's stored signup attribution, never the token or the email.
+    """
+    if (body.email is None) == (body.user_id is None):
+        raise HTTPException(status_code=400,
+                            detail="send exactly one of email or user_id")
+    try:
+        grant = testers.grant_tester(email=body.email, user_id=body.user_id)
+    except testers.TesterRefused as exc:
+        raise _refusal(exc)
+    events.record_event_safe(grant.user_id, events.TESTER_ACCESS_GRANTED,
+                             _stored_attribution(grant.user_id))
+    return {"user_id": grant.user_id, "email": grant.email, "token": grant.token,
+            "expires_at": grant.expires_at, "testers_granted": grant.testers_granted,
+            "testers_limit": grant.testers_limit}
+
+
+@router.post("/admin/testers/extend")
+def extend_tester_access(body: TesterExtendRequest,
+                         _admin: None = Depends(_require_admin)) -> dict:
+    """Another 7 days for an existing tester, with the reason it was earned.
+
+    Issues a NEW token; older tokens keep their own expiry (nothing is revoked)
+    and no further slot is used. `reason` is required: what feedback justified
+    it. 409 `not_a_tester` for anyone never granted. The event
+    `tester_access_extended` records a counter, never the token or the reason.
+    """
+    if body.user_id is None:
+        raise HTTPException(status_code=400, detail="send a user_id")
+    try:
+        grant = testers.extend_tester(body.user_id, body.reason or "")
+    except testers.TesterRefused as exc:
+        raise _refusal(exc)
+    events.record_event_safe(grant.user_id, events.TESTER_ACCESS_EXTENDED,
+                             {"extension_number": grant.extension_number})
+    return {"user_id": grant.user_id, "email": grant.email, "token": grant.token,
+            "expires_at": grant.expires_at, "testers_granted": grant.testers_granted,
+            "testers_limit": grant.testers_limit,
+            "extension_number": grant.extension_number}
+
+
+@router.get("/admin/testers")
+def get_testers(_admin: None = Depends(_require_admin)) -> dict:
+    """Every tester (user_id, email, granted_at, expires_at of their newest
+    token, first_used_at/activated, and each extension with its reason) plus
+    `granted`, `limit` and `remaining` of the 20. Never a token."""
+    return testers.list_testers()

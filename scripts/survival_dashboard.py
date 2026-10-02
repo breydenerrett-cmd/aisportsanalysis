@@ -30,6 +30,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+from src.appstate.testers import TESTER_LIMIT  # noqa: E402  (needs the path line above)
+
 CONFIG = ROOT / "config" / "business.json"
 PIPELINE = ROOT / "docs" / "sales" / "pipeline.csv"
 QUEUE = ROOT / "docs" / "sales" / "outreach_queue.csv"
@@ -215,6 +217,12 @@ def render(config: dict, today: date, now_utc: str, queue_rows: list = None,
     auto = f" (plus {q['auto_replies']} auto-reply, not counted)" if q["auto_replies"] else ""
     out.append(f"| Replies | {q['replies']}{auto} |")
     out.append(f"| Signups | {q['signups']} |")
+    # Early-access testers are granted by hand from the admin page, and this
+    # script never calls production: the row exists only when the owner has put
+    # the count in config/business.json (`testers_granted`, an integer).
+    testers = config.get("testers_granted")
+    if isinstance(testers, int) and not isinstance(testers, bool):
+        out.append(f"| Testers granted | {testers} of {TESTER_LIMIT} (config, owner-updated) |")
     out.append(f"| Active users | {q['activated']} |")
     out.append(f"| People who said they would pay | {q['would_pay']} |")
     cfg_paid = rev.get("paying_customers") or 0

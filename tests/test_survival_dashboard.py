@@ -243,5 +243,34 @@ class ARateNeedsASample(unittest.TestCase):
         self.assertEqual(sd._fig({}), "nothing graded")
 
 
+class TestersGrantedRow(unittest.TestCase):
+    """Early-access testers are granted by hand; the script never asks
+    production. The row exists only when the owner put the count in config."""
+
+    def _text(self, **extra):
+        return sd.render(dict(CONFIG, **extra), date(2026, 10, 3), "2026-10-03 00:00Z",
+                         queue_rows=[], pipeline_rows=[], record=[])
+
+    def test_no_row_when_the_config_has_no_count(self):
+        self.assertNotIn("Testers granted", self._text())
+        self.assertNotIn("Testers granted", self._text(testers_granted=None))
+
+    def test_the_row_shows_the_owners_count_against_the_cap(self):
+        from src.appstate.testers import TESTER_LIMIT
+        self.assertIn(f"| Testers granted | 7 of {TESTER_LIMIT} (config, owner-updated) |",
+                      self._text(testers_granted=7))
+        self.assertIn("| Testers granted | 0 of 20 (config, owner-updated) |",
+                      self._text(testers_granted=0))
+
+    def test_a_count_that_is_not_an_integer_is_not_printed(self):
+        for bad in ("7", 7.0, True, [7]):
+            self.assertNotIn("Testers granted", self._text(testers_granted=bad), repr(bad))
+
+    def test_the_script_makes_no_network_call(self):
+        source = (sd.ROOT / "scripts" / "survival_dashboard.py").read_text(encoding="utf-8")
+        for needle in ("urllib", "requests", "http.client", "socket", "/admin/testers"):
+            self.assertNotIn(needle, source, needle)
+
+
 if __name__ == "__main__":
     unittest.main()

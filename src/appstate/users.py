@@ -37,6 +37,11 @@ tokens(token_hash, user_id, created_at, expires_at, revoked_at, first_used_at)
     first_used_at is NULL until mark_token_first_used() writes it exactly
     once -- see that function's docstring for why it exists (the
     invite_redeemed analytics event, api/auth.py).
+
+The early-access tester tables (testers, tester_extensions) are NOT created
+here: src/appstate/testers.py owns them, the same way customers.py owns the
+billing tables in this same file. A tester's token is an ordinary row in
+`tokens` and authenticates exactly like an invite token.
 """
 
 from __future__ import annotations
@@ -333,6 +338,28 @@ def set_user_plan(user_id: int, plan: str, *, db: Optional[Path] = None) -> None
         conn.execute("UPDATE users SET plan = ? WHERE id = ?", (plan, user_id))
 
 
+def insert_token(conn: sqlite3.Connection, user_id: int, *, ttl: timedelta,
+                 now: Optional[datetime] = None) -> str:
+    """Mint a token ON AN OPEN CONNECTION and return the RAW token; the caller
+    owns the transaction.
+
+    Split out of `issue_invite_token` for one reason: src/appstate/testers.py
+    must create the tester row and its token in ONE transaction. Two separate
+    connections would let a crash between them burn one of the 20 tester slots
+    with no token anyone could ever be sent. `issue_invite_token` is now a
+    thin wrapper, so there is still exactly one place a token row is written.
+    """
+    raw_token = secrets.token_urlsafe(32)
+    created_at = now or datetime.now(timezone.utc)
+    expires_at = created_at + ttl
+    conn.execute(
+        "INSERT INTO tokens (token_hash, user_id, created_at, expires_at, "
+        "revoked_at) VALUES (?, ?, ?, ?, NULL)",
+        (_hash_token(raw_token), user_id, created_at.isoformat(),
+         expires_at.isoformat()))
+    return raw_token
+
+
 def issue_invite_token(user_id: int, *, ttl: timedelta = DEFAULT_TOKEN_TTL,
                         db: Optional[Path] = None) -> str:
     """Mint a new opaque bearer token for user_id and return the RAW token.
@@ -341,16 +368,8 @@ def issue_invite_token(user_id: int, *, ttl: timedelta = DEFAULT_TOKEN_TTL,
     token -- callers (the admin invite endpoint) hand it to the invited
     user once and never store it themselves. Only the hash is persisted.
     """
-    raw_token = secrets.token_urlsafe(32)
-    created_at = datetime.now(timezone.utc)
-    expires_at = created_at + ttl
     with _connect(db) as conn:
-        conn.execute(
-            "INSERT INTO tokens (token_hash, user_id, created_at, expires_at, "
-            "revoked_at) VALUES (?, ?, ?, ?, NULL)",
-            (_hash_token(raw_token), user_id, created_at.isoformat(),
-             expires_at.isoformat()))
-    return raw_token
+        return insert_token(conn, user_id, ttl=ttl)
 
 
 def mark_token_first_used(raw_token: str, *, at: Optional[str] = None,

@@ -42,7 +42,7 @@ import { el, clear, renderError } from "./dom.js";
 import { BETA_TIER } from "./pricing.js";
 import {
   loadCheckoutState, ctaLabel, pricingNote, plannedPrice, monthlyPrice,
-  cardRequiredNotice, trialStartedNote,
+  cardRequiredNotice, trialStartedNote, WAITLIST_CONFIRMATION,
 } from "./checkout.js";
 
 // Substance only -- no new claims. Each line restates something the
@@ -110,9 +110,6 @@ function renderBenefits() {
  * open" on a bad day is the recoverable mistake.
  */
 const readBilling = loadCheckoutState;
-
-export const CHECKOUT_NOT_OPEN_MESSAGE =
-  "Checkout is not open yet. Your email is saved; nothing has been charged.";
 
 export async function renderSignup(main) {
   clear(main);
@@ -190,13 +187,15 @@ export async function renderSignup(main) {
         resultHost.appendChild(el("p", { class: "signup-card__notice signup-card__notice--go", "data-hook": "signup-checkout-link" },
           [el("a", { class: "btn btn--primary btn--full chamfer chamfer--btn", href: result.checkout.checkout_url, text: "Continue to checkout" })]));
       } else if (result && result.status === "waitlisted") {
-        // WHAT IS TRUE: the email is stored (a `waitlisted` user row) and
-        // nothing was charged. There is no email sender, so no promise to
-        // notify the person by email can be made.
+        // WHAT IS TRUE: the email is stored (a `waitlisted` user row), nothing
+        // was charged, and no card was asked for. There is still no email
+        // SENDER in this app: the only email promised is the one the owner
+        // writes by hand to a tester he picked (checkout.js's
+        // WAITLIST_CONFIRMATION, where the whole wording is decided).
         resultHost.appendChild(el("p", {
           class: "signup-card__notice signup-card__notice--info",
           "data-hook": "signup-waitlisted",
-          text: CHECKOUT_NOT_OPEN_MESSAGE,
+          text: WAITLIST_CONFIRMATION,
         }));
       } else if (result && result.status === "error" && result.message) {
         // The API's own plain words ("payments are not available right now;
