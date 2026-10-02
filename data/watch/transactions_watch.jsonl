@@ -2880,3 +2880,5 @@
 {"fetched_utc": "2026-10-02T18:18:52.427380+00:00", "game_date": "2026-10-02", "poll": true}
 {"fetched_utc": "2026-10-02T18:31:23.056660+00:00", "game_date": "2026-10-02", "poll": true}
 {"fetched_utc": "2026-10-02T18:48:30.113338+00:00", "game_date": "2026-10-02", "poll": true}
+{"fetched_utc": "2026-10-02T18:59:08.550760+00:00", "game_date": "2026-10-02", "poll": true}
+{"category": "other", "date": "2026-10-02", "first_seen_utc": "2026-10-02T18:59:08.550760+00:00", "player": "Michael Toglia", "player_id": 669911, "team": "SEA", "transaction_id": 944950}
