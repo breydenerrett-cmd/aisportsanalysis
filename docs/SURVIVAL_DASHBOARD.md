@@ -1,6 +1,6 @@
 # LineHound survival dashboard
 
-Generated 2026-10-02 03:10Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-10-02 03:59Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
@@ -75,8 +75,8 @@ Closing-line value: see `docs/VALUE_SCAN.md` (the standing measurement; no CLV f
 
 - **Owner:** Set the production admin token: docs/GO_LIVE_2026-09-28.md section 0 (two PowerShell commands, two minutes). Then DNS for linehound.app (section 1). One at a time.
 - **Customer:** Do NOT send yet. Batch 1 goes out after (1) the admin token is set, (2) linehound.app resolves and the batches are rebuilt on it, (3) the visit tracking pushed 2026-10-02 is live in production. Then: python scripts/outreach_batch.py sent --batch 1 --items ... after each hand-sent message.
-- **Product:** Landing page: say what the product is on the first phone screen and make the button a plain next step (docs/CONVERSION_REVIEW_2026-10-02.md). In progress.
-- **Model:** Performance matrix by sport, market, rule and visibility (docs/PERFORMANCE_MATRIX.md, in progress), then prop-family experiments chosen from what it shows is measurable. No gate or threshold changes without a pre-registered forward test.
+- **Product:** Landing page rewritten for the first phone screen (what it is, what you get, waitlist button); pushed 2026-10-02, live on staging. Open decision for Brey: whether early sign-ups get free tester access (docs/CONVERSION_REVIEW_2026-10-02.md).
+- **Model:** No market shows repeatable value (docs/PERFORMANCE_MATRIX.md: 110 measured populations, 0 candidates; moneyline closing-line value negative on 26 of 26 rows). The props question cannot be answered before 2026-10-31: the best-placed family, batter total bases, reaches a minimum sample about five weeks into the 2027 season (docs/PROP_EXPERIMENT_INVENTORY.md, docs/PREREG_PROP_FAMILIES_DRAFT.md, a DRAFT with seven owner decisions). Until then: sell the public record and the price comparison, not an edge. AI critic: adds one catch over a plain rule on 8 cases and is not ready to show customers (docs/AI_CRITIC_BENCHMARK.md).
 
 ## What survival requires
 
@@ -124,15 +124,13 @@ Closing-line value: see `docs/VALUE_SCAN.md` (the standing measurement; no CLV f
 
 ## Today's execution
 
-- Public record, access delivery, cancel link, attribution (buying-path worker)
-- Free public postseason odds page (lead magnet)
-- Loss diagnosis: done, filed in docs/audit/2026-10-01/
-- Independent attack on the buying path: 1 blocker and 9 other findings; blocker fixed, rest fixed or listed above
-- Independent check of the postseason page: bracket and sums correct; 10 defects being fixed before it ships
 - Outreach batch 1: 20 paste-ready messages (docs/sales/batch_01.md)
 - Production recovery: stuck deploy cancelled, reviewed release deployed, 60-minute soak passed
 - Admin page shows signups by outreach source; link previews for the landing page and the record link
 - Capture slowdown found and fixed: engine slate 21 minutes -> 65 seconds on a runner
 - Staging billing confirmed in test mode (from /health, no key shown); rehearsal purchase steps in GO_LIVE section 5
 - UFC: seven published picks graded from two independent sources each
+- Source tracking for outreach links; one outreach queue (40 leads) feeding this dashboard
+- Performance matrix, prop-experiment inventory and draft, AI critic benchmark run 1
+- Landing page: product-first first screen; production watch script; UFC auto-grading built (inactive)
 
