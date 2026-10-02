@@ -2897,3 +2897,5 @@
 {"fetched_utc": "2026-10-02T21:07:53.352352+00:00", "game_date": "2026-10-02", "poll": true}
 {"fetched_utc": "2026-10-02T21:07:54.547540+00:00", "game_date": "2026-10-02", "poll": true}
 {"fetched_utc": "2026-10-02T21:19:43.149708+00:00", "game_date": "2026-10-02", "poll": true}
+{"fetched_utc": "2026-10-02T21:34:03.385526+00:00", "game_date": "2026-10-02", "poll": true}
+{"category": "il_activation", "date": "2026-10-02", "first_seen_utc": "2026-10-02T21:34:03.385526+00:00", "player": "Andrew Vaughn", "player_id": 683734, "team": "MIL", "transaction_id": 944955}
