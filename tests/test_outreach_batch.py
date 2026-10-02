@@ -282,12 +282,12 @@ class BuildEndToEnd(unittest.TestCase):
             self.assertFalse({i["name"] for i in items} & {i["name"] for i in second})
 
 
-def _tree(base: Path, scripts=SCRIPTS, targets=None):
+def _tree(base: Path, scripts=SCRIPTS, targets=None, url=URL):
     sales = base / "docs" / "sales"
     sales.mkdir(parents=True)
     (base / "config").mkdir()
     (base / "config" / "business.json").write_text(
-        '{"public_urls": {"record": "%s"}}' % URL, encoding="utf-8")
+        '{"public_urls": {"record": "%s"}}' % url, encoding="utf-8")
     (sales / "scripts.md").write_text(scripts, encoding="utf-8")
     (sales / "channels.md").write_text(CHANNELS, encoding="utf-8")
     fields = ["type", "name", "url", "size", "sport_focus", "why_fit", "contact_path", "rule_status",
@@ -432,6 +432,435 @@ class OnePersonOncePerBatch(unittest.TestCase):
         seller = self._row("creator", "Paid Picks Letter", why="possible competitor: sells a paid group")
         self.assertFalse(ob.eligible(seller))
         self.assertTrue(ob.eligible(self._row("creator", "A Critic")))
+
+
+HASH_URL = "https://example.test/web/index.html#/record-card"
+
+
+def big_targets():
+    """Enough distinct targets for two full batches of 20 (names short, so no first-word collisions)."""
+    out = [row("forum", f"F{i}") for i in range(6)]
+    out += [row("creator", f"C{i}") for i in range(12)]
+    out += [row("x_account", f"X{i}") for i in range(12)]
+    out += [row("discord_server", f"D{i}", size="1K members", focus="MLB") for i in range(24)]
+    return out
+
+
+def run(root, *argv):
+    out, err = io.StringIO(), io.StringIO()
+    with redirect_stdout(out), redirect_stderr(err):
+        code = ob.main(list(argv), root=root, record_fn=lambda: RECORD)
+    return code, out.getvalue(), err.getvalue()
+
+
+def queue_of(root):
+    return ob.read_queue(root / "docs" / "sales" / ob.QUEUE_NAME)
+
+
+def snapshot(root):
+    sales = root / "docs" / "sales"
+    return {p.name: p.read_bytes() for p in sorted(sales.glob("*")) if p.is_file()}
+
+
+class QueueSeed(unittest.TestCase):
+    """One row per LEAD, seeded from the batch files, never the same person twice."""
+
+    def _two_batches(self, tmp):
+        root = _tree(Path(tmp), targets=big_targets())
+        self.assertEqual(run(root, "build", "--batch", "1", "--date", "2026-10-01")[0], 0)
+        self.assertEqual(run(root, "build", "--batch", "2", "--date", "2026-10-01")[0], 0)
+        return root
+
+    def test_two_batches_give_forty_distinct_leads_and_no_person_twice(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            rows = queue_of(self._two_batches(tmp))
+            self.assertEqual(len(rows), 40)
+            ids = [r["lead_id"] for r in rows]
+            self.assertEqual(len(set(ids)), 40)
+            for lid in ids:
+                self.assertRegex(lid, r"^[a-z0-9-]{1,40}$")
+            seen = set()
+            for r in rows:
+                keys = ob.people({"name": r["person_channel"]})
+                self.assertFalse(seen & keys, r["person_channel"])
+                seen |= keys
+            self.assertEqual({r["batch"] for r in rows}, {"1", "2"})
+            self.assertEqual(list(rows[0].keys()), ob.QUEUE_FIELDS)
+            self.assertTrue(all(not r["sent_at"] and not r["payment_at"] for r in rows))
+
+    def test_seed_from_legacy_batch_files_numbers_leads_in_file_order_and_is_idempotent(self):
+        import re
+        with tempfile.TemporaryDirectory() as tmp:
+            root = self._two_batches(tmp)
+            sales = root / "docs" / "sales"
+            first = [r["person_channel"] for r in queue_of(root)]
+            for name in ("batch_01.md", "batch_02.md"):      # make them look like pre-queue files
+                text = (sales / name).read_text(encoding="utf-8")
+                (sales / name).write_text(re.sub(r', "lead_id": "[^"]*"', "", text), encoding="utf-8")
+            (sales / ob.QUEUE_NAME).unlink()
+            code, out, _ = run(root, "seed")
+            self.assertEqual(code, 0, out)
+            rows = queue_of(root)
+            self.assertEqual([r["person_channel"] for r in rows], first)
+            self.assertEqual(rows[0]["lead_id"][:5], "l001-")
+            self.assertEqual(rows[39]["lead_id"][:5], "l040-")
+            before = snapshot(root)
+            self.assertEqual(run(root, "seed")[0], 0)
+            self.assertEqual(snapshot(root), before)
+
+    def test_a_second_channel_for_the_same_person_is_refused(self):
+        base = ob.add_leads([], [{"name": "JustBaseball Betting (Peter Appel, TheDannyClassic)",
+                                  "type": "creator", "sport": "MLB", "batch": 1},
+                                 {"name": "Farley's Substack", "type": "creator", "batch": 1}])
+        for alias in ("Peter Appel (@PeterAppel23)",                     # a name inside the brackets
+                      "Farley (@FarleyBets)",                            # a possessive first name
+                      "  justbaseball betting (peter appel, thedannyclassic) "):   # same name, other spacing
+            with self.assertRaises(ob.OutreachError, msg=alias) as cm:
+                ob.add_leads(base, [{"name": alias, "type": "x_account", "batch": 2}])
+            self.assertIn("one person is one lead", str(cm.exception))
+        self.assertEqual(len(ob.add_leads(base, [{"name": "Joseph Buchdahl (@12Xpert)",
+                                                  "type": "x_account", "batch": 2}])), 3)
+        with self.assertRaises(ob.OutreachError):       # twice in the same call
+            ob.add_leads([], [{"name": "Z", "type": "creator"}, {"name": "z", "type": "creator"}])
+
+    def test_seed_refuses_a_batch_file_that_lists_one_person_twice_and_writes_nothing(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = _tree(Path(tmp), targets=[row("creator", "JustBaseball Betting (Peter Appel, X)"),
+                                             row("x_account", "Peter Appel (@PeterAppel23)")])
+            sales = root / "docs" / "sales"
+            meta = ('<!--ITEM {"n": 1, "type": "%s", "name": "%s", "url": "", "contact_path": "", '
+                    '"variant": "v"}-->\n')
+            (sales / "batch_01.md").write_text(
+                meta % ("creator", "JustBaseball Betting (Peter Appel, X)")
+                + meta % ("x_account", "Peter Appel (@PeterAppel23)"), encoding="utf-8")
+            before = snapshot(root)
+            code, _, err = run(root, "seed")
+            self.assertEqual(code, 2)
+            self.assertIn("same person", err)
+            self.assertEqual(snapshot(root), before)
+            self.assertFalse((sales / ob.QUEUE_NAME).exists())
+
+    def test_lead_ids_are_url_safe_and_at_most_forty_characters(self):
+        long = "Ünïcode & Punctuation's Extremely Long Community Name For Sports Betting (Owner)"
+        lid = ob.make_lead_id(7, long)
+        self.assertLessEqual(len(lid), 40)
+        self.assertRegex(lid, r"^l007-[a-z0-9-]+$")
+        self.assertFalse(lid.endswith("-"))
+        self.assertEqual(ob.make_lead_id(12, "Unit Circle"), "l012-unit-circle")
+        self.assertEqual(ob.make_lead_id(5, "Farley's Substack"), "l005-farleys-substack")
+        self.assertRegex(ob.make_lead_id(1, "!!!"), r"^l001-lead$")
+
+    def test_the_committed_queue_matches_the_committed_batch_files(self):
+        """Reads the real repo on purpose: it guards the artifact Brey works from."""
+        root = Path(__file__).resolve().parents[1]
+        rows = ob.read_queue(root / "docs" / "sales" / ob.QUEUE_NAME)
+        ids = [r["lead_id"] for r in rows]
+        self.assertEqual(len(ids), len(set(ids)))
+        seen = set()
+        for r in rows:
+            keys = ob.people({"name": r["person_channel"]})
+            self.assertFalse(seen & keys, r["person_channel"])
+            seen |= keys
+        by_id = {r["lead_id"]: r for r in rows}
+        for path in sorted((root / "docs" / "sales").glob("batch_*.md")):
+            for item in ob.parse_batch(path.read_text(encoding="utf-8")):
+                self.assertIn(item["lead_id"], by_id, item["name"])
+                self.assertEqual(by_id[item["lead_id"]]["person_channel"], item["name"])
+
+
+class QueueCommands(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = _tree(Path(self.tmp.name), targets=big_targets())
+        run(self.root, "build", "--batch", "1", "--date", "2026-10-01")
+        self.assertEqual(run(self.root, "sent", "--batch", "1", "--items", "1,2",
+                             "--at", "2026-10-02T09:00:00Z")[0], 0)
+        self.a, self.b, self.unsent = [r["lead_id"] for r in queue_of(self.root)[:3]]
+
+    def lead(self, lead_id):
+        return next(r for r in queue_of(self.root) if r["lead_id"] == lead_id)
+
+    def test_sent_stamps_the_row_and_sets_the_day_three_followup(self):
+        row = self.lead(self.a)
+        self.assertEqual(row["sent_at"], "2026-10-02T09:00:00Z")
+        self.assertEqual(row["next_followup"], "2026-10-05")
+        self.assertEqual(row["message_version"], "feedback post + record link")
+        self.assertEqual(self.lead(self.unsent)["sent_at"], "")
+
+    def test_reply_signup_activated_would_pay_paid_update_one_row_and_never_add_a_lead(self):
+        pipe = self.root / "docs" / "sales" / "pipeline.csv"
+        before_events = len(ob.read_pipeline(pipe)[1])
+        steps = [("reply", "--classification", "interested"), ("signup",), ("activated",),
+                 ("would-pay",), ("paid", "--revenue", "19.99")]
+        for n, step in enumerate(steps):
+            code, out, err = run(self.root, *step[:1], "--lead", self.a, *step[1:],
+                                 "--at", f"2026-10-0{3 + n}T10:00:00Z")
+            self.assertEqual(code, 0, err)
+            rows = queue_of(self.root)
+            self.assertEqual(len(rows), 20)                              # still 20 rows
+            self.assertEqual(ob.queue_counts(rows)["leads"], 20)         # still 20 leads
+        row = self.lead(self.a)
+        self.assertEqual((row["reply_at"], row["reply_classification"]), ("2026-10-03T10:00:00Z", "interested"))
+        self.assertEqual(row["signup_at"], "2026-10-04T10:00:00Z")
+        self.assertEqual(row["activated_at"], "2026-10-05T10:00:00Z")
+        self.assertEqual(row["would_pay_at"], "2026-10-06T10:00:00Z")
+        self.assertEqual(row["payment_at"], "2026-10-07T10:00:00Z")
+        counts = ob.queue_counts(queue_of(self.root))
+        self.assertEqual((counts["sent"], counts["replies"], counts["signups"], counts["activated"],
+                          counts["would_pay"], counts["paid"]), (2, 1, 1, 1, 1, 1))
+        events = ob.read_pipeline(pipe)[1][before_events:]
+        self.assertEqual([e["stage"] for e in events], ["replied", "signup", "active", "would_pay", "paid"])
+        self.assertTrue(all(f"lead_id={self.a}" in e["notes"] for e in events))
+        self.assertEqual(events[-1]["revenue"], "19.99")
+        total, unknown = ob.queue_revenue(queue_of(self.root), ob.read_pipeline(pipe)[1])
+        self.assertEqual((round(total, 2), unknown), (19.99, 0))
+
+    def test_a_timestamp_is_set_once_and_never_overwritten(self):
+        self.assertEqual(run(self.root, "signup", "--lead", self.a, "--at", "2026-10-03T10:00:00Z")[0], 0)
+        before = snapshot(self.root)
+        code, _, err = run(self.root, "signup", "--lead", self.a, "--at", "2026-10-09T10:00:00Z")
+        self.assertEqual(code, 2)
+        self.assertIn("already recorded", err)
+        self.assertEqual(snapshot(self.root), before)
+        self.assertEqual(self.lead(self.a)["signup_at"], "2026-10-03T10:00:00Z")
+
+    def test_an_auto_reply_is_not_a_reply_and_the_first_real_one_replaces_it(self):
+        run(self.root, "reply", "--lead", self.a, "--classification", "auto", "--at", "2026-10-03T08:00:00Z")
+        counts = ob.queue_counts(queue_of(self.root))
+        self.assertEqual((counts["replied_any"], counts["replies"], counts["auto_replies"]), (1, 0, 1))
+        self.assertIsNone(ob.milestones(queue_of(self.root))["first_reply"])
+        self.assertEqual(run(self.root, "reply", "--lead", self.a, "--classification", "auto")[0], 2)
+        run(self.root, "reply", "--lead", self.a, "--classification", "question", "--at", "2026-10-04T08:00:00Z")
+        row = self.lead(self.a)
+        self.assertEqual((row["reply_at"], row["reply_classification"]), ("2026-10-04T08:00:00Z", "question"))
+        # a later reclassification keeps the first real reply's time
+        run(self.root, "reply", "--lead", self.a, "--classification", "interested", "--at", "2026-10-06T08:00:00Z")
+        row = self.lead(self.a)
+        self.assertEqual((row["reply_at"], row["reply_classification"]), ("2026-10-04T08:00:00Z", "interested"))
+        self.assertIn("question -> interested", row["notes"])
+        # an auto-reply after a real one tells us nothing
+        self.assertEqual(run(self.root, "reply", "--lead", self.a, "--classification", "auto")[0], 2)
+
+    def test_illegal_transitions_exit_2_and_leave_every_file_byte_identical(self):
+        run(self.root, "signup", "--lead", self.a, "--at", "2026-10-03T10:00:00Z")
+        cases = [
+            ("reply", "--lead", self.unsent, "--classification", "interested"),   # reply before sent
+            ("signup", "--lead", self.unsent),
+            ("paid", "--lead", self.unsent),
+            ("would-pay", "--lead", self.unsent),
+            ("followup", "--lead", self.unsent, "--date", "2026-10-09"),
+            ("activated", "--lead", self.b),                                      # activated before signup
+            ("reply", "--lead", "l999-nobody", "--classification", "interested"),  # unknown lead
+            ("signup", "--lead", "l999-nobody"),
+            ("reply", "--lead", self.a, "--classification", "ecstatic"),          # unknown classification
+            ("reply", "--lead", self.a),                                          # neither form
+            ("signup", "--lead", self.b, "--at", "2026-10-01T00:00:00Z"),         # before it was sent
+            ("signup", "--lead", self.b, "--at", "not-a-time"),
+            ("paid", "--lead", self.a, "--revenue", "-5"),
+            ("followup", "--lead", self.a, "--date", "next week"),
+            ("sent", "--batch", "1", "--items", "1"),                             # already sent
+            ("sent", "--batch", "1", "--items", "3,99"),                          # one bad item voids the call
+            ("signup", "--lead", self.a),                                         # already signed up
+        ]
+        for argv in cases:
+            before = snapshot(self.root)
+            code, _, err = run(self.root, *argv)
+            self.assertEqual(code, 2, (argv, err))
+            self.assertIn("refused:", err)
+            self.assertEqual(snapshot(self.root), before, argv)
+
+    def test_followup_sets_the_next_date_and_can_be_moved(self):
+        self.assertEqual(run(self.root, "followup", "--lead", self.a, "--date", "2026-10-09")[0], 0)
+        self.assertEqual(self.lead(self.a)["next_followup"], "2026-10-09")
+        self.assertEqual(run(self.root, "followup", "--lead", self.a, "--date", "2026-10-12")[0], 0)
+        self.assertEqual(self.lead(self.a)["next_followup"], "2026-10-12")
+        self.assertEqual(len(queue_of(self.root)), 20)
+
+    def test_a_lead_can_be_named_by_its_person_channel(self):
+        name = self.lead(self.a)["person_channel"]
+        self.assertEqual(run(self.root, "signup", "--target", name.lower(), "--at", "2026-10-03T10:00:00Z")[0], 0)
+        self.assertTrue(self.lead(self.a)["signup_at"])
+
+    def test_milestones_print_the_first_timestamp_of_each_step_or_not_yet(self):
+        code, out, _ = run(self.root, "milestones")
+        self.assertEqual(code, 0)
+        self.assertIn("First message sent: 2026-10-02T09:00:00Z", out)
+        self.assertIn("First signup: not yet", out)
+        self.assertIn("First payment: not yet", out)
+        run(self.root, "reply", "--lead", self.b, "--classification", "auto", "--at", "2026-10-02T09:30:00Z")
+        run(self.root, "reply", "--lead", self.a, "--classification", "question", "--at", "2026-10-03T12:00:00Z")
+        run(self.root, "reply", "--lead", self.b, "--classification", "interested", "--at", "2026-10-03T08:00:00Z")
+        run(self.root, "signup", "--lead", self.a, "--at", "2026-10-05T12:00:00Z")
+        run(self.root, "signup", "--lead", self.b, "--at", "2026-10-04T12:00:00Z")
+        found = ob.milestones(queue_of(self.root))
+        self.assertEqual(found["first_sent"], "2026-10-02T09:00:00Z")
+        self.assertEqual(found["first_reply"], "2026-10-03T08:00:00Z")     # the auto at 09:30 never counted
+        self.assertEqual(found["first_interested"], "2026-10-03T08:00:00Z")
+        self.assertEqual(found["first_signup"], "2026-10-04T12:00:00Z")
+        self.assertIsNone(found["first_active"])
+        self.assertIsNone(found["first_payment"])
+        self.assertIn("First signup: 2026-10-04T12:00:00Z", run(self.root, "milestones")[1])
+
+    def test_the_legacy_stage_form_still_works_and_says_it_left_the_queue_alone(self):
+        name = self.lead(self.a)["person_channel"]
+        before = (self.root / "docs" / "sales" / ob.QUEUE_NAME).read_bytes()
+        code, out, _ = run(self.root, "reply", "--target", name, "--stage", "replied", "--date", "2026-10-03")
+        self.assertEqual(code, 0)
+        self.assertIn("queue", out)
+        self.assertEqual((self.root / "docs" / "sales" / ob.QUEUE_NAME).read_bytes(), before)
+
+
+class TaggedLinks(unittest.TestCase):
+    def test_tag_url_puts_the_query_before_the_fragment(self):
+        self.assertEqual(
+            ob.tag_url("https://host/web/index.html#/record-card", "l012-unit-circle", "discord_server", 1),
+            "https://host/web/index.html?utm_source=l012-unit-circle&utm_medium=discord_server"
+            "&utm_campaign=batch_01#/record-card")
+        self.assertEqual(ob.tag_url("https://host/r", "l001-a", "forum", 12),
+                         "https://host/r?utm_source=l001-a&utm_medium=forum&utm_campaign=batch_12")
+        self.assertEqual(ob.tag_url("https://host/r?x=1#/h", "l001-a", "forum", 2),
+                         "https://host/r?x=1&utm_source=l001-a&utm_medium=forum&utm_campaign=batch_02#/h")
+
+    def test_tag_url_refuses_a_bad_lead_id_a_bad_medium_and_existing_utm(self):
+        for bad in ("L001-A", "l001 a", "l001-" + "a" * 40, ""):
+            with self.assertRaises(ob.OutreachError, msg=bad):
+                ob.tag_url("https://host/r", bad, "forum", 1)
+        with self.assertRaises(ob.OutreachError):
+            ob.tag_url("https://host/r", "l001-a", "Forum Thread", 1)
+        with self.assertRaises(ob.OutreachError):
+            ob.tag_url("https://host/r?utm_source=x", "l001-a", "forum", 1)
+
+    def test_every_record_link_in_a_built_batch_carries_its_lead_and_the_base_comes_from_config(self):
+        import re
+        with tempfile.TemporaryDirectory() as tmp:
+            root = _tree(Path(tmp), targets=big_targets(), url=HASH_URL)
+            self.assertEqual(run(root, "build", "--batch", "1", "--date", "2026-10-01")[0], 0)
+            text = (root / "docs" / "sales" / "batch_01.md").read_text(encoding="utf-8")
+            ids = {r["lead_id"] for r in queue_of(root)}
+            links = re.findall(r"https://example\.test/web/index\.html\S*", text)
+            self.assertGreaterEqual(len(links), 20)          # 2 forum bodies + 18 "if they ask" lines
+            for link in links:
+                m = re.fullmatch(r"https://example\.test/web/index\.html\?utm_source=([a-z0-9-]+)"
+                                 r"&utm_medium=(forum|creator|x_account|discord_server)"
+                                 r"&utm_campaign=batch_01#/record-card", link)
+                self.assertIsNotNone(m, link)
+                self.assertIn(m.group(1), ids)
+            forum = next(i for i in ob.parse_batch(text) if i["type"] == "forum")
+            self.assertIn(f"Record page: https://example.test/web/index.html?utm_source={forum['lead_id']}"
+                          f"&utm_medium=forum&utm_campaign=batch_01#/record-card", text)
+            # the cold messages still carry no link
+            for block in re.findall(r"```\n(.*?)\n```", text, re.S):
+                if "I'm the builder" not in block and "```" not in block and "sent --batch" not in block \
+                        and "reply --lead" not in block:
+                    self.assertNotIn("http", block)
+
+    def test_switching_the_domain_is_one_config_edit_plus_rebuild(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = _tree(Path(tmp), targets=big_targets(), url=HASH_URL)
+            run(root, "build", "--batch", "1", "--date", "2026-10-01")
+            (root / "config" / "business.json").write_text(
+                '{"public_urls": {"record": "https://linehound.app/web/index.html#/record-card"}}',
+                encoding="utf-8")
+            self.assertEqual(run(root, "rebuild", "--batch", "1")[0], 0)
+            text = (root / "docs" / "sales" / "batch_01.md").read_text(encoding="utf-8")
+            self.assertNotIn("example.test/web", text)
+            self.assertIn("https://linehound.app/web/index.html?utm_source=l001-", text)
+
+
+class Rebuild(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = _tree(Path(self.tmp.name), targets=big_targets(), url=HASH_URL)
+        self.sales = self.root / "docs" / "sales"
+        self.assertEqual(run(self.root, "build", "--batch", "1", "--date", "2026-10-02")[0], 0)
+
+    def names(self):
+        return [i["name"] for i in ob.parse_batch((self.sales / "batch_01.md").read_text(encoding="utf-8"))]
+
+    @staticmethod
+    def stable(text):
+        return "\n".join(l for l in text.splitlines() if not l.startswith("- Read at "))
+
+    def test_rebuild_keeps_the_same_leads_in_the_same_order_even_if_targets_change(self):
+        before_text = (self.sales / "batch_01.md").read_text(encoding="utf-8")
+        before_names, before_queue = self.names(), queue_of(self.root)
+        # a better-ranked target appears; a reselection would pick it up
+        path = self.sales / "targets.csv"
+        old = path.read_text(encoding="utf-8")
+        newrow = io.StringIO()
+        csv.DictWriter(newrow, fieldnames=list(csv.DictReader(io.StringIO(old)).fieldnames),
+                       lineterminator="\n").writerow(row("forum", "FNEW"))
+        header, _, rest = old.partition("\n")
+        path.write_text(header + "\n" + newrow.getvalue() + rest, encoding="utf-8")
+        code, out, err = run(self.root, "rebuild", "--batch", "1")
+        self.assertEqual(code, 0, err)
+        self.assertEqual(self.names(), before_names)
+        self.assertNotIn("FNEW", self.names())
+        self.assertEqual(queue_of(self.root), before_queue)
+        # only the "Read at" line and the verb differ: wording is untouched, the link is the same
+        after_text = (self.sales / "batch_01.md").read_text(encoding="utf-8")
+        self.assertEqual(self.stable(after_text).replace("rebuild --batch", "build --batch"),
+                         self.stable(before_text))
+
+    def test_rebuild_keeps_the_original_generation_date_for_the_followup_days(self):
+        run(self.root, "rebuild", "--batch", "1")
+        text = (self.sales / "batch_01.md").read_text(encoding="utf-8")
+        self.assertIn("on 2026-10-02.", text)
+        self.assertIn("day 3 2026-10-05, day 7 2026-10-09", text)
+
+    def test_rebuild_refuses_once_any_item_is_marked_sent_and_writes_nothing(self):
+        self.assertEqual(run(self.root, "sent", "--batch", "1", "--items", "3")[0], 0)
+        before = snapshot(self.root)
+        code, _, err = run(self.root, "rebuild", "--batch", "1")
+        self.assertEqual(code, 2)
+        self.assertIn("already marked sent", err)
+        self.assertEqual(snapshot(self.root), before)
+
+    def test_rebuild_also_refuses_for_an_item_found_in_the_pipeline_history(self):
+        pipe = self.sales / "pipeline.csv"
+        fields, hist = ob.read_pipeline(pipe)
+        ob.append_rows(pipe, fields, ob.sent_rows([ob.parse_batch(
+            (self.sales / "batch_01.md").read_text(encoding="utf-8"))[4]], 1, date(2026, 10, 2)))
+        before = snapshot(self.root)
+        self.assertEqual(run(self.root, "rebuild", "--batch", "1")[0], 2)
+        self.assertEqual(snapshot(self.root), before)
+
+    def test_the_guards_still_run_on_every_rebuilt_item(self):
+        path = self.sales / "targets.csv"
+        text = path.read_text(encoding="utf-8")
+        victim = self.names()[10]
+        path.write_text(text.replace("first line.", "We post a lock every night."), encoding="utf-8")
+        before = snapshot(self.root)
+        code, _, err = run(self.root, "rebuild", "--batch", "1")
+        self.assertEqual(code, 2)
+        self.assertIn("lock", err)
+        self.assertIn("guard hit", err)
+        self.assertEqual(snapshot(self.root), before)
+        self.assertTrue(victim)
+
+    def test_build_refuses_a_batch_file_that_exists_and_points_at_rebuild(self):
+        before = snapshot(self.root)
+        code, _, err = run(self.root, "build", "--batch", "1")
+        self.assertEqual(code, 2)
+        self.assertIn("rebuild", err)
+        self.assertEqual(snapshot(self.root), before)
+
+    def test_rebuild_of_a_legacy_file_creates_leads_in_file_order_with_tagged_links(self):
+        import re
+        text = (self.sales / "batch_01.md").read_text(encoding="utf-8")
+        legacy = re.sub(r', "lead_id": "[^"]*"', "", text)
+        legacy = re.sub(r"\?utm_source=[^#\s]*", "", legacy)
+        (self.sales / "batch_01.md").write_text(legacy, encoding="utf-8")
+        (self.sales / ob.QUEUE_NAME).unlink()
+        self.assertEqual(run(self.root, "rebuild", "--batch", "1")[0], 0)
+        rows = queue_of(self.root)
+        self.assertEqual([r["person_channel"] for r in rows], self.names())
+        self.assertEqual(rows[0]["lead_id"][:5], "l001-")
+        new_text = (self.sales / "batch_01.md").read_text(encoding="utf-8")
+        self.assertIn(f"?utm_source={rows[0]['lead_id']}&utm_medium=forum&utm_campaign=batch_01#/record-card",
+                      new_text)
 
 
 if __name__ == "__main__":

@@ -1,19 +1,82 @@
 # LineHound survival dashboard
 
-Generated 2026-10-02 00:38Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and `docs/sales/pipeline.csv`, not this file.
+Generated 2026-10-02 02:56Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
 | Days until 2026-10-31 | **29** |
-| Monthly cost (known + estimated infrastructure) | $78.00 |
-| Monthly cost incl. Claude at the planning assumption | $278.00 (unknown: Claude subscription that operates the business, BALLDONTLIE) |
-| Revenue (MRR) | $0.00 |
-| Paying customers | 0 |
-| Trials | 0 |
-| Leads contacted | 0 (ever replied 0, ever had a demo 0, lost 0) |
-| Lead to paid conversion | n/a (no leads yet) |
+| Current monthly burn (known + estimated infrastructure) | $78.00 |
+| Current monthly burn incl. Claude at the planning assumption | $278.00 (unknown: Claude subscription that operates the business, BALLDONTLIE) |
+| Identified monthly savings (not yet realised) | $29.00: The Odds API (100K tier): $29.00 (downgrade to the $30 20K tier from November; NOT confirmed, owner decision) |
+| Revenue (payments logged in the queue) | none logged (no `paid` lead in the queue) |
+| MRR (config, manual: manual until /admin/revenue is read from production) | $0.00 |
+| Unique leads | 40 |
+| Messages sent | 0 |
+| Replies | 0 |
+| Signups | 0 |
+| Active users | 0 |
+| People who said they would pay | 0 |
+| Paid customers | 0 |
+| Conversion rate (paid / leads sent) | n/a (no lead has been sent a message yet) |
 | CAC | $0 spent on acquisition |
 | Gap to break-even | $278.00 per month |
+
+## Milestones (first timestamp of each, UTC)
+
+- First message sent: not yet
+- First real reply (not auto): not yet
+- First interested reply: not yet
+- First signup: not yet
+- First active user: not yet
+- First would-pay: not yet
+- First payment: not yet
+
+## Current sports
+
+- MLB postseason (card, hits and total-bases props)
+- NFL (value lines)
+- UFC (published; graded by hand)
+
+## Performance by market (counted picks; never pooled) and CLV
+
+- **MLB current** (Our value card; 2026-09-22..2026-09-27): 16-17, -5.05u, ROI -15.3% (n=33)
+  - game: 2-1, +0.69u, ROI +23.2% (n=3)
+  - prop: 14-16, -5.74u, ROI -19.1% (n=30)
+  - fills (shown apart, never counted): 21-8, +7.68u, ROI +26.5% (n=29)
+- **MLB previous** (Our first card rule; 2026-09-10..2026-09-22): 151-79, +7.98u, ROI +3.5% (n=230)
+  - game: 73-40, +7.61u, ROI +6.7% (n=113)
+  - prop: 78-39, +0.38u, ROI +0.3% (n=117)
+- **NFL current** (Our NFL value rule; 2026-09-27..2026-09-27): 1-0, +0.93u, ROI +92.6% (n=1)
+  - game: 1-0, +0.93u, ROI +92.6% (n=1)
+- **NFL previous** (Our first NFL rule; 2026-09-17..2026-09-21): 7-3, -0.26u, ROI -2.6% (n=10)
+  - game: 7-3, -0.26u, ROI -2.6% (n=10)
+- **MMA current** (Our UFC card; 2026-09-22..2026-09-26): 5-1, +2.50u, ROI +41.7% (n=6)
+  - game: 5-1, +2.50u, ROI +41.7% (n=6)
+
+Closing-line value: see `docs/VALUE_SCAN.md` (the standing measurement; no CLV figure is computed or copied here). No rule here has evidence of an edge.
+
+- V2 MAIN picks 16-17, -5.05u; 19 of the 33 are one day (2026-09-22, cap breach, -5.14u).
+- Everything shown to readers under V2 (picks plus fills): 41-27, +3.46u.
+- Closing-line value is negative in every segment measured (V1 games -1.21 pts, n=51; props about -3.5).
+- Our number scored worse than the market's in 12 of 16 populations and never significantly better.
+
+## Production health and capture cost
+
+- Production health: see docs/audit
+- Capture cost: see docs/audit
+
+## Top 3 blockers
+
+1. linehound.app does not load: the domain is on Cloudflare with no A, AAAA or CNAME record and Fly holds no certificate for it. Outreach links use linehound-prod.fly.dev until it does. Checkout cannot be switched on before it does, because buyers are returned to that domain. Steps: docs/GO_LIVE_2026-09-28.md section 1. Owner.
+2. Signups are invisible: production has no admin token, so nobody can read who signed up or from which outreach link. One command, no Stripe needed, before batch 1 is sent: docs/GO_LIVE_2026-09-28.md section 0. Owner.
+3. No distribution: zero outreach sent. The first 20 are written and ready to paste in docs/sales/batch_01.md; log each send with `python scripts/outreach_batch.py sent --batch 1 --items ...`. Owner.
+
+## Next actions
+
+- **Owner:** not set
+- **Customer:** Brey: first set the admin token (GO_LIVE section 0) so signups are visible, then send batch 1 (docs/sales/batch_01.md). Start with items 1 and 2 (two forums where promotion is allowed), then the four creators and five X replies; at most five Discord notes a day. Log each with scripts/outreach_batch.py. Batch 2 (docs/sales/batch_02.md, 20 more, nobody repeated from batch 1) is ready for when batch 1 is out.
+- **Product:** not set
+- **Model:** docs/VALUE_SCAN.md is now the standing measurement (python scripts/value_scan.py): 43 populations, 0 candidates, 6 with enough data and no evidence, 37 too few. The one hypothesis worth a pre-registered forward test is whether V2's value gate selects the worse entries (z -1.43 in shadow A). No gate or threshold changes until that test reports.
 
 ## What survival requires
 
@@ -36,35 +99,6 @@ Generated 2026-10-02 00:38Z by `scripts/survival_dashboard.py`. Edit `config/bus
 | GitHub Actions | $0.00 | KEEP | Free only because the repo is public (about 90k runner minutes a month). Do not make the repo private. |
 | Stripe | $0.00 | KEEP | Per charge: about $1.02 on $19.99. |
 
-## Active sports
-
-- MLB postseason (card, hits and total-bases props)
-- NFL (value lines)
-- UFC (published; graded by hand)
-
-## Public record by sport and market (counted picks; never pooled)
-
-- **MLB current** (Our value card; 2026-09-22..2026-09-27): 16-17, -5.05u, ROI -15.3% (n=33)
-  - game: 2-1, +0.69u, ROI +23.2% (n=3)
-  - prop: 14-16, -5.74u, ROI -19.1% (n=30)
-  - fills (shown apart, never counted): 21-8, +7.68u, ROI +26.5% (n=29)
-- **MLB previous** (Our first card rule; 2026-09-10..2026-09-22): 151-79, +7.98u, ROI +3.5% (n=230)
-  - game: 73-40, +7.61u, ROI +6.7% (n=113)
-  - prop: 78-39, +0.38u, ROI +0.3% (n=117)
-- **NFL current** (Our NFL value rule; 2026-09-27..2026-09-27): 1-0, +0.93u, ROI +92.6% (n=1)
-  - game: 1-0, +0.93u, ROI +92.6% (n=1)
-- **NFL previous** (Our first NFL rule; 2026-09-17..2026-09-21): 7-3, -0.26u, ROI -2.6% (n=10)
-  - game: 7-3, -0.26u, ROI -2.6% (n=10)
-- **MMA current** (Our UFC card; 2026-09-22..2026-09-26): 5-1, +2.50u, ROI +41.7% (n=6)
-  - game: 5-1, +2.50u, ROI +41.7% (n=6)
-
-No rule here has evidence of an edge. Closing-line value and calibration: see `docs/audit/` for the latest loss diagnosis.
-
-- V2 MAIN picks 16-17, -5.05u; 19 of the 33 are one day (2026-09-22, cap breach, -5.14u).
-- Everything shown to readers under V2 (picks plus fills): 41-27, +3.46u.
-- Closing-line value is negative in every segment measured (V1 games -1.21 pts, n=51; props about -3.5).
-- Our number scored worse than the market's in 12 of 16 populations and never significantly better.
-
 ## Product errors
 
 - Production memory incident (2026-10-01): the site restarted for lack of memory about every 11 minutes from its first deploy until 21:39Z. Fixed by serialising cache rebuilds, deployed 21:41Z. 60-minute soak passed: 0 restarts, peak 589 MB of 1,024, steady memory 358 MB and flattening. docs/audit/2026-10-01/PRODUCTION_RECOVERY.md.
@@ -81,11 +115,8 @@ No rule here has evidence of an edge. Closing-line value and calibration: see `d
 - Sign-in, deferred: a link carrying a token signs the reader into that token's account; a crafted link could sign someone into an account that is not theirs.
 - Lost access token: no email sender exists, so recovery is by support only (admin re-issue route being added 2026-10-01).
 
-## Top blockers
+## Other blockers
 
-- linehound.app does not load: the domain is on Cloudflare with no A, AAAA or CNAME record and Fly holds no certificate for it. Outreach links use linehound-prod.fly.dev until it does. Checkout cannot be switched on before it does, because buyers are returned to that domain. Steps: docs/GO_LIVE_2026-09-28.md section 1. Owner.
-- Signups are invisible: production has no admin token, so nobody can read who signed up or from which outreach link. One command, no Stripe needed, before batch 1 is sent: docs/GO_LIVE_2026-09-28.md section 0. Owner.
-- No distribution: zero outreach sent. The first 20 are written and ready to paste in docs/sales/batch_01.md; log each send with `python scripts/outreach_batch.py sent --batch 1 --items ...`. Owner.
 - Stripe is not live: account verification pending (date of birth, phone), then the five Fly secrets. Owner.
 - Discord feed not wired: needs the webhook secret and one env line on the default branch. Owner + me.
 - Claude monthly cost unknown, so break-even is an estimate. Owner.
@@ -104,8 +135,4 @@ No rule here has evidence of an edge. Closing-line value and calibration: see `d
 - Capture slowdown found and fixed: engine slate 21 minutes -> 65 seconds on a runner
 - Staging billing confirmed in test mode (from /health, no key shown); rehearsal purchase steps in GO_LIVE section 5
 - UFC: seven published picks graded from two independent sources each
-
-**Next customer action:** Brey: first set the admin token (GO_LIVE section 0) so signups are visible, then send batch 1 (docs/sales/batch_01.md). Start with items 1 and 2 (two forums where promotion is allowed), then the four creators and five X replies; at most five Discord notes a day. Log each with scripts/outreach_batch.py. Batch 2 (docs/sales/batch_02.md, 20 more, nobody repeated from batch 1) is ready for when batch 1 is out.
-
-**Next research action:** docs/VALUE_SCAN.md is now the standing measurement (python scripts/value_scan.py): 43 populations, 0 candidates, 6 with enough data and no evidence, 37 too few. The one hypothesis worth a pre-registered forward test is whether V2's value gate selects the worse entries (z -1.43 in shadow A). No gate or threshold changes until that test reports.
 

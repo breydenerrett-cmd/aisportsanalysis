@@ -1,16 +1,21 @@
 """The one living business dashboard: docs/SURVIVAL_DASHBOARD.md.
 
 Deterministic. Computes what the repo can know (days left, the cost table
-and break-even, the public record by sport and market, the sales pipeline
-counts) and prints what a person must supply (revenue until production's
-admin route is read, the Claude cost) as UNKNOWN rather than guessing.
+and break-even, the public record by sport and market, the outreach funnel)
+and prints what a person must supply (revenue until production's admin route
+is read, the Claude cost) as UNKNOWN or "not set" rather than guessing.
+
+Every funnel count is read from docs/sales/outreach_queue.csv, one row per
+LEAD, counted by distinct lead_id: a reply, a signup or a payment updates a
+lead's row and can never add a lead, so no person is counted twice. A rate is
+printed only from a non-zero denominator.
 
     python scripts/survival_dashboard.py            # writes the file
     python scripts/survival_dashboard.py --stdout   # prints it
 
-Inputs: config/business.json (costs, offers, blockers, today's queue),
-docs/sales/pipeline.csv (leads), the card ledgers through
-src.report.effective_record.
+Inputs: config/business.json (costs, offers, blockers, next actions),
+docs/sales/outreach_queue.csv (leads), docs/sales/pipeline.csv (payment
+amounts, from `paid` events), the card ledgers through src.report.effective_record.
 """
 from __future__ import annotations
 
@@ -27,6 +32,7 @@ sys.path.insert(0, str(ROOT))
 
 CONFIG = ROOT / "config" / "business.json"
 PIPELINE = ROOT / "docs" / "sales" / "pipeline.csv"
+QUEUE = ROOT / "docs" / "sales" / "outreach_queue.csv"
 OUT = ROOT / "docs" / "SURVIVAL_DASHBOARD.md"
 
 STAGES = ("sent", "replied", "demo", "trial", "paid", "lost")
@@ -123,35 +129,132 @@ def record_lines() -> list:
     return lines or ["- no ledgers found"]
 
 
-def render(config: dict, today: date, now_utc: str) -> str:
+def savings(config: dict) -> list:
+    """(item, usd, label) for each costs_monthly item that carries a `saving_usd`."""
+    return [(c["item"], c["saving_usd"], c.get("saving_label") or "see the note in the costs table")
+            for c in config["costs_monthly"] if c.get("saving_usd") is not None]
+
+
+def _action(config: dict, key: str) -> str:
+    return (config.get(key) or "").strip() or "not set"
+
+
+def _load_queue(queue_rows, pipeline_rows) -> tuple:
+    """(queue_rows, pipeline_rows, note). Tests inject both; production reads the files."""
+    from scripts import outreach_batch as ob
+    note = ""
+    if queue_rows is None:
+        try:
+            queue_rows = ob.read_queue(QUEUE, must_exist=False)
+        except ob.OutreachError as exc:
+            queue_rows, note = [], f"queue unreadable: {exc}"
+        if not QUEUE.exists():
+            note = "docs/sales/outreach_queue.csv not found; run `python scripts/outreach_batch.py seed`"
+    if pipeline_rows is None:
+        pipeline_rows = ob.read_pipeline(PIPELINE)[1]
+    return queue_rows, pipeline_rows, note
+
+
+def render(config: dict, today: date, now_utc: str, queue_rows: list = None,
+           pipeline_rows: list = None, record: list = None) -> str:
+    from scripts import outreach_batch as ob
     deadline = date.fromisoformat(config["deadline"])
     costs = cost_summary(config)
-    pipe = pipeline_counts()
+    queue_rows, pipeline_rows, queue_note = _load_queue(queue_rows, pipeline_rows)
+    q = ob.queue_counts(queue_rows)
+    revenue_total, revenue_unknown = ob.queue_revenue(queue_rows, pipeline_rows)
     rev = config.get("revenue") or {}
     mrr = rev.get("mrr_usd") or 0.0
-    leads = pipe["rows"]
-    paid = max(pipe["counts"]["paid"], rev.get("paying_customers") or 0)
-    conv = f"{paid / leads * 100:.1f}%" if leads else "n/a (no leads yet)"
+    paid = q["paid"]
+    if q["sent"]:
+        conv = f"{paid / q['sent'] * 100:.1f}% ({paid} of {q['sent']} leads sent)"
+    else:
+        conv = "n/a (no lead has been sent a message yet)"
+    saves = savings(config)
     out = []
     out.append("# LineHound survival dashboard")
     out.append("")
     out.append(f"Generated {now_utc} by `scripts/survival_dashboard.py`. Edit `config/business.json` "
-               "and `docs/sales/pipeline.csv`, not this file.")
+               "and log outreach with `scripts/outreach_batch.py`, not this file.")
     out.append("")
     out.append("| | |")
     out.append("|---|---|")
     out.append(f"| Days until {deadline.isoformat()} | **{(deadline - today).days}** |")
-    out.append(f"| Monthly cost (known + estimated infrastructure) | {_money(costs['infra_total'])} |")
-    out.append(f"| Monthly cost incl. Claude at the planning assumption | {_money(costs['planning_total'])} "
+    out.append(f"| Current monthly burn (known + estimated infrastructure) | {_money(costs['infra_total'])} |")
+    out.append(f"| Current monthly burn incl. Claude at the planning assumption | {_money(costs['planning_total'])} "
                f"(unknown: {', '.join(costs['unknown_items']) or 'none'}) |")
-    out.append(f"| Revenue (MRR) | {_money(mrr)} |")
-    out.append(f"| Paying customers | {paid} |")
-    out.append(f"| Trials | {max(pipe['counts']['trial'], rev.get('trials') or 0)} |")
-    out.append(f"| Leads contacted | {leads} (ever replied {pipe['reached']['replied']}, "
-               f"ever had a demo {pipe['reached']['demo']}, lost {pipe['counts']['lost']}) |")
-    out.append(f"| Lead to paid conversion | {conv} |")
+    if saves:
+        total = sum(usd for _, usd, _ in saves)
+        listing = "; ".join(f"{item}: {_money(usd)} ({label})" for item, usd, label in saves)
+        out.append(f"| Identified monthly savings (not yet realised) | {_money(total)}: {listing} |")
+    else:
+        out.append("| Identified monthly savings (not yet realised) | none identified "
+                   "(no costs_monthly item has a saving_usd) |")
+    if paid == 0:
+        revenue_text = "none logged (no `paid` lead in the queue)"
+    elif revenue_unknown and not revenue_total:
+        revenue_text = f"UNKNOWN ({revenue_unknown} payment(s) logged without a revenue figure)"
+    elif revenue_unknown:
+        revenue_text = (f"{_money(revenue_total)} plus {revenue_unknown} payment(s) logged "
+                        "without a revenue figure")
+    else:
+        revenue_text = _money(revenue_total)
+    out.append(f"| Revenue (payments logged in the queue) | {revenue_text} |")
+    out.append(f"| MRR (config, manual: {rev.get('source') or 'no source stated'}) | {_money(mrr)} |")
+    out.append(f"| Unique leads | {q['leads']} |")
+    out.append(f"| Messages sent | {q['sent']} |")
+    auto = f" (plus {q['auto_replies']} auto-reply, not counted)" if q["auto_replies"] else ""
+    out.append(f"| Replies | {q['replies']}{auto} |")
+    out.append(f"| Signups | {q['signups']} |")
+    out.append(f"| Active users | {q['activated']} |")
+    out.append(f"| People who said they would pay | {q['would_pay']} |")
+    cfg_paid = rev.get("paying_customers") or 0
+    stale = f" (config says {cfg_paid}; they are not in the queue, log them with `paid`)" if cfg_paid > paid else ""
+    out.append(f"| Paid customers | {paid}{stale} |")
+    out.append(f"| Conversion rate (paid / leads sent) | {conv} |")
     out.append("| CAC | $0 spent on acquisition |")
     out.append(f"| Gap to break-even | {_money(max(costs['planning_total'] - mrr, 0.0))} per month |")
+    out.append("")
+    notes = []
+    if queue_note:
+        notes.append(queue_note)
+    if q["duplicate_rows"]:
+        notes.append(f"{q['duplicate_rows']} repeated lead_id row(s) in the queue were merged, not counted")
+    out.extend(f"> {n}" for n in notes)
+    if notes:
+        out.append("")
+    out.append("## Milestones (first timestamp of each, UTC)")
+    out.append("")
+    out.extend(f"- {line}" for line in ob.milestone_lines(queue_rows))
+    out.append("")
+    out.append("## Current sports")
+    out.append("")
+    out.extend(f"- {s}" for s in config.get("active_sports", []))
+    out.append("")
+    out.append("## Performance by market (counted picks; never pooled) and CLV")
+    out.append("")
+    out.extend(record if record is not None else record_lines())
+    out.append("")
+    out.append("Closing-line value: see `docs/VALUE_SCAN.md` (the standing measurement; no CLV figure "
+               "is computed or copied here). No rule here has evidence of an edge.")
+    out.append("")
+    out.extend(f"- {item}" for item in config.get("record_reading", []))
+    out.append("")
+    out.append("## Production health and capture cost")
+    out.append("")
+    out.append(f"- Production health: {(config.get('production_health') or '').strip() or 'see docs/audit'}")
+    out.append(f"- Capture cost: {(config.get('capture_cost') or '').strip() or 'see docs/audit'}")
+    out.append("")
+    out.append("## Top 3 blockers")
+    out.append("")
+    out.extend(f"{n}. {item}" for n, item in enumerate(config.get("top_blockers", [])[:3], start=1))
+    out.append("")
+    out.append("## Next actions")
+    out.append("")
+    out.append(f"- **Owner:** {_action(config, 'next_owner_action')}")
+    out.append(f"- **Customer:** {_action(config, 'next_customer_action')}")
+    out.append(f"- **Product:** {_action(config, 'next_product_action')}")
+    out.append(f"- **Model:** {_action(config, 'next_research_action')}")
     out.append("")
     out.append("## What survival requires")
     out.append("")
@@ -168,29 +271,15 @@ def render(config: dict, today: date, now_utc: str) -> str:
         amount = _money(c["usd"]) + ("" if c["known"] or c["usd"] is None else " (est.)")
         out.append(f"| {c['item']} | {amount} | {c['class']} | {c['note']} |")
     out.append("")
-    out.append("## Active sports")
-    out.append("")
-    out.extend(f"- {s}" for s in config.get("active_sports", []))
-    out.append("")
-    out.append("## Public record by sport and market (counted picks; never pooled)")
-    out.append("")
-    out.extend(record_lines())
-    out.append("")
-    out.append("No rule here has evidence of an edge. Closing-line value and calibration: "
-               "see `docs/audit/` for the latest loss diagnosis.")
-    out.append("")
-    out.extend(f"- {item}" for item in config.get("record_reading", []))
-    out.append("")
-    for title, key in (("Product errors", "product_errors"), ("Top blockers", "top_blockers"),
-                       ("Today's execution", "today")):
+    rest = config.get("top_blockers", [])[3:]
+    for title, items in (("Product errors", config.get("product_errors", [])),
+                         ("Other blockers", rest), ("Today's execution", config.get("today", []))):
+        if not items:
+            continue
         out.append(f"## {title}")
         out.append("")
-        out.extend(f"- {item}" for item in config.get(key, []))
+        out.extend(f"- {item}" for item in items)
         out.append("")
-    out.append(f"**Next customer action:** {config.get('next_customer_action', '')}")
-    out.append("")
-    out.append(f"**Next research action:** {config.get('next_research_action', '')}")
-    out.append("")
     return "\n".join(out)
 
 
