@@ -1,0 +1,87 @@
+{
+  "case_id": "case_07_missing_information",
+  "case_type": "missing_information",
+  "facts": [
+    {
+      "type": "value",
+      "claim_id": "model_input:HOU-SEA-2026-09-23-1:away_sp_known",
+      "field_path": "away_sp_known",
+      "value": true,
+      "source_ref": "evidence/shadow_enumeration/2026-09-23_20260923T140951Z.json#board.models_by_game.HOU-SEA-2026-09-23-1.model_inputs.away_sp_known#away_sp_known"
+    },
+    {
+      "type": "value",
+      "claim_id": "model_input:HOU-SEA-2026-09-23-1:away_sp_known",
+      "field_path": "away_sp_starts",
+      "value": 4,
+      "source_ref": "evidence/shadow_enumeration/2026-09-23_20260923T140951Z.json#board.models_by_game.HOU-SEA-2026-09-23-1.model_inputs.away_sp_known#away_sp_starts"
+    },
+    {
+      "type": "value",
+      "claim_id": "model_input:HOU-SEA-2026-09-23-1:away_sp_known",
+      "field_path": "away_sp_era",
+      "value": null,
+      "source_ref": "evidence/shadow_enumeration/2026-09-23_20260923T140951Z.json#board.models_by_game.HOU-SEA-2026-09-23-1.model_inputs.away_sp_known#away_sp_era",
+      "note": "None in the source: the field is absent"
+    },
+    {
+      "type": "value",
+      "claim_id": "model_input:HOU-SEA-2026-09-23-1:home_sp_known",
+      "field_path": "home_sp_era",
+      "value": 4.1799,
+      "source_ref": "evidence/shadow_enumeration/2026-09-23_20260923T140951Z.json#board.models_by_game.HOU-SEA-2026-09-23-1.model_inputs.home_sp_known#home_sp_era"
+    },
+    {
+      "type": "value",
+      "claim_id": "market:HOU-SEA-2026-09-23-1:away",
+      "field_path": "best_price",
+      "value": 125,
+      "source_ref": "shadow artifact quotes_by_game.HOU-SEA-2026-09-23-1.away#best_price"
+    },
+    {
+      "type": "value",
+      "claim_id": "probable:HOU-SEA-2026-09-23-1:away",
+      "field_path": "probable_id",
+      "value": 814490,
+      "source_ref": "MLB live game feed capture (data/live/mlb/2026-09-23.jsonl, away_probable_pitcher_id); pitcher name from data/processed/boxscores_2026.jsonl#probable_id"
+    }
+  ],
+  "planted_issue": {
+    "kind": "missing_field",
+    "description": "The recommended (away) side's starter rate stats (ERA, WHIP, K/9, BB/9, HR/9, FIP, K-BB%) are None in the model input; only a 4-start count is present.",
+    "claim_ids": [
+      "model_input:HOU-SEA-2026-09-23-1:away_sp_known"
+    ]
+  },
+  "correct_action": "NO_ADJUSTMENT",
+  "acceptable_actions": [
+    "NO_ADJUSTMENT",
+    "REQUEST_SCENARIO"
+  ],
+  "recalculation_justified": false,
+  "must_flag": [
+    {
+      "flag": "MISSING",
+      "claim_ids": [
+        "model_input:HOU-SEA-2026-09-23-1:away_sp_known"
+      ],
+      "reason": "the away starter rate stats the argument needs are absent"
+    }
+  ],
+  "must_not_claim": [
+    {
+      "statement": "States or implies a specific ERA, FIP, WHIP or K/9 for Ethan Pecko; the packet carries none.",
+      "patterns": [
+        "Pecko\\b[^.]{0,100}\\b(ERA|FIP|WHIP|K/9|K9)\\b[^.]{0,25}\\d",
+        "\\b(ERA|FIP|WHIP)\\b[^.]{0,25}\\d[^.]{0,60}\\bPecko"
+      ]
+    },
+    {
+      "statement": "Says the missing starter figures are league-average or neutral and so the input is fine.",
+      "patterns": [
+        "\\b(league[- ]average|neutral|replacement[- ]level)\\b[^.]{0,40}\\b(starter|stats?|figures?|rates?)\\b[^.]{0,40}\\b(fine|ok|acceptable|reasonable)\\b"
+      ]
+    }
+  ],
+  "notes": "The field the starter argument needs is absent. Correct behaviour: say it is missing (MISSING label citing the model_input claim), request no recalculation and fill in nothing. Any Fact on away_sp_era fails the existing verifier because the value is None."
+}

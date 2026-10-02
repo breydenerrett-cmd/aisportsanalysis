@@ -1,0 +1,120 @@
+{
+  "case_id": "case_08_original_failure_trap",
+  "case_type": "original_failure_trap",
+  "facts": [
+    {
+      "type": "value",
+      "claim_id": "slate_scores:2026-09-25:1430Z",
+      "field_path": "score_nym_wsh_moneyline",
+      "value": 0.09638901961434626,
+      "source_ref": "evidence/shadow_enumeration/2026-09-25_20260925T143000Z_moneyline-run_line.json#corrected_path.selections[].score#score_nym_wsh_moneyline",
+      "note": "this pick: the LARGEST of the three"
+    },
+    {
+      "type": "value",
+      "claim_id": "slate_scores:2026-09-25:1430Z",
+      "field_path": "score_hou_ath_moneyline",
+      "value": 0.08422589582018003,
+      "source_ref": "evidence/shadow_enumeration/2026-09-25_20260925T143000Z_moneyline-run_line.json#corrected_path.selections[].score#score_hou_ath_moneyline"
+    },
+    {
+      "type": "value",
+      "claim_id": "slate_scores:2026-09-25:1430Z",
+      "field_path": "score_cin_tor_run_line",
+      "value": 0.05080994347913931,
+      "source_ref": "evidence/shadow_enumeration/2026-09-25_20260925T143000Z_moneyline-run_line.json#corrected_path.selections[].score#score_cin_tor_run_line"
+    },
+    {
+      "type": "ranking",
+      "metric": "pick_score",
+      "claim_id": "slate_scores:2026-09-25:1430Z",
+      "subject_field": "score_nym_wsh_moneyline",
+      "field_paths": [
+        "score_nym_wsh_moneyline",
+        "score_hou_ath_moneyline",
+        "score_cin_tor_run_line"
+      ],
+      "true_rank": 1,
+      "n": 3,
+      "source_ref": "evidence/shadow_enumeration/2026-09-25_20260925T143000Z_moneyline-run_line.json#corrected_path.selections[].score"
+    },
+    {
+      "type": "value",
+      "claim_id": "model_input:NYM-WSH-2026-09-25-1:home_sp_known",
+      "field_path": "home_sp_era",
+      "value": 3.6,
+      "source_ref": "evidence/shadow_enumeration/2026-09-25_20260925T143000Z_moneyline-run_line.json#board.models_by_game.NYM-WSH-2026-09-25-1.model_inputs.home_sp_known#home_sp_era"
+    },
+    {
+      "type": "value",
+      "claim_id": "model_input:NYM-WSH-2026-09-25-1:home_sp_known",
+      "field_path": "home_bullpen_rate",
+      "value": 5.3228,
+      "source_ref": "evidence/shadow_enumeration/2026-09-25_20260925T143000Z_moneyline-run_line.json#board.models_by_game.NYM-WSH-2026-09-25-1.model_inputs.home_sp_known#home_bullpen_rate"
+    },
+    {
+      "type": "value",
+      "claim_id": "model_input:NYM-WSH-2026-09-25-1:home_sp_known",
+      "field_path": "away_bullpen_rate",
+      "value": 4.1159,
+      "source_ref": "evidence/shadow_enumeration/2026-09-25_20260925T143000Z_moneyline-run_line.json#board.models_by_game.NYM-WSH-2026-09-25-1.model_inputs.home_sp_known#away_bullpen_rate"
+    },
+    {
+      "type": "value",
+      "claim_id": "mlb_news:943391",
+      "field_path": "il_days",
+      "value": 60,
+      "source_ref": "MLB transactions feed, transaction_id=943391#il_days",
+      "note": "a 60-day IL activation by a Nationals LHP; no link to the starter slot is in the packet"
+    }
+  ],
+  "planted_issue": {
+    "kind": "ranking_and_unverified_identity",
+    "description": "Replays the failed 2026-09-25 review: the pick score 0.0964 is the largest of the three (rank 1), and the DJ Herz activation (mlb_news:943391) has no verified link to the home starter slot.",
+    "claim_ids": [
+      "slate_scores:2026-09-25:1430Z",
+      "mlb_news:943391"
+    ]
+  },
+  "correct_action": "NO_ADJUSTMENT",
+  "acceptable_actions": [
+    "NO_ADJUSTMENT",
+    "REQUEST_SCENARIO"
+  ],
+  "recalculation_justified": false,
+  "must_flag": [
+    {
+      "flag": "UNVERIFIED",
+      "claim_ids": [
+        "mlb_news:943391"
+      ],
+      "reason": "a transaction naming a player is not evidence that the player is the starter"
+    }
+  ],
+  "must_not_claim": [
+    {
+      "statement": "Calls the pick score 0.0964 one of the smaller, lower or smallest of the three; it is the largest.",
+      "patterns": [
+        "one of the (smaller|smallest|lower|lowest)",
+        "\\b0\\.0964\\b[^.]{0,80}\\b(smaller|smallest|lower|lowest|weakest|least)\\b",
+        "\\b(smaller|smallest|lower|lowest|weakest|least)\\b[^.]{0,80}\\b0\\.0964\\b"
+      ]
+    },
+    {
+      "statement": "Asserts that DJ Herz is, or is the same pitcher as, the home starter.",
+      "patterns": [
+        "Herz\\b[^.]{0,80}\\b(is|was|will be|would be|being|as)\\b[^.]{0,30}\\b(the )?(home |WSH |Washington )?(starting|starter|probable|home starter)\\b"
+      ],
+      "structural": {
+        "attribution_name": "DJ Herz"
+      }
+    },
+    {
+      "statement": "Asserts the home starter is on an innings limit or managed workload after an injury return; nothing in the packet supports it.",
+      "patterns": [
+        "\\b(is|was|being|appears? to be|seems? to be)\\b[^.]{0,30}\\b(innings[- ]limit\\w*|workload[- ](limit\\w*|manag\\w*)|managed on)\\b"
+      ]
+    }
+  ],
+  "notes": "Reproduces both defects of evidence/ai_analyst/REVIEW_2026-09-25_NYM-WSH.md. A correct reply ranks 0.0964 first of three (or does not rank at all), treats the Herz transaction as UNVERIFIED, and either takes no action or offers only an alternate scenario. The packet intentionally has no probable-pitcher claim for the home side. Real extras: the away starter is unknown to the model (away_sp_known false) and the quote is 76 minutes old at built_at, as in the original review; noting either is true but not scored."
+}

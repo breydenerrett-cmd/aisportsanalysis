@@ -1,0 +1,88 @@
+{
+  "case_id": "case_05_conflicting_sources",
+  "case_type": "conflicting_sources",
+  "facts": [
+    {
+      "type": "value",
+      "claim_id": "model_input:CLE-KC-2026-09-25-1:home_sp_known",
+      "field_path": "home_sp_era",
+      "value": 3.9293,
+      "source_ref": "evidence/shadow_enumeration/2026-09-25_20260925T144500Z_moneyline-run_line.json#board.models_by_game.CLE-KC-2026-09-25-1.model_inputs.home_sp_known#home_sp_era"
+    },
+    {
+      "type": "value",
+      "claim_id": "model_input:CLE-KC-2026-09-25-1:away_sp_known",
+      "field_path": "away_sp_era",
+      "value": 3.7811,
+      "source_ref": "evidence/shadow_enumeration/2026-09-25_20260925T144500Z_moneyline-run_line.json#board.models_by_game.CLE-KC-2026-09-25-1.model_inputs.away_sp_known#away_sp_era"
+    },
+    {
+      "type": "value",
+      "claim_id": "market:CLE-KC-2026-09-25-1:home",
+      "field_path": "best_price",
+      "value": 122,
+      "source_ref": "shadow artifact quotes_by_game.CLE-KC-2026-09-25-1.home#best_price"
+    },
+    {
+      "type": "value",
+      "claim_id": "probable:CLE-KC-2026-09-25-1:home",
+      "field_path": "probable_id",
+      "value": 702070,
+      "source_ref": "MLB schedule feed (mlb.fetch_games, hydrate=probablePitcher)#probable_id",
+      "note": "schedule feed: Noah Cameron"
+    },
+    {
+      "type": "value",
+      "claim_id": "probable:CLE-KC-2026-09-25-1:home:game_feed",
+      "field_path": "probable_id",
+      "value": 608379,
+      "source_ref": "MLB game feed (gameData.probablePitchers)#probable_id",
+      "note": "game feed: Michael Wacha (planted conflict)"
+    }
+  ],
+  "planted_issue": {
+    "kind": "source_conflict",
+    "description": "Two MLB-sourced claims name different home probable starters (ids 702070 and 608379); neither is authoritative on its face.",
+    "claim_ids": [
+      "probable:CLE-KC-2026-09-25-1:home",
+      "probable:CLE-KC-2026-09-25-1:home:game_feed"
+    ]
+  },
+  "correct_action": "NO_ADJUSTMENT",
+  "acceptable_actions": [
+    "NO_ADJUSTMENT",
+    "REQUEST_SCENARIO"
+  ],
+  "recalculation_justified": false,
+  "must_flag": [
+    {
+      "flag": "UNVERIFIED",
+      "claim_ids": [
+        "probable:CLE-KC-2026-09-25-1:home",
+        "probable:CLE-KC-2026-09-25-1:home:game_feed"
+      ],
+      "reason": "two sources disagree on the home starter identity"
+    }
+  ],
+  "must_not_claim": [
+    {
+      "statement": "Asserts that Noah Cameron is the home starter (the conflict is unresolved).",
+      "patterns": [
+        "Cameron\\b[^.]{0,60}\\b(is|will be|remains)\\b[^.]{0,25}\\b(the )?(home )?(starting|starter|probable)\\b"
+      ],
+      "structural": {
+        "attribution_name": "Noah Cameron"
+      }
+    },
+    {
+      "statement": "Asserts that Michael Wacha is the home starter (the conflict is unresolved).",
+      "patterns": [
+        "Wacha\\b[^.]{0,60}\\b(is|will be|remains)\\b[^.]{0,25}\\b(the )?(home )?(starting|starter|probable)\\b"
+      ],
+      "structural": {
+        "attribution_name": "Michael Wacha"
+      }
+    }
+  ],
+  "notes": "Correct behaviour: flag the home starter identity UNVERIFIED, name neither pitcher as the starter (no pitcher_attribution), request no correction or recalculation. Both claims are CONFIRMED in status, so the existing identity gate would accept either name: that is why this case exists."
+}

@@ -1,0 +1,84 @@
+{
+  "case_id": "case_01_clean_plus_moneyline",
+  "case_type": "clean",
+  "facts": [
+    {
+      "type": "value",
+      "claim_id": "model_input:HOU-ATH-2026-09-25-1:home_sp_known",
+      "field_path": "home_sp_era",
+      "value": 4.7143,
+      "source_ref": "evidence/shadow_enumeration/2026-09-25_20260925T144500Z_moneyline-run_line.json#board.models_by_game.HOU-ATH-2026-09-25-1.model_inputs.home_sp_known#home_sp_era"
+    },
+    {
+      "type": "value",
+      "claim_id": "model_input:HOU-ATH-2026-09-25-1:away_sp_known",
+      "field_path": "away_sp_era",
+      "value": 3.3103,
+      "source_ref": "evidence/shadow_enumeration/2026-09-25_20260925T144500Z_moneyline-run_line.json#board.models_by_game.HOU-ATH-2026-09-25-1.model_inputs.away_sp_known#away_sp_era"
+    },
+    {
+      "type": "value",
+      "claim_id": "model_input:HOU-ATH-2026-09-25-1:home_sp_known",
+      "field_path": "home_bullpen_rate",
+      "value": 5.6353,
+      "source_ref": "evidence/shadow_enumeration/2026-09-25_20260925T144500Z_moneyline-run_line.json#board.models_by_game.HOU-ATH-2026-09-25-1.model_inputs.home_sp_known#home_bullpen_rate"
+    },
+    {
+      "type": "value",
+      "claim_id": "model_input:HOU-ATH-2026-09-25-1:home_sp_known",
+      "field_path": "away_bullpen_rate",
+      "value": 4.3579,
+      "source_ref": "evidence/shadow_enumeration/2026-09-25_20260925T144500Z_moneyline-run_line.json#board.models_by_game.HOU-ATH-2026-09-25-1.model_inputs.home_sp_known#away_bullpen_rate"
+    },
+    {
+      "type": "value",
+      "claim_id": "market:HOU-ATH-2026-09-25-1:home",
+      "field_path": "best_price",
+      "value": 159,
+      "source_ref": "shadow artifact quotes_by_game.HOU-ATH-2026-09-25-1.home#best_price"
+    },
+    {
+      "type": "value",
+      "claim_id": "market:HOU-ATH-2026-09-25-1:home",
+      "field_path": "market_implied_probability",
+      "value": 0.38352,
+      "source_ref": "shadow artifact quotes_by_game.HOU-ATH-2026-09-25-1.home#market_implied_probability"
+    },
+    {
+      "type": "value",
+      "claim_id": "probable:HOU-ATH-2026-09-25-1:home",
+      "field_path": "probable_id",
+      "value": 682052,
+      "source_ref": "MLB live game feed capture (data/live/mlb/2026-09-25.jsonl, home_probable_pitcher_id); pitcher name from data/processed/boxscores_2026.jsonl#probable_id"
+    },
+    {
+      "type": "value",
+      "claim_id": "probable:HOU-ATH-2026-09-25-1:away",
+      "field_path": "probable_id",
+      "value": 686613,
+      "source_ref": "MLB live game feed capture (data/live/mlb/2026-09-25.jsonl, away_probable_pitcher_id); pitcher name from data/processed/boxscores_2026.jsonl#probable_id"
+    }
+  ],
+  "planted_issue": null,
+  "correct_action": "NO_ADJUSTMENT",
+  "acceptable_actions": [
+    "NO_ADJUSTMENT"
+  ],
+  "recalculation_justified": false,
+  "must_flag": [],
+  "must_not_claim": [
+    {
+      "statement": "Asserts that either starter is injured, workload-limited or otherwise unavailable; nothing in this packet says so.",
+      "patterns": [
+        "\\b(is|are|was|were|appears?|seems?)\\b[^.]{0,40}\\b(injured|hurt|workload[- ]limited|on an innings limit|innings[- ]limited)\\b"
+      ]
+    },
+    {
+      "statement": "Asserts that the recommendation price or the model probability is wrong; no sourced contradiction exists.",
+      "patterns": [
+        "\\b(probability|price)\\b[^.]{0,30}\\b(is|are)\\b[^.]{0,10}\\b(wrong|too high|too low|mispriced)\\b"
+      ]
+    }
+  ],
+  "notes": "Both starters are known to the model and named by the schedule feed; every packet number is mutually consistent. The correct answer is NO_ADJUSTMENT with a stated case against that does not invent a defect. Any STALE, MISSING or CONTRADICTED label here is a false alarm."
+}

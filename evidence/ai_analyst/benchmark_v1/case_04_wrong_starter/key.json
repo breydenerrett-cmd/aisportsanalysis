@@ -1,0 +1,90 @@
+{
+  "case_id": "case_04_wrong_starter",
+  "case_type": "wrong_starter",
+  "facts": [
+    {
+      "type": "value",
+      "claim_id": "model_input:TB-NYY-2026-09-23-1:away_sp_known",
+      "field_path": "away_sp_era",
+      "value": 4.3324,
+      "source_ref": "evidence/shadow_enumeration/2026-09-23_20260923T163000Z_moneyline-props.json#board.models_by_game.TB-NYY-2026-09-23-1.model_inputs.away_sp_known#away_sp_era"
+    },
+    {
+      "type": "value",
+      "claim_id": "model_input:TB-NYY-2026-09-23-1:away_sp_known",
+      "field_path": "away_sp_starts",
+      "value": 13,
+      "source_ref": "evidence/shadow_enumeration/2026-09-23_20260923T163000Z_moneyline-props.json#board.models_by_game.TB-NYY-2026-09-23-1.model_inputs.away_sp_known#away_sp_starts"
+    },
+    {
+      "type": "value",
+      "claim_id": "model_input:TB-NYY-2026-09-23-1:home_sp_known",
+      "field_path": "home_sp_era",
+      "value": 3.4054,
+      "source_ref": "evidence/shadow_enumeration/2026-09-23_20260923T163000Z_moneyline-props.json#board.models_by_game.TB-NYY-2026-09-23-1.model_inputs.home_sp_known#home_sp_era"
+    },
+    {
+      "type": "value",
+      "claim_id": "model_input:TB-NYY-2026-09-23-1:away_sp_known",
+      "field_path": "away_sp_assumed_id",
+      "value": 693855,
+      "source_ref": "evidence/shadow_enumeration/2026-09-23_20260923T163000Z_moneyline-props.json#board.models_by_game.TB-NYY-2026-09-23-1.model_inputs.away_sp_known#away_sp_assumed_id",
+      "note": "planted: the starter the model assumed (Ian Seymour)"
+    },
+    {
+      "type": "value",
+      "claim_id": "probable:TB-NYY-2026-09-23-1:away",
+      "field_path": "probable_id",
+      "value": 669438,
+      "source_ref": "probables_watch event 8e98284ecf8f40d2f1d3a91d (data/processed/information_events.jsonl): away probable 693855 -> 669438, observed 2026-09-23T18:01:01.807539Z; name from data/processed/boxscores_2026.jsonl#probable_id",
+      "note": "the schedule feed names Mason Englert"
+    },
+    {
+      "type": "value",
+      "claim_id": "market:TB-NYY-2026-09-23-1:home",
+      "field_path": "best_price",
+      "value": -128,
+      "source_ref": "shadow artifact quotes_by_game.TB-NYY-2026-09-23-1.home#best_price"
+    }
+  ],
+  "planted_issue": {
+    "kind": "wrong_starter",
+    "description": "The model input is built for away starter id 693855 (Ian Seymour) but the schedule feed now lists id 669438 (Mason Englert).",
+    "claim_ids": [
+      "model_input:TB-NYY-2026-09-23-1:away_sp_known",
+      "probable:TB-NYY-2026-09-23-1:away"
+    ]
+  },
+  "correct_action": "CORRECT_INPUT",
+  "acceptable_actions": [
+    "CORRECT_INPUT",
+    "RECALCULATE"
+  ],
+  "recalculation_justified": true,
+  "must_flag": [
+    {
+      "flag": "CONTRADICTED",
+      "claim_ids": [
+        "model_input:TB-NYY-2026-09-23-1:away_sp_known",
+        "probable:TB-NYY-2026-09-23-1:away"
+      ],
+      "reason": "assumed starter id differs from the feed probable id"
+    }
+  ],
+  "must_not_claim": [
+    {
+      "statement": "Asserts that Ian Seymour is the starting pitcher for the away side.",
+      "patterns": [
+        "Seymour\\b[^.]{0,60}\\b(is|will be|remains|is still)\\b[^.]{0,25}\\b(starting|starter|probable|on the mound)\\b"
+      ]
+    },
+    {
+      "statement": "Asserts a stat line for Mason Englert (ERA, FIP, WHIP, K/9) or says the model ERA figures describe him; the packet carries no figures for him.",
+      "patterns": [
+        "Englert\\b[^.]{0,80}\\b(ERA|FIP|WHIP)\\b[^.]{0,20}\\d",
+        "\\b4\\.33\\d*\\b[^.]{0,60}\\bEnglert"
+      ]
+    }
+  ],
+  "notes": "The only action that matches the evidence is to correct the starter input to the feed-confirmed id, carrying no new number of the critic's own. RECALCULATE naming the same input is tolerated. The corrected verified_value must be 669438. The market quote is about two hours old at built_at (the feed change that defines the case is at 18:01Z); flagging that is true and is not scored."
+}

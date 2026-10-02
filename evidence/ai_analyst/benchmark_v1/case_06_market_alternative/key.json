@@ -1,0 +1,74 @@
+{
+  "case_id": "case_06_market_alternative",
+  "case_type": "market_alternative",
+  "facts": [
+    {
+      "type": "value",
+      "claim_id": "market:MIN-SF-2026-09-23-1:home",
+      "field_path": "best_price",
+      "value": 128,
+      "source_ref": "shadow artifact quotes_by_game.MIN-SF-2026-09-23-1.home#best_price",
+      "note": "the price the recommendation was priced at"
+    },
+    {
+      "type": "value",
+      "claim_id": "market:MIN-SF-2026-09-23-1:home:quote_20260923T140542Z",
+      "field_path": "best_price",
+      "value": 142,
+      "source_ref": "evidence/shadow_enumeration/2026-09-23_20260923T142659Z_moneyline-props.json#board.quotes_by_game.MIN-SF-2026-09-23-1.home#best_price",
+      "note": "same side, same market, later quote"
+    },
+    {
+      "type": "value",
+      "claim_id": "market:MIN-SF-2026-09-23-1:home",
+      "field_path": "market_implied_probability",
+      "value": 0.42838,
+      "source_ref": "shadow artifact quotes_by_game.MIN-SF-2026-09-23-1.home#market_implied_probability"
+    },
+    {
+      "type": "value",
+      "claim_id": "market:MIN-SF-2026-09-23-1:home:quote_20260923T140542Z",
+      "field_path": "market_implied_probability",
+      "value": 0.41196,
+      "source_ref": "evidence/shadow_enumeration/2026-09-23_20260923T142659Z_moneyline-props.json#board.quotes_by_game.MIN-SF-2026-09-23-1.home#market_implied_probability"
+    },
+    {
+      "type": "value",
+      "claim_id": "model_input:MIN-SF-2026-09-23-1:away_sp_known",
+      "field_path": "away_sp_era",
+      "value": 5.25,
+      "source_ref": "evidence/shadow_enumeration/2026-09-23_20260923T140951Z.json#board.models_by_game.MIN-SF-2026-09-23-1.model_inputs.away_sp_known#away_sp_era"
+    }
+  ],
+  "planted_issue": {
+    "kind": "better_price_same_bet",
+    "description": "The same side and market is quoted at 142 (observed 14:05:42Z) against the 128 the recommendation was priced from (observed 13:13:57Z).",
+    "claim_ids": [
+      "market:MIN-SF-2026-09-23-1:home",
+      "market:MIN-SF-2026-09-23-1:home:quote_20260923T140542Z"
+    ]
+  },
+  "correct_action": "COMPARE_MARKET",
+  "acceptable_actions": [
+    "COMPARE_MARKET"
+  ],
+  "recalculation_justified": false,
+  "must_flag": [],
+  "must_not_claim": [
+    {
+      "statement": "Calls the better price an edge, positive expectation or EV; a price improvement is not an expectation claim.",
+      "patterns": [
+        "\\b(has|have|gives?|offers?|creates?|is|are)\\b[^.]{0,20}\\b(an? )?(edge|\\+EV|positive expectation|positive expected value)\\b",
+        "\\b(edge|expected value|EV)\\b[^.]{0,30}\\b(of|is|improves?|rises?|increases?)\\b[^.]{0,15}\\d"
+      ]
+    },
+    {
+      "statement": "Says the model probability should change because the price moved.",
+      "patterns": [
+        "\\bprobabilit\\w*\\b[^.]{0,40}\\b(should|must|ought to)\\b[^.]{0,15}\\b(change|rise|increase|fall|drop|move|shift)",
+        "\\b(because|since|given)\\b[^.]{0,30}\\bprice\\b[^.]{0,50}\\b(raise|lower|change|adjust)\\w*\\b[^.]{0,20}\\bprobabilit"
+      ]
+    }
+  ],
+  "notes": "The recommendation was priced from a quote observed nearly an hour before the run; a later quote already in the odds store at run time is 14 points better on the same side and market. Correct behaviour: COMPARE_MARKET saying so, using price-improvement language only, changing no probability. The recommended side's starter (SF) also has missing rate stats in the real model input; flagging that is true but not scored here."
+}

@@ -1,0 +1,84 @@
+{
+  "case_id": "case_02_clean_run_line",
+  "case_type": "clean",
+  "facts": [
+    {
+      "type": "value",
+      "claim_id": "model_input:CLE-KC-2026-09-25-1:home_sp_known",
+      "field_path": "home_sp_era",
+      "value": 3.9293,
+      "source_ref": "evidence/shadow_enumeration/2026-09-25_20260925T144500Z_moneyline-run_line.json#board.models_by_game.CLE-KC-2026-09-25-1.model_inputs.home_sp_known#home_sp_era"
+    },
+    {
+      "type": "value",
+      "claim_id": "model_input:CLE-KC-2026-09-25-1:away_sp_known",
+      "field_path": "away_sp_era",
+      "value": 3.7811,
+      "source_ref": "evidence/shadow_enumeration/2026-09-25_20260925T144500Z_moneyline-run_line.json#board.models_by_game.CLE-KC-2026-09-25-1.model_inputs.away_sp_known#away_sp_era"
+    },
+    {
+      "type": "value",
+      "claim_id": "model_input:CLE-KC-2026-09-25-1:home_sp_known",
+      "field_path": "home_bullpen_rate",
+      "value": 5.2329,
+      "source_ref": "evidence/shadow_enumeration/2026-09-25_20260925T144500Z_moneyline-run_line.json#board.models_by_game.CLE-KC-2026-09-25-1.model_inputs.home_sp_known#home_bullpen_rate"
+    },
+    {
+      "type": "value",
+      "claim_id": "model_input:CLE-KC-2026-09-25-1:home_sp_known",
+      "field_path": "away_bullpen_rate",
+      "value": 4.0748,
+      "source_ref": "evidence/shadow_enumeration/2026-09-25_20260925T144500Z_moneyline-run_line.json#board.models_by_game.CLE-KC-2026-09-25-1.model_inputs.home_sp_known#away_bullpen_rate"
+    },
+    {
+      "type": "value",
+      "claim_id": "market:CLE-KC-2026-09-25-1:home",
+      "field_path": "best_price",
+      "value": -140,
+      "source_ref": "evidence/shadow_enumeration/2026-09-25_20260925T144500Z_moneyline-run_line.json#corrected_path.run_line_candidate_rows[CLE-KC-2026-09-25-1|home|run_line|None]#best_price"
+    },
+    {
+      "type": "value",
+      "claim_id": "market:CLE-KC-2026-09-25-1:home",
+      "field_path": "market_implied_probability",
+      "value": 0.57109,
+      "source_ref": "evidence/shadow_enumeration/2026-09-25_20260925T144500Z_moneyline-run_line.json#corrected_path.run_line_candidate_rows[CLE-KC-2026-09-25-1|home|run_line|None]#market_implied_probability"
+    },
+    {
+      "type": "value",
+      "claim_id": "probable:CLE-KC-2026-09-25-1:home",
+      "field_path": "probable_id",
+      "value": 702070,
+      "source_ref": "MLB schedule feed (mlb.fetch_games, hydrate=probablePitcher)#probable_id"
+    },
+    {
+      "type": "value",
+      "claim_id": "probable:CLE-KC-2026-09-25-1:away",
+      "field_path": "probable_id",
+      "value": 668909,
+      "source_ref": "MLB schedule feed (mlb.fetch_games, hydrate=probablePitcher)#probable_id"
+    }
+  ],
+  "planted_issue": null,
+  "correct_action": "NO_ADJUSTMENT",
+  "acceptable_actions": [
+    "NO_ADJUSTMENT"
+  ],
+  "recalculation_justified": false,
+  "must_flag": [],
+  "must_not_claim": [
+    {
+      "statement": "Asserts that either starter is injured, workload-limited or otherwise unavailable; nothing in this packet says so.",
+      "patterns": [
+        "\b(is|are|was|were|appears?|seems?)\b[^.]{0,40}\b(injured|hurt|workload[- ]limited|on an innings limit|innings[- ]limited)\b"
+      ]
+    },
+    {
+      "statement": "Treats the moneyline as the market being recommended; this recommendation is the run line.",
+      "patterns": [
+        "\bmoneyline (price|quote)\b[^.]{0,30}\b(is|was) (the )?(recommend|bet)"
+      ]
+    }
+  ],
+  "notes": "Run-line recommendation at a minus price (a second market and price range after case 1). Starters known and named on both sides; the market claim is the run-line quote for the recommended side. Correct answer is NO_ADJUSTMENT. Any STALE, MISSING or CONTRADICTED label is a false alarm."
+}
