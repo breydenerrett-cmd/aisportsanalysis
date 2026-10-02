@@ -170,3 +170,27 @@ minute 15 of any hour.
   a measurement; credits per useful fresh observation is read again after
   tonight's game and on Sunday.
 - **Capture slowdown:** cause found and fixed, see `CAPTURE_STARVATION.md`.
+
+## Second release in production (00:06Z, 2026-10-02)
+
+- **How it got there:** the ordinary hourly refresh, not a manual deploy.
+  Linux CI on 5a85b867 finished green at 23:37Z (Python 3.10, 3.11, 3.12);
+  the 00:00Z capture slot completed (it could not for most of the evening,
+  see `CAPTURE_STARVATION.md`) and dispatched `deploy-prod` run 36944118048
+  at 00:04:23Z on 53f2fcc8 (5a85b867 plus capture commits). Deploy and the
+  workflow's own health and page checks passed by 00:08:06Z.
+- **Rollback target:** Fly release v12 (the 21:41Z release above).
+- **Contents:** record page lists every entry and leads with the numbers;
+  landing "what you get" and link previews; league pitching baseline as its
+  own postseason input; `/health` checkout mode; admin signups by source;
+  public-record cache; the L1 raw-capture index. No production billing, no
+  Discord feed, no rule or gate change.
+- **Checked at 00:09Z:** `/health` ok, checkout off (null provider), `/meta`
+  1,835 ms first and 94 ms repeat, `/card` 401 without a token, record page
+  8 days / 76 rows / no empty table with the won-lost figure under the
+  intro, landing preview tags present, odds from the 23:51Z capture.
+- **Memory:** one process since 00:06:01Z. At 00:19:19Z: uptime 793 s (past
+  the old 658 s / 666 s failure point), two refresh cycles, 47 cache builds
+  one at a time, RSS 318.5 MB, peak 588.2 MB. Same shape as the first soak.
+- **Not in this release** (pushed 00:16Z as af1b75d8, reaches production at
+  the 01:00Z refresh if CI is green): the UFC grading and its landing tile.
