@@ -7,8 +7,13 @@
 
 import { renderPostseason } from "./postseason.js";
 import { renderDisclaimerFooter } from "./meta.js";
+import { trackPublicPageView } from "./pageview.js";
 
 document.addEventListener("DOMContentLoaded", () => {
+  // An outreach link may open this page directly (postseason.html?utm_source=
+  // <lead>&...): store the first touch and count the visit, once per load,
+  // exactly as the app shell does for its public routes (pageview.js).
+  trackPublicPageView("postseason");
   const main = document.querySelector("[data-hook='app-outlet']");
   const footer = document.querySelector("[data-hook='disclaimer-host']");
   // The standalone page has no router, so the footer's "#/support" style

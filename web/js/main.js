@@ -104,6 +104,7 @@ import { renderCardRecord } from "./cardrecord.js";
 import { renderLive } from "./live.js";
 import { renderPostseason } from "./postseason.js";
 import { maybeGotcha } from "./gotcha.js";
+import { publicPageName, trackPublicPageView, rememberFirstTouch } from "./pageview.js";
 
 // MLB's sub menu (docs/DESIGN_SYSTEM.md section 3, D7): 01 GAMEDAY, 02
 // MATCHUPS, 03 PROPS, 04 RESULTS, 05 BETS. Hash immediately before label,
@@ -393,6 +394,21 @@ async function _renderRouteInner(main) {
   }
 }
 
+/** First touch + one public_page_view for the page this load opened on
+ * (pageview.js). Other arrival routes still store the first touch. */
+function trackArrival() {
+  try {
+    const { segments } = parseHash();
+    const { sport, segments: sportSegments } = parseSport(segments);
+    const route = ROUTE_ALIASES[sportSegments[0]] || sportSegments[0];
+    const page = publicPageName(sport, route);
+    if (page) trackPublicPageView(page);
+    else rememberFirstTouch();
+  } catch (err) {
+    // Tracking must never stop the app mounting.
+  }
+}
+
 function boot() {
   // A joke, for one person, off a link. FIRST thing in boot and it returns
   // early, so nothing else mounts underneath it -- but it only ever returns
@@ -402,6 +418,14 @@ function boot() {
   // docstring for why the trigger is narrow on purpose and how to delete
   // the whole thing.
   if (maybeGotcha()) return;
+
+  // WHERE THIS VISITOR CAME FROM, whichever page the link opened. Only the
+  // landing page used to store the first touch, but outreach links point at
+  // the record page (index.html?utm_source=...#/record-card). The query string
+  // sits BEFORE the hash, so it never reaches parseHash (hash only) and the
+  // router is unaffected by it. Once per page load, from the ARRIVAL route:
+  // later hashchange navigations inside the app are not new arrivals.
+  trackArrival();
 
   const main = document.querySelector("[data-hook='app-outlet']");
   const disclaimerHost = document.querySelector("[data-hook='disclaimer-host']");

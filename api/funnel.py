@@ -52,6 +52,7 @@ landing_view counts.
 from __future__ import annotations
 
 import json
+import re
 from datetime import date as date_cls, datetime, timedelta, timezone
 from typing import Dict, List, Optional
 
@@ -72,9 +73,20 @@ router = APIRouter()
 # there is no server-side moment that could record it instead. It is
 # rate-limited and property-validated identically, and its `properties`
 # carry the CTA's own data-hook rather than anything the page can invent.
+# PUBLIC_PAGE_VIEW joined 2026-10-01: outreach links point at the record page
+# and the postseason page, not only landing.html, and those visits left no
+# trace. Same reason as the others (no identity exists yet), same rate limit,
+# same properties cap; its one extra rule is the `page` label check below.
 PUBLIC_FUNNEL_KINDS = frozenset({
     events.LANDING_VIEW, events.SIGNUP_STARTED, events.CTA_CLICK,
+    events.PUBLIC_PAGE_VIEW,
 })
+
+# `properties.page` of a public_page_view is a short fixed label the page
+# itself chose ("record-card", "postseason"), never a URL or free text. A
+# public caller that sends anything else is refused rather than stored, so the
+# cardinality of that field stays bounded.
+PAGE_LABEL_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,31}$")
 
 # See module docstring's "WHY A FIXED SENTINEL id" section. Still the id of
 # record for a beacon that carries no (or a malformed) `anon_id` -- an older
@@ -150,6 +162,14 @@ def post_funnel_event(body: FunnelEventRequest) -> dict:
                        f"allowed: {sorted(PUBLIC_FUNNEL_KINDS)}"),
         })
     properties = _validated_properties(body.properties)
+    if body.kind == events.PUBLIC_PAGE_VIEW:
+        page = (properties or {}).get("page")
+        if not isinstance(page, str) or not PAGE_LABEL_RE.match(page):
+            raise HTTPException(status_code=400, detail={
+                "error": "page_label_invalid",
+                "message": "public_page_view needs properties.page, a short "
+                           "label of lowercase letters, digits and hyphens "
+                           "(at most 32 characters)"})
     anon_id = attribution_mod.clean_anon_id(body.anon_id)
     identity = f"{ANON_ID_PREFIX}{anon_id}" if anon_id else ANONYMOUS_FUNNEL_USER_ID
     events.record_event_safe(identity, body.kind, properties)
@@ -222,6 +242,15 @@ UNIQUE_VISITOR_STEPS = frozenset({
 # distinct-visitor version stays recoverable from the same rows if it is
 # ever wanted -- it is just not the launch question.
 FIRST_OCCURRENCE_STEPS = frozenset({events.BET_CHECK_RUN, events.BET_SAVED})
+
+# Kinds that get a COLUMN in `by_source` but are deliberately NOT steps of the
+# main funnel. public_page_view is a raw count of record-page / postseason-page
+# loads: it is where an outreach lead who never saw landing.html first shows
+# up, but it is not a stage between landing_view and signup_started (nobody is
+# "converting" from it), and listing it in FUNNEL_STEPS would add a row to the
+# funnel table and shift every conversion_from neighbour. It is placed just
+# after landing_view in by_source so the two arrival columns sit together.
+SOURCE_ONLY_STEPS = (events.PUBLIC_PAGE_VIEW,)
 
 FUNNEL_DEFAULT_WINDOW_DAYS = 30
 
@@ -334,13 +363,16 @@ def _counts_by_source(start: str, end: str, *, db=None) -> Dict[str, Dict[str, i
     attributed = [step for step in FUNNEL_STEPS
                   if step not in FIRST_OCCURRENCE_STEPS
                   and step != events.INVITE_REDEEMED]
+    landing_at = attributed.index(events.LANDING_VIEW) + 1
+    attributed[landing_at:landing_at] = list(SOURCE_ONLY_STEPS)
     out: Dict[str, Dict[str, int]] = {}
     for event in _window_events(start, end, db=db):
         if event.kind not in attributed:
             continue
         slot = out.setdefault(_source_of(event), {step: 0 for step in attributed})
         slot[event.kind] += 1
-    return dict(sorted(out.items(), key=lambda kv: (-kv[1].get(events.LANDING_VIEW, 0), kv[0])))
+    return dict(sorted(out.items(), key=lambda kv: (
+        -kv[1].get(events.LANDING_VIEW, 0), -kv[1].get(events.PUBLIC_PAGE_VIEW, 0), kv[0])))
 
 
 @router.get("/admin/funnel")

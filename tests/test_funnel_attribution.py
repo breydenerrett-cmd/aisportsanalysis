@@ -209,8 +209,9 @@ class TheServerAcceptsIt(unittest.TestCase):
         self.assertIn(events.CTA_CLICK, funnel.PUBLIC_FUNNEL_KINDS)
 
     def test_the_public_allowlist_stays_narrow(self):
-        """Three kinds, all genuinely pre-identity. Anything else belongs
-        server-recorded."""
+        """Four kinds, all genuinely pre-identity (public_page_view joined
+        2026-10-01 for outreach links that open the record or postseason
+        page). Anything else belongs server-recorded."""
         # CI runs this suite WITHOUT api/requirements.txt -- fastapi
         # lives only in api/'s dependencies (tests/test_api_boundary.py
         # exists to prove src/ never needs it). Skip rather than error,
@@ -223,7 +224,8 @@ class TheServerAcceptsIt(unittest.TestCase):
         from api import funnel
         from src.appstate import events
         self.assertEqual(
-            {events.LANDING_VIEW, events.SIGNUP_STARTED, events.CTA_CLICK},
+            {events.LANDING_VIEW, events.SIGNUP_STARTED, events.CTA_CLICK,
+             events.PUBLIC_PAGE_VIEW},
             set(funnel.PUBLIC_FUNNEL_KINDS))
 
 

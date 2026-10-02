@@ -187,6 +187,16 @@ LANDING_VIEW = "landing_view"
 # cannot fill the table with junk kinds.
 CTA_CLICK = "cta_click"
 
+# A visitor LOADED a public page that is not the landing page: the record page
+# (#/record-card, #/nfl/record, #/ufc/record) or the free postseason page --
+# the pages outreach links actually point at. Added 2026-10-01. A separate
+# kind from LANDING_VIEW on purpose: landing_view is the baseline every
+# conversion percentage in GET /admin/funnel is measured from, and folding
+# these loads into it would inflate that baseline. Carries `page` (a short
+# fixed label) plus the visitor's stored first touch in `properties`; it is
+# shown in the by-source breakdown, not as a step of the main funnel.
+PUBLIC_PAGE_VIEW = "public_page_view"
+
 # Support re-issued a subscriber's access token (POST /admin/users/token).
 # Operational, not a funnel step: never recorded from the public beacon, and
 # its properties carry no token, only how many old tokens were revoked.
@@ -196,7 +206,7 @@ EVENT_KINDS = frozenset({
     PAGE_VIEW, BET_CHECK_RUN, FREE_BET_CHECK, BET_SAVED, INVITE_REDEEMED,
     SIGNUP_STARTED, ACCOUNT_CREATED, CHECKOUT_STARTED, CHECKOUT_COMPLETED,
     SUBSCRIPTION_CANCELLED, SUBSCRIPTION_REACTIVATED,
-    DIGEST_VIEWED, LANDING_VIEW, CTA_CLICK, SUPPORT_TOKEN_REISSUED,
+    DIGEST_VIEWED, LANDING_VIEW, CTA_CLICK, PUBLIC_PAGE_VIEW, SUPPORT_TOKEN_REISSUED,
 })
 
 
