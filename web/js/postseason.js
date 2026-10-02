@@ -49,7 +49,7 @@ export const POSTSEASON_PATH = "/postseason";
  * sit here promised a trial on a deploy with checkout switched off.
  */
 export function postseasonCtaText(state) {
-  if (!state || !state.on) return "Tonight's graded card: get notified when checkout opens";
+  if (!state || !state.on) return "Tonight's graded card: request early access";
   return state.trialDays > 0
     ? `Tonight's graded card: start your ${state.trialDays}-day free trial`
     : "Tonight's graded card: subscribe";

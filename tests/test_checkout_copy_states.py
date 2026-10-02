@@ -291,8 +291,8 @@ class CheckoutCopyInEveryState(unittest.TestCase):
         for name, meta in NOT_ON_CASES:
             with self.subTest(state=name):
                 out = self.run_scenario(kind="signup", meta=meta)
-                self.assertEqual(out["title"], "Checkout is not open yet.")
-                self.assertEqual(out["button"], "Save my email")
+                self.assertEqual(out["title"], "Request early access")
+                self.assertEqual(out["button"], "Request early access")
                 self.assertIn("Planned price: $19.99/month", out["text"])
                 self.assertIsNone(TRIAL_RE.search(out["text"]), out["text"])
                 self.assertNotIn("signup-card-required", out["hooks"])

@@ -92,7 +92,8 @@ class SignInAndSignUpCopyIsTrue(unittest.TestCase):
 
     def test_signin_does_not_mention_an_email_nothing_sends(self):
         self.assertNotIn("welcome email", self.signin.lower())
-        self.assertIn("Paste the access token you were shown after checkout", self.signin)
+        self.assertIn("the one you were shown after checkout", self.signin)
+        self.assertIn("sent to you as an early-access tester", self.signin)
 
     def test_no_file_under_web_promises_a_welcome_email(self):
         for path in list(JS.glob("*.js")) + list(WEB.glob("*.html")):
@@ -126,8 +127,11 @@ class SignInAndSignUpCopyIsTrue(unittest.TestCase):
         # /meta's `trial_days` (behaviour pinned in tests/test_checkout_copy_states.py).
         self.assertIn("ctaLabel(billing)", self.signup)
         self.assertNotIn("7-day", self.signup)
-        self.assertRegex(self.signup, r'text: billing\.on \? ctaText : "Checkout is not open yet\."')
-        self.assertRegex(self.signup, r'text: billing\.on \? ctaText : "Save my email"')
+        self.assertIn('"data-hook": "signup-title",', self.signup)
+        self.assertNotIn("Checkout is not open yet.", self.signup)
+        # the button is the same label the landing page's button carries, in
+        # every billing state (checkout.js ctaLabel)
+        self.assertRegex(self.signup, r'"data-hook": "signup-submit",\s+text: ctaText,')
 
     def test_billing_state_comes_from_meta_not_a_guess(self):
         # CHANGED 2026-10-01: the "on" decision moved to the one shared helper.

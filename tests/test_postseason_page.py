@@ -1513,7 +1513,7 @@ class WebCopyTests(unittest.TestCase):
         # with checkout off never promises a trial on this page either.
         self.assertNotIn("7-day", js)
         self.assertIn("loadCheckoutState", js)
-        self.assertIn("get notified when checkout opens", js)
+        self.assertIn("request early access", js)
         self.assertIn("-day free trial", js)
         self.assertIn("No edge is claimed.", js)
 

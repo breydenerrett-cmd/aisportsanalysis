@@ -111,6 +111,13 @@ function renderBenefits() {
  */
 const readBilling = loadCheckoutState;
 
+// The signup page while nothing is on sale: the offer in one sentence, under a
+// heading that is checkout.js's own button label (one decision, one file). No
+// trial, no price promise.
+export const OFF_OFFER = "The first 20 testers get one week of early access, no card. "
+  + "Performance is not proven and nothing is on sale yet. Leave your email and, if "
+  + "you're picked, your access link comes from Brey.";
+
 export async function renderSignup(main) {
   clear(main);
   const wrap = el("section", { class: "signup", "data-view": "signup", "aria-label": "signup" });
@@ -124,15 +131,24 @@ export async function renderSignup(main) {
   // With billing off the same words would be a promise nothing can keep, so
   // the form says what is true instead.
   card.appendChild(el("h1", { class: "signup-card__title", "data-hook": "signup-title",
-    text: billing.on ? ctaText : "Checkout is not open yet." }));
+    text: ctaText }));
   card.appendChild(el("p", { class: "signup-card__subhead", "data-hook": "signup-kicker",
     text: "Tonight's bets, written down before first pitch." }));
-  card.appendChild(el("p", { class: "signup-card__subhead", text:
-    // No count promised (2026-09-21): the card held 7-13 picks a day, not 3-5.
-    "Every pick on the card: which side is more likely, what the price needs, and the record of every one — win or lose." }));
-
-  card.appendChild(renderPricingBadge(billing));
-  card.appendChild(renderBenefits());
+  if (billing.on) {
+    card.appendChild(el("p", { class: "signup-card__subhead", text:
+      // No count promised (2026-09-21): the card held 7-13 picks a day, not 3-5.
+      "Every pick on the card: which side is more likely, what the price needs, and the record of every one — win or lose." }));
+    card.appendChild(renderPricingBadge(billing));
+    card.appendChild(renderBenefits());
+  } else {
+    // NOTHING IS ON SALE, SO THE FORM COMES FIRST (2026-10-02). On a phone
+    // the email field sat under a page of copy headed "Checkout is not open
+    // yet." -- a visitor who had just pressed the early-access button was told
+    // no and then asked to scroll. The offer in one sentence, the field, the
+    // button; what the product is follows below for anyone who wants it.
+    card.appendChild(el("p", { class: "signup-card__subhead", "data-hook": "signup-offer",
+      text: OFF_OFFER }));
+  }
 
   const form = el("form", { class: "signup-card__form", "data-hook": "signup-form" });
   const field = el("div", { class: "signup-card__field" });
@@ -154,7 +170,7 @@ export async function renderSignup(main) {
   form.appendChild(el("button", {
     type: "submit", class: "btn btn--primary btn--full btn--lg chamfer chamfer--btn",
     "data-hook": "signup-submit",
-    text: billing.on ? ctaText : "Save my email",
+    text: ctaText,
   }));
   const status = el("p", { class: "signup-card__status", role: "status", "data-hook": "signup-status" });
   form.appendChild(status);
@@ -162,6 +178,10 @@ export async function renderSignup(main) {
 
   const resultHost = el("div", { class: "signup-card__result", "data-hook": "signup-result" });
   card.appendChild(resultHost);
+  if (!billing.on) {
+    card.appendChild(renderPricingBadge(billing));
+    card.appendChild(renderBenefits());
+  }
 
   // Reuses the disclaimer language already established for this beta
   // (src/analysis/disclaimers.py's BETA_DISCLAIMER, surfaced app-wide by

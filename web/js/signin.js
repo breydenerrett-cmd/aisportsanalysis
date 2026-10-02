@@ -36,7 +36,8 @@ export async function renderSignin(container, query = {}) {
   panel.appendChild(el("p", { class: "gate__eyebrow", text: "PRIVATE BETA" }));
   panel.appendChild(el("h1", { class: "signin__title", text: "Sign in to view tonight's board." }));
   panel.appendChild(el("p", { class: "signin__body",
-    text: "Paste the access token you were shown after checkout. It is stored on this "
+    text: "Paste your access token: the one you were shown after checkout, or the one "
+        + "sent to you as an early-access tester. It is stored on this "
         + "device only and is sent with each request to the board." }));
 
   const field = el("div", { class: "signin__field" });

@@ -339,6 +339,13 @@ export function renderFunnel(host, funnel) {
   }
   table.appendChild(body);
   wrap.appendChild(table);
+  // Our own labelled test links (utm_source=internal-...) are left out of the
+  // counts above by the server; say so, so the two tables can be reconciled.
+  if (funnel.internal_events_excluded > 0) {
+    wrap.appendChild(el("p", { "data-hook": "admin-funnel-internal-note",
+      text: `${funnel.internal_events_excluded} event(s) from our own test links are not counted above. `
+          + "They are listed under their source below." }));
+  }
   wrap.appendChild(renderFunnelBySource(funnel.by_source));
   host.appendChild(wrap);
 }
