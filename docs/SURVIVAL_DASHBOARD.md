@@ -1,6 +1,6 @@
 # LineHound survival dashboard
 
-Generated 2026-10-02 02:56Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-10-02 03:10Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
@@ -39,19 +39,19 @@ Generated 2026-10-02 02:56Z by `scripts/survival_dashboard.py`. Edit `config/bus
 
 ## Performance by market (counted picks; never pooled) and CLV
 
-- **MLB current** (Our value card; 2026-09-22..2026-09-27): 16-17, -5.05u, ROI -15.3% (n=33)
-  - game: 2-1, +0.69u, ROI +23.2% (n=3)
-  - prop: 14-16, -5.74u, ROI -19.1% (n=30)
-  - fills (shown apart, never counted): 21-8, +7.68u, ROI +26.5% (n=29)
-- **MLB previous** (Our first card rule; 2026-09-10..2026-09-22): 151-79, +7.98u, ROI +3.5% (n=230)
-  - game: 73-40, +7.61u, ROI +6.7% (n=113)
-  - prop: 78-39, +0.38u, ROI +0.3% (n=117)
-- **NFL current** (Our NFL value rule; 2026-09-27..2026-09-27): 1-0, +0.93u, ROI +92.6% (n=1)
-  - game: 1-0, +0.93u, ROI +92.6% (n=1)
-- **NFL previous** (Our first NFL rule; 2026-09-17..2026-09-21): 7-3, -0.26u, ROI -2.6% (n=10)
-  - game: 7-3, -0.26u, ROI -2.6% (n=10)
-- **MMA current** (Our UFC card; 2026-09-22..2026-09-26): 5-1, +2.50u, ROI +41.7% (n=6)
-  - game: 5-1, +2.50u, ROI +41.7% (n=6)
+- **MLB current** (Our value card; 2026-09-22..2026-09-27): n=33: 16-17, -5.05u, ROI -15.3%
+  - game: n=3: 2-1, +0.69u (too few for a rate)
+  - prop: n=30: 14-16, -5.74u, ROI -19.1%
+  - fills (shown apart, never counted): n=29: 21-8, +7.68u (too few for a rate)
+- **MLB previous** (Our first card rule; 2026-09-10..2026-09-22): n=230: 151-79, +7.98u, ROI +3.5%
+  - game: n=113: 73-40, +7.61u, ROI +6.7%
+  - prop: n=117: 78-39, +0.38u, ROI +0.3%
+- **NFL current** (Our NFL value rule; 2026-09-27..2026-09-27): n=1: 1-0, +0.93u (too few for a rate)
+  - game: n=1: 1-0, +0.93u (too few for a rate)
+- **NFL previous** (Our first NFL rule; 2026-09-17..2026-09-21): n=10: 7-3, -0.26u (too few for a rate)
+  - game: n=10: 7-3, -0.26u (too few for a rate)
+- **MMA current** (Our UFC card; 2026-09-22..2026-09-26): n=6: 5-1, +2.50u (too few for a rate)
+  - game: n=6: 5-1, +2.50u (too few for a rate)
 
 Closing-line value: see `docs/VALUE_SCAN.md` (the standing measurement; no CLV figure is computed or copied here). No rule here has evidence of an edge.
 
@@ -62,21 +62,21 @@ Closing-line value: see `docs/VALUE_SCAN.md` (the standing measurement; no CLV f
 
 ## Production health and capture cost
 
-- Production health: see docs/audit
-- Capture cost: see docs/audit
+- Production health: Run `python scripts/prod_watch.py`. 2026-10-02 03:07Z: up since 00:06Z with no restart, peak 589 MB of 1,024, CI green, capture running. Two breaches: site odds 3.3 h old (the refresh gate, docs/decisions/REFRESH_GATE.md) and the last daily loop failed (2026-10-01 run; fix pushed, next run 10:10Z).
+- Capture cost: 10.9 credits an hour after the cadence change against 23.6 before (2026-10-01, one evening, not a representative game day). Metric: credits per useful fresh observation; re-measure after Sunday. docs/audit/2026-10-01/PRODUCTION_RECOVERY.md.
 
 ## Top 3 blockers
 
-1. linehound.app does not load: the domain is on Cloudflare with no A, AAAA or CNAME record and Fly holds no certificate for it. Outreach links use linehound-prod.fly.dev until it does. Checkout cannot be switched on before it does, because buyers are returned to that domain. Steps: docs/GO_LIVE_2026-09-28.md section 1. Owner.
-2. Signups are invisible: production has no admin token, so nobody can read who signed up or from which outreach link. One command, no Stripe needed, before batch 1 is sent: docs/GO_LIVE_2026-09-28.md section 0. Owner.
-3. No distribution: zero outreach sent. The first 20 are written and ready to paste in docs/sales/batch_01.md; log each send with `python scripts/outreach_batch.py sent --batch 1 --items ...`. Owner.
+1. Nobody has been contacted: 40 leads are queued, 0 messages sent. Sending waits on three things, in order: the admin token (owner, 2 minutes), the domain (owner, DNS), and the source tracking reaching production.
+2. linehound.app does not load: the domain is on Cloudflare with no A, AAAA or CNAME record and Fly holds no certificate for it. Outreach links use linehound-prod.fly.dev until it does. Checkout cannot be switched on before it does, because buyers are returned to that domain. Steps: docs/GO_LIVE_2026-09-28.md section 1. Owner.
+3. Signups are invisible: production has no admin token, so nobody can read who signed up or from which outreach link. One command, no Stripe needed, before batch 1 is sent: docs/GO_LIVE_2026-09-28.md section 0. Owner.
 
 ## Next actions
 
-- **Owner:** not set
-- **Customer:** Brey: first set the admin token (GO_LIVE section 0) so signups are visible, then send batch 1 (docs/sales/batch_01.md). Start with items 1 and 2 (two forums where promotion is allowed), then the four creators and five X replies; at most five Discord notes a day. Log each with scripts/outreach_batch.py. Batch 2 (docs/sales/batch_02.md, 20 more, nobody repeated from batch 1) is ready for when batch 1 is out.
-- **Product:** not set
-- **Model:** docs/VALUE_SCAN.md is now the standing measurement (python scripts/value_scan.py): 43 populations, 0 candidates, 6 with enough data and no evidence, 37 too few. The one hypothesis worth a pre-registered forward test is whether V2's value gate selects the worse entries (z -1.43 in shadow A). No gate or threshold changes until that test reports.
+- **Owner:** Set the production admin token: docs/GO_LIVE_2026-09-28.md section 0 (two PowerShell commands, two minutes). Then DNS for linehound.app (section 1). One at a time.
+- **Customer:** Do NOT send yet. Batch 1 goes out after (1) the admin token is set, (2) linehound.app resolves and the batches are rebuilt on it, (3) the visit tracking pushed 2026-10-02 is live in production. Then: python scripts/outreach_batch.py sent --batch 1 --items ... after each hand-sent message.
+- **Product:** Landing page: say what the product is on the first phone screen and make the button a plain next step (docs/CONVERSION_REVIEW_2026-10-02.md). In progress.
+- **Model:** Performance matrix by sport, market, rule and visibility (docs/PERFORMANCE_MATRIX.md, in progress), then prop-family experiments chosen from what it shows is measurable. No gate or threshold changes without a pre-registered forward test.
 
 ## What survival requires
 

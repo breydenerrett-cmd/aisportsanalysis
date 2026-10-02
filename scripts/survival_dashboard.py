@@ -92,13 +92,22 @@ def pipeline_counts(path: Path = PIPELINE) -> dict:
             "reached": {s: len(names) for s, names in reached.items()}}
 
 
+MIN_N_FOR_A_RATE = 30
+
+
 def _fig(fig) -> str:
     if not fig or not (fig.get("n_staked") or fig.get("wins") or fig.get("losses")):
         return "nothing graded"
     units = fig.get("profit_units") or 0.0
     staked = fig.get("n_staked") or 0
-    roi = f"{units / staked * 100:+.1f}%" if staked else "n/a"
-    return f"{fig.get('wins', 0)}-{fig.get('losses', 0)}, {units:+.2f}u, ROI {roi} (n={staked})"
+    # The sample size leads, and a rate is printed only where it could mean
+    # something: "ROI +92.6%" off one NFL pick and "+41.7%" off six UFC picks
+    # were both on this page, each flattering and neither a measurement. The
+    # floor is the one docs/VALUE_SCAN.md uses for TOO FEW.
+    record = f"n={staked}: {fig.get('wins', 0)}-{fig.get('losses', 0)}, {units:+.2f}u"
+    if staked < MIN_N_FOR_A_RATE:
+        return f"{record} (too few for a rate)"
+    return f"{record}, ROI {units / staked * 100:+.1f}%"
 
 
 def record_lines() -> list:

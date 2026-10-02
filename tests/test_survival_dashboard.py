@@ -222,5 +222,26 @@ class CommittedDashboard(unittest.TestCase):
                          [("The Odds API (100K tier)", 29.0)])
 
 
+
+class ARateNeedsASample(unittest.TestCase):
+    """"ROI +92.6%" off one NFL pick was on the dashboard. The sample size
+    leads and a rate appears only from MIN_N_FOR_A_RATE staked picks."""
+
+    def test_a_small_sample_prints_its_n_first_and_no_rate(self):
+        text = sd._fig({"wins": 5, "losses": 1, "n_staked": 6, "profit_units": 2.5027})
+        self.assertTrue(text.startswith("n=6: 5-1, +2.50u"), text)
+        self.assertNotIn("%", text)
+        self.assertIn("too few for a rate", text)
+
+    def test_a_rate_appears_at_the_floor(self):
+        text = sd._fig({"wins": 16, "losses": 17, "n_staked": 33, "profit_units": -5.05})
+        self.assertEqual(text, "n=33: 16-17, -5.05u, ROI -15.3%")
+        below = sd._fig({"wins": 15, "losses": 14, "n_staked": sd.MIN_N_FOR_A_RATE - 1, "profit_units": 1.0})
+        self.assertNotIn("%", below)
+
+    def test_nothing_graded_stays_nothing_graded(self):
+        self.assertEqual(sd._fig({}), "nothing graded")
+
+
 if __name__ == "__main__":
     unittest.main()
