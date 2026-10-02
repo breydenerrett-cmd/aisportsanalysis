@@ -216,6 +216,26 @@ async def log_requests(request: Request, call_next):
     return response
 
 
+# -- one public address ----------------------------------------------------
+#
+# linehound.app and www.linehound.app both resolve to this app (2026-10-02).
+# Two addresses for the same page split everything that is keyed by origin:
+# a visitor's first-touch source and visitor id live in localStorage, which
+# is per origin, so a lead who arrives on one and signs up on the other reads
+# as two people, one of them unattributed. The apex is the canonical address;
+# anything asked of `www.` is sent there, same path and query, with a
+# permanent redirect that keeps the method. Any other host (the fly.dev
+# address, localhost, a health check by IP) is left exactly as it was.
+@app.middleware("http")
+async def canonical_host(request: Request, call_next):
+    host = (request.headers.get("host") or "").strip().lower()
+    if host.startswith("www.") and len(host) > 4:
+        query = request.url.query
+        target = f"https://{host[4:]}{request.url.path}" + (f"?{query}" if query else "")
+        return RedirectResponse(url=target, status_code=308)
+    return await call_next(request)
+
+
 def _route_template(request: Request) -> str:
     """The matched route's path pattern (e.g. `/game/{date}/{away}/{home}`),
     never the raw URL -- see src/appstate/reqlog.py's module docstring for
