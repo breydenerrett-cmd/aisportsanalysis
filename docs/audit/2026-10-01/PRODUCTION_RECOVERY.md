@@ -194,3 +194,25 @@ minute 15 of any hour.
   one at a time, RSS 318.5 MB, peak 588.2 MB. Same shape as the first soak.
 - **Not in this release** (pushed 00:16Z as af1b75d8, reaches production at
   the 01:00Z refresh if CI is green): the UFC grading and its landing tile.
+
+## Credit change, whole day (still not a confirmed win)
+
+`credit_efficiency_2026-10-01_full_day.txt`, the runner's stores through
+23:51Z:
+
+| | Before 18:42Z (18.7 h) | After (5.2 h) |
+|---|---|---|
+| Credits per hour | 23.6 | 10.9 |
+| NFL credits | 266 | 27 |
+| NFL capture instants | 85 | 7 |
+| NFL rows bought per credit | 256 | 211 |
+| Minutes with a kickoff inside 6 h | 27 | 310 |
+| of those, board under 60 min old | 27 (100%) | 297 (96%) |
+| MMA credits | 85 | 1 |
+
+Reading it: spend has more than halved and the NFL card had a usable board
+for 96% of tonight's game window. It is one evening, most of it with capture
+slots starved, and each credit bought slightly fewer rows than before. The
+game-day refresh has fired once. The measurement that decides this is a full
+Sunday with slots completing normally: credits per fresh board-minute, and
+whether any game's pre-kickoff phases were missed.
