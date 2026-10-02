@@ -73,3 +73,25 @@ lead. When that row shows a signup, run
 counts only rows of `docs/sales/outreach_queue.csv`, one per lead, so page
 views, repeat visits and a second link for the same person cannot add a
 lead.
+
+## 4. Tester-access release (05:46Z)
+
+| | |
+|---|---|
+| Tested commit (Linux CI green on 3.10/3.11/3.12; full local suite 9,669 tests, no new failure) | `d66f4816` |
+| Production | `3f69dd37` = `d66f4816` plus one capture commit; deployed 05:46Z by `deploy-prod` run 36970310435 |
+| Rollback target | Fly release v15 |
+| Checked at 05:48Z | `/health` ok, billing off; landing, record, postseason 200; `/card` 401; `/admin/overview`, `/admin/funnel`, `/admin/testers` 401 without a token; `www` 308 to the apex |
+| Live wording | button "Request early access"; hero note with the offer (first 20 testers, 7 days, no card, not on sale yet); FAQ "What is early access?"; the signup page opens with the offer and the email field |
+| New on the admin page | Testers section (N of 20, grant, extend with a reason, activated yes/no); funnel note for excluded test events |
+
+What is in it: early tester access (granted only from the admin page; a
+7-day token; the 20 is counted in the database and cannot be reset by a
+restart or beaten by two grants at once), the early-access wording on the
+landing, signup, sign-in and postseason pages, and `internal` sources left
+out of funnel totals. No billing change, no card-rule change.
+
+Owner checks still open (they need the admin token):
+1. Funnel: submit the labelled test signup, then find the `internal-test`
+   row under "By source" showing one account created.
+2. Testers: the section reads "0 of 20 granted".

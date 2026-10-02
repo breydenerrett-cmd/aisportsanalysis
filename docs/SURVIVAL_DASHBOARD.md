@@ -1,6 +1,6 @@
 # LineHound survival dashboard
 
-Generated 2026-10-02 04:29Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-10-02 05:48Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
@@ -14,6 +14,7 @@ Generated 2026-10-02 04:29Z by `scripts/survival_dashboard.py`. Edit `config/bus
 | Messages sent | 0 |
 | Replies | 0 |
 | Signups | 0 |
+| Testers granted | 0 of 20 (config, owner-updated) |
 | Active users | 0 |
 | People who said they would pay | 0 |
 | Paid customers | 0 |
@@ -62,20 +63,20 @@ Closing-line value: see `docs/VALUE_SCAN.md` (the standing measurement; no CLV f
 
 ## Production health and capture cost
 
-- Production health: Run `python scripts/prod_watch.py`. 2026-10-02 03:07Z: up since 00:06Z with no restart, peak 589 MB of 1,024, CI green, capture running. Two breaches: site odds 3.3 h old (the refresh gate, docs/decisions/REFRESH_GATE.md) and the last daily loop failed (2026-10-01 run; fix pushed, next run 10:10Z).
+- Production health: Run `python scripts/prod_watch.py`. 2026-10-02 05:48Z: production on d66f4816 (deployed 05:46Z), health ok, billing off, CI green. Known noise: 'odds older than 3 h' overnight when no game is coming, and the 2026-10-01 daily-loop failure until the 10:10Z run.
 - Capture cost: 10.9 credits an hour after the cadence change against 23.6 before (2026-10-01, one evening, not a representative game day). Metric: credits per useful fresh observation; re-measure after Sunday. docs/audit/2026-10-01/PRODUCTION_RECOVERY.md.
 
 ## Top 3 blockers
 
-1. Nobody has been contacted: 40 leads are queued, 0 messages sent. The admin token is set and linehound.app is live (2026-10-02). The last thing in the way is production itself: it is still on the 00:06Z build, without the outreach tracking or the new landing page, because the hourly refresh has not fired since (docs/decisions/REFRESH_GATE.md). One refresh, then send.
+1. Nobody has been contacted: 40 leads are queued, 0 messages sent. Everything in front of sending is done (domain, tracking, tester access, production current). What remains is the owner's two-minute funnel check with the admin token, then sending batch 1 by hand.
 2. Stripe is not live: the account is verified (2026-10-02). Next: rehearse a purchase on staging in test mode (docs/GO_LIVE_2026-09-28.md section 5), then the Stripe secrets on production. Owner.
 3. Discord feed not wired: needs the webhook secret and one env line on the default branch. Owner + me.
 
 ## Next actions
 
-- **Owner:** Say whether production may be refreshed now (one deploy of the tested head), and approve or decline the refresh-gate change (docs/decisions/REFRESH_GATE.md). Then: rehearse a purchase on staging with Stripe's test card (GO_LIVE section 5).
-- **Customer:** Send batch 1 (docs/sales/batch_01.md) as soon as production has been refreshed: links now point at linehound.app and carry each lead's tag. Forums first (items 1 and 2), then creators and X replies; at most five Discord notes a day. After each: python scripts/outreach_batch.py sent --batch 1 --items N.
-- **Product:** Landing page rewritten for the first phone screen (what it is, what you get, waitlist button); pushed 2026-10-02, live on staging. Open decision for Brey: whether early sign-ups get free tester access (docs/CONVERSION_REVIEW_2026-10-02.md).
+- **Owner:** 1) Funnel check: open the internal-test link, submit funnel-test@linehound.app, confirm the internal-test row on the admin page (docs/audit/2026-10-02/LAUNCH_CHAIN.md). 2) Send batch 1 (docs/sales/batch_01.md), forums first. 3) Rehearse a purchase on staging with Stripe's test card (GO_LIVE section 5).
+- **Customer:** Batch 1 is ready to send by hand (links on linehound.app, tagged per lead). Log each send with scripts/outreach_batch.py; grant tester access from the admin page to anyone who qualifies (docs/offers/EARLY_TESTER_OFFER.md).
+- **Product:** Early tester access is live (first 20, 7 days, no card). Next: an expired tester must be able to buy when billing opens (the signup form answers 'invited' today); the record panel shows dashes for a few minutes after each deploy.
 - **Model:** No market shows repeatable value (docs/PERFORMANCE_MATRIX.md: 110 measured populations, 0 candidates; moneyline closing-line value negative on 26 of 26 rows). The props question cannot be answered before 2026-10-31: the best-placed family, batter total bases, reaches a minimum sample about five weeks into the 2027 season (docs/PROP_EXPERIMENT_INVENTORY.md, docs/PREREG_PROP_FAMILIES_DRAFT.md, a DRAFT with seven owner decisions). Until then: sell the public record and the price comparison, not an edge. AI critic: adds one catch over a plain rule on 8 cases and is not ready to show customers (docs/AI_CRITIC_BENCHMARK.md).
 
 ## What survival requires
