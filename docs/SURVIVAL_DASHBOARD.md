@@ -1,10 +1,10 @@
 # LineHound survival dashboard
 
-Generated 2026-10-01 23:59Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and `docs/sales/pipeline.csv`, not this file.
+Generated 2026-10-02 00:38Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and `docs/sales/pipeline.csv`, not this file.
 
 | | |
 |---|---|
-| Days until 2026-10-31 | **30** |
+| Days until 2026-10-31 | **29** |
 | Monthly cost (known + estimated infrastructure) | $78.00 |
 | Monthly cost incl. Claude at the planning assumption | $278.00 (unknown: Claude subscription that operates the business, BALLDONTLIE) |
 | Revenue (MRR) | $0.00 |
@@ -105,7 +105,7 @@ No rule here has evidence of an edge. Closing-line value and calibration: see `d
 - Staging billing confirmed in test mode (from /health, no key shown); rehearsal purchase steps in GO_LIVE section 5
 - UFC: seven published picks graded from two independent sources each
 
-**Next customer action:** Brey: send batch 1 (docs/sales/batch_01.md). Start with items 1 and 2 (two forums where promotion is allowed), then the four creators and five X replies; at most five Discord notes a day. Log each with scripts/outreach_batch.py.
+**Next customer action:** Brey: first set the admin token (GO_LIVE section 0) so signups are visible, then send batch 1 (docs/sales/batch_01.md). Start with items 1 and 2 (two forums where promotion is allowed), then the four creators and five X replies; at most five Discord notes a day. Log each with scripts/outreach_batch.py. Batch 2 (docs/sales/batch_02.md, 20 more, nobody repeated from batch 1) is ready for when batch 1 is out.
 
 **Next research action:** docs/VALUE_SCAN.md is now the standing measurement (python scripts/value_scan.py): 43 populations, 0 candidates, 6 with enough data and no evidence, 37 too few. The one hypothesis worth a pre-registered forward test is whether V2's value gate selects the worse entries (z -1.43 in shadow A). No gate or threshold changes until that test reports.
 

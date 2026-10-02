@@ -195,8 +195,13 @@ def quotas(size: int) -> dict:
 
 
 def select_targets(targets: list, contacted: set, size: int = BASE_SIZE,
-                   exclude: set = frozenset()) -> list:
-    """Deterministic. `contacted` and `exclude` hold normalised names (pipeline, other batches)."""
+                   exclude: set = frozenset(), exclude_people: set = frozenset()) -> list:
+    """Deterministic. `contacted` and `exclude` hold normalised names (pipeline, other batches).
+
+    `exclude_people` holds `people()` keys of everyone already in another
+    batch or the pipeline. Batch 2 first came out with Peter Appel and Farley
+    in it again, as X accounts, after batch 1 had them as a site and a
+    newsletter: the one-person-once rule only looked inside a single batch."""
     seen = set(contacted) | set(exclude)
     pool = []
     for row in targets:
@@ -208,7 +213,7 @@ def select_targets(targets: list, contacted: set, size: int = BASE_SIZE,
     want = quotas(size)
     picked = {}
     shortfall = 0
-    met = set()
+    met = set(exclude_people)
     for kind in ("forum", "creator", "x_account"):
         rows = []
         for r in pool:
@@ -567,6 +572,17 @@ def _other_batch_names(sales: Path, batch: int) -> set:
     return names
 
 
+def _other_batch_people(sales: Path, batch: int) -> set:
+    """`people()` keys for every item in the other batch files."""
+    keys = set()
+    for path in sales.glob("batch_*.md"):
+        if path.name == f"batch_{batch:02d}.md":
+            continue
+        for item in parse_batch(path.read_text(encoding="utf-8")):
+            keys |= people({"name": item["name"]})
+    return keys
+
+
 def cmd_build(args, root: Path, record_fn) -> int:
     sales = root / SALES
     when = date.fromisoformat(args.date) if args.date else date.today()
@@ -596,7 +612,11 @@ def cmd_build(args, root: Path, record_fn) -> int:
         if already:
             raise OutreachError(f"{out_path.name} already has logged items ({', '.join(already)}); "
                                 "refusing to overwrite a batch that was partly sent")
-    chosen = select_targets(targets, contacted, args.size, _other_batch_names(sales, args.batch))
+    met_before = _other_batch_people(sales, args.batch)
+    for past in history:
+        met_before |= people({"name": past.get("target") or ""})
+    chosen = select_targets(targets, contacted, args.size, _other_batch_names(sales, args.batch),
+                            exclude_people=met_before)
     items = [build_item(r, scripts, mlb_record, record_url) for r in chosen]
     bad = False
     for n, item in enumerate(items, start=1):

@@ -404,6 +404,18 @@ class OnePersonOncePerBatch(unittest.TestCase):
         self.assertNotIn("Peter Appel (@PeterAppel23)", names)
         self.assertIn("Joseph Buchdahl (@12Xpert)", names)
 
+    def test_a_person_in_an_earlier_batch_is_not_picked_again_under_another_name(self):
+        # Batch 2 first came out with Peter Appel and Farley in it again.
+        earlier = (ob.people({"name": "JustBaseball Betting (Peter Appel, TheDannyClassic)"})
+                   | ob.people({"name": "Farley's Substack"}))
+        targets = [self._row("x_account", "Peter Appel (@PeterAppel23)"),
+                   self._row("x_account", "Farley (@FarleyBets)"),
+                   self._row("x_account", "Joseph Buchdahl (@12Xpert)")]
+        names = [r["name"] for r in ob.select_targets(targets, set(), size=20, exclude_people=earlier)]
+        self.assertEqual(names, ["Joseph Buchdahl (@12Xpert)"])
+        # and without the earlier batch they are all eligible
+        self.assertEqual(len(ob.select_targets(targets, set(), size=20)), 3)
+
     def test_people_reads_the_name_and_the_brackets_and_drops_handles(self):
         self.assertIn("peter appel", ob.people({"name": "Peter Appel (@PeterAppel23)"}))
         self.assertNotIn("@peterappel23", ob.people({"name": "Peter Appel (@PeterAppel23)"}))
