@@ -62,7 +62,7 @@ Notes: the post contains no price, no discount and no link. If a mod says the po
 
 Reply to a specific post. One reply per account. No hashtags. No link in the first reply. Replace the bracket with something you actually read in their post.
 
-> [One specific thing from their post, e.g. "Your point about closing-line value being the real test..."]. I publish a nightly MLB/NFL card before the game and grade it in public, losses included. MLB record is [MLB_RECORD], so negative, no edge claimed. Would value a critical read if you're open to it.
+> [One specific thing from their post]. I post a nightly MLB/NFL card before the game and grade it in public, losses included. So far: [MLB_RECORD]. No edge claimed. What would you check first to decide if a record like that is honest?
 
 If they say yes or ask where, reply with `[RECORD_URL]` only then. If the account's DMs are open and they engaged, one DM using Variant B text from section (a), tailored.
 
