@@ -58,10 +58,11 @@ plate appearances for a batter).
 - **Deterministic and hashable.** Built from its arguments only: no clock, no disk, no
   network. `packet_hash` is a sha256 of the canonical JSON. Same inputs, same hash, in any
   row order.
-- **Works without the other workers' pieces.** If the game payload carries a `read`
+- **Works with or without the neighbouring pieces.** If the game payload carries a `read`
   (the deterministic per-game read), it becomes `sections.read`. If it does not, nothing
   changes. Live game state is read from `game.state`; the ledger refuses a game that is
-  not `pending`.
+  not `pending`. Run-line and total prices come from the multi-book store directly, so the
+  packet does not wait on any payload change to carry them.
 
 **Slots.** `markets` is keyed by slot id: `moneyline`, `run_line`, `total`,
 `team_total_away`, `team_total_home`, `prop_01` ... Each lists its options with the

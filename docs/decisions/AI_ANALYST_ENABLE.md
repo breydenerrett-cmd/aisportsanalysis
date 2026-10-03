@@ -57,7 +57,9 @@ data collection around it.
 - One real game, about $0.10:
   `ANTHROPIC_API_KEY=... python -m src.cli analyst run --date <today> --game <AWAY@HOME>`
   then `python -m src.cli analyst record`, which prints the record, the ledger integrity check and
-  the cost per day. Commit nothing by hand: the daily job stages `evidence/` already.
+  the cost per day. A real local run writes to YOUR checkout's `evidence/analyst_v1.jsonl`,
+  `evidence/analyst_usage_v1.jsonl` and `evidence/analyst_packets_v1/`. Do not commit or push them (the
+  daily job owns those files and a second chain would not merge); discard them when you have looked.
 - In the daily job's log, look for lines starting `analyst:`. `PUBLISHED <game>` is a game published;
   `STOPPED: spend cap reached` is the cap doing its job; `SKIP` lines say why a game was left alone.
 
@@ -93,7 +95,8 @@ Two ways, neither needed to turn it on:
 - Keep 10:00Z and add a later `analyst run --date <today> --refresh`: a game that has not started can be
   published again as a new version, every version stays in the ledger, and only the newest counts.
 
-A game already published is frozen and never paid for twice, so running both is safe.
+A plain run never pays twice for a game that is already published (it is frozen and skipped before any
+call); only `--refresh` does, on purpose.
 
 ## Turning it off
 
