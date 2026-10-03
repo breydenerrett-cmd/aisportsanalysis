@@ -34,6 +34,7 @@ from api.betcheck import free_router as free_betcheck_router, router as betcheck
 from api.daily import router as daily_router
 from api.games import router as games_router
 from api.card import public_router as card_public_router, router as card_router
+from api.analyst import public_router as analyst_public_router, router as analyst_router
 from api.opportunities import router as opportunities_router
 from api.performance import router as performance_router
 from api.live import router as live_router
@@ -95,6 +96,13 @@ app.include_router(opportunities_router, dependencies=_authed_paid)
 # only (api/card.py's `_public_history`), mounted BEFORE the paid card router
 # so "record"/"history" are never captured as a /card/{date}.
 app.include_router(card_public_router)
+# /analyst/record -- the AI analyst's graded record by market family, PUBLIC,
+# mounted BEFORE the paid /analyst/{date}/{away}/{home} so "record" is never
+# captured as a date. Counts only; never an unsettled game's analysis.
+app.include_router(analyst_public_router)
+# /analyst/{date}/{away}/{home} -- one game's published AI analysis, read from
+# the ledger (never the model), same paid-demo gate as /game/...
+app.include_router(analyst_router, dependencies=_authed_paid)
 # /card/{date}, /card -- THE CARD, the three-to-five bets the front page
 # leads with. Paid, like every other read-only game surface: it is the
 # product, and the free surface is Bet Check.

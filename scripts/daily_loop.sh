@@ -373,6 +373,11 @@ if [ "$NFLSETTLE_STATUS" -ne 0 ]; then
 fi
 echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: nfl card settle --recent exit=$NFLSETTLE_STATUS" >> "$RUN_NOTE"
 
+# THE AI ANALYST (docs/AI_ANALYST.md): grade yesterday, and -- only if the owner
+# has set ANTHROPIC_API_KEY -- analyse today. Its own record, never mixed into the
+# card's. The step always exits 0 and prints no ESCALATE: it cannot fail this loop.
+bash scripts/analyst_step.sh "$TODAY" "$YESTERDAY"
+
 # MLB_VALUE_SHADOW_V1 (docs/PREREG_MLB_VALUE_SHADOW_V1.md): grades the shadow
 # arms' pending decisions from the box scores `daily` ingested above, by
 # game_pk; no final yet stays pending, VOID only after 7 days. Counts only.

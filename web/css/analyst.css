@@ -1,0 +1,81 @@
+/* =====================================================================
+   THE AI ANALYST -- web/js/analyst.js: the section on one game's page and
+   the analyst table on the record page. Every class is scoped to the an-
+   prefix so it cannot touch another screen. Reuses the --v-* palette and the
+   global .sechead primitive; invents no colour.
+
+   A PASS IS DRAWN EXACTLY AS LARGE AS A TAKE. The verdict word has one size
+   and one weight for all three verdicts; only its colour tone differs.
+   ===================================================================== */
+
+.an-section { margin-bottom: var(--sp-8); }
+
+.an-label {
+  margin: 0 0 var(--sp-6);
+  font-family: var(--font-mono); font-size: 12.5px; letter-spacing: .06em;
+  color: var(--v-warn-label);
+}
+
+.an-summary {
+  margin: 0 0 var(--sp-6); max-width: 680px;
+  font-size: 16px; line-height: 1.6; color: var(--v-t2);
+}
+.an-summary--withheld { color: var(--v-t5); font-style: italic; }
+.an-none { margin: 0; max-width: 640px; font-size: 15px; line-height: 1.5; color: var(--v-t4); }
+
+.an-family { margin-top: var(--sp-9); }
+.an-family__head {
+  margin: 0 0 var(--sp-5);
+  font-family: var(--font-display); font-size: 13.5px; font-weight: 800;
+  letter-spacing: .2em; text-transform: uppercase; color: var(--v-t4);
+}
+
+.an-call {
+  padding: var(--sp-6) 0;
+  border-top: 1px solid var(--v-edge);
+}
+.an-call__head { display: flex; align-items: baseline; gap: var(--sp-5); flex-wrap: wrap; }
+.an-call__verdict {
+  font-family: var(--font-display); font-weight: 800; font-size: 15px;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--v-t1);
+}
+.an-call--take .an-call__verdict { color: var(--v-live-lit); }
+.an-call--take_other_side .an-call__verdict { color: var(--v-live-lit); }
+.an-call--pass .an-call__verdict { color: var(--v-t3); }
+.an-call__what { font-size: 16px; color: var(--v-t1); }
+.an-call__facts {
+  display: flex; gap: var(--sp-7); flex-wrap: wrap; margin-top: var(--sp-3);
+  font-family: var(--font-mono); font-size: 13.5px; color: var(--v-t4);
+}
+.an-call__reasons {
+  margin: var(--sp-4) 0 0; padding: 0 0 0 var(--sp-6);
+  display: grid; gap: var(--sp-2); font-size: 14.5px; line-height: 1.5; color: var(--v-t3);
+}
+.an-call__pass-price, .an-call__change {
+  margin: var(--sp-3) 0 0; font-size: 13.5px; line-height: 1.5; color: var(--v-t5);
+}
+.an-call__result {
+  margin: var(--sp-4) 0 0;
+  font-family: var(--font-display); font-weight: 800; font-size: 13px;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--v-t3);
+}
+.an-foot { margin: var(--sp-8) 0 0; font-size: 13px; color: var(--v-t6); max-width: 640px; }
+
+/* ---- the record table ---------------------------------------------- */
+.an-rec__intro { margin: 0 0 var(--sp-6); max-width: 680px; font-size: 14.5px; line-height: 1.55; color: var(--v-t4); }
+.an-rec__table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.an-rec__table th, .an-rec__table td {
+  padding: var(--sp-3) var(--sp-4); text-align: right; white-space: nowrap;
+  border-bottom: 1px solid var(--v-edge); color: var(--v-t2);
+}
+.an-rec__table th:first-child { text-align: left; font-weight: 700; color: var(--v-t1); }
+.an-rec__table thead th {
+  font-family: var(--font-display); font-size: 11.5px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--v-t5);
+}
+.an-rec__withheld { text-align: left !important; white-space: normal !important; color: var(--v-t5) !important; }
+.an-rec__recent { margin: 0; padding: 0 0 0 var(--sp-6); display: grid; gap: var(--sp-2); font-size: 14px; color: var(--v-t3); }
+
+@media (max-width: 640px) {
+  .an-rec__table { display: block; overflow-x: auto; }
+}

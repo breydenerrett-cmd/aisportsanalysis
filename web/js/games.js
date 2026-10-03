@@ -83,6 +83,7 @@ import { armEntrances } from "./motion.js";
 import { fetchLiveIndex, liveFor, pricesAreLastPregame, renderLiveStrip,
   renderPregameLabel } from "./livestate.js";
 import { renderLineMarkets } from "./linemarkets.js";
+import { fetchAnalyst, renderAnalystSection } from "./analyst.js";
 
 function todayIso() {
   return new Date().toISOString().slice(0, 10);
@@ -1054,6 +1055,7 @@ export async function renderGameDetail(container, date, away, home) {
   let cardPick = null;
   let liveIndex = null;
   let oddsSlate = null;
+  let analyst = null;
   try {
     // THE CARD'S PICK FOR THIS GAME, fetched alongside. It leads the screen.
     //
@@ -1073,8 +1075,12 @@ export async function renderGameDetail(container, date, away, home) {
       // for prices because the per-game route records a "prices" value action.
       fetchLiveIndex(date),
       apiGet(`/odds/${encodeURIComponent(date)}`),
+      // THE AI ANALYST'S PUBLISHED ANALYSIS (web/js/analyst.js). Read from the
+      // ledger, never from a model; a failed fetch is a missing section.
+      fetchAnalyst(date, away, home),
     ]);
     if (both[0].status !== "fulfilled") throw both[0].reason;
+    if (both[4].status === "fulfilled") analyst = both[4].value;
     payload = both[0].value;
     if (both[1].status === "fulfilled") {
       const picks = (both[1].value && both[1].value.picks) || [];
@@ -1115,6 +1121,8 @@ export async function renderGameDetail(container, date, away, home) {
   // rested, what the park is doing tonight.
   const gameStory = renderGameStory(advanced, quick); if (gameStory) body.appendChild(gameStory);
   body.appendChild(gqvTeams(advanced, quick));
+  // THE AI ANALYST: one self-contained section, absent when the fetch failed.
+  if (analyst) body.appendChild(renderAnalystSection(analyst));
   body.appendChild(gqvActions(date, away, home));
 
   // ADVANCED APPENDS BENEATH QUICK -- the toggle only shows/hides this

@@ -4557,6 +4557,9 @@ def build_parser() -> argparse.ArgumentParser:
         "--results-path", dest="results_path", default=None,
         help="results store to read and append (default: the real one)")
 
+    from src.analyst import cli as analyst_cli
+    analyst_cli.add_parser(sub)
+
     eod_cmd = sub.add_parser(
         "eod", help="build and write the end-of-day self-review (S7)")
     eod_cmd.add_argument("--date", required=True, help="YYYY-MM-DD")
@@ -4565,6 +4568,12 @@ def build_parser() -> argparse.ArgumentParser:
                               "won control) -- needs the gameflow store")
 
     return parser
+
+
+def cmd_analyst(args) -> int:
+    """`analyst run|grade|record`: the AI analyst (src/analyst/, docs/AI_ANALYST.md)."""
+    from src.analyst import cli as analyst_cli
+    return analyst_cli.main(args)
 
 
 COMMANDS = {
@@ -4608,6 +4617,7 @@ COMMANDS = {
     "engine": cmd_engine,
     "card": cmd_card,
     "eod": cmd_eod,
+    "analyst": cmd_analyst,
     "nfl": cmd_nfl,
     "tennis": cmd_tennis,
     "ufc": cmd_ufc,

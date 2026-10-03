@@ -1,0 +1,10 @@
+--- a/.github/workflows/daily-loop.yml
++++ b/.github/workflows/daily-loop.yml
+@@ -133,6 +133,7 @@
+         env:
+           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+           BALLDONTLIE_API_KEY: ${{ secrets.BALLDONTLIE_API_KEY }}
++          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+         run: |
+           set -o pipefail
+           bash scripts/daily_loop.sh 2>&1 | tee -a /tmp/daily_run.out

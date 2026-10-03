@@ -47,6 +47,7 @@ import { loadCheckoutState, NOT_ON, recordCtaLabel } from "./checkout.js";
 import { NFL_NOTICE, NFL_RETIRED_RULE, MLB_SHADOW_RULE } from "./sport.js";
 import { FILL_TAG, POSTSEASON_TAG_RECORD, entryRow } from "./entrytext.js";
 import { SPORT_KEYS as ACCOUNT_VIEWS, mountExampleAccounts } from "./exampleaccounts.js";
+import { mountAnalystRecord } from "./analyst.js";
 
 // GET /card/history's own default (api/card.py's DEFAULT_HISTORY_LIMIT) --
 // kept in sync by eye rather than fetched, since it only ever changes the
@@ -1221,6 +1222,11 @@ export async function renderCardRecord(container, options = {}) {
   // picks are shown whether or not anything counted has graded.
   const postseason = postseasonNote(record);
   if (postseason) screen.appendChild(postseason);
+
+  // THE AI ANALYST'S RECORD: its own section, its own numbers, never added to
+  // the card record above. Only on the live MLB rule's page; a failed fetch
+  // leaves the page exactly as it was.
+  if (sport === "mlb" && !rule) await mountAnalystRecord(screen);
 
   const bottomCta = signupCta("bottom");
   if (bottomCta) screen.appendChild(bottomCta);
