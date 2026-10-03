@@ -77,7 +77,7 @@ class TheFirstScreenReadsInOrder(unittest.TestCase):
 
     def test_the_headline_names_the_product_not_our_behaviour(self):
         title = re.search(r'<h1 class="hero__claim-title">(.*?)</h1>', MARKUP, re.S).group(1)
-        self.assertEqual(title.strip(), "Tonight's MLB, NFL and UFC bets, posted before the game.")
+        self.assertEqual(title.strip(), "Tonight's MLB and NFL bets, posted before the game.")
         self.assertEqual(MARKUP.count("<h1"), 1)
 
     def test_the_lede_is_one_short_paragraph_with_no_schedule_and_no_figure(self):

@@ -33,7 +33,7 @@
      type as everything else. tests/test_web_structure.py enforces that
      mechanically. -->
 <title>LINEHOUND — tonight's picks, frozen before first pitch</title>
-<meta name="description" content="MLB and NFL picks posted before the game, graded automatically the next morning. UFC picks are graded once results are entered by hand. Every loss stays on the record. Tennis is research only. Planned price: $19.99/month.">
+<meta name="description" content="MLB and NFL picks posted before the game, graded automatically the next morning. UFC picks are paused while we build real fight analysis; the UFC picks already made are graded once results are entered by hand. Every loss stays on the record. Tennis is research only. Planned price: $19.99/month.">
 <!-- LINK PREVIEW (2026-10-01). Every first contact is this address pasted
      into a Discord DM, an X reply or a forum thread, and without these the
      preview was a bare URL or whatever the app guessed. Same claims as the
@@ -43,7 +43,7 @@
 <meta property="og:url" content="https://linehound.app/web/landing.html">
 <link rel="canonical" href="https://linehound.app/web/landing.html">
 <meta property="og:type" content="website">
-<meta property="og:title" content="LineHound: tonight's MLB, NFL and UFC bets, posted before the game">
+<meta property="og:title" content="LineHound: tonight's MLB and NFL bets, posted before the game">
 <meta property="og:description" content="A short card each night: the bet, the best price and where to find it, and why. Every card is graded in public afterwards, wins and losses. The full record is free to read.">
 <meta name="twitter:card" content="summary">
 <meta name="theme-color" content="#0B0C0E">
@@ -94,14 +94,14 @@
        stale number on the page. -->
   <div class="hero__top">
   <div class="hero__claim" data-rise data-delay="40" data-hook="hero-claim">
-    <span class="eyebrow eyebrow--money">MLB · NFL · UFC — every pick published</span>
+    <span class="eyebrow eyebrow--money">MLB and NFL · every pick published</span>
     <!-- THE PRODUCT, THEN THE METHOD (2026-10-02, docs/CONVERSION_REVIEW_2026-10-02.md
          change 1). The headline says what is offered; the lede says what a
          card holds and that it is graded in public, wins and losses. No
          result is promised and no edge is claimed. The grading schedule
          (MLB/NFL next morning, UFC by hand) is no longer here; it is on the
          page in the FAQ ("Which sports do you cover?") and in the sport tiles. -->
-    <h1 class="hero__claim-title">Tonight's MLB, NFL and UFC bets, posted before the game.</h1>
+    <h1 class="hero__claim-title">Tonight's MLB and NFL bets, posted before the game.</h1>
     <p class="hero__claim-body">A short card each night: the bet, the best price and where to find it, and why. Every card is graded in public afterwards, wins and losses.</p>
     <div class="hero__cta-group" data-rise data-delay="160">
       <a class="btn btn--primary" href="index.html#/signup" data-hook="cta-signup-hero" data-checkout-cta>Request early access</a>
@@ -288,7 +288,7 @@
     <div class="story-card panel chamfer" data-rise data-delay="120" data-hook="wyg-subscribers">
       <div class="story-card__kicker">Subscribers</div>
       <ul class="pricing-card__list wyg-list">
-        <li data-hook="wyg-sub-card"><span class="wyg-name">Tonight's card, before the game.</span> The day's bets with their prices, written to the public ledger before the game. NFL and UFC cards sit on their own pages.</li>
+        <li data-hook="wyg-sub-card"><span class="wyg-name">Tonight's card, before the game.</span> The day's bets with their prices, written to the public ledger before the game. The NFL card sits on its own page. UFC picks are paused while we build real fight analysis.</li>
         <li data-hook="wyg-sub-matchups"><span class="wyg-name">Matchups.</span> Every game on the slate, in depth.</li>
         <li data-hook="wyg-sub-odds"><span class="wyg-name">Odds.</span> Each tracked book's price for a game, side by side.</li>
         <li data-hook="wyg-sub-props"><span class="wyg-name">Props.</span> Player props priced for the night, ordered by how likely each one is.</li>
@@ -537,7 +537,7 @@
             <span class="hero__stat-label">Nights graded</span>
           </div>
         </div>
-        <p class="hero__proof-sub" data-hook="sport-tile-ufc-current-state">Picks published on event nights.</p>
+        <p class="hero__proof-sub" data-hook="sport-tile-ufc-current-state">Picks paused while we build real fight analysis.</p>
         <p class="hero__proof-note" data-hook="sport-tile-ufc-current-postseason" hidden></p>
       </div>
 
@@ -643,9 +643,10 @@
     </details>
     <details class="faq-item panel chamfer" data-hook="faq-sports-covered">
       <summary>Which sports do you cover?</summary>
-      <p class="faq-item__body">MLB, NFL and UFC all carry live picks, published before the game or event. MLB and NFL
-        grade automatically the next morning; UFC picks grade once results are entered by hand. Tennis is
-        research-stage — a match board, not picks yet.</p>
+      <p class="faq-item__body">MLB and NFL carry live picks, published before the game and graded automatically
+        the next morning. UFC picks are paused while we build real fight analysis; the UFC picks already made
+        are graded once results are entered by hand and stay on the record. Tennis is research only: a match
+        board, not picks yet.</p>
     </details>
     <details class="faq-item panel chamfer" data-hook="faq-cancel">
       <summary>Can I cancel anytime?</summary>

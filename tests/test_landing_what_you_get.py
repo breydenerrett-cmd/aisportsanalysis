@@ -265,8 +265,12 @@ class TheCopyIsPlainAndCautious(unittest.TestCase):
             "Every card is graded in public afterwards, wins and losses.")
         self.assertNotIn("entered by hand", claim)
         faq = re.sub(r"\s+", " ", _section("faq"))
-        self.assertIn("MLB and NFL grade automatically the next morning; "
-                      "UFC picks grade once results are entered by hand.", faq)
+        # 2026-10-03: UFC picks paused (config/ufc_public_card.json). The FAQ still
+        # carries both grading facts, and now the pause too.
+        self.assertIn("MLB and NFL carry live picks, published before the game and graded "
+                      "automatically the next morning.", faq)
+        self.assertIn("UFC picks are paused while we build real fight analysis; the UFC picks "
+                      "already made are graded once results are entered by hand", faq)
 
 
 class TheCssAddsOnlyWhatTheBlocksNeed(unittest.TestCase):
