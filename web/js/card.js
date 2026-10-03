@@ -215,6 +215,24 @@ function breakdownBody(pick, { ourLabel = "Our number", showAlternative = false,
     figures.appendChild(el("p", { class: "card2bd__figure",
       text: `${ourLabel} ${ours}` }));
   }
+  // A V2 ENTRY'S OWN NUMBER, 2026-10-03. V2 carries no `probability` or
+  // `model_probability`, so its breakdown showed the market's number and the
+  // price's, and never ours: the one figure that says why the bet is on the
+  // card. `our_probability_used` is the number the rule actually tested
+  // against the price, after its own markdown; `our_probability` is the number
+  // before it. Both are frozen fields of the entry. Shown together, because
+  // the markdown is the honest part: our number has not been shown to beat
+  // the market's.
+  if (ours === null && typeof pick.our_probability_used === "number") {
+    const used = pct0(pick.our_probability_used);
+    const raw = typeof pick.our_probability === "number" ? pct0(pick.our_probability) : null;
+    if (used !== null) {
+      figures.appendChild(el("p", { class: "card2bd__figure", "data-hook": "card-our-number",
+        text: raw !== null && raw !== used
+          ? `Our number ${used}, marked down from ${raw}`
+          : `Our number ${used}` }));
+    }
+  }
   const needs = typeof pick.breakeven === "number" ? pct0(pick.breakeven) : breakevenPct(pick.price);
   if (needs !== null && pick.price !== undefined) {
     figures.appendChild(el("p", { class: "card2bd__figure",
@@ -703,7 +721,21 @@ function resolveAllBets(payload, allBets) {
     const full = resolveAllBetsItem(item, payload);
     if (full) resolved.push({ item, full });
   }
-  return resolved;
+  return picksBeforeFills(resolved);
+}
+
+/** PICKS FIRST, THEN FILLS (V2 only), 2026-10-03. The served order keeps an
+ * entry shown on an earlier version of tonight's card where it was, so a fill
+ * could sit at #1 above eight picks: the first thing a reader met on the page
+ * was "Fill, not a pick". This is a stable split and nothing more: the picks
+ * keep the card's own order among themselves, and so do the fills. Nothing is
+ * re-ranked, dropped or relabelled, and a V1 list (references, no fills) comes
+ * back exactly as it went in. */
+function picksBeforeFills(resolved) {
+  if (!resolved.length || !resolved.every((r) => isFullEntry(r.item))) return resolved;
+  const picks = resolved.filter((r) => !isFill(r.full));
+  const fills = resolved.filter((r) => isFill(r.full));
+  return picks.concat(fills);
 }
 
 /** "8 picks · 2 fills" for a V2 card, or null for anything else (V1's
@@ -830,6 +862,29 @@ function allBetsSectionHead(count, kindsPresent) {
       "data-hook": "card-all-bets-subhead",
       text: "Every bet we can price and grade, ranked by how likely it is. "
           + "Player props, and only player props, so far today." }));
+  }
+  return wrap;
+}
+
+/** The merged head for a V2 card. A V2 CARD IS NOT RANKED BY LIKELIHOOD
+ * (2026-10-03): `allBetsSectionHead` says "ranked by how likely it is", which
+ * is V1's rule. V2 orders its picks by its own score, value times confidence
+ * on our marked-down number (best_bets_card.rank_key: descending score), so
+ * that sentence was untrue on every V2 card. `fills` is how many fills are
+ * drawn under the head. Two literal branches, for the register sweep. */
+function v2AllBetsSectionHead(count, fills) {
+  const wrap = el("div", { "data-hook": "card-all-bets-divider" });
+  wrap.appendChild(sectionHead("TODAY'S BETS",
+    count ? `${count} bet${count === 1 ? "" : "s"}` : null));
+  if (fills > 0) {
+    wrap.appendChild(el("p", { class: "card2lede card2lede--mute",
+      "data-hook": "card-all-bets-subhead",
+      text: "Picks first, in the order of the card's own score: value and confidence together. "
+          + "Fills come last and are marked as fills." }));
+  } else {
+    wrap.appendChild(el("p", { class: "card2lede card2lede--mute",
+      "data-hook": "card-all-bets-subhead",
+      text: "In the order of the card's own score: value and confidence together." }));
   }
   return wrap;
 }
@@ -1402,7 +1457,11 @@ export async function renderCard(host, options = {}) {
   // are read once above the headline, which counts from the same list.)
   if (resolvedBets.length) {
     const kindsPresent = new Set(resolvedBets.map((r) => r.item.kind));
-    wrap.appendChild(allBetsSectionHead(resolvedBets.length, kindsPresent));
+    const isV2List = resolvedBets.every((r) => isFullEntry(r.item));
+    wrap.appendChild(isV2List
+      ? v2AllBetsSectionHead(resolvedBets.length,
+          resolvedBets.filter((r) => isFill(r.full)).length)
+      : allBetsSectionHead(resolvedBets.length, kindsPresent));
     const mergedGrid = el("div", { class: "card2grid", "data-hook": "card-all-bets-grid" });
     resolvedBets.forEach(({ item, full }, index) => {
       mergedGrid.appendChild(

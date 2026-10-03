@@ -336,6 +336,15 @@ def _entry_players(entries):
     return [e["player"] or e["team_name"] for e in entries]
 
 
+def _display_order(entries):
+    """The order the page draws a V2 list in: the picks in the card's own
+    order, then the fills in the card's own order (card.js picksBeforeFills).
+    A stable split; nothing is re-ranked."""
+    picks = [e for e in entries if e.get("entry_class") != "fill"]
+    fills = [e for e in entries if e.get("entry_class") == "fill"]
+    return picks + fills
+
+
 # ---------------------------------------------------------------------------
 # 2026-10-03: ten props, eight picks and two fills, the card the tester saw.
 # ---------------------------------------------------------------------------
@@ -345,7 +354,7 @@ class TheTenPropNightRendersTenDistinctCards(_CardHarness):
     def setUpClass(cls):
         super().setUpClass()
         cls.row = fixture_row("2026-10-03")
-        cls.entries = cls.row["all_bets"]
+        cls.entries = _display_order(cls.row["all_bets"])
 
     def setUp(self):
         self.out = self.render(served_payload(self.row))
@@ -388,9 +397,11 @@ class TheTenPropNightRendersTenDistinctCards(_CardHarness):
         self.assertEqual(len({c["bet"] for c in self.cards}), 10)
 
     def test_the_first_two_sentences_a_tester_reads(self):
-        # entry 0 is a fill (Rocchio), entry 1 the number-one pick (Ty France)
-        self.assertEqual(self.cards[0]["bet"], "Brayan Rocchio over 0.5 total bases at -135")
-        self.assertEqual(self.cards[1]["bet"], "Take Ty France over 0.5 hits at -155")
+        # the number-one pick (Ty France) and the second (Garrett Mitchell); the
+        # fill the card served first (Rocchio) is drawn after the picks
+        self.assertEqual(self.cards[0]["bet"], "Take Ty France over 0.5 hits at -155")
+        self.assertEqual(self.cards[1]["bet"], "Take Garrett Mitchell over 0.5 total bases at -120")
+        self.assertEqual(self.cards[8]["bet"], "Brayan Rocchio over 0.5 total bases at -135")
 
     def test_a_pick_says_take_and_a_fill_never_does(self):
         for card, entry in zip(self.cards, self.entries):
@@ -420,9 +431,40 @@ class TheTenPropNightRendersTenDistinctCards(_CardHarness):
         self.assertNotIn("0 picks", meta)
         self.assertEqual(self.head(self.out, "TODAY'S BETS")["meta"], "10 bets")
 
+    def test_the_picks_come_before_the_fills(self):
+        """The served list had a fill first (Rocchio, shown on an earlier
+        version of the card), so the first thing on the page read "Fill, not a
+        pick". The page draws the picks first and the fills last; each group
+        keeps the card's own order."""
+        classes = [c["entryClass"] for c in self.cards]
+        self.assertEqual(classes, ["pick"] * 8 + ["fill"] * 2)
+        served = self.row["all_bets"]
+        self.assertEqual(served[0]["entry_class"], "fill")       # guards the guard
+        self.assertEqual([self.who(c) for c in self.cards[:8]],
+                         [e["player"] for e in served if e["entry_class"] == "pick"])
+        self.assertEqual([self.who(c) for c in self.cards[8:]],
+                         [e["player"] for e in served if e["entry_class"] == "fill"])
+
+    def test_the_ordering_sentence_does_not_claim_a_likelihood_ranking(self):
+        """V2 orders by its own score (value times confidence), not by how
+        likely each bet is. The V1 sentence said the second and was untrue."""
+        self.assertNotIn("ranked by how likely", self.out["text"])
+        self.assertIn("Picks first, in the order of the card's own score", self.out["text"])
+        self.assertIn("Fills come last and are marked as fills.", self.out["text"])
+
+    def test_the_breakdown_shows_our_own_number_and_its_markdown(self):
+        france = self.cards[0]
+        entry = self.entries[0]
+        self.assertEqual(entry["player"], "Ty France")
+        used = round(entry["our_probability_used"] * 100)
+        raw = round(entry["our_probability"] * 100)
+        self.assertIn(f"Our number {used}%, marked down from {raw}%", france["breakdown"])
+        for card in self.cards:
+            self.assertIn("Our number ", card["breakdown"])
+
     def test_no_double_percent_anywhere_on_the_page(self):
         self.assertNotIn("%%", self.out["text"])
-        france = self.cards[1]
+        france = self.cards[0]
         self.assertIn("Market says 58%", france["breakdown"])
         self.assertIn("Needs 61% to break even at -155", france["breakdown"])
         # every card that prints a break-even line prints it with one sign
@@ -472,7 +514,7 @@ class TheMixedGameAndPropNightRendersEachEntryOnce(_CardHarness):
     def setUpClass(cls):
         super().setUpClass()
         cls.row = fixture_row("2026-09-25")
-        cls.entries = cls.row["all_bets"]
+        cls.entries = _display_order(cls.row["all_bets"])
 
     def setUp(self):
         self.out = self.render(served_payload(self.row))
