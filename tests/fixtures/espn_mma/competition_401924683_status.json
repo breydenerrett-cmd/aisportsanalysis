@@ -1,0 +1,30 @@
+{
+ "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600061266/competitions/401924683/status?lang=en&region=us",
+ "clock": 57.0,
+ "displayClock": "0:57",
+ "period": 1,
+ "type": {
+  "id": "3",
+  "name": "STATUS_FINAL",
+  "state": "post",
+  "completed": true,
+  "description": "Final",
+  "detail": "Final",
+  "shortDetail": "Final"
+ },
+ "result": {
+  "id": 284,
+  "name": "submission",
+  "displayName": "Submission",
+  "description": "Guillotine Choke",
+  "displayDescription": "Guillotine Choke",
+  "shortDisplayName": "Sub",
+  "target": {
+   "id": 122,
+   "name": "head",
+   "description": "Head",
+   "displayDescription": "Head"
+  }
+ },
+ "featured": false
+}

@@ -1,0 +1,289 @@
+{
+ "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600061266/competitions/401924683/plays?lang=en&region=us",
+ "count": 14,
+ "pageIndex": 1,
+ "pageSize": 25,
+ "pageCount": 1,
+ "items": [
+  {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600061266/competitions/401924683/plays/21690?lang=en&region=us",
+   "id": "21690",
+   "sequenceNumber": "109952",
+   "type": {
+    "id": "1",
+    "text": "Fight Open"
+   },
+   "awayScore": 0,
+   "homeScore": 0,
+   "period": {
+    "number": 0
+   },
+   "clock": {
+    "value": 0.0,
+    "displayValue": "-"
+   },
+   "scoringPlay": false,
+   "wallclock": "2026-09-27T01:04:20Z"
+  },
+  {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600061266/competitions/401924683/plays/21691?lang=en&region=us",
+   "id": "21691",
+   "sequenceNumber": "109954",
+   "type": {
+    "id": "2",
+    "text": "Walkout"
+   },
+   "awayScore": 0,
+   "homeScore": 0,
+   "period": {
+    "number": 0
+   },
+   "clock": {
+    "value": 0.0,
+    "displayValue": "-"
+   },
+   "scoringPlay": false,
+   "wallclock": "2026-09-27T01:05:35Z"
+  },
+  {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600061266/competitions/401924683/plays/21710?lang=en&region=us",
+   "id": "21710",
+   "sequenceNumber": "109955",
+   "type": {
+    "id": "2",
+    "text": "Walkout"
+   },
+   "awayScore": 0,
+   "homeScore": 0,
+   "period": {
+    "number": 0
+   },
+   "clock": {
+    "value": 0.0,
+    "displayValue": "-"
+   },
+   "scoringPlay": false,
+   "wallclock": "2026-09-27T01:06:53Z"
+  },
+  {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600061266/competitions/401924683/plays/21711?lang=en&region=us",
+   "id": "21711",
+   "sequenceNumber": "109956",
+   "type": {
+    "id": "3",
+    "text": "Tale of the tape"
+   },
+   "awayScore": 0,
+   "homeScore": 0,
+   "period": {
+    "number": 0
+   },
+   "clock": {
+    "value": 0.0,
+    "displayValue": "-"
+   },
+   "scoringPlay": false,
+   "wallclock": "2026-09-27T01:08:45Z"
+  },
+  {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600061266/competitions/401924683/plays/21712?lang=en&region=us",
+   "id": "21712",
+   "sequenceNumber": "109957",
+   "type": {
+    "id": "4",
+    "text": "Staredown"
+   },
+   "awayScore": 0,
+   "homeScore": 0,
+   "period": {
+    "number": 0
+   },
+   "clock": {
+    "value": 0.0,
+    "displayValue": "-"
+   },
+   "scoringPlay": false,
+   "wallclock": "2026-09-27T01:10:23Z"
+  },
+  {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600061266/competitions/401924683/plays/21713?lang=en&region=us",
+   "id": "21713",
+   "sequenceNumber": "109958",
+   "type": {
+    "id": "5",
+    "text": "Round Start"
+   },
+   "awayScore": 0,
+   "homeScore": 0,
+   "period": {
+    "number": 1
+   },
+   "clock": {
+    "value": 300.0,
+    "displayValue": "5:00"
+   },
+   "scoringPlay": false,
+   "wallclock": "2026-09-27T01:10:42Z"
+  },
+  {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600061266/competitions/401924683/plays/21714?lang=en&region=us",
+   "id": "21714",
+   "sequenceNumber": "109959",
+   "type": {
+    "id": "12",
+    "text": "Takedown Attempt"
+   },
+   "awayScore": 0,
+   "homeScore": 0,
+   "period": {
+    "number": 1
+   },
+   "clock": {
+    "value": 267.0,
+    "displayValue": "4:27"
+   },
+   "scoringPlay": false,
+   "wallclock": "2026-09-27T01:11:15Z"
+  },
+  {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600061266/competitions/401924683/plays/21715?lang=en&region=us",
+   "id": "21715",
+   "sequenceNumber": "109960",
+   "type": {
+    "id": "13",
+    "text": "Takedown"
+   },
+   "awayScore": 0,
+   "homeScore": 0,
+   "period": {
+    "number": 1
+   },
+   "clock": {
+    "value": 263.0,
+    "displayValue": "4:23"
+   },
+   "scoringPlay": false,
+   "wallclock": "2026-09-27T01:11:19Z"
+  },
+  {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600061266/competitions/401924683/plays/21716?lang=en&region=us",
+   "id": "21716",
+   "sequenceNumber": "109961",
+   "type": {
+    "id": "16",
+    "text": "Submission Attempt"
+   },
+   "awayScore": 0,
+   "homeScore": 0,
+   "period": {
+    "number": 1
+   },
+   "clock": {
+    "value": 250.0,
+    "displayValue": "4:10"
+   },
+   "scoringPlay": false,
+   "wallclock": "2026-09-27T01:11:32Z"
+  },
+  {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600061266/competitions/401924683/plays/21717?lang=en&region=us",
+   "id": "21717",
+   "sequenceNumber": "109962",
+   "type": {
+    "id": "16",
+    "text": "Submission Attempt"
+   },
+   "awayScore": 0,
+   "homeScore": 0,
+   "period": {
+    "number": 1
+   },
+   "clock": {
+    "value": 242.0,
+    "displayValue": "4:02"
+   },
+   "scoringPlay": false,
+   "wallclock": "2026-09-27T01:11:40Z"
+  },
+  {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600061266/competitions/401924683/plays/21718?lang=en&region=us",
+   "id": "21718",
+   "sequenceNumber": "109963",
+   "type": {
+    "id": "18",
+    "text": "Round End"
+   },
+   "awayScore": 0,
+   "homeScore": 0,
+   "period": {
+    "number": 1
+   },
+   "clock": {
+    "value": 241.0,
+    "displayValue": "4:01"
+   },
+   "scoringPlay": false,
+   "wallclock": "2026-09-27T01:11:41Z"
+  },
+  {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600061266/competitions/401924683/plays/21719?lang=en&region=us",
+   "id": "21719",
+   "sequenceNumber": "109964",
+   "type": {
+    "id": "19",
+    "text": "Fight Over"
+   },
+   "awayScore": 0,
+   "homeScore": 0,
+   "period": {
+    "number": 0
+   },
+   "clock": {
+    "value": 0.0,
+    "displayValue": "-"
+   },
+   "scoringPlay": false,
+   "wallclock": "2026-09-27T01:11:41Z"
+  },
+  {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600061266/competitions/401924683/plays/21730?lang=en&region=us",
+   "id": "21730",
+   "sequenceNumber": "109965",
+   "type": {
+    "id": "23",
+    "text": "Results"
+   },
+   "awayScore": 0,
+   "homeScore": 0,
+   "period": {
+    "number": 0
+   },
+   "clock": {
+    "value": 0.0,
+    "displayValue": "-"
+   },
+   "scoringPlay": false,
+   "wallclock": "2026-09-27T01:14:41Z"
+  },
+  {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600061266/competitions/401924683/plays/21731?lang=en&region=us",
+   "id": "21731",
+   "sequenceNumber": "109966",
+   "type": {
+    "id": "20",
+    "text": "Unofficial Winner Submission"
+   },
+   "awayScore": 0,
+   "homeScore": 0,
+   "period": {
+    "number": 0
+   },
+   "clock": {
+    "value": 0.0,
+    "displayValue": "-"
+   },
+   "scoringPlay": false,
+   "wallclock": "2026-09-27T01:14:57Z"
+  }
+ ]
+}

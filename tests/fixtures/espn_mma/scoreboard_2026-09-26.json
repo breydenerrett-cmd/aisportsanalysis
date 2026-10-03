@@ -1,0 +1,3098 @@
+{
+ "leagues": [
+  {
+   "id": "3321",
+   "uid": "s:3301~l:3321",
+   "name": "Ultimate Fighting Championship",
+   "displayName": "UFC",
+   "abbreviation": "UFC",
+   "shortName": "UFC",
+   "slug": "ufc",
+   "season": {
+    "year": 2026,
+    "startDate": "2026-01-01T08:00Z",
+    "endDate": "2026-12-31T08:00Z",
+    "displayName": "2026",
+    "type": {
+     "id": "2",
+     "type": 2,
+     "name": "Regular Season",
+     "abbreviation": "reg"
+    }
+   },
+   "logos": [
+    {
+     "href": "https://a.espncdn.com/i/teamlogos/leagues/500/ufc.png",
+     "width": 500,
+     "height": 500,
+     "alt": "",
+     "rel": [
+      "full",
+      "default"
+     ],
+     "lastUpdated": "2018-12-21T18:30Z"
+    },
+    {
+     "href": "https://a.espncdn.com/i/teamlogos/leagues/500/ufc.png",
+     "width": 500,
+     "height": 500,
+     "alt": "",
+     "rel": [
+      "full",
+      "dark"
+     ],
+     "lastUpdated": "2018-12-21T18:30Z"
+    }
+   ],
+   "calendarType": "list",
+   "calendarIsWhitelist": true,
+   "calendarStartDate": "2026-01-01T08:00Z",
+   "calendarEndDate": "2026-12-31T08:00Z",
+   "calendar": [
+    {
+     "label": "UFC 324: Gaethje vs. Pimblett",
+     "startDate": "2026-01-25T01:30Z",
+     "endDate": "2026-01-25T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600057024?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 325: Volkanovski vs. Lopes 2",
+     "startDate": "2026-02-01T01:00Z",
+     "endDate": "2026-02-01T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600057025?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Bautista vs. Oliveira",
+     "startDate": "2026-02-08T01:00Z",
+     "endDate": "2026-02-08T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600057328?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Strickland vs. Hernandez",
+     "startDate": "2026-02-22T01:00Z",
+     "endDate": "2026-02-22T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600057329?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Moreno vs. Kavanagh",
+     "startDate": "2026-03-01T01:00Z",
+     "endDate": "2026-03-01T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600057330?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 326: Holloway vs. Oliveira 2",
+     "startDate": "2026-03-08T01:30Z",
+     "endDate": "2026-03-08T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600057326?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Emmett vs. Vallejos",
+     "startDate": "2026-03-15T00:00Z",
+     "endDate": "2026-03-15T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600057364?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Evloev vs. Murphy",
+     "startDate": "2026-03-21T20:00Z",
+     "endDate": "2026-03-22T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600057365?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Adesanya vs. Pyfer",
+     "startDate": "2026-03-29T00:00Z",
+     "endDate": "2026-03-29T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600057366?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Moicano vs. Duncan",
+     "startDate": "2026-04-05T00:00Z",
+     "endDate": "2026-04-05T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600058693?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 327: Procházka vs. Ulberg",
+     "startDate": "2026-04-12T00:30Z",
+     "endDate": "2026-04-12T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600058745?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Burns vs. Malott",
+     "startDate": "2026-04-19T00:00Z",
+     "endDate": "2026-04-19T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600058725?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Sterling vs. Zalal",
+     "startDate": "2026-04-26T00:00Z",
+     "endDate": "2026-04-26T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600058746?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Della Maddalena vs. Prates",
+     "startDate": "2026-05-02T11:00Z",
+     "endDate": "2026-05-03T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600058807?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 328: Chimaev vs. Strickland",
+     "startDate": "2026-05-10T00:00Z",
+     "endDate": "2026-05-10T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600058947?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Allen vs. Costa",
+     "startDate": "2026-05-17T00:00Z",
+     "endDate": "2026-05-17T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600058948?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Song vs. Figueiredo",
+     "startDate": "2026-05-30T11:00Z",
+     "endDate": "2026-05-31T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600058517?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Muhammad vs. Bonfim",
+     "startDate": "2026-06-07T00:00Z",
+     "endDate": "2026-06-07T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600058949?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Freedom 250: Topuria vs. Gaethje",
+     "startDate": "2026-06-15T03:00Z",
+     "endDate": "2026-06-15T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600058854?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Kape vs. Horiguchi 2",
+     "startDate": "2026-06-21T00:00Z",
+     "endDate": "2026-06-21T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600059467?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Fiziev vs. Torres",
+     "startDate": "2026-06-27T16:00Z",
+     "endDate": "2026-06-28T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600059254?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 329: McGregor vs. Holloway 2",
+     "startDate": "2026-07-12T00:00Z",
+     "endDate": "2026-07-12T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600059148?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Du Plessis vs. Usman",
+     "startDate": "2026-07-19T00:00Z",
+     "endDate": "2026-07-19T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600059599?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Ankalaev vs. Guskov",
+     "startDate": "2026-07-25T16:00Z",
+     "endDate": "2026-07-26T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600059667?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Medić vs. Rodriguez",
+     "startDate": "2026-08-01T17:00Z",
+     "endDate": "2026-08-02T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600059339?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Gamrot vs Salkilld",
+     "startDate": "2026-08-09T00:00Z",
+     "endDate": "2026-08-09T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600060621?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 10, Week 1",
+     "startDate": "2026-08-12T02:00Z",
+     "endDate": "2026-08-12T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600060732?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 330: Makhachev vs. Machado Garry",
+     "startDate": "2026-08-16T00:30Z",
+     "endDate": "2026-08-16T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600059185?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 10, Week 2",
+     "startDate": "2026-08-19T02:00Z",
+     "endDate": "2026-08-19T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600060733?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Hernandez vs. Rodrigues",
+     "startDate": "2026-08-23T00:00Z",
+     "endDate": "2026-08-23T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600060493?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 10, Week 3",
+     "startDate": "2026-08-26T02:00Z",
+     "endDate": "2026-08-26T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600060734?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Nurmagomedov vs. Song",
+     "startDate": "2026-08-29T10:00Z",
+     "endDate": "2026-08-30T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600060620?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 10, Week 4",
+     "startDate": "2026-09-02T02:00Z",
+     "endDate": "2026-09-02T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600060735?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Hooker vs. Parnasse",
+     "startDate": "2026-09-05T19:00Z",
+     "endDate": "2026-09-06T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600059993?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 10, Week 5",
+     "startDate": "2026-09-09T02:00Z",
+     "endDate": "2026-09-09T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600060736?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Noche UFC: Silva vs. Delgado",
+     "startDate": "2026-09-12T21:00Z",
+     "endDate": "2026-09-13T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600060772?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 10, Week 6",
+     "startDate": "2026-09-16T02:00Z",
+     "endDate": "2026-09-16T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600060737?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 331: Van vs. Pantoja 2",
+     "startDate": "2026-09-20T00:00Z",
+     "endDate": "2026-09-20T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600060963?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 10, Week 7",
+     "startDate": "2026-09-23T02:00Z",
+     "endDate": "2026-09-23T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600060738?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Rosas Jr. vs. Barcelos",
+     "startDate": "2026-09-27T00:00Z",
+     "endDate": "2026-09-27T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600061266?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 10, Week 8",
+     "startDate": "2026-09-30T02:00Z",
+     "endDate": "2026-09-30T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600060739?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 332: Silva vs. Wang",
+     "startDate": "2026-10-03T23:00Z",
+     "endDate": "2026-10-04T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600061182?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 10, Week 9",
+     "startDate": "2026-10-07T02:00Z",
+     "endDate": "2026-10-07T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600060740?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Allen vs. Duncan",
+     "startDate": "2026-10-11T00:00Z",
+     "endDate": "2026-10-11T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600061541?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 10, Week 10",
+     "startDate": "2026-10-14T02:00Z",
+     "endDate": "2026-10-14T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600060741?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Buckley vs. Malott",
+     "startDate": "2026-10-18T00:00Z",
+     "endDate": "2026-10-18T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600060773?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 333: Volkanovski vs. Evloev",
+     "startDate": "2026-10-24T17:00Z",
+     "endDate": "2026-10-25T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600061267?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Moicano vs. Nolan",
+     "startDate": "2026-11-01T00:00Z",
+     "endDate": "2026-11-01T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600061420?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Bonfim vs. Brady",
+     "startDate": "2026-11-08T01:00Z",
+     "endDate": "2026-11-08T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600061268?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 334: Gane vs. Hokit",
+     "startDate": "2026-11-15T01:00Z",
+     "endDate": "2026-11-15T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600061400?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Procházka vs. Stirling",
+     "startDate": "2026-11-21T17:00Z",
+     "endDate": "2026-11-22T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600061665?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 335",
+     "startDate": "2026-12-13T01:00Z",
+     "endDate": "2026-12-13T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600061401?lang=en&region=us"
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "600061266",
+   "uid": "s:3301~l:3321~e:600061266",
+   "date": "2026-09-26T21:00Z",
+   "name": "UFC Fight Night: Rosas Jr. vs. Barcelos",
+   "shortName": "UFC Fight Night",
+   "season": {
+    "year": 2026,
+    "type": 2,
+    "slug": "regular-season"
+   },
+   "competitions": [
+    {
+     "id": "401914472",
+     "uid": "s:3301~l:3321~e:600061266~c:401914472",
+     "date": "2026-09-26T21:00Z",
+     "endDate": "2026-09-26T21:00Z",
+     "type": {
+      "id": "1006",
+      "abbreviation": "W Strawweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": true,
+     "recent": false,
+     "venue": {
+      "id": "6176",
+      "fullName": "Meta APEX",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "4683395",
+       "uid": "s:3301~a:4683395",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Vanessa Demopoulos",
+        "displayName": "Vanessa Demopoulos",
+        "shortName": "V. Demopoulos",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "11-9-0"
+        }
+       ]
+      },
+      {
+       "id": "5063403",
+       "uid": "s:3301~a:5063403",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Yazmin Jauregui",
+        "displayName": "Yazmin Jauregui",
+        "shortName": "Y. Jauregui",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/mex.png",
+         "alt": "Mexico",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "12-2-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 62.0,
+      "displayClock": "1:02",
+      "period": 1,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "Paramount+"
+       ]
+      }
+     ],
+     "details": [
+      {
+       "id": "21231",
+       "type": {
+        "id": "21",
+        "text": "Unofficial Winner Kotko"
+       }
+      },
+      {
+       "id": "21230",
+       "type": {
+        "id": "23",
+        "text": "Results"
+       }
+      },
+      {
+       "id": "21219",
+       "type": {
+        "id": "19",
+        "text": "Fight Over"
+       }
+      },
+      {
+       "id": "21218",
+       "type": {
+        "id": "18",
+        "text": "Round End"
+       }
+      },
+      {
+       "id": "21217",
+       "type": {
+        "id": "13",
+        "text": "Takedown"
+       }
+      },
+      {
+       "id": "21216",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      },
+      {
+       "id": "21215",
+       "type": {
+        "id": "5",
+        "text": "Round Start"
+       }
+      },
+      {
+       "id": "21214",
+       "type": {
+        "id": "4",
+        "text": "Staredown"
+       }
+      },
+      {
+       "id": "21213",
+       "type": {
+        "id": "3",
+        "text": "Tale of the tape"
+       }
+      },
+      {
+       "id": "21212",
+       "type": {
+        "id": "2",
+        "text": "Walkout"
+       }
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2026-09-26T21:00Z",
+     "broadcast": "Paramount+",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "4",
+        "shortName": "Streaming"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "Paramount+"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "401914469",
+     "uid": "s:3301~l:3321~e:600061266~c:401914469",
+     "date": "2026-09-26T21:00Z",
+     "endDate": "2026-09-26T21:00Z",
+     "type": {
+      "id": "970",
+      "abbreviation": "Bantamweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": true,
+     "recent": false,
+     "venue": {
+      "id": "6176",
+      "fullName": "Meta APEX",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "3154389",
+       "uid": "s:3301~a:3154389",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Alatengheili",
+        "displayName": "Alatengheili",
+        "shortName": "Alatengheili",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/chn.png",
+         "alt": "China",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 86.0,
+         "displayValue": "86.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "18-10-2"
+        }
+       ]
+      },
+      {
+       "id": "4063869",
+       "uid": "s:3301~a:4063869",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "John Castaneda",
+        "displayName": "John Castaneda",
+        "shortName": "J. Castaneda",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 85.0,
+         "displayValue": "85.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "21-9-1"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "Paramount+"
+       ]
+      }
+     ],
+     "details": [
+      {
+       "id": "21277",
+       "type": {
+        "id": "22",
+        "text": "Unofficial Winner Decision"
+       }
+      },
+      {
+       "id": "21276",
+       "type": {
+        "id": "23",
+        "text": "Results"
+       }
+      },
+      {
+       "id": "21275",
+       "type": {
+        "id": "19",
+        "text": "Fight Over"
+       }
+      },
+      {
+       "id": "21274",
+       "type": {
+        "id": "18",
+        "text": "Round End"
+       }
+      },
+      {
+       "id": "21273",
+       "type": {
+        "id": "16",
+        "text": "Submission Attempt"
+       }
+      },
+      {
+       "id": "21272",
+       "type": {
+        "id": "13",
+        "text": "Takedown"
+       }
+      },
+      {
+       "id": "21271",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      },
+      {
+       "id": "21270",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      },
+      {
+       "id": "21269",
+       "type": {
+        "id": "15",
+        "text": "Reversal"
+       }
+      },
+      {
+       "id": "21268",
+       "type": {
+        "id": "16",
+        "text": "Submission Attempt"
+       }
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2026-09-26T21:00Z",
+     "broadcast": "Paramount+",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "4",
+        "shortName": "Streaming"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "Paramount+"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "401914466",
+     "uid": "s:3301~l:3321~e:600061266~c:401914466",
+     "date": "2026-09-26T21:00Z",
+     "endDate": "2026-09-26T21:00Z",
+     "type": {
+      "id": "970",
+      "abbreviation": "Bantamweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": true,
+     "recent": false,
+     "venue": {
+      "id": "6176",
+      "fullName": "Meta APEX",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "3922491",
+       "uid": "s:3301~a:3922491",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Ricky Simon",
+        "displayName": "Ricky Simon",
+        "shortName": "R. Simon",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "22-8-1"
+        }
+       ]
+      },
+      {
+       "id": "4339130",
+       "uid": "s:3301~a:4339130",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Montel Jackson",
+        "displayName": "Montel Jackson",
+        "shortName": "M. Jackson",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "16-4-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 159.0,
+      "displayClock": "2:39",
+      "period": 2,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "Paramount+"
+       ]
+      }
+     ],
+     "details": [
+      {
+       "id": "21342",
+       "type": {
+        "id": "21",
+        "text": "Unofficial Winner Kotko"
+       }
+      },
+      {
+       "id": "21343",
+       "type": {
+        "id": "23",
+        "text": "Results"
+       }
+      },
+      {
+       "id": "21339",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      },
+      {
+       "id": "21341",
+       "type": {
+        "id": "19",
+        "text": "Fight Over"
+       }
+      },
+      {
+       "id": "21340",
+       "type": {
+        "id": "18",
+        "text": "Round End"
+       }
+      },
+      {
+       "id": "21338",
+       "type": {
+        "id": "17",
+        "text": "Knockdown"
+       }
+      },
+      {
+       "id": "21337",
+       "type": {
+        "id": "13",
+        "text": "Takedown"
+       }
+      },
+      {
+       "id": "21336",
+       "type": {
+        "id": "5",
+        "text": "Round Start"
+       }
+      },
+      {
+       "id": "21335",
+       "type": {
+        "id": "18",
+        "text": "Round End"
+       }
+      },
+      {
+       "id": "21334",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2026-09-26T21:00Z",
+     "broadcast": "Paramount+",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "4",
+        "shortName": "Streaming"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "Paramount+"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "401914470",
+     "uid": "s:3301~l:3321~e:600061266~c:401914470",
+     "date": "2026-09-26T21:00Z",
+     "endDate": "2026-09-26T21:00Z",
+     "type": {
+      "id": "986",
+      "abbreviation": "Lightweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": true,
+     "recent": false,
+     "venue": {
+      "id": "6176",
+      "fullName": "Meta APEX",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "5110006",
+       "uid": "s:3301~a:5110006",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Elves Brener",
+        "displayName": "Elves Brener",
+        "shortName": "E. Brener",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/bra.png",
+         "alt": "Brazil",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "17-6-0"
+        }
+       ]
+      },
+      {
+       "id": "5149546",
+       "uid": "s:3301~a:5149546",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Josiah Harrell",
+        "displayName": "Josiah Harrell",
+        "shortName": "J. Harrell",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "11-2-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 254.0,
+      "displayClock": "4:14",
+      "period": 1,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "Paramount+"
+       ]
+      }
+     ],
+     "details": [
+      {
+       "id": "21366",
+       "type": {
+        "id": "23",
+        "text": "Results"
+       }
+      },
+      {
+       "id": "21365",
+       "type": {
+        "id": "21",
+        "text": "Unofficial Winner Kotko"
+       }
+      },
+      {
+       "id": "21364",
+       "type": {
+        "id": "19",
+        "text": "Fight Over"
+       }
+      },
+      {
+       "id": "21363",
+       "type": {
+        "id": "18",
+        "text": "Round End"
+       }
+      },
+      {
+       "id": "21362",
+       "type": {
+        "id": "17",
+        "text": "Knockdown"
+       }
+      },
+      {
+       "id": "21361",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      },
+      {
+       "id": "21360",
+       "type": {
+        "id": "11",
+        "text": "Round Unpause"
+       }
+      },
+      {
+       "id": "21359",
+       "type": {
+        "id": "8",
+        "text": "Pause Reason Low Blow"
+       }
+      },
+      {
+       "id": "21358",
+       "type": {
+        "id": "6",
+        "text": "Round Pause"
+       }
+      },
+      {
+       "id": "21357",
+       "type": {
+        "id": "13",
+        "text": "Takedown"
+       }
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2026-09-26T21:00Z",
+     "broadcast": "Paramount+",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "4",
+        "shortName": "Streaming"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "Paramount+"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "401914467",
+     "uid": "s:3301~l:3321~e:600061266~c:401914467",
+     "date": "2026-09-26T21:00Z",
+     "endDate": "2026-09-26T21:00Z",
+     "type": {
+      "id": "990",
+      "abbreviation": "Light Heavyweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": true,
+     "recent": false,
+     "venue": {
+      "id": "6176",
+      "fullName": "Meta APEX",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "4799517",
+       "uid": "s:3301~a:4799517",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Christian Edwards",
+        "displayName": "Christian Edwards",
+        "shortName": "C. Edwards",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "9-5-0"
+        }
+       ]
+      },
+      {
+       "id": "5060489",
+       "uid": "s:3301~a:5060489",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Rodolfo Bellato",
+        "displayName": "Rodolfo Bellato",
+        "shortName": "R. Bellato",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/bra.png",
+         "alt": "Brazil",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "13-4-1"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 107.0,
+      "displayClock": "1:47",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "Paramount+"
+       ]
+      }
+     ],
+     "details": [
+      {
+       "id": "21456",
+       "type": {
+        "id": "23",
+        "text": "Results"
+       }
+      },
+      {
+       "id": "21455",
+       "type": {
+        "id": "21",
+        "text": "Unofficial Winner Kotko"
+       }
+      },
+      {
+       "id": "21454",
+       "type": {
+        "id": "19",
+        "text": "Fight Over"
+       }
+      },
+      {
+       "id": "21453",
+       "type": {
+        "id": "18",
+        "text": "Round End"
+       }
+      },
+      {
+       "id": "21452",
+       "type": {
+        "id": "17",
+        "text": "Knockdown"
+       }
+      },
+      {
+       "id": "21451",
+       "type": {
+        "id": "5",
+        "text": "Round Start"
+       }
+      },
+      {
+       "id": "21450",
+       "type": {
+        "id": "18",
+        "text": "Round End"
+       }
+      },
+      {
+       "id": "21434",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      },
+      {
+       "id": "21433",
+       "type": {
+        "id": "5",
+        "text": "Round Start"
+       }
+      },
+      {
+       "id": "21432",
+       "type": {
+        "id": "18",
+        "text": "Round End"
+       }
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2026-09-26T21:00Z",
+     "broadcast": "Paramount+",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "4",
+        "shortName": "Streaming"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "Paramount+"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "401911631",
+     "uid": "s:3301~l:3321~e:600061266~c:401911631",
+     "date": "2026-09-26T21:00Z",
+     "endDate": "2026-09-26T21:00Z",
+     "type": {
+      "id": "972",
+      "abbreviation": "Middleweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": true,
+     "recent": false,
+     "venue": {
+      "id": "6176",
+      "fullName": "Meta APEX",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "4341572",
+       "uid": "s:3301~a:4341572",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Robert Bryczek",
+        "displayName": "Robert Bryczek",
+        "shortName": "R. Bryczek",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/pol.png",
+         "alt": "Poland",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 81.0,
+         "displayValue": "81.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 0
+          },
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 0
+          },
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "18-8-0"
+        }
+       ]
+      },
+      {
+       "id": "4426250",
+       "uid": "s:3301~a:4426250",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Rodolfo Vieira",
+        "displayName": "Rodolfo Vieira",
+        "shortName": "R. Vieira",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/bra.png",
+         "alt": "Brazil",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 90.0,
+         "displayValue": "90.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 0
+          },
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 0
+          },
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "12-5-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "Paramount+"
+       ]
+      }
+     ],
+     "details": [
+      {
+       "id": "21530",
+       "type": {
+        "id": "23",
+        "text": "Results"
+       }
+      },
+      {
+       "id": "21516",
+       "type": {
+        "id": "19",
+        "text": "Fight Over"
+       }
+      },
+      {
+       "id": "21515",
+       "type": {
+        "id": "18",
+        "text": "Round End"
+       }
+      },
+      {
+       "id": "21514",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      },
+      {
+       "id": "21513",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      },
+      {
+       "id": "21512",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      },
+      {
+       "id": "21511",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      },
+      {
+       "id": "21510",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      },
+      {
+       "id": "21492",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      },
+      {
+       "id": "21491",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2026-09-26T21:00Z",
+     "broadcast": "Paramount+",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "4",
+        "shortName": "Streaming"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "Paramount+"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "401914468",
+     "uid": "s:3301~l:3321~e:600061266~c:401914468",
+     "date": "2026-09-26T21:00Z",
+     "endDate": "2026-09-26T21:00Z",
+     "type": {
+      "id": "970",
+      "abbreviation": "Bantamweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": true,
+     "recent": false,
+     "venue": {
+      "id": "6176",
+      "fullName": "Meta APEX",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "4815974",
+       "uid": "s:3301~a:4815974",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Brady Hiestand",
+        "displayName": "Brady Hiestand",
+        "shortName": "B. Hiestand",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "10-2-0"
+        }
+       ]
+      },
+      {
+       "id": "5068624",
+       "uid": "s:3301~a:5068624",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Rinya Nakamura",
+        "displayName": "Rinya Nakamura",
+        "shortName": "R. Nakamura",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/jpn.png",
+         "alt": "Japan",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "10-2-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 247.0,
+      "displayClock": "4:07",
+      "period": 2,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "Paramount+"
+       ]
+      }
+     ],
+     "details": [
+      {
+       "id": "21565",
+       "type": {
+        "id": "20",
+        "text": "Unofficial Winner Submission"
+       }
+      },
+      {
+       "id": "21566",
+       "type": {
+        "id": "23",
+        "text": "Results"
+       }
+      },
+      {
+       "id": "21564",
+       "type": {
+        "id": "19",
+        "text": "Fight Over"
+       }
+      },
+      {
+       "id": "21563",
+       "type": {
+        "id": "18",
+        "text": "Round End"
+       }
+      },
+      {
+       "id": "21562",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      },
+      {
+       "id": "21561",
+       "type": {
+        "id": "16",
+        "text": "Submission Attempt"
+       }
+      },
+      {
+       "id": "21560",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      },
+      {
+       "id": "21559",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      },
+      {
+       "id": "21558",
+       "type": {
+        "id": "13",
+        "text": "Takedown"
+       }
+      },
+      {
+       "id": "21557",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2026-09-26T21:00Z",
+     "broadcast": "Paramount+",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "4",
+        "shortName": "Streaming"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "Paramount+"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "401914464",
+     "uid": "s:3301~l:3321~e:600061266~c:401914464",
+     "date": "2026-09-27T00:00Z",
+     "endDate": "2026-09-27T00:00Z",
+     "type": {
+      "id": "1006",
+      "abbreviation": "W Strawweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": true,
+     "recent": false,
+     "venue": {
+      "id": "6176",
+      "fullName": "Meta APEX",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "4836549",
+       "uid": "s:3301~a:4836549",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Tina Black",
+        "displayName": "Tina Black",
+        "shortName": "T. Black",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/bra.png",
+         "alt": "Brazil",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "16-4-0"
+        }
+       ]
+      },
+      {
+       "id": "5169699",
+       "uid": "s:3301~a:5169699",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Melissa Amaya",
+        "displayName": "Melissa Amaya",
+        "shortName": "M. Amaya",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "8-1-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 199.0,
+      "displayClock": "3:19",
+      "period": 2,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "Paramount+"
+       ]
+      }
+     ],
+     "details": [
+      {
+       "id": "21631",
+       "type": {
+        "id": "21",
+        "text": "Unofficial Winner Kotko"
+       }
+      },
+      {
+       "id": "21630",
+       "type": {
+        "id": "23",
+        "text": "Results"
+       }
+      },
+      {
+       "id": "21618",
+       "type": {
+        "id": "19",
+        "text": "Fight Over"
+       }
+      },
+      {
+       "id": "21617",
+       "type": {
+        "id": "18",
+        "text": "Round End"
+       }
+      },
+      {
+       "id": "21616",
+       "type": {
+        "id": "17",
+        "text": "Knockdown"
+       }
+      },
+      {
+       "id": "21615",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      },
+      {
+       "id": "21614",
+       "type": {
+        "id": "5",
+        "text": "Round Start"
+       }
+      },
+      {
+       "id": "21613",
+       "type": {
+        "id": "18",
+        "text": "Round End"
+       }
+      },
+      {
+       "id": "21612",
+       "type": {
+        "id": "17",
+        "text": "Knockdown"
+       }
+      },
+      {
+       "id": "21611",
+       "type": {
+        "id": "5",
+        "text": "Round Start"
+       }
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 4
+      }
+     },
+     "startDate": "2026-09-27T00:00Z",
+     "broadcast": "Paramount+",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "4",
+        "shortName": "Streaming"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "Paramount+"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "401914465",
+     "uid": "s:3301~l:3321~e:600061266~c:401914465",
+     "date": "2026-09-27T00:00Z",
+     "endDate": "2026-09-27T00:00Z",
+     "type": {
+      "id": "970",
+      "abbreviation": "Bantamweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": true,
+     "recent": false,
+     "venue": {
+      "id": "6176",
+      "fullName": "Meta APEX",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "5345639",
+       "uid": "s:3301~a:5345639",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Ilimbek Akylbek Uulu",
+        "displayName": "Ilimbek Akylbek Uulu",
+        "shortName": "I. Akylbek Uulu",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/kgz.png",
+         "alt": "Kyrgyzstan",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "11-3-0"
+        }
+       ]
+      },
+      {
+       "id": "5345640",
+       "uid": "s:3301~a:5345640",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Mehemmedeli Osmanli",
+        "displayName": "Mehemmedeli Osmanli",
+        "shortName": "M. Osmanli",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/aze.png",
+         "alt": "Azerbaijan",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "12-2-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 139.0,
+      "displayClock": "2:19",
+      "period": 1,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "Paramount+"
+       ]
+      }
+     ],
+     "details": [
+      {
+       "id": "21681",
+       "type": {
+        "id": "23",
+        "text": "Results"
+       }
+      },
+      {
+       "id": "21680",
+       "type": {
+        "id": "19",
+        "text": "Fight Over"
+       }
+      },
+      {
+       "id": "21679",
+       "type": {
+        "id": "18",
+        "text": "Round End"
+       }
+      },
+      {
+       "id": "21678",
+       "type": {
+        "id": "9",
+        "text": "Pause Reason Generic"
+       }
+      },
+      {
+       "id": "21677",
+       "type": {
+        "id": "6",
+        "text": "Round Pause"
+       }
+      },
+      {
+       "id": "21676",
+       "type": {
+        "id": "13",
+        "text": "Takedown"
+       }
+      },
+      {
+       "id": "21675",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      },
+      {
+       "id": "21674",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      },
+      {
+       "id": "21673",
+       "type": {
+        "id": "5",
+        "text": "Round Start"
+       }
+      },
+      {
+       "id": "21672",
+       "type": {
+        "id": "4",
+        "text": "Staredown"
+       }
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 4
+      }
+     },
+     "startDate": "2026-09-27T00:00Z",
+     "broadcast": "Paramount+",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "4",
+        "shortName": "Streaming"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "Paramount+"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "401924683",
+     "uid": "s:3301~l:3321~e:600061266~c:401924683",
+     "date": "2026-09-27T00:00Z",
+     "endDate": "2026-09-27T00:00Z",
+     "type": {
+      "id": "990",
+      "abbreviation": "Light Heavyweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": true,
+     "recent": false,
+     "venue": {
+      "id": "6176",
+      "fullName": "Meta APEX",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "5060467",
+       "uid": "s:3301~a:5060467",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Sedriques Dumas",
+        "displayName": "Sedriques Dumas",
+        "shortName": "S. Dumas",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "10-6-0"
+        }
+       ]
+      },
+      {
+       "id": "5369427",
+       "uid": "s:3301~a:5369427",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Luis Hernandez",
+        "displayName": "Luis Hernandez",
+        "shortName": "L. Hernandez",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "9-0-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 57.0,
+      "displayClock": "0:57",
+      "period": 1,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "Paramount+"
+       ]
+      }
+     ],
+     "details": [
+      {
+       "id": "21731",
+       "type": {
+        "id": "20",
+        "text": "Unofficial Winner Submission"
+       }
+      },
+      {
+       "id": "21730",
+       "type": {
+        "id": "23",
+        "text": "Results"
+       }
+      },
+      {
+       "id": "21719",
+       "type": {
+        "id": "19",
+        "text": "Fight Over"
+       }
+      },
+      {
+       "id": "21718",
+       "type": {
+        "id": "18",
+        "text": "Round End"
+       }
+      },
+      {
+       "id": "21717",
+       "type": {
+        "id": "16",
+        "text": "Submission Attempt"
+       }
+      },
+      {
+       "id": "21716",
+       "type": {
+        "id": "16",
+        "text": "Submission Attempt"
+       }
+      },
+      {
+       "id": "21715",
+       "type": {
+        "id": "13",
+        "text": "Takedown"
+       }
+      },
+      {
+       "id": "21714",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      },
+      {
+       "id": "21713",
+       "type": {
+        "id": "5",
+        "text": "Round Start"
+       }
+      },
+      {
+       "id": "21712",
+       "type": {
+        "id": "4",
+        "text": "Staredown"
+       }
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2026-09-27T00:00Z",
+     "broadcast": "Paramount+",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "4",
+        "shortName": "Streaming"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "Paramount+"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "401914471",
+     "uid": "s:3301~l:3321~e:600061266~c:401914471",
+     "date": "2026-09-27T00:00Z",
+     "endDate": "2026-09-27T00:00Z",
+     "type": {
+      "id": "1003",
+      "abbreviation": "W Bantamweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": true,
+     "recent": false,
+     "venue": {
+      "id": "6176",
+      "fullName": "Meta APEX",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "4418784",
+       "uid": "s:3301~a:4418784",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Norma Dumont",
+        "displayName": "Norma Dumont",
+        "shortName": "N. Dumont",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/bra.png",
+         "alt": "Brazil",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 84.0,
+         "displayValue": "84.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "13-4-0"
+        }
+       ]
+      },
+      {
+       "id": "5075333",
+       "uid": "s:3301~a:5075333",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Ailin Perez",
+        "displayName": "Ailin Perez",
+        "shortName": "A. Perez",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/arg.png",
+         "alt": "Argentina",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 87.0,
+         "displayValue": "87.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "14-2-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "Paramount+"
+       ]
+      }
+     ],
+     "details": [
+      {
+       "id": "21835",
+       "type": {
+        "id": "22",
+        "text": "Unofficial Winner Decision"
+       }
+      },
+      {
+       "id": "21834",
+       "type": {
+        "id": "23",
+        "text": "Results"
+       }
+      },
+      {
+       "id": "21833",
+       "type": {
+        "id": "19",
+        "text": "Fight Over"
+       }
+      },
+      {
+       "id": "21832",
+       "type": {
+        "id": "18",
+        "text": "Round End"
+       }
+      },
+      {
+       "id": "21831",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      },
+      {
+       "id": "21850",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      },
+      {
+       "id": "21830",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      },
+      {
+       "id": "21811",
+       "type": {
+        "id": "5",
+        "text": "Round Start"
+       }
+      },
+      {
+       "id": "21810",
+       "type": {
+        "id": "18",
+        "text": "Round End"
+       }
+      },
+      {
+       "id": "21795",
+       "type": {
+        "id": "13",
+        "text": "Takedown"
+       }
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2026-09-27T00:00Z",
+     "broadcast": "Paramount+",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "4",
+        "shortName": "Streaming"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "Paramount+"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "401911630",
+     "uid": "s:3301~l:3321~e:600061266~c:401911630",
+     "date": "2026-09-27T00:00Z",
+     "endDate": "2026-09-27T00:00Z",
+     "type": {
+      "id": "970",
+      "abbreviation": "Bantamweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": true,
+     "recent": false,
+     "venue": {
+      "id": "6176",
+      "fullName": "Meta APEX",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "3075570",
+       "uid": "s:3301~a:3075570",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Raoni Barcelos",
+        "displayName": "Raoni Barcelos",
+        "shortName": "R. Barcelos",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/bra.png",
+         "alt": "Brazil",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "22-6-0"
+        }
+       ]
+      },
+      {
+       "id": "5088844",
+       "uid": "s:3301~a:5088844",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Raul Rosas Jr.",
+        "displayName": "Raul Rosas Jr.",
+        "shortName": "R. Rosas Jr.",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/mex.png",
+         "alt": "Mexico",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "13-1-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 98.0,
+      "displayClock": "1:38",
+      "period": 5,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": true
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "Paramount+"
+       ]
+      }
+     ],
+     "details": [
+      {
+       "id": "22011",
+       "type": {
+        "id": "23",
+        "text": "Results"
+       }
+      },
+      {
+       "id": "22010",
+       "type": {
+        "id": "21",
+        "text": "Unofficial Winner Kotko"
+       }
+      },
+      {
+       "id": "21996",
+       "type": {
+        "id": "19",
+        "text": "Fight Over"
+       }
+      },
+      {
+       "id": "21995",
+       "type": {
+        "id": "18",
+        "text": "Round End"
+       }
+      },
+      {
+       "id": "21994",
+       "type": {
+        "id": "13",
+        "text": "Takedown"
+       }
+      },
+      {
+       "id": "21993",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      },
+      {
+       "id": "21992",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      },
+      {
+       "id": "21991",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      },
+      {
+       "id": "21990",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      },
+      {
+       "id": "21989",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 5
+      }
+     },
+     "startDate": "2026-09-27T00:00Z",
+     "broadcast": "Paramount+",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "4",
+        "shortName": "Streaming"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "Paramount+"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    }
+   ],
+   "links": [
+    {
+     "language": "en-US",
+     "rel": [
+      "summary",
+      "desktop",
+      "event"
+     ],
+     "href": "https://www.espn.com/mma/fightcenter/_/id/600061266/league/ufc",
+     "text": "Gamecast",
+     "shortText": "Gamecast",
+     "isExternal": false,
+     "isPremium": false
+    }
+   ],
+   "venues": [
+    {
+     "id": "6176",
+     "fullName": "Meta APEX",
+     "address": {
+      "city": "Las Vegas",
+      "state": "NV",
+      "country": "USA"
+     }
+    }
+   ],
+   "status": {
+    "type": {
+     "id": "3",
+     "name": "STATUS_FINAL",
+     "state": "post",
+     "completed": true,
+     "description": "Final",
+     "detail": "Final",
+     "shortDetail": "Final"
+    }
+   }
+  }
+ ],
+ "provider": {
+  "id": "100",
+  "name": "Draft Kings",
+  "displayName": "Draft Kings",
+  "priority": 1
+ }
+}

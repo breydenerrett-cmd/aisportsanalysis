@@ -1,0 +1,155 @@
+{
+ "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600061266/competitions/401914466?lang=en&region=us",
+ "id": "401914466",
+ "guid": "19a1fb5d-6c25-3665-ad8f-974506b42e09",
+ "uid": "s:3301~l:3321~e:600061266~c:401914466",
+ "description": "3 Rnd (5-5-5)",
+ "date": "2026-09-26T21:00Z",
+ "endDate": "2026-09-26T21:00Z",
+ "lastUpdated": "2026-09-30T22:27Z",
+ "type": {
+  "id": "970",
+  "text": "Bantamweight",
+  "abbreviation": "Bantamweight"
+ },
+ "timeValid": true,
+ "neutralSite": false,
+ "previewAvailable": false,
+ "recapAvailable": false,
+ "boxscoreAvailable": true,
+ "lineupAvailable": false,
+ "gamecastAvailable": true,
+ "playByPlayAvailable": true,
+ "conversationAvailable": true,
+ "commentaryAvailable": false,
+ "pickcenterAvailable": false,
+ "summaryAvailable": true,
+ "liveAvailable": false,
+ "ticketsAvailable": false,
+ "shotChartAvailable": false,
+ "timeoutsAvailable": false,
+ "possessionArrowAvailable": false,
+ "onWatchESPN": false,
+ "recent": false,
+ "bracketAvailable": false,
+ "wallclockAvailable": true,
+ "highlightsAvailable": false,
+ "gameSource": {
+  "id": "2",
+  "description": "feed",
+  "state": "full"
+ },
+ "boxscoreSource": {
+  "id": "0",
+  "description": "none",
+  "state": "none"
+ },
+ "playByPlaySource": {
+  "id": "0",
+  "description": "none",
+  "state": "none"
+ },
+ "linescoreSource": {
+  "id": "2",
+  "description": "feed",
+  "state": "full"
+ },
+ "statsSource": {
+  "id": "0",
+  "description": "none",
+  "state": "none"
+ },
+ "venue": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/venues/6176?lang=en&region=us",
+  "id": "6176",
+  "guid": "08fe13ed-19a1-3a27-a881-ac68e83f363f",
+  "fullName": "Meta APEX",
+  "address": {
+   "city": "Las Vegas",
+   "state": "NV",
+   "country": "USA"
+  },
+  "grass": false,
+  "indoor": true
+ },
+ "competitors": [
+  {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600061266/competitions/401914466/competitors/3922491?lang=en&region=us",
+   "id": "3922491",
+   "uid": "s:3301~a:3922491",
+   "type": "athlete",
+   "order": 2,
+   "winner": false,
+   "athlete": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/3922491?lang=en&region=us"
+   },
+   "statistics": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600061266/competitions/401914466/competitors/3922491/statistics?lang=en&region=us"
+   },
+   "record": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/3922491/records?lang=en&region=us"
+   }
+  },
+  {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600061266/competitions/401914466/competitors/4339130?lang=en&region=us",
+   "id": "4339130",
+   "uid": "s:3301~a:4339130",
+   "type": "athlete",
+   "order": 1,
+   "winner": true,
+   "athlete": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/4339130?lang=en&region=us"
+   },
+   "statistics": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600061266/competitions/401914466/competitors/4339130/statistics?lang=en&region=us"
+   },
+   "record": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/4339130/records?lang=en&region=us"
+   }
+  }
+ ],
+ "status": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600061266/competitions/401914466/status?lang=en&region=us"
+ },
+ "odds": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600061266/competitions/401914466/odds?lang=en&region=us"
+ },
+ "broadcasts": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600061266/competitions/401914466/broadcasts?lang=en&region=us"
+ },
+ "officials": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600061266/competitions/401914466/officials?lang=en&region=us"
+ },
+ "details": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600061266/competitions/401914466/plays?lang=en&region=us"
+ },
+ "links": [
+  {
+   "language": "en-US",
+   "rel": [
+    "summary",
+    "desktop",
+    "competition"
+   ],
+   "href": "https://www.espn.com/mma/fightcenter/_/id/600061266/league/ufc/fightId/401914466",
+   "text": "Fightcenter",
+   "shortText": "FightCenter",
+   "isExternal": false,
+   "isPremium": false
+  }
+ ],
+ "format": {
+  "regulation": {
+   "periods": 3,
+   "displayName": "Round",
+   "slug": "round",
+   "clock": 300.0
+  }
+ },
+ "matchNumber": 10,
+ "cardSegment": {
+  "id": "174",
+  "description": "Prelims",
+  "name": "prelims1"
+ }
+}

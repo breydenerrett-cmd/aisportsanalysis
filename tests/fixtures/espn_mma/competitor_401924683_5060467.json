@@ -1,0 +1,17 @@
+{
+ "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600061266/competitions/401924683/competitors/5060467?lang=en&region=us",
+ "id": "5060467",
+ "uid": "s:3301~a:5060467",
+ "type": "athlete",
+ "order": 2,
+ "winner": false,
+ "athlete": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/5060467?lang=en&region=us"
+ },
+ "statistics": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600061266/competitions/401924683/competitors/5060467/statistics?lang=en&region=us"
+ },
+ "record": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/5060467/records?lang=en&region=us"
+ }
+}

@@ -1,0 +1,22 @@
+{
+ "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600061266/competitions/401911630/status?lang=en&region=us",
+ "clock": 98.0,
+ "displayClock": "1:38",
+ "period": 5,
+ "type": {
+  "id": "3",
+  "name": "STATUS_FINAL",
+  "state": "post",
+  "completed": true,
+  "description": "Final",
+  "detail": "Final",
+  "shortDetail": "Final"
+ },
+ "result": {
+  "id": 356,
+  "name": "kotko",
+  "displayName": "KO/TKO",
+  "shortDisplayName": "KO/TKO"
+ },
+ "featured": true
+}

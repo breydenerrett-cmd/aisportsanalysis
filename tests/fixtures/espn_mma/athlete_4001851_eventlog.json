@@ -1,0 +1,311 @@
+{
+ "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/4001851/eventlog?lang=en&region=us",
+ "events": {
+  "count": 31,
+  "pageIndex": 1,
+  "pageSize": 25,
+  "pageCount": 2,
+  "items": [
+   {
+    "event": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600061182?lang=en&region=us"
+    },
+    "competition": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600061182/competitions/401912275?lang=en&region=us"
+    },
+    "competitor": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600061182/competitions/401912275/competitors/4001851?lang=en&region=us"
+    },
+    "played": false
+   },
+   {
+    "event": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600056375?lang=en&region=us"
+    },
+    "competition": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600056375/competitions/401831778?lang=en&region=us"
+    },
+    "competitor": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600056375/competitions/401831778/competitors/4001851?lang=en&region=us"
+    },
+    "played": true
+   },
+   {
+    "event": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600053891?lang=en&region=us"
+    },
+    "competition": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600053891/competitions/401773313?lang=en&region=us"
+    },
+    "competitor": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600053891/competitions/401773313/competitors/4001851?lang=en&region=us"
+    },
+    "played": true
+   },
+   {
+    "event": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600051448?lang=en&region=us"
+    },
+    "competition": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600051448/competitions/401734557?lang=en&region=us"
+    },
+    "competitor": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600051448/competitions/401734557/competitors/4001851?lang=en&region=us"
+    },
+    "played": true
+   },
+   {
+    "event": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600033395?lang=en&region=us"
+    },
+    "competition": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600033395/competitions/401542799?lang=en&region=us"
+    },
+    "competitor": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600033395/competitions/401542799/competitors/4001851?lang=en&region=us"
+    },
+    "played": true
+   },
+   {
+    "event": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600027407?lang=en&region=us"
+    },
+    "competition": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600027407/competitions/401518023?lang=en&region=us"
+    },
+    "competitor": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600027407/competitions/401518023/competitors/4001851?lang=en&region=us"
+    },
+    "played": true
+   },
+   {
+    "event": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600020487?lang=en&region=us"
+    },
+    "competition": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600020487/competitions/401443596?lang=en&region=us"
+    },
+    "competitor": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600020487/competitions/401443596/competitors/4001851?lang=en&region=us"
+    },
+    "played": true
+   },
+   {
+    "event": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600010587?lang=en&region=us"
+    },
+    "competition": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600010587/competitions/401364825?lang=en&region=us"
+    },
+    "competitor": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600010587/competitions/401364825/competitors/4001851?lang=en&region=us"
+    },
+    "played": true
+   },
+   {
+    "event": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600005882?lang=en&region=us"
+    },
+    "competition": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600005882/competitions/401322539?lang=en&region=us"
+    },
+    "competitor": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600005882/competitions/401322539/competitors/4001851?lang=en&region=us"
+    },
+    "played": true
+   },
+   {
+    "event": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600004560?lang=en&region=us"
+    },
+    "competition": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600004560/competitions/401311714?lang=en&region=us"
+    },
+    "competitor": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600004560/competitions/401311714/competitors/4001851?lang=en&region=us"
+    },
+    "played": true
+   },
+   {
+    "event": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600000500?lang=en&region=us"
+    },
+    "competition": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600000500/competitions/401261033?lang=en&region=us"
+    },
+    "competitor": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600000500/competitions/401261033/competitors/4001851?lang=en&region=us"
+    },
+    "played": true
+   },
+   {
+    "event": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/401220846?lang=en&region=us"
+    },
+    "competition": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/401220846/competitions/401222895?lang=en&region=us"
+    },
+    "competitor": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/401220846/competitions/401222895/competitors/4001851?lang=en&region=us"
+    },
+    "played": true
+   },
+   {
+    "event": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/401131743?lang=en&region=us"
+    },
+    "competition": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/401131743/competitions/272940?lang=en&region=us"
+    },
+    "competitor": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/401131743/competitions/272940/competitors/4001851?lang=en&region=us"
+    },
+    "played": true
+   },
+   {
+    "event": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/401129395?lang=en&region=us"
+    },
+    "competition": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/401129395/competitions/266535?lang=en&region=us"
+    },
+    "competitor": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/401129395/competitions/266535/competitors/4001851?lang=en&region=us"
+    },
+    "played": true
+   },
+   {
+    "event": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/401011307?lang=en&region=us"
+    },
+    "competition": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/401011307/competitions/245018?lang=en&region=us"
+    },
+    "competitor": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/401011307/competitions/245018/competitors/4001851?lang=en&region=us"
+    },
+    "played": true
+   },
+   {
+    "event": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/400972120?lang=en&region=us"
+    },
+    "competition": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/400972120/competitions/241384?lang=en&region=us"
+    },
+    "competitor": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/400972120/competitions/241384/competitors/4001851?lang=en&region=us"
+    },
+    "played": true
+   },
+   {
+    "event": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/400948306?lang=en&region=us"
+    },
+    "competition": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/400948306/competitions/234734?lang=en&region=us"
+    },
+    "competitor": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/400948306/competitions/234734/competitors/4001851?lang=en&region=us"
+    },
+    "played": true
+   },
+   {
+    "event": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/400901159?lang=en&region=us"
+    },
+    "competition": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/400901159/competitions/230163?lang=en&region=us"
+    },
+    "competitor": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/400901159/competitions/230163/competitors/4001851?lang=en&region=us"
+    },
+    "played": true
+   },
+   {
+    "event": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/400879557?lang=en&region=us"
+    },
+    "competition": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/400879557/competitions/225976?lang=en&region=us"
+    },
+    "competitor": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/400879557/competitions/225976/competitors/4001851?lang=en&region=us"
+    },
+    "played": true
+   },
+   {
+    "event": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/other/events/400867129?lang=en&region=us"
+    },
+    "competition": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/other/events/400867129/competitions/223629?lang=en&region=us"
+    },
+    "competitor": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/other/events/400867129/competitions/223629/competitors/4001851?lang=en&region=us"
+    },
+    "played": true
+   },
+   {
+    "event": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/other/events/400867131?lang=en&region=us"
+    },
+    "competition": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/other/events/400867131/competitions/224499?lang=en&region=us"
+    },
+    "competitor": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/other/events/400867131/competitions/224499/competitors/4001851?lang=en&region=us"
+    },
+    "played": true
+   },
+   {
+    "event": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/other/events/400869706?lang=en&region=us"
+    },
+    "competition": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/other/events/400869706/competitions/224500?lang=en&region=us"
+    },
+    "competitor": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/other/events/400869706/competitions/224500/competitors/4001851?lang=en&region=us"
+    },
+    "played": true
+   },
+   {
+    "event": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/other/events/400876642?lang=en&region=us"
+    },
+    "competition": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/other/events/400876642/competitions/224501?lang=en&region=us"
+    },
+    "competitor": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/other/events/400876642/competitions/224501/competitors/4001851?lang=en&region=us"
+    },
+    "played": true
+   },
+   {
+    "event": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/other/events/400876643?lang=en&region=us"
+    },
+    "competition": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/other/events/400876643/competitions/224502?lang=en&region=us"
+    },
+    "competitor": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/other/events/400876643/competitions/224502/competitors/4001851?lang=en&region=us"
+    },
+    "played": true
+   },
+   {
+    "event": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/other/events/400876644?lang=en&region=us"
+    },
+    "competition": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/other/events/400876644/competitions/224503?lang=en&region=us"
+    },
+    "competitor": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/other/events/400876644/competitions/224503/competitors/4001851?lang=en&region=us"
+    },
+    "played": true
+   }
+  ]
+ }
+}

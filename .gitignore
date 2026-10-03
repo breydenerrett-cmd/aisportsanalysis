@@ -290,3 +290,8 @@ data/tennis_trial/
 # person wrote to the owner and who they are (handles, emails) live ONLY here, append-only.
 # docs/sales/outreach_queue.csv and pipeline.csv hold ids, channels, timestamps and reply types.
 data/private/
+
+# DATA SERVICE RAW CACHE (src/datasvc/http.py). Every fetched page, keyed by URL, so a re-run
+# never fetches it twice. Large and reproducible; the normalised files under data/datasvc/<sport>/
+# are what is tracked.
+data/datasvc/raw/

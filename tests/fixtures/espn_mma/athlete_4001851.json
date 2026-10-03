@@ -1,0 +1,183 @@
+{
+ "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/4001851?lang=en&region=us",
+ "id": "4001851",
+ "uid": "s:3301~a:4001851",
+ "guid": "43948b20-f9b7-6baf-532e-044bc82a5d80",
+ "firstName": "Marvin",
+ "lastName": "Vettori",
+ "fullName": "Marvin Vettori",
+ "displayName": "Marvin Vettori",
+ "nickname": "The Italian Dream",
+ "shortName": "M. Vettori",
+ "weight": 186.0,
+ "displayWeight": "186 lbs",
+ "height": 72.0,
+ "displayHeight": "6' 0\"",
+ "age": 33,
+ "dateOfBirth": "1993-09-20T07:00Z",
+ "gender": "MALE",
+ "links": [
+  {
+   "language": "en-US",
+   "rel": [
+    "playercard",
+    "desktop",
+    "athlete"
+   ],
+   "href": "https://www.espn.com/mma/fighter/_/id/4001851/marvin-vettori",
+   "text": "Player Card",
+   "shortText": "Player Card",
+   "isExternal": false,
+   "isPremium": false
+  },
+  {
+   "language": "en-US",
+   "rel": [
+    "stats",
+    "desktop",
+    "athlete"
+   ],
+   "href": "https://www.espn.com/mma/fighter/stats/_/id/4001851/marvin-vettori",
+   "text": "Stats",
+   "shortText": "Stats",
+   "isExternal": false,
+   "isPremium": false
+  },
+  {
+   "language": "en-US",
+   "rel": [
+    "news",
+    "desktop",
+    "athlete"
+   ],
+   "href": "https://www.espn.com/mma/fighter/news/_/id/4001851/marvin-vettori",
+   "text": "News",
+   "shortText": "News",
+   "isExternal": false,
+   "isPremium": false
+  },
+  {
+   "language": "en-US",
+   "rel": [
+    "bio",
+    "desktop",
+    "athlete"
+   ],
+   "href": "https://www.espn.com/mma/fighter/bio/_/id/4001851/marvin-vettori",
+   "text": "Bio",
+   "shortText": "Bio",
+   "isExternal": false,
+   "isPremium": false
+  },
+  {
+   "language": "en-US",
+   "rel": [
+    "overview",
+    "desktop",
+    "athlete"
+   ],
+   "href": "https://www.espn.com/mma/fighter/_/id/4001851/marvin-vettori",
+   "text": "Overview",
+   "shortText": "Overview",
+   "isExternal": false,
+   "isPremium": false
+  },
+  {
+   "language": "en-US",
+   "rel": [
+    "history",
+    "desktop",
+    "athlete"
+   ],
+   "href": "https://www.espn.com/mma/fighter/history/_/id/4001851/marvin-vettori",
+   "text": "Fight History",
+   "shortText": "Fight History",
+   "isExternal": false,
+   "isPremium": false
+  }
+ ],
+ "citizenship": "Italy",
+ "citizenshipCountry": {
+  "alternateId": "105",
+  "abbreviation": "ITA",
+  "color": "#CD212A",
+  "alternateColor": "#008C45"
+ },
+ "slug": "marvin-vettori",
+ "headshot": {
+  "href": "https://a.espncdn.com/i/headshots/mma/players/full/4001851.png",
+  "alt": "Marvin Vettori"
+ },
+ "flag": {
+  "href": "https://a.espncdn.com/i/teamlogos/countries/500/ita.png",
+  "alt": "Italy",
+  "rel": [
+   "country-flag"
+  ]
+ },
+ "linked": true,
+ "statistics": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/4001851/statistics?lang=en&region=us"
+ },
+ "records": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/4001851/records?lang=en&region=us"
+ },
+ "active": true,
+ "eventLog": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/4001851/eventlog?lang=en&region=us"
+ },
+ "status": {
+  "id": "1",
+  "name": "Active",
+  "type": "active",
+  "abbreviation": "Active"
+ },
+ "leagues": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/4001851/leagues?lang=en&region=us"
+ },
+ "defaultLeague": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc?lang=en&region=us"
+ },
+ "reach": 74.0,
+ "displayReach": "74\"",
+ "weightClass": {
+  "id": "972",
+  "text": "Middleweight",
+  "shortName": "Middleweight",
+  "slug": "middleweight"
+ },
+ "stance": {
+  "id": "76",
+  "text": "Southpaw"
+ },
+ "association": {
+  "id": "25",
+  "name": "American Top Team",
+  "location": {
+   "country": "Italy"
+  }
+ },
+ "styles": [
+  {
+   "id": "21",
+   "text": "Brazilian Jiu-Jitsu"
+  }
+ ],
+ "images": [
+  {
+   "href": "https://a.espncdn.com/i/headshots/mma/players/stance/left/4001851.png",
+   "rel": [
+    "leftStance"
+   ]
+  },
+  {
+   "href": "https://a.espncdn.com/i/headshots/mma/players/stance/right/4001851.png",
+   "rel": [
+    "rightStance"
+   ]
+  }
+ ],
+ "ranks": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/4001851/ranks?lang=en&region=us"
+ }
+}
