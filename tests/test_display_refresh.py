@@ -302,24 +302,27 @@ class NeverAWorseStoreThanTheOneItStartedWith(Base):
         self.assertEqual(report["steps"]["standings"]["status"], "ok")
         self.assertFalse((self.root / ".refresh_work").exists())
 
-    def test_a_copy_that_shrank_is_refused(self):
+    def test_a_season_the_api_answers_with_nothing_is_never_replaced_by_an_empty_marker(self):
         """An API hiccup that answers every game log with nothing would replace
-        a starter's whole season with an empty marker. That is a shrink, and the
-        committed copy wins."""
+        a starter's whole season with an empty marker. The committed season
+        wins. (Until 2026-10-03 the whole copy was refused when the TOTAL
+        shrank; that let a loss through whenever other pitchers grew the total,
+        see tests/test_display_refresh_keys.py. Now the key keeps its records
+        and the rest of the copy is promoted.)"""
         # 111 is tonight's announced starter, so he WILL be re-fetched; he has a
-        # real season on file, so an empty answer is a visible shrink.
+        # real season on file, so an empty answer would be a visible loss.
         season = [{"person_id": 111, "date": f"2026-{m:02d}-{d:02d}", "season": "2026",
                    "games_started": 1, "innings_pitched": 5.0, "earned_runs": 1}
                   for m in range(4, 10) for d in range(1, 29)]
         pitchers.write_logs({"111": season}, self.hist / "pitcher_logs.jsonl")
-        before = _sha(self.hist / "pitcher_logs.jsonl")
         self.fake.game_logs = {}          # every log now comes back empty
         report = self.run_refresh(only=["pitchers"])
         self.assertEqual(report["steps"]["pitchers"]["fetched"], 2)       # it did try
-        self.assertEqual(_sha(self.hist / "pitcher_logs.jsonl"), before)
-        kept = [k for k in report["kept"] if k["file"] == "pitcher_logs.jsonl"]
-        self.assertEqual(len(kept), 1)
-        self.assertIn("fewer rows", kept[0]["reason"])
+        stored = pitchers.read_logs(self.hist / "pitcher_logs.jsonl")
+        self.assertEqual([a["date"] for a in stored["111"] if a.get("date")],
+                         [a["date"] for a in season])
+        self.assertEqual([r["keys"] for r in report["restored"]], [1])
+        self.assertEqual(report["restored"][0]["rows"], len(season))
 
     def test_promote_refuses_a_shrunk_or_unparseable_copy_directly(self):
         work, dest = self.root / "w.jsonl", self.hist / "bullpen_log.jsonl"
@@ -377,8 +380,12 @@ class YesterdayIsRefetchedWhole(Base):
 
     def test_a_game_that_was_in_progress_at_the_last_fetch_is_not_lost_or_doubled(self):
         # The log holds ONE of yesterday's rows (the fetch near midnight saw one
-        # game finished). Yesterday has two finals now.
-        partial = {"date": YESTERDAY, "game_pk": 13, "team": "NYY", "person_id": 9013,
+        # game finished). Yesterday has two finals now, and the one the log had
+        # is the same game (pk 31): the row is REPLACED by the final one, not
+        # kept beside it. (It used to name a game, pk 13, that the feed no
+        # longer lists for that date; a committed record the re-fetch does not
+        # return is kept since 2026-10-03, see tests/test_display_refresh_keys.py.)
+        partial = {"date": YESTERDAY, "game_pk": 31, "team": "NYY", "person_id": 9031,
                    "name": "Late Arm", "started": False, "innings": 1.0, "pitches": 15}
         with (self.hist / "bullpen_log.jsonl").open("a", encoding="utf-8") as handle:
             handle.write(json.dumps(partial, sort_keys=True) + "\n")

@@ -571,8 +571,267 @@ def _validate(path: Path) -> Optional[str]:
     return None
 
 
+# ---------------------------------------------------------------------------
+# Per-key promotion: no key may lose a row
+# ---------------------------------------------------------------------------
+#
+# "The copy has not shrunk" compares TOTALS, and a total hides a loss: an empty
+# answer from the API for ONE pitcher replaces his whole season with an empty
+# marker (`pitchers.build_log_store` replaces every row a successful fetch
+# covers), and the store still grows overall because other pitchers gained
+# rows. The same shape exists for the one date the bullpen and standings steps
+# re-fetch whole. So a copy is checked KEY BY KEY against the committed one
+# before it is promoted: a key is a pitcher-season, a date, a game or a player
+# as the store defines it, and a key LOSES a row when the committed copy has a
+# record under it that the refreshed copy does not.
+#
+# For a key that would lose rows the promoted copy holds the UNION of the two:
+# every committed record under that key, plus whatever the refresh added there.
+# (Not "the committed rows instead": a pitcher whose refreshed answer is missing
+# one old start still gets his new starts.) What a record IS, per store, is
+# `ident`: bookkeeping markers are not records and are never "lost" -- an
+# empty-day marker next to real rows would say the day had no games, and a
+# refresh marker on an empty answer would say a pitcher had just been checked.
+# An answer that carried records writes its own marker; an answer that carried
+# none never replaces the committed one, so the next run asks again.
+#
+# The repair is made on the WORK copy (which a later step may still read) and
+# the committed file is only ever read. What was kept is reported
+# (`kept_committed`) and logged. The Savant arsenal leaderboards are the one
+# exception to the union: their rows are shares of one whole snapshot, so a
+# union of two snapshots would double-count; a player who lost rows keeps the
+# committed rows instead.
+
+MAX_KEPT_EXAMPLES = 5
+
+
+def _write_text_atomic(path: Path, text: str) -> None:
+    tmp = path.with_name(path.name + ".repair.tmp")
+    try:
+        with tmp.open("w", encoding="utf-8", newline="\n") as handle:
+            handle.write(text)
+        os.replace(tmp, path)
+    finally:
+        tmp.unlink(missing_ok=True)
+
+
+def _read_jsonl_pairs(path: Path, key_fn, ident, is_marker):
+    """([(line, key)] in file order, {key: [(line, identity, is_marker)]}). A
+    line that does not parse, or has no key, is carried with key None. The
+    parsed row is dropped at once: only the line and its identity are kept, so
+    the bullpen log (60,000 rows) costs its text, not its dicts."""
+    sequence, groups = [], {}
+    with path.open(encoding="utf-8") as handle:
+        for raw in handle:
+            text = raw.strip()
+            if not text:
+                continue
+            line = raw if raw.endswith("\n") else raw + "\n"
+            try:
+                row = json.loads(text)
+            except json.JSONDecodeError:
+                row = None
+            key = key_fn(row) if isinstance(row, dict) else None
+            sequence.append((line, key))
+            if key is not None:
+                groups.setdefault(key, []).append((line, ident(row), is_marker(row)))
+    return sequence, groups
+
+
+def _union_for_key(committed, refreshed):
+    """(triples, restored_count): the union for one key, markers per the rules
+    in the section comment above. `restored_count` is how many committed
+    records the refreshed copy was missing."""
+    fresh = [t for t in refreshed if not t[2]]
+    have = {t[1] for t in fresh}
+    extra = [t for t in committed if not t[2] and t[1] not in have]
+    markers_fresh = [t for t in refreshed if t[2]]
+    markers_committed = [t for t in committed if t[2]]
+    if fresh:
+        markers = markers_fresh
+    elif extra:
+        markers = markers_committed
+    else:
+        markers = markers_fresh or markers_committed
+    return fresh + extra + markers, len(extra)
+
+
+def _restore_jsonl(work: Path, committed: Path, key_fn, ident, is_marker) -> Optional[dict]:
+    work_sequence, work_groups = _read_jsonl_pairs(work, key_fn, ident, is_marker)
+    _, committed_groups = _read_jsonl_pairs(committed, key_fn, ident, is_marker)
+    lost = []
+    for key, triples in committed_groups.items():
+        before = {t[1] for t in triples if not t[2]}
+        after = {t[1] for t in work_groups.get(key, ()) if not t[2]}
+        if before - after:
+            lost.append(key)
+    if not lost:
+        return None
+    lost_set, restored = set(lost), 0
+    lines = [line for line, key in work_sequence if key not in lost_set]
+    for key in lost:
+        triples, count = _union_for_key(committed_groups[key], work_groups.get(key, []))
+        lines.extend(t[0] for t in triples)
+        restored += count
+    _write_text_atomic(work, "".join(lines))
+    return {"keys": [str(k) for k in lost], "rows": restored}
+
+
+def _pitcher_key(row):
+    person = row.get("person_id")
+    if person is None:
+        return None
+    return f"{person}:{row.get('season') or str(row.get('date') or '')[:4]}"
+
+
+def _pitcher_ident(row):
+    """One appearance: the date, and whether he started (a start and a relief
+    outing on one date are two records). Never raises on a malformed field."""
+    try:
+        started = int(row.get("games_started") or 0)
+    except (TypeError, ValueError):
+        started = 0
+    return (str(row.get("date")), started)
+
+
+def _pitcher_marker(row) -> bool:
+    return row.get("date") is None
+
+
+def _restore_pitchers(work: Path, committed: Path) -> Optional[dict]:
+    from src.pipeline import pitchers
+    report = _restore_jsonl(work, committed, _pitcher_key, _pitcher_ident, _pitcher_marker)
+    if report:
+        # Back to the canonical layout (grouped by pitcher, by date within):
+        # the repair appended the restored keys at the end of the file.
+        pitchers.write_logs(pitchers.read_logs(work), work)
+    return report
+
+
+def _bullpen_key(row):
+    return str(row["date"]) if row.get("date") else None
+
+
+def _bullpen_ident(row):
+    return (str(row.get("game_pk")), str(row.get("person_id")))
+
+
+def _bullpen_marker(row) -> bool:
+    return bool(row.get("empty")) or row.get("person_id") is None
+
+
+def _standings_key(row):
+    return str(row["date"]) if row.get("date") else None
+
+
+def _standings_ident(row):
+    return str(row.get("team_abbrev") or row.get("team_id"))
+
+
+def _transactions_key(row):
+    day = str(row.get("filed_date") or row.get("date") or "")[:10]
+    return day or None
+
+
+def _never_a_marker(row) -> bool:
+    return False
+
+
+def _restore_results(work: Path, committed: Path) -> Optional[dict]:
+    from src.pipeline import history
+    held, kept = history.read_results(work), history.read_results(committed)
+    lost = [pk for pk in kept if pk not in held]
+    if not lost:
+        return None
+    for pk in lost:
+        held[pk] = kept[pk]
+    history.write_results(held, work)
+    return {"keys": lost, "rows": len(lost)}
+
+
+def _restore_dict(work: Path, committed: Path, wrap: Optional[str]) -> Optional[dict]:
+    """A JSON object keyed by pitcher, player or date. `wrap` names the one
+    inner object when the keys live under a field (the results manifest's
+    `dates`)."""
+    def load(path):
+        data = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(data, dict):
+            raise ValueError(f"{path.name} is not an object")
+        inner = data[wrap] if wrap and isinstance(data.get(wrap), dict) else data
+        return data, inner
+
+    data, held = load(work)
+    _, kept = load(committed)
+    lost = [k for k in kept if k not in held]
+    if not lost:
+        return None
+    for key in lost:
+        held[key] = kept[key]
+    _write_text_atomic(work, json.dumps(data, indent=1, sort_keys=True))
+    return {"keys": [str(k) for k in lost], "rows": len(lost)}
+
+
+def _restore_arsenal(work: Path, committed: Path) -> Optional[dict]:
+    def load(path):
+        data = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(data, dict) or not isinstance(data.get("rows"), list):
+            raise ValueError(f"{path.name} has no rows")
+        return data
+
+    def by_player(rows):
+        out = {}
+        for row in rows:
+            out.setdefault(str(row.get("player_id")), []).append(row)
+        return out
+
+    data, kept = load(work), load(committed)
+    held_by, kept_by = by_player(data["rows"]), by_player(kept["rows"])
+    lost = []
+    for player, rows in kept_by.items():
+        before = {str(r.get("pitch_type")) for r in rows}
+        after = {str(r.get("pitch_type")) for r in held_by.get(player, ())}
+        if before - after:
+            lost.append(player)
+    if not lost:
+        return None
+    lost_set = set(lost)
+    data["rows"] = ([r for r in data["rows"] if str(r.get("player_id")) not in lost_set]
+                    + [r for p in lost for r in kept_by[p]])
+    _write_text_atomic(work, json.dumps(data, sort_keys=True))
+    return {"keys": lost, "rows": sum(len(kept_by[p]) for p in lost)}
+
+
+# destination file name -> repair(work, committed) -> None | {"keys", "rows"}
+KEYED_STORES: dict = {
+    "pitcher_logs.jsonl": _restore_pitchers,
+    "bullpen_log.jsonl": lambda w, c: _restore_jsonl(
+        w, c, _bullpen_key, _bullpen_ident, _bullpen_marker),
+    "standings.jsonl": lambda w, c: _restore_jsonl(
+        w, c, _standings_key, _standings_ident, _never_a_marker),
+    "transactions.jsonl": lambda w, c: _restore_jsonl(
+        w, c, _transactions_key, lambda r: str(r.get("transaction_id")), _never_a_marker),
+    "mlb_results.csv": _restore_results,
+    "mlb_results.manifest.json": lambda w, c: _restore_dict(w, c, "dates"),
+    "pitcher_splits.json": lambda w, c: _restore_dict(w, c, None),
+    "handedness.json": lambda w, c: _restore_dict(w, c, None),
+}
+
+
+def _keyed_repair(dest: Path):
+    """The repair for this destination, or None. The arsenal leaderboards are
+    named by season (`arsenals/pitcher_2026.json`), so they match on their
+    directory."""
+    found = KEYED_STORES.get(dest.name)
+    if found is None and dest.parent.name == "arsenals" and dest.suffix == ".json":
+        found = _restore_arsenal
+    return found
+
+
 def _promote(work_file: Path, dest: Path, kind: str) -> dict:
-    """Move one finished copy over its original if it is sound and not worse."""
+    """Move one finished copy over its original if it is sound and not worse.
+
+    "Not worse" is checked per key first (no key may lose a record; see the
+    section above) and by total second."""
     if not work_file.exists():
         return {"file": dest.name, "promoted": False, "reason": "step produced no file"}
     problem = _validate(work_file)
@@ -580,6 +839,18 @@ def _promote(work_file: Path, dest: Path, kind: str) -> dict:
         return {"file": dest.name, "promoted": False, "reason": f"copy does not parse: {problem}"}
     if _sha(work_file) == _sha(dest):
         return {"file": dest.name, "promoted": False, "reason": "unchanged"}
+    kept_committed = None
+    repair = _keyed_repair(dest)
+    if repair is not None and dest.exists() and _validate(dest) is None:
+        try:
+            kept_committed = repair(work_file, dest)
+        except Exception as exc:  # noqa: BLE001 -- a copy that cannot be checked is not promoted
+            return {"file": dest.name, "promoted": False,
+                    "reason": (f"could not check the copy against the committed one "
+                               f"({type(exc).__name__}: {exc}); kept the committed copy")}
+        if kept_committed is not None and _sha(work_file) == _sha(dest):
+            return {"file": dest.name, "promoted": False, "reason": "unchanged",
+                    "kept_committed": _kept_summary(kept_committed)}
     before, after = _rows(dest), _rows(work_file)
     if before is not None and after is not None and kind != "manifest":
         floor = before * (1.0 - PITCHER_SHRINK_TOLERANCE) if kind == "pitcher" else before
@@ -587,7 +858,15 @@ def _promote(work_file: Path, dest: Path, kind: str) -> dict:
             return {"file": dest.name, "promoted": False, "rows_before": before, "rows_after": after,
                     "reason": "copy has fewer rows than the committed one; kept the committed copy"}
     _atomic_replace(work_file, dest)
-    return {"file": dest.name, "promoted": True, "rows_before": before, "rows_after": after}
+    out = {"file": dest.name, "promoted": True, "rows_before": before, "rows_after": after}
+    if kept_committed is not None:
+        out["kept_committed"] = _kept_summary(kept_committed)
+    return out
+
+
+def _kept_summary(found: dict) -> dict:
+    keys = found["keys"]
+    return {"keys": len(keys), "rows": found["rows"], "examples": keys[:MAX_KEPT_EXAMPLES]}
 
 
 # ---------------------------------------------------------------------------
@@ -608,7 +887,8 @@ def refresh(root=None, *, now=None, max_seconds: float = DEFAULT_MAX_SECONDS,
     wanted = [s for s in STEP_ORDER if only is None or s in set(only)]
     started = clock()
     report: dict = {"started_utc": moment.isoformat(), "baseball_date": today,
-                    "steps": {}, "promoted": [], "kept": [], "skipped_reason": None}
+                    "steps": {}, "promoted": [], "kept": [], "restored": [],
+                    "skipped_reason": None}
 
     before = store_freshness.report(data_root, moment)
     report["before"] = _summary(before)
@@ -678,6 +958,15 @@ def refresh(root=None, *, now=None, max_seconds: float = DEFAULT_MAX_SECONDS,
             for p in promotions:
                 (report["promoted"] if p["promoted"] else report["kept"]).append(
                     {"step": name, **p})
+                if p.get("kept_committed"):
+                    # A key that would have lost records kept them. Say so: a
+                    # refresh that quietly rewrote a pitcher's season is the
+                    # failure this exists to make visible.
+                    found = p["kept_committed"]
+                    report["restored"].append({"step": name, "file": p["file"], **found})
+                    log(f"  {name:<12} kept committed records for {found['keys']} key(s) "
+                        f"in {p['file']} ({found['rows']} record(s)): "
+                        + ", ".join(found["examples"]))
             report["steps"][name] = entry
             log(f"  {name:<12} {entry['status']:<7} {entry['seconds']:>6.1f}s  "
                 + ", ".join(f"{p['file']}:{'PROMOTED' if p['promoted'] else p['reason']}" for p in promotions))
