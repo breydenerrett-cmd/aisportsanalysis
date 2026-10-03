@@ -3023,3 +3023,4 @@
 {"category": "other", "date": "2026-10-03", "first_seen_utc": "2026-10-03T16:25:08.511839+00:00", "player": "Bryse Wilson", "player_id": 669060, "team": "MIL", "transaction_id": 944985}
 {"category": "other", "date": "2026-10-03", "first_seen_utc": "2026-10-03T16:25:08.511839+00:00", "player": "Walker Buehler", "player_id": 621111, "team": "SD", "transaction_id": 944986}
 {"category": "il_activation", "date": "2026-10-03", "first_seen_utc": "2026-10-03T16:25:08.511839+00:00", "player": "Randy V\u00e1squez", "player_id": 681190, "team": "SD", "transaction_id": 944987}
+{"fetched_utc": "2026-10-03T16:37:40.519795+00:00", "game_date": "2026-10-03", "poll": true}
