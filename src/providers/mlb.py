@@ -549,8 +549,20 @@ def fetch_results(game_date, timeout: float = DEFAULT_TIMEOUT) -> dict:
     }
 
 
-def fetch_pitcher_game_log(person_id, season, timeout: float = DEFAULT_TIMEOUT) -> list:
+def fetch_pitcher_game_log(person_id, season, timeout: float = DEFAULT_TIMEOUT,
+                           game_types=None) -> list:
     """Every pitching appearance for one player in one season, oldest first.
+
+    `game_types=None` (the default, and what every caller got before this
+    argument existed) sends the unchanged request: the API answers with the
+    REGULAR SEASON only, and the rows carry no `game_type` key. Passing a
+    collection of gameType codes (for example `DECISIVE_GAME_TYPES`) adds the
+    postseason to the answer -- verified live 2026-10-03 against a 2025
+    pitcher: the bare request ended at his last regular-season start and
+    `gameType=R,F,D,L,W` added his Wild Card and Division Series starts -- and
+    stamps every row with its `game_type`, so a reader can tell a postseason
+    start from a regular-season one and a training consumer can leave the
+    postseason out.
 
     This is the raw material for point-in-time pitcher stats. Season-to-date figures
     from the API include the whole season and would leak the future into past games;
@@ -560,9 +572,19 @@ def fetch_pitcher_game_log(person_id, season, timeout: float = DEFAULT_TIMEOUT) 
     legitimate answer -- a pitcher who missed the season through injury has no
     appearances, and that is different from a failed request.
     """
+    params = {"stats": "gameLog", "group": "pitching", "season": season}
+    if game_types:
+        # NEVER ask for "P" alongside the specific postseason codes. "P" is the
+        # API's aggregate "all postseason" type, so a request for F,D,L,W,P
+        # returns every postseason appearance TWICE -- once as its own round and
+        # once as P (verified live 2026-10-03: each 2026 Wild Card start came
+        # back as an F row and a P row). Doubled starts would double a
+        # starter's postseason innings in every season total built from the log.
+        requested = set(game_types) - {"P"} or set(game_types)
+        params["gameType"] = ",".join(sorted(requested))
     payload = _get_json(
         f"people/{person_id}/stats",
-        {"stats": "gameLog", "group": "pitching", "season": season},
+        params,
         timeout=timeout,
     )
     stats = payload.get("stats") or []
@@ -572,7 +594,7 @@ def fetch_pitcher_game_log(person_id, season, timeout: float = DEFAULT_TIMEOUT) 
     appearances = []
     for split in stats[0].get("splits") or []:
         stat = split.get("stat") or {}
-        appearances.append({
+        row = {
             "person_id": int(person_id),
             "date": split.get("date"),
             "season": str(season),
@@ -587,7 +609,10 @@ def fetch_pitcher_game_log(person_id, season, timeout: float = DEFAULT_TIMEOUT) 
             "home_runs": _as_int(stat.get("homeRuns")),
             "batters_faced": _as_int(stat.get("battersFaced")),
             "pitches": _as_int(stat.get("numberOfPitches")),
-        })
+        }
+        if game_types:
+            row["game_type"] = split.get("gameType") or GAME_TYPE_REGULAR
+        appearances.append(row)
     appearances.sort(key=lambda a: a.get("date") or "")
     return appearances
 

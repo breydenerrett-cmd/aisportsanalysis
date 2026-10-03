@@ -37,6 +37,10 @@ from __future__ import annotations
 
 from datetime import date, timedelta
 
+from src.providers import mlb as _mlb
+
+_TRAINING_GAME_TYPES = _mlb.TRAINING_GAME_TYPES
+
 # Feature windows. "Recent form" has no canonical length, so both a short and a medium
 # window are computed and the model decides which carries signal.
 FORM_WINDOWS = (5, 10)
@@ -326,8 +330,22 @@ def build_training_row(store, game, pitcher_logs=None,
 
 def build_training_table(store, min_date=None, max_date=None,
                          require_complete=True, pitcher_logs=None,
-                         require_pitchers=False) -> dict:
+                         require_pitchers=False,
+                         game_types=_TRAINING_GAME_TYPES) -> dict:
     """Build the full labelled table, oldest first.
+
+    `game_types` is which stored games may become a LABELLED ROW, and the
+    default is the regular season only (`mlb.TRAINING_GAME_TYPES`). The
+    results store is shared: since 2026-09-23 it also holds postseason games
+    (`ingest --game-types decisive`, so the public postseason page and the
+    card's grading can see October). Without this filter every one of those
+    games became a training row for `train`, the card calibration fit and
+    every backtest -- a different, selected population (best teams, aces
+    starting, no regular-season fatigue) wearing the same uniforms, which is
+    the contamination `TRAINING_GAME_TYPES` exists to prevent. The store keeps
+    the games; only the table leaves them out. A row with no `game_type` is
+    regular season (every row written before the column mattered). Pass
+    `game_types=None` to build over every stored game.
 
     `require_complete` drops rows where either side's sample is too thin for rates. Early
     April games have almost no history by construction, and including them trains the
@@ -337,7 +355,8 @@ def build_training_table(store, min_date=None, max_date=None,
     table is how a training set quietly stops representing the season.
     """
     rows, skipped = [], {"no_label": 0, "thin_sample": 0, "error": 0,
-                         "out_of_range": 0, "pitcher_unknown": 0}
+                         "out_of_range": 0, "pitcher_unknown": 0,
+                         "not_training_game_type": 0}
 
     # The FIP constant is season-level and expensive to derive per row, so it is
     # computed once against the end of the window. That is a deliberate and tiny
@@ -359,6 +378,9 @@ def build_training_table(store, min_date=None, max_date=None,
         game_date = game.get("date")
         if not game_date:
             skipped["error"] += 1
+            continue
+        if game_types is not None and (game.get("game_type") or "R") not in game_types:
+            skipped["not_training_game_type"] += 1
             continue
         if min_date and game_date < min_date:
             skipped["out_of_range"] += 1

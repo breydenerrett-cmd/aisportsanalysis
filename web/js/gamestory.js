@@ -84,6 +84,17 @@ function warnChip(text) {
   return el("span", { class: "pv-chip pv-chip--warn", text });
 }
 
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "June", "July", "Aug", "Sept", "Oct", "Nov", "Dec"];
+
+/** "2026-09-07" -> "Sept 7". Anything that is not an ISO date comes back
+ * as null, so the caller says "unknown" rather than printing junk. */
+function shortDate(iso) {
+  const m = typeof iso === "string" ? /^(\d{4})-(\d{2})-(\d{2})/.exec(iso) : null;
+  if (!m) return null;
+  const month = MONTHS[Number(m[2]) - 1];
+  return month ? `${month} ${Number(m[3])}` : null;
+}
+
 function panelHead(text) {
   return el("div", { class: "gs-panel__eyebrow", text });
 }
@@ -110,6 +121,12 @@ function starterColumn(section, side, teamAbbr, probable) {
   }
   const thin = section[`${side}_sp_thin`] === true;
   if (thin) col.appendChild(warnChip("THIN SAMPLE"));
+  // The pitcher log ends before this game: every number below is true only up
+  // to that date, and the days-rest figure counts from the log's last row, not
+  // from his last real start. Say so on the card.
+  const logStale = section.logs_stale === true;
+  const logEnds = shortDate(section.logs_through);
+  if (logStale) col.appendChild(warnChip(logEnds ? `PITCHER LOG ENDS ${logEnds.toUpperCase()}` : "PITCHER LOG DATE UNKNOWN"));
 
   const starts = section[`${side}_sp_starts`];
   const sample = typeof starts === "number" ? `${starts} starts` : null;
@@ -121,7 +138,9 @@ function starterColumn(section, side, teamAbbr, probable) {
   col.appendChild(grid);
 
   const rest = section[`${side}_sp_days_rest`];
-  col.appendChild(factRow("DAYS REST", typeof rest === "number" ? `${rest} day${rest === 1 ? "" : "s"}` : null));
+  col.appendChild(factRow("DAYS REST", typeof rest === "number"
+    ? `${rest} day${rest === 1 ? "" : "s"}${logStale && logEnds ? ` (counted from the log, which ends ${logEnds})` : ""}`
+    : null));
 
   const recentEra = section[`${side}_sp_recent_era`];
   const recentStarts = section[`${side}_sp_recent_starts`];
@@ -240,6 +259,18 @@ function bullpenColumn(teamAbbr, data) {
   }
   const windowDays = data.window_days;
   const count = data.reliever_count;
+  const pensEnd = shortDate(data.log_through);
+  if (data.log_stale === true) {
+    // The bullpen log stops before this game's window. "No relief appearances"
+    // or a short list here would describe the log, not the club.
+    col.appendChild(warnChip(pensEnd ? `BULLPEN LOG ENDS ${pensEnd.toUpperCase()}` : "BULLPEN LOG DATE UNKNOWN"));
+    if (!count) {
+      col.appendChild(el("p", { class: "gs-note",
+        text: `The bullpen log ends ${pensEnd || "on an unknown date"}; games since then are not in it, `
+            + "so recent relief use is unknown." }));
+      return col;
+    }
+  }
   if (!count) {
     // A real "no relief appearances in the window" state -- rendered
     // honestly as a sentence, never hidden and never a fabricated row.

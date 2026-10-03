@@ -312,6 +312,40 @@ def check_app_db(db_path: Optional[Path] = None) -> DbCheck:
     return DbCheck(reachable=True, path=str(resolved))
 
 
+def check_data_freshness(root: Path, now: datetime) -> dict:
+    """How current each store a page READS AT REQUEST TIME is, from outside.
+
+    Added 2026-10-03: the odds stores above were timed, but the results,
+    pitcher, bullpen and standings stores the computed pages read were not, and
+    the image carried copies up to four weeks old while every page rendered.
+    Per store: the newest date it covers (`through`), days behind yesterday
+    (Eastern), and whether that is past its tolerance
+    (src/pipeline/store_freshness.py). INFORMATIONAL: it never changes
+    `status`, because a 503 here takes the whole site out of rotation over a
+    stale input the page already labels (see `_only_checkout_is_broken`'s
+    reasoning). The deploy check and any uptime monitor read `core_stale`.
+
+    `guard` is the container's own refresher (src/pipeline/display_refresh.py):
+    whether it is on, when it last ran, and what it said.
+    """
+    try:
+        from src.pipeline import display_refresh, store_freshness
+        data = store_freshness.report(root, now)
+        return {
+            "baseball_date": data["baseball_date"],
+            "expected_through": data["expected_through"],
+            "core_stale": data["core_stale"],
+            "stale": data["stale"],
+            "oldest_core_through": data["oldest_through"],
+            "stores": {name: {"through": entry["through"], "lag_days": entry["lag_days"],
+                              "stale": entry["stale"], "reason": entry["reason"]}
+                       for name, entry in data["stores"].items()},
+            "guard": display_refresh.guard_status(),
+        }
+    except Exception as exc:  # noqa: BLE001 -- a health check must never be the thing that 500s
+        return {"error": f"could not evaluate data freshness: {type(exc).__name__}: {exc}"}
+
+
 def report(*, data_dir: Optional[Path] = None, db_path: Optional[Path] = None,
            now: Optional[datetime] = None) -> dict:
     """The full /health payload: process liveness, db reachability, the
@@ -401,6 +435,7 @@ def report(*, data_dir: Optional[Path] = None, db_path: Optional[Path] = None,
         "app_db": db.to_dict(),
         "odds": {ODDS_STORE_NAME: odds.to_dict()},
         "forward_captures": forward,
+        "data_freshness": check_data_freshness(root, now),
         "checkout": checkout,
         "reasons": reasons,
     }

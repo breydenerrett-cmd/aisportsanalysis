@@ -1,0 +1,27 @@
+--- a/.github/workflows/deploy-prod.yml
++++ b/.github/workflows/deploy-prod.yml
+@@ -59,7 +59,7 @@
+           ref: claude/sports-betting-analysis-review-g1o0co
+       - uses: superfly/flyctl-actions/setup-flyctl@master
+       - name: Deploy
+-        run: flyctl deploy -c deploy/fly.production.toml -a linehound-prod --remote-only --yes
++        run: flyctl deploy -c deploy/fly.production.toml -a linehound-prod --remote-only --yes --build-arg DATA_REFRESH_STAMP=$(date -u +%Y%m%d%H)
+         env:
+           FLY_API_TOKEN: ${{ secrets.FLY_PROD_API_TOKEN || secrets.FLY_ORG_TOKEN }}
+       # Same two-phase shape as deploy-staging.yml's own health check
+@@ -90,6 +90,15 @@
+             sleep 10
+           done
+           echo "up; now exercising the page path"
++          # The request-time stores (results, pitcher/bullpen logs, standings) are
++          # refreshed at image build and by the container's own guard; /health
++          # reports how current each is. A stale core store is a warning, never a
++          # failed deploy: the pages say what their data covers.
++          fresh=$(curl -s "$BASE/health" || echo '{}')
++          case "$fresh" in
++            *'"core_stale":[]'*) echo "data freshness: core stores current" ;;
++            *) echo "::warning::a core data store is stale on linehound-prod -- see data_freshness in /health" ;;
++          esac
+ 
+           ET=$(TZ=America/New_York date +%Y-%m-%d)
+           UTC=$(date -u +%Y-%m-%d)

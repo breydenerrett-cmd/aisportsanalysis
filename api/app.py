@@ -190,6 +190,28 @@ def _start_cache_warmup() -> None:
     warmup.start_background_warmup()
 
 
+# -- background data refresh -------------------------------------------------
+#
+# The pages read results / pitcher / bullpen / standings files in the image at
+# request time, and the image's copies are as old as the last commit that
+# touched them (src/pipeline/display_refresh.py's module docstring has the
+# whole story). The image build refreshes them (deploy/Dockerfile); this is
+# the second line: a daemon thread that re-checks them hourly and refreshes in
+# a memory-capped CHILD process only when a core store has gone stale. OFF
+# unless DISPLAY_REFRESH_GUARD_INTERVAL_SECONDS > 0 (the Dockerfile sets it),
+# so a test client or a laptop never starts one. Waits for the first cache
+# warm-up pass so the two never compete for the 1 GB machine.
+@app.on_event("startup")
+def _start_display_refresh_guard() -> None:
+    from src.pipeline import display_refresh
+
+    def _warm_up_done() -> bool:
+        status = warmup.status()
+        return (not status.get("enabled")) or int(status.get("passes_completed") or 0) >= 1
+
+    display_refresh.start_background_guard(ready=_warm_up_done)
+
+
 # -- request logging + structured 500s -------------------------------------
 #
 # One middleware does both jobs (a per-request log line, and turning an

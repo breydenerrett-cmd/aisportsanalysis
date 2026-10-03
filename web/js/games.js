@@ -296,13 +296,31 @@ function gqvTopStrip(quick, live) {
   return strip;
 }
 
+const RESULT_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "June", "July", "Aug", "Sept", "Oct", "Nov", "Dec"];
+
+/** "2026-09-23" -> "Sept 23"; null for anything that is not an ISO date. */
+function resultsDate(iso) {
+  const m = typeof iso === "string" ? /^(\d{4})-(\d{2})-(\d{2})/.exec(iso) : null;
+  const month = m ? RESULT_MONTHS[Number(m[2]) - 1] : null;
+  return month ? `${month} ${Number(m[3])}` : null;
+}
+
+/** "N games", plus the date the record is true to when the results store ends
+ * before this game -- a record is never shown without its date once that date
+ * is not "yesterday". */
+function gamesSample(teams, key) {
+  const n = teams && teams[`${key}_games_played`];
+  if (typeof n !== "number") return null;
+  const ends = teams.results_stale === true ? resultsDate(teams.results_through) : null;
+  return ends ? `${n} games \u00b7 results end ${ends}` : `${n} games`;
+}
+
 function teamRecordParts(teams, key) {
   if (!teams) return { text: null, sample: null };
   const w = teams[`${key}_wins`];
   const l = teams[`${key}_losses`];
-  const n = teams[`${key}_games_played`];
   const text = (typeof w === "number" && typeof l === "number") ? `${w}-${l}` : null;
-  const sample = typeof n === "number" ? `${n} games` : null;
+  const sample = gamesSample(teams, key);
   return { text, sample };
 }
 
@@ -722,8 +740,7 @@ function gqvTeams(advanced, quick) {
   }
   const grid = el("div", { class: "gqv-stats" });
   for (const [key, label] of [["away", quick.away_team], ["home", quick.home_team]]) {
-    const n = typeof teams[`${key}_games_played`] === "number"
-      ? `${teams[`${key}_games_played`]} games` : null;
+    const n = gamesSample(teams, key);
     const w = teams[`${key}_wins`];
     const l = teams[`${key}_losses`];
     grid.appendChild(gqvStatCell(`${label} RECORD`,

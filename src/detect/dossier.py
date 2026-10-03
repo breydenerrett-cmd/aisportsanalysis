@@ -70,6 +70,28 @@ class Dossier:
         }
 
 
+def _newest_date(days):
+    """Newest 'YYYY-MM-DD' among `days`, ignoring blanks and non-dates."""
+    best = None
+    for day in days:
+        text = str(day or "")[:10]
+        if len(text) == 10 and text[4] == "-" and text[7] == "-" and (best is None or text > best):
+            best = text
+    return best
+
+
+def _ends_before(through, date) -> bool:
+    """True when coverage `through` ends more than a day before `date` (or is
+    unknown). Pre-game, yesterday's games are the newest a store can hold."""
+    from datetime import date as _date
+    if not through:
+        return True
+    try:
+        return (_date.fromisoformat(str(date)[:10]) - _date.fromisoformat(through)).days > 1
+    except ValueError:
+        return True
+
+
 def build(game, store, pitcher_logs=None, prices=None, weather=None,
           lineups=None, bullpen=None, splits=None, matchups=None,
           travel=None, arsenals=None, news=None, matchup_depth=None,
@@ -83,7 +105,12 @@ def build(game, store, pitcher_logs=None, prices=None, weather=None,
     # Team form, point-in-time and season-scoped by the same accessor the model
     # uses -- nothing here reaches across the off-season or into the future.
     if store:
-        dossier.add("teams", team_features.matchup_features(store, away, home, date))
+        teams = dict(team_features.matchup_features(store, away, home, date))
+        # The records above are as old as the store. Say how old, on the data
+        # itself, so a page never shows "10-7" without the date it is true to.
+        teams["results_through"] = _newest_date(r.get("date") for r in store.values())
+        teams["results_stale"] = _ends_before(teams["results_through"], date)
+        dossier.add("teams", teams)
     else:
         dossier.miss("teams", "no historical results store")
 
@@ -107,9 +134,17 @@ def build(game, store, pitcher_logs=None, prices=None, weather=None,
         dossier.miss("standings", "standings not built for this date")
 
     if pitcher_logs:
-        dossier.add("starters", pitcher_features.matchup_pitcher_features(
+        starters = dict(pitcher_features.matchup_pitcher_features(
             pitcher_logs, game.get("away_probable_id"),
             game.get("home_probable_id"), date))
+        # "Days rest 14" was a log that ended two weeks before the game. The
+        # section now carries the date the log covers and whether that is too
+        # old to describe this game, so the page can say so instead.
+        logs_through = _newest_date(a.get("date") for rows in pitcher_logs.values()
+                                    for a in rows)
+        starters["logs_through"] = logs_through
+        starters["logs_stale"] = _ends_before(logs_through, date)
+        dossier.add("starters", starters)
     else:
         dossier.miss("starters", "no pitcher logs; run the pitcher log build")
 

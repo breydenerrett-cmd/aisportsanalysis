@@ -84,6 +84,37 @@ COPY data/research/alpha_registry.jsonl data/research/alpha_registry.jsonl
 # store as a stated gap -- the page degrades, it does not break.
 COPY data/historical/ data/historical/
 
+# BRING THE REQUEST-TIME STORES CURRENT (2026-10-03). The COPY above is the
+# repo's committed copy of results, pitcher logs, bullpen log, standings,
+# splits, arsenals and transactions -- and nothing commits those, so on
+# 2026-10-03 they ended between Sept 6 and Sept 23 while the pages read them
+# as if they were today's. This step catches them up from MLB's free keyless
+# Stats API, regular season and postseason, in at most ~4.5 minutes, and does
+# it for every deploy: it sits AFTER the last COPY, so this layer is rebuilt
+# whenever capture has committed anything (it commits every hour).
+#
+# It can NEVER make the build or the data worse: it works on copies, promotes
+# a copy only if it parses and has not shrunk, and exits 0 on every soft
+# failure (`|| true` and `timeout` are belt and braces for a crash or a hang).
+# An unreachable API costs one 8-second probe and leaves the committed copy.
+# Zero odds credits; touches nothing under data/watch, data/processed,
+# evidence or any card file. What it does, and why it is safe for the
+# training stores: src/pipeline/display_refresh.py's module docstring.
+#
+# Runs as root (before the USER switch below); the chown after it covers the
+# files it writes.
+#
+# DATA_REFRESH_STAMP is a cache-buster only: Docker reuses this layer when
+# nothing above it changed, and a redeploy of an unchanged commit would
+# otherwise ship the previous build's data. Pass
+# `--build-arg DATA_REFRESH_STAMP=$(date -u +%Y%m%d%H)` to force a fresh pull
+# (docs/decisions/deploy-prod-data-freshness.patch does, for production).
+# Unset it is harmless: the container's guard (api/app.py) catches the gap.
+ARG DATA_REFRESH_STAMP=unset
+RUN echo "data refresh stamp: ${DATA_REFRESH_STAMP}" \
+    && (timeout 330 python -m src.pipeline.display_refresh --max-seconds 270 \
+        || echo "display refresh did not complete; image keeps the committed stores")
+
 # APP_DB_PATH defaults to data/app/app.db (src/appstate/users.py) when the
 # env var is unset -- fine for a quick local run, but on a real host this
 # should point at a mounted volume so the user/token store survives a
@@ -93,6 +124,11 @@ COPY data/historical/ data/historical/
 ENV APP_DB_PATH=/app/data/app/app.db
 ENV APP_ADMIN_TOKEN=
 ENV PYTHONUNBUFFERED=1
+# The container's own data guard (api/app.py -> src/pipeline/display_refresh.py):
+# hourly, re-check the request-time stores and refresh in a memory-capped child
+# process only if a core store has gone stale. 0 disables it; unset (tests, a
+# laptop) it is off.
+ENV DISPLAY_REFRESH_GUARD_INTERVAL_SECONDS=3600
 
 RUN useradd --create-home --uid 10001 apiuser \
     && mkdir -p /app/data/app \

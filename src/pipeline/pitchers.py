@@ -122,8 +122,16 @@ def build_log_store(person_ids, season, path=DEFAULT_LOG_STORE,
                     resume: bool = True, on_pitcher=None, timeout: int = 20,
                     flush_every: int = 25, *, refresh: bool = False,
                     refresh_after_hours: float = DEFAULT_REFRESH_AFTER_HOURS,
-                    max_refetch_per_run: int | None = None, now=None) -> dict:
+                    max_refetch_per_run: int | None = None, now=None,
+                    game_types=None) -> dict:
     """Fetch and cache game logs for a set of pitchers.
+
+    `game_types=None` (default) stores the regular season only, exactly as
+    before. Passing a set of gameType codes (`mlb.DECISIVE_GAME_TYPES`) stores
+    the postseason too, each row stamped with its `game_type`
+    (`mlb.fetch_pitcher_game_log`). That is what lets a postseason page see an
+    October start; `league_fip_constant` skips every row whose `game_type` is
+    not regular-season, so the postseason never enters a calibration constant.
 
     TWO DIFFERENT CONTRACTS, ONE FUNCTION -- read this before changing either.
 
@@ -232,7 +240,11 @@ def build_log_store(person_ids, season, path=DEFAULT_LOG_STORE,
     processed = 0
     for person in targets:
         try:
-            appearances = mlb.fetch_pitcher_game_log(person, season, timeout=timeout)
+            if game_types is None:
+                appearances = mlb.fetch_pitcher_game_log(person, season, timeout=timeout)
+            else:
+                appearances = mlb.fetch_pitcher_game_log(
+                    person, season, timeout=timeout, game_types=game_types)
         except mlb.MLBError as exc:
             errors.append({"person_id": person, "error": str(exc)})
             continue
@@ -408,12 +420,20 @@ def league_fip_constant(logs, cutoff_date) -> float:
     instead of hardcoding a number that silently goes stale.
 
     Falls back to a documented default when there is not yet enough history.
+
+    REGULAR SEASON ONLY. A row stamped with a non-regular `game_type` (a
+    postseason start, stored so a display page can show it) is skipped: the
+    constant is a league-wide calibration and the postseason is a different,
+    selected population. A row with no `game_type` is regular season -- that
+    is every row written before the postseason was stored.
     """
     cutoff = _to_date(cutoff_date)
     innings = earned = hr = bb = k = 0.0
     for appearances in logs.values():
         for appearance in appearances:
             if appearance.get("empty") or not appearance.get("date"):
+                continue
+            if (appearance.get("game_type") or "R") != "R":
                 continue
             try:
                 if _to_date(appearance["date"]) >= cutoff:

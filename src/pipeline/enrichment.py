@@ -83,6 +83,20 @@ def latest_weather_by_pk(rows, games) -> dict:
     return out
 
 
+def _behind_by_more_than_a_day(through, date) -> bool:
+    """True when a store covering `through` cannot speak for `date`: it ends
+    more than one day before it (yesterday's games are legitimately the newest
+    thing a pre-game page can hold). No coverage date at all is stale."""
+    from datetime import date as _date
+    if not through:
+        return True
+    try:
+        return (_date.fromisoformat(str(date)[:10])
+                - _date.fromisoformat(str(through)[:10])).days > 1
+    except ValueError:
+        return True
+
+
 def enrichment_inputs(games, date, store) -> dict:
     """Every store-backed `build_slate` input for one date's `games`."""
     inputs = {}
@@ -97,11 +111,22 @@ def enrichment_inputs(games, date, store) -> dict:
         pen_log = []
     if pen_log:
         wanted = {t for g in games for t in (g.get("away_team"), g.get("home_team")) if t}
+        # What the log actually covers. A club with no relief rows in the
+        # window looks identical whether the pen rested or the log simply ends
+        # before the window -- the page said "no relief appearances in the last
+        # 7 days" from a log that stopped on Sept 6. `log_through` states the
+        # coverage; `log_stale` is set when it ends more than a day before the
+        # date asked about, so the page can say so instead.
+        log_through = max((str(r.get("date")) for r in pen_log if r.get("date")),
+                          default=None)
         for team in wanted:
             try:
-                pens[team] = bullpen.team_workload(pen_log, team, date)
+                workload = bullpen.team_workload(pen_log, team, date)
             except Exception:  # noqa: BLE001
                 continue
+            workload["log_through"] = log_through
+            workload["log_stale"] = _behind_by_more_than_a_day(log_through, date)
+            pens[team] = workload
     inputs["bullpen_by_team"] = pens or None
 
     stored = lineup_store.read()
