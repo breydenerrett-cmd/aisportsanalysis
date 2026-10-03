@@ -1,0 +1,16 @@
+season,game_type,team,week,gsis_id,position,full_name,first_name,last_name,report_primary_injury,report_secondary_injury,report_status,practice_primary_injury,practice_secondary_injury,practice_status,date_modified
+2024,REG,ARI,1,00-0039521,WR,Xavier Weaver,Xavier,Weaver,Oblique,,Out,Oblique,,Did Not Participate In Practice,2024-09-06T19:05:30Z
+2024,REG,ARI,1,00-0037141,S,Joey Blount,Joey,Blount,Back,,Questionable,Back,,Limited Participation in Practice,2024-09-06T19:05:21Z
+2024,REG,ARI,1,00-0039737,TE,Tip Reiman,Tip,Reiman,Ankle,,Questionable,Ankle,,Limited Participation in Practice,2024-09-06T19:05:21Z
+2024,REG,HOU,15,00-0039359,TE,Cade Stover,Cade,Stover,Illness,,Out,,,"
+    ",2024-12-15T14:17:06Z
+2024,REG,HOU,15,00-0039359,TE,Cade Stover,Cade,Stover,Illness,,Questionable,,,"
+    ",2024-12-15T03:34:33Z
+2024,REG,NYJ,15,00-0034270,TE,Tyler Conklin,Tyler,Conklin,Not injury related - personal matter,,Out,,,"
+    ",2024-12-15T13:57:00Z
+2024,REG,NYJ,15,00-0034270,TE,Tyler Conklin,Tyler,Conklin,Not injury related - personal matter,,Questionable,,,"
+    ",2024-12-14T20:55:19Z
+2024,REG,CLE,1,00-0036915,"
+    ",Jeremiah Owusu-Koramoah,Jeremiah,Owusu-Koramoah,,,,Hand,,Full Participation in Practice,2024-09-06T19:00:44Z
+2024,REG,KC,1,00-0037198,"
+    ",Nazeeh Johnson,Nazeeh,Johnson,,,,Hamstring,,Full Participation in Practice,2024-09-04T15:55:06Z

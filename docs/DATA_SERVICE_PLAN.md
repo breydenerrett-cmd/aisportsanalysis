@@ -43,7 +43,7 @@ One API key, every sport, stats and odds in one consistent shape.
 |---|---|---|---|
 | 1 | UFC | ESPN public JSON (core API) plus UFC.com athlete pages | Verified 2026-10-03, see below. ufcstats.com is behind a browser check and is not used. |
 | 2 | MLB | MLB Stats API (already used by LineHound) | Mostly exists; needs the service shape and daily refresh. |
-| 3 | NFL | nflverse open data releases | Play by play, rosters, schedules back to 1999. |
+| 3 | NFL | nflverse open data releases | Verified 2026-10-03, see `docs/datasvc/NFL_SCHEMA.md`: the schedule (`games.csv`, 1999 to 2026, with rest, roof, weather, coaches, starting quarterbacks and the market), weekly team and player statistics (1999 to 2026) and injury reports (2009 to 2026). Plain CSV, CC BY 4.0, attribution kept. Play by play and depth charts (53 MB a season) are not used. |
 | 4 | NHL | NHL public web API | Games, box, play by play, standings. |
 | 5 | NBA | NBA public stats endpoints | Rate limited and header sensitive; cache hard. |
 | 6 | Tennis | Existing BALLDONTLIE harvest plus public results | Harvest already holds ATP/WTA history. |
@@ -96,7 +96,7 @@ order follows LineHound's needs.
 | Plan | written | this file | 2026-10-03 |
 | UFC data layer | built and merged: schedule and results, fighters, UFC.com profiles, fight statistics, odds, leakage-free features, matchup sheet, paid `/data/v1` API. Backfill 2024 to 2026 done (156 events, 1,689 bouts, 3,182 statistics rows, 4,033 odds rows, 1,075 fighters), committed and shipped in the image; it feeds the UFC fight-night page and the UFC AI analyst. UFC.com career profiles for 863 of 1,075 fighters (862 matched on name and record, 1 on an exact name where the page shows no record; 0 errors); the other 212 have no verifiable UFC.com page | `src/datasvc/ufc/`, `python -m src.datasvc.cli ufc ...`, `fa13daad` | 2026-10-03 |
 | MLB in service shape | not started | | |
-| NFL | not started | | |
+| NFL data layer | built: schedule and results, team and player weekly statistics, injury reports, leakage-free features (form, rest and bye, travel and time zones, quarterback and coach, injury counts by position, head to head, player usage over the last 3 and 5 games), matchup fact sheet, paid `/data/v1/nfl` API, CLI. Backfill 2021 to 2026 done and committed (1,696 games, 3,392 team rows, 13,809 player rows from 2024, 17,972 injury rows; 22.0 MB). **Not yet shipped in the image, and not yet refreshed by the daily loop** (`deploy/Dockerfile`, `.dockerignore` and `scripts/daily_loop.sh` name only the UFC directory, and two tests pin that) | `src/datasvc/nfl/`, `python -m src.datasvc.cli nfl ...`, `docs/datasvc/NFL_FEATURES.md`, branch `worktree-agent-a467cd07ca76e6e92` | 2026-10-03 |
 | NHL | not started | | |
 | NBA | not started | | |
 | Tennis | harvest exists, not served | | |

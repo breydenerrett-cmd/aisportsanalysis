@@ -1,0 +1,89 @@
+{
+ "attribution": "Schedule, team and player statistics and injury reports: nflverse (github.com/nflverse/nflverse-data), CC BY 4.0.",
+ "coverage": {
+  "injuries_seasons": [
+   2021,
+   2022,
+   2023,
+   2024,
+   2025,
+   2026
+  ],
+  "player_games_seasons": [
+   2024,
+   2025,
+   2026
+  ],
+  "player_games_since": 2024,
+  "seasons": [
+   2021,
+   2026
+  ]
+ },
+ "files": {
+  "games.jsonl": {
+   "bytes": 1786169,
+   "newest": "2026-10-02T00:15:00Z",
+   "records": 1696,
+   "sha256": "3025f3ed665fd44fe18b9b957b0b536bc14e4f4e943d1ac3fc1e0eb6b416fc91"
+  },
+  "injuries.jsonl": {
+   "bytes": 8363160,
+   "newest": "2026-10-03T21:28:09Z",
+   "records": 17972,
+   "sha256": "e53398a47eeb0f4d4af54136d7513c408c64eed24f332f983eea7116fc420b6b"
+  },
+  "player_games.jsonl": {
+   "bytes": 8531446,
+   "newest": "2026-10-02T00:15:00Z",
+   "records": 13809,
+   "sha256": "3621efe25fc13de1076ed6b28e9160833d5073f79113c084b06a6d5045d816c8"
+  },
+  "team_games.jsonl": {
+   "bytes": 3349368,
+   "newest": "2026-10-02T00:15:00Z",
+   "records": 3392,
+   "sha256": "b44bad7b346f2c36a7121eb32e5ca233bdacb99bf47980797aa53bd14f134760"
+  }
+ },
+ "generated_utc": "2026-10-03T22:32:29Z",
+ "last_run": {
+  "finished_utc": "2026-10-03T22:32:29Z",
+  "games": 1,
+  "injuries": 0,
+  "kind": "update",
+  "missing_files": [],
+  "per_season": {
+   "2026": {
+    "injuries": {
+     "dropped_full_participation_only": 492,
+     "kept": 555,
+     "rows": 1047
+    },
+    "player_stats": {
+     "dropped_no_player_id": 4,
+     "dropped_not_offense": 2283,
+     "kept": 1120,
+     "rows": 3407
+    },
+    "team_games": 544,
+    "team_stats_rows": 98,
+    "team_stats_unmatched": []
+   }
+  },
+  "player_games": 0,
+  "seasons": [
+   2026
+  ],
+  "started_utc": "2026-10-03T22:32:26Z",
+  "stopped": null,
+  "team_games": 0
+ },
+ "last_run_errors": 0,
+ "sources": {
+  "games": "https://github.com/nflverse/nflverse-data/releases/download/schedules/games.csv",
+  "injuries": "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_{season}.csv",
+  "player_stats": "https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_{season}.csv",
+  "team_stats": "https://github.com/nflverse/nflverse-data/releases/download/stats_team/stats_team_week_{season}.csv"
+ }
+}

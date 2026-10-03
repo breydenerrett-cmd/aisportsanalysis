@@ -6,6 +6,12 @@
     python -m src.datasvc.cli ufc status
     python -m src.datasvc.cli ufc matchup "Fighter A" "Fighter B" [--as-of YYYY-MM-DD]
 
+    python -m src.datasvc.cli nfl backfill --since 2021 [--player-since 2024] [--max-requests N]
+    python -m src.datasvc.cli nfl update [--today YYYY-MM-DD]
+    python -m src.datasvc.cli nfl status [--check]
+    python -m src.datasvc.cli nfl matchup KC BUF [--season 2026 --week 5] [--as-of YYYY-MM-DD]
+    (the NFL handlers live in src/datasvc/nfl/cli.py)
+
 Kept apart from src/cli.py so the data service can grow without touching
 LineHound's own command line.
 """
@@ -18,6 +24,7 @@ import sys
 from datetime import date, datetime, timezone
 
 from src.datasvc.http import PoliteFetcher
+from src.datasvc.nfl import cli as nfl_cli
 from src.datasvc.ufc import pipeline
 from src.datasvc.ufc.store import UfcStore
 
@@ -108,6 +115,7 @@ def build_parser() -> argparse.ArgumentParser:
     m.add_argument("b")
     m.add_argument("--as-of", default=None)
     m.set_defaults(func=cmd_matchup)
+    nfl_cli.register(sport)
     return parser
 
 
