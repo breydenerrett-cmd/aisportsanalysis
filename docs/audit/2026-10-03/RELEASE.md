@@ -82,3 +82,34 @@ Billing stays off. No card rule, gate or published pick changes. UFC picks stay 
 - 21:22Z staging deployed and verified (see table).
 - 21:37Z Linux CI green.
 - 22:10Z production deployed; verified from outside at 22:11Z (see table).
+
+---
+
+# Release 3 (23:15Z): the situation layer, the NFL data layer, the off-day fix
+
+Billing stays off. No card rule, gate or published pick changes. The AI analyst stays off until the
+owner adds the key; its with/without-situation comparison stays off until switched on.
+
+## What is in it
+
+| Part | What changed | Why |
+|---|---|---|
+| Situation layer (MLB, UFC) | A short "Situation" block in the MLB written read and the UFC fight-night read: where each side stands going into the game (the previous round and how it ended, days of rest, a bye, form over the last 5 and 10, the season series, postseason history back to 2015), each line with its sample and every gap listed. Checked against today's four Division Series games: every line true (for example CWS 7-6 against CLE this season, CWS swept HOU 2-0 in a series that ended Sept 30, CLE had a bye) | The owner: bring the bigger picture into the analysis, every sport. `docs/SITUATION_LAYER.md` |
+| AI analyst arm B | A second analyst that reads the situation beside the statistics, frozen into its own ledger, and `analyst compare`, which grades A against B on the games both froze and withholds rates under 30 graded calls. Off by default | Proves whether the bigger picture helps instead of assuming it |
+| Rest versus rhythm (research) | Pre-registered, then run on 28 Division Series (2015-2025): a null. Bye clubs won Game 1 in 19 of 28 (16.4 expected) and the series in 15 of 28 (17.1 expected); the sample can only see swings of about 18 points | `docs/research/SITUATION_REST_VS_RHYTHM_DIVISION_SERIES.md` |
+| Earlier postseasons store | 440 postseason games and 330 season records (2015-2025), display only, never a training population; shipped in the image so the block reads them in production | Without it the block would have fallen back to 2023 silently |
+| Situation speed | A game's record is built in 0.08 s (was about 0.5 s) | Parsing 40,000 dates with `strptime` |
+| NFL data layer | nflverse schedule, results, closing lines, weekly team and player statistics and injury reports, 2021-2026 (player rows from 2024), leakage-free features and a matchup sheet, paid `/data/v1/nfl` routes; shipped in the image and refreshed by the daily loop (rehearsed: 4 requests, 3.2 s) | The all-sports data service, next sport |
+| Off-day fix (pushed 22:15Z) | `engine settle` and `eod` treat a date the results manifest proves had no MLB game as nothing to settle | Both 2026-10-03 daily runs went red over the 2026-10-02 off day |
+| UFC.com profiles (pushed 22:15Z) | Career figures for 863 of 1,075 fighters | Context for the UFC reads and the analyst |
+
+## Status
+
+| Stage | State |
+|---|---|
+| Full suite (Windows) on `0ba8152f` | 12,864 tests, no failure outside the known Windows-only identities |
+| Linux CI simulation (no FastAPI) | 778 tests in the 24 modules changed since the 22:15Z push, 0 failures |
+| Pushed | pending, 23:15Z window |
+| Linux CI | pending |
+| Staging | pending |
+| Production | pending |
