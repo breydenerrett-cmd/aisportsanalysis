@@ -378,6 +378,18 @@ echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: nfl card settle --recent exit=$N
 # card's. The step always exits 0 and prints no ESCALATE: it cannot fail this loop.
 bash scripts/analyst_step.sh "$TODAY" "$YESTERDAY"
 
+# UFC CARD GRADING FROM ESPN (2026-10-03; src/providers/espn_mma_results.py,
+# docs/UFC_RESULT_SOURCE.md). Grades yesterday's published UFC picks from ESPN's
+# results once the bouts are final, then settles the card. It never overwrites a
+# result entered by hand: a disagreement is printed and nothing is written (exit 2).
+# data/historical/ufc_results.jsonl is NOT in the daily-loop cache (daily-loop.yml),
+# so the copy on disk is git's and staging it below adds only the new rows.
+# Guarded: neither command can fail this loop.
+echo "== ufc autograde + settle ($YESTERDAY) =="
+python3 -m src.cli ufc autograde --date "$YESTERDAY" 2>&1 | sed 's/^/  /' || true
+python3 -m src.cli card settle --sport mma --date "$YESTERDAY" 2>&1 | sed 's/^/  /' || true
+echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: ufc autograde + settle $YESTERDAY" >> "$RUN_NOTE"
+
 # MLB_VALUE_SHADOW_V1 (docs/PREREG_MLB_VALUE_SHADOW_V1.md): grades the shadow
 # arms' pending decisions from the box scores `daily` ingested above, by
 # game_pk; no final yet stays pending, VOID only after 7 days. Counts only.
@@ -688,7 +700,7 @@ python3 -m src.cli store rotate --all --if-over-mb 60 --keep-days 1 \
 # reads -- and git keeps the backfill because nothing here overwrites it.
 # Making git authoritative for these stores needs a union of both copies
 # before ingest, not a blind `git add`; until that exists, do not stage them.
-git add data/processed data/watch data/research data/raw/oddsapi evidence data/paper_accounts docs/eod docs/OVERNIGHT_RUN.md artifacts config/capture_families.json 2>/dev/null || true
+git add data/processed data/watch data/research data/raw/oddsapi evidence data/paper_accounts docs/eod docs/OVERNIGHT_RUN.md artifacts config/capture_families.json data/historical/ufc_results.jsonl 2>/dev/null || true
 git reset -q artifacts/demo_latest.html 2>/dev/null || true
 # GUARD (2026-09-21 incident): size-gate backstop for whatever store
 # rotation above did not catch -- prints WARN/ESCALATE, never blocks.

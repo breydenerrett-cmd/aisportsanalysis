@@ -391,7 +391,7 @@ function fillRuleBlock(root, prefix, cohort, roleLabel) {
       // UFC PICKS PAUSED 2026-10-03 (config/ufc_public_card.json): the tile says so
       // before it describes how the existing record was graded.
       const cadence = /(^|-)ufc-/.test(prefix)
-        ? "Picks paused while we build real fight analysis. Graded by hand" : "Graded nightly";
+        ? "Picks paused while we build real fight analysis. Graded after each event" : "Graded nightly";
       stateNode.textContent = `${named}${cadence}${span ? `, ${span}` : ""}.`;
     }
     const marketsNode = root.querySelector(`[data-hook='${prefix}-markets']`);
