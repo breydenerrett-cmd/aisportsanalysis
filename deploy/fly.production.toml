@@ -34,6 +34,11 @@ primary_region = "iad"
   # builds on several threads holds far more resident memory than it uses.
   # Two arenas is the usual setting for a threaded Python server.
   MALLOC_ARENA_MAX = "2"
+  # RUN LINE AND TOTALS ON THE GAME PAGES AND THE ODDS TAB (2026-10-03). Spreads and
+  # totals have been requested and stored with every MLB capture since 2026-09-03
+  # (src/providers/odds.py DEFAULT_MARKETS), so serving them costs no credits.
+  # docs/decisions/RUNLINE_TOTALS.md. "off" (or removing the line) hides them again.
+  RUNLINE_TOTALS = "on"
 
   # BOUNDARY 5, and the one that costs a customer money if it is wrong.
   #
