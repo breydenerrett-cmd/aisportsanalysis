@@ -19,7 +19,7 @@ from datetime import date as date_cls
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse
 
-from src.appstate import reqlog
+from src.appstate import freshness, reqlog
 from src.pipeline import history
 from src.providers import mlb
 
@@ -200,7 +200,23 @@ def _start_cache_warmup() -> None:
 # a memory-capped CHILD process only when a core store has gone stale. OFF
 # unless DISPLAY_REFRESH_GUARD_INTERVAL_SECONDS > 0 (the Dockerfile sets it),
 # so a test client or a laptop never starts one. Waits for the first cache
-# warm-up pass so the two never compete for the 1 GB machine.
+# warm-up pass so the two never compete for the 1 GB machine, and SKIPS a cycle
+# (it does not block) whenever a warm-up pass or a page-cache rebuild is running:
+# the warm-up repeats every 600 s, so waiting for the first pass only covered the
+# first of them. The refresh child also asks the kernel to kill it before the web
+# server if memory truly runs out (display_refresh.OOM_SCORE_ADJ).
+def _caches_busy():
+    """Why the machine is occupied right now, or None: a cache warm-up pass is
+    running (api/warmup.py, every 600 s), or any page cache is mid-rebuild
+    (src/appstate/freshness.py's one-build-at-a-time counter, which counts
+    blocking and background builds alike)."""
+    if warmup.status().get("running"):
+        return "a cache warm-up pass is running"
+    if freshness.build_stats().get("running"):
+        return "a page cache is being rebuilt"
+    return None
+
+
 @app.on_event("startup")
 def _start_display_refresh_guard() -> None:
     from src.pipeline import display_refresh
@@ -209,7 +225,7 @@ def _start_display_refresh_guard() -> None:
         status = warmup.status()
         return (not status.get("enabled")) or int(status.get("passes_completed") or 0) >= 1
 
-    display_refresh.start_background_guard(ready=_warm_up_done)
+    display_refresh.start_background_guard(ready=_warm_up_done, busy=_caches_busy)
 
 
 # -- request logging + structured 500s -------------------------------------

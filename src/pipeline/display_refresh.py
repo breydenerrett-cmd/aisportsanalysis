@@ -41,6 +41,12 @@ as a CONTAINER GUARD (`start_background_guard`, called from api/app.py's
 startup) that re-checks `store_freshness.report()` hourly and refreshes in a
 memory-capped subprocess only when a core store has gone stale.
 
+On the 1 GB machine the guard stays out of the web server's way twice over. It
+SKIPS a cycle (never blocks) while a cache warm-up pass or a page-cache rebuild
+is running, and asks again a minute later; and the refresh child raises its own
+`oom_score_adj` to 1000 (Linux), so if memory truly runs out the kernel kills
+the refresh, not the server.
+
 THE GAME-TYPE RULE (why postseason games are ingested, and why that is safe)
 ---------------------------------------------------------------------------
 `ingest`'s default `--game-types training` stores the regular season only, so
@@ -106,7 +112,8 @@ returns a whole season), so the committed sealed-window starts are put back over
 whatever it now says for them.
 
 CLI:  python -m src.pipeline.display_refresh [--root DIR] [--max-seconds N]
-          [--only results,bullpen,...] [--max-memory-mb N] [--json PATH]
+          [--only results,bullpen,...] [--max-memory-mb N] [--oom-score-adj N]
+          [--json PATH]
       python -m src.pipeline.display_refresh --check     (freshness only)
 Exit code is 0 for every soft outcome, including "refreshed nothing"; the
 JSON report and the final `through:` lines say what happened.
@@ -179,8 +186,18 @@ ENV_GUARD_INTERVAL = "DISPLAY_REFRESH_GUARD_INTERVAL_SECONDS"
 ENV_GUARD_DELAY = "DISPLAY_REFRESH_GUARD_INITIAL_DELAY_SECONDS"
 DEFAULT_GUARD_DELAY_S = 120.0
 GUARD_MIN_GAP_S = 1800.0          # never start two refreshes closer than this
+GUARD_BUSY_RETRY_S = 60.0         # a cycle skipped because a cache build or warm-up
+                                  # is running is asked again this soon, not an hour on
 GUARD_CHILD_MEMORY_MB = 700
 GUARD_CHILD_SECONDS = 240.0
+
+# The kernel kills the process with the highest `oom_score_adj` first when
+# memory runs out; 1000 is the maximum, "kill me before anything else". The
+# refresh child sets it on itself (raising your own score needs no privilege),
+# so on the 1 GB machine a real out-of-memory takes the refresh, never the web
+# server. Linux only; a no-op elsewhere.
+OOM_SCORE_ADJ = 1000
+OOM_SCORE_PATH = "/proc/self/oom_score_adj"
 
 
 class Deadline:
@@ -1169,7 +1186,7 @@ def _summary(freshness: dict) -> dict:
 # The container guard
 # ---------------------------------------------------------------------------
 
-_GUARD_STATUS: dict = {"enabled": False, "interval_s": None, "runs": 0,
+_GUARD_STATUS: dict = {"enabled": False, "interval_s": None, "runs": 0, "busy_skips": 0,
                        "last_attempt_utc": None, "last_exit": None,
                        "last_result": None, "next_check_utc": None}
 _GUARD_LOCK = threading.Lock()
@@ -1199,7 +1216,8 @@ def _run_child(root=None, *, seconds: float = GUARD_CHILD_SECONDS,
     """The refresh in a child process: its memory is its own and capped, and a
     hang is killed at the wall clock. Never raises."""
     cmd = [sys.executable, "-m", "src.pipeline.display_refresh",
-           "--max-seconds", str(int(seconds)), "--max-memory-mb", str(int(memory_mb))]
+           "--max-seconds", str(int(seconds)), "--max-memory-mb", str(int(memory_mb)),
+           "--oom-score-adj", str(OOM_SCORE_ADJ)]
     if root is not None:
         cmd += ["--root", str(root)]
     try:
@@ -1215,9 +1233,19 @@ def _run_child(root=None, *, seconds: float = GUARD_CHILD_SECONDS,
 
 def guard_tick(*, now=None, root=None, last_run_at: Optional[float] = None,
                clock: Callable[[], float] = time.monotonic,
-               child: Callable[..., dict] = _run_child) -> dict:
-    """One check: refresh in a child only if a core store is stale and the last
-    run is not too recent. Returns what it decided (also kept in guard_status)."""
+               child: Callable[..., dict] = _run_child,
+               busy: Optional[Callable[[], Optional[str]]] = None) -> dict:
+    """One check: refresh in a child only if a core store is stale, the last
+    run is not too recent and nothing heavy is running. Returns what it decided
+    (also kept in guard_status).
+
+    `busy()` answers why the machine is occupied (a string) or None. It is only
+    asked when a refresh would otherwise start. A busy tick is SKIPPED, not
+    waited out: nothing here blocks on the build, the decision comes back at
+    once with `busy: True` and the caller asks again soon (`GUARD_BUSY_RETRY_S`).
+    Why: the cache warm-up repeats every 600 s and a page cache rebuilds in the
+    background, each one's peak (about 540 MB) on a 1 GB machine; the refresh
+    child is another few hundred."""
     freshness = store_freshness.report(root, now)
     stale = freshness["core_stale"]
     if not stale:
@@ -1225,22 +1253,35 @@ def guard_tick(*, now=None, root=None, last_run_at: Optional[float] = None,
     elif last_run_at is not None and clock() - last_run_at < GUARD_MIN_GAP_S:
         decision = {"ran": False, "reason": "refreshed recently; waiting", "core_stale": stale}
     else:
-        outcome = child(root)
-        decision = {"ran": True, "core_stale": stale, **outcome}
+        why = busy() if busy is not None else None
+        if why:
+            decision = {"ran": False, "busy": True, "core_stale": stale,
+                        "reason": f"skipped this cycle: {why}"}
+        else:
+            outcome = child(root)
+            decision = {"ran": True, "core_stale": stale, **outcome}
     return decision
 
 
 def start_background_guard(*, ready: Optional[Callable[[], bool]] = None,
                            env=None, root=None, stop_event: Optional[threading.Event] = None,
                            child: Callable[..., dict] = _run_child,
-                           sleep: Callable[[float], bool] = None) -> Optional[threading.Thread]:
+                           sleep: Callable[[float], bool] = None,
+                           busy: Optional[Callable[[], Optional[str]]] = None
+                           ) -> Optional[threading.Thread]:
     """Start the one daemon thread that keeps a long-lived container current.
 
     Disabled (returns None, starts nothing) unless
     DISPLAY_REFRESH_GUARD_INTERVAL_SECONDS > 0. Waits `ready()` (the app's
-    first warm-up pass) so a refresh never competes with the warm-up for the
-    1 GB machine, then every interval runs `guard_tick`. The refresh itself is
-    a child process (see `_run_child`); this thread only decides and waits.
+    first warm-up pass) so a refresh never competes with the first warm-up for
+    the 1 GB machine, then every interval runs `guard_tick`. The refresh itself
+    is a child process (see `_run_child`); this thread only decides and waits.
+
+    `busy()` covers every pass after the first: the warm-up repeats every 600 s
+    and page caches rebuild in the background, so a tick that finds one running
+    is skipped (never blocked on) and asked again in `GUARD_BUSY_RETRY_S`
+    instead of an interval later. `api/app.py` passes the warm-up's own status
+    and `src.appstate.freshness`'s one-build-at-a-time counter.
     """
     interval = guard_interval_seconds(env)
     if interval <= 0:
@@ -1263,8 +1304,9 @@ def start_background_guard(*, ready: Optional[Callable[[], bool]] = None,
             return
         last_run_at = None
         while True:
+            pause = interval
             try:
-                decision = guard_tick(root=root, last_run_at=last_run_at, child=child)
+                decision = guard_tick(root=root, last_run_at=last_run_at, child=child, busy=busy)
                 now_iso = datetime.now(timezone.utc).isoformat()
                 if decision["ran"]:
                     last_run_at = time.monotonic()
@@ -1273,12 +1315,17 @@ def start_background_guard(*, ready: Optional[Callable[[], bool]] = None,
                     _set_status(last_attempt_utc=now_iso, last_exit=decision.get("exit"),
                                 last_result=decision.get("result"))
                 else:
+                    if decision.get("busy"):
+                        # Skipped, not blocked on: ask again soon, not an hour on.
+                        pause = min(interval, GUARD_BUSY_RETRY_S)
+                        with _GUARD_LOCK:
+                            _GUARD_STATUS["busy_skips"] += 1
                     _set_status(last_result=decision["reason"])
             except Exception as exc:  # noqa: BLE001 -- a guard must never take the app down
                 _set_status(last_result=f"guard error: {type(exc).__name__}: {exc}")
             _set_status(next_check_utc=(datetime.now(timezone.utc)
-                                        + timedelta(seconds=interval)).isoformat())
-            if wait(interval):
+                                        + timedelta(seconds=pause)).isoformat())
+            if wait(pause):
                 return
 
     _set_status(enabled=True, interval_s=interval)
@@ -1307,7 +1354,34 @@ def _cap_memory(megabytes: int) -> Optional[str]:
     return None
 
 
-def main(argv=None) -> int:
+def _write_proc_file(path: str, text: str) -> None:
+    with open(path, "w", encoding="ascii") as handle:
+        handle.write(text)
+
+
+def raise_oom_priority(value: int = OOM_SCORE_ADJ, *, platform: Optional[str] = None,
+                       writer: Optional[Callable[[str, str], None]] = None,
+                       path: str = OOM_SCORE_PATH) -> Optional[str]:
+    """Make THIS process the kernel's first choice to kill when memory truly
+    runs out, so on the 1 GB machine the refresh child dies and the web server
+    does not. Writes `value` (default 1000, the maximum) to
+    `/proc/self/oom_score_adj`; raising your own score needs no privilege.
+
+    Linux only. On any other platform it does nothing and returns None. A write
+    that fails (a read-only /proc, a sandbox) returns a note and never raises:
+    the refresh is a convenience and must never fail to start over this.
+    `platform` and `writer` are injectable so the call path is testable on a
+    machine with no /proc."""
+    if not (platform if platform is not None else sys.platform).startswith("linux"):
+        return None
+    try:
+        (writer or _write_proc_file)(path, str(int(value)))
+    except (OSError, ValueError) as exc:
+        return f"could not raise oom_score_adj: {exc}"
+    return None
+
+
+def main(argv=None, *, oom: Optional[Callable[..., Optional[str]]] = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--root", default=None, help="data root (default: the project's data/)")
     parser.add_argument("--max-seconds", type=float, default=DEFAULT_MAX_SECONDS)
@@ -1315,11 +1389,18 @@ def main(argv=None) -> int:
                         help="comma-separated steps: " + ",".join(STEP_ORDER))
     parser.add_argument("--max-memory-mb", type=int, default=0,
                         help="cap this process's address space (Linux)")
+    parser.add_argument("--oom-score-adj", type=int, default=None,
+                        help="raise this process's oom_score_adj so the kernel kills it "
+                             "before the web server (Linux)")
     parser.add_argument("--json", default=None, help="also write the report here")
     parser.add_argument("--check", action="store_true",
                         help="print the freshness report and stop; fetch nothing")
     args = parser.parse_args(argv)
 
+    if args.oom_score_adj is not None:
+        note = (oom or raise_oom_priority)(args.oom_score_adj)
+        if note:
+            print(f"display refresh: {note}", flush=True)
     if args.check:
         data = store_freshness.report(args.root)
         print(json.dumps(data, indent=1, sort_keys=True))
