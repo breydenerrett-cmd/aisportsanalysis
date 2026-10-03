@@ -77,15 +77,35 @@ def _fighter_ids(bouts: Iterable[dict]) -> List[str]:
     return sorted(ids)
 
 
+def _batch_parts(result):
+    """(fighters, failed) from whatever fetch_fighters returned: its FighterBatch
+    (`.fighters`, `.failed`), a dict with those keys, or a plain list."""
+    if isinstance(result, dict):
+        return list(result.get("fighters", []) or []), list(result.get("failed", result.get("not_found", [])) or [])
+    if hasattr(result, "fighters"):
+        return list(result.fighters or []), list(getattr(result, "failed", []) or [])
+    return list(result or []), []
+
+
+def _profile_fetcher(fetcher):
+    """UFC.com gets its own, slower pace (at least one second between requests) and
+    shares the cache. A fake fetcher in a test is used as it is."""
+    if isinstance(fetcher, PoliteFetcher):
+        return PoliteFetcher(cache_dir=fetcher.cache_dir, delay_s=max(1.0, fetcher.delay_s),
+                             max_requests=fetcher.max_requests, user_agent=fetcher.user_agent)
+    return fetcher
+
+
 def _ingest_fighters(fetcher, store, src, ids, summary, *, refresh, profiles, log) -> None:
     known = store.fighter_by_id()
     wanted = ids if refresh else [i for i in ids if i not in known]
     if wanted:
-        result = src.fighters.fetch_fighters(fetcher, wanted)
-        records = result.get("fighters", []) if isinstance(result, dict) else list(result)
-        if isinstance(result, dict):
-            for missing in result.get("not_found", []) or []:
-                _record_error(summary, f"fighter {missing}", FetchError(str(missing), 404, "not found"))
+        records, failed = _batch_parts(src.fighters.fetch_fighters(fetcher, wanted))
+        for item in failed:
+            fid = item.get("fighter_id") if isinstance(item, dict) else item
+            status = item.get("status") if isinstance(item, dict) else 404
+            kind = item.get("kind") if isinstance(item, dict) else "not_found"
+            _record_error(summary, f"fighter {fid}", FetchError(str(fid), status, kind or "failed"))
         if records:
             store.upsert("fighters", records)
             summary["fighters"] += len(records)
@@ -96,9 +116,10 @@ def _ingest_fighters(fetcher, store, src, ids, summary, *, refresh, profiles, lo
     fighters_by_id = store.fighter_by_id()
     todo = [fighters_by_id[i] for i in ids if i in fighters_by_id and (refresh or i not in have)]
     saved = []
+    slow = _profile_fetcher(fetcher)
     for fighter in todo:
         try:
-            record = src.ufccom.fetch_profile(fetcher, fighter)
+            record = src.ufccom.fetch_profile(slow, fighter)
         except (SourceBlocked, RequestCapReached):
             if saved:
                 store.upsert("ufccom_profiles", saved)

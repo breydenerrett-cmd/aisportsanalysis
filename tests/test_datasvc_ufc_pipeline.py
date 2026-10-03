@@ -35,6 +35,7 @@ class Fakes:
                           bout("b2", "e1", "f3", "f2", day="2025-05-01")]},
         }
         self.stats_error_for = set()
+        self.missing_fighters = set()
         self.cap_on_event = None
         self.block_on_event = None
         self.upcoming = ([{"event_id": "e9", "date_utc": "2026-10-10T21:00Z"}],
@@ -84,8 +85,12 @@ class Fakes:
 
         def fetch_fighters(fetcher, ids):
             f.calls.append(("fighters", tuple(ids)))
-            return {"fighters": [{"fighter_id": i, "name": f"Fighter {i}", "fetched_utc": "x"} for i in ids],
-                    "not_found": []}
+            # the real module returns a FighterBatch: .fighters and .failed
+            found = [i for i in ids if i not in f.missing_fighters]
+            return types.SimpleNamespace(
+                fighters=[{"fighter_id": i, "name": f"Fighter {i}", "fetched_utc": "x"} for i in found],
+                failed=[{"fighter_id": i, "kind": "not_found", "status": 404, "message": "not found"}
+                        for i in ids if i in f.missing_fighters])
 
         def fetch_profile(fetcher, fighter):
             f.calls.append(("profile", fighter["fighter_id"]))
@@ -152,6 +157,13 @@ class Backfill(unittest.TestCase):
         self.assertEqual(len(summary["errors"]), 1)
         self.assertIn("b1", summary["errors"][0])
         self.assertEqual(len(self.store.fight_stats), 4)
+        self.assertIsNone(summary["stopped"])
+
+    def test_a_fighter_the_source_lacks_is_an_error_not_a_stop(self):
+        self.fakes.missing_fighters = {"f3"}
+        summary = self.run_backfill()
+        self.assertEqual(sorted(f["fighter_id"] for f in self.store.fighters), ["f1", "f2", "f4"])
+        self.assertTrue(any("fighter f3" in e for e in summary["errors"]))
         self.assertIsNone(summary["stopped"])
 
     def test_switches_turn_parts_off(self):
