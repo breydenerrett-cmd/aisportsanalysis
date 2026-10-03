@@ -144,7 +144,7 @@ export const SPORTS = [
     status: "live",
     home: "#/ufc",
     submenu: [
-      { hash: "#/ufc", label: "GAMEDAY", sub: "This card's picks" },
+      { hash: "#/ufc", label: "GAMEDAY", sub: "This card, fight by fight" },
       { hash: "#/ufc/record", label: "RESULTS", sub: "Every pick, graded" },
     ],
     plan: null,

@@ -1,0 +1,130 @@
+/* =====================================================================
+   FIGHT NIGHT -- web/js/ufcfights.js, the UFC page's fight analysis, drawn under
+   the "picks are paused" notice (2026-10-03). Every class is scoped to the uf-
+   prefix so it cannot touch another screen. Reuses the --v-* palette and the global
+   .sechead / .panel / .chamfer primitives; invents no colour.
+
+   HOLDS AT 390px WITH NO SIDEWAYS SCROLL. One column by default, blocks only (no
+   tables), every text node wraps, no width above 300px is ever fixed, and nothing
+   is allowed to scroll on its own. The two-column layouts (the fighters side by
+   side, strengths and weaknesses side by side) switch on only from 900px up.
+
+   COLOUR HAS ONE MEANING EACH, AS ELSEWHERE: cyan is analytical, amber is "know this,
+   thin data", and the red money tone is never used here, because nothing on this page
+   is a price advantage.
+   ===================================================================== */
+.uf { margin-bottom: var(--sp-9); min-width: 0; }
+.uf, .uf * { overflow-wrap: anywhere; box-sizing: border-box; }
+.uf p, .uf li, .uf h3, .uf h4 { max-width: 100%; }
+.uf-label { font-size: 13px; line-height: 1.5; color: var(--v-warn-label); margin: 0 0 var(--sp-6); }
+.uf-text { font-size: 14.5px; line-height: 1.55; color: var(--v-t2); margin: 0 0 var(--sp-4); }
+.uf-small { font-size: 13px; line-height: 1.5; color: var(--v-t5); margin: 0 0 var(--sp-5); }
+.uf-notice { font-size: 14px; line-height: 1.5; color: var(--v-warn-label); margin: 0 0 var(--sp-5); }
+.uf-none { font-size: 14px; line-height: 1.5; color: var(--v-t5); margin: 0 0 var(--sp-5); }
+.uf-unavailable { font-size: 15px; line-height: 1.55; color: var(--v-t3); margin: var(--sp-5) 0; }
+.uf-result { font-family: var(--font-display); font-size: 15px; font-weight: 800; letter-spacing: .08em;
+  color: var(--v-t1); margin: 0 0 var(--sp-5); text-transform: uppercase; }
+
+.uf-card { display: flex; flex-direction: column; gap: var(--sp-8); }
+.uf-segment { font-family: var(--font-display); font-size: 14px; font-weight: 800; letter-spacing: .2em;
+  color: var(--v-t4); margin: var(--sp-8) 0 0; text-transform: uppercase; }
+.uf-bout { padding: var(--sp-8); min-width: 0; }
+
+.uf-bout__head { display: flex; flex-direction: column; gap: var(--sp-3); margin-bottom: var(--sp-6); }
+.uf-bout__time { font-family: var(--font-mono); font-size: 13px; color: var(--v-t4); }
+.uf-chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: var(--sp-3); }
+.uf-chip { display: inline-block; padding: 3px 8px; font-family: var(--font-display); font-size: 12px;
+  font-weight: 800; letter-spacing: .12em; color: var(--v-t2); background: rgba(255, 255, 255, .07);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .18); }
+.uf-chip--side { color: var(--v-live-lit); background: rgba(0, 224, 255, .08);
+  box-shadow: inset 0 0 0 1px rgba(0, 224, 255, .35); }
+.uf-chip--warn { color: var(--v-warn-label); background: rgba(255, 176, 32, .13);
+  box-shadow: inset 0 0 0 1px rgba(255, 176, 32, .4); }
+
+.uf-fighters { display: flex; flex-direction: column; gap: var(--sp-5); margin-bottom: var(--sp-5); }
+.uf-versus { align-self: flex-start; font-family: var(--font-display); font-size: 13px; font-weight: 800;
+  letter-spacing: .2em; color: var(--v-t5); }
+.uf-fighter { min-width: 0; }
+.uf-fighter__name { font-family: var(--font-display); font-size: 26px; font-weight: 800; line-height: 1.1;
+  letter-spacing: .03em; color: var(--v-t0); margin: 0; text-transform: uppercase; }
+.uf-fighter__nick { font-size: 14px; color: var(--v-t4); margin: var(--sp-1) 0 0; }
+.uf-fighter__facts { font-size: 14px; line-height: 1.5; color: var(--v-t3); margin: var(--sp-2) 0 0; }
+.uf-fighter__price { font-family: var(--font-mono); font-size: 17px; color: var(--v-t1); margin: var(--sp-3) 0 0; }
+
+.uf-headline { font-family: var(--font-body); font-size: 17px; line-height: 1.45; font-weight: 600;
+  color: var(--v-t0); margin: var(--sp-6) 0 var(--sp-5); }
+.uf-depth { margin: 0 0 var(--sp-6); }
+.uf-depth .uf-chip { margin-bottom: var(--sp-3); }
+
+.uf-subhead { font-family: var(--font-display); font-size: 13px; font-weight: 800; letter-spacing: .16em;
+  color: var(--v-t4); margin: var(--sp-8) 0 var(--sp-5); text-transform: uppercase; }
+.uf-block { margin-top: var(--sp-6); min-width: 0; }
+.uf-cols { display: flex; flex-direction: column; gap: var(--sp-6); }
+.uf-col { min-width: 0; }
+.uf-col__name { font-family: var(--font-display); font-size: 17px; font-weight: 800; letter-spacing: .06em;
+  color: var(--v-t1); margin: var(--sp-6) 0 0; padding-top: var(--sp-5);
+  border-top: 1px solid var(--v-edge); text-transform: uppercase; }
+.uf-list { list-style: none; margin: 0; padding: 0; }
+.uf-item { padding: var(--sp-5) 0; border-top: 1px solid rgba(255, 255, 255, .06); min-width: 0; }
+.uf-item--strength { border-left: 2px solid rgba(0, 224, 255, .45); padding-left: var(--sp-5); }
+.uf-item--weakness { border-left: 2px solid rgba(255, 255, 255, .22); padding-left: var(--sp-5); }
+.uf-item__sentence { font-size: 14.5px; line-height: 1.55; color: var(--v-t2); margin: 0 0 var(--sp-3); }
+.uf-item__caveat { font-size: 13px; line-height: 1.5; color: var(--v-t5); margin: 0 0 var(--sp-3); }
+.uf-route__title { font-family: var(--font-display); font-size: 15px; font-weight: 800; letter-spacing: .08em;
+  color: var(--v-t1); text-transform: uppercase; }
+
+.uf-evidence, .uf-more { margin: var(--sp-3) 0 0; }
+.uf-evidence__summary, .uf-more__summary { cursor: pointer; font-family: var(--font-display); font-size: 12.5px;
+  font-weight: 800; letter-spacing: .14em; color: var(--v-t4); padding: 6px 0; }
+.uf-more--block { margin-top: var(--sp-7); }
+.uf-evidence__list { list-style: none; margin: var(--sp-3) 0 0; padding: 0; }
+.uf-evidence__row { display: flex; flex-direction: column; gap: 2px; padding: 6px 0;
+  border-top: 1px solid rgba(255, 255, 255, .06); font-size: 13.5px; line-height: 1.45; }
+.uf-evidence__label { color: var(--v-t4); }
+.uf-evidence__value { font-family: var(--font-mono); color: var(--v-t1); }
+
+.uf-market p { font-size: 14.5px; line-height: 1.55; color: var(--v-t2); margin: 0 0 var(--sp-4); }
+.uf-shared { margin: 0; }
+.uf-plain { list-style: none; margin: 0; padding: 0; }
+.uf-plain__item { font-size: 14px; line-height: 1.55; color: var(--v-t2); padding: var(--sp-4) 0;
+  border-top: 1px solid rgba(255, 255, 255, .06); }
+.uf-plain__lead { color: var(--v-t1); font-weight: 600; }
+
+/* The slot the UFC analyst section mounts into; an empty slot takes no room. */
+.uf-analyst-slot { min-width: 0; margin-top: var(--sp-6); }
+.uf-analyst-slot:empty { display: none; }
+
+/* The fact sheet: rows of label, first fighter, second fighter. A grid of three flexible
+   columns, never a table, so it wraps instead of scrolling. */
+.uf-facts { margin-top: var(--sp-7); }
+.uf-facts__summary { cursor: pointer; font-family: var(--font-display); font-size: 13px; font-weight: 800;
+  letter-spacing: .16em; color: var(--v-t3); padding: 8px 0; }
+.uf-fact { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--sp-3); padding: 7px 0; border-top: 1px solid rgba(255, 255, 255, .06);
+  font-size: 13.5px; line-height: 1.4; min-width: 0; }
+.uf-fact--head { font-family: var(--font-display); font-size: 12px; font-weight: 800; letter-spacing: .1em;
+  color: var(--v-t5); text-transform: uppercase; }
+.uf-fact__label { color: var(--v-t4); min-width: 0; }
+.uf-fact__value { color: var(--v-t1); min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.uf-fact__figure { font-family: var(--font-mono); }
+.uf-fact__note { font-size: 12px; color: var(--v-t5); }
+.uf-fact .uf-chip { align-self: flex-start; }
+
+.uf-others { margin-top: var(--sp-8); }
+.uf-others__label { font-family: var(--font-display); font-size: 12.5px; font-weight: 800; letter-spacing: .16em;
+  color: var(--v-t4); }
+.uf-others__list { list-style: none; margin: var(--sp-3) 0 0; padding: 0; }
+.uf-others__item { padding: 6px 0; }
+.uf-others__link { color: var(--v-live-label); font-size: 14px; }
+.uf-empty { padding: var(--sp-8); }
+.uf-empty__actions { margin-top: var(--sp-6); }
+
+@media (min-width: 900px) {
+  .uf-bout { padding: var(--sp-10) var(--sp-11); }
+  .uf-bout__head { flex-direction: row; justify-content: space-between; align-items: center; }
+  .uf-fighters { flex-direction: row; align-items: flex-start; gap: var(--sp-9); }
+  .uf-fighter { flex: 1 1 0; }
+  .uf-versus { align-self: center; }
+  .uf-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--sp-10); }
+  .uf-headline { font-size: 19px; }
+}

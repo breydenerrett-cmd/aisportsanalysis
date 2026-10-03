@@ -1,0 +1,6428 @@
+{
+ "cases": {
+  "rosas_v_barcelos_afterwards": {
+   "read": {
+    "a": {
+     "context": [
+      {
+       "evidence": [
+        {
+         "label": "Raul Rosas Jr. fights on file",
+         "path": "features.a.record.fights",
+         "value": 1
+        },
+        {
+         "label": "Raul Rosas Jr. wins on file",
+         "path": "features.a.record.wins",
+         "value": 1
+        },
+        {
+         "label": "Raul Rosas Jr. losses on file",
+         "path": "features.a.record.losses",
+         "value": 0
+        },
+        {
+         "label": "Raul Rosas Jr. first fight on file",
+         "path": "features.a.record.first_fight_utc",
+         "value": "2026-09-27T00:00:00Z"
+        }
+       ],
+       "key": "coverage",
+       "sentence": "Raul Rosas Jr. has 1 UFC fight on file, the first on 2026-09-27, for a record of 1-0-0."
+      },
+      {
+       "evidence": [
+        {
+         "label": "Raul Rosas Jr. result, fight 1 back",
+         "path": "features.a.last_three.0.result",
+         "value": "win"
+        },
+        {
+         "label": "Raul Rosas Jr. opponent, fight 1 back",
+         "path": "features.a.last_three.0.opponent_name",
+         "value": "Raoni Barcelos"
+        },
+        {
+         "label": "Raul Rosas Jr. method, fight 1 back",
+         "path": "features.a.last_three.0.method",
+         "value": "KO_TKO"
+        },
+        {
+         "label": "Raul Rosas Jr. date, fight 1 back",
+         "path": "features.a.last_three.0.date_utc",
+         "value": "2026-09-27T00:00Z"
+        }
+       ],
+       "key": "last_fights",
+       "sentence": "Raul Rosas Jr.'s last fight on file: beat Raoni Barcelos by knockout or TKO on 2026-09-27, round 5."
+      }
+     ],
+     "fighter_id": "5088844",
+     "name": "Raul Rosas Jr.",
+     "paths_to_victory": [
+      {
+       "built_from": [],
+       "caveat": "",
+       "down_weighted": true,
+       "evidence": [
+        {
+         "label": "Raul Rosas Jr. fights on file",
+         "path": "features.a.record.fights",
+         "value": 1
+        }
+       ],
+       "route": "none",
+       "sample_level": "thin",
+       "sentence": "Nothing in the figures on file points to a route to a win for Raul Rosas Jr., and only 1 fight is on file.",
+       "size": "slight",
+       "thin": true,
+       "title": "No clear route",
+       "weight": 0.0
+      }
+     ],
+     "strengths": [],
+     "weaknesses": []
+    },
+    "as_of": "2026-10-03T00:00:00Z",
+    "b": {
+     "context": [
+      {
+       "evidence": [
+        {
+         "label": "Raoni Barcelos fights on file",
+         "path": "features.b.record.fights",
+         "value": 1
+        },
+        {
+         "label": "Raoni Barcelos wins on file",
+         "path": "features.b.record.wins",
+         "value": 0
+        },
+        {
+         "label": "Raoni Barcelos losses on file",
+         "path": "features.b.record.losses",
+         "value": 1
+        },
+        {
+         "label": "Raoni Barcelos first fight on file",
+         "path": "features.b.record.first_fight_utc",
+         "value": "2026-09-27T00:00:00Z"
+        }
+       ],
+       "key": "coverage",
+       "sentence": "Raoni Barcelos has 1 UFC fight on file, the first on 2026-09-27, for a record of 0-1-0."
+      },
+      {
+       "evidence": [
+        {
+         "label": "Raoni Barcelos result, fight 1 back",
+         "path": "features.b.last_three.0.result",
+         "value": "loss"
+        },
+        {
+         "label": "Raoni Barcelos opponent, fight 1 back",
+         "path": "features.b.last_three.0.opponent_name",
+         "value": "Raul Rosas Jr."
+        },
+        {
+         "label": "Raoni Barcelos method, fight 1 back",
+         "path": "features.b.last_three.0.method",
+         "value": "KO_TKO"
+        },
+        {
+         "label": "Raoni Barcelos date, fight 1 back",
+         "path": "features.b.last_three.0.date_utc",
+         "value": "2026-09-27T00:00Z"
+        }
+       ],
+       "key": "last_fights",
+       "sentence": "Raoni Barcelos' last fight on file: lost to Raul Rosas Jr. by knockout or TKO on 2026-09-27, round 5."
+      }
+     ],
+     "fighter_id": "3075570",
+     "name": "Raoni Barcelos",
+     "paths_to_victory": [
+      {
+       "built_from": [],
+       "caveat": "",
+       "down_weighted": true,
+       "evidence": [
+        {
+         "label": "Raoni Barcelos fights on file",
+         "path": "features.b.record.fights",
+         "value": 1
+        }
+       ],
+       "route": "none",
+       "sample_level": "thin",
+       "sentence": "Nothing in the figures on file points to a route to a win for Raoni Barcelos, and only 1 fight is on file.",
+       "size": "slight",
+       "thin": true,
+       "title": "No clear route",
+       "weight": 0.0
+      }
+     ],
+     "strengths": [],
+     "weaknesses": []
+    },
+    "context": [],
+    "data_depth": {
+     "a": {
+      "fights": 1,
+      "minutes": 21.63,
+      "name": "Raul Rosas Jr.",
+      "overall_fights": null
+     },
+     "b": {
+      "fights": 1,
+      "minutes": 21.63,
+      "name": "Raoni Barcelos",
+      "overall_fights": null
+     },
+     "evidence": [
+      {
+       "label": "Raul Rosas Jr. UFC fights on file",
+       "path": "features.a.sample.fights",
+       "value": 1
+      },
+      {
+       "label": "Raul Rosas Jr. fight minutes on file",
+       "path": "features.a.sample.minutes",
+       "value": 21.63
+      },
+      {
+       "label": "Raoni Barcelos UFC fights on file",
+       "path": "features.b.sample.fights",
+       "value": 1
+      },
+      {
+       "label": "Raoni Barcelos fight minutes on file",
+       "path": "features.b.sample.minutes",
+       "value": 21.63
+      }
+     ],
+     "level": "thin",
+     "sentence": "On file as of 2026-10-03: Raul Rosas Jr. 1 UFC fight (22 minutes); Raoni Barcelos 1 UFC fight (22 minutes). That is thin: under 3 fights or 30 fight minutes for Raul Rosas Jr. and Raoni Barcelos, so any figure built on them is an early sign and not a settled fact."
+    },
+    "headline": "No single difference clearly separates Raul Rosas Jr. and Raoni Barcelos in the data on file, and that is a valid read. Little is on file for Raul Rosas Jr. and Raoni Barcelos.",
+    "headline_trait": null,
+    "history": {
+     "caveat": "",
+     "evidence": [
+      {
+       "label": "opponents in common",
+       "path": "shared_opponents.count",
+       "value": 0
+      },
+      {
+       "label": "Raul Rosas Jr. opponents on file",
+       "path": "shared_opponents.a_opponents",
+       "value": 1
+      },
+      {
+       "label": "Raoni Barcelos opponents on file",
+       "path": "shared_opponents.b_opponents",
+       "value": 1
+      }
+     ],
+     "previous_meetings": [
+      {
+       "evidence": [
+        {
+         "label": "date of the earlier fight",
+         "path": "previous_meetings.0.date_utc",
+         "value": "2026-09-27T00:00Z"
+        },
+        {
+         "label": "result for Raul Rosas Jr.",
+         "path": "previous_meetings.0.result",
+         "value": "win"
+        },
+        {
+         "label": "method",
+         "path": "previous_meetings.0.method",
+         "value": "KO_TKO"
+        },
+        {
+         "label": "round",
+         "path": "previous_meetings.0.round",
+         "value": 5
+        }
+       ],
+       "sentence": "Raul Rosas Jr. won by knockout or TKO on 2026-09-27, in round 5."
+      }
+     ],
+     "shared_opponents": [],
+     "summary": "Raul Rosas Jr. and Raoni Barcelos have met once in the fights on file. Counting each other, Raul Rosas Jr. has faced 1 opponent on file and Raoni Barcelos has faced 1, with no one else in common."
+    },
+    "label": "A written description of this fight built only from the figures on this page. It is not a prediction, not advice, and not a claim that any price is wrong.",
+    "market_view": {
+     "agreement": "no price",
+     "available": false,
+     "evidence": [],
+     "label": "What the price implies, set beside this read.",
+     "lean": "none",
+     "lean_weight": 0.0,
+     "sentences": [
+      "No price is on file for this fight, so there is nothing to set this read against.",
+      "We have not tested whether figures like these beat UFC prices. Treat this as a description of the fight, not as advice."
+     ]
+    },
+    "missing": [
+     {
+      "detail": "no scheduled bout between these two fighters is on file, so the read treats them as a possible matchup",
+      "input": "The booked bout",
+      "status": "absent"
+     },
+     {
+      "detail": "the fighter record was fetched on 2026-10-03, not before 2026-10-03, so it may already include this fight and is not used",
+      "input": "Raul Rosas Jr.: overall record",
+      "status": "absent"
+     },
+     {
+      "detail": "no opponent had an earlier UFC fight in the store",
+      "input": "Raul Rosas Jr.: strength of schedule",
+      "status": "absent"
+     },
+     {
+      "detail": "no date of birth on the fighter record",
+      "input": "Raul Rosas Jr.: age",
+      "status": "absent"
+     },
+     {
+      "detail": "no height on the fighter record",
+      "input": "Raul Rosas Jr.: height",
+      "status": "absent"
+     },
+     {
+      "detail": "no reach on the fighter record",
+      "input": "Raul Rosas Jr.: reach",
+      "status": "absent"
+     },
+     {
+      "detail": "1 fight and 22 minutes on file; a rate is shown from 2 fights and counts as more than thin from 3 fights and 30 fight minutes",
+      "input": "Raul Rosas Jr.: rates and accuracies",
+      "status": "thin"
+     },
+     {
+      "detail": "1 fight on file; a share of results is shown from 3 fights and counts as more than thin from 5",
+      "input": "Raul Rosas Jr.: finishing, win and fight-length figures",
+      "status": "thin"
+     },
+     {
+      "detail": "the fighter record was fetched on 2026-10-03, not before 2026-10-03, so it may already include this fight and is not used",
+      "input": "Raoni Barcelos: overall record",
+      "status": "absent"
+     },
+     {
+      "detail": "no opponent had an earlier UFC fight in the store",
+      "input": "Raoni Barcelos: strength of schedule",
+      "status": "absent"
+     },
+     {
+      "detail": "no date of birth on the fighter record",
+      "input": "Raoni Barcelos: age",
+      "status": "absent"
+     },
+     {
+      "detail": "no height on the fighter record",
+      "input": "Raoni Barcelos: height",
+      "status": "absent"
+     },
+     {
+      "detail": "no reach on the fighter record",
+      "input": "Raoni Barcelos: reach",
+      "status": "absent"
+     },
+     {
+      "detail": "1 fight and 22 minutes on file; a rate is shown from 2 fights and counts as more than thin from 3 fights and 30 fight minutes",
+      "input": "Raoni Barcelos: rates and accuracies",
+      "status": "thin"
+     },
+     {
+      "detail": "1 fight on file; a share of results is shown from 3 fights and counts as more than thin from 5",
+      "input": "Raoni Barcelos: finishing, win and fight-length figures",
+      "status": "thin"
+     }
+    ],
+    "notices": [
+     "No booked bout between Raul Rosas Jr. and Raoni Barcelos is on file, so this read treats them as a possible matchup measured as of 2026-10-03."
+    ],
+    "version": 1,
+    "what_would_change_it": [
+     {
+      "because": "Everything above is built from Raul Rosas Jr. and Raoni Barcelos as a possible matchup measured as of 2026-10-03; a replacement fighter would void it and start the read again.",
+      "evidence": [],
+      "fact": "A change of opponent, a withdrawal or a cancelled bout."
+     },
+     {
+      "because": "Raul Rosas Jr. has 1 fight and 22 minutes behind the figures, so one more fight would move most of them.",
+      "evidence": [
+       {
+        "label": "Raul Rosas Jr. fights on file",
+        "path": "features.a.sample.fights",
+        "value": 1
+       },
+       {
+        "label": "Raul Rosas Jr. fight minutes on file",
+        "path": "features.a.sample.minutes",
+        "value": 21.63
+       }
+      ],
+      "fact": "More fights on file for Raul Rosas Jr.."
+     },
+     {
+      "because": "With no price on file there is nothing to set this read against; once one is posted the market view above fills in.",
+      "evidence": [],
+      "fact": "A price being posted."
+     }
+    ]
+   },
+   "sheet": {
+    "a": {
+     "fighter_id": "5088844",
+     "name": "Raul Rosas Jr."
+    },
+    "as_of": "2026-10-03T00:00:00Z",
+    "as_of_source": "argument",
+    "b": {
+     "fighter_id": "3075570",
+     "name": "Raoni Barcelos"
+    },
+    "bout": null,
+    "differentials": {
+     "average_fight_time_s": {
+      "a": 1298,
+      "a_sample": {
+       "fights": 1,
+       "minutes": 21.63
+      },
+      "b": 1298,
+      "b_sample": {
+       "fights": 1,
+       "minutes": 21.63
+      },
+      "diff": 0,
+      "thin_sample": true,
+      "unit": "seconds"
+     },
+     "been_finished_rate": {
+      "a": 0,
+      "a_sample": {
+       "fights": 1,
+       "minutes": 21.63
+      },
+      "b": 1,
+      "b_sample": {
+       "fights": 1,
+       "minutes": 21.63
+      },
+      "diff": -1,
+      "thin_sample": true,
+      "unit": "losses by KO/TKO or submission per fight"
+     },
+     "control_time_share": {
+      "a": 0.0416,
+      "a_sample": {
+       "fights": 1,
+       "minutes": 21.63
+      },
+      "b": 0.2935,
+      "b_sample": {
+       "fights": 1,
+       "minutes": 21.63
+      },
+      "diff": -0.2519,
+      "thin_sample": true,
+      "unit": "seconds in control / fight seconds"
+     },
+     "distance_rate": {
+      "a": 0,
+      "a_sample": {
+       "fights": 1,
+       "minutes": 21.63
+      },
+      "b": 0,
+      "b_sample": {
+       "fights": 1,
+       "minutes": 21.63
+      },
+      "diff": 0,
+      "thin_sample": true,
+      "unit": "share of fights that went to the judges' scorecards"
+     },
+     "finish_rate": {
+      "a": 1,
+      "a_sample": {
+       "fights": 1,
+       "minutes": 21.63
+      },
+      "b": 0,
+      "b_sample": {
+       "fights": 1,
+       "minutes": 21.63
+      },
+      "diff": 1,
+      "thin_sample": true,
+      "unit": "finishing wins (KO/TKO or submission) per fight"
+     },
+     "knockdowns_landed_per_15": {
+      "a": 0,
+      "a_sample": {
+       "fights": 1,
+       "minutes": 21.63
+      },
+      "b": 0,
+      "b_sample": {
+       "fights": 1,
+       "minutes": 21.63
+      },
+      "diff": 0,
+      "thin_sample": true,
+      "unit": "knockdowns scored per 15 minutes"
+     },
+     "knockdowns_suffered_per_15": {
+      "a": 0,
+      "a_sample": {
+       "fights": 1,
+       "minutes": 21.63
+      },
+      "b": 0,
+      "b_sample": {
+       "fights": 1,
+       "minutes": 21.63
+      },
+      "diff": 0,
+      "thin_sample": true,
+      "unit": "knockdowns suffered per 15 minutes"
+     },
+     "sig_strike_accuracy": {
+      "a": 0.4502,
+      "a_sample": {
+       "fights": 1,
+       "minutes": 21.63
+      },
+      "b": 0.5695,
+      "b_sample": {
+       "fights": 1,
+       "minutes": 21.63
+      },
+      "diff": -0.1193,
+      "thin_sample": true,
+      "unit": "significant strikes landed / attempted"
+     },
+     "sig_strike_defence": {
+      "a": 0.4305,
+      "a_sample": {
+       "fights": 1,
+       "minutes": 21.63
+      },
+      "b": 0.5498,
+      "b_sample": {
+       "fights": 1,
+       "minutes": 21.63
+      },
+      "diff": -0.1193,
+      "thin_sample": true,
+      "unit": "1 - opponent significant strikes landed / attempted"
+     },
+     "sig_strikes_absorbed_per_min": {
+      "a": 5.8706,
+      "a_sample": {
+       "fights": 1,
+       "minutes": 21.63
+      },
+      "b": 5.2234,
+      "b_sample": {
+       "fights": 1,
+       "minutes": 21.63
+      },
+      "diff": 0.6472,
+      "thin_sample": true,
+      "unit": "significant strikes absorbed per minute"
+     },
+     "sig_strikes_landed_per_min": {
+      "a": 5.2234,
+      "a_sample": {
+       "fights": 1,
+       "minutes": 21.63
+      },
+      "b": 5.8706,
+      "b_sample": {
+       "fights": 1,
+       "minutes": 21.63
+      },
+      "diff": -0.6472,
+      "thin_sample": true,
+      "unit": "significant strikes landed per minute"
+     },
+     "strength_of_schedule": {
+      "a": null,
+      "a_sample": {
+       "fights": 0,
+       "minutes": 0.0
+      },
+      "b": null,
+      "b_sample": {
+       "fights": 0,
+       "minutes": 0.0
+      },
+      "diff": null,
+      "thin_sample": true,
+      "unit": "mean opponent UFC win rate at the start of each fight"
+     },
+     "submission_attempts_per_15": {
+      "a": 0,
+      "a_sample": {
+       "fights": 1,
+       "minutes": 21.63
+      },
+      "b": 3.4669,
+      "b_sample": {
+       "fights": 1,
+       "minutes": 21.63
+      },
+      "diff": -3.4669,
+      "thin_sample": true,
+      "unit": "submission attempts per 15 minutes"
+     },
+     "takedown_accuracy": {
+      "a": 0.3333,
+      "a_sample": {
+       "fights": 1,
+       "minutes": 21.63
+      },
+      "b": 0.4091,
+      "b_sample": {
+       "fights": 1,
+       "minutes": 21.63
+      },
+      "diff": -0.0758,
+      "thin_sample": true,
+      "unit": "takedowns landed / attempted"
+     },
+     "takedown_defence": {
+      "a": 0.5909,
+      "a_sample": {
+       "fights": 1,
+       "minutes": 21.63
+      },
+      "b": 0.6667,
+      "b_sample": {
+       "fights": 1,
+       "minutes": 21.63
+      },
+      "diff": -0.0758,
+      "thin_sample": true,
+      "unit": "1 - opponent takedowns landed / attempted"
+     },
+     "takedowns_landed_per_15": {
+      "a": 0.6934,
+      "a_sample": {
+       "fights": 1,
+       "minutes": 21.63
+      },
+      "b": 6.2404,
+      "b_sample": {
+       "fights": 1,
+       "minutes": 21.63
+      },
+      "diff": -5.547,
+      "thin_sample": true,
+      "unit": "takedowns landed per 15 minutes"
+     },
+     "ufc_fights": {
+      "a": 1,
+      "a_sample": {
+       "fights": 1,
+       "minutes": 21.63
+      },
+      "b": 1,
+      "b_sample": {
+       "fights": 1,
+       "minutes": 21.63
+      },
+      "diff": 0,
+      "unit": "fights"
+     },
+     "win_rate": {
+      "a": 1,
+      "a_sample": {
+       "fights": 1,
+       "minutes": 21.63
+      },
+      "b": 0,
+      "b_sample": {
+       "fights": 1,
+       "minutes": 21.63
+      },
+      "diff": 1,
+      "thin_sample": true,
+      "unit": "wins / (wins + losses + draws)"
+     }
+    },
+    "features": {
+     "a": {
+      "as_of": "2026-10-03T00:00:00Z",
+      "career_record_incl_non_ufc": {
+       "as_of_safe": false,
+       "draws": 0,
+       "fetched_utc": "2026-10-03T18:00:00Z",
+       "includes_non_ufc": true,
+       "label": "Overall professional record from the fighter record, including fights outside the UFC",
+       "losses": 1,
+       "no_contests": null,
+       "note": "As of the fetch time of the fighter record, not as of as_of; do not use it where leakage matters.",
+       "wins": 13
+      },
+      "fighter_id": "5088844",
+      "figures": {
+       "age_years": {
+        "reason": "no date of birth on the fighter record",
+        "unit": "years",
+        "value": null
+       },
+       "average_fight_time_s": {
+        "den": 1,
+        "fights": 1,
+        "minutes": 21.63,
+        "num": 1298,
+        "unit": "seconds",
+        "value": 1298
+       },
+       "been_finished_rate": {
+        "den": 1,
+        "fights": 1,
+        "minutes": 21.63,
+        "num": 0,
+        "unit": "losses by KO/TKO or submission per fight",
+        "value": 0
+       },
+       "control_time_share": {
+        "den": 1298,
+        "fights": 1,
+        "minutes": 21.63,
+        "num": 54,
+        "unit": "seconds in control / fight seconds",
+        "value": 0.0416
+       },
+       "days_since_last_fight": {
+        "unit": "days",
+        "value": 6
+       },
+       "distance_rate": {
+        "den": 1,
+        "fights": 1,
+        "minutes": 21.63,
+        "num": 0,
+        "unit": "share of fights that went to the judges' scorecards",
+        "value": 0
+       },
+       "finish_rate": {
+        "den": 1,
+        "fights": 1,
+        "minutes": 21.63,
+        "num": 1,
+        "unit": "finishing wins (KO/TKO or submission) per fight",
+        "value": 1
+       },
+       "finish_share_of_wins": {
+        "den": 1,
+        "fights": 1,
+        "minutes": 21.63,
+        "num": 1,
+        "unit": "share of wins that were KO/TKO or submission",
+        "value": 1
+       },
+       "finished_share_of_losses": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "no losses with a recorded method before as_of",
+        "unit": "share of losses that were KO/TKO or submission",
+        "value": null
+       },
+       "height_in": {
+        "reason": "no height on the fighter record",
+        "unit": "inches",
+        "value": null
+       },
+       "knockdowns_landed_per_15": {
+        "den": 21.6333,
+        "fights": 1,
+        "minutes": 21.63,
+        "num": 0,
+        "unit": "knockdowns scored per 15 minutes",
+        "value": 0
+       },
+       "knockdowns_suffered_per_15": {
+        "den": 21.6333,
+        "fights": 1,
+        "minutes": 21.63,
+        "num": 0,
+        "unit": "knockdowns suffered per 15 minutes",
+        "value": 0
+       },
+       "reach_in": {
+        "reason": "no reach on the fighter record",
+        "unit": "inches",
+        "value": null
+       },
+       "sig_strike_accuracy": {
+        "den": 251,
+        "fights": 1,
+        "minutes": 21.63,
+        "num": 113,
+        "unit": "significant strikes landed / attempted",
+        "value": 0.4502
+       },
+       "sig_strike_defence": {
+        "den": 223,
+        "fights": 1,
+        "minutes": 21.63,
+        "num": 127,
+        "unit": "1 - opponent significant strikes landed / attempted",
+        "value": 0.4305
+       },
+       "sig_strike_share_body": {
+        "den": 113,
+        "fights": 1,
+        "minutes": 21.63,
+        "num": 14,
+        "unit": "share of significant strikes landed, by target",
+        "value": 0.1239
+       },
+       "sig_strike_share_clinch": {
+        "den": 113,
+        "fights": 1,
+        "minutes": 21.63,
+        "num": 17,
+        "unit": "share of significant strikes landed, by position",
+        "value": 0.1504
+       },
+       "sig_strike_share_distance": {
+        "den": 113,
+        "fights": 1,
+        "minutes": 21.63,
+        "num": 92,
+        "unit": "share of significant strikes landed, by position",
+        "value": 0.8142
+       },
+       "sig_strike_share_ground": {
+        "den": 113,
+        "fights": 1,
+        "minutes": 21.63,
+        "num": 4,
+        "unit": "share of significant strikes landed, by position",
+        "value": 0.0354
+       },
+       "sig_strike_share_head": {
+        "den": 113,
+        "fights": 1,
+        "minutes": 21.63,
+        "num": 89,
+        "unit": "share of significant strikes landed, by target",
+        "value": 0.7876
+       },
+       "sig_strike_share_leg": {
+        "den": 113,
+        "fights": 1,
+        "minutes": 21.63,
+        "num": 10,
+        "unit": "share of significant strikes landed, by target",
+        "value": 0.0885
+       },
+       "sig_strikes_absorbed_per_min": {
+        "den": 21.6333,
+        "fights": 1,
+        "minutes": 21.63,
+        "num": 127,
+        "unit": "significant strikes absorbed per minute",
+        "value": 5.8706
+       },
+       "sig_strikes_landed_per_min": {
+        "den": 21.6333,
+        "fights": 1,
+        "minutes": 21.63,
+        "num": 113,
+        "unit": "significant strikes landed per minute",
+        "value": 5.2234
+       },
+       "strength_of_schedule": {
+        "fights": 0,
+        "minutes": 0.0,
+        "opponents_without_history": 1,
+        "reason": "no opponent had an earlier UFC fight in the store",
+        "unit": "mean opponent UFC win rate at the start of each fight",
+        "value": null
+       },
+       "submission_attempts_per_15": {
+        "den": 21.6333,
+        "fights": 1,
+        "minutes": 21.63,
+        "num": 0,
+        "unit": "submission attempts per 15 minutes",
+        "value": 0
+       },
+       "takedown_accuracy": {
+        "den": 3,
+        "fights": 1,
+        "minutes": 21.63,
+        "num": 1,
+        "unit": "takedowns landed / attempted",
+        "value": 0.3333
+       },
+       "takedown_defence": {
+        "den": 22,
+        "fights": 1,
+        "minutes": 21.63,
+        "num": 9,
+        "unit": "1 - opponent takedowns landed / attempted",
+        "value": 0.5909
+       },
+       "takedowns_landed_per_15": {
+        "den": 21.6333,
+        "fights": 1,
+        "minutes": 21.63,
+        "num": 1,
+        "unit": "takedowns landed per 15 minutes",
+        "value": 0.6934
+       },
+       "ufc_fights": {
+        "fights": 1,
+        "minutes": 21.63,
+        "unit": "fights",
+        "value": 1
+       },
+       "win_rate": {
+        "den": 1,
+        "fights": 1,
+        "minutes": 21.63,
+        "num": 1,
+        "unit": "wins / (wins + losses + draws)",
+        "value": 1
+       }
+      },
+      "last_three": [
+       {
+        "bout_id": "401911630",
+        "date_utc": "2026-09-27T00:00Z",
+        "detail": null,
+        "method": "KO_TKO",
+        "opponent_id": "3075570",
+        "opponent_name": "Raoni Barcelos",
+        "result": "win",
+        "round": 5,
+        "time_s": 98.0,
+        "weight_class": "Bantamweight"
+       }
+      ],
+      "leakage_rule": "uses only bouts that started strictly before as_of and have a result; a bout on the as_of date or at the as_of instant, and every later bout, is excluded",
+      "missing": [
+       {
+        "figure": "finished_share_of_losses",
+        "reason": "no losses with a recorded method before as_of"
+       },
+       {
+        "figure": "strength_of_schedule",
+        "reason": "no opponent had an earlier UFC fight in the store"
+       },
+       {
+        "figure": "age_years",
+        "reason": "no date of birth on the fighter record"
+       },
+       {
+        "figure": "height_in",
+        "reason": "no height on the fighter record"
+       },
+       {
+        "figure": "reach_in",
+        "reason": "no reach on the fighter record"
+       },
+       {
+        "figure": "ufccom_career",
+        "reason": "no UFC.com profile for this fighter in the store"
+       }
+      ],
+      "name": "Raul Rosas Jr.",
+      "physical": {
+       "dob": null,
+       "stance": null
+      },
+      "record": {
+       "draws": 0,
+       "fights": 1,
+       "first_fight_utc": "2026-09-27T00:00:00Z",
+       "last_fight_utc": "2026-09-27T00:00:00Z",
+       "losses": 0,
+       "losses_by_method": {
+        "decision": 0,
+        "dq": 0,
+        "ko_tko": 0,
+        "other": 0,
+        "submission": 0,
+        "unknown": 0
+       },
+       "no_contests": 0,
+       "wins": 1,
+       "wins_by_method": {
+        "decision": 0,
+        "dq": 0,
+        "ko_tko": 1,
+        "other": 0,
+        "submission": 0,
+        "unknown": 0
+       }
+      },
+      "sample": {
+       "fights": 1,
+       "fights_with_both_stats": 1,
+       "fights_with_opponent_stats": 1,
+       "fights_with_own_stats": 1,
+       "fights_without_any_stats": [],
+       "minutes": 21.63,
+       "skipped": {
+        "no_start_time": [],
+        "started_without_result": []
+       }
+      },
+      "streak": {
+       "length": 1,
+       "type": "win"
+      },
+      "strength_of_schedule_by_fight": [
+       {
+        "bout_id": "401911630",
+        "date_utc": "2026-09-27T00:00:00Z",
+        "opponent_id": "3075570",
+        "opponent_record_then": {
+         "draws": 0,
+         "losses": 0,
+         "no_contests": 0,
+         "wins": 0
+        },
+        "opponent_win_rate": null
+       }
+      ],
+      "ufccom_career": null,
+      "weight_classes": {
+       "current": "Bantamweight",
+       "fights_without_weight_class": 0,
+       "fought": [
+        {
+         "fights": 1,
+         "first_utc": "2026-09-27T00:00:00Z",
+         "last_utc": "2026-09-27T00:00:00Z",
+         "weight_class": "Bantamweight"
+        }
+       ],
+       "most_recent_change": null
+      }
+     },
+     "b": {
+      "as_of": "2026-10-03T00:00:00Z",
+      "career_record_incl_non_ufc": {
+       "as_of_safe": false,
+       "draws": 0,
+       "fetched_utc": "2026-10-03T18:00:00Z",
+       "includes_non_ufc": true,
+       "label": "Overall professional record from the fighter record, including fights outside the UFC",
+       "losses": 6,
+       "no_contests": null,
+       "note": "As of the fetch time of the fighter record, not as of as_of; do not use it where leakage matters.",
+       "wins": 22
+      },
+      "fighter_id": "3075570",
+      "figures": {
+       "age_years": {
+        "reason": "no date of birth on the fighter record",
+        "unit": "years",
+        "value": null
+       },
+       "average_fight_time_s": {
+        "den": 1,
+        "fights": 1,
+        "minutes": 21.63,
+        "num": 1298,
+        "unit": "seconds",
+        "value": 1298
+       },
+       "been_finished_rate": {
+        "den": 1,
+        "fights": 1,
+        "minutes": 21.63,
+        "num": 1,
+        "unit": "losses by KO/TKO or submission per fight",
+        "value": 1
+       },
+       "control_time_share": {
+        "den": 1298,
+        "fights": 1,
+        "minutes": 21.63,
+        "num": 381,
+        "unit": "seconds in control / fight seconds",
+        "value": 0.2935
+       },
+       "days_since_last_fight": {
+        "unit": "days",
+        "value": 6
+       },
+       "distance_rate": {
+        "den": 1,
+        "fights": 1,
+        "minutes": 21.63,
+        "num": 0,
+        "unit": "share of fights that went to the judges' scorecards",
+        "value": 0
+       },
+       "finish_rate": {
+        "den": 1,
+        "fights": 1,
+        "minutes": 21.63,
+        "num": 0,
+        "unit": "finishing wins (KO/TKO or submission) per fight",
+        "value": 0
+       },
+       "finish_share_of_wins": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "no wins with a recorded method before as_of",
+        "unit": "share of wins that were KO/TKO or submission",
+        "value": null
+       },
+       "finished_share_of_losses": {
+        "den": 1,
+        "fights": 1,
+        "minutes": 21.63,
+        "num": 1,
+        "unit": "share of losses that were KO/TKO or submission",
+        "value": 1
+       },
+       "height_in": {
+        "reason": "no height on the fighter record",
+        "unit": "inches",
+        "value": null
+       },
+       "knockdowns_landed_per_15": {
+        "den": 21.6333,
+        "fights": 1,
+        "minutes": 21.63,
+        "num": 0,
+        "unit": "knockdowns scored per 15 minutes",
+        "value": 0
+       },
+       "knockdowns_suffered_per_15": {
+        "den": 21.6333,
+        "fights": 1,
+        "minutes": 21.63,
+        "num": 0,
+        "unit": "knockdowns suffered per 15 minutes",
+        "value": 0
+       },
+       "reach_in": {
+        "reason": "no reach on the fighter record",
+        "unit": "inches",
+        "value": null
+       },
+       "sig_strike_accuracy": {
+        "den": 223,
+        "fights": 1,
+        "minutes": 21.63,
+        "num": 127,
+        "unit": "significant strikes landed / attempted",
+        "value": 0.5695
+       },
+       "sig_strike_defence": {
+        "den": 251,
+        "fights": 1,
+        "minutes": 21.63,
+        "num": 113,
+        "unit": "1 - opponent significant strikes landed / attempted",
+        "value": 0.5498
+       },
+       "sig_strike_share_body": {
+        "den": 127,
+        "fights": 1,
+        "minutes": 21.63,
+        "num": 34,
+        "unit": "share of significant strikes landed, by target",
+        "value": 0.2677
+       },
+       "sig_strike_share_clinch": {
+        "den": 127,
+        "fights": 1,
+        "minutes": 21.63,
+        "num": 9,
+        "unit": "share of significant strikes landed, by position",
+        "value": 0.0709
+       },
+       "sig_strike_share_distance": {
+        "den": 127,
+        "fights": 1,
+        "minutes": 21.63,
+        "num": 117,
+        "unit": "share of significant strikes landed, by position",
+        "value": 0.9213
+       },
+       "sig_strike_share_ground": {
+        "den": 127,
+        "fights": 1,
+        "minutes": 21.63,
+        "num": 1,
+        "unit": "share of significant strikes landed, by position",
+        "value": 0.0079
+       },
+       "sig_strike_share_head": {
+        "den": 127,
+        "fights": 1,
+        "minutes": 21.63,
+        "num": 90,
+        "unit": "share of significant strikes landed, by target",
+        "value": 0.7087
+       },
+       "sig_strike_share_leg": {
+        "den": 127,
+        "fights": 1,
+        "minutes": 21.63,
+        "num": 3,
+        "unit": "share of significant strikes landed, by target",
+        "value": 0.0236
+       },
+       "sig_strikes_absorbed_per_min": {
+        "den": 21.6333,
+        "fights": 1,
+        "minutes": 21.63,
+        "num": 113,
+        "unit": "significant strikes absorbed per minute",
+        "value": 5.2234
+       },
+       "sig_strikes_landed_per_min": {
+        "den": 21.6333,
+        "fights": 1,
+        "minutes": 21.63,
+        "num": 127,
+        "unit": "significant strikes landed per minute",
+        "value": 5.8706
+       },
+       "strength_of_schedule": {
+        "fights": 0,
+        "minutes": 0.0,
+        "opponents_without_history": 1,
+        "reason": "no opponent had an earlier UFC fight in the store",
+        "unit": "mean opponent UFC win rate at the start of each fight",
+        "value": null
+       },
+       "submission_attempts_per_15": {
+        "den": 21.6333,
+        "fights": 1,
+        "minutes": 21.63,
+        "num": 5,
+        "unit": "submission attempts per 15 minutes",
+        "value": 3.4669
+       },
+       "takedown_accuracy": {
+        "den": 22,
+        "fights": 1,
+        "minutes": 21.63,
+        "num": 9,
+        "unit": "takedowns landed / attempted",
+        "value": 0.4091
+       },
+       "takedown_defence": {
+        "den": 3,
+        "fights": 1,
+        "minutes": 21.63,
+        "num": 1,
+        "unit": "1 - opponent takedowns landed / attempted",
+        "value": 0.6667
+       },
+       "takedowns_landed_per_15": {
+        "den": 21.6333,
+        "fights": 1,
+        "minutes": 21.63,
+        "num": 9,
+        "unit": "takedowns landed per 15 minutes",
+        "value": 6.2404
+       },
+       "ufc_fights": {
+        "fights": 1,
+        "minutes": 21.63,
+        "unit": "fights",
+        "value": 1
+       },
+       "win_rate": {
+        "den": 1,
+        "fights": 1,
+        "minutes": 21.63,
+        "num": 0,
+        "unit": "wins / (wins + losses + draws)",
+        "value": 0
+       }
+      },
+      "last_three": [
+       {
+        "bout_id": "401911630",
+        "date_utc": "2026-09-27T00:00Z",
+        "detail": null,
+        "method": "KO_TKO",
+        "opponent_id": "5088844",
+        "opponent_name": "Raul Rosas Jr.",
+        "result": "loss",
+        "round": 5,
+        "time_s": 98.0,
+        "weight_class": "Bantamweight"
+       }
+      ],
+      "leakage_rule": "uses only bouts that started strictly before as_of and have a result; a bout on the as_of date or at the as_of instant, and every later bout, is excluded",
+      "missing": [
+       {
+        "figure": "finish_share_of_wins",
+        "reason": "no wins with a recorded method before as_of"
+       },
+       {
+        "figure": "strength_of_schedule",
+        "reason": "no opponent had an earlier UFC fight in the store"
+       },
+       {
+        "figure": "age_years",
+        "reason": "no date of birth on the fighter record"
+       },
+       {
+        "figure": "height_in",
+        "reason": "no height on the fighter record"
+       },
+       {
+        "figure": "reach_in",
+        "reason": "no reach on the fighter record"
+       },
+       {
+        "figure": "ufccom_career",
+        "reason": "no UFC.com profile for this fighter in the store"
+       }
+      ],
+      "name": "Raoni Barcelos",
+      "physical": {
+       "dob": null,
+       "stance": null
+      },
+      "record": {
+       "draws": 0,
+       "fights": 1,
+       "first_fight_utc": "2026-09-27T00:00:00Z",
+       "last_fight_utc": "2026-09-27T00:00:00Z",
+       "losses": 1,
+       "losses_by_method": {
+        "decision": 0,
+        "dq": 0,
+        "ko_tko": 1,
+        "other": 0,
+        "submission": 0,
+        "unknown": 0
+       },
+       "no_contests": 0,
+       "wins": 0,
+       "wins_by_method": {
+        "decision": 0,
+        "dq": 0,
+        "ko_tko": 0,
+        "other": 0,
+        "submission": 0,
+        "unknown": 0
+       }
+      },
+      "sample": {
+       "fights": 1,
+       "fights_with_both_stats": 1,
+       "fights_with_opponent_stats": 1,
+       "fights_with_own_stats": 1,
+       "fights_without_any_stats": [],
+       "minutes": 21.63,
+       "skipped": {
+        "no_start_time": [],
+        "started_without_result": []
+       }
+      },
+      "streak": {
+       "length": 1,
+       "type": "loss"
+      },
+      "strength_of_schedule_by_fight": [
+       {
+        "bout_id": "401911630",
+        "date_utc": "2026-09-27T00:00:00Z",
+        "opponent_id": "5088844",
+        "opponent_record_then": {
+         "draws": 0,
+         "losses": 0,
+         "no_contests": 0,
+         "wins": 0
+        },
+        "opponent_win_rate": null
+       }
+      ],
+      "ufccom_career": null,
+      "weight_classes": {
+       "current": "Bantamweight",
+       "fights_without_weight_class": 0,
+       "fought": [
+        {
+         "fights": 1,
+         "first_utc": "2026-09-27T00:00:00Z",
+         "last_utc": "2026-09-27T00:00:00Z",
+         "weight_class": "Bantamweight"
+        }
+       ],
+       "most_recent_change": null
+      }
+     }
+    },
+    "layoff": {
+     "a_days": 6,
+     "a_last_fight_utc": "2026-09-27T00:00:00Z",
+     "b_days": 6,
+     "b_last_fight_utc": "2026-09-27T00:00:00Z",
+     "difference_days": 0,
+     "longer_layoff": "equal",
+     "measured_to": "2026-10-03T00:00:00Z"
+    },
+    "leakage_rule": "uses only bouts that started strictly before as_of and have a result; a bout on the as_of date or at the as_of instant, and every later bout, is excluded",
+    "missing": [
+     {
+      "fighter_id": "5088844",
+      "figure": "finished_share_of_losses",
+      "reason": "no losses with a recorded method before as_of",
+      "side": "a"
+     },
+     {
+      "fighter_id": "5088844",
+      "figure": "strength_of_schedule",
+      "reason": "no opponent had an earlier UFC fight in the store",
+      "side": "a"
+     },
+     {
+      "fighter_id": "5088844",
+      "figure": "age_years",
+      "reason": "no date of birth on the fighter record",
+      "side": "a"
+     },
+     {
+      "fighter_id": "5088844",
+      "figure": "height_in",
+      "reason": "no height on the fighter record",
+      "side": "a"
+     },
+     {
+      "fighter_id": "5088844",
+      "figure": "reach_in",
+      "reason": "no reach on the fighter record",
+      "side": "a"
+     },
+     {
+      "fighter_id": "5088844",
+      "figure": "ufccom_career",
+      "reason": "no UFC.com profile for this fighter in the store",
+      "side": "a"
+     },
+     {
+      "fighter_id": "3075570",
+      "figure": "finish_share_of_wins",
+      "reason": "no wins with a recorded method before as_of",
+      "side": "b"
+     },
+     {
+      "fighter_id": "3075570",
+      "figure": "strength_of_schedule",
+      "reason": "no opponent had an earlier UFC fight in the store",
+      "side": "b"
+     },
+     {
+      "fighter_id": "3075570",
+      "figure": "age_years",
+      "reason": "no date of birth on the fighter record",
+      "side": "b"
+     },
+     {
+      "fighter_id": "3075570",
+      "figure": "height_in",
+      "reason": "no height on the fighter record",
+      "side": "b"
+     },
+     {
+      "fighter_id": "3075570",
+      "figure": "reach_in",
+      "reason": "no reach on the fighter record",
+      "side": "b"
+     },
+     {
+      "fighter_id": "3075570",
+      "figure": "ufccom_career",
+      "reason": "no UFC.com profile for this fighter in the store",
+      "side": "b"
+     },
+     {
+      "figure": "bout",
+      "reason": "no scheduled bout between these fighters in the store",
+      "side": null
+     }
+    ],
+    "note": "Facts only. No prediction, no pick. The probabilities in the odds block are the market's own, not an estimate made here.",
+    "odds": null,
+    "physical": {
+     "a": {
+      "age_years": null,
+      "height_in": null,
+      "reach_in": null,
+      "reach_minus_height_in": null,
+      "stance": null
+     },
+     "b": {
+      "age_years": null,
+      "height_in": null,
+      "reach_in": null,
+      "reach_minus_height_in": null,
+      "stance": null
+     },
+     "differences": {
+      "age_years": null,
+      "height_in": null,
+      "reach_in": null,
+      "reach_minus_height_in": null
+     },
+     "same_stance": null,
+     "stance_matchup": null
+    },
+    "previous_meetings": [
+     {
+      "bout_id": "401911630",
+      "date_utc": "2026-09-27T00:00Z",
+      "detail": null,
+      "method": "KO_TKO",
+      "opponent_id": "3075570",
+      "opponent_name": "Raoni Barcelos",
+      "result": "win",
+      "round": 5,
+      "time_s": 98.0,
+      "weight_class": "Bantamweight",
+      "winner_id": "5088844",
+      "winner_name": "Raul Rosas Jr."
+     }
+    ],
+    "shared_opponents": {
+     "a_opponents": 1,
+     "b_opponents": 1,
+     "count": 0,
+     "items": []
+    },
+    "styles": {
+     "a": {
+      "applies": [],
+      "checked": [
+       "wrestler",
+       "submission_threat",
+       "striker",
+       "volume_striker",
+       "knockout_threat",
+       "finisher",
+       "vulnerable_to_finish",
+       "goes_the_distance",
+       "hard_to_take_down"
+      ],
+      "does_not_apply": [],
+      "not_assessed": [
+       {
+        "name": "wrestler",
+        "reason": "takedowns_landed_per_15: needs 3 fights, has 1; control_time_share: needs 3 fights, has 1"
+       },
+       {
+        "name": "submission_threat",
+        "reason": "submission_attempts_per_15: needs 3 fights, has 1"
+       },
+       {
+        "name": "striker",
+        "reason": "sig_strike_share_distance: needs 3 fights, has 1; takedowns_landed_per_15: needs 3 fights, has 1"
+       },
+       {
+        "name": "volume_striker",
+        "reason": "sig_strikes_landed_per_min: needs 3 fights, has 1"
+       },
+       {
+        "name": "knockout_threat",
+        "reason": "knockdowns_landed_per_15: needs 3 fights, has 1"
+       },
+       {
+        "name": "finisher",
+        "reason": "finish_rate: needs 5 fights, has 1"
+       },
+       {
+        "name": "vulnerable_to_finish",
+        "reason": "been_finished_rate: needs 5 fights, has 1"
+       },
+       {
+        "name": "goes_the_distance",
+        "reason": "distance_rate: needs 5 fights, has 1"
+       },
+       {
+        "name": "hard_to_take_down",
+        "reason": "takedown_defence: needs 3 fights, has 1"
+       }
+      ]
+     },
+     "b": {
+      "applies": [],
+      "checked": [
+       "wrestler",
+       "submission_threat",
+       "striker",
+       "volume_striker",
+       "knockout_threat",
+       "finisher",
+       "vulnerable_to_finish",
+       "goes_the_distance",
+       "hard_to_take_down"
+      ],
+      "does_not_apply": [],
+      "not_assessed": [
+       {
+        "name": "wrestler",
+        "reason": "takedowns_landed_per_15: needs 3 fights, has 1; control_time_share: needs 3 fights, has 1"
+       },
+       {
+        "name": "submission_threat",
+        "reason": "submission_attempts_per_15: needs 3 fights, has 1"
+       },
+       {
+        "name": "striker",
+        "reason": "sig_strike_share_distance: needs 3 fights, has 1; takedowns_landed_per_15: needs 3 fights, has 1"
+       },
+       {
+        "name": "volume_striker",
+        "reason": "sig_strikes_landed_per_min: needs 3 fights, has 1"
+       },
+       {
+        "name": "knockout_threat",
+        "reason": "knockdowns_landed_per_15: needs 3 fights, has 1"
+       },
+       {
+        "name": "finisher",
+        "reason": "finish_rate: needs 5 fights, has 1"
+       },
+       {
+        "name": "vulnerable_to_finish",
+        "reason": "been_finished_rate: needs 5 fights, has 1"
+       },
+       {
+        "name": "goes_the_distance",
+        "reason": "distance_rate: needs 5 fights, has 1"
+       },
+       {
+        "name": "hard_to_take_down",
+        "reason": "takedown_defence: needs 3 fights, has 1"
+       }
+      ]
+     }
+    }
+   }
+  },
+  "synthetic_main_event": {
+   "read": {
+    "a": {
+     "context": [
+      {
+       "evidence": [
+        {
+         "label": "Alex Archer fights on file",
+         "path": "features.a.record.fights",
+         "value": 5
+        },
+        {
+         "label": "Alex Archer wins on file",
+         "path": "features.a.record.wins",
+         "value": 3
+        },
+        {
+         "label": "Alex Archer losses on file",
+         "path": "features.a.record.losses",
+         "value": 2
+        },
+        {
+         "label": "Alex Archer first fight on file",
+         "path": "features.a.record.first_fight_utc",
+         "value": "2025-01-18T22:00:00Z"
+        }
+       ],
+       "key": "coverage",
+       "sentence": "Alex Archer has 5 UFC fights on file, the first on 2025-01-18, for a record of 3-2-0."
+      },
+      {
+       "evidence": [
+        {
+         "label": "Alex Archer overall wins",
+         "path": "features.a.career_record_incl_non_ufc.wins",
+         "value": 12
+        },
+        {
+         "label": "Alex Archer overall losses",
+         "path": "features.a.career_record_incl_non_ufc.losses",
+         "value": 4
+        },
+        {
+         "label": "record fetched",
+         "path": "features.a.career_record_incl_non_ufc.fetched_utc",
+         "value": "2026-10-03T12:00:00Z"
+        }
+       ],
+       "key": "overall_record",
+       "sentence": "The fighter record, fetched 2026-10-03, shows 12-4-0 overall, 16 professional fights including any outside the UFC."
+      },
+      {
+       "evidence": [
+        {
+         "label": "Alex Archer result, fight 1 back",
+         "path": "features.a.last_three.0.result",
+         "value": "win"
+        },
+        {
+         "label": "Alex Archer opponent, fight 1 back",
+         "path": "features.a.last_three.0.opponent_name",
+         "value": "Dan Silva"
+        },
+        {
+         "label": "Alex Archer method, fight 1 back",
+         "path": "features.a.last_three.0.method",
+         "value": "DEC_UNANIMOUS"
+        },
+        {
+         "label": "Alex Archer date, fight 1 back",
+         "path": "features.a.last_three.0.date_utc",
+         "value": "2026-06-13T22:00Z"
+        },
+        {
+         "label": "Alex Archer result, fight 2 back",
+         "path": "features.a.last_three.1.result",
+         "value": "loss"
+        },
+        {
+         "label": "Alex Archer opponent, fight 2 back",
+         "path": "features.a.last_three.1.opponent_name",
+         "value": "Ben Brawler"
+        },
+        {
+         "label": "Alex Archer method, fight 2 back",
+         "path": "features.a.last_three.1.method",
+         "value": "DEC_UNANIMOUS"
+        },
+        {
+         "label": "Alex Archer date, fight 2 back",
+         "path": "features.a.last_three.1.date_utc",
+         "value": "2026-03-14T22:00Z"
+        },
+        {
+         "label": "Alex Archer result, fight 3 back",
+         "path": "features.a.last_three.2.result",
+         "value": "win"
+        },
+        {
+         "label": "Alex Archer opponent, fight 3 back",
+         "path": "features.a.last_three.2.opponent_name",
+         "value": "Eli Silva"
+        },
+        {
+         "label": "Alex Archer method, fight 3 back",
+         "path": "features.a.last_three.2.method",
+         "value": "DEC_UNANIMOUS"
+        },
+        {
+         "label": "Alex Archer date, fight 3 back",
+         "path": "features.a.last_three.2.date_utc",
+         "value": "2025-09-20T22:00Z"
+        }
+       ],
+       "key": "last_fights",
+       "sentence": "Alex Archer's last 3 fights on file, newest first: beat Dan Silva by unanimous decision on 2026-06-13, round 3; lost to Ben Brawler by unanimous decision on 2026-03-14, round 5; beat Eli Silva by unanimous decision on 2025-09-20, round 3."
+      }
+     ],
+     "fighter_id": "101",
+     "name": "Alex Archer",
+     "paths_to_victory": [
+      {
+       "built_from": [
+        "decision_wins"
+       ],
+       "caveat": "",
+       "down_weighted": false,
+       "evidence": [
+        {
+         "label": "Alex Archer wins by decision",
+         "path": "features.a.record.wins_by_method.decision",
+         "value": 2
+        },
+        {
+         "label": "Alex Archer wins on file",
+         "path": "features.a.record.wins",
+         "value": 3
+        },
+        {
+         "label": "Alex Archer fights on file",
+         "path": "features.a.record.fights",
+         "value": 5
+        },
+        {
+         "label": "Ben Brawler finishing rate",
+         "path": "features.b.figures.finish_rate.value",
+         "value": 0.4
+        }
+       ],
+       "route": "scorecards",
+       "sample_level": "fair",
+       "sentence": "2 of Alex Archer's 3 wins on file came by decision, and Ben Brawler has finished 40% of fights on file.",
+       "size": "slight",
+       "thin": false,
+       "title": "Win on the scorecards",
+       "weight": 0.6
+      }
+     ],
+     "strengths": [
+      {
+       "caveat": "",
+       "down_weighted": false,
+       "evidence": [
+        {
+         "label": "Alex Archer submission attempts per 15 minutes",
+         "path": "features.a.figures.submission_attempts_per_15.value",
+         "value": 1.2
+        },
+        {
+         "label": "Alex Archer fights behind this",
+         "path": "features.a.figures.submission_attempts_per_15.fights",
+         "value": 4
+        },
+        {
+         "label": "Alex Archer fight minutes behind this",
+         "path": "features.a.figures.submission_attempts_per_15.minutes",
+         "value": 50.0
+        }
+       ],
+       "family": "grappling",
+       "kind": "strength",
+       "sample": {
+        "fights": 4,
+        "minutes": 50.0
+       },
+       "sample_level": "fair",
+       "sentence": "Alex Archer hunts submissions, throwing 1.2 attempts per 15 minutes (on file: 4 fights, 50 minutes).",
+       "size": "slight",
+       "thin": false,
+       "trait": "submission_threat",
+       "weight": 0.6
+      },
+      {
+       "caveat": "The reach is as listed on the fighter record.",
+       "down_weighted": false,
+       "evidence": [
+        {
+         "label": "Alex Archer reach (inches)",
+         "path": "physical.a.reach_in",
+         "value": 74.0
+        },
+        {
+         "label": "Ben Brawler reach (inches)",
+         "path": "physical.b.reach_in",
+         "value": 71.0
+        }
+       ],
+       "family": "physical",
+       "kind": "strength",
+       "sample": null,
+       "sample_level": "fair",
+       "sentence": "Alex Archer has the longer reach by 3.0 inches (74 against 71).",
+       "size": "slight",
+       "thin": false,
+       "trait": "reach",
+       "weight": 0.6
+      }
+     ],
+     "weaknesses": [
+      {
+       "caveat": "",
+       "down_weighted": false,
+       "evidence": [
+        {
+         "label": "Ben Brawler takedowns landed per 15 minutes",
+         "path": "features.b.figures.takedowns_landed_per_15.value",
+         "value": 2.9348
+        },
+        {
+         "label": "Ben Brawler fights behind this",
+         "path": "features.b.figures.takedowns_landed_per_15.fights",
+         "value": 5
+        },
+        {
+         "label": "Ben Brawler fight minutes behind this",
+         "path": "features.b.figures.takedowns_landed_per_15.minutes",
+         "value": 61.33
+        },
+        {
+         "label": "Alex Archer takedown defence",
+         "path": "features.a.figures.takedown_defence.value",
+         "value": 0.5
+        },
+        {
+         "label": "takedowns attempted against Alex Archer",
+         "path": "features.a.figures.takedown_defence.den",
+         "value": 10
+        },
+        {
+         "label": "Alex Archer fights behind this",
+         "path": "features.a.figures.takedown_defence.fights",
+         "value": 4
+        }
+       ],
+       "family": "grappling",
+       "kind": "weakness",
+       "sample": {
+        "fights": 4,
+        "minutes": 50.0
+       },
+       "sample_level": "fair",
+       "sentence": "Alex Archer is easy to take down, having stopped 50% of 10 takedown attempts, and Ben Brawler lands 2.9 takedowns per 15 minutes (on file: Ben Brawler 5 fights, 61 minutes; Alex Archer 4 fights, 10 takedown attempts against Alex Archer).",
+       "size": "large",
+       "thin": false,
+       "trait": "takedown_open",
+       "weight": 1.8
+      },
+      {
+       "caveat": "",
+       "down_weighted": false,
+       "evidence": [
+        {
+         "label": "Alex Archer share of strikes thrown at the fighter that miss",
+         "path": "features.a.figures.sig_strike_defence.value",
+         "value": 0.4
+        },
+        {
+         "label": "Alex Archer fights behind this",
+         "path": "features.a.figures.sig_strike_defence.fights",
+         "value": 4
+        },
+        {
+         "label": "Alex Archer fight minutes behind this",
+         "path": "features.a.figures.sig_strike_defence.minutes",
+         "value": 50.0
+        },
+        {
+         "label": "Ben Brawler share of strikes thrown at the fighter that miss",
+         "path": "features.b.figures.sig_strike_defence.value",
+         "value": 0.5052
+        },
+        {
+         "label": "Ben Brawler fights behind this",
+         "path": "features.b.figures.sig_strike_defence.fights",
+         "value": 4
+        },
+        {
+         "label": "Ben Brawler fight minutes behind this",
+         "path": "features.b.figures.sig_strike_defence.minutes",
+         "value": 55.33
+        }
+       ],
+       "family": "striking",
+       "kind": "weakness",
+       "sample": {
+        "fights": 4,
+        "minutes": 50.0
+       },
+       "sample_level": "fair",
+       "sentence": "Alex Archer is easier to hit, with only 40% of the significant strikes thrown at Alex Archer missing against 51% for Ben Brawler (on file: Alex Archer 4 fights, 50 minutes; Ben Brawler 4 fights, 55 minutes).",
+       "size": "moderate",
+       "thin": false,
+       "trait": "striking_defence",
+       "weight": 1.2
+      },
+      {
+       "caveat": "",
+       "down_weighted": false,
+       "evidence": [
+        {
+         "label": "Alex Archer knockdowns suffered per 15 minutes",
+         "path": "features.a.figures.knockdowns_suffered_per_15.value",
+         "value": 0.9
+        },
+        {
+         "label": "Alex Archer fights behind this",
+         "path": "features.a.figures.knockdowns_suffered_per_15.fights",
+         "value": 4
+        },
+        {
+         "label": "Alex Archer fight minutes behind this",
+         "path": "features.a.figures.knockdowns_suffered_per_15.minutes",
+         "value": 50.0
+        }
+       ],
+       "family": "finishing",
+       "kind": "weakness",
+       "sample": {
+        "fights": 4,
+        "minutes": 50.0
+       },
+       "sample_level": "fair",
+       "sentence": "Alex Archer has been knocked down 0.9 times per 15 minutes (on file: 4 fights, 50 minutes).",
+       "size": "slight",
+       "thin": false,
+       "trait": "chin",
+       "weight": 0.6
+      },
+      {
+       "caveat": "Records on file say nothing about who the fights were against.",
+       "down_weighted": false,
+       "evidence": [
+        {
+         "label": "Alex Archer wins on file",
+         "path": "features.a.record.wins",
+         "value": 3
+        },
+        {
+         "label": "Alex Archer losses on file",
+         "path": "features.a.record.losses",
+         "value": 2
+        },
+        {
+         "label": "Alex Archer fights on file",
+         "path": "features.a.record.fights",
+         "value": 5
+        },
+        {
+         "label": "Ben Brawler wins on file",
+         "path": "features.b.record.wins",
+         "value": 4
+        },
+        {
+         "label": "Ben Brawler losses on file",
+         "path": "features.b.record.losses",
+         "value": 1
+        },
+        {
+         "label": "Ben Brawler fights on file",
+         "path": "features.b.record.fights",
+         "value": 5
+        }
+       ],
+       "family": "form",
+       "kind": "weakness",
+       "sample": {
+        "fights": 5,
+        "minutes": 61.33
+       },
+       "sample_level": "fair",
+       "sentence": "Alex Archer has the weaker record on file, 3 wins in 5 fights against 4 wins in 5 fights for Ben Brawler.",
+       "size": "slight",
+       "thin": false,
+       "trait": "results",
+       "weight": 0.6
+      }
+     ]
+    },
+    "as_of": "2026-10-10T23:00:00Z",
+    "b": {
+     "context": [
+      {
+       "evidence": [
+        {
+         "label": "Ben Brawler fights on file",
+         "path": "features.b.record.fights",
+         "value": 5
+        },
+        {
+         "label": "Ben Brawler wins on file",
+         "path": "features.b.record.wins",
+         "value": 4
+        },
+        {
+         "label": "Ben Brawler losses on file",
+         "path": "features.b.record.losses",
+         "value": 1
+        },
+        {
+         "label": "Ben Brawler first fight on file",
+         "path": "features.b.record.first_fight_utc",
+         "value": "2025-03-08T22:00:00Z"
+        }
+       ],
+       "key": "coverage",
+       "sentence": "Ben Brawler has 5 UFC fights on file, the first on 2025-03-08, for a record of 4-1-0."
+      },
+      {
+       "evidence": [
+        {
+         "label": "Ben Brawler overall wins",
+         "path": "features.b.career_record_incl_non_ufc.wins",
+         "value": 9
+        },
+        {
+         "label": "Ben Brawler overall losses",
+         "path": "features.b.career_record_incl_non_ufc.losses",
+         "value": 3
+        },
+        {
+         "label": "record fetched",
+         "path": "features.b.career_record_incl_non_ufc.fetched_utc",
+         "value": "2026-10-03T12:00:00Z"
+        }
+       ],
+       "key": "overall_record",
+       "sentence": "The fighter record, fetched 2026-10-03, shows 9-3-1 overall, 13 professional fights including any outside the UFC."
+      },
+      {
+       "evidence": [
+        {
+         "label": "Ben Brawler result, fight 1 back",
+         "path": "features.b.last_three.0.result",
+         "value": "loss"
+        },
+        {
+         "label": "Ben Brawler opponent, fight 1 back",
+         "path": "features.b.last_three.0.opponent_name",
+         "value": "Cal Clinch"
+        },
+        {
+         "label": "Ben Brawler method, fight 1 back",
+         "path": "features.b.last_three.0.method",
+         "value": "SUB"
+        },
+        {
+         "label": "Ben Brawler date, fight 1 back",
+         "path": "features.b.last_three.0.date_utc",
+         "value": "2026-08-08T22:00Z"
+        },
+        {
+         "label": "Ben Brawler result, fight 2 back",
+         "path": "features.b.last_three.1.result",
+         "value": "win"
+        },
+        {
+         "label": "Ben Brawler opponent, fight 2 back",
+         "path": "features.b.last_three.1.opponent_name",
+         "value": "Alex Archer"
+        },
+        {
+         "label": "Ben Brawler method, fight 2 back",
+         "path": "features.b.last_three.1.method",
+         "value": "DEC_UNANIMOUS"
+        },
+        {
+         "label": "Ben Brawler date, fight 2 back",
+         "path": "features.b.last_three.1.date_utc",
+         "value": "2026-03-14T22:00Z"
+        },
+        {
+         "label": "Ben Brawler result, fight 3 back",
+         "path": "features.b.last_three.2.result",
+         "value": "win"
+        },
+        {
+         "label": "Ben Brawler opponent, fight 3 back",
+         "path": "features.b.last_three.2.opponent_name",
+         "value": "Dan Silva"
+        },
+        {
+         "label": "Ben Brawler method, fight 3 back",
+         "path": "features.b.last_three.2.method",
+         "value": "SUB"
+        },
+        {
+         "label": "Ben Brawler date, fight 3 back",
+         "path": "features.b.last_three.2.date_utc",
+         "value": "2026-01-24T22:00Z"
+        }
+       ],
+       "key": "last_fights",
+       "sentence": "Ben Brawler's last 3 fights on file, newest first: lost to Cal Clinch by submission on 2026-08-08, round 3; beat Alex Archer by unanimous decision on 2026-03-14, round 5; beat Dan Silva by submission on 2026-01-24, round 1."
+      }
+     ],
+     "fighter_id": "102",
+     "name": "Ben Brawler",
+     "paths_to_victory": [
+      {
+       "built_from": [
+        "takedown_open"
+       ],
+       "caveat": "",
+       "down_weighted": false,
+       "evidence": [
+        {
+         "label": "Ben Brawler takedowns landed per 15 minutes",
+         "path": "features.b.figures.takedowns_landed_per_15.value",
+         "value": 2.9348
+        },
+        {
+         "label": "Ben Brawler fights behind this",
+         "path": "features.b.figures.takedowns_landed_per_15.fights",
+         "value": 5
+        },
+        {
+         "label": "Ben Brawler fight minutes behind this",
+         "path": "features.b.figures.takedowns_landed_per_15.minutes",
+         "value": 61.33
+        },
+        {
+         "label": "Alex Archer takedown defence",
+         "path": "features.a.figures.takedown_defence.value",
+         "value": 0.5
+        },
+        {
+         "label": "takedowns attempted against Alex Archer",
+         "path": "features.a.figures.takedown_defence.den",
+         "value": 10
+        },
+        {
+         "label": "Alex Archer fights behind this",
+         "path": "features.a.figures.takedown_defence.fights",
+         "value": 4
+        }
+       ],
+       "route": "mat",
+       "sample_level": "fair",
+       "sentence": "Ben Brawler lands 2.9 takedowns per 15 minutes on file, and Alex Archer has stopped only 50% of 10 attempts.",
+       "size": "large",
+       "thin": false,
+       "title": "Take it to the mat",
+       "weight": 1.8
+      },
+      {
+       "built_from": [
+        "decision_wins"
+       ],
+       "caveat": "",
+       "down_weighted": false,
+       "evidence": [
+        {
+         "label": "Ben Brawler wins by decision",
+         "path": "features.b.record.wins_by_method.decision",
+         "value": 2
+        },
+        {
+         "label": "Ben Brawler wins on file",
+         "path": "features.b.record.wins",
+         "value": 4
+        },
+        {
+         "label": "Ben Brawler fights on file",
+         "path": "features.b.record.fights",
+         "value": 5
+        },
+        {
+         "label": "Alex Archer finishing rate",
+         "path": "features.a.figures.finish_rate.value",
+         "value": 0.2
+        }
+       ],
+       "route": "scorecards",
+       "sample_level": "fair",
+       "sentence": "2 of Ben Brawler's 4 wins on file came by decision, and Alex Archer has finished 20% of fights on file.",
+       "size": "slight",
+       "thin": false,
+       "title": "Win on the scorecards",
+       "weight": 0.6
+      }
+     ],
+     "strengths": [
+      {
+       "caveat": "",
+       "down_weighted": false,
+       "evidence": [
+        {
+         "label": "Ben Brawler takedowns landed per 15 minutes",
+         "path": "features.b.figures.takedowns_landed_per_15.value",
+         "value": 2.9348
+        },
+        {
+         "label": "Ben Brawler fights behind this",
+         "path": "features.b.figures.takedowns_landed_per_15.fights",
+         "value": 5
+        },
+        {
+         "label": "Ben Brawler fight minutes behind this",
+         "path": "features.b.figures.takedowns_landed_per_15.minutes",
+         "value": 61.33
+        },
+        {
+         "label": "Alex Archer takedown defence",
+         "path": "features.a.figures.takedown_defence.value",
+         "value": 0.5
+        },
+        {
+         "label": "takedowns attempted against Alex Archer",
+         "path": "features.a.figures.takedown_defence.den",
+         "value": 10
+        },
+        {
+         "label": "Alex Archer fights behind this",
+         "path": "features.a.figures.takedown_defence.fights",
+         "value": 4
+        }
+       ],
+       "family": "grappling",
+       "kind": "strength",
+       "sample": {
+        "fights": 4,
+        "minutes": 50.0
+       },
+       "sample_level": "fair",
+       "sentence": "Ben Brawler can take Alex Archer down, landing 2.9 takedowns per 15 minutes while Alex Archer has stopped 50% of 10 attempts against Alex Archer (on file: Ben Brawler 5 fights, 61 minutes; Alex Archer 4 fights, 10 takedown attempts against Alex Archer).",
+       "size": "large",
+       "thin": false,
+       "trait": "takedown_open",
+       "weight": 1.8
+      },
+      {
+       "caveat": "",
+       "down_weighted": false,
+       "evidence": [
+        {
+         "label": "Alex Archer share of strikes thrown at the fighter that miss",
+         "path": "features.a.figures.sig_strike_defence.value",
+         "value": 0.4
+        },
+        {
+         "label": "Alex Archer fights behind this",
+         "path": "features.a.figures.sig_strike_defence.fights",
+         "value": 4
+        },
+        {
+         "label": "Alex Archer fight minutes behind this",
+         "path": "features.a.figures.sig_strike_defence.minutes",
+         "value": 50.0
+        },
+        {
+         "label": "Ben Brawler share of strikes thrown at the fighter that miss",
+         "path": "features.b.figures.sig_strike_defence.value",
+         "value": 0.5052
+        },
+        {
+         "label": "Ben Brawler fights behind this",
+         "path": "features.b.figures.sig_strike_defence.fights",
+         "value": 4
+        },
+        {
+         "label": "Ben Brawler fight minutes behind this",
+         "path": "features.b.figures.sig_strike_defence.minutes",
+         "value": 55.33
+        }
+       ],
+       "family": "striking",
+       "kind": "strength",
+       "sample": {
+        "fights": 4,
+        "minutes": 50.0
+       },
+       "sample_level": "fair",
+       "sentence": "Ben Brawler is harder to hit, with 51% of the significant strikes thrown at Ben Brawler missing against 40% for Alex Archer (on file: Alex Archer 4 fights, 50 minutes; Ben Brawler 4 fights, 55 minutes).",
+       "size": "moderate",
+       "thin": false,
+       "trait": "striking_defence",
+       "weight": 1.2
+      },
+      {
+       "caveat": "Records on file say nothing about who the fights were against.",
+       "down_weighted": false,
+       "evidence": [
+        {
+         "label": "Alex Archer wins on file",
+         "path": "features.a.record.wins",
+         "value": 3
+        },
+        {
+         "label": "Alex Archer losses on file",
+         "path": "features.a.record.losses",
+         "value": 2
+        },
+        {
+         "label": "Alex Archer fights on file",
+         "path": "features.a.record.fights",
+         "value": 5
+        },
+        {
+         "label": "Ben Brawler wins on file",
+         "path": "features.b.record.wins",
+         "value": 4
+        },
+        {
+         "label": "Ben Brawler losses on file",
+         "path": "features.b.record.losses",
+         "value": 1
+        },
+        {
+         "label": "Ben Brawler fights on file",
+         "path": "features.b.record.fights",
+         "value": 5
+        }
+       ],
+       "family": "form",
+       "kind": "strength",
+       "sample": {
+        "fights": 5,
+        "minutes": 61.33
+       },
+       "sample_level": "fair",
+       "sentence": "Ben Brawler has the better record on file, 4 wins in 5 fights against 3 wins in 5 fights for Alex Archer.",
+       "size": "slight",
+       "thin": false,
+       "trait": "results",
+       "weight": 0.6
+      }
+     ],
+     "weaknesses": [
+      {
+       "caveat": "The reach is as listed on the fighter record.",
+       "down_weighted": false,
+       "evidence": [
+        {
+         "label": "Alex Archer reach (inches)",
+         "path": "physical.a.reach_in",
+         "value": 74.0
+        },
+        {
+         "label": "Ben Brawler reach (inches)",
+         "path": "physical.b.reach_in",
+         "value": 71.0
+        }
+       ],
+       "family": "physical",
+       "kind": "weakness",
+       "sample": null,
+       "sample_level": "fair",
+       "sentence": "Ben Brawler gives away 3.0 inches of reach (71 against 74).",
+       "size": "slight",
+       "thin": false,
+       "trait": "reach",
+       "weight": 0.6
+      }
+     ]
+    },
+    "context": [
+     {
+      "evidence": [
+       {
+        "label": "stances",
+        "path": "physical.stance_matchup",
+        "value": "Orthodox vs Southpaw"
+       }
+      ],
+      "key": "stance",
+      "sentence": "Alex Archer fights orthodox and Ben Brawler fights southpaw. These figures do not measure what that changes."
+     },
+     {
+      "evidence": [
+       {
+        "label": "Alex Archer share of fights that went to the scorecards",
+        "path": "features.a.figures.distance_rate.value",
+        "value": 0.6
+       },
+       {
+        "label": "Ben Brawler share of fights that went to the scorecards",
+        "path": "features.b.figures.distance_rate.value",
+        "value": 0.4
+       },
+       {
+        "label": "Alex Archer fights with a recorded method",
+        "path": "features.a.figures.distance_rate.fights",
+        "value": 5
+       },
+       {
+        "label": "Ben Brawler fights with a recorded method",
+        "path": "features.b.figures.distance_rate.fights",
+        "value": 5
+       }
+      ],
+      "key": "fight_shape",
+      "sentence": "Alex Archer's fights on file have gone to the scorecards 60% of the time and Ben Brawler's 40% (fights with a recorded method: Alex Archer 5, Ben Brawler 5)."
+     }
+    ],
+    "data_depth": {
+     "a": {
+      "fights": 5,
+      "minutes": 65.0,
+      "name": "Alex Archer",
+      "overall_fights": 16
+     },
+     "b": {
+      "fights": 5,
+      "minutes": 61.33,
+      "name": "Ben Brawler",
+      "overall_fights": 13
+     },
+     "evidence": [
+      {
+       "label": "Alex Archer UFC fights on file",
+       "path": "features.a.sample.fights",
+       "value": 5
+      },
+      {
+       "label": "Alex Archer fight minutes on file",
+       "path": "features.a.sample.minutes",
+       "value": 65.0
+      },
+      {
+       "label": "Ben Brawler UFC fights on file",
+       "path": "features.b.sample.fights",
+       "value": 5
+      },
+      {
+       "label": "Ben Brawler fight minutes on file",
+       "path": "features.b.sample.minutes",
+       "value": 61.33
+      }
+     ],
+     "level": "fair",
+     "sentence": "On file before this fight: Alex Archer 5 UFC fights (65 minutes), out of 16 professional fights in all; Ben Brawler 5 UFC fights (61 minutes), out of 13 professional fights in all. That is enough to describe each fighter's recent style and not enough to settle it."
+    },
+    "headline": "The biggest difference is in the takedown game. Ben Brawler can take Alex Archer down, landing 2.9 takedowns per 15 minutes while Alex Archer has stopped 50% of 10 attempts against Alex Archer (on file: Ben Brawler 5 fights, 61 minutes; Alex Archer 4 fights, 10 takedown attempts against Alex Archer).",
+    "headline_trait": "takedown_open",
+    "history": {
+     "caveat": "Results against a shared opponent are a weak guide: the opponent changes between fights, and the fights were months apart.",
+     "evidence": [
+      {
+       "label": "opponents in common",
+       "path": "shared_opponents.count",
+       "value": 3
+      },
+      {
+       "label": "Alex Archer opponents on file",
+       "path": "shared_opponents.a_opponents",
+       "value": 4
+      },
+      {
+       "label": "Ben Brawler opponents on file",
+       "path": "shared_opponents.b_opponents",
+       "value": 4
+      }
+     ],
+     "previous_meetings": [
+      {
+       "evidence": [
+        {
+         "label": "date of the earlier fight",
+         "path": "previous_meetings.0.date_utc",
+         "value": "2026-03-14T22:00Z"
+        },
+        {
+         "label": "result for Alex Archer",
+         "path": "previous_meetings.0.result",
+         "value": "loss"
+        },
+        {
+         "label": "method",
+         "path": "previous_meetings.0.method",
+         "value": "DEC_UNANIMOUS"
+        },
+        {
+         "label": "round",
+         "path": "previous_meetings.0.round",
+         "value": 5
+        }
+       ],
+       "sentence": "Ben Brawler won by unanimous decision on 2026-03-14, in round 5."
+      }
+     ],
+     "shared_opponents": [
+      {
+       "evidence": [
+        {
+         "label": "Alex Archer result against Cal Clinch",
+         "path": "shared_opponents.items.0.a.0.result",
+         "value": "win"
+        },
+        {
+         "label": "Alex Archer method against Cal Clinch",
+         "path": "shared_opponents.items.0.a.0.method",
+         "value": "KO_TKO"
+        },
+        {
+         "label": "Alex Archer date against Cal Clinch",
+         "path": "shared_opponents.items.0.a.0.date_utc",
+         "value": "2025-01-18T22:00Z"
+        },
+        {
+         "label": "Ben Brawler result against Cal Clinch",
+         "path": "shared_opponents.items.0.b.0.result",
+         "value": "win"
+        },
+        {
+         "label": "Ben Brawler method against Cal Clinch",
+         "path": "shared_opponents.items.0.b.0.method",
+         "value": "DEC_UNANIMOUS"
+        },
+        {
+         "label": "Ben Brawler date against Cal Clinch",
+         "path": "shared_opponents.items.0.b.0.date_utc",
+         "value": "2025-03-08T22:00Z"
+        },
+        {
+         "label": "Ben Brawler result against Cal Clinch",
+         "path": "shared_opponents.items.0.b.1.result",
+         "value": "loss"
+        },
+        {
+         "label": "Ben Brawler method against Cal Clinch",
+         "path": "shared_opponents.items.0.b.1.method",
+         "value": "SUB"
+        },
+        {
+         "label": "Ben Brawler date against Cal Clinch",
+         "path": "shared_opponents.items.0.b.1.date_utc",
+         "value": "2026-08-08T22:00Z"
+        }
+       ],
+       "opponent": "Cal Clinch",
+       "sentence": "Both fought Cal Clinch. Alex Archer beat Cal Clinch by knockout or TKO on 2025-01-18; Ben Brawler beat Cal Clinch by unanimous decision on 2025-03-08 and Ben Brawler lost to Cal Clinch by submission on 2026-08-08."
+      },
+      {
+       "evidence": [
+        {
+         "label": "Alex Archer result against Dan Silva",
+         "path": "shared_opponents.items.1.a.0.result",
+         "value": "loss"
+        },
+        {
+         "label": "Alex Archer method against Dan Silva",
+         "path": "shared_opponents.items.1.a.0.method",
+         "value": "SUB"
+        },
+        {
+         "label": "Alex Archer date against Dan Silva",
+         "path": "shared_opponents.items.1.a.0.date_utc",
+         "value": "2025-04-26T22:00Z"
+        },
+        {
+         "label": "Alex Archer result against Dan Silva",
+         "path": "shared_opponents.items.1.a.1.result",
+         "value": "win"
+        },
+        {
+         "label": "Alex Archer method against Dan Silva",
+         "path": "shared_opponents.items.1.a.1.method",
+         "value": "DEC_UNANIMOUS"
+        },
+        {
+         "label": "Alex Archer date against Dan Silva",
+         "path": "shared_opponents.items.1.a.1.date_utc",
+         "value": "2026-06-13T22:00Z"
+        },
+        {
+         "label": "Ben Brawler result against Dan Silva",
+         "path": "shared_opponents.items.1.b.0.result",
+         "value": "win"
+        },
+        {
+         "label": "Ben Brawler method against Dan Silva",
+         "path": "shared_opponents.items.1.b.0.method",
+         "value": "SUB"
+        },
+        {
+         "label": "Ben Brawler date against Dan Silva",
+         "path": "shared_opponents.items.1.b.0.date_utc",
+         "value": "2026-01-24T22:00Z"
+        }
+       ],
+       "opponent": "Dan Silva",
+       "sentence": "Both fought Dan Silva. Alex Archer lost to Dan Silva by submission on 2025-04-26 and Alex Archer beat Dan Silva by unanimous decision on 2026-06-13; Ben Brawler beat Dan Silva by submission on 2026-01-24."
+      },
+      {
+       "evidence": [
+        {
+         "label": "Alex Archer result against Eli Silva",
+         "path": "shared_opponents.items.2.a.0.result",
+         "value": "win"
+        },
+        {
+         "label": "Alex Archer method against Eli Silva",
+         "path": "shared_opponents.items.2.a.0.method",
+         "value": "DEC_UNANIMOUS"
+        },
+        {
+         "label": "Alex Archer date against Eli Silva",
+         "path": "shared_opponents.items.2.a.0.date_utc",
+         "value": "2025-09-20T22:00Z"
+        },
+        {
+         "label": "Ben Brawler result against Eli Silva",
+         "path": "shared_opponents.items.2.b.0.result",
+         "value": "win"
+        },
+        {
+         "label": "Ben Brawler method against Eli Silva",
+         "path": "shared_opponents.items.2.b.0.method",
+         "value": "KO_TKO"
+        },
+        {
+         "label": "Ben Brawler date against Eli Silva",
+         "path": "shared_opponents.items.2.b.0.date_utc",
+         "value": "2025-06-14T22:00Z"
+        }
+       ],
+       "opponent": "Eli Silva",
+       "sentence": "Both fought Eli Silva. Alex Archer beat Eli Silva by unanimous decision on 2025-09-20; Ben Brawler beat Eli Silva by knockout or TKO on 2025-06-14."
+      }
+     ],
+     "summary": "Alex Archer and Ben Brawler have met once in the fights on file. They have 3 opponents in common."
+    },
+    "label": "A written description of this fight built only from the figures on this page. It is not a prediction, not advice, and not a claim that any price is wrong.",
+    "market_view": {
+     "agreement": "disagrees",
+     "available": true,
+     "evidence": [
+      {
+       "label": "Alex Archer price",
+       "path": "odds.moneyline.current.a",
+       "value": -170
+      },
+      {
+       "label": "Ben Brawler price",
+       "path": "odds.moneyline.current.b",
+       "value": 145
+      },
+      {
+       "label": "Alex Archer share of the market with the margin removed",
+       "path": "odds.moneyline.current.without_margin.a",
+       "value": 0.6067
+      },
+      {
+       "label": "Ben Brawler share of the market with the margin removed",
+       "path": "odds.moneyline.current.without_margin.b",
+       "value": 0.3933
+      },
+      {
+       "label": "the bookmaker's margin",
+       "path": "odds.moneyline.current.margin",
+       "value": 0.0378
+      },
+      {
+       "label": "prices fetched",
+       "path": "odds.fetched_utc",
+       "value": "2026-10-03T12:00:00Z"
+      },
+      {
+       "label": "Alex Archer share when the line opened",
+       "path": "odds.moneyline.open.without_margin.a",
+       "value": 0.5798
+      },
+      {
+       "label": "rounds line",
+       "path": "odds.rounds_total.line",
+       "value": 4.5
+      },
+      {
+       "label": "share for the over",
+       "path": "odds.rounds_total.current.without_margin.over",
+       "value": 0.5
+      }
+     ],
+     "favourite": "a",
+     "fetched_utc": "2026-10-03T12:00:00Z",
+     "implied": {
+      "a": {
+       "american": -170,
+       "name": "Alex Archer",
+       "with_margin": 0.6296,
+       "without_margin": 0.6067
+      },
+      "b": {
+       "american": 145,
+       "name": "Ben Brawler",
+       "with_margin": 0.4082,
+       "without_margin": 0.3933
+      }
+     },
+     "is_closing": false,
+     "label": "What the price implies, set beside this read.",
+     "lean": "b",
+     "lean_weight": 3.0,
+     "margin": 0.0378,
+     "movement": {
+      "points": 2.7,
+      "toward": "a"
+     },
+     "provider": "DraftKings",
+     "sentences": [
+      "DraftKings' current prices make Alex Archer the 60.7% favourite and Ben Brawler 39.3%, with the bookmaker's margin taken out (Alex Archer -170, Ben Brawler +145, fetched 2026-10-03).",
+      "The line has moved toward Alex Archer since it opened, by 2.7 points of probability with the margin removed. A move says what the market now thinks and not why.",
+      "The rounds line is 4.5, with the fight going past it the likelier side at 50% with the margin removed.",
+      "The figures on file lean toward Ben Brawler, the side the market has as the underdog, so this read disagrees with the price.",
+      "Even so, a disagreement with a posted price is a question to check and not a finding.",
+      "We have not tested whether figures like these beat UFC prices. Treat this as a description of the fight, not as advice."
+     ],
+     "snapshot": "current"
+    },
+    "missing": [],
+    "notices": [],
+    "version": 1,
+    "what_would_change_it": [
+     {
+      "because": "Everything above is built from Alex Archer and Ben Brawler as booked for 2026-10-10; a replacement fighter would void it and start the read again.",
+      "evidence": [
+       {
+        "label": "date of the bout",
+        "path": "bout.date_utc",
+        "value": "2026-10-10T23:00Z"
+       },
+       {
+        "label": "status of the bout",
+        "path": "bout.status",
+        "value": "scheduled"
+       }
+      ],
+      "fact": "A change of opponent, a withdrawal or a cancelled bout."
+     },
+     {
+      "because": "The market takes in injuries, weight cuts and camp news that these figures cannot see; a large move after this read was built would mean something we do not see.",
+      "evidence": [
+       {
+        "label": "Alex Archer price",
+        "path": "odds.moneyline.current.a",
+        "value": -170
+       },
+       {
+        "label": "Ben Brawler price",
+        "path": "odds.moneyline.current.b",
+        "value": 145
+       }
+      ],
+      "fact": "A move in the price."
+     }
+    ]
+   },
+   "sheet": {
+    "a": {
+     "fighter_id": "101",
+     "name": "Alex Archer"
+    },
+    "as_of": "2026-10-10T23:00:00Z",
+    "as_of_source": "scheduled_bout_start",
+    "b": {
+     "fighter_id": "102",
+     "name": "Ben Brawler"
+    },
+    "bout": {
+     "bout_id": "9101",
+     "card_segment": "main",
+     "date_utc": "2026-10-10T23:00Z",
+     "description": "5 Rnd",
+     "event_id": "7013",
+     "event_name": "Synthetic Championship Night",
+     "match_number": 1,
+     "other_scheduled_bout_ids": [],
+     "scheduled_rounds": 5,
+     "status": "scheduled",
+     "weight_class": "Welterweight"
+    },
+    "differentials": {
+     "average_fight_time_s": {
+      "a": 780,
+      "a_sample": {
+       "fights": 5,
+       "minutes": 65.0
+      },
+      "b": 736,
+      "b_sample": {
+       "fights": 5,
+       "minutes": 61.33
+      },
+      "diff": 44,
+      "thin_sample": false,
+      "unit": "seconds"
+     },
+     "been_finished_rate": {
+      "a": 0.2,
+      "a_sample": {
+       "fights": 5,
+       "minutes": 65.0
+      },
+      "b": 0.2,
+      "b_sample": {
+       "fights": 5,
+       "minutes": 61.33
+      },
+      "diff": 0.0,
+      "thin_sample": false,
+      "unit": "losses by KO/TKO or submission per fight"
+     },
+     "control_time_share": {
+      "a": 0.2,
+      "a_sample": {
+       "fights": 3,
+       "minutes": 42.0
+      },
+      "b": 0.288,
+      "b_sample": {
+       "fights": 5,
+       "minutes": 61.33
+      },
+      "diff": -0.088,
+      "thin_sample": false,
+      "unit": "seconds in control / fight seconds"
+     },
+     "distance_rate": {
+      "a": 0.6,
+      "a_sample": {
+       "fights": 5,
+       "minutes": 65.0
+      },
+      "b": 0.4,
+      "b_sample": {
+       "fights": 5,
+       "minutes": 61.33
+      },
+      "diff": 0.2,
+      "thin_sample": false,
+      "unit": "share of fights that went to the judges' scorecards"
+     },
+     "finish_rate": {
+      "a": 0.2,
+      "a_sample": {
+       "fights": 5,
+       "minutes": 65.0
+      },
+      "b": 0.4,
+      "b_sample": {
+       "fights": 5,
+       "minutes": 61.33
+      },
+      "diff": -0.2,
+      "thin_sample": false,
+      "unit": "finishing wins (KO/TKO or submission) per fight"
+     },
+     "knockdowns_landed_per_15": {
+      "a": 0.6,
+      "a_sample": {
+       "fights": 4,
+       "minutes": 50.0
+      },
+      "b": 0.7337,
+      "b_sample": {
+       "fights": 5,
+       "minutes": 61.33
+      },
+      "diff": -0.1337,
+      "thin_sample": false,
+      "unit": "knockdowns scored per 15 minutes"
+     },
+     "knockdowns_suffered_per_15": {
+      "a": 0.9,
+      "a_sample": {
+       "fights": 4,
+       "minutes": 50.0
+      },
+      "b": 0.2711,
+      "b_sample": {
+       "fights": 4,
+       "minutes": 55.33
+      },
+      "diff": 0.6289,
+      "thin_sample": false,
+      "unit": "knockdowns suffered per 15 minutes"
+     },
+     "sig_strike_accuracy": {
+      "a": 0.5,
+      "a_sample": {
+       "fights": 4,
+       "minutes": 50.0
+      },
+      "b": 0.5395,
+      "b_sample": {
+       "fights": 5,
+       "minutes": 61.33
+      },
+      "diff": -0.0395,
+      "thin_sample": false,
+      "unit": "significant strikes landed / attempted"
+     },
+     "sig_strike_defence": {
+      "a": 0.4,
+      "a_sample": {
+       "fights": 4,
+       "minutes": 50.0
+      },
+      "b": 0.5052,
+      "b_sample": {
+       "fights": 4,
+       "minutes": 55.33
+      },
+      "diff": -0.1052,
+      "thin_sample": false,
+      "unit": "1 - opponent significant strikes landed / attempted"
+     },
+     "sig_strikes_absorbed_per_min": {
+      "a": 3,
+      "a_sample": {
+       "fights": 4,
+       "minutes": 50.0
+      },
+      "b": 3.4157,
+      "b_sample": {
+       "fights": 4,
+       "minutes": 55.33
+      },
+      "diff": -0.4157,
+      "thin_sample": false,
+      "unit": "significant strikes absorbed per minute"
+     },
+     "sig_strikes_landed_per_min": {
+      "a": 4,
+      "a_sample": {
+       "fights": 4,
+       "minutes": 50.0
+      },
+      "b": 3.3424,
+      "b_sample": {
+       "fights": 5,
+       "minutes": 61.33
+      },
+      "diff": 0.6576,
+      "thin_sample": false,
+      "unit": "significant strikes landed per minute"
+     },
+     "strength_of_schedule": {
+      "a": 0.4444,
+      "a_sample": {
+       "fights": 3,
+       "minutes": 55.0
+      },
+      "b": 0.4167,
+      "b_sample": {
+       "fights": 4,
+       "minutes": 55.33
+      },
+      "diff": 0.0277,
+      "thin_sample": true,
+      "unit": "mean opponent UFC win rate at the start of each fight"
+     },
+     "submission_attempts_per_15": {
+      "a": 1.2,
+      "a_sample": {
+       "fights": 4,
+       "minutes": 50.0
+      },
+      "b": 0.7337,
+      "b_sample": {
+       "fights": 5,
+       "minutes": 61.33
+      },
+      "diff": 0.4663,
+      "thin_sample": false,
+      "unit": "submission attempts per 15 minutes"
+     },
+     "takedown_accuracy": {
+      "a": 0.4,
+      "a_sample": {
+       "fights": 4,
+       "minutes": 50.0
+      },
+      "b": 0.5714,
+      "b_sample": {
+       "fights": 5,
+       "minutes": 61.33
+      },
+      "diff": -0.1714,
+      "thin_sample": false,
+      "unit": "takedowns landed / attempted"
+     },
+     "takedown_defence": {
+      "a": 0.5,
+      "a_sample": {
+       "fights": 4,
+       "minutes": 50.0
+      },
+      "b": 0.6923,
+      "b_sample": {
+       "fights": 4,
+       "minutes": 55.33
+      },
+      "diff": -0.1923,
+      "thin_sample": false,
+      "unit": "1 - opponent takedowns landed / attempted"
+     },
+     "takedowns_landed_per_15": {
+      "a": 1.8,
+      "a_sample": {
+       "fights": 4,
+       "minutes": 50.0
+      },
+      "b": 2.9348,
+      "b_sample": {
+       "fights": 5,
+       "minutes": 61.33
+      },
+      "diff": -1.1348,
+      "thin_sample": false,
+      "unit": "takedowns landed per 15 minutes"
+     },
+     "ufc_fights": {
+      "a": 5,
+      "a_sample": {
+       "fights": 5,
+       "minutes": 65.0
+      },
+      "b": 5,
+      "b_sample": {
+       "fights": 5,
+       "minutes": 61.33
+      },
+      "diff": 0,
+      "unit": "fights"
+     },
+     "win_rate": {
+      "a": 0.6,
+      "a_sample": {
+       "fights": 5,
+       "minutes": 65.0
+      },
+      "b": 0.8,
+      "b_sample": {
+       "fights": 5,
+       "minutes": 61.33
+      },
+      "diff": -0.2,
+      "thin_sample": false,
+      "unit": "wins / (wins + losses + draws)"
+     }
+    },
+    "features": {
+     "a": {
+      "as_of": "2026-10-10T23:00:00Z",
+      "career_record_incl_non_ufc": {
+       "as_of_safe": false,
+       "draws": 0,
+       "fetched_utc": "2026-10-03T12:00:00Z",
+       "includes_non_ufc": true,
+       "label": "Overall professional record from the fighter record, including fights outside the UFC",
+       "losses": 4,
+       "no_contests": null,
+       "note": "As of the fetch time of the fighter record, not as of as_of; do not use it where leakage matters.",
+       "wins": 12
+      },
+      "fighter_id": "101",
+      "figures": {
+       "age_years": {
+        "unit": "years",
+        "value": 34.5
+       },
+       "average_fight_time_s": {
+        "den": 5,
+        "fights": 5,
+        "minutes": 65.0,
+        "num": 3900,
+        "unit": "seconds",
+        "value": 780
+       },
+       "been_finished_rate": {
+        "den": 5,
+        "fights": 5,
+        "minutes": 65.0,
+        "num": 1,
+        "unit": "losses by KO/TKO or submission per fight",
+        "value": 0.2
+       },
+       "control_time_share": {
+        "den": 2520,
+        "fights": 3,
+        "minutes": 42.0,
+        "num": 504,
+        "unit": "seconds in control / fight seconds",
+        "value": 0.2
+       },
+       "days_since_last_fight": {
+        "unit": "days",
+        "value": 119
+       },
+       "distance_rate": {
+        "den": 5,
+        "fights": 5,
+        "minutes": 65.0,
+        "num": 3,
+        "unit": "share of fights that went to the judges' scorecards",
+        "value": 0.6
+       },
+       "finish_rate": {
+        "den": 5,
+        "fights": 5,
+        "minutes": 65.0,
+        "num": 1,
+        "unit": "finishing wins (KO/TKO or submission) per fight",
+        "value": 0.2
+       },
+       "finish_share_of_wins": {
+        "den": 3,
+        "fights": 3,
+        "minutes": 32.0,
+        "num": 1,
+        "unit": "share of wins that were KO/TKO or submission",
+        "value": 0.3333
+       },
+       "finished_share_of_losses": {
+        "den": 2,
+        "fights": 2,
+        "minutes": 33.0,
+        "num": 1,
+        "unit": "share of losses that were KO/TKO or submission",
+        "value": 0.5
+       },
+       "height_in": {
+        "unit": "inches",
+        "value": 72.0
+       },
+       "knockdowns_landed_per_15": {
+        "den": 50,
+        "fights": 4,
+        "minutes": 50.0,
+        "num": 2,
+        "unit": "knockdowns scored per 15 minutes",
+        "value": 0.6
+       },
+       "knockdowns_suffered_per_15": {
+        "den": 50,
+        "fights": 4,
+        "minutes": 50.0,
+        "num": 3,
+        "unit": "knockdowns suffered per 15 minutes",
+        "value": 0.9
+       },
+       "reach_in": {
+        "unit": "inches",
+        "value": 74.0
+       },
+       "sig_strike_accuracy": {
+        "den": 400,
+        "fights": 4,
+        "minutes": 50.0,
+        "num": 200,
+        "unit": "significant strikes landed / attempted",
+        "value": 0.5
+       },
+       "sig_strike_defence": {
+        "den": 250,
+        "fights": 4,
+        "minutes": 50.0,
+        "num": 150,
+        "unit": "1 - opponent significant strikes landed / attempted",
+        "value": 0.4
+       },
+       "sig_strike_share_body": {
+        "den": 200,
+        "fights": 4,
+        "minutes": 50.0,
+        "num": 35,
+        "unit": "share of significant strikes landed, by target",
+        "value": 0.175
+       },
+       "sig_strike_share_clinch": {
+        "den": 200,
+        "fights": 4,
+        "minutes": 50.0,
+        "num": 29,
+        "unit": "share of significant strikes landed, by position",
+        "value": 0.145
+       },
+       "sig_strike_share_distance": {
+        "den": 200,
+        "fights": 4,
+        "minutes": 50.0,
+        "num": 152,
+        "unit": "share of significant strikes landed, by position",
+        "value": 0.76
+       },
+       "sig_strike_share_ground": {
+        "den": 200,
+        "fights": 4,
+        "minutes": 50.0,
+        "num": 19,
+        "unit": "share of significant strikes landed, by position",
+        "value": 0.095
+       },
+       "sig_strike_share_head": {
+        "den": 200,
+        "fights": 4,
+        "minutes": 50.0,
+        "num": 157,
+        "unit": "share of significant strikes landed, by target",
+        "value": 0.785
+       },
+       "sig_strike_share_leg": {
+        "den": 200,
+        "fights": 4,
+        "minutes": 50.0,
+        "num": 8,
+        "unit": "share of significant strikes landed, by target",
+        "value": 0.04
+       },
+       "sig_strikes_absorbed_per_min": {
+        "den": 50,
+        "fights": 4,
+        "minutes": 50.0,
+        "num": 150,
+        "unit": "significant strikes absorbed per minute",
+        "value": 3
+       },
+       "sig_strikes_landed_per_min": {
+        "den": 50,
+        "fights": 4,
+        "minutes": 50.0,
+        "num": 200,
+        "unit": "significant strikes landed per minute",
+        "value": 4
+       },
+       "strength_of_schedule": {
+        "den": 3,
+        "fights": 3,
+        "minutes": 55.0,
+        "num": 1.3333,
+        "opponents_without_history": 2,
+        "unit": "mean opponent UFC win rate at the start of each fight",
+        "value": 0.4444
+       },
+       "submission_attempts_per_15": {
+        "den": 50,
+        "fights": 4,
+        "minutes": 50.0,
+        "num": 4,
+        "unit": "submission attempts per 15 minutes",
+        "value": 1.2
+       },
+       "takedown_accuracy": {
+        "den": 15,
+        "fights": 4,
+        "minutes": 50.0,
+        "num": 6,
+        "unit": "takedowns landed / attempted",
+        "value": 0.4
+       },
+       "takedown_defence": {
+        "den": 10,
+        "fights": 4,
+        "minutes": 50.0,
+        "num": 5,
+        "unit": "1 - opponent takedowns landed / attempted",
+        "value": 0.5
+       },
+       "takedowns_landed_per_15": {
+        "den": 50,
+        "fights": 4,
+        "minutes": 50.0,
+        "num": 6,
+        "unit": "takedowns landed per 15 minutes",
+        "value": 1.8
+       },
+       "ufc_fights": {
+        "fights": 5,
+        "minutes": 65.0,
+        "unit": "fights",
+        "value": 5
+       },
+       "win_rate": {
+        "den": 5,
+        "fights": 5,
+        "minutes": 65.0,
+        "num": 3,
+        "unit": "wins / (wins + losses + draws)",
+        "value": 0.6
+       }
+      },
+      "last_three": [
+       {
+        "bout_id": "9011",
+        "date_utc": "2026-06-13T22:00Z",
+        "detail": null,
+        "method": "DEC_UNANIMOUS",
+        "opponent_id": "104",
+        "opponent_name": "Dan Silva",
+        "result": "win",
+        "round": 3,
+        "time_s": 300.0,
+        "weight_class": "Welterweight"
+       },
+       {
+        "bout_id": "9009",
+        "date_utc": "2026-03-14T22:00Z",
+        "detail": null,
+        "method": "DEC_UNANIMOUS",
+        "opponent_id": "102",
+        "opponent_name": "Ben Brawler",
+        "result": "loss",
+        "round": 5,
+        "time_s": 300.0,
+        "weight_class": "Welterweight"
+       },
+       {
+        "bout_id": "9006",
+        "date_utc": "2025-09-20T22:00Z",
+        "detail": null,
+        "method": "DEC_UNANIMOUS",
+        "opponent_id": "105",
+        "opponent_name": "Eli Silva",
+        "result": "win",
+        "round": 3,
+        "time_s": 300.0,
+        "weight_class": "Middleweight"
+       }
+      ],
+      "leakage_rule": "uses only bouts that started strictly before as_of and have a result; a bout on the as_of date or at the as_of instant, and every later bout, is excluded",
+      "missing": [],
+      "name": "Alex Archer",
+      "physical": {
+       "dob": "1992-04-10",
+       "stance": "Orthodox"
+      },
+      "record": {
+       "draws": 0,
+       "fights": 5,
+       "first_fight_utc": "2025-01-18T22:00:00Z",
+       "last_fight_utc": "2026-06-13T22:00:00Z",
+       "losses": 2,
+       "losses_by_method": {
+        "decision": 1,
+        "dq": 0,
+        "ko_tko": 0,
+        "other": 0,
+        "submission": 1,
+        "unknown": 0
+       },
+       "no_contests": 0,
+       "wins": 3,
+       "wins_by_method": {
+        "decision": 2,
+        "dq": 0,
+        "ko_tko": 1,
+        "other": 0,
+        "submission": 0,
+        "unknown": 0
+       }
+      },
+      "sample": {
+       "fights": 5,
+       "fights_with_both_stats": 4,
+       "fights_with_opponent_stats": 4,
+       "fights_with_own_stats": 4,
+       "fights_without_any_stats": [
+        "9006"
+       ],
+       "minutes": 65.0,
+       "skipped": {
+        "no_start_time": [],
+        "started_without_result": [
+         {
+          "bout_id": "9013",
+          "date_utc": "2026-04-04T22:00Z",
+          "status": "canceled"
+         }
+        ]
+       }
+      },
+      "streak": {
+       "length": 1,
+       "type": "win"
+      },
+      "strength_of_schedule_by_fight": [
+       {
+        "bout_id": "9001",
+        "date_utc": "2025-01-18T22:00:00Z",
+        "opponent_id": "103",
+        "opponent_record_then": {
+         "draws": 0,
+         "losses": 0,
+         "no_contests": 0,
+         "wins": 0
+        },
+        "opponent_win_rate": null
+       },
+       {
+        "bout_id": "9003",
+        "date_utc": "2025-04-26T22:00:00Z",
+        "opponent_id": "104",
+        "opponent_record_then": {
+         "draws": 0,
+         "losses": 0,
+         "no_contests": 0,
+         "wins": 0
+        },
+        "opponent_win_rate": null
+       },
+       {
+        "bout_id": "9006",
+        "date_utc": "2025-09-20T22:00:00Z",
+        "opponent_id": "105",
+        "opponent_record_then": {
+         "draws": 0,
+         "losses": 1,
+         "no_contests": 0,
+         "wins": 0
+        },
+        "opponent_win_rate": 0
+       },
+       {
+        "bout_id": "9009",
+        "date_utc": "2026-03-14T22:00:00Z",
+        "opponent_id": "102",
+        "opponent_record_then": {
+         "draws": 0,
+         "losses": 0,
+         "no_contests": 0,
+         "wins": 3
+        },
+        "opponent_win_rate": 1
+       },
+       {
+        "bout_id": "9011",
+        "date_utc": "2026-06-13T22:00:00Z",
+        "opponent_id": "104",
+        "opponent_record_then": {
+         "draws": 0,
+         "losses": 2,
+         "no_contests": 1,
+         "wins": 1
+        },
+        "opponent_win_rate": 0.3333
+       }
+      ],
+      "ufccom_career": {
+       "as_of_safe": false,
+       "fetched_utc": "2026-10-03T12:00:00Z",
+       "figures": {
+        "record_text": "12-4-0 (W-L-D)",
+        "sig_strike_accuracy": 0.99,
+        "sig_strikes_landed_per_min": 9.99,
+        "takedown_avg_per_15": 9.9
+       },
+       "label": "UFC.com career figures",
+       "note": "Career numbers as the UFC.com page showed them when fetched. Not as-of-date: they include every fight up to the fetch, so they must never feed anything where leakage matters. No figure, differential or style label in this module uses them.",
+       "source_url": "https://example.test/athlete/alex-archer",
+       "ufc_slug": "alex-archer"
+      },
+      "weight_classes": {
+       "current": "Welterweight",
+       "fights_without_weight_class": 0,
+       "fought": [
+        {
+         "fights": 2,
+         "first_utc": "2026-03-14T22:00:00Z",
+         "last_utc": "2026-06-13T22:00:00Z",
+         "weight_class": "Welterweight"
+        },
+        {
+         "fights": 3,
+         "first_utc": "2025-01-18T22:00:00Z",
+         "last_utc": "2025-09-20T22:00:00Z",
+         "weight_class": "Middleweight"
+        }
+       ],
+       "most_recent_change": {
+        "bout_id": "9009",
+        "date_utc": "2026-03-14T22:00:00Z",
+        "direction": "down",
+        "from": "Middleweight",
+        "to": "Welterweight"
+       }
+      }
+     },
+     "b": {
+      "as_of": "2026-10-10T23:00:00Z",
+      "career_record_incl_non_ufc": {
+       "as_of_safe": false,
+       "draws": 1,
+       "fetched_utc": "2026-10-03T12:00:00Z",
+       "includes_non_ufc": true,
+       "label": "Overall professional record from the fighter record, including fights outside the UFC",
+       "losses": 3,
+       "no_contests": null,
+       "note": "As of the fetch time of the fighter record, not as of as_of; do not use it where leakage matters.",
+       "wins": 9
+      },
+      "fighter_id": "102",
+      "figures": {
+       "age_years": {
+        "unit": "years",
+        "value": 36.94
+       },
+       "average_fight_time_s": {
+        "den": 5,
+        "fights": 5,
+        "minutes": 61.33,
+        "num": 3680,
+        "unit": "seconds",
+        "value": 736
+       },
+       "been_finished_rate": {
+        "den": 5,
+        "fights": 5,
+        "minutes": 61.33,
+        "num": 1,
+        "unit": "losses by KO/TKO or submission per fight",
+        "value": 0.2
+       },
+       "control_time_share": {
+        "den": 3680,
+        "fights": 5,
+        "minutes": 61.33,
+        "num": 1060,
+        "unit": "seconds in control / fight seconds",
+        "value": 0.288
+       },
+       "days_since_last_fight": {
+        "unit": "days",
+        "value": 63
+       },
+       "distance_rate": {
+        "den": 5,
+        "fights": 5,
+        "minutes": 61.33,
+        "num": 2,
+        "unit": "share of fights that went to the judges' scorecards",
+        "value": 0.4
+       },
+       "finish_rate": {
+        "den": 5,
+        "fights": 5,
+        "minutes": 61.33,
+        "num": 2,
+        "unit": "finishing wins (KO/TKO or submission) per fight",
+        "value": 0.4
+       },
+       "finish_share_of_wins": {
+        "den": 4,
+        "fights": 4,
+        "minutes": 49.33,
+        "num": 2,
+        "unit": "share of wins that were KO/TKO or submission",
+        "value": 0.5
+       },
+       "finished_share_of_losses": {
+        "den": 1,
+        "fights": 1,
+        "minutes": 12.0,
+        "num": 1,
+        "unit": "share of losses that were KO/TKO or submission",
+        "value": 1
+       },
+       "height_in": {
+        "unit": "inches",
+        "value": 70.0
+       },
+       "knockdowns_landed_per_15": {
+        "den": 61.3333,
+        "fights": 5,
+        "minutes": 61.33,
+        "num": 3,
+        "unit": "knockdowns scored per 15 minutes",
+        "value": 0.7337
+       },
+       "knockdowns_suffered_per_15": {
+        "den": 55.3333,
+        "fights": 4,
+        "minutes": 55.33,
+        "num": 1,
+        "unit": "knockdowns suffered per 15 minutes",
+        "value": 0.2711
+       },
+       "reach_in": {
+        "unit": "inches",
+        "value": 71.0
+       },
+       "sig_strike_accuracy": {
+        "den": 380,
+        "fights": 5,
+        "minutes": 61.33,
+        "num": 205,
+        "unit": "significant strikes landed / attempted",
+        "value": 0.5395
+       },
+       "sig_strike_defence": {
+        "den": 382,
+        "fights": 4,
+        "minutes": 55.33,
+        "num": 189,
+        "unit": "1 - opponent significant strikes landed / attempted",
+        "value": 0.5052
+       },
+       "sig_strike_share_body": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "none of the 5 fight(s) before as_of has all nine position-by-target landed significant strike counts",
+        "unit": "share of significant strikes landed, by target",
+        "value": null
+       },
+       "sig_strike_share_clinch": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "none of the 5 fight(s) before as_of has all nine position-by-target landed significant strike counts",
+        "unit": "share of significant strikes landed, by position",
+        "value": null
+       },
+       "sig_strike_share_distance": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "none of the 5 fight(s) before as_of has all nine position-by-target landed significant strike counts",
+        "unit": "share of significant strikes landed, by position",
+        "value": null
+       },
+       "sig_strike_share_ground": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "none of the 5 fight(s) before as_of has all nine position-by-target landed significant strike counts",
+        "unit": "share of significant strikes landed, by position",
+        "value": null
+       },
+       "sig_strike_share_head": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "none of the 5 fight(s) before as_of has all nine position-by-target landed significant strike counts",
+        "unit": "share of significant strikes landed, by target",
+        "value": null
+       },
+       "sig_strike_share_leg": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "none of the 5 fight(s) before as_of has all nine position-by-target landed significant strike counts",
+        "unit": "share of significant strikes landed, by target",
+        "value": null
+       },
+       "sig_strikes_absorbed_per_min": {
+        "den": 55.3333,
+        "fights": 4,
+        "minutes": 55.33,
+        "num": 189,
+        "unit": "significant strikes absorbed per minute",
+        "value": 3.4157
+       },
+       "sig_strikes_landed_per_min": {
+        "den": 61.3333,
+        "fights": 5,
+        "minutes": 61.33,
+        "num": 205,
+        "unit": "significant strikes landed per minute",
+        "value": 3.3424
+       },
+       "strength_of_schedule": {
+        "den": 4,
+        "fights": 4,
+        "minutes": 55.33,
+        "num": 1.6667,
+        "opponents_without_history": 1,
+        "unit": "mean opponent UFC win rate at the start of each fight",
+        "value": 0.4167
+       },
+       "submission_attempts_per_15": {
+        "den": 61.3333,
+        "fights": 5,
+        "minutes": 61.33,
+        "num": 3,
+        "unit": "submission attempts per 15 minutes",
+        "value": 0.7337
+       },
+       "takedown_accuracy": {
+        "den": 21,
+        "fights": 5,
+        "minutes": 61.33,
+        "num": 12,
+        "unit": "takedowns landed / attempted",
+        "value": 0.5714
+       },
+       "takedown_defence": {
+        "den": 13,
+        "fights": 4,
+        "minutes": 55.33,
+        "num": 4,
+        "unit": "1 - opponent takedowns landed / attempted",
+        "value": 0.6923
+       },
+       "takedowns_landed_per_15": {
+        "den": 61.3333,
+        "fights": 5,
+        "minutes": 61.33,
+        "num": 12,
+        "unit": "takedowns landed per 15 minutes",
+        "value": 2.9348
+       },
+       "ufc_fights": {
+        "fights": 5,
+        "minutes": 61.33,
+        "unit": "fights",
+        "value": 5
+       },
+       "win_rate": {
+        "den": 5,
+        "fights": 5,
+        "minutes": 61.33,
+        "num": 4,
+        "unit": "wins / (wins + losses + draws)",
+        "value": 0.8
+       }
+      },
+      "last_three": [
+       {
+        "bout_id": "9012",
+        "date_utc": "2026-08-08T22:00Z",
+        "detail": "Guillotine Choke",
+        "method": "SUB",
+        "opponent_id": "103",
+        "opponent_name": "Cal Clinch",
+        "result": "loss",
+        "round": 3,
+        "time_s": 120.0,
+        "weight_class": "Welterweight"
+       },
+       {
+        "bout_id": "9009",
+        "date_utc": "2026-03-14T22:00Z",
+        "detail": null,
+        "method": "DEC_UNANIMOUS",
+        "opponent_id": "101",
+        "opponent_name": "Alex Archer",
+        "result": "win",
+        "round": 5,
+        "time_s": 300.0,
+        "weight_class": "Welterweight"
+       },
+       {
+        "bout_id": "9008",
+        "date_utc": "2026-01-24T22:00Z",
+        "detail": "Guillotine Choke",
+        "method": "SUB",
+        "opponent_id": "104",
+        "opponent_name": "Dan Silva",
+        "result": "win",
+        "round": 1,
+        "time_s": 200.0,
+        "weight_class": "Welterweight"
+       }
+      ],
+      "leakage_rule": "uses only bouts that started strictly before as_of and have a result; a bout on the as_of date or at the as_of instant, and every later bout, is excluded",
+      "missing": [
+       {
+        "figure": "sig_strike_share_distance",
+        "reason": "none of the 5 fight(s) before as_of has all nine position-by-target landed significant strike counts"
+       },
+       {
+        "figure": "sig_strike_share_clinch",
+        "reason": "none of the 5 fight(s) before as_of has all nine position-by-target landed significant strike counts"
+       },
+       {
+        "figure": "sig_strike_share_ground",
+        "reason": "none of the 5 fight(s) before as_of has all nine position-by-target landed significant strike counts"
+       },
+       {
+        "figure": "sig_strike_share_head",
+        "reason": "none of the 5 fight(s) before as_of has all nine position-by-target landed significant strike counts"
+       },
+       {
+        "figure": "sig_strike_share_body",
+        "reason": "none of the 5 fight(s) before as_of has all nine position-by-target landed significant strike counts"
+       },
+       {
+        "figure": "sig_strike_share_leg",
+        "reason": "none of the 5 fight(s) before as_of has all nine position-by-target landed significant strike counts"
+       },
+       {
+        "figure": "ufccom_career",
+        "reason": "no UFC.com profile for this fighter in the store"
+       }
+      ],
+      "name": "Ben Brawler",
+      "physical": {
+       "dob": "1989-11-02",
+       "stance": "Southpaw"
+      },
+      "record": {
+       "draws": 0,
+       "fights": 5,
+       "first_fight_utc": "2025-03-08T22:00:00Z",
+       "last_fight_utc": "2026-08-08T22:00:00Z",
+       "losses": 1,
+       "losses_by_method": {
+        "decision": 0,
+        "dq": 0,
+        "ko_tko": 0,
+        "other": 0,
+        "submission": 1,
+        "unknown": 0
+       },
+       "no_contests": 0,
+       "wins": 4,
+       "wins_by_method": {
+        "decision": 2,
+        "dq": 0,
+        "ko_tko": 1,
+        "other": 0,
+        "submission": 1,
+        "unknown": 0
+       }
+      },
+      "sample": {
+       "fights": 5,
+       "fights_with_both_stats": 4,
+       "fights_with_opponent_stats": 4,
+       "fights_with_own_stats": 5,
+       "fights_without_any_stats": [],
+       "minutes": 61.33,
+       "skipped": {
+        "no_start_time": [],
+        "started_without_result": []
+       }
+      },
+      "streak": {
+       "length": 1,
+       "type": "loss"
+      },
+      "strength_of_schedule_by_fight": [
+       {
+        "bout_id": "9002",
+        "date_utc": "2025-03-08T22:00:00Z",
+        "opponent_id": "103",
+        "opponent_record_then": {
+         "draws": 0,
+         "losses": 1,
+         "no_contests": 0,
+         "wins": 0
+        },
+        "opponent_win_rate": 0
+       },
+       {
+        "bout_id": "9004",
+        "date_utc": "2025-06-14T22:00:00Z",
+        "opponent_id": "105",
+        "opponent_record_then": {
+         "draws": 0,
+         "losses": 0,
+         "no_contests": 0,
+         "wins": 0
+        },
+        "opponent_win_rate": null
+       },
+       {
+        "bout_id": "9008",
+        "date_utc": "2026-01-24T22:00:00Z",
+        "opponent_id": "104",
+        "opponent_record_then": {
+         "draws": 0,
+         "losses": 1,
+         "no_contests": 1,
+         "wins": 1
+        },
+        "opponent_win_rate": 0.5
+       },
+       {
+        "bout_id": "9009",
+        "date_utc": "2026-03-14T22:00:00Z",
+        "opponent_id": "101",
+        "opponent_record_then": {
+         "draws": 0,
+         "losses": 1,
+         "no_contests": 0,
+         "wins": 2
+        },
+        "opponent_win_rate": 0.6667
+       },
+       {
+        "bout_id": "9012",
+        "date_utc": "2026-08-08T22:00:00Z",
+        "opponent_id": "103",
+        "opponent_record_then": {
+         "draws": 0,
+         "losses": 2,
+         "no_contests": 0,
+         "wins": 2
+        },
+        "opponent_win_rate": 0.5
+       }
+      ],
+      "ufccom_career": null,
+      "weight_classes": {
+       "current": "Welterweight",
+       "fights_without_weight_class": 0,
+       "fought": [
+        {
+         "fights": 4,
+         "first_utc": "2025-06-14T22:00:00Z",
+         "last_utc": "2026-08-08T22:00:00Z",
+         "weight_class": "Welterweight"
+        },
+        {
+         "fights": 1,
+         "first_utc": "2025-03-08T22:00:00Z",
+         "last_utc": "2025-03-08T22:00:00Z",
+         "weight_class": "Middleweight"
+        }
+       ],
+       "most_recent_change": {
+        "bout_id": "9004",
+        "date_utc": "2025-06-14T22:00:00Z",
+        "direction": "down",
+        "from": "Middleweight",
+        "to": "Welterweight"
+       }
+      }
+     }
+    },
+    "layoff": {
+     "a_days": 119,
+     "a_last_fight_utc": "2026-06-13T22:00:00Z",
+     "b_days": 63,
+     "b_last_fight_utc": "2026-08-08T22:00:00Z",
+     "difference_days": 56,
+     "longer_layoff": "a",
+     "measured_to": "2026-10-10T23:00:00Z"
+    },
+    "leakage_rule": "uses only bouts that started strictly before as_of and have a result; a bout on the as_of date or at the as_of instant, and every later bout, is excluded",
+    "missing": [
+     {
+      "fighter_id": "102",
+      "figure": "sig_strike_share_distance",
+      "reason": "none of the 5 fight(s) before as_of has all nine position-by-target landed significant strike counts",
+      "side": "b"
+     },
+     {
+      "fighter_id": "102",
+      "figure": "sig_strike_share_clinch",
+      "reason": "none of the 5 fight(s) before as_of has all nine position-by-target landed significant strike counts",
+      "side": "b"
+     },
+     {
+      "fighter_id": "102",
+      "figure": "sig_strike_share_ground",
+      "reason": "none of the 5 fight(s) before as_of has all nine position-by-target landed significant strike counts",
+      "side": "b"
+     },
+     {
+      "fighter_id": "102",
+      "figure": "sig_strike_share_head",
+      "reason": "none of the 5 fight(s) before as_of has all nine position-by-target landed significant strike counts",
+      "side": "b"
+     },
+     {
+      "fighter_id": "102",
+      "figure": "sig_strike_share_body",
+      "reason": "none of the 5 fight(s) before as_of has all nine position-by-target landed significant strike counts",
+      "side": "b"
+     },
+     {
+      "fighter_id": "102",
+      "figure": "sig_strike_share_leg",
+      "reason": "none of the 5 fight(s) before as_of has all nine position-by-target landed significant strike counts",
+      "side": "b"
+     },
+     {
+      "fighter_id": "102",
+      "figure": "ufccom_career",
+      "reason": "no UFC.com profile for this fighter in the store",
+      "side": "b"
+     }
+    ],
+    "note": "Facts only. No prediction, no pick. The probabilities in the odds block are the market's own, not an estimate made here.",
+    "odds": {
+     "as_of_safe": false,
+     "fetched_utc": "2026-10-03T12:00:00Z",
+     "is_closing": false,
+     "method": {
+      "close": null,
+      "current": null,
+      "open": {
+       "a": {
+        "decision": 350,
+        "ko_tko_dq": 300,
+        "submission": 800
+       },
+       "b": {
+        "decision": 400,
+        "ko_tko_dq": 450,
+        "submission": 900
+       },
+       "implied": {
+        "a": {
+         "decision": 0.2222,
+         "ko_tko_dq": 0.25,
+         "submission": 0.1111
+        },
+        "b": {
+         "decision": 0.2,
+         "ko_tko_dq": 0.1818,
+         "submission": 0.1
+        }
+       },
+       "margin": 0.0652,
+       "without_margin": {
+        "a": {
+         "decision": 0.2086,
+         "ko_tko_dq": 0.2347,
+         "submission": 0.1043
+        },
+        "b": {
+         "decision": 0.1878,
+         "ko_tko_dq": 0.1707,
+         "submission": 0.0939
+        }
+       }
+      }
+     },
+     "moneyline": {
+      "close": null,
+      "current": {
+       "a": -170,
+       "b": 145,
+       "implied": {
+        "a": 0.6296,
+        "b": 0.4082
+       },
+       "margin": 0.0378,
+       "without_margin": {
+        "a": 0.6067,
+        "b": 0.3933
+       }
+      },
+      "open": {
+       "a": -150,
+       "b": 130,
+       "implied": {
+        "a": 0.6,
+        "b": 0.4348
+       },
+       "margin": 0.0348,
+       "without_margin": {
+        "a": 0.5798,
+        "b": 0.4202
+       }
+      }
+     },
+     "orientation": "verified",
+     "other_providers": [],
+     "provider": "DraftKings",
+     "provider_id": "100",
+     "rounds_total": {
+      "close": null,
+      "current": {
+       "implied": {
+        "over": 0.5238,
+        "under": 0.5238
+       },
+       "margin": 0.0476,
+       "over": -110,
+       "under": -110,
+       "without_margin": {
+        "over": 0.5,
+        "under": 0.5
+       }
+      },
+      "line": 4.5,
+      "open": {
+       "implied": {
+        "over": 0.5455,
+        "under": 0.5
+       },
+       "margin": 0.0455,
+       "over": -120,
+       "under": 100,
+       "without_margin": {
+        "over": 0.5217,
+        "under": 0.4783
+       }
+      }
+     }
+    },
+    "physical": {
+     "a": {
+      "age_years": 34.5,
+      "height_in": 72.0,
+      "reach_in": 74.0,
+      "reach_minus_height_in": 2.0,
+      "stance": "Orthodox"
+     },
+     "b": {
+      "age_years": 36.94,
+      "height_in": 70.0,
+      "reach_in": 71.0,
+      "reach_minus_height_in": 1.0,
+      "stance": "Southpaw"
+     },
+     "differences": {
+      "age_years": -2.44,
+      "height_in": 2.0,
+      "reach_in": 3.0,
+      "reach_minus_height_in": 1.0
+     },
+     "same_stance": false,
+     "stance_matchup": "Orthodox vs Southpaw"
+    },
+    "previous_meetings": [
+     {
+      "bout_id": "9009",
+      "date_utc": "2026-03-14T22:00Z",
+      "detail": null,
+      "method": "DEC_UNANIMOUS",
+      "opponent_id": "102",
+      "opponent_name": "Ben Brawler",
+      "result": "loss",
+      "round": 5,
+      "time_s": 300.0,
+      "weight_class": "Welterweight",
+      "winner_id": "102",
+      "winner_name": "Ben Brawler"
+     }
+    ],
+    "shared_opponents": {
+     "a_opponents": 4,
+     "b_opponents": 4,
+     "count": 3,
+     "items": [
+      {
+       "a": [
+        {
+         "bout_id": "9001",
+         "date_utc": "2025-01-18T22:00Z",
+         "detail": "Punch",
+         "method": "KO_TKO",
+         "opponent_id": "103",
+         "opponent_name": "Cal Clinch",
+         "result": "win",
+         "round": 1,
+         "time_s": 120.0,
+         "weight_class": "Middleweight"
+        }
+       ],
+       "b": [
+        {
+         "bout_id": "9002",
+         "date_utc": "2025-03-08T22:00Z",
+         "detail": null,
+         "method": "DEC_UNANIMOUS",
+         "opponent_id": "103",
+         "opponent_name": "Cal Clinch",
+         "result": "win",
+         "round": 3,
+         "time_s": 300.0,
+         "weight_class": "Middleweight"
+        },
+        {
+         "bout_id": "9012",
+         "date_utc": "2026-08-08T22:00Z",
+         "detail": "Guillotine Choke",
+         "method": "SUB",
+         "opponent_id": "103",
+         "opponent_name": "Cal Clinch",
+         "result": "loss",
+         "round": 3,
+         "time_s": 120.0,
+         "weight_class": "Welterweight"
+        }
+       ],
+       "opponent_id": "103",
+       "opponent_name": "Cal Clinch"
+      },
+      {
+       "a": [
+        {
+         "bout_id": "9003",
+         "date_utc": "2025-04-26T22:00Z",
+         "detail": "Guillotine Choke",
+         "method": "SUB",
+         "opponent_id": "104",
+         "opponent_name": "Dan Silva",
+         "result": "loss",
+         "round": 2,
+         "time_s": 180.0,
+         "weight_class": "Middleweight"
+        },
+        {
+         "bout_id": "9011",
+         "date_utc": "2026-06-13T22:00Z",
+         "detail": null,
+         "method": "DEC_UNANIMOUS",
+         "opponent_id": "104",
+         "opponent_name": "Dan Silva",
+         "result": "win",
+         "round": 3,
+         "time_s": 300.0,
+         "weight_class": "Welterweight"
+        }
+       ],
+       "b": [
+        {
+         "bout_id": "9008",
+         "date_utc": "2026-01-24T22:00Z",
+         "detail": "Guillotine Choke",
+         "method": "SUB",
+         "opponent_id": "104",
+         "opponent_name": "Dan Silva",
+         "result": "win",
+         "round": 1,
+         "time_s": 200.0,
+         "weight_class": "Welterweight"
+        }
+       ],
+       "opponent_id": "104",
+       "opponent_name": "Dan Silva"
+      },
+      {
+       "a": [
+        {
+         "bout_id": "9006",
+         "date_utc": "2025-09-20T22:00Z",
+         "detail": null,
+         "method": "DEC_UNANIMOUS",
+         "opponent_id": "105",
+         "opponent_name": "Eli Silva",
+         "result": "win",
+         "round": 3,
+         "time_s": 300.0,
+         "weight_class": "Middleweight"
+        }
+       ],
+       "b": [
+        {
+         "bout_id": "9004",
+         "date_utc": "2025-06-14T22:00Z",
+         "detail": "Punch",
+         "method": "KO_TKO",
+         "opponent_id": "105",
+         "opponent_name": "Eli Silva",
+         "result": "win",
+         "round": 2,
+         "time_s": 60.0,
+         "weight_class": "Welterweight"
+        }
+       ],
+       "opponent_id": "105",
+       "opponent_name": "Eli Silva"
+      }
+     ]
+    },
+    "styles": {
+     "a": {
+      "applies": [
+       {
+        "evidence": {
+         "submission_attempts_per_15": 1.2
+        },
+        "name": "submission_threat",
+        "rule": "submission_attempts_per_15 >= 1",
+        "sample": {
+         "fights": 4,
+         "minutes": 50.0
+        },
+        "summary": "throws submission attempts often"
+       },
+       {
+        "evidence": {
+         "distance_rate": 0.6
+        },
+        "name": "goes_the_distance",
+        "rule": "distance_rate >= 0.6",
+        "sample": {
+         "fights": 5,
+         "minutes": 65.0
+        },
+        "summary": "most of his fights go to the judges' scorecards"
+       }
+      ],
+      "checked": [
+       "wrestler",
+       "submission_threat",
+       "striker",
+       "volume_striker",
+       "knockout_threat",
+       "finisher",
+       "vulnerable_to_finish",
+       "goes_the_distance",
+       "hard_to_take_down"
+      ],
+      "does_not_apply": [
+       "wrestler",
+       "striker",
+       "volume_striker",
+       "knockout_threat",
+       "finisher",
+       "vulnerable_to_finish",
+       "hard_to_take_down"
+      ],
+      "not_assessed": []
+     },
+     "b": {
+      "applies": [
+       {
+        "evidence": {
+         "control_time_share": 0.288,
+         "takedowns_landed_per_15": 2.9348
+        },
+        "name": "wrestler",
+        "rule": "takedowns_landed_per_15 >= 2 and control_time_share >= 0.2",
+        "sample": {
+         "fights": 5,
+         "minutes": 61.33
+        },
+        "summary": "lands takedowns often and spends real time in control"
+       }
+      ],
+      "checked": [
+       "wrestler",
+       "submission_threat",
+       "striker",
+       "volume_striker",
+       "knockout_threat",
+       "finisher",
+       "vulnerable_to_finish",
+       "goes_the_distance",
+       "hard_to_take_down"
+      ],
+      "does_not_apply": [
+       "submission_threat",
+       "striker",
+       "volume_striker",
+       "knockout_threat",
+       "finisher",
+       "vulnerable_to_finish",
+       "goes_the_distance",
+       "hard_to_take_down"
+      ],
+      "not_assessed": []
+     }
+    }
+   }
+  },
+  "vettori_v_naurdiev_upcoming": {
+   "read": {
+    "a": {
+     "context": [
+      {
+       "evidence": [
+        {
+         "label": "Marvin Vettori fights on file",
+         "path": "features.a.record.fights",
+         "value": 0
+        }
+       ],
+       "key": "coverage",
+       "sentence": "Marvin Vettori has no UFC fights on file before this bout, so this is a debut or the file does not reach earlier fights."
+      },
+      {
+       "evidence": [
+        {
+         "label": "Marvin Vettori overall wins",
+         "path": "features.a.career_record_incl_non_ufc.wins",
+         "value": 19
+        },
+        {
+         "label": "Marvin Vettori overall losses",
+         "path": "features.a.career_record_incl_non_ufc.losses",
+         "value": 10
+        },
+        {
+         "label": "record fetched",
+         "path": "features.a.career_record_incl_non_ufc.fetched_utc",
+         "value": "2026-10-03T18:00:00Z"
+        }
+       ],
+       "key": "overall_record",
+       "sentence": "The fighter record, fetched 2026-10-03, shows 19-10-1 overall, 30 professional fights including any outside the UFC."
+      }
+     ],
+     "fighter_id": "4001851",
+     "name": "Marvin Vettori",
+     "paths_to_victory": [
+      {
+       "built_from": [],
+       "caveat": "",
+       "down_weighted": true,
+       "evidence": [
+        {
+         "label": "Marvin Vettori fights on file",
+         "path": "features.a.record.fights",
+         "value": 0
+        }
+       ],
+       "route": "none",
+       "sample_level": "thin",
+       "sentence": "Nothing in the figures on file points to a route to a win for Marvin Vettori, and only 0 fights are on file.",
+       "size": "slight",
+       "thin": true,
+       "title": "No clear route",
+       "weight": 0.0
+      }
+     ],
+     "strengths": [],
+     "weaknesses": []
+    },
+    "as_of": "2026-10-03T20:00:00Z",
+    "b": {
+     "context": [
+      {
+       "evidence": [
+        {
+         "label": "Ismail Naurdiev fights on file",
+         "path": "features.b.record.fights",
+         "value": 0
+        }
+       ],
+       "key": "coverage",
+       "sentence": "Ismail Naurdiev has no UFC fights on file before this bout, so this is a debut or the file does not reach earlier fights."
+      },
+      {
+       "evidence": [
+        {
+         "label": "Ismail Naurdiev overall wins",
+         "path": "features.b.career_record_incl_non_ufc.wins",
+         "value": 25
+        },
+        {
+         "label": "Ismail Naurdiev overall losses",
+         "path": "features.b.career_record_incl_non_ufc.losses",
+         "value": 8
+        },
+        {
+         "label": "record fetched",
+         "path": "features.b.career_record_incl_non_ufc.fetched_utc",
+         "value": "2026-10-03T18:00:00Z"
+        }
+       ],
+       "key": "overall_record",
+       "sentence": "The fighter record, fetched 2026-10-03, shows 25-8-0 overall, 33 professional fights including any outside the UFC."
+      }
+     ],
+     "fighter_id": "4412813",
+     "name": "Ismail Naurdiev",
+     "paths_to_victory": [
+      {
+       "built_from": [],
+       "caveat": "",
+       "down_weighted": true,
+       "evidence": [
+        {
+         "label": "Ismail Naurdiev fights on file",
+         "path": "features.b.record.fights",
+         "value": 0
+        }
+       ],
+       "route": "none",
+       "sample_level": "thin",
+       "sentence": "Nothing in the figures on file points to a route to a win for Ismail Naurdiev, and only 0 fights are on file.",
+       "size": "slight",
+       "thin": true,
+       "title": "No clear route",
+       "weight": 0.0
+      }
+     ],
+     "strengths": [],
+     "weaknesses": []
+    },
+    "context": [
+     {
+      "evidence": [
+       {
+        "label": "stances",
+        "path": "physical.stance_matchup",
+        "value": "Southpaw vs Orthodox"
+       }
+      ],
+      "key": "stance",
+      "sentence": "Marvin Vettori fights southpaw and Ismail Naurdiev fights orthodox. These figures do not measure what that changes."
+     }
+    ],
+    "data_depth": {
+     "a": {
+      "fights": 0,
+      "minutes": 0.0,
+      "name": "Marvin Vettori",
+      "overall_fights": 30
+     },
+     "b": {
+      "fights": 0,
+      "minutes": 0.0,
+      "name": "Ismail Naurdiev",
+      "overall_fights": 33
+     },
+     "evidence": [
+      {
+       "label": "Marvin Vettori UFC fights on file",
+       "path": "features.a.sample.fights",
+       "value": 0
+      },
+      {
+       "label": "Marvin Vettori fight minutes on file",
+       "path": "features.a.sample.minutes",
+       "value": 0.0
+      },
+      {
+       "label": "Ismail Naurdiev UFC fights on file",
+       "path": "features.b.sample.fights",
+       "value": 0
+      },
+      {
+       "label": "Ismail Naurdiev fight minutes on file",
+       "path": "features.b.sample.minutes",
+       "value": 0.0
+      }
+     ],
+     "level": "thin",
+     "sentence": "On file before this fight: Marvin Vettori 0 UFC fights (0 minutes), out of 30 professional fights in all; Ismail Naurdiev 0 UFC fights (0 minutes), out of 33 professional fights in all. That is thin: under 3 fights or 30 fight minutes for Marvin Vettori and Ismail Naurdiev, so any figure built on them is an early sign and not a settled fact."
+    },
+    "headline": "No single difference clearly separates Marvin Vettori and Ismail Naurdiev in the data on file, and that is a valid read. No UFC fights are on file for Marvin Vettori and Ismail Naurdiev.",
+    "headline_trait": null,
+    "history": {
+     "caveat": "",
+     "evidence": [
+      {
+       "label": "opponents in common",
+       "path": "shared_opponents.count",
+       "value": 0
+      },
+      {
+       "label": "Marvin Vettori opponents on file",
+       "path": "shared_opponents.a_opponents",
+       "value": 0
+      },
+      {
+       "label": "Ismail Naurdiev opponents on file",
+       "path": "shared_opponents.b_opponents",
+       "value": 0
+      }
+     ],
+     "previous_meetings": [],
+     "shared_opponents": [],
+     "summary": "Marvin Vettori and Ismail Naurdiev have not met in the fights on file. At least one of them has no earlier opponents on file, so there is nothing to compare."
+    },
+    "label": "A written description of this fight built only from the figures on this page. It is not a prediction, not advice, and not a claim that any price is wrong.",
+    "market_view": {
+     "agreement": "no lean",
+     "available": true,
+     "evidence": [
+      {
+       "label": "Marvin Vettori price",
+       "path": "odds.moneyline.current.a",
+       "value": 114
+      },
+      {
+       "label": "Ismail Naurdiev price",
+       "path": "odds.moneyline.current.b",
+       "value": -135
+      },
+      {
+       "label": "Marvin Vettori share of the market with the margin removed",
+       "path": "odds.moneyline.current.without_margin.a",
+       "value": 0.4486
+      },
+      {
+       "label": "Ismail Naurdiev share of the market with the margin removed",
+       "path": "odds.moneyline.current.without_margin.b",
+       "value": 0.5514
+      },
+      {
+       "label": "the bookmaker's margin",
+       "path": "odds.moneyline.current.margin",
+       "value": 0.0418
+      },
+      {
+       "label": "prices fetched",
+       "path": "odds.fetched_utc",
+       "value": "2026-10-03T18:00:00Z"
+      },
+      {
+       "label": "Marvin Vettori share when the line opened",
+       "path": "odds.moneyline.open.without_margin.a",
+       "value": 0.4675
+      },
+      {
+       "label": "rounds line",
+       "path": "odds.rounds_total.line",
+       "value": 2.5
+      },
+      {
+       "label": "share for the over",
+       "path": "odds.rounds_total.current.without_margin.over",
+       "value": 0.6693
+      },
+      {
+       "label": "Marvin Vettori by decision, margin removed",
+       "path": "odds.method.current.without_margin.a.decision",
+       "value": 0.2969
+      }
+     ],
+     "favourite": "b",
+     "fetched_utc": "2026-10-03T18:00:00Z",
+     "implied": {
+      "a": {
+       "american": 114,
+       "name": "Marvin Vettori",
+       "with_margin": 0.4673,
+       "without_margin": 0.4486
+      },
+      "b": {
+       "american": -135,
+       "name": "Ismail Naurdiev",
+       "with_margin": 0.5745,
+       "without_margin": 0.5514
+      }
+     },
+     "is_closing": false,
+     "label": "What the price implies, set beside this read.",
+     "lean": "none",
+     "lean_weight": 0,
+     "margin": 0.0418,
+     "movement": {
+      "points": 1.9,
+      "toward": "b"
+     },
+     "provider": "DraftKings",
+     "sentences": [
+      "DraftKings' current prices make Ismail Naurdiev the 55.1% favourite and Marvin Vettori 44.9%, with the bookmaker's margin taken out (Marvin Vettori +114, Ismail Naurdiev -135, fetched 2026-10-03).",
+      "The line has moved toward Ismail Naurdiev since it opened, by 1.9 points of probability with the margin removed. A move says what the market now thinks and not why.",
+      "The rounds line is 2.5, with the fight going past it the likelier side at 67% with the margin removed.",
+      "Taken together, the method prices put a decision at 60%, a KO or TKO at 29% and a submission at 12%, margin removed.",
+      "The figures on file do not lean clearly toward either fighter, so this read neither agrees nor disagrees with the price. On these inputs the price is the better informed number.",
+      "With this little on file, the price is more likely right than this read.",
+      "We have not tested whether figures like these beat UFC prices. Treat this as a description of the fight, not as advice."
+     ],
+     "snapshot": "current"
+    },
+    "missing": [
+     {
+      "detail": "no UFC fights on file before this bout, so every figure built from fights is missing",
+      "input": "Marvin Vettori: UFC fights",
+      "status": "absent"
+     },
+     {
+      "detail": "no UFC fights on file before this bout, so every figure built from fights is missing",
+      "input": "Ismail Naurdiev: UFC fights",
+      "status": "absent"
+     }
+    ],
+    "notices": [],
+    "version": 1,
+    "what_would_change_it": [
+     {
+      "because": "Everything above is built from Marvin Vettori and Ismail Naurdiev as booked for 2026-10-03; a replacement fighter would void it and start the read again.",
+      "evidence": [
+       {
+        "label": "date of the bout",
+        "path": "bout.date_utc",
+        "value": "2026-10-03T20:00Z"
+       },
+       {
+        "label": "status of the bout",
+        "path": "bout.status",
+        "value": "scheduled"
+       }
+      ],
+      "fact": "A change of opponent, a withdrawal or a cancelled bout."
+     },
+     {
+      "because": "Marvin Vettori has 0 fights and 0 minutes behind the figures, so one more fight would move most of them.",
+      "evidence": [
+       {
+        "label": "Marvin Vettori fights on file",
+        "path": "features.a.sample.fights",
+        "value": 0
+       },
+       {
+        "label": "Marvin Vettori fight minutes on file",
+        "path": "features.a.sample.minutes",
+        "value": 0.0
+       }
+      ],
+      "fact": "More fights on file for Marvin Vettori."
+     },
+     {
+      "because": "The market takes in injuries, weight cuts and camp news that these figures cannot see; a large move after this read was built would mean something we do not see.",
+      "evidence": [
+       {
+        "label": "Marvin Vettori price",
+        "path": "odds.moneyline.current.a",
+        "value": 114
+       },
+       {
+        "label": "Ismail Naurdiev price",
+        "path": "odds.moneyline.current.b",
+        "value": -135
+       }
+      ],
+      "fact": "A move in the price."
+     }
+    ]
+   },
+   "sheet": {
+    "a": {
+     "fighter_id": "4001851",
+     "name": "Marvin Vettori"
+    },
+    "as_of": "2026-10-03T20:00:00Z",
+    "as_of_source": "scheduled_bout_start",
+    "b": {
+     "fighter_id": "4412813",
+     "name": "Ismail Naurdiev"
+    },
+    "bout": {
+     "bout_id": "401912275",
+     "card_segment": "early_prelims",
+     "date_utc": "2026-10-03T20:00Z",
+     "description": "3 Rnd (5-5-5)",
+     "event_id": "600061182",
+     "event_name": "UFC 332: Silva vs. Wang",
+     "match_number": 13,
+     "other_scheduled_bout_ids": [],
+     "scheduled_rounds": 3,
+     "status": "scheduled",
+     "weight_class": "Middleweight"
+    },
+    "differentials": {
+     "average_fight_time_s": {
+      "a": null,
+      "a_sample": {
+       "fights": 0,
+       "minutes": 0.0
+      },
+      "b": null,
+      "b_sample": {
+       "fights": 0,
+       "minutes": 0.0
+      },
+      "diff": null,
+      "thin_sample": true,
+      "unit": "seconds"
+     },
+     "been_finished_rate": {
+      "a": null,
+      "a_sample": {
+       "fights": 0,
+       "minutes": 0.0
+      },
+      "b": null,
+      "b_sample": {
+       "fights": 0,
+       "minutes": 0.0
+      },
+      "diff": null,
+      "thin_sample": true,
+      "unit": "losses by KO/TKO or submission per fight"
+     },
+     "control_time_share": {
+      "a": null,
+      "a_sample": {
+       "fights": 0,
+       "minutes": 0.0
+      },
+      "b": null,
+      "b_sample": {
+       "fights": 0,
+       "minutes": 0.0
+      },
+      "diff": null,
+      "thin_sample": true,
+      "unit": "seconds in control / fight seconds"
+     },
+     "distance_rate": {
+      "a": null,
+      "a_sample": {
+       "fights": 0,
+       "minutes": 0.0
+      },
+      "b": null,
+      "b_sample": {
+       "fights": 0,
+       "minutes": 0.0
+      },
+      "diff": null,
+      "thin_sample": true,
+      "unit": "share of fights that went to the judges' scorecards"
+     },
+     "finish_rate": {
+      "a": null,
+      "a_sample": {
+       "fights": 0,
+       "minutes": 0.0
+      },
+      "b": null,
+      "b_sample": {
+       "fights": 0,
+       "minutes": 0.0
+      },
+      "diff": null,
+      "thin_sample": true,
+      "unit": "finishing wins (KO/TKO or submission) per fight"
+     },
+     "knockdowns_landed_per_15": {
+      "a": null,
+      "a_sample": {
+       "fights": 0,
+       "minutes": 0.0
+      },
+      "b": null,
+      "b_sample": {
+       "fights": 0,
+       "minutes": 0.0
+      },
+      "diff": null,
+      "thin_sample": true,
+      "unit": "knockdowns scored per 15 minutes"
+     },
+     "knockdowns_suffered_per_15": {
+      "a": null,
+      "a_sample": {
+       "fights": 0,
+       "minutes": 0.0
+      },
+      "b": null,
+      "b_sample": {
+       "fights": 0,
+       "minutes": 0.0
+      },
+      "diff": null,
+      "thin_sample": true,
+      "unit": "knockdowns suffered per 15 minutes"
+     },
+     "sig_strike_accuracy": {
+      "a": null,
+      "a_sample": {
+       "fights": 0,
+       "minutes": 0.0
+      },
+      "b": null,
+      "b_sample": {
+       "fights": 0,
+       "minutes": 0.0
+      },
+      "diff": null,
+      "thin_sample": true,
+      "unit": "significant strikes landed / attempted"
+     },
+     "sig_strike_defence": {
+      "a": null,
+      "a_sample": {
+       "fights": 0,
+       "minutes": 0.0
+      },
+      "b": null,
+      "b_sample": {
+       "fights": 0,
+       "minutes": 0.0
+      },
+      "diff": null,
+      "thin_sample": true,
+      "unit": "1 - opponent significant strikes landed / attempted"
+     },
+     "sig_strikes_absorbed_per_min": {
+      "a": null,
+      "a_sample": {
+       "fights": 0,
+       "minutes": 0.0
+      },
+      "b": null,
+      "b_sample": {
+       "fights": 0,
+       "minutes": 0.0
+      },
+      "diff": null,
+      "thin_sample": true,
+      "unit": "significant strikes absorbed per minute"
+     },
+     "sig_strikes_landed_per_min": {
+      "a": null,
+      "a_sample": {
+       "fights": 0,
+       "minutes": 0.0
+      },
+      "b": null,
+      "b_sample": {
+       "fights": 0,
+       "minutes": 0.0
+      },
+      "diff": null,
+      "thin_sample": true,
+      "unit": "significant strikes landed per minute"
+     },
+     "strength_of_schedule": {
+      "a": null,
+      "a_sample": {
+       "fights": 0,
+       "minutes": 0.0
+      },
+      "b": null,
+      "b_sample": {
+       "fights": 0,
+       "minutes": 0.0
+      },
+      "diff": null,
+      "thin_sample": true,
+      "unit": "mean opponent UFC win rate at the start of each fight"
+     },
+     "submission_attempts_per_15": {
+      "a": null,
+      "a_sample": {
+       "fights": 0,
+       "minutes": 0.0
+      },
+      "b": null,
+      "b_sample": {
+       "fights": 0,
+       "minutes": 0.0
+      },
+      "diff": null,
+      "thin_sample": true,
+      "unit": "submission attempts per 15 minutes"
+     },
+     "takedown_accuracy": {
+      "a": null,
+      "a_sample": {
+       "fights": 0,
+       "minutes": 0.0
+      },
+      "b": null,
+      "b_sample": {
+       "fights": 0,
+       "minutes": 0.0
+      },
+      "diff": null,
+      "thin_sample": true,
+      "unit": "takedowns landed / attempted"
+     },
+     "takedown_defence": {
+      "a": null,
+      "a_sample": {
+       "fights": 0,
+       "minutes": 0.0
+      },
+      "b": null,
+      "b_sample": {
+       "fights": 0,
+       "minutes": 0.0
+      },
+      "diff": null,
+      "thin_sample": true,
+      "unit": "1 - opponent takedowns landed / attempted"
+     },
+     "takedowns_landed_per_15": {
+      "a": null,
+      "a_sample": {
+       "fights": 0,
+       "minutes": 0.0
+      },
+      "b": null,
+      "b_sample": {
+       "fights": 0,
+       "minutes": 0.0
+      },
+      "diff": null,
+      "thin_sample": true,
+      "unit": "takedowns landed per 15 minutes"
+     },
+     "ufc_fights": {
+      "a": 0,
+      "a_sample": {
+       "fights": 0,
+       "minutes": 0.0
+      },
+      "b": 0,
+      "b_sample": {
+       "fights": 0,
+       "minutes": 0.0
+      },
+      "diff": 0,
+      "unit": "fights"
+     },
+     "win_rate": {
+      "a": null,
+      "a_sample": {
+       "fights": 0,
+       "minutes": 0.0
+      },
+      "b": null,
+      "b_sample": {
+       "fights": 0,
+       "minutes": 0.0
+      },
+      "diff": null,
+      "thin_sample": true,
+      "unit": "wins / (wins + losses + draws)"
+     }
+    },
+    "features": {
+     "a": {
+      "as_of": "2026-10-03T20:00:00Z",
+      "career_record_incl_non_ufc": {
+       "as_of_safe": false,
+       "draws": 1,
+       "fetched_utc": "2026-10-03T18:00:00Z",
+       "includes_non_ufc": true,
+       "label": "Overall professional record from the fighter record, including fights outside the UFC",
+       "losses": 10,
+       "no_contests": 0,
+       "note": "As of the fetch time of the fighter record, not as of as_of; do not use it where leakage matters.",
+       "wins": 19
+      },
+      "fighter_id": "4001851",
+      "figures": {
+       "age_years": {
+        "unit": "years",
+        "value": 33.04
+       },
+       "average_fight_time_s": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "no UFC fights in the store before as_of",
+        "unit": "seconds",
+        "value": null
+       },
+       "been_finished_rate": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "no UFC fights in the store before as_of",
+        "unit": "losses by KO/TKO or submission per fight",
+        "value": null
+       },
+       "control_time_share": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "no UFC fights in the store before as_of",
+        "unit": "seconds in control / fight seconds",
+        "value": null
+       },
+       "days_since_last_fight": {
+        "reason": "no UFC fights in the store before as_of",
+        "unit": "days",
+        "value": null
+       },
+       "distance_rate": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "no UFC fights in the store before as_of",
+        "unit": "share of fights that went to the judges' scorecards",
+        "value": null
+       },
+       "finish_rate": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "no UFC fights in the store before as_of",
+        "unit": "finishing wins (KO/TKO or submission) per fight",
+        "value": null
+       },
+       "finish_share_of_wins": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "no wins with a recorded method before as_of",
+        "unit": "share of wins that were KO/TKO or submission",
+        "value": null
+       },
+       "finished_share_of_losses": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "no losses with a recorded method before as_of",
+        "unit": "share of losses that were KO/TKO or submission",
+        "value": null
+       },
+       "height_in": {
+        "unit": "inches",
+        "value": 72.0
+       },
+       "knockdowns_landed_per_15": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "no UFC fights in the store before as_of",
+        "unit": "knockdowns scored per 15 minutes",
+        "value": null
+       },
+       "knockdowns_suffered_per_15": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "no UFC fights in the store before as_of",
+        "unit": "knockdowns suffered per 15 minutes",
+        "value": null
+       },
+       "reach_in": {
+        "unit": "inches",
+        "value": 74.0
+       },
+       "sig_strike_accuracy": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "no UFC fights in the store before as_of",
+        "unit": "significant strikes landed / attempted",
+        "value": null
+       },
+       "sig_strike_defence": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "no UFC fights in the store before as_of",
+        "unit": "1 - opponent significant strikes landed / attempted",
+        "value": null
+       },
+       "sig_strike_share_body": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "no UFC fights in the store before as_of",
+        "unit": "share of significant strikes landed, by target",
+        "value": null
+       },
+       "sig_strike_share_clinch": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "no UFC fights in the store before as_of",
+        "unit": "share of significant strikes landed, by position",
+        "value": null
+       },
+       "sig_strike_share_distance": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "no UFC fights in the store before as_of",
+        "unit": "share of significant strikes landed, by position",
+        "value": null
+       },
+       "sig_strike_share_ground": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "no UFC fights in the store before as_of",
+        "unit": "share of significant strikes landed, by position",
+        "value": null
+       },
+       "sig_strike_share_head": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "no UFC fights in the store before as_of",
+        "unit": "share of significant strikes landed, by target",
+        "value": null
+       },
+       "sig_strike_share_leg": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "no UFC fights in the store before as_of",
+        "unit": "share of significant strikes landed, by target",
+        "value": null
+       },
+       "sig_strikes_absorbed_per_min": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "no UFC fights in the store before as_of",
+        "unit": "significant strikes absorbed per minute",
+        "value": null
+       },
+       "sig_strikes_landed_per_min": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "no UFC fights in the store before as_of",
+        "unit": "significant strikes landed per minute",
+        "value": null
+       },
+       "strength_of_schedule": {
+        "fights": 0,
+        "minutes": 0.0,
+        "opponents_without_history": 0,
+        "reason": "no UFC fights in the store before as_of",
+        "unit": "mean opponent UFC win rate at the start of each fight",
+        "value": null
+       },
+       "submission_attempts_per_15": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "no UFC fights in the store before as_of",
+        "unit": "submission attempts per 15 minutes",
+        "value": null
+       },
+       "takedown_accuracy": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "no UFC fights in the store before as_of",
+        "unit": "takedowns landed / attempted",
+        "value": null
+       },
+       "takedown_defence": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "no UFC fights in the store before as_of",
+        "unit": "1 - opponent takedowns landed / attempted",
+        "value": null
+       },
+       "takedowns_landed_per_15": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "no UFC fights in the store before as_of",
+        "unit": "takedowns landed per 15 minutes",
+        "value": null
+       },
+       "ufc_fights": {
+        "fights": 0,
+        "minutes": 0.0,
+        "unit": "fights",
+        "value": 0
+       },
+       "win_rate": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "no UFC fights in the store before as_of",
+        "unit": "wins / (wins + losses + draws)",
+        "value": null
+       }
+      },
+      "last_three": [],
+      "leakage_rule": "uses only bouts that started strictly before as_of and have a result; a bout on the as_of date or at the as_of instant, and every later bout, is excluded",
+      "missing": [
+       {
+        "figure": "win_rate",
+        "reason": "no UFC fights in the store before as_of"
+       },
+       {
+        "figure": "finish_rate",
+        "reason": "no UFC fights in the store before as_of"
+       },
+       {
+        "figure": "been_finished_rate",
+        "reason": "no UFC fights in the store before as_of"
+       },
+       {
+        "figure": "finish_share_of_wins",
+        "reason": "no wins with a recorded method before as_of"
+       },
+       {
+        "figure": "finished_share_of_losses",
+        "reason": "no losses with a recorded method before as_of"
+       },
+       {
+        "figure": "distance_rate",
+        "reason": "no UFC fights in the store before as_of"
+       },
+       {
+        "figure": "average_fight_time_s",
+        "reason": "no UFC fights in the store before as_of"
+       },
+       {
+        "figure": "sig_strikes_landed_per_min",
+        "reason": "no UFC fights in the store before as_of"
+       },
+       {
+        "figure": "sig_strikes_absorbed_per_min",
+        "reason": "no UFC fights in the store before as_of"
+       },
+       {
+        "figure": "sig_strike_accuracy",
+        "reason": "no UFC fights in the store before as_of"
+       },
+       {
+        "figure": "sig_strike_defence",
+        "reason": "no UFC fights in the store before as_of"
+       },
+       {
+        "figure": "sig_strike_share_distance",
+        "reason": "no UFC fights in the store before as_of"
+       },
+       {
+        "figure": "sig_strike_share_clinch",
+        "reason": "no UFC fights in the store before as_of"
+       },
+       {
+        "figure": "sig_strike_share_ground",
+        "reason": "no UFC fights in the store before as_of"
+       },
+       {
+        "figure": "sig_strike_share_head",
+        "reason": "no UFC fights in the store before as_of"
+       },
+       {
+        "figure": "sig_strike_share_body",
+        "reason": "no UFC fights in the store before as_of"
+       },
+       {
+        "figure": "sig_strike_share_leg",
+        "reason": "no UFC fights in the store before as_of"
+       },
+       {
+        "figure": "knockdowns_landed_per_15",
+        "reason": "no UFC fights in the store before as_of"
+       },
+       {
+        "figure": "knockdowns_suffered_per_15",
+        "reason": "no UFC fights in the store before as_of"
+       },
+       {
+        "figure": "takedowns_landed_per_15",
+        "reason": "no UFC fights in the store before as_of"
+       },
+       {
+        "figure": "takedown_accuracy",
+        "reason": "no UFC fights in the store before as_of"
+       },
+       {
+        "figure": "takedown_defence",
+        "reason": "no UFC fights in the store before as_of"
+       },
+       {
+        "figure": "control_time_share",
+        "reason": "no UFC fights in the store before as_of"
+       },
+       {
+        "figure": "submission_attempts_per_15",
+        "reason": "no UFC fights in the store before as_of"
+       },
+       {
+        "figure": "strength_of_schedule",
+        "reason": "no UFC fights in the store before as_of"
+       },
+       {
+        "figure": "days_since_last_fight",
+        "reason": "no UFC fights in the store before as_of"
+       },
+       {
+        "figure": "ufccom_career",
+        "reason": "no UFC.com profile for this fighter in the store"
+       }
+      ],
+      "name": "Marvin Vettori",
+      "physical": {
+       "dob": "1993-09-20",
+       "stance": "Southpaw"
+      },
+      "record": {
+       "draws": 0,
+       "fights": 0,
+       "first_fight_utc": null,
+       "last_fight_utc": null,
+       "losses": 0,
+       "losses_by_method": {
+        "decision": 0,
+        "dq": 0,
+        "ko_tko": 0,
+        "other": 0,
+        "submission": 0,
+        "unknown": 0
+       },
+       "no_contests": 0,
+       "wins": 0,
+       "wins_by_method": {
+        "decision": 0,
+        "dq": 0,
+        "ko_tko": 0,
+        "other": 0,
+        "submission": 0,
+        "unknown": 0
+       }
+      },
+      "sample": {
+       "fights": 0,
+       "fights_with_both_stats": 0,
+       "fights_with_opponent_stats": 0,
+       "fights_with_own_stats": 0,
+       "fights_without_any_stats": [],
+       "minutes": 0.0,
+       "skipped": {
+        "no_start_time": [],
+        "started_without_result": []
+       }
+      },
+      "streak": {
+       "length": 0,
+       "type": null
+      },
+      "strength_of_schedule_by_fight": [],
+      "ufccom_career": null,
+      "weight_classes": {
+       "current": null,
+       "fights_without_weight_class": 0,
+       "fought": [],
+       "most_recent_change": null
+      }
+     },
+     "b": {
+      "as_of": "2026-10-03T20:00:00Z",
+      "career_record_incl_non_ufc": {
+       "as_of_safe": false,
+       "draws": 0,
+       "fetched_utc": "2026-10-03T18:00:00Z",
+       "includes_non_ufc": true,
+       "label": "Overall professional record from the fighter record, including fights outside the UFC",
+       "losses": 8,
+       "no_contests": 0,
+       "note": "As of the fetch time of the fighter record, not as of as_of; do not use it where leakage matters.",
+       "wins": 25
+      },
+      "fighter_id": "4412813",
+      "figures": {
+       "age_years": {
+        "unit": "years",
+        "value": 30.13
+       },
+       "average_fight_time_s": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "no UFC fights in the store before as_of",
+        "unit": "seconds",
+        "value": null
+       },
+       "been_finished_rate": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "no UFC fights in the store before as_of",
+        "unit": "losses by KO/TKO or submission per fight",
+        "value": null
+       },
+       "control_time_share": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "no UFC fights in the store before as_of",
+        "unit": "seconds in control / fight seconds",
+        "value": null
+       },
+       "days_since_last_fight": {
+        "reason": "no UFC fights in the store before as_of",
+        "unit": "days",
+        "value": null
+       },
+       "distance_rate": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "no UFC fights in the store before as_of",
+        "unit": "share of fights that went to the judges' scorecards",
+        "value": null
+       },
+       "finish_rate": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "no UFC fights in the store before as_of",
+        "unit": "finishing wins (KO/TKO or submission) per fight",
+        "value": null
+       },
+       "finish_share_of_wins": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "no wins with a recorded method before as_of",
+        "unit": "share of wins that were KO/TKO or submission",
+        "value": null
+       },
+       "finished_share_of_losses": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "no losses with a recorded method before as_of",
+        "unit": "share of losses that were KO/TKO or submission",
+        "value": null
+       },
+       "height_in": {
+        "unit": "inches",
+        "value": 70.0
+       },
+       "knockdowns_landed_per_15": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "no UFC fights in the store before as_of",
+        "unit": "knockdowns scored per 15 minutes",
+        "value": null
+       },
+       "knockdowns_suffered_per_15": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "no UFC fights in the store before as_of",
+        "unit": "knockdowns suffered per 15 minutes",
+        "value": null
+       },
+       "reach_in": {
+        "unit": "inches",
+        "value": 74.0
+       },
+       "sig_strike_accuracy": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "no UFC fights in the store before as_of",
+        "unit": "significant strikes landed / attempted",
+        "value": null
+       },
+       "sig_strike_defence": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "no UFC fights in the store before as_of",
+        "unit": "1 - opponent significant strikes landed / attempted",
+        "value": null
+       },
+       "sig_strike_share_body": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "no UFC fights in the store before as_of",
+        "unit": "share of significant strikes landed, by target",
+        "value": null
+       },
+       "sig_strike_share_clinch": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "no UFC fights in the store before as_of",
+        "unit": "share of significant strikes landed, by position",
+        "value": null
+       },
+       "sig_strike_share_distance": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "no UFC fights in the store before as_of",
+        "unit": "share of significant strikes landed, by position",
+        "value": null
+       },
+       "sig_strike_share_ground": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "no UFC fights in the store before as_of",
+        "unit": "share of significant strikes landed, by position",
+        "value": null
+       },
+       "sig_strike_share_head": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "no UFC fights in the store before as_of",
+        "unit": "share of significant strikes landed, by target",
+        "value": null
+       },
+       "sig_strike_share_leg": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "no UFC fights in the store before as_of",
+        "unit": "share of significant strikes landed, by target",
+        "value": null
+       },
+       "sig_strikes_absorbed_per_min": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "no UFC fights in the store before as_of",
+        "unit": "significant strikes absorbed per minute",
+        "value": null
+       },
+       "sig_strikes_landed_per_min": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "no UFC fights in the store before as_of",
+        "unit": "significant strikes landed per minute",
+        "value": null
+       },
+       "strength_of_schedule": {
+        "fights": 0,
+        "minutes": 0.0,
+        "opponents_without_history": 0,
+        "reason": "no UFC fights in the store before as_of",
+        "unit": "mean opponent UFC win rate at the start of each fight",
+        "value": null
+       },
+       "submission_attempts_per_15": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "no UFC fights in the store before as_of",
+        "unit": "submission attempts per 15 minutes",
+        "value": null
+       },
+       "takedown_accuracy": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "no UFC fights in the store before as_of",
+        "unit": "takedowns landed / attempted",
+        "value": null
+       },
+       "takedown_defence": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "no UFC fights in the store before as_of",
+        "unit": "1 - opponent takedowns landed / attempted",
+        "value": null
+       },
+       "takedowns_landed_per_15": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "no UFC fights in the store before as_of",
+        "unit": "takedowns landed per 15 minutes",
+        "value": null
+       },
+       "ufc_fights": {
+        "fights": 0,
+        "minutes": 0.0,
+        "unit": "fights",
+        "value": 0
+       },
+       "win_rate": {
+        "fights": 0,
+        "minutes": 0.0,
+        "reason": "no UFC fights in the store before as_of",
+        "unit": "wins / (wins + losses + draws)",
+        "value": null
+       }
+      },
+      "last_three": [],
+      "leakage_rule": "uses only bouts that started strictly before as_of and have a result; a bout on the as_of date or at the as_of instant, and every later bout, is excluded",
+      "missing": [
+       {
+        "figure": "win_rate",
+        "reason": "no UFC fights in the store before as_of"
+       },
+       {
+        "figure": "finish_rate",
+        "reason": "no UFC fights in the store before as_of"
+       },
+       {
+        "figure": "been_finished_rate",
+        "reason": "no UFC fights in the store before as_of"
+       },
+       {
+        "figure": "finish_share_of_wins",
+        "reason": "no wins with a recorded method before as_of"
+       },
+       {
+        "figure": "finished_share_of_losses",
+        "reason": "no losses with a recorded method before as_of"
+       },
+       {
+        "figure": "distance_rate",
+        "reason": "no UFC fights in the store before as_of"
+       },
+       {
+        "figure": "average_fight_time_s",
+        "reason": "no UFC fights in the store before as_of"
+       },
+       {
+        "figure": "sig_strikes_landed_per_min",
+        "reason": "no UFC fights in the store before as_of"
+       },
+       {
+        "figure": "sig_strikes_absorbed_per_min",
+        "reason": "no UFC fights in the store before as_of"
+       },
+       {
+        "figure": "sig_strike_accuracy",
+        "reason": "no UFC fights in the store before as_of"
+       },
+       {
+        "figure": "sig_strike_defence",
+        "reason": "no UFC fights in the store before as_of"
+       },
+       {
+        "figure": "sig_strike_share_distance",
+        "reason": "no UFC fights in the store before as_of"
+       },
+       {
+        "figure": "sig_strike_share_clinch",
+        "reason": "no UFC fights in the store before as_of"
+       },
+       {
+        "figure": "sig_strike_share_ground",
+        "reason": "no UFC fights in the store before as_of"
+       },
+       {
+        "figure": "sig_strike_share_head",
+        "reason": "no UFC fights in the store before as_of"
+       },
+       {
+        "figure": "sig_strike_share_body",
+        "reason": "no UFC fights in the store before as_of"
+       },
+       {
+        "figure": "sig_strike_share_leg",
+        "reason": "no UFC fights in the store before as_of"
+       },
+       {
+        "figure": "knockdowns_landed_per_15",
+        "reason": "no UFC fights in the store before as_of"
+       },
+       {
+        "figure": "knockdowns_suffered_per_15",
+        "reason": "no UFC fights in the store before as_of"
+       },
+       {
+        "figure": "takedowns_landed_per_15",
+        "reason": "no UFC fights in the store before as_of"
+       },
+       {
+        "figure": "takedown_accuracy",
+        "reason": "no UFC fights in the store before as_of"
+       },
+       {
+        "figure": "takedown_defence",
+        "reason": "no UFC fights in the store before as_of"
+       },
+       {
+        "figure": "control_time_share",
+        "reason": "no UFC fights in the store before as_of"
+       },
+       {
+        "figure": "submission_attempts_per_15",
+        "reason": "no UFC fights in the store before as_of"
+       },
+       {
+        "figure": "strength_of_schedule",
+        "reason": "no UFC fights in the store before as_of"
+       },
+       {
+        "figure": "days_since_last_fight",
+        "reason": "no UFC fights in the store before as_of"
+       },
+       {
+        "figure": "ufccom_career",
+        "reason": "no UFC.com profile for this fighter in the store"
+       }
+      ],
+      "name": "Ismail Naurdiev",
+      "physical": {
+       "dob": "1996-08-18",
+       "stance": "Orthodox"
+      },
+      "record": {
+       "draws": 0,
+       "fights": 0,
+       "first_fight_utc": null,
+       "last_fight_utc": null,
+       "losses": 0,
+       "losses_by_method": {
+        "decision": 0,
+        "dq": 0,
+        "ko_tko": 0,
+        "other": 0,
+        "submission": 0,
+        "unknown": 0
+       },
+       "no_contests": 0,
+       "wins": 0,
+       "wins_by_method": {
+        "decision": 0,
+        "dq": 0,
+        "ko_tko": 0,
+        "other": 0,
+        "submission": 0,
+        "unknown": 0
+       }
+      },
+      "sample": {
+       "fights": 0,
+       "fights_with_both_stats": 0,
+       "fights_with_opponent_stats": 0,
+       "fights_with_own_stats": 0,
+       "fights_without_any_stats": [],
+       "minutes": 0.0,
+       "skipped": {
+        "no_start_time": [],
+        "started_without_result": []
+       }
+      },
+      "streak": {
+       "length": 0,
+       "type": null
+      },
+      "strength_of_schedule_by_fight": [],
+      "ufccom_career": null,
+      "weight_classes": {
+       "current": null,
+       "fights_without_weight_class": 0,
+       "fought": [],
+       "most_recent_change": null
+      }
+     }
+    },
+    "layoff": {
+     "a_days": null,
+     "a_last_fight_utc": null,
+     "b_days": null,
+     "b_last_fight_utc": null,
+     "difference_days": null,
+     "longer_layoff": null,
+     "measured_to": "2026-10-03T20:00:00Z"
+    },
+    "leakage_rule": "uses only bouts that started strictly before as_of and have a result; a bout on the as_of date or at the as_of instant, and every later bout, is excluded",
+    "missing": [
+     {
+      "fighter_id": "4001851",
+      "figure": "win_rate",
+      "reason": "no UFC fights in the store before as_of",
+      "side": "a"
+     },
+     {
+      "fighter_id": "4001851",
+      "figure": "finish_rate",
+      "reason": "no UFC fights in the store before as_of",
+      "side": "a"
+     },
+     {
+      "fighter_id": "4001851",
+      "figure": "been_finished_rate",
+      "reason": "no UFC fights in the store before as_of",
+      "side": "a"
+     },
+     {
+      "fighter_id": "4001851",
+      "figure": "finish_share_of_wins",
+      "reason": "no wins with a recorded method before as_of",
+      "side": "a"
+     },
+     {
+      "fighter_id": "4001851",
+      "figure": "finished_share_of_losses",
+      "reason": "no losses with a recorded method before as_of",
+      "side": "a"
+     },
+     {
+      "fighter_id": "4001851",
+      "figure": "distance_rate",
+      "reason": "no UFC fights in the store before as_of",
+      "side": "a"
+     },
+     {
+      "fighter_id": "4001851",
+      "figure": "average_fight_time_s",
+      "reason": "no UFC fights in the store before as_of",
+      "side": "a"
+     },
+     {
+      "fighter_id": "4001851",
+      "figure": "sig_strikes_landed_per_min",
+      "reason": "no UFC fights in the store before as_of",
+      "side": "a"
+     },
+     {
+      "fighter_id": "4001851",
+      "figure": "sig_strikes_absorbed_per_min",
+      "reason": "no UFC fights in the store before as_of",
+      "side": "a"
+     },
+     {
+      "fighter_id": "4001851",
+      "figure": "sig_strike_accuracy",
+      "reason": "no UFC fights in the store before as_of",
+      "side": "a"
+     },
+     {
+      "fighter_id": "4001851",
+      "figure": "sig_strike_defence",
+      "reason": "no UFC fights in the store before as_of",
+      "side": "a"
+     },
+     {
+      "fighter_id": "4001851",
+      "figure": "sig_strike_share_distance",
+      "reason": "no UFC fights in the store before as_of",
+      "side": "a"
+     },
+     {
+      "fighter_id": "4001851",
+      "figure": "sig_strike_share_clinch",
+      "reason": "no UFC fights in the store before as_of",
+      "side": "a"
+     },
+     {
+      "fighter_id": "4001851",
+      "figure": "sig_strike_share_ground",
+      "reason": "no UFC fights in the store before as_of",
+      "side": "a"
+     },
+     {
+      "fighter_id": "4001851",
+      "figure": "sig_strike_share_head",
+      "reason": "no UFC fights in the store before as_of",
+      "side": "a"
+     },
+     {
+      "fighter_id": "4001851",
+      "figure": "sig_strike_share_body",
+      "reason": "no UFC fights in the store before as_of",
+      "side": "a"
+     },
+     {
+      "fighter_id": "4001851",
+      "figure": "sig_strike_share_leg",
+      "reason": "no UFC fights in the store before as_of",
+      "side": "a"
+     },
+     {
+      "fighter_id": "4001851",
+      "figure": "knockdowns_landed_per_15",
+      "reason": "no UFC fights in the store before as_of",
+      "side": "a"
+     },
+     {
+      "fighter_id": "4001851",
+      "figure": "knockdowns_suffered_per_15",
+      "reason": "no UFC fights in the store before as_of",
+      "side": "a"
+     },
+     {
+      "fighter_id": "4001851",
+      "figure": "takedowns_landed_per_15",
+      "reason": "no UFC fights in the store before as_of",
+      "side": "a"
+     },
+     {
+      "fighter_id": "4001851",
+      "figure": "takedown_accuracy",
+      "reason": "no UFC fights in the store before as_of",
+      "side": "a"
+     },
+     {
+      "fighter_id": "4001851",
+      "figure": "takedown_defence",
+      "reason": "no UFC fights in the store before as_of",
+      "side": "a"
+     },
+     {
+      "fighter_id": "4001851",
+      "figure": "control_time_share",
+      "reason": "no UFC fights in the store before as_of",
+      "side": "a"
+     },
+     {
+      "fighter_id": "4001851",
+      "figure": "submission_attempts_per_15",
+      "reason": "no UFC fights in the store before as_of",
+      "side": "a"
+     },
+     {
+      "fighter_id": "4001851",
+      "figure": "strength_of_schedule",
+      "reason": "no UFC fights in the store before as_of",
+      "side": "a"
+     },
+     {
+      "fighter_id": "4001851",
+      "figure": "days_since_last_fight",
+      "reason": "no UFC fights in the store before as_of",
+      "side": "a"
+     },
+     {
+      "fighter_id": "4001851",
+      "figure": "ufccom_career",
+      "reason": "no UFC.com profile for this fighter in the store",
+      "side": "a"
+     },
+     {
+      "fighter_id": "4412813",
+      "figure": "win_rate",
+      "reason": "no UFC fights in the store before as_of",
+      "side": "b"
+     },
+     {
+      "fighter_id": "4412813",
+      "figure": "finish_rate",
+      "reason": "no UFC fights in the store before as_of",
+      "side": "b"
+     },
+     {
+      "fighter_id": "4412813",
+      "figure": "been_finished_rate",
+      "reason": "no UFC fights in the store before as_of",
+      "side": "b"
+     },
+     {
+      "fighter_id": "4412813",
+      "figure": "finish_share_of_wins",
+      "reason": "no wins with a recorded method before as_of",
+      "side": "b"
+     },
+     {
+      "fighter_id": "4412813",
+      "figure": "finished_share_of_losses",
+      "reason": "no losses with a recorded method before as_of",
+      "side": "b"
+     },
+     {
+      "fighter_id": "4412813",
+      "figure": "distance_rate",
+      "reason": "no UFC fights in the store before as_of",
+      "side": "b"
+     },
+     {
+      "fighter_id": "4412813",
+      "figure": "average_fight_time_s",
+      "reason": "no UFC fights in the store before as_of",
+      "side": "b"
+     },
+     {
+      "fighter_id": "4412813",
+      "figure": "sig_strikes_landed_per_min",
+      "reason": "no UFC fights in the store before as_of",
+      "side": "b"
+     },
+     {
+      "fighter_id": "4412813",
+      "figure": "sig_strikes_absorbed_per_min",
+      "reason": "no UFC fights in the store before as_of",
+      "side": "b"
+     },
+     {
+      "fighter_id": "4412813",
+      "figure": "sig_strike_accuracy",
+      "reason": "no UFC fights in the store before as_of",
+      "side": "b"
+     },
+     {
+      "fighter_id": "4412813",
+      "figure": "sig_strike_defence",
+      "reason": "no UFC fights in the store before as_of",
+      "side": "b"
+     },
+     {
+      "fighter_id": "4412813",
+      "figure": "sig_strike_share_distance",
+      "reason": "no UFC fights in the store before as_of",
+      "side": "b"
+     },
+     {
+      "fighter_id": "4412813",
+      "figure": "sig_strike_share_clinch",
+      "reason": "no UFC fights in the store before as_of",
+      "side": "b"
+     },
+     {
+      "fighter_id": "4412813",
+      "figure": "sig_strike_share_ground",
+      "reason": "no UFC fights in the store before as_of",
+      "side": "b"
+     },
+     {
+      "fighter_id": "4412813",
+      "figure": "sig_strike_share_head",
+      "reason": "no UFC fights in the store before as_of",
+      "side": "b"
+     },
+     {
+      "fighter_id": "4412813",
+      "figure": "sig_strike_share_body",
+      "reason": "no UFC fights in the store before as_of",
+      "side": "b"
+     },
+     {
+      "fighter_id": "4412813",
+      "figure": "sig_strike_share_leg",
+      "reason": "no UFC fights in the store before as_of",
+      "side": "b"
+     },
+     {
+      "fighter_id": "4412813",
+      "figure": "knockdowns_landed_per_15",
+      "reason": "no UFC fights in the store before as_of",
+      "side": "b"
+     },
+     {
+      "fighter_id": "4412813",
+      "figure": "knockdowns_suffered_per_15",
+      "reason": "no UFC fights in the store before as_of",
+      "side": "b"
+     },
+     {
+      "fighter_id": "4412813",
+      "figure": "takedowns_landed_per_15",
+      "reason": "no UFC fights in the store before as_of",
+      "side": "b"
+     },
+     {
+      "fighter_id": "4412813",
+      "figure": "takedown_accuracy",
+      "reason": "no UFC fights in the store before as_of",
+      "side": "b"
+     },
+     {
+      "fighter_id": "4412813",
+      "figure": "takedown_defence",
+      "reason": "no UFC fights in the store before as_of",
+      "side": "b"
+     },
+     {
+      "fighter_id": "4412813",
+      "figure": "control_time_share",
+      "reason": "no UFC fights in the store before as_of",
+      "side": "b"
+     },
+     {
+      "fighter_id": "4412813",
+      "figure": "submission_attempts_per_15",
+      "reason": "no UFC fights in the store before as_of",
+      "side": "b"
+     },
+     {
+      "fighter_id": "4412813",
+      "figure": "strength_of_schedule",
+      "reason": "no UFC fights in the store before as_of",
+      "side": "b"
+     },
+     {
+      "fighter_id": "4412813",
+      "figure": "days_since_last_fight",
+      "reason": "no UFC fights in the store before as_of",
+      "side": "b"
+     },
+     {
+      "fighter_id": "4412813",
+      "figure": "ufccom_career",
+      "reason": "no UFC.com profile for this fighter in the store",
+      "side": "b"
+     }
+    ],
+    "note": "Facts only. No prediction, no pick. The probabilities in the odds block are the market's own, not an estimate made here.",
+    "odds": {
+     "as_of_safe": false,
+     "fetched_utc": "2026-10-03T18:00:00Z",
+     "is_closing": false,
+     "method": {
+      "close": null,
+      "current": {
+       "a": {
+        "decision": 180,
+        "ko_tko_dq": 1200,
+        "submission": 1000
+       },
+       "b": {
+        "decision": 175,
+        "ko_tko_dq": 275,
+        "submission": 2000
+       },
+       "implied": {
+        "a": {
+         "decision": 0.3571,
+         "ko_tko_dq": 0.0769,
+         "submission": 0.0909
+        },
+        "b": {
+         "decision": 0.3636,
+         "ko_tko_dq": 0.2667,
+         "submission": 0.0476
+        }
+       },
+       "margin": 0.2029,
+       "without_margin": {
+        "a": {
+         "decision": 0.2969,
+         "ko_tko_dq": 0.0639,
+         "submission": 0.0756
+        },
+        "b": {
+         "decision": 0.3023,
+         "ko_tko_dq": 0.2217,
+         "submission": 0.0396
+        }
+       }
+      },
+      "open": {
+       "a": {
+        "decision": 200,
+        "ko_tko_dq": 1000,
+        "submission": 850
+       },
+       "b": {
+        "decision": 185,
+        "ko_tko_dq": 250,
+        "submission": 2000
+       },
+       "implied": {
+        "a": {
+         "decision": 0.3333,
+         "ko_tko_dq": 0.0909,
+         "submission": 0.1053
+        },
+        "b": {
+         "decision": 0.3509,
+         "ko_tko_dq": 0.2857,
+         "submission": 0.0476
+        }
+       },
+       "margin": 0.2137,
+       "without_margin": {
+        "a": {
+         "decision": 0.2746,
+         "ko_tko_dq": 0.0749,
+         "submission": 0.0867
+        },
+        "b": {
+         "decision": 0.2891,
+         "ko_tko_dq": 0.2354,
+         "submission": 0.0392
+        }
+       }
+      }
+     },
+     "moneyline": {
+      "close": null,
+      "current": {
+       "a": 114,
+       "b": -135,
+       "implied": {
+        "a": 0.4673,
+        "b": 0.5745
+       },
+       "margin": 0.0418,
+       "without_margin": {
+        "a": 0.4486,
+        "b": 0.5514
+       }
+      },
+      "open": {
+       "a": 105,
+       "b": -125,
+       "implied": {
+        "a": 0.4878,
+        "b": 0.5556
+       },
+       "margin": 0.0434,
+       "without_margin": {
+        "a": 0.4675,
+        "b": 0.5325
+       }
+      }
+     },
+     "orientation": "verified",
+     "other_providers": [],
+     "provider": "DraftKings",
+     "provider_id": "100",
+     "rounds_total": {
+      "close": null,
+      "current": {
+       "implied": {
+        "over": 0.7101,
+        "under": 0.3509
+       },
+       "margin": 0.061,
+       "over": -245,
+       "under": 185,
+       "without_margin": {
+        "over": 0.6693,
+        "under": 0.3307
+       }
+      },
+      "line": 2.5,
+      "open": {
+       "implied": {
+        "over": 0.6774,
+        "under": 0.3846
+       },
+       "margin": 0.062,
+       "over": -210,
+       "under": 160,
+       "without_margin": {
+        "over": 0.6379,
+        "under": 0.3621
+       }
+      }
+     }
+    },
+    "physical": {
+     "a": {
+      "age_years": 33.04,
+      "height_in": 72.0,
+      "reach_in": 74.0,
+      "reach_minus_height_in": 2.0,
+      "stance": "Southpaw"
+     },
+     "b": {
+      "age_years": 30.13,
+      "height_in": 70.0,
+      "reach_in": 74.0,
+      "reach_minus_height_in": 4.0,
+      "stance": "Orthodox"
+     },
+     "differences": {
+      "age_years": 2.91,
+      "height_in": 2.0,
+      "reach_in": 0.0,
+      "reach_minus_height_in": -2.0
+     },
+     "same_stance": false,
+     "stance_matchup": "Southpaw vs Orthodox"
+    },
+    "previous_meetings": [],
+    "shared_opponents": {
+     "a_opponents": 0,
+     "b_opponents": 0,
+     "count": 0,
+     "items": []
+    },
+    "styles": {
+     "a": {
+      "applies": [],
+      "checked": [
+       "wrestler",
+       "submission_threat",
+       "striker",
+       "volume_striker",
+       "knockout_threat",
+       "finisher",
+       "vulnerable_to_finish",
+       "goes_the_distance",
+       "hard_to_take_down"
+      ],
+      "does_not_apply": [],
+      "not_assessed": [
+       {
+        "name": "wrestler",
+        "reason": "takedowns_landed_per_15: no UFC fights in the store before as_of; control_time_share: no UFC fights in the store before as_of"
+       },
+       {
+        "name": "submission_threat",
+        "reason": "submission_attempts_per_15: no UFC fights in the store before as_of"
+       },
+       {
+        "name": "striker",
+        "reason": "sig_strike_share_distance: no UFC fights in the store before as_of; takedowns_landed_per_15: no UFC fights in the store before as_of"
+       },
+       {
+        "name": "volume_striker",
+        "reason": "sig_strikes_landed_per_min: no UFC fights in the store before as_of"
+       },
+       {
+        "name": "knockout_threat",
+        "reason": "knockdowns_landed_per_15: no UFC fights in the store before as_of"
+       },
+       {
+        "name": "finisher",
+        "reason": "finish_rate: no UFC fights in the store before as_of"
+       },
+       {
+        "name": "vulnerable_to_finish",
+        "reason": "been_finished_rate: no UFC fights in the store before as_of"
+       },
+       {
+        "name": "goes_the_distance",
+        "reason": "distance_rate: no UFC fights in the store before as_of"
+       },
+       {
+        "name": "hard_to_take_down",
+        "reason": "takedown_defence: no UFC fights in the store before as_of"
+       }
+      ]
+     },
+     "b": {
+      "applies": [],
+      "checked": [
+       "wrestler",
+       "submission_threat",
+       "striker",
+       "volume_striker",
+       "knockout_threat",
+       "finisher",
+       "vulnerable_to_finish",
+       "goes_the_distance",
+       "hard_to_take_down"
+      ],
+      "does_not_apply": [],
+      "not_assessed": [
+       {
+        "name": "wrestler",
+        "reason": "takedowns_landed_per_15: no UFC fights in the store before as_of; control_time_share: no UFC fights in the store before as_of"
+       },
+       {
+        "name": "submission_threat",
+        "reason": "submission_attempts_per_15: no UFC fights in the store before as_of"
+       },
+       {
+        "name": "striker",
+        "reason": "sig_strike_share_distance: no UFC fights in the store before as_of; takedowns_landed_per_15: no UFC fights in the store before as_of"
+       },
+       {
+        "name": "volume_striker",
+        "reason": "sig_strikes_landed_per_min: no UFC fights in the store before as_of"
+       },
+       {
+        "name": "knockout_threat",
+        "reason": "knockdowns_landed_per_15: no UFC fights in the store before as_of"
+       },
+       {
+        "name": "finisher",
+        "reason": "finish_rate: no UFC fights in the store before as_of"
+       },
+       {
+        "name": "vulnerable_to_finish",
+        "reason": "been_finished_rate: no UFC fights in the store before as_of"
+       },
+       {
+        "name": "goes_the_distance",
+        "reason": "distance_rate: no UFC fights in the store before as_of"
+       },
+       {
+        "name": "hard_to_take_down",
+        "reason": "takedown_defence: no UFC fights in the store before as_of"
+       }
+      ]
+     }
+    }
+   }
+  }
+ }
+}

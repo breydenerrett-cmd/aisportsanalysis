@@ -88,6 +88,7 @@ import { mountNews } from "./news.js";
 import { renderComingSoon } from "./comingsoon.js";
 import { renderToday } from "./today.js";
 import { renderCard } from "./card.js";
+import { renderFightNight } from "./ufcfights.js";
 import { renderTennisBoard } from "./tennis.js";
 import { renderGamesList, renderGameDetail } from "./games.js";
 import { renderBetCheck } from "./betcheck.js";
@@ -336,7 +337,12 @@ async function _renderRouteInner(main) {
     if (route === "record") {
       await renderCardRecord(main, { sport: "mma" });
     } else {
+      // The card (today it is the "picks are paused" notice) first, then the fight
+      // analysis under it: one panel per bout of the next card (web/js/ufcfights.js).
+      // `#/ufc?event=<id>` opens another card. The analyst section mounts through the
+      // `analyst` option once it exists; see ufcfights.js, "WHERE THE AI ANALYST GOES".
       await renderCard(main, { sport: "mma" });
+      await renderFightNight(main, { eventId: query.event });
     }
   } else if (sport === "nba" || sport === "nhl") {
     // NBA and NHL are still coming-soon (D6): every route under either,
