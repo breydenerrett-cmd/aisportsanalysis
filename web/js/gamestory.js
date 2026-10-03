@@ -122,7 +122,27 @@ const STARTER_STATS = [
   { key: "ip_per_start", label: "IP / START", digits: 2 },
 ];
 
-function starterColumn(section, side, teamAbbr, probable, coverage) {
+/** When this side's starter last pitched, postseason included, from the block the
+ * game route attaches beside the dossier (`advanced.starter_rest[side]`,
+ * src/pipeline/starter_rest.py): `{date, days_before, round, started}` or null.
+ * The dossier's `*_sp_days_rest` is a model input read from the regular season
+ * only, so in October it counts from his last regular-season outing. */
+function lastOutingOf(advanced, side) {
+  const block = advanced && typeof advanced.starter_rest === "object" ? advanced.starter_rest : null;
+  const entry = block && typeof block[side] === "object" ? block[side] : null;
+  return entry && typeof entry.days_before === "number" ? entry : null;
+}
+
+export function lastOutingText(outing) {
+  const days = outing.days_before;
+  const when = shortDate(outing.date);
+  const bits = [when ? `last pitched ${when}` : "last pitched"];
+  if (outing.round) bits.push(`${outing.round} game`);
+  if (outing.started === false) bits.push("in relief");
+  return `${days} day${days === 1 ? "" : "s"} (${bits.join(", ")})`;
+}
+
+function starterColumn(section, side, teamAbbr, probable, coverage, outing) {
   const col = el("div", { class: "gs-col" });
   col.appendChild(el("div", { class: "gs-col__head", text: (probable || teamAbbr || "").toUpperCase() }));
   const known = section[`${side}_sp_known`];
@@ -151,9 +171,11 @@ function starterColumn(section, side, teamAbbr, probable, coverage) {
   col.appendChild(grid);
 
   const rest = section[`${side}_sp_days_rest`];
-  col.appendChild(factRow("DAYS REST", typeof rest === "number"
-    ? `${rest} day${rest === 1 ? "" : "s"}${logStale && logEnds ? ` (counted from the log, which ends ${logEnds})` : ""}`
-    : null));
+  col.appendChild(factRow("DAYS REST", outing
+    ? lastOutingText(outing)
+    : typeof rest === "number"
+      ? `${rest} day${rest === 1 ? "" : "s"}${logStale && logEnds ? ` (counted from the log, which ends ${logEnds})` : ""}`
+      : null));
 
   const recentEra = section[`${side}_sp_recent_era`];
   const recentStarts = section[`${side}_sp_recent_starts`];
@@ -198,8 +220,10 @@ function renderStarters(advanced, quick) {
   panel.appendChild(panelHead("STARTERS"));
   const cols = el("div", { class: "gs-cols" });
   const coverage = coverageOf(advanced, "pitcher_logs");
-  cols.appendChild(starterColumn(section, "away", quick.away_team, game && game.away_probable, coverage));
-  cols.appendChild(starterColumn(section, "home", quick.home_team, game && game.home_probable, coverage));
+  cols.appendChild(starterColumn(section, "away", quick.away_team, game && game.away_probable, coverage,
+    lastOutingOf(advanced, "away")));
+  cols.appendChild(starterColumn(section, "home", quick.home_team, game && game.home_probable, coverage,
+    lastOutingOf(advanced, "home")));
   panel.appendChild(cols);
   const diff = starterDiffRow(section);
   if (diff) panel.appendChild(diff);

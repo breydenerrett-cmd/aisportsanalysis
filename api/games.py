@@ -39,6 +39,7 @@ from src.appstate import activation, events, freshness
 # See _enrichment_inputs for why none of these ever reaches the network.
 from src.pipeline import enrichment
 from src.pipeline import read_context
+from src.pipeline import starter_rest
 from src.pipeline import store_freshness
 from src.pipeline import (briefing, bullpen, history, lineup_store, lineups,
                           matchup_history, news, pitchers, standings, travel,
@@ -491,6 +492,15 @@ def get_game(date: str, away: str, home: str, request: Request = None) -> dict:
         payload["advanced"]["data_coverage"] = store_freshness.coverage_for_game(date)
     except Exception:  # noqa: BLE001 -- additive, never a 500
         payload["advanced"]["data_coverage"] = None
+    # WHEN EACH STARTER LAST PITCHED, postseason included. Same rule as the
+    # coverage above: the dossier's days of rest are a model input read from
+    # the regular season only, so in October they count from a starter's last
+    # regular-season outing; this is the true figure, for the page alone
+    # (src/pipeline/starter_rest.py). A failure costs the line, never the page.
+    try:
+        payload["advanced"]["starter_rest"] = starter_rest.starter_rest(entry["dossier"].game, date)
+    except Exception:  # noqa: BLE001 -- additive, never a 500
+        payload["advanced"]["starter_rest"] = None
     if len(matches) > 1:
         payload["note"] = (
             f"{len(matches)} games matched {away}@{home} on {date} (a "
