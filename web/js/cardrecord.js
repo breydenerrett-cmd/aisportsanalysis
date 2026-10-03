@@ -46,6 +46,7 @@ import { bookLabel } from "./labels.js";
 import { loadCheckoutState, NOT_ON, recordCtaLabel } from "./checkout.js";
 import { NFL_NOTICE, NFL_RETIRED_RULE, MLB_SHADOW_RULE } from "./sport.js";
 import { FILL_TAG, POSTSEASON_TAG_RECORD, entryRow } from "./entrytext.js";
+import { SPORT_KEYS as ACCOUNT_VIEWS, mountExampleAccounts } from "./exampleaccounts.js";
 
 // GET /card/history's own default (api/card.py's DEFAULT_HISTORY_LIMIT) --
 // kept in sync by eye rather than fetched, since it only ever changes the
@@ -931,6 +932,33 @@ function emptyRecord(sport = "mlb", rule = null) {
   return wrap;
 }
 
+/**
+ * EXAMPLE ACCOUNTS (2026-10-03; web/js/exampleaccounts.js, GET /card/accounts).
+ * The MLB record page carries the section, under the record numbers; the NFL
+ * and UFC record pages carry one link to it. It is filled in after the page
+ * is drawn, so the record is never held up by it, and a failed fetch leaves
+ * the one-sentence state in its place (see mountExampleAccounts) -- it can
+ * never break the record above it. `#/record-card?accounts=nfl` opens it on
+ * that sport.
+ */
+function accountsView(wanted) {
+  return ACCOUNT_VIEWS.includes(wanted) ? wanted : null;
+}
+
+function accountsSection(wanted) {
+  const host = el("div", { class: "acct-host", "data-hook": "record-accounts-host" });
+  const sport = accountsView(wanted);
+  mountExampleAccounts(host, { sport }).then(() => {
+    if (sport && typeof host.scrollIntoView === "function") host.scrollIntoView({ block: "start" });
+  }).catch(() => {});
+  return host;
+}
+
+function accountsLink(sport) {
+  return el("a", { class: "card2rec__link", href: `#/record-card?accounts=${sport === "mma" ? "ufc" : "nfl"}`,
+    "data-hook": "record-accounts-link", text: "IF YOU HAD FOLLOWED EVERY PICK →" });
+}
+
 /** THE SIGNED-OUT VISITOR'S WAY FORWARD (2026-10-01). This page is public --
  * GET /card/record and GET /card/history need no token and show settled
  * days only -- so a stranger can read the whole record, and the one thing it
@@ -1119,6 +1147,14 @@ export async function renderCardRecord(container, options = {}) {
     screen.appendChild(voidsNote(record));
   }
   screen.appendChild(unitsNote());
+  // UNDER THE RECORD NUMBERS (2026-10-03): the live MLB rule's page holds the
+  // example accounts; NFL's live rule and UFC link to it. The retired rules'
+  // pages (?rule=) have neither: no account follows a rule that stopped.
+  if (sport === "mlb" && !rule) {
+    screen.appendChild(accountsSection(options && options.accounts));
+  } else if ((sport === "nfl" && !rule) || sport === "mma") {
+    screen.appendChild(accountsLink(sport));
+  }
   const topCta = signupCta("top");
   if (topCta) screen.appendChild(topCta);
 

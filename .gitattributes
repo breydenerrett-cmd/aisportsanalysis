@@ -21,3 +21,6 @@ data/processed/*.jsonl text eol=lf
 # (2026-09-28 design review). Segments are binary.
 evidence/*.jsonl text eol=lf
 *.jsonl.gz binary
+# Fixture copies of real ledgers (tests/fixtures/example_accounts) keep the
+# writer's LF so they stay byte-identical to the evidence they were copied from.
+tests/fixtures/example_accounts/*.jsonl text eol=lf

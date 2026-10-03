@@ -17,6 +17,8 @@ so cannot report failing to clear one.
 
 from __future__ import annotations
 
+import logging
+import os
 from datetime import date as date_cls, datetime, timezone
 from typing import Optional
 
@@ -35,7 +37,9 @@ from src.report import card as card_mod
 #
 #   router         GET /card/{date}, GET /card          PAID  -- tonight's picks.
 #   public_router  GET /card/record, GET /card/history  PUBLIC -- the graded
-#                                                       record, settled days only.
+#                  GET /card/accounts                   record, settled days only,
+#                                                       and example account
+#                                                       balances over it.
 #
 # The landing page promises "one public page you can open yourself", and the
 # record page IS that page; behind the paid gate a stranger who followed the
@@ -46,6 +50,7 @@ from src.report import card as card_mod
 # because history()/history_v2() return PUBLISHED-but-unsettled days too.
 router = APIRouter()
 public_router = APIRouter()
+_log = logging.getLogger(__name__)
 
 # Per-IP, per-minute. The two public routes verify the hash chain and fold the
 # whole ledger on every call, and nobody legitimately loads a record page
@@ -529,6 +534,136 @@ def get_card_history(request: Request = None, limit: int = DEFAULT_HISTORY_LIMIT
                            lambda: _card_history_uncached(None, limit, sport, rule))
     _record_page_view(request, "card_history", None)
     return payload
+
+
+# EXAMPLE ACCOUNTS (2026-10-03). `GET /card/accounts` answers "what would a
+# bankroll be today if it had bet every published pick since 2026-09-22",
+# per sport and for all sports, for the few accounts in
+# config/example_accounts.json. The arithmetic is src/appstate/
+# example_accounts.py (pure); this block only gathers its inputs.
+#
+# IT READS NOTHING THE RECORD PAGE HAS NOT ALREADY READ. Production has
+# OOM'd on whole-store reads, so the three records and the three histories
+# come from the very memo entries GET /card/record and GET /card/history fill
+# for the record page: the same keys ("record", (sport, None)) and
+# ("history", (60, sport, None)), so a visitor who opens the page costs the
+# box one build of each, not two. The one exception is a day that is only
+# partly settled: the public history withholds it (it would list tonight's
+# unplayed picks), yet the record counts its finished picks, so the two would
+# differ by that day. Only then is the sport's settled rows read once more,
+# and only their results and units are used, never a pick's name.
+#
+# Memoised per ledger state like the other public routes, plus the config
+# file's own size and time, so editing an account is picked up. An answer that
+# fails to reconcile IS cached (it is a fact about the ledger state); an
+# unexpected exception is not, and the visitor gets the one-sentence answer.
+ACCOUNTS_HISTORY_LIMIT = 60          # what web/js/cardrecord.js asks for
+
+
+def _accounts_config_signature() -> tuple:
+    from src.appstate import example_accounts
+    try:
+        stat = os.stat(example_accounts.CONFIG_PATH)
+        return (stat.st_size, stat.st_mtime_ns)
+    except OSError as exc:
+        return (type(exc).__name__,)
+
+
+def _accounts_unfiltered_days(ledger_sport: str) -> list:
+    """Every settled day of one sport, partly settled ones included, exactly
+    as the record counts them. Used only while a day is partly settled."""
+    from src.appstate import card_ledger
+    if ledger_sport == "mlb":
+        days = card_ledger.history_v2(limit=None)["days"]
+        return _mark_postseason({"days": days})["days"]
+    if ledger_sport == "nfl":
+        return card_ledger.history(limit=None, sport="nfl", rule=_resolve_nfl_rule(None))["days"]
+    return card_ledger.history(limit=None, sport=ledger_sport)["days"]
+
+
+def _accounts_days(ledger_sport: str) -> list:
+    from src.appstate import example_accounts
+    limit = ACCOUNTS_HISTORY_LIMIT
+    history = _memo_public("history", (limit, ledger_sport, None),
+                           lambda: _card_history_uncached(None, limit, ledger_sport, None))
+    if history.get("truncated"):
+        limit = MAX_HISTORY_LIMIT
+        history = _memo_public("history", (limit, ledger_sport, None),
+                               lambda: _card_history_uncached(None, limit, ledger_sport, None))
+        if history.get("truncated"):
+            raise example_accounts.AccountsError(
+                "The record has more days than this page follows, so nothing is shown.")
+    if history.get("withheld_days"):
+        return _accounts_unfiltered_days(ledger_sport)
+    return history.get("days") or []
+
+
+def _accounts_sources() -> dict:
+    from src.appstate import example_accounts as ea
+    sources = {}
+    for view, ledger_sport in ea.LEDGER_SPORT.items():
+        record = _memo_public("record", (ledger_sport, None),
+                              lambda s=ledger_sport: _card_record_uncached(None, s, None))
+        if record.get("chain_ok") is not True:
+            raise ea.AccountsError(
+                f"The {ea.VIEW_LABEL[view]} record does not pass its tamper check right now, "
+                "so nothing is shown.")
+        if view == "mlb" and record.get("rule") != "v2":
+            raise ea.AccountsError("The MLB record is not on the current rule, so nothing is shown.")
+        days = _accounts_days(ledger_sport)
+        if view == "mlb":
+            rows, waiting = ea.rows_from_v2_days(days, view)
+        else:
+            rows, waiting = ea.rows_from_v1_days(days, view)
+        sources[view] = {"rows": rows, "waiting": waiting,
+                         "reference": ea.reference_from_record(view, record)}
+    return sources
+
+
+def _accounts_pending() -> list:
+    """Published picks still waiting on their games, as a count per sport and
+    never a name: the figure /meta already publishes (effective_record's
+    `pending_count`), read from /meta's own per-ledger-state memo."""
+    from src.appstate import example_accounts as ea
+    try:
+        from api import meta as meta_api
+        sports = (meta_api._record_parts().get("effective_record") or {}).get("sports") or {}
+    except Exception:  # noqa: BLE001 -- no count is better than a wrong one
+        return []
+    pending = []
+    for view, ledger_sport in ea.LEDGER_SPORT.items():
+        count = ((sports.get(ledger_sport) or {}).get("current") or {}).get("pending_count")
+        if isinstance(count, int) and not isinstance(count, bool) and count > 0:
+            pending.append({"sport": view, "picks": count})
+    return pending
+
+
+def _accounts_uncached() -> dict:
+    from src.appstate import example_accounts as ea
+    try:
+        config = ea.load_config()
+        payload = ea.build_payload(config, _accounts_sources(), pending=_accounts_pending())
+    except ea.AccountsError as exc:
+        payload = ea.unavailable(str(exc))
+    if not payload.get("available"):
+        _log.warning("example accounts unavailable: %s %s", payload.get("reason"),
+                     {k: v.get("problems") for k, v in (payload.get("reconciled") or {}).items()
+                      if not v.get("ok")})
+    return payload
+
+
+@public_router.get("/card/accounts", dependencies=[Depends(_rate_limit_public_record)])
+def get_card_accounts() -> dict:
+    """GET /card/accounts: what a bankroll would be today had it bet every
+    published pick since the start date, or `{"available": false, ...}` when
+    the numbers do not reconcile with the published record. Public, no token,
+    settled days only, and nothing about any user."""
+    from src.appstate import example_accounts as ea
+    try:
+        return _memo_public("accounts", (_accounts_config_signature(),), _accounts_uncached)
+    except Exception:  # noqa: BLE001 -- the public page never gets a 500 for this
+        _log.exception("example accounts failed unexpectedly")
+        return ea.unavailable("The record could not be read right now, so nothing is shown.")
 
 
 def _card_record_uncached(request: Request = None, sport: str = "mlb",

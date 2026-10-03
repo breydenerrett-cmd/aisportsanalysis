@@ -371,8 +371,13 @@ async function _renderRouteInner(main) {
     // #/record-card?rule=v1 -- V1's own record, kept apart from V2's
     // (T13 cutover, docs/PREREG_CARD_V2.md R3/R5). Only that one known id
     // is ever forwarded, same guard shape as NFL's ?rule=NFL_CARD_V1 above.
+    // #/record-card?accounts=nfl opens the example accounts on that sport
+    // (the NFL and UFC record pages link here); cardrecord.js ignores any
+    // value that is not one of its four views.
     if (query.rule === MLB_SHADOW_RULE) {
       await renderCardRecord(main, { rule: MLB_SHADOW_RULE });
+    } else if (query.accounts) {
+      await renderCardRecord(main, { accounts: query.accounts });
     } else {
       await renderCardRecord(main);
     }

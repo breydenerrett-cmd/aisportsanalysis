@@ -69,10 +69,18 @@ class RouteOrder(unittest.TestCase):
             "/card/{date} is declared before /card/history, so 'history' "
             "is matched as a date and 400s.")
 
-    def test_all_four_card_routes_are_declared(self):
+    def test_every_card_route_is_declared(self):
+        # "/card/accounts" joined the public router 2026-10-03 (example
+        # accounts); its own tests are tests/test_example_accounts_route.py.
         self.assertEqual(
-            {"/card", "/card/record", "/card/history", "/card/{date}"},
+            {"/card", "/card/record", "/card/history", "/card/accounts", "/card/{date}"},
             set(_card_router_paths()))
+
+    def test_card_accounts_is_declared_before_the_date_route(self):
+        """Same collision as record and history: declared after
+        /card/{date}, "accounts" would be matched as a date and 400."""
+        paths = _card_router_paths()
+        self.assertLess(paths.index("/card/accounts"), paths.index("/card/{date}"))
 
 
 @unittest.skipUnless(_HAVE_FASTAPI, "fastapi not installed")

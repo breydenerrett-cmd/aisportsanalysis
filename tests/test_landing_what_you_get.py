@@ -142,10 +142,12 @@ class EachYouGetLineIsTiedToARealRoute(unittest.TestCase):
             self.assertIn(router, mounts)
             self.assertIsNone(mounts[router], f"{router} must carry no auth dependency")
 
-    def test_the_public_card_router_serves_record_and_history_only(self):
+    def test_the_public_card_router_serves_record_history_and_accounts_only(self):
         card_py = (ROOT / "api" / "card.py").read_text(encoding="utf-8")
         public = re.findall(r'@public_router\.get\("([^"]+)"', card_py)
-        self.assertEqual(sorted(public), ["/card/history", "/card/record"])
+        # "/card/accounts" (example accounts, 2026-10-03) is settled-day
+        # arithmetic over the public record, so it is public like the record.
+        self.assertEqual(sorted(public), ["/card/accounts", "/card/history", "/card/record"])
         paid = re.findall(r'@router\.get\("([^"]+)"', card_py)
         self.assertEqual(sorted(paid), ["/card", "/card/{date}"])
 
