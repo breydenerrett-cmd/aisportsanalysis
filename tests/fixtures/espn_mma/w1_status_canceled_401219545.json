@@ -1,0 +1,17 @@
+{
+ "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/401219517/competitions/401219545/status?lang=en&region=us",
+ "clock": 0.0,
+ "displayClock": "-",
+ "period": 0,
+ "type": {
+  "id": "5",
+  "name": "STATUS_CANCELED",
+  "state": "post",
+  "completed": false,
+  "description": "Canceled",
+  "detail": "Canceled",
+  "shortDetail": "Canceled"
+ },
+ "result": {},
+ "featured": false
+}

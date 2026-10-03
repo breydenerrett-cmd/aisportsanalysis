@@ -1,0 +1,22 @@
+{
+ "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600000340/competitions/401265459/status?lang=en&region=us",
+ "clock": 300.0,
+ "displayClock": "5:00",
+ "period": 5,
+ "type": {
+  "id": "3",
+  "name": "STATUS_FINAL",
+  "state": "post",
+  "completed": true,
+  "description": "Final",
+  "detail": "Final",
+  "shortDetail": "Final"
+ },
+ "result": {
+  "id": 269,
+  "name": "draw",
+  "displayName": "Draw",
+  "shortDisplayName": "Draw"
+ },
+ "featured": true
+}

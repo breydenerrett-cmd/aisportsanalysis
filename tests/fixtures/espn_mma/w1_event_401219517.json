@@ -1,0 +1,192 @@
+{
+ "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/401219517?lang=en&region=us",
+ "id": "401219517",
+ "guid": "2dd1987f-ff50-33e2-8d1e-4d0bffdd07a8",
+ "uid": "s:3301~l:3321~e:401219517",
+ "date": "2020-03-21T22:00Z",
+ "name": "UFC Fight Night: Woodley vs. Edwards",
+ "shortName": "UFC Fight Night",
+ "season": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/seasons/2020?lang=en&region=us"
+ },
+ "seasonType": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/seasons/2020/types/2?lang=en&region=us"
+ },
+ "timeValid": true,
+ "competitions": [
+  {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/401219517/competitions/401219545?lang=en&region=us",
+   "id": "401219545",
+   "guid": "236a1549-25d2-3350-95fc-7729e2105554",
+   "uid": "s:3301~l:3321~e:401219517~c:401219545",
+   "description": "",
+   "date": "2020-03-21T22:00Z",
+   "endDate": "2020-03-21T22:00Z",
+   "lastUpdated": "2020-04-22T16:29Z",
+   "timeValid": true,
+   "neutralSite": false,
+   "previewAvailable": false,
+   "recapAvailable": false,
+   "boxscoreAvailable": true,
+   "lineupAvailable": false,
+   "gamecastAvailable": false,
+   "playByPlayAvailable": false,
+   "conversationAvailable": true,
+   "commentaryAvailable": false,
+   "pickcenterAvailable": false,
+   "summaryAvailable": true,
+   "liveAvailable": false,
+   "ticketsAvailable": false,
+   "shotChartAvailable": false,
+   "timeoutsAvailable": false,
+   "possessionArrowAvailable": false,
+   "onWatchESPN": false,
+   "recent": false,
+   "bracketAvailable": false,
+   "wallclockAvailable": false,
+   "highlightsAvailable": false,
+   "gameSource": {
+    "id": "1",
+    "description": "basic/manual",
+    "state": "basic"
+   },
+   "boxscoreSource": {
+    "id": "0",
+    "description": "none",
+    "state": "none"
+   },
+   "playByPlaySource": {
+    "id": "0",
+    "description": "none",
+    "state": "none"
+   },
+   "linescoreSource": {
+    "id": "1",
+    "description": "basic/manual",
+    "state": "basic"
+   },
+   "statsSource": {
+    "id": "0",
+    "description": "none",
+    "state": "none"
+   },
+   "venue": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/venues/2590?lang=en&region=us",
+    "id": "2590",
+    "guid": "f6f170ae-4283-374a-b939-ee8676584795",
+    "fullName": "O2 Arena (ENG)",
+    "address": {
+     "city": "London",
+     "country": "England"
+    },
+    "grass": false,
+    "indoor": true
+   },
+   "competitors": [
+    {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/401219517/competitions/401219545/competitors/2431356?lang=en&region=us",
+     "id": "2431356",
+     "uid": "s:3301~a:2431356",
+     "type": "athlete",
+     "order": 1,
+     "winner": false,
+     "athlete": {
+      "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/2431356?lang=en&region=us"
+     }
+    },
+    {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/401219517/competitions/401219545/competitors/4402367?lang=en&region=us",
+     "id": "4402367",
+     "uid": "s:3301~a:4402367",
+     "type": "athlete",
+     "order": 2,
+     "winner": false,
+     "athlete": {
+      "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/4402367?lang=en&region=us"
+     }
+    }
+   ],
+   "status": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/401219517/competitions/401219545/status?lang=en&region=us"
+   },
+   "links": [
+    {
+     "language": "en-US",
+     "rel": [
+      "summary",
+      "desktop",
+      "competition"
+     ],
+     "href": "https://www.espn.com/mma/fightcenter/_/id/401219517/league/ufc/fightId/401219545",
+     "text": "Fightcenter",
+     "shortText": "FightCenter",
+     "isExternal": false,
+     "isPremium": false
+    }
+   ],
+   "format": {
+    "regulation": {
+     "periods": 5,
+     "displayName": "Round",
+     "slug": "round",
+     "clock": 300.0
+    }
+   },
+   "matchNumber": 1,
+   "cardSegment": {
+    "id": "173",
+    "description": "Main Card",
+    "name": "main"
+   }
+  }
+ ],
+ "links": [
+  {
+   "language": "en-US",
+   "rel": [
+    "summary",
+    "desktop",
+    "event"
+   ],
+   "href": "https://www.espn.com/mma/fightcenter/_/id/401219517/league/ufc",
+   "text": "FightCenter",
+   "shortText": "FightCenter",
+   "isExternal": false,
+   "isPremium": false
+  },
+  {
+   "language": "en-US",
+   "rel": [
+    "summary",
+    "sportscenter",
+    "app",
+    "event"
+   ],
+   "href": "sportscenter://x-callback-url/showGame?url=https%3A%2F%2Fwww.espn.com%2Fmma%2Ffightcenter%2F_%2Fid%2F401219517%2Fleague%2Fufc%3Fmodifier%3Dwebview",
+   "text": "FightCenter",
+   "shortText": "FightCenter",
+   "isExternal": false,
+   "isPremium": false
+  }
+ ],
+ "venues": [
+  {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/venues/2590?lang=en&region=us"
+  }
+ ],
+ "league": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc?lang=en&region=us"
+ },
+ "ticketsAvailable": false,
+ "status": {
+  "type": {
+   "id": "5",
+   "name": "STATUS_CANCELED",
+   "state": "post",
+   "completed": false,
+   "description": "Canceled",
+   "detail": "Canceled",
+   "shortDetail": "Canceled"
+  }
+ }
+}

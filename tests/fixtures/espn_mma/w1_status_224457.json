@@ -1,0 +1,22 @@
+{
+ "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/400818923/competitions/224457/status?lang=en&region=us",
+ "clock": 300.0,
+ "displayClock": "5:00",
+ "period": 3,
+ "type": {
+  "id": "3",
+  "name": "STATUS_FINAL",
+  "state": "post",
+  "completed": true,
+  "description": "Final",
+  "detail": "Final",
+  "shortDetail": "Final"
+ },
+ "result": {
+  "id": 263,
+  "name": "decision---unanimous",
+  "displayName": "Decision - Unanimous",
+  "shortDisplayName": "U Dec"
+ },
+ "featured": false
+}

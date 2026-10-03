@@ -1,0 +1,16 @@
+{
+ "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600061182/competitions/401912278/status?lang=en&region=us",
+ "clock": 0.0,
+ "displayClock": "-",
+ "period": 0,
+ "type": {
+  "id": "1",
+  "name": "STATUS_SCHEDULED",
+  "state": "pre",
+  "completed": false,
+  "description": "Scheduled",
+  "detail": "Sat, October 3rd at 8:00 PM EDT",
+  "shortDetail": "10/3 - 8:00 PM EDT"
+ },
+ "result": {}
+}
