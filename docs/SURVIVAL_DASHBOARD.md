@@ -1,6 +1,6 @@
 # LineHound survival dashboard
 
-Generated 2026-10-03 16:53Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-10-03 21:25Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
@@ -97,9 +97,9 @@ Closing-line value: see `docs/VALUE_SCAN.md` (the standing measurement; no CLV f
 
 ## Next actions
 
-- **Owner:** 1) Send group 1 by hand (docs/sales/SEND_ORDER.md: Covers thread, 337picks, Unit Circle, Tommy Lorenzo) and report each send and reply. 2) Add `timeout-minutes: 15` to the deploy job (docs/audit/2026-10-03/PROD_DEPLOY_HANG.md; one line in GitHub's editor). 3) Staging purchase rehearsal with Stripe's test card (docs/billing/PURCHASE_REHEARSAL.md).
+- **Owner:** 1) Send group 1 by hand (docs/sales/SEND_ORDER.md: Covers thread, 337picks, Unit Circle, Tommy Lorenzo) and report each send and reply. 2) Turn the AI analyst on: an Anthropic API key with a monthly spend limit, saved as the repo secret ANTHROPIC_API_KEY (docs/decisions/AI_ANALYST_ENABLE.md); until then the MLB and UFC analyst sections stay empty. 3) Add `timeout-minutes: 15` to the deploy job (docs/audit/2026-10-03/PROD_DEPLOY_HANG.md; one line in GitHub's editor). 4) Staging purchase rehearsal with Stripe's test card (docs/billing/PURCHASE_REHEARSAL.md).
 - **Customer:** Batch 1 goes out in five small groups, best fit first; group 1 is written and waiting. Log sends and replies with scripts/outreach_batch.py (exact words stay in a private local file). Grant tester spots only to people who bet these sports, will use it and will give feedback (docs/sales/DISCOVERY_GUIDE.md). After five real conversations: stop and synthesise before changing the product.
-- **Product:** The prop numbers ignore the opposing starter: the card's top pick and the board's biggest gaps on 2026-10-03 were hitters facing the best pitcher on the slate. That is the first thing a baseball-literate tester will notice. Also open: the game pages' bullpen and rest lines read from logs that end in September.
+- **Product:** The prop numbers ignore the opposing starter: the card's top pick and the board's biggest gaps on 2026-10-03 were hitters facing the best pitcher on the slate. That is the first thing a baseball-literate tester will notice. Building now: the situation layer (rest and rhythm, form, stakes, pressure history, head-to-head, availability) for MLB and UFC with a with/without test of the AI analyst (docs/SITUATION_LAYER_PLAN.md), and the NFL data layer.
 - **Model:** No market shows repeatable value (docs/PERFORMANCE_MATRIX.md: 110 measured populations, 0 candidates; moneyline closing-line value negative on 26 of 26 rows). The props question cannot be answered before 2026-10-31: the best-placed family, batter total bases, reaches a minimum sample about five weeks into the 2027 season (docs/PROP_EXPERIMENT_INVENTORY.md, docs/PREREG_PROP_FAMILIES_DRAFT.md, a DRAFT with seven owner decisions). Until then: sell the public record and the price comparison, not an edge. AI critic: adds one catch over a plain rule on 8 cases and is not ready to show customers (docs/AI_CRITIC_BENCHMARK.md).
 
 ## What survival requires
