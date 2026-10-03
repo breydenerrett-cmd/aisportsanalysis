@@ -169,4 +169,93 @@ disk and no network.
 
 ## 9. Result
 
-*(Added after the run. Everything above was committed before it.)*
+*(Added after the run, 2026-10-03. Everything above was committed first, as `5be98154`; the one change
+to it since is this section.)*
+
+**A null result.** Across 28 Division Series with one club on a bye, the bye club won Game 1 more
+often than the standings and home field predict and the series less often. Neither difference is
+close to the bar, and a sample this size could only have seen a swing of about 18 points.
+
+| | Bye club won | Expected from record and home field | Excess | Two-sided p |
+|---|---|---|---|---|
+| Game 1 | 19 of 28 (67.9%) | 16.4 (58.4%) | +2.6 wins (+9.4 points) | 0.41 |
+| **Series** (primary) | **15 of 28 (53.6%)** | **17.1 (61.2%)** | **-2.1 wins (-7.6 points)** | **0.52** |
+| Sensitivity, Game 1 | 19 of 28 | 15.8 (56.6%) | +3.2 wins | 0.31 |
+| Sensitivity, series | 15 of 28 | 16.2 (57.8%) | -1.2 wins | 0.79 |
+
+By the rule in section 5 the primary result (p = 0.52) is a null and is reported as one. The sensitivity
+run agrees with it on significance in both measures (it moves the series excess toward zero, as a
+shrunk yardstick should).
+
+**What it says, in plain words.**
+
+- If rest cost the bye club its rhythm, Game 1, the bye club's first game back, is where it should
+  show. It shows the opposite: the bye clubs won Game 1 in 19 of 28, about 2.6 wins more than
+  expected. The standard deviation of that count is 2.6 wins, so this is one standard deviation, the
+  kind of gap chance produces about two times in five.
+- The series result leans the other way: 2.1 wins fewer than expected, which is under one standard
+  deviation (2.6 wins). The two measures point in opposite directions, which is what noise does.
+- Nothing here supports "momentum over rest" and nothing refutes it. **A swing of about 18 points a
+  series would have been needed to reach p = 0.05; an effect of a few points, the size a real one
+  would more plausibly have, is invisible at 28 series.** The null is "this sample could not see an
+  effect of ordinary size", not "rest does not matter".
+
+**The series, as played** (expected figures are the yardstick's, from the clubs' records and the home
+pattern; the price column is the closing moneyline, which this test could not have):
+
+| Season | Bye club | Played the Wild Card | Game 1 | Series | Expected G1 | Expected series | Price |
+|---|---|---|---|---|---|---|---|
+| 2015 | STL | CHC (won its Wild Card game) | bye club won 4-0 at home | bye club lost 1-3 | 0.549 | 0.547 | none |
+| 2015 | KC | HOU (won its Wild Card game) | bye club lost 2-5 at home | bye club won 3-2 | 0.586 | 0.615 | none |
+| 2016 | CHC | SF (won its Wild Card game) | bye club won 1-0 at home | bye club won 3-1 | 0.633 | 0.701 | none |
+| 2016 | TEX | TOR (won its Wild Card game) | bye club lost 1-10 at home | bye club lost 0-3 | 0.567 | 0.581 | none |
+| 2017 | LAD | ARI (won its Wild Card game) | bye club won 9-5 at home | bye club won 3-0 | 0.600 | 0.641 | none |
+| 2017 | CLE | NYY (won its Wild Card game) | bye club won 4-0 at home | bye club lost 2-3 | 0.599 | 0.640 | none |
+| 2018 | BOS | NYY (won its Wild Card game) | bye club won 5-4 at home | bye club won 3-1 | 0.583 | 0.610 | none |
+| 2018 | MIL | COL (won its Wild Card game) | bye club won 3-2 at home | bye club won 3-0 | 0.561 | 0.570 | none |
+| 2019 | HOU | TB (won its Wild Card game) | bye club won 6-2 at home | bye club won 3-2 | 0.601 | 0.644 | none |
+| 2019 | LAD | WSH (won its Wild Card game) | bye club won 6-0 at home | bye club lost 2-3 | 0.613 | 0.665 | none |
+| 2021 | TB | BOS (won its Wild Card game) | bye club won 5-0 at home | bye club lost 1-3 | 0.581 | 0.606 | none |
+| 2021 | SF | LAD (won its Wild Card game) | bye club won 4-0 at home | bye club lost 2-3 | 0.537 | 0.524 | none |
+| 2022 | ATL | PHI (won the Wild Card Series 2-0) | bye club lost 6-7 at home | bye club lost 1-3 | 0.617 | 0.672 | none |
+| 2022 | NYY | CLE (won the Wild Card Series 2-0) | bye club won 4-1 at home | bye club won 3-2 | 0.574 | 0.594 | none |
+| 2022 | HOU | SEA (won the Wild Card Series 2-0) | bye club won 8-7 at home | bye club won 3-0 | 0.631 | 0.696 | none |
+| 2022 | LAD | SD (won the Wild Card Series 2-1) | bye club won 5-3 at home | bye club lost 1-3 | 0.668 | 0.759 | none |
+| 2023 | LAD | ARI (won the Wild Card Series 2-0) | bye club lost 2-11 at home | bye club lost 0-3 | 0.628 | 0.692 | none |
+| 2023 | ATL | PHI (won the Wild Card Series 2-0) | bye club lost 0-3 at home | bye club lost 1-3 | 0.618 | 0.674 | none |
+| 2023 | BAL | TEX (won the Wild Card Series 2-0) | bye club lost 2-3 at home | bye club lost 0-3 | 0.599 | 0.640 | none |
+| 2023 | HOU | MIN (won the Wild Card Series 2-0) | bye club won 6-4 at home | bye club won 3-1 | 0.549 | 0.546 | none |
+| 2024 | CLE | DET (won the Wild Card Series 2-0) | bye club won 7-0 at home | bye club won 3-2 | 0.571 | 0.587 | none |
+| 2024 | NYY | KC (won the Wild Card Series 2-0) | bye club won 6-5 at home | bye club won 3-1 | 0.579 | 0.604 | none |
+| 2024 | LAD | SD (won the Wild Card Series 2-0) | bye club won 7-5 at home | bye club won 3-2 | 0.562 | 0.571 | none |
+| 2024 | PHI | NYM (won the Wild Card Series 2-1) | bye club lost 2-6 at home | bye club lost 1-3 | 0.567 | 0.581 | none |
+| 2025 | MIL | CHC (won the Wild Card Series 2-1) | bye club won 9-3 at home | bye club won 3-2 | 0.561 | 0.570 | none |
+| 2025 | SEA | DET (won the Wild Card Series 2-1) | bye club lost 2-3 at home | bye club won 3-2 | 0.549 | 0.546 | none |
+| 2025 | PHI | LAD (won the Wild Card Series 2-0) | bye club lost 3-5 at home | bye club lost 1-3 | 0.549 | 0.547 | none |
+| 2025 | TOR | NYY (won the Wild Card Series 2-1) | bye club won 10-1 at home | bye club won 3-1 | 0.530 | 0.511 | none |
+
+**Left out (16 of the 44):** the 12 bye-against-bye series of 2015 to 2019 and 2021, and the four
+2020 series where every club had played the Wild Card round. No series was left out for an open
+result, an incomplete Wild Card round or a missing record.
+
+**The price.** As registered, no series has a closing price (our closing moneylines exist for 2026
+only), so every Price cell reads "none". One related fact, found while checking: the historical odds
+archive (`data/archive/historical/odds_history/`, three snapshots a day) reaches early October in
+2023 to 2025 and holds a pre-game moneyline for all twelve Game 1s of those years: within about six
+hours of first pitch for the eight of 2024 and 2025, and about two days before for the four of
+2023, whose snapshots stop on October 5. A snapshot is not a closing line and it was not joined here;
+it is what a later test would use to ask whether the price already held the standings. Twelve games
+could not answer that either.
+
+**What follows for the layer.** Nothing is added to or removed from the prompt: it says how to weigh
+the situation, not what the situation does. "Bye or played" stays in the situation record as a fact
+(`rest_and_rhythm.previous_round`) the analyst can see and cite, with the sample it rests on. The
+real test of whether the analyst does better for seeing it is the side-by-side (arm A without the
+situation layer, arm B with it, `docs/SITUATION_LAYER.md`), which can start with the 2026 Division
+Series if the owner turns the switch on.
+
+**Checks on the run.** The 131 postseason games of 2023 to 2025 the Stats API returned are identical to
+the results store's (date, clubs, round, both scores). The pairing, the yardstick (against independent
+hand and brute-force arithmetic), the exact test and the verdict rule are in
+`tests/test_situation_rest_vs_rhythm.py`, and the store's ingest in `tests/test_situation_history.py`;
+both run on fixtures with no disk and no network.

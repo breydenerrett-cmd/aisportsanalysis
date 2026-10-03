@@ -98,6 +98,28 @@ Two ways, neither needed to turn it on:
 A plain run never pays twice for a game that is already published (it is frozen and skipped before any
 call); only `--refresh` does, on purpose.
 
+## Optional: the situation arm (arm B), about twice the cost
+
+`docs/SITUATION_LAYER.md`. The analyst above is **arm A**. **Arm B** is the same analyst given the situation
+layer (rest and rhythm, form, stakes, how each club has fared in October, head to head, availability), run
+beside it on the same games into its own ledger, so the record can say whether the layer helps. It is off.
+
+- **To turn it on:** in `config/analyst.json` set `"situation_arm": {"enabled": true}`. Every `analyst run`,
+  including the daily job's step, then runs arm B right after arm A on each game. No workflow edit and no new
+  secret: it is the same key. To try it once instead: `python -m src.cli analyst run --date <today> --arm both`
+  (or `--arm B`).
+- **What it costs:** turning it on roughly doubles the analyst's cost: a second call per game with about 2,500
+  to 3,800 more input tokens (about $0.09 to $0.13 a game for arm B against $0.08 to $0.11 for arm A).
+  **Both arms: about $0.17 to $0.24 a game, $2.60 to $3.60 for
+  a fifteen-game day, about $75 to $110 for a month of slate days**; UFC about $0.11 to $0.19 a bout for both.
+  Estimates until the first measured day; `analyst compare` prints the measured cost of the paired games. The
+  per-run cap ($6, 600,000 tokens) is shared by both arms. **Raise the console spend limit** from the $60
+  suggested above to cover both (about $120) before turning it on.
+- **To turn it off:** set `enabled` back to false. Arm B's ledger stays as it was and `analyst grade` keeps
+  grading it; arm A is unaffected either way.
+- **To read it:** `python -m src.cli analyst compare` (per sport and market family: counts, results, units,
+  calibration; rates withheld under 30 graded calls per family).
+
 ## Turning it off
 
 Any one of these; the first is enough.

@@ -835,3 +835,23 @@ is about 33 bouts.
 the store is the data layer's synthetic world in a temporary directory, the HTTP caller is injected, and no
 test reads the repo's real UFC data. `tests/test_analyst_ufc_docs.py` pins that the prompt in this file is
 the prompt in the code.
+
+## The situation arm (arm B)
+
+Everything above is **arm A**: the analyst that reads the matchup statistics. It is unchanged, byte for
+byte, and `tests/test_situation_analyst.py` pins its prompts, its packets and its ledger rows by hash.
+
+**Arm B** is the same analyst with the situation layer (`src/situation/`, `docs/SITUATION_LAYER.md`): the
+same packet plus a `sections.situation` section (rest and rhythm, form, stakes, pressure history, head to
+head, availability, venue for MLB; layoff, form, card slot, previous meeting and weight class for UFC) and
+the same prompt plus a "THE SITUATION" section of four rules on weighing it (MLB rules 17 to 20, UFC 23 to
+26; the text is in `docs/SITUATION_LAYER.md` and pinned to the code). It writes to its own ledgers,
+`evidence/analyst_v1_situation.jsonl` and `evidence/analyst_ufc_v1_situation.jsonl`, with its own cost logs
+and frozen packets, and `python -m src.cli analyst compare` sets the two arms side by side, by sport and
+market family, withholding rates under 30 graded calls.
+
+**It is off.** `config/analyst.json` `situation_arm.enabled` is false; `analyst run --arm B` or `--arm both`
+runs it for one run. Turning the switch on **roughly doubles the analyst's cost** (a second call per game with
+about 2,500 to 3,800 more input tokens: about $0.09 to $0.13 a game for B against $0.08 to $0.11 for A; both
+arms about $0.17 to $0.24 a game, $2.60 to $3.60 for a fifteen-game day). The spend cap is shared by both
+arms. Raise the console spend limit before turning it on (`docs/decisions/AI_ANALYST_ENABLE.md`).
