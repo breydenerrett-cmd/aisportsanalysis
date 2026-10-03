@@ -50,6 +50,8 @@ PEAK_RSS_LIMIT_MB = 850.0          # the machine has 1,024
 ODDS_STALE_HOURS = 3.0
 CAPTURE_GAP_MINUTES = 150          # quiet-hours slots are 60 minutes apart
 DEPLOY_MATCH_MINUTES = 10
+DEPLOY_HUNG_MINUTES = 20           # a deploy takes about four; one hung run blocks every later one
+DEPLOY_RUNS_READ = 20              # enough to reach the last success behind a queue of cancelled runs
 EXPECT_CHECKOUT = "off"
 
 
@@ -119,6 +121,23 @@ def evaluate(health_status, health, card_status, runs, previous, now):
     else:
         check(True, f"same process since {started} (up {runtime.get('uptime_s')} s)")
 
+    # A HUNG DEPLOY (2026-10-03). deploy-prod has no job timeout and its
+    # concurrency group does not cancel a run in progress, so one `fly deploy`
+    # that never returned at 10:07Z held the queue for six hours: every hourly
+    # refresh after it waited, then was cancelled by the next. The site kept
+    # answering /health while its data aged. Nothing else here said why.
+    stuck = []
+    for run in runs.get("deploy-prod.yml", []):
+        if run.get("status") == "completed" or run.get("conclusion"):
+            continue
+        created = _when(run.get("createdAt"))
+        if created and (now - created).total_seconds() > DEPLOY_HUNG_MINUTES * 60:
+            stuck.append((now - created).total_seconds() / 60)
+    check(not stuck,
+          f"production deploy: a run has been unfinished for {max(stuck):.0f} min "
+          f"(normal is about 4); later deploys wait behind it" if stuck
+          else "production deploy: nothing stuck")
+
     peak = runtime.get("peak_rss_mb")
     check(isinstance(peak, (int, float)) and peak <= PEAK_RSS_LIMIT_MB,
           f"memory: peak {peak} MB, now {runtime.get('rss_mb')} MB (limit {PEAK_RSS_LIMIT_MB:.0f})")
@@ -166,7 +185,7 @@ def main(argv=None):
         previous = None
     health_status, health = _get("/health")
     card_status, _ = _get("/card")
-    runs = {name: _runs(name) for name in
+    runs = {name: _runs(name, DEPLOY_RUNS_READ if name == "deploy-prod.yml" else 6) for name in
             ("deploy-prod.yml", "tests.yml", "forward-capture.yml", "daily-loop.yml")}
     lines, breaches, state = evaluate(health_status, health, card_status, runs, previous, now)
 

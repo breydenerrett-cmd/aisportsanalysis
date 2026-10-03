@@ -80,6 +80,27 @@ class Evaluate(unittest.TestCase):
             {"status": "completed", "conclusion": "success"}]}))
         self.assertEqual(breaches, [])
 
+    def test_a_deploy_that_never_finished_is_a_breach(self):
+        """2026-10-03: one `fly deploy` hung at 10:07Z and held the queue for
+        six hours while /health stayed green and the site's data aged."""
+        stuck = runs(**{"deploy-prod.yml": [
+            {"status": "pending", "conclusion": "", "createdAt": "2026-10-02T02:08:57Z"},
+            {"status": "completed", "conclusion": "cancelled", "createdAt": "2026-10-02T01:03:47Z"},
+            {"status": "in_progress", "conclusion": "", "createdAt": "2026-10-01T21:07:26Z"},
+            {"status": "completed", "conclusion": "success", "createdAt": "2026-10-01T20:02:31Z",
+             "updatedAt": "2026-10-02T00:08:06Z"}]})
+        breaches, _ = self._breaches(runs=stuck)
+        self.assertEqual(len(breaches), 1, breaches)
+        self.assertIn("production deploy", breaches[0])
+        self.assertIn("353 min", breaches[0])          # the oldest unfinished run, not the newest
+
+    def test_a_deploy_that_just_started_is_not(self):
+        fresh = runs(**{"deploy-prod.yml": [
+            {"status": "in_progress", "conclusion": "", "createdAt": "2026-10-02T02:57:00Z"},
+            {"status": "completed", "conclusion": "success", "updatedAt": "2026-10-02T00:08:06Z"}]})
+        breaches, _ = self._breaches(runs=fresh)
+        self.assertEqual(breaches, [])
+
     def test_the_first_look_has_nothing_to_compare_and_is_not_a_restart(self):
         breaches, state = self._breaches(previous=None)
         self.assertEqual(breaches, [])
