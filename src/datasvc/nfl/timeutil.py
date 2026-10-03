@@ -31,31 +31,13 @@ from src.datasvc.ufc.features import instant, iso_utc, parse_instant
 __all__ = ["instant", "iso_utc", "parse_instant", "eastern_to_utc", "us_dst_dates",
            "utc_offset_hours", "season_of", "ZONES", "FIRST_YEAR"]
 
-FIRST_YEAR = 1987
+# The US rules live in src/data/eastern.py (2026-10-03), so the Eastern fallback the NFL card's
+# provider and the snapshot store use is the same rule this module tests against zoneinfo.
+from src.data.eastern import FIRST_YEAR, us_dst_dates
+from src.data.eastern import nth_sunday as _nth_sunday
+
 _UTC = timezone.utc
 _CLOCK = re.compile(r"^\s*(\d{1,2}):(\d{2})\s*$")
-
-
-def _nth_sunday(year: int, month: int, n: int) -> date:
-    """The n-th Sunday of a month (n >= 1), or the last one when n == -1."""
-    if n == -1:
-        last = date(year + (month == 12), month % 12 + 1, 1) - timedelta(days=1)
-        return last - timedelta(days=(last.weekday() - 6) % 7)
-    first = date(year, month, 1)
-    return first + timedelta(days=(6 - first.weekday()) % 7 + 7 * (n - 1))
-
-
-def us_dst_dates(year: int) -> Tuple[date, date]:
-    """(first day of daylight time, first day back on standard time) in the US, both Sundays.
-
-    From 2007: second Sunday of March to first Sunday of November. 1987 to 2006: first
-    Sunday of April to last Sunday of October. The change happens at 02:00 local time.
-    """
-    if year >= 2007:
-        return _nth_sunday(year, 3, 2), _nth_sunday(year, 11, 1)
-    if year >= FIRST_YEAR:
-        return _nth_sunday(year, 4, 1), _nth_sunday(year, 10, -1)
-    raise ValueError(f"US daylight rules are only written out from {FIRST_YEAR}; got {year}")
 
 
 def eastern_to_utc(gameday: str, gametime: Optional[str]) -> Optional[str]:

@@ -30,6 +30,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
 
+from src.data.eastern import EASTERN_FALLBACK
 from src.paths import processed_path
 from src.pipeline import snapshots
 from src.providers import nfl as nfl_provider
@@ -74,13 +75,18 @@ REFRESH_MARK = ("_gameday_refresh", "refresh")
 
 
 def _eastern():
-    """NFL's official timezone, with a fallback for tzdata-less containers."""
+    """NFL's official timezone, with a fallback for machines without a tz database.
+
+    The fallback is `src.data.eastern.EASTERN_FALLBACK`, the US daylight rules
+    written out; until 2026-10-03 it was a fixed -04:00, an hour off from the
+    first Sunday of November to the end of the season.
+    """
     try:
         from zoneinfo import ZoneInfo
 
         return ZoneInfo("America/New_York")
     except Exception:  # noqa: BLE001 -- no tzdata is a deployment fact, not a bug
-        return timezone(timedelta(hours=-4))
+        return EASTERN_FALLBACK
 
 
 _EASTERN = _eastern()

@@ -32,6 +32,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from src.core import odds as odds_math
+from src.data.eastern import EASTERN_FALLBACK
 from src.paths import processed_path
 from src.pipeline import store_archive
 from src.providers import odds as odds_provider
@@ -66,20 +67,22 @@ CLOSING_STALE_SECONDS = 30 * 60
 
 
 def _eastern():
-    """MLB's official timezone, with a fallback for tzdata-less containers.
+    """The Eastern timezone, with a fallback for machines without a tz database.
 
-    Every regular-season and postseason first pitch falls inside daylight time,
-    and the only dates a fixed -04:00 could get wrong are first pitches between
-    04:00 and 05:00 UTC -- 11pm Eastern, which baseball does not schedule. So the
-    fallback is exact for the games this project sees, and says so rather than
-    pretending the zone database is present.
+    The fallback is `src.data.eastern.EASTERN_FALLBACK`, the US daylight rules
+    written out. Until 2026-10-03 it was a fixed -04:00, justified by "every
+    regular-season and postseason first pitch falls inside daylight time". That
+    held for baseball's regular season but not for a World Series game on or
+    after the first Sunday of November, and this store also carries NFL and MMA
+    rows, whose seasons run through the winter: a commence time between 04:00
+    and 05:00 UTC then landed on the wrong Eastern date.
     """
     try:
         from zoneinfo import ZoneInfo
 
         return ZoneInfo("America/New_York")
     except Exception:  # noqa: BLE001 -- no tzdata is a deployment fact, not a bug
-        return timezone(timedelta(hours=-4))
+        return EASTERN_FALLBACK
 
 
 _EASTERN = _eastern()

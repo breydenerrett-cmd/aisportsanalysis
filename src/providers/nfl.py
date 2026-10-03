@@ -17,8 +17,10 @@ from __future__ import annotations
 import csv
 import urllib.error
 import urllib.request
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from typing import Optional
+
+from src.data.eastern import EASTERN_FALLBACK
 
 ATTRIBUTION = "Schedule, injury and team statistics: nflverse (github.com/nflverse/nflverse-data), CC BY 4.0."
 
@@ -35,18 +37,20 @@ class NFLError(RuntimeError):
 
 
 def _eastern():
-    """NFL's official timezone, with a fallback for tzdata-less containers.
+    """NFL's official timezone, with a fallback for machines without a tz database.
 
-    NFL games fall entirely within daylight time (March-December), so a fixed
-    -04:00 offset handles all games correctly. This matches the fallback
-    in src/pipeline/snapshots.py.
+    The fallback is `src.data.eastern.EASTERN_FALLBACK`, the US daylight rules
+    written out. Until 2026-10-03 it was a fixed -04:00 on the claim that NFL
+    games fall inside daylight time; they do not (daylight time ends the first
+    Sunday of November and the season runs into February), so every kickoff
+    from November on was computed an hour early.
     """
     try:
         from zoneinfo import ZoneInfo
 
         return ZoneInfo("America/New_York")
     except Exception:  # noqa: BLE001 -- no tzdata is a deployment fact, not a bug
-        return timezone(timedelta(hours=-4))
+        return EASTERN_FALLBACK
 
 
 _EASTERN = _eastern()
