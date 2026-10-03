@@ -94,7 +94,7 @@ order follows LineHound's needs.
 | Piece | State | Branch or commit | Updated |
 |---|---|---|---|
 | Plan | written | this file | 2026-10-03 |
-| UFC data layer | schedule and results (92 tests), fighters and UFC.com profiles (115), fight statistics and odds (122), pipeline and CLI merged; features, matchup and API building; first backfill (2024 to 2026) running | `src/datasvc/ufc/`, `python -m src.datasvc.cli ufc ...` | 2026-10-03 |
+| UFC data layer | built and merged: schedule and results, fighters, UFC.com profiles, fight statistics, odds, leakage-free features, matchup sheet, paid `/data/v1` API. Backfill 2024 to 2026 done (156 events, 1,689 bouts, 3,182 statistics rows, 4,033 odds rows, 1,075 fighters), committed and shipped in the image; it feeds the UFC fight-night page and the UFC AI analyst. UFC.com profiles pass running | `src/datasvc/ufc/`, `python -m src.datasvc.cli ufc ...`, `fa13daad` | 2026-10-03 |
 | MLB in service shape | not started | | |
 | NFL | not started | | |
 | NHL | not started | | |
@@ -102,6 +102,6 @@ order follows LineHound's needs.
 | Tennis | harvest exists, not served | | |
 | Odds store served | not started | | |
 | Keys and tiers | not started | | |
-| Daily refresh wired | not started | | |
+| Daily refresh wired | UFC: the daily loop runs `ufc update` (last 10 days of results, next 21 days of cards) and commits the files; the image ships them | `scripts/daily_loop.sh`, `fa13daad` | 2026-10-03 |
 | Nightly agent | not started | | |
 | Landing and dashboard | not started | | |
