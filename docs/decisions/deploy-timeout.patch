@@ -1,0 +1,12 @@
+--- a/.github/workflows/deploy-prod.yml
++++ b/.github/workflows/deploy-prod.yml
+@@ -34,5 +34,9 @@
+ jobs:
+   deploy:
+     runs-on: ubuntu-latest
++    # A deploy takes about four minutes. Without a limit, one hung `fly deploy`
++    # holds the queue for GitHub's six-hour default and every later refresh
++    # waits behind it (2026-10-03, 10:07Z to 16:07Z: six hours of stale data).
++    timeout-minutes: 15
+     steps:
+       - name: Guard - secret present

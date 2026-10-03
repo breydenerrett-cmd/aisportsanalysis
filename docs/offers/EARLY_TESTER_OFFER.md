@@ -31,27 +31,16 @@ Not "a line-price checker".
 4. Log it: `python scripts/outreach_batch.py tester-access --lead <id>` when
    you grant access (it counts as an active tester for 7 days), `signup --lead
    <id>` when they sign up, `activated --lead <id>` when the Testers table
-   shows them as activated (they used the token).
+   shows them as activated (they opened real content, not just signed in).
 
-Message to send with the token (edit freely, keep the five facts):
+Who gets a spot, and the message to send with the token: see "First 20
+testers" in `docs/sales/DISCOVERY_GUIDE.md`. A signup is not a tester: grant
+only to someone who bets or seriously follows MLB, NFL or UFC, says they will
+use it, and agrees to tell you what was useful.
 
-```
-You're in: 7 days of early access to LineHound, no card.
-
-Sign in here: https://linehound.app/web/index.html#/signin
-Paste this token: <token>
-
-What it is: tonight's card before the game (the bet, the best price and
-where to find it, and why), plus matchups, odds and props. Every card is
-graded in public afterwards.
-
-What to know: this is early access and performance is not proven. The
-current MLB record is negative and it's on the record page with every loss.
-It's analysis, not advice. Access ends after 7 days.
-
-The one thing I'd ask: after a couple of nights, tell me what was useful,
-what was confusing, and whether you'd pay for it.
-```
+"Activated" on the Testers table means the tester opened real product content
+while signed in (tonight's card, a game breakdown, the props, an NFL or UFC
+card), not that they signed in.
 
 ## The outreach loop
 
@@ -117,14 +106,16 @@ How you know a lead signed up: the admin page's funnel has a "By source"
 table. Each outreach link carries the lead's id, so the row is named after
 the lead (for example `l012-unit-circle`).
 
-Order for batch 1: the two forums first (items 1 and 2: promotion is allowed
-there), then the four creators, then the five X replies (replace the bracket
-with something specific from their post; about 55 characters fit), then at
-most five Discord notes a day. No copy-paste to several people at once, no
-automation.
+Order for batch 1: five small groups, best fit first, in
+`docs/sales/SEND_ORDER.md` (that file also holds the exact wording for the
+group being sent). No copy-paste to several people at once, no automation, at
+most five Discord notes a day.
 
-## Not yet (before billing opens)
+## When a tester's week ends
 
-A tester whose 7 days ran out cannot buy from the signup form today: the
-form reports their account as "invited" and does not open a checkout. That
-must be fixed before production billing is switched on.
+Their token stops working. On the sign-in page they are told the early access
+ended and when. While billing is off the page says paid plans are not open
+yet and to reply to you. Once billing is on, the same page offers a button
+that starts checkout on their existing account: same account, saved bets
+kept, no second signup. Details: `docs/audit/2026-10-03/EXPIRED_TESTER_PAID_PATH.md`.
+The purchase paths and their test status: `docs/billing/PURCHASE_REHEARSAL.md`.
