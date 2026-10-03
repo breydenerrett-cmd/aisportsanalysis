@@ -37,6 +37,7 @@ from api.card import public_router as card_public_router, router as card_router
 from api.opportunities import router as opportunities_router
 from api.performance import router as performance_router
 from api.live import router as live_router
+from api.live_state import router as live_state_router
 from api.tennis import router as tennis_router
 from api.props import router as props_router
 from api.meta import router as meta_router
@@ -104,6 +105,10 @@ app.include_router(performance_router, dependencies=_authed_paid)
 # /live -- Live game states and research candidates, internal testing surface,
 # same paid-demo gate as the rest of the read-only game surface.
 app.include_router(live_router, dependencies=_authed_paid)
+# /live/{date} -- the slate's live game state (status, score, inning, outs),
+# free MLB Stats API, cached 45 s per slate (api/live_state.py). Same paid-demo
+# gate as the rest of the read-only game surface.
+app.include_router(live_state_router, dependencies=_authed_paid)
 # /tennis/board -- Tennis research board, same paid-demo gate as the rest of
 # the read-only game surface.
 app.include_router(tennis_router, dependencies=_authed_paid)

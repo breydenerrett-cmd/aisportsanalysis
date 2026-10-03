@@ -79,6 +79,9 @@ import { teamName, bookLabel } from "./labels.js";
 import { slateTile } from "./tiles.js";
 import { setShellStatusFromStaleness } from "./shell.js";
 import { armEntrances } from "./motion.js";
+import { fetchLiveIndex, liveFor, pricesAreLastPregame, renderLiveStrip,
+  renderPregameLabel } from "./livestate.js";
+import { renderLineMarkets } from "./linemarkets.js";
 
 function todayIso() {
   return new Date().toISOString().slice(0, 10);
@@ -127,9 +130,11 @@ export async function renderGamesList(container, date) {
 
   let payload;
   let odds = null;
+  let liveIndex = null;
   try {
     payload = await apiGet(`/games/${encodeURIComponent(useDate)}`);
     odds = await apiGet(`/odds/${encodeURIComponent(useDate)}`).catch(() => null);
+    liveIndex = await fetchLiveIndex(useDate); // never rejects; null = no live state
   } catch (err) {
     renderError(loadingWrap, err);
     return;
@@ -173,6 +178,8 @@ export async function renderGamesList(container, date) {
       grid.appendChild(slateTile(Object.assign({ date: payload.date || useDate }, row2), {
         awayPrice: best.away ? best.away.price : null,
         homePrice: best.home ? best.home.price : null,
+        live: liveFor(liveIndex, row2.game_id),
+        priceObservedUtc: h2h && h2h.staleness ? h2h.staleness.observed_utc : null,
         flag,
         delay: (i % 6) * 70,
       }));
@@ -273,15 +280,16 @@ function gqvBadge(abbr) {
   return badge;
 }
 
-function gqvTopStrip(quick) {
+function gqvTopStrip(quick, live) {
   const strip = el("div", { class: "gqv-topstrip", "data-rise": "" });
   strip.appendChild(el("span", { class: "gqv-topstrip__eyebrow", text: "GAME · QUICK VIEW" }));
   strip.appendChild(el("span", { class: "gqv-topstrip__rule" }));
   const price = quick.price || {};
   const captured = price.available ? etClock(price.staleness && price.staleness.observed_utc) : null;
   if (captured) {
+    // A started game's board is its last PRE-GAME one -- say so (livestate.js).
     strip.appendChild(el("span", { class: "gqv-topstrip__chip", "data-hook": "prices-captured",
-      text: `PRICES CAPTURED ${captured}` }));
+      text: pricesAreLastPregame(live) ? `LAST PRE-GAME PRICES ${captured}` : `PRICES CAPTURED ${captured}` }));
   }
   return strip;
 }
@@ -417,11 +425,14 @@ const NOTHING_STANDS_OUT = "NOTHING STANDS OUT HERE";
  * which risks reading as a pick this product does not make. Falls back
  * to V2-15's "PRICE · MARKET UNAVAILABLE" amber absence when
  * `price.available` is false. */
-function gqvPrice(quick) {
+function gqvPrice(quick, live) {
   const price = quick.price || {};
   const panel = el("section", { class: "gqv-price panel chamfer", "data-hook": "price", "data-price": "",
     "data-rise": "", "data-delay": "120" });
   panel.appendChild(el("div", { class: "gqv-price__eyebrow", text: "PRICE · MONEYLINE" }));
+  // Started game: this is the last pre-game price, with its capture time.
+  const pregame = renderPregameLabel(live, price.staleness && price.staleness.observed_utc);
+  if (pregame) panel.appendChild(pregame);
 
   if (!price.available) {
     panel.appendChild(notYetAvailable(
@@ -1040,6 +1051,8 @@ export async function renderGameDetail(container, date, away, home) {
 
   let payload;
   let cardPick = null;
+  let liveIndex = null;
+  let oddsSlate = null;
   try {
     // THE CARD'S PICK FOR THIS GAME, fetched alongside. It leads the screen.
     //
@@ -1054,6 +1067,11 @@ export async function renderGameDetail(container, date, away, home) {
     const both = await Promise.allSettled([
       apiGet(`/game/${encodeURIComponent(date)}/${encodeURIComponent(away)}/${encodeURIComponent(home)}`),
       apiGet(`/card/${encodeURIComponent(date)}`),
+      // LIVE STATE AND RUN LINE / TOTAL, both optional: either failing leaves the
+      // page exactly as it was. The slate board (not the per-game route) is read
+      // for prices because the per-game route records a "prices" value action.
+      fetchLiveIndex(date),
+      apiGet(`/odds/${encodeURIComponent(date)}`),
     ]);
     if (both[0].status !== "fulfilled") throw both[0].reason;
     payload = both[0].value;
@@ -1061,6 +1079,8 @@ export async function renderGameDetail(container, date, away, home) {
       const picks = (both[1].value && both[1].value.picks) || [];
       cardPick = picks.find((p) => p.away_team === away && p.home_team === home) || null;
     }
+    liveIndex = both[2].status === "fulfilled" ? both[2].value : null;
+    oddsSlate = both[3].status === "fulfilled" ? both[3].value : null;
   } catch (err) {
     renderError(loadingWrap, err);
     return;
@@ -1069,15 +1089,19 @@ export async function renderGameDetail(container, date, away, home) {
 
   const quick = payload.quick || {};
   const advanced = payload.advanced || {};
+  const live = liveFor(liveIndex, quick.game_id);
+  const oddsEntry = ((oddsSlate && oddsSlate.games) || []).find((g) => g.game_id === quick.game_id) || null;
 
   const body = el("div", { class: "gqv-body" });
   body.appendChild(el("a", { class: "gqv-back", href: `#/games/${encodeURIComponent(date)}`,
     text: "← BACK TO THE SLATE" }));
-  body.appendChild(gqvTopStrip(quick));
+  body.appendChild(gqvTopStrip(quick, live));
   body.appendChild(gqvIdentity(quick, advanced));
+  const liveStrip = renderLiveStrip(live); if (liveStrip) body.appendChild(liveStrip);
   // THE BET FIRST. Everything below is why, not what.
   body.appendChild(gqvTonightsPick(cardPick, quick));
-  body.appendChild(gqvPrice(quick));
+  body.appendChild(gqvPrice(quick, live));
+  const lineMarkets = renderLineMarkets(oddsEntry, live); if (lineMarkets) body.appendChild(lineMarkets);
   // GAME STORY STAYS. Starters, bullpen workload, travel and weather are the
   // things a reader actually wants under a bet -- who is pitching, who is
   // rested, what the park is doing tonight.

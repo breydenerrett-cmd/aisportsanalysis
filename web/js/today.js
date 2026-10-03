@@ -117,6 +117,11 @@ import { teamName, bookLabel, FAIR_EXPLAINER } from "./labels.js";
 import { slateTile } from "./tiles.js";
 import { setShellStatus } from "./shell.js";
 import { armEntrances } from "./motion.js";
+import { fetchLiveIndex, liveFor, renderPregameLabel } from "./livestate.js";
+
+// This screen's live state (GET /live/{date}), set once per render and read by the
+// hero price panel and the slate rail. null = unavailable: both render as before.
+let liveIndexForPage = null;
 
 /* ---------------------------------------------------------------------
  * Reading the payloads -- contract-safe only (see module docstring)
@@ -394,6 +399,10 @@ function priceContextPanel(row, side, h2h) {
     teamBadge(abbr),
     el("span", { class: "gv2-price__label", text: `${teamName(abbr, "name") || abbr} moneyline` }),
   ]));
+  // A started game's price is its last pre-game one: say so, with the capture time.
+  const pregame = renderPregameLabel(liveFor(liveIndexForPage, row.game_id),
+    h2h.staleness && h2h.staleness.observed_utc);
+  if (pregame) panel.appendChild(pregame);
 
   if (!best) {
     panel.appendChild(el("p", { class: "gv2-price__empty", "data-hook": "gameday-price-empty",
@@ -842,6 +851,8 @@ function renderSlateRail(rows, oddsIndex, featuredGameId, changedIds) {
     rail.appendChild(slateTile(row, {
       awayPrice: away ? away.price : null,
       homePrice: home ? home.price : null,
+      live: liveFor(liveIndexForPage, row.game_id),
+      priceObservedUtc: h2h && h2h.staleness ? h2h.staleness.observed_utc : null,
       flag,
       feature: row.game_id === featuredGameId,
       delay: i * 90,
@@ -974,11 +985,13 @@ export async function renderToday(container) {
 
   // Three independent reads; a failure in any one must not blank the
   // whole screen (odds.js and V1's today.js follow the same rule).
-  const [slate, odds, changed] = await Promise.all([
+  const [slate, odds, changed, liveIndex] = await Promise.all([
     apiGet(`/games/${encodeURIComponent(date)}`).catch(() => null),
     apiGet(`/odds/${encodeURIComponent(date)}`).catch(() => null),
     apiGet(`/changed/${encodeURIComponent(date)}`).catch(() => null),
+    fetchLiveIndex(date), // never rejects; null = live state unavailable
   ]);
+  liveIndexForPage = liveIndex;
   loadingWrap.remove();
 
   // RECORD STRIP -- mounted at the absolute top of the Today screen,

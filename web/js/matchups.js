@@ -52,6 +52,7 @@ import { el, clear, renderError, renderLoading, notYetAvailable,
 import { renderValueMeter } from "./valuemeter.js";
 import { teamColors } from "./teamcolors.js";
 import { teamName, bookLabel } from "./labels.js";
+import { fetchLiveIndex, liveByPk, renderPregameLabel } from "./livestate.js";
 
 export const FROZEN_TITLE = "PAPER POSITIONS FROZEN BEFORE FIRST PITCH";
 
@@ -256,7 +257,7 @@ function moneylineSideFigures(row) {
   return wrap;
 }
 
-function moneylineBlock(away, home, h2h, unpricedReason) {
+function moneylineBlock(away, home, h2h, unpricedReason, live) {
   const block = el("div", { class: "mx-ml", "data-hook": "matchup-moneyline" });
   block.appendChild(el("div", { class: "mx-ml__title", text: "MONEYLINE" }));
   if (!h2h.away && !h2h.home) {
@@ -264,6 +265,10 @@ function moneylineBlock(away, home, h2h, unpricedReason) {
       unpricedReason || "No priced board for this game yet.", "NO BOARD"));
     return block;
   }
+  // A started game's moneyline is its last pre-game one: label it with its capture time.
+  const pregame = renderPregameLabel(live,
+    (h2h.away && h2h.away.observed_utc) || (h2h.home && h2h.home.observed_utc));
+  if (pregame) block.appendChild(pregame);
   const cols = el("div", { class: "mx-ml__cols" });
   for (const [abbr, row] of [[away, h2h.away], [home, h2h.home]]) {
     const col = el("div", { class: "mx-ml__col" });
@@ -357,7 +362,8 @@ function matchupCard(entry, date, indices) {
   }
   card.appendChild(probables);
 
-  card.appendChild(moneylineBlock(away, home, h2h, unpricedReason));
+  card.appendChild(moneylineBlock(away, home, h2h, unpricedReason,
+    liveByPk(indices.liveIndex, game.game_pk)));
   card.appendChild(livePriceReadBlock(away, home, h2h, unpricedReason));
   card.appendChild(frozenPositionsBlock(dailyGame));
   card.appendChild(gameOutcomeLine(dailyGame));
@@ -402,10 +408,12 @@ export async function renderMatchups(container, date, preloadedToday = null) {
   const sideFetches = [
     apiGet(`/daily/${encodeURIComponent(date)}`).catch(() => null),
     apiGet(`/opportunities/${encodeURIComponent(date)}`).catch(() => null),
+    fetchLiveIndex(date), // shared with the rest of the screen; never rejects
   ];
+  let liveIndex = null;
   try {
     const todayFetch = todayPayload ? Promise.resolve(todayPayload) : apiGet("/today");
-    [todayPayload, dailyPayload, oppPayload] = await Promise.all(
+    [todayPayload, dailyPayload, oppPayload, liveIndex] = await Promise.all(
       [todayFetch, ...sideFetches]);
   } catch (err) {
     clear(body);
@@ -443,7 +451,7 @@ export async function renderMatchups(container, date, preloadedToday = null) {
   const qualifyingKeys = new Set(
     ((oppPayload && oppPayload.qualifying) || []).map((r) => gameKeyOf(r.away_team, r.home_team)));
 
-  const indices = { dailyByKey, oppRowsByKey, unpricedByKey, qualifyingKeys };
+  const indices = { dailyByKey, oppRowsByKey, unpricedByKey, qualifyingKeys, liveIndex };
 
   const sorted = games.slice().sort((a, b) => {
     const gameA = (a.dossier && a.dossier.game) || {};

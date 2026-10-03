@@ -3625,3 +3625,53 @@
   .day-gallery { grid-template-columns: 1fr; }
   .day-detail-screen { padding: var(--sp-7) var(--gutter-mobile) var(--sp-13); gap: var(--sp-7); }
 }
+
+/* =====================================================================
+   LIVE GAME STATE + RUN LINE / TOTAL  (web/js/livestate.js, linemarkets.js)
+   Additive: nothing above changes. One strip, one label, one block.
+   ===================================================================== */
+.live-strip {
+  display: flex; align-items: baseline; flex-wrap: wrap; gap: var(--sp-5);
+  padding: 10px 16px; margin-bottom: var(--sp-8);
+  background: rgba(255, 255, 255, .04); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .1);
+  font-family: var(--font-mono); font-size: 13.5px; letter-spacing: .08em; color: var(--v-t2);
+}
+.live-strip__label { font-family: var(--font-display); font-size: 13px; font-weight: 800; letter-spacing: .2em; color: var(--v-live-lit); }
+.live-strip--delayed .live-strip__label, .live-strip--off .live-strip__label { color: var(--v-warn-lit); }
+.live-strip--final .live-strip__label { color: var(--v-t4); }
+.live-strip__score { color: var(--v-t0); font-size: 15px; }
+.live-strip__detail { color: var(--v-t5); }
+.pregame-label {
+  margin: 0 0 var(--sp-6); font-family: var(--font-mono); font-size: 12.5px; letter-spacing: .08em;
+  color: var(--v-warn-lit);
+}
+.tile__live {
+  position: absolute; left: 20px; right: 20px; top: 98px;
+  font-family: var(--font-mono); font-size: 12px; letter-spacing: .06em; color: var(--live-lit);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.tile__live--delayed, .tile__live--off { color: var(--v-warn-lit); }
+.tile__live--final { color: rgba(255, 255, 255, .6); }
+.tile__pregame {
+  position: absolute; left: 20px; right: 20px; bottom: 84px;
+  font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .08em; color: var(--v-warn-lit);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+@media (max-width: 899px) {
+  .tile__live { top: 74px; font-size: 11px; }
+  .tile__pregame { bottom: 70px; }
+}
+.lm { padding: var(--sp-10) var(--sp-11); margin-bottom: var(--sp-8); }
+.lm__eyebrow { font-family: var(--font-display); font-size: 12.5px; font-weight: 800; letter-spacing: .2em; color: var(--v-t5); margin-bottom: var(--sp-6); }
+.lm__captured { margin: 0 0 var(--sp-6); font-family: var(--font-mono); font-size: 12.5px; letter-spacing: .08em; color: var(--v-t6); }
+.lm__cols { display: flex; gap: var(--sp-10); flex-wrap: wrap; }
+.lm__market { flex: 1 1 260px; min-width: 240px; }
+.lm__title { font-family: var(--font-display); font-size: 13px; font-weight: 800; letter-spacing: .18em; color: var(--v-t3); margin-bottom: var(--sp-5); }
+.lm__sides { display: flex; gap: var(--sp-8); flex-wrap: wrap; }
+.lm-side { flex: 1 1 110px; min-width: 100px; }
+.lm-side__label { font-family: var(--font-display); font-size: 12px; font-weight: 800; letter-spacing: .14em; color: var(--v-t5); margin-bottom: var(--sp-3); }
+.lm-side__price { font-family: var(--font-display); font-style: italic; font-size: clamp(26px, 3vw, 36px); font-weight: 800; color: #FFF; line-height: .95; }
+.lm-side__books { margin-top: var(--sp-2); font-family: var(--font-mono); font-size: 12.5px; color: var(--v-t6); }
+.lm-side__fair { margin-top: var(--sp-3); font-family: var(--font-mono); font-size: 13px; color: var(--v-t3); }
+.lm__facts { margin-top: var(--sp-5); font-family: var(--font-mono); font-size: 12px; letter-spacing: .04em; color: var(--v-t6); }
+@media (max-width: 899px) { .lm { padding: var(--sp-8); } .lm__cols { gap: var(--sp-8); } }

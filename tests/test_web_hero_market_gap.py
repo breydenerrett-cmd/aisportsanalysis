@@ -214,8 +214,10 @@ class TheFallbackBodyIsAScannedLiteral(unittest.TestCase):
         # the fallback back behind a ternary would show up as a line-number
         # mismatch instead of quietly losing coverage again.
         covered_lines = {line for line, _text in self.pairs}
-        self.assertIn(720, covered_lines)  # true-branch headline
-        self.assertIn(740, covered_lines)  # true-branch fallback body
+        # Moved +9 on 2026-10-03: the live-state import and the pregame label
+        # in priceContextPanel were added above this function (web/js/today.js).
+        self.assertIn(729, covered_lines)  # true-branch headline
+        self.assertIn(749, covered_lines)  # true-branch fallback body
 
 
 class TheBodyParagraphCarriesItsDataHook(unittest.TestCase):

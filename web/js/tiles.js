@@ -17,10 +17,16 @@
 
 import { el, formatAmerican, formatEasternClock } from "./dom.js";
 import { teamColors, seamGradient } from "./teamcolors.js";
+import { liveStripModel, pregameLabel, pregameShortLabel, pricesAreLastPregame,
+  tileLiveText } from "./livestate.js";
 
 /**
  * @param {object} game  {date, away_team, home_team, first_pitch_utc, venue}
- * @param {object} opts  {awayPrice, homePrice, flag: {text, kind}, feature}
+ * @param {object} opts  {awayPrice, homePrice, flag: {text, kind}, feature,
+ *   live, priceObservedUtc}
+ *   `live` is the game's row from GET /live/{date} (or null). When the game is
+ *   not pregame the tile says so on one line and tags the prices as the last
+ *   pre-game ones (hover: with their capture time) -- see livestate.js.
  *   `kind` is one of "money" | "live" | "neutral" -- and money is
  *   RESERVED: pass it only where a better price genuinely exists.
  */
@@ -75,6 +81,13 @@ export function slateTile(game, opts = {}) {
     style: `color:${homeC.known ? homeC.accent : "#F2F4F8"}` }));
   tile.appendChild(teams);
 
+  const liveText = tileLiveText(opts.live);
+  if (liveText) {
+    const model = liveStripModel(opts.live);
+    tile.appendChild(el("span", { class: `tile__live tile__live--${model.kind}`,
+      "data-hook": "tile-live", text: liveText }));
+  }
+
   const awayText = formatAmerican(opts.awayPrice);
   const homeText = formatAmerican(opts.homePrice);
   if (awayText !== null && homeText !== null) {
@@ -82,6 +95,12 @@ export function slateTile(game, opts = {}) {
     prices.appendChild(el("span", { class: "tile__price", text: awayText }));
     prices.appendChild(el("span", { class: "tile__price-rule" }));
     prices.appendChild(el("span", { class: "tile__price tile__price--muted", text: homeText }));
+    if (pricesAreLastPregame(opts.live)) {
+      // Never a current price on a started game: label it, with its capture time.
+      tile.appendChild(el("span", { class: "tile__pregame", "data-hook": "tile-pregame",
+        title: pregameLabel(opts.live, opts.priceObservedUtc) || "",
+        text: pregameShortLabel(opts.live, opts.priceObservedUtc) }));
+    }
     tile.appendChild(prices);
   } else {
     tile.appendChild(el("span", { class: "tile__noprice", "data-hook": "tile-no-price",

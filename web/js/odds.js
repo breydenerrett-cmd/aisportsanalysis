@@ -65,6 +65,8 @@ import { teamColors } from "./teamcolors.js";
 import { teamName, bookLabel, FAIR_LONG } from "./labels.js";
 import { setShellStatus } from "./shell.js";
 import { armEntrances } from "./motion.js";
+import { fetchLiveIndex, liveFor, renderLiveStrip, renderPregameLabel } from "./livestate.js";
+import { renderLineMarkets } from "./linemarkets.js";
 
 /** Above this age a board ROW (one book's quote) is flagged stale. This
  * is a CLIENT decision, not a server verdict (handoff rule 3.11: "no
@@ -390,7 +392,7 @@ function boardTable(h2h, awayAbbr, homeAbbr, date, referenceNow) {
  * One game's card -- shared by the slate board and the single-game route
  * ------------------------------------------------------------------- */
 
-function gameCard(gameEntry, { date, referenceNow }) {
+function gameCard(gameEntry, { date, referenceNow, live = null }) {
   const h2h = h2hOf(gameEntry) || {};
   const variant = boardVariant(h2h);
   const away = gameEntry.away_team;
@@ -433,6 +435,12 @@ function gameCard(gameEntry, { date, referenceNow }) {
   }
   card.appendChild(head);
 
+  // Live state: a started game says so, and its board is the LAST PRE-GAME one.
+  const liveStrip = renderLiveStrip(live);
+  if (liveStrip) card.appendChild(liveStrip);
+  const pregame = renderPregameLabel(live, staleness.observed_utc);
+  if (pregame) card.appendChild(pregame);
+
   const body = el("div", { class: "ov2-body" });
   if (variant === "no-board") {
     body.appendChild(noBoardBlock(h2h));
@@ -453,6 +461,10 @@ function gameCard(gameEntry, { date, referenceNow }) {
     body.appendChild(boardTable(h2h, away, home, date, referenceNow));
   }
   card.appendChild(body);
+
+  // Run line and total, present only when the server's RUNLINE_TOTALS switch is on.
+  const lineMarkets = renderLineMarkets(gameEntry, live);
+  if (lineMarkets) card.appendChild(lineMarkets);
 
   const actions = el("div", { class: "ov2-actions" });
   actions.appendChild(el("a", {
@@ -560,8 +572,12 @@ export async function renderOdds(container, date) {
   host.appendChild(loadingWrap);
 
   let payload;
+  let liveIndex = null;
   try {
-    payload = await apiGet(`/odds/${encodeURIComponent(useDate)}`);
+    [payload, liveIndex] = await Promise.all([
+      apiGet(`/odds/${encodeURIComponent(useDate)}`),
+      fetchLiveIndex(useDate), // never rejects; null = live state unavailable
+    ]);
   } catch (err) {
     renderError(loadingWrap, err);
     return;
@@ -594,7 +610,8 @@ export async function renderOdds(container, date) {
   const list = el("div", { class: "ov2-list gutter" });
   let i = 0;
   for (const entry of games) {
-    const card = gameCard(entry, { date: effectiveDate, referenceNow });
+    const card = gameCard(entry, { date: effectiveDate, referenceNow,
+      live: liveFor(liveIndex, entry.game_id) });
     card.setAttribute("data-delay", String(Math.min(i, 6) * 60));
     list.appendChild(card);
     i += 1;
@@ -602,7 +619,9 @@ export async function renderOdds(container, date) {
   host.appendChild(list);
 
   host.appendChild(el("p", { class: "ov2-footnote gutter",
-    text: "Moneyline only — other markets are refused by name. Book count above is the real count on "
+    text: (games.some((g) => g.markets && g.markets.spreads)
+        ? "Moneyline, run line and total. " : "Moneyline only — other markets are refused by name. ")
+        + "Book count above is the real count on "
         + "each game's own board, never a fixed number. The 30-minute stale flag is a threshold we draw, "
         + "not one the sportsbooks report." }));
 
@@ -621,9 +640,12 @@ export async function renderOddsGame(container, date, away, home) {
   host.appendChild(loadingWrap);
 
   let payload;
+  let liveIndex = null;
   try {
-    payload = await apiGet(
-      `/odds/${encodeURIComponent(date)}/${encodeURIComponent(away)}/${encodeURIComponent(home)}`);
+    [payload, liveIndex] = await Promise.all([
+      apiGet(`/odds/${encodeURIComponent(date)}/${encodeURIComponent(away)}/${encodeURIComponent(home)}`),
+      fetchLiveIndex(date), // never rejects; null = live state unavailable
+    ]);
   } catch (err) {
     renderError(loadingWrap, err);
     return;
@@ -636,7 +658,8 @@ export async function renderOddsGame(container, date, away, home) {
   }
 
   const list = el("div", { class: "ov2-list gutter" });
-  list.appendChild(gameCard(payload, { date: payload.date || date, referenceNow: Date.now() }));
+  list.appendChild(gameCard(payload, { date: payload.date || date, referenceNow: Date.now(),
+    live: liveFor(liveIndex, payload.game_id) }));
   host.appendChild(list);
 
   armEntrances(host);

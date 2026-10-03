@@ -25,6 +25,7 @@ the cache entry was built.
 
 from __future__ import annotations
 
+import logging
 import re
 from datetime import datetime, timezone
 from typing import Optional, Tuple
@@ -32,7 +33,7 @@ from typing import Optional, Tuple
 from fastapi import APIRouter, HTTPException, Request
 
 from api.auth import request_user_id
-from src.analysis import oddspayload
+from src.analysis import oddspayload, runline_totals
 from src.analysis import prices as prices_mod
 from src.appstate import activation, freshness
 from src.providers import mlb
@@ -133,6 +134,36 @@ def _build_odds_inputs(date: str) -> Tuple[list, dict, dict]:
     return games, boards, meta
 
 
+def _newest_line_boards_observed_utc(line_boards: dict) -> Optional[str]:
+    observed = [b.get("observed_utc") for per_game in line_boards.values()
+                for b in per_game.values() if b and b.get("observed_utc")]
+    return max(observed) if observed else None
+
+
+def _line_boards_for(date: str) -> Optional[dict]:
+    """The date's run-line and total boards, or None when RUNLINE_TOTALS is off
+    (the default -- docs/decisions/RUNLINE_TOTALS.md). Cached under its own key
+    with the same TTL and single-flight rules as the moneyline inputs, so the
+    extra store read happens once per window, not once per visitor.
+
+    FAIL SOFT. These two markets are an addition to a page that already works;
+    a read failure leaves every game's run line / total as an explicit "no board"
+    section and never takes the moneyline board down with it.
+    """
+    if not runline_totals.enabled():
+        return None
+    try:
+        boards, _meta = _odds_cache.get(
+            ("odds_line_boards", date),
+            lambda: runline_totals.line_boards_by_matchup(date=date),
+            odds_observed_extractor=_newest_line_boards_observed_utc)
+        return boards
+    except Exception:  # noqa: BLE001 -- see docstring
+        logging.getLogger(__name__).exception(
+            "run line / totals boards unreadable for %s", date)
+        return {}
+
+
 @router.get("/odds/{date}")
 def get_odds(date: str) -> dict:
     """The whole slate's market board for one date: per game, per market,
@@ -145,7 +176,8 @@ def get_odds(date: str) -> dict:
     """
     games, boards, meta = _build_odds_inputs(date)
     payload = oddspayload.build_odds_payload(games, boards, date=date,
-                                             now=datetime.now(timezone.utc))
+                                             now=datetime.now(timezone.utc),
+                                             line_boards=_line_boards_for(date))
     payload["freshness"] = meta
     return payload
 
@@ -175,7 +207,10 @@ def get_odds_game(date: str, away: str, home: str, request: Request = None) -> d
     game = matches[0]
     key = prices_mod.matchup_key(game.get("away_team"), game.get("home_team"),
                                  game.get("date"))
-    payload = oddspayload.build_game_odds(game, boards.get(key), now=now)
+    line_boards = _line_boards_for(date)
+    payload = oddspayload.build_game_odds(
+        game, boards.get(key), now=now,
+        line_boards=None if line_boards is None else line_boards.get(key, {}))
     payload["freshness"] = meta
     if len(matches) > 1:
         payload["note"] = (

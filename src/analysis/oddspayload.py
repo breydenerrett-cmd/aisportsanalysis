@@ -16,8 +16,10 @@ no reason to know about (spread across books, favorite disagreement).
 
 MARKET STRUCTURE
 -----------------
-Only h2h (moneyline) exists today -- it is the only market the multi-book
-store captures (src/pipeline/snapshots.py's `multibook_rows`). Every game's
+h2h (moneyline) is always served. Run line (`spreads`) and `totals` are in the
+multi-book store too (src/pipeline/snapshots.py's `multibook_rows`, since
+2026-09-03) and are served only when RUNLINE_TOTALS is on -- see
+src/analysis/runline_totals.py and docs/decisions/RUNLINE_TOTALS.md. Every game's
 payload nests its market(s) under a `markets` dict keyed by market name
 (`"h2h"`) rather than putting h2h fields at the top level, so a future
 market (spreads, totals) is an additional key, not a reshape of every
@@ -55,9 +57,10 @@ from typing import Optional
 
 from src.analysis import gamepayload
 from src.analysis import prices as prices_mod
+from src.analysis import runline_totals
 from src.core import odds as odds_math
 
-MARKETS = ("h2h",)  # the only market the multi-book store captures today
+MARKETS = ("h2h",)  # always served; spreads/totals are added behind RUNLINE_TOTALS
 
 NO_BOARD_REASON = "no multi-book observations recorded for this game"
 
@@ -280,8 +283,22 @@ def _books_disagree_on_favorite(quotes: list) -> Optional[bool]:
 # One game's full odds payload
 # ---------------------------------------------------------------------------
 
-def build_game_odds(game: dict, board: Optional[dict], *, now: datetime) -> dict:
-    """The Odds-tab payload for one game: identity plus every market."""
+def build_game_odds(game: dict, board: Optional[dict], *, now: datetime,
+                    line_boards: Optional[dict] = None) -> dict:
+    """The Odds-tab payload for one game: identity plus every market.
+
+    `line_boards` is this game's {"spreads": board, "totals": board} from
+    runline_totals.line_boards_by_matchup, or None. None is the switch being
+    OFF (RUNLINE_TOTALS, docs/decisions/RUNLINE_TOTALS.md): the payload is then
+    exactly what it was before run line and totals existed. `{}` is the switch
+    ON with nothing recorded for this game, which renders as an explicit
+    unavailable section, not as an absent one.
+    """
+    markets = build_game_markets(board, now=now)
+    if line_boards is not None:
+        markets.update(runline_totals.build_game_line_markets(
+            line_boards,
+            staleness=lambda observed, has: _staleness(observed, now=now, has_board=has)))
     return {
         "game_id": gamepayload.game_id(game),
         "away_team": game.get("away_team"),
@@ -289,7 +306,7 @@ def build_game_odds(game: dict, board: Optional[dict], *, now: datetime) -> dict
         "date": game.get("date"),
         "first_pitch_utc": game.get("start_time_utc"),
         "venue": game.get("venue"),
-        "markets": build_game_markets(board, now=now),
+        "markets": markets,
     }
 
 
@@ -330,8 +347,12 @@ def build_slate_summary(game_odds: list, boards_by_id: dict) -> dict:
 
 
 def build_odds_payload(games: list, boards: dict, *, date: Optional[str] = None,
-                       now: Optional[datetime] = None) -> dict:
+                       now: Optional[datetime] = None,
+                       line_boards: Optional[dict] = None) -> dict:
     """The full GET /odds/{date} payload.
+
+    `line_boards` ({matchup_key: {"spreads": ..., "totals": ...}}) is passed only
+    when RUNLINE_TOTALS is on; None leaves the payload exactly as it was.
 
     `games` is the date's schedule (src.providers.mlb.fetch_games shape);
     `boards` is keyed the way `prices.matchup_key` keys it -- the caller
@@ -345,7 +366,9 @@ def build_odds_payload(games: list, boards: dict, *, date: Optional[str] = None,
         key = prices_mod.matchup_key(game.get("away_team"), game.get("home_team"),
                                      game.get("date"))
         board = boards.get(key)
-        entry = build_game_odds(game, board, now=now)
+        entry = build_game_odds(
+            game, board, now=now,
+            line_boards=None if line_boards is None else line_boards.get(key, {}))
         game_odds.append(entry)
         boards_by_id[entry["game_id"]] = board
     return {
