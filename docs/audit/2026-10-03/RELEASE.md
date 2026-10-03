@@ -46,3 +46,37 @@ Billing stays off. No card rule, gate or published pick changes.
 - 17:38Z Linux CI green. Production was blocked behind a second hung deploy (run 37135966540, since 16:11Z); the owner cancelled it at 17:40Z.
 - 17:42Z production restarted on the release; verified from outside at 17:47Z (see table).
 - Example accounts (`/card/accounts`, the "If you had followed every pick" section) were merged after this push and are not in production yet.
+
+---
+
+# Release 2 (21:16Z): UFC fight night with the AI analyst, the UFC data in the image, playoff rest days
+
+Billing stays off. No card rule, gate or published pick changes. UFC picks stay paused.
+
+## What is in it
+
+| Part | What changed | Why |
+|---|---|---|
+| UFC fight night | The UFC page shows the next card bout by bout: who is fighting, each fighter's form, strengths and weaknesses from the fight statistics, the price, and a written read. It replaces the empty "picks paused" screen | The owner: "are we actually doing matchup analysis?" `docs/UFC_FIGHT_NIGHT.md` |
+| UFC AI analyst | A model-written call on every priced market of every bout, frozen before the bout and graded in public on its own record, mounted inside each bout. It runs only once the owner adds the API key | `docs/AI_ANALYST.md` |
+| UFC data in the image | The normalised UFC files (156 events, 1,689 bouts, 3,182 statistics rows, 4,033 odds rows, 1,075 fighters, ~14 MB) are committed and copied into the image | Without them production would have loaded an empty store and said no card is booked |
+| UFC data kept current | The daily loop runs `ufc update` (last 10 days of results, next 21 days of cards) and commits the files. Rehearsed from an empty cache as the runner runs it: 225 requests, 125 s, 0 errors; it picked up tonight's UFC 332 and its finished prelims | Nothing refreshed the files |
+| UFC data status | A booked card no longer counts as the newest data (the status said a December date and a negative age) | `src/datasvc/ufc/store.py` |
+| Playoff rest days | The starter card's DAYS REST counts postseason outings and says when and in what game he last pitched; the model input does not move | A Wild Card starter showed 14 days (the cap) |
+
+## Status
+
+| Stage | State |
+|---|---|
+| Full suite (Windows) on `83f58326` | 12,153 tests, no failure outside the known Windows-only identities |
+| Targeted tests for the later commits | pass (datasvc, image, daily loop, game route and page, analyst packet, read) |
+| Linux CI simulation (no FastAPI) | 655 tests in the 18 changed modules plus 34 for the rest-day change, 0 failures |
+| Pushed | 21:16Z, `fa13daad` (inside the minute 15 to 39 window) |
+| Staging | deployed 21:22Z; verified from outside: health ok, every request-time store current through 2026-10-02 or later, new `gamestory.js` and `main.js` served, `/game/...` carries `advanced.starter_rest` for all six games checked, `/ufc/fight-night` refuses without a token (401) |
+| Linux CI | running (run 37154528035) |
+| Production | waits for CI |
+
+## Log
+
+- 21:16Z pushed `fa13daad` after fetch, merge, the full suite on `83f58326`, targeted tests on the later commits and the no-FastAPI run.
+- 21:22Z staging deployed and verified (see table).
