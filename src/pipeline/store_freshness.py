@@ -353,15 +353,21 @@ def report(root=None, now=None) -> dict:
     base = (Path(root) if root is not None else paths.data_root()) / "historical"
 
     stores: dict = {}
-    newest_regular = None
+    newest_regular = newest_game = None
     for spec in _build_specs():
         rel = spec.rel.replace("{season}", season)
         scanned = _scan_cached(spec, base / rel)
         if spec.name == "mlb_results":
             newest_regular = scanned.get("newest_regular")
+            newest_game = scanned.get("newest_row")
         target = expected
         if spec.name == "standings":
             target = min(expected, standings_horizon(newest_regular, today))
+        elif spec.name == "pitcher_logs" and not stores.get("mlb_results", {}).get("stale", True):
+            # Off-season: the results store is current and its newest game is
+            # days old, so no starter is a refresh candidate and no marker is
+            # written. The log is then as current as it can be, not stale.
+            target = min(expected, standings_horizon(newest_game, today))
         entry = {"path": f"historical/{rel}", "reads": spec.reads,
                  "present": bool(scanned.get("present")),
                  "through": scanned.get("through"),

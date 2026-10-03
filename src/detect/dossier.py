@@ -140,8 +140,12 @@ def build(game, store, pitcher_logs=None, prices=None, weather=None,
         # "Days rest 14" was a log that ended two weeks before the game. The
         # section now carries the date the log covers and whether that is too
         # old to describe this game, so the page can say so instead.
-        logs_through = _newest_date(a.get("date") for rows in pitcher_logs.values()
-                                    for a in rows)
+        # COVERAGE, not the newest start: a refresh marker (`date: None`,
+        # `checked_utc`) says the log was checked then and held everything,
+        # so the day after a league-wide off day is not a stale log -- the
+        # same definition src.pipeline.store_freshness uses.
+        logs_through = _newest_date(a.get("date") or a.get("checked_utc")
+                                    for rows in pitcher_logs.values() for a in rows)
         starters["logs_through"] = logs_through
         starters["logs_stale"] = _ends_before(logs_through, date)
         dossier.add("starters", starters)

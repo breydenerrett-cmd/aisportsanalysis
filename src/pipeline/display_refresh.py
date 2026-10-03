@@ -656,9 +656,23 @@ def refresh(root=None, *, now=None, max_seconds: float = DEFAULT_MAX_SECONDS,
             entry["seconds"] = round(clock() - step_start, 2)
 
             promotions = []
-            if entry["status"] != "skipped":
+            # Only a step that RETURNED is promoted (a deadline hit mid-step
+            # returns, with its progress). A step that raised may have left a
+            # half-rewritten copy (pitchers.write_logs truncates and rewrites)
+            # that still parses and sits inside the shrink tolerance.
+            if entry["status"] == "ok":
                 for rel, dest_rel, kind in STEP_FILES[name]:
                     rel, dest_rel = rel.replace("{season}", season), dest_rel.replace("{season}", season)
+                    if kind == "manifest" and promotions and not promotions[-1]["promoted"] \
+                            and promotions[-1]["reason"] != "unchanged":
+                        # The manifest is the results store's coverage record.
+                        # Promoted without its CSV it claims dates whose games
+                        # the store does not hold: /health calls the store
+                        # current and resume never fetches those dates again.
+                        promotions.append({"file": Path(dest_rel).name, "promoted": False,
+                                           "reason": "its results copy was not promoted; "
+                                                     "kept the committed copy"})
+                        continue
                     promotions.append(_promote(work / rel, base / dest_rel, kind))
             entry["files"] = promotions
             for p in promotions:
