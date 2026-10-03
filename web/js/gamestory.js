@@ -99,6 +99,17 @@ function panelHead(text) {
   return el("div", { class: "gs-panel__eyebrow", text });
 }
 
+/** What a store COVERS, from the block the game route attaches beside the
+ * dossier (`advanced.data_coverage[key]`, api/games.py): `{through, stale}`,
+ * or null when the payload carries none. A display fact, deliberately not a
+ * field of the dossier's sections -- those are model and ledger inputs, and a
+ * label added there changes what the card reads and the analyst freezes. */
+function coverageOf(advanced, key) {
+  const block = advanced && typeof advanced.data_coverage === "object" ? advanced.data_coverage : null;
+  const entry = block && typeof block[key] === "object" ? block[key] : null;
+  return entry || null;
+}
+
 /* =====================================================================
  * STARTERS
  * ===================================================================*/
@@ -111,7 +122,7 @@ const STARTER_STATS = [
   { key: "ip_per_start", label: "IP / START", digits: 2 },
 ];
 
-function starterColumn(section, side, teamAbbr, probable) {
+function starterColumn(section, side, teamAbbr, probable, coverage) {
   const col = el("div", { class: "gs-col" });
   col.appendChild(el("div", { class: "gs-col__head", text: (probable || teamAbbr || "").toUpperCase() }));
   const known = section[`${side}_sp_known`];
@@ -123,9 +134,11 @@ function starterColumn(section, side, teamAbbr, probable) {
   if (thin) col.appendChild(warnChip("THIN SAMPLE"));
   // The pitcher log ends before this game: every number below is true only up
   // to that date, and the days-rest figure counts from the log's last row, not
-  // from his last real start. Say so on the card.
-  const logStale = section.logs_stale === true;
-  const logEnds = shortDate(section.logs_through);
+  // from his last real start. Say so on the card. `coverage` is the date the
+  // log was last refreshed (a refresh that found nothing new counts), so the
+  // day after a league-wide off day is not a stale log.
+  const logStale = !!coverage && coverage.stale === true;
+  const logEnds = shortDate(coverage && coverage.through);
   if (logStale) col.appendChild(warnChip(logEnds ? `PITCHER LOG ENDS ${logEnds.toUpperCase()}` : "PITCHER LOG DATE UNKNOWN"));
 
   const starts = section[`${side}_sp_starts`];
@@ -184,8 +197,9 @@ function renderStarters(advanced, quick) {
   const panel = el("section", { class: "gs-panel panel chamfer", "data-hook": "gs-starters" });
   panel.appendChild(panelHead("STARTERS"));
   const cols = el("div", { class: "gs-cols" });
-  cols.appendChild(starterColumn(section, "away", quick.away_team, game && game.away_probable));
-  cols.appendChild(starterColumn(section, "home", quick.home_team, game && game.home_probable));
+  const coverage = coverageOf(advanced, "pitcher_logs");
+  cols.appendChild(starterColumn(section, "away", quick.away_team, game && game.away_probable, coverage));
+  cols.appendChild(starterColumn(section, "home", quick.home_team, game && game.home_probable, coverage));
   panel.appendChild(cols);
   const diff = starterDiffRow(section);
   if (diff) panel.appendChild(diff);
@@ -250,7 +264,7 @@ function relieverRow(row) {
   return wrap;
 }
 
-function bullpenColumn(teamAbbr, data) {
+function bullpenColumn(teamAbbr, data, coverage) {
   const col = el("div", { class: "gs-col" });
   col.appendChild(el("div", { class: "gs-col__head", text: (teamAbbr || "").toUpperCase() }));
   if (!data) {
@@ -259,8 +273,8 @@ function bullpenColumn(teamAbbr, data) {
   }
   const windowDays = data.window_days;
   const count = data.reliever_count;
-  const pensEnd = shortDate(data.log_through);
-  if (data.log_stale === true) {
+  const pensEnd = shortDate(coverage && coverage.through);
+  if (coverage && coverage.stale === true) {
     // The bullpen log stops before this game's window. "No relief appearances"
     // or a short list here would describe the log, not the club.
     col.appendChild(warnChip(pensEnd ? `BULLPEN LOG ENDS ${pensEnd.toUpperCase()}` : "BULLPEN LOG DATE UNKNOWN"));
@@ -300,8 +314,9 @@ function renderBullpen(advanced, quick) {
   const panel = el("section", { class: "gs-panel panel chamfer", "data-hook": "gs-bullpen" });
   panel.appendChild(panelHead("BULLPEN"));
   const cols = el("div", { class: "gs-cols" });
-  cols.appendChild(bullpenColumn(quick.away_team, section[quick.away_team]));
-  cols.appendChild(bullpenColumn(quick.home_team, section[quick.home_team]));
+  const coverage = coverageOf(advanced, "bullpen_log");
+  cols.appendChild(bullpenColumn(quick.away_team, section[quick.away_team], coverage));
+  cols.appendChild(bullpenColumn(quick.home_team, section[quick.home_team], coverage));
   panel.appendChild(cols);
   return panel;
 }

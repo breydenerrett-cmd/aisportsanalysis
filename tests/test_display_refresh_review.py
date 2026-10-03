@@ -29,7 +29,6 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from unittest import mock
 
-from src.detect import dossier
 from src.pipeline import display_refresh as dr, history, pitchers, store_freshness as sf
 from tests.test_display_refresh import Base
 
@@ -49,12 +48,20 @@ def _marker(pid, checked_utc):
 
 
 class ThePitcherLogLabelReadsCoverageNotTheNewestStart(unittest.TestCase):
+    """The label moved out of the dossier on 2026-10-03 (see
+    tests/test_stale_data_surfaces.py: a dossier section is a model and ledger
+    input). It reads coverage in its new home, `coverage_for_game`: the same
+    two cases, the same answers."""
 
-    GAME = {"date": "2026-10-03", "away_team": "NYY", "home_team": "BOS",
-            "away_probable_id": 111, "home_probable_id": 222}
+    GAME_DATE = "2026-10-03"
 
-    def starters(self, logs):
-        return dossier.build(self.GAME, {}, pitcher_logs=logs).to_dict()["sections"]["starters"]
+    def coverage(self, logs):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "historical").mkdir()
+            pitchers.write_logs(logs, root / "historical" / "pitcher_logs.jsonl")
+            sf.reset_cache_for_tests()
+            return sf.coverage_for_game(self.GAME_DATE, root=root)["pitcher_logs"]
 
     def test_a_log_refreshed_this_morning_is_not_flagged_after_an_off_day(self):
         # No games league-wide on 10-02. The log was refreshed on 10-03 and
@@ -63,16 +70,12 @@ class ThePitcherLogLabelReadsCoverageNotTheNewestStart(unittest.TestCase):
                         _marker(111, "2026-10-03T13:00:00+00:00")],
                 "222": [_appearance(222, "2026-09-30", "F"),
                         _marker(222, "2026-10-03T13:00:00+00:00")]}
-        section = self.starters(logs)
-        self.assertFalse(section["logs_stale"], section)
-        self.assertEqual(section["logs_through"], "2026-10-03")
+        self.assertEqual(self.coverage(logs), {"through": "2026-10-03", "stale": False})
 
     def test_a_log_that_really_ends_weeks_ago_is_still_flagged(self):
         logs = {"111": [_appearance(111, "2026-09-07")],
                 "222": [_appearance(222, "2026-09-06"), _marker(222, "2026-09-07T10:00:00+00:00")]}
-        section = self.starters(logs)
-        self.assertTrue(section["logs_stale"])
-        self.assertEqual(section["logs_through"], "2026-09-07")
+        self.assertEqual(self.coverage(logs), {"through": "2026-09-07", "stale": True})
 
 
 class TheManifestTravelsWithItsResults(Base):

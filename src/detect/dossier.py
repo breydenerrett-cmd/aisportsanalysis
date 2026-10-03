@@ -70,28 +70,6 @@ class Dossier:
         }
 
 
-def _newest_date(days):
-    """Newest 'YYYY-MM-DD' among `days`, ignoring blanks and non-dates."""
-    best = None
-    for day in days:
-        text = str(day or "")[:10]
-        if len(text) == 10 and text[4] == "-" and text[7] == "-" and (best is None or text > best):
-            best = text
-    return best
-
-
-def _ends_before(through, date) -> bool:
-    """True when coverage `through` ends more than a day before `date` (or is
-    unknown). Pre-game, yesterday's games are the newest a store can hold."""
-    from datetime import date as _date
-    if not through:
-        return True
-    try:
-        return (_date.fromisoformat(str(date)[:10]) - _date.fromisoformat(through)).days > 1
-    except ValueError:
-        return True
-
-
 def build(game, store, pitcher_logs=None, prices=None, weather=None,
           lineups=None, bullpen=None, splits=None, matchups=None,
           travel=None, arsenals=None, news=None, matchup_depth=None,
@@ -104,13 +82,21 @@ def build(game, store, pitcher_logs=None, prices=None, weather=None,
 
     # Team form, point-in-time and season-scoped by the same accessor the model
     # uses -- nothing here reaches across the off-season or into the future.
+    #
+    # NOTHING IN THE `teams`, `starters` OR `bullpen` SECTIONS SAYS HOW OLD THE
+    # STORE BEHIND IT IS (2026-10-03). That was tried: coverage labels lived
+    # here for a day. But a dossier section is a MODEL INPUT and a LEDGER
+    # INPUT -- `card._flatten` merges `teams` and `starters` into the card's
+    # feature dict, and the analyst packet freezes whole sections under
+    # `analyst_packet_v1` -- so a label added here changes what is frozen into
+    # a public record, and it was computed from the newest GAME rather than
+    # from what the store covers (every page said "results end ..." the day
+    # after a league-wide off day). The labels are a display fact: the game
+    # route attaches them beside the dossier (`advanced.data_coverage`,
+    # `src.pipeline.store_freshness.coverage_for_game`) and the page reads
+    # them there. This section is exactly what the feature builders return.
     if store:
-        teams = dict(team_features.matchup_features(store, away, home, date))
-        # The records above are as old as the store. Say how old, on the data
-        # itself, so a page never shows "10-7" without the date it is true to.
-        teams["results_through"] = _newest_date(r.get("date") for r in store.values())
-        teams["results_stale"] = _ends_before(teams["results_through"], date)
-        dossier.add("teams", teams)
+        dossier.add("teams", team_features.matchup_features(store, away, home, date))
     else:
         dossier.miss("teams", "no historical results store")
 
@@ -134,21 +120,9 @@ def build(game, store, pitcher_logs=None, prices=None, weather=None,
         dossier.miss("standings", "standings not built for this date")
 
     if pitcher_logs:
-        starters = dict(pitcher_features.matchup_pitcher_features(
+        dossier.add("starters", pitcher_features.matchup_pitcher_features(
             pitcher_logs, game.get("away_probable_id"),
             game.get("home_probable_id"), date))
-        # "Days rest 14" was a log that ended two weeks before the game. The
-        # section now carries the date the log covers and whether that is too
-        # old to describe this game, so the page can say so instead.
-        # COVERAGE, not the newest start: a refresh marker (`date: None`,
-        # `checked_utc`) says the log was checked then and held everything,
-        # so the day after a league-wide off day is not a stale log -- the
-        # same definition src.pipeline.store_freshness uses.
-        logs_through = _newest_date(a.get("date") or a.get("checked_utc")
-                                    for rows in pitcher_logs.values() for a in rows)
-        starters["logs_through"] = logs_through
-        starters["logs_stale"] = _ends_before(logs_through, date)
-        dossier.add("starters", starters)
     else:
         dossier.miss("starters", "no pitcher logs; run the pitcher log build")
 

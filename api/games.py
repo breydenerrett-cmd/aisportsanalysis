@@ -39,6 +39,7 @@ from src.appstate import activation, events, freshness
 # See _enrichment_inputs for why none of these ever reaches the network.
 from src.pipeline import enrichment
 from src.pipeline import read_context
+from src.pipeline import store_freshness
 from src.pipeline import (briefing, bullpen, history, lineup_store, lineups,
                           matchup_history, news, pitchers, standings, travel,
                           weather_capture)
@@ -479,6 +480,17 @@ def get_game(date: str, away: str, home: str, request: Request = None) -> dict:
         "engine": _engine_summary_for_entry(entry["dossier"], date),
         "price_verdicts": _price_verdicts_for_entry(entry["dossier"], now=now),
     }
+    # WHAT EACH STORE COVERS, for the labels the page prints ("results end Sept
+    # 23", "pitcher log ends ...", "bullpen log ends ..."). A display fact, so it
+    # rides on the served view and NOT in the dossier: a dossier section feeds
+    # the card's model and the analyst's frozen packet, and a label must never
+    # change what those read (store_freshness.coverage_for_game). Coverage, not
+    # the newest game, so the day after a league-wide off day is not "stale". A
+    # failure here costs the labels, never the page.
+    try:
+        payload["advanced"]["data_coverage"] = store_freshness.coverage_for_game(date)
+    except Exception:  # noqa: BLE001 -- additive, never a 500
+        payload["advanced"]["data_coverage"] = None
     if len(matches) > 1:
         payload["note"] = (
             f"{len(matches)} games matched {away}@{home} on {date} (a "

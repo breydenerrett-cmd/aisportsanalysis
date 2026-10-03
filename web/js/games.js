@@ -305,30 +305,42 @@ function resultsDate(iso) {
   return month ? `${month} ${Number(m[3])}` : null;
 }
 
+/** What the results store COVERS, from the block the game route attaches beside
+ * the dossier (`advanced.data_coverage.results`, api/games.py); null when the
+ * payload carries none. A display fact, deliberately not a field of the
+ * dossier's `teams` section: that section is a model and ledger input, and the
+ * coverage there was read off the newest GAME, so the day after a league-wide
+ * off day every record said "results end ..." for a store that was current. */
+function resultsCoverage(advanced) {
+  const block = advanced && typeof advanced.data_coverage === "object" ? advanced.data_coverage : null;
+  const entry = block && typeof block.results === "object" ? block.results : null;
+  return entry || null;
+}
+
 /** "N games", plus the date the record is true to when the results store ends
  * before this game -- a record is never shown without its date once that date
- * is not "yesterday". */
-function gamesSample(teams, key) {
+ * is not "yesterday". `coverage` is `resultsCoverage(advanced)`. */
+function gamesSample(teams, key, coverage) {
   const n = teams && teams[`${key}_games_played`];
   if (typeof n !== "number") return null;
-  const ends = teams.results_stale === true ? resultsDate(teams.results_through) : null;
+  const ends = coverage && coverage.stale === true ? resultsDate(coverage.through) : null;
   return ends ? `${n} games \u00b7 results end ${ends}` : `${n} games`;
 }
 
-function teamRecordParts(teams, key) {
+function teamRecordParts(teams, key, coverage) {
   if (!teams) return { text: null, sample: null };
   const w = teams[`${key}_wins`];
   const l = teams[`${key}_losses`];
   const text = (typeof w === "number" && typeof l === "number") ? `${w}-${l}` : null;
-  const sample = gamesSample(teams, key);
+  const sample = gamesSample(teams, key, coverage);
   return { text, sample };
 }
 
-function gqvTeamColumn(abbr, teams, key, probable, home) {
+function gqvTeamColumn(abbr, teams, key, probable, home, coverage) {
   const col = el("div", { class: `gqv-team${home ? " gqv-team--home" : ""}` });
   col.appendChild(gqvBadge(abbr));
   col.appendChild(el("div", { class: "gqv-team__name", text: teamName(abbr, "full") || abbr || "" }));
-  const { text, sample } = teamRecordParts(teams, key);
+  const { text, sample } = teamRecordParts(teams, key, coverage);
   const rec = el("div", { class: "gqv-team__record" });
   if (text) {
     rec.appendChild(el("span", { class: "gqv-team__record-figure", text }));
@@ -349,6 +361,7 @@ function gqvTeamColumn(abbr, teams, key, probable, home) {
 function gqvIdentity(quick, advanced) {
   const game = advanced && typeof advanced.game === "object" ? advanced.game : null;
   const teams = readSection(advanced, "teams");
+  const coverage = resultsCoverage(advanced);
   const away = quick.away_team;
   const home = quick.home_team;
   const awayProbable = game && game.away_probable ? String(game.away_probable) : null;
@@ -357,9 +370,9 @@ function gqvIdentity(quick, advanced) {
   const wrap = el("section", { class: "gqv-identity panel chamfer", "data-hook": "game-identity",
     "data-rise": "", "data-delay": "40" });
   const row = el("div", { class: "gqv-identity__row" });
-  row.appendChild(gqvTeamColumn(away, teams, "away", awayProbable, false));
+  row.appendChild(gqvTeamColumn(away, teams, "away", awayProbable, false, coverage));
   row.appendChild(el("span", { class: "gqv-vs", "aria-hidden": "true", text: "VS" }));
-  row.appendChild(gqvTeamColumn(home, teams, "home", homeProbable, true));
+  row.appendChild(gqvTeamColumn(home, teams, "home", homeProbable, true, coverage));
   wrap.appendChild(row);
 
   const meta = [];
@@ -739,8 +752,9 @@ function gqvTeams(advanced, quick) {
     return panel;
   }
   const grid = el("div", { class: "gqv-stats" });
+  const coverage = resultsCoverage(advanced);
   for (const [key, label] of [["away", quick.away_team], ["home", quick.home_team]]) {
-    const n = gamesSample(teams, key);
+    const n = gamesSample(teams, key, coverage);
     const w = teams[`${key}_wins`];
     const l = teams[`${key}_losses`];
     grid.appendChild(gqvStatCell(`${label} RECORD`,

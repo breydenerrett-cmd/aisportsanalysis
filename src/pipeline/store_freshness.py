@@ -413,3 +413,63 @@ def through_dates(root=None, now=None) -> dict:
     """{store name: its `through` date or None} -- the plain version of
     `report()` for a caller that only wants to print the dates."""
     return {name: entry["through"] for name, entry in report(root, now)["stores"].items()}
+
+
+# ---------------------------------------------------------------------------
+# What a game page says about the age of a store
+# ---------------------------------------------------------------------------
+
+# page key -> store. The three stores whose age changes what a game page means:
+# team records and rest days (results), a starter's numbers and days of rest
+# (pitcher logs), and the "no relief appearances in the last 7 days" sentence
+# (bullpen log).
+GAME_PAGE_STORES = (("results", "mlb_results"), ("pitcher_logs", "pitcher_logs"),
+                    ("bullpen_log", "bullpen_log"))
+
+
+def ends_before(through, game_date) -> bool:
+    """True when a store whose coverage ends on `through` cannot describe a
+    game on `game_date`: it stops more than one day before it (yesterday's
+    games are legitimately the newest thing a pre-game page can hold), or its
+    end is unknown. A PAST game is never called stale because the store has
+    since moved on."""
+    if not through:
+        return True
+    try:
+        return (date.fromisoformat(str(game_date)[:10])
+                - date.fromisoformat(str(through)[:10])).days > 1
+    except ValueError:
+        return True
+
+
+def coverage_for_game(game_date, root=None) -> dict:
+    """{"results" | "pitcher_logs" | "bullpen_log": {"through", "stale"}} for
+    one game's date: what each store COVERS and whether that is too old for
+    this game.
+
+    DISPLAY ONLY, ATTACHED BESIDE THE DOSSIER, NEVER INSIDE IT. `through` is
+    COVERAGE (see the module docstring), not the newest game. The first
+    version of this label lived in the dossier and read the newest game in the
+    results store, so the day after a league-wide off day (the schedule has
+    no games on the 3rd, a refresh covered it, the newest game is the 2nd)
+    every page said "results end ..." for a store that was as current as it
+    can be. And a dossier section is a model and ledger input (the card's
+    features, the analyst's frozen packet), which a display label must never
+    change. `api/games.py` calls this per `/game` request and attaches the
+    answer as `advanced.data_coverage`; each store's scan is cached against
+    (size, mtime), so a request costs a few `stat` calls.
+
+    Never fresh by default: an absent or unreadable store has `through: None`
+    and `stale: True`.
+    """
+    base = (Path(root) if root is not None else paths.data_root()) / "historical"
+    specs = {spec.name: spec for spec in _build_specs()}
+    out = {}
+    for key, name in GAME_PAGE_STORES:
+        spec = specs[name]
+        scanned = _scan_cached(spec, base / spec.rel)
+        through = None
+        if scanned.get("present") and not scanned.get("error"):
+            through = scanned.get("through")
+        out[key] = {"through": through, "stale": ends_before(through, game_date)}
+    return out

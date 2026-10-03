@@ -126,6 +126,15 @@ def _stores_patched(stack: ExitStack, logs):
         stack.enter_context(mock.patch.object(target, name, return_value=value))
 
 
+def _card_for(entries):
+    """The card exactly as `card publish` builds it from a slate's entries."""
+    opps = opportunities.build_opportunities(entries, date=DATE, now=NOW)
+    return card_mod.card_for_date(
+        entries, opps["rows"], date=DATE, now=NOW, prefer_frozen=False,
+        calibration=_Calibration(), multibook_rows=[], event_map={},
+        prop_board=lambda d: {"contracts": [], "reason": "n/a"})
+
+
 def _slate(logs):
     """The slate and the card, built the way the API and `card publish` build
     them: `enrichment_inputs`, then `build_slate`, then the card."""
@@ -139,12 +148,7 @@ def _slate(logs):
         inputs = enrichment.enrichment_inputs([game], DATE, store)
         inputs.update(price_boards_by_key=board, roster_events_by_pk={})
         entries = briefing.build_slate([game], store, **inputs)["games"]
-    opps = opportunities.build_opportunities(entries, date=DATE, now=NOW)
-    payload = card_mod.card_for_date(
-        entries, opps["rows"], date=DATE, now=NOW, prefer_frozen=False,
-        calibration=_Calibration(), multibook_rows=[], event_map={},
-        prop_board=lambda d: {"contracts": [], "reason": "n/a"})
-    return inputs, entries, payload
+    return inputs, entries, _card_for(entries)
 
 
 class TheViewIsAPureCopy(unittest.TestCase):
@@ -245,9 +249,7 @@ class EveryModelInputEqualsTheRegularSeasonStore(unittest.TestCase):
                              self.regular[1][0]["dossier"].sections[section], section)
 
     def test_the_starter_features_are_what_the_regular_season_alone_gives(self):
-        feats = dict(self.both[1][0]["dossier"].sections["starters"])
-        for label in ("logs_through", "logs_stale"):      # coverage labels, not features
-            feats.pop(label, None)
+        feats = self.both[1][0]["dossier"].sections["starters"]
         direct = pitchers.matchup_pitcher_features(_logs(with_postseason=False), 111, 222, DATE)
         self.assertEqual(feats, direct)
         # and the numbers a person would see: his last start is the 27th
