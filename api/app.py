@@ -41,6 +41,7 @@ from api.live import router as live_router
 from api.live_state import router as live_state_router
 from api.tennis import router as tennis_router
 from api.props import router as props_router
+from api.datasvc import router as datasvc_router
 from api.meta import router as meta_router
 from api.postseason import router as postseason_router
 from api.web import router as web_router
@@ -125,6 +126,10 @@ app.include_router(tennis_router, dependencies=_authed_paid)
 # each outcome is, never by the gap against its price, because selecting on
 # that gap was measured at -13.4% against a -9.1% control.
 app.include_router(props_router, dependencies=_authed_paid)
+# /data/v1/... -- the data service (api/datasvc.py). The router carries its own sign-in
+# gate (require_paid_access) and is NOT in `_authed_paid`: public demo mode must never
+# open the bulk data surface. Docs: docs/datasvc/UFC_FEATURES.md.
+app.include_router(datasvc_router)
 # /daily, /daily/{date}, /record -- Task C1's Frozen Pregame Record surface,
 # same paid-demo gate as the rest of the read-only game surface.
 app.include_router(daily_router, dependencies=_authed_paid)
