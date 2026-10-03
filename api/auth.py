@@ -13,6 +13,12 @@ module used to do inline -- see authproviders.InviteTokenProvider's
 docstring. Clerk (docs/LAUNCH_DECISIONS.md Decision 1) becomes the active
 provider later via AUTH_PROVIDER=clerk, with no change to this file.
 
+EXPIRED TESTER TOKEN: an early-access tester's seven day token that has run out
+still gets a 401, but with `error: "tester_access_expired"` and the date their
+access ended instead of the generic "unauthorized" -- see _expired_tester_detail.
+Every other failing token (unknown, revoked, malformed, a paying customer's old
+tester token) keeps the generic body.
+
 PAID SURFACE: get_current_user answers "who is this?", never "have they
 paid?" -- `require_paid_access` below is the second, separate gate the game
 surface carries, and it is a no-op for any user with no subscription record
@@ -47,6 +53,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from src.appstate import authproviders
 from src.appstate import customers
 from src.appstate import events
+from src.appstate import tester_upgrade
 from src.appstate import users as users_store
 
 ENV_ADMIN_TOKEN = "APP_ADMIN_TOKEN"
@@ -58,6 +65,36 @@ def _unauthorized(detail: str) -> HTTPException:
     """One shape for every 401 this module raises -- a caller parses one
     structure, not several ad hoc ones."""
     return HTTPException(status_code=401, detail={"error": "unauthorized", "message": detail})
+
+
+def _expired_tester_detail(authorization: Optional[str]) -> Optional[dict]:
+    """The 401 body for an EXPIRED early-access tester token, or None for every
+    other reason a token fails (unknown, revoked, malformed, not a tester,
+    already a paying customer -- see src.appstate.tester_upgrade).
+
+    Same status and same `error`-plus-`message` shape as every 401 here, with
+    `error` = "tester_access_expired" and the date the access ended, so the
+    sign-in page can tell "your early access ended" from "that token is wrong"
+    and offer the one next step that is true. It only answers for someone who
+    presents the whole token: no email is involved, so it is not a way to ask
+    whether an address is a tester.
+
+    Best-effort and never raising: a failure in this lookup must leave the
+    caller with the ordinary 401 it would have had, not a 500 on the route that
+    guards everything."""
+    try:
+        scheme, _, raw_token = (authorization or "").partition(" ")
+        if scheme.lower() != "bearer" or not raw_token:
+            return None
+        ended_at = tester_upgrade.expired_token_window(raw_token)
+    except Exception as exc:  # noqa: BLE001 -- see docstring: must never raise
+        print(f"auth: expired-tester lookup failed: {exc!r}", file=sys.stderr, flush=True)
+        return None
+    if ended_at is None:
+        return None
+    return {"error": tester_upgrade.TESTER_ACCESS_EXPIRED_ERROR,
+            "message": "early access has ended for this token",
+            "expires_at": ended_at}
 
 
 def get_current_user(authorization: Optional[str] = Header(default=None),
@@ -85,6 +122,9 @@ def get_current_user(authorization: Optional[str] = Header(default=None),
         raise HTTPException(status_code=503, detail={
             "error": "auth_provider_not_configured", "message": str(exc)})
     if user is None:
+        ended = _expired_tester_detail(authorization)
+        if ended is not None:
+            raise HTTPException(status_code=401, detail=ended)
         raise _unauthorized("missing, invalid, expired, or revoked token")
     if user.status == "suspended":
         raise _unauthorized("account suspended")

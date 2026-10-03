@@ -162,6 +162,62 @@ export function signinLinkLabel(state) {
 }
 
 /**
+ * AN EARLY-ACCESS TESTER WHOSE WEEK HAS ENDED (or who wants to pay inside it).
+ *
+ * The server tells the pages two things about such a person: the sign-in call
+ * answers 401 `tester_access_expired` with the date their access ended
+ * (api/auth.py), and POST /signup answers `tester_expired` / `tester_active`
+ * with the date their window ends when checkout is not on
+ * (api/signup.py, src/appstate/tester_upgrade.py). With checkout on, signup
+ * simply returns the checkout link, the same as for a new buyer. The words for
+ * all of it live here so the sign-in page and the signup form say the same
+ * thing and the paid offer is still named by one file.
+ *
+ * `TESTER_NOT_OPEN` is the whole next step while nothing can be bought: no
+ * button, no trial, no promise of an automatic email -- the owner answers by
+ * hand, the way he sent the access link in the first place.
+ */
+export const TESTER_NOT_OPEN = "Paid plans are not open yet. Reply to Brey if you want to keep going.";
+
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July",
+  "August", "September", "October", "November", "December"];
+
+/** "3 October 2026" (UTC, so every reader and every test sees the same day),
+ * or null for anything that is not a date. */
+export function endDateLabel(iso) {
+  const when = new Date(iso);
+  if (!iso || Number.isNaN(when.getTime())) return null;
+  return `${when.getUTCDate()} ${MONTHS[when.getUTCMonth()]} ${when.getUTCFullYear()}`;
+}
+
+/** "Your early access ended on 3 October 2026." */
+export function testerEndedLine(iso) {
+  const day = endDateLabel(iso);
+  return day ? `Your early access ended on ${day}.` : "Your early access has ended.";
+}
+
+/** "Your early access runs until 9 October 2026." (a tester still inside the window) */
+export function testerActiveLine(iso) {
+  const day = endDateLabel(iso);
+  return day ? `Your early access runs until ${day}.` : "Your early access is still open.";
+}
+
+/** The signup form's answer to `tester_expired` / `tester_active`: what is true
+ * about their access, then the one next step while nothing can be bought. */
+export function testerSignupNotice(status, iso) {
+  const line = status === "tester_active" ? testerActiveLine(iso) : testerEndedLine(iso);
+  return `${line} ${TESTER_NOT_OPEN}`;
+}
+
+/** The label of the button that starts checkout for a tester whose access
+ * ended, or null when checkout is not on (then there is no button at all, only
+ * TESTER_NOT_OPEN). It is the signup form's own heading and button text, so the
+ * button and the page it opens name the offer in the same words. */
+export function upgradeLabel(state) {
+  return state && state.on ? ctaLabel(state) : null;
+}
+
+/**
  * The line under the landing hero buttons. Off: the early-access offer, that it
  * is not on sale yet with the planned price (when there is one), and what is
  * free now. On: the trial (only if there is one), the price from /meta, and the

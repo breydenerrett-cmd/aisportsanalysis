@@ -582,8 +582,19 @@ class ATesterTokenOpensThePaidPagesUntilItExpires(unittest.TestCase):
         status, _ = self._get("/card", self._tester(6).token)
         self.assertNotIn(status, (401, 402, 403))
 
-    def test_the_card_is_refused_on_day_eight_with_the_normal_401(self):
-        status, body = self._get("/card", self._tester(8).token)
+    def test_the_card_is_refused_on_day_eight_with_a_401_that_says_the_access_ended(self):
+        # CHANGED 2026-10-03 (expired tester -> paying subscriber): still a 401,
+        # but no longer the generic body -- the page has to be able to tell "your
+        # early access ended" from "that token is wrong". A wrong token keeps
+        # the generic body (tests/test_expired_tester_paid_path.py).
+        grant = self._tester(8)
+        status, body = self._get("/card", grant.token)
+        self.assertEqual(status, 401)
+        self.assertEqual(body["detail"]["error"], "tester_access_expired")
+        self.assertEqual(body["detail"]["expires_at"], grant.expires_at)
+
+    def test_a_wrong_token_is_still_the_generic_401(self):
+        status, body = self._get("/card", "not-a-token-anyone-was-given")
         self.assertEqual(status, 401)
         self.assertEqual(body["detail"]["error"], "unauthorized")
 

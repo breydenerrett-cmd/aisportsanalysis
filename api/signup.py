@@ -49,6 +49,28 @@ alone entirely: signup is not a way to re-litigate an account a human
 process (the admin invite endpoint, or Stripe support) already put in a
 different state.
 
+THE ONE EXCEPTION: EARLY-ACCESS TESTERS (src/appstate/tester_upgrade.py)
+-------------------------------------------------------------------------
+`testers.grant_tester` leaves a person `invited`, so a tester whose week ran out
+used to hit the `invited` line above and never reach a checkout: a permanent
+dead end. A user with a row in `testers` and no current subscription
+entitlement is therefore routed through the same checkout a new buyer gets, on
+the SAME user id (no second account, nothing deleted):
+
+  * billing on  -> `{"user_id", "checkout": {"status": "redirect", ...}}`, the
+    normal answer. An `invited` tester moves to `pending_payment` and the
+    webhook makes them `active`, exactly as for a new buyer. Applies inside the
+    week too (someone who wants to pay early).
+  * billing off -> a distinct, truthful state, no checkout and no promise of an
+    email nothing sends: `{"status": "tester_expired", "expires_at"}` once the
+    window has ended, `{"status": "tester_active", "expires_at"}` while it is
+    still open. The user's status is not touched.
+  * billing switched on but unable to take a payment -> the same `error`
+    answers a new buyer gets.
+
+A comped `invited` user who is not a tester, an `active` paying customer and a
+`suspended` account keep exactly the behaviour above.
+
 NOTE FOR WHOEVER CREATES THE STRIPE PRICE (doc note only -- no Stripe
 calls happen in this module or this task): when Brey sets up the beta
 Price in the Stripe dashboard, the Product's display name should be
@@ -72,6 +94,7 @@ from src.appstate import billing
 from src.appstate import customers
 from src.appstate import events
 from src.appstate import ratelimit
+from src.appstate import tester_upgrade
 from src.appstate import users as users_store
 
 router = APIRouter()
@@ -234,8 +257,11 @@ def _attempt_checkout(user_id: int) -> Optional[str]:
 def _respond_for(user: users_store.User) -> dict:
     """The response (and any resulting status write) for an email that
     already has a user row -- see module docstring's "IDEMPOTENT PER
-    EMAIL" section for the reasoning."""
-    if user.status in ("active", "suspended", "invited"):
+    EMAIL" section for the reasoning, and its early-access-tester exception."""
+    # None for everyone who is not an early-access tester without a current
+    # subscription, which leaves the rest of this function exactly as it was.
+    tester = tester_upgrade.upgrade_state(user)
+    if tester is None and user.status in ("active", "suspended", "invited"):
         # Not this endpoint's business to move a user out of a state a
         # human process put them in -- report it plainly instead.
         return {"user_id": user.id, "status": user.status}
@@ -256,13 +282,23 @@ def _respond_for(user: users_store.User) -> dict:
                 "message": "payments are not available right now; nothing "
                            "has been charged"}
     if checkout_url:
-        if user.status != "pending_payment":
+        # A tester who is already `active` (a lapsed subscriber coming back)
+        # keeps that status: nothing about their account changed, and the
+        # webhook only ever moves a person INTO active.
+        keep_status = tester is not None and user.status == "active"
+        if user.status != "pending_payment" and not keep_status:
             users_store.set_user_status(user.id, "pending_payment")
         stored = customers.get_signup_attribution(user.id)
         events.record_event_safe(user.id, events.CHECKOUT_STARTED,
                                  *([stored] if stored else []))
         return {"user_id": user.id,
                 "checkout": {"status": "redirect", "checkout_url": checkout_url}}
+    if tester is not None:
+        # Billing is off, so there is nothing to buy. Say what is true about
+        # their access and leave their status alone: waitlisting a tester would
+        # file a person we already let in under "not yet picked".
+        return {"user_id": user.id, "status": tester["state"],
+                "expires_at": tester["expires_at"]}
     if user.status != "waitlisted":
         users_store.set_user_status(user.id, "waitlisted")
     return {"user_id": user.id, "status": "waitlisted"}

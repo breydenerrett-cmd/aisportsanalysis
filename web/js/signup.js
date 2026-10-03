@@ -3,7 +3,9 @@
  * module codes against its documented contract only:
  * `{user_id, checkout: {status, checkout_url}}` on the paid-checkout
  * branch, or `{user_id, status: "waitlisted"}` on the honest waitlist
- * branch -- verified against api/signup.py's actual responses) -- and
+ * branch, or `{user_id, status: "tester_expired" | "tester_active",
+ * expires_at}` for an early-access tester while checkout is not on -- verified
+ * against api/signup.py's actual responses) -- and
  * SIGNUP COMPLETE view, which renders a one-time invite token handed back
  * on the URL (e.g. after a checkout redirect or an admin-issued invite
  * link) with copy instructions and a link back into the app.
@@ -42,7 +44,7 @@ import { el, clear, renderError } from "./dom.js";
 import { BETA_TIER } from "./pricing.js";
 import {
   loadCheckoutState, ctaLabel, pricingNote, plannedPrice, monthlyPrice,
-  cardRequiredNotice, trialStartedNote, WAITLIST_CONFIRMATION,
+  cardRequiredNotice, trialStartedNote, WAITLIST_CONFIRMATION, testerSignupNotice,
 } from "./checkout.js";
 
 // Substance only -- no new claims. Each line restates something the
@@ -225,6 +227,16 @@ export async function renderSignup(main) {
           class: "signup-card__notice signup-card__notice--warn",
           "data-hook": "signup-error-message",
           text: String(result.message),
+        }));
+      } else if (result && (result.status === "tester_expired" || result.status === "tester_active")) {
+        // An early-access tester, checkout not on: what is true about their
+        // access (the server's own date), then the one next step. The words are
+        // checkout.js's, shared with the sign-in page. With checkout on the
+        // server answers with the checkout link above instead.
+        resultHost.appendChild(el("p", {
+          class: "signup-card__notice signup-card__notice--info",
+          "data-hook": result.status === "tester_active" ? "signup-tester-active" : "signup-tester-expired",
+          text: testerSignupNotice(result.status, result.expires_at),
         }));
       } else if (result && ["active", "suspended", "invited"].includes(result.status)) {
         resultHost.appendChild(el("p", {

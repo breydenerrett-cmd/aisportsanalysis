@@ -43,6 +43,7 @@ from typing import Callable, Dict, List, Mapping, Optional, Protocol
 
 from src.appstate import customers
 from src.appstate import events
+from src.appstate import tester_upgrade
 from src.appstate import users as users_store
 
 
@@ -1134,7 +1135,13 @@ def _activate_signup(user_id: int, stripe_session_id: Optional[str], *,
     user = users_store.get_user(user_id, db=db)
     if user is None:
         return
-    if user.status == "pending_payment":
+    # An early-access tester who pays is the same account becoming a customer:
+    # `invited` -> `active`, whichever door they came through. The signup form
+    # parks a tester at pending_payment first; the billing page's own checkout
+    # does not, and a tester inside their week can use either. Anyone else's
+    # `invited` status is left exactly as it was.
+    if user.status == "pending_payment" or (
+            user.status == "invited" and tester_upgrade.is_tester(user_id, db=db)):
         users_store.set_user_status(user_id, "active", db=db)
     if not stripe_session_id or customers.has_activation_token(stripe_session_id, db=db):
         return

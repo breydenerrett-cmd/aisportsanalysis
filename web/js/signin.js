@@ -21,12 +21,44 @@
  * Mechanics preserved verbatim from the retired chrome form: save the
  * token to localStorage via api.js, clear it, and say which happened.
  * This module never validates the token itself -- only the API can do
- * that, and it says so with a 401 (handled in dom.renderError).
+ * that, and it says so with a 401 (handled in dom.renderError). The one
+ * thing it asks the API about is the ONE 401 a person can act on: an
+ * early-access tester token that has run out (see expiredTesterState).
  */
 
-import { getToken, setToken, clearToken } from "./api.js";
+import { getToken, setToken, clearToken, apiGet, ApiError } from "./api.js";
 import { el, clear } from "./dom.js";
-import { loadCheckoutState, NOT_ON, signinNote, signinLinkLabel } from "./checkout.js";
+import {
+  loadCheckoutState, NOT_ON, signinNote, signinLinkLabel,
+  testerEndedLine, upgradeLabel, TESTER_NOT_OPEN,
+} from "./checkout.js";
+
+/** The `detail.error` api/auth.py puts on the 401 of an EXPIRED early-access
+ * tester token (src/appstate/tester_upgrade.py TESTER_ACCESS_EXPIRED_ERROR). */
+export const TESTER_ACCESS_EXPIRED = "tester_access_expired";
+
+/**
+ * Ask the API what the stored token is worth, by the one cheap authed read the
+ * billing page already uses. Resolves `{endedAt}` (an ISO date string, or null
+ * if the server sent none) ONLY when the server says the token is an expired
+ * early-access tester token; anything else -- a good token, a wrong one, a
+ * network failure -- resolves null and the page behaves exactly as it always
+ * did. This never decides anything itself: the words and the date are the
+ * server's, a wrong token is still a plain wrong token.
+ */
+export async function expiredTesterState() {
+  if (!getToken()) return null;
+  try {
+    await apiGet("/billing/status");
+    return null;
+  } catch (err) {
+    const detail = err instanceof ApiError && err.status === 401 ? err.detail : null;
+    if (detail && typeof detail === "object" && detail.error === TESTER_ACCESS_EXPIRED) {
+      return { endedAt: detail.expires_at || null };
+    }
+    return null;
+  }
+}
 
 export async function renderSignin(container, query = {}) {
   clear(container);
@@ -56,6 +88,34 @@ export async function renderSignin(container, query = {}) {
   panel.appendChild(actions);
   panel.appendChild(status);
 
+  // AN EXPIRED EARLY-ACCESS TOKEN gets its own state, not the silence a wrong
+  // token gets: what happened (the date), then the ONE next step that is true.
+  // Checkout on: a button to the signup form, whose email step starts the
+  // checkout for this same account (the expired token cannot authorise one
+  // itself). Checkout off: the plain sentence, no button, no promise of an
+  // email nothing sends. Every word that names the offer is checkout.js's.
+  const ended = el("div", { class: "signin__ended", "data-hook": "tester-ended" });
+  panel.appendChild(ended);
+  async function showExpiredTester() {
+    const found = await expiredTesterState();
+    clear(ended);
+    // Cleared while the question was in flight: nothing left to explain.
+    if (!found || !getToken()) return false;
+    const state = await loadCheckoutState();
+    ended.appendChild(el("p", { class: "signin__body", role: "status",
+      "data-hook": "tester-ended-line", text: testerEndedLine(found.endedAt) }));
+    const label = upgradeLabel(state);
+    if (label) {
+      ended.appendChild(el("a", { class: "btn btn--primary chamfer chamfer--btn",
+        href: "#/signup", "data-hook": "tester-upgrade", text: label }));
+    } else {
+      ended.appendChild(el("p", { class: "signin__body", "data-hook": "tester-not-open",
+        text: TESTER_NOT_OPEN }));
+    }
+    return true;
+  }
+  showExpiredTester();
+
   // The cautious wording first; the trial wording only when /meta says
   // checkout is on, with its own trial length (checkout.js, one decision for
   // every page).
@@ -73,14 +133,18 @@ export async function renderSignin(container, query = {}) {
     "data-hook": "signin-continue", text: "CONTINUE TO THE BOARD" });
   panel.appendChild(back);
 
-  panel.addEventListener("submit", (event) => {
+  panel.addEventListener("submit", async (event) => {
     event.preventDefault();
     setToken(input.value.trim());
     status.textContent = "Token saved. Open Today to load the board.";
+    // The board cannot load for an ended tester token: say so here, once,
+    // instead of leaving "open Today" to dead-end at the gate.
+    if (await showExpiredTester()) status.textContent = "Token saved.";
   });
   panel.querySelector("[data-hook='clear-token']").addEventListener("click", () => {
     clearToken();
     input.value = "";
+    clear(ended);
     status.textContent = "Token cleared.";
   });
 
