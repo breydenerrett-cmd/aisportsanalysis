@@ -94,7 +94,7 @@ order follows LineHound's needs.
 | Piece | State | Branch or commit | Updated |
 |---|---|---|---|
 | Plan | written | this file | 2026-10-03 |
-| UFC data layer | built and merged: schedule and results, fighters, UFC.com profiles, fight statistics, odds, leakage-free features, matchup sheet, paid `/data/v1` API. Backfill 2024 to 2026 done (156 events, 1,689 bouts, 3,182 statistics rows, 4,033 odds rows, 1,075 fighters), committed and shipped in the image; it feeds the UFC fight-night page and the UFC AI analyst. UFC.com profiles pass running | `src/datasvc/ufc/`, `python -m src.datasvc.cli ufc ...`, `fa13daad` | 2026-10-03 |
+| UFC data layer | built and merged: schedule and results, fighters, UFC.com profiles, fight statistics, odds, leakage-free features, matchup sheet, paid `/data/v1` API. Backfill 2024 to 2026 done (156 events, 1,689 bouts, 3,182 statistics rows, 4,033 odds rows, 1,075 fighters), committed and shipped in the image; it feeds the UFC fight-night page and the UFC AI analyst. UFC.com career profiles for 863 of 1,075 fighters (862 matched on name and record, 1 on an exact name where the page shows no record; 0 errors); the other 212 have no verifiable UFC.com page | `src/datasvc/ufc/`, `python -m src.datasvc.cli ufc ...`, `fa13daad` | 2026-10-03 |
 | MLB in service shape | not started | | |
 | NFL | not started | | |
 | NHL | not started | | |

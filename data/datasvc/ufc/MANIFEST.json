@@ -29,9 +29,15 @@
    "newest": "2026-10-03T19:55:38Z",
    "records": 4033,
    "sha256": "930b79337157fedc50e19c03ddb171ccf0605a75712347665aa518cef4b39fe6"
+  },
+  "ufccom_profiles.jsonl": {
+   "bytes": 1263862,
+   "newest": "2026-10-03T22:05:27Z",
+   "records": 863,
+   "sha256": "f9d7f7ec8aa1bf8e6c6f556c4a324c4546537888cfff4654f15de97323098267"
   }
  },
- "generated_utc": "2026-10-03T21:04:52Z",
+ "generated_utc": "2026-10-03T22:06:14Z",
  "last_run": {
   "bouts": 1689,
   "events": 156,
@@ -44,5 +50,16 @@
   "started_utc": "2026-10-03T18:57:57Z",
   "stopped": null
  },
- "last_run_errors": 0
+ "last_run_errors": 0,
+ "profiles_run": {
+  "errors": 0,
+  "fighters": 1075,
+  "finished_utc": "2026-10-03T22:05:00Z",
+  "kind": "ufccom_profiles",
+  "matched_on": {
+   "name": 1,
+   "name+record": 862
+  },
+  "profiles": 863
+ }
 }
