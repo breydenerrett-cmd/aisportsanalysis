@@ -43,6 +43,10 @@ import { el, renderError, formatAmerican, formatEasternTime } from "./dom.js";
 import { bookLabel } from "./labels.js";
 import { experimentalNotice, disclosure, chip } from "./layout.js";
 import { NFL_RETIRED_RULE } from "./sport.js";
+// The one copy of "what a stored entry says in words" -- the record page and
+// the landing sample use it too. The V2 ledger stores no `bet` sentence, so the
+// merged card composes one from the entry's own fields with the same function.
+import { betText, isFill, FILL_TAG } from "./entrytext.js";
 
 // Mirrors src/analysis/daily_card.py's labels. Kept as a lookup rather than
 // rendered raw so the page controls its own typography, and so a label the
@@ -109,15 +113,19 @@ function pct0(fraction) {
   return `${Math.round(fraction * 100)}%`;
 }
 
-/** The win rate an American price needs to break even, as a whole percent.
- * Arithmetic on the stated price alone (the same de-vig-free formula
- * landing-live.js's own breakevenPct uses) -- not a fabricated number, the
- * price's own implied probability. */
+/** The win rate an American price needs to break even, as a whole-percent
+ * STRING ("61%"), the same shape `pct0` returns, so a caller never has to
+ * remember which of the two carries its own sign (2026-10-03: this one
+ * returned a bare number and `pct0` a string, and the break-even line
+ * printed "61%%" whenever the pick carried its own `breakeven`). Arithmetic
+ * on the stated price alone (the same de-vig-free formula landing-live.js's
+ * own breakevenPct uses) -- not a fabricated number, the price's own implied
+ * probability. */
 function breakevenPct(price) {
   const n = Number(price);
   if (!Number.isFinite(n) || n === 0) return null;
   const p = n < 0 ? Math.abs(n) / (Math.abs(n) + 100) : 100 / (n + 100);
-  return Math.round(p * 100);
+  return `${Math.round(p * 100)}%`;
 }
 
 /** Word chips naming the real conditions behind a pick -- never a claim
@@ -210,7 +218,7 @@ function breakdownBody(pick, { ourLabel = "Our number", showAlternative = false,
   const needs = typeof pick.breakeven === "number" ? pct0(pick.breakeven) : breakevenPct(pick.price);
   if (needs !== null && pick.price !== undefined) {
     figures.appendChild(el("p", { class: "card2bd__figure",
-      text: `Needs ${needs}% to break even at ${formatAmerican(pick.price)}` }));
+      text: `Needs ${needs} to break even at ${formatAmerican(pick.price)}` }));
   }
   if (figures.childNodes.length) nodes.push(figures);
 
@@ -261,6 +269,17 @@ function breakdownBody(pick, { ourLabel = "Our number", showAlternative = false,
       text: "Open this matchup" }));
   }
   return nodes;
+}
+
+/** The id of one card's "View breakdown" panel. A V2 entry (`entry_class`)
+ * adds its position on the merged card: `game_pk` alone is shared by every
+ * prop on one game (and by a doubleheader's two picks), and two panels with
+ * one id leave `aria-controls` pointing at the wrong one. Every other shape
+ * keeps the id it has always had. */
+function breakdownId(prefix, pick, base) {
+  return pick.entry_class && pick.position
+    ? `${prefix}-${base}-${pick.position}`
+    : `${prefix}-${base}`;
 }
 
 function sectionHead(label, meta) {
@@ -341,7 +360,8 @@ export function compactPickCard(pick, opts = {}) {
 
   card.appendChild(disclosure({
     summary: "View breakdown",
-    id: `card-breakdown-${pick.game_pk || pick.event_id || pick.rank || Math.random().toString(36).slice(2)}`,
+    id: breakdownId("card-breakdown", pick,
+      pick.game_pk || pick.event_id || pick.rank || Math.random().toString(36).slice(2)),
     body: breakdownBody(pick, { showAlternative: true, payload, sport, hasModel }),
   }));
 
@@ -484,7 +504,8 @@ function propPickCard(pick, total, servingOlderDate) {
 
   card.appendChild(disclosure({
     summary: "View breakdown",
-    id: `card-prop-breakdown-${pick.game_pk || pick.player || pick.rank || Math.random().toString(36).slice(2)}`,
+    id: breakdownId("card-prop-breakdown", pick,
+      pick.game_pk || pick.player || pick.rank || Math.random().toString(36).slice(2)),
     body: [...breakdownBody(pick, { ourLabel: "Our number" }), boardLink],
   }));
   return card;
@@ -561,7 +582,8 @@ function totalPickCard(pick, total) {
   // no Bet Check support, only the game route.
   card.appendChild(disclosure({
     summary: "View breakdown",
-    id: `card-total-breakdown-${pick.game_pk || pick.rank || Math.random().toString(36).slice(2)}`,
+    id: breakdownId("card-total-breakdown", pick,
+      pick.game_pk || pick.rank || Math.random().toString(36).slice(2)),
     body: breakdownBody(pick, { ourLabel: "Our number" }),
   }));
   return card;
@@ -576,14 +598,25 @@ function totalPickCard(pick, total) {
  * `payload.picks` / `payload.total_picks` / `payload.prop_picks` -- this
  * file renders that order, it never re-sorts or re-selects anything.
  *
- * FOUND DEFENSIVELY, NOT TRUSTED BLINDLY. The backend track's own notes on
- * the exact shape of `item.key` were not available to this track (see this
- * file's git history / the integrator's brief) -- `resolveAllBetsItem`
- * treats `item.key` as a hint (an index into the pick's own array) and
- * only trusts it once the pick found there actually carries the same
- * `bet` sentence the merged entry named; otherwise it falls back to a
- * straight scan of that array for a matching `bet` string, which is the
- * one field every pick kind serializes identically.
+ * TWO SHAPES OF `all_bets` ENTRY, AND AN ENTRY IS MATCHED BY IDENTITY.
+ *
+ *   V1 (daily_card.merge_all_bets): a REFERENCE, `{kind, index, bet, ...}`,
+ *   where `index` is the pick's position in its own kind's array. It is
+ *   resolved through that array, and `bet` only corroborates it.
+ *
+ *   V2 (best_bets_card.select, frozen in the ledger): the FULL candidate --
+ *   `player`, `market`, `side`, `line`, `price`, `entry_class` ... -- with
+ *   no `index`, and `bet: null` on every entry because the V2 ledger has never
+ *   stored a sentence. It IS its pick; there is nothing to look up. It is
+ *   also never in `picks` / `prop_picks` alone: fills live in `fills`, so a
+ *   lookup by sentence could not find them even if there were one.
+ *
+ * THE DEFECT THIS REPLACES, 2026-10-03: the lookup was `list.find(p =>
+ * p.bet === item.bet)`. With `bet` null on both sides, `null === null` matched
+ * the FIRST pick in the array for every entry: ten different props drew as the
+ * same player, and on a night of fills only (no pick to match) every entry
+ * resolved to nothing and the page printed NO CARD TODAY. Two nulls are not an
+ * identity; an entry with no sentence is matched by `index` or not at all.
  * -------------------------------------------------------------------- */
 
 /** Which of the three type-specific arrays a merged entry's full pick
@@ -596,16 +629,58 @@ function allBetsSourceArray(kind, payload) {
   return null;
 }
 
+/** True for a V2 entry: the full pick itself, not a reference to one. V1's
+ * references carry `index` and never a `price`; a V2 entry carries
+ * `entry_class` ("pick" or "fill") and its own price. */
+function isFullEntry(item) {
+  if (!item || typeof item !== "object") return false;
+  if (typeof item.entry_class === "string") return true;
+  return !Number.isInteger(item.index) && item.price !== undefined && item.price !== null;
+}
+
+/** A pick's own sentence, or null when it has none -- the one place "has a
+ * sentence" is decided, so no comparison here can ever be null === null. */
+function sentenceOf(pick) {
+  return typeof pick.bet === "string" && pick.bet !== "" ? pick.bet : null;
+}
+
 function resolveAllBetsItem(item, payload) {
+  // A V2 entry is its own pick: matched by identity, never looked up.
+  if (isFullEntry(item)) return item;
   const list = allBetsSourceArray(item.kind, payload);
   if (!Array.isArray(list)) return null;
   // `item.index`, not `item.key` (2026-09-14, integrator): the backend
   // (daily_card.merge_all_bets) emits `index`; `key` never existed, so this
-  // hint never hit and every entry went through the scan below.
-  if (Number.isInteger(item.index) && list[item.index] && list[item.index].bet === item.bet) {
-    return list[item.index];
-  }
-  return list.find((p) => p && p.bet === item.bet) || null;
+  // hint never hit and every entry went through the scan below. The pick at
+  // `index` is trusted once it carries the sentence the entry named; two
+  // missing sentences at one `index` are the same position, which is identity.
+  const at = Number.isInteger(item.index) ? list[item.index] : null;
+  if (at && sentenceOf(at) === sentenceOf(item)) return at;
+  // No sentence, no scan. `find` by an empty sentence is the defect above.
+  const sentence = sentenceOf(item);
+  if (sentence === null) return null;
+  return list.find((p) => p && p.bet === sentence) || null;
+}
+
+/** "Take Ty France over 0.5 hits at -155" -- the bet sentence of a V2 entry,
+ * composed from its own stored fields with the one shared wording function
+ * (entrytext.betText: "Ty France over 0.5 hits", "Yankees to win") plus the
+ * price. The server cannot supply it: the V2 ledger stores no `bet`, and the
+ * candidate's `bet_sentence` that best_bets_card.bet_sentence reads is not a
+ * frozen field -- nor would it do, it names the raw market key and leaves out
+ * over or under.
+ *
+ * "Take" follows best_bets_card.bet_sentence exactly: only when the entry's
+ * own `take` is true, and a fill never has it. A fill reads as the bet it is
+ * with no verb in front, and wears the fill label (`fillTagEl`). */
+function v2BetSentence(entry) {
+  const named = betText(entry);
+  if (!named) return "";
+  const price = formatAmerican(entry.price);
+  const sentence = price === null ? named : `${named} at ${price}`;
+  const take = entry.take === undefined || entry.take === null
+    ? !isFill(entry) : entry.take === true;
+  return take ? `Take ${sentence}` : sentence;
 }
 
 /** Every `payload.all_bets` entry that actually resolves to a full pick,
@@ -631,6 +706,21 @@ function resolveAllBets(payload, allBets) {
   return resolved;
 }
 
+/** "8 picks · 2 fills" for a V2 card, or null for anything else (V1's
+ * references carry no `entry_class`, so a V1 card is never counted here and
+ * keeps its own headline). Counted off the resolved list -- the entries the
+ * page actually draws -- by each entry's own `entry_class`, so the headline
+ * and the cards under it cannot disagree. No fill clause when there is no
+ * fill. Never "0 picks" over a list that holds picks. */
+function v2CardCount(resolved) {
+  const entries = resolved.filter((r) => isFullEntry(r.item)).map((r) => r.full);
+  if (!entries.length) return null;
+  const fills = entries.filter(isFill).length;
+  const picks = entries.length - fills;
+  const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+  return fills ? `${plural(picks, "pick")} · ${plural(fills, "fill")}` : plural(picks, "pick");
+}
+
 /** The small kind tag every merged card carries, beside its rank and
  * label -- MONEYLINE / RUN LINE / TOTAL / PLAYER PROP. A "game" entry can
  * be either of the first two (`pick.market === "run_line"` names the
@@ -646,6 +736,22 @@ function kindTagText(kind, pick) {
 
 function kindTagEl(text) {
   return el("span", { class: "card2__kind", "data-hook": "card-kind-tag", text });
+}
+
+/** The label a fill wears, beside its kind tag. Same words the record page
+ * and the landing sample use (entrytext.FILL_TAG): a fill failed a check and
+ * is not a pick, and the owner's rule is that it is always labelled as one. */
+function fillTagEl() {
+  return el("span", { class: "card2__kind", "data-hook": "card-fill-tag", text: FILL_TAG });
+}
+
+/** One plain sentence under a fill's bet line saying what a fill is. No
+ * claim about the bet itself: only that it did not pass every check, and
+ * how it is graded. */
+function fillNoteEl() {
+  return el("p", { class: "card2lede card2lede--mute", "data-hook": "card-fill-note",
+    text: "It did not pass every check, so it is not a pick. It is listed to "
+        + "round out the card, and it is graded apart from the picks." });
 }
 
 /** A prop whose lineup has not posted yet -- `expected_pa_source` is still
@@ -752,6 +858,10 @@ function mergedBetCard(item, full, allBetsTotal, index, servingOlderDate) {
   // read "1, 3, 4 ... 8 OF 7". The resolved list keeps the server's order.
   const position = index + 1;
   const positioned = Object.assign({}, full, { position });
+  // A V2 entry stores no sentence; say what the bet is from its own fields.
+  // A sentence the server did send is used as sent (V1 references, and any
+  // V2 row that one day stores one).
+  if (isFullEntry(item) && !sentenceOf(positioned)) positioned.bet = v2BetSentence(full);
   let card;
   if (item.kind === "prop") {
     card = propPickCard(positioned, allBetsTotal, servingOlderDate);
@@ -762,6 +872,18 @@ function mergedBetCard(item, full, allBetsTotal, index, servingOlderDate) {
   }
   const top = card.querySelector(".card2__top");
   if (top) top.appendChild(kindTagEl(kindTagText(item.kind, full)));
+  if (isFullEntry(item)) {
+    card.setAttribute("data-entry-class", isFill(full) ? "fill" : "pick");
+    if (isFill(full)) {
+      // LABELLED AS A FILL, never presented as a pick (owner: "always 3 with
+      // labelled fills"): a tag beside the kind tag, and a line under the
+      // bet saying what a fill is.
+      if (top) top.appendChild(fillTagEl());
+      const betLine = card.querySelector(".card2__bet");
+      if (betLine) card.insertBefore(fillNoteEl(), betLine.nextSibling);
+      else card.appendChild(fillNoteEl());
+    }
+  }
   if (item.kind === "prop" && full.lineup_posted === false) {
     // ABOVE THE BET SENTENCE, not a trailing chip in `.card2__top` -- see
     // `lineupNotPostedWarning`'s own comment for why.
@@ -1153,9 +1275,23 @@ export async function renderCard(host, options = {}) {
   // reads `payload.all_bets` too, from here down.
   const picks = payload.picks || [];
 
-  const meta = payload.games_on_slate
-    ? `${picks.length} of ${payload.games_on_slate} games`
-    : `${picks.length} picks`;
+  // THE MERGED LIST, RESOLVED ONCE, BEFORE ANYTHING ON THE PAGE IS COUNTED --
+  // the headline just below reads it for a V2 card, and the merged grid
+  // further down renders exactly this list. See `resolveAllBets`'s own
+  // comment for the gap-numbering defect resolving up front fixed.
+  const allBets = Array.isArray(payload.all_bets) ? payload.all_bets : [];
+  const resolvedBets = allBets.length ? resolveAllBets(payload, allBets) : [];
+
+  // THE HEADLINE COUNTS WHAT IS UNDER IT. `picks` is the GAME picks only;
+  // a V2 card made of player props has `picks: []` and printed "0 picks"
+  // above eight picks and two fills (2026-10-03). A V2 card says its own
+  // number of picks and of fills, counted off the entries it is about to
+  // draw by their own `entry_class` (the same two numbers the payload carries
+  // as `n_picks` and `n_fills`). A V1 card keeps "N of M games" exactly.
+  const meta = v2CardCount(resolvedBets)
+    || (payload.games_on_slate
+      ? `${picks.length} of ${payload.games_on_slate} games`
+      : `${picks.length} picks`);
   // Named for what it is. A card from an earlier slate must never sit under
   // a heading that says TONIGHT'S.
   wrap.appendChild(sectionHead(
@@ -1262,11 +1398,8 @@ export async function renderCard(host, options = {}) {
   // has not shipped it on this deploy yet -- the `else` branch renders
   // exactly what this file has always rendered. Do not fold the two
   // branches together; the `else` branch is this file's whole
-  // compatibility story for those older rows.
-  const allBets = Array.isArray(payload.all_bets) ? payload.all_bets : [];
-  // RESOLVED ONCE, before the count or a single card is rendered -- see
-  // `resolveAllBets`'s own comment for the gap-numbering defect this fixes.
-  const resolvedBets = allBets.length ? resolveAllBets(payload, allBets) : [];
+  // compatibility story for those older rows. (`allBets` and `resolvedBets`
+  // are read once above the headline, which counts from the same list.)
   if (resolvedBets.length) {
     const kindsPresent = new Set(resolvedBets.map((r) => r.item.kind));
     wrap.appendChild(allBetsSectionHead(resolvedBets.length, kindsPresent));
