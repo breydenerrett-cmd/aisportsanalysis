@@ -2996,3 +2996,7 @@
 {"fetched_utc": "2026-10-03T13:49:06.390022+00:00", "game_date": "2026-10-03", "poll": true}
 {"fetched_utc": "2026-10-03T14:02:16.414862+00:00", "game_date": "2026-10-03", "poll": true}
 {"fetched_utc": "2026-10-03T14:02:17.632772+00:00", "game_date": "2026-10-03", "poll": true}
+{"fetched_utc": "2026-10-03T14:15:05.840213+00:00", "game_date": "2026-10-03", "poll": true}
+{"category": "other", "date": "2026-10-03", "first_seen_utc": "2026-10-03T14:15:05.840213+00:00", "player": "Slade Cecconi", "player_id": 677944, "team": "CLE", "transaction_id": 944959}
+{"category": "other", "date": "2026-10-03", "first_seen_utc": "2026-10-03T14:15:05.840213+00:00", "player": "Huascar Brazob\u00e1n", "player_id": 623211, "team": "CWS", "transaction_id": 944960}
+{"category": "il_activation", "date": "2026-10-03", "first_seen_utc": "2026-10-03T14:15:05.840213+00:00", "player": "Tyler Davis", "player_id": 699823, "team": "CWS", "transaction_id": 944961}
