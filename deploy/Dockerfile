@@ -76,6 +76,12 @@ COPY data/paper_accounts/ data/paper_accounts/
 # GET /meta. It was never in the image, so staging told every visitor
 # "0 pre-registered research ideas". ~100 KB, git-tracked, read-only here.
 COPY data/research/alpha_registry.jsonl data/research/alpha_registry.jsonl
+# EARLIER POSTSEASONS, DISPLAY ONLY (2026-10-03): the game page's Situation
+# block reads 2015-2025 postseason games and records from this store
+# (src/situation/postseason_history.py) for the long-memory facts, such as a
+# club's October record. ~440 KB, git-tracked, read-only here, and never a
+# training population. Without it the block silently falls back to 2023 on.
+COPY data/research/postseason_history/ data/research/postseason_history/
 # F-2 (2026-09-07): team records, starter form, bullpen workload, posted
 # lineups and handedness for the matchup page. .dockerignore admits exactly
 # five files here; the deploy workflow restores them from the daily-loop

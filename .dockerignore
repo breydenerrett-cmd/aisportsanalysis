@@ -84,6 +84,9 @@ data/historical/*
 !data/research/
 data/research/*
 !data/research/alpha_registry.jsonl
+# Earlier postseasons (2015-2025), display only: the game page's Situation
+# block reads them (src/situation/postseason_history.py).
+!data/research/postseason_history/
 # The UFC data layer (2026-10-03): the normalised files the fight-night page and
 # the data API read, and only them. The raw fetch cache (data/datasvc/raw/,
 # ~90 MB, git-ignored) and any future sport's directory stay out until a served
