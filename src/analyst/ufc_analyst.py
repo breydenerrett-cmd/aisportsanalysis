@@ -49,8 +49,11 @@ from typing import Callable, Mapping, Optional, Sequence
 
 from src.analyst import analyst as analyst_mod
 from src.analyst import critic
+from src.analyst import situation_prompt
 
 UFC_PROMPT_VERSION = "analyst_ufc_prompt_v1"
+# Arm B of the side-by-side test: the same prompt with "THE SITUATION" before its closing line.
+UFC_SITUATION_PROMPT_VERSION = "analyst_ufc_prompt_v1_situation"
 
 UFC_SYSTEM_PROMPT = """\
 You are a mixed martial arts betting analyst. You write the analysis of one UFC bout and make a call on every market the packet prices. You are an AI model and the reader knows it. Your work is published before the bout, graded afterward, and shown next to its record whatever that record turns out to be. Write like a sharp human analyst talking to a smart friend: plain words, a point of view, no hype.
@@ -89,6 +92,8 @@ THE SUMMARY
 
 Reply with one JSON object that matches the schema and nothing else."""
 
+UFC_SITUATION_SYSTEM_PROMPT = situation_prompt.with_section(UFC_SYSTEM_PROMPT, situation_prompt.UFC_SITUATION_SECTION)
+
 # Capitalised vocabulary a UFC claim may use that is not a person. Compared after
 # the critic's own normalisation, so punctuation does not matter. The "women"
 # spellings are there because the critic strips a possessive ("Women's" becomes
@@ -109,25 +114,30 @@ def known_names(packet: Mapping) -> critic.KnownNames:
     return critic.KnownNames.build(packet, extra_phrases=UFC_PHRASES, clubs=False)
 
 
-def prompt_hash() -> str:
-    """sha256 of the UFC prompt and the schema: what a published row was made with."""
-    return hashlib.sha256((UFC_SYSTEM_PROMPT + "\n" + json.dumps(
+def prompt_hash(system_prompt: Optional[str] = None) -> str:
+    """sha256 of the UFC prompt and the schema: what a published row was made with. Arm B passes
+    its own prompt (`UFC_SITUATION_SYSTEM_PROMPT`); the default is arm A's."""
+    return hashlib.sha256(((system_prompt or UFC_SYSTEM_PROMPT) + "\n" + json.dumps(
         analyst_mod.RESPONSE_SCHEMA, sort_keys=True)).encode("utf-8")).hexdigest()
 
 
 def build_request(packet: Mapping, cfg: Mapping, *,
-                  repair: Optional[Sequence[str]] = None) -> dict:
-    """The exact JSON body that would be POSTed for this bout. No key, no network."""
-    return analyst_mod.build_request(packet, cfg, repair=repair, system_prompt=UFC_SYSTEM_PROMPT)
+                  repair: Optional[Sequence[str]] = None,
+                  system_prompt: Optional[str] = None) -> dict:
+    """The exact JSON body that would be POSTed for this bout. No key, no network.
+    `system_prompt` is arm B's (the situation section added); the default is arm A's."""
+    return analyst_mod.build_request(packet, cfg, repair=repair,
+                                     system_prompt=system_prompt or UFC_SYSTEM_PROMPT)
 
 
 def analyze(packet: Mapping, cfg: Mapping, *, api_key: Optional[str],
             http_post: analyst_mod.HttpPost = analyst_mod.urllib_post,
             meter: Optional[analyst_mod.SpendMeter] = None,
-            sleep: Callable[[float], None] = time.sleep) -> analyst_mod.AnalysisResult:
-    """`analyst.analyze` with the UFC prompt. Same errors, same spend cap."""
+            sleep: Callable[[float], None] = time.sleep,
+            system_prompt: Optional[str] = None) -> analyst_mod.AnalysisResult:
+    """`analyst.analyze` with the UFC prompt (or arm B's). Same errors, same spend cap."""
     return analyst_mod.analyze(packet, cfg, api_key=api_key, http_post=http_post, meter=meter,
-                               sleep=sleep, system_prompt=UFC_SYSTEM_PROMPT)
+                               sleep=sleep, system_prompt=system_prompt or UFC_SYSTEM_PROMPT)
 
 
 def event_numbers(packet: Mapping) -> list:

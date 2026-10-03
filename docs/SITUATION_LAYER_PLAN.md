@@ -62,6 +62,7 @@ no factor is trusted until it has been measured.
 | Piece | State | Updated |
 |---|---|---|
 | Plan | written | 2026-10-03 |
-| MLB and UFC situation records | building | 2026-10-03 |
-| Side-by-side analysts (A without, B with) | building | 2026-10-03 |
-| Rest vs rhythm test, MLB Division Series | building | 2026-10-03 |
+| MLB and UFC situation records | built and tested, shown as a short block in the MLB and UFC reads (`docs/SITUATION_LAYER.md`) | 2026-10-03 |
+| Side-by-side analysts (A without, B with) | built and tested, **off** (`situation_arm` in `config/analyst.json`); no graded calls yet; about twice the analyst's cost when on | 2026-10-03 |
+| Earlier postseasons, display-only store | 2015 to 2025 ingested from MLB's free feed (440 games); never a training population | 2026-10-03 |
+| Rest vs rhythm test, MLB Division Series | run on 28 series, 2015 to 2025: a null (`docs/research/SITUATION_REST_VS_RHYTHM_DIVISION_SERIES.md`) | 2026-10-03 |

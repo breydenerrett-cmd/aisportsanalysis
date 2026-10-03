@@ -193,7 +193,13 @@ class TheShape(FightNightCase):
         main = self.bout(self.ok(), "9101")
         sheet = matchup.matchup(self.store, "101", "102", now=NOW)
         self.assertEqual(main["sheet"], json.loads(json.dumps(sheet)))
-        self.assertEqual(main["read"], json.loads(json.dumps(ufc_read.build_read(sheet))))
+        # The read is built from the sheet, plus the bout's situation block when the route has one
+        # (src/situation/): without it the read is exactly the read of the sheet alone.
+        served = dict(main["read"])
+        block = served.pop("situation")
+        self.assertEqual(served, json.loads(json.dumps(ufc_read.build_read(sheet))))
+        self.assertEqual(block, json.loads(json.dumps(
+            ufc_read.build_read(sheet, situation=main["situation"])["situation"])))
         self.assertEqual(main["sheet"]["as_of_source"], "scheduled_bout_start")
         self.assertEqual(main["read"]["a"]["name"], "Alex Archer")
 
@@ -201,7 +207,10 @@ class TheShape(FightNightCase):
         from tests.test_ufc_read import evidence_entries
         for b in self.ok()["bouts"]:
             for entry in evidence_entries(b["read"]):
-                found, value = ufc_read.resolve_path(b["sheet"], entry["path"])
+                # the situation block's evidence points into the bout's own `situation` record;
+                # everything else points into the sheet
+                root = b if entry["path"].startswith("situation.") else b["sheet"]
+                found, value = ufc_read.resolve_path(root, entry["path"])
                 self.assertTrue(found, (b["bout_id"], entry))
                 if not entry.get("derived"):
                     self.assertEqual(value, entry["value"])

@@ -144,6 +144,40 @@ def price_rows(date: str, games: Iterable[Mapping], *,
     return by_pk
 
 
+def mlb_situation_provider(*, results: Optional[Iterable[Mapping]] = None,
+                           covered_dates: Optional[Iterable[str]] = None,
+                           history_loader: Optional[Callable] = None) -> Callable:
+    """A callable `item -> situation record` for arm B, reading the stores once on first use.
+
+    It reads what the game page reads (the results store) plus two things only the situation layer
+    needs: the ingest manifest, to know which days between the newest stored game and this one are
+    confirmed fetched, and the display-only postseason history (earlier Octobers), which extends the
+    long-memory facts and nothing else. A missing history is an empty one. `results`,
+    `covered_dates` and `history_loader` are the test seams; production passes none.
+    """
+    from src.situation import mlb as situation_mlb
+    from src.situation import postseason_history
+
+    state: dict = {}
+
+    def provider(item: Mapping) -> dict:
+        if not state:
+            rows = list(results) if results is not None else list(history.read_results().values())
+            if covered_dates is not None:
+                covered = set(covered_dates)
+            else:
+                manifest = history.read_manifest()
+                covered = {d for d, entry in manifest.items() if not (entry or {}).get("pending")}
+            held = (history_loader or postseason_history.load)()
+            state.update(rows=rows, covered=covered, extra=list(held.games), records=dict(held.season_records))
+        game = ((item.get("payload") or {}).get("advanced") or {}).get("game") or {}
+        return situation_mlb.situation_for_game(
+            game, state["rows"], extra_games=state["extra"], season_records=state["records"],
+            covered_dates=state["covered"])
+
+    return provider
+
+
 def prop_board_for(date: str, batter_rows_by_pk: Mapping) -> dict:
     """{game_pk: [contract, ...]} from the repo's own prop board, built from
     only that game's prop rows. Failure is a missing board, never an error:

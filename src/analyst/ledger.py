@@ -103,8 +103,10 @@ def _iso(moment: datetime) -> str:
     return moment.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def prompt_hash() -> str:
-    return hashlib.sha256((analyst_mod.SYSTEM_PROMPT + "\n" + json.dumps(
+def prompt_hash(system_prompt: Optional[str] = None) -> str:
+    """sha256 of the prompt and the schema a row was made with. Arm B passes its own prompt
+    (`analyst.SITUATION_SYSTEM_PROMPT`); the default is arm A's."""
+    return hashlib.sha256(((system_prompt or analyst_mod.SYSTEM_PROMPT) + "\n" + json.dumps(
         analyst_mod.RESPONSE_SCHEMA, sort_keys=True)).encode("utf-8")).hexdigest()
 
 
@@ -217,7 +219,8 @@ def publish_refusal(packet: Mapping, now: datetime, lock_lead_minutes: float = 0
 def publish(packet: Mapping, verified, *, now: datetime, model: str,
             run: Optional[Mapping] = None, path: Optional[str] = None,
             packet_dir: Optional[str] = None, lock_lead_minutes: float = 0.0,
-            refresh: bool = False) -> tuple:
+            refresh: bool = False, prompt_version: Optional[str] = None,
+            system_prompt: Optional[str] = None, extra: Optional[Mapping] = None) -> tuple:
     """Freeze one game's analysis. Returns `(row, created)`.
 
     Refuses (GameStarted) unless the game is provably still ahead of us: first
@@ -226,6 +229,10 @@ def publish(packet: Mapping, verified, *, now: datetime, model: str,
     (`created` False) unless `refresh`, which writes a new version while the
     game is ungraded. Nothing but the ledger row and the packet file is
     written.
+
+    `prompt_version`, `system_prompt` and `extra` are arm B's (the situation arm writes its own
+    file, with its own prompt identity and an `arm` marker the comparison checks). Left alone
+    they are arm A's, and the row is exactly the row it has always been.
     """
     game = packet["game"]
     gid = game["game_id"]
@@ -255,7 +262,8 @@ def publish(packet: Mapping, verified, *, now: datetime, model: str,
         "supersedes": existing[-1]["row_hash"] if existing else None,
         "packet_hash": digest, "packet_path": packet_path,
         "packet_version": packet.get("packet_version"),
-        "prompt_version": analyst_mod.PROMPT_VERSION, "prompt_hash": prompt_hash(),
+        "prompt_version": prompt_version or analyst_mod.PROMPT_VERSION,
+        "prompt_hash": prompt_hash(system_prompt),
         "model": model,
         "summary": verified.summary, "summary_status": verified.summary_status,
         "summary_problems": list(verified.summary_problems),
@@ -265,6 +273,8 @@ def publish(packet: Mapping, verified, *, now: datetime, model: str,
         "model_critic": verified.model_critic,
         "run": dict(run or {}),
     }
+    if extra:
+        payload.update(extra)
     return _ledger(path).append(payload), True
 
 

@@ -58,6 +58,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from api import datasvc
 from api.auth import require_paid_access
 from src.analysis import ufc_read
+from src.situation import ufc as situation_ufc
 from src.datasvc.ufc import features as features_mod
 from src.datasvc.ufc import matchup as matchup_mod
 
@@ -199,8 +200,18 @@ def _bout_payload(store, bout: dict, now: datetime) -> dict:
         _log(f"sheet for bout {bout.get('bout_id')}", exc)
         out["unavailable"] = _cap(_reason_for(exc)) + "."
         return out
+    # The situation around the bout (src/situation/ufc.py), from the sheet's own features so nothing is
+    # computed twice. Display only and fail soft: a bout whose situation cannot be built is shown
+    # without the block, never without its read.
     try:
-        out["read"] = ufc_read.build_read(out["sheet"])
+        out["situation"] = situation_ufc.situation_for_bout(store, bout["bout_id"], sheet=out["sheet"])
+    except datasvc.DataUnavailable:
+        raise
+    except Exception as exc:  # noqa: BLE001
+        _log(f"situation for bout {bout.get('bout_id')}", exc)
+        out["situation"] = None
+    try:
+        out["read"] = ufc_read.build_read(out["sheet"], situation=out.get("situation"))
     except Exception as exc:  # noqa: BLE001
         _log(f"read for bout {bout.get('bout_id')}", exc)
         out["unavailable"] = "The written read for this bout could not be built, so only the facts are shown."

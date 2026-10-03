@@ -45,9 +45,14 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, Mapping, Optional, Sequence
 
 from src.analyst import config as config_mod
+from src.analyst import situation_prompt
 from src.ledger.chain import canonical_bytes
 
 PROMPT_VERSION = "analyst_prompt_v1"
+# Arm B of the side-by-side test (docs/SITUATION_LAYER.md): the same prompt with "THE SITUATION"
+# added before its closing line. Used only when the situation arm is switched on; the prompt
+# above is untouched and tests pin that it is byte for byte what it was.
+SITUATION_PROMPT_VERSION = "analyst_prompt_v1_situation"
 
 VERDICTS = ("TAKE", "PASS", "TAKE_OTHER_SIDE")
 CONFIDENCES = ("low", "medium", "high")
@@ -90,6 +95,8 @@ THE SUMMARY
 16. `summary` is the argument in 120 to 200 words of plain prose, one or two paragraphs, no lists, no markdown. Say where you lean and why, where you pass, what the market probably has right, and which missing inputs matter. A voice like: "Even though TB is -127, I like it: the starter has the better numbers over his last starts and the price is close to a coin flip." Only with facts that are actually in the packet.
 
 Reply with one JSON object that matches the schema and nothing else."""
+
+SITUATION_SYSTEM_PROMPT = situation_prompt.with_section(SYSTEM_PROMPT, situation_prompt.MLB_SITUATION_SECTION)
 
 _STR = {"type": "string"}
 _NUM_OR_NULL = {"anyOf": [{"type": "number"}, {"type": "null"}]}

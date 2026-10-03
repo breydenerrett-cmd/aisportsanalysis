@@ -83,8 +83,11 @@ from typing import Any, Mapping, Optional
 from src.analyst import packet as base
 from src.datasvc.ufc import features as feat
 from src.datasvc.ufc import matchup as mu
+from src.situation import record as situation_record
 
 PACKET_VERSION = "analyst_ufc_packet_v1"
+# Arm B of the side-by-side test: the same packet with a `situation` section.
+PACKET_VERSION_SITUATION = "analyst_ufc_packet_v1_situation"
 
 # The data layer's own minimum for a rate to mean anything (matchup.MIN_FIGHTS_TIMED).
 # A fighter with fewer fights in the store than this is called thin in `missing`.
@@ -479,9 +482,14 @@ def _limits(store_start: Optional[str]) -> list:
     ]
 
 
-def build_packet(store, bout_id: str, *, built_at: str, cfg: Optional[Mapping] = None) -> dict:
+def build_packet(store, bout_id: str, *, built_at: str, cfg: Optional[Mapping] = None,
+                 situation: Optional[Mapping] = None) -> dict:
     """One bout's frozen fact packet. Deterministic in the store's contents and
     its arguments: no clock, no network, no write.
+
+    `situation` (a `src.situation.ufc.situation_for_bout` record) adds `sections.situation` and
+    changes `packet_version`: arm B of the side-by-side test. Left None, the packet is exactly the
+    one arm A has always had.
 
     `store` is a `src.datasvc.ufc.store.UfcStore`. `built_at` is the ISO UTC
     moment the packet is built (the caller's clock). Raises `UfcPacketError` for a
@@ -597,12 +605,14 @@ def build_packet(store, bout_id: str, *, built_at: str, cfg: Optional[Mapping] =
         missing += gaps
         if values:
             sections[f"career_{side}"] = {"as_of": stamp, "as_of_basis": CAREER_BASIS, "values": values}
+    if situation is not None:
+        sections["situation"] = situation_record.packet_section(situation)
     sections = _scrub(sections)
 
     missing = sorted({(m["item"], m["kind"], m["reason"]): m for m in missing}.values(),
                      key=lambda m: (m["item"], m["kind"], m["reason"]))
     return {
-        "packet_version": PACKET_VERSION,
+        "packet_version": PACKET_VERSION if situation is None else PACKET_VERSION_SITUATION,
         "built_at": _iso(cutoff),
         "bout": bout_block,
         "figure_units": _units(fa, fb),
