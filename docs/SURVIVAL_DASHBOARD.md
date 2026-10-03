@@ -1,6 +1,6 @@
 # LineHound survival dashboard
 
-Generated 2026-10-03 15:48Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-10-03 16:53Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
@@ -26,7 +26,7 @@ Read from `docs/sales/outreach_queue.csv`, people only. A forum thread is a publ
 | SIGNUPS | 0 | People with a signup logged. |
 | ACTIVE TESTERS | 0 | People whose tester access was granted less than 7 days ago. |
 | ACTIVATED USERS | 0 (from the outreach log) | People with an `activated` entry in the outreach log. |
-| RETURNING USERS | 0 (not measured yet) | Activated testers who came back on another day; needs `tester_activity` in config. |
+| RETURNING USERS | 0 (not measured yet) | Activated testers who used it again 12 hours or more after their first use; needs `tester_activity` in config. |
 | WOULD PAY | 0 (0 said no) | People who said yes to paying; the number who said no is beside it. |
 | PAID USERS | 0 | People with a payment logged. |
 | REVENUE | none logged (no `paid` lead in the queue) | Revenue figures from `paid` events for those people; nothing is estimated. |
@@ -86,7 +86,7 @@ Closing-line value: see `docs/VALUE_SCAN.md` (the standing measurement; no CLV f
 
 ## Production health and capture cost
 
-- Production health: Run `python scripts/prod_watch.py`. 2026-10-02 05:48Z: production on d66f4816 (deployed 05:46Z), health ok, billing off, CI green. Known noise: 'odds older than 3 h' overnight when no game is coming, and the 2026-10-01 daily-loop failure until the 10:10Z run.
+- Production health: Run `python scripts/prod_watch.py`. 2026-10-03: production served 09:02Z data until 16:08Z behind one stalled deploy (docs/audit/2026-10-03/PROD_DEPLOY_HANG.md); the watch now flags a deploy unfinished for 20 minutes. Known noise: the daily loop fails on days with no MLB games (2026-10-02).
 - Capture cost: 10.9 credits an hour after the cadence change against 23.6 before (2026-10-01, one evening, not a representative game day). Metric: credits per useful fresh observation; re-measure after Sunday. docs/audit/2026-10-01/PRODUCTION_RECOVERY.md.
 
 ## Top 3 blockers
@@ -97,9 +97,9 @@ Closing-line value: see `docs/VALUE_SCAN.md` (the standing measurement; no CLV f
 
 ## Next actions
 
-- **Owner:** 1) Funnel check: open the internal-test link, submit funnel-test@linehound.app, confirm the internal-test row on the admin page (docs/audit/2026-10-02/LAUNCH_CHAIN.md). 2) Send batch 1 (docs/sales/batch_01.md), forums first. 3) Rehearse a purchase on staging with Stripe's test card (GO_LIVE section 5).
-- **Customer:** Batch 1 is ready to send by hand (links on linehound.app, tagged per lead). Log each send with scripts/outreach_batch.py; grant tester access from the admin page to anyone who qualifies (docs/offers/EARLY_TESTER_OFFER.md).
-- **Product:** Early tester access is live (first 20, 7 days, no card). Next: an expired tester must be able to buy when billing opens (the signup form answers 'invited' today); the record panel shows dashes for a few minutes after each deploy.
+- **Owner:** 1) Send group 1 by hand (docs/sales/SEND_ORDER.md: Covers thread, 337picks, Unit Circle, Tommy Lorenzo) and report each send and reply. 2) Add `timeout-minutes: 15` to the deploy job (docs/audit/2026-10-03/PROD_DEPLOY_HANG.md; one line in GitHub's editor). 3) Staging purchase rehearsal with Stripe's test card (docs/billing/PURCHASE_REHEARSAL.md).
+- **Customer:** Batch 1 goes out in five small groups, best fit first; group 1 is written and waiting. Log sends and replies with scripts/outreach_batch.py (exact words stay in a private local file). Grant tester spots only to people who bet these sports, will use it and will give feedback (docs/sales/DISCOVERY_GUIDE.md). After five real conversations: stop and synthesise before changing the product.
+- **Product:** The prop numbers ignore the opposing starter: the card's top pick and the board's biggest gaps on 2026-10-03 were hitters facing the best pitcher on the slate. That is the first thing a baseball-literate tester will notice. Also open: the game pages' bullpen and rest lines read from logs that end in September.
 - **Model:** No market shows repeatable value (docs/PERFORMANCE_MATRIX.md: 110 measured populations, 0 candidates; moneyline closing-line value negative on 26 of 26 rows). The props question cannot be answered before 2026-10-31: the best-placed family, batter total bases, reaches a minimum sample about five weeks into the 2027 season (docs/PROP_EXPERIMENT_INVENTORY.md, docs/PREREG_PROP_FAMILIES_DRAFT.md, a DRAFT with seven owner decisions). Until then: sell the public record and the price comparison, not an edge. AI critic: adds one catch over a plain rule on 8 cases and is not ready to show customers (docs/AI_CRITIC_BENCHMARK.md).
 
 ## What survival requires
