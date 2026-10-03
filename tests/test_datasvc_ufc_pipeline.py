@@ -66,8 +66,9 @@ class Fakes:
                 bouts.extend(bs)
             return events, bouts
 
-        def crawl_upcoming(fetcher, today, days=21):
+        def crawl_upcoming(fetcher, today, days=21, known_bouts=None):
             f.calls.append(("upcoming", today, days))
+            f.known_bouts_seen = list(known_bouts or [])
             return f.upcoming
 
         def fetch_bout_stats(fetcher, b):
@@ -176,6 +177,8 @@ class Update(unittest.TestCase):
         self.assertNotIn(("stats", "b9"), self.fakes.calls)
         self.assertIn("f5", [f["fighter_id"] for f in self.store.fighters])
         self.assertIsNone(summary["stopped"])
+        # the stored bouts are handed over so a bout dropped from a card comes back canceled
+        self.assertIn("b3", [b["bout_id"] for b in self.fakes.known_bouts_seen])
 
     def test_a_window_across_new_year_reads_both_seasons(self):
         pipeline.update(date(2027, 1, 4), days_back=10, fetcher=FakeFetcher(), store=self.store,

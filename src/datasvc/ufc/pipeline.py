@@ -189,7 +189,11 @@ def update(today: Optional[date] = None, *, days_back: int = 10, days_ahead: int
             summary["bouts"] += len(bouts)
             touched.extend(bouts)
             _ingest_bout_details(fetcher, store, src, bouts, summary, stats=True, odds_on=True, log=log)
-        events, bouts = src.schedule.crawl_upcoming(fetcher, today, days=days_ahead)
+        # known_bouts: a bout that disappears from an upcoming card must come back as
+        # canceled; without the stored bouts that is only detectable while the raw
+        # cache still holds the previous event document (schedule.crawl_upcoming).
+        events, bouts = src.schedule.crawl_upcoming(fetcher, today, days=days_ahead,
+                                                    known_bouts=store.bouts)
         if events:
             store.upsert("events", events)
         if bouts:
