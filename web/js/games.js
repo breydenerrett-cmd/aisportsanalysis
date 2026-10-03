@@ -1107,6 +1107,11 @@ export async function renderGameDetail(container, date, away, home) {
   const liveStrip = renderLiveStrip(live); if (liveStrip) body.appendChild(liveStrip);
   // THE BET FIRST. Everything below is why, not what.
   body.appendChild(gqvTonightsPick(cardPick, quick));
+  // THE AI ANALYST NEXT (2026-10-03): its call on every market is the product the
+  // owner asked for ("pick this, not this, and this is why"), so it sits directly
+  // under the card's pick and above the read and every table. Absent when the
+  // fetch failed or nothing is published for this game.
+  if (analyst) body.appendChild(renderAnalystSection(analyst));
   // THE READ, 2026-10-03. The game page showed tables and no reasoning; the
   // owner called the matchup analysis "barely analytical, just a couple of
   // numbers". This is the written read (src/analysis/matchup_read.py), above
@@ -1121,8 +1126,6 @@ export async function renderGameDetail(container, date, away, home) {
   // rested, what the park is doing tonight.
   const gameStory = renderGameStory(advanced, quick); if (gameStory) body.appendChild(gameStory);
   body.appendChild(gqvTeams(advanced, quick));
-  // THE AI ANALYST: one self-contained section, absent when the fetch failed.
-  if (analyst) body.appendChild(renderAnalystSection(analyst));
   body.appendChild(gqvActions(date, away, home));
 
   // ADVANCED APPENDS BENEATH QUICK -- the toggle only shows/hides this

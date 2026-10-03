@@ -438,8 +438,10 @@ class WebLiveStateTests(unittest.TestCase):
             self.assertRegex(label, r"^LAST PRE-GAME PRICE · ")
         self.assertIn("RUN LINE", out["lineMarkets"])
         self.assertIn("-150", out["lineMarkets"])
+        # "analyst" is the AI analyst's published calls (read from its ledger, never
+        # a model call); the per-game prices route is still never requested here.
         self.assertEqual(sorted(set(c.split("/")[1] for c in out["calls"])),
-                         ["card", "game", "live", "odds"])
+                         ["analyst", "card", "game", "live", "odds"])
 
     def test_game_page_pregame_has_no_strip_and_no_label(self):
         out = self.run_node(self.game_scenario(
