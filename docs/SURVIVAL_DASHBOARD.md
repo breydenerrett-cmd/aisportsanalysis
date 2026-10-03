@@ -1,35 +1,57 @@
 # LineHound survival dashboard
 
-Generated 2026-10-02 05:48Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-10-03 15:44Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
-| Days until 2026-10-31 | **29** |
+| Days until 2026-10-31 | **28** |
 | Current monthly burn (known + estimated infrastructure) | $78.00 |
 | Current monthly burn incl. Claude at the planning assumption | $278.00 (unknown: Claude subscription that operates the business, BALLDONTLIE) |
 | Identified monthly savings (not yet realised) | $29.00: The Odds API (100K tier): $29.00 (downgrade to the $30 20K tier from November; NOT confirmed, owner decision) |
-| Revenue (payments logged in the queue) | none logged (no `paid` lead in the queue) |
 | MRR (config, manual: manual until /admin/revenue is read from production) | $0.00 |
-| Unique leads | 40 |
-| Messages sent | 0 |
-| Replies | 0 |
-| Signups | 0 |
 | Testers granted | 0 of 20 (config, owner-updated) |
-| Active users | 0 |
-| People who said they would pay | 0 |
-| Paid customers | 0 |
-| Conversion rate (paid / leads sent) | n/a (no lead has been sent a message yet) |
 | CAC | $0 spent on acquisition |
 | Gap to break-even | $278.00 per month |
+
+## Customer discovery
+
+Read from `docs/sales/outreach_queue.csv`, people only. A forum thread is a public post, not a human, and a queued person nobody has contacted is not a lead.
+
+| Measure | Value | What it counts |
+|---|---|---|
+| UNIQUE LEADS | 0 | People (not channel posts) who were sent a message, replied or signed up. Queued people nobody has contacted are not counted. |
+| MESSAGES SENT | 0 | Rows of any kind with a send logged, so a thread posted counts here. |
+| REPLIES | 0 | People with a reply logged. |
+| POSITIVE REPLIES | 0 | People whose reply type is POSITIVE_INTEREST, SIGNED_UP, ACTIVE_TESTER or WOULD_PAY. |
+| SIGNUPS | 0 | People with a signup logged. |
+| ACTIVE TESTERS | 0 | People whose tester access was granted less than 7 days ago. |
+| ACTIVATED USERS | 0 (from the outreach log) | People with an `activated` entry in the outreach log. |
+| RETURNING USERS | 0 (not measured yet) | Activated testers who came back on another day; needs `tester_activity` in config. |
+| WOULD PAY | 0 (0 said no) | People who said yes to paying; the number who said no is beside it. |
+| PAID USERS | 0 | People with a payment logged. |
+| REVENUE | none logged (no `paid` lead in the queue) | Revenue figures from `paid` events for those people; nothing is estimated. |
+
+- queued, not yet contacted: 37 (people in the queue with no message, reply or signup; not leads)
+- channel posts made: 0 (forum threads posted; a thread is not a human, so it is not a lead)
+
+| Rate | Value | Definition |
+|---|---|---|
+| Reply rate | 0 of 0 (no rate yet) | People sent a message who replied, of people sent a message. |
+| Signup rate | 0 of 0 (no rate yet) | Signups of unique leads. |
+| Activation rate | 0 of 0 (no rate yet) | Activated of signups, both from the outreach log so they are the same people. |
+| Would-pay rate | 0 of 0 (no rate yet) | Yes of everyone who answered yes or no. |
+| Paid conversion | 0 of 0 (no rate yet) | Paid users of unique leads. |
 
 ## Milestones (first timestamp of each, UTC)
 
 - First message sent: not yet
-- First real reply (not auto): not yet
-- First interested reply: not yet
+- First reply: not yet
+- First positive reply (the time of that lead's first reply): not yet
 - First signup: not yet
-- First active user: not yet
-- First would-pay: not yet
+- First tester access: not yet
+- First active tester: not yet
+- First feedback: not yet
+- First would-pay (yes): not yet
 - First payment: not yet
 
 ## Current sports
@@ -44,6 +66,7 @@ Generated 2026-10-02 05:48Z by `scripts/survival_dashboard.py`. Edit `config/bus
   - game: n=3: 2-1, +0.69u (too few for a rate)
   - prop: n=30: 14-16, -5.74u, ROI -19.1%
   - fills (shown apart, never counted): n=29: 21-8, +7.68u (too few for a rate)
+  - postseason (graded, not counted): n=2: 0-2, -2.00u (too few for a rate)
 - **MLB previous** (Our first card rule; 2026-09-10..2026-09-22): n=230: 151-79, +7.98u, ROI +3.5%
   - game: n=113: 73-40, +7.61u, ROI +6.7%
   - prop: n=117: 78-39, +0.38u, ROI +0.3%

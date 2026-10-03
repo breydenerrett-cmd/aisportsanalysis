@@ -1,13 +1,41 @@
-"""Outreach batch builder: selection, parsed text, guard, and the append-only pipeline log."""
+"""Outreach batch builder: selection, parsed text, guard, the append-only pipeline log, the v2 queue,
+the private store and the reply types. Every test injects its own root, private path and clock; none
+reads the real private store."""
 import csv
 import io
+import json
+import os
 import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
+from unittest import mock
 
 from scripts import outreach_batch as ob
+from scripts import survival_dashboard as sd
+
+NOW = datetime(2026, 10, 12, 12, 0, tzinfo=timezone.utc)
+
+# The real private store must stay untouched by this suite. Only its size and mtime are looked at, never its content.
+REAL_PRIVATE = Path(__file__).resolve().parents[1] / "data" / "private" / "outreach_private.jsonl"
+
+
+def _stat_signature():
+    if not REAL_PRIVATE.exists():
+        return None
+    info = REAL_PRIVATE.stat()
+    return (info.st_size, info.st_mtime_ns)
+
+
+_REAL_PRIVATE_BEFORE = _stat_signature()
+
+
+def tearDownModule():
+    if _stat_signature() != _REAL_PRIVATE_BEFORE:
+        raise AssertionError("a test touched the real data/private/outreach_private.jsonl")
+DASH_CONFIG = {"deadline": "2026-10-31", "offers": [], "revenue": {},
+               "costs_monthly": [{"item": "data", "usd": 59.0, "known": True, "class": "KEEP", "note": ""}]}
 
 SCRIPTS = """# scripts
 
@@ -446,10 +474,11 @@ def big_targets():
     return out
 
 
-def run(root, *argv):
+def run(root, *argv, now=None):
     out, err = io.StringIO(), io.StringIO()
     with redirect_stdout(out), redirect_stderr(err):
-        code = ob.main(list(argv), root=root, record_fn=lambda: RECORD)
+        code = ob.main(list(argv), root=root, record_fn=lambda: RECORD,
+                       now_fn=(lambda: now) if now else None)
     return code, out.getvalue(), err.getvalue()
 
 
@@ -460,6 +489,23 @@ def queue_of(root):
 def snapshot(root):
     sales = root / "docs" / "sales"
     return {p.name: p.read_bytes() for p in sorted(sales.glob("*")) if p.is_file()}
+
+
+def private_of(root):
+    return root / "data" / "private" / "outreach_private.jsonl"
+
+
+def private_lines(root):
+    path = private_of(root)
+    return [json.loads(l) for l in path.read_text(encoding="utf-8").splitlines()] if path.exists() else []
+
+
+def snapshot_all(root):
+    """The sales files plus the private store: a refusal must leave both byte-identical."""
+    out = snapshot(root)
+    if private_of(root).exists():
+        out["<private>"] = private_of(root).read_bytes()
+    return out
 
 
 class QueueSeed(unittest.TestCase):
@@ -481,8 +527,8 @@ class QueueSeed(unittest.TestCase):
                 self.assertRegex(lid, r"^[a-z0-9-]{1,40}$")
             seen = set()
             for r in rows:
-                keys = ob.people({"name": r["person_channel"]})
-                self.assertFalse(seen & keys, r["person_channel"])
+                keys = ob.people({"name": r["person"]})
+                self.assertFalse(seen & keys, r["person"])
                 seen |= keys
             self.assertEqual({r["batch"] for r in rows}, {"1", "2"})
             self.assertEqual(list(rows[0].keys()), ob.QUEUE_FIELDS)
@@ -493,7 +539,7 @@ class QueueSeed(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = self._two_batches(tmp)
             sales = root / "docs" / "sales"
-            first = [r["person_channel"] for r in queue_of(root)]
+            first = [r["person"] for r in queue_of(root)]
             for name in ("batch_01.md", "batch_02.md"):      # make them look like pre-queue files
                 text = (sales / name).read_text(encoding="utf-8")
                 (sales / name).write_text(re.sub(r', "lead_id": "[^"]*"', "", text), encoding="utf-8")
@@ -501,7 +547,7 @@ class QueueSeed(unittest.TestCase):
             code, out, _ = run(root, "seed")
             self.assertEqual(code, 0, out)
             rows = queue_of(root)
-            self.assertEqual([r["person_channel"] for r in rows], first)
+            self.assertEqual([r["person"] for r in rows], first)
             self.assertEqual(rows[0]["lead_id"][:5], "l001-")
             self.assertEqual(rows[39]["lead_id"][:5], "l040-")
             before = snapshot(root)
@@ -558,25 +604,27 @@ class QueueSeed(unittest.TestCase):
         self.assertEqual(len(ids), len(set(ids)))
         seen = set()
         for r in rows:
-            keys = ob.people({"name": r["person_channel"]})
-            self.assertFalse(seen & keys, r["person_channel"])
+            keys = ob.people({"name": r["person"]})
+            self.assertFalse(seen & keys, r["person"])
             seen |= keys
         by_id = {r["lead_id"]: r for r in rows}
         for path in sorted((root / "docs" / "sales").glob("batch_*.md")):
             for item in ob.parse_batch(path.read_text(encoding="utf-8")):
                 self.assertIn(item["lead_id"], by_id, item["name"])
-                self.assertEqual(by_id[item["lead_id"]]["person_channel"], item["name"])
+                self.assertEqual(by_id[item["lead_id"]]["person"], item["name"])
 
 
 class QueueCommands(unittest.TestCase):
+    """Items 1 and 2 of batch 1 are forum threads (channel posts); 3 and 4 are creators (people)."""
+
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
         self.root = _tree(Path(self.tmp.name), targets=big_targets())
         run(self.root, "build", "--batch", "1", "--date", "2026-10-01")
-        self.assertEqual(run(self.root, "sent", "--batch", "1", "--items", "1,2",
+        self.assertEqual(run(self.root, "sent", "--batch", "1", "--items", "1,2,3,4",
                              "--at", "2026-10-02T09:00:00Z")[0], 0)
-        self.a, self.b, self.unsent = [r["lead_id"] for r in queue_of(self.root)[:3]]
+        self.post, self.post2, self.a, self.b, self.unsent = [r["lead_id"] for r in queue_of(self.root)[:5]]
 
     def lead(self, lead_id):
         return next(r for r in queue_of(self.root) if r["lead_id"] == lead_id)
@@ -585,90 +633,143 @@ class QueueCommands(unittest.TestCase):
         row = self.lead(self.a)
         self.assertEqual(row["sent_at"], "2026-10-02T09:00:00Z")
         self.assertEqual(row["next_followup"], "2026-10-05")
-        self.assertEqual(row["message_version"], "feedback post + record link")
+        self.assertEqual(row["message_version"], "first_line + Variant B")
+        self.assertEqual(self.lead(self.post)["message_version"], "feedback post + record link")
         self.assertEqual(self.lead(self.unsent)["sent_at"], "")
 
-    def test_reply_signup_activated_would_pay_paid_update_one_row_and_never_add_a_lead(self):
+    def test_every_step_updates_one_row_and_never_adds_a_lead(self):
         pipe = self.root / "docs" / "sales" / "pipeline.csv"
         before_events = len(ob.read_pipeline(pipe)[1])
-        steps = [("reply", "--classification", "interested"), ("signup",), ("activated",),
-                 ("would-pay",), ("paid", "--revenue", "19.99")]
+        steps = [("reply", "--type", "POSITIVE_INTEREST"), ("signup",), ("tester-access",), ("activated",),
+                 ("feedback",), ("would-pay",), ("paid", "--revenue", "19.99")]
         for n, step in enumerate(steps):
-            code, out, err = run(self.root, *step[:1], "--lead", self.a, *step[1:],
+            code, out, err = run(self.root, step[0], "--lead", self.a, *step[1:],
                                  "--at", f"2026-10-0{3 + n}T10:00:00Z")
             self.assertEqual(code, 0, err)
             rows = queue_of(self.root)
             self.assertEqual(len(rows), 20)                              # still 20 rows
-            self.assertEqual(ob.queue_counts(rows)["leads"], 20)         # still 20 leads
+            self.assertEqual(ob.queue_counts(rows, NOW)["leads"], 2)     # still the 2 people sent a message
         row = self.lead(self.a)
-        self.assertEqual((row["reply_at"], row["reply_classification"]), ("2026-10-03T10:00:00Z", "interested"))
+        self.assertEqual((row["reply_at"], row["reply_type"]), ("2026-10-03T10:00:00Z", "POSITIVE_INTEREST"))
         self.assertEqual(row["signup_at"], "2026-10-04T10:00:00Z")
-        self.assertEqual(row["activated_at"], "2026-10-05T10:00:00Z")
-        self.assertEqual(row["would_pay_at"], "2026-10-06T10:00:00Z")
-        self.assertEqual(row["payment_at"], "2026-10-07T10:00:00Z")
-        counts = ob.queue_counts(queue_of(self.root))
-        self.assertEqual((counts["sent"], counts["replies"], counts["signups"], counts["activated"],
-                          counts["would_pay"], counts["paid"]), (2, 1, 1, 1, 1, 1))
+        self.assertEqual(row["tester_access_at"], "2026-10-05T10:00:00Z")
+        self.assertEqual(row["activated_at"], "2026-10-06T10:00:00Z")
+        self.assertEqual(row["feedback_at"], "2026-10-07T10:00:00Z")
+        self.assertEqual((row["would_pay"], row["would_pay_at"]), ("yes", "2026-10-08T10:00:00Z"))
+        self.assertEqual(row["payment_at"], "2026-10-09T10:00:00Z")
+        counts = ob.queue_counts(queue_of(self.root), NOW)
+        self.assertEqual((counts["sent"], counts["sent_persons"], counts["replies"], counts["positive"],
+                          counts["signups"], counts["activated"], counts["would_pay_yes"], counts["paid"]),
+                         (4, 2, 1, 1, 1, 1, 1, 1))
         events = ob.read_pipeline(pipe)[1][before_events:]
-        self.assertEqual([e["stage"] for e in events], ["replied", "signup", "active", "would_pay", "paid"])
+        self.assertEqual([e["stage"] for e in events], ["replied", "signup", "tester_access", "active",
+                                                        "feedback", "would_pay", "paid"])
         self.assertTrue(all(f"lead_id={self.a}" in e["notes"] for e in events))
         self.assertEqual(events[-1]["revenue"], "19.99")
         total, unknown = ob.queue_revenue(queue_of(self.root), ob.read_pipeline(pipe)[1])
         self.assertEqual((round(total, 2), unknown), (19.99, 0))
 
     def test_a_timestamp_is_set_once_and_never_overwritten(self):
-        self.assertEqual(run(self.root, "signup", "--lead", self.a, "--at", "2026-10-03T10:00:00Z")[0], 0)
-        before = snapshot(self.root)
-        code, _, err = run(self.root, "signup", "--lead", self.a, "--at", "2026-10-09T10:00:00Z")
-        self.assertEqual(code, 2)
-        self.assertIn("already recorded", err)
-        self.assertEqual(snapshot(self.root), before)
+        for step in ("signup", "tester-access"):
+            self.assertEqual(run(self.root, step, "--lead", self.a, "--at", "2026-10-03T10:00:00Z")[0], 0)
+            before = snapshot_all(self.root)
+            code, _, err = run(self.root, step, "--lead", self.a, "--at", "2026-10-09T10:00:00Z")
+            self.assertEqual(code, 2)
+            self.assertIn("already recorded", err)
+            self.assertEqual(snapshot_all(self.root), before)
         self.assertEqual(self.lead(self.a)["signup_at"], "2026-10-03T10:00:00Z")
+        self.assertEqual(self.lead(self.a)["tester_access_at"], "2026-10-03T10:00:00Z")
 
-    def test_an_auto_reply_is_not_a_reply_and_the_first_real_one_replaces_it(self):
-        run(self.root, "reply", "--lead", self.a, "--classification", "auto", "--at", "2026-10-03T08:00:00Z")
-        counts = ob.queue_counts(queue_of(self.root))
-        self.assertEqual((counts["replied_any"], counts["replies"], counts["auto_replies"]), (1, 0, 1))
-        self.assertIsNone(ob.milestones(queue_of(self.root))["first_reply"])
-        self.assertEqual(run(self.root, "reply", "--lead", self.a, "--classification", "auto")[0], 2)
-        run(self.root, "reply", "--lead", self.a, "--classification", "question", "--at", "2026-10-04T08:00:00Z")
+    def test_later_replies_keep_the_first_time_and_follow_the_latest_type(self):
+        run(self.root, "reply", "--lead", self.a, "--type", "auto", "--at", "2026-10-03T08:00:00Z")
         row = self.lead(self.a)
-        self.assertEqual((row["reply_at"], row["reply_classification"]), ("2026-10-04T08:00:00Z", "question"))
-        # a later reclassification keeps the first real reply's time
-        run(self.root, "reply", "--lead", self.a, "--classification", "interested", "--at", "2026-10-06T08:00:00Z")
+        self.assertEqual((row["reply_at"], row["reply_type"]), ("2026-10-03T08:00:00Z", "SPAM_OR_IRRELEVANT"))
+        run(self.root, "reply", "--lead", self.a, "--type", "CURIOUS", "--at", "2026-10-04T08:00:00Z")
         row = self.lead(self.a)
-        self.assertEqual((row["reply_at"], row["reply_classification"]), ("2026-10-04T08:00:00Z", "interested"))
-        self.assertIn("question -> interested", row["notes"])
-        # an auto-reply after a real one tells us nothing
-        self.assertEqual(run(self.root, "reply", "--lead", self.a, "--classification", "auto")[0], 2)
+        self.assertEqual((row["reply_at"], row["reply_type"]), ("2026-10-03T08:00:00Z", "CURIOUS"))
+        # the same type again, with nothing new to say, writes nothing
+        before = snapshot_all(self.root)
+        self.assertEqual(run(self.root, "reply", "--lead", self.a, "--type", "curious")[0], 2)
+        self.assertEqual(snapshot_all(self.root), before)
+        # ...but a new message with the same type is kept (privately) and the queue is unchanged
+        queue_before = (self.root / "docs" / "sales" / ob.QUEUE_NAME).read_bytes()
+        self.assertEqual(run(self.root, "reply", "--lead", self.a, "--type", "curious", "--said", "one more thing",
+                             "--at", "2026-10-06T08:00:00Z")[0], 0)
+        self.assertEqual((self.root / "docs" / "sales" / ob.QUEUE_NAME).read_bytes(), queue_before)
+        self.assertIn("one more thing", [e["text"] for e in private_lines(self.root)])
+
+    def test_a_would_pay_answer_can_be_corrected_and_carries_the_price_in_notes(self):
+        code, _, err = run(self.root, "would-pay", "--lead", self.a, "--price", "15", "--at", "2026-10-03T10:00:00Z")
+        self.assertEqual(code, 0, err)
+        row = self.lead(self.a)
+        self.assertEqual((row["would_pay"], row["would_pay_at"]), ("yes", "2026-10-03T10:00:00Z"))
+        self.assertEqual(row["notes"], "price_signal=15")
+        self.assertEqual(run(self.root, "would-pay", "--lead", self.b, "--no", "--at", "2026-10-03T11:00:00Z")[0], 0)
+        self.assertEqual(self.lead(self.b)["would_pay"], "no")
+        before = snapshot_all(self.root)
+        self.assertEqual(run(self.root, "would-pay", "--lead", self.a)[0], 2)     # same answer, nothing new
+        self.assertEqual(snapshot_all(self.root), before)
+        self.assertEqual(run(self.root, "would-pay", "--lead", self.a, "--no", "--at", "2026-10-05T10:00:00Z")[0], 0)
+        row = self.lead(self.a)
+        self.assertEqual((row["would_pay"], row["would_pay_at"]), ("no", "2026-10-05T10:00:00Z"))
+        counts = ob.queue_counts(queue_of(self.root), NOW)
+        self.assertEqual((counts["would_pay_yes"], counts["would_pay_no"]), (0, 2))
+
+    def test_feedback_keeps_its_first_time_and_a_new_message_is_still_saved(self):
+        self.assertEqual(run(self.root, "feedback", "--lead", self.a, "--said", "the card was clear",
+                             "--at", "2026-10-04T10:00:00Z")[0], 0)
+        self.assertEqual(run(self.root, "feedback", "--lead", self.a, "--said", "props were confusing",
+                             "--at", "2026-10-06T10:00:00Z")[0], 0)
+        self.assertEqual(self.lead(self.a)["feedback_at"], "2026-10-04T10:00:00Z")
+        self.assertEqual([e["text"] for e in private_lines(self.root) if e["type"] == "feedback"],
+                         ["the card was clear", "props were confusing"])
+        self.assertEqual(run(self.root, "feedback", "--lead", self.a)[0], 2)      # nothing new at all
+
+    def test_a_channel_post_is_not_a_human_and_cannot_reply_or_sign_up(self):
+        for argv in (("reply", "--type", "CURIOUS"), ("signup",), ("tester-access",), ("activated",),
+                     ("feedback", "--said", "x"), ("would-pay",), ("paid",)):
+            before = snapshot_all(self.root)
+            code, _, err = run(self.root, argv[0], "--lead", self.post, *argv[1:])
+            self.assertEqual(code, 2, argv)
+            self.assertIn("channel post", err)
+            self.assertIn("add --via " + self.post, err)
+            self.assertEqual(snapshot_all(self.root), before, argv)
+        # sending the thread is fine, and it is a sent message but not a lead
+        counts = ob.queue_counts(queue_of(self.root), NOW)
+        self.assertEqual((counts["sent"], counts["leads"], counts["channel_posts_made"]), (4, 2, 2))
 
     def test_illegal_transitions_exit_2_and_leave_every_file_byte_identical(self):
         run(self.root, "signup", "--lead", self.a, "--at", "2026-10-03T10:00:00Z")
         cases = [
-            ("reply", "--lead", self.unsent, "--classification", "interested"),   # reply before sent
+            ("reply", "--lead", self.unsent, "--type", "interested"),             # reply before sent
             ("signup", "--lead", self.unsent),
             ("paid", "--lead", self.unsent),
             ("would-pay", "--lead", self.unsent),
+            ("tester-access", "--lead", self.unsent),
+            ("feedback", "--lead", self.unsent, "--said", "hello"),
             ("followup", "--lead", self.unsent, "--date", "2026-10-09"),
             ("activated", "--lead", self.b),                                      # activated before signup
-            ("reply", "--lead", "l999-nobody", "--classification", "interested"),  # unknown lead
+            ("reply", "--lead", "l999-nobody", "--type", "interested"),           # unknown lead
             ("signup", "--lead", "l999-nobody"),
-            ("reply", "--lead", self.a, "--classification", "ecstatic"),          # unknown classification
+            ("reply", "--lead", self.a, "--type", "ecstatic"),                    # unknown type
+            ("reply", "--lead", self.a, "--type", "NO_REPLY"),                    # derived, never typed
             ("reply", "--lead", self.a),                                          # neither form
             ("signup", "--lead", self.b, "--at", "2026-10-01T00:00:00Z"),         # before it was sent
             ("signup", "--lead", self.b, "--at", "not-a-time"),
             ("paid", "--lead", self.a, "--revenue", "-5"),
+            ("would-pay", "--lead", self.a, "--price", "-1"),
+            ("would-pay", "--lead", self.a, "--price", "nan"),
             ("followup", "--lead", self.a, "--date", "next week"),
-            ("sent", "--batch", "1", "--items", "1"),                             # already sent
-            ("sent", "--batch", "1", "--items", "3,99"),                          # one bad item voids the call
+            ("sent", "--batch", "1", "--items", "3"),                             # already sent
+            ("sent", "--batch", "1", "--items", "5,99"),                          # one bad item voids the call
             ("signup", "--lead", self.a),                                         # already signed up
         ]
         for argv in cases:
-            before = snapshot(self.root)
+            before = snapshot_all(self.root)
             code, _, err = run(self.root, *argv)
             self.assertEqual(code, 2, (argv, err))
             self.assertIn("refused:", err)
-            self.assertEqual(snapshot(self.root), before, argv)
+            self.assertEqual(snapshot_all(self.root), before, argv)
 
     def test_followup_sets_the_next_date_and_can_be_moved(self):
         self.assertEqual(run(self.root, "followup", "--lead", self.a, "--date", "2026-10-09")[0], 0)
@@ -677,38 +778,532 @@ class QueueCommands(unittest.TestCase):
         self.assertEqual(self.lead(self.a)["next_followup"], "2026-10-12")
         self.assertEqual(len(queue_of(self.root)), 20)
 
-    def test_a_lead_can_be_named_by_its_person_channel(self):
-        name = self.lead(self.a)["person_channel"]
+    def test_a_lead_can_be_named_by_its_person(self):
+        name = self.lead(self.a)["person"]
         self.assertEqual(run(self.root, "signup", "--target", name.lower(), "--at", "2026-10-03T10:00:00Z")[0], 0)
         self.assertTrue(self.lead(self.a)["signup_at"])
 
-    def test_milestones_print_the_first_timestamp_of_each_step_or_not_yet(self):
+    def test_milestones_print_the_first_timestamp_and_lead_of_each_step_or_not_yet(self):
         code, out, _ = run(self.root, "milestones")
         self.assertEqual(code, 0)
-        self.assertIn("First message sent: 2026-10-02T09:00:00Z", out)
-        self.assertIn("First signup: not yet", out)
-        self.assertIn("First payment: not yet", out)
-        run(self.root, "reply", "--lead", self.b, "--classification", "auto", "--at", "2026-10-02T09:30:00Z")
-        run(self.root, "reply", "--lead", self.a, "--classification", "question", "--at", "2026-10-03T12:00:00Z")
-        run(self.root, "reply", "--lead", self.b, "--classification", "interested", "--at", "2026-10-03T08:00:00Z")
+        self.assertIn(f"First message sent: 2026-10-02T09:00:00Z ({self.post})", out)
+        for label in ("First reply", "First positive reply", "First signup", "First tester access",
+                      "First active tester", "First feedback", "First would-pay", "First payment"):
+            self.assertRegex(out, rf"{label}[^\n]*: not yet")
+        run(self.root, "reply", "--lead", self.b, "--type", "SPAM_OR_IRRELEVANT", "--at", "2026-10-02T09:30:00Z")
+        run(self.root, "reply", "--lead", self.a, "--type", "CURIOUS", "--at", "2026-10-03T12:00:00Z")
+        run(self.root, "reply", "--lead", self.a, "--type", "WOULD_PAY", "--at", "2026-10-03T13:00:00Z")
         run(self.root, "signup", "--lead", self.a, "--at", "2026-10-05T12:00:00Z")
         run(self.root, "signup", "--lead", self.b, "--at", "2026-10-04T12:00:00Z")
+        run(self.root, "tester-access", "--lead", self.b, "--at", "2026-10-04T13:00:00Z")
+        run(self.root, "activated", "--lead", self.b, "--at", "2026-10-04T14:00:00Z")
+        run(self.root, "feedback", "--lead", self.b, "--at", "2026-10-06T14:00:00Z")
+        run(self.root, "would-pay", "--lead", self.a, "--at", "2026-10-07T14:00:00Z")
+        run(self.root, "would-pay", "--lead", self.b, "--no", "--at", "2026-10-06T14:00:00Z")
         found = ob.milestones(queue_of(self.root))
-        self.assertEqual(found["first_sent"], "2026-10-02T09:00:00Z")
-        self.assertEqual(found["first_reply"], "2026-10-03T08:00:00Z")     # the auto at 09:30 never counted
-        self.assertEqual(found["first_interested"], "2026-10-03T08:00:00Z")
-        self.assertEqual(found["first_signup"], "2026-10-04T12:00:00Z")
-        self.assertIsNone(found["first_active"])
+        self.assertEqual(found["first_sent"], ("2026-10-02T09:00:00Z", self.post))
+        self.assertEqual(found["first_reply"], ("2026-10-02T09:30:00Z", self.b))
+        self.assertEqual(found["first_positive"], ("2026-10-03T12:00:00Z", self.a))   # the spam reply never counts
+        self.assertEqual(found["first_signup"], ("2026-10-04T12:00:00Z", self.b))
+        self.assertEqual(found["first_tester_access"], ("2026-10-04T13:00:00Z", self.b))
+        self.assertEqual(found["first_active"], ("2026-10-04T14:00:00Z", self.b))
+        self.assertEqual(found["first_feedback"], ("2026-10-06T14:00:00Z", self.b))
+        self.assertEqual(found["first_would_pay"], ("2026-10-07T14:00:00Z", self.a))  # b said no
         self.assertIsNone(found["first_payment"])
-        self.assertIn("First signup: 2026-10-04T12:00:00Z", run(self.root, "milestones")[1])
+        out = run(self.root, "milestones")[1]
+        self.assertIn(f"First signup: 2026-10-04T12:00:00Z ({self.b})", out)
+        self.assertIn("First payment: not yet", out)
 
     def test_the_legacy_stage_form_still_works_and_says_it_left_the_queue_alone(self):
-        name = self.lead(self.a)["person_channel"]
+        name = self.lead(self.a)["person"]
         before = (self.root / "docs" / "sales" / ob.QUEUE_NAME).read_bytes()
         code, out, _ = run(self.root, "reply", "--target", name, "--stage", "replied", "--date", "2026-10-03")
         self.assertEqual(code, 0)
         self.assertIn("queue", out)
         self.assertEqual((self.root / "docs" / "sales" / ob.QUEUE_NAME).read_bytes(), before)
+
+    def test_the_legacy_stage_form_refuses_said_because_it_would_be_dropped(self):
+        name = self.lead(self.a)["person"]
+        before = snapshot_all(self.root)
+        code, _, err = run(self.root, "reply", "--target", name, "--stage", "replied", "--said", "words")
+        self.assertEqual(code, 2)
+        self.assertIn("--said", err)
+        self.assertEqual(snapshot_all(self.root), before)
+
+    def test_the_old_classification_flag_and_words_still_work(self):
+        for flag, word, expected in (("--classification", "interested", "POSITIVE_INTEREST"),
+                                     ("--type", "Question", "CURIOUS")):
+            code, _, err = run(self.root, "reply", "--lead", self.b, flag, word, "--at", "2026-10-03T10:00:00Z")
+            self.assertEqual(code, 0, err)
+            self.assertEqual(self.lead(self.b)["reply_type"], expected)
+        for word, expected in (("not_interested", "NOT_INTERESTED"), ("auto", "SPAM_OR_IRRELEVANT"),
+                               ("hostile", "TRUST_OBJECTION"), ("price_objection", "PRICE_OBJECTION")):
+            self.assertEqual(ob.parse_reply_type(word), expected)
+
+
+class ReplyTypes(unittest.TestCase):
+    EXACT = ("POSITIVE_INTEREST", "CURIOUS", "SIGNED_UP", "ACTIVE_TESTER", "WOULD_PAY", "PRICE_OBJECTION",
+             "TRUST_OBJECTION", "PRODUCT_CONFUSION", "NOT_INTERESTED", "NO_REPLY", "SPAM_OR_IRRELEVANT")
+
+    def test_the_eleven_exact_strings(self):
+        self.assertEqual(ob.REPLY_TYPES, self.EXACT)
+        self.assertEqual(ob.POSITIVE_TYPES, ("POSITIVE_INTEREST", "SIGNED_UP", "ACTIVE_TESTER", "WOULD_PAY"))
+
+    def test_any_case_and_every_typeable_type_is_accepted(self):
+        for t in self.EXACT:
+            if t == "NO_REPLY":
+                continue
+            self.assertEqual(ob.parse_reply_type(t), t)
+            self.assertEqual(ob.parse_reply_type(t.lower()), t)
+            self.assertEqual(ob.parse_reply_type(t.title().replace("_", "-")), t)
+
+    def test_no_reply_is_derived_so_it_cannot_be_typed_and_unknown_is_refused(self):
+        with self.assertRaises(ob.OutreachError) as cm:
+            ob.parse_reply_type("no_reply")
+        self.assertIn("worked out by itself", str(cm.exception))
+        self.assertEqual(ob.parse_reply_type("NO_REPLY", allow_no_reply=True), "NO_REPLY")
+        for bad in ("", "ecstatic", "positive"):
+            with self.assertRaises(ob.OutreachError, msg=bad):
+                ob.parse_reply_type(bad)
+
+
+class NoReplyIsDerived(unittest.TestCase):
+    SENT = "2026-10-02T09:00:00Z"
+
+    def row(self, **kw):
+        base = {f: "" for f in ob.QUEUE_FIELDS}
+        base.update({"lead_id": "l001-x", "kind": "person", "person": "X", "channel": "creator",
+                     "sent_at": self.SENT})
+        base.update(kw)
+        return base
+
+    def test_more_than_seven_days_after_a_send_with_no_reply_reads_as_no_reply(self):
+        sent = datetime(2026, 10, 2, 9, 0, tzinfo=timezone.utc)
+        row = self.row()
+        self.assertEqual(ob.effective_reply_type(row, sent + timedelta(days=7)), "")             # exactly 7 days
+        self.assertEqual(ob.effective_reply_type(row, sent + timedelta(days=7, seconds=1)), "NO_REPLY")
+        self.assertEqual(ob.effective_reply_type(row, sent + timedelta(days=1)), "")
+
+    def test_a_reply_a_missing_send_or_a_channel_post_is_never_no_reply(self):
+        late = datetime(2026, 11, 1, tzinfo=timezone.utc)
+        self.assertEqual(ob.effective_reply_type(self.row(reply_at="2026-10-03T00:00:00Z"), late), "")
+        self.assertEqual(ob.effective_reply_type(self.row(reply_at="2026-10-03T00:00:00Z",
+                                                          reply_type="CURIOUS"), late), "CURIOUS")
+        self.assertEqual(ob.effective_reply_type(self.row(sent_at=""), late), "")
+        self.assertEqual(ob.effective_reply_type(self.row(kind="channel_post"), late), "")
+
+    def test_status_reports_it_without_anyone_typing_it_and_never_writes_it(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = _tree(Path(tmp), targets=big_targets())
+            run(root, "build", "--batch", "1", "--date", "2026-10-01")
+            run(root, "sent", "--batch", "1", "--items", "3,4", "--at", self.SENT)
+            run(root, "reply", "--lead", queue_of(root)[3]["lead_id"], "--type", "CURIOUS",
+                "--at", "2026-10-03T00:00:00Z")
+            early = run(root, "status", now=datetime(2026, 10, 5, tzinfo=timezone.utc))[1]
+            self.assertIn("NO_REPLY: 0", early)
+            late = run(root, "status", now=datetime(2026, 10, 12, tzinfo=timezone.utc))[1]
+            self.assertIn("NO_REPLY: 1", late)
+            self.assertIn("CURIOUS: 1", late)
+            self.assertEqual({r["reply_type"] for r in queue_of(root)}, {"", "CURIOUS"})
+
+
+class StatusAndGroups(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = _tree(Path(self.tmp.name), targets=big_targets())
+        run(self.root, "build", "--batch", "1", "--date", "2026-10-01")
+        rows = queue_of(self.root)
+        self.ids = [r["lead_id"] for r in rows]
+
+    def test_status_lists_only_leads_with_activity_and_every_type_with_its_zero(self):
+        out = run(self.root, "status")[1]
+        self.assertIn("no lead has any activity yet", out)
+        for t in ob.REPLY_TYPES:
+            self.assertIn(f"{t}: 0", out)
+        self.assertIn("UNCLASSIFIED: 0", out)
+        run(self.root, "sent", "--batch", "1", "--items", "3", "--at", "2026-10-02T09:00:00Z")
+        run(self.root, "reply", "--lead", self.ids[2], "--type", "PRICE_OBJECTION", "--at", "2026-10-03T09:00:00Z")
+        out = run(self.root, "status", now=datetime(2026, 10, 4, tzinfo=timezone.utc))[1]
+        lines = [l for l in out.splitlines() if l.startswith("l0")]
+        self.assertEqual(len(lines), 1)
+        self.assertIn(self.ids[2], lines[0])
+        self.assertIn("reply PRICE_OBJECTION", lines[0])
+        self.assertIn("PRICE_OBJECTION: 1", out)
+        self.assertIn("CURIOUS: 0", out)
+
+    def test_set_group_then_next_group_walks_the_groups_in_order(self):
+        self.assertIn("No send groups assigned", run(self.root, "next-group")[1])
+        a, b, c = self.ids[2], self.ids[3], self.ids[4]
+        self.assertEqual(run(self.root, "set-group", "--leads", f"{c},{a}", "--group", "2")[0], 0)
+        self.assertEqual(run(self.root, "set-group", "--leads", f"{a}", "--group", "1")[0], 0)   # regrouped
+        self.assertEqual(run(self.root, "set-group", "--leads", f"{b}", "--group", "1")[0], 0)
+        rows = {r["lead_id"]: r for r in queue_of(self.root)}
+        self.assertEqual((rows[a]["send_group"], rows[b]["send_group"], rows[c]["send_group"]), ("1", "1", "2"))
+        out = run(self.root, "next-group")[1]
+        self.assertIn("Send group 1: 2 of 2", out)
+        self.assertIn(f"- {a} | {rows[a]['person']} | creator", out)
+        self.assertIn("docs/sales/batch_01.md, item 3", out)
+        self.assertIn("python scripts/outreach_batch.py sent --batch 1 --items 3", out)
+        self.assertIn("sent --batch 1 --items 4", out)
+        self.assertIn("--items 3,4", out)                       # the whole group in one command
+        self.assertNotIn(c, out)
+        run(self.root, "sent", "--batch", "1", "--items", "3,4", "--at", "2026-10-02T09:00:00Z")
+        out = run(self.root, "next-group")[1]
+        self.assertIn("Send group 2: 1 of 1", out)
+        self.assertIn(f"- {c} |", out)
+        self.assertIn("sent --batch 1 --items 5", out)
+        self.assertNotIn(a, out)
+        run(self.root, "sent", "--batch", "1", "--items", "5", "--at", "2026-10-02T09:00:00Z")
+        self.assertIn("has been sent", run(self.root, "next-group")[1])
+
+    def test_set_group_refuses_unknown_duplicate_empty_and_bad_group_and_writes_nothing(self):
+        for argv in (("--leads", f"{self.ids[2]},l999-nobody", "--group", "1"),
+                     ("--leads", f"{self.ids[2]},{self.ids[2]}", "--group", "1"),
+                     ("--leads", " , ", "--group", "1"),
+                     ("--leads", self.ids[2], "--group", "0")):
+            before = snapshot_all(self.root)
+            code, _, err = run(self.root, "set-group", *argv)
+            self.assertEqual(code, 2, argv)
+            self.assertIn("refused:", err)
+            self.assertEqual(snapshot_all(self.root), before)
+
+    def test_next_group_says_so_when_a_lead_is_in_no_batch_file(self):
+        rows = queue_of(self.root)
+        rows.append(dict(rows[2], lead_id="l099-p", person="l099-p", send_group="1"))
+        ob.write_queue(self.root / "docs" / "sales" / ob.QUEUE_NAME, rows)
+        out = run(self.root, "next-group")[1]
+        self.assertIn("- l099-p |", out)
+        self.assertIn("no batch file lists this lead", out)
+
+
+class PrivateStore(unittest.TestCase):
+    """The repo is public: what people wrote and who they are never reaches a tracked file."""
+
+    SAID = "this is a very private sentence about my cousin Zebediah"
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = _tree(Path(self.tmp.name), targets=big_targets())
+        run(self.root, "build", "--batch", "1", "--date", "2026-10-01")
+        run(self.root, "sent", "--batch", "1", "--items", "3,4", "--at", "2026-10-02T09:00:00Z")
+        self.a, self.b = [r["lead_id"] for r in queue_of(self.root)[2:4]]
+
+    def tracked_text(self):
+        return "\n".join(p.read_text(encoding="utf-8") for p in sorted((self.root / "docs").rglob("*")) if p.is_file())
+
+    def test_reply_text_goes_to_the_private_file_only(self):
+        code, out, err = run(self.root, "reply", "--lead", self.a, "--type", "CURIOUS", "--said", self.SAID,
+                             "--by", "ai", "--at", "2026-10-03T10:00:00Z")
+        self.assertEqual(code, 0, err)
+        self.assertNotIn("Zebediah", out + err + self.tracked_text())
+        lines = private_lines(self.root)
+        self.assertEqual([(e["lead_id"], e["type"], e["text"], e["by"]) for e in lines],
+                         [(self.a, "reply", self.SAID, "ai"), (self.a, "classification", "CURIOUS", "ai")])
+        self.assertTrue(all(set(e) == {"lead_id", "at", "type", "text", "by"} for e in lines))
+        self.assertEqual(lines[0]["at"], "2026-10-03T10:00:00Z")
+
+    def test_the_store_is_append_only_and_a_reclassification_changes_only_reply_type(self):
+        run(self.root, "reply", "--lead", self.a, "--type", "CURIOUS", "--said", self.SAID, "--at", "2026-10-03T10:00:00Z")
+        store = private_of(self.root).read_bytes()
+        before_row = next(r for r in queue_of(self.root) if r["lead_id"] == self.a)
+        run(self.root, "reply", "--lead", self.a, "--type", "TRUST_OBJECTION", "--at", "2026-10-04T10:00:00Z")
+        after_row = next(r for r in queue_of(self.root) if r["lead_id"] == self.a)
+        self.assertEqual({k for k in before_row if before_row[k] != after_row[k]}, {"reply_type"})
+        self.assertEqual(after_row["reply_type"], "TRUST_OBJECTION")
+        grown = private_of(self.root).read_bytes()
+        self.assertTrue(grown.startswith(store))                       # earlier bytes untouched
+        added = [json.loads(l) for l in grown[len(store):].decode().splitlines()]
+        self.assertEqual([(e["type"], e["text"]) for e in added], [("classification", "TRUST_OBJECTION")])
+        # the verbatim message is still there, unedited
+        self.assertEqual(private_lines(self.root)[0]["text"], self.SAID)
+
+    def test_the_pipeline_and_the_queue_hold_no_verbatim_text_or_handle(self):
+        run(self.root, "reply", "--lead", self.a, "--type", "CURIOUS", "--said", self.SAID)
+        run(self.root, "add", "--via", self.a, "--channel", "discord", "--handle", "@Zebediah_Cousin",
+            "--type", "CURIOUS", "--said", "my cousin Zebediah says hi")
+        run(self.root, "alias", "--lead", "l021-p", "--handle", "zeb@example.test")
+        blob = self.tracked_text()
+        for needle in ("Zebediah", "zebediah", "cousin", "zeb@example"):
+            self.assertNotIn(needle, blob)
+
+    def test_the_path_comes_from_an_argument_then_the_environment_then_the_root(self):
+        root = Path(self.tmp.name)
+        self.assertEqual(ob.private_path(root), root / "data" / "private" / "outreach_private.jsonl")
+        with mock.patch.dict(os.environ, {ob.PRIVATE_ENV: str(root / "elsewhere.jsonl")}):
+            self.assertEqual(ob.private_path(root), root / "elsewhere.jsonl")
+            self.assertEqual(ob.private_path(root, root / "arg.jsonl"), root / "arg.jsonl")
+            with redirect_stdout(io.StringIO()):
+                code = ob.main(["reply", "--lead", self.a, "--type", "CURIOUS", "--said", "via env"], root=root)
+        self.assertEqual(code, 0)
+        self.assertTrue((root / "elsewhere.jsonl").exists())
+        self.assertFalse(private_of(self.root).exists())
+        arg = root / "arg.jsonl"
+        with redirect_stdout(io.StringIO()):
+            ob.main(["feedback", "--lead", self.a, "--said", "via argument"], root=root, private_path_override=arg)
+        self.assertIn("via argument", arg.read_text(encoding="utf-8"))
+
+    def test_note_and_sport_refuse_handles_emails_links_and_known_identities(self):
+        run(self.root, "add", "--via", self.a, "--channel", "discord", "--handle", "SecretName99", "--type", "CURIOUS")
+        for argv in (("followup", "--lead", self.a, "--date", "2026-10-09", "--note", "ping @someone"),
+                     ("followup", "--lead", self.a, "--date", "2026-10-09", "--note", "see http://x.test"),
+                     ("followup", "--lead", self.a, "--date", "2026-10-09", "--note", "it was secret name 99 again"),
+                     ("add", "--via", self.a, "--channel", "x", "--sport", "mlb, @handle"),
+                     ("signup", "--lead", self.a, "--note", "mail me at a@b.test"),
+                     ("sent", "--batch", "1", "--items", "5", "--note", "to @someone")):
+            before = snapshot_all(self.root)
+            code, _, err = run(self.root, *argv)
+            self.assertEqual(code, 2, argv)
+            self.assertIn("tracked file", err)
+            self.assertEqual(snapshot_all(self.root), before, argv)
+        self.assertEqual(run(self.root, "followup", "--lead", self.a, "--date", "2026-10-09",
+                             "--note", "asked for a call")[0], 0)
+
+    def test_a_damaged_store_is_a_refusal_never_a_silent_skip(self):
+        run(self.root, "add", "--via", self.a, "--channel", "discord", "--handle", "someone")
+        with private_of(self.root).open("a", encoding="utf-8") as handle:
+            handle.write("not json at all\n")
+        before = snapshot_all(self.root)
+        code, _, err = run(self.root, "add", "--via", self.a, "--channel", "discord", "--handle", "someoneelse")
+        self.assertEqual(code, 2)
+        self.assertIn("line 2", err)
+        self.assertEqual(snapshot_all(self.root), before)
+
+    def test_entries_are_validated_and_a_missing_final_newline_is_repaired_without_rewriting(self):
+        with self.assertRaises(ob.OutreachError):
+            ob.private_entry("l1-x", "t", "gossip", "x")
+        with self.assertRaises(ob.OutreachError):
+            ob.private_entry("l1-x", "t", "reply", "x", by="robot")
+        path = Path(self.tmp.name) / "p.jsonl"
+        path.write_bytes(b'{"lead_id": "l1-x", "at": "t", "type": "note", "text": "a", "by": "owner"}')
+        ob.append_private(path, [ob.private_entry("l2-x", "t", "note", "b")])
+        self.assertEqual(len(ob.read_private(path)), 2)
+        self.assertTrue(path.read_bytes().startswith(b'{"lead_id": "l1-x"'))
+
+    def test_the_real_store_is_gitignored_and_no_test_here_reads_it(self):
+        ignore = (Path(__file__).resolve().parents[1] / ".gitignore").read_text(encoding="utf-8").splitlines()
+        self.assertIn("data/private/", [l.strip() for l in ignore])
+        self.assertEqual(ob.PRIVATE_REL.as_posix(), "data/private/outreach_private.jsonl")
+        self.assertTrue(str(private_of(self.root)).startswith(self.tmp.name))
+
+
+class AddAndAlias(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = _tree(Path(self.tmp.name), targets=big_targets())
+        run(self.root, "build", "--batch", "1", "--date", "2026-10-01")
+        rows = queue_of(self.root)
+        self.post, self.post2, self.a = [r["lead_id"] for r in rows[:3]]
+
+    def lead(self, lead_id):
+        return next(r for r in queue_of(self.root) if r["lead_id"] == lead_id)
+
+    def test_add_makes_a_person_with_an_id_that_holds_no_personal_data(self):
+        code, out, err = run(self.root, "add", "--via", self.post, "--channel", "Discord",
+                             "--handle", "@Some_User", "--sport", "MLB props", "--type", "curious",
+                             "--said", "hi, how does it work?", "--at", "2026-10-03T10:00:00Z")
+        self.assertEqual(code, 0, err)
+        rows = queue_of(self.root)
+        self.assertEqual(len(rows), 21)
+        new = rows[-1]
+        self.assertEqual(new["lead_id"], "l021-p")
+        self.assertRegex(new["lead_id"], r"^l\d{3}-p$")
+        self.assertEqual((new["kind"], new["channel"], new["campaign"], new["batch"], new["via_lead"]),
+                         ("person", "discord", "batch_01", "1", self.post))
+        self.assertEqual((new["person"], new["sport_interest"], new["reply_at"], new["reply_type"], new["sent_at"]),
+                         ("l021-p", "MLB props", "2026-10-03T10:00:00Z", "CURIOUS", ""))
+        self.assertEqual([(e["type"], e["text"]) for e in private_lines(self.root)],
+                         [("identity", "@Some_User"), ("reply", "hi, how does it work?"),
+                          ("classification", "CURIOUS")])
+        self.assertNotIn("Some_User", out + (self.root / "docs" / "sales" / ob.QUEUE_NAME).read_text(encoding="utf-8"))
+        # they count as a lead and a reply, but not toward the reply RATE (we never messaged them)
+        counts = ob.queue_counts(rows, NOW)
+        self.assertEqual((counts["leads"], counts["replies"], counts["sent_persons"], counts["replied_after_sent"]),
+                         (1, 1, 0, 0))
+        # and the next one gets the next number
+        run(self.root, "add", "--via", self.post, "--channel", "discord", "--handle", "other")
+        self.assertEqual(queue_of(self.root)[-1]["lead_id"], "l022-p")
+
+    def test_add_for_a_handle_already_known_under_another_channel_is_refused(self):
+        self.assertEqual(run(self.root, "add", "--via", self.post, "--channel", "discord",
+                             "--handle", "@Some_User")[0], 0)
+        for handle in ("some_user", "@SOME_USER", "  @ Some _User  "):
+            before = snapshot_all(self.root)
+            code, _, err = run(self.root, "add", "--via", self.post2, "--channel", "x", "--handle", handle)
+            self.assertEqual(code, 2, handle)
+            self.assertIn("l021-p", err)                 # names the lead that already has the handle
+            self.assertIn("alias", err)                  # and says what to do instead
+            self.assertEqual(snapshot_all(self.root), before, handle)
+        self.assertEqual(len(queue_of(self.root)), 21)
+        # the dashboard still counts one human
+        text = sd.render(DASH_CONFIG, date(2026, 10, 4), "2026-10-04 00:00Z",
+                         queue_rows=queue_of(self.root), pipeline_rows=[], record=[])
+        self.assertIn("| UNIQUE LEADS | 1 |", text)
+
+    def test_an_alias_is_the_same_human_so_it_collides_too(self):
+        run(self.root, "add", "--via", self.post, "--channel", "discord", "--handle", "first_handle")
+        self.assertEqual(run(self.root, "alias", "--lead", "l021-p", "--handle", "Same.Person@Example.test")[0], 0)
+        before = snapshot_all(self.root)
+        code, _, err = run(self.root, "add", "--via", self.post2, "--channel", "email",
+                           "--handle", "same.person@example.test")
+        self.assertEqual(code, 2)
+        self.assertIn("l021-p", err)
+        self.assertEqual(snapshot_all(self.root), before)
+
+    def test_alias_refuses_a_handle_that_belongs_to_another_lead_or_to_this_one(self):
+        run(self.root, "add", "--via", self.post, "--channel", "discord", "--handle", "alpha")
+        run(self.root, "add", "--via", self.post, "--channel", "discord", "--handle", "bravo")
+        before = snapshot_all(self.root)
+        code, _, err = run(self.root, "alias", "--lead", "l022-p", "--handle", "@Alpha")
+        self.assertEqual(code, 2)
+        self.assertIn("l021-p", err)
+        self.assertEqual(run(self.root, "alias", "--lead", "l021-p", "--handle", "alpha")[0], 2)    # its own
+        self.assertEqual(run(self.root, "alias", "--lead", "l999-nobody", "--handle", "zulu")[0], 2)
+        self.assertEqual(run(self.root, "alias", "--lead", self.post, "--handle", "zulu")[0], 2)    # a thread
+        self.assertEqual(run(self.root, "alias", "--lead", "l021-p", "--handle", "  @  ")[0], 2)
+        self.assertEqual(snapshot_all(self.root), before)
+
+    def test_a_handle_already_public_in_the_queue_is_the_same_human(self):
+        rows = queue_of(self.root)
+        rows[2]["person"] = "Joseph Buchdahl (@12Xpert)"
+        ob.write_queue(self.root / "docs" / "sales" / ob.QUEUE_NAME, rows)
+        before = snapshot_all(self.root)
+        code, _, err = run(self.root, "add", "--via", self.post, "--channel", "x", "--handle", "12xpert")
+        self.assertEqual(code, 2)
+        self.assertIn(self.a, err)
+        self.assertEqual(snapshot_all(self.root), before)
+
+    def test_someone_who_wrote_in_on_their_own_has_no_via_lead(self):
+        code, out, err = run(self.root, "add", "--channel", "email", "--handle", "walkin@example.test",
+                             "--type", "POSITIVE_INTEREST", "--at", "2026-10-03T10:00:00Z")
+        self.assertEqual(code, 0, err)
+        new = queue_of(self.root)[-1]
+        self.assertEqual((new["via_lead"], new["campaign"], new["batch"]), ("", "organic", ""))
+        self.assertEqual(run(self.root, "signup", "--lead", new["lead_id"], "--at", "2026-10-04T10:00:00Z")[0], 0)
+
+    def test_an_added_person_can_be_logged_against_without_ever_having_been_sent_a_message(self):
+        run(self.root, "add", "--via", self.post, "--channel", "discord", "--handle", "someone", "--type", "CURIOUS",
+            "--at", "2026-10-03T10:00:00Z")
+        for argv in (("reply", "--type", "WOULD_PAY"), ("signup",), ("tester-access",), ("activated",),
+                     ("feedback", "--said", "nice"), ("would-pay", "--price", "10"), ("paid", "--revenue", "10")):
+            code, _, err = run(self.root, argv[0], "--lead", "l021-p", *argv[1:], "--at", "2026-10-04T10:00:00Z")
+            self.assertEqual(code, 0, (argv, err))
+        row = self.lead("l021-p")
+        self.assertEqual((row["reply_at"], row["reply_type"]), ("2026-10-03T10:00:00Z", "WOULD_PAY"))
+        self.assertTrue(row["signup_at"] and row["payment_at"])
+        # a person who was never sent a message cannot be earlier than their own reply for a send event
+        self.assertEqual(run(self.root, "followup", "--lead", "l021-p", "--date", "2026-10-09")[0], 0)
+
+    def test_add_validates_channel_type_and_the_via_lead(self):
+        for argv in (("--via", self.post, "--channel", "bob#1234"),         # a handle where a platform goes
+                     ("--via", self.post, "--channel", "@bob"),
+                     ("--via", self.post, "--channel", "x" * 30),
+                     ("--via", self.post, "--channel", "x", "--type", "NO_REPLY"),
+                     ("--via", self.post, "--channel", "x", "--type", "ecstatic"),
+                     ("--via", "l999-nobody", "--channel", "x"),
+                     ("--via", self.post, "--channel", "x", "--handle", "")):
+            before = snapshot_all(self.root)
+            code, _, err = run(self.root, "add", *argv)
+            self.assertEqual(code, 2, argv)
+            self.assertIn("refused:", err)
+            self.assertEqual(snapshot_all(self.root), before, argv)
+
+    def test_add_without_a_handle_warns_that_the_duplicate_check_could_not_run(self):
+        code, out, _ = run(self.root, "add", "--via", self.post, "--channel", "discord")
+        self.assertEqual(code, 0)
+        self.assertIn("duplicate-human check could not run", out)
+        self.assertIn("reply --lead l021-p --type", out)
+        self.assertEqual(private_lines(self.root), [])
+
+    def test_the_audit_trail_row_for_an_add_has_ids_and_types_only(self):
+        run(self.root, "add", "--via", self.post, "--channel", "discord", "--handle", "someone", "--type", "CURIOUS",
+            "--said", "secret words", "--at", "2026-10-03T10:00:00Z")
+        events = ob.read_pipeline(self.root / "docs" / "sales" / "pipeline.csv")[1]
+        self.assertEqual(len(events), 1)
+        e = events[0]
+        self.assertEqual((e["stage"], e["target"], e["source"], e["campaign"]), ("replied", "l021-p", "discord", "batch_01"))
+        self.assertIn("lead_id=l021-p", e["notes"])
+        self.assertIn("added via " + self.post, e["notes"])
+        self.assertNotIn("secret", str(e))
+        self.assertNotIn("someone", str(e))
+
+
+class MigrationFromV1(unittest.TestCase):
+    OLD = ob.OLD_QUEUE_FIELDS
+
+    def write_old(self, root, rows):
+        path = root / "docs" / "sales" / ob.QUEUE_NAME
+        with path.open("w", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=self.OLD, lineterminator="\n", restval="")
+            writer.writeheader()
+            writer.writerows(rows)
+        return path
+
+    def old_row(self, n, source, **kw):
+        row = {"lead_id": f"l{n:03d}-lead-{n}", "person_channel": f"Lead {n} (@h{n})", "source": source,
+               "sport_interest": "MLB", "message_version": "v", "batch": "2"}
+        row.update(kw)
+        return row
+
+    def test_the_v1_header_is_read_as_v2_with_the_documented_mapping(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = _tree(Path(tmp))
+            path = self.write_old(root, [
+                self.old_row(1, "forum"),
+                self.old_row(2, "creator", sent_at="2026-10-02T09:00:00Z", reply_at="2026-10-03T09:00:00Z",
+                             reply_classification="interested", would_pay_at="2026-10-04T09:00:00Z", notes="n"),
+                self.old_row(3, "discord_server", reply_classification="auto", batch=""),
+                self.old_row(4, "x_account", reply_classification="hostile")])
+            rows = ob.read_queue(path)
+            self.assertEqual([r["lead_id"] for r in rows], ["l001-lead-1", "l002-lead-2", "l003-lead-3", "l004-lead-4"])
+            self.assertTrue(all(list(r) == ob.QUEUE_FIELDS for r in rows))
+            self.assertEqual([r["kind"] for r in rows], ["channel_post", "person", "person", "person"])
+            self.assertEqual([r["channel"] for r in rows], ["forum", "creator", "discord_server", "x_account"])
+            self.assertEqual([r["campaign"] for r in rows], ["batch_02", "batch_02", "", "batch_02"])
+            self.assertEqual(rows[1]["person"], "Lead 2 (@h2)")
+            self.assertEqual((rows[1]["reply_type"], rows[1]["would_pay"], rows[1]["would_pay_at"], rows[1]["notes"]),
+                             ("POSITIVE_INTEREST", "yes", "2026-10-04T09:00:00Z", "n"))
+            self.assertEqual((rows[2]["reply_type"], rows[3]["reply_type"]), ("SPAM_OR_IRRELEVANT", "TRUST_OBJECTION"))
+            self.assertEqual(rows[0]["would_pay"], "")
+            self.assertEqual(path.read_text(encoding="utf-8").splitlines()[0], ",".join(self.OLD))   # not rewritten by a read
+
+    def test_the_first_command_that_saves_writes_v2_and_keeps_every_lead_id(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = _tree(Path(tmp))
+            path = self.write_old(root, [self.old_row(1, "creator", sent_at="2026-10-02T09:00:00Z")])
+            self.assertEqual(run(root, "reply", "--lead", "l001-lead-1", "--type", "CURIOUS",
+                                 "--at", "2026-10-03T09:00:00Z")[0], 0)
+            self.assertEqual(path.read_text(encoding="utf-8").splitlines()[0], ",".join(ob.QUEUE_FIELDS))
+            row = queue_of(root)[0]
+            self.assertEqual((row["lead_id"], row["reply_type"]), ("l001-lead-1", "CURIOUS"))
+
+    def test_a_header_that_is_neither_version_and_a_bad_kind_are_refused(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "q.csv"
+            path.write_text("lead_id,person\nl001-x,X\n", encoding="utf-8")
+            with self.assertRaises(ob.OutreachError):
+                ob.read_queue(path)
+            ob.write_queue(path, [dict({f: "" for f in ob.QUEUE_FIELDS}, lead_id="l001-x", kind="human")])
+            with self.assertRaises(ob.OutreachError) as cm:
+                ob.read_queue(path)
+            self.assertIn("kind", str(cm.exception))
+
+    def test_the_committed_queue_is_v2_with_the_migrated_values(self):
+        """Reads the real (public) queue on purpose: the live utm_source ids must survive."""
+        root = Path(__file__).resolve().parents[1]
+        path = root / "docs" / "sales" / ob.QUEUE_NAME
+        self.assertEqual(path.read_text(encoding="utf-8").splitlines()[0], ",".join(ob.QUEUE_FIELDS))
+        rows = ob.read_queue(path)
+        self.assertEqual(len(rows), 40)
+        self.assertEqual(rows[0]["lead_id"], "l001-covers-website-promotions-forum")
+        self.assertEqual({r["kind"] for r in rows if r["channel"] == "forum"}, {"channel_post"})
+        self.assertEqual({r["kind"] for r in rows if r["channel"] != "forum"}, {"person"})
+        self.assertEqual({r["campaign"] for r in rows}, {"batch_01", "batch_02"})
+        for r in rows:
+            self.assertEqual(r["campaign"], f"batch_{int(r['batch']):02d}")
+            self.assertEqual(r["via_lead"], "")
 
 
 class TaggedLinks(unittest.TestCase):
@@ -856,7 +1451,7 @@ class Rebuild(unittest.TestCase):
         (self.sales / ob.QUEUE_NAME).unlink()
         self.assertEqual(run(self.root, "rebuild", "--batch", "1")[0], 0)
         rows = queue_of(self.root)
-        self.assertEqual([r["person_channel"] for r in rows], self.names())
+        self.assertEqual([r["person"] for r in rows], self.names())
         self.assertEqual(rows[0]["lead_id"][:5], "l001-")
         new_text = (self.sales / "batch_01.md").read_text(encoding="utf-8")
         self.assertIn(f"?utm_source={rows[0]['lead_id']}&utm_medium=forum&utm_campaign=batch_01#/record-card",

@@ -285,3 +285,8 @@ data/tennis_trial/
 # a registration that references an untracked artifact references nothing
 # anyone else can obtain. 1.6KB, written once, never regenerated nightly.
 !data/processed/card_v2_frozen_params.json
+
+# PRIVATE OUTREACH STORE (scripts/outreach_batch.py). The repository is PUBLIC; what a
+# person wrote to the owner and who they are (handles, emails) live ONLY here, append-only.
+# docs/sales/outreach_queue.csv and pipeline.csv hold ids, channels, timestamps and reply types.
+data/private/
