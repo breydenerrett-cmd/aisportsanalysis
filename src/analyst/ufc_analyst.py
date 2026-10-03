@@ -26,8 +26,8 @@ sports must mean the same thing by every field.
 
 WHY THE PROMPT ASKS FOR "THIN SAMPLE" CAUTION IN SO MANY WORDS
 --------------------------------------------------------------
-The data store holds only the fights it has ingested (it begins in 2024), so a
-fighter with a twenty-fight career can show two. Every rate in the packet says
+The data store holds only the fights it has ingested (the packet says where it
+begins), so a fighter with a twenty-fight career can show two. Every rate in the packet says
 how many fights it rests on, but a model reading a number tends to read the
 number. The prompt says, three ways, that a rate from one or two fights is not a
 rate and that PASS is the answer when the sample is thin.
