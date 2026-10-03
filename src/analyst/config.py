@@ -46,6 +46,12 @@ DEFAULTS: dict = {
     "model_critic": {"enabled": False, "model": "claude-sonnet-5-5",
                      "max_output_tokens": 4000},
     "min_graded_for_rates": 30,
+    # THE SIDE-BY-SIDE TEST (docs/SITUATION_LAYER.md). Off: `analyst run` runs arm A, the analyst
+    # that reads the matchup statistics, exactly as it always has. On: it also runs arm B on the same
+    # games, the same analyst plus the situation layer, into its own ledger. Arm B is a second call
+    # per game, so turning this on roughly doubles the analyst's cost. `analyst run --arm A|B|both`
+    # overrides it for one run.
+    "situation_arm": {"enabled": False},
 }
 
 
@@ -87,6 +93,9 @@ def validate(cfg: Mapping) -> dict:
             raise ConfigError(f"{key} must be an integer >= 0")
     if cfg["max_attempts"] < 1:
         raise ConfigError("max_attempts must be at least 1")
+    arm = cfg.get("situation_arm")
+    if not isinstance(arm, Mapping) or not isinstance(arm.get("enabled"), bool):
+        raise ConfigError("situation_arm.enabled must be true or false")
     return cfg
 
 

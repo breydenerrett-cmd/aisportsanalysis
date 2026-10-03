@@ -65,8 +65,12 @@ from typing import Any, Iterable, Mapping, Optional, Sequence
 
 from src.core import odds as odds_math
 from src.ledger.chain import canonical_bytes
+from src.situation import record as situation_record
 
 PACKET_VERSION = "analyst_packet_v1"
+# Arm B of the side-by-side test: the same packet with a `situation` section. The version says
+# so, and a packet built without a situation is byte for byte what it was (same version, same hash).
+PACKET_VERSION_SITUATION = "analyst_packet_v1_situation"
 
 # A section whose own as-of stamp is older than this is flagged stale.
 STALE_SECTION_DAYS = 14
@@ -657,7 +661,10 @@ def _sections(advanced: Mapping, payload: Mapping, overrides: Mapping,
     raw = dict(advanced.get("sections") or {})
     read = payload.get("read") if isinstance(payload.get("read"), Mapping) else advanced.get("read")
     if isinstance(read, Mapping) and read:
-        raw["read"] = read
+        # The page's written read can carry a "Situation" block. The situation reaches the analyst
+        # only through its own section (arm B), never through the read: otherwise arm A, the arm
+        # that must not see it, would read it here.
+        raw["read"] = {k: v for k, v in read.items() if k != "situation"}
     info = advanced.get("information_time")
     info = _iso(_parse_utc(info)) if info else None
     sections: dict = {}
@@ -743,8 +750,14 @@ def build_packet(payload: Mapping, *, built_at: str,
                  prop_board: Sequence[Mapping] = (),
                  team_names: Optional[Mapping] = None,
                  section_as_of: Optional[Mapping] = None,
-                 cfg: Optional[Mapping] = None) -> dict:
+                 cfg: Optional[Mapping] = None,
+                 situation: Optional[Mapping] = None) -> dict:
     """One game's frozen fact packet. Deterministic in its arguments.
+
+    `situation` (a `src.situation.mlb.situation_for_game` record) adds `sections.situation` and
+    changes `packet_version`: that is arm B of the side-by-side test. Left None, nothing is added
+    and the packet is exactly the one arm A has always had. Its holes stay in the section's own
+    `missing`; the packet's top-level `missing` is the same in both arms.
 
     `payload` is what GET /game/{date}/{away}/{home} returns (or its
     `advanced` block alone). The row arguments are this game's rows from the
@@ -766,6 +779,8 @@ def build_packet(payload: Mapping, *, built_at: str,
 
     sections, missing = _sections(advanced, payload, dict(section_as_of or {}),
                                   str(game["date"] or ""))
+    if situation is not None:
+        sections["situation"] = _scrub(situation_record.packet_section(situation))
 
     markets: dict = {}
     rows = list(multibook_rows)
@@ -854,7 +869,7 @@ def build_packet(payload: Mapping, *, built_at: str,
                      key=lambda m: (m["item"], m["kind"], m["reason"]))
 
     return {
-        "packet_version": PACKET_VERSION,
+        "packet_version": PACKET_VERSION if situation is None else PACKET_VERSION_SITUATION,
         "built_at": _iso(cutoff),
         "game": game,
         "sections": sections,
