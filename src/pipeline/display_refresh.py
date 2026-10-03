@@ -21,10 +21,12 @@ baseball date:
 
   results        every date since the store's last covered one, regular season
                  AND postseason (see "THE GAME-TYPE RULE")
-  bullpen_log    missing dates, and yesterday re-fetched whole (a game that was
-                 still in progress at the last fetch is otherwise lost)
-  pitcher_logs   starters in the last 21 days of results plus today's and
-                 tomorrow's probables, postseason starts included
+  bullpen_log    missing dates from the log's own newest date (never less than
+                 the last 75 days), and yesterday re-fetched whole (a game that
+                 was still in progress at the last fetch is otherwise lost)
+  pitcher_logs   every starter whose log is behind a start the results show
+                 (from HIS OWN coverage end), plus today's and tomorrow's
+                 probables; postseason starts included, each tagged
   standings      every missing daily snapshot; yesterday re-taken if it was
                  captured before that day was over
   pitcher_splits today's and tomorrow's probables
@@ -55,15 +57,33 @@ postseason pitcher appearances carry a `game_type` that
 `pitchers.league_fip_constant` excludes. The store holds the games; training
 tables leave them out.
 
+THE WINDOWS ARE ANCHORED ON COVERAGE, NOT ON THE CLOCK
+------------------------------------------------------
+The committed copy never advances (nothing commits these stores), so the gap
+between its last date and today only grows until someone commits one. A window
+measured back from TODAY (the first version: 21 days of starters, 75 days of
+bullpen) eventually stops reaching the start of that gap, and the oldest part
+of it is never fetched while /health, which counts the newest date or marker
+anywhere in a file, says the store is current. So each window starts at the
+store's OWN coverage end minus a small overlap: the bullpen at the log's newest
+date, a starter at his own log's end (his refresh marker, in Eastern time, or
+his newest start). The old window survives only as a floor on how far back to
+look for a hole.
+
 NEVER A WORSE STORE THAN THE ONE IT STARTED WITH
 ------------------------------------------------
 Every step works on a COPY in `<data>/.refresh_work/`. A copy is promoted over
-the original (`os.replace`, atomic) only if it parses and has not shrunk; any
-failure -- network down, deadline hit mid-step, a corrupt write -- leaves the
-committed copy exactly as it was ("fail soft to the committed copy"). A
-deadline hit mid-step promotes the progress made so far if it is sound: a
-partial catch-up is better than none, and every step resumes from its own
-coverage record next time.
+the original (`os.replace`, atomic) only if it parses and no key has lost a
+record; any failure -- network down, deadline hit mid-step, a corrupt write --
+leaves the committed copy exactly as it was ("fail soft to the committed
+copy"). A deadline hit mid-step promotes the progress made so far if it is
+sound: a partial catch-up is better than none, and every step resumes from its
+own coverage record next time.
+
+"No key has lost a record" is checked KEY BY KEY, not by total (see "Per-key
+promotion" below): an empty answer for one pitcher replaced his whole season
+while the store grew overall. A key that would lose a record keeps the union of
+the committed and refreshed records, and the run says so.
 
 BOUNDED: a wall-clock budget (default 270 s) divided across the steps by
 weight, with unused time rolling forward; a one-call reachability probe up
@@ -74,9 +94,16 @@ the child's address space.
 
 ZERO ODDS CREDITS. Every call here is MLB's free keyless Stats API or Baseball
 Savant's free leaderboard CSV; nothing imports `src.providers.odds`.
-Nothing here touches data/watch, data/processed, evidence, any odds store, any
-card file, or any outcome of the sealed 2026-01-01..08-27 window: those
-paths are never opened.
+Nothing here touches data/watch, data/processed, evidence, any odds store or any
+card file: those paths are never opened.
+
+THE SEALED WINDOW. The 2026-01-01..08-27 outcomes are sealed. No step requests
+a date in it (`_unsealed_start` clips every range to start on 2026-08-28),
+however old a store's coverage is -- the bullpen window used to reach back to
+2026-07-20 -- and rows already stored there are left exactly as they are. A
+pitcher's game log is the one answer that is not asked for by date (the feed
+returns a whole season), so the committed sealed-window starts are put back over
+whatever it now says for them.
 
 CLI:  python -m src.pipeline.display_refresh [--root DIR] [--max-seconds N]
           [--only results,bullpen,...] [--max-memory-mb N] [--json PATH]
@@ -113,8 +140,14 @@ RESULTS_CHUNK_DAYS = 5
 BULLPEN_WINDOW_DAYS = 75          # fill any missing date this far back. The committed
                                   # copy never advances, so every build re-does the gap
                                   # since it; ~3 s per game day, bounded by the budget
+BULLPEN_OVERLAP_DAYS = 2          # ... and never start later than the log's own newest
+                                  # date minus this: the window is a floor on how far
+                                  # back to look, the log's coverage end is the anchor
 BULLPEN_CHUNK_DAYS = 4
-PITCHER_ACTIVE_DAYS = 21          # a starter who started within this window is refreshed
+PITCHER_ACTIVE_DAYS = 21          # a starter with no record of ever being checked this
+                                  # season is refreshed only if he started this recently
+PITCHER_OVERLAP_DAYS = 2          # a starter is refreshed when he has a start on or after
+                                  # his own log's coverage end minus this
 PITCHER_CHUNK = 30
 PITCHER_REFRESH_AFTER_HOURS = 12.0
 PITCHER_MAX_PER_RUN = 400
@@ -126,6 +159,16 @@ SPLITS_DAYS_AHEAD = 1             # today and tomorrow's probables
 # A pitcher store may shrink by at most this fraction (a corrected appearance)
 # before a refresh refuses to promote it. Everything else may not shrink.
 PITCHER_SHRINK_TOLERANCE = 0.02
+
+# THE SEALED WINDOW. The 2026-01-01..2026-08-27 outcomes are sealed (CLAUDE.md,
+# docs/test_split_seal.json): nothing outside the owner's own research path may
+# fetch or rewrite them. The refresh therefore never asks for a date in this
+# window, however old a store's coverage is (the bullpen window reached back to
+# 2026-07-20 before this floor existed). Rows already stored there are left
+# exactly as they are: nothing here purges, rewrites or "cleans" them.
+SEALED_FIRST = date(2026, 1, 1)
+SEALED_LAST = date(2026, 8, 27)
+SEALED_FLOOR = date(2026, 8, 28)
 
 STEP_ORDER = ("results", "bullpen", "pitchers", "standings", "splits",
               "handedness", "arsenals", "transactions")
@@ -266,6 +309,21 @@ def _d(value) -> date:
     return value if isinstance(value, date) else date.fromisoformat(str(value)[:10])
 
 
+def _unsealed_start(start: date, end: date) -> Optional[date]:
+    """`start`, moved up to the sealed floor when [start, end] would reach into
+    the sealed window (the part of a range before 2026-08-28 is dropped, 2025
+    included: nothing here needs it); None when nothing is left to ask for.
+    EVERY date range a step requests goes through this."""
+    if start < SEALED_FLOOR and end >= SEALED_FIRST:
+        start = SEALED_FLOOR
+    return start if start <= end else None
+
+
+def _in_sealed_window(value) -> bool:
+    day = store_freshness._day(value)
+    return bool(day) and SEALED_FIRST <= date.fromisoformat(day) <= SEALED_LAST
+
+
 # ---------------------------------------------------------------------------
 # Steps. Each takes a context and returns a small report dict. They raise
 # nothing the caller must handle: `refresh` wraps every step in its own
@@ -296,9 +354,12 @@ def _step_results(ctx: _Ctx) -> dict:
         # No coverage record at all: a cold store is a full-season backfill,
         # which is `daily_bootstrap.sh`'s job. Never start one from here.
         start = lookback
+    # The coverage record is the anchor (the newest date it names, never the
+    # clock); the sealed window is never asked for, however old it is.
+    start = _unsealed_start(start, _d(ctx.today))
     attempted = processed = failed = 0
     errors = []
-    for first, last in _chunks(start, _d(ctx.today), RESULTS_CHUNK_DAYS):
+    for first, last in (_chunks(start, _d(ctx.today), RESULTS_CHUNK_DAYS) if start else ()):
         if ctx.deadline.expired():
             errors.append({"error": "deadline reached", "next": first})
             break
@@ -313,7 +374,7 @@ def _step_results(ctx: _Ctx) -> dict:
         processed += report["processed"]
         failed += report["failed"]
         errors.extend(report["errors"][:3])
-    return {"from": start.isoformat(), "to": ctx.today, "attempted": attempted,
+    return {"from": start.isoformat() if start else None, "to": ctx.today, "attempted": attempted,
             "processed": processed, "failed": failed, "errors": errors[:5]}
 
 
@@ -328,9 +389,20 @@ def _step_bullpen(ctx: _Ctx) -> dict:
     start = yesterday - timedelta(days=BULLPEN_WINDOW_DAYS - 1)
     have = _jsonl_dates(log)
     if have:
+        # ANCHORED ON THE LOG'S OWN COVERAGE END. The window is only how far
+        # back to look for a hole; it was relative to today, so once the gap
+        # since the committed copy's last date grew past it (a copy ending in
+        # September, a build in late November) the oldest part of the gap
+        # stopped being fetched while /health, which counts the newest date,
+        # reported the log current. Start no later than the newest date the log
+        # holds minus a small overlap (dates it already holds are skipped by
+        # `build_log` without a request), and never before its first date.
+        start = min(start, _d(max(have)) - timedelta(days=BULLPEN_OVERLAP_DAYS))
         start = max(start, _d(min(have)))
+    # The sealed window is never asked for, however old the gap is.
+    start = _unsealed_start(start, yesterday)
     appearances = dates = failed = 0
-    for first, last in _chunks(start, yesterday, BULLPEN_CHUNK_DAYS):
+    for first, last in (_chunks(start, yesterday, BULLPEN_CHUNK_DAYS) if start else ()):
         if ctx.deadline.expired():
             break
         report = bullpen.build_log(first, last, path=log, resume=True,
@@ -338,7 +410,7 @@ def _step_bullpen(ctx: _Ctx) -> dict:
         appearances += report["appearances"]
         dates += report["dates"]
         failed += report["failed"]
-    return {"from": start.isoformat(), "to": ctx.yesterday,
+    return {"from": start.isoformat() if start else None, "to": ctx.yesterday,
             "refetched_yesterday_rows": replaced, "dates": dates,
             "appearances": appearances, "failed": failed}
 
@@ -356,18 +428,113 @@ def _probable_ids_for(days, timeout) -> set:
     return ids
 
 
+def _eastern_day(stamp) -> Optional[str]:
+    """The US Eastern calendar day of an ISO timestamp (a refresh marker's
+    `checked_utc`), or None. Games are filed under the Eastern day."""
+    text = str(stamp or "")
+    if not text:
+        return None
+    try:
+        moment = store_freshness._utc(text)
+    except ValueError:
+        return None
+    return (moment + store_freshness.eastern_offset(moment)).date().isoformat()
+
+
+def _pitcher_covered_through(appearances, season) -> Optional[str]:
+    """The newest day one pitcher's stored log is known to cover for `season`:
+    the Eastern day his refresh marker says the feed was asked, or his newest
+    stored start, whichever is later. None when the log holds neither (never
+    checked)."""
+    best = None
+    for row in appearances:
+        if str(row.get("season") or str(row.get("date") or "")[:4]) != season:
+            continue
+        for day in (store_freshness._day(row.get("date")), _eastern_day(row.get("checked_utc"))):
+            if day and (best is None or day > best):
+                best = day
+    return best
+
+
+def _starters_to_refresh(results, existing, season, today: str) -> set:
+    """The pitchers whose stored log is behind a start the results show.
+
+    ANCHORED ON EACH PITCHER'S OWN COVERAGE, not on the clock. The first
+    version refreshed every starter of the last 21 days, so a start that fell
+    outside that window before the log was caught up (a copy ending in early
+    September, a build in October) was never fetched while /health, which
+    counts the newest marker anywhere in the file, reported the log current.
+    A starter is a candidate when the results show a start of his on or after
+    his log's coverage end minus `PITCHER_OVERLAP_DAYS`; one never checked this
+    season only when he started within `PITCHER_ACTIVE_DAYS` (a full-season
+    backfill is `daily_bootstrap.sh`'s job, not this refresh's)."""
+    newest_start: dict = {}
+    for row in results.values():
+        day = str(row.get("date") or "")
+        if not day.startswith(season):
+            continue
+        for key in ("away_probable_id", "home_probable_id"):
+            pid = row.get(key)
+            if pid not in (None, ""):
+                pid = str(pid)
+                if day > newest_start.get(pid, ""):
+                    newest_start[pid] = day
+    recent_cutoff = (_d(today) - timedelta(days=PITCHER_ACTIVE_DAYS)).isoformat()
+    out = set()
+    for pid, newest in newest_start.items():
+        covered = _pitcher_covered_through(existing.get(pid, []), season)
+        if covered is None:
+            if newest >= recent_cutoff:
+                out.add(pid)
+        elif newest >= (_d(covered) - timedelta(days=PITCHER_OVERLAP_DAYS)).isoformat():
+            out.add(pid)
+    return out
+
+
+def _keep_sealed_pitcher_rows(committed_path: Path, work_path: Path) -> int:
+    """Put back the rows the committed copy already holds for a date in the
+    sealed window. The game-log endpoint answers with a pitcher's WHOLE
+    season, so a refresh would otherwise replace his stored sealed-window
+    starts with the feed's current values (a stat correction included); no date
+    is requested, but the rows are rewritten. An appearance the committed copy
+    does not hold is left as the feed gave it. Returns how many rows were put
+    back."""
+    from src.pipeline import pitchers
+    if not committed_path.exists() or not work_path.exists():
+        return 0
+    kept = pitchers.read_logs(committed_path)
+    logs = pitchers.read_logs(work_path)
+    restored = 0
+    for person, rows in kept.items():
+        sealed = {_pitcher_ident(r): r for r in rows
+                  if r.get("date") and not r.get("empty") and _in_sealed_window(r["date"])}
+        if not sealed or person not in logs:
+            continue
+        merged = []
+        for row in logs[person]:
+            ident = _pitcher_ident(row)
+            if row.get("date") and _in_sealed_window(row["date"]) and ident in sealed:
+                if row != sealed[ident]:
+                    restored += 1
+                merged.append(sealed[ident])
+            else:
+                merged.append(row)
+        logs[person] = merged
+    if restored:
+        pitchers.write_logs(logs, work_path)
+    return restored
+
+
 def _step_pitchers(ctx: _Ctx) -> dict:
     from src.pipeline import history, pitchers
     path = ctx.w("pitcher_logs.jsonl")
     results = history.read_results(ctx.w("mlb_results.csv"))
-    cutoff = (_d(ctx.today) - timedelta(days=PITCHER_ACTIVE_DAYS)).isoformat()
-    recent_ids = pitchers.probable_pitcher_ids(
-        {k: v for k, v in results.items() if str(v.get("date") or "") >= cutoff})
+    existing = pitchers.read_logs(path)
+    recent_ids = _starters_to_refresh(results, existing, ctx.season, ctx.today)
     upcoming = _probable_ids_for(
         [(_d(ctx.today) + timedelta(days=i)).isoformat() for i in range(0, 3)], ctx.timeout)
-    # Upcoming starters first (they decide tonight's pages), then anyone who
-    # started lately. Within each group, never-checked before stale.
-    existing = pitchers.read_logs(path)
+    # Upcoming starters first (they decide tonight's pages), then anyone whose
+    # log is behind a start. Within each group, never-checked before stale.
 
     def staleness(pid):
         marker = pitchers.coverage_marker(existing.get(pid, []), ctx.season)
@@ -388,8 +555,11 @@ def _step_pitchers(ctx: _Ctx) -> dict:
             timeout=ctx.timeout, game_types=mlb.DECISIVE_GAME_TYPES)
         processed += report["processed"]
         failed += report["failed"]
+    # The sealed window's rows stay exactly as committed (see SEALED_FIRST).
+    sealed_kept = _keep_sealed_pitcher_rows(ctx.base / "pitcher_logs.jsonl", path) if processed else 0
     return {"candidates": len(ordered), "upcoming_probables": len(upcoming),
-            "fetched": processed, "failed": failed, "deferred_by_deadline": deferred}
+            "fetched": processed, "failed": failed, "deferred_by_deadline": deferred,
+            "sealed_rows_kept": sealed_kept}
 
 
 def _step_standings(ctx: _Ctx) -> dict:
@@ -426,9 +596,12 @@ def _step_standings(ctx: _Ctx) -> dict:
             retaken = _drop_standings_day(path, ctx.yesterday)
             start = min(start, _d(ctx.yesterday))
 
+    # The sealed window is never asked for (a snapshot there is an outcome-era
+    # record; see SEALED_FIRST).
+    first_day = _unsealed_start(start, today)
     built = skipped = failed = 0
-    day = start
-    while day <= today:
+    day = first_day
+    while day is not None and day <= today:
         if ctx.deadline.expired():
             break
         result = standings.build(day.year, day, path=path, timeout=ctx.timeout)
@@ -439,8 +612,9 @@ def _step_standings(ctx: _Ctx) -> dict:
         else:
             built += 1
         day += timedelta(days=1)
-    return {"from": start.isoformat(), "to": ctx.today, "built": built,
-            "skipped": skipped, "failed": failed, "retaken_yesterday_rows": retaken}
+    return {"from": first_day.isoformat() if first_day else None, "to": ctx.today,
+            "built": built, "skipped": skipped, "failed": failed,
+            "retaken_yesterday_rows": retaken}
 
 
 def _drop_standings_day(path: Path, day: str) -> int:
@@ -518,6 +692,9 @@ def _step_transactions(ctx: _Ctx) -> dict:
         newest = max(stamps) if stamps else None
     floor = _d(ctx.today) - timedelta(days=TRANSACTIONS_MAX_WINDOW_DAYS)
     start = max(_d(newest) - timedelta(days=2), floor) if newest else _d(ctx.today) - timedelta(days=7)
+    start = _unsealed_start(start, _d(ctx.today))
+    if start is None:
+        return {"from": None, "fetched": 0, "written": 0}
     report = news.ingest(start.isoformat(), ctx.today, store=store)
     return {"from": start.isoformat(), "fetched": report["fetched"], "written": report["written"]}
 
