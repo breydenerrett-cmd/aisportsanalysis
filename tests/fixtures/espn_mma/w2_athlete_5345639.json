@@ -1,0 +1,167 @@
+{
+ "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/5345639?lang=en&region=us",
+ "id": "5345639",
+ "uid": "s:3301~a:5345639",
+ "guid": "e845fd49-7e5b-3b8c-8fa2-1ae4e31b255c",
+ "firstName": "Ilimbek",
+ "lastName": "Akylbek Uulu",
+ "fullName": "Ilimbek Akylbek Uulu",
+ "displayName": "Ilimbek Akylbek Uulu",
+ "shortName": "I. Akylbek Uulu",
+ "weight": 135.0,
+ "displayWeight": "135 lbs",
+ "height": 67.0,
+ "displayHeight": "5' 7\"",
+ "age": 23,
+ "dateOfBirth": "2003-09-01T07:00Z",
+ "gender": "MALE",
+ "links": [
+  {
+   "language": "en-US",
+   "rel": [
+    "playercard",
+    "desktop",
+    "athlete"
+   ],
+   "href": "https://www.espn.com/mma/fighter/_/id/5345639/ilimbek-akylbek-uulu",
+   "text": "Player Card",
+   "shortText": "Player Card",
+   "isExternal": false,
+   "isPremium": false
+  },
+  {
+   "language": "en-US",
+   "rel": [
+    "stats",
+    "desktop",
+    "athlete"
+   ],
+   "href": "https://www.espn.com/mma/fighter/stats/_/id/5345639/ilimbek-akylbek-uulu",
+   "text": "Stats",
+   "shortText": "Stats",
+   "isExternal": false,
+   "isPremium": false
+  },
+  {
+   "language": "en-US",
+   "rel": [
+    "news",
+    "desktop",
+    "athlete"
+   ],
+   "href": "https://www.espn.com/mma/fighter/news/_/id/5345639/ilimbek-akylbek-uulu",
+   "text": "News",
+   "shortText": "News",
+   "isExternal": false,
+   "isPremium": false
+  },
+  {
+   "language": "en-US",
+   "rel": [
+    "bio",
+    "desktop",
+    "athlete"
+   ],
+   "href": "https://www.espn.com/mma/fighter/bio/_/id/5345639/ilimbek-akylbek-uulu",
+   "text": "Bio",
+   "shortText": "Bio",
+   "isExternal": false,
+   "isPremium": false
+  },
+  {
+   "language": "en-US",
+   "rel": [
+    "overview",
+    "desktop",
+    "athlete"
+   ],
+   "href": "https://www.espn.com/mma/fighter/_/id/5345639/ilimbek-akylbek-uulu",
+   "text": "Overview",
+   "shortText": "Overview",
+   "isExternal": false,
+   "isPremium": false
+  },
+  {
+   "language": "en-US",
+   "rel": [
+    "history",
+    "desktop",
+    "athlete"
+   ],
+   "href": "https://www.espn.com/mma/fighter/history/_/id/5345639/ilimbek-akylbek-uulu",
+   "text": "Fight History",
+   "shortText": "Fight History",
+   "isExternal": false,
+   "isPremium": false
+  }
+ ],
+ "citizenship": "Kyrgyzstan",
+ "citizenshipCountry": {
+  "alternateId": "634",
+  "abbreviation": "KGZ",
+  "color": "#E8112D",
+  "alternateColor": "#FFE704"
+ },
+ "slug": "ilimbek-akylbek-uulu",
+ "headshot": {
+  "href": "https://a.espncdn.com/i/headshots/mma/players/full/5345639.png",
+  "alt": "Ilimbek Akylbek Uulu"
+ },
+ "flag": {
+  "href": "https://a.espncdn.com/i/teamlogos/countries/500/kgz.png",
+  "alt": "Kyrgyzstan",
+  "rel": [
+   "country-flag"
+  ]
+ },
+ "linked": true,
+ "statistics": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/5345639/statistics?lang=en&region=us"
+ },
+ "records": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/5345639/records?lang=en&region=us"
+ },
+ "active": true,
+ "eventLog": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/5345639/eventlog?lang=en&region=us"
+ },
+ "status": {
+  "id": "1",
+  "name": "Active",
+  "type": "active",
+  "abbreviation": "Active"
+ },
+ "leagues": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/5345639/leagues?lang=en&region=us"
+ },
+ "defaultLeague": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc?lang=en&region=us"
+ },
+ "reach": 66.5,
+ "displayReach": "66.5\"",
+ "weightClass": {
+  "id": "970",
+  "text": "Bantamweight",
+  "shortName": "Bantamweight",
+  "slug": "bantamweight"
+ },
+ "stance": {
+  "id": "75",
+  "text": "Orthodox"
+ },
+ "association": {
+  "id": "8588",
+  "name": "VFS Academy",
+  "location": {
+   "country": "Kyrgyzstan"
+  }
+ },
+ "images": [
+  {
+   "href": "https://a.espncdn.com/i/headshots/mma/players/stance/right/5345639.png",
+   "rel": [
+    "rightStance"
+   ]
+  }
+ ]
+}

@@ -1,0 +1,179 @@
+{
+ "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/3154389?lang=en&region=us",
+ "id": "3154389",
+ "uid": "s:3301~a:3154389",
+ "guid": "717694aa-bb3b-12f1-fda3-b8ef26d53c30",
+ "firstName": "Alatengheili",
+ "fullName": "Alatengheili",
+ "displayName": "Alatengheili",
+ "nickname": "The Mongolian Knight",
+ "shortName": "Alatengheili",
+ "weight": 136.0,
+ "displayWeight": "136 lbs",
+ "height": 65.0,
+ "displayHeight": "5' 5\"",
+ "age": 34,
+ "dateOfBirth": "1991-12-14T08:00Z",
+ "gender": "MALE",
+ "links": [
+  {
+   "language": "en-US",
+   "rel": [
+    "playercard",
+    "desktop",
+    "athlete"
+   ],
+   "href": "https://www.espn.com/mma/fighter/_/id/3154389/alatengheili",
+   "text": "Player Card",
+   "shortText": "Player Card",
+   "isExternal": false,
+   "isPremium": false
+  },
+  {
+   "language": "en-US",
+   "rel": [
+    "stats",
+    "desktop",
+    "athlete"
+   ],
+   "href": "https://www.espn.com/mma/fighter/stats/_/id/3154389/alatengheili",
+   "text": "Stats",
+   "shortText": "Stats",
+   "isExternal": false,
+   "isPremium": false
+  },
+  {
+   "language": "en-US",
+   "rel": [
+    "news",
+    "desktop",
+    "athlete"
+   ],
+   "href": "https://www.espn.com/mma/fighter/news/_/id/3154389/alatengheili",
+   "text": "News",
+   "shortText": "News",
+   "isExternal": false,
+   "isPremium": false
+  },
+  {
+   "language": "en-US",
+   "rel": [
+    "bio",
+    "desktop",
+    "athlete"
+   ],
+   "href": "https://www.espn.com/mma/fighter/bio/_/id/3154389/alatengheili",
+   "text": "Bio",
+   "shortText": "Bio",
+   "isExternal": false,
+   "isPremium": false
+  },
+  {
+   "language": "en-US",
+   "rel": [
+    "overview",
+    "desktop",
+    "athlete"
+   ],
+   "href": "https://www.espn.com/mma/fighter/_/id/3154389/alatengheili",
+   "text": "Overview",
+   "shortText": "Overview",
+   "isExternal": false,
+   "isPremium": false
+  },
+  {
+   "language": "en-US",
+   "rel": [
+    "history",
+    "desktop",
+    "athlete"
+   ],
+   "href": "https://www.espn.com/mma/fighter/history/_/id/3154389/alatengheili",
+   "text": "Fight History",
+   "shortText": "Fight History",
+   "isExternal": false,
+   "isPremium": false
+  }
+ ],
+ "citizenship": "China",
+ "citizenshipCountry": {
+  "alternateId": "384",
+  "abbreviation": "CHN",
+  "color": "#DE2910",
+  "alternateColor": "#FFDE00"
+ },
+ "slug": "alatengheili",
+ "headshot": {
+  "href": "https://a.espncdn.com/i/headshots/mma/players/full/3154389.png",
+  "alt": "Alatengheili"
+ },
+ "flag": {
+  "href": "https://a.espncdn.com/i/teamlogos/countries/500/chn.png",
+  "alt": "China",
+  "rel": [
+   "country-flag"
+  ]
+ },
+ "linked": true,
+ "statistics": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/3154389/statistics?lang=en&region=us"
+ },
+ "records": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/3154389/records?lang=en&region=us"
+ },
+ "active": true,
+ "eventLog": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/3154389/eventlog?lang=en&region=us"
+ },
+ "status": {
+  "id": "1",
+  "name": "Active",
+  "type": "active",
+  "abbreviation": "Active"
+ },
+ "leagues": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/3154389/leagues?lang=en&region=us"
+ },
+ "defaultLeague": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc?lang=en&region=us"
+ },
+ "reach": 66.0,
+ "displayReach": "66\"",
+ "weightClass": {
+  "id": "970",
+  "text": "Bantamweight",
+  "shortName": "Bantamweight",
+  "slug": "bantamweight"
+ },
+ "stance": {
+  "id": "75",
+  "text": "Orthodox"
+ },
+ "association": {
+  "id": "5795",
+  "name": "Fight Ready",
+  "location": {
+   "country": "China"
+  }
+ },
+ "styles": [
+  {
+   "id": "34",
+   "text": "Mixed Martial Artist"
+  }
+ ],
+ "images": [
+  {
+   "href": "https://a.espncdn.com/i/headshots/mma/players/stance/left/3154389.png",
+   "rel": [
+    "leftStance"
+   ]
+  },
+  {
+   "href": "https://a.espncdn.com/i/headshots/mma/players/stance/right/3154389.png",
+   "rel": [
+    "rightStance"
+   ]
+  }
+ ]
+}

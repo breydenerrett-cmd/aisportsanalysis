@@ -1,0 +1,133 @@
+{
+ "count": 1,
+ "pageIndex": 1,
+ "pageSize": 25,
+ "pageCount": 1,
+ "items": [
+  {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/5450121/records/0?lang=en&region=us",
+   "id": "0",
+   "name": "overall",
+   "abbreviation": "TOT",
+   "displayName": "Overall",
+   "shortDisplayName": "OVER",
+   "description": "Overall Record",
+   "type": "total",
+   "summary": "6-0-0",
+   "displayValue": "6-0-0",
+   "value": 1.0,
+   "stats": [
+    {
+     "name": "losses",
+     "displayName": "Losses",
+     "shortDisplayName": "L",
+     "description": "Losses",
+     "abbreviation": "L",
+     "type": "losses",
+     "value": 0.0,
+     "displayValue": "0"
+    },
+    {
+     "name": "wins",
+     "displayName": "Wins",
+     "shortDisplayName": "W",
+     "description": "Wins",
+     "abbreviation": "W",
+     "type": "wins",
+     "value": 6.0,
+     "displayValue": "6"
+    },
+    {
+     "name": "draws",
+     "displayName": "Draws",
+     "shortDisplayName": "Draws",
+     "description": "Draws",
+     "abbreviation": "D",
+     "type": "draws",
+     "value": 0.0,
+     "displayValue": "0"
+    },
+    {
+     "name": "noContests",
+     "displayName": "No Contests",
+     "shortDisplayName": "No Contests",
+     "description": "No Contests",
+     "abbreviation": "NC",
+     "type": "nocontests",
+     "value": 0.0,
+     "displayValue": "0"
+    },
+    {
+     "name": "submissionLosses",
+     "displayName": "Submission Losses",
+     "shortDisplayName": "SUBL",
+     "description": "Submission Losses",
+     "abbreviation": "SUBL",
+     "type": "submissionlosses",
+     "value": 0.0,
+     "displayValue": "0"
+    },
+    {
+     "name": "submissions",
+     "displayName": "Submissions",
+     "shortDisplayName": "SUB",
+     "description": "Submissions",
+     "abbreviation": "SUB",
+     "type": "submissions",
+     "value": 0.0,
+     "displayValue": "0"
+    },
+    {
+     "name": "titleDraws",
+     "displayName": "Title Draws",
+     "shortDisplayName": "TDRW",
+     "description": "Title Draws",
+     "abbreviation": "TDRW",
+     "type": "titledraws",
+     "value": 0.0,
+     "displayValue": "0"
+    },
+    {
+     "name": "titleLosses",
+     "displayName": "Title Losses",
+     "shortDisplayName": "TLOS",
+     "description": "Title Losses",
+     "abbreviation": "TLOS",
+     "type": "titlelosses",
+     "value": 0.0,
+     "displayValue": "0"
+    },
+    {
+     "name": "titleWins",
+     "displayName": "Title Wins",
+     "shortDisplayName": "TWIN",
+     "description": "Titles Wins",
+     "abbreviation": "TWIN",
+     "type": "titlewins",
+     "value": 3.0,
+     "displayValue": "3"
+    },
+    {
+     "name": "tkoLosses",
+     "displayName": "Technical Knockout Losses",
+     "shortDisplayName": "TKOL",
+     "description": "Technical Knockout Losses",
+     "abbreviation": "TKOL",
+     "type": "tkolosses",
+     "value": 0.0,
+     "displayValue": "0"
+    },
+    {
+     "name": "tkos",
+     "displayName": "Technical Knockout",
+     "shortDisplayName": "TKO",
+     "description": "Technical Knockout",
+     "abbreviation": "TKO",
+     "type": "tkos",
+     "value": 5.0,
+     "displayValue": "5"
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,174 @@
+{
+ "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/4274796?lang=en&region=us",
+ "id": "4274796",
+ "uid": "s:3301~a:4274796",
+ "guid": "a736a673-5b6e-6121-f5fc-1a033eafd63b",
+ "firstName": "Roberto",
+ "lastName": "Soldić",
+ "fullName": "Roberto Soldić",
+ "displayName": "Roberto Soldić",
+ "nickname": "Robocop",
+ "shortName": "R. Soldić",
+ "weight": 185.0,
+ "displayWeight": "185 lbs",
+ "height": 71.0,
+ "displayHeight": "5' 11\"",
+ "age": 31,
+ "dateOfBirth": "1995-01-25T08:00Z",
+ "gender": "MALE",
+ "links": [
+  {
+   "language": "en-US",
+   "rel": [
+    "playercard",
+    "desktop",
+    "athlete"
+   ],
+   "href": "https://www.espn.com/mma/fighter/_/id/4274796/roberto-soldic",
+   "text": "Player Card",
+   "shortText": "Player Card",
+   "isExternal": false,
+   "isPremium": false
+  },
+  {
+   "language": "en-US",
+   "rel": [
+    "stats",
+    "desktop",
+    "athlete"
+   ],
+   "href": "https://www.espn.com/mma/fighter/stats/_/id/4274796/roberto-soldic",
+   "text": "Stats",
+   "shortText": "Stats",
+   "isExternal": false,
+   "isPremium": false
+  },
+  {
+   "language": "en-US",
+   "rel": [
+    "news",
+    "desktop",
+    "athlete"
+   ],
+   "href": "https://www.espn.com/mma/fighter/news/_/id/4274796/roberto-soldic",
+   "text": "News",
+   "shortText": "News",
+   "isExternal": false,
+   "isPremium": false
+  },
+  {
+   "language": "en-US",
+   "rel": [
+    "bio",
+    "desktop",
+    "athlete"
+   ],
+   "href": "https://www.espn.com/mma/fighter/bio/_/id/4274796/roberto-soldic",
+   "text": "Bio",
+   "shortText": "Bio",
+   "isExternal": false,
+   "isPremium": false
+  },
+  {
+   "language": "en-US",
+   "rel": [
+    "overview",
+    "desktop",
+    "athlete"
+   ],
+   "href": "https://www.espn.com/mma/fighter/_/id/4274796/roberto-soldic",
+   "text": "Overview",
+   "shortText": "Overview",
+   "isExternal": false,
+   "isPremium": false
+  },
+  {
+   "language": "en-US",
+   "rel": [
+    "history",
+    "desktop",
+    "athlete"
+   ],
+   "href": "https://www.espn.com/mma/fighter/history/_/id/4274796/roberto-soldic",
+   "text": "Fight History",
+   "shortText": "Fight History",
+   "isExternal": false,
+   "isPremium": false
+  }
+ ],
+ "citizenship": "Croatia",
+ "citizenshipCountry": {
+  "alternateId": "152",
+  "abbreviation": "CRO",
+  "color": "#FF0000",
+  "alternateColor": "#171796"
+ },
+ "slug": "roberto-soldic",
+ "headshot": {
+  "href": "https://a.espncdn.com/i/headshots/mma/players/full/4274796.png",
+  "alt": "Roberto Soldić"
+ },
+ "flag": {
+  "href": "https://a.espncdn.com/i/teamlogos/countries/500/cro.png",
+  "alt": "Croatia",
+  "rel": [
+   "country-flag"
+  ]
+ },
+ "linked": true,
+ "statistics": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/4274796/statistics?lang=en&region=us"
+ },
+ "records": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/4274796/records?lang=en&region=us"
+ },
+ "active": true,
+ "eventLog": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/4274796/eventlog?lang=en&region=us"
+ },
+ "status": {
+  "id": "1",
+  "name": "Active",
+  "type": "active",
+  "abbreviation": "Active"
+ },
+ "leagues": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/4274796/leagues?lang=en&region=us"
+ },
+ "defaultLeague": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc?lang=en&region=us"
+ },
+ "reach": 73.0,
+ "displayReach": "73\"",
+ "weightClass": {
+  "id": "969",
+  "text": "Welterweight",
+  "shortName": "Welterweight",
+  "slug": "welterweight"
+ },
+ "stance": {
+  "id": "76",
+  "text": "Southpaw"
+ },
+ "association": {
+  "id": "5467",
+  "name": "UFD Gym",
+  "location": {
+   "country": "Croatia"
+  }
+ },
+ "styles": [
+  {
+   "id": "30",
+   "text": "Striker"
+  }
+ ],
+ "images": [
+  {
+   "href": "https://a.espncdn.com/i/headshots/mma/players/stance/left/4274796.png",
+   "rel": [
+    "leftStance"
+   ]
+  }
+ ]
+}

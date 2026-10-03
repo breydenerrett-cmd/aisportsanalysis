@@ -1,0 +1,167 @@
+{
+ "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/5450121?lang=en&region=us",
+ "id": "5450121",
+ "uid": "s:3301~a:5450121",
+ "guid": "b9fc5b81-c4b6-329f-a436-8706134c2783",
+ "firstName": "Lucas",
+ "lastName": "Armand",
+ "fullName": "Lucas Armand",
+ "displayName": "Lucas Armand",
+ "nickname": "Do or Die",
+ "shortName": "L. Armand",
+ "weight": 264.0,
+ "displayWeight": "264 lbs",
+ "height": 76.0,
+ "displayHeight": "6' 4\"",
+ "age": 30,
+ "dateOfBirth": "1995-10-26T07:00Z",
+ "gender": "MALE",
+ "links": [
+  {
+   "language": "en-US",
+   "rel": [
+    "playercard",
+    "desktop",
+    "athlete"
+   ],
+   "href": "https://www.espn.com/mma/fighter/_/id/5450121/lucas-armand",
+   "text": "Player Card",
+   "shortText": "Player Card",
+   "isExternal": false,
+   "isPremium": false
+  },
+  {
+   "language": "en-US",
+   "rel": [
+    "stats",
+    "desktop",
+    "athlete"
+   ],
+   "href": "https://www.espn.com/mma/fighter/stats/_/id/5450121/lucas-armand",
+   "text": "Stats",
+   "shortText": "Stats",
+   "isExternal": false,
+   "isPremium": false
+  },
+  {
+   "language": "en-US",
+   "rel": [
+    "news",
+    "desktop",
+    "athlete"
+   ],
+   "href": "https://www.espn.com/mma/fighter/news/_/id/5450121/lucas-armand",
+   "text": "News",
+   "shortText": "News",
+   "isExternal": false,
+   "isPremium": false
+  },
+  {
+   "language": "en-US",
+   "rel": [
+    "bio",
+    "desktop",
+    "athlete"
+   ],
+   "href": "https://www.espn.com/mma/fighter/bio/_/id/5450121/lucas-armand",
+   "text": "Bio",
+   "shortText": "Bio",
+   "isExternal": false,
+   "isPremium": false
+  },
+  {
+   "language": "en-US",
+   "rel": [
+    "overview",
+    "desktop",
+    "athlete"
+   ],
+   "href": "https://www.espn.com/mma/fighter/_/id/5450121/lucas-armand",
+   "text": "Overview",
+   "shortText": "Overview",
+   "isExternal": false,
+   "isPremium": false
+  },
+  {
+   "language": "en-US",
+   "rel": [
+    "history",
+    "desktop",
+    "athlete"
+   ],
+   "href": "https://www.espn.com/mma/fighter/history/_/id/5450121/lucas-armand",
+   "text": "Fight History",
+   "shortText": "Fight History",
+   "isExternal": false,
+   "isPremium": false
+  }
+ ],
+ "citizenship": "USA",
+ "citizenshipCountry": {
+  "alternateId": "1",
+  "abbreviation": "USA",
+  "color": "#3C3B6E",
+  "alternateColor": "#B22234"
+ },
+ "slug": "lucas-armand",
+ "headshot": {
+  "href": "https://a.espncdn.com/i/headshots/mma/players/full/5450121.png",
+  "alt": "Lucas Armand"
+ },
+ "flag": {
+  "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+  "alt": "USA",
+  "rel": [
+   "country-flag"
+  ]
+ },
+ "linked": true,
+ "statistics": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/5450121/statistics?lang=en&region=us"
+ },
+ "records": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/5450121/records?lang=en&region=us"
+ },
+ "active": true,
+ "eventLog": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/5450121/eventlog?lang=en&region=us"
+ },
+ "status": {
+  "id": "1",
+  "name": "Active",
+  "type": "active",
+  "abbreviation": "Active"
+ },
+ "leagues": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/5450121/leagues?lang=en&region=us"
+ },
+ "defaultLeague": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc?lang=en&region=us"
+ },
+ "reach": 0.0,
+ "weightClass": {
+  "id": "982",
+  "text": "Heavyweight",
+  "shortName": "Heavyweight",
+  "slug": "heavyweight"
+ },
+ "stance": {
+  "id": "0",
+  "text": "--"
+ },
+ "association": {
+  "id": "7627",
+  "name": "Murcielago MMA",
+  "location": {
+   "country": "USA"
+  }
+ },
+ "images": [
+  {
+   "href": "https://a.espncdn.com/i/headshots/mma/players/stance/right/5450121.png",
+   "rel": [
+    "rightStance"
+   ]
+  }
+ ]
+}
