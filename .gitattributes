@@ -24,3 +24,9 @@ evidence/*.jsonl text eol=lf
 # Fixture copies of real ledgers (tests/fixtures/example_accounts) keep the
 # writer's LF so they stay byte-identical to the evidence they were copied from.
 tests/fixtures/example_accounts/*.jsonl text eol=lf
+# The data service's normalised files (src/datasvc/store.py writes them LF) and
+# the MANIFEST.json that records each one's byte size and sha256. A CRLF working
+# copy would no longer match its manifest, so the data API would stop trusting
+# it and rescan every file (api/datasvc.py StoreHolder._measure).
+data/datasvc/**/*.jsonl text eol=lf
+data/datasvc/**/MANIFEST.json text eol=lf
