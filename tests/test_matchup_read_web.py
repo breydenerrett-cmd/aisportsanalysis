@@ -49,7 +49,8 @@ class TheReadIsWiredAboveTheTables(unittest.TestCase):
     def test_the_read_is_appended_before_every_table_on_the_game_route(self):
         body = GAMES_JS.split("export async function renderGameDetail(")[1]
         read_at = body.index("renderMatchupRead(payload.read)")
-        for later in ("gqvPrice(quick)", "renderGameStory(advanced, quick)",
+        for later in ("gqvPrice(quick, live)", "renderLineMarkets(oddsEntry, live)",
+                      "renderGameStory(advanced, quick)",
                       "gqvTeams(advanced, quick)", "gqvActions(date, away, home)",
                       "renderAdvancedV2(advanced, quick)"):
             self.assertLess(read_at, body.index(later), later)
