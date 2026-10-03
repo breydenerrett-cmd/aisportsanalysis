@@ -301,6 +301,11 @@ SLIP_OUT=$(python3 -m src.cli engine slip --date "$TODAY" 2>&1)
 echo "$SLIP_OUT" | sed 's/^/  /' || echo "  (slip pass failed; frozen decisions are unaffected)"
 echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: engine slip --date $TODAY" >> "$RUN_NOTE"
 
+# AN OFF DAY IS NOT A MISSED SLATE (2026-10-03). On a date the results
+# manifest proves had no MLB game (src.pipeline.history.no_games_scheduled),
+# `engine settle` and `eod` below say "nothing to settle / review" and exit 0;
+# the catch-up at the top of this script reads yesterday's schedule first.
+# Any other date with no wagers or decisions still exits 2 and escalates.
 echo "== engine settle (yesterday, $YESTERDAY) =="
 SETTLE_OUT=$(python3 -m src.cli engine settle --date "$YESTERDAY" 2>&1)
 SETTLE_STATUS=$?

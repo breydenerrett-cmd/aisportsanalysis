@@ -161,6 +161,45 @@ def covers_scope(entry: Mapping, wanted) -> bool:
     return frozenset(wanted) <= stored_scope(entry)
 
 
+def no_games_scheduled(game_date, path=None):
+    """Why `game_date` had no MLB game anyone could have staked on, or None.
+
+    WHY THIS EXISTS (2026-10-03). 2026-10-02 was a league-wide off day between
+    the Wild Card round and the Division Series. The engine slate correctly
+    considered 0 games and recorded nothing; the next morning `engine settle`
+    ("no paper wagers recorded") and `eod` ("no decisions were recorded")
+    refused that date, the daily loop escalated both, and the job went red.
+    The same happens on every off day between rounds, at the All-Star break
+    and every day of the offseason. Those two commands ask this function
+    before reporting a failure.
+
+    POSITIVE EVIDENCE ONLY. A reason comes back only when this manifest says
+    the schedule was read for the date and nothing is pending, and either it
+    listed no game at all, or (when the date was read under the decisive
+    scope, so every regular-season and postseason game would have been kept)
+    every game it listed was of a type the store never keeps, such as the
+    All-Star Game. A date the manifest has never seen, one with games still
+    pending, one with any regular-season or postseason game -- cancelled ones
+    included, since they were scheduled when a slate would have run -- or an
+    unreadable manifest returns None, so a slate that never ran on a real game
+    day still fails loudly.
+    """
+    try:
+        entry = read_manifest(path if path is not None else DEFAULT_MANIFEST).get(str(game_date))
+    except HistoryError:
+        return None
+    if not isinstance(entry, Mapping) or entry.get("pending"):
+        return None
+    total = entry.get("total")
+    if total == 0:
+        return f"the MLB schedule listed no games on {game_date}"
+    if (isinstance(total, int) and total > 0 and covers_scope(entry, mlb.DECISIVE_GAME_TYPES)
+            and entry.get("stored") == 0 and entry.get("skipped_game_type") == total):
+        return (f"the MLB schedule listed only exhibition games on {game_date} "
+                "(no regular-season or postseason game)")
+    return None
+
+
 def missing_dates(start, end, path=DEFAULT_MANIFEST,
                   include_unfinished: bool = True, game_types=None) -> list:
     """Dates in a range that still owe us results.

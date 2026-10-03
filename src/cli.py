@@ -2683,9 +2683,23 @@ def _cmd_engine_settle(args) -> int:
     """S6a: `engine settle --date DATE`. See
     `src.engine.settle_slate.run_settle`."""
     from src.engine import settle_slate
+    from src.pipeline import history
 
     try:
         report = settle_slate.run_settle(args.date)
+    except settle_slate.NoWagersError as exc:
+        # An off day is not a missed slate: with no game scheduled there was
+        # nothing to stake, so nothing is owed. Only the results manifest's
+        # positive evidence counts (history.no_games_scheduled); any other
+        # empty date is refused exactly as before and the daily loop escalates.
+        reason = history.no_games_scheduled(args.date)
+        if reason is None:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return EXIT_ERROR
+        print(f"[PAPER] engine settle --date {args.date}")
+        print(f"  nothing to settle   : {reason} (results manifest), so no slate "
+              "was expected and no wager is owed")
+        return EXIT_OK
     except settle_slate.SettleError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return EXIT_ERROR
@@ -3725,6 +3739,20 @@ def cmd_eod(args) -> int:
         d for d in all_decisions
         if (d.decision_utc or "").startswith(date_str)
     ]
+
+    # AN OFF DAY HAS NOTHING TO REVIEW. No decision on a date the results
+    # manifest proves had no MLB game (history.no_games_scheduled) is not a
+    # gap: nothing is written, as before, and the command says why and exits
+    # 0. Any other empty date still refuses below (EodReviewError, exit 2), so
+    # a slate that never ran on a real game day still escalates.
+    if not decisions:
+        from src.pipeline import history
+        reason = history.no_games_scheduled(date_str)
+        if reason is not None:
+            print(f"eod --date {date_str}")
+            print(f"  nothing to review   : {reason} (results manifest), so no "
+                  "decision was expected; no report written")
+            return EXIT_OK
 
     review_rows = HashChainLedger(str(REVIEW_LEDGER_PATH)).read()
     reviews = [

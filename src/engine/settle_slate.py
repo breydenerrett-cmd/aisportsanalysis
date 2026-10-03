@@ -79,6 +79,12 @@ class SettleError(ValueError):
     """A settle run could not proceed honestly."""
 
 
+class NoWagersError(SettleError):
+    """No paper wager was recorded for the date. Still a refusal here; the CLI
+    turns it into "nothing to settle" only when the results manifest proves no
+    MLB game was scheduled that day (`history.no_games_scheduled`)."""
+
+
 def _read_jsonl(path) -> list[dict]:
     p = Path(path)
     if not p.exists():
@@ -489,7 +495,7 @@ def run_settle(date_str: str, *, wagers_path=None, results_path=MLB_RESULTS_CSV,
         else gamekey.DEFAULT_MAP_PATH)
     wagers = wagers_for_date(date_str, path=str(wagers_path or PAPER_WAGERS_PATH))
     if not wagers:
-        raise SettleError(
+        raise NoWagersError(
             f"no paper wagers recorded for {date_str} in "
             f"{wagers_path or PAPER_WAGERS_PATH} -- run `engine slate "
             f"--date {date_str}` first")
