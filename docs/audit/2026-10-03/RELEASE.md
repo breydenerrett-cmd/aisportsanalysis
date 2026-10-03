@@ -73,10 +73,12 @@ Billing stays off. No card rule, gate or published pick changes. UFC picks stay 
 | Linux CI simulation (no FastAPI) | 655 tests in the 18 changed modules plus 34 for the rest-day change, 0 failures |
 | Pushed | 21:16Z, `fa13daad` (inside the minute 15 to 39 window) |
 | Staging | deployed 21:22Z; verified from outside: health ok and no store reported stale (pitcher logs through 2026-10-03, results through 2026-10-02, standings through 2026-09-27, the last regular-season day), new `gamestory.js` and `main.js` served, `/game/...` carries `advanced.starter_rest` for all six games checked (2026-10-03 and 10-04), `/ufc/fight-night` refuses without a token (401) |
-| Linux CI | running (run 37154528035) |
-| Production | waits for CI |
+| Linux CI | success on Python 3.10, 3.11 and 3.12 (run 37154528035, 21:37Z) |
+| Production | deployed 22:10Z (deploy-prod on `00951748`, a capture commit that contains `fa13daad`); verified from outside 22:11Z: health ok, no store stale (results through 2026-10-02, pitcher logs through 2026-10-03), new `gamestory.js`, `main.js`, `ufcfights.js` and `analyst_ufc.js` served, `/ufc/fight-night` and `/games/...` refuse without a token (401), `/analyst/ufc/record` answers with 0 bouts published (the analyst is off until the owner adds the key), landing, `/meta` and `/postseason` answer 200. The signed-in pages were checked on staging |
 
 ## Log
 
 - 21:16Z pushed `fa13daad` after fetch, merge, the full suite on `83f58326`, targeted tests on the later commits and the no-FastAPI run.
 - 21:22Z staging deployed and verified (see table).
+- 21:37Z Linux CI green.
+- 22:10Z production deployed; verified from outside at 22:11Z (see table).
