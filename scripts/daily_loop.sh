@@ -397,6 +397,17 @@ echo "== ufc data update (last 10 days, next 21 days) =="
 python3 -m src.datasvc.cli ufc update --no-profiles --max-requests 2000 2>&1 | tail -n 20 | sed 's/^/  /' || true
 echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: ufc data update" >> "$RUN_NOTE"
 
+# THE NFL DATA LAYER, KEPT CURRENT (2026-10-03; src/datasvc/nfl/pipeline.py,
+# docs/datasvc/NFL_SCHEMA.md). The schedule (with results and closing lines)
+# and the current season's weekly team, player and injury files from
+# nflverse's public releases (CC BY 4.0): a handful of requests. A bad or
+# partial file changes nothing. Same staging rule as the UFC directory above:
+# not in the daily-loop cache, so git's copy is the base and only new rows are
+# staged. Guarded: it cannot fail this loop.
+echo "== nfl data update (schedule and the current season) =="
+python3 -m src.datasvc.cli nfl update --max-requests 50 2>&1 | tail -n 20 | sed 's/^/  /' || true
+echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: nfl data update" >> "$RUN_NOTE"
+
 # UFC CARD GRADING FROM ESPN (2026-10-03; src/providers/espn_mma_results.py,
 # docs/UFC_RESULT_SOURCE.md). Grades yesterday's published UFC picks from ESPN's
 # results once the bouts are final, then settles the card. It never overwrites a
@@ -719,7 +730,7 @@ python3 -m src.cli store rotate --all --if-over-mb 60 --keep-days 1 \
 # reads -- and git keeps the backfill because nothing here overwrites it.
 # Making git authoritative for these stores needs a union of both copies
 # before ingest, not a blind `git add`; until that exists, do not stage them.
-git add data/processed data/watch data/research data/raw/oddsapi evidence data/paper_accounts docs/eod docs/OVERNIGHT_RUN.md artifacts config/capture_families.json data/historical/ufc_results.jsonl data/datasvc/ufc 2>/dev/null || true
+git add data/processed data/watch data/research data/raw/oddsapi evidence data/paper_accounts docs/eod docs/OVERNIGHT_RUN.md artifacts config/capture_families.json data/historical/ufc_results.jsonl data/datasvc/ufc data/datasvc/nfl 2>/dev/null || true
 git reset -q artifacts/demo_latest.html 2>/dev/null || true
 # GUARD (2026-09-21 incident): size-gate backstop for whatever store
 # rotation above did not catch -- prints WARN/ESCALATE, never blocks.

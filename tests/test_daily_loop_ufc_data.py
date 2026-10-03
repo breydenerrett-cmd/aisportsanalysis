@@ -29,9 +29,11 @@ class TheDailyLoopUpdatesTheUfcData(unittest.TestCase):
     def test_it_runs_before_the_commit(self):
         self.assertLess(SCRIPT.index(STEP), SCRIPT.index("git add data/processed"))
 
-    def test_only_the_normalised_ufc_files_are_staged(self):
+    def test_only_the_normalised_sport_directories_are_staged(self):
+        # The NFL directory joined the UFC one on 2026-10-03 (tests/test_nfl_data_ships_and_refreshes.py).
+        # Never data/datasvc wholesale and never the raw fetch cache.
         joined = " ".join(line for line in SCRIPT.splitlines() if line.strip().startswith("git add "))
-        self.assertEqual(re.findall(r"data/datasvc\S*", joined), ["data/datasvc/ufc"])
+        self.assertEqual(sorted(re.findall(r"data/datasvc\S*", joined)), ["data/datasvc/nfl", "data/datasvc/ufc"])
 
     def test_the_data_is_not_restored_from_the_cache(self):
         self.assertNotIn("datasvc", WORKFLOW)

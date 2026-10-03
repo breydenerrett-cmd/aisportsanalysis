@@ -94,6 +94,8 @@ data/research/*
 !data/datasvc/
 data/datasvc/*
 !data/datasvc/ufc/
+# The NFL data layer (2026-10-03): the normalised files /data/v1/nfl reads.
+!data/datasvc/nfl/
 
 design/
 docs/

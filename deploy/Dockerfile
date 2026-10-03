@@ -96,6 +96,11 @@ COPY data/historical/ data/historical/
 # store loads empty and the UFC page says no card is booked. The raw fetch cache
 # beside it (data/datasvc/raw/, git-ignored) stays out of the build context.
 COPY data/datasvc/ufc/ data/datasvc/ufc/
+# THE NFL DATA LAYER (2026-10-03): the normalised nflverse files /data/v1/nfl
+# reads (src/datasvc/nfl/store.py). ~22 MB, git-tracked, kept current by the
+# daily loop (`python -m src.datasvc.cli nfl update`). Loaded only when an NFL
+# data route is first asked for.
+COPY data/datasvc/nfl/ data/datasvc/nfl/
 
 # BRING THE REQUEST-TIME STORES CURRENT (2026-10-03). The COPY above is the
 # repo's committed copy of results, pitcher logs, bullpen log, standings,
