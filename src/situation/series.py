@@ -73,8 +73,19 @@ def to_int(value: Any) -> Optional[int]:
 
 
 def row_date(row: Mapping) -> Optional[str]:
-    """The row's date as an ISO date string, or None when it is missing or unreadable."""
+    """The row's date as an ISO date string, or None when it is missing or unreadable.
+
+    The store's own "YYYY-MM-DD" takes the fast path (`date.fromisoformat`, which accepts exactly
+    the dates `strptime("%Y-%m-%d")` does for that shape): a page's situation parses about 40,000
+    dates, and `strptime` made that most of a second on its own. Any other shape keeps `strptime`.
+    """
     text = str(row.get("date") or "").strip()[:10]
+    if len(text) == 10 and text[4] == "-" and text[7] == "-":
+        try:
+            date.fromisoformat(text)
+        except ValueError:
+            return None
+        return text
     try:
         datetime.strptime(text, "%Y-%m-%d")
     except ValueError:
