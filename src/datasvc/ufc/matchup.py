@@ -291,6 +291,10 @@ def _moneyline(row: dict, a_key: str, b_key: str) -> dict:
     for snap in SNAPSHOTS:
         pa, pb = row.get(f"{a_key}_ml_{snap}"), row.get(f"{b_key}_ml_{snap}")
         out[snap] = None if pa is None and pb is None else {"a": pa, "b": pb, **remove_margin({"a": pa, "b": pb})}
+    # A finished bout's current price IS its close. Some providers (ESPN BET in 2025-26)
+    # carry open and current only; without this the closing line read as missing.
+    if out["close"] is None and row.get("is_closing") and out["current"] is not None:
+        out["close"] = dict(out["current"], from_snapshot="current")
     return out
 
 
@@ -325,9 +329,16 @@ def _method_market(row: dict, a_key: str, b_key: str) -> dict:
     return out
 
 
-def _primary_row(rows: Sequence[dict]) -> dict:
-    """DraftKings (provider id 100, the one ESPN carries) first, then by provider id."""
-    return sorted(rows, key=lambda r: (str(r.get("provider_id")) != "100", str(r.get("provider_id"))))[0]
+def _primary_row(rows: Sequence[dict]) -> Optional[dict]:
+    """DraftKings (provider id 100, the one ESPN carries) first, then by provider id.
+
+    Never an in-fight row (`in_play`, ESPN's live provider): its prices were taken during
+    the fight, so they are neither a pre-fight market nor a close. None when only in-fight
+    rows exist."""
+    pre_fight = [r for r in rows if not r.get("in_play")]
+    if not pre_fight:
+        return None
+    return sorted(pre_fight, key=lambda r: (str(r.get("provider_id")) != "100", str(r.get("provider_id"))))[0]
 
 
 def bout_odds(store, bout: dict, a_id: str, b_id: str, *, detail: str = "full") -> Optional[dict]:
@@ -340,6 +351,11 @@ def bout_odds(store, bout: dict, a_id: str, b_id: str, *, detail: str = "full") 
     if not rows:
         return None
     row = _primary_row(rows)
+    if row is None:
+        return {"provider": None, "provider_id": None, "as_of_safe": False, "moneyline": None,
+                "rounds_total": None, "method": None, "other_providers": [
+                    {"provider_id": r.get("provider_id"), "provider": r.get("provider")} for r in rows],
+                "note": "only in-fight prices exist for this bout; no pre-fight market is shown"}
     block = {
         "provider": row.get("provider"), "provider_id": row.get("provider_id"),
         "fetched_utc": row.get("fetched_utc"), "is_closing": row.get("is_closing"),

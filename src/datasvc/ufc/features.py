@@ -273,6 +273,15 @@ def _variants(name: str) -> Tuple[str, ...]:
     return tuple(dict.fromkeys((name, camel, name.replace("_", ""))))
 
 
+def _first(row: Optional[dict], *names: str) -> Optional[float]:
+    """The first of `names` the row carries as a number (see `_num`), else None."""
+    for name in names:
+        value = _num(row, name)
+        if value is not None:
+            return value
+    return None
+
+
 def _num(row: Optional[dict], name: str) -> Optional[float]:
     """A statistic as a non-negative finite number, or None when the row lacks it.
 
@@ -660,12 +669,15 @@ def features_as_of(store, fighter_id: str, as_of: Any) -> dict:
         fights, lambda f: _num(f.opp, "takedowns_landed"), lambda f: _num(f.opp, "takedowns_attempted"),
         unit="1 - opponent takedowns landed / attempted", needs="the opponent's takedown counts",
         zero_den="opponents attempted no takedowns in the fights with statistics", complement=True)
+    # Field names as src/datasvc/ufc/fightstats.py writes them (control_time_s,
+    # submission_attempts); the older spellings stay as fallbacks. Found 2026-10-03 by
+    # running this module on the real backfill: both figures were null for every fighter.
     figures["control_time_share"] = _ratio(
-        fights, lambda f: _num(f.own, "time_in_control"), lambda f: f.seconds,
+        fights, lambda f: _first(f.own, "control_time_s", "time_in_control"), lambda f: f.seconds,
         unit="seconds in control / fight seconds", needs="its own control time and a fight time",
         zero_den="no fight time in the fights with control statistics")
     figures["submission_attempts_per_15"] = _rate(
-        fights, lambda f: _num(f.own, "submissions"), per_minutes=15,
+        fights, lambda f: _first(f.own, "submission_attempts", "submissions"), per_minutes=15,
         unit="submission attempts per 15 minutes", needs="its own submission count and a fight time")
 
     # schedule, layoff, physical -----------------------------------------------------
