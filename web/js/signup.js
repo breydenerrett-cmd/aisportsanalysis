@@ -3,9 +3,10 @@
  * module codes against its documented contract only:
  * `{user_id, checkout: {status, checkout_url}}` on the paid-checkout
  * branch, or `{user_id, status: "waitlisted"}` on the honest waitlist
- * branch, or `{user_id, status: "tester_expired" | "tester_active",
- * expires_at}` for an early-access tester while checkout is not on -- verified
- * against api/signup.py's actual responses) -- and
+ * branch, or `{user_id, status: "tester_expired" | "tester_active"}` for an
+ * email that belongs to an early-access tester (checkout on or off, never a
+ * date, never a checkout link) -- verified against api/signup.py's actual
+ * responses) -- and
  * SIGNUP COMPLETE view, which renders a one-time invite token handed back
  * on the URL (e.g. after a checkout redirect or an admin-issued invite
  * link) with copy instructions and a link back into the app.
@@ -229,15 +230,21 @@ export async function renderSignup(main) {
           text: String(result.message),
         }));
       } else if (result && (result.status === "tester_expired" || result.status === "tester_active")) {
-        // An early-access tester, checkout not on: what is true about their
-        // access (the server's own date), then the one next step. The words are
-        // checkout.js's, shared with the sign-in page. With checkout on the
-        // server answers with the checkout link above instead.
+        // An email that already belongs to an early-access tester, whether
+        // checkout is on or not. The server sends a status word only (no date,
+        // never a checkout link: an email address proves nothing about who is
+        // typing it), so this says what that means and where to go: the
+        // sign-in page, where the person's own token starts a checkout. The
+        // words are checkout.js's, shared with the sign-in page.
         resultHost.appendChild(el("p", {
           class: "signup-card__notice signup-card__notice--info",
           "data-hook": result.status === "tester_active" ? "signup-tester-active" : "signup-tester-expired",
-          text: testerSignupNotice(result.status, result.expires_at),
-        }));
+        }, [
+          testerSignupNotice(result.status) + " ",
+          el("a", { href: "#/signin", "data-hook": "signup-tester-signin-link",
+            text: "Open the sign-in page" }),
+          ".",
+        ]));
       } else if (result && ["active", "suspended", "invited"].includes(result.status)) {
         resultHost.appendChild(el("p", {
           class: "signup-card__notice signup-card__notice--info",

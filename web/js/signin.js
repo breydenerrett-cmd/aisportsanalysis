@@ -26,12 +26,22 @@
  * early-access tester token that has run out (see expiredTesterState).
  */
 
-import { getToken, setToken, clearToken, apiGet, ApiError } from "./api.js";
+import { getToken, setToken, clearToken, apiGet, apiPost, ApiError } from "./api.js";
 import { el, clear } from "./dom.js";
 import {
-  loadCheckoutState, NOT_ON, signinNote, signinLinkLabel,
-  testerEndedLine, upgradeLabel, TESTER_NOT_OPEN,
+  loadCheckoutState, loadTesterBilling, NOT_ON, signinNote, signinLinkLabel,
+  testerEndedLine, upgradeLabel, TESTER_NOT_OPEN, TESTER_REPLY,
 } from "./checkout.js";
+
+/** What to tell a tester whose click on the checkout button was refused or
+ * never arrived. Plain words, nothing charged, and the one way on that always
+ * works: reply to Brey (checkout.js TESTER_REPLY). */
+function testerCheckoutErrorText(err) {
+  if (err instanceof ApiError && err.status === 429) {
+    return "Too many tries. Wait a little and press the button again. " + TESTER_REPLY;
+  }
+  return "Checkout could not be started. Nothing has been charged. " + TESTER_REPLY;
+}
 
 /** The `detail.error` api/auth.py puts on the 401 of an EXPIRED early-access
  * tester token (src/appstate/tester_upgrade.py TESTER_ACCESS_EXPIRED_ERROR). */
@@ -90,27 +100,76 @@ export async function renderSignin(container, query = {}) {
 
   // AN EXPIRED EARLY-ACCESS TOKEN gets its own state, not the silence a wrong
   // token gets: what happened (the date), then the ONE next step that is true.
-  // Checkout on: a button to the signup form, whose email step starts the
-  // checkout for this same account (the expired token cannot authorise one
-  // itself). Checkout off: the plain sentence, no button, no promise of an
-  // email nothing sends. Every word that names the offer is checkout.js's.
+  // Checkout on: a button that starts the checkout for this same account by
+  // sending the stored token to POST /billing/tester-checkout (the one route
+  // that accepts an ended tester token; the token, not an email address, is the
+  // proof) and follows the redirect. Checkout off (the server said so): the
+  // plain sentence, no button, no promise of an email nothing sends. /meta
+  // unreachable: only what the page does know, that the access ended and to
+  // reply to Brey. Every word that names the offer is checkout.js's.
   const ended = el("div", { class: "signin__ended", "data-hook": "tester-ended" });
   panel.appendChild(ended);
+
+  // Every await below can be overtaken: a second Save, a Save of a different
+  // token, Clear. `generation` is bumped by each of those; a call that finds it
+  // has moved on after an await draws nothing, so a slow answer about an OLD
+  // token can never overwrite the newer one.
+  let generation = 0;
+
+  async function startTesterCheckout(mine, button, outcome) {
+    if (button.disabled) return;      // one request per press, however fast the clicks
+    button.disabled = true;
+    clear(outcome);
+    let payload;
+    try {
+      payload = await apiPost("/billing/tester-checkout", {});
+    } catch (err) {
+      if (mine !== generation) return;
+      button.disabled = false;
+      outcome.appendChild(el("p", { class: "signin__body", role: "status",
+        "data-hook": "tester-upgrade-error", text: testerCheckoutErrorText(err) }));
+      return;
+    }
+    if (mine !== generation) return;
+    button.disabled = false;    // also on success: Back from Stripe restores this page as it was
+    if (payload && payload.checkout && payload.checkout.checkout_url) {
+      // Stripe-hosted checkout: card details are entered on Stripe's origin.
+      window.location.assign(payload.checkout.checkout_url);
+      return;
+    }
+    // The API's own plain words for "error" (checkout could not be started,
+    // nothing charged); the not-open sentence when the server says it is off.
+    const text = payload && payload.status === "error" && payload.message
+      ? String(payload.message)
+      : payload && payload.status === "not_configured" ? TESTER_NOT_OPEN
+      : "Checkout did not start. Nothing has been charged. " + TESTER_REPLY;
+    outcome.appendChild(el("p", { class: "signin__body", role: "status",
+      "data-hook": "tester-upgrade-error", text }));
+  }
+
   async function showExpiredTester() {
+    const mine = ++generation;
     const found = await expiredTesterState();
+    if (mine !== generation) return false;
     clear(ended);
     // Cleared while the question was in flight: nothing left to explain.
     if (!found || !getToken()) return false;
-    const state = await loadCheckoutState();
+    const { state, knownNotOpen } = await loadTesterBilling();
+    if (mine !== generation) return false;
     ended.appendChild(el("p", { class: "signin__body", role: "status",
       "data-hook": "tester-ended-line", text: testerEndedLine(found.endedAt) }));
     const label = upgradeLabel(state);
     if (label) {
-      ended.appendChild(el("a", { class: "btn btn--primary chamfer chamfer--btn",
-        href: "#/signup", "data-hook": "tester-upgrade", text: label }));
+      const outcome = el("div", { "data-hook": "tester-upgrade-outcome" });
+      const button = el("button", { type: "button",
+        class: "btn btn--primary chamfer chamfer--btn",
+        "data-hook": "tester-upgrade", text: label });
+      button.addEventListener("click", () => startTesterCheckout(mine, button, outcome));
+      ended.appendChild(button);
+      ended.appendChild(outcome);
     } else {
       ended.appendChild(el("p", { class: "signin__body", "data-hook": "tester-not-open",
-        text: TESTER_NOT_OPEN }));
+        text: knownNotOpen ? TESTER_NOT_OPEN : TESTER_REPLY }));
     }
     return true;
   }
@@ -144,6 +203,7 @@ export async function renderSignin(container, query = {}) {
   panel.querySelector("[data-hook='clear-token']").addEventListener("click", () => {
     clearToken();
     input.value = "";
+    generation++;
     clear(ended);
     status.textContent = "Token cleared.";
   });

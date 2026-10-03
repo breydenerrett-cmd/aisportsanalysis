@@ -38,7 +38,7 @@ doc alongside it.
 | `/betcheck/free` | open, no token — the landing page's three introductory Bet Checks. Not an exception to the rule above: it serves one game per call, is capped at 3 per anonymous identity **for life** (`src/appstate/freechecks.py`), and carries its own 10/hour-per-IP limiter |
 | `/health`, `/meta`, `/web/*`, `POST /funnel/event` | open, no token |
 | `/admin/*` | `X-Admin-Token`, a separate admin credential (`api/auth.py`'s `_require_admin`) -- disabled (404) entirely unless `APP_ADMIN_TOKEN` is set |
-| `/billing/*` | `/billing/checkout` and `/billing/status` require a Bearer token (same as the game surface); `/billing/webhook` is called by Stripe, not a browser, and is verified by Stripe's own webhook signature instead |
+| `/billing/*` | `/billing/checkout` and `/billing/status` require a Bearer token (same as the game surface); `/billing/webhook` is called by Stripe, not a browser, and is verified by Stripe's own webhook signature instead; `POST /billing/tester-checkout` takes an early-access tester's Bearer token, EXPIRED ones included, and nothing else (`api/auth.py`'s `get_tester_checkout_user`; no other route accepts an expired token) |
 
 ## `GET /today`
 

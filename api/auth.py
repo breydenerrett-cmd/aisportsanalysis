@@ -17,7 +17,9 @@ EXPIRED TESTER TOKEN: an early-access tester's seven day token that has run out
 still gets a 401, but with `error: "tester_access_expired"` and the date their
 access ended instead of the generic "unauthorized" -- see _expired_tester_detail.
 Every other failing token (unknown, revoked, malformed, a paying customer's old
-tester token) keeps the generic body.
+tester token) keeps the generic body. That same expired token (and only a
+tester's) is accepted by exactly one route, POST /billing/tester-checkout, through
+`get_tester_checkout_user`; no ordinary route accepts it.
 
 PAID SURFACE: get_current_user answers "who is this?", never "have they
 paid?" -- `require_paid_access` below is the second, separate gate the game
@@ -131,6 +133,44 @@ def get_current_user(authorization: Optional[str] = Header(default=None),
     if request is not None:
         request.state.user_id = user.id
     _record_invite_redeemed_once(authorization, user)
+    return user
+
+
+def get_tester_checkout_user(authorization: Optional[str] = Header(default=None),
+                              request: Request = None) -> users_store.User:
+    """FastAPI dependency for ONE route, POST /billing/tester-checkout: resolve
+    `Authorization: Bearer <token>` to the early-access tester it belongs to,
+    EXPIRED token included, or raise the same generic 401 every bad token gets.
+
+    This is deliberately NOT get_current_user and changes nothing about it:
+    every ordinary route still refuses an expired token (users_store.authenticate
+    is untouched), and nothing here marks a token as used. The lookup is
+    src.appstate.tester_upgrade.tester_for_token, which finds the token by its
+    hash and refuses an unknown or revoked token, a non-tester's token (a comped
+    invite's expired token), a suspended account and a person a subscription
+    already entitles. All of those are one indistinguishable 401, so the route is
+    not a way to ask what an arbitrary token is.
+
+    It reads the invite-token table directly rather than going through the
+    AUTH_PROVIDER seam: a tester's token is an invite token by construction
+    (testers.grant_tester), and an identity provider's session has no business
+    starting a checkout for an account it did not issue.
+
+    A failure in the lookup is a 401, never a 500 and never a pass: a route that
+    can open a payment must fail closed."""
+    scheme, _, raw_token = (authorization or "").partition(" ")
+    user = None
+    if scheme.lower() == "bearer" and raw_token:
+        try:
+            user = tester_upgrade.tester_for_token(raw_token)
+        except Exception as exc:  # noqa: BLE001 -- fail closed, see docstring
+            print(f"auth: tester-checkout token lookup failed: {exc!r}",
+                  file=sys.stderr, flush=True)
+            user = None
+    if user is None:
+        raise _unauthorized("missing, invalid, expired, or revoked token")
+    if request is not None:
+        request.state.user_id = user.id
     return user
 
 

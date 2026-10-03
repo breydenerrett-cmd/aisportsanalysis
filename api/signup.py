@@ -53,20 +53,28 @@ THE ONE EXCEPTION: EARLY-ACCESS TESTERS (src/appstate/tester_upgrade.py)
 -------------------------------------------------------------------------
 `testers.grant_tester` leaves a person `invited`, so a tester whose week ran out
 used to hit the `invited` line above and never reach a checkout: a permanent
-dead end. A user with a row in `testers` and no current subscription
-entitlement is therefore routed through the same checkout a new buyer gets, on
-the SAME user id (no second account, nothing deleted):
+dead end. The fix is NOT to open a checkout from this form. POST /signup has no
+credential; an email address is not one. A checkout is bound to a user id, and
+whoever completes it is handed a token for that account by GET /signup/complete,
+so a checkout started here for a tester's email would let a stranger who knew
+only that email take the tester's account (saved bets and all).
 
-  * billing on  -> `{"user_id", "checkout": {"status": "redirect", ...}}`, the
-    normal answer. An `invited` tester moves to `pending_payment` and the
-    webhook makes them `active`, exactly as for a new buyer. Applies inside the
-    week too (someone who wants to pay early).
-  * billing off -> a distinct, truthful state, no checkout and no promise of an
-    email nothing sends: `{"status": "tester_expired", "expires_at"}` once the
-    window has ended, `{"status": "tester_active", "expires_at"}` while it is
-    still open. The user's status is not touched.
-  * billing switched on but unable to take a payment -> the same `error`
-    answers a new buyer gets.
+For an email that belongs to a tester (a row in `testers`, expired or not,
+lapsed subscriber or not) this route therefore, with billing on OR off:
+
+  * never starts a checkout, never creates a Stripe customer, never changes the
+    user's status, never records an event, never stores the attribution the
+    caller sent;
+  * answers `{"user_id", "status": "tester_expired" | "tester_active"}` and
+    nothing else. No date: an end date next to an email address tells anyone who
+    types that address when the person's access ends. (`user_id` is returned as
+    it is for every other existing account; the page does not read it.) A
+    suspended tester, or one a subscription currently entitles, gets the plain
+    `suspended` / `active` answer any such account gets.
+
+The tester pays through POST /billing/tester-checkout below, which accepts the
+tester's own token (expired is fine) and starts the same checkout a new buyer
+gets, on the SAME user id: no second account, nothing deleted.
 
 A comped `invited` user who is not a tester, an `active` paying customer and a
 `suspended` account keep exactly the behaviour above.
@@ -96,6 +104,8 @@ from src.appstate import events
 from src.appstate import ratelimit
 from src.appstate import tester_upgrade
 from src.appstate import users as users_store
+
+from api.auth import get_tester_checkout_user
 
 router = APIRouter()
 
@@ -148,6 +158,23 @@ def _rate_limit_signup_complete(request: Request) -> None:
     if not result.allowed:
         raise HTTPException(status_code=429, detail={
             "error": "rate_limited", "retry_after": result.retry_after})
+
+
+# POST /billing/tester-checkout (below) is the only way a tester's account gets a
+# checkout. It is keyed on the authenticated tester (rate limit AFTER the token
+# is verified, so a made-up token costs one hash lookup and no Stripe call), and
+# one tester has one Stripe customer and one idempotent checkout session
+# (billing.StripeBillingProvider), so the route cannot be used to create Stripe
+# objects for anyone but the token's own account. 10 an hour: an honest tester
+# presses the button once or twice, and an abandoned checkout is retried at most
+# a handful of times. Built from the same `limiter_dependency` the billing
+# routes use; api/billing.py's own limiter does not fit because its dependency
+# is get_current_user, which refuses the expired token this route exists for.
+TESTER_CHECKOUT_RATE_LIMIT_PER_HOUR = 10
+_tester_checkout_limiter = ratelimit.FixedWindowLimiter(
+    limit=TESTER_CHECKOUT_RATE_LIMIT_PER_HOUR, window_s=3600.0)
+_rate_limit_tester_checkout = ratelimit.limiter_dependency(
+    _tester_checkout_limiter, user_dependency=get_tester_checkout_user)
 
 
 def _valid_email(email: str) -> bool:
@@ -254,17 +281,23 @@ def _attempt_checkout(user_id: int) -> Optional[str]:
     return url or None
 
 
-def _respond_for(user: users_store.User) -> dict:
-    """The response (and any resulting status write) for an email that
-    already has a user row -- see module docstring's "IDEMPOTENT PER
-    EMAIL" section for the reasoning, and its early-access-tester exception."""
-    # None for everyone who is not an early-access tester without a current
-    # subscription, which leaves the rest of this function exactly as it was.
-    tester = tester_upgrade.upgrade_state(user)
-    if tester is None and user.status in ("active", "suspended", "invited"):
-        # Not this endpoint's business to move a user out of a state a
-        # human process put them in -- report it plainly instead.
-        return {"user_id": user.id, "status": user.status}
+def _start_checkout(user: users_store.User, *, keep_status: bool = False) -> Optional[dict]:
+    """Try to open a checkout bound to `user`.
+
+    The response a buyer gets when the attempt produced an answer: the redirect
+    (`{"user_id", "checkout": {"status": "redirect", "checkout_url"}}`, after the
+    status move and the CHECKOUT_STARTED event below) or the two `error` answers.
+    None when billing is deliberately off and there is nothing to buy, in which
+    case nothing was written.
+
+    Both callers decide WHO may reach this before calling it: a new or
+    non-tester email from the public form (_respond_for), or a tester proven by
+    their token (POST /billing/tester-checkout). It never decides that itself.
+
+    `keep_status`: an `active` user (a lapsed subscriber coming back) keeps that
+    status, because nothing about their account changed and the webhook only
+    ever moves a person INTO active.
+    """
     try:
         checkout_url = _attempt_checkout(user.id)
     except _CheckoutProviderError:
@@ -281,27 +314,103 @@ def _respond_for(user: users_store.User) -> dict:
         return {"user_id": user.id, "status": "error",
                 "message": "payments are not available right now; nothing "
                            "has been charged"}
-    if checkout_url:
-        # A tester who is already `active` (a lapsed subscriber coming back)
-        # keeps that status: nothing about their account changed, and the
-        # webhook only ever moves a person INTO active.
-        keep_status = tester is not None and user.status == "active"
-        if user.status != "pending_payment" and not keep_status:
-            users_store.set_user_status(user.id, "pending_payment")
-        stored = customers.get_signup_attribution(user.id)
-        events.record_event_safe(user.id, events.CHECKOUT_STARTED,
-                                 *([stored] if stored else []))
-        return {"user_id": user.id,
-                "checkout": {"status": "redirect", "checkout_url": checkout_url}}
-    if tester is not None:
-        # Billing is off, so there is nothing to buy. Say what is true about
-        # their access and leave their status alone: waitlisting a tester would
-        # file a person we already let in under "not yet picked".
-        return {"user_id": user.id, "status": tester["state"],
-                "expires_at": tester["expires_at"]}
+    if not checkout_url:
+        return None
+    if user.status != "pending_payment" and not keep_status:
+        users_store.set_user_status(user.id, "pending_payment")
+    stored = customers.get_signup_attribution(user.id)
+    events.record_event_safe(user.id, events.CHECKOUT_STARTED,
+                             *([stored] if stored else []))
+    return {"user_id": user.id,
+            "checkout": {"status": "redirect", "checkout_url": checkout_url}}
+
+
+# What the form says about an account that already exists and that this endpoint
+# does not move (see _respond_for).
+_EXISTING_ACCOUNT_STATUSES = ("active", "suspended", "invited")
+
+
+def _respond_for_tester(user: users_store.User) -> dict:
+    """The whole answer for an email that belongs to an early-access tester.
+
+    A status word and nothing else: no checkout, no status write, no Stripe call,
+    no event, no date (see the module docstring's tester section for why an
+    email address cannot be allowed to start anything for a tester's account).
+    The same answer with billing on and with billing off."""
+    state = tester_upgrade.upgrade_state(user)
+    if state is not None:
+        return {"user_id": user.id, "status": state["state"]}
+    # A suspended tester, or one a subscription currently entitles: the plain
+    # answer any such account gets. An entitled tester is paid, so `active`
+    # even while the webhook has not yet moved their status off pending_payment.
+    status = user.status if user.status in _EXISTING_ACCOUNT_STATUSES else "active"
+    return {"user_id": user.id, "status": status}
+
+
+def _respond_for(user: users_store.User) -> dict:
+    """The response (and any resulting status write) for an email that
+    already has a user row -- see module docstring's "IDEMPOTENT PER
+    EMAIL" section for the reasoning, and its early-access-tester exception."""
+    if tester_upgrade.is_tester(user.id):
+        return _respond_for_tester(user)
+    if user.status in _EXISTING_ACCOUNT_STATUSES:
+        # Not this endpoint's business to move a user out of a state a
+        # human process put them in -- report it plainly instead.
+        return {"user_id": user.id, "status": user.status}
+    answer = _start_checkout(user)
+    if answer is not None:
+        return answer
     if user.status != "waitlisted":
         users_store.set_user_status(user.id, "waitlisted")
     return {"user_id": user.id, "status": "waitlisted"}
+
+
+# What POST /billing/tester-checkout answers when billing is off: the same
+# `not_configured` shape and vocabulary every other billing route uses
+# (api/billing.py), as a 200 with a status field rather than an HTTP error.
+_TESTER_CHECKOUT_NOT_OPEN = {
+    "status": "not_configured",
+    "message": "paid plans are not open yet; nothing has been changed"}
+
+
+@router.post("/billing/tester-checkout")
+def tester_checkout(current_user: users_store.User = Depends(get_tester_checkout_user),
+                    _rate_limit: None = Depends(_rate_limit_tester_checkout)) -> dict:
+    """An early-access tester starts paying, on their own account, by proving
+    they hold their token. The ONLY way a tester's account reaches a checkout.
+
+    AUTH: `Authorization: Bearer <tester token>`. The token may be EXPIRED (the
+    week ended) or still inside its window (paying early), but it must be a real
+    token of a non-suspended tester, not revoked, whose subscription does not
+    currently entitle them (api/auth.py get_tester_checkout_user). Anything else
+    is the generic 401 body every bad token gets, so this is not a way to ask what
+    a token is. No ordinary route accepts an expired token; this one does not
+    widen that.
+
+    BODY: none.
+
+    ANSWERS (all 200 unless noted):
+      billing on   `{"user_id", "checkout": {"status": "redirect", "checkout_url"}}`,
+                   exactly what a new buyer's signup returns; the status moves the
+                   way a new buyer's does (`invited` -> `pending_payment`; an
+                   `active` lapsed subscriber keeps `active`) and CHECKOUT_STARTED
+                   is recorded.
+      billing on but unable to take a payment, or Stripe refused
+                   `{"user_id", "status": "error", "message"}`, the two answers a
+                   new buyer gets; nothing is moved.
+      billing off  `{"status": "not_configured", "message"}`; nothing is
+                   changed, no Stripe call, no event.
+      401          generic `unauthorized` (see AUTH).
+      429          `rate_limited`: 10 an hour per tester
+                   (TESTER_CHECKOUT_RATE_LIMIT_PER_HOUR), counted only after the
+                   token has been verified.
+
+    Paying then follows the buyer's path: Stripe redirects to the success page,
+    GET /signup/complete trades the session id for a subscriber token, and the
+    tester's status becomes `active` when the webhook lands.
+    """
+    answer = _start_checkout(current_user, keep_status=current_user.status == "active")
+    return answer if answer is not None else dict(_TESTER_CHECKOUT_NOT_OPEN)
 
 
 @router.post("/signup")
@@ -324,7 +433,7 @@ def signup(body: SignupRequest, _rate_limit: None = Depends(_rate_limit_signup))
             user = users_store.get_user_by_email(email)
             if user is None:
                 raise HTTPException(status_code=400, detail=str(exc))
-            _remember_attribution(user.id, attribution)
+            _remember_returning_attribution(user, attribution)
             return _respond_for(user)
         _remember_attribution(user.id, attribution)
         # ACCOUNT_CREATED, not SIGNUP_STARTED: this is the moment a real
@@ -340,8 +449,19 @@ def signup(body: SignupRequest, _rate_limit: None = Depends(_rate_limit_signup))
     else:
         # A returning signup (a pending or waitlisted email trying again)
         # keeps the first touch it already has; this only fills a gap.
-        _remember_attribution(user.id, attribution)
+        _remember_returning_attribution(user, attribution)
     return _respond_for(user)
+
+
+def _remember_returning_attribution(user: users_store.User, attribution: dict) -> None:
+    """First-touch attribution for an email that already has an account -- except
+    a tester's. An unauthenticated POST changes nothing about a tester's account
+    (see the module docstring), and the activation report leaves out testers whose
+    stored attribution is internal and splits the rest by channel, so a stranger
+    who typed a tester's email must not be able to fill that first touch in."""
+    if attribution and tester_upgrade.is_tester(user.id):
+        return
+    _remember_attribution(user.id, attribution)
 
 
 def _remember_attribution(user_id: int, attribution: dict) -> None:

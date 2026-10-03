@@ -327,8 +327,11 @@ def extend_tester_access(body: TesterExtendRequest,
 
     Issues a NEW token; older tokens keep their own expiry (nothing is revoked)
     and no further slot is used. `reason` is required: what feedback justified
-    it. 409 `not_a_tester` for anyone never granted. The event
-    `tester_access_extended` records a counter, never the token or the reason.
+    it. 409 `not_a_tester` for anyone never granted, 409 `user_suspended`, and
+    409 `has_subscription` for a person with a subscription record (a paying or
+    formerly paying customer is not a tester; the new token would open nothing).
+    The event `tester_access_extended` records a counter, never the token or the
+    reason.
     """
     if body.user_id is None:
         raise HTTPException(status_code=400, detail="send a user_id")

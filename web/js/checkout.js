@@ -164,20 +164,25 @@ export function signinLinkLabel(state) {
 /**
  * AN EARLY-ACCESS TESTER WHOSE WEEK HAS ENDED (or who wants to pay inside it).
  *
- * The server tells the pages two things about such a person: the sign-in call
+ * The server tells the pages two things about such a person. The sign-in call
  * answers 401 `tester_access_expired` with the date their access ended
- * (api/auth.py), and POST /signup answers `tester_expired` / `tester_active`
- * with the date their window ends when checkout is not on
- * (api/signup.py, src/appstate/tester_upgrade.py). With checkout on, signup
- * simply returns the checkout link, the same as for a new buyer. The words for
- * all of it live here so the sign-in page and the signup form say the same
- * thing and the paid offer is still named by one file.
+ * (api/auth.py): the caller holds the token, so the date is theirs to read. And
+ * POST /signup answers `tester_expired` / `tester_active` for a tester's email,
+ * with billing on or off, and NO date and no checkout link (api/signup.py,
+ * src/appstate/tester_upgrade.py): an email address proves nothing, so the form
+ * can only point the person at the sign-in page, where their token starts the
+ * checkout (POST /billing/tester-checkout). The words for all of it live here so
+ * the sign-in page and the signup form say the same thing and the paid offer is
+ * still named by one file.
  *
- * `TESTER_NOT_OPEN` is the whole next step while nothing can be bought: no
- * button, no trial, no promise of an automatic email -- the owner answers by
- * hand, the way he sent the access link in the first place.
+ * `TESTER_NOT_OPEN` is the whole next step while the server has said nothing can
+ * be bought: no button, no trial, no promise of an automatic email -- the owner
+ * answers by hand, the way he sent the access link in the first place.
+ * `TESTER_REPLY` is the part that is true even when the page does not know
+ * whether anything can be bought (/meta could not be read).
  */
 export const TESTER_NOT_OPEN = "Paid plans are not open yet. Reply to Brey if you want to keep going.";
+export const TESTER_REPLY = "Reply to Brey if you want to keep going.";
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July",
   "August", "September", "October", "November", "December"];
@@ -196,25 +201,48 @@ export function testerEndedLine(iso) {
   return day ? `Your early access ended on ${day}.` : "Your early access has ended.";
 }
 
-/** "Your early access runs until 9 October 2026." (a tester still inside the window) */
-export function testerActiveLine(iso) {
-  const day = endDateLabel(iso);
-  return day ? `Your early access runs until ${day}.` : "Your early access is still open.";
-}
-
-/** The signup form's answer to `tester_expired` / `tester_active`: what is true
- * about their access, then the one next step while nothing can be bought. */
-export function testerSignupNotice(status, iso) {
-  const line = status === "tester_active" ? testerActiveLine(iso) : testerEndedLine(iso);
-  return `${line} ${TESTER_NOT_OPEN}`;
+/** The signup form's answer to `tester_expired` / `tester_active`. No date (the
+ * server sends none: an end date beside an email address would tell anyone who
+ * types it when that person's access ends) and no offer wording: it says the
+ * email already has early access and that the access token, on the sign-in page,
+ * is the way on. */
+export function testerSignupNotice(status) {
+  const lost = "If you lost the token, reply to Brey.";
+  if (status === "tester_active") {
+    return `That email already has early access. Sign in with the access token Brey sent you. ${lost}`;
+  }
+  return "That email already has early access, and it has ended. "
+    + `The sign-in page is where to continue: use your access token there. ${lost}`;
 }
 
 /** The label of the button that starts checkout for a tester whose access
  * ended, or null when checkout is not on (then there is no button at all, only
- * TESTER_NOT_OPEN). It is the signup form's own heading and button text, so the
- * button and the page it opens name the offer in the same words. */
+ * the sentence). It is the signup form's own heading and button text, so the
+ * button and the page it leads to name the offer in the same words. */
 export function upgradeLabel(state) {
   return state && state.on ? ctaLabel(state) : null;
+}
+
+/** True only when /meta ANSWERED and said checkout is "off" or "unavailable":
+ * the server told the page paid plans are not open. An unreachable /meta, or one
+ * with no billing block, is not that: the page does not know, and must not state
+ * it as a fact. */
+export function checkoutKnownNotOpen(payload) {
+  const billing = payload && typeof payload === "object" ? payload.billing : null;
+  return !!billing && (billing.checkout === "off" || billing.checkout === "unavailable");
+}
+
+/** What the ended-access page needs from /meta: the checkout state (as
+ * loadCheckoutState gives it) and whether the server said nothing is on sale.
+ * Never rejects; an unreadable /meta is `{state: not on, knownNotOpen: false}`. */
+export async function loadTesterBilling() {
+  try {
+    const { meta } = await import("./meta.js");
+    const payload = await meta();
+    return { state: checkoutState(payload), knownNotOpen: checkoutKnownNotOpen(payload) };
+  } catch (err) {
+    return { state: checkoutState(null), knownNotOpen: false };
+  }
 }
 
 /**

@@ -12,19 +12,36 @@ owner chose to let in first.
 
 WHAT THIS MODULE DECIDES
 --------------------------
-Two questions, both read from tables that already exist (no schema change):
+Three questions, all read from tables that already exist (no schema change):
 
-  * `upgrade_state(user)`: may this person start a checkout from the public
-    signup form, and what is true about their access right now? A TESTER (a row
-    in `testers`, which is never deleted) who is not currently entitled by a
-    subscription. `tester_expired` once their window has ended, `tester_active`
-    while it is still open (they want to pay early). Anyone else gets None and
-    keeps exactly the behaviour they had: a comped `invited` user is not a
-    tester, and a paying customer is already paid.
+  * `upgrade_state(user)`: what is true about a TESTER's access right now, for
+    the public signup form to name? A TESTER (a row in `testers`, which is never
+    deleted) who is not currently entitled by a subscription is `tester_expired`
+    once their window has ended, `tester_active` while it is still open. Anyone
+    else gets None and keeps exactly the behaviour they had: a comped `invited`
+    user is not a tester, and a paying customer is already paid. It is a LABEL,
+    not a permission: the signup form never starts a checkout for a tester,
+    because an email address is not a credential (see below).
+  * `tester_for_token(raw_token)`: may this bearer token start a checkout for a
+    tester's own account? Yes for a real, unrevoked token of a non-suspended
+    tester who is not currently entitled by a subscription, whether the token
+    has expired or not. This is the ONLY door a tester's account has to a
+    checkout (POST /billing/tester-checkout): the proof is holding the token
+    that was handed to them.
   * `expired_token_window(raw_token)`: is this bearer token an EXPIRED tester
     token, and when did that person's access end? Lets the sign-in page say
     "your early access ended on <date>" instead of the same words it uses for a
     mistyped token.
+
+WHY THE EMAIL IS NOT ENOUGH
+-----------------------------
+POST /signup is unauthenticated and the checkout it opens is bound to a user id.
+Whoever completes a checkout bound to a user id is handed a long-lived token for
+that account by GET /signup/complete. If the signup form started a checkout for
+an existing tester, anyone who typed the tester's email (a free trial costs
+nothing) would receive a token for the tester's account: saved bets readable and
+deletable. So the form answers a tester's email with a status word and nothing
+else, and the account is reachable only through `tester_for_token`.
 
 WHAT IS DELIBERATELY NOT HERE
 --------------------------------
@@ -98,9 +115,12 @@ def is_tester(user_id: int, *, db: Optional[Path] = None) -> bool:
 
 def upgrade_state(user: users_store.User, *, now: Optional[datetime] = None,
                   db: Optional[Path] = None) -> Optional[dict]:
-    """None unless `user` is a tester who may start a checkout.
+    """None unless `user` is a tester the signup form should name as one.
 
     Otherwise {"state": TESTER_EXPIRED | TESTER_ACTIVE, "expires_at": <iso>}.
+    `expires_at` is for callers that already hold the person's token; the public
+    signup answer never carries it (a date next to an email address tells anyone
+    who types that address when the person's access ends).
     The comparison is `now >= expires_at` = expired, the same boundary
     users_store.authenticate uses for the token itself, so "your access ended"
     and "your token stopped working" can never disagree by an instant.
@@ -133,6 +153,55 @@ def upgrade_state(user: users_store.User, *, now: Optional[datetime] = None,
     return {"state": state, "expires_at": ends.isoformat()}
 
 
+def _tester_token_row(raw_token: str, *, db: Optional[Path] = None):
+    """The one token lookup this module does, by the token's HASH (never a
+    plaintext comparison): the token's own row joined to its user and to that
+    user's `testers` row, or None when the token is unknown or its user was never
+    a tester. Expiry, revocation, suspension and entitlement are NOT decided
+    here; each caller applies the rules it needs to the row."""
+    with testers._connect(db) as conn:
+        return conn.execute(
+            "SELECT k.user_id AS user_id, k.expires_at AS token_end, "
+            "       k.revoked_at AS revoked_at, t.expires_at AS window_end, "
+            "       u.status AS status "
+            "  FROM tokens k "
+            "  JOIN testers t ON t.user_id = k.user_id "
+            "  JOIN users u ON u.id = k.user_id "
+            " WHERE k.token_hash = ?",
+            (users_store._hash_token(raw_token),)).fetchone()
+
+
+def tester_for_token(raw_token: str, *, now: Optional[datetime] = None,
+                     db: Optional[Path] = None) -> Optional[users_store.User]:
+    """The tester `raw_token` belongs to, if it may start a checkout for them;
+    otherwise None (the caller answers every None with the same generic 401).
+
+    The proof of identity is the token itself, so this accepts a token that has
+    EXPIRED (that is the whole point: the week ended, the person still holds
+    the token they were sent) and one still inside its window (a tester paying
+    early). It does not authenticate anyone for anything else: the token still
+    opens no ordinary route (users_store.authenticate is untouched and still
+    refuses it), and nothing here marks it used.
+
+    None for:
+      * an unknown token, or one whose user was never a tester (a comped invite's
+        expired token is not a tester's);
+      * a REVOKED token (support's re-issue revokes every older token on purpose);
+      * a suspended account;
+      * a person a subscription currently entitles: they already pay, and a
+        second checkout would be a second subscription on one account. A tester
+        whose subscription has LAPSED is not entitled, so they qualify again.
+    """
+    if not raw_token:
+        return None
+    row = _tester_token_row(raw_token, db=db)
+    if row is None or row["revoked_at"] is not None or row["status"] == "suspended":
+        return None
+    if customers.has_paid_access(row["user_id"], _utc(now), db=db):
+        return None
+    return users_store.get_user(row["user_id"], db=db)
+
+
 def expired_token_window(raw_token: str, *, now: Optional[datetime] = None,
                          db: Optional[Path] = None) -> Optional[str]:
     """When a tester's access ended (ISO string), if `raw_token` is an EXPIRED
@@ -157,16 +226,7 @@ def expired_token_window(raw_token: str, *, now: Optional[datetime] = None,
     if not raw_token:
         return None
     when = _utc(now)
-    with testers._connect(db) as conn:
-        row = conn.execute(
-            "SELECT k.user_id AS user_id, k.expires_at AS token_end, "
-            "       k.revoked_at AS revoked_at, t.expires_at AS window_end, "
-            "       u.status AS status "
-            "  FROM tokens k "
-            "  JOIN testers t ON t.user_id = k.user_id "
-            "  JOIN users u ON u.id = k.user_id "
-            " WHERE k.token_hash = ?",
-            (users_store._hash_token(raw_token),)).fetchone()
+    row = _tester_token_row(raw_token, db=db)
     if row is None or row["revoked_at"] is not None or row["status"] == "suspended":
         return None
     token_end = _parse(row["token_end"])

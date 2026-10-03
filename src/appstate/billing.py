@@ -1073,17 +1073,29 @@ def apply_stripe_webhook_event(event: dict, *, db: Optional[Path] = None) -> Non
             known = customers.get_subscription_record(user_id, db=db) or {}
             if known.get("stripe_subscription_id") != subscription_id:
                 known = {}
-            # Never overwrite a status the subscription events already set:
-            # `customer.subscription.created` (trialing) can be processed
-            # BEFORE this event (Stripe does not order webhooks), and writing
-            # "active" over it would count a trialing buyer as paying in
-            # /admin/revenue. Only "trialing" is protected; anything else
-            # behaves as before.
-            status = "trialing" if known.get("status") == "trialing" else "active"
-            customers.upsert_subscription(
-                user_id, subscription_id, status,
-                cancel_at=known.get("cancel_at"),
-                current_period_end=known.get("current_period_end"), db=db)
+            # A subscription already recorded as ENDED stays ended. Stripe
+            # delivers at least once, retries for days and does not order
+            # events, so this very event can arrive again after
+            # `customer.subscription.deleted` has been applied; writing
+            # "active" with no cancel_at over that record would entitle the
+            # customer forever (has_paid_access never expires an active record
+            # without a cancel_at). Only the SAME subscription id is protected:
+            # a customer who buys again gets a brand-new Stripe subscription, its
+            # `known` is {} above, and it activates normally. Everything after
+            # this block (the activation token, the status move) is already
+            # idempotent per checkout session, so a redelivery does no harm there.
+            if known.get("status") != "canceled":
+                # Never overwrite a status the subscription events already set:
+                # `customer.subscription.created` (trialing) can be processed
+                # BEFORE this event (Stripe does not order webhooks), and writing
+                # "active" over it would count a trialing buyer as paying in
+                # /admin/revenue. Only "trialing" is protected; anything else
+                # behaves as before.
+                status = "trialing" if known.get("status") == "trialing" else "active"
+                customers.upsert_subscription(
+                    user_id, subscription_id, status,
+                    cancel_at=known.get("cancel_at"),
+                    current_period_end=known.get("current_period_end"), db=db)
         _activate_signup(user_id, obj.get("id"), db=db)
     elif event_type in ("customer.subscription.created", "customer.subscription.updated",
                          "customer.subscription.deleted"):

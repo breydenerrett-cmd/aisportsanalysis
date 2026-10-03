@@ -1,14 +1,17 @@
 """Adversarial review of 40a9974c (expired tester -> paying subscriber).
 
 Each test here pins a defect the review confirmed in that commit's design (or a
-pre-existing one on the same path), as the property that SHOULD hold. They are
-marked `expectedFailure` so the suite stays green while the defect exists; once
-a fix lands the test passes, unittest reports an "unexpected success" (which
-fails the run), and the decorator must be removed. Do not delete one to make
-the run green: fix the code, then drop the decorator.
+pre-existing one on the same path), as the property that SHOULD hold. They were
+written as `expectedFailure` while the defect existed, and each decorator was
+removed in the commit that fixed the defect (D1 signup opens no checkout for a
+tester's email, D3 a redelivered completed event cannot resurrect an ended
+subscription, D4 extend refuses a tester who has a subscription record, D5 the
+sign-in page's overlapping status checks). They are ordinary tests now: if one
+fails, the defect is back.
 
-One plain test at the end records a behaviour the review checked and found
-correct (an abandoned tester checkout is not a dead end).
+One more plain test records a behaviour the review checked and found correct
+(an abandoned tester checkout is not a dead end); it now goes through the token
+route, the only way a tester's account reaches a checkout.
 
 Reuses the fixtures of tests/test_expired_tester_paid_path.py: temp database,
 the in-process Stripe stand-in (never a real request), signed webhooks.
@@ -81,7 +84,6 @@ class EmailAloneMustNotOpenAnExistingTestersAccount(_BillingOn):
         from api.mybets import list_my_bets
         return list_my_bets(current_user=self.sign_in_with(token))["bets"]
 
-    @unittest.expectedFailure
     def test_a_stranger_cannot_read_an_expired_testers_saved_bets(self):
         grant = self.grant_for("victim@example.com", age_days=8)
         savedbets.save_bet(grant.user_id, "MLB-2026-09-30-NYY-BOS", "NYY", price=-110.0)
@@ -91,7 +93,6 @@ class EmailAloneMustNotOpenAnExistingTestersAccount(_BillingOn):
                              "a token minted for an email-only checkout reads the "
                              "tester's existing saved bets")
 
-    @unittest.expectedFailure
     def test_a_stranger_cannot_read_an_active_testers_saved_bets(self):
         grant = self.grant_for("victim@example.com", age_days=2)    # still inside the week
         savedbets.save_bet(grant.user_id, "MLB-2026-09-30-NYY-BOS", "NYY", price=-110.0)
@@ -99,14 +100,13 @@ class EmailAloneMustNotOpenAnExistingTestersAccount(_BillingOn):
         if token is not None:
             self.assertEqual(self._victims_bets_visible_to(token), [])
 
-    @unittest.expectedFailure
     def test_a_stranger_cannot_take_over_a_lapsed_former_tester_subscriber(self):
         # The keep_status branch: an `active` former tester whose subscription
         # ended. Pre-change, signup answered {"status": "active"} for them.
         grant = self.grant_for("victim@example.com", age_days=40)
         uid = grant.user_id
-        self.signup("victim@example.com")
-        self.pay(uid)                                    # the victim's own purchase
+        self.checkout_by_token(grant.token)                # the victim's own purchase,
+        self.pay(uid)                                    # by their token
         savedbets.save_bet(uid, "MLB-2026-09-30-NYY-BOS", "NYY", price=-110.0)
         self.webhook(self.subscription_event("deleted", "canceled", period_end=_past()))
         self.assertEqual(users_store.get_user(uid).status, "active")
@@ -114,7 +114,6 @@ class EmailAloneMustNotOpenAnExistingTestersAccount(_BillingOn):
         if token is not None:
             self.assertEqual(self._victims_bets_visible_to(token), [])
 
-    @unittest.expectedFailure
     def test_a_stranger_cannot_change_a_testers_account_state(self):
         # Short of paying: one unauthenticated POST moves the tester from
         # `invited` to `pending_payment` and creates a Stripe customer for them.
@@ -122,6 +121,7 @@ class EmailAloneMustNotOpenAnExistingTestersAccount(_BillingOn):
         self.signup("victim@example.com")
         self.assertEqual(users_store.get_user(grant.user_id).status, "invited")
         self.assertIsNone(customers.get_customer_ref(grant.user_id))
+        self.assertIsNone(customers.get_subscription_record(grant.user_id))
 
 
 # ===========================================================================
@@ -131,11 +131,10 @@ class EmailAloneMustNotOpenAnExistingTestersAccount(_BillingOn):
 # ===========================================================================
 
 class RedeliveredCompletedMustNotResurrectAccess(_BillingOn):
-    @unittest.expectedFailure
     def test_completed_redelivered_after_deleted_keeps_the_subscription_ended(self):
         grant = self.grant_for("former@example.com", age_days=8)
         uid = grant.user_id
-        self.signup("former@example.com")
+        self.checkout_by_token(grant.token)
         token = self.pay(uid)
         self.webhook(self.subscription_event("deleted", "canceled", period_end=_past()))
         self.assertFalse(customers.has_paid_access(uid))
@@ -146,6 +145,52 @@ class RedeliveredCompletedMustNotResurrectAccess(_BillingOn):
                          customers.get_subscription_record(uid))
         with self.assertRaises(HTTPException):
             self.open_paid_page(token)
+
+    def test_a_genuinely_new_checkout_after_the_end_still_activates(self):
+        # The guard is per subscription id: a person who buys again gets a NEW
+        # Stripe subscription, and that one must open the board.
+        grant = self.grant_for("former@example.com", age_days=8)
+        uid = grant.user_id
+        self.checkout_by_token(grant.token)
+        self.pay(uid)
+        self.webhook(self.subscription_event("deleted", "canceled", period_end=_past()))
+        self.assertFalse(customers.has_paid_access(uid))
+        self.checkout_by_token(grant.token)               # an ended tester pays again
+        self.webhook({"id": "evt_completed_new", "type": "checkout.session.completed",
+                      "data": {"object": {"id": "cs_new", "client_reference_id": str(uid),
+                                          "customer": acceptance.CUSTOMER,
+                                          "subscription": "sub_new",
+                                          "payment_status": "paid"}}})
+        self.assertTrue(customers.has_paid_access(uid))
+        self.assertEqual(customers.get_subscription_record(uid)["stripe_subscription_id"],
+                         "sub_new")
+        self.assertEqual(self.open_paid_page(self.collect_token("cs_new")["token"]).id, uid)
+
+    def test_the_ended_record_is_left_exactly_as_the_deleted_event_wrote_it(self):
+        grant = self.grant_for("former@example.com", age_days=8)
+        uid = grant.user_id
+        self.checkout_by_token(grant.token)
+        self.pay(uid)
+        self.webhook(self.subscription_event("deleted", "canceled", period_end=_past()))
+        before = customers.get_subscription_record(uid)
+        self.webhook(self.completed_event(uid))
+        after = customers.get_subscription_record(uid)
+        self.assertEqual({k: v for k, v in after.items() if k != "updated_at"},
+                         {k: v for k, v in before.items() if k != "updated_at"})
+        self.assertEqual(after["status"], "canceled")
+
+    def test_a_redelivered_completed_event_before_any_end_is_still_idempotent(self):
+        # The pre-existing behaviour the guard must not disturb.
+        grant = self.grant_for("early@example.com", age_days=2)
+        uid = grant.user_id
+        self.checkout_by_token(grant.token)
+        self.pay(uid)
+        before = customers.get_subscription_record(uid)
+        self.webhook(self.completed_event(uid))
+        after = customers.get_subscription_record(uid)
+        self.assertEqual((after["status"], after["current_period_end"]),
+                         (before["status"], before["current_period_end"]))
+        self.assertTrue(customers.has_paid_access(uid))
 
 
 # ===========================================================================
@@ -158,11 +203,10 @@ class RedeliveredCompletedMustNotResurrectAccess(_BillingOn):
 # ===========================================================================
 
 class ExtendingALapsedPayingTesterIsNotASilentNoOp(_BillingOn):
-    @unittest.expectedFailure
     def test_extend_either_refuses_or_opens_the_board(self):
         grant = self.grant_for("former@example.com", age_days=8)
         uid = grant.user_id
-        self.signup("former@example.com")
+        self.checkout_by_token(grant.token)
         self.pay(uid)
         self.webhook(self.subscription_event("deleted", "canceled", period_end=_past()))
         try:
@@ -170,6 +214,48 @@ class ExtendingALapsedPayingTesterIsNotASilentNoOp(_BillingOn):
         except testers.TesterRefused:
             return
         self.assertEqual(self.open_paid_page(extended.token).id, uid)
+
+    def test_the_refusal_is_has_subscription_before_anything_is_written(self):
+        # The owner's decision (D4): refuse, with the reason grant_tester gives,
+        # and write nothing -- no token, no extension row, no moved window.
+        grant = self.grant_for("former@example.com", age_days=8)
+        uid = grant.user_id
+        self.checkout_by_token(grant.token)
+        self.pay(uid)
+        self.webhook(self.subscription_event("deleted", "canceled", period_end=_past()))
+        tokens_before = self.rows("SELECT COUNT(*) FROM tokens")[0][0]
+        window_before = self.history_row(uid)
+        with self.assertRaises(testers.TesterRefused) as refused:
+            testers.extend_tester(uid, "sent three useful bug reports")
+        self.assertEqual((refused.exception.code, refused.exception.status),
+                         ("has_subscription", 409))
+        with self.assertRaises(testers.TesterRefused) as granted:
+            testers.grant_tester(user_id=uid)
+        self.assertEqual(granted.exception.code, refused.exception.code)
+        self.assertEqual(self.rows("SELECT COUNT(*) FROM tokens")[0][0], tokens_before)
+        self.assertEqual(self.history_row(uid), window_before)
+        self.assertEqual(self.rows("SELECT COUNT(*) FROM tester_extensions")[0][0], 0)
+
+    def test_the_admin_route_returns_it_as_a_409_the_page_can_show(self):
+        from api.admin import TesterExtendRequest, extend_tester_access
+        grant = self.grant_for("former@example.com", age_days=8)
+        self.checkout_by_token(grant.token)
+        self.pay(grant.user_id)
+        self.webhook(self.subscription_event("deleted", "canceled", period_end=_past()))
+        with self.assertRaises(HTTPException) as ctx:
+            extend_tester_access(TesterExtendRequest(user_id=grant.user_id, reason="useful"),
+                                 _admin=None)
+        self.assertEqual(ctx.exception.status_code, 409)
+        self.assertEqual(ctx.exception.detail["error"], "has_subscription")
+        self.assertIn("subscription", ctx.exception.detail["message"])
+
+    def test_a_tester_with_no_subscription_record_can_still_be_extended(self):
+        # The refusal is about the subscription record, not about having tried
+        # to pay: an abandoned checkout leaves none (see the plain test below).
+        grant = self.grant_for("tester@example.com", age_days=8)
+        self.checkout_by_token(grant.token)
+        extended = testers.extend_tester(grant.user_id, "asked for more time")
+        self.assertEqual(self.open_paid_page(extended.token).id, grant.user_id)
 
 
 # ===========================================================================
@@ -180,14 +266,16 @@ class AnAbandonedTesterCheckoutIsNotADeadEnd(_BillingOn):
     def test_admin_can_still_extend_and_the_person_can_retry(self):
         grant = self.grant_for("tester@example.com", age_days=8)
         uid = grant.user_id
-        self.assertIn("checkout", self.signup("tester@example.com"))
+        self.assertIn("checkout", self.checkout_by_token(grant.token))
         self.assertEqual(users_store.get_user(uid).status, "pending_payment")
         # Abandoned. The admin extends: allowed, and the new token opens the board.
         extended = testers.extend_tester(uid, "asked for more time")
         self.assertEqual(self.open_paid_page(extended.token).id, uid)
-        # They come back to pay: a checkout again, same account.
-        again = self.signup("tester@example.com")
-        self.assertEqual((again["user_id"], again["checkout"]["status"]), (uid, "redirect"))
+        # They come back to pay: a checkout again, same account, with either
+        # token (the ended one still proves who they are).
+        for token in (extended.token, grant.token):
+            again = self.checkout_by_token(token)
+            self.assertEqual((again["user_id"], again["checkout"]["status"]), (uid, "redirect"))
         self.assertEqual(self.user_count(), 1)
         # grant_tester refuses (checkout_open before already_a_tester), nothing written.
         with self.assertRaises(testers.TesterRefused) as refused:
@@ -259,12 +347,10 @@ class SigninDoesNotRaceItself(unittest.TestCase):
         line = [ln for ln in proc.stdout.splitlines() if ln.startswith("@@")][-1]
         return json.loads(line[2:])
 
-    @unittest.expectedFailure
     def test_saving_an_ended_token_twice_shows_the_ended_state_once(self):
         out = self.run_race(meta=ON7, token="old-expired", submit="old-expired", presses=2)
         self.assertEqual((out["ended"], out["buttons"]), (1, 1), out)
 
-    @unittest.expectedFailure
     def test_a_good_token_saved_over_an_ended_one_shows_no_ended_state(self):
         out = self.run_race(meta=ON7, token="old-expired", submit="new-good", presses=1)
         self.assertEqual((out["ended"], out["buttons"]), (0, 0), out)

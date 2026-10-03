@@ -302,7 +302,11 @@ def extend_tester(user_id: int, reason: str, *, now: Optional[datetime] = None,
     extending can only ever give the person MORE time, never take access away
     mid-test. It does not use another slot (the testers row already exists).
     Refused: an unknown user (404), a user who was never granted (not_a_tester),
-    a suspended one, and an empty or over-long reason (400) -- the reason is
+    a suspended one, a tester with a subscription record (409 has_subscription,
+    the reason grant_tester gives: a paying or formerly paying customer is not a
+    tester, and a new tester-length token would be refused by the paid surface
+    anyway -- 402 on every page -- so extending would hand back a token that
+    opens nothing), and an empty or over-long reason (400) -- the reason is
     the owner's own record of what feedback earned the extension, and an
     extension without one is how "extended only when useful" turns into
     "extended by default".
@@ -317,6 +321,9 @@ def extend_tester(user_id: int, reason: str, *, now: Optional[datetime] = None,
             "reason_too_long",
             f"keep the reason under {MAX_REASON_LENGTH} characters", status=400)
     when = _utc(now)
+    # Looked up before the write lock, as grant_tester does (another module's
+    # table, its own connection).
+    has_subscription = customers.get_subscription_record(user_id, db=db) is not None
     with _connect(db) as conn:
         _begin_exclusive(conn)
         row = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
@@ -330,6 +337,12 @@ def extend_tester(user_id: int, reason: str, *, now: Optional[datetime] = None,
                 "this person was never granted tester access; grant it first")
         if row["status"] == "suspended":
             raise TesterRefused("user_suspended", "this account is suspended")
+        if has_subscription:
+            raise TesterRefused(
+                "has_subscription",
+                "this person has a subscription record; a paying or formerly paying "
+                "customer is not a tester, and a new tester token would not open "
+                "anything for them")
         expires = when + TESTER_ACCESS_TTL
         raw_token = users_store.insert_token(conn, user_id, ttl=TESTER_ACCESS_TTL, now=when)
         conn.execute("UPDATE testers SET expires_at = ? WHERE user_id = ?",
