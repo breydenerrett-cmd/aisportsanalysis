@@ -3026,3 +3026,21 @@
 {"fetched_utc": "2026-10-03T16:37:40.519795+00:00", "game_date": "2026-10-03", "poll": true}
 {"fetched_utc": "2026-10-03T16:51:14.847814+00:00", "game_date": "2026-10-03", "poll": true}
 {"fetched_utc": "2026-10-03T17:04:07.884159+00:00", "game_date": "2026-10-03", "poll": true}
+{"fetched_utc": "2026-10-03T17:20:36.295361+00:00", "game_date": "2026-10-03", "poll": true}
+{"category": "il_activation", "date": "2026-10-03", "first_seen_utc": "2026-10-03T17:20:36.295361+00:00", "player": "JR Ritchie", "player_id": 702275, "team": "ATL", "transaction_id": 944988}
+{"category": "il_activation", "date": "2026-10-03", "first_seen_utc": "2026-10-03T17:20:36.295361+00:00", "player": "AJ Smith-Shawver", "player_id": 700363, "team": "ATL", "transaction_id": 944989}
+{"category": "il_activation", "date": "2026-10-03", "first_seen_utc": "2026-10-03T17:20:36.295361+00:00", "player": "Lane Thomas", "player_id": 657041, "team": "ATL", "transaction_id": 944990}
+{"category": "other", "date": "2026-10-03", "first_seen_utc": "2026-10-03T17:20:36.295361+00:00", "player": "Dominic Smith", "player_id": 642086, "team": "ATL", "transaction_id": 944991}
+{"category": "other", "date": "2026-10-03", "first_seen_utc": "2026-10-03T17:20:36.295361+00:00", "player": "DaShawn Keirsey Jr.", "player_id": 680577, "team": "ATL", "transaction_id": 944992}
+{"category": "other", "date": "2026-10-03", "first_seen_utc": "2026-10-03T17:20:36.295361+00:00", "player": "Luke Williams", "player_id": 663897, "team": "ATL", "transaction_id": 944993}
+{"fetched_utc": "2026-10-03T17:29:48.811080+00:00", "game_date": "2026-10-03", "poll": true}
+{"category": "other", "date": "2026-10-03", "first_seen_utc": "2026-10-03T17:29:48.811080+00:00", "player": "Jack Dreyer", "player_id": 676263, "team": "LAD", "transaction_id": 944994}
+{"category": "other", "date": "2026-10-03", "first_seen_utc": "2026-10-03T17:29:48.811080+00:00", "player": "Justin Wrobleski", "player_id": 680736, "team": "LAD", "transaction_id": 944997}
+{"category": "other", "date": "2026-10-03", "first_seen_utc": "2026-10-03T17:29:48.811080+00:00", "player": "Alex Freeland", "player_id": 690976, "team": "LAD", "transaction_id": 944998}
+{"category": "other", "date": "2026-10-03", "first_seen_utc": "2026-10-03T17:29:48.811080+00:00", "player": "Alex Call", "player_id": 669743, "team": "LAD", "transaction_id": 944999}
+{"fetched_utc": "2026-10-03T17:42:26.638995+00:00", "game_date": "2026-10-03", "poll": true}
+{"fetched_utc": "2026-10-03T17:42:28.070768+00:00", "game_date": "2026-10-03", "poll": true}
+{"fetched_utc": "2026-10-03T17:54:44.203728+00:00", "game_date": "2026-10-03", "poll": true}
+{"fetched_utc": "2026-10-03T17:54:45.576224+00:00", "game_date": "2026-10-03", "poll": true}
+{"fetched_utc": "2026-10-03T18:09:49.721196+00:00", "game_date": "2026-10-03", "poll": true}
+{"fetched_utc": "2026-10-03T18:09:51.306608+00:00", "game_date": "2026-10-03", "poll": true}
