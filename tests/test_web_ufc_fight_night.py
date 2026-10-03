@@ -60,7 +60,10 @@ class TheCardIsWiredUnderThePausedNotice(unittest.TestCase):
         self.assertIn('await renderCardRecord(main, { sport: "mma" });', branch)
         gameday = branch.split("} else {", 1)[1]
         card_at = gameday.index('await renderCard(main, { sport: "mma" });')
-        night_at = gameday.index("await renderFightNight(main, { eventId: query.event });")
+        # 2026-10-03 integration: the call also passes the UFC analyst through the page's
+        # `analyst` option (main.js), so match the call's start, not its whole literal.
+        night_at = gameday.index("await renderFightNight(main, {")
+        self.assertIn("eventId: query.event", gameday[night_at:night_at + 200])
         self.assertLess(card_at, night_at, "the fight analysis sits UNDER the card (today the paused notice)")
         self.assertNotIn("renderFightNight", branch.split("} else {", 1)[0], "the record page is not the analysis page")
 

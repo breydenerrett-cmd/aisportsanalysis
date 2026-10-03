@@ -62,12 +62,20 @@ class StaticChecks(unittest.TestCase):
         imports = re.findall(r'from "(\./[^"]+)"', code)
         self.assertEqual(sorted(imports), ["./analyst.js", "./api.js", "./dom.js"])
 
-    def test_the_fight_night_page_and_the_record_page_were_not_edited(self):
-        for name in ("games.js", "cardrecord.js", "main.js"):
+    def test_the_section_is_mounted_only_through_the_fight_night_analyst_option(self):
+        """2026-10-03 integration: main.js mounts the UFC analyst into the fight-night page's
+        bout slots (ufcfights.js's `analyst` option). The page modules themselves still do
+        not import it, and the MLB game page and the record page are unchanged."""
+        for name in ("games.js", "cardrecord.js"):
             self.assertNotIn("analyst_ufc", (JS / name).read_text(encoding="utf-8"), name)
         ufc_pages = [p for p in JS.glob("*.js") if p.name.startswith("ufc")]
         for page in ufc_pages:
             self.assertNotIn("analyst_ufc", page.read_text(encoding="utf-8"), page.name)
+        main = (JS / "main.js").read_text(encoding="utf-8")
+        self.assertIn('import { fetchUfcAnalyst, boutNode as ufcAnalystBout } from "./analyst_ufc.js";', main)
+        branch = main.split('} else if (sport === "ufc") {')[1].split('} else if (sport === "nba"')[0]
+        self.assertIn("analyst: async (slot, ctx) =>", branch)
+        self.assertIn("fetchUfcAnalyst(ctx.event.event_id)", branch)
 
     def test_the_families_are_the_ones_the_grader_counts(self):
         from src.analyst import ufc_grading

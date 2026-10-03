@@ -89,6 +89,7 @@ import { renderComingSoon } from "./comingsoon.js";
 import { renderToday } from "./today.js";
 import { renderCard } from "./card.js";
 import { renderFightNight } from "./ufcfights.js";
+import { fetchUfcAnalyst, boutNode as ufcAnalystBout } from "./analyst_ufc.js";
 import { renderTennisBoard } from "./tennis.js";
 import { renderGamesList, renderGameDetail } from "./games.js";
 import { renderBetCheck } from "./betcheck.js";
@@ -342,7 +343,25 @@ async function _renderRouteInner(main) {
       // `#/ufc?event=<id>` opens another card. The analyst section mounts through the
       // `analyst` option once it exists; see ufcfights.js, "WHERE THE AI ANALYST GOES".
       await renderCard(main, { sport: "mma" });
-      await renderFightNight(main, { eventId: query.event });
+      // THE UFC AI ANALYST (web/js/analyst_ufc.js) in each bout's slot. The card-level
+      // slot is filled first (ufcfights.js fightNightNode), which starts ONE fetch of the
+      // event's published calls; each bout slot then shows its own bout's calls. Nothing
+      // published, or a failed fetch, leaves every slot empty and the page as it was.
+      let ufcCalls = null;
+      await renderFightNight(main, {
+        eventId: query.event,
+        analyst: async (slot, ctx) => {
+          if (ctx && ctx.event) {
+            ufcCalls = fetchUfcAnalyst(ctx.event.event_id);
+            return;
+          }
+          if (!ufcCalls || !ctx || !ctx.bout_id) return;
+          const data = await ufcCalls;
+          const bouts = (data && data.available && data.analysis && data.analysis.bouts) || [];
+          const mine = bouts.find((b) => String(b.bout_id) === String(ctx.bout_id));
+          if (mine) slot.appendChild(ufcAnalystBout(mine));
+        },
+      });
     }
   } else if (sport === "nba" || sport === "nhl") {
     // NBA and NHL are still coming-soon (D6): every route under either,
