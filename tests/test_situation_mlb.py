@@ -524,6 +524,13 @@ class TheLongerHistory(unittest.TestCase):
         reason = gaps_of(r)[("pressure_history", "regular_season_win_rate", "away")]
         self.assertIn("2019", reason)
 
+    def test_the_standings_beat_the_rows_for_a_regular_season_record(self):
+        """The standings count every game, including the opening series abroad that the results store
+        starts after (LAD and CHC in 2025 differ by two games), so they are the authority."""
+        records = {(2025, "TB"): {"wins": 100, "losses": 62}}
+        d = by_key(run(F.division_game(1), season_records=records))[("pressure_history", "postseason_record", "away")]["detail"]
+        self.assertEqual((d["regular_season_games"], d["regular_season_win_pct"]), (162, round(100 / 162, 4)))
+
     def test_the_results_store_wins_where_both_hold_a_game(self):
         clash = dict(F.division_series()[0], away_score="99", home_score="0", winner="TB")
         r = run(F.division_game(2), F.world(), extra_games=[clash])

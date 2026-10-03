@@ -1,0 +1,28 @@
+{
+ "fetched_utc": "2026-10-03T21:38:58Z",
+ "game_types": [
+  "F",
+  "D",
+  "L",
+  "W"
+ ],
+ "games": 440,
+ "label": "Display and research only. Never a training population: postseason games are a selected population, and nothing that fits or prices a model may read this store.",
+ "never_a_training_population": true,
+ "note": "games are postseason games only; a season record is a club's final regular-season record from the standings, one row per club, never games",
+ "season_records": 330,
+ "seasons": [
+  2015,
+  2016,
+  2017,
+  2018,
+  2019,
+  2020,
+  2021,
+  2022,
+  2023,
+  2024,
+  2025
+ ],
+ "source": "MLB Stats API (statsapi.mlb.com), free and keyless"
+}

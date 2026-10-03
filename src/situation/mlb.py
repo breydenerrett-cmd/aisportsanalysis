@@ -537,16 +537,17 @@ def _stakes(ctx: _Ctx, out: list, gaps: list) -> None:
 # ---------------------------------------------------------------------------
 
 def _regular_record(ctx: _Ctx, team: str, season: int) -> Optional[tuple]:
-    """(wins, losses) of a club's regular season from the rows, else from the supplied
-    season records, else None."""
+    """(wins, losses) of a club's regular season: the supplied season record (the standings, which
+    count every game, including the two opening series abroad the results store starts after) when
+    there is one, else the club's regular-season games in the rows, else None."""
+    held = ctx.season_records.get((season, team))
+    if held and held.get("wins") is not None and held.get("losses") is not None:
+        return int(held["wins"]), int(held["losses"])
     games = [p for p in (_persp(r, team) for r in ctx.by_team.get(team, ())
                          if r.get("game_type") == ser.REGULAR and int(r["date"][:4]) == season) if p]
     if ctx.store_starts and season >= int(ctx.store_starts[:4]) and games:
         wins = sum(1 for g in games if g["win"])
         return wins, len(games) - wins
-    held = ctx.season_records.get((season, team))
-    if held and held.get("wins") is not None and held.get("losses") is not None:
-        return int(held["wins"]), int(held["losses"])
     return None
 
 
