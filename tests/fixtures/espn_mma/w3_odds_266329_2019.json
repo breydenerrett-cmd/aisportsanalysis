@@ -1,0 +1,303 @@
+{
+ "count": 6,
+ "pageIndex": 1,
+ "pageSize": 25,
+ "pageCount": 1,
+ "items": [
+  {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/401129626/competitions/266329/odds/1001?lang=en&region=us",
+   "provider": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/providers/1001?lang=en&region=us",
+    "id": "1001",
+    "name": "Bet365",
+    "priority": 0
+   },
+   "details": "K. Nurmagomedov -460",
+   "overUnder": 3.5,
+   "overOdds": -125.0,
+   "underOdds": 100.0,
+   "awayAthleteOdds": {
+    "favorite": false,
+    "underdog": true,
+    "moneyLine": 350,
+    "current": {
+     "moneyLine": {
+      "alternateDisplayValue": "+350",
+      "american": "+350"
+     }
+    },
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/2506549?lang=en&region=us"
+    }
+   },
+   "homeAthleteOdds": {
+    "favorite": true,
+    "underdog": false,
+    "moneyLine": -460,
+    "current": {
+     "moneyLine": {
+      "alternateDisplayValue": "-460",
+      "american": "-460"
+     }
+    },
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/2611557?lang=en&region=us"
+    }
+   },
+   "moneylineWinner": false,
+   "spreadWinner": false,
+   "current": {
+    "over": {
+     "alternateDisplayValue": "-125",
+     "american": "-125"
+    },
+    "under": {
+     "alternateDisplayValue": "+100",
+     "american": "+100"
+    },
+    "total": {
+     "alternateDisplayValue": "3.5",
+     "american": "3.5"
+    }
+   }
+  },
+  {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/401129626/competitions/266329/odds/37?lang=en&region=us",
+   "provider": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/providers/37?lang=en&region=us",
+    "id": "37",
+    "name": "Betradar",
+    "priority": 0
+   },
+   "details": "K. Nurmagomedov -490",
+   "overUnder": 3.5,
+   "overOdds": -140.0,
+   "underOdds": 110.0,
+   "awayAthleteOdds": {
+    "favorite": false,
+    "underdog": true,
+    "moneyLine": 340,
+    "current": {
+     "moneyLine": {
+      "alternateDisplayValue": "+340",
+      "american": "+340"
+     }
+    },
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/2506549?lang=en&region=us"
+    }
+   },
+   "homeAthleteOdds": {
+    "favorite": true,
+    "underdog": false,
+    "moneyLine": -490,
+    "current": {
+     "moneyLine": {
+      "alternateDisplayValue": "-490",
+      "american": "-490"
+     }
+    },
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/2611557?lang=en&region=us"
+    }
+   },
+   "moneylineWinner": false,
+   "spreadWinner": false,
+   "current": {
+    "over": {
+     "alternateDisplayValue": "-140",
+     "american": "-140"
+    },
+    "under": {
+     "alternateDisplayValue": "+110",
+     "american": "+110"
+    },
+    "total": {
+     "alternateDisplayValue": "3.5",
+     "american": "3.5"
+    },
+    "draw": {
+     "alternateDisplayValue": "+8000",
+     "american": "+8000"
+    }
+   }
+  },
+  {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/401129626/competitions/266329/odds/38?lang=en&region=us",
+   "provider": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/providers/38?lang=en&region=us",
+    "id": "38",
+    "name": "Caesars (New Jersey)",
+    "priority": 0
+   },
+   "details": "K. Nurmagomedov -550",
+   "awayAthleteOdds": {
+    "favorite": false,
+    "underdog": true,
+    "moneyLine": 380,
+    "current": {
+     "moneyLine": {
+      "alternateDisplayValue": "+380",
+      "american": "+380"
+     }
+    },
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/2506549?lang=en&region=us"
+    }
+   },
+   "homeAthleteOdds": {
+    "favorite": true,
+    "underdog": false,
+    "moneyLine": -550,
+    "current": {
+     "moneyLine": {
+      "alternateDisplayValue": "-550",
+      "american": "-550"
+     }
+    },
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/2611557?lang=en&region=us"
+    }
+   },
+   "moneylineWinner": false,
+   "spreadWinner": false
+  },
+  {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/401129626/competitions/266329/odds/1004?lang=en&region=us",
+   "provider": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/providers/1004?lang=en&region=us",
+    "id": "1004",
+    "name": "Consensus",
+    "priority": 0
+   },
+   "details": "K. Nurmagomedov -530",
+   "overUnder": 3.5,
+   "overOdds": -135.0,
+   "underOdds": 105.0,
+   "awayAthleteOdds": {
+    "favorite": false,
+    "underdog": true,
+    "moneyLine": 410,
+    "current": {
+     "moneyLine": {
+      "alternateDisplayValue": "+410",
+      "american": "+410"
+     }
+    },
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/2506549?lang=en&region=us"
+    }
+   },
+   "homeAthleteOdds": {
+    "favorite": true,
+    "underdog": false,
+    "moneyLine": -530,
+    "current": {
+     "moneyLine": {
+      "alternateDisplayValue": "-530",
+      "american": "-530"
+     }
+    },
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/2611557?lang=en&region=us"
+    }
+   },
+   "moneylineWinner": false,
+   "spreadWinner": false,
+   "current": {
+    "over": {
+     "alternateDisplayValue": "-135",
+     "american": "-135"
+    },
+    "under": {
+     "alternateDisplayValue": "+105",
+     "american": "+105"
+    },
+    "total": {
+     "alternateDisplayValue": "3.5",
+     "american": "3.5"
+    }
+   }
+  },
+  {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/401129626/competitions/266329/odds/36?lang=en&region=us",
+   "provider": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/providers/36?lang=en&region=us",
+    "id": "36",
+    "name": "Unibet",
+    "priority": 0
+   },
+   "details": "K. Nurmagomedov -440",
+   "awayAthleteOdds": {
+    "favorite": false,
+    "underdog": true,
+    "moneyLine": 340,
+    "current": {
+     "moneyLine": {
+      "alternateDisplayValue": "+340",
+      "american": "+340"
+     }
+    },
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/2506549?lang=en&region=us"
+    }
+   },
+   "homeAthleteOdds": {
+    "favorite": true,
+    "underdog": false,
+    "moneyLine": -440,
+    "current": {
+     "moneyLine": {
+      "alternateDisplayValue": "-440",
+      "american": "-440"
+     }
+    },
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/2611557?lang=en&region=us"
+    }
+   },
+   "moneylineWinner": false,
+   "spreadWinner": false
+  },
+  {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/401129626/competitions/266329/odds/32?lang=en&region=us",
+   "provider": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/providers/32?lang=en&region=us",
+    "id": "32",
+    "name": "Wynn",
+    "priority": 0
+   },
+   "details": "K. Nurmagomedov -500",
+   "awayAthleteOdds": {
+    "favorite": false,
+    "underdog": true,
+    "moneyLine": 380,
+    "current": {
+     "moneyLine": {
+      "alternateDisplayValue": "+380",
+      "american": "+380"
+     }
+    },
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/2506549?lang=en&region=us"
+    }
+   },
+   "homeAthleteOdds": {
+    "favorite": true,
+    "underdog": false,
+    "moneyLine": -500,
+    "current": {
+     "moneyLine": {
+      "alternateDisplayValue": "-500",
+      "american": "-500"
+     }
+    },
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/2611557?lang=en&region=us"
+    }
+   },
+   "moneylineWinner": false,
+   "spreadWinner": false
+  }
+ ]
+}

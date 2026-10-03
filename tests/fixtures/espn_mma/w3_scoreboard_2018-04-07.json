@@ -1,0 +1,1823 @@
+{
+ "leagues": [
+  {
+   "id": "3321",
+   "uid": "s:3301~l:3321",
+   "name": "Ultimate Fighting Championship",
+   "displayName": "UFC",
+   "abbreviation": "UFC",
+   "shortName": "UFC",
+   "slug": "ufc",
+   "season": {
+    "year": 2018,
+    "startDate": "2018-01-01T08:00Z",
+    "endDate": "2018-12-31T08:00Z",
+    "displayName": "2018",
+    "type": {
+     "id": "2",
+     "type": 2,
+     "name": "Regular Season",
+     "abbreviation": "reg"
+    }
+   },
+   "logos": [
+    {
+     "href": "https://a.espncdn.com/i/teamlogos/leagues/500/ufc.png",
+     "width": 500,
+     "height": 500,
+     "alt": "",
+     "rel": [
+      "full",
+      "default"
+     ],
+     "lastUpdated": "2018-12-21T18:30Z"
+    },
+    {
+     "href": "https://a.espncdn.com/i/teamlogos/leagues/500/ufc.png",
+     "width": 500,
+     "height": 500,
+     "alt": "",
+     "rel": [
+      "full",
+      "dark"
+     ],
+     "lastUpdated": "2018-12-21T18:30Z"
+    }
+   ],
+   "calendarType": "list",
+   "calendarIsWhitelist": true,
+   "calendarStartDate": "2018-01-01T08:00Z",
+   "calendarEndDate": "2018-12-31T08:00Z",
+   "calendar": [
+    {
+     "label": "UFC Fight Night: Stephens vs. Choi",
+     "startDate": "2018-01-14T21:30Z",
+     "endDate": "2018-01-15T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400999549?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 220: Miocic vs. Ngannou",
+     "startDate": "2018-01-21T06:00Z",
+     "endDate": "2018-01-21T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400999430?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Jacare vs. Brunson 2",
+     "startDate": "2018-01-28T04:00Z",
+     "endDate": "2018-01-28T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400999869?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Machida vs. Anders",
+     "startDate": "2018-02-04T06:00Z",
+     "endDate": "2018-02-04T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400999366?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 221: Romero vs. Rockhold",
+     "startDate": "2018-02-10T21:30Z",
+     "endDate": "2018-02-11T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400999582?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Cowboy vs. Medeiros",
+     "startDate": "2018-02-18T21:00Z",
+     "endDate": "2018-02-18T21:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400999870?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Emmett vs. Stephens",
+     "startDate": "2018-02-24T19:00Z",
+     "endDate": "2018-02-25T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400999871?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 222: Cyborg vs. Kunitskaya",
+     "startDate": "2018-03-03T21:30Z",
+     "endDate": "2018-03-04T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400999550?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Werdum vs. Volkov",
+     "startDate": "2018-03-18T00:00Z",
+     "endDate": "2018-03-18T00:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400999627?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 223: Khabib vs. Iaquinta",
+     "startDate": "2018-04-07T23:00Z",
+     "endDate": "2018-04-08T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401012186?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Poirier vs. Gaethje",
+     "startDate": "2018-04-15T03:00Z",
+     "endDate": "2018-04-15T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401011307?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Barboza vs. Lee",
+     "startDate": "2018-04-22T05:00Z",
+     "endDate": "2018-04-22T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401017343?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 224: Nunes vs. Pennington",
+     "startDate": "2018-05-13T05:00Z",
+     "endDate": "2018-05-13T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401017344?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Maia vs. Usman",
+     "startDate": "2018-05-19T21:30Z",
+     "endDate": "2018-05-20T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401021503?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Thompson vs. Till",
+     "startDate": "2018-05-27T13:30Z",
+     "endDate": "2018-05-28T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401026710?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Rivera vs. Moraes",
+     "startDate": "2018-06-02T05:00Z",
+     "endDate": "2018-06-02T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401017493?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 225: Whittaker vs. Romero 2",
+     "startDate": "2018-06-10T02:00Z",
+     "endDate": "2018-06-10T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401017492?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 2, Week 1",
+     "startDate": "2018-06-13T04:00Z",
+     "endDate": "2018-06-13T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401033270?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 2, Week 2",
+     "startDate": "2018-06-20T04:00Z",
+     "endDate": "2018-06-20T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401033277?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Cowboy vs. Edwards",
+     "startDate": "2018-06-24T02:00Z",
+     "endDate": "2018-06-24T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401025730?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 2, Week 3",
+     "startDate": "2018-06-27T04:00Z",
+     "endDate": "2018-06-27T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401033279?lang=en&region=us"
+     }
+    },
+    {
+     "label": "The Ultimate Fighter 27 Finale",
+     "startDate": "2018-07-07T02:00Z",
+     "endDate": "2018-07-07T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401006826?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 226: Miocic vs. Cormier",
+     "startDate": "2018-07-08T05:00Z",
+     "endDate": "2018-07-08T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401006827?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 2, Week 4",
+     "startDate": "2018-07-11T04:00Z",
+     "endDate": "2018-07-11T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401033280?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Dos Santos vs. Ivanov",
+     "startDate": "2018-07-15T02:00Z",
+     "endDate": "2018-07-15T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401031114?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 2, Week 5",
+     "startDate": "2018-07-18T04:00Z",
+     "endDate": "2018-07-18T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401033281?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Shogun vs. Smith",
+     "startDate": "2018-07-22T13:30Z",
+     "endDate": "2018-07-22T13:30Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401028392?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 2, Week 6",
+     "startDate": "2018-07-25T04:00Z",
+     "endDate": "2018-07-25T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401033282?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Alvarez vs. Poirier 2",
+     "startDate": "2018-07-28T19:00Z",
+     "endDate": "2018-07-29T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401030616?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 2, Week 7",
+     "startDate": "2018-08-01T04:00Z",
+     "endDate": "2018-08-01T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401033284?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 227: Dillashaw vs. Garbrandt 2",
+     "startDate": "2018-08-04T21:30Z",
+     "endDate": "2018-08-05T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401028930?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 2, Week 8",
+     "startDate": "2018-08-08T04:00Z",
+     "endDate": "2018-08-08T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401033283?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Brazil 1",
+     "startDate": "2018-08-11T04:00Z",
+     "endDate": "2018-08-11T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401074496?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Brazil 2",
+     "startDate": "2018-08-12T04:00Z",
+     "endDate": "2018-08-12T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401074497?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Brazil 3",
+     "startDate": "2018-08-12T04:00Z",
+     "endDate": "2018-08-12T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401074498?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Gaethje vs. Vick",
+     "startDate": "2018-08-25T21:30Z",
+     "endDate": "2018-08-26T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401036886?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 228: Woodley vs. Till",
+     "startDate": "2018-09-08T21:00Z",
+     "endDate": "2018-09-09T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401035311?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Hunt vs. Oleinik",
+     "startDate": "2018-09-15T21:00Z",
+     "endDate": "2018-09-16T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401033913?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Marreta vs. Anders",
+     "startDate": "2018-09-23T05:30Z",
+     "endDate": "2018-09-23T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401032731?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 229: Khabib vs. McGregor",
+     "startDate": "2018-10-07T05:00Z",
+     "endDate": "2018-10-07T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401006828?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Volkan vs. Smith",
+     "startDate": "2018-10-28T05:00Z",
+     "endDate": "2018-10-28T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401053583?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 230: Cormier vs. Lewis",
+     "startDate": "2018-11-04T05:00Z",
+     "endDate": "2018-11-04T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401053584?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Korean Zombie vs. Rodriguez",
+     "startDate": "2018-11-11T06:00Z",
+     "endDate": "2018-11-11T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401053585?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Magny vs. Ponzinibbio",
+     "startDate": "2018-11-18T06:00Z",
+     "endDate": "2018-11-18T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401053586?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Blaydes vs. Ngannou 2",
+     "startDate": "2018-11-24T14:30Z",
+     "endDate": "2018-11-25T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401053587?lang=en&region=us"
+     }
+    },
+    {
+     "label": "The Ultimate Fighter 28 Finale",
+     "startDate": "2018-12-01T06:00Z",
+     "endDate": "2018-12-01T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401053589?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Dos Santos vs. Tuivasa",
+     "startDate": "2018-12-01T08:00Z",
+     "endDate": "2018-12-01T08:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401053588?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 231: Holloway vs. Ortega",
+     "startDate": "2018-12-09T06:00Z",
+     "endDate": "2018-12-09T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401053582?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Lee vs. Iaquinta 2",
+     "startDate": "2018-12-16T04:00Z",
+     "endDate": "2018-12-16T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401053610?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 232: Jones vs. Gustafsson 2",
+     "startDate": "2018-12-30T06:00Z",
+     "endDate": "2018-12-30T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401006829?lang=en&region=us"
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "401012186",
+   "uid": "s:3301~l:3321~e:401012186",
+   "date": "2018-04-07T20:00Z",
+   "name": "UFC 223: Khabib vs. Iaquinta",
+   "shortName": "UFC 223",
+   "season": {
+    "year": 2018,
+    "type": 2,
+    "slug": "regular-season"
+   },
+   "competitions": [
+    {
+     "id": "245593",
+     "uid": "s:3301~l:3321~e:401012186~c:245593",
+     "date": "2018-04-08T00:00Z",
+     "endDate": "2018-04-08T00:00Z",
+     "type": {
+      "id": "990",
+      "abbreviation": "Light Heavyweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "3559",
+      "fullName": "Barclays Center",
+      "address": {
+       "city": "Brooklyn",
+       "state": "NY",
+       "address1": "620 Atlantic Ave",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "3971496",
+       "uid": "s:3301~a:3971496",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Devin Clark",
+        "displayName": "Devin Clark",
+        "shortName": "D. Clark",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 89.0,
+         "displayValue": "89.0",
+         "period": 2,
+         "linescores": [
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 2
+          },
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 2
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 2
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "14-9-0"
+        }
+       ]
+      },
+      {
+       "id": "4081550",
+       "uid": "s:3301~a:4081550",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Mike Rodriguez",
+        "displayName": "Mike Rodriguez",
+        "shortName": "M. Rodriguez",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 82.0,
+         "displayValue": "82.0",
+         "period": 2,
+         "linescores": [
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 2
+          },
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 2
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 2
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "12-7-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2018-04-08T00:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "244290",
+     "uid": "s:3301~l:3321~e:401012186~c:244290",
+     "date": "2018-04-08T00:00Z",
+     "endDate": "2018-04-08T00:00Z",
+     "type": {
+      "id": "1007",
+      "abbreviation": "W Flyweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "3559",
+      "fullName": "Barclays Center",
+      "address": {
+       "city": "Brooklyn",
+       "state": "NY",
+       "address1": "620 Atlantic Ave",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "3019035",
+       "uid": "s:3301~a:3019035",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Bec Rawlings",
+        "displayName": "Bec Rawlings",
+        "shortName": "B. Rawlings",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/aus.png",
+         "alt": "Australia",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 81.0,
+         "displayValue": "81.0",
+         "period": 3,
+         "linescores": [
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 3
+          },
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 3
+          },
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 3
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "8-9-0"
+        }
+       ]
+      },
+      {
+       "id": "3046022",
+       "uid": "s:3301~a:3046022",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Ashlee Evans-Smith",
+        "displayName": "Ashlee Evans-Smith",
+        "shortName": "A. Evans-Smith",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 90.0,
+         "displayValue": "90.0",
+         "period": 3,
+         "linescores": [
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 3
+          },
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 3
+          },
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 3
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "6-6-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2018-04-08T00:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "243852",
+     "uid": "s:3301~l:3321~e:401012186~c:243852",
+     "date": "2018-04-08T00:00Z",
+     "endDate": "2018-04-08T00:00Z",
+     "type": {
+      "id": "986",
+      "abbreviation": "Lightweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "3559",
+      "fullName": "Barclays Center",
+      "address": {
+       "city": "Brooklyn",
+       "state": "NY",
+       "address1": "620 Atlantic Ave",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2335772",
+       "uid": "s:3301~a:2335772",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Evan Dunham",
+        "displayName": "Evan Dunham",
+        "shortName": "E. Dunham",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "18-9-1"
+        }
+       ]
+      },
+      {
+       "id": "3096577",
+       "uid": "s:3301~a:3096577",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Olivier Aubin-Mercier",
+        "displayName": "Olivier Aubin-Mercier",
+        "shortName": "O. Aubin-Mercier",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/can.png",
+         "alt": "Canada",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "21-5-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 53.0,
+      "displayClock": "0:53",
+      "period": 1,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2018-04-08T00:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "243572",
+     "uid": "s:3301~l:3321~e:401012186~c:243572",
+     "date": "2018-04-08T00:00Z",
+     "endDate": "2018-04-08T00:00Z",
+     "type": {
+      "id": "1006",
+      "abbreviation": "W Strawweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "3559",
+      "fullName": "Barclays Center",
+      "address": {
+       "city": "Brooklyn",
+       "state": "NY",
+       "address1": "620 Atlantic Ave",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2512985",
+       "uid": "s:3301~a:2512985",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Felice Herrig",
+        "displayName": "Felice Herrig",
+        "shortName": "F. Herrig",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 85.0,
+         "displayValue": "85.0",
+         "period": 3,
+         "linescores": [
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 3
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 3
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 3
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "14-10-0"
+        }
+       ]
+      },
+      {
+       "id": "3102702",
+       "uid": "s:3301~a:3102702",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Karolina Kowalkiewicz",
+        "displayName": "Karolina Kowalkiewicz",
+        "shortName": "K. Kowalkiewicz",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/pol.png",
+         "alt": "Poland",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 86.0,
+         "displayValue": "86.0",
+         "period": 3,
+         "linescores": [
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 3
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 3
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 3
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "16-10-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2018-04-08T00:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "243853",
+     "uid": "s:3301~l:3321~e:401012186~c:243853",
+     "date": "2018-04-08T02:00Z",
+     "endDate": "2018-04-08T02:00Z",
+     "type": {
+      "id": "986",
+      "abbreviation": "Lightweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "3559",
+      "fullName": "Barclays Center",
+      "address": {
+       "city": "Brooklyn",
+       "state": "NY",
+       "address1": "620 Atlantic Ave",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2335676",
+       "uid": "s:3301~a:2335676",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Joe Lauzon",
+        "displayName": "Joe Lauzon",
+        "shortName": "J. Lauzon",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "28-16-0"
+        }
+       ]
+      },
+      {
+       "id": "2951241",
+       "uid": "s:3301~a:2951241",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Chris Gruetzemacher",
+        "displayName": "Chris Gruetzemacher",
+        "shortName": "C. Gruetzemacher",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "15-5-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 2,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2018-04-08T02:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "245592",
+     "uid": "s:3301~l:3321~e:401012186~c:245592",
+     "date": "2018-04-08T02:00Z",
+     "endDate": "2018-04-08T02:00Z",
+     "type": {
+      "id": "999",
+      "abbreviation": "Featherweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "3559",
+      "fullName": "Barclays Center",
+      "address": {
+       "city": "Brooklyn",
+       "state": "NY",
+       "address1": "620 Atlantic Ave",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "3947005",
+       "uid": "s:3301~a:3947005",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Kyle Bochniak",
+        "displayName": "Kyle Bochniak",
+        "shortName": "K. Bochniak",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 82.0,
+         "displayValue": "82.0",
+         "period": 3,
+         "linescores": [
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 3
+          },
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 3
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 3
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "11-7-0"
+        }
+       ]
+      },
+      {
+       "id": "4241041",
+       "uid": "s:3301~a:4241041",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Zabit Magomedsharipov",
+        "displayName": "Zabit Magomedsharipov",
+        "shortName": "Z. Magomedsharipov",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/rus.png",
+         "alt": "Russia",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 89.0,
+         "displayValue": "89.0",
+         "period": 3,
+         "linescores": [
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 3
+          },
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 3
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 3
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "18-1-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": true
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2018-04-08T02:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "244753",
+     "uid": "s:3301~l:3321~e:401012186~c:244753",
+     "date": "2018-04-08T02:00Z",
+     "endDate": "2018-04-08T02:00Z",
+     "type": {
+      "id": "999",
+      "abbreviation": "Featherweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "3559",
+      "fullName": "Barclays Center",
+      "address": {
+       "city": "Brooklyn",
+       "state": "NY",
+       "address1": "620 Atlantic Ave",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "3028863",
+       "uid": "s:3301~a:3028863",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Renato Moicano",
+        "displayName": "Renato Moicano",
+        "shortName": "R. Moicano",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/bra.png",
+         "alt": "Brazil",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 89.0,
+         "displayValue": "89.0",
+         "period": 3,
+         "linescores": [
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 3
+          },
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 3
+          },
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 3
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "21-7-1"
+        }
+       ]
+      },
+      {
+       "id": "3164030",
+       "uid": "s:3301~a:3164030",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Calvin Kattar",
+        "displayName": "Calvin Kattar",
+        "shortName": "C. Kattar",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 82.0,
+         "displayValue": "82.0",
+         "period": 3,
+         "linescores": [
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 3
+          },
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 3
+          },
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 3
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "23-10-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2018-04-08T02:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "243737",
+     "uid": "s:3301~l:3321~e:401012186~c:243737",
+     "date": "2018-04-08T02:00Z",
+     "endDate": "2018-04-08T02:00Z",
+     "type": {
+      "id": "1006",
+      "abbreviation": "W Strawweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "3559",
+      "fullName": "Barclays Center",
+      "address": {
+       "city": "Brooklyn",
+       "state": "NY",
+       "address1": "620 Atlantic Ave",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "3032973",
+       "uid": "s:3301~a:3032973",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Rose Namajunas",
+        "displayName": "Rose Namajunas",
+        "shortName": "R. Namajunas",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 147.0,
+         "displayValue": "147.0",
+         "period": 5,
+         "linescores": [
+          {
+           "value": 49.0,
+           "displayValue": "49",
+           "period": 5
+          },
+          {
+           "value": 49.0,
+           "displayValue": "49",
+           "period": 5
+          },
+          {
+           "value": 49.0,
+           "displayValue": "49",
+           "period": 5
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "15-8-0"
+        }
+       ]
+      },
+      {
+       "id": "3106617",
+       "uid": "s:3301~a:3106617",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Joanna Jedrzejczyk",
+        "displayName": "Joanna Jedrzejczyk",
+        "shortName": "J. Jedrzejczyk",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/pol.png",
+         "alt": "Poland",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 138.0,
+         "displayValue": "138.0",
+         "period": 5,
+         "linescores": [
+          {
+           "value": 46.0,
+           "displayValue": "46",
+           "period": 5
+          },
+          {
+           "value": 46.0,
+           "displayValue": "46",
+           "period": 5
+          },
+          {
+           "value": 46.0,
+           "displayValue": "46",
+           "period": 5
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "16-5-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 5,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 5
+      }
+     },
+     "startDate": "2018-04-08T02:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "243591",
+     "uid": "s:3301~l:3321~e:401012186~c:243591",
+     "date": "2018-04-08T02:00Z",
+     "endDate": "2018-04-08T02:00Z",
+     "type": {
+      "id": "986",
+      "abbreviation": "Lightweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "3559",
+      "fullName": "Barclays Center",
+      "address": {
+       "city": "Brooklyn",
+       "state": "NY",
+       "address1": "620 Atlantic Ave",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2611557",
+       "uid": "s:3301~a:2611557",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Khabib Nurmagomedov",
+        "displayName": "Khabib Nurmagomedov",
+        "shortName": "K. Nurmagomedov",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/rus.png",
+         "alt": "Russia",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 150.0,
+         "displayValue": "150.0",
+         "period": 5,
+         "linescores": [
+          {
+           "value": 50.0,
+           "displayValue": "50",
+           "period": 5
+          },
+          {
+           "value": 50.0,
+           "displayValue": "50",
+           "period": 5
+          },
+          {
+           "value": 50.0,
+           "displayValue": "50",
+           "period": 5
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "29-0-0"
+        }
+       ]
+      },
+      {
+       "id": "2960680",
+       "uid": "s:3301~a:2960680",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Al Iaquinta",
+        "displayName": "Al Iaquinta",
+        "shortName": "A. Iaquinta",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 130.0,
+         "displayValue": "130.0",
+         "period": 5,
+         "linescores": [
+          {
+           "value": 43.0,
+           "displayValue": "43",
+           "period": 5
+          },
+          {
+           "value": 44.0,
+           "displayValue": "44",
+           "period": 5
+          },
+          {
+           "value": 43.0,
+           "displayValue": "43",
+           "period": 5
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "14-7-1"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 5,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 5
+      }
+     },
+     "startDate": "2018-04-08T02:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    }
+   ],
+   "links": [
+    {
+     "language": "en-US",
+     "rel": [
+      "summary",
+      "desktop",
+      "event"
+     ],
+     "href": "https://www.espn.com/mma/fightcenter/_/id/401012186/league/ufc",
+     "text": "Gamecast",
+     "shortText": "Gamecast",
+     "isExternal": false,
+     "isPremium": false
+    }
+   ],
+   "venues": [
+    {
+     "id": "3559",
+     "fullName": "Barclays Center",
+     "address": {
+      "city": "Brooklyn",
+      "state": "NY",
+      "address1": "620 Atlantic Ave",
+      "country": "USA"
+     }
+    }
+   ],
+   "status": {
+    "type": {
+     "id": "3",
+     "name": "STATUS_FINAL",
+     "state": "post",
+     "completed": true,
+     "description": "Final",
+     "detail": "Final",
+     "shortDetail": "Final"
+    }
+   }
+  }
+ ],
+ "provider": {
+  "id": "100",
+  "name": "Draft Kings",
+  "displayName": "Draft Kings",
+  "priority": 1
+ }
+}

@@ -1,0 +1,362 @@
+{
+ "count": 8,
+ "pageIndex": 1,
+ "pageSize": 25,
+ "pageCount": 1,
+ "items": [
+  {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600025607/competitions/401499752/odds/50?lang=en&region=us",
+   "provider": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/providers/50?lang=en&region=us",
+    "id": "50",
+    "name": "BetfairSportsbook",
+    "priority": 0
+   },
+   "details": "M. Ankalaev -400",
+   "awayAthleteOdds": {
+    "favorite": true,
+    "underdog": false,
+    "moneyLine": -400,
+    "current": {
+     "moneyLine": {
+      "alternateDisplayValue": "-400",
+      "american": "-400"
+     }
+    },
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/4273399?lang=en&region=us"
+    }
+   },
+   "homeAthleteOdds": {
+    "favorite": false,
+    "underdog": true,
+    "moneyLine": 250,
+    "current": {
+     "moneyLine": {
+      "alternateDisplayValue": "+250",
+      "american": "+250"
+     }
+    },
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/2506250?lang=en&region=us"
+    }
+   },
+   "moneylineWinner": false,
+   "spreadWinner": false
+  },
+  {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600025607/competitions/401499752/odds/52?lang=en&region=us",
+   "provider": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/providers/52?lang=en&region=us",
+    "id": "52",
+    "name": "Caesars Sportsbook (CO)",
+    "priority": 0
+   },
+   "details": "M. Ankalaev -360",
+   "awayAthleteOdds": {
+    "favorite": true,
+    "underdog": false,
+    "moneyLine": -360,
+    "current": {
+     "moneyLine": {
+      "alternateDisplayValue": "-360",
+      "american": "-360"
+     }
+    },
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/4273399?lang=en&region=us"
+    }
+   },
+   "homeAthleteOdds": {
+    "favorite": false,
+    "underdog": true,
+    "moneyLine": 280,
+    "current": {
+     "moneyLine": {
+      "alternateDisplayValue": "+280",
+      "american": "+280"
+     }
+    },
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/2506250?lang=en&region=us"
+    }
+   },
+   "moneylineWinner": false,
+   "spreadWinner": false
+  },
+  {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600025607/competitions/401499752/odds/45?lang=en&region=us",
+   "provider": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/providers/45?lang=en&region=us",
+    "id": "45",
+    "name": "Caesars Sportsbook (NJ)",
+    "priority": 0
+   },
+   "details": "M. Ankalaev -360",
+   "awayAthleteOdds": {
+    "favorite": true,
+    "underdog": false,
+    "moneyLine": -360,
+    "current": {
+     "moneyLine": {
+      "alternateDisplayValue": "-360",
+      "american": "-360"
+     }
+    },
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/4273399?lang=en&region=us"
+    }
+   },
+   "homeAthleteOdds": {
+    "favorite": false,
+    "underdog": true,
+    "moneyLine": 280,
+    "current": {
+     "moneyLine": {
+      "alternateDisplayValue": "+280",
+      "american": "+280"
+     }
+    },
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/2506250?lang=en&region=us"
+    }
+   },
+   "moneylineWinner": false,
+   "spreadWinner": false
+  },
+  {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600025607/competitions/401499752/odds/1004?lang=en&region=us",
+   "provider": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/providers/1004?lang=en&region=us",
+    "id": "1004",
+    "name": "Consensus",
+    "priority": 0
+   },
+   "details": "M. Ankalaev -347",
+   "overUnder": 3.5,
+   "overOdds": -103.0,
+   "underOdds": -127.0,
+   "awayAthleteOdds": {
+    "favorite": true,
+    "underdog": false,
+    "moneyLine": -347,
+    "current": {
+     "moneyLine": {
+      "alternateDisplayValue": "-347",
+      "american": "-347"
+     }
+    },
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/4273399?lang=en&region=us"
+    }
+   },
+   "homeAthleteOdds": {
+    "favorite": false,
+    "underdog": true,
+    "moneyLine": 277,
+    "current": {
+     "moneyLine": {
+      "alternateDisplayValue": "+277",
+      "american": "+277"
+     }
+    },
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/2506250?lang=en&region=us"
+    }
+   },
+   "moneylineWinner": false,
+   "spreadWinner": false,
+   "current": {
+    "over": {
+     "alternateDisplayValue": "-103",
+     "american": "-103"
+    },
+    "under": {
+     "alternateDisplayValue": "-127",
+     "american": "-127"
+    },
+    "total": {
+     "alternateDisplayValue": "3.5",
+     "american": "3.5"
+    }
+   }
+  },
+  {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600025607/competitions/401499752/odds/55?lang=en&region=us",
+   "provider": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/providers/55?lang=en&region=us",
+    "id": "55",
+    "name": "Holland Casino",
+    "priority": 0
+   },
+   "details": "M. Ankalaev -400",
+   "awayAthleteOdds": {
+    "favorite": true,
+    "underdog": false,
+    "moneyLine": -400,
+    "current": {
+     "moneyLine": {
+      "alternateDisplayValue": "-400",
+      "american": "-400"
+     }
+    },
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/4273399?lang=en&region=us"
+    }
+   },
+   "homeAthleteOdds": {
+    "favorite": false,
+    "underdog": true,
+    "moneyLine": 275,
+    "current": {
+     "moneyLine": {
+      "alternateDisplayValue": "+275",
+      "american": "+275"
+     }
+    },
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/2506250?lang=en&region=us"
+    }
+   },
+   "moneylineWinner": false,
+   "spreadWinner": false
+  },
+  {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600025607/competitions/401499752/odds/48?lang=en&region=us",
+   "provider": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/providers/48?lang=en&region=us",
+    "id": "48",
+    "name": "PointsBet",
+    "priority": 0
+   },
+   "details": "M. Ankalaev -333",
+   "overUnder": 2.5,
+   "overOdds": -149.0,
+   "underOdds": 115.0,
+   "awayAthleteOdds": {
+    "favorite": true,
+    "underdog": false,
+    "moneyLine": -333,
+    "current": {
+     "moneyLine": {
+      "alternateDisplayValue": "-333",
+      "american": "-333"
+     }
+    },
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/4273399?lang=en&region=us"
+    }
+   },
+   "homeAthleteOdds": {
+    "favorite": false,
+    "underdog": true,
+    "moneyLine": 260,
+    "current": {
+     "moneyLine": {
+      "alternateDisplayValue": "+260",
+      "american": "+260"
+     }
+    },
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/2506250?lang=en&region=us"
+    }
+   },
+   "moneylineWinner": false,
+   "spreadWinner": false,
+   "current": {
+    "over": {
+     "alternateDisplayValue": "-149",
+     "american": "-149"
+    },
+    "under": {
+     "alternateDisplayValue": "+115",
+     "american": "+115"
+    },
+    "total": {
+     "alternateDisplayValue": "2.5",
+     "american": "2.5"
+    }
+   }
+  },
+  {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600025607/competitions/401499752/odds/53?lang=en&region=us",
+   "provider": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/providers/53?lang=en&region=us",
+    "id": "53",
+    "name": "Titanbets",
+    "priority": 0
+   },
+   "details": "M. Ankalaev -400",
+   "awayAthleteOdds": {
+    "favorite": true,
+    "underdog": false,
+    "moneyLine": -400,
+    "current": {
+     "moneyLine": {
+      "alternateDisplayValue": "-400",
+      "american": "-400"
+     }
+    },
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/4273399?lang=en&region=us"
+    }
+   },
+   "homeAthleteOdds": {
+    "favorite": false,
+    "underdog": true,
+    "moneyLine": 275,
+    "current": {
+     "moneyLine": {
+      "alternateDisplayValue": "+275",
+      "american": "+275"
+     }
+    },
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/2506250?lang=en&region=us"
+    }
+   },
+   "moneylineWinner": false,
+   "spreadWinner": false
+  },
+  {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600025607/competitions/401499752/odds/36?lang=en&region=us",
+   "provider": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/providers/36?lang=en&region=us",
+    "id": "36",
+    "name": "Unibet",
+    "priority": 0
+   },
+   "details": "M. Ankalaev -375",
+   "awayAthleteOdds": {
+    "favorite": true,
+    "underdog": false,
+    "moneyLine": -375,
+    "current": {
+     "moneyLine": {
+      "alternateDisplayValue": "-375",
+      "american": "-375"
+     }
+    },
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/4273399?lang=en&region=us"
+    }
+   },
+   "homeAthleteOdds": {
+    "favorite": false,
+    "underdog": true,
+    "moneyLine": 275,
+    "current": {
+     "moneyLine": {
+      "alternateDisplayValue": "+275",
+      "american": "+275"
+     }
+    },
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/2506250?lang=en&region=us"
+    }
+   },
+   "moneylineWinner": false,
+   "spreadWinner": false
+  }
+ ]
+}

@@ -1,0 +1,2083 @@
+{
+ "leagues": [
+  {
+   "id": "3321",
+   "uid": "s:3301~l:3321",
+   "name": "Ultimate Fighting Championship",
+   "displayName": "UFC",
+   "abbreviation": "UFC",
+   "shortName": "UFC",
+   "slug": "ufc",
+   "season": {
+    "year": 2017,
+    "startDate": "2017-01-01T08:00Z",
+    "endDate": "2017-12-31T08:00Z",
+    "displayName": "2017",
+    "type": {
+     "id": "2",
+     "type": 2,
+     "name": "Regular Season",
+     "abbreviation": "reg"
+    }
+   },
+   "logos": [
+    {
+     "href": "https://a.espncdn.com/i/teamlogos/leagues/500/ufc.png",
+     "width": 500,
+     "height": 500,
+     "alt": "",
+     "rel": [
+      "full",
+      "default"
+     ],
+     "lastUpdated": "2018-12-21T18:30Z"
+    },
+    {
+     "href": "https://a.espncdn.com/i/teamlogos/leagues/500/ufc.png",
+     "width": 500,
+     "height": 500,
+     "alt": "",
+     "rel": [
+      "full",
+      "dark"
+     ],
+     "lastUpdated": "2018-12-21T18:30Z"
+    }
+   ],
+   "calendarType": "list",
+   "calendarIsWhitelist": true,
+   "calendarStartDate": "2017-01-01T08:00Z",
+   "calendarEndDate": "2017-12-31T08:00Z",
+   "calendar": [
+    {
+     "label": "UFC Fight Night: Rodriguez vs. Penn",
+     "startDate": "2017-01-16T06:00Z",
+     "endDate": "2017-01-16T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400925481?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Shevchenko vs. Pena",
+     "startDate": "2017-01-29T04:00Z",
+     "endDate": "2017-01-29T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400925921?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Bermudez vs. The Korean Zombie",
+     "startDate": "2017-02-05T06:00Z",
+     "endDate": "2017-02-05T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400925601?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 208: Holm vs. de Randamie",
+     "startDate": "2017-02-12T06:00Z",
+     "endDate": "2017-02-12T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400925788?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Lewis vs. Browne",
+     "startDate": "2017-02-20T05:00Z",
+     "endDate": "2017-02-20T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400925785?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 209: Woodley vs. Thompson 2",
+     "startDate": "2017-03-05T06:00Z",
+     "endDate": "2017-03-05T06:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400925922?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Belfort vs. Gastelum",
+     "startDate": "2017-03-12T06:00Z",
+     "endDate": "2017-03-12T06:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400929017?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Manuwa vs. Anderson",
+     "startDate": "2017-03-19T05:00Z",
+     "endDate": "2017-03-19T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400925786?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 210: Cormier vs. Johnson 2",
+     "startDate": "2017-04-09T03:00Z",
+     "endDate": "2017-04-09T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400928881?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Johnson vs. Reis",
+     "startDate": "2017-04-16T05:00Z",
+     "endDate": "2017-04-16T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400942606?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Swanson vs. Lobov",
+     "startDate": "2017-04-23T05:00Z",
+     "endDate": "2017-04-23T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400942607?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 211: Miocic vs. dos Santos 2",
+     "startDate": "2017-05-13T20:00Z",
+     "endDate": "2017-05-14T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400941268?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Gustafsson vs. Teixeira",
+     "startDate": "2017-05-29T05:00Z",
+     "endDate": "2017-05-29T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400944776?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 212: Aldo vs. Holloway",
+     "startDate": "2017-06-03T07:00Z",
+     "endDate": "2017-06-03T07:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400942508?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Lewis vs. Hunt",
+     "startDate": "2017-06-11T04:00Z",
+     "endDate": "2017-06-11T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400947466?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Holm vs. Correia",
+     "startDate": "2017-06-18T04:00Z",
+     "endDate": "2017-06-18T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400944285?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Chiesa vs. Lee",
+     "startDate": "2017-06-26T04:00Z",
+     "endDate": "2017-06-26T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400948306?lang=en&region=us"
+     }
+    },
+    {
+     "label": "The Ultimate Fighter 25 Finale",
+     "startDate": "2017-07-08T04:00Z",
+     "endDate": "2017-07-08T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400951439?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 213: Romero vs. Whittaker",
+     "startDate": "2017-07-09T05:00Z",
+     "endDate": "2017-07-09T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400949108?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 1, Week 1",
+     "startDate": "2017-07-11T22:00Z",
+     "endDate": "2017-07-12T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400961602?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Nelson vs. Ponzinibbio",
+     "startDate": "2017-07-17T03:00Z",
+     "endDate": "2017-07-17T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400947050?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 1, Week 2",
+     "startDate": "2017-07-19T05:00Z",
+     "endDate": "2017-07-19T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400966346?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Weidman vs. Gastelum",
+     "startDate": "2017-07-23T05:00Z",
+     "endDate": "2017-07-23T05:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400949207?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 1, Week 3",
+     "startDate": "2017-07-25T15:00Z",
+     "endDate": "2017-07-26T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400966347?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 214: Cormier vs. Jones 2",
+     "startDate": "2017-07-29T22:00Z",
+     "endDate": "2017-07-30T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400925787?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 1, Week 4",
+     "startDate": "2017-08-01T23:00Z",
+     "endDate": "2017-08-02T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400966348?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Pettis vs. Moreno",
+     "startDate": "2017-08-05T23:00Z",
+     "endDate": "2017-08-06T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400953601?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 1, Week 5",
+     "startDate": "2017-08-08T22:00Z",
+     "endDate": "2017-08-09T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400968458?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 1, Week 6",
+     "startDate": "2017-08-16T03:00Z",
+     "endDate": "2017-08-16T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400968459?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 1, Week 7",
+     "startDate": "2017-08-23T05:00Z",
+     "endDate": "2017-08-23T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400972137?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 1, Week 8",
+     "startDate": "2017-08-30T05:00Z",
+     "endDate": "2017-08-30T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400972138?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Volkov vs. Struve",
+     "startDate": "2017-09-02T15:00Z",
+     "endDate": "2017-09-03T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400947051?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 215: Nunes vs. Shevchenko 2",
+     "startDate": "2017-09-09T22:00Z",
+     "endDate": "2017-09-10T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400952466?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Rockhold vs. Branch",
+     "startDate": "2017-09-17T03:00Z",
+     "endDate": "2017-09-17T03:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400970916?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Saint Preux vs. Okami",
+     "startDate": "2017-09-22T23:00Z",
+     "endDate": "2017-09-23T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400964019?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 216: Ferguson vs. Lee",
+     "startDate": "2017-10-07T22:00Z",
+     "endDate": "2017-10-08T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400972121?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Cerrone vs. Till",
+     "startDate": "2017-10-21T22:00Z",
+     "endDate": "2017-10-22T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400972122?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Brunson vs. Machida",
+     "startDate": "2017-10-29T05:00Z",
+     "endDate": "2017-10-29T05:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400972116?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 217: Bisping vs. St-Pierre",
+     "startDate": "2017-11-05T05:00Z",
+     "endDate": "2017-11-05T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400972115?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Poirier vs. Pettis",
+     "startDate": "2017-11-11T22:00Z",
+     "endDate": "2017-11-12T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400972117?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Werdum vs. Tybura",
+     "startDate": "2017-11-18T21:30Z",
+     "endDate": "2017-11-19T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400972118?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Bisping vs. Gastelum",
+     "startDate": "2017-11-26T07:00Z",
+     "endDate": "2017-11-26T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400972114?lang=en&region=us"
+     }
+    },
+    {
+     "label": "The Ultimate Fighter 26 Semifinal",
+     "startDate": "2017-11-29T20:00Z",
+     "endDate": "2017-11-29T20:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401128195?lang=en&region=us"
+     }
+    },
+    {
+     "label": "The Ultimate Fighter 26 Finale",
+     "startDate": "2017-12-01T22:30Z",
+     "endDate": "2017-12-02T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400972134?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 218: Holloway vs. Aldo 2",
+     "startDate": "2017-12-02T21:00Z",
+     "endDate": "2017-12-03T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400972119?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Swanson vs. Ortega",
+     "startDate": "2017-12-09T21:30Z",
+     "endDate": "2017-12-10T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400985822?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Lawler vs. dos Anjos",
+     "startDate": "2017-12-17T04:00Z",
+     "endDate": "2017-12-17T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400972123?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 219: Cyborg vs. Holm",
+     "startDate": "2017-12-30T22:30Z",
+     "endDate": "2017-12-31T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400972120?lang=en&region=us"
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "400925787",
+   "uid": "s:3301~l:3321~e:400925787",
+   "date": "2017-07-29T19:00Z",
+   "name": "UFC 214: Cormier vs. Jones 2",
+   "shortName": "UFC 214",
+   "season": {
+    "year": 2017,
+    "type": 2,
+    "slug": "regular-season"
+   },
+   "competitions": [
+    {
+     "id": "236465",
+     "uid": "s:3301~l:3321~e:400925787~c:236465",
+     "date": "2017-07-29T04:00Z",
+     "endDate": "2017-07-29T04:00Z",
+     "type": {
+      "id": "986",
+      "abbreviation": "Lightweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "1842",
+      "fullName": "Honda Center",
+      "address": {
+       "city": "Anaheim",
+       "state": "CA",
+       "address1": "2695 East Katella Ave.",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2354104",
+       "uid": "s:3301~a:2354104",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Joshua Burkman",
+        "displayName": "Joshua Burkman",
+        "shortName": "J. Burkman",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "28-18-0"
+        }
+       ]
+      },
+      {
+       "id": "2951202",
+       "uid": "s:3301~a:2951202",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Drew Dober",
+        "displayName": "Drew Dober",
+        "shortName": "D. Dober",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "29-15-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 184.0,
+      "displayClock": "3:04",
+      "period": 1,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2017-07-29T04:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "236467",
+     "uid": "s:3301~l:3321~e:400925787~c:236467",
+     "date": "2017-07-29T04:00Z",
+     "endDate": "2017-07-29T04:00Z",
+     "type": {
+      "id": "956",
+      "abbreviation": "Flyweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "1842",
+      "fullName": "Honda Center",
+      "address": {
+       "city": "Anaheim",
+       "state": "CA",
+       "address1": "2695 East Katella Ave.",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "3122041",
+       "uid": "s:3301~a:3122041",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Eric Shelton",
+        "displayName": "Eric Shelton",
+        "shortName": "E. Shelton",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 85.0,
+         "displayValue": "85.0",
+         "period": 3,
+         "linescores": [
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 3
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 3
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 3
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "18-8-0"
+        }
+       ]
+      },
+      {
+       "id": "4036094",
+       "uid": "s:3301~a:4036094",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Jarred Brooks",
+        "displayName": "Jarred Brooks",
+        "shortName": "J. Brooks",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 86.0,
+         "displayValue": "86.0",
+         "period": 3,
+         "linescores": [
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 3
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 3
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 3
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "21-5-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2017-07-29T04:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "236464",
+     "uid": "s:3301~l:3321~e:400925787~c:236464",
+     "date": "2017-07-29T04:00Z",
+     "endDate": "2017-07-29T04:00Z",
+     "type": {
+      "id": "1006",
+      "abbreviation": "W Strawweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "1842",
+      "fullName": "Honda Center",
+      "address": {
+       "city": "Anaheim",
+       "state": "CA",
+       "address1": "2695 East Katella Ave.",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "3074493",
+       "uid": "s:3301~a:3074493",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Alexandra Albu",
+        "displayName": "Alexandra Albu",
+        "shortName": "A. Albu",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/rus.png",
+         "alt": "Russia",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 87.0,
+         "displayValue": "87.0",
+         "period": 3,
+         "linescores": [
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 3
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 3
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 3
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "7-2-0"
+        }
+       ]
+      },
+      {
+       "id": "3129344",
+       "uid": "s:3301~a:3129344",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Kailin Curran",
+        "displayName": "Kailin Curran",
+        "shortName": "K. Curran",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 84.0,
+         "displayValue": "84.0",
+         "period": 3,
+         "linescores": [
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 3
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 3
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 3
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "6-7-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2017-07-29T04:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "238090",
+     "uid": "s:3301~l:3321~e:400925787~c:238090",
+     "date": "2017-07-29T04:00Z",
+     "endDate": "2017-07-29T04:00Z",
+     "type": {
+      "id": "999",
+      "abbreviation": "Featherweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "1842",
+      "fullName": "Honda Center",
+      "address": {
+       "city": "Anaheim",
+       "state": "CA",
+       "address1": "2695 East Katella Ave.",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "3074464",
+       "uid": "s:3301~a:3074464",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Andre Fili",
+        "displayName": "Andre Fili",
+        "shortName": "A. Fili",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 81.0,
+         "displayValue": "81.0",
+         "period": 3,
+         "linescores": [
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 3
+          },
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 3
+          },
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 3
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "25-14-0"
+        }
+       ]
+      },
+      {
+       "id": "3164030",
+       "uid": "s:3301~a:3164030",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Calvin Kattar",
+        "displayName": "Calvin Kattar",
+        "shortName": "C. Kattar",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 90.0,
+         "displayValue": "90.0",
+         "period": 3,
+         "linescores": [
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 3
+          },
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 3
+          },
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 3
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "23-10-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2017-07-29T04:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "236540",
+     "uid": "s:3301~l:3321~e:400925787~c:236540",
+     "date": "2017-07-29T04:00Z",
+     "endDate": "2017-07-29T04:00Z",
+     "type": {
+      "id": "999",
+      "abbreviation": "Featherweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "1842",
+      "fullName": "Honda Center",
+      "address": {
+       "city": "Anaheim",
+       "state": "CA",
+       "address1": "2695 East Katella Ave.",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "3028863",
+       "uid": "s:3301~a:3028863",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Renato Moicano",
+        "displayName": "Renato Moicano",
+        "shortName": "R. Moicano",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/bra.png",
+         "alt": "Brazil",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "21-7-1"
+        }
+       ]
+      },
+      {
+       "id": "3045737",
+       "uid": "s:3301~a:3045737",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Brian Ortega",
+        "displayName": "Brian Ortega",
+        "shortName": "B. Ortega",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "16-5-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 179.0,
+      "displayClock": "2:59",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": true
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2017-07-29T04:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "236453",
+     "uid": "s:3301~l:3321~e:400925787~c:236453",
+     "date": "2017-07-29T04:00Z",
+     "endDate": "2017-07-29T04:00Z",
+     "type": {
+      "id": "1002",
+      "abbreviation": "Catch Weight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "1842",
+      "fullName": "Honda Center",
+      "address": {
+       "city": "Anaheim",
+       "state": "CA",
+       "address1": "2695 East Katella Ave.",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2504550",
+       "uid": "s:3301~a:2504550",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Renan Barao",
+        "displayName": "Renan Barao",
+        "shortName": "R. Barao",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/bra.png",
+         "alt": "Brazil",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 81.0,
+         "displayValue": "81.0",
+         "period": 3,
+         "linescores": [
+          {
+           "value": 26.0,
+           "displayValue": "26",
+           "period": 3
+          },
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 3
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 3
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "34-9-0"
+        }
+       ]
+      },
+      {
+       "id": "3031559",
+       "uid": "s:3301~a:3031559",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Aljamain Sterling",
+        "displayName": "Aljamain Sterling",
+        "shortName": "A. Sterling",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 88.0,
+         "displayValue": "88.0",
+         "period": 3,
+         "linescores": [
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 3
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 3
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 3
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "26-5-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2017-07-29T04:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "236452",
+     "uid": "s:3301~l:3321~e:400925787~c:236452",
+     "date": "2017-07-29T04:00Z",
+     "endDate": "2017-07-29T04:00Z",
+     "type": {
+      "id": "999",
+      "abbreviation": "Featherweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "1842",
+      "fullName": "Honda Center",
+      "address": {
+       "city": "Anaheim",
+       "state": "CA",
+       "address1": "2695 East Katella Ave.",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2504178",
+       "uid": "s:3301~a:2504178",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Ricardo Lamas",
+        "displayName": "Ricardo Lamas",
+        "shortName": "R. Lamas",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "20-8-0"
+        }
+       ]
+      },
+      {
+       "id": "3955317",
+       "uid": "s:3301~a:3955317",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Jason Knight",
+        "displayName": "Jason Knight",
+        "shortName": "J. Knight",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "23-8-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 274.0,
+      "displayClock": "4:34",
+      "period": 1,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2017-07-29T04:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "236651",
+     "uid": "s:3301~l:3321~e:400925787~c:236651",
+     "date": "2017-07-29T04:00Z",
+     "endDate": "2017-07-29T04:00Z",
+     "type": {
+      "id": "990",
+      "abbreviation": "Light Heavyweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "1842",
+      "fullName": "Honda Center",
+      "address": {
+       "city": "Anaheim",
+       "state": "CA",
+       "address1": "2695 East Katella Ave.",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2611102",
+       "uid": "s:3301~a:2611102",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Jimi Manuwa",
+        "displayName": "Jimi Manuwa",
+        "shortName": "J. Manuwa",
+        "flag": {
+         "href": "https://www.espn.com/i/teamlogos/countries/500/blank.png",
+         "alt": "default",
+         "rel": [
+          "default-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "17-6-0"
+        }
+       ]
+      },
+      {
+       "id": "3110836",
+       "uid": "s:3301~a:3110836",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Volkan Oezdemir",
+        "displayName": "Volkan Oezdemir",
+        "shortName": "V. Oezdemir",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/sui.png",
+         "alt": "Switzerland",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "21-8-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 42.0,
+      "displayClock": "0:42",
+      "period": 1,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2017-07-29T04:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "237510",
+     "uid": "s:3301~l:3321~e:400925787~c:237510",
+     "date": "2017-07-29T04:00Z",
+     "endDate": "2017-07-29T04:00Z",
+     "type": {
+      "id": "969",
+      "abbreviation": "Welterweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "1842",
+      "fullName": "Honda Center",
+      "address": {
+       "city": "Anaheim",
+       "state": "CA",
+       "address1": "2695 East Katella Ave.",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2431258",
+       "uid": "s:3301~a:2431258",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Robbie Lawler",
+        "displayName": "Robbie Lawler",
+        "shortName": "R. Lawler",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 87.0,
+         "displayValue": "87.0",
+         "period": 3,
+         "linescores": [
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 3
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 3
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 3
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "30-16-0"
+        }
+       ]
+      },
+      {
+       "id": "2479918",
+       "uid": "s:3301~a:2479918",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Donald Cerrone",
+        "displayName": "Donald Cerrone",
+        "shortName": "D. Cerrone",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 84.0,
+         "displayValue": "84.0",
+         "period": 3,
+         "linescores": [
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 3
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 3
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 3
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "36-17-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2017-07-29T04:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "236790",
+     "uid": "s:3301~l:3321~e:400925787~c:236790",
+     "date": "2017-07-29T04:00Z",
+     "endDate": "2017-07-29T04:00Z",
+     "type": {
+      "id": "1004",
+      "abbreviation": "W Featherweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "1842",
+      "fullName": "Honda Center",
+      "address": {
+       "city": "Anaheim",
+       "state": "CA",
+       "address1": "2695 East Katella Ave.",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2354558",
+       "uid": "s:3301~a:2354558",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Tonya Evinger",
+        "displayName": "Tonya Evinger",
+        "shortName": "T. Evinger",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "19-8-0"
+        }
+       ]
+      },
+      {
+       "id": "2354564",
+       "uid": "s:3301~a:2354564",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Cris Cyborg",
+        "displayName": "Cris Cyborg",
+        "shortName": "C. Cyborg",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/bra.png",
+         "alt": "Brazil",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "30-2-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 116.0,
+      "displayClock": "1:56",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 5
+      }
+     },
+     "startDate": "2017-07-29T04:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "237416",
+     "uid": "s:3301~l:3321~e:400925787~c:237416",
+     "date": "2017-07-29T04:00Z",
+     "endDate": "2017-07-29T04:00Z",
+     "type": {
+      "id": "969",
+      "abbreviation": "Welterweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "1842",
+      "fullName": "Honda Center",
+      "address": {
+       "city": "Anaheim",
+       "state": "CA",
+       "address1": "2695 East Katella Ave.",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2335778",
+       "uid": "s:3301~a:2335778",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Demian Maia",
+        "displayName": "Demian Maia",
+        "shortName": "D. Maia",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/bra.png",
+         "alt": "Brazil",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 137.0,
+         "displayValue": "137.0",
+         "period": 5,
+         "linescores": [
+          {
+           "value": 45.0,
+           "displayValue": "45",
+           "period": 5
+          },
+          {
+           "value": 46.0,
+           "displayValue": "46",
+           "period": 5
+          },
+          {
+           "value": 46.0,
+           "displayValue": "46",
+           "period": 5
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "28-11-0"
+        }
+       ]
+      },
+      {
+       "id": "2501926",
+       "uid": "s:3301~a:2501926",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Tyron Woodley",
+        "displayName": "Tyron Woodley",
+        "shortName": "T. Woodley",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 148.0,
+         "displayValue": "148.0",
+         "period": 5,
+         "linescores": [
+          {
+           "value": 50.0,
+           "displayValue": "50",
+           "period": 5
+          },
+          {
+           "value": 49.0,
+           "displayValue": "49",
+           "period": 5
+          },
+          {
+           "value": 49.0,
+           "displayValue": "49",
+           "period": 5
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "19-7-1"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 5,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 5
+      }
+     },
+     "startDate": "2017-07-29T04:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "236217",
+     "uid": "s:3301~l:3321~e:400925787~c:236217",
+     "date": "2017-07-29T04:00Z",
+     "endDate": "2017-07-29T04:00Z",
+     "type": {
+      "id": "990",
+      "abbreviation": "Light Heavyweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "1842",
+      "fullName": "Honda Center",
+      "address": {
+       "city": "Anaheim",
+       "state": "CA",
+       "address1": "2695 East Katella Ave.",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2335639",
+       "uid": "s:3301~a:2335639",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Jon Jones",
+        "displayName": "Jon Jones",
+        "shortName": "J. Jones",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "28-1-0"
+        }
+       ]
+      },
+      {
+       "id": "2509290",
+       "uid": "s:3301~a:2509290",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Daniel Cormier",
+        "displayName": "Daniel Cormier",
+        "shortName": "D. Cormier",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "22-3-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 181.0,
+      "displayClock": "3:01",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 5
+      }
+     },
+     "startDate": "2017-07-29T04:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    }
+   ],
+   "links": [
+    {
+     "language": "en-US",
+     "rel": [
+      "summary",
+      "desktop",
+      "event"
+     ],
+     "href": "https://www.espn.com/mma/fightcenter/_/id/400925787/league/ufc",
+     "text": "Gamecast",
+     "shortText": "Gamecast",
+     "isExternal": false,
+     "isPremium": false
+    }
+   ],
+   "venues": [
+    {
+     "id": "1842",
+     "fullName": "Honda Center",
+     "address": {
+      "city": "Anaheim",
+      "state": "CA",
+      "address1": "2695 East Katella Ave.",
+      "country": "USA"
+     }
+    }
+   ],
+   "status": {
+    "type": {
+     "id": "3",
+     "name": "STATUS_FINAL",
+     "state": "post",
+     "completed": true,
+     "description": "Final",
+     "detail": "Final",
+     "shortDetail": "Final"
+    }
+   }
+  }
+ ],
+ "provider": {
+  "id": "100",
+  "name": "Draft Kings",
+  "displayName": "Draft Kings",
+  "priority": 1
+ }
+}

@@ -1,0 +1,4099 @@
+{
+ "leagues": [
+  {
+   "id": "3321",
+   "uid": "s:3301~l:3321",
+   "name": "Ultimate Fighting Championship",
+   "displayName": "UFC",
+   "abbreviation": "UFC",
+   "shortName": "UFC",
+   "slug": "ufc",
+   "season": {
+    "year": 2025,
+    "startDate": "2025-01-01T08:00Z",
+    "endDate": "2025-12-31T08:00Z",
+    "displayName": "2025",
+    "type": {
+     "id": "2",
+     "type": 2,
+     "name": "Regular Season",
+     "abbreviation": "reg"
+    }
+   },
+   "logos": [
+    {
+     "href": "https://a.espncdn.com/i/teamlogos/leagues/500/ufc.png",
+     "width": 500,
+     "height": 500,
+     "alt": "",
+     "rel": [
+      "full",
+      "default"
+     ],
+     "lastUpdated": "2018-12-21T18:30Z"
+    },
+    {
+     "href": "https://a.espncdn.com/i/teamlogos/leagues/500/ufc.png",
+     "width": 500,
+     "height": 500,
+     "alt": "",
+     "rel": [
+      "full",
+      "dark"
+     ],
+     "lastUpdated": "2018-12-21T18:30Z"
+    }
+   ],
+   "calendarType": "list",
+   "calendarIsWhitelist": true,
+   "calendarStartDate": "2025-01-01T08:00Z",
+   "calendarEndDate": "2025-12-31T08:00Z",
+   "calendar": [
+    {
+     "label": "UFC Fight Night: Dern vs Ribas 2",
+     "startDate": "2025-01-12T00:00Z",
+     "endDate": "2025-01-12T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600051441?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 311: Makhachev vs. Moicano",
+     "startDate": "2025-01-19T02:00Z",
+     "endDate": "2025-01-19T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600051442?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Adesanya vs. Imavov",
+     "startDate": "2025-02-01T17:00Z",
+     "endDate": "2025-02-02T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600051443?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 312: Du Plessis vs. Strickland 2",
+     "startDate": "2025-02-09T02:30Z",
+     "endDate": "2025-02-09T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600050481?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Cannonier vs. Rodrigues",
+     "startDate": "2025-02-16T00:00Z",
+     "endDate": "2025-02-16T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600051444?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Cejudo vs. Song",
+     "startDate": "2025-02-23T02:00Z",
+     "endDate": "2025-02-23T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600051445?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Kape vs. Almabayev",
+     "startDate": "2025-03-02T00:30Z",
+     "endDate": "2025-03-02T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600051446?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 313: Pereira vs. Ankalaev",
+     "startDate": "2025-03-09T02:00Z",
+     "endDate": "2025-03-09T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600051447?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Vettori vs. Dolidze 2",
+     "startDate": "2025-03-15T23:00Z",
+     "endDate": "2025-03-16T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600051448?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Edwards vs. Brady",
+     "startDate": "2025-03-22T20:00Z",
+     "endDate": "2025-03-23T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600051194?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Moreno vs. Erceg",
+     "startDate": "2025-03-29T23:00Z",
+     "endDate": "2025-03-30T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600051449?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Emmett vs. Murphy",
+     "startDate": "2025-04-06T01:00Z",
+     "endDate": "2025-04-06T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600053226?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 314: Volkanovski vs. Lopes",
+     "startDate": "2025-04-13T01:00Z",
+     "endDate": "2025-04-13T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600053165?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Machado Garry vs. Prates",
+     "startDate": "2025-04-27T01:00Z",
+     "endDate": "2025-04-27T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600053312?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Sandhagen vs. Figueiredo",
+     "startDate": "2025-05-04T02:00Z",
+     "endDate": "2025-05-04T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600053455?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 315: Muhammad vs. Della Maddalena",
+     "startDate": "2025-05-11T01:00Z",
+     "endDate": "2025-05-11T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600053073?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Burns vs. Morales",
+     "startDate": "2025-05-17T23:00Z",
+     "endDate": "2025-05-18T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600053676?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Blanchfield vs. Barber",
+     "startDate": "2025-06-01T01:30Z",
+     "endDate": "2025-06-01T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600053606?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 316: Dvalishvili vs. O'Malley 2",
+     "startDate": "2025-06-08T01:00Z",
+     "endDate": "2025-06-08T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600053672?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Usman vs. Buckley",
+     "startDate": "2025-06-15T02:00Z",
+     "endDate": "2025-06-15T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600053732?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Hill vs. Rountree Jr.",
+     "startDate": "2025-06-21T19:00Z",
+     "endDate": "2025-06-22T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600053795?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 317: Topuria vs. Oliveira",
+     "startDate": "2025-06-29T02:00Z",
+     "endDate": "2025-06-29T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600053168?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Lewis vs. Teixeira",
+     "startDate": "2025-07-13T01:00Z",
+     "endDate": "2025-07-13T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600054061?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 318: Holloway vs. Poirier 3",
+     "startDate": "2025-07-20T01:00Z",
+     "endDate": "2025-07-20T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600053891?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Whittaker vs. de Ridder",
+     "startDate": "2025-07-26T19:00Z",
+     "endDate": "2025-07-27T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600053545?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Taira vs. Park",
+     "startDate": "2025-08-03T01:00Z",
+     "endDate": "2025-08-03T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600054244?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Dolidze vs. Hernandez",
+     "startDate": "2025-08-09T23:00Z",
+     "endDate": "2025-08-10T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600054396?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 9, Week 1",
+     "startDate": "2025-08-13T02:00Z",
+     "endDate": "2025-08-13T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600055020?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 319: Du Plessis vs. Chimaev",
+     "startDate": "2025-08-17T01:30Z",
+     "endDate": "2025-08-17T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600054045?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 9, Week 2",
+     "startDate": "2025-08-20T03:00Z",
+     "endDate": "2025-08-20T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600055021?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Walker vs. Zhang",
+     "startDate": "2025-08-23T10:00Z",
+     "endDate": "2025-08-24T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600054141?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 9, Week 3",
+     "startDate": "2025-08-27T03:00Z",
+     "endDate": "2025-08-27T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600055005?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 9, Week 4",
+     "startDate": "2025-09-03T03:00Z",
+     "endDate": "2025-09-03T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600055006?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Imavov vs. Borralho",
+     "startDate": "2025-09-06T19:00Z",
+     "endDate": "2025-09-07T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600054419?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 9, Week 5",
+     "startDate": "2025-09-10T03:00Z",
+     "endDate": "2025-09-10T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600055007?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Noche UFC: Lopes vs. Silva",
+     "startDate": "2025-09-13T22:00Z",
+     "endDate": "2025-09-14T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600053664?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 9, Week 6",
+     "startDate": "2025-09-17T03:00Z",
+     "endDate": "2025-09-17T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600055031?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 9, Week 7",
+     "startDate": "2025-09-24T03:00Z",
+     "endDate": "2025-09-24T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600055032?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Ulberg vs. Reyes",
+     "startDate": "2025-09-28T02:00Z",
+     "endDate": "2025-09-28T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600055226?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 9, Week 8",
+     "startDate": "2025-10-01T03:00Z",
+     "endDate": "2025-10-01T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600055033?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 320: Ankalaev vs. Pereira 2",
+     "startDate": "2025-10-05T01:00Z",
+     "endDate": "2025-10-05T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600054473?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 9, Week 9",
+     "startDate": "2025-10-08T03:00Z",
+     "endDate": "2025-10-08T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600055054?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Oliveira vs. Gamrot",
+     "startDate": "2025-10-11T23:00Z",
+     "endDate": "2025-10-12T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600055376?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 9, Week 10",
+     "startDate": "2025-10-15T03:00Z",
+     "endDate": "2025-10-15T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600055055?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: de Ridder vs. Allen",
+     "startDate": "2025-10-18T23:00Z",
+     "endDate": "2025-10-19T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600054482?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 321: Aspinall vs. Gane",
+     "startDate": "2025-10-25T17:00Z",
+     "endDate": "2025-10-26T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600055085?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Garcia vs. Onama",
+     "startDate": "2025-11-01T23:00Z",
+     "endDate": "2025-11-02T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600056045?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Bonfim vs. Brown",
+     "startDate": "2025-11-09T00:00Z",
+     "endDate": "2025-11-09T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600056160?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 322: Della Maddalena vs. Makhachev",
+     "startDate": "2025-11-16T02:00Z",
+     "endDate": "2025-11-16T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600055729?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Tsarukyan vs. Hooker",
+     "startDate": "2025-11-22T18:00Z",
+     "endDate": "2025-11-23T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600055175?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 323: Dvalishvili vs. Yan 2",
+     "startDate": "2025-12-07T02:00Z",
+     "endDate": "2025-12-07T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600056375?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Royval vs. Kape",
+     "startDate": "2025-12-14T03:00Z",
+     "endDate": "2025-12-14T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600056266?lang=en&region=us"
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "600053891",
+   "uid": "s:3301~l:3321~e:600053891",
+   "date": "2025-07-19T22:00Z",
+   "name": "UFC 318: Holloway vs. Poirier 3",
+   "shortName": "UFC 318",
+   "season": {
+    "year": 2025,
+    "type": 2,
+    "slug": "regular-season"
+   },
+   "competitions": [
+    {
+     "id": "401769291",
+     "uid": "s:3301~l:3321~e:600053891~c:401769291",
+     "date": "2025-07-19T22:00Z",
+     "endDate": "2025-07-19T22:00Z",
+     "type": {
+      "id": "1007",
+      "abbreviation": "W Flyweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": true,
+     "recent": false,
+     "venue": {
+      "id": "985",
+      "fullName": "Smoothie King Center",
+      "address": {
+       "city": "New Orleans",
+       "state": "LA",
+       "address1": "1660 GIROD ST.",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "4239113",
+       "uid": "s:3301~a:4239113",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Nicolle Caliari",
+        "displayName": "Nicolle Caliari",
+        "shortName": "N. Caliari",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/bra.png",
+         "alt": "Brazil",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "9-4-0"
+        }
+       ]
+      },
+      {
+       "id": "5172179",
+       "uid": "s:3301~a:5172179",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Carli Judice",
+        "displayName": "Carli Judice",
+        "shortName": "C. Judice",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "7-2-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 90.0,
+      "displayClock": "1:30",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "ESPN2",
+        "ESPN+",
+        "Disney+"
+       ]
+      }
+     ],
+     "details": [
+      {
+       "id": "2888",
+       "type": {
+        "id": "21",
+        "text": "Unofficial Winner Kotko"
+       }
+      },
+      {
+       "id": "2887",
+       "type": {
+        "id": "23",
+        "text": "Results"
+       }
+      },
+      {
+       "id": "2886",
+       "type": {
+        "id": "19",
+        "text": "Fight Over"
+       }
+      },
+      {
+       "id": "2885",
+       "type": {
+        "id": "18",
+        "text": "Round End"
+       }
+      },
+      {
+       "id": "2884",
+       "type": {
+        "id": "17",
+        "text": "Knockdown"
+       }
+      },
+      {
+       "id": "2883",
+       "type": {
+        "id": "13",
+        "text": "Takedown"
+       }
+      },
+      {
+       "id": "2882",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      },
+      {
+       "id": "2881",
+       "type": {
+        "id": "5",
+        "text": "Round Start"
+       }
+      },
+      {
+       "id": "2880",
+       "type": {
+        "id": "18",
+        "text": "Round End"
+       }
+      },
+      {
+       "id": "2879",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2025-07-19T22:00Z",
+     "broadcast": "ESPN2/ESPN+/Disney+",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "1",
+        "shortName": "TV"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "ESPN2",
+        "logo": "https://a.espncdn.com/guid/4bab8fd8-cd13-379f-9558-c3614851bf91/logos/default.png",
+        "darkLogo": ""
+       },
+       "lang": "en",
+       "region": "us"
+      },
+      {
+       "type": {
+        "id": "4",
+        "shortName": "Streaming"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "ESPN+",
+        "logo": "https://a.espncdn.com/guid/322a7e47-3cdb-3b5c-ab1b-678e1f2c27e5/logos/default.png",
+        "darkLogo": "https://a.espncdn.com/guid/322a7e47-3cdb-3b5c-ab1b-678e1f2c27e5/logos/default-dark.png"
+       },
+       "lang": "en",
+       "region": "us"
+      },
+      {
+       "type": {
+        "id": "4",
+        "shortName": "Streaming"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "Disney+",
+        "logo": "https://a.espncdn.com/guid/2f3d8704-2682-3195-9920-bb3e38d3e845/logos/default.png",
+        "darkLogo": "https://a.espncdn.com/guid/2f3d8704-2682-3195-9920-bb3e38d3e845/logos/default-dark.png"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "401799532",
+     "uid": "s:3301~l:3321~e:600053891~c:401799532",
+     "date": "2025-07-19T22:00Z",
+     "endDate": "2025-07-19T22:00Z",
+     "type": {
+      "id": "972",
+      "abbreviation": "Middleweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": true,
+     "recent": false,
+     "venue": {
+      "id": "985",
+      "fullName": "Smoothie King Center",
+      "address": {
+       "city": "New Orleans",
+       "state": "LA",
+       "address1": "1660 GIROD ST.",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "5077131",
+       "uid": "s:3301~a:5077131",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Brunno Ferreira",
+        "displayName": "Brunno Ferreira",
+        "shortName": "B. Ferreira",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/bra.png",
+         "alt": "Brazil",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "15-5-0"
+        }
+       ]
+      },
+      {
+       "id": "5291733",
+       "uid": "s:3301~a:5291733",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Jackson McVey",
+        "displayName": "Jackson McVey",
+        "shortName": "J. McVey",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "8-2-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 215.0,
+      "displayClock": "3:35",
+      "period": 1,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "ESPN2",
+        "ESPN+",
+        "Disney+"
+       ]
+      }
+     ],
+     "details": [
+      {
+       "id": "2902",
+       "type": {
+        "id": "23",
+        "text": "Results"
+       }
+      },
+      {
+       "id": "2901",
+       "type": {
+        "id": "20",
+        "text": "Unofficial Winner Submission"
+       }
+      },
+      {
+       "id": "2900",
+       "type": {
+        "id": "19",
+        "text": "Fight Over"
+       }
+      },
+      {
+       "id": "2899",
+       "type": {
+        "id": "18",
+        "text": "Round End"
+       }
+      },
+      {
+       "id": "2898",
+       "type": {
+        "id": "16",
+        "text": "Submission Attempt"
+       }
+      },
+      {
+       "id": "2897",
+       "type": {
+        "id": "13",
+        "text": "Takedown"
+       }
+      },
+      {
+       "id": "2896",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      },
+      {
+       "id": "2895",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      },
+      {
+       "id": "2894",
+       "type": {
+        "id": "5",
+        "text": "Round Start"
+       }
+      },
+      {
+       "id": "2893",
+       "type": {
+        "id": "4",
+        "text": "Staredown"
+       }
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2025-07-19T22:00Z",
+     "broadcast": "ESPN2/ESPN+/Disney+",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "1",
+        "shortName": "TV"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "ESPN2",
+        "logo": "https://a.espncdn.com/guid/4bab8fd8-cd13-379f-9558-c3614851bf91/logos/default.png",
+        "darkLogo": ""
+       },
+       "lang": "en",
+       "region": "us"
+      },
+      {
+       "type": {
+        "id": "4",
+        "shortName": "Streaming"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "ESPN+",
+        "logo": "https://a.espncdn.com/guid/322a7e47-3cdb-3b5c-ab1b-678e1f2c27e5/logos/default.png",
+        "darkLogo": "https://a.espncdn.com/guid/322a7e47-3cdb-3b5c-ab1b-678e1f2c27e5/logos/default-dark.png"
+       },
+       "lang": "en",
+       "region": "us"
+      },
+      {
+       "type": {
+        "id": "4",
+        "shortName": "Streaming"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "Disney+",
+        "logo": "https://a.espncdn.com/guid/2f3d8704-2682-3195-9920-bb3e38d3e845/logos/default.png",
+        "darkLogo": "https://a.espncdn.com/guid/2f3d8704-2682-3195-9920-bb3e38d3e845/logos/default-dark.png"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "401799531",
+     "uid": "s:3301~l:3321~e:600053891~c:401799531",
+     "date": "2025-07-19T22:00Z",
+     "endDate": "2025-07-19T22:00Z",
+     "type": {
+      "id": "982",
+      "abbreviation": "Heavyweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": true,
+     "recent": false,
+     "venue": {
+      "id": "985",
+      "fullName": "Smoothie King Center",
+      "address": {
+       "city": "New Orleans",
+       "state": "LA",
+       "address1": "1660 GIROD ST.",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "3887606",
+       "uid": "s:3301~a:3887606",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Ryan Spann",
+        "displayName": "Ryan Spann",
+        "shortName": "R. Spann",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "24-12-0"
+        }
+       ]
+      },
+      {
+       "id": "4710386",
+       "uid": "s:3301~a:4710386",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Lukasz Brzeski",
+        "displayName": "Lukasz Brzeski",
+        "shortName": "L. Brzeski",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/pol.png",
+         "alt": "Poland",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "9-7-1"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 167.0,
+      "displayClock": "2:47",
+      "period": 1,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "ESPN2",
+        "ESPN+",
+        "Disney+"
+       ]
+      }
+     ],
+     "details": [
+      {
+       "id": "2916",
+       "type": {
+        "id": "23",
+        "text": "Results"
+       }
+      },
+      {
+       "id": "2915",
+       "type": {
+        "id": "20",
+        "text": "Unofficial Winner Submission"
+       }
+      },
+      {
+       "id": "2914",
+       "type": {
+        "id": "19",
+        "text": "Fight Over"
+       }
+      },
+      {
+       "id": "2913",
+       "type": {
+        "id": "18",
+        "text": "Round End"
+       }
+      },
+      {
+       "id": "2912",
+       "type": {
+        "id": "16",
+        "text": "Submission Attempt"
+       }
+      },
+      {
+       "id": "2911",
+       "type": {
+        "id": "16",
+        "text": "Submission Attempt"
+       }
+      },
+      {
+       "id": "2910",
+       "type": {
+        "id": "13",
+        "text": "Takedown"
+       }
+      },
+      {
+       "id": "2909",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      },
+      {
+       "id": "2908",
+       "type": {
+        "id": "5",
+        "text": "Round Start"
+       }
+      },
+      {
+       "id": "2907",
+       "type": {
+        "id": "4",
+        "text": "Staredown"
+       }
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2025-07-19T22:00Z",
+     "broadcast": "ESPN2/ESPN+/Disney+",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "1",
+        "shortName": "TV"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "ESPN2",
+        "logo": "https://a.espncdn.com/guid/4bab8fd8-cd13-379f-9558-c3614851bf91/logos/default.png",
+        "darkLogo": ""
+       },
+       "lang": "en",
+       "region": "us"
+      },
+      {
+       "type": {
+        "id": "4",
+        "shortName": "Streaming"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "ESPN+",
+        "logo": "https://a.espncdn.com/guid/322a7e47-3cdb-3b5c-ab1b-678e1f2c27e5/logos/default.png",
+        "darkLogo": "https://a.espncdn.com/guid/322a7e47-3cdb-3b5c-ab1b-678e1f2c27e5/logos/default-dark.png"
+       },
+       "lang": "en",
+       "region": "us"
+      },
+      {
+       "type": {
+        "id": "4",
+        "shortName": "Streaming"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "Disney+",
+        "logo": "https://a.espncdn.com/guid/2f3d8704-2682-3195-9920-bb3e38d3e845/logos/default.png",
+        "darkLogo": "https://a.espncdn.com/guid/2f3d8704-2682-3195-9920-bb3e38d3e845/logos/default-dark.png"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "401776542",
+     "uid": "s:3301~l:3321~e:600053891~c:401776542",
+     "date": "2025-07-19T22:00Z",
+     "endDate": "2025-07-19T22:00Z",
+     "type": {
+      "id": "990",
+      "abbreviation": "Light Heavyweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": true,
+     "recent": false,
+     "venue": {
+      "id": "985",
+      "fullName": "Smoothie King Center",
+      "address": {
+       "city": "New Orleans",
+       "state": "LA",
+       "address1": "1660 GIROD ST.",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "3998068",
+       "uid": "s:3301~a:3998068",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Marcin Prachnio",
+        "displayName": "Marcin Prachnio",
+        "shortName": "M. Prachnio",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/pol.png",
+         "alt": "Poland",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "17-9-0"
+        }
+       ]
+      },
+      {
+       "id": "4354420",
+       "uid": "s:3301~a:4354420",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Jimmy Crute",
+        "displayName": "Jimmy Crute",
+        "shortName": "J. Crute",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/aus.png",
+         "alt": "Australia",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "14-4-2"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 282.0,
+      "displayClock": "4:42",
+      "period": 1,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "ESPN2",
+        "ESPN+",
+        "Disney+"
+       ]
+      }
+     ],
+     "details": [
+      {
+       "id": "2937",
+       "type": {
+        "id": "23",
+        "text": "Results"
+       }
+      },
+      {
+       "id": "2936",
+       "type": {
+        "id": "20",
+        "text": "Unofficial Winner Submission"
+       }
+      },
+      {
+       "id": "2935",
+       "type": {
+        "id": "19",
+        "text": "Fight Over"
+       }
+      },
+      {
+       "id": "2934",
+       "type": {
+        "id": "18",
+        "text": "Round End"
+       }
+      },
+      {
+       "id": "2933",
+       "type": {
+        "id": "16",
+        "text": "Submission Attempt"
+       }
+      },
+      {
+       "id": "2932",
+       "type": {
+        "id": "16",
+        "text": "Submission Attempt"
+       }
+      },
+      {
+       "id": "2931",
+       "type": {
+        "id": "13",
+        "text": "Takedown"
+       }
+      },
+      {
+       "id": "2930",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      },
+      {
+       "id": "2929",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      },
+      {
+       "id": "2928",
+       "type": {
+        "id": "13",
+        "text": "Takedown"
+       }
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2025-07-19T22:00Z",
+     "broadcast": "ESPN2/ESPN+/Disney+",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "1",
+        "shortName": "TV"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "ESPN2",
+        "logo": "https://a.espncdn.com/guid/4bab8fd8-cd13-379f-9558-c3614851bf91/logos/default.png",
+        "darkLogo": ""
+       },
+       "lang": "en",
+       "region": "us"
+      },
+      {
+       "type": {
+        "id": "4",
+        "shortName": "Streaming"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "ESPN+",
+        "logo": "https://a.espncdn.com/guid/322a7e47-3cdb-3b5c-ab1b-678e1f2c27e5/logos/default.png",
+        "darkLogo": "https://a.espncdn.com/guid/322a7e47-3cdb-3b5c-ab1b-678e1f2c27e5/logos/default-dark.png"
+       },
+       "lang": "en",
+       "region": "us"
+      },
+      {
+       "type": {
+        "id": "4",
+        "shortName": "Streaming"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "Disney+",
+        "logo": "https://a.espncdn.com/guid/2f3d8704-2682-3195-9920-bb3e38d3e845/logos/default.png",
+        "darkLogo": "https://a.espncdn.com/guid/2f3d8704-2682-3195-9920-bb3e38d3e845/logos/default-dark.png"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "401769290",
+     "uid": "s:3301~l:3321~e:600053891~c:401769290",
+     "date": "2025-07-19T22:00Z",
+     "endDate": "2025-07-19T22:00Z",
+     "type": {
+      "id": "969",
+      "abbreviation": "Welterweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": true,
+     "recent": false,
+     "venue": {
+      "id": "985",
+      "fullName": "Smoothie King Center",
+      "address": {
+       "city": "New Orleans",
+       "state": "LA",
+       "address1": "1660 GIROD ST.",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "4408375",
+       "uid": "s:3301~a:4408375",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Adam Fugitt",
+        "displayName": "Adam Fugitt",
+        "shortName": "A. Fugitt",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "10-6-0"
+        }
+       ]
+      },
+      {
+       "id": "5212748",
+       "uid": "s:3301~a:5212748",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Islam Dulatov",
+        "displayName": "Islam Dulatov",
+        "shortName": "I. Dulatov",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/ger.png",
+         "alt": "Germany",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "12-1-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 246.0,
+      "displayClock": "4:06",
+      "period": 1,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "ESPN2",
+        "ESPN+",
+        "Disney+"
+       ]
+      }
+     ],
+     "details": [
+      {
+       "id": "2951",
+       "type": {
+        "id": "23",
+        "text": "Results"
+       }
+      },
+      {
+       "id": "2950",
+       "type": {
+        "id": "21",
+        "text": "Unofficial Winner Kotko"
+       }
+      },
+      {
+       "id": "2949",
+       "type": {
+        "id": "19",
+        "text": "Fight Over"
+       }
+      },
+      {
+       "id": "2948",
+       "type": {
+        "id": "18",
+        "text": "Round End"
+       }
+      },
+      {
+       "id": "2947",
+       "type": {
+        "id": "17",
+        "text": "Knockdown"
+       }
+      },
+      {
+       "id": "2946",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      },
+      {
+       "id": "2945",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      },
+      {
+       "id": "2944",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      },
+      {
+       "id": "2943",
+       "type": {
+        "id": "5",
+        "text": "Round Start"
+       }
+      },
+      {
+       "id": "2942",
+       "type": {
+        "id": "4",
+        "text": "Staredown"
+       }
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2025-07-19T22:00Z",
+     "broadcast": "ESPN2/ESPN+/Disney+",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "1",
+        "shortName": "TV"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "ESPN2",
+        "logo": "https://a.espncdn.com/guid/4bab8fd8-cd13-379f-9558-c3614851bf91/logos/default.png",
+        "darkLogo": ""
+       },
+       "lang": "en",
+       "region": "us"
+      },
+      {
+       "type": {
+        "id": "4",
+        "shortName": "Streaming"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "ESPN+",
+        "logo": "https://a.espncdn.com/guid/322a7e47-3cdb-3b5c-ab1b-678e1f2c27e5/logos/default.png",
+        "darkLogo": "https://a.espncdn.com/guid/322a7e47-3cdb-3b5c-ab1b-678e1f2c27e5/logos/default-dark.png"
+       },
+       "lang": "en",
+       "region": "us"
+      },
+      {
+       "type": {
+        "id": "4",
+        "shortName": "Streaming"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "Disney+",
+        "logo": "https://a.espncdn.com/guid/2f3d8704-2682-3195-9920-bb3e38d3e845/logos/default.png",
+        "darkLogo": "https://a.espncdn.com/guid/2f3d8704-2682-3195-9920-bb3e38d3e845/logos/default-dark.png"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "401782335",
+     "uid": "s:3301~l:3321~e:600053891~c:401782335",
+     "date": "2025-07-20T00:00Z",
+     "endDate": "2025-07-20T00:00Z",
+     "type": {
+      "id": "972",
+      "abbreviation": "Middleweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": true,
+     "recent": false,
+     "venue": {
+      "id": "985",
+      "fullName": "Smoothie King Center",
+      "address": {
+       "city": "New Orleans",
+       "state": "LA",
+       "address1": "1660 GIROD ST.",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "4686237",
+       "uid": "s:3301~a:4686237",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Robert Valentin",
+        "displayName": "Robert Valentin",
+        "shortName": "R. Valentin",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/sui.png",
+         "alt": "Switzerland",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "13-6-0"
+        }
+       ]
+      },
+      {
+       "id": "5218421",
+       "uid": "s:3301~a:5218421",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Ateba Gautier",
+        "displayName": "Ateba Gautier",
+        "shortName": "A. Gautier",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/cmr.png",
+         "alt": "Cameroon",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "11-1-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 70.0,
+      "displayClock": "1:10",
+      "period": 1,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "ESPN",
+        "ESPN+",
+        "Disney+"
+       ]
+      }
+     ],
+     "details": [
+      {
+       "id": "2962",
+       "type": {
+        "id": "23",
+        "text": "Results"
+       }
+      },
+      {
+       "id": "2961",
+       "type": {
+        "id": "21",
+        "text": "Unofficial Winner Kotko"
+       }
+      },
+      {
+       "id": "2960",
+       "type": {
+        "id": "19",
+        "text": "Fight Over"
+       }
+      },
+      {
+       "id": "2959",
+       "type": {
+        "id": "18",
+        "text": "Round End"
+       }
+      },
+      {
+       "id": "2958",
+       "type": {
+        "id": "17",
+        "text": "Knockdown"
+       }
+      },
+      {
+       "id": "2957",
+       "type": {
+        "id": "5",
+        "text": "Round Start"
+       }
+      },
+      {
+       "id": "2956",
+       "type": {
+        "id": "4",
+        "text": "Staredown"
+       }
+      },
+      {
+       "id": "2955",
+       "type": {
+        "id": "3",
+        "text": "Tale of the tape"
+       }
+      },
+      {
+       "id": "2954",
+       "type": {
+        "id": "2",
+        "text": "Walkout"
+       }
+      },
+      {
+       "id": "2953",
+       "type": {
+        "id": "2",
+        "text": "Walkout"
+       }
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2025-07-20T00:00Z",
+     "broadcast": "ESPN/ESPN+/Disney+",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "1",
+        "shortName": "TV"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "ESPN",
+        "logo": "https://a.espncdn.com/guid/335fd2d2-97b9-336b-81ee-573eb6bdcffc/logos/default.png",
+        "darkLogo": ""
+       },
+       "lang": "en",
+       "region": "us"
+      },
+      {
+       "type": {
+        "id": "4",
+        "shortName": "Streaming"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "ESPN+",
+        "logo": "https://a.espncdn.com/guid/322a7e47-3cdb-3b5c-ab1b-678e1f2c27e5/logos/default.png",
+        "darkLogo": "https://a.espncdn.com/guid/322a7e47-3cdb-3b5c-ab1b-678e1f2c27e5/logos/default-dark.png"
+       },
+       "lang": "en",
+       "region": "us"
+      },
+      {
+       "type": {
+        "id": "4",
+        "shortName": "Streaming"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "Disney+",
+        "logo": "https://a.espncdn.com/guid/2f3d8704-2682-3195-9920-bb3e38d3e845/logos/default.png",
+        "darkLogo": "https://a.espncdn.com/guid/2f3d8704-2682-3195-9920-bb3e38d3e845/logos/default-dark.png"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "401799530",
+     "uid": "s:3301~l:3321~e:600053891~c:401799530",
+     "date": "2025-07-20T00:00Z",
+     "endDate": "2025-07-20T00:00Z",
+     "type": {
+      "id": "969",
+      "abbreviation": "Welterweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": true,
+     "recent": false,
+     "venue": {
+      "id": "985",
+      "fullName": "Smoothie King Center",
+      "address": {
+       "city": "New Orleans",
+       "state": "LA",
+       "address1": "1660 GIROD ST.",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "4700616",
+       "uid": "s:3301~a:4700616",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Nikolay Veretennikov",
+        "displayName": "Nikolay Veretennikov",
+        "shortName": "N. Veretennikov",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/kaz.png",
+         "alt": "Kazakhstan",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 86.0,
+         "displayValue": "86.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "14-8-0"
+        }
+       ]
+      },
+      {
+       "id": "5123216",
+       "uid": "s:3301~a:5123216",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Francisco Prado",
+        "displayName": "Francisco Prado",
+        "shortName": "F. Prado",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/arg.png",
+         "alt": "Argentina",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 85.0,
+         "displayValue": "85.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "12-5-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "ESPN",
+        "ESPN+",
+        "Disney+"
+       ]
+      }
+     ],
+     "details": [
+      {
+       "id": "3001",
+       "type": {
+        "id": "22",
+        "text": "Unofficial Winner Decision"
+       }
+      },
+      {
+       "id": "3000",
+       "type": {
+        "id": "23",
+        "text": "Results"
+       }
+      },
+      {
+       "id": "2999",
+       "type": {
+        "id": "19",
+        "text": "Fight Over"
+       }
+      },
+      {
+       "id": "2998",
+       "type": {
+        "id": "18",
+        "text": "Round End"
+       }
+      },
+      {
+       "id": "2997",
+       "type": {
+        "id": "13",
+        "text": "Takedown"
+       }
+      },
+      {
+       "id": "2996",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      },
+      {
+       "id": "2995",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      },
+      {
+       "id": "2994",
+       "type": {
+        "id": "13",
+        "text": "Takedown"
+       }
+      },
+      {
+       "id": "2993",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      },
+      {
+       "id": "2992",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2025-07-20T00:00Z",
+     "broadcast": "ESPN/ESPN+/Disney+",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "1",
+        "shortName": "TV"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "ESPN",
+        "logo": "https://a.espncdn.com/guid/335fd2d2-97b9-336b-81ee-573eb6bdcffc/logos/default.png",
+        "darkLogo": ""
+       },
+       "lang": "en",
+       "region": "us"
+      },
+      {
+       "type": {
+        "id": "4",
+        "shortName": "Streaming"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "ESPN+",
+        "logo": "https://a.espncdn.com/guid/322a7e47-3cdb-3b5c-ab1b-678e1f2c27e5/logos/default.png",
+        "darkLogo": "https://a.espncdn.com/guid/322a7e47-3cdb-3b5c-ab1b-678e1f2c27e5/logos/default-dark.png"
+       },
+       "lang": "en",
+       "region": "us"
+      },
+      {
+       "type": {
+        "id": "4",
+        "shortName": "Streaming"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "Disney+",
+        "logo": "https://a.espncdn.com/guid/2f3d8704-2682-3195-9920-bb3e38d3e845/logos/default.png",
+        "darkLogo": "https://a.espncdn.com/guid/2f3d8704-2682-3195-9920-bb3e38d3e845/logos/default-dark.png"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "401773313",
+     "uid": "s:3301~l:3321~e:600053891~c:401773313",
+     "date": "2025-07-20T00:00Z",
+     "endDate": "2025-07-20T00:00Z",
+     "type": {
+      "id": "972",
+      "abbreviation": "Middleweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": true,
+     "recent": false,
+     "venue": {
+      "id": "985",
+      "fullName": "Smoothie King Center",
+      "address": {
+       "city": "New Orleans",
+       "state": "LA",
+       "address1": "1660 GIROD ST.",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "4001851",
+       "uid": "s:3301~a:4001851",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Marvin Vettori",
+        "displayName": "Marvin Vettori",
+        "shortName": "M. Vettori",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/ita.png",
+         "alt": "Italy",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 82.0,
+         "displayValue": "82.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 0
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          },
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "19-10-1"
+        }
+       ]
+      },
+      {
+       "id": "4025699",
+       "uid": "s:3301~a:4025699",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Brendan Allen",
+        "displayName": "Brendan Allen",
+        "shortName": "B. Allen",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/bra.png",
+         "alt": "Brazil",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 89.0,
+         "displayValue": "89.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 0
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          },
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "27-7-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": true
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "ESPN",
+        "ESPN+",
+        "Disney+"
+       ]
+      }
+     ],
+     "details": [
+      {
+       "id": "3023",
+       "type": {
+        "id": "22",
+        "text": "Unofficial Winner Decision"
+       }
+      },
+      {
+       "id": "3022",
+       "type": {
+        "id": "23",
+        "text": "Results"
+       }
+      },
+      {
+       "id": "3021",
+       "type": {
+        "id": "19",
+        "text": "Fight Over"
+       }
+      },
+      {
+       "id": "3020",
+       "type": {
+        "id": "18",
+        "text": "Round End"
+       }
+      },
+      {
+       "id": "3019",
+       "type": {
+        "id": "13",
+        "text": "Takedown"
+       }
+      },
+      {
+       "id": "3018",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      },
+      {
+       "id": "3017",
+       "type": {
+        "id": "5",
+        "text": "Round Start"
+       }
+      },
+      {
+       "id": "3016",
+       "type": {
+        "id": "18",
+        "text": "Round End"
+       }
+      },
+      {
+       "id": "3015",
+       "type": {
+        "id": "5",
+        "text": "Round Start"
+       }
+      },
+      {
+       "id": "3014",
+       "type": {
+        "id": "18",
+        "text": "Round End"
+       }
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2025-07-20T00:00Z",
+     "broadcast": "ESPN/ESPN+/Disney+",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "1",
+        "shortName": "TV"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "ESPN",
+        "logo": "https://a.espncdn.com/guid/335fd2d2-97b9-336b-81ee-573eb6bdcffc/logos/default.png",
+        "darkLogo": ""
+       },
+       "lang": "en",
+       "region": "us"
+      },
+      {
+       "type": {
+        "id": "4",
+        "shortName": "Streaming"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "ESPN+",
+        "logo": "https://a.espncdn.com/guid/322a7e47-3cdb-3b5c-ab1b-678e1f2c27e5/logos/default.png",
+        "darkLogo": "https://a.espncdn.com/guid/322a7e47-3cdb-3b5c-ab1b-678e1f2c27e5/logos/default-dark.png"
+       },
+       "lang": "en",
+       "region": "us"
+      },
+      {
+       "type": {
+        "id": "4",
+        "shortName": "Streaming"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "Disney+",
+        "logo": "https://a.espncdn.com/guid/2f3d8704-2682-3195-9920-bb3e38d3e845/logos/default.png",
+        "darkLogo": "https://a.espncdn.com/guid/2f3d8704-2682-3195-9920-bb3e38d3e845/logos/default-dark.png"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "401776541",
+     "uid": "s:3301~l:3321~e:600053891~c:401776541",
+     "date": "2025-07-20T00:00Z",
+     "endDate": "2025-07-20T00:00Z",
+     "type": {
+      "id": "970",
+      "abbreviation": "Bantamweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": true,
+     "recent": false,
+     "venue": {
+      "id": "985",
+      "fullName": "Smoothie King Center",
+      "address": {
+       "city": "New Orleans",
+       "state": "LA",
+       "address1": "1660 GIROD ST.",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "4237015",
+       "uid": "s:3301~a:4237015",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Kyler Phillips",
+        "displayName": "Kyler Phillips",
+        "shortName": "K. Phillips",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 84.0,
+         "displayValue": "84.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "12-5-0"
+        }
+       ]
+      },
+      {
+       "id": "4884877",
+       "uid": "s:3301~a:4884877",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Vinicius Oliveira",
+        "displayName": "Vinicius Oliveira",
+        "shortName": "V. Oliveira",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/bra.png",
+         "alt": "Brazil",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 87.0,
+         "displayValue": "87.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "24-4-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "ESPN",
+        "ESPN+",
+        "Disney+"
+       ]
+      }
+     ],
+     "details": [
+      {
+       "id": "3048",
+       "type": {
+        "id": "22",
+        "text": "Unofficial Winner Decision"
+       }
+      },
+      {
+       "id": "3047",
+       "type": {
+        "id": "23",
+        "text": "Results"
+       }
+      },
+      {
+       "id": "3046",
+       "type": {
+        "id": "19",
+        "text": "Fight Over"
+       }
+      },
+      {
+       "id": "3045",
+       "type": {
+        "id": "18",
+        "text": "Round End"
+       }
+      },
+      {
+       "id": "3044",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      },
+      {
+       "id": "3043",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      },
+      {
+       "id": "3042",
+       "type": {
+        "id": "5",
+        "text": "Round Start"
+       }
+      },
+      {
+       "id": "3041",
+       "type": {
+        "id": "18",
+        "text": "Round End"
+       }
+      },
+      {
+       "id": "3040",
+       "type": {
+        "id": "13",
+        "text": "Takedown"
+       }
+      },
+      {
+       "id": "3039",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2025-07-20T00:00Z",
+     "broadcast": "ESPN/ESPN+/Disney+",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "1",
+        "shortName": "TV"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "ESPN",
+        "logo": "https://a.espncdn.com/guid/335fd2d2-97b9-336b-81ee-573eb6bdcffc/logos/default.png",
+        "darkLogo": ""
+       },
+       "lang": "en",
+       "region": "us"
+      },
+      {
+       "type": {
+        "id": "4",
+        "shortName": "Streaming"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "ESPN+",
+        "logo": "https://a.espncdn.com/guid/322a7e47-3cdb-3b5c-ab1b-678e1f2c27e5/logos/default.png",
+        "darkLogo": "https://a.espncdn.com/guid/322a7e47-3cdb-3b5c-ab1b-678e1f2c27e5/logos/default-dark.png"
+       },
+       "lang": "en",
+       "region": "us"
+      },
+      {
+       "type": {
+        "id": "4",
+        "shortName": "Streaming"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "Disney+",
+        "logo": "https://a.espncdn.com/guid/2f3d8704-2682-3195-9920-bb3e38d3e845/logos/default.png",
+        "darkLogo": "https://a.espncdn.com/guid/2f3d8704-2682-3195-9920-bb3e38d3e845/logos/default-dark.png"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "401794120",
+     "uid": "s:3301~l:3321~e:600053891~c:401794120",
+     "date": "2025-07-20T02:00Z",
+     "endDate": "2025-07-20T02:00Z",
+     "type": {
+      "id": "986",
+      "abbreviation": "Lightweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": true,
+     "recent": false,
+     "venue": {
+      "id": "985",
+      "fullName": "Smoothie King Center",
+      "address": {
+       "city": "New Orleans",
+       "state": "LA",
+       "address1": "1660 GIROD ST.",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2488476",
+       "uid": "s:3301~a:2488476",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Michael Johnson",
+        "displayName": "Michael Johnson",
+        "shortName": "M. Johnson",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 87.0,
+         "displayValue": "87.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "25-20-0"
+        }
+       ]
+      },
+      {
+       "id": "4863327",
+       "uid": "s:3301~a:4863327",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Daniel Zellhuber",
+        "displayName": "Daniel Zellhuber",
+        "shortName": "D. Zellhuber",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/mex.png",
+         "alt": "Mexico",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 84.0,
+         "displayValue": "84.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "15-4-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "PPV"
+       ]
+      }
+     ],
+     "details": [
+      {
+       "id": "3070",
+       "type": {
+        "id": "22",
+        "text": "Unofficial Winner Decision"
+       }
+      },
+      {
+       "id": "3069",
+       "type": {
+        "id": "23",
+        "text": "Results"
+       }
+      },
+      {
+       "id": "3068",
+       "type": {
+        "id": "19",
+        "text": "Fight Over"
+       }
+      },
+      {
+       "id": "3067",
+       "type": {
+        "id": "18",
+        "text": "Round End"
+       }
+      },
+      {
+       "id": "3066",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      },
+      {
+       "id": "3065",
+       "type": {
+        "id": "5",
+        "text": "Round Start"
+       }
+      },
+      {
+       "id": "3064",
+       "type": {
+        "id": "18",
+        "text": "Round End"
+       }
+      },
+      {
+       "id": "3063",
+       "type": {
+        "id": "17",
+        "text": "Knockdown"
+       }
+      },
+      {
+       "id": "3062",
+       "type": {
+        "id": "5",
+        "text": "Round Start"
+       }
+      },
+      {
+       "id": "3061",
+       "type": {
+        "id": "18",
+        "text": "Round End"
+       }
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2025-07-20T02:00Z",
+     "broadcast": "PPV",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "2",
+        "shortName": "PPV"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "PPV"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "401794200",
+     "uid": "s:3301~l:3321~e:600053891~c:401794200",
+     "date": "2025-07-20T02:00Z",
+     "endDate": "2025-07-20T02:00Z",
+     "type": {
+      "id": "999",
+      "abbreviation": "Featherweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": true,
+     "recent": false,
+     "venue": {
+      "id": "985",
+      "fullName": "Smoothie King Center",
+      "address": {
+       "city": "New Orleans",
+       "state": "LA",
+       "address1": "1660 GIROD ST.",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2532870",
+       "uid": "s:3301~a:2532870",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Patricio Pitbull",
+        "displayName": "Patricio Pitbull",
+        "shortName": "P. Pitbull",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/bra.png",
+         "alt": "Brazil",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 87.0,
+         "displayValue": "87.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "38-9-0"
+        }
+       ]
+      },
+      {
+       "id": "4074001",
+       "uid": "s:3301~a:4074001",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Dan Ige",
+        "displayName": "Dan Ige",
+        "shortName": "D. Ige",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 84.0,
+         "displayValue": "84.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "19-12-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "PPV"
+       ]
+      }
+     ],
+     "details": [
+      {
+       "id": "3102",
+       "type": {
+        "id": "22",
+        "text": "Unofficial Winner Decision"
+       }
+      },
+      {
+       "id": "3101",
+       "type": {
+        "id": "23",
+        "text": "Results"
+       }
+      },
+      {
+       "id": "3100",
+       "type": {
+        "id": "19",
+        "text": "Fight Over"
+       }
+      },
+      {
+       "id": "3099",
+       "type": {
+        "id": "18",
+        "text": "Round End"
+       }
+      },
+      {
+       "id": "3098",
+       "type": {
+        "id": "13",
+        "text": "Takedown"
+       }
+      },
+      {
+       "id": "3097",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      },
+      {
+       "id": "3096",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      },
+      {
+       "id": "3095",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      },
+      {
+       "id": "3094",
+       "type": {
+        "id": "11",
+        "text": "Round Unpause"
+       }
+      },
+      {
+       "id": "3093",
+       "type": {
+        "id": "8",
+        "text": "Pause Reason Low Blow"
+       }
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2025-07-20T02:00Z",
+     "broadcast": "PPV",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "2",
+        "shortName": "PPV"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "PPV"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "401799529",
+     "uid": "s:3301~l:3321~e:600053891~c:401799529",
+     "date": "2025-07-20T02:00Z",
+     "endDate": "2025-07-20T02:00Z",
+     "type": {
+      "id": "969",
+      "abbreviation": "Welterweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": true,
+     "recent": false,
+     "venue": {
+      "id": "985",
+      "fullName": "Smoothie King Center",
+      "address": {
+       "city": "New Orleans",
+       "state": "LA",
+       "address1": "1660 GIROD ST.",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "3943695",
+       "uid": "s:3301~a:3943695",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Kevin Holland",
+        "displayName": "Kevin Holland",
+        "shortName": "K. Holland",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 84.0,
+         "displayValue": "84.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "29-15-0"
+        }
+       ]
+      },
+      {
+       "id": "4426312",
+       "uid": "s:3301~a:4426312",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Daniel Rodriguez",
+        "displayName": "Daniel Rodriguez",
+        "shortName": "D. Rodriguez",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 87.0,
+         "displayValue": "87.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "20-6-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "PPV"
+       ]
+      }
+     ],
+     "details": [
+      {
+       "id": "3125",
+       "type": {
+        "id": "22",
+        "text": "Unofficial Winner Decision"
+       }
+      },
+      {
+       "id": "3124",
+       "type": {
+        "id": "23",
+        "text": "Results"
+       }
+      },
+      {
+       "id": "3123",
+       "type": {
+        "id": "19",
+        "text": "Fight Over"
+       }
+      },
+      {
+       "id": "3122",
+       "type": {
+        "id": "18",
+        "text": "Round End"
+       }
+      },
+      {
+       "id": "3121",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      },
+      {
+       "id": "3120",
+       "type": {
+        "id": "17",
+        "text": "Knockdown"
+       }
+      },
+      {
+       "id": "3119",
+       "type": {
+        "id": "5",
+        "text": "Round Start"
+       }
+      },
+      {
+       "id": "3118",
+       "type": {
+        "id": "18",
+        "text": "Round End"
+       }
+      },
+      {
+       "id": "3117",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      },
+      {
+       "id": "3116",
+       "type": {
+        "id": "13",
+        "text": "Takedown"
+       }
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2025-07-20T02:00Z",
+     "broadcast": "PPV",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "2",
+        "shortName": "PPV"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "PPV"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "401789179",
+     "uid": "s:3301~l:3321~e:600053891~c:401789179",
+     "date": "2025-07-20T02:00Z",
+     "endDate": "2025-07-20T02:00Z",
+     "type": {
+      "id": "972",
+      "abbreviation": "Middleweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": true,
+     "recent": false,
+     "venue": {
+      "id": "985",
+      "fullName": "Smoothie King Center",
+      "address": {
+       "city": "New Orleans",
+       "state": "LA",
+       "address1": "1660 GIROD ST.",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "4080826",
+       "uid": "s:3301~a:4080826",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Paulo Costa",
+        "displayName": "Paulo Costa",
+        "shortName": "P. Costa",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/bra.png",
+         "alt": "Brazil",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 89.0,
+         "displayValue": "89.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          },
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 0
+          },
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "16-4-0"
+        }
+       ]
+      },
+      {
+       "id": "4300149",
+       "uid": "s:3301~a:4300149",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Roman Kopylov",
+        "displayName": "Roman Kopylov",
+        "shortName": "R. Kopylov",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/rus.png",
+         "alt": "Russia",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 82.0,
+         "displayValue": "82.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          },
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 0
+          },
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "15-5-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "PPV"
+       ]
+      }
+     ],
+     "details": [
+      {
+       "id": "3138",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      },
+      {
+       "id": "3137",
+       "type": {
+        "id": "12",
+        "text": "Takedown Attempt"
+       }
+      },
+      {
+       "id": "3136",
+       "type": {
+        "id": "5",
+        "text": "Round Start"
+       }
+      },
+      {
+       "id": "3135",
+       "type": {
+        "id": "18",
+        "text": "Round End"
+       }
+      },
+      {
+       "id": "3134",
+       "type": {
+        "id": "5",
+        "text": "Round Start"
+       }
+      },
+      {
+       "id": "3133",
+       "type": {
+        "id": "18",
+        "text": "Round End"
+       }
+      },
+      {
+       "id": "3132",
+       "type": {
+        "id": "17",
+        "text": "Knockdown"
+       }
+      },
+      {
+       "id": "3131",
+       "type": {
+        "id": "5",
+        "text": "Round Start"
+       }
+      },
+      {
+       "id": "3130",
+       "type": {
+        "id": "4",
+        "text": "Staredown"
+       }
+      },
+      {
+       "id": "3129",
+       "type": {
+        "id": "3",
+        "text": "Tale of the tape"
+       }
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2025-07-20T02:00Z",
+     "broadcast": "PPV",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "2",
+        "shortName": "PPV"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "PPV"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "401769288",
+     "uid": "s:3301~l:3321~e:600053891~c:401769288",
+     "date": "2025-07-20T02:00Z",
+     "endDate": "2025-07-20T02:00Z",
+     "type": {
+      "id": "986",
+      "abbreviation": "Lightweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": true,
+     "recent": false,
+     "venue": {
+      "id": "985",
+      "fullName": "Smoothie King Center",
+      "address": {
+       "city": "New Orleans",
+       "state": "LA",
+       "address1": "1660 GIROD ST.",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2506549",
+       "uid": "s:3301~a:2506549",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Dustin Poirier",
+        "displayName": "Dustin Poirier",
+        "shortName": "D. Poirier",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 139.0,
+         "displayValue": "139.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 46.0,
+           "displayValue": "46",
+           "period": 0
+          },
+          {
+           "value": 46.0,
+           "displayValue": "46",
+           "period": 0
+          },
+          {
+           "value": 47.0,
+           "displayValue": "47",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "30-10-0"
+        }
+       ]
+      },
+      {
+       "id": "2614933",
+       "uid": "s:3301~a:2614933",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Max Holloway",
+        "displayName": "Max Holloway",
+        "shortName": "M. Holloway",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 146.0,
+         "displayValue": "146.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 49.0,
+           "displayValue": "49",
+           "period": 0
+          },
+          {
+           "value": 49.0,
+           "displayValue": "49",
+           "period": 0
+          },
+          {
+           "value": 48.0,
+           "displayValue": "48",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "28-9-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 5,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "PPV"
+       ]
+      }
+     ],
+     "details": [
+      {
+       "id": "3163",
+       "type": {
+        "id": "22",
+        "text": "Unofficial Winner Decision"
+       }
+      },
+      {
+       "id": "3162",
+       "type": {
+        "id": "23",
+        "text": "Results"
+       }
+      },
+      {
+       "id": "3161",
+       "type": {
+        "id": "19",
+        "text": "Fight Over"
+       }
+      },
+      {
+       "id": "3160",
+       "type": {
+        "id": "18",
+        "text": "Round End"
+       }
+      },
+      {
+       "id": "3159",
+       "type": {
+        "id": "11",
+        "text": "Round Unpause"
+       }
+      },
+      {
+       "id": "3158",
+       "type": {
+        "id": "7",
+        "text": "Pause Reason Eye Poke"
+       }
+      },
+      {
+       "id": "3157",
+       "type": {
+        "id": "6",
+        "text": "Round Pause"
+       }
+      },
+      {
+       "id": "3156",
+       "type": {
+        "id": "5",
+        "text": "Round Start"
+       }
+      },
+      {
+       "id": "3155",
+       "type": {
+        "id": "18",
+        "text": "Round End"
+       }
+      },
+      {
+       "id": "3154",
+       "type": {
+        "id": "5",
+        "text": "Round Start"
+       }
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 5
+      }
+     },
+     "startDate": "2025-07-20T02:00Z",
+     "broadcast": "PPV",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "2",
+        "shortName": "PPV"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "PPV"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    }
+   ],
+   "links": [
+    {
+     "language": "en-US",
+     "rel": [
+      "summary",
+      "desktop",
+      "event"
+     ],
+     "href": "https://www.espn.com/mma/fightcenter/_/id/600053891/league/ufc",
+     "text": "Gamecast",
+     "shortText": "Gamecast",
+     "isExternal": false,
+     "isPremium": false
+    }
+   ],
+   "venues": [
+    {
+     "id": "985",
+     "fullName": "Smoothie King Center",
+     "address": {
+      "city": "New Orleans",
+      "state": "LA",
+      "address1": "1660 GIROD ST.",
+      "country": "USA"
+     }
+    }
+   ],
+   "status": {
+    "type": {
+     "id": "3",
+     "name": "STATUS_FINAL",
+     "state": "post",
+     "completed": true,
+     "description": "Final",
+     "detail": "Final",
+     "shortDetail": "Final"
+    }
+   }
+  }
+ ],
+ "provider": {
+  "id": "100",
+  "name": "Draft Kings",
+  "displayName": "Draft Kings",
+  "priority": 1
+ }
+}

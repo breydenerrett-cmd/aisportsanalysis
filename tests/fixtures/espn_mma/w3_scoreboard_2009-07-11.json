@@ -1,0 +1,2211 @@
+{
+ "leagues": [
+  {
+   "id": "3321",
+   "uid": "s:3301~l:3321",
+   "name": "Ultimate Fighting Championship",
+   "displayName": "UFC",
+   "abbreviation": "UFC",
+   "shortName": "UFC",
+   "slug": "ufc",
+   "season": {
+    "year": 2009,
+    "startDate": "2009-01-01T08:00Z",
+    "endDate": "2009-12-31T08:00Z",
+    "displayName": "2009",
+    "type": {
+     "id": "2",
+     "type": 2,
+     "name": "Regular Season",
+     "abbreviation": "reg"
+    }
+   },
+   "logos": [
+    {
+     "href": "https://a.espncdn.com/i/teamlogos/leagues/500/ufc.png",
+     "width": 500,
+     "height": 500,
+     "alt": "",
+     "rel": [
+      "full",
+      "default"
+     ],
+     "lastUpdated": "2018-12-21T18:30Z"
+    },
+    {
+     "href": "https://a.espncdn.com/i/teamlogos/leagues/500/ufc.png",
+     "width": 500,
+     "height": 500,
+     "alt": "",
+     "rel": [
+      "full",
+      "dark"
+     ],
+     "lastUpdated": "2018-12-21T18:30Z"
+    }
+   ],
+   "calendarType": "list",
+   "calendarIsWhitelist": true,
+   "calendarStartDate": "2009-01-01T08:00Z",
+   "calendarEndDate": "2009-12-31T08:00Z",
+   "calendar": [
+    {
+     "label": "UFC 93: Franklin vs. Henderson",
+     "startDate": "2009-01-18T05:00Z",
+     "endDate": "2009-01-18T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400252754?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 94: St-Pierre vs. Penn 2",
+     "startDate": "2009-02-01T05:00Z",
+     "endDate": "2009-02-01T05:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400252738?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Lauzon vs. Stephens",
+     "startDate": "2009-02-08T05:00Z",
+     "endDate": "2009-02-08T05:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400252730?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 95: Sanchez vs. Stevenson",
+     "startDate": "2009-02-22T05:00Z",
+     "endDate": "2009-02-22T05:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400252716?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 96: Jackson vs. Jardine",
+     "startDate": "2009-03-08T05:00Z",
+     "endDate": "2009-03-08T05:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400252704?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Condit vs. Kampmann",
+     "startDate": "2009-04-02T04:00Z",
+     "endDate": "2009-04-02T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400252671?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 97: Redemption",
+     "startDate": "2009-04-19T04:00Z",
+     "endDate": "2009-04-19T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400252645?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 98: Evans vs. Machida",
+     "startDate": "2009-05-24T04:00Z",
+     "endDate": "2009-05-24T04:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400252596?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 99: The Comeback",
+     "startDate": "2009-06-13T07:00Z",
+     "endDate": "2009-06-13T07:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400252570?lang=en&region=us"
+     }
+    },
+    {
+     "label": "The Ultimate Fighter 9 Finale",
+     "startDate": "2009-06-21T04:00Z",
+     "endDate": "2009-06-21T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400252563?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 100: Lesnar vs. Mir 2",
+     "startDate": "2009-07-12T04:00Z",
+     "endDate": "2009-07-12T04:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400252542?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 101: Declaration",
+     "startDate": "2009-08-09T04:00Z",
+     "endDate": "2009-08-09T04:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400252521?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 102: Couture vs. Nogueira",
+     "startDate": "2009-08-30T04:00Z",
+     "endDate": "2009-08-30T04:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400252496?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Diaz vs. Guillard",
+     "startDate": "2009-09-17T04:00Z",
+     "endDate": "2009-09-17T04:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400252480?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 103: Franklin vs. Belfort",
+     "startDate": "2009-09-20T04:00Z",
+     "endDate": "2009-09-20T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400252474?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 104: Machida vs. Shogun",
+     "startDate": "2009-10-25T04:00Z",
+     "endDate": "2009-10-25T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400252438?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 105: Couture vs. Vera",
+     "startDate": "2009-11-15T05:00Z",
+     "endDate": "2009-11-15T05:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400252410?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 106: Ortiz vs. Griffin 2",
+     "startDate": "2009-11-22T05:00Z",
+     "endDate": "2009-11-22T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400252394?lang=en&region=us"
+     }
+    },
+    {
+     "label": "The Ultimate Fighter 10 Finale",
+     "startDate": "2009-12-06T05:00Z",
+     "endDate": "2009-12-06T05:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400252380?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 107: Penn vs. Sanchez",
+     "startDate": "2009-12-13T05:00Z",
+     "endDate": "2009-12-13T05:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400252372?lang=en&region=us"
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "400252542",
+   "uid": "s:3301~l:3321~e:400252542",
+   "date": "2009-07-12T01:00Z",
+   "name": "UFC 100: Lesnar vs. Mir 2",
+   "shortName": "UFC 100",
+   "season": {
+    "year": 2009,
+    "type": 2,
+    "slug": "regular-season"
+   },
+   "competitions": [
+    {
+     "id": "152355",
+     "uid": "s:3301~l:3321~e:400252542~c:152355",
+     "date": "2009-07-12T01:00Z",
+     "endDate": "2009-07-12T01:00Z",
+     "type": {
+      "id": "986",
+      "abbreviation": "Lightweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "2233",
+      "fullName": "Mandalay Bay",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2335789",
+       "uid": "s:3301~a:2335789",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Matt Grice",
+        "displayName": "Matt Grice",
+        "shortName": "M. Grice",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 0.0,
+         "displayValue": "0.0",
+         "period": 1
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "15-5-0"
+        }
+       ]
+      },
+      {
+       "id": "2335795",
+       "uid": "s:3301~a:2335795",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Shannon Gugerty",
+        "displayName": "Shannon Gugerty",
+        "shortName": "S. Gugerty",
+        "flag": {
+         "href": "https://www.espn.com/i/teamlogos/countries/500/blank.png",
+         "alt": "default",
+         "rel": [
+          "default-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 0.0,
+         "displayValue": "0.0",
+         "period": 1
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "14-7-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 156.0,
+      "displayClock": "2:36",
+      "period": 1,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2009-07-12T01:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "152367",
+     "uid": "s:3301~l:3321~e:400252542~c:152367",
+     "date": "2009-07-12T01:00Z",
+     "endDate": "2009-07-12T01:00Z",
+     "type": {
+      "id": "972",
+      "abbreviation": "Middleweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "2233",
+      "fullName": "Mandalay Bay",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2335641",
+       "uid": "s:3301~a:2335641",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Tom Lawlor",
+        "displayName": "Tom Lawlor",
+        "shortName": "T. Lawlor",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 0.0,
+         "displayValue": "0.0",
+         "period": 1
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "11-8-0"
+        }
+       ]
+      },
+      {
+       "id": "2335744",
+       "uid": "s:3301~a:2335744",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "CB Dollaway",
+        "displayName": "CB Dollaway",
+        "shortName": "C. Dollaway",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 0.0,
+         "displayValue": "0.0",
+         "period": 1
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "17-10-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 55.0,
+      "displayClock": "0:55",
+      "period": 1,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2009-07-12T01:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "151971",
+     "uid": "s:3301~l:3321~e:400252542~c:151971",
+     "date": "2009-07-12T01:00Z",
+     "endDate": "2009-07-12T01:00Z",
+     "type": {
+      "id": "969",
+      "abbreviation": "Welterweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "2233",
+      "fullName": "Mandalay Bay",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2335818",
+       "uid": "s:3301~a:2335818",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Dong Hyun Kim",
+        "displayName": "Dong Hyun Kim",
+        "shortName": "D. Kim",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/kor.png",
+         "alt": "Korea",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 90.0,
+         "displayValue": "90.0",
+         "period": 1,
+         "linescores": [
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 1
+          },
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 1
+          },
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 1
+          }
+         ]
+        },
+        {
+         "value": 90.0,
+         "displayValue": "90.0",
+         "period": 2,
+         "linescores": [
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 2
+          },
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 2
+          },
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 2
+          }
+         ]
+        },
+        {
+         "value": 90.0,
+         "displayValue": "90.0",
+         "period": 3,
+         "linescores": [
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 3
+          },
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 3
+          },
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 3
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "22-4-1"
+        }
+       ]
+      },
+      {
+       "id": "2354352",
+       "uid": "s:3301~a:2354352",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "TJ Grant",
+        "displayName": "TJ Grant",
+        "shortName": "T. Grant",
+        "flag": {
+         "href": "https://www.espn.com/i/teamlogos/countries/500/blank.png",
+         "alt": "default",
+         "rel": [
+          "default-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 78.0,
+         "displayValue": "78.0",
+         "period": 1,
+         "linescores": [
+          {
+           "value": 26.0,
+           "displayValue": "26",
+           "period": 1
+          },
+          {
+           "value": 26.0,
+           "displayValue": "26",
+           "period": 1
+          },
+          {
+           "value": 26.0,
+           "displayValue": "26",
+           "period": 1
+          }
+         ]
+        },
+        {
+         "value": 78.0,
+         "displayValue": "78.0",
+         "period": 2,
+         "linescores": [
+          {
+           "value": 26.0,
+           "displayValue": "26",
+           "period": 2
+          },
+          {
+           "value": 26.0,
+           "displayValue": "26",
+           "period": 2
+          },
+          {
+           "value": 26.0,
+           "displayValue": "26",
+           "period": 2
+          }
+         ]
+        },
+        {
+         "value": 78.0,
+         "displayValue": "78.0",
+         "period": 3,
+         "linescores": [
+          {
+           "value": 26.0,
+           "displayValue": "26",
+           "period": 3
+          },
+          {
+           "value": 26.0,
+           "displayValue": "26",
+           "period": 3
+          },
+          {
+           "value": 26.0,
+           "displayValue": "26",
+           "period": 3
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "21-5-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2009-07-12T01:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "152314",
+     "uid": "s:3301~l:3321~e:400252542~c:152314",
+     "date": "2009-07-12T01:00Z",
+     "endDate": "2009-07-12T01:00Z",
+     "type": {
+      "id": "990",
+      "abbreviation": "Light Heavyweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "2233",
+      "fullName": "Mandalay Bay",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2335639",
+       "uid": "s:3301~a:2335639",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Jon Jones",
+        "displayName": "Jon Jones",
+        "shortName": "J. Jones",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 0.0,
+         "displayValue": "0.0",
+         "period": 1
+        },
+        {
+         "value": 0.0,
+         "displayValue": "0.0",
+         "period": 2
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "28-1-0"
+        }
+       ]
+      },
+      {
+       "id": "2335648",
+       "uid": "s:3301~a:2335648",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Jake O'Brien",
+        "displayName": "Jake O'Brien",
+        "shortName": "J. O'Brien",
+        "flag": {
+         "href": "https://www.espn.com/i/teamlogos/countries/500/blank.png",
+         "alt": "default",
+         "rel": [
+          "default-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "13-4-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 163.0,
+      "displayClock": "2:43",
+      "period": 2,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2009-07-12T01:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "152293",
+     "uid": "s:3301~l:3321~e:400252542~c:152293",
+     "date": "2009-07-12T01:00Z",
+     "endDate": "2009-07-12T01:00Z",
+     "type": {
+      "id": "986",
+      "abbreviation": "Lightweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "2233",
+      "fullName": "Mandalay Bay",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2335685",
+       "uid": "s:3301~a:2335685",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Mac Danzig",
+        "displayName": "Mac Danzig",
+        "shortName": "M. Danzig",
+        "flag": {
+         "href": "https://www.espn.com/i/teamlogos/countries/500/blank.png",
+         "alt": "default",
+         "rel": [
+          "default-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 81.0,
+         "displayValue": "81.0",
+         "period": 3,
+         "linescores": [
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 3
+          },
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 3
+          },
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 3
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "21-12-1"
+        }
+       ]
+      },
+      {
+       "id": "2335718",
+       "uid": "s:3301~a:2335718",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Jim Miller",
+        "displayName": "Jim Miller",
+        "shortName": "J. Miller",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 90.0,
+         "displayValue": "90.0",
+         "period": 1,
+         "linescores": [
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 1
+          },
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 1
+          },
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 1
+          }
+         ]
+        },
+        {
+         "value": 90.0,
+         "displayValue": "90.0",
+         "period": 2,
+         "linescores": [
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 2
+          },
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 2
+          },
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 2
+          }
+         ]
+        },
+        {
+         "value": 90.0,
+         "displayValue": "90.0",
+         "period": 3,
+         "linescores": [
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 3
+          },
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 3
+          },
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 3
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "39-19-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2009-07-12T01:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "151890",
+     "uid": "s:3301~l:3321~e:400252542~c:151890",
+     "date": "2009-07-12T01:00Z",
+     "endDate": "2009-07-12T01:00Z",
+     "type": {
+      "id": "990",
+      "abbreviation": "Light Heavyweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "2233",
+      "fullName": "Mandalay Bay",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2335515",
+       "uid": "s:3301~a:2335515",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Mark Coleman",
+        "displayName": "Mark Coleman",
+        "shortName": "M. Coleman",
+        "flag": {
+         "href": "https://www.espn.com/i/teamlogos/countries/500/blank.png",
+         "alt": "default",
+         "rel": [
+          "default-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 87.0,
+         "displayValue": "87.0",
+         "period": 1,
+         "linescores": [
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 1
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 1
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 1
+          }
+         ]
+        },
+        {
+         "value": 87.0,
+         "displayValue": "87.0",
+         "period": 2,
+         "linescores": [
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 2
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 2
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 2
+          }
+         ]
+        },
+        {
+         "value": 87.0,
+         "displayValue": "87.0",
+         "period": 3,
+         "linescores": [
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 3
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 3
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 3
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "16-10-0"
+        }
+       ]
+      },
+      {
+       "id": "2335525",
+       "uid": "s:3301~a:2335525",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Stephan Bonnar",
+        "displayName": "Stephan Bonnar",
+        "shortName": "S. Bonnar",
+        "flag": {
+         "href": "https://www.espn.com/i/teamlogos/countries/500/blank.png",
+         "alt": "default",
+         "rel": [
+          "default-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 84.0,
+         "displayValue": "84.0",
+         "period": 1,
+         "linescores": [
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 1
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 1
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 1
+          }
+         ]
+        },
+        {
+         "value": 84.0,
+         "displayValue": "84.0",
+         "period": 2,
+         "linescores": [
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 2
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 2
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 2
+          }
+         ]
+        },
+        {
+         "value": 84.0,
+         "displayValue": "84.0",
+         "period": 3,
+         "linescores": [
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 3
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 3
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 3
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "15-9-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2009-07-12T01:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "151928",
+     "uid": "s:3301~l:3321~e:400252542~c:151928",
+     "date": "2009-07-12T01:00Z",
+     "endDate": "2009-07-12T01:00Z",
+     "type": {
+      "id": "972",
+      "abbreviation": "Middleweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "2233",
+      "fullName": "Mandalay Bay",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2335486",
+       "uid": "s:3301~a:2335486",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Alan Belcher",
+        "displayName": "Alan Belcher",
+        "shortName": "A. Belcher",
+        "flag": {
+         "href": "https://www.espn.com/i/teamlogos/countries/500/blank.png",
+         "alt": "default",
+         "rel": [
+          "default-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 84.0,
+         "displayValue": "84.0",
+         "period": 1,
+         "linescores": [
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 1
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 1
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 1
+          }
+         ]
+        },
+        {
+         "value": 84.0,
+         "displayValue": "84.0",
+         "period": 2,
+         "linescores": [
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 2
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 2
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 2
+          }
+         ]
+        },
+        {
+         "value": 84.0,
+         "displayValue": "84.0",
+         "period": 3,
+         "linescores": [
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 3
+          },
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 3
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 3
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "18-8-0"
+        }
+       ]
+      },
+      {
+       "id": "2354127",
+       "uid": "s:3301~a:2354127",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Yoshihiro Akiyama",
+        "displayName": "Yoshihiro Akiyama",
+        "shortName": "Y. Akiyama",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/jpn.png",
+         "alt": "Japan",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 87.0,
+         "displayValue": "87.0",
+         "period": 1,
+         "linescores": [
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 1
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 1
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 1
+          }
+         ]
+        },
+        {
+         "value": 87.0,
+         "displayValue": "87.0",
+         "period": 2,
+         "linescores": [
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 2
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 2
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 2
+          }
+         ]
+        },
+        {
+         "value": 87.0,
+         "displayValue": "87.0",
+         "period": 3,
+         "linescores": [
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 3
+          },
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 3
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 3
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "16-7-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": true
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2009-07-12T01:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "152198",
+     "uid": "s:3301~l:3321~e:400252542~c:152198",
+     "date": "2009-07-12T01:00Z",
+     "endDate": "2009-07-12T01:00Z",
+     "type": {
+      "id": "972",
+      "abbreviation": "Middleweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "2233",
+      "fullName": "Mandalay Bay",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2335497",
+       "uid": "s:3301~a:2335497",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Dan Henderson",
+        "displayName": "Dan Henderson",
+        "shortName": "D. Henderson",
+        "flag": {
+         "href": "https://www.espn.com/i/teamlogos/countries/500/blank.png",
+         "alt": "default",
+         "rel": [
+          "default-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 0.0,
+         "displayValue": "0.0",
+         "period": 1
+        },
+        {
+         "value": 0.0,
+         "displayValue": "0.0",
+         "period": 2
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "32-15-0"
+        }
+       ]
+      },
+      {
+       "id": "2335602",
+       "uid": "s:3301~a:2335602",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Michael Bisping",
+        "displayName": "Michael Bisping",
+        "shortName": "M. Bisping",
+        "flag": {
+         "href": "https://www.espn.com/i/teamlogos/countries/500/blank.png",
+         "alt": "default",
+         "rel": [
+          "default-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 0.0,
+         "displayValue": "0.0",
+         "period": 1
+        },
+        {
+         "value": 0.0,
+         "displayValue": "0.0",
+         "period": 2
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "30-9-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 200.0,
+      "displayClock": "3:20",
+      "period": 2,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2009-07-12T01:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "152102",
+     "uid": "s:3301~l:3321~e:400252542~c:152102",
+     "date": "2009-07-12T01:00Z",
+     "endDate": "2009-07-12T01:00Z",
+     "type": {
+      "id": "969",
+      "abbreviation": "Welterweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "2233",
+      "fullName": "Mandalay Bay",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2335659",
+       "uid": "s:3301~a:2335659",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Georges St-Pierre",
+        "displayName": "Georges St-Pierre",
+        "shortName": "G. St-Pierre",
+        "flag": {
+         "href": "https://www.espn.com/i/teamlogos/countries/500/blank.png",
+         "alt": "default",
+         "rel": [
+          "default-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 150.0,
+         "displayValue": "150.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 50.0,
+           "displayValue": "50",
+           "period": 0
+          },
+          {
+           "value": 50.0,
+           "displayValue": "50",
+           "period": 0
+          },
+          {
+           "value": 50.0,
+           "displayValue": "50",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "26-2-0"
+        }
+       ]
+      },
+      {
+       "id": "2335660",
+       "uid": "s:3301~a:2335660",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Thiago Alves",
+        "displayName": "Thiago Alves",
+        "shortName": "T. Alves",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/bra.png",
+         "alt": "Brazil",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 134.0,
+         "displayValue": "134.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 45.0,
+           "displayValue": "45",
+           "period": 0
+          },
+          {
+           "value": 45.0,
+           "displayValue": "45",
+           "period": 0
+          },
+          {
+           "value": 44.0,
+           "displayValue": "44",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "28-15-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 5,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 5
+      }
+     },
+     "startDate": "2009-07-12T01:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "152100",
+     "uid": "s:3301~l:3321~e:400252542~c:152100",
+     "date": "2009-07-12T01:00Z",
+     "endDate": "2009-07-12T01:00Z",
+     "type": {
+      "id": "982",
+      "abbreviation": "Heavyweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "2233",
+      "fullName": "Mandalay Bay",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2335298",
+       "uid": "s:3301~a:2335298",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Brock Lesnar",
+        "displayName": "Brock Lesnar",
+        "shortName": "B. Lesnar",
+        "flag": {
+         "href": "https://www.espn.com/i/teamlogos/countries/500/blank.png",
+         "alt": "default",
+         "rel": [
+          "default-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 0.0,
+         "displayValue": "0.0",
+         "period": 1
+        },
+        {
+         "value": 0.0,
+         "displayValue": "0.0",
+         "period": 2
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "5-3-0"
+        }
+       ]
+      },
+      {
+       "id": "2335301",
+       "uid": "s:3301~a:2335301",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Frank Mir",
+        "displayName": "Frank Mir",
+        "shortName": "F. Mir",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "19-13-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 108.0,
+      "displayClock": "1:48",
+      "period": 2,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 5
+      }
+     },
+     "startDate": "2009-07-12T01:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "151918",
+     "uid": "s:3301~l:3321~e:400252542~c:151918",
+     "date": "2009-07-12T01:00Z",
+     "endDate": "2009-07-12T01:00Z",
+     "type": {
+      "id": "969",
+      "abbreviation": "Welterweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "2233",
+      "fullName": "Mandalay Bay",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2335665",
+       "uid": "s:3301~a:2335665",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Jon Fitch",
+        "displayName": "Jon Fitch",
+        "shortName": "J. Fitch",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 0.0,
+         "displayValue": "0.0",
+         "period": 1,
+         "linescores": [
+          {
+           "value": 0.0,
+           "displayValue": "0",
+           "period": 1
+          },
+          {
+           "value": 0.0,
+           "displayValue": "0",
+           "period": 1
+          },
+          {
+           "value": 0.0,
+           "displayValue": "0",
+           "period": 1
+          }
+         ]
+        },
+        {
+         "value": 0.0,
+         "displayValue": "0.0",
+         "period": 2,
+         "linescores": [
+          {
+           "value": 0.0,
+           "displayValue": "0",
+           "period": 2
+          },
+          {
+           "value": 0.0,
+           "displayValue": "0",
+           "period": 2
+          },
+          {
+           "value": 0.0,
+           "displayValue": "0",
+           "period": 2
+          }
+         ]
+        },
+        {
+         "value": 88.0,
+         "displayValue": "88.0",
+         "period": 3,
+         "linescores": [
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 3
+          },
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 3
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 3
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "29-8-2"
+        }
+       ]
+      },
+      {
+       "id": "2335735",
+       "uid": "s:3301~a:2335735",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Paulo Thiago",
+        "displayName": "Paulo Thiago",
+        "shortName": "P. Thiago",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/bra.png",
+         "alt": "Brazil",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 0.0,
+         "displayValue": "0.0",
+         "period": 1,
+         "linescores": [
+          {
+           "value": 0.0,
+           "displayValue": "0",
+           "period": 1
+          },
+          {
+           "value": 0.0,
+           "displayValue": "0",
+           "period": 1
+          },
+          {
+           "value": 0.0,
+           "displayValue": "0",
+           "period": 1
+          }
+         ]
+        },
+        {
+         "value": 0.0,
+         "displayValue": "0.0",
+         "period": 2,
+         "linescores": [
+          {
+           "value": 0.0,
+           "displayValue": "0",
+           "period": 2
+          },
+          {
+           "value": 0.0,
+           "displayValue": "0",
+           "period": 2
+          },
+          {
+           "value": 0.0,
+           "displayValue": "0",
+           "period": 2
+          }
+         ]
+        },
+        {
+         "value": 83.0,
+         "displayValue": "83.0",
+         "period": 3,
+         "linescores": [
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 3
+          },
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 3
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 3
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "18-10-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2009-07-12T01:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    }
+   ],
+   "links": [
+    {
+     "language": "en-US",
+     "rel": [
+      "summary",
+      "desktop",
+      "event"
+     ],
+     "href": "https://www.espn.com/mma/fightcenter/_/id/400252542/league/ufc",
+     "text": "Gamecast",
+     "shortText": "Gamecast",
+     "isExternal": false,
+     "isPremium": false
+    }
+   ],
+   "venues": [
+    {
+     "id": "2233",
+     "fullName": "Mandalay Bay",
+     "address": {
+      "city": "Las Vegas",
+      "state": "NV",
+      "country": "USA"
+     }
+    }
+   ],
+   "status": {
+    "type": {
+     "id": "3",
+     "name": "STATUS_FINAL",
+     "state": "post",
+     "completed": true,
+     "description": "Final",
+     "detail": "Final",
+     "shortDetail": "Final"
+    }
+   }
+  }
+ ],
+ "provider": {
+  "id": "100",
+  "name": "Draft Kings",
+  "displayName": "Draft Kings",
+  "priority": 1
+ }
+}

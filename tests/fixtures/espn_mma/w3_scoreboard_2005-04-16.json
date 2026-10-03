@@ -1,0 +1,1351 @@
+{
+ "leagues": [
+  {
+   "id": "3321",
+   "uid": "s:3301~l:3321",
+   "name": "Ultimate Fighting Championship",
+   "displayName": "UFC",
+   "abbreviation": "UFC",
+   "shortName": "UFC",
+   "slug": "ufc",
+   "season": {
+    "year": 2005,
+    "startDate": "2005-01-01T08:00Z",
+    "endDate": "2005-12-31T08:00Z",
+    "displayName": "2005",
+    "type": {
+     "id": "2",
+     "type": 2,
+     "name": "Regular Season",
+     "abbreviation": "reg"
+    }
+   },
+   "logos": [
+    {
+     "href": "https://a.espncdn.com/i/teamlogos/leagues/500/ufc.png",
+     "width": 500,
+     "height": 500,
+     "alt": "",
+     "rel": [
+      "full",
+      "default"
+     ],
+     "lastUpdated": "2018-12-21T18:30Z"
+    },
+    {
+     "href": "https://a.espncdn.com/i/teamlogos/leagues/500/ufc.png",
+     "width": 500,
+     "height": 500,
+     "alt": "",
+     "rel": [
+      "full",
+      "dark"
+     ],
+     "lastUpdated": "2018-12-21T18:30Z"
+    }
+   ],
+   "calendarType": "list",
+   "calendarIsWhitelist": true,
+   "calendarStartDate": "2005-01-01T08:00Z",
+   "calendarEndDate": "2005-12-31T08:00Z",
+   "calendar": [
+    {
+     "label": "UFC 51: Super Saturday",
+     "startDate": "2005-02-06T05:00Z",
+     "endDate": "2005-02-06T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400254447?lang=en&region=us"
+     }
+    },
+    {
+     "label": "The Ultimate Fighter 1 Finale",
+     "startDate": "2005-04-10T04:00Z",
+     "endDate": "2005-04-10T04:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400254386?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 52: Couture vs. Liddell 2",
+     "startDate": "2005-04-17T04:00Z",
+     "endDate": "2005-04-17T04:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400254377?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 53: Heavy Hitters",
+     "startDate": "2005-06-05T04:00Z",
+     "endDate": "2005-06-05T04:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400254327?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night 1",
+     "startDate": "2005-08-07T04:00Z",
+     "endDate": "2005-08-07T04:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400254263?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 54: Boiling Point",
+     "startDate": "2005-08-21T04:00Z",
+     "endDate": "2005-08-21T04:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400254255?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night 2",
+     "startDate": "2005-10-04T04:00Z",
+     "endDate": "2005-10-04T04:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400254204?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 55: Fury",
+     "startDate": "2005-10-08T04:00Z",
+     "endDate": "2005-10-08T04:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400254203?lang=en&region=us"
+     }
+    },
+    {
+     "label": "The Ultimate Fighter 2 Finale",
+     "startDate": "2005-11-06T05:00Z",
+     "endDate": "2005-11-06T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400254173?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 56: Full Force",
+     "startDate": "2005-11-20T05:00Z",
+     "endDate": "2005-11-20T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400254160?lang=en&region=us"
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "400254377",
+   "uid": "s:3301~l:3321~e:400254377",
+   "date": "2005-04-17T01:00Z",
+   "name": "UFC 52: Couture vs. Liddell 2",
+   "shortName": "UFC 52",
+   "season": {
+    "year": 2005,
+    "type": 2,
+    "slug": "regular-season"
+   },
+   "competitions": [
+    {
+     "id": "156038",
+     "uid": "s:3301~l:3321~e:400254377~c:156038",
+     "date": "2005-04-17T01:00Z",
+     "endDate": "2005-04-17T01:00Z",
+     "type": {
+      "id": "982",
+      "abbreviation": "Heavyweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "1403",
+      "fullName": "MGM Grand",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2354532",
+       "uid": "s:3301~a:2354532",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Mike Van Arsdale",
+        "displayName": "Mike Van Arsdale",
+        "shortName": "M. Van Arsdale",
+        "flag": {
+         "href": "https://www.espn.com/i/teamlogos/countries/500/blank.png",
+         "alt": "default",
+         "rel": [
+          "default-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 87.0,
+         "displayValue": "87.0",
+         "period": 1,
+         "linescores": [
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 1
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 1
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 1
+          }
+         ]
+        },
+        {
+         "value": 87.0,
+         "displayValue": "87.0",
+         "period": 2,
+         "linescores": [
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 2
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 2
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 2
+          }
+         ]
+        },
+        {
+         "value": 87.0,
+         "displayValue": "87.0",
+         "period": 3,
+         "linescores": [
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 3
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 3
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 3
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "8-5-0"
+        }
+       ]
+      },
+      {
+       "id": "2501711",
+       "uid": "s:3301~a:2501711",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "John Marsh",
+        "displayName": "John Marsh",
+        "shortName": "J. Marsh",
+        "flag": {
+         "href": "https://www.espn.com/i/teamlogos/countries/500/blank.png",
+         "alt": "default",
+         "rel": [
+          "default-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 84.0,
+         "displayValue": "84.0",
+         "period": 1,
+         "linescores": [
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 1
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 1
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 1
+          }
+         ]
+        },
+        {
+         "value": 84.0,
+         "displayValue": "84.0",
+         "period": 2,
+         "linescores": [
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 2
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 2
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 2
+          }
+         ]
+        },
+        {
+         "value": 84.0,
+         "displayValue": "84.0",
+         "period": 3,
+         "linescores": [
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 3
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 3
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 3
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "0-6-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2005-04-17T01:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "158185",
+     "uid": "s:3301~l:3321~e:400254377~c:158185",
+     "date": "2005-04-17T01:00Z",
+     "endDate": "2005-04-17T01:00Z",
+     "type": {
+      "id": "972",
+      "abbreviation": "Middleweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "1403",
+      "fullName": "MGM Grand",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2335448",
+       "uid": "s:3301~a:2335448",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Patrick Cote",
+        "displayName": "Patrick Cote",
+        "shortName": "P. Cote",
+        "flag": {
+         "href": "https://www.espn.com/i/teamlogos/countries/500/blank.png",
+         "alt": "default",
+         "rel": [
+          "default-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 0.0,
+         "displayValue": "0.0",
+         "period": 1
+        },
+        {
+         "value": 0.0,
+         "displayValue": "0.0",
+         "period": 2
+        },
+        {
+         "value": 0.0,
+         "displayValue": "0.0",
+         "period": 3
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "23-11-0"
+        }
+       ]
+      },
+      {
+       "id": "2335496",
+       "uid": "s:3301~a:2335496",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Joe Doerksen",
+        "displayName": "Joe Doerksen",
+        "shortName": "J. Doerksen",
+        "flag": {
+         "href": "https://www.espn.com/i/teamlogos/countries/500/blank.png",
+         "alt": "default",
+         "rel": [
+          "default-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 0.0,
+         "displayValue": "0.0",
+         "period": 1
+        },
+        {
+         "value": 0.0,
+         "displayValue": "0.0",
+         "period": 2
+        },
+        {
+         "value": 0.0,
+         "displayValue": "0.0",
+         "period": 3
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "14-13-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 155.0,
+      "displayClock": "2:35",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2005-04-17T01:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "156037",
+     "uid": "s:3301~l:3321~e:400254377~c:156037",
+     "date": "2005-04-17T01:00Z",
+     "endDate": "2005-04-17T01:00Z",
+     "type": {
+      "id": "972",
+      "abbreviation": "Middleweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "1403",
+      "fullName": "MGM Grand",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2335698",
+       "uid": "s:3301~a:2335698",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Joe Riggs",
+        "displayName": "Joe Riggs",
+        "shortName": "J. Riggs",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 0.0,
+         "displayValue": "0.0",
+         "period": 1
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "47-18-1"
+        }
+       ]
+      },
+      {
+       "id": "2335786",
+       "uid": "s:3301~a:2335786",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Ivan Salaverry",
+        "displayName": "Ivan Salaverry",
+        "shortName": "I. Salaverry",
+        "flag": {
+         "href": "https://www.espn.com/i/teamlogos/countries/500/blank.png",
+         "alt": "default",
+         "rel": [
+          "default-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 0.0,
+         "displayValue": "0.0",
+         "period": 1
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "14-9-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 162.0,
+      "displayClock": "2:42",
+      "period": 1,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2005-04-17T01:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "152609",
+     "uid": "s:3301~l:3321~e:400254377~c:152609",
+     "date": "2005-04-17T01:00Z",
+     "endDate": "2005-04-17T01:00Z",
+     "type": {
+      "id": "969",
+      "abbreviation": "Welterweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "1403",
+      "fullName": "MGM Grand",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2335659",
+       "uid": "s:3301~a:2335659",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Georges St-Pierre",
+        "displayName": "Georges St-Pierre",
+        "shortName": "G. St-Pierre",
+        "flag": {
+         "href": "https://www.espn.com/i/teamlogos/countries/500/blank.png",
+         "alt": "default",
+         "rel": [
+          "default-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 90.0,
+         "displayValue": "90.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 0
+          },
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 0
+          },
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "26-2-0"
+        }
+       ]
+      },
+      {
+       "id": "2354051",
+       "uid": "s:3301~a:2354051",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Jason Miller",
+        "displayName": "Jason Miller",
+        "shortName": "J. Miller",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 81.0,
+         "displayValue": "81.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 0
+          },
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 0
+          },
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "23-10-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2005-04-17T01:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "156036",
+     "uid": "s:3301~l:3321~e:400254377~c:156036",
+     "date": "2005-04-17T01:00Z",
+     "endDate": "2005-04-17T01:00Z",
+     "type": {
+      "id": "972",
+      "abbreviation": "Middleweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "1403",
+      "fullName": "MGM Grand",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2335768",
+       "uid": "s:3301~a:2335768",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Travis Lutter",
+        "displayName": "Travis Lutter",
+        "shortName": "T. Lutter",
+        "flag": {
+         "href": "https://www.espn.com/i/teamlogos/countries/500/blank.png",
+         "alt": "default",
+         "rel": [
+          "default-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 0.0,
+         "displayValue": "0.0",
+         "period": 1
+        },
+        {
+         "value": 0.0,
+         "displayValue": "0.0",
+         "period": 2
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "10-6-0"
+        }
+       ]
+      },
+      {
+       "id": "2354346",
+       "uid": "s:3301~a:2354346",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Matt Lindland",
+        "displayName": "Matt Lindland",
+        "shortName": "M. Lindland",
+        "flag": {
+         "href": "https://www.espn.com/i/teamlogos/countries/500/blank.png",
+         "alt": "default",
+         "rel": [
+          "default-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 0.0,
+         "displayValue": "0.0",
+         "period": 1
+        },
+        {
+         "value": 0.0,
+         "displayValue": "0.0",
+         "period": 2
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "22-9-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 193.0,
+      "displayClock": "3:13",
+      "period": 2,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2005-04-17T01:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "151819",
+     "uid": "s:3301~l:3321~e:400254377~c:151819",
+     "date": "2005-04-17T01:00Z",
+     "endDate": "2005-04-17T01:00Z",
+     "type": {
+      "id": "969",
+      "abbreviation": "Welterweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "1403",
+      "fullName": "MGM Grand",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2335661",
+       "uid": "s:3301~a:2335661",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Matt Hughes",
+        "displayName": "Matt Hughes",
+        "shortName": "M. Hughes",
+        "flag": {
+         "href": "https://www.espn.com/i/teamlogos/countries/500/blank.png",
+         "alt": "default",
+         "rel": [
+          "default-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 0.0,
+         "displayValue": "0.0",
+         "period": 1
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "45-9-0"
+        }
+       ]
+      },
+      {
+       "id": "2335699",
+       "uid": "s:3301~a:2335699",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Frank Trigg",
+        "displayName": "Frank Trigg",
+        "shortName": "F. Trigg",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "22-9-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 245.0,
+      "displayClock": "4:05",
+      "period": 1,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 5
+      }
+     },
+     "startDate": "2005-04-17T01:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "152485",
+     "uid": "s:3301~l:3321~e:400254377~c:152485",
+     "date": "2005-04-17T01:00Z",
+     "endDate": "2005-04-17T01:00Z",
+     "type": {
+      "id": "990",
+      "abbreviation": "Light Heavyweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "1403",
+      "fullName": "MGM Grand",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2335476",
+       "uid": "s:3301~a:2335476",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Renato Sobral",
+        "displayName": "Renato Sobral",
+        "shortName": "R. Sobral",
+        "flag": {
+         "href": "https://www.espn.com/i/teamlogos/countries/500/blank.png",
+         "alt": "default",
+         "rel": [
+          "default-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 0.0,
+         "displayValue": "0.0",
+         "period": 1
+        },
+        {
+         "value": 0.0,
+         "displayValue": "0.0",
+         "period": 2
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "38-11-0"
+        }
+       ]
+      },
+      {
+       "id": "2431320",
+       "uid": "s:3301~a:2431320",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Travis Wiuff",
+        "displayName": "Travis Wiuff",
+        "shortName": "T. Wiuff",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 0.0,
+         "displayValue": "0.0",
+         "period": 1
+        },
+        {
+         "value": 0.0,
+         "displayValue": "0.0",
+         "period": 2
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "75-22-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 24.0,
+      "displayClock": "0:24",
+      "period": 2,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2005-04-17T01:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "151885",
+     "uid": "s:3301~l:3321~e:400254377~c:151885",
+     "date": "2005-04-17T01:00Z",
+     "endDate": "2005-04-17T01:00Z",
+     "type": {
+      "id": "990",
+      "abbreviation": "Light Heavyweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "1403",
+      "fullName": "MGM Grand",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2335338",
+       "uid": "s:3301~a:2335338",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Randy Couture",
+        "displayName": "Randy Couture",
+        "shortName": "R. Couture",
+        "flag": {
+         "href": "https://www.espn.com/i/teamlogos/countries/500/blank.png",
+         "alt": "default",
+         "rel": [
+          "default-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 0.0,
+         "displayValue": "0.0",
+         "period": 1
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "19-11-0"
+        }
+       ]
+      },
+      {
+       "id": "2335464",
+       "uid": "s:3301~a:2335464",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Chuck Liddell",
+        "displayName": "Chuck Liddell",
+        "shortName": "C. Liddell",
+        "flag": {
+         "href": "https://www.espn.com/i/teamlogos/countries/500/blank.png",
+         "alt": "default",
+         "rel": [
+          "default-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 0.0,
+         "displayValue": "0.0",
+         "period": 1
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "21-9-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 126.0,
+      "displayClock": "2:06",
+      "period": 1,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 5
+      }
+     },
+     "startDate": "2005-04-17T01:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    }
+   ],
+   "links": [
+    {
+     "language": "en-US",
+     "rel": [
+      "summary",
+      "desktop",
+      "event"
+     ],
+     "href": "https://www.espn.com/mma/fightcenter/_/id/400254377/league/ufc",
+     "text": "Gamecast",
+     "shortText": "Gamecast",
+     "isExternal": false,
+     "isPremium": false
+    }
+   ],
+   "venues": [
+    {
+     "id": "1403",
+     "fullName": "MGM Grand",
+     "address": {
+      "city": "Las Vegas",
+      "state": "NV",
+      "country": "USA"
+     }
+    }
+   ],
+   "status": {
+    "type": {
+     "id": "3",
+     "name": "STATUS_FINAL",
+     "state": "post",
+     "completed": true,
+     "description": "Final",
+     "detail": "Final",
+     "shortDetail": "Final"
+    }
+   }
+  }
+ ],
+ "provider": {
+  "id": "100",
+  "name": "Draft Kings",
+  "displayName": "Draft Kings",
+  "priority": 1
+ }
+}

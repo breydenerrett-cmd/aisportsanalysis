@@ -1,0 +1,1041 @@
+{
+ "count": 12,
+ "pageIndex": 1,
+ "pageSize": 25,
+ "pageCount": 1,
+ "items": [
+  {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600041053/competitions/401632019/odds/1001?lang=en&region=us",
+   "provider": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/providers/1001?lang=en&region=us",
+    "id": "1001",
+    "name": "Bet365",
+    "priority": 0
+   },
+   "details": "K. Green -175",
+   "overUnder": 2.5,
+   "overOdds": -145.0,
+   "underOdds": 105.0,
+   "awayAthleteOdds": {
+    "favorite": false,
+    "underdog": true,
+    "moneyLine": 150,
+    "open": {
+     "favorite": false,
+     "moneyLine": {
+      "value": 2.5,
+      "displayValue": "3/2",
+      "alternateDisplayValue": "+150",
+      "decimal": 2.5,
+      "fraction": "3/2",
+      "american": "+150"
+     }
+    },
+    "current": {
+     "moneyLine": {
+      "value": 2.5,
+      "displayValue": "3/2",
+      "alternateDisplayValue": "+150",
+      "decimal": 2.5,
+      "fraction": "3/2",
+      "american": "+150"
+     }
+    },
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/2335718?lang=en&region=us"
+    }
+   },
+   "homeAthleteOdds": {
+    "favorite": true,
+    "underdog": false,
+    "moneyLine": -175,
+    "open": {
+     "favorite": false,
+     "moneyLine": {
+      "value": 1.57,
+      "displayValue": "4/7",
+      "alternateDisplayValue": "-175",
+      "decimal": 1.57,
+      "fraction": "4/7",
+      "american": "-175"
+     }
+    },
+    "current": {
+     "moneyLine": {
+      "value": 1.57,
+      "displayValue": "4/7",
+      "alternateDisplayValue": "-175",
+      "decimal": 1.57,
+      "fraction": "4/7",
+      "american": "-175"
+     }
+    },
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/2502364?lang=en&region=us"
+    }
+   },
+   "moneylineWinner": false,
+   "spreadWinner": false,
+   "open": {
+    "over": {
+     "value": 1.69,
+     "displayValue": "20/29",
+     "alternateDisplayValue": "-145",
+     "decimal": 1.69,
+     "fraction": "20/29",
+     "american": "-145"
+    },
+    "under": {
+     "value": 2.05,
+     "displayValue": "21/20",
+     "alternateDisplayValue": "+105",
+     "decimal": 2.05,
+     "fraction": "21/20",
+     "american": "+105"
+    },
+    "total": {
+     "value": 2.5,
+     "displayValue": "2.5",
+     "alternateDisplayValue": "2.5",
+     "decimal": 2.5,
+     "fraction": "2.5",
+     "american": "2.5"
+    }
+   },
+   "current": {
+    "over": {
+     "value": 1.69,
+     "displayValue": "20/29",
+     "alternateDisplayValue": "-145",
+     "decimal": 1.69,
+     "fraction": "20/29",
+     "american": "-145"
+    },
+    "under": {
+     "value": 2.05,
+     "displayValue": "21/20",
+     "alternateDisplayValue": "+105",
+     "decimal": 2.05,
+     "fraction": "21/20",
+     "american": "+105"
+    },
+    "total": {
+     "value": 2.5,
+     "displayValue": "2.5",
+     "alternateDisplayValue": "2.5",
+     "decimal": 2.5,
+     "fraction": "2.5",
+     "american": "2.5"
+    }
+   }
+  },
+  {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600041053/competitions/401632019/odds/50?lang=en&region=us",
+   "provider": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/providers/50?lang=en&region=us",
+    "id": "50",
+    "name": "BetfairSportsbook",
+    "priority": 0
+   },
+   "details": "K. Green -189",
+   "awayAthleteOdds": {
+    "favorite": false,
+    "underdog": true,
+    "moneyLine": 150,
+    "open": {
+     "favorite": false,
+     "moneyLine": {
+      "value": 2.5,
+      "displayValue": "3/2",
+      "alternateDisplayValue": "+150",
+      "decimal": 2.5,
+      "fraction": "3/2",
+      "american": "+150"
+     }
+    },
+    "current": {
+     "moneyLine": {
+      "value": 2.5,
+      "displayValue": "3/2",
+      "alternateDisplayValue": "+150",
+      "decimal": 2.5,
+      "fraction": "3/2",
+      "american": "+150"
+     }
+    },
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/2335718?lang=en&region=us"
+    }
+   },
+   "homeAthleteOdds": {
+    "favorite": true,
+    "underdog": false,
+    "moneyLine": -189,
+    "open": {
+     "favorite": false,
+     "moneyLine": {
+      "value": 1.53,
+      "displayValue": "100/189",
+      "alternateDisplayValue": "-189",
+      "decimal": 1.53,
+      "fraction": "100/189",
+      "american": "-189"
+     }
+    },
+    "current": {
+     "moneyLine": {
+      "value": 1.53,
+      "displayValue": "100/189",
+      "alternateDisplayValue": "-189",
+      "decimal": 1.53,
+      "fraction": "100/189",
+      "american": "-189"
+     }
+    },
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/2502364?lang=en&region=us"
+    }
+   },
+   "moneylineWinner": false,
+   "spreadWinner": false
+  },
+  {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600041053/competitions/401632019/odds/52?lang=en&region=us",
+   "provider": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/providers/52?lang=en&region=us",
+    "id": "52",
+    "name": "Caesars Sportsbook (CO)",
+    "priority": 0
+   },
+   "details": "K. Green -210",
+   "awayAthleteOdds": {
+    "favorite": false,
+    "underdog": true,
+    "moneyLine": 175,
+    "open": {
+     "favorite": false,
+     "moneyLine": {
+      "value": 2.75,
+      "displayValue": "7/4",
+      "alternateDisplayValue": "+175",
+      "decimal": 2.75,
+      "fraction": "7/4",
+      "american": "+175"
+     }
+    },
+    "current": {
+     "moneyLine": {
+      "value": 2.75,
+      "displayValue": "7/4",
+      "alternateDisplayValue": "+175",
+      "decimal": 2.75,
+      "fraction": "7/4",
+      "american": "+175"
+     }
+    },
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/2335718?lang=en&region=us"
+    }
+   },
+   "homeAthleteOdds": {
+    "favorite": true,
+    "underdog": false,
+    "moneyLine": -210,
+    "open": {
+     "favorite": false,
+     "moneyLine": {
+      "value": 1.48,
+      "displayValue": "10/21",
+      "alternateDisplayValue": "-210",
+      "decimal": 1.48,
+      "fraction": "10/21",
+      "american": "-210"
+     }
+    },
+    "current": {
+     "moneyLine": {
+      "value": 1.48,
+      "displayValue": "10/21",
+      "alternateDisplayValue": "-210",
+      "decimal": 1.48,
+      "fraction": "10/21",
+      "american": "-210"
+     }
+    },
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/2502364?lang=en&region=us"
+    }
+   },
+   "moneylineWinner": false,
+   "spreadWinner": false
+  },
+  {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600041053/competitions/401632019/odds/45?lang=en&region=us",
+   "provider": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/providers/45?lang=en&region=us",
+    "id": "45",
+    "name": "Caesars Sportsbook (NJ)",
+    "priority": 0
+   },
+   "details": "K. Green -210",
+   "awayAthleteOdds": {
+    "favorite": false,
+    "underdog": true,
+    "moneyLine": 175,
+    "open": {
+     "favorite": false,
+     "moneyLine": {
+      "value": 2.75,
+      "displayValue": "7/4",
+      "alternateDisplayValue": "+175",
+      "decimal": 2.75,
+      "fraction": "7/4",
+      "american": "+175"
+     }
+    },
+    "current": {
+     "moneyLine": {
+      "value": 2.75,
+      "displayValue": "7/4",
+      "alternateDisplayValue": "+175",
+      "decimal": 2.75,
+      "fraction": "7/4",
+      "american": "+175"
+     }
+    },
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/2335718?lang=en&region=us"
+    }
+   },
+   "homeAthleteOdds": {
+    "favorite": true,
+    "underdog": false,
+    "moneyLine": -210,
+    "open": {
+     "favorite": false,
+     "moneyLine": {
+      "value": 1.48,
+      "displayValue": "10/21",
+      "alternateDisplayValue": "-210",
+      "decimal": 1.48,
+      "fraction": "10/21",
+      "american": "-210"
+     }
+    },
+    "current": {
+     "moneyLine": {
+      "value": 1.48,
+      "displayValue": "10/21",
+      "alternateDisplayValue": "-210",
+      "decimal": 1.48,
+      "fraction": "10/21",
+      "american": "-210"
+     }
+    },
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/2502364?lang=en&region=us"
+    }
+   },
+   "moneylineWinner": false,
+   "spreadWinner": false
+  },
+  {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600041053/competitions/401632019/odds/57?lang=en&region=us",
+   "provider": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/providers/57?lang=en&region=us",
+    "id": "57",
+    "name": "Caesars Sportsbook (Tennessee)",
+    "priority": 0
+   },
+   "details": "K. Green -210",
+   "awayAthleteOdds": {
+    "favorite": false,
+    "underdog": true,
+    "moneyLine": 175,
+    "open": {
+     "favorite": false,
+     "moneyLine": {
+      "value": 2.75,
+      "displayValue": "7/4",
+      "alternateDisplayValue": "+175",
+      "decimal": 2.75,
+      "fraction": "7/4",
+      "american": "+175"
+     }
+    },
+    "current": {
+     "moneyLine": {
+      "value": 2.75,
+      "displayValue": "7/4",
+      "alternateDisplayValue": "+175",
+      "decimal": 2.75,
+      "fraction": "7/4",
+      "american": "+175"
+     }
+    },
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/2335718?lang=en&region=us"
+    }
+   },
+   "homeAthleteOdds": {
+    "favorite": true,
+    "underdog": false,
+    "moneyLine": -210,
+    "open": {
+     "favorite": false,
+     "moneyLine": {
+      "value": 1.48,
+      "displayValue": "10/21",
+      "alternateDisplayValue": "-210",
+      "decimal": 1.48,
+      "fraction": "10/21",
+      "american": "-210"
+     }
+    },
+    "current": {
+     "moneyLine": {
+      "value": 1.48,
+      "displayValue": "10/21",
+      "alternateDisplayValue": "-210",
+      "decimal": 1.48,
+      "fraction": "10/21",
+      "american": "-210"
+     }
+    },
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/2502364?lang=en&region=us"
+    }
+   },
+   "moneylineWinner": false,
+   "spreadWinner": false
+  },
+  {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600041053/competitions/401632019/odds/1004?lang=en&region=us",
+   "provider": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/providers/1004?lang=en&region=us",
+    "id": "1004",
+    "name": "Consensus",
+    "priority": 0
+   },
+   "details": "K. Green -167",
+   "overUnder": 2.5,
+   "overOdds": -141.0,
+   "underOdds": 106.0,
+   "awayAthleteOdds": {
+    "favorite": false,
+    "underdog": true,
+    "moneyLine": 143,
+    "current": {
+     "moneyLine": {
+      "alternateDisplayValue": "+143",
+      "american": "+143"
+     }
+    },
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/2335718?lang=en&region=us"
+    }
+   },
+   "homeAthleteOdds": {
+    "favorite": true,
+    "underdog": false,
+    "moneyLine": -167,
+    "current": {
+     "moneyLine": {
+      "alternateDisplayValue": "-167",
+      "american": "-167"
+     }
+    },
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/2502364?lang=en&region=us"
+    }
+   },
+   "moneylineWinner": false,
+   "spreadWinner": false,
+   "current": {
+    "over": {
+     "alternateDisplayValue": "-141",
+     "american": "-141"
+    },
+    "under": {
+     "alternateDisplayValue": "+106",
+     "american": "+106"
+    },
+    "total": {
+     "alternateDisplayValue": "2.5",
+     "american": "2.5"
+    }
+   }
+  },
+  {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600041053/competitions/401632019/odds/40?lang=en&region=us",
+   "provider": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/providers/40?lang=en&region=us",
+    "id": "40",
+    "name": "DraftKings (old)",
+    "priority": 0
+   },
+   "details": "K. Green -185",
+   "overUnder": 2.5,
+   "overOdds": -130.0,
+   "underOdds": 100.0,
+   "awayAthleteOdds": {
+    "favorite": false,
+    "underdog": true,
+    "moneyLine": 154,
+    "open": {
+     "favorite": false,
+     "moneyLine": {
+      "value": 2.54,
+      "displayValue": "77/50",
+      "alternateDisplayValue": "+154",
+      "decimal": 2.54,
+      "fraction": "77/50",
+      "american": "+154"
+     }
+    },
+    "current": {
+     "moneyLine": {
+      "value": 2.54,
+      "displayValue": "77/50",
+      "alternateDisplayValue": "+154",
+      "decimal": 2.54,
+      "fraction": "77/50",
+      "american": "+154"
+     }
+    },
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/2335718?lang=en&region=us"
+    }
+   },
+   "homeAthleteOdds": {
+    "favorite": true,
+    "underdog": false,
+    "moneyLine": -185,
+    "open": {
+     "favorite": false,
+     "moneyLine": {
+      "value": 1.54,
+      "displayValue": "20/37",
+      "alternateDisplayValue": "-185",
+      "decimal": 1.54,
+      "fraction": "20/37",
+      "american": "-185"
+     }
+    },
+    "current": {
+     "moneyLine": {
+      "value": 1.54,
+      "displayValue": "20/37",
+      "alternateDisplayValue": "-185",
+      "decimal": 1.54,
+      "fraction": "20/37",
+      "american": "-185"
+     }
+    },
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/2502364?lang=en&region=us"
+    }
+   },
+   "moneylineWinner": false,
+   "spreadWinner": false,
+   "open": {
+    "over": {
+     "value": 1.77,
+     "displayValue": "10/13",
+     "alternateDisplayValue": "-130",
+     "decimal": 1.77,
+     "fraction": "10/13",
+     "american": "-130"
+    },
+    "under": {
+     "value": 2.0,
+     "displayValue": "1/1",
+     "alternateDisplayValue": "+100",
+     "decimal": 2.0,
+     "fraction": "1/1",
+     "american": "+100"
+    },
+    "total": {
+     "value": 2.5,
+     "displayValue": "2.5",
+     "alternateDisplayValue": "2.5",
+     "decimal": 2.5,
+     "fraction": "2.5",
+     "american": "2.5"
+    }
+   },
+   "current": {
+    "over": {
+     "value": 1.77,
+     "displayValue": "10/13",
+     "alternateDisplayValue": "-130",
+     "decimal": 1.77,
+     "fraction": "10/13",
+     "american": "-130"
+    },
+    "under": {
+     "value": 2.0,
+     "displayValue": "1/1",
+     "alternateDisplayValue": "+100",
+     "decimal": 2.0,
+     "fraction": "1/1",
+     "american": "+100"
+    },
+    "total": {
+     "value": 2.5,
+     "displayValue": "2.5",
+     "alternateDisplayValue": "2.5",
+     "decimal": 2.5,
+     "fraction": "2.5",
+     "american": "2.5"
+    }
+   }
+  },
+  {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600041053/competitions/401632019/odds/58?lang=en&region=us",
+   "provider": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/providers/58?lang=en&region=us",
+    "id": "58",
+    "name": "ESPN BET",
+    "priority": 0
+   },
+   "details": "K. Green -200",
+   "overUnder": 2.5,
+   "awayAthleteOdds": {
+    "favorite": false,
+    "underdog": true,
+    "moneyLine": 170,
+    "open": {
+     "favorite": false,
+     "moneyLine": {
+      "value": 2.7,
+      "displayValue": "17/10",
+      "alternateDisplayValue": "+170",
+      "decimal": 2.7,
+      "fraction": "17/10",
+      "american": "+170"
+     }
+    },
+    "current": {
+     "moneyLine": {
+      "value": 2.7,
+      "displayValue": "17/10",
+      "alternateDisplayValue": "+170",
+      "decimal": 2.7,
+      "fraction": "17/10",
+      "american": "+170"
+     }
+    },
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/2335718?lang=en&region=us"
+    }
+   },
+   "homeAthleteOdds": {
+    "favorite": true,
+    "underdog": false,
+    "moneyLine": -200,
+    "open": {
+     "favorite": false,
+     "moneyLine": {
+      "value": 1.5,
+      "displayValue": "1/2",
+      "alternateDisplayValue": "-200",
+      "decimal": 1.5,
+      "fraction": "1/2",
+      "american": "-200"
+     }
+    },
+    "current": {
+     "moneyLine": {
+      "value": 1.5,
+      "displayValue": "1/2",
+      "alternateDisplayValue": "-200",
+      "decimal": 1.5,
+      "fraction": "1/2",
+      "american": "-200"
+     }
+    },
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/2502364?lang=en&region=us"
+    }
+   },
+   "links": [
+    {
+     "language": "en-US",
+     "rel": [
+      "home",
+      "desktop",
+      "bets",
+      "espn-bet"
+     ],
+     "href": "https://espnbet.app.link?$canonical_url=/sport/mma/organization/ufc/competition/ufc-300/event/b922bb1b-76df-4928-96f4-9699b80327e0",
+     "text": "Home Bet",
+     "shortText": "Home Bet",
+     "isExternal": true,
+     "isPremium": false
+    },
+    {
+     "language": "en-US",
+     "rel": [
+      "away",
+      "desktop",
+      "bets",
+      "espn-bet"
+     ],
+     "href": "https://espnbet.app.link?$canonical_url=/sport/mma/organization/ufc/competition/ufc-300/event/b922bb1b-76df-4928-96f4-9699b80327e0",
+     "text": "Away Bet",
+     "shortText": "Away Bet",
+     "isExternal": true,
+     "isPremium": false
+    }
+   ],
+   "moneylineWinner": false,
+   "spreadWinner": false,
+   "open": {
+    "total": {
+     "alternateDisplayValue": "2.5",
+     "american": "2.5"
+    }
+   },
+   "current": {
+    "total": {
+     "alternateDisplayValue": "2.5",
+     "american": "2.5"
+    }
+   }
+  },
+  {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600041053/competitions/401632019/odds/59?lang=en&region=us",
+   "provider": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/providers/59?lang=en&region=us",
+    "id": "59",
+    "name": "ESPN Bet - Live Odds",
+    "priority": 0
+   },
+   "details": "K. Green -3000",
+   "overUnder": 2.5,
+   "awayAthleteOdds": {
+    "favorite": false,
+    "underdog": true,
+    "moneyLine": 700,
+    "open": {
+     "favorite": false,
+     "moneyLine": {
+      "value": 8.0,
+      "displayValue": "7/1",
+      "alternateDisplayValue": "+700",
+      "decimal": 8.0,
+      "fraction": "7/1",
+      "american": "+700"
+     }
+    },
+    "current": {
+     "moneyLine": {
+      "value": 8.0,
+      "displayValue": "7/1",
+      "alternateDisplayValue": "+700",
+      "decimal": 8.0,
+      "fraction": "7/1",
+      "american": "+700"
+     }
+    },
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/2335718?lang=en&region=us"
+    }
+   },
+   "homeAthleteOdds": {
+    "favorite": true,
+    "underdog": false,
+    "moneyLine": -3000,
+    "open": {
+     "favorite": false,
+     "moneyLine": {
+      "value": 1.03,
+      "displayValue": "1/30",
+      "alternateDisplayValue": "-3000",
+      "decimal": 1.03,
+      "fraction": "1/30",
+      "american": "-3000"
+     }
+    },
+    "current": {
+     "moneyLine": {
+      "value": 1.03,
+      "displayValue": "1/30",
+      "alternateDisplayValue": "-3000",
+      "decimal": 1.03,
+      "fraction": "1/30",
+      "american": "-3000"
+     }
+    },
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/2502364?lang=en&region=us"
+    }
+   },
+   "links": [
+    {
+     "language": "en-US",
+     "rel": [
+      "home",
+      "desktop",
+      "bets",
+      "espn-bet---live-odds"
+     ],
+     "href": "https://espnbet.app.link?$canonical_url=/sport/mma/organization/ufc/competition/ufc-300/event/b922bb1b-76df-4928-96f4-9699b80327e0",
+     "text": "Home Bet",
+     "shortText": "Home Bet",
+     "isExternal": true,
+     "isPremium": false
+    },
+    {
+     "language": "en-US",
+     "rel": [
+      "away",
+      "desktop",
+      "bets",
+      "espn-bet---live-odds"
+     ],
+     "href": "https://espnbet.app.link?$canonical_url=/sport/mma/organization/ufc/competition/ufc-300/event/b922bb1b-76df-4928-96f4-9699b80327e0",
+     "text": "Away Bet",
+     "shortText": "Away Bet",
+     "isExternal": true,
+     "isPremium": false
+    }
+   ],
+   "moneylineWinner": false,
+   "spreadWinner": false,
+   "open": {
+    "total": {
+     "alternateDisplayValue": "2.5",
+     "american": "2.5"
+    }
+   },
+   "current": {
+    "total": {
+     "alternateDisplayValue": "2.5",
+     "american": "2.5"
+    }
+   }
+  },
+  {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600041053/competitions/401632019/odds/41?lang=en&region=us",
+   "provider": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/providers/41?lang=en&region=us",
+    "id": "41",
+    "name": "Sugarhouse (New Jersey)",
+    "priority": 0
+   },
+   "overUnder": 2.5,
+   "overOdds": -128.0,
+   "underOdds": -103.0,
+   "awayAthleteOdds": {
+    "favorite": false,
+    "underdog": true,
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/2335718?lang=en&region=us"
+    }
+   },
+   "homeAthleteOdds": {
+    "favorite": false,
+    "underdog": true,
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/2502364?lang=en&region=us"
+    }
+   },
+   "moneylineWinner": false,
+   "spreadWinner": false,
+   "open": {
+    "over": {
+     "value": 1.78,
+     "displayValue": "25/32",
+     "alternateDisplayValue": "-128",
+     "decimal": 1.78,
+     "fraction": "25/32",
+     "american": "-128"
+    },
+    "under": {
+     "value": 1.97,
+     "displayValue": "100/103",
+     "alternateDisplayValue": "-103",
+     "decimal": 1.97,
+     "fraction": "100/103",
+     "american": "-103"
+    },
+    "total": {
+     "value": 2.5,
+     "displayValue": "2.5",
+     "alternateDisplayValue": "2.5",
+     "decimal": 2.5,
+     "fraction": "2.5",
+     "american": "2.5"
+    }
+   },
+   "current": {
+    "over": {
+     "value": 1.78,
+     "displayValue": "25/32",
+     "alternateDisplayValue": "-128",
+     "decimal": 1.78,
+     "fraction": "25/32",
+     "american": "-128"
+    },
+    "under": {
+     "value": 1.97,
+     "displayValue": "100/103",
+     "alternateDisplayValue": "-103",
+     "decimal": 1.97,
+     "fraction": "100/103",
+     "american": "-103"
+    },
+    "total": {
+     "value": 2.5,
+     "displayValue": "2.5",
+     "alternateDisplayValue": "2.5",
+     "decimal": 2.5,
+     "fraction": "2.5",
+     "american": "2.5"
+    }
+   }
+  },
+  {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600041053/competitions/401632019/odds/53?lang=en&region=us",
+   "provider": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/providers/53?lang=en&region=us",
+    "id": "53",
+    "name": "Titanbets",
+    "priority": 0
+   },
+   "details": "K. Green -189",
+   "awayAthleteOdds": {
+    "favorite": false,
+    "underdog": true,
+    "moneyLine": 145,
+    "open": {
+     "favorite": false,
+     "moneyLine": {
+      "value": 2.45,
+      "displayValue": "29/20",
+      "alternateDisplayValue": "+145",
+      "decimal": 2.45,
+      "fraction": "29/20",
+      "american": "+145"
+     }
+    },
+    "current": {
+     "moneyLine": {
+      "value": 2.45,
+      "displayValue": "29/20",
+      "alternateDisplayValue": "+145",
+      "decimal": 2.45,
+      "fraction": "29/20",
+      "american": "+145"
+     }
+    },
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/2335718?lang=en&region=us"
+    }
+   },
+   "homeAthleteOdds": {
+    "favorite": true,
+    "underdog": false,
+    "moneyLine": -189,
+    "open": {
+     "favorite": false,
+     "moneyLine": {
+      "value": 1.53,
+      "displayValue": "100/189",
+      "alternateDisplayValue": "-189",
+      "decimal": 1.53,
+      "fraction": "100/189",
+      "american": "-189"
+     }
+    },
+    "current": {
+     "moneyLine": {
+      "value": 1.53,
+      "displayValue": "100/189",
+      "alternateDisplayValue": "-189",
+      "decimal": 1.53,
+      "fraction": "100/189",
+      "american": "-189"
+     }
+    },
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/2502364?lang=en&region=us"
+    }
+   },
+   "moneylineWinner": false,
+   "spreadWinner": false
+  },
+  {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600041053/competitions/401632019/odds/36?lang=en&region=us",
+   "provider": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/providers/36?lang=en&region=us",
+    "id": "36",
+    "name": "Unibet",
+    "priority": 0
+   },
+   "details": "K. Green -205",
+   "awayAthleteOdds": {
+    "favorite": false,
+    "underdog": true,
+    "moneyLine": 163,
+    "open": {
+     "favorite": false,
+     "moneyLine": {
+      "value": 2.63,
+      "displayValue": "163/100",
+      "alternateDisplayValue": "+163",
+      "decimal": 2.63,
+      "fraction": "163/100",
+      "american": "+163"
+     }
+    },
+    "current": {
+     "moneyLine": {
+      "value": 2.63,
+      "displayValue": "163/100",
+      "alternateDisplayValue": "+163",
+      "decimal": 2.63,
+      "fraction": "163/100",
+      "american": "+163"
+     }
+    },
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/2335718?lang=en&region=us"
+    }
+   },
+   "homeAthleteOdds": {
+    "favorite": true,
+    "underdog": false,
+    "moneyLine": -205,
+    "open": {
+     "favorite": false,
+     "moneyLine": {
+      "value": 1.49,
+      "displayValue": "20/41",
+      "alternateDisplayValue": "-205",
+      "decimal": 1.49,
+      "fraction": "20/41",
+      "american": "-205"
+     }
+    },
+    "current": {
+     "moneyLine": {
+      "value": 1.49,
+      "displayValue": "20/41",
+      "alternateDisplayValue": "-205",
+      "decimal": 1.49,
+      "fraction": "20/41",
+      "american": "-205"
+     }
+    },
+    "athlete": {
+     "$ref": "http://sports.core.api.espn.com/v2/sports/mma/athletes/2502364?lang=en&region=us"
+    }
+   },
+   "moneylineWinner": false,
+   "spreadWinner": false
+  }
+ ]
+}

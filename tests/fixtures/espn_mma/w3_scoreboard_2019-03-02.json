@@ -1,0 +1,2399 @@
+{
+ "leagues": [
+  {
+   "id": "3321",
+   "uid": "s:3301~l:3321",
+   "name": "Ultimate Fighting Championship",
+   "displayName": "UFC",
+   "abbreviation": "UFC",
+   "shortName": "UFC",
+   "slug": "ufc",
+   "season": {
+    "year": 2019,
+    "startDate": "2019-01-01T08:00Z",
+    "endDate": "2019-12-31T08:00Z",
+    "displayName": "2019",
+    "type": {
+     "id": "2",
+     "type": 2,
+     "name": "Regular Season",
+     "abbreviation": "reg"
+    }
+   },
+   "logos": [
+    {
+     "href": "https://a.espncdn.com/i/teamlogos/leagues/500/ufc.png",
+     "width": 500,
+     "height": 500,
+     "alt": "",
+     "rel": [
+      "full",
+      "default"
+     ],
+     "lastUpdated": "2018-12-21T18:30Z"
+    },
+    {
+     "href": "https://a.espncdn.com/i/teamlogos/leagues/500/ufc.png",
+     "width": 500,
+     "height": 500,
+     "alt": "",
+     "rel": [
+      "full",
+      "dark"
+     ],
+     "lastUpdated": "2018-12-21T18:30Z"
+    }
+   ],
+   "calendarType": "list",
+   "calendarIsWhitelist": true,
+   "calendarStartDate": "2019-01-01T08:00Z",
+   "calendarEndDate": "2019-12-31T08:00Z",
+   "calendar": [
+    {
+     "label": "UFC Fight Night: Cejudo vs. Dillashaw",
+     "startDate": "2019-01-20T02:00Z",
+     "endDate": "2019-01-20T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401098393?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Assuncao vs. Moraes 2",
+     "startDate": "2019-02-03T01:00Z",
+     "endDate": "2019-02-03T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401098395?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 234: Adesanya vs. Silva",
+     "startDate": "2019-02-10T03:00Z",
+     "endDate": "2019-02-10T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401098396?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Ngannou vs. Velasquez",
+     "startDate": "2019-02-18T01:30Z",
+     "endDate": "2019-02-18T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401098397?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Blachowicz vs. Santos",
+     "startDate": "2019-02-23T19:00Z",
+     "endDate": "2019-02-24T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401098398?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 235: Jones vs. Smith",
+     "startDate": "2019-03-03T02:30Z",
+     "endDate": "2019-03-03T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401098399?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Lewis vs. Dos Santos",
+     "startDate": "2019-03-10T01:00Z",
+     "endDate": "2019-03-10T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401098400?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Till vs. Masvidal",
+     "startDate": "2019-03-16T20:00Z",
+     "endDate": "2019-03-17T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401098294?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Thompson vs. Pettis",
+     "startDate": "2019-03-24T00:00Z",
+     "endDate": "2019-03-24T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401098401?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Barboza vs. Gaethje",
+     "startDate": "2019-03-30T22:30Z",
+     "endDate": "2019-03-31T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401098402?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 236: Holloway vs. Poirier 2",
+     "startDate": "2019-04-14T01:15Z",
+     "endDate": "2019-04-14T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401107793?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Overeem vs. Oleinik",
+     "startDate": "2019-04-20T17:00Z",
+     "endDate": "2019-04-21T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401107794?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Jacare vs. Hermansson",
+     "startDate": "2019-04-28T00:30Z",
+     "endDate": "2019-04-28T00:30Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401107795?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Iaquinta vs. Cowboy",
+     "startDate": "2019-05-05T00:00Z",
+     "endDate": "2019-05-05T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401107796?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 237: Namajunas vs. Andrade",
+     "startDate": "2019-05-12T01:30Z",
+     "endDate": "2019-05-12T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401107797?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Dos Anjos vs. Lee",
+     "startDate": "2019-05-19T00:00Z",
+     "endDate": "2019-05-19T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401107798?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Gustafsson vs. Smith",
+     "startDate": "2019-06-01T17:00Z",
+     "endDate": "2019-06-02T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401107799?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 238: Cejudo vs. Moraes",
+     "startDate": "2019-06-09T01:15Z",
+     "endDate": "2019-06-09T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401107800?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 3, Week 1",
+     "startDate": "2019-06-19T03:00Z",
+     "endDate": "2019-06-19T03:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401128917?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Moicano vs. The Korean Zombie",
+     "startDate": "2019-06-22T23:00Z",
+     "endDate": "2019-06-23T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401107801?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 3, Week 2",
+     "startDate": "2019-06-26T03:00Z",
+     "endDate": "2019-06-26T03:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401128919?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Ngannou vs. Dos Santos",
+     "startDate": "2019-06-30T01:00Z",
+     "endDate": "2019-06-30T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401107802?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 239: Jones vs. Santos",
+     "startDate": "2019-07-07T01:15Z",
+     "endDate": "2019-07-07T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401122133?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 3, Week 3",
+     "startDate": "2019-07-10T03:00Z",
+     "endDate": "2019-07-10T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401128920?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: De Randamie vs. Ladd",
+     "startDate": "2019-07-14T00:00Z",
+     "endDate": "2019-07-14T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401129395?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 3, Week 4",
+     "startDate": "2019-07-17T03:00Z",
+     "endDate": "2019-07-17T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401128921?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Dos Anjos vs. Edwards",
+     "startDate": "2019-07-21T01:00Z",
+     "endDate": "2019-07-21T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401131735?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 3, Week 5",
+     "startDate": "2019-07-24T03:00Z",
+     "endDate": "2019-07-24T03:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401128922?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 240: Holloway vs. Edgar",
+     "startDate": "2019-07-28T02:00Z",
+     "endDate": "2019-07-28T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401131019?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 3, Week 6",
+     "startDate": "2019-07-31T03:00Z",
+     "endDate": "2019-07-31T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401128923?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Covington vs. Lawler",
+     "startDate": "2019-08-03T19:00Z",
+     "endDate": "2019-08-04T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401131736?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 3, Week 7",
+     "startDate": "2019-08-07T03:00Z",
+     "endDate": "2019-08-07T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401128924?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Shevchenko vs. Carmouche 2",
+     "startDate": "2019-08-11T00:00Z",
+     "endDate": "2019-08-11T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401131737?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 3, Week 8",
+     "startDate": "2019-08-14T03:00Z",
+     "endDate": "2019-08-14T03:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401128925?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 241: Cormier vs. Miocic 2",
+     "startDate": "2019-08-18T01:30Z",
+     "endDate": "2019-08-18T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401130480?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 3, Week 9",
+     "startDate": "2019-08-21T03:00Z",
+     "endDate": "2019-08-21T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401128926?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 3, Week 10",
+     "startDate": "2019-08-28T03:00Z",
+     "endDate": "2019-08-28T03:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401128918?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Andrade vs. Zhang",
+     "startDate": "2019-08-31T10:00Z",
+     "endDate": "2019-09-01T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401131738?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 242: Khabib vs. Poirier",
+     "startDate": "2019-09-07T17:15Z",
+     "endDate": "2019-09-08T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401129626?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Cowboy vs. Gaethje",
+     "startDate": "2019-09-15T00:00Z",
+     "endDate": "2019-09-15T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401131739?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Rodriguez vs. Stephens",
+     "startDate": "2019-09-22T00:00Z",
+     "endDate": "2019-09-22T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401131740?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Hermansson vs. Cannonier",
+     "startDate": "2019-09-28T18:00Z",
+     "endDate": "2019-09-29T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401131741?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 243: Whittaker vs. Adesanya",
+     "startDate": "2019-10-06T01:45Z",
+     "endDate": "2019-10-06T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401131742?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Joanna vs. Waterson",
+     "startDate": "2019-10-13T00:00Z",
+     "endDate": "2019-10-13T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401131743?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Reyes vs. Weidman",
+     "startDate": "2019-10-19T01:00Z",
+     "endDate": "2019-10-19T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401131744?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Maia vs. Askren",
+     "startDate": "2019-10-26T12:30Z",
+     "endDate": "2019-10-27T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401131745?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 244: Masvidal vs. Diaz",
+     "startDate": "2019-11-03T01:30Z",
+     "endDate": "2019-11-03T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401131746?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Zabit vs. Kattar",
+     "startDate": "2019-11-09T19:00Z",
+     "endDate": "2019-11-10T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401131748?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Blachowicz vs. Jacare",
+     "startDate": "2019-11-17T01:00Z",
+     "endDate": "2019-11-17T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401131747?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Overeem vs. Rozenstruik",
+     "startDate": "2019-12-08T01:45Z",
+     "endDate": "2019-12-08T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401131749?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 245: Usman vs. Covington",
+     "startDate": "2019-12-15T02:15Z",
+     "endDate": "2019-12-15T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401131750?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Edgar vs. The Korean Zombie",
+     "startDate": "2019-12-21T10:00Z",
+     "endDate": "2019-12-22T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401131751?lang=en&region=us"
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "401098399",
+   "uid": "s:3301~l:3321~e:401098399",
+   "date": "2019-03-02T23:30Z",
+   "name": "UFC 235: Jones vs. Smith",
+   "shortName": "UFC 235",
+   "season": {
+    "year": 2019,
+    "type": 2,
+    "slug": "regular-season"
+   },
+   "competitions": [
+    {
+     "id": "260994",
+     "uid": "s:3301~l:3321~e:401098399~c:260994",
+     "date": "2019-03-02T23:30Z",
+     "endDate": "2019-03-02T23:30Z",
+     "type": {
+      "id": "1006",
+      "abbreviation": "W Strawweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "5060",
+      "fullName": "T-Mobile Arena",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "address1": "3780 South Las Vegas Boulevard",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "3115958",
+       "uid": "s:3301~a:3115958",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Hannah Cifers",
+        "displayName": "Hannah Cifers",
+        "shortName": "H. Cifers",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 86.0,
+         "displayValue": "86.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "10-7-0"
+        }
+       ]
+      },
+      {
+       "id": "4227055",
+       "uid": "s:3301~a:4227055",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Polyana Viana",
+        "displayName": "Polyana Viana",
+        "shortName": "P. Viana",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/bra.png",
+         "alt": "Brazil",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 85.0,
+         "displayValue": "85.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "13-9-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "UFCFP"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2019-03-02T23:30Z",
+     "broadcast": "UFCFP",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "4",
+        "shortName": "Streaming"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "UFCFP"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "259494",
+     "uid": "s:3301~l:3321~e:401098399~c:259494",
+     "date": "2019-03-02T23:30Z",
+     "endDate": "2019-03-02T23:30Z",
+     "type": {
+      "id": "1003",
+      "abbreviation": "W Bantamweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "5060",
+      "fullName": "T-Mobile Arena",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "address1": "3780 South Las Vegas Boulevard",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "4082113",
+       "uid": "s:3301~a:4082113",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Gina Mazany",
+        "displayName": "Gina Mazany",
+        "shortName": "G. Mazany",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "8-6-0"
+        }
+       ]
+      },
+      {
+       "id": "4334306",
+       "uid": "s:3301~a:4334306",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Macy Chiasson",
+        "displayName": "Macy Chiasson",
+        "shortName": "M. Chiasson",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "11-6-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 109.0,
+      "displayClock": "1:49",
+      "period": 1,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "UFCFP"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2019-03-02T23:30Z",
+     "broadcast": "UFCFP",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "4",
+        "shortName": "Streaming"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "UFCFP"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "260675",
+     "uid": "s:3301~l:3321~e:401098399~c:260675",
+     "date": "2019-03-02T23:30Z",
+     "endDate": "2019-03-02T23:30Z",
+     "type": {
+      "id": "972",
+      "abbreviation": "Middleweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "5060",
+      "fullName": "T-Mobile Arena",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "address1": "3780 South Las Vegas Boulevard",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "3020777",
+       "uid": "s:3301~a:3020777",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Charles Byrd",
+        "displayName": "Charles Byrd",
+        "shortName": "C. Byrd",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "10-7-0"
+        }
+       ]
+      },
+      {
+       "id": "4354318",
+       "uid": "s:3301~a:4354318",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Edmen Shahbazyan",
+        "displayName": "Edmen Shahbazyan",
+        "shortName": "E. Shahbazyan",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "17-6-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 38.0,
+      "displayClock": "0:38",
+      "period": 1,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "UFCFP"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2019-03-02T23:30Z",
+     "broadcast": "UFCFP",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "4",
+        "shortName": "Streaming"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "UFCFP"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "258775",
+     "uid": "s:3301~l:3321~e:401098399~c:258775",
+     "date": "2019-03-03T01:00Z",
+     "endDate": "2019-03-03T01:00Z",
+     "type": {
+      "id": "969",
+      "abbreviation": "Welterweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "5060",
+      "fullName": "T-Mobile Arena",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "address1": "3780 South Las Vegas Boulevard",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2335671",
+       "uid": "s:3301~a:2335671",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Diego Sanchez",
+        "displayName": "Diego Sanchez",
+        "shortName": "D. Sanchez",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "31-14-0"
+        }
+       ]
+      },
+      {
+       "id": "3960470",
+       "uid": "s:3301~a:3960470",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Mickey Gall",
+        "displayName": "Mickey Gall",
+        "shortName": "M. Gall",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "7-7-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 253.0,
+      "displayClock": "4:13",
+      "period": 2,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "ESPN"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2019-03-03T01:00Z",
+     "broadcast": "ESPN",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "1",
+        "shortName": "TV"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "ESPN",
+        "logo": "https://a.espncdn.com/guid/335fd2d2-97b9-336b-81ee-573eb6bdcffc/logos/default.png",
+        "darkLogo": ""
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "260616",
+     "uid": "s:3301~l:3321~e:401098399~c:260616",
+     "date": "2019-03-03T01:00Z",
+     "endDate": "2019-03-03T01:00Z",
+     "type": {
+      "id": "970",
+      "abbreviation": "Bantamweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "5060",
+      "fullName": "T-Mobile Arena",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "address1": "3780 South Las Vegas Boulevard",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "3128373",
+       "uid": "s:3301~a:3128373",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Alejandro Perez",
+        "displayName": "Alejandro Perez",
+        "shortName": "A. Perez",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/mex.png",
+         "alt": "Mexico",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 83.0,
+         "displayValue": "83.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          },
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "23-9-1"
+        }
+       ]
+      },
+      {
+       "id": "4046059",
+       "uid": "s:3301~a:4046059",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Cody Stamann",
+        "displayName": "Cody Stamann",
+        "shortName": "C. Stamann",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 88.0,
+         "displayValue": "88.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          },
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "21-8-1"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "ESPN"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2019-03-03T01:00Z",
+     "broadcast": "ESPN",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "1",
+        "shortName": "TV"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "ESPN",
+        "logo": "https://a.espncdn.com/guid/335fd2d2-97b9-336b-81ee-573eb6bdcffc/logos/default.png",
+        "darkLogo": ""
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "259637",
+     "uid": "s:3301~l:3321~e:401098399~c:259637",
+     "date": "2019-03-03T01:00Z",
+     "endDate": "2019-03-03T01:00Z",
+     "type": {
+      "id": "990",
+      "abbreviation": "Light Heavyweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "5060",
+      "fullName": "T-Mobile Arena",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "address1": "3780 South Las Vegas Boulevard",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2504818",
+       "uid": "s:3301~a:2504818",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Misha Cirkunov",
+        "displayName": "Misha Cirkunov",
+        "shortName": "M. Cirkunov",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/can.png",
+         "alt": "Canada",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "15-9-0"
+        }
+       ]
+      },
+      {
+       "id": "3146944",
+       "uid": "s:3301~a:3146944",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Johnny Walker",
+        "displayName": "Johnny Walker",
+        "shortName": "J. Walker",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/bra.png",
+         "alt": "Brazil",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "22-10-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 36.0,
+      "displayClock": "0:36",
+      "period": 1,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "ESPN"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2019-03-03T01:00Z",
+     "broadcast": "ESPN",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "1",
+        "shortName": "TV"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "ESPN",
+        "logo": "https://a.espncdn.com/guid/335fd2d2-97b9-336b-81ee-573eb6bdcffc/logos/default.png",
+        "darkLogo": ""
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "258934",
+     "uid": "s:3301~l:3321~e:401098399~c:258934",
+     "date": "2019-03-03T01:00Z",
+     "endDate": "2019-03-03T01:00Z",
+     "type": {
+      "id": "999",
+      "abbreviation": "Featherweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "5060",
+      "fullName": "T-Mobile Arena",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "address1": "3780 South Las Vegas Boulevard",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2335673",
+       "uid": "s:3301~a:2335673",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Jeremy Stephens",
+        "displayName": "Jeremy Stephens",
+        "shortName": "J. Stephens",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 84.0,
+         "displayValue": "84.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "29-23-0"
+        }
+       ]
+      },
+      {
+       "id": "4241041",
+       "uid": "s:3301~a:4241041",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Zabit Magomedsharipov",
+        "displayName": "Zabit Magomedsharipov",
+        "shortName": "Z. Magomedsharipov",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/rus.png",
+         "alt": "Russia",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 87.0,
+         "displayValue": "87.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "18-1-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "ESPN"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2019-03-03T01:00Z",
+     "broadcast": "ESPN",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "1",
+        "shortName": "TV"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "ESPN",
+        "logo": "https://a.espncdn.com/guid/335fd2d2-97b9-336b-81ee-573eb6bdcffc/logos/default.png",
+        "darkLogo": ""
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "259774",
+     "uid": "s:3301~l:3321~e:401098399~c:259774",
+     "date": "2019-03-03T03:00Z",
+     "endDate": "2019-03-03T03:00Z",
+     "type": {
+      "id": "970",
+      "abbreviation": "Bantamweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "5060",
+      "fullName": "T-Mobile Arena",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "address1": "3780 South Las Vegas Boulevard",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "3045734",
+       "uid": "s:3301~a:3045734",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Pedro Munhoz",
+        "displayName": "Pedro Munhoz",
+        "shortName": "P. Munhoz",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/bra.png",
+         "alt": "Brazil",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "20-10-0"
+        }
+       ]
+      },
+      {
+       "id": "3163637",
+       "uid": "s:3301~a:3163637",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Cody Garbrandt",
+        "displayName": "Cody Garbrandt",
+        "shortName": "C. Garbrandt",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "15-8-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 292.0,
+      "displayClock": "4:52",
+      "period": 1,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": true
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "PPV"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2019-03-03T03:00Z",
+     "broadcast": "PPV",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "2",
+        "shortName": "PPV"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "PPV"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "258134",
+     "uid": "s:3301~l:3321~e:401098399~c:258134",
+     "date": "2019-03-03T03:00Z",
+     "endDate": "2019-03-03T03:00Z",
+     "type": {
+      "id": "1006",
+      "abbreviation": "W Strawweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "5060",
+      "fullName": "T-Mobile Arena",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "address1": "3780 South Las Vegas Boulevard",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "3032972",
+       "uid": "s:3301~a:3032972",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Tecia Pennington",
+        "displayName": "Tecia Pennington",
+        "shortName": "T. Pennington",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 82.0,
+         "displayValue": "82.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 0
+          },
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 0
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "15-8-0"
+        }
+       ]
+      },
+      {
+       "id": "4350762",
+       "uid": "s:3301~a:4350762",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Zhang Weili",
+        "displayName": "Zhang Weili",
+        "shortName": "Z. Weili",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/chn.png",
+         "alt": "China",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 89.0,
+         "displayValue": "89.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 0
+          },
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 0
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "26-4-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "PPV"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2019-03-03T03:00Z",
+     "broadcast": "PPV",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "2",
+        "shortName": "PPV"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "PPV"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "259098",
+     "uid": "s:3301~l:3321~e:401098399~c:259098",
+     "date": "2019-03-03T03:00Z",
+     "endDate": "2019-03-03T03:00Z",
+     "type": {
+      "id": "969",
+      "abbreviation": "Welterweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "5060",
+      "fullName": "T-Mobile Arena",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "address1": "3780 South Las Vegas Boulevard",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2431258",
+       "uid": "s:3301~a:2431258",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Robbie Lawler",
+        "displayName": "Robbie Lawler",
+        "shortName": "R. Lawler",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "30-16-0"
+        }
+       ]
+      },
+      {
+       "id": "2500597",
+       "uid": "s:3301~a:2500597",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Ben Askren",
+        "displayName": "Ben Askren",
+        "shortName": "B. Askren",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "19-2-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 200.0,
+      "displayClock": "3:20",
+      "period": 1,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "PPV"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2019-03-03T03:00Z",
+     "broadcast": "PPV",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "2",
+        "shortName": "PPV"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "PPV"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "259854",
+     "uid": "s:3301~l:3321~e:401098399~c:259854",
+     "date": "2019-03-03T03:00Z",
+     "endDate": "2019-03-03T03:00Z",
+     "type": {
+      "id": "969",
+      "abbreviation": "Welterweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "5060",
+      "fullName": "T-Mobile Arena",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "address1": "3780 South Las Vegas Boulevard",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2501926",
+       "uid": "s:3301~a:2501926",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Tyron Woodley",
+        "displayName": "Tyron Woodley",
+        "shortName": "T. Woodley",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 133.0,
+         "displayValue": "133.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 45.0,
+           "displayValue": "45",
+           "period": 0
+          },
+          {
+           "value": 44.0,
+           "displayValue": "44",
+           "period": 0
+          },
+          {
+           "value": 44.0,
+           "displayValue": "44",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "19-7-1"
+        }
+       ]
+      },
+      {
+       "id": "3088812",
+       "uid": "s:3301~a:3088812",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Kamaru Usman",
+        "displayName": "Kamaru Usman",
+        "shortName": "K. Usman",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/ngr.png",
+         "alt": "Nigeria",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 150.0,
+         "displayValue": "150.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 50.0,
+           "displayValue": "50",
+           "period": 0
+          },
+          {
+           "value": 50.0,
+           "displayValue": "50",
+           "period": 0
+          },
+          {
+           "value": 50.0,
+           "displayValue": "50",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "21-5-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 5,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "PPV"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 5
+      }
+     },
+     "startDate": "2019-03-03T03:00Z",
+     "broadcast": "PPV",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "2",
+        "shortName": "PPV"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "PPV"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "260896",
+     "uid": "s:3301~l:3321~e:401098399~c:260896",
+     "date": "2019-03-03T03:00Z",
+     "endDate": "2019-03-03T03:00Z",
+     "type": {
+      "id": "990",
+      "abbreviation": "Light Heavyweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "5060",
+      "fullName": "T-Mobile Arena",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "address1": "3780 South Las Vegas Boulevard",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2335639",
+       "uid": "s:3301~a:2335639",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Jon Jones",
+        "displayName": "Jon Jones",
+        "shortName": "J. Jones",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 144.0,
+         "displayValue": "144.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 48.0,
+           "displayValue": "48",
+           "period": 0
+          },
+          {
+           "value": 48.0,
+           "displayValue": "48",
+           "period": 0
+          },
+          {
+           "value": 48.0,
+           "displayValue": "48",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "28-1-0"
+        }
+       ]
+      },
+      {
+       "id": "2512976",
+       "uid": "s:3301~a:2512976",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Anthony Smith",
+        "displayName": "Anthony Smith",
+        "shortName": "A. Smith",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 132.0,
+         "displayValue": "132.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 44.0,
+           "displayValue": "44",
+           "period": 0
+          },
+          {
+           "value": 44.0,
+           "displayValue": "44",
+           "period": 0
+          },
+          {
+           "value": 44.0,
+           "displayValue": "44",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "38-22-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 5,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "PPV"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 5
+      }
+     },
+     "startDate": "2019-03-03T03:00Z",
+     "broadcast": "PPV",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "2",
+        "shortName": "PPV"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "PPV"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    }
+   ],
+   "links": [
+    {
+     "language": "en-US",
+     "rel": [
+      "summary",
+      "desktop",
+      "event"
+     ],
+     "href": "https://www.espn.com/mma/fightcenter/_/id/401098399/league/ufc",
+     "text": "Gamecast",
+     "shortText": "Gamecast",
+     "isExternal": false,
+     "isPremium": false
+    }
+   ],
+   "venues": [
+    {
+     "id": "5060",
+     "fullName": "T-Mobile Arena",
+     "address": {
+      "city": "Las Vegas",
+      "state": "NV",
+      "address1": "3780 South Las Vegas Boulevard",
+      "country": "USA"
+     }
+    }
+   ],
+   "status": {
+    "type": {
+     "id": "3",
+     "name": "STATUS_FINAL",
+     "state": "post",
+     "completed": true,
+     "description": "Final",
+     "detail": "Final",
+     "shortDetail": "Final"
+    }
+   }
+  }
+ ],
+ "provider": {
+  "id": "100",
+  "name": "Draft Kings",
+  "displayName": "Draft Kings",
+  "priority": 1
+ }
+}

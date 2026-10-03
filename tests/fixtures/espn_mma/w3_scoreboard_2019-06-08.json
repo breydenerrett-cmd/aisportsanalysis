@@ -1,0 +1,2653 @@
+{
+ "leagues": [
+  {
+   "id": "3321",
+   "uid": "s:3301~l:3321",
+   "name": "Ultimate Fighting Championship",
+   "displayName": "UFC",
+   "abbreviation": "UFC",
+   "shortName": "UFC",
+   "slug": "ufc",
+   "season": {
+    "year": 2019,
+    "startDate": "2019-01-01T08:00Z",
+    "endDate": "2019-12-31T08:00Z",
+    "displayName": "2019",
+    "type": {
+     "id": "2",
+     "type": 2,
+     "name": "Regular Season",
+     "abbreviation": "reg"
+    }
+   },
+   "logos": [
+    {
+     "href": "https://a.espncdn.com/i/teamlogos/leagues/500/ufc.png",
+     "width": 500,
+     "height": 500,
+     "alt": "",
+     "rel": [
+      "full",
+      "default"
+     ],
+     "lastUpdated": "2018-12-21T18:30Z"
+    },
+    {
+     "href": "https://a.espncdn.com/i/teamlogos/leagues/500/ufc.png",
+     "width": 500,
+     "height": 500,
+     "alt": "",
+     "rel": [
+      "full",
+      "dark"
+     ],
+     "lastUpdated": "2018-12-21T18:30Z"
+    }
+   ],
+   "calendarType": "list",
+   "calendarIsWhitelist": true,
+   "calendarStartDate": "2019-01-01T08:00Z",
+   "calendarEndDate": "2019-12-31T08:00Z",
+   "calendar": [
+    {
+     "label": "UFC Fight Night: Cejudo vs. Dillashaw",
+     "startDate": "2019-01-20T02:00Z",
+     "endDate": "2019-01-20T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401098393?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Assuncao vs. Moraes 2",
+     "startDate": "2019-02-03T01:00Z",
+     "endDate": "2019-02-03T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401098395?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 234: Adesanya vs. Silva",
+     "startDate": "2019-02-10T03:00Z",
+     "endDate": "2019-02-10T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401098396?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Ngannou vs. Velasquez",
+     "startDate": "2019-02-18T01:30Z",
+     "endDate": "2019-02-18T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401098397?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Blachowicz vs. Santos",
+     "startDate": "2019-02-23T19:00Z",
+     "endDate": "2019-02-24T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401098398?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 235: Jones vs. Smith",
+     "startDate": "2019-03-03T02:30Z",
+     "endDate": "2019-03-03T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401098399?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Lewis vs. Dos Santos",
+     "startDate": "2019-03-10T01:00Z",
+     "endDate": "2019-03-10T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401098400?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Till vs. Masvidal",
+     "startDate": "2019-03-16T20:00Z",
+     "endDate": "2019-03-17T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401098294?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Thompson vs. Pettis",
+     "startDate": "2019-03-24T00:00Z",
+     "endDate": "2019-03-24T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401098401?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Barboza vs. Gaethje",
+     "startDate": "2019-03-30T22:30Z",
+     "endDate": "2019-03-31T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401098402?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 236: Holloway vs. Poirier 2",
+     "startDate": "2019-04-14T01:15Z",
+     "endDate": "2019-04-14T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401107793?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Overeem vs. Oleinik",
+     "startDate": "2019-04-20T17:00Z",
+     "endDate": "2019-04-21T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401107794?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Jacare vs. Hermansson",
+     "startDate": "2019-04-28T00:30Z",
+     "endDate": "2019-04-28T00:30Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401107795?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Iaquinta vs. Cowboy",
+     "startDate": "2019-05-05T00:00Z",
+     "endDate": "2019-05-05T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401107796?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 237: Namajunas vs. Andrade",
+     "startDate": "2019-05-12T01:30Z",
+     "endDate": "2019-05-12T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401107797?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Dos Anjos vs. Lee",
+     "startDate": "2019-05-19T00:00Z",
+     "endDate": "2019-05-19T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401107798?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Gustafsson vs. Smith",
+     "startDate": "2019-06-01T17:00Z",
+     "endDate": "2019-06-02T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401107799?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 238: Cejudo vs. Moraes",
+     "startDate": "2019-06-09T01:15Z",
+     "endDate": "2019-06-09T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401107800?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 3, Week 1",
+     "startDate": "2019-06-19T03:00Z",
+     "endDate": "2019-06-19T03:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401128917?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Moicano vs. The Korean Zombie",
+     "startDate": "2019-06-22T23:00Z",
+     "endDate": "2019-06-23T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401107801?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 3, Week 2",
+     "startDate": "2019-06-26T03:00Z",
+     "endDate": "2019-06-26T03:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401128919?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Ngannou vs. Dos Santos",
+     "startDate": "2019-06-30T01:00Z",
+     "endDate": "2019-06-30T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401107802?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 239: Jones vs. Santos",
+     "startDate": "2019-07-07T01:15Z",
+     "endDate": "2019-07-07T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401122133?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 3, Week 3",
+     "startDate": "2019-07-10T03:00Z",
+     "endDate": "2019-07-10T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401128920?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: De Randamie vs. Ladd",
+     "startDate": "2019-07-14T00:00Z",
+     "endDate": "2019-07-14T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401129395?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 3, Week 4",
+     "startDate": "2019-07-17T03:00Z",
+     "endDate": "2019-07-17T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401128921?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Dos Anjos vs. Edwards",
+     "startDate": "2019-07-21T01:00Z",
+     "endDate": "2019-07-21T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401131735?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 3, Week 5",
+     "startDate": "2019-07-24T03:00Z",
+     "endDate": "2019-07-24T03:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401128922?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 240: Holloway vs. Edgar",
+     "startDate": "2019-07-28T02:00Z",
+     "endDate": "2019-07-28T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401131019?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 3, Week 6",
+     "startDate": "2019-07-31T03:00Z",
+     "endDate": "2019-07-31T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401128923?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Covington vs. Lawler",
+     "startDate": "2019-08-03T19:00Z",
+     "endDate": "2019-08-04T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401131736?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 3, Week 7",
+     "startDate": "2019-08-07T03:00Z",
+     "endDate": "2019-08-07T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401128924?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Shevchenko vs. Carmouche 2",
+     "startDate": "2019-08-11T00:00Z",
+     "endDate": "2019-08-11T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401131737?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 3, Week 8",
+     "startDate": "2019-08-14T03:00Z",
+     "endDate": "2019-08-14T03:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401128925?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 241: Cormier vs. Miocic 2",
+     "startDate": "2019-08-18T01:30Z",
+     "endDate": "2019-08-18T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401130480?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 3, Week 9",
+     "startDate": "2019-08-21T03:00Z",
+     "endDate": "2019-08-21T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401128926?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 3, Week 10",
+     "startDate": "2019-08-28T03:00Z",
+     "endDate": "2019-08-28T03:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401128918?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Andrade vs. Zhang",
+     "startDate": "2019-08-31T10:00Z",
+     "endDate": "2019-09-01T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401131738?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 242: Khabib vs. Poirier",
+     "startDate": "2019-09-07T17:15Z",
+     "endDate": "2019-09-08T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401129626?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Cowboy vs. Gaethje",
+     "startDate": "2019-09-15T00:00Z",
+     "endDate": "2019-09-15T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401131739?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Rodriguez vs. Stephens",
+     "startDate": "2019-09-22T00:00Z",
+     "endDate": "2019-09-22T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401131740?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Hermansson vs. Cannonier",
+     "startDate": "2019-09-28T18:00Z",
+     "endDate": "2019-09-29T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401131741?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 243: Whittaker vs. Adesanya",
+     "startDate": "2019-10-06T01:45Z",
+     "endDate": "2019-10-06T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401131742?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Joanna vs. Waterson",
+     "startDate": "2019-10-13T00:00Z",
+     "endDate": "2019-10-13T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401131743?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Reyes vs. Weidman",
+     "startDate": "2019-10-19T01:00Z",
+     "endDate": "2019-10-19T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401131744?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Maia vs. Askren",
+     "startDate": "2019-10-26T12:30Z",
+     "endDate": "2019-10-27T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401131745?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 244: Masvidal vs. Diaz",
+     "startDate": "2019-11-03T01:30Z",
+     "endDate": "2019-11-03T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401131746?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Zabit vs. Kattar",
+     "startDate": "2019-11-09T19:00Z",
+     "endDate": "2019-11-10T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401131748?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Blachowicz vs. Jacare",
+     "startDate": "2019-11-17T01:00Z",
+     "endDate": "2019-11-17T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401131747?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Overeem vs. Rozenstruik",
+     "startDate": "2019-12-08T01:45Z",
+     "endDate": "2019-12-08T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401131749?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 245: Usman vs. Covington",
+     "startDate": "2019-12-15T02:15Z",
+     "endDate": "2019-12-15T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401131750?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Edgar vs. The Korean Zombie",
+     "startDate": "2019-12-21T10:00Z",
+     "endDate": "2019-12-22T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/401131751?lang=en&region=us"
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "401107800",
+   "uid": "s:3301~l:3321~e:401107800",
+   "date": "2019-06-08T22:15Z",
+   "name": "UFC 238: Cejudo vs. Moraes",
+   "shortName": "UFC 238",
+   "season": {
+    "year": 2019,
+    "type": 2,
+    "slug": "regular-season"
+   },
+   "competitions": [
+    {
+     "id": "262894",
+     "uid": "s:3301~l:3321~e:401107800~c:262894",
+     "date": "2019-06-08T22:15Z",
+     "endDate": "2019-06-08T22:15Z",
+     "type": {
+      "id": "1007",
+      "abbreviation": "W Flyweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "1847",
+      "fullName": "United Center",
+      "address": {
+       "city": "Chicago",
+       "state": "IL",
+       "address1": "UNITED CENTER,  1901 W. MADISON ST.",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "3028064",
+       "uid": "s:3301~a:3028064",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Joanne Wood",
+        "displayName": "Joanne Wood",
+        "shortName": "J. Wood",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/sct.png",
+         "alt": "Scotland",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 83.0,
+         "displayValue": "83.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 0
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "17-8-0"
+        }
+       ]
+      },
+      {
+       "id": "4026490",
+       "uid": "s:3301~a:4026490",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Katlyn Cerminara",
+        "displayName": "Katlyn Cerminara",
+        "shortName": "K. Cerminara",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 88.0,
+         "displayValue": "88.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 0
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "18-6-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "ESPN+"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2019-06-08T22:15Z",
+     "broadcast": "ESPN+",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "4",
+        "shortName": "Streaming"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "ESPN+",
+        "logo": "https://a.espncdn.com/guid/322a7e47-3cdb-3b5c-ab1b-678e1f2c27e5/logos/default.png",
+        "darkLogo": "https://a.espncdn.com/guid/322a7e47-3cdb-3b5c-ab1b-678e1f2c27e5/logos/default-dark.png"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "266454",
+     "uid": "s:3301~l:3321~e:401107800~c:266454",
+     "date": "2019-06-08T22:15Z",
+     "endDate": "2019-06-08T22:15Z",
+     "type": {
+      "id": "970",
+      "abbreviation": "Bantamweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "1847",
+      "fullName": "United Center",
+      "address": {
+       "city": "Chicago",
+       "state": "IL",
+       "address1": "UNITED CENTER,  1901 W. MADISON ST.",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2504561",
+       "uid": "s:3301~a:2504561",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Eddie Wineland",
+        "displayName": "Eddie Wineland",
+        "shortName": "E. Wineland",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "24-16-1"
+        }
+       ]
+      },
+      {
+       "id": "4421979",
+       "uid": "s:3301~a:4421979",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Grigorii Popov",
+        "displayName": "Grigorii Popov",
+        "shortName": "G. Popov",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/rus.png",
+         "alt": "Russia",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "13-3-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 287.0,
+      "displayClock": "4:47",
+      "period": 2,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "ESPN+"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2019-06-08T22:15Z",
+     "broadcast": "ESPN+",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "4",
+        "shortName": "Streaming"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "ESPN+",
+        "logo": "https://a.espncdn.com/guid/322a7e47-3cdb-3b5c-ab1b-678e1f2c27e5/logos/default.png",
+        "darkLogo": "https://a.espncdn.com/guid/322a7e47-3cdb-3b5c-ab1b-678e1f2c27e5/logos/default-dark.png"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "265994",
+     "uid": "s:3301~l:3321~e:401107800~c:265994",
+     "date": "2019-06-08T22:15Z",
+     "endDate": "2019-06-08T22:15Z",
+     "type": {
+      "id": "972",
+      "abbreviation": "Middleweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "1847",
+      "fullName": "United Center",
+      "address": {
+       "city": "Chicago",
+       "state": "IL",
+       "address1": "UNITED CENTER,  1901 W. MADISON ST.",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "4064854",
+       "uid": "s:3301~a:4064854",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Darren Stewart",
+        "displayName": "Darren Stewart",
+        "shortName": "D. Stewart",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/eng.png",
+         "alt": "England",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 88.0,
+         "displayValue": "88.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          },
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 0
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "16-10-0"
+        }
+       ]
+      },
+      {
+       "id": "4249192",
+       "uid": "s:3301~a:4249192",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Bevon Lewis",
+        "displayName": "Bevon Lewis",
+        "shortName": "B. Lewis",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/jam.png",
+         "alt": "Jamaica",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 83.0,
+         "displayValue": "83.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          },
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 0
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "7-6-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "ESPN+"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2019-06-08T22:15Z",
+     "broadcast": "ESPN+",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "4",
+        "shortName": "Streaming"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "ESPN+",
+        "logo": "https://a.espncdn.com/guid/322a7e47-3cdb-3b5c-ab1b-678e1f2c27e5/logos/default.png",
+        "darkLogo": "https://a.espncdn.com/guid/322a7e47-3cdb-3b5c-ab1b-678e1f2c27e5/logos/default-dark.png"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "261475",
+     "uid": "s:3301~l:3321~e:401107800~c:261475",
+     "date": "2019-06-08T22:15Z",
+     "endDate": "2019-06-08T22:15Z",
+     "type": {
+      "id": "1006",
+      "abbreviation": "W Strawweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "1847",
+      "fullName": "United Center",
+      "address": {
+       "city": "Chicago",
+       "state": "IL",
+       "address1": "UNITED CENTER,  1901 W. MADISON ST.",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "3115931",
+       "uid": "s:3301~a:3115931",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Angela Hill",
+        "displayName": "Angela Hill",
+        "shortName": "A. Hill",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 84.0,
+         "displayValue": "84.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "19-16-0"
+        }
+       ]
+      },
+      {
+       "id": "4275487",
+       "uid": "s:3301~a:4275487",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Yan Xiaonan",
+        "displayName": "Yan Xiaonan",
+        "shortName": "Y. Xiaonan",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/chn.png",
+         "alt": "China",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 87.0,
+         "displayValue": "87.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "19-6-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "ESPN+"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2019-06-08T22:15Z",
+     "broadcast": "ESPN+",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "4",
+        "shortName": "Streaming"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "ESPN+",
+        "logo": "https://a.espncdn.com/guid/322a7e47-3cdb-3b5c-ab1b-678e1f2c27e5/logos/default.png",
+        "darkLogo": "https://a.espncdn.com/guid/322a7e47-3cdb-3b5c-ab1b-678e1f2c27e5/logos/default-dark.png"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "259621",
+     "uid": "s:3301~l:3321~e:401107800~c:259621",
+     "date": "2019-06-09T00:00Z",
+     "endDate": "2019-06-09T00:00Z",
+     "type": {
+      "id": "999",
+      "abbreviation": "Featherweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "1847",
+      "fullName": "United Center",
+      "address": {
+       "city": "Chicago",
+       "state": "IL",
+       "address1": "UNITED CENTER,  1901 W. MADISON ST.",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2504178",
+       "uid": "s:3301~a:2504178",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Ricardo Lamas",
+        "displayName": "Ricardo Lamas",
+        "shortName": "R. Lamas",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "20-8-0"
+        }
+       ]
+      },
+      {
+       "id": "3164030",
+       "uid": "s:3301~a:3164030",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Calvin Kattar",
+        "displayName": "Calvin Kattar",
+        "shortName": "C. Kattar",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "23-10-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 246.0,
+      "displayClock": "4:06",
+      "period": 1,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "ESPN"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2019-06-09T00:00Z",
+     "broadcast": "ESPN",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "1",
+        "shortName": "TV"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "ESPN",
+        "logo": "https://a.espncdn.com/guid/335fd2d2-97b9-336b-81ee-573eb6bdcffc/logos/default.png",
+        "darkLogo": ""
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "264306",
+     "uid": "s:3301~l:3321~e:401107800~c:264306",
+     "date": "2019-06-09T00:00Z",
+     "endDate": "2019-06-09T00:00Z",
+     "type": {
+      "id": "1006",
+      "abbreviation": "W Strawweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "1847",
+      "fullName": "United Center",
+      "address": {
+       "city": "Chicago",
+       "state": "IL",
+       "address1": "UNITED CENTER,  1901 W. MADISON ST.",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "3102702",
+       "uid": "s:3301~a:3102702",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Karolina Kowalkiewicz",
+        "displayName": "Karolina Kowalkiewicz",
+        "shortName": "K. Kowalkiewicz",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/pol.png",
+         "alt": "Poland",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 81.0,
+         "displayValue": "81.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 0
+          },
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 0
+          },
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "16-10-0"
+        }
+       ]
+      },
+      {
+       "id": "3136287",
+       "uid": "s:3301~a:3136287",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Alexa Grasso",
+        "displayName": "Alexa Grasso",
+        "shortName": "A. Grasso",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/mex.png",
+         "alt": "Mexico",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 90.0,
+         "displayValue": "90.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 0
+          },
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 0
+          },
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "18-5-1"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "ESPN"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2019-06-09T00:00Z",
+     "broadcast": "ESPN",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "1",
+        "shortName": "TV"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "ESPN",
+        "logo": "https://a.espncdn.com/guid/335fd2d2-97b9-336b-81ee-573eb6bdcffc/logos/default.png",
+        "darkLogo": ""
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "264500",
+     "uid": "s:3301~l:3321~e:401107800~c:264500",
+     "date": "2019-06-09T00:00Z",
+     "endDate": "2019-06-09T00:00Z",
+     "type": {
+      "id": "970",
+      "abbreviation": "Bantamweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "1847",
+      "fullName": "United Center",
+      "address": {
+       "city": "Chicago",
+       "state": "IL",
+       "address1": "UNITED CENTER,  1901 W. MADISON ST.",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "3031559",
+       "uid": "s:3301~a:3031559",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Aljamain Sterling",
+        "displayName": "Aljamain Sterling",
+        "shortName": "A. Sterling",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 90.0,
+         "displayValue": "90.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 0
+          },
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 0
+          },
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "26-5-0"
+        }
+       ]
+      },
+      {
+       "id": "3045734",
+       "uid": "s:3301~a:3045734",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Pedro Munhoz",
+        "displayName": "Pedro Munhoz",
+        "shortName": "P. Munhoz",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/bra.png",
+         "alt": "Brazil",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 81.0,
+         "displayValue": "81.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 0
+          },
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 0
+          },
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "20-10-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "ESPN"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2019-06-09T00:00Z",
+     "broadcast": "ESPN",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "1",
+        "shortName": "TV"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "ESPN",
+        "logo": "https://a.espncdn.com/guid/335fd2d2-97b9-336b-81ee-573eb6bdcffc/logos/default.png",
+        "darkLogo": ""
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "262895",
+     "uid": "s:3301~l:3321~e:401107800~c:262895",
+     "date": "2019-06-09T00:00Z",
+     "endDate": "2019-06-09T00:00Z",
+     "type": {
+      "id": "1006",
+      "abbreviation": "W Strawweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "1847",
+      "fullName": "United Center",
+      "address": {
+       "city": "Chicago",
+       "state": "IL",
+       "address1": "UNITED CENTER,  1901 W. MADISON ST.",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "3024357",
+       "uid": "s:3301~a:3024357",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Nina Nunes",
+        "displayName": "Nina Nunes",
+        "shortName": "N. Nunes",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 84.0,
+         "displayValue": "84.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "11-7-0"
+        }
+       ]
+      },
+      {
+       "id": "4020435",
+       "uid": "s:3301~a:4020435",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Tatiana Suarez",
+        "displayName": "Tatiana Suarez",
+        "shortName": "T. Suarez",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 87.0,
+         "displayValue": "87.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "13-1-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "ESPN"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2019-06-09T00:00Z",
+     "broadcast": "ESPN",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "1",
+        "shortName": "TV"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "ESPN",
+        "logo": "https://a.espncdn.com/guid/335fd2d2-97b9-336b-81ee-573eb6bdcffc/logos/default.png",
+        "darkLogo": ""
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "263415",
+     "uid": "s:3301~l:3321~e:401107800~c:263415",
+     "date": "2019-06-09T02:00Z",
+     "endDate": "2019-06-09T02:00Z",
+     "type": {
+      "id": "982",
+      "abbreviation": "Heavyweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "1847",
+      "fullName": "United Center",
+      "address": {
+       "city": "Chicago",
+       "state": "IL",
+       "address1": "UNITED CENTER,  1901 W. MADISON ST.",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2556638",
+       "uid": "s:3301~a:2556638",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Blagoy Ivanov",
+        "displayName": "Blagoy Ivanov",
+        "shortName": "B. Ivanov",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/bul.png",
+         "alt": "Bulgaria",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 89.0,
+         "displayValue": "89.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 0
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          },
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "19-7-0"
+        }
+       ]
+      },
+      {
+       "id": "3722422",
+       "uid": "s:3301~a:3722422",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Tai Tuivasa",
+        "displayName": "Tai Tuivasa",
+        "shortName": "T. Tuivasa",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/aus.png",
+         "alt": "Australia",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 82.0,
+         "displayValue": "82.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 0
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          },
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "15-11-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "PPV"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2019-06-09T02:00Z",
+     "broadcast": "PPV",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "2",
+        "shortName": "PPV"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "PPV"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "264134",
+     "uid": "s:3301~l:3321~e:401107800~c:264134",
+     "date": "2019-06-09T02:00Z",
+     "endDate": "2019-06-09T02:00Z",
+     "type": {
+      "id": "970",
+      "abbreviation": "Bantamweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "1847",
+      "fullName": "United Center",
+      "address": {
+       "city": "Chicago",
+       "state": "IL",
+       "address1": "UNITED CENTER,  1901 W. MADISON ST.",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "3003458",
+       "uid": "s:3301~a:3003458",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Jimmie Rivera",
+        "displayName": "Jimmie Rivera",
+        "shortName": "J. Rivera",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/pur.png",
+         "alt": "Puerto Rico",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 83.0,
+         "displayValue": "83.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          },
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "23-5-0"
+        }
+       ]
+      },
+      {
+       "id": "4293517",
+       "uid": "s:3301~a:4293517",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Petr Yan",
+        "displayName": "Petr Yan",
+        "shortName": "P. Yan",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/rus.png",
+         "alt": "Russia",
+         "rel": [
+          "country-flag"
+         ]
+        },
+        "accolades": [
+         {
+          "id": "478",
+          "name": "UFC Bantamweight Title",
+          "type": "Belt"
+         },
+         {
+          "id": "708",
+          "name": "UFC Interim Bantamweight Title",
+          "type": "Belt"
+         }
+        ]
+       },
+       "linescores": [
+        {
+         "value": 88.0,
+         "displayValue": "88.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          },
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "20-5-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "PPV"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2019-06-09T02:00Z",
+     "broadcast": "PPV",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "2",
+        "shortName": "PPV"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "PPV"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "266274",
+     "uid": "s:3301~l:3321~e:401107800~c:266274",
+     "date": "2019-06-09T02:00Z",
+     "endDate": "2019-06-09T02:00Z",
+     "type": {
+      "id": "986",
+      "abbreviation": "Lightweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "1847",
+      "fullName": "United Center",
+      "address": {
+       "city": "Chicago",
+       "state": "IL",
+       "address1": "UNITED CENTER,  1901 W. MADISON ST.",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2479918",
+       "uid": "s:3301~a:2479918",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Donald Cerrone",
+        "displayName": "Donald Cerrone",
+        "shortName": "D. Cerrone",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "36-17-0"
+        }
+       ]
+      },
+      {
+       "id": "2560085",
+       "uid": "s:3301~a:2560085",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Tony Ferguson",
+        "displayName": "Tony Ferguson",
+        "shortName": "T. Ferguson",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "26-11-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 2,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": true
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "PPV"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2019-06-09T02:00Z",
+     "broadcast": "PPV",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "2",
+        "shortName": "PPV"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "PPV"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "261474",
+     "uid": "s:3301~l:3321~e:401107800~c:261474",
+     "date": "2019-06-09T02:00Z",
+     "endDate": "2019-06-09T02:00Z",
+     "type": {
+      "id": "1007",
+      "abbreviation": "W Flyweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "1847",
+      "fullName": "United Center",
+      "address": {
+       "city": "Chicago",
+       "state": "IL",
+       "address1": "UNITED CENTER,  1901 W. MADISON ST.",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2554705",
+       "uid": "s:3301~a:2554705",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Valentina Shevchenko",
+        "displayName": "Valentina Shevchenko",
+        "shortName": "V. Shevchenko",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/kgz.png",
+         "alt": "Kyrgyzstan",
+         "rel": [
+          "country-flag"
+         ]
+        },
+        "accolades": [
+         {
+          "id": "902",
+          "name": "UFC Women's Flyweight Title",
+          "type": "Belt"
+         }
+        ]
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "26-4-1"
+        }
+       ]
+      },
+      {
+       "id": "3005099",
+       "uid": "s:3301~a:3005099",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Jessica Eye",
+        "displayName": "Jessica Eye",
+        "shortName": "J. Eye",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "15-11-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 26.0,
+      "displayClock": "0:26",
+      "period": 2,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "PPV"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 5
+      }
+     },
+     "startDate": "2019-06-09T02:00Z",
+     "broadcast": "PPV",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "2",
+        "shortName": "PPV"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "PPV"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "263613",
+     "uid": "s:3301~l:3321~e:401107800~c:263613",
+     "date": "2019-06-09T02:00Z",
+     "endDate": "2019-06-09T02:00Z",
+     "type": {
+      "id": "970",
+      "abbreviation": "Bantamweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "1847",
+      "fullName": "United Center",
+      "address": {
+       "city": "Chicago",
+       "state": "IL",
+       "address1": "UNITED CENTER,  1901 W. MADISON ST.",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2553310",
+       "uid": "s:3301~a:2553310",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Marlon Moraes",
+        "displayName": "Marlon Moraes",
+        "shortName": "M. Moraes",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/bra.png",
+         "alt": "Brazil",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "23-13-1"
+        }
+       ]
+      },
+      {
+       "id": "3023388",
+       "uid": "s:3301~a:3023388",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Henry Cejudo",
+        "displayName": "Henry Cejudo",
+        "shortName": "H. Cejudo",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "16-6-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 291.0,
+      "displayClock": "4:51",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "PPV"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 5
+      }
+     },
+     "startDate": "2019-06-09T02:00Z",
+     "broadcast": "PPV",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "2",
+        "shortName": "PPV"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "PPV"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    }
+   ],
+   "links": [
+    {
+     "language": "en-US",
+     "rel": [
+      "summary",
+      "desktop",
+      "event"
+     ],
+     "href": "https://www.espn.com/mma/fightcenter/_/id/401107800/league/ufc",
+     "text": "Gamecast",
+     "shortText": "Gamecast",
+     "isExternal": false,
+     "isPremium": false
+    }
+   ],
+   "venues": [
+    {
+     "id": "1847",
+     "fullName": "United Center",
+     "address": {
+      "city": "Chicago",
+      "state": "IL",
+      "address1": "UNITED CENTER,  1901 W. MADISON ST.",
+      "country": "USA"
+     }
+    }
+   ],
+   "status": {
+    "type": {
+     "id": "3",
+     "name": "STATUS_FINAL",
+     "state": "post",
+     "completed": true,
+     "description": "Final",
+     "detail": "Final",
+     "shortDetail": "Final"
+    }
+   }
+  }
+ ],
+ "provider": {
+  "id": "100",
+  "name": "Draft Kings",
+  "displayName": "Draft Kings",
+  "priority": 1
+ }
+}

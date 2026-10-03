@@ -1,0 +1,1951 @@
+{
+ "leagues": [
+  {
+   "id": "3321",
+   "uid": "s:3301~l:3321",
+   "name": "Ultimate Fighting Championship",
+   "displayName": "UFC",
+   "abbreviation": "UFC",
+   "shortName": "UFC",
+   "slug": "ufc",
+   "season": {
+    "year": 2011,
+    "startDate": "2011-01-01T08:00Z",
+    "endDate": "2011-12-31T08:00Z",
+    "displayName": "2011",
+    "type": {
+     "id": "2",
+     "type": 2,
+     "name": "Regular Season",
+     "abbreviation": "reg"
+    }
+   },
+   "logos": [
+    {
+     "href": "https://a.espncdn.com/i/teamlogos/leagues/500/ufc.png",
+     "width": 500,
+     "height": 500,
+     "alt": "",
+     "rel": [
+      "full",
+      "default"
+     ],
+     "lastUpdated": "2018-12-21T18:30Z"
+    },
+    {
+     "href": "https://a.espncdn.com/i/teamlogos/leagues/500/ufc.png",
+     "width": 500,
+     "height": 500,
+     "alt": "",
+     "rel": [
+      "full",
+      "dark"
+     ],
+     "lastUpdated": "2018-12-21T18:30Z"
+    }
+   ],
+   "calendarType": "list",
+   "calendarIsWhitelist": true,
+   "calendarStartDate": "2011-01-01T08:00Z",
+   "calendarEndDate": "2011-12-31T08:00Z",
+   "calendar": [
+    {
+     "label": "UFC 125: Resolution",
+     "startDate": "2011-01-02T05:00Z",
+     "endDate": "2011-01-02T05:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400252043?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Fight for the Troops 2",
+     "startDate": "2011-01-23T05:00Z",
+     "endDate": "2011-01-23T05:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400252037?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 126: Silva vs. Belfort",
+     "startDate": "2011-02-06T05:00Z",
+     "endDate": "2011-02-06T05:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400252023?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 127: Penn vs. Fitch",
+     "startDate": "2011-02-27T05:00Z",
+     "endDate": "2011-02-27T05:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400252013?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC on Versus: Sanchez vs. Kampmann",
+     "startDate": "2011-03-04T05:00Z",
+     "endDate": "2011-03-04T05:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400252010?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 128: Shogun vs. Jones",
+     "startDate": "2011-03-20T04:00Z",
+     "endDate": "2011-03-20T04:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400251999?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Davis vs. Nogueira",
+     "startDate": "2011-03-27T04:00Z",
+     "endDate": "2011-03-27T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400251993?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 129: St-Pierre vs. Shields",
+     "startDate": "2011-05-01T04:00Z",
+     "endDate": "2011-05-01T04:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400251959?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 130: Rampage vs. Hamill",
+     "startDate": "2011-05-29T04:00Z",
+     "endDate": "2011-05-29T04:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400251939?lang=en&region=us"
+     }
+    },
+    {
+     "label": "The Ultimate Fighter 13 Finale",
+     "startDate": "2011-06-05T04:00Z",
+     "endDate": "2011-06-05T04:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400251935?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 131: Dos Santos vs. Carwin",
+     "startDate": "2011-06-12T04:00Z",
+     "endDate": "2011-06-12T04:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400251927?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC on Versus: Barry vs. Kongo",
+     "startDate": "2011-06-27T04:00Z",
+     "endDate": "2011-06-27T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400251919?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 132: Cruz vs. Faber 2",
+     "startDate": "2011-07-03T04:00Z",
+     "endDate": "2011-07-03T04:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400251918?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 133: Evans vs. Ortiz 2",
+     "startDate": "2011-08-07T04:00Z",
+     "endDate": "2011-08-07T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400251899?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC on Versus: Hardy vs. Lytle",
+     "startDate": "2011-08-15T04:00Z",
+     "endDate": "2011-08-15T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400251895?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 134: Silva vs. Okami",
+     "startDate": "2011-08-28T04:00Z",
+     "endDate": "2011-08-28T04:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400251887?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Shields vs. Ellenberger",
+     "startDate": "2011-09-18T04:00Z",
+     "endDate": "2011-09-18T04:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400251873?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 135: Jones vs. Rampage",
+     "startDate": "2011-09-25T04:00Z",
+     "endDate": "2011-09-25T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400251868?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC on Versus: Cruz vs. Johnson",
+     "startDate": "2011-10-02T04:00Z",
+     "endDate": "2011-10-02T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400251865?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 136: Edgar vs. Maynard 3",
+     "startDate": "2011-10-09T04:00Z",
+     "endDate": "2011-10-09T04:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400251859?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 137: Penn vs. Diaz",
+     "startDate": "2011-10-30T04:00Z",
+     "endDate": "2011-10-30T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400251839?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 138: Leben vs. Munoz",
+     "startDate": "2011-11-06T04:00Z",
+     "endDate": "2011-11-06T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400251835?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC on Fox: Velasquez vs. dos Santos",
+     "startDate": "2011-11-13T05:00Z",
+     "endDate": "2011-11-13T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400251828?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 139: Shogun vs. Henderson",
+     "startDate": "2011-11-20T05:00Z",
+     "endDate": "2011-11-20T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400251824?lang=en&region=us"
+     }
+    },
+    {
+     "label": "The Ultimate Fighter 14 Finale",
+     "startDate": "2011-12-04T05:00Z",
+     "endDate": "2011-12-04T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400251809?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 140: Jones vs. Machida",
+     "startDate": "2011-12-11T05:00Z",
+     "endDate": "2011-12-11T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400251804?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 141: Lesnar vs. Overeem",
+     "startDate": "2011-12-31T05:00Z",
+     "endDate": "2011-12-31T05:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400251796?lang=en&region=us"
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "400251959",
+   "uid": "s:3301~l:3321~e:400251959",
+   "date": "2011-05-01T01:00Z",
+   "name": "UFC 129: St-Pierre vs. Shields",
+   "shortName": "UFC 129",
+   "season": {
+    "year": 2011,
+    "type": 2,
+    "slug": "regular-season"
+   },
+   "competitions": [
+    {
+     "id": "154879",
+     "uid": "s:3301~l:3321~e:400251959~c:154879",
+     "date": "2011-05-01T01:00Z",
+     "endDate": "2011-05-01T01:00Z",
+     "type": {
+      "id": "999",
+      "abbreviation": "Featherweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "1822",
+      "fullName": "Rogers Centre",
+      "address": {
+       "city": "Toronto",
+       "state": "ON",
+       "address1": "SKYDOME,  1 BLUE JAYS WAY, SUI",
+       "country": "Canada"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2504563",
+       "uid": "s:3301~a:2504563",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Yves Jabouin",
+        "displayName": "Yves Jabouin",
+        "shortName": "Y. Jabouin",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/can.png",
+         "alt": "Canada",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "20-11-0"
+        }
+       ]
+      },
+      {
+       "id": "2526824",
+       "uid": "s:3301~a:2526824",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Pablo Garza",
+        "displayName": "Pablo Garza",
+        "shortName": "P. Garza",
+        "flag": {
+         "href": "https://www.espn.com/i/teamlogos/countries/500/blank.png",
+         "alt": "default",
+         "rel": [
+          "default-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 0.0,
+         "displayValue": "0.0",
+         "period": 0
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "12-4-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 271.0,
+      "displayClock": "4:31",
+      "period": 1,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2011-05-01T01:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "154883",
+     "uid": "s:3301~l:3321~e:400251959~c:154883",
+     "date": "2011-05-01T01:00Z",
+     "endDate": "2011-05-01T01:00Z",
+     "type": {
+      "id": "986",
+      "abbreviation": "Lightweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "1822",
+      "fullName": "Rogers Centre",
+      "address": {
+       "city": "Toronto",
+       "state": "ON",
+       "address1": "SKYDOME,  1 BLUE JAYS WAY, SUI",
+       "country": "Canada"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2500948",
+       "uid": "s:3301~a:2500948",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Kyle Watson",
+        "displayName": "Kyle Watson",
+        "shortName": "K. Watson",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 0.0,
+         "displayValue": "0.0",
+         "period": 0
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "13-9-1"
+        }
+       ]
+      },
+      {
+       "id": "2529520",
+       "uid": "s:3301~a:2529520",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "John Makdessi",
+        "displayName": "John Makdessi",
+        "shortName": "J. Makdessi",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/can.png",
+         "alt": "Canada",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "18-9-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 87.0,
+      "displayClock": "1:27",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2011-05-01T01:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "154882",
+     "uid": "s:3301~l:3321~e:400251959~c:154882",
+     "date": "2011-05-01T01:00Z",
+     "endDate": "2011-05-01T01:00Z",
+     "type": {
+      "id": "972",
+      "abbreviation": "Middleweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "1822",
+      "fullName": "Rogers Centre",
+      "address": {
+       "city": "Toronto",
+       "state": "ON",
+       "address1": "SKYDOME,  1 BLUE JAYS WAY, SUI",
+       "country": "Canada"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2335483",
+       "uid": "s:3301~a:2335483",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Ryan Jensen",
+        "displayName": "Ryan Jensen",
+        "shortName": "R. Jensen",
+        "flag": {
+         "href": "https://www.espn.com/i/teamlogos/countries/500/blank.png",
+         "alt": "default",
+         "rel": [
+          "default-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 0.0,
+         "displayValue": "0.0",
+         "period": 0
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "19-8-0"
+        }
+       ]
+      },
+      {
+       "id": "2335771",
+       "uid": "s:3301~a:2335771",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Jason MacDonald",
+        "displayName": "Jason MacDonald",
+        "shortName": "J. MacDonald",
+        "flag": {
+         "href": "https://www.espn.com/i/teamlogos/countries/500/blank.png",
+         "alt": "default",
+         "rel": [
+          "default-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 0.0,
+         "displayValue": "0.0",
+         "period": 0
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "25-16-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 97.0,
+      "displayClock": "1:37",
+      "period": 1,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2011-05-01T01:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "154881",
+     "uid": "s:3301~l:3321~e:400251959~c:154881",
+     "date": "2011-05-01T01:00Z",
+     "endDate": "2011-05-01T01:00Z",
+     "type": {
+      "id": "970",
+      "abbreviation": "Bantamweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "1822",
+      "fullName": "Rogers Centre",
+      "address": {
+       "city": "Toronto",
+       "state": "ON",
+       "address1": "SKYDOME,  1 BLUE JAYS WAY, SUI",
+       "country": "Canada"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2335702",
+       "uid": "s:3301~a:2335702",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Ivan Menjivar",
+        "displayName": "Ivan Menjivar",
+        "shortName": "I. Menjivar",
+        "flag": {
+         "href": "https://www.espn.com/i/teamlogos/countries/500/blank.png",
+         "alt": "default",
+         "rel": [
+          "default-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 0.0,
+         "displayValue": "0.0",
+         "period": 0
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "25-12-0"
+        }
+       ]
+      },
+      {
+       "id": "2465555",
+       "uid": "s:3301~a:2465555",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Charlie Valencia",
+        "displayName": "Charlie Valencia",
+        "shortName": "C. Valencia",
+        "flag": {
+         "href": "https://www.espn.com/i/teamlogos/countries/500/blank.png",
+         "alt": "default",
+         "rel": [
+          "default-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 0.0,
+         "displayValue": "0.0",
+         "period": 0
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "12-7-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 90.0,
+      "displayClock": "1:30",
+      "period": 1,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2011-05-01T01:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "154880",
+     "uid": "s:3301~l:3321~e:400251959~c:154880",
+     "date": "2011-05-01T01:00Z",
+     "endDate": "2011-05-01T01:00Z",
+     "type": {
+      "id": "969",
+      "abbreviation": "Welterweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "1822",
+      "fullName": "Rogers Centre",
+      "address": {
+       "city": "Toronto",
+       "state": "ON",
+       "address1": "SKYDOME,  1 BLUE JAYS WAY, SUI",
+       "country": "Canada"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2504245",
+       "uid": "s:3301~a:2504245",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Daniel Roberts",
+        "displayName": "Daniel Roberts",
+        "shortName": "D. Roberts",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 84.0,
+         "displayValue": "84.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "15-7-0"
+        }
+       ]
+      },
+      {
+       "id": "2504613",
+       "uid": "s:3301~a:2504613",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Claude Patrick",
+        "displayName": "Claude Patrick",
+        "shortName": "C. Patrick",
+        "flag": {
+         "href": "https://www.espn.com/i/teamlogos/countries/500/blank.png",
+         "alt": "default",
+         "rel": [
+          "default-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 87.0,
+         "displayValue": "87.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "14-2-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2011-05-01T01:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "154878",
+     "uid": "s:3301~l:3321~e:400251959~c:154878",
+     "date": "2011-05-01T01:00Z",
+     "endDate": "2011-05-01T01:00Z",
+     "type": {
+      "id": "969",
+      "abbreviation": "Welterweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "1822",
+      "fullName": "Rogers Centre",
+      "address": {
+       "city": "Toronto",
+       "state": "ON",
+       "address1": "SKYDOME,  1 BLUE JAYS WAY, SUI",
+       "country": "Canada"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2486942",
+       "uid": "s:3301~a:2486942",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Jake Ellenberger",
+        "displayName": "Jake Ellenberger",
+        "shortName": "J. Ellenberger",
+        "flag": {
+         "href": "https://www.espn.com/i/teamlogos/countries/500/blank.png",
+         "alt": "default",
+         "rel": [
+          "default-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 0.0,
+         "displayValue": "0.0",
+         "period": 0
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "31-15-0"
+        }
+       ]
+      },
+      {
+       "id": "2531643",
+       "uid": "s:3301~a:2531643",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Sean Pierson",
+        "displayName": "Sean Pierson",
+        "shortName": "S. Pierson",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/can.png",
+         "alt": "Canada",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 0.0,
+         "displayValue": "0.0",
+         "period": 0
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "14-6-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 162.0,
+      "displayClock": "2:42",
+      "period": 1,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2011-05-01T01:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "154877",
+     "uid": "s:3301~l:3321~e:400251959~c:154877",
+     "date": "2011-05-01T01:00Z",
+     "endDate": "2011-05-01T01:00Z",
+     "type": {
+      "id": "969",
+      "abbreviation": "Welterweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "1822",
+      "fullName": "Rogers Centre",
+      "address": {
+       "city": "Toronto",
+       "state": "ON",
+       "address1": "SKYDOME,  1 BLUE JAYS WAY, SUI",
+       "country": "Canada"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2335679",
+       "uid": "s:3301~a:2335679",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Nate Diaz",
+        "displayName": "Nate Diaz",
+        "shortName": "N. Diaz",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 79.0,
+         "displayValue": "79.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 0
+          },
+          {
+           "value": 26.0,
+           "displayValue": "26",
+           "period": 0
+          },
+          {
+           "value": 26.0,
+           "displayValue": "26",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "22-14-0"
+        }
+       ]
+      },
+      {
+       "id": "2501814",
+       "uid": "s:3301~a:2501814",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Rory MacDonald",
+        "displayName": "Rory MacDonald",
+        "shortName": "R. MacDonald",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/can.png",
+         "alt": "Canada",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 90.0,
+         "displayValue": "90.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 0
+          },
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 0
+          },
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "23-10-1"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2011-05-01T01:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "154876",
+     "uid": "s:3301~l:3321~e:400251959~c:154876",
+     "date": "2011-05-01T01:00Z",
+     "endDate": "2011-05-01T01:00Z",
+     "type": {
+      "id": "986",
+      "abbreviation": "Lightweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "1822",
+      "fullName": "Rogers Centre",
+      "address": {
+       "city": "Toronto",
+       "state": "ON",
+       "address1": "SKYDOME,  1 BLUE JAYS WAY, SUI",
+       "country": "Canada"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2335717",
+       "uid": "s:3301~a:2335717",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Mark Bocek",
+        "displayName": "Mark Bocek",
+        "shortName": "M. Bocek",
+        "flag": {
+         "href": "https://www.espn.com/i/teamlogos/countries/500/blank.png",
+         "alt": "default",
+         "rel": [
+          "default-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 81.0,
+         "displayValue": "81.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 0
+          },
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 0
+          },
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "12-5-0"
+        }
+       ]
+      },
+      {
+       "id": "2487019",
+       "uid": "s:3301~a:2487019",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Benson Henderson",
+        "displayName": "Benson Henderson",
+        "shortName": "B. Henderson",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 90.0,
+         "displayValue": "90.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 0
+          },
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 0
+          },
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "30-13-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2011-05-01T01:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "154874",
+     "uid": "s:3301~l:3321~e:400251959~c:154874",
+     "date": "2011-05-01T01:00Z",
+     "endDate": "2011-05-01T01:00Z",
+     "type": {
+      "id": "990",
+      "abbreviation": "Light Heavyweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "1822",
+      "fullName": "Rogers Centre",
+      "address": {
+       "city": "Toronto",
+       "state": "ON",
+       "address1": "SKYDOME,  1 BLUE JAYS WAY, SUI",
+       "country": "Canada"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2335532",
+       "uid": "s:3301~a:2335532",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Jason Brilz",
+        "displayName": "Jason Brilz",
+        "shortName": "J. Brilz",
+        "flag": {
+         "href": "https://www.espn.com/i/teamlogos/countries/500/blank.png",
+         "alt": "default",
+         "rel": [
+          "default-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 0.0,
+         "displayValue": "0.0",
+         "period": 0
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "22-6-1"
+        }
+       ]
+      },
+      {
+       "id": "2487838",
+       "uid": "s:3301~a:2487838",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Vladimir Matyushenko",
+        "displayName": "Vladimir Matyushenko",
+        "shortName": "V. Matyushenko",
+        "flag": {
+         "href": "https://www.espn.com/i/teamlogos/countries/500/blank.png",
+         "alt": "default",
+         "rel": [
+          "default-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 0.0,
+         "displayValue": "0.0",
+         "period": 0
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "27-8-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 20.0,
+      "displayClock": "0:20",
+      "period": 1,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2011-05-01T01:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "154875",
+     "uid": "s:3301~l:3321~e:400251959~c:154875",
+     "date": "2011-05-01T01:00Z",
+     "endDate": "2011-05-01T01:00Z",
+     "type": {
+      "id": "990",
+      "abbreviation": "Light Heavyweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "1822",
+      "fullName": "Rogers Centre",
+      "address": {
+       "city": "Toronto",
+       "state": "ON",
+       "address1": "SKYDOME,  1 BLUE JAYS WAY, SUI",
+       "country": "Canada"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2335338",
+       "uid": "s:3301~a:2335338",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Randy Couture",
+        "displayName": "Randy Couture",
+        "shortName": "R. Couture",
+        "flag": {
+         "href": "https://www.espn.com/i/teamlogos/countries/500/blank.png",
+         "alt": "default",
+         "rel": [
+          "default-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 0.0,
+         "displayValue": "0.0",
+         "period": 0
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "19-11-0"
+        }
+       ]
+      },
+      {
+       "id": "2335524",
+       "uid": "s:3301~a:2335524",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Lyoto Machida",
+        "displayName": "Lyoto Machida",
+        "shortName": "L. Machida",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/bra.png",
+         "alt": "Brazil",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 0.0,
+         "displayValue": "0.0",
+         "period": 0
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "26-12-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 65.0,
+      "displayClock": "1:05",
+      "period": 2,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2011-05-01T01:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "157993",
+     "uid": "s:3301~l:3321~e:400251959~c:157993",
+     "date": "2011-05-01T01:00Z",
+     "endDate": "2011-05-01T01:00Z",
+     "type": {
+      "id": "999",
+      "abbreviation": "Featherweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "1822",
+      "fullName": "Rogers Centre",
+      "address": {
+       "city": "Toronto",
+       "state": "ON",
+       "address1": "SKYDOME,  1 BLUE JAYS WAY, SUI",
+       "country": "Canada"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2447641",
+       "uid": "s:3301~a:2447641",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "José Aldo",
+        "displayName": "José Aldo",
+        "shortName": "J. Aldo",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/bra.png",
+         "alt": "Brazil",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 145.0,
+         "displayValue": "145.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 48.0,
+           "displayValue": "48",
+           "period": 0
+          },
+          {
+           "value": 49.0,
+           "displayValue": "49",
+           "period": 0
+          },
+          {
+           "value": 48.0,
+           "displayValue": "48",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "32-10-0"
+        }
+       ]
+      },
+      {
+       "id": "2501722",
+       "uid": "s:3301~a:2501722",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Mark Hominick",
+        "displayName": "Mark Hominick",
+        "shortName": "M. Hominick",
+        "flag": {
+         "href": "https://www.espn.com/i/teamlogos/countries/500/blank.png",
+         "alt": "default",
+         "rel": [
+          "default-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 137.0,
+         "displayValue": "137.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 46.0,
+           "displayValue": "46",
+           "period": 0
+          },
+          {
+           "value": 46.0,
+           "displayValue": "46",
+           "period": 0
+          },
+          {
+           "value": 45.0,
+           "displayValue": "45",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "20-12-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 5,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": true
+     },
+     "format": {
+      "regulation": {
+       "periods": 5
+      }
+     },
+     "startDate": "2011-05-01T01:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "157813",
+     "uid": "s:3301~l:3321~e:400251959~c:157813",
+     "date": "2011-05-01T01:00Z",
+     "endDate": "2011-05-01T01:00Z",
+     "type": {
+      "id": "969",
+      "abbreviation": "Welterweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "1822",
+      "fullName": "Rogers Centre",
+      "address": {
+       "city": "Toronto",
+       "state": "ON",
+       "address1": "SKYDOME,  1 BLUE JAYS WAY, SUI",
+       "country": "Canada"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2335659",
+       "uid": "s:3301~a:2335659",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Georges St-Pierre",
+        "displayName": "Georges St-Pierre",
+        "shortName": "G. St-Pierre",
+        "flag": {
+         "href": "https://www.espn.com/i/teamlogos/countries/500/blank.png",
+         "alt": "default",
+         "rel": [
+          "default-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 146.0,
+         "displayValue": "146.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 48.0,
+           "displayValue": "48",
+           "period": 0
+          },
+          {
+           "value": 50.0,
+           "displayValue": "50",
+           "period": 0
+          },
+          {
+           "value": 48.0,
+           "displayValue": "48",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "26-2-0"
+        }
+       ]
+      },
+      {
+       "id": "2486937",
+       "uid": "s:3301~a:2486937",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Jake Shields",
+        "displayName": "Jake Shields",
+        "shortName": "J. Shields",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 139.0,
+         "displayValue": "139.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 47.0,
+           "displayValue": "47",
+           "period": 0
+          },
+          {
+           "value": 45.0,
+           "displayValue": "45",
+           "period": 0
+          },
+          {
+           "value": 47.0,
+           "displayValue": "47",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "34-11-1"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 5,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 5
+      }
+     },
+     "startDate": "2011-05-01T01:00Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    }
+   ],
+   "links": [
+    {
+     "language": "en-US",
+     "rel": [
+      "summary",
+      "desktop",
+      "event"
+     ],
+     "href": "https://www.espn.com/mma/fightcenter/_/id/400251959/league/ufc",
+     "text": "Gamecast",
+     "shortText": "Gamecast",
+     "isExternal": false,
+     "isPremium": false
+    }
+   ],
+   "venues": [
+    {
+     "id": "1822",
+     "fullName": "Rogers Centre",
+     "address": {
+      "city": "Toronto",
+      "state": "ON",
+      "address1": "SKYDOME,  1 BLUE JAYS WAY, SUI",
+      "country": "Canada"
+     }
+    }
+   ],
+   "status": {
+    "type": {
+     "id": "3",
+     "name": "STATUS_FINAL",
+     "state": "post",
+     "completed": true,
+     "description": "Final",
+     "detail": "Final",
+     "shortDetail": "Final"
+    }
+   }
+  }
+ ],
+ "provider": {
+  "id": "100",
+  "name": "Draft Kings",
+  "displayName": "Draft Kings",
+  "priority": 1
+ }
+}

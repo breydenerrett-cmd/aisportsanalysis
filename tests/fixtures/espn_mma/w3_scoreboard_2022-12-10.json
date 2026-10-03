@@ -1,0 +1,2317 @@
+{
+ "leagues": [
+  {
+   "id": "3321",
+   "uid": "s:3301~l:3321",
+   "name": "Ultimate Fighting Championship",
+   "displayName": "UFC",
+   "abbreviation": "UFC",
+   "shortName": "UFC",
+   "slug": "ufc",
+   "season": {
+    "year": 2022,
+    "startDate": "2022-01-01T08:00Z",
+    "endDate": "2022-12-31T08:00Z",
+    "displayName": "2022",
+    "type": {
+     "id": "2",
+     "type": 2,
+     "name": "Regular Season",
+     "abbreviation": "reg"
+    }
+   },
+   "logos": [
+    {
+     "href": "https://a.espncdn.com/i/teamlogos/leagues/500/ufc.png",
+     "width": 500,
+     "height": 500,
+     "alt": "",
+     "rel": [
+      "full",
+      "default"
+     ],
+     "lastUpdated": "2018-12-21T18:30Z"
+    },
+    {
+     "href": "https://a.espncdn.com/i/teamlogos/leagues/500/ufc.png",
+     "width": 500,
+     "height": 500,
+     "alt": "",
+     "rel": [
+      "full",
+      "dark"
+     ],
+     "lastUpdated": "2018-12-21T18:30Z"
+    }
+   ],
+   "calendarType": "list",
+   "calendarIsWhitelist": true,
+   "calendarStartDate": "2022-01-01T08:00Z",
+   "calendarEndDate": "2022-12-31T08:00Z",
+   "calendar": [
+    {
+     "label": "UFC Fight Night: Kattar vs. Chikadze",
+     "startDate": "2022-01-16T01:00Z",
+     "endDate": "2022-01-16T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600013389?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 270: Ngannou vs. Gane",
+     "startDate": "2022-01-23T03:00Z",
+     "endDate": "2022-01-23T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600011827?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Hermansson vs. Strickland",
+     "startDate": "2022-02-06T00:00Z",
+     "endDate": "2022-02-06T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600014067?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 271: Adesanya vs. Whittaker 2",
+     "startDate": "2022-02-13T02:00Z",
+     "endDate": "2022-02-13T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600013887?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Walker vs. Hill",
+     "startDate": "2022-02-20T00:00Z",
+     "endDate": "2022-02-20T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600014767?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Makhachev vs. Green",
+     "startDate": "2022-02-27T00:00Z",
+     "endDate": "2022-02-27T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600014327?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 272: Covington vs. Masvidal",
+     "startDate": "2022-03-06T02:00Z",
+     "endDate": "2022-03-06T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600013889?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Santos vs. Ankalaev",
+     "startDate": "2022-03-13T00:00Z",
+     "endDate": "2022-03-13T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600014167?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Volkov vs. Aspinall",
+     "startDate": "2022-03-19T20:30Z",
+     "endDate": "2022-03-20T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600015251?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Blaydes vs. Daukaus",
+     "startDate": "2022-03-26T23:00Z",
+     "endDate": "2022-03-27T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600013888?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 273: Volkanovski vs. The Korean Zombie",
+     "startDate": "2022-04-10T01:30Z",
+     "endDate": "2022-04-10T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600016207?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Luque vs. Muhammad 2",
+     "startDate": "2022-04-17T00:30Z",
+     "endDate": "2022-04-17T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600016208?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Lemos vs. Andrade",
+     "startDate": "2022-04-24T01:00Z",
+     "endDate": "2022-04-24T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600016209?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Font vs. Vera",
+     "startDate": "2022-04-30T23:00Z",
+     "endDate": "2022-05-01T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600016747?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 274: Oliveira vs. Gaethje",
+     "startDate": "2022-05-08T00:30Z",
+     "endDate": "2022-05-08T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600017087?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Blachowicz vs. Rakic",
+     "startDate": "2022-05-15T02:30Z",
+     "endDate": "2022-05-15T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600018367?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Holm vs. Vieira",
+     "startDate": "2022-05-21T23:00Z",
+     "endDate": "2022-05-22T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600018214?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Volkov vs. Rozenstruik",
+     "startDate": "2022-06-04T20:00Z",
+     "endDate": "2022-06-05T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600018857?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 275: Teixeira vs. Procházka",
+     "startDate": "2022-06-12T02:00Z",
+     "endDate": "2022-06-12T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600018247?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Kattar vs. Emmett",
+     "startDate": "2022-06-18T23:00Z",
+     "endDate": "2022-06-19T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600019387?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Tsarukyan vs. Gamrot",
+     "startDate": "2022-06-26T02:00Z",
+     "endDate": "2022-06-26T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600020441?lang=en&region=us"
+     }
+    },
+    {
+     "label": "The Ultimate Fighter 30 Semifinal: Nunes vs. Peña",
+     "startDate": "2022-06-28T19:00Z",
+     "endDate": "2022-06-29T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600023342?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 276: Adesanya vs. Cannonier",
+     "startDate": "2022-07-03T01:00Z",
+     "endDate": "2022-07-03T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600015541?lang=en&region=us"
+     }
+    },
+    {
+     "label": "The Ultimate Fighter 30 Semifinal: Nunes vs. Peña",
+     "startDate": "2022-07-05T19:00Z",
+     "endDate": "2022-07-06T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600023343?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Dos Anjos vs. Fiziev",
+     "startDate": "2022-07-10T01:00Z",
+     "endDate": "2022-07-10T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600019227?lang=en&region=us"
+     }
+    },
+    {
+     "label": "The Ultimate Fighter 30 Semifinal: Nunes vs. Peña",
+     "startDate": "2022-07-12T19:00Z",
+     "endDate": "2022-07-13T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600023344?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Ortega vs. Rodriguez",
+     "startDate": "2022-07-16T18:00Z",
+     "endDate": "2022-07-17T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600020987?lang=en&region=us"
+     }
+    },
+    {
+     "label": "The Ultimate Fighter 30 Semifinal: Nunes vs. Peña",
+     "startDate": "2022-07-19T19:00Z",
+     "endDate": "2022-07-20T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600023345?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Blaydes vs. Aspinall",
+     "startDate": "2022-07-23T19:00Z",
+     "endDate": "2022-07-24T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600019287?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 6, Week 1",
+     "startDate": "2022-07-27T03:00Z",
+     "endDate": "2022-07-27T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600021770?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 277: Peña vs. Nunes 2",
+     "startDate": "2022-07-31T01:00Z",
+     "endDate": "2022-07-31T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600020707?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 6, Week 2",
+     "startDate": "2022-08-03T03:00Z",
+     "endDate": "2022-08-03T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600021771?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Santos vs. Hill",
+     "startDate": "2022-08-07T02:30Z",
+     "endDate": "2022-08-07T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600021087?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 6, Week 3",
+     "startDate": "2022-08-10T03:00Z",
+     "endDate": "2022-08-10T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600021772?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Vera vs. Cruz",
+     "startDate": "2022-08-13T23:00Z",
+     "endDate": "2022-08-14T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600022153?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 6, Week 4",
+     "startDate": "2022-08-17T03:00Z",
+     "endDate": "2022-08-17T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600021773?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 278: Usman vs. Edwards 2",
+     "startDate": "2022-08-21T01:30Z",
+     "endDate": "2022-08-21T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600021776?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 6, Week 5",
+     "startDate": "2022-08-24T03:00Z",
+     "endDate": "2022-08-24T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600022207?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 6, Week 6",
+     "startDate": "2022-08-31T03:00Z",
+     "endDate": "2022-08-31T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600022208?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Gane vs. Tuivasa",
+     "startDate": "2022-09-03T19:00Z",
+     "endDate": "2022-09-04T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600020487?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 6, Week 7",
+     "startDate": "2022-09-07T03:00Z",
+     "endDate": "2022-09-07T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600022209?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 279: Diaz vs. Ferguson",
+     "startDate": "2022-09-11T01:00Z",
+     "endDate": "2022-09-11T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600023167?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 6, Week 8",
+     "startDate": "2022-09-14T03:00Z",
+     "endDate": "2022-09-14T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600022210?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Sandhagen vs. Song",
+     "startDate": "2022-09-17T23:00Z",
+     "endDate": "2022-09-18T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600022789?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 6, Week 9",
+     "startDate": "2022-09-21T03:00Z",
+     "endDate": "2022-09-21T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600022211?lang=en&region=us"
+     }
+    },
+    {
+     "label": "Dana White's Contender Series: Season 6, Week 10",
+     "startDate": "2022-09-28T03:00Z",
+     "endDate": "2022-09-28T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600022212?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Dern vs. Yan",
+     "startDate": "2022-10-01T23:00Z",
+     "endDate": "2022-10-02T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600023587?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Grasso vs. Araujo",
+     "startDate": "2022-10-15T23:00Z",
+     "endDate": "2022-10-16T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600023508?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 280: Oliveira vs. Makhachev",
+     "startDate": "2022-10-22T17:00Z",
+     "endDate": "2022-10-23T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600017767?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Kattar vs. Allen",
+     "startDate": "2022-10-29T23:00Z",
+     "endDate": "2022-10-30T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600023527?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Rodriguez vs. Lemos",
+     "startDate": "2022-11-05T23:00Z",
+     "endDate": "2022-11-06T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600024347?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 281: Adesanya vs. Pereira",
+     "startDate": "2022-11-13T02:00Z",
+     "endDate": "2022-11-13T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600023427?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Nzechukwu vs. Cutelaba",
+     "startDate": "2022-11-19T21:00Z",
+     "endDate": "2022-11-20T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600024907?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Thompson vs. Holland",
+     "startDate": "2022-12-04T03:00Z",
+     "endDate": "2022-12-04T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600024851?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 282: Blachowicz vs. Ankalaev",
+     "startDate": "2022-12-11T02:30Z",
+     "endDate": "2022-12-11T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600025607?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Cannonier vs. Strickland",
+     "startDate": "2022-12-18T00:00Z",
+     "endDate": "2022-12-18T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/600023847?lang=en&region=us"
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "600025607",
+   "uid": "s:3301~l:3321~e:600025607",
+   "date": "2022-12-10T23:30Z",
+   "name": "UFC 282: Blachowicz vs. Ankalaev",
+   "shortName": "UFC 282",
+   "season": {
+    "year": 2022,
+    "type": 2,
+    "slug": "regular-season"
+   },
+   "competitions": [
+    {
+     "id": "401504148",
+     "uid": "s:3301~l:3321~e:600025607~c:401504148",
+     "date": "2022-12-10T23:30Z",
+     "endDate": "2022-12-10T23:30Z",
+     "type": {
+      "id": "970",
+      "abbreviation": "Bantamweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "5060",
+      "fullName": "T-Mobile Arena",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "address1": "3780 South Las Vegas Boulevard",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "5077399",
+       "uid": "s:3301~a:5077399",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Cameron Saaiman",
+        "displayName": "Cameron Saaiman",
+        "shortName": "C. Saaiman",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/rsa.png",
+         "alt": "South Africa",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "9-3-0"
+        }
+       ]
+      },
+      {
+       "id": "5119740",
+       "uid": "s:3301~a:5119740",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Steven Koslow",
+        "displayName": "Steven Koslow",
+        "shortName": "S. Koslow",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "6-1-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 253.0,
+      "displayClock": "4:13",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "ESPN+"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2022-12-10T23:30Z",
+     "broadcast": "ESPN+",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "4",
+        "shortName": "Streaming"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "ESPN+",
+        "logo": "https://a.espncdn.com/guid/322a7e47-3cdb-3b5c-ab1b-678e1f2c27e5/logos/default.png",
+        "darkLogo": "https://a.espncdn.com/guid/322a7e47-3cdb-3b5c-ab1b-678e1f2c27e5/logos/default-dark.png"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "401499757",
+     "uid": "s:3301~l:3321~e:600025607~c:401499757",
+     "date": "2022-12-10T23:30Z",
+     "endDate": "2022-12-10T23:30Z",
+     "type": {
+      "id": "999",
+      "abbreviation": "Featherweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "5060",
+      "fullName": "T-Mobile Arena",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "address1": "3780 South Las Vegas Boulevard",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "4063667",
+       "uid": "s:3301~a:4063667",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "TJ Brown",
+        "displayName": "TJ Brown",
+        "shortName": "T. Brown",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "17-12-0"
+        }
+       ]
+      },
+      {
+       "id": "5075335",
+       "uid": "s:3301~a:5075335",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Erik Silva",
+        "displayName": "Erik Silva",
+        "shortName": "E. Silva",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/ven.png",
+         "alt": "Venezuela",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "9-4-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 221.0,
+      "displayClock": "3:41",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "ESPN+"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2022-12-10T23:30Z",
+     "broadcast": "ESPN+",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "4",
+        "shortName": "Streaming"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "ESPN+",
+        "logo": "https://a.espncdn.com/guid/322a7e47-3cdb-3b5c-ab1b-678e1f2c27e5/logos/default.png",
+        "darkLogo": "https://a.espncdn.com/guid/322a7e47-3cdb-3b5c-ab1b-678e1f2c27e5/logos/default-dark.png"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "401499756",
+     "uid": "s:3301~l:3321~e:600025607~c:401499756",
+     "date": "2022-12-10T23:30Z",
+     "endDate": "2022-12-10T23:30Z",
+     "type": {
+      "id": "999",
+      "abbreviation": "Featherweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "5060",
+      "fullName": "T-Mobile Arena",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "address1": "3780 South Las Vegas Boulevard",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "3900088",
+       "uid": "s:3301~a:3900088",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Billy Quarantillo",
+        "displayName": "Billy Quarantillo",
+        "shortName": "B. Quarantillo",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "18-8-0"
+        }
+       ]
+      },
+      {
+       "id": "4018757",
+       "uid": "s:3301~a:4018757",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Alexander Hernandez",
+        "displayName": "Alexander Hernandez",
+        "shortName": "A. Hernandez",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "18-9-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 270.0,
+      "displayClock": "4:30",
+      "period": 2,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "ESPN+"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2022-12-10T23:30Z",
+     "broadcast": "ESPN+",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "4",
+        "shortName": "Streaming"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "ESPN+",
+        "logo": "https://a.espncdn.com/guid/322a7e47-3cdb-3b5c-ab1b-678e1f2c27e5/logos/default.png",
+        "darkLogo": "https://a.espncdn.com/guid/322a7e47-3cdb-3b5c-ab1b-678e1f2c27e5/logos/default-dark.png"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "401498922",
+     "uid": "s:3301~l:3321~e:600025607~c:401498922",
+     "date": "2022-12-11T01:00Z",
+     "endDate": "2022-12-11T01:00Z",
+     "type": {
+      "id": "972",
+      "abbreviation": "Middleweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "5060",
+      "fullName": "T-Mobile Arena",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "address1": "3780 South Las Vegas Boulevard",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2984770",
+       "uid": "s:3301~a:2984770",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Chris Curtis",
+        "displayName": "Chris Curtis",
+        "shortName": "C. Curtis",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "32-13-0"
+        }
+       ]
+      },
+      {
+       "id": "4024714",
+       "uid": "s:3301~a:4024714",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Joaquin Buckley",
+        "displayName": "Joaquin Buckley",
+        "shortName": "J. Buckley",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "21-8-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 169.0,
+      "displayClock": "2:49",
+      "period": 2,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "ESPN2",
+        "ESPN+"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2022-12-11T01:00Z",
+     "broadcast": "ESPN2/ESPN+",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "1",
+        "shortName": "TV"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "ESPN2",
+        "logo": "https://a.espncdn.com/guid/4bab8fd8-cd13-379f-9558-c3614851bf91/logos/default.png",
+        "darkLogo": ""
+       },
+       "lang": "en",
+       "region": "us"
+      },
+      {
+       "type": {
+        "id": "4",
+        "shortName": "Streaming"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "ESPN+",
+        "logo": "https://a.espncdn.com/guid/322a7e47-3cdb-3b5c-ab1b-678e1f2c27e5/logos/default.png",
+        "darkLogo": "https://a.espncdn.com/guid/322a7e47-3cdb-3b5c-ab1b-678e1f2c27e5/logos/default-dark.png"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "401499754",
+     "uid": "s:3301~l:3321~e:600025607~c:401499754",
+     "date": "2022-12-11T01:00Z",
+     "endDate": "2022-12-11T01:00Z",
+     "type": {
+      "id": "972",
+      "abbreviation": "Middleweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "5060",
+      "fullName": "T-Mobile Arena",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "address1": "3780 South Las Vegas Boulevard",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "4217382",
+       "uid": "s:3301~a:4217382",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Dalcha Lungiambula",
+        "displayName": "Dalcha Lungiambula",
+        "shortName": "D. Lungiambula",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/drc.png",
+         "alt": "Democratic Republic of Congo",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "11-6-0"
+        }
+       ]
+      },
+      {
+       "id": "4354318",
+       "uid": "s:3301~a:4354318",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Edmen Shahbazyan",
+        "displayName": "Edmen Shahbazyan",
+        "shortName": "E. Shahbazyan",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "17-6-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 281.0,
+      "displayClock": "4:41",
+      "period": 2,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "ESPN2",
+        "ESPN+"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2022-12-11T01:00Z",
+     "broadcast": "ESPN2/ESPN+",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "1",
+        "shortName": "TV"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "ESPN2",
+        "logo": "https://a.espncdn.com/guid/4bab8fd8-cd13-379f-9558-c3614851bf91/logos/default.png",
+        "darkLogo": ""
+       },
+       "lang": "en",
+       "region": "us"
+      },
+      {
+       "type": {
+        "id": "4",
+        "shortName": "Streaming"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "ESPN+",
+        "logo": "https://a.espncdn.com/guid/322a7e47-3cdb-3b5c-ab1b-678e1f2c27e5/logos/default.png",
+        "darkLogo": "https://a.espncdn.com/guid/322a7e47-3cdb-3b5c-ab1b-678e1f2c27e5/logos/default-dark.png"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "401499755",
+     "uid": "s:3301~l:3321~e:600025607~c:401499755",
+     "date": "2022-12-11T01:00Z",
+     "endDate": "2022-12-11T01:00Z",
+     "type": {
+      "id": "982",
+      "abbreviation": "Heavyweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "5060",
+      "fullName": "T-Mobile Arena",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "address1": "3780 South Las Vegas Boulevard",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "4341598",
+       "uid": "s:3301~a:4341598",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Chris Daukaus",
+        "displayName": "Chris Daukaus",
+        "shortName": "C. Daukaus",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "12-7-0"
+        }
+       ]
+      },
+      {
+       "id": "4410084",
+       "uid": "s:3301~a:4410084",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Jairzinho Rozenstruik",
+        "displayName": "Jairzinho Rozenstruik",
+        "shortName": "J. Rozenstruik",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/sur.png",
+         "alt": "Suriname",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "15-6-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 23.0,
+      "displayClock": "0:23",
+      "period": 1,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "ESPN2",
+        "ESPN+"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2022-12-11T01:00Z",
+     "broadcast": "ESPN2/ESPN+",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "1",
+        "shortName": "TV"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "ESPN2",
+        "logo": "https://a.espncdn.com/guid/4bab8fd8-cd13-379f-9558-c3614851bf91/logos/default.png",
+        "darkLogo": ""
+       },
+       "lang": "en",
+       "region": "us"
+      },
+      {
+       "type": {
+        "id": "4",
+        "shortName": "Streaming"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "ESPN+",
+        "logo": "https://a.espncdn.com/guid/322a7e47-3cdb-3b5c-ab1b-678e1f2c27e5/logos/default.png",
+        "darkLogo": "https://a.espncdn.com/guid/322a7e47-3cdb-3b5c-ab1b-678e1f2c27e5/logos/default-dark.png"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "401500710",
+     "uid": "s:3301~l:3321~e:600025607~c:401500710",
+     "date": "2022-12-11T01:00Z",
+     "endDate": "2022-12-11T01:00Z",
+     "type": {
+      "id": "970",
+      "abbreviation": "Bantamweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "5060",
+      "fullName": "T-Mobile Arena",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "address1": "3780 South Las Vegas Boulevard",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "4062287",
+       "uid": "s:3301~a:4062287",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Jay Perrin",
+        "displayName": "Jay Perrin",
+        "shortName": "J. Perrin",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "12-8-0"
+        }
+       ]
+      },
+      {
+       "id": "5088844",
+       "uid": "s:3301~a:5088844",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Raul Rosas Jr.",
+        "displayName": "Raul Rosas Jr.",
+        "shortName": "R. Rosas Jr.",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/mex.png",
+         "alt": "Mexico",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "13-1-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 164.0,
+      "displayClock": "2:44",
+      "period": 1,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "ESPN2",
+        "ESPN+"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2022-12-11T01:00Z",
+     "broadcast": "ESPN2/ESPN+",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "1",
+        "shortName": "TV"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "ESPN2",
+        "logo": "https://a.espncdn.com/guid/4bab8fd8-cd13-379f-9558-c3614851bf91/logos/default.png",
+        "darkLogo": ""
+       },
+       "lang": "en",
+       "region": "us"
+      },
+      {
+       "type": {
+        "id": "4",
+        "shortName": "Streaming"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "ESPN+",
+        "logo": "https://a.espncdn.com/guid/322a7e47-3cdb-3b5c-ab1b-678e1f2c27e5/logos/default.png",
+        "darkLogo": "https://a.espncdn.com/guid/322a7e47-3cdb-3b5c-ab1b-678e1f2c27e5/logos/default-dark.png"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "401500696",
+     "uid": "s:3301~l:3321~e:600025607~c:401500696",
+     "date": "2022-12-11T03:00Z",
+     "endDate": "2022-12-11T03:00Z",
+     "type": {
+      "id": "999",
+      "abbreviation": "Featherweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "5060",
+      "fullName": "T-Mobile Arena",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "address1": "3780 South Las Vegas Boulevard",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "3953381",
+       "uid": "s:3301~a:3953381",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Bryce Mitchell",
+        "displayName": "Bryce Mitchell",
+        "shortName": "B. Mitchell",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "19-4-0"
+        }
+       ]
+      },
+      {
+       "id": "4350812",
+       "uid": "s:3301~a:4350812",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Ilia Topuria",
+        "displayName": "Ilia Topuria",
+        "shortName": "I. Topuria",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/geo.png",
+         "alt": "Georgia",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "17-1-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 190.0,
+      "displayClock": "3:10",
+      "period": 2,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "PPV"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2022-12-11T03:00Z",
+     "broadcast": "PPV",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "2",
+        "shortName": "PPV"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "PPV"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "401499751",
+     "uid": "s:3301~l:3321~e:600025607~c:401499751",
+     "date": "2022-12-11T03:00Z",
+     "endDate": "2022-12-11T03:00Z",
+     "type": {
+      "id": "972",
+      "abbreviation": "Middleweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "5060",
+      "fullName": "T-Mobile Arena",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "address1": "3780 South Las Vegas Boulevard",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "3166126",
+       "uid": "s:3301~a:3166126",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Dricus Du Plessis",
+        "displayName": "Dricus Du Plessis",
+        "shortName": "D. Du Plessis",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/rsa.png",
+         "alt": "South Africa",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "24-3-0"
+        }
+       ]
+      },
+      {
+       "id": "3897436",
+       "uid": "s:3301~a:3897436",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Darren Till",
+        "displayName": "Darren Till",
+        "shortName": "D. Till",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/eng.png",
+         "alt": "England",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "18-5-1"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 163.0,
+      "displayClock": "2:43",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": true
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "PPV"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2022-12-11T03:00Z",
+     "broadcast": "PPV",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "2",
+        "shortName": "PPV"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "PPV"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "401508037",
+     "uid": "s:3301~l:3321~e:600025607~c:401508037",
+     "date": "2022-12-11T03:00Z",
+     "endDate": "2022-12-11T03:00Z",
+     "type": {
+      "id": "1002",
+      "abbreviation": "Catch Weight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "5060",
+      "fullName": "T-Mobile Arena",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "address1": "3780 South Las Vegas Boulevard",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "3043484",
+       "uid": "s:3301~a:3043484",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Santiago Ponzinibbio",
+        "displayName": "Santiago Ponzinibbio",
+        "shortName": "S. Ponzinibbio",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/arg.png",
+         "alt": "Argentina",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "31-10-0"
+        }
+       ]
+      },
+      {
+       "id": "3088232",
+       "uid": "s:3301~a:3088232",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Alex Morono",
+        "displayName": "Alex Morono",
+        "shortName": "A. Morono",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "24-13-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 149.0,
+      "displayClock": "2:29",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "PPV"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2022-12-11T03:00Z",
+     "broadcast": "PPV",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "2",
+        "shortName": "PPV"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "PPV"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "401499750",
+     "uid": "s:3301~l:3321~e:600025607~c:401499750",
+     "date": "2022-12-11T03:00Z",
+     "endDate": "2022-12-11T03:00Z",
+     "type": {
+      "id": "986",
+      "abbreviation": "Lightweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "5060",
+      "fullName": "T-Mobile Arena",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "address1": "3780 South Las Vegas Boulevard",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "3894823",
+       "uid": "s:3301~a:3894823",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Jared Gordon",
+        "displayName": "Jared Gordon",
+        "shortName": "J. Gordon",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 84.0,
+         "displayValue": "84.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "21-9-0"
+        }
+       ]
+      },
+      {
+       "id": "4008549",
+       "uid": "s:3301~a:4008549",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Paddy Pimblett",
+        "displayName": "Paddy Pimblett",
+        "shortName": "P. Pimblett",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/eng.png",
+         "alt": "England",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 87.0,
+         "displayValue": "87.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "24-4-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "PPV"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2022-12-11T03:00Z",
+     "broadcast": "PPV",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "2",
+        "shortName": "PPV"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "PPV"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    },
+    {
+     "id": "401499752",
+     "uid": "s:3301~l:3321~e:600025607~c:401499752",
+     "date": "2022-12-11T03:00Z",
+     "endDate": "2022-12-11T03:00Z",
+     "type": {
+      "id": "990",
+      "abbreviation": "Light Heavyweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "5060",
+      "fullName": "T-Mobile Arena",
+      "address": {
+       "city": "Las Vegas",
+       "state": "NV",
+       "address1": "3780 South Las Vegas Boulevard",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2506250",
+       "uid": "s:3301~a:2506250",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Jan Blachowicz",
+        "displayName": "Jan Blachowicz",
+        "shortName": "J. Blachowicz",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/pol.png",
+         "alt": "Poland",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 141.0,
+         "displayValue": "141.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 47.0,
+           "displayValue": "47",
+           "period": 0
+          },
+          {
+           "value": 46.0,
+           "displayValue": "46",
+           "period": 0
+          },
+          {
+           "value": 48.0,
+           "displayValue": "48",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "29-12-2"
+        }
+       ]
+      },
+      {
+       "id": "4273399",
+       "uid": "s:3301~a:4273399",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Magomed Ankalaev",
+        "displayName": "Magomed Ankalaev",
+        "shortName": "M. Ankalaev",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/rus.png",
+         "alt": "Russia",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 142.0,
+         "displayValue": "142.0",
+         "period": 0,
+         "linescores": [
+          {
+           "value": 47.0,
+           "displayValue": "47",
+           "period": 0
+          },
+          {
+           "value": 48.0,
+           "displayValue": "48",
+           "period": 0
+          },
+          {
+           "value": 47.0,
+           "displayValue": "47",
+           "period": 0
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "22-2-1"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 5,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "PPV"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 5
+      }
+     },
+     "startDate": "2022-12-11T03:00Z",
+     "broadcast": "PPV",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "2",
+        "shortName": "PPV"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "PPV"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    }
+   ],
+   "links": [
+    {
+     "language": "en-US",
+     "rel": [
+      "summary",
+      "desktop",
+      "event"
+     ],
+     "href": "https://www.espn.com/mma/fightcenter/_/id/600025607/league/ufc",
+     "text": "Gamecast",
+     "shortText": "Gamecast",
+     "isExternal": false,
+     "isPremium": false
+    }
+   ],
+   "venues": [
+    {
+     "id": "5060",
+     "fullName": "T-Mobile Arena",
+     "address": {
+      "city": "Las Vegas",
+      "state": "NV",
+      "address1": "3780 South Las Vegas Boulevard",
+      "country": "USA"
+     }
+    }
+   ],
+   "status": {
+    "type": {
+     "id": "3",
+     "name": "STATUS_FINAL",
+     "state": "post",
+     "completed": true,
+     "description": "Final",
+     "detail": "Final",
+     "shortDetail": "Final"
+    }
+   }
+  }
+ ],
+ "provider": {
+  "id": "100",
+  "name": "Draft Kings",
+  "displayName": "Draft Kings",
+  "priority": 1
+ }
+}

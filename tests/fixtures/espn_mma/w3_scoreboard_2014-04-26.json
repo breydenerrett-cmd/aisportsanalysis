@@ -1,0 +1,1744 @@
+{
+ "leagues": [
+  {
+   "id": "3321",
+   "uid": "s:3301~l:3321",
+   "name": "Ultimate Fighting Championship",
+   "displayName": "UFC",
+   "abbreviation": "UFC",
+   "shortName": "UFC",
+   "slug": "ufc",
+   "season": {
+    "year": 2014,
+    "startDate": "2014-01-01T08:00Z",
+    "endDate": "2014-12-31T08:00Z",
+    "displayName": "2014",
+    "type": {
+     "id": "2",
+     "type": 2,
+     "name": "Regular Season",
+     "abbreviation": "reg"
+    }
+   },
+   "logos": [
+    {
+     "href": "https://a.espncdn.com/i/teamlogos/leagues/500/ufc.png",
+     "width": 500,
+     "height": 500,
+     "alt": "",
+     "rel": [
+      "full",
+      "default"
+     ],
+     "lastUpdated": "2018-12-21T18:30Z"
+    },
+    {
+     "href": "https://a.espncdn.com/i/teamlogos/leagues/500/ufc.png",
+     "width": 500,
+     "height": 500,
+     "alt": "",
+     "rel": [
+      "full",
+      "dark"
+     ],
+     "lastUpdated": "2018-12-21T18:30Z"
+    }
+   ],
+   "calendarType": "list",
+   "calendarIsWhitelist": true,
+   "calendarStartDate": "2014-01-01T08:00Z",
+   "calendarEndDate": "2014-12-31T08:00Z",
+   "calendar": [
+    {
+     "label": "UFC Fight Night: Saffiedine vs. Lim",
+     "startDate": "2014-01-05T05:00Z",
+     "endDate": "2014-01-05T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400513115?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Rockhold vs. Philippou",
+     "startDate": "2014-01-15T08:00Z",
+     "endDate": "2014-01-15T08:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400517543?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC on Fox: Henderson vs. Thomson",
+     "startDate": "2014-01-25T19:30Z",
+     "endDate": "2014-01-25T19:30Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400514854?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 169: Barao vs. Faber 2",
+     "startDate": "2014-02-01T21:30Z",
+     "endDate": "2014-02-01T21:30Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400478716?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Machida vs. Mousasi",
+     "startDate": "2014-02-15T22:30Z",
+     "endDate": "2014-02-16T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400516084?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 170: Rousey vs. McMann",
+     "startDate": "2014-02-22T22:00Z",
+     "endDate": "2014-02-22T22:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400514855?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Kim vs. Hathaway",
+     "startDate": "2014-03-02T03:00Z",
+     "endDate": "2014-03-02T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400528294?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Gustafsson vs. Manuwa",
+     "startDate": "2014-03-08T17:00Z",
+     "endDate": "2014-03-08T17:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400515114?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 171: Hendricks vs. Lawler",
+     "startDate": "2014-03-15T21:00Z",
+     "endDate": "2014-03-16T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400517714?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Shogun vs. Henderson",
+     "startDate": "2014-03-23T19:00Z",
+     "endDate": "2014-03-24T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400531694?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Minotauro vs. Nelson",
+     "startDate": "2014-04-11T13:00Z",
+     "endDate": "2014-04-12T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400532917?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Bisping vs. Kennedy",
+     "startDate": "2014-04-16T18:15Z",
+     "endDate": "2014-04-16T18:15Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400529094?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC on Fox: Werdum vs. Browne",
+     "startDate": "2014-04-19T18:30Z",
+     "endDate": "2014-04-19T18:30Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400529894?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 172: Jones vs. Teixeira",
+     "startDate": "2014-04-26T22:30Z",
+     "endDate": "2014-04-26T22:30Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400529374?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Brown vs. Silva",
+     "startDate": "2014-05-10T21:30Z",
+     "endDate": "2014-05-11T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400539354?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 173: Barao vs. Dillashaw",
+     "startDate": "2014-05-24T07:00Z",
+     "endDate": "2014-05-24T07:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400533294?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Munoz vs. Mousasi",
+     "startDate": "2014-05-31T15:30Z",
+     "endDate": "2014-05-31T15:30Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400543514?lang=en&region=us"
+     }
+    },
+    {
+     "label": "TUF Brazil Finale: Miocic vs. Maldonado",
+     "startDate": "2014-06-01T01:30Z",
+     "endDate": "2014-06-01T01:30Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400537811?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Henderson vs. Khabilov",
+     "startDate": "2014-06-07T22:30Z",
+     "endDate": "2014-06-07T22:30Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400547234?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 174: Johnson vs. Bagautinov",
+     "startDate": "2014-06-14T22:00Z",
+     "endDate": "2014-06-14T22:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400534690?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Swanson vs. Stephens",
+     "startDate": "2014-06-28T22:30Z",
+     "endDate": "2014-06-29T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400546894?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Te Huna vs. Marquardt",
+     "startDate": "2014-06-29T05:30Z",
+     "endDate": "2014-06-29T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400551477?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 175: Weidman vs. Machida",
+     "startDate": "2014-07-05T22:00Z",
+     "endDate": "2014-07-05T22:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400548474?lang=en&region=us"
+     }
+    },
+    {
+     "label": "The Ultimate Fighter 19 Finale",
+     "startDate": "2014-07-06T21:00Z",
+     "endDate": "2014-07-06T21:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400546414?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Cerrone vs. Miller",
+     "startDate": "2014-07-16T21:30Z",
+     "endDate": "2014-07-16T21:30Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400553594?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: McGregor vs. Brandao",
+     "startDate": "2014-07-19T15:30Z",
+     "endDate": "2014-07-19T15:30Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400543515?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC on Fox: Lawler vs. Brown",
+     "startDate": "2014-07-26T19:15Z",
+     "endDate": "2014-07-27T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400549884?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Bader vs. Saint Preux",
+     "startDate": "2014-08-16T09:30Z",
+     "endDate": "2014-08-16T09:30Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400557554?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Henderson vs. dos Anjos",
+     "startDate": "2014-08-23T22:30Z",
+     "endDate": "2014-08-23T22:30Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400553614?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Bisping vs. Le",
+     "startDate": "2014-08-24T02:30Z",
+     "endDate": "2014-08-24T02:30Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400543516?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 177: Dillashaw vs. Soto",
+     "startDate": "2014-08-31T02:00Z",
+     "endDate": "2014-08-31T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400559634?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Souza vs. Mousasi",
+     "startDate": "2014-09-06T01:00Z",
+     "endDate": "2014-09-06T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400560734?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Silva vs. Arlovski",
+     "startDate": "2014-09-13T21:00Z",
+     "endDate": "2014-09-14T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400557634?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Hunt vs. Nelson",
+     "startDate": "2014-09-20T22:00Z",
+     "endDate": "2014-09-20T22:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400543518?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 178: Johnson vs. Cariaso",
+     "startDate": "2014-09-27T15:00Z",
+     "endDate": "2014-09-28T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400534691?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: MacDonald vs. Saffiedine",
+     "startDate": "2014-10-04T22:00Z",
+     "endDate": "2014-10-05T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400534692?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Nelson vs. Story",
+     "startDate": "2014-10-04T22:00Z",
+     "endDate": "2014-10-04T22:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400543519?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 179: Aldo vs. Mendes 2",
+     "startDate": "2014-10-25T21:00Z",
+     "endDate": "2014-10-26T06:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400557635?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Rockhold vs. Bisping",
+     "startDate": "2014-11-08T03:30Z",
+     "endDate": "2014-11-08T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400582487?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Shogun vs. Saint Preux",
+     "startDate": "2014-11-08T22:00Z",
+     "endDate": "2014-11-08T22:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400582010?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 180: Werdum vs. Hunt",
+     "startDate": "2014-11-15T22:00Z",
+     "endDate": "2014-11-16T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400555416?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Edgar vs. Swanson",
+     "startDate": "2014-11-22T22:00Z",
+     "endDate": "2014-11-23T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400543520?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC 181: Hendricks vs. Lawler 2",
+     "startDate": "2014-12-06T22:00Z",
+     "endDate": "2014-12-07T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400534693?lang=en&region=us"
+     }
+    },
+    {
+     "label": "The Ultimate Fighter 20 Finale",
+     "startDate": "2014-12-13T02:30Z",
+     "endDate": "2014-12-13T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400580047?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Dos Santos vs. Miocic",
+     "startDate": "2014-12-13T18:30Z",
+     "endDate": "2014-12-14T07:59Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400567339?lang=en&region=us"
+     }
+    },
+    {
+     "label": "UFC Fight Night: Machida vs. Dollaway",
+     "startDate": "2014-12-20T22:00Z",
+     "endDate": "2014-12-20T22:00Z",
+     "event": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/mma/leagues/ufc/events/400584827?lang=en&region=us"
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "400529374",
+   "uid": "s:3301~l:3321~e:400529374",
+   "date": "2014-04-26T19:30Z",
+   "name": "UFC 172: Jones vs. Teixeira",
+   "shortName": "UFC 172",
+   "season": {
+    "year": 2014,
+    "type": 2,
+    "slug": "regular-season"
+   },
+   "competitions": [
+    {
+     "id": "196832",
+     "uid": "s:3301~l:3321~e:400529374~c:196832",
+     "date": "2014-04-26T19:30Z",
+     "endDate": "2014-04-26T19:30Z",
+     "type": {
+      "id": "970",
+      "abbreviation": "Bantamweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "4483",
+      "fullName": "Baltimore Arena",
+      "address": {
+       "city": "Baltimore",
+       "state": "MD",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "3001208",
+       "uid": "s:3301~a:3001208",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Chris Beal",
+        "displayName": "Chris Beal",
+        "shortName": "C. Beal",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "10-8-0"
+        }
+       ]
+      },
+      {
+       "id": "3074969",
+       "uid": "s:3301~a:3074969",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Patrick Williams",
+        "displayName": "Patrick Williams",
+        "shortName": "P. Williams",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "8-6-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 111.0,
+      "displayClock": "1:51",
+      "period": 2,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2014-04-26T19:30Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "194861",
+     "uid": "s:3301~l:3321~e:400529374~c:194861",
+     "date": "2014-04-26T19:30Z",
+     "endDate": "2014-04-26T19:30Z",
+     "type": {
+      "id": "986",
+      "abbreviation": "Lightweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "4483",
+      "fullName": "Baltimore Arena",
+      "address": {
+       "city": "Baltimore",
+       "state": "MD",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2486967",
+       "uid": "s:3301~a:2486967",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Danny Castillo",
+        "displayName": "Danny Castillo",
+        "shortName": "D. Castillo",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "17-10-0"
+        }
+       ]
+      },
+      {
+       "id": "2503056",
+       "uid": "s:3301~a:2503056",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Charlie Brenneman",
+        "displayName": "Charlie Brenneman",
+        "shortName": "C. Brenneman",
+        "flag": {
+         "href": "https://www.espn.com/i/teamlogos/countries/500/blank.png",
+         "alt": "default",
+         "rel": [
+          "default-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "19-8-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 21.0,
+      "displayClock": "0:21",
+      "period": 2,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2014-04-26T19:30Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "193464",
+     "uid": "s:3301~l:3321~e:400529374~c:193464",
+     "date": "2014-04-26T19:30Z",
+     "endDate": "2014-04-26T19:30Z",
+     "type": {
+      "id": "1003",
+      "abbreviation": "W Bantamweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "4483",
+      "fullName": "Baltimore Arena",
+      "address": {
+       "city": "Baltimore",
+       "state": "MD",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "3034802",
+       "uid": "s:3301~a:3034802",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Jessamyn Duke",
+        "displayName": "Jessamyn Duke",
+        "shortName": "J. Duke",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 82.0,
+         "displayValue": "82.0",
+         "period": 3,
+         "linescores": [
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 3
+          },
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 3
+          },
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 3
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "3-5-0"
+        }
+       ]
+      },
+      {
+       "id": "3081041",
+       "uid": "s:3301~a:3081041",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Bethe Correia",
+        "displayName": "Bethe Correia",
+        "shortName": "B. Correia",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/bra.png",
+         "alt": "Brazil",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 89.0,
+         "displayValue": "89.0",
+         "period": 3,
+         "linescores": [
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 3
+          },
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 3
+          },
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 3
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "11-6-1"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2014-04-26T19:30Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "194221",
+     "uid": "s:3301~l:3321~e:400529374~c:194221",
+     "date": "2014-04-26T19:30Z",
+     "endDate": "2014-04-26T19:30Z",
+     "type": {
+      "id": "986",
+      "abbreviation": "Lightweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "4483",
+      "fullName": "Baltimore Arena",
+      "address": {
+       "city": "Baltimore",
+       "state": "MD",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2354524",
+       "uid": "s:3301~a:2354524",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Takanori Gomi",
+        "displayName": "Takanori Gomi",
+        "shortName": "T. Gomi",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/jpn.png",
+         "alt": "Japan",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 87.0,
+         "displayValue": "87.0",
+         "period": 3,
+         "linescores": [
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 3
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 3
+          },
+          {
+           "value": 29.0,
+           "displayValue": "29",
+           "period": 3
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "36-15-0"
+        }
+       ]
+      },
+      {
+       "id": "2560712",
+       "uid": "s:3301~a:2560712",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Isaac Vallie-Flagg",
+        "displayName": "Isaac Vallie-Flagg",
+        "shortName": "I. Vallie-Flagg",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 84.0,
+         "displayValue": "84.0",
+         "period": 3,
+         "linescores": [
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 3
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 3
+          },
+          {
+           "value": 28.0,
+           "displayValue": "28",
+           "period": 3
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "16-7-1"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": true
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2014-04-26T19:30Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "193561",
+     "uid": "s:3301~l:3321~e:400529374~c:193561",
+     "date": "2014-04-26T19:30Z",
+     "endDate": "2014-04-26T19:30Z",
+     "type": {
+      "id": "956",
+      "abbreviation": "Flyweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "4483",
+      "fullName": "Baltimore Arena",
+      "address": {
+       "city": "Baltimore",
+       "state": "MD",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2500457",
+       "uid": "s:3301~a:2500457",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Joseph Benavidez",
+        "displayName": "Joseph Benavidez",
+        "shortName": "J. Benavidez",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "28-8-0"
+        }
+       ]
+      },
+      {
+       "id": "2614020",
+       "uid": "s:3301~a:2614020",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Tim Elliott",
+        "displayName": "Tim Elliott",
+        "shortName": "T. Elliott",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "23-14-1"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 248.0,
+      "displayClock": "4:08",
+      "period": 1,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2014-04-26T19:30Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "193404",
+     "uid": "s:3301~l:3321~e:400529374~c:193404",
+     "date": "2014-04-26T19:30Z",
+     "endDate": "2014-04-26T19:30Z",
+     "type": {
+      "id": "999",
+      "abbreviation": "Featherweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "4483",
+      "fullName": "Baltimore Arena",
+      "address": {
+       "city": "Baltimore",
+       "state": "MD",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2614933",
+       "uid": "s:3301~a:2614933",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Max Holloway",
+        "displayName": "Max Holloway",
+        "shortName": "M. Holloway",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "28-9-0"
+        }
+       ]
+      },
+      {
+       "id": "3074464",
+       "uid": "s:3301~a:3074464",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Andre Fili",
+        "displayName": "Andre Fili",
+        "shortName": "A. Fili",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "25-14-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 219.0,
+      "displayClock": "3:39",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2014-04-26T19:30Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "193741",
+     "uid": "s:3301~l:3321~e:400529374~c:193741",
+     "date": "2014-04-26T19:30Z",
+     "endDate": "2014-04-26T19:30Z",
+     "type": {
+      "id": "986",
+      "abbreviation": "Lightweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "4483",
+      "fullName": "Baltimore Arena",
+      "address": {
+       "city": "Baltimore",
+       "state": "MD",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2335718",
+       "uid": "s:3301~a:2335718",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Jim Miller",
+        "displayName": "Jim Miller",
+        "shortName": "J. Miller",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "39-19-0"
+        }
+       ]
+      },
+      {
+       "id": "2504257",
+       "uid": "s:3301~a:2504257",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Yancy Medeiros",
+        "displayName": "Yancy Medeiros",
+        "shortName": "Y. Medeiros",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "17-9-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 198.0,
+      "displayClock": "3:18",
+      "period": 1,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2014-04-26T19:30Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "193602",
+     "uid": "s:3301~l:3321~e:400529374~c:193602",
+     "date": "2014-04-26T19:30Z",
+     "endDate": "2014-04-26T19:30Z",
+     "type": {
+      "id": "972",
+      "abbreviation": "Middleweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "4483",
+      "fullName": "Baltimore Arena",
+      "address": {
+       "city": "Baltimore",
+       "state": "MD",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2335531",
+       "uid": "s:3301~a:2335531",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Tim Boetsch",
+        "displayName": "Tim Boetsch",
+        "shortName": "T. Boetsch",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "21-13-0"
+        }
+       ]
+      },
+      {
+       "id": "2519811",
+       "uid": "s:3301~a:2519811",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Luke Rockhold",
+        "displayName": "Luke Rockhold",
+        "shortName": "L. Rockhold",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "16-6-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 128.0,
+      "displayClock": "2:08",
+      "period": 1,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2014-04-26T19:30Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "193601",
+     "uid": "s:3301~l:3321~e:400529374~c:193601",
+     "date": "2014-04-26T19:30Z",
+     "endDate": "2014-04-26T19:30Z",
+     "type": {
+      "id": "990",
+      "abbreviation": "Light Heavyweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "4483",
+      "fullName": "Baltimore Arena",
+      "address": {
+       "city": "Baltimore",
+       "state": "MD",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2335663",
+       "uid": "s:3301~a:2335663",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Anthony Johnson",
+        "displayName": "Anthony Johnson",
+        "shortName": "A. Johnson",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 90.0,
+         "displayValue": "90.0",
+         "period": 3,
+         "linescores": [
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 3
+          },
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 3
+          },
+          {
+           "value": 30.0,
+           "displayValue": "30",
+           "period": 3
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "23-6-0"
+        }
+       ]
+      },
+      {
+       "id": "2499976",
+       "uid": "s:3301~a:2499976",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Phil Davis",
+        "displayName": "Phil Davis",
+        "shortName": "P. Davis",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 81.0,
+         "displayValue": "81.0",
+         "period": 3,
+         "linescores": [
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 3
+          },
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 3
+          },
+          {
+           "value": 27.0,
+           "displayValue": "27",
+           "period": 3
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "25-8-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2014-04-26T19:30Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    },
+    {
+     "id": "192588",
+     "uid": "s:3301~l:3321~e:400529374~c:192588",
+     "date": "2014-04-26T19:30Z",
+     "endDate": "2014-04-26T19:30Z",
+     "type": {
+      "id": "990",
+      "abbreviation": "Light Heavyweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "4483",
+      "fullName": "Baltimore Arena",
+      "address": {
+       "city": "Baltimore",
+       "state": "MD",
+       "country": "USA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "2335639",
+       "uid": "s:3301~a:2335639",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Jon Jones",
+        "displayName": "Jon Jones",
+        "shortName": "J. Jones",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png",
+         "alt": "USA",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 150.0,
+         "displayValue": "150.0",
+         "period": 5,
+         "linescores": [
+          {
+           "value": 50.0,
+           "displayValue": "50",
+           "period": 5
+          },
+          {
+           "value": 50.0,
+           "displayValue": "50",
+           "period": 5
+          },
+          {
+           "value": 50.0,
+           "displayValue": "50",
+           "period": 5
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "28-1-0"
+        }
+       ]
+      },
+      {
+       "id": "2504929",
+       "uid": "s:3301~a:2504929",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Glover Teixeira",
+        "displayName": "Glover Teixeira",
+        "shortName": "G. Teixeira",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/bra.png",
+         "alt": "Brazil",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "linescores": [
+        {
+         "value": 135.0,
+         "displayValue": "135.0",
+         "period": 5,
+         "linescores": [
+          {
+           "value": 45.0,
+           "displayValue": "45",
+           "period": 5
+          },
+          {
+           "value": 45.0,
+           "displayValue": "45",
+           "period": 5
+          },
+          {
+           "value": 45.0,
+           "displayValue": "45",
+           "period": 5
+          }
+         ]
+        }
+       ],
+       "statistics": [],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "TOT",
+         "type": "total",
+         "summary": "33-9-0"
+        }
+       ]
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 5,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 5
+      }
+     },
+     "startDate": "2014-04-26T19:30Z",
+     "broadcast": "",
+     "geoBroadcasts": [],
+     "broadcasts": [],
+     "highlights": []
+    }
+   ],
+   "links": [
+    {
+     "language": "en-US",
+     "rel": [
+      "summary",
+      "desktop",
+      "event"
+     ],
+     "href": "https://www.espn.com/mma/fightcenter/_/id/400529374/league/ufc",
+     "text": "Gamecast",
+     "shortText": "Gamecast",
+     "isExternal": false,
+     "isPremium": false
+    }
+   ],
+   "venues": [
+    {
+     "id": "4483",
+     "fullName": "Baltimore Arena",
+     "address": {
+      "city": "Baltimore",
+      "state": "MD",
+      "country": "USA"
+     }
+    }
+   ],
+   "status": {
+    "type": {
+     "id": "3",
+     "name": "STATUS_FINAL",
+     "state": "post",
+     "completed": true,
+     "description": "Final",
+     "detail": "Final",
+     "shortDetail": "Final"
+    }
+   }
+  }
+ ],
+ "provider": {
+  "id": "100",
+  "name": "Draft Kings",
+  "displayName": "Draft Kings",
+  "priority": 1
+ }
+}
