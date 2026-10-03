@@ -73,6 +73,7 @@ import { el, clear, renderAbsent, humanizeKey,
   formatEasternTime, formatEasternClock, localZoneAbbr, renderWordChip } from "./dom.js";
 import { renderLoadingSkeleton, renderError, notYetAvailable } from "./states.js";
 import { renderGameStory } from "./gamestory.js";
+import { renderMatchupRead } from "./matchupread.js";
 import { renderStaleness } from "./meta.js";
 import { teamColors } from "./teamcolors.js";
 import { teamName, bookLabel } from "./labels.js";
@@ -1100,6 +1101,13 @@ export async function renderGameDetail(container, date, away, home) {
   const liveStrip = renderLiveStrip(live); if (liveStrip) body.appendChild(liveStrip);
   // THE BET FIRST. Everything below is why, not what.
   body.appendChild(gqvTonightsPick(cardPick, quick));
+  // THE READ, 2026-10-03. The game page showed tables and no reasoning; the
+  // owner called the matchup analysis "barely analytical, just a couple of
+  // numbers". This is the written read (src/analysis/matchup_read.py), above
+  // every table, with its evidence under a toggle. It describes the game; it
+  // names no pick and changes none.
+  const matchupRead = renderMatchupRead(payload.read);
+  if (matchupRead) body.appendChild(matchupRead);
   body.appendChild(gqvPrice(quick, live));
   const lineMarkets = renderLineMarkets(oddsEntry, live); if (lineMarkets) body.appendChild(lineMarkets);
   // GAME STORY STAYS. Starters, bullpen workload, travel and weather are the

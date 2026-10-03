@@ -1,0 +1,1435 @@
+{
+ "advanced": {
+  "away_team": "NYY",
+  "findings": [],
+  "game": {
+   "away_probable": "Gerrit Cole",
+   "away_probable_id": 543037,
+   "away_score": null,
+   "away_team": "NYY",
+   "away_team_id": 147,
+   "date": "2026-10-03",
+   "detailed_state": "Scheduled",
+   "double_header": "N",
+   "first_five": {
+    "away_runs": null,
+    "complete": false,
+    "home_runs": null,
+    "innings_available": 0,
+    "reason": "only 0 inning(s) in the line; a first-five market needs 5 and is void otherwise",
+    "total_runs": null,
+    "winner": null
+   },
+   "game_number": 1,
+   "game_pk": 849835,
+   "game_type": "D",
+   "home_probable": "Drew Rasmussen",
+   "home_probable_id": 656876,
+   "home_score": null,
+   "home_team": "TB",
+   "home_team_id": 139,
+   "home_won": null,
+   "run_differential": null,
+   "start_time_utc": "2026-10-03T22:30:00Z",
+   "state": "pending",
+   "total_runs": null,
+   "venue": "Tropicana Field",
+   "winner": null
+  },
+  "game_id": "NYY-TB-2026-10-03-1",
+  "gaps": {
+   "lineups": "lineup not posted yet, or not fetched",
+   "matchup_depth": "no posted lineup for this game, so there is no unit to decompose",
+   "matchup_history": "batter-vs-pitcher history not fetched",
+   "news": "no injured-list moves, call-ups or trades for either club in the last 10 days",
+   "splits": "pitcher platoon splits not fetched",
+   "standings": "no standings snapshot stored for 2026-10-03"
+  },
+  "home_team": "TB",
+  "information_time": "2026-10-03T17:51:42.000259+00:00",
+  "market": null,
+  "sections": {
+   "arsenals": {
+    "away": [
+     {
+      "ba": 0.209,
+      "est_woba": 0.283,
+      "hard_hit_percent": 46.8,
+      "k_percent": 31.1,
+      "name": "Cole, Gerrit",
+      "pa": 225.0,
+      "pitch_name": "4-Seam Fastball",
+      "pitch_type": "FF",
+      "pitch_usage": 49.3,
+      "pitches": 814.0,
+      "player_id": "543037",
+      "slg": 0.37,
+      "team": "NYY",
+      "team_name_alt": "NYY",
+      "whiff_percent": 21.8,
+      "woba": 0.274
+     },
+     {
+      "ba": 0.229,
+      "est_woba": 0.291,
+      "hard_hit_percent": 42.2,
+      "k_percent": 21.8,
+      "name": "Cole, Gerrit",
+      "pa": 87.0,
+      "pitch_name": "Slider",
+      "pitch_type": "SL",
+      "pitch_usage": 19.9,
+      "pitches": 329.0,
+      "player_id": "543037",
+      "slg": 0.386,
+      "team": "NYY",
+      "team_name_alt": "NYY",
+      "whiff_percent": 27.9,
+      "woba": 0.282
+     },
+     {
+      "ba": 0.333,
+      "est_woba": 0.345,
+      "hard_hit_percent": 51.2,
+      "k_percent": 14.5,
+      "name": "Cole, Gerrit",
+      "pa": 55.0,
+      "pitch_name": "Curveball",
+      "pitch_type": "CU",
+      "pitch_usage": 13.8,
+      "pitches": 228.0,
+      "player_id": "543037",
+      "slg": 0.647,
+      "team": "NYY",
+      "team_name_alt": "NYY",
+      "whiff_percent": 20.0,
+      "woba": 0.435
+     },
+     {
+      "ba": 0.2,
+      "est_woba": 0.256,
+      "hard_hit_percent": 25.5,
+      "k_percent": 21.3,
+      "name": "Cole, Gerrit",
+      "pa": 61.0,
+      "pitch_name": "Changeup",
+      "pitch_type": "CH",
+      "pitch_usage": 13.5,
+      "pitches": 223.0,
+      "player_id": "543037",
+      "slg": 0.333,
+      "team": "NYY",
+      "team_name_alt": "NYY",
+      "whiff_percent": 23.4,
+      "woba": 0.236
+     }
+    ],
+    "home": [
+     {
+      "ba": 0.208,
+      "est_woba": 0.287,
+      "hard_hit_percent": 30.7,
+      "k_percent": 18.4,
+      "name": "Rasmussen, Drew",
+      "pa": 185.0,
+      "pitch_name": "Cutter",
+      "pitch_type": "FC",
+      "pitch_usage": 28.9,
+      "pitches": 687.0,
+      "player_id": "656876",
+      "slg": 0.341,
+      "team": "TB",
+      "team_name_alt": "TB",
+      "whiff_percent": 25.1,
+      "woba": 0.271
+     },
+     {
+      "ba": 0.215,
+      "est_woba": 0.278,
+      "hard_hit_percent": 37.6,
+      "k_percent": 32.1,
+      "name": "Rasmussen, Drew",
+      "pa": 159.0,
+      "pitch_name": "4-Seam Fastball",
+      "pitch_type": "FF",
+      "pitch_usage": 28.5,
+      "pitches": 678.0,
+      "player_id": "656876",
+      "slg": 0.354,
+      "team": "TB",
+      "team_name_alt": "TB",
+      "whiff_percent": 25.8,
+      "woba": 0.293
+     },
+     {
+      "ba": 0.182,
+      "est_woba": 0.265,
+      "hard_hit_percent": 38.4,
+      "k_percent": 24.6,
+      "name": "Rasmussen, Drew",
+      "pa": 142.0,
+      "pitch_name": "Sinker",
+      "pitch_type": "SI",
+      "pitch_usage": 23.1,
+      "pitches": 549.0,
+      "player_id": "656876",
+      "slg": 0.28,
+      "team": "TB",
+      "team_name_alt": "TB",
+      "whiff_percent": 16.5,
+      "woba": 0.237
+     },
+     {
+      "ba": 0.148,
+      "est_woba": 0.193,
+      "hard_hit_percent": 28.0,
+      "k_percent": 38.3,
+      "name": "Rasmussen, Drew",
+      "pa": 81.0,
+      "pitch_name": "Changeup",
+      "pitch_type": "CH",
+      "pitch_usage": 13.1,
+      "pitches": 312.0,
+      "player_id": "656876",
+      "slg": 0.148,
+      "team": "TB",
+      "team_name_alt": "TB",
+      "whiff_percent": 36.1,
+      "woba": 0.144
+     }
+    ]
+   },
+   "bullpen": {
+    "NYY": {
+     "as_of": "2026-10-03",
+     "reliever_count": 0,
+     "relievers": [],
+     "team": "NYY",
+     "total_innings": 0,
+     "window_days": 7
+    },
+    "TB": {
+     "as_of": "2026-10-03",
+     "reliever_count": 0,
+     "relievers": [],
+     "team": "TB",
+     "total_innings": 0,
+     "window_days": 7
+    }
+   },
+   "market": {
+    "all_books": {
+     "h2h": [
+      {
+       "away_price": 114,
+       "book": "fanduel",
+       "home_price": -134,
+       "last_update": "2026-10-03T16:51:16.161446+00:00"
+      },
+      {
+       "away_price": 112,
+       "book": "draftkings",
+       "home_price": -135,
+       "last_update": "2026-10-03T16:51:16.161446+00:00"
+      },
+      {
+       "away_price": 115,
+       "book": "betmgm",
+       "home_price": -135,
+       "last_update": "2026-10-03T16:51:16.161446+00:00"
+      },
+      {
+       "away_price": 110,
+       "book": "fanatics",
+       "home_price": -130,
+       "last_update": "2026-10-03T16:51:16.161446+00:00"
+      },
+      {
+       "away_price": 114,
+       "book": "mybookieag",
+       "home_price": -134,
+       "last_update": "2026-10-03T16:51:16.161446+00:00"
+      },
+      {
+       "away_price": 110,
+       "book": "betrivers",
+       "home_price": -132,
+       "last_update": "2026-10-03T16:51:16.161446+00:00"
+      },
+      {
+       "away_price": 113,
+       "book": "bovada",
+       "home_price": -135,
+       "last_update": "2026-10-03T16:51:16.161446+00:00"
+      },
+      {
+       "away_price": 115,
+       "book": "betonlineag",
+       "home_price": -127,
+       "last_update": "2026-10-03T16:51:16.161446+00:00"
+      },
+      {
+       "away_price": 115,
+       "book": "lowvig",
+       "home_price": -127,
+       "last_update": "2026-10-03T16:51:16.161446+00:00"
+      },
+      {
+       "away_price": 117,
+       "book": "betus",
+       "home_price": -128,
+       "last_update": "2026-10-03T16:51:16.161446+00:00"
+      },
+      {
+       "away_price": 115,
+       "book": "williamhill_us",
+       "home_price": -136,
+       "last_update": "2026-10-03T16:51:16.161446+00:00"
+      }
+     ]
+    },
+    "markets": {
+     "h2h": {
+      "away_fair": 0.4508,
+      "away_price": 117,
+      "book": "betus",
+      "derived_from_board": true,
+      "hold_pct": 2.175,
+      "home_fair": 0.5492,
+      "home_price": -128,
+      "last_update": "2026-10-03T16:51:16.161446+00:00",
+      "total": null
+     }
+    }
+   },
+   "multibook_board": {
+    "observed_utc": "2026-10-03T16:51:16.161446+00:00",
+    "quotes": [
+     {
+      "away_price": 114,
+      "book": "fanduel",
+      "home_price": -134,
+      "ts": "2026-10-03T16:51:16.161446+00:00"
+     },
+     {
+      "away_price": 112,
+      "book": "draftkings",
+      "home_price": -135,
+      "ts": "2026-10-03T16:51:16.161446+00:00"
+     },
+     {
+      "away_price": 115,
+      "book": "betmgm",
+      "home_price": -135,
+      "ts": "2026-10-03T16:51:16.161446+00:00"
+     },
+     {
+      "away_price": 110,
+      "book": "fanatics",
+      "home_price": -130,
+      "ts": "2026-10-03T16:51:16.161446+00:00"
+     },
+     {
+      "away_price": 114,
+      "book": "mybookieag",
+      "home_price": -134,
+      "ts": "2026-10-03T16:51:16.161446+00:00"
+     },
+     {
+      "away_price": 110,
+      "book": "betrivers",
+      "home_price": -132,
+      "ts": "2026-10-03T16:51:16.161446+00:00"
+     },
+     {
+      "away_price": 113,
+      "book": "bovada",
+      "home_price": -135,
+      "ts": "2026-10-03T16:51:16.161446+00:00"
+     },
+     {
+      "away_price": 115,
+      "book": "betonlineag",
+      "home_price": -127,
+      "ts": "2026-10-03T16:51:16.161446+00:00"
+     },
+     {
+      "away_price": 115,
+      "book": "lowvig",
+      "home_price": -127,
+      "ts": "2026-10-03T16:51:16.161446+00:00"
+     },
+     {
+      "away_price": 117,
+      "book": "betus",
+      "home_price": -128,
+      "ts": "2026-10-03T16:51:16.161446+00:00"
+     },
+     {
+      "away_price": 115,
+      "book": "williamhill_us",
+      "home_price": -136,
+      "ts": "2026-10-03T16:51:16.161446+00:00"
+     }
+    ],
+    "source": "multi-book capture store"
+   },
+   "park": {
+    "altitude_m": 5,
+    "lat": 27.7683,
+    "lon": -82.6534,
+    "name": "Tropicana Field",
+    "orientation_deg": null,
+    "roof": "fixed",
+    "team": "TB"
+   },
+   "price_improvement": {
+    "any_positive": false,
+    "dispersion": {
+     "books": 11,
+     "home_probability_range": 0.01063
+    },
+    "label": "price improvement / line-shopping value — a better execution price, not expected value and not a prediction",
+    "note": "No side here beats the de-vigged consensus, and that is the usual case rather than a bad board: the best available price still carries the book's vig while the consensus it is measured against has had the vig removed, so the difference is normally negative by roughly the hold. A positive number is the exception worth noticing; these are not.",
+    "observed_utc": "2026-10-03T16:51:16.161446+00:00",
+    "sides": {
+     "away": {
+      "best_book": "betus",
+      "best_price": 117,
+      "consensus_probability": 0.45136,
+      "improvement_points": -0.00947,
+      "improvement_return_pct": -2.056
+     },
+     "home": {
+      "best_book": "betonlineag",
+      "best_price": -127,
+      "consensus_probability": 0.54864,
+      "improvement_points": -0.01083,
+      "improvement_return_pct": -1.935
+     }
+    }
+   },
+   "starters": {
+    "away_sp_appearances": 19,
+    "away_sp_bb9": 1.7838,
+    "away_sp_days_rest": 14,
+    "away_sp_era": 3.4054,
+    "away_sp_fip": 3.8602,
+    "away_sp_hr9": 1.3784,
+    "away_sp_innings": 111.0,
+    "away_sp_ip_per_start": 5.842,
+    "away_sp_k9": 9.1622,
+    "away_sp_k_bb_pct": 0.2009,
+    "away_sp_known": true,
+    "away_sp_recent_era": 4.9091,
+    "away_sp_recent_ip_per_start": 6.111,
+    "away_sp_recent_starts": 3,
+    "away_sp_starts": 19,
+    "away_sp_thin": false,
+    "away_sp_whip": 1.0901,
+    "both_sp_known": true,
+    "diff_sp_era": -0.5293,
+    "diff_sp_fip": -0.8691,
+    "diff_sp_ip_per_start": -0.163,
+    "diff_sp_k9": -0.0057,
+    "diff_sp_k_bb_pct": 0.0148,
+    "diff_sp_whip": -0.1836,
+    "either_sp_thin": false,
+    "home_sp_appearances": 27,
+    "home_sp_bb9": 1.5848,
+    "home_sp_days_rest": 14,
+    "home_sp_era": 2.8761,
+    "home_sp_fip": 2.9911,
+    "home_sp_hr9": 0.8217,
+    "home_sp_innings": 153.33,
+    "home_sp_ip_per_start": 5.679,
+    "home_sp_k9": 9.1565,
+    "home_sp_k_bb_pct": 0.2157,
+    "home_sp_known": true,
+    "home_sp_recent_era": 1.8947,
+    "home_sp_recent_ip_per_start": 6.333,
+    "home_sp_recent_starts": 3,
+    "home_sp_starts": 27,
+    "home_sp_thin": false,
+    "home_sp_whip": 0.9065
+   },
+   "teams": {
+    "away_away_win_pct": 0.575,
+    "away_games_played": 155,
+    "away_home_win_pct": 0.56,
+    "away_last10_games": 10,
+    "away_last10_run_diff_pg": 1.8,
+    "away_last10_runs_scored_pg": 5.0,
+    "away_last10_wins": 6,
+    "away_last5_games": 5,
+    "away_last5_run_diff_pg": -0.4,
+    "away_last5_runs_scored_pg": 3.8,
+    "away_last5_wins": 2,
+    "away_losses": 67,
+    "away_rest_days": 10,
+    "away_run_diff_pg": 0.819,
+    "away_runs_allowed_pg": 3.742,
+    "away_runs_scored_pg": 4.561,
+    "away_sample_is_thin": false,
+    "away_streak": 2,
+    "away_win_pct": 0.5677,
+    "away_wins": 88,
+    "diff_run_diff_pg": -0.383,
+    "diff_runs_allowed_pg": 0.316,
+    "diff_runs_scored_pg": -0.067,
+    "diff_win_pct": 0.0349,
+    "either_sample_thin": false,
+    "home_away_win_pct": 0.52,
+    "home_games_played": 156,
+    "home_home_win_pct": 0.679,
+    "home_last10_games": 10,
+    "home_last10_run_diff_pg": 2.0,
+    "home_last10_runs_scored_pg": 4.7,
+    "home_last10_wins": 7,
+    "home_last5_games": 5,
+    "home_last5_run_diff_pg": 0.2,
+    "home_last5_runs_scored_pg": 3.0,
+    "home_last5_wins": 3,
+    "home_losses": 62,
+    "home_rest_days": 10,
+    "home_run_diff_pg": 0.436,
+    "home_runs_allowed_pg": 4.058,
+    "home_runs_scored_pg": 4.494,
+    "home_sample_is_thin": false,
+    "home_streak": -2,
+    "home_win_pct": 0.6026,
+    "home_wins": 94
+   },
+   "travel": {
+    "NYY": {
+     "days_since_last_game": null,
+     "dense_stretch": false,
+     "eastward": null,
+     "games_last_7": 0,
+     "last_venue": null,
+     "miles": null,
+     "reason": "no games in the window to travel from",
+     "team": "NYY",
+     "zones": null
+    },
+    "TB": {
+     "days_since_last_game": null,
+     "dense_stretch": false,
+     "eastward": null,
+     "games_last_7": 0,
+     "last_venue": null,
+     "miles": null,
+     "reason": "no games in the window to travel from",
+     "team": "TB",
+     "zones": null
+    }
+   },
+   "weather": {
+    "hours_from_first_pitch": 0.5,
+    "humidity_pct": 67,
+    "observed_utc": "2026-10-03T22:00",
+    "precip_probability_pct": 11,
+    "pressure_hpa": 1012.7,
+    "temp_f": 86.4,
+    "wind_from_deg": 192,
+    "wind_mph": 4.5
+   }
+  },
+  "side": null,
+  "staleness": {
+   "age_seconds": 3628.768304,
+   "has_board": true,
+   "observed_utc": "2026-10-03T16:51:16.161446+00:00"
+  },
+  "summary": "nothing obvious: starters are close (FIP gap 0.87, needs 1.00); teams are close on run differential (gap 0.38, needs 1.00)",
+  "verdict": "no_play"
+ },
+ "engine": {
+  "fatal_counterarguments": [
+   {
+    "cause": "thin_board:books_at_decision_below_min_books",
+    "detail": "books_at_decision=1 < 2",
+    "severity": "FATAL"
+   },
+   {
+    "cause": "thin_board:books_at_decision_below_min_books",
+    "detail": "books_at_decision=1 < 2",
+    "severity": "FATAL"
+   },
+   {
+    "cause": "thin_board:books_at_decision_below_min_books",
+    "detail": "books_at_decision=0 < 2",
+    "severity": "FATAL"
+   },
+   {
+    "cause": "thin_board:books_at_decision_below_min_books",
+    "detail": "books_at_decision=0 < 2",
+    "severity": "FATAL"
+   },
+   {
+    "cause": "thin_board:books_at_decision_below_min_books",
+    "detail": "books_at_decision=0 < 2",
+    "severity": "FATAL"
+   },
+   {
+    "cause": "thin_board:books_at_decision_below_min_books",
+    "detail": "books_at_decision=1 < 2",
+    "severity": "FATAL"
+   },
+   {
+    "cause": "thin_board:books_at_decision_below_min_books",
+    "detail": "books_at_decision=1 < 2",
+    "severity": "FATAL"
+   },
+   {
+    "cause": "thin_board:books_at_decision_below_min_books",
+    "detail": "books_at_decision=1 < 2",
+    "severity": "FATAL"
+   },
+   {
+    "cause": "thin_board:books_at_decision_below_min_books",
+    "detail": "books_at_decision=0 < 2",
+    "severity": "FATAL"
+   },
+   {
+    "cause": "thin_board:books_at_decision_below_min_books",
+    "detail": "books_at_decision=0 < 2",
+    "severity": "FATAL"
+   },
+   {
+    "cause": "thin_board:books_at_decision_below_min_books",
+    "detail": "books_at_decision=0 < 2",
+    "severity": "FATAL"
+   },
+   {
+    "cause": "thin_board:books_at_decision_below_min_books",
+    "detail": "books_at_decision=1 < 2",
+    "severity": "FATAL"
+   },
+   {
+    "cause": "thin_board:books_at_decision_below_min_books",
+    "detail": "books_at_decision=1 < 2",
+    "severity": "FATAL"
+   },
+   {
+    "cause": "thin_board:books_at_decision_below_min_books",
+    "detail": "books_at_decision=1 < 2",
+    "severity": "FATAL"
+   },
+   {
+    "cause": "thin_board:books_at_decision_below_min_books",
+    "detail": "books_at_decision=0 < 2",
+    "severity": "FATAL"
+   },
+   {
+    "cause": "thin_board:books_at_decision_below_min_books",
+    "detail": "books_at_decision=0 < 2",
+    "severity": "FATAL"
+   },
+   {
+    "cause": "thin_board:books_at_decision_below_min_books",
+    "detail": "books_at_decision=0 < 2",
+    "severity": "FATAL"
+   },
+   {
+    "cause": "thin_board:books_at_decision_below_min_books",
+    "detail": "books_at_decision=1 < 2",
+    "severity": "FATAL"
+   },
+   {
+    "cause": "thin_board:books_at_decision_below_min_books",
+    "detail": "books_at_decision=1 < 2",
+    "severity": "FATAL"
+   },
+   {
+    "cause": "thin_board:books_at_decision_below_min_books",
+    "detail": "books_at_decision=1 < 2",
+    "severity": "FATAL"
+   },
+   {
+    "cause": "thin_board:books_at_decision_below_min_books",
+    "detail": "books_at_decision=0 < 2",
+    "severity": "FATAL"
+   },
+   {
+    "cause": "thin_board:books_at_decision_below_min_books",
+    "detail": "books_at_decision=0 < 2",
+    "severity": "FATAL"
+   },
+   {
+    "cause": "thin_board:books_at_decision_below_min_books",
+    "detail": "books_at_decision=0 < 2",
+    "severity": "FATAL"
+   },
+   {
+    "cause": "thin_board:books_at_decision_below_min_books",
+    "detail": "books_at_decision=1 < 2",
+    "severity": "FATAL"
+   },
+   {
+    "cause": "thin_board:books_at_decision_below_min_books",
+    "detail": "books_at_decision=1 < 2",
+    "severity": "FATAL"
+   },
+   {
+    "cause": "thin_board:books_at_decision_below_min_books",
+    "detail": "books_at_decision=1 < 2",
+    "severity": "FATAL"
+   },
+   {
+    "cause": "thin_board:books_at_decision_below_min_books",
+    "detail": "books_at_decision=0 < 2",
+    "severity": "FATAL"
+   },
+   {
+    "cause": "thin_board:books_at_decision_below_min_books",
+    "detail": "books_at_decision=0 < 2",
+    "severity": "FATAL"
+   },
+   {
+    "cause": "thin_board:books_at_decision_below_min_books",
+    "detail": "books_at_decision=0 < 2",
+    "severity": "FATAL"
+   },
+   {
+    "cause": "thin_board:books_at_decision_below_min_books",
+    "detail": "books_at_decision=1 < 2",
+    "severity": "FATAL"
+   },
+   {
+    "cause": "thin_board:books_at_decision_below_min_books",
+    "detail": "books_at_decision=1 < 2",
+    "severity": "FATAL"
+   },
+   {
+    "cause": "thin_board:books_at_decision_below_min_books",
+    "detail": "books_at_decision=1 < 2",
+    "severity": "FATAL"
+   },
+   {
+    "cause": "thin_board:books_at_decision_below_min_books",
+    "detail": "books_at_decision=0 < 2",
+    "severity": "FATAL"
+   },
+   {
+    "cause": "thin_board:books_at_decision_below_min_books",
+    "detail": "books_at_decision=0 < 2",
+    "severity": "FATAL"
+   },
+   {
+    "cause": "thin_board:books_at_decision_below_min_books",
+    "detail": "books_at_decision=0 < 2",
+    "severity": "FATAL"
+   },
+   {
+    "cause": "thin_board:books_at_decision_below_min_books",
+    "detail": "books_at_decision=1 < 2",
+    "severity": "FATAL"
+   },
+   {
+    "cause": "thin_board:books_at_decision_below_min_books",
+    "detail": "books_at_decision=1 < 2",
+    "severity": "FATAL"
+   },
+   {
+    "cause": "thin_board:books_at_decision_below_min_books",
+    "detail": "books_at_decision=1 < 2",
+    "severity": "FATAL"
+   },
+   {
+    "cause": "thin_board:books_at_decision_below_min_books",
+    "detail": "books_at_decision=0 < 2",
+    "severity": "FATAL"
+   },
+   {
+    "cause": "thin_board:books_at_decision_below_min_books",
+    "detail": "books_at_decision=0 < 2",
+    "severity": "FATAL"
+   },
+   {
+    "cause": "thin_board:books_at_decision_below_min_books",
+    "detail": "books_at_decision=0 < 2",
+    "severity": "FATAL"
+   },
+   {
+    "cause": "thin_board:books_at_decision_below_min_books",
+    "detail": "books_at_decision=1 < 2",
+    "severity": "FATAL"
+   }
+  ],
+  "forward_test_plays": [],
+  "market_reference_present": true,
+  "n_decisions": 84,
+  "n_play": 42,
+  "n_staked": 63,
+  "provenance_counts": {
+   "market_derived": 56,
+   "placeholder": 28
+  },
+  "stand_downs": null
+ },
+ "freshness": {
+  "age_s": 7.756838,
+  "built_at": "2026-10-03T17:51:37.172884+00:00",
+  "served_at": "2026-10-03T17:51:44.929722+00:00",
+  "stale": true,
+  "stale_reason": "newest odds board is 3629s old, over the 1800s freshness threshold"
+ },
+ "price_verdicts": {
+  "away": {
+   "age_seconds": 3629,
+   "basis": "Price verdict = your price versus the fair price across the books at one capture instant — the books' average with their cut taken back out. This tells you whether you are getting a good NUMBER on the bet, not whether the bet wins. No independent model probability exists yet.",
+   "books": 11,
+   "evidence_tier": "MEDIUM",
+   "fair_price": 122,
+   "independent_model": "NO INDEPENDENT MODEL YET",
+   "market_implied_probability": 0.45136,
+   "market_reference_provenance": "market_derived",
+   "observed_utc": "2026-10-03T16:51:16.161446+00:00",
+   "reasons": [
+    "Your price +117 implies 46.1%; the fair price across 11 books is 45.1% (-0.9 pts)",
+    "Board captured 1.0 hr ago"
+   ],
+   "risks": [],
+   "stated_implied_probability": 0.4608,
+   "value_points": -0.94,
+   "word": "FAIR PRICE"
+  },
+  "home": {
+   "age_seconds": 3629,
+   "basis": "Price verdict = your price versus the fair price across the books at one capture instant — the books' average with their cut taken back out. This tells you whether you are getting a good NUMBER on the bet, not whether the bet wins. No independent model probability exists yet.",
+   "books": 11,
+   "evidence_tier": "MEDIUM",
+   "fair_price": -122,
+   "independent_model": "NO INDEPENDENT MODEL YET",
+   "market_implied_probability": 0.54864,
+   "market_reference_provenance": "market_derived",
+   "observed_utc": "2026-10-03T16:51:16.161446+00:00",
+   "reasons": [
+    "Your price -127 implies 56.0%; the fair price across 11 books is 54.9% (-1.1 pts)",
+    "Board captured 1.0 hr ago"
+   ],
+   "risks": [],
+   "stated_implied_probability": 0.5595,
+   "value_points": -1.09,
+   "word": "PASS"
+  }
+ },
+ "quick": {
+  "away_team": "NYY",
+  "game_id": "NYY-TB-2026-10-03-1",
+  "headline": "Interesting matchup, but no demonstrated betting edge.",
+  "home_team": "TB",
+  "market": null,
+  "price": {
+   "available": true,
+   "books": 11,
+   "home_probability_range": 0.01063,
+   "label": "price improvement / line-shopping value — a better execution price, not expected value and not a prediction",
+   "note": "No side here beats the de-vigged consensus, and that is the usual case rather than a bad board: the best available price still carries the book's vig while the consensus it is measured against has had the vig removed, so the difference is normally negative by roughly the hold. A positive number is the exception worth noticing; these are not.",
+   "sides": {
+    "away": {
+     "best_book": "betus",
+     "best_price": 117,
+     "consensus_probability": 0.45136,
+     "improvement_probability_points": -0.00947,
+     "improvement_return_pct": -2.056
+    },
+    "home": {
+     "best_book": "betonlineag",
+     "best_price": -127,
+     "consensus_probability": 0.54864,
+     "improvement_probability_points": -0.01083,
+     "improvement_return_pct": -1.935
+    }
+   },
+   "staleness": {
+    "age_seconds": 3628.768304,
+    "has_board": true,
+    "observed_utc": "2026-10-03T16:51:16.161446+00:00"
+   }
+  },
+  "side": null,
+  "summary": "nothing obvious: starters are close (FIP gap 0.87, needs 1.00); teams are close on run differential (gap 0.38, needs 1.00)",
+  "top_findings": [],
+  "verdict": "no_play"
+ },
+ "read": {
+  "as_of": "2026-10-03T17:51:42.000259+00:00",
+  "factors": [
+   {
+    "caveat": "Season lines only; park and opponent are not adjusted. Our pitcher logs end 2026-09-07, 26 days before this game, so recent starts are missing.",
+    "confidence": "medium",
+    "down_weighted": true,
+    "evidence": [
+     {
+      "label": "Gerrit Cole FIP",
+      "path": "advanced.sections.starters.away_sp_fip",
+      "value": 3.8602
+     },
+     {
+      "label": "Gerrit Cole WHIP",
+      "path": "advanced.sections.starters.away_sp_whip",
+      "value": 1.0901
+     },
+     {
+      "label": "Gerrit Cole strikeouts minus walks",
+      "path": "advanced.sections.starters.away_sp_k_bb_pct",
+      "value": 0.2009
+     },
+     {
+      "label": "Gerrit Cole innings",
+      "path": "advanced.sections.starters.away_sp_innings",
+      "value": 111.0
+     },
+     {
+      "label": "Drew Rasmussen FIP",
+      "path": "advanced.sections.starters.home_sp_fip",
+      "value": 2.9911
+     },
+     {
+      "label": "Drew Rasmussen WHIP",
+      "path": "advanced.sections.starters.home_sp_whip",
+      "value": 0.9065
+     },
+     {
+      "label": "Drew Rasmussen strikeouts minus walks",
+      "path": "advanced.sections.starters.home_sp_k_bb_pct",
+      "value": 0.2157
+     },
+     {
+      "label": "Drew Rasmussen innings",
+      "path": "advanced.sections.starters.home_sp_innings",
+      "value": 153.33
+     }
+    ],
+    "factor": "starting_pitching",
+    "favours": "TB",
+    "rank": 1,
+    "sentence": "Gerrit Cole (3.86 FIP, 1.09 WHIP, 20.1% strikeouts minus walks, 111 innings) against Drew Rasmussen (2.99 FIP, 0.91 WHIP, 21.6% strikeouts minus walks, 153 innings). Drew Rasmussen is better by 0.87 runs per nine on FIP, which favours the Rays. WHIP and strikeouts minus walks point the same way.",
+    "short": "Drew Rasmussen (2.99 FIP) is the better starter than Gerrit Cole (3.86 FIP), which favours the Rays.",
+    "size": "moderate",
+    "title": "Starting pitching"
+   },
+   {
+    "caveat": "Plate appearances that ended on each pitch type, season to date, as of a pitch-file date this page does not state. Not adjusted for opponent or park.",
+    "confidence": "medium",
+    "down_weighted": false,
+    "evidence": [
+     {
+      "label": "Gerrit Cole 4-Seam Fastball wOBA allowed",
+      "path": "advanced.sections.arsenals.away.0.woba",
+      "value": 0.274
+     },
+     {
+      "label": "Gerrit Cole 4-Seam Fastball plate appearances",
+      "path": "advanced.sections.arsenals.away.0.pa",
+      "value": 225.0
+     },
+     {
+      "label": "Gerrit Cole Slider wOBA allowed",
+      "path": "advanced.sections.arsenals.away.1.woba",
+      "value": 0.282
+     },
+     {
+      "label": "Gerrit Cole Slider plate appearances",
+      "path": "advanced.sections.arsenals.away.1.pa",
+      "value": 87.0
+     },
+     {
+      "label": "Gerrit Cole Curveball wOBA allowed",
+      "path": "advanced.sections.arsenals.away.2.woba",
+      "value": 0.435
+     },
+     {
+      "label": "Gerrit Cole Curveball plate appearances",
+      "path": "advanced.sections.arsenals.away.2.pa",
+      "value": 55.0
+     },
+     {
+      "label": "Gerrit Cole Changeup wOBA allowed",
+      "path": "advanced.sections.arsenals.away.3.woba",
+      "value": 0.236
+     },
+     {
+      "label": "Gerrit Cole Changeup plate appearances",
+      "path": "advanced.sections.arsenals.away.3.pa",
+      "value": 61.0
+     },
+     {
+      "label": "Drew Rasmussen Cutter wOBA allowed",
+      "path": "advanced.sections.arsenals.home.0.woba",
+      "value": 0.271
+     },
+     {
+      "label": "Drew Rasmussen Cutter plate appearances",
+      "path": "advanced.sections.arsenals.home.0.pa",
+      "value": 185.0
+     },
+     {
+      "label": "Drew Rasmussen 4-Seam Fastball wOBA allowed",
+      "path": "advanced.sections.arsenals.home.1.woba",
+      "value": 0.293
+     },
+     {
+      "label": "Drew Rasmussen 4-Seam Fastball plate appearances",
+      "path": "advanced.sections.arsenals.home.1.pa",
+      "value": 159.0
+     },
+     {
+      "label": "Drew Rasmussen Sinker wOBA allowed",
+      "path": "advanced.sections.arsenals.home.2.woba",
+      "value": 0.237
+     },
+     {
+      "label": "Drew Rasmussen Sinker plate appearances",
+      "path": "advanced.sections.arsenals.home.2.pa",
+      "value": 142.0
+     },
+     {
+      "label": "Drew Rasmussen Changeup wOBA allowed",
+      "path": "advanced.sections.arsenals.home.3.woba",
+      "value": 0.144
+     },
+     {
+      "label": "Drew Rasmussen Changeup plate appearances",
+      "path": "advanced.sections.arsenals.home.3.pa",
+      "value": 81.0
+     }
+    ],
+    "factor": "arsenal_results",
+    "favours": "TB",
+    "rank": 2,
+    "sentence": "Gerrit Cole has held hitters to a 0.291 wOBA over 428 plate appearances, 23.0% whiffs, leaning on the 4-seam fastball (49.3% of his pitches). Drew Rasmussen has held hitters to a 0.251 wOBA over 567 plate appearances, 24.7% whiffs, leaning on the cutter (28.9% of his pitches). By results on each pitch, Drew Rasmussen has been harder to hit by 0.040 wOBA, which favours the Rays.",
+    "short": "Drew Rasmussen has been harder to hit on the pitches he throws, which favours the Rays.",
+    "size": "moderate",
+    "title": "Results by pitch"
+   },
+   {
+    "caveat": "Home run rates settle slowly; with a few hundred batters behind each, a gap this size can move a lot.",
+    "confidence": "medium",
+    "down_weighted": false,
+    "evidence": [
+     {
+      "label": "park run factor",
+      "path": "read_inputs.park_factor.factor",
+      "value": 1.0024
+     },
+     {
+      "label": "home games behind the park factor",
+      "path": "read_inputs.park_factor.home_games",
+      "value": 81
+     },
+     {
+      "label": "Gerrit Cole home runs per nine",
+      "path": "advanced.sections.starters.away_sp_hr9",
+      "value": 1.3784
+     },
+     {
+      "label": "Gerrit Cole innings",
+      "path": "advanced.sections.starters.away_sp_innings",
+      "value": 111.0
+     },
+     {
+      "label": "Drew Rasmussen home runs per nine",
+      "path": "advanced.sections.starters.home_sp_hr9",
+      "value": 0.8217
+     },
+     {
+      "label": "Drew Rasmussen innings",
+      "path": "advanced.sections.starters.home_sp_innings",
+      "value": 153.33
+     }
+    ],
+    "factor": "hr_park",
+    "favours": "TB",
+    "rank": 3,
+    "sentence": "Gerrit Cole has allowed 1.38 home runs per nine and Drew Rasmussen 0.82 (111 and 153 innings), a gap that favours the Rays; the park factor of 1.002 is close to neutral.",
+    "short": "Gerrit Cole gives up more home runs than Drew Rasmussen, which favours the Rays.",
+    "size": "slight",
+    "title": "Home runs against the park"
+   },
+   {
+    "caveat": "This is a division series game and these are regular season rates; the smaller sample is 155 games. Our results end 2026-09-23, 10 days before this game.",
+    "confidence": "medium",
+    "down_weighted": true,
+    "evidence": [
+     {
+      "label": "Yankees run margin per game",
+      "path": "advanced.sections.teams.away_run_diff_pg",
+      "value": 0.819
+     },
+     {
+      "label": "Rays run margin per game",
+      "path": "advanced.sections.teams.home_run_diff_pg",
+      "value": 0.436
+     },
+     {
+      "label": "Yankees games played",
+      "path": "advanced.sections.teams.away_games_played",
+      "value": 155
+     },
+     {
+      "label": "Rays games played",
+      "path": "advanced.sections.teams.home_games_played",
+      "value": 156
+     },
+     {
+      "label": "Yankees win share",
+      "path": "advanced.sections.teams.away_win_pct",
+      "value": 0.5677
+     },
+     {
+      "label": "Rays win share",
+      "path": "advanced.sections.teams.home_win_pct",
+      "value": 0.6026
+     }
+    ],
+    "factor": "season_strength",
+    "favours": "NYY",
+    "rank": 4,
+    "sentence": "The Yankees have outscored opponents by 0.82 runs a game (4.56 scored, 3.74 allowed) and the Rays by 0.44 (4.49 scored, 4.06 allowed). The 0.38 run gap favours the Yankees.",
+    "short": "The Yankees have the better season run margin (0.82 against 0.44 a game).",
+    "size": "slight",
+    "title": "Season run margin"
+   },
+   {
+    "caveat": "Park orientation is not on file for any ballpark, so wind direction cannot be read as blowing in or out.",
+    "confidence": "medium",
+    "down_weighted": false,
+    "evidence": [
+     {
+      "label": "roof type",
+      "path": "advanced.sections.park.roof",
+      "value": "fixed"
+     },
+     {
+      "label": "park run factor",
+      "path": "read_inputs.park_factor.factor",
+      "value": 1.0024
+     },
+     {
+      "label": "home games behind the park factor",
+      "path": "read_inputs.park_factor.home_games",
+      "value": 81
+     }
+    ],
+    "factor": "park_weather",
+    "favours": "even",
+    "rank": 5,
+    "sentence": "At Tropicana Field, the park factor of 1.002 is close to neutral; the roof is fixed, so the weather outside does not apply. Taken together the setting is not tilted either way, for both clubs equally.",
+    "short": "The setting at Tropicana Field is not tilted either way, for both clubs equally.",
+    "size": "slight",
+    "title": "Park and weather"
+   },
+   {
+    "caveat": "Three starts is roughly eighteen innings, which is noise-level. These are the three newest on file and our pitcher logs end 2026-09-07, 26 days before this game, so they are not the latest three he has thrown.",
+    "confidence": "low",
+    "down_weighted": true,
+    "evidence": [
+     {
+      "label": "Gerrit Cole last three ERA",
+      "path": "advanced.sections.starters.away_sp_recent_era",
+      "value": 4.9091
+     },
+     {
+      "label": "Gerrit Cole season ERA",
+      "path": "advanced.sections.starters.away_sp_era",
+      "value": 3.4054
+     },
+     {
+      "label": "Gerrit Cole recent starts",
+      "path": "advanced.sections.starters.away_sp_recent_starts",
+      "value": 3
+     },
+     {
+      "label": "Gerrit Cole innings per start, last three",
+      "path": "advanced.sections.starters.away_sp_recent_ip_per_start",
+      "value": 6.111
+     },
+     {
+      "label": "Gerrit Cole innings per start, season",
+      "path": "advanced.sections.starters.away_sp_ip_per_start",
+      "value": 5.842
+     }
+    ],
+    "factor": "pitcher_form",
+    "favours": "TB",
+    "rank": 6,
+    "sentence": "Gerrit Cole has a 4.91 ERA over his last three on file (3 starts, about 18 innings) against 3.41 on the season, worse by 1.50. Three starts is a small sample.",
+    "short": "Gerrit Cole has pitched differently over the last three starts than over the season, which leans toward the Rays.",
+    "size": "slight",
+    "title": "Last three starts"
+   },
+   {
+    "caveat": "Ten games swings by more than a run a game on luck alone, so this factor is capped at slight. Our results end 2026-09-23, 10 days before this game, so these ten games are the newest in our records, not the newest played.",
+    "confidence": "low",
+    "down_weighted": true,
+    "evidence": [
+     {
+      "label": "Yankees run margin, last ten",
+      "path": "advanced.sections.teams.away_last10_run_diff_pg",
+      "value": 1.8
+     },
+     {
+      "label": "Yankees games in the window",
+      "path": "advanced.sections.teams.away_last10_games",
+      "value": 10
+     },
+     {
+      "label": "Yankees run margin, last five",
+      "path": "advanced.sections.teams.away_last5_run_diff_pg",
+      "value": -0.4
+     },
+     {
+      "label": "Rays run margin, last ten",
+      "path": "advanced.sections.teams.home_last10_run_diff_pg",
+      "value": 2.0
+     },
+     {
+      "label": "Rays games in the window",
+      "path": "advanced.sections.teams.home_last10_games",
+      "value": 10
+     },
+     {
+      "label": "Rays run margin, last five",
+      "path": "advanced.sections.teams.home_last5_run_diff_pg",
+      "value": 0.2
+     }
+    ],
+    "factor": "recent_form",
+    "favours": "even",
+    "rank": 7,
+    "sentence": "The Yankees outscored opponents by 1.80 a game over their last 10, against 0.82 on the season; the Rays outscored opponents by 2.00 a game over their last 10, against 0.44 on the season. Neither club is far from its season line.",
+    "short": "Neither club is far from its season line over the last ten games.",
+    "size": "slight",
+    "title": "Recent run scoring and prevention"
+   }
+  ],
+  "headline": "Drew Rasmussen (2.99 FIP) is the better starter than Gerrit Cole (3.86 FIP), which favours the Rays.",
+  "label": "A written description of this game built only from the data on this page. It is not a prediction, not advice, and not a claim that any price is wrong.",
+  "market_view": {
+   "agreement": "agrees",
+   "available": true,
+   "board_age_seconds": 3629.0,
+   "books": 11,
+   "evidence": [
+    {
+     "label": "Yankees price-implied share",
+     "path": "advanced.sections.price_improvement.sides.away.consensus_probability",
+     "value": 0.45136
+    },
+    {
+     "label": "Rays price-implied share",
+     "path": "advanced.sections.price_improvement.sides.home.consensus_probability",
+     "value": 0.54864
+    },
+    {
+     "label": "books on the board",
+     "path": "advanced.sections.price_improvement.dispersion.books",
+     "value": 11
+    }
+   ],
+   "implied": {
+    "away": {
+     "fair_price": 122,
+     "probability": 0.4514,
+     "team": "NYY"
+    },
+    "home": {
+     "fair_price": -122,
+     "probability": 0.5486,
+     "team": "TB"
+    }
+   },
+   "label": "What the price implies, compared with this read.",
+   "lean": "TB",
+   "observed_utc": "2026-10-03T16:51:16.161446+00:00",
+   "sentences": [
+    "Across 11 books the market makes the Rays a 54.9% favourite (a fair price of -122) and the Yankees 45.1%, with each book's margin removed.",
+    "The board was captured 60 minutes before this page was built, which is older than we like.",
+    "This read leans toward the Rays too, so it agrees with the market on direction. That is expected: starters and run rates are already in the price. It says nothing about whether the price is right.",
+    "In our own pre-registered tests of features like these against the market, none held up as a betting advantage. Treat everything above as a description of the game."
+   ]
+  },
+  "missing": [
+   {
+    "detail": "our results end 2026-09-23, 10 days before this game, so last-five, last-ten, rest and travel are older than they look",
+    "input": "Team results",
+    "status": "stale"
+   },
+   {
+    "detail": "our pitcher logs end 2026-09-07, 26 days before this game, so starters' season lines and last-three-start figures miss anything newer, and a rest figure of 14 or more days is not reliable",
+    "input": "Pitcher logs",
+    "status": "stale"
+   },
+   {
+    "detail": "lineup not posted yet, or not fetched",
+    "input": "Lineups",
+    "status": "absent"
+   },
+   {
+    "detail": "batter-vs-pitcher history not fetched",
+    "input": "Batter against pitcher history",
+    "status": "absent"
+   },
+   {
+    "detail": "our bullpen log ends 2026-09-06, 27 days before this game, so the seven day workload window holds 0 relief outings for the Yankees and 0 for the Rays; it is not used",
+    "input": "Bullpen workload",
+    "status": "stale"
+   },
+   {
+    "detail": "no games in the window to travel from; our results end 2026-09-23, 10 days before this game",
+    "input": "Yankees travel",
+    "status": "absent"
+   },
+   {
+    "detail": "no games in the window to travel from; our results end 2026-09-23, 10 days before this game",
+    "input": "Rays travel",
+    "status": "absent"
+   },
+   {
+    "detail": "the rest days on the page (10 and 10) are the gap since the newest game in our results, and our results end 2026-09-23, 10 days before this game, so they are not a measured break",
+    "input": "Days of rest",
+    "status": "stale"
+   },
+   {
+    "detail": "no standings snapshot stored for 2026-10-03",
+    "input": "League standings",
+    "status": "absent"
+   },
+   {
+    "detail": "no posted lineup for this game, so there is no unit to decompose",
+    "input": "Matchup depth",
+    "status": "absent"
+   },
+   {
+    "detail": "pitcher platoon splits not fetched",
+    "input": "Pitcher platoon splits",
+    "status": "absent"
+   }
+  ],
+  "notices": [
+   "This is a division series. Team rates on this page are regular season rates."
+  ],
+  "run_environment": {
+   "arithmetic": [
+    "League scoring: 4.47 runs per team per game over 2331 games in our results.",
+    "Yankees offence: 4.56 runs per game over 155 games, pulled toward the league rate to 4.55.",
+    "Rays run prevention: 0.63 of the game is Drew Rasmussen at 3.54 runs per nine (his FIP of 2.99 times 1.08, pulled toward the league rate), and 0.37 is the bullpen at 4.12, the club's whole season rate standing in for it. That blends to 3.75.",
+    "Yankees expected runs: 4.55 x 3.75 / 4.47 = 3.81, times the park factor of 1.002, giving 3.82.",
+    "Rays offence: 4.49 runs per game over 156 games, pulled toward the league rate to 4.49.",
+    "Yankees run prevention: 0.65 of the game is Gerrit Cole at 4.26 runs per nine (his FIP of 3.86 times 1.08, pulled toward the league rate), and 0.35 is the bullpen at 3.84, the club's whole season rate standing in for it. That blends to 4.12.",
+    "Rays expected runs: 4.49 x 4.12 / 4.47 = 4.13 plus the 0.20 run home field credit, times the park factor of 1.002, giving 4.34.",
+    "Range: one standard error of the season rates behind each number (the Yankees 3.3 to 4.3, the Rays 3.7 to 5.0, total 7.3 to 9.0). That is the uncertainty in the inputs, not the spread of possible scores.",
+    "A single game is far wider than that range: one standard deviation of one club's score in a single game is about 3.1 runs."
+   ],
+   "available": true,
+   "away": {
+    "expected_runs": 3.82,
+    "high": 4.33,
+    "low": 3.31,
+    "team": "NYY"
+   },
+   "caveats": [
+    "Weather is not in this arithmetic; no weather effect has been fitted or tested here.",
+    "Lineups are not in this arithmetic; both clubs are priced as their season selves.",
+    "The bullpen share uses each club's whole season runs allowed, which includes its starters.",
+    "Our pitcher logs end 2026-09-07, 26 days before this game, so starter lines miss his newest outings.",
+    "Our results end 2026-09-23, 10 days before this game; the season rates stop there."
+   ],
+   "evidence": [
+    {
+     "label": "Yankees runs scored per game",
+     "path": "advanced.sections.teams.away_runs_scored_pg",
+     "value": 4.561
+    },
+    {
+     "label": "Yankees runs allowed per game",
+     "path": "advanced.sections.teams.away_runs_allowed_pg",
+     "value": 3.742
+    },
+    {
+     "label": "Rays runs scored per game",
+     "path": "advanced.sections.teams.home_runs_scored_pg",
+     "value": 4.494
+    },
+    {
+     "label": "Rays runs allowed per game",
+     "path": "advanced.sections.teams.home_runs_allowed_pg",
+     "value": 4.058
+    },
+    {
+     "label": "league runs per team per game",
+     "path": "read_inputs.league_runs_per_game.value",
+     "value": 4.4728
+    },
+    {
+     "label": "park run factor",
+     "path": "read_inputs.park_factor.factor",
+     "value": 1.0024
+    }
+   ],
+   "game": {
+    "expected_total": 8.17,
+    "high": 9.01,
+    "low": 7.32
+   },
+   "home": {
+    "expected_runs": 4.34,
+    "high": 5.01,
+    "low": 3.67,
+    "team": "TB"
+   },
+   "label": "An estimate built from season averages. It has no track record and is not a prediction of the score.",
+   "leader": "TB"
+  },
+  "what_would_change_it": [
+   {
+    "because": "Both probables, Gerrit Cole and Drew Rasmussen, drive the pitching factors; a replacement or an opener voids them.",
+    "evidence": [
+     {
+      "label": "away probable",
+      "path": "advanced.game.away_probable",
+      "value": "Gerrit Cole"
+     },
+     {
+      "label": "home probable",
+      "path": "advanced.game.home_probable",
+      "value": "Drew Rasmussen"
+     }
+    ],
+    "fact": "A change of starting pitcher."
+   },
+   {
+    "because": "Platoon, depth and pitch-mix factors cannot be read until they are.",
+    "evidence": [],
+    "fact": "The lineups, once posted."
+   }
+  ]
+ },
+ "read_inputs": {
+  "bullpen_log": {
+   "through": "2026-09-06"
+  },
+  "league_runs_per_game": {
+   "games": 2331,
+   "value": 4.4728
+  },
+  "park_factor": {
+   "away_games": 75,
+   "factor": 1.0024,
+   "home_games": 81,
+   "raw_factor": 1.0071,
+   "team": "TB",
+   "thin": false
+  },
+  "pitcher_logs": {
+   "through": "2026-09-07"
+  },
+  "results": {
+   "games": 2331,
+   "through": "2026-09-23"
+  }
+ }
+}

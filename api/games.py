@@ -31,12 +31,14 @@ from typing import Optional, Tuple
 from fastapi import APIRouter, HTTPException, Request
 
 from src.analysis import gamepayload
+from src.analysis import matchup_read
 from src.analysis import priceverdict
 from src.appstate import activation, events, freshness
 # F-2: every store the CLI briefing reads, so the matchup page carries team
 # records, starter form, bullpen workload, lineups, travel and weather.
 # See _enrichment_inputs for why none of these ever reaches the network.
 from src.pipeline import enrichment
+from src.pipeline import read_context
 from src.pipeline import (briefing, bullpen, history, lineup_store, lineups,
                           matchup_history, news, pitchers, standings, travel,
                           weather_capture)
@@ -199,6 +201,28 @@ def _build_entries(date: str, **build_slate_kwargs) -> list:
 # `/game/...` view (measured 2026-09-07). The result only changes when the
 # slate runs, so it caches on the same terms as the entries above.
 _engine_cache = freshness.SingleFlightTTLCache(ttl_s=ENTRIES_CACHE_TTL_S)
+
+# The facts about our own stores that the written read needs (how old the
+# results, pitcher logs and bullpen log are; the league run rate; the park
+# factor). Same TTL as the entries it sits beside.
+_read_inputs_cache = freshness.SingleFlightTTLCache(ttl_s=ENTRIES_CACHE_TTL_S)
+
+
+def read_inputs_for(date: str, home_team: str) -> dict:
+    """`src.pipeline.read_context.build`, cached per (date, home club).
+
+    An unreadable store yields an empty mapping rather than raising: the read
+    then says it cannot tell how old anything is, which is the honest answer,
+    and the game page still loads.
+    """
+    def _rebuild():
+        return read_context.build(history.read_results(), date, home_team)
+
+    try:
+        value, _meta = _read_inputs_cache.get(("read_inputs", date, home_team), _rebuild)
+    except Exception:  # noqa: BLE001 -- see docstring
+        return {}
+    return value
 
 
 def engine_decisions_for_date(date: str) -> dict:
@@ -460,6 +484,19 @@ def get_game(date: str, away: str, home: str, request: Request = None) -> dict:
             f"{len(matches)} games matched {away}@{home} on {date} (a "
             "doubleheader) -- this payload is the earlier-listed game; the "
             "URL scheme has no way to name the second one")
+    # THE WRITTEN READ. Built last, from the payload as served, so every
+    # sentence and every evidence path in it refers to a field the reader's own
+    # page also holds. Analysis text only: it reads the payload and changes
+    # nothing in it, and it touches no pick, gate or record. `read_inputs`
+    # rides beside it because the read cites it (the league run rate, the park
+    # factor, how old each store is). A failure here costs the read, never the
+    # page.
+    try:
+        payload["read_inputs"] = read_inputs_for(
+            date, entry["dossier"].game.get("home_team") or home)
+        payload["read"] = matchup_read.build_read(payload)
+    except Exception:  # noqa: BLE001 -- the read is additive, never a 500
+        payload["read"] = None
     _record_page_view(request, "/game/{date}/{away}/{home}", date, surface="matchup")
     return payload
 

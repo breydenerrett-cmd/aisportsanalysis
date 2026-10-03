@@ -284,3 +284,56 @@
 .gs-reliever__avail--warn { color: var(--v-warn-label, #FFB020); background: rgba(255, 176, 32, .13);
   box-shadow: inset 0 0 0 1px rgba(255, 176, 32, .4); }
 .gs-reliever__why { display: block; margin-top: 2px; font-size: 13px; line-height: 1.45; color: var(--v-t5); }
+
+/* =====================================================================
+   THE READ -- web/js/matchupread.js, the written read of one game, placed
+   under the pick and above every table on the one-game route (2026-10-03).
+   Blocks only, no tables, and every text node wraps: the read has to hold at
+   390px without a sideways scroll. Colours reuse tokens.css; the warn tone is
+   the same amber the rest of this route uses for "know this, thin data".
+   ===================================================================== */
+.mr-read { padding: var(--sp-10) var(--sp-11); margin-bottom: var(--sp-8); min-width: 0; }
+.mr-read, .mr-read * { overflow-wrap: anywhere; box-sizing: border-box; }
+.mr-read p, .mr-read li, .mr-read h3, .mr-read h4 { max-width: 100%; }
+.mr-eyebrow { font-family: var(--font-display); font-size: 12.5px; font-weight: 800;
+  letter-spacing: .2em; color: var(--v-t5); margin-bottom: var(--sp-6); text-transform: uppercase; }
+.mr-headline { font-family: var(--font-body); font-size: 19px; line-height: 1.4; font-weight: 600;
+  color: var(--v-t0); margin: 0 0 var(--sp-6); }
+.mr-notice { font-size: 14px; line-height: 1.5; color: var(--v-warn-label); margin: 0 0 var(--sp-5); }
+.mr-small { font-size: 13px; line-height: 1.5; color: var(--v-t5); margin: 0 0 var(--sp-6); }
+.mr-subhead { font-family: var(--font-display); font-size: 13px; font-weight: 800; letter-spacing: .16em;
+  color: var(--v-t4); margin: var(--sp-9) 0 var(--sp-6); text-transform: uppercase; }
+.mr-factors { display: flex; flex-direction: column; gap: var(--sp-7); }
+.mr-factor { padding: var(--sp-7) 0; border-top: 1px solid rgba(255, 255, 255, .08); min-width: 0; }
+.mr-factor__head { display: flex; flex-direction: column; gap: var(--sp-4); margin-bottom: var(--sp-4); }
+.mr-factor__title { font-family: var(--font-display); font-size: 16px; font-weight: 800; letter-spacing: .06em;
+  color: var(--v-t1); margin: 0; text-transform: uppercase; }
+.mr-factor__sentence { font-size: 15px; line-height: 1.55; color: var(--v-t2); margin: 0 0 var(--sp-4); }
+.mr-factor__caveat { font-size: 13px; line-height: 1.5; color: var(--v-t5); margin: 0 0 var(--sp-4); }
+.mr-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.mr-chip { display: inline-block; padding: 3px 8px; font-family: var(--font-display); font-size: 12px;
+  font-weight: 800; letter-spacing: .12em; color: var(--v-t2); background: rgba(255, 255, 255, .07);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .18); }
+.mr-chip--side { color: var(--v-t0); background: rgba(255, 255, 255, .12); }
+.mr-chip--warn { color: var(--v-warn-label); background: rgba(255, 176, 32, .13);
+  box-shadow: inset 0 0 0 1px rgba(255, 176, 32, .4); }
+.mr-evidence { margin: var(--sp-4) 0 0; }
+.mr-evidence__summary { cursor: pointer; font-family: var(--font-display); font-size: 12.5px; font-weight: 800;
+  letter-spacing: .14em; color: var(--v-t4); padding: 6px 0; }
+.mr-evidence__list, .mr-list { list-style: none; margin: var(--sp-4) 0 0; padding: 0; }
+.mr-evidence__row { display: flex; flex-direction: column; gap: 2px; padding: 6px 0;
+  border-top: 1px solid rgba(255, 255, 255, .06); font-size: 13.5px; line-height: 1.45; }
+.mr-evidence__label { color: var(--v-t4); }
+.mr-evidence__value { font-family: var(--font-mono); color: var(--v-t1); }
+.mr-block p { font-size: 14.5px; line-height: 1.55; color: var(--v-t2); margin: 0 0 var(--sp-4); }
+.mr-block p.mr-small { font-size: 13px; color: var(--v-t5); }
+.mr-runs p { font-family: var(--font-mono); font-size: 14px; color: var(--v-t1); }
+.mr-arith p { font-size: 13.5px; color: var(--v-t3); }
+.mr-arith--caveats p { color: var(--v-t5); }
+.mr-list__item { font-size: 14px; line-height: 1.55; color: var(--v-t2); padding: var(--sp-4) 0;
+  border-top: 1px solid rgba(255, 255, 255, .06); }
+.mr-list__lead { color: var(--v-t1); font-weight: 600; }
+@media (max-width: 899px) {
+  .mr-read { padding: var(--sp-8); }
+  .mr-headline { font-size: 17px; }
+}
