@@ -42,6 +42,7 @@ from src.pipeline import (briefing, bullpen, enrichment, features as team_featur
 from src.providers import mlb
 from src.report import card as card_mod
 from tests._fake_statsapi import FakeStatsApi
+from tests.test_display_refresh import Base
 from tests.test_postseason_page import (_rotation, build as build_postseason_page,
                                         pitcher_logs as postseason_logs, schedule_game)
 
@@ -323,6 +324,40 @@ class ThePostseasonPageIsPricedFromTheRegularSeasonAlone(unittest.TestCase):
 
         self.assertEqual(json.dumps(page_for(tagged), sort_keys=True, default=str),
                          json.dumps(page_for(plain), sort_keys=True, default=str))
+
+
+class AfterARealRefreshTheConsumersStillReadTheRegularSeason(Base):
+    """The whole path rather than each end of it: the real refresh (the fake
+    Stats API at the network seam) writes tagged postseason starts into the
+    pitcher-log file, and the real enrichment loader hands `build_slate` only the
+    regular season."""
+
+    def test_the_file_the_refresh_wrote_holds_october_and_the_loader_leaves_it_out(self):
+        self.fake.game_logs = {
+            111: [{"date": "2026-09-22", "gameType": "R"}, {"date": "2026-09-25", "gameType": "R"},
+                  {"date": "2026-09-29", "gameType": "F", "ip": "1.0", "er": 8}],
+            222: [{"date": "2026-09-26", "gameType": "R"}, {"date": "2026-09-30", "gameType": "F"}]}
+        self.run_refresh(only=["pitchers"])
+        stored = pitchers.read_logs(self.hist / "pitcher_logs.jsonl")
+        # the premise: October is in the file, tagged (the seeded 09-07 start the
+        # feed did not return is kept by the per-key rule, untagged)
+        self.assertIn("F", {a.get("game_type") for a in stored["111"]})
+        self.assertIn("2026-09-29", {a.get("date") for a in stored["111"]})
+        game = dict(_game(), away_probable_id=111, home_probable_id=222)
+        with ExitStack() as stack:
+            _stores_patched(stack, stored)           # the loader reads exactly what the refresh wrote
+            inputs = enrichment.enrichment_inputs([game], DATE, _store())
+        handed = inputs["pitcher_logs"]
+        self.assertEqual(sorted(a["date"] for a in handed["111"] if a.get("date")),
+                         ["2026-09-07", "2026-09-22", "2026-09-25"])
+        self.assertTrue(all(pitchers.is_regular_season(a) for rows in handed.values() for a in rows))
+        # and the starter features built from it are the regular season's alone
+        feats = pitchers.matchup_pitcher_features(handed, 111, 222, DATE)
+        reference = pitchers.matchup_pitcher_features(pitchers.regular_season_logs(stored), 111, 222, DATE)
+        self.assertEqual(feats, reference)
+        self.assertEqual(feats["away_sp_starts"], 3)
+        leaked = pitchers.matchup_pitcher_features(stored, 111, 222, DATE)
+        self.assertEqual(leaked["away_sp_starts"], 4, "the premise: with October left in, he has four")
 
 
 class TheCommandLineFeedsModelsTheSameView(unittest.TestCase):

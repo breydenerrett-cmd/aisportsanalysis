@@ -127,7 +127,8 @@ Why this shape:
   copy in `data/.refresh_work/`. A copy is promoted over the original with an
   atomic `os.replace` only if it parses and has not shrunk (pitcher logs may
   shrink by at most 2%); otherwise the committed copy stays. A deadline hit
-  mid-step promotes the progress made, which resumes next run.
+  mid-step promotes the progress made, which resumes next run. *(Second pass:
+  "has not shrunk" is now checked key by key, not by total; section 9, item 3.)*
 - **An unreachable API costs one 8-second probe.** Fetch timeout 10 s.
 - **Zero odds credits.** MLB Stats API and Baseball Savant only. It never
   opens `data/watch`, `data/processed`, `evidence`, any card file or any odds
@@ -135,7 +136,9 @@ Why this shape:
   dates after each store's own newest date, plus a 14-day results lookback --
   today that is 2026-09-09 onward, nowhere near the sealed 2026-01-01..08-27
   window -- and it never rewrites an existing outcome (results merge by
-  `game_pk`, and a copy with fewer rows is refused).
+  `game_pk`, and a copy with fewer rows is refused). *(Second pass: that claim
+  was true of the results and not of the bullpen, whose 75-day window reached
+  back to 07-20. No step may now request a sealed date; section 9, item 5.)*
 - **Bounded:** default budget 270 s split across eight steps by weight with
   unused time rolling forward; the Dockerfile adds `timeout 330` and `||
   echo`, so the build cannot fail or hang on it. Measured live, 2026-10-03,
@@ -146,8 +149,8 @@ What each step does (all resumable from the store's own coverage record):
 | Step | Catches up | Notes |
 |---|---|---|
 | results | every date since the manifest's newest, min 14-day lookback | `DECISIVE_GAME_TYPES` (postseason stored); scope-aware resume re-fetches an R-only date once |
-| bullpen | missing dates in a 75-day window; **yesterday re-fetched whole** | `build_log` skips a date once any row exists, so a game in progress at the last fetch was lost for good |
-| pitchers | starters of the last 21 days + the next 3 days' announced probables | refresh mode (12 h), postseason starts included, each tagged `game_type` |
+| bullpen | missing dates from the log's own newest date (never less than a 75-day window); **yesterday re-fetched whole** | `build_log` skips a date once any row exists, so a game in progress at the last fetch was lost for good. *Second pass: anchored on the log's coverage end, not on today; section 9, item 4* |
+| pitchers | starters whose log is behind a start the results show (from each one's own coverage end) + the next 3 days' announced probables | refresh mode (12 h), postseason starts included, each tagged `game_type`. *Second pass: was "starters of the last 21 days"; section 9, item 4* |
 | standings | each missing daily snapshot; yesterday re-taken if captured before that day ended | stops at the last regular-season date (the API returns an empty table for a postseason date) |
 | splits / handedness / arsenals / transactions | today's+tomorrow's probables / batters in recent lineups / both Savant leaderboards / moves since the newest stored | best effort |
 
@@ -201,8 +204,8 @@ exclude postseason events is a research-gate decision, not a plumbing one.
 | `deploy/Dockerfile` | the build-time `RUN`, `ARG DATA_REFRESH_STAMP`, `ENV DISPLAY_REFRESH_GUARD_INTERVAL_SECONDS=3600` |
 | `api/app.py` | startup hook for the guard (off unless the env var is set) |
 | `src/appstate/apphealth.py` | `data_freshness` in `/health` (informational; never changes `status`, because a 503 takes the whole site out of rotation) |
-| `src/detect/dossier.py`, `src/pipeline/enrichment.py` | `teams.results_through/results_stale`, `starters.logs_through/logs_stale`, per-club `bullpen.log_through/log_stale` |
-| `web/js/gamestory.js`, `web/js/games.js` | the pages say it: "BULLPEN LOG ENDS SEPT 6", "PITCHER LOG ENDS SEPT 7", "days rest ... (counted from the log, which ends ...)", "N games - results end Sept 23". Only shown when the store ends before the game; a past game is not called stale because the store moved on |
+| ~~`src/detect/dossier.py`, `src/pipeline/enrichment.py`~~ | **Superseded, see section 9.** The labels first lived in the dossier sections (`teams.results_through/results_stale`, `starters.logs_through/logs_stale`, per-club `bullpen.log_through/log_stale`). They are now a display fact: `store_freshness.coverage_for_game`, attached by `api/games.py` as `advanced.data_coverage`. The dossier sections are exactly what the feature builders return again |
+| `web/js/gamestory.js`, `web/js/games.js` | the pages say it: "BULLPEN LOG ENDS SEPT 6", "PITCHER LOG ENDS SEPT 7", "days rest ... (counted from the log, which ends ...)", "N games - results end Sept 23". Only shown when the store ends before the game; a past game is not called stale because the store moved on. Read from `advanced.data_coverage` (section 9) |
 | `src/providers/mlb.py`, `src/pipeline/pitchers.py` | `game_types` option (default: byte-identical request and rows) |
 | `src/pipeline/features.py` | the training-table game-type filter |
 
@@ -312,3 +315,200 @@ cover there is no banner. `/postseason`'s "Pitcher numbers on file run through
 - **MLB load:** ~250 pitcher-log requests per build, hourly, plus one schedule
   call per date. Free, unauthenticated, and all fail soft; reduce
   `PITCHER_ACTIVE_DAYS` in `display_refresh.py` if it is ever rate-limited.
+  *(Second pass: the whole build is about 600 to 700 requests, most of them
+  bullpen boxscores, and it repeats every hour because the committed copy never
+  advances; that is the one remaining owner decision, section 9.)*
+
+## 9. Second pass: what changed after the review, and the one owner decision left
+
+The reviewed change (sections 1 to 8) and the reviewer's four fixes were brought
+onto the then-current integration branch (`bfca21a8`) and the seven things the
+review still found were closed. The cherry-picks applied with no textual
+conflict. Three files auto-merged and were read for semantic overlap rather
+than trusted: `api/app.py` (the analyst and live-state router mounts and the
+guard's startup hook sit side by side), `deploy/Dockerfile` (`COPY config/` and
+the refresh `RUN` step and `ENV`), `web/js/games.js` (the written read, live
+strip, line prices and analyst section alongside `gamesSample`). Both sides'
+behaviour is present in each.
+
+Every item has a test that fails on the commit before its fix (counts below are
+tests in the new or rewritten module that fail there).
+
+| # | Review finding | Fix | Tests |
+|---|---|---|---|
+| 1 | Postseason pitcher starts, now stored and tagged, would flow into starter features for the live card preview, the analyst and `/postseason` pricing | `pitchers.regular_season_logs` applied AT each consumer (`enrichment_inputs`, `postseason_page.build`, the four `cli.py` loads); never inside `read_logs` | `tests/test_model_inputs_regular_season.py`, 19 (13 fail before; one walks the real refresh into the real loader) |
+| 2 | "results end ..." was read off the newest game, so the day after a league-wide off day every page showed a false stale label | coverage from `store_freshness`, attached to the `/game` payload as `advanced.data_coverage`; the page reads it; the dossier is untouched | `tests/test_stale_data_surfaces.py` 25, `tests/test_game_page_coverage_web.py` 15 (28 fail before, with the review's moved test) |
+| 3 | "Has not shrunk" compared totals; an empty answer for one pitcher replaced his season while the store grew | per-key promotion with a union for any key that would lose a record | `tests/test_display_refresh_keys.py`, 20 (16 fail before) |
+| 4 | The 21-day and 75-day windows were relative to today, so the gap since the committed copy stopped being fetched | each window starts at the store's own coverage end minus an overlap | `tests/test_display_refresh_windows.py`, 17 (10 fail before, items 4 and 5) |
+| 5 | The bullpen window reached back to 2026-07-20, inside the sealed window | every requested range starts no earlier than 2026-08-28; stored rows there are left as they are | same module |
+| 6 | If memory truly runs out the kernel might kill the web server | the refresh child raises its own `oom_score_adj` to 1000 (Linux; no-op elsewhere) | `tests/test_display_refresh_guard.py`, 22 (21 fail before, items 6 and 7) |
+| 7 | The guard waited for the first warm-up pass only, but the warm-up repeats every 600 s | a busy tick is skipped, not blocked on, and asked again in 60 s | same module |
+
+### 1. Model inputs stay exactly as before: regular season only
+
+The pitcher-log file now holds postseason starts, each tagged `game_type`. The
+same file is read by every consumer that turns it into a model input, and one
+Wild Card start moved a synthetic starter's ERA from 3.00 to 6.39 and changed
+the card's pick for the game. `pitchers.regular_season_logs(logs)` is a pure
+copy that drops tagged non-regular rows (markers survive, so a refresh still
+reads as coverage; a pitcher left with nothing is absent, as in a store that
+never held him). It is applied at the consumer, never inside `read_logs`:
+`build_log_store` rewrites the whole file from `read_logs`, so a filter there
+deletes October on the next refresh (pinned by a refresh round-trip test).
+
+Consumers changed: `enrichment.enrichment_inputs` (the game pages, the live card
+preview, the analyst), `postseason_page.build` (stored logs and any rows a
+fresh-log fetcher returns; `api/postseason.py`'s fetcher asks for the regular
+season only and needed no change), and the four `src/cli.py` loads. The
+postseason page's "run through" date and currency rule now describe the rows the
+model used, so no postseason start is shown unlabelled.
+
+Separating display from model inputs was not small and clean (the dossier's
+starters section is both the page's starter panel and the card's and the scan's
+feature source), so the postseason starts are excluded from display too. The
+cost, stated plainly: **a starter who threw in an earlier round shows days rest
+counted from his last regular-season start** (6 days where he really has 2).
+The page still says the log is current because coverage counts the refresh. It
+is what the regular-season-only store gave before this work, and a display fix
+would have to read the raw log for the date only and label it.
+
+Proof the inputs did not move, on a store holding both kinds of row: the
+enrichment inputs, the starters and teams sections, the card's features, the
+published card payload (byte for byte) and the whole postseason page payload all
+equal what the regular-season-only store gives.
+
+### 2. Store-age labels are a display fact
+
+Two defects. The labels were read off the newest GAME in a store, so a league-
+wide off day made a current store look stale. And they lived in dossier sections,
+which are model and ledger inputs: `card._flatten` merges `teams` and `starters`
+into the card's features and the analyst freezes whole sections into its hashed
+packet (`analyst_packet_v1`). **Measured against the starting HEAD, the labels
+changed what the analyst freezes** (the `teams`, `starters` and `bullpen`
+sections all hashed differently) while the card payload did not move. The review
+did not name this; it is the reason the fix is a restoration and not only a
+relocation.
+
+`store_freshness.coverage_for_game(date)` reads what each store COVERS (the
+results manifest, the pitcher refresh markers, the bullpen log's empty-day
+markers) against one game's date; `api/games.get_game` attaches it as
+`advanced.data_coverage` (a failure costs the labels, never the page);
+`games.js` and `gamestory.js` read it. `dossier.build` and `enrichment_inputs`
+are exactly what the feature builders return again.
+
+**Proof that nothing a ledger reads moved** (hermetic, the real code path, the
+starting HEAD against this branch, same synthetic stores):
+
+```
+                                         card payload      dossier sections
+starting HEAD,   regular-season store    1d73e3af272f2543  28231e04540b4bc4
+this branch,     regular-season store    1d73e3af272f2543  28231e04540b4bc4
+this branch,     store holding both      1d73e3af272f2543  28231e04540b4bc4
+the cherry-picks alone                   1d73e3af272f2543  820c401dd319a160   <- the analyst's input moved
+starting HEAD,   store holding both      41ab88a4aee2dfff  979cb3393a3739a9   <- the leak item 1 closes
+```
+
+### 3. No key may lose a record when a copy is promoted
+
+A key is whatever the store divides into: a pitcher-season, a date, a game, a
+player. A key LOSES a record when the committed copy holds one under it that the
+refreshed copy does not. Such a key keeps the UNION of the two (so a pitcher
+whose answer is missing one old start still gets his new ones). Bookkeeping is
+not a record: an empty-day marker never sits beside real rows, and an answer
+that carried nothing never replaces a committed coverage marker, so the next
+run asks again and a pitcher is not marked freshly checked on an empty answer.
+The repair is made on the work copy, the committed file is only read, and what
+was kept is in `report["restored"]` and the log. A copy that cannot be checked is
+not promoted. Covered: pitcher logs, bullpen log, standings, transactions, the
+results CSV and manifest, the splits and handedness caches. The two Savant
+arsenal files keep the committed rows for a player who lost one instead of a
+union (their rows are shares of one snapshot; a union double-counts). The totals
+rule stays as the backstop. Cost on the repo's real stores: bullpen log 3.6 s and
+about 100 MB peak, pitcher log 3.4 s and about 40 MB, after the step has freed
+its own memory.
+
+Two reviewed tests pinned the old consequence and were changed, not deleted: a
+season survives an empty answer (it used to refuse the whole copy), and the
+in-progress-game test now names the same game before and after (it used a
+game the feed no longer listed, whose row is now kept).
+
+### 4. The windows are anchored on coverage, not the clock
+
+Bullpen: start at the earlier of the 75-day window and the log's newest date
+minus 2 days, never before the log's first date (dates already held cost no
+request). Pitchers: a starter is refreshed when the results show a start of his
+on or after HIS OWN log's coverage end minus 2 days (his refresh marker, in
+Eastern time, or his newest start); one never checked this season only if he
+started in the last 21 days (a full-season backfill is `daily_bootstrap.sh`'s
+job). One store-wide anchor would not work: a marker written for tonight's
+starter would hide every other starter's gap, which is the failure being fixed.
+
+### 5. The sealed window is never requested
+
+`_unsealed_start` clips every range a step requests (results, bullpen,
+standings, transactions) to start on 2026-08-28. Rows already stored in the
+window are left exactly as they are, nothing is purged. The one answer not asked
+for by date is a pitcher's game log (the feed returns a whole season), so the
+committed sealed-window starts are put back over whatever the feed now says for
+them; an appearance the store does not hold is left as the feed gave it. A
+store whose coverage ends inside the window therefore has a hole before 08-28
+that this refresh will not fill (none of the repo's stores do).
+
+### 6 and 7. A 1 GB machine
+
+The child sets `/proc/self/oom_score_adj` to 1000 (the maximum; raising your own
+score needs no privilege) so that if memory truly runs out the kernel kills the
+refresh, never the server. The write is injectable and a no-op off Linux, and a
+failed write is a printed note. For the overlap, `guard_tick(busy=...)` returns
+"skipped this cycle" at once when a warm-up pass or a page-cache rebuild is
+running (`api/app.py` passes the warm-up's own status and
+`src.appstate.freshness.build_stats()`, the existing one-build-at-a-time
+counter), and the loop asks again in 60 s, not an hour later. The minimum-gap
+rule is decided first; current stores never ask.
+
+### Not fixed, stated
+
+- **Days rest for a starter who threw in an earlier round** (item 1), above.
+- **`read_context`** still reads the raw pitcher-log file for the written read's
+  "our pitcher logs end ..." date, so that date can be a postseason start. It is
+  a coverage claim, not a model input.
+- **Research scripts** keep calling `pitchers.read_logs()`. Their training
+  tables are regular-season games, their features are point-in-time and
+  season-scoped and the FIP constant skips non-regular rows. **Any new consumer
+  that prices a live game must call `regular_season_logs`.**
+- **`bullpen.build_log`** writes an empty-day marker when every boxscore of a
+  date fails, and resume then never retries that date. The refresh re-fetches
+  yesterday only. Not touched (the daily loop shares that function).
+- **A record the feed legitimately removes** now stays in the store until the
+  committed copy advances (conservative by design).
+- **Not exercised on Fly**, as in section 8: the oom write and the busy check
+  were tested through injected seams, not in a container.
+
+### The one remaining owner decision
+
+An hourly rebuild re-fetches about 600 to 700 MLB Stats API requests every time
+(about 300 bullpen boxscores, about 250 pitcher logs, the rest schedule and
+standings calls, from the committed copy as it stands today), because nothing
+advances the committed copy: every build repeats the whole gap since it, and the
+gap grows each day until the postseason ends. The fix is to PERSIST the refreshed
+stores, and it is the owner's because it touches infrastructure and capture:
+
+1. a Fly volume for `data/historical` (the image's copy would have to be seeded
+   into it and merged by union on each deploy), or
+2. committing the refreshed stores from a capture slot or the daily loop with a
+   union (`daily_loop.sh` refuses to `git add` them today, on purpose: a blind
+   add deletes git-only rows), staged by name behind `lib_shrink_guard`.
+
+Not implemented here. Until then the site is correct and current and each
+build pays the catch-up; the per-key promotion and the coverage anchors above
+are what make a persisted store safe to adopt.
+
+### Verify
+
+```
+python3 -m unittest tests.test_display_refresh tests.test_display_refresh_review \
+  tests.test_display_refresh_keys tests.test_display_refresh_windows \
+  tests.test_display_refresh_guard tests.test_store_freshness \
+  tests.test_stale_data_surfaces tests.test_model_inputs_regular_season \
+  tests.test_game_page_coverage_web
+```
