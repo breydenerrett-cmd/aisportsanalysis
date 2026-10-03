@@ -1799,6 +1799,21 @@
          "label": "Alex Archer fight minutes behind this",
          "path": "features.a.figures.submission_attempts_per_15.minutes",
          "value": 50.0
+        },
+        {
+         "label": "Ben Brawler submission attempts per 15 minutes",
+         "path": "features.b.figures.submission_attempts_per_15.value",
+         "value": 0.7337
+        },
+        {
+         "label": "Ben Brawler fights behind this",
+         "path": "features.b.figures.submission_attempts_per_15.fights",
+         "value": 5
+        },
+        {
+         "label": "Ben Brawler fight minutes behind this",
+         "path": "features.b.figures.submission_attempts_per_15.minutes",
+         "value": 61.33
         }
        ],
        "family": "grappling",
@@ -1808,7 +1823,7 @@
         "minutes": 50.0
        },
        "sample_level": "fair",
-       "sentence": "Alex Archer hunts submissions, throwing 1.2 attempts per 15 minutes (on file: 4 fights, 50 minutes).",
+       "sentence": "Alex Archer hunts submissions, throwing 1.2 attempts per 15 minutes against 0.7 for Ben Brawler (on file: Alex Archer 4 fights, 50 minutes; Ben Brawler 5 fights, 61 minutes).",
        "size": "slight",
        "thin": false,
        "trait": "submission_threat",
@@ -1955,6 +1970,21 @@
          "label": "Alex Archer fight minutes behind this",
          "path": "features.a.figures.knockdowns_suffered_per_15.minutes",
          "value": 50.0
+        },
+        {
+         "label": "Ben Brawler knockdowns suffered per 15 minutes",
+         "path": "features.b.figures.knockdowns_suffered_per_15.value",
+         "value": 0.2711
+        },
+        {
+         "label": "Ben Brawler fights behind this",
+         "path": "features.b.figures.knockdowns_suffered_per_15.fights",
+         "value": 4
+        },
+        {
+         "label": "Ben Brawler fight minutes behind this",
+         "path": "features.b.figures.knockdowns_suffered_per_15.minutes",
+         "value": 55.33
         }
        ],
        "family": "finishing",
@@ -1964,7 +1994,7 @@
         "minutes": 50.0
        },
        "sample_level": "fair",
-       "sentence": "Alex Archer has been knocked down 0.9 times per 15 minutes (on file: 4 fights, 50 minutes).",
+       "sentence": "Alex Archer has been knocked down 0.9 times per 15 minutes against 0.3 for Ben Brawler (on file: Alex Archer 4 fights, 50 minutes; Ben Brawler 4 fights, 55 minutes).",
        "size": "slight",
        "thin": false,
        "trait": "chin",
@@ -4434,7 +4464,7 @@
        ],
        "route": "none",
        "sample_level": "thin",
-       "sentence": "Nothing in the figures on file points to a route to a win for Marvin Vettori, and only 0 fights are on file.",
+       "sentence": "Nothing in the figures on file points to a route to a win for Marvin Vettori, and no fights are on file.",
        "size": "slight",
        "thin": true,
        "title": "No clear route",
@@ -4496,7 +4526,7 @@
        ],
        "route": "none",
        "sample_level": "thin",
-       "sentence": "Nothing in the figures on file points to a route to a win for Ismail Naurdiev, and only 0 fights are on file.",
+       "sentence": "Nothing in the figures on file points to a route to a win for Ismail Naurdiev, and no fights are on file.",
        "size": "slight",
        "thin": true,
        "title": "No clear route",
@@ -4707,7 +4737,7 @@
       "fact": "A change of opponent, a withdrawal or a cancelled bout."
      },
      {
-      "because": "Marvin Vettori has 0 fights and 0 minutes behind the figures, so one more fight would move most of them.",
+      "because": "No UFC fights are on file for Marvin Vettori, so every fight figure about Marvin Vettori is missing and a first one would start to fill them in.",
       "evidence": [
        {
         "label": "Marvin Vettori fights on file",
@@ -4720,7 +4750,7 @@
         "value": 0.0
        }
       ],
-      "fact": "More fights on file for Marvin Vettori."
+      "fact": "A UFC fight on file for Marvin Vettori."
      },
      {
       "because": "The market takes in injuries, weight cuts and camp news that these figures cannot see; a large move after this read was built would mean something we do not see.",

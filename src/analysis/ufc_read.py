@@ -669,6 +669,16 @@ def _r_control(ctx: _Ctx) -> List[dict]:
     ]
 
 
+def _opponent_of(ctx: _Ctx, side: str, name: str) -> Optional[dict]:
+    """The other fighter's figure `name` when it can be printed beside this fighter's (it has a value and enough
+    fights to be shown), so a one-sided strength reads as a difference and not as a lone number."""
+    foe = other(side)
+    fig = ctx.fig(foe, name)
+    if _num(fig.get("value")) is None or not ctx.shown([(foe, name)]):
+        return None
+    return fig
+
+
 def _r_knockdown_power(ctx: _Ctx) -> List[dict]:
     out = []
     name = "knockdowns_landed_per_15"
@@ -678,13 +688,19 @@ def _r_knockdown_power(ctx: _Ctx) -> List[dict]:
         size = _size(value, KNOCKDOWNS_LANDED)
         if value is None or size is None or not ctx.shown([(side, name)]):
             continue
-        level = _level_timed([fig])
-        X = ctx.short[side]
+        X, Y = ctx.short[side], ctx.short[other(side)]
+        ofig = _opponent_of(ctx, side, name)
+        figs = [fig] + ([ofig] if ofig else [])
+        against = f" against {_fmt(ofig.get('value'))} for {Y}" if ofig else ""
+        clause = ctx.pair_clause((name,)) if ofig else ctx.own_clause(side, (name,))
+        evidence = ctx.fig_ev(side, (name,), ("knockdowns scored per 15 minutes",))
+        if ofig:
+            evidence += ctx.fig_ev(other(side), (name,), ("knockdowns scored per 15 minutes",))
         out.append(_item(
-            "knockdown_power", "finishing", side, "strength", size, level,
-            f"{X} scores knockdowns, {_fmt(value)} per 15 minutes {ctx.own_clause(side, (name,))}.",
-            ctx.fig_ev(side, (name,), ("knockdowns scored per 15 minutes",)), _fights_minutes(fig),
-            caveat=_caveat_thin(ctx.thin_who((name,), (side,)))))
+            "knockdown_power", "finishing", side, "strength", size, _level_timed(figs),
+            f"{X} scores knockdowns, {_fmt(value)} per 15 minutes{against} {clause}.",
+            evidence, _weakest(figs),
+            caveat=_caveat_thin(ctx.thin_who((name,), ("a", "b") if ofig else (side,)))))
     return out
 
 
@@ -702,13 +718,19 @@ def _r_chin(ctx: _Ctx) -> List[dict]:
         size = rate_size or count_size
         if size is None:
             continue
-        X = ctx.short[side]
+        X, Y = ctx.short[side], ctx.short[other(side)]
         fights = int(rec.get("fights") or 0)
         parts, evidence, level_parts = [], [], []
+        ofig = _opponent_of(ctx, side, name) if rate_size else None
+        rate_figs = [fig] + ([ofig] if ofig else [])
         if rate_size:
-            parts.append(f"{X} has been knocked down {_fmt(value)} times per 15 minutes {ctx.own_clause(side, (name,))}")
+            against = f" against {_fmt(ofig.get('value'))} for {Y}" if ofig else ""
+            clause = ctx.pair_clause((name,)) if ofig else ctx.own_clause(side, (name,))
+            parts.append(f"{X} has been knocked down {_fmt(value)} times per 15 minutes{against} {clause}")
             evidence += ctx.fig_ev(side, (name,), ("knockdowns suffered per 15 minutes",))
-            level_parts.append(_level_timed([fig]))
+            if ofig:
+                evidence += ctx.fig_ev(other(side), (name,), ("knockdowns suffered per 15 minutes",))
+            level_parts.append(_level_timed(rate_figs))
         if ko_losses:
             lead = f"{X} has lost by KO or TKO {_times(ko_losses)} in {_plural(fights, 'fight')} on file"
             parts.append(lead if not parts else f"and has lost by KO or TKO {_times(ko_losses)} in {_plural(fights, 'fight')} on file")
@@ -718,10 +740,10 @@ def _r_chin(ctx: _Ctx) -> List[dict]:
         level = _worst(level_parts)
         sentence = parts[0] if len(parts) == 1 else f"{parts[0]}, {parts[1]}"
         results_thin = [X] if (fights < MIN_FIGHTS_RESULTS and ko_losses) else []
-        who = ctx.thin_who((name,), (side,)) if rate_size else []
+        who = ctx.thin_who((name,), ("a", "b") if ofig else (side,)) if rate_size else []
         caveat = _caveat_thin(list(dict.fromkeys(who + results_thin)))
         out.append(_item("chin", "finishing", side, "weakness", size, level, sentence + ".", evidence,
-                         _fights_minutes(fig) if rate_size else (fights, None), caveat=caveat))
+                         _weakest(rate_figs) if rate_size else (fights, None), caveat=caveat))
     return out
 
 
@@ -767,13 +789,20 @@ def _r_submissions(ctx: _Ctx) -> List[dict]:
         fig = ctx.fig(side, name)
         value = _num(fig.get("value"))
         size = _size(value, SUBMISSION_ATTEMPTS)
-        X = ctx.short[side]
+        X, Y = ctx.short[side], ctx.short[other(side)]
         if value is not None and size is not None and ctx.shown([(side, name)]):
+            ofig = _opponent_of(ctx, side, name)
+            figs = [fig] + ([ofig] if ofig else [])
+            against = f" against {_fmt(ofig.get('value'))} for {Y}" if ofig else ""
+            clause = ctx.pair_clause((name,)) if ofig else ctx.own_clause(side, (name,))
+            evidence = ctx.fig_ev(side, (name,), ("submission attempts per 15 minutes",))
+            if ofig:
+                evidence += ctx.fig_ev(other(side), (name,), ("submission attempts per 15 minutes",))
             out.append(_item(
-                "submission_threat", "grappling", side, "strength", size, _level_timed([fig]),
-                f"{X} hunts submissions, throwing {_fmt(value)} attempts per 15 minutes {ctx.own_clause(side, (name,))}.",
-                ctx.fig_ev(side, (name,), ("submission attempts per 15 minutes",)), _fights_minutes(fig),
-                caveat=_caveat_thin(ctx.thin_who((name,), (side,)))))
+                "submission_threat", "grappling", side, "strength", size, _level_timed(figs),
+                f"{X} hunts submissions, throwing {_fmt(value)} attempts per 15 minutes{against} {clause}.",
+                evidence, _weakest(figs),
+                caveat=_caveat_thin(ctx.thin_who((name,), ("a", "b") if ofig else (side,)))))
         rec = ctx.rec(side)
         count = int((rec.get("losses_by_method") or {}).get("submission") or 0)
         fights = int(rec.get("fights") or 0)
@@ -1312,7 +1341,8 @@ def _routes(ctx: _Ctx, items: Sequence[dict], side: str) -> List[dict]:
     found = found[:MAX_ROUTES]
     if not found:
         n = int(ctx.rec(side).get("fights") or 0)
-        why = (f", and only {_plural(n, 'fight')} {'is' if n == 1 else 'are'} on file" if n < MIN_FIGHTS_RESULTS else "")
+        why = ("" if n >= MIN_FIGHTS_RESULTS else ", and no fights are on file" if n == 0
+               else f", and only {_plural(n, 'fight')} {'is' if n == 1 else 'are'} on file")
         found = [{"route": "none", "title": "No clear route",
                   "sentence": f"Nothing in the figures on file points to a route to a win for {X}{why}.",
                   "size": "slight", "sample_level": THIN, "thin": True, "down_weighted": True,
@@ -1582,12 +1612,18 @@ def _what_would_change_it(ctx: _Ctx, depth: dict, market: dict) -> List[dict]:
     if depth["level"] == THIN:
         thinnest = min(("a", "b"), key=lambda s: (depth[s]["fights"], depth[s]["minutes"]))
         who = ctx.short[thinnest]
-        out.append({
-            "fact": f"More fights on file for {who}.",
-            "because": f"{who} has {_plural(depth[thinnest]['fights'], 'fight')} and {_minutes(depth[thinnest]['minutes'])} "
-                       "behind the figures, so one more fight would move most of them.",
-            "evidence": _dedupe([ctx.ev(f"features.{thinnest}.sample.fights", f"{who} fights on file"),
-                                 ctx.ev(f"features.{thinnest}.sample.minutes", f"{who} fight minutes on file")])})
+        evidence = _dedupe([ctx.ev(f"features.{thinnest}.sample.fights", f"{who} fights on file"),
+                            ctx.ev(f"features.{thinnest}.sample.minutes", f"{who} fight minutes on file")])
+        if depth[thinnest]["fights"] == 0:
+            out.append({"fact": f"A UFC fight on file for {who}.",
+                        "because": f"No UFC fights are on file for {who}, so every fight figure about {who} is missing and a "
+                                   "first one would start to fill them in.", "evidence": evidence})
+        else:
+            out.append({
+                "fact": f"More fights on file for {who}.",
+                "because": f"{who} has {_plural(depth[thinnest]['fights'], 'fight')} and {_minutes(depth[thinnest]['minutes'])} "
+                           "behind the figures, so one more fight would move most of them.",
+                "evidence": evidence})
     if market["available"]:
         out.append({"fact": "A move in the price.",
                     "because": "The market takes in injuries, weight cuts and camp news that these figures cannot see; a large "

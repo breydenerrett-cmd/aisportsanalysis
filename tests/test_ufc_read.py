@@ -265,6 +265,35 @@ class FinishingRules(unittest.TestCase):
         self.assertEqual(item(read_of(a={"figures": F(knockdowns_landed_per_15=2.2)}), "a", "strengths", "knockdown_power")["size"], "large")
         self.assertNotIn("knockdown_power", traits(read_of(a={"figures": F(knockdowns_landed_per_15=0.7)})["a"], "strengths"))
 
+    def test_a_one_sided_strength_prints_the_other_fighters_figure_beside_it_so_it_reads_as_a_difference(self):
+        r = read_of(a={"figures": F(knockdowns_landed_per_15=1.5, submission_attempts_per_15=1.9)},
+                    b={"figures": F(knockdowns_suffered_per_15=1.4)})
+        ko = item(r, "a", "strengths", "knockdown_power")
+        self.assertEqual(ko["sentence"], "Alex Archer scores knockdowns, 1.5 per 15 minutes against 0.3 for Ben Brawler "
+                                         "(on file: Alex Archer 8 fights, 100 minutes; Ben Brawler 8 fights, 100 minutes).")
+        self.assertIn("features.b.figures.knockdowns_landed_per_15.value", [e["path"] for e in ko["evidence"]])
+        chin = item(r, "b", "weaknesses", "chin")
+        self.assertTrue(chin["sentence"].startswith("Ben Brawler has been knocked down 1.4 times per 15 minutes against 0.2 for "
+                                                    "Alex Archer (on file: Alex Archer 8 fights, 100 minutes; Ben Brawler 8 fights, "
+                                                    "100 minutes)"), chin["sentence"])
+        sub = item(r, "a", "strengths", "submission_threat")
+        self.assertEqual(sub["sentence"], "Alex Archer hunts submissions, throwing 1.9 attempts per 15 minutes against 0.3 for "
+                                          "Ben Brawler (on file: Alex Archer 8 fights, 100 minutes; Ben Brawler 8 fights, 100 minutes).")
+
+    def test_the_other_fighters_figure_is_left_out_when_there_is_none_or_too_little_to_print(self):
+        gone = {"value": None, "unit": "u", "fights": 0, "minutes": 0.0}
+        one = figure(0.3, fights=1, minutes=10.0)
+        for foe in ({"figures": {"knockdowns_landed_per_15": gone}}, {"figures": {"knockdowns_landed_per_15": one}}):
+            r = read_of(a={"figures": F(knockdowns_landed_per_15=1.5)}, b=foe)
+            ko = item(r, "a", "strengths", "knockdown_power")
+            self.assertEqual(ko["sentence"], "Alex Archer scores knockdowns, 1.5 per 15 minutes (on file: 8 fights, 100 minutes).")
+
+    def test_the_other_fighters_thin_sample_makes_the_comparison_thin(self):
+        thin_foe = {"figures": {"knockdowns_landed_per_15": figure(0.3, fights=2, minutes=15.0)}}
+        ko = item(read_of(a={"figures": F(knockdowns_landed_per_15=1.5)}, b=thin_foe), "a", "strengths", "knockdown_power")
+        self.assertTrue(ko["thin"])
+        self.assertTrue(ko["caveat"].startswith("Thin sample: Ben Brawler has fewer than 3 fights or 30 fight minutes"))
+
     def test_losses_by_ko_alone_raise_a_chin_question_only_from_two(self):
         two = {"losses_by_method": {"ko_tko": 2, "submission": 0, "decision": 1, "dq": 0, "other": 0, "unknown": 0}}
         one = {"losses_by_method": {"ko_tko": 1, "submission": 0, "decision": 2, "dq": 0, "other": 0, "unknown": 0}}
@@ -682,7 +711,8 @@ class MissingData(unittest.TestCase):
     def test_the_opponent_is_still_read_and_the_route_says_only_the_fighter_without_fights_is_thin(self):
         r = self.debut_read()
         self.assertEqual(route_keys(r, "a"), ["none"])
-        self.assertIn("only 0 fights are on file", r["a"]["paths_to_victory"][0]["sentence"])
+        self.assertEqual(r["a"]["paths_to_victory"][0]["sentence"],
+                         "Nothing in the figures on file points to a route to a win for Alex Archer, and no fights are on file.")
 
     def test_missing_reasons_are_plain_words_not_field_names(self):
         r = self.debut_read()
@@ -964,6 +994,14 @@ class WhatWouldChangeIt(unittest.TestCase):
         facts = [i["fact"] for i in items]
         self.assertIn("More fights on file for Alex Archer.", facts)
         self.assertEqual(len(items), 3)
+
+    def test_a_fighter_with_no_fights_is_not_told_one_more_would_move_the_figures(self):
+        items = read_of(a=no_fights())["what_would_change_it"]
+        facts = {i["fact"]: i["because"] for i in items}
+        self.assertEqual(facts["A UFC fight on file for Alex Archer."],
+                         "No UFC fights are on file for Alex Archer, so every fight figure about Alex Archer is missing and a first "
+                         "one would start to fill them in.")
+        self.assertNotIn("More fights on file for Alex Archer.", facts)
 
     def test_no_price_says_a_price_being_posted_would_change_it(self):
         self.assertEqual(read_of(odds=None)["what_would_change_it"][-1]["fact"], "A price being posted.")

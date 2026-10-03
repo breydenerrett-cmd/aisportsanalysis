@@ -198,7 +198,10 @@ first backfill (2024 to 2026), looked at to place round numbers sensibly, not ag
 | `win_streak`, `loss_streak` | the current run | win 3 / 5 / 7, loss 2 / 3 / 4 | Always thin under four fights; a run counts results only |
 
 Several rules are two-sided: one comparison gives the better side a strength and the other a weakness (the two carry the
-same evidence). The rest describe one fighter.
+same evidence). The rest describe one fighter; where the other fighter's figure for the same measure can be printed (it has
+a value and at least two fights) the sentence prints it beside the first, for knockdowns scored, knockdowns suffered and
+submission attempts, so that a one-sided strength reads as a difference and not as a lone number, and the sample is the
+thinner of the two.
 
 ### Headline, routes, market view, history
 
