@@ -61,6 +61,26 @@
 }
 .an-foot { margin: var(--sp-8) 0 0; font-size: 13px; color: var(--v-t6); max-width: 640px; }
 
+/* ---- the UFC event section (web/js/analyst_ufc.js) ------------------- */
+/* One block per bout under the same section head and label as the game section. The calls
+   inside a bout are the same .an-call rows, so a PASS is as large as a TAKE here too. */
+.an-ufc-bout { margin-top: var(--sp-9); padding-top: var(--sp-6); border-top: 2px solid var(--v-edge); }
+.an-ufc-bout:first-of-type { margin-top: var(--sp-6); }
+.an-ufc-bout__head {
+  margin: 0 0 var(--sp-2);
+  font-family: var(--font-display); font-size: 20px; font-weight: 800; color: var(--v-t1);
+}
+.an-ufc-bout__meta {
+  margin: 0 0 var(--sp-5);
+  font-family: var(--font-mono); font-size: 12.5px; letter-spacing: .06em; color: var(--v-t5);
+}
+.an-ufc-bout__result {
+  margin: 0 0 var(--sp-5);
+  font-family: var(--font-display); font-weight: 800; font-size: 13px;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--v-t3);
+}
+.an-ufc-bout .an-family { margin-top: var(--sp-6); }
+
 /* ---- the record table ---------------------------------------------- */
 .an-rec__intro { margin: 0 0 var(--sp-6); max-width: 680px; font-size: 14.5px; line-height: 1.55; color: var(--v-t4); }
 .an-rec__table { width: 100%; border-collapse: collapse; font-size: 14px; }

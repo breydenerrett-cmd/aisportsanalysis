@@ -9,6 +9,12 @@
     record  the record by market family, the cost per day, and the ledger's
             integrity check.
 
+`--sport ufc` (run, grade and record all take it; `--sport mlb` is the default and is
+everything in this file) hands the same arguments to `ufc_cli.py`: the UFC analyst has its
+own packet, prompt, ledger and record and shares only the model call, the spend meter and
+the critic with this one. `--game AWAY@HOME` is MLB's selector and `--event ID` UFC's; each
+sport refuses the other's.
+
 WITHOUT A KEY
 -------------
 `run` without ANTHROPIC_API_KEY prints `BLOCKED: <reason>` and exits 3 before
@@ -41,6 +47,10 @@ from src.analyst import critic, ledger, packet as packet_mod
 
 EXIT_OK, EXIT_ERROR, EXIT_BLOCKED, EXIT_CAP = 0, 2, 3, 4
 
+# `--sport` on run, grade and record. mlb is the default and is everything below this line;
+# ufc hands the same arguments to src/analyst/ufc_cli.py.
+SPORTS = ("mlb", "ufc")
+
 # After this many games in a row fail at the API (not malformed output: the
 # API itself), the run stops instead of burning the slate on a dead key or an
 # outage.
@@ -57,8 +67,13 @@ def add_parser(sub) -> None:
                                          "of every game, frozen before first pitch")
     inner = cmd.add_subparsers(dest="analyst_command", required=True)
     run = inner.add_parser("run", help="analyse a date's games and publish before first pitch")
+    run.add_argument("--sport", choices=SPORTS, default="mlb",
+                     help="mlb (default) or ufc: ufc analyses the date's UFC events "
+                          "(src/analyst/ufc_cli.py), with its own ledger and record")
     run.add_argument("--date", required=True, help="YYYY-MM-DD")
-    run.add_argument("--game", default=None, help="only this game, AWAY@HOME (e.g. NYY@TB)")
+    run.add_argument("--game", default=None, help="only this game, AWAY@HOME (e.g. NYY@TB); MLB only")
+    run.add_argument("--event", default=None,
+                     help="only this event id (--sport ufc), e.g. 600061182; it must be dated --date")
     run.add_argument("--dry-run", dest="dry_run", action="store_true",
                      help="build packets and the request that would be sent; call nothing, write nothing")
     run.add_argument("--print-request", dest="print_request", action="store_true",
@@ -68,8 +83,10 @@ def add_parser(sub) -> None:
     run.add_argument("--model-critic", dest="model_critic", action="store_true",
                      help="also run the optional model critic (a second call per game)")
     grade = inner.add_parser("grade", help="grade a date's published games")
+    grade.add_argument("--sport", choices=SPORTS, default="mlb", help="mlb (default) or ufc")
     grade.add_argument("--date", required=True, help="YYYY-MM-DD")
-    inner.add_parser("record", help="the record by market family, daily cost, ledger integrity")
+    record = inner.add_parser("record", help="the record by market family, daily cost, ledger integrity")
+    record.add_argument("--sport", choices=SPORTS, default="mlb", help="mlb (default) or ufc")
 
 
 # ---------------------------------------------------------------------------
@@ -332,6 +349,12 @@ def execute_record(*, out: Callable = print, store_path: Optional[str] = None,
 
 def main(args) -> int:
     """Dispatch for `src.cli`."""
+    if getattr(args, "sport", "mlb") == "ufc":
+        from src.analyst import ufc_cli     # lazy: ufc_cli imports this module
+        return ufc_cli.main(args)
+    if getattr(args, "event", None):
+        print("--event is for --sport ufc; for MLB use --game AWAY@HOME")
+        return EXIT_ERROR
     if args.analyst_command == "run":
         return execute_run(args.date, game=args.game, dry_run=args.dry_run,
                            print_request=args.print_request, refresh=args.refresh,

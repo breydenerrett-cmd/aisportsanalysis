@@ -9,6 +9,10 @@ That sentence is on every surface that shows the analyst's work. The record star
 empty. Nothing here is a claim that the analyst is any good; the record is how that
 gets measured, in the open, including every loss and every pass.
 
+The sections below describe the MLB analyst. UFC has its own at the end of this file,
+"The UFC analyst": the same machinery with a fight packet, a fight prompt and its own
+ledger and record.
+
 ## What it is for
 
 The owner's words: "Every single player prop, every single sports bet per matchup,
@@ -505,3 +509,329 @@ How to turn it on, what it costs a day and how to turn it off again:
 offline (the HTTP caller is injected; the shared fixtures read no repo data), plus the wording sweeps
 `test_web_register_sweep`, `test_customer_language` and `test_no_developer_notes_on_screen`.
 `tests/test_analyst_model.py` pins that the prompt in this file is the prompt in the code.
+
+## The UFC analyst
+
+The same analyst for fights: every bout on a card gets a model-written call, with reasons, on every
+market we hold a price for, frozen before the bout and graded in public. It is the MLB analyst's
+machinery with a fight packet, a fight prompt and its own ledger and record.
+
+> Written by an AI model from the data on this page. Unproven. Analysis, not advice.
+
+The public UFC favourites rule is paused (`docs/decisions/UFC_FAVOURITES_PAUSED.md`) until each fight
+has a real breakdown behind it. This is that breakdown, built so it can be checked. It changes no card
+rule, pick or published result, shares no row with the card record or the MLB analyst record, and
+places nothing.
+
+### What is shared and what is new
+
+| piece | where | UFC |
+|---|---|---|
+| model call, schema, shape check, repair, spend meter and cap | `src/analyst/analyst.py` | shared (the prompt is a parameter) |
+| deterministic critic, the -200 rule, banned words, name check | `src/analyst/critic.py` | shared (the name vocabulary is a parameter) |
+| fact packet | `src/analyst/ufc_packet.py` | new |
+| prompt, request, verify bound to the fight vocabulary | `src/analyst/ufc_analyst.py` | new |
+| grading | `src/analyst/ufc_grading.py` | new |
+| ledger and record | `src/analyst/ufc_ledger.py`, `evidence/analyst_ufc_v1.jsonl` | new, same chain primitive |
+| CLI | `src/analyst/ufc_cli.py`, `--sport ufc` | new, the MLB commands are untouched |
+| routes | `api/analyst_ufc.py` | new |
+| page module | `web/js/analyst_ufc.js` | new, not mounted on any page |
+
+### 1. The packet (`src/analyst/ufc_packet.py`)
+
+One frozen, hashable packet per bout, built by `build_packet(store, bout_id, built_at=...)` from
+`src.datasvc.ufc.matchup.matchup(store, a, b, as_of=<the bout's scheduled start>)`: the data layer's own
+fact sheet (fighters' records and rates with their own samples, style labels, differences, shared
+opponents, previous meetings, physical comparison, layoff) plus `matchup.bout_odds`. The packet adds no
+statistic of its own. Its shape is the MLB packet's on purpose (`markets`, `slots`, `missing`, `limits`,
+the same option and quote objects, the same path grammar), so the critic, the ledger and the page read it
+the same way.
+
+**No leakage, four ways.**
+
+1. Features are as of the bout's scheduled start. A result, the bout's own or a later one, is invisible
+   to them: that is the data layer's rule (`docs/datasvc/UFC_FEATURES.md`), and the packet tests rebuild
+   the packet from a world that ends at the start and from the full world and require them to be equal.
+2. The bout block is a whitelist: identity, event, start, state, weight class, rounds, card segment, the
+   two fighters. The winner, method, round and time a finished bout carries never enter it.
+3. A price enters only when its odds row was fetched before the packet was built and strictly before the
+   bout's scheduled start. The data layer keeps one odds row per provider per bout and overwrites it on
+   every fetch, so a row fetched after the start (a closing line written once the fight was over) is
+   dropped whole and `missing` says why. A row that cannot be dated is dropped too, and so is a row marked
+   as the closing line. The `close` prices are never read.
+4. The live in-play provider ("ESPN Bet - Live Odds") is never used, whatever it quotes, even when it is
+   the only row.
+
+The overall professional record and the UFC.com career figures are not as-of-date (the data layer labels
+both `as_of_safe: false`). They enter only when their own fetch time is before the bout's start, so
+neither can hold its result, and they are labelled as covering more than the store.
+
+**Slots.** A slot exists only when every price it needs is quoted: both sides of the moneyline, the line
+and both prices of the total, the one price of a method outcome. Nothing is inferred.
+
+| slot | market | selections (lean first) | verdicts |
+|---|---|---|---|
+| `moneyline` | `moneyline` | each fighter, the favourite first | TAKE, TAKE_OTHER_SIDE, PASS |
+| `rounds_total` | `rounds_total` | `Over 4.5`, `Under 4.5` (the likelier side first) | TAKE, TAKE_OTHER_SIDE, PASS |
+| `method_a_ko`, `method_b_ko` | `method` | `<fighter> by KO/TKO/DQ` | TAKE, PASS |
+| `method_a_sub`, `method_b_sub` | `method` | `<fighter> by submission` | TAKE, PASS |
+| `method_a_dec`, `method_b_dec` | `method` | `<fighter> by decision` | TAKE, PASS |
+
+The six method outcomes are not a two-way market, so each is its own one-option slot: there is no other
+side to take, and the critic strikes a TAKE_OTHER_SIDE on one. Each option carries its quote (`book` is
+the provider, `price` the current price, `captured_utc` the odds row's fetch time), `fair_probability`
+(the price as a probability with the margin divided out, from the data layer; for a method price only
+when all six are quoted), `implied_probability` (the same price with the margin left in) and `open_price`
+(and `open_line` for a total, because an open price is priced at the open line).
+
+**Holes.** `missing` lists every absent, stale or thin input with the reason: a figure the sheet could
+not compute, a fighter with no fights or fewer than three in the store, fights without statistics, an
+earlier bout with no recorded result, a quote older than 180 minutes (one entry per slot, so the critic
+can lower a confident call that rests on it), a market with no price, an odds row withheld and why, a
+fighter with no name.
+
+**Names.** A fighter the store cannot name is labelled `Fighter A` or `Fighter B` and `name_known` is
+false. The packet never invents a name. The CLI refuses to publish such a bout: an analysis that cannot
+say who is fighting is not worth publishing.
+
+**Not analyzed** (stated in the packet's `limits`): round betting, the spread and every other market;
+injuries, weight cuts, camp news, short-notice replacements and rankings are not in the data. Counts and
+rates cover only the UFC fights in the data store (the packet says where it begins), not a career.
+
+**How to read it** (the packet's `how_to_read`): which fighter is `a`, that a difference is a minus b, that
+`previous_meetings` are written from fighter a's side, what a figure's `fights` and `minutes` mean, and the
+difference between `fair_probability` and `implied_probability`. It is in the frozen packet so the file
+explains itself.
+
+### 2. The prompt, verbatim (`UFC_PROMPT_VERSION = analyst_ufc_prompt_v1`)
+
+Every sentence of the MLB prompt is in it word for word except the few that name baseball, which are
+reworded (`tests/test_analyst_ufc_model.py` lists them and fails if an MLB rule is added or changed without
+the UFC prompt carrying it). The fight guidance is rules 14 to 19.
+
+```
+You are a mixed martial arts betting analyst. You write the analysis of one UFC bout and make a call on every market the packet prices. You are an AI model and the reader knows it. Your work is published before the bout, graded afterward, and shown next to its record whatever that record turns out to be. Write like a sharp human analyst talking to a smart friend: plain words, a point of view, no hype.
+
+THE PACKET IS YOUR ONLY SOURCE
+1. Reason only from the packet. Use no outside knowledge of any fighter, opponent, camp, injury, weight cut, ranking or result, even if you are sure of it. If something matters and is not in the packet, say it is missing. Name fighters exactly as the packet spells them, and name nobody who is not in it.
+2. A claim without a packet path is forbidden. Every reason has evidence: a list of {path, value}. A path names one value in the packet and starts at the packet's own top-level key. The value is copied exactly. Examples of real paths: markets.moneyline.options[0].best.price and sections.fighter_a.values.figures.finish_rate.value. Never start a path with data. or packet.
+3. Every number you write in prose must appear in the packet, or be a price or probability you are yourself giving in a call. Do no arithmetic of your own on packet numbers in prose (no differences, sums or ratios); quote the packet's numbers, including the differences it already holds in sections.matchup. Do not write clock times.
+4. `missing` lists what is absent, stale or thin. Weigh it. A call that rests on something listed there is a PASS.
+
+THE CALLS
+5. Make exactly one call for every entry in `slots`, in the same order, using its slot_id and its market. `selection` must be one of that slot's selections, written exactly as listed. The first selection is the lean: the side the books favour. A slot with a single selection (one fighter to win by one method) has no other side, so it is a TAKE or a PASS.
+6. Verdicts. TAKE: bet the lean (the first selection) at the price you name. TAKE_OTHER_SIDE: bet the other selection, the side the books do not favour. PASS: bet nothing in this market.
+7. PASS is the default. When the evidence is thin, or the packet gives you nothing about this market beyond its own price, PASS. Say plainly when the market is probably right, and what makes you think so.
+8. Never TAKE any bet at a price of -200 or worse, in any market (-200, -250, -325 and so on). PASS it, or if the other side is the one you like, take that.
+9. price and book: the quote you would take, copied from the selection's quotes in the packet. For a PASS you may give the best quote or null.
+10. fair_estimate: your own probability that the selection wins, between 0.01 and 0.99. The books' own number is in the packet: fair_probability is the price as a probability with the bookmaker's margin taken out, and implied_probability is the same price with the margin left in. A method of victory price has a fair_probability only when all six method prices are quoted; otherwise it is null. If you depart from the books by more than a few points, the reasons must show what the packet knows that the price does not. For a PASS you may give null.
+11. pass_price: the American price at which the selection stops being worth taking, which is the break-even price of your fair_estimate. On a PASS, the price at which you would start to take it, or null if no price would do.
+12. confidence: low, medium or high. High only when several independent packet facts agree and nothing relevant is in `missing`.
+13. what_would_change_it: one sentence naming a specific new fact that would flip the call, such as a late price move or a change of opponent. If it names a price, that price is your pass_price.
+
+THE FIGHT
+14. Style matchup. `sections.matchup.values.styles` holds labels (wrestler, striker, finisher and so on) computed from each fighter's own numbers, with the evidence behind each. They describe what the numbers show and predict nothing. A label under `not_assessed` was not judged because the sample was too small, which is not the same as not applying. Labels matter in pairs: a fighter who takes opponents down against one who defends takedowns poorly, or a high-volume striker against a fighter who absorbs a lot, is a matchup. Two styles that never meet say little.
+15. Finishing threat against durability. Set how often each fighter finishes (finish_rate, knockdowns_landed_per_15, submission_attempts_per_15) against how often the other has been finished (been_finished_rate, knockdowns_suffered_per_15), and read how their fights ended in record.wins_by_method, record.losses_by_method and last_three. A method price needs its own route: a fighter who has only won on the scorecards has not shown he can win by knockout.
+16. Pace and fight time against the rounds total. The line is in rounds and a round is five minutes: over a line of 2.5 the bout must last past the middle of the third round. Use average_fight_time_s, distance_rate, finish_rate and been_finished_rate for both fighters and the scheduled_rounds, and say whether the price already holds them. Two fighters who rarely finish and are rarely finished point to a long bout; two who finish often point to a short one.
+17. Layoff and short notice. The layoff (sections.matchup.values.layoff) and each fighter's days_since_last_fight are packet facts: a long layoff or a very short turnaround is a reason for care, never a verdict. Short notice, injuries, weight cuts and camp changes are not in the packet. Never claim one; say that you cannot see it.
+18. Thin samples. The packet counts only the UFC fights in its data store, so a fighter can have two or three fights there where his career has twenty. Every figure carries its own fights and minutes, and a rate from one or two fights is not a rate. When the sample is thin (see `missing`, thin_sample and each figure's fights), prefer PASS, say it is thin, and lean on what is solid: the records and the last fights. Career figures, when the packet has them, say how far back they go; use them as that and no more.
+19. Keep the calls consistent with each other and with the summary. A fighter you expect to win on the scorecards is not also a good knockout bet.
+
+THE WORDS
+20. Never write: lock, guaranteed, free money, sure thing, can't lose, +EV. Never claim a profit, an edge you have, or certainty. No exclamation marks.
+21. Do not recommend a stake size and do not describe anything as a bet you or we placed.
+
+THE SUMMARY
+22. `summary` is the argument in 120 to 200 words of plain prose, one or two paragraphs, no lists, no markdown. Say where you lean and why, where you pass, what the market probably has right, and which missing inputs matter. A voice like: "The favourite is the right side on the moneyline, but the price already says so and the sample behind his numbers is thin, so I pass." Only with facts that are actually in the packet.
+
+Reply with one JSON object that matches the schema and nothing else.
+```
+
+**The schema** is the MLB schema, verbatim, section 2 above (`analyst.RESPONSE_SCHEMA`): a call per slot
+with verdict, price, book, fair_estimate, confidence, reasons with evidence, pass_price and
+what_would_change_it, and a summary of 120 to 200 words. The model cannot make up a slot, a market or a
+selection; `validate_output` checks the rest.
+
+**The critic** is the MLB critic with one thing changed, the name vocabulary (`ufc_analyst.known_names`).
+A call is struck when a path does not resolve, a value is not the packet's, a number in prose is not a
+packet number, a banned word appears, a person is named who is not in the packet, the selection or
+verdict does not fit the slot, the price and book are not a real quote, a TAKE is at -200 or worse in any
+market (method prices and totals included), or the call contradicts itself. A UFC claim may say
+"Unanimous Decision" or "Women's Flyweight" without being struck as a stranger; no baseball club is
+vouched for. A struck call is published as a PASS whose reason is "Could not be verified." The original
+goes to the ledger row's `struck` list. The packet's own text vouches for the fighters and their
+opponents; a name stitched from two real ones is struck.
+
+### 3. The ledger (`src/analyst/ufc_ledger.py`)
+
+`evidence/analyst_ufc_v1.jsonl`, append-only and hash-chained on `HashChainLedger`, with the frozen
+packets in `evidence/analyst_ufc_packets_v1/<date>/<bout>_<hash12>.json.gz` and the cost log in
+`evidence/analyst_ufc_usage_v1.jsonl`. None of the MLB analyst's or the cards' files is read or written.
+
+| row | when | holds |
+|---|---|---|
+| `analyst_ufc_published` | before the bout | the calls, each with its grading spec (the fighter it backs, the method, the side and line); summary and its status; the struck originals; packet hash and path; model, prompt version and hash; run cost |
+| `analyst_ufc_graded` | after the bout | each call's result from the data layer's bout record, and what the result was |
+| `analyst_ufc_correction` | when a grade was wrong | the corrected fields and a reason; the graded row is untouched |
+
+- **Refuses to publish** for a bout that has started, whose scheduled start is unknown, or whose state is
+  not `scheduled`. The CLI asks the same question before calling the model, so a bout that cannot be
+  published is never paid for. ESPN gives every bout of a card segment the segment's start, so the real
+  bout begins later than the time it is refused at: the rule is conservative by construction.
+- **Frozen.** A second `publish` returns the first row. `--refresh` writes a new version while the bout
+  has not started and has not been graded; only the newest version counts.
+- **`date` is the event's date** (the UTC date of the event's start). Every bout of an event carries it,
+  including main-card bouts that start after midnight UTC, and `grade --date` uses it.
+- **Size.** A published row is about 8 KB with terse reasons (measured on the test fixtures) and will be
+  more with real ones, call it 8 to 15 KB a bout, plus about 5 KB for the packet file. A 14-bout card adds
+  roughly 0.2 to 0.3 MB, about 10 to 15 MB a year at a card a week. The store is not registered for the
+  cold-storage rotation the capture stores have (`src/pipeline/store_archive.py`); at that rate the 100 MB
+  file limit is several years away.
+
+### 4. How grading works (`src/analyst/ufc_grading.py`)
+
+Families are graded and counted on their own: `moneyline`, `method`, `rounds_total`. WIN, LOSS, PUSH,
+VOID and UNRESOLVED mean what they mean for MLB. Returns are flat one-unit stakes at the published price.
+A PASS is not a bet; it carries `would_have`, what the passed side would have done at its best quote.
+
+| market | rule |
+|---|---|
+| moneyline | WIN when the fighter the call backs is the recorded winner, LOSS when the other fighter is. A disqualification win is a win. |
+| method | WIN when the backed fighter won and the way he won is the priced method: `KO_TKO` and `DQ` are `ko_tko_dq`, `SUB` is `submission`, `DEC_UNANIMOUS`, `DEC_SPLIT`, `DEC_MAJORITY` and `DECISION` are `decision`. LOSS otherwise. `OTHER` is VOID, except that its raw label for a stoppage by the doctor (`tko---doctors-stoppage`, all 11 `OTHER` results among the 1,591 finished bouts in the store on 2026-10-03) is a TKO, as every book's method market counts it. |
+| rounds total | elapsed seconds are (`end_round` - 1) x 300 + `end_time_s`, compared with the line x 300. Over wins when the bout lasted longer than the line, Under when it ended before it. A bout that went the distance ends at the last round's 300 seconds, so it is over every line below its scheduled rounds. |
+| draw, no contest | VOID in every family, including a no contest the data layer records with a winner. |
+| canceled | VOID. |
+| not final yet | UNRESOLVED: never a loss, never a void. |
+| final, no usable result | UNRESOLVED (no winner, no method, no end round or time, a clock outside a round). A later ingest may supply it. |
+
+**The half-round boundary.** A line is a half-round ("over 2.5": past the middle of the third round). A bout
+that ends exactly on the line, 2:30 of round 3 against 2.5, is a PUSH for either side: the stake comes back.
+That is the usual treatment of a total that lands on its line and the only one that does not pick a winner
+by an arbitrary clock tie-break. It was not checked against any one book's published rule (the work had no
+network), so it is stated here for the record to be checked against. It is rare (4 of the 1,591 timed bouts in the store on 2026-10-03 ended at exactly 150.0 seconds). Seconds are
+compared, not floats of rounds, so 4.5 x 300 = 1350 is exact. If a book's own rule differs, a `correction`
+row fixes the grade and the record shows it as corrected.
+
+**The public record** (`GET /analyst/ufc/record`) shows counts by family always. A win rate and units
+appear for a family only at **30 graded calls** (win, loss or push); below that the server sends null and
+the reason, and the page never computes a rate of its own.
+
+### 5. Where it shows
+
+- `GET /analyst/ufc/{event_id}` (`api/analyst_ufc.py`): one event's published analysis, every bout in card
+  order with its grades, from the ledger only. It is mounted behind the same gate as `GET /game/...` and
+  `GET /analyst/...`. **A page view never calls the model.** An event with nothing published answers
+  `available: false` and a plain reason.
+- `GET /analyst/ufc/record`: the public record. It never serves a pick for a bout that has not settled.
+- `web/js/analyst_ufc.js`: a self-contained module. It is not mounted on any page by this work. To mount
+  the section on the fight-night page, two lines and nothing else:
+
+```js
+import { fetchUfcAnalyst, renderUfcAnalystEvent } from "./analyst_ufc.js";
+const data = await fetchUfcAnalyst(eventId);          // null on any failure: the section is just absent
+if (data) screen.appendChild(renderUfcAnalystEvent(data));
+```
+
+  `renderUfcAnalystRecord(record)` and `mountUfcAnalystRecord(screen)` do the same for the record page.
+  Every call is drawn by the MLB module's `callNode`, so a PASS is exactly as large as a TAKE. The styles
+  are in `web/css/analyst.css`, which `web/index.html` already links.
+
+  A page that lays out its own bout cards can fetch the event once and draw one bout where it belongs:
+  `data.analysis.bouts` is keyed by `bout_id`, the id the data layer uses, and `boutNode(bout)` renders
+  one of them. Each bout carries `fighter_a`, `fighter_b`, `weight_class`, `card_segment`, `match_number`,
+  `start_utc`, `summary` and `summary_status`, `calls` (grouped by `family`), `result_text` once it has been
+  graded, and `graded`.
+
+### 6. Running it
+
+```
+python -m src.cli analyst run --sport ufc --date 2026-10-10 --dry-run
+python -m src.cli analyst run --sport ufc --date 2026-10-10 --event 600061541 --dry-run --print-request
+python -m src.cli analyst run --sport ufc --date 2026-10-10            # needs ANTHROPIC_API_KEY
+python -m src.cli analyst grade --sport ufc --date 2026-10-10
+python -m src.cli analyst record --sport ufc
+```
+
+- It is the same `ANTHROPIC_API_KEY` as the MLB analyst: nothing new for the owner to create. Without it,
+  `run` prints `BLOCKED: ...` and exits 3 before loading, building, calling or writing anything.
+  `--dry-run` needs no key: it builds each packet and the exact request that would be sent, prints its size,
+  slot count and worst-case cost, and calls and writes nothing.
+- `--date` selects the events that start on that date (UTC); `--event ID` selects one of them. Bouts are
+  taken earliest start first, main event first within a start, so a run that begins close to the first bout
+  publishes what it still can.
+- A bout already published is frozen and skipped without a model call. A bout that has started, whose start
+  is unknown, that is not `scheduled`, that prices no market, or whose fighters the store cannot name is
+  skipped before any call. Exit codes: 0 ok, 2 error, 3 blocked, 4 spend cap.
+- `scripts/analyst_step.sh` is the MLB daily step and was not changed. Wiring `--sport ufc` into the daily
+  job is a separate decision (it needs the data service's odds capture to run before the analyst, and a
+  workflow edit that is the owner's).
+
+**A dry run on the real data**, from the main checkout's store, on 2026-10-03 at 20:14Z, a quarter of an
+hour after UFC 332's early prelims started (`AISPORTS_DATA_DIR` pointed at the main checkout's `data`):
+
+```
+$ python -m src.cli analyst run --sport ufc --date 2026-10-03 --event 600061182 --dry-run
+SKIP 401912274 Fighter A vs Fighter B: the bout's scheduled start 2026-10-03T20:00:00Z has passed or is inside the 0.0-minute lock; nothing can be published
+...
+DRY RUN 401912278 Fighter A vs Fighter B: packet 048de59eb8d0 (22312 characters), 8 slots, 13 missing items, request ~9904 input tokens (high estimate), worst case $0.18; nothing sent, nothing written
+  slots: moneyline, rounds_total, method_a_ko, method_a_sub, method_a_dec, method_b_ko, method_b_sub, method_b_dec
+  NOTE: no name is stored for fighter A and B; a real run skips this bout until the data store has them
+...
+dry run over 8 bout(s) of 14: 64 slots, ~79467 input tokens, worst case $1.44 (a run stops at its $6.00 cap); nothing sent, nothing written
+```
+
+Bout 401912278 is the UFC 332 main event (Women's Flyweight, title bout, five rounds). Its packet prices all
+eight slots: the moneyline at -205 and +170 (fair 0.6447 and 0.3553, opened at -198 and +164), the rounds
+total at 4.5 (over -280, under +210, opened -315 and +230) and six method prices from +2200 (the second
+fighter by submission) to -110 (the first by decision). The six bouts skipped started at 20:00Z, which is the
+refusal rule working on real data. **Today a real run would skip every bout**, because the main checkout's
+store has no `fighters.jsonl` yet: no fighter has a name. The first thing the UFC analyst needs from the data
+layer is that file (and, for the career blocks, `ufccom_profiles.jsonl`).
+
+### 7. Cost per card
+
+**Everything below is an estimate until the first measured day.** The cost log
+(`evidence/analyst_ufc_usage_v1.jsonl`) records the real tokens and dollars per bout from the usage the API
+returns, and `analyst record --sport ufc` prints cost per day.
+
+| item | value | source |
+|---|---|---|
+| model and price | `claude-sonnet-5-5`, $2.00 per million input tokens, $10.00 per million output tokens | `config/analyst.json`, shared with MLB |
+| packet, all 8 slots priced | 21,300 to 24,100 characters, mean 22,400 | measured by the dry run above, 8 UFC 332 bouts |
+| packet, moneyline only (a week out) | 16,700 to 17,600 characters | measured on the 2026-10-10 card, 10 bouts |
+| prompt and schema | 7,000 and 1,400 characters | measured in characters, not tokens |
+| input per bout | about 9,600 to 10,500 tokens (the CLI's deliberately high estimate is 3 characters a token and leaves the schema out) | |
+| output per bout | 3,500 to 7,000 tokens: about 270 for the summary, about 200 for each of 8 calls, plus adaptive thinking at medium effort (not measured) | assumption |
+| prompt caching | not used: the stable prefix is under the minimum cacheable length | no saving claimed |
+
+Per bout with all eight slots: input about $0.02 plus output $0.035 to $0.07 is **about $0.05 to $0.09**.
+Worst case, a full 16,000-token answer, is $0.18 (what the spend cap reserves before each call). A 13- or
+14-bout card is **about $0.70 to $1.25**; the same card's worst case is $2.34. A card a week out, where only
+moneylines are priced, is about $0.03 to $0.05 a bout, $0.30 to $0.60 for a card. At four to five events a
+month that is **about $3 to $6 a month**. The optional model critic adds about $0.03 a bout. A repair
+attempt on a malformed answer costs another call. The hard cap is the MLB one: $6.00 and 600,000 tokens per
+run, checked before every call, stopping the run with `STOPPED: spend cap reached`. At the worst case that
+is about 33 bouts.
+
+### 8. What it does not claim
+
+- That it is right. The record is empty and unproven, and the label says so everywhere.
+- Any profit, any edge, any expected value. It never says "lock", "guaranteed" or "free money", and the
+  critic strikes any call that does.
+- That a verified call is a good call. Verified means the facts it quotes are in the packet and the call
+  does not contradict itself. Whether it was worth taking is what the record measures.
+- That it saw anything outside the packet: no search, no tools, no memory of other bouts.
+- Anything about injuries, weight cuts, camp news or short notice. They are not in the data.
+- That the card is affected. It changes no card rule, gate, pick or published result and shares no row
+  with the card record or the MLB analyst record.
+- A stake size, or that anyone should bet. It recommends no stake and places nothing.
+
+### 9. Tests
+
+`tests/test_analyst_ufc_packet.py` (shape, slots, determinism, no leakage, holes),
+`test_analyst_ufc_model.py` (the prompt, the request, the call), `test_analyst_ufc_critic.py`,
+`test_analyst_ufc_grading.py` (every result kind), `test_analyst_ufc_ledger.py`, `test_analyst_ufc_cli.py`,
+`test_analyst_ufc_api.py`, `test_analyst_ufc_web.py` (under node) and `test_analyst_ufc_docs.py`, all offline:
+the store is the data layer's synthetic world in a temporary directory, the HTTP caller is injected, and no
+test reads the repo's real UFC data. `tests/test_analyst_ufc_docs.py` pins that the prompt in this file is
+the prompt in the code.

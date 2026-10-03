@@ -294,12 +294,19 @@ def name_runs(text: str) -> list:
 @dataclass
 class KnownNames:
     """Every name the packet can vouch for: its own text, the printed
-    "Last, First" forms turned round, and the clubs."""
+    "Last, First" forms turned round, and the clubs.
+
+    `phrases` is the sport's own capitalised vocabulary (defaults to baseball's);
+    `clubs=False` leaves the baseball clubs out, for a sport that has none
+    (`ufc_analyst.known_names`). The MLB call, `KnownNames.build(packet)`, is
+    unchanged."""
     blob: str
     team_words: frozenset
+    phrases: frozenset = _PHRASES
 
     @classmethod
-    def build(cls, packet: Mapping) -> "KnownNames":
+    def build(cls, packet: Mapping, *, extra_phrases: Sequence[str] = (),
+              clubs: bool = True) -> "KnownNames":
         pieces, team_words = [], set()
         for _p, v in packet_mod.iter_leaves(packet):
             if not isinstance(v, str):
@@ -308,19 +315,21 @@ class KnownNames:
             if ", " in v and v.count(",") == 1:
                 last, first = v.split(", ")
                 pieces.append(_norm(f"{first} {last}"))
-        for team in labels.TEAM_NAMES.values():
-            for key in ("city", "name", "full"):
-                if team.get(key):
-                    pieces.append(_norm(team[key]))
-                    team_words.update(_norm(team[key]).split())
+        if clubs:
+            for team in labels.TEAM_NAMES.values():
+                for key in ("city", "name", "full"):
+                    if team.get(key):
+                        pieces.append(_norm(team[key]))
+                        team_words.update(_norm(team[key]).split())
         blob = " | ".join(p for p in pieces if p).join(("| ", " |"))
-        return cls(blob, frozenset(team_words))
+        return cls(blob, frozenset(team_words),
+                   _PHRASES | frozenset(_norm(p) for p in extra_phrases))
 
     def _known(self, segment: str, single: bool) -> bool:
         if single:
             return segment in self.team_words      # "Rays", "Bay", never a bare first name
         # pieces are separated by " | ", so a segment can never span two of them
-        return segment in _PHRASES or f" {segment} " in self.blob
+        return segment in self.phrases or f" {segment} " in self.blob
 
     def has(self, run: str) -> bool:
         """Can the whole run be tiled by things the packet or the vocabulary
@@ -515,16 +524,24 @@ def _struck_call(packet: Mapping, call: Mapping, problems: Sequence[str]) -> dic
 
 def verify(packet: Mapping, output: Mapping, *,
            model_critic: Optional[Mapping] = None,
-           model_critic_status: str = "off") -> Verified:
+           model_critic_status: str = "off",
+           known: Optional[KnownNames] = None,
+           extra_numbers: Sequence[float] = ()) -> Verified:
     """Run the deterministic pass (and fold in a model critic's verdict, when
     one ran) over a shape-valid analysis. Never raises on bad content: bad
     content is what it exists to strike.
 
     `model_critic` is the parsed critic JSON ({"checks": [...],
-    "summary_supported", "summary_problem"}); it can only strike.
+    "summary_supported", "summary_problem"}); it can only strike. `known` is
+    the name vocabulary to check against; the default is the MLB one, and
+    another sport passes its own (`ufc_analyst.known_names`). `extra_numbers`
+    are numbers the packet states inside a string and a claim may repeat (the
+    number in an event's name); the default adds nothing.
     """
     base_pool = NumberPool.base(packet)
-    known = KnownNames.build(packet)
+    if extra_numbers:
+        base_pool = NumberPool(base_pool.values + _expand(extra_numbers))
+    known = known or KnownNames.build(packet)
     flagged: dict = {}
     if model_critic:
         for c in model_critic.get("checks") or []:

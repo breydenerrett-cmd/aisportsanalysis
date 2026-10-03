@@ -300,12 +300,17 @@ def user_message(packet: Mapping, repair: Optional[Sequence[str]] = None) -> str
 
 
 def build_request(packet: Mapping, cfg: Mapping, *,
-                  repair: Optional[Sequence[str]] = None) -> dict:
-    """The exact JSON body that would be POSTed. No key, no network."""
+                  repair: Optional[Sequence[str]] = None,
+                  system_prompt: str = SYSTEM_PROMPT) -> dict:
+    """The exact JSON body that would be POSTed. No key, no network.
+
+    `system_prompt` is the one thing a sport changes (`ufc_analyst.py` passes its
+    own); the schema, the effort and the request shape are shared on purpose.
+    """
     return {
         "model": cfg["model"],
         "max_tokens": int(cfg["max_output_tokens"]),
-        "system": SYSTEM_PROMPT,
+        "system": system_prompt,
         "output_config": {
             "format": {"type": "json_schema", "schema": RESPONSE_SCHEMA},
             "effort": cfg["effort"],
@@ -500,11 +505,13 @@ class AnalysisResult:
 
 def analyze(packet: Mapping, cfg: Mapping, *, api_key: Optional[str],
             http_post: HttpPost = urllib_post, meter: Optional[SpendMeter] = None,
-            sleep: Callable[[float], None] = time.sleep) -> AnalysisResult:
+            sleep: Callable[[float], None] = time.sleep,
+            system_prompt: str = SYSTEM_PROMPT) -> AnalysisResult:
     """Ask the model for the game's analysis. Raises, never returns junk.
 
     `Blocked` without a key (nothing sent). Up to `max_attempts` calls: only a
     SHAPE failure earns a retry, with the reasons appended to the request.
+    `system_prompt` defaults to the MLB prompt; another sport passes its own.
     """
     if not api_key:
         raise Blocked(f"{config_mod.ENV_KEY} is not set; the analyst cannot run")
@@ -514,7 +521,7 @@ def analyze(packet: Mapping, cfg: Mapping, *, api_key: Optional[str],
     errors: list = []
     request_ids: list = []
     for attempt in range(1, int(cfg["max_attempts"]) + 1):
-        body = build_request(packet, cfg, repair=errors or None)
+        body = build_request(packet, cfg, repair=errors or None, system_prompt=system_prompt)
         meter.check_before(estimate_tokens(body["system"],
                                            body["messages"][0]["content"]),
                            int(cfg["max_output_tokens"]), cfg)
