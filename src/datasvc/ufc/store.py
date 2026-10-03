@@ -10,6 +10,7 @@ the statistics file.
 from __future__ import annotations
 
 from collections import defaultdict
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -42,6 +43,27 @@ DATE_FIELDS = {
     "odds": "fetched_utc", "fighters": "fetched_utc", "ufccom_profiles": "fetched_utc",
 }
 
+# A booked, postponed or cancelled card or bout has not taken place: its date is a
+# schedule, not data. Until 2026-10-03 a card booked for December was the store's
+# "newest" event, so `status` and /data/v1/status reported a date ten weeks ahead and a
+# negative age for a store whose last finished card was days old. These never count
+# toward `newest`; `next_scheduled` names the soonest booked one instead.
+SCHEDULED_DATASETS = ("events", "bouts")
+NOT_HAPPENED = frozenset({"scheduled", "postponed", "canceled"})
+
+
+def counts_toward_newest(name: str, row: dict) -> bool:
+    """False only for an event or bout whose status says it has not taken place."""
+    return name not in SCHEDULED_DATASETS or row.get("status") not in NOT_HAPPENED
+
+
+def _instant(value) -> Optional[datetime]:
+    try:
+        stamp = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return stamp if stamp.tzinfo else stamp.replace(tzinfo=timezone.utc)
+
 
 class UfcStore:
     def __init__(self, root: Optional[Path] = None):
@@ -72,9 +94,25 @@ class UfcStore:
         return count
 
     def newest(self, name: str) -> Optional[str]:
+        """The newest date in a dataset; for events and bouts, the newest that took place."""
         field = DATE_FIELDS[name]
-        values = [r.get(field) for r in self.load(name) if r.get(field)]
+        values = [r.get(field) for r in self.load(name) if r.get(field) and counts_toward_newest(name, r)]
         return max(values) if values else None
+
+    def next_scheduled(self, name: str, after: Optional[datetime] = None) -> Optional[str]:
+        """The soonest booked date in events or bouts, later than `after` when given.
+
+        Without `after` a booking that has already passed (a row nobody updated) can be
+        the answer, so callers with a clock pass it. None for datasets with no schedule.
+        """
+        if name not in SCHEDULED_DATASETS:
+            return None
+        booked = []
+        for row in self.load(name):
+            when = _instant(row.get("date_utc")) if row.get("status") == "scheduled" else None
+            if when is not None and (after is None or when > after):
+                booked.append((when, row["date_utc"]))
+        return min(booked)[1] if booked else None
 
     def write_manifest(self, extra: dict = None) -> dict:
         datasets = {FILES[n]: {"records": len(self.load(n)), "newest": self.newest(n)}

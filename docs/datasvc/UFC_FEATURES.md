@@ -419,7 +419,7 @@ curl -H "Authorization: Bearer $T" https://<host>/data/v1/status
   "generated_utc": "2026-10-03T15:00:00Z",
   "datasets": {
     "events":   {"file": "events.jsonl", "newest_field": "date_utc", "present": true, "records": 14,
-                 "newest": "2026-10-10T21:00Z", "bytes": 3863, "age_seconds": -626400, "age_days": -7.25,
+                 "newest": "2026-08-08T22:00Z", "bytes": 3863, "age_seconds": 4813200, "age_days": 55.71,
                  "source": "manifest"},
     "fighters": {"file": "fighters.jsonl", "newest_field": "fetched_utc", "present": true, "records": 5,
                  "newest": "2026-10-03T12:00:00Z", "bytes": 2315, "age_seconds": 10800, "age_days": 0.12,
@@ -433,8 +433,10 @@ curl -H "Authorization: Bearer $T" https://<host>/data/v1/status
 Counts and newest dates come from `MANIFEST.json` when its recorded byte size matches the file on disk
 (`"source": "manifest"`), otherwise from one streaming pass over the file (`"source": "files"`), cached until
 the file changes. Neither loads the dataset into memory and neither happens per request. `age_seconds` is
-`now - newest` and is **negative** when the newest record is in the future (a scheduled event); for freshness
-read `odds`, `fighters` and `ufccom_profiles`, whose newest is a fetch time. A missing file is
+`now - newest`. For `events` and `bouts`, `newest` is the newest card or bout that took place: booked,
+postponed and cancelled ones never count (`src.datasvc.ufc.store.counts_toward_newest`; before 2026-10-03 a
+card booked for December made the age negative). `/data/v1/ufc/upcoming` lists the booked cards. For `odds`,
+`fighters` and `ufccom_profiles`, `newest` is a fetch time. A missing file is
 `"present": false` with 0 records. `service` shows when the current store was loaded and how many times it
 has been swapped.
 

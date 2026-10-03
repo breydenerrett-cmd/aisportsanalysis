@@ -334,7 +334,7 @@ class StoreHolder:
                     row = json.loads(line)
                     records += 1
                     value = row.get(field) if field and isinstance(row, dict) else None
-                    if value and (newest is None or value > newest):
+                    if value and ufc_store.counts_toward_newest(name, row) and (newest is None or value > newest):
                         newest = value
         except (OSError, ValueError) as exc:
             raise DataUnavailable(name) from exc
@@ -562,9 +562,9 @@ def get_status() -> dict:
         "datasets": datasets,
         "manifest_generated_utc": holder.manifest_generated_utc(),
         "service": holder.info(),
-        "note": ("age_seconds is now minus `newest`; it is negative when the newest record is in the future "
-                 "(a scheduled event). For freshness read the odds, fighters and ufccom_profiles datasets, "
-                 "whose newest is a fetch time."),
+        "note": ("age_seconds is now minus `newest`. For events and bouts `newest` is the newest card or bout "
+                 "that took place: booked, postponed and cancelled ones do not count (/data/v1/ufc/upcoming "
+                 "lists the booked ones). For odds, fighters and ufccom_profiles `newest` is a fetch time."),
     }}
 
 

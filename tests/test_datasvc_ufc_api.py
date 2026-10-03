@@ -610,9 +610,10 @@ class Status(ApiCase):
         self.assertEqual(ds["fighters"]["newest_field"], "fetched_utc")
         self.assertEqual(ds["fighters"]["age_seconds"], 3 * 3600)             # fetched 12:00, now 15:00
         self.assertEqual(ds["fighters"]["age_days"], 0.12)
-        self.assertEqual(ds["events"]["newest"], "2026-10-10T21:00Z")          # a scheduled card
-        self.assertEqual(ds["events"]["age_seconds"], -(7 * 86400 + 6 * 3600))  # in the future: negative, and said so
-        self.assertEqual(ds["bouts"]["newest"], "2026-10-10T23:00Z")
+        # the newest card that took place (Aug 8); the card booked for Oct 10 and the cancelled one do not count
+        self.assertEqual(ds["events"]["newest"], "2026-08-08T22:00Z")
+        self.assertEqual(ds["events"]["age_seconds"], 55 * 86400 + 17 * 3600)
+        self.assertEqual(ds["bouts"]["newest"], "2026-08-08T22:00Z")
         self.assertIsNone(data["manifest_generated_utc"])
         self.assertEqual(data["generated_utc"], "2026-10-03T15:00:00Z")
 

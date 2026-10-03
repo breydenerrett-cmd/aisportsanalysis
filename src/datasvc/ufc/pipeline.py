@@ -235,14 +235,16 @@ def update(today: Optional[date] = None, *, days_back: int = 10, days_ahead: int
 
 
 def status(store: Optional[UfcStore] = None, now: Optional[datetime] = None) -> dict:
-    """Each dataset's record count, newest date and age in hours."""
+    """Each dataset's record count, newest date and age in hours, and for events and bouts
+    the soonest booked date after now. A booked card never counts as the newest data
+    (`store.counts_toward_newest`), so an age is never negative."""
     store = store or UfcStore()
     now = now or datetime.now(timezone.utc)
     out = {}
     from src.datasvc.ufc.store import FILES
     for name in FILES:
         if not store.path(name).exists():
-            out[name] = {"records": 0, "newest": None, "age_hours": None}
+            out[name] = {"records": 0, "newest": None, "age_hours": None, "next_scheduled": None}
             continue
         newest = store.newest(name)
         age = None
@@ -254,5 +256,6 @@ def status(store: Optional[UfcStore] = None, now: Optional[datetime] = None) -> 
                 age = round((now - stamp).total_seconds() / 3600, 1)
             except ValueError:
                 age = None
-        out[name] = {"records": len(store.load(name)), "newest": newest, "age_hours": age}
+        out[name] = {"records": len(store.load(name)), "newest": newest, "age_hours": age,
+                     "next_scheduled": store.next_scheduled(name, after=now)}
     return out

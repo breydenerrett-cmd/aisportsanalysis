@@ -205,7 +205,8 @@ class Status(unittest.TestCase):
             store = UfcStore(Path(tmp))
             store.upsert("events", [{"event_id": "e1", "date_utc": "2026-10-03T12:00Z"}])
             out = pipeline.status(store, now=datetime(2026, 10, 3, 18, 0, tzinfo=timezone.utc))
-            self.assertEqual(out["events"], {"records": 1, "newest": "2026-10-03T12:00Z", "age_hours": 6.0})
+            self.assertEqual(out["events"], {"records": 1, "newest": "2026-10-03T12:00Z", "age_hours": 6.0,
+                                             "next_scheduled": None})
             self.assertEqual(out["bouts"]["records"], 0)
 
 
