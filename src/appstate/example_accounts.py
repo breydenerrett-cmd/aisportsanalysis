@@ -59,8 +59,13 @@ from collections import Counter
 from decimal import Decimal
 from typing import Any, Iterable, Mapping, Optional, Sequence
 
+from src.paths import repo_root
+
 START_DATE = "2026-09-22"
-CONFIG_PATH = os.path.join("config", "example_accounts.json")
+# Anchored at the repository root, not the working directory (src/paths.py
+# explains why a cwd-relative path silently reads nothing when a process starts
+# somewhere else). The deployed image copies config/ (deploy/Dockerfile).
+CONFIG_PATH = os.path.join(str(repo_root()), "config", "example_accounts.json")
 
 # The sport keys this feature shows. The ledger calls UFC "mma"; the page and
 # the payload say "ufc", which is what a reader sees in the address bar.

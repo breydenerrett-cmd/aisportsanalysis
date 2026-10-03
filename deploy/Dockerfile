@@ -44,6 +44,13 @@ RUN apt-get update \
 
 COPY api/ api/
 COPY src/ src/
+# WHY config/ IS COPIED (2026-10-03). Request-time code reads settings from it
+# (config/example_accounts.json for the "If you had followed every pick"
+# section, src/appstate/example_accounts.py). The image had no config/ at all,
+# so that section answered "settings could not be read" on staging while every
+# local test passed against the repo copy. Small, public, no secrets: the repo
+# is public and nothing secret may ever be committed under config/.
+COPY config/ config/
 # WHY web/ IS COPIED TOO
 # ------------------------
 # api/web.py serves the browser client off disk from REPO_ROOT/"web"
