@@ -2,6 +2,16 @@
 
 For Brey. One decision, two lines of workflow change. Written 2026-10-02.
 
+**Corrected 2026-10-03.** Fault 2 below was overstated. It said the hourly
+refresh never fires in quiet hours. On 2026-10-03 it fired every hour from
+04:05Z to 16:00Z, overnight included, because that night's slots happened
+to land inside minute 00 to 14. Whether it fires depends on where the slots
+fall against the hour, which drifts from night to night. The freeze is real
+but intermittent, not nightly. The larger fault seen since is different and
+comes first: one stalled deploy blocked every refresh for six hours
+(`docs/audit/2026-10-03/PROD_DEPLOY_HANG.md`); its fix is a one-line job
+timeout (`docs/decisions/deploy-timeout.patch`).
+
 ## Current behaviour
 
 Production's data is baked into its image, so it only updates when
@@ -18,8 +28,8 @@ Two things follow that nobody intended:
    untested. (Not seen to happen; avoided so far by not pushing between
    minute 45 and minute 15.)
 2. **It can stop refreshing for many hours.** In quiet hours slots are 60
-   minutes apart and land at about minute 31, so the "minute 00 to 14" test
-   never passes. Observed tonight: last refresh 00:04Z; slots at 01:31Z and
+   minutes apart. When they happen to land outside minute 00 to 14, the test
+   fails every hour until the spacing changes. Observed 2026-10-02: last refresh 00:04Z; slots at 01:31Z and
    02:31Z both said "not the first slot of the hour"; at 02:38Z production
    was still serving the 23:51Z odds and did not have the 00:16Z push (the
    UFC grading), although CI was green.
@@ -67,8 +77,8 @@ Revert the one commit. The old condition returns on the next slot.
 
 ## If we do nothing
 
-Production keeps freezing every quiet-hours stretch (most nights from about
-01:00Z until the next afternoon's games), and every push needs the
+Production freezes on the nights the slots land outside minute 00 to 14
+(seen 2026-10-02; not seen 2026-10-03), and every push needs the
 minute-45-to-15 rule to stay safe.
 
 ## Recommendation
@@ -77,6 +87,5 @@ minute-45-to-15 rule to stay safe.
 are observed, not theoretical. I am not permitted to edit workflow files, so
 this needs either your edit or your explicit go-ahead for me to make it.
 
-Separately, for tonight only: production will not refresh again until
-tomorrow afternoon. One manual run of `deploy-prod` on the current green head
-fixes that once; I will not dispatch it without your say-so.
+Order of work: the job timeout first (one line, protects against a six-hour
+freeze that has happened), this change second.
