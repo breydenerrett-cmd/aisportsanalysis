@@ -1559,10 +1559,21 @@ def cmd_sent(args, root: Path, private: Path, now: datetime) -> int:
     qpath = sales / QUEUE_NAME
     queue = read_queue(qpath)
     note = check_public_text(args.note or "", "--note", read_private(private)) if args.note else ""
+    # --version: the wording actually sent, when it is not the batch file's own text (a
+    # hand-tailored group in docs/sales/SEND_ORDER.md). It is a label for comparing message
+    # versions later, so it goes through the same public-text guard as a note.
+    version = (getattr(args, "version", None) or "").strip()
+    if version:
+        version = check_public_text(version, "--version", read_private(private))
     tagged = []
     for item in chosen:
         lead = _lead_for_item(queue, item)
         queue, _ = apply_event(queue, lead["lead_id"], "sent", when)
+        if version:
+            for row in queue:
+                if row["lead_id"] == lead["lead_id"]:
+                    row["message_version"] = version
+            item = dict(item, variant=version)
         tagged.append(dict(item, lead_id=lead["lead_id"]))
     new = sent_rows(tagged, args.batch, parse_ts(when).date(), note)
     write_queue(qpath, queue)
@@ -1855,6 +1866,7 @@ def main(argv=None, root: Path = ROOT, record_fn=None, private_path_override=Non
     s.add_argument("--batch", type=int, required=True)
     s.add_argument("--items", required=True)
     s.add_argument("--note", default=None)
+    s.add_argument("--version", default=None)
     when_flags(s)
     r = sub.add_parser("reply")
     r.add_argument("--lead", default=None)

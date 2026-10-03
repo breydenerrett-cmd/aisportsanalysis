@@ -637,6 +637,25 @@ class QueueCommands(unittest.TestCase):
         self.assertEqual(self.lead(self.post)["message_version"], "feedback post + record link")
         self.assertEqual(self.lead(self.unsent)["sent_at"], "")
 
+    def test_sent_with_a_version_records_the_wording_actually_sent(self):
+        """A hand-tailored group (docs/sales/SEND_ORDER.md) is not the batch file's own text;
+        --version labels what went out, on the queue row and on the audit-trail row, so
+        message versions can be compared later. Other leads keep their own label."""
+        code, _out, err = run(self.root, "sent", "--batch", "1", "--items", "5",
+                              "--version", "v2a-discovery-question", "--at", "2026-10-03T09:00:00Z")
+        self.assertEqual(code, 0, err)
+        self.assertEqual(self.lead(self.unsent)["message_version"], "v2a-discovery-question")
+        self.assertEqual(self.lead(self.a)["message_version"], "first_line + Variant B")
+        pipe = self.root / "docs" / "sales" / "pipeline.csv"
+        last = ob.read_pipeline(pipe)[1][-1]
+        self.assertEqual(last["message_variant"], "v2a-discovery-question")
+
+    def test_sent_version_refuses_a_handle(self):
+        code, _out, err = run(self.root, "sent", "--batch", "1", "--items", "5",
+                              "--version", "sent to @someone", "--at", "2026-10-03T09:00:00Z")
+        self.assertEqual(code, 2)
+        self.assertEqual(self.lead(self.unsent)["sent_at"], "")
+
     def test_every_step_updates_one_row_and_never_adds_a_lead(self):
         pipe = self.root / "docs" / "sales" / "pipeline.csv"
         before_events = len(ob.read_pipeline(pipe)[1])

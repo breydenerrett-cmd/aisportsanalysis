@@ -29,13 +29,18 @@ units over 6 regular-season nights; postseason 0-2 (graded, not counted);
 NFL 1-0; UFC 5-1. Open the record page before you send and check the MLB
 number still matches.
 
-After each send, log it:
+After each send, log it (or just tell me "sent 1" and I will). The version
+label records which wording went out, so the versions can be compared:
 
 ```
-python scripts/outreach_batch.py sent --batch 1 --items 1
+python scripts/outreach_batch.py sent --batch 1 --items 1 --version v2-thread-offer-two-questions
+python scripts/outreach_batch.py sent --batch 1 --items 13 --version v2a-discovery-question
+python scripts/outreach_batch.py sent --batch 1 --items 12 --version v2b-tester-offer
+python scripts/outreach_batch.py sent --batch 1 --items 9 --version v2-x-question-only
 ```
 
-(items: Covers is 1, Tommy Lorenzo is 9, Unit Circle is 12, 337picks is 13)
+The text to send is the text in this file, not the older wording in
+`batch_01.md` (that file still holds each lead's tagged record link).
 
 ### 1. Covers, Website Promotions forum (item 1, lead l001)
 

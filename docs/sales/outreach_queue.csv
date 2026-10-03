@@ -1,24 +1,24 @@
 lead_id,kind,person,channel,campaign,sport_interest,message_version,send_group,sent_at,reply_at,reply_type,signup_at,tester_access_at,activated_at,feedback_at,would_pay,would_pay_at,payment_at,next_followup,notes,via_lead,batch
-l001-covers-website-promotions-forum,channel_post,Covers Website Promotions Forum,forum,batch_01,All sports betting,feedback post + record link,,,,,,,,,,,,,,,1
-l002-therx-site-promotions-forum,channel_post,TheRX Site Promotions Forum,forum,batch_01,All sports betting; service plays,feedback post + record link,,,,,,,,,,,,,,,1
-l003-justbaseball-betting,person,"JustBaseball Betting (Peter Appel, TheDannyClassic)",creator,batch_01,MLB betting,first_line + Variant B,,,,,,,,,,,,,,,1
-l004-monotonebetting-substack,person,MonotoneBetting Substack,creator,batch_01,"Player props, DC sports",first_line + Variant B,,,,,,,,,,,,,,,1
-l005-farleys-substack,person,Farley's Substack,creator,batch_01,"NFL betting, psycho-social angles",first_line + Variant B,,,,,,,,,,,,,,,1
-l006-the-closing-line-podcast,person,The Closing Line Podcast (Dustin Gouker),creator,batch_01,"Betting industry, picks ecosystem",first_line + Variant B,,,,,,,,,,,,,,,1
-l007-joseph-buchdahl,person,Joseph Buchdahl (@12Xpert),x_account,batch_01,"Betting statistics, tipster evaluation",X reply template,,,,,,,,,,,,,,,1
-l008-tyler-shoemaker,person,Tyler Shoemaker (@TShoeIndex),x_account,batch_01,"NFL, MLB ratings; tracked bets",X reply template,,,,,,,,,,,,,,,1
-l009-tommy-lorenzo,person,Tommy Lorenzo (@sportsbooktom),x_account,batch_01,"MLB, CFB, NFL contests; podcast host",X reply template,,,,,,,,,,,,,,,1
-l010-kyle-kirms,person,Kyle Kirms (@kylekirms),x_account,batch_01,Sports betting content,X reply template,,,,,,,,,,,,,,,1
-l011-picks-with-the-professor,person,Picks with the Professor (@ProfessorSides),x_account,batch_01,Player-level data betting,X reply template,,,,,,,,,,,,,,,1
-l012-unit-circle,person,Unit Circle,discord_server,batch_01,"NFL, NBA, MLB, esports; props + fantasy",first_line + Variant B,,,,,,,,,,,,,,,1
-l013-337picks,person,337picks,discord_server,batch_01,"NFL, MLB, UFC, college football",first_line + Variant B,,,,,,,,,,,,,,,1
-l014-presidential-props,person,Presidential Props,discord_server,batch_01,"Props (PrizePicks/Underdog), NFL and others",first_line + Variant B,,,,,,,,,,,,,,,1
-l015-fantasy-football-addicts,person,Fantasy Football Addicts,discord_server,batch_01,NFL fantasy football,first_line + Variant B,,,,,,,,,,,,,,,1
-l016-dynasty-fantasy-baseball-prospects,person,Dynasty Fantasy Baseball + Prospects,discord_server,batch_01,"Dynasty fantasy baseball, MLB prospects",first_line + Variant B,,,,,,,,,,,,,,,1
-l017-bmb-picks,person,BMB Picks,discord_server,batch_01,"Player props (PrizePicks, Betr, Chalkboard, DraftKings)",first_line + Variant B,,,,,,,,,,,,,,,1
-l018-cash-counter,person,CASH COUNTER,discord_server,batch_01,"NFL, NCAAF, player props and game lines",first_line + Variant B,,,,,,,,,,,,,,,1
-l019-sbpicks,person,SBPICKS,discord_server,batch_01,"NFL, NBA, soccer, CS2; parlays and props",first_line + Variant B,,,,,,,,,,,,,,,1
-l020-xploit-wagers,person,Xploit Wagers,discord_server,batch_01,"NFL, NBA, MLB",first_line + Variant B,,,,,,,,,,,,,,,1
+l001-covers-website-promotions-forum,channel_post,Covers Website Promotions Forum,forum,batch_01,All sports betting,feedback post + record link,1,,,,,,,,,,,,,,1
+l002-therx-site-promotions-forum,channel_post,TheRX Site Promotions Forum,forum,batch_01,All sports betting; service plays,feedback post + record link,2,,,,,,,,,,,,,,1
+l003-justbaseball-betting,person,"JustBaseball Betting (Peter Appel, TheDannyClassic)",creator,batch_01,MLB betting,first_line + Variant B,2,,,,,,,,,,,,,,1
+l004-monotonebetting-substack,person,MonotoneBetting Substack,creator,batch_01,"Player props, DC sports",first_line + Variant B,4,,,,,,,,,,,,,,1
+l005-farleys-substack,person,Farley's Substack,creator,batch_01,"NFL betting, psycho-social angles",first_line + Variant B,4,,,,,,,,,,,,,,1
+l006-the-closing-line-podcast,person,The Closing Line Podcast (Dustin Gouker),creator,batch_01,"Betting industry, picks ecosystem",first_line + Variant B,5,,,,,,,,,,,,,,1
+l007-joseph-buchdahl,person,Joseph Buchdahl (@12Xpert),x_account,batch_01,"Betting statistics, tipster evaluation",X reply template,5,,,,,,,,,,,,,,1
+l008-tyler-shoemaker,person,Tyler Shoemaker (@TShoeIndex),x_account,batch_01,"NFL, MLB ratings; tracked bets",X reply template,3,,,,,,,,,,,,,,1
+l009-tommy-lorenzo,person,Tommy Lorenzo (@sportsbooktom),x_account,batch_01,"MLB, CFB, NFL contests; podcast host",X reply template,1,,,,,,,,,,,,,,1
+l010-kyle-kirms,person,Kyle Kirms (@kylekirms),x_account,batch_01,Sports betting content,X reply template,4,,,,,,,,,,,,,,1
+l011-picks-with-the-professor,person,Picks with the Professor (@ProfessorSides),x_account,batch_01,Player-level data betting,X reply template,3,,,,,,,,,,,,,,1
+l012-unit-circle,person,Unit Circle,discord_server,batch_01,"NFL, NBA, MLB, esports; props + fantasy",first_line + Variant B,1,,,,,,,,,,,,,,1
+l013-337picks,person,337picks,discord_server,batch_01,"NFL, MLB, UFC, college football",first_line + Variant B,1,,,,,,,,,,,,,,1
+l014-presidential-props,person,Presidential Props,discord_server,batch_01,"Props (PrizePicks/Underdog), NFL and others",first_line + Variant B,3,,,,,,,,,,,,,,1
+l015-fantasy-football-addicts,person,Fantasy Football Addicts,discord_server,batch_01,NFL fantasy football,first_line + Variant B,5,,,,,,,,,,,,,,1
+l016-dynasty-fantasy-baseball-prospects,person,Dynasty Fantasy Baseball + Prospects,discord_server,batch_01,"Dynasty fantasy baseball, MLB prospects",first_line + Variant B,5,,,,,,,,,,,,,,1
+l017-bmb-picks,person,BMB Picks,discord_server,batch_01,"Player props (PrizePicks, Betr, Chalkboard, DraftKings)",first_line + Variant B,3,,,,,,,,,,,,,,1
+l018-cash-counter,person,CASH COUNTER,discord_server,batch_01,"NFL, NCAAF, player props and game lines",first_line + Variant B,2,,,,,,,,,,,,,,1
+l019-sbpicks,person,SBPICKS,discord_server,batch_01,"NFL, NBA, soccer, CS2; parlays and props",first_line + Variant B,4,,,,,,,,,,,,,,1
+l020-xploit-wagers,person,Xploit Wagers,discord_server,batch_01,"NFL, NBA, MLB",first_line + Variant B,2,,,,,,,,,,,,,,1
 l021-trustmyrecord-forums,channel_post,TrustMyRecord Forums,forum,batch_02,General betting; MLB contest,feedback post + record link,,,,,,,,,,,,,,,2
 l022-david-miller,person,David Miller (@vegasringers),x_account,batch_02,+EV betting,X reply template,,,,,,,,,,,,,,,2
 l023-monotone-football,person,Monotone Football (@MonotoneFootbal),x_account,batch_02,"Sports betting writer, Substack",X reply template,,,,,,,,,,,,,,,2
