@@ -378,6 +378,20 @@ echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: nfl card settle --recent exit=$N
 # card's. The step always exits 0 and prints no ESCALATE: it cannot fail this loop.
 bash scripts/analyst_step.sh "$TODAY" "$YESTERDAY"
 
+# THE UFC DATA LAYER, KEPT CURRENT (2026-10-03; src/datasvc/ufc/pipeline.py,
+# docs/datasvc/UFC_SCHEMA.md). The fight-night page and the data API read the
+# normalised files under data/datasvc/ufc, which ship in the image. This pulls
+# the last 10 days of results, statistics and odds and the next 21 days of
+# booked cards from ESPN's public JSON: polite (rate-limited, capped at 2000
+# requests) and it stops on any browser check rather than working around it.
+# data/datasvc/ufc is NOT in the daily-loop cache, so the copy on disk is git's
+# and staging it below adds the new rows; the raw fetch cache (data/datasvc/raw/)
+# is git-ignored and never staged. UFC.com profiles are skipped here (one request
+# a second; they have their own pass). Guarded: it cannot fail this loop.
+echo "== ufc data update (last 10 days, next 21 days) =="
+python3 -m src.datasvc.cli ufc update --no-profiles --max-requests 2000 2>&1 | tail -n 20 | sed 's/^/  /' || true
+echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: ufc data update" >> "$RUN_NOTE"
+
 # UFC CARD GRADING FROM ESPN (2026-10-03; src/providers/espn_mma_results.py,
 # docs/UFC_RESULT_SOURCE.md). Grades yesterday's published UFC picks from ESPN's
 # results once the bouts are final, then settles the card. It never overwrites a
@@ -700,7 +714,7 @@ python3 -m src.cli store rotate --all --if-over-mb 60 --keep-days 1 \
 # reads -- and git keeps the backfill because nothing here overwrites it.
 # Making git authoritative for these stores needs a union of both copies
 # before ingest, not a blind `git add`; until that exists, do not stage them.
-git add data/processed data/watch data/research data/raw/oddsapi evidence data/paper_accounts docs/eod docs/OVERNIGHT_RUN.md artifacts config/capture_families.json data/historical/ufc_results.jsonl 2>/dev/null || true
+git add data/processed data/watch data/research data/raw/oddsapi evidence data/paper_accounts docs/eod docs/OVERNIGHT_RUN.md artifacts config/capture_families.json data/historical/ufc_results.jsonl data/datasvc/ufc 2>/dev/null || true
 git reset -q artifacts/demo_latest.html 2>/dev/null || true
 # GUARD (2026-09-21 incident): size-gate backstop for whatever store
 # rotation above did not catch -- prints WARN/ESCALATE, never blocks.

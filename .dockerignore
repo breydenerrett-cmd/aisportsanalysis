@@ -84,6 +84,13 @@ data/historical/*
 !data/research/
 data/research/*
 !data/research/alpha_registry.jsonl
+# The UFC data layer (2026-10-03): the normalised files the fight-night page and
+# the data API read, and only them. The raw fetch cache (data/datasvc/raw/,
+# ~90 MB, git-ignored) and any future sport's directory stay out until a served
+# route reads them.
+!data/datasvc/
+data/datasvc/*
+!data/datasvc/ufc/
 
 design/
 docs/

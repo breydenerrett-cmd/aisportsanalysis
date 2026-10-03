@@ -83,6 +83,13 @@ COPY data/research/alpha_registry.jsonl data/research/alpha_registry.jsonl
 # still succeeds, and api/games._enrichment_inputs treats every absent
 # store as a stated gap -- the page degrades, it does not break.
 COPY data/historical/ data/historical/
+# THE UFC DATA LAYER (2026-10-03): the fight-night page (api/ufc_fights.py) and
+# the data API (api/datasvc.py) read the normalised UFC files from
+# src/datasvc/ufc/store.py's DEFAULT_DIR. ~14 MB, git-tracked, kept current by
+# the daily loop (`python -m src.datasvc.cli ufc update`). Without this line the
+# store loads empty and the UFC page says no card is booked. The raw fetch cache
+# beside it (data/datasvc/raw/, git-ignored) stays out of the build context.
+COPY data/datasvc/ufc/ data/datasvc/ufc/
 
 # BRING THE REQUEST-TIME STORES CURRENT (2026-10-03). The COPY above is the
 # repo's committed copy of results, pitcher logs, bullpen log, standings,
