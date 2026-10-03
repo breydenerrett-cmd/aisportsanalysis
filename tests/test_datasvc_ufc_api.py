@@ -201,12 +201,19 @@ class Authentication(ApiCase):
 class Surface(ApiCase):
     def test_the_openapi_schema_builds_and_lists_exactly_the_documented_endpoints(self):
         """FastAPI builds /openapi.json for the whole product from every route, so a signature it
-        cannot describe would break the docs endpoint of the entire app, not just this router."""
+        cannot describe would break the docs endpoint of the entire app, not just this router.
+
+        2026-10-03: the NFL routes joined the same router (docs/datasvc/NFL_FEATURES.md), so the
+        exact set now has the UFC paths and the NFL paths, each listed here by hand."""
         paths = self.app.openapi()["paths"]
+        nfl = f"{PREFIX}/nfl"
         self.assertEqual(set(paths), {
             f"{PREFIX}/status", f"{UFC}/events", f"{UFC}/events/{{event_id}}", f"{UFC}/bouts/{{bout_id}}",
             f"{UFC}/fighters", f"{UFC}/fighters/{{fighter_id}}", f"{UFC}/fighters/{{fighter_id}}/fights",
-            f"{UFC}/fighters/{{fighter_id}}/features", f"{UFC}/matchup", f"{UFC}/upcoming"})
+            f"{UFC}/fighters/{{fighter_id}}/features", f"{UFC}/matchup", f"{UFC}/upcoming",
+            f"{nfl}/games", f"{nfl}/games/{{game_id}}", f"{nfl}/team-games", f"{nfl}/player-games",
+            f"{nfl}/injuries", f"{nfl}/matchup", f"{nfl}/teams/{{team}}/features",
+            f"{nfl}/players/{{player}}/features"})
         for path, methods in paths.items():
             self.assertEqual(list(methods), ["get"], path)          # read-only: nothing here writes
 

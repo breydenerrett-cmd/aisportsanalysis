@@ -1,8 +1,12 @@
-"""GET /data/v1/...: the data service's HTTP surface (UFC first).
+"""GET /data/v1/...: the data service's HTTP surface (UFC, then NFL).
 
 This file only serves what the files hold. Every number a route returns is either a
-stored record or comes from `src.datasvc.ufc.features` / `matchup`, which own the
-leakage rule; nothing here derives a figure. Same division of labour as api/props.py.
+stored record or comes from `src.datasvc.ufc.features` / `matchup` (UFC) or
+`src.datasvc.nfl.features` / `matchup` (NFL), which own the leakage rule; nothing here
+derives a figure. Same division of labour as api/props.py. The NFL routes
+(`/data/v1/nfl/...`, docs/datasvc/NFL_FEATURES.md) share this router, its sign-in, its error
+shape and its pagination; each sport has its own store holder, so one sport's files changing
+or failing never swaps out or breaks the other's.
 
 THREE THINGS THAT MUST STAY TRUE
 --------------------------------
@@ -65,14 +69,21 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from api.auth import require_paid_access
 from src.datasvc import names
+from src.datasvc.nfl import features as nfl_features
+from src.datasvc.nfl import matchup as nfl_matchup
+from src.datasvc.nfl import store as nfl_store
+from src.datasvc.nfl.store import NflStore
 from src.datasvc.ufc import features as features_mod
 from src.datasvc.ufc import matchup as matchup_mod
 from src.datasvc.ufc import store as ufc_store
 from src.datasvc.ufc.store import UfcStore
+from src.sports import nfl_teams
 
 API_VERSION = "v1"
 DEFAULT_LIMIT = 50
 EVENT_STATUSES = ("scheduled", "in_progress", "final", "canceled", "postponed", "unknown")
+GAME_STATUSES = ("scheduled", "in_progress", "final", "no_result", "removed")
+GAME_TYPES = ("REG", "WC", "DIV", "CON", "SB")
 
 # /upcoming lists events that have not finished. One that started up to this long ago is
 # still "tonight's card" (a card runs for hours and the status flips late); a "scheduled"
@@ -196,10 +207,10 @@ def data_access(request: Request, user=Depends(require_paid_access)) -> DataCall
 
 # -- the store, loaded once ---------------------------------------------------------------------
 
-class _LockedStore(UfcStore):
-    """A UfcStore safe to share between request threads.
+class _LockedMixin:
+    """Makes a dataset store (UFC or NFL) safe to share between request threads.
 
-    The foundation's store loads lazily and is written for one thread: two requests
+    The foundation's stores load lazily and are written for one thread: two requests
     arriving together would both read the same file and both build the same index.
     Loading and indexing here take a lock (re-checked inside it), so each dataset is read
     once per store version however many requests ask for it at once. Reads of what is
@@ -245,8 +256,31 @@ class _LockedStore(UfcStore):
             return self._views[name]
 
 
-class StoreHolder:
-    """The one store of a process, replaced only when a dataset file changes on disk."""
+class _LockedStore(_LockedMixin, UfcStore):
+    """A UfcStore safe to share between request threads (see `_LockedMixin`)."""
+
+
+class _LockedNflStore(_LockedMixin, NflStore):
+    """An NflStore safe to share between request threads (see `_LockedMixin`)."""
+
+
+class _BaseHolder:
+    """The one store of a process for one sport, replaced only when a dataset file changes on disk.
+
+    A subclass names the sport's files, date fields, store class and default directory.
+    """
+
+    files: Dict[str, str] = {}
+    date_fields: Dict[str, str] = {}
+    store_class: Any = None
+
+    @staticmethod
+    def counts_toward_newest(name: str, row: dict) -> bool:
+        return True
+
+    @staticmethod
+    def default_root() -> Path:
+        raise NotImplementedError
 
     def __init__(self, root: Optional[Path] = None):
         self._lock = threading.Lock()
@@ -254,8 +288,8 @@ class StoreHolder:
 
     def set_root(self, root: Optional[Path]) -> None:
         with self._lock:
-            self._root = Path(root) if root is not None else ufc_store.DEFAULT_DIR
-            self._current: Optional[Tuple[tuple, _LockedStore]] = None
+            self._root = Path(root) if root is not None else self.default_root()
+            self._current: Optional[Tuple[tuple, Any]] = None
             self._loaded_utc: Optional[str] = None
             self._status: Dict[str, tuple] = {}
             self._manifest: Tuple[Optional[tuple], dict] = (None, {})
@@ -272,7 +306,7 @@ class StoreHolder:
         timestamps can show the same mtime for two writes made close together.
         """
         sig = []
-        for name, filename in ufc_store.FILES.items():
+        for name, filename in self.files.items():
             try:
                 st = (self._root / filename).stat()
                 sig.append((name, st.st_mtime_ns, st.st_size))
@@ -280,7 +314,7 @@ class StoreHolder:
                 sig.append((name, None, None))
         return tuple(sig)
 
-    def store(self) -> _LockedStore:
+    def store(self):
         """The current store, replaced first if any dataset file changed since it was made."""
         sig = self._file_signature()
         current = self._current
@@ -289,7 +323,7 @@ class StoreHolder:
         with self._lock:
             sig = self._file_signature()
             if self._current is None or self._current[0] != sig:
-                self._current = (sig, _LockedStore(self._root))
+                self._current = (sig, self.store_class(self._root))
                 self._loaded_utc = features_mod.iso_utc(_now())
                 self.reloads += 1
             return self._current[1]
@@ -320,10 +354,10 @@ class StoreHolder:
     def _measure(self, name: str, path: Path, size: int) -> dict:
         """Records and newest date: the manifest if it describes this very file, else one scan."""
         files, _ = self._manifest_files()
-        entry = files.get(ufc_store.FILES[name])
+        entry = files.get(self.files[name])
         if isinstance(entry, dict) and entry.get("bytes") == size and "records" in entry:
             return {"records": entry["records"], "newest": entry.get("newest"), "source": "manifest"}
-        field = ufc_store.DATE_FIELDS.get(name)
+        field = self.date_fields.get(name)
         records, newest = 0, None
         try:
             with path.open(encoding="utf-8") as handle:
@@ -334,16 +368,16 @@ class StoreHolder:
                     row = json.loads(line)
                     records += 1
                     value = row.get(field) if field and isinstance(row, dict) else None
-                    if value and ufc_store.counts_toward_newest(name, row) and (newest is None or value > newest):
+                    if value and self.counts_toward_newest(name, row) and (newest is None or value > newest):
                         newest = value
         except (OSError, ValueError) as exc:
             raise DataUnavailable(name) from exc
         return {"records": records, "newest": newest, "source": "files"}
 
     def dataset_status(self, name: str, now: datetime) -> dict:
-        filename = ufc_store.FILES[name]
+        filename = self.files[name]
         path = self._root / filename
-        base = {"file": filename, "newest_field": ufc_store.DATE_FIELDS.get(name)}
+        base = {"file": filename, "newest_field": self.date_fields.get(name)}
         try:
             st = path.stat()
         except OSError:
@@ -369,8 +403,40 @@ class StoreHolder:
     def manifest_generated_utc(self) -> Optional[str]:
         return self._manifest_files()[1]
 
+    def manifest_extra(self, key: str) -> Any:
+        """A top-level value of MANIFEST.json other than the file table (attribution, coverage), or None."""
+        self._manifest_files()
+        return self._manifest[1].get(key)
+
+
+class StoreHolder(_BaseHolder):
+    """The UFC store of a process."""
+
+    files = ufc_store.FILES
+    date_fields = ufc_store.DATE_FIELDS
+    store_class = _LockedStore
+    counts_toward_newest = staticmethod(ufc_store.counts_toward_newest)
+
+    @staticmethod
+    def default_root() -> Path:
+        return ufc_store.DEFAULT_DIR
+
+
+class NflStoreHolder(_BaseHolder):
+    """The NFL store of a process."""
+
+    files = nfl_store.FILES
+    date_fields = nfl_store.DATE_FIELDS
+    store_class = _LockedNflStore
+    counts_toward_newest = staticmethod(nfl_store.counts_toward_newest)
+
+    @staticmethod
+    def default_root() -> Path:
+        return nfl_store.DEFAULT_DIR
+
 
 holder = StoreHolder()
+nfl_holder = NflStoreHolder()
 
 
 def use_data_dir(path: Optional[Path]) -> None:
@@ -378,8 +444,17 @@ def use_data_dir(path: Optional[Path]) -> None:
     holder.set_root(path)
 
 
+def use_nfl_data_dir(path: Optional[Path]) -> None:
+    """Point the NFL routes at another directory (tests, or a deployment that keeps the files elsewhere)."""
+    nfl_holder.set_root(path)
+
+
 def _store() -> _LockedStore:
     return holder.store()
+
+
+def _nfl() -> _LockedNflStore:
+    return nfl_holder.store()
 
 
 # -- pagination ------------------------------------------------------------------------------
@@ -553,6 +628,27 @@ router = APIRouter(prefix=f"/data/{API_VERSION}", dependencies=[Depends(data_acc
 
 # -- /status ---------------------------------------------------------------------------------------
 
+def _nfl_status(now: datetime) -> dict:
+    """The NFL datasets for /status. Fail-soft: an unreadable NFL file is reported in its own entry
+    and never turns the UFC half of /status into a 503."""
+    datasets = {}
+    for name in nfl_store.FILES:
+        try:
+            datasets[name] = nfl_holder.dataset_status(name, now)
+        except DataUnavailable as exc:
+            print(f"data api: nfl dataset {name!r} could not be read for /status: {exc.__cause__!r}",
+                  file=sys.stderr, flush=True)
+            datasets[name] = {"file": nfl_store.FILES[name], "newest_field": nfl_store.DATE_FIELDS.get(name),
+                              "present": True, "readable": False, "records": None, "newest": None,
+                              "age_seconds": None, "age_days": None, "source": None}
+    return {"datasets": datasets, "manifest_generated_utc": nfl_holder.manifest_generated_utc(),
+            "coverage": nfl_holder.manifest_extra("coverage"), "attribution": nfl_store.ATTRIBUTION,
+            "service": nfl_holder.info(),
+            "note": ("For games and team_games `newest` is the newest game that was played (a booked game does "
+                     "not count); for player_games it is the newest game with a stat line; for injuries it is the "
+                     "time a changed report row was first fetched.")}
+
+
 @router.get("/status", summary="Each dataset's record count, newest date and age")
 def get_status() -> dict:
     now = _now()
@@ -565,6 +661,7 @@ def get_status() -> dict:
         "note": ("age_seconds is now minus `newest`. For events and bouts `newest` is the newest card or bout "
                  "that took place: booked, postponed and cancelled ones do not count (/data/v1/ufc/upcoming "
                  "lists the booked ones). For odds, fighters and ufccom_profiles `newest` is a fetch time."),
+        "nfl": _nfl_status(now),
     }}
 
 
@@ -767,6 +864,227 @@ def get_upcoming(days: Optional[int] = Query(None, ge=1, le=365), limit: int = Q
 
     return _page_response(items, lambda e: (_date_key(e.get("date_utc")), str(e.get("event_id"))), caller, limit,
                           cursor, _query_sig(route="upcoming", days=days), descending=False, render=render)
+
+
+# -- NFL ------------------------------------------------------------------------------------------------
+#
+# Same router, same sign-in, same error shape, same cursor pagination as the UFC routes above.
+# Every number is a stored record or comes from `src.datasvc.nfl.features` / `matchup`, which own the
+# leakage rule. The NFL files are loaded by their own holder (`nfl_holder`), once per process, and swapped
+# in only when one of them changes on disk. Contract: docs/datasvc/NFL_SCHEMA.md and NFL_FEATURES.md.
+
+def _bad_param(param: str, message: str) -> ApiError:
+    return ApiError(422, "invalid_parameter", f"invalid parameter '{param}': {message}",
+                    {"errors": [{"in": "query", "param": param, "message": message}]})
+
+
+def _team_param(value: Optional[str], param: str) -> Optional[str]:
+    """A team filter as an nflverse code; 422 for something that is no NFL team."""
+    if value is None:
+        return None
+    code = nfl_teams.abbrev(value)
+    if code is None:
+        raise _bad_param(param, f"{value!r} is not an NFL team (a code like KC or a name like Chiefs)")
+    return code
+
+
+def _choice(value: Optional[str], param: str, allowed: Sequence[str]) -> Optional[str]:
+    if value is not None and value not in allowed:
+        raise _bad_param(param, f"must be one of {', '.join(allowed)}")
+    return value
+
+
+def _nfl_people(store) -> Dict[str, List[str]]:
+    """player_id -> the name it may be searched by, for names.match."""
+    return store.view("nfl_people", lambda: {pid: [name] for pid, name in store.player_names().items() if name})
+
+
+def _resolve_player(store, value: str, param: str = "player") -> Tuple[str, str]:
+    """A player id or a name to (player_id, how it was matched). Never guesses between equals."""
+    if value in store.player_games_by_player():
+        return value, "id"
+    result = names.match(value, _nfl_people(store))
+    if result.best:
+        return result.best, "name"
+    if result.ambiguous:
+        raise ApiError(409, "ambiguous_name", f"{param}={value!r} matches more than one player equally well; "
+                       "pass a player id", {"param": param, "query": value,
+                                            "candidates": [{"player_id": pid, "name": name, "score": score}
+                                                           for pid, name, score in result.candidates]})
+    raise ApiError(404, "not_found", f"no player matches {param}={value!r}")
+
+
+def _tg_key(row: dict) -> Tuple[str, str, str]:
+    return (row.get("kickoff_utc") or "", row["game_id"], row["team"])
+
+
+def _pg_key(row: dict) -> Tuple[str, str, str]:
+    return (row.get("kickoff_utc") or "", row["game_id"], row["player_id"])
+
+
+def _inj_key(row: dict) -> Tuple[str, str]:
+    return (row["game_id"], row["player_id"])
+
+
+@router.get("/nfl/games", summary="NFL games, newest first; filter by season, week, team, type and status")
+def nfl_list_games(season: Optional[int] = Query(None, ge=1999, le=2100), week: Optional[int] = Query(None, ge=1, le=30),
+                   team: Optional[str] = Query(None, max_length=60), game_type: Optional[str] = Query(None, max_length=8),
+                   status: Optional[str] = Query(None, max_length=20), order: str = Query("desc"),
+                   limit: int = Query(DEFAULT_LIMIT, ge=1), cursor: Optional[str] = Query(None, max_length=1024),
+                   caller: DataCaller = Depends(data_access)) -> dict:
+    """The stored game records (docs/datasvc/NFL_SCHEMA.md), played and scheduled, chronological order."""
+    _choice(game_type, "game_type", GAME_TYPES)
+    _choice(status, "status", GAME_STATUSES)
+    code = _team_param(team, "team")
+    descending = _order(order)
+    store = _nfl()
+    items = [g for g in store.games_sorted()
+             if (season is None or g["season"] == season) and (week is None or g["week"] == week)
+             and (code is None or code in (g["home_team"], g["away_team"]))
+             and (game_type is None or g.get("game_type") == game_type) and (status is None or g.get("status") == status)]
+    sig = _query_sig(route="nfl_games", season=season, week=week, team=code, game_type=game_type, status=status,
+                     order=order)
+    return _page_response(items, nfl_store.game_sort_key, caller, limit, cursor, sig, descending=descending,
+                          render=lambda g: g)
+
+
+@router.get("/nfl/games/{game_id}", summary="One NFL game with both teams' rows")
+def nfl_get_game(game_id: str) -> dict:
+    store = _nfl()
+    game = store.game_by_id().get(game_id)
+    if game is None:
+        raise _not_found("game", game_id)
+    rows = store.team_game_by_key()
+    return {"data": {"game": game,
+                     "team_games": [rows[(game_id, t)] for t in (game["home_team"], game["away_team"])
+                                    if (game_id, t) in rows]}}
+
+
+@router.get("/nfl/team-games", summary="One row per team per game, newest first")
+def nfl_list_team_games(team: Optional[str] = Query(None, max_length=60),
+                        season: Optional[int] = Query(None, ge=1999, le=2100), week: Optional[int] = Query(None, ge=1, le=30),
+                        game_type: Optional[str] = Query(None, max_length=8), status: Optional[str] = Query(None, max_length=20),
+                        order: str = Query("desc"), limit: int = Query(DEFAULT_LIMIT, ge=1),
+                        cursor: Optional[str] = Query(None, max_length=1024),
+                        caller: DataCaller = Depends(data_access)) -> dict:
+    _choice(game_type, "game_type", GAME_TYPES)
+    _choice(status, "status", GAME_STATUSES)
+    code = _team_param(team, "team")
+    descending = _order(order)
+    store = _nfl()
+    everything = store.view("team_games_sorted", lambda: sorted(store.team_games, key=_tg_key))
+    items = [r for r in everything
+             if (code is None or r["team"] == code) and (season is None or r["season"] == season)
+             and (week is None or r["week"] == week) and (game_type is None or r.get("game_type") == game_type)
+             and (status is None or r.get("status") == status)]
+    sig = _query_sig(route="nfl_team_games", team=code, season=season, week=week, game_type=game_type, status=status,
+                     order=order)
+    return _page_response(items, _tg_key, caller, limit, cursor, sig, descending=descending, render=lambda r: r)
+
+
+@router.get("/nfl/player-games", summary="Offensive usage and production per player per game, newest first")
+def nfl_list_player_games(player: Optional[str] = Query(None, min_length=1, max_length=100),
+                          team: Optional[str] = Query(None, max_length=60), game_id: Optional[str] = Query(None, max_length=40),
+                          season: Optional[int] = Query(None, ge=1999, le=2100), week: Optional[int] = Query(None, ge=1, le=30),
+                          position_group: Optional[str] = Query(None, max_length=8), order: str = Query("desc"),
+                          limit: int = Query(DEFAULT_LIMIT, ge=1), cursor: Optional[str] = Query(None, max_length=1024),
+                          caller: DataCaller = Depends(data_access)) -> dict:
+    """`player` is a player id or a name (an id wins; two equally good name matches are a 409)."""
+    _choice(position_group, "position_group", nfl_store.POSITION_GROUP_ORDER)
+    code = _team_param(team, "team")
+    descending = _order(order)
+    store = _nfl()
+    pid = _resolve_player(store, player)[0] if player is not None else None
+    everything = store.view("player_games_sorted", lambda: sorted(store.player_games, key=_pg_key))
+    items = [r for r in everything
+             if (pid is None or r["player_id"] == pid) and (code is None or r["team"] == code)
+             and (game_id is None or r["game_id"] == game_id) and (season is None or r["season"] == season)
+             and (week is None or r["week"] == week) and (position_group is None or r.get("position_group") == position_group)]
+    sig = _query_sig(route="nfl_player_games", player=pid, team=code, game_id=game_id, season=season, week=week,
+                     position_group=position_group, order=order)
+    return _page_response(items, _pg_key, caller, limit, cursor, sig, descending=descending, render=lambda r: r)
+
+
+@router.get("/nfl/injuries", summary="Injury report rows (designated or limited players), newest first")
+def nfl_list_injuries(game_id: Optional[str] = Query(None, max_length=40), team: Optional[str] = Query(None, max_length=60),
+                      season: Optional[int] = Query(None, ge=1999, le=2100), week: Optional[int] = Query(None, ge=1, le=30),
+                      player_id: Optional[str] = Query(None, max_length=20),
+                      position_group: Optional[str] = Query(None, max_length=8),
+                      report_status: Optional[str] = Query(None, max_length=20), order: str = Query("desc"),
+                      limit: int = Query(DEFAULT_LIMIT, ge=1), cursor: Optional[str] = Query(None, max_length=1024),
+                      caller: DataCaller = Depends(data_access)) -> dict:
+    _choice(position_group, "position_group", nfl_store.POSITION_GROUP_ORDER)
+    code = _team_param(team, "team")
+    descending = _order(order)
+    store = _nfl()
+    everything = store.view("injuries_sorted", lambda: sorted(store.injuries, key=_inj_key))
+    items = [r for r in everything
+             if (game_id is None or r["game_id"] == game_id) and (code is None or r["team"] == code)
+             and (season is None or r["season"] == season) and (week is None or r["week"] == week)
+             and (player_id is None or r["player_id"] == player_id)
+             and (position_group is None or r.get("position_group") == position_group)
+             and (report_status is None or r.get("report_status") == report_status.lower())]
+    sig = _query_sig(route="nfl_injuries", game_id=game_id, team=code, season=season, week=week, player_id=player_id,
+                     position_group=position_group, report_status=report_status, order=order)
+    return _page_response(items, _inj_key, caller, limit, cursor, sig, descending=descending, render=lambda r: r)
+
+
+@router.get("/nfl/matchup", summary="The fact sheet for one game (a game id, or two teams)")
+def nfl_get_matchup(game_id: Optional[str] = Query(None, max_length=40), a: Optional[str] = Query(None, max_length=60),
+                    b: Optional[str] = Query(None, max_length=60), season: Optional[int] = Query(None, ge=1999, le=2100),
+                    week: Optional[int] = Query(None, ge=1, le=30), as_of: Optional[str] = Query(None, max_length=64)) -> dict:
+    """`game_id`, or `a` and `b` (team codes or names, either of them home): the next game between them that
+    has not kicked off, else the latest (`season` and `week` pick one). `as_of` defaults to the kickoff and
+    may not be later than it."""
+    cutoff = _parse_as_of(as_of)
+    store = _nfl()
+    if game_id is None and (a is None or b is None):
+        raise _bad_param("game_id", "give game_id, or both a and b (the two teams)")
+    resolved: Dict[str, Any] = {}
+    try:
+        if game_id is None:
+            game = nfl_matchup.find_game(store, a, b, season=season, week=week, now=_now())
+            game_id = game["game_id"]
+            resolved = {"a": a, "b": b, "game_id": game_id, "matched_by": "teams"}
+        else:
+            resolved = {"game_id": game_id, "matched_by": "game_id"}
+        sheet = nfl_matchup.matchup(store, game_id, cutoff, now=_now())
+    except nfl_features.UnknownGame:
+        raise _not_found("game", game_id) from None
+    except nfl_features.UnknownTeam as exc:
+        raise ApiError(404, "not_found", str(exc)) from None
+    except LookupError as exc:
+        raise ApiError(404, "not_found", str(exc)) from None
+    except ValueError as exc:
+        param = "b" if "does not play itself" in str(exc) else "as_of"
+        raise _bad_param(param, str(exc)) from None
+    sheet["resolved"] = resolved
+    return {"data": sheet}
+
+
+@router.get("/nfl/teams/{team}/features", summary="A team's leakage-free form as of a moment")
+def nfl_team_features(team: str, as_of: Optional[str] = Query(None, max_length=64),
+                      season: Optional[int] = Query(None, ge=1999, le=2100)) -> dict:
+    cutoff = _parse_as_of(as_of) or _now()
+    try:
+        return {"data": nfl_features.team_features_as_of(_nfl(), team, cutoff, season=season)}
+    except nfl_features.UnknownTeam:
+        raise _not_found("team", team) from None
+
+
+@router.get("/nfl/players/{player}/features",
+            summary="A player's recent usage and production over his last 3 and 5 games, as of a moment")
+def nfl_player_features(player: str, as_of: Optional[str] = Query(None, max_length=64)) -> dict:
+    """`player` is a player id or a name."""
+    cutoff = _parse_as_of(as_of) or _now()
+    store = _nfl()
+    pid, how = _resolve_player(store, player, "player")
+    try:
+        data = nfl_features.player_features_as_of(store, pid, cutoff)
+    except nfl_features.UnknownPlayer:
+        raise _not_found("player", pid) from None
+    data["resolved"] = {"query": player, "player_id": pid, "matched_by": how}
+    return {"data": data}
 
 
 # -- anything else under /data/v1 -------------------------------------------------------------------------

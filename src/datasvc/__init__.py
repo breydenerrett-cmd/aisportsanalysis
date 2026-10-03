@@ -10,6 +10,8 @@ Layout:
   names.py   name normalisation and matching (accents, nicknames, ambiguity)
   ufc/       UFC, from ESPN's public JSON and UFC.com athlete pages
              (contract: docs/datasvc/UFC_SCHEMA.md)
+  nfl/       NFL, from nflverse's release files
+             (contract: docs/datasvc/NFL_SCHEMA.md)
 
 stdlib only, like the rest of src/.
 """
