@@ -38,6 +38,23 @@ MAX_VALUE_LENGTH = 64
 _VALUE_RE = re.compile(r"^[A-Za-z0-9 _.\-/:+%@~]+$")
 _ANON_ID_RE = re.compile(r"^[A-Za-z0-9_\-]{16,64}$")
 
+# OUR OWN TEST TRAFFIC IS NOT A CUSTOMER. A utm_source that is exactly
+# "internal" or starts with "internal-" (internal-test, internal-brey, ...)
+# marks a link the owner sent himself to walk the funnel. The funnel report
+# (api/funnel.py) leaves those events out of every step, and the tester
+# activity report (src/appstate/activation.py) leaves those users out of every
+# count, from this ONE rule so the two cannot disagree. The hyphen matters:
+# "international-bettors" is a customer.
+INTERNAL_SOURCE = "internal"
+
+
+def is_internal_source(value: object) -> bool:
+    """True when `value` is a utm_source tagged as our own test traffic."""
+    if not isinstance(value, str):
+        return False
+    value = value.strip().lower()
+    return value == INTERNAL_SOURCE or value.startswith(INTERNAL_SOURCE + "-")
+
 
 def clean_anon_id(raw: object) -> Optional[str]:
     """The client's random visitor id, or None if it is not shaped like one."""

@@ -34,9 +34,10 @@ src/appstate/users.py).
 POST /admin/testers and POST /admin/testers/extend are the early-access offer
 (src/appstate/testers.py holds the policy and the reasons): the first 20
 testers, 7 days each, no card, granted by the owner alone from the admin page.
-GET /admin/testers lists them. They reuse this module's one admin gate, return
-a raw token exactly once, and never put a token, an email or a reason into an
-event.
+GET /admin/testers lists them, and GET /admin/activation is the aggregate of
+what they actually did (src/appstate/activation.py defines "activated" and
+"returning"). They reuse this module's one admin gate, return a raw token exactly
+once, and never put a token, an email or a reason into an event.
 """
 
 from __future__ import annotations
@@ -346,6 +347,24 @@ def extend_tester_access(body: TesterExtendRequest,
 @router.get("/admin/testers")
 def get_testers(_admin: None = Depends(_require_admin)) -> dict:
     """Every tester (user_id, email, granted_at, expires_at of their newest
-    token, first_used_at/activated, and each extension with its reason) plus
-    `granted`, `limit` and `remaining` of the 20. Never a token."""
+    token, each extension with its reason, and what they did) plus `granted`,
+    `limit` and `remaining` of the 20. Never a token.
+
+    `first_used_at` / `first_signin_at` is when a token was first used: a
+    sign-in. `activated` is NOT that: it means a value action (an authenticated
+    request that returned product content), with `activated_at`,
+    `hours_signup_to_activation`, `last_active_at`, `active_days`, `returning`
+    and `features` (label to count). See src/appstate/activation.py."""
     return testers.list_testers()
+
+
+@router.get("/admin/activation")
+def get_activation(_admin: None = Depends(_require_admin)) -> dict:
+    """The tester activity aggregate: how many were granted, are inside their
+    window, activated, returning, the median hours from signup to activation,
+    and how many distinct testers used each feature. No emails and no user ids,
+    so it can be pasted into a dashboard file as it is. Our own test accounts
+    (signup source `internal` or `internal-...`) are left out and counted in
+    `internal_excluded`. `unmeasured_features` lists labels no route can record
+    yet, so a zero there is not read as "nobody used it"."""
+    return testers.activation_report()

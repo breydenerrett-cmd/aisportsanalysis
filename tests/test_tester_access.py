@@ -38,6 +38,7 @@ try:
 except ImportError:
     HAS_FASTAPI = False
 
+from src.appstate import activation
 from src.appstate import customers
 from src.appstate import events
 from src.appstate import testers
@@ -347,14 +348,29 @@ class Extending(_Base):
 
 
 class TheListing(_Base):
-    def test_activated_means_any_token_was_ever_used(self):
+    def test_signing_in_is_recorded_but_is_not_activation(self):
+        """first_used_at is a sign-in. `activated` now means a value action
+        (src/appstate/activation.py), so redeeming a token alone is not it."""
         a, b = self.grant(1), self.grant(2)
         users_store.mark_token_first_used(a.token, at="2026-10-06T08:00:00+00:00", db=self.db)
         rows = {r["user_id"]: r for r in testers.list_testers(db=self.db)["testers"]}
-        self.assertTrue(rows[a.user_id]["activated"])
         self.assertEqual(rows[a.user_id]["first_used_at"], "2026-10-06T08:00:00+00:00")
-        self.assertFalse(rows[b.user_id]["activated"])
+        self.assertEqual(rows[a.user_id]["first_signin_at"], "2026-10-06T08:00:00+00:00")
+        self.assertFalse(rows[a.user_id]["activated"])
+        self.assertIsNone(rows[a.user_id]["activated_at"])
         self.assertIsNone(rows[b.user_id]["first_used_at"])
+        self.assertFalse(rows[b.user_id]["activated"])
+
+    def test_activated_means_a_value_action_not_a_token_use(self):
+        a, b = self.grant(1), self.grant(2)
+        activation.record_value_action(a.user_id, "card", route="card", date="2026-10-06",
+                                       at="2026-10-06T09:00:00+00:00", db=self.db)
+        rows = {r["user_id"]: r for r in testers.list_testers(db=self.db)["testers"]}
+        self.assertTrue(rows[a.user_id]["activated"])
+        self.assertEqual(rows[a.user_id]["activated_at"], "2026-10-06T09:00:00+00:00")
+        self.assertIsNone(rows[a.user_id]["first_used_at"],
+                          "no sign-in was recorded, and none is implied")
+        self.assertFalse(rows[b.user_id]["activated"])
 
     def test_the_listing_carries_the_counts_and_never_a_token(self):
         grant = self.grant(1)
@@ -365,7 +381,10 @@ class TheListing(_Base):
         self.assertNotIn(grant.token, json.dumps(listing))
         self.assertEqual(set(listing["testers"][0]),
                          {"user_id", "email", "status", "granted_at", "expires_at",
-                          "first_used_at", "activated", "extensions"})
+                          "first_used_at", "extensions",
+                          "account_created_at", "tester_granted_at", "first_signin_at",
+                          "activated", "activated_at", "hours_signup_to_activation",
+                          "last_active_at", "active_days", "returning", "features"})
 
     def test_an_empty_database_lists_nothing_and_reports_twenty_remaining(self):
         listing = testers.list_testers(db=self.db)

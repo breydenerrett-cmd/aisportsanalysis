@@ -9,8 +9,12 @@ of tests/test_admin_funnel_by_source.py) and pins what the page must do:
   * a form (email) with "Grant 7-day tester access"; after a grant, the token
     ONCE in a read-only box with a copy button, the expiry, and the line
     "Send this to them yourself; it is not stored and cannot be shown again.";
-  * a table of testers (email, granted, expires, activated, extensions) with an
+  * a table of testers (email, granted, expires, signed in, activated with the
+    hours from signup, returning, days active, features used, extensions) with an
     "Extend 7 days" action that refuses to send without a typed reason;
+  * below it a "Tester activity" block showing the aggregate from
+    GET /admin/activation in plain words, and a "Copy for dashboard" button that
+    copies that exact object (activated means a value action, not a sign-in);
   * a waitlisted user in the users list gets a "Grant tester access" shortcut
     that FILLS the form and sends nothing;
   * the token never reaches storage, a URL or the console, and is gone when
@@ -124,9 +128,27 @@ const snapshot = () => ({
   rows: host.byHook("admin-tester-row").map((r) => ({
     userId: r.attrs["data-user-id"], cells: r.children.map((c) => flat(c).trim().replace(/\s+/g, " ")),
     expires: r.one("admin-tester-expires").textContent,
+    signedIn: r.one("admin-tester-signed-in").textContent,
     activated: r.one("admin-tester-activated").textContent,
+    returning: r.one("admin-tester-returning").textContent,
+    daysActive: r.one("admin-tester-days-active").textContent,
+    features: r.one("admin-tester-features").textContent,
     extendLabel: r.one("admin-tester-extend").textContent,
   })),
+  headers: host.one("admin-testers-table")
+    ? host.one("admin-testers-table")._all([]).filter((n) => n.tagName === "TH")
+        .map((n) => n.textContent) : [],
+  activity: host.one("admin-activity") && host.one("admin-activity").children.length ? {
+    title: host.one("admin-activity").children[0].textContent,
+    facts: host.one("admin-activity-facts")
+      ? host.one("admin-activity-facts").children.map((li) => li.textContent) : [],
+    features: host.byHook("admin-activity-feature")
+      .map((li) => [li.attrs["data-feature"], li.textContent]),
+    copyLabel: host.one("admin-activity-copy") ? host.one("admin-activity-copy").textContent : null,
+    json: host.one("admin-activity-json") ? host.one("admin-activity-json").textContent : null,
+    error: host.byHook("admin-activity-error").length,
+    text: flat(host.one("admin-activity")),
+  } : null,
   empty: host.byHook("admin-testers-empty").length,
   result: host.one("admin-tester-result") ? {
     summary: host.one("admin-tester-result-summary").textContent,
@@ -141,6 +163,9 @@ const snapshot = () => ({
 const out = {};
 await admin.mountTesters(host);
 if (scenario.kind === "render") {
+  out.snap = snapshot();
+} else if (scenario.kind === "copy-activity") {
+  await press(host.one("admin-activity-copy"));
   out.snap = snapshot();
 } else if (scenario.kind === "grant") {
   host.one("admin-tester-email").value = scenario.email;
@@ -177,19 +202,48 @@ process.stdout.write("@@" + JSON.stringify(out) + "\n");
 TESTERS = {
     "granted": 3, "limit": 20, "remaining": 17, "ttl_days": 7,
     "testers": [
+        # Ann signed in AND used the product, came back, and used three features.
         {"user_id": 11, "email": "ann@example.com", "status": "invited",
          "granted_at": "2026-10-05T12:00:00+00:00", "expires_at": "2026-10-19T09:30:00+00:00",
-         "first_used_at": "2026-10-05T13:00:00+00:00", "activated": True,
+         "first_used_at": "2026-10-05T13:00:00+00:00",
+         "account_created_at": "2026-10-05T12:00:00+00:00",
+         "tester_granted_at": "2026-10-05T12:00:00+00:00",
+         "first_signin_at": "2026-10-05T13:00:00+00:00",
+         "activated": True, "activated_at": "2026-10-05T15:30:00+00:00",
+         "hours_signup_to_activation": 3.5, "last_active_at": "2026-10-07T10:00:00+00:00",
+         "active_days": 2, "returning": True,
+         "features": {"card": 3, "slate": 3, "props": 1},
          "extensions": [{"extended_at": "2026-10-12T09:30:00+00:00",
                          "expires_at": "2026-10-19T09:30:00+00:00",
                          "reason": "filed three specific bugs"}]},
+        # Bo signed in and used nothing: signed in is not activated.
         {"user_id": 12, "email": "bo@example.com", "status": "invited",
          "granted_at": "2026-10-06T08:15:00+00:00", "expires_at": "2026-10-13T08:15:00+00:00",
-         "first_used_at": None, "activated": False, "extensions": []},
+         "first_used_at": "2026-10-06T09:00:00+00:00",
+         "account_created_at": "2026-10-06T08:15:00+00:00",
+         "tester_granted_at": "2026-10-06T08:15:00+00:00",
+         "first_signin_at": "2026-10-06T09:00:00+00:00",
+         "activated": False, "activated_at": None, "hours_signup_to_activation": None,
+         "last_active_at": None, "active_days": 0, "returning": False, "features": {},
+         "extensions": []},
+        # Cy never signed in.
         {"user_id": 13, "email": "cy@example.com", "status": "invited",
          "granted_at": "2026-10-07T08:15:00+00:00", "expires_at": "2026-10-14T08:15:00+00:00",
-         "first_used_at": None, "activated": False, "extensions": []},
+         "first_used_at": None,
+         "account_created_at": "2026-10-07T08:15:00+00:00",
+         "tester_granted_at": "2026-10-07T08:15:00+00:00",
+         "first_signin_at": None,
+         "activated": False, "activated_at": None, "hours_signup_to_activation": None,
+         "last_active_at": None, "active_days": 0, "returning": False, "features": {},
+         "extensions": []},
     ],
+}
+ACTIVITY = {
+    "as_of": "2026-10-08T12:00:00+00:00", "testers_granted": 3, "testers_in_window": 2,
+    "activated": 1, "returning": 1, "median_hours_signup_to_activation": 3.5,
+    "feature_users": {"card": 1, "matchup": 0, "moneyline": 0, "props": 1, "prices": 0,
+                      "postseason": 0, "nfl": 0, "ufc": 0, "slate": 1},
+    "internal_excluded": 1, "unmeasured_features": ["moneyline"],
 }
 SECRET = "tok_SECRET_value_that_must_never_leak_0123456789"
 GRANTED = {"user_id": 14, "email": "dee@example.com", "token": SECRET,
@@ -213,6 +267,8 @@ class AdminTestersSection(unittest.TestCase):
     def run_page(self, **scenario):
         scenario.setdefault("responses", {})
         scenario["responses"].setdefault("GET /admin/testers", [{"status": 200, "body": TESTERS}])
+        scenario["responses"].setdefault("GET /admin/activation",
+                                         [{"status": 200, "body": ACTIVITY}])
         done = subprocess.run(["node", "harness.mjs"], cwd=Path(self.tmp) / "js",
                               env=dict(os.environ, SCENARIO=json.dumps(scenario)),
                               capture_output=True, text=True, encoding="utf-8", timeout=60)
@@ -239,18 +295,118 @@ class AdminTestersSection(unittest.TestCase):
         self.assertEqual(snap["button"], "Grant 3-day tester access")
         self.assertEqual(snap["rows"][0]["extendLabel"], "Extend 3 days")
 
-    def test_the_table_has_email_granted_expires_activated_extensions_and_an_extend_action(self):
-        rows = self.run_page(kind="render")["snap"]["rows"]
+    def test_the_table_has_email_granted_expires_signed_in_activated_returning_days_features_extensions_and_an_extend_action(self):
+        snap = self.run_page(kind="render")["snap"]
+        self.assertEqual(snap["headers"], [
+            "email", "granted", "expires", "signed in", "activated", "returning",
+            "days active", "features used", "extensions", "extend"])
+        rows = snap["rows"]
         self.assertEqual([r["userId"] for r in rows], ["11", "12", "13"])
         ann, bo = rows[0], rows[1]
         self.assertEqual(ann["cells"][0], "ann@example.com")
         self.assertEqual(ann["cells"][1], "2026-10-05 12:00 UTC")
         self.assertEqual(ann["expires"], "2026-10-19 09:30 UTC")
-        self.assertEqual(ann["activated"], "yes")
-        self.assertEqual(ann["cells"][4], "2026-10-12 09:30 UTC: filed three specific bugs")
-        self.assertEqual(bo["activated"], "no")
-        self.assertEqual(bo["cells"][4], "—")
+        self.assertEqual(ann["cells"][8], "2026-10-12 09:30 UTC: filed three specific bugs")
+        self.assertEqual(bo["cells"][8], "—")
         self.assertEqual(ann["extendLabel"], "Extend 7 days")
+
+    def test_signed_in_and_activated_are_two_different_columns(self):
+        """Bo signed in and used nothing; Cy never signed in. Neither is
+        activated. Ann is activated, with the hours from signup, and the
+        feature counts, most used first."""
+        rows = {r["userId"]: r for r in self.run_page(kind="render")["snap"]["rows"]}
+        self.assertEqual((rows["11"]["signedIn"], rows["11"]["activated"]),
+                         ("yes", "yes, 3.5 hours after signup"))
+        self.assertEqual((rows["12"]["signedIn"], rows["12"]["activated"]), ("yes", "no"))
+        self.assertEqual((rows["13"]["signedIn"], rows["13"]["activated"]), ("no", "no"))
+        self.assertEqual((rows["11"]["returning"], rows["12"]["returning"]), ("yes", "no"))
+        self.assertEqual((rows["11"]["daysActive"], rows["12"]["daysActive"]), ("2", "0"))
+        self.assertEqual(rows["11"]["features"], "card 3, slate 3, props 1")
+        self.assertEqual(rows["12"]["features"], "none")
+
+    def test_the_new_cells_use_plain_words_and_no_em_dash(self):
+        snap = self.run_page(kind="render")["snap"]
+        for row in snap["rows"]:
+            for key in ("signedIn", "activated", "returning", "daysActive", "features"):
+                self.assertNotIn("—", row[key], key)
+        for header in snap["headers"][3:8]:
+            self.assertNotIn("—", header)
+
+    def test_the_hours_from_signup_read_as_minutes_under_an_hour_and_singular_at_one(self):
+        for hours, expect in ((0.2, "yes, 12 minutes after signup"),
+                              (1.0, "yes, 1 hour after signup"),
+                              (26.04, "yes, 26 hours after signup"),
+                              (None, "yes")):
+            with self.subTest(hours=hours):
+                body = json.loads(json.dumps(TESTERS))
+                body["testers"][0]["hours_signup_to_activation"] = hours
+                snap = self.run_page(kind="render", responses={"GET /admin/testers": [
+                    {"status": 200, "body": body}]})["snap"]
+                self.assertEqual(snap["rows"][0]["activated"], expect)
+
+    # ---- the tester activity block ----------------------------------------------
+
+    def test_the_activity_block_sits_below_the_table_and_says_it_in_plain_words(self):
+        activity = self.run_page(kind="render")["snap"]["activity"]
+        self.assertEqual(activity["title"], "Tester activity")
+        self.assertEqual(activity["facts"], [
+            "Testers granted: 3",
+            "Still inside their access window: 2",
+            "Activated (used the product, not just signed in): 1 of 3",
+            "Returning (used it again 12 hours or more after the first time): 1",
+            "Median time from signup to first use: 3.5 hours",
+            "Our own test accounts left out: 1",
+        ])
+        self.assertNotIn("—", activity["text"])
+
+    def test_every_feature_is_listed_and_one_nothing_can_record_yet_says_so(self):
+        features = dict(self.run_page(kind="render")["snap"]["activity"]["features"])
+        self.assertEqual(list(features), ["card", "matchup", "moneyline", "props", "prices",
+                                          "postseason", "nfl", "ufc", "slate"])
+        self.assertEqual(features["card"], "card: 1")
+        self.assertEqual(features["matchup"], "matchup: 0")
+        self.assertEqual(features["moneyline"], "moneyline: not measured yet",
+                         "a zero there would read as nobody used it")
+
+    def test_with_nobody_activated_the_median_says_nobody_has(self):
+        body = dict(ACTIVITY, activated=0, returning=0, median_hours_signup_to_activation=None)
+        activity = self.run_page(kind="render", responses={"GET /admin/activation": [
+            {"status": 200, "body": body}]})["snap"]["activity"]
+        self.assertEqual(activity["facts"][4],
+                         "Median time from signup to first use: nobody has used it yet")
+
+    def test_copy_for_dashboard_copies_exactly_the_object_the_server_sent(self):
+        out = self.run_page(kind="copy-activity")
+        self.assertEqual(out["snap"]["activity"]["copyLabel"], "Copied")
+        self.assertEqual(len(out["copied"]), 1)
+        self.assertEqual(json.loads(out["copied"][0]), ACTIVITY)
+        self.assertEqual(out["snap"]["activity"]["json"], out["copied"][0],
+                         "the box shows the text that was copied")
+        pasted = json.loads(out["copied"][0])
+        self.assertNotIn("email", json.dumps(pasted))
+        self.assertNotIn("user_id", json.dumps(pasted))
+
+    def test_the_copy_button_is_labelled_copy_for_dashboard(self):
+        self.assertEqual(self.run_page(kind="render")["snap"]["activity"]["copyLabel"],
+                         "Copy for dashboard")
+
+    def test_the_activity_block_reloads_after_a_grant(self):
+        more = dict(ACTIVITY, testers_granted=4)
+        responses = {"POST /admin/testers": [{"status": 200, "body": GRANTED}],
+                     "GET /admin/testers": [{"status": 200, "body": TESTERS},
+                                            {"status": 200, "body": AFTER_GRANT}],
+                     "GET /admin/activation": [{"status": 200, "body": ACTIVITY},
+                                               {"status": 200, "body": more}]}
+        out = self.run_page(kind="grant", email="dee@example.com", responses=responses)
+        self.assertEqual(out["snap"]["activity"]["facts"][0], "Testers granted: 4")
+
+    def test_a_failed_activity_load_leaves_the_testers_table_alone(self):
+        snap = self.run_page(kind="render", responses={"GET /admin/activation": [
+            {"status": 500, "body": {"detail": "boom"}}]})["snap"]
+        self.assertEqual(snap["activity"]["error"], 1)
+        self.assertEqual([r["userId"] for r in snap["rows"]], ["11", "12", "13"])
+        self.assertEqual(snap["count"], "3 of 20 granted, 17 remaining")
+        self.assertIsNone(snap["activity"]["copyLabel"], "nothing to copy when nothing loaded")
 
     def test_an_empty_list_says_so(self):
         empty = {"granted": 0, "limit": 20, "remaining": 20, "ttl_days": 7, "testers": []}

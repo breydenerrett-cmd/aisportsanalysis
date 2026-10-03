@@ -33,7 +33,8 @@ from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query, Request
 
-from src.appstate import freshness
+from api.auth import request_user_id
+from src.appstate import activation, freshness
 from src.pipeline import prop_listing
 from src.report import props as props_mod
 
@@ -107,11 +108,20 @@ def _board(date: str, limit: Optional[int]) -> dict:
 def get_props(request: Request,
               limit: int = Query(props_mod.DEFAULT_LIMIT, ge=1,
                                  le=props_mod.MAX_LIMIT)) -> dict:
-    return _board(_today(), limit)
+    date = _today()
+    board = _board(date, limit)
+    # A value action (src/appstate/activation.py): recorded only after the board
+    # was built, only for an authenticated caller, and never able to fail it.
+    activation.record_value_action(request_user_id(request), "props",
+                                   route="/props", date=date)
+    return board
 
 
 @router.get("/props/{date}")
 def get_props_for_date(date: str, request: Request,
                        limit: int = Query(props_mod.DEFAULT_LIMIT, ge=1,
                                           le=props_mod.MAX_LIMIT)) -> dict:
-    return _board(_validate(date), limit)
+    board = _board(_validate(date), limit)
+    activation.record_value_action(request_user_id(request), "props",
+                                   route="/props/{date}", date=date)
+    return board

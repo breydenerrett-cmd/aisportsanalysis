@@ -32,7 +32,7 @@ from fastapi import APIRouter, HTTPException, Request
 
 from src.analysis import gamepayload
 from src.analysis import priceverdict
-from src.appstate import events, freshness
+from src.appstate import activation, events, freshness
 # F-2: every store the CLI briefing reads, so the matchup page carries team
 # records, starter form, bullpen workload, lineups, travel and weather.
 # See _enrichment_inputs for why none of these ever reaches the network.
@@ -285,13 +285,23 @@ def _engine_summary_for_entry(dossier, date: str) -> Optional[dict]:
     return {**(rollup or {}), "stand_downs": standing_down}
 
 
-def _record_page_view(request: Optional[Request], route: str, date: str) -> None:
+def _record_page_view(request: Optional[Request], route: str, date: str, *,
+                      surface: Optional[str] = None, sport: str = "mlb") -> None:
     """Analytics page_view on a successful GET, keyed to the caller
     api.auth.get_current_user already resolved and stashed on
     `request.state.user_id` -- the router-level auth dependency
     (api/app.py's `dependencies=_authed`) has always run by the time a
     route function's own body executes, so that attribute is set on any
     real, authenticated HTTP request that reaches here.
+
+    `surface` (one of activation.FEATURES) marks the request as a VALUE ACTION:
+    the person was served product content, which is what "activated" and the
+    per-feature counts are made of (src/appstate/activation.py). The event is
+    the same one, with `feature`, `surface` and `sport` added to its
+    properties -- still exactly one insert. `sport` is the sport the route
+    actually SERVED, not merely the one the query string named. Routes that
+    carry no surface (What Changed, the public record pages) record the plain
+    page_view they always have.
 
     `request` defaults to None (like api/auth.py's own `request` parameter)
     so every existing direct-call test in tests/test_api_games.py -- which
@@ -306,8 +316,12 @@ def _record_page_view(request: Optional[Request], route: str, date: str) -> None
     user_id = getattr(request.state, "user_id", None)
     if user_id is None:
         return
-    events.record_event_safe(user_id, events.PAGE_VIEW,
-                             {"route": route, "date": date})
+    if surface is None:
+        events.record_event_safe(user_id, events.PAGE_VIEW,
+                                 {"route": route, "date": date})
+    else:
+        activation.record_value_action(user_id, surface, route=route, date=date,
+                                       sport=sport)
 
 
 def _serialize_nfl_entry(entry: dict) -> dict:
@@ -402,14 +416,15 @@ def get_games(date: str, request: Request = None, sport: str = "mlb") -> dict:
             "games": serialized,
             "notice": "Experimental selections. Performance is still being evaluated.",
         }
-        _record_page_view(request, "/games/{date}", date)
+        _record_page_view(request, "/games/{date}", date, surface="slate", sport="nfl")
         return payload
 
-    # MLB: existing code path (default)
+    # MLB: existing code path (default). Any other sport name falls through to
+    # here and is served the MLB slate, so it is recorded as the MLB slate.
     entries, notes, meta = _build_entries(date)
     payload = gamepayload.build_slate_list(entries, date=date, notes=notes)
     payload["freshness"] = meta
-    _record_page_view(request, "/games/{date}", date)
+    _record_page_view(request, "/games/{date}", date, surface="slate", sport="mlb")
     return payload
 
 
@@ -445,7 +460,7 @@ def get_game(date: str, away: str, home: str, request: Request = None) -> dict:
             f"{len(matches)} games matched {away}@{home} on {date} (a "
             "doubleheader) -- this payload is the earlier-listed game; the "
             "URL scheme has no way to name the second one")
-    _record_page_view(request, "/game/{date}/{away}/{home}", date)
+    _record_page_view(request, "/game/{date}/{away}/{home}", date, surface="matchup")
     return payload
 
 

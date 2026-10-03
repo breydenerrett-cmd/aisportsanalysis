@@ -325,15 +325,14 @@ def _step_counts(start: str, end: str, *, db=None) -> Dict[str, int]:
 # internal-brey, ...) keeps its own row in `by_source`, is left out of every
 # funnel step and unique-visitor count, and the response says how many events
 # were left out. The hyphen matters: "international-bettors" is a customer.
-INTERNAL_SOURCE = "internal"
+#
+# The rule itself lives in src/appstate/attribution.py so the tester activity
+# report (src/appstate/activation.py) applies exactly the same one.
+INTERNAL_SOURCE = attribution_mod.INTERNAL_SOURCE
 
 
 def _is_internal(event) -> bool:
-    value = (event.properties or {}).get("utm_source")
-    if not isinstance(value, str):
-        return False
-    value = value.strip().lower()
-    return value == INTERNAL_SOURCE or value.startswith(INTERNAL_SOURCE + "-")
+    return attribution_mod.is_internal_source((event.properties or {}).get("utm_source"))
 
 
 def _source_of(event) -> str:

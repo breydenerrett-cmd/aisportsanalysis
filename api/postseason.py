@@ -51,10 +51,13 @@ import threading
 import time
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter
+from typing import Optional
 
+from fastapi import APIRouter, Header
+
+from api.auth import optional_user_id
 from src.analysis import postseason_config as pc
-from src.appstate import freshness
+from src.appstate import activation, freshness
 from src.pipeline import history
 from src.pipeline import standings as standings_store
 from src.providers import mlb
@@ -274,10 +277,17 @@ def _guarded_build() -> dict:
 # -- route ----------------------------------------------------------------
 
 @router.get("/postseason")
-def get_postseason() -> dict:
+def get_postseason(authorization: Optional[str] = Header(default=None)) -> dict:
     """The page's data: series state and chances, game-by-game forecasts,
     pennant and World Series odds, `as_of`, the model note and the caveats.
-    `available: false` with a `reason` when the field cannot be set."""
+    `available: false` with a `reason` when the field cannot be set.
+
+    Public: no token is required and none changes the answer. When a valid
+    token IS presented (a signed-in tester opening the page; the web client
+    attaches the stored token to every request) and the page was served, the
+    visit is recorded as a `postseason` value action (src/appstate/
+    activation.py). An anonymous visitor, a bad token and the unavailable
+    answer record nothing."""
     try:
         payload, meta = _cache.get(CACHE_KEY, _guarded_build)
     except Exception as exc:  # noqa: BLE001 -- never a 500; see module docstring
@@ -297,4 +307,6 @@ def get_postseason() -> dict:
     out = dict(payload)
     out.pop("detail", None)
     out["freshness"] = {k: meta.get(k) for k in ("served_at", "built_at", "stale", "stale_reason")}
+    activation.record_value_action(optional_user_id(authorization), "postseason",
+                                   route="/postseason")
     return out

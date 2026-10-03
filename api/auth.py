@@ -167,6 +167,41 @@ def require_paid_access(
                    "for; reactivate or start a new subscription to continue"})
 
 
+def request_user_id(request) -> Optional[int]:
+    """The user id `get_current_user` stashed on `request.state`, or None.
+
+    None for no request at all (a direct call in a test), for a request that
+    never went through `get_current_user` (the public routes, and every route in
+    public demo mode), and for a state with no `user_id`. Product analytics reads
+    the caller from here and records nothing when it is None, which is what keeps
+    an anonymous visitor out of every value-action count.
+    """
+    return getattr(getattr(request, "state", None), "user_id", None)
+
+
+def optional_user_id(authorization) -> Optional[int]:
+    """The user id behind a bearer token, for a PUBLIC route that wants to know
+    whether the caller happens to be signed in; None for everyone else.
+
+    It never raises and never changes the response: no header, a malformed one,
+    an expired, revoked or unknown token, a suspended account, or an auth
+    provider that is not configured all give None. Unlike `get_current_user` it
+    does not mark a token as used and records no INVITE_REDEEMED: reading a
+    public page is not a sign-in. A request with no Authorization header costs
+    nothing here (no database read); one with a token costs the same single
+    token lookup an authenticated route pays.
+    """
+    if not isinstance(authorization, str) or not authorization:
+        return None
+    try:
+        user = authproviders.get_provider().resolve(authorization)
+    except Exception:  # noqa: BLE001 -- see docstring: must never raise
+        return None
+    if user is None or user.status == "suspended":
+        return None
+    return user.id
+
+
 def _record_invite_redeemed_once(authorization: Optional[str],
                                  user: users_store.User) -> None:
     """Emit `events.INVITE_REDEEMED` on the first successful use of the

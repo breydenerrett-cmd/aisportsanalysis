@@ -73,6 +73,26 @@ WIRED-IN CALL SITES
                            explicit-user-action-only rule, so a cancel that
                            was undone is visible as its own moment rather
                            than inferred from the absence of a later churn.
+VALUE ACTIONS ARE PAGE_VIEWS WITH A `feature` (added 2026-10-03). A page_view
+whose properties carry `feature` (one of activation.FEATURES), `surface` and
+`sport` is a VALUE ACTION: an authenticated request that successfully returned
+product content. That is what "activated" and "returning" are made of
+(src/appstate/activation.py defines both, and owns the route-to-label table).
+Recorded, as the same single page_view each route already wrote, by:
+  - api/games.py  GET /games/{date} (slate; nfl by sport), GET /game/{date}/
+                  {away}/{home} (matchup);
+  - api/card.py   GET /card/{date}, GET /card (card; nfl / ufc by sport);
+  - api/props.py  GET /props/{date}, GET /props (props), newly recorded;
+  - api/odds.py   GET /odds/{date}/{away}/{home} (prices), newly recorded;
+  - api/postseason.py  GET /postseason (postseason), newly recorded, and ONLY
+                  when a valid token is presented to that public route.
+Page views without a `feature` (What Changed, /today, /opportunities, the
+public record pages, the odds board) are unchanged and are not value actions:
+they are fetched in the background by the pages that matter, so labelling them
+would make every Today view look like use of every feature. Raw page_view counts
+in GET /admin/overview rise by the newly recorded routes; no other reader of
+page_view counts changes (src/appstate/onboarding.py reads route == "/today"
+only, and that event is untouched).
 `api/today.py`'s `get_today_payload_cached` accepts an optional `user_id`
 and records PAGE_VIEW when given one. That call site is LIVE: `GET /today`
 in api/app.py passes `user_id=getattr(request.state, "user_id", None)`
@@ -116,6 +136,8 @@ analytics_events(id, user_hash, kind, properties_json, at)
           cta_click | public_page_view | support_token_reissued |
           tester_access_granted | tester_access_extended
     at:   required ISO-8601 UTC string, the instant the event happened.
+    page_view properties: {route, date} always; plus {feature, surface, sport}
+          when the request is a value action (see VALUE ACTIONS above).
 """
 
 from __future__ import annotations

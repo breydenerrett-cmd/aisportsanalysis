@@ -76,7 +76,10 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, Iterator, List, Optional
 
+from src.appstate import activation
+from src.appstate import attribution
 from src.appstate import customers
+from src.appstate import events
 from src.appstate import users as users_store
 
 # THE TWO NUMBERS OF THE OFFER, in one place. The admin API reports them, the
@@ -346,14 +349,26 @@ def extend_tester(user_id: int, reason: str, *, now: Optional[datetime] = None,
 def list_testers(*, db: Optional[Path] = None) -> dict:
     """Every tester, oldest grant first, plus the counts the admin page shows.
 
-    `first_used_at` is the earliest first use of ANY of the person's tokens and
-    `activated` is simply whether there is one: the question the owner is
-    asking is "did they ever open it", and a person who lost one token and
-    was sent another still counts as having opened it.
+    Two different facts, kept apart (src/appstate/activation.py defines both):
+
+      * `first_used_at` / `first_signin_at` is the earliest first use of ANY of
+        the person's tokens: they signed in. A person who lost one token and
+        was sent another still counts as having signed in. That is NOT
+        activation.
+      * `activated` means the person has had at least one VALUE ACTION: an
+        authenticated request that returned product content (a card, a
+        matchup, props, ...). `activated_at` is the first one,
+        `hours_signup_to_activation` is account creation to that moment,
+        `returning` is a second value action 12 hours or more later, and
+        `features` counts value actions per feature label.
+
+    The value-action facts come from one bounded, grouped query over the
+    analytics events for these testers' hashes only (activation.py).
     """
     with _connect(db) as conn:
         rows = conn.execute("""
             SELECT t.user_id, t.granted_at, t.expires_at, u.email, u.status,
+                   u.created_at,
                    (SELECT MIN(k.first_used_at) FROM tokens k
                      WHERE k.user_id = t.user_id) AS first_used_at
               FROM testers t JOIN users u ON u.id = t.user_id
@@ -366,15 +381,40 @@ def list_testers(*, db: Optional[Path] = None) -> dict:
             extensions.setdefault(ext["user_id"], []).append(
                 {"extended_at": ext["extended_at"], "expires_at": ext["expires_at"],
                  "reason": ext["reason"]})
-    testers = [{
-        "user_id": r["user_id"], "email": r["email"], "status": r["status"],
-        "granted_at": r["granted_at"], "expires_at": r["expires_at"],
-        "first_used_at": r["first_used_at"], "activated": r["first_used_at"] is not None,
-        "extensions": extensions.get(r["user_id"], []),
-    } for r in rows]
+    hashes = {r["user_id"]: events.hash_user_id(r["user_id"]) for r in rows}
+    stats = activation.value_action_stats(list(hashes.values()), db=db)
+    testers = []
+    for r in rows:
+        activity = activation.user_activity(
+            stats.get(hashes[r["user_id"]]), account_created_at=r["created_at"],
+            tester_granted_at=r["granted_at"], first_signin_at=r["first_used_at"])
+        testers.append({
+            "user_id": r["user_id"], "email": r["email"], "status": r["status"],
+            "granted_at": r["granted_at"], "expires_at": r["expires_at"],
+            "first_used_at": r["first_used_at"],
+            **activity,
+            "extensions": extensions.get(r["user_id"], []),
+        })
     return {"testers": testers, "granted": len(testers), "limit": TESTER_LIMIT,
             "remaining": max(TESTER_LIMIT - len(testers), 0),
             "ttl_days": TESTER_ACCESS_TTL.days}
+
+
+def activation_report(*, now: Optional[datetime] = None,
+                      db: Optional[Path] = None) -> dict:
+    """The aggregate behind GET /admin/activation: no emails, no user ids.
+
+    Our own test accounts do not count. A tester whose stored signup
+    attribution has utm_source `internal` or `internal-...` (the one rule in
+    attribution.is_internal_source, shared with the funnel report) is left out
+    of every number and counted in `internal_excluded` instead. A tester with
+    no stored attribution is a real tester.
+    """
+    when = _utc(now)
+    rows = list_testers(db=db)["testers"]
+    internal = {r["user_id"] for r in rows if attribution.is_internal_source(
+        customers.get_signup_attribution(r["user_id"], db=db).get("utm_source"))}
+    return activation.summarise(rows, internal_ids=internal, as_of=when)
 
 
 def tester_marks(*, db: Optional[Path] = None) -> Dict[int, dict]:

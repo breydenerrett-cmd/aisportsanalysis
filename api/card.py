@@ -260,7 +260,7 @@ def _build_payload(date: str, request: Optional[Request], route: str,
             return nfl_card.card_for_date(date, now=datetime.now(timezone.utc))
 
         payload, _meta = _nfl_card_cache.get(("nfl_card", date), _rebuild)
-        _record_page_view(request, route, date)
+        _record_page_view(request, route, date, surface="card", sport="nfl")
         return payload
 
     # UFC/MMA: use ufc_card. Free/public, no different than the other live
@@ -273,7 +273,7 @@ def _build_payload(date: str, request: Optional[Request], route: str,
             return ufc_card.card_for_date(date, now=datetime.now(timezone.utc))
 
         payload, _meta = _mma_card_cache.get(("mma_card", date), _rebuild)
-        _record_page_view(request, route, date)
+        _record_page_view(request, route, date, surface="card", sport="mma")
         return payload
 
     resolved_rule = _resolve_rule(rule)
@@ -319,7 +319,7 @@ def _build_payload(date: str, request: Optional[Request], route: str,
             "stale": False,
             "stale_reason": None,
         }
-        _record_page_view(request, route, date)
+        _record_page_view(request, route, date, surface="card")
         return frozen
 
     # The LIVE (not yet published) branch is cached per date, like the NFL and
@@ -340,7 +340,7 @@ def _build_payload(date: str, request: Optional[Request], route: str,
         return built
 
     payload, _meta = _mlb_live_card_cache.get(("mlb_live_card", date), _rebuild_live)
-    _record_page_view(request, route, date)
+    _record_page_view(request, route, date, surface="card")
     return payload
 
 
@@ -367,7 +367,7 @@ def _build_payload_v2(date: str, request: Optional[Request], route: str) -> dict
     frozen = card_v2.frozen_card_v2(date)
     if frozen is not None:
         frozen["generated_at"] = now.isoformat()
-        _record_page_view(request, route, date)
+        _record_page_view(request, route, date, surface="card")
         return frozen
 
     entries, _notes, meta = _build_entries(date)
@@ -379,7 +379,7 @@ def _build_payload_v2(date: str, request: Optional[Request], route: str) -> dict
     except card_v2.CardV2Error as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     payload["freshness"] = meta
-    _record_page_view(request, route, date)
+    _record_page_view(request, route, date, surface="card")
     return payload
 
 

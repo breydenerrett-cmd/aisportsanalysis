@@ -2,7 +2,7 @@
  * ADMIN view -- web/admin.html. A structural (zero-aesthetic) ops page
  * over the admin surface: GET /admin/overview, GET /admin/funnel,
  * GET /admin/support, GET /admin/users, POST /admin/support/{id}/status,
- * GET/POST /admin/testers and POST /admin/testers/extend
+ * GET/POST /admin/testers, POST /admin/testers/extend and GET /admin/activation
  * (api/admin.py, api/funnel.py, api/support.py), all gated by
  * `X-Admin-Token` (api/auth.py's `_require_admin`).
  *
@@ -17,6 +17,13 @@
  * read-only box for the owner to copy and send himself, and is never written
  * to storage, never put in a URL, never logged, and is gone the moment the
  * section is rebuilt (a reload, a new token, or clearing the admin token).
+ *
+ * "ACTIVATED" IS NOT "SIGNED IN" (owner decision, 2026-10-03). The table shows
+ * both. Signed in means a token was used. Activated means the person was served
+ * product content (a card, a matchup, props, ...), the server's definition in
+ * src/appstate/activation.py, shown with the hours from signup. Returning, days
+ * active and the features used come from the same place. Below the table, the
+ * Tester activity block shows the aggregate and copies it for the dashboard.
  *
  * WHY sessionStorage, NEVER localStorage, FOR THE ADMIN TOKEN
  * -------------------------------------------------------------------
@@ -557,6 +564,31 @@ function renderTesterCount(host, data) {
   host.textContent = `${data.granted} of ${data.limit} granted, ${data.remaining} remaining`;
 }
 
+/** "3.5 hours", "1 hour", "12 minutes": plain words for a span the server
+ * measured in hours; an empty string when it sent no number. */
+function hoursLabel(hours) {
+  if (typeof hours !== "number" || !Number.isFinite(hours) || hours < 0) return "";
+  if (hours < 1) return `${Math.round(hours * 60)} minutes`;
+  const rounded = Math.round(hours * 10) / 10;
+  return `${rounded} ${rounded === 1 ? "hour" : "hours"}`;
+}
+
+/** The "activated" cell. ACTIVATED means a value action (the person was served
+ * product content), not a sign-in: the sign-in has its own column. */
+function activatedText(tester) {
+  if (!tester.activated) return "no";
+  const span = hoursLabel(tester.hours_signup_to_activation);
+  return span ? `yes, ${span} after signup` : "yes";
+}
+
+/** "card 3, slate 2": the features a tester used, most used first; "none" when
+ * they used no feature. */
+function featuresText(features) {
+  const used = Object.entries(features || {}).filter(([, count]) => count > 0)
+    .sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1));
+  return used.length ? used.map(([label, count]) => `${label} ${count}`).join(", ") : "none";
+}
+
 function renderTesterTable(host, data, onExtend) {
   clear(host);
   const testers = data.testers || [];
@@ -566,7 +598,8 @@ function renderTesterTable(host, data, onExtend) {
   }
   const table = el("table", { class: "admin-testers-table", "data-hook": "admin-testers-table" });
   const head = el("tr");
-  for (const column of ["email", "granted", "expires", "activated", "extensions", "extend"]) {
+  for (const column of ["email", "granted", "expires", "signed in", "activated", "returning",
+                        "days active", "features used", "extensions", "extend"]) {
     head.appendChild(el("th", { text: column }));
   }
   table.appendChild(el("thead", {}, [head]));
@@ -576,8 +609,17 @@ function renderTesterTable(host, data, onExtend) {
     row.appendChild(el("td", { text: tester.email }));
     row.appendChild(el("td", { text: utcLabel(tester.granted_at) }));
     row.appendChild(el("td", { "data-hook": "admin-tester-expires", text: utcLabel(tester.expires_at) }));
+    // Signed in is the old "activated": a token was used. It is not value.
+    row.appendChild(el("td", { "data-hook": "admin-tester-signed-in",
+      text: tester.first_signin_at ? "yes" : "no" }));
     row.appendChild(el("td", { "data-hook": "admin-tester-activated",
-      text: tester.activated ? "yes" : "no" }));
+      text: activatedText(tester) }));
+    row.appendChild(el("td", { "data-hook": "admin-tester-returning",
+      text: tester.returning ? "yes" : "no" }));
+    row.appendChild(el("td", { "data-hook": "admin-tester-days-active",
+      text: String(tester.active_days || 0) }));
+    row.appendChild(el("td", { "data-hook": "admin-tester-features",
+      text: featuresText(tester.features) }));
     const extensions = el("td", { "data-hook": "admin-tester-extensions" });
     if ((tester.extensions || []).length) {
       const list = el("ul");
@@ -608,6 +650,70 @@ function renderTesterTable(host, data, onExtend) {
   host.appendChild(table);
 }
 
+/** The "Tester activity" block: the aggregate GET /admin/activation reports
+ * (no emails, no ids), in plain words, with a button that copies that exact
+ * object for the dashboard file. The text in the box is the text that is
+ * copied, so what the owner sees is what gets pasted. */
+export function renderActivity(host, data) {
+  clear(host);
+  host.appendChild(el("h3", { text: "Tester activity" }));
+  const facts = el("ul", { "data-hook": "admin-activity-facts" });
+  const median = hoursLabel(data.median_hours_signup_to_activation);
+  const lines = [
+    ["granted", `Testers granted: ${data.testers_granted}`],
+    ["in-window", `Still inside their access window: ${data.testers_in_window}`],
+    ["activated", `Activated (used the product, not just signed in): ${data.activated} of ${data.testers_granted}`],
+    ["returning", `Returning (used it again 12 hours or more after the first time): ${data.returning}`],
+    ["median", `Median time from signup to first use: ${median || "nobody has used it yet"}`],
+    ["internal", `Our own test accounts left out: ${data.internal_excluded}`],
+  ];
+  for (const [hook, text] of lines) {
+    facts.appendChild(el("li", { "data-hook": `admin-activity-${hook}`, text }));
+  }
+  host.appendChild(facts);
+
+  host.appendChild(el("p", { text: "Testers who used each feature:" }));
+  const unmeasured = new Set(data.unmeasured_features || []);
+  const features = el("ul", { "data-hook": "admin-activity-features" });
+  for (const [label, count] of Object.entries(data.feature_users || {})) {
+    features.appendChild(el("li", { "data-hook": "admin-activity-feature", "data-feature": label,
+      text: unmeasured.has(label) ? `${label}: not measured yet` : `${label}: ${count}` }));
+  }
+  host.appendChild(features);
+
+  const json = JSON.stringify(data, null, 2);
+  const copy = el("button", { type: "button", "data-hook": "admin-activity-copy",
+    text: "Copy for dashboard" });
+  copy.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(json);
+      copy.textContent = "Copied";
+    } catch (err) {
+      // Clipboard blocked: the text below is selectable by hand.
+      copy.textContent = "Copy it by hand from the box";
+    }
+  });
+  host.appendChild(copy);
+  host.appendChild(el("pre", { "data-hook": "admin-activity-json", text: json }));
+}
+
+/** Load GET /admin/activation into the activity block. A failure here never
+ * touches the testers table above it. */
+async function loadActivity(host) {
+  let data;
+  try {
+    data = await adminGet("/admin/activation");
+  } catch (err) {
+    clear(host);
+    host.appendChild(el("h3", { text: "Tester activity" }));
+    const note = el("div", { "data-hook": "admin-activity-error" });
+    renderAuthState(note, err);
+    host.appendChild(note);
+    return;
+  }
+  renderActivity(host, data);
+}
+
 /** Build the Testers section into `host` and load it. Rebuilding clears the
  * host first, which is also what removes a token that was on screen. */
 export async function mountTesters(host) {
@@ -617,7 +723,8 @@ export async function mountTesters(host) {
   const formHost = el("div", { "data-hook": "admin-tester-form-host" });
   const resultHost = el("div", { "data-hook": "admin-tester-result-host" });
   const listHost = el("div", { "data-hook": "admin-testers-list" });
-  for (const part of [count, formHost, resultHost, listHost]) host.appendChild(part);
+  const activityHost = el("div", { "data-hook": "admin-activity" });
+  for (const part of [count, formHost, resultHost, listHost, activityHost]) host.appendChild(part);
 
   async function reload() {
     let data;
@@ -629,6 +736,9 @@ export async function mountTesters(host) {
     }
     renderTesterCount(count, data);
     renderTesterTable(listHost, data, onExtend);
+    // The activity block follows the table and reloads with it, so a grant is
+    // reflected in "testers granted" without a page reload.
+    await loadActivity(activityHost);
     return data;
   }
 

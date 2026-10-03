@@ -218,8 +218,12 @@ class PageViewEventTests(_ResetEntriesCache):
         with patch.object(mlb, "fetch_games", return_value=_schedule()), \
              patch.object(events, "record_event_safe") as safe:
             games_mod.get_games("2026-08-31", request=_FakeRequest(user_id=7))
+        # The same one page_view, now also marked as a value action: the slate
+        # list is the `slate` feature (src/appstate/activation.py).
         safe.assert_called_once_with(
-            7, events.PAGE_VIEW, {"route": "/games/{date}", "date": "2026-08-31"})
+            7, events.PAGE_VIEW,
+            {"route": "/games/{date}", "date": "2026-08-31",
+             "feature": "slate", "surface": "slate", "sport": "mlb"})
 
     def test_get_game_records_page_view_only_on_the_match(self):
         with patch.object(mlb, "fetch_games", return_value=_schedule()), \
@@ -227,7 +231,8 @@ class PageViewEventTests(_ResetEntriesCache):
             games_mod.get_game("2026-08-31", "BOS", "NYY", request=_FakeRequest(7))
         safe.assert_called_once_with(
             7, events.PAGE_VIEW,
-            {"route": "/game/{date}/{away}/{home}", "date": "2026-08-31"})
+            {"route": "/game/{date}/{away}/{home}", "date": "2026-08-31",
+             "feature": "matchup", "surface": "matchup", "sport": "mlb"})
 
     def test_get_game_records_nothing_on_a_404(self):
         with patch.object(mlb, "fetch_games", return_value=_schedule()), \

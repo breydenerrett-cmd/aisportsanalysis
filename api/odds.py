@@ -29,11 +29,12 @@ import re
 from datetime import datetime, timezone
 from typing import Optional, Tuple
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 
+from api.auth import request_user_id
 from src.analysis import oddspayload
 from src.analysis import prices as prices_mod
-from src.appstate import freshness
+from src.appstate import activation, freshness
 from src.providers import mlb
 
 router = APIRouter()
@@ -150,7 +151,7 @@ def get_odds(date: str) -> dict:
 
 
 @router.get("/odds/{date}/{away}/{home}")
-def get_odds_game(date: str, away: str, home: str) -> dict:
+def get_odds_game(date: str, away: str, home: str, request: Request = None) -> dict:
     """One game's odds payload.
 
     Unknown date/game is a structured 404, naming what was searched for
@@ -181,4 +182,10 @@ def get_odds_game(date: str, away: str, home: str) -> dict:
             f"{len(matches)} games matched {away}@{home} on {date} (a "
             "doubleheader) -- this payload is the earlier-listed game; the "
             "URL scheme has no way to name the second one")
+    # A value action (src/appstate/activation.py): one game's price comparison,
+    # which a person reaches only by opening that game's board. The whole-slate
+    # board GET /odds/{date} is NOT recorded: Today and Matchups fetch it in the
+    # background, so a label there would count every Today view as price use.
+    activation.record_value_action(request_user_id(request), "prices",
+                                   route="/odds/{date}/{away}/{home}", date=date)
     return payload
