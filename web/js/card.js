@@ -1138,6 +1138,39 @@ function emptyCard(payload, sport = "mlb") {
   return wrap;
 }
 
+/** THE PAUSED STATE (UFC, owner decision 2026-10-03;
+ * docs/decisions/UFC_FAVOURITES_PAUSED.md).
+ *
+ * For a date after the cut-off the server answers `paused: true`, no picks,
+ * and a few plain sentences of `reason`. They are rendered VERBATIM, like
+ * every other empty state's reason: a substitute composed here would be this
+ * page describing its own confidence.
+ *
+ * This is not `emptyCard`. "NO CARD TODAY" says tonight has no card, and this
+ * says UFC picks are off. Its two links are the UFC record, where every pick
+ * made so far stays, and the live MLB card. The record strip is not drawn
+ * under it: the strip is the running figure of a rule that is not publishing
+ * any more, and the link already goes where the whole record is.
+ *
+ * The caller returns before the walk-back to the last published card, on
+ * purpose: that fallback tells the reader tomorrow's card posts in the
+ * morning, which is false for as long as the pause lasts. */
+function pausedCard(payload) {
+  const wrap = el("section", { class: "gutter", "data-hook": "card-paused" });
+  const panel = el("div", { class: "panel chamfer card2empty card2empty--paused" });
+  panel.appendChild(el("span", { class: "card2empty__label", text: "PICKS PAUSED" }));
+  panel.appendChild(el("p", { class: "card2empty__body", "data-hook": "card-paused-reason",
+    text: payload.reason || "UFC picks are paused." }));
+  const actions = el("div", { class: "card2empty__actions" });
+  actions.appendChild(el("a", { class: "btn btn--primary chamfer chamfer--btn",
+    href: "#/ufc/record", "data-hook": "card-record-link", text: "VIEW THE UFC RECORD" }));
+  actions.appendChild(el("a", { class: "btn btn--ghost chamfer chamfer--btn",
+    href: "#/today", "data-hook": "card-paused-mlb-link", text: "SEE TONIGHT'S MLB PICKS" }));
+  panel.appendChild(actions);
+  wrap.appendChild(panel);
+  return wrap;
+}
+
 /** Whether a card payload has anything to render at all -- game picks OR a
  * non-empty `payload.all_bets`.
  *
@@ -1303,6 +1336,17 @@ export async function renderCard(host, options = {}) {
     servingOlderCard = last.date || null;
     const recordUrl = `/card/record${sport !== "mlb" ? `?sport=${sport}` : ""}`;
     record = await apiGet(recordUrl).catch(() => null);
+  }
+
+  // PAUSED, BEFORE ANY WALK-BACK (UFC, owner decision 2026-10-03). A date
+  // after the cut-off comes back `paused: true` with the reason; it is shown
+  // as the empty state and the page does NOT go looking for last night's card
+  // to put under it -- that fallback would print "Tomorrow's card posts in the
+  // morning" over a sport whose picks are off. Strictly `=== true`, so no other
+  // sport's payload can be mistaken for it.
+  if (payload && payload.paused === true) {
+    wrap.appendChild(pausedCard(payload));
+    return { rendered: false, firstPick: null };
   }
 
   if (!payloadHasBets(payload)) {

@@ -453,6 +453,20 @@
 }
 .card2empty__actions { display: flex; gap: var(--sp-5); flex-wrap: wrap; }
 
+/* THE PAUSED STATE (UFC, 2026-10-03, web/js/card.js pausedCard). The server's
+   reason is four plain sentences, not one short fact, so it is set as body
+   copy rather than in the big display line the one-line empty states use
+   (24ch wide at 26px, which would stack this ten lines high). Never under
+   15px on a phone, same floor as the rest of the card. */
+.card2empty--paused .card2empty__body {
+  font-family: var(--font-body);
+  font-style: normal;
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1.5;
+  max-width: 56ch;
+}
+
 /* ---------------------------------------------------------------------
  * THE RECORD PAGE (#/record-card, web/js/cardrecord.js) -- the full
  * receipts ledger, as opposed to the one-paragraph .card2rec summary

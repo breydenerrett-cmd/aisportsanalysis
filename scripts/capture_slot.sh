@@ -589,9 +589,36 @@ echo "$NFL_CARD_OUT" | tail -n 25 | sed 's/^/  /'
 # UFC card publish: same "build first, write second" shape as NFL's just
 # above (src/report/ufc_card.py's card_to_publish). Each bout locks 90
 # minutes before its own commence_time regardless of when this slot runs.
-echo "== ufc card publish ($SLATE_DATE) =="
-UFC_CARD_OUT=$(python3 -m src.cli card publish --sport mma --date "$SLATE_DATE" 2>&1) || true
-echo "$UFC_CARD_OUT" | tail -n 25 | sed 's/^/  /'
+#
+# PAUSED AFTER THE CUT-OFF DATE (owner decision 2026-10-03,
+# docs/decisions/UFC_FAVOURITES_PAUSED.md). The favourites rule stops
+# publishing; the last date it publishes for is the one value in
+# config/ufc_public_card.json, which src/appstate/ufc_public_card.py prints.
+# A SLATE_DATE on or before it publishes exactly as before, so the cut-off
+# day's later slots still write their locked versions. `ufc capture` above is
+# a different thing (it buys odds) and is not behind this. Only this one step
+# is gated, and it never fails the slot.
+#
+# An unreadable config is not "publish": the helper falls back to the owner's
+# own date, and if the helper itself cannot run the case below does the same
+# with the literal, so the only dates that ever publish without the config
+# saying so are the ones on or before 2026-10-03. The comparison is on digits
+# only (20261003), so no locale can change what "after" means, and a trailing
+# carriage return (a Windows python prints one) is dropped before the date is
+# checked.
+UFC_PUBLIC_LAST_DATE=$(python3 -m src.appstate.ufc_public_card) || UFC_PUBLIC_LAST_DATE=""
+UFC_PUBLIC_LAST_DATE="${UFC_PUBLIC_LAST_DATE%$'\r'}"
+case "$UFC_PUBLIC_LAST_DATE" in
+    [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]) ;;
+    *) UFC_PUBLIC_LAST_DATE="2026-10-03" ;;
+esac
+if [ "${SLATE_DATE//-/}" -gt "${UFC_PUBLIC_LAST_DATE//-/}" ] 2>/dev/null; then
+    echo "== ufc card publish: paused after $UFC_PUBLIC_LAST_DATE (config/ufc_public_card.json) =="
+else
+    echo "== ufc card publish ($SLATE_DATE) =="
+    UFC_CARD_OUT=$(python3 -m src.cli card publish --sport mma --date "$SLATE_DATE" 2>&1) || true
+    echo "$UFC_CARD_OUT" | tail -n 25 | sed 's/^/  /'
+fi
 
 # Live window dispatch: check if we should dispatch live-window workflow for each sport.
 # SAME gh mechanism as chain_dispatch: this step runs from the "Capture one

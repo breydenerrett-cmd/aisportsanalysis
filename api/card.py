@@ -30,6 +30,7 @@ from src.analysis import opportunities as opportunities_mod
 from src.analysis import strength
 from src.appstate import freshness
 from src.appstate import ratelimit
+from src.appstate import ufc_public_card
 from src.report import card as card_mod
 
 # TWO ROUTERS, ONE PREFIX (2026-10-01). api/app.py mounts `router` behind the
@@ -83,6 +84,8 @@ _nfl_card_cache = freshness.SingleFlightTTLCache(ttl_s=120.0, stale_while_revali
 # just to save a rebuild), same 120s TTL every other date-keyed cache in
 # this project uses. Only the VALUE is reused, never the meta -- this
 # route's response shape is unchanged, so no `freshness` key is added.
+# A date after the UFC pause cut-off never reaches this cache (2026-10-03,
+# see `_build_payload`): it is answered as paused before anything is built.
 _mma_card_cache = freshness.SingleFlightTTLCache(ttl_s=120.0, stale_while_revalidate_s=900.0)
 
 # MLB card, LIVE (unpublished) branch only -- see _build_payload. The stale
@@ -272,6 +275,31 @@ def _build_payload(date: str, request: Optional[Request], route: str,
     # rules here -- the "free, being tested" framing lives in the payload's
     # own notice/disclaimer text, not in a separate auth gate.
     if sport == "mma":
+        # PAUSED AFTER THE CUT-OFF (owner decision 2026-10-03,
+        # docs/decisions/UFC_FAVOURITES_PAUSED.md). The favourites rule is no
+        # longer public, and the live branch below WOULD serve it: a date with
+        # no published row is built from the multibook store on the spot and
+        # comes back as provisional picks. So a date after the last public
+        # date (config/ufc_public_card.json, read through ufc_public_card)
+        # is answered here, before the cache and before anything that reads
+        # the store or the ledger, with no picks and the reason. Nothing is
+        # built, so there is nothing to cache and no stale entry to serve.
+        #
+        # A date on or before the cut-off falls through untouched: frozen
+        # rows, the live card for a date not yet published, the cache, all
+        # exactly as they were. An unreadable config is NOT "no pause": the
+        # helper falls back to the owner's own date, so a deploy without
+        # config/ still pauses (the image did not copy it when this was
+        # written).
+        #
+        # A plain page_view, not a value action: no product content was
+        # served, and `surface` is what makes a request count toward a
+        # tester's activation and the per-feature numbers.
+        paused = ufc_public_card.paused_card(date)
+        if paused is not None:
+            _record_page_view(request, route, date)
+            return paused
+
         from src.report import ufc_card
 
         def _rebuild():
