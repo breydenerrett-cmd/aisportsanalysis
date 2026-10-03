@@ -309,6 +309,16 @@ class TesterActivityFromTheProduct(unittest.TestCase):
         self.assertEqual([l for l in section.splitlines() if l.startswith("| ") and "---" not in l],
                          ["| card | 4 |", "| props | 2 |", "| odds | 0 |"])
 
+    def test_a_feature_the_product_cannot_measure_is_not_printed_as_zero(self):
+        """The admin page's export lists `unmeasured_features` (moneyline today: no route
+        serves it as the page a person chose). Its 0 is not 'nobody used it'."""
+        activity = dict(self.ACTIVITY, feature_users={"card": 4, "moneyline": 0, "props": 0},
+                        unmeasured_features=["moneyline"], internal_excluded=1)
+        text = render(dict(CONFIG, tester_activity=activity))
+        section = text.split("| Feature | Testers who used it |")[1].split("##")[0]
+        self.assertEqual([l for l in section.splitlines() if l.startswith("| ") and "---" not in l],
+                         ["| card | 4 |", "| moneyline | not measured yet |", "| props | 0 |"])
+
     def test_absent_means_the_log_and_not_measured_and_no_activity_section(self):
         text = render(CONFIG, sent_five())
         self.assertNotIn("Tester activity", text)

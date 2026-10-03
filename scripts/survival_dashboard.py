@@ -217,6 +217,10 @@ def tester_activity(config: dict) -> tuple:
                 out["feature_users"][str(name)] = users
     elif features is not None:
         problems.append("config tester_activity.feature_users is not an object; ignored")
+    # Features the product cannot measure yet (no route serves them as the page a person
+    # chose). Their 0 is not "nobody used it", so the table says so instead of printing it.
+    unmeasured = raw.get("unmeasured_features")
+    out["unmeasured_features"] = [str(n) for n in unmeasured] if isinstance(unmeasured, list) else []
     return out, problems
 
 
@@ -237,16 +241,19 @@ def customer_section(q: dict, revenue_text: str, activity: dict = None) -> list:
     as_of = (activity or {}).get("as_of") or "an unstated date"
     if from_product("activated"):
         activated = f"{activity['activated']} (from the product, as of {as_of})"
-        activated_def = "Testers who used their token, counted by the product."
+        activated_def = ("Testers who opened real product content while signed in (a card, a game "
+                         "breakdown, the props), not just signed in. Counted by the product.")
     else:
         activated = f"{q['activated']} (from the outreach log)"
         activated_def = "People with an `activated` entry in the outreach log."
     if from_product("returning"):
         returning = f"{activity['returning']} (from the product, as of {as_of})"
-        returning_def = "Activated testers who came back on another day, counted by the product."
+        returning_def = ("Activated testers who used it again 12 hours or more after their first "
+                         "use. Counted by the product.")
     else:
         returning = "0 (not measured yet)"
-        returning_def = "Activated testers who came back on another day; needs `tester_activity` in config."
+        returning_def = ("Activated testers who used it again 12 hours or more after their first use; "
+                         "needs `tester_activity` in config.")
     spam = f" ({q['replies_spam']} of them spam or irrelevant)" if q["replies_spam"] else ""
     out = ["| Measure | Value | What it counts |", "|---|---|---|"]
     out.append(f"| UNIQUE LEADS | {q['leads']} | People (not channel posts) who were sent a message, replied "
@@ -298,7 +305,9 @@ def customer_section(q: dict, revenue_text: str, activity: dict = None) -> list:
             out.append("")
             out.append("| Feature | Testers who used it |")
             out.append("|---|---|")
-            out.extend(f"| {name} | {users} |" for name, users in features.items())
+            unmeasured = set(activity.get("unmeasured_features") or [])
+            out.extend(f"| {name} | {'not measured yet' if name in unmeasured else users} |"
+                       for name, users in features.items())
     return out
 
 
