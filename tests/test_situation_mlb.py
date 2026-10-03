@@ -244,6 +244,15 @@ class ADivisionSeriesOpener(unittest.TestCase):
                                         "last_series_win_round": "Wild Card Series"})
         self.assertEqual(tb["sentence"], "TB has won 1 postseason series in our data (2025 on), most recently in 2025.")
 
+    def test_a_drought_is_only_stated_as_far_back_as_the_data_and_the_record_says_so(self):
+        gap = gaps_of(self.r)[("stakes", "milestone_before_data", "game")]
+        self.assertIn("only stated back to 2025", gap)
+        older = run(F.division_game(1), extra_games=[F.g(9001, "2019-10-04", "TB", "HOU", 4, 1, "D")])
+        self.assertIn("only stated back to 2019", gaps_of(older)[("stakes", "milestone_before_data", "game")])
+
+    def test_a_regular_season_game_makes_no_milestone_claim(self):
+        self.assertNotIn(("stakes", "milestone_before_data", "game"), gaps_of(run(F.regular_game())))
+
     def test_pressure_history_sets_the_postseason_against_the_regular_season(self):
         tb = self.f[("pressure_history", "postseason_record", "away")]
         self.assertEqual(tb["value"], 3)

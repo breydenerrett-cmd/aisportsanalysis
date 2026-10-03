@@ -124,7 +124,7 @@ class TheRecord(unittest.TestCase):
         self.assertEqual(len(lines), 1)
         self.assertEqual(lines[0]["sentence"], "NYY has won 3 straight.")
         path = lines[0]["evidence"]["path"]
-        self.assertEqual(path, "situation.factors[0].value")
+        self.assertEqual(path, "situation.factors.0.value")
         self.assertEqual(r["factors"][0]["value"], lines[0]["evidence"]["value"])
 
     def test_display_lines_tolerate_nothing(self):

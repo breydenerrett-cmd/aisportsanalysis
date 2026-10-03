@@ -226,6 +226,32 @@ def read_inputs_for(date: str, home_team: str) -> dict:
     return value
 
 
+# The situation record of one game (src/situation/): where each club stands going into it. Built from
+# the results store, the ingest manifest and the display-only postseason history, which is a lot of
+# rows to read for one page, so it is cached per game on the same terms as the entries above.
+_situation_cache = freshness.SingleFlightTTLCache(ttl_s=ENTRIES_CACHE_TTL_S)
+
+
+def situation_for_entry(date: str, game: dict) -> Optional[dict]:
+    """The situation record for this game, cached per (date, game). None, never an error: the page
+    is served without the block when it cannot be built. Display only: it reaches the written read
+    and the response beside it, and it is not a dossier section, so it can change neither the card's
+    model nor the analyst's packet for arm A."""
+    from src.analyst import source
+
+    key = ("situation", date, str(game.get("game_pk") or ""), str(game.get("away_team")),
+           str(game.get("home_team")), str(game.get("game_number") or ""))
+
+    def _rebuild():
+        return source.mlb_situation_provider()({"payload": {"advanced": {"game": game}}})
+
+    try:
+        value, _meta = _situation_cache.get(key, _rebuild)
+    except Exception:  # noqa: BLE001 -- see docstring
+        return None
+    return value
+
+
 def engine_decisions_for_date(date: str) -> dict:
     """`engine_bridge.decisions_for_date`, cached per date and shared by
     every api/ caller. Returns an empty mapping rather than raising if the
@@ -503,6 +529,10 @@ def get_game(date: str, away: str, home: str, request: Request = None) -> dict:
     # rides beside it because the read cites it (the league run rate, the park
     # factor, how old each store is). A failure here costs the read, never the
     # page.
+    try:
+        payload["situation"] = situation_for_entry(date, entry["dossier"].game)
+    except Exception:  # noqa: BLE001 -- additive, never a 500
+        payload["situation"] = None
     try:
         payload["read_inputs"] = read_inputs_for(
             date, entry["dossier"].game.get("home_team") or home)

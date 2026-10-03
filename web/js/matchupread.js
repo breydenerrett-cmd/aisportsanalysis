@@ -173,6 +173,44 @@ function missingList(items) {
   return block;
 }
 
+/**
+ * THE SITUATION -- where each club stands going into the game (src/situation/mlb.py). Plain
+ * sentences the server wrote, each with its sample in the words; the evidence toggle lists the
+ * values behind them and the foldout lists what the data could not say. Null when the read
+ * carries no situation block (a page with no record shows no block, never an empty one).
+ */
+export function situationView(situation) {
+  if (!situation || typeof situation !== "object") return null;
+  const lines = Array.isArray(situation.lines) ? situation.lines : [];
+  const missing = Array.isArray(situation.missing) ? situation.missing : [];
+  if (!lines.length && !missing.length) return null;
+  const block = el("div", { class: "mr-block", "data-hook": "read-situation" });
+  block.appendChild(subhead("SITUATION"));
+  if (situation.label) block.appendChild(el("p", { class: "mr-small", text: situation.label }));
+  for (const line of lines) {
+    block.appendChild(el("p", { class: "mr-situation__line", "data-hook": "read-situation-line",
+      text: line.sentence }));
+  }
+  const toggle = evidenceToggle(lines.map((l) => l.evidence).filter(Boolean), "read-situation-evidence");
+  if (toggle) block.appendChild(toggle);
+  if (missing.length) {
+    const details = el("details", { class: "mr-evidence", "data-hook": "read-situation-missing" });
+    details.appendChild(el("summary", { class: "mr-evidence__summary",
+      text: `WHAT THE SITUATION COULD NOT SAY (${missing.length})` }));
+    const list = el("ul", { class: "mr-list" });
+    for (const item of missing) {
+      const row = el("li", { class: "mr-list__item" });
+      row.appendChild(chip(String(item.status).toUpperCase(), item.status === "stale" ? "warn" : "plain"));
+      row.appendChild(el("strong", { class: "mr-list__lead", text: " " + item.input + ". " }));
+      row.appendChild(el("span", { class: "mr-list__body", text: item.detail }));
+      list.appendChild(row);
+    }
+    details.appendChild(list);
+    block.appendChild(details);
+  }
+  return block;
+}
+
 /** The whole read, or null when there is none to show. */
 export function renderMatchupRead(read) {
   if (!read || typeof read !== "object" || !read.headline) return null;
@@ -203,6 +241,8 @@ export function renderMatchupRead(read) {
     host.appendChild(el("p", { class: "mr-factor__sentence",
       text: "No factor could be built from the data on this page." }));
   }
+  const situation = situationView(read.situation);
+  if (situation) host.appendChild(situation);
   host.appendChild(runEnvironment(read.run_environment));
   host.appendChild(marketView(read.market_view));
   host.appendChild(changeList(read.what_would_change_it));

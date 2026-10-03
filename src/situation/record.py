@@ -363,7 +363,8 @@ def packet_section(record: Mapping) -> dict:
 def display_lines(record: Optional[Mapping], *, limit: int = 6) -> list:
     """The record's short page block: up to `limit` entries `{sentence, family, side,
     sample, evidence}`. `evidence` is a path into the record as the page holds it
-    (`situation.factors[i].value`) so each sentence can be walked back to its value."""
+    (`situation.factors.<i>.value`, the written reads' dotted-path grammar with integer list
+    indexes) so each sentence can be walked back to its value."""
     out = []
     if not isinstance(record, Mapping):
         return out
@@ -375,10 +376,34 @@ def display_lines(record: Optional[Mapping], *, limit: int = 6) -> list:
         out.append({
             "sentence": item["sentence"], "family": item["family"], "side": item["side"],
             "sample": dict(item.get("sample") or {}),
-            "evidence": {"path": f"situation.factors[{i}].value", "label": item["name"].replace("_", " "),
+            "evidence": {"path": f"situation.factors.{i}.value", "label": item["name"].replace("_", " "),
                          "value": item["value"]},
         })
     return out
+
+
+PAGE_MISSING_SHOWN = 8
+
+
+def page_block(record: Optional[Mapping], *, label: str, limit: int = 6) -> Optional[dict]:
+    """The "Situation" block of a written read: `{label, as_of, lines, missing}`, or None when the
+    record has nothing to say (a page with no record shows no block, never an empty one).
+
+    `lines` are `display_lines` (a sentence, its sample and an evidence path that resolves in the
+    record the page holds). `missing` is what the situation could not say, in the shape the
+    read's own "what we could not use" list uses (`input`, `status`, `detail`): a store that is not
+    current is `stale`, everything else `absent`. The reads add this block only when a record is
+    handed to them, so a read built without one is exactly the read it always was."""
+    if not isinstance(record, Mapping):
+        return None
+    lines = display_lines(record, limit=limit)
+    notes = [{"input": f"{g['family'].replace('_', ' ')}: {g['name'].replace('_', ' ')}"
+                       + ("" if g.get("side") == SIDE_GAME else f" ({g['side']})"),
+              "status": "stale" if g["name"] == "results_store_current" else "absent",
+              "detail": g["reason"]} for g in (record.get("missing") or [])][:PAGE_MISSING_SHOWN]
+    if not lines and not notes:
+        return None
+    return {"label": label, "as_of": record.get("as_of"), "lines": lines, "missing": notes}
 
 
 def numbers_in_record(record: Mapping) -> list:

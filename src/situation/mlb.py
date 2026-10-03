@@ -530,6 +530,12 @@ def _stakes(ctx: _Ctx, out: list, gaps: list) -> None:
             as_of=as_of, side=side,
             source=(f"results store: every postseason series the club played since {first_season}"),
             sentence=sentence, detail=detail))
+    if first_season is not None:
+        # "First series win since YEAR" is a milestone only as far back as the data goes: a drought
+        # older than the earliest season held is not stated, and the record says so.
+        gaps.append(rec.gap(fam, "milestone_before_data",
+                            f"how long since either club won a postseason series is only stated back to "
+                            f"{first_season}, where the data starts; a longer drought is not in the data"))
 
 
 # ---------------------------------------------------------------------------

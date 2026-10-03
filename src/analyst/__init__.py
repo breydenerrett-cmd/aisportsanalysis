@@ -20,6 +20,15 @@ meter and the critic and adding its own packet, prompt, grader, ledger and CLI:
 Each analyst's record is its own. None is merged into the card record or into another
 analyst's, and none changes a card rule, gate, pick or published result. Nothing in this
 package places a bet or can.
+
+THE SIDE-BY-SIDE TEST OF THE SITUATION LAYER (docs/SITUATION_LAYER.md). Everything above is arm A,
+the analyst that reads the matchup statistics, and is unchanged. Arm B is the same analyst plus the
+situation layer (src/situation/), frozen into its own ledgers, off unless config/analyst.json says
+`situation_arm.enabled`:
+
+    situation_prompt.py   the four rules "THE SITUATION" adds to each prompt (no imports)
+    situation_arm.py      the arms: prompts, files, the switch
+    compare.py            `analyst compare`: arm A against arm B by sport and market family
 """
 
 LABEL = ("Written by an AI model from the data on this page. Unproven. "

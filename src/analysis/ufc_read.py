@@ -59,8 +59,15 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 from src.datasvc import names as _names
 from src.datasvc.ufc import features as _feat
 from src.datasvc.ufc import matchup as _rules
+from src.situation import record as _situation
 
 READ_VERSION = 1
+
+# The short "Situation" block (src/situation/): layoff, form, the card slot, the previous meeting
+# and weight class, in sentences with their samples. Added only when the route hands a record in.
+SITUATION_LABEL = ("Where each fighter stands going into this bout, from fights before it. A description "
+                   "of the situation, not a forecast and not a claim that the price is wrong.")
+SITUATION_LINES = 6
 
 # ---------------------------------------------------------------------------
 # Thresholds. Fixed in advance; each is justified in docs/UFC_FIGHT_NIGHT.md.
@@ -1757,9 +1764,11 @@ def compact_sheet(sheet: Optional[dict]) -> Optional[dict]:
 # The read
 # ---------------------------------------------------------------------------
 
-def build_read(sheet: dict, *, now: Any = None) -> dict:
+def build_read(sheet: dict, *, now: Any = None, situation: Optional[dict] = None) -> dict:
     """The written read of one fight. `sheet` is `matchup.matchup(...)`; `now` (optional, an ISO
-    string or datetime) lets the market view say how old the prices are.
+    string or datetime) lets the market view say how old the prices are. `situation` (optional) is a
+    `src.situation.ufc.situation_for_bout` record: it adds the short "Situation" block under its own
+    key, and a read built without one has exactly the keys it always had.
 
     Never raises on a sparse sheet: a rule that fails is reported in `missing` as an error and the
     rest of the read is still produced.
@@ -1805,7 +1814,7 @@ def build_read(sheet: dict, *, now: Any = None) -> dict:
             "paths_to_victory": routes,
             "context": _context_for(ctx, side),
         }
-    return {
+    out = {
         "version": READ_VERSION,
         "label": LABEL,
         "as_of": ctx.as_of,
@@ -1821,3 +1830,10 @@ def build_read(sheet: dict, *, now: Any = None) -> dict:
         "what_would_change_it": _what_would_change_it(ctx, depth, market),
         "missing": _missing(ctx, depth) + errors,
     }
+    try:
+        block = _situation.page_block(situation, label=SITUATION_LABEL, limit=SITUATION_LINES)
+    except Exception:  # noqa: BLE001 -- additive: a record that cannot be shown costs the block, not the read
+        block = None
+    if block is not None:
+        out["situation"] = block
+    return out

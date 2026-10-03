@@ -297,6 +297,42 @@ function historyBlock(history) {
   return block;
 }
 
+/**
+ * THE SITUATION -- where each fighter stands going into the bout (src/situation/ufc.py): layoff,
+ * form, the card slot, the previous meeting and weight class, as plain sentences with their samples
+ * in the words. Null when the read carries no situation block.
+ */
+export function situationView(situation) {
+  if (!situation || typeof situation !== "object") return null;
+  const lines = Array.isArray(situation.lines) ? situation.lines : [];
+  const missing = Array.isArray(situation.missing) ? situation.missing : [];
+  if (!lines.length && !missing.length) return null;
+  const block = el("div", { class: "uf-block", "data-hook": "ufc-situation" });
+  block.appendChild(subhead("SITUATION"));
+  if (situation.label) block.appendChild(el("p", { class: "uf-small", text: situation.label }));
+  for (const line of lines) {
+    block.appendChild(el("p", { class: "uf-text", "data-hook": "ufc-situation-line", text: line.sentence }));
+  }
+  const toggle = evidenceToggle(lines.map((l) => l.evidence).filter(Boolean), "ufc-situation-evidence");
+  if (toggle) block.appendChild(toggle);
+  if (missing.length) {
+    const more = el("details", { class: "uf-more", "data-hook": "ufc-situation-missing" });
+    more.appendChild(el("summary", { class: "uf-more__summary",
+      text: `WHAT THE SITUATION COULD NOT SAY (${missing.length})` }));
+    const list = el("ul", { class: "uf-plain" });
+    for (const item of missing) {
+      const row = el("li", { class: "uf-plain__item" });
+      row.appendChild(chip(String(item.status).toUpperCase(), item.status === "stale" ? "warn" : "plain"));
+      row.appendChild(el("strong", { class: "uf-plain__lead", text: " " + item.input + ". " }));
+      row.appendChild(el("span", { class: "uf-plain__body", text: item.detail }));
+      list.appendChild(row);
+    }
+    more.appendChild(list);
+    block.appendChild(more);
+  }
+  return block;
+}
+
 function marketBlock(view) {
   const block = el("div", { class: "uf-block", "data-hook": "ufc-market" });
   block.appendChild(subhead("WHAT THE PRICE SAYS"));
@@ -541,6 +577,8 @@ function readBlocks(panel, bout) {
     panel.appendChild(el("p", { class: "uf-small", "data-hook": "ufc-context", text: line.sentence }));
     if (line.caveat) panel.appendChild(el("p", { class: "uf-small", text: line.caveat }));
   }
+  const situation = situationView(read.situation);
+  if (situation) panel.appendChild(situation);
   panel.appendChild(marketBlock(read.market_view));
 }
 

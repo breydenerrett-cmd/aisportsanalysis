@@ -59,6 +59,7 @@ from typing import Any, Optional
 
 from src.analysis import strength
 from src.data import labels
+from src.situation import record as situation_record
 
 # ---------------------------------------------------------------------------
 # Thresholds. Fixed in advance; each is justified in docs/MATCHUP_READ.md.
@@ -131,6 +132,12 @@ RUN_LABEL = ("An estimate built from season averages. It has no track record "
 RESEARCH_NOTE = ("In our own pre-registered tests of features like these "
                  "against the market, none held up as a betting advantage. "
                  "Treat everything above as a description of the game.")
+
+# The short "Situation" block (src/situation/): where each club stands going into the game, in
+# sentences with their samples. Added to the read only when the page hands one in.
+SITUATION_LABEL = ("Where each club stands going into this game, from games before it. A description of "
+                   "the situation, not a forecast and not a claim that the price is wrong.")
+SITUATION_LINES = 6
 
 _GAME_TYPES = {"R": "regular season", "F": "wild card series", "D": "division series",
                "L": "league championship series", "W": "world series",
@@ -1955,7 +1962,7 @@ def build_read(payload: dict) -> dict:
                   "sentences": ["The price comparison could not be built from this page's data."],
                   "evidence": [], "agreement": "no price"}
         ctx.miss("Market price", "error", f"{type(exc).__name__}")
-    return {
+    out = {
         "label": LABEL,
         "as_of": ctx.as_of,
         "headline": _headline(ctx, ranked, run_env),
@@ -1966,3 +1973,14 @@ def build_read(payload: dict) -> dict:
         "what_would_change_it": _what_would_change_it(ctx, ranked),
         "missing": ctx.missing,
     }
+    # The situation block is its own key and only when the payload carries a record: a read built
+    # without one has exactly the keys it always had, and a record that cannot be shown costs the
+    # block, never the read.
+    try:
+        block = situation_record.page_block((payload or {}).get("situation"), label=SITUATION_LABEL,
+                                            limit=SITUATION_LINES)
+    except Exception:  # noqa: BLE001 -- additive, never takes the read down
+        block = None
+    if block is not None:
+        out["situation"] = block
+    return out
