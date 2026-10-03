@@ -57,7 +57,9 @@ One API key, every sport, stats and odds in one consistent shape.
 | ESPN core and site JSON, MMA | Open, no challenge. 34 seasons listed; event and bout data checked back to UFC 200 (2016). Per bout: both fighters with records, weight class, status, winner. Per fighter: height, reach, age, date of birth, stance, weight class, nickname, overall record, and a full fight history (34 fights for one fighter checked). Per fight: 43 statistics including knockdowns, significant strikes by target and by position (distance, clinch, ground), takedowns attempted and landed. Odds: DraftKings per bout with open, close and current for the over/under on rounds and spread, also present on completed fights. |
 | UFC.com athlete page | Plain HTML, no challenge. Shows striking accuracy, takedown figures, reach, significant strikes and wins by knockout. |
 
-Not yet verified: whether the moneyline open and close are stored for completed fights, whether control time is in the per-fight statistics, round-by-round splits (the linescores list came back empty), and the exact request volume a full backfill needs. ESPN's endpoints are unofficial and can change without notice, so every parser keeps saved fixtures and the freshness alarm below.
+Measured by the ingestion workers (2026-10-03): result names for KO/TKO, submission, unanimous, split and majority decisions, DQ, draw and no contest all seen live; per-fight statistics exist back to 2005 (UFC 52); control time is recorded from about 2018 on (zero before); odds with opening and closing lines from up to 12 sportsbooks per fight start between June and September 2019, including method-of-victory prices; a live in-fight provider is flagged so it is never read as a closing line. UFC.com answers a missing fighter with HTTP 200 (a search page or another fighter), so a profile is accepted only when the name and record match.
+
+Originally not yet verified: whether the moneyline open and close are stored for completed fights, whether control time is in the per-fight statistics, round-by-round splits (the linescores list came back empty), and the exact request volume a full backfill needs. ESPN's endpoints are unofficial and can change without notice, so every parser keeps saved fixtures and the freshness alarm below.
 
 ESPN serves the other leagues through the same structure (the same host and path pattern with a different sport and league). That is not yet probed for MLB, NFL, NHL or NBA; if it holds, one adapter pattern covers most of the table below, with the league feeds adding depth.
 
@@ -92,7 +94,7 @@ order follows LineHound's needs.
 | Piece | State | Branch or commit | Updated |
 |---|---|---|---|
 | Plan | written | this file | 2026-10-03 |
-| UFC data layer | waiting for a worker slot (cap of four); first attempt on ufcstats.com stopped at its browser check, nothing built; brief rewritten for ESPN plus UFC.com | | 2026-10-03 |
+| UFC data layer | schedule and results (92 tests), fighters and UFC.com profiles (115), fight statistics and odds (122), pipeline and CLI merged; features, matchup and API building; first backfill (2024 to 2026) running | `src/datasvc/ufc/`, `python -m src.datasvc.cli ufc ...` | 2026-10-03 |
 | MLB in service shape | not started | | |
 | NFL | not started | | |
 | NHL | not started | | |
