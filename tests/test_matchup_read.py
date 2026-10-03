@@ -1528,6 +1528,11 @@ if HAS_FASTAPI:
     from api import games as games_mod
     from src.providers import mlb
     from tests.test_api_games import _ResetEntriesCache, _schedule
+else:
+    # Linux CI has no FastAPI. The class below is skipped there, but its base must
+    # still exist when the module is imported, or the whole module fails to load
+    # (2026-10-03: CI reported tests.test_matchup_read as an import error).
+    _ResetEntriesCache = unittest.TestCase
 
 
 @unittest.skipUnless(HAS_FASTAPI, "fastapi not installed")
