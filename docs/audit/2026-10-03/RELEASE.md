@@ -24,10 +24,10 @@ Billing stays off. No card rule, gate or published pick changes.
 | Full suite (Windows) | 9,969 tests, no failure outside the eight known Windows-only identities |
 | Linux CI simulation (no FastAPI) | 651 tests in the changed modules, 0 failures |
 | Committed | yes |
-| Pushed | (filled in below) |
-| Linux CI | (filled in below) |
-| Staging | (filled in below) |
-| Production | (filled in below) |
+| Pushed | 17:16Z, `5398c83d` (inside the minute 15 to 39 window) |
+| Linux CI | success on Python 3.10, 3.11 and 3.12 (run 37139917877) |
+| Staging | verified from outside 17:20Z: health ok, checkout in Stripe test mode, restarted 17:17Z; `/admin/activation`, `/admin/testers` and `POST /billing/tester-checkout` refuse without a valid token (401); new `card.js`, `signin.js`, `admin.js` served. The staging click-through with a card is the owner's (`docs/billing/PURCHASE_REHEARSAL.md`) |
+| Production | deployed 17:42Z (run 37139264169, after two hung runs were cleared); verified from outside 17:47Z: health ok, billing off, new `card.js`, `signin.js` and `admin.js` served, `/admin/activation`, `/admin/testers`, `/admin/overview`, `/card` and `POST /billing/tester-checkout` refuse without a valid token (401), landing, index, `/meta` and `/postseason` answer 200 |
 
 ## Not in it
 
@@ -41,3 +41,8 @@ Billing stays off. No card rule, gate or published pick changes.
 
 ## Log
 
+- 17:16Z pushed `5398c83d` after fetch, merge, quick tests and the no-FastAPI run.
+- 17:20Z staging verified from outside (see table).
+- 17:38Z Linux CI green. Production was blocked behind a second hung deploy (run 37135966540, since 16:11Z); the owner cancelled it at 17:40Z.
+- 17:42Z production restarted on the release; verified from outside at 17:47Z (see table).
+- Example accounts (`/card/accounts`, the "If you had followed every pick" section) were merged after this push and are not in production yet.

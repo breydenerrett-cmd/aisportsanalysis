@@ -41,13 +41,25 @@ One API key, every sport, stats and odds in one consistent shape.
 
 | Order | Sport | Source | Notes |
 |---|---|---|---|
-| 1 | UFC | ufcstats.com pages | In progress. Fights, fighters, round stats. |
+| 1 | UFC | ESPN public JSON (core API) plus UFC.com athlete pages | Verified 2026-10-03, see below. ufcstats.com is behind a browser check and is not used. |
 | 2 | MLB | MLB Stats API (already used by LineHound) | Mostly exists; needs the service shape and daily refresh. |
 | 3 | NFL | nflverse open data releases | Play by play, rosters, schedules back to 1999. |
 | 4 | NHL | NHL public web API | Games, box, play by play, standings. |
 | 5 | NBA | NBA public stats endpoints | Rate limited and header sensitive; cache hard. |
 | 6 | Tennis | Existing BALLDONTLIE harvest plus public results | Harvest already holds ATP/WTA history. |
 | 7 | Odds, all sports | Our own Odds API captures and the BALLDONTLIE harvest | Forward only from when we captured. |
+
+## Source probes (2026-10-03, plain client, one request at a time)
+
+| Source | Result |
+|---|---|
+| ufcstats.com | Serves a JavaScript proof-of-work page instead of data. A script can only pass it by running the check, which we do not do. Not usable. |
+| ESPN core and site JSON, MMA | Open, no challenge. 34 seasons listed; event and bout data checked back to UFC 200 (2016). Per bout: both fighters with records, weight class, status, winner. Per fighter: height, reach, age, date of birth, stance, weight class, nickname, overall record, and a full fight history (34 fights for one fighter checked). Per fight: 43 statistics including knockdowns, significant strikes by target and by position (distance, clinch, ground), takedowns attempted and landed. Odds: DraftKings per bout with open, close and current for the over/under on rounds and spread, also present on completed fights. |
+| UFC.com athlete page | Plain HTML, no challenge. Shows striking accuracy, takedown figures, reach, significant strikes and wins by knockout. |
+
+Not yet verified: whether the moneyline open and close are stored for completed fights, whether control time is in the per-fight statistics, round-by-round splits (the linescores list came back empty), and the exact request volume a full backfill needs. ESPN's endpoints are unofficial and can change without notice, so every parser keeps saved fixtures and the freshness alarm below.
+
+ESPN serves the other leagues through the same structure (the same host and path pattern with a different sport and league). That is not yet probed for MLB, NFL, NHL or NBA; if it holds, one adapter pattern covers most of the table below, with the league feeds adding depth.
 
 A source can change or block us without notice. Each sport therefore keeps a
 raw page or response cache, a parser test suite on saved fixtures, and a
@@ -80,7 +92,7 @@ order follows LineHound's needs.
 | Piece | State | Branch or commit | Updated |
 |---|---|---|---|
 | Plan | written | this file | 2026-10-03 |
-| UFC data layer | building | worker in progress | 2026-10-03 |
+| UFC data layer | waiting for a worker slot (cap of four); first attempt on ufcstats.com stopped at its browser check, nothing built; brief rewritten for ESPN plus UFC.com | | 2026-10-03 |
 | MLB in service shape | not started | | |
 | NFL | not started | | |
 | NHL | not started | | |
