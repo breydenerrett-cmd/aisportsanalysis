@@ -1311,7 +1311,9 @@ def cmd_brief(args) -> int:
         print(f"ERROR: {exc}", file=sys.stderr)
         return EXIT_ERROR
 
-    logs = pitchers.read_logs() or None
+    # Regular-season rows only: these logs become starter features, and the
+    # store also holds tagged postseason starts (pitchers.regular_season_logs).
+    logs = pitchers.regular_season_logs(pitchers.read_logs()) or None
     prices = {}
     if odds_prov.is_configured() and not args.no_odds:
         try:
@@ -1588,7 +1590,7 @@ def cmd_analyze(args) -> int:
                   f"game {stored.get('game_number') or 1}. Re-run against the "
                   "other game_pk is not supported yet.")
 
-    logs = pitchers.read_logs() or None
+    logs = pitchers.regular_season_logs(pitchers.read_logs()) or None
     if logs is None:
         print("  (no pitcher logs -- starter section will carry a gap)")
 
@@ -1716,7 +1718,7 @@ def cmd_scan(args) -> int:
         print(f"no games scheduled for {args.date}")
         return EXIT_OK
 
-    logs = pitchers.read_logs()
+    logs = pitchers.regular_season_logs(pitchers.read_logs())
     if not logs:
         print("  (no pitcher logs -- starter signal unavailable)")
         logs = None
@@ -1903,7 +1905,7 @@ def cmd_predict(args) -> int:
         print(f"no games scheduled for {args.date}")
         return EXIT_OK
 
-    logs = pitchers.read_logs() if model["features"] and any(
+    logs = pitchers.regular_season_logs(pitchers.read_logs()) if model["features"] and any(
         f.startswith(("away_sp", "home_sp", "diff_sp")) for f in model["features"]
     ) else None
 

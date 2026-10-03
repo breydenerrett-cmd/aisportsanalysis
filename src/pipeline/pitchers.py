@@ -107,6 +107,45 @@ def write_logs(logs: dict, path=DEFAULT_LOG_STORE) -> str:
     return str(target)
 
 
+def is_regular_season(appearance) -> bool:
+    """True for a regular-season row. A row with no `game_type` IS regular
+    season -- every row written before the postseason was stored, and every
+    bookkeeping marker (`date: None`, `checked_utc`), carries none."""
+    return (appearance.get("game_type") or mlb.GAME_TYPE_REGULAR) in mlb.TRAINING_GAME_TYPES
+
+
+def regular_season_logs(logs) -> dict:
+    """A COPY of `logs` holding regular-season rows only: the shape every model
+    and every price is allowed to read.
+
+    WHY THIS EXISTS (2026-10-03). The display refresh stores postseason starts
+    in this file, each tagged with its `game_type`, so a postseason page can
+    show October. A starter's season-to-date numbers, his days of rest and the
+    league FIP constant are model inputs, and a postseason start is a different,
+    selected population (the best clubs, aces, no regular-season fatigue). Left
+    in, one Wild Card start moved a starter's ERA from 3.00 to 6.39 and flipped
+    the card's pick for the game. So every consumer that FEEDS A MODEL OR A
+    PRICE reads this view: `enrichment.enrichment_inputs` (the game pages, the
+    live card preview, the analyst), `postseason_page.build` and the CLI
+    commands that load the store. The view is what the store held before any
+    postseason row was written, so no input moves.
+
+    NEVER APPLY THIS INSIDE `read_logs`. `build_log_store` rewrites the whole
+    file from `read_logs`; a filter there would delete every postseason row on
+    the next refresh. The store keeps the rows, the readers leave them out.
+
+    Markers survive (they carry no `game_type`, so a refresh still reads as
+    coverage). A pitcher left with no row at all is absent, exactly as in a
+    store that never held his postseason starts. The input is not modified.
+    """
+    out = {}
+    for person, appearances in (logs or {}).items():
+        kept = [a for a in appearances if is_regular_season(a)]
+        if kept:
+            out[person] = kept
+    return out
+
+
 def probable_pitcher_ids(store) -> set:
     """Every pitcher who was a listed probable in the results store."""
     ids = set()

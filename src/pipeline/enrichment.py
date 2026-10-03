@@ -101,7 +101,13 @@ def enrichment_inputs(games, date, store) -> dict:
     """Every store-backed `build_slate` input for one date's `games`."""
     inputs = {}
 
-    logs = pitchers.read_logs()
+    # REGULAR SEASON ONLY. The store also holds postseason starts (tagged with
+    # their `game_type`) so the postseason page can show October. These logs
+    # become starter features for the game pages, the live card preview and
+    # the analyst, so the postseason rows are left out HERE, at the consumer:
+    # `read_logs` stays whole because `build_log_store` rewrites the file from
+    # it. See `pitchers.regular_season_logs`.
+    logs = pitchers.regular_season_logs(pitchers.read_logs())
     inputs["pitcher_logs"] = logs or None
 
     pens = {}

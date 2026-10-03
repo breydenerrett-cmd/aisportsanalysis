@@ -94,6 +94,7 @@ from typing import Callable, Mapping, Optional, Sequence
 from src.analysis import matchup_model as mm
 from src.analysis import postseason as ps
 from src.analysis import postseason_config as pc
+from src.pipeline import pitchers as pitchers_mod
 
 MODEL_ID = "POSTSEASON_PAGE_V1"
 MODEL_NAME = "Series chances from team run rates, starters, bullpens and parks"
@@ -785,8 +786,13 @@ class _Context:
         if not isinstance(rows, (list, tuple)):
             return
         season = self.cutoff[:4]
+        # Regular-season rows only, whatever the fetcher returns: the feed's
+        # default answer is the regular season, but a fetcher that asked for
+        # the postseason too (tagged rows) must not smuggle October into a
+        # model input. Same rule as the stored logs (see `build`).
         clean = [dict(r) for r in rows if isinstance(r, Mapping) and r.get("date")
-                 and str(r["date"]) <= self.today and not r.get("empty")]
+                 and str(r["date"]) <= self.today and not r.get("empty")
+                 and pitchers_mod.is_regular_season(r)]
         if not any(str(r["date"])[:4] == season for r in clean):
             return
         if not self._logs_copied:
@@ -1797,6 +1803,16 @@ def build(now, results_store=None, standings=None, probables=None, *,
 
         if pitcher_logs is None:
             pitcher_logs = _load_default("pitchers")
+        # REGULAR SEASON ONLY, for every number this build prices and every
+        # date it prints. The stored log also holds postseason starts, tagged
+        # with their `game_type`, so the page can see October; a starter's
+        # season-to-date numbers are a model input and a postseason start is a
+        # different, selected population. Filtering here (a copy, at the
+        # consumer; `pitchers.read_logs` stays whole because the store is
+        # rewritten from it) makes every figure below what it was before any
+        # postseason row was stored, including the "run through" date and the
+        # currency rule that decides whether a starter counts at all.
+        pitcher_logs = pitchers_mod.regular_season_logs(pitcher_logs)
         if bullpen_log is None:
             bullpen_log = _load_default("bullpen")
         bullpen_all = bullpen_log
