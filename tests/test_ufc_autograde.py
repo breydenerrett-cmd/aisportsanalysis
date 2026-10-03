@@ -271,14 +271,126 @@ class AutogradeDate(Base):
         self.assertEqual(len(ufc_results.read_all(self.results)), 1)
 
     def test_a_manual_row_is_never_buried_by_a_rerun(self):
+        # Changed 2026-10-03 (ESPN source): a source that DISAGREES with a hand
+        # row is now reported (`disagree`) instead of silently skipped. What did
+        # not change: nothing is written, the hand row still stands.
         self.publish(D2, ONE)
         ufc_results.record_result(date=D2, fight="Fighter A vs Fighter B", winner="Fighter B",
                                   entered_by="brey", now=NOW, path=self.results)
         decisions = self.grade(D2, FakeProvider(
             [pf(1, "Fighter A", "Fighter B", winner="Fighter A")]))
-        self.assertEqual(decisions[0].action, ag.ACTION_SKIP)
+        self.assertEqual(decisions[0].action, ag.ACTION_DISAGREE)
+        self.assertIn("DISAGREES", decisions[0].reason)
+        self.assertEqual(decisions[0].existing["winner"], "Fighter B")
+        self.assertEqual(decisions[0].winner, "Fighter A")   # what the source says, not written
         found = ufc_results.result_for_fight(D2, "Fighter A", "Fighter B", path=self.results)
         self.assertEqual((found["winner"], found["entered_by"]), ("Fighter B", "brey"))
+        self.assertEqual(len(ufc_results.read_all(self.results)), 1)
+
+    def test_a_manual_row_the_source_agrees_with_is_skipped_and_says_so(self):
+        self.publish(D2, ONE)
+        ufc_results.record_result(date=D2, fight="Fighter B vs Fighter A", winner="Fighter A",
+                                  entered_by="brey", now=NOW, path=self.results)
+        (d,) = self.grade(D2, FakeProvider(
+            [pf(1, "Fighter A", "Fighter B", winner="Fighter A")]))
+        self.assertEqual(d.action, ag.ACTION_SKIP)
+        self.assertIn("fake agrees", d.reason)
+        self.assertEqual(d.provenance["provider_fight_id"], "1")   # shown, never written
+        self.assertEqual(len(ufc_results.read_all(self.results)), 1)
+
+    def test_void_labels_that_grade_the_same_are_not_a_disagreement(self):
+        self.publish(D2, ONE)
+        ufc_results.record_result(date=D2, fight="Fighter A vs Fighter B",
+                                  outcome="cancelled", entered_by="brey", now=NOW,
+                                  path=self.results)
+        (d,) = self.grade(D2, FakeProvider([pf(1, "Fighter A", "Fighter B",
+                                                outcome=ufc_results.OUTCOME_NO_CONTEST)]))
+        self.assertEqual(d.action, ag.ACTION_SKIP)
+        self.assertIn("agrees", d.reason)
+
+    def test_win_on_file_against_a_void_from_the_source_is_a_disagreement(self):
+        self.publish(D2, ONE)
+        ufc_results.record_result(date=D2, fight="Fighter A vs Fighter B", winner="Fighter A",
+                                  entered_by="brey", now=NOW, path=self.results)
+        (d,) = self.grade(D2, FakeProvider([pf(1, "Fighter A", "Fighter B",
+                                                outcome=ufc_results.OUTCOME_DRAW)]))
+        self.assertEqual(d.action, ag.ACTION_DISAGREE)
+
+    def test_source_with_nothing_final_cannot_confirm_a_row_but_does_not_object(self):
+        self.publish(D2, ONE)
+        ufc_results.record_result(date=D2, fight="Fighter A vs Fighter B", winner="Fighter A",
+                                  entered_by="brey", now=NOW, path=self.results)
+        (d,) = self.grade(D2, FakeProvider([pf(1, "Fighter A", "Fighter B",
+                                                status=ag.STATUS_PENDING, raw="in_progress")]))
+        self.assertEqual(d.action, ag.ACTION_SKIP)
+        self.assertIn("could not confirm", d.reason)
+
+    def test_an_unreachable_source_does_not_break_a_run_that_has_nothing_to_record(self):
+        self.publish(D2, ONE)
+        ufc_results.record_result(date=D2, fight="Fighter A vs Fighter B", winner="Fighter A",
+                                  entered_by="brey", now=NOW, path=self.results)
+        (d,) = self.grade(D2, FakeProvider(error=ag.ProviderError("no network")))
+        self.assertEqual(d.action, ag.ACTION_SKIP)
+        self.assertIn("not compared", d.reason)
+        self.assertIn("no network", d.reason)
+
+    def test_an_unreachable_source_still_stops_a_run_that_needs_a_result(self):
+        self.publish(D2, ONE + [("g2", "Fighter C", "Fighter D", "home", -150.0,
+                                 "2026-09-26T20:00:00Z")])
+        ufc_results.record_result(date=D2, fight="Fighter A vs Fighter B", winner="Fighter A",
+                                  entered_by="brey", now=NOW, path=self.results)
+        with self.assertRaises(ag.ProviderError):
+            self.grade(D2, FakeProvider(error=ag.ProviderError("no network")))
+        self.assertEqual(len(ufc_results.read_all(self.results)), 1)
+
+    def test_an_earlier_automatic_row_is_compared_too_and_never_overwritten(self):
+        self.publish(D2, ONE)
+        self.grade(D2, FakeProvider([pf(1, "Fighter A", "Fighter B", winner="Fighter A")]))
+        (d,) = self.grade(D2, FakeProvider([pf(1, "Fighter A", "Fighter B",
+                                                winner="Fighter B")]))
+        self.assertEqual(d.action, ag.ACTION_DISAGREE)
+        self.assertEqual(len(ufc_results.read_all(self.results)), 1)
+
+    def _settled_with_a_hand_row(self, winner):
+        self.publish(D2, ONE)
+        ufc_results.record_result(date=D2, fight="Fighter A vs Fighter B", winner=winner,
+                                  entered_by="brey", now=NOW, path=self.results)
+        ufc_report.settle_for_date(D2, now=NOW, path=self.ledger, results_path=self.results)
+
+    def test_verify_examines_settled_picks_that_a_normal_run_leaves_alone(self):
+        self._settled_with_a_hand_row("Fighter A")
+        provider = FakeProvider([pf(1, "Fighter A", "Fighter B", winner="Fighter A")])
+        self.assertEqual(self.grade(D2, provider), [])
+        (d,) = self.grade(D2, provider, verify=True)
+        self.assertEqual(d.action, ag.ACTION_SKIP)
+        self.assertIn("agrees", d.reason)
+        self.assertEqual(len(ufc_results.read_all(self.results)), 1)
+
+    def test_verify_reports_a_disagreement_on_a_settled_pick(self):
+        self._settled_with_a_hand_row("Fighter B")
+        (d,) = self.grade(D2, FakeProvider([pf(1, "Fighter A", "Fighter B",
+                                                winner="Fighter A")]), verify=True)
+        self.assertEqual(d.action, ag.ACTION_DISAGREE)
+        self.assertEqual(len(ufc_results.read_all(self.results)), 1)
+
+    def test_verify_never_writes_even_for_a_pick_that_has_no_row(self):
+        self.publish(D2, ONE)
+        (d,) = self.grade(D2, FakeProvider([pf(1, "Fighter A", "Fighter B",
+                                                winner="Fighter A")]), verify=True)
+        self.assertEqual(d.action, ag.ACTION_RECORD)   # "would record", not written
+        self.assertEqual(ufc_results.read_all(self.results), [])
+
+    def test_dry_run_never_writes_even_when_a_disagreement_exists(self):
+        self.publish(D2, ONE + [("g2", "Fighter C", "Fighter D", "home", -150.0,
+                                 "2026-09-26T20:00:00Z")])
+        ufc_results.record_result(date=D2, fight="Fighter A vs Fighter B", winner="Fighter B",
+                                  entered_by="brey", now=NOW, path=self.results)
+        decisions = self.grade(D2, FakeProvider([
+            pf(1, "Fighter A", "Fighter B", winner="Fighter A"),
+            pf(2, "Fighter C", "Fighter D", winner="Fighter C")]), dry_run=True)
+        self.assertEqual([d.action for d in decisions],
+                         [ag.ACTION_DISAGREE, ag.ACTION_RECORD])
+        self.assertEqual(len(ufc_results.read_all(self.results)), 1)
 
     def test_manual_correction_after_an_automatic_row_wins_at_settlement(self):
         self.publish(D2, ONE)

@@ -3992,53 +3992,97 @@ def cmd_ufc(args) -> int:
     if sub == "autograde":
         from src.pipeline import ufc_autograde, ufc_results
 
-        if getattr(args, "fixture", None):
+        def say(text, stream=None):
+            # A fighter's name can hold a letter the console's code page lacks
+            # (cp1252 on Windows has no c-acute): never let printing crash a run
+            # that has already written its rows.
+            stream = stream or sys.stdout
+            try:
+                print(text, file=stream)
+            except UnicodeEncodeError:
+                enc = getattr(stream, "encoding", None) or "ascii"
+                print(text.encode(enc, "replace").decode(enc), file=stream)
+
+        source = getattr(args, "source", None)
+        fixture = getattr(args, "fixture", None)
+        if fixture:
+            if source not in (None, "balldontlie"):
+                say("ERROR: --fixture is a BALLDONTLIE-shaped file and only works with "
+                    "--source balldontlie (an offline ESPN replay is --offline with "
+                    "--cache-dir)", sys.stderr)
+                return EXIT_ERROR
+            source = "balldontlie"
+        source = source or "espn"
+        offline = bool(getattr(args, "offline", False))
+        if offline and source != "espn":
+            say("ERROR: --offline replays the saved ESPN cache; it needs --source espn",
+                sys.stderr)
+            return EXIT_ERROR
+
+        if source == "espn":
+            from src.providers import espn_mma_results
+            provider = espn_mma_results.EspnMmaResultsProvider(
+                espn_mma_results.make_fetcher(getattr(args, "cache_dir", None),
+                                              offline=offline),
+                live=not offline)
+        elif fixture:
             from src.providers import balldontlie_mma
-            provider = balldontlie_mma.provider_from_fixture(args.fixture)
+            provider = balldontlie_mma.provider_from_fixture(fixture)
         else:
             from src.providers import balldontlie_mma
             try:
                 provider = balldontlie_mma.BallDontLieMmaProvider.from_env()
             except ufc_autograde.ProviderError as exc:
-                print(f"BLOCKED: {exc}", file=sys.stderr)
+                say(f"BLOCKED: {exc}", sys.stderr)
                 return EXIT_NOT_CONFIGURED
         kwargs = {}
         if getattr(args, "ledger_path", None):
             kwargs["ledger_path"] = args.ledger_path
         if getattr(args, "results_path", None):
             kwargs["results_path"] = args.results_path
-        dry = bool(getattr(args, "dry_run", False))
+        verify = bool(getattr(args, "verify", False))
+        dry = bool(getattr(args, "dry_run", False)) or verify
         try:
             decisions = ufc_autograde.autograde_date(
-                args.date, provider, dry_run=dry, **kwargs)
+                args.date, provider, dry_run=dry, verify=verify, **kwargs)
         except ufc_autograde.ProviderError as exc:
-            print(f"BLOCKED: {exc}", file=sys.stderr)
+            say(f"BLOCKED: {exc}", sys.stderr)
             return EXIT_ERROR
         except ufc_results.UfcResultsError as exc:
-            print(f"ERROR: {exc}", file=sys.stderr)
+            say(f"ERROR: {exc}", sys.stderr)
             return EXIT_ERROR
         if not decisions:
-            print(f"no published UFC picks needing a result for {args.date}")
+            say(f"no published UFC picks for {args.date}" if verify
+                else f"no published UFC picks needing a result for {args.date}")
             return EXIT_OK
+        if verify:
+            say(f"verify {args.date} against {provider.name}: every published pick, "
+                "including ones already settled, compared with the result on file. "
+                "Nothing is written.")
         verb = {"record": "WOULD RECORD" if dry else "RECORDED",
                 "unresolved": "UNRESOLVED (human needed)",
-                "skip": "SKIPPED"}
+                "skip": "SKIPPED",
+                "disagree": "DISAGREES (nothing changed)"}
         for d in decisions:
             line = f"{verb[d.action]}  {d.bout.fight}"
-            if d.action == "record":
+            if d.action in ("record", "disagree"):
                 line += f"  outcome={d.outcome}" + (f" winner={d.winner}" if d.winner else "")
-            print(line)
-            print(f"    why: {d.reason}")
-            if d.action == "record":
-                print(f"    provenance: {d.provenance}")
+            say(line)
+            say(f"    why: {d.reason}")
+            if d.provenance and (verify or d.action in ("record", "disagree")):
+                say(f"    provenance: {d.provenance}")
         counts = {k: sum(1 for d in decisions if d.action == k)
-                  for k in ("record", "unresolved", "skip")}
-        print(f"{'dry run -- nothing written. ' if dry else ''}"
-              f"{counts['record']} to record, {counts['unresolved']} unresolved, "
-              f"{counts['skip']} skipped")
+                  for k in ("record", "unresolved", "skip", "disagree")}
+        say(f"{'dry run -- nothing written. ' if dry else ''}"
+            f"{counts['record']} to record, {counts['unresolved']} unresolved, "
+            f"{counts['skip']} skipped, {counts['disagree']} disagree")
+        if counts["disagree"]:
+            say(f"ATTENTION: {provider.name} disagrees with {counts['disagree']} result(s) "
+                "already on file. Nothing was changed; a correction is a new row entered "
+                "by a person (python -m src.cli ufc result ...).", sys.stderr)
         if not dry and counts["record"]:
-            print(f"next: python -m src.cli card settle --sport mma --date {args.date}")
-        return EXIT_OK
+            say(f"next: python -m src.cli card settle --sport mma --date {args.date}")
+        return EXIT_ERROR if counts["disagree"] else EXIT_OK
 
     print(f"unknown ufc subcommand: {sub}")
     return EXIT_ERROR
@@ -4539,17 +4583,35 @@ def build_parser() -> argparse.ArgumentParser:
 
     ufc_autograde_cmd = ufc_sub.add_parser(
         "autograde",
-        help="grade published UFC picks from a results provider "
-             "(BALLDONTLIE MMA) into the results store; --dry-run prints "
-             "what it would record and why")
+        help="grade published UFC picks from a results source (ESPN by default, "
+             "no key; BALLDONTLIE selectable) into the results store; --dry-run "
+             "prints what it would record and why; --verify audits the results "
+             "already on file against the source and writes nothing")
     ufc_autograde_cmd.add_argument("--date", required=True,
                                    help="YYYY-MM-DD card date (as in the ledger)")
     ufc_autograde_cmd.add_argument("--dry-run", dest="dry_run", action="store_true",
                                    help="print decisions, write nothing")
     ufc_autograde_cmd.add_argument(
+        "--source", choices=("espn", "balldontlie"), default=None,
+        help="where results come from (default: espn; --fixture alone implies "
+             "balldontlie). A result a person already entered is never overwritten: "
+             "the source is compared with it and any disagreement is reported")
+    ufc_autograde_cmd.add_argument(
+        "--verify", action="store_true",
+        help="read-only audit: compare the source with the result on file for EVERY "
+             "published pick of the date, including picks already settled "
+             "(implies --dry-run)")
+    ufc_autograde_cmd.add_argument(
+        "--cache-dir", dest="cache_dir", default=None,
+        help="espn: the raw response cache (default data/datasvc/raw, untracked)")
+    ufc_autograde_cmd.add_argument(
+        "--offline", action="store_true",
+        help="espn: make no request; read everything from --cache-dir and fail on a "
+             "miss (replay a saved grading)")
+    ufc_autograde_cmd.add_argument(
         "--fixture", default=None,
-        help="offline: read the provider response from this JSON file instead "
-             "of calling the API (no key needed)")
+        help="offline, balldontlie only: read the provider response from this JSON "
+             "file instead of calling the API (no key needed)")
     ufc_autograde_cmd.add_argument(
         "--ledger-path", dest="ledger_path", default=None,
         help="read the published card from this ledger file (default: the real one)")
