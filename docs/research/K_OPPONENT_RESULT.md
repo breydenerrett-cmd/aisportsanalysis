@@ -147,9 +147,10 @@ registration and unable to change the verdict):
 2. **Placebo.** With the opposing team shuffled among the starts of each date (the
    same factor distribution, the wrong team), mean d turns **negative**: 2023
    -0.00583 [-0.00847, -0.00304] at 4.5 and -0.00491 [-0.00805, -0.00184] at 5.5;
-   2024 -0.00803 [-0.01183, -0.00435] and -0.00771 [-0.01149, -0.00387]. A leak or a
-   systematic bias would not reverse with the label scrambled. The signal depends on
-   the right team.
+   2024 -0.00803 [-0.01183, -0.00435] and -0.00771 [-0.01149, -0.00387]. The signal depends on
+   the right team, which rules out a bias in the factor's distribution alone. It does
+   not rule out a leak through the true team's record (scrambling would remove that
+   too); the point-in-time tests and check 1 are the evidence against a leak.
 3. **Scale.** The slope of the strikeout residual (K minus the baseline's expected K)
    on the applied shift (baseline expected K times factor minus one) is **1.13 in
    2023 and 1.22 in 2024**: the factor is about the right size, if anything slightly
