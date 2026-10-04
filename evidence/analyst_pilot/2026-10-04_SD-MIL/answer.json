@@ -1,46 +1,91 @@
 {
-  "summary": "I pass on all three markets. Milwaukee is the favorite at -130 and the case is real: Logan Henderson has an ERA of 2.4712 against 3.2108 for Michael King, and MIL has the better run differential per game, 1.319 against 0.259. But the books' own de-vigged number for MIL is 0.5535, and that already reflects most of the starter and team-quality gap, so I do not see what the price misses. King's FIP of 4.1311 and recent ERA of 5.2941 lean toward MIL, but Henderson has only 98.33 innings this year. Lineups are not posted, and there is no matchup history or standings snapshot, so any lean rests on thin ground. On the run line, SD +1.5 at -185 is too expensive to chase, and MIL -1.5 at +165 needs a bigger win than the evidence supports. The total of 7 is priced almost level, with the over at 0.5092 fair probability, a retractable roof and a wind of 11.9 mph that I cannot read without knowing the roof status. The market is probably right on all three.",
+  "summary": "I lean Milwaukee at -128. Logan Henderson has the better numbers going in, with a 2.4712 ERA and 3.5027 FIP against 3.2108 and 4.1311 for Michael King, and Milwaukee's run differential per game is 1.319 against San Diego's 0.259. Adrian Morejon looks likely unavailable for San Diego after 31 pitches yesterday, while every Milwaukee reliever is listed as available. I put Milwaukee a few points above the books' 0.5511, so my number is only a little off the price. The case against is that Henderson's ERA runs well under his FIP.\n\nI pass on the run line. The packet says nothing about margin beyond the moneyline view, and SD +1.5 at -185 is already expensive, so I think the market is about right. I also pass on the total of 7, which the books split almost evenly. Both starters are strong, the wind is 12.1 mph from 306 degrees, and the packet does not say if the roof is open. Standings and team totals are missing, and no props were analyzed.",
   "calls": [
     {
       "slot_id": "moneyline",
       "market": "moneyline",
       "selection": "MIL",
-      "verdict": "PASS",
-      "price": -130,
+      "verdict": "TAKE",
+      "price": -128,
       "book": "lowvig",
-      "fair_estimate": 0.56,
-      "confidence": "low",
+      "fair_estimate": 0.58,
+      "confidence": "medium",
       "reasons": [
         {
-          "claim": "MIL has the better starter on ERA and FIP, but the books' fair probability for MIL already sits above a coin flip, so the price likely includes it.",
+          "claim": "Milwaukee has the better starter on the season numbers: Henderson's ERA and FIP are both lower than King's, and his strikeout-minus-walk rate is far higher.",
           "evidence": [
             {"path": "sections.starters.values.home_sp_era", "value": 2.4712},
             {"path": "sections.starters.values.away_sp_era", "value": 3.2108},
             {"path": "sections.starters.values.home_sp_fip", "value": 3.5027},
             {"path": "sections.starters.values.away_sp_fip", "value": 4.1311},
-            {"path": "markets.moneyline.options[0].fair_probability", "value": 0.5535}
+            {"path": "sections.starters.values.home_sp_k_bb_pct", "value": 0.2453},
+            {"path": "sections.starters.values.away_sp_k_bb_pct", "value": 0.1176}
           ],
           "derived": []
         },
         {
-          "claim": "MIL also has the better run differential per game, which agrees with the starter advantage but is again something the market sees.",
+          "claim": "Milwaukee has been the stronger team by run differential, and is far better at home than San Diego is on the road.",
           "evidence": [
             {"path": "sections.teams.values.home_run_diff_pg", "value": 1.319},
-            {"path": "sections.teams.values.away_run_diff_pg", "value": 0.259}
+            {"path": "sections.teams.values.away_run_diff_pg", "value": 0.259},
+            {"path": "sections.teams.values.home_home_win_pct", "value": 0.6709},
+            {"path": "sections.teams.values.away_away_win_pct", "value": 0.4878}
           ],
           "derived": []
         },
         {
-          "claim": "Lineups are not posted, so the matchup cannot be judged and the lean rests on thin ground.",
+          "claim": "San Diego's Adrian Morejon is likely unavailable after 31 pitches yesterday, and every Milwaukee reliever is listed as available, so the late innings tilt toward Milwaukee.",
           "evidence": [
-            {"path": "missing[0].item", "value": "lineups"}
+            {"path": "sections.bullpen.values.SD.relievers[0].name", "value": "Adrian Morejon"},
+            {"path": "sections.bullpen.values.SD.relievers[0].availability", "value": "likely_unavailable"},
+            {"path": "sections.bullpen.values.SD.relievers[0].appearances[0].pitches", "value": 31},
+            {"path": "sections.bullpen.values.MIL.relievers[0].availability", "value": "available"}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Milwaukee's posted lineup has hit well against the sinker, the primary pitch of the starter it faces, over a large sample.",
+          "evidence": [
+            {"path": "sections.matchup_depth.values.home.pitch_mix.lineup_vs_primary.woba", "value": 0.3797},
+            {"path": "sections.matchup_depth.values.home.pitch_mix.lineup_vs_primary.pa", "value": 975}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The books already lean Milwaukee, and my number is only a few points above theirs, so this is a small disagreement with the price rather than a big one.",
+          "evidence": [
+            {"path": "markets.moneyline.options[0].fair_probability", "value": 0.5511},
+            {"path": "markets.moneyline.options[0].best.price", "value": -128},
+            {"path": "markets.moneyline.options[0].best.book", "value": "lowvig"}
           ],
           "derived": []
         }
       ],
-      "pass_price": -127,
-      "what_would_change_it": "A posted MIL lineup that holds up against the SD starter, together with a price of -127 or better on MIL, would turn this into a take.",
-      "case_against": null
+      "pass_price": -138,
+      "what_would_change_it": "A scratch of Henderson, a Milwaukee lineup change that removes key bats, or a price worse than -138 would turn this into a pass.",
+      "case_against": {
+        "claim": "Henderson's 2.4712 ERA sits 1.0315 runs below his 3.5027 FIP, so his ERA likely flatters him over a 98.33 inning sample, and the starter Milwaukee's lineup faces has allowed 0.2852 wOBA to left-handed hitters against 0.3019 to right-handed, so Milwaukee's six left-handed bats do not get the usual platoon lift.",
+        "evidence": [
+          {"path": "sections.starters.values.home_sp_era", "value": 2.4712},
+          {"path": "sections.starters.values.home_sp_fip", "value": 3.5027},
+          {"path": "sections.starters.values.home_sp_innings", "value": 98.33},
+          {"path": "sections.matchup_depth.values.home.handedness.starter.vs_left_woba", "value": 0.2852},
+          {"path": "sections.matchup_depth.values.home.handedness.starter.vs_right_woba", "value": 0.3019},
+          {"path": "sections.matchup_depth.values.home.handedness.lineup_counts.L", "value": 6}
+        ],
+        "derived": [
+          {
+            "value": 1.0315,
+            "unit": "runs",
+            "op": "difference",
+            "inputs": [
+              "sections.starters.values.home_sp_fip",
+              "sections.starters.values.home_sp_era"
+            ],
+            "note": "Henderson's FIP minus his ERA: how far his ERA runs below his FIP."
+          }
+        ]
+      }
     },
     {
       "slot_id": "run_line",
@@ -49,28 +94,37 @@
       "verdict": "PASS",
       "price": -185,
       "book": "mybookieag",
-      "fair_estimate": 0.64,
+      "fair_estimate": 0.63,
       "confidence": "low",
       "reasons": [
         {
-          "claim": "The books' fair probability for SD +1.5 is already high and the best price is steep, so the market looks about right and there is little reason to pay for it. My own number is close to theirs.",
+          "claim": "The books' own de-vigged numbers put SD +1.5 near 0.63 and MIL -1.5 near 0.37, and I have nothing in the packet that moves me off that.",
           "evidence": [
-            {"path": "markets.run_line.options[0].best.price", "value": -185},
-            {"path": "markets.run_line.options[0].fair_probability", "value": 0.6318}
+            {"path": "markets.run_line.options[0].fair_probability", "value": 0.6303},
+            {"path": "markets.run_line.options[1].fair_probability", "value": 0.3697}
           ],
           "derived": []
         },
         {
-          "claim": "MIL -1.5 pays well, but nothing in the packet shows MIL winning by two or more more often than the price implies, and lineups are missing.",
+          "claim": "My Milwaukee lean is about who wins, not by how much, and the packet has no margin-specific inputs: no team-total prices were captured.",
           "evidence": [
-            {"path": "markets.run_line.options[1].best.price", "value": 165},
-            {"path": "missing[0].item", "value": "lineups"}
+            {"path": "missing[2].item", "value": "team_totals"},
+            {"path": "sections.teams.values.home_run_diff_pg", "value": 1.319},
+            {"path": "sections.teams.values.away_run_diff_pg", "value": 0.259}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "SD +1.5 is quoted from -185 up to -200 across books, so the price already charges heavily for the cushion.",
+          "evidence": [
+            {"path": "markets.run_line.options[0].best.price", "value": -185},
+            {"path": "markets.run_line.options[0].quotes[0].price", "value": -200}
           ],
           "derived": []
         }
       ],
-      "pass_price": -178,
-      "what_would_change_it": "A price of -178 or better on SD +1.5, or posted lineups showing a clear mismatch, would be the new fact needed to revisit this market.",
+      "pass_price": -170,
+      "what_would_change_it": "SD +1.5 at a price better than -170 would make me take it.",
       "case_against": null
     },
     {
@@ -84,32 +138,36 @@
       "confidence": "low",
       "reasons": [
         {
-          "claim": "The total is priced almost level between over and under, and the packet gives nothing beyond the price that separates them, so my number sits next to the books' number.",
+          "claim": "The books split the total almost evenly, so the market sees a near coin flip and I see no reason to argue.",
           "evidence": [
-            {"path": "markets.total.options[0].fair_probability", "value": 0.5092},
-            {"path": "markets.total.options[1].fair_probability", "value": 0.4908}
+            {"path": "markets.total.options[0].fair_probability", "value": 0.5098},
+            {"path": "markets.total.options[1].fair_probability", "value": 0.4902},
+            {"path": "markets.total.options[1].best.price", "value": 100}
           ],
           "derived": []
         },
         {
-          "claim": "Weather is hard to use because the park has a retractable roof and the packet does not say whether it will be open.",
+          "claim": "The packet points both ways: strong starter ERAs push toward the under, while both offenses score at a solid clip and push toward the over.",
           "evidence": [
-            {"path": "sections.park.values.roof", "value": "retractable"},
-            {"path": "sections.weather.values.wind_mph", "value": 11.9}
+            {"path": "sections.starters.values.home_sp_era", "value": 2.4712},
+            {"path": "sections.starters.values.away_sp_era", "value": 3.2108},
+            {"path": "sections.teams.values.home_runs_scored_pg", "value": 5.119},
+            {"path": "sections.teams.values.away_runs_scored_pg", "value": 4.438}
           ],
           "derived": []
         },
         {
-          "claim": "Both starters carry strong strikeout and walk numbers, but no lineup is posted, so run scoring cannot be judged.",
+          "claim": "Wind and roof are not usable: the wind speed and direction are given, but the packet does not give the park orientation or say whether the retractable roof will be open.",
           "evidence": [
-            {"path": "sections.starters.values.home_sp_k_bb_pct", "value": 0.2453},
-            {"path": "missing[0].item", "value": "lineups"}
+            {"path": "sections.weather.values.wind_mph", "value": 12.1},
+            {"path": "sections.weather.values.wind_from_deg", "value": 306},
+            {"path": "sections.park.values.roof", "value": "retractable"}
           ],
           "derived": []
         }
       ],
       "pass_price": -104,
-      "what_would_change_it": "A price of -104 or better on the over, a confirmed roof status, or posted lineups that change the run-scoring picture would be the new fact needed to revisit this market.",
+      "what_would_change_it": "Over 7 at a price better than -104, or confirmation of the roof status with a wind blowing out, would make me take the over.",
       "case_against": null
     }
   ],

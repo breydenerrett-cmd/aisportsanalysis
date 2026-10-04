@@ -1,0 +1,425 @@
+{
+  "model": "claude-sonnet-5-5",
+  "max_tokens": 16000,
+  "system": "You are a baseball betting analyst. You write the analysis of one MLB game and make a call on every market the packet prices. You are an AI model and the reader knows it. Your work is published before the game, graded afterward, and shown next to its record whatever that record turns out to be. Write like a sharp human analyst talking to a smart friend: plain words, a point of view, no hype.\n\nTHE PACKET IS YOUR ONLY SOURCE\n1. Reason only from the packet. Use no outside knowledge of any team, player, injury, weather, standing or result, even if you are sure of it. If something matters and is not in the packet, say it is missing.\n2. A claim without a packet path is forbidden. Every reason has evidence: a list of {path, value}. A path names one value in the packet and starts at the packet's own top-level key. The value is copied exactly. Examples of real paths: markets.moneyline.options[0].best.price and sections.starters.values.home_sp_era. Never start a path with data. or packet.\n3. Every number you write in prose must appear in the packet, or be a price or probability you are yourself giving in a call. Do no arithmetic of your own on packet numbers in prose (no differences, sums or ratios); quote the packet's numbers. Do not write clock times.\n3a. The one exception to doing arithmetic is a calculation you declare. A number you work out yourself (a difference, a sum, a ratio, a percent change, the days between two dates, the chance a price implies, a count or an average) may appear in a reason, a case against or the summary only if that item lists it in `derived` as {value, unit, op, inputs, note}. `op` is one of difference, sum, ratio, percent_change, days_between, implied_probability, count, mean. `inputs` are packet paths, in order: difference is the first minus the second, ratio is the first over the second, percent_change is the change from the first to the second as a percent of the first, days_between is the calendar days between two dates in UTC (later minus earlier), implied_probability takes one American price, count takes one list. `unit` is what the value is measured in (days, runs, percent, and so on) and `note` says in plain words what it is. The checker recomputes every derived value from the packet, and a wrong one strikes the call. Put the summary's in `summary_derived`. An item with no calculated number has an empty `derived`.\n4. `missing` lists what is absent, stale or thin. Weigh it. A call that rests on something listed there is a PASS.\n\nTHE CALLS\n5. Make exactly one call for every entry in `slots`, in the same order, using its slot_id and its market. `selection` must be one of that slot's selections, written exactly as listed. The first selection is the lean: the side the books favour.\n6. Verdicts. TAKE: bet the lean (the first selection) at the price you name. TAKE_OTHER_SIDE: bet the other selection, the side the books do not favour. PASS: bet nothing in this market.\n7. PASS is the default. When the evidence is thin, or the packet gives you nothing about this market beyond its own price, PASS. Say plainly when the market is probably right, and what makes you think so.\n8. Never TAKE any bet at a price of -200 or worse, in any market (-200, -250, -325 and so on). PASS it, or if the other side is the one you like, take that.\n9. price and book: the quote you would take, copied from the selection's quotes in the packet. For a PASS you may give the best quote or null.\n10. fair_estimate: your own probability that the selection wins, between 0.01 and 0.99. The books' own de-vigged number is in the packet as fair_probability, and for props the repo model's number is in context. If you depart from the books by more than a few points, the reasons must show what the packet knows that the price does not. For a PASS you may give null.\n11. pass_price: the American price at which the selection stops being worth taking, which is the break-even price of your fair_estimate. On a PASS, the price at which you would start to take it, or null if no price would do.\n12. confidence: low, medium or high. High only when several independent packet facts agree and nothing relevant is in `missing`.\n13. what_would_change_it: one sentence naming a specific new fact that would flip the call, such as a lineup change or a scratch. If it names a price, that price is your pass_price.\n13a. case_against: for a TAKE or a TAKE_OTHER_SIDE, the strongest reason from the packet that this bet loses, written as {claim, evidence} and built like a reason. It must name a specific weakness in this bet, such as a number in the packet that points the other way, not general risk: \"anything can happen in baseball\" is not a case against. Cite at least one packet path, and quote only numbers that are in the packet. Argue it as hard as you would argue the other side. For a PASS it is null.\n\nTHE WORDS\n14. Never write: lock, guaranteed, free money, sure thing, can't lose, +EV. Never claim a profit, an edge you have, or certainty. No exclamation marks.\n15. Do not recommend a stake size and do not describe anything as a bet you or we placed.\n\nTHE SUMMARY\n16. `summary` is the argument in 120 to 200 words of plain prose, one or two paragraphs, no lists, no markdown. Say where you lean and why, where you pass, what the market probably has right, and which missing inputs matter. A voice like: \"Even though TB is -127, I like it: the starter has the better numbers over his last starts and the price is close to a coin flip.\" Only with facts that are actually in the packet.\n\nReply with one JSON object that matches the schema and nothing else.",
+  "output_config": {
+    "format": {
+      "type": "json_schema",
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "summary",
+          "calls",
+          "summary_derived"
+        ],
+        "properties": {
+          "summary": {
+            "type": "string"
+          },
+          "calls": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "slot_id",
+                "market",
+                "selection",
+                "verdict",
+                "price",
+                "book",
+                "fair_estimate",
+                "confidence",
+                "reasons",
+                "pass_price",
+                "what_would_change_it",
+                "case_against"
+              ],
+              "properties": {
+                "slot_id": {
+                  "type": "string"
+                },
+                "market": {
+                  "type": "string"
+                },
+                "selection": {
+                  "type": "string"
+                },
+                "verdict": {
+                  "type": "string",
+                  "enum": [
+                    "TAKE",
+                    "PASS",
+                    "TAKE_OTHER_SIDE"
+                  ]
+                },
+                "price": {
+                  "anyOf": [
+                    {
+                      "type": "integer"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "book": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "fair_estimate": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "confidence": {
+                  "type": "string",
+                  "enum": [
+                    "low",
+                    "medium",
+                    "high"
+                  ]
+                },
+                "reasons": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "claim",
+                      "evidence",
+                      "derived"
+                    ],
+                    "properties": {
+                      "claim": {
+                        "type": "string"
+                      },
+                      "evidence": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "path",
+                            "value"
+                          ],
+                          "properties": {
+                            "path": {
+                              "type": "string"
+                            },
+                            "value": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "number"
+                                },
+                                {
+                                  "type": "boolean"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      },
+                      "derived": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "value",
+                            "unit",
+                            "op",
+                            "inputs",
+                            "note"
+                          ],
+                          "properties": {
+                            "value": {
+                              "type": "number"
+                            },
+                            "unit": {
+                              "type": "string",
+                              "enum": [
+                                "books",
+                                "days",
+                                "degrees",
+                                "entries",
+                                "games",
+                                "hits",
+                                "innings",
+                                "items",
+                                "mph",
+                                "percent",
+                                "percentage points",
+                                "players",
+                                "points",
+                                "probability",
+                                "quotes",
+                                "ratio",
+                                "runs",
+                                "strikeouts",
+                                "times",
+                                "units",
+                                "wins"
+                              ]
+                            },
+                            "op": {
+                              "type": "string",
+                              "enum": [
+                                "difference",
+                                "sum",
+                                "mean",
+                                "ratio",
+                                "percent_change",
+                                "days_between",
+                                "implied_probability",
+                                "count"
+                              ]
+                            },
+                            "inputs": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "note": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "pass_price": {
+                  "anyOf": [
+                    {
+                      "type": "integer"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "what_would_change_it": {
+                  "type": "string"
+                },
+                "case_against": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "claim",
+                        "evidence",
+                        "derived"
+                      ],
+                      "properties": {
+                        "claim": {
+                          "type": "string"
+                        },
+                        "evidence": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "path",
+                              "value"
+                            ],
+                            "properties": {
+                              "path": {
+                                "type": "string"
+                              },
+                              "value": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "boolean"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              }
+                            }
+                          }
+                        },
+                        "derived": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "value",
+                              "unit",
+                              "op",
+                              "inputs",
+                              "note"
+                            ],
+                            "properties": {
+                              "value": {
+                                "type": "number"
+                              },
+                              "unit": {
+                                "type": "string",
+                                "enum": [
+                                  "books",
+                                  "days",
+                                  "degrees",
+                                  "entries",
+                                  "games",
+                                  "hits",
+                                  "innings",
+                                  "items",
+                                  "mph",
+                                  "percent",
+                                  "percentage points",
+                                  "players",
+                                  "points",
+                                  "probability",
+                                  "quotes",
+                                  "ratio",
+                                  "runs",
+                                  "strikeouts",
+                                  "times",
+                                  "units",
+                                  "wins"
+                                ]
+                              },
+                              "op": {
+                                "type": "string",
+                                "enum": [
+                                  "difference",
+                                  "sum",
+                                  "mean",
+                                  "ratio",
+                                  "percent_change",
+                                  "days_between",
+                                  "implied_probability",
+                                  "count"
+                                ]
+                              },
+                              "inputs": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              },
+                              "note": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "summary_derived": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "value",
+                "unit",
+                "op",
+                "inputs",
+                "note"
+              ],
+              "properties": {
+                "value": {
+                  "type": "number"
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "books",
+                    "days",
+                    "degrees",
+                    "entries",
+                    "games",
+                    "hits",
+                    "innings",
+                    "items",
+                    "mph",
+                    "percent",
+                    "percentage points",
+                    "players",
+                    "points",
+                    "probability",
+                    "quotes",
+                    "ratio",
+                    "runs",
+                    "strikeouts",
+                    "times",
+                    "units",
+                    "wins"
+                  ]
+                },
+                "op": {
+                  "type": "string",
+                  "enum": [
+                    "difference",
+                    "sum",
+                    "mean",
+                    "ratio",
+                    "percent_change",
+                    "days_between",
+                    "implied_probability",
+                    "count"
+                  ]
+                },
+                "inputs": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "note": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "effort": "medium"
+  },
+  "messages": [
+    {
+      "role": "user",
+      "content": "PACKET (JSON). Paths in your evidence start at its top-level keys.\n{\"built_at\":\"2026-10-04T15:18:16Z\",\"game\":{\"away\":\"SD\",\"date\":\"2026-10-04\",\"detailed_state\":\"Scheduled\",\"first_pitch_utc\":\"2026-10-04T20:00:00Z\",\"game_id\":\"SD-MIL-2026-10-04-1\",\"game_pk\":849825,\"game_type\":\"D\",\"home\":\"MIL\",\"probables\":{\"away\":{\"name\":\"Michael King\"},\"home\":{\"name\":\"Logan Henderson\"}},\"state\":\"pending\",\"venue\":\"American Family Field\"},\"limits\":[\"Only the most-quoted line of each market is analyzed; alternate run lines and alternate totals are not.\",\"First-five-inning markets are not analyzed.\",\"Player props are capped per game; the contracts left out are counted in `missing`.\",\"Every quote is the newest one captured before this packet was built, with its capture time; nothing was captured after it.\"],\"markets\":{\"moneyline\":{\"as_of\":\"2026-10-04T15:04:08Z\",\"label\":\"SD at MIL moneyline\",\"lean\":\"MIL\",\"market\":\"moneyline\",\"options\":[{\"best\":{\"book\":\"lowvig\",\"price\":-130},\"books\":11,\"fair_probability\":0.5535,\"line\":null,\"quotes\":[{\"book\":\"betmgm\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":-135},{\"book\":\"betonlineag\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":-130},{\"book\":\"betrivers\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":-141},{\"book\":\"betus\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":-130},{\"book\":\"bovada\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":-135},{\"book\":\"draftkings\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":-137},{\"book\":\"fanatics\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":-140},{\"book\":\"fanduel\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":-134},{\"book\":\"lowvig\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":-130},{\"book\":\"mybookieag\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":-136},{\"book\":\"williamhill_us\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":-136}],\"selection\":\"MIL\",\"side\":\"home\"},{\"best\":{\"book\":\"lowvig\",\"price\":118},\"books\":11,\"fair_probability\":0.4465,\"line\":null,\"quotes\":[{\"book\":\"betmgm\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":115},{\"book\":\"betonlineag\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":118},{\"book\":\"betrivers\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":118},{\"book\":\"betus\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":118},{\"book\":\"bovada\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":113},{\"book\":\"draftkings\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":114},{\"book\":\"fanatics\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":115},{\"book\":\"fanduel\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":114},{\"book\":\"lowvig\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":118},{\"book\":\"mybookieag\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":116},{\"book\":\"williamhill_us\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":116}],\"selection\":\"SD\",\"side\":\"away\"}],\"slot_id\":\"moneyline\"},\"run_line\":{\"as_of\":\"2026-10-04T15:04:08Z\",\"label\":\"SD at MIL run line\",\"lean\":\"SD +1.5\",\"market\":\"run_line\",\"options\":[{\"best\":{\"book\":\"mybookieag\",\"price\":-185},\"books\":11,\"fair_probability\":0.6318,\"line\":1.5,\"quotes\":[{\"book\":\"betmgm\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":-200},{\"book\":\"betonlineag\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":-185},{\"book\":\"betrivers\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":-186},{\"book\":\"betus\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":-185},{\"book\":\"bovada\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":-195},{\"book\":\"draftkings\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":-197},{\"book\":\"fanatics\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":-200},{\"book\":\"fanduel\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":-200},{\"book\":\"lowvig\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":-185},{\"book\":\"mybookieag\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":-185},{\"book\":\"williamhill_us\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":-193}],\"selection\":\"SD +1.5\",\"side\":\"away\"},{\"best\":{\"book\":\"bovada\",\"price\":165},\"books\":11,\"fair_probability\":0.3682,\"line\":-1.5,\"quotes\":[{\"book\":\"betmgm\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":165},{\"book\":\"betonlineag\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":161},{\"book\":\"betrivers\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":150},{\"book\":\"betus\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":160},{\"book\":\"bovada\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":165},{\"book\":\"draftkings\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":161},{\"book\":\"fanatics\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":160},{\"book\":\"fanduel\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":164},{\"book\":\"lowvig\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":162},{\"book\":\"mybookieag\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":163},{\"book\":\"williamhill_us\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":161}],\"selection\":\"MIL -1.5\",\"side\":\"home\"}],\"slot_id\":\"run_line\"},\"total\":{\"as_of\":\"2026-10-04T15:04:08Z\",\"label\":\"SD at MIL game total runs\",\"lean\":\"Over 7\",\"market\":\"total\",\"options\":[{\"best\":{\"book\":\"williamhill_us\",\"price\":-108},\"books\":10,\"fair_probability\":0.5092,\"line\":7.0,\"quotes\":[{\"book\":\"betmgm\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":-115},{\"book\":\"betonlineag\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":-117},{\"book\":\"betrivers\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":-109},{\"book\":\"betus\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":-115},{\"book\":\"bovada\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":-115},{\"book\":\"draftkings\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":-115},{\"book\":\"fanatics\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":-115},{\"book\":\"lowvig\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":-115},{\"book\":\"mybookieag\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":-115},{\"book\":\"williamhill_us\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":-108}],\"selection\":\"Over 7\",\"side\":\"over\"},{\"best\":{\"book\":\"lowvig\",\"price\":100},\"books\":10,\"fair_probability\":0.4908,\"line\":7.0,\"quotes\":[{\"book\":\"betmgm\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":-105},{\"book\":\"betonlineag\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":-103},{\"book\":\"betrivers\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":-112},{\"book\":\"betus\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":-105},{\"book\":\"bovada\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":-105},{\"book\":\"draftkings\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":-104},{\"book\":\"fanatics\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":-105},{\"book\":\"lowvig\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":100},{\"book\":\"mybookieag\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":-107},{\"book\":\"williamhill_us\",\"captured_utc\":\"2026-10-04T15:04:08Z\",\"price\":-109}],\"selection\":\"Under 7\",\"side\":\"under\"}],\"slot_id\":\"total\"}},\"missing\":[{\"item\":\"lineups\",\"kind\":\"absent\",\"reason\":\"lineup not posted yet, or not fetched\"},{\"item\":\"matchup_depth\",\"kind\":\"absent\",\"reason\":\"no posted lineup for this game, so there is no unit to decompose\"},{\"item\":\"matchup_history\",\"kind\":\"absent\",\"reason\":\"batter-vs-pitcher history not fetched\"},{\"item\":\"props\",\"kind\":\"thin\",\"reason\":\"4 prop contracts were priced; 0 are analyzed (the rest are left out by the per-game cap)\"},{\"item\":\"standings\",\"kind\":\"absent\",\"reason\":\"no standings snapshot stored for 2026-10-04\"},{\"item\":\"team_totals\",\"kind\":\"absent\",\"reason\":\"no team-total prices were captured for this game\"}],\"packet_version\":\"analyst_packet_v1\",\"sections\":{\"arsenals\":{\"as_of\":\"2026-10-04T15:18:15Z\",\"as_of_basis\":\"when the game payload was built\",\"values\":{\"away\":[{\"est_woba\":0.387,\"hard_hit_pct\":44.4,\"k_pct\":19.7,\"pa\":208.0,\"pitch\":\"Sinker\",\"pitcher\":\"King, Michael\",\"usage_pct\":27.9,\"whiff_pct\":16.7,\"woba\":0.365},{\"est_woba\":0.283,\"hard_hit_pct\":23.7,\"k_pct\":16.5,\"pa\":243.0,\"pitch\":\"Changeup\",\"pitcher\":\"King, Michael\",\"usage_pct\":26.4,\"whiff_pct\":27.0,\"woba\":0.241},{\"est_woba\":0.346,\"hard_hit_pct\":39.7,\"k_pct\":31.8,\"pa\":129.0,\"pitch\":\"4-Seam Fastball\",\"pitcher\":\"King, Michael\",\"usage_pct\":20.3,\"whiff_pct\":27.8,\"woba\":0.325},{\"est_woba\":0.294,\"hard_hit_pct\":29.5,\"k_pct\":20.2,\"pa\":124.0,\"pitch\":\"Sweeper\",\"pitcher\":\"King, Michael\",\"usage_pct\":18.8,\"whiff_pct\":27.7,\"woba\":0.297},{\"est_woba\":0.255,\"hard_hit_pct\":29.7,\"k_pct\":22.6,\"pa\":53.0,\"pitch\":\"Slider\",\"pitcher\":\"King, Michael\",\"usage_pct\":6.6,\"whiff_pct\":23.3,\"woba\":0.206}],\"home\":[{\"est_woba\":0.234,\"hard_hit_pct\":48.5,\"k_pct\":34.3,\"pa\":172.0,\"pitch\":\"4-Seam Fastball\",\"pitcher\":\"Henderson, Logan\",\"usage_pct\":46.4,\"whiff_pct\":20.8,\"woba\":0.22},{\"est_woba\":0.245,\"hard_hit_pct\":21.0,\"k_pct\":32.6,\"pa\":129.0,\"pitch\":\"Changeup\",\"pitcher\":\"Henderson, Logan\",\"usage_pct\":35.2,\"whiff_pct\":37.4,\"woba\":0.246},{\"est_woba\":0.328,\"hard_hit_pct\":41.7,\"k_pct\":9.1,\"pa\":55.0,\"pitch\":\"Cutter\",\"pitcher\":\"Henderson, Logan\",\"usage_pct\":15.3,\"whiff_pct\":21.0,\"woba\":0.365}]}},\"bullpen\":{\"as_of\":\"2026-10-04\",\"as_of_basis\":\"newest stamp inside the section\",\"values\":{\"MIL\":{\"as_of\":\"2026-10-04\",\"reliever_count\":7,\"relievers\":[{\"appearances\":[{\"date\":\"2026-10-03\",\"days_ago\":1,\"innings\":1.0,\"pitches\":20},{\"date\":\"2026-09-27\",\"days_ago\":7,\"innings\":1.667,\"pitches\":25}],\"availability\":\"available\",\"availability_reason\":\"pitched yesterday but only 20 pitches\",\"innings\":2.67,\"name\":\"DL Hall\",\"pitches\":45,\"pitches_known\":true},{\"appearances\":[{\"date\":\"2026-09-27\",\"days_ago\":7,\"innings\":1.667,\"pitches\":21}],\"availability\":\"available\",\"availability_reason\":\"last pitched 7 days ago\",\"innings\":1.67,\"name\":\"Shane Drohan\",\"pitches\":21,\"pitches_known\":true},{\"appearances\":[{\"date\":\"2026-10-03\",\"days_ago\":1,\"innings\":1.667,\"pitches\":23}],\"availability\":\"available\",\"availability_reason\":\"pitched yesterday but only 23 pitches\",\"innings\":1.67,\"name\":\"Aaron Ashby\",\"pitches\":23,\"pitches_known\":true},{\"appearances\":[{\"date\":\"2026-10-03\",\"days_ago\":1,\"innings\":1.333,\"pitches\":17}],\"availability\":\"available\",\"availability_reason\":\"pitched yesterday but only 17 pitches\",\"innings\":1.33,\"name\":\"Trevor Megill\",\"pitches\":17,\"pitches_known\":true},{\"appearances\":[{\"date\":\"2026-10-03\",\"days_ago\":1,\"innings\":0.667,\"pitches\":11}],\"availability\":\"available\",\"availability_reason\":\"pitched yesterday but only 11 pitches\",\"innings\":0.67,\"name\":\"Antonio Senzatela\",\"pitches\":11,\"pitches_known\":true},{\"appearances\":[{\"date\":\"2026-09-27\",\"days_ago\":7,\"innings\":0.333,\"pitches\":26}],\"availability\":\"available\",\"availability_reason\":\"last pitched 7 days ago\",\"innings\":0.33,\"name\":\"Chad Patrick\",\"pitches\":26,\"pitches_known\":true},{\"appearances\":[{\"date\":\"2026-10-03\",\"days_ago\":1,\"innings\":0.333,\"pitches\":16}],\"availability\":\"available\",\"availability_reason\":\"pitched yesterday but only 16 pitches\",\"innings\":0.33,\"name\":\"Abner Uribe\",\"pitches\":16,\"pitches_known\":true}],\"team\":\"MIL\",\"total_innings\":8.67,\"window_days\":7},\"SD\":{\"as_of\":\"2026-10-04\",\"reliever_count\":7,\"relievers\":[{\"appearances\":[{\"date\":\"2026-10-03\",\"days_ago\":1,\"innings\":2.0,\"pitches\":31},{\"date\":\"2026-09-30\",\"days_ago\":4,\"innings\":2.0,\"pitches\":29}],\"availability\":\"likely_unavailable\",\"availability_reason\":\"threw 31 pitches yesterday; a next-day appearance after that is unusual\",\"innings\":4.0,\"name\":\"Adrian Morejon\",\"pitches\":60,\"pitches_known\":true},{\"appearances\":[{\"date\":\"2026-09-27\",\"days_ago\":7,\"innings\":3.0,\"pitches\":64}],\"availability\":\"available\",\"availability_reason\":\"last pitched 7 days ago\",\"innings\":3.0,\"name\":\"Griffin Canning\",\"pitches\":64,\"pitches_known\":true},{\"appearances\":[{\"date\":\"2026-10-03\",\"days_ago\":1,\"innings\":1.333,\"pitches\":19},{\"date\":\"2026-09-30\",\"days_ago\":4,\"innings\":1.667,\"pitches\":21}],\"availability\":\"available\",\"availability_reason\":\"pitched yesterday but only 19 pitches\",\"innings\":3.0,\"name\":\"Bradgley Rodriguez\",\"pitches\":40,\"pitches_known\":true},{\"appearances\":[{\"date\":\"2026-10-03\",\"days_ago\":1,\"innings\":1.0,\"pitches\":15},{\"date\":\"2026-09-29\",\"days_ago\":5,\"innings\":1.0,\"pitches\":11}],\"availability\":\"available\",\"availability_reason\":\"pitched yesterday but only 15 pitches\",\"innings\":2.0,\"name\":\"Yuki Matsui\",\"pitches\":26,\"pitches_known\":true},{\"appearances\":[{\"date\":\"2026-10-03\",\"days_ago\":1,\"innings\":1.0,\"pitches\":16},{\"date\":\"2026-09-30\",\"days_ago\":4,\"innings\":1.0,\"pitches\":11}],\"availability\":\"available\",\"availability_reason\":\"pitched yesterday but only 16 pitches\",\"innings\":2.0,\"name\":\"Jason Adam\",\"pitches\":27,\"pitches_known\":true},{\"appearances\":[{\"date\":\"2026-09-29\",\"days_ago\":5,\"innings\":1.0,\"pitches\":22}],\"availability\":\"available\",\"availability_reason\":\"last pitched 5 days ago\",\"innings\":1.0,\"name\":\"Joe Musgrove\",\"pitches\":22,\"pitches_known\":true},{\"appearances\":[{\"date\":\"2026-09-30\",\"days_ago\":4,\"innings\":1.0,\"pitches\":19}],\"availability\":\"available\",\"availability_reason\":\"last pitched 4 days ago\",\"innings\":1.0,\"name\":\"Mason Miller\",\"pitches\":19,\"pitches_known\":true}],\"team\":\"SD\",\"total_innings\":16.0,\"window_days\":7}}},\"news\":{\"as_of\":\"2026-10-04T15:18:15Z\",\"as_of_basis\":\"when the game payload was built\",\"values\":{\"MIL\":[{\"category\":\"il_activation\",\"date\":\"2026-10-02\",\"description\":\"Milwaukee Brewers activated 1B Andrew Vaughn from the 10-day injured list.\",\"filed_date\":\"2026-10-02\",\"from_team\":null,\"injury_note\":null,\"player\":\"Andrew Vaughn\",\"sentence\":\"Milwaukee Brewers activated 1B Andrew Vaughn from the 10-day injured list.\",\"team\":\"MIL\",\"to_team\":\"MIL\",\"transaction_id\":944955,\"type_desc\":\"Status Change\"},{\"category\":\"il_activation\",\"date\":\"2026-09-28\",\"description\":\"Milwaukee Brewers activated RHP Grant Anderson from the 15-day injured list.\",\"filed_date\":\"2026-09-28\",\"from_team\":null,\"injury_note\":null,\"player\":\"Grant Anderson\",\"sentence\":\"Milwaukee Brewers activated RHP Grant Anderson from the 15-day injured list.\",\"team\":\"MIL\",\"to_team\":\"MIL\",\"transaction_id\":944625,\"type_desc\":\"Status Change\"},{\"category\":\"recalled\",\"date\":\"2026-09-28\",\"description\":\"Milwaukee Brewers recalled LF Akil Baddoo from Nashville Sounds.\",\"filed_date\":\"2026-09-28\",\"from_team\":null,\"injury_note\":null,\"player\":\"Akil Baddoo\",\"sentence\":\"Milwaukee Brewers recalled LF Akil Baddoo from Nashville Sounds.\",\"team\":\"MIL\",\"to_team\":\"MIL\",\"transaction_id\":944634,\"type_desc\":\"Recalled\"},{\"category\":\"recalled\",\"date\":\"2026-09-28\",\"description\":\"Milwaukee Brewers recalled RHP Brandon Sproat from Nashville Sounds.\",\"filed_date\":\"2026-09-28\",\"from_team\":null,\"injury_note\":null,\"player\":\"Brandon Sproat\",\"sentence\":\"Milwaukee Brewers recalled RHP Brandon Sproat from Nashville Sounds.\",\"team\":\"MIL\",\"to_team\":\"MIL\",\"transaction_id\":944636,\"type_desc\":\"Recalled\"}],\"SD\":[{\"category\":\"il_activation\",\"date\":\"2026-10-03\",\"description\":\"San Diego Padres activated RHP Randy V\\u00e1squez.\",\"filed_date\":\"2026-10-03\",\"from_team\":null,\"injury_note\":null,\"player\":\"Randy V\\u00e1squez\",\"sentence\":\"San Diego Padres activated RHP Randy V\\u00e1squez.\",\"team\":\"SD\",\"to_team\":\"SD\",\"transaction_id\":944987,\"type_desc\":\"Status Change\"},{\"category\":\"il_activation\",\"date\":\"2026-09-29\",\"description\":\"San Diego Padres activated RHP Joe Musgrove from the 60-day injured list.\",\"filed_date\":\"2026-09-29\",\"from_team\":null,\"injury_note\":null,\"player\":\"Joe Musgrove\",\"sentence\":\"San Diego Padres activated RHP Joe Musgrove from the 60-day injured list.\",\"team\":\"SD\",\"to_team\":\"SD\",\"transaction_id\":944709,\"type_desc\":\"Status Change\"},{\"category\":\"il_placement\",\"date\":\"2026-09-29\",\"description\":\"San Diego Padres placed C Rodolfo Dur\\u00e1n on the 60-day injured list. Right forearm strain.\",\"filed_date\":\"2026-09-29\",\"from_team\":null,\"injury_note\":\"Right forearm strain\",\"player\":\"Rodolfo Dur\\u00e1n\",\"sentence\":\"San Diego Padres placed C Rodolfo Dur\\u00e1n on the 60-day injured list. Right forearm strain.\",\"team\":\"SD\",\"to_team\":\"SD\",\"transaction_id\":944744,\"type_desc\":\"Status Change\"},{\"category\":\"il_activation\",\"date\":\"2026-09-28\",\"description\":\"San Diego Padres activated DH Miguel Andujar from the 10-day injured list.\",\"filed_date\":\"2026-09-28\",\"from_team\":null,\"injury_note\":null,\"player\":\"Miguel Andujar\",\"sentence\":\"San Diego Padres activated DH Miguel Andujar from the 10-day injured list.\",\"team\":\"SD\",\"to_team\":\"SD\",\"transaction_id\":944422,\"type_desc\":\"Status Change\"}]}},\"park\":{\"as_of\":\"2026-10-04T15:18:15Z\",\"as_of_basis\":\"when the game payload was built\",\"values\":{\"altitude_m\":193,\"name\":\"American Family Field\",\"roof\":\"retractable\",\"team\":\"MIL\"}},\"splits\":{\"as_of\":\"2026-10-04T15:03:18.573390+00:00\",\"as_of_basis\":\"newest stamp inside the section\",\"values\":{\"away\":{\"platoon\":{\"gap\":-0.047,\"reason\":null,\"usable\":true,\"vs_left_faced\":476,\"vs_left_ops\":0.635,\"vs_right_faced\":281,\"vs_right_ops\":0.682,\"weaker_against\":\"R\"},\"record\":{\"as_of\":\"2026-10-04T15:03:17.840069+00:00\",\"season\":\"2026\",\"splits\":{\"Away_Games\":{\"avg\":0.229,\"batters_faced\":403,\"home_runs\":11,\"innings\":\"96.1\",\"ops\":0.671,\"strikeouts\":81,\"walks\":37},\"Home_Games\":{\"avg\":0.212,\"batters_faced\":354,\"home_runs\":9,\"innings\":\"88.2\",\"ops\":0.631,\"strikeouts\":78,\"walks\":33},\"vs_Left\":{\"avg\":0.219,\"batters_faced\":476,\"home_runs\":13,\"innings\":\"116.1\",\"ops\":0.635,\"strikeouts\":97,\"walks\":47},\"vs_Right\":{\"avg\":0.224,\"batters_faced\":281,\"home_runs\":7,\"innings\":\"67.0\",\"ops\":0.682,\"strikeouts\":62,\"walks\":23}}}},\"home\":{\"platoon\":{\"gap\":0.047,\"reason\":null,\"usable\":true,\"vs_left_faced\":242,\"vs_left_ops\":0.592,\"vs_right_faced\":129,\"vs_right_ops\":0.545,\"weaker_against\":\"L\"},\"record\":{\"as_of\":\"2026-10-04T15:03:18.573390+00:00\",\"season\":\"2026\",\"splits\":{\"Away_Games\":{\"avg\":0.194,\"batters_faced\":209,\"home_runs\":7,\"innings\":\"54.1\",\"ops\":0.602,\"strikeouts\":60,\"walks\":11},\"Home_Games\":{\"avg\":0.169,\"batters_faced\":162,\"home_runs\":7,\"innings\":\"44.0\",\"ops\":0.541,\"strikeouts\":50,\"walks\":8},\"vs_Left\":{\"avg\":0.178,\"batters_faced\":242,\"home_runs\":10,\"innings\":\"64.0\",\"ops\":0.592,\"strikeouts\":73,\"walks\":15},\"vs_Right\":{\"avg\":0.192,\"batters_faced\":129,\"home_runs\":4,\"innings\":\"34.0\",\"ops\":0.545,\"strikeouts\":37,\"walks\":4}}}}}},\"starters\":{\"as_of\":\"2026-10-03\",\"as_of_basis\":\"stats through this date\",\"values\":{\"away_sp_appearances\":32,\"away_sp_bb9\":3.4054,\"away_sp_days_rest\":12,\"away_sp_era\":3.2108,\"away_sp_fip\":4.1311,\"away_sp_hr9\":0.973,\"away_sp_innings\":185.0,\"away_sp_ip_per_start\":5.781,\"away_sp_k9\":7.7351,\"away_sp_k_bb_pct\":0.1176,\"away_sp_known\":true,\"away_sp_recent_era\":5.2941,\"away_sp_recent_ip_per_start\":5.667,\"away_sp_recent_starts\":3,\"away_sp_starts\":32,\"away_sp_thin\":false,\"away_sp_whip\":1.1784,\"both_sp_known\":true,\"diff_sp_era\":-0.7396,\"diff_sp_fip\":-0.6284,\"diff_sp_ip_per_start\":-0.318,\"diff_sp_k9\":2.3327,\"diff_sp_k_bb_pct\":0.1277,\"diff_sp_whip\":-0.3343,\"either_sp_thin\":false,\"home_sp_appearances\":18,\"home_sp_bb9\":1.739,\"home_sp_days_rest\":11,\"home_sp_era\":2.4712,\"home_sp_fip\":3.5027,\"home_sp_hr9\":1.2814,\"home_sp_innings\":98.33,\"home_sp_ip_per_start\":5.463,\"home_sp_k9\":10.0678,\"home_sp_k_bb_pct\":0.2453,\"home_sp_known\":true,\"home_sp_recent_era\":2.4,\"home_sp_recent_ip_per_start\":5.0,\"home_sp_recent_starts\":3,\"home_sp_starts\":18,\"home_sp_thin\":false,\"home_sp_whip\":0.8441}},\"teams\":{\"as_of\":\"2026-10-03\",\"as_of_basis\":\"stats through this date\",\"values\":{\"away_away_win_pct\":0.4878,\"away_games_played\":162,\"away_home_win_pct\":0.625,\"away_last10_games\":10,\"away_last10_run_diff_pg\":1.4,\"away_last10_runs_scored_pg\":5.3,\"away_last10_wins\":7,\"away_last5_games\":5,\"away_last5_run_diff_pg\":3.6,\"away_last5_runs_scored_pg\":6.6,\"away_last5_wins\":4,\"away_losses\":72,\"away_rest_days\":1,\"away_run_diff_pg\":0.259,\"away_runs_allowed_pg\":4.179,\"away_runs_scored_pg\":4.438,\"away_sample_is_thin\":false,\"away_streak\":-1,\"away_win_pct\":0.5556,\"away_wins\":90,\"diff_run_diff_pg\":1.06,\"diff_runs_allowed_pg\":-0.379,\"diff_runs_scored_pg\":0.681,\"diff_win_pct\":0.0756,\"either_sample_thin\":false,\"home_away_win_pct\":0.5926,\"home_games_played\":160,\"home_home_win_pct\":0.6709,\"home_last10_games\":10,\"home_last10_run_diff_pg\":1.8,\"home_last10_runs_scored_pg\":4.3,\"home_last10_wins\":9,\"home_last5_games\":5,\"home_last5_run_diff_pg\":2.4,\"home_last5_runs_scored_pg\":5.0,\"home_last5_wins\":5,\"home_losses\":59,\"home_rest_days\":1,\"home_run_diff_pg\":1.319,\"home_runs_allowed_pg\":3.8,\"home_runs_scored_pg\":5.119,\"home_sample_is_thin\":false,\"home_streak\":6,\"home_win_pct\":0.6312,\"home_wins\":101}},\"travel\":{\"as_of\":\"2026-10-04T15:18:15Z\",\"as_of_basis\":\"when the game payload was built\",\"values\":{\"MIL\":{\"days_since_last_game\":1,\"dense_stretch\":false,\"eastward\":false,\"games_last_7\":3,\"last_venue\":\"MIL\",\"long_trip\":false,\"miles\":0.0,\"reason\":null,\"team\":\"MIL\",\"zones\":0.0},\"SD\":{\"days_since_last_game\":1,\"dense_stretch\":false,\"eastward\":false,\"games_last_7\":5,\"last_venue\":\"MIL\",\"long_trip\":false,\"miles\":0.0,\"reason\":null,\"team\":\"SD\",\"zones\":0.0}}},\"weather\":{\"as_of\":\"2026-10-04T20:00\",\"as_of_basis\":\"forecast for the hour shown\",\"values\":{\"hours_from_first_pitch\":0.0,\"humidity_pct\":54,\"observed_utc\":\"2026-10-04T20:00\",\"precip_probability_pct\":0,\"pressure_hpa\":997.1,\"temp_f\":66.2,\"wind_from_deg\":308,\"wind_mph\":11.9}}},\"slots\":[{\"label\":\"SD at MIL moneyline\",\"market\":\"moneyline\",\"selections\":[\"MIL\",\"SD\"],\"slot_id\":\"moneyline\"},{\"label\":\"SD at MIL run line\",\"market\":\"run_line\",\"selections\":[\"SD +1.5\",\"MIL -1.5\"],\"slot_id\":\"run_line\"},{\"label\":\"SD at MIL game total runs\",\"market\":\"total\",\"selections\":[\"Over 7\",\"Under 7\"],\"slot_id\":\"total\"}]}\n\nMake one call for each of these slot ids, in this order: moneyline, run_line, total."
+    }
+  ]
+}

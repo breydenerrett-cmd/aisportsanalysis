@@ -1,6 +1,6 @@
 {
   "packet_version": "analyst_packet_v1",
-  "built_at": "2026-10-04T16:52:05Z",
+  "built_at": "2026-10-04T15:18:16Z",
   "game": {
     "game_id": "SD-MIL-2026-10-04-1",
     "game_pk": 849825,
@@ -10,7 +10,7 @@
     "venue": "American Family Field",
     "first_pitch_utc": "2026-10-04T20:00:00Z",
     "state": "pending",
-    "detailed_state": "Pre-Game",
+    "detailed_state": "Scheduled",
     "game_type": "D",
     "probables": {
       "away": {
@@ -119,499 +119,6 @@
         "home_sp_starts": 18,
         "home_sp_thin": false,
         "home_sp_whip": 0.8441
-      }
-    },
-    "lineups": {
-      "as_of": "2026-10-04T16:52:28Z",
-      "as_of_basis": "when the game payload was built",
-      "values": {
-        "away": {
-          "batters": [
-            {
-              "name": "Fernando Tatis Jr.",
-              "order": 1,
-              "position": "RF"
-            },
-            {
-              "name": "Dustin Harris",
-              "order": 2,
-              "position": "LF"
-            },
-            {
-              "name": "Manny Machado",
-              "order": 3,
-              "position": "3B"
-            },
-            {
-              "name": "Ty France",
-              "order": 4,
-              "position": "1B"
-            },
-            {
-              "name": "Jackson Merrill",
-              "order": 5,
-              "position": "CF"
-            },
-            {
-              "name": "Ethan Salas",
-              "order": 6,
-              "position": "DH"
-            },
-            {
-              "name": "Xander Bogaerts",
-              "order": 7,
-              "position": "SS"
-            },
-            {
-              "name": "Luis Campusano",
-              "order": 8,
-              "position": "C"
-            },
-            {
-              "name": "Jake Cronenworth",
-              "order": 9,
-              "position": "2B"
-            }
-          ],
-          "faces_starter_throwing": "R",
-          "handedness": {
-            "L": 4,
-            "R": 5,
-            "S": 0,
-            "known": 9,
-            "unknown": 0
-          },
-          "platoon_advantage": {
-            "advantaged": 4,
-            "counts": {
-              "L": 4,
-              "R": 5,
-              "S": 0,
-              "known": 9,
-              "unknown": 0
-            },
-            "known": 9,
-            "reason": null,
-            "share": 0.444
-          }
-        },
-        "home": {
-          "batters": [
-            {
-              "name": "Jackson Chourio",
-              "order": 1,
-              "position": "LF"
-            },
-            {
-              "name": "Brice Turang",
-              "order": 2,
-              "position": "2B"
-            },
-            {
-              "name": "Jake Bauers",
-              "order": 3,
-              "position": "1B"
-            },
-            {
-              "name": "William Contreras",
-              "order": 4,
-              "position": "C"
-            },
-            {
-              "name": "Garrett Mitchell",
-              "order": 5,
-              "position": "CF"
-            },
-            {
-              "name": "Christian Yelich",
-              "order": 6,
-              "position": "DH"
-            },
-            {
-              "name": "Sal Frelick",
-              "order": 7,
-              "position": "RF"
-            },
-            {
-              "name": "Cooper Pratt",
-              "order": 8,
-              "position": "SS"
-            },
-            {
-              "name": "David Hamilton",
-              "order": 9,
-              "position": "3B"
-            }
-          ],
-          "faces_starter_throwing": "R",
-          "handedness": {
-            "L": 6,
-            "R": 3,
-            "S": 0,
-            "known": 9,
-            "unknown": 0
-          },
-          "platoon_advantage": {
-            "advantaged": 6,
-            "counts": {
-              "L": 6,
-              "R": 3,
-              "S": 0,
-              "known": 9,
-              "unknown": 0
-            },
-            "known": 9,
-            "reason": null,
-            "share": 0.667
-          }
-        }
-      }
-    },
-    "matchup_history": {
-      "as_of": "2026-10-04T16:52:28Z",
-      "as_of_basis": "when the game payload was built",
-      "values": {
-        "away": null,
-        "home": {
-          "aggregate_avg": 0.184,
-          "batters": [
-            {
-              "at_bats": 5,
-              "avg": 0.0,
-              "hits": 0,
-              "home_runs": 0,
-              "name": "Jackson Chourio",
-              "ops": 0.167,
-              "order": 1,
-              "strikeouts": 2,
-              "walks": 1
-            },
-            {
-              "at_bats": 11,
-              "avg": 0.273,
-              "hits": 3,
-              "home_runs": 0,
-              "name": "Brice Turang",
-              "ops": 0.728,
-              "order": 2,
-              "strikeouts": 1,
-              "walks": 0
-            },
-            {
-              "at_bats": 9,
-              "avg": 0.111,
-              "hits": 1,
-              "home_runs": 0,
-              "name": "Jake Bauers",
-              "ops": 0.222,
-              "order": 3,
-              "strikeouts": 4,
-              "walks": 0
-            },
-            {
-              "at_bats": 9,
-              "avg": 0.0,
-              "hits": 0,
-              "home_runs": 0,
-              "name": "William Contreras",
-              "ops": 0.0,
-              "order": 4,
-              "strikeouts": 3,
-              "walks": 0
-            },
-            {
-              "at_bats": 2,
-              "avg": 0.0,
-              "hits": 0,
-              "home_runs": 0,
-              "name": "Garrett Mitchell",
-              "ops": 0.333,
-              "order": 5,
-              "strikeouts": 2,
-              "walks": 1
-            },
-            {
-              "at_bats": 3,
-              "avg": 0.0,
-              "hits": 0,
-              "home_runs": 0,
-              "name": "Christian Yelich",
-              "ops": 0.0,
-              "order": 6,
-              "strikeouts": 2,
-              "walks": 0
-            },
-            {
-              "at_bats": 10,
-              "avg": 0.5,
-              "hits": 5,
-              "home_runs": 0,
-              "name": "Sal Frelick",
-              "ops": 1.145,
-              "order": 7,
-              "strikeouts": 2,
-              "walks": 1
-            },
-            {
-              "at_bats": 0,
-              "avg": null,
-              "hits": 0,
-              "home_runs": 0,
-              "name": "Cooper Pratt",
-              "ops": null,
-              "order": 8,
-              "strikeouts": 0,
-              "walks": 0
-            },
-            {
-              "at_bats": 0,
-              "avg": null,
-              "hits": 0,
-              "home_runs": 0,
-              "name": "David Hamilton",
-              "ops": null,
-              "order": 9,
-              "strikeouts": 0,
-              "walks": 0
-            }
-          ],
-          "reason": "the whole lineup has only 49 career at-bats against him; a read needs at least 60",
-          "total_at_bats": 49,
-          "total_hits": 9,
-          "total_home_runs": 0,
-          "total_strikeouts": 16,
-          "usable": false
-        }
-      }
-    },
-    "matchup_depth": {
-      "as_of": "2026-10-04T16:52:28Z",
-      "as_of_basis": "when the game payload was built",
-      "values": {
-        "away": {
-          "concentration": {
-            "absent": [],
-            "bottom": {
-              "pa": 3313,
-              "woba": 0.3323
-            },
-            "gap": 0.0044,
-            "sentences": [
-              "Lineup slots 1-4 have run 0.337 wOBA across all pitchers before the cutoff (3486 PA).",
-              "Lineup slots 5-9 have run 0.332 wOBA across all pitchers before the cutoff (3313 PA).",
-              "Top-minus-bottom concentration: +0.004 wOBA (3486 PA vs 3313 PA)."
-            ],
-            "top": {
-              "pa": 3486,
-              "woba": 0.3367
-            },
-            "warnings": []
-          },
-          "handedness": {
-            "absent": [
-              "starter platoon split: only 0 batters faced left-handed and 0 right-handed before the cutoff; a platoon split needs 60 each side"
-            ],
-            "lineup": {
-              "advantaged": 4,
-              "known": 9,
-              "share": 0.444
-            },
-            "lineup_counts": {
-              "L": 4,
-              "R": 5,
-              "S": 0,
-              "known": 9,
-              "unknown": 0
-            },
-            "sentences": [
-              "The posted lineup bats 4L / 5R / 0S (9 of 9 bat sides known).",
-              "4 of the 9 hitters with a known bat side hold the platoon advantage against this right-handed starter (44.4%)."
-            ],
-            "starter": null,
-            "warnings": [
-              "Small sample: only 0 batters faced left-handed and 0 right-handed before the cutoff; a platoon split needs 60 each side."
-            ]
-          },
-          "opposing_starter_id": "701656",
-          "opposing_starter_throws": "R",
-          "pitch_mix": {
-            "absent": [
-              "the starter has fewer than 50 pitches recorded before the cutoff, so his primary pitch is unknown"
-            ],
-            "batters": [],
-            "lineup_vs_primary": null,
-            "primary": null,
-            "sentences": [],
-            "warnings": [
-              "Small sample: fewer than 50 recorded pitches from this starter before the cutoff -- no pitch-mix read is possible."
-            ]
-          },
-          "starter_stuff": {
-            "absent": [
-              "starter fastball velocity: only 0 measured fastballs across the pitcher's last 0 appearances before the cutoff; the velocity read needs 100",
-              "starter ground-ball share: only 0 batted balls before the cutoff; the ground-ball share needs 50"
-            ],
-            "groundball": null,
-            "sentences": [],
-            "velocity": null,
-            "warnings": [
-              "Small sample: only 0 measured fastballs across the pitcher's last 0 appearances before the cutoff; the velocity read needs 100.",
-              "Small sample: only 0 batted balls before the cutoff; the ground-ball share needs 50."
-            ]
-          },
-          "team": "SD"
-        },
-        "cutoff": "2026-10-04",
-        "floors": {
-          "groundball_batted_balls": 50,
-          "half_pa": 60,
-          "lineup_vs_pitch_pa": 60,
-          "pitch_mix_pitches": 50,
-          "platoon_bf_per_side": 60,
-          "velocity_fastballs": 100
-        },
-        "home": {
-          "concentration": {
-            "absent": [],
-            "bottom": {
-              "pa": 2327,
-              "woba": 0.3407
-            },
-            "gap": -0.0106,
-            "sentences": [
-              "Lineup slots 1-4 have run 0.330 wOBA across all pitchers before the cutoff (3514 PA).",
-              "Lineup slots 5-9 have run 0.341 wOBA across all pitchers before the cutoff (2327 PA).",
-              "Top-minus-bottom concentration: -0.011 wOBA (3514 PA vs 2327 PA)."
-            ],
-            "top": {
-              "pa": 3514,
-              "woba": 0.3301
-            },
-            "warnings": []
-          },
-          "handedness": {
-            "absent": [],
-            "lineup": {
-              "advantaged": 6,
-              "known": 9,
-              "share": 0.667
-            },
-            "lineup_counts": {
-              "L": 6,
-              "R": 3,
-              "S": 0,
-              "known": 9,
-              "unknown": 0
-            },
-            "sentences": [
-              "The posted lineup bats 6L / 3R / 0S (9 of 9 bat sides known).",
-              "6 of the 9 hitters with a known bat side hold the platoon advantage against this right-handed starter (66.7%).",
-              "That starter has allowed 0.285 wOBA to left-handed hitters (559 batters faced) and 0.302 to right-handed (573 faced) before the cutoff -- a gap of -0.017."
-            ],
-            "starter": {
-              "gap": -0.0167,
-              "vs_left_faced": 559,
-              "vs_left_woba": 0.2852,
-              "vs_right_faced": 573,
-              "vs_right_woba": 0.3019,
-              "weaker_against": "R"
-            },
-            "warnings": []
-          },
-          "opposing_starter_id": "650633",
-          "opposing_starter_throws": "R",
-          "pitch_mix": {
-            "absent": [],
-            "batters": [
-              {
-                "name": "Jackson Chourio",
-                "order": 1,
-                "pa": 109,
-                "woba": 0.3495
-              },
-              {
-                "name": "Brice Turang",
-                "order": 2,
-                "pa": 166,
-                "woba": 0.3386
-              },
-              {
-                "name": "Jake Bauers",
-                "order": 3,
-                "pa": 75,
-                "woba": 0.3173
-              },
-              {
-                "name": "William Contreras",
-                "order": 4,
-                "pa": 273,
-                "woba": 0.3971
-              },
-              {
-                "name": "Garrett Mitchell",
-                "order": 5,
-                "pa": 37,
-                "woba": 0.4649
-              },
-              {
-                "name": "Christian Yelich",
-                "order": 6,
-                "pa": 154,
-                "woba": 0.4036
-              },
-              {
-                "name": "Sal Frelick",
-                "order": 7,
-                "pa": 106,
-                "woba": 0.4057
-              },
-              {
-                "name": "David Hamilton",
-                "order": 9,
-                "pa": 55,
-                "woba": 0.3873
-              }
-            ],
-            "lineup_vs_primary": {
-              "batters_measured": 8,
-              "pa": 975,
-              "woba": 0.3797
-            },
-            "primary": {
-              "pitch_type": "SI",
-              "pitches": 1339,
-              "total_pitches": 4501,
-              "usage_pct": 29.7
-            },
-            "sentences": [
-              "The opposing starter's most-used pitch before the cutoff is the SI at 29.7% usage (1339 of 4501 pitches).",
-              "This lineup has run 0.380 wOBA against that pitch type across 975 PA (8 of 9 posted hitters have a measured line)."
-            ],
-            "warnings": []
-          },
-          "starter_stuff": {
-            "absent": [],
-            "groundball": {
-              "batted_balls": 713,
-              "share": 0.4208
-            },
-            "sentences": [
-              "The opposing starter's fastball has averaged 93.7 mph over his last 5 measured appearances before the cutoff (268 fastballs), against a league average of 93.9 mph at the same cutoff -- a gap of -0.3 mph.",
-              "Ground balls make up 42.1% of the batted balls against that starter before the cutoff (713 batted balls)."
-            ],
-            "velocity": {
-              "avg": 93.66,
-              "fastballs": 268,
-              "games": 5,
-              "gap": -0.28,
-              "league_avg": 93.94
-            },
-            "warnings": []
-          },
-          "team": "MIL"
-        },
-        "nature": "Observations of play recorded before the cutoff, from pitch-level rows that already existed. Nothing in this section is a prediction.",
-        "stuff_note": "Starter stuff: a fastball below the league average at the same cutoff marks lost velocity before the season line reflects it, and a high ground-ball share takes balls out of the air. V5 tested both features against the market and found nothing (docs/RESEARCH_V5_STUFF.md), so these are observations, not an edge."
       }
     },
     "splits": {
@@ -729,7 +236,7 @@
       }
     },
     "arsenals": {
-      "as_of": "2026-10-04T16:52:28Z",
+      "as_of": "2026-10-04T15:18:15Z",
       "as_of_basis": "when the game payload was built",
       "values": {
         "away": [
@@ -1105,7 +612,7 @@
       }
     },
     "travel": {
-      "as_of": "2026-10-04T16:52:28Z",
+      "as_of": "2026-10-04T15:18:15Z",
       "as_of_basis": "when the game payload was built",
       "values": {
         "MIL": {
@@ -1139,17 +646,17 @@
       "as_of_basis": "forecast for the hour shown",
       "values": {
         "hours_from_first_pitch": 0.0,
-        "humidity_pct": 47,
+        "humidity_pct": 54,
         "observed_utc": "2026-10-04T20:00",
         "precip_probability_pct": 0,
-        "pressure_hpa": 998.1,
-        "temp_f": 67.6,
-        "wind_from_deg": 306,
-        "wind_mph": 12.1
+        "pressure_hpa": 997.1,
+        "temp_f": 66.2,
+        "wind_from_deg": 308,
+        "wind_mph": 11.9
       }
     },
     "park": {
-      "as_of": "2026-10-04T16:52:28Z",
+      "as_of": "2026-10-04T15:18:15Z",
       "as_of_basis": "when the game payload was built",
       "values": {
         "altitude_m": 193,
@@ -1159,7 +666,7 @@
       }
     },
     "news": {
-      "as_of": "2026-10-04T16:52:28Z",
+      "as_of": "2026-10-04T15:18:15Z",
       "as_of_basis": "when the game payload was built",
       "values": {
         "MIL": [
@@ -1286,7 +793,7 @@
       "slot_id": "moneyline",
       "market": "moneyline",
       "label": "SD at MIL moneyline",
-      "as_of": "2026-10-04T16:00:54Z",
+      "as_of": "2026-10-04T15:04:08Z",
       "lean": "MIL",
       "options": [
         {
@@ -1298,64 +805,64 @@
             {
               "book": "betmgm",
               "price": -135,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "betonlineag",
-              "price": -128,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "price": -130,
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "betrivers",
               "price": -141,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "betus",
-              "price": -128,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "price": -130,
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "bovada",
-              "price": -134,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "price": -135,
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "draftkings",
               "price": -137,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "fanatics",
-              "price": -130,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "price": -140,
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "fanduel",
               "price": -134,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "lowvig",
-              "price": -128,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "price": -130,
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "mybookieag",
               "price": -136,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "williamhill_us",
               "price": -136,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "captured_utc": "2026-10-04T15:04:08Z"
             }
           ],
           "best": {
-            "price": -128,
+            "price": -130,
             "book": "lowvig"
           },
-          "fair_probability": 0.5511
+          "fair_probability": 0.5535
         },
         {
           "selection": "SD",
@@ -1366,64 +873,64 @@
             {
               "book": "betmgm",
               "price": 115,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "betonlineag",
-              "price": 116,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "price": 118,
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "betrivers",
               "price": 118,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "betus",
-              "price": 117,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "price": 118,
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "bovada",
-              "price": 112,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "price": 113,
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "draftkings",
               "price": 114,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "fanatics",
-              "price": 110,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "price": 115,
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "fanduel",
               "price": 114,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "lowvig",
-              "price": 116,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "price": 118,
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "mybookieag",
               "price": 116,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "williamhill_us",
               "price": 116,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "captured_utc": "2026-10-04T15:04:08Z"
             }
           ],
           "best": {
             "price": 118,
-            "book": "betrivers"
+            "book": "lowvig"
           },
-          "fair_probability": 0.4489
+          "fair_probability": 0.4465
         }
       ]
     },
@@ -1431,7 +938,7 @@
       "slot_id": "run_line",
       "market": "run_line",
       "label": "SD at MIL run line",
-      "as_of": "2026-10-04T16:00:54Z",
+      "as_of": "2026-10-04T15:04:08Z",
       "lean": "SD +1.5",
       "options": [
         {
@@ -1443,64 +950,64 @@
             {
               "book": "betmgm",
               "price": -200,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "betonlineag",
               "price": -185,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "betrivers",
               "price": -186,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "betus",
               "price": -185,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "bovada",
               "price": -195,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "draftkings",
               "price": -197,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "fanatics",
-              "price": -190,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "price": -200,
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "fanduel",
-              "price": -194,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "price": -200,
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "lowvig",
               "price": -185,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "mybookieag",
               "price": -185,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "williamhill_us",
               "price": -193,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "captured_utc": "2026-10-04T15:04:08Z"
             }
           ],
           "best": {
             "price": -185,
             "book": "mybookieag"
           },
-          "fair_probability": 0.6303
+          "fair_probability": 0.6318
         },
         {
           "selection": "MIL -1.5",
@@ -1511,64 +1018,64 @@
             {
               "book": "betmgm",
               "price": 165,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "betonlineag",
               "price": 161,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "betrivers",
               "price": 150,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "betus",
               "price": 160,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "bovada",
               "price": 165,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "draftkings",
               "price": 161,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "fanatics",
-              "price": 155,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "price": 160,
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "fanduel",
-              "price": 158,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "price": 164,
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "lowvig",
               "price": 162,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "mybookieag",
               "price": 163,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "williamhill_us",
               "price": 161,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "captured_utc": "2026-10-04T15:04:08Z"
             }
           ],
           "best": {
             "price": 165,
             "book": "bovada"
           },
-          "fair_probability": 0.3697
+          "fair_probability": 0.3682
         }
       ]
     },
@@ -1576,7 +1083,7 @@
       "slot_id": "total",
       "market": "total",
       "label": "SD at MIL game total runs",
-      "as_of": "2026-10-04T16:00:54Z",
+      "as_of": "2026-10-04T15:04:08Z",
       "lean": "Over 7",
       "options": [
         {
@@ -1587,60 +1094,60 @@
           "quotes": [
             {
               "book": "betmgm",
-              "price": -118,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "price": -115,
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "betonlineag",
               "price": -117,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "betrivers",
               "price": -109,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "betus",
               "price": -115,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "bovada",
               "price": -115,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "draftkings",
               "price": -115,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "fanatics",
               "price": -115,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "lowvig",
               "price": -115,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "mybookieag",
               "price": -115,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "williamhill_us",
               "price": -108,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "captured_utc": "2026-10-04T15:04:08Z"
             }
           ],
           "best": {
             "price": -108,
             "book": "williamhill_us"
           },
-          "fair_probability": 0.5098
+          "fair_probability": 0.5092
         },
         {
           "selection": "Under 7",
@@ -1650,60 +1157,60 @@
           "quotes": [
             {
               "book": "betmgm",
-              "price": -102,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "price": -105,
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "betonlineag",
               "price": -103,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "betrivers",
               "price": -112,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "betus",
               "price": -105,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "bovada",
               "price": -105,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "draftkings",
               "price": -104,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "fanatics",
               "price": -105,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "lowvig",
               "price": 100,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "mybookieag",
               "price": -107,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "captured_utc": "2026-10-04T15:04:08Z"
             },
             {
               "book": "williamhill_us",
               "price": -109,
-              "captured_utc": "2026-10-04T16:00:54Z"
+              "captured_utc": "2026-10-04T15:04:08Z"
             }
           ],
           "best": {
             "price": 100,
             "book": "lowvig"
           },
-          "fair_probability": 0.4902
+          "fair_probability": 0.4908
         }
       ]
     }
@@ -1738,6 +1245,21 @@
     }
   ],
   "missing": [
+    {
+      "item": "lineups",
+      "kind": "absent",
+      "reason": "lineup not posted yet, or not fetched"
+    },
+    {
+      "item": "matchup_depth",
+      "kind": "absent",
+      "reason": "no posted lineup for this game, so there is no unit to decompose"
+    },
+    {
+      "item": "matchup_history",
+      "kind": "absent",
+      "reason": "batter-vs-pitcher history not fetched"
+    },
     {
       "item": "props",
       "kind": "thin",

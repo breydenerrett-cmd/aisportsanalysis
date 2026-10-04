@@ -4,20 +4,18 @@
   "away": "SD",
   "home": "MIL",
   "first_pitch_utc": "2026-10-04T20:00:00Z",
-  "built_at": "2026-10-04T16:52:05Z",
-  "packet_hash": "7c6d9f13f22991093d0733bd8c16eb430056dc74adaf690c49647e32489848a1",
+  "built_at": "2026-10-04T15:18:16Z",
+  "packet_hash": "8de2bea775be9d825a794607c7f011d58c1e6c72ddc64285fa6a2c1c9fa7a5f3",
   "prompt_version": "analyst_prompt_v3",
   "prompt_hash": "8c667bbbcceb40d1a332fbf9308a97428d422e11cb0f6066de73b58694ee2c34",
-  "token_estimate": 11527,
+  "token_estimate": 8921,
   "model": "claude-sonnet-5-5",
   "slots": [
     "moneyline",
     "run_line",
     "total"
   ],
-  "missing_items": 3,
+  "missing_items": 6,
   "rehearsal": false,
-  "mode": "session_assisted",
-  "packet_source": "data_client",
-  "data_version": "dv1-e72263ce0403554960ada340"
+  "mode": "session_assisted"
 }
