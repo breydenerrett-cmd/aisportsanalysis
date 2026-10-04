@@ -1,131 +1,142 @@
 # Batch 1 sending order
 
-## Send these five first (2026-10-04): the brief comes first
+## Send these five first (2026-10-04): an invitation to review the next brief
 
-This section replaces "Group 1" below as the next thing to send. Five people,
-MLB fit first, each shown one real matchup brief before anything else. The
-older messages led with a description and the record; these lead with the
-report. Do not send until I confirm the sample page is live with a brief on
-it. Send by hand, then tell me "sent 9" (the item number) and I log it.
+This section replaces "Group 1" below as the next thing to send. Five people, MLB fit first. Each
+message is an honest invitation to look at the NEXT completed brief; it does not say a sample is
+already up, and it carries no link. When someone says yes, send them the link below once a brief is
+posted. Version label for all five: `v3b-invite-next-brief`. Send by hand, then tell me "sent 9"
+(the item number) and I log it. A send, a reply, a signup, real use and a payment are logged
+separately.
 
 Why these five (all from the existing queue; nobody appears twice):
 
 | Item | Lead | Why this person |
 |---|---|---|
 | 9 | Tommy Lorenzo, X | Bets MLB and hosts a betting podcast; judges other people's reasoning for a living. |
-| 3 | Peter Appel, JustBaseball, X | Publishes his own losing MLB audit; the brief argues against its own bets, which is his habit too. One person, reached on X (the JustBaseball entry and his X account are the same lead). |
+| 3 | Peter Appel, JustBaseball, X | Publishes his own losing MLB audit; the brief argues against its own bets. The JustBaseball entry and his X account are one lead. |
 | 8 | Tyler Shoemaker, X | Runs his own MLB and NFL ratings and shares every bet; will compare our numbers with his. |
-| 11 | Picks with the Professor, X | Player-level data is his whole pitch; the brief makes a call on up to 16 player props. Smallest account, so the likeliest to answer. |
-| 12 | Unit Circle, Discord | A server sold on "transparent results" that posts matchups and props daily. A community owner, so also a test of the server price later. |
+| 11 | Picks with the Professor, X | Player-level data is his pitch; the brief calls player props. Smallest account, so the likeliest to answer. |
+| 12 | Unit Circle, Discord | A server sold on "transparent results" that posts matchups and props daily. |
 
 Spare, if one cannot be reached: item 13 (337picks, Discord).
 
-The offer line is the same in every message and is all that is promised: MLB
-playoff briefs before first pitch; free for 7 days, no card; $19.99 a month
-after that only if they choose to keep it. Nothing is on sale yet and nobody
-is charged automatically.
-
-Sample link, tagged per lead (replace LEAD and CHANNEL as listed under each):
+Link to send only AFTER they say yes and a brief is posted (replace LEAD and CHANNEL):
 
 ```
 https://linehound.app/web/sample.html?utm_source=LEAD&utm_medium=CHANNEL&utm_campaign=brief_01
 ```
 
-On X: if his DMs are open, send the DM text. If not, reply to a recent
-baseball post with the public reply (no link) and send the link when he
-answers. Replace each bracket with one thing you actually read in his recent
-post; if you cannot find one honestly, skip him and use the spare.
+On X: DM if his DMs are open. If not, reply to a recent baseball post with the short public reply.
+Replace a bracket with one thing you actually read in his recent post; if you cannot find one
+honestly, skip him and use the spare.
 
 ### Item 9, Tommy Lorenzo (LEAD `l009-tommy-lorenzo`, CHANNEL `x_account`)
 
-DM:
+Where: https://x.com/sportsbooktom
 
 ```
-Tommy, [one thing from his recent baseball post]. I built a matchup brief for the MLB playoffs: for each game it makes a call on every priced market, argues the strongest case against its own bet, lists what it could not know, and is graded in public after. Here is one, frozen before first pitch: LINK. Would you look and tell me whether it helps you decide what to examine or skip? It is AI analysis, not advice, and I claim no edge. If it is useful: free for 7 days, no card, then $19.99 a month only if you want to keep it.
+Tommy, [one thing from his recent baseball post]. I am building a matchup brief for the MLB playoffs: for each game it makes a call on every priced market, writes the strongest case against its own bet, lists what it could not know, and is graded in public afterward. It is posted before first pitch. May I send you the next one when it is posted, and would you tell me whether it helps you decide what to examine or skip? AI analysis, not advice, and I claim no edge. If it turns out useful: free for 7 days, no card, then $19.99 a month only if you want to keep it.
 ```
 
 Public reply if DMs are closed:
 
 ```
-[One thing from his post]. I built a playoff matchup brief that argues the case against its own bet and gets graded in public. Would you look at one and tell me if it helps you decide what to skip?
+[One thing from his post]. I am building a playoff matchup brief that argues the case against its own bet and is graded in public. May I send you the next one and hear what is missing?
 ```
 
-Follow-up after 3 days of silence, once:
+When he says yes, once a brief is posted:
 
 ```
-Posted today's brief before first pitch and yesterday's is graded, win or lose: LINK. Still glad to hear what is missing.
+Here it is, frozen before first pitch: LINK. What would you want it to show that it does not?
 ```
 
-Log: `python scripts/outreach_batch.py sent --batch 1 --items 9 --version v3-brief-first`
+Log: `python scripts/outreach_batch.py sent --batch 1 --items 9 --version v3b-invite-next-brief`
 
 ### Item 3, Peter Appel (LEAD `l003-justbaseball-betting`, CHANNEL `creator`)
 
-Where: https://x.com/peterappel23 (DM, or reply to a playoff post).
+Where: https://x.com/peterappel23
 
 ```
-Peter, your "Auditing Myself" log is the reason I am writing: you publish the losing numbers. I built a playoff matchup brief that does the same to itself. For each game it calls every priced market, writes the strongest case against its own bet, lists what it could not know, and is graded in public after. One, frozen before first pitch: LINK. Would you tell me whether it helps you decide what to examine or skip, and what you would want it to show? AI analysis, not advice, no edge claimed. Free for 7 days, no card; $19.99 a month after only if you keep it.
+Peter, your "Auditing Myself" log is the reason I am writing: you publish the losing numbers. I am building a matchup brief for the MLB playoffs: for each game it makes a call on every priced market, writes the strongest case against its own bet, lists what it could not know, and is graded in public afterward. It is posted before first pitch. May I send you the next one when it is posted, and would you tell me whether it helps you decide what to examine or skip? AI analysis, not advice, and I claim no edge. If it turns out useful: free for 7 days, no card, then $19.99 a month only if you want to keep it.
 ```
 
 Public reply if DMs are closed:
 
 ```
-[One thing from his post]. I built a playoff brief that argues against its own bet and is graded in public, in the spirit of your audit series. Would you look at one and tell me what is missing?
+[One thing from his post]. I am building a playoff matchup brief that argues the case against its own bet and is graded in public. May I send you the next one and hear what is missing?
 ```
 
-Follow-up after 3 days, once: same text as item 9.
+When he says yes, once a brief is posted:
 
-Log: `python scripts/outreach_batch.py sent --batch 1 --items 3 --version v3-brief-first`
+```
+Here it is, frozen before first pitch: LINK. What would you want it to show that it does not?
+```
+
+Log: `python scripts/outreach_batch.py sent --batch 1 --items 3 --version v3b-invite-next-brief`
 
 ### Item 8, Tyler Shoemaker (LEAD `l008-tyler-shoemaker`, CHANNEL `x_account`)
 
+Where: https://x.com/tshoeindex
+
 ```
-Tyler, you share every bet and keep your own ratings, so you can check this faster than most. I built a playoff matchup brief: a call on every priced market, the strongest case against each bet, what it could not know, graded in public after. One, frozen before first pitch: LINK. Where does it disagree with your numbers, and does it help you decide what to examine or skip? AI analysis, not advice, no edge claimed. Free for 7 days, no card; $19.99 a month after only if you keep it.
+Tyler, you share every bet and keep your own ratings, so you can check this faster than most. I am building a matchup brief for the MLB playoffs: for each game it makes a call on every priced market, writes the strongest case against its own bet, lists what it could not know, and is graded in public afterward. It is posted before first pitch. May I send you the next one when it is posted, and would you tell me whether it helps you decide what to examine or skip? AI analysis, not advice, and I claim no edge. If it turns out useful: free for 7 days, no card, then $19.99 a month only if you want to keep it.
 ```
 
 Public reply if DMs are closed:
 
 ```
-[One thing from his post]. I built a playoff brief that makes a call on every market and argues against itself, graded in public. Would you check one against your ratings?
+[One thing from his post]. I am building a playoff matchup brief that argues the case against its own bet and is graded in public. May I send you the next one and hear what is missing?
 ```
 
-Follow-up after 3 days, once: same text as item 9.
+When he says yes, once a brief is posted:
 
-Log: `python scripts/outreach_batch.py sent --batch 1 --items 8 --version v3-brief-first`
+```
+Here it is, frozen before first pitch: LINK. What would you want it to show that it does not?
+```
+
+Log: `python scripts/outreach_batch.py sent --batch 1 --items 8 --version v3b-invite-next-brief`
 
 ### Item 11, Picks with the Professor (LEAD `l011-picks-with-the-professor`, CHANNEL `x_account`)
 
+Where: https://x.com/professorsides
+
 ```
-Professor, you work from player-level data, so the props half of this is yours to judge. I built a playoff matchup brief: for each game a call on every priced market including up to 16 player props, the strongest case against each bet, what it could not know, graded in public after. One, frozen before first pitch: LINK. Does it help you decide which props to examine or skip, and what is it missing? AI analysis, not advice, no edge claimed. Free for 7 days, no card; $19.99 a month after only if you keep it.
+Professor, you work from player-level data, so the props half of this is yours to judge. I am building a matchup brief for the MLB playoffs: for each game it makes a call on every priced market, writes the strongest case against its own bet, lists what it could not know, and is graded in public afterward. It is posted before first pitch. May I send you the next one when it is posted, and would you tell me whether it helps you decide what to examine or skip? AI analysis, not advice, and I claim no edge. If it turns out useful: free for 7 days, no card, then $19.99 a month only if you want to keep it.
 ```
 
 Public reply if DMs are closed:
 
 ```
-[One thing from his post]. I built a playoff brief that calls each player prop and argues against its own bet, graded in public. Would you look at one and tell me what is missing?
+[One thing from his post]. I am building a playoff matchup brief that argues the case against its own bet and is graded in public. May I send you the next one and hear what is missing?
 ```
 
-Follow-up after 3 days, once: same text as item 9.
-
-Log: `python scripts/outreach_batch.py sent --batch 1 --items 11 --version v3-brief-first`
-
-### Item 12, Unit Circle (LEAD `l012-unit-circle`, CHANNEL `discord`)
-
-Where: join https://disboard.org/server/1369099482997723208 as a member,
-read the rules, then the ticket or mod-contact channel. If the rules forbid
-links, send the text without the link and offer it.
+When he says yes, once a brief is posted:
 
 ```
-Hi [Name], Unit Circle is built on transparent results, so I would value your read. I built a matchup brief for the MLB playoffs: a call on every priced market, the strongest case against each bet, what it could not know, graded in public after. One, frozen before first pitch: LINK. Would you look and tell me whether it would help your members decide what to examine or skip? AI analysis, not advice, no edge claimed. Free for 7 days, no card; $19.99 a month after only if you keep it.
+Here it is, frozen before first pitch: LINK. What would you want it to show that it does not?
 ```
 
-Follow-up after 3 days, once: same text as item 9.
+Log: `python scripts/outreach_batch.py sent --batch 1 --items 11 --version v3b-invite-next-brief`
 
-Log: `python scripts/outreach_batch.py sent --batch 1 --items 12 --version v3-brief-first`
+### Item 12, Unit Circle (Discord) (LEAD `l012-unit-circle`, CHANNEL `discord`)
 
-After someone uses it, ask what `docs/sales/DISCOVERY_GUIDE.md` lists: what
-decision it helped, what was missing, whether they came back, and whether
-they will pay $19.99 for it. A reply, a signup, real use, a return visit and
-a payment are five different things and are logged separately.
+Where: join https://disboard.org/server/1369099482997723208 as a member, read the rules, then the ticket or mod-contact channel
+
+```
+Hi [Name], Unit Circle is built on transparent results, so I would value your read. I am building a matchup brief for the MLB playoffs: for each game it makes a call on every priced market, writes the strongest case against its own bet, lists what it could not know, and is graded in public afterward. It is posted before first pitch. May I send you the next one when it is posted, and would you tell me whether it helps you decide what to examine or skip? AI analysis, not advice, and I claim no edge. If it turns out useful: free for 7 days, no card, then $19.99 a month only if you want to keep it.
+```
+
+When he says yes, once a brief is posted:
+
+```
+Here it is, frozen before first pitch: LINK. What would you want it to show that it does not?
+```
+
+Log: `python scripts/outreach_batch.py sent --batch 1 --items 12 --version v3b-invite-next-brief`
+
+After someone uses it, ask what `docs/sales/DISCOVERY_GUIDE.md` lists: what decision it helped, what
+was missing, whether they came back, and whether they will pay $19.99 for it.
 
 ---
 
