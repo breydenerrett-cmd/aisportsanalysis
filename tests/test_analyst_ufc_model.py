@@ -21,6 +21,19 @@ from tests import ufc_analyst_fixtures as F
 # if a rule is added to or changed in the MLB prompt, this test fails until the UFC prompt
 # carries it or this list says, in writing, that it should not.
 REWORDED = {
+    # Rule 3a of MLB prompt v3 (2026-10-04), declared derivations. The UFC analyst does not carry it for the
+    # same reason: its schema, critic and hash are unchanged, and the critic ignores a `derived` key on a UFC
+    # reason (tests/test_analyst_derived.py pins that), so a UFC number is checked against the packet as before.
+    "3a.",
+    "The one exception to doing arithmetic is a calculation you declare.",
+    "A number you work out yourself (a difference, a sum, a ratio, a percent change, the days between two dates, the chance a price implies, a count or an average) may appear in a reason, a case against or the summary only if that item lists it in `derived` as {value, unit, op, inputs, note}.",
+    "`op` is one of difference, sum, ratio, percent_change, days_between, implied_probability, count, mean.",
+    "`inputs` are packet paths, in order:",
+    "difference is the first minus the second, ratio is the first over the second, percent_change is the change from the first to the second as a percent of the first, days_between is the calendar days between two dates in UTC (later minus earlier), implied_probability takes one American price, count takes one list.",
+    "`unit` is what the value is measured in (days, runs, percent, and so on) and `note` says in plain words what it is.",
+    "The checker recomputes every derived value from the packet, and a wrong one strikes the call.",
+    "Put the summary's in `summary_derived`.",
+    "An item with no calculated number has an empty `derived`.",
     # Rule 13a of MLB prompt v2 (2026-10-03), the required case against. The UFC analyst deliberately
     # does not carry it: the UFC request, schema, critic and prompt hash are unchanged (the MLB schema
     # is its own copy, `analyst.MLB_RESPONSE_SCHEMA`), and a UFC case against is a later decision.

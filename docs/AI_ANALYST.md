@@ -117,7 +117,7 @@ server-side refusal fallback is **not** enabled: it re-runs a declined request o
 bills that at the other model's rate, which the spend cap's single price table would understate. The
 request is one non-streaming call (`max_tokens` 16,000, timeout 600 seconds).
 
-#### The prompt, verbatim (`PROMPT_VERSION = analyst_prompt_v2`)
+#### The prompt, verbatim (`PROMPT_VERSION = analyst_prompt_v3`)
 
 ```
 You are a baseball betting analyst. You write the analysis of one MLB game and make a call on every market the packet prices. You are an AI model and the reader knows it. Your work is published before the game, graded afterward, and shown next to its record whatever that record turns out to be. Write like a sharp human analyst talking to a smart friend: plain words, a point of view, no hype.
@@ -126,6 +126,7 @@ THE PACKET IS YOUR ONLY SOURCE
 1. Reason only from the packet. Use no outside knowledge of any team, player, injury, weather, standing or result, even if you are sure of it. If something matters and is not in the packet, say it is missing.
 2. A claim without a packet path is forbidden. Every reason has evidence: a list of {path, value}. A path names one value in the packet and starts at the packet's own top-level key. The value is copied exactly. Examples of real paths: markets.moneyline.options[0].best.price and sections.starters.values.home_sp_era. Never start a path with data. or packet.
 3. Every number you write in prose must appear in the packet, or be a price or probability you are yourself giving in a call. Do no arithmetic of your own on packet numbers in prose (no differences, sums or ratios); quote the packet's numbers. Do not write clock times.
+3a. The one exception to doing arithmetic is a calculation you declare. A number you work out yourself (a difference, a sum, a ratio, a percent change, the days between two dates, the chance a price implies, a count or an average) may appear in a reason, a case against or the summary only if that item lists it in `derived` as {value, unit, op, inputs, note}. `op` is one of difference, sum, ratio, percent_change, days_between, implied_probability, count, mean. `inputs` are packet paths, in order: difference is the first minus the second, ratio is the first over the second, percent_change is the change from the first to the second as a percent of the first, days_between is the calendar days between two dates in UTC (later minus earlier), implied_probability takes one American price, count takes one list. `unit` is what the value is measured in (days, runs, percent, and so on) and `note` says in plain words what it is. The checker recomputes every derived value from the packet, and a wrong one strikes the call. Put the summary's in `summary_derived`. An item with no calculated number has an empty `derived`.
 4. `missing` lists what is absent, stale or thin. Weigh it. A call that rests on something listed there is a PASS.
 
 THE CALLS
@@ -150,18 +151,84 @@ THE SUMMARY
 Reply with one JSON object that matches the schema and nothing else.
 ```
 
-#### Prompt v2 and the schema, verbatim
+#### Prompt v2, prompt v3 and the schema, verbatim
 
-`analyst_prompt_v2` (2026-10-03) adds one rule, 13a, and one required call field, `case_against`:
+`analyst_prompt_v2` (2026-10-03) added one rule, 13a, and one required call field, `case_against`:
 for a TAKE or a TAKE_OTHER_SIDE, `{claim, evidence}`, the strongest reason from the packet that the
 bet loses (a specific weakness, not general risk); for a PASS, null. v1 never ran against the API
 (no ledger file existed), so changing it lost no record. The rule is numbered 13a so every later
 rule keeps its number: the situation section (arm B) takes 17 to 20.
 
+`analyst_prompt_v3` (2026-10-04) adds rule 3a and the `derived` field, described in the next
+section. **No row has been published under v2**, so the change cost no record: every row written
+from here on carries v3 and the v3 prompt hash (`prompt_hash`, which also covers the schema). Rule 3
+keeps its words and its number; 3a is the one exception to it, so the later rules and the situation
+section still number as before. Arm B's version moves with it (`analyst_prompt_v3_situation`).
+
 The schema below is `analyst.MLB_RESPONSE_SCHEMA`. The UFC analyst shares the model call and the
-critic but not this field: it keeps using the shared `analyst.RESPONSE_SCHEMA` (the same schema
-without `case_against`), `schema_for(packet)` picks by the packet (a game packet versus a bout
-packet), and the UFC request, prompt hash and critic are unchanged.
+critic but not these fields: it keeps using the shared `analyst.RESPONSE_SCHEMA` (the same schema
+without `case_against` or `derived`), `schema_for(packet)` picks by the packet (a game packet versus
+a bout packet), and the UFC request, prompt hash and critic are unchanged. The critic ignores a
+`derived` key on a UFC reason, so a UFC number is checked against the packet exactly as before.
+
+#### Declared derivations (prompt v3)
+
+The number rule is unchanged and strict: a number in prose must be in the packet. The checker
+struck a call that said "11 days" because the model had computed the 11 itself, and that stays
+rejected. But some calculated facts are legitimate, and the owner's ruling of 2026-10-04 allows
+them "when deterministic code verifies their source inputs, calculation, units and time
+convention", with the provenance kept beside the report. So the model may **declare** a calculation
+and the code **redoes** it from packet values; the model's number is never trusted, only compared.
+
+Each reason, each case against and the summary (as `summary_derived`, beside `summary`) may carry
+`derived`, a list of `{value, unit, op, inputs, note}`. `inputs` are packet paths, in order. The
+checker (`critic.verify_derivations`) reads each input, recomputes the op, checks the unit is one
+the op allows, and compares with the op's tolerance. Only then is that value allowed in the prose
+of **that item and no other**: a correct derivation does not license a different number in the same
+sentence, in another reason, or in `what_would_change_it`. A derivation whose op is unknown, whose
+inputs are absent, not numbers or not the kind the op needs, whose unit the op does not allow or
+whose value differs from the recomputed one **strikes the call** (or withholds the summary), with a
+plain reason in the audit trail. A number that is neither in the packet nor a verified derivation is
+rejected exactly as it always was.
+
+| op | inputs | convention | tolerance |
+|---|---|---|---|
+| `difference` | 2 numbers | first minus second, signed | 0.05 (0.5 in percentage points) |
+| `sum` | 2 to 12 numbers | the total | 0.05 (0.5 in percent or percentage points) |
+| `mean` | 2 to 12 numbers | the arithmetic mean | 0.05 (0.5 in percent or percentage points) |
+| `ratio` | 2 numbers | first over second; a zero second is refused | 0.05 (0.5 in percent) |
+| `percent_change` | 2 numbers | from the first to the second, as a percent of the absolute value of the first; a zero first is refused | 0.5 percent |
+| `days_between` | 2 ISO dates or datetimes | calendar days between the two dates in UTC, later minus earlier, never negative; a date alone is that day in UTC, a datetime is converted to UTC first (no offset is read as UTC) and its time of day is dropped | exact |
+| `implied_probability` | 1 American price | the price's break-even probability, margin left in | 0.5 percent, or 0.005 as a probability |
+| `count` | 1 packet list | its length | exact |
+
+**Rounding.** A declared value agrees with the recomputed one when it is within half a unit of the
+last decimal place it was written to (3.5 for 3.4876 is rounding), and never by more than the cap in
+the table, so a whole number cannot stand in for 0.6. A cap of "exact" means the whole number the
+op returns. The unit sets the scale: `percent` and `percentage points` are 100 times a fraction (the
+packet holds probabilities as fractions), `probability` is the fraction itself. Each op allows only
+its own units (`analyst.DERIVATION_UNITS`, which is also the schema's enum): `days` for
+`days_between`; `percent` for `percent_change`; `percent` or `probability` for
+`implied_probability`; `ratio`, `times` or `percent` for `ratio`; a counting noun for `count`; and
+for `difference`, `sum` and `mean` a baseball quantity (runs, points, games, wins, innings, hits,
+strikeouts, degrees, mph, units) or, where a fraction is being scaled, percentage points or
+percent. The prose number must itself match the derived value at the precision written (the
+absolute value is allowed, so a gap is said without its sign), and a probability may be said as a
+percentage. A verified derivation the sentence does not use is dropped, not kept.
+
+**What is not checked.** The derivation licenses a NUMBER, not the words around it: the prose's own
+unit is not parsed, so "11 runs" would pass beside a verified 11-day derivation. The note is kept
+in the ledger for the audit and never shown. The shape is checked in `validate_output` (a malformed
+`derived` is a shape error and earns the one repair attempt); whether it is true is the critic's.
+
+**Provenance.** Each verified derivation is stored in the published row, inside the reason that used
+it (the summary's at the row's top level as `summary_derived`): the op, unit and value, the packet
+paths it was computed from with a plain label and the value read at each, and the note. A row with
+no derivation is byte for byte what it was. `ledger.game_view` serves each reason with
+`derivations`, one short plain sentence per calculation, for example "11 days: calendar days (UTC)
+from starter last start date to first pitch.", and the whole analysis with `summary_derivations`.
+The page (`web/js/analyst.js`) draws the sentence small under the reason or the summary. It never
+shows a path.
 
 ```json
 {
@@ -169,7 +236,8 @@ packet), and the UFC request, prompt hash and critic are unchanged.
   "additionalProperties": false,
   "required": [
     "summary",
-    "calls"
+    "calls",
+    "summary_derived"
   ],
   "properties": {
     "summary": {
@@ -257,7 +325,8 @@ packet), and the UFC request, prompt hash and critic are unchanged.
               "additionalProperties": false,
               "required": [
                 "claim",
-                "evidence"
+                "evidence",
+                "derived"
               ],
               "properties": {
                 "claim": {
@@ -294,6 +363,73 @@ packet), and the UFC request, prompt hash and critic are unchanged.
                       }
                     }
                   }
+                },
+                "derived": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "value",
+                      "unit",
+                      "op",
+                      "inputs",
+                      "note"
+                    ],
+                    "properties": {
+                      "value": {
+                        "type": "number"
+                      },
+                      "unit": {
+                        "type": "string",
+                        "enum": [
+                          "books",
+                          "days",
+                          "degrees",
+                          "entries",
+                          "games",
+                          "hits",
+                          "innings",
+                          "items",
+                          "mph",
+                          "percent",
+                          "percentage points",
+                          "players",
+                          "points",
+                          "probability",
+                          "quotes",
+                          "ratio",
+                          "runs",
+                          "strikeouts",
+                          "times",
+                          "units",
+                          "wins"
+                        ]
+                      },
+                      "op": {
+                        "type": "string",
+                        "enum": [
+                          "difference",
+                          "sum",
+                          "mean",
+                          "ratio",
+                          "percent_change",
+                          "days_between",
+                          "implied_probability",
+                          "count"
+                        ]
+                      },
+                      "inputs": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "note": {
+                        "type": "string"
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -318,7 +454,8 @@ packet), and the UFC request, prompt hash and critic are unchanged.
                 "additionalProperties": false,
                 "required": [
                   "claim",
-                  "evidence"
+                  "evidence",
+                  "derived"
                 ],
                 "properties": {
                   "claim": {
@@ -355,6 +492,73 @@ packet), and the UFC request, prompt hash and critic are unchanged.
                         }
                       }
                     }
+                  },
+                  "derived": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "value",
+                        "unit",
+                        "op",
+                        "inputs",
+                        "note"
+                      ],
+                      "properties": {
+                        "value": {
+                          "type": "number"
+                        },
+                        "unit": {
+                          "type": "string",
+                          "enum": [
+                            "books",
+                            "days",
+                            "degrees",
+                            "entries",
+                            "games",
+                            "hits",
+                            "innings",
+                            "items",
+                            "mph",
+                            "percent",
+                            "percentage points",
+                            "players",
+                            "points",
+                            "probability",
+                            "quotes",
+                            "ratio",
+                            "runs",
+                            "strikeouts",
+                            "times",
+                            "units",
+                            "wins"
+                          ]
+                        },
+                        "op": {
+                          "type": "string",
+                          "enum": [
+                            "difference",
+                            "sum",
+                            "mean",
+                            "ratio",
+                            "percent_change",
+                            "days_between",
+                            "implied_probability",
+                            "count"
+                          ]
+                        },
+                        "inputs": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "note": {
+                          "type": "string"
+                        }
+                      }
+                    }
                   }
                 }
               },
@@ -362,6 +566,73 @@ packet), and the UFC request, prompt hash and critic are unchanged.
                 "type": "null"
               }
             ]
+          }
+        }
+      }
+    },
+    "summary_derived": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "value",
+          "unit",
+          "op",
+          "inputs",
+          "note"
+        ],
+        "properties": {
+          "value": {
+            "type": "number"
+          },
+          "unit": {
+            "type": "string",
+            "enum": [
+              "books",
+              "days",
+              "degrees",
+              "entries",
+              "games",
+              "hits",
+              "innings",
+              "items",
+              "mph",
+              "percent",
+              "percentage points",
+              "players",
+              "points",
+              "probability",
+              "quotes",
+              "ratio",
+              "runs",
+              "strikeouts",
+              "times",
+              "units",
+              "wins"
+            ]
+          },
+          "op": {
+            "type": "string",
+            "enum": [
+              "difference",
+              "sum",
+              "mean",
+              "ratio",
+              "percent_change",
+              "days_between",
+              "implied_probability",
+              "count"
+            ]
+          },
+          "inputs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "note": {
+            "type": "string"
           }
         }
       }
@@ -386,7 +657,13 @@ Deterministic first, always on, free and exact. A call is **struck** when:
   and a bare 4 matches only a whole 4);
 - a number quoted in a reason or in `what_would_change_it` is not a number in the packet
   or a price or probability the analyst itself gives in a call (a percentage matches a
-  packet fraction at the precision written; a date in words is fine);
+  packet fraction at the precision written; a date in words is fine), or, in that one reason or
+  case against or the summary, a calculation it declares in `derived` that the checker recomputed
+  from the packet (see "Declared derivations");
+- a declared derivation does not hold: an unknown op or unit, an input that is absent, not a
+  number (or not a date, a price or a list, as the op needs) or a group, a value that differs from
+  the recomputed one beyond the op's tolerance, a wrong sign, a zero denominator, more than six
+  in one item. A summary that fails this is withheld;
 - a banned word appears: lock, guaranteed, free money, sure thing, can't lose, +EV, or
   "edge" unless it is denied ("no edge here");
 - a person is named who is not in the packet. Any run of two or more capitalised words is read as
@@ -429,7 +706,8 @@ and the row records `model_critic: "did not run"`.
 **What the critic cannot catch.** It checks that quoted facts are true and the call is
 coherent. It cannot tell whether a true fact is a good reason, whether the summary and the
 calls agree in spirit, or whether the model's probabilities are any good. Its number check is
-against the packet's numbers, not their meaning (the evidence values carry the meaning). Its name
+against the packet's numbers, not their meaning (the evidence values carry the meaning). A verified
+derivation licenses a number, not the unit the prose puts after it. Its name
 check does not look at single capitalised words. A claim can quote true numbers and real names and
 still draw a conclusion they do not support: the optional model critic is the second line for that,
 and the record is the last.
@@ -449,7 +727,7 @@ rows and a different record from the cards.
 
 | row | when | holds |
 |---|---|---|
-| `analyst_published` | before first pitch | the calls, each with its grading spec; summary and its status; the struck originals; packet hash and path; model, prompt hash; run cost |
+| `analyst_published` | before first pitch | the calls, each with its grading spec and, in a reason that used one, its verified derivations; summary and its status (and `summary_derived` when it used one); the struck originals; packet hash and path; model, prompt hash; run cost |
 | `analyst_graded` | after the game | each call's result from the results the cards use |
 | `analyst_correction` | when a grade was wrong | the corrected fields and a reason; the graded row is untouched |
 
@@ -506,7 +784,9 @@ The server sends null, and the page never computes a rate of its own.
   large as TAKE. `GET /analyst/{date}/{away}/{home}` serves it, behind the same gate as
   `GET /game/...`, from the ledger only: **a page view never calls the model.**
   Each TAKE shows "The case against" under its reasons, and the section lists what the analysis
-  could not use (the packet's `missing` list, capped at six with a count).
+  could not use (the packet's `missing` list, capped at six with a count). A reason or summary
+  that rests on a calculated number shows one small plain sentence under it saying where the
+  number came from (see "Declared derivations").
 - **Record page**, the analyst table by market family, with the label, and under it, when the pilot
   has published, "Supervised-session briefs" as a separate block.
 
@@ -627,7 +907,8 @@ How to turn it on, what it costs a day and how to turn it off again:
 ## Tests
 
 `tests/test_analyst_packet.py`, `test_analyst_model.py`, `test_analyst_critic.py`,
-`test_analyst_ledger.py`, `test_analyst_cli.py`, `test_analyst_api.py`, `test_analyst_web.py`, all
+`test_analyst_ledger.py`, `test_analyst_derived.py` (the declared derivations: each op right and
+wrong, the provenance and what the page is served), `test_analyst_cli.py`, `test_analyst_api.py`, `test_analyst_web.py`, all
 offline (the HTTP caller is injected; the shared fixtures read no repo data), plus the wording sweeps
 `test_web_register_sweep`, `test_customer_language` and `test_no_developer_notes_on_screen`.
 `tests/test_analyst_docs.py` pins that the prompt and the schema in this file are the ones in the
