@@ -45,8 +45,10 @@ import copy
 import hashlib
 import json
 import threading
+import time
+from collections import deque
 from dataclasses import dataclass
-from datetime import date as _date, datetime, timezone
+from datetime import date as _date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple
 
@@ -62,6 +64,20 @@ BUILD_ATTEMPTS = 3
 # today, tomorrow and the day just played, with one to spare. The oldest date is dropped first.
 MAX_DATES_HELD = 4
 
+# The dates a caller may ask about: 400 days back (a season and a bit of replay) to 14 days ahead (a schedule the
+# provider has posted). validate_date accepts year 1 to 9999, and every distinct date it let through was one request
+# to the schedule provider (shared with the live pages), so an authenticated loop over dates was an upstream burst
+# and a cache-evicting flood. Outside the window the answer is a plain refusal and nothing is asked of anyone.
+WINDOW_DAYS_BACK = 400
+WINDOW_DAYS_AHEAD = 14
+
+# Even inside the window, a service asks the provider for at most this many DATES IT HAS NO SCHEDULE FOR per
+# window: 414 distinct dates are still 414 requests. Refreshing a date already held is bounded by the TTL (one
+# request per held date per 120 s), so it is not charged. The budget runs on a monotonic clock, not the service's
+# (injected, steppable) one, so a clock moved back cannot freeze or refill it.
+SCHEDULE_BUDGET = 12
+SCHEDULE_BUDGET_WINDOW_S = 60.0
+
 # What a packet is built from, named once so the version, the sources list and the tests agree.
 PACKET_STORES = ("mlb_results", "pitcher_logs", "bullpen_log", "lineups", "handedness", "pitcher_splits",
                  "matchup_history", "standings", "transactions", "arsenal_pitcher", "arsenal_batter",
@@ -76,6 +92,10 @@ class ScheduleUnavailable(Exception):
     """The schedule provider could not be reached and no earlier read of it is held."""
 
 
+class ScheduleBudgetExceeded(ScheduleUnavailable):
+    """Too many dates the service holds no schedule for were asked about just now; the provider was not asked."""
+
+
 def _iso(moment: datetime) -> str:
     return moment.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -83,6 +103,17 @@ def _iso(moment: datetime) -> str:
 def _canon_hash(value: Any) -> str:
     return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(",", ":"), default=str)
                           .encode("utf-8")).hexdigest()
+
+
+def out_of_window(date: str, now: datetime) -> Optional[dict]:
+    """A refusal when `date` (already validated) is outside the window of dates a caller may ask about, else None."""
+    today = now.astimezone(timezone.utc).date()
+    first, last = today - timedelta(days=WINDOW_DAYS_BACK), today + timedelta(days=WINDOW_DAYS_AHEAD)
+    if first <= _date.fromisoformat(date) <= last:
+        return None
+    return {"available": False, "missing": [
+        {"item": "date", "reason": f"{date} is outside the dates this service answers for "
+                                   f"({first.isoformat()} to {last.isoformat()})", "code": "out_of_range"}]}
 
 
 def validate_date(value: Any) -> str:
@@ -210,7 +241,10 @@ class MlbService:
                  results_reader: Optional[Callable[[], Mapping]] = None,
                  pitcher_reader: Optional[Callable[[], Mapping]] = None,
                  data_root: Optional[Path] = None,
-                 config_loader: Optional[Callable[[], dict]] = None):
+                 config_loader: Optional[Callable[[], dict]] = None,
+                 schedule_budget: int = SCHEDULE_BUDGET,
+                 schedule_budget_window_s: float = SCHEDULE_BUDGET_WINDOW_S,
+                 budget_clock: Optional[Callable[[], float]] = None):
         self._fetch_games = fetch_games
         self._loader = loader or default_loader
         self._stores = tuple(stores) if stores is not None else None
@@ -220,7 +254,15 @@ class MlbService:
         self._pitcher_reader = pitcher_reader
         self._data_root = Path(data_root) if data_root is not None else None
         self._config_loader = config_loader
+        # `_lock` guards the dictionaries and counters ONLY and is never held across a schedule request or a build:
+        # the one lock used to be held through both, so one slow date stalled every reader of every date (a cache
+        # hit needed it too). A build is single-flight per date under `_date_lock(date)`.
         self._lock = threading.RLock()
+        self._date_locks: Dict[str, threading.Lock] = {}
+        self._budget_clock = budget_clock or time.monotonic
+        self._budget_spent: deque = deque()
+        self._schedule_budget = int(schedule_budget)
+        self._schedule_budget_window = float(schedule_budget_window_s)
         self._schedules: Dict[str, _Schedule] = {}
         self._items: Dict[str, _Items] = {}
         self._packets: Dict[tuple, Tuple[tuple, dict]] = {}
@@ -283,17 +325,54 @@ class MlbService:
 
     # -- the schedule ----------------------------------------------------------------------------
 
+    def _date_lock(self, date: str) -> threading.Lock:
+        """The date's build lock. Dates are validated and inside the window, so there are at most ~415 of these."""
+        with self._lock:
+            lock = self._date_locks.get(date)
+            if lock is None:
+                lock = self._date_locks[date] = threading.Lock()
+            return lock
+
+    def _held_fresh(self, date: str, now: datetime) -> Optional[_Schedule]:
+        """The held schedule if it is within the TTL (and marks it recently used), else None. Brief, global lock."""
+        with self._lock:
+            held = self._schedules.get(date)
+            if held is not None and 0 <= (now - held.observed_at).total_seconds() < self._ttl:
+                self._schedules[date] = self._schedules.pop(date)      # recently used goes last: junk dates age out first
+                return held
+            return None
+
+    def _charge_budget(self) -> None:
+        """Spend one request of the new-date budget or raise `ScheduleBudgetExceeded`."""
+        with self._lock:
+            now = self._budget_clock()
+            while self._budget_spent and now - self._budget_spent[0] >= self._schedule_budget_window:
+                self._budget_spent.popleft()
+            if len(self._budget_spent) >= self._schedule_budget:
+                raise ScheduleBudgetExceeded("too many dates were asked about just now and the schedule provider "
+                                             "was not asked for this one; try again in a minute")
+            self._budget_spent.append(now)
+
     def _schedule_for(self, date: str, now: datetime) -> _Schedule:
         """The date's schedule: the held read while it is within the TTL, else one fresh request.
 
         A failed refresh serves the earlier read, marked with the error and its ORIGINAL observation time;
-        with no earlier read it raises `ScheduleUnavailable`.
+        with no earlier read it raises `ScheduleUnavailable`. The request is made under the DATE's lock (one
+        request per date however many readers wait) and never under the global one.
         """
-        with self._lock:
-            held = self._schedules.get(date)
-            if held is not None and 0 <= (now - held.observed_at).total_seconds() < self._ttl:
-                return held
-            self.counters["schedule_requests"] += 1
+        fresh = self._held_fresh(date, now)
+        if fresh is not None:
+            return fresh
+        with self._date_lock(date):
+            fresh = self._held_fresh(date, now)                  # another reader refreshed it while this one waited
+            if fresh is not None:
+                return fresh
+            with self._lock:
+                held = self._schedules.get(date)
+            if held is None:
+                self._charge_budget()
+            with self._lock:
+                self.counters["schedule_requests"] += 1
             try:
                 games = tuple(self._fetch(date))
             except Exception as exc:  # noqa: BLE001 -- any provider failure is "unavailable", never a 500
@@ -303,7 +382,9 @@ class MlbService:
                 # outage costs one request per window, not one per call.
                 held = _Schedule(held.date, held.games, held.observed_utc, now, held.fingerprint,
                                  refresh_error=f"{type(exc).__name__}: {exc}")
-                self._schedules[date] = held
+                with self._lock:
+                    self._schedules.pop(date, None)
+                    self._schedules[date] = held
                 return held
             fingerprint = _canon_hash(list(games))
             if held is not None and held.fingerprint == fingerprint:
@@ -311,32 +392,49 @@ class MlbService:
                 held = _Schedule(date, held.games, held.observed_utc, now, fingerprint)
             else:
                 held = _Schedule(date, games, _iso(now), now, fingerprint)
-            self._schedules[date] = held
-            self._trim()
+            with self._lock:
+                self._schedules.pop(date, None)
+                self._schedules[date] = held
+                self._trim()
             return held
 
     # -- the items of a date, cached against the version ------------------------------------------------
 
-    def _snapshot(self, date: str, now: datetime) -> _Items:
-        schedule = self._schedule_for(date, now)
+    def _snapshot(self, date: str, now: datetime, schedule: Optional[_Schedule] = None) -> _Items:
+        """The date's built items. A hit costs a `stat()` per store file and a brief global lock; a build runs
+        under the date's own lock, so it blocks only readers of the same date that need the same build."""
+        schedule = schedule or self._schedule_for(date, now)
         for _ in range(BUILD_ATTEMPTS):
             sig = self.signature(date)
             key = (sig, schedule.fingerprint)
-            with self._lock:
-                held = self._items.get(date)
-                if held is not None and held.key == key:
+            held = self._items_hit(date, key)
+            if held is not None:
+                return held
+            with self._date_lock(date):
+                held = self._items_hit(date, key)               # built by the reader this one waited behind
+                if held is not None:
                     return held
                 items = self._loader(date, list(schedule.games), now)
-                self.counters["item_builds"] += 1
+                with self._lock:
+                    self.counters["item_builds"] += 1
                 if self.signature(date) != sig:
                     continue                      # a store changed while it was being read: read again
                 built = _Items(key, items, schedule, self._version(sig, "schedule:" + schedule.fingerprint),
                                _iso(now))
-                self._items.pop(date, None)
-                self._items[date] = built
-                self._trim()
+                with self._lock:
+                    self._items.pop(date, None)
+                    self._items[date] = built
+                    self._trim()
                 return built
         raise core.SnapshotUnstable(f"the MLB stores changed on every one of {BUILD_ATTEMPTS} reads")
+
+    def _items_hit(self, date: str, key: tuple) -> Optional[_Items]:
+        with self._lock:
+            held = self._items.get(date)
+            if held is not None and held.key == key:
+                self._items[date] = self._items.pop(date)      # recently used goes last
+                return held
+            return None
 
     def _trim(self) -> None:
         """Forget the oldest dates beyond `MAX_DATES_HELD`: their items, packets and schedules."""
@@ -356,6 +454,9 @@ class MlbService:
         """The schedule for `date`, results for final games. Cached by the schedule's fingerprint."""
         date = validate_date(date)
         now = self._now(now)
+        refused = out_of_window(date, now)
+        if refused is not None:
+            return refused
         try:
             schedule = self._schedule_for(date, now)
         except ScheduleUnavailable as exc:
@@ -364,9 +465,7 @@ class MlbService:
                       key=lambda r: (r["start_time_utc"] or "", str(r["game_pk"])))
         missing = []
         if schedule.refresh_error:
-            missing.append({"item": "schedule", "kind": "stale",
-                            "reason": f"the schedule could not be re-read ({schedule.refresh_error}); these games are "
-                                      f"the read of {schedule.observed_utc}"})
+            missing.append(_stale_item(schedule))
         if not rows:
             missing.append({"item": "games", "kind": "none_scheduled",
                             "reason": f"the schedule lists no games on {date} (an off day, or a date the provider "
@@ -385,7 +484,7 @@ class MlbService:
         stored = index.get(date, [])
         if not stored:
             return {"available": False, "missing": [
-                {"item": "schedule", "reason": f"the schedule provider could not be reached ({why}) and the "
+                {"item": "schedule", "reason": f"the schedule is not available ({why}) and the "
                                                f"results store holds no games for {date}", "code": "unavailable"}]}
         rows = [result_row(r) for r in sorted(stored, key=lambda r: (r.get("start_time_utc") or "",
                                                                         str(r.get("game_pk"))))]
@@ -397,7 +496,7 @@ class MlbService:
                 "sources": [self._source("mlb_results", self._version(sig)["files"].get("mlb_results"))],
                 "coverage": self._coverage(date),
                 "missing": [{"item": "schedule", "kind": "unavailable",
-                             "reason": f"the schedule provider could not be reached ({why}); these are the games "
+                             "reason": f"the schedule is not available ({why}); these are the games "
                                        "the results store holds for the date (final games only)"}]}
         return core._ok("mlb", "schedule", rows, meta)
 
@@ -450,12 +549,23 @@ class MlbService:
         date = validate_date(date)
         now = self._now(now)
         wanted = _wanted(away, home)
+        refused = out_of_window(date, now)
+        if refused is not None:
+            return refused
         try:
-            snap = self._snapshot(date, now)
+            schedule = self._schedule_for(date, now)
         except ScheduleUnavailable as exc:
             return {"available": False, "missing": [
-                {"item": "schedule", "reason": f"the schedule provider could not be reached: {exc}",
-                 "code": "unavailable"}]}
+                {"item": "schedule", "reason": f"the schedule is not available: {exc}", "code": "unavailable"}]}
+        # The game is looked for on the schedule BEFORE the slate is built: building is the whole slate (seconds of
+        # CPU and the date's place in the cache), and a club pair the schedule does not list is answered by the
+        # schedule alone. A junk request therefore builds nothing and evicts nothing.
+        if not any(_item_matches({"payload": {"advanced": {"game": g}}}, wanted) for g in schedule.games):
+            return {"available": False, "missing": [
+                {"item": "game", "reason": f"no game {away}@{home} on {date} in the schedule read of "
+                                           f"{schedule.observed_utc}", "code": "not_found"}]}
+        try:
+            snap = self._snapshot(date, now, schedule)
         except core.SnapshotUnstable as exc:
             return {"available": False, "missing": [{"item": "snapshot", "reason": f"{exc}; try again",
                                                      "code": "unavailable"}]}
@@ -476,7 +586,7 @@ class MlbService:
                 held = self._packets.get(cache_key)
                 if held is not None and held[0] == snap.key:
                     self.counters["packet_cache_hits"] += 1
-                    return copy.deepcopy(held[1])       # a caller that edits its answer must not edit the cache
+                    return _with_schedule_state(copy.deepcopy(held[1]), schedule)  # a caller that edits its answer must not edit the cache
         cut = built_at or _iso(now)
         from src.analyst import cli as analyst_cli
         from src.analyst import packet as packet_mod
@@ -490,7 +600,7 @@ class MlbService:
         if built_at is None:
             with self._lock:
                 self._packets[cache_key] = (snap.key, copy.deepcopy(result))
-        return result
+        return _with_schedule_state(result, schedule)
 
     def quotes(self, date: Optional[str], away: Optional[str], home: Optional[str], *,
                now: Optional[datetime] = None) -> dict:
@@ -669,6 +779,29 @@ class MlbService:
 
 
 # -- rows ---------------------------------------------------------------------------------------------------
+
+def _stale_item(schedule: _Schedule) -> dict:
+    """The `missing` entry for a schedule that could not be re-read (the one `games()` and `packet()` share)."""
+    return {"item": "schedule", "kind": "stale",
+            "reason": f"the schedule could not be re-read ({schedule.refresh_error}); these games are "
+                      f"the read of {schedule.observed_utc}"}
+
+
+def _with_schedule_state(result: dict, schedule: _Schedule) -> dict:
+    """Say, on a packet answer, whether the schedule it rests on could not be refreshed RIGHT NOW.
+
+    That is a fact about the schedule's latest refresh attempt, not about the moment the packet was built, so it
+    is applied to every answer, a cached one included: a packet built while the provider was up and served after
+    it went down is on a schedule that is no longer being refreshed, and the cached copy cannot know. The
+    packet's own bytes (and so its hash) are untouched; only `meta` carries it.
+    """
+    meta = result["meta"]
+    meta["schedule_refresh_error"] = schedule.refresh_error
+    meta["missing"] = [m for m in meta["missing"] if not (m.get("item") == "schedule" and m.get("kind") == "stale")]
+    if schedule.refresh_error:
+        meta["missing"].append(_stale_item(schedule))
+    return result
+
 
 def _wanted(away: Optional[str], home: Optional[str]) -> Tuple[str, str]:
     if not away or not home:

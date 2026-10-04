@@ -78,7 +78,6 @@ class Counting:
 
 class ASlateIsBuiltOnlyForAGameThatIsOnIt(unittest.TestCase):
 
-    @unittest.expectedFailure
     def test_a_club_pair_the_schedule_does_not_list_builds_nothing(self):
         """`MlbService.packet` takes the date's snapshot (the whole slate: 8.6 s for 16 games, docs/datasvc/
         CLIENT.md) BEFORE it looks for the game, so an authenticated caller asking for ZZZ@YYY on any date pays for
@@ -87,7 +86,6 @@ class ASlateIsBuiltOnlyForAGameThatIsOnIt(unittest.TestCase):
         c.service.packet(F.DATE, "ZZZ", "YYY")
         self.assertEqual(c.loads, [], "a whole-slate build ran for a game that is not on the schedule")
 
-    @unittest.expectedFailure
     def test_junk_requests_cannot_evict_the_slate_a_real_reader_is_using(self):
         """MAX_DATES_HELD is 4 and the oldest date goes first, so five junk requests on five other dates push
         today's slate out, and the next real read rebuilds it."""
@@ -128,7 +126,6 @@ class ASlateIsBuiltOnlyForAGameThatIsOnIt(unittest.TestCase):
 
 class OneBuildDoesNotStopEveryOtherRead(unittest.TestCase):
 
-    @unittest.expectedFailure
     def test_a_cached_packet_is_served_while_another_date_is_being_built(self):
         """`_snapshot` holds the service's one RLock for the whole slate build (and `_schedule_for` for the whole
         upstream request), and a cache hit needs that lock, so one slow date stalls every reader of every date.
@@ -152,7 +149,6 @@ class OneBuildDoesNotStopEveryOtherRead(unittest.TestCase):
 
 class AnUpstreamBurstIsBounded(unittest.TestCase):
 
-    @unittest.expectedFailure
     def test_a_burst_of_distinct_dates_does_not_become_a_burst_of_upstream_requests(self):
         """Any date from 0001-01-01 to 9999-12-31 passes `validate_date`, each distinct date is one request to the
         schedule provider, and the cache keeps eight of them. A signed-in caller looping over dates sends the
@@ -165,7 +161,6 @@ class AnUpstreamBurstIsBounded(unittest.TestCase):
 
 class AStaleScheduleIsSaidToBeStale(unittest.TestCase):
 
-    @unittest.expectedFailure
     def test_a_packet_built_on_a_schedule_read_days_ago_says_so_in_its_missing_list(self):
         """When the provider fails, the held schedule is served with its ORIGINAL observation time (right) and
         `games()` adds a `stale` entry to `missing`. `packet()` only sets `schedule_refresh_error`: the packet's
@@ -246,7 +241,6 @@ class StatusDoesNotRescanOrLeak(unittest.TestCase):
         self.addCleanup(store_freshness.reset_cache_for_tests)
         self.now = datetime(2026, 10, 4, 15, tzinfo=timezone.utc)
 
-    @unittest.expectedFailure
     def test_a_corrupt_store_is_scanned_once_per_file_version_not_once_per_status_request(self):
         """`store_freshness._scan_cached` says 'errors are never cached', so a corrupt or torn store file is parsed
         again on EVERY /data/v1/status request; the UFC and NFL halves of the same route remember a failure per
@@ -264,7 +258,6 @@ class StatusDoesNotRescanOrLeak(unittest.TestCase):
                 service.status(self.now)
         self.assertEqual(len(scans), 1, f"the same unchanged corrupt file was parsed {len(scans)} times")
 
-    @unittest.expectedFailure
     def test_status_does_not_print_the_servers_file_path(self):
         """The unreadable-store reason is `f"{type(exc).__name__}: {exc}"`, and an OSError's text carries the
         absolute path (`[Errno 13] Permission denied: 'C:\\\\...\\\\pitcher_splits.json'`), which `/status` returns
@@ -324,7 +317,6 @@ class OverHttp(MlbApiCase):
         self.assertNotIn(Path(self._tmp.name).name, json.dumps(body))
         self.assertEqual(body["error"]["code"], "data_unavailable")
 
-    @unittest.expectedFailure
     def test_http_status_does_not_print_the_servers_file_path_of_an_unreadable_mlb_store(self):
         root = Path(self._tmp.name) / "mlb_status_root"
         (root / "historical" / "pitcher_splits.json").mkdir(parents=True)
