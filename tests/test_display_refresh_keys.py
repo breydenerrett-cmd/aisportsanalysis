@@ -156,7 +156,11 @@ class TheBullpenAndStandingsDatesKeepTheirRecords(Base):
         self.assertIn((YESTERDAY, 13, 9013), {(r["date"], r.get("game_pk"), r.get("person_id")) for r in rows})
         grew = len(rows) > 3
         self.assertTrue(grew, "the premise: other dates were fetched, so the total grew")
-        self.assertEqual([r["keys"] for r in report["restored"]], [1])
+        # 2026-10-04: the step no longer drops yesterday's rows when it cannot
+        # read yesterday's schedule (it re-fetches only when the schedule shows
+        # a final game the log lacks), so there is nothing for the per-key
+        # promotion to put back. The rows are still there, which is the claim.
+        self.assertEqual(report["restored"], [])
 
 
 class TheKeyedRepairPerStore(unittest.TestCase):

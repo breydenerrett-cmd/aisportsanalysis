@@ -351,8 +351,12 @@ class NeverAWorseStoreThanTheOneItStartedWith(Base):
         self.assertEqual(sentinels, {k: v for k, v in after.items()
                                      if k.startswith(("watch", "processed"))})
         self.assertFalse((self.root / ".refresh_work").exists())
+        # `raw/` (git-ignored, reproducible) holds the fetch layer's cache of
+        # answers that can never change again (src/pipeline/refresh_fetch.py);
+        # nothing else under it, and nothing outside it besides historical.
         self.assertEqual(sorted(p.name for p in self.root.iterdir()),
-                         ["historical", "processed", "watch"])
+                         ["historical", "processed", "raw", "watch"])
+        self.assertEqual([p.name for p in (self.root / "raw").iterdir()], ["mlb_statsapi_cache"])
         leftovers = [p for p in self.hist.rglob("*") if p.name.endswith((".tmp", ".refresh.tmp"))]
         self.assertEqual(leftovers, [])
 
