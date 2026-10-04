@@ -31,9 +31,11 @@ Two columns, because they prove different things:
 | 12 | Billing switched on but misconfigured: an honest error, never a silent waitlist | yes | PASS `BrokenBillingFailsOutLoud`, `test_checkout_delivery.SilentWaitlistTests` | not applicable |
 | 13 | Billing off (production today): no checkout, no promise of a payment | yes | PASS `BillingSwitchedOff.test_off_says_so_and_never_promises_a_payment`, `test_expired_tester_paid_path.SignupWithBillingOff` | verified on production 2026-10-02 (`/health` checkout off) |
 
-"PASS" in the first column means the named tests passed in the full suite
-run recorded at the bottom of this file. It does not mean a human has seen
-it work with Stripe.
+| 14 | A failed payment (trial ends and the first charge fails, or a renewal fails) ends access at the end of the PAID period, not the new one; a successful retry restores it | yes | PASS `test_billing_failed_payment` (all 14 tests; the first two classes failed before the fix) | NOT RUN (step 13) |
+
+"PASS" in the first column means the named tests passed in the test run
+recorded at the bottom of this file. It does not mean a human has seen it
+work with Stripe.
 
 ## The staging run (owner, about 20 minutes, nothing is charged)
 
@@ -79,10 +81,113 @@ it says `checkout.mode: test`. If it says `live`, stop.
     `rehearsal-3@linehound.app` on the signup form before step 11's payment.
     The page says the email already has early access and to sign in with
     the token. No Stripe page opens. *(row 11a)*
+13. **Failed payment.** Buy with a fourth email
+    (`rehearsal-4@linehound.app`) using Stripe's test card
+    `4000 0000 0000 0341` (it is accepted at checkout and declined on the
+    first real charge). On the Billing page write down the date it shows;
+    that is the trial's end, about 7 days out. In the Stripe dashboard, test
+    mode: Subscriptions, that subscription, Actions, End trial now. Stripe
+    tries the charge, it is declined, and the subscription goes `past_due`.
+    Reload the Billing page. **Pass:** the date has NOT moved (it is still
+    the trial's end, not a month out); the status reads "canceled" (this
+    app shows every non-paying Stripe status that way). **Fail:** the date
+    is about a month away. Then look for the `invoice.payment_failed` line
+    in the Roadmap table below. Ending the trial early does not shorten what
+    was promised, so the card will still open until the original trial end;
+    to see it refused I will give you the same one command as step 8.
+    *(row 14)* In the Stripe webhook settings for staging, make sure the
+    endpoint is also sent `invoice.payment_failed` (it is only logged, but
+    it is the line that proves the decline arrived). The retry-succeeds
+    case is covered in process only: Stripe's test dashboard cannot make a
+    declining card start working.
 
 Tell me each step's result ("3 ok", "6 showed two subscriptions") and I will
 fill the table. I can check `/health` and the public pages from outside; I
 cannot see the admin page or fill in a card.
+
+## Roadmap cases: what to look for on staging
+
+Each case below has the in-process test that proves our logic, the staging
+step that proves the wiring, and the exact line to find in the staging log
+(`fly logs -a linehound-staging`). Only the owner types the test card.
+
+**The request-log line** is written by the middleware in `api/app.py` through
+`src/appstate/reqlog.py`, one per request, to stderr:
+
+```
+method=GET path=/ufc/fight-night status=401 latency_ms=29.2 user=-
+```
+
+Fields, in order: `method`, `path` (the route TEMPLATE, for example
+`/signup/complete`, never the raw URL), `status`, `latency_ms`, `user`.
+`user` is `-` for an anonymous request. For a signed-in request it is NOT the
+account id: it is the first 16 hex characters of the sha256 of the id, so
+lines from one account match each other and never name it. Bearer tokens,
+emails and bodies are never logged. A webhook request is anonymous
+(`user=-`), because Stripe is not signed in. Do not expect to read an email
+or id in any line; match accounts by the `user=` value being the same across
+your own requests.
+
+The one non-request line this work adds is written by the webhook handler,
+also to stderr:
+
+```
+billing: invoice.payment_failed user=<16 hex> subscription=sub_... attempt=1
+```
+
+| Case | In-process test | Staging step | Log lines to find |
+|---|---|---|---|
+| Closed success tab | `BuyAndComeBack.test_purchase_persists_and_access_survives_closing_the_page`, `test_the_buyer_who_closed_the_tab_before_the_token_arrived_can_come_back` | 3 and 4 | `method=POST path=/billing/webhook status=200 ... user=-` for the payment, then later `method=GET path=/signup/complete status=200 ... user=-` if the page is reopened, or `status=404` once the link has expired (the support re-issue path, step 5); the first signed-in request after returning shows `status=200` with a `user=` value |
+| The same event delivered twice | `DuplicateWebhook.test_a_redelivered_payment_grants_nothing_twice` | 6 (Resend) | two identical `method=POST path=/billing/webhook status=200` lines (the resend answers 200 like the first delivery); the admin page still shows one user and one subscription |
+| An active tester converting | `test_expired_tester_paid_path.PayingFromInsideTheWeekThroughTheBillingPage.test_an_invited_tester_who_pays_becomes_active`, `TesterCheckoutWithBillingOn.test_a_tester_still_inside_the_week_can_pay_early` | 11, done while the week is still running | `method=POST path=/billing/tester-checkout status=200 ... user=<hash>` (or `/billing/checkout` if started from the Billing page), then `method=POST path=/billing/webhook status=200 ... user=-` |
+| An expired tester converting | `test_expired_tester_paid_path.PayingAsAFormerTester.test_one_user_active_with_the_subscription`, `TesterCheckoutWithBillingOn.test_an_expired_tester_token_starts_the_checkout_on_their_own_account` | 11 and 12 | `method=POST path=/billing/tester-checkout status=200 ... user=<hash>` (the token proves who they are, so the hash is present), the webhook line, and afterwards `method=GET path=/ufc/fight-night status=200 ... user=<same hash>`; the old week token still gets `status=401` |
+| Cancellation | `CancelAndExpiry.test_cancel_stops_renewal_and_keeps_what_was_paid_for` | 7 | `method=POST path=/billing/cancel status=200 ... user=<hash>`; a following `method=GET path=/ufc/fight-night status=200 ... user=<same hash>` shows access continued; a `customer.subscription.updated` webhook line follows if Stripe sends one |
+| Expiry | `CancelAndExpiry.test_after_the_paid_period_access_is_refused_with_a_reason` | 8 (simulated; the period end is moved by the one command) | `method=GET path=/ufc/fight-night status=402 ... user=<same hash>`, and `method=GET path=/billing/status status=200 ... user=<same hash>` (the billing page must still open) |
+| Failed payment | `test_billing_failed_payment` (trial then first charge, renewal, retry succeeds, redelivery, stale events) | 13 | `billing: invoice.payment_failed user=<hash> subscription=sub_... attempt=1`, then `method=POST path=/billing/webhook status=200 ... user=-` for it and for the `customer.subscription.updated` that follows; the Billing page date must not move |
+
+### Proving the paid gate on staging
+
+Staging runs with `APP_PUBLIC_DEMO=1` (`deploy/fly.staging.toml`). That empties
+the paid gate on most product routes (`/today`, `/games`, `/odds`,
+`/betcheck` and the other routers in `api/app.py`'s `_authed_paid` group), so
+**those routes answer 200 to anyone on staging and prove nothing about
+payment.** Do not use them for this rehearsal.
+
+`/ufc/fight-night` is always gated. `api/ufc_fights.py` builds its router with
+`dependencies=[Depends(require_paid_access)]` itself, and `api/app.py` mounts
+it with a bare `app.include_router(ufc_fights_router)`, outside
+`_authed_paid`; `tests/test_api_ufc_fights.py::test_public_demo_mode_cannot_open_it`
+pins that it answers 401 under demo mode. Use it, with
+`curl -i https://linehound-staging.fly.dev/ufc/fight-night -H "Authorization: Bearer <token>"`
+(leave the header off for the anonymous case):
+
+| When | Request | Expected status | Log line |
+|---|---|---|---|
+| Before paying (a signed-up buyer has no token yet; an expired tester's token behaves the same) | no header, or the ended week token | **401** | `method=GET path=/ufc/fight-night status=401 ... user=-` |
+| After paying | the token from the completion page | **200** (503 `UFC data is not readable right now` also means the gate opened; staging may not hold UFC data. The pass criterion is "not 401 and not 402") | `method=GET path=/ufc/fight-night status=200 ... user=<hash>` |
+| After expiry (step 8 command, or after a declined first charge once the trial end has passed) | the same token | **402** with `"error": "subscription_expired"` | `method=GET path=/ufc/fight-night status=402 ... user=<same hash>` |
+
+The same token must give 200 then 402, with the same `user=` value on both
+lines. If it gives 402 before the period end, or 200 after it, the gate is
+wrong; stop and tell me.
+
+### Stripe test-dashboard actions the owner uses
+
+Test mode only (confirm the toggle says "Test mode" first).
+
+- **Resend an event** (rows 5, 6): Developers, Events, open the event,
+  Resend (to the staging endpoint).
+- **Cancel** (rows 7, 9): easiest from the app's own Billing, Cancel button,
+  which schedules the cancel for period end. In the dashboard: Subscriptions,
+  the subscription, Actions, Cancel subscription, then choose "At end of
+  current billing period". Do not pick "Immediately" for the rehearsal
+  unless the step says so: it ends access now, by design.
+- **End a trial** (row 14): Subscriptions, the subscription, Actions, End
+  trial now. Pair it with test card `4000 0000 0000 0341` for the failing
+  charge.
+- **Make a charge decline or succeed:** only the card number decides, and it
+  is typed on Stripe's own checkout page by the owner. Nothing else in this
+  file ever touches a card.
 
 ## Found in review and fixed (2026-10-03)
 
@@ -116,3 +221,12 @@ too. Detail: `docs/audit/2026-10-03/EXPIRED_TESTER_PAID_PATH.md`.
 pushed: 9,969 tests, no failure outside the eight known Windows-only
 identities (`docs/audit/2026-09-28/full_suite_integrated_1169b2d6_failures.txt`).
 Linux CI result: see `docs/audit/2026-10-03/RELEASE.md`.
+
+Row 14 (failed payment) was added after that run. It was checked with the
+billing test modules only (360 tests, no failure): `test_billing_failed_payment`,
+`test_billing_acceptance_path`, `test_billing_cancellation_policy`,
+`test_appstate_billing`, `test_appstate_customers`,
+`test_expired_tester_paid_path`, `test_expired_tester_review`,
+`test_api_billing`, `test_api_signup`, `test_checkout_copy_states`,
+`test_checkout_delivery`, `test_api_boundary`. The full suite has not been
+re-run on the change.
