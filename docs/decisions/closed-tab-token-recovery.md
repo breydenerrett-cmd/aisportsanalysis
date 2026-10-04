@@ -1,5 +1,4 @@
 # Closed-tab token recovery (decision for the owner)
-
 Status: PROPOSED, not applied (review 2026-10-04). Patch:
 `closed-tab-token-recovery.patch` (web/js/signup.js only).
 
@@ -19,7 +18,6 @@ Status: PROPOSED, not applied (review 2026-10-04). Patch:
   was included" screen (~455-460); the 10-minute window is unreachable. The
   same browser profile is already signed in via `setToken`; any other device
   needs support (`POST /admin/users/token`).
-
 ## Option A: keep as is
 
 - Buyer: closes the tab early, sees "Check your link", contacts support (no
@@ -43,14 +41,12 @@ on the "already signed in" and server-refusal screens.
   left in history is dead. LIMITATION: if the tab closes before the timer
   fires, the history entry keeps the session id (inert after the window).
   B adds no server exposure; it makes the id easier to find on that device.
-
 ## Recommendation
 
 B, if the owner accepts the shared-computer exposure above: buyers are on
 phones and personal laptops, and A locks a paying customer out with no email
 fallback. For zero history exposure, stay on A and add the recovery step to
 the support runbook.
-
 ## Tests with the change applied
 
 274 tests OK (checkout_to_card_web, signup_complete_polling, api_signup,
