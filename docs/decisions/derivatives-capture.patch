@@ -1,0 +1,13 @@
+--- a/.github/workflows/forward-capture.yml
++++ b/.github/workflows/forward-capture.yml
+@@ -237,4 +237,10 @@
+           CAPTURE_NOW: ${{ github.event_name == 'workflow_dispatch' && inputs.capture_now == '1' && '1' || '' }}
+           # This file chains in its `pace` job; the script must not also.
+           CHAIN_BY_WORKFLOW_STEP: "1"
++          # Team totals, alternates and the F5 trio (src/pipeline/derivative_markets.py).
++          # PAUSED since 2026-09-21 (credit squeeze); the last row was captured
++          # 2026-09-21T22:19Z. Setting this to "1" resumes ALL THREE families, about
++          # 96 credits a day by the script's own estimate. Owner decision, see
++          # docs/audit/2026-10-04/COLLECTION.md section 6.
++          DERIVATIVES_CAPTURE: "1"
+         run: bash scripts/capture_slot.sh

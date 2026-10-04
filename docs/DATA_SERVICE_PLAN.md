@@ -67,6 +67,43 @@ A source can change or block us without notice. Each sport therefore keeps a
 raw page or response cache, a parser test suite on saved fixtures, and a
 freshness alarm, so a break is seen the same day and fixed in one place.
 
+## Source matrix (2026-10-04)
+
+Three separate kinds of data, because they are separate decisions: **sporting
+statistics** (what happened), **sportsbook prices** (what books offered) and
+**internally derived features** (what we compute). "Permitted use" is what the
+provider's own published words say, quoted or marked uncertain; an open URL is
+not a licence, and nothing here is legal advice. Measured numbers come from
+`docs/audit/2026-10-04/COLLECTION.md`. Nothing in this table says a
+subscription can be cancelled: that follows from a plan actually being
+downgraded and the product still working, not from a row.
+
+### A. Sporting statistics
+
+| Capability | Provider | Fields | Permitted use (as published) | Auth | Cost or quota | Observed coverage | Freshness need | Replaces a paid dependency? |
+|---|---|---|---|---|---|---|---|---|
+| MLB schedule, finals, probables, boxscores (relief usage), pitcher game logs, splits, standings, handedness, transactions | MLB Stats API, `statsapi.mlb.com` (free, unofficial for third parties) | Per game: teams, scores, status, probables; per boxscore: every pitcher's line; per pitcher: season game log by game type; standings by date; people | **Restrictive.** Every response carries "Use of any content on this page acknowledges agreement to the terms posted here" (`gdx.mlb.com/components/copyright.txt`), and that text says only "individual, non-commercial, non-bulk use of the Materials is permitted" and any other use is prohibited without MLB Advanced Media's written authorization. LineHound is a paid product and fetches in bulk (632 requests for a cold refresh), so its present use is **not clearly covered**. Owner decision, not an engineering one | None | No published quota found. Observed 2026-10-04: about 1,300 requests over eight refreshes, the long ones at roughly 3 a second, 0 HTTP errors, no throttling | Complete for what the product reads: results 2023-03-30 to now, pitcher logs and bullpen log for 2026, standings to the end of the regular season (the API returns an empty table for a postseason date) | Results and bullpen: daily; pitcher logs and splits: before first pitch on a start day | **No.** It is the free dependency; it replaces nothing paid. It is the one with a terms question |
+| MLB pitch-arsenal leaderboards | Baseball Savant CSV (`baseballsavant.mlb.com/leaderboard/pitch-arsenal-stats`) | Per pitcher and batter, per pitch type: usage, whiff, wOBA, hard-hit | **Uncertain.** MLB property; no licence read here | None | 2 requests per refresh | 2026 season, both sides | Daily | No |
+| Weather | Open-Meteo | Forecast by ballpark | **Uncertain.** As I recall, free for non-commercial use with a paid plan for commercial; verify before relying on it | None | Free tier | Forecast rows captured since 2026-09-02 | Hours | No |
+| UFC schedule, bouts, fighters, per-fight statistics, bout odds | ESPN public core JSON, UFC.com athlete pages | See the probe table above | **Uncertain.** Unofficial endpoints, no licence read; UFC.com site terms not read | None | 156 events, 1,689 bouts committed; a refresh is a handful of requests (PoliteFetcher caps and caches by URL) | 2016 to now checked | Daily | **Partly, for UFC only:** ESPN carries a bookmaker's open and close per bout, which is what the paid `mma_h2h` capture buys. Its licence is unverified and it is one book |
+| NFL schedule, team and player weekly statistics, injuries | nflverse data releases | See `docs/datasvc/NFL_SCHEMA.md` | **CC BY 4.0, attribution kept** (as already recorded in the build-order table; upstream sources behind it not examined) | None | 4 requests for a daily update | 1999 to 2026 | Daily in season | Possibly for NFL statistics (BALLDONTLIE ALL-ACCESS holds some of the same); not proven, not tested |
+| Tennis, NFL and other harvested history | BALLDONTLIE ALL-ACCESS (paid, bought 2026-09-15) | Harvested to `data/historical/balldontlie/` | Under that subscription's terms (not re-read here) | Key in `.env` | Paid plan | ATP/WTA history, NFL | Varies | This **is** a paid dependency. NFL statistics are also in nflverse (free); tennis has no free equivalent verified here |
+
+### B. Sportsbook prices
+
+| Capability | Provider | Fields | Permitted use | Auth | Cost or quota | Observed coverage | Freshness need | Replaces a paid dependency? |
+|---|---|---|---|---|---|---|---|---|
+| Multi-book h2h, spreads, totals; pitcher and batter props; team totals, alternates, F5 trio | The Odds API (paid) | Price, line, book, timestamps per selection | Under that plan's terms (not re-read here); resale or redistribution of the prices is a question to settle before the data service sells them | Key in `.env` | Paid plan; floor 5,000 credits, about 132 a day approved | Forward only, from when each family was first captured | Minutes before first pitch | **No.** There is no free equivalent verified here. ESPN's per-bout bookmaker feed (UFC only) is the one partial candidate and is unverified. Prices cannot be rebuilt after the fact, so a missed window is gone |
+
+### C. Internally derived features
+
+| Capability | Provider | Fields | Permitted use | Auth | Cost | Coverage | Freshness need | Replaces a paid dependency? |
+|---|---|---|---|---|---|---|---|---|
+| Form, rest, travel, workload, matchup and ratings features; the card's probabilities | Our own code over A and B (`src/features`, `src/pipeline`, `src/datasvc/*/features.py`) | Computed, point in time | Ours. It inherits the terms of the inputs: a feature built from restricted statistics is not freer than they are | None | Compute and maintenance only | Wherever the inputs exist | Daily | Not a dependency. It cannot replace A or B; it only moves what A and B must be fresh for |
+
+What still costs money whatever this table says: sportsbook prices (The Odds
+API), the BALLDONTLIE subscription, hosting (Fly), and the maintenance time.
+
 ## Running by itself
 
 - A daily refresh job per sport (`python -m src.cli datasvc <sport> update`)

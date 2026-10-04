@@ -143,27 +143,29 @@ class TheReportSaysWhatItFound(Fixture):
         self.assertEqual(second["steps"]["bullpen"]["observation"]["new"], 0)
 
     def test_a_provider_correction_is_corrected_not_new(self):
-        self.run_refresh(only=["results"], fetch=uncached())
-        self.fake.schedule["2026-10-01"] = [
-            raw_game(13, "2026-10-01", "NYY", "BOS", 7, 2, "F", away_sp=111, home_sp=222)]   # was 6-2
-        report = self.run_refresh(only=["results"], fetch=uncached(), now=NOW)
-        # resume skips a covered date, so force the look the way the loop does
-        history_report = history.ingest_range(
-            "2026-10-01", "2026-10-01", store_path=self.hist / "mlb_results.csv",
-            manifest_path=self.hist / "mlb_results.manifest.json", resume=False,
-            game_types=mlb.DECISIVE_GAME_TYPES)
-        self.assertEqual(history_report["failed"], 0)
-        self.assertEqual(history.read_results(self.hist / "mlb_results.csv")["13"]["away_score"], "7")
-        # the diff itself, between the committed copy and a refreshed one
-        work = self.root / "w.csv"
-        committed = self.root / "c.csv"
+        self.run_refresh(only=["results", "pitchers"], fetch=uncached())
+        stored = {a["date"]: a for a in pitchers.read_logs(self.hist / "pitcher_logs.jsonl")["111"] if a.get("date")}
+        self.assertEqual(stored["2026-09-25"]["innings_pitched"], 6.0)
+        # the provider revises that start; a later refresh (past the 12-hour rule) sees it
+        self.fake.game_logs[111] = [{**g, "ip": "7.0"} if g["date"] == "2026-09-25" else g
+                                    for g in self.fake.game_logs[111]]
+        later = NOW + timedelta(hours=13)
+        report = self.run_refresh(only=["pitchers"], fetch=uncached(), now=later)
+        observation = report["steps"]["pitchers"]["observation"]
+        self.assertEqual((observation["corrected"], observation["new"]), (1, 0), observation)
+        self.assertEqual(observation["verdict"], "corrected")
+        after = {a["date"]: a for a in pitchers.read_logs(self.hist / "pitcher_logs.jsonl")["111"] if a.get("date")}
+        self.assertEqual(after["2026-09-25"]["innings_pitched"], 7.0)
+
+    def test_the_row_diff_tells_a_changed_game_from_a_new_one(self):
+        work, committed = self.root / "w.csv", self.root / "c.csv"
         rows = history.read_results(self.hist / "mlb_results.csv")
-        history.write_results(rows, work)
-        rows["13"] = {**rows["13"], "away_score": "6"}
         history.write_results(rows, committed)
+        rows["1"] = {**rows["1"], "away_score": "9"}
+        rows["77"] = {**rows["1"], "game_pk": "77"}
+        history.write_results(rows, work)
         diff = dr.row_diff("mlb_results.csv", work, committed)
-        self.assertEqual((diff["corrected"], diff["new"]), (1, 0))
-        self.assertIsNotNone(report)
+        self.assertEqual((diff["corrected"], diff["new"], diff["unchanged"]), (1, 1, len(rows) - 2))
 
     def test_bookkeeping_fields_are_not_a_correction(self):
         a, b = self.root / "a.jsonl", self.root / "b.jsonl"

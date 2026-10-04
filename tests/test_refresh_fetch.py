@@ -201,20 +201,21 @@ class EveryCallIsOneOfTheKindsAReaderMustNotConfuse(Base):
     def test_data_empty_reused_and_failed_are_four_different_outcomes(self):
         empty_log = {"stats": []}
         full = {"stats": [{"splits": [{"date": "2026-10-01"}]}]}
-        wire = Wire(full, empty_log, mlb.MLBError("could not reach MLB API for x: reset"))
+        wire = Wire(full, empty_log, final_schedule(code="S"), mlb.MLBError("could not reach MLB API for x: reset"))
         layer = self.layer()
 
         def go():
             mlb._get_json("people/1/stats", {"stats": "gameLog"})          # data
             mlb._get_json("people/2/stats", {"stats": "gameLog"})          # nothing to report
-            mlb._get_json("people/1/stats", {"stats": "gameLog"})          # asked before
+            mlb._get_json("schedule", {"date": "d"})                       # data
+            mlb._get_json("schedule", {"date": "d"})                       # asked before
             with self.assertRaises(mlb.MLBError):
                 mlb._get_json("people/3/stats", {"stats": "gameLog"})      # no answer
         self.run_with(wire, layer, go)
         summary = layer.summary()
-        self.assertEqual(summary["outcomes"], {"ok": 1, "ok_empty": 1, "cache_memo": 1, "transport_error": 1})
+        self.assertEqual(summary["outcomes"], {"ok": 2, "ok_empty": 1, "cache_memo": 1, "transport_error": 1})
         self.assertEqual((summary["network_calls"], summary["reused"], summary["failed"],
-                          summary["missing_source_data"]), (3, 1, 1, 1))
+                          summary["missing_source_data"]), (4, 1, 1, 1))
 
     def test_a_per_step_window_is_the_calls_since_the_mark(self):
         wire = Wire(final_schedule(code="S"))
@@ -251,6 +252,17 @@ class FetchOnceReuseEverywhere(Base):
         self.run_with(wire, layer, go)
         self.assertEqual(len(wire.calls), 1)
         self.assertEqual(layer.summary()["reused"], 4)
+
+    def test_a_game_log_or_boxscore_is_not_held_in_memory(self):
+        wire = Wire({"stats": [{"splits": [{"date": "2026-10-01"}]}]})
+        layer = self.layer()
+
+        def go():
+            mlb._get_json("people/1/stats", {"stats": "gameLog"})
+            mlb._get_json("people/1/stats", {"stats": "gameLog"})
+        self.run_with(wire, layer, go)
+        self.assertEqual(len(wire.calls), 2, "only the small answers several steps share are kept")
+        self.assertEqual(layer._memo, {})
 
     def test_a_reused_answer_is_a_copy_not_the_cached_object(self):
         wire = Wire(final_schedule(code="S"))

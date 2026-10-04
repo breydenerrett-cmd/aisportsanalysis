@@ -14,10 +14,10 @@ without editing any of them:
   COUNT     every call and every real `urlopen` attempt, by endpoint class and
             by outcome, so "how many requests did one refresh make" is a number
             read off the run's own report, not an estimate.
-  REUSE     an identical URL asked twice in one run is answered from memory (the
-            probe, the results step and the pitcher step all ask for today's
-            schedule; the pitcher and splits steps both ask for the same
-            probables). A response that can never change again -- a schedule
+  REUSE     an identical schedule or standings URL asked twice in one run is
+            answered from memory (the probe, the results step and the pitcher
+            step all ask for today's schedule; the pitcher and splits steps
+            both ask for the same probables). Nothing larger is held. A response that can never change again -- a schedule
             day whose games are all final or cancelled, and the boxscore of a
             game the schedule has shown final -- is also kept on disk, keyed by
             the canonical URL as `src.datasvc.http.PoliteFetcher` does, so a
@@ -75,6 +75,12 @@ MAX_RETRY_AFTER_S = 30.0
 CONSECUTIVE_FAILURE_LIMIT = 6        # this many hard failures in a row halts the run
 RATE_LIMIT_LIMIT = 3                 # ... or this many calls that stayed 429 after retries
 IMMUTABLE_TTL_S = 7 * 24 * 3600.0    # a final answer is trusted this long (stat corrections)
+# Only these are kept in memory within a run. They are the answers several steps
+# ask for again (today's and tomorrow's schedule is read by the probe, the
+# results, bullpen, pitcher and splits steps) and they are small. A boxscore or a
+# game log is asked for once per run, and holding 290 boxscores (tens of MB) to
+# answer a question nobody repeats would cost the 1 GB machine for nothing.
+MEMO_CLASSES = frozenset({"schedule", "standings"})
 AUTH_STATUSES = frozenset({401, 403})
 RETRY_STATUSES = frozenset({429, 500, 502, 503, 504})
 FINAL_CODES = frozenset({"F", "O"})
@@ -225,7 +231,8 @@ class FetchLayer:
             entry["outcome"] = "halted"
             raise error_cls(f"refresh halted, no request made: {self.halted}")
 
-        if self.use_memo and key in self._memo:
+        memoable = self.use_memo and cls in MEMO_CLASSES
+        if memoable and key in self._memo:
             entry["outcome"] = "cache_memo"
             return copy.deepcopy(self._memo[key])
         stored = self._disk_get(key)
@@ -282,7 +289,7 @@ class FetchLayer:
     # -- reuse --------------------------------------------------------------
 
     def _remember(self, key, cls, payload) -> None:
-        if self.use_memo:
+        if self.use_memo and cls in MEMO_CLASSES:
             self._memo[key] = copy.deepcopy(payload)
         if cls == "schedule" and isinstance(payload, dict):
             for day in payload.get("dates") or []:

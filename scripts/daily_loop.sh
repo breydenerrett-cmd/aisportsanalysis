@@ -696,7 +696,7 @@ echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: prereg-clv exit=$PREREG_STATUS" 
 # anything, so no forecast, card or ledger input changes: this only changes what
 # the next consumer starts from.
 #
-# GUARDED: no `set -e` here, `timeout` bounds a hang, and every line ends in a
+# GUARDED: this script has no errexit, `timeout` bounds a hang, and every line ends in a
 # fallback that only prints. A failure here costs nothing but a day's persisting;
 # the image build and the container guard still refresh on their own.
 echo "== MLB display stores (merge with committed copy, incremental refresh) =="
