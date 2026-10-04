@@ -293,11 +293,18 @@ class RevenueReportTests(_DbCase):
         trial = self._user("t1@example.com", "twitter")
         ended = self._user("e1@example.com", "twitter")
         self._user("nobody@example.com", "twitter")        # signed up, never paid
-        customers.upsert_subscription(paying1.id, "sub1", "active", db=self.db)
-        customers.upsert_subscription(paying2.id, "sub2", "active", db=self.db)
+        # The revenue report counts a row only while it is paid through a
+        # future instant (an active row nothing has paid for is `unpaid`).
+        from datetime import datetime, timedelta, timezone
+        end = (datetime.now(timezone.utc) + timedelta(days=30)).isoformat()
+        customers.upsert_subscription(paying1.id, "sub1", "active",
+                                      current_period_end=end, db=self.db)
+        customers.upsert_subscription(paying2.id, "sub2", "active",
+                                      current_period_end=end, db=self.db)
         customers.upsert_subscription(paying3.id, "sub3", "active",
-                                      cancel_at="2026-11-01T00:00:00+00:00", db=self.db)
-        customers.upsert_subscription(trial.id, "sub4", "trialing", db=self.db)
+                                      cancel_at=end, current_period_end=end, db=self.db)
+        customers.upsert_subscription(trial.id, "sub4", "trialing",
+                                      current_period_end=end, db=self.db)
         customers.upsert_subscription(ended.id, "sub5", "canceled", db=self.db)
 
         report = get_revenue(_admin=None)

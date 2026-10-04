@@ -53,6 +53,15 @@ class _FailedPaymentCase(acceptance._Case):
                                     "subscription": SUBSCRIPTION,
                                     "attempt_count": attempt, "paid": False}}}
 
+    def invoice_paid(self, period_end, event_id="evt_invoice_paid"):
+        """The paid invoice that actually buys `period_end`: payment evidence,
+        which a bare `active` subscription event is not."""
+        epoch = _epoch(period_end)
+        return {"id": event_id, "type": "invoice.paid",
+                "data": {"object": {"id": "in_paid", "customer": CUSTOMER,
+                                    "subscription": SUBSCRIPTION, "status": "paid",
+                                    "lines": {"data": [{"period": {"end": epoch}}]}}}}
+
     def sub_event(self, kind, status, period_end, *, cancel_at=None, event_id=None):
         event = self.subscription_event(kind, status, period_end=_epoch(period_end),
                                         cancel_at=_epoch(cancel_at) if cancel_at else None)
@@ -169,6 +178,10 @@ class TheRetrySucceeds(_FailedPaymentCase):
                 self.assert_refused(token)
                 self.webhook(self.sub_event("updated", "active", new_end,
                                             event_id="evt_retry_paid"))
+                # `active` alone only announces the period; the retried
+                # invoice being PAID is what buys it.
+                self.assert_refused(token)
+                self.webhook(self.invoice_paid(new_end))
                 self.assertEqual(self.open_paid_page(token).id, user_id)
                 self.assertEqual(self.end_of(user_id), self.iso(new_end))
                 self.assertTrue(customers.has_paid_access(
@@ -182,7 +195,9 @@ class WhatMustKeepWorking(_FailedPaymentCase):
         user_id, token = self.start("active", self.now + timedelta(days=2))
         later = self.now + timedelta(days=32)
         self.webhook(self.sub_event("updated", "active", later, event_id="evt_renewal"))
+        self.webhook(self.invoice_paid(later))
         self.assertEqual(self.end_of(user_id), self.iso(later))
+        self.assertTrue(customers.has_paid_access(user_id, now=later - timedelta(days=1)))
         self.assertEqual(self.open_paid_page(token).id, user_id)
 
     def test_cancel_at_period_end_keeps_what_was_paid_for(self):

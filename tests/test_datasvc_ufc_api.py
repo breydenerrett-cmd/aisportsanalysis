@@ -23,7 +23,7 @@ import tempfile
 import threading
 import time
 import unittest
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
@@ -165,7 +165,11 @@ class Authentication(ApiCase):
         self.assertEqual(body["error"]["code"], "subscription_expired")
         live = users_store.create_user("live@example.com", status="active", db=self.db)
         live_token = users_store.issue_invite_token(live.id, db=self.db)
-        customers.upsert_subscription(live.id, "sub_live", "active", db=self.db)
+        # Paid through a future instant: an `active` row with no payment on
+        # record is not entitled (billing ACCESS POLICY, 2026-10-04).
+        customers.upsert_subscription(
+            live.id, "sub_live", "active", db=self.db,
+            current_period_end=(datetime.now(timezone.utc) + timedelta(days=30)).isoformat())
         self.assertEqual(self.get(f"{UFC}/events", token=live_token)[0], 200)
 
     def test_a_valid_token_gets_through_to_every_route(self):

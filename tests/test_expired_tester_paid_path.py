@@ -287,6 +287,11 @@ class SignupForATestersEmailWithBillingOn(_BillingOn):
         grant = self.grant_for("former@example.com", age_days=40)
         self.checkout_by_token(grant.token)
         self.pay(grant.user_id)
+        # The paid period runs out: time passing moves the paid-through instant
+        # into the past. (These tests used to let the `deleted`/cancel event's
+        # own period end do that; an event announcing an end never shortens what
+        # a trial or invoice paid for, and the fixture's trial runs to 2099.)
+        self.age_rows("billing_subscriptions", "paid_through", timedelta(hours=1))
         self.webhook(self.subscription_event("deleted", "canceled",
                                              period_end=acceptance._epoch(
                                                  datetime.now(timezone.utc) - timedelta(hours=1))))
@@ -488,6 +493,11 @@ class TesterCheckoutWithBillingOn(_BillingOn):
         grant = self.grant_for("former@example.com", age_days=40)
         self.checkout_by_token(grant.token)
         self.pay(grant.user_id)
+        # The paid period runs out: time passing moves the paid-through instant
+        # into the past. (These tests used to let the `deleted`/cancel event's
+        # own period end do that; an event announcing an end never shortens what
+        # a trial or invoice paid for, and the fixture's trial runs to 2099.)
+        self.age_rows("billing_subscriptions", "paid_through", timedelta(hours=1))
         self.webhook(self.subscription_event(
             "deleted", "canceled",
             period_end=acceptance._epoch(datetime.now(timezone.utc) - timedelta(hours=1))))
@@ -873,6 +883,11 @@ class AccessIsGovernedByTheSubscription(_BillingOn):
         self.assertEqual(self.open_paid_page(token).id, grant.user_id)
 
         ended = acceptance._epoch(datetime.now(timezone.utc) - timedelta(hours=1))
+        # The paid period runs out: time passing moves the paid-through instant
+        # into the past. (These tests used to let the `deleted`/cancel event's
+        # own period end do that; an event announcing an end never shortens what
+        # a trial or invoice paid for, and the fixture's trial runs to 2099.)
+        self.age_rows("billing_subscriptions", "paid_through", timedelta(hours=1))
         self.webhook(self.subscription_event("updated", "active", period_end=ended, cancel_at=ended))
         with self.assertRaises(HTTPException) as lapsed:
             self.open_paid_page(token)
@@ -884,6 +899,11 @@ class AccessIsGovernedByTheSubscription(_BillingOn):
         self.checkout_by_token(grant.token)
         self.pay(grant.user_id)
         ended = acceptance._epoch(datetime.now(timezone.utc) - timedelta(hours=1))
+        # The paid period runs out: time passing moves the paid-through instant
+        # into the past. (These tests used to let the `deleted`/cancel event's
+        # own period end do that; an event announcing an end never shortens what
+        # a trial or invoice paid for, and the fixture's trial runs to 2099.)
+        self.age_rows("billing_subscriptions", "paid_through", timedelta(hours=1))
         self.webhook(self.subscription_event("deleted", "canceled", period_end=ended))
         user = self.sign_in_with(grant.token)           # the week token still authenticates
         with self.assertRaises(HTTPException) as lapsed:
@@ -906,6 +926,11 @@ class AccessIsGovernedByTheSubscription(_BillingOn):
 
         # The period runs out.
         ended = acceptance._epoch(datetime.now(timezone.utc) - timedelta(hours=1))
+        # The paid period runs out: time passing moves the paid-through instant
+        # into the past. (These tests used to let the `deleted`/cancel event's
+        # own period end do that; an event announcing an end never shortens what
+        # a trial or invoice paid for, and the fixture's trial runs to 2099.)
+        self.age_rows("billing_subscriptions", "paid_through", timedelta(hours=1))
         self.webhook(self.subscription_event("updated", "active", period_end=ended, cancel_at=ended))
         self.webhook(self.subscription_event("deleted", "canceled", period_end=ended))
         with self.assertRaises(HTTPException) as blocked:
@@ -1086,7 +1111,9 @@ class TheUpgradeStateRules(_BillingOff):
     def test_a_currently_paid_tester_does_not_qualify_but_a_lapsed_one_does(self):
         grant = self.grant_for(age_days=8)
         customers.upsert_customer(grant.user_id, "cus_1")
-        customers.upsert_subscription(grant.user_id, "sub_1", "active")
+        customers.upsert_subscription(
+            grant.user_id, "sub_1", "active",
+            current_period_end=(datetime.now(timezone.utc) + timedelta(days=5)).isoformat())
         self.assertIsNone(self._state(grant.user_id))
         customers.upsert_subscription(grant.user_id, "sub_1", "canceled")
         self.assertEqual(self._state(grant.user_id)["state"], "tester_expired")

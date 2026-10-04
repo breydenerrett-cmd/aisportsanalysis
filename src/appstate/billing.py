@@ -23,6 +23,65 @@ NO CARD DATA, EVER. Nothing in this module accepts, stores, or forwards a
 card number, CVV, or any other payment instrument. Stripe's own hosted
 Checkout/Customer Portal handles that entirely -- this app only ever sees
 a checkout URL, a subscription id, and a status string.
+
+ACCESS POLICY (owner ruling, 2026-10-04)
+----------------------------------------
+Stripe does not guarantee webhook order and delivers at least once, so what a
+customer may use is decided by EVIDENCE, never by the order events arrive in
+and never by a period Stripe merely announced:
+
+  1. Access runs to the stored PAID-THROUGH instant
+     (billing_subscriptions.paid_through) and to nothing else. After it a
+     customer is not entitled until a paid renewal arrives. The one bounded
+     exception is a RENEWAL GRACE (customers.RENEWAL_GRACE_SECONDS, 6 hours,
+     the owner can set it to 0): a subscription still `active`/`trialing`, not
+     scheduled to cancel, with no failed payment recorded keeps access that
+     long past paid-through, because Stripe creates the renewal invoice at the
+     boundary and charges it about an hour later. A scheduled cancel, a failed
+     payment (`past_due`, `unpaid`, ...) and a deleted subscription get none.
+  2. Only evidence moves it, and only LATER: a paid invoice
+     (`invoice.paid` / `invoice.payment_succeeded`) moves it to the end of the
+     period that invoice bought (its line period end); a `trialing`
+     subscription grants through `trial_end` and no further; a NEW
+     subscription reported `active` by `customer.subscription.created` is its
+     first paid period (Stripe holds a new subscription at `incomplete` until
+     the first invoice is paid). A `customer.subscription.updated` that only
+     announces a new `current_period_end` while `active` grants nothing, and
+     neither does `checkout.session.completed`, which carries no period: it
+     links the buyer and the first paid invoice grants. Evidence is clamped to
+     MAX_EVIDENCE_DAYS (400) past the event's own time, so an absurd invoice
+     line cannot make access permanent.
+  3. A failed charge (`past_due`, `unpaid`, `incomplete`, ...) moves nothing,
+     in either direction: what was paid for stays theirs to the paid-through
+     instant, and the period Stripe tried to bill is never granted.
+  4. Every status decision compares the event's own time (`event.created`,
+     the subscription's own `created`) with what is stored, so an older event
+     never overwrites a newer state: an older failure after a later payment
+     changes nothing, a duplicate changes nothing (it does not even rewrite
+     the row), a delayed paid event for a period already recorded changes
+     nothing, and events for an older subscription id never touch a newer
+     subscription's record. A time that is missing cannot prove an event old,
+     so that comparison falls back to arrival order. Because evidence only
+     ever extends paid-through, no order of arrival can take away access a
+     customer paid for or give access they did not.
+  5. Cancellation policy: cancelling at period end stops RENEWAL and keeps
+     what was paid for (status stays `active`, `cancel_at` is recorded, access
+     runs to paid-through). `customer.subscription.deleted` ends access at the
+     paid-through instant -- not earlier (a deleted event's own period end does
+     not cut paid time short) and not later (it does not extend it).
+  6. The handler never raises on a signed body of an odd shape: anything that
+     is not the expected type is treated as absent (apply_stripe_webhook_event)
+     and the route answers 200.
+  7. A customer recorded before this rule existed keeps the period end already
+     on their row as their paid-through (customers._add_paid_through_columns),
+     so nobody loses access on deploy.
+
+If the webhook endpoint is NOT sent the invoice events, no renewal is ever
+granted (the safe failure): a customer's first period still opens through
+`customer.subscription.created`, and access then lapses at paid-through. The
+owner sees it as paying customers losing access one period (plus the grace)
+after they bought, with no `invoice.paid` lines in the Stripe webhook delivery log
+(docs/billing/PURCHASE_REHEARSAL.md).
 """
 
 from __future__ import annotations
@@ -70,9 +129,12 @@ class Subscription:
     StripeBillingProvider.cancel): a SCHEDULED cancel leaves `status`
     "active" -- that is Stripe's own model, not a fudge -- so the boolean
     is what distinguishes "renewing" from "runs out at period end", and
-    `current_period_end` is the timestamp entitlement actually expires at
-    (src.appstate.customers.has_paid_access). All three are None/False
-    whenever the provider response did not carry them: absent stays absent.
+    `current_period_end` is the period Stripe says the subscription is in.
+    That is what the provider ANNOUNCES, not what was paid for: entitlement
+    expires at the locally recorded paid-through instant instead
+    (src.appstate.customers.has_paid_access; see ACCESS POLICY above). All
+    three are None/False whenever the provider response did not carry them:
+    absent stays absent.
     """
     user_id: int
     plan_id: str
@@ -351,8 +413,9 @@ def subscription_period_end(obj) -> object:
     if top is not None:
         return top
     ends = []
-    for item in ((obj.get("items") or {}).get("data") or []):
-        value = (item or {}).get("current_period_end")
+    items = _dig(obj, "items", "data")
+    for item in (items if isinstance(items, list) else []):
+        value = item.get("current_period_end") if isinstance(item, dict) else None
         try:
             ends.append(int(value))
         except (TypeError, ValueError):
@@ -987,8 +1050,280 @@ def verify_stripe_webhook_signature(payload: bytes, sig_header: Optional[str], s
 def _int_or_none(value: object) -> Optional[int]:
     try:
         return int(value)  # type: ignore[arg-type]
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, OverflowError):
         return None
+
+
+# The largest Stripe-side time (unix seconds) and database id this module
+# will act on. Far above any real value (year 5138) and far below what sqlite's
+# INTEGER or datetime can choke on: a signed body is only proof of ORIGIN, and
+# an out-of-range number must be ignored, never raised out of the webhook.
+MAX_EVENT_EPOCH = 10 ** 11
+MAX_DB_ID = 2 ** 62
+
+# The furthest past an event's own time that payment (or trial) evidence may
+# move paid-through: a bit over the longest plan (annual) plus slack. A paid
+# invoice line that ends decades out (a hand-made invoice item, a dashboard
+# typo) would otherwise make access permanent, and paid-through only grows.
+MAX_EVIDENCE_DAYS = 400
+
+
+def _epoch_in_range(value: object) -> Optional[int]:
+    """A Stripe unix time as an int, or None when absent, malformed, negative
+    or beyond MAX_EVENT_EPOCH."""
+    parsed = _int_or_none(value)
+    return parsed if parsed is not None and 0 <= parsed <= MAX_EVENT_EPOCH else None
+
+
+def _str_or_none(value: object) -> Optional[str]:
+    """`value` only if it is a non-empty str: an id that arrived as an object
+    or a list is not an id."""
+    return value if isinstance(value, str) and value else None
+
+
+def _clamp_evidence(end_iso: Optional[str], at: Optional[int]) -> Optional[str]:
+    """`end_iso` limited to MAX_EVIDENCE_DAYS past the event's own time (the
+    moment of arrival when the event carries none)."""
+    end = customers._parse_iso(end_iso)
+    if end is None:
+        return None
+    base = (datetime.fromtimestamp(at, tz=timezone.utc) if at is not None
+            else datetime.now(timezone.utc))
+    ceiling = base + timedelta(days=MAX_EVIDENCE_DAYS)
+    return (ceiling if end > ceiling else end).isoformat()
+
+
+def _dig(value: object, *keys: str) -> object:
+    """value[k1][k2]... through anything that is not a dict -> None. A
+    webhook payload is untrusted SHAPE even after its signature verified."""
+    for key in keys:
+        if not isinstance(value, dict):
+            return None
+        value = value.get(key)
+    return value
+
+
+def _later_iso(current: Optional[str], candidate: Optional[str]) -> Optional[str]:
+    """The later of two ISO instants. An absent or unreadable candidate never
+    wins, and nothing here ever moves an instant EARLIER: paid-through only
+    grows, which is what makes every order of arrival safe."""
+    parsed = customers._parse_iso(candidate)
+    if parsed is None:
+        return current
+    held = customers._parse_iso(current)
+    return candidate if held is None or parsed > held else current
+
+
+def _max_known(a: Optional[int], b: Optional[int]) -> Optional[int]:
+    """The larger of two Stripe-side times, either of which may be unknown."""
+    if a is None:
+        return b
+    if b is None:
+        return a
+    return max(a, b)
+
+
+def _not_older(at: Optional[int], stamp: Optional[int]) -> bool:
+    """True unless BOTH times are known and `at` is strictly older than the
+    stamp. An unknown time cannot prove an event old, so it falls back to
+    arrival order (the pre-ordering behaviour)."""
+    return at is None or stamp is None or at >= stamp
+
+
+def _invoice_subscription_id(obj: dict) -> Optional[str]:
+    """The subscription an invoice bills: `subscription` (API versions before
+    2025-03-31, a string or an expanded object) or
+    `parent.subscription_details.subscription` (after)."""
+    for value in (obj.get("subscription"),
+                  _dig(obj, "parent", "subscription_details", "subscription")):
+        if isinstance(value, dict):
+            value = value.get("id")
+        if isinstance(value, str) and value:
+            return value
+    return None
+
+
+def _invoice_paid_through(obj: dict, subscription_id: str,
+                          at: Optional[int] = None) -> Optional[str]:
+    """EVIDENCE OF PAYMENT: the end of the period a PAID invoice bought, as an
+    ISO instant, or None when the invoice is not paid or names no period.
+
+    The period is read from the invoice's LINES, not from `period_end` on the
+    invoice itself: for a subscription invoice the top-level pair describes
+    the interval the invoice was generated over (it ends where the new period
+    starts), while each line's `period` is the service period actually
+    charged for. A line that names a different subscription is skipped. With
+    no readable line there is no evidence and no fallback: absent stays
+    absent. Free (100% coupon, $0 trial) invoices are `paid` and count; that
+    is the owner's pricing decision, not this code's.
+    """
+    status = obj.get("status")
+    if not (status == "paid" or (status is None and obj.get("paid") is True)):
+        return None
+    lines = _dig(obj, "lines", "data")
+    if not isinstance(lines, list):
+        return None
+    ends = []
+    for line in lines:
+        if not isinstance(line, dict):
+            continue
+        line_sub = line.get("subscription") or _dig(
+            line, "parent", "subscription_item_details", "subscription")
+        if isinstance(line_sub, str) and line_sub and line_sub != subscription_id:
+            continue
+        end = _int_or_none(_dig(line, "period", "end"))
+        if end is not None:
+            ends.append(end)
+    return _clamp_evidence(_epoch_to_iso(max(ends)), at) if ends else None
+
+
+def _relation(record: Optional[dict], subscription_id: str,
+              created: Optional[int]) -> str:
+    """How an event's subscription stands to the one on record:
+    "none" nothing recorded, "same", or for a different id "newer" / "older"
+    by the two subscriptions' own creation times, or "unknown" when either
+    time is missing (never guessed)."""
+    if record is None:
+        return "none"
+    if record["stripe_subscription_id"] == subscription_id:
+        return "same"
+    held = record["sub_created_at"]
+    if created is None or held is None:
+        return "unknown"
+    return "newer" if created > held else "older"
+
+
+def _decide_subscription_event(record: Optional[dict], *, event_type: str,
+                                subscription_id: str, at: Optional[int],
+                                sub_created: Optional[int], raw_status: object,
+                                cancel_at: Optional[str], announced_end: Optional[str],
+                                trial_end: Optional[str]) -> Optional[dict]:
+    """The new row after one customer.subscription.* event, or None for "no
+    row to write". Pure: the rules in the module docstring, nothing else.
+
+    Two separate questions, answered separately:
+      EVIDENCE -- does this event prove money or a trial? Then paid-through
+        moves (never earlier), whatever subscription it names and whenever it
+        was sent: payment that happened stays happened.
+      STATE -- does it change the displayed status / cancel schedule? Only if
+        it is not older than what is stored, and (for a failure) not older
+        than the newest payment evidence.
+    """
+    kind = event_type.rsplit(".", 1)[-1]
+    deleted = kind == "deleted"
+    failure = (not deleted) and raw_status in FAILED_PAYMENT_STATUSES
+    status = "canceled" if deleted else _normalize_subscription_status(raw_status)
+    evidence = None
+    if not deleted and not failure:
+        if status == "trialing":
+            evidence = trial_end or announced_end        # a trial is free through trial_end ONLY
+        elif status == "active" and kind == "created":
+            evidence = announced_end    # Stripe reports a NEW subscription active only once paid
+    if sub_created is None and kind == "created":
+        sub_created = at
+    evidence = _clamp_evidence(evidence, at)
+    relation = _relation(record, subscription_id, sub_created)
+    held_paid = record["paid_through"] if record else None
+    paid_through = _later_iso(held_paid, evidence)
+
+    if relation in ("older", "unknown") and (relation == "older" or evidence is None):
+        # A different subscription that cannot be shown newer: its events
+        # never touch the recorded one. Only payment it proves is kept.
+        if record is None or paid_through == held_paid:
+            return None
+        return {**record, "paid_through": paid_through}
+
+    if relation in ("none", "newer", "unknown"):
+        # A new subscription becomes the record. What the old one had paid
+        # for travels with it: a second subscription stuck at `incomplete`
+        # must not wipe time the customer paid for. The renewal grace does
+        # not travel unless the old row had it, and new payment clears it.
+        blocked = 1 if failure or deleted else customers.carry_grace_block(record)
+        if paid_through != held_paid:
+            blocked = 1 if failure or deleted else 0
+        return {"stripe_subscription_id": subscription_id, "status": status,
+                "cancel_at": cancel_at,
+                "current_period_end": None if failure else announced_end,
+                "paid_through": paid_through, "sub_created_at": sub_created,
+                "snapshot_at": at, "paid_at": at if evidence else None,
+                "grace_blocked": blocked}
+
+    state = dict(record)
+    state["paid_through"] = paid_through
+    if evidence is not None:
+        state["paid_at"] = _max_known(record["paid_at"], at)
+    if record["sub_created_at"] is None:
+        state["sub_created_at"] = sub_created
+    if failure:
+        # A decline is only news if it is NEWER than the newest payment seen
+        # (an older one was settled by that payment) and than the newest
+        # subscription event applied.
+        fresh = (record["paid_at"] is None or at is None or at > record["paid_at"]) \
+            and _not_older(at, record["snapshot_at"])
+    else:
+        fresh = _not_older(at, record["snapshot_at"])
+    # Payment newer than the last failure or deletion lifts the grace block;
+    # a failure or deletion that is itself fresh sets it. A bare `active`
+    # announcement does neither: it is not payment.
+    blocked = record["grace_blocked"] or 0
+    if paid_through != held_paid and _not_older(at, record["snapshot_at"]):
+        blocked = 0
+    if fresh and (failure or deleted):
+        blocked = 1
+    state["grace_blocked"] = blocked
+    if fresh:
+        state.update(
+            status=status, cancel_at=cancel_at,
+            # Stripe has already moved its period end to the period it TRIED
+            # to bill: next to a not-paying status that reads as a free
+            # month, so a failure keeps the end already on record.
+            current_period_end=record["current_period_end"] if failure else announced_end,
+            snapshot_at=_max_known(record["snapshot_at"], at))
+    return state
+
+
+def _decide_invoice_paid(record: Optional[dict], *, subscription_id: str,
+                          at: Optional[int], paid_through: str) -> dict:
+    """The new row after a PAID invoice (invoice.paid / invoice.payment_
+    succeeded). The invoice's period end moves paid-through, never earlier
+    and whichever subscription of the customer it names, since the money
+    arrived either way. Only the recorded subscription's own state is
+    touched beyond that, and only to repair a status an older failure left:
+    a payment is not older than the failure it answers."""
+    if record is None:
+        return {"stripe_subscription_id": subscription_id, "status": "active",
+                "cancel_at": None, "current_period_end": paid_through,
+                "paid_through": paid_through, "sub_created_at": None,
+                "snapshot_at": None, "paid_at": at, "grace_blocked": 0}
+    state = dict(record)
+    state["paid_through"] = _later_iso(record["paid_through"], paid_through)
+    if record["stripe_subscription_id"] != subscription_id:
+        return state
+    if state["paid_through"] != record["paid_through"] and _not_older(at, record["snapshot_at"]):
+        state["grace_blocked"] = 0      # a payment newer than the failure answers it
+    state["paid_at"] = _max_known(record["paid_at"], at)
+    state["current_period_end"] = _later_iso(record["current_period_end"], paid_through)
+    if record["status"] not in customers.PAID_STATUSES and _not_older(at, record["snapshot_at"]):
+        state["status"] = "active"
+    return state
+
+
+def _decide_checkout_completed(record: Optional[dict], *, subscription_id: str,
+                                created: Optional[int], status: str) -> Optional[dict]:
+    """The row a completed Checkout session leaves. It LINKS the buyer to a
+    subscription and carries no period and no payment amount, so it records
+    the subscription without any paid-through: the paid invoice (or the trial
+    / new-subscription event) is what grants access, a moment later. The row
+    must exist at once, though -- a user with a payment pending and no row at
+    all is an invite-token user, who is never gated (api/auth.py)."""
+    relation = _relation(record, subscription_id, created)
+    if relation in ("same", "older"):
+        return None   # a redelivery, or an older purchase's session: nothing new
+    return {"stripe_subscription_id": subscription_id, "status": status,
+            "cancel_at": None, "current_period_end": None,
+            "paid_through": record["paid_through"] if record else None,
+            "sub_created_at": created, "snapshot_at": None, "paid_at": None,
+            "grace_blocked": customers.carry_grace_block(record)}
 
 
 def apply_stripe_webhook_event(event: dict, *, db: Optional[Path] = None) -> None:
@@ -999,177 +1334,115 @@ def apply_stripe_webhook_event(event: dict, *, db: Optional[Path] = None) -> Non
     src.appstate.users.authenticate trusts a token only after its own
     hash check passes; it has no signature of its own to check.
 
-    Handles the three events this app's billing model needs:
-      - checkout.session.completed: links user_id (client_reference_id)
-        to the Stripe customer id, records the new subscription as active
-        if one was created (subscription mode), and activates a
-        self-serve signup (see _activate_signup below) -- the
-        pending_payment -> active transition and the one-time GET
-        /signup/complete token both happen here, since this is the one
-        place this app knows a real Stripe payment was verified.
+    Stripe delivers at least once, retries for days and does not order
+    events, so every decision below is made against what is stored, using the
+    event's own `created` time and the object's own times -- never arrival
+    order alone. The rules are in this module's docstring (ACCESS POLICY);
+    this is how each event type applies them:
+
+      - checkout.session.completed: links user_id (client_reference_id) to
+        the Stripe customer, records the new subscription (no access yet --
+        the session carries no period), and activates a self-serve signup
+        (see _activate_signup) -- the pending_payment -> active transition and
+        the one-time GET /signup/complete token both happen here, since this
+        is the one place this app knows a real Stripe payment was verified.
+      - invoice.paid / invoice.payment_succeeded: THE evidence of payment.
+        Paid-through moves to the end of the period the paid invoice bought.
       - customer.subscription.created / .updated / .deleted: looks the
         event's customer id back up to a local user_id (the event itself
-        never carries one) and overwrites that user's recorded status.
-        `.deleted` is always recorded as "canceled" regardless of the
-        object's own `status` field, since a deleted subscription is
-        canceled by definition even if Stripe's payload still shows its
-        last pre-deletion status. `.created` and `.updated` both go
-        through _normalize_subscription_status, which keeps "active" and
-        "trialing" apart (a free-trial subscription -- STRIPE_TRIAL_DAYS on
-        checkout.session's subscription_data -- reports "trialing" here,
-        and PAID_STATUSES treats that as entitled the same as "active")
-        while collapsing everything else (past_due, unpaid, incomplete,
-        ...) to "canceled". `cancel_at` (Stripe's "scheduled to cancel at
-        period end" unix timestamp) and `current_period_end` (the
-        paid-through timestamp entitlement expires at --
-        src.appstate.customers.has_paid_access) ride along when present,
-        so GET /billing/status and the paid-surface gate can both answer
-        without a live Stripe call. A SCHEDULED cancel arrives as `updated`
-        with status still "active" (or "trialing") and is recorded that
-        way, which is why entitlement never reads the status string alone.
-        `.created` is handled the same as `.updated` (not just `.updated`
-        alone) because a brand-new trial subscription's very first status
-        report IS a `.created` event -- without it, a checkout that starts
-        a trial would show "active" (checkout.session.completed's own
-        honest-but-incomplete guess below) until something else happened
-        to trigger an `.updated`, which could be days later or never.
-
+        never carries one). `.created` reporting `active` is the first
+        period of a new subscription (Stripe holds a new subscription at
+        `incomplete` until its first invoice is paid); `trialing` is a trial,
+        free through `trial_end`; every other `.created`/`.updated`/`.deleted`
+        only updates status and cancel schedule. A scheduled cancel arrives
+        as `updated` with status still "active" and is recorded that way:
+        it ends renewal, not the period already paid for.
       - A failed charge (status past_due / unpaid / incomplete /
-        incomplete_expired, FAILED_PAYMENT_STATUSES) never moves the
-        recorded period end forward: access ends where the paid period (or
-        free trial) ended. `invoice.payment_failed` is acknowledged and
-        logged, and changes nothing by itself.
-
-      - checkout.session.completed records the new subscription as
-        "active" (not "trialing") when one was created, even for a trial
-        checkout -- a checkout.session object carries no expanded
-        subscription status, only its id, so there is nothing truer to
-        record at this exact event. The `customer.subscription.created`
-        event Stripe sends around the same time (handled above) corrects
-        it to "trialing" moments later. This is a brief, honest display lag
-        (the same kind GET /billing/status's own docstring already
-        documents for webhook freshness generally), never an entitlement
-        gap: "active" is in PAID_STATUSES exactly like "trialing" is, so
-        access is never mistakenly withheld during that window. When the
-        subscription event arrives FIRST (Stripe does not order webhooks) the
-        row is already "trialing" and checkout.session.completed leaves it
-        that way rather than overwriting it with "active".
+        incomplete_expired, FAILED_PAYMENT_STATUSES) moves nothing: Stripe has
+        already moved `current_period_end` to the period it TRIED to bill, and
+        the display end keeps the paid one. `invoice.payment_failed` is
+        acknowledged and logged, and changes nothing by itself.
 
     Any other event type, or one of these missing the fields it needs
-    (e.g. no local mapping yet for a subscription.updated whose
-    checkout.session.completed hasn't been processed -- Stripe does not
-    guarantee webhook delivery order), is silently ignored rather than
-    raised: a webhook endpoint that 500s on a legitimate-but-unhandled
-    event looks like an outage to Stripe's retry logic.
+    (e.g. no local mapping yet for a subscription.updated whose customer has
+    no record), is silently ignored rather than raised: a webhook endpoint
+    that 500s on a legitimate-but-unhandled event looks like an outage to
+    Stripe's retry logic. Nothing here logs a raw account id, an email or a
+    secret.
     """
+    # COERCE AT THE BOUNDARY. The signature proves who sent the body, not that
+    # it has the shape this code expects, and an exception here is a 500 that
+    # Stripe retries for three days. Anything that is not the expected type is
+    # treated as absent, and the event is then ignored like any other it
+    # cannot use.
+    if not isinstance(event, dict):
+        return
     event_type = event.get("type")
-    obj = ((event.get("data") or {}).get("object")) or {}
+    obj = _dig(event, "data", "object")
+    if not isinstance(obj, dict):
+        return
+    at = _epoch_in_range(event.get("created"))
     if event_type == "checkout.session.completed":
         user_id = _int_or_none(obj.get("client_reference_id"))
-        customer_id = obj.get("customer")
-        subscription_id = obj.get("subscription")
-        if user_id is None or not customer_id:
+        customer_id = _str_or_none(obj.get("customer"))
+        subscription_id = _str_or_none(obj.get("subscription"))
+        if user_id is None or not 0 <= user_id <= MAX_DB_ID or not customer_id:
             return
         customers.upsert_customer(user_id, customer_id, db=db)
         if subscription_id:
-            # A checkout session carries no period end or cancellation
-            # state of its own, and upsert_subscription clears what it is
-            # not given -- so anything already on record is carried
-            # through. Without this, a REDELIVERED checkout.session
-            # .completed (Stripe retries for days) would wipe the
-            # current_period_end a later subscription event established and
-            # silently un-schedule a cancel the customer actually made.
-            # Only ever carried through for the SAME subscription id: a
-            # customer who resubscribed has a brand-new subscription, and
-            # the old one's period end says nothing about it.
-            known = customers.get_subscription_record(user_id, db=db) or {}
-            if known.get("stripe_subscription_id") != subscription_id:
-                known = {}
-            # A subscription already recorded as ENDED stays ended. Stripe
-            # delivers at least once, retries for days and does not order
-            # events, so this very event can arrive again after
-            # `customer.subscription.deleted` has been applied; writing
-            # "active" with no cancel_at over that record would entitle the
-            # customer forever (has_paid_access never expires an active record
-            # without a cancel_at). Only the SAME subscription id is protected:
-            # a customer who buys again gets a brand-new Stripe subscription, its
-            # `known` is {} above, and it activates normally. Everything after
-            # this block (the activation token, the status move) is already
-            # idempotent per checkout session, so a redelivery does no harm there.
-            if known.get("status") != "canceled":
-                # Never overwrite a status the subscription events already set:
-                # `customer.subscription.created` (trialing) can be processed
-                # BEFORE this event (Stripe does not order webhooks), and writing
-                # "active" over it would count a trialing buyer as paying in
-                # /admin/revenue. Only "trialing" is protected; anything else
-                # behaves as before.
-                status = "trialing" if known.get("status") == "trialing" else "active"
-                customers.upsert_subscription(
-                    user_id, subscription_id, status,
-                    cancel_at=known.get("cancel_at"),
-                    current_period_end=known.get("current_period_end"), db=db)
-        _activate_signup(user_id, obj.get("id"), db=db)
+            created = _epoch_in_range(obj.get("created"))
+            customers.mutate_subscription(
+                user_id,
+                lambda record: _decide_checkout_completed(
+                    record, subscription_id=subscription_id,
+                    created=created if created is not None else at,
+                    # A delayed payment method completes the session UNPAID.
+                    status="canceled" if obj.get("payment_status") == "unpaid" else "active"),
+                db=db)
+        _activate_signup(user_id, _str_or_none(obj.get("id")), db=db)
     elif event_type in ("customer.subscription.created", "customer.subscription.updated",
                          "customer.subscription.deleted"):
-        customer_id = obj.get("customer")
-        subscription_id = obj.get("id")
+        customer_id = _str_or_none(obj.get("customer"))
+        subscription_id = _str_or_none(obj.get("id"))
         if not customer_id or not subscription_id:
             return
         user_id = customers.get_user_id_by_customer_ref(customer_id, db=db)
         if user_id is None:
             return
-        deleted = event_type == "customer.subscription.deleted"
-        status = "canceled" if deleted else _normalize_subscription_status(obj.get("status"))
-        period_end = _epoch_to_iso(subscription_period_end(obj))
-        recorded = customers.get_subscription_record(user_id, db=db) or {}
-        known = recorded
-        if known.get("stripe_subscription_id") != subscription_id:
-            known = {}   # a resubscribed customer's old period says nothing about this one
-        if not deleted and obj.get("status") in FAILED_PAYMENT_STATUSES:
-            if recorded and not known and customers.has_paid_access(user_id, db=db):
-                # A DIFFERENT subscription that failed (a second one stuck at
-                # `incomplete`, say) says nothing about the paid time still
-                # left on the recorded one; writing it would wipe that.
-                # Its own `active` event overwrites normally once it is paid.
-                return
-            # A declined charge pays for nothing. Stripe has already moved
-            # `current_period_end` to the period it TRIED to bill, and
-            # recording that next to a not-paying status would read as a
-            # cancelled customer inside a paid period -- a free month. Keep
-            # the end already on record (the paid period, or the trial that
-            # was free); with none on record there is no paid period to
-            # honour, and absent stays absent.
-            period_end = known.get("current_period_end")
-        elif status in customers.PAID_STATUSES and known and \
-                known.get("status") not in customers.PAID_STATUSES:
-            # Stripe delivers at least once and does not order events, so a
-            # pre-failure `active`/`trialing` can arrive AFTER the failure
-            # was recorded. A real recovery always carries a period end
-            # beyond the paid one still on record (the retried invoice
-            # covers the new period); one that does not is a stale event and
-            # must not turn access back on. Only once the recorded end has
-            # passed, though: while time is still on the record the customer
-            # has access either way, an equal-end paid event grants nothing
-            # extra, and it may be a genuine recovery from a decline that did
-            # not move the end (a failed mid-period invoice, then a fixed
-            # card) -- dropping it would strand a paying customer as
-            # "canceled" with a hard expiry.
-            recorded_end = customers._parse_iso(known.get("current_period_end"))
-            incoming_end = customers._parse_iso(period_end)
-            if (recorded_end and incoming_end and incoming_end <= recorded_end
-                    and recorded_end <= datetime.now(timezone.utc)):
-                return
-        customers.upsert_subscription(
-            user_id, subscription_id, status,
-            cancel_at=_epoch_to_iso(obj.get("cancel_at")),
-            current_period_end=period_end, db=db)
+        customers.mutate_subscription(
+            user_id,
+            lambda record: _decide_subscription_event(
+                record, event_type=event_type, subscription_id=subscription_id, at=at,
+                sub_created=_epoch_in_range(obj.get("created")),
+                raw_status=_str_or_none(obj.get("status")),
+                cancel_at=_epoch_to_iso(obj.get("cancel_at")),
+                announced_end=_epoch_to_iso(subscription_period_end(obj)),
+                trial_end=_epoch_to_iso(obj.get("trial_end"))),
+            db=db)
+    elif event_type in ("invoice.paid", "invoice.payment_succeeded"):
+        customer_ref = _str_or_none(obj.get("customer"))
+        subscription_id = _invoice_subscription_id(obj)
+        if not customer_ref or not subscription_id:
+            return
+        paid_through = _invoice_paid_through(obj, subscription_id, at)
+        if paid_through is None:
+            return
+        user_id = customers.get_user_id_by_customer_ref(customer_ref, db=db)
+        if user_id is None:
+            return
+        customers.mutate_subscription(
+            user_id,
+            lambda record: _decide_invoice_paid(
+                record, subscription_id=subscription_id, at=at, paid_through=paid_through),
+            db=db)
     elif event_type == "invoice.payment_failed":
-        # Acknowledged and logged, never acted on: the subscription event
-        # that follows carries the status, and access is decided from that
-        # (see FAILED_PAYMENT_STATUSES). One grep-able line per decline, no
-        # card data, for the staging rehearsal and the operator. `user` is the
-        # same hashed reference the request log prints (reqlog.user_ref), so
-        # the two correlate and no log line names a raw account id.
+        # Acknowledged and logged, never acted on: a decline pays for nothing
+        # and proves nothing about status that the subscription event that
+        # follows does not say better (see FAILED_PAYMENT_STATUSES). One
+        # grep-able line per decline, no card data, for the staging rehearsal
+        # and the operator. `user` is the same hashed reference the request
+        # log prints (reqlog.user_ref), so the two correlate and no log line
+        # names a raw account id.
         customer_ref = obj.get("customer")
         user_id = (customers.get_user_id_by_customer_ref(customer_ref, db=db)
                    if isinstance(customer_ref, str) and customer_ref else None)

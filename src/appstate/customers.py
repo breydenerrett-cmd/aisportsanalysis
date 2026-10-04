@@ -19,14 +19,29 @@ billing_customers(user_id PK, stripe_customer_id UNIQUE, created_at)
     One Stripe customer per local user, created once (in
     StripeBillingProvider._ensure_customer) and reused forever after.
 billing_subscriptions(user_id PK, stripe_subscription_id, status, cancel_at,
-                      current_period_end, updated_at)
+                      current_period_end, paid_through, sub_created_at,
+                      snapshot_at, paid_at, grace_blocked, updated_at)
     The last subscription status this app has SEEN via a *verified*
     webhook (src.appstate.billing.apply_stripe_webhook_event) -- never a
     live Stripe API call. This is what lets api/billing.py's GET
     /billing/status answer instantly from local state instead of calling
-    out to Stripe on every page load, and what has_paid_access() decides
-    entitlement from (`current_period_end` is the paid-through timestamp
-    the cancellation policy turns on).
+    out to Stripe on every page load.
+
+    `paid_through` is what has_paid_access() decides entitlement from: the
+    instant the customer has EVIDENCE of payment (or of a free trial) for.
+    `current_period_end` is only what Stripe last ANNOUNCED for the
+    subscription -- a renewal's new end appears there the moment the period
+    rolls over, before (and whether or not) the invoice is paid -- so it is
+    kept for display and never grants anything. The three INTEGER columns
+    are Stripe-side unix times used to order events (Stripe does not
+    deliver in order): `sub_created_at` when the recorded subscription was
+    created, `snapshot_at` the newest subscription event applied,
+    `paid_at` the newest payment evidence applied. NULL means "unknown",
+    which falls back to arrival order for that comparison.
+    `grace_blocked` is 1 once a failed payment or a deletion has been applied
+    and no payment newer than it has arrived: it withholds the renewal grace
+    (RENEWAL_GRACE_SECONDS) even if a later bare `active` event flips the
+    status word back, because that event is an announcement, not payment.
 billing_checkout_idempotency(user_id, plan_id PK, idempotency_key, created_at)
     Keyed on (user_id, plan_id): a client retrying a failed/timed-out
     checkout attempt for the same plan reuses the same Idempotency-Key
@@ -154,6 +169,48 @@ def _add_column_if_missing(conn: sqlite3.Connection, table: str, column: str,
             raise
 
 
+def _add_paid_through_columns(conn: sqlite3.Connection) -> None:
+    """The 2026-10-04 billing-order migration: `paid_through` plus the three
+    event-ordering stamps, added to the table that is already there.
+
+    ADDITIVE AND IDEMPOTENT. Every column is ALTER ... ADD COLUMN on a
+    nullable column, so an existing app.db keeps every row and every old
+    reader keeps working.
+
+    THE BACKFILL RUNS EXACTLY ONCE, IN THE SAME TRANSACTION AS THE ALTER.
+    Before this change `current_period_end` was what access ran to, so a
+    customer already recorded with an end keeps that end as their
+    paid-through instant -- no one loses access on deploy. The backfill must
+    not be repeatable: once the column exists, a NULL `paid_through` beside an
+    announced `current_period_end` is a meaningful state (a period was
+    announced and nothing was paid), and copying it over on the next
+    connection would hand out exactly the access this change withholds. So
+    the column's creation and the copy are one BEGIN IMMEDIATE ... COMMIT:
+    either both happened or neither did, and a second connection racing this
+    one waits on the write lock, re-reads the columns and finds nothing to
+    do. A row with NO recorded end gets no paid-through: absent stays absent.
+    """
+    def present() -> set:
+        return {row["name"] for row in conn.execute("PRAGMA table_info(billing_subscriptions)")}
+
+    for column in ("sub_created_at", "snapshot_at", "paid_at", "grace_blocked"):
+        _add_column_if_missing(conn, "billing_subscriptions", column, "INTEGER")
+    if "paid_through" in present():
+        return
+    if conn.in_transaction:
+        conn.commit()
+    conn.execute("BEGIN IMMEDIATE")
+    try:
+        if "paid_through" not in present():
+            conn.execute("ALTER TABLE billing_subscriptions ADD COLUMN paid_through TEXT")
+            conn.execute("UPDATE billing_subscriptions SET paid_through = current_period_end "
+                         "WHERE current_period_end IS NOT NULL")
+        conn.execute("COMMIT")
+    except BaseException:
+        conn.execute("ROLLBACK")
+        raise
+
+
 def _ensure_schema(conn: sqlite3.Connection) -> None:
     conn.execute("""
         CREATE TABLE IF NOT EXISTS billing_customers (
@@ -184,6 +241,7 @@ def _ensure_schema(conn: sqlite3.Connection) -> None:
     # entitled?" without a live Stripe call on every request -- see
     # has_paid_access below.
     _add_column_if_missing(conn, "billing_subscriptions", "current_period_end", "TEXT")
+    _add_paid_through_columns(conn)
     conn.execute("""
         CREATE TABLE IF NOT EXISTS billing_checkout_idempotency (
             user_id INTEGER NOT NULL,
@@ -254,69 +312,127 @@ def get_user_id_by_customer_ref(stripe_customer_id: str, *, db: Optional[Path] =
         return row["user_id"] if row else None
 
 
+_UNSET = object()
+
+# Every column of a subscription row the webhook handler decides, in the
+# order mutate_subscription's `decide` callback returns them.
+_STATE_FIELDS = ("stripe_subscription_id", "status", "cancel_at", "current_period_end",
+                 "paid_through", "sub_created_at", "snapshot_at", "paid_at",
+                 "grace_blocked")
+
+
+def _read_record(conn: sqlite3.Connection, user_id: int) -> Optional[dict]:
+    row = conn.execute(
+        "SELECT stripe_subscription_id, status, cancel_at, current_period_end, "
+        "paid_through, sub_created_at, snapshot_at, paid_at, grace_blocked, updated_at "
+        "FROM billing_subscriptions WHERE user_id = ?", (user_id,)).fetchone()
+    return dict(row) if row else None
+
+
+def _write_record(conn: sqlite3.Connection, user_id: int, state: dict) -> None:
+    conn.execute("""
+        INSERT INTO billing_subscriptions
+            (user_id, stripe_subscription_id, status, cancel_at, current_period_end,
+             paid_through, sub_created_at, snapshot_at, paid_at, grace_blocked,
+             updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(user_id) DO UPDATE SET
+            stripe_subscription_id = excluded.stripe_subscription_id,
+            status = excluded.status,
+            cancel_at = excluded.cancel_at,
+            current_period_end = excluded.current_period_end,
+            paid_through = excluded.paid_through,
+            sub_created_at = excluded.sub_created_at,
+            snapshot_at = excluded.snapshot_at,
+            paid_at = excluded.paid_at,
+            grace_blocked = excluded.grace_blocked,
+            updated_at = excluded.updated_at
+    """, (user_id, *(state[name] for name in _STATE_FIELDS), _now_iso()))
+
+
 def upsert_subscription(user_id: int, stripe_subscription_id: str, status: str, *,
                          cancel_at: Optional[str] = None,
                          current_period_end: Optional[str] = None,
+                         paid_through=_UNSET, sub_created_at=_UNSET,
+                         snapshot_at=_UNSET, paid_at=_UNSET, grace_blocked=_UNSET,
                          db: Optional[Path] = None) -> None:
-    """Overwrite the locally-recorded subscription state for user_id.
-    Called only from a verified webhook event -- see
-    src.appstate.billing.apply_stripe_webhook_event -- or from
-    api/billing.py's POST /billing/cancel proactively updating local state
-    right after a successful provider.cancel() call, rather than waiting on
-    Stripe's own (not guaranteed-immediate, especially in test mode)
-    `customer.subscription.deleted` webhook -- never speculatively beyond
-    those two call sites, since this table is the only thing GET
-    /billing/status reads.
+    """Overwrite the locally-recorded subscription state for user_id -- the
+    DIRECT write: an operator, a test fixture, or api/billing.py's POST
+    /billing/cancel recording what the provider just answered. The Stripe
+    webhook does NOT use this; it goes through mutate_subscription so its
+    read-decide-write is one transaction (src.appstate.billing).
 
     `cancel_at` is Stripe's own "scheduled to cancel at period end"
     timestamp (ISO-8601 UTC string, already converted from Stripe's unix
-    epoch by the caller) -- None whenever the webhook/cancel call carried
-    none, which also means ON CONFLICT correctly clears a stale value once
-    a subscription is no longer scheduled to cancel.
+    epoch by the caller) -- None whenever the caller carried none, which
+    also means ON CONFLICT correctly clears a stale value once a
+    subscription is no longer scheduled to cancel.
 
-    `current_period_end` is Stripe's end of the period the customer has
-    ALREADY PAID FOR -- the single fact the cancellation policy turns on
-    (cancel stops renewal; access runs to that timestamp). Same
-    ISO-8601-or-None contract as `cancel_at`, and the same
-    clear-on-None ON CONFLICT behavior: a caller that does not know the
-    period end must not leave a stale one behind pretending it does.
-    Callers that merely re-confirm an existing subscription (a redelivered
-    checkout.session.completed) pass the value they already have on record
-    rather than None -- see src.appstate.billing.apply_stripe_webhook_event.
+    `current_period_end` is the end of the period Stripe last announced:
+    display only (see the module docstring). `paid_through` is the instant
+    access runs to. Left unset it is taken from `current_period_end`, which
+    is exactly what a direct caller who names an end means by it; a caller
+    that must NOT hand out access (the cancel endpoint, which only learned
+    of an announcement) passes the paid-through it already has, or None.
+
+    The three ordering stamps are kept as stored when unset and the row is
+    the same subscription (a direct write has no event time to compare, so
+    it must not erase one), and cleared when the row switches to another.
     """
     with _connect(db) as conn:
-        conn.execute("""
-            INSERT INTO billing_subscriptions
-                (user_id, stripe_subscription_id, status, cancel_at,
-                 current_period_end, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?)
-            ON CONFLICT(user_id) DO UPDATE SET
-                stripe_subscription_id = excluded.stripe_subscription_id,
-                status = excluded.status,
-                cancel_at = excluded.cancel_at,
-                current_period_end = excluded.current_period_end,
-                updated_at = excluded.updated_at
-        """, (user_id, stripe_subscription_id, status, cancel_at,
-              current_period_end, _now_iso()))
+        existing = _read_record(conn, user_id) or {}
+        same = existing.get("stripe_subscription_id") == stripe_subscription_id
+
+        def stamp(value, name):
+            if value is not _UNSET:
+                return value
+            return existing.get(name) if same else None
+
+        _write_record(conn, user_id, {
+            "stripe_subscription_id": stripe_subscription_id, "status": status,
+            "cancel_at": cancel_at, "current_period_end": current_period_end,
+            "paid_through": current_period_end if paid_through is _UNSET else paid_through,
+            "sub_created_at": stamp(sub_created_at, "sub_created_at"),
+            "snapshot_at": stamp(snapshot_at, "snapshot_at"),
+            "paid_at": stamp(paid_at, "paid_at"),
+            "grace_blocked": stamp(grace_blocked, "grace_blocked")})
+
+
+def mutate_subscription(user_id: int, decide: Callable[[Optional[dict]], Optional[dict]], *,
+                         db: Optional[Path] = None) -> Optional[dict]:
+    """Read user_id's subscription row, let `decide(record_or_None)` return
+    the new state (a dict with every key of _STATE_FIELDS) or None for "no
+    change", and write it -- all under one write lock (BEGIN IMMEDIATE), so
+    two webhook deliveries for one customer cannot both read the old state
+    and each write over the other. Stripe delivers concurrently and out of
+    order; the ordering decisions in src.appstate.billing are only as good as
+    the state they were made against.
+
+    A decision equal to what is stored writes nothing: a duplicate delivery
+    leaves the row, and its `updated_at`, exactly as it was. Returns the row
+    as it stands afterwards (None if there is none)."""
+    with _connect(db) as conn:
+        if conn.in_transaction:
+            conn.commit()
+        conn.execute("BEGIN IMMEDIATE")
+        record = _read_record(conn, user_id)
+        state = decide(dict(record) if record else None)
+        if state is not None and (
+                record is None or any(record[name] != state[name] for name in _STATE_FIELDS)):
+            _write_record(conn, user_id, state)
+            record = _read_record(conn, user_id)
+        return record
 
 
 def get_subscription_record(user_id: int, *, db: Optional[Path] = None) -> Optional[dict]:
     """The last webhook-reported (or cancel-endpoint-updated) subscription
     state for user_id, or None if none has ever arrived. Returns a plain
     dict (not a billing.Subscription) since this is a narrower,
-    storage-shaped read, not a provider-protocol call."""
+    storage-shaped read, not a provider-protocol call. `paid_through` is
+    what access runs to; `current_period_end` is only what Stripe last
+    announced."""
     with _connect(db) as conn:
-        row = conn.execute(
-            "SELECT stripe_subscription_id, status, cancel_at, "
-            "current_period_end, updated_at "
-            "FROM billing_subscriptions WHERE user_id = ?",
-            (user_id,)).fetchone()
-        if not row:
-            return None
-        return {"stripe_subscription_id": row["stripe_subscription_id"],
-                "status": row["status"], "cancel_at": row["cancel_at"],
-                "current_period_end": row["current_period_end"],
-                "updated_at": row["updated_at"]}
+        return _read_record(conn, user_id)
 
 
 # The subscription statuses that mean "this customer is currently paying"
@@ -325,15 +441,74 @@ def get_subscription_record(user_id: int, *, db: Optional[Path] = None) -> Optio
 # is exactly the state the cancellation policy has to keep serving.
 PAID_STATUSES = frozenset({"active", "trialing"})
 
+# A bounded grace past `paid_through` for exactly one state: a subscription
+# still `active`/`trialing`, not scheduled to cancel, with no failed payment
+# recorded -- i.e. a customer who is renewing. Stripe creates the renewal
+# invoice AT the period boundary and finalizes and charges it about an hour
+# later, so without this every renewing customer is refused from the boundary
+# until `invoice.paid` arrives: an hour or more out of every paid month, with
+# "your paid access ended" for someone whose card is about to be charged. Six
+# hours is several times Stripe's hour (a retried first attempt still fits)
+# and short enough that a renewal that is NEVER paid costs at most six hours.
+# A scheduled cancel, past_due / unpaid / incomplete (recorded as `canceled`)
+# and deleted subscriptions get none: for them the paid-through instant is the
+# end. Owner decision, 2026-10-04: set this to 0 to have no grace at all.
+RENEWAL_GRACE_SECONDS = 6 * 3600
+
+
+def carry_grace_block(record: Optional[dict]) -> int:
+    """The `grace_blocked` a row inherits when a NEW subscription replaces
+    `record` and takes its paid-through with it: 1 unless the old row was
+    itself renewing, so a deleted, failed or cancelling subscription's
+    remainder does not pick up a renewal grace just because a new (not yet
+    paid) subscription now carries it. Payment on the new subscription clears
+    it (src.appstate.billing)."""
+    if not record:
+        return 0
+    renewing = (record["status"] in PAID_STATUSES and not record["cancel_at"]
+                and not record.get("grace_blocked"))
+    return 0 if renewing else 1
+
+
+def entitled_through(status: Optional[str], cancel_at: Optional[str],
+                     paid_through: Optional[str],
+                     grace_blocked: object = None) -> Optional[datetime]:
+    """The last instant a subscription row entitles its customer to the paid
+    surface: `paid_through`, plus RENEWAL_GRACE_SECONDS for a renewing
+    customer (see above: paid status, no cancel scheduled, no failed payment
+    or deletion applied since the last payment). None when nothing has been paid for (no
+    `paid_through`). The ONE place the grace is applied; has_paid_access and
+    the admin revenue view both read it, so they cannot disagree."""
+    end = _parse_iso(paid_through)
+    if end is None:
+        return None
+    if status in PAID_STATUSES and not cancel_at and not grace_blocked:
+        end += timedelta(seconds=RENEWAL_GRACE_SECONDS)
+    return end
+
 
 def has_paid_access(user_id: int, now: Optional[datetime] = None, *,
                      db: Optional[Path] = None) -> bool:
     """Whether user_id is entitled to the PAID surface right now.
 
-    THE POLICY, IN ONE FUNCTION (docs/LAUNCH_DECISIONS.md, LINEHOUND paid
-    beta): cancelling stops renewal, it does not revoke what was already
-    paid for. So a customer keeps access through `current_period_end` and
-    loses it after that timestamp unless they reactivate before it.
+    THE POLICY, IN ONE FUNCTION: access runs to the PAID-THROUGH instant and
+    to nothing else. `paid_through` is moved only by evidence -- a paid
+    invoice's period end, a trial's `trial_end`, the first period of a new
+    subscription (src.appstate.billing's module docstring has the full
+    rules) -- so a period Stripe merely ANNOUNCED, a failed charge for the
+    period it tried to bill, and the order events happen to arrive in can
+    none of them grant or take away anything.
+
+    The status string does not decide WHETHER access exists, on purpose, and
+    that is the cancellation policy: cancelling stops renewal and does not
+    revoke what was already paid for (a scheduled cancel is still "active"; a
+    deleted or past-due subscription is "canceled"), so all of them keep
+    access through `paid_through` and lose it after that instant unless a
+    paid renewal arrives. The status only decides the grace below. A
+    subscription that is "active" well past its paid-through instant with no
+    payment on record has NOT been paid for, so it is not entitled: the old
+    rule ("active with no cancel scheduled never expires") is what turned a
+    period announcement into a free month.
 
     Callers that need "is this even a subscription customer?" ask
     get_subscription_record first: THIS function answers False for a user
@@ -348,26 +523,26 @@ def has_paid_access(user_id: int, now: Optional[datetime] = None, *,
     fresh as the last verified webhook, which is an honest lag rather than
     a fabricated up-to-the-second answer.
 
-    A canceled subscription with NO recorded `current_period_end` is False,
-    never a guess: absent data is absent, and guessing here would mean
-    either serving a lapsed customer forever or cutting a paid one off
-    early. `now` is injectable for deterministic tests, the same pattern
-    src.appstate.users.authenticate uses for token expiry.
+    GRACE: a customer who is renewing (status active/trialing, no cancel
+    scheduled, no failed payment recorded) keeps access for
+    RENEWAL_GRACE_SECONDS past `paid_through`, to cover the hour Stripe waits
+    before it charges a renewal. A scheduled cancel, a failed payment and a
+    deleted subscription get none.
+
+    No recorded `paid_through` is False, never a guess: absent data is
+    absent, and guessing here would mean either serving an unpaid customer
+    or cutting a paid one off early. `now` is injectable for deterministic
+    tests, the same pattern src.appstate.users.authenticate uses for token
+    expiry.
     """
     record = get_subscription_record(user_id, db=db)
     if record is None:
         return False
-    now = now or datetime.now(timezone.utc)
-    period_end = _parse_iso(record.get("current_period_end"))
-    if record["status"] in PAID_STATUSES:
-        # Scheduled-cancel case: Stripe still says "active", so the only
-        # thing that can end entitlement is the period end actually passing
-        # before the `customer.subscription.deleted` webhook lands. With no
-        # cancellation scheduled there is nothing to expire.
-        if record.get("cancel_at") and period_end is not None and now > period_end:
-            return False
-        return True
-    return period_end is not None and now <= period_end
+    end = entitled_through(record["status"], record.get("cancel_at"),
+                           record.get("paid_through"), record.get("grace_blocked"))
+    if end is None:
+        return False
+    return (now or datetime.now(timezone.utc)) <= end
 
 
 def _parse_iso(value: Optional[str]) -> Optional[datetime]:
@@ -660,7 +835,8 @@ def list_subscription_rows(*, db: Optional[Path] = None) -> List[dict]:
     admin revenue report's one read. Small table, plain SELECT."""
     with _connect(db) as conn:
         rows = conn.execute(
-            "SELECT user_id, status, cancel_at, current_period_end "
+            "SELECT user_id, status, cancel_at, current_period_end, paid_through, "
+            "grace_blocked "
             "FROM billing_subscriptions ORDER BY user_id").fetchall()
     return [dict(r) for r in rows]
 
