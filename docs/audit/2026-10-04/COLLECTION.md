@@ -221,6 +221,34 @@ Restart behaviour in one line: every step still works on a copy in
 at the next start and never read, and answers that cannot change are on disk, so
 a rerun does not ask for them again.
 
+### 9a. Adversarial review, fixed the same day (`tests.test_review_collection`)
+
+A red-team review pinned seven defects as `expectedFailure` tests; all seven
+are fixed and the decorators are off.
+
+| Defect | Fix |
+|---|---|
+| Two relief outings on one date were one record, so the union dropped one (and the row count stayed level, so the shrink guard was silent) | Identity is a multiset in every keyed store (`display_refresh._union_for_key`, `_restore_jsonl`, `_keep_sealed_pitcher_rows`, the new/corrected/unchanged diff, the arsenal check): a merge holds as many records of an identity as either side, lines match by content first and leftovers pair in file order as one record corrected, only the surplus is put back; `_loses_nothing` compares counts |
+| A committed CSV column the code does not know was narrowed by the rewrite | The merge now CARRIES the extra columns (header and values, from the side each row came from) and `_loses_nothing` refuses a merge missing a column the other side carries. This differs from "refuse the merge": the pinned test asserts the column is still in the file after the union, which a refusal cannot satisfy, and refusing would also block persisting for good once any refresh had narrowed the cache copy |
+| The union could newly commit rows dated 2026-01-01..08-27 that only the Actions cache held | `store_persist.without_disk_only_sealed`: before merging, cache-only sealed-window rows are left out of the disk copy and a sealed row git holds is git's, in place (rows, results CSV, manifest). Counted by date; no outcome is read |
+| The disk cache pinned `O`, `T`, `U` schedule days (and `O` boxscores) for a week | Only `F` and cancelled/postponed `D`/`C` are immutable |
+| A bare timeout on the news and Savant seams was uncounted | `FetchLayer._call` catches `OSError` too: `transport_error`, in the failure streak, the run halts |
+| Negative or NaN `Retry-After` crashed the call | Treated as absent (also inf and 0) |
+| Retry sleeps could outrun `--max-seconds` | Total retry sleep is capped (90 s) and no sleep is taken that would leave less than 2 s of the run's own deadline (`FetchLayer.bind_remaining`, bound by `display_refresh.refresh`) |
+
+**A conflict on a display store no longer strands the day's data.** The persisted
+stores share one commit with the odds, watch and ledger data. Before, a
+`git pull --rebase` conflict anywhere aborted and left that whole commit local
+(and so did every later run: wedged, forward-captured data included). Now
+`pull_rebase_dropping_display_conflicts` in `scripts/daily_loop.sh`: when the
+conflict names ONLY `data/historical/` files it aborts, drops exactly those files
+from our commit (disk copies saved to `/tmp/display_store_conflict/`, working
+files restored to the committed copy so no conflict markers remain), keeps
+everything else, rebases again and pushes. A conflict naming anything else is
+untouched: abort, local commit kept, `ESCALATE`, exit 1, as before. Shell-level
+tests in `tests.test_daily_loop_persist.AConflictOnADisplayStoreDoesNotStrandTheDaysOtherData`
+run the real tail of the script against a real bare origin.
+
 ## 10. Runs unattended, and how that was shown
 
 The refresh runs through the daily loop with no session (`scripts/daily_loop.sh`),

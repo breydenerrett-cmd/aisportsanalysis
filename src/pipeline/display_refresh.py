@@ -562,17 +562,26 @@ def _keep_sealed_pitcher_rows(committed_path: Path, work_path: Path) -> int:
     logs = pitchers.read_logs(work_path)
     restored = 0
     for person, rows in kept.items():
-        sealed = {_pitcher_ident(r): r for r in rows
-                  if r.get("date") and not r.get("empty") and _in_sealed_window(r["date"])}
+        # Two outings on one date share an identity: keep them as a LIST and
+        # pair the feed's rows with the committed ones in order, so a pair of
+        # relief outings is not turned into one outing written twice.
+        sealed: dict = {}
+        for r in rows:
+            if r.get("date") and not r.get("empty") and _in_sealed_window(r["date"]):
+                sealed.setdefault(_pitcher_ident(r), []).append(r)
         if not sealed or person not in logs:
             continue
+        used: dict = {}
         merged = []
         for row in logs[person]:
             ident = _pitcher_ident(row)
-            if row.get("date") and _in_sealed_window(row["date"]) and ident in sealed:
-                if row != sealed[ident]:
+            held = sealed.get(ident)
+            n = used.get(ident, 0)
+            if row.get("date") and _in_sealed_window(row["date"]) and held and n < len(held):
+                used[ident] = n + 1
+                if row != held[n]:
                     restored += 1
-                merged.append(sealed[ident])
+                merged.append(held[n])
             else:
                 merged.append(row)
         logs[person] = merged
@@ -922,8 +931,32 @@ def _union_for_key(committed, refreshed):
     in the section comment above. `restored_count` is how many committed
     records the refreshed copy was missing."""
     fresh = [t for t in refreshed if not t[2]]
-    have = {t[1] for t in fresh}
-    extra = [t for t in committed if not t[2] and t[1] not in have]
+    fresh_count: dict = {}
+    fresh_lines: dict = {}
+    for t in fresh:
+        fresh_count[t[1]] = fresh_count.get(t[1], 0) + 1
+        fresh_lines.setdefault(t[1], []).append(t[0].strip())
+    by_ident: dict = {}
+    for t in committed:
+        if not t[2]:
+            by_ident.setdefault(t[1], []).append(t)
+    extra = []
+    for ident, group in by_ident.items():
+        if len(group) <= fresh_count.get(ident, 0):
+            continue
+        # Identity is a MULTISET (a pitcher's two relief outings on one date
+        # share one). Committed lines the refresh holds verbatim are matched
+        # away; of the rest, the first `len(pool)` pair off, in file order, with
+        # the refresh's remaining lines as one record CORRECTED by the refresh;
+        # only the committed records beyond the refreshed count are put back.
+        pool = list(fresh_lines.get(ident, ()))
+        unmatched = []
+        for t in group:
+            if t[0].strip() in pool:
+                pool.remove(t[0].strip())
+            else:
+                unmatched.append(t)
+        extra.extend(unmatched[len(pool):])
     markers_fresh = [t for t in refreshed if t[2]]
     markers_committed = [t for t in committed if t[2]]
     if fresh:
@@ -935,14 +968,22 @@ def _union_for_key(committed, refreshed):
     return fresh + extra + markers, len(extra)
 
 
+def _ident_counts(triples) -> dict:
+    """{identity: how many records} over the non-marker triples."""
+    out: dict = {}
+    for t in triples:
+        if not t[2]:
+            out[t[1]] = out.get(t[1], 0) + 1
+    return out
+
+
 def _restore_jsonl(work: Path, committed: Path, key_fn, ident, is_marker) -> Optional[dict]:
     work_sequence, work_groups = _read_jsonl_pairs(work, key_fn, ident, is_marker)
     _, committed_groups = _read_jsonl_pairs(committed, key_fn, ident, is_marker)
     lost = []
     for key, triples in committed_groups.items():
-        before = {t[1] for t in triples if not t[2]}
-        after = {t[1] for t in work_groups.get(key, ()) if not t[2]}
-        if before - after:
+        after = _ident_counts(work_groups.get(key, ()))
+        if any(n > after.get(i, 0) for i, n in _ident_counts(triples).items()):
             lost.append(key)
     if not lost:
         return None
@@ -1067,9 +1108,13 @@ def _restore_arsenal(work: Path, committed: Path) -> Optional[dict]:
     held_by, kept_by = by_player(data["rows"]), by_player(kept["rows"])
     lost = []
     for player, rows in kept_by.items():
-        before = {str(r.get("pitch_type")) for r in rows}
-        after = {str(r.get("pitch_type")) for r in held_by.get(player, ())}
-        if before - after:
+        before: dict = {}
+        for r in rows:
+            before[str(r.get("pitch_type"))] = before.get(str(r.get("pitch_type")), 0) + 1
+        after: dict = {}
+        for r in held_by.get(player, ()):
+            after[str(r.get("pitch_type"))] = after.get(str(r.get("pitch_type")), 0) + 1
+        if any(n > after.get(t, 0) for t, n in before.items()):
             lost.append(player)
     if not lost:
         return None
@@ -1149,6 +1194,7 @@ def _diff_counts(old: dict, new: dict) -> dict:
 
 def _jsonl_records(path: Path, key_fn, ident, is_marker) -> dict:
     out: dict = {}
+    seen: dict = {}
     with path.open(encoding="utf-8") as handle:
         for raw in handle:
             text = raw.strip()
@@ -1162,7 +1208,10 @@ def _jsonl_records(path: Path, key_fn, ident, is_marker) -> dict:
                 continue
             key = key_fn(row)
             if key is not None:
-                out[(key, ident(row))] = _stable_text(row)
+                # the Nth record that shares an identity is its own record
+                n = seen.get((key, ident(row)), 0)
+                seen[(key, ident(row))] = n + 1
+                out[(key, ident(row), n)] = _stable_text(row)
     return out
 
 
@@ -1273,6 +1322,10 @@ def refresh(root=None, *, now=None, max_seconds: float = DEFAULT_MAX_SECONDS,
     data_root = Path(root) if root is not None else paths.data_root()
     layer = fetch if fetch is not None else refresh_fetch.FetchLayer(
         cache_dir=data_root / "raw" / "mlb_statsapi_cache")
+    # A retry sleep may not run past the run's own budget: the run stops itself
+    # before --max-seconds instead of being killed by the loop's `timeout`.
+    run_deadline = Deadline(max_seconds, clock)
+    layer.bind_remaining(run_deadline.remaining)
     with layer.install():
         return _refresh(data_root, layer, now=now, max_seconds=max_seconds, only=only,
                         timeout=timeout, clock=clock, log=log)

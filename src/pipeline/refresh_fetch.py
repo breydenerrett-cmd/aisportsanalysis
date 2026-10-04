@@ -58,6 +58,7 @@ import contextlib
 import copy
 import hashlib
 import json
+import math
 import re
 import time
 import urllib.error
@@ -83,8 +84,14 @@ IMMUTABLE_TTL_S = 7 * 24 * 3600.0    # a final answer is trusted this long (stat
 MEMO_CLASSES = frozenset({"schedule", "standings"})
 AUTH_STATUSES = frozenset({401, 403})
 RETRY_STATUSES = frozenset({429, 500, 502, 503, 504})
-FINAL_CODES = frozenset({"F", "O"})
-SETTLED_CODES = FINAL_CODES | frozenset({"D", "C", "T", "U"})  # final, or will not be played
+# Only a day that CANNOT change again is pinned on disk for a week: Final, or a
+# game that will not be played today (Cancelled, Postponed). "O" (Game Over, the
+# last out before the official Final) and the suspended codes "T"/"U" still
+# change: a game in one of them becomes "F" or resumes.
+FINAL_CODES = frozenset({"F"})
+SETTLED_CODES = FINAL_CODES | frozenset({"D", "C"})
+RETRY_SLEEP_BUDGET_S = 90.0          # all retry sleeps of one run together (the run budget is 270 s)
+MIN_WORK_AFTER_SLEEP_S = 2.0         # a retry that would leave less than this of the run budget is not slept for
 
 OUTCOMES_REUSED = ("cache_memo", "cache_disk")
 OUTCOMES_FAILED = ("auth_denied", "rate_limited", "http_error",
@@ -146,9 +153,16 @@ def _retry_after(exc: BaseException) -> Optional[float]:
     headers = getattr(exc.__cause__, "headers", None)
     try:
         raw = headers.get("Retry-After") if headers else None
-        return min(float(raw), MAX_RETRY_AFTER_S) if raw else None
+        if not raw:
+            return None
+        wait = float(raw)
     except (TypeError, ValueError):
         return None
+    # A negative or NaN value is a malformed header, not a wait: absent (the
+    # caller's own backoff applies), and time.sleep would raise on it.
+    if not math.isfinite(wait) or wait <= 0:
+        return None
+    return min(wait, MAX_RETRY_AFTER_S)
 
 
 class FetchLayer:
@@ -158,7 +172,9 @@ class FetchLayer:
                  retries: int = MAX_RETRIES, backoff_s: float = BACKOFF_S,
                  sleep: Callable[[float], None] = time.sleep,
                  clock: Callable[[], float] = time.time,
-                 immutable_ttl_s: float = IMMUTABLE_TTL_S):
+                 immutable_ttl_s: float = IMMUTABLE_TTL_S,
+                 sleep_budget_s: float = RETRY_SLEEP_BUDGET_S,
+                 remaining: Optional[Callable[[], float]] = None):
         self.cache_dir = Path(cache_dir) if cache_dir is not None else None
         self.use_memo = bool(memo)
         self.retries = max(int(retries), 0)
@@ -172,6 +188,28 @@ class FetchLayer:
         self._final_pks: set = set()
         self._streak = 0
         self._rate_limited = 0
+        # Retry sleeps are bounded twice: all together by `sleep_budget_s`, and
+        # each by the time the run itself has left (`remaining()`, seconds; the
+        # refresh binds it to its own deadline), so the run stops itself before
+        # --max-seconds instead of being killed by the loop's timeout.
+        self.sleep_budget_s = max(float(sleep_budget_s), 0.0)
+        self._slept = 0.0
+        self._remaining = remaining
+
+    def bind_remaining(self, remaining: Optional[Callable[[], float]]) -> None:
+        """The run's own time left, in seconds (None: unbounded by a deadline)."""
+        self._remaining = remaining
+
+    def _may_sleep(self, wait: float) -> bool:
+        if self._slept + wait > self.sleep_budget_s:
+            return False
+        if self._remaining is not None:
+            try:
+                if wait + MIN_WORK_AFTER_SLEEP_S > self._remaining():
+                    return False
+            except Exception:  # noqa: BLE001 -- a broken clock never makes a retry unbounded: no sleep
+                return False
+        return True
 
     # -- installation -------------------------------------------------------
 
@@ -247,7 +285,10 @@ class FetchLayer:
             entry["attempts"] = attempt
             try:
                 payload = invoke()
-            except error_cls as exc:
+            except (error_cls, OSError) as exc:
+                # OSError: the news and Savant seams wrap URLError/HTTPError but
+                # not the bare TimeoutError (or reset) a read raises; it is a
+                # failed fetch with no HTTP status, not an unclassified call.
                 status = _status_of(exc)
                 entry["status"] = status
                 if status in AUTH_STATUSES:
@@ -260,8 +301,12 @@ class FetchLayer:
                 # timeout or reset once itself, and stacking a second policy on
                 # top of it multiplies the wait on an API that is simply down.
                 if status in RETRY_STATUSES and attempt <= self.retries:
-                    self._sleep(_retry_after(exc) or self.backoff_s * (2 ** (attempt - 1)))
-                    continue
+                    wait = _retry_after(exc) or self.backoff_s * (2 ** (attempt - 1))
+                    if self._may_sleep(wait):
+                        self._slept += wait
+                        self._sleep(wait)
+                        continue
+                    entry["retry_skipped"] = "time budget"
                 if status == 404:
                     entry["outcome"] = "not_found"
                 elif status == 429:

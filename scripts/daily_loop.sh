@@ -781,6 +781,52 @@ git reset -q artifacts/demo_latest.html 2>/dev/null || true
 # GUARD (2026-09-21 incident): size-gate backstop for whatever store
 # rotation above did not catch -- prints WARN/ESCALATE, never blocks.
 guard_staged_size
+
+# A CONFLICT ON A DISPLAY STORE MUST NOT STRAND THE DAY'S OTHER DATA (2026-10-04
+# review). The persisted MLB stores (data/historical/) go into the SAME commit as
+# the day's odds, watch and ledger data. Another writer (a second runner, a local
+# run, the image-build refresh) can advance the same store on origin, and then
+# `git pull --rebase` conflicts in that one file. The old branch aborted and left
+# the whole commit local-only: every later run added another commit, hit the same
+# conflict, and nothing reached origin again -- the forward-captured data
+# included, which is the irreplaceable part. The display stores are reproducible
+# (the next refresh rebuilds them from MLB's free API and the union keeps what
+# git holds), so a conflict that names ONLY data/historical/ files drops those
+# files from our commit, keeps the rest, and rebases again. A conflict that names
+# anything else is not touched: abort, as before. The disk copies of the dropped
+# stores are saved under /tmp/display_store_conflict/ and the working files go
+# back to the committed copy, so no later step sees conflict markers.
+pull_rebase_dropping_display_conflicts() {
+    local branch="$1" ours conflicts rebasing=0 others f
+    ours=$(git rev-parse HEAD 2>/dev/null) || return 1
+    git pull -q --rebase --autostash origin "$branch" && return 0
+    if [ -d "$(git rev-parse --git-path rebase-merge 2>/dev/null)" ] || [ -d "$(git rev-parse --git-path rebase-apply 2>/dev/null)" ]; then
+        rebasing=1
+    fi
+    conflicts=$(git diff --name-only --diff-filter=U 2>/dev/null | tr -d '\r')
+    git rebase --abort 2>/dev/null || true
+    [ "$rebasing" -eq 1 ] && [ -n "$conflicts" ] || return 1
+    others=$(printf '%s\n' "$conflicts" | grep -v '^data/historical/' || true)
+    [ -z "$others" ] || return 1
+    [ "$(git rev-parse HEAD 2>/dev/null)" = "$ours" ] || return 1
+    echo "== rebase conflicted only in display stores ($(printf '%s\n' "$conflicts" | wc -l | tr -d ' ') file(s)); dropping them from our commit, keeping the rest =="
+    mkdir -p /tmp/display_store_conflict
+    git reset -q --soft HEAD~1 || return 1
+    for f in $conflicts; do
+        git reset -q HEAD -- "$f" 2>/dev/null || true
+        cp "$f" "/tmp/display_store_conflict/$(basename "$f")" 2>/dev/null || true
+        git checkout -q -- "$f" 2>/dev/null || true
+    done
+    if ! git diff --cached --quiet; then
+        git commit -q -m "Daily loop $(date -u +%Y-%m-%d) (display stores left out: rebase conflict)" || return 1
+    fi
+    if git pull -q --rebase --autostash origin "$branch"; then
+        return 0
+    fi
+    git rebase --abort 2>/dev/null || true
+    return 1
+}
+
 if ! git diff --cached --quiet; then
     BRANCH=$(git rev-parse --abbrev-ref HEAD)
     if ! git commit -q -m "Daily loop $(date -u +%Y-%m-%d)"; then
@@ -791,10 +837,10 @@ if ! git diff --cached --quiet; then
         echo "ESCALATE: git fetch failed -- commit is local only"
         type foundry_beat >/dev/null 2>&1 && foundry_beat daily_loop escalate escalate "" "git fetch failed" || true
         GIT_FAILED=1
-    elif ! git pull -q --rebase --autostash origin "$BRANCH"; then
+    elif ! pull_rebase_dropping_display_conflicts "$BRANCH"; then
         # Our own just-made commit is what we're rebasing onto origin --
         # abort rather than leave the working tree mid-rebase for the next
-        # run to trip over.
+        # run to trip over (the helper aborts too; this is its backstop).
         git rebase --abort 2>/dev/null || true
         echo "ESCALATE: rebase onto origin/$BRANCH failed -- commit is local only, needs manual resolution"
         type foundry_beat >/dev/null 2>&1 && foundry_beat daily_loop escalate escalate "" "rebase failed" || true
