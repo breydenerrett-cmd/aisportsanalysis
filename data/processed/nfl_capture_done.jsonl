@@ -83,3 +83,7 @@
 {"game_id": "_gameday_refresh", "observed_utc": "2026-10-04T17:10:43.705911Z", "phase": "refresh"}
 {"game_id": "_gameday_refresh", "observed_utc": "2026-10-04T17:49:14.579302Z", "phase": "refresh"}
 {"game_id": "2026_04_MIA_MIN", "observed_utc": "2026-10-04T18:11:53.628678Z", "phase": "t2h"}
+{"game_id": "2026_04_KC_LV", "observed_utc": "2026-10-04T18:26:35.614028Z", "phase": "t2h"}
+{"game_id": "2026_04_LAC_SEA", "observed_utc": "2026-10-04T18:26:35.614028Z", "phase": "t2h"}
+{"game_id": "2026_04_DEN_SF", "observed_utc": "2026-10-04T18:26:35.614028Z", "phase": "t2h"}
+{"game_id": "2026_04_DET_CAR", "observed_utc": "2026-10-04T18:26:35.614028Z", "phase": "t6h"}
