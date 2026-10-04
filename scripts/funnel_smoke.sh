@@ -63,6 +63,10 @@ export STRIPE_API_KEY="sk_test_synthetic_funnelsmoke"
 export STRIPE_BETA_PRICE_ID="price_synthetic"
 export STRIPE_WEBHOOK_SECRET="whsec_synthetic"
 export STRIPE_FAKE_TRANSPORT="1"
+# Checkout refuses before the charge without a return URL (src.appstate
+# .billing.checkout_delivery_ready); the fake never visits it, so any
+# absolute https URL satisfies the gate.
+export PUBLIC_BASE_URL="https://funnelsmoke.example"
 
 # Mirrors of src.appstate.billing's own FAKE_TRANSPORT_* constants -- kept
 # as plain shell strings (not read out of the running process) so this
@@ -191,6 +195,50 @@ if [ "$WEBHOOK_STATUS" = "200" ]; then
     pass "POST /billing/webhook accepted the signed checkout.session.completed event"
 else
     fail "POST /billing/webhook returned ${WEBHOOK_STATUS}, expected 200: $(cat /tmp/funnel_webhook_body)"
+fi
+
+echo "== step 4b: POST /billing/webhook with the paid first invoice (what grants access) =="
+# A completed checkout session carries no period, so it grants no paid access
+# by itself (ACCESS POLICY, src/appstate/billing.py): the PAID INVOICE does.
+# Stripe sends invoice.paid for the first charge right after the session. The
+# period end below is the fake transport's own FAKE_TRANSPORT_CURRENT_PERIOD_END
+# (2099-01-01), so the later cancel step reports the same paid-through date.
+INVOICE_BODY_FILE="${TMP_DB_DIR}/invoice_body.json"
+python3 -c "
+import json, time
+print(json.dumps({
+    'id': 'evt_funnelsmoke_invoice_synthetic',
+    'type': 'invoice.paid',
+    'created': int(time.time()),
+    'data': {'object': {
+        'id': 'in_funnelsmoke_synthetic',
+        'customer': '${FAKE_CUSTOMER_ID}',
+        'subscription': '${FAKE_SUBSCRIPTION_ID}',
+        'status': 'paid',
+        'billing_reason': 'subscription_create',
+        'lines': {'data': [{'subscription': '${FAKE_SUBSCRIPTION_ID}',
+                            'period': {'end': 4070908800}}]},
+    }},
+}))
+" > "$INVOICE_BODY_FILE"
+INVOICE_SIGNATURE="$(python3 -c "
+import hashlib, hmac, time
+with open('${INVOICE_BODY_FILE}', 'rb') as f:
+    payload = f.read()
+ts = int(time.time())
+signed = f'{ts}.'.encode('utf-8') + payload
+sig = hmac.new('${STRIPE_WEBHOOK_SECRET}'.encode('utf-8'), signed, hashlib.sha256).hexdigest()
+print(f't={ts},v1={sig}')
+")"
+INVOICE_STATUS="$(curl -s -o /tmp/funnel_invoice_body -w '%{http_code}' \
+    -X POST "${BASE}/billing/webhook" \
+    -H 'Content-Type: application/json' \
+    -H "Stripe-Signature: ${INVOICE_SIGNATURE}" \
+    --data-binary "@${INVOICE_BODY_FILE}")"
+if [ "$INVOICE_STATUS" = "200" ]; then
+    pass "POST /billing/webhook accepted the signed invoice.paid event"
+else
+    fail "POST /billing/webhook returned ${INVOICE_STATUS} for invoice.paid, expected 200: $(cat /tmp/funnel_invoice_body)"
 fi
 
 echo "== step 5: GET /signup/complete mints the one-time activation token =="

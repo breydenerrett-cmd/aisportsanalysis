@@ -15,6 +15,7 @@ from __future__ import annotations
 import os
 import tempfile
 import unittest
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest import mock
 
@@ -189,7 +190,14 @@ class AdminReissueTokenTests(unittest.TestCase):
     def _paying_user(self, email="payer@example.com", status="active"):
         user = users_store.create_user(email, status="active", plan="beta")
         self.customers.upsert_customer(user.id, "cus_" + str(user.id))
-        self.customers.upsert_subscription(user.id, "sub_" + str(user.id), status)
+        # Paid through a future instant: access runs to the paid-through date
+        # and an `active` row with none on record is not entitled (billing
+        # ACCESS POLICY, 2026-10-04), so a "paying" fixture must have one.
+        # A canceled fixture stays one with nothing paid through.
+        paid_through = ((datetime.now(timezone.utc) + timedelta(days=30)).isoformat()
+                        if status in ("active", "trialing") else None)
+        self.customers.upsert_subscription(user.id, "sub_" + str(user.id), status,
+                                           current_period_end=paid_through)
         return user
 
     def _call(self, **kw):
