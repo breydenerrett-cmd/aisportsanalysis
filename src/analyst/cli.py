@@ -542,7 +542,11 @@ def main(args) -> int:
     if args.analyst_command == "pilot":
         from src.analyst import pilot       # lazy: pilot imports this module
         if args.pilot_command == "prepare":
-            return pilot.prepare(args.date, args.game, scratch=args.scratch)
+            # The packet comes through the internal data service (src/datasvc/client.py), the same
+            # door the /data/v1/mlb routes use: same packet bytes as the analyst's own loader, plus
+            # the packet's source and data version in prepare.json.
+            from src.datasvc.client import DataClient
+            return pilot.prepare(args.date, args.game, scratch=args.scratch, client=DataClient())
         if args.pilot_command == "check":
             return pilot.check(args.dir, args.response)
         return pilot.publish(args.dir, args.response, model=args.model, tokens_in=args.tokens_in,

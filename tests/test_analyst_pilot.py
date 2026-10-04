@@ -536,7 +536,11 @@ class TheCommandsAreWired(unittest.TestCase):
     def test_main_dispatches_each_to_the_pilot_module(self):
         with mock.patch.object(pilot, "prepare", return_value=0) as prep:
             cli.main(self.parse("pilot", "prepare", "--date", "2026-10-03", "--game", "NYY@TB"))
-        prep.assert_called_once_with("2026-10-03", "NYY@TB", scratch=None)
+        # The command takes its packet through the internal data service (src/datasvc/client.py).
+        from src.datasvc.client import DataClient
+        (date, game), kwargs = prep.call_args
+        self.assertEqual((date, game, kwargs["scratch"]), ("2026-10-03", "NYY@TB", None))
+        self.assertIsInstance(kwargs["client"], DataClient)
         with mock.patch.object(pilot, "check", return_value=0) as chk:
             cli.main(self.parse("pilot", "check", "--dir", "d", "--response", "r"))
         chk.assert_called_once_with("d", "r")

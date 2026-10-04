@@ -68,8 +68,11 @@ class MlbApiCase(ApiCase):
                               "section_as_of": {"teams": "2026-10-02", "starters": "2026-10-02"}})
             return items
 
+        # The stores are injected empty: without this the service read this machine's real results
+        # file, so "the schedule is unreachable" answered from disk wherever that file was current.
         self.service = svc.MlbService(fetch_games=fetch, loader=load, stores=(), clock=lambda: F.NOW,
-                                      config_loader=lambda: dict(F.CFG), data_root=self.root)
+                                      config_loader=lambda: dict(F.CFG), data_root=self.root,
+                                      results_reader=lambda: {}, pitcher_reader=lambda: {})
         datasvc.use_mlb_service(self.service)
         self.addCleanup(datasvc.use_mlb_service, None)
 
