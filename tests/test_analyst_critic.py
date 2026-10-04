@@ -144,7 +144,7 @@ class NamesMustBeInThePacket(unittest.TestCase):
 
     def test_a_starter_the_packet_names_is_fine_with_or_without_a_possessive(self):
         self.assertEqual(self.claim("Gerrit Cole has the longer leash.").struck, [])
-        self.assertEqual(self.claim("Gerrit Cole's ERA is in the packet.").struck, [])
+        self.assertEqual(self.claim("Gerrit Cole's ERA is in the data.").struck, [])
         self.assertEqual(self.claim("Drew Rasmussen is the home starter.").struck, [])
 
     def test_a_batter_from_a_prop_in_the_packet_is_fine(self):

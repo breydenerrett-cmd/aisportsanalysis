@@ -40,7 +40,9 @@ KEY = {"ANTHROPIC_API_KEY": "sk-test"}
 # changes these on purpose: update them in the same commit that says why.
 # analyst_prompt_v2 (2026-10-03): v1 plus rule 13a, the required case against. v1 never ran, so no row carries its hash.
 # analyst_prompt_v3 (2026-10-04): v2 plus rule 3a, declared derivations. No row was ever published under v2.
-MLB_PROMPT_SHA256 = "a9b1ebe59219e59bb93e0f2e86d7cbba7f0dcbd24eee988812e77187dddb7577"
+# analyst_prompt_v4 (2026-10-04): v3 plus rule 14a, no "packet" in what a reader sees (v3 was a9b1ebe5...; two
+# pilot rows were published under it and stay as published). Pinned in tests/test_analyst_v4.py as well.
+MLB_PROMPT_SHA256 = "98dc8f5e9021c74ac3631072988d04bbcd6070bf5a1a7927bd8adfe4cd240a35"
 UFC_PROMPT_SHA256 = "fb066b4cad001571d4224507581c092fd1286c4f388cacfc71708346f58d7db3"
 MLB_PACKET_SHA256 = "d5f4be75e1dbcfdc486b0128109b2fbe18742debcaeb68c39924fc5ff8206110"
 UFC_PACKET_SHA256 = "cf59dcd22ae9bd5f30763575b6acd51112718a170c21abc43ce58b914029a454"
@@ -74,7 +76,7 @@ def mlb_situation(rows=None):
 class ArmAIsByteForByteWhatItWas(unittest.TestCase):
     def test_the_mlb_prompt_is_the_one_that_shipped(self):
         self.assertEqual(sha(A.SYSTEM_PROMPT), MLB_PROMPT_SHA256)
-        self.assertEqual(A.PROMPT_VERSION, "analyst_prompt_v3")
+        self.assertEqual(A.PROMPT_VERSION, "analyst_prompt_v4")
 
     def test_the_ufc_prompt_is_the_one_that_shipped(self):
         self.assertEqual(sha(U.UFC_SYSTEM_PROMPT), UFC_PROMPT_SHA256)
@@ -123,7 +125,7 @@ class ArmAIsByteForByteWhatItWas(unittest.TestCase):
             row = ledger.rows(env.a["store_path"])[0]
         self.assertNotIn("arm", row)
         self.assertNotIn("situation_version", row)
-        self.assertEqual(row["prompt_version"], "analyst_prompt_v3")
+        self.assertEqual(row["prompt_version"], "analyst_prompt_v4")
         self.assertEqual(row["prompt_hash"], ledger.prompt_hash())
         self.assertEqual(row["packet_version"], "analyst_packet_v1")
 
@@ -170,7 +172,7 @@ class ThePrompts(unittest.TestCase):
     def test_the_prompt_identities_differ_and_are_versioned(self):
         self.assertNotEqual(ledger.prompt_hash(), ledger.prompt_hash(A.SITUATION_SYSTEM_PROMPT))
         self.assertNotEqual(U.prompt_hash(), U.prompt_hash(U.UFC_SITUATION_SYSTEM_PROMPT))
-        self.assertEqual(A.SITUATION_PROMPT_VERSION, "analyst_prompt_v3_situation")
+        self.assertEqual(A.SITUATION_PROMPT_VERSION, "analyst_prompt_v4_situation")
         self.assertEqual(U.UFC_SITUATION_PROMPT_VERSION, "analyst_ufc_prompt_v1_situation")
 
     def test_the_section_refuses_a_prompt_that_does_not_end_on_the_closing_line(self):
@@ -408,7 +410,7 @@ class TheMlbRun(unittest.TestCase):
         self.assertNotIn("arm", a)
         self.assertEqual((b["arm"], b["situation_version"]), ("B", "situation_v1"))
         self.assertEqual((a["prompt_version"], b["prompt_version"]),
-                         ("analyst_prompt_v3", "analyst_prompt_v3_situation"))
+                         ("analyst_prompt_v4", "analyst_prompt_v4_situation"))
         self.assertEqual((a["prompt_hash"], b["prompt_hash"]),
                          (ledger.prompt_hash(), ledger.prompt_hash(A.SITUATION_SYSTEM_PROMPT)))
         self.assertEqual((a["packet_version"], b["packet_version"]),

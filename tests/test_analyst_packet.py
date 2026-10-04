@@ -158,7 +158,8 @@ class EveryPriceCarriesItsBookAndCaptureTime(unittest.TestCase):
         self.assertEqual(len(props), 2)
         thin = [m for m in packet["missing"] if m["item"] == "props"]
         self.assertEqual(len(thin), 1)
-        self.assertIn("left out by the per-game cap", thin[0]["reason"])
+        self.assertEqual(thin[0]["reason"], "4 player props were priced and 2 analyzed: "
+                                            "2 were left out by the limit of 2 props per game")
 
     def test_starting_pitcher_strikeouts_are_always_analyzed_first(self):
         cfg = dict(F.CFG, max_props_per_game=1)

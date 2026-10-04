@@ -34,6 +34,14 @@ REWORDED = {
     "The checker recomputes every derived value from the packet, and a wrong one strikes the call.",
     "Put the summary's in `summary_derived`.",
     "An item with no calculated number has an empty `derived`.",
+    # Rule 14a of MLB prompt v4 (2026-10-04), no "packet" in what a reader sees. The UFC analyst does not
+    # carry it: its prompt and prompt hash must not change, and the critic only strikes the word in an MLB
+    # item (tests/test_analyst_v4.py pins both). A UFC rule of its own is a later decision.
+    "14a.",
+    "Everything a reader sees (the summary, every reason's claim, the case against and what_would_change_it) is read by a customer who has never heard of a packet.",
+    "In those fields call the data \"the data\" or \"what we have\", never \"the packet\".",
+    "The checker strikes the word \"packet\" there.",
+    "Evidence paths keep their own form.",
     # Rule 13a of MLB prompt v2 (2026-10-03), the required case against. The UFC analyst deliberately
     # does not carry it: the UFC request, schema, critic and prompt hash are unchanged (the MLB schema
     # is its own copy, `analyst.MLB_RESPONSE_SCHEMA`), and a UFC case against is a later decision.

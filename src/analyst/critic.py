@@ -42,6 +42,14 @@ number that is neither in the packet nor a verified derivation is rejected exact
 was. The derivations that held, with the values they were computed from, are kept with the
 published call (the row's provenance) and the page shows each as a sentence.
 
+OUR WORDS ARE NOT THE READER'S (prompt v4)
+------------------------------------------
+"packet" is the repo's word for the frozen fact sheet; a customer has never heard it. In an MLB
+summary, reason claim, case against or what_would_change_it the word is struck like a banned one
+(`INTERNAL_WORDS`, `banned_words(..., internal=True)`): the call becomes a PASS "could not be verified"
+and the summary is withheld. Evidence paths are not prose and are not scanned. The UFC analyst is not
+held to it (its prompt did not change).
+
 WHAT THIS CANNOT CATCH
 ----------------------
 It checks that quoted facts are true and that the call is coherent. It cannot
@@ -88,6 +96,13 @@ _BANNED = (
     (r"\bcannot\s+lose\b", "cannot lose"),
     (r"\+\s*EV\b", "+EV"),
     (r"(?i)bet[\s-]*check", "Bet Check"),
+)
+# Words that are ours, not the reader's (prompt v4, rule 14a). The first published brief said "the packet
+# gives nothing beyond the price" to a customer who has never heard of a packet. Struck exactly like a
+# banned word, and only in an MLB item (`internal=True`): the UFC analyst's prompt and critic behaviour
+# are not changed by this. Matched with the plural, on word boundaries ("packets", not "unpacketed").
+INTERNAL_WORDS = (
+    (r"\bpackets?\b", "packet"),
 )
 _EDGE = re.compile(r"\bedges?\b", re.I)
 _NEGATOR = re.compile(r"\b(no|not|never|without|nothing|none|isn'?t|aren'?t|don'?t|"
@@ -229,9 +244,11 @@ def unsupported_numbers(text: str, pool: NumberPool) -> list:
     return [lit for lit in numbers_in_prose(text) if not pool.has(lit)]
 
 
-def banned_words(text: str) -> list:
+def banned_words(text: str, *, internal: bool = False) -> list:
+    """The banned words in `text`. `internal` also rejects our own vocabulary (`INTERNAL_WORDS`),
+    which only prose a reader sees is held to, and only for MLB."""
     found = []
-    for pattern, label in _BANNED:
+    for pattern, label in _BANNED + (INTERNAL_WORDS if internal else ()):
         if re.search(pattern, text or "", re.I):
             found.append(label)
     for m in _EDGE.finditer(text or ""):
@@ -736,7 +753,7 @@ def _check_reason(packet: Mapping, where: str, reason: Any, pool: NumberPool,
         used.extend(_used(verified, claim))
     for lit in unsupported_numbers(claim, pool):
         problems.append(f"{where} quotes {lit}, which is not a number in the packet")
-    for word in banned_words(claim):
+    for word in banned_words(claim, internal=used is not None):
         problems.append(f"{where} uses the banned word {word!r}")
     for run in unsupported_names(claim, known):
         problems.append(f"{where} names {run!r}, which is not a name in the packet")
@@ -829,7 +846,7 @@ def check_call(packet: Mapping, call: Mapping, pool: NumberPool,
         text = call.get(text_key) or ""
         for lit in unsupported_numbers(text, pool):
             p.append(f"{text_key} quotes {lit}, which is not a number in the packet")
-        for word in banned_words(text):
+        for word in banned_words(text, internal=mlb):
             p.append(f"{text_key} uses the banned word {word!r}")
         for run in unsupported_names(text, known):
             p.append(f"{text_key} names {run!r}, which is not a name in the packet")
@@ -979,7 +996,7 @@ def verify(packet: Mapping, output: Mapping, *,
             s_derived = _used(s_verified, summary)
         for lit in unsupported_numbers(summary, pool):
             s_problems.append(f"the summary quotes {lit}, which is not a number in the packet")
-        for word in banned_words(summary):
+        for word in banned_words(summary, internal=is_mlb_packet(packet)):
             s_problems.append(f"the summary uses the banned word {word!r}")
         for run in unsupported_names(summary, known):
             s_problems.append(f"the summary names {run!r}, which is not a name in the packet")

@@ -58,7 +58,11 @@ plate appearances for a batter).
   the payload's own gap messages (no lineup yet, no matchup history), a quote older than
   180 minutes, team or starter stats that stop more than 3 days before the game (an ingest
   stopped), a section stamped more than 14 days before the game, an empty bullpen or travel
-  window, props left out by the per-game cap.
+  window, and props left out (with the true cause: fewer than `min_books_for_prop` books quoting
+  them, or the per-game cap, or the per-market limit). A hole on ONE side is listed by itself
+  (`lineups.away`, `bullpen.home`, `matchup_depth.away`, `starters.away`, kind `absent`, a plain
+  reason): a lineup posted for one club only used to say nothing at all. When both sides are absent
+  the older message stands (the payload's own gap, or the bullpen's "either club" line).
 - **Deterministic and hashable.** Built from its arguments only: no clock, no disk, no
   network. `packet_hash` is a sha256 of the canonical JSON. Same inputs, same hash, in any
   row order.
@@ -86,6 +90,15 @@ be a TAKE or a PASS and never a TAKE_OTHER_SIDE.
 first, then the repo's prop board order (how likely the outcome is, never the gap
 against the price: `src/analysis/propboard.py` measured that ordering and the gap lost),
 at most half the cap from one stat. The rest are counted in `missing`.
+The line says why, from what the selection actually did: "4 player props were priced, each by
+fewer than 2 books, so none is analyzed" (SD at MIL on 2026-10-04; the old line blamed the per-game
+cap, which was 16 and had nothing to do with it), or "6 player props were priced and 4 analyzed: 2 were
+left out by the limit of 4 props per game".
+
+*Packet hashes.* The per-side `missing` entries, the prop line and the wording of the "no prices were
+captured" lines (it said "this packet") change the bytes of a packet that has such a hole, so a packet
+built from now on can hash differently from one built from the same inputs yesterday. Packets already
+frozen, and the rows published from them, are unchanged.
 
 **Not analyzed** (stated in the packet's `limits`): alternate run lines and totals,
 first-five markets, every line but the most-quoted one.
@@ -117,7 +130,7 @@ server-side refusal fallback is **not** enabled: it re-runs a declined request o
 bills that at the other model's rate, which the spend cap's single price table would understate. The
 request is one non-streaming call (`max_tokens` 16,000, timeout 600 seconds).
 
-#### The prompt, verbatim (`PROMPT_VERSION = analyst_prompt_v3`)
+#### The prompt, verbatim (`PROMPT_VERSION = analyst_prompt_v4`)
 
 ```
 You are a baseball betting analyst. You write the analysis of one MLB game and make a call on every market the packet prices. You are an AI model and the reader knows it. Your work is published before the game, graded afterward, and shown next to its record whatever that record turns out to be. Write like a sharp human analyst talking to a smart friend: plain words, a point of view, no hype.
@@ -143,6 +156,7 @@ THE CALLS
 
 THE WORDS
 14. Never write: lock, guaranteed, free money, sure thing, can't lose, +EV. Never claim a profit, an edge you have, or certainty. No exclamation marks.
+14a. Everything a reader sees (the summary, every reason's claim, the case against and what_would_change_it) is read by a customer who has never heard of a packet. In those fields call the data "the data" or "what we have", never "the packet". The checker strikes the word "packet" there. Evidence paths keep their own form.
 15. Do not recommend a stake size and do not describe anything as a bet you or we placed.
 
 THE SUMMARY
@@ -151,7 +165,7 @@ THE SUMMARY
 Reply with one JSON object that matches the schema and nothing else.
 ```
 
-#### Prompt v2, prompt v3 and the schema, verbatim
+#### Prompt v2, v3, v4 and the schema, verbatim
 
 `analyst_prompt_v2` (2026-10-03) added one rule, 13a, and one required call field, `case_against`:
 for a TAKE or a TAKE_OTHER_SIDE, `{claim, evidence}`, the strongest reason from the packet that the
@@ -164,6 +178,18 @@ section. **No row has been published under v2**, so the change cost no record: e
 from here on carries v3 and the v3 prompt hash (`prompt_hash`, which also covers the schema). Rule 3
 keeps its words and its number; 3a is the one exception to it, so the later rules and the situation
 section still number as before. Arm B's version moves with it (`analyst_prompt_v3_situation`).
+
+`analyst_prompt_v4` (2026-10-04) adds rule 14a and nothing else: the first published brief (two
+pilot rows, both under v3) told customers "the packet gives nothing beyond the price" and "the packet
+does not say whether the roof is open", and "packet" is our word, not theirs. Rule 14a tells the model
+to call the data "the data" or "what we have" in every field a reader sees (the summary, each reason's
+claim, the case against and `what_would_change_it`), and the checker now strikes the word there like
+any banned one (`critic.INTERNAL_WORDS`, MLB only): a struck call is published as a PASS "could not be
+verified" and a struck summary is withheld. Evidence paths are not prose and are not scanned. Every
+other rule is byte for byte what it was, and 14a takes no number, so the situation section still
+starts at 17. The two v3 rows are never rewritten; they keep `analyst_prompt_v3` and the v3 prompt
+hash. The UFC prompt, hash and critic behaviour did not change. Arm B's version is
+`analyst_prompt_v4_situation`.
 
 The schema below is `analyst.MLB_RESPONSE_SCHEMA`. The UFC analyst shares the model call and the
 critic but not these fields: it keeps using the shared `analyst.RESPONSE_SCHEMA` (the same schema
