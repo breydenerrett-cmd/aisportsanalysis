@@ -365,8 +365,9 @@ class StaticChecks(unittest.TestCase):
     def test_the_offer_is_one_line_with_the_terms_the_owner_set(self):
         m = re.search(r'OFFER_LINE =\s*"([^"]+)"\s*\+\s*"([^"]+)"', SAMPLE_JS)
         line = m.group(1) + m.group(2)
-        for phrase in ("MLB postseason briefs", "posted before first pitch", "Free for 7 days",
-                       "first testers", "no card", "Planned price $19.99 a month", "Analysis, not advice."):
+        for phrase in ("MLB postseason briefs", "posted before first pitch", "7 days free",
+                       "first 20 testers", "hand-picked", "no card", "Not on sale yet",
+                       "planned price $19.99 a month", "Analysis, not advice."):
             self.assertIn(phrase, line)
 
     def test_the_price_matches_the_one_the_landing_page_and_pricing_module_state(self):
@@ -447,8 +448,8 @@ class ThePageUnderNode(unittest.TestCase):
 
     def test_it_states_the_offer_in_one_line(self):
         out = self.render(brief())
-        self.assertIn("Free for 7 days for the first testers, no card. Planned price $19.99 a month. "
-                      "Analysis, not advice.", out["text"])
+        self.assertIn("The first 20 testers are hand-picked: 7 days free, no card. "
+                      "Not on sale yet; planned price $19.99 a month. Analysis, not advice.", out["text"])
         self.assertEqual(out["hooks"].count("sample-offer"), 1)
 
     def test_no_brief_says_so_and_keeps_the_links_and_the_offer(self):

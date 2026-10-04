@@ -118,14 +118,62 @@ You're in: one week of early access to LineHound, no card. It ends on <date>.
 Sign in: https://linehound.app/web/index.html#/signin
 Paste this token: <token>
 
-Where to start: the first screen is tonight's card, the bets it likes, posted before the games. Then open one game you care about for the full breakdown.
+Where to start: open one playoff game you care about. Each game page has the matchup brief, posted before first pitch, with the strongest reason against every call. Tonight's card is on the first screen.
 
-What's there: tonight's MLB card and game breakdowns, player props ranked by how likely they are, the NFL card on game days, the UFC card on fight days, playoff odds, and the public record of every pick.
+What's there: the playoff matchup brief on each game page, tonight's card (some nights it has few picks or none, and that is on purpose), the odds and props pages, and the public record of every pick.
 
-What's experimental: all of it is unproven. The MLB record is negative so far, and NFL and UFC have only a handful of graded picks. Some nights the card has few picks or none; that is on purpose. It is analysis, not advice.
+What's experimental: all of it is unproven. The MLB record is negative so far, and NFL has only a handful of graded picks. UFC picks are paused right now. The card and the brief on a game page are two separate methods, graded separately, and they can differ for the same game. It is analysis, not advice.
 
 How to tell me what you think: just reply here. After two nights I'd like to know what was useful, what was confusing and what was missing.
 ```
+
+### Keep your own test account out of the customer numbers
+
+The funnel report and the tester activity report leave out our own traffic by
+one rule, and only by this rule: the account's signup carried a `utm_source`
+that is exactly `internal` or starts with `internal-` (for example
+`internal-brey`). Anything else counts as a customer, so do this before you
+grant your own email:
+
+1. Use an email that has never requested access. A signup that is already on
+   file keeps its first source, and a later signup cannot change a tester's.
+2. In a fresh private window (the first source is stored once per browser and
+   the first one wins), open
+   `https://linehound.app/web/index.html?utm_source=internal-brey#/signup`
+   and request early access with that email.
+3. Then grant it from the admin page like any tester. Granting an email with no
+   earlier signup leaves no tag, and your own page views would count as a
+   customer's.
+4. Check: the activity section of the admin page shows "Our own test accounts
+   left out: 1" (it counts up by one), and the granted and activated numbers do
+   not include you.
+
+### A tester who lost the token
+
+The token is never stored and cannot be shown again, so send a new one. The
+subscriber re-issue route refuses testers; the only door is the extend call.
+On the admin page, Testers section, find their row, type a reason in the box
+("lost the token" is enough) and press "Extend 7 days". That is
+`POST /admin/testers/extend` with the header `X-Admin-Token: <admin token>` and
+the body `{"user_id": <their id>, "reason": "lost the token"}`. It needs the
+user id (not the email) and a reason; without a reason it answers 400
+`reason_required`. It uses no extra tester spot. The answer carries a new token,
+shown once: send it the same way as the first (paste it into a message yourself;
+nothing emails it).
+
+Read "Known limits" below before you do this for someone who is mid-week.
+
+### Known limits
+
+- The lost-token route always gives a fresh 7 days from the moment you press
+  it, however many days the tester had left. Re-sending a token to someone with
+  four days left hands out a week from now.
+- It does not revoke the old token. The lost token keeps working until its own
+  expiry, so a lost token that someone else found is not shut off by sending a
+  new one.
+- Every use is recorded as an extension with its reason. That log is meant to
+  show which extensions were earned by feedback; a lost-token reason is
+  honest, but it is not feedback.
 
 ## Activated means used, not signed up
 

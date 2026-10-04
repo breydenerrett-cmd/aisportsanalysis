@@ -42,7 +42,8 @@ HERO_NOTE = ("Early access: the first 20 testers get 7 days free, no card. "
              "Not on sale yet; planned price $19.99 a month. "
              "The record and the postseason odds are free now.")
 CONFIRMATION = ("You're on the list. The first 20 testers get 7 days of early access, no card needed. "
-                "If you're picked, your access link comes by email from Brey, usually within a day. "
+                "Brey picks the first 20 by hand, so not everyone is picked. "
+                "If you're picked, he sends you the access link himself. "
                 "What you should know: this is early access; performance is not proven; "
                 "the analysis is informational, not advice; every result stays on the public record, "
                 "losses included; tester access is temporary.")
@@ -109,7 +110,11 @@ class TheFiveFacts(unittest.TestCase):
         # There is still no email sender: the only email promised is Brey's own,
         # to someone he picked.
         self.assertIn("If you're picked", CONFIRMATION)
-        self.assertIn("from Brey", CONFIRMATION)
+        self.assertIn("Brey picks the first 20 by hand", CONFIRMATION)
+        self.assertIn("not everyone is picked", CONFIRMATION)
+        self.assertIn("he sends you the access link himself", CONFIRMATION)
+        self.assertNotIn("by email", CONFIRMATION)
+        self.assertNotIn("within a day", CONFIRMATION)
         self.assertNotIn("we'll email", CONFIRMATION.lower())
         self.assertNotIn("on the waitlist", CONFIRMATION.lower())
 

@@ -31,8 +31,8 @@ import { renderAnalystSection } from "./analyst.js";
 import { renderDisclaimerFooter } from "./meta.js";
 
 export const OFFER_LINE =
-  "MLB postseason briefs are posted before first pitch. Free for 7 days for the first testers, "
-  + "no card. Planned price $19.99 a month. Analysis, not advice.";
+  "MLB postseason briefs are posted before first pitch. The first 20 testers are hand-picked: "
+  + "7 days free, no card. Not on sale yet; planned price $19.99 a month. Analysis, not advice.";
 
 export const NONE_TEXT = "There is no sample brief to show right now.";
 
@@ -40,7 +40,7 @@ export const NONE_TEXT = "There is no sample brief to show right now.";
 export const LINKS = {
   record: { href: "index.html#/record-card", text: "See the public record" },
   landing: { href: "landing.html", text: "About LINEHOUND" },
-  signup: { href: "index.html#/signup", text: "Start the free 7 days" },
+  signup: { href: "index.html#/signup", text: "Request early access" },
 };
 
 function facts(data) {

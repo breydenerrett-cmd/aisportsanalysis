@@ -67,10 +67,11 @@ export const FREE_NOW_NOTE = "The record and the postseason odds are free now.";
 
 /** What the signup page says after a waitlist signup succeeded. Plain words,
  * the five facts of the early-access offer, and no promise beyond what the
- * owner does by hand ("usually within a day" is his own commitment). */
+ * owner does by hand: he picks the first 20 himself and sends the link himself. */
 export const WAITLIST_CONFIRMATION =
   "You're on the list. The first 20 testers get 7 days of early access, no card needed. "
-  + "If you're picked, your access link comes by email from Brey, usually within a day. "
+  + "Brey picks the first 20 by hand, so not everyone is picked. "
+  + "If you're picked, he sends you the access link himself. "
   + "What you should know: this is early access; performance is not proven; "
   + "the analysis is informational, not advice; every result stays on the public record, "
   + "losses included; tester access is temporary.";

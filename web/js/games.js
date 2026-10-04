@@ -1142,7 +1142,14 @@ export async function renderGameDetail(container, date, away, home) {
   // owner asked for ("pick this, not this, and this is why"), so it sits directly
   // under the card's pick and above the read and every table. Absent when the
   // fetch failed or nothing is published for this game.
-  if (analyst) body.appendChild(renderAnalystSection(analyst));
+  // The card and the brief can name different things for one game (the card a fill at
+  // one price, the brief another). One plain sentence says they are two methods.
+  if (analyst) {
+    body.appendChild(el("p", { class: "gqv-two-methods", "data-hook": "card-and-brief-differ",
+      text: "Tonight's card and this brief are two separate methods, graded separately, "
+        + "and they may differ for the same game." }));
+    body.appendChild(renderAnalystSection(analyst));
+  }
   // THE READ, 2026-10-03. The game page showed tables and no reasoning; the
   // owner called the matchup analysis "barely analytical, just a couple of
   // numbers". This is the written read (src/analysis/matchup_read.py), above
