@@ -20,7 +20,16 @@ only the league?
                with that mean.
 
 Both are scored on P(strikeouts > line) at 3.5, 4.5, 5.5 and 6.5, and on the
-absolute error of expected strikeouts. No price is involved anywhere: there is
+absolute error of expected strikeouts.
+
+A third prediction, the SHAPE CONTROL, is computed beside them and decides
+nothing: Poisson with the league mean and no pitcher information. The baseline
+is an empirical distribution and the candidate is Poisson, so a gap between
+them mixes "pitcher information" with "distribution shape". The control
+separates the two descriptively: d_shape = loss(BASELINE) - loss(CONTROL) is
+the gain or cost of the Poisson shape alone, and d_info = loss(CONTROL) -
+loss(CANDIDATE) is the value of the pitcher's own history with the shape held
+fixed. Their sum is d. No price is involved anywhere: there is
 no historical strikeout price before 2026, and 2026 inputs before 2026-08-28
 are sealed.
 
@@ -371,6 +380,15 @@ def shrunk_batters_faced(pitcher_bf_total: int, pitcher_starts: int,
     return (pitcher_bf_total + prior_weight * league_mean_bf) / (pitcher_starts + prior_weight)
 
 
+def control_prediction(pool: LeaguePool) -> dict:
+    """Shape control: Poisson at the league mean strikeouts per start, no
+    pitcher information. Identical to the candidate with an empty history
+    (a test pins it)."""
+    mean = pool.mean_k()
+    return {"expected": mean,
+            "over": {line_key(L): poisson_over(mean, L) for L in LINES}}
+
+
 def candidate_prediction(pool: LeaguePool, history: tuple) -> dict:
     """The pitcher-specific model. `history` is (starts, k, bf) over his own
     earlier same-season starts; the league figures come from the SAME pool the
@@ -499,6 +517,7 @@ def build_comparison_rows(*, season, starts: Sequence[Mapping],
                 continue
             base = baseline_prediction(active)
             cand = candidate_prediction(active, tuple(h))
+            ctrl = control_prediction(active)
             k = s["k"]
             row = {"date": date, "person_id": s["person_id"], "k": k,
                    "bf": s["bf"], "prior_starts": h[0], "pool": source,
@@ -512,8 +531,13 @@ def build_comparison_rows(*, season, starts: Sequence[Mapping],
                 row[f"y_{key}"] = y
                 row[f"p_base_{key}"] = base["over"][key]
                 row[f"p_cand_{key}"] = cand["over"][key]
+                row[f"p_ctrl_{key}"] = ctrl["over"][key]
                 row[f"d_{key}"] = paired_difference(
                     base["over"][key], cand["over"][key], y)
+                row[f"d_shape_{key}"] = paired_difference(
+                    base["over"][key], ctrl["over"][key], y)
+                row[f"d_info_{key}"] = paired_difference(
+                    ctrl["over"][key], cand["over"][key], y)
             out.append(row)
             counts["scored"] += 1
             counts["scored_pool_same_season" if source == "same_season"
@@ -559,6 +583,12 @@ def line_summary(rows: Sequence[Mapping], line: float) -> dict:
     paired["minimum_detectable_effect_80pct"] = (
         None if paired["se"] is None else 2.8 * paired["se"])
     out["paired"] = paired
+    out["log_loss_shape_control"] = _mean(
+        [log_loss_one(r[f"p_ctrl_{key}"], r[y]) for r in rows])
+    out["shape_effect_descriptive"] = clustered_mean_interval(
+        per_date_aggregates(rows, f"d_shape_{key}"))
+    out["information_effect_descriptive"] = clustered_mean_interval(
+        per_date_aggregates(rows, f"d_info_{key}"))
     return out
 
 

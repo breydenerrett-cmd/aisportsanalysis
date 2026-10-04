@@ -448,6 +448,22 @@ class TwoModelTests(unittest.TestCase):
             same_day.setdefault(r["date"], set()).add(r["p_cand_4.5"])
         self.assertTrue(any(len(v) > 1 for v in same_day.values()), last)
 
+    def test_shape_control_is_the_candidate_without_pitcher_information(self):
+        pool = self._pool()
+        ctrl = kb.control_prediction(pool)
+        empty = kb.candidate_prediction(pool, (0, 0, 0))
+        self.assertAlmostEqual(ctrl["expected"], empty["expected"])
+        for key in ctrl["over"]:
+            self.assertAlmostEqual(ctrl["over"][key], empty["over"][key])
+
+    def test_shape_and_information_effects_sum_to_the_registered_difference(self):
+        for r in World().build()["rows"]:
+            for L in kb.LINES:
+                key = kb.line_key(L)
+                self.assertAlmostEqual(
+                    r[f"d_shape_{key}"] + r[f"d_info_{key}"], r[f"d_{key}"],
+                    places=12)
+
     def test_poisson_tail_known_values_and_monotone(self):
         # P(K > 4.5) = 1 - P(K <= 4), mean 5
         pmf = [math.exp(-5) * 5 ** j / math.factorial(j) for j in range(5)]
@@ -615,6 +631,11 @@ class SummaryTests(unittest.TestCase):
             self.assertAlmostEqual(
                 block["paired"]["minimum_detectable_effect_80pct"],
                 2.8 * block["paired"]["se"])
+        for block in lines.values():
+            self.assertAlmostEqual(
+                block["shape_effect_descriptive"]["estimate"]
+                + block["information_effect_descriptive"]["estimate"],
+                block["paired"]["estimate"], places=10)
         mae = s["all_scored"]["expected_strikeouts_mae"]
         self.assertAlmostEqual(mae["mae_baseline"] - mae["mae_candidate"],
                                mae["paired"]["estimate"], places=10)

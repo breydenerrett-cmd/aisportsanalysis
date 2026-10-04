@@ -144,7 +144,7 @@ def main(argv=None):
     row_keys = ("date", "person_id", "k", "bf", "prior_starts", "pool",
                 "e_base", "e_cand") + tuple(
         f"{p}_{kb.line_key(L)}" for L in kb.LINES
-        for p in ("p_base", "p_cand"))
+        for p in ("p_base", "p_cand", "p_ctrl"))
     row_digest = _digest({k: r[k] for k in row_keys} for r in rows)
     artifact = {
         "rule_id": RULE_ID,
