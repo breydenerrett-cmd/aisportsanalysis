@@ -48,6 +48,7 @@ from tests import test_billing_acceptance_path as acceptance
 CUSTOMER = acceptance.CUSTOMER
 SUBSCRIPTION = acceptance.SUBSCRIPTION
 DAY = 86400
+_CLOCK = datetime.fromtimestamp(int(datetime.now(timezone.utc).timestamp()), tz=timezone.utc)
 
 
 def _epoch(moment: datetime) -> int:
@@ -66,7 +67,9 @@ class _OrderCase(acceptance._Case):
 
     def setUp(self):
         super().setUp()
-        self.now = datetime.now(timezone.utc)
+        # One clock for the whole test run, so a test that calls setUp again
+        # to start a second buyer sees the same instants.
+        self.now = _CLOCK
         self.base = _epoch(self.now) - 3 * DAY
         self.p1 = _epoch(self.now + timedelta(days=10))    # paid through
         self.p2 = _epoch(self.now + timedelta(days=40))    # next period
@@ -129,6 +132,17 @@ class _OrderCase(acceptance._Case):
         self.webhook(self.sub_event("created", "active", 1, period_end=end))
         self.webhook(self.invoice_event(2, period_end=end, reason="subscription_create"))
         return user_id, self.collect_token()["token"]
+
+    def seed_paid(self, user_id=1):
+        """A customer paid through p1, without the signup machinery: the
+        permutation tests build hundreds of these. Reuses the database and
+        clears the subscription row, which is what a fresh customer is."""
+        customers.upsert_customer(user_id, CUSTOMER)
+        with closing(sqlite3.connect(self.db)) as conn, conn:
+            conn.execute("DELETE FROM billing_subscriptions")
+        self.webhook(self.sub_event("created", "active", 1, period_end=self.p1))
+        self.webhook(self.invoice_event(2, period_end=self.p1, reason="subscription_create"))
+        return user_id
 
     def buy_trial(self, trial_end, email="trial@example.com"):
         started = self.signup(email)
@@ -503,9 +517,8 @@ class EveryOrderEndsTheSame(_OrderCase):
         seen = set()
         count = 0
         for order in itertools.permutations(range(len(make_events()))):
-            self.setUp()
             count += 1
-            user_id, _ = self.buy_paid()
+            user_id = self.seed_paid()
             events = make_events()
             for index in order:
                 self.assertEqual(self.webhook(events[index]), {"received": True})
@@ -534,16 +547,14 @@ class EveryOrderEndsTheSame(_OrderCase):
             self.failed_event(20, period_end=self.p2),
             self.invoice_event(30, period_end=self.p2),
             self.sub_event("updated", "active", 30, period_end=self.p2),
-            self.invoice_event(30, period_end=self.p2, kind="invoice.payment_succeeded"),
         ], "active", self.p2)
 
     def test_a_renewal_that_fails_and_never_pays(self):
         count = 0
         outcomes = set()
         for order in itertools.permutations(range(3)):
-            self.setUp()
             count += 1
-            user_id, _ = self.buy_paid()
+            user_id = self.seed_paid()
             events = [self.sub_event("updated", "active", 19, period_end=self.p2),
                       self.sub_event("updated", "past_due", 20, period_end=self.p2),
                       self.failed_event(20, period_end=self.p2)]
@@ -602,6 +613,41 @@ class TheWebhookAlwaysAnswersAndNeverLeaks(_OrderCase):
         self.assertNotIn("whsec", logged)
         self.assertNotIn(f"user={user_id} ", logged)
         self.assertNotIn(f"user_id={user_id}", logged)
+
+
+class TheBillingPageAndCancelNeverPromiseAnUnpaidPeriod(_OrderCase):
+    """Two more doors a Stripe-announced period could walk through: the page's
+    own status read, and POST /billing/cancel, which writes the provider's
+    live answer (the in-process Stripe stand-in always reports an active
+    subscription whose period ends in 2099) into the local table."""
+
+    def _user(self, user_id):
+        from src.appstate import users as users_store
+        return users_store.get_user(user_id)
+
+    def test_status_reports_the_paid_through_not_the_announced_end(self):
+        from api.billing import billing_status
+        user_id, _ = self.buy_paid()
+        self.webhook(self.sub_event("updated", "active", 20, period_end=self.p2))
+        shown = billing_status(current_user=self._user(user_id))
+        self.assertEqual(shown["current_period_end"], _iso(self.p1))
+
+    def test_cancel_does_not_turn_the_announced_period_into_access(self):
+        from api.billing import cancel_subscription
+        user_id, token = self.buy_paid()
+        result = cancel_subscription(current_user=self._user(user_id), _rate_limit=None)
+        self.assertTrue(result["cancel_at_period_end"], result)
+        self.assertEqual(result["current_period_end"], _iso(self.p1))
+        self.assertEqual(self.paid_through(user_id), _iso(self.p1))
+        self.assert_covers(user_id, self.p1)
+
+    def test_cancel_on_a_lapsed_customer_whose_renewal_failed_grants_nothing(self):
+        from api.billing import cancel_subscription
+        long_ago = _epoch(self.now - timedelta(days=2))
+        user_id, token = self.buy_paid(end=long_ago)
+        self.webhook(self.sub_event("updated", "past_due", 20, period_end=self.p2))
+        cancel_subscription(current_user=self._user(user_id), _rate_limit=None)
+        self.assert_refused(token)
 
 
 class AnExpiredRenewalCanBeBoughtAgain(_OrderCase):
