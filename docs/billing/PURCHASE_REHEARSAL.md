@@ -249,7 +249,8 @@ the events come in. Owner ruling, 2026-10-04. The rules, in plain words (the
 same list is the "ACCESS POLICY" in `src/appstate/billing.py`):
 
 1. **Access runs to one stored date, the paid-through date,** and to nothing
-   else. After it the customer is not let in until a paid renewal arrives.
+   else. After it the customer is not let in until a paid renewal arrives. The
+   one exception is a short, bounded renewal grace (below).
 2. **Only proof moves that date, and only later.** A paid invoice moves it to
    the end of the period that invoice bought. A free trial moves it to the
    trial's end and no further. A brand new subscription that Stripe reports
@@ -281,19 +282,39 @@ same list is the "ACCESS POLICY" in `src/appstate/billing.py`):
 The Billing page and the cancel/reactivate answers now show the paid-through
 date as "access until", not the period Stripe announced.
 
-**Known and deliberate:** a customer whose renewal is slow to be charged is
-refused from the paid-through date until `invoice.paid` arrives. Stripe
-normally pays a renewal invoice about an hour after the period rolls over, so
-the gap is of that order; there is no grace window because a grace window is
-access without proof. If you want one, it is a single named constant to add
-in `src/appstate/customers.has_paid_access` and a decision for you.
+**Renewal grace (bounded, the owner can set it to 0).** Stripe creates a
+renewal invoice at the period boundary and charges it about an hour later, so
+with no grace every renewing customer would be refused for that hour each
+month. `RENEWAL_GRACE_SECONDS` in `src/appstate/customers.py` is 6 hours (set
+it to 0 for none). It applies only to a subscription that is still `active`
+or `trialing`, is not scheduled to cancel, and has no failed payment or
+deletion on record since the last payment: it keeps access that long past the
+paid-through date and is not payment (the stored date does not move). A
+scheduled cancel, `past_due`, `unpaid`, `incomplete` and a deleted subscription
+get none, and a bare `active` event after a failure does not give it back;
+only a new payment does. The worst a renewal that is never paid costs is six
+hours.
+
+**Other behaviour worth knowing.**
+
+- A tester whose week is still open and who has started paying is not locked
+  out in the moments between the checkout completing and the paid invoice (or
+  trial event) being processed.
+- The admin revenue page counts a row as paying or trialing only while it is
+  actually entitled (paid through a future instant, plus the grace). Anything
+  else that Stripe calls `active` is shown as `unpaid`, not as revenue.
+- Payment evidence is clamped to 400 days past the event's own time, so an
+  odd paid invoice line cannot make access permanent.
+- A signed webhook body of an odd shape (not an object, ids that are objects,
+  a time far out of range) is ignored and answered 200, never a 500.
+- Cancel (`POST /billing/cancel`) reads the paid-through inside the same
+  database lock it writes under, so a renewal that lands while Cancel is in
+  flight is kept.
 
 **Not covered:** a payment for a subscription this app has no customer record
 for (it is dropped, as before, and Stripe is told 200); events that arrive
 before the customer is linked to Stripe cannot happen on this path (the link
-is made when checkout is opened). The admin revenue page counts rows by
-status, so a row that has not been paid yet still reads as "paying" there
-until its invoice arrives.
+is made when checkout is opened).
 
 ## Found in review and fixed (2026-10-03)
 
@@ -306,6 +327,30 @@ nothing else. The same review found an older fault (row 5a) and it is fixed
 too. Detail: `docs/audit/2026-10-03/EXPIRED_TESTER_PAID_PATH.md`.
 
 ## Open decisions before production billing
+
+### Owner decisions: event-order review, left as they are
+
+Both were found by the 2026-10-04 adversarial review and need your call, not a
+code change:
+
+- **Existing `active` rows with no recorded period end.** Before this change an
+  `active` or `trialing` row with no cancel scheduled was entitled for ever,
+  even with no period end at all. The migration gives such a row nothing
+  (absent stays absent), so a customer in that state, if any exists, is
+  refused until their next payment event. Billing is off in production, so
+  the population may be empty. If it is not, you decide whether those rows get
+  a bounded backfill (the review proposes: open on deploy for at most one
+  period). Pinned as an expected failure in
+  `tests/test_billing_event_order_review.py`
+  (`test_an_active_row_with_no_end_is_open_on_deploy_for_at_most_one_period`).
+- **Repeatable free trials.** Every checkout gets the 7-day trial, and a
+  trial grants access through its end. A person who lets a subscription end
+  and checks out again with a new subscription gets a new free trial each
+  time; nothing here limits it. Related to the second free week for tester
+  upgrades below. It needs a rule from you (one trial per person or per card)
+  and a code change at checkout, not in the webhook. No test pins it yet.
+
+### Other open decisions
 
 - **A second free week.** Checkout gives every new buyer a 7-day Stripe
   trial. A former tester who upgrades would get that too: a second free
