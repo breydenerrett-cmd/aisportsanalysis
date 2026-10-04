@@ -1,0 +1,561 @@
+{
+ "summary": "I pass on everything in this game. The Dodgers are the favorite at -190 at the best price, and that looks about right: Blake Snell has a 1.8984 ERA and a 1.8564 FIP over his starts, and LAD has the better run differential per game (1.163 against ATL's 0.804) and has won 8 of its last 10. But the books already price all of that, and the best LAD quote of -190 sits close to the books' de-vigged 0.6442. On the other side, Ray Kerr has a thin sample with no usable ERA, so ATL at +180 is a price on an unknown, not a read. The run line and the 7.5 total are both priced near a coin flip, and nothing in what we have separates the sides. The lineups are not posted, matchup history is missing, and every player prop quote is hours old with only a few books behind it, so I leave the props alone too. A posted lineup and fresh prop prices would be the first things to change this.",
+ "calls": [
+  {
+   "slot_id": "moneyline",
+   "market": "moneyline",
+   "selection": "LAD",
+   "verdict": "PASS",
+   "price": -190,
+   "book": "betrivers",
+   "fair_estimate": 0.64,
+   "confidence": "medium",
+   "reasons": [
+    {
+     "claim": "Blake Snell has a strong ERA and FIP over his starts and LAD has the better run differential, but those facts are public and the books' de-vigged number for LAD already reflects them.",
+     "evidence": [
+      {
+       "path": "sections.starters.values.home_sp_era",
+       "value": 1.8984
+      },
+      {
+       "path": "sections.starters.values.home_sp_fip",
+       "value": 1.8564
+      },
+      {
+       "path": "markets.moneyline.options[0].fair_probability",
+       "value": 0.6442
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The best LAD quote is close to the books' own fair number, so the price leaves little room, and ATL's starter is a thin sample with no usable ERA, so there is no case for the other side either.",
+     "evidence": [
+      {
+       "path": "markets.moneyline.options[0].best.price",
+       "value": -190
+      },
+      {
+       "path": "sections.starters.values.away_sp_thin",
+       "value": true
+      },
+      {
+       "path": "missing[0].item",
+       "value": "lineups"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": -178,
+   "what_would_change_it": "A posted lineup showing key LAD bats resting, or a move in the LAD price toward -178, would make me look again.",
+   "case_against": null
+  },
+  {
+   "slot_id": "run_line",
+   "market": "run_line",
+   "selection": "ATL +1.5",
+   "verdict": "PASS",
+   "price": -122,
+   "book": "lowvig",
+   "fair_estimate": 0.54,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' fair number for ATL +1.5 is close to my own read, and the data gives nothing about the margin of the game beyond the price itself.",
+     "evidence": [
+      {
+       "path": "markets.run_line.options[0].fair_probability",
+       "value": 0.5397
+      },
+      {
+       "path": "markets.run_line.options[0].best.price",
+       "value": -122
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "Matchup depth and lineups are missing, so I cannot say how ATL's lineup sets up against Snell or how a close loss versus a blowout is likely to look.",
+     "evidence": [
+      {
+       "path": "missing[1].item",
+       "value": "matchup_depth"
+      },
+      {
+       "path": "missing[0].item",
+       "value": "lineups"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": -117,
+   "what_would_change_it": "A posted ATL lineup that looks strong against Snell, or an ATL +1.5 price at -117 or better, would bring this into play.",
+   "case_against": null
+  },
+  {
+   "slot_id": "total",
+   "market": "total",
+   "selection": "Over 7.5",
+   "verdict": "PASS",
+   "price": -109,
+   "book": "draftkings",
+   "fair_estimate": 0.51,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The total is priced almost evenly, and the data points both ways: Snell's numbers suggest fewer runs while ATL's starter has no usable record to weigh against them.",
+     "evidence": [
+      {
+       "path": "markets.total.options[0].fair_probability",
+       "value": 0.5145
+      },
+      {
+       "path": "sections.starters.values.home_sp_era",
+       "value": 1.8984
+      },
+      {
+       "path": "sections.starters.values.away_sp_era",
+       "value": null
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "Lineups are missing and the forecast shows light wind, so there is no clear environmental push either way.",
+     "evidence": [
+      {
+       "path": "missing[0].item",
+       "value": "lineups"
+      },
+      {
+       "path": "sections.weather.values.wind_mph",
+       "value": 6.4
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": -104,
+   "what_would_change_it": "A posted lineup with several regulars out, or a bullpen report that changes who is available, could move the total, and an Over price at -104 or better would interest me.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_01",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": -171,
+   "book": "draftkings",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' fair number for this side comes only from their own prices, and the data has nothing else about Drake Baldwin to show the price is wrong.",
+     "evidence": [
+      {
+       "path": "markets.prop_01.options[0].fair_probability",
+       "value": 0.5995
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The repo model likes the over more than the market does, but the quotes are stale, only a few books are involved, and the lineup is not posted, so I will not lean on the gap.",
+     "evidence": [
+      {
+       "path": "markets.prop_01.context.repo_model_probability",
+       "value": 0.6802
+      },
+      {
+       "path": "markets.prop_01.context.repo_market_probability",
+       "value": 0.5995
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "No lineup is posted and the prop quotes are hours old, so we cannot confirm he is playing or where he bats.",
+     "evidence": [
+      {
+       "path": "missing[0].item",
+       "value": "lineups"
+      },
+      {
+       "path": "missing[3].kind",
+       "value": "stale"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A posted lineup confirming Drake Baldwin is starting, along with fresh quotes from more books, would let me price this properly.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_02",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": -135,
+   "book": "bovada",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' fair number for this side comes only from their own prices, and the data has nothing else about Austin Riley to show the price is wrong.",
+     "evidence": [
+      {
+       "path": "markets.prop_02.options[0].fair_probability",
+       "value": 0.5478
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "No lineup is posted and the prop quotes are hours old, so we cannot confirm he is playing or where he bats.",
+     "evidence": [
+      {
+       "path": "missing[0].item",
+       "value": "lineups"
+      },
+      {
+       "path": "missing[3].kind",
+       "value": "stale"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A posted lineup confirming Austin Riley is starting, along with fresh quotes from more books, would let me price this properly.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_03",
+   "market": "prop",
+   "selection": "Under 1.5",
+   "verdict": "PASS",
+   "price": -150,
+   "book": "williamhill_us",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' fair number for this side comes only from their own prices, and the data has nothing else about Drake Baldwin to show the price is wrong.",
+     "evidence": [
+      {
+       "path": "markets.prop_03.options[0].fair_probability",
+       "value": 0.5634
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "No lineup is posted and the prop quotes are hours old, so we cannot confirm he is playing or where he bats.",
+     "evidence": [
+      {
+       "path": "missing[0].item",
+       "value": "lineups"
+      },
+      {
+       "path": "missing[3].kind",
+       "value": "stale"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A posted lineup confirming Drake Baldwin is starting, along with fresh quotes from more books, would let me price this properly.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_04",
+   "market": "prop",
+   "selection": "Under 1.5",
+   "verdict": "PASS",
+   "price": -150,
+   "book": "williamhill_us",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' fair number for this side comes only from their own prices, and the data has nothing else about Freddie Freeman to show the price is wrong.",
+     "evidence": [
+      {
+       "path": "markets.prop_04.options[0].fair_probability",
+       "value": 0.5683
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "No lineup is posted and the prop quotes are hours old, so we cannot confirm he is playing or where he bats.",
+     "evidence": [
+      {
+       "path": "missing[0].item",
+       "value": "lineups"
+      },
+      {
+       "path": "missing[3].kind",
+       "value": "stale"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A posted lineup confirming Freddie Freeman is starting, along with fresh quotes from more books, would let me price this properly.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_05",
+   "market": "prop",
+   "selection": "Under 1.5",
+   "verdict": "PASS",
+   "price": -170,
+   "book": "williamhill_us",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' fair number for this side comes only from their own prices, and the data has nothing else about Kyle Tucker to show the price is wrong.",
+     "evidence": [
+      {
+       "path": "markets.prop_05.options[0].fair_probability",
+       "value": 0.5912
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "No lineup is posted and the prop quotes are hours old, so we cannot confirm he is playing or where he bats.",
+     "evidence": [
+      {
+       "path": "missing[0].item",
+       "value": "lineups"
+      },
+      {
+       "path": "missing[3].kind",
+       "value": "stale"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A posted lineup confirming Kyle Tucker is starting, along with fresh quotes from more books, would let me price this properly.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_06",
+   "market": "prop",
+   "selection": "Under 1.5",
+   "verdict": "PASS",
+   "price": -159,
+   "book": "draftkings",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' fair number for this side comes only from their own prices, and the data has nothing else about Matt Olson to show the price is wrong.",
+     "evidence": [
+      {
+       "path": "markets.prop_06.options[0].fair_probability",
+       "value": 0.5754
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "No lineup is posted and the prop quotes are hours old, so we cannot confirm he is playing or where he bats.",
+     "evidence": [
+      {
+       "path": "missing[0].item",
+       "value": "lineups"
+      },
+      {
+       "path": "missing[3].kind",
+       "value": "stale"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A posted lineup confirming Matt Olson is starting, along with fresh quotes from more books, would let me price this properly.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_07",
+   "market": "prop",
+   "selection": "Under 1.5",
+   "verdict": "PASS",
+   "price": -169,
+   "book": "draftkings",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' fair number for this side comes only from their own prices, and the data has nothing else about Mauricio Dubon to show the price is wrong.",
+     "evidence": [
+      {
+       "path": "markets.prop_07.options[0].fair_probability",
+       "value": 0.5905
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "No lineup is posted and the prop quotes are hours old, so we cannot confirm he is playing or where he bats.",
+     "evidence": [
+      {
+       "path": "missing[0].item",
+       "value": "lineups"
+      },
+      {
+       "path": "missing[3].kind",
+       "value": "stale"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A posted lineup confirming Mauricio Dubon is starting, along with fresh quotes from more books, would let me price this properly.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_08",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": -130,
+   "book": "bovada",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' fair number for this side comes only from their own prices, and the data has nothing else about Max Muncy to show the price is wrong.",
+     "evidence": [
+      {
+       "path": "markets.prop_08.options[0].fair_probability",
+       "value": 0.5389
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "No lineup is posted and the prop quotes are hours old, so we cannot confirm he is playing or where he bats.",
+     "evidence": [
+      {
+       "path": "missing[0].item",
+       "value": "lineups"
+      },
+      {
+       "path": "missing[3].kind",
+       "value": "stale"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A posted lineup confirming Max Muncy is starting, along with fresh quotes from more books, would let me price this properly.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_09",
+   "market": "prop",
+   "selection": "Under 1.5",
+   "verdict": "PASS",
+   "price": -173,
+   "book": "williamhill_us",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' fair number for this side comes only from their own prices, and the data has nothing else about Michael Harris II to show the price is wrong.",
+     "evidence": [
+      {
+       "path": "markets.prop_09.options[0].fair_probability",
+       "value": 0.5973
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "No lineup is posted and the prop quotes are hours old, so we cannot confirm he is playing or where he bats.",
+     "evidence": [
+      {
+       "path": "missing[0].item",
+       "value": "lineups"
+      },
+      {
+       "path": "missing[3].kind",
+       "value": "stale"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A posted lineup confirming Michael Harris II is starting, along with fresh quotes from more books, would let me price this properly.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_10",
+   "market": "prop",
+   "selection": "Under 0.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' fair number for this side comes only from their own prices, and the data has nothing else about Ha-Seong Kim to show the price is wrong.",
+     "evidence": [
+      {
+       "path": "markets.prop_10.options[0].fair_probability",
+       "value": 0.8282
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The under is priced at a heavy favorite's number, and a bet at that kind of price needs a much stronger read than anything the data gives.",
+     "evidence": [
+      {
+       "path": "markets.prop_10.options[0].best.price",
+       "value": -700
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "No lineup is posted and the prop quotes are hours old, so we cannot confirm he is playing or where he bats.",
+     "evidence": [
+      {
+       "path": "missing[0].item",
+       "value": "lineups"
+      },
+      {
+       "path": "missing[3].kind",
+       "value": "stale"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A posted lineup confirming Ha-Seong Kim is starting, along with fresh quotes from more books, would let me price this properly.",
+   "case_against": null
+  }
+ ],
+ "summary_derived": []
+}
