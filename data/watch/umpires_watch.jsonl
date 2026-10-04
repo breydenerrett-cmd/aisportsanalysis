@@ -3504,3 +3504,22 @@
 {"game_date": "2026-10-05", "observed_utc": "2026-10-04T19:04:30.739894+00:00", "poll": true}
 {"game_date": "2026-10-04", "observed_utc": "2026-10-04T19:17:32.955629+00:00", "poll": true}
 {"game_date": "2026-10-05", "observed_utc": "2026-10-04T19:17:33.087086+00:00", "poll": true}
+{"game_date": "2026-10-04", "observed_utc": "2026-10-04T19:36:15.415819+00:00", "poll": true}
+{"game_date": "2026-10-05", "observed_utc": "2026-10-04T19:36:15.492134+00:00", "poll": true}
+{"game_date": "2026-10-04", "observed_utc": "2026-10-04T19:43:27.572987+00:00", "poll": true}
+{"game_date": "2026-10-05", "observed_utc": "2026-10-04T19:43:27.774015+00:00", "poll": true}
+{"game_date": "2026-10-04", "observed_utc": "2026-10-04T19:56:30.083565+00:00", "poll": true}
+{"game_date": "2026-10-05", "observed_utc": "2026-10-04T19:56:30.281641+00:00", "poll": true}
+{"game_date": "2026-10-04", "observed_utc": "2026-10-04T20:08:00.995054+00:00", "poll": true}
+{"commence_time": "2026-10-05T00:00:00Z", "crew": [{"id": 427197, "name": "Chris Guccione", "officialType": "Home Plate"}, {"id": 428442, "name": "James Hoye", "officialType": "First Base"}, {"id": 503586, "name": "Tripp Gibson", "officialType": "Second Base"}, {"id": 427554, "name": "Jim Wolf", "officialType": "Third Base"}, {"id": 482631, "name": "Mike Estabrook", "officialType": "Left Field"}, {"id": 577468, "name": "Roberto Ortiz", "officialType": "Right Field"}], "game_date": "2026-10-04", "game_pk": 849823, "game_state": "Pre-Game", "home_plate_umpire": "Chris Guccione", "observed_utc": "2026-10-04T20:08:00.995054+00:00", "prev_poll_utc": "2026-10-04T19:56:30.083565+00:00", "revealed": true}
+{"game_date": "2026-10-05", "observed_utc": "2026-10-04T20:08:01.142863+00:00", "poll": true}
+{"game_date": "2026-10-04", "observed_utc": "2026-10-04T20:21:06.779011+00:00", "poll": true}
+{"game_date": "2026-10-05", "observed_utc": "2026-10-04T20:21:06.953977+00:00", "poll": true}
+{"game_date": "2026-10-04", "observed_utc": "2026-10-04T20:35:28.871701+00:00", "poll": true}
+{"game_date": "2026-10-05", "observed_utc": "2026-10-04T20:35:29.041758+00:00", "poll": true}
+{"game_date": "2026-10-04", "observed_utc": "2026-10-04T20:50:59.705371+00:00", "poll": true}
+{"game_date": "2026-10-05", "observed_utc": "2026-10-04T20:50:59.823227+00:00", "poll": true}
+{"game_date": "2026-10-04", "observed_utc": "2026-10-04T20:59:54.894646+00:00", "poll": true}
+{"game_date": "2026-10-05", "observed_utc": "2026-10-04T20:59:55.010365+00:00", "poll": true}
+{"game_date": "2026-10-04", "observed_utc": "2026-10-04T21:14:36.069876+00:00", "poll": true}
+{"game_date": "2026-10-05", "observed_utc": "2026-10-04T21:14:36.275115+00:00", "poll": true}
