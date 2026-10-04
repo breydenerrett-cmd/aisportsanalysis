@@ -4,11 +4,11 @@
   "away": "ATL",
   "home": "LAD",
   "first_pitch_utc": "2026-10-05T00:00:00Z",
-  "built_at": "2026-10-04T21:21:24Z",
-  "packet_hash": "ccef506233663986cd6c37b35f91ebb50f706379b96b0692b00c32de89a06f38",
-  "prompt_version": "analyst_prompt_v5",
-  "prompt_hash": "acf8a530117b6bda68c72d69b1fe643951cb5e399054cff45920c5b3a3b8e08c",
-  "token_estimate": 15884,
+  "built_at": "2026-10-04T18:49:42Z",
+  "packet_hash": "6c67d71dfca2f99d84839628baeca7f838a6e6893c03ff6b749c1f85f8a376ab",
+  "prompt_version": "analyst_prompt_v4",
+  "prompt_hash": "4c5a4b7d0aa3b15096bbcc89e7029995b54068bac1d37d07fb31dcb97626aecd",
+  "token_estimate": 12398,
   "model": "claude-sonnet-5-5",
   "slots": [
     "moneyline",
@@ -23,12 +23,11 @@
     "prop_07",
     "prop_08",
     "prop_09",
-    "prop_10",
-    "prop_11"
+    "prop_10"
   ],
-  "missing_items": 4,
+  "missing_items": 8,
   "rehearsal": false,
   "mode": "session_assisted",
   "packet_source": "data_client",
-  "data_version": "dv1-cbb0cb65fc75f0d92a46cdfb"
+  "data_version": "dv1-4eae351e42170718823407e1"
 }

@@ -1,55 +1,69 @@
 {
- "summary": "I pass on everything in this game. The Dodgers are the favorite at -190 at the best price, and that looks about right: Blake Snell has a 1.8984 ERA and a 1.8564 FIP over his starts, and LAD has the better run differential per game (1.163 against ATL's 0.804) and has won 8 of its last 10. But the books already price all of that, and the best LAD quote of -190 sits close to the books' de-vigged 0.6442. On the other side, Ray Kerr has a thin sample with no usable ERA, so ATL at +180 is a price on an unknown, not a read. The run line and the 7.5 total are both priced near a coin flip, and nothing in what we have separates the sides. The lineups are not posted, matchup history is missing, and every player prop quote is hours old with only a few books behind it, so I leave the props alone too. A posted lineup and fresh prop prices would be the first things to change this.",
+ "summary": "Nothing here is worth a bet. On the moneyline, LAD is the side the books favour, but its best price is -212 at draftkings, beyond the price limit we use, and ATL at +199 sits close to the books' own fair probability of 0.3323. Blake Snell has a 1.8984 ERA and a 1.8564 FIP, and the Dodgers have won 8 of their last 10, but the Braves starter Ray Kerr has almost no sample in the data, so we cannot say the market is wrong about either arm. The run line and the total are near coin flips, with fair probabilities of 0.5206 for ATL +1.5 and 0.5109 for Under 8, and the hot, dry forecast works against a low-scoring read. The player props are thin. Most are quoted by only two or three books, those quotes are far older than the lineups, and Max Muncy and Ha-Seong Kim do not appear in either posted lineup. The Drake Baldwin hits prop is the closest call, since LineHound's own model likes the over, but Snell is a hard matchup and a 29-game sample is small. Missing: standings, the Braves starter's numbers and team totals.",
  "calls": [
   {
    "slot_id": "moneyline",
    "market": "moneyline",
    "selection": "LAD",
    "verdict": "PASS",
-   "price": -190,
-   "book": "betrivers",
-   "fair_estimate": 0.64,
+   "price": -212,
+   "book": "draftkings",
+   "fair_estimate": 0.66,
    "confidence": "medium",
    "reasons": [
     {
-     "claim": "Blake Snell has a strong ERA and FIP over his starts and LAD has the better run differential, but those facts are public and the books' de-vigged number for LAD already reflects them.",
+     "claim": "The best LAD price in the data is -212 at draftkings, which is beyond the price limit we use, so the favourite cannot be a bet however good the team is.",
      "evidence": [
       {
-       "path": "sections.starters.values.home_sp_era",
-       "value": 1.8984
+       "path": "markets.moneyline.options[0].best.price",
+       "value": -212
       },
       {
-       "path": "sections.starters.values.home_sp_fip",
-       "value": 1.8564
-      },
-      {
-       "path": "markets.moneyline.options[0].fair_probability",
-       "value": 0.6442
+       "path": "markets.moneyline.options[0].best.book",
+       "value": "draftkings"
       }
      ],
      "derived": []
     },
     {
-     "claim": "The best LAD quote is close to the books' own fair number, so the price leaves little room, and ATL's starter is a thin sample with no usable ERA, so there is no case for the other side either.",
+     "claim": "The books' own fair probability is 0.6677 for LAD and 0.3323 for ATL, and nothing in the data shows the market has this wrong: Blake Snell has a 1.8984 ERA, but the Braves starter has too small a sample to compare him against.",
      "evidence": [
       {
-       "path": "markets.moneyline.options[0].best.price",
-       "value": -190
+       "path": "markets.moneyline.options[0].fair_probability",
+       "value": 0.6677
+      },
+      {
+       "path": "markets.moneyline.options[1].fair_probability",
+       "value": 0.3323
+      },
+      {
+       "path": "sections.starters.values.home_sp_era",
+       "value": 1.8984
       },
       {
        "path": "sections.starters.values.away_sp_thin",
        "value": true
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "Recent form points the same way as the price: LAD has won 8 of its last 10 and ATL 4 of its last 10, so the market is probably about right.",
+     "evidence": [
+      {
+       "path": "sections.teams.values.home_last10_wins",
+       "value": 8
       },
       {
-       "path": "missing[0].item",
-       "value": "lineups"
+       "path": "sections.teams.values.away_last10_wins",
+       "value": 4
       }
      ],
      "derived": []
     }
    ],
-   "pass_price": -178,
-   "what_would_change_it": "A posted lineup showing key LAD bats resting, or a move in the LAD price toward -178, would make me look again.",
+   "pass_price": -194,
+   "what_would_change_it": "A better price on LAD, or a late change to either starter that the data does not yet show, would reopen it.",
    "case_against": null
   },
   {
@@ -57,93 +71,182 @@
    "market": "run_line",
    "selection": "ATL +1.5",
    "verdict": "PASS",
-   "price": -122,
+   "price": -112,
    "book": "lowvig",
-   "fair_estimate": 0.54,
+   "fair_estimate": 0.52,
    "confidence": "low",
    "reasons": [
     {
-     "claim": "The books' fair number for ATL +1.5 is close to my own read, and the data gives nothing about the margin of the game beyond the price itself.",
+     "claim": "The books see this as a toss-up, with fair probabilities of 0.5206 for ATL +1.5 and 0.4794 for LAD -1.5, and the data gives no strong reason to move off that.",
      "evidence": [
       {
        "path": "markets.run_line.options[0].fair_probability",
-       "value": 0.5397
+       "value": 0.5206
       },
       {
-       "path": "markets.run_line.options[0].best.price",
-       "value": -122
+       "path": "markets.run_line.options[1].fair_probability",
+       "value": 0.4794
       }
      ],
      "derived": []
     },
     {
-     "claim": "Matchup depth and lineups are missing, so I cannot say how ATL's lineup sets up against Snell or how a close loss versus a blowout is likely to look.",
+     "claim": "LAD has the better run difference per game, 1.163 against 0.804 for ATL, and Snell has a 1.8564 FIP, which argues for a Dodgers win, but he averages only 4.741 innings a start, which hands a lot of the game to the bullpen.",
      "evidence": [
       {
-       "path": "missing[1].item",
-       "value": "matchup_depth"
+       "path": "sections.teams.values.home_run_diff_pg",
+       "value": 1.163
       },
       {
-       "path": "missing[0].item",
-       "value": "lineups"
+       "path": "sections.teams.values.away_run_diff_pg",
+       "value": 0.804
+      },
+      {
+       "path": "sections.starters.values.home_sp_fip",
+       "value": 1.8564
+      },
+      {
+       "path": "sections.starters.values.home_sp_ip_per_start",
+       "value": 4.741
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "Two Braves relievers are marked likely unavailable after heavy use yesterday, which cuts against ATL +1.5 holding late.",
+     "evidence": [
+      {
+       "path": "sections.bullpen.values.ATL.relievers[0].availability",
+       "value": "likely_unavailable"
+      },
+      {
+       "path": "sections.bullpen.values.ATL.relievers[4].availability",
+       "value": "likely_unavailable"
       }
      ],
      "derived": []
     }
    ],
-   "pass_price": -117,
-   "what_would_change_it": "A posted ATL lineup that looks strong against Snell, or an ATL +1.5 price at -117 or better, would bring this into play.",
+   "pass_price": -108,
+   "what_would_change_it": "Learning how deep the Braves starter is expected to go, given his thin sample, or a lineup change would decide it.",
    "case_against": null
   },
   {
    "slot_id": "total",
    "market": "total",
-   "selection": "Over 7.5",
+   "selection": "Under 8",
    "verdict": "PASS",
-   "price": -109,
-   "book": "draftkings",
+   "price": -110,
+   "book": "lowvig",
    "fair_estimate": 0.51,
    "confidence": "low",
    "reasons": [
     {
-     "claim": "The total is priced almost evenly, and the data points both ways: Snell's numbers suggest fewer runs while ATL's starter has no usable record to weigh against them.",
+     "claim": "The books' fair probabilities are 0.5109 for Under 8 and 0.4891 for Over 8, which is close to a coin flip, and the data gives no clear tiebreaker.",
      "evidence": [
       {
        "path": "markets.total.options[0].fair_probability",
-       "value": 0.5145
+       "value": 0.5109
       },
       {
-       "path": "sections.starters.values.home_sp_era",
-       "value": 1.8984
-      },
-      {
-       "path": "sections.starters.values.away_sp_era",
-       "value": null
+       "path": "markets.total.options[1].fair_probability",
+       "value": 0.4891
       }
      ],
      "derived": []
     },
     {
-     "claim": "Lineups are missing and the forecast shows light wind, so there is no clear environmental push either way.",
+     "claim": "Snell's 1.8984 ERA supports the under, but the Braves lineup has run 0.371 wOBA against his most-used pitch, which points the other way.",
      "evidence": [
       {
-       "path": "missing[0].item",
-       "value": "lineups"
+       "path": "sections.starters.values.home_sp_era",
+       "value": 1.8984
       },
       {
-       "path": "sections.weather.values.wind_mph",
-       "value": 6.4
+       "path": "sections.matchup_depth.values.away.pitch_mix.lineup_vs_primary.woba",
+       "value": 0.371
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The forecast for first pitch is hot and dry, 94.6 degrees with 23 percent humidity, which tends to help offence and works against the under.",
+     "evidence": [
+      {
+       "path": "sections.weather.values.temp_f",
+       "value": 94.6
+      },
+      {
+       "path": "sections.weather.values.humidity_pct",
+       "value": 23
       }
      ],
      "derived": []
     }
    ],
    "pass_price": -104,
-   "what_would_change_it": "A posted lineup with several regulars out, or a bullpen report that changes who is available, could move the total, and an Over price at -104 or better would interest me.",
+   "what_would_change_it": "A confirmed limit on Snell's innings or a change in the forecast wind would shift how we read the total.",
    "case_against": null
   },
   {
    "slot_id": "prop_01",
+   "market": "prop",
+   "selection": "Over 6.5",
+   "verdict": "PASS",
+   "price": -120,
+   "book": "fanduel",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' fair probability for Over 6.5 strikeouts is 0.5259, so the market leans only slightly to the over.",
+     "evidence": [
+      {
+       "path": "markets.prop_01.options[0].fair_probability",
+       "value": 0.5259
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "Snell strikes out 11.6016 per nine innings, but he averages 4.741 innings a start and 3.556 over his last three, so reaching 7 strikeouts needs a longer outing than he has been getting.",
+     "evidence": [
+      {
+       "path": "sections.starters.values.home_sp_k9",
+       "value": 11.6016
+      },
+      {
+       "path": "sections.starters.values.home_sp_ip_per_start",
+       "value": 4.741
+      },
+      {
+       "path": "sections.starters.values.home_sp_recent_ip_per_start",
+       "value": 3.556
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The books are not in full agreement: draftkings has the over at -154 while betmgm has it at -125, so the market is still working out where this line belongs and the data gives us no reason to side with one book.",
+     "evidence": [
+      {
+       "path": "markets.prop_01.options[0].quotes[3].price",
+       "value": -154
+      },
+      {
+       "path": "markets.prop_01.options[0].quotes[0].price",
+       "value": -125
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "Word on how many pitches Snell is expected to throw would decide this one.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_02",
    "market": "prop",
    "selection": "Over 0.5",
    "verdict": "PASS",
@@ -153,50 +256,62 @@
    "confidence": "low",
    "reasons": [
     {
-     "claim": "The books' fair number for this side comes only from their own prices, and the data has nothing else about Drake Baldwin to show the price is wrong.",
+     "claim": "LineHound's own model has Drake Baldwin getting a hit at 0.6741 against 0.5995 from the market, but that rests on his 0.7586 season rate over only 29 games and does not know this pitcher.",
      "evidence": [
       {
-       "path": "markets.prop_01.options[0].fair_probability",
+       "path": "markets.prop_02.context.repo_model_probability",
+       "value": 0.6741
+      },
+      {
+       "path": "markets.prop_02.context.repo_market_probability",
        "value": 0.5995
+      },
+      {
+       "path": "markets.prop_02.context.season_rate",
+       "value": 0.7586
+      },
+      {
+       "path": "markets.prop_02.context.season_games",
+       "value": 29
       }
      ],
      "derived": []
     },
     {
-     "claim": "The repo model likes the over more than the market does, but the quotes are stale, only a few books are involved, and the lineup is not posted, so I will not lean on the gap.",
+     "claim": "Snell has allowed 0.2623 wOBA to right-handed hitters and 0.2822 to left-handed ones, and Baldwin's batting side is not in the data, so we cannot say how the matchup lands for him.",
      "evidence": [
       {
-       "path": "markets.prop_01.context.repo_model_probability",
-       "value": 0.6802
+       "path": "sections.matchup_depth.values.away.handedness.starter.vs_right_woba",
+       "value": 0.2623
       },
       {
-       "path": "markets.prop_01.context.repo_market_probability",
-       "value": 0.5995
+       "path": "sections.matchup_depth.values.away.handedness.starter.vs_left_woba",
+       "value": 0.2822
       }
      ],
      "derived": []
     },
     {
-     "claim": "No lineup is posted and the prop quotes are hours old, so we cannot confirm he is playing or where he bats.",
+     "claim": "Only two books quote this prop and the quotes are far older than the lineup and moneyline quotes, so the price may not reflect today's information.",
      "evidence": [
       {
-       "path": "missing[0].item",
-       "value": "lineups"
+       "path": "markets.prop_02.options[0].books",
+       "value": 2
       },
       {
-       "path": "missing[3].kind",
-       "value": "stale"
+       "path": "markets.prop_02.as_of",
+       "value": "2026-10-04T04:07:21Z"
       }
      ],
      "derived": []
     }
    ],
    "pass_price": null,
-   "what_would_change_it": "A posted lineup confirming Drake Baldwin is starting, along with fresh quotes from more books, would let me price this properly.",
+   "what_would_change_it": "Fresh quotes from more books after the lineups, or a clear read on how Baldwin fares against left-handed pitching, would bring it back into play.",
    "case_against": null
   },
   {
-   "slot_id": "prop_02",
+   "slot_id": "prop_03",
    "market": "prop",
    "selection": "Over 0.5",
    "verdict": "PASS",
@@ -206,71 +321,50 @@
    "confidence": "low",
    "reasons": [
     {
-     "claim": "The books' fair number for this side comes only from their own prices, and the data has nothing else about Austin Riley to show the price is wrong.",
+     "claim": "The books' fair probability for Over 0.5 is 0.5478, and the data holds nothing about this hitter beyond the price and his lineup spot, so we assume the market is about right.",
      "evidence": [
       {
-       "path": "markets.prop_02.options[0].fair_probability",
+       "path": "markets.prop_03.options[0].fair_probability",
        "value": 0.5478
       }
      ],
      "derived": []
     },
     {
-     "claim": "No lineup is posted and the prop quotes are hours old, so we cannot confirm he is playing or where he bats.",
+     "claim": "Austin Riley bats eighth, and the Braves hitters have run 0.3225 wOBA against Snell's most-used pitch for him, a modest number against a hard matchup.",
      "evidence": [
       {
-       "path": "missing[0].item",
-       "value": "lineups"
+       "path": "sections.lineups.values.away.batters[7].name",
+       "value": "Austin Riley"
       },
       {
-       "path": "missing[3].kind",
-       "value": "stale"
-      }
-     ],
-     "derived": []
-    }
-   ],
-   "pass_price": null,
-   "what_would_change_it": "A posted lineup confirming Austin Riley is starting, along with fresh quotes from more books, would let me price this properly.",
-   "case_against": null
-  },
-  {
-   "slot_id": "prop_03",
-   "market": "prop",
-   "selection": "Under 1.5",
-   "verdict": "PASS",
-   "price": -150,
-   "book": "williamhill_us",
-   "fair_estimate": null,
-   "confidence": "low",
-   "reasons": [
-    {
-     "claim": "The books' fair number for this side comes only from their own prices, and the data has nothing else about Drake Baldwin to show the price is wrong.",
-     "evidence": [
+       "path": "sections.lineups.values.away.batters[7].order",
+       "value": 8
+      },
       {
-       "path": "markets.prop_03.options[0].fair_probability",
-       "value": 0.5634
+       "path": "sections.matchup_depth.values.away.pitch_mix.batters[6].woba",
+       "value": 0.3225
       }
      ],
      "derived": []
     },
     {
-     "claim": "No lineup is posted and the prop quotes are hours old, so we cannot confirm he is playing or where he bats.",
+     "claim": "Only three books quote this prop and the quotes are far older than the lineups, so they may not reflect the posted batting order.",
      "evidence": [
       {
-       "path": "missing[0].item",
-       "value": "lineups"
+       "path": "markets.prop_03.options[0].books",
+       "value": 3
       },
       {
-       "path": "missing[3].kind",
-       "value": "stale"
+       "path": "markets.prop_03.as_of",
+       "value": "2026-10-04T04:07:21Z"
       }
      ],
      "derived": []
     }
    ],
    "pass_price": null,
-   "what_would_change_it": "A posted lineup confirming Drake Baldwin is starting, along with fresh quotes from more books, would let me price this properly.",
+   "what_would_change_it": "A confirmed lineup change or fresh quotes from more books would be needed before this is worth a bet.",
    "case_against": null
   },
   {
@@ -284,36 +378,119 @@
    "confidence": "low",
    "reasons": [
     {
-     "claim": "The books' fair number for this side comes only from their own prices, and the data has nothing else about Freddie Freeman to show the price is wrong.",
+     "claim": "The books' fair probability for Under 1.5 is 0.5634, and the data holds nothing about this hitter beyond the price and his lineup spot, so we assume the market is about right.",
      "evidence": [
       {
        "path": "markets.prop_04.options[0].fair_probability",
-       "value": 0.5683
+       "value": 0.5634
       }
      ],
      "derived": []
     },
     {
-     "claim": "No lineup is posted and the prop quotes are hours old, so we cannot confirm he is playing or where he bats.",
+     "claim": "Drake Baldwin leads off, so he sees the most plate appearances, but Snell has allowed 0.2623 wOBA to right-handed hitters and 0.2822 to left-handed ones, so the under price already looks fair.",
      "evidence": [
       {
-       "path": "missing[0].item",
-       "value": "lineups"
+       "path": "sections.lineups.values.away.batters[0].name",
+       "value": "Drake Baldwin"
       },
       {
-       "path": "missing[3].kind",
-       "value": "stale"
+       "path": "sections.lineups.values.away.batters[0].order",
+       "value": 1
+      },
+      {
+       "path": "sections.matchup_depth.values.away.handedness.starter.vs_right_woba",
+       "value": 0.2623
+      },
+      {
+       "path": "sections.matchup_depth.values.away.handedness.starter.vs_left_woba",
+       "value": 0.2822
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "Only three books quote this prop and the quotes are far older than the lineups, so they may not reflect the posted batting order.",
+     "evidence": [
+      {
+       "path": "markets.prop_04.options[0].books",
+       "value": 3
+      },
+      {
+       "path": "markets.prop_04.as_of",
+       "value": "2026-10-04T04:07:21Z"
       }
      ],
      "derived": []
     }
    ],
    "pass_price": null,
-   "what_would_change_it": "A posted lineup confirming Freddie Freeman is starting, along with fresh quotes from more books, would let me price this properly.",
+   "what_would_change_it": "A confirmed lineup change or fresh quotes from more books would be needed before this is worth a bet.",
    "case_against": null
   },
   {
    "slot_id": "prop_05",
+   "market": "prop",
+   "selection": "Under 1.5",
+   "verdict": "PASS",
+   "price": -150,
+   "book": "williamhill_us",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' fair probability for Under 1.5 is 0.5683, and the data holds nothing about this hitter beyond the price and his lineup spot, so we assume the market is about right.",
+     "evidence": [
+      {
+       "path": "markets.prop_05.options[0].fair_probability",
+       "value": 0.5683
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "Freddie Freeman bats fourth and has run 0.416 wOBA against the Braves starter's most-used pitch, but that starter has only a small sample, so it tells us little about the under.",
+     "evidence": [
+      {
+       "path": "sections.lineups.values.home.batters[3].name",
+       "value": "Freddie Freeman"
+      },
+      {
+       "path": "sections.lineups.values.home.batters[3].order",
+       "value": 4
+      },
+      {
+       "path": "sections.matchup_depth.values.home.pitch_mix.batters[3].woba",
+       "value": 0.416
+      },
+      {
+       "path": "sections.starters.values.away_sp_thin",
+       "value": true
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "Only three books quote this prop and the quotes are far older than the lineups, so they may not reflect the posted batting order.",
+     "evidence": [
+      {
+       "path": "markets.prop_05.options[0].books",
+       "value": 3
+      },
+      {
+       "path": "markets.prop_05.as_of",
+       "value": "2026-10-04T04:07:21Z"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A confirmed lineup change or fresh quotes from more books would be needed before this is worth a bet.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_06",
    "market": "prop",
    "selection": "Under 1.5",
    "verdict": "PASS",
@@ -323,36 +500,58 @@
    "confidence": "low",
    "reasons": [
     {
-     "claim": "The books' fair number for this side comes only from their own prices, and the data has nothing else about Kyle Tucker to show the price is wrong.",
+     "claim": "The books' fair probability for Under 1.5 is 0.5912, and the data holds nothing about this hitter beyond the price and his lineup spot, so we assume the market is about right.",
      "evidence": [
       {
-       "path": "markets.prop_05.options[0].fair_probability",
+       "path": "markets.prop_06.options[0].fair_probability",
        "value": 0.5912
       }
      ],
      "derived": []
     },
     {
-     "claim": "No lineup is posted and the prop quotes are hours old, so we cannot confirm he is playing or where he bats.",
+     "claim": "Kyle Tucker bats sixth and has run 0.4561 wOBA against the Braves starter's most-used pitch, which argues against the under, but that starter has only a small sample.",
      "evidence": [
       {
-       "path": "missing[0].item",
-       "value": "lineups"
+       "path": "sections.lineups.values.home.batters[5].name",
+       "value": "Kyle Tucker"
       },
       {
-       "path": "missing[3].kind",
-       "value": "stale"
+       "path": "sections.lineups.values.home.batters[5].order",
+       "value": 6
+      },
+      {
+       "path": "sections.matchup_depth.values.home.pitch_mix.batters[5].woba",
+       "value": 0.4561
+      },
+      {
+       "path": "sections.starters.values.away_sp_thin",
+       "value": true
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "Only three books quote this prop and the quotes are far older than the lineups, so they may not reflect the posted batting order.",
+     "evidence": [
+      {
+       "path": "markets.prop_06.options[0].books",
+       "value": 3
+      },
+      {
+       "path": "markets.prop_06.as_of",
+       "value": "2026-10-04T04:07:21Z"
       }
      ],
      "derived": []
     }
    ],
    "pass_price": null,
-   "what_would_change_it": "A posted lineup confirming Kyle Tucker is starting, along with fresh quotes from more books, would let me price this properly.",
+   "what_would_change_it": "A confirmed lineup change or fresh quotes from more books would be needed before this is worth a bet.",
    "case_against": null
   },
   {
-   "slot_id": "prop_06",
+   "slot_id": "prop_07",
    "market": "prop",
    "selection": "Under 1.5",
    "verdict": "PASS",
@@ -362,36 +561,58 @@
    "confidence": "low",
    "reasons": [
     {
-     "claim": "The books' fair number for this side comes only from their own prices, and the data has nothing else about Matt Olson to show the price is wrong.",
+     "claim": "The books' fair probability for Under 1.5 is 0.5754, and the data holds nothing about this hitter beyond the price and his lineup spot, so we assume the market is about right.",
      "evidence": [
       {
-       "path": "markets.prop_06.options[0].fair_probability",
+       "path": "markets.prop_07.options[0].fair_probability",
        "value": 0.5754
       }
      ],
      "derived": []
     },
     {
-     "claim": "No lineup is posted and the prop quotes are hours old, so we cannot confirm he is playing or where he bats.",
+     "claim": "Matt Olson bats third and has run 0.4122 wOBA against Snell's most-used pitch, which argues against the under, while Snell's 1.8984 ERA argues for it, so the two roughly cancel.",
      "evidence": [
       {
-       "path": "missing[0].item",
-       "value": "lineups"
+       "path": "sections.lineups.values.away.batters[2].name",
+       "value": "Matt Olson"
       },
       {
-       "path": "missing[3].kind",
-       "value": "stale"
+       "path": "sections.lineups.values.away.batters[2].order",
+       "value": 3
+      },
+      {
+       "path": "sections.matchup_depth.values.away.pitch_mix.batters[1].woba",
+       "value": 0.4122
+      },
+      {
+       "path": "sections.starters.values.home_sp_era",
+       "value": 1.8984
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "Only three books quote this prop and the quotes are far older than the lineups, so they may not reflect the posted batting order.",
+     "evidence": [
+      {
+       "path": "markets.prop_07.options[0].books",
+       "value": 3
+      },
+      {
+       "path": "markets.prop_07.as_of",
+       "value": "2026-10-04T04:07:21Z"
       }
      ],
      "derived": []
     }
    ],
    "pass_price": null,
-   "what_would_change_it": "A posted lineup confirming Matt Olson is starting, along with fresh quotes from more books, would let me price this properly.",
+   "what_would_change_it": "A confirmed lineup change or fresh quotes from more books would be needed before this is worth a bet.",
    "case_against": null
   },
   {
-   "slot_id": "prop_07",
+   "slot_id": "prop_08",
    "market": "prop",
    "selection": "Under 1.5",
    "verdict": "PASS",
@@ -401,36 +622,54 @@
    "confidence": "low",
    "reasons": [
     {
-     "claim": "The books' fair number for this side comes only from their own prices, and the data has nothing else about Mauricio Dubon to show the price is wrong.",
+     "claim": "The books' fair probability for Under 1.5 is 0.5905, and the data holds nothing about this hitter beyond the price and his lineup spot, so we assume the market is about right.",
      "evidence": [
       {
-       "path": "markets.prop_07.options[0].fair_probability",
+       "path": "markets.prop_08.options[0].fair_probability",
        "value": 0.5905
       }
      ],
      "derived": []
     },
     {
-     "claim": "No lineup is posted and the prop quotes are hours old, so we cannot confirm he is playing or where he bats.",
+     "claim": "Mauricio Dubon bats sixth and has run only 0.2787 wOBA against Snell's most-used pitch, which fits the under, but the price already reflects a hitter at the bottom of the order.",
      "evidence": [
       {
-       "path": "missing[0].item",
-       "value": "lineups"
+       "path": "sections.lineups.values.away.batters[5].name",
+       "value": "Mauricio Dubón"
       },
       {
-       "path": "missing[3].kind",
-       "value": "stale"
+       "path": "sections.lineups.values.away.batters[5].order",
+       "value": 6
+      },
+      {
+       "path": "sections.matchup_depth.values.away.pitch_mix.batters[4].woba",
+       "value": 0.2787
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "Only three books quote this prop and the quotes are far older than the lineups, so they may not reflect the posted batting order.",
+     "evidence": [
+      {
+       "path": "markets.prop_08.options[0].books",
+       "value": 3
+      },
+      {
+       "path": "markets.prop_08.as_of",
+       "value": "2026-10-04T04:07:21Z"
       }
      ],
      "derived": []
     }
    ],
    "pass_price": null,
-   "what_would_change_it": "A posted lineup confirming Mauricio Dubon is starting, along with fresh quotes from more books, would let me price this properly.",
+   "what_would_change_it": "A confirmed lineup change or fresh quotes from more books would be needed before this is worth a bet.",
    "case_against": null
   },
   {
-   "slot_id": "prop_08",
+   "slot_id": "prop_09",
    "market": "prop",
    "selection": "Over 0.5",
    "verdict": "PASS",
@@ -440,36 +679,50 @@
    "confidence": "low",
    "reasons": [
     {
-     "claim": "The books' fair number for this side comes only from their own prices, and the data has nothing else about Max Muncy to show the price is wrong.",
+     "claim": "Max Muncy is not among the hitters in the posted Dodgers lineup, so this quote may have been set before the lineup was known.",
      "evidence": [
       {
-       "path": "markets.prop_08.options[0].fair_probability",
+       "path": "sections.lineups.values.home.handedness.known",
+       "value": 9
+      },
+      {
+       "path": "sections.lineups.values.home.batters[0].name",
+       "value": "Mookie Betts"
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The books' fair probability for Over 0.5 is 0.5389, and the data holds nothing about this hitter beyond the price, so we assume the market is about right.",
+     "evidence": [
+      {
+       "path": "markets.prop_09.options[0].fair_probability",
        "value": 0.5389
       }
      ],
      "derived": []
     },
     {
-     "claim": "No lineup is posted and the prop quotes are hours old, so we cannot confirm he is playing or where he bats.",
+     "claim": "Only three books quote this prop and the quotes are far older than the lineups.",
      "evidence": [
       {
-       "path": "missing[0].item",
-       "value": "lineups"
+       "path": "markets.prop_09.options[0].books",
+       "value": 3
       },
       {
-       "path": "missing[3].kind",
-       "value": "stale"
+       "path": "markets.prop_09.as_of",
+       "value": "2026-10-04T04:07:21Z"
       }
      ],
      "derived": []
     }
    ],
    "pass_price": null,
-   "what_would_change_it": "A posted lineup confirming Max Muncy is starting, along with fresh quotes from more books, would let me price this properly.",
+   "what_would_change_it": "Confirmation that Muncy is in the lineup, plus fresh quotes from more books, would be needed before this is worth a bet.",
    "case_against": null
   },
   {
-   "slot_id": "prop_09",
+   "slot_id": "prop_10",
    "market": "prop",
    "selection": "Under 1.5",
    "verdict": "PASS",
@@ -479,81 +732,115 @@
    "confidence": "low",
    "reasons": [
     {
-     "claim": "The books' fair number for this side comes only from their own prices, and the data has nothing else about Michael Harris II to show the price is wrong.",
+     "claim": "The books' fair probability for Under 1.5 is 0.5973, and the data holds nothing about this hitter beyond the price and his lineup spot, so we assume the market is about right.",
      "evidence": [
       {
-       "path": "markets.prop_09.options[0].fair_probability",
+       "path": "markets.prop_10.options[0].fair_probability",
        "value": 0.5973
       }
      ],
      "derived": []
     },
     {
-     "claim": "No lineup is posted and the prop quotes are hours old, so we cannot confirm he is playing or where he bats.",
+     "claim": "Michael Harris II bats fifth and has run 0.345 wOBA against Snell's most-used pitch, a middling number, so nothing here moves us off the market.",
      "evidence": [
       {
-       "path": "missing[0].item",
-       "value": "lineups"
+       "path": "sections.lineups.values.away.batters[4].name",
+       "value": "Michael Harris II"
       },
       {
-       "path": "missing[3].kind",
-       "value": "stale"
+       "path": "sections.lineups.values.away.batters[4].order",
+       "value": 5
+      },
+      {
+       "path": "sections.matchup_depth.values.away.pitch_mix.batters[3].woba",
+       "value": 0.345
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "Only three books quote this prop and the quotes are far older than the lineups, so they may not reflect the posted batting order.",
+     "evidence": [
+      {
+       "path": "markets.prop_10.options[0].books",
+       "value": 3
+      },
+      {
+       "path": "markets.prop_10.as_of",
+       "value": "2026-10-04T04:07:21Z"
       }
      ],
      "derived": []
     }
    ],
    "pass_price": null,
-   "what_would_change_it": "A posted lineup confirming Michael Harris II is starting, along with fresh quotes from more books, would let me price this properly.",
+   "what_would_change_it": "A confirmed lineup change or fresh quotes from more books would be needed before this is worth a bet.",
    "case_against": null
   },
   {
-   "slot_id": "prop_10",
+   "slot_id": "prop_11",
    "market": "prop",
    "selection": "Under 0.5",
    "verdict": "PASS",
-   "price": null,
-   "book": null,
+   "price": -700,
+   "book": "draftkings",
    "fair_estimate": null,
    "confidence": "low",
    "reasons": [
     {
-     "claim": "The books' fair number for this side comes only from their own prices, and the data has nothing else about Ha-Seong Kim to show the price is wrong.",
+     "claim": "The best Under price is -700 at draftkings, far beyond the price limit we use, so this cannot be a bet however likely it looks.",
      "evidence": [
       {
-       "path": "markets.prop_10.options[0].fair_probability",
-       "value": 0.8282
-      }
-     ],
-     "derived": []
-    },
-    {
-     "claim": "The under is priced at a heavy favorite's number, and a bet at that kind of price needs a much stronger read than anything the data gives.",
-     "evidence": [
-      {
-       "path": "markets.prop_10.options[0].best.price",
+       "path": "markets.prop_11.options[0].best.price",
        "value": -700
-      }
-     ],
-     "derived": []
-    },
-    {
-     "claim": "No lineup is posted and the prop quotes are hours old, so we cannot confirm he is playing or where he bats.",
-     "evidence": [
-      {
-       "path": "missing[0].item",
-       "value": "lineups"
       },
       {
-       "path": "missing[3].kind",
-       "value": "stale"
+       "path": "markets.prop_11.options[0].best.book",
+       "value": "draftkings"
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The books' fair probability for the under is 0.8282 and for the over 0.1718, and Ha-Seong Kim is not among the hitters in either posted lineup, so the data cannot tell us whether he plays.",
+     "evidence": [
+      {
+       "path": "markets.prop_11.options[0].fair_probability",
+       "value": 0.8282
+      },
+      {
+       "path": "markets.prop_11.options[1].fair_probability",
+       "value": 0.1718
+      },
+      {
+       "path": "sections.lineups.values.home.handedness.known",
+       "value": 9
+      },
+      {
+       "path": "sections.lineups.values.away.handedness.known",
+       "value": 9
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "Only two books quote this prop and the quotes are far older than the lineups.",
+     "evidence": [
+      {
+       "path": "markets.prop_11.options[0].books",
+       "value": 2
+      },
+      {
+       "path": "markets.prop_11.as_of",
+       "value": "2026-10-04T04:07:21Z"
       }
      ],
      "derived": []
     }
    ],
    "pass_price": null,
-   "what_would_change_it": "A posted lineup confirming Ha-Seong Kim is starting, along with fresh quotes from more books, would let me price this properly.",
+   "what_would_change_it": "Confirmation that Kim is in a lineup, with fresh quotes from more books, would be needed before this is worth a bet.",
    "case_against": null
   }
  ],
