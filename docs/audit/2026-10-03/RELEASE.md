@@ -109,7 +109,14 @@ owner adds the key; its with/without-situation comparison stays off until switch
 |---|---|
 | Full suite (Windows) on `0ba8152f` | 12,864 tests, no failure outside the known Windows-only identities |
 | Linux CI simulation (no FastAPI) | 778 tests in the 24 modules changed since the 22:15Z push, 0 failures |
-| Pushed | pending, 23:15Z window |
-| Linux CI | pending |
-| Staging | pending |
-| Production | pending |
+| Pushed | 23:15Z, `a4926c10` (inside the minute 15 to 39 window) |
+| Linux CI | success on Python 3.10, 3.11 and 3.12 (23:38Z) |
+| Staging | deployed 23:23Z; verified from outside: health ok; the Situation block is served on all four of today's game pages with six lines each (for example "NYY won the Wild Card Series 2-0 over BOS (2 games), which ended 2026-09-30, 3 days earlier." and "TB had a bye"); first request 0.8 to 4.2 s, repeat 0.5 to 0.7 s |
+| Production | deployed 00:04Z on 2026-10-04 (deploy-prod on `10a81b46`, a capture commit that contains `a4926c10`); verified from outside 00:44Z: health ok, no store stale, checkout off, new `matchupread.js`, `ufcfights.js` and `gamestory.js` served, `/game/...`, `/data/v1/nfl/games` and `/ufc/fight-night` refuse without a token (401), `/analyst/record`, `/meta` and the landing page answer 200 |
+
+## Log
+
+- 23:15Z pushed `a4926c10` after the full suite on `0ba8152f` and the no-FastAPI run.
+- 23:23Z staging deployed and verified. 23:38Z Linux CI green.
+- 00:04Z production deployed; verified from outside at 00:44Z.
+- Not in this release: `79325bb5` (Eastern time without a tz database), committed locally at 23:27Z; it goes out with the next push.
