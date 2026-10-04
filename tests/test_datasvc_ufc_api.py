@@ -204,10 +204,14 @@ class Surface(ApiCase):
         cannot describe would break the docs endpoint of the entire app, not just this router.
 
         2026-10-03: the NFL routes joined the same router (docs/datasvc/NFL_FEATURES.md), so the
-        exact set now has the UFC paths and the NFL paths, each listed here by hand."""
+        exact set now has the UFC paths and the NFL paths, each listed here by hand.
+
+        2026-10-04: the two MLB routes joined (src/datasvc/mlb/service.py wraps the existing services)."""
         paths = self.app.openapi()["paths"]
         nfl = f"{PREFIX}/nfl"
+        mlb = f"{PREFIX}/mlb"
         self.assertEqual(set(paths), {
+            f"{mlb}/games", f"{mlb}/games/{{date}}/{{away}}/{{home}}/packet",
             f"{PREFIX}/status", f"{UFC}/events", f"{UFC}/events/{{event_id}}", f"{UFC}/bouts/{{bout_id}}",
             f"{UFC}/fighters", f"{UFC}/fighters/{{fighter_id}}", f"{UFC}/fighters/{{fighter_id}}/fights",
             f"{UFC}/fighters/{{fighter_id}}/features", f"{UFC}/matchup", f"{UFC}/upcoming",

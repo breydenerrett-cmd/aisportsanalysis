@@ -128,26 +128,72 @@ def _iso(moment: datetime) -> str:
 # prepare
 # ---------------------------------------------------------------------------
 
+def _packet_from_client(client, date: str, game: str, moment: datetime, built_at: str, cfg: Mapping,
+                        out: Callable):
+    """(packet, data-service facts) from `DataClient`, or (None, None) after printing the refusal.
+
+    The data service builds the packet with the analyst's own code over the same stores
+    (src/datasvc/mlb/service.py), so for the same inputs and the same `built_at` these are the same
+    bytes as the loader path; tests/test_datasvc_mlb_pilot.py pins that by comparing packet hashes.
+    The refusals say what the loader path says.
+    """
+    from src.datasvc.client import DataError
+
+    away, _, home = game.upper().partition("@")
+    try:
+        result = client.mlb_service().packet(date, away, home, built_at=built_at, cfg=cfg, now=moment)
+    except DataError as exc:
+        out(f"ERROR: {exc.message}")
+        return None, None
+    if not result["available"]:
+        first = (result.get("missing") or [{}])[0]
+        if first.get("code") == "not_found":
+            out(f"no games found for {date} matching {game}")
+        elif first.get("code") == "ambiguous":
+            out(f"ERROR: more than one game matches {game} on {date}; the pilot handles one game at a time")
+        else:
+            out(f"ERROR: the data service has no packet for {game} on {date}: {first.get('reason')}")
+        return None, None
+    meta = result["meta"]
+    return result["data"], {"packet_source": "data_client", "data_version": meta["data_version"]}
+
+
 def prepare(date: str, game: str, *, scratch: Optional[str] = None, cfg: Optional[Mapping] = None,
             loader: Optional[Callable] = None, now: Optional[Callable] = None,
-            out: Callable = print, root: Optional[Path] = None) -> int:
+            out: Callable = print, root: Optional[Path] = None, client=None) -> int:
     """Build the packet the way a run does and write the three files. Refuses what a run refuses,
-    with the same words, because a session must not be spent on a game that cannot be published."""
+    with the same words, because a session must not be spent on a game that cannot be published.
+
+    `client` (a `src.datasvc.client.DataClient`) makes the data service the packet's source in place of
+    the analyst's loader: the same packet bytes, plus `packet_source` and the packet's `data_version`
+    in prepare.json. Left None nothing changes. Naming both `loader` and `client` is a mistake and refused.
+    """
     cfg = dict(cfg) if cfg is not None else config_mod.load()
     if "@" not in (game or ""):
         out("ERROR: --game must be AWAY@HOME, for example NYY@TB")
         return EXIT_ERROR
-    items = [i for i in (loader or cli.default_loader)(date)
-             if cli._matches(i["payload"]["advanced"]["game"], game)]
-    if not items:
-        out(f"no games found for {date} matching {game}")
+    if client is not None and loader is not None:
+        out("ERROR: give the pilot one packet source, a loader or a data client, not both")
         return EXIT_ERROR
-    if len(items) > 1:
-        out(f"ERROR: {len(items)} games match {game} on {date}; the pilot handles one game at a time")
-        return EXIT_ERROR
-    moment = (now or cli._now)()
-    built_at = _iso(moment)
-    packet = cli._packet(items[0], built_at, cfg)
+    source_facts: dict = {}
+    if client is not None:
+        moment = (now or cli._now)()
+        built_at = _iso(moment)
+        packet, source_facts = _packet_from_client(client, date, game, moment, built_at, cfg, out)
+        if packet is None:
+            return EXIT_ERROR
+    else:
+        items = [i for i in (loader or cli.default_loader)(date)
+                 if cli._matches(i["payload"]["advanced"]["game"], game)]
+        if not items:
+            out(f"no games found for {date} matching {game}")
+            return EXIT_ERROR
+        if len(items) > 1:
+            out(f"ERROR: {len(items)} games match {game} on {date}; the pilot handles one game at a time")
+            return EXIT_ERROR
+        moment = (now or cli._now)()
+        built_at = _iso(moment)
+        packet = cli._packet(items[0], built_at, cfg)
     gid = packet["game"]["game_id"]
     why = ledger.publish_refusal(packet, moment, float(cfg["lock_lead_minutes"]))
     if why:
@@ -172,6 +218,7 @@ def prepare(date: str, game: str, *, scratch: Optional[str] = None, cfg: Optiona
         "token_estimate": estimate, "model": cfg["model"],
         "slots": [s["slot_id"] for s in packet["slots"]], "missing_items": len(packet["missing"]),
         "rehearsal": rehearsal, "mode": MODE,
+        **source_facts,
     }
     _write_json(folder / "packet.json", packet)
     _write_json(folder / "request.json", body)

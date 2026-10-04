@@ -49,17 +49,12 @@ changes. Rate limiting belongs in the same function.
 
 from __future__ import annotations
 
-import base64
-import bisect
-import hashlib
-import json
 import sys
-import threading
 import uuid
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Callable, Dict, Optional
 
 from fastapi import APIRouter, Depends, Query, Request
 from fastapi.exceptions import RequestValidationError
@@ -68,48 +63,29 @@ from fastapi.routing import APIRoute
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from api.auth import require_paid_access
-from src.datasvc import names
-from src.datasvc.nfl import features as nfl_features
-from src.datasvc.nfl import matchup as nfl_matchup
+from src.datasvc import client
+from src.datasvc.client import (  # noqa: F401 -- re-exported: other modules and tests reach these as `datasvc.X`
+    DEFAULT_LIMIT, EVENT_STATUSES, GAME_STATUSES, GAME_TYPES, UPCOMING_GRACE, DataUnavailable, NflStoreHolder,
+    StoreHolder, _date_key, _query_sig, decode_cursor, encode_cursor, holder, nfl_holder, paginate)
+from src.datasvc.client import DataError as ApiError
+from src.datasvc.mlb import service as mlb_service
 from src.datasvc.nfl import store as nfl_store
-from src.datasvc.nfl.store import NflStore
 from src.datasvc.ufc import features as features_mod
-from src.datasvc.ufc import matchup as matchup_mod
 from src.datasvc.ufc import store as ufc_store
-from src.datasvc.ufc.store import UfcStore
-from src.sports import nfl_teams
 
 API_VERSION = "v1"
-DEFAULT_LIMIT = 50
-EVENT_STATUSES = ("scheduled", "in_progress", "final", "canceled", "postponed", "unknown")
-GAME_STATUSES = ("scheduled", "in_progress", "final", "no_result", "removed")
-GAME_TYPES = ("REG", "WC", "DIV", "CON", "SB")
-
-# /upcoming lists events that have not finished. One that started up to this long ago is
-# still "tonight's card" (a card runs for hours and the status flips late); a "scheduled"
-# event older than that is a stale row, not an upcoming one, and is left out.
-UPCOMING_GRACE = timedelta(hours=36)
 
 
 def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+# The holders live in src/datasvc/client.py (the in-process client shares them); this module's clock is
+# what tests pin, so the holders follow it, late-bound.
+holder.clock = nfl_holder.clock = lambda: _now()
+
+
 # -- errors -------------------------------------------------------------------------
-
-class ApiError(Exception):
-    def __init__(self, status: int, code: str, message: str, details: Optional[dict] = None):
-        super().__init__(message)
-        self.status, self.code, self.message, self.details = status, code, message, details
-
-
-class DataUnavailable(Exception):
-    """A dataset file exists but cannot be read (a corrupt line, a permission error)."""
-
-    def __init__(self, dataset: str):
-        super().__init__(dataset)
-        self.dataset = dataset
-
 
 _DEFAULT_CODES = {400: "bad_request", 401: "unauthorized", 402: "payment_required", 403: "forbidden",
                   404: "not_found", 405: "method_not_allowed", 409: "conflict", 422: "invalid_parameter",
@@ -206,238 +182,9 @@ def data_access(request: Request, user=Depends(require_paid_access)) -> DataCall
 
 
 # -- the store, loaded once ---------------------------------------------------------------------
-
-class _LockedMixin:
-    """Makes a dataset store (UFC or NFL) safe to share between request threads.
-
-    The foundation's stores load lazily and are written for one thread: two requests
-    arriving together would both read the same file and both build the same index.
-    Loading and indexing here take a lock (re-checked inside it), so each dataset is read
-    once per store version however many requests ask for it at once. Reads of what is
-    already loaded take no lock. Read failures become `DataUnavailable` so a corrupt
-    line is a 503 and not a 500 with a server path in it, and a failure is remembered
-    for this store version: otherwise every request would re-parse a large corrupt file
-    up to its bad line, the whole-store-read-per-request pattern in the one situation
-    where it hurts most. The holder swaps in a fresh store when the file changes, which
-    is when it is worth trying again.
-    """
-
-    def __init__(self, root: Optional[Path] = None):
-        super().__init__(root)
-        self._lock = threading.RLock()
-        self._views: Dict[str, Any] = {}
-        self._failed: Dict[str, BaseException] = {}
-
-    def load(self, name: str) -> list:
-        if name in self._cache:
-            return self._cache[name]
-        with self._lock:
-            if name in self._failed:
-                raise DataUnavailable(name) from self._failed[name]
-            try:
-                return super().load(name)
-            except (OSError, ValueError) as exc:
-                self._failed[name] = exc
-                raise DataUnavailable(name) from exc
-
-    def _index(self, name: str, build):
-        if name in self._indexes:
-            return self._indexes[name]
-        with self._lock:
-            return super()._index(name, build)
-
-    def view(self, name: str, build: Callable[[], Any]) -> Any:
-        """A value derived from this store version (a sorted list, a name index), built once."""
-        if name in self._views:
-            return self._views[name]
-        with self._lock:
-            if name not in self._views:
-                self._views[name] = build()
-            return self._views[name]
-
-
-class _LockedStore(_LockedMixin, UfcStore):
-    """A UfcStore safe to share between request threads (see `_LockedMixin`)."""
-
-
-class _LockedNflStore(_LockedMixin, NflStore):
-    """An NflStore safe to share between request threads (see `_LockedMixin`)."""
-
-
-class _BaseHolder:
-    """The one store of a process for one sport, replaced only when a dataset file changes on disk.
-
-    A subclass names the sport's files, date fields, store class and default directory.
-    """
-
-    files: Dict[str, str] = {}
-    date_fields: Dict[str, str] = {}
-    store_class: Any = None
-
-    @staticmethod
-    def counts_toward_newest(name: str, row: dict) -> bool:
-        return True
-
-    @staticmethod
-    def default_root() -> Path:
-        raise NotImplementedError
-
-    def __init__(self, root: Optional[Path] = None):
-        self._lock = threading.Lock()
-        self.set_root(root)
-
-    def set_root(self, root: Optional[Path]) -> None:
-        with self._lock:
-            self._root = Path(root) if root is not None else self.default_root()
-            self._current: Optional[Tuple[tuple, Any]] = None
-            self._loaded_utc: Optional[str] = None
-            self._status: Dict[str, tuple] = {}
-            self._manifest: Tuple[Optional[tuple], dict] = (None, {})
-            self.reloads = 0
-
-    @property
-    def root(self) -> Path:
-        return self._root
-
-    def _file_signature(self) -> tuple:
-        """(name, modification time in ns, size) per dataset file; None for a file that is absent.
-
-        Size rides along with the modification time because a filesystem with coarse
-        timestamps can show the same mtime for two writes made close together.
-        """
-        sig = []
-        for name, filename in self.files.items():
-            try:
-                st = (self._root / filename).stat()
-                sig.append((name, st.st_mtime_ns, st.st_size))
-            except OSError:
-                sig.append((name, None, None))
-        return tuple(sig)
-
-    def store(self):
-        """The current store, replaced first if any dataset file changed since it was made."""
-        sig = self._file_signature()
-        current = self._current
-        if current is not None and current[0] == sig:
-            return current[1]
-        with self._lock:
-            sig = self._file_signature()
-            if self._current is None or self._current[0] != sig:
-                self._current = (sig, self.store_class(self._root))
-                self._loaded_utc = features_mod.iso_utc(_now())
-                self.reloads += 1
-            return self._current[1]
-
-    def info(self) -> dict:
-        return {"store_loaded_utc": self._loaded_utc, "reloads": self.reloads}
-
-    # -- /status: counts and newest dates without loading the datasets -------------------
-
-    def _manifest_files(self) -> Tuple[dict, Optional[str]]:
-        path = self._root / "MANIFEST.json"
-        try:
-            st = path.stat()
-        except OSError:
-            return {}, None
-        sig = (st.st_mtime_ns, st.st_size)
-        with self._lock:
-            if self._manifest[0] != sig:
-                try:
-                    data = json.loads(path.read_text(encoding="utf-8"))
-                    data = data if isinstance(data, dict) else {}
-                except (OSError, ValueError):
-                    data = {}
-                self._manifest = (sig, data)
-            data = self._manifest[1]
-        return (data.get("files") or {}), data.get("generated_utc")
-
-    def _measure(self, name: str, path: Path, size: int) -> dict:
-        """Records and newest date: the manifest if it describes this very file, else one scan."""
-        files, _ = self._manifest_files()
-        entry = files.get(self.files[name])
-        if isinstance(entry, dict) and entry.get("bytes") == size and "records" in entry:
-            return {"records": entry["records"], "newest": entry.get("newest"), "source": "manifest"}
-        field = self.date_fields.get(name)
-        records, newest = 0, None
-        try:
-            with path.open(encoding="utf-8") as handle:
-                for line in handle:
-                    line = line.strip()
-                    if not line:
-                        continue
-                    row = json.loads(line)
-                    records += 1
-                    value = row.get(field) if field and isinstance(row, dict) else None
-                    if value and self.counts_toward_newest(name, row) and (newest is None or value > newest):
-                        newest = value
-        except (OSError, ValueError) as exc:
-            raise DataUnavailable(name) from exc
-        return {"records": records, "newest": newest, "source": "files"}
-
-    def dataset_status(self, name: str, now: datetime) -> dict:
-        filename = self.files[name]
-        path = self._root / filename
-        base = {"file": filename, "newest_field": self.date_fields.get(name)}
-        try:
-            st = path.stat()
-        except OSError:
-            return {**base, "present": False, "records": 0, "newest": None, "bytes": None,
-                    "age_seconds": None, "age_days": None, "source": None}
-        sig = (st.st_mtime_ns, st.st_size)
-        with self._lock:
-            cached = self._status.get(name)
-        if cached is None or cached[0] != sig:
-            info = self._measure(name, path, st.st_size)
-            with self._lock:
-                self._status[name] = (sig, info)
-        else:
-            info = cached[1]
-        age = None
-        newest = features_mod.instant(info["newest"])
-        if newest is not None:
-            age = int((now - newest).total_seconds())
-        return {**base, "present": True, "records": info["records"], "newest": info["newest"],
-                "bytes": st.st_size, "age_seconds": age,
-                "age_days": None if age is None else round(age / 86400.0, 2), "source": info["source"]}
-
-    def manifest_generated_utc(self) -> Optional[str]:
-        return self._manifest_files()[1]
-
-    def manifest_extra(self, key: str) -> Any:
-        """A top-level value of MANIFEST.json other than the file table (attribution, coverage), or None."""
-        self._manifest_files()
-        return self._manifest[1].get(key)
-
-
-class StoreHolder(_BaseHolder):
-    """The UFC store of a process."""
-
-    files = ufc_store.FILES
-    date_fields = ufc_store.DATE_FIELDS
-    store_class = _LockedStore
-    counts_toward_newest = staticmethod(ufc_store.counts_toward_newest)
-
-    @staticmethod
-    def default_root() -> Path:
-        return ufc_store.DEFAULT_DIR
-
-
-class NflStoreHolder(_BaseHolder):
-    """The NFL store of a process."""
-
-    files = nfl_store.FILES
-    date_fields = nfl_store.DATE_FIELDS
-    store_class = _LockedNflStore
-    counts_toward_newest = staticmethod(nfl_store.counts_toward_newest)
-
-    @staticmethod
-    def default_root() -> Path:
-        return nfl_store.DEFAULT_DIR
-
-
-holder = StoreHolder()
-nfl_holder = NflStoreHolder()
-
+#
+# `holder` and `nfl_holder` are imported from src/datasvc/client.py above (the in-process client shares
+# the very same objects, so a process holds each store once).
 
 def use_data_dir(path: Optional[Path]) -> None:
     """Point the API at another directory (tests, or a deployment that keeps the files elsewhere)."""
@@ -449,178 +196,29 @@ def use_nfl_data_dir(path: Optional[Path]) -> None:
     nfl_holder.set_root(path)
 
 
-def _store() -> _LockedStore:
+def use_mlb_service(service: Optional[mlb_service.MlbService]) -> None:
+    """Point the MLB routes at another service (tests), or back at the process's own with None."""
+    mlb_service.set_default_service(service)
+
+
+def _store():
     return holder.store()
 
 
-def _nfl() -> _LockedNflStore:
+def _nfl():
     return nfl_holder.store()
 
 
 # -- pagination ------------------------------------------------------------------------------
 
-def _query_sig(**params: Any) -> str:
-    """A short fingerprint of a query's filters, so a cursor cannot be replayed against another query."""
-    blob = json.dumps(params, sort_keys=True, default=str)
-    return hashlib.sha256(blob.encode("utf-8")).hexdigest()[:8]
-
-
-def encode_cursor(sig: str, key: Sequence[str]) -> str:
-    raw = json.dumps({"q": sig, "k": list(key)}, separators=(",", ":")).encode("utf-8")
-    return base64.urlsafe_b64encode(raw).decode("ascii").rstrip("=")
-
-
-def decode_cursor(cursor: str, sig: str) -> Tuple[str, ...]:
-    bad = ApiError(422, "invalid_cursor", "the cursor is not one this API issued; start again without one")
-    try:
-        padded = cursor + "=" * (-len(cursor) % 4)
-        data = json.loads(base64.urlsafe_b64decode(padded.encode("ascii")).decode("utf-8"))
-        key, query = data["k"], data["q"]
-        if not isinstance(key, list) or not key or not all(isinstance(x, str) for x in key):
-            raise ValueError("bad key")
-    except (ValueError, KeyError, TypeError) as exc:
-        raise bad from exc
-    if query != sig:
-        raise ApiError(422, "invalid_cursor",
-                       "the cursor belongs to a different query (other filters or order); start again without one")
-    return tuple(key)
-
-
-def paginate(items: Sequence[Any], key_fn: Callable[[Any], Tuple[str, ...]], *, limit: int,
-             cursor: Optional[str], sig: str, descending: bool) -> Tuple[list, Optional[str]]:
-    """One page of `items` (sorted ascending by `key_fn`) and the cursor for the next, or None.
-
-    Keyset, not offset: the cursor holds the sort key of the last item served, so a page
-    never repeats or skips a row when the data changes between requests.
-    """
-    keys = [key_fn(i) for i in items]
-    after = decode_cursor(cursor, sig) if cursor else None
-    if descending:
-        end = len(items) if after is None else bisect.bisect_left(keys, after)
-        start = max(0, end - limit)
-        page = list(items[start:end])[::-1]
-        more = start > 0
-    else:
-        start = 0 if after is None else bisect.bisect_right(keys, after)
-        page = list(items[start:start + limit])
-        more = start + limit < len(items)
-    return page, (encode_cursor(sig, key_fn(page[-1])) if page and more else None)
-
-
-def _page_response(items: Sequence[Any], key_fn, caller: DataCaller, limit: int, cursor: Optional[str],
+def _page_response(items, key_fn, caller: DataCaller, limit: int, cursor: Optional[str],
                    sig: str, *, descending: bool, render: Callable[[Any], dict]) -> dict:
-    effective = min(limit, caller.tier.max_limit)
-    page, next_cursor = paginate(items, key_fn, limit=effective, cursor=cursor, sig=sig, descending=descending)
-    return {"data": [render(i) for i in page],
-            "page": {"limit": effective, "count": len(page), "total": len(items), "next_cursor": next_cursor}}
+    return client.page_response(items, key_fn, caller.tier.max_limit, limit, cursor, sig,
+                                descending=descending, render=render)
 
 
-def _date_key(text: Any) -> str:
-    """A sortable form of a stored date: UTC ISO to the second when readable, else the raw text."""
-    inst = features_mod.instant(text)
-    return features_mod.iso_utc(inst) if inst is not None else (text if isinstance(text, str) else "")
-
-
-def _order(order: str) -> bool:
-    if order not in ("asc", "desc"):
-        raise ApiError(422, "invalid_parameter", "invalid parameter 'order': must be asc or desc",
-                       {"errors": [{"in": "query", "param": "order", "message": "must be asc or desc"}]})
-    return order == "desc"
-
-
-# -- shared lookups and projections -----------------------------------------------------------------
-
-def _not_found(kind: str, ident: str) -> ApiError:
-    return ApiError(404, "not_found", f"no {kind} with id {ident!r} in the store")
-
-
-def _fighter_ref(store, fighter_id: Optional[str]) -> Optional[dict]:
-    if not fighter_id:
-        return None
-    return {"fighter_id": fighter_id, "name": (store.fighter_by_id().get(fighter_id) or {}).get("name")}
-
-
-def _fighter_summary(f: dict) -> dict:
-    return {"fighter_id": f.get("fighter_id"), "name": f.get("name"), "nickname": f.get("nickname"),
-            "weight_class": f.get("weight_class"), "stance": f.get("stance"), "dob": f.get("dob"),
-            "active": f.get("active"), "record": f.get("record")}
-
-
-def _event_summary(e: dict) -> dict:
-    return {"event_id": e.get("event_id"), "name": e.get("name"), "short_name": e.get("short_name"),
-            "date_utc": e.get("date_utc"), "season": e.get("season"), "status": e.get("status"),
-            "venue_id": e.get("venue_id"), "bout_count": len(e.get("bout_ids") or [])}
-
-
-def _bout_with_names(store, bout: dict) -> dict:
-    return {**bout, "fighter_a": _fighter_ref(store, bout.get("fighter_a_id")),
-            "fighter_b": _fighter_ref(store, bout.get("fighter_b_id"))}
-
-
-def _result_block(store, bout: dict) -> Optional[dict]:
-    winner, method = bout.get("winner_id"), bout.get("result_method")
-    if not winner and method not in ("DRAW", "NC"):
-        return None
-    loser = None
-    if winner:
-        loser = bout.get("fighter_b_id") if winner == bout.get("fighter_a_id") else bout.get("fighter_a_id")
-    return {
-        "outcome": "decided" if winner else ("draw" if method == "DRAW" else "no_contest"),
-        "winner_id": winner, "winner_name": (_fighter_ref(store, winner) or {}).get("name"),
-        "loser_id": loser, "loser_name": (_fighter_ref(store, loser) or {}).get("name"),
-        "method": method, "method_raw": bout.get("result_method_raw"), "detail": bout.get("result_detail"),
-        "target": bout.get("result_target"), "end_round": bout.get("end_round"),
-        "end_time_s": bout.get("end_time_s"), "fight_time_s": bout.get("fight_time_s"),
-    }
-
-
-def _people(store) -> Dict[str, List[str]]:
-    """fighter_id -> every name it may be searched by, for names.match."""
-    def build():
-        out = {}
-        for f in store.fighters:
-            label = f.get("name") or " ".join(p for p in (f.get("first_name"), f.get("last_name")) if p)
-            variants = [label] + [a for a in (f.get("aliases") or []) if isinstance(a, str)]
-            variants = [v for v in variants if v]
-            if variants:
-                out[f["fighter_id"]] = variants
-        return out
-    return store.view("people", build)
-
-
-def _candidate(store, pid: str, matched: str, score: float) -> dict:
-    return {"fighter_id": pid, "name": (store.fighter_by_id().get(pid) or {}).get("name") or matched,
-            "matched_name": matched, "score": score}
-
-
-def _known_fighter(store, fighter_id: str) -> bool:
-    return fighter_id in store.fighter_by_id() or fighter_id in store.bouts_by_fighter()
-
-
-def _resolve_fighter(store, value: str, param: str) -> Tuple[str, str]:
-    """A fighter id or a name to (fighter_id, how it was matched). Never guesses between equals."""
-    if _known_fighter(store, value):
-        return value, "id"
-    result = names.match(value, _people(store))
-    if result.best:
-        return result.best, "name"
-    if result.ambiguous:
-        raise ApiError(409, "ambiguous_name", f"{param}={value!r} matches more than one fighter equally well; "
-                       "pass a fighter id", {"param": param, "query": value,
-                                              "candidates": [_candidate(store, *c) for c in result.candidates]})
-    raise ApiError(404, "not_found", f"no fighter matches {param}={value!r}")
-
-
-def _parse_as_of(value: Optional[str]) -> Optional[datetime]:
-    if value is None:
-        return None
-    try:
-        return features_mod.parse_instant(value)
-    except ValueError:
-        raise ApiError(422, "invalid_parameter",
-                       "invalid parameter 'as_of': must be an ISO date (2026-10-03) or datetime "
-                       "(2026-10-03T21:00Z; URL-encode a + offset as %2B)",
-                       {"errors": [{"in": "query", "param": "as_of", "message": "not an ISO date or datetime"}]})
+_order = client.order_is_descending
+_parse_as_of = client.parse_as_of
 
 
 router = APIRouter(prefix=f"/data/{API_VERSION}", dependencies=[Depends(data_access)], route_class=DataRoute)
@@ -649,6 +247,27 @@ def _nfl_status(now: datetime) -> dict:
                      "time a changed report row was first fetched.")}
 
 
+def _mlb_status(now: datetime) -> dict:
+    """The MLB datasets for /status, from the existing freshness module (src/pipeline/store_freshness.py).
+    Fail-soft like the NFL half: a store that cannot be read is reported, and never turns /status into a 503."""
+    try:
+        return _mlb().status(now)
+    except Exception as exc:  # noqa: BLE001 -- /status stays up when one sport's files are broken
+        print(f"data api: the mlb datasets could not be measured for /status: {exc!r}", file=sys.stderr, flush=True)
+        return {"datasets": None, "readable": False,
+                "note": "the MLB datasets could not be measured right now; this has been logged"}
+
+
+def _mlb() -> mlb_service.MlbService:
+    return mlb_service.default_service()
+
+
+def _http_client() -> client.DataClient:
+    """The client the matchup routes build their packet through: strict, so a lookup failure is the route's
+    own 404, 409 or 422 and not an `available: false`, and on the API's clock."""
+    return client.DataClient(ufc=holder, nfl=nfl_holder, mlb=_mlb(), clock=lambda: _now(), strict=True)
+
+
 @router.get("/status", summary="Each dataset's record count, newest date and age")
 def get_status() -> dict:
     now = _now()
@@ -662,71 +281,32 @@ def get_status() -> dict:
                  "that took place: booked, postponed and cancelled ones do not count (/data/v1/ufc/upcoming "
                  "lists the booked ones). For odds, fighters and ufccom_profiles `newest` is a fetch time."),
         "nfl": _nfl_status(now),
+        "mlb": _mlb_status(now),
     }}
 
 
 # -- events ------------------------------------------------------------------------------------------
-
-def _event_year(e: dict) -> Optional[int]:
-    inst = features_mod.instant(e.get("date_utc"))
-    if inst is not None:
-        return inst.year
-    season = e.get("season")
-    return season if isinstance(season, int) else None
-
 
 @router.get("/ufc/events", summary="Events, newest first; filter by year and status")
 def list_events(year: Optional[int] = Query(None, ge=1990, le=2100), status: Optional[str] = Query(None),
                 order: str = Query("desc"), limit: int = Query(DEFAULT_LIMIT, ge=1),
                 cursor: Optional[str] = Query(None, max_length=1024),
                 caller: DataCaller = Depends(data_access)) -> dict:
-    if status is not None and status not in EVENT_STATUSES:
-        raise ApiError(422, "invalid_parameter", f"invalid parameter 'status': must be one of {', '.join(EVENT_STATUSES)}",
-                       {"errors": [{"in": "query", "param": "status", "message": f"one of {list(EVENT_STATUSES)}"}]})
+    items = client.ufc_events(_store(), year, status)
     descending = _order(order)
-    store = _store()
-    everything = store.view("events_asc", lambda: sorted(
-        store.events, key=lambda e: (_date_key(e.get("date_utc")), str(e.get("event_id")))))
-    items = [e for e in everything
-             if (year is None or _event_year(e) == year) and (status is None or e.get("status") == status)]
     sig = _query_sig(route="events", year=year, status=status, order=order)
-    return _page_response(items, lambda e: (_date_key(e.get("date_utc")), str(e.get("event_id"))), caller,
-                          limit, cursor, sig, descending=descending, render=_event_summary)
+    return _page_response(items, client.event_sort_key, caller, limit, cursor, sig, descending=descending,
+                          render=client.event_summary)
 
 
 @router.get("/ufc/events/{event_id}", summary="One event with its bouts")
 def get_event(event_id: str) -> dict:
-    store = _store()
-    event = store.event_by_id().get(event_id)
-    if event is None:
-        raise _not_found("event", event_id)
-    bouts_by_id = store.bout_by_id()
-    ids = event.get("bout_ids") or []
-    return {"data": {
-        "event": event,
-        "bouts": [_bout_with_names(store, bouts_by_id[b]) for b in ids if b in bouts_by_id],
-        "missing_bout_ids": [b for b in ids if b not in bouts_by_id],
-    }}
+    return {"data": client.ufc_event_detail(_store(), event_id)}
 
 
 @router.get("/ufc/bouts/{bout_id}", summary="One bout with its fighters, result, statistics rows and odds")
 def get_bout(bout_id: str) -> dict:
-    store = _store()
-    bout = store.bout_by_id().get(bout_id)
-    if bout is None:
-        raise _not_found("bout", bout_id)
-    fighters = store.fighter_by_id()
-    stats = store.stats_for()
-    a, b = bout.get("fighter_a_id"), bout.get("fighter_b_id")
-    event = store.event_by_id().get(bout.get("event_id"))
-    return {"data": {
-        "bout": bout,
-        "event": _event_summary(event) if event else None,
-        "fighters": {"a": fighters.get(a), "b": fighters.get(b)},
-        "result": _result_block(store, bout),
-        "stats": [stats[(bout_id, f)] for f in (a, b) if (bout_id, f) in stats],
-        "odds": list(store.odds_for_bout().get(bout_id, [])),
-    }}
+    return {"data": client.ufc_bout_detail(_store(), bout_id)}
 
 
 # -- fighters ------------------------------------------------------------------------------------------
@@ -739,51 +319,15 @@ def list_fighters(search: Optional[str] = Query(None, min_length=1, max_length=1
     or 404. Without it: a page of every fighter by name."""
     store = _store()
     if search is not None:
-        result = names.match(search, _people(store))
-        if result.best:
-            candidates = [_candidate(store, *c) for c in result.candidates]
-            best = store.fighter_by_id()[result.best]
-            return {"data": {"query": search,
-                             "match": {**_fighter_summary(best), "score": candidates[0]["score"],
-                                       "matched_name": candidates[0]["matched_name"]},
-                             "candidates": candidates}}
-        if result.ambiguous:
-            raise ApiError(409, "ambiguous_name",
-                           f"{search!r} matches more than one fighter equally well; pass a fighter id",
-                           {"query": search, "candidates": [_candidate(store, *c) for c in result.candidates]})
-        raise ApiError(404, "not_found", f"no fighter matches {search!r}")
-    everything = store.view("fighters_by_name", lambda: sorted(
-        store.fighters, key=lambda f: (names.normalise(f.get("name")), str(f.get("fighter_id")))))
-    return _page_response(everything, lambda f: (names.normalise(f.get("name")), str(f.get("fighter_id"))), caller,
-                          limit, cursor, _query_sig(route="fighters"), descending=False, render=_fighter_summary)
+        return {"data": client.ufc_fighter_search(store, search)}
+    return _page_response(client.ufc_fighters_by_name(store), client.fighter_sort_key, caller,
+                          limit, cursor, _query_sig(route="fighters"), descending=False,
+                          render=client.fighter_summary)
 
 
 @router.get("/ufc/fighters/{fighter_id}", summary="One fighter (and the UFC.com profile when there is one)")
 def get_fighter(fighter_id: str) -> dict:
-    store = _store()
-    fighter = store.fighter_by_id().get(fighter_id)
-    if fighter is None:
-        raise _not_found("fighter record", fighter_id)
-    return {"data": {"fighter": fighter,
-                     "ufccom_profile": store.profile_for().get(fighter_id),
-                     "ufc_bouts_in_store": len(store.bouts_by_fighter().get(fighter_id, []))}}
-
-
-def _fight_item(store, fighter_id: str, bout: dict) -> dict:
-    a, b = bout.get("fighter_a_id"), bout.get("fighter_b_id")
-    opponent = b if a == fighter_id else a
-    return {
-        "bout_id": bout["bout_id"], "event_id": bout.get("event_id"),
-        "event_name": (store.event_by_id().get(bout.get("event_id")) or {}).get("name"),
-        "date_utc": bout.get("date_utc"), "status": bout.get("status"),
-        "opponent_id": opponent, "opponent_name": (_fighter_ref(store, opponent) or {}).get("name"),
-        "weight_class": bout.get("weight_class"), "card_segment": bout.get("card_segment"),
-        "match_number": bout.get("match_number"), "scheduled_rounds": bout.get("scheduled_rounds"),
-        "result": features_mod.outcome_for(bout, fighter_id), "method": bout.get("result_method"),
-        "method_detail": bout.get("result_detail"), "end_round": bout.get("end_round"),
-        "end_time_s": bout.get("end_time_s"), "fight_time_s": bout.get("fight_time_s"),
-        "has_stats": (bout["bout_id"], fighter_id) in store.stats_for(),
-    }
+    return {"data": client.ufc_fighter_detail(_store(), fighter_id)}
 
 
 @router.get("/ufc/fighters/{fighter_id}/fights", summary="A fighter's bouts, newest first, upcoming ones included")
@@ -791,22 +335,16 @@ def get_fighter_fights(fighter_id: str, limit: int = Query(DEFAULT_LIMIT, ge=1),
                        cursor: Optional[str] = Query(None, max_length=1024),
                        caller: DataCaller = Depends(data_access)) -> dict:
     store = _store()
-    if not _known_fighter(store, fighter_id):
-        raise _not_found("fighter", fighter_id)
-    bouts = sorted(store.bouts_by_fighter().get(fighter_id, []),
-                   key=lambda b: (_date_key(b.get("date_utc")), str(b["bout_id"])))
-    return _page_response(bouts, lambda b: (_date_key(b.get("date_utc")), str(b["bout_id"])), caller, limit, cursor,
+    bouts = client.ufc_fighter_bouts(store, fighter_id)
+    return _page_response(bouts, client.bout_sort_key, caller, limit, cursor,
                           _query_sig(route="fights", fighter=fighter_id), descending=True,
-                          render=lambda b: _fight_item(store, fighter_id, b))
+                          render=lambda b: client.fight_item(store, fighter_id, b))
 
 
 @router.get("/ufc/fighters/{fighter_id}/features", summary="A fighter's leakage-free features as of a moment")
 def get_fighter_features(fighter_id: str, as_of: Optional[str] = Query(None, max_length=64)) -> dict:
     cutoff = _parse_as_of(as_of) or _now()
-    store = _store()
-    if not _known_fighter(store, fighter_id):
-        raise _not_found("fighter", fighter_id)
-    return {"data": features_mod.features_as_of(store, fighter_id, cutoff)}
+    return {"data": client.ufc_fighter_features(_store(), fighter_id, cutoff)}
 
 
 # -- matchup and upcoming -------------------------------------------------------------------------------
@@ -814,28 +352,10 @@ def get_fighter_features(fighter_id: str, as_of: Optional[str] = Query(None, max
 @router.get("/ufc/matchup", summary="The fact sheet for two fighters (ids or names)")
 def get_matchup(a: str = Query(..., min_length=1, max_length=100), b: str = Query(..., min_length=1, max_length=100),
                 as_of: Optional[str] = Query(None, max_length=64)) -> dict:
-    cutoff = _parse_as_of(as_of)
-    store = _store()
-    a_id, a_how = _resolve_fighter(store, a, "a")
-    b_id, b_how = _resolve_fighter(store, b, "b")
-    if a_id == b_id:
-        raise ApiError(422, "invalid_parameter", "a and b are the same fighter",
-                       {"errors": [{"in": "query", "param": "b", "message": "same fighter as a"}]})
-    sheet = matchup_mod.matchup(store, a_id, b_id, cutoff, now=_now())
-    sheet["resolved"] = {"a": {"query": a, "fighter_id": a_id, "matched_by": a_how},
-                         "b": {"query": b, "fighter_id": b_id, "matched_by": b_how}}
-    return {"data": sheet}
-
-
-def _upcoming_bout(store, bout: dict) -> dict:
-    a, b = bout.get("fighter_a_id"), bout.get("fighter_b_id")
-    return {
-        "bout_id": bout["bout_id"], "match_number": bout.get("match_number"),
-        "card_segment": bout.get("card_segment"), "date_utc": bout.get("date_utc"),
-        "weight_class": bout.get("weight_class"), "scheduled_rounds": bout.get("scheduled_rounds"),
-        "status": bout.get("status"), "fighter_a": _fighter_ref(store, a), "fighter_b": _fighter_ref(store, b),
-        "odds": matchup_mod.bout_odds(store, bout, a, b, detail="current"),
-    }
+    """`data` is the fact sheet; `meta` carries the ids and provider id mapping, units, sources, coverage,
+    missing reasons, `data_version` and how each dataset's history was obtained (docs/datasvc/CLIENT.md)."""
+    packet = _http_client().matchup("ufc", a=a, b=b, as_of=as_of)
+    return {"data": packet["data"], "meta": packet["meta"]}
 
 
 @router.get("/ufc/upcoming", summary="Scheduled events with their bouts and current odds, soonest first")
@@ -844,26 +364,10 @@ def get_upcoming(days: Optional[int] = Query(None, ge=1, le=365), limit: int = Q
                  caller: DataCaller = Depends(data_access)) -> dict:
     now = _now()
     store = _store()
-    horizon = None if days is None else now + timedelta(days=days)
-    earliest = now - UPCOMING_GRACE
-    everything = store.view("events_asc", lambda: sorted(
-        store.events, key=lambda e: (_date_key(e.get("date_utc")), str(e.get("event_id")))))
-    items = []
-    for e in everything:
-        start = features_mod.instant(e.get("date_utc"))
-        if e.get("status") not in ("scheduled", "in_progress") or start is None or start < earliest:
-            continue
-        if horizon is not None and start > horizon:
-            continue
-        items.append(e)
-
-    def render(e: dict) -> dict:
-        bouts = store.bout_by_id()
-        return {**_event_summary(e), "bouts": [_upcoming_bout(store, bouts[i])
-                                               for i in (e.get("bout_ids") or []) if i in bouts]}
-
-    return _page_response(items, lambda e: (_date_key(e.get("date_utc")), str(e.get("event_id"))), caller, limit,
-                          cursor, _query_sig(route="upcoming", days=days), descending=False, render=render)
+    items = client.ufc_upcoming_events(store, now, days)
+    return _page_response(items, client.event_sort_key, caller, limit, cursor,
+                          _query_sig(route="upcoming", days=days), descending=False,
+                          render=lambda e: client.upcoming_event(store, e))
 
 
 # -- NFL ------------------------------------------------------------------------------------------------
@@ -873,59 +377,6 @@ def get_upcoming(days: Optional[int] = Query(None, ge=1, le=365), limit: int = Q
 # leakage rule. The NFL files are loaded by their own holder (`nfl_holder`), once per process, and swapped
 # in only when one of them changes on disk. Contract: docs/datasvc/NFL_SCHEMA.md and NFL_FEATURES.md.
 
-def _bad_param(param: str, message: str) -> ApiError:
-    return ApiError(422, "invalid_parameter", f"invalid parameter '{param}': {message}",
-                    {"errors": [{"in": "query", "param": param, "message": message}]})
-
-
-def _team_param(value: Optional[str], param: str) -> Optional[str]:
-    """A team filter as an nflverse code; 422 for something that is no NFL team."""
-    if value is None:
-        return None
-    code = nfl_teams.abbrev(value)
-    if code is None:
-        raise _bad_param(param, f"{value!r} is not an NFL team (a code like KC or a name like Chiefs)")
-    return code
-
-
-def _choice(value: Optional[str], param: str, allowed: Sequence[str]) -> Optional[str]:
-    if value is not None and value not in allowed:
-        raise _bad_param(param, f"must be one of {', '.join(allowed)}")
-    return value
-
-
-def _nfl_people(store) -> Dict[str, List[str]]:
-    """player_id -> the name it may be searched by, for names.match."""
-    return store.view("nfl_people", lambda: {pid: [name] for pid, name in store.player_names().items() if name})
-
-
-def _resolve_player(store, value: str, param: str = "player") -> Tuple[str, str]:
-    """A player id or a name to (player_id, how it was matched). Never guesses between equals."""
-    if value in store.player_games_by_player():
-        return value, "id"
-    result = names.match(value, _nfl_people(store))
-    if result.best:
-        return result.best, "name"
-    if result.ambiguous:
-        raise ApiError(409, "ambiguous_name", f"{param}={value!r} matches more than one player equally well; "
-                       "pass a player id", {"param": param, "query": value,
-                                            "candidates": [{"player_id": pid, "name": name, "score": score}
-                                                           for pid, name, score in result.candidates]})
-    raise ApiError(404, "not_found", f"no player matches {param}={value!r}")
-
-
-def _tg_key(row: dict) -> Tuple[str, str, str]:
-    return (row.get("kickoff_utc") or "", row["game_id"], row["team"])
-
-
-def _pg_key(row: dict) -> Tuple[str, str, str]:
-    return (row.get("kickoff_utc") or "", row["game_id"], row["player_id"])
-
-
-def _inj_key(row: dict) -> Tuple[str, str]:
-    return (row["game_id"], row["player_id"])
-
-
 @router.get("/nfl/games", summary="NFL games, newest first; filter by season, week, team, type and status")
 def nfl_list_games(season: Optional[int] = Query(None, ge=1999, le=2100), week: Optional[int] = Query(None, ge=1, le=30),
                    team: Optional[str] = Query(None, max_length=60), game_type: Optional[str] = Query(None, max_length=8),
@@ -933,31 +384,17 @@ def nfl_list_games(season: Optional[int] = Query(None, ge=1999, le=2100), week: 
                    limit: int = Query(DEFAULT_LIMIT, ge=1), cursor: Optional[str] = Query(None, max_length=1024),
                    caller: DataCaller = Depends(data_access)) -> dict:
     """The stored game records (docs/datasvc/NFL_SCHEMA.md), played and scheduled, chronological order."""
-    _choice(game_type, "game_type", GAME_TYPES)
-    _choice(status, "status", GAME_STATUSES)
-    code = _team_param(team, "team")
+    items = client.nfl_games(_nfl(), season=season, week=week, team=team, game_type=game_type, status=status)
     descending = _order(order)
-    store = _nfl()
-    items = [g for g in store.games_sorted()
-             if (season is None or g["season"] == season) and (week is None or g["week"] == week)
-             and (code is None or code in (g["home_team"], g["away_team"]))
-             and (game_type is None or g.get("game_type") == game_type) and (status is None or g.get("status") == status)]
-    sig = _query_sig(route="nfl_games", season=season, week=week, team=code, game_type=game_type, status=status,
-                     order=order)
+    sig = _query_sig(route="nfl_games", season=season, week=week, team=client.team_param(team, "team"),
+                     game_type=game_type, status=status, order=order)
     return _page_response(items, nfl_store.game_sort_key, caller, limit, cursor, sig, descending=descending,
                           render=lambda g: g)
 
 
 @router.get("/nfl/games/{game_id}", summary="One NFL game with both teams' rows")
 def nfl_get_game(game_id: str) -> dict:
-    store = _nfl()
-    game = store.game_by_id().get(game_id)
-    if game is None:
-        raise _not_found("game", game_id)
-    rows = store.team_game_by_key()
-    return {"data": {"game": game,
-                     "team_games": [rows[(game_id, t)] for t in (game["home_team"], game["away_team"])
-                                    if (game_id, t) in rows]}}
+    return {"data": client.nfl_game_detail(_nfl(), game_id)}
 
 
 @router.get("/nfl/team-games", summary="One row per team per game, newest first")
@@ -967,19 +404,11 @@ def nfl_list_team_games(team: Optional[str] = Query(None, max_length=60),
                         order: str = Query("desc"), limit: int = Query(DEFAULT_LIMIT, ge=1),
                         cursor: Optional[str] = Query(None, max_length=1024),
                         caller: DataCaller = Depends(data_access)) -> dict:
-    _choice(game_type, "game_type", GAME_TYPES)
-    _choice(status, "status", GAME_STATUSES)
-    code = _team_param(team, "team")
+    items = client.nfl_team_games(_nfl(), team=team, season=season, week=week, game_type=game_type, status=status)
     descending = _order(order)
-    store = _nfl()
-    everything = store.view("team_games_sorted", lambda: sorted(store.team_games, key=_tg_key))
-    items = [r for r in everything
-             if (code is None or r["team"] == code) and (season is None or r["season"] == season)
-             and (week is None or r["week"] == week) and (game_type is None or r.get("game_type") == game_type)
-             and (status is None or r.get("status") == status)]
-    sig = _query_sig(route="nfl_team_games", team=code, season=season, week=week, game_type=game_type, status=status,
-                     order=order)
-    return _page_response(items, _tg_key, caller, limit, cursor, sig, descending=descending, render=lambda r: r)
+    sig = _query_sig(route="nfl_team_games", team=client.team_param(team, "team"), season=season, week=week,
+                     game_type=game_type, status=status, order=order)
+    return _page_response(items, client.tg_key, caller, limit, cursor, sig, descending=descending, render=lambda r: r)
 
 
 @router.get("/nfl/player-games", summary="Offensive usage and production per player per game, newest first")
@@ -990,19 +419,14 @@ def nfl_list_player_games(player: Optional[str] = Query(None, min_length=1, max_
                           limit: int = Query(DEFAULT_LIMIT, ge=1), cursor: Optional[str] = Query(None, max_length=1024),
                           caller: DataCaller = Depends(data_access)) -> dict:
     """`player` is a player id or a name (an id wins; two equally good name matches are a 409)."""
-    _choice(position_group, "position_group", nfl_store.POSITION_GROUP_ORDER)
-    code = _team_param(team, "team")
+    code = client.team_param(team, "team")
+    client.choice(position_group, "position_group", nfl_store.POSITION_GROUP_ORDER)
     descending = _order(order)
-    store = _nfl()
-    pid = _resolve_player(store, player)[0] if player is not None else None
-    everything = store.view("player_games_sorted", lambda: sorted(store.player_games, key=_pg_key))
-    items = [r for r in everything
-             if (pid is None or r["player_id"] == pid) and (code is None or r["team"] == code)
-             and (game_id is None or r["game_id"] == game_id) and (season is None or r["season"] == season)
-             and (week is None or r["week"] == week) and (position_group is None or r.get("position_group") == position_group)]
+    items, pid = client.nfl_player_games(_nfl(), player=player, team=team, game_id=game_id, season=season, week=week,
+                                         position_group=position_group)
     sig = _query_sig(route="nfl_player_games", player=pid, team=code, game_id=game_id, season=season, week=week,
                      position_group=position_group, order=order)
-    return _page_response(items, _pg_key, caller, limit, cursor, sig, descending=descending, render=lambda r: r)
+    return _page_response(items, client.pg_key, caller, limit, cursor, sig, descending=descending, render=lambda r: r)
 
 
 @router.get("/nfl/injuries", summary="Injury report rows (designated or limited players), newest first")
@@ -1013,20 +437,13 @@ def nfl_list_injuries(game_id: Optional[str] = Query(None, max_length=40), team:
                       report_status: Optional[str] = Query(None, max_length=20), order: str = Query("desc"),
                       limit: int = Query(DEFAULT_LIMIT, ge=1), cursor: Optional[str] = Query(None, max_length=1024),
                       caller: DataCaller = Depends(data_access)) -> dict:
-    _choice(position_group, "position_group", nfl_store.POSITION_GROUP_ORDER)
-    code = _team_param(team, "team")
+    code = client.team_param(team, "team")
     descending = _order(order)
-    store = _nfl()
-    everything = store.view("injuries_sorted", lambda: sorted(store.injuries, key=_inj_key))
-    items = [r for r in everything
-             if (game_id is None or r["game_id"] == game_id) and (code is None or r["team"] == code)
-             and (season is None or r["season"] == season) and (week is None or r["week"] == week)
-             and (player_id is None or r["player_id"] == player_id)
-             and (position_group is None or r.get("position_group") == position_group)
-             and (report_status is None or r.get("report_status") == report_status.lower())]
+    items = client.nfl_injuries(_nfl(), game_id=game_id, team=team, season=season, week=week, player_id=player_id,
+                                position_group=position_group, report_status=report_status)
     sig = _query_sig(route="nfl_injuries", game_id=game_id, team=code, season=season, week=week, player_id=player_id,
                      position_group=position_group, report_status=report_status, order=order)
-    return _page_response(items, _inj_key, caller, limit, cursor, sig, descending=descending, render=lambda r: r)
+    return _page_response(items, client.inj_key, caller, limit, cursor, sig, descending=descending, render=lambda r: r)
 
 
 @router.get("/nfl/matchup", summary="The fact sheet for one game (a game id, or two teams)")
@@ -1035,41 +452,16 @@ def nfl_get_matchup(game_id: Optional[str] = Query(None, max_length=40), a: Opti
                     week: Optional[int] = Query(None, ge=1, le=30), as_of: Optional[str] = Query(None, max_length=64)) -> dict:
     """`game_id`, or `a` and `b` (team codes or names, either of them home): the next game between them that
     has not kicked off, else the latest (`season` and `week` pick one). `as_of` defaults to the kickoff and
-    may not be later than it."""
-    cutoff = _parse_as_of(as_of)
-    store = _nfl()
-    if game_id is None and (a is None or b is None):
-        raise _bad_param("game_id", "give game_id, or both a and b (the two teams)")
-    resolved: Dict[str, Any] = {}
-    try:
-        if game_id is None:
-            game = nfl_matchup.find_game(store, a, b, season=season, week=week, now=_now())
-            game_id = game["game_id"]
-            resolved = {"a": a, "b": b, "game_id": game_id, "matched_by": "teams"}
-        else:
-            resolved = {"game_id": game_id, "matched_by": "game_id"}
-        sheet = nfl_matchup.matchup(store, game_id, cutoff, now=_now())
-    except nfl_features.UnknownGame:
-        raise _not_found("game", game_id) from None
-    except nfl_features.UnknownTeam as exc:
-        raise ApiError(404, "not_found", str(exc)) from None
-    except LookupError as exc:
-        raise ApiError(404, "not_found", str(exc)) from None
-    except ValueError as exc:
-        param = "b" if "does not play itself" in str(exc) else "as_of"
-        raise _bad_param(param, str(exc)) from None
-    sheet["resolved"] = resolved
-    return {"data": sheet}
+    may not be later than it. `meta` as for /ufc/matchup."""
+    packet = _http_client().matchup("nfl", game_id=game_id, a=a, b=b, season=season, week=week, as_of=as_of)
+    return {"data": packet["data"], "meta": packet["meta"]}
 
 
 @router.get("/nfl/teams/{team}/features", summary="A team's leakage-free form as of a moment")
 def nfl_team_features(team: str, as_of: Optional[str] = Query(None, max_length=64),
                       season: Optional[int] = Query(None, ge=1999, le=2100)) -> dict:
     cutoff = _parse_as_of(as_of) or _now()
-    try:
-        return {"data": nfl_features.team_features_as_of(_nfl(), team, cutoff, season=season)}
-    except nfl_features.UnknownTeam:
-        raise _not_found("team", team) from None
+    return {"data": client.nfl_team_features_as_of(_nfl(), team, cutoff, season=season)}
 
 
 @router.get("/nfl/players/{player}/features",
@@ -1077,14 +469,53 @@ def nfl_team_features(team: str, as_of: Optional[str] = Query(None, max_length=6
 def nfl_player_features(player: str, as_of: Optional[str] = Query(None, max_length=64)) -> dict:
     """`player` is a player id or a name."""
     cutoff = _parse_as_of(as_of) or _now()
-    store = _nfl()
-    pid, how = _resolve_player(store, player, "player")
-    try:
-        data = nfl_features.player_features_as_of(store, pid, cutoff)
-    except nfl_features.UnknownPlayer:
-        raise _not_found("player", pid) from None
-    data["resolved"] = {"query": player, "player_id": pid, "matched_by": how}
-    return {"data": data}
+    return {"data": client.nfl_player_features_as_of(_nfl(), player, cutoff)}
+
+
+# -- MLB: the existing services through the same door --------------------------------------------------------
+#
+# Wrappers only (src/datasvc/mlb/service.py): the schedule and results, and the analyst's evidence packet as
+# `src/analyst/packet.py` builds it. Read-only: serving a packet publishes nothing and calls no model. Keeps MLB's
+# own shapes; the envelope (`meta`) is the same as UFC and NFL.
+
+_REFUSAL_STATUS = {"not_found": 404, "ambiguous": 409, "no_data": 404, "unavailable": 503}
+_REFUSAL_CODE = {"not_found": "not_found", "ambiguous": "ambiguous_game", "no_data": "not_found",
+                 "unavailable": "data_unavailable"}
+
+
+def _refusal(result: dict) -> ApiError:
+    """An `available: false` answer from the MLB service as the one error shape."""
+    first = (result.get("missing") or [{}])[0]
+    code = first.get("code", "unavailable")
+    return ApiError(_REFUSAL_STATUS.get(code, 503), _REFUSAL_CODE.get(code, "data_unavailable"),
+                    first.get("reason") or "no data", {"missing": result.get("missing")})
+
+
+@router.get("/mlb/games", summary="MLB games for a date, results for final games")
+def mlb_list_games(date: str = Query(..., min_length=10, max_length=10), limit: int = Query(DEFAULT_LIMIT, ge=1),
+                   cursor: Optional[str] = Query(None, max_length=1024),
+                   caller: DataCaller = Depends(data_access)) -> dict:
+    """`data` is the day's games in schedule order with MLB's own shape; `meta` says when the schedule was read,
+    that a played game's probable starter is retroactive, how fresh each store is, and what is missing."""
+    result = _mlb().games(date, now=_now())
+    if not result["available"]:
+        raise _refusal(result)
+    page = _page_response(result["data"], lambda r: (r["start_time_utc"] or "", str(r["game_pk"])), caller, limit,
+                          cursor, _query_sig(route="mlb_games", date=date), descending=False, render=lambda r: r)
+    page["meta"] = result["meta"]
+    return page
+
+
+@router.get("/mlb/games/{date}/{away}/{home}/packet",
+            summary="The analyst's frozen evidence packet for one game (read-only, never published)")
+def mlb_get_packet(date: str, away: str, home: str) -> dict:
+    """`data` is the packet exactly as `src/analyst/packet.py` builds it (its `packet_hash` is in `meta`); `meta`
+    carries the ids and provider id mapping, units, each source's identity and basis (observed at the time or
+    reconstructed later), coverage, missing reasons and the `data_version`."""
+    result = _mlb().packet(date, away, home, now=_now())
+    if not result["available"]:
+        raise _refusal(result)
+    return {"data": result["data"], "meta": result["meta"]}
 
 
 # -- anything else under /data/v1 -------------------------------------------------------------------------
