@@ -12,6 +12,9 @@ Layout:
              (contract: docs/datasvc/UFC_SCHEMA.md)
   nfl/       NFL, from nflverse's release files
              (contract: docs/datasvc/NFL_SCHEMA.md)
+  client.py  the in-process door (`DataClient`) and the fastapi-free core the /data/v1 routes call
+  mlb/       MLB, wrapping the existing stores and the analyst's packet (no ingest of its own)
+             (reference: docs/datasvc/CLIENT.md)
 
 stdlib only, like the rest of src/.
 """

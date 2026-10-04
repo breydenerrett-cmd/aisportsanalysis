@@ -402,7 +402,9 @@ class Status(NflApiCase):
         from src.datasvc.ufc.store import FILES as UFC_FILES
         self.assertEqual(set(data["datasets"]), set(UFC_FILES))
         self.assertTrue(all(d["present"] is False for d in data["datasets"].values()))
-        self.assertEqual(set(data), {"generated_utc", "datasets", "manifest_generated_utc", "service", "note", "nfl"})
+        # 2026-10-04: the MLB datasets joined /status as one more top-level key (the key-set pin moves with it).
+        self.assertEqual(set(data), {"generated_utc", "datasets", "manifest_generated_utc", "service", "note", "nfl",
+                                     "mlb"})
 
     def test_no_nfl_data_at_all_is_absent_not_an_error(self):
         datasvc.use_nfl_data_dir(Path(self._tmp.name) / "nowhere")
