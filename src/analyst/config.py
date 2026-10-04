@@ -52,6 +52,10 @@ DEFAULTS: dict = {
     # per game, so turning this on roughly doubles the analyst's cost. `analyst run --arm A|B|both`
     # overrides it for one run.
     "situation_arm": {"enabled": False},
+    # THE SUPERVISED-SESSION PILOT (src/analyst/pilot.py). A packet prepared for a session to answer
+    # goes stale: prices move and lineups post. `pilot publish` refuses a packet built more than this
+    # many minutes before the moment of publishing, so what is frozen is never a packet from hours ago.
+    "pilot": {"max_packet_age_minutes": 90},
 }
 
 
@@ -96,6 +100,10 @@ def validate(cfg: Mapping) -> dict:
     arm = cfg.get("situation_arm")
     if not isinstance(arm, Mapping) or not isinstance(arm.get("enabled"), bool):
         raise ConfigError("situation_arm.enabled must be true or false")
+    pilot = cfg.get("pilot")
+    age = pilot.get("max_packet_age_minutes") if isinstance(pilot, Mapping) else None
+    if isinstance(age, bool) or not isinstance(age, (int, float)) or age <= 0:
+        raise ConfigError("pilot.max_packet_age_minutes must be a number > 0")
     return cfg
 
 

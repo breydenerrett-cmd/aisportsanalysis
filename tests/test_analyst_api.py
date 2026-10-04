@@ -131,7 +131,9 @@ class TheCacheFollowsTheFile(unittest.TestCase):
     def test_rows_are_reread_when_the_file_changes_and_not_before(self):
         from api import analyst as api_analyst
         api_analyst.reset_cache_for_tests()
-        with mock.patch.object(api_analyst, "_signature", side_effect=[(1, 1), (1, 1), (2, 2)]), \
+        none = (None, None)
+        with mock.patch.object(api_analyst, "_signature",
+                               side_effect=[((1, 1), none), ((1, 1), none), ((2, 2), none)]), \
                 mock.patch.object(api_analyst.ledger, "rows", return_value=["x"]) as read:
             api_analyst._rows()
             api_analyst._rows()

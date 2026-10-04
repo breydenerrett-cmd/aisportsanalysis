@@ -312,7 +312,9 @@ class TheMinus200Rule(unittest.TestCase):
                 "reasons": [{"claim": "The home side is the clear favourite.",
                              "evidence": [{"path": "markets.moneyline.lean", "value": "TB"}]}],
                 "pass_price": int(round(odds_math.probability_to_american(fair))),
-                "what_would_change_it": "A scratch of the home starter."}
+                "what_would_change_it": "A scratch of the home starter.",
+                "case_against": {"claim": "The home side is the books' favourite.",
+                  "evidence": [{"path": "markets.moneyline.lean", "value": "TB"}]}}
 
     def test_a_take_on_a_moneyline_at_minus_200_or_worse_is_struck_to_pass(self):
         packet = self.packet()
@@ -354,7 +356,8 @@ class TheMinus200Rule(unittest.TestCase):
         call = F.pass_call(packet, prop)
         call.update(verdict="TAKE", selection=opt["selection"], price=-263, book="betonlineag",
                     fair_estimate=fair, confidence="medium",
-                    pass_price=int(round(odds_math.probability_to_american(fair))))
+                    pass_price=int(round(odds_math.probability_to_american(fair))),
+                    case_against=F.case_against_for(packet, prop))
         out["calls"] = [call if c["slot_id"] == prop else c for c in out["calls"]]
         v = C.verify(packet, out)
         self.assertIn(prop, struck_ids(v))
@@ -366,7 +369,8 @@ class TheMinus200Rule(unittest.TestCase):
                           price=other["best"]["price"], book=other["best"]["book"])
         fe = round(odds_math.american_to_probability(other["best"]["price"]) + 0.03, 4)
         take_other.update(fair_estimate=fe, confidence="medium",
-                          pass_price=int(round(odds_math.probability_to_american(fe))))
+                          pass_price=int(round(odds_math.probability_to_american(fe))),
+                          case_against=F.case_against_for(packet, prop))
         out["calls"] = [take_other if c["slot_id"] == prop else c for c in out["calls"]]
         self.assertNotIn(prop, struck_ids(C.verify(packet, out)))
 

@@ -105,9 +105,10 @@ def _iso(moment: datetime) -> str:
 
 def prompt_hash(system_prompt: Optional[str] = None) -> str:
     """sha256 of the prompt and the schema a row was made with. Arm B passes its own prompt
-    (`analyst.SITUATION_SYSTEM_PROMPT`); the default is arm A's."""
+    (`analyst.SITUATION_SYSTEM_PROMPT`); the default is arm A's. The schema is the MLB one (prompt
+    v2 added `case_against`); the UFC analyst hashes the shared schema in `ufc_analyst.prompt_hash`."""
     return hashlib.sha256(((system_prompt or analyst_mod.SYSTEM_PROMPT) + "\n" + json.dumps(
-        analyst_mod.RESPONSE_SCHEMA, sort_keys=True)).encode("utf-8")).hexdigest()
+        analyst_mod.MLB_RESPONSE_SCHEMA, sort_keys=True)).encode("utf-8")).hexdigest()
 
 
 # ---------------------------------------------------------------------------
@@ -370,10 +371,28 @@ def call_title(spec: Mapping) -> str:
     return _FAMILY_TITLES.get(family, str(family or ""))
 
 
+def _missing_list(pub: Mapping, root: Optional[Path]) -> Optional[list]:
+    """What the packet said it could not use (its `missing` list), read from the frozen packet
+    file the row points at. None, never a guess, when the file cannot be read: a page that said
+    "nothing was missing" because a file was absent would be telling a different story."""
+    try:
+        packet = read_packet(pub, root=root)
+    except (OSError, ValueError, KeyError, AnalystLedgerError, EOFError):
+        return None
+    missing = packet.get("missing")
+    return list(missing) if isinstance(missing, list) else None
+
+
 def game_view(date: str, away: str, home: str, *, path: Optional[str] = None,
-              all_rows: Optional[Sequence[Mapping]] = None) -> Optional[dict]:
+              all_rows: Optional[Sequence[Mapping]] = None,
+              root: Optional[Path] = None) -> Optional[dict]:
     """The published analysis for one game, merged with its grade, or None
-    when nothing was published. Reads only the ledger: no model call, ever."""
+    when nothing was published. Reads only the ledger and the frozen packet file the row names:
+    no model call, ever.
+
+    Also carries, for each call, its `case_against` (prompt v2 rows; None on a PASS and on a row
+    written before v2), and for the game the packet's `missing` list and the `provenance` of the
+    row: "session_assisted" for a supervised-session row (src/analyst/pilot.py), else "api"."""
     all_rows = rows(path) if all_rows is None else all_rows
     pubs = [p for p in latest_published(all_rows).values()
             if p["date"] == date and p["away"].upper() == away.upper()
@@ -387,7 +406,7 @@ def game_view(date: str, away: str, home: str, *, path: Optional[str] = None,
     for c in pub["calls"]:
         item = {k: c.get(k) for k in ("slot_id", "market", "selection", "verdict", "price",
                                       "book", "fair_estimate", "confidence", "reasons",
-                                      "pass_price", "what_would_change_it", "verification")}
+                                      "pass_price", "what_would_change_it", "verification", "case_against")}
         spec = c.get("grading") or {}
         item["family"] = spec.get("family")
         item["player"] = spec.get("player")
@@ -402,6 +421,8 @@ def game_view(date: str, away: str, home: str, *, path: Optional[str] = None,
         "published_utc": pub["published_utc"], "first_pitch_utc": pub["first_pitch_utc"],
         "model": pub["model"], "version": pub["version"],
         "summary": pub["summary"], "summary_status": pub["summary_status"],
+        "provenance": pub.get("provenance") or "api",
+        "missing": _missing_list(pub, root),
         "calls": calls,
         "final": (graded or {}).get("final"),
         "graded": graded is not None,

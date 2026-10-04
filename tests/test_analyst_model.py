@@ -22,7 +22,7 @@ class TheRequest(unittest.TestCase):
 
     def test_it_asks_for_a_json_schema_and_sends_no_rejected_parameters(self):
         self.assertEqual(self.body["output_config"]["format"]["type"], "json_schema")
-        self.assertIs(self.body["output_config"]["format"]["schema"], A.RESPONSE_SCHEMA)
+        self.assertIs(self.body["output_config"]["format"]["schema"], A.MLB_RESPONSE_SCHEMA)
         self.assertEqual(self.body["output_config"]["effort"], "medium")
         for rejected in ("temperature", "top_p", "top_k", "thinking", "tool_choice"):
             self.assertNotIn(rejected, self.body)
@@ -63,6 +63,7 @@ class TheRequest(unittest.TestCase):
                 for v in node:
                     walk(v)
         walk(A.RESPONSE_SCHEMA)
+        walk(A.MLB_RESPONSE_SCHEMA)
         walk(A.CRITIC_SCHEMA)
 
 

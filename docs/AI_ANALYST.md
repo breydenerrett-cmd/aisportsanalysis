@@ -117,7 +117,7 @@ server-side refusal fallback is **not** enabled: it re-runs a declined request o
 bills that at the other model's rate, which the spend cap's single price table would understate. The
 request is one non-streaming call (`max_tokens` 16,000, timeout 600 seconds).
 
-#### The prompt, verbatim (`PROMPT_VERSION = analyst_prompt_v1`)
+#### The prompt, verbatim (`PROMPT_VERSION = analyst_prompt_v2`)
 
 ```
 You are a baseball betting analyst. You write the analysis of one MLB game and make a call on every market the packet prices. You are an AI model and the reader knows it. Your work is published before the game, graded afterward, and shown next to its record whatever that record turns out to be. Write like a sharp human analyst talking to a smart friend: plain words, a point of view, no hype.
@@ -138,6 +138,7 @@ THE CALLS
 11. pass_price: the American price at which the selection stops being worth taking, which is the break-even price of your fair_estimate. On a PASS, the price at which you would start to take it, or null if no price would do.
 12. confidence: low, medium or high. High only when several independent packet facts agree and nothing relevant is in `missing`.
 13. what_would_change_it: one sentence naming a specific new fact that would flip the call, such as a lineup change or a scratch. If it names a price, that price is your pass_price.
+13a. case_against: for a TAKE or a TAKE_OTHER_SIDE, the strongest reason from the packet that this bet loses, written as {claim, evidence} and built like a reason. It must name a specific weakness in this bet, such as a number in the packet that points the other way, not general risk: "anything can happen in baseball" is not a case against. Cite at least one packet path, and quote only numbers that are in the packet. Argue it as hard as you would argue the other side. For a PASS it is null.
 
 THE WORDS
 14. Never write: lock, guaranteed, free money, sure thing, can't lose, +EV. Never claim a profit, an edge you have, or certainty. No exclamation marks.
@@ -149,7 +150,18 @@ THE SUMMARY
 Reply with one JSON object that matches the schema and nothing else.
 ```
 
-#### The schema, verbatim
+#### Prompt v2 and the schema, verbatim
+
+`analyst_prompt_v2` (2026-10-03) adds one rule, 13a, and one required call field, `case_against`:
+for a TAKE or a TAKE_OTHER_SIDE, `{claim, evidence}`, the strongest reason from the packet that the
+bet loses (a specific weakness, not general risk); for a PASS, null. v1 never ran against the API
+(no ledger file existed), so changing it lost no record. The rule is numbered 13a so every later
+rule keeps its number: the situation section (arm B) takes 17 to 20.
+
+The schema below is `analyst.MLB_RESPONSE_SCHEMA`. The UFC analyst shares the model call and the
+critic but not this field: it keeps using the shared `analyst.RESPONSE_SCHEMA` (the same schema
+without `case_against`), `schema_for(packet)` picks by the packet (a game packet versus a bout
+packet), and the UFC request, prompt hash and critic are unchanged.
 
 ```json
 {
@@ -179,7 +191,8 @@ Reply with one JSON object that matches the schema and nothing else.
           "confidence",
           "reasons",
           "pass_price",
-          "what_would_change_it"
+          "what_would_change_it",
+          "case_against"
         ],
         "properties": {
           "slot_id": {
@@ -297,6 +310,58 @@ Reply with one JSON object that matches the schema and nothing else.
           },
           "what_would_change_it": {
             "type": "string"
+          },
+          "case_against": {
+            "anyOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "claim",
+                  "evidence"
+                ],
+                "properties": {
+                  "claim": {
+                    "type": "string"
+                  },
+                  "evidence": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "path",
+                        "value"
+                      ],
+                      "properties": {
+                        "path": {
+                          "type": "string"
+                        },
+                        "value": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "boolean"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         }
       }
@@ -308,7 +373,8 @@ Reply with one JSON object that matches the schema and nothing else.
 The model is not allowed to make up a market: `slot_id` must be one the packet lists,
 `market` must match it, `selection` must be one of its selections. Ranges the schema
 cannot express (a probability between 0 and 1, a summary of 120 to 200 words, one call
-per slot in slot order) are checked in `validate_output`.
+per slot in slot order) are checked in `validate_output`. An absent `case_against` is read as null
+there, and the critic strikes a TAKE that has none.
 
 ### 3. The critic (`src/analyst/critic.py`)
 
@@ -337,6 +403,10 @@ Deterministic first, always on, free and exact. A call is **struck** when:
   build brief named the moneyline; the later ruling is broader, so the floor holds for every market,
   heavy-juice props included. Narrowing it is one `if` in `critic.check_call`. The other side of the
   same market is not caught by it;
+- a TAKE or TAKE_OTHER_SIDE has no `case_against`, or its case against fails the same checks a
+  reason does (it cites no path, a path does not resolve or holds another value, a number is not in
+  the packet, a banned word, a name not in the packet). The struck call is published as a PASS and
+  the audit trail says why. A PASS publishes no case against whatever the model sent;
 - the call contradicts itself: a fair estimate at or below the break-even of the price it
   says to take, a pass price that is not the break-even price of the estimate (within 2
   points of probability) or is a better price than the one taken, a TAKE with no estimate
@@ -435,7 +505,59 @@ The server sends null, and the page never computes a rate of its own.
   verdict, price and book, confidence, the reasons, and the pass price. PASS is drawn exactly as
   large as TAKE. `GET /analyst/{date}/{away}/{home}` serves it, behind the same gate as
   `GET /game/...`, from the ledger only: **a page view never calls the model.**
-- **Record page**, the analyst table by market family, with the label.
+  Each TAKE shows "The case against" under its reasons, and the section lists what the analysis
+  could not use (the packet's `missing` list, capped at six with a count).
+- **Record page**, the analyst table by market family, with the label, and under it, when the pilot
+  has published, "Supervised-session briefs" as a separate block.
+
+## The supervised-session pilot (`src/analyst/pilot.py`)
+
+The analyst needs an API key the owner has not added. The owner approved a pilot in the meantime:
+a supervised Claude session writes the model's answer from the exact request the API call would
+send, and the SAME validation, code checker and ledger publish it, honestly labelled. It is not a
+second pipeline: `pilot.py` calls `validate_output`, `critic.verify` and `ledger.publish`, and adds
+three commands, separate stores and a provenance.
+
+```
+python -m src.cli analyst pilot prepare --date 2026-10-03 --game NYY@TB [--scratch DIR]
+python -m src.cli analyst pilot check   --dir evidence/analyst_pilot/2026-10-03_NYY-TB --response answer.json
+python -m src.cli analyst pilot publish --dir evidence/analyst_pilot/2026-10-03_NYY-TB --response answer.json \
+    --model <name> [--tokens-in N --tokens-out N --seconds S --operator-minutes M] [--refresh]
+```
+
+- **prepare** builds the packet with the same loader and builder a run uses, refuses a started or
+  unpriced game with the same messages, and writes `packet.json`, `request.json` (the exact request
+  body) and `prepare.json` (packet hash, prompt version and hash, built time, first pitch, token
+  estimate, model) to `evidence/analyst_pilot/<date>_<AWAY>-<HOME>/`. With `--scratch` it writes to
+  that folder instead and marks it a rehearsal.
+- **check** validates and runs the checker against the saved packet and prints, per call, kept or
+  struck and why, with totals. It publishes nothing and works on rehearsal folders.
+- **publish** reloads the saved packet and refuses unless: the folder is not a rehearsal; the packet
+  hash matches `prepare.json` and the prompt has not changed since; the game has not started
+  (`ledger.publish_refusal`); the packet was built no more than `pilot.max_packet_age_minutes` ago
+  (`config/analyst.json`, 90); the game has no pilot row yet (or `--refresh`, still refused once
+  graded); and the response passes the shape check. A response that passes the shape check but has
+  false claims is published with those calls struck to PASS, as the API path does.
+- **Stores.** `evidence/analyst_pilot_v1.jsonl`, `evidence/analyst_pilot_usage_v1.jsonl` and
+  `evidence/analyst_pilot_packets_v1/`, separate from the main analyst's. No pilot command writes a
+  main store. A row carries `provenance: "session_assisted"`, and its `run` records the mode, the
+  model name given, the token counts, a dollar figure labelled an estimate at list price (tokens
+  times `config/analyst.json` prices, not a bill; none when tokens are not reported), seconds and
+  operator minutes.
+- **Grading and record.** `analyst grade` also grades pilot rows once the pilot store exists, and
+  `analyst record` prints them under "SUPERVISED-SESSION BRIEFS". They are never added to the main
+  record.
+- **Serving.** A game page gets the main ledger's row when it has one, otherwise the pilot's, with
+  `PILOT_LABEL`: "Written by an AI model in a supervised session, from the data frozen before the
+  game. Unproven. Analysis, not advice." Each served call carries its `case_against`; the analysis
+  carries the packet's `missing` list and the `provenance`. `GET /analyst/record` returns the pilot's
+  record as a separate `pilot` block.
+- **The public sample.** `config/sample_brief.json` names one game (`{"date", "away", "home"}`, or
+  null). `GET /sample/brief` (public, rate-limited like the record) serves only that game's pilot
+  view, or `available: false`; `web/sample.html` draws it with the analyst section, says when it was
+  frozen and when the game starts, shows the result once graded, links the public record and the
+  landing page, and states the offer in one line. The page stores the visitor's first touch with
+  `attribution.js`'s `captureFirstTouch`, as the landing page does.
 
 ## What it does not claim
 
@@ -508,7 +630,9 @@ How to turn it on, what it costs a day and how to turn it off again:
 `test_analyst_ledger.py`, `test_analyst_cli.py`, `test_analyst_api.py`, `test_analyst_web.py`, all
 offline (the HTTP caller is injected; the shared fixtures read no repo data), plus the wording sweeps
 `test_web_register_sweep`, `test_customer_language` and `test_no_developer_notes_on_screen`.
-`tests/test_analyst_model.py` pins that the prompt in this file is the prompt in the code.
+`tests/test_analyst_docs.py` pins that the prompt and the schema in this file are the ones in the
+code. The pilot has `tests/test_analyst_pilot.py`, `test_analyst_pilot_serving.py` and
+`test_sample_brief.py`.
 
 ## The UFC analyst
 

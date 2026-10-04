@@ -160,7 +160,18 @@ def take_other_side_ml(packet: dict) -> dict:
                           {"path": "sections.starters.values.home_sp_fip", "value": 2.9911}]}],
         "pass_price": pass_price,
         "what_would_change_it": "A lineup that sits the road side's best hitters, or the price shortening.",
+        "case_against": {
+            "claim": "The home starter has the lower ERA, 2.8761 against 3.4054, and the books make the home side the favourite.",
+            "evidence": [{"path": "sections.starters.values.home_sp_era", "value": 2.8761},
+                         {"path": "sections.starters.values.away_sp_era", "value": 3.4054}]},
     }
+
+
+def case_against_for(packet: dict, slot_id: str) -> dict:
+    """A checkable case against for a hand-built TAKE on `slot_id`: it cites the market's own lean."""
+    market = packet["markets"][slot_id]
+    return {"claim": "The books already make the other side the favourite.",
+            "evidence": [{"path": f"markets.{slot_id}.lean", "value": market["lean"]}]}
 
 
 def pass_call(packet: dict, slot_id: str, claim: str = "The books' own number is the best read here.") -> dict:
@@ -175,6 +186,7 @@ def pass_call(packet: dict, slot_id: str, claim: str = "The books' own number is
              "value": opt["fair_probability"]}]}],
         "pass_price": None,
         "what_would_change_it": "A posted lineup or a price that moves.",
+        "case_against": None,
     }
 
 

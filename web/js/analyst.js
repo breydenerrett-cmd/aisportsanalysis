@@ -5,7 +5,9 @@
  *   renderAnalystSection(data)   one game's published analysis: the summary,
  *                                then the calls grouped by market. The game
  *                                page appends it and does nothing else with it.
- *   renderAnalystRecord(record)  the public record, by market family.
+ *   renderAnalystRecord(record)  the public record, by market family, and
+ *                                (when the server sends one) the supervised-session
+ *                                briefs' own record under its own heading.
  *   mountAnalystRecord(screen)   fetches GET /analyst/record and appends the
  *                                section; a failed fetch leaves the page as it
  *                                was.
@@ -24,6 +26,14 @@
  *   server ever omits it.
  * - Show a call the checker could not verify as though it were analysis. Those
  *   arrive as a PASS whose reason says so; they are drawn like any PASS.
+ * - Hide the case against. Every take arrives with the strongest reason from the
+ *   packet that it loses (`case_against`); it is drawn under the reasons in the
+ *   same type, so a reader weighs both. A pass has none and shows none.
+ * - Hide what the analysis could not use. `analysis.missing` is the packet's own
+ *   list of absent, stale or thin inputs; it is listed (capped, with a count),
+ *   and when the server could not read it (null) nothing is claimed either way.
+ * - Write its own label. A supervised-session brief arrives with a different
+ *   label from the API analyst's; the page prints whichever the server sent.
  *
  * The API serves what the ledger froze before first pitch. This file reads
  * it. It makes no call to a model, computes no price and re-derives nothing.
@@ -119,6 +129,17 @@ function resultLine(call) {
   return null;
 }
 
+function caseAgainst(call) {
+  const against = call.case_against;
+  if (unverified(call) || !against || !against.claim) return null;
+  const block = el("div", { class: "an-call__against", "data-hook": "analyst-case-against" });
+  block.appendChild(el("h4", { class: "an-call__against-head", text: "The case against" }));
+  const list = el("ul", { class: "an-call__reasons" });
+  list.appendChild(el("li", { text: against.claim }));
+  block.appendChild(list);
+  return block;
+}
+
 export function callNode(call) {
   const node = el("article", {
     class: `an-call an-call--${String(call.verdict || "").toLowerCase()}`,
@@ -144,6 +165,8 @@ export function callNode(call) {
   node.appendChild(facts);
 
   node.appendChild(reasonList(call));
+  const against = caseAgainst(call);
+  if (against) node.appendChild(against);
 
   if (!unverified(call) && call.pass_price !== null && call.pass_price !== undefined) {
     const when = call.verdict === "PASS" ? "Would start to take it at" : "Stops being worth it at";
@@ -168,6 +191,40 @@ function head(label, meta) {
   h.appendChild(el("span", { class: "sechead__hair" }));
   if (meta) h.appendChild(el("span", { class: "sechead__meta", text: meta }));
   return h;
+}
+
+/** Most items listed under "What the analysis could not use"; the rest are counted. */
+export const MISSING_SHOWN = 6;
+
+function asSentence(text) {
+  const t = String(text || "").trim();
+  if (!t) return "";
+  const s = t.charAt(0).toUpperCase() + t.slice(1);
+  return /[.]$/.test(s) ? s : `${s}.`;
+}
+
+/** The packet's own list of inputs the analysis could not use. `missing` null means the server
+ * could not read the list: nothing is said, rather than "nothing was missing". */
+export function missingBlock(missing) {
+  if (!Array.isArray(missing)) return null;
+  const block = el("div", { class: "an-missing", "data-hook": "analyst-missing" });
+  block.appendChild(el("h3", { class: "an-family__head", text: "What the analysis could not use" }));
+  if (!missing.length) {
+    block.appendChild(el("p", { class: "an-none", text: "Nothing the data was expected to hold was missing." }));
+    return block;
+  }
+  const list = el("ul", { class: "an-missing__list" });
+  for (const m of missing.slice(0, MISSING_SHOWN)) {
+    const text = asSentence(m && m.reason);
+    if (text) list.appendChild(el("li", { text }));
+  }
+  block.appendChild(list);
+  const more = missing.length - MISSING_SHOWN;
+  if (more > 0) {
+    block.appendChild(el("p", { class: "an-missing__more", "data-hook": "analyst-missing-more",
+      text: `And ${more} more ${more === 1 ? "item" : "items"} not listed here.` }));
+  }
+  return block;
 }
 
 /** @param data  GET /analyst/{date}/{away}/{home}: {available, label, analysis, reason} */
@@ -201,6 +258,8 @@ export function renderAnalystSection(data) {
     for (const call of calls) block.appendChild(callNode(call));
     host.appendChild(block);
   }
+  const missing = missingBlock(analysis.missing);
+  if (missing) host.appendChild(missing);
   host.appendChild(el("p", { class: "an-foot",
     text: "Published before first pitch and graded afterward, on the record page. Passes are shown as plainly as takes." }));
   return host;
@@ -256,19 +315,9 @@ function familyRow(name, f) {
   return tr;
 }
 
-/** @param record  GET /analyst/record */
-export function renderAnalystRecord(record) {
-  const host = el("section", { class: "an-section an-rec", "data-hook": "analyst-record" });
-  host.appendChild(head("AI ANALYST RECORD", "UNPROVEN"));
-  host.appendChild(el("p", { class: "an-label", "data-hook": "analyst-label",
-    text: (record && record.label) || ANALYST_LABEL }));
-  if (!record) return host;
-  const min = record.min_graded || 30;
-  host.appendChild(el("p", { class: "an-rec__intro", "data-hook": "analyst-record-intro",
-    text: `${record.games_published} games analysed so far, ${record.games_settled} fully settled. `
-      + `Counts are always shown. A win rate and units appear for a market only after it has ${min} graded calls. `
-      + "This record is kept apart from the card record and never added to it." }));
-
+/** The family table and the latest graded calls, appended to `host`. Shared by the analyst's
+ * record and the supervised-session briefs' record: the same numbers drawn the same way. */
+function appendRecordBody(host, record) {
   const table = el("table", { class: "an-rec__table", "data-hook": "analyst-record-table" });
   const headRow = el("tr");
   for (const h of ["Market", "Taken", "Passed", "Graded", "W-L-P", "Void", "Win rate", "Units"]) {
@@ -296,6 +345,39 @@ export function renderAnalystRecord(record) {
     host.appendChild(el("h3", { class: "an-family__head", text: "Latest graded calls" }));
     host.appendChild(list);
   }
+}
+
+/** @param record  GET /analyst/record */
+export function renderAnalystRecord(record) {
+  const host = el("section", { class: "an-section an-rec", "data-hook": "analyst-record" });
+  host.appendChild(head("AI ANALYST RECORD", "UNPROVEN"));
+  host.appendChild(el("p", { class: "an-label", "data-hook": "analyst-label",
+    text: (record && record.label) || ANALYST_LABEL }));
+  if (!record) return host;
+  const min = record.min_graded || 30;
+  host.appendChild(el("p", { class: "an-rec__intro", "data-hook": "analyst-record-intro",
+    text: `${record.games_published} games analysed so far, ${record.games_settled} fully settled. `
+      + `Counts are always shown. A win rate and units appear for a market only after it has ${min} graded calls. `
+      + "This record is kept apart from the card record and never added to it." }));
+  appendRecordBody(host, record);
+  if (record.pilot) host.appendChild(renderPilotRecord(record.pilot));
+  return host;
+}
+
+/** The supervised-session briefs' record: its own block under its own heading, with the label the
+ * server sent for it. Never merged into the counts above it. */
+export function renderPilotRecord(pilot) {
+  const host = el("section", { class: "an-rec an-rec--pilot", "data-hook": "analyst-pilot-record" });
+  host.appendChild(el("h3", { class: "an-family__head", "data-hook": "analyst-pilot-heading",
+    text: "Supervised-session briefs" }));
+  host.appendChild(el("p", { class: "an-label", "data-hook": "analyst-pilot-label",
+    text: pilot.label || "" }));
+  const min = pilot.min_graded || 30;
+  host.appendChild(el("p", { class: "an-rec__intro", "data-hook": "analyst-pilot-intro",
+    text: `${pilot.games_published} games briefed so far, ${pilot.games_settled} fully settled. `
+      + `A win rate and units appear for a market only after it has ${min} graded calls. `
+      + "These briefs are counted apart from the analyst record above and from the card record." }));
+  appendRecordBody(host, pilot);
   return host;
 }
 

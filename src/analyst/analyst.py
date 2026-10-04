@@ -36,6 +36,7 @@ so the tests never touch one.
 
 from __future__ import annotations
 
+import copy
 import json
 import math
 import time
@@ -48,11 +49,14 @@ from src.analyst import config as config_mod
 from src.analyst import situation_prompt
 from src.ledger.chain import canonical_bytes
 
-PROMPT_VERSION = "analyst_prompt_v1"
-# Arm B of the side-by-side test (docs/SITUATION_LAYER.md): the same prompt with "THE SITUATION"
+# v2 (2026-10-03) adds the required `case_against` on every TAKE. v1 never ran against the API (no
+# ledger file existed), so the change cost no record. The new rule is numbered 13a so the rules after
+# it keep their numbers: the situation section (situation_prompt.py) takes 17 to 20 and must not collide.
+PROMPT_VERSION = "analyst_prompt_v2"
+# Arm B of the side-by-side test (docs/SITUATION_LAYER.md): the same (v2) prompt with "THE SITUATION"
 # added before its closing line. Used only when the situation arm is switched on; the prompt
 # above is untouched and tests pin that it is byte for byte what it was.
-SITUATION_PROMPT_VERSION = "analyst_prompt_v1_situation"
+SITUATION_PROMPT_VERSION = "analyst_prompt_v2_situation"
 
 VERDICTS = ("TAKE", "PASS", "TAKE_OTHER_SIDE")
 CONFIDENCES = ("low", "medium", "high")
@@ -86,6 +90,7 @@ THE CALLS
 11. pass_price: the American price at which the selection stops being worth taking, which is the break-even price of your fair_estimate. On a PASS, the price at which you would start to take it, or null if no price would do.
 12. confidence: low, medium or high. High only when several independent packet facts agree and nothing relevant is in `missing`.
 13. what_would_change_it: one sentence naming a specific new fact that would flip the call, such as a lineup change or a scratch. If it names a price, that price is your pass_price.
+13a. case_against: for a TAKE or a TAKE_OTHER_SIDE, the strongest reason from the packet that this bet loses, written as {claim, evidence} and built like a reason. It must name a specific weakness in this bet, such as a number in the packet that points the other way, not general risk: "anything can happen in baseball" is not a case against. Cite at least one packet path, and quote only numbers that are in the packet. Argue it as hard as you would argue the other side. For a PASS it is null.
 
 THE WORDS
 14. Never write: lock, guaranteed, free money, sure thing, can't lose, +EV. Never claim a profit, an edge you have, or certainty. No exclamation marks.
@@ -158,6 +163,38 @@ RESPONSE_SCHEMA: dict = {
         },
     },
 }
+
+# THE MLB SCHEMA (prompt v2) AND WHY `RESPONSE_SCHEMA` IS LEFT ALONE
+# ------------------------------------------------------------------
+# `RESPONSE_SCHEMA` above is shared: the UFC analyst (ufc_analyst.py, ufc_cli.py) sends and hashes it
+# by name, and the UFC prompt never asks for a case against. Adding the field to it would change the
+# UFC request, its prompt hash and what the UFC critic strikes, in a file this change does not own.
+# So the MLB schema is a copy with one more required call field, and `schema_for(packet)` picks by
+# the packet (an MLB game packet has a `game` block and no `bout`). Every MLB path (request, shape
+# check, critic, ledger hash) goes through it; UFC goes on using `RESPONSE_SCHEMA` untouched.
+_REASON_SCHEMA = RESPONSE_SCHEMA["properties"]["calls"]["items"]["properties"]["reasons"]["items"]
+CASE_AGAINST_SCHEMA: dict = {"anyOf": [_REASON_SCHEMA, {"type": "null"}]}
+
+
+def _mlb_schema() -> dict:
+    schema = copy.deepcopy(RESPONSE_SCHEMA)
+    item = schema["properties"]["calls"]["items"]
+    item["required"] = list(item["required"]) + ["case_against"]
+    item["properties"]["case_against"] = copy.deepcopy(CASE_AGAINST_SCHEMA)
+    return schema
+
+
+MLB_RESPONSE_SCHEMA: dict = _mlb_schema()
+
+
+def is_mlb_packet(packet: Any) -> bool:
+    return isinstance(packet, Mapping) and isinstance(packet.get("game"), Mapping) and "bout" not in packet
+
+
+def schema_for(packet: Any) -> dict:
+    """The response schema for this packet's sport: MLB's (with `case_against`) or the shared one."""
+    return MLB_RESPONSE_SCHEMA if is_mlb_packet(packet) else RESPONSE_SCHEMA
+
 
 CRITIC_SYSTEM_PROMPT = """\
 You check one analyst's published calls against the fact packet it was written from. You add no facts and make no calls of your own. For each call decide whether every reason's claim is actually supported by the evidence values it cites, and whether the verdict follows from the reasons. A claim that goes beyond its evidence, reads a number the wrong way, or draws a conclusion the cited facts do not support is not supported. Do the same for the summary. Be strict: when in doubt, it is not supported. Reply with one JSON object that matches the schema and nothing else."""
@@ -319,7 +356,7 @@ def build_request(packet: Mapping, cfg: Mapping, *,
         "max_tokens": int(cfg["max_output_tokens"]),
         "system": system_prompt,
         "output_config": {
-            "format": {"type": "json_schema", "schema": RESPONSE_SCHEMA},
+            "format": {"type": "json_schema", "schema": schema_for(packet)},
             "effort": cfg["effort"],
         },
         "messages": [{"role": "user", "content": user_message(packet, repair)}],
@@ -411,6 +448,16 @@ def words(text: str) -> int:
     return len(str(text).split())
 
 
+def _reason_shape_errors(where: str, reason: Any) -> list:
+    """Shape errors of one {claim, evidence: [{path, value}]}: a reason or a case against."""
+    if not isinstance(reason, Mapping) or not isinstance(reason.get("claim"), str) \
+            or not isinstance(reason.get("evidence"), list):
+        return [f"{where} needs a claim and an evidence list"]
+    return [f"{where}.evidence[{k}] needs a path and a value"
+            for k, ev in enumerate(reason["evidence"])
+            if not isinstance(ev, Mapping) or not isinstance(ev.get("path"), str) or "value" not in ev]
+
+
 def validate_output(output: Any, packet: Mapping) -> list:
     """Every way `output` fails the schema, as readable strings. Empty list
     means the SHAPE is right; it says nothing about whether it is true."""
@@ -431,6 +478,7 @@ def validate_output(output: Any, packet: Mapping) -> list:
     calls = output.get("calls")
     if not isinstance(calls, list):
         return errors + ["calls must be a list"]
+    schema = schema_for(packet)
     markets = packet.get("markets") or {}
     seen: dict = {}
     for i, call in enumerate(calls):
@@ -438,12 +486,14 @@ def validate_output(output: Any, packet: Mapping) -> list:
         if not isinstance(call, Mapping):
             errors.append(f"{where} is not an object")
             continue
-        missing = [k for k in RESPONSE_SCHEMA["properties"]["calls"]["items"]["required"]
-                   if k not in call]
+        item_schema = schema["properties"]["calls"]["items"]
+        # An absent case_against is read as null: the critic strikes a TAKE without one and says
+        # why, which is a better answer to a forgotten key than rejecting the whole analysis.
+        missing = [k for k in item_schema["required"] if k not in call and k != "case_against"]
         if missing:
             errors.append(f"{where} is missing {missing}")
             continue
-        extra = set(call) - set(RESPONSE_SCHEMA["properties"]["calls"]["items"]["properties"])
+        extra = set(call) - set(item_schema["properties"])
         if extra:
             errors.append(f"{where} has unexpected keys {sorted(extra)}")
         sid = call["slot_id"]
@@ -473,19 +523,14 @@ def validate_output(output: Any, packet: Mapping) -> list:
             errors.append(f"{where}: fair_estimate must be a probability between 0 and 1, or null")
         if not isinstance(call["what_would_change_it"], str) or not call["what_would_change_it"].strip():
             errors.append(f"{where}: what_would_change_it must be a sentence")
+        if "case_against" in item_schema["properties"] and call.get("case_against") is not None:
+            errors.extend(_reason_shape_errors(f"{where}: case_against", call["case_against"]))
         reasons = call["reasons"]
         if not isinstance(reasons, list) or not reasons:
             errors.append(f"{where}: reasons must be a non-empty list")
             continue
         for j, reason in enumerate(reasons):
-            if not isinstance(reason, Mapping) or not isinstance(reason.get("claim"), str) \
-                    or not isinstance(reason.get("evidence"), list):
-                errors.append(f"{where}: reasons[{j}] needs a claim and an evidence list")
-                continue
-            for k, ev in enumerate(reason["evidence"]):
-                if not isinstance(ev, Mapping) or not isinstance(ev.get("path"), str) \
-                        or "value" not in ev:
-                    errors.append(f"{where}: reasons[{j}].evidence[{k}] needs a path and a value")
+            errors.extend(_reason_shape_errors(f"{where}: reasons[{j}]", reason))
     for sid in markets:
         if sid not in seen:
             errors.append(f"call {sid!r}: missing; every slot needs one call")

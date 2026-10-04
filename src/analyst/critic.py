@@ -45,7 +45,7 @@ from datetime import datetime
 from typing import Any, Mapping, Optional, Sequence
 
 from src.analyst import packet as packet_mod
-from src.analyst.analyst import TAKE_PRICE_FLOOR
+from src.analyst.analyst import TAKE_PRICE_FLOOR, is_mlb_packet
 from src.core import odds as odds_math
 from src.data import labels
 
@@ -368,6 +368,43 @@ def _implied(price: Any) -> Optional[float]:
         return None
 
 
+def _check_reason(packet: Mapping, where: str, reason: Any, pool: NumberPool,
+                  known: KnownNames, problems: list, *, required: bool) -> int:
+    """Every problem with one {claim, evidence} (a reason, or a case against), appended to
+    `problems`. `required` also demands a non-empty claim (a case against; a reason has never
+    been held to that, and the UFC critic shares this routine). Returns how many evidence items it cited. The one routine both are checked by,
+    so a case against is held to exactly the standard a reason is."""
+    if not isinstance(reason, Mapping):
+        problems.append(f"{where} is not a claim with evidence")
+        return 0
+    claim = reason.get("claim")
+    claim = claim if isinstance(claim, str) else ""
+    evidence = reason.get("evidence") or []
+    if required and not claim.strip():
+        problems.append(f"{where} has no claim")
+    if not evidence:
+        problems.append(f"{where} cites no packet path")
+    for k, ev in enumerate(evidence):
+        ok, found = packet_mod.resolve_path(packet, ev.get("path"))
+        if not ok:
+            problems.append(f"{where}.evidence[{k}]: {ev.get('path')!r}: {found}")
+            continue
+        if isinstance(found, (dict, list)):
+            problems.append(f"{where}.evidence[{k}]: {ev.get('path')!r} is a group, "
+                            "not a single value")
+            continue
+        if not values_match(ev.get("value"), found):
+            problems.append(f"{where}.evidence[{k}]: {ev.get('path')!r} holds {found!r}, "
+                            f"not {ev.get('value')!r}")
+    for lit in unsupported_numbers(claim, pool):
+        problems.append(f"{where} quotes {lit}, which is not a number in the packet")
+    for word in banned_words(claim):
+        problems.append(f"{where} uses the banned word {word!r}")
+    for run in unsupported_names(claim, known):
+        problems.append(f"{where} names {run!r}, which is not a name in the packet")
+    return len(evidence)
+
+
 def check_call(packet: Mapping, call: Mapping, pool: NumberPool,
                known: Optional[KnownNames] = None) -> CallCheck:
     """Every deterministic problem with one call. Empty `problems` = verified."""
@@ -430,29 +467,17 @@ def check_call(packet: Mapping, call: Mapping, pool: NumberPool,
     reasons = call.get("reasons") or []
     n_evidence = 0
     for j, reason in enumerate(reasons):
-        claim = reason.get("claim", "")
-        evidence = reason.get("evidence") or []
-        if not evidence:
-            p.append(f"reasons[{j}] cites no packet path")
-        n_evidence += len(evidence)
-        for k, ev in enumerate(evidence):
-            ok, found = packet_mod.resolve_path(packet, ev.get("path"))
-            if not ok:
-                p.append(f"reasons[{j}].evidence[{k}]: {ev.get('path')!r}: {found}")
-                continue
-            if isinstance(found, (dict, list)):
-                p.append(f"reasons[{j}].evidence[{k}]: {ev.get('path')!r} is a group, "
-                         "not a single value")
-                continue
-            if not values_match(ev.get("value"), found):
-                p.append(f"reasons[{j}].evidence[{k}]: {ev.get('path')!r} holds {found!r}, "
-                         f"not {ev.get('value')!r}")
-        for lit in unsupported_numbers(claim, pool):
-            p.append(f"reasons[{j}] quotes {lit}, which is not a number in the packet")
-        for word in banned_words(claim):
-            p.append(f"reasons[{j}] uses the banned word {word!r}")
-        for run in unsupported_names(claim, known):
-            p.append(f"reasons[{j}] names {run!r}, which is not a name in the packet")
+        n_evidence += _check_reason(packet, f"reasons[{j}]", reason, pool, known, p, required=False)
+    if is_mlb_packet(packet):
+        # Prompt v2: a bet is published with the strongest reason it loses, checked exactly as a
+        # reason is. A PASS carries none (and publishes none, see `verify`).
+        if takes:
+            against = call.get("case_against")
+            if against is None:
+                p.append("a TAKE needs a case_against: the strongest reason from the packet that "
+                         "this bet loses")
+            else:
+                _check_reason(packet, "case_against", against, pool, known, p, required=True)
     for text_key in ("what_would_change_it",):
         text = call.get(text_key) or ""
         for lit in unsupported_numbers(text, pool):
@@ -507,7 +532,7 @@ def _struck_call(packet: Mapping, call: Mapping, problems: Sequence[str]) -> dic
     price, book = call.get("price"), call.get("book")
     if not packet_mod.has_quote(packet, sid, selection, book, price):
         price = book = None
-    return {
+    out = {
         "slot_id": sid, "market": market["market"], "selection": selection,
         "verdict": "PASS", "price": price, "book": book, "fair_estimate": None,
         "confidence": "low",
@@ -520,6 +545,9 @@ def _struck_call(packet: Mapping, call: Mapping, problems: Sequence[str]) -> dic
         # was struck. The detail is in the ledger row's `struck` audit trail.
         "verification": {"status": UNVERIFIED, "problems": []},
     }
+    if is_mlb_packet(packet):
+        out["case_against"] = None
+    return out
 
 
 def verify(packet: Mapping, output: Mapping, *,
@@ -562,6 +590,9 @@ def verify(packet: Mapping, output: Mapping, *,
         kept = {k: call[k] for k in ("slot_id", "market", "selection", "verdict", "price",
                                      "book", "fair_estimate", "confidence", "reasons",
                                      "pass_price", "what_would_change_it")}
+        if is_mlb_packet(packet):
+            # a PASS publishes no case against whatever the model sent: nothing unchecked is shown
+            kept["case_against"] = call.get("case_against") if call["verdict"] != "PASS" else None
         kept["verification"] = {"status": "verified", "problems": []}
         if check.downgrades:
             kept["confidence"] = _lower(kept["confidence"])
