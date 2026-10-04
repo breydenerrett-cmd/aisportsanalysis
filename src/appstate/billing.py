@@ -43,6 +43,7 @@ from typing import Callable, Dict, List, Mapping, Optional, Protocol
 
 from src.appstate import customers
 from src.appstate import events
+from src.appstate import reqlog
 from src.appstate import tester_upgrade
 from src.appstate import users as users_store
 
@@ -902,6 +903,11 @@ class StripeBillingProvider:
                                 or current.current_period_end))
 
 
+# Stripe statuses that mean a charge was attempted and not paid. Their events
+# carry the period Stripe tried to bill, which must never become access.
+FAILED_PAYMENT_STATUSES = frozenset({"past_due", "unpaid", "incomplete", "incomplete_expired"})
+
+
 def _normalize_subscription_status(raw_status: Optional[str]) -> str:
     """Stripe's own subscription-status vocabulary (active, trialing,
     past_due, unpaid, incomplete, incomplete_expired, canceled, paused,
@@ -1028,6 +1034,12 @@ def apply_stripe_webhook_event(event: dict, *, db: Optional[Path] = None) -> Non
         honest-but-incomplete guess below) until something else happened
         to trigger an `.updated`, which could be days later or never.
 
+      - A failed charge (status past_due / unpaid / incomplete /
+        incomplete_expired, FAILED_PAYMENT_STATUSES) never moves the
+        recorded period end forward: access ends where the paid period (or
+        free trial) ended. `invoice.payment_failed` is acknowledged and
+        logged, and changes nothing by itself.
+
       - checkout.session.completed records the new subscription as
         "active" (not "trialing") when one was created, even for a trial
         checkout -- a checkout.session object carries no expanded
@@ -1106,12 +1118,76 @@ def apply_stripe_webhook_event(event: dict, *, db: Optional[Path] = None) -> Non
         user_id = customers.get_user_id_by_customer_ref(customer_id, db=db)
         if user_id is None:
             return
-        status = ("canceled" if event_type == "customer.subscription.deleted"
-                  else _normalize_subscription_status(obj.get("status")))
+        deleted = event_type == "customer.subscription.deleted"
+        status = "canceled" if deleted else _normalize_subscription_status(obj.get("status"))
+        period_end = _epoch_to_iso(subscription_period_end(obj))
+        recorded = customers.get_subscription_record(user_id, db=db) or {}
+        known = recorded
+        if known.get("stripe_subscription_id") != subscription_id:
+            known = {}   # a resubscribed customer's old period says nothing about this one
+        if not deleted and obj.get("status") in FAILED_PAYMENT_STATUSES:
+            if recorded and not known and customers.has_paid_access(user_id, db=db):
+                # A DIFFERENT subscription that failed (a second one stuck at
+                # `incomplete`, say) says nothing about the paid time still
+                # left on the recorded one; writing it would wipe that.
+                # Its own `active` event overwrites normally once it is paid.
+                return
+            # A declined charge pays for nothing. Stripe has already moved
+            # `current_period_end` to the period it TRIED to bill, and
+            # recording that next to a not-paying status would read as a
+            # cancelled customer inside a paid period -- a free month. Keep
+            # the end already on record (the paid period, or the trial that
+            # was free); with none on record there is no paid period to
+            # honour, and absent stays absent.
+            period_end = known.get("current_period_end")
+        elif status in customers.PAID_STATUSES and known and \
+                known.get("status") not in customers.PAID_STATUSES:
+            # Stripe delivers at least once and does not order events, so a
+            # pre-failure `active`/`trialing` can arrive AFTER the failure
+            # was recorded. A real recovery always carries a period end
+            # beyond the paid one still on record (the retried invoice
+            # covers the new period); one that does not is a stale event and
+            # must not turn access back on. Only once the recorded end has
+            # passed, though: while time is still on the record the customer
+            # has access either way, an equal-end paid event grants nothing
+            # extra, and it may be a genuine recovery from a decline that did
+            # not move the end (a failed mid-period invoice, then a fixed
+            # card) -- dropping it would strand a paying customer as
+            # "canceled" with a hard expiry.
+            recorded_end = customers._parse_iso(known.get("current_period_end"))
+            incoming_end = customers._parse_iso(period_end)
+            if (recorded_end and incoming_end and incoming_end <= recorded_end
+                    and recorded_end <= datetime.now(timezone.utc)):
+                return
         customers.upsert_subscription(
             user_id, subscription_id, status,
             cancel_at=_epoch_to_iso(obj.get("cancel_at")),
-            current_period_end=_epoch_to_iso(subscription_period_end(obj)), db=db)
+            current_period_end=period_end, db=db)
+    elif event_type == "invoice.payment_failed":
+        # Acknowledged and logged, never acted on: the subscription event
+        # that follows carries the status, and access is decided from that
+        # (see FAILED_PAYMENT_STATUSES). One grep-able line per decline, no
+        # card data, for the staging rehearsal and the operator. `user` is the
+        # same hashed reference the request log prints (reqlog.user_ref), so
+        # the two correlate and no log line names a raw account id.
+        customer_ref = obj.get("customer")
+        user_id = (customers.get_user_id_by_customer_ref(customer_ref, db=db)
+                   if isinstance(customer_ref, str) and customer_ref else None)
+        print(f"billing: invoice.payment_failed user={reqlog.user_ref(user_id) or '-'} "
+              f"subscription={_log_text(obj.get('subscription'))} "
+              f"attempt={_log_text(obj.get('attempt_count'))}", file=sys.stderr, flush=True)
+
+
+# Longest webhook-supplied field a log line will carry.
+LOG_FIELD_MAX_CHARS = 80
+
+
+def _log_text(value: object) -> str:
+    """A webhook field as one log token: `repr()` of a length-capped string,
+    so a newline or odd shape in the payload can never start a second line."""
+    if value is None or value == "":
+        return "-"
+    return repr(str(value)[:LOG_FIELD_MAX_CHARS])
 
 
 def _epoch_to_iso(epoch: object) -> Optional[str]:
