@@ -23,7 +23,7 @@ class TheDocQuotesTheCode(unittest.TestCase):
         self.assertIn(A.PROMPT_VERSION, DOC)
 
     def test_the_schema_in_the_doc_is_the_schema_in_the_code(self):
-        self.assertIn(json.dumps(A.RESPONSE_SCHEMA, indent=2), DOC)
+        self.assertIn(json.dumps(A.MLB_RESPONSE_SCHEMA, indent=2), DOC)
 
     def test_the_cost_numbers_in_the_doc_are_the_configs(self):
         from src.analyst import config

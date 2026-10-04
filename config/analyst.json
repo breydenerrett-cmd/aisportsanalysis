@@ -15,5 +15,6 @@
   "lock_lead_minutes": 0,
   "model_critic": {"enabled": false, "model": "claude-sonnet-5-5", "max_output_tokens": 4000},
   "min_graded_for_rates": 30,
-  "situation_arm": {"enabled": false}
+  "situation_arm": {"enabled": false},
+  "pilot": {"max_packet_age_minutes": 90}
 }

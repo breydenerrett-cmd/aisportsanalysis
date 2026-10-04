@@ -33,3 +33,10 @@ situation layer (src/situation/), frozen into its own ledgers, off unless config
 
 LABEL = ("Written by an AI model from the data on this page. Unproven. "
          "Analysis, not advice.")
+
+# The label on a brief written in a supervised session (src/analyst/pilot.py): a person ran a Claude
+# session, which wrote the answer from the exact request the API would have been sent, and the same
+# validation, checker and ledger published it. The words say who wrote it and how, because the
+# difference is the thing a reader should know. Served by the API; the page never writes its own.
+PILOT_LABEL = ("Written by an AI model in a supervised session, from the data frozen before the game. "
+               "Unproven. Analysis, not advice.")

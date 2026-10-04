@@ -11,6 +11,11 @@
     compare arm A against arm B (docs/SITUATION_LAYER.md): per sport and market
             family, counts, results, units and calibration, rates withheld under
             30 graded calls. Reads two ledgers, calls nothing, costs nothing.
+    pilot   prepare | check | publish: the supervised-session path (src/analyst/pilot.py).
+            A Claude session writes the answer from the exact request the API would be
+            sent; the same validation, checker and ledger publish it, into SEPARATE pilot
+            stores, labelled as written in a supervised session. `grade` and `record`
+            also cover the pilot's rows (under their own heading) once its store exists.
 
 `--sport ufc` (run, grade and record all take it; `--sport mlb` is the default and is
 everything in this file) hands the same arguments to `ufc_cli.py`: the UFC analyst has its
@@ -108,6 +113,29 @@ def add_parser(sub) -> None:
     record = inner.add_parser("record", help="the record by market family, daily cost, ledger integrity")
     record.add_argument("--sport", choices=SPORTS, default="mlb", help="mlb (default) or ufc")
     record.add_argument("--arm", choices=("A", "B"), default="A", help="which arm's record to print (default A)")
+    pilot = inner.add_parser("pilot", help="the supervised-session pilot: prepare, check, publish "
+                                           "(MLB only; its own stores)")
+    pilot_sub = pilot.add_subparsers(dest="pilot_command", required=True)
+    prep = pilot_sub.add_parser("prepare", help="build the packet and the exact request for one game")
+    prep.add_argument("--date", required=True, help="YYYY-MM-DD")
+    prep.add_argument("--game", required=True, help="AWAY@HOME (e.g. NYY@TB)")
+    prep.add_argument("--scratch", default=None,
+                      help="write to this folder instead and mark it a rehearsal (it can be checked, "
+                           "never published)")
+    chk = pilot_sub.add_parser("check", help="validate and run the checker on a response; publishes nothing")
+    chk.add_argument("--dir", required=True, help="the prepared folder")
+    chk.add_argument("--response", required=True, help="the JSON answer the session wrote")
+    pub = pilot_sub.add_parser("publish", help="freeze a response into the pilot ledger")
+    pub.add_argument("--dir", required=True, help="the prepared folder")
+    pub.add_argument("--response", required=True, help="the JSON answer the session wrote")
+    pub.add_argument("--model", required=True, help="the model that wrote the answer, as the session names it")
+    pub.add_argument("--tokens-in", dest="tokens_in", type=int, default=None)
+    pub.add_argument("--tokens-out", dest="tokens_out", type=int, default=None)
+    pub.add_argument("--seconds", type=float, default=None, help="how long the answer took")
+    pub.add_argument("--operator-minutes", dest="operator_minutes", type=float, default=None,
+                     help="operator time spent on this game")
+    pub.add_argument("--refresh", action="store_true",
+                     help="publish a new version of a game that already has a pilot row")
     compare = inner.add_parser("compare", help="arm A against arm B, by sport and market family")
     compare.add_argument("--sport", choices=("mlb", "ufc", "all"), default="all")
     compare.add_argument("--json", dest="as_json", action="store_true", help="print the report as JSON")
@@ -412,12 +440,23 @@ def default_results(date: str) -> tuple:
     return by_pk, [r for r in box if str(r.get("date")) == date]
 
 
+def _pilot_store(store_path: Optional[str], pilot_store: Optional[str]) -> Optional[str]:
+    """The pilot's store when it exists, else None. An injected main store (a test, a rehearsal)
+    means the real pilot store is left alone unless one was injected too."""
+    if pilot_store is None and store_path is not None:
+        return None
+    from src.analyst import pilot
+    target = pilot_store or pilot.store_paths()["store"]
+    return target if Path(target).exists() else None
+
+
 def execute_grade(date: str, *, results: Optional[Callable] = None,
                   now: Optional[Callable] = None, out: Callable = print,
                   store_path: Optional[str] = None, arm: Optional[str] = None,
-                  arm_b_store: Optional[str] = None) -> int:
+                  arm_b_store: Optional[str] = None, pilot_store: Optional[str] = None) -> int:
     """Grade a date. Arm A always (unless `arm` is B); arm B too when asked for or when its ledger
-    exists: grading costs nothing and an arm that is not graded is an arm that cannot be compared."""
+    exists: grading costs nothing and an arm that is not graded is an arm that cannot be compared.
+    The supervised-session pilot's rows are graded too once its store exists (same code, its own file)."""
     by_pk, box = (results or default_results)(date)
     clock = (now or _now)()
     b_store = arm_b_store or situation_arm.mlb_arm(situation_arm.ARM_B).abs_store()
@@ -432,20 +471,18 @@ def execute_grade(date: str, *, results: Optional[Callable] = None,
             f"complete={counts['complete']} unchanged={counts['unchanged']}")
         for note in counts["notes"]:
             out(f"  {note}")
+    pilot_path = _pilot_store(store_path, pilot_store) if arm != "B" else None
+    if pilot_path:
+        counts = ledger.grade_date(date, by_pk, box, now=clock, path=pilot_path)
+        out(f"analyst grade {date} [pilot]: published={counts['published']} graded={counts['graded']} "
+            f"complete={counts['complete']} unchanged={counts['unchanged']}")
+        for note in counts["notes"]:
+            out(f"  {note}")
     return EXIT_OK
 
 
-def execute_record(*, out: Callable = print, store_path: Optional[str] = None,
-                   usage_path: Optional[str] = None, cfg: Optional[Mapping] = None,
-                   arm: str = situation_arm.ARM_A) -> int:
-    cfg = dict(cfg) if cfg is not None else config_mod.load()
-    if arm == situation_arm.ARM_B:
-        spec = situation_arm.mlb_arm(arm)
-        store_path = store_path or spec.abs_store()
-        usage_path = usage_path or spec.abs_usage()
-        out("ARM B: the analyst plus the situation layer (docs/SITUATION_LAYER.md)")
-    rec = ledger.record(path=store_path, min_graded=cfg["min_graded_for_rates"])
-    out(rec["label"])
+def _print_record(rec: Mapping, out: Callable, label: Optional[str] = None) -> None:
+    out(label or rec["label"])
     out(f"games published {rec['games_published']}, settled {rec['games_settled']}")
     for name, f in rec["families"].items():
         rate = "withheld" if f["win_rate"] is None else f"{f['win_rate'] * 100:.1f}%"
@@ -453,6 +490,19 @@ def execute_record(*, out: Callable = print, store_path: Optional[str] = None,
             f"passes {f['passes']}, graded {f['graded']} "
             f"(W{f['wins']} L{f['losses']} P{f['pushes']} V{f['voids']}), "
             f"unresolved {f['unresolved']}, win rate {rate}")
+
+
+def execute_record(*, out: Callable = print, store_path: Optional[str] = None,
+                   usage_path: Optional[str] = None, cfg: Optional[Mapping] = None,
+                   arm: str = situation_arm.ARM_A, pilot_store: Optional[str] = None) -> int:
+    cfg = dict(cfg) if cfg is not None else config_mod.load()
+    if arm == situation_arm.ARM_B:
+        spec = situation_arm.mlb_arm(arm)
+        store_path = store_path or spec.abs_store()
+        usage_path = usage_path or spec.abs_usage()
+        out("ARM B: the analyst plus the situation layer (docs/SITUATION_LAYER.md)")
+    rec = ledger.record(path=store_path, min_graded=cfg["min_graded_for_rates"])
+    _print_record(rec, out)
     check = ledger.verify(store_path)
     out(f"ledger: {'OK' if check['ok'] else 'PROBLEM'} ({check['rows']} rows)")
     for problem in check["problems"]:
@@ -464,7 +514,21 @@ def execute_record(*, out: Callable = print, store_path: Optional[str] = None,
             u = usage[day]
             out(f"  {day}: {u['published']}/{u['games']} games published, "
                 f"{u['input_tokens']} in / {u['output_tokens']} out tokens, ${u['cost_usd']:.2f}")
-    return EXIT_OK if check["ok"] else EXIT_ERROR
+    ok = check["ok"]
+    pilot_path = _pilot_store(store_path, pilot_store) if arm == situation_arm.ARM_A else None
+    if pilot_path:
+        # Its own heading, its own chain check, never added to the record above.
+        from src.analyst import PILOT_LABEL
+        out("")
+        out("SUPERVISED-SESSION BRIEFS (a separate record; never added to the one above)")
+        _print_record(ledger.record(path=pilot_path, min_graded=cfg["min_graded_for_rates"]), out,
+                      label=PILOT_LABEL)
+        pcheck = ledger.verify(pilot_path)
+        out(f"pilot ledger: {'OK' if pcheck['ok'] else 'PROBLEM'} ({pcheck['rows']} rows)")
+        for problem in pcheck["problems"]:
+            out(f"  {problem}")
+        ok = ok and pcheck["ok"]
+    return EXIT_OK if ok else EXIT_ERROR
 
 
 def main(args) -> int:
@@ -475,6 +539,15 @@ def main(args) -> int:
     if getattr(args, "sport", "mlb") == "ufc":
         from src.analyst import ufc_cli     # lazy: ufc_cli imports this module
         return ufc_cli.main(args)
+    if args.analyst_command == "pilot":
+        from src.analyst import pilot       # lazy: pilot imports this module
+        if args.pilot_command == "prepare":
+            return pilot.prepare(args.date, args.game, scratch=args.scratch)
+        if args.pilot_command == "check":
+            return pilot.check(args.dir, args.response)
+        return pilot.publish(args.dir, args.response, model=args.model, tokens_in=args.tokens_in,
+                             tokens_out=args.tokens_out, seconds=args.seconds,
+                             operator_minutes=args.operator_minutes, refresh=args.refresh)
     if getattr(args, "event", None):
         print("--event is for --sport ufc; for MLB use --game AWAY@HOME")
         return EXIT_ERROR

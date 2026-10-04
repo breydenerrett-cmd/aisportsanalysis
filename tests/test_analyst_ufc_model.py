@@ -21,6 +21,17 @@ from tests import ufc_analyst_fixtures as F
 # if a rule is added to or changed in the MLB prompt, this test fails until the UFC prompt
 # carries it or this list says, in writing, that it should not.
 REWORDED = {
+    # Rule 13a of MLB prompt v2 (2026-10-03), the required case against. The UFC analyst deliberately
+    # does not carry it: the UFC request, schema, critic and prompt hash are unchanged (the MLB schema
+    # is its own copy, `analyst.MLB_RESPONSE_SCHEMA`), and a UFC case against is a later decision.
+    "13a.",
+    "case_against:",
+    "for a TAKE or a TAKE_OTHER_SIDE, the strongest reason from the packet that this bet loses, written as {claim, evidence} and built like a reason.",
+    "It must name a specific weakness in this bet, such as a number in the packet that points the other way, not general risk:",
+    "\"anything can happen in baseball\" is not a case against.",
+    "Cite at least one packet path, and quote only numbers that are in the packet.",
+    "Argue it as hard as you would argue the other side.",
+    "For a PASS it is null.",
     "You are a baseball betting analyst.",
     "You write the analysis of one MLB game and make a call on every market the packet prices.",
     "Your work is published before the game, graded afterward, and shown next to its record whatever that record turns out to be.",

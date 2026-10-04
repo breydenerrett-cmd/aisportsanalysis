@@ -269,6 +269,73 @@ class TheAnalystRendersUnderNode(unittest.TestCase):
         out = self.render("section", view([call("moneyline", "PASS", "moneyline", price=None, book=None)]))
         self.assertIn("No price named", out["calls"][0]["price"])
 
+    # ---- the case against, what was missing, the pilot's label ------------
+
+    def test_each_take_shows_the_case_against_under_its_reasons_and_a_pass_shows_none(self):
+        against = {"claim": "The home starter has the lower ERA.", "evidence": []}
+        out = self.render("section", view([
+            call("moneyline", "TAKE_OTHER_SIDE", "moneyline", case_against=against),
+            call("run_line", "TAKE", "run_line", case_against=against),
+            call("total", "PASS", "total", case_against=None)]))
+        take, other, passed = out["calls"]
+        for c in (take, other):
+            self.assertIn("The case against", c["text"])
+            self.assertIn("The home starter has the lower ERA.", c["text"])
+            self.assertLess(c["text"].index("The books make the home side"), c["text"].index("The case against"))
+        self.assertNotIn("The case against", passed["text"])
+        self.assertEqual(out["hooks"].count("analyst-case-against"), 2)
+
+    def test_the_case_against_is_drawn_in_the_reasons_own_list_style(self):
+        out = self.render("section", view([call("moneyline", "TAKE", "moneyline",
+                                                case_against={"claim": "A weakness.", "evidence": []})]))
+        c = out["calls"][0]
+        self.assertEqual(c["reasons"], ["The books make the home side the favourite.",
+                                        "The starters are closer than the price suggests.", "A weakness."])
+
+    def test_a_row_without_a_case_against_and_a_struck_call_draw_none(self):
+        struck = call("moneyline", "PASS", "moneyline",
+                      case_against={"claim": "Should never show.", "evidence": []},
+                      reasons=[{"claim": "Could not be verified.", "evidence": []}],
+                      verification={"status": "could not be verified", "problems": []})
+        old = call("run_line", "TAKE", "run_line")
+        out = self.render("section", view([struck, old]))
+        self.assertNotIn("The case against", out["text"])
+        self.assertNotIn("Should never show.", out["text"])
+
+    def test_what_the_analysis_could_not_use_is_listed_after_the_calls(self):
+        missing = [{"item": "lineups", "kind": "absent", "reason": "lineup not posted yet"},
+                   {"item": "bullpen", "kind": "absent", "reason": "no reliever appearances recorded"}]
+        out = self.render("section", view([call("moneyline", "TAKE", "moneyline")], missing=missing))
+        self.assertIn("What the analysis could not use", out["text"])
+        self.assertIn("Lineup not posted yet.", out["text"])
+        self.assertIn("No reliever appearances recorded.", out["text"])
+        self.assertLess(out["hooks"].index("analyst-call"), out["hooks"].index("analyst-missing"))
+        self.assertNotIn("analyst-missing-more", out["hooks"])
+
+    def test_a_long_missing_list_is_capped_with_a_count(self):
+        missing = [{"item": f"x{i}", "kind": "absent", "reason": f"input {i} is absent"} for i in range(9)]
+        out = self.render("section", view([call("moneyline", "TAKE", "moneyline")], missing=missing))
+        self.assertIn("Input 5 is absent.", out["text"])
+        self.assertNotIn("Input 6 is absent.", out["text"])
+        self.assertIn("And 3 more items not listed here.", out["text"])
+
+    def test_an_empty_list_says_nothing_was_missing_and_an_unread_one_says_nothing_at_all(self):
+        empty = self.render("section", view([call("moneyline", "TAKE", "moneyline")], missing=[]))
+        self.assertIn("Nothing the data was expected to hold was missing.", empty["text"])
+        unread = self.render("section", view([call("moneyline", "TAKE", "moneyline")], missing=None))
+        self.assertNotIn("What the analysis could not use", unread["text"])
+        self.assertNotIn("analyst-missing", unread["hooks"])
+
+    def test_the_pilots_label_is_printed_as_the_server_sent_it(self):
+        pilot_label = ("Written by an AI model in a supervised session, from the data frozen before the game. "
+                       "Unproven. Analysis, not advice.")
+        data = view([call("moneyline", "TAKE", "moneyline")])
+        data["label"] = pilot_label
+        out = self.render("section", data)
+        self.assertEqual(out["firstParagraph"], pilot_label)
+        self.assertEqual(out["labelCount"], 1)
+        self.assertNotIn(LABEL, out["text"])
+
     # ---- the record ------------------------------------------------------
 
     def record(self, **fams):
@@ -316,6 +383,42 @@ class TheAnalystRendersUnderNode(unittest.TestCase):
         out = self.render("record", data)
         self.assertIn("BOS at NYM, BOS at +120 — Won", out["text"])
         self.assertIn("Pete Alonso Over 0.5 at -130 — Lost", out["text"])
+
+    def test_the_pilot_record_is_its_own_block_under_its_own_heading(self):
+        pilot_label = "Written in a supervised session. Unproven. Analysis, not advice."
+        data = self.record()
+        data["pilot"] = dict(self.record(moneyline=family(taken=3, passes=2, graded=1, wins=1)),
+                             label=pilot_label, games_published=2, games_settled=1)
+        out = self.render("record", data)
+        self.assertIn("analyst-pilot-record", out["hooks"])
+        self.assertIn("Supervised-session briefs", out["text"])
+        self.assertIn(pilot_label, out["text"])
+        self.assertIn("2 games briefed so far, 1 fully settled.", out["text"])
+        self.assertIn("counted apart from the analyst record above", out["text"])
+        # the main table keeps its own five rows and the pilot's five follow it, never merged
+        self.assertEqual(len(out["rows"]), 10)
+        self.assertEqual(out["rows"][0]["cells"][1], "0")
+        self.assertEqual(out["rows"][5]["cells"][1], "3")
+        self.assertLess(out["text"].index("AI ANALYST RECORD"), out["text"].index("Supervised-session briefs"))
+
+    def test_without_a_pilot_block_the_record_is_what_it_was(self):
+        absent = self.record()
+        null = dict(self.record(), pilot=None)
+        for data in (absent, null):
+            out = self.render("record", data)
+            self.assertNotIn("analyst-pilot-record", out["hooks"])
+            self.assertNotIn("Supervised-session briefs", out["text"])
+            self.assertEqual(len(out["rows"]), 5)
+
+    def test_the_pilot_record_withholds_rates_under_thirty_graded_calls_too(self):
+        data = self.record()
+        data["pilot"] = dict(self.record(moneyline=family(taken=14, graded=14, wins=9, losses=5,
+                                                          reason="fewer than 30 graded calls (14 so far)")),
+                             label="x. Unproven.")
+        out = self.render("record", data)
+        row = out["rows"][5]
+        self.assertTrue(row["withheld"])
+        self.assertFalse(row["hasRate"])
 
 
 if __name__ == "__main__":

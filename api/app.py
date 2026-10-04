@@ -35,6 +35,7 @@ from api.daily import router as daily_router
 from api.games import router as games_router
 from api.card import public_router as card_public_router, router as card_router
 from api.analyst import public_router as analyst_public_router, router as analyst_router
+from api.sample import public_router as sample_public_router
 from api.analyst_ufc import (public_router as analyst_ufc_public_router,
                              router as analyst_ufc_router)
 from api.opportunities import router as opportunities_router
@@ -104,6 +105,9 @@ app.include_router(card_public_router)
 # mounted BEFORE the paid /analyst/{date}/{away}/{home} so "record" is never
 # captured as a date. Counts only; never an unsettled game's analysis.
 app.include_router(analyst_public_router)
+# /sample/brief -- ONE designated game's supervised-session brief (config/sample_brief.json), PUBLIC
+# and rate-limited like /analyst/record; serves only that game's pilot row, or available: false.
+app.include_router(sample_public_router)
 # /analyst/{date}/{away}/{home} -- one game's published AI analysis, read from
 # the ledger (never the model), same paid-demo gate as /game/...
 app.include_router(analyst_router, dependencies=_authed_paid)

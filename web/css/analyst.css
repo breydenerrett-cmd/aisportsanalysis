@@ -99,3 +99,33 @@
 @media (max-width: 640px) {
   .an-rec__table { display: block; overflow-x: auto; }
 }
+
+/* THE CASE AGAINST sits under a take's reasons in the same type and the same
+   list style: a reader weighs both, so neither is dressed up. */
+.an-call__against { margin-top: var(--sp-5); }
+.an-call__against-head {
+  margin: 0;
+  font-family: var(--font-display); font-size: 12.5px; font-weight: 800;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--v-t4);
+}
+
+/* WHAT THE ANALYSIS COULD NOT USE: the packet's own list of holes. */
+.an-missing { margin-top: var(--sp-9); }
+.an-missing__list {
+  margin: 0; padding: 0 0 0 var(--sp-6);
+  display: grid; gap: var(--sp-2); font-size: 14.5px; line-height: 1.5; color: var(--v-t3);
+}
+.an-missing__more { margin: var(--sp-3) 0 0; font-size: 13.5px; color: var(--v-t5); }
+
+/* The supervised-session briefs' record, under the analyst's own. */
+.an-rec--pilot { margin-top: var(--sp-9); }
+
+/* THE PUBLIC SAMPLE PAGE (web/sample.html). One column, the analyst section
+   unchanged, a facts strip and an offer line. */
+.sp-page { margin: 0 auto; max-width: 760px; padding: var(--sp-8) 16px var(--sp-9); }
+.sp-intro { margin: 0 0 var(--sp-6); font-size: 15px; line-height: 1.55; color: var(--v-t3); max-width: 640px; }
+.sp-facts { display: grid; gap: var(--sp-2); margin: 0 0 var(--sp-7); padding: 0;
+  list-style: none; font-family: var(--font-mono); font-size: 13.5px; color: var(--v-t4); }
+.sp-links { display: flex; gap: var(--sp-7); flex-wrap: wrap; margin: var(--sp-8) 0 var(--sp-6); font-size: 15px; }
+.sp-links a { color: var(--v-t1); }
+.sp-offer { margin: 0; max-width: 640px; font-size: 14.5px; line-height: 1.55; color: var(--v-t4); }
