@@ -32,7 +32,13 @@ and never by a period Stripe merely announced:
 
   1. Access runs to the stored PAID-THROUGH instant
      (billing_subscriptions.paid_through) and to nothing else. After it a
-     customer is not entitled until a paid renewal arrives.
+     customer is not entitled until a paid renewal arrives. The one bounded
+     exception is a RENEWAL GRACE (customers.RENEWAL_GRACE_SECONDS, 6 hours,
+     the owner can set it to 0): a subscription still `active`/`trialing`, not
+     scheduled to cancel, with no failed payment recorded keeps access that
+     long past paid-through, because Stripe creates the renewal invoice at the
+     boundary and charges it about an hour later. A scheduled cancel, a failed
+     payment (`past_due`, `unpaid`, ...) and a deleted subscription get none.
   2. Only evidence moves it, and only LATER: a paid invoice
      (`invoice.paid` / `invoice.payment_succeeded`) moves it to the end of the
      period that invoice bought (its line period end); a `trialing`
@@ -42,7 +48,9 @@ and never by a period Stripe merely announced:
      the first invoice is paid). A `customer.subscription.updated` that only
      announces a new `current_period_end` while `active` grants nothing, and
      neither does `checkout.session.completed`, which carries no period: it
-     links the buyer and the first paid invoice grants.
+     links the buyer and the first paid invoice grants. Evidence is clamped to
+     MAX_EVIDENCE_DAYS (400) past the event's own time, so an absurd invoice
+     line cannot make access permanent.
   3. A failed charge (`past_due`, `unpaid`, `incomplete`, ...) moves nothing,
      in either direction: what was paid for stays theirs to the paid-through
      instant, and the period Stripe tried to bill is never granted.
@@ -61,15 +69,18 @@ and never by a period Stripe merely announced:
      runs to paid-through). `customer.subscription.deleted` ends access at the
      paid-through instant -- not earlier (a deleted event's own period end does
      not cut paid time short) and not later (it does not extend it).
-  6. A customer recorded before this rule existed keeps the period end already
+  6. The handler never raises on a signed body of an odd shape: anything that
+     is not the expected type is treated as absent (apply_stripe_webhook_event)
+     and the route answers 200.
+  7. A customer recorded before this rule existed keeps the period end already
      on their row as their paid-through (customers._add_paid_through_columns),
      so nobody loses access on deploy.
 
 If the webhook endpoint is NOT sent the invoice events, no renewal is ever
 granted (the safe failure): a customer's first period still opens through
 `customer.subscription.created`, and access then lapses at paid-through. The
-owner sees it as paying customers losing access exactly one period after they
-bought, with no `invoice.paid` lines in the Stripe webhook delivery log
+owner sees it as paying customers losing access one period (plus the grace)
+after they bought, with no `invoice.paid` lines in the Stripe webhook delivery log
 (docs/billing/PURCHASE_REHEARSAL.md).
 """
 
@@ -402,8 +413,9 @@ def subscription_period_end(obj) -> object:
     if top is not None:
         return top
     ends = []
-    for item in ((obj.get("items") or {}).get("data") or []):
-        value = (item or {}).get("current_period_end")
+    items = _dig(obj, "items", "data")
+    for item in (items if isinstance(items, list) else []):
+        value = item.get("current_period_end") if isinstance(item, dict) else None
         try:
             ends.append(int(value))
         except (TypeError, ValueError):
@@ -1038,8 +1050,47 @@ def verify_stripe_webhook_signature(payload: bytes, sig_header: Optional[str], s
 def _int_or_none(value: object) -> Optional[int]:
     try:
         return int(value)  # type: ignore[arg-type]
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, OverflowError):
         return None
+
+
+# The largest Stripe-side time (unix seconds) and database id this module
+# will act on. Far above any real value (year 5138) and far below what sqlite's
+# INTEGER or datetime can choke on: a signed body is only proof of ORIGIN, and
+# an out-of-range number must be ignored, never raised out of the webhook.
+MAX_EVENT_EPOCH = 10 ** 11
+MAX_DB_ID = 2 ** 62
+
+# The furthest past an event's own time that payment (or trial) evidence may
+# move paid-through: a bit over the longest plan (annual) plus slack. A paid
+# invoice line that ends decades out (a hand-made invoice item, a dashboard
+# typo) would otherwise make access permanent, and paid-through only grows.
+MAX_EVIDENCE_DAYS = 400
+
+
+def _epoch_in_range(value: object) -> Optional[int]:
+    """A Stripe unix time as an int, or None when absent, malformed, negative
+    or beyond MAX_EVENT_EPOCH."""
+    parsed = _int_or_none(value)
+    return parsed if parsed is not None and 0 <= parsed <= MAX_EVENT_EPOCH else None
+
+
+def _str_or_none(value: object) -> Optional[str]:
+    """`value` only if it is a non-empty str: an id that arrived as an object
+    or a list is not an id."""
+    return value if isinstance(value, str) and value else None
+
+
+def _clamp_evidence(end_iso: Optional[str], at: Optional[int]) -> Optional[str]:
+    """`end_iso` limited to MAX_EVIDENCE_DAYS past the event's own time (the
+    moment of arrival when the event carries none)."""
+    end = customers._parse_iso(end_iso)
+    if end is None:
+        return None
+    base = (datetime.fromtimestamp(at, tz=timezone.utc) if at is not None
+            else datetime.now(timezone.utc))
+    ceiling = base + timedelta(days=MAX_EVIDENCE_DAYS)
+    return (ceiling if end > ceiling else end).isoformat()
 
 
 def _dig(value: object, *keys: str) -> object:
@@ -1092,7 +1143,8 @@ def _invoice_subscription_id(obj: dict) -> Optional[str]:
     return None
 
 
-def _invoice_paid_through(obj: dict, subscription_id: str) -> Optional[str]:
+def _invoice_paid_through(obj: dict, subscription_id: str,
+                          at: Optional[int] = None) -> Optional[str]:
     """EVIDENCE OF PAYMENT: the end of the period a PAID invoice bought, as an
     ISO instant, or None when the invoice is not paid or names no period.
 
@@ -1122,7 +1174,7 @@ def _invoice_paid_through(obj: dict, subscription_id: str) -> Optional[str]:
         end = _int_or_none(_dig(line, "period", "end"))
         if end is not None:
             ends.append(end)
-    return _epoch_to_iso(max(ends)) if ends else None
+    return _clamp_evidence(_epoch_to_iso(max(ends)), at) if ends else None
 
 
 def _relation(record: Optional[dict], subscription_id: str,
@@ -1169,6 +1221,7 @@ def _decide_subscription_event(record: Optional[dict], *, event_type: str,
             evidence = announced_end    # Stripe reports a NEW subscription active only once paid
     if sub_created is None and kind == "created":
         sub_created = at
+    evidence = _clamp_evidence(evidence, at)
     relation = _relation(record, subscription_id, sub_created)
     held_paid = record["paid_through"] if record else None
     paid_through = _later_iso(held_paid, evidence)
@@ -1183,12 +1236,17 @@ def _decide_subscription_event(record: Optional[dict], *, event_type: str,
     if relation in ("none", "newer", "unknown"):
         # A new subscription becomes the record. What the old one had paid
         # for travels with it: a second subscription stuck at `incomplete`
-        # must not wipe time the customer paid for.
+        # must not wipe time the customer paid for. The renewal grace does
+        # not travel unless the old row had it, and new payment clears it.
+        blocked = 1 if failure or deleted else customers.carry_grace_block(record)
+        if paid_through != held_paid:
+            blocked = 1 if failure or deleted else 0
         return {"stripe_subscription_id": subscription_id, "status": status,
                 "cancel_at": cancel_at,
                 "current_period_end": None if failure else announced_end,
                 "paid_through": paid_through, "sub_created_at": sub_created,
-                "snapshot_at": at, "paid_at": at if evidence else None}
+                "snapshot_at": at, "paid_at": at if evidence else None,
+                "grace_blocked": blocked}
 
     state = dict(record)
     state["paid_through"] = paid_through
@@ -1204,6 +1262,15 @@ def _decide_subscription_event(record: Optional[dict], *, event_type: str,
             and _not_older(at, record["snapshot_at"])
     else:
         fresh = _not_older(at, record["snapshot_at"])
+    # Payment newer than the last failure or deletion lifts the grace block;
+    # a failure or deletion that is itself fresh sets it. A bare `active`
+    # announcement does neither: it is not payment.
+    blocked = record["grace_blocked"] or 0
+    if paid_through != held_paid and _not_older(at, record["snapshot_at"]):
+        blocked = 0
+    if fresh and (failure or deleted):
+        blocked = 1
+    state["grace_blocked"] = blocked
     if fresh:
         state.update(
             status=status, cancel_at=cancel_at,
@@ -1227,11 +1294,13 @@ def _decide_invoice_paid(record: Optional[dict], *, subscription_id: str,
         return {"stripe_subscription_id": subscription_id, "status": "active",
                 "cancel_at": None, "current_period_end": paid_through,
                 "paid_through": paid_through, "sub_created_at": None,
-                "snapshot_at": None, "paid_at": at}
+                "snapshot_at": None, "paid_at": at, "grace_blocked": 0}
     state = dict(record)
     state["paid_through"] = _later_iso(record["paid_through"], paid_through)
     if record["stripe_subscription_id"] != subscription_id:
         return state
+    if state["paid_through"] != record["paid_through"] and _not_older(at, record["snapshot_at"]):
+        state["grace_blocked"] = 0      # a payment newer than the failure answers it
     state["paid_at"] = _max_known(record["paid_at"], at)
     state["current_period_end"] = _later_iso(record["current_period_end"], paid_through)
     if record["status"] not in customers.PAID_STATUSES and _not_older(at, record["snapshot_at"]):
@@ -1253,7 +1322,8 @@ def _decide_checkout_completed(record: Optional[dict], *, subscription_id: str,
     return {"stripe_subscription_id": subscription_id, "status": status,
             "cancel_at": None, "current_period_end": None,
             "paid_through": record["paid_through"] if record else None,
-            "sub_created_at": created, "snapshot_at": None, "paid_at": None}
+            "sub_created_at": created, "snapshot_at": None, "paid_at": None,
+            "grace_blocked": customers.carry_grace_block(record)}
 
 
 def apply_stripe_webhook_event(event: dict, *, db: Optional[Path] = None) -> None:
@@ -1300,18 +1370,27 @@ def apply_stripe_webhook_event(event: dict, *, db: Optional[Path] = None) -> Non
     Stripe's retry logic. Nothing here logs a raw account id, an email or a
     secret.
     """
+    # COERCE AT THE BOUNDARY. The signature proves who sent the body, not that
+    # it has the shape this code expects, and an exception here is a 500 that
+    # Stripe retries for three days. Anything that is not the expected type is
+    # treated as absent, and the event is then ignored like any other it
+    # cannot use.
+    if not isinstance(event, dict):
+        return
     event_type = event.get("type")
-    obj = ((event.get("data") or {}).get("object")) or {}
-    at = _int_or_none(event.get("created"))
+    obj = _dig(event, "data", "object")
+    if not isinstance(obj, dict):
+        return
+    at = _epoch_in_range(event.get("created"))
     if event_type == "checkout.session.completed":
         user_id = _int_or_none(obj.get("client_reference_id"))
-        customer_id = obj.get("customer")
-        subscription_id = obj.get("subscription")
-        if user_id is None or not customer_id:
+        customer_id = _str_or_none(obj.get("customer"))
+        subscription_id = _str_or_none(obj.get("subscription"))
+        if user_id is None or not 0 <= user_id <= MAX_DB_ID or not customer_id:
             return
         customers.upsert_customer(user_id, customer_id, db=db)
-        if subscription_id and isinstance(subscription_id, str):
-            created = _int_or_none(obj.get("created"))
+        if subscription_id:
+            created = _epoch_in_range(obj.get("created"))
             customers.mutate_subscription(
                 user_id,
                 lambda record: _decide_checkout_completed(
@@ -1320,11 +1399,11 @@ def apply_stripe_webhook_event(event: dict, *, db: Optional[Path] = None) -> Non
                     # A delayed payment method completes the session UNPAID.
                     status="canceled" if obj.get("payment_status") == "unpaid" else "active"),
                 db=db)
-        _activate_signup(user_id, obj.get("id"), db=db)
+        _activate_signup(user_id, _str_or_none(obj.get("id")), db=db)
     elif event_type in ("customer.subscription.created", "customer.subscription.updated",
                          "customer.subscription.deleted"):
-        customer_id = obj.get("customer")
-        subscription_id = obj.get("id")
+        customer_id = _str_or_none(obj.get("customer"))
+        subscription_id = _str_or_none(obj.get("id"))
         if not customer_id or not subscription_id:
             return
         user_id = customers.get_user_id_by_customer_ref(customer_id, db=db)
@@ -1334,17 +1413,18 @@ def apply_stripe_webhook_event(event: dict, *, db: Optional[Path] = None) -> Non
             user_id,
             lambda record: _decide_subscription_event(
                 record, event_type=event_type, subscription_id=subscription_id, at=at,
-                sub_created=_int_or_none(obj.get("created")), raw_status=obj.get("status"),
+                sub_created=_epoch_in_range(obj.get("created")),
+                raw_status=_str_or_none(obj.get("status")),
                 cancel_at=_epoch_to_iso(obj.get("cancel_at")),
                 announced_end=_epoch_to_iso(subscription_period_end(obj)),
                 trial_end=_epoch_to_iso(obj.get("trial_end"))),
             db=db)
     elif event_type in ("invoice.paid", "invoice.payment_succeeded"):
-        customer_ref = obj.get("customer")
+        customer_ref = _str_or_none(obj.get("customer"))
         subscription_id = _invoice_subscription_id(obj)
-        if not isinstance(customer_ref, str) or not customer_ref or not subscription_id:
+        if not customer_ref or not subscription_id:
             return
-        paid_through = _invoice_paid_through(obj, subscription_id)
+        paid_through = _invoice_paid_through(obj, subscription_id, at)
         if paid_through is None:
             return
         user_id = customers.get_user_id_by_customer_ref(customer_ref, db=db)

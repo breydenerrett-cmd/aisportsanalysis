@@ -280,15 +280,34 @@ def _persist(user_id: int, subscription: billing.Subscription) -> None:
     has not been attempted yet) that is a period nobody paid for, and the
     customer is exactly who is on the Billing page pressing Cancel. So the
     paid-through already on record is carried through unchanged; only a
-    verified payment event moves it (src.appstate.billing, ACCESS POLICY)."""
-    if not subscription.provider_ref:
+    verified payment event moves it (src.appstate.billing, ACCESS POLICY).
+
+    The paid-through is READ INSIDE THE SAME WRITE LOCK it is written back
+    under (customers.mutate_subscription): a renewal's `invoice.paid` that
+    commits while Cancel is in flight would otherwise be overwritten with the
+    value read before it landed, and the customer would silently lose the
+    month they just paid for."""
+    ref = subscription.provider_ref
+    if not ref:
         return
-    known = customers.get_subscription_record(user_id) or {}
-    customers.upsert_subscription(
-        user_id, subscription.provider_ref, subscription.status,
-        cancel_at=subscription.cancel_at,
-        current_period_end=subscription.current_period_end,
-        paid_through=known.get("paid_through"))
+
+    def decide(record):
+        record = record or {}
+        same = record.get("stripe_subscription_id") == ref
+
+        def stamp(name):
+            return record.get(name) if same else None
+
+        return {"stripe_subscription_id": ref, "status": subscription.status,
+                "cancel_at": subscription.cancel_at,
+                "current_period_end": subscription.current_period_end,
+                "paid_through": record.get("paid_through"),
+                "sub_created_at": stamp("sub_created_at"),
+                "snapshot_at": stamp("snapshot_at"), "paid_at": stamp("paid_at"),
+                "grace_blocked": (record.get("grace_blocked") if same
+                                  else customers.carry_grace_block(record or None))}
+
+    customers.mutate_subscription(user_id, decide)
 
 
 def _subscription_body(subscription: billing.Subscription, *,

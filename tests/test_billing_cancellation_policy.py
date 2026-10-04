@@ -198,8 +198,13 @@ class EntitlementTests(unittest.TestCase):
             current_period_end=_iso(self.period_end), db=self.db)
         self.assertTrue(customers.has_paid_access(
             self.user.id, now=self.now, db=self.db))
+        # No cancel scheduled and nothing failed: the renewal grace applies
+        # (and only that long).
+        grace = timedelta(seconds=customers.RENEWAL_GRACE_SECONDS)
+        self.assertTrue(customers.has_paid_access(
+            self.user.id, now=self.period_end + grace, db=self.db))
         self.assertFalse(customers.has_paid_access(
-            self.user.id, now=self.period_end + timedelta(seconds=1), db=self.db))
+            self.user.id, now=self.period_end + grace + timedelta(seconds=1), db=self.db))
 
     def test_trialing_subscription_is_entitled(self):
         customers.upsert_subscription(

@@ -59,7 +59,6 @@ class ARenewingCustomerIsNotRefusedWhileStripeWaitsToChargeTheRenewal(_OrderCase
 
     HALF_HOUR = 1800
 
-    @unittest.expectedFailure
     def test_an_active_renewing_customer_still_has_access_half_an_hour_after_the_boundary(self):
         user_id, token = self.buy_paid()
         # The renewal invoice exists (draft) but is not charged yet: the only
@@ -105,17 +104,24 @@ class CancelCannotEraseARenewalThatLandsWhileItIsInFlight(_OrderCase):
     Fix: have _persist go through customers.mutate_subscription and read
     paid_through (and the ordering stamps) inside the lock."""
 
-    @unittest.expectedFailure
     def test_a_renewal_paid_during_cancel_keeps_its_paid_through(self):
         from api.billing import cancel_subscription
         user_id, _ = self.buy_paid()
-        real = customers.upsert_subscription
+        real = customers.mutate_subscription
+        landed = []
 
         def renewal_lands_first(*args, **kwargs):
+            if landed:      # the webhook's own write goes through here too
+                return real(*args, **kwargs)
+            landed.append(True)
+            # The renewal commits after the endpoint has talked to the
+            # provider and before its write transaction: whatever it read
+            # earlier is stale, only a read INSIDE the lock is not. (This
+            # used to wrap upsert_subscription, the old read-then-write.)
             self.webhook(self.invoice_event(30, period_end=self.p2))
             return real(*args, **kwargs)
 
-        with mock.patch.object(customers, "upsert_subscription", renewal_lands_first):
+        with mock.patch.object(customers, "mutate_subscription", renewal_lands_first):
             cancel_subscription(current_user=_user(user_id), _rate_limit=None)
         self.assertEqual(self.paid_through(user_id), _iso(self.p2),
                          "cancel wrote back the paid-through it read before the "
@@ -148,7 +154,6 @@ class ATesterInsideTheirWeekIsNotLockedOutByStartingToPay(_OrderCase):
         user_id, token = self._tester("guard@example.com")
         self.assertEqual(self.open_paid_page(token).id, user_id)
 
-    @unittest.expectedFailure
     def test_after_only_the_completed_session_the_tester_is_still_open(self):
         user_id, token = self._tester("midweek@example.com")
         self.webhook(self.session_event(user_id, payment_status="no_payment_required"))
@@ -185,7 +190,6 @@ class TheRevenueViewCountsEntitlementNotJustTheStatusWord(_OrderCase):
         from api.admin import get_revenue
         return get_revenue(_admin=None)
 
-    @unittest.expectedFailure
     def test_a_completed_session_with_no_payment_yet_is_not_mrr(self):
         started = self.signup("pending@example.com")
         user_id = started["user_id"]
@@ -194,7 +198,6 @@ class TheRevenueViewCountsEntitlementNotJustTheStatusWord(_OrderCase):
         revenue = self._revenue()
         self.assertEqual((revenue["paying"], revenue["mrr_cents"]), (0, 0))
 
-    @unittest.expectedFailure
     def test_an_active_row_past_its_paid_through_is_not_mrr(self):
         user_id, _ = self.buy_paid(end=_epoch(self.now - timedelta(days=5)))
         self.assertFalse(customers.has_paid_access(user_id))
@@ -331,7 +334,6 @@ class OddButSignedPayloadsAreAnsweredNotRaised(_OrderCase):
             "data": {"object": {"id": "sub_x", "customer": CUSTOMER, "status": "active"}}},
     }
 
-    @unittest.expectedFailure
     def test_every_odd_shape_gets_a_200(self):
         customers.upsert_customer(1, CUSTOMER)
         failures = []
@@ -356,7 +358,6 @@ class APaidInvoiceCannotGrantDecades(_OrderCase):
     Fix: clamp the evidence to event time + a ceiling a bit above the longest
     plan (400 days) and treat anything beyond as 'no evidence'."""
 
-    @unittest.expectedFailure
     def test_a_line_ending_in_2100_does_not_make_access_permanent(self):
         user_id = self.seed_paid()
         far = _epoch(datetime(2100, 1, 1, tzinfo=timezone.utc))

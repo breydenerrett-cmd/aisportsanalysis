@@ -197,10 +197,22 @@ def require_paid_access(
     still be able to reach POST /billing/reactivate or start a new
     checkout, which a fully-locked account could not.
     """
-    if customers.get_subscription_record(current_user.id) is None:
+    record = customers.get_subscription_record(current_user.id)
+    if record is None:
         return current_user
     if customers.has_paid_access(current_user.id):
         return current_user
+    # A tester whose week is still open who has STARTED paying has a row (the
+    # completed checkout creates it at once) but nothing paid through yet, until
+    # the paid invoice / trial event is processed -- Stripe does not order them
+    # and a retry can take minutes. They were given the week free; starting to
+    # pay must not lock them out of it. A row that has ever held a paid-through
+    # (a lapsed subscriber) is gated as before, and so is a tester whose window
+    # has closed.
+    if record.get("paid_through") is None:
+        upgrade = tester_upgrade.upgrade_state(current_user)
+        if upgrade and upgrade.get("state") == tester_upgrade.TESTER_ACTIVE:
+            return current_user
     raise HTTPException(status_code=402, detail={
         "error": "subscription_expired",
         "message": "your paid access ended at the end of the period you paid "

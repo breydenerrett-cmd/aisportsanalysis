@@ -20,7 +20,7 @@ billing_customers(user_id PK, stripe_customer_id UNIQUE, created_at)
     StripeBillingProvider._ensure_customer) and reused forever after.
 billing_subscriptions(user_id PK, stripe_subscription_id, status, cancel_at,
                       current_period_end, paid_through, sub_created_at,
-                      snapshot_at, paid_at, updated_at)
+                      snapshot_at, paid_at, grace_blocked, updated_at)
     The last subscription status this app has SEEN via a *verified*
     webhook (src.appstate.billing.apply_stripe_webhook_event) -- never a
     live Stripe API call. This is what lets api/billing.py's GET
@@ -38,6 +38,10 @@ billing_subscriptions(user_id PK, stripe_subscription_id, status, cancel_at,
     created, `snapshot_at` the newest subscription event applied,
     `paid_at` the newest payment evidence applied. NULL means "unknown",
     which falls back to arrival order for that comparison.
+    `grace_blocked` is 1 once a failed payment or a deletion has been applied
+    and no payment newer than it has arrived: it withholds the renewal grace
+    (RENEWAL_GRACE_SECONDS) even if a later bare `active` event flips the
+    status word back, because that event is an announcement, not payment.
 billing_checkout_idempotency(user_id, plan_id PK, idempotency_key, created_at)
     Keyed on (user_id, plan_id): a client retrying a failed/timed-out
     checkout attempt for the same plan reuses the same Idempotency-Key
@@ -189,7 +193,7 @@ def _add_paid_through_columns(conn: sqlite3.Connection) -> None:
     def present() -> set:
         return {row["name"] for row in conn.execute("PRAGMA table_info(billing_subscriptions)")}
 
-    for column in ("sub_created_at", "snapshot_at", "paid_at"):
+    for column in ("sub_created_at", "snapshot_at", "paid_at", "grace_blocked"):
         _add_column_if_missing(conn, "billing_subscriptions", column, "INTEGER")
     if "paid_through" in present():
         return
@@ -313,13 +317,14 @@ _UNSET = object()
 # Every column of a subscription row the webhook handler decides, in the
 # order mutate_subscription's `decide` callback returns them.
 _STATE_FIELDS = ("stripe_subscription_id", "status", "cancel_at", "current_period_end",
-                 "paid_through", "sub_created_at", "snapshot_at", "paid_at")
+                 "paid_through", "sub_created_at", "snapshot_at", "paid_at",
+                 "grace_blocked")
 
 
 def _read_record(conn: sqlite3.Connection, user_id: int) -> Optional[dict]:
     row = conn.execute(
         "SELECT stripe_subscription_id, status, cancel_at, current_period_end, "
-        "paid_through, sub_created_at, snapshot_at, paid_at, updated_at "
+        "paid_through, sub_created_at, snapshot_at, paid_at, grace_blocked, updated_at "
         "FROM billing_subscriptions WHERE user_id = ?", (user_id,)).fetchone()
     return dict(row) if row else None
 
@@ -328,8 +333,9 @@ def _write_record(conn: sqlite3.Connection, user_id: int, state: dict) -> None:
     conn.execute("""
         INSERT INTO billing_subscriptions
             (user_id, stripe_subscription_id, status, cancel_at, current_period_end,
-             paid_through, sub_created_at, snapshot_at, paid_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             paid_through, sub_created_at, snapshot_at, paid_at, grace_blocked,
+             updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(user_id) DO UPDATE SET
             stripe_subscription_id = excluded.stripe_subscription_id,
             status = excluded.status,
@@ -339,6 +345,7 @@ def _write_record(conn: sqlite3.Connection, user_id: int, state: dict) -> None:
             sub_created_at = excluded.sub_created_at,
             snapshot_at = excluded.snapshot_at,
             paid_at = excluded.paid_at,
+            grace_blocked = excluded.grace_blocked,
             updated_at = excluded.updated_at
     """, (user_id, *(state[name] for name in _STATE_FIELDS), _now_iso()))
 
@@ -347,7 +354,7 @@ def upsert_subscription(user_id: int, stripe_subscription_id: str, status: str, 
                          cancel_at: Optional[str] = None,
                          current_period_end: Optional[str] = None,
                          paid_through=_UNSET, sub_created_at=_UNSET,
-                         snapshot_at=_UNSET, paid_at=_UNSET,
+                         snapshot_at=_UNSET, paid_at=_UNSET, grace_blocked=_UNSET,
                          db: Optional[Path] = None) -> None:
     """Overwrite the locally-recorded subscription state for user_id -- the
     DIRECT write: an operator, a test fixture, or api/billing.py's POST
@@ -387,7 +394,8 @@ def upsert_subscription(user_id: int, stripe_subscription_id: str, status: str, 
             "paid_through": current_period_end if paid_through is _UNSET else paid_through,
             "sub_created_at": stamp(sub_created_at, "sub_created_at"),
             "snapshot_at": stamp(snapshot_at, "snapshot_at"),
-            "paid_at": stamp(paid_at, "paid_at")})
+            "paid_at": stamp(paid_at, "paid_at"),
+            "grace_blocked": stamp(grace_blocked, "grace_blocked")})
 
 
 def mutate_subscription(user_id: int, decide: Callable[[Optional[dict]], Optional[dict]], *,
@@ -433,6 +441,51 @@ def get_subscription_record(user_id: int, *, db: Optional[Path] = None) -> Optio
 # is exactly the state the cancellation policy has to keep serving.
 PAID_STATUSES = frozenset({"active", "trialing"})
 
+# A bounded grace past `paid_through` for exactly one state: a subscription
+# still `active`/`trialing`, not scheduled to cancel, with no failed payment
+# recorded -- i.e. a customer who is renewing. Stripe creates the renewal
+# invoice AT the period boundary and finalizes and charges it about an hour
+# later, so without this every renewing customer is refused from the boundary
+# until `invoice.paid` arrives: an hour or more out of every paid month, with
+# "your paid access ended" for someone whose card is about to be charged. Six
+# hours is several times Stripe's hour (a retried first attempt still fits)
+# and short enough that a renewal that is NEVER paid costs at most six hours.
+# A scheduled cancel, past_due / unpaid / incomplete (recorded as `canceled`)
+# and deleted subscriptions get none: for them the paid-through instant is the
+# end. Owner decision, 2026-10-04: set this to 0 to have no grace at all.
+RENEWAL_GRACE_SECONDS = 6 * 3600
+
+
+def carry_grace_block(record: Optional[dict]) -> int:
+    """The `grace_blocked` a row inherits when a NEW subscription replaces
+    `record` and takes its paid-through with it: 1 unless the old row was
+    itself renewing, so a deleted, failed or cancelling subscription's
+    remainder does not pick up a renewal grace just because a new (not yet
+    paid) subscription now carries it. Payment on the new subscription clears
+    it (src.appstate.billing)."""
+    if not record:
+        return 0
+    renewing = (record["status"] in PAID_STATUSES and not record["cancel_at"]
+                and not record.get("grace_blocked"))
+    return 0 if renewing else 1
+
+
+def entitled_through(status: Optional[str], cancel_at: Optional[str],
+                     paid_through: Optional[str],
+                     grace_blocked: object = None) -> Optional[datetime]:
+    """The last instant a subscription row entitles its customer to the paid
+    surface: `paid_through`, plus RENEWAL_GRACE_SECONDS for a renewing
+    customer (see above: paid status, no cancel scheduled, no failed payment
+    or deletion applied since the last payment). None when nothing has been paid for (no
+    `paid_through`). The ONE place the grace is applied; has_paid_access and
+    the admin revenue view both read it, so they cannot disagree."""
+    end = _parse_iso(paid_through)
+    if end is None:
+        return None
+    if status in PAID_STATUSES and not cancel_at and not grace_blocked:
+        end += timedelta(seconds=RENEWAL_GRACE_SECONDS)
+    return end
+
 
 def has_paid_access(user_id: int, now: Optional[datetime] = None, *,
                      db: Optional[Path] = None) -> bool:
@@ -446,15 +499,16 @@ def has_paid_access(user_id: int, now: Optional[datetime] = None, *,
     period it tried to bill, and the order events happen to arrive in can
     none of them grant or take away anything.
 
-    The status string does not decide access, on purpose, and that is the
-    cancellation policy: cancelling stops renewal and does not revoke what
-    was already paid for (a scheduled cancel is still "active"; a deleted or
-    past-due subscription is "canceled"), so all of them keep access through
-    `paid_through` and lose it after that instant unless a paid renewal
-    arrives. A subscription that is "active" past its paid-through instant
-    with no payment on record has NOT been paid for, so it is not entitled:
-    the old rule ("active with no cancel scheduled never expires") is what
-    turned a period announcement into a free month.
+    The status string does not decide WHETHER access exists, on purpose, and
+    that is the cancellation policy: cancelling stops renewal and does not
+    revoke what was already paid for (a scheduled cancel is still "active"; a
+    deleted or past-due subscription is "canceled"), so all of them keep
+    access through `paid_through` and lose it after that instant unless a
+    paid renewal arrives. The status only decides the grace below. A
+    subscription that is "active" well past its paid-through instant with no
+    payment on record has NOT been paid for, so it is not entitled: the old
+    rule ("active with no cancel scheduled never expires") is what turned a
+    period announcement into a free month.
 
     Callers that need "is this even a subscription customer?" ask
     get_subscription_record first: THIS function answers False for a user
@@ -469,6 +523,12 @@ def has_paid_access(user_id: int, now: Optional[datetime] = None, *,
     fresh as the last verified webhook, which is an honest lag rather than
     a fabricated up-to-the-second answer.
 
+    GRACE: a customer who is renewing (status active/trialing, no cancel
+    scheduled, no failed payment recorded) keeps access for
+    RENEWAL_GRACE_SECONDS past `paid_through`, to cover the hour Stripe waits
+    before it charges a renewal. A scheduled cancel, a failed payment and a
+    deleted subscription get none.
+
     No recorded `paid_through` is False, never a guess: absent data is
     absent, and guessing here would mean either serving an unpaid customer
     or cutting a paid one off early. `now` is injectable for deterministic
@@ -478,10 +538,11 @@ def has_paid_access(user_id: int, now: Optional[datetime] = None, *,
     record = get_subscription_record(user_id, db=db)
     if record is None:
         return False
-    paid_through = _parse_iso(record.get("paid_through"))
-    if paid_through is None:
+    end = entitled_through(record["status"], record.get("cancel_at"),
+                           record.get("paid_through"), record.get("grace_blocked"))
+    if end is None:
         return False
-    return (now or datetime.now(timezone.utc)) <= paid_through
+    return (now or datetime.now(timezone.utc)) <= end
 
 
 def _parse_iso(value: Optional[str]) -> Optional[datetime]:
@@ -774,7 +835,8 @@ def list_subscription_rows(*, db: Optional[Path] = None) -> List[dict]:
     admin revenue report's one read. Small table, plain SELECT."""
     with _connect(db) as conn:
         rows = conn.execute(
-            "SELECT user_id, status, cancel_at, current_period_end, paid_through "
+            "SELECT user_id, status, cancel_at, current_period_end, paid_through, "
+            "grace_blocked "
             "FROM billing_subscriptions ORDER BY user_id").fetchall()
     return [dict(r) for r in rows]
 

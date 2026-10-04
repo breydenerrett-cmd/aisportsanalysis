@@ -36,6 +36,7 @@ import unittest
 from contextlib import closing, redirect_stderr
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from unittest import mock
 
 try:
     from fastapi import HTTPException
@@ -175,10 +176,24 @@ class _OrderCase(acceptance._Case):
             self.open_paid_page(token)
         self.assertEqual(refused.exception.status_code, 402)
 
+    def grace(self, user_id):
+        """The renewal grace the row is entitled to: only a renewing
+        subscription (paid status, no cancel scheduled, no failure recorded)
+        gets RENEWAL_GRACE_SECONDS; every other state gets none."""
+        record = self.record(user_id)
+        renewing = (record["status"] in customers.PAID_STATUSES and not record["cancel_at"]
+                    and not record["grace_blocked"])
+        return customers.RENEWAL_GRACE_SECONDS if renewing else 0
+
     def assert_covers(self, user_id, end):
-        """Access up to `end`, none after it."""
+        """Access up to `end` (plus the renewal grace for a renewing
+        subscription, which TheRenewalGraceIsBoundedAndNarrow pins), none
+        after."""
+        grace = self.grace(user_id)
         self.assertTrue(self.has_access(user_id, end - 3600), "access ended early")
-        self.assertFalse(self.has_access(user_id, end + 3600), "access ran late")
+        self.assertFalse(self.has_access(user_id, end + grace + 3600), "access ran late")
+        if not grace:
+            self.assertFalse(self.has_access(user_id, end + 1), "access ran past the end")
 
 
 class APeriodAnnouncementAloneGrantsNothing(_OrderCase):
@@ -281,12 +296,14 @@ class UpdateAndPaymentInEitherOrder(_OrderCase):
         self.assertEqual(outcomes[0], outcomes[1])
         self.assertEqual(outcomes[0][:2], ("active", _iso(self.p2)))
 
-    def test_the_gap_between_update_and_payment_has_no_access_for_the_new_period(self):
+    def test_the_announced_period_is_not_access_beyond_the_renewal_grace(self):
         user_id, _ = self.buy_paid()
         self.webhook(self.sub_event("updated", "active", 20, period_end=self.p2))
-        self.assertFalse(self.has_access(user_id, self.p1 + 3600))
+        grace = customers.RENEWAL_GRACE_SECONDS
+        self.assertTrue(self.has_access(user_id, self.p1 + 3600))   # Stripe's pre-charge hour
+        self.assertFalse(self.has_access(user_id, self.p1 + grace + 3600))
         self.webhook(self.invoice_event(21, period_end=self.p2))
-        self.assertTrue(self.has_access(user_id, self.p1 + 3600))
+        self.assertTrue(self.has_access(user_id, self.p1 + grace + 3600))
 
     def test_invoice_payment_succeeded_is_evidence_too(self):
         user_id, _ = self.buy_paid()
@@ -525,7 +542,7 @@ class EveryOrderEndsTheSame(_OrderCase):
             record = self.record(user_id)
             outcome = (record["status"], record["paid_through"], record["cancel_at"],
                        self.has_access(user_id, expected_end - 3600),
-                       self.has_access(user_id, expected_end + 3600))
+                       self.has_access(user_id, expected_end + self.grace(user_id) + 3600))
             seen.add(outcome)
         self.assertEqual(len(seen), 1, f"orders disagreed: {sorted(map(str, seen))}")
         status, end, _, inside, after = seen.pop()
@@ -648,6 +665,88 @@ class TheBillingPageAndCancelNeverPromiseAnUnpaidPeriod(_OrderCase):
         self.webhook(self.sub_event("updated", "past_due", 20, period_end=self.p2))
         cancel_subscription(current_user=self._user(user_id), _rate_limit=None)
         self.assert_refused(token)
+
+
+class TheRenewalGraceIsBoundedAndNarrow(_OrderCase):
+    """RENEWAL_GRACE_SECONDS covers the hour Stripe waits before it charges a
+    renewal, for a renewing customer only (owner can set it to 0)."""
+
+    def test_the_constant_is_six_hours(self):
+        self.assertEqual(customers.RENEWAL_GRACE_SECONDS, 6 * 3600)
+
+    def test_a_renewing_customer_has_exactly_the_grace_past_paid_through(self):
+        user_id, _ = self.buy_paid()
+        grace = customers.RENEWAL_GRACE_SECONDS
+        self.assertTrue(self.has_access(user_id, self.p1 + 1800))
+        self.assertTrue(self.has_access(user_id, self.p1 + grace))
+        self.assertFalse(self.has_access(user_id, self.p1 + grace + 1))
+        self.assertEqual(self.paid_through(user_id), _iso(self.p1))   # grace is not evidence
+
+    def test_a_scheduled_cancel_a_failure_and_a_deletion_get_none(self):
+        for label, event in (
+                ("scheduled cancel", self.sub_event("updated", "active", 10, period_end=self.p1,
+                                                    cancel_at=self.p1)),
+                ("past_due", self.sub_event("updated", "past_due", 20, period_end=self.p2)),
+                ("unpaid", self.sub_event("updated", "unpaid", 20, period_end=self.p2)),
+                ("deleted", self.sub_event("deleted", "canceled", 20, period_end=self.p1))):
+            with self.subTest(label):
+                user_id = self.seed_paid()
+                self.webhook(event)
+                self.assertTrue(self.has_access(user_id, self.p1 - 60))
+                self.assertFalse(self.has_access(user_id, self.p1 + 1))
+
+    def test_a_trial_that_runs_out_unpaid_gets_the_grace_and_no_more(self):
+        trial_end = _epoch(self.now + timedelta(days=7))
+        user_id, _ = self.buy_trial(trial_end)
+        self.assertTrue(self.has_access(user_id, trial_end + 1800))
+        self.assertFalse(self.has_access(
+            user_id, trial_end + customers.RENEWAL_GRACE_SECONDS + 1))
+
+    def test_setting_the_constant_to_zero_removes_the_grace(self):
+        user_id, _ = self.buy_paid()
+        with mock.patch.object(customers, "RENEWAL_GRACE_SECONDS", 0):
+            self.assertTrue(self.has_access(user_id, self.p1))
+            self.assertFalse(self.has_access(user_id, self.p1 + 1))
+
+
+class EvidenceIsClampedAndOddPayloadsAreAnswered(_OrderCase):
+    def test_a_paid_line_ending_decades_out_is_clamped_past_the_event(self):
+        user_id = self.seed_paid()
+        far = _epoch(datetime(2100, 1, 1, tzinfo=timezone.utc))
+        self.webhook(self.invoice_event(30, period_end=far))
+        ceiling = self.at(30) + billing.MAX_EVIDENCE_DAYS * DAY
+        self.assertEqual(self.paid_through(user_id), _iso(ceiling))
+
+    def test_a_far_trial_end_is_clamped_too(self):
+        started = self.signup("longtrial@example.com")
+        user_id = started["user_id"]
+        far = _epoch(datetime(2100, 1, 1, tzinfo=timezone.utc))
+        self.webhook(self.session_event(user_id, payment_status="no_payment_required"))
+        self.webhook(self.sub_event("created", "trialing", 1, period_end=far, trial_end=far))
+        self.assertEqual(self.paid_through(user_id),
+                         _iso(self.at(1) + billing.MAX_EVIDENCE_DAYS * DAY))
+
+    def test_a_normal_annual_invoice_is_not_clamped(self):
+        user_id = self.seed_paid()
+        yearly = _epoch(self.now + timedelta(days=365))
+        self.webhook(self.invoice_event(30, period_end=yearly))
+        self.assertEqual(self.paid_through(user_id), _iso(yearly))
+
+    def test_odd_shapes_are_acknowledged_without_a_write(self):
+        user_id = self.seed_paid()
+        before = self.stable(user_id)
+        for odd in ([], "x", None, {"type": "invoice.paid", "data": []},
+                    {"type": "invoice.paid", "data": {"object": []}},
+                    {"type": "customer.subscription.updated", "created": 10 ** 30,
+                     "data": {"object": {"id": SUBSCRIPTION, "customer": CUSTOMER,
+                                         "status": ["active"], "items": "x"}}},
+                    {"type": "checkout.session.completed",
+                     "data": {"object": {"client_reference_id": str(10 ** 30),
+                                         "customer": CUSTOMER, "subscription": "sub_z"}}},
+                    {"type": "checkout.session.completed",
+                     "data": {"object": {"client_reference_id": "1", "customer": {"a": 1}}}}):
+            self.assertEqual(self.webhook(odd), {"received": True}, repr(odd))
+        self.assertEqual(self.paid_through(user_id), before["paid_through"])
 
 
 class AnExpiredRenewalCanBeBoughtAgain(_OrderCase):

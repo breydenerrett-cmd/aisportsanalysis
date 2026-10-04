@@ -44,6 +44,7 @@ from __future__ import annotations
 
 import sys
 from collections import Counter
+from datetime import datetime, timezone
 from typing import Dict
 
 from typing import Optional
@@ -128,19 +129,22 @@ def get_revenue(_admin: None = Depends(_require_admin)) -> dict:
                       (they still count in `paying`/`trialing` until the
                       period ends, and are NOT in `mrr_cents` going forward).
       canceled        status `canceled`.
+      unpaid          status `active`/`trialing` but not entitled: nothing is
+                      paid through yet, or the paid-through (plus the renewal
+                      grace) has passed. Not counted in `paying`, `trialing`
+                      or any MRR figure.
       mrr_cents       `paying` minus `cancel_scheduled` actives, times the
                       plan price (billing.BETA_PLAN_PRICE_CENTS = 1999).
                       Trialing is never counted: nothing has been charged.
                       `mrr_gross_cents` is the figure without the cancel
                       subtraction.
 
-    A checkout that just completed is recorded `active` until Stripe's
-    `customer.subscription.created` arrives moments later and corrects it to
-    `trialing` (see src.appstate.billing.apply_stripe_webhook_event), so a
-    fresh trial can read as paying for a short window when the checkout event
-    is processed first. If the subscription event arrives first the row is
-    already `trialing` and the checkout event keeps it. The reconciled number
-    is what the Stripe dashboard shows, this is the app's own view.
+    A checkout that just completed is recorded `active` with nothing paid
+    through until the paid invoice (or the trial's `customer.subscription
+    .created`) arrives moments later (see
+    src.appstate.billing.apply_stripe_webhook_event); until then it is
+    `unpaid`, not paying. The reconciled number is what the Stripe dashboard
+    shows, this is the app's own view.
 
     `signups_by_source` counts every user by the utm_source of their first
     touch ("(direct)" when they have none); `paying_by_source` and
@@ -157,9 +161,24 @@ def get_revenue(_admin: None = Depends(_require_admin)) -> dict:
     trialing_by_source: Counter = Counter()
     cancel_scheduled = 0
     active_not_canceling = 0
+    now = datetime.now(timezone.utc)
+    unpaid = 0
     for row in customers.list_subscription_rows():
         status = row["status"]
         scheduled = bool(row.get("cancel_at"))
+        if status in customers.PAID_STATUSES:
+            # The status word is not revenue: a row counts as paying or
+            # trialing only while it is actually entitled (paid through a
+            # future instant, plus the renewal grace). An `active` row nothing
+            # has been paid for yet (a completed session whose invoice has not
+            # arrived) or whose paid-through has passed (a renewal never paid,
+            # or the invoice events not subscribed) is `unpaid`, not MRR.
+            end = customers.entitled_through(status, row.get("cancel_at"),
+                                             row.get("paid_through"),
+                                             row.get("grace_blocked"))
+            if end is None or now > end:
+                unpaid += 1
+                continue
         if status == "active":
             counts["paying"] += 1
             paying_by_source[source_of(row["user_id"])] += 1
@@ -183,6 +202,7 @@ def get_revenue(_admin: None = Depends(_require_admin)) -> dict:
         "trialing": counts["trialing"],
         "cancel_scheduled": cancel_scheduled,
         "canceled": counts["canceled"],
+        "unpaid": unpaid,
         "mrr_cents": active_not_canceling * price,
         "mrr_gross_cents": counts["paying"] * price,
         "mrr_usd": round(active_not_canceling * price / 100.0, 2),
