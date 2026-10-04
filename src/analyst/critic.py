@@ -42,13 +42,14 @@ number that is neither in the packet nor a verified derivation is rejected exact
 was. The derivations that held, with the values they were computed from, are kept with the
 published call (the row's provenance) and the page shows each as a sentence.
 
-OUR WORDS ARE NOT THE READER'S (prompt v4)
-------------------------------------------
+OUR WORDS ARE NOT THE READER'S (prompt v4, v5)
+----------------------------------------------
 "packet" is the repo's word for the frozen fact sheet; a customer has never heard it. In an MLB
 summary, reason claim, case against or what_would_change_it the word is struck like a banned one
 (`INTERNAL_WORDS`, `banned_words(..., internal=True)`): the call becomes a PASS "could not be verified"
 and the summary is withheld. Evidence paths are not prose and are not scanned. The UFC analyst is not
-held to it (its prompt did not change).
+held to it (its prompt did not change). Prompt v5 adds "repo", "repos" and "repository" to the list:
+the repo is our code base, and "the repo model" reached a published brief.
 
 WHAT THIS CANNOT CATCH
 ----------------------
@@ -101,8 +102,15 @@ _BANNED = (
 # gives nothing beyond the price" to a customer who has never heard of a packet. Struck exactly like a
 # banned word, and only in an MLB item (`internal=True`): the UFC analyst's prompt and critic behaviour
 # are not changed by this. Matched with the plural, on word boundaries ("packets", not "unpacketed").
+# Prompt v5 adds "repo": the published Braves at Dodgers brief said "the repo model likes the over more than the
+# market does" (the packet fields are repo_model_probability and repo_market_probability, and the model copied
+# them). "repo", "repos" and "repository" are struck; "report", "reported" and "reporter" are not, because the
+# match is on whole words. A field NAME such as repo_model_probability is one word with its underscores, so it
+# is not struck either, and evidence paths are not prose and are not scanned at all.
 INTERNAL_WORDS = (
     (r"\bpackets?\b", "packet"),
+    (r"\brepos?\b", "repo"),
+    (r"\brepositor(?:y|ies)\b", "repository"),
 )
 _EDGE = re.compile(r"\bedges?\b", re.I)
 _NEGATOR = re.compile(r"\b(no|not|never|without|nothing|none|isn'?t|aren'?t|don'?t|"

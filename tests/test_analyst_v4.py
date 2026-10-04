@@ -55,9 +55,8 @@ def items(packet: dict) -> set:
 # ---------------------------------------------------------------------------
 
 class ThePromptIsVersionFour(unittest.TestCase):
-    def test_it_is_v4_and_the_rule_says_what_to_say_instead(self):
-        self.assertEqual(A.PROMPT_VERSION, "analyst_prompt_v4")
-        self.assertEqual(A.SITUATION_PROMPT_VERSION, "analyst_prompt_v4_situation")
+    def test_the_rule_still_says_what_to_say_instead(self):
+        # v5 (tests/test_analyst_v5.py) extended 14a and moved the version; v4's sentence is still in it.
         self.assertIn('call the data "the data" or "what we have", never "the packet"', RULE_14A)
         for field in ("the summary", "reason's claim", "the case against", "what_would_change_it"):
             self.assertIn(field, RULE_14A)
@@ -69,9 +68,10 @@ class ThePromptIsVersionFour(unittest.TestCase):
         without = "\n".join(l for l in A.SYSTEM_PROMPT.split("\n") if not l.startswith("14a."))
         self.assertEqual(sha(without), V3_PROMPT_SHA256)
 
-    def test_the_hashes_are_pinned_and_v3_rows_keep_theirs(self):
-        self.assertEqual(sha(A.SYSTEM_PROMPT), V4_PROMPT_SHA256)
-        self.assertEqual(ledger.prompt_hash(), V4_PROMPT_HASH)
+    def test_the_v4_hashes_are_history_now_and_differ_from_the_current_prompt(self):
+        """The v4 pins stay as the record of what the v4 rows were published under; v5 moved the live ones."""
+        self.assertNotEqual(sha(A.SYSTEM_PROMPT), V4_PROMPT_SHA256)
+        self.assertNotEqual(ledger.prompt_hash(), V4_PROMPT_HASH)
         self.assertNotEqual(V4_PROMPT_HASH, V3_PROMPT_HASH)
 
     def test_no_rule_number_moved_and_the_situation_section_still_starts_at_17(self):
@@ -84,7 +84,7 @@ class ThePromptIsVersionFour(unittest.TestCase):
         self.assertEqual(U.prompt_hash(), UFC_PROMPT_HASH)
         self.assertNotIn("14a.", U.UFC_SYSTEM_PROMPT)
 
-    def test_the_request_carries_the_v4_prompt(self):
+    def test_the_request_carries_the_current_prompt(self):
         body = A.build_request(F.build(), F.CFG)
         self.assertEqual(body["system"], A.SYSTEM_PROMPT)
         self.assertIn(RULE_14A, body["system"])
@@ -184,11 +184,11 @@ class TheWordPacketIsStruck(unittest.TestCase):
 
 
 class ThePilotWorksWithV4(Env):
-    def test_prepare_check_and_publish_carry_v4(self):
+    def test_prepare_check_and_publish_carry_the_current_prompt(self):
         self.assertEqual(self.prepare(), 0, self.text)
         meta = pilot.load_prepared(str(self.folder)).meta
         self.assertEqual((meta["prompt_version"], meta["prompt_hash"]),
-                         ("analyst_prompt_v4", V4_PROMPT_HASH))
+                         (A.PROMPT_VERSION, ledger.prompt_hash()))
         request = (self.folder / "request.json").read_text(encoding="utf-8")
         self.assertIn("14a. Everything a reader sees", request)
         self.out.clear()
@@ -197,7 +197,7 @@ class ThePilotWorksWithV4(Env):
         self.assertEqual(self.publish(), 0, self.text)
         row = self.store_rows()[0]
         self.assertEqual((row["prompt_version"], row["prompt_hash"]),
-                         ("analyst_prompt_v4", V4_PROMPT_HASH))
+                         (A.PROMPT_VERSION, ledger.prompt_hash()))
 
     def test_a_folder_prepared_under_v3_cannot_be_published_under_v4(self):
         """The two briefs published today were prepared under v3. A new brief is prepared afresh:

@@ -130,7 +130,7 @@ server-side refusal fallback is **not** enabled: it re-runs a declined request o
 bills that at the other model's rate, which the spend cap's single price table would understate. The
 request is one non-streaming call (`max_tokens` 16,000, timeout 600 seconds).
 
-#### The prompt, verbatim (`PROMPT_VERSION = analyst_prompt_v4`)
+#### The prompt, verbatim (`PROMPT_VERSION = analyst_prompt_v5`)
 
 ```
 You are a baseball betting analyst. You write the analysis of one MLB game and make a call on every market the packet prices. You are an AI model and the reader knows it. Your work is published before the game, graded afterward, and shown next to its record whatever that record turns out to be. Write like a sharp human analyst talking to a smart friend: plain words, a point of view, no hype.
@@ -156,7 +156,7 @@ THE CALLS
 
 THE WORDS
 14. Never write: lock, guaranteed, free money, sure thing, can't lose, +EV. Never claim a profit, an edge you have, or certainty. No exclamation marks.
-14a. Everything a reader sees (the summary, every reason's claim, the case against and what_would_change_it) is read by a customer who has never heard of a packet. In those fields call the data "the data" or "what we have", never "the packet". The checker strikes the word "packet" there. Evidence paths keep their own form.
+14a. Everything a reader sees (the summary, every reason's claim, the case against and what_would_change_it) is read by a customer who has never heard of a packet. In those fields call the data "the data" or "what we have", never "the packet". The checker strikes the word "packet" there. Likewise never write "repo", "repos", "repository" or "the repo model": the probability the packet calls repo_model_probability is LineHound's own model, so say "LineHound's own model" (and "the market" for repo_market_probability). The checker strikes those words too. Evidence paths keep their own form.
 15. Do not recommend a stake size and do not describe anything as a bet you or we placed.
 
 THE SUMMARY
@@ -165,7 +165,7 @@ THE SUMMARY
 Reply with one JSON object that matches the schema and nothing else.
 ```
 
-#### Prompt v2, v3, v4 and the schema, verbatim
+#### Prompt v2, v3, v4, v5 and the schema, verbatim
 
 `analyst_prompt_v2` (2026-10-03) added one rule, 13a, and one required call field, `case_against`:
 for a TAKE or a TAKE_OTHER_SIDE, `{claim, evidence}`, the strongest reason from the packet that the
@@ -190,6 +190,19 @@ other rule is byte for byte what it was, and 14a takes no number, so the situati
 starts at 17. The two v3 rows are never rewritten; they keep `analyst_prompt_v3` and the v3 prompt
 hash. The UFC prompt, hash and critic behaviour did not change. Arm B's version is
 `analyst_prompt_v4_situation`.
+
+`analyst_prompt_v5` (2026-10-04) extends rule 14a and nothing else: the published brief for Braves at
+Dodgers told a customer "the repo model likes the over more than the market does". "Repo" is our word
+for this code base (the packet fields are `repo_model_probability` and `repo_market_probability`, and
+the model copied them), and a customer has never heard it. Rule 14a now also says never to write
+"repo", "repos", "repository" or "the repo model": the probability is LineHound's own model, and the
+checker strikes those words in the same four fields and for MLB only (`critic.INTERNAL_WORDS`,
+whole words, so "report" and "reported" pass and an evidence path such as
+`repo_model_probability` is not scanned). Every other rule is byte for byte v4, 14a keeps its number,
+and the situation section still starts at 17. The rows published under v3 and v4 are never rewritten;
+they keep their own version and hash, and a folder prepared under v4 is refused at publish until it is
+prepared again under v5. The UFC prompt, hash and critic behaviour did not change. Arm B's version is
+`analyst_prompt_v5_situation`.
 
 The schema below is `analyst.MLB_RESPONSE_SCHEMA`. The UFC analyst shares the model call and the
 critic but not these fields: it keeps using the shared `analyst.RESPONSE_SCHEMA` (the same schema

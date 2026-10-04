@@ -564,7 +564,7 @@ class TheSchemaAndThePrompt(unittest.TestCase):
 
     def test_the_prompt_says_what_to_do_and_leaves_every_rule_number_where_it_was(self):
         text = A.SYSTEM_PROMPT
-        self.assertEqual(A.PROMPT_VERSION, "analyst_prompt_v4")
+        self.assertEqual(A.PROMPT_VERSION, "analyst_prompt_v5")
         self.assertIn("3a. The one exception to doing arithmetic is a calculation you declare.", text)
         self.assertIn("Do no arithmetic of your own on packet numbers in prose", text)
         self.assertIn("the checker recomputes every derived value", text.replace("The checker recomputes", "the checker recomputes"))
@@ -675,7 +675,7 @@ class StoredAndServed(unittest.TestCase):
         out["summary"] += " The road starter pitched 11 days before the game."
         out["summary_derived"] = [DAYS]
         row, verified = self.publish(p, out)
-        self.assertEqual(row["prompt_version"], "analyst_prompt_v4")
+        self.assertEqual(row["prompt_version"], "analyst_prompt_v5")
         self.assertEqual(row["calls"][0]["reasons"][1]["derived"][0]["inputs"][0]["path"], LAST_START)
         self.assertEqual(row["summary_derived"][0]["value"], 11)
 

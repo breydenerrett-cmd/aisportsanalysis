@@ -34,8 +34,8 @@ from tests.test_analyst_critic import call, struck_ids, verify
 
 
 class ThePromptAsksForTheCaseAgainst(unittest.TestCase):
-    def test_it_is_version_four_and_still_says_what_a_case_against_is(self):
-        self.assertEqual(A.PROMPT_VERSION, "analyst_prompt_v4")
+    def test_it_is_version_five_and_still_says_what_a_case_against_is(self):
+        self.assertEqual(A.PROMPT_VERSION, "analyst_prompt_v5")
         text = A.SYSTEM_PROMPT
         self.assertIn("13a. case_against:", text)
         self.assertIn("the strongest reason from the packet that this bet loses", text)

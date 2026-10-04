@@ -64,11 +64,18 @@ from src.ledger.chain import canonical_bytes
 # checker (critic.INTERNAL_WORDS) strikes the word like any banned one, so a slip is caught, not hoped
 # against. Every other rule is byte for byte what it was and 14a takes no number, so the situation
 # section still starts at 17. The two v3 rows stay as published: a row is never rewritten.
-PROMPT_VERSION = "analyst_prompt_v4"
-# Arm B of the side-by-side test (docs/SITUATION_LAYER.md): the same (v4) prompt with "THE SITUATION"
+#
+# v5 (2026-10-04) extends rule 14a to a second internal word. The published brief for Braves at Dodgers told
+# a customer "the repo model likes the over more than the market does": "repo" is our word for this code
+# base and the packet fields are repo_model_probability / repo_market_probability, so the model copied it.
+# Rule 14a now also says never write "repo" or "the repo model"; it is LineHound's own model (LineHound's
+# baseline model's probability). The checker (critic.INTERNAL_WORDS) strikes the word like "packet". Every
+# other rule is byte for byte v4, and 14a keeps its number. The v3 and v4 rows stay as published.
+PROMPT_VERSION = "analyst_prompt_v5"
+# Arm B of the side-by-side test (docs/SITUATION_LAYER.md): the same (v5) prompt with "THE SITUATION"
 # added before its closing line. Used only when the situation arm is switched on; the prompt
 # above is untouched and tests pin that it is byte for byte what it was.
-SITUATION_PROMPT_VERSION = "analyst_prompt_v4_situation"
+SITUATION_PROMPT_VERSION = "analyst_prompt_v5_situation"
 
 VERDICTS = ("TAKE", "PASS", "TAKE_OTHER_SIDE")
 CONFIDENCES = ("low", "medium", "high")
@@ -107,7 +114,7 @@ THE CALLS
 
 THE WORDS
 14. Never write: lock, guaranteed, free money, sure thing, can't lose, +EV. Never claim a profit, an edge you have, or certainty. No exclamation marks.
-14a. Everything a reader sees (the summary, every reason's claim, the case against and what_would_change_it) is read by a customer who has never heard of a packet. In those fields call the data "the data" or "what we have", never "the packet". The checker strikes the word "packet" there. Evidence paths keep their own form.
+14a. Everything a reader sees (the summary, every reason's claim, the case against and what_would_change_it) is read by a customer who has never heard of a packet. In those fields call the data "the data" or "what we have", never "the packet". The checker strikes the word "packet" there. Likewise never write "repo", "repos", "repository" or "the repo model": the probability the packet calls repo_model_probability is LineHound's own model, so say "LineHound's own model" (and "the market" for repo_market_probability). The checker strikes those words too. Evidence paths keep their own form.
 15. Do not recommend a stake size and do not describe anything as a bet you or we placed.
 
 THE SUMMARY

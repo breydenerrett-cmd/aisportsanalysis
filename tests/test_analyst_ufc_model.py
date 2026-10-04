@@ -42,6 +42,11 @@ REWORDED = {
     "In those fields call the data \"the data\" or \"what we have\", never \"the packet\".",
     "The checker strikes the word \"packet\" there.",
     "Evidence paths keep their own form.",
+    # Prompt v5 (2026-10-04) extends 14a to "repo" ("the repo model" reached a published brief). Same story:
+    # the UFC prompt and hash do not change (tests/test_analyst_v5.py pins both).
+    "Likewise never write \"repo\", \"repos\", \"repository\" or \"the repo model\":",
+    "the probability the packet calls repo_model_probability is LineHound's own model, so say \"LineHound's own model\" (and \"the market\" for repo_market_probability).",
+    "The checker strikes those words too.",
     # Rule 13a of MLB prompt v2 (2026-10-03), the required case against. The UFC analyst deliberately
     # does not carry it: the UFC request, schema, critic and prompt hash are unchanged (the MLB schema
     # is its own copy, `analyst.MLB_RESPONSE_SCHEMA`), and a UFC case against is a later decision.
