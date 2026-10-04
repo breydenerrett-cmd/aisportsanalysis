@@ -95,9 +95,15 @@ def _in_window_rows(path):
     return kept
 
 
-def _sha256_file(path):
+def _sha256_decompressed(path):
+    """sha256 of the DECOMPRESSED bytes: that is what SHA256SUMS records.
+
+    (The first version hashed the .gz file itself and refused a correct
+    archive; found on the first real invocation, before any row was priced,
+    and fixed in a separately disclosed commit.)
+    """
     h = hashlib.sha256()
-    with open(path, "rb") as fh:
+    with gzip.open(path, "rb") as fh:
         for block in iter(lambda: fh.read(1 << 20), b""):
             h.update(block)
     return h.hexdigest()
@@ -114,10 +120,11 @@ def _verify_box_archive(season, path):
                 expected = parts[0]
     if expected is None:
         raise tbs.TbStarterError(f"{name} has no entry in {BOX_SHA256SUMS}")
-    actual = _sha256_file(path)
+    actual = _sha256_decompressed(path)
     if actual != expected:
         raise tbs.TbStarterError(
-            f"{path} sha256 {actual} does not match SHA256SUMS {expected}")
+            f"{path} (decompressed) sha256 {actual} does not match "
+            f"SHA256SUMS {expected}")
     return actual
 
 

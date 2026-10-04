@@ -635,5 +635,31 @@ class ScriptArtifactTests(unittest.TestCase):
             self.assertNotIn("mean d", text)
 
 
+class BoxArchiveChecksumTests(unittest.TestCase):
+    """SHA256SUMS records the DECOMPRESSED bytes of each archived box file."""
+
+    def test_checksum_is_over_the_decompressed_content(self):
+        import gzip
+        import hashlib
+        script = _load_script()
+        payload = b'{"type": "batter"}\n' * 50
+        with tempfile.TemporaryDirectory() as tmp:
+            archive = os.path.join(tmp, "boxscores_2023.jsonl.gz")
+            with gzip.open(archive, "wb") as fh:
+                fh.write(payload)
+            sums = os.path.join(tmp, "SHA256SUMS")
+            good = hashlib.sha256(payload).hexdigest()
+            Path(sums).write_text(
+                f"{good}  boxscores/boxscores_2023.jsonl.gz\n", encoding="utf-8")
+            with mock.patch.object(script, "BOX_SHA256SUMS", sums):
+                self.assertEqual(script._verify_box_archive(2023, archive), good)
+            Path(sums).write_text(
+                f"{'0' * 64}  boxscores/boxscores_2023.jsonl.gz\n",
+                encoding="utf-8")
+            with mock.patch.object(script, "BOX_SHA256SUMS", sums):
+                with self.assertRaises(tbs.TbStarterError):
+                    script._verify_box_archive(2023, archive)
+
+
 if __name__ == "__main__":
     unittest.main()
