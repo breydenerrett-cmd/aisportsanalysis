@@ -60,6 +60,7 @@ from typing import Any, Mapping, Optional, Sequence
 from src import paths
 from src.analyst import LABEL
 from src.analyst import analyst as analyst_mod
+from src.analyst import critic as critic_mod
 from src.analyst import grading, packet as packet_mod
 from src.ledger.chain import HashChainLedger, canonical_bytes
 
@@ -274,6 +275,9 @@ def publish(packet: Mapping, verified, *, now: datetime, model: str,
         "model_critic": verified.model_critic,
         "run": dict(run or {}),
     }
+    if getattr(verified, "summary_derived", None):
+        # prompt v3: the calculations the published summary rests on, as the checker recomputed them
+        payload["summary_derived"] = [dict(r) for r in verified.summary_derived]
     if extra:
         payload.update(extra)
     return _ledger(path).append(payload), True
@@ -383,6 +387,22 @@ def _missing_list(pub: Mapping, root: Optional[Path]) -> Optional[list]:
     return list(missing) if isinstance(missing, list) else None
 
 
+def _served_reason(reason: Any) -> Any:
+    """A reason as the page is served it. The stored derivations (prompt v3) hold packet paths and the
+    values read at them: that is the audit record, in the row. A reader gets `derivations`, one short
+    plain sentence each ("11 days: calendar days (UTC) from ... to ..."), and no path. A reason
+    with none (every row written before v3) is served exactly as stored, with no new key."""
+    if not isinstance(reason, Mapping) or "derived" not in reason:
+        return reason
+    out = {k: v for k, v in reason.items() if k != "derived"}
+    out["derivations"] = critic_mod.derivation_sentences(reason.get("derived"))
+    return out
+
+
+def _served_reasons(reasons: Any) -> Any:
+    return [_served_reason(r) for r in reasons] if isinstance(reasons, list) else reasons
+
+
 def game_view(date: str, away: str, home: str, *, path: Optional[str] = None,
               all_rows: Optional[Sequence[Mapping]] = None,
               root: Optional[Path] = None) -> Optional[dict]:
@@ -407,6 +427,8 @@ def game_view(date: str, away: str, home: str, *, path: Optional[str] = None,
         item = {k: c.get(k) for k in ("slot_id", "market", "selection", "verdict", "price",
                                       "book", "fair_estimate", "confidence", "reasons",
                                       "pass_price", "what_would_change_it", "verification", "case_against")}
+        item["reasons"] = _served_reasons(item["reasons"])
+        item["case_against"] = _served_reason(item["case_against"])
         spec = c.get("grading") or {}
         item["family"] = spec.get("family")
         item["player"] = spec.get("player")
@@ -421,6 +443,7 @@ def game_view(date: str, away: str, home: str, *, path: Optional[str] = None,
         "published_utc": pub["published_utc"], "first_pitch_utc": pub["first_pitch_utc"],
         "model": pub["model"], "version": pub["version"],
         "summary": pub["summary"], "summary_status": pub["summary_status"],
+        "summary_derivations": critic_mod.derivation_sentences(pub.get("summary_derived")),
         "provenance": pub.get("provenance") or "api",
         "missing": _missing_list(pub, root),
         "calls": calls,

@@ -106,7 +106,7 @@ class Prepare(Env):
         packet = F.build()
         self.assertEqual(meta["packet_hash"], packet_mod.packet_hash(packet))
         self.assertEqual((meta["prompt_version"], meta["prompt_hash"]),
-                         ("analyst_prompt_v2", ledger.prompt_hash()))
+                         ("analyst_prompt_v3", ledger.prompt_hash()))
         self.assertEqual(meta["built_at"], F.BUILT_AT)
         self.assertEqual(meta["first_pitch_utc"], F.FIRST_PITCH)
         self.assertEqual(meta["model"], F.CFG["model"])
@@ -182,6 +182,29 @@ class Check(Env):
         self.check(self.good_response())
         self.assertFalse((self.root / "evidence" / "analyst_pilot_v1.jsonl").exists())
         self.assertEqual([f for f in self.files() if "analyst_pilot_v1" in f or "usage" in f], [])
+
+    SPLITS_DAYS = {"op": "days_between", "value": 25, "unit": "days", "note": "age of the split records",
+                   "inputs": ["sections.splits.as_of", "game.date"]}
+
+    def derived_response(self, derived):
+        out = F.good_output(F.build())
+        out["calls"][0]["reasons"][1]["claim"] = "The split records are 25 days old by the game date."
+        out["calls"][0]["reasons"][1]["derived"] = derived
+        return self.write_response(out)
+
+    def test_a_declared_and_correct_calculation_is_kept_in_check_under_v3(self):
+        self.assertEqual(self.check(self.derived_response([self.SPLITS_DAYS])), 0, self.text)
+        self.assertIn("moneyline: TAKE_OTHER_SIDE NYY: kept", self.text)
+
+    def test_the_same_sentence_without_the_declaration_is_struck_in_check(self):
+        self.check(self.derived_response([]))
+        self.assertIn("moneyline: TAKE_OTHER_SIDE NYY: STRUCK", self.text)
+        self.assertIn("quotes 25, which is not a number in the packet", self.text)
+
+    def test_a_wrong_calculation_is_struck_in_check_and_says_what_it_should_be(self):
+        self.check(self.derived_response([dict(self.SPLITS_DAYS, value=24)]))
+        self.assertIn("STRUCK", self.text)
+        self.assertIn("days_between of those inputs is 25 days, not 24", self.text)
 
     def test_a_planted_wrong_evidence_value_is_struck_and_says_why(self):
         out = F.good_output(F.build())
@@ -265,11 +288,27 @@ class Publish(Env):
         self.assertEqual(ledger.read_packet(row), prepared)
         self.assertEqual(row["packet_hash"], packet_mod.packet_hash(F.build()))
 
+    def test_a_verified_calculation_is_published_with_its_provenance_and_served_as_a_sentence(self):
+        out = F.good_output(F.build())
+        out["calls"][0]["reasons"][1]["claim"] = "The split records are 25 days old by the game date."
+        out["calls"][0]["reasons"][1]["derived"] = [
+            {"op": "days_between", "value": 25, "unit": "days", "note": "age of the split records",
+             "inputs": ["sections.splits.as_of", "game.date"]}]
+        self.assertEqual(self.publish(self.write_response(out)), 0, self.text)
+        row = self.store_rows()[0]
+        self.assertEqual(row["prompt_version"], "analyst_prompt_v3")
+        rec = row["calls"][0]["reasons"][1]["derived"][0]
+        self.assertEqual((rec["op"], rec["value"], rec["unit"]), ("days_between", 25, "days"))
+        self.assertEqual([i["value"] for i in rec["inputs"]], ["2026-09-08T20:37:57Z", "2026-10-03"])
+        view = ledger.game_view(F.DATE, "NYY", "TB", all_rows=self.store_rows(), root=self.root)
+        self.assertEqual(view["calls"][0]["reasons"][1]["derivations"],
+                         ["25 days: calendar days (UTC) from the splits as-of date to the game date."])
+
     def test_the_row_says_how_it_was_made(self):
         self.publish(tokens_in=10000, tokens_out=5000, seconds=95.5, operator_minutes=12)
         row = self.store_rows()[0]
         self.assertEqual(row["provenance"], "session_assisted")
-        self.assertEqual((row["prompt_version"], row["prompt_hash"]), ("analyst_prompt_v2", ledger.prompt_hash()))
+        self.assertEqual((row["prompt_version"], row["prompt_hash"]), ("analyst_prompt_v3", ledger.prompt_hash()))
         run = row["run"]
         self.assertEqual((run["mode"], run["model"]), ("session_assisted", "claude-sonnet-5-5"))
         self.assertEqual((run["tokens_in"], run["tokens_out"]), (10000, 5000))
@@ -396,7 +435,7 @@ class Publish(Env):
         self.assertIn("already graded", self.text)
 
     def test_a_prompt_that_changed_since_prepare_is_refused(self):
-        with mock.patch.object(A, "PROMPT_VERSION", "analyst_prompt_v3"):
+        with mock.patch.object(A, "PROMPT_VERSION", "analyst_prompt_v4"):
             self.assertEqual(self.publish(), 2)
         self.assertIn("has changed since this game was prepared", self.text)
 

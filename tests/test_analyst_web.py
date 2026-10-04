@@ -302,6 +302,31 @@ class TheAnalystRendersUnderNode(unittest.TestCase):
         self.assertNotIn("The case against", out["text"])
         self.assertNotIn("Should never show.", out["text"])
 
+    def test_a_calculated_number_shows_where_it_came_from_small_under_its_reason(self):
+        sentence = "11 days: calendar days (UTC) from away starter last start to the game date."
+        reasons = [{"claim": "The books make the home side the favourite.", "evidence": []},
+                   {"claim": "The road starter pitched 11 days before the game.", "evidence": [],
+                    "derivations": [sentence]}]
+        against = {"claim": "That is 11 days of rest.", "evidence": [], "derivations": [sentence]}
+        out = self.render("section", view([call("moneyline", "TAKE", "moneyline", reasons=reasons,
+                                                case_against=against)],
+                                          summary_derivations=[sentence]))
+        c = out["calls"][0]
+        self.assertEqual(c["reasons"][0], "The books make the home side the favourite.")
+        self.assertEqual(c["reasons"][1], "The road starter pitched 11 days before the game.\n" + sentence)
+        self.assertEqual(c["reasons"][2], "That is 11 days of rest.\n" + sentence)
+        self.assertEqual(out["hooks"].count("analyst-derivation"), 3)   # reason, case against, summary
+        self.assertEqual(out["text"].count(sentence), 3)
+        self.assertNotIn("sections.", out["text"])
+
+    def test_a_reason_without_a_calculation_and_a_withheld_summary_draw_no_sentence(self):
+        sentence = "11 days: calendar days (UTC) from away starter last start to the game date."
+        out = self.render("section", view([call("moneyline", "TAKE", "moneyline")],
+                                          summary_status="withheld", summary=None,
+                                          summary_derivations=[sentence]))
+        self.assertNotIn("analyst-derivation", out["hooks"])
+        self.assertNotIn(sentence, out["text"])
+
     def test_what_the_analysis_could_not_use_is_listed_after_the_calls(self):
         missing = [{"item": "lineups", "kind": "absent", "reason": "lineup not posted yet"},
                    {"item": "bullpen", "kind": "absent", "reason": "no reliever appearances recorded"}]

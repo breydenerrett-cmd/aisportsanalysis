@@ -32,6 +32,10 @@
  * - Hide what the analysis could not use. `analysis.missing` is the packet's own
  *   list of absent, stale or thin inputs; it is listed (capped, with a count),
  *   and when the server could not read it (null) nothing is claimed either way.
+ * - Show a calculated number without saying where it came from. A reason that rests on a
+ *   number the analyst worked out (days between two dates, a gap between two ERAs) arrives with
+ *   `derivations`: short plain sentences the server wrote from what the checker recomputed. They are
+ *   drawn small, under the reason. The page prints them as sent, never a path or a formula of its own.
  * - Write its own label. A supervised-session brief arrives with a different
  *   label from the API analyst's; the page prints whichever the server sent.
  *
@@ -109,10 +113,20 @@ function unverified(call) {
  * One call
  * ===================================================================*/
 
+/** One reason as a list item: its claim, then (when the checker verified a calculation behind a number
+ * in it) a small sentence per calculation saying where the number came from. */
+function reasonItem(reason) {
+  const li = el("li", { text: reason.claim });
+  for (const sentence of reason.derivations || []) {
+    if (sentence) li.appendChild(el("small", { class: "an-derived", "data-hook": "analyst-derivation", text: sentence }));
+  }
+  return li;
+}
+
 function reasonList(call) {
   const list = el("ul", { class: "an-call__reasons", "data-hook": "analyst-reasons" });
   for (const reason of call.reasons || []) {
-    if (reason && reason.claim) list.appendChild(el("li", { text: reason.claim }));
+    if (reason && reason.claim) list.appendChild(reasonItem(reason));
   }
   return list;
 }
@@ -135,7 +149,7 @@ function caseAgainst(call) {
   const block = el("div", { class: "an-call__against", "data-hook": "analyst-case-against" });
   block.appendChild(el("h4", { class: "an-call__against-head", text: "The case against" }));
   const list = el("ul", { class: "an-call__reasons" });
-  list.appendChild(el("li", { text: against.claim }));
+  list.appendChild(reasonItem(against));
   block.appendChild(list);
   return block;
 }
@@ -245,6 +259,9 @@ export function renderAnalystSection(data) {
   if (analysis.summary_status === "ok" && analysis.summary) {
     for (const para of String(analysis.summary).split(/\n{2,}/)) {
       if (para.trim()) host.appendChild(el("p", { class: "an-summary", "data-hook": "analyst-summary", text: para.trim() }));
+    }
+    for (const sentence of analysis.summary_derivations || []) {
+      if (sentence) host.appendChild(el("p", { class: "an-derived an-derived--summary", "data-hook": "analyst-derivation", text: sentence }));
     }
   } else {
     host.appendChild(el("p", { class: "an-summary an-summary--withheld", "data-hook": "analyst-summary",

@@ -52,11 +52,16 @@ from src.ledger.chain import canonical_bytes
 # v2 (2026-10-03) adds the required `case_against` on every TAKE. v1 never ran against the API (no
 # ledger file existed), so the change cost no record. The new rule is numbered 13a so the rules after
 # it keep their numbers: the situation section (situation_prompt.py) takes 17 to 20 and must not collide.
-PROMPT_VERSION = "analyst_prompt_v2"
-# Arm B of the side-by-side test (docs/SITUATION_LAYER.md): the same (v2) prompt with "THE SITUATION"
+#
+# v3 (2026-10-04) adds rule 3a and the `derived` field: a calculated number in prose is allowed only when the
+# reason declares how it was calculated and the checker (critic.verify_derivations) recomputes it from packet
+# values. No row has been published under v2, so the change cost no record. Rule 3 keeps its number and its
+# words about quoting the packet; 3a is the exception, so the situation section still starts at 17.
+PROMPT_VERSION = "analyst_prompt_v3"
+# Arm B of the side-by-side test (docs/SITUATION_LAYER.md): the same (v3) prompt with "THE SITUATION"
 # added before its closing line. Used only when the situation arm is switched on; the prompt
 # above is untouched and tests pin that it is byte for byte what it was.
-SITUATION_PROMPT_VERSION = "analyst_prompt_v2_situation"
+SITUATION_PROMPT_VERSION = "analyst_prompt_v3_situation"
 
 VERDICTS = ("TAKE", "PASS", "TAKE_OTHER_SIDE")
 CONFIDENCES = ("low", "medium", "high")
@@ -78,6 +83,7 @@ THE PACKET IS YOUR ONLY SOURCE
 1. Reason only from the packet. Use no outside knowledge of any team, player, injury, weather, standing or result, even if you are sure of it. If something matters and is not in the packet, say it is missing.
 2. A claim without a packet path is forbidden. Every reason has evidence: a list of {path, value}. A path names one value in the packet and starts at the packet's own top-level key. The value is copied exactly. Examples of real paths: markets.moneyline.options[0].best.price and sections.starters.values.home_sp_era. Never start a path with data. or packet.
 3. Every number you write in prose must appear in the packet, or be a price or probability you are yourself giving in a call. Do no arithmetic of your own on packet numbers in prose (no differences, sums or ratios); quote the packet's numbers. Do not write clock times.
+3a. The one exception to doing arithmetic is a calculation you declare. A number you work out yourself (a difference, a sum, a ratio, a percent change, the days between two dates, the chance a price implies, a count or an average) may appear in a reason, a case against or the summary only if that item lists it in `derived` as {value, unit, op, inputs, note}. `op` is one of difference, sum, ratio, percent_change, days_between, implied_probability, count, mean. `inputs` are packet paths, in order: difference is the first minus the second, ratio is the first over the second, percent_change is the change from the first to the second as a percent of the first, days_between is the calendar days between two dates in UTC (later minus earlier), implied_probability takes one American price, count takes one list. `unit` is what the value is measured in (days, runs, percent, and so on) and `note` says in plain words what it is. The checker recomputes every derived value from the packet, and a wrong one strikes the call. Put the summary's in `summary_derived`. An item with no calculated number has an empty `derived`.
 4. `missing` lists what is absent, stale or thin. Weigh it. A call that rests on something listed there is a PASS.
 
 THE CALLS
@@ -164,23 +170,65 @@ RESPONSE_SCHEMA: dict = {
     },
 }
 
-# THE MLB SCHEMA (prompt v2) AND WHY `RESPONSE_SCHEMA` IS LEFT ALONE
-# ------------------------------------------------------------------
+# THE MLB SCHEMA (prompt v2, v3) AND WHY `RESPONSE_SCHEMA` IS LEFT ALONE
+# ---------------------------------------------------------------------
 # `RESPONSE_SCHEMA` above is shared: the UFC analyst (ufc_analyst.py, ufc_cli.py) sends and hashes it
-# by name, and the UFC prompt never asks for a case against. Adding the field to it would change the
-# UFC request, its prompt hash and what the UFC critic strikes, in a file this change does not own.
-# So the MLB schema is a copy with one more required call field, and `schema_for(packet)` picks by
-# the packet (an MLB game packet has a `game` block and no `bout`). Every MLB path (request, shape
+# by name, and the UFC prompt never asks for a case against or a derived number. Adding either to it
+# would change the UFC request, its prompt hash and what the UFC critic strikes, in a file this change
+# does not own. So the MLB schema is a copy with more fields, and `schema_for(packet)` picks by the
+# packet (an MLB game packet has a `game` block and no `bout`). Every MLB path (request, shape
 # check, critic, ledger hash) goes through it; UFC goes on using `RESPONSE_SCHEMA` untouched.
+#
+# v2 added the required `case_against`. v3 adds `derived` to every reason and to the case against, and
+# `summary_derived` beside the summary: the calculations the item's prose relies on, each recomputed by
+# the critic (critic.verify_derivations). The ops, and the units each may be written in, are a CLOSED
+# set named here so the prompt, the schema and the checker cannot drift apart (the checker adds the
+# arithmetic, and a test pins that the two key sets are the same).
+DERIVATION_UNITS: dict = {
+    "difference": ("runs", "points", "games", "wins", "innings", "hits", "strikeouts", "degrees",
+                   "mph", "units", "percentage points"),
+    "sum": ("runs", "points", "games", "wins", "innings", "hits", "strikeouts", "degrees",
+            "mph", "units", "percentage points", "percent"),
+    "mean": ("runs", "points", "games", "wins", "innings", "hits", "strikeouts", "degrees",
+             "mph", "units", "percentage points", "percent"),
+    "ratio": ("ratio", "times", "percent"),
+    "percent_change": ("percent",),
+    "days_between": ("days",),
+    "implied_probability": ("percent", "probability"),
+    "count": ("items", "games", "players", "books", "quotes", "entries"),
+}
+DERIVATION_OPS = tuple(DERIVATION_UNITS)
+DERIVATION_KEYS = ("value", "unit", "op", "inputs", "note")
+MAX_DERIVATIONS = 6          # per item: a reason that needs more than this is doing arithmetic, not citing
+
+_DERIVATION_SCHEMA: dict = {
+    "type": "object",
+    "additionalProperties": False,
+    "required": list(DERIVATION_KEYS),
+    "properties": {
+        "value": {"type": "number"},
+        "unit": {"type": "string", "enum": sorted({u for us in DERIVATION_UNITS.values() for u in us})},
+        "op": {"type": "string", "enum": list(DERIVATION_OPS)},
+        "inputs": {"type": "array", "items": _STR},
+        "note": _STR,
+    },
+}
+_DERIVED_SCHEMA: dict = {"type": "array", "items": _DERIVATION_SCHEMA}
+
 _REASON_SCHEMA = RESPONSE_SCHEMA["properties"]["calls"]["items"]["properties"]["reasons"]["items"]
 CASE_AGAINST_SCHEMA: dict = {"anyOf": [_REASON_SCHEMA, {"type": "null"}]}
 
 
 def _mlb_schema() -> dict:
     schema = copy.deepcopy(RESPONSE_SCHEMA)
+    schema["required"] = list(schema["required"]) + ["summary_derived"]
+    schema["properties"]["summary_derived"] = copy.deepcopy(_DERIVED_SCHEMA)
     item = schema["properties"]["calls"]["items"]
+    reason = item["properties"]["reasons"]["items"]
+    reason["required"] = list(reason["required"]) + ["derived"]
+    reason["properties"]["derived"] = copy.deepcopy(_DERIVED_SCHEMA)
     item["required"] = list(item["required"]) + ["case_against"]
-    item["properties"]["case_against"] = copy.deepcopy(CASE_AGAINST_SCHEMA)
+    item["properties"]["case_against"] = {"anyOf": [copy.deepcopy(reason), {"type": "null"}]}
     return schema
 
 
@@ -448,14 +496,48 @@ def words(text: str) -> int:
     return len(str(text).split())
 
 
-def _reason_shape_errors(where: str, reason: Any) -> list:
-    """Shape errors of one {claim, evidence: [{path, value}]}: a reason or a case against."""
+def _derived_shape_errors(where: str, derived: Any) -> list:
+    """Shape errors of a `derived` list. Only the SHAPE: an unknown op, a unit the op does not allow or
+    a value that does not recompute is the critic's to strike (with the reason), not a reason to ask
+    the model again. An absent `derived` is an empty one, as an absent case_against is null."""
+    if derived is None:
+        return []
+    if not isinstance(derived, list):
+        return [f"{where}.derived must be a list"]
+    errors = []
+    for k, d in enumerate(derived):
+        at = f"{where}.derived[{k}]"
+        if not isinstance(d, Mapping):
+            errors.append(f"{at} is not an object")
+            continue
+        extra = set(d) - set(DERIVATION_KEYS)
+        if extra:
+            errors.append(f"{at} has unexpected keys {sorted(extra)}")
+        absent = [key for key in DERIVATION_KEYS if key not in d]
+        if absent:
+            errors.append(f"{at} is missing {absent}")
+            continue
+        if not _is_num(d["value"]):
+            errors.append(f"{at}.value must be a number")
+        if not isinstance(d["op"], str) or not isinstance(d["unit"], str) or not isinstance(d["note"], str):
+            errors.append(f"{at} needs op, unit and note as strings")
+        if not isinstance(d["inputs"], list) or not all(isinstance(i, str) for i in d["inputs"]):
+            errors.append(f"{at}.inputs must be a list of packet paths")
+    return errors
+
+
+def _reason_shape_errors(where: str, reason: Any, *, derived: bool = False) -> list:
+    """Shape errors of one {claim, evidence: [{path, value}]}: a reason or a case against.
+    `derived` (an MLB packet, prompt v3) also checks the shape of its `derived` list."""
     if not isinstance(reason, Mapping) or not isinstance(reason.get("claim"), str) \
             or not isinstance(reason.get("evidence"), list):
         return [f"{where} needs a claim and an evidence list"]
-    return [f"{where}.evidence[{k}] needs a path and a value"
-            for k, ev in enumerate(reason["evidence"])
-            if not isinstance(ev, Mapping) or not isinstance(ev.get("path"), str) or "value" not in ev]
+    errors = [f"{where}.evidence[{k}] needs a path and a value"
+              for k, ev in enumerate(reason["evidence"])
+              if not isinstance(ev, Mapping) or not isinstance(ev.get("path"), str) or "value" not in ev]
+    if derived:
+        errors.extend(_derived_shape_errors(where, reason.get("derived")))
+    return errors
 
 
 def validate_output(output: Any, packet: Mapping) -> list:
@@ -464,9 +546,13 @@ def validate_output(output: Any, packet: Mapping) -> list:
     errors: list = []
     if not isinstance(output, Mapping):
         return ["the answer is not a JSON object"]
-    extra = set(output) - {"summary", "calls"}
+    schema = schema_for(packet)
+    mlb = is_mlb_packet(packet)
+    extra = set(output) - set(schema["properties"])
     if extra:
         errors.append(f"unexpected top-level keys: {sorted(extra)}")
+    if mlb:
+        errors.extend(_derived_shape_errors("summary", output.get("summary_derived")))
     summary = output.get("summary")
     if not isinstance(summary, str):
         errors.append("summary must be a string")
@@ -478,7 +564,6 @@ def validate_output(output: Any, packet: Mapping) -> list:
     calls = output.get("calls")
     if not isinstance(calls, list):
         return errors + ["calls must be a list"]
-    schema = schema_for(packet)
     markets = packet.get("markets") or {}
     seen: dict = {}
     for i, call in enumerate(calls):
@@ -524,13 +609,14 @@ def validate_output(output: Any, packet: Mapping) -> list:
         if not isinstance(call["what_would_change_it"], str) or not call["what_would_change_it"].strip():
             errors.append(f"{where}: what_would_change_it must be a sentence")
         if "case_against" in item_schema["properties"] and call.get("case_against") is not None:
-            errors.extend(_reason_shape_errors(f"{where}: case_against", call["case_against"]))
+            errors.extend(_reason_shape_errors(f"{where}: case_against", call["case_against"],
+                                               derived=mlb))
         reasons = call["reasons"]
         if not isinstance(reasons, list) or not reasons:
             errors.append(f"{where}: reasons must be a non-empty list")
             continue
         for j, reason in enumerate(reasons):
-            errors.extend(_reason_shape_errors(f"{where}: reasons[{j}]", reason))
+            errors.extend(_reason_shape_errors(f"{where}: reasons[{j}]", reason, derived=mlb))
     for sid in markets:
         if sid not in seen:
             errors.append(f"call {sid!r}: missing; every slot needs one call")

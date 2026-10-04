@@ -117,6 +117,13 @@
 }
 .an-missing__more { margin: var(--sp-3) 0 0; font-size: 13.5px; color: var(--v-t5); }
 
+/* WHERE A CALCULATED NUMBER CAME FROM: one small sentence under the reason (or the summary) that
+   uses it, written by the server from what the checker recomputed. Quiet by design, never a chip. */
+.an-derived {
+  display: block; margin-top: var(--sp-1); font-size: 12.5px; line-height: 1.4; color: var(--v-t5);
+}
+.an-derived--summary { margin: calc(-1 * var(--sp-3)) 0 var(--sp-6); max-width: 680px; }
+
 /* The supervised-session briefs' record, under the analyst's own. */
 .an-rec--pilot { margin-top: var(--sp-9); }
 
