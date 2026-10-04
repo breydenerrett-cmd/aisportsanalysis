@@ -46,6 +46,10 @@ def _past(hours=1):
     return acceptance._epoch(datetime.now(timezone.utc) - timedelta(hours=hours))
 
 
+def _future(days=30):
+    return acceptance._epoch(datetime.now(timezone.utc) + timedelta(days=days))
+
+
 # ===========================================================================
 # D1. Billing ON: knowing a tester's EMAIL is enough to get a bearer token for
 #     their existing account (saved bets included). Before 40a9974c the signup
@@ -136,6 +140,11 @@ class RedeliveredCompletedMustNotResurrectAccess(_BillingOn):
         uid = grant.user_id
         self.checkout_by_token(grant.token)
         token = self.pay(uid)
+        # The paid period runs out: time passing moves the paid-through instant
+        # into the past. (These tests used to let the `deleted`/cancel event's
+        # own period end do that; an event announcing an end never shortens what
+        # a trial or invoice paid for, and the fixture's trial runs to 2099.)
+        self.age_rows("billing_subscriptions", "paid_through", timedelta(hours=1))
         self.webhook(self.subscription_event("deleted", "canceled", period_end=_past()))
         self.assertFalse(customers.has_paid_access(uid))
         # Stripe delivers at least once and retries for days; event order is not
@@ -153,6 +162,11 @@ class RedeliveredCompletedMustNotResurrectAccess(_BillingOn):
         uid = grant.user_id
         self.checkout_by_token(grant.token)
         self.pay(uid)
+        # The paid period runs out: time passing moves the paid-through instant
+        # into the past. (These tests used to let the `deleted`/cancel event's
+        # own period end do that; an event announcing an end never shortens what
+        # a trial or invoice paid for, and the fixture's trial runs to 2099.)
+        self.age_rows("billing_subscriptions", "paid_through", timedelta(hours=1))
         self.webhook(self.subscription_event("deleted", "canceled", period_end=_past()))
         self.assertFalse(customers.has_paid_access(uid))
         self.checkout_by_token(grant.token)               # an ended tester pays again
@@ -161,6 +175,14 @@ class RedeliveredCompletedMustNotResurrectAccess(_BillingOn):
                                           "customer": acceptance.CUSTOMER,
                                           "subscription": "sub_new",
                                           "payment_status": "paid"}}})
+        # The completed session links the purchase; the paid first invoice is
+        # what grants the period (a session carries none).
+        self.assertFalse(customers.has_paid_access(uid))
+        self.webhook({"id": "evt_paid_new", "type": "invoice.paid",
+                      "data": {"object": {
+                          "id": "in_new", "customer": acceptance.CUSTOMER,
+                          "subscription": "sub_new", "status": "paid",
+                          "lines": {"data": [{"period": {"end": _future()}}]}}}})
         self.assertTrue(customers.has_paid_access(uid))
         self.assertEqual(customers.get_subscription_record(uid)["stripe_subscription_id"],
                          "sub_new")

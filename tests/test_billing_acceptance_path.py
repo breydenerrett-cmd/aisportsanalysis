@@ -187,6 +187,9 @@ class BuyAndComeBack(_Case):
         # same link (it is in the browser's history) still works.
         started = self.signup()
         self.webhook(self.completed_event(started["user_id"]))
+        # A completed session alone grants no access (it carries no period);
+        # the subscription event that follows it within a second does.
+        self.webhook(self.subscription_event("created", "trialing"))
         self.age_rows("signup_activation_tokens", "created_at", timedelta(hours=24))
         token = self.collect_token()["token"]
         self.assertEqual(self.open_paid_page(token).id, started["user_id"])
@@ -253,7 +256,10 @@ class CancelAndExpiry(_Case):
         user_id, token = self.buy()
         ended = _epoch(datetime.now(timezone.utc) - timedelta(hours=1))
         # Scheduled cancel whose period has now run out, before Stripe's
-        # `deleted` event has even arrived.
+        # `deleted` event has even arrived. Time passing is what ends access
+        # (the paid-through instant moves into the past); the announcement
+        # alone never shortens or lengthens it.
+        self.age_rows("billing_subscriptions", "paid_through", timedelta(hours=1))
         self.webhook(self.subscription_event("updated", "active", period_end=ended,
                                              cancel_at=ended))
         with self.assertRaises(HTTPException) as lapsed:

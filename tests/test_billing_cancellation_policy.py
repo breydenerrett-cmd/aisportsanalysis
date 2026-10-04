@@ -189,13 +189,28 @@ class EntitlementTests(unittest.TestCase):
             self.user.id, now=self.now, db=self.db))
 
     def test_active_subscription_is_entitled(self):
-        customers.upsert_subscription(self.user.id, "sub_1", "active", db=self.db)
+        # Entitled THROUGH its paid-through instant. (This used to upsert an
+        # `active` row with no end at all and expect access forever; an
+        # active row nothing has been paid for is no longer entitled -- see
+        # tests/test_billing_event_order.py.)
+        customers.upsert_subscription(
+            self.user.id, "sub_1", "active",
+            current_period_end=_iso(self.period_end), db=self.db)
+        self.assertTrue(customers.has_paid_access(
+            self.user.id, now=self.now, db=self.db))
+        self.assertFalse(customers.has_paid_access(
+            self.user.id, now=self.period_end + timedelta(seconds=1), db=self.db))
+
+    def test_trialing_subscription_is_entitled(self):
+        customers.upsert_subscription(
+            self.user.id, "sub_1", "trialing",
+            current_period_end=_iso(self.period_end), db=self.db)
         self.assertTrue(customers.has_paid_access(
             self.user.id, now=self.now, db=self.db))
 
-    def test_trialing_subscription_is_entitled(self):
-        customers.upsert_subscription(self.user.id, "sub_1", "trialing", db=self.db)
-        self.assertTrue(customers.has_paid_access(
+    def test_an_active_subscription_with_no_payment_on_record_is_not_entitled(self):
+        customers.upsert_subscription(self.user.id, "sub_1", "active", db=self.db)
+        self.assertFalse(customers.has_paid_access(
             self.user.id, now=self.now, db=self.db))
 
     def test_scheduled_cancel_stays_entitled_through_the_paid_period(self):
@@ -294,9 +309,13 @@ class ReactivationTests(unittest.TestCase):
             current_period_end=result.current_period_end, db=self.db)
         record = customers.get_subscription_record(self.user.id, db=self.db)
         self.assertIsNone(record["cancel_at"])
-        # Renewal resumed: no scheduled cancel means the period end is no
-        # longer an expiry date, so a date past it is still entitled.
+        # Renewal resumed, and what was paid for is untouched. A date PAST the
+        # paid period is entitled only once the renewal's invoice is paid (a
+        # paid-invoice event, tests/test_billing_event_order.py); resuming
+        # renewal is not payment, and this used to assert it was.
         self.assertTrue(customers.has_paid_access(
+            self.user.id, now=self.period_end - timedelta(days=1), db=self.db))
+        self.assertFalse(customers.has_paid_access(
             self.user.id, now=self.period_end + timedelta(days=1), db=self.db))
 
     def test_reactivating_an_ended_subscription_reports_it_rather_than_faking(self):
@@ -625,6 +644,15 @@ class CancelEndpointPolicyTests(unittest.TestCase):
             "data": {"object": {"client_reference_id": str(self.user.id),
                                 "customer": "cus_cp", "subscription": "sub_cp",
                                 "id": "cs_cp"}}})))
+        # The purchase itself: the first invoice, paid. A completed session
+        # carries no period, so it is this event that gives the customer
+        # something to keep after cancelling.
+        asyncio.run(stripe_webhook(self._signed_request({
+            "type": "invoice.paid",
+            "data": {"object": {"customer": "cus_cp", "subscription": "sub_cp",
+                                "status": "paid",
+                                "lines": {"data": [{"period": {
+                                    "end": _epoch(self.period_end)}}]}}}})))
         scheduled = billing.Subscription(
             user_id=self.user.id, plan_id="price_beta", status="active",
             provider_ref="sub_cp", cancel_at_period_end=True,

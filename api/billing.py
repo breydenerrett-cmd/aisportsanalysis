@@ -35,6 +35,7 @@ from __future__ import annotations
 import json
 import os
 import sys
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
@@ -165,9 +166,13 @@ def billing_status(current_user: User = Depends(get_current_user)) -> dict:
             # The paid-through timestamp: what the customer keeps access
             # until after cancelling, and what the paid-surface gate
             # measures "expired" against (src.appstate.customers
-            # .has_paid_access). None when no webhook/cancel response has
-            # carried one -- absent stays absent, never a guessed date.
-            "current_period_end": record.get("current_period_end"),
+            # .has_paid_access). It is the instant payment (or a trial)
+            # covers, NOT the period Stripe last announced: a renewal's new
+            # end is announced before its invoice is paid, and the page would
+            # otherwise promise access the gate then refuses. None when no
+            # payment evidence has been recorded -- absent stays absent,
+            # never a guessed date.
+            "current_period_end": record.get("paid_through"),
             "updated_at": record["updated_at"]}
 
 
@@ -218,7 +223,7 @@ def cancel_subscription(current_user: User = Depends(get_current_user),
                 "message": "cancellation could not be completed; try again shortly"}
     _persist(current_user.id, subscription)
     events.record_event_safe(current_user.id, events.SUBSCRIPTION_CANCELLED)
-    return _subscription_body(subscription)
+    return _subscription_body(subscription, user_id=current_user.id)
 
 
 @router.post("/billing/reactivate")
@@ -259,7 +264,7 @@ def reactivate_subscription(current_user: User = Depends(get_current_user),
     # is a visible moment rather than something inferred from a churn that
     # never arrived.
     events.record_event_safe(current_user.id, events.SUBSCRIPTION_REACTIVATED)
-    return _subscription_body(subscription)
+    return _subscription_body(subscription, user_id=current_user.id)
 
 
 def _persist(user_id: int, subscription: billing.Subscription) -> None:
@@ -267,25 +272,46 @@ def _persist(user_id: int, subscription: billing.Subscription) -> None:
     waiting on Stripe's own webhook -- see cancel_subscription's docstring
     for why (test mode especially may never deliver one). No provider_ref
     means no real provider subscription was touched (NullBillingProvider's
-    honest non-answer), and there is nothing to record."""
+    honest non-answer), and there is nothing to record.
+
+    WHAT IT MUST NOT DO: raise the paid-through instant. The provider's
+    answer is a live read of the subscription, and its `current_period_end`
+    is the period Stripe ANNOUNCED -- for a renewal whose charge failed (or
+    has not been attempted yet) that is a period nobody paid for, and the
+    customer is exactly who is on the Billing page pressing Cancel. So the
+    paid-through already on record is carried through unchanged; only a
+    verified payment event moves it (src.appstate.billing, ACCESS POLICY)."""
     if not subscription.provider_ref:
         return
+    known = customers.get_subscription_record(user_id) or {}
     customers.upsert_subscription(
         user_id, subscription.provider_ref, subscription.status,
         cancel_at=subscription.cancel_at,
-        current_period_end=subscription.current_period_end)
+        current_period_end=subscription.current_period_end,
+        paid_through=known.get("paid_through"))
 
 
-def _subscription_body(subscription: billing.Subscription) -> dict:
+def _subscription_body(subscription: billing.Subscription, *,
+                       user_id: Optional[int] = None) -> dict:
     """One response shape for cancel and reactivate, so a client parses a
     single structure for both. `cancel_at_period_end` is the field that
     actually says whether renewal is stopped -- `status` stays "active"
-    for a scheduled cancel, because the customer really is still active."""
+    for a scheduled cancel, because the customer really is still active.
+
+    `current_period_end` is what the customer keeps access until, so with a
+    `user_id` it is the locally recorded paid-through instant, not the
+    period Stripe announced (see _persist) -- the page says "access
+    continues until <date>" from it."""
+    end = subscription.current_period_end
+    if user_id is not None and subscription.provider_ref:
+        record = customers.get_subscription_record(user_id)
+        if record and record["stripe_subscription_id"] == subscription.provider_ref:
+            end = record["paid_through"]
     return {"status": subscription.status,
             "stripe_subscription_id": subscription.provider_ref,
             "cancel_at_period_end": subscription.cancel_at_period_end,
             "cancel_at": subscription.cancel_at,
-            "current_period_end": subscription.current_period_end}
+            "current_period_end": end}
 
 
 @router.post("/billing/webhook")

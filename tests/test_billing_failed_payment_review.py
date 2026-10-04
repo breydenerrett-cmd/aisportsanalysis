@@ -38,10 +38,13 @@ class RecoveryWithTheSamePeriodEnd(_FailedPaymentCase):
         self.webhook(self.sub_event("updated", "active", end, event_id="evt_fixed"))
         record = customers.get_subscription_record(user_id)
         self.assertEqual(record["status"], "active", record)
-        # A paying customer is not on a hard clock that a late renewal
-        # webhook can trip: an active record never expires by itself.
+        # What was paid for is still theirs through the paid end. (It used to
+        # also assert an `active` record never expires by itself; that rule
+        # let a bare period announcement hand out an unpaid renewal, and
+        # access now runs to the paid-through instant -- see
+        # tests/test_billing_event_order.py.)
         self.assertTrue(customers.has_paid_access(
-            user_id, now=end + timedelta(hours=1)))
+            user_id, now=end - timedelta(hours=1)))
 
     def test_a_late_decline_after_recovery_is_repaired_by_the_redelivered_recovery(self):
         """past_due(N) -> active(N) -> a LATE past_due(N) -> Stripe redelivers
