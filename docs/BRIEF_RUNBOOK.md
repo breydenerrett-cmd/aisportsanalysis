@@ -36,7 +36,14 @@ remembered from an earlier session; the steps are complete.
    Give the subagent no hint about which way to lean: the instruction is the request and nothing
    else. Checker rejections seen so far, all fixed by the writer answering again: a banned word
    ("edge"), a number it computed without declaring it, its own estimate quoted in the summary, and
-   a name written differently from the packet ("San Diego's Morejon").
+   a name written differently from the packet ("San Diego's Morejon", "two Braves"), and a price
+   that is not in the data ("-200" as the limit). When the writer answers again, give it the
+   checker's rejection lines and nothing else. A struck call is published as a pass marked "could
+   not be verified"; if time before first pitch is short, publishing with one struck pass is
+   allowed and is recorded in the ledger.
+   Seen 2026-10-04: two answers to the same frozen data differed (one took a strikeout prop, the
+   next passed on everything). The published answer is the one that cleared the checker; the
+   call is not stable across answers, so say "one model reading", never "the model's view".
    A later version of the same game (lineups now posted): copy the folder aside first, `prepare`
    again, and publish with `--refresh`; the earlier version stays in the ledger.
 6. Publish within 90 minutes of step 3 and before first pitch:
