@@ -47,6 +47,7 @@ from __future__ import annotations
 import csv
 import json
 import os
+import sys
 import threading
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
@@ -305,7 +306,20 @@ _scan_cache: dict = {}
 
 def _scan_cached(spec: StoreSpec, path: Path) -> dict:
     """One store's scan, remembered against (size, mtime) so an unchanged file
-    is never re-read. Errors are returned, never raised, and never cached."""
+    is never re-read. Errors are returned, never raised.
+
+    A failure is remembered too, per file version. It used to be recomputed on
+    every call ("errors are never cached"), so a corrupt or torn store was
+    parsed again by every /health poll and every /data/v1/status request until
+    someone fixed it -- the UFC and NFL halves of that route already remember a
+    failure per file version for exactly this reason. A file that is repaired or
+    rewritten has a new (size, mtime) and is read again at once.
+
+    The caller-facing error is the exception TYPE only: an OSError's text
+    carries the absolute server path ("[Errno 13] Permission denied: <full path>"),
+    and /status hands this string to any signed-in caller. The detail goes to
+    stderr, once per file version, where the operator reads it.
+    """
     try:
         stat = path.stat()
     except OSError:
@@ -318,8 +332,11 @@ def _scan_cached(spec: StoreSpec, path: Path) -> dict:
     try:
         scanned = spec.scan(path)
     except Exception as exc:  # noqa: BLE001 -- a corrupt store is a finding, not a crash
-        return {"present": True, "error": f"{type(exc).__name__}: {exc}"}
-    scanned["present"] = True
+        print(f"store freshness: {spec.name} ({path}) could not be read: {type(exc).__name__}: {exc}",
+              file=sys.stderr, flush=True)
+        scanned = {"present": True, "error": type(exc).__name__}
+    else:
+        scanned["present"] = True
     with _cache_lock:
         _scan_cache[spec.name] = (key, scanned)
     return scanned

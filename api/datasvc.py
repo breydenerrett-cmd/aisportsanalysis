@@ -484,9 +484,9 @@ def nfl_player_features(player: str, as_of: Optional[str] = Query(None, max_leng
 # `src/analyst/packet.py` builds it. Read-only: serving a packet publishes nothing and calls no model. Keeps MLB's
 # own shapes; the envelope (`meta`) is the same as UFC and NFL.
 
-_REFUSAL_STATUS = {"not_found": 404, "ambiguous": 409, "no_data": 404, "unavailable": 503}
+_REFUSAL_STATUS = {"not_found": 404, "ambiguous": 409, "no_data": 404, "unavailable": 503, "out_of_range": 422}
 _REFUSAL_CODE = {"not_found": "not_found", "ambiguous": "ambiguous_game", "no_data": "not_found",
-                 "unavailable": "data_unavailable"}
+                 "unavailable": "data_unavailable", "out_of_range": "invalid_parameter"}
 
 
 def _refusal(result: dict) -> ApiError:

@@ -81,8 +81,9 @@ A cached packet keeps its own `built_utc`.
 Cost to know: the first MLB read of a date after a store or schedule change builds the whole slate (the same work
 as the game page's rebuild: 8.6 seconds for 16 games on a laptop over the repo's real stores, measured 2026-10-04,
 and heavier on the 512 MB container, which has not been measured). The odds captures change every 13 minutes, so a
-date is rebuilt about that often while games are being priced. A service holds the newest four dates
-(`MAX_DATES_HELD`) and hands every caller its own copy of an answer, so editing a result never edits the cache or a
+date is rebuilt about that often while games are being priced. A build runs under its own date's lock: a slow date delays only readers of that date, and a cache hit never waits
+for a build (the dictionaries have their own short lock, held across no request and no build). A service holds the
+four most recently used dates (`MAX_DATES_HELD`) and hands every caller its own copy of an answer, so editing a result never edits the cache or a
 store. Timestamps the domain code stamps with the clock when it builds a payload (`information_time`, some
 `sections.*.as_of`) differ between any two builds, the analyst's own included; for the same inputs and clock the
 bytes are the analyst's.
@@ -128,6 +129,10 @@ Generated from the router (`python -m api.datasvc`); a test compares this table 
 token and answers errors as `{"error": {"code", "message", "details"?}}`. The MLB routes answer `503
 data_unavailable` when the schedule provider cannot be reached, `404 not_found` for a game that is not on the
 schedule and `409 ambiguous_game` for a doubleheader (a packet is one game's; the URL cannot say which half).
+A date outside the window (400 days back to 14 days ahead of today) is `422 invalid_parameter` and asks the provider
+nothing; a game is looked for on the schedule before any slate is built, so a club pair that is not on it is a `404`
+that costs no build. The service asks the provider for at most 12 dates it holds no schedule for per minute
+(`SCHEDULE_BUDGET`); past that a new date is `503 data_unavailable` until the minute is up.
 
 <!-- routes:begin -->
 | Method | Path | Parameters | Returns |
