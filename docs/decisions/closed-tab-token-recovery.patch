@@ -1,0 +1,55 @@
+diff --git a/web/js/signup.js b/web/js/signup.js
+index 4ac7e47c7..9d76786db 100644
+--- a/web/js/signup.js
++++ b/web/js/signup.js
+@@ -289,6 +289,18 @@ export async function renderSignup(main) {
+  * seconds either side of it -- until it does GET /signup/complete is a 404. */
+ export const SIGNUP_POLL_INTERVAL_MS = 2000;
+ export const SIGNUP_POLL_TIMEOUT_MS = 60000;
++// How long the session id stays in the address bar after the token is shown:
++// the server's own re-read window (customers.ACTIVATION_REREAD_WINDOW, 10
++// minutes). A buyer who closes the tab and reopens it from history inside the
++// window re-reads the same token; after it the server answers 404 anyway.
++export const SIGNUP_SESSION_ID_LIFETIME_MS = 10 * 60 * 1000;
++
++function dropSessionIdFromAddress() {
++  try {
++    window.history.replaceState(null, "", window.location.pathname
++      + window.location.search + "#/signup/complete");
++  } catch (err) { /* no history API: leave the URL */ }
++}
+ 
+ const _defaultSleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+ 
+@@ -405,15 +417,17 @@ export async function renderSignupComplete(main, query) {
+       // SIGNED IN IMMEDIATELY: the same storage key the sign-in page writes,
+       // so the buyer never has to paste anything to reach tonight's card.
+       setToken(token);
+-      // Keep the session id out of the address bar and the history once it
+-      // has done its job (replaceState does not fire hashchange).
+-      try {
+-        window.history.replaceState(null, "", window.location.pathname
+-          + window.location.search + "#/signup/complete");
+-      } catch (err) { /* no history API: leave the URL */ }
++      // Keep the session id in the address until the server's re-read window
++      // ends, so a closed tab reopened from history still works; then drop it
++      // (replaceState does not fire hashchange).
++      // unref (Node only, absent in browsers): a pending 10-minute timer must
++      // not keep the test harness process alive.
++      const dropTimer = setTimeout(dropSessionIdFromAddress, SIGNUP_SESSION_ID_LIFETIME_MS);
++      if (dropTimer && typeof dropTimer.unref === "function") dropTimer.unref();
+     } else if (getToken()) {
+       // Reloaded after the re-read window closed, on the device that was
+       // already signed in at checkout: nothing is lost.
++      dropSessionIdFromAddress();
+       card.appendChild(el("h1", { class: "signup-card__title", text: "You're signed in." }));
+       card.appendChild(el("p", { class: "signup-card__subhead", "data-hook": "signup-already-signed-in", text:
+         "This device is already signed in, so there is nothing more to do here." }));
+@@ -436,6 +450,7 @@ export async function renderSignupComplete(main, query) {
+       // A real API refusal (not "not yet"): the token is not retrievable --
+       // the session id is wrong, or its re-read window has closed.
+       card.appendChild(el("h1", { class: "signup-card__title", text: "Almost there." }));
++      dropSessionIdFromAddress();
+       const detail = el("div", { "data-hook": "signup-error-detail" });
+       card.appendChild(detail);
+       renderError(detail, outcome.error);
