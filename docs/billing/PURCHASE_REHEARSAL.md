@@ -1,4 +1,134 @@
-# Purchase rehearsal: one PASS/FAIL table
+# The owner's part: about 15 minutes
+
+Everything that can be proven without a human has been (see "What is proven
+and how" below). What is left is one thing only you can do: **type Stripe's
+TEST card into Stripe's own page on staging.** Nothing is charged (test mode).
+The parent watches the staging log while you click and tells you what it
+saw; you do not read logs.
+
+**Before you start (parent, not you):** the new `billing: webhook ...` log line
+must be deployed to staging (commit "Log one non-secret line per processed
+Stripe webhook event"); without it the watcher cannot tell
+`checkout.session.completed` from `invoice.paid` (every webhook is the same
+request line). The parent starts the watcher before your first click, because
+`fly logs` keeps only about the last 100 lines:
+
+```
+fly logs -a linehound-staging | python scripts/rehearsal_watch.py --since <UTC time you start>
+```
+
+Staging note (observed 2026-10-04 18:52Z): the staging machine was OOM-killed
+and restarted once while this was prepared (`fly status` showed one critical
+health check). If a step below hangs, wait a minute and retry it; Stripe also
+retries a webhook that arrives while the machine is down. Say so if it happens.
+
+## The one sequence
+
+Use a normal browser window. Tell the parent "go" before step 1 and the number
+of each step as you finish it.
+
+| # | You do (exact) | The parent looks for |
+|---|---|---|
+| 1 | Open the Stripe dashboard and switch the **Test mode** toggle ON (the page must say Test mode / show the orange test banner). Go to **Developers, Webhooks** (newer dashboards: **Developers, Workbench, Webhooks**), open the endpoint whose URL is `https://linehound-staging.fly.dev/billing/webhook`, choose **Edit** (Update destination), and tick **`invoice.paid`** and **`invoice.payment_failed`** in addition to the four already ticked (`checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`). Save. Labels differ a little between dashboard versions; the events are what matter. | Nothing in the log yet. It shows up as step 4's `invoice.paid` line. If that line never comes, this step did not save. |
+| 2 | Open `https://linehound-staging.fly.dev/health`. It must contain `"checkout"` with `"mode": "test"`. If it says `live`, stop and tell the parent. | Parent already read this anonymously at 2026-10-04 18:54Z: `provider: stripe`, `mode: test`. |
+| 3 | Open `https://linehound-staging.fly.dev/web/landing.html`, press the main button, type the email `rehearsal-1@linehound.app`, submit. You are sent to a Stripe-hosted page. | `method=POST path=/signup status=200` (weak: it is also 200 when billing says "not configured"; the Stripe page opening is the real proof, so tell the parent if it did not open). |
+| 4 | **On Stripe's page type the test card yourself:** number `4242 4242 4242 4242`, any future expiry (for example `12/34`), any 3-digit CVC, any name and postcode. Press the pay/start-trial button. The success page opens and shows an access token. Copy the token into a notepad. **Do not close the tab yet.** | `billing: webhook type='checkout.session.completed' ... paid_through=-` then `type='customer.subscription.created' ... paid_through='<date>'` and `type='invoice.paid' ...`. Then `GET /signup/complete status=200`. Expected, not yet observed: the paid-through date is the trial's end (about 7 days out), and Stripe sends `invoice.paid` for the $0 trial invoice. If `invoice.paid` is absent but `customer.subscription.created` shows a date, access still opens; tell the parent, it is a finding. |
+| 5 | **Close the tab.** Within 10 minutes, reopen the same success page from your browser history (History, the most recent Stripe return, or Ctrl+Shift+T). The token is shown again. | A **second** `GET /signup/complete status=200` after the payment: "return after closing the success page". After 10 minutes the page 404s by design (token re-read window); then use step 6's token. |
+| 6 | Open `https://linehound-staging.fly.dev/web/index.html#/signin`, paste the token, sign in. Then open `https://linehound-staging.fly.dev/web/index.html#/ufc` (the one page on staging that is always behind the paid gate) and then `...index.html#/billing`. The Billing page shows a status and an "access until" date. Tell the parent the date. | `GET /ufc/fight-night status=200` (or `503`, which also means the gate opened; staging may hold no UFC data) with a `user=<16 hex>` value; `GET /billing/status status=200` with the same `user=`. |
+| 7 | On the Billing page press **Cancel renewal**. The page says access continues until a date. Reload `#/ufc`: it still opens. | `POST /billing/cancel status=200` with the same `user=`, then another `/ufc/fight-night 200/503`. |
+| 8 | **Decline case.** Sign out (or use a private window) and repeat steps 3 to 4 with the email `rehearsal-4@linehound.app` and the card `4000 0000 0000 0341` (Stripe's card that is accepted at checkout and refused on the first real charge). On the Billing page write down the date. In the Stripe dashboard (Test mode): **Subscriptions**, that subscription, **Actions**, **End trial now**. Stripe tries the charge and it is declined. Reload the Billing page. **Pass:** the date has not moved to a month out and the status reads "canceled" (this app shows every non-paying status that way). | `billing: invoice.payment_failed user=<16 hex> subscription='sub_...' attempt='1'`, then a `type='customer.subscription.updated'` line whose `paid_through` is unchanged. If `invoice.payment_failed` does not appear, step 1 did not save. |
+| 9 | Optional, 1 minute, no card needed: in a private window, start a signup with `rehearsal-5@linehound.app`, and on Stripe's page use card `4000 0000 0000 0002` (declined on the spot). Stripe shows "card declined" and you stay on Stripe's page. | No `checkout.session.completed` for that signup and `/signup/complete` never answers 200. Nothing is granted. |
+
+What you tell the parent after each step: "done", and for steps 4, 6 and 8 the
+date the Billing page shows. The parent answers with the watcher's PASS or
+NOT SEEN lines and fills in the REAL column below. The older run's other
+steps (Resend a duplicate event, expiry, re-buy, reactivate, expired tester)
+are deliberately not in this short run; they stay in "The staging run" further
+down, and expiry needs a command to move the stored period end that is not
+written yet.
+
+## What is proven and how (updated 2026-10-04)
+
+Three labels, kept apart:
+
+- **MOCKED**: the real application code, in process, against a stand-in for
+  Stripe with hand-signed webhooks. Proves our logic.
+- **LOCAL**: a real uvicorn process on 127.0.0.1 (`scripts/rehearsal_local.py`),
+  Stripe stand-in, hand-signed webhooks, its own log read by the watcher.
+  Proves the log lines the watcher matches are the ones the server writes.
+- **REAL**: observed on staging or in Stripe. Only what is listed as observed.
+
+| Claim | MOCKED | LOCAL | REAL (staging / Stripe) |
+|---|---|---|---|
+| Duplicate event grants nothing twice | PASS `DuplicateWebhook` (2), `WebhookIdempotencyTests` (3), `DuplicatesAndDelays` (4), `RedeliveredCompletedMustNotResurrectAccess` (4) | not run | NOT RUN (step 6 of the detailed run: Resend) |
+| Delayed / reordered events end the same | PASS `EveryOrderEndsTheSame` (3), `UpdateAndPaymentInEitherOrder` (3), `FailureAndPaymentInEitherOrder` (4), `APeriodAnnouncementAloneGrantsNothing` (5) | not run | NOT RUN |
+| Failed payment never extends access | PASS `test_billing_failed_payment` (14), `..._review` (5) | invoice.payment_failed accepted and logged, 200 | NOT RUN (owner step 8) |
+| Close the success page, come back | PASS `BuyAndComeBack` (4), `RecoveryWithoutTheTab` (4) | PASS second `/signup/complete` 200 after the payment | NOT RUN (owner step 5) |
+| Expired tester converts on the same account | PASS `test_expired_tester_paid_path` (102), `test_expired_tester_review` (15), `test_tester_journey_e2e` (29) | not run | NOT RUN |
+| Cancel keeps access to period end | PASS `CancelAndExpiry` (4), `CancelKeepsAccessUntilPeriodEndTests` (3) | PASS cancel 200 | NOT RUN (owner step 7) |
+| Forged / unsigned webhook changes nothing | PASS `DuplicateWebhook.test_a_forged_or_unsigned_webhook_changes_nothing` | not run | not applicable; a POST to staging is not allowed from this work. A GET to `/billing/webhook` answers 405 (REAL, 2026-10-04) |
+| Staging is in Stripe test mode | n/a | n/a | PASS `/health` says `checkout: provider stripe, mode test` (REAL, 2026-10-04 18:54Z) |
+| Checkout and paid routes refuse anonymous callers | PASS `test_api_billing` | n/a | PASS anonymous `GET /ufc/fight-night` 401 and `GET /billing/status` 401 (REAL, 2026-10-04). `POST /billing/checkout` not probed (POST) |
+| Staging has the right secrets set | n/a | n/a | PASS by name only: `BILLING_PROVIDER`, `STRIPE_API_KEY`, `STRIPE_BETA_PRICE_ID`, `STRIPE_WEBHOOK_SECRET`, `APP_ADMIN_TOKEN`, `ODDS_API_KEY` all Deployed (`fly secrets list`). Values never read |
+| Which webhook event types have ever arrived on staging | n/a | n/a | UNKNOWN: `fly logs` keeps about 100 lines (from 18:48Z on 2026-10-04) and none were billing lines; the Stripe dashboard's Events list for the endpoint is the only history |
+| The whole funnel script `scripts/funnel_smoke.sh` | n/a | BLOCKED on this Windows host: it hands `/tmp/...` paths to native Windows Python, so its signing and parsing steps cannot open their files (14 failures, all at that boundary, none in the app). `rehearsal_local.py` is the replacement here | n/a |
+| The watcher reads the real log format | PASS `test_rehearsal_watch` (14) | PASS all 8 required steps against a real server's log | PASS for the parse only: 35 of 35 request-log lines in a live `fly logs --no-tail` capture (2026-10-04) were read; none were billing lines, so every step read NOT SEEN, correctly |
+
+## What the watcher can and cannot see
+
+Matched from lines the code emits today (`scripts/rehearsal_watch.py`):
+
+| Step | Log line | Emitted today? |
+|---|---|---|
+| checkout requested | `method=POST path=/signup\|/billing/checkout\|/billing/tester-checkout status=200` | request line only. **No line says a Stripe session was created**, and the request is 200 even when billing answers "not configured" or "error" (the failure case logs `billing: checkout provider call failed`, which the watcher prints as a WARN). Weak by nature; `checkout.session.completed` is the proof |
+| `checkout.session.completed` | `billing: webhook type='checkout.session.completed' event=... user=... paid_through=- status=...` | **added in this work** (before it, no line named the event) |
+| `invoice.paid` | `billing: webhook type='invoice.paid' ...` | added in this work |
+| access granted / paid_through set | the same webhook line with `paid_through='<date>'`, on `invoice.paid`, `customer.subscription.created` or `.updated` | added in this work. The date is a date, not a secret |
+| paid gate opened | `method=GET path=/ufc/fight-night status=200 (or 503) ... user=<16 hex>` | yes, request log |
+| return after closing the success page | second `method=GET path=/signup/complete status=200` after the payment | yes, request log |
+| cancel | `method=POST path=/billing/cancel status=200 ... user=<16 hex>` | yes, request log |
+| `invoice.payment_failed` | `billing: invoice.payment_failed user=... subscription=... attempt=...` | yes, existing line |
+| paid gate refused after expiry (optional) | `method=GET path=/ufc/fight-night status=402 ... user=<16 hex>` | yes, request log |
+
+Not visible in any log, so not claimed: the Stripe page itself, the card form,
+which card was typed, and any event Stripe sent that the endpoint was not
+subscribed to.
+
+Warnings the watcher adds: the webhook answering 400 (signature) or 501
+(`STRIPE_WEBHOOK_SECRET` unset), any 5xx on a `/billing` route, and any
+`billing: ... provider call failed` line.
+
+Dry run before the owner starts, no network beyond localhost:
+
+```
+python scripts/rehearsal_local.py
+```
+
+It prints PASS for each required step when the watcher and the server agree.
+
+## Results (REAL = what a person or Stripe has actually been observed doing)
+
+| Step | MOCKED | LOCAL | REAL |
+|---|---|---|---|
+| Webhook endpoint subscribed to `invoice.paid` and `invoice.payment_failed` | n/a | n/a | NOT RUN (owner step 1) |
+| Sign-up on staging opens Stripe's page | PASS | PASS (signup 200) | NOT RUN (step 3) |
+| Test card accepted; `checkout.session.completed` and `invoice.paid` arrive | PASS | PASS | NOT RUN (step 4) |
+| Access granted (paid-through set) | PASS | PASS | NOT RUN (steps 4, 6) |
+| Close success page, return | PASS | PASS | NOT RUN (step 5) |
+| Paid gate opens for the token | PASS | PASS | NOT RUN (step 6) |
+| Cancel keeps access | PASS | PASS | NOT RUN (step 7) |
+| Decline: `invoice.payment_failed`, date unmoved | PASS | PASS (log line) | NOT RUN (step 8) |
+| Staging in test mode | n/a | n/a | PASS (anonymous `/health`, 2026-10-04) |
+
+Known gaps this work did not close: the two `expectedFailure` tests in
+`test_tester_journey_e2e` (re-sending a lost tester token hands out another
+week and does not revoke the lost one; admin extend, not billing) and the
+`DeployDoesNotStrandOrImmortaliseExistingRows` owner decision below are still
+open; billing is off in production, so neither blocks the staging run.
+
+---
+
+## Purchase rehearsal: one PASS/FAIL table (the detailed record)
 
 Production billing stays OFF until every critical row below reads PASS in
 both columns. This file is the single record.
@@ -181,6 +311,14 @@ also to stderr:
 
 ```
 billing: invoice.payment_failed user=<16 hex> subscription='sub_...' attempt='1'
+```
+
+A second webhook line (added 2026-10-04) is written for every other processed
+event, so the log names which event arrived. `paid_through` is the stored
+date access runs to (`-` when none), `status` the stored status:
+
+```
+billing: webhook type='invoice.paid' event='evt_...' user=<16 hex or -> paid_through='2026-11-04T19:00:00+00:00' status='active'
 ```
 
 | Case | In-process test | Staging step | Log lines to find |
