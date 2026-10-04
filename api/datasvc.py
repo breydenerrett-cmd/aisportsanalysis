@@ -1,4 +1,10 @@
-"""GET /data/v1/...: the data service's HTTP surface (UFC, then NFL).
+"""GET /data/v1/...: the data service's HTTP surface (UFC, NFL, MLB).
+
+Since 2026-10-04 the routes' domain logic lives in `src/datasvc/client.py` (fastapi-free), which this file
+and the in-process `DataClient` both call: this file is sign-in, parameter parsing, pagination and the one error
+shape on top of it. The store holders, `DataUnavailable` and the lookups moved there unchanged and are imported
+back under their old names. The MLB routes wrap the existing services (`src/datasvc/mlb/service.py`). Reference:
+docs/datasvc/CLIENT.md, whose route table is generated from this router (`python -m api.datasvc`).
 
 This file only serves what the files hold. Every number a route returns is either a
 stored record or comes from `src.datasvc.ufc.features` / `matchup` (UFC) or
@@ -533,3 +539,30 @@ def no_such_route(request: Request, path: str) -> dict:
         raise StarletteHTTPException(status_code=405, detail="method not allowed",
                                      headers={"Allow": ", ".join(sorted(allowed))})
     raise ApiError(404, "not_found", f"no such route: {request.url.path}")
+
+
+# -- the route reference, generated from the router itself ------------------------------------------------------
+
+def route_reference() -> str:
+    """The Markdown table of every documented /data/v1 route: method, path, parameters and what it returns.
+
+    Generated from `router.routes` (path, parameters and summary come from the route declarations), so the
+    table in docs/datasvc/CLIENT.md cannot drift from the code: a test compares the two, and
+    `python -m api.datasvc` prints the table to paste back in when it changes. The catch-all that answers
+    unknown paths is not a documented route and is left out.
+    """
+    rows = []
+    for route in router.routes:
+        if not isinstance(route, APIRoute) or not route.include_in_schema:
+            continue
+        dependant = route.dependant
+        params = [p.name for p in dependant.path_params] + [p.name for p in dependant.query_params]
+        rows.append((route.path, ", ".join(f"`{p}`" for p in params) or "none",
+                     route.summary or route.name.replace("_", " ")))
+    lines = ["| Method | Path | Parameters | Returns |", "|---|---|---|---|"]
+    lines += [f"| GET | `{path}` | {params} | {summary} |" for path, params, summary in sorted(rows)]
+    return "\n".join(lines)
+
+
+if __name__ == "__main__":
+    print(route_reference())

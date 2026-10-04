@@ -370,11 +370,20 @@ class _BaseHolder:
         with self._lock:
             cached = self._status.get(name)
         if cached is None or cached[0] != sig:
-            info = self._measure(name, path, st.st_size)
+            try:
+                info = self._measure(name, path, st.st_size)
+            except DataUnavailable as exc:
+                # Remembered for this file version, like a store's failed load: a corrupt file is re-parsed when
+                # it changes, not on every call (the client checks each dataset before every answer).
+                with self._lock:
+                    self._status[name] = (sig, exc)
+                raise
             with self._lock:
                 self._status[name] = (sig, info)
         else:
             info = cached[1]
+            if isinstance(info, DataUnavailable):
+                raise DataUnavailable(name) from info.__cause__
         age = None
         newest = features_mod.instant(info["newest"])
         if newest is not None:
@@ -992,6 +1001,16 @@ BASIS: Dict[str, Dict[str, dict]] = {
     },
 }
 
+def basis_reference() -> str:
+    """The Markdown table of `BASIS`, for docs/datasvc/CLIENT.md (a test compares the two, so the doc says
+    what the code says). `python -m src.datasvc.client` prints it."""
+    lines = ["| Sport | Dataset | Source | Basis | What that means |", "|---|---|---|---|---|"]
+    for sport, datasets in BASIS.items():
+        for name, info in datasets.items():
+            lines.append(f"| {sport} | `{name}` | {info['source']} | `{info['basis']}` | {info['note']} |")
+    return "\n".join(lines)
+
+
 UNITS = {
     "ufc": {"height": "inches", "reach": "inches", "weight": "pounds", "time": "seconds",
             "prices": "American odds", "rates": "per minute or per 15 minutes as each figure's own unit says"},
@@ -1472,7 +1491,7 @@ def _ufc_ids_of_sheet(sheet: dict, store) -> dict:
                                      "event": (sheet.get("bout") or {}).get("event_id")}}}
     slugs = {}
     for side in ("a", "b"):
-        block = (feats.get(side) or {}).get("ufccom") or {}
+        block = (feats.get(side) or {}).get("ufccom_career") or {}
         slugs[side] = block.get("ufc_slug")
     if any(slugs.values()):
         ids["provider_ids"]["ufc_com_slug"] = slugs
@@ -1492,3 +1511,7 @@ def _nfl_ids_of_sheet(sheet: dict, store) -> dict:
 def default_client() -> DataClient:
     """A client over the process's own stores (what the analyst and the pages use)."""
     return DataClient()
+
+
+if __name__ == "__main__":
+    print(basis_reference())
