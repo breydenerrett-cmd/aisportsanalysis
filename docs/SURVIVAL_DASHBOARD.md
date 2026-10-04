@@ -1,13 +1,13 @@
 # LineHound survival dashboard
 
-Generated 2026-10-03 21:25Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-10-04 00:48Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
-| Days until 2026-10-31 | **28** |
+| Days until 2026-10-31 | **27** |
 | Current monthly burn (known + estimated infrastructure) | $78.00 |
 | Current monthly burn incl. Claude at the planning assumption | $278.00 (unknown: Claude subscription that operates the business, BALLDONTLIE) |
-| Identified monthly savings (not yet realised) | $29.00: The Odds API (100K tier): $29.00 (downgrade to the $30 20K tier from November; NOT confirmed, owner decision) |
+| Identified monthly savings (not yet realised) | $29.00: The Odds API (100K tier): $29.00 (downgrade to the $30 20K tier; NOT confirmed, owner decision) |
 | MRR (config, manual: manual until /admin/revenue is read from production) | $0.00 |
 | Testers granted | 0 of 20 (config, owner-updated) |
 | CAC | $0 spent on acquisition |
@@ -97,9 +97,9 @@ Closing-line value: see `docs/VALUE_SCAN.md` (the standing measurement; no CLV f
 
 ## Next actions
 
-- **Owner:** 1) Send group 1 by hand (docs/sales/SEND_ORDER.md: Covers thread, 337picks, Unit Circle, Tommy Lorenzo) and report each send and reply. 2) Turn the AI analyst on: an Anthropic API key with a monthly spend limit, saved as the repo secret ANTHROPIC_API_KEY (docs/decisions/AI_ANALYST_ENABLE.md); until then the MLB and UFC analyst sections stay empty. 3) Add `timeout-minutes: 15` to the deploy job (docs/audit/2026-10-03/PROD_DEPLOY_HANG.md; one line in GitHub's editor). 4) Staging purchase rehearsal with Stripe's test card (docs/billing/PURCHASE_REHEARSAL.md).
+- **Owner:** Roadmap: first revenue (2026-10-03). 1) Game days: have a session open by 10:15 am PT, or type "run the brief", so the playoff brief is frozen before first pitch. 2) Send the five brief-first messages (docs/sales/SEND_ORDER.md, top section) once the sample page has a brief on it, and report each send. 3) Fifteen minutes: the staging purchase with Stripe's test card (docs/billing/PURCHASE_REHEARSAL.md). 4) Send Stripe the support question (docs/billing/STRIPE_SUPPORT_QUESTION.md). 5) Three numbers: Claude plan price, this month's Fly bill, the domain price per year. 6) Recommended: an Anthropic API key with a $10 monthly limit as the repo secret ANTHROPIC_API_KEY plus the one env line (docs/decisions/AI_ANALYST_ENABLE.md), so briefs need no live session. 7) Grant tester access to each prospect who says yes.
 - **Customer:** Batch 1 goes out in five small groups, best fit first; group 1 is written and waiting. Log sends and replies with scripts/outreach_batch.py (exact words stay in a private local file). Grant tester spots only to people who bet these sports, will use it and will give feedback (docs/sales/DISCOVERY_GUIDE.md). After five real conversations: stop and synthesise before changing the product.
-- **Product:** The prop numbers ignore the opposing starter: the card's top pick and the board's biggest gaps on 2026-10-03 were hitters facing the best pitcher on the slate. That is the first thing a baseball-literate tester will notice. Building now: the situation layer (rest and rhythm, form, stakes, pressure history, head-to-head, availability) for MLB and UFC with a with/without test of the AI analyst (docs/SITUATION_LAYER_PLAN.md), and the NFL data layer.
+- **Product:** One complete playoff brief delivered through the signed-in game page and a public sample: the session-assisted analyst path (a call on every priced market, the case against each bet, what was missing, graded in public). In test: whether feeding the opposing starter improves the total-bases numbers (docs/PREREG_TB_STARTER_AWARE.md). Parked: more sports in the data service, UFC and NFL briefs.
 - **Model:** No market shows repeatable value (docs/PERFORMANCE_MATRIX.md: 110 measured populations, 0 candidates; moneyline closing-line value negative on 26 of 26 rows). The props question cannot be answered before 2026-10-31: the best-placed family, batter total bases, reaches a minimum sample about five weeks into the 2027 season (docs/PROP_EXPERIMENT_INVENTORY.md, docs/PREREG_PROP_FAMILIES_DRAFT.md, a DRAFT with seven owner decisions). Until then: sell the public record and the price comparison, not an edge. AI critic: adds one catch over a plain rule on 8 cases and is not ready to show customers (docs/AI_CRITIC_BENCHMARK.md).
 
 ## What survival requires
@@ -111,17 +111,21 @@ Closing-line value: see `docs/VALUE_SCAN.md` (the standing measurement; no CLV f
 
 ## Costs and the kill list
 
-| Item | Monthly | Verdict | Note |
-|---|---|---|---|
-| The Odds API (100K tier) | $59.00 | KEEP | Prices every card. Burn before the NFL/MMA re-buy fix: about 550 credits a day, 80% of it NFL and MMA boards re-bought every slot. After the fix: 6.7 credits an hour measured over 3.6 hours, but capture slots were starved for most of that window, so the saving is NOT confirmed. The 25-minute game-day refresh fired for the first time at 23:20Z. Re-measure after Sunday's games; if it holds, the $30 20K tier fits and saves $29 from November. Owner decision. |
-| Fly.io production (2 shared CPUs, 1 GB, 1 GB volume) | $15.00 (est.) | KEEP | Estimate. Exact figure: Fly dashboard, billing. |
-| Fly.io staging (stops when idle since 2026-10-01) | $3.00 (est.) | REDUCE | Estimate. Was always-on (about $15 estimated); now billed only while someone is using it, plus storage. Exact figure: Fly dashboard, billing. Still serves the paid product free (APP_PUBLIC_DEMO=1): turn the demo off once production is selling. |
-| Domain linehound.app | $1.00 (est.) | KEEP | Amortised estimate. |
-| Claude subscription that operates the business | UNKNOWN | REDUCE | UNKNOWN. Brey to supply the monthly figure; planned against $200. |
-| BALLDONTLIE | UNKNOWN | CANCEL | UNKNOWN. The 48-hour trial ended 2026-09-17; nothing harvested is used by any model. Check the account's billing page that it did not convert to $299.99. |
-| API-Tennis | $0.00 | CANCEL | Trial expired 2026-09-18, not renewed. |
-| GitHub Actions | $0.00 | KEEP | Free only because the repo is public (about 90k runner minutes a month). Do not make the repo private. |
-| Stripe | $0.00 | KEEP | Per charge: about $1.02 on $19.99. |
+| Item | Monthly | Basis | Kind | Evidence | Verdict | Note |
+|---|---|---|---|---|---|---|
+| The Odds API (100K tier) | $59.00 | estimated | fixed subscription | Plan price $59; the 100,000 quota reset is in data/processed/credit_log.jsonl on 2026-10-01. Invoice not seen. | KEEP | Prices every card. September used 95,101 of 100,000 credits. Since the re-buy fix, October is running at about 270 a day (814 in the first three days, postseason slate, no NFL Sunday yet), which would be about 8,400 a month and fit the $30 20K tier. Re-measure after two NFL Sundays before deciding. What the smaller tier loses: headroom for backfills and new-market probes. Owner decision. |
+| Fly.io production (2 shared CPUs, 1 GB, 1 GB volume) | $15.00 (est.) | estimated | usage, roughly fixed | Machine size from deploy/fly.production.toml times list price. Invoice not seen. | KEEP | Estimate. Exact figure: Fly dashboard, billing. |
+| Fly.io staging (stops when idle since 2026-10-01) | $3.00 (est.) | estimated | usage | Stops when idle; list-price estimate. Invoice not seen. | REDUCE | Estimate. Was always-on (about $15 estimated); now billed only while someone is using it, plus storage. Exact figure: Fly dashboard, billing. Still serves the paid product free (APP_PUBLIC_DEMO=1): turn the demo off once production is selling. |
+| Domain linehound.app | $1.00 (est.) | estimated | fixed, prepaid yearly | Amortised guess. Registrar receipt not seen. | KEEP | Amortised estimate. |
+| Claude subscription that operates the business | UNKNOWN | unknown | fixed subscription, shared | Owner to supply. Session-assisted briefs run on this subscription and add no API charge. | REDUCE | UNKNOWN. Brey to supply the monthly figure; planned against $200. |
+| BALLDONTLIE | UNKNOWN | unknown | none expected | The API answers 401 since the trial ended; owner to confirm no charge on the billing page. | CANCEL | UNKNOWN. The 48-hour trial ended 2026-09-17; nothing harvested is used by any model. Check the account's billing page that it did not convert to $299.99. |
+| API-Tennis | $0.00 | actual | none | Trial expired 2026-09-18, not renewed. | CANCEL | Trial expired 2026-09-18, not renewed. |
+| GitHub Actions | $0.00 | actual | none | Public repository; no charge. | KEEP | Free only because the repo is public (about 90k runner minutes a month). Do not make the repo private. |
+| Stripe | $0.00 | actual | per charge | Published fees; nothing is charged while billing is off. | KEEP | Per charge: about $1.02 on $19.99. |
+
+Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). No other cost rises with each subscriber: the analysis is written once per game, not once per customer.
+- api per game usd: 0.08 to 0.11 at list price (docs/AI_ANALYST.md); not incurred until the key is set
+- session assisted per brief: not measured yet; filled from the first pilot brief (tokens, list-price dollars, minutes)
 
 ## Product errors
 

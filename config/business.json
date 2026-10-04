@@ -12,64 +12,91 @@
       "known": true,
       "class": "KEEP",
       "saving_usd": 29.0,
-      "saving_label": "downgrade to the $30 20K tier from November; NOT confirmed, owner decision",
-      "note": "Prices every card. Burn before the NFL/MMA re-buy fix: about 550 credits a day, 80% of it NFL and MMA boards re-bought every slot. After the fix: 6.7 credits an hour measured over 3.6 hours, but capture slots were starved for most of that window, so the saving is NOT confirmed. The 25-minute game-day refresh fired for the first time at 23:20Z. Re-measure after Sunday's games; if it holds, the $30 20K tier fits and saves $29 from November. Owner decision."
+      "saving_label": "downgrade to the $30 20K tier; NOT confirmed, owner decision",
+      "note": "Prices every card. September used 95,101 of 100,000 credits. Since the re-buy fix, October is running at about 270 a day (814 in the first three days, postseason slate, no NFL Sunday yet), which would be about 8,400 a month and fit the $30 20K tier. Re-measure after two NFL Sundays before deciding. What the smaller tier loses: headroom for backfills and new-market probes. Owner decision.",
+      "basis": "estimated",
+      "kind": "fixed subscription",
+      "evidence": "Plan price $59; the 100,000 quota reset is in data/processed/credit_log.jsonl on 2026-10-01. Invoice not seen."
     },
     {
       "item": "Fly.io production (2 shared CPUs, 1 GB, 1 GB volume)",
       "usd": 15.0,
       "known": false,
       "class": "KEEP",
-      "note": "Estimate. Exact figure: Fly dashboard, billing."
+      "note": "Estimate. Exact figure: Fly dashboard, billing.",
+      "basis": "estimated",
+      "kind": "usage, roughly fixed",
+      "evidence": "Machine size from deploy/fly.production.toml times list price. Invoice not seen."
     },
     {
       "item": "Fly.io staging (stops when idle since 2026-10-01)",
       "usd": 3.0,
       "known": false,
       "class": "REDUCE",
-      "note": "Estimate. Was always-on (about $15 estimated); now billed only while someone is using it, plus storage. Exact figure: Fly dashboard, billing. Still serves the paid product free (APP_PUBLIC_DEMO=1): turn the demo off once production is selling."
+      "note": "Estimate. Was always-on (about $15 estimated); now billed only while someone is using it, plus storage. Exact figure: Fly dashboard, billing. Still serves the paid product free (APP_PUBLIC_DEMO=1): turn the demo off once production is selling.",
+      "basis": "estimated",
+      "kind": "usage",
+      "evidence": "Stops when idle; list-price estimate. Invoice not seen."
     },
     {
       "item": "Domain linehound.app",
       "usd": 1.0,
       "known": false,
       "class": "KEEP",
-      "note": "Amortised estimate."
+      "note": "Amortised estimate.",
+      "basis": "estimated",
+      "kind": "fixed, prepaid yearly",
+      "evidence": "Amortised guess. Registrar receipt not seen."
     },
     {
       "item": "Claude subscription that operates the business",
       "usd": null,
       "known": false,
       "class": "REDUCE",
-      "note": "UNKNOWN. Brey to supply the monthly figure; planned against $200."
+      "note": "UNKNOWN. Brey to supply the monthly figure; planned against $200.",
+      "basis": "unknown",
+      "kind": "fixed subscription, shared",
+      "evidence": "Owner to supply. Session-assisted briefs run on this subscription and add no API charge."
     },
     {
       "item": "BALLDONTLIE",
       "usd": null,
       "known": false,
       "class": "CANCEL",
-      "note": "UNKNOWN. The 48-hour trial ended 2026-09-17; nothing harvested is used by any model. Check the account's billing page that it did not convert to $299.99."
+      "note": "UNKNOWN. The 48-hour trial ended 2026-09-17; nothing harvested is used by any model. Check the account's billing page that it did not convert to $299.99.",
+      "basis": "unknown",
+      "kind": "none expected",
+      "evidence": "The API answers 401 since the trial ended; owner to confirm no charge on the billing page."
     },
     {
       "item": "API-Tennis",
       "usd": 0.0,
       "known": true,
       "class": "CANCEL",
-      "note": "Trial expired 2026-09-18, not renewed."
+      "note": "Trial expired 2026-09-18, not renewed.",
+      "basis": "actual",
+      "kind": "none",
+      "evidence": "Trial expired 2026-09-18, not renewed."
     },
     {
       "item": "GitHub Actions",
       "usd": 0.0,
       "known": true,
       "class": "KEEP",
-      "note": "Free only because the repo is public (about 90k runner minutes a month). Do not make the repo private."
+      "note": "Free only because the repo is public (about 90k runner minutes a month). Do not make the repo private.",
+      "basis": "actual",
+      "kind": "none",
+      "evidence": "Public repository; no charge."
     },
     {
       "item": "Stripe",
       "usd": 0.0,
       "known": true,
       "class": "KEEP",
-      "note": "Per charge: about $1.02 on $19.99."
+      "note": "Per charge: about $1.02 on $19.99.",
+      "basis": "actual",
+      "kind": "per charge",
+      "evidence": "Published fees; nothing is charged while billing is off."
     }
   ],
   "claude_planning_assumption_usd": 200.0,
@@ -137,9 +164,13 @@
     "Closing-line value is negative in every segment measured (V1 games -1.21 pts, n=51; props about -3.5).",
     "Our number scored worse than the market's in 12 of 16 populations and never significantly better."
   ],
-  "next_owner_action": "1) Send group 1 by hand (docs/sales/SEND_ORDER.md: Covers thread, 337picks, Unit Circle, Tommy Lorenzo) and report each send and reply. 2) Turn the AI analyst on: an Anthropic API key with a monthly spend limit, saved as the repo secret ANTHROPIC_API_KEY (docs/decisions/AI_ANALYST_ENABLE.md); until then the MLB and UFC analyst sections stay empty. 3) Add `timeout-minutes: 15` to the deploy job (docs/audit/2026-10-03/PROD_DEPLOY_HANG.md; one line in GitHub's editor). 4) Staging purchase rehearsal with Stripe's test card (docs/billing/PURCHASE_REHEARSAL.md).",
-  "next_product_action": "The prop numbers ignore the opposing starter: the card's top pick and the board's biggest gaps on 2026-10-03 were hitters facing the best pitcher on the slate. That is the first thing a baseball-literate tester will notice. Building now: the situation layer (rest and rhythm, form, stakes, pressure history, head-to-head, availability) for MLB and UFC with a with/without test of the AI analyst (docs/SITUATION_LAYER_PLAN.md), and the NFL data layer.",
+  "next_owner_action": "Roadmap: first revenue (2026-10-03). 1) Game days: have a session open by 10:15 am PT, or type \"run the brief\", so the playoff brief is frozen before first pitch. 2) Send the five brief-first messages (docs/sales/SEND_ORDER.md, top section) once the sample page has a brief on it, and report each send. 3) Fifteen minutes: the staging purchase with Stripe's test card (docs/billing/PURCHASE_REHEARSAL.md). 4) Send Stripe the support question (docs/billing/STRIPE_SUPPORT_QUESTION.md). 5) Three numbers: Claude plan price, this month's Fly bill, the domain price per year. 6) Recommended: an Anthropic API key with a $10 monthly limit as the repo secret ANTHROPIC_API_KEY plus the one env line (docs/decisions/AI_ANALYST_ENABLE.md), so briefs need no live session. 7) Grant tester access to each prospect who says yes.",
+  "next_product_action": "One complete playoff brief delivered through the signed-in game page and a public sample: the session-assisted analyst path (a call on every priced market, the case against each bet, what was missing, graded in public). In test: whether feeding the opposing starter improves the total-bases numbers (docs/PREREG_TB_STARTER_AWARE.md). Parked: more sports in the data service, UFC and NFL briefs.",
   "production_health": "Run `python scripts/prod_watch.py`. 2026-10-03: production served 09:02Z data until 16:08Z behind one stalled deploy (docs/audit/2026-10-03/PROD_DEPLOY_HANG.md); the watch now flags a deploy unfinished for 20 minutes. Known noise: the daily loop fails on days with no MLB games (2026-10-02).",
   "capture_cost": "10.9 credits an hour after the cadence change against 23.6 before (2026-10-01, one evening, not a representative game day). Metric: credits per useful fresh observation; re-measure after Sunday. docs/audit/2026-10-01/PRODUCTION_RECOVERY.md.",
-  "testers_granted": 0
+  "testers_granted": 0,
+  "analyst_costs": {
+    "api_per_game_usd": "0.08 to 0.11 at list price (docs/AI_ANALYST.md); not incurred until the key is set",
+    "session_assisted_per_brief": "not measured yet; filled from the first pilot brief (tokens, list-price dollars, minutes)"
+  }
 }

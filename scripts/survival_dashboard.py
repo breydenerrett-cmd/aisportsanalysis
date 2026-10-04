@@ -424,11 +424,25 @@ def render(config: dict, today: date, now_utc: str, queue_rows: list = None,
     out.append("")
     out.append("## Costs and the kill list")
     out.append("")
-    out.append("| Item | Monthly | Verdict | Note |")
-    out.append("|---|---|---|---|")
+    # Basis is actual (an invoice or the account says so), estimated, or unknown. Nothing here is
+    # read from an invoice unless its evidence says so; an amount is never promoted to "actual" by
+    # a default in the code.
+    out.append("| Item | Monthly | Basis | Kind | Evidence | Verdict | Note |")
+    out.append("|---|---|---|---|---|---|---|")
     for c in config["costs_monthly"]:
         amount = _money(c["usd"]) + ("" if c["known"] or c["usd"] is None else " (est.)")
-        out.append(f"| {c['item']} | {amount} | {c['class']} | {c['note']} |")
+        basis = c.get("basis") or ("unknown" if c["usd"] is None else "actual" if c["known"] else "estimated")
+        out.append(f"| {c['item']} | {amount} | {basis} | {c.get('kind') or ''} | {c.get('evidence') or ''} "
+                   f"| {c['class']} | {c['note']} |")
+    out.append("")
+    individual = next((o for o in config.get("offers", []) if o.get("price_usd") == 19.99), None)
+    if individual:
+        net = individual["net_after_stripe_usd"]
+        out.append(f"Contribution per paying subscriber: ${net:,.2f} a month (${individual['price_usd']:,.2f} "
+                   "less Stripe's fees). No other cost rises with each subscriber: the analysis is written "
+                   "once per game, not once per customer.")
+    for label, text in (config.get("analyst_costs") or {}).items():
+        out.append(f"- {label.replace('_', ' ')}: {text}")
     out.append("")
     rest = config.get("top_blockers", [])[3:]
     for title, items in (("Product errors", config.get("product_errors", [])),
