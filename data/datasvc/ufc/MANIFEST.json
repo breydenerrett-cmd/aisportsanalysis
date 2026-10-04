@@ -1,22 +1,22 @@
 {
  "files": {
   "bouts.jsonl": {
-   "bytes": 1426718,
-   "newest": "2026-09-29T23:00Z",
+   "bytes": 1426884,
+   "newest": "2026-10-04T00:00Z",
    "records": 1689,
-   "sha256": "701982b2020239efe3512bdb8dc9e4ae6944dc6ccdae313785de000e34fdfe41"
+   "sha256": "35d77150cbd2c01b8b656a6c8bae4f8f28c2767eb2402d06e2d45573555f827d"
   },
   "events.jsonl": {
-   "bytes": 80171,
-   "newest": "2026-09-29T23:00Z",
+   "bytes": 80163,
+   "newest": "2026-10-03T20:00Z",
    "records": 156,
-   "sha256": "b622eb588bcc0afe1647433f802d87242af07cc73aba1647dd61d812e950b9d1"
+   "sha256": "8adf00296aa5ee99d4d834957af4ceeb68e3a8efcc6cadd1254193e05f53f22a"
   },
   "fight_stats.jsonl": {
-   "bytes": 5482593,
-   "newest": "2026-09-29T23:00Z",
-   "records": 3182,
-   "sha256": "fd5fe0f285ea55b0e4af4421274ff32f7f905f64602be3b50974f2ecc52167e5"
+   "bytes": 5530540,
+   "newest": "2026-10-04T00:00Z",
+   "records": 3210,
+   "sha256": "b816031c71c691c8c131c5558050fbdc3f55974af98c9c32a79b0b75e2079a12"
   },
   "fighters.jsonl": {
    "bytes": 598289,
@@ -25,10 +25,10 @@
    "sha256": "c170d8d1d8810879ba9c0d0415098b7414f6b632f56e05b7eb8158b9b9e140cb"
   },
   "odds.jsonl": {
-   "bytes": 6088358,
-   "newest": "2026-10-03T19:55:38Z",
-   "records": 4033,
-   "sha256": "930b79337157fedc50e19c03ddb171ccf0605a75712347665aa518cef4b39fe6"
+   "bytes": 6090706,
+   "newest": "2026-10-04T10:19:49Z",
+   "records": 4034,
+   "sha256": "9d319ffdfd64b43cdf13511ea7042ccaa95536b6c3aba9999cf401550af59095"
   },
   "ufccom_profiles.jsonl": {
    "bytes": 1263862,
@@ -37,29 +37,18 @@
    "sha256": "f9d7f7ec8aa1bf8e6c6f556c4a324c4546537888cfff4654f15de97323098267"
   }
  },
- "generated_utc": "2026-10-03T22:06:14Z",
+ "generated_utc": "2026-10-04T10:19:53Z",
  "last_run": {
-  "bouts": 1689,
-  "events": 156,
-  "fight_stats": 3182,
-  "fighters": 1075,
-  "finished_utc": "2026-10-03T20:14:23Z",
-  "kind": "backfill",
-  "odds": 4033,
+  "bouts": 80,
+  "events": 9,
+  "fight_stats": 60,
+  "fighters": 0,
+  "finished_utc": "2026-10-04T10:19:53Z",
+  "kind": "update",
+  "odds": 50,
   "profiles": 0,
-  "started_utc": "2026-10-03T18:57:57Z",
+  "started_utc": "2026-10-04T10:17:13Z",
   "stopped": null
  },
- "last_run_errors": 0,
- "profiles_run": {
-  "errors": 0,
-  "fighters": 1075,
-  "finished_utc": "2026-10-03T22:05:00Z",
-  "kind": "ufccom_profiles",
-  "matched_on": {
-   "name": 1,
-   "name+record": 862
-  },
-  "profiles": 863
- }
+ "last_run_errors": 0
 }
