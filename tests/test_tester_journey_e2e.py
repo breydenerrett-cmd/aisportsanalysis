@@ -230,7 +230,6 @@ class SampleSignedOut(_Journey):
         self.assertIn("MLB postseason", offer)
         self.assertIn("Analysis, not advice", offer)
 
-    @unittest.expectedFailure
     def test_the_sample_offer_line_says_it_is_not_on_sale_and_hand_picked(self):
         # The landing page and the signup form say both: "first 20 testers", "not on sale yet",
         # "if you're picked". The sample page says "Free for 7 days for the first testers" and
@@ -239,7 +238,6 @@ class SampleSignedOut(_Journey):
         self.assertRegex(offer, r"(?i)not on sale")
         self.assertNotIn("Start the free 7 days", offer)
 
-    @unittest.expectedFailure
     def test_the_outreach_message_does_not_promise_paying_to_keep_it_while_checkout_is_off(self):
         status, meta = self.call("GET", "/meta")
         self.assertEqual(status, 200)
@@ -301,7 +299,6 @@ class RequestEarlyAccess(_Journey):
                      "losses included", "temporary"):
             self.assertIn(fact, text)
 
-    @unittest.expectedFailure
     def test_the_confirmation_does_not_promise_a_timing_the_guide_does_not_keep(self):
         # The guide tells the owner to answer an unselected signup with "I'll write when one
         # opens"; the page tells every signup an email "usually within a day" is coming.
@@ -408,7 +405,6 @@ class Activation(_Journey):
         self.assertEqual((report["testers_granted"], report["activated"], report["internal_excluded"]),
                          (1, 1, 1))
 
-    @unittest.expectedFailure
     def test_the_guide_tells_the_owner_how_to_keep_his_own_account_out_of_the_counts(self):
         # Granting his own email the way the guide says (no earlier signup) leaves no internal
         # tag, so his own page views count as a customer's. Only a signup that carried
@@ -444,7 +440,6 @@ class DayEight(_Journey):
         self.assertIn("Your early access ended on ${day}.", src)
         self.assertIn("upgradeLabel", _read(JS / "signin.js"))
 
-    @unittest.expectedFailure
     def test_a_game_page_for_an_ended_tester_says_the_access_ended(self):
         # The sign-in page does. A game page draws the generic gate for every 401: "This part of
         # the private beta needs your invite token. Add it once and it stays on this device",
@@ -498,7 +493,6 @@ class LostToken(_Journey):
                   body={"user_id": grant["user_id"], "reason": "lost the token"})
         self.assertEqual(self.call("GET", f"/games/{self.date}", token=grant["token"])[0], 401)
 
-    @unittest.expectedFailure
     def test_the_guide_says_what_the_owner_does_when_a_tester_loses_the_token(self):
         guide = _read(ROOT / "docs" / "sales" / "DISCOVERY_GUIDE.md")
         self.assertRegex(guide.split("## First 20 testers", 1)[1].split("\n## ", 1)[0], r"(?i)\blost\b")
@@ -510,7 +504,6 @@ class LostToken(_Journey):
 
 class TokenMessageIsTrueToday(_Journey):
 
-    @unittest.expectedFailure
     def test_the_message_does_not_offer_a_ufc_card_while_ufc_picks_are_paused(self):
         token = self.grant("a@example.test")["token"]
         status, card = self.call("GET", f"/card/{self.date}", token=token, query="sport=mma")

@@ -14,7 +14,10 @@
  * of composing a claim about it -- this is display, not interpretation.
  */
 
-import { loadCheckoutState, NOT_ON, gateLabel } from "./checkout.js";
+import {
+  loadCheckoutState, NOT_ON, gateLabel, loadTesterBilling, testerEndedLine, upgradeLabel,
+  TESTER_NOT_OPEN, TESTER_REPLY,
+} from "./checkout.js";
 
 export function el(tag, attrs = {}, children = []) {
   const node = document.createElement(tag);
@@ -377,6 +380,43 @@ export function renderLoading(text) {
     [el("p", { class: "state-loading__figure", text })]);
 }
 
+/** The `detail.error` api/auth.py puts on the 401 of an EXPIRED early-access
+ * tester token. The same word signin.js asks about; spelled here too because
+ * signin.js imports this module. */
+const TESTER_ACCESS_EXPIRED = "tester_access_expired";
+
+/** A tester whose seven days are over (401 {"error":"tester_access_expired",
+ * "expires_at"}). They HAVE a token, so the generic "needs your invite token"
+ * gate with its signup button sends them round the signup form for
+ * nothing. Say what the sign-in page says: the access ended, on which day, and
+ * the one next step that is true (checkout.js owns every word). Checkout off or
+ * unknown: no button, no signup link. Checkout on: one link to the sign-in page,
+ * where the upgrade button lives. */
+function renderTesterExpired(container, err) {
+  const detail = err.detail;
+  const section = el("section", {
+    class: "gate chamfer", role: "alert", "data-hook": "tester-access-ended",
+  });
+  section.appendChild(el("p", { class: "gate__eyebrow", text: "EARLY ACCESS ENDED" }));
+  section.appendChild(el("p", { class: "gate__title", "data-hook": "tester-ended-line",
+    text: testerEndedLine(detail.expires_at) }));
+  const next = el("p", { class: "gate__body", "data-hook": "tester-not-open", text: TESTER_REPLY });
+  section.appendChild(next);
+  const actions = el("div", { class: "gate__actions" });
+  section.appendChild(actions);
+  loadTesterBilling().then(({ state, knownNotOpen }) => {
+    const label = upgradeLabel(state);
+    if (label) {
+      next.textContent = "";
+      actions.appendChild(el("a", { href: "#/signin", class: "btn btn--primary chamfer chamfer--btn",
+        "data-hook": "tester-upgrade-link", text: label }));
+    } else if (knownNotOpen) {
+      next.textContent = TESTER_NOT_OPEN;
+    }
+  });
+  container.appendChild(section);
+}
+
 /** A missing/invalid invite token. Customer language on the primary
  * surface, with the API's own words kept -- verbatim, never paraphrased
  * -- inside a collapsed disclosure. This client never decides WHY the
@@ -449,6 +489,10 @@ export function renderError(container, err) {
   clear(container);
   const status = err && err.status != null ? String(err.status) : "network";
   if (status === "401") {
+    if (err.detail && typeof err.detail === "object" && err.detail.error === TESTER_ACCESS_EXPIRED) {
+      renderTesterExpired(container, err);
+      return;
+    }
     renderAuthRequired(container, err);
     return;
   }
