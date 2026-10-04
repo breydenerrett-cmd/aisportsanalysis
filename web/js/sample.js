@@ -77,6 +77,12 @@ export function renderSample(data) {
     text: "One real brief, written before the game and kept exactly as it was. Every call is shown, "
       + "the passes as plainly as the takes, with the strongest reason against each one." }));
   if (data && data.available && data.analysis) {
+    // Which game this is. Without it a reader cannot tell what the calls below are about.
+    const a = data.analysis;
+    if (a.away && a.home) {
+      page.appendChild(el("h2", { class: "sp-matchup", "data-hook": "sample-matchup",
+        text: `${a.away} at ${a.home}${a.date ? `, ${a.date}` : ""} (MLB postseason)` }));
+    }
     page.appendChild(facts(data));
     page.appendChild(renderAnalystSection(data));
   } else {
