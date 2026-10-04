@@ -1,6 +1,6 @@
 # LineHound survival dashboard
 
-Generated 2026-10-04 01:19Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-10-04 16:24Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
@@ -66,7 +66,7 @@ Read from `docs/sales/outreach_queue.csv`, people only. A forum thread is a publ
   - game: n=3: 2-1, +0.69u (too few for a rate)
   - prop: n=30: 14-16, -5.74u, ROI -19.1%
   - fills (shown apart, never counted): n=29: 21-8, +7.68u (too few for a rate)
-  - postseason (graded, not counted): n=2: 0-2, -2.00u (too few for a rate)
+  - postseason (graded, not counted): n=10: 5-5, -0.48u (too few for a rate)
 - **MLB previous** (Our first card rule; 2026-09-10..2026-09-22): n=230: 151-79, +7.98u, ROI +3.5%
   - game: n=113: 73-40, +7.61u, ROI +6.7%
   - prop: n=117: 78-39, +0.38u, ROI +0.3%
@@ -74,8 +74,8 @@ Read from `docs/sales/outreach_queue.csv`, people only. A forum thread is a publ
   - game: n=1: 1-0, +0.93u (too few for a rate)
 - **NFL previous** (Our first NFL rule; 2026-09-17..2026-09-21): n=10: 7-3, -0.26u (too few for a rate)
   - game: n=10: 7-3, -0.26u (too few for a rate)
-- **MMA current** (Our UFC card; 2026-09-22..2026-09-26): n=6: 5-1, +2.50u (too few for a rate)
-  - game: n=6: 5-1, +2.50u (too few for a rate)
+- **MMA current** (Our UFC card; 2026-09-22..2026-10-03): n=9: 8-1, +4.80u (too few for a rate)
+  - game: n=9: 8-1, +4.80u (too few for a rate)
 
 Closing-line value: see `docs/VALUE_SCAN.md` (the standing measurement; no CLV figure is computed or copied here). No rule here has evidence of an edge.
 
@@ -97,9 +97,9 @@ Closing-line value: see `docs/VALUE_SCAN.md` (the standing measurement; no CLV f
 
 ## Next actions
 
-- **Owner:** Roadmap: first revenue (2026-10-03). 1) Game days: have a session open by 10:15 am PT, or type "run the brief", so the playoff brief is frozen before first pitch. 2) Send the five brief-first messages (docs/sales/SEND_ORDER.md, top section) once the sample page has a brief on it, and report each send. 3) Fifteen minutes: the staging purchase with Stripe's test card (docs/billing/PURCHASE_REHEARSAL.md). 4) Send Stripe the support question (docs/billing/STRIPE_SUPPORT_QUESTION.md). 5) Three numbers: Claude plan price, this month's Fly bill, the domain price per year. 6) Recommended: an Anthropic API key with a $10 monthly limit as the repo secret ANTHROPIC_API_KEY plus the one env line (docs/decisions/AI_ANALYST_ENABLE.md), so briefs need no live session. 7) Grant tester access to each prospect who says yes.
+- **Owner:** 1) Send the five invitations (docs/sales/SEND_ORDER.md, top section); the sample is live at https://linehound.app/web/sample.html, so send the link when someone says yes; report each send. 2) Open the Padres at Brewers game page on production with a tester account and confirm the brief shows. 3) Stripe test-mode rehearsal on staging, about 15 minutes (docs/billing/PURCHASE_REHEARSAL.md): first subscribe the staging webhook to invoice.paid and invoice.payment_failed. 4) Send Stripe the support question (docs/billing/STRIPE_SUPPORT_QUESTION.md). 5) Decide: MLB's data terms allow individual, non-commercial, non-bulk use only (docs/audit/2026-10-04/COLLECTION.md); repeat free trials and legacy rows (PURCHASE_REHEARSAL.md, Owner decisions); resuming team-total capture, about 96 credits a day (docs/decisions/derivatives-capture.patch). 6) Three cost numbers: Claude plan, Fly bill, domain. 7) Recommended: the Anthropic API key with a $10 limit, so briefs need no live session. Resume a brief any time: say "run the brief" (docs/BRIEF_RUNBOOK.md).
 - **Customer:** Batch 1 goes out in five small groups, best fit first; group 1 is written and waiting. Log sends and replies with scripts/outreach_batch.py (exact words stay in a private local file). Grant tester spots only to people who bet these sports, will use it and will give feedback (docs/sales/DISCOVERY_GUIDE.md). After five real conversations: stop and synthesise before changing the product.
-- **Product:** One complete playoff brief delivered through the signed-in game page and a public sample: the session-assisted analyst path (a call on every priced market, the case against each bet, what was missing, graded in public). In test: whether feeding the opposing starter improves the total-bases numbers (docs/PREREG_TB_STARTER_AWARE.md). Parked: more sports in the data service, UFC and NFL briefs.
+- **Product:** Delivery is session-assisted, not unattended. A brief for each playoff game before first pitch (docs/BRIEF_RUNBOOK.md); grade yesterday's. Fix in the next prompt version: the brief says "the packet" in customer text. Research, no live change: the opposing starter helps total bases slightly (docs/research/TB_STARTER_AWARE_RESULT.md); a pitcher-specific strikeout model beats a league baseline (docs/research/K_BASELINE_RESULT.md); both need a market comparison before any promotion.
 - **Model:** No market shows repeatable value (docs/PERFORMANCE_MATRIX.md: 110 measured populations, 0 candidates; moneyline closing-line value negative on 26 of 26 rows). The props question cannot be answered before 2026-10-31: the best-placed family, batter total bases, reaches a minimum sample about five weeks into the 2027 season (docs/PROP_EXPERIMENT_INVENTORY.md, docs/PREREG_PROP_FAMILIES_DRAFT.md, a DRAFT with seven owner decisions). Until then: sell the public record and the price comparison, not an edge. AI critic: adds one catch over a plain rule on 8 cases and is not ready to show customers (docs/AI_CRITIC_BENCHMARK.md).
 
 ## What survival requires
@@ -125,7 +125,7 @@ Closing-line value: see `docs/VALUE_SCAN.md` (the standing measurement; no CLV f
 
 Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). No other cost rises with each subscriber: the analysis is written once per game, not once per customer.
 - api per game usd: 0.08 to 0.11 at list price (docs/AI_ANALYST.md); not incurred until the key is set
-- session assisted per brief: rehearsal 2026-10-04 (Braves at Dodgers, 3 markets, not published): 30 seconds, request about 5,000 input tokens, about $0.02 at list price; billed to the shared subscription, no API charge. A real brief with props is larger; filled again from the first published one.
+- session assisted per brief: first published brief, 2026-10-04 Padres at Brewers (3 markets, no props): about $0.04 at list price (8,921 input and about 1,900 output tokens), 60 seconds of model time, about 12 minutes of operator time; billed to the shared subscription, no API charge.
 
 ## Product errors
 
@@ -150,13 +150,17 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
+- First brief published and live for customers: Padres at Brewers, frozen 15:19Z, three passes with reasons (https://linehound.app/web/sample.html)
+- Internal data API: MLB joins UFC and NFL behind one client; the brief's prepare command reads through it; fifty repeated reads make no upstream request
+- Collection: a current store refreshes in 5 requests (was 19); a cold one is 618; the daily loop now saves the refreshed stats so builds stop refetching about 600 requests each
+- Billing: access follows verified payment whatever the event order; reviewed twice; real Stripe rehearsal still not run
+- Checker: declared calculations are recomputed and kept with their source; undeclared numbers are still rejected
+- Research: starter-aware total bases (small), pitcher strikeout baseline (clear against a weak baseline); no live change
+- Five invitations ready; none sent
 - Outreach batch 1: 20 paste-ready messages (docs/sales/batch_01.md)
 - Production recovery: stuck deploy cancelled, reviewed release deployed, 60-minute soak passed
 - Admin page shows signups by outreach source; link previews for the landing page and the record link
 - Capture slowdown found and fixed: engine slate 21 minutes -> 65 seconds on a runner
 - Staging billing confirmed in test mode (from /health, no key shown); rehearsal purchase steps in GO_LIVE section 5
 - UFC: seven published picks graded from two independent sources each
-- Source tracking for outreach links; one outreach queue (40 leads) feeding this dashboard
-- Performance matrix, prop-experiment inventory and draft, AI critic benchmark run 1
-- Landing page: product-first first screen; production watch script; UFC auto-grading built (inactive)
 
