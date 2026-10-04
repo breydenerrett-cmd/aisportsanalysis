@@ -31,11 +31,47 @@ Two columns, because they prove different things:
 | 12 | Billing switched on but misconfigured: an honest error, never a silent waitlist | yes | PASS `BrokenBillingFailsOutLoud`, `test_checkout_delivery.SilentWaitlistTests` | not applicable |
 | 13 | Billing off (production today): no checkout, no promise of a payment | yes | PASS `BillingSwitchedOff.test_off_says_so_and_never_promises_a_payment`, `test_expired_tester_paid_path.SignupWithBillingOff` | verified on production 2026-10-02 (`/health` checkout off) |
 
-| 14 | A failed payment (trial ends and the first charge fails, or a renewal fails) ends access at the end of the PAID period, not the new one; a successful retry restores it | yes | PARTIAL: `test_billing_failed_payment` and `test_billing_failed_payment_review` pass (they model the event order below as Stripe is assumed to send it). **OPEN** (see "Failed payment: OPEN") | NOT RUN (step 13) |
+| 14 | A failed payment (trial ends and the first charge fails, or a renewal fails) ends access at the end of the PAID period, not the new one; a successful retry restores it | yes | PASS `test_billing_failed_payment`, `test_billing_failed_payment_review`, and `test_billing_event_order` (every order of one renewal's events, duplicates, delays; see "Failed payment and event order") | NOT RUN (step 13) |
+| 14a | A period announcement alone never grants an unpaid renewal; a paid invoice grants the period it bought; an older failure never undoes a later payment | yes | PASS `test_billing_event_order` (`APeriodAnnouncementAloneGrantsNothing`, `EveryOrderEndsTheSame`, `FailureAndPaymentInEitherOrder`) | NOT RUN (step 13; needs the two invoice events subscribed, see "Required setup") |
 
 "PASS" in the first column means the named tests passed in the test run
 recorded at the bottom of this file. It does not mean a human has seen it
 work with Stripe.
+
+## Required setup: the Stripe test webhook endpoint (owner, once)
+
+Access now follows payment, and payment arrives as an invoice event. In the
+Stripe dashboard, test mode, Developers, Webhooks, the staging endpoint
+(`https://linehound-staging.fly.dev/billing/webhook`): the endpoint must be
+sent **all six** of these events, not the four it was first set up with.
+
+- `checkout.session.completed`
+- `customer.subscription.created`
+- `customer.subscription.updated`
+- `customer.subscription.deleted`
+- `invoice.paid` (required)
+- `invoice.payment_failed` (required)
+
+`invoice.payment_succeeded` is also understood if it is ticked; it says the
+same as `invoice.paid`.
+
+**If `invoice.paid` is not subscribed, the handler grants no renewal.** That is
+the safe failure: nothing is given away. A first purchase still opens
+(Stripe's `customer.subscription.created` for a new subscription reports
+`active` only once its first invoice is paid, or `trialing` for a trial), and
+then access simply ends at the end of that first period, because no paid
+renewal ever arrives. **How you would see it:** on staging, the Billing page
+date never moves past the first period and the card is refused once that date
+passes (402, `subscription_expired`), even though Stripe shows the renewal
+paid; in the Stripe webhook screen the endpoint's recent deliveries show no
+`invoice.paid` rows. Fix: tick the event, then Resend the missed
+`invoice.paid` events (Developers, Events, Resend); a resent event is safe,
+it only ever extends access to the period it paid for.
+
+**If `invoice.payment_failed` is not subscribed**, nothing about access
+changes (a decline never changed access), but the
+`billing: invoice.payment_failed` log line in step 13 never appears, which is
+how you would see it.
 
 ## The staging run (owner, about 20 minutes, nothing is charged)
 
@@ -99,16 +135,19 @@ it says `checkout.mode: test`. If it says `live`, stop.
     endpoint is also sent `invoice.payment_failed` (it is only logged, but
     it is the line that proves the decline arrived). The retry-succeeds
     case is covered in process only: Stripe's test dashboard cannot make a
-    declining card start working. **Also record the order of events.**
-    The order decides an open question (see "Failed payment: OPEN"). From
-    the Stripe test dashboard's event list, note the order and time of
+    declining card start working. **Also record the order of events**, as a
+    check on the assumptions the code now makes (it no longer depends on
+    any particular order; see "Failed payment and event order"). From the
+    Stripe test dashboard's event list, note the order and time of
     `customer.subscription.updated` (and the status and
     `current_period_end` it carries), `invoice.created`,
-    `invoice.payment_failed` and `invoice.paid` for a renewal that fails.
-    Ending a trial early only approximates a renewal; the faithful run is a
-    renewal that fails under a Stripe test clock (create the customer under
-    a test clock in the dashboard, subscribe it with the declining card,
-    advance the clock past the period). Send me that list.
+    `invoice.payment_failed` and `invoice.paid` for a renewal. The faithful
+    run is a renewal under a Stripe test clock (create the customer under a
+    test clock in the dashboard, subscribe it, advance the clock past the
+    period): with a card that works, the Billing page date must move to the
+    new period only after `invoice.paid`; with the declining card it must
+    not move at all. Ending a trial early only approximates a renewal. Send
+    me that list.
 
 Tell me each step's result ("3 ok", "6 showed two subscriptions") and I will
 fill the table. I can check `/health` and the public pages from outside; I
@@ -153,6 +192,7 @@ billing: invoice.payment_failed user=<16 hex> subscription='sub_...' attempt='1'
 | Cancellation | `CancelAndExpiry.test_cancel_stops_renewal_and_keeps_what_was_paid_for` | 7 | `method=POST path=/billing/cancel status=200 ... user=<hash>`; a following `method=GET path=/ufc/fight-night status=200 ... user=<same hash>` shows access continued; a `customer.subscription.updated` webhook line follows if Stripe sends one |
 | Expiry | `CancelAndExpiry.test_after_the_paid_period_access_is_refused_with_a_reason` | 8 (simulated; the period end is moved by the one command) | `method=GET path=/ufc/fight-night status=402 ... user=<same hash>`, and `method=GET path=/billing/status status=200 ... user=<same hash>` (the billing page must still open) |
 | Failed payment | `test_billing_failed_payment` (trial then first charge, renewal, retry succeeds, redelivery, stale events) | 13 | `billing: invoice.payment_failed user=<hash> subscription='sub_...' attempt='1'`, then `method=POST path=/billing/webhook status=200 ... user=-` for it and for the `customer.subscription.updated` that follows; the Billing page date must not move |
+| Renewal paid / events out of order | `test_billing_event_order` (`EveryOrderEndsTheSame`, `UpdateAndPaymentInEitherOrder`, `DuplicatesAndDelays`) | 13 (test clock) | `method=POST path=/billing/webhook status=200 ... user=-` for each of `customer.subscription.updated` and `invoice.paid`; the Billing page date moves to the new period only once the `invoice.paid` line has appeared, whichever of the two arrived first |
 
 ### Proving the paid gate on staging
 
@@ -198,27 +238,62 @@ Test mode only (confirm the toggle says "Test mode" first).
   is typed on Stripe's own checkout page by the owner. Nothing else in this
   file ever touches a card.
 
-## Failed payment: OPEN
+## Failed payment and event order: what is true now
 
-Do not read row 14 as closed. The fix keeps the recorded period end when a
-`past_due`, `unpaid` or `incomplete` event arrives, so a decline cannot move
-access forward **if the new period end first arrives on that failure event**.
-That is the order the tests model, and it is what the first charge after a
-trial is believed to do. It is not verified against Stripe.
+Stripe does not send events in order and sends some twice. The reviewer's
+suspicion in the earlier version of this file (a renewal's new period end
+arriving on an `active` update before the charge is attempted, so a decline
+still yields a free period) was right to worry about, and the fix is no
+longer a guard on that order: access now follows **payment**, whatever order
+the events come in. Owner ruling, 2026-10-04. The rules, in plain words (the
+same list is the "ACCESS POLICY" in `src/appstate/billing.py`):
 
-The reviewer's hypothesis, untested: at a renewal Stripe sends
-`customer.subscription.updated` with the NEW period end while the status is
-still `active`, before the charge is attempted. If so, that event is stored
-as paid time, a later `past_due` keeps that new end, and the decline still
-yields a free period. The tests do not cover it because the app cannot tell a
-renewal that will succeed from one that will fail until `invoice.paid` or
-`invoice.payment_failed` arrives.
+1. **Access runs to one stored date, the paid-through date,** and to nothing
+   else. After it the customer is not let in until a paid renewal arrives.
+2. **Only proof moves that date, and only later.** A paid invoice moves it to
+   the end of the period that invoice bought. A free trial moves it to the
+   trial's end and no further. A brand new subscription that Stripe reports
+   as `active` is its first paid period (Stripe holds a new subscription as
+   `incomplete` until the first invoice is paid).
+3. **A new period that Stripe merely announces grants nothing.** The
+   `customer.subscription.updated` that moves the period end forward at a
+   renewal is only an announcement. A completed checkout page on its own also
+   grants nothing: it carries no period, so the paid first invoice (a second
+   later) is what opens access.
+4. **A failed charge moves nothing in either direction.** What was paid for
+   stays theirs to the paid-through date; the period Stripe tried to bill is
+   never given.
+5. **An older event never undoes a newer one.** Each event is compared with
+   what is stored using its own Stripe timestamp: an older decline arriving
+   after a later payment changes nothing; a duplicate changes nothing (it does
+   not even rewrite the stored row); a late "paid" for a period already
+   recorded changes nothing; events for an old subscription never touch a
+   newer subscription's record. Where Stripe sent no timestamp the app falls
+   back to arrival order for that comparison. Because proof only ever moves the
+   date later, no arrival order can take away access a customer paid for or
+   give access they did not.
+6. **Cancellation is unchanged and now written down.** Cancelling stops
+   renewal and keeps what was paid for. When Stripe says the subscription is
+   deleted, access ends at the paid-through date, not earlier and not later.
+7. **Nobody loses access on deploy.** A customer already recorded with a
+   period end keeps that end as their paid-through date.
 
-If staging shows that order, the remedy is not another guard on the
-subscription events: access must move onto `invoice.paid` (extend only when
-the invoice is paid), which is a larger change to payment code and is not
-made here. Step 13's event-order note is what decides it. Until then a
-failed renewal may still keep one extra period of access.
+The Billing page and the cancel/reactivate answers now show the paid-through
+date as "access until", not the period Stripe announced.
+
+**Known and deliberate:** a customer whose renewal is slow to be charged is
+refused from the paid-through date until `invoice.paid` arrives. Stripe
+normally pays a renewal invoice about an hour after the period rolls over, so
+the gap is of that order; there is no grace window because a grace window is
+access without proof. If you want one, it is a single named constant to add
+in `src/appstate/customers.has_paid_access` and a decision for you.
+
+**Not covered:** a payment for a subscription this app has no customer record
+for (it is dropped, as before, and Stripe is told 200); events that arrive
+before the customer is linked to Stripe cannot happen on this path (the link
+is made when checkout is opened). The admin revenue page counts rows by
+status, so a row that has not been paid yet still reads as "paying" there
+until its invoice arrives.
 
 ## Found in review and fixed (2026-10-03)
 
@@ -238,10 +313,11 @@ too. Detail: `docs/audit/2026-10-03/EXPIRED_TESTER_PAID_PATH.md`.
   access. It needs a code change before billing opens (the trial length
   has to become part of the checkout's idempotency key, and the button
   label must stop promising a trial to someone who will not get one).
-- **An old payment event after a newer subscription.** The subscription
-  table holds one row per person. A payment event for an old subscription,
-  redelivered after the same person has bought again, can still overwrite
-  the newer record. Rare; needs a guard before billing opens.
+- **Two subscriptions for one person.** The table holds one row per
+  person. An event for an old subscription no longer overwrites the newer
+  record (2026-10-04), but only the newer subscription's own state is shown;
+  a person who somehow ends up paying for two is not told. Rare; billing
+  support would see it in Stripe.
 - **A deep review before the switch.** This path touches sign-in and
   payments. Before production billing is turned on, run the cloud review
   (`/code-review ultra`) on the branch; it is yours to launch.
@@ -262,3 +338,9 @@ billing test modules only (365 tests, no failure): `test_billing_failed_payment`
 `test_api_billing`, `test_api_signup`, `test_checkout_copy_states`,
 `test_checkout_delivery`, `test_api_boundary`. The full suite has not been
 re-run on the change.
+
+Rows 14 and 14a (event order) were checked with those modules plus
+`test_billing_event_order` and `test_appstate_sqlite_pragmas` on 2026-10-04.
+The same change turned up fixtures elsewhere that treated an `active` row with
+no payment on record as entitled for ever; they are named in the commit that
+changed the rule.
