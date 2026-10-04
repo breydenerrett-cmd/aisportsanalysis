@@ -1,14 +1,16 @@
 # Batch 1 sending order
 
-## Send these five first (2026-10-04): an invitation to review the next brief
+## Send these five first (2026-10-04): an invitation to read a real brief
 
 This section replaces "Group 1" below as the next thing to send. Five people, MLB fit first. Each
-message is an honest invitation to look at the NEXT completed brief. It promises only what exists
-today: paid plans are not open, so it says "not on sale yet" and never "then $19.99 if you keep it"; it does not say a sample is
-already up, and it carries no link. When someone says yes, send them the link below once a brief is
-posted. Version label for all five: `v3c-invite-not-on-sale`. Send by hand, then tell me "sent 9"
+message links to the brief that is live now at https://linehound.app/web/sample.html (one real
+game, frozen before first pitch, graded after). It promises only what exists today: paid plans are
+not open, so it says "not on sale yet"; and it says the brief calls the markets it has prices for,
+because today's brief had no player props it could call. Replace LINK with the tagged link under
+each person. Version label for all five: `v3d-sample-link`. Send by hand, then tell me "sent 9"
 (the item number) and I log it. A send, a reply, a signup, real use and a payment are logged
-separately.
+separately. Before sending after tonight, open the link yourself: it shows the latest designated
+game and its result once graded.
 
 Why these five (all from the existing queue; nobody appears twice):
 
@@ -22,7 +24,7 @@ Why these five (all from the existing queue; nobody appears twice):
 
 Spare, if one cannot be reached: item 13 (337picks, Discord).
 
-Link to send only AFTER they say yes and a brief is posted (replace LEAD and CHANNEL):
+The link, tagged per person (replace LEAD and CHANNEL as listed under each):
 
 ```
 https://linehound.app/web/sample.html?utm_source=LEAD&utm_medium=CHANNEL&utm_campaign=brief_01
@@ -37,7 +39,7 @@ honestly, skip him and use the spare.
 Where: https://x.com/sportsbooktom
 
 ```
-Tommy, [one thing from his recent baseball post]. I am building a matchup brief for the MLB playoffs: for each game it makes a call on every priced market, writes the strongest case against its own bet, lists what it could not know, and is graded in public afterward. It is posted before first pitch. May I send you the next one when it is posted, and would you tell me whether it helps you decide what to examine or skip? AI analysis, not advice, and I claim no edge. If it turns out useful, I am hand-picking the first 20 testers: 7 days free, no card. It is not on sale yet; the planned price is $19.99 a month.
+Tommy, [one thing from his recent baseball post]. I am building a matchup brief for the MLB playoffs: for each game it makes a call (take or pass) on each market it has prices for, writes the strongest case against any bet it takes, lists what it could not know, and is graded in public afterward. It is posted before first pitch. Today's is here: LINK Would you look at it and tell me whether it helps you decide what to examine or skip? AI analysis, not advice, and I claim no edge. If it turns out useful, I am hand-picking the first 20 testers: 7 days free, no card. It is not on sale yet; the planned price is $19.99 a month.
 ```
 
 Public reply if DMs are closed:
@@ -46,20 +48,20 @@ Public reply if DMs are closed:
 [One thing from his post]. I am building a playoff matchup brief that argues the case against its own bet and is graded in public. May I send you the next one and hear what is missing?
 ```
 
-When he says yes, once a brief is posted:
+If he answers:
 
 ```
-Here it is, frozen before first pitch: LINK. What would you want it to show that it does not?
+Thank you. What would you want it to show that it does not? If you want the next ones before first pitch, I can add you to the first 20 testers.
 ```
 
-Log: `python scripts/outreach_batch.py sent --batch 1 --items 9 --version v3c-invite-not-on-sale`
+Log: `python scripts/outreach_batch.py sent --batch 1 --items 9 --version v3d-sample-link`
 
 ### Item 3, Peter Appel (LEAD `l003-justbaseball-betting`, CHANNEL `creator`)
 
 Where: https://x.com/peterappel23
 
 ```
-Peter, your "Auditing Myself" log is the reason I am writing: you publish the losing numbers. I am building a matchup brief for the MLB playoffs: for each game it makes a call on every priced market, writes the strongest case against its own bet, lists what it could not know, and is graded in public afterward. It is posted before first pitch. May I send you the next one when it is posted, and would you tell me whether it helps you decide what to examine or skip? AI analysis, not advice, and I claim no edge. If it turns out useful, I am hand-picking the first 20 testers: 7 days free, no card. It is not on sale yet; the planned price is $19.99 a month.
+Peter, your "Auditing Myself" log is the reason I am writing: you publish the losing numbers. I am building a matchup brief for the MLB playoffs: for each game it makes a call (take or pass) on each market it has prices for, writes the strongest case against any bet it takes, lists what it could not know, and is graded in public afterward. It is posted before first pitch. Today's is here: LINK Would you look at it and tell me whether it helps you decide what to examine or skip? AI analysis, not advice, and I claim no edge. If it turns out useful, I am hand-picking the first 20 testers: 7 days free, no card. It is not on sale yet; the planned price is $19.99 a month.
 ```
 
 Public reply if DMs are closed:
@@ -68,20 +70,20 @@ Public reply if DMs are closed:
 [One thing from his post]. I am building a playoff matchup brief that argues the case against its own bet and is graded in public. May I send you the next one and hear what is missing?
 ```
 
-When he says yes, once a brief is posted:
+If he answers:
 
 ```
-Here it is, frozen before first pitch: LINK. What would you want it to show that it does not?
+Thank you. What would you want it to show that it does not? If you want the next ones before first pitch, I can add you to the first 20 testers.
 ```
 
-Log: `python scripts/outreach_batch.py sent --batch 1 --items 3 --version v3c-invite-not-on-sale`
+Log: `python scripts/outreach_batch.py sent --batch 1 --items 3 --version v3d-sample-link`
 
 ### Item 8, Tyler Shoemaker (LEAD `l008-tyler-shoemaker`, CHANNEL `x_account`)
 
 Where: https://x.com/tshoeindex
 
 ```
-Tyler, you share every bet and keep your own ratings, so you can check this faster than most. I am building a matchup brief for the MLB playoffs: for each game it makes a call on every priced market, writes the strongest case against its own bet, lists what it could not know, and is graded in public afterward. It is posted before first pitch. May I send you the next one when it is posted, and would you tell me whether it helps you decide what to examine or skip? AI analysis, not advice, and I claim no edge. If it turns out useful, I am hand-picking the first 20 testers: 7 days free, no card. It is not on sale yet; the planned price is $19.99 a month.
+Tyler, you share every bet and keep your own ratings, so you can check this faster than most. I am building a matchup brief for the MLB playoffs: for each game it makes a call (take or pass) on each market it has prices for, writes the strongest case against any bet it takes, lists what it could not know, and is graded in public afterward. It is posted before first pitch. Today's is here: LINK Would you look at it and tell me whether it helps you decide what to examine or skip? AI analysis, not advice, and I claim no edge. If it turns out useful, I am hand-picking the first 20 testers: 7 days free, no card. It is not on sale yet; the planned price is $19.99 a month.
 ```
 
 Public reply if DMs are closed:
@@ -90,20 +92,20 @@ Public reply if DMs are closed:
 [One thing from his post]. I am building a playoff matchup brief that argues the case against its own bet and is graded in public. May I send you the next one and hear what is missing?
 ```
 
-When he says yes, once a brief is posted:
+If he answers:
 
 ```
-Here it is, frozen before first pitch: LINK. What would you want it to show that it does not?
+Thank you. What would you want it to show that it does not? If you want the next ones before first pitch, I can add you to the first 20 testers.
 ```
 
-Log: `python scripts/outreach_batch.py sent --batch 1 --items 8 --version v3c-invite-not-on-sale`
+Log: `python scripts/outreach_batch.py sent --batch 1 --items 8 --version v3d-sample-link`
 
 ### Item 11, Picks with the Professor (LEAD `l011-picks-with-the-professor`, CHANNEL `x_account`)
 
 Where: https://x.com/professorsides
 
 ```
-Professor, you work from player-level data, so the props half of this is yours to judge. I am building a matchup brief for the MLB playoffs: for each game it makes a call on every priced market, writes the strongest case against its own bet, lists what it could not know, and is graded in public afterward. It is posted before first pitch. May I send you the next one when it is posted, and would you tell me whether it helps you decide what to examine or skip? AI analysis, not advice, and I claim no edge. If it turns out useful, I am hand-picking the first 20 testers: 7 days free, no card. It is not on sale yet; the planned price is $19.99 a month.
+Professor, you work from player-level data, so you will see fastest where this is thin: today's brief had too few prop prices to call any. I am building a matchup brief for the MLB playoffs: for each game it makes a call (take or pass) on each market it has prices for, writes the strongest case against any bet it takes, lists what it could not know, and is graded in public afterward. It is posted before first pitch. Today's is here: LINK Would you look at it and tell me whether it helps you decide what to examine or skip? AI analysis, not advice, and I claim no edge. If it turns out useful, I am hand-picking the first 20 testers: 7 days free, no card. It is not on sale yet; the planned price is $19.99 a month.
 ```
 
 Public reply if DMs are closed:
@@ -112,29 +114,29 @@ Public reply if DMs are closed:
 [One thing from his post]. I am building a playoff matchup brief that argues the case against its own bet and is graded in public. May I send you the next one and hear what is missing?
 ```
 
-When he says yes, once a brief is posted:
+If he answers:
 
 ```
-Here it is, frozen before first pitch: LINK. What would you want it to show that it does not?
+Thank you. What would you want it to show that it does not? If you want the next ones before first pitch, I can add you to the first 20 testers.
 ```
 
-Log: `python scripts/outreach_batch.py sent --batch 1 --items 11 --version v3c-invite-not-on-sale`
+Log: `python scripts/outreach_batch.py sent --batch 1 --items 11 --version v3d-sample-link`
 
 ### Item 12, Unit Circle (Discord) (LEAD `l012-unit-circle`, CHANNEL `discord`)
 
 Where: join https://disboard.org/server/1369099482997723208 as a member, read the rules, then the ticket or mod-contact channel
 
 ```
-Hi [Name], Unit Circle is built on transparent results, so I would value your read. I am building a matchup brief for the MLB playoffs: for each game it makes a call on every priced market, writes the strongest case against its own bet, lists what it could not know, and is graded in public afterward. It is posted before first pitch. May I send you the next one when it is posted, and would you tell me whether it helps you decide what to examine or skip? AI analysis, not advice, and I claim no edge. If it turns out useful, I am hand-picking the first 20 testers: 7 days free, no card. It is not on sale yet; the planned price is $19.99 a month.
+Hi [Name], Unit Circle is built on transparent results, so I would value your read. I am building a matchup brief for the MLB playoffs: for each game it makes a call (take or pass) on each market it has prices for, writes the strongest case against any bet it takes, lists what it could not know, and is graded in public afterward. It is posted before first pitch. Today's is here: LINK Would you look at it and tell me whether it helps you decide what to examine or skip? AI analysis, not advice, and I claim no edge. If it turns out useful, I am hand-picking the first 20 testers: 7 days free, no card. It is not on sale yet; the planned price is $19.99 a month.
 ```
 
-When he says yes, once a brief is posted:
+If he answers:
 
 ```
-Here it is, frozen before first pitch: LINK. What would you want it to show that it does not?
+Thank you. What would you want it to show that it does not? If you want the next ones before first pitch, I can add you to the first 20 testers.
 ```
 
-Log: `python scripts/outreach_batch.py sent --batch 1 --items 12 --version v3c-invite-not-on-sale`
+Log: `python scripts/outreach_batch.py sent --batch 1 --items 12 --version v3d-sample-link`
 
 After someone uses it, ask what `docs/sales/DISCOVERY_GUIDE.md` lists: what decision it helped, what
 was missing, whether they came back, and whether they will pay $19.99 for it.
