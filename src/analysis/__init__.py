@@ -44,7 +44,7 @@ from __future__ import annotations
 # registered and read the same night. Both its bands were killed on
 # discovery data (docs/SR1_RESULT_2026-09-16.md), which is what "tested"
 # counts: read, verdict recorded, loser published.
-_LAST_KNOWN_HYPOTHESES = 37
+_LAST_KNOWN_HYPOTHESES = 38
 _LAST_KNOWN_FAMILIES = 6
 
 _UNITS = ("zero", "one", "two", "three", "four", "five", "six", "seven",

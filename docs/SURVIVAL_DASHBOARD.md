@@ -1,6 +1,6 @@
 # LineHound survival dashboard
 
-Generated 2026-10-04 00:48Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-10-04 01:19Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
@@ -125,7 +125,7 @@ Closing-line value: see `docs/VALUE_SCAN.md` (the standing measurement; no CLV f
 
 Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). No other cost rises with each subscriber: the analysis is written once per game, not once per customer.
 - api per game usd: 0.08 to 0.11 at list price (docs/AI_ANALYST.md); not incurred until the key is set
-- session assisted per brief: not measured yet; filled from the first pilot brief (tokens, list-price dollars, minutes)
+- session assisted per brief: rehearsal 2026-10-04 (Braves at Dodgers, 3 markets, not published): 30 seconds, request about 5,000 input tokens, about $0.02 at list price; billed to the shared subscription, no API charge. A real brief with props is larger; filled again from the first published one.
 
 ## Product errors
 
@@ -138,7 +138,7 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 - Shadow ledgers hold one wrong permanent VOID (game 824785, played a day late). Append-only correction pending.
 - NFL picks store no model probability or observation time, so NFL calibration and closing-line value cannot be measured.
 - Daily loop red on 'settlement gap': cause found (a cancelled game and a rain-out played a day late could never settle). Fix pushed 2026-10-01 (eb850168); confirm on the 2026-10-02 10:10Z run.
-- Billing, deferred (review 2026-10-01): a failed renewal keeps access until the new period ends, and a redelivered or out-of-order Stripe event can restore access after a cancellation. Signatures are enforced, so only Stripe can trigger it. Fix before the first renewal date, about 37 days after the first sale.
+- Billing, deferred (review 2026-10-01): a failed renewal keeps access until the new period ends, and a redelivered or out-of-order Stripe event can restore access after a cancellation. Signatures are enforced, so only Stripe can trigger it. Fix before the first renewal date, about 37 days after the first sale. UPDATE: Billing (2026-10-04): past_due, unpaid and incomplete events no longer move the access end forward, and invoice.payment_failed is acknowledged and logged (tests/test_billing_failed_payment.py and its review file). NOT verified against Stripe's real event order: if a renewal announces the new period while still active before the charge, a declined renewal can still keep one extra period, and access would have to move onto invoice.paid. Staging step 13 is NOT RUN; treat the flaw as open.
 - Public record, deferred: while a day is only partly graded the headline counts its graded picks but the day list withholds the whole day, so the two cannot be reconciled until it resolves.
 - Sign-in, deferred: a link carrying a token signs the reader into that token's account; a crafted link could sign someone into an account that is not theirs.
 - Lost access token: no email sender exists, so recovery is by support only (admin re-issue route being added 2026-10-01).
