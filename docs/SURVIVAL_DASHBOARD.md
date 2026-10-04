@@ -1,6 +1,6 @@
 # LineHound survival dashboard
 
-Generated 2026-10-04 16:24Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-10-04 17:36Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
@@ -97,9 +97,9 @@ Closing-line value: see `docs/VALUE_SCAN.md` (the standing measurement; no CLV f
 
 ## Next actions
 
-- **Owner:** 1) Send the five invitations (docs/sales/SEND_ORDER.md, top section); the sample is live at https://linehound.app/web/sample.html, so send the link when someone says yes; report each send. 2) Open the Padres at Brewers game page on production with a tester account and confirm the brief shows. 3) Stripe test-mode rehearsal on staging, about 15 minutes (docs/billing/PURCHASE_REHEARSAL.md): first subscribe the staging webhook to invoice.paid and invoice.payment_failed. 4) Send Stripe the support question (docs/billing/STRIPE_SUPPORT_QUESTION.md). 5) Decide: MLB's data terms allow individual, non-commercial, non-bulk use only (docs/audit/2026-10-04/COLLECTION.md); repeat free trials and legacy rows (PURCHASE_REHEARSAL.md, Owner decisions); resuming team-total capture, about 96 credits a day (docs/decisions/derivatives-capture.patch). 6) Three cost numbers: Claude plan, Fly bill, domain. 7) Recommended: the Anthropic API key with a $10 limit, so briefs need no live session. Resume a brief any time: say "run the brief" (docs/BRIEF_RUNBOOK.md).
+- **Owner:** 0) Check the BALLDONTLIE billing page and cancel if it is charging: its key has answered unauthorized since 2026-09-17 and nothing on the site uses it. 1) Send the five invitations (docs/sales/SEND_ORDER.md, top section); the sample is live at https://linehound.app/web/sample.html, so send the link when someone says yes; report each send. 2) Open the Padres at Brewers game page on production with a tester account and confirm the brief shows. 3) Stripe test-mode rehearsal on staging, about 15 minutes (docs/billing/PURCHASE_REHEARSAL.md): first subscribe the staging webhook to invoice.paid and invoice.payment_failed. 4) Send Stripe the support question (docs/billing/STRIPE_SUPPORT_QUESTION.md). 5) Decide: MLB's data terms allow individual, non-commercial, non-bulk use only (docs/audit/2026-10-04/COLLECTION.md); repeat free trials and legacy rows (PURCHASE_REHEARSAL.md, Owner decisions); resuming team-total capture, about 96 credits a day (docs/decisions/derivatives-capture.patch). 6) Three cost numbers: Claude plan, Fly bill, domain. 7) Recommended: the Anthropic API key with a $10 limit, so briefs need no live session. Resume a brief any time: say "run the brief" (docs/BRIEF_RUNBOOK.md).
 - **Customer:** Batch 1 goes out in five small groups, best fit first; group 1 is written and waiting. Log sends and replies with scripts/outreach_batch.py (exact words stay in a private local file). Grant tester spots only to people who bet these sports, will use it and will give feedback (docs/sales/DISCOVERY_GUIDE.md). After five real conversations: stop and synthesise before changing the product.
-- **Product:** Delivery is session-assisted, not unattended. A brief for each playoff game before first pitch (docs/BRIEF_RUNBOOK.md); grade yesterday's. Fix in the next prompt version: the brief says "the packet" in customer text. Research, no live change: the opposing starter helps total bases slightly (docs/research/TB_STARTER_AWARE_RESULT.md); a pitcher-specific strikeout model beats a league baseline (docs/research/K_BASELINE_RESULT.md); both need a market comparison before any promotion.
+- **Product:** Delivery is session-assisted, not unattended. A brief for each playoff game before first pitch (docs/BRIEF_RUNBOOK.md); grade yesterday's. Briefs from now on use prompt v4 (no "packet" in reader text, one-sided missing lineups listed, the props line states the real reason); the two briefs already published keep their wording. Research, no live change: the opposing starter helps total bases slightly (docs/research/TB_STARTER_AWARE_RESULT.md); a pitcher-specific strikeout model beats a league baseline (docs/research/K_BASELINE_RESULT.md); both need a market comparison before any promotion.
 - **Model:** No market shows repeatable value (docs/PERFORMANCE_MATRIX.md: 110 measured populations, 0 candidates; moneyline closing-line value negative on 26 of 26 rows). The props question cannot be answered before 2026-10-31: the best-placed family, batter total bases, reaches a minimum sample about five weeks into the 2027 season (docs/PROP_EXPERIMENT_INVENTORY.md, docs/PREREG_PROP_FAMILIES_DRAFT.md, a DRAFT with seven owner decisions). Until then: sell the public record and the price comparison, not an edge. AI critic: adds one catch over a plain rule on 8 cases and is not ready to show customers (docs/AI_CRITIC_BENCHMARK.md).
 
 ## What survival requires
@@ -118,7 +118,7 @@ Closing-line value: see `docs/VALUE_SCAN.md` (the standing measurement; no CLV f
 | Fly.io staging (stops when idle since 2026-10-01) | $3.00 (est.) | estimated | usage | Stops when idle; list-price estimate. Invoice not seen. | REDUCE | Estimate. Was always-on (about $15 estimated); now billed only while someone is using it, plus storage. Exact figure: Fly dashboard, billing. Still serves the paid product free (APP_PUBLIC_DEMO=1): turn the demo off once production is selling. |
 | Domain linehound.app | $1.00 (est.) | estimated | fixed, prepaid yearly | Amortised guess. Registrar receipt not seen. | KEEP | Amortised estimate. |
 | Claude subscription that operates the business | UNKNOWN | unknown | fixed subscription, shared | Owner to supply. Session-assisted briefs run on this subscription and add no API charge. | REDUCE | UNKNOWN. Brey to supply the monthly figure; planned against $200. |
-| BALLDONTLIE | UNKNOWN | unknown | none expected | The API answers 401 since the trial ended; owner to confirm no charge on the billing page. | CANCEL | UNKNOWN. The 48-hour trial ended 2026-09-17; nothing harvested is used by any model. Check the account's billing page that it did not convert to $299.99. |
+| BALLDONTLIE | UNKNOWN | unknown | none expected | The API answers 401 since the trial ended; owner to confirm no charge on the billing page. | CANCEL | UNKNOWN whether it is billing. The key has answered 401 since the trial ended 2026-09-17 and nothing on the site depends on it; our own MLB, NFL and UFC data layer covers what it was bought for. Owner: open the billing page; if it is charging (about $289 to $299.99 a month), cancel. That is the single largest saving available. |
 | API-Tennis | $0.00 | actual | none | Trial expired 2026-09-18, not renewed. | CANCEL | Trial expired 2026-09-18, not renewed. |
 | GitHub Actions | $0.00 | actual | none | Public repository; no charge. | KEEP | Free only because the repo is public (about 90k runner minutes a month). Do not make the repo private. |
 | Stripe | $0.00 | actual | per charge | Published fees; nothing is charged while billing is off. | KEEP | Per charge: about $1.02 on $19.99. |
@@ -150,13 +150,13 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- First brief published and live for customers: Padres at Brewers, frozen 15:19Z, three passes with reasons (https://linehound.app/web/sample.html)
+- First brief published and live for customers: Padres at Brewers. Version 1 (15:19Z) passed on all three markets; version 2 (16:54Z, both lineups posted) takes Brewers moneyline at -128 and passes on the run line and total (https://linehound.app/web/sample.html). Session-assisted, not unattended.
 - Internal data API: MLB joins UFC and NFL behind one client; the brief's prepare command reads through it; fifty repeated reads make no upstream request
-- Collection: a current store refreshes in 5 requests (was 19); a cold one is 618; the daily loop now saves the refreshed stats so builds stop refetching about 600 requests each
-- Billing: access follows verified payment whatever the event order; reviewed twice; real Stripe rehearsal still not run
+- Collection: measured against MLB's feed, a current store refreshes in 5 requests (was 19) and a cold one in 618 (was 632). The daily loop now saves the refreshed stats, so builds should stop refetching the whole gap; the per-day saving (about 36,000 to about 600 requests) is modelled, not yet observed on a runner
+- Billing: access follows verified payment whatever the event order (two adversarial reviews, defects fixed). Still open: the real Stripe test-mode rehearsal (NOT RUN) and two owner decisions (repeat free trials, legacy rows)
 - Checker: declared calculations are recomputed and kept with their source; undeclared numbers are still rejected
 - Research: starter-aware total bases (small), pitcher strikeout baseline (clear against a weak baseline); no live change
-- Five invitations ready; none sent
+- Five invitations ready, linking to the live sample; none sent
 - Outreach batch 1: 20 paste-ready messages (docs/sales/batch_01.md)
 - Production recovery: stuck deploy cancelled, reviewed release deployed, 60-minute soak passed
 - Admin page shows signups by outreach source; link previews for the landing page and the record link
