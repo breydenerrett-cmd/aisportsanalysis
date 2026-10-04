@@ -20,7 +20,11 @@ remembered from an earlier session; the steps are complete.
 1. Bring this computer's stats current (they are not committed and go stale):
    `python -m src.pipeline.display_refresh --max-seconds 400`
    Do not commit the refreshed files under `data/historical/`.
-2. Pull the latest captured prices: fetch and merge the working branch.
+2. Pull the latest captured prices: fetch and merge the working branch. Then bring today's posted
+   lineups current (the capture may have run before a club posted; on 2026-10-04 the packet held
+   one club's nine and did not list the other as missing):
+   `python -c "from src.pipeline import lineup_store; print(lineup_store.build(['YYYY-MM-DD'], refresh=('YYYY-MM-DD',)))"`
+   After `prepare`, confirm both lineups are in `packet.json` before spending a session on it.
 3. Pick the game (see "Which game" below) and freeze it:
    `python -m src.cli analyst pilot prepare --date YYYY-MM-DD --game AWAY@HOME`
 4. A Sonnet subagent, given only `request.json` from the folder that command prints, writes
@@ -29,6 +33,12 @@ remembered from an earlier session; the steps are complete.
    Read every call against the frozen quotes: event, player, market, line, side, price, book.
    If the summary is withheld or a call is struck for a fixable reason (for example a number it
    computed without declaring it), have the subagent answer again; never edit the answer by hand.
+   Give the subagent no hint about which way to lean: the instruction is the request and nothing
+   else. Checker rejections seen so far, all fixed by the writer answering again: a banned word
+   ("edge"), a number it computed without declaring it, its own estimate quoted in the summary, and
+   a name written differently from the packet ("San Diego's Morejon").
+   A later version of the same game (lineups now posted): copy the folder aside first, `prepare`
+   again, and publish with `--refresh`; the earlier version stays in the ledger.
 6. Publish within 90 minutes of step 3 and before first pitch:
    `python -m src.cli analyst pilot publish --dir DIR --response DIR/answer.json --model claude-sonnet-5-5 --tokens-in N --tokens-out N --seconds S --operator-minutes M`
 7. Point the public sample at it: set `config/sample_brief.json` to `{"date": ..., "away": ..., "home": ...}`.
