@@ -28,7 +28,7 @@ try:
 except ImportError:  # pragma: no cover
     HTTPException = Exception  # the base class is skipped without FastAPI
 
-from src.appstate import customers
+from src.appstate import customers, reqlog
 from tests import test_billing_acceptance_path as acceptance
 
 CUSTOMER = acceptance.CUSTOMER
@@ -115,7 +115,9 @@ class FirstChargeFailsAfterTheTrial(_FailedPaymentCase):
             {k: v for k, v in before.items() if k != "updated_at"})
         line = captured.getvalue()
         self.assertIn("invoice.payment_failed", line)
-        self.assertIn(f"user={self.user_id}", line)
+        # The same hashed reference the request log prints, never the raw id.
+        self.assertIn(f"user={reqlog.user_ref(self.user_id)}", line)
+        self.assertNotIn(f"user={self.user_id} ", line)
         self.assertNotIn("whsec", line)
 
     def test_a_second_decline_changes_nothing(self):

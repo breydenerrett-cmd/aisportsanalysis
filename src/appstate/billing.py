@@ -43,6 +43,7 @@ from typing import Callable, Dict, List, Mapping, Optional, Protocol
 
 from src.appstate import customers
 from src.appstate import events
+from src.appstate import reqlog
 from src.appstate import tester_upgrade
 from src.appstate import users as users_store
 
@@ -1152,10 +1153,12 @@ def apply_stripe_webhook_event(event: dict, *, db: Optional[Path] = None) -> Non
         # Acknowledged and logged, never acted on: the subscription event
         # that follows carries the status, and access is decided from that
         # (see FAILED_PAYMENT_STATUSES). One grep-able line per decline, no
-        # card data, for the staging rehearsal and the operator.
+        # card data, for the staging rehearsal and the operator. `user` is the
+        # same hashed reference the request log prints (reqlog.user_ref), so
+        # the two correlate and no log line names a raw account id.
         user_id = customers.get_user_id_by_customer_ref(obj.get("customer"), db=db) \
             if obj.get("customer") else None
-        print(f"billing: invoice.payment_failed user={user_id if user_id is not None else '-'} "
+        print(f"billing: invoice.payment_failed user={reqlog.user_ref(user_id) or '-'} "
               f"subscription={obj.get('subscription') or '-'} "
               f"attempt={obj.get('attempt_count') or '-'}", file=sys.stderr, flush=True)
 
