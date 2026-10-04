@@ -135,7 +135,7 @@ from pathlib import Path
 from typing import Callable, Optional
 
 from src import paths
-from src.pipeline import store_freshness
+from src.pipeline import refresh_fetch, store_freshness
 from src.providers import mlb
 
 DEFAULT_MAX_SECONDS = 270.0
@@ -158,10 +158,12 @@ PITCHER_OVERLAP_DAYS = 2          # a starter is refreshed when he has a start o
 PITCHER_CHUNK = 30
 PITCHER_REFRESH_AFTER_HOURS = 12.0
 PITCHER_MAX_PER_RUN = 400
+UPCOMING_MAX_AGE_HOURS = 30.0     # an upcoming probable with no newer start is re-asked this often
 STANDINGS_MAX_BACKFILL_DAYS = 45
 TRANSACTIONS_MAX_WINDOW_DAYS = 30
 HANDEDNESS_LINEUP_DAYS = 7
 SPLITS_DAYS_AHEAD = 1             # today and tomorrow's probables
+SPLITS_REFRESH_AFTER_HOURS = 12.0  # a cached split younger than this is not re-asked for
 
 # A pitcher store may shrink by at most this fraction (a corrected appearance)
 # before a refresh refuses to promote it. Everything else may not shrink.
@@ -395,6 +397,32 @@ def _step_results(ctx: _Ctx) -> dict:
             "processed": processed, "failed": failed, "errors": errors[:5]}
 
 
+def _bullpen_yesterday_incomplete(log: Path, ctx: _Ctx) -> bool:
+    """True when yesterday's schedule shows a final game the log holds no rows
+    for (or the log holds nothing for yesterday at all). When the schedule
+    cannot be read the answer is False: the rows are left as they are (the
+    old code dropped them first and let the per-key promotion put them back)."""
+    if not log.exists():
+        return True
+    try:
+        final_pks = {str(g["gamePk"]) for g in mlb.fetch_schedule(ctx.yesterday, timeout=ctx.timeout)
+                     if g.get("gamePk") and (g.get("status") or {}).get("codedGameState") == "F"}
+    except mlb.MLBError:
+        return False
+    held = set()
+    with log.open(encoding="utf-8") as handle:
+        for line in handle:
+            if f'"{ctx.yesterday}"' not in line:
+                continue
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if row.get("date") == ctx.yesterday and row.get("game_pk") is not None:
+                held.add(str(row["game_pk"]))
+    return bool(final_pks - held)
+
+
 def _step_bullpen(ctx: _Ctx) -> dict:
     from src.pipeline import bullpen
     log = ctx.w("bullpen_log.jsonl")
@@ -402,7 +430,18 @@ def _step_bullpen(ctx: _Ctx) -> dict:
     # Yesterday is re-fetched WHOLE: a refresh near midnight Eastern sees
     # games still in progress, and `build_log` skips a date once any row for it
     # exists, so without this a late game would be missing for good.
-    replaced = _rewrite_jsonl_without(log, lambda r: r.get("date") == ctx.yesterday)
+    #
+    # ... but only when something is actually missing (2026-10-04). The log
+    # holds a game only once it was final (`build_log` reads `codedGameState ==
+    # "F"`), so a game that was still on at the last fetch is simply ABSENT.
+    # One schedule request (the one `build_log` is about to make anyway) names
+    # yesterday's final games; if the log already holds every one of them
+    # there is nothing a refetch could add, and the boxscores (one request a
+    # game: 288 of the 632 requests of a cold refresh, and the 4 of 19 on a
+    # steady one) are not asked for again.
+    refetch = _bullpen_yesterday_incomplete(log, ctx)
+    replaced = (_rewrite_jsonl_without(log, lambda r: r.get("date") == ctx.yesterday)
+                if refetch else 0)
     start = yesterday - timedelta(days=BULLPEN_WINDOW_DAYS - 1)
     have = _jsonl_dates(log)
     if have:
@@ -542,6 +581,21 @@ def _keep_sealed_pitcher_rows(committed_path: Path, work_path: Path) -> int:
     return restored
 
 
+def _marker_age_hours(appearances, ctx: _Ctx) -> Optional[float]:
+    """Hours since this pitcher's log was last checked (his refresh marker), or
+    None when it has no marker. A marker stamped in the future counts as just
+    now: a clock that disagrees never makes a log look old."""
+    from src.pipeline import pitchers
+    marker = pitchers.coverage_marker(appearances, ctx.season)
+    stamp = marker.get("checked_utc") if marker else None
+    if not stamp:
+        return None
+    try:
+        return max((ctx.now - store_freshness._utc(stamp)).total_seconds() / 3600.0, 0.0)
+    except (ValueError, TypeError):
+        return None
+
+
 def _step_pitchers(ctx: _Ctx) -> dict:
     from src.pipeline import history, pitchers
     path = ctx.w("pitcher_logs.jsonl")
@@ -550,6 +604,17 @@ def _step_pitchers(ctx: _Ctx) -> dict:
     recent_ids = _starters_to_refresh(results, existing, ctx.season, ctx.today)
     upcoming = _probable_ids_for(
         [(_d(ctx.today) + timedelta(days=i)).isoformat() for i in range(0, 3)], ctx.timeout)
+    # An upcoming probable whose log was checked recently and who has no start
+    # newer than that check is not asked for again: his season log cannot have
+    # changed (he has not pitched). Every build starts from the committed copy,
+    # whose markers are up to a day old, so the 12-hour rule alone made each
+    # build after the evening re-ask for every probable (about 30 requests a
+    # build, many builds a day). He is re-asked after UPCOMING_MAX_AGE_HOURS, or
+    # at once if the results show a start of his since the check.
+    upcoming_all = len(upcoming)
+    upcoming = {pid for pid in upcoming
+                if pid in recent_ids or _marker_age_hours(existing.get(pid, []), ctx) is None
+                or _marker_age_hours(existing.get(pid, []), ctx) >= UPCOMING_MAX_AGE_HOURS}
     # Upcoming starters first (they decide tonight's pages), then anyone whose
     # log is behind a start. Within each group, never-checked before stale.
 
@@ -575,6 +640,7 @@ def _step_pitchers(ctx: _Ctx) -> dict:
     # The sealed window's rows stay exactly as committed (see SEALED_FIRST).
     sealed_kept = _keep_sealed_pitcher_rows(ctx.base / "pitcher_logs.jsonl", path) if processed else 0
     return {"candidates": len(ordered), "upcoming_probables": len(upcoming),
+            "upcoming_skipped_checked_recently": upcoming_all - len(upcoming),
             "fetched": processed, "failed": failed, "deferred_by_deadline": deferred,
             "sealed_rows_kept": sealed_kept}
 
@@ -644,7 +710,12 @@ def _step_splits(ctx: _Ctx) -> dict:
         [(_d(ctx.today) + timedelta(days=i)).isoformat()
          for i in range(0, SPLITS_DAYS_AHEAD + 1)], ctx.timeout)
     fetched = failed = 0
-    ordered = sorted(ids)
+    # A season-to-date split moves only when its pitcher pitches, so a probable
+    # whose cached split is under SPLITS_REFRESH_AFTER_HOURS old is not asked
+    # for again (every build did, 6 requests of the 19 a steady refresh made).
+    cache = lineups.read_splits(ctx.w("pitcher_splits.json"))
+    fresh = {pid for pid in ids if _splits_fresh(cache.get(f"{pid}:{ctx.season}"), ctx.now)}
+    ordered = sorted(ids - fresh)
     for index in range(0, len(ordered), 10):
         if ctx.deadline.expired():
             break
@@ -653,7 +724,21 @@ def _step_splits(ctx: _Ctx) -> dict:
                                         timeout=ctx.timeout)
         fetched += report["fetched"]
         failed += report["failed"]
-    return {"requested": len(ids), "fetched": fetched, "failed": failed}
+    return {"requested": len(ids), "skipped_fresh": len(fresh), "fetched": fetched,
+            "failed": failed}
+
+
+def _splits_fresh(record, now: datetime) -> bool:
+    """True when this cached split was taken within SPLITS_REFRESH_AFTER_HOURS
+    of `now`. A missing or unreadable stamp is not fresh."""
+    stamp = (record or {}).get("as_of") if isinstance(record, dict) else None
+    if not stamp:
+        return False
+    try:
+        age = (now - store_freshness._utc(stamp)).total_seconds()
+    except (ValueError, TypeError):
+        return False
+    return 0 <= age < SPLITS_REFRESH_AFTER_HOURS * 3600.0
 
 
 def _step_handedness(ctx: _Ctx) -> dict:
@@ -1011,6 +1096,109 @@ KEYED_STORES: dict = {
 }
 
 
+# ---------------------------------------------------------------------------
+# What a refresh actually changed: new, corrected, unchanged
+# ---------------------------------------------------------------------------
+#
+# "The file differs" says nothing a reader can act on. A refresh that re-asks
+# the provider for rows it already holds meets three different things, and the
+# report keeps them apart (2026-10-04):
+#
+#   new        a record the committed copy does not hold
+#   corrected  a record the committed copy holds, with different content (the
+#              provider revised it: a scorer's change, a late stat correction)
+#   unchanged  a record the committed copy holds, identical
+#
+# Fields that are the refresh's own bookkeeping (when it looked, when the
+# snapshot was taken) are not content: a re-taken standings row that differs
+# only in `captured_at` is unchanged, not a correction. Missing source data (the
+# provider answered with nothing) and a failed fetch are NOT row facts; they are
+# counted per request by `refresh_fetch.FetchLayer`.
+
+VOLATILE_FIELDS = frozenset({"as_of", "checked_utc", "captured_at", "fetched_utc"})
+
+# store file name -> (key_fn, ident, is_marker) for the line-per-record stores
+JSONL_SPECS: dict = {
+    "pitcher_logs.jsonl": (_pitcher_key, _pitcher_ident, _pitcher_marker),
+    "bullpen_log.jsonl": (_bullpen_key, _bullpen_ident, _bullpen_marker),
+    "standings.jsonl": (_standings_key, _standings_ident, _never_a_marker),
+    "transactions.jsonl": (_transactions_key, lambda r: str(r.get("transaction_id")),
+                           _never_a_marker),
+}
+
+
+def _stable_text(value) -> str:
+    """Canonical text of a record with the refresh's bookkeeping removed."""
+    if isinstance(value, dict):
+        value = {k: v for k, v in value.items() if k not in VOLATILE_FIELDS}
+    return json.dumps(value, sort_keys=True, default=str)
+
+
+def _diff_counts(old: dict, new: dict) -> dict:
+    """{identity: stable text} against {identity: stable text}."""
+    out = {"new": 0, "corrected": 0, "unchanged": 0}
+    for ident, text in new.items():
+        if ident not in old:
+            out["new"] += 1
+        elif old[ident] == text:
+            out["unchanged"] += 1
+        else:
+            out["corrected"] += 1
+    return out
+
+
+def _jsonl_records(path: Path, key_fn, ident, is_marker) -> dict:
+    out: dict = {}
+    with path.open(encoding="utf-8") as handle:
+        for raw in handle:
+            text = raw.strip()
+            if not text:
+                continue
+            try:
+                row = json.loads(text)
+            except json.JSONDecodeError:
+                continue
+            if not isinstance(row, dict) or is_marker(row):
+                continue
+            key = key_fn(row)
+            if key is not None:
+                out[(key, ident(row))] = _stable_text(row)
+    return out
+
+
+def _json_records(path: Path, wrap: Optional[str]) -> dict:
+    data = json.loads(path.read_text(encoding="utf-8"))
+    if wrap and isinstance(data, dict) and isinstance(data.get(wrap), dict):
+        data = data[wrap]
+    if isinstance(data, dict) and isinstance(data.get("rows"), list):    # an arsenal leaderboard
+        return {(str(r.get("player_id")), str(r.get("pitch_type"))): _stable_text(r)
+                for r in data["rows"] if isinstance(r, dict)}
+    if not isinstance(data, dict):
+        return {}
+    return {str(k): _stable_text(v) for k, v in data.items()}
+
+
+def row_diff(dest_name: str, work: Path, committed: Path) -> Optional[dict]:
+    """new / corrected / unchanged for one store, `work` against `committed`.
+    None when the pair cannot be compared (a file kind it does not know); never
+    raises."""
+    try:
+        if dest_name in JSONL_SPECS:
+            spec = JSONL_SPECS[dest_name]
+            return _diff_counts(_jsonl_records(committed, *spec), _jsonl_records(work, *spec))
+        if dest_name == "mlb_results.csv":
+            from src.pipeline import history
+            old, new = history.read_results(committed), history.read_results(work)
+            return _diff_counts({k: _stable_text(v) for k, v in old.items()},
+                                {k: _stable_text(v) for k, v in new.items()})
+        if dest_name.endswith(".json"):
+            wrap = "dates" if dest_name == "mlb_results.manifest.json" else None
+            return _diff_counts(_json_records(committed, wrap), _json_records(work, wrap))
+    except Exception:  # noqa: BLE001 -- a report line, never a reason to fail a refresh
+        return None
+    return None
+
+
 def _keyed_repair(dest: Path):
     """The repair for this destination, or None. The arsenal leaderboards are
     named by season (`arsenals/pitcher_2026.json`), so they match on their
@@ -1051,8 +1239,11 @@ def _promote(work_file: Path, dest: Path, kind: str) -> dict:
         if after < floor:
             return {"file": dest.name, "promoted": False, "rows_before": before, "rows_after": after,
                     "reason": "copy has fewer rows than the committed one; kept the committed copy"}
+    diff = row_diff(dest.name, work_file, dest) if dest.exists() else None
     _atomic_replace(work_file, dest)
     out = {"file": dest.name, "promoted": True, "rows_before": before, "rows_after": after}
+    if diff is not None:
+        out["diff"] = diff
     if kept_committed is not None:
         out["kept_committed"] = _kept_summary(kept_committed)
     return out
@@ -1070,13 +1261,29 @@ def _kept_summary(found: dict) -> dict:
 def refresh(root=None, *, now=None, max_seconds: float = DEFAULT_MAX_SECONDS,
             only=None, timeout: int = FETCH_TIMEOUT_S,
             clock: Callable[[], float] = time.monotonic,
-            log: Optional[Callable[[str], None]] = None) -> dict:
+            log: Optional[Callable[[str], None]] = None,
+            fetch: Optional[refresh_fetch.FetchLayer] = None) -> dict:
     """Catch the stores up. `root` is a data root (default: the project's).
-    Returns a report; never raises for a network or data problem."""
+    Returns a report; never raises for a network or data problem.
+
+    Every upstream request goes through one `refresh_fetch.FetchLayer`
+    (counted, reused, boundedly retried, halted on a 401/403); its summary is
+    `report["fetch"]` and each step's own is `report["steps"][name]["fetch"]`.
+    `fetch` is injectable so a test controls the sleeps and the cache."""
+    data_root = Path(root) if root is not None else paths.data_root()
+    layer = fetch if fetch is not None else refresh_fetch.FetchLayer(
+        cache_dir=data_root / "raw" / "mlb_statsapi_cache")
+    with layer.install():
+        return _refresh(data_root, layer, now=now, max_seconds=max_seconds, only=only,
+                        timeout=timeout, clock=clock, log=log)
+
+
+def _refresh(data_root: Path, layer: refresh_fetch.FetchLayer, *, now, max_seconds: float,
+             only, timeout: int, clock: Callable[[], float],
+             log: Optional[Callable[[str], None]]) -> dict:
     log = log or (lambda text: print(text, flush=True))
     moment = store_freshness._utc(now)
     today = store_freshness.baseball_date(moment)
-    data_root = Path(root) if root is not None else paths.data_root()
     base = data_root / "historical"
     wanted = [s for s in STEP_ORDER if only is None or s in set(only)]
     started = clock()
@@ -1093,8 +1300,11 @@ def refresh(root=None, *, now=None, max_seconds: float = DEFAULT_MAX_SECONDS,
     try:
         mlb.fetch_schedule(today, timeout=PROBE_TIMEOUT_S)
     except mlb.MLBError as exc:
-        report["skipped_reason"] = f"MLB Stats API unreachable: {exc}"
+        report["skipped_reason"] = (f"MLB Stats API refused: {layer.halted}" if layer.halted
+                                    else f"MLB Stats API unreachable: {exc}")
         report["after"] = report["before"]
+        report["fetch"] = layer.summary()
+        report["halted"] = layer.halted
         report["elapsed_s"] = round(clock() - started, 2)
         log(f"display refresh: skipped ({report['skipped_reason']}); stores unchanged")
         return report
@@ -1118,9 +1328,14 @@ def refresh(root=None, *, now=None, max_seconds: float = DEFAULT_MAX_SECONDS,
             remaining_weight -= STEP_WEIGHT[name]
             ctx = _Ctx(work, base, moment, today, step_deadline, timeout)
             step_start = clock()
+            mark = layer.mark()
             entry: dict = {}
             try:
-                if deadline.expired():
+                if layer.halted:
+                    # A 401/403 (or a run of hard failures) stopped the run:
+                    # no step may start another request.
+                    entry = {"status": "skipped", "reason": f"halted: {layer.halted}"}
+                elif deadline.expired():
                     entry = {"status": "skipped", "reason": "budget exhausted"}
                 else:
                     detail = STEPS[name](ctx)
@@ -1149,6 +1364,8 @@ def refresh(root=None, *, now=None, max_seconds: float = DEFAULT_MAX_SECONDS,
                         continue
                     promotions.append(_promote(work / rel, base / dest_rel, kind))
             entry["files"] = promotions
+            entry["fetch"] = _compact_fetch(layer.summary(mark))
+            entry["observation"] = _observation(entry, promotions)
             for p in promotions:
                 (report["promoted"] if p["promoted"] else report["kept"]).append(
                     {"step": name, **p})
@@ -1169,11 +1386,58 @@ def refresh(root=None, *, now=None, max_seconds: float = DEFAULT_MAX_SECONDS,
 
     after = store_freshness.report(data_root, moment)
     report["after"] = _summary(after)
+    report["fetch"] = layer.summary()
+    report["halted"] = layer.halted
     report["elapsed_s"] = round(clock() - started, 2)
+    fetch = report["fetch"]
+    log(f"display refresh: {fetch['requests_made']} request(s) made, {fetch['reused']} reused, "
+        f"{fetch['failed']} failed, {fetch['missing_source_data']} empty answer(s)"
+        + (f"; HALTED: {layer.halted}" if layer.halted else ""))
     log("display refresh: through " + ", ".join(
         f"{n}={after['stores'][n]['through']}" for n in store_freshness.CORE_STORES)
         + (f"; still stale: {', '.join(after['core_stale'])}" if after["core_stale"] else "; core stores current"))
     return report
+
+
+def _compact_fetch(summary: dict) -> dict:
+    """The per-step slice of the fetch summary (the run-level one keeps the
+    per-class table)."""
+    return {k: summary[k] for k in ("calls", "network_calls", "reused", "failed", "retries",
+                                    "requests_made", "missing_source_data", "outcomes")}
+
+
+def _observation(entry: dict, promotions: list) -> dict:
+    """What this step found, in the four kinds a reader must not confuse.
+
+    new / corrected / unchanged are record counts, from the diff against the
+    committed copy (only for a promoted file: an unchanged or refused file
+    changed nothing). missing_source counts requests the provider answered with
+    nothing; failed counts requests that did not get an answer. `verdict` is the
+    one word for the step."""
+    new = sum((p.get("diff") or {}).get("new", 0) for p in promotions)
+    corrected = sum((p.get("diff") or {}).get("corrected", 0) for p in promotions)
+    unchanged = sum((p.get("diff") or {}).get("unchanged", 0) for p in promotions)
+    fetch = entry.get("fetch") or {}
+    failed = fetch.get("failed", 0)
+    missing = fetch.get("missing_source_data", 0)
+    if entry.get("status") == "skipped":
+        verdict = "skipped"
+    elif entry.get("status") == "failed":
+        verdict = "failed"
+    elif failed and not (new or corrected):
+        verdict = "failed"
+    elif failed:
+        verdict = "partial"
+    elif corrected:
+        verdict = "corrected"
+    elif new:
+        verdict = "updated"
+    elif missing:
+        verdict = "missing_source_data"
+    else:
+        verdict = "unchanged"
+    return {"new": new, "corrected": corrected, "unchanged": unchanged,
+            "missing_source": missing, "failed": failed, "verdict": verdict}
 
 
 def _summary(freshness: dict) -> dict:

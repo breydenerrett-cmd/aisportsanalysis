@@ -675,6 +675,35 @@ echo "$PREREG_OUT" | sed 's/^/  /'
 echo "$PREREG_OUT" | grep "^ESCALATE:" || true
 echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: prereg-clv exit=$PREREG_STATUS" >> "$RUN_NOTE"
 
+# THE MLB DISPLAY STORES: REFRESH ONCE HERE, THEN PERSIST, SO NOBODY ELSE HAS TO
+# (2026-10-04, docs/audit/2026-10-04/COLLECTION.md). data/historical/ holds what
+# the site's computed pages read. Every image build (about 57 a day), container
+# guard, runner and local run started from the committed copy, which stopped on
+# 2026-09-23, and each one re-fetched the whole gap from MLB's free Stats API:
+# 632 requests and about 3.5 minutes apiece. Nothing advanced the committed copy
+# because the block that stages data/historical stays off (read the long comment
+# at `git add` below: on a runner the disk copy is the Actions cache's copy, and
+# a blind add would delete rows only git holds).
+#
+# Two guarded steps fix that. Here, BEFORE the git lock (a network call must not
+# hold it): (1) merge the committed copy into the disk copy with git winning a
+# tie, so an old or empty cache restore can never be the base (union, never a
+# replace: src/pipeline/store_persist.py), then (2) the incremental refresh,
+# which asks only for what the stores do not hold and writes nothing worse than
+# what it started with (src/pipeline/display_refresh.py). Below, under the lock
+# and just before `git add`, the refreshed stores are unioned with HEAD once
+# more and staged BY NAME. They run AFTER every step that prices or settles
+# anything, so no forecast, card or ledger input changes: this only changes what
+# the next consumer starts from.
+#
+# GUARDED: this script has no errexit, `timeout` bounds a hang, and every line ends in a
+# fallback that only prints. A failure here costs nothing but a day's persisting;
+# the image build and the container guard still refresh on their own.
+echo "== MLB display stores (merge with committed copy, incremental refresh) =="
+timeout 120 python3 -m src.pipeline.store_persist union --prefer head 2>&1 | sed 's/^/  /'     || echo "  (store union did not complete; stores unchanged)"
+timeout 330 python3 -m src.pipeline.display_refresh --max-seconds 270 --json /tmp/display_refresh_report.json 2>&1 | sed 's/^/  /'     || echo "  (display refresh did not complete; stores unchanged)"
+echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: display stores refreshed (report /tmp/display_refresh_report.json)" >> "$RUN_NOTE"
+
 # Concurrent runs of this script and forward_capture.sh on the same shared
 # checkout raced each other into stranded/mismerged commits four times in
 # 30h (87312f2, de8a582, b258fc1, 9d30526): both scripts trip on their own
@@ -730,7 +759,24 @@ python3 -m src.cli store rotate --all --if-over-mb 60 --keep-days 1 \
 # reads -- and git keeps the backfill because nothing here overwrites it.
 # Making git authoritative for these stores needs a union of both copies
 # before ingest, not a blind `git add`; until that exists, do not stage them.
+# (2026-10-04: that union now exists, src/pipeline/store_persist.py, and the
+# stores it names are staged BY NAME just below. The directory is still never
+# added.)
 git add data/processed data/watch data/research data/raw/oddsapi evidence data/paper_accounts docs/eod docs/OVERNIGHT_RUN.md artifacts config/capture_families.json data/historical/ufc_results.jsonl data/datasvc/ufc data/datasvc/nfl 2>/dev/null || true
+# THE UNION THAT COMMENT ASKED FOR (2026-10-04). The refreshed MLB display
+# stores are merged with the copy in HEAD record by record (a row only git holds
+# survives, a row the provider corrected is updated, a row only the refresh holds
+# is added; a merge that would still lose a record is not written), and only the
+# stores that then differ from HEAD are staged, BY NAME, never the directory.
+# `guard_staged_no_shrink` below re-checks each against HEAD and restores any that
+# would shrink. Guarded: a failure leaves the stores unstaged, as before.
+PERSIST_PATHS=$(timeout 120 python3 -m src.pipeline.store_persist persist 2>/tmp/store_persist.err | tr -d '\r') || PERSIST_PATHS=""
+sed 's/^/  /' /tmp/store_persist.err 2>/dev/null || true
+if [ -n "$PERSIST_PATHS" ]; then
+    echo "== persisting MLB display stores: $(echo $PERSIST_PATHS | wc -w) file(s) =="
+    git add $PERSIST_PATHS 2>/dev/null || echo "  (could not stage the display stores; they stay local)"
+    guard_staged_no_shrink $PERSIST_PATHS
+fi
 git reset -q artifacts/demo_latest.html 2>/dev/null || true
 # GUARD (2026-09-21 incident): size-gate backstop for whatever store
 # rotation above did not catch -- prints WARN/ESCALATE, never blocks.
