@@ -55,6 +55,7 @@ from __future__ import annotations
 
 import base64
 import bisect
+import copy
 import hashlib
 import json
 import threading
@@ -1216,6 +1217,10 @@ class DataClient:
                                    extra_items=[{"item": "candidates", "reason": "pass an id to choose",
                                                  "candidates": (exc.details or {}).get("candidates")}])
             raise
+        if not self._strict:
+            # The sheets and rows are the store's own objects; a caller in this process that edits its answer
+            # must not edit the shared store. (Over HTTP the answer is only serialised.)
+            result = copy.deepcopy(result)
         pager = None
         if page:
             result, pager = result["data"], result["page"]

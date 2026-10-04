@@ -12,9 +12,7 @@ anonymous caller is refused on every one of them in the one error shape.
 from __future__ import annotations
 
 import re
-import tempfile
 import unittest
-from datetime import timedelta
 from pathlib import Path
 from unittest import mock
 

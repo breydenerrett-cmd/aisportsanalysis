@@ -44,7 +44,6 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
-import os
 import threading
 from dataclasses import dataclass
 from datetime import date as _date, datetime, timezone
@@ -53,10 +52,15 @@ from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple
 
 from src import paths
 from src.datasvc import client as core
-from src.datasvc.client import DataError, DEFAULT_LIMIT
+from src.datasvc.client import DEFAULT_LIMIT
 
 DEFAULT_SCHEDULE_TTL_S = 120.0
 BUILD_ATTEMPTS = 3
+
+# How many dates a service keeps built items and packets for. A date's items are the whole slate's payloads and
+# price rows, so the number is small on purpose (production has run out of memory on whole-store caches before):
+# today, tomorrow and the day just played, with one to spare. The oldest date is dropped first.
+MAX_DATES_HELD = 4
 
 # What a packet is built from, named once so the version, the sources list and the tests agree.
 PACKET_STORES = ("mlb_results", "pitcher_logs", "bullpen_log", "lineups", "handedness", "pitcher_splits",
@@ -308,6 +312,7 @@ class MlbService:
             else:
                 held = _Schedule(date, games, _iso(now), now, fingerprint)
             self._schedules[date] = held
+            self._trim()
             return held
 
     # -- the items of a date, cached against the version ------------------------------------------------
@@ -327,9 +332,23 @@ class MlbService:
                     continue                      # a store changed while it was being read: read again
                 built = _Items(key, items, schedule, self._version(sig, "schedule:" + schedule.fingerprint),
                                _iso(now))
+                self._items.pop(date, None)
                 self._items[date] = built
+                self._trim()
                 return built
         raise core.SnapshotUnstable(f"the MLB stores changed on every one of {BUILD_ATTEMPTS} reads")
+
+    def _trim(self) -> None:
+        """Forget the oldest dates beyond `MAX_DATES_HELD`: their items, packets and schedules."""
+        with self._lock:
+            while len(self._items) > MAX_DATES_HELD:
+                oldest = next(iter(self._items))
+                del self._items[oldest]
+                self._schedules.pop(oldest, None)
+                for key in [k for k in self._packets if k[0] == oldest]:
+                    del self._packets[key]
+            while len(self._schedules) > 2 * MAX_DATES_HELD:      # dates only ever listed, never built
+                del self._schedules[next(iter(self._schedules))]
 
     # -- the capabilities ---------------------------------------------------------------------------
 
@@ -457,7 +476,7 @@ class MlbService:
                 held = self._packets.get(cache_key)
                 if held is not None and held[0] == snap.key:
                     self.counters["packet_cache_hits"] += 1
-                    return held[1]
+                    return copy.deepcopy(held[1])       # a caller that edits its answer must not edit the cache
         cut = built_at or _iso(now)
         from src.analyst import cli as analyst_cli
         from src.analyst import packet as packet_mod
@@ -470,7 +489,7 @@ class MlbService:
                           self._packet_meta(date, snap, matches[0], packet, packet_mod, now))
         if built_at is None:
             with self._lock:
-                self._packets[cache_key] = (snap.key, result)
+                self._packets[cache_key] = (snap.key, copy.deepcopy(result))
         return result
 
     def quotes(self, date: Optional[str], away: Optional[str], home: Optional[str], *,

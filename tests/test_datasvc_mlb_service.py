@@ -21,7 +21,7 @@ import io
 import json
 import tempfile
 import unittest
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 from pathlib import Path
 from unittest import mock
 
@@ -307,7 +307,7 @@ class Caching(Base):
             for i in range(50):
                 self.world.now = NOW + timedelta(seconds=i)                # time passes, inside the TTL
                 out = self.svc.packet(DATE, "NYY", "TB")
-                self.assertIs(out, first)                                  # the very answer, not a rebuild
+                self.assertEqual(out, first)                               # the very answer, not a rebuild
                 self.svc.games(DATE)
         self.assertEqual(opens["n"], 0, opens["paths"])
         self.assertEqual(len(self.world.fetches), 1)                       # zero upstream requests after the warm read
@@ -335,7 +335,8 @@ class Caching(Base):
         self.world.now = NOW + timedelta(seconds=svc.DEFAULT_SCHEDULE_TTL_S + 1)
         again = self.svc.packet(DATE, "NYY", "TB")
         self.assertEqual(len(self.world.fetches), 2)                       # one more upstream request, by design
-        self.assertIs(again, first)                                        # the same schedule: the same snapshot
+        self.assertEqual(again, first)                                     # the same schedule: the same snapshot
+        self.assertEqual(self.svc.counters["packet_builds"], 1)
         self.assertEqual(again["meta"]["observed_utc"], "2026-10-03T18:00:00Z")
 
     def test_a_store_version_change_invalidates(self):
@@ -399,6 +400,28 @@ class Caching(Base):
         self.assertFalse(out["available"])
         self.assertEqual(out["missing"][0]["item"], "snapshot")
         self.assertEqual(self.world.builds, svc.BUILD_ATTEMPTS)
+
+    def test_a_caller_that_edits_its_answer_does_not_edit_the_cache(self):
+        first = self.svc.packet(DATE, "NYY", "TB")
+        first["data"]["markets"].clear()
+        first["meta"]["ids"]["game_pk"] = -1
+        again = self.svc.packet(DATE, "NYY", "TB")
+        self.assertIn("moneyline", again["data"]["markets"])
+        self.assertEqual(again["meta"]["ids"]["game_pk"], 849835)
+
+    def test_only_the_newest_dates_are_held_so_the_memory_is_bounded(self):
+        days = [f"2026-09-{n:02d}" for n in range(10, 10 + svc.MAX_DATES_HELD + 3)]
+        for day in days:
+            self.world.games = [schedule_game(date=day)]
+            self.svc.packet(day, "NYY", "TB")
+        self.assertEqual(len(self.svc._items), svc.MAX_DATES_HELD)
+        self.assertEqual(list(self.svc._items), days[-svc.MAX_DATES_HELD:])
+        self.assertTrue(all(key[0] in self.svc._items for key in self.svc._packets))
+        before = self.world.builds
+        self.svc.packet(days[-1], "NYY", "TB")                              # the newest is still held
+        self.assertEqual(self.world.builds, before)
+        self.svc.packet(days[0], "NYY", "TB")                               # the oldest was dropped: built again
+        self.assertEqual(self.world.builds, before + 1)
 
     def test_other_dates_and_other_games_do_not_share_a_cached_packet(self):
         self.world.games = [schedule_game(pk=1), schedule_game(pk=2, away="BOS", home="BAL")]

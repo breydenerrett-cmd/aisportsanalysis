@@ -78,6 +78,15 @@ an unchanged snapshot cost a stat per file: no upstream request (the MLB schedul
 store re-read (`tests/test_datasvc_client.py`, `tests/test_datasvc_mlb_service.py` count both over fifty reads).
 A cached packet keeps its own `built_utc`.
 
+Cost to know: the first MLB read of a date after a store or schedule change builds the whole slate (the same work
+as the game page's rebuild: 8.6 seconds for 16 games on a laptop over the repo's real stores, measured 2026-10-04,
+and heavier on the 512 MB container, which has not been measured). The odds captures change every 13 minutes, so a
+date is rebuilt about that often while games are being priced. A service holds the newest four dates
+(`MAX_DATES_HELD`) and hands every caller its own copy of an answer, so editing a result never edits the cache or a
+store. Timestamps the domain code stamps with the clock when it builds a payload (`information_time`, some
+`sections.*.as_of`) differ between any two builds, the analyst's own included; for the same inputs and clock the
+bytes are the analyst's.
+
 ## Observed at the time, or reconstructed later
 
 A value's history is only as good as how we got it. `observed_at_the_time` is our own forward capture, stamped

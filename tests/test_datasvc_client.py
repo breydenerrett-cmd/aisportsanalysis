@@ -389,6 +389,19 @@ class Versions(Worlds):
         self.assertEqual(ctx.exception.status, 503)
 
 
+class Isolation(Worlds):
+    def test_a_caller_that_edits_its_answer_does_not_edit_the_shared_store(self):
+        out = self.nfl_client.game("nfl", game_id=G["g05"])
+        out["data"]["game"]["home_team"] = "EDITED"
+        out["data"]["team_games"].clear()
+        again = self.nfl_client.game("nfl", game_id=G["g05"])
+        self.assertNotEqual(again["data"]["game"]["home_team"], "EDITED")
+        self.assertEqual(len(again["data"]["team_games"]), 2)
+        listing = self.client.schedule("ufc")
+        listing["data"][0]["name"] = "EDITED"
+        self.assertNotEqual(self.client.schedule("ufc")["data"][0]["name"], "EDITED")
+
+
 class MlbIsForwarded(Worlds):
     def test_the_mlb_capabilities_go_through_the_mlb_service_with_the_clients_clock(self):
         self.client.schedule("mlb", date="2026-10-03")
