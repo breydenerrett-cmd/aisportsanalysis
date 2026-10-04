@@ -3,9 +3,10 @@
 ## Send these five first (2026-10-04): an invitation to review the next brief
 
 This section replaces "Group 1" below as the next thing to send. Five people, MLB fit first. Each
-message is an honest invitation to look at the NEXT completed brief; it does not say a sample is
+message is an honest invitation to look at the NEXT completed brief. It promises only what exists
+today: paid plans are not open, so it says "not on sale yet" and never "then $19.99 if you keep it"; it does not say a sample is
 already up, and it carries no link. When someone says yes, send them the link below once a brief is
-posted. Version label for all five: `v3b-invite-next-brief`. Send by hand, then tell me "sent 9"
+posted. Version label for all five: `v3c-invite-not-on-sale`. Send by hand, then tell me "sent 9"
 (the item number) and I log it. A send, a reply, a signup, real use and a payment are logged
 separately.
 
@@ -36,7 +37,7 @@ honestly, skip him and use the spare.
 Where: https://x.com/sportsbooktom
 
 ```
-Tommy, [one thing from his recent baseball post]. I am building a matchup brief for the MLB playoffs: for each game it makes a call on every priced market, writes the strongest case against its own bet, lists what it could not know, and is graded in public afterward. It is posted before first pitch. May I send you the next one when it is posted, and would you tell me whether it helps you decide what to examine or skip? AI analysis, not advice, and I claim no edge. If it turns out useful: free for 7 days, no card, then $19.99 a month only if you want to keep it.
+Tommy, [one thing from his recent baseball post]. I am building a matchup brief for the MLB playoffs: for each game it makes a call on every priced market, writes the strongest case against its own bet, lists what it could not know, and is graded in public afterward. It is posted before first pitch. May I send you the next one when it is posted, and would you tell me whether it helps you decide what to examine or skip? AI analysis, not advice, and I claim no edge. If it turns out useful, I am hand-picking the first 20 testers: 7 days free, no card. It is not on sale yet; the planned price is $19.99 a month.
 ```
 
 Public reply if DMs are closed:
@@ -51,14 +52,14 @@ When he says yes, once a brief is posted:
 Here it is, frozen before first pitch: LINK. What would you want it to show that it does not?
 ```
 
-Log: `python scripts/outreach_batch.py sent --batch 1 --items 9 --version v3b-invite-next-brief`
+Log: `python scripts/outreach_batch.py sent --batch 1 --items 9 --version v3c-invite-not-on-sale`
 
 ### Item 3, Peter Appel (LEAD `l003-justbaseball-betting`, CHANNEL `creator`)
 
 Where: https://x.com/peterappel23
 
 ```
-Peter, your "Auditing Myself" log is the reason I am writing: you publish the losing numbers. I am building a matchup brief for the MLB playoffs: for each game it makes a call on every priced market, writes the strongest case against its own bet, lists what it could not know, and is graded in public afterward. It is posted before first pitch. May I send you the next one when it is posted, and would you tell me whether it helps you decide what to examine or skip? AI analysis, not advice, and I claim no edge. If it turns out useful: free for 7 days, no card, then $19.99 a month only if you want to keep it.
+Peter, your "Auditing Myself" log is the reason I am writing: you publish the losing numbers. I am building a matchup brief for the MLB playoffs: for each game it makes a call on every priced market, writes the strongest case against its own bet, lists what it could not know, and is graded in public afterward. It is posted before first pitch. May I send you the next one when it is posted, and would you tell me whether it helps you decide what to examine or skip? AI analysis, not advice, and I claim no edge. If it turns out useful, I am hand-picking the first 20 testers: 7 days free, no card. It is not on sale yet; the planned price is $19.99 a month.
 ```
 
 Public reply if DMs are closed:
@@ -73,14 +74,14 @@ When he says yes, once a brief is posted:
 Here it is, frozen before first pitch: LINK. What would you want it to show that it does not?
 ```
 
-Log: `python scripts/outreach_batch.py sent --batch 1 --items 3 --version v3b-invite-next-brief`
+Log: `python scripts/outreach_batch.py sent --batch 1 --items 3 --version v3c-invite-not-on-sale`
 
 ### Item 8, Tyler Shoemaker (LEAD `l008-tyler-shoemaker`, CHANNEL `x_account`)
 
 Where: https://x.com/tshoeindex
 
 ```
-Tyler, you share every bet and keep your own ratings, so you can check this faster than most. I am building a matchup brief for the MLB playoffs: for each game it makes a call on every priced market, writes the strongest case against its own bet, lists what it could not know, and is graded in public afterward. It is posted before first pitch. May I send you the next one when it is posted, and would you tell me whether it helps you decide what to examine or skip? AI analysis, not advice, and I claim no edge. If it turns out useful: free for 7 days, no card, then $19.99 a month only if you want to keep it.
+Tyler, you share every bet and keep your own ratings, so you can check this faster than most. I am building a matchup brief for the MLB playoffs: for each game it makes a call on every priced market, writes the strongest case against its own bet, lists what it could not know, and is graded in public afterward. It is posted before first pitch. May I send you the next one when it is posted, and would you tell me whether it helps you decide what to examine or skip? AI analysis, not advice, and I claim no edge. If it turns out useful, I am hand-picking the first 20 testers: 7 days free, no card. It is not on sale yet; the planned price is $19.99 a month.
 ```
 
 Public reply if DMs are closed:
@@ -95,14 +96,14 @@ When he says yes, once a brief is posted:
 Here it is, frozen before first pitch: LINK. What would you want it to show that it does not?
 ```
 
-Log: `python scripts/outreach_batch.py sent --batch 1 --items 8 --version v3b-invite-next-brief`
+Log: `python scripts/outreach_batch.py sent --batch 1 --items 8 --version v3c-invite-not-on-sale`
 
 ### Item 11, Picks with the Professor (LEAD `l011-picks-with-the-professor`, CHANNEL `x_account`)
 
 Where: https://x.com/professorsides
 
 ```
-Professor, you work from player-level data, so the props half of this is yours to judge. I am building a matchup brief for the MLB playoffs: for each game it makes a call on every priced market, writes the strongest case against its own bet, lists what it could not know, and is graded in public afterward. It is posted before first pitch. May I send you the next one when it is posted, and would you tell me whether it helps you decide what to examine or skip? AI analysis, not advice, and I claim no edge. If it turns out useful: free for 7 days, no card, then $19.99 a month only if you want to keep it.
+Professor, you work from player-level data, so the props half of this is yours to judge. I am building a matchup brief for the MLB playoffs: for each game it makes a call on every priced market, writes the strongest case against its own bet, lists what it could not know, and is graded in public afterward. It is posted before first pitch. May I send you the next one when it is posted, and would you tell me whether it helps you decide what to examine or skip? AI analysis, not advice, and I claim no edge. If it turns out useful, I am hand-picking the first 20 testers: 7 days free, no card. It is not on sale yet; the planned price is $19.99 a month.
 ```
 
 Public reply if DMs are closed:
@@ -117,14 +118,14 @@ When he says yes, once a brief is posted:
 Here it is, frozen before first pitch: LINK. What would you want it to show that it does not?
 ```
 
-Log: `python scripts/outreach_batch.py sent --batch 1 --items 11 --version v3b-invite-next-brief`
+Log: `python scripts/outreach_batch.py sent --batch 1 --items 11 --version v3c-invite-not-on-sale`
 
 ### Item 12, Unit Circle (Discord) (LEAD `l012-unit-circle`, CHANNEL `discord`)
 
 Where: join https://disboard.org/server/1369099482997723208 as a member, read the rules, then the ticket or mod-contact channel
 
 ```
-Hi [Name], Unit Circle is built on transparent results, so I would value your read. I am building a matchup brief for the MLB playoffs: for each game it makes a call on every priced market, writes the strongest case against its own bet, lists what it could not know, and is graded in public afterward. It is posted before first pitch. May I send you the next one when it is posted, and would you tell me whether it helps you decide what to examine or skip? AI analysis, not advice, and I claim no edge. If it turns out useful: free for 7 days, no card, then $19.99 a month only if you want to keep it.
+Hi [Name], Unit Circle is built on transparent results, so I would value your read. I am building a matchup brief for the MLB playoffs: for each game it makes a call on every priced market, writes the strongest case against its own bet, lists what it could not know, and is graded in public afterward. It is posted before first pitch. May I send you the next one when it is posted, and would you tell me whether it helps you decide what to examine or skip? AI analysis, not advice, and I claim no edge. If it turns out useful, I am hand-picking the first 20 testers: 7 days free, no card. It is not on sale yet; the planned price is $19.99 a month.
 ```
 
 When he says yes, once a brief is posted:
@@ -133,7 +134,7 @@ When he says yes, once a brief is posted:
 Here it is, frozen before first pitch: LINK. What would you want it to show that it does not?
 ```
 
-Log: `python scripts/outreach_batch.py sent --batch 1 --items 12 --version v3b-invite-next-brief`
+Log: `python scripts/outreach_batch.py sent --batch 1 --items 12 --version v3c-invite-not-on-sale`
 
 After someone uses it, ask what `docs/sales/DISCOVERY_GUIDE.md` lists: what decision it helped, what
 was missing, whether they came back, and whether they will pay $19.99 for it.
