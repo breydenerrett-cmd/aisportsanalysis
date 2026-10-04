@@ -235,6 +235,11 @@ class TheCountMatchesEverywhereElse(unittest.TestCase):
         self.assertIn(analysis.HYPOTHESIS_FAMILIES_WORD, ranker.BANNER)
 
     def test_no_stale_count_survives_in_the_banner(self):
+        # A word that is the count today is not stale (the families count reached
+        # thirteen on 2026-10-04); only the hard-coded old figures are banned.
+        current = {analysis.HYPOTHESES_TESTED_WORD.lower(), analysis.HYPOTHESIS_FAMILIES_WORD.lower()}
         for stale in ("Twenty-four", "twenty-four", "Thirteen", "thirteen",
-                      "three research families"):
+                      " three research families"):
+            if stale.lower() in current:
+                continue
             self.assertNotIn(stale, ranker.BANNER)
