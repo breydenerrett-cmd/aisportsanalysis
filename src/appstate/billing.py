@@ -902,6 +902,11 @@ class StripeBillingProvider:
                                 or current.current_period_end))
 
 
+# Stripe statuses that mean a charge was attempted and not paid. Their events
+# carry the period Stripe tried to bill, which must never become access.
+FAILED_PAYMENT_STATUSES = frozenset({"past_due", "unpaid", "incomplete", "incomplete_expired"})
+
+
 def _normalize_subscription_status(raw_status: Optional[str]) -> str:
     """Stripe's own subscription-status vocabulary (active, trialing,
     past_due, unpaid, incomplete, incomplete_expired, canceled, paused,
@@ -1028,6 +1033,12 @@ def apply_stripe_webhook_event(event: dict, *, db: Optional[Path] = None) -> Non
         honest-but-incomplete guess below) until something else happened
         to trigger an `.updated`, which could be days later or never.
 
+      - A failed charge (status past_due / unpaid / incomplete /
+        incomplete_expired, FAILED_PAYMENT_STATUSES) never moves the
+        recorded period end forward: access ends where the paid period (or
+        free trial) ended. `invoice.payment_failed` is acknowledged and
+        logged, and changes nothing by itself.
+
       - checkout.session.completed records the new subscription as
         "active" (not "trialing") when one was created, even for a trial
         checkout -- a checkout.session object carries no expanded
@@ -1106,12 +1117,47 @@ def apply_stripe_webhook_event(event: dict, *, db: Optional[Path] = None) -> Non
         user_id = customers.get_user_id_by_customer_ref(customer_id, db=db)
         if user_id is None:
             return
-        status = ("canceled" if event_type == "customer.subscription.deleted"
-                  else _normalize_subscription_status(obj.get("status")))
+        deleted = event_type == "customer.subscription.deleted"
+        status = "canceled" if deleted else _normalize_subscription_status(obj.get("status"))
+        period_end = _epoch_to_iso(subscription_period_end(obj))
+        known = customers.get_subscription_record(user_id, db=db) or {}
+        if known.get("stripe_subscription_id") != subscription_id:
+            known = {}   # a resubscribed customer's old period says nothing about this one
+        if not deleted and obj.get("status") in FAILED_PAYMENT_STATUSES:
+            # A declined charge pays for nothing. Stripe has already moved
+            # `current_period_end` to the period it TRIED to bill, and
+            # recording that next to a not-paying status would read as a
+            # cancelled customer inside a paid period -- a free month. Keep
+            # the end already on record (the paid period, or the trial that
+            # was free); with none on record there is no paid period to
+            # honour, and absent stays absent.
+            period_end = known.get("current_period_end")
+        elif status in customers.PAID_STATUSES and known and \
+                known.get("status") not in customers.PAID_STATUSES:
+            # Stripe delivers at least once and does not order events, so a
+            # pre-failure `active`/`trialing` can arrive AFTER the failure
+            # was recorded. A real recovery always carries a period end
+            # beyond the paid one still on record (the retried invoice
+            # covers the new period); one that does not is a stale event and
+            # must not turn access back on.
+            recorded_end = customers._parse_iso(known.get("current_period_end"))
+            incoming_end = customers._parse_iso(period_end)
+            if recorded_end and incoming_end and incoming_end <= recorded_end:
+                return
         customers.upsert_subscription(
             user_id, subscription_id, status,
             cancel_at=_epoch_to_iso(obj.get("cancel_at")),
-            current_period_end=_epoch_to_iso(subscription_period_end(obj)), db=db)
+            current_period_end=period_end, db=db)
+    elif event_type == "invoice.payment_failed":
+        # Acknowledged and logged, never acted on: the subscription event
+        # that follows carries the status, and access is decided from that
+        # (see FAILED_PAYMENT_STATUSES). One grep-able line per decline, no
+        # card data, for the staging rehearsal and the operator.
+        user_id = customers.get_user_id_by_customer_ref(obj.get("customer"), db=db) \
+            if obj.get("customer") else None
+        print(f"billing: invoice.payment_failed user={user_id if user_id is not None else '-'} "
+              f"subscription={obj.get('subscription') or '-'} "
+              f"attempt={obj.get('attempt_count') or '-'}", file=sys.stderr, flush=True)
 
 
 def _epoch_to_iso(epoch: object) -> Optional[str]:
