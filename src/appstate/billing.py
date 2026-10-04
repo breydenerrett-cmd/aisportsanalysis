@@ -1327,6 +1327,44 @@ def _decide_checkout_completed(record: Optional[dict], *, subscription_id: str,
 
 
 def apply_stripe_webhook_event(event: dict, *, db: Optional[Path] = None) -> None:
+    """Apply one verified Stripe webhook event (the rules are in
+    `_apply_event`'s docstring), then write ONE `billing: webhook ...` log line
+    saying which event type was processed. The request log cannot say: every
+    webhook is `POST /billing/webhook status=200 user=-`. The line carries the
+    event type and id, the hashed user reference, and the stored paid-through
+    DATE and status; never an email, a raw account id, a token or a secret. It
+    can never raise or change the answer Stripe gets."""
+    _apply_event(event, db=db)
+    try:
+        _log_webhook_processed(event, db=db)
+    except Exception:  # a log line must never turn a processed event into a 500
+        pass
+
+
+def _log_webhook_processed(event: object, *, db: Optional[Path] = None) -> None:
+    if not isinstance(event, dict):
+        return
+    event_type = event.get("type")
+    obj = _dig(event, "data", "object")
+    if not isinstance(event_type, str) or not isinstance(obj, dict):
+        return
+    if event_type == "invoice.payment_failed":
+        return  # has its own, richer line (see _apply_event)
+    if event_type == "checkout.session.completed":
+        user_id = _int_or_none(obj.get("client_reference_id"))
+    else:
+        customer_ref = obj.get("customer")
+        user_id = (customers.get_user_id_by_customer_ref(customer_ref, db=db)
+                   if isinstance(customer_ref, str) and customer_ref else None)
+    record = (customers.get_subscription_record(user_id, db=db)
+              if user_id is not None and 0 <= user_id <= MAX_DB_ID else None) or {}
+    print(f"billing: webhook type={_log_text(event_type)} event={_log_text(event.get('id'))} "
+          f"user={reqlog.user_ref(user_id) or '-'} "
+          f"paid_through={_log_text(record.get('paid_through'))} "
+          f"status={_log_text(record.get('status'))}", file=sys.stderr, flush=True)
+
+
+def _apply_event(event: dict, *, db: Optional[Path] = None) -> None:
     """Persist the effect of one verified Stripe webhook event onto
     src.appstate.customers' tables. MUST be called only after
     api/billing.py has verified the event's signature -- this function
