@@ -593,6 +593,43 @@ def _select_props(groups: Mapping, board: Sequence[Mapping], *, cap: int,
     return chosen
 
 
+def _props_left_out_reason(groups: Mapping, priced_keys: Sequence, chosen: set, analyzed: int, *,
+                           cap: int, min_books: int) -> str:
+    """The plain, TRUE reason some priced props were not analyzed. A reader sees this line.
+
+    It used to say every prop left out was "left out by the per-game cap". That was wrong whenever the
+    cap was not what stopped them: on 2026-10-04 (SD at MIL) four props were priced, none was analyzed
+    and the cap is 16, because each had been captured from one book and `_select_props` will not
+    analyze a prop fewer than `min_books` books quote (one book's price has nothing to be compared
+    with). So the reason is worked out from what `_select_props` actually did, prop by prop: too few
+    books, or no room (the per-game cap, or the half-the-cap limit on one market). A cause is stated
+    only when at least one prop was stopped by it.
+    """
+    def n_props(n: int) -> str:
+        return f"{n} player prop{'' if n == 1 else 's'}"
+
+    few = [k for k in priced_keys
+           if len(set(groups[k]["over"]) | set(groups[k]["under"])) < min_books]
+    room = [k for k in priced_keys if k not in chosen and k not in few]
+    if few and not room and analyzed == 0:
+        if len(few) == 1:
+            return (f"1 player prop was priced, by fewer than {min_books} books, "
+                    "so it is not analyzed")
+        return (f"{len(few)} player props were priced, each by fewer than {min_books} books, "
+                "so none is analyzed")
+    causes = []
+    if few:
+        causes.append(f"{n_props(len(few))} had fewer than {min_books} books quoting "
+                      f"{'it' if len(few) == 1 else 'them'}")
+    if room:
+        limit = (f"the limit of {cap} props per game" if analyzed >= cap else
+                 f"the limit of {max(1, math.ceil(cap / 2))} props from one market")
+        causes.append(f"{len(room)} {'was' if len(room) == 1 else 'were'} left out by {limit}")
+    head = (f"{n_props(len(priced_keys))} {'was' if len(priced_keys) == 1 else 'were'} priced "
+            f"and {analyzed} analyzed")
+    return head + (": " + " and ".join(causes) if causes else "")
+
+
 # ---------------------------------------------------------------------------
 # sections
 # ---------------------------------------------------------------------------
@@ -657,7 +694,8 @@ def _section_as_of(name: str, values: Any, information_time: Optional[str],
 
 
 def _sections(advanced: Mapping, payload: Mapping, overrides: Mapping,
-              game_date: str) -> tuple:
+              game_date: str, clubs: Optional[Mapping] = None) -> tuple:
+    clubs = dict(clubs or {})
     raw = dict(advanced.get("sections") or {})
     read = payload.get("read") if isinstance(payload.get("read"), Mapping) else advanced.get("read")
     if isinstance(read, Mapping) and read:
@@ -695,9 +733,45 @@ def _sections(advanced: Mapping, payload: Mapping, overrides: Mapping,
             missing.append({"item": name, "kind": "absent", "reason": str(reason)})
     # present but empty in substance
     pen = sections.get("bullpen", {}).get("values") or {}
-    if pen and all(isinstance(v, Mapping) and not v.get("relievers") for v in pen.values()):
-        missing.append({"item": "bullpen", "kind": "absent",
-                        "reason": "no reliever appearances recorded for either club in the window"})
+    if pen:
+        # The bullpen section is keyed by club abbreviation, and a club with no data is left out of it
+        # (src/pipeline/briefing.py), not shown empty: so a one-sided gap is a missing KEY as often as an
+        # empty list. Each side is looked up by its club; when neither club is in the section at all
+        # the keys are not ours to read and the older both-sides rule decides.
+        found = {side: pen.get(_clean_key(club)) for side, club in clubs.items() if club}
+        if len(found) == 2 and any(v is not None for v in found.values()):
+            lacking = [side for side, v in found.items()
+                       if not (isinstance(v, Mapping) and v.get("relievers"))]
+        else:
+            lacking = ["away", "home"] if all(
+                isinstance(v, Mapping) and not v.get("relievers") for v in pen.values()) else []
+        if len(lacking) == 2:
+            missing.append({"item": "bullpen", "kind": "absent",
+                            "reason": "no reliever appearances recorded for either club in the window"})
+        for side in lacking if len(lacking) == 1 else ():
+            missing.append({"item": f"bullpen.{side}", "kind": "absent",
+                            "reason": f"no reliever appearances recorded for the {side} club "
+                                      "in the window"})
+    # One club's lineup, or its matchup depth, absent while the other is there. The section's own gap
+    # (above) says so only when BOTH are missing; a half-empty section used to say nothing at all, and
+    # a reader could not tell "the data has no road lineup" from "the road lineup was never asked for".
+    lineups = sections.get("lineups", {}).get("values")
+    if isinstance(lineups, Mapping):
+        for side in ("away", "home"):
+            blk = lineups.get(side)
+            if not (isinstance(blk, Mapping) and blk.get("batters")):
+                missing.append({"item": f"lineups.{side}", "kind": "absent",
+                                "reason": f"the {side} lineup is not posted yet, or was not fetched"})
+    depth = sections.get("matchup_depth", {}).get("values")
+    if isinstance(depth, Mapping):
+        for side in ("away", "home"):
+            blk = depth.get(side)
+            if not isinstance(blk, Mapping):
+                missing.append({"item": f"matchup_depth.{side}", "kind": "absent",
+                                "reason": f"no matchup depth was built for the {side} lineup"})
+            elif blk.get("reason"):
+                missing.append({"item": f"matchup_depth.{side}", "kind": "absent",
+                                "reason": str(blk["reason"])})
     trav = sections.get("travel", {}).get("values") or {}
     if trav and all(isinstance(v, Mapping) and v.get("miles") is None for v in trav.values()):
         missing.append({"item": "travel", "kind": "absent",
@@ -778,7 +852,7 @@ def build_packet(payload: Mapping, *, built_at: str,
     names = dict(team_names or {})
 
     sections, missing = _sections(advanced, payload, dict(section_as_of or {}),
-                                  str(game["date"] or ""))
+                                  str(game["date"] or ""), {"away": away, "home": home})
     if situation is not None:
         sections["situation"] = _scrub(situation_record.packet_section(situation))
 
@@ -804,7 +878,7 @@ def build_packet(payload: Mapping, *, built_at: str,
                                     "reason": "no team-total prices were captured for this game"})
             else:
                 missing.append({"item": slot_id, "kind": "absent",
-                                "reason": f"no {label} prices were captured before this packet was built"})
+                                "reason": f"no {label} prices were captured before this analysis was built"})
             continue
         age = (cutoff - _parse_utc(market["as_of"])).total_seconds() / 60.0
         if age > stale_minutes:
@@ -845,15 +919,18 @@ def build_packet(payload: Mapping, *, built_at: str,
             markets[built["slot_id"]] = built
         else:
             n -= 1
-    priced = len([k for k in groups if groups[k]["over"]])
+    priced_keys = [k for k in groups if groups[k]["over"]]
+    priced = len(priced_keys)
     analyzed = len([m for m in markets.values() if m["market"] == "prop"])
     if priced == 0:
         missing.append({"item": "props", "kind": "absent",
                         "reason": "no player-prop prices were captured for this game"})
     elif priced > analyzed:
         missing.append({"item": "props", "kind": "thin",
-                        "reason": f"{priced} prop contracts were priced; {analyzed} are analyzed "
-                                  "(the rest are left out by the per-game cap)"})
+                        "reason": _props_left_out_reason(
+                            groups, priced_keys, set(keys), analyzed,
+                            cap=int(cfg.get("max_props_per_game", 16)),
+                            min_books=int(cfg.get("min_books_for_prop", 2)))})
 
     prop_ages = [(cutoff - _parse_utc(m["as_of"])).total_seconds() / 60.0
                  for m in markets.values() if m["market"] == "prop" and m["as_of"]]

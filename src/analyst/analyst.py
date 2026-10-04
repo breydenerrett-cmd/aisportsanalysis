@@ -57,11 +57,18 @@ from src.ledger.chain import canonical_bytes
 # reason declares how it was calculated and the checker (critic.verify_derivations) recomputes it from packet
 # values. No row has been published under v2, so the change cost no record. Rule 3 keeps its number and its
 # words about quoting the packet; 3a is the exception, so the situation section still starts at 17.
-PROMPT_VERSION = "analyst_prompt_v3"
-# Arm B of the side-by-side test (docs/SITUATION_LAYER.md): the same (v3) prompt with "THE SITUATION"
+#
+# v4 (2026-10-04) adds rule 14a. The first published brief (two rows, both v3) told customers "the
+# packet gives nothing beyond the price": "packet" is our internal word and a reader has never heard of
+# it. Rule 14a tells the model to say "the data" or "what we have" in every field a reader sees, and the
+# checker (critic.INTERNAL_WORDS) strikes the word like any banned one, so a slip is caught, not hoped
+# against. Every other rule is byte for byte what it was and 14a takes no number, so the situation
+# section still starts at 17. The two v3 rows stay as published: a row is never rewritten.
+PROMPT_VERSION = "analyst_prompt_v4"
+# Arm B of the side-by-side test (docs/SITUATION_LAYER.md): the same (v4) prompt with "THE SITUATION"
 # added before its closing line. Used only when the situation arm is switched on; the prompt
 # above is untouched and tests pin that it is byte for byte what it was.
-SITUATION_PROMPT_VERSION = "analyst_prompt_v3_situation"
+SITUATION_PROMPT_VERSION = "analyst_prompt_v4_situation"
 
 VERDICTS = ("TAKE", "PASS", "TAKE_OTHER_SIDE")
 CONFIDENCES = ("low", "medium", "high")
@@ -100,6 +107,7 @@ THE CALLS
 
 THE WORDS
 14. Never write: lock, guaranteed, free money, sure thing, can't lose, +EV. Never claim a profit, an edge you have, or certainty. No exclamation marks.
+14a. Everything a reader sees (the summary, every reason's claim, the case against and what_would_change_it) is read by a customer who has never heard of a packet. In those fields call the data "the data" or "what we have", never "the packet". The checker strikes the word "packet" there. Evidence paths keep their own form.
 15. Do not recommend a stake size and do not describe anything as a bet you or we placed.
 
 THE SUMMARY

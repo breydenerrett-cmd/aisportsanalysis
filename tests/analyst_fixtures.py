@@ -112,7 +112,9 @@ def prop_board() -> list:
              "probability": 0.58, "market_probability": 0.56, "expected_pa": 4.1}]
 
 
-def build(*, state="pending", with_scores=False, built_at=BUILT_AT, **overrides) -> dict:
+def build(*, state="pending", with_scores=False, built_at=BUILT_AT, edit=None, **overrides) -> dict:
+    """`edit`, when given, is called with the payload's `advanced` block before the packet is built,
+    so a test can shape the sections and gaps (a one-sided lineup, a missing bullpen) offline."""
     kwargs = dict(
         multibook_rows=multibook_rows(), team_total_rows=team_total_rows(),
         batter_prop_rows=batter_prop_rows(), pitcher_prop_rows=pitcher_prop_rows(),
@@ -120,7 +122,10 @@ def build(*, state="pending", with_scores=False, built_at=BUILT_AT, **overrides)
         team_names={"away": "New York Yankees", "home": "Tampa Bay Rays"},
         section_as_of={"teams": "2026-10-02", "starters": "2026-10-02"}, cfg=CFG)
     kwargs.update(overrides)
-    return packet_mod.build_packet(payload(state, with_scores), built_at=built_at, **kwargs)
+    pay = payload(state, with_scores)
+    if edit is not None:
+        edit(pay["advanced"])
+    return packet_mod.build_packet(pay, built_at=built_at, **kwargs)
 
 
 # ---------------------------------------------------------------------------
@@ -137,7 +142,7 @@ SUMMARY = (
     "than right by luck. The one place I lean away from the crowd is the road side on the "
     "moneyline, because the price is longer than the numbers justify, but I hold that loosely and "
     "will change it the moment a lineup shows a surprise or a price moves against it, because "
-    "nothing in this packet is strong enough to be sure about.")
+    "nothing in the data is strong enough to be sure about.")
 
 
 def take_other_side_ml(packet: dict) -> dict:

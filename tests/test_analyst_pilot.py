@@ -106,7 +106,7 @@ class Prepare(Env):
         packet = F.build()
         self.assertEqual(meta["packet_hash"], packet_mod.packet_hash(packet))
         self.assertEqual((meta["prompt_version"], meta["prompt_hash"]),
-                         ("analyst_prompt_v3", ledger.prompt_hash()))
+                         ("analyst_prompt_v4", ledger.prompt_hash()))
         self.assertEqual(meta["built_at"], F.BUILT_AT)
         self.assertEqual(meta["first_pitch_utc"], F.FIRST_PITCH)
         self.assertEqual(meta["model"], F.CFG["model"])
@@ -296,7 +296,7 @@ class Publish(Env):
              "inputs": ["sections.splits.as_of", "game.date"]}]
         self.assertEqual(self.publish(self.write_response(out)), 0, self.text)
         row = self.store_rows()[0]
-        self.assertEqual(row["prompt_version"], "analyst_prompt_v3")
+        self.assertEqual(row["prompt_version"], "analyst_prompt_v4")
         rec = row["calls"][0]["reasons"][1]["derived"][0]
         self.assertEqual((rec["op"], rec["value"], rec["unit"]), ("days_between", 25, "days"))
         self.assertEqual([i["value"] for i in rec["inputs"]], ["2026-09-08T20:37:57Z", "2026-10-03"])
@@ -308,7 +308,7 @@ class Publish(Env):
         self.publish(tokens_in=10000, tokens_out=5000, seconds=95.5, operator_minutes=12)
         row = self.store_rows()[0]
         self.assertEqual(row["provenance"], "session_assisted")
-        self.assertEqual((row["prompt_version"], row["prompt_hash"]), ("analyst_prompt_v3", ledger.prompt_hash()))
+        self.assertEqual((row["prompt_version"], row["prompt_hash"]), ("analyst_prompt_v4", ledger.prompt_hash()))
         run = row["run"]
         self.assertEqual((run["mode"], run["model"]), ("session_assisted", "claude-sonnet-5-5"))
         self.assertEqual((run["tokens_in"], run["tokens_out"]), (10000, 5000))
@@ -435,7 +435,7 @@ class Publish(Env):
         self.assertIn("already graded", self.text)
 
     def test_a_prompt_that_changed_since_prepare_is_refused(self):
-        with mock.patch.object(A, "PROMPT_VERSION", "analyst_prompt_v4"):
+        with mock.patch.object(A, "PROMPT_VERSION", "analyst_prompt_v5"):
             self.assertEqual(self.publish(), 2)
         self.assertIn("has changed since this game was prepared", self.text)
 
