@@ -1,0 +1,1285 @@
+{
+  "packet_version": "analyst_packet_v1",
+  "built_at": "2026-10-04T15:18:16Z",
+  "game": {
+    "game_id": "SD-MIL-2026-10-04-1",
+    "game_pk": 849825,
+    "date": "2026-10-04",
+    "away": "SD",
+    "home": "MIL",
+    "venue": "American Family Field",
+    "first_pitch_utc": "2026-10-04T20:00:00Z",
+    "state": "pending",
+    "detailed_state": "Scheduled",
+    "game_type": "D",
+    "probables": {
+      "away": {
+        "name": "Michael King"
+      },
+      "home": {
+        "name": "Logan Henderson"
+      }
+    }
+  },
+  "sections": {
+    "teams": {
+      "as_of": "2026-10-03",
+      "as_of_basis": "stats through this date",
+      "values": {
+        "away_away_win_pct": 0.4878,
+        "away_games_played": 162,
+        "away_home_win_pct": 0.625,
+        "away_last10_games": 10,
+        "away_last10_run_diff_pg": 1.4,
+        "away_last10_runs_scored_pg": 5.3,
+        "away_last10_wins": 7,
+        "away_last5_games": 5,
+        "away_last5_run_diff_pg": 3.6,
+        "away_last5_runs_scored_pg": 6.6,
+        "away_last5_wins": 4,
+        "away_losses": 72,
+        "away_rest_days": 1,
+        "away_run_diff_pg": 0.259,
+        "away_runs_allowed_pg": 4.179,
+        "away_runs_scored_pg": 4.438,
+        "away_sample_is_thin": false,
+        "away_streak": -1,
+        "away_win_pct": 0.5556,
+        "away_wins": 90,
+        "diff_run_diff_pg": 1.06,
+        "diff_runs_allowed_pg": -0.379,
+        "diff_runs_scored_pg": 0.681,
+        "diff_win_pct": 0.0756,
+        "either_sample_thin": false,
+        "home_away_win_pct": 0.5926,
+        "home_games_played": 160,
+        "home_home_win_pct": 0.6709,
+        "home_last10_games": 10,
+        "home_last10_run_diff_pg": 1.8,
+        "home_last10_runs_scored_pg": 4.3,
+        "home_last10_wins": 9,
+        "home_last5_games": 5,
+        "home_last5_run_diff_pg": 2.4,
+        "home_last5_runs_scored_pg": 5.0,
+        "home_last5_wins": 5,
+        "home_losses": 59,
+        "home_rest_days": 1,
+        "home_run_diff_pg": 1.319,
+        "home_runs_allowed_pg": 3.8,
+        "home_runs_scored_pg": 5.119,
+        "home_sample_is_thin": false,
+        "home_streak": 6,
+        "home_win_pct": 0.6312,
+        "home_wins": 101
+      }
+    },
+    "starters": {
+      "as_of": "2026-10-03",
+      "as_of_basis": "stats through this date",
+      "values": {
+        "away_sp_appearances": 32,
+        "away_sp_bb9": 3.4054,
+        "away_sp_days_rest": 12,
+        "away_sp_era": 3.2108,
+        "away_sp_fip": 4.1311,
+        "away_sp_hr9": 0.973,
+        "away_sp_innings": 185.0,
+        "away_sp_ip_per_start": 5.781,
+        "away_sp_k9": 7.7351,
+        "away_sp_k_bb_pct": 0.1176,
+        "away_sp_known": true,
+        "away_sp_recent_era": 5.2941,
+        "away_sp_recent_ip_per_start": 5.667,
+        "away_sp_recent_starts": 3,
+        "away_sp_starts": 32,
+        "away_sp_thin": false,
+        "away_sp_whip": 1.1784,
+        "both_sp_known": true,
+        "diff_sp_era": -0.7396,
+        "diff_sp_fip": -0.6284,
+        "diff_sp_ip_per_start": -0.318,
+        "diff_sp_k9": 2.3327,
+        "diff_sp_k_bb_pct": 0.1277,
+        "diff_sp_whip": -0.3343,
+        "either_sp_thin": false,
+        "home_sp_appearances": 18,
+        "home_sp_bb9": 1.739,
+        "home_sp_days_rest": 11,
+        "home_sp_era": 2.4712,
+        "home_sp_fip": 3.5027,
+        "home_sp_hr9": 1.2814,
+        "home_sp_innings": 98.33,
+        "home_sp_ip_per_start": 5.463,
+        "home_sp_k9": 10.0678,
+        "home_sp_k_bb_pct": 0.2453,
+        "home_sp_known": true,
+        "home_sp_recent_era": 2.4,
+        "home_sp_recent_ip_per_start": 5.0,
+        "home_sp_recent_starts": 3,
+        "home_sp_starts": 18,
+        "home_sp_thin": false,
+        "home_sp_whip": 0.8441
+      }
+    },
+    "splits": {
+      "as_of": "2026-10-04T15:03:18.573390+00:00",
+      "as_of_basis": "newest stamp inside the section",
+      "values": {
+        "away": {
+          "platoon": {
+            "gap": -0.047,
+            "reason": null,
+            "usable": true,
+            "vs_left_faced": 476,
+            "vs_left_ops": 0.635,
+            "vs_right_faced": 281,
+            "vs_right_ops": 0.682,
+            "weaker_against": "R"
+          },
+          "record": {
+            "as_of": "2026-10-04T15:03:17.840069+00:00",
+            "season": "2026",
+            "splits": {
+              "Away_Games": {
+                "avg": 0.229,
+                "batters_faced": 403,
+                "home_runs": 11,
+                "innings": "96.1",
+                "ops": 0.671,
+                "strikeouts": 81,
+                "walks": 37
+              },
+              "Home_Games": {
+                "avg": 0.212,
+                "batters_faced": 354,
+                "home_runs": 9,
+                "innings": "88.2",
+                "ops": 0.631,
+                "strikeouts": 78,
+                "walks": 33
+              },
+              "vs_Left": {
+                "avg": 0.219,
+                "batters_faced": 476,
+                "home_runs": 13,
+                "innings": "116.1",
+                "ops": 0.635,
+                "strikeouts": 97,
+                "walks": 47
+              },
+              "vs_Right": {
+                "avg": 0.224,
+                "batters_faced": 281,
+                "home_runs": 7,
+                "innings": "67.0",
+                "ops": 0.682,
+                "strikeouts": 62,
+                "walks": 23
+              }
+            }
+          }
+        },
+        "home": {
+          "platoon": {
+            "gap": 0.047,
+            "reason": null,
+            "usable": true,
+            "vs_left_faced": 242,
+            "vs_left_ops": 0.592,
+            "vs_right_faced": 129,
+            "vs_right_ops": 0.545,
+            "weaker_against": "L"
+          },
+          "record": {
+            "as_of": "2026-10-04T15:03:18.573390+00:00",
+            "season": "2026",
+            "splits": {
+              "Away_Games": {
+                "avg": 0.194,
+                "batters_faced": 209,
+                "home_runs": 7,
+                "innings": "54.1",
+                "ops": 0.602,
+                "strikeouts": 60,
+                "walks": 11
+              },
+              "Home_Games": {
+                "avg": 0.169,
+                "batters_faced": 162,
+                "home_runs": 7,
+                "innings": "44.0",
+                "ops": 0.541,
+                "strikeouts": 50,
+                "walks": 8
+              },
+              "vs_Left": {
+                "avg": 0.178,
+                "batters_faced": 242,
+                "home_runs": 10,
+                "innings": "64.0",
+                "ops": 0.592,
+                "strikeouts": 73,
+                "walks": 15
+              },
+              "vs_Right": {
+                "avg": 0.192,
+                "batters_faced": 129,
+                "home_runs": 4,
+                "innings": "34.0",
+                "ops": 0.545,
+                "strikeouts": 37,
+                "walks": 4
+              }
+            }
+          }
+        }
+      }
+    },
+    "arsenals": {
+      "as_of": "2026-10-04T15:18:15Z",
+      "as_of_basis": "when the game payload was built",
+      "values": {
+        "away": [
+          {
+            "est_woba": 0.387,
+            "hard_hit_pct": 44.4,
+            "k_pct": 19.7,
+            "pa": 208.0,
+            "pitch": "Sinker",
+            "pitcher": "King, Michael",
+            "usage_pct": 27.9,
+            "whiff_pct": 16.7,
+            "woba": 0.365
+          },
+          {
+            "est_woba": 0.283,
+            "hard_hit_pct": 23.7,
+            "k_pct": 16.5,
+            "pa": 243.0,
+            "pitch": "Changeup",
+            "pitcher": "King, Michael",
+            "usage_pct": 26.4,
+            "whiff_pct": 27.0,
+            "woba": 0.241
+          },
+          {
+            "est_woba": 0.346,
+            "hard_hit_pct": 39.7,
+            "k_pct": 31.8,
+            "pa": 129.0,
+            "pitch": "4-Seam Fastball",
+            "pitcher": "King, Michael",
+            "usage_pct": 20.3,
+            "whiff_pct": 27.8,
+            "woba": 0.325
+          },
+          {
+            "est_woba": 0.294,
+            "hard_hit_pct": 29.5,
+            "k_pct": 20.2,
+            "pa": 124.0,
+            "pitch": "Sweeper",
+            "pitcher": "King, Michael",
+            "usage_pct": 18.8,
+            "whiff_pct": 27.7,
+            "woba": 0.297
+          },
+          {
+            "est_woba": 0.255,
+            "hard_hit_pct": 29.7,
+            "k_pct": 22.6,
+            "pa": 53.0,
+            "pitch": "Slider",
+            "pitcher": "King, Michael",
+            "usage_pct": 6.6,
+            "whiff_pct": 23.3,
+            "woba": 0.206
+          }
+        ],
+        "home": [
+          {
+            "est_woba": 0.234,
+            "hard_hit_pct": 48.5,
+            "k_pct": 34.3,
+            "pa": 172.0,
+            "pitch": "4-Seam Fastball",
+            "pitcher": "Henderson, Logan",
+            "usage_pct": 46.4,
+            "whiff_pct": 20.8,
+            "woba": 0.22
+          },
+          {
+            "est_woba": 0.245,
+            "hard_hit_pct": 21.0,
+            "k_pct": 32.6,
+            "pa": 129.0,
+            "pitch": "Changeup",
+            "pitcher": "Henderson, Logan",
+            "usage_pct": 35.2,
+            "whiff_pct": 37.4,
+            "woba": 0.246
+          },
+          {
+            "est_woba": 0.328,
+            "hard_hit_pct": 41.7,
+            "k_pct": 9.1,
+            "pa": 55.0,
+            "pitch": "Cutter",
+            "pitcher": "Henderson, Logan",
+            "usage_pct": 15.3,
+            "whiff_pct": 21.0,
+            "woba": 0.365
+          }
+        ]
+      }
+    },
+    "bullpen": {
+      "as_of": "2026-10-04",
+      "as_of_basis": "newest stamp inside the section",
+      "values": {
+        "MIL": {
+          "as_of": "2026-10-04",
+          "reliever_count": 7,
+          "relievers": [
+            {
+              "appearances": [
+                {
+                  "date": "2026-10-03",
+                  "days_ago": 1,
+                  "innings": 1.0,
+                  "pitches": 20
+                },
+                {
+                  "date": "2026-09-27",
+                  "days_ago": 7,
+                  "innings": 1.667,
+                  "pitches": 25
+                }
+              ],
+              "availability": "available",
+              "availability_reason": "pitched yesterday but only 20 pitches",
+              "innings": 2.67,
+              "name": "DL Hall",
+              "pitches": 45,
+              "pitches_known": true
+            },
+            {
+              "appearances": [
+                {
+                  "date": "2026-09-27",
+                  "days_ago": 7,
+                  "innings": 1.667,
+                  "pitches": 21
+                }
+              ],
+              "availability": "available",
+              "availability_reason": "last pitched 7 days ago",
+              "innings": 1.67,
+              "name": "Shane Drohan",
+              "pitches": 21,
+              "pitches_known": true
+            },
+            {
+              "appearances": [
+                {
+                  "date": "2026-10-03",
+                  "days_ago": 1,
+                  "innings": 1.667,
+                  "pitches": 23
+                }
+              ],
+              "availability": "available",
+              "availability_reason": "pitched yesterday but only 23 pitches",
+              "innings": 1.67,
+              "name": "Aaron Ashby",
+              "pitches": 23,
+              "pitches_known": true
+            },
+            {
+              "appearances": [
+                {
+                  "date": "2026-10-03",
+                  "days_ago": 1,
+                  "innings": 1.333,
+                  "pitches": 17
+                }
+              ],
+              "availability": "available",
+              "availability_reason": "pitched yesterday but only 17 pitches",
+              "innings": 1.33,
+              "name": "Trevor Megill",
+              "pitches": 17,
+              "pitches_known": true
+            },
+            {
+              "appearances": [
+                {
+                  "date": "2026-10-03",
+                  "days_ago": 1,
+                  "innings": 0.667,
+                  "pitches": 11
+                }
+              ],
+              "availability": "available",
+              "availability_reason": "pitched yesterday but only 11 pitches",
+              "innings": 0.67,
+              "name": "Antonio Senzatela",
+              "pitches": 11,
+              "pitches_known": true
+            },
+            {
+              "appearances": [
+                {
+                  "date": "2026-09-27",
+                  "days_ago": 7,
+                  "innings": 0.333,
+                  "pitches": 26
+                }
+              ],
+              "availability": "available",
+              "availability_reason": "last pitched 7 days ago",
+              "innings": 0.33,
+              "name": "Chad Patrick",
+              "pitches": 26,
+              "pitches_known": true
+            },
+            {
+              "appearances": [
+                {
+                  "date": "2026-10-03",
+                  "days_ago": 1,
+                  "innings": 0.333,
+                  "pitches": 16
+                }
+              ],
+              "availability": "available",
+              "availability_reason": "pitched yesterday but only 16 pitches",
+              "innings": 0.33,
+              "name": "Abner Uribe",
+              "pitches": 16,
+              "pitches_known": true
+            }
+          ],
+          "team": "MIL",
+          "total_innings": 8.67,
+          "window_days": 7
+        },
+        "SD": {
+          "as_of": "2026-10-04",
+          "reliever_count": 7,
+          "relievers": [
+            {
+              "appearances": [
+                {
+                  "date": "2026-10-03",
+                  "days_ago": 1,
+                  "innings": 2.0,
+                  "pitches": 31
+                },
+                {
+                  "date": "2026-09-30",
+                  "days_ago": 4,
+                  "innings": 2.0,
+                  "pitches": 29
+                }
+              ],
+              "availability": "likely_unavailable",
+              "availability_reason": "threw 31 pitches yesterday; a next-day appearance after that is unusual",
+              "innings": 4.0,
+              "name": "Adrian Morejon",
+              "pitches": 60,
+              "pitches_known": true
+            },
+            {
+              "appearances": [
+                {
+                  "date": "2026-09-27",
+                  "days_ago": 7,
+                  "innings": 3.0,
+                  "pitches": 64
+                }
+              ],
+              "availability": "available",
+              "availability_reason": "last pitched 7 days ago",
+              "innings": 3.0,
+              "name": "Griffin Canning",
+              "pitches": 64,
+              "pitches_known": true
+            },
+            {
+              "appearances": [
+                {
+                  "date": "2026-10-03",
+                  "days_ago": 1,
+                  "innings": 1.333,
+                  "pitches": 19
+                },
+                {
+                  "date": "2026-09-30",
+                  "days_ago": 4,
+                  "innings": 1.667,
+                  "pitches": 21
+                }
+              ],
+              "availability": "available",
+              "availability_reason": "pitched yesterday but only 19 pitches",
+              "innings": 3.0,
+              "name": "Bradgley Rodriguez",
+              "pitches": 40,
+              "pitches_known": true
+            },
+            {
+              "appearances": [
+                {
+                  "date": "2026-10-03",
+                  "days_ago": 1,
+                  "innings": 1.0,
+                  "pitches": 15
+                },
+                {
+                  "date": "2026-09-29",
+                  "days_ago": 5,
+                  "innings": 1.0,
+                  "pitches": 11
+                }
+              ],
+              "availability": "available",
+              "availability_reason": "pitched yesterday but only 15 pitches",
+              "innings": 2.0,
+              "name": "Yuki Matsui",
+              "pitches": 26,
+              "pitches_known": true
+            },
+            {
+              "appearances": [
+                {
+                  "date": "2026-10-03",
+                  "days_ago": 1,
+                  "innings": 1.0,
+                  "pitches": 16
+                },
+                {
+                  "date": "2026-09-30",
+                  "days_ago": 4,
+                  "innings": 1.0,
+                  "pitches": 11
+                }
+              ],
+              "availability": "available",
+              "availability_reason": "pitched yesterday but only 16 pitches",
+              "innings": 2.0,
+              "name": "Jason Adam",
+              "pitches": 27,
+              "pitches_known": true
+            },
+            {
+              "appearances": [
+                {
+                  "date": "2026-09-29",
+                  "days_ago": 5,
+                  "innings": 1.0,
+                  "pitches": 22
+                }
+              ],
+              "availability": "available",
+              "availability_reason": "last pitched 5 days ago",
+              "innings": 1.0,
+              "name": "Joe Musgrove",
+              "pitches": 22,
+              "pitches_known": true
+            },
+            {
+              "appearances": [
+                {
+                  "date": "2026-09-30",
+                  "days_ago": 4,
+                  "innings": 1.0,
+                  "pitches": 19
+                }
+              ],
+              "availability": "available",
+              "availability_reason": "last pitched 4 days ago",
+              "innings": 1.0,
+              "name": "Mason Miller",
+              "pitches": 19,
+              "pitches_known": true
+            }
+          ],
+          "team": "SD",
+          "total_innings": 16.0,
+          "window_days": 7
+        }
+      }
+    },
+    "travel": {
+      "as_of": "2026-10-04T15:18:15Z",
+      "as_of_basis": "when the game payload was built",
+      "values": {
+        "MIL": {
+          "days_since_last_game": 1,
+          "dense_stretch": false,
+          "eastward": false,
+          "games_last_7": 3,
+          "last_venue": "MIL",
+          "long_trip": false,
+          "miles": 0.0,
+          "reason": null,
+          "team": "MIL",
+          "zones": 0.0
+        },
+        "SD": {
+          "days_since_last_game": 1,
+          "dense_stretch": false,
+          "eastward": false,
+          "games_last_7": 5,
+          "last_venue": "MIL",
+          "long_trip": false,
+          "miles": 0.0,
+          "reason": null,
+          "team": "SD",
+          "zones": 0.0
+        }
+      }
+    },
+    "weather": {
+      "as_of": "2026-10-04T20:00",
+      "as_of_basis": "forecast for the hour shown",
+      "values": {
+        "hours_from_first_pitch": 0.0,
+        "humidity_pct": 54,
+        "observed_utc": "2026-10-04T20:00",
+        "precip_probability_pct": 0,
+        "pressure_hpa": 997.1,
+        "temp_f": 66.2,
+        "wind_from_deg": 308,
+        "wind_mph": 11.9
+      }
+    },
+    "park": {
+      "as_of": "2026-10-04T15:18:15Z",
+      "as_of_basis": "when the game payload was built",
+      "values": {
+        "altitude_m": 193,
+        "name": "American Family Field",
+        "roof": "retractable",
+        "team": "MIL"
+      }
+    },
+    "news": {
+      "as_of": "2026-10-04T15:18:15Z",
+      "as_of_basis": "when the game payload was built",
+      "values": {
+        "MIL": [
+          {
+            "category": "il_activation",
+            "date": "2026-10-02",
+            "description": "Milwaukee Brewers activated 1B Andrew Vaughn from the 10-day injured list.",
+            "filed_date": "2026-10-02",
+            "from_team": null,
+            "injury_note": null,
+            "player": "Andrew Vaughn",
+            "sentence": "Milwaukee Brewers activated 1B Andrew Vaughn from the 10-day injured list.",
+            "team": "MIL",
+            "to_team": "MIL",
+            "transaction_id": 944955,
+            "type_desc": "Status Change"
+          },
+          {
+            "category": "il_activation",
+            "date": "2026-09-28",
+            "description": "Milwaukee Brewers activated RHP Grant Anderson from the 15-day injured list.",
+            "filed_date": "2026-09-28",
+            "from_team": null,
+            "injury_note": null,
+            "player": "Grant Anderson",
+            "sentence": "Milwaukee Brewers activated RHP Grant Anderson from the 15-day injured list.",
+            "team": "MIL",
+            "to_team": "MIL",
+            "transaction_id": 944625,
+            "type_desc": "Status Change"
+          },
+          {
+            "category": "recalled",
+            "date": "2026-09-28",
+            "description": "Milwaukee Brewers recalled LF Akil Baddoo from Nashville Sounds.",
+            "filed_date": "2026-09-28",
+            "from_team": null,
+            "injury_note": null,
+            "player": "Akil Baddoo",
+            "sentence": "Milwaukee Brewers recalled LF Akil Baddoo from Nashville Sounds.",
+            "team": "MIL",
+            "to_team": "MIL",
+            "transaction_id": 944634,
+            "type_desc": "Recalled"
+          },
+          {
+            "category": "recalled",
+            "date": "2026-09-28",
+            "description": "Milwaukee Brewers recalled RHP Brandon Sproat from Nashville Sounds.",
+            "filed_date": "2026-09-28",
+            "from_team": null,
+            "injury_note": null,
+            "player": "Brandon Sproat",
+            "sentence": "Milwaukee Brewers recalled RHP Brandon Sproat from Nashville Sounds.",
+            "team": "MIL",
+            "to_team": "MIL",
+            "transaction_id": 944636,
+            "type_desc": "Recalled"
+          }
+        ],
+        "SD": [
+          {
+            "category": "il_activation",
+            "date": "2026-10-03",
+            "description": "San Diego Padres activated RHP Randy V\u00e1squez.",
+            "filed_date": "2026-10-03",
+            "from_team": null,
+            "injury_note": null,
+            "player": "Randy V\u00e1squez",
+            "sentence": "San Diego Padres activated RHP Randy V\u00e1squez.",
+            "team": "SD",
+            "to_team": "SD",
+            "transaction_id": 944987,
+            "type_desc": "Status Change"
+          },
+          {
+            "category": "il_activation",
+            "date": "2026-09-29",
+            "description": "San Diego Padres activated RHP Joe Musgrove from the 60-day injured list.",
+            "filed_date": "2026-09-29",
+            "from_team": null,
+            "injury_note": null,
+            "player": "Joe Musgrove",
+            "sentence": "San Diego Padres activated RHP Joe Musgrove from the 60-day injured list.",
+            "team": "SD",
+            "to_team": "SD",
+            "transaction_id": 944709,
+            "type_desc": "Status Change"
+          },
+          {
+            "category": "il_placement",
+            "date": "2026-09-29",
+            "description": "San Diego Padres placed C Rodolfo Dur\u00e1n on the 60-day injured list. Right forearm strain.",
+            "filed_date": "2026-09-29",
+            "from_team": null,
+            "injury_note": "Right forearm strain",
+            "player": "Rodolfo Dur\u00e1n",
+            "sentence": "San Diego Padres placed C Rodolfo Dur\u00e1n on the 60-day injured list. Right forearm strain.",
+            "team": "SD",
+            "to_team": "SD",
+            "transaction_id": 944744,
+            "type_desc": "Status Change"
+          },
+          {
+            "category": "il_activation",
+            "date": "2026-09-28",
+            "description": "San Diego Padres activated DH Miguel Andujar from the 10-day injured list.",
+            "filed_date": "2026-09-28",
+            "from_team": null,
+            "injury_note": null,
+            "player": "Miguel Andujar",
+            "sentence": "San Diego Padres activated DH Miguel Andujar from the 10-day injured list.",
+            "team": "SD",
+            "to_team": "SD",
+            "transaction_id": 944422,
+            "type_desc": "Status Change"
+          }
+        ]
+      }
+    }
+  },
+  "markets": {
+    "moneyline": {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "label": "SD at MIL moneyline",
+      "as_of": "2026-10-04T15:04:08Z",
+      "lean": "MIL",
+      "options": [
+        {
+          "selection": "MIL",
+          "side": "home",
+          "line": null,
+          "books": 11,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": -135,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "betonlineag",
+              "price": -130,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "betrivers",
+              "price": -141,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "betus",
+              "price": -130,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "bovada",
+              "price": -135,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "draftkings",
+              "price": -137,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "fanatics",
+              "price": -140,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "fanduel",
+              "price": -134,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "lowvig",
+              "price": -130,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "mybookieag",
+              "price": -136,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "williamhill_us",
+              "price": -136,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            }
+          ],
+          "best": {
+            "price": -130,
+            "book": "lowvig"
+          },
+          "fair_probability": 0.5535
+        },
+        {
+          "selection": "SD",
+          "side": "away",
+          "line": null,
+          "books": 11,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": 115,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "betonlineag",
+              "price": 118,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "betrivers",
+              "price": 118,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "betus",
+              "price": 118,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "bovada",
+              "price": 113,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "draftkings",
+              "price": 114,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "fanatics",
+              "price": 115,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "fanduel",
+              "price": 114,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "lowvig",
+              "price": 118,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "mybookieag",
+              "price": 116,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "williamhill_us",
+              "price": 116,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            }
+          ],
+          "best": {
+            "price": 118,
+            "book": "lowvig"
+          },
+          "fair_probability": 0.4465
+        }
+      ]
+    },
+    "run_line": {
+      "slot_id": "run_line",
+      "market": "run_line",
+      "label": "SD at MIL run line",
+      "as_of": "2026-10-04T15:04:08Z",
+      "lean": "SD +1.5",
+      "options": [
+        {
+          "selection": "SD +1.5",
+          "side": "away",
+          "line": 1.5,
+          "books": 11,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": -200,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "betonlineag",
+              "price": -185,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "betrivers",
+              "price": -186,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "betus",
+              "price": -185,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "bovada",
+              "price": -195,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "draftkings",
+              "price": -197,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "fanatics",
+              "price": -200,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "fanduel",
+              "price": -200,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "lowvig",
+              "price": -185,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "mybookieag",
+              "price": -185,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "williamhill_us",
+              "price": -193,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            }
+          ],
+          "best": {
+            "price": -185,
+            "book": "mybookieag"
+          },
+          "fair_probability": 0.6318
+        },
+        {
+          "selection": "MIL -1.5",
+          "side": "home",
+          "line": -1.5,
+          "books": 11,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": 165,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "betonlineag",
+              "price": 161,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "betrivers",
+              "price": 150,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "betus",
+              "price": 160,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "bovada",
+              "price": 165,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "draftkings",
+              "price": 161,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "fanatics",
+              "price": 160,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "fanduel",
+              "price": 164,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "lowvig",
+              "price": 162,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "mybookieag",
+              "price": 163,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "williamhill_us",
+              "price": 161,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            }
+          ],
+          "best": {
+            "price": 165,
+            "book": "bovada"
+          },
+          "fair_probability": 0.3682
+        }
+      ]
+    },
+    "total": {
+      "slot_id": "total",
+      "market": "total",
+      "label": "SD at MIL game total runs",
+      "as_of": "2026-10-04T15:04:08Z",
+      "lean": "Over 7",
+      "options": [
+        {
+          "selection": "Over 7",
+          "side": "over",
+          "line": 7.0,
+          "books": 10,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": -115,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "betonlineag",
+              "price": -117,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "betrivers",
+              "price": -109,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "betus",
+              "price": -115,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "bovada",
+              "price": -115,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "draftkings",
+              "price": -115,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "fanatics",
+              "price": -115,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "lowvig",
+              "price": -115,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "mybookieag",
+              "price": -115,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "williamhill_us",
+              "price": -108,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            }
+          ],
+          "best": {
+            "price": -108,
+            "book": "williamhill_us"
+          },
+          "fair_probability": 0.5092
+        },
+        {
+          "selection": "Under 7",
+          "side": "under",
+          "line": 7.0,
+          "books": 10,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": -105,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "betonlineag",
+              "price": -103,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "betrivers",
+              "price": -112,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "betus",
+              "price": -105,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "bovada",
+              "price": -105,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "draftkings",
+              "price": -104,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "fanatics",
+              "price": -105,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "lowvig",
+              "price": 100,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "mybookieag",
+              "price": -107,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            },
+            {
+              "book": "williamhill_us",
+              "price": -109,
+              "captured_utc": "2026-10-04T15:04:08Z"
+            }
+          ],
+          "best": {
+            "price": 100,
+            "book": "lowvig"
+          },
+          "fair_probability": 0.4908
+        }
+      ]
+    }
+  },
+  "slots": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "label": "SD at MIL moneyline",
+      "selections": [
+        "MIL",
+        "SD"
+      ]
+    },
+    {
+      "slot_id": "run_line",
+      "market": "run_line",
+      "label": "SD at MIL run line",
+      "selections": [
+        "SD +1.5",
+        "MIL -1.5"
+      ]
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "label": "SD at MIL game total runs",
+      "selections": [
+        "Over 7",
+        "Under 7"
+      ]
+    }
+  ],
+  "missing": [
+    {
+      "item": "lineups",
+      "kind": "absent",
+      "reason": "lineup not posted yet, or not fetched"
+    },
+    {
+      "item": "matchup_depth",
+      "kind": "absent",
+      "reason": "no posted lineup for this game, so there is no unit to decompose"
+    },
+    {
+      "item": "matchup_history",
+      "kind": "absent",
+      "reason": "batter-vs-pitcher history not fetched"
+    },
+    {
+      "item": "props",
+      "kind": "thin",
+      "reason": "4 prop contracts were priced; 0 are analyzed (the rest are left out by the per-game cap)"
+    },
+    {
+      "item": "standings",
+      "kind": "absent",
+      "reason": "no standings snapshot stored for 2026-10-04"
+    },
+    {
+      "item": "team_totals",
+      "kind": "absent",
+      "reason": "no team-total prices were captured for this game"
+    }
+  ],
+  "limits": [
+    "Only the most-quoted line of each market is analyzed; alternate run lines and alternate totals are not.",
+    "First-five-inning markets are not analyzed.",
+    "Player props are capped per game; the contracts left out are counted in `missing`.",
+    "Every quote is the newest one captured before this packet was built, with its capture time; nothing was captured after it."
+  ]
+}

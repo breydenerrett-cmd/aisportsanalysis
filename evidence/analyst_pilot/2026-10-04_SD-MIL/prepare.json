@@ -1,0 +1,21 @@
+{
+  "game_id": "SD-MIL-2026-10-04-1",
+  "date": "2026-10-04",
+  "away": "SD",
+  "home": "MIL",
+  "first_pitch_utc": "2026-10-04T20:00:00Z",
+  "built_at": "2026-10-04T15:18:16Z",
+  "packet_hash": "8de2bea775be9d825a794607c7f011d58c1e6c72ddc64285fa6a2c1c9fa7a5f3",
+  "prompt_version": "analyst_prompt_v3",
+  "prompt_hash": "8c667bbbcceb40d1a332fbf9308a97428d422e11cb0f6066de73b58694ee2c34",
+  "token_estimate": 8921,
+  "model": "claude-sonnet-5-5",
+  "slots": [
+    "moneyline",
+    "run_line",
+    "total"
+  ],
+  "missing_items": 6,
+  "rehearsal": false,
+  "mode": "session_assisted"
+}

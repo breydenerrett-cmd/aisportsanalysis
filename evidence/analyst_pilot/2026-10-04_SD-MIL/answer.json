@@ -1,0 +1,117 @@
+{
+  "summary": "I pass on all three markets. Milwaukee is the favorite at -130 and the case is real: Logan Henderson has an ERA of 2.4712 against 3.2108 for Michael King, and MIL has the better run differential per game, 1.319 against 0.259. But the books' own de-vigged number for MIL is 0.5535, and that already reflects most of the starter and team-quality gap, so I do not see what the price misses. King's FIP of 4.1311 and recent ERA of 5.2941 lean toward MIL, but Henderson has only 98.33 innings this year. Lineups are not posted, and there is no matchup history or standings snapshot, so any lean rests on thin ground. On the run line, SD +1.5 at -185 is too expensive to chase, and MIL -1.5 at +165 needs a bigger win than the evidence supports. The total of 7 is priced almost level, with the over at 0.5092 fair probability, a retractable roof and a wind of 11.9 mph that I cannot read without knowing the roof status. The market is probably right on all three.",
+  "calls": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "selection": "MIL",
+      "verdict": "PASS",
+      "price": -130,
+      "book": "lowvig",
+      "fair_estimate": 0.56,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "MIL has the better starter on ERA and FIP, but the books' fair probability for MIL already sits above a coin flip, so the price likely includes it.",
+          "evidence": [
+            {"path": "sections.starters.values.home_sp_era", "value": 2.4712},
+            {"path": "sections.starters.values.away_sp_era", "value": 3.2108},
+            {"path": "sections.starters.values.home_sp_fip", "value": 3.5027},
+            {"path": "sections.starters.values.away_sp_fip", "value": 4.1311},
+            {"path": "markets.moneyline.options[0].fair_probability", "value": 0.5535}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "MIL also has the better run differential per game, which agrees with the starter advantage but is again something the market sees.",
+          "evidence": [
+            {"path": "sections.teams.values.home_run_diff_pg", "value": 1.319},
+            {"path": "sections.teams.values.away_run_diff_pg", "value": 0.259}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Lineups are not posted, so the matchup cannot be judged and the lean rests on thin ground.",
+          "evidence": [
+            {"path": "missing[0].item", "value": "lineups"}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": -127,
+      "what_would_change_it": "A posted MIL lineup that holds up against the SD starter, together with a price of -127 or better on MIL, would turn this into a take.",
+      "case_against": null
+    },
+    {
+      "slot_id": "run_line",
+      "market": "run_line",
+      "selection": "SD +1.5",
+      "verdict": "PASS",
+      "price": -185,
+      "book": "mybookieag",
+      "fair_estimate": 0.64,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The books' fair probability for SD +1.5 is already high and the best price is steep, so the market looks about right and there is little reason to pay for it. My own number is close to theirs.",
+          "evidence": [
+            {"path": "markets.run_line.options[0].best.price", "value": -185},
+            {"path": "markets.run_line.options[0].fair_probability", "value": 0.6318}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "MIL -1.5 pays well, but nothing in the packet shows MIL winning by two or more more often than the price implies, and lineups are missing.",
+          "evidence": [
+            {"path": "markets.run_line.options[1].best.price", "value": 165},
+            {"path": "missing[0].item", "value": "lineups"}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": -178,
+      "what_would_change_it": "A price of -178 or better on SD +1.5, or posted lineups showing a clear mismatch, would be the new fact needed to revisit this market.",
+      "case_against": null
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "selection": "Over 7",
+      "verdict": "PASS",
+      "price": -108,
+      "book": "williamhill_us",
+      "fair_estimate": 0.51,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The total is priced almost level between over and under, and the packet gives nothing beyond the price that separates them, so my number sits next to the books' number.",
+          "evidence": [
+            {"path": "markets.total.options[0].fair_probability", "value": 0.5092},
+            {"path": "markets.total.options[1].fair_probability", "value": 0.4908}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Weather is hard to use because the park has a retractable roof and the packet does not say whether it will be open.",
+          "evidence": [
+            {"path": "sections.park.values.roof", "value": "retractable"},
+            {"path": "sections.weather.values.wind_mph", "value": 11.9}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Both starters carry strong strikeout and walk numbers, but no lineup is posted, so run scoring cannot be judged.",
+          "evidence": [
+            {"path": "sections.starters.values.home_sp_k_bb_pct", "value": 0.2453},
+            {"path": "missing[0].item", "value": "lineups"}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": -104,
+      "what_would_change_it": "A price of -104 or better on the over, a confirmed roof status, or posted lineups that change the run-scoring picture would be the new fact needed to revisit this market.",
+      "case_against": null
+    }
+  ],
+  "summary_derived": []
+}
