@@ -79,7 +79,6 @@ class ASettledAnswerOnDiskIsOneThatCannotChange(FetchBase):
     asks again inside that window. 'O' (Game Over: the last out, before the official Final) and the suspended codes
     'T'/'U' are in the settled set, but a game in those states DOES change: it becomes 'F', or it resumes."""
 
-    @unittest.expectedFailure
     def test_game_over_and_suspended_days_are_not_pinned_on_disk(self):
         for code in ("O", "T", "U"):
             with self.subTest(code=code):
@@ -101,7 +100,6 @@ class ASettledAnswerOnDiskIsOneThatCannotChange(FetchBase):
 
 class ARefusedRetryAfterIsStillAFailureNotACrash(FetchBase):
 
-    @unittest.expectedFailure
     def test_a_negative_or_nan_retry_after_header_is_a_failed_fetch_not_a_valueerror(self):
         """`_retry_after` returns min(float(raw), 30): -5 and nan survive (both truthy), and `time.sleep` raises
         ValueError out of `_call`, so the caller sees a ValueError where it handles only the provider's error."""
@@ -115,7 +113,6 @@ class ARefusedRetryAfterIsStillAFailureNotACrash(FetchBase):
 
 class RetrySleepsFitTheRunsOwnBudget(FetchBase):
 
-    @unittest.expectedFailure
     def test_the_worst_case_retry_sleep_before_the_run_halts_is_inside_the_refresh_budget(self):
         """Every call that keeps answering 503 with Retry-After: 30 sleeps 30 s twice before it fails, and the run
         halts only after CONSECUTIVE_FAILURE_LIMIT such calls: 6 x 60 s = 360 s, past --max-seconds 270 and past
@@ -136,7 +133,6 @@ class RetrySleepsFitTheRunsOwnBudget(FetchBase):
 
 class ATimeoutOnTheNewsAndSavantSeamsIsAFailureTheReportCounts(FetchBase):
 
-    @unittest.expectedFailure
     def test_a_bare_timeout_is_counted_as_a_failed_fetch(self):
         """`mlb_news._get_json` and `statcast.fetch_arsenal` wrap URLError and HTTPError but not the bare
         TimeoutError a read timeout raises (src/providers/mlb.py says so in its own docstring). The layer catches
@@ -198,7 +194,6 @@ class PersistBase(unittest.TestCase):
 
 class TwoAppearancesOnOneDateAreTwoRecords(PersistBase):
 
-    @unittest.expectedFailure
     def test_a_doubleheader_second_relief_outing_held_only_by_git_survives_the_union(self):
         """A pitcher's appearance is identified by (date, started), so two relief outings on one date (a
         doubleheader; the repo's own pitcher_logs has three such pairs) are ONE identity. Git holds both; the disk
@@ -218,7 +213,6 @@ class TwoAppearancesOnOneDateAreTwoRecords(PersistBase):
 
 class ASchemaWiderThanTheCodeKnowsIsNotNarrowed(PersistBase):
 
-    @unittest.expectedFailure
     def test_restoring_a_git_only_game_does_not_drop_a_column_the_committed_file_carries(self):
         """`_restore_results` rewrites the whole CSV through `history.write_results`, which writes only
         RESULT_COLUMNS (extrasaction='ignore'). A committed file with one more column (written by newer code, or
@@ -238,7 +232,6 @@ class ASchemaWiderThanTheCodeKnowsIsNotNarrowed(PersistBase):
 
 class TheSealedWindowIsNotCommittedByTheUnion(PersistBase):
 
-    @unittest.expectedFailure
     def test_rows_dated_inside_the_sealed_window_that_only_the_cache_holds_are_not_persisted(self):
         """The refresh never asks for 2026-01-01..2026-08-27 and `_keep_sealed_pitcher_rows` keeps git's rows there,
         but `union_one` keeps a record 'held by only one side', so an Actions cache that once ingested the window

@@ -53,6 +53,7 @@ THE CLI (never fails the caller; exit 0 on every soft outcome)
 from __future__ import annotations
 
 import argparse
+import csv
 import hashlib
 import json
 import shutil
@@ -63,7 +64,7 @@ from typing import Callable, Optional
 
 from src import paths
 from src.pipeline import display_refresh as dr
-from src.pipeline import store_freshness
+from src.pipeline import history, store_freshness
 
 Reader = Callable[[str], Optional[bytes]]
 
@@ -113,9 +114,64 @@ def _is_arsenal(name: str) -> bool:
     return name.startswith("arsenals/") and name.endswith(".json")
 
 
+def _csv_columns(path: Path) -> list:
+    with path.open(newline="", encoding="utf-8") as handle:
+        return next(csv.reader(handle), [])
+
+
+def _extra_columns(*paths: Path) -> list:
+    """Columns the results CSVs carry that this code does not know, in the order
+    first met. `history.write_results` writes only RESULT_COLUMNS, so rewriting
+    such a file through it would narrow every row (a committed file written by
+    newer code); a merge carries the extra columns instead (its values from the
+    side the row came from), and `_loses_nothing` refuses a merge without them."""
+    out: list = []
+    for path in paths:
+        for column in _csv_columns(path):
+            if column not in history.RESULT_COLUMNS and column not in out:
+                out.append(column)
+    return out
+
+
+def _write_results_wide(rows: dict, path: Path, extras: list) -> None:
+    """`history.write_results` (same order, same file discipline) plus `extras`."""
+    if not extras:
+        history.write_results(rows, path)
+        return
+    ordered = sorted(rows.values(), key=lambda r: (r.get("date") or "", str(r.get("game_pk") or "")))
+    columns = list(history.RESULT_COLUMNS) + list(extras)
+
+    def render(handle):
+        writer = csv.DictWriter(handle, fieldnames=columns, extrasaction="ignore")
+        writer.writeheader()
+        for row in ordered:
+            writer.writerow({c: row.get(c) for c in columns})
+
+    history._atomic_write(path, render)
+
+
+def _carry_extra_columns(work: Path, primary: Path, secondary: Path) -> None:
+    """After a merge that went through `history.write_results`, put back any
+    column the committed or disk copy carries that the code does not know."""
+    extras = _extra_columns(secondary, primary)
+    if not extras or set(extras) <= set(_csv_columns(work)):
+        return
+    rows = history.read_results(work)
+    first, second = history.read_results(primary), history.read_results(secondary)
+    for pk, row in rows.items():
+        for column in extras:
+            if row.get(column) in (None, ""):
+                row[column] = (first.get(pk) or {}).get(column) or (second.get(pk) or {}).get(column)
+    _write_results_wide(rows, work, extras)
+
+
 def _loses_nothing(name: str, merged: Path, other: Path, scratch: Path) -> bool:
     """True when `merged` holds every record `other` holds (the repair finds
-    nothing to put back)."""
+    nothing to put back), counting a record as many times as `other` holds it
+    (a pitcher's two relief outings on one date are two), and, for the results
+    CSV, every column `other` carries."""
+    if name == "mlb_results.csv" and not set(_csv_columns(other)) <= set(_csv_columns(merged)):
+        return False
     repair = dr._keyed_repair(Path(name))
     if repair is None:
         return True
@@ -123,6 +179,121 @@ def _loses_nothing(name: str, merged: Path, other: Path, scratch: Path) -> bool:
     probe.parent.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(merged, probe)
     return repair(probe, other) is None
+
+
+# -- the sealed window --------------------------------------------------------------------------------------
+
+def _sealed(value) -> bool:
+    try:
+        return bool(dr._in_sealed_window(value))
+    except (ValueError, TypeError):
+        return False
+
+
+_ROW_DATE = {
+    "pitcher_logs.jsonl": lambda r: r.get("date"),
+    "bullpen_log.jsonl": lambda r: r.get("date"),
+    "standings.jsonl": lambda r: r.get("date"),
+    "transactions.jsonl": lambda r: r.get("filed_date") or r.get("date"),
+}
+
+
+def _sealed_sig(row: dict, line: str, spec) -> tuple:
+    key_fn, ident, is_marker = spec
+    key = key_fn(row)
+    if key is None:
+        return ("raw", line.strip())
+    return (key, "\0marker" if is_marker(row) else ident(row))
+
+
+def _jsonl_sealed_lines(path: Path, name: str) -> dict:
+    spec, day_of, out = dr.JSONL_SPECS[name], _ROW_DATE[name], {}
+    with path.open(encoding="utf-8") as handle:
+        for raw in handle:
+            if not raw.strip():
+                continue
+            try:
+                row = json.loads(raw)
+            except json.JSONDecodeError:
+                continue
+            if isinstance(row, dict) and _sealed(day_of(row)):
+                out.setdefault(_sealed_sig(row, raw, spec), []).append(raw if raw.endswith("\n") else raw + "\n")
+    return out
+
+
+def without_disk_only_sealed(name: str, disk: Path, head_path: Path, scratch: Path) -> Optional[Path]:
+    """A copy of the disk store from which every row dated in the sealed window
+    (2026-01-01..2026-08-27) that git does not already hold is gone, and in which
+    a sealed-window row git DOES hold is git's own, in place: the union must
+    never newly commit one, nor change one. Returns the path of the cleaned copy,
+    or None when the disk copy needed nothing. Counts and dates only; no outcome
+    is read for anything but the identity and the date. Never raises past the
+    caller's guard."""
+    clean = scratch / "clean" / name
+    clean.parent.mkdir(parents=True, exist_ok=True)
+    if name in dr.JSONL_SPECS:
+        spec, day_of = dr.JSONL_SPECS[name], _ROW_DATE[name]
+        held, seen, lines = _jsonl_sealed_lines(head_path, name), {}, []
+        with disk.open(encoding="utf-8") as handle:
+            for raw in handle:
+                if not raw.strip():
+                    continue
+                line = raw if raw.endswith("\n") else raw + "\n"
+                try:
+                    row = json.loads(raw)
+                except json.JSONDecodeError:
+                    lines.append(line)
+                    continue
+                if not (isinstance(row, dict) and _sealed(day_of(row))):
+                    lines.append(line)
+                    continue
+                sig = _sealed_sig(row, raw, spec)
+                n = seen.get(sig, 0)
+                seen[sig] = n + 1
+                if n < len(held.get(sig, ())):
+                    lines.append(held[sig][n])
+                # else: only the cache holds it; it does not go into the commit
+        text = "".join(lines)
+        if text == disk.read_text(encoding="utf-8"):
+            return None
+        clean.write_text(text, encoding="utf-8", newline="")
+        return clean
+    if name == "mlb_results.csv":
+        rows, head_rows, out = history.read_results(disk), history.read_results(head_path), {}
+        changed = False
+        for pk, row in rows.items():
+            if _sealed(row.get("date")):
+                changed = True if pk not in head_rows or head_rows[pk] != row else changed
+                if pk in head_rows:
+                    out[pk] = head_rows[pk]
+            else:
+                out[pk] = row
+        if not changed:
+            return None
+        _write_results_wide(out, clean, _extra_columns(head_path, disk))
+        return clean
+    if name == "mlb_results.manifest.json":
+        data = json.loads(disk.read_text(encoding="utf-8"))
+        inner = data.get("dates") if isinstance(data, dict) else None
+        if not isinstance(inner, dict):
+            return None
+        head_data = json.loads(head_path.read_text(encoding="utf-8"))
+        head_inner = head_data.get("dates") if isinstance(head_data, dict) else None
+        head_inner = head_inner if isinstance(head_inner, dict) else {}
+        changed = False
+        for day in list(inner):
+            if _sealed(day):
+                if day not in head_inner or head_inner[day] != inner[day]:
+                    changed = True
+                if day in head_inner:
+                    inner[day] = head_inner[day]
+                else:
+                    del inner[day]
+        if not changed:
+            return None
+        clean.write_text(json.dumps(data, indent=1, sort_keys=True), encoding="utf-8")
+        return clean
+    return None
 
 
 def union_one(name: str, base: Path, reader: Reader, prefer: str, scratch: Path) -> dict:
@@ -148,7 +319,11 @@ def union_one(name: str, base: Path, reader: Reader, prefer: str, scratch: Path)
         if _digest(disk.read_bytes()) == _digest(head):
             return {**out, "action": "unchanged"}
 
-        primary, secondary = (disk, head_path) if prefer == "disk" else (head_path, disk)
+        # The sealed window: nothing the cache alone holds for 2026-01-01..08-27 may reach
+        # the commit; a row git holds there is kept exactly as git has it.
+        cleaned = without_disk_only_sealed(name, disk, head_path, scratch)
+        mine = cleaned if cleaned is not None else disk
+        primary, secondary = (mine, head_path) if prefer == "disk" else (head_path, mine)
         work = scratch / "work" / name
         work.parent.mkdir(parents=True, exist_ok=True)
         if _is_arsenal(name):
@@ -156,20 +331,25 @@ def union_one(name: str, base: Path, reader: Reader, prefer: str, scratch: Path)
             pick = secondary if _as_of(secondary) > _as_of(primary) else primary
             shutil.copyfile(pick, work)
             info = None
-            out["snapshot"] = "disk" if pick == disk else "committed"
+            out["snapshot"] = "disk" if pick == mine else "committed"
         else:
             repair = dr._keyed_repair(Path(name))
             if repair is None:
                 return {**out, "action": "refused", "reason": "no merge rule for this file"}
             shutil.copyfile(primary, work)
             info = repair(work, secondary)
+            if name == "mlb_results.csv":
+                _carry_extra_columns(work, primary, secondary)
         if dr._validate(work) is not None:
             return {**out, "action": "refused", "reason": "the merged copy does not parse"}
         if not _is_arsenal(name):
-            for other in (head_path, disk):
+            # `mine` rather than `disk`: the cache-only sealed rows were left out on purpose
+            for other in (head_path, mine):
                 if not _loses_nothing(name, work, other, scratch):
                     return {**out, "action": "refused",
                             "reason": "the merged copy would still lose a record"}
+        if cleaned is not None:
+            out["sealed_cache_only_rows_left_out"] = True
         out["records_from_other_side"] = (info or {}).get("rows", 0)
         if info:
             out["keys_from_other_side"] = len(info["keys"])

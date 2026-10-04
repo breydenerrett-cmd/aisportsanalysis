@@ -159,5 +159,131 @@ class TheRealPersistBlockStagesTheUnion(unittest.TestCase):
         self.assertEqual(self.staged(), [])
 
 
+@unittest.skipIf(BASH is None, "no usable bash")
+class AConflictOnADisplayStoreDoesNotStrandTheDaysOtherData(unittest.TestCase):
+    """The persisted display stores ride in the same commit as the day's other
+    data. When another writer advanced the same store on origin, `git pull
+    --rebase` conflicts in that one file; the loop used to abort and leave the
+    whole commit local, and every later run did the same. The commit-and-push tail
+    of the REAL script is run under bash against a real bare origin."""
+
+    STORE = "data/historical/bullpen_log.jsonl"
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        base = Path(self._tmp.name)
+        self.origin = base / "origin.git"
+        self.repo = base / "repo"
+        self.other = base / "other"
+        subprocess.run(["git", "init", "-q", "--bare", "-b", "main", str(self.origin)], check=True)
+        self.repo.mkdir()
+        self.g(self.repo, "init", "-q", "-b", "main")
+        for who in (self.repo,):
+            self.config(who)
+        (self.repo / "data" / "historical").mkdir(parents=True)
+        (self.repo / "data" / "watch").mkdir(parents=True)
+        (self.repo / self.STORE).write_text('{"date": "2026-09-05", "game_pk": 5}\n', encoding="utf-8")
+        (self.repo / "data/watch/shared.jsonl").write_text('{"k": 0}\n', encoding="utf-8")
+        self.g(self.repo, "add", "data")
+        self.g(self.repo, "commit", "-q", "-m", "seed")
+        self.g(self.repo, "remote", "add", "origin", str(self.origin))
+        self.g(self.repo, "push", "-q", "-u", "origin", "main")
+        subprocess.run(["git", "clone", "-q", str(self.origin), str(self.other)], check=True)
+        self.config(self.other)
+
+    def config(self, where):
+        self.g(where, "config", "user.email", "t@example.test")
+        self.g(where, "config", "user.name", "t")
+        self.g(where, "config", "core.autocrlf", "false")
+
+    @staticmethod
+    def g(where, *args):
+        return subprocess.run(["git", *args], cwd=where, capture_output=True, text=True, check=True).stdout
+
+    def write(self, where, rel, text, mode="a"):
+        path = where / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open(mode, encoding="utf-8") as handle:
+            handle.write(text)
+
+    def upstream_moves(self, rel, text):
+        self.write(self.other, rel, text)
+        self.g(self.other, "add", "-A")
+        self.g(self.other, "commit", "-q", "-m", "another writer")
+        self.g(self.other, "push", "-q", "origin", "main")
+
+    def run_tail(self):
+        func = re.search(r"(?ms)^pull_rebase_dropping_display_conflicts\(\) \{.*?^\}$", TEXT)
+        block = re.search(r"(?ms)^if ! git diff --cached --quiet; then.*?^fi$", TEXT)
+        self.assertIsNotNone(func)
+        self.assertIsNotNone(block)
+        harness = f"GIT_FAILED=0\n{func.group(0)}\n{block.group(0)}\necho GIT_FAILED=$GIT_FAILED\n"
+        return subprocess.run([BASH, "-c", harness], cwd=self.repo, capture_output=True, text=True,
+                              env={**__import__("os").environ, "PYTHONIOENCODING": "utf-8"})
+
+    def origin_file(self, rel):
+        done = subprocess.run(["git", "show", f"main:{rel}"], cwd=self.origin, capture_output=True, text=True)
+        return done.stdout if done.returncode == 0 else None
+
+    def not_mid_rebase(self):
+        self.assertFalse((self.repo / ".git" / "rebase-merge").exists())
+        self.assertFalse((self.repo / ".git" / "rebase-apply").exists())
+
+    def test_the_script_calls_the_helper_in_place_of_the_bare_pull(self):
+        self.assertIn('pull_rebase_dropping_display_conflicts "$BRANCH"', TEXT)
+        self.assertNotIn('elif ! git pull -q --rebase --autostash origin "$BRANCH"', TEXT)
+
+    def test_a_conflict_on_a_display_store_alone_drops_it_and_still_pushes_the_rest(self):
+        self.upstream_moves(self.STORE, '{"date": "2026-09-06", "game_pk": 6}\n')
+        self.write(self.repo, self.STORE, '{"date": "2026-09-07", "game_pk": 7}\n')
+        self.write(self.repo, "data/watch/capture.jsonl", '{"captured": 1}\n')
+        self.g(self.repo, "add", self.STORE, "data/watch/capture.jsonl")
+
+        done = self.run_tail()
+
+        out = done.stdout + done.stderr
+        self.assertIn("GIT_FAILED=0", out, out)
+        self.not_mid_rebase()
+        self.assertEqual(self.origin_file("data/watch/capture.jsonl"), '{"captured": 1}\n',
+                         "the day's other data reached origin\n" + out)
+        store = self.origin_file(self.STORE)
+        self.assertIn('"game_pk": 6', store, "the other writer's store is what origin holds")
+        self.assertNotIn('"game_pk": 7', store, "our conflicting store was left out of the commit")
+        self.assertEqual((self.repo / self.STORE).read_text(encoding="utf-8"), store,
+                         "no conflict markers or half-merged copy left in the working tree")
+        self.assertEqual(self.g(self.repo, "status", "--porcelain", "--untracked-files=no").strip(), "")
+
+    def test_a_conflict_that_also_names_other_files_is_not_touched(self):
+        self.upstream_moves(self.STORE, '{"date": "2026-09-06", "game_pk": 6}\n')
+        self.write(self.other, "data/watch/shared.jsonl", '{"k": "other"}\n')
+        self.g(self.other, "commit", "-q", "-am", "another writer, watch")
+        self.g(self.other, "push", "-q", "origin", "main")
+        self.write(self.repo, self.STORE, '{"date": "2026-09-07", "game_pk": 7}\n')
+        self.write(self.repo, "data/watch/shared.jsonl", '{"k": "ours"}\n')
+        self.g(self.repo, "add", self.STORE, "data/watch/shared.jsonl")
+
+        done = self.run_tail()
+
+        out = done.stdout + done.stderr
+        self.assertIn("GIT_FAILED=1", out, out)
+        self.assertIn("rebase onto origin/main failed", out)
+        self.not_mid_rebase()
+        self.assertIn("Daily loop", self.g(self.repo, "log", "-1", "--format=%s"), "the local commit is kept")
+        self.assertNotIn('"ours"', self.origin_file("data/watch/shared.jsonl"))
+
+    def test_no_conflict_is_the_old_path(self):
+        self.upstream_moves("data/watch/elsewhere.jsonl", '{"k": 1}\n')
+        self.write(self.repo, self.STORE, '{"date": "2026-09-07", "game_pk": 7}\n')
+        self.g(self.repo, "add", self.STORE)
+
+        done = self.run_tail()
+
+        out = done.stdout + done.stderr
+        self.assertIn("GIT_FAILED=0", out, out)
+        self.assertIn('"game_pk": 7', self.origin_file(self.STORE))
+        self.assertNotIn("dropping them", out)
+
+
 if __name__ == "__main__":
     unittest.main()
