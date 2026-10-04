@@ -81,12 +81,13 @@ def store_names(season: str) -> list:
     return seen
 
 
-def git_reader(repo_root: Path, base_rel: str = "data/historical") -> Reader:
-    """Reads `HEAD:<base_rel>/<name>` through `git show`; None when HEAD has no
-    such file or git is unavailable."""
+def git_reader(repo_root: Path, base_rel: str = "data/historical", ref: str = "HEAD") -> Reader:
+    """Reads `<ref>:<base_rel>/<name>` through `git show` (HEAD unless a ref such
+    as `origin/main` is given); None when the ref has no such file or git is
+    unavailable."""
     def read(name: str) -> Optional[bytes]:
         try:
-            done = subprocess.run(["git", "show", f"HEAD:{base_rel}/{name}"], cwd=str(repo_root),
+            done = subprocess.run(["git", "show", f"{ref}:{base_rel}/{name}"], cwd=str(repo_root),
                                   capture_output=True, timeout=60)
         except (OSError, subprocess.SubprocessError):
             return None
@@ -375,6 +376,16 @@ def union_stores(root=None, *, reader: Reader, prefer: str = "disk", season: Opt
     try:
         results = [union_one(n, base, reader, prefer, scratch)
                    for n in (names or store_names(season))]
+        # A column the code does not know survives the round trip (it is carried,
+        # never narrowed) but is not a model input. Say so, so a person sees it.
+        for r in results:
+            if r["file"] == "mlb_results.csv" and (base / r["file"]).exists():
+                try:
+                    unknown = _extra_columns(base / r["file"])
+                except (OSError, csv.Error, UnicodeDecodeError):
+                    unknown = []
+                if unknown:
+                    r["unknown_columns"] = unknown
     finally:
         shutil.rmtree(scratch, ignore_errors=True)
     return {"prefer": prefer, "stores": results,
@@ -400,13 +411,175 @@ def differing_from_head(root=None, *, reader: Reader, season: Optional[str] = No
     return out
 
 
+# -- the deferred-store ledger ------------------------------------------------------------------------------
+#
+# When `daily_loop.sh` has to leave a display store out of a commit (the rebase
+# conflicted on it: another writer advanced the same store on origin), the
+# refresh is re-derivable, so what is kept is a SMALL COMMITTED RECORD, not the
+# store: one JSON line per event in data/watch/display_store_deferred.jsonl,
+# appended and staged with the rest of the commit that does go out.
+#
+#   deferred  {at, event, store, rows_on_disk, rows_in_remote, rows_only_ours, reason}
+#   resolved  {at, event, store, deferred_runs}   a persist of that store succeeded
+#
+# The next run retries the union and persist as normal. A store whose latest
+# event is `deferred` is OUTSTANDING; one deferred on ESCALATE_AFTER consecutive
+# runs with no `resolved` between is escalated, on every run, until it resolves.
+
+LEDGER_REL = "data/watch/display_store_deferred.jsonl"
+ESCALATE_AFTER = 3
+
+
+def ledger_path(root=None) -> Path:
+    base = Path(root) if root is not None else paths.data_root()
+    return base / "watch" / "display_store_deferred.jsonl"
+
+
+def read_ledger(path: Path) -> list:
+    out: list = []
+    try:
+        with path.open(encoding="utf-8") as handle:
+            for raw in handle:
+                try:
+                    row = json.loads(raw)
+                except json.JSONDecodeError:
+                    continue
+                if isinstance(row, dict) and row.get("store") and row.get("event") in ("deferred", "resolved"):
+                    out.append(row)
+    except OSError:
+        pass
+    return out
+
+
+def outstanding(events: list) -> dict:
+    """{store: {"runs", "since", "last"}} for stores whose latest event is `deferred`;
+    `runs` is the consecutive deferrals since the last `resolved`."""
+    state: dict = {}
+    for ev in events:
+        slot = state.setdefault(ev["store"], {"runs": 0, "since": None, "last": None})
+        if ev["event"] == "deferred":
+            slot["runs"] += 1
+            slot["since"] = slot["since"] or ev.get("at")
+            slot["last"] = ev
+        else:
+            slot.update(runs=0, since=None, last=None)
+    return {k: v for k, v in state.items() if v["runs"] > 0}
+
+
+def _append_ledger(path: Path, rows: list) -> None:
+    if not rows:
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8", newline="\n") as handle:
+        for row in rows:
+            handle.write(json.dumps(row, sort_keys=True) + "\n")
+
+
+def _now_iso(now=None) -> str:
+    from datetime import datetime, timezone
+    moment = now or datetime.now(timezone.utc)
+    return moment.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _store_name(value: str) -> str:
+    value = value.replace("\\", "/").strip()
+    return value[len("data/historical/"):] if value.startswith("data/historical/") else value
+
+
+def _count_deferred(name: str, disk: Path, remote: Optional[bytes], scratch: Path) -> dict:
+    """Rows on disk, rows in the remote copy, rows only we held. None for what
+    cannot be counted; never raises."""
+    out = {"rows_on_disk": None, "rows_in_remote": None, "rows_only_ours": None}
+    try:
+        out["rows_on_disk"] = dr._rows(disk) if disk.exists() else None
+        if remote is not None and disk.exists():
+            probe = scratch / "remote" / name
+            probe.parent.mkdir(parents=True, exist_ok=True)
+            probe.write_bytes(remote)
+            out["rows_in_remote"] = dr._rows(probe)
+            diff = dr.row_diff(name, disk, probe)
+            out["rows_only_ours"] = diff["new"] if diff else None
+    except Exception:  # noqa: BLE001 -- a count is a report line, never a reason to fail
+        pass
+    return out
+
+
+def record_run(root=None, *, deferred: Optional[list] = None, kept: Optional[list] = None,
+               reader: Optional[Reader] = None, reason: str = "", now=None) -> list:
+    """Append this run's ledger lines and return the lines to print.
+
+    `deferred`: stores left out of the commit (one `deferred` line each, with
+    counts against `reader`'s copy, the remote's). `kept`: stores in the commit
+    that goes out; one that was outstanding gets a `resolved` line. Then every
+    outstanding store at or past ESCALATE_AFTER runs prints an ESCALATE line."""
+    data_root = Path(root) if root is not None else paths.data_root()
+    ledger = ledger_path(data_root)
+    base = data_root / "historical"
+    at = _now_iso(now)
+    before = outstanding(read_ledger(ledger))
+    lines, rows = [], []
+    scratch = data_root / ".union_work"
+    shutil.rmtree(scratch, ignore_errors=True)
+    scratch.mkdir(parents=True, exist_ok=True)
+    try:
+        for raw in deferred or []:
+            name = _store_name(raw)
+            counts = _count_deferred(name, base / name, reader(name) if reader else None, scratch)
+            rows.append({"at": at, "event": "deferred", "store": name, **counts, "reason": reason})
+            lines.append(f"DISPLAY STORE NOT PERSISTED: data/historical/{name} "
+                         f"rows_on_disk={counts['rows_on_disk']} rows_in_remote={counts['rows_in_remote']} "
+                         f"rows_only_ours={counts['rows_only_ours']} reason={reason}")
+    finally:
+        shutil.rmtree(scratch, ignore_errors=True)
+    skipped = {_store_name(s) for s in deferred or []}
+    for raw in kept or []:
+        name = _store_name(raw)
+        if name in before and name not in skipped:
+            rows.append({"at": at, "event": "resolved", "store": name, "deferred_runs": before[name]["runs"]})
+            lines.append(f"display store persisted, deferral resolved: data/historical/{name} "
+                         f"(had been deferred {before[name]['runs']} run(s))")
+    _append_ledger(ledger, rows)
+    for name, slot in sorted(outstanding(read_ledger(ledger)).items()):
+        if slot["runs"] >= ESCALATE_AFTER:
+            lines.append(f"ESCALATE: display store data/historical/{name} deferred on {slot['runs']} "
+                         f"consecutive runs with no resolved (since {slot['since']}); its updates are not "
+                         f"reaching origin -- reconcile it by hand")
+    return lines
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    parser.add_argument("command", choices=("union", "persist"))
+    parser.add_argument("command", choices=("union", "persist", "record", "deferred"))
     parser.add_argument("--prefer", choices=("disk", "head"), default=None)
     parser.add_argument("--root", default=None, help="data root (default: the project's data/)")
+    parser.add_argument("--deferred", nargs="*", default=[], help="record: stores left out of the commit")
+    parser.add_argument("--kept", nargs="*", default=[], help="record: stores in the commit that goes out")
+    parser.add_argument("--ref", default="HEAD", help="record: the remote copy to count against")
+    parser.add_argument("--reason", default="", help="record: why the stores were left out")
     args = parser.parse_args(argv)
     repo = paths.repo_root()
+    if args.command == "record":
+        try:
+            for line in record_run(args.root, deferred=args.deferred, kept=args.kept,
+                                   reader=git_reader(repo, ref=args.ref), reason=args.reason):
+                print(line)
+        except Exception as exc:  # noqa: BLE001
+            print(f"store_persist: record failed softly ({type(exc).__name__}: {exc})", file=sys.stderr)
+        return 0
+    if args.command == "deferred":
+        try:
+            held = outstanding(read_ledger(ledger_path(args.root)))
+        except Exception as exc:  # noqa: BLE001
+            print(f"store_persist: deferred failed softly ({type(exc).__name__}: {exc})", file=sys.stderr)
+            return 0
+        if not held:
+            print("no display store is deferred")
+        for name, slot in sorted(held.items()):
+            last = slot["last"] or {}
+            print(f"data/historical/{name}: deferred {slot['runs']} consecutive run(s) since {slot['since']} "
+                  f"(rows_on_disk={last.get('rows_on_disk')} rows_in_remote={last.get('rows_in_remote')} "
+                  f"rows_only_ours={last.get('rows_only_ours')}; {last.get('reason')})")
+        return 0
     reader = git_reader(repo)
     try:
         report = union_stores(args.root, reader=reader,
@@ -418,6 +591,10 @@ def main(argv=None) -> int:
     for row in report["stores"]:
         extra = f" ({row['reason']})" if row.get("reason") else ""
         print(f"store_persist: {row['file']}: {row['action']}{extra}", file=sys.stderr)
+        if row.get("unknown_columns"):
+            print(f"store_persist: {row['file']}: carries column(s) this code does not know: "
+                  f"{', '.join(row['unknown_columns'])} (kept in the file; not read as a model input)",
+                  file=sys.stderr)
     if args.command == "persist":
         refused = set(report["refused"])
         for name in differing_from_head(args.root, reader=reader):

@@ -183,8 +183,10 @@ class AConflictOnADisplayStoreDoesNotStrandTheDaysOtherData(unittest.TestCase):
             self.config(who)
         (self.repo / "data" / "historical").mkdir(parents=True)
         (self.repo / "data" / "watch").mkdir(parents=True)
-        (self.repo / self.STORE).write_text('{"date": "2026-09-05", "game_pk": 5}\n', encoding="utf-8")
+        (self.repo / self.STORE).write_text('{"date": "2026-09-05", "game_pk": 5, "person_id": 705, "team": "NYY"}\n', encoding="utf-8")
         (self.repo / "data/watch/shared.jsonl").write_text('{"k": 0}\n', encoding="utf-8")
+        shutil.copytree(REPO / "src", self.repo / "src",
+                        ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
         self.g(self.repo, "add", "data")
         self.g(self.repo, "commit", "-q", "-m", "seed")
         self.g(self.repo, "remote", "add", "origin", str(self.origin))
@@ -214,13 +216,19 @@ class AConflictOnADisplayStoreDoesNotStrandTheDaysOtherData(unittest.TestCase):
         self.g(self.other, "push", "-q", "origin", "main")
 
     def run_tail(self):
-        func = re.search(r"(?ms)^pull_rebase_dropping_display_conflicts\(\) \{.*?^\}$", TEXT)
+        funcs = TEXT[TEXT.index("DISPLAY_LEDGER=data"):TEXT.index("if ! git diff --cached --quiet; then\n    BRANCH=")]
         block = re.search(r"(?ms)^if ! git diff --cached --quiet; then.*?^fi$", TEXT)
-        self.assertIsNotNone(func)
         self.assertIsNotNone(block)
-        harness = f"GIT_FAILED=0\n{func.group(0)}\n{block.group(0)}\necho GIT_FAILED=$GIT_FAILED\n"
+        import sys
+        harness = (f'python3() {{ "{Path(sys.executable).as_posix()}" "$@"; }}\n'
+                   f"RUN_NOTE=docs/OVERNIGHT_RUN.md\nGIT_FAILED=0\n{funcs}\n{block.group(0)}\n"
+                   "echo GIT_FAILED=$GIT_FAILED\n")
         return subprocess.run([BASH, "-c", harness], cwd=self.repo, capture_output=True, text=True,
-                              env={**__import__("os").environ, "PYTHONIOENCODING": "utf-8"})
+                              env={**__import__("os").environ, "PYTHONPATH": str(self.repo),
+                                   "PYTHONIOENCODING": "utf-8"})
+
+    def ledger_lines(self, text):
+        return [json.loads(l) for l in (text or "").splitlines() if l.strip()]
 
     def origin_file(self, rel):
         done = subprocess.run(["git", "show", f"main:{rel}"], cwd=self.origin, capture_output=True, text=True)
@@ -235,8 +243,8 @@ class AConflictOnADisplayStoreDoesNotStrandTheDaysOtherData(unittest.TestCase):
         self.assertNotIn('elif ! git pull -q --rebase --autostash origin "$BRANCH"', TEXT)
 
     def test_a_conflict_on_a_display_store_alone_drops_it_and_still_pushes_the_rest(self):
-        self.upstream_moves(self.STORE, '{"date": "2026-09-06", "game_pk": 6}\n')
-        self.write(self.repo, self.STORE, '{"date": "2026-09-07", "game_pk": 7}\n')
+        self.upstream_moves(self.STORE, '{"date": "2026-09-06", "game_pk": 6, "person_id": 706, "team": "NYY"}\n')
+        self.write(self.repo, self.STORE, '{"date": "2026-09-07", "game_pk": 7, "person_id": 707, "team": "NYY"}\n')
         self.write(self.repo, "data/watch/capture.jsonl", '{"captured": 1}\n')
         self.g(self.repo, "add", self.STORE, "data/watch/capture.jsonl")
 
@@ -248,18 +256,95 @@ class AConflictOnADisplayStoreDoesNotStrandTheDaysOtherData(unittest.TestCase):
         self.assertEqual(self.origin_file("data/watch/capture.jsonl"), '{"captured": 1}\n',
                          "the day's other data reached origin\n" + out)
         store = self.origin_file(self.STORE)
-        self.assertIn('"game_pk": 6', store, "the other writer's store is what origin holds")
-        self.assertNotIn('"game_pk": 7', store, "our conflicting store was left out of the commit")
+        self.assertIn('"game_pk": 6,', store, "the other writer's store is what origin holds")
+        self.assertNotIn('"game_pk": 7,', store, "our conflicting store was left out of the commit")
         self.assertEqual((self.repo / self.STORE).read_text(encoding="utf-8"), store,
                          "no conflict markers or half-merged copy left in the working tree")
         self.assertEqual(self.g(self.repo, "status", "--porcelain", "--untracked-files=no").strip(), "")
+        # the remote's data is preserved byte for byte
+        self.assertEqual(store, (self.other / self.STORE).read_text(encoding="utf-8"))
+        self.g(self.other, "pull", "-q")
+        self.assertEqual(store, (self.other / self.STORE).read_text(encoding="utf-8"))
+
+    def test_a_skipped_store_is_recorded_durably_printed_and_noted_and_never_called_saved(self):
+        self.upstream_moves(self.STORE, '{"date": "2026-09-06", "game_pk": 6, "person_id": 706, "team": "NYY"}\n')
+        self.write(self.repo, self.STORE, '{"date": "2026-09-07", "game_pk": 7, "person_id": 707, "team": "NYY"}\n')
+        self.write(self.repo, "data/watch/capture.jsonl", '{"captured": 1}\n')
+        self.g(self.repo, "add", self.STORE, "data/watch/capture.jsonl")
+
+        done = self.run_tail()
+
+        out = done.stdout + done.stderr
+        self.assertIn("GIT_FAILED=0", out, out)
+        # 1. the committed ledger: one deferred line, with the counts
+        events = self.ledger_lines(self.origin_file("data/watch/display_store_deferred.jsonl"))
+        self.assertEqual([(e["event"], e["store"]) for e in events], [("deferred", "bullpen_log.jsonl")], events)
+        event = events[0]
+        self.assertEqual((event["rows_on_disk"], event["rows_in_remote"], event["rows_only_ours"]), (2, 2, 1), event)
+        self.assertRegex(event["at"], r"^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$")
+        self.assertIn("rebase conflict", event["reason"])
+        # our conflicting copy was NOT committed anywhere, not even under another name
+        shown = self.g(self.origin, "log", "--all", "-p", "--format=")
+        self.assertNotIn('"game_pk": 7', shown)
+        # 2. one printed line per skipped store, with the same counts, and the same line in the run note
+        line = next(l for l in out.splitlines() if "DISPLAY STORE NOT PERSISTED" in l)
+        self.assertIn("data/historical/bullpen_log.jsonl rows_on_disk=2 rows_in_remote=2 rows_only_ours=1", line)
+        note = self.origin_file("docs/OVERNIGHT_RUN.md")
+        self.assertIn("DISPLAY STORE NOT PERSISTED: data/historical/bullpen_log.jsonl rows_on_disk=2", note)
+        # no message on the path says the stores were saved
+        self.assertIn("were NOT persisted", out)
+        self.assertNotIn("== committed ==", out)
+        for message in out.splitlines():
+            if re.search(r"persist|saved|committed", message, re.I) and "not" not in message.lower():
+                self.assertNotIn("stores", message.lower(), f"a message that may claim a save: {message!r}")
+
+    def test_the_third_consecutive_deferral_escalates_by_name(self):
+        ledger = self.repo / "data/watch/display_store_deferred.jsonl"
+        for day in ("01", "02"):
+            self.write(self.repo, "data/watch/display_store_deferred.jsonl", json.dumps(
+                {"at": f"2026-10-{day}T10:00:00Z", "event": "deferred", "store": "bullpen_log.jsonl",
+                 "rows_on_disk": 1, "rows_in_remote": 1, "rows_only_ours": 0, "reason": "x"}) + "\n")
+        self.g(self.repo, "add", "-A", "data")
+        self.g(self.repo, "commit", "-q", "-m", "two earlier deferrals")
+        self.g(self.repo, "push", "-q", "origin", "main")
+        self.g(self.other, "pull", "-q")
+        self.upstream_moves(self.STORE, '{"date": "2026-09-06", "game_pk": 6, "person_id": 706, "team": "NYY"}\n')
+        self.write(self.repo, self.STORE, '{"date": "2026-09-07", "game_pk": 7, "person_id": 707, "team": "NYY"}\n')
+        self.g(self.repo, "add", self.STORE)
+        self.assertTrue(ledger.exists())
+
+        done = self.run_tail()
+
+        out = done.stdout + done.stderr
+        self.assertRegex(out, r"(?m)^\s*ESCALATE: display store data/historical/bullpen_log\.jsonl deferred on 3 "
+                              r"consecutive runs", out)
+        self.assertEqual(len(self.ledger_lines(self.origin_file("data/watch/display_store_deferred.jsonl"))), 3)
+
+    def test_a_ledger_that_both_sides_appended_to_is_merged_not_a_wedge(self):
+        self.write(self.other, "data/watch/display_store_deferred.jsonl", json.dumps(
+            {"at": "2026-10-03T10:00:00Z", "event": "deferred", "store": "standings.jsonl",
+             "rows_on_disk": 1, "rows_in_remote": 1, "rows_only_ours": 0, "reason": "elsewhere"}) + "\n")
+        self.upstream_moves(self.STORE, '{"date": "2026-09-06", "game_pk": 6, "person_id": 706, "team": "NYY"}\n')
+        self.write(self.repo, self.STORE, '{"date": "2026-09-07", "game_pk": 7, "person_id": 707, "team": "NYY"}\n')
+        self.write(self.repo, "data/watch/capture.jsonl", '{"captured": 1}\n')
+        self.g(self.repo, "add", self.STORE, "data/watch/capture.jsonl")
+
+        done = self.run_tail()
+
+        out = done.stdout + done.stderr
+        self.assertIn("GIT_FAILED=0", out, out)
+        self.not_mid_rebase()
+        stores = sorted(e["store"] for e in self.ledger_lines(
+            self.origin_file("data/watch/display_store_deferred.jsonl")))
+        self.assertEqual(stores, ["bullpen_log.jsonl", "standings.jsonl"])
+        self.assertEqual(self.origin_file("data/watch/capture.jsonl"), '{"captured": 1}\n')
 
     def test_a_conflict_that_also_names_other_files_is_not_touched(self):
-        self.upstream_moves(self.STORE, '{"date": "2026-09-06", "game_pk": 6}\n')
+        self.upstream_moves(self.STORE, '{"date": "2026-09-06", "game_pk": 6, "person_id": 706, "team": "NYY"}\n')
         self.write(self.other, "data/watch/shared.jsonl", '{"k": "other"}\n')
         self.g(self.other, "commit", "-q", "-am", "another writer, watch")
         self.g(self.other, "push", "-q", "origin", "main")
-        self.write(self.repo, self.STORE, '{"date": "2026-09-07", "game_pk": 7}\n')
+        self.write(self.repo, self.STORE, '{"date": "2026-09-07", "game_pk": 7, "person_id": 707, "team": "NYY"}\n')
         self.write(self.repo, "data/watch/shared.jsonl", '{"k": "ours"}\n')
         self.g(self.repo, "add", self.STORE, "data/watch/shared.jsonl")
 
@@ -274,14 +359,14 @@ class AConflictOnADisplayStoreDoesNotStrandTheDaysOtherData(unittest.TestCase):
 
     def test_no_conflict_is_the_old_path(self):
         self.upstream_moves("data/watch/elsewhere.jsonl", '{"k": 1}\n')
-        self.write(self.repo, self.STORE, '{"date": "2026-09-07", "game_pk": 7}\n')
+        self.write(self.repo, self.STORE, '{"date": "2026-09-07", "game_pk": 7, "person_id": 707, "team": "NYY"}\n')
         self.g(self.repo, "add", self.STORE)
 
         done = self.run_tail()
 
         out = done.stdout + done.stderr
         self.assertIn("GIT_FAILED=0", out, out)
-        self.assertIn('"game_pk": 7', self.origin_file(self.STORE))
+        self.assertIn('"game_pk": 7,', self.origin_file(self.STORE))
         self.assertNotIn("dropping them", out)
 
 

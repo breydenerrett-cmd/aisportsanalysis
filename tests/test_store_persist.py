@@ -271,5 +271,112 @@ class TheCliNeverFailsTheCaller(Base):
         self.assertEqual(out.getvalue().split(), ["data/historical/bullpen_log.jsonl"])
 
 
+class AColumnTheCodeDoesNotKnowIsNamedInTheReport(Base):
+
+    def widen(self, root_dir, column="venue_id"):
+        path = root_dir / "mlb_results.csv"
+        lines = path.read_text(encoding="utf-8").splitlines()
+        path.write_text("\r\n".join([lines[0] + "," + column] + [ln + ",31" for ln in lines[1:]]) + "\r\n",
+                        encoding="utf-8")
+
+    def test_the_union_report_and_the_cli_name_the_carried_column(self):
+        import io
+        from contextlib import redirect_stderr, redirect_stdout
+        self.widen(self.head)
+        rows = history.read_results(self.disk / "mlb_results.csv")
+        rows.pop("900")
+        history.write_results(rows, self.disk / "mlb_results.csv")           # the cache lost a git-only game
+        report = self.union()
+        self.assertEqual(self.action(report, "mlb_results.csv")["unknown_columns"], ["venue_id"])
+        out, err = io.StringIO(), io.StringIO()
+        with redirect_stdout(out), redirect_stderr(err), \
+                mock.patch.object(sp, "git_reader", return_value=self.reader):
+            sp.main(["persist", "--root", str(self.disk_root)])
+        self.assertIn("venue_id", err.getvalue())
+        self.assertIn("does not know", err.getvalue())
+        self.assertNotIn("venue_id", out.getvalue(), "stdout is the stage list only")
+
+    def test_a_file_without_the_column_says_nothing(self):
+        report = self.union()
+        self.assertNotIn("unknown_columns", self.action(report, "mlb_results.csv"))
+
+
+class TheDeferredLedger(Base):
+    """What the daily loop records when it must leave a display store out of a commit."""
+
+    def record(self, **kw):
+        return sp.record_run(self.disk_root, reader=self.reader, reason="rebase conflict", **kw)
+
+    def events(self):
+        return sp.read_ledger(sp.ledger_path(self.disk_root))
+
+    def test_a_deferral_records_the_counts_and_prints_one_line_per_store(self):
+        log = self.disk / "bullpen_log.jsonl"
+        log.write_text(log.read_text(encoding="utf-8") + jsonl([arm("2026-10-02", 14, 9014)]), encoding="utf-8")
+        lines = self.record(deferred=["data/historical/bullpen_log.jsonl", "standings.jsonl"])
+        self.assertEqual(len([l for l in lines if l.startswith("DISPLAY STORE NOT PERSISTED")]), 2)
+        first = self.events()[0]
+        self.assertEqual((first["event"], first["store"]), ("deferred", "bullpen_log.jsonl"))
+        self.assertEqual((first["rows_in_remote"], first["rows_only_ours"]), (2, 1))
+        self.assertEqual(first["rows_on_disk"], 3)       # the seeded row and day marker, plus one only we hold
+        self.assertIn("rows_only_ours=1", lines[0])
+        self.assertEqual(first["reason"], "rebase conflict")
+
+    def test_a_successful_persist_resolves_only_an_outstanding_store(self):
+        self.record(deferred=["bullpen_log.jsonl"])
+        lines = self.record(kept=["data/historical/bullpen_log.jsonl", "data/historical/standings.jsonl"])
+        resolved = [e for e in self.events() if e["event"] == "resolved"]
+        self.assertEqual([e["store"] for e in resolved], ["bullpen_log.jsonl"], "standings was never deferred")
+        self.assertEqual(resolved[0]["deferred_runs"], 1)
+        self.assertEqual(sp.outstanding(self.events()), {})
+        self.assertTrue(any("resolved" in l for l in lines))
+
+    def test_three_consecutive_deferrals_escalate_every_run_until_resolved(self):
+        for n in (1, 2):
+            self.assertEqual([l for l in self.record(deferred=["bullpen_log.jsonl"]) if l.startswith("ESCALATE")], [],
+                             f"run {n}")
+        third = [l for l in self.record(deferred=["bullpen_log.jsonl"]) if l.startswith("ESCALATE")]
+        self.assertEqual(len(third), 1)
+        self.assertIn("data/historical/bullpen_log.jsonl", third[0])
+        self.assertIn("3 consecutive", third[0])
+        again = [l for l in self.record() if l.startswith("ESCALATE")]        # a run that defers nothing new
+        self.assertEqual(len(again), 1, "still outstanding, still escalated")
+        self.record(kept=["bullpen_log.jsonl"])
+        self.assertEqual([l for l in self.record() if l.startswith("ESCALATE")], [])
+
+    def test_a_resolved_between_deferrals_resets_the_count(self):
+        self.record(deferred=["bullpen_log.jsonl"])
+        self.record(deferred=["bullpen_log.jsonl"])
+        self.record(kept=["bullpen_log.jsonl"])
+        lines = self.record(deferred=["bullpen_log.jsonl"])
+        self.assertEqual([l for l in lines if l.startswith("ESCALATE")], [])
+        self.assertEqual(sp.outstanding(self.events())["bullpen_log.jsonl"]["runs"], 1)
+
+    def test_the_deferred_command_lists_what_is_outstanding(self):
+        import io
+        from contextlib import redirect_stderr, redirect_stdout
+        out = io.StringIO()
+        with redirect_stdout(out), redirect_stderr(io.StringIO()):
+            sp.main(["deferred", "--root", str(self.disk_root)])
+        self.assertIn("no display store is deferred", out.getvalue())
+        self.record(deferred=["bullpen_log.jsonl"])
+        self.record(deferred=["bullpen_log.jsonl"])
+        self.record(deferred=["standings.jsonl"])
+        self.record(kept=["standings.jsonl"])
+        out = io.StringIO()
+        with redirect_stdout(out), redirect_stderr(io.StringIO()):
+            self.assertEqual(sp.main(["deferred", "--root", str(self.disk_root)]), 0)
+        text = out.getvalue()
+        self.assertIn("data/historical/bullpen_log.jsonl: deferred 2 consecutive run(s)", text)
+        self.assertNotIn("standings", text)
+
+    def test_a_torn_or_foreign_ledger_line_is_skipped_not_fatal(self):
+        path = sp.ledger_path(self.disk_root)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text('{"event": "deferred", "store": "a.json"}\nnot json\n{"event": "other"}\n',
+                        encoding="utf-8")
+        self.assertEqual([e["store"] for e in self.events()], ["a.json"])
+
+
 if __name__ == "__main__":
     unittest.main()

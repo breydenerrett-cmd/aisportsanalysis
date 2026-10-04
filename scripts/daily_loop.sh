@@ -773,10 +773,19 @@ git add data/processed data/watch data/research data/raw/oddsapi evidence data/p
 PERSIST_PATHS=$(timeout 120 python3 -m src.pipeline.store_persist persist 2>/tmp/store_persist.err | tr -d '\r') || PERSIST_PATHS=""
 sed 's/^/  /' /tmp/store_persist.err 2>/dev/null || true
 if [ -n "$PERSIST_PATHS" ]; then
-    echo "== persisting MLB display stores: $(echo $PERSIST_PATHS | wc -w) file(s) =="
+    # Staged, not yet committed or pushed: whether they reach origin is decided
+    # below (a conflicting rebase can leave a store out), and said there.
+    echo "== staging $(echo $PERSIST_PATHS | wc -w) MLB display store(s) for the commit =="
     git add $PERSIST_PATHS 2>/dev/null || echo "  (could not stage the display stores; they stay local)"
     guard_staged_no_shrink $PERSIST_PATHS
 fi
+# The deferred-store ledger (data/watch/display_store_deferred.jsonl): a store
+# staged above that was deferred on an earlier run is now `resolved`, and a store
+# deferred on 3 consecutive runs prints ESCALATE every run until it resolves.
+# Guarded like every line here: a failure only costs the record.
+DISPLAY_STAGED=$(git diff --cached --name-only -- data/historical 2>/dev/null | tr -d '\r')
+timeout 60 python3 -m src.pipeline.store_persist record --kept $DISPLAY_STAGED 2>&1 | sed 's/^/  /' || true
+git add data/watch/display_store_deferred.jsonl 2>/dev/null || true
 git reset -q artifacts/demo_latest.html 2>/dev/null || true
 # GUARD (2026-09-21 incident): size-gate backstop for whatever store
 # rotation above did not catch -- prints WARN/ESCALATE, never blocks.
@@ -793,34 +802,96 @@ guard_staged_size
 # (the next refresh rebuilds them from MLB's free API and the union keeps what
 # git holds), so a conflict that names ONLY data/historical/ files drops those
 # files from our commit, keeps the rest, and rebases again. A conflict that names
-# anything else is not touched: abort, as before. The disk copies of the dropped
-# stores are saved under /tmp/display_store_conflict/ and the working files go
-# back to the committed copy, so no later step sees conflict markers.
-pull_rebase_dropping_display_conflicts() {
-    local branch="$1" ours conflicts rebasing=0 others f
-    ours=$(git rev-parse HEAD 2>/dev/null) || return 1
+# anything else is not touched: abort, as before.
+#
+# WHAT IS KEPT, AND WHAT IS SAID (owner ruling 2026-10-04). Origin's copy of a
+# dropped store is what the rebase keeps; ours is NOT committed. What is kept of
+# it is a small committed record, one line per skipped store appended to
+# data/watch/display_store_deferred.jsonl and staged with the commit that does go
+# out (store, rows on disk, rows in the remote copy, rows only we held, reason;
+# src.pipeline.store_persist record). Each skipped store is printed AND written to
+# the run note as "DISPLAY STORE NOT PERSISTED"; nothing on this path says the
+# stores were saved. The next run retries the union and persist; a success writes
+# a `resolved` line; a store deferred on 3 consecutive runs prints ESCALATE.
+DISPLAY_LEDGER=data/watch/display_store_deferred.jsonl
+DISPLAY_STORES_DEFERRED=""
+
+# `git pull --rebase`; a conflict in the (append-only) ledger alone is resolved by
+# keeping every line of both sides. Anything else is left for the caller, with the
+# rebase still in progress.
+pull_rebase_resolving_ledger() {
+    local branch="$1" conflicts tries=0
     git pull -q --rebase --autostash origin "$branch" && return 0
+    while [ "$tries" -lt 5 ]; do
+        tries=$((tries + 1))
+        [ -d "$(git rev-parse --git-path rebase-merge 2>/dev/null)" ] || [ -d "$(git rev-parse --git-path rebase-apply 2>/dev/null)" ] || return 1
+        conflicts=$(git diff --name-only --diff-filter=U 2>/dev/null | tr -d '\r')
+        [ "$conflicts" = "$DISPLAY_LEDGER" ] || return 1
+        { git show ":2:$DISPLAY_LEDGER"; git show ":3:$DISPLAY_LEDGER"; } 2>/dev/null | awk 'NF && !seen[$0]++' > "$DISPLAY_LEDGER" || return 1
+        git add "$DISPLAY_LEDGER" || return 1
+        if GIT_EDITOR=true git -c core.editor=true rebase --continue >/dev/null 2>&1; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+pull_rebase_dropping_display_conflicts() {
+    local branch="$1" ours conflicts rebasing=0 others dropped kept f line note_file
+    ours=$(git rev-parse HEAD 2>/dev/null) || return 1
+    pull_rebase_resolving_ledger "$branch" && return 0
     if [ -d "$(git rev-parse --git-path rebase-merge 2>/dev/null)" ] || [ -d "$(git rev-parse --git-path rebase-apply 2>/dev/null)" ]; then
         rebasing=1
     fi
     conflicts=$(git diff --name-only --diff-filter=U 2>/dev/null | tr -d '\r')
     git rebase --abort 2>/dev/null || true
     [ "$rebasing" -eq 1 ] && [ -n "$conflicts" ] || return 1
-    others=$(printf '%s\n' "$conflicts" | grep -v '^data/historical/' || true)
+    others=$(printf '%s\n' "$conflicts" | grep -v '^data/historical/' | grep -vx "$DISPLAY_LEDGER" || true)
     [ -z "$others" ] || return 1
+    dropped=$(printf '%s\n' "$conflicts" | grep '^data/historical/' || true)
+    [ -n "$dropped" ] || return 1
     [ "$(git rev-parse HEAD 2>/dev/null)" = "$ours" ] || return 1
-    echo "== rebase conflicted only in display stores ($(printf '%s\n' "$conflicts" | wc -l | tr -d ' ') file(s)); dropping them from our commit, keeping the rest =="
+    echo "== rebase conflicted only in display stores; NOT persisting $(printf '%s\n' "$dropped" | wc -l | tr -d ' ') store(s), committing the rest =="
     mkdir -p /tmp/display_store_conflict
     git reset -q --soft HEAD~1 || return 1
-    for f in $conflicts; do
+    for f in $dropped; do
         git reset -q HEAD -- "$f" 2>/dev/null || true
+    done
+    # This run's own ledger lines (written before the commit, when the stores were
+    # still expected to go out) are rewritten from the ledger as it was in HEAD.
+    git reset -q HEAD -- "$DISPLAY_LEDGER" 2>/dev/null || true
+    if git cat-file -e "HEAD:$DISPLAY_LEDGER" 2>/dev/null; then
+        git checkout -q -- "$DISPLAY_LEDGER" 2>/dev/null || true
+    else
+        rm -f "$DISPLAY_LEDGER"
+    fi
+    kept=$(git diff --cached --name-only -- data/historical 2>/dev/null | tr -d '\r')
+    note=$(python3 -m src.pipeline.store_persist record --ref "origin/$branch" \
+        --reason "rebase conflict with origin/$branch; the remote copy was kept, ours was not committed" \
+        --deferred $dropped --kept $kept 2>/dev/null | tr -d '\r') || note=""
+    DISPLAY_STORES_DEFERRED=$(printf '%s\n' "$dropped" | wc -l | tr -d ' ')
+    note_file="${RUN_NOTE:-docs/OVERNIGHT_RUN.md}"
+    mkdir -p "$(dirname "$note_file")"
+    if [ -n "$note" ]; then
+        printf '%s\n' "$note" | sed 's/^/  /'
+        printf '%s\n' "$note" | while IFS= read -r line; do
+            echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: $line" >> "$note_file"
+        done
+    else
+        for f in $dropped; do
+            echo "DISPLAY STORE NOT PERSISTED: $f (the deferred record could not be written)"
+            echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: DISPLAY STORE NOT PERSISTED: $f (no deferred record written)" >> "$note_file"
+        done
+    fi
+    for f in $dropped; do
         cp "$f" "/tmp/display_store_conflict/$(basename "$f")" 2>/dev/null || true
         git checkout -q -- "$f" 2>/dev/null || true
     done
+    git add "$DISPLAY_LEDGER" "$note_file" 2>/dev/null || true
     if ! git diff --cached --quiet; then
-        git commit -q -m "Daily loop $(date -u +%Y-%m-%d) (display stores left out: rebase conflict)" || return 1
+        git commit -q -m "Daily loop $(date -u +%Y-%m-%d) (display stores NOT persisted: rebase conflict)" || return 1
     fi
-    if git pull -q --rebase --autostash origin "$branch"; then
+    if pull_rebase_resolving_ledger "$branch"; then
         return 0
     fi
     git rebase --abort 2>/dev/null || true
@@ -855,7 +926,11 @@ if ! git diff --cached --quiet; then
             fi
         done
         if [ "$PUSH_OK" -eq 1 ]; then
-            echo "== committed =="
+            if [ -n "$DISPLAY_STORES_DEFERRED" ]; then
+                echo "== pushed, but $DISPLAY_STORES_DEFERRED MLB display store(s) were NOT persisted (rebase conflict); see data/watch/display_store_deferred.jsonl =="
+            else
+                echo "== committed =="
+            fi
         else
             echo "ESCALATE: push failed after retries -- commit is local only, needs manual push"
             type foundry_beat >/dev/null 2>&1 && foundry_beat daily_loop escalate escalate "" "push failed after retries" || true

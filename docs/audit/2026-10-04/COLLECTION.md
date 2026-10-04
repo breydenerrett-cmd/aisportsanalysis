@@ -249,6 +249,35 @@ untouched: abort, local commit kept, `ESCALATE`, exit 1, as before. Shell-level
 tests in `tests.test_daily_loop_persist.AConflictOnADisplayStoreDoesNotStrandTheDaysOtherData`
 run the real tail of the script against a real bare origin.
 
+### 9b. A skipped display store: what is kept, said and retried (owner ruling 2026-10-04)
+
+When the rebase conflicts only in `data/historical/` files, `daily_loop.sh`
+keeps origin's copy of each (the rebase takes it; our conflicting copy is never
+committed) and pushes the rest. For each skipped store it then:
+
+* **records it durably**: one JSON line in `data/watch/display_store_deferred.jsonl`
+  (`at`, `store`, `rows_on_disk`, `rows_in_remote`, `rows_only_ours`, `reason`),
+  staged in the commit that does go out. The refresh is idempotent, so the record,
+  not the store, is what survives a thrown-away runner. A ledger conflict (both
+  sides appended) keeps every line of both;
+* **says it**: prints `DISPLAY STORE NOT PERSISTED: data/historical/<store>
+  rows_on_disk=N rows_in_remote=N rows_only_ours=N reason=...` per store, writes the
+  same line to `docs/OVERNIGHT_RUN.md`, and the push message reads `== pushed, but N
+  MLB display store(s) were NOT persisted ... ==` instead of `== committed ==`. The
+  pre-commit message was changed from "persisting" to "staging ... for the commit":
+  nothing says stores were saved before that is true;
+* **retries**: the next run unions and persists as normal. A successful persist of
+  a deferred store appends `resolved`; a store deferred on 3 consecutive runs with no
+  `resolved` prints `ESCALATE: display store ... deferred on 3 consecutive runs`
+  on that run and every run after, until it resolves.
+  `python -m src.pipeline.store_persist deferred` lists what is outstanding.
+
+**Unknown columns** survive a round trip (carried, not narrowed) but are not model
+inputs: `tests.test_unknown_column_is_not_a_model_input` shows the training table, the
+matchup features and the starter features byte-identical with and without an extra
+column (even one that is a copy of the label), and the persist report names any
+carried column on stderr (`carries column(s) this code does not know: ...`).
+
 ## 10. Runs unattended, and how that was shown
 
 The refresh runs through the daily loop with no session (`scripts/daily_loop.sh`),
