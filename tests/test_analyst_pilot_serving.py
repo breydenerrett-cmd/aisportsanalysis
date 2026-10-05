@@ -161,7 +161,9 @@ class Published(unittest.TestCase):
                           "section_as_of": {"teams": "2026-10-02", "starters": "2026-10-02"}}])
         answer = cls.root / "answer.json"
         answer.write_text(json.dumps(F.good_output(F.build())), encoding="utf-8")
-        code = pilot.publish(str(pilot.game_folder(F.DATE, "NYY", "TB", cls.root)), str(answer),
+        folder = str(pilot.game_folder(F.DATE, "NYY", "TB", cls.root))
+        pilot.check(folder, str(answer), out=out.append, now=lambda: F.NOW)   # records attempt 1
+        code = pilot.publish(folder, str(answer),
                              model="claude-sonnet-5-5", cfg=F.CFG, root=cls.root, now=lambda: F.NOW,
                              out=out.append)
         assert code == 0, out

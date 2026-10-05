@@ -54,6 +54,8 @@ def publish_pilot_game(root: Path, away="NYY", home="TB") -> None:
     answer = F.good_output(packet) if (away, home) == ("NYY", "TB") else only_passes(packet)
     path = root / f"answer_{away}_{home}.json"
     path.write_text(json.dumps(answer), encoding="utf-8")
+    # the operator's flow: a check records the attempt, and a publish of an unchecked answer is refused
+    pilot.check(str(pilot.game_folder(F.DATE, away, home, root)), str(path), out=out.append, now=lambda: F.NOW)
     code = pilot.publish(str(pilot.game_folder(F.DATE, away, home, root)), str(path), model="claude-sonnet-5-5",
                          cfg=F.CFG, root=root, now=lambda: F.NOW, out=out.append)
     assert code == 0, out

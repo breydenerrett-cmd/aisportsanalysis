@@ -850,13 +850,36 @@ python -m src.cli analyst pilot publish --dir evidence/analyst_pilot/2026-10-03_
   estimate, model) to `evidence/analyst_pilot/<date>_<AWAY>-<HOME>/`. With `--scratch` it writes to
   that folder instead and marks it a rehearsal.
 - **check** validates and runs the checker against the saved packet and prints, per call, kept or
-  struck and why, with totals. It publishes nothing and works on rehearsal folders.
-- **publish** reloads the saved packet and refuses unless: the folder is not a rehearsal; the packet
+  struck and why, with totals. It publishes nothing and works on rehearsal folders. It does write
+  one thing: the response is recorded as an attempt (see "The publication rule" below), and when
+  the checker rejected it, the rejection lines are printed as the only thing the writer may be
+  given for a second try.
+- **publish** reloads the saved packet and refuses unless: the response was checked and is the
+  latest attempt, with no reroll behind it (the publication rule below); the folder is not a rehearsal; the packet
   hash matches `prepare.json` and the prompt has not changed since; the game has not started
   (`ledger.publish_refusal`); the packet was built no more than `pilot.max_packet_age_minutes` ago
   (`config/analyst.json`, 90); the game has no pilot row yet (or `--refresh`, still refused once
   graded); and the response passes the shape check. A response that passes the shape check but has
   false claims is published with those calls struck to PASS, as the API path does.
+- **The publication rule (enforced in `pilot.py`, pinned by `tests/test_analyst_publication_rule.py`).**
+  The first answer to a prepared folder is the candidate. It may be answered again only because
+  the checker rejected it for a rule violation (a struck call, a withheld summary, or a response that
+  fails the shape check), at most twice, so three attempts at the most, and the only extra input the
+  writer gets is the checker's rejection lines. Nobody chooses among answers: the published answer
+  is always the latest attempt, an earlier attempt can never be published once a later one exists,
+  and an answer that follows a clean one is a reroll that can never be published. `check` records
+  every distinct response it is shown in `attempts.jsonl` in the folder (attempt number, sha256 of
+  the response bytes, UTC time, kept and struck counts, the rejection lines) and saves each as
+  `attempt_N.json`; the same answer shown twice counts once, and a file that is not JSON is not an
+  answer and is not recorded. `publish` refuses a response that was never checked, one that is not the
+  latest attempt, one that follows an unrejected attempt, and a fourth. The published row carries
+  `attempts` (the count) and `attempt_hashes` (each attempt's sha256, in order), and its `run.attempts`
+  and the usage log say the same. Rows written before the rule have neither field and load, serve,
+  grade and verify as they always did. A folder prepared before the rule has no attempts file and needs
+  a `check` before it can be published. Preparing the game again freezes a new request and starts a
+  new count. Why: on 2026-10-04 three answers to one request disagreed on a prop, and without a rule
+  "answer again until it looks right" is a free choice among samples
+  (`docs/research/ANALYST_CONSISTENCY.md`).
 - **Stores.** `evidence/analyst_pilot_v1.jsonl`, `evidence/analyst_pilot_usage_v1.jsonl` and
   `evidence/analyst_pilot_packets_v1/`, separate from the main analyst's. No pilot command writes a
   main store. A row carries `provenance: "session_assisted"`, and its `run` records the mode, the

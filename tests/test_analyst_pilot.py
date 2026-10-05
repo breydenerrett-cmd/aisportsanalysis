@@ -71,8 +71,13 @@ class Env(unittest.TestCase):
         return self.write_response(F.good_output(F.build()))
 
     def publish(self, response=None, *, now=None, **kw):
+        """The operator's flow: `check` records the attempt, then `publish`. A publish of a response
+        that was never checked is refused (tests/test_analyst_publication_rule.py pins that), so every
+        test here that is not about that rule goes through a check first, with its output set aside."""
         kw.setdefault("model", "claude-sonnet-5-5")
-        return pilot.publish(str(self.folder), response or self.good_response(), cfg=F.CFG,
+        response = response or self.good_response()
+        pilot.check(str(self.folder), response, out=lambda *_: None, now=lambda: now or self.now)
+        return pilot.publish(str(self.folder), response, cfg=F.CFG,
                              root=self.root, now=lambda: now or self.now, out=self.out.append, **kw)
 
     def files(self):

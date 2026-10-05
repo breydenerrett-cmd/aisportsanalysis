@@ -41,6 +41,33 @@ WHAT A PUBLISH REFUSES
   check but fails the truth check is NOT refused: it is published with the failing calls struck to
   PASS, exactly as the API path does, because that is the record of what the model said.
 
+THE PUBLICATION RULE: THE FIRST ANSWER IS THE CANDIDATE, NOBODY PICKS AMONG ANSWERS
+-----------------------------------------------------------------------------------
+On 2026-10-04 three answers were written to one frozen request for Braves at Dodgers; the first took
+a strikeout Under, the checker rejected it for unrelated violations, the second (given only the
+rejection lines) passed on that call and was published, and an independent third took the Under again.
+Nothing in the pipeline then said which answers a session could write, how many, or why. Left open,
+"answer again until it looks right" is a free choice among samples, and a choice among samples is the
+one way a published record can quietly stop being what the model said. So the rule is code:
+
+* the FIRST answer shown to `check` is the candidate;
+* it may be answered again ONLY because the checker rejected it for a rule violation (a struck call,
+  a withheld summary, or a response that fails the shape check), and at most twice: three attempts
+  in all;
+* the only extra input the writer may receive is the checker's rejection lines (`check` prints them);
+* the published answer is always the LATEST attempt. An earlier attempt can never be published once
+  a later one exists, and an attempt that follows a clean one is a reroll that can never be published.
+
+`check` is where it is enforced. Every distinct response it is shown is appended to `attempts.jsonl` in
+the prepared folder (attempt number, sha256 of the response bytes, UTC time, kept and struck counts,
+the rejection lines) and copied to `attempt_N.json`. The same bytes shown twice count once. `publish`
+refuses a response that was never checked, that is not the latest attempt, that follows an unrejected
+attempt, or that is a fourth. The ledger row carries `attempts` (the count) and `attempt_hashes`. Rows
+written before this rule have neither field and load, serve, grade and verify exactly as they did; a
+folder prepared before it has no attempts file and needs a `check` before it can be published.
+Attempts belong to one prepared packet: preparing the game again freezes a new request, which starts
+its own attempt count (and, being a new packet, a new version).
+
 THE COST FIGURE IS AN ESTIMATE AT LIST PRICE
 --------------------------------------------
 A session is not billed per token. When the operator reports tokens, the row carries tokens times the
@@ -54,6 +81,7 @@ Nothing here calls the API, a deployed host or any model, and nothing here place
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
@@ -265,13 +293,21 @@ def load_prepared(folder: str) -> Prepared:
 _FENCE = re.compile(r"^\s*```(?:json)?\s*\n(.*?)\n\s*```\s*$", re.S)
 
 
-def load_response(path: str) -> dict:
-    """The response file as a JSON object. A markdown fence around it is tolerated (a session
-    often writes one); anything else that is not JSON is an error."""
+def read_response_bytes(path: str) -> bytes:
+    """The response file exactly as written. Its hash is the attempt's identity."""
     try:
-        text = Path(path).read_text(encoding="utf-8")
+        return Path(path).read_bytes()
     except OSError as exc:
         raise PilotError(f"response file could not be read: {path} ({exc.strerror or exc})") from None
+
+
+def parse_response(raw: bytes) -> dict:
+    """The response bytes as a JSON object. A markdown fence around it is tolerated (a session
+    often writes one); anything else that is not JSON is an error."""
+    try:
+        text = raw.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise PilotError(f"the response is not valid UTF-8 text: {exc}") from None
     fenced = _FENCE.match(text)
     try:
         value = json.loads(fenced.group(1) if fenced else text)
@@ -280,6 +316,157 @@ def load_response(path: str) -> dict:
     if not isinstance(value, dict):
         raise PilotError("the response is not a JSON object")
     return value
+
+
+def load_response(path: str) -> dict:
+    """The response file as a JSON object (see `parse_response`)."""
+    return parse_response(read_response_bytes(path))
+
+
+# ---------------------------------------------------------------------------
+# attempts: the publication rule
+# ---------------------------------------------------------------------------
+
+ATTEMPTS_FILE = "attempts.jsonl"
+
+# The first answer plus at most two re-answers. Three is enough to fix the rule violations a checker
+# names (attempt 2 did on 2026-10-04) and few enough that "try again" cannot become a search. The
+# number lives here, not in config: raising it is a change to the rule, and a rule change belongs in a
+# reviewed commit with this docstring, not in a file an operator edits mid-session.
+MAX_ATTEMPTS = 3
+
+
+def _sha256(raw: bytes) -> str:
+    return hashlib.sha256(raw).hexdigest()
+
+
+def _content_sha256(response: Mapping) -> str:
+    """Hash of the parsed answer, so the same answer saved with other whitespace or inside a markdown
+    fence is the SAME attempt, not a new draw."""
+    return _sha256(json.dumps(response, sort_keys=True, separators=(",", ":")).encode("utf-8"))
+
+
+def attempt_file(folder: Path, number: int) -> Path:
+    return Path(folder) / f"attempt_{number}.json"
+
+
+def read_attempts(folder, packet_hash: str) -> list:
+    """The folder's recorded attempts for THIS packet, oldest first. Attempts recorded against another
+    packet (the game was prepared again) belong to that request and are not counted."""
+    path = Path(folder) / ATTEMPTS_FILE
+    if not path.exists():
+        return []
+    found = []
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError as exc:
+        raise PilotError(f"{path} could not be read ({exc.strerror or exc})") from None
+    for n, line in enumerate(lines, 1):
+        if not line.strip():
+            continue
+        try:
+            row = json.loads(line)
+        except ValueError:
+            raise PilotError(f"{path} line {n} is not JSON; the attempt record is damaged") from None
+        if isinstance(row, dict) and row.get("packet_hash") == packet_hash:
+            found.append(row)
+    return found
+
+
+def rejection_lines(report: "CheckReport") -> list:
+    """What the checker objects to, one line each: the only thing a writer may be given before
+    answering again. Empty when the response is clean."""
+    if report.shape_errors:
+        return [f"shape: {e}" for e in report.shape_errors]
+    lines = []
+    for c in report.calls:
+        lines.extend(f"{c.slot_id}: {p}" for p in c.problems)
+    lines.extend(f"summary: {p}" for p in report.summary_problems)
+    return lines
+
+
+def _is_rejected(report: "CheckReport") -> bool:
+    return bool(report.shape_errors) or report.struck > 0 or report.summary_status != "ok"
+
+
+def eligibility(attempts: list, number: int) -> Optional[str]:
+    """Why attempt `number` (1-based, in `attempts`) can never be published, or None when it can.
+    The one statement of the re-answer rule: a later attempt is allowed only when the one before it
+    was rejected, and never past the third."""
+    if number > MAX_ATTEMPTS:
+        return (f"attempt {number} is past the limit of {MAX_ATTEMPTS} attempts (the first answer and "
+                f"at most {MAX_ATTEMPTS - 1} re-answers)")
+    if number > 1 and not attempts[number - 2].get("rejected"):
+        return (f"attempt {number - 1} was not rejected by the checker, so answering again is a "
+                "reroll, and a reroll is never published")
+    return None
+
+
+def record_attempt(folder: Path, packet_hash: str, raw: bytes, response: Mapping,
+                   report: "CheckReport", moment: datetime) -> tuple:
+    """Record `raw` as the next attempt unless the same answer is already recorded. Returns
+    `(row, is_new)`. Appends to `attempts.jsonl` and writes `attempt_N.json` byte for byte; nothing
+    is ever rewritten."""
+    attempts = read_attempts(folder, packet_hash)
+    digest, content = _sha256(raw), _content_sha256(response)
+    for row in attempts:
+        if row.get("sha256") == digest or row.get("content_sha256") == content:
+            return row, False
+    number = len(attempts) + 1
+    row = {
+        "attempt": number, "packet_hash": packet_hash, "sha256": digest, "content_sha256": content,
+        "utc": _iso(moment),
+        "kept": None if report.shape_errors else report.kept,
+        "struck": None if report.shape_errors else report.struck,
+        "shape_errors": len(report.shape_errors),
+        "summary_status": report.summary_status,
+        "rejected": _is_rejected(report),
+        "rejection_lines": rejection_lines(report),
+        "publishable": eligibility(attempts + [{}], number) is None,
+    }
+    saved = attempt_file(folder, number)
+    saved.write_bytes(raw)
+    with open(Path(folder) / ATTEMPTS_FILE, "ab") as handle:
+        handle.write((json.dumps(row, sort_keys=True) + "\n").encode("utf-8"))
+    return row, True
+
+
+def publication_refusal(folder, packet_hash: str, raw: bytes, response: Mapping) -> tuple:
+    """`(reason, attempts)` : why this response may not be published (None when it may) and the
+    attempts it was judged against. Recomputes the rule from the raw records rather than trusting a
+    stored flag, and proves each saved attempt file is the bytes that were hashed."""
+    attempts = read_attempts(folder, packet_hash)
+    if not attempts:
+        return ("this response was never checked: run `pilot check` on it first, which records the "
+                "attempt (a folder prepared before the attempt record needs a check too)"), attempts
+    digest, content = _sha256(raw), _content_sha256(response)
+    matched = [r for r in attempts if r.get("sha256") == digest or r.get("content_sha256") == content]
+    if not matched:
+        return ("this response was never checked: it is not one of the "
+                f"{len(attempts)} attempt(s) recorded for this packet; run `pilot check` on it"), attempts
+    latest = attempts[-1]
+    if matched[0] is not latest:
+        return (f"this response is attempt {matched[0].get('attempt')}, but attempt "
+                f"{latest.get('attempt')} exists; the latest attempt is the only one that can be "
+                "published, and an earlier one never can be"), attempts
+    if len(attempts) > MAX_ATTEMPTS:
+        return (f"{len(attempts)} attempts are recorded; at most {MAX_ATTEMPTS} are allowed (the first "
+                f"answer and {MAX_ATTEMPTS - 1} re-answers), so none of them can be published; "
+                "prepare the game again for a new request"), attempts
+    for number in range(2, len(attempts) + 1):
+        why = eligibility(attempts, number)
+        if why:
+            return f"{why}; nothing can be published from this folder's attempts", attempts
+    for number, row in enumerate(attempts, 1):
+        saved = attempt_file(folder, number)
+        try:
+            same = _sha256(saved.read_bytes()) == row.get("sha256")
+        except OSError:
+            same = False
+        if not same:
+            return (f"attempt_{number}.json is missing or no longer the bytes that were checked; "
+                    "the attempt record cannot be trusted"), attempts
+    return None, attempts
 
 
 # ---------------------------------------------------------------------------
@@ -351,11 +538,46 @@ def print_report(report: CheckReport, out: Callable) -> None:
     out(f"totals: {len(report.calls)} calls, {report.kept} kept, {report.struck} struck")
 
 
-def check(folder: str, response_path: str, *, out: Callable = print) -> int:
-    """`pilot check`: what publishing this response would keep and strike. Writes nothing."""
+def print_attempt(row: Mapping, is_new: bool, out: Callable) -> None:
+    """Say which attempt this response is, and what the publication rule allows next."""
+    number = row["attempt"]
+    if not is_new:
+        out(f"attempt {number} of {MAX_ATTEMPTS}: this answer was already recorded; it counts once")
+    else:
+        out(f"attempt {number} of {MAX_ATTEMPTS} recorded (sha256 {row['sha256'][:12]}); saved as "
+            f"{attempt_file('.', number).name}")
+    if not row.get("publishable"):
+        out("  NOT PUBLISHABLE: " + _unpublishable_reason(row))
+    if row.get("rejected"):
+        if number >= MAX_ATTEMPTS:
+            out(f"  REJECTED and no attempts are left ({MAX_ATTEMPTS} used): nothing can be published "
+                "from this folder; prepare the game again for a new request")
+            return
+        out(f"  REJECTED by the checker. The writer may answer again (attempt {number + 1} of "
+            f"{MAX_ATTEMPTS}) with these lines and nothing else added to the request:")
+        for line in row.get("rejection_lines") or []:
+            out(f"    {line}")
+    elif row.get("publishable"):
+        out("  CLEAN: this is the candidate. Publish it; answering again would be a reroll, and the "
+            "later answer could not be published.")
+
+
+def _unpublishable_reason(row: Mapping) -> str:
+    number = row["attempt"]
+    if number > MAX_ATTEMPTS:
+        return f"it is attempt {number}, past the limit of {MAX_ATTEMPTS}"
+    return f"the attempt before it (attempt {number - 1}) was not rejected, so this is a reroll"
+
+
+def check(folder: str, response_path: str, *, out: Callable = print,
+          now: Optional[Callable] = None) -> int:
+    """`pilot check`: what publishing this response would keep and strike, and the one thing it
+    writes: the response is recorded as an attempt in the prepared folder (see the publication rule
+    in this module's docstring). It publishes nothing."""
     try:
         prepared = load_prepared(folder)
-        response = load_response(response_path)
+        raw = read_response_bytes(response_path)
+        response = parse_response(raw)
     except PilotError as exc:
         out(f"ERROR: {exc}")
         return EXIT_ERROR
@@ -363,6 +585,13 @@ def check(folder: str, response_path: str, *, out: Callable = print) -> int:
     out(f"CHECK {prepared.meta.get('game_id')}{' (rehearsal)' if prepared.meta.get('rehearsal') else ''}: "
         "nothing is published by this command")
     print_report(report, out)
+    try:
+        row, is_new = record_attempt(prepared.folder, prepared.meta["packet_hash"], raw, response,
+                                     report, (now or cli._now)())
+    except (PilotError, OSError) as exc:
+        out(f"ERROR: the attempt could not be recorded, so this response cannot be published: {exc}")
+        return EXIT_ERROR
+    print_attempt(row, is_new, out)
     return EXIT_ERROR if report.shape_errors else EXIT_OK
 
 
@@ -379,7 +608,7 @@ def _nonneg(name: str, value) -> Optional[float]:
 
 
 def run_record(cfg: Mapping, *, model: str, tokens_in, tokens_out, seconds, operator_minutes,
-               run_id: str) -> dict:
+               run_id: str, attempts: int = 1) -> dict:
     """The row's `run`: how this brief was made, and what it would have cost at list price."""
     estimate = None
     if tokens_in is not None and tokens_out is not None:
@@ -389,7 +618,7 @@ def run_record(cfg: Mapping, *, model: str, tokens_in, tokens_out, seconds, oper
             "tokens_in": tokens_in, "tokens_out": tokens_out,
             "cost_usd": estimate, "cost_basis": COST_BASIS,
             "price_per_million_usd": dict(cfg["price_per_million_usd"]),
-            "seconds": seconds, "operator_minutes": operator_minutes, "attempts": 1}
+            "seconds": seconds, "operator_minutes": operator_minutes, "attempts": attempts}
 
 
 def publish(folder: str, response_path: str, *, model: str, tokens_in=None, tokens_out=None,
@@ -433,7 +662,11 @@ def publish(folder: str, response_path: str, *, model: str, tokens_in=None, toke
         if existing and not refresh:
             raise PilotError(f"{gid}: already has a pilot row (v{existing['version']}); frozen unless "
                              "--refresh")
-        response = load_response(response_path)
+        raw = read_response_bytes(response_path)
+        response = parse_response(raw)
+        why, attempts = publication_refusal(prepared.folder, meta["packet_hash"], raw, response)
+        if why:
+            raise PilotError(f"{gid}: {why}")
         errors = analyst_mod.validate_output(response, packet)
         if errors:
             raise PilotError("the response fails the shape check, so nothing was published:\n  "
@@ -445,12 +678,14 @@ def publish(folder: str, response_path: str, *, model: str, tokens_in=None, toke
     verified = critic.verify(packet, response)
     run_id = uuid.uuid4().hex[:12]
     run = run_record(cfg, model=model.strip(), tokens_in=tokens_in, tokens_out=tokens_out,
-                     seconds=seconds, operator_minutes=operator_minutes, run_id=run_id)
+                     seconds=seconds, operator_minutes=operator_minutes, run_id=run_id,
+                     attempts=len(attempts))
     try:
         row, created = ledger.publish(
             packet, verified, now=moment, model=model.strip(), run=run, path=files["store"],
             packet_dir=files["packets"], lock_lead_minutes=lead, refresh=refresh,
-            prompt_version=analyst_mod.PROMPT_VERSION, extra={"provenance": MODE, "mode": MODE})
+            prompt_version=analyst_mod.PROMPT_VERSION, extra={"provenance": MODE, "mode": MODE, "attempts": len(attempts),
+                   "attempt_hashes": [a["sha256"] for a in attempts]})
     except ledger.AnalystLedgerError as exc:
         out(f"REFUSED: {exc}")
         return EXIT_ERROR
@@ -458,7 +693,7 @@ def publish(folder: str, response_path: str, *, model: str, tokens_in=None, toke
         date=packet["game"]["date"], game_id=gid, run_id=run_id,
         outcome="published" if created else "already_published", model=model.strip(),
         usage={"input_tokens": tokens_in or 0, "output_tokens": tokens_out or 0},
-        cost_usd=run["cost_usd"] or 0.0, attempts=1, cfg=cfg, now=moment, path=files["usage"],
+        cost_usd=run["cost_usd"] or 0.0, attempts=len(attempts), cfg=cfg, now=moment, path=files["usage"],
         extra={"mode": MODE, "tokens_reported": tokens_in is not None and tokens_out is not None,
                "cost_basis": COST_BASIS, "seconds": seconds, "operator_minutes": operator_minutes,
                "calls": len(verified.calls), "struck": len(verified.struck)})
