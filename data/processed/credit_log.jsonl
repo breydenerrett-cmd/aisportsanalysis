@@ -9905,3 +9905,7 @@
 {"budget_band": "live_capture", "caller": "prop_listing.run", "credits_remaining": 98783, "credits_used_last": 0, "utc": "2026-10-05T01:08:26.364299Z"}
 {"budget_band": "live_capture", "caller": "prop_prices.run", "credits_remaining": 98783, "credits_used_last": 0, "utc": "2026-10-05T01:08:29.528211Z"}
 {"budget_band": "live_capture", "caller": "batter_props.run", "credits_remaining": 98783, "credits_used_last": 0, "utc": "2026-10-05T01:08:29.881502Z"}
+{"budget_band": "live_capture", "caller": "dense.run", "credits_remaining": 98782, "credits_used_last": 0, "utc": "2026-10-05T01:21:28.074891Z"}
+{"budget_band": "live_capture", "caller": "prop_listing.run", "credits_remaining": 98782, "credits_used_last": 0, "utc": "2026-10-05T01:21:28.695856Z"}
+{"budget_band": "live_capture", "caller": "prop_prices.run", "credits_remaining": 98782, "credits_used_last": 0, "utc": "2026-10-05T01:21:30.284898Z"}
+{"budget_band": "live_capture", "caller": "batter_props.run", "credits_remaining": 98782, "credits_used_last": 0, "utc": "2026-10-05T01:21:30.698274Z"}
