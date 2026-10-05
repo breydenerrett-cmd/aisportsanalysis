@@ -100,3 +100,4 @@
 {"game_id": "2026_04_DET_CAR", "observed_utc": "2026-10-04T23:51:55.187897Z", "phase": "t30m"}
 {"game_id": "2026_04_ATL_NO", "observed_utc": "2026-10-05T00:19:01.712141Z", "phase": "t24h"}
 {"game_id": "2026_04_ATL_NO", "observed_utc": "2026-10-05T18:21:48.762899Z", "phase": "t6h"}
+{"game_id": "_gameday_refresh", "observed_utc": "2026-10-05T18:54:01.741972Z", "phase": "refresh"}
