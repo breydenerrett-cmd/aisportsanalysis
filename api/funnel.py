@@ -394,6 +394,54 @@ def _counts_by_source(start: str, end: str, *, db=None) -> Dict[str, Dict[str, i
         -kv[1].get(events.LANDING_VIEW, 0), -kv[1].get(events.PUBLIC_PAGE_VIEW, 0), kv[0])))
 
 
+# Page label for a public_page_view that carries none (an event recorded before
+# the `page` check existed, or a row written by hand). Filed under one fixed
+# label so the report never grows a key from attacker-controlled text.
+UNKNOWN_PAGE = "(unknown)"
+
+
+def _page_of(event) -> str:
+    value = (event.properties or {}).get("page")
+    return value if isinstance(value, str) and PAGE_LABEL_RE.match(value) else UNKNOWN_PAGE
+
+
+def _page_views(start: str, end: str, *, db=None) -> Dict[str, dict]:
+    """page label -> {views, unique_visitors, by_source}, in range, for
+    public_page_view events, with our own test links LEFT OUT.
+
+    WHY THIS EXISTS (2026-10-05). `by_source.<src>.public_page_view` lumps every
+    public page together (record card, postseason, the sample brief), which
+    cannot answer "did the people I sent the sample to open it". This is the
+    same events split by the `page` the page itself named, next to the signup
+    columns of `by_source` (same source keys), so a batch reads as views ->
+    unique readers -> signups. `views` is raw loads; `unique_visitors` is
+    distinct visitor ids (a beacon with no anon_id shares one sentinel, so all
+    such loads count as one visitor, the same caveat `_unique_visitor_counts`
+    carries). Internal sources (utm_source "internal" / "internal-*") stay in
+    storage and keep their row in `by_source`, but are not counted here: the
+    first real lead must not arrive into a number that already includes us.
+    """
+    views: Dict[str, Dict[str, int]] = {}
+    seen: Dict[str, Dict[str, set]] = {}
+    for event in _window_events(start, end, db=db):
+        if event.kind != events.PUBLIC_PAGE_VIEW or _is_internal(event):
+            continue
+        page, source = _page_of(event), _source_of(event)
+        views.setdefault(page, {}).setdefault(source, 0)
+        views[page][source] += 1
+        seen.setdefault(page, {}).setdefault(source, set()).add(event.user_hash)
+    out: Dict[str, dict] = {}
+    for page in sorted(views):
+        by_source = {
+            source: {"views": count, "unique_visitors": len(seen[page][source])}
+            for source, count in sorted(views[page].items(), key=lambda kv: (-kv[1], kv[0]))}
+        all_visitors = set().union(*seen[page].values())
+        out[page] = {"views": sum(views[page].values()),
+                     "unique_visitors": len(all_visitors),
+                     "by_source": by_source}
+    return out
+
+
 @router.get("/admin/funnel")
 def get_admin_funnel(start: Optional[str] = None, end: Optional[str] = None,
                      _admin: None = Depends(_require_admin)) -> dict:
@@ -444,4 +492,5 @@ def get_admin_funnel(start: Optional[str] = None, end: Optional[str] = None,
     internal = sum(1 for event in _window_events(start, end) if _is_internal(event))
     return {"start": start, "end": end, "steps": steps_out,
             "by_source": _counts_by_source(start, end),
+            "page_views": _page_views(start, end),
             "internal_events_excluded": internal}

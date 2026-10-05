@@ -6,8 +6,10 @@ tests/test_funnel_attribution.py for the landing page). Without this a lead who 
 signed up later would read as "(direct)" and the batch that found them would look like it had produced
 nothing.
 
-The page must call `captureFirstTouch` from web/js/attribution.js, the same function landing.js
-calls, and must not carry a second copy of the logic. The real sample.js, attribution.js, api.js and
+The page calls `trackPublicPageView("sample")` from web/js/pageview.js, which stores the first
+touch with `captureFirstTouch` (web/js/attribution.js, the same function landing.js calls) and sends
+the one public_page_view beacon (tests/test_sample_view_tracking.py pins the beacon). It must not
+carry a second copy of the logic. The real sample.js, attribution.js, api.js and
 analyst.js are executed under node against a small fake DOM (the harness of tests/test_sample_brief.py).
 Skipped when node is missing. `web/js/attribution.js` is unchanged by this work.
 """
@@ -35,10 +37,14 @@ FIRST_TOUCH_KEY = "linehound.first_touch"
 
 
 class TheSamplePageUsesTheOneImplementation(unittest.TestCase):
-    def test_it_imports_and_calls_the_same_function_the_landing_page_does(self):
-        self.assertIn('import { captureFirstTouch } from "./attribution.js";', SAMPLE_JS)
+    def test_it_stores_the_touch_through_the_one_shared_call_the_other_public_pages_make(self):
+        pageview = (JS / "pageview.js").read_text(encoding="utf-8")
+        self.assertIn('import { trackPublicPageView } from "./pageview.js";', SAMPLE_JS)
+        self.assertRegex(SAMPLE_JS, r"trackPublicPageView\(SAMPLE_PAGE\);")
+        # ... and that call is the landing page's own capture, not a copy of it
+        self.assertIn('import { captureFirstTouch } from "./attribution.js";', pageview)
         self.assertIn('import { captureFirstTouch } from "./attribution.js";', LANDING_JS)
-        self.assertRegex(SAMPLE_JS, r"captureFirstTouch\(\);")
+        self.assertRegex(pageview, r"captureFirstTouch\(\);")
 
     def test_it_carries_no_second_implementation(self):
         code = "\n".join(line for line in SAMPLE_JS.splitlines() if not line.strip().startswith(("*", "//", "/*")))
@@ -47,8 +53,8 @@ class TheSamplePageUsesTheOneImplementation(unittest.TestCase):
 
     def test_the_capture_runs_on_load_before_anything_that_can_fail(self):
         body = SAMPLE_JS[SAMPLE_JS.index("async function main()"):]
-        self.assertLess(body.index("captureFirstTouch()"), body.index("renderDisclaimerFooter"))
-        self.assertLess(body.index("captureFirstTouch()"), body.index("fetchSample()"))
+        self.assertLess(body.index("trackPublicPageView("), body.index("renderDisclaimerFooter"))
+        self.assertLess(body.index("trackPublicPageView("), body.index("fetchSample()"))
         self.assertIn('document.addEventListener("DOMContentLoaded", main)', SAMPLE_JS)
 
     def test_signup_reads_the_stored_touch_so_a_plain_link_keeps_the_source(self):
@@ -107,9 +113,10 @@ class TheSamplePageStoresTheFirstTouch(unittest.TestCase):
         self.assertEqual(out["callCount"], 2)
         self.assertEqual(len(out["links"]), 3)
 
-    def test_the_visit_sends_no_funnel_event_this_page_has_no_kind_for(self):
+    def test_the_visit_sends_one_funnel_beacon_and_nothing_else(self):
+        # (what that beacon says is pinned in tests/test_sample_view_tracking.py)
         out = self.load(search=OUTREACH)
-        self.assertEqual(out["posts"], [])
+        self.assertEqual(out["posts"], ["/funnel/event"])
 
 
 if __name__ == "__main__":

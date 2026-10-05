@@ -1,7 +1,8 @@
 /**
  * ARRIVING ON A PUBLIC PAGE OTHER THAN THE LANDING PAGE.
  *
- * Outreach links do not all point at landing.html. The record page
+ * Outreach links do not all point at landing.html (web/sample.html joined the pages
+ * that call this on 2026-10-05, label "sample"). The record page
  * (index.html?utm_source=<lead>&utm_medium=<channel>&utm_campaign=<batch>#/record-card)
  * and the free postseason page (postseason.html?...) are the pages the
  * outreach copy actually sends people to, and until 2026-10-01 neither one

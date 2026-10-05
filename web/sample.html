@@ -13,8 +13,10 @@
 <meta name="theme-color" content="#0A0A0B">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230B0C0E'/%3E%3Cpath d='M6 6l8 0 0 9-8 4z' fill='%23FF3D57'/%3E%3Cpath d='M18 6l8 0 0 13-8-4z' fill='%23FF7A45'/%3E%3C/svg%3E">
 <!-- A SIGNED-OUT, SHAREABLE PAGE with no router: it mounts web/js/sample.js directly. Outreach links
-     point here with ?utm_source=<lead>&utm_medium=<channel>&utm_campaign=<batch>; sample.js stores
-     that first touch with attribution.js's captureFirstTouch, the same call the landing page makes.
+     point here with ?utm_source=<lead>&utm_medium=<channel>&utm_campaign=<batch>; sample.js calls
+     pageview.js's trackPublicPageView("sample"), which stores that first touch (attribution.js's
+     captureFirstTouch, the call the landing page makes) and sends one public_page_view beacon, so the
+     click-through is counted in GET /admin/funnel `page_views.sample`. Fire-and-forget.
      The data is public (GET /sample/brief takes no token) and is exactly one designated game.
      Stylesheets are the app's own in the order postseason.html loads them, with app.css because the
      shared footer's rules live there, then analyst.css for the analysis section. -->

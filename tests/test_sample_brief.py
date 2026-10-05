@@ -249,9 +249,24 @@ globalThis.localStorage = storage;
 globalThis.sessionStorage = storage;
 const gets = [];
 const posts = [];
-globalThis.fetch = async (url, init) => {
+const beacons = [];   // parsed bodies of the POSTs (the funnel beacon), in order
+// `beaconFails` simulates a blocked or failing beacon: "sync" = fetch throws before returning a
+// promise (an extension that stubs it), "reject" = the promise rejects (network error / blocked),
+// "http500" = the server answers 500.
+globalThis.fetch = (url, init) => {
   url = String(url);
-  if (init && init.method === "POST") posts.push(url); else gets.push(url);
+  if (init && init.method === "POST") {
+    posts.push(url);
+    try { beacons.push(JSON.parse(init.body)); } catch (err) { beacons.push(null); }
+    if (scenario.beaconFails === "sync") throw new Error("blocked");
+    if (scenario.beaconFails === "reject") return Promise.reject(new Error("blocked"));
+    if (scenario.beaconFails === "http500") return Promise.resolve({ ok: false, status: 500, text: async () => "boom" });
+  } else {
+    gets.push(url);
+  }
+  return respond(url);
+};
+const respond = async (url) => {
   if (url.startsWith("/sample/brief") && scenario.brief !== undefined) {
     if (scenario.briefFails) return { ok: false, status: 500, text: async () => "boom" };
     return { ok: true, status: 200, text: async () => JSON.stringify(scenario.brief) };
@@ -287,6 +302,7 @@ try {
 }
 out.gets = gets;
 out.posts = posts;
+out.beacons = beacons;
 out.stored = Object.fromEntries(store);
 console.log("@@" + JSON.stringify(out));
 """

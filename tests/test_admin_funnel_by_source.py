@@ -58,6 +58,9 @@ console.log("@@" + JSON.stringify({
   header: table ? cells(table.children[0].children[0]) : null,
   rows: host.byHook("admin-funnel-source").map(cells),
   empty: host.byHook("admin-funnel-by-source-empty").map((n) => n.textContent),
+  sampleHeader: host.byHook("admin-funnel-sample-table").map((t) => cells(t.children[0].children[0]))[0] || null,
+  sampleRows: host.byHook("admin-funnel-sample-source").map(cells),
+  sampleTotal: host.byHook("admin-funnel-sample-total").map(cells)[0] || null,
 }));
 """
 
@@ -111,6 +114,30 @@ class AdminFunnelBySource(unittest.TestCase):
             self.assertEqual(out["steps"], 2)
             self.assertIsNone(out["header"])
             self.assertEqual(out["empty"], ["No attributed events in this range."])
+
+    def test_sample_views_sit_beside_the_same_sources_signups(self):
+        # api/funnel.py's page_views.sample (internal links already left out) next to by_source
+        out = self._render({"start": "a", "end": "b", "steps": STEPS, "by_source": {
+            "l009-tommy-lorenzo": {"landing_view": 0, "signup_started": 1, "account_created": 1},
+            "l012-unit-circle": {"landing_view": 0, "signup_started": 0, "account_created": 0},
+        }, "page_views": {"sample": {"views": 5, "unique_visitors": 3, "by_source": {
+            "l009-tommy-lorenzo": {"views": 4, "unique_visitors": 2},
+            "l012-unit-circle": {"views": 1, "unique_visitors": 1},
+        }}, "record-card": {"views": 9, "unique_visitors": 9, "by_source": {}}}})
+        self.assertEqual(out["sampleHeader"], ["Source", "Sample views", "Unique visitors",
+                                               "Signups started (any page)", "Accounts created (any page)"])
+        self.assertEqual(out["sampleRows"], [["l009-tommy-lorenzo", "4", "2", "1", "1"],
+                                             ["l012-unit-circle", "1", "1", "0", "0"]])
+        self.assertEqual(out["sampleTotal"], ["All sources", "5", "3", "", ""])
+
+    def test_no_sample_block_draws_no_sample_table(self):
+        for page_views in (None, {}, {"record-card": {"views": 1, "unique_visitors": 1, "by_source": {}}}):
+            funnel = {"start": "a", "end": "b", "steps": STEPS, "by_source": {}}
+            if page_views is not None:
+                funnel["page_views"] = page_views
+            out = self._render(funnel)
+            self.assertIsNone(out["sampleHeader"])
+            self.assertEqual(out["sampleRows"], [])
 
 
 if __name__ == "__main__":

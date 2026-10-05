@@ -17,15 +17,22 @@
  *   the label stays "Unproven".
  * - Pick the game. The server serves the one designated game or says there is none; this file never
  *   passes a date or a team, so no URL parameter can make it show another brief.
- * - Lose the source. An outreach link opens this page with utm_source / utm_medium / utm_campaign in
- *   the address; `captureFirstTouch` (the one implementation, attribution.js, the same call the
- *   landing page makes) stores them on load, first touch wins. The links below carry nothing: the
- *   landing page and the signup read the stored source, so a lead who read this page and signs up
- *   later is credited to the message that found them.
+ * - Lose the source, or the visit. An outreach link opens this page with utm_source / utm_medium /
+ *   utm_campaign in the address. `trackPublicPageView("sample")` (pageview.js, the one call the record
+ *   page and the postseason page make) stores them as the first touch (attribution.js's
+ *   `captureFirstTouch`, the same function the landing page calls; first touch wins) and sends ONE
+ *   `public_page_view` beacon carrying them, so a click-through shows up in GET /admin/funnel's
+ *   `page_views.sample` before anyone signs up. The links below carry nothing: the landing page and the
+ *   signup read the stored source, so a lead who read this page and signs up later is credited to the
+ *   message that found them.
+ * - Let the measuring break the page. The beacon is fire-and-forget and the whole call is guarded: a
+ *   blocked request or blocked storage leaves the page rendering exactly as it would have.
+ * - Send anything personal. The beacon is the page label "sample", the UTM tags and the visitor's
+ *   random id (api.js adds it); never the URL, the hash or the referrer's address.
  */
 
 import { apiGet } from "./api.js";
-import { captureFirstTouch } from "./attribution.js";
+import { trackPublicPageView } from "./pageview.js";
 import { el, formatEasternClock } from "./dom.js";
 import { renderAnalystSection } from "./analyst.js";
 import { renderDisclaimerFooter } from "./meta.js";
@@ -33,6 +40,9 @@ import { renderDisclaimerFooter } from "./meta.js";
 export const OFFER_LINE =
   "MLB postseason briefs are posted before first pitch. The first 20 testers are hand-picked: "
   + "7 days free, no card. Not on sale yet; planned price $19.99 a month. Analysis, not advice.";
+
+/** The `page` label of this page's public_page_view (api/funnel.py PAGE_LABEL_RE). */
+export const SAMPLE_PAGE = "sample";
 
 export const NONE_TEXT = "There is no sample brief to show right now.";
 
@@ -103,8 +113,9 @@ async function fetchSample() {
 }
 
 async function main() {
-  // Store the outreach link's source before anything else can fail.
-  try { captureFirstTouch(); } catch (err) { /* never break the page */ }
+  // Store the outreach link's source and count this load, before anything else can fail.
+  // trackPublicPageView never throws; the try is belt and braces for the page's sake.
+  try { trackPublicPageView(SAMPLE_PAGE); } catch (err) { /* never break the page */ }
   const outlet = document.querySelector("[data-hook='app-outlet']");
   const footer = document.querySelector("[data-hook='disclaimer-host']");
   if (footer) renderDisclaimerFooter(footer, { linkPrefix: "index.html" });

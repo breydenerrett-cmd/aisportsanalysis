@@ -354,6 +354,8 @@ export function renderFunnel(host, funnel) {
           + "They are listed under their source below." }));
   }
   wrap.appendChild(renderFunnelBySource(funnel.by_source));
+  const sample = renderSamplePageViews(funnel.page_views, funnel.by_source);
+  if (sample) wrap.appendChild(sample);
   host.appendChild(wrap);
 }
 
@@ -392,6 +394,46 @@ function renderFunnelBySource(bySource) {
     }
     body.appendChild(row);
   }
+  table.appendChild(body);
+  wrap.appendChild(table);
+  return wrap;
+}
+
+// DID THE PEOPLE I SENT THE SAMPLE TO OPEN IT. `page_views.sample` (api/funnel.py's
+// _page_views) is the public_page_view events of web/sample.html split by source, our own
+// internal-* test links already left out. Signups sit beside it from the SAME source's
+// `by_source` row: account_created counts that source on any page, not only people who read the
+// sample, and the header says so. Drawn only when the server sent the block (an older server
+// sends none) and the sample has been viewed at all.
+function renderSamplePageViews(pageViews, bySource) {
+  const sample = pageViews && pageViews.sample;
+  if (!sample || !sample.by_source) return null;
+  const wrap = el("div", { "data-hook": "admin-funnel-sample-views" });
+  wrap.appendChild(el("h3", { text: "Sample page by source" }));
+  const table = el("table", { class: "admin-funnel-table", "data-hook": "admin-funnel-sample-table" });
+  const head = el("tr");
+  for (const label of ["Source", "Sample views", "Unique visitors", "Signups started (any page)",
+                       "Accounts created (any page)"]) {
+    head.appendChild(el("th", { text: label }));
+  }
+  table.appendChild(el("thead", {}, [head]));
+  const body = el("tbody");
+  const sources = Object.keys(sample.by_source);
+  for (const source of sources) {
+    const mine = sample.by_source[source] || {};
+    const row = (bySource || {})[source] || {};
+    const tr = el("tr", { "data-hook": "admin-funnel-sample-source", "data-source": source });
+    for (const text of [source, mine.views, mine.unique_visitors, row.signup_started,
+                        row.account_created]) {
+      tr.appendChild(el("td", { text: String(text === undefined || text === null ? 0 : text) }));
+    }
+    body.appendChild(tr);
+  }
+  const total = el("tr", { "data-hook": "admin-funnel-sample-total" });
+  for (const text of ["All sources", sample.views, sample.unique_visitors, "", ""]) {
+    total.appendChild(el("td", { text: String(text === undefined ? 0 : text) }));
+  }
+  body.appendChild(total);
   table.appendChild(body);
   wrap.appendChild(table);
   return wrap;
