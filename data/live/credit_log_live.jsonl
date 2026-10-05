@@ -234,3 +234,5 @@
 {"budget_band": "live_odds", "caller": "live_odds.capture_inplay", "credits_remaining": null, "credits_used_last": 1, "utc": "2026-10-05T01:05:36.797884Z"}
 {"budget_band": "live_odds", "caller": "live_odds.capture_inplay", "credits_remaining": null, "credits_used_last": 1, "utc": "2026-10-05T01:06:37.515421Z"}
 {"budget_band": "live_odds", "caller": "live_odds.capture_inplay", "credits_remaining": null, "credits_used_last": 1, "utc": "2026-10-05T01:10:41.456553Z"}
+{"budget_band": "live_odds", "caller": "live_odds.capture_inplay", "credits_remaining": null, "credits_used_last": 1, "utc": "2026-10-05T21:11:40.164289Z"}
+{"budget_band": "live_odds", "caller": "live_odds.capture_inplay", "credits_remaining": null, "credits_used_last": 1, "utc": "2026-10-05T21:12:40.586580Z"}
