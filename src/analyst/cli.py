@@ -122,7 +122,8 @@ def add_parser(sub) -> None:
     prep.add_argument("--scratch", default=None,
                       help="write to this folder instead and mark it a rehearsal (it can be checked, "
                            "never published)")
-    chk = pilot_sub.add_parser("check", help="validate and run the checker on a response; publishes nothing")
+    chk = pilot_sub.add_parser("check", help="validate and run the checker on a response and record it as an "
+                                             "attempt (publication rule); publishes nothing")
     chk.add_argument("--dir", required=True, help="the prepared folder")
     chk.add_argument("--response", required=True, help="the JSON answer the session wrote")
     pub = pilot_sub.add_parser("publish", help="freeze a response into the pilot ledger")

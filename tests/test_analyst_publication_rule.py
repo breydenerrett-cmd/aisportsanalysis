@@ -303,7 +303,7 @@ class TheLedgerStillReadsOldRows(unittest.TestCase):
         copy.write_text("\n".join(lines[:len(keep)]) + "\n", encoding="utf-8")
         self.assertTrue(ledger.verify(str(copy), root=self.root)["ok"])
         pub = ledger.latest_published(ledger.rows(str(copy)))["ATL-LAD-2026-10-04-1"]
-        results = {pub["game_pk"]: {"away_score": "3", "home_score": "5"}}
+        results = {pub["game_pk"]: {"away_score": "3", "home_score": "5"}}   # invented, for the test only
         counts = ledger.grade_date("2026-10-04", results, [],
                                    now=datetime(2026, 10, 5, 12, tzinfo=timezone.utc), path=str(copy))
         self.assertEqual(counts["graded"], 1, counts)
