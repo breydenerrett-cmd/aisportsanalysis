@@ -1,0 +1,537 @@
+{
+ "summary": "I pass on most of this card and lean one way on a single prop. The one I like is Blake Snell Under 6.5 strikeouts at DraftKings at +120. His strikeout rate is strong, but he averages 4.741 innings per start and 3.556 over his last three, and clearing 6.5 needs length he has not been showing. Most other books price both sides near even, so the DraftKings quote is the outlier worth taking, with low confidence because we have nothing on his pitch count plan.\n\nThe moneyline is a pass: the Dodgers are -212 at the best price, which is past the line where we will not lay a price, and Atlanta at +199 is about what the books' own fair number says. The run line and the total are priced like coin flips and the data gives no angle the market has missed, so Under 8 and ATL +1.5 are passes too. Atlanta's starter Ray Kerr has a small sample, which is the biggest hole in what we have. The player props were quoted by only a few books well before first pitch, so I leave them alone.",
+ "calls": [
+  {
+   "slot_id": "moneyline",
+   "market": "moneyline",
+   "selection": "LAD",
+   "verdict": "PASS",
+   "price": -212,
+   "book": "draftkings",
+   "fair_estimate": null,
+   "confidence": "medium",
+   "reasons": [
+    {
+     "claim": "The best Dodgers price is -212, which is past the point where we will back a side, and the books' own fair number for them is 0.6677.",
+     "evidence": [
+      {
+       "path": "markets.moneyline.options[0].best.price",
+       "value": -212
+      },
+      {
+       "path": "markets.moneyline.options[0].fair_probability",
+       "value": 0.6677
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "Atlanta at +199 is priced about where the books' fair number of 0.3323 says it should be, and the data gives no clear reason the market is wrong, especially with Atlanta's starter on a small sample.",
+     "evidence": [
+      {
+       "path": "markets.moneyline.options[1].best.price",
+       "value": 199
+      },
+      {
+       "path": "markets.moneyline.options[1].fair_probability",
+       "value": 0.3323
+      },
+      {
+       "path": "sections.starters.values.away_sp_thin",
+       "value": true
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A confirmed Atlanta lineup or starter change that moves the picture would make us look again.",
+   "case_against": null
+  },
+  {
+   "slot_id": "run_line",
+   "market": "run_line",
+   "selection": "ATL +1.5",
+   "verdict": "PASS",
+   "price": -112,
+   "book": "lowvig",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The two sides are priced close to even, with the books' fair number at 0.5206 for Atlanta +1.5, and the data gives nothing here beyond the price itself.",
+     "evidence": [
+      {
+       "path": "markets.run_line.options[0].fair_probability",
+       "value": 0.5206
+      },
+      {
+       "path": "markets.run_line.options[0].best.price",
+       "value": -112
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "Atlanta's starter has a small sample and Los Angeles has the better run difference per game, so neither side has a clear edge to argue against a near coin-flip price.",
+     "evidence": [
+      {
+       "path": "sections.starters.values.away_sp_thin",
+       "value": true
+      },
+      {
+       "path": "sections.teams.values.home_run_diff_pg",
+       "value": 1.163
+      },
+      {
+       "path": "sections.teams.values.away_run_diff_pg",
+       "value": 0.804
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A late scratch or a lineup change on either side would change the read on the margin.",
+   "case_against": null
+  },
+  {
+   "slot_id": "total",
+   "market": "total",
+   "selection": "Under 8",
+   "verdict": "PASS",
+   "price": -110,
+   "book": "lowvig",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The total is priced as a near coin flip, with the books' fair number at 0.5109 for the Under, and the market is probably close to right.",
+     "evidence": [
+      {
+       "path": "markets.total.options[0].fair_probability",
+       "value": 0.5109
+      },
+      {
+       "path": "markets.total.options[1].fair_probability",
+       "value": 0.4891
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The forecast is hot at 94.6 degrees while Snell's numbers are strong, so the inputs pull in opposite directions and we do not have a clear side.",
+     "evidence": [
+      {
+       "path": "sections.weather.values.temp_f",
+       "value": 94.6
+      },
+      {
+       "path": "sections.starters.values.home_sp_era",
+       "value": 1.8984
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A confirmed bullpen availability shift or a lineup change that moves the run picture would make us look again.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_01",
+   "market": "prop",
+   "selection": "Under 6.5",
+   "verdict": "TAKE_OTHER_SIDE",
+   "price": 120,
+   "book": "draftkings",
+   "fair_estimate": 0.52,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "Snell averages 4.741 innings per start this season and 3.556 innings per start over his last three, so he has not been working deep enough to make clearing 6.5 strikeouts comfortable.",
+     "evidence": [
+      {
+       "path": "sections.starters.values.home_sp_ip_per_start",
+       "value": 4.741
+      },
+      {
+       "path": "sections.starters.values.home_sp_recent_ip_per_start",
+       "value": 3.556
+      },
+      {
+       "path": "sections.starters.values.home_sp_recent_starts",
+       "value": 3
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "DraftKings is the outlier quote on this line: it pays +120 on the Under while other books have the Under near even money, so the price is better than the books' fair number of 0.4741 suggests.",
+     "evidence": [
+      {
+       "path": "markets.prop_01.options[1].quotes[3].price",
+       "value": 120
+      },
+      {
+       "path": "markets.prop_01.options[1].quotes[5].price",
+       "value": -106
+      },
+      {
+       "path": "markets.prop_01.options[1].fair_probability",
+       "value": 0.4741
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "He is also coming off 8 days of rest after 9 starts totalling 42.67 innings, and nothing in the data says his pitch count is built up, so a short outing is a live outcome.",
+     "evidence": [
+      {
+       "path": "sections.starters.values.home_sp_days_rest",
+       "value": 8
+      },
+      {
+       "path": "sections.starters.values.home_sp_starts",
+       "value": 9
+      },
+      {
+       "path": "sections.starters.values.home_sp_innings",
+       "value": 42.67
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": -108,
+   "what_would_change_it": "A report of an extended pitch count for Snell, or the Under dropping to -108 or shorter, would end the case.",
+   "case_against": {
+    "claim": "Snell strikes batters out at a high rate, 11.6016 per nine innings, and the books' own fair number leans Over at 0.5259, so a few quick strikeouts early could get him there even in a short outing.",
+    "evidence": [
+     {
+      "path": "sections.starters.values.home_sp_k9",
+      "value": 11.6016
+     },
+     {
+      "path": "markets.prop_01.options[0].fair_probability",
+      "value": 0.5259
+     }
+    ],
+    "derived": []
+   }
+  },
+  {
+   "slot_id": "prop_02",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": -171,
+   "book": "draftkings",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "LineHound's own model has the Over at 0.6741 against the market's 0.5995, but only two books quote it and the quotes are old, so the gap rests on thin and stale information.",
+     "evidence": [
+      {
+       "path": "markets.prop_02.context.repo_model_probability",
+       "value": 0.6741
+      },
+      {
+       "path": "markets.prop_02.context.repo_market_probability",
+       "value": 0.5995
+      },
+      {
+       "path": "markets.prop_02.as_of",
+       "value": "2026-10-04T04:07:21Z"
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "Baldwin leads off and has hit in a high share of his 29 games, but he faces a left-hander with a 1.8984 ERA, and the price of -171 already charges for that.",
+     "evidence": [
+      {
+       "path": "markets.prop_02.context.season_rate",
+       "value": 0.7586
+      },
+      {
+       "path": "markets.prop_02.context.season_games",
+       "value": 29
+      },
+      {
+       "path": "sections.starters.values.home_sp_era",
+       "value": 1.8984
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "Fresh quotes from more books that still sit above the market's number would make this worth another look.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_03",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": -135,
+   "book": "bovada",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' fair number is 0.5478 from only a few older quotes, and the data gives nothing about this market beyond its own price.",
+     "evidence": [
+      {
+       "path": "markets.prop_03.options[0].fair_probability",
+       "value": 0.5478
+      },
+      {
+       "path": "markets.prop_03.as_of",
+       "value": "2026-10-04T04:07:21Z"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "Fresh quotes from more books, or a confirmed lineup change, would let us revisit this.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_04",
+   "market": "prop",
+   "selection": "Under 1.5",
+   "verdict": "PASS",
+   "price": -150,
+   "book": "williamhill_us",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' fair number is 0.5634 from only a few older quotes, and the data gives nothing about this market beyond its own price.",
+     "evidence": [
+      {
+       "path": "markets.prop_04.options[0].fair_probability",
+       "value": 0.5634
+      },
+      {
+       "path": "markets.prop_04.as_of",
+       "value": "2026-10-04T04:07:21Z"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "Fresh quotes from more books, or a confirmed lineup change, would let us revisit this.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_05",
+   "market": "prop",
+   "selection": "Under 1.5",
+   "verdict": "PASS",
+   "price": -150,
+   "book": "williamhill_us",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' fair number is 0.5683 from only a few older quotes, and the data gives nothing about this market beyond its own price.",
+     "evidence": [
+      {
+       "path": "markets.prop_05.options[0].fair_probability",
+       "value": 0.5683
+      },
+      {
+       "path": "markets.prop_05.as_of",
+       "value": "2026-10-04T04:07:21Z"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "Fresh quotes from more books, or a confirmed lineup change, would let us revisit this.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_06",
+   "market": "prop",
+   "selection": "Under 1.5",
+   "verdict": "PASS",
+   "price": -170,
+   "book": "williamhill_us",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' fair number is 0.5912 from only a few older quotes, and the data gives nothing about this market beyond its own price.",
+     "evidence": [
+      {
+       "path": "markets.prop_06.options[0].fair_probability",
+       "value": 0.5912
+      },
+      {
+       "path": "markets.prop_06.as_of",
+       "value": "2026-10-04T04:07:21Z"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "Fresh quotes from more books, or a confirmed lineup change, would let us revisit this.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_07",
+   "market": "prop",
+   "selection": "Under 1.5",
+   "verdict": "PASS",
+   "price": -159,
+   "book": "draftkings",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' fair number is 0.5754 from only a few older quotes, and the data gives nothing about this market beyond its own price.",
+     "evidence": [
+      {
+       "path": "markets.prop_07.options[0].fair_probability",
+       "value": 0.5754
+      },
+      {
+       "path": "markets.prop_07.as_of",
+       "value": "2026-10-04T04:07:21Z"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "Fresh quotes from more books, or a confirmed lineup change, would let us revisit this.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_08",
+   "market": "prop",
+   "selection": "Under 1.5",
+   "verdict": "PASS",
+   "price": -169,
+   "book": "draftkings",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' fair number is 0.5905 from only a few older quotes, and the data gives nothing about this market beyond its own price.",
+     "evidence": [
+      {
+       "path": "markets.prop_08.options[0].fair_probability",
+       "value": 0.5905
+      },
+      {
+       "path": "markets.prop_08.as_of",
+       "value": "2026-10-04T04:07:21Z"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "Fresh quotes from more books, or a confirmed lineup change, would let us revisit this.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_09",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": -130,
+   "book": "bovada",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' fair number is 0.5389 from only a few older quotes, and the data gives nothing about this market beyond its own price.",
+     "evidence": [
+      {
+       "path": "markets.prop_09.options[0].fair_probability",
+       "value": 0.5389
+      },
+      {
+       "path": "markets.prop_09.as_of",
+       "value": "2026-10-04T04:07:21Z"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "Fresh quotes from more books, or a confirmed lineup change, would let us revisit this.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_10",
+   "market": "prop",
+   "selection": "Under 1.5",
+   "verdict": "PASS",
+   "price": -173,
+   "book": "williamhill_us",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' fair number is 0.5973 from only a few older quotes, and the data gives nothing about this market beyond its own price.",
+     "evidence": [
+      {
+       "path": "markets.prop_10.options[0].fair_probability",
+       "value": 0.5973
+      },
+      {
+       "path": "markets.prop_10.as_of",
+       "value": "2026-10-04T04:07:21Z"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "Fresh quotes from more books, or a confirmed lineup change, would let us revisit this.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_11",
+   "market": "prop",
+   "selection": "Under 0.5",
+   "verdict": "PASS",
+   "price": -700,
+   "book": "draftkings",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The Under is priced at -700, which is past the -200 limit where we will back a side, and the books' fair number of 0.8282 already reflects that.",
+     "evidence": [
+      {
+       "path": "markets.prop_11.options[0].best.price",
+       "value": -700
+      },
+      {
+       "path": "markets.prop_11.options[0].fair_probability",
+       "value": 0.8282
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "Only a lineup change that puts Kim in a different batting spot would change this.",
+   "case_against": null
+  }
+ ],
+ "summary_derived": []
+}

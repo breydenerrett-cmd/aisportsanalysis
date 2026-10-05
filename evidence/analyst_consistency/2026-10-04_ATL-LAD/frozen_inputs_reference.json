@@ -1,0 +1,12 @@
+{
+  "note": "References to the frozen inputs all three answers were written against. The originals are published evidence and are not modified; frozen_request.json in this folder is a byte copy of request.json.",
+  "folder": "evidence/analyst_pilot/2026-10-04_ATL-LAD",
+  "game_id": "ATL-LAD-2026-10-04-1",
+  "packet_hash_canonical": "ccef506233663986cd6c37b35f91ebb50f706379b96b0692b00c32de89a06f38",
+  "files": {
+    "request.json": {"path": "evidence/analyst_pilot/2026-10-04_ATL-LAD/request.json", "sha256_of_file": "b5e1392c11f13382686c11651d77c69cce16c799265d6f54ec478056524f0843", "bytes": 67412},
+    "packet.json": {"path": "evidence/analyst_pilot/2026-10-04_ATL-LAD/packet.json", "sha256_of_file": "e58a8ba8854108f9ba8945c276858263535838ef5e2176dca793f9f466d32a77", "bytes": 79527},
+    "prepare.json": {"path": "evidence/analyst_pilot/2026-10-04_ATL-LAD/prepare.json", "sha256_of_file": "dd4f6d45bdb5684ea8c517e0fd89ef5338a4a9d8106deb166418efaa591a74f5", "bytes": 871}
+  },
+  "ledger_row": {"store": "evidence/analyst_pilot_v1.jsonl", "version": 2, "row_hash": "1e4e26f8624a5fb9dcbbc882986a89fdae415951b220107909d502ba6b712af3"}
+}
