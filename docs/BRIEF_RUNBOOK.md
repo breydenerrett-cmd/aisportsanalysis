@@ -54,6 +54,29 @@ remembered from an earlier session; the steps are complete.
 9. Verify both views: the public page `/web/sample.html`, and the signed-in game page as a tester.
 10. After the game: `python -m src.cli analyst grade --date YYYY-MM-DD`, commit, push.
 
+## Answering a prepared game: the publication rule (in force from 2026-10-05, enforced by code)
+
+The first answer is the candidate. Nobody picks among answers.
+
+1. The writer answers from `request.json` and nothing else. Run `pilot check` on the file; that
+   records attempt 1 in the folder (`attempts.jsonl`, `attempt_1.json`).
+2. If check is clean, publish it. Do not write another answer "to see if it differs": an answer
+   that follows a clean one is a reroll and `pilot publish` refuses it.
+3. If check rejects it, the writer may answer again, at most twice more (three attempts in all).
+   The only extra input is the rejection lines check printed, word for word. No hints, no earlier
+   answer pasted in, no saying which calls were kept. Expect unflagged calls to change: a
+   re-answer redraws the whole answer (this is how the Snell call changed on 2026-10-04).
+4. Publish the latest attempt only. `pilot publish` refuses a response that was never checked, one
+   that is not the latest attempt, one that follows an unrejected attempt, and a fourth attempt.
+   The row keeps `attempts` and `attempt_hashes`.
+5. Stability samples (extra answers for diagnosis) are drawn only after the brief is published,
+   are never offered to `pilot publish`, and are saved under
+   `evidence/analyst_consistency/<date>_<game>/` and compared with `scripts/analyst_consistency.py`.
+6. Preparing a game again freezes a new request and starts a new attempt count.
+
+Finding (docs/research/ANALYST_CONSISTENCY.md): the prompt gives no minimum gap between the model's
+estimate and the price, so the same reading can come out as a take or a pass.
+
 ## Which game
 
 Take the next game by first pitch that meets all of: it has not started; `prepare` does not print
