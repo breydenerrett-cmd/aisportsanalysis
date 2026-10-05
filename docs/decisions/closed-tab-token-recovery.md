@@ -1,5 +1,5 @@
 # Closed-tab token recovery (decision for the owner)
-Status: PROPOSED, not applied (review 2026-10-04). Patch:
+Status: DECIDED 2026-10-05, Option B NOT applied (proposed in the 2026-10-04 review). Patch:
 `closed-tab-token-recovery.patch` (web/js/signup.js only).
 
 ## Behaviour today
@@ -56,3 +56,22 @@ the node harnesses (60 s timeouts); the patch `unref`s the timer (Node only).
 Loosest pin: `test_checkout_to_card_web.py::test_the_session_id_is_removed_from_the_address_bar_after_use`
 only asserts `replaceState` exists (true under B). B needs new tests for the
 timer and the two immediate drops.
+
+## Decision 2026-10-05: Option B not applied
+
+The session id stays out of the address bar and the history the moment it has
+done its job (and now also on every other outcome of the page). Reason: for up
+to 10 minutes anyone who can see the history entry or the tab on a shared
+computer, a screen share or a copied URL could read a 366-day subscriber login,
+and the server cannot tell them from the buyer; the patch only helps the buyer
+who reopens the tab inside those 10 minutes.
+
+What replaced it (W02/W03): a buyer who comes back to `#/signup/complete` on a
+browser that holds a token is checked against the server (GET /billing/status)
+and shown "You're signed in."; a token the server refuses is cleared and the page
+says the purchase or trial is not lost, with Sign in and Get help; no token at
+all gets the same honest state instead of "No token was included in this link".
+Everyone else is recovered by support: `POST /admin/users/reissue`, a reason on
+the audit log, the replaced token revoked, the new token sent only to the
+mailbox on the account (docs/billing/RECOVERY_PROCEDURE.md). The patch file is
+kept for the record and must not be applied.

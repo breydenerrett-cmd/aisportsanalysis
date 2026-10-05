@@ -24,6 +24,34 @@ import { el, clear, renderError } from "./dom.js";
 const MAX_SUBJECT_LENGTH = 200;
 const MAX_BODY_LENGTH = 5000;
 
+/**
+ * LOCKED OUT: what to send, exactly. There is no email sender and no
+ * self-service way to get a lost access token back, so this is SUPPORT
+ * RECOVERY (docs/billing/RECOVERY_PROCEDURE.md): a person replies from the
+ * mailbox on the account and the new token goes only to that address. The page
+ * therefore asks for the account's address, says nothing is shown here, and
+ * says what is not enough, so nobody sends a card number or an old token and
+ * nobody expects a token in a chat. It claims no turnaround time: a person
+ * answers by hand.
+ */
+export const LOCKED_OUT_STEPS = [
+  "Write to us with the form below, from the email address your account uses. We answer only that address.",
+  "Put \"Locked out\" in the subject. Say whether you bought a plan or were given early access.",
+  "We send a new access token to that address. The old one stops working the moment we do.",
+  "Do not send a card number or an old token. An email address or a checkout number on its own is not enough, and we never send a token to a chat or a message.",
+];
+
+function lockedOutNote() {
+  const box = el("section", { class: "support-lockedout", "data-hook": "support-locked-out" });
+  box.appendChild(el("h2", { text: "Locked out of your account?" }));
+  box.appendChild(el("p", { text:
+    "If you lost your access token, or paid and never saw it, this is how we get you back in. "
+    + "It is done by hand, so it takes a person, not a button. Your purchase or trial is not lost." }));
+  box.appendChild(el("ol", { class: "support-lockedout__steps" },
+    LOCKED_OUT_STEPS.map((text) => el("li", { text }))));
+  return box;
+}
+
 export async function renderSupport(container) {
   clear(container);
   const section = el("section", { class: "support-view", "data-view": "support" });
@@ -32,6 +60,8 @@ export async function renderSupport(container) {
   // saying what it was for or what happens next (read on 2026-09-12).
   section.appendChild(el("p", { class: "support__intro", "data-hook": "support-intro",
     text: "A question about a pick, a number that looks wrong, or something broken? Write it here and we reply by email." }));
+
+  section.appendChild(lockedOutNote());
 
   const isAuthed = Boolean(getToken());
   const form = el("form", { class: "support-form", "data-hook": "support-form" });

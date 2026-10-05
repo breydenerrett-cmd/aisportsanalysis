@@ -42,6 +42,7 @@ once, and never put a token, an email or a reason into an event.
 
 from __future__ import annotations
 
+import re
 import sys
 from collections import Counter
 from datetime import datetime, timezone
@@ -58,6 +59,7 @@ from src.appstate import apphealth
 from src.appstate import billing
 from src.appstate import customers
 from src.appstate import events
+from src.appstate import tester_upgrade
 from src.appstate import testers
 from src.appstate import users as users_store
 
@@ -251,7 +253,12 @@ def reissue_subscriber_token(body: ReissueTokenRequest,
       6. The event `support_token_reissued` records that it happened, not it.
 
     Paid access is customers.has_paid_access (trialing counts); the token
-    lives billing.SUBSCRIBER_TOKEN_TTL. The token is never logged here."""
+    lives billing.SUBSCRIBER_TOKEN_TTL. The token is never logged here.
+
+    SUPERSEDED for support recovery by POST /admin/users/reissue (below): that
+    route also covers testers, requires a reason and writes it to the audit
+    log. This one is kept unchanged for the callers and tests that already
+    use it; docs/billing/RECOVERY_PROCEDURE.md names only the newer route."""
     if (body.email is None) == (body.user_id is None):
         raise HTTPException(status_code=400,
                             detail="send exactly one of email or user_id")
@@ -273,6 +280,134 @@ def reissue_subscriber_token(body: ReissueTokenRequest,
                              {"revoked_tokens": revoked})
     return {"user_id": user.id, "email": user.email, "token": raw_token,
             "revoked_tokens": revoked}
+
+
+class ReissueAccessRequest(BaseModel):
+    """Exactly one of `email` or `user_id`, and a `reason` (always)."""
+    email: Optional[str] = None
+    user_id: Optional[int] = None
+    reason: Optional[str] = None
+
+
+# A reason is a note ("verified by reply from the account mailbox, ticket 41"),
+# not an essay and not a place to paste the credential it is about.
+REISSUE_REASON_MAX = 500
+_LOOKS_LIKE_A_TOKEN = re.compile(r"[A-Za-z0-9_-]{32,}")
+
+# ONE refusal for every reason a re-issue cannot happen -- no such account, a
+# waitlisted signup, a lapsed subscriber, a suspended user, a tester with a
+# subscription record. The admin is the caller, but what an admin reads out in
+# a chat or a ticket must never tell the asker whether an address has an
+# account. The admin page shows the real state; this answer does not.
+REISSUE_REFUSED = {"error": "reissue_refused",
+                   "message": "no token was issued: this request does not match an "
+                              "account that can be given one"}
+
+
+def _reissue_plan(user: Optional[users_store.User]):
+    """(kind, token end) for an account support may re-issue for, else None.
+
+    subscriber: customers.has_paid_access (trialing counts), the usual
+        subscriber token lifetime. The subscription record is never written.
+    tester: a `testers` row, no subscription record, not suspended. The token
+        ends exactly where the tester window ends (testers.expires_at): a
+        re-issue replaces a lost credential, it does not grant the week again
+        (that is POST /admin/testers/extend, which needs feedback to justify
+        it). An ENDED window yields a token already past its end, which opens
+        nothing but identifies the person to POST /billing/tester-checkout, the
+        door an expired tester converts through.
+    Anything else (a lapsed subscriber, a waitlisted signup, a suspended
+    account) is None: the same stance as POST /admin/users/token, "do not work
+    around it"."""
+    if user is None or user.status == "suspended":
+        return None
+    now = datetime.now(timezone.utc)
+    if customers.has_paid_access(user.id, now):
+        return "subscriber", now + billing.SUBSCRIBER_TOKEN_TTL
+    if customers.get_subscription_record(user.id) is not None:
+        return None
+    window = tester_upgrade.tester_window(user.id)
+    try:
+        ends = datetime.fromisoformat(window["expires_at"]) if window else None
+    except (TypeError, ValueError):
+        ends = None
+    if ends is None:
+        return None
+    return "tester", (ends if ends.tzinfo else ends.replace(tzinfo=timezone.utc))
+
+
+@router.post("/admin/users/reissue")
+def reissue_access_token(body: ReissueAccessRequest,
+                         _admin: None = Depends(_require_admin)) -> dict:
+    """SUPPORT RECOVERY, NOT SELF-SERVICE: replace the access token of a paying
+    subscriber or an early-access tester who has lost theirs. There is no email
+    sender, so this is the only way back for a buyer who closed the checkout tab
+    before the token was read, let the 10-minute re-read window pass, or opens
+    the product on another device (docs/billing/RECOVERY_PROCEDURE.md).
+
+    SUPPORT PROCEDURE (the one-page version; the full one is that document):
+      1. Ownership is proven by the MAILBOX: the request must come from the
+         account's own address, and the answer goes ONLY to that address. An
+         email, a checkout id or a name in a chat or DM proves nothing.
+      2. POST here with X-Admin-Token and {"email" | "user_id", "reason"}. The
+         reason is required (what was verified, which ticket) and is written to
+         the audit log.
+      3. 409 `reissue_refused` is one answer for every kind of "no": do not work
+         around it and do not tell the asker which kind it was.
+      4. The response carries the raw token ONCE. Send it to the account's
+         address; never paste it into a ticket, a chat or a log.
+      5. Every earlier token of that user is revoked in the same transaction as
+         the new one is minted. Neither the tester window nor paid_through is
+         touched.
+
+    AUDIT: one `support_token_reissued` event in the events table (the existing
+    log, keyed by the user's hash) carrying `reason`, `kind`, `revoked_tokens`,
+    never a token or an email. It is written BEFORE anything changes and a
+    failure to write it (503) leaves the accounts exactly as they were: an
+    unlogged issue is not allowed to happen. The reason is checked before any
+    account is looked up, so a missing reason says nothing about whether the
+    account exists.
+    """
+    if (body.email is None) == (body.user_id is None):
+        raise HTTPException(status_code=400,
+                            detail="send exactly one of email or user_id")
+    why = (body.reason or "").strip()
+    if not why:
+        raise HTTPException(status_code=400, detail={
+            "error": "reason_required",
+            "message": "say what was verified and for which ticket"})
+    if len(why) > REISSUE_REASON_MAX:
+        raise HTTPException(status_code=400, detail={
+            "error": "reason_too_long",
+            "message": f"keep the reason under {REISSUE_REASON_MAX} characters"})
+    if _LOOKS_LIKE_A_TOKEN.search(why):
+        raise HTTPException(status_code=400, detail={
+            "error": "reason_looks_like_a_secret",
+            "message": "the reason is stored in a log; do not paste a token or key into it"})
+    if body.email is not None:
+        user = users_store.get_user_by_email(body.email.strip().lower())
+    else:
+        user = users_store.get_user(body.user_id)
+    plan = _reissue_plan(user)
+    if plan is None:
+        raise HTTPException(status_code=409, detail=dict(REISSUE_REFUSED))
+    kind, ends_at = plan
+    # The audit row first, into the SAME database file the tokens live in.
+    try:
+        events.record_event(
+            events.hash_user_id(user.id), events.SUPPORT_TOKEN_REISSUED,
+            {"action": "reissue", "kind": kind, "reason": why,
+             "revoked_tokens": users_store.count_unrevoked_tokens(user.id)},
+            db=users_store.db_path())
+    except Exception as exc:  # noqa: BLE001 -- see docstring: fail closed
+        print(f"admin: reissue audit write failed, nothing issued: {exc!r}",
+              file=sys.stderr, flush=True)
+        raise HTTPException(status_code=503, detail={
+            "error": "audit_log_unavailable",
+            "message": "the audit log could not be written, so nothing was issued"})
+    raw_token, revoked = users_store.reissue_token(user.id, expires_at=ends_at)
+    return {"user_id": user.id, "email": user.email, "token": raw_token, "kind": kind,
+            "expires_at": ends_at.isoformat(), "revoked_tokens": revoked}
 
 
 # ---------------------------------------------------------------------------
@@ -344,6 +479,10 @@ def grant_tester_access(body: TesterGrantRequest,
 def extend_tester_access(body: TesterExtendRequest,
                          _admin: None = Depends(_require_admin)) -> dict:
     """Another 7 days for an existing tester, with the reason it was earned.
+
+    NOT the lost-token door: a tester who only lost the token is re-issued one
+    with POST /admin/users/reissue, which keeps the window and revokes the lost
+    token. Extending is for feedback that earned more time.
 
     Issues a NEW token; older tokens keep their own expiry (nothing is revoked)
     and no further slot is used. `reason` is required: what feedback justified

@@ -452,8 +452,23 @@ class DayEight(_Journey):
 # ===========================================================================
 
 class LostToken(_Journey):
+    """A tester who loses the token. TWO different doors, kept apart on purpose:
 
-    def test_the_only_door_is_extend_by_user_id_with_a_reason_and_it_uses_no_slot(self):
+    * POST /admin/testers/extend is an EARNED extension: another seven days, a
+      reason about the feedback that earned it, the old tokens left to run out.
+    * POST /admin/users/reissue is the LOST-TOKEN door (support recovery, not
+      self-service; docs/billing/RECOVERY_PROCEDURE.md): a new token that ends
+      exactly where the old window ends, every replaced token revoked, a reason
+      in the audit log. Before 2026-10-05 the only door was extend, which handed
+      out a fresh free week and left the lost token alive; those two defects were
+      expectedFailure tests here and are now plain passes against the re-issue.
+    """
+
+    def reissue(self, **body):
+        body.setdefault("reason", "lost the token; verified by reply from the account mailbox")
+        return self.call("POST", "/admin/users/reissue", admin=True, body=body)
+
+    def test_extend_is_still_an_earned_extension_by_user_id_with_a_reason_and_uses_no_slot(self):
         grant = self.grant("a@example.test")
         uid = grant["user_id"]
         status, body = self.call("POST", "/admin/users/token", admin=True, body={"email": "a@example.test"})
@@ -463,35 +478,42 @@ class LostToken(_Journey):
         self.assertEqual(self.call("POST", "/admin/testers/extend", admin=True,
                                    body={"email": "a@example.test", "reason": "lost it"})[0], 400)
         status, fresh = self.call("POST", "/admin/testers/extend", admin=True,
-                                  body={"user_id": uid, "reason": "lost the token"})
+                                  body={"user_id": uid, "reason": "sent three specific problems"})
         self.assertEqual(status, 200)
         self.assertEqual((fresh["testers_granted"], fresh["extension_number"]), (1, 1))
+        self.assertGreater(datetime.fromisoformat(fresh["expires_at"]),
+                           datetime.fromisoformat(grant["expires_at"]))
         self.assertEqual(self.call("GET", f"/games/{self.date}", token=fresh["token"])[0], 200)
         self.assertEqual(self.call("GET", "/admin/testers", admin=True)[1]["remaining"], 19)
 
-    def test_after_the_week_ended_a_re_issued_token_works_and_the_old_one_is_a_plain_401(self):
+    def test_after_the_week_ended_an_extension_works_and_the_old_token_is_a_plain_401(self):
         grant = self.grant("a@example.test")
         self.expire(grant["user_id"])
         fresh = self.call("POST", "/admin/testers/extend", admin=True,
-                          body={"user_id": grant["user_id"], "reason": "lost the token"})[1]
+                          body={"user_id": grant["user_id"], "reason": "sent three specific problems"})[1]
         self.assertEqual(self.call("GET", f"/games/{self.date}", token=fresh["token"])[0], 200)
         status, body = self.call("GET", f"/games/{self.date}", token=grant["token"])
         self.assertEqual((status, body["detail"]["error"]), (401, "unauthorized"))
 
-    @unittest.expectedFailure
     def test_re_sending_a_lost_token_does_not_hand_out_another_week(self):
         grant = self.grant("a@example.test")
-        fresh = self.call("POST", "/admin/testers/extend", admin=True,
-                          body={"user_id": grant["user_id"], "reason": "lost the token"})[1]
-        self.assertLessEqual(datetime.fromisoformat(fresh["expires_at"]),
-                             datetime.fromisoformat(grant["expires_at"]))
+        status, fresh = self.reissue(user_id=grant["user_id"])
+        self.assertEqual(status, 200, fresh)
+        self.assertEqual(datetime.fromisoformat(fresh["expires_at"]),
+                         datetime.fromisoformat(grant["expires_at"]))
+        row = self.row_for(grant["user_id"])
+        self.assertEqual(datetime.fromisoformat(row["expires_at"]),
+                         datetime.fromisoformat(grant["expires_at"]))
+        self.assertEqual(row["extensions"], [])
+        self.assertEqual(self.call("GET", f"/games/{self.date}", token=fresh["token"])[0], 200)
 
-    @unittest.expectedFailure
     def test_re_sending_a_lost_token_revokes_the_lost_one(self):
         grant = self.grant("a@example.test")
-        self.call("POST", "/admin/testers/extend", admin=True,
-                  body={"user_id": grant["user_id"], "reason": "lost the token"})
-        self.assertEqual(self.call("GET", f"/games/{self.date}", token=grant["token"])[0], 401)
+        self.assertEqual(self.call("GET", f"/games/{self.date}", token=grant["token"])[0], 200)
+        status, fresh = self.reissue(email="a@example.test")
+        self.assertEqual((status, fresh["revoked_tokens"]), (200, 1))
+        status, body = self.call("GET", f"/games/{self.date}", token=grant["token"])
+        self.assertEqual((status, body["detail"]["error"]), (401, "unauthorized"))
 
     def test_the_guide_says_what_the_owner_does_when_a_tester_loses_the_token(self):
         guide = _read(ROOT / "docs" / "sales" / "DISCOVERY_GUIDE.md")

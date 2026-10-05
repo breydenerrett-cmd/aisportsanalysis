@@ -55,7 +55,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Iterator, List, Optional
+from typing import Iterator, List, Optional, Tuple
 
 from src import paths
 
@@ -431,6 +431,46 @@ def revoke_all_tokens(user_id: int, *, db: Optional[Path] = None) -> int:
             "WHERE user_id = ? AND revoked_at IS NULL",
             (_now_iso(), user_id))
         return cur.rowcount
+
+
+def count_unrevoked_tokens(user_id: int, *, db: Optional[Path] = None) -> int:
+    """How many of user_id's tokens `revoke_all_tokens` / `reissue_token` would
+    revoke right now (expired ones count: they are not revoked). Read first by
+    the support re-issue so its audit record can be written BEFORE anything is
+    changed -- see api/admin.py reissue_access_token."""
+    with _connect(db) as conn:
+        return conn.execute(
+            "SELECT COUNT(*) FROM tokens WHERE user_id = ? AND revoked_at IS NULL",
+            (user_id,)).fetchone()[0]
+
+
+def reissue_token(user_id: int, *, expires_at: datetime,
+                  now: Optional[datetime] = None,
+                  db: Optional[Path] = None) -> Tuple[str, int]:
+    """Replace every token of user_id with ONE new token that ends at exactly
+    `expires_at`; returns (RAW token, how many old tokens were revoked).
+
+    The revoke and the insert are one transaction: a crash leaves the person
+    with their old tokens, never with none and never with two. `expires_at` is
+    the caller's to decide and is the whole point of this function over
+    `revoke_all_tokens` + `issue_invite_token`: a re-issue replaces a lost
+    credential, it must not move the end of what the person was given. A
+    tester's token ends at the tester window (testers.expires_at), a
+    subscriber's at the usual subscriber lifetime. A time already in the past
+    is allowed on purpose: an EXPIRED tester who lost their token needs one
+    that authenticates nothing but still identifies them to
+    POST /billing/tester-checkout (src/appstate/tester_upgrade.py).
+
+    Nothing here touches users.status, testers or any billing table."""
+    when = now or datetime.now(timezone.utc)
+    with _connect(db) as conn:
+        cur = conn.execute(
+            "UPDATE tokens SET revoked_at = ? "
+            "WHERE user_id = ? AND revoked_at IS NULL",
+            (when.isoformat(), user_id))
+        revoked = cur.rowcount
+        raw_token = insert_token(conn, user_id, ttl=expires_at - when, now=when)
+    return raw_token, revoked
 
 
 def authenticate(raw_token: str, *, db: Optional[Path] = None,
