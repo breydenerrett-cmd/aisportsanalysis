@@ -2729,3 +2729,7 @@
 {"fetched_utc": "2026-10-05T03:32:00.619633+00:00", "game_date": "2026-10-04", "poll": true}
 {"fetched_utc": "2026-10-05T03:43:11.936100+00:00", "game_date": "2026-10-04", "poll": true}
 {"fetched_utc": "2026-10-05T03:56:02.279419+00:00", "game_date": "2026-10-04", "poll": true}
+{"fetched_utc": "2026-10-05T04:09:05.175607+00:00", "game_date": "2026-10-05", "poll": true}
+{"away_probable_id": 641743, "fetched_utc": "2026-10-05T04:09:05.175607+00:00", "game_pk": 849834, "home_probable_id": 668909}
+{"away_probable_id": 693645, "fetched_utc": "2026-10-05T04:09:05.175607+00:00", "game_pk": 849839, "home_probable_id": 642547}
+{"fetched_utc": "2026-10-05T04:09:06.774054+00:00", "game_date": "2026-10-05", "poll": true}
