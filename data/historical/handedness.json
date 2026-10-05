@@ -4,6 +4,11 @@
   "name": "Miguel Cabrera",
   "throws": "R"
  },
+ "434378": {
+  "bats": "R",
+  "name": "Justin Verlander",
+  "throws": "R"
+ },
  "443558": {
   "bats": "R",
   "name": "Nelson Cruz",
@@ -113,6 +118,11 @@
   "bats": "R",
   "name": "Miguel Rojas",
   "throws": "R"
+ },
+ "500779": {
+  "bats": "R",
+  "name": "Jose Quintana",
+  "throws": "L"
  },
  "500871": {
   "bats": "S",
@@ -6579,6 +6589,11 @@
   "name": "Mitch Spence",
   "throws": "R"
  },
+ "687792": {
+  "bats": "R",
+  "name": "DJ Herz",
+  "throws": "L"
+ },
  "687799": {
   "bats": "L",
   "name": "Cade Marlowe",
@@ -6719,6 +6734,11 @@
   "name": "David Sandlin",
   "throws": "R"
  },
+ "689981": {
+  "bats": "R",
+  "name": "River Ryan",
+  "throws": "R"
+ },
  "690022": {
   "bats": "R",
   "name": "Ryan Ritter",
@@ -6828,6 +6848,11 @@
   "bats": "S",
   "name": "Jasson Dom\u00ednguez",
   "throws": "R"
+ },
+ "691181": {
+  "bats": "L",
+  "name": "Emmanuel Rodriguez",
+  "throws": "L"
  },
  "691182": {
   "bats": "S",
@@ -6972,6 +6997,11 @@
  "693304": {
   "bats": "R",
   "name": "Nick Gonzales",
+  "throws": "R"
+ },
+ "693306": {
+  "bats": "R",
+  "name": "Aaron Sabato",
   "throws": "R"
  },
  "693307": {
@@ -7874,6 +7904,11 @@
   "name": "Luis Lara",
   "throws": "R"
  },
+ "800543": {
+  "bats": "L",
+  "name": "Josue De Paula",
+  "throws": "L"
+ },
  "800600": {
   "bats": "L",
   "name": "Jackson Kent",
@@ -8154,6 +8189,11 @@
   "name": "Jonah Cox",
   "throws": "R"
  },
+ "814154": {
+  "bats": "L",
+  "name": "Scott Bandura",
+  "throws": "R"
+ },
  "814305": {
   "bats": "R",
   "name": "Yunior Tur",
@@ -8183,6 +8223,11 @@
   "bats": "L",
   "name": "Mitch Farris",
   "throws": "L"
+ },
+ "815589": {
+  "bats": "L",
+  "name": "Bo Davidson",
+  "throws": "R"
  },
  "815873": {
   "bats": "L",
