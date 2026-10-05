@@ -68,8 +68,10 @@ import concurrent.futures
 import json
 import os
 import re
+import signal
 import subprocess
 import sys
+import threading
 import time
 from pathlib import Path
 
@@ -90,6 +92,18 @@ try:
 except Exception:  # pragma: no cover -- heartbeat is optional, never fatal
     def foundry_beat(*args, **kwargs):  # type: ignore[no-redef]
         pass
+
+# Modules that spawn bash/git subprocesses with hard wall-clock timeouts
+# (8 s, 30 s, 120 s). Run beside 20+ other busy workers they time out for
+# reasons that have nothing to do with the code (2026-10-04: a full run printed
+# nothing for 60 minutes). They are taken OUT of the parallel shards and run
+# afterwards, ALONE, one at a time. Override with --serial-modules, disable
+# with --no-serial.
+DEFAULT_SERIAL_MODULES = ("tests.test_daily_bootstrap",
+                          "tests.test_capture_no_set_time")
+
+HEARTBEAT_SECONDS = 60.0  # periodic "still running" line while shards run
+TIMEOUT_RETURNCODE = 124  # `timeout(1)` convention
 
 _RAN_RE = re.compile(r"^Ran (\d+) tests? in ([\d.]+)s", re.MULTILINE)
 _STATUS_RE = re.compile(r"^(OK|FAILED)\b(?:\s*\(([^)]*)\))?", re.MULTILINE)
@@ -163,27 +177,30 @@ def shard_modules(modules: list[str], n_workers: int,
     return shards
 
 
-def run_shard(modules: list[str]) -> dict:
-    """Run one worker's modules in a single `unittest -q` invocation.
+def normalize_module(name: str) -> str:
+    """`test_x`, `tests.test_x` and `test_x.py` all become `tests.test_x`."""
+    return "tests." + name.strip().removeprefix("tests.").removesuffix(".py")
 
-    One process per shard (not per module) -- see module docstring, "WHY
-    SHARD BY MODULE, NOT BY INDIVIDUAL TEST" for why modules are the grain,
-    and this is what keeps interpreter-startup overhead to N processes
-    total instead of one per module.
+
+def partition_serial(modules: list[str],
+                     serial: list[str] | tuple[str, ...]
+                     ) -> tuple[list[str], list[str]]:
+    """Split `modules` into (parallel, serial_to_run_alone).
+
+    Only serial modules that are actually in `modules` are returned (a
+    `--modules` subset or an exclude file may drop them), in the order the
+    serial list names them. Pure function: no I/O.
     """
-    if not modules:
-        return {"modules": [], "returncode": 0, "tests": 0, "failures": 0,
-                 "errors": 0, "skipped": 0, "seconds": 0.0, "output": ""}
-    start = time.perf_counter()
-    proc = subprocess.run(
-        [sys.executable, "-m", "unittest", "-q", *modules],
-        cwd=REPO_ROOT,
-        capture_output=True,
-        text=True,
-        env=_CLEAN_ENV,
-    )
-    elapsed = time.perf_counter() - start
-    text = proc.stderr
+    wanted = [normalize_module(m) for m in serial]
+    present = set(modules)
+    serial_run = [m for m in dict.fromkeys(wanted) if m in present]
+    drop = set(serial_run)
+    parallel = [m for m in modules if m not in drop]
+    return parallel, serial_run
+
+
+def parse_unittest_output(text: str) -> dict:
+    """Pull Ran N / failures / errors / skipped out of a `unittest -q` tail."""
     tests = failures = errors = skipped = 0
     ran = _RAN_RE.search(text)
     if ran:
@@ -204,11 +221,195 @@ def run_shard(modules: list[str]) -> dict:
                 errors = int(val)
             elif key.strip() == "skipped":
                 skipped = int(val)
+    return {"tests": tests, "failures": failures, "errors": errors,
+            "skipped": skipped}
+
+
+def aggregate_results(parallel_results: list[dict],
+                      serial_results: list[dict]) -> dict:
+    """Summary arithmetic: totals over BOTH phases, broken list, exit verdict.
+
+    A result is broken if its returncode != 0 (this includes timeouts, which
+    carry TIMEOUT_RETURNCODE). Pure function: unit-tested with fake results.
+    """
+    every = list(parallel_results) + list(serial_results)
     return {
-        "modules": modules, "returncode": proc.returncode, "tests": tests,
-        "failures": failures, "errors": errors, "skipped": skipped,
-        "seconds": round(elapsed, 3), "output": proc.stdout + proc.stderr,
+        "total_tests": sum(r["tests"] for r in every),
+        "failures": sum(r["failures"] for r in every),
+        "errors": sum(r["errors"] for r in every),
+        "skipped": sum(r["skipped"] for r in every),
+        "timeouts": sum(1 for r in every if r.get("timed_out")),
+        "broken": [r for r in every if r["returncode"] != 0],
+        "parallel_tests": sum(r["tests"] for r in parallel_results),
+        "serial_tests": sum(r["tests"] for r in serial_results),
     }
+
+
+def _hb(msg: str) -> None:
+    """Heartbeat line. stderr, flushed, `[hb]`-prefixed so it can never be
+    mistaken for a `Ran N tests` / `FAIL:` / `OK:` / `FAILED:` line."""
+    print(f"[hb {time.strftime('%H:%M:%S')}] {msg}", file=sys.stderr, flush=True)
+
+
+_ACTIVE: dict[str, tuple[subprocess.Popen, float, list[str]]] = {}
+_ACTIVE_LOCK = threading.Lock()
+
+
+def _kill_tree(proc: subprocess.Popen) -> None:
+    """Kill `proc` and its children (the shell-script tests spawn bash/git)."""
+    try:
+        if os.name == "nt":
+            subprocess.run(["taskkill", "/PID", str(proc.pid), "/T", "/F"],
+                           capture_output=True)
+        else:
+            os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+    except Exception:
+        pass
+    try:
+        proc.kill()
+    except Exception:
+        pass
+
+
+def run_shard(modules: list[str], label: str = "shard") -> dict:
+    """Run one worker's modules in a single `unittest -q` invocation.
+
+    One process per shard (not per module) -- see module docstring, "WHY
+    SHARD BY MODULE, NOT BY INDIVIDUAL TEST" for why modules are the grain,
+    and this is what keeps interpreter-startup overhead to N processes
+    total instead of one per module.
+
+    Emits a heartbeat line when the group starts and when it finishes (with
+    seconds). The live Popen is registered in _ACTIVE so the overall timeout
+    can name and kill what is still running.
+    """
+    if not modules:
+        return {"modules": [], "returncode": 0, "tests": 0, "failures": 0,
+                 "errors": 0, "skipped": 0, "seconds": 0.0, "output": "",
+                 "timed_out": False, "label": label}
+    _hb(f"{label} started: {len(modules)} module(s): {', '.join(modules)}")
+    start = time.perf_counter()
+    popen_kwargs = {}
+    if os.name != "nt":
+        popen_kwargs["start_new_session"] = True
+    proc = subprocess.Popen(
+        [sys.executable, "-m", "unittest", "-q", *modules],
+        cwd=REPO_ROOT, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        text=True, env=_CLEAN_ENV, **popen_kwargs)
+    with _ACTIVE_LOCK:
+        _ACTIVE[label] = (proc, time.perf_counter(), modules)
+    try:
+        stdout, stderr = proc.communicate()
+    finally:
+        with _ACTIVE_LOCK:
+            _ACTIVE.pop(label, None)
+    elapsed = time.perf_counter() - start
+    killed = bool(getattr(proc, "_tp_killed", False))
+    parsed = parse_unittest_output(stderr or "")
+    returncode = TIMEOUT_RETURNCODE if killed else proc.returncode
+    out = (stdout or "") + (stderr or "")
+    if killed:
+        out += (f"\nTIMED OUT: {label} was killed after {elapsed:.0f}s by the "
+                "overall --timeout-minutes limit.\n")
+    _hb(f"{label} finished in {elapsed:.1f}s: {parsed['tests']} tests "
+        f"[{'TIMED OUT' if killed else ('OK' if returncode == 0 else 'FAILED')}]")
+    return {"modules": modules, "returncode": returncode, **parsed,
+            "seconds": round(elapsed, 3), "output": out,
+            "timed_out": killed, "label": label}
+
+
+def _kill_all_active() -> list[tuple[str, float, list[str]]]:
+    """Kill every registered shard; return (label, seconds_running, modules)."""
+    with _ACTIVE_LOCK:
+        snapshot = [(lab, proc, t0, mods)
+                    for lab, (proc, t0, mods) in _ACTIVE.items()]
+    now = time.perf_counter()
+    named = []
+    for lab, proc, t0, mods in snapshot:
+        proc._tp_killed = True  # type: ignore[attr-defined]
+        _kill_tree(proc)
+        named.append((lab, now - t0, mods))
+    return named
+
+
+def run_parallel_phase(shards: list[list[str]], n_workers: int,
+                       deadline: float | None,
+                       runner=run_shard) -> tuple[list[dict], list[str]]:
+    """Run shards concurrently; periodic heartbeat; honour `deadline`.
+
+    Returns (results_in_shard_order, timed_out_report_lines). `deadline` is a
+    time.perf_counter() value or None. `runner(modules, label=...)` is
+    injectable for tests.
+    """
+    results: dict[int, dict] = {}
+    report: list[str] = []
+    if not shards:
+        return [], report
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, n_workers)) as pool:
+        futures = {pool.submit(runner, mods, label=f"worker {i}"): i
+                   for i, mods in enumerate(shards)}
+        pending = set(futures)
+        t_phase = time.perf_counter()
+        killed_already = False
+        while pending:
+            wait_for = HEARTBEAT_SECONDS
+            if deadline is not None:
+                wait_for = max(0.0, min(wait_for, deadline - time.perf_counter()))
+            done, pending = concurrent.futures.wait(
+                pending, timeout=wait_for,
+                return_when=concurrent.futures.FIRST_COMPLETED)
+            for f in done:
+                results[futures[f]] = f.result()
+            if not pending:
+                break
+            if (deadline is not None and time.perf_counter() >= deadline
+                    and not killed_already):
+                killed_already = True
+                for lab, secs, mods in _kill_all_active():
+                    report.append(f"{lab} still running after {secs:.0f}s: "
+                                  f"{', '.join(mods)}")
+                continue  # loop again to collect the killed (now finished) futures
+            if not done and not killed_already:
+                with _ACTIVE_LOCK:
+                    live = [(lab, time.perf_counter() - t0)
+                            for lab, (_p, t0, _m) in _ACTIVE.items()]
+                _hb(f"{len(pending)} shard(s) still running after "
+                    f"{time.perf_counter() - t_phase:.0f}s: "
+                    + ", ".join(f"{lab} ({secs:.0f}s)" for lab, secs in sorted(live)))
+    return [results[i] for i in range(len(shards))], report
+
+
+def run_serial_phase(serial_modules: list[str], deadline: float | None,
+                     runner=run_shard) -> tuple[list[dict], list[str]]:
+    """Run each serial module ALONE, one after another, in this thread."""
+    results: list[dict] = []
+    report: list[str] = []
+    for i, mod in enumerate(serial_modules):
+        label = f"serial {i + 1}/{len(serial_modules)}"
+        if deadline is not None and time.perf_counter() >= deadline:
+            report.append(f"{label}: not started, overall timeout reached: {mod}")
+            results.append({"modules": [mod], "returncode": TIMEOUT_RETURNCODE,
+                            "tests": 0, "failures": 0, "errors": 0,
+                            "skipped": 0, "seconds": 0.0, "timed_out": True,
+                            "label": label,
+                            "output": "NOT STARTED: overall timeout reached.\n"})
+            continue
+        timer = None
+        if deadline is not None:
+            def _expire():
+                for lab, secs, mods in _kill_all_active():
+                    report.append(f"{lab} still running after {secs:.0f}s: "
+                                  f"{', '.join(mods)}")
+            timer = threading.Timer(max(0.0, deadline - time.perf_counter()),
+                                    _expire)
+            timer.daemon = True
+            timer.start()
+        try:
+            results.append(runner([mod], label=label))
+        finally:
+            if timer is not None:
+                timer.cancel()
+    return results, report
 
 
 def check_forward_stores_unchanged(baseline: dict) -> tuple[bool, str]:
@@ -248,7 +449,7 @@ def check_forward_stores_unchanged(baseline: dict) -> tuple[bool, str]:
                     "sidecar and find the test that wrote here.")
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__,
                                       formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--workers", type=int, default=os.cpu_count() or 1,
@@ -263,22 +464,39 @@ def main() -> int:
     parser.add_argument("--modules", nargs="*", default=None,
                          help="Run only these modules (dotted or bare name); "
                               "default is every tests/test_*.py.")
-    args = parser.parse_args()
+    parser.add_argument("--serial-modules", nargs="*",
+                         default=list(DEFAULT_SERIAL_MODULES),
+                         help="Modules removed from the parallel shards and run "
+                              "afterwards ALONE, one at a time (default: "
+                              + ", ".join(DEFAULT_SERIAL_MODULES) + ").")
+    parser.add_argument("--no-serial", action="store_true",
+                         help="Disable the serial phase: shard every module "
+                              "in parallel as before.")
+    parser.add_argument("--timeout-minutes", type=float, default=None,
+                         help="Overall wall-clock limit. When hit, name the "
+                              "shard(s) still running, kill them, and fail.")
+    args = parser.parse_args(argv)
 
     foundry_beat("test_runner", "start", "ok")
 
     all_modules = args.modules or discover_modules()
-    all_modules = sorted({m if m.startswith("tests.") else f"tests.{m}"
-                           for m in all_modules})
+    all_modules = sorted({normalize_module(m) for m in all_modules})
     excluded = load_exclusions(args.exclude_file) if args.exclude_file else set()
     modules = [m for m in all_modules if m not in excluded]
     if not modules:
         print("no test modules selected", file=sys.stderr)
         return 2
 
-    n_workers = max(1, min(args.workers, len(modules)))
+    if args.no_serial:
+        parallel_modules, serial_modules = modules, []
+    else:
+        parallel_modules, serial_modules = partition_serial(
+            modules, args.serial_modules)
+
+    n_workers = max(1, min(args.workers, max(1, len(parallel_modules))))
     timings = load_timings(args.timings)
-    shards = shard_modules(modules, n_workers, timings)
+    shards = (shard_modules(parallel_modules, n_workers, timings)
+              if parallel_modules else [])
 
     # Baseline taken above at import time (`suite.BASELINE_STORES`), i.e.
     # before any worker below has had a chance to run. That ordering is the
@@ -287,52 +505,76 @@ def main() -> int:
     baseline = suite.BASELINE_STORES
 
     print(f"running {len(modules)} modules "
-          f"({len(excluded)} excluded) across {n_workers} workers...",
-          file=sys.stderr)
+          f"({len(excluded)} excluded) across {n_workers} workers "
+          f"+ {len(serial_modules)} serial module(s) run alone afterwards...",
+          file=sys.stderr, flush=True)
 
     wall_start = time.perf_counter()
-    results = []
-    with concurrent.futures.ThreadPoolExecutor(max_workers=n_workers) as pool:
-        # subprocess.run() blocks its calling thread but releases the GIL
-        # while the child runs, so a thread pool is enough to get N real
-        # OS processes running concurrently.
-        for result in pool.map(run_shard, shards):
-            results.append(result)
+    deadline = (wall_start + args.timeout_minutes * 60.0
+                if args.timeout_minutes else None)
+
+    # subprocess blocks its calling thread but releases the GIL while the
+    # child runs, so a thread pool is enough to get N real OS processes
+    # running concurrently.
+    results, timeout_report = run_parallel_phase(shards, n_workers, deadline)
+    serial_results: list[dict] = []
+    if serial_modules:
+        _hb(f"parallel phase done; running {len(serial_modules)} serial "
+            f"module(s) alone: {', '.join(serial_modules)}")
+        serial_results, serial_report = run_serial_phase(serial_modules, deadline)
+        timeout_report += serial_report
     wall_elapsed = time.perf_counter() - wall_start
 
     fp_ok, fp_message = check_forward_stores_unchanged(baseline)
 
-    total_tests = sum(r["tests"] for r in results)
-    total_failures = sum(r["failures"] for r in results)
-    total_errors = sum(r["errors"] for r in results)
-    total_skipped = sum(r["skipped"] for r in results)
-    broken = [r for r in results if r["returncode"] != 0]
+    agg = aggregate_results(results, serial_results)
+    broken = agg["broken"]
 
     print("-" * 72)
     for i, r in enumerate(results):
-        status = "OK" if r["returncode"] == 0 else "FAILED"
+        status = ("TIMED OUT" if r.get("timed_out")
+                  else "OK" if r["returncode"] == 0 else "FAILED")
         print(f"worker {i}: {len(r['modules']):>3} modules, "
               f"{r['tests']:>4} tests, {r['seconds']:>7.1f}s  [{status}]")
+    if serial_results:
+        print("-" * 72)
+        print("SERIAL MODULES (run alone, one at a time, after the parallel "
+              "workers finished)")
+        for r in serial_results:
+            status = ("TIMED OUT" if r.get("timed_out")
+                      else "OK" if r["returncode"] == 0 else "FAILED")
+            print(f"serial {', '.join(r['modules'])}: {r['tests']:>4} tests, "
+                  f"{r['seconds']:>7.1f}s  [{status}]")
     print("-" * 72)
     overall_ok = not broken and fp_ok
     summary = ("OK" if overall_ok else "FAILED")
-    print(f"{summary}: {total_tests} tests in {wall_elapsed:.1f}s wall "
-          f"({n_workers} workers) -- failures={total_failures} "
-          f"errors={total_errors} skipped={total_skipped}")
+    print(f"{summary}: {agg['total_tests']} tests in {wall_elapsed:.1f}s wall "
+          f"({n_workers} workers) -- failures={agg['failures']} "
+          f"errors={agg['errors']} skipped={agg['skipped']}"
+          + (f" timeouts={agg['timeouts']}" if agg["timeouts"] else "")
+          + (f" (parallel={agg['parallel_tests']} serial={agg['serial_tests']})"
+             if serial_results else ""))
     print(fp_message)
+    if timeout_report:
+        print(f"OVERALL TIMEOUT: --timeout-minutes {args.timeout_minutes:g} "
+              "reached; shard(s) still running when it fired:")
+        for line in timeout_report:
+            print(f"  - {line}")
 
     if broken:
         print(f"\n{len(broken)} worker(s) had failures/errors; output follows:\n",
               file=sys.stderr)
         for r in broken:
-            print(f"=== worker running {', '.join(r['modules'])} ===",
+            kind = "serial module" if r in serial_results else "worker"
+            print(f"=== {kind} running {', '.join(r['modules'])} ===",
                   file=sys.stderr)
             print(r["output"], file=sys.stderr)
 
     if overall_ok:
-        foundry_beat("test_runner", "end", "ok", f"{total_tests}/{total_tests} passed")
+        foundry_beat("test_runner", "end", "ok",
+                     f"{agg['total_tests']}/{agg['total_tests']} passed")
     else:
-        failed = total_failures + total_errors + len(broken)
+        failed = agg["failures"] + agg["errors"] + len(broken)
         foundry_beat("test_runner", "end", "down", f"{failed} failed")
 
     return 0 if overall_ok else 1
