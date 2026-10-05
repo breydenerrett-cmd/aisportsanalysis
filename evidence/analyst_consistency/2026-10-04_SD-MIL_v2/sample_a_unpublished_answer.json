@@ -1,0 +1,215 @@
+{
+ "summary": "I pass on all three markets. Milwaukee is the side the books favour, at -128 at best, and the case is easy to see: Logan Henderson's season ERA is 2.4712 against 3.2108 for Michael King, Milwaukee's run differential per game is 1.319 against 0.259, and San Diego's Adrian Morejon looks unavailable after 31 pitches yesterday. But the books already carry that. Their de-vigged Milwaukee number is 0.5511, I land near 0.55, and the break-even for that is about -122, which no book is offering. Henderson has only 98.33 innings behind him, and King's recent ERA of 5.2941 covers just three starts, so neither season line settles it. The run line asks -185 at best for SD +1.5 against a fair probability of 0.6303, and the packet gives me nothing about margin of victory to argue with that. The total of 7 is close to a coin flip, and the 12.1 mph wind means little without its direction against the field or the roof status. Missing: standings, team totals, analyzed props, and a usable matchup history.",
+ "calls": [
+  {
+   "slot_id": "moneyline",
+   "market": "moneyline",
+   "selection": "MIL",
+   "verdict": "PASS",
+   "price": -128,
+   "book": "lowvig",
+   "fair_estimate": 0.55,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The home starter has the better season line, which is why the books lean Milwaukee.",
+     "evidence": [
+      {
+       "path": "sections.starters.values.home_sp_era",
+       "value": 2.4712
+      },
+      {
+       "path": "sections.starters.values.away_sp_era",
+       "value": 3.2108
+      },
+      {
+       "path": "sections.starters.values.home_sp_fip",
+       "value": 3.5027
+      },
+      {
+       "path": "sections.starters.values.away_sp_fip",
+       "value": 4.1311
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "Milwaukee has the stronger run differential per game, and San Diego's Morejon is flagged likely unavailable after a heavy outing.",
+     "evidence": [
+      {
+       "path": "sections.teams.values.home_run_diff_pg",
+       "value": 1.319
+      },
+      {
+       "path": "sections.teams.values.away_run_diff_pg",
+       "value": 0.259
+      },
+      {
+       "path": "sections.bullpen.values.SD.relievers[0].availability",
+       "value": "likely_unavailable"
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The books' own de-vigged number already reflects this, and the packet has no fact that moves me far from it.",
+     "evidence": [
+      {
+       "path": "markets.moneyline.options[0].fair_probability",
+       "value": 0.5511
+      },
+      {
+       "path": "markets.moneyline.options[0].best.price",
+       "value": -128
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "Henderson's sample is thin next to King's, and King's last three starts are worse than his season line.",
+     "evidence": [
+      {
+       "path": "sections.starters.values.home_sp_innings",
+       "value": 98.33
+      },
+      {
+       "path": "sections.starters.values.away_sp_recent_era",
+       "value": 5.2941
+      },
+      {
+       "path": "sections.starters.values.away_sp_recent_starts",
+       "value": 3
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": -122,
+   "what_would_change_it": "A Milwaukee price of -122 or shorter, which is my break-even, would make it worth taking.",
+   "case_against": null
+  },
+  {
+   "slot_id": "run_line",
+   "market": "run_line",
+   "selection": "SD +1.5",
+   "verdict": "PASS",
+   "price": -185,
+   "book": "mybookieag",
+   "fair_estimate": 0.63,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The price is steep for what the packet shows: the books' fair probability for SD +1.5 is 0.6303 and the best quote is -185.",
+     "evidence": [
+      {
+       "path": "markets.run_line.options[0].fair_probability",
+       "value": 0.6303
+      },
+      {
+       "path": "markets.run_line.options[0].best.price",
+       "value": -185
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "Milwaukee has the better starter and recent form, which supports a Milwaukee win but says nothing about the margin.",
+     "evidence": [
+      {
+       "path": "sections.starters.values.home_sp_era",
+       "value": 2.4712
+      },
+      {
+       "path": "sections.teams.values.home_last10_run_diff_pg",
+       "value": 1.8
+      },
+      {
+       "path": "sections.teams.values.away_last10_run_diff_pg",
+       "value": 1.4
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "Milwaukee -1.5 pays up to +165, and nothing in the packet shows that price is wrong either.",
+     "evidence": [
+      {
+       "path": "markets.run_line.options[1].best.price",
+       "value": 165
+      },
+      {
+       "path": "markets.run_line.options[1].fair_probability",
+       "value": 0.3697
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": -170,
+   "what_would_change_it": "SD +1.5 at -170 or better, which is my break-even, would make it worth taking.",
+   "case_against": null
+  },
+  {
+   "slot_id": "total",
+   "market": "total",
+   "selection": "Over 7",
+   "verdict": "PASS",
+   "price": -108,
+   "book": "williamhill_us",
+   "fair_estimate": 0.5,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The packet gives nothing about this market beyond its own price, which is close to even.",
+     "evidence": [
+      {
+       "path": "markets.total.options[0].fair_probability",
+       "value": 0.5098
+      },
+      {
+       "path": "markets.total.options[0].best.price",
+       "value": -108
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "Both starters have good season lines, which pulls toward the Under, while the wind is a possible push the other way.",
+     "evidence": [
+      {
+       "path": "sections.starters.values.home_sp_era",
+       "value": 2.4712
+      },
+      {
+       "path": "sections.starters.values.away_sp_era",
+       "value": 3.2108
+      },
+      {
+       "path": "sections.weather.values.wind_mph",
+       "value": 12.1
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The wind direction against the field is not given in a usable form, and the roof is retractable with no status in the packet.",
+     "evidence": [
+      {
+       "path": "sections.weather.values.wind_from_deg",
+       "value": 306
+      },
+      {
+       "path": "sections.park.values.roof",
+       "value": "retractable"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": 100,
+   "what_would_change_it": "Over 7 at +100, which is my break-even, or a confirmed open roof with the wind blowing out, would make it worth taking.",
+   "case_against": null
+  }
+ ],
+ "summary_derived": []
+}
