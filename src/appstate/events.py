@@ -221,9 +221,13 @@ CTA_CLICK = "cta_click"
 # shown in the by-source breakdown, not as a step of the main funnel.
 PUBLIC_PAGE_VIEW = "public_page_view"
 
-# Support re-issued a subscriber's access token (POST /admin/users/token).
-# Operational, not a funnel step: never recorded from the public beacon, and
-# its properties carry no token, only how many old tokens were revoked.
+# Support replaced a person's access token (POST /admin/users/token, and
+# POST /admin/users/reissue, which is the one support uses now). Operational,
+# not a funnel step: never recorded from the public beacon. The properties
+# carry NO token and no email: `action` ("reissue", or "reissue_failed" for an
+# attempt that was rolled back), `kind`, how many old tokens were revoked, and
+# `reason`, the free-text note the operator gave (the route refuses one that
+# looks like it holds a token).
 SUPPORT_TOKEN_REISSUED = "support_token_reissued"
 
 # The owner granted, or extended, an early-access tester's access from the admin

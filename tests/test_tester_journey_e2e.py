@@ -111,6 +111,18 @@ class _Journey(unittest.TestCase):
             "APP_DB_PATH": str(self.db_path), "APP_ADMIN_TOKEN": ADMIN})
         env.start()
         self.addCleanup(env.stop)
+        # THE DATABASE IS THIS TEST'S OWN, WHATEVER RAN BEFORE. The env var alone
+        # is not enough: another module that leaves a patch on users_store.db_path
+        # (or events.db_path) un-stopped wins over it, and these tests then share
+        # one file and count each other's testers ("already_a_tester",
+        # testers_granted: 2 -- seen in the sharded full run, 2026-10-05). Patching
+        # the functions here, with their own cleanup, makes the test independent of
+        # import order and of the other modules' hygiene.
+        from src.appstate import events as events_module, users as users_module
+        for module in (users_module, events_module):
+            patcher = mock.patch.object(module, "db_path", lambda: self.db_path)
+            patcher.start()
+            self.addCleanup(patcher.stop)
         # Billing is off in production and must be off here, whatever the host has set.
         for name in ("BILLING_PROVIDER", "STRIPE_API_KEY", "STRIPE_BETA_PRICE_ID"):
             patcher = mock.patch.dict(os.environ)

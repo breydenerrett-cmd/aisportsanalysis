@@ -42,11 +42,12 @@ once, and never put a token, an email or a reason into an event.
 
 from __future__ import annotations
 
+import json
 import re
 import sys
 from collections import Counter
 from datetime import datetime, timezone
-from typing import Dict
+from typing import Any, Dict
 
 from typing import Optional
 
@@ -285,14 +286,31 @@ def reissue_subscriber_token(body: ReissueTokenRequest,
 class ReissueAccessRequest(BaseModel):
     """Exactly one of `email` or `user_id`, and a `reason` (always)."""
     email: Optional[str] = None
-    user_id: Optional[int] = None
+    # Any, not int: a value that is not a real account id (a string, a float, a
+    # list, 2**70) is the same 409 as an unknown account, not a 422 or a 500.
+    # See _account_id.
+    user_id: Optional[Any] = None
     reason: Optional[str] = None
 
 
 # A reason is a note ("verified by reply from the account mailbox, ticket 41"),
 # not an essay and not a place to paste the credential it is about.
 REISSUE_REASON_MAX = 500
+# What counts as "a token in the reason". The product's access tokens are
+# secrets.token_urlsafe(32): 43 characters of [A-Za-z0-9_-] (src/appstate/users.py
+# insert_token), so any 32-character run of that alphabet is refused wherever it
+# sits in the sentence. The rest are the ways a token is usually pasted with
+# something around it: an Authorization header, a token= or session_id= query
+# parameter, an admin header, a Stripe checkout session id (which is itself the
+# key to the activation bridge). A plain "lost bearer token" is fine.
 _LOOKS_LIKE_A_TOKEN = re.compile(r"[A-Za-z0-9_-]{32,}")
+_SECRET_HINTS = re.compile(
+    r"bearer\s+[A-Za-z0-9._~+/=-]{8,}"
+    r"|token\s*=\s*\S"
+    r"|session_id\s*="
+    r"|x-admin-token"
+    r"|\bcs_(?:test|live)_[A-Za-z0-9]{8,}",
+    re.IGNORECASE)
 
 # ONE refusal for every reason a re-issue cannot happen -- no such account, a
 # waitlisted signup, a lapsed subscriber, a suspended user, a tester with a
@@ -302,6 +320,21 @@ _LOOKS_LIKE_A_TOKEN = re.compile(r"[A-Za-z0-9_-]{32,}")
 REISSUE_REFUSED = {"error": "reissue_refused",
                    "message": "no token was issued: this request does not match an "
                               "account that can be given one"}
+
+
+# SQLite stores an integer in 8 bytes; a bigger one raises OverflowError the
+# moment it is bound to a query. An account id is a positive row id.
+_MAX_ACCOUNT_ID = 2 ** 63 - 1
+
+
+def _account_id(value: Any) -> Optional[int]:
+    """`value` if it can be the id of an account, else None -- a bool, a string,
+    a float, a list, zero, a negative number or anything past SQLite's integer
+    range. The caller treats None exactly like an unknown account (the one 409),
+    so a probe with 2**70 learns nothing a probe with 99999 would not."""
+    if isinstance(value, bool) or not isinstance(value, int):
+        return None
+    return value if 1 <= value <= _MAX_ACCOUNT_ID else None
 
 
 def _reissue_plan(user: Optional[users_store.User]):
@@ -336,6 +369,37 @@ def _reissue_plan(user: Optional[users_store.User]):
     return "tester", (ends if ends.tzinfo else ends.replace(tzinfo=timezone.utc))
 
 
+def _write_reissue_audit(conn, user_id: int, properties: dict) -> None:
+    """The `support_token_reissued` row, written on the caller's open transaction.
+
+    events.record_event opens its own connection, which cannot be part of
+    users.reissue_token's transaction (a second writer would wait out the first's
+    lock), so the one INSERT is repeated here: same table, same columns, same
+    hashed user, same JSON, with the schema ensured on the shared connection."""
+    events._ensure_schema(conn)
+    conn.execute(
+        "INSERT INTO analytics_events (user_hash, kind, properties_json, at) "
+        "VALUES (?, ?, ?, ?)",
+        (events.hash_user_id(user_id), events.SUPPORT_TOKEN_REISSUED,
+         json.dumps(properties, sort_keys=True), events._now_iso()))
+
+
+def _record_failed_reissue(user_id: int, kind: str, reason: str, stage: str) -> None:
+    """After a re-issue was rolled back, say so in the audit log: one
+    `support_token_reissued` row with action `reissue_failed` (never `reissue`),
+    the reason and the stage that failed. Best effort: if the database is what
+    failed, this write fails too and the stderr line is what is left. Never
+    raises; the 503 the caller is about to send is the answer."""
+    try:
+        events.record_event(
+            events.hash_user_id(user_id), events.SUPPORT_TOKEN_REISSUED,
+            {"action": "reissue_failed", "kind": kind, "reason": reason, "stage": stage},
+            db=users_store.db_path())
+    except Exception as exc:  # noqa: BLE001
+        print(f"admin: could not record the failed reissue: {exc!r}",
+              file=sys.stderr, flush=True)
+
+
 @router.post("/admin/users/reissue")
 def reissue_access_token(body: ReissueAccessRequest,
                          _admin: None = Depends(_require_admin)) -> dict:
@@ -346,9 +410,12 @@ def reissue_access_token(body: ReissueAccessRequest,
     the product on another device (docs/billing/RECOVERY_PROCEDURE.md).
 
     SUPPORT PROCEDURE (the one-page version; the full one is that document):
-      1. Ownership is proven by the MAILBOX: the request must come from the
-         account's own address, and the answer goes ONLY to that address. An
-         email, a checkout id or a name in a chat or DM proves nothing.
+      1. Ownership is proven by the MAILBOX: write to the address on the account
+         and call this ONLY after a reply arrives FROM that mailbox confirming
+         the request. The Get help form proves nothing (its email field is typed,
+         anyone can type a victim's address), so nothing is revoked before the
+         reply; the answer goes ONLY to that address. An email, a checkout id or
+         a name in a chat or DM proves nothing either.
       2. POST here with X-Admin-Token and {"email" | "user_id", "reason"}. The
          reason is required (what was verified, which ticket) and is written to
          the audit log.
@@ -361,12 +428,14 @@ def reissue_access_token(body: ReissueAccessRequest,
          touched.
 
     AUDIT: one `support_token_reissued` event in the events table (the existing
-    log, keyed by the user's hash) carrying `reason`, `kind`, `revoked_tokens`,
-    never a token or an email. It is written BEFORE anything changes and a
-    failure to write it (503) leaves the accounts exactly as they were: an
-    unlogged issue is not allowed to happen. The reason is checked before any
-    account is looked up, so a missing reason says nothing about whether the
-    account exists.
+    log, keyed by the user's hash) carrying `action: "reissue"`, `reason`, `kind`,
+    `revoked_tokens`, never a token or an email. It is written in the SAME
+    transaction as the revoke and the new token: a failure of either (503) leaves
+    the accounts exactly as they were and no "reissue" row behind, so an unlogged
+    issue and a logged non-issue are both impossible. A re-issue that failed is
+    then recorded as `action: "reissue_failed"` (best effort). The reason is
+    checked before any account is looked up, so a missing reason says nothing
+    about whether the account exists, and it may not contain a token.
     """
     if (body.email is None) == (body.user_id is None):
         raise HTTPException(status_code=400,
@@ -380,32 +449,49 @@ def reissue_access_token(body: ReissueAccessRequest,
         raise HTTPException(status_code=400, detail={
             "error": "reason_too_long",
             "message": f"keep the reason under {REISSUE_REASON_MAX} characters"})
-    if _LOOKS_LIKE_A_TOKEN.search(why):
+    if _LOOKS_LIKE_A_TOKEN.search(why) or _SECRET_HINTS.search(why):
         raise HTTPException(status_code=400, detail={
             "error": "reason_looks_like_a_secret",
             "message": "the reason is stored in a log; do not paste a token or key into it"})
     if body.email is not None:
         user = users_store.get_user_by_email(body.email.strip().lower())
     else:
-        user = users_store.get_user(body.user_id)
+        account_id = _account_id(body.user_id)
+        user = users_store.get_user(account_id) if account_id is not None else None
     plan = _reissue_plan(user)
     if plan is None:
         raise HTTPException(status_code=409, detail=dict(REISSUE_REFUSED))
     kind, ends_at = plan
-    # The audit row first, into the SAME database file the tokens live in.
+    # The audit row is written INSIDE the token change's transaction, so the row
+    # and the change stand or fall together: no "reissue" row for a re-issue that
+    # did not happen, and no re-issue without its row.
+    audit_failed = False
+
+    def write_audit(conn, revoked: int) -> None:
+        nonlocal audit_failed
+        try:
+            _write_reissue_audit(conn, user.id, {
+                "action": "reissue", "kind": kind, "reason": why,
+                "revoked_tokens": revoked})
+        except Exception:  # noqa: BLE001 -- noted, then re-raised to roll back
+            audit_failed = True
+            raise
+
     try:
-        events.record_event(
-            events.hash_user_id(user.id), events.SUPPORT_TOKEN_REISSUED,
-            {"action": "reissue", "kind": kind, "reason": why,
-             "revoked_tokens": users_store.count_unrevoked_tokens(user.id)},
-            db=users_store.db_path())
-    except Exception as exc:  # noqa: BLE001 -- see docstring: fail closed
-        print(f"admin: reissue audit write failed, nothing issued: {exc!r}",
+        raw_token, revoked = users_store.reissue_token(
+            user.id, expires_at=ends_at, audit=write_audit)
+    except Exception as exc:  # noqa: BLE001 -- fail closed: nothing was changed
+        stage = "audit_write" if audit_failed else "token_change"
+        print(f"admin: reissue failed at {stage}, nothing changed: {exc!r}",
               file=sys.stderr, flush=True)
+        _record_failed_reissue(user.id, kind, why, stage)
+        if audit_failed:
+            raise HTTPException(status_code=503, detail={
+                "error": "audit_log_unavailable",
+                "message": "the audit log could not be written, so nothing was issued"})
         raise HTTPException(status_code=503, detail={
-            "error": "audit_log_unavailable",
-            "message": "the audit log could not be written, so nothing was issued"})
-    raw_token, revoked = users_store.reissue_token(user.id, expires_at=ends_at)
+            "error": "reissue_failed",
+            "message": "the token could not be changed; nothing was issued or revoked"})
     return {"user_id": user.id, "email": user.email, "token": raw_token, "kind": kind,
             "expires_at": ends_at.isoformat(), "revoked_tokens": revoked}
 

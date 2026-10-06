@@ -55,7 +55,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Iterator, List, Optional, Tuple
+from typing import Callable, Iterator, List, Optional, Tuple
 
 from src import paths
 
@@ -408,14 +408,56 @@ def mark_token_first_used(raw_token: str, *, at: Optional[str] = None,
         return cur.rowcount > 0
 
 
+def _wipe_activation_tokens(conn: sqlite3.Connection, *, user_id: Optional[int] = None,
+                            raw_token: Optional[str] = None) -> None:
+    """Forget the UNHASHED copy of a revoked credential, on the caller's open
+    transaction.
+
+    WHY THIS LIVES HERE. A checkout buyer's token is also stored raw in
+    signup_activation_tokens (src/appstate/customers.py) so GET /signup/complete
+    can hand it over: unread for up to 72 h, and for 10 minutes after the first
+    read. Revoking the token in `tokens` alone left that copy readable, and the
+    bridge kept returning a credential that authenticate() rejects -- the page
+    then stored it over the buyer's good one (found in review 2026-10-05). Every
+    revoke path therefore wipes it in the SAME transaction, so there is no
+    instant where the old token is revoked and still being given out.
+
+    `retrieved_at` is stamped like the bridge's own scrub does (customers.
+    _scrub_if_expired): a row with no raw token and no retrieved_at would let the
+    bridge's atomic claim "win" and hand back a None token. Stamped, a wiped row
+    is indistinguishable from an already-used one.
+
+    users.py cannot import customers (customers imports this module), and the
+    table only exists once customers has opened the database, so this is plain SQL
+    guarded by a table-exists check. Match by user_id (every token of the user) or
+    by the exact raw token (one revoked token)."""
+    exists = conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type = 'table' "
+        "AND name = 'signup_activation_tokens'").fetchone()
+    if exists is None:
+        return
+    if user_id is not None:
+        where, arg = "user_id = ?", user_id
+    elif raw_token is not None:
+        where, arg = "raw_token = ?", raw_token
+    else:
+        return
+    conn.execute(
+        "UPDATE signup_activation_tokens SET raw_token = NULL, "
+        "retrieved_at = COALESCE(retrieved_at, ?) "
+        f"WHERE {where} AND raw_token IS NOT NULL", (_now_iso(), arg))
+
+
 def revoke_token(raw_token: str, *, db: Optional[Path] = None) -> bool:
     """Mark a token revoked. Returns True if a matching, not-already-revoked
-    token was found."""
+    token was found. The unhashed copy the checkout activation bridge may still
+    hold for it is wiped in the same transaction (`_wipe_activation_tokens`)."""
     with _connect(db) as conn:
         cur = conn.execute(
             "UPDATE tokens SET revoked_at = ? "
             "WHERE token_hash = ? AND revoked_at IS NULL",
             (_now_iso(), _hash_token(raw_token)))
+        _wipe_activation_tokens(conn, raw_token=raw_token)
         return cur.rowcount > 0
 
 
@@ -424,12 +466,14 @@ def revoke_all_tokens(user_id: int, *, db: Optional[Path] = None) -> int:
     many were revoked. Used by the support token re-issue (POST
     /admin/users/token): a lost or leaked token must stop working at the
     moment its replacement is minted. No schema change -- `revoked_at` is the
-    existing column revoke_token already writes."""
+    existing column revoke_token already writes. The raw activation tokens the
+    checkout bridge holds for this user are wiped in the same transaction."""
     with _connect(db) as conn:
         cur = conn.execute(
             "UPDATE tokens SET revoked_at = ? "
             "WHERE user_id = ? AND revoked_at IS NULL",
             (_now_iso(), user_id))
+        _wipe_activation_tokens(conn, user_id=user_id)
         return cur.rowcount
 
 
@@ -446,6 +490,7 @@ def count_unrevoked_tokens(user_id: int, *, db: Optional[Path] = None) -> int:
 
 def reissue_token(user_id: int, *, expires_at: datetime,
                   now: Optional[datetime] = None,
+                  audit: Optional[Callable[[sqlite3.Connection, int], None]] = None,
                   db: Optional[Path] = None) -> Tuple[str, int]:
     """Replace every token of user_id with ONE new token that ends at exactly
     `expires_at`; returns (RAW token, how many old tokens were revoked).
@@ -461,6 +506,16 @@ def reissue_token(user_id: int, *, expires_at: datetime,
     that authenticates nothing but still identifies them to
     POST /billing/tester-checkout (src/appstate/tester_upgrade.py).
 
+    The raw activation token the checkout bridge may still hold for the user is
+    wiped in the same transaction (`_wipe_activation_tokens`): a replaced
+    credential must not be handed out by GET /signup/complete.
+
+    `audit(conn, revoked)` is called on the SAME connection after the revoke and
+    the insert, before the commit. The support route writes its audit row there,
+    so the row and the change are one transaction: if either fails neither
+    stays (a "reissued" row for a re-issue that did not happen was the defect).
+    An exception from `audit` rolls everything back and propagates.
+
     Nothing here touches users.status, testers or any billing table."""
     when = now or datetime.now(timezone.utc)
     with _connect(db) as conn:
@@ -469,7 +524,10 @@ def reissue_token(user_id: int, *, expires_at: datetime,
             "WHERE user_id = ? AND revoked_at IS NULL",
             (when.isoformat(), user_id))
         revoked = cur.rowcount
+        _wipe_activation_tokens(conn, user_id=user_id)
         raw_token = insert_token(conn, user_id, ttl=expires_at - when, now=when)
+        if audit is not None:
+            audit(conn, revoked)
     return raw_token, revoked
 
 

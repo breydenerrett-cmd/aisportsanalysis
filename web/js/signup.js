@@ -48,7 +48,7 @@ import {
   cardRequiredNotice, trialStartedNote, WAITLIST_CONFIRMATION, testerSignupNotice,
 } from "./checkout.js";
 import {
-  checkStoredToken, renderSignedOut, renderUnreachable, renderTesterEnded, renderValidated,
+  checkStoredToken, checkToken, renderSignedOut, renderUnreachable, renderTesterEnded, renderValidated,
 } from "./support_recovery.js";
 
 // Substance only -- no new claims. Each line restates something the
@@ -415,7 +415,9 @@ async function resolveStoredToken(main, card, query, stillFinishing = null) {
   } else if (result.kind === "expired") {
     if (stillFinishing) stillFinishing(); else await renderTesterEnded(card, result.endedAt);
   } else {
-    clearToken();
+    // Clear the token that was CHECKED, not whatever is stored now: another
+    // tab may have signed in with a good one while the answer was in flight.
+    if (getToken() === result.sent) clearToken();
     if (stillFinishing) stillFinishing(); else renderSignedOut(card, { cleared: true });
   }
 }
@@ -466,13 +468,41 @@ export async function renderSignupComplete(main, query) {
         href: "#/support", "data-hook": "signup-support-link", text: "Contact support" }));
     };
     if (outcome.token) {
-      token = outcome.token;
-      // SIGNED IN IMMEDIATELY: the same storage key the sign-in page writes,
-      // so the buyer never has to paste anything to reach tonight's card.
-      setToken(token);
+      // ASK THE SERVER BEFORE STORING (review 2026-10-05). After a support
+      // re-issue the bridge could hand back the replaced token, and this page
+      // stored whatever it got over the buyer's good one and said "signed in".
+      // The exchanged token goes through the same check as a stored one, with
+      // its own header and nothing written; only a token the server knows is
+      // stored.
+      const checked = await checkToken(outcome.token);
+      if (!wrap.isConnected) return;
       // Keep the session id out of the address bar and the history once it
       // has done its job.
       scrubAddress();
+      if (checked.kind === "unknown") {
+        // The server rejects what it just gave out. Keep whatever this device
+        // holds, and let the stored token be asked about as usual.
+        if (getToken()) {
+          await resolveStoredToken(main, card, query);
+        } else {
+          renderSignedOut(card, { lead: "We could not get a working access token from this checkout link." });
+        }
+        return;
+      }
+      if (checked.kind === "unreachable") {
+        // Not an answer: store nothing, offer the retry (the same session id
+        // still reads inside its window).
+        renderUnreachable(card, () => renderSignupComplete(main, query), { saved: Boolean(getToken()) });
+        return;
+      }
+      token = outcome.token;
+      // SIGNED IN: the same storage key the sign-in page writes, so the buyer
+      // never has to paste anything to reach tonight's card.
+      setToken(token);
+      if (checked.kind === "expired") {
+        await renderTesterEnded(card, checked.endedAt);
+        return;
+      }
     } else if (getToken()) {
       // The re-read window closed (or the poll gave up) on a device that holds
       // a token. That token used to be trusted unseen; now the server is asked.

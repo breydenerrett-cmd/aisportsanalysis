@@ -27,17 +27,22 @@ const MAX_BODY_LENGTH = 5000;
 /**
  * LOCKED OUT: what to send, exactly. There is no email sender and no
  * self-service way to get a lost access token back, so this is SUPPORT
- * RECOVERY (docs/billing/RECOVERY_PROCEDURE.md): a person replies from the
- * mailbox on the account and the new token goes only to that address. The page
- * therefore asks for the account's address, says nothing is shown here, and
+ * RECOVERY (docs/billing/RECOVERY_PROCEDURE.md): the email field on this form
+ * is typed and unverified, so a form is never proof of anything. We write to the
+ * address on the account, the person replies from that mailbox, and only then
+ * does a new token go, to that address. Nothing is revoked before the reply, so
+ * a stranger who types someone else's address locks nobody out. The page
+ * therefore says to expect a confirmation email and to reply from the
+ * account's address, says nothing is shown here, and
  * says what is not enough, so nobody sends a card number or an old token and
  * nobody expects a token in a chat. It claims no turnaround time: a person
  * answers by hand.
  */
 export const LOCKED_OUT_STEPS = [
-  "Write to us with the form below, from the email address your account uses. We answer only that address.",
+  "Write to us with the form below and type the email address your account uses. We answer only that address.",
   "Put \"Locked out\" in the subject. Say whether you bought a plan or were given early access.",
-  "We send a new access token to that address. The old one stops working the moment we do.",
+  "We write to the address on the account first, to confirm the request. Reply to that email from the email address your account uses. Until your reply arrives nothing changes, and your current token keeps working.",
+  "After your reply we send a new access token to that address. The old one stops working the moment we do.",
   "Do not send a card number or an old token. An email address or a checkout number on its own is not enough, and we never send a token to a chat or a message.",
 ];
 

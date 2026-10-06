@@ -500,7 +500,15 @@ def signup_complete(session_id: str,
     most 30; the page treats a 429 as "try again"."""
     result = customers.take_activation_token(
         session_id, reread_window=customers.ACTIVATION_REREAD_WINDOW)
-    if result is None:
+    # A token the server would itself reject is not an activation token any
+    # more: after a support re-issue (or any revoke) this bridge must not hand
+    # the replaced credential back, because the page stores whatever it gets
+    # (review 2026-10-05). Revoking also wipes the stored raw copy
+    # (users.revoke_token / revoke_all_tokens / reissue_token); this check is the
+    # backstop for any path that left one behind. The refusal is the 404 above,
+    # the one answer the page already handles and an outsider cannot tell from
+    # "never happened".
+    if result is None or users_store.authenticate(result["raw_token"]) is None:
         raise HTTPException(status_code=404, detail={
             "error": "not_found",
             "message": "no activation token available for this session"})

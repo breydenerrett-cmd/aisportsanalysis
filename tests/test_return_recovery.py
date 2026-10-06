@@ -161,7 +161,13 @@ globalThis.fetch = async (url, init) => {
     return json(200, scenario.meta || { billing: { checkout: "off", trial_days: 7, price_cents: 1999 } });
   }
   if (url === "/billing/status") {
-    const r = pickStep(scenario.status || [{ code: 200, body: { status: "not_configured" } }], "status");
+    // Per-token answers (a stored token and a freshly exchanged one can differ),
+    // else the numbered sequence.
+    const sent = String(headers.Authorization || "").replace(/^Bearer /, "");
+    const byToken = scenario.statusByToken && scenario.statusByToken[sent];
+    const r = byToken || pickStep(scenario.status || [{ code: 200, body: { status: "not_configured" } }], "status");
+    // Another tab stores a different token while this request is in flight.
+    if (scenario.swapDuringStatus) { store.set("aisportsanalysis.invite_token", scenario.swapDuringStatus); }
     if (r.network) throw new Error("offline");
     return json(r.code, r.body);
   }
@@ -405,6 +411,68 @@ class TheReturnPageUnderNode(unittest.TestCase):
         self.assertNotIn("SIGNUP_SESSION_ID_LIFETIME_MS", src)
         self.assertNotIn("dropTimer", src)
 
+    # ---- review 2026-10-05: a token the server hands out must be a token it accepts ----
+
+    def test_an_exchanged_token_the_server_rejects_never_replaces_a_good_stored_one(self):
+        # a re-issue replaced the buyer's token; the activation bridge still gave out the
+        # old one (before the server fix), and this page stored it over the good one
+        out = self.run_scenario(
+            token="tok_good", query=SESSION_QUERY,
+            complete=[{"code": 200, "body": {"user_id": 3, "token": "tok_dead_activation"}}],
+            statusByToken={"tok_dead_activation": PLAIN_401, "tok_good": OK_TESTER})
+        self.assertEqual(out["stored"], "tok_good")
+        for _key, value in out["wrote"]:
+            self.assertNotEqual(value, "tok_dead_activation", "the dead token was written to storage")
+        self.assertNotIn("tok_dead_activation", out["page"])
+        # what the buyer is told is true: the token this browser holds works
+        self.assertIn("You're signed in.", out["page"])
+        # the exchanged token was asked about with its own header, the stored one after it
+        auths = [c["auth"] for c in out["calls"] if c["url"] == "/billing/status"]
+        self.assertEqual(auths, ["Bearer tok_dead_activation", "Bearer tok_good"])
+
+    def test_an_exchanged_token_the_server_rejects_with_nothing_stored_is_not_signed_in(self):
+        out = self.run_scenario(
+            token=None, query=SESSION_QUERY,
+            complete=[{"code": 200, "body": {"user_id": 3, "token": "tok_dead_activation"}}],
+            statusByToken={"tok_dead_activation": PLAIN_401})
+        self.assertIsNone(out["stored"])
+        self.assertNotIn("You're in.", out["page"])
+        self.assertNotIn("You're signed in.", out["page"])
+        self.assertNotIn("tok_dead_activation", out["page"])
+        self.assert_honest_signed_out(out)
+
+    def test_an_exchanged_token_the_server_accepts_replaces_a_dead_stored_one(self):
+        out = self.run_scenario(
+            token="tok_old_dead", query=SESSION_QUERY,
+            complete=[{"code": 200, "body": {"user_id": 3, "token": "tok_new"}}],
+            statusByToken={"tok_new": OK_TESTER, "tok_old_dead": PLAIN_401})
+        self.assertEqual(out["stored"], "tok_new")
+        self.assertIn("You're in.", out["page"])
+        self.assertIn("tok_new", out["page"])
+
+    def test_when_the_exchanged_token_cannot_be_checked_it_is_not_stored_and_retry_works(self):
+        out = self.run_scenario(
+            token="tok_good", query=SESSION_QUERY, retry=True,
+            complete=[{"code": 200, "body": {"user_id": 3, "token": "tok_new"}}],
+            statusByToken={"tok_new": NETWORK, "tok_good": OK_TESTER})
+        self.assertIn("could not check", out["page"])
+        self.assertNotIn("You're in.", out["page"])
+        self.assertEqual(out["stored"], "tok_good")
+        self.assertIn("signup-check-retry", out["hooks"])
+
+    # ---- review 2026-10-05: clear what was checked, not what is stored now ----
+
+    def test_a_401_clears_only_the_token_that_was_checked(self):
+        # another tab signed in with a fresh token while the answer was in flight
+        out = self.run_scenario(token="tok_checked_dead", query={}, status=[PLAIN_401],
+                                swapDuringStatus="tok_signed_in_meanwhile")
+        self.assertEqual(out["stored"], "tok_signed_in_meanwhile")
+        self.assertNotIn("You're signed in.", out["page"])
+
+    def test_a_401_still_clears_the_token_when_nothing_changed_meanwhile(self):
+        out = self.run_scenario(token="tok_checked_dead", query={}, status=[PLAIN_401])
+        self.assertIsNone(out["stored"])
+
 
 # ===========================================================================
 # What the page's decision rests on: GET /billing/status
@@ -619,9 +687,10 @@ class ReissueRoute(_Journey):
         self.assertEqual(self.audit(), [])
 
     def test_when_the_audit_log_cannot_be_written_nothing_is_issued_or_revoked(self):
-        from src.appstate import events
+        # the audit row is written inside the token change's transaction (see
+        # tests/test_reissue_review.py), so a failed write rolls the change back
         grant = self.grant("a@example.test")
-        with mock.patch.object(events, "record_event", side_effect=sqlite3.OperationalError("disk full")):
+        with mock.patch("api.admin._write_reissue_audit", side_effect=sqlite3.OperationalError("disk full")):
             status, answer = self.reissue(user_id=grant["user_id"])
         self.assertEqual(status, 503, answer)
         self.assertEqual(self.call("GET", f"/games/{self.date}", token=grant["token"])[0], 200)
@@ -658,6 +727,11 @@ class AWebhookOnlyBuyerIsRecoverable(_Case):
         env = mock.patch.dict(os.environ, {"APP_DB_PATH": str(self.db)})
         env.start()
         self.addCleanup(env.stop)
+        # the audit log lives in the same file, whatever another module left patched
+        from src.appstate import events as events_module
+        patcher = mock.patch.object(events_module, "db_path", lambda: self.db)
+        patcher.start()
+        self.addCleanup(patcher.stop)
 
     def test_the_verified_purchase_grants_access_and_support_can_hand_over_a_token(self):
         from api.admin import ReissueAccessRequest, reissue_access_token
@@ -760,6 +834,13 @@ class SupportPageTellsALockedOutBuyerWhatToSend(unittest.TestCase):
                      "is not enough"):
             self.assertIn(fact, self.steps)
 
+    def test_it_says_to_expect_a_confirmation_email_and_to_reply_from_the_account_address(self):
+        for fact in ("write to the address on the account first, to confirm the request",
+                     "Reply to that email from the email address your account uses",
+                     "Until your reply arrives nothing changes",
+                     "your current token keeps working"):
+            self.assertIn(fact, self.steps)
+
     def test_it_is_support_recovery_it_promises_no_button_and_no_turnaround(self):
         note = self.src.split("function lockedOutNote()", 1)[1].split("\n}\n", 1)[0]
         self.assertIn("by hand", note)
@@ -781,6 +862,19 @@ class TheDocumentsSayWhatWasDecided(unittest.TestCase):
             self.assertIn(case, text)
         for rule in ("mailbox", "reason", "audit", "stops working", "alone"):
             self.assertIn(rule, text.lower())
+
+    def test_a_form_submission_is_not_proof_and_nothing_is_revoked_before_the_reply(self):
+        # review 2026-10-05: the form's email field is typed, so the procedure may not
+        # treat a submission as arriving "from the address"
+        text = " ".join((ROOT / "docs" / "billing" / "RECOVERY_PROCEDURE.md").read_text(
+            encoding="utf-8").split())
+        self.assertNotIn("arrives from the address on the account (the Get help form", text)
+        for fact in ("typed and unverified", "anyone can type a victim's address",
+                     "first write to the address on the account",
+                     "until a reply arrives from that mailbox",
+                     "nothing is revoked or issued before that",
+                     "keeps working", "lock a paying customer out"):
+            self.assertIn(fact, text)
 
     def test_option_b_is_recorded_as_not_applied(self):
         text = (ROOT / "docs" / "decisions" / "closed-tab-token-recovery.md").read_text(encoding="utf-8")

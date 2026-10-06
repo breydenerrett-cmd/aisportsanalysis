@@ -13,7 +13,7 @@
  * checkStoredToken for the four answers.
  */
 
-import { apiGet, ApiError } from "./api.js";
+import { apiGet, ApiError, getToken } from "./api.js";
 import { el } from "./dom.js";
 import {
   testerEndedLine, loadTesterBilling, TESTER_NOT_OPEN, TESTER_REPLY,
@@ -36,18 +36,58 @@ import { TESTER_ACCESS_EXPIRED } from "./signin.js";
  * customer out.
  */
 export async function checkStoredToken() {
+  // The token apiFetch is about to send: read now, before the first await, so the
+  // caller can tell which token this answer is about even if storage changes
+  // while the request is in flight (another tab signing in).
+  const sent = getToken();
   try {
     const billing = await apiGet("/billing/status");
-    return { kind: "valid", billing };
+    return { kind: "valid", billing, sent };
   } catch (err) {
-    if (err instanceof ApiError && err.status === 401) {
-      const detail = err.detail;
-      if (detail && typeof detail === "object" && detail.error === TESTER_ACCESS_EXPIRED) {
-        return { kind: "expired", endedAt: detail.expires_at || null };
-      }
-      return { kind: "unknown" };
+    return { ...classifyFailure(err), sent };
+  }
+}
+
+function classifyFailure(err) {
+  if (err instanceof ApiError && err.status === 401) {
+    const detail = err.detail;
+    if (detail && typeof detail === "object" && detail.error === TESTER_ACCESS_EXPIRED) {
+      return { kind: "expired", endedAt: detail.expires_at || null };
     }
-    return { kind: "unreachable" };
+    return { kind: "unknown" };
+  }
+  return { kind: "unreachable" };
+}
+
+/**
+ * The same question as checkStoredToken, asked about a token this browser does
+ * NOT hold yet: the one GET /signup/complete just handed over. apiFetch always
+ * sends the STORED token, so asking through it would mean writing the new token
+ * to storage first, and a token the server then rejects would already have
+ * replaced a good one. This sends its own header, stores nothing, and answers
+ * with the same four kinds, so the page stores an exchanged token only once the
+ * server has said it is a known account's.
+ */
+export async function checkToken(token) {
+  const controller = typeof AbortController === "function" ? new AbortController() : null;
+  const timer = controller ? setTimeout(() => controller.abort(), 20000) : null;
+  try {
+    const response = await fetch("/billing/status", {
+      method: "GET", headers: { Authorization: `Bearer ${token}` },
+      ...(controller ? { signal: controller.signal } : {}),
+    });
+    let payload = null;
+    const text = await response.text();
+    if (text) {
+      try { payload = JSON.parse(text); } catch (err) { payload = text; }
+    }
+    if (response.ok) return { kind: "valid", billing: payload, sent: token };
+    const detail = payload && payload.detail !== undefined ? payload.detail : payload;
+    return { ...classifyFailure(new ApiError(response.status, detail)), sent: token };
+  } catch (err) {
+    return { kind: "unreachable", sent: token };
+  } finally {
+    if (timer) clearTimeout(timer);
   }
 }
 
@@ -77,11 +117,12 @@ export function renderSignedOut(card, { cleared = false, lead = null } = {}) {
   helpLinks(card);
 }
 
-export function renderUnreachable(card, retry) {
+export function renderUnreachable(card, retry, { saved = true } = {}) {
   card.appendChild(el("h1", { class: "signup-card__title", text: "We could not check your sign-in." }));
   card.appendChild(el("p", { class: "signup-card__notice signup-card__notice--warn",
     "data-hook": "signup-check-failed", text:
-    "We could not check your access token just now. Your token is still saved on this device. "
+    "We could not check your access token just now. "
+    + (saved ? "Your token is still saved on this device. " : "")
     + "Try again in a moment." }));
   const button = el("button", { type: "button", class: "btn btn--primary btn--full chamfer chamfer--btn",
     "data-hook": "signup-check-retry", text: "Try again" });
