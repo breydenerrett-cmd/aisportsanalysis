@@ -13,9 +13,46 @@ from __future__ import annotations
 
 import unittest
 from datetime import datetime, timezone
+from unittest import addModuleCleanup
 
 from src.analysis import best_bets_card
 from src.report import card_v2
+
+
+# `card_v2_for_date` reads two stores from disk that the game side of this
+# file never injects: the bullpen log (via `card.relief_rates_for`, which
+# feeds the model's relief rate) and the multibook store (via
+# `card.run_line_rows`, when no `multibook_rows` is passed). Both are
+# appended to by the daily loop (since 2026-10-05 they are committed), so a
+# fixture priced against them drifts: the bullpen log grew from ending
+# 2026-09-06 to 2026-10-04, which moved NYY's 2026-09-20 relief rate from
+# 3.532 to 3.549 and COL's from 5.023 to 5.127, lifted the model's home
+# probability past G8's disagreement cap against the fixture's 0.58
+# consensus, and turned the "picked" game into no candidate at all.
+# `setUpModule` pins both readers to fixed values for every test here.
+# 3.532 / 5.023 are the real rates from the log as committed through
+# 2026-10-04, the numbers `_opportunity_rows`'s 0.6752 model-probability
+# comment was written against.
+RELIEF_RATES = {"NYY": 3.532, "COL": 5.023}
+
+
+def setUpModule():
+    from unittest import mock
+    from src.report import card as card_v1
+
+    real_run_line_rows = card_v1.run_line_rows
+
+    def pinned_run_line_rows(date, *, rows=None, **kw):
+        # An explicit `rows` (even empty) bypasses the store and its cache;
+        # defaulting to [] means no run-line alternatives, never the disk.
+        return real_run_line_rows(date, rows=[] if rows is None else rows, **kw)
+
+    for patcher in (
+            mock.patch.object(card_v1, "relief_rates_for",
+                              lambda _date: dict(RELIEF_RATES)),
+            mock.patch.object(card_v1, "run_line_rows", pinned_run_line_rows)):
+        patcher.start()
+        addModuleCleanup(patcher.stop)
 
 
 NOW = datetime(2026, 9, 20, 16, 0, 0, tzinfo=timezone.utc)

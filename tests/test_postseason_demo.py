@@ -311,11 +311,59 @@ def _strip_label_only_keys(obj):
     return obj
 
 
+# The 2026-09-08 standings snapshot the bracket demo was written against,
+# trimmed to the twelve clubs that snapshot seeded (field names and values
+# are the real `data/historical/standings.jsonl` ones, from the one-snapshot
+# version of that file committed through 2026-10-04). Embedded because
+# since 2026-10-05 the daily loop appends a new snapshot to that file every
+# day, so `derive_conditional_seeding` on the live file raises "expected one
+# standings snapshot" -- the failure V3LabellingTests hit on a clean
+# checkout. The bracket's seeding is a fixed input to these tests, never
+# whatever the file holds today.
+_SNAPSHOT = "2026-09-08T20:36:38.925644+00:00"
+SEEDING_SNAPSHOT_ROWS = [
+    {"captured_at": _SNAPSHOT, "league_id": lg, "team_abbrev": team,
+     "division_leader": leader, "wildcard_rank": wc, "win_pct": pct}
+    for lg, team, leader, wc, pct in (
+        (103, "TB", True, None, 0.594), (103, "NYY", False, 1, 0.566),
+        (103, "BOS", False, 2, 0.552), (103, "CWS", True, None, 0.524),
+        (103, "CLE", False, 3, 0.503), (103, "HOU", True, None, 0.507),
+        (104, "ATL", True, None, 0.590), (104, "PHI", False, 1, 0.563),
+        (104, "MIL", True, None, 0.614), (104, "CHC", False, 2, 0.559),
+        (104, "LAD", True, None, 0.604), (104, "AZ", False, 3, 0.531),
+    )
+]
+
+# Point-in-time cut for the 2026 rows the bracket reads. The bracket's
+# features are taken "as of" the latest 2026 date in whatever store it is
+# handed, and the daily loop now extends those stores every day (results,
+# bullpen log), so a test on the raw files drifts daily. 2026-09-23 is the
+# last 2026 date in the results store as committed through 2026-10-04 -- the
+# window these tests were written and passing against (the demo's own "~26
+# days" unsealed window, 2026-08-28..09-23). 2026 rows after it are dropped
+# here; 2023-25 rows (the World Series demo's data) are untouched. (Cutting
+# earlier leaves too few games to price some seeded pairs.)
+BRACKET_STORE_CUTOFF = "2026-09-23"
+
+
+def _as_of_snapshot(rows):
+    """`rows` (a list, or a dict of row dicts) without any 2026 row dated
+    after BRACKET_STORE_CUTOFF."""
+    def keep(row):
+        date = str(row.get("date") or "")
+        return not (date.startswith("2026") and date > BRACKET_STORE_CUTOFF)
+    if isinstance(rows, dict):
+        return {k: v for k, v in rows.items() if keep(v)}
+    return [r for r in rows if keep(r)]
+
+
 class V3LabellingTests(unittest.TestCase):
     """Third review, 2026-09-27: MODEL-USED/SCENARIO INPUT/CONTEXT ONLY/
     UNAVAILABLE must stay distinct, and a v3 relabelling must never change
-    a single probability. Real data, same justification as
-    StateTableConsistencyTests above."""
+    a single probability. Real 2023-25 data (same justification as
+    StateTableConsistencyTests above); the 2026 bracket's seeding snapshot
+    and its as-of data window are pinned fixtures, because those are the
+    inputs the daily loop now moves (see SEEDING_SNAPSHOT_ROWS)."""
 
     @classmethod
     def setUpClass(cls):
@@ -325,8 +373,12 @@ class V3LabellingTests(unittest.TestCase):
         bullpen_log = bullpen.read_log()
         cls.v2 = demo.run_world_series_2024_demo_v2(store, pitcher_logs, bullpen_log)
         cls.v3 = demo.run_world_series_2024_demo_v3(store, pitcher_logs, bullpen_log)
-        cls.bracket_v1 = demo.run_2026_conditional_bracket_demo(store, bullpen_log)
-        cls.bracket_v3 = demo.run_2026_conditional_bracket_demo_v3(store, bullpen_log)
+        bracket_store = _as_of_snapshot(store)
+        bracket_pen = _as_of_snapshot(bullpen_log)
+        cls.bracket_v1 = demo.run_2026_conditional_bracket_demo(
+            bracket_store, bracket_pen, SEEDING_SNAPSHOT_ROWS)
+        cls.bracket_v3 = demo.run_2026_conditional_bracket_demo_v3(
+            bracket_store, bracket_pen, SEEDING_SNAPSHOT_ROWS)
 
     # ---- WORLD SERIES v3 ----
 
@@ -376,6 +428,17 @@ class V3LabellingTests(unittest.TestCase):
 
     def test_bracket_v3_probabilities_are_byte_identical_to_v1(self):
         self.assertEqual(_strip_label_only_keys(self.bracket_v1), _strip_label_only_keys(self.bracket_v3))
+
+    def test_bracket_seeding_comes_from_the_injected_snapshot_not_the_file(self):
+        """Regression for the 2026-10-05 break: the live standings file now
+        holds many daily snapshots, and a bracket built from it raised. The
+        seeding here is exactly the injected 2026-09-08 field."""
+        self.assertEqual(_SNAPSHOT, self.bracket_v1["seeding_snapshot_captured_at"])
+        self.assertEqual({1: "TB", 2: "CWS", 3: "HOU", 4: "NYY", 5: "BOS", 6: "CLE"},
+                         self.bracket_v1["seeding"]["AL"])
+        self.assertEqual({1: "MIL", 2: "LAD", 3: "ATL", 4: "PHI", 5: "CHC", 6: "AZ"},
+                         self.bracket_v1["seeding"]["NL"])
+        self.assertLessEqual(self.bracket_v1["features_as_of"], BRACKET_STORE_CUTOFF)
 
     def test_bracket_v3_starting_pitcher_is_unavailable(self):
         self.assertEqual("UNAVAILABLE", self.bracket_v3["factor_dispositions"]["starting_pitcher"])

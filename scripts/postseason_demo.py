@@ -479,8 +479,16 @@ def derive_conditional_seeding(rows: list) -> dict:
             "source": "data/historical/standings.jsonl (one snapshot)"}
 
 
-def run_2026_conditional_bracket_demo(store, bullpen_log) -> dict:
-    snapshot_rows = _load_standings_snapshot()
+def run_2026_conditional_bracket_demo(store, bullpen_log, standings_rows=None) -> dict:
+    """`standings_rows` is the injection seam for the one standings snapshot
+    the seeding is derived from. Left `None` it reads the live
+    `data/historical/standings.jsonl`, exactly as before -- but since
+    2026-10-05 the daily loop APPENDS a snapshot per day to that file, so the
+    live read now raises "expected one standings snapshot" (see
+    `derive_conditional_seeding`). A test that needs a stable bracket must
+    pass its own single-snapshot rows rather than depend on the file."""
+    snapshot_rows = (standings_rows if standings_rows is not None
+                     else _load_standings_snapshot())
     derived = derive_conditional_seeding(snapshot_rows)
     seeding = derived["seeding"]
 
@@ -686,14 +694,14 @@ def run_world_series_2024_demo_v3(store, pitcher_logs, bullpen_log) -> dict:
     return v3
 
 
-def run_2026_conditional_bracket_demo_v3(store, bullpen_log) -> dict:
+def run_2026_conditional_bracket_demo_v3(store, bullpen_log, standings_rows=None) -> dict:
     """The bracket, relabelled. Every round here is an unscheduled future
     game, so `starting_pitcher` is uniformly UNAVAILABLE -- not MODEL-USED
     (the bug) and not SCENARIO INPUT (no rotation projection is attempted
     for a round this far out; see `richer_factors_not_used_in_bracket`,
     already present in v1/this function's own output).
     """
-    v1 = run_2026_conditional_bracket_demo(store, bullpen_log)
+    v1 = run_2026_conditional_bracket_demo(store, bullpen_log, standings_rows)
 
     v3 = dict(v1)
     top_level = dict(v1["factor_dispositions"])
