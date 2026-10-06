@@ -1,34 +1,34 @@
 {
  "files": {
   "bouts.jsonl": {
-   "bytes": 1426884,
+   "bytes": 1430985,
    "newest": "2026-10-04T00:00Z",
-   "records": 1689,
-   "sha256": "c574950bbccef12c8126c048a723221675cc752a1f13157da0ae85d8610cf9ef"
+   "records": 1694,
+   "sha256": "e292a741bc5ec273eed4ab92e6e54bfabd45cc628c7cab7cbf098138d71ed743"
   },
   "events.jsonl": {
-   "bytes": 80163,
+   "bytes": 80228,
    "newest": "2026-10-03T20:00Z",
    "records": 156,
-   "sha256": "a28cb1f0ab26ff8296788c2ddefa226450c9ab571624fe63fd14ab73dadda49c"
+   "sha256": "bb09cd9f13b85d8b93e827496fb60dcfee2b4fce8667c5fd440d0492a4c7a2ae"
   },
   "fight_stats.jsonl": {
    "bytes": 5530540,
    "newest": "2026-10-04T00:00Z",
    "records": 3210,
-   "sha256": "fb286cd7cdfd7a14eb89cf80b378aeb7e256289609068e4943f1e37b22e91db0"
+   "sha256": "8613ecdd4eb362a90d7eb67280ecd8435025f0db65cc61ba12ad4cc114cb6daf"
   },
   "fighters.jsonl": {
-   "bytes": 598289,
-   "newest": "2026-10-03T20:14:22Z",
-   "records": 1075,
-   "sha256": "c170d8d1d8810879ba9c0d0415098b7414f6b632f56e05b7eb8158b9b9e140cb"
+   "bytes": 605522,
+   "newest": "2026-10-06T10:20:32Z",
+   "records": 1088,
+   "sha256": "4b1499fe63f1fdc2d576946690c5608f9d3a7101a6221107946c4cbdda0e2256"
   },
   "odds.jsonl": {
-   "bytes": 6090670,
-   "newest": "2026-10-05T19:02:30Z",
+   "bytes": 6090658,
+   "newest": "2026-10-06T10:20:17Z",
    "records": 4034,
-   "sha256": "225bf2c8f456e84687650dc9bbee5520b206ec55d4deac095ac247c08df7c726"
+   "sha256": "365bc7bd2bb3c47bb723839bac419b2fa049da5931e30781355e4bacdc411f9e"
   },
   "ufccom_profiles.jsonl": {
    "bytes": 1263862,
@@ -37,17 +37,17 @@
    "sha256": "f9d7f7ec8aa1bf8e6c6f556c4a324c4546537888cfff4654f15de97323098267"
   }
  },
- "generated_utc": "2026-10-05T19:02:33Z",
+ "generated_utc": "2026-10-06T10:20:33Z",
  "last_run": {
-  "bouts": 80,
-  "events": 9,
+  "bouts": 90,
+  "events": 10,
   "fight_stats": 60,
-  "fighters": 0,
-  "finished_utc": "2026-10-05T19:02:33Z",
+  "fighters": 13,
+  "finished_utc": "2026-10-06T10:20:32Z",
   "kind": "update",
   "odds": 50,
   "profiles": 0,
-  "started_utc": "2026-10-05T19:00:29Z",
+  "started_utc": "2026-10-06T10:18:23Z",
   "stopped": null
  },
  "last_run_errors": 0

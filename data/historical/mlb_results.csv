@@ -9817,3 +9817,5 @@ game_pk,date,start_time_utc,venue,game_type,away_team,home_team,away_team_id,hom
 849835,2026-10-03,2026-10-03T22:30:00Z,Tropicana Field,D,NYY,TB,147,139,Gerrit Cole,Drew Rasmussen,543037,656876,0,1,TB,1,1,1,N,1
 849823,2026-10-04,2026-10-05T00:00:00Z,UNIQLO Field at Dodger Stadium,D,ATL,LAD,144,119,Ray Kerr,Blake Snell,678061,605483,3,2,ATL,0,5,1,N,1
 849825,2026-10-04,2026-10-04T20:00:00Z,American Family Field,D,SD,MIL,135,158,Michael King,Logan Henderson,650633,701656,3,4,MIL,1,7,1,N,1
+849834,2026-10-05,2026-10-05T21:00:00Z,Progressive Field,D,CWS,CLE,145,114,Anthony Kay,Gavin Williams,641743,668909,4,3,CWS,0,7,1,N,1
+849839,2026-10-05,2026-10-06T00:00:00Z,Tropicana Field,D,NYY,TB,147,139,Cam Schlittler,Freddy Peralta,693645,642547,2,5,TB,1,7,3,N,1
