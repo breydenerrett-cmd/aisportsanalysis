@@ -3937,3 +3937,6 @@
 {"game_date": "2026-10-07", "observed_utc": "2026-10-06T18:07:43.843448+00:00", "poll": true}
 {"game_date": "2026-10-06", "observed_utc": "2026-10-06T18:22:12.874170+00:00", "poll": true}
 {"game_date": "2026-10-07", "observed_utc": "2026-10-06T18:22:13.054744+00:00", "poll": true}
+{"game_date": "2026-10-06", "observed_utc": "2026-10-06T18:34:20.135408+00:00", "poll": true}
+{"commence_time": "2026-10-06T22:00:00Z", "crew": [{"id": 428442, "name": "James Hoye", "officialType": "Home Plate"}, {"id": 503586, "name": "Tripp Gibson", "officialType": "First Base"}, {"id": 427554, "name": "Jim Wolf", "officialType": "Second Base"}, {"id": 482631, "name": "Mike Estabrook", "officialType": "Third Base"}, {"id": 577468, "name": "Roberto Ortiz", "officialType": "Left Field"}, {"id": 427197, "name": "Chris Guccione", "officialType": "Right Field"}], "game_date": "2026-10-06", "game_pk": 849819, "game_state": "Pre-Game", "home_plate_umpire": "James Hoye", "observed_utc": "2026-10-06T18:34:20.135408+00:00", "prev_poll_utc": "2026-10-06T18:22:12.874170+00:00", "revealed": true}
+{"game_date": "2026-10-07", "observed_utc": "2026-10-06T18:34:20.201618+00:00", "poll": true}
