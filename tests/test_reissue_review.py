@@ -43,6 +43,9 @@ if HAS_FASTAPI:
     from tests.test_billing_acceptance_path import SESSION, _Case
     from tests.test_tester_journey_e2e import _Journey
     from src.appstate import customers, events, users as users_store
+else:  # Linux CI has no FastAPI: the classes below are skipped, but must still load
+    SESSION = None
+    _Case = _Journey = unittest.TestCase
 
 REASON = "lost the token; verified by reply from the account mailbox, ticket 41"
 

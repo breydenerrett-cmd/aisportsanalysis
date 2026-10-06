@@ -480,6 +480,8 @@ class TheReturnPageUnderNode(unittest.TestCase):
 
 if HAS_FASTAPI:
     from tests.test_tester_journey_e2e import _Journey, _asgi, ADMIN
+else:  # Linux CI has no FastAPI: the classes below are skipped, but must still load
+    _Journey = _Case = unittest.TestCase
 
 
 @unittest.skipUnless(HAS_FASTAPI, "fastapi not installed")
