@@ -3501,3 +3501,4 @@
 {"category": "other", "date": "2026-10-06", "first_seen_utc": "2026-10-07T00:04:30.450948+00:00", "player": "Mart\u00edn P\u00e9rez", "player_id": 527048, "team": "ATL", "transaction_id": 945206}
 {"category": "recalled", "date": "2026-10-06", "first_seen_utc": "2026-10-07T00:04:30.450948+00:00", "player": "Emmet Sheehan", "player_id": 686218, "team": "LAD", "transaction_id": 945207}
 {"fetched_utc": "2026-10-07T00:04:32.057458+00:00", "game_date": "2026-10-06", "poll": true}
+{"fetched_utc": "2026-10-07T00:11:14.548975+00:00", "game_date": "2026-10-06", "poll": true}
