@@ -1,34 +1,34 @@
 {
  "files": {
   "bouts.jsonl": {
-   "bytes": 1431040,
-   "newest": "2026-10-04T00:00Z",
-   "records": 1694,
-   "sha256": "c336d57cb71c17b5d42c16719c43246a068377cbbb05e41f21a43f7a38f37060"
+   "bytes": 1433598,
+   "newest": "2026-10-06T23:00Z",
+   "records": 1697,
+   "sha256": "b32c6930d26dbbdcecbc2ee19574bd755ddeefd94512a227f733e81bfcbf9d63"
   },
   "events.jsonl": {
-   "bytes": 80228,
-   "newest": "2026-10-03T20:00Z",
+   "bytes": 80246,
+   "newest": "2026-10-06T23:00Z",
    "records": 156,
-   "sha256": "593c187d8fd80944672cb9798a8d3bc0c3b2e17589b2f481d1b6680957df39f1"
+   "sha256": "f059e2caf2673b2ddfe412d5a5019e4a9c13d7e3c1661eef2afc23166bd54551"
   },
   "fight_stats.jsonl": {
-   "bytes": 5530540,
-   "newest": "2026-10-04T00:00Z",
-   "records": 3210,
-   "sha256": "3c662fc745205d804f08e196199e695d0d74343acac80e99e0baebc0090ea822"
+   "bytes": 5547642,
+   "newest": "2026-10-06T23:00Z",
+   "records": 3220,
+   "sha256": "733e802f8f1cf380077094a97b990322dc9ec745de41772998e73651ed6fb56b"
   },
   "fighters.jsonl": {
-   "bytes": 605522,
-   "newest": "2026-10-06T10:20:32Z",
-   "records": 1088,
-   "sha256": "4b1499fe63f1fdc2d576946690c5608f9d3a7101a6221107946c4cbdda0e2256"
+   "bytes": 608797,
+   "newest": "2026-10-07T10:19:52Z",
+   "records": 1094,
+   "sha256": "62dda277b102c5ad562d863972eddaf19f1c04ef260c77657c96f334067fa0dc"
   },
   "odds.jsonl": {
-   "bytes": 6090657,
-   "newest": "2026-10-06T16:28:58Z",
+   "bytes": 6095120,
+   "newest": "2026-10-07T10:19:43Z",
    "records": 4034,
-   "sha256": "fabd63ccf5d8947d61bb8a59ef1609d3f851a42e25b4ddf91f1f0cd90460459c"
+   "sha256": "5c301901a88ad5a4cb3b7c8c9397a74182e91a4c302099ceb403f44af306d42a"
   },
   "ufccom_profiles.jsonl": {
    "bytes": 1263862,
@@ -37,17 +37,17 @@
    "sha256": "f9d7f7ec8aa1bf8e6c6f556c4a324c4546537888cfff4654f15de97323098267"
   }
  },
- "generated_utc": "2026-10-06T16:29:02Z",
+ "generated_utc": "2026-10-07T10:19:53Z",
  "last_run": {
-  "bouts": 90,
-  "events": 10,
-  "fight_stats": 60,
-  "fighters": 0,
-  "finished_utc": "2026-10-06T16:29:02Z",
+  "bouts": 67,
+  "events": 8,
+  "fight_stats": 46,
+  "fighters": 6,
+  "finished_utc": "2026-10-07T10:19:53Z",
   "kind": "update",
-  "odds": 50,
+  "odds": 26,
   "profiles": 0,
-  "started_utc": "2026-10-06T16:27:03Z",
+  "started_utc": "2026-10-07T10:17:51Z",
   "stopped": null
  },
  "last_run_errors": 0
