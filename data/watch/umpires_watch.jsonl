@@ -4180,3 +4180,5 @@
 {"game_date": "2026-10-07", "observed_utc": "2026-10-07T19:55:37.234776+00:00", "poll": true}
 {"commence_time": "2026-10-08T00:00:00Z", "crew": [{"id": 483564, "name": "Dan Bellino", "officialType": "Home Plate"}, {"id": 521251, "name": "Ben May", "officialType": "First Base"}, {"id": 482666, "name": "D.J. Reyburn", "officialType": "Second Base"}, {"id": 605674, "name": "Ryan Wills", "officialType": "Third Base"}, {"id": 575629, "name": "Shane Livensparger", "officialType": "Left Field"}, {"id": 605672, "name": "Jeremie Rehak", "officialType": "Right Field"}], "game_date": "2026-10-07", "game_pk": 849838, "game_state": "Pre-Game", "home_plate_umpire": "Dan Bellino", "observed_utc": "2026-10-07T19:55:37.234776+00:00", "prev_poll_utc": "2026-10-07T19:41:05.386101+00:00", "revealed": true}
 {"game_date": "2026-10-08", "observed_utc": "2026-10-07T19:55:37.401128+00:00", "poll": true}
+{"game_date": "2026-10-07", "observed_utc": "2026-10-07T20:08:40.549476+00:00", "poll": true}
+{"game_date": "2026-10-08", "observed_utc": "2026-10-07T20:08:40.624473+00:00", "poll": true}
