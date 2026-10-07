@@ -17,3 +17,4 @@
 {"end_utc": "2026-10-03T22:20:54.002948+00:00", "game_id": "849835", "gap_seconds": 523.406885, "kind": "WINDOW_GAP", "reason": "no live window covered this span", "start_utc": "2026-10-03T22:12:10.596063+00:00"}
 {"end_utc": "2026-10-04T03:59:16.234742+00:00", "game_id": "849830", "gap_seconds": 525.732115, "kind": "WINDOW_GAP", "reason": "no live window covered this span", "start_utc": "2026-10-04T03:50:30.502627+00:00"}
 {"end_utc": "2026-10-06T02:38:11.048985+00:00", "game_id": "849839", "gap_seconds": 794.873127, "kind": "WINDOW_GAP", "reason": "no live window covered this span", "start_utc": "2026-10-06T02:24:56.175858+00:00"}
+{"end_utc": "2026-10-07T03:33:06.007170+00:00", "game_id": "849826", "gap_seconds": 1290.047973, "kind": "WINDOW_GAP", "reason": "no live window covered this span", "start_utc": "2026-10-07T03:11:35.959197+00:00"}
