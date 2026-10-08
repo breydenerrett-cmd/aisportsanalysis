@@ -4407,3 +4407,6 @@
 {"game_date": "2026-10-09", "observed_utc": "2026-10-08T19:52:35.948766+00:00", "poll": true}
 {"game_date": "2026-10-08", "observed_utc": "2026-10-08T19:59:00.695722+00:00", "poll": true}
 {"game_date": "2026-10-09", "observed_utc": "2026-10-08T19:59:00.892003+00:00", "poll": true}
+{"game_date": "2026-10-08", "observed_utc": "2026-10-08T20:12:36.364895+00:00", "poll": true}
+{"commence_time": "2026-10-09T00:00:00Z", "crew": [{"id": 596740, "name": "Jansen Visconti", "officialType": "Home Plate"}, {"id": 483569, "name": "Vic Carapazza", "officialType": "First Base"}, {"id": 665297, "name": "Tom Hanahan", "officialType": "Second Base"}, {"id": 484183, "name": "Cory Blaser", "officialType": "Third Base"}, {"id": 573597, "name": "Gabe Morales", "officialType": "Left Field"}, {"id": 429805, "name": "Todd Tichenor", "officialType": "Right Field"}], "game_date": "2026-10-08", "game_pk": 849832, "game_state": "Pre-Game", "home_plate_umpire": "Jansen Visconti", "observed_utc": "2026-10-08T20:12:36.364895+00:00", "prev_poll_utc": "2026-10-08T19:59:00.695722+00:00", "revealed": true}
+{"game_date": "2026-10-09", "observed_utc": "2026-10-08T20:12:36.588216+00:00", "poll": true}
