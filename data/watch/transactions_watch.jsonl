@@ -3773,3 +3773,37 @@
 {"fetched_utc": "2026-10-08T21:36:21.755723+00:00", "game_date": "2026-10-08", "poll": true}
 {"fetched_utc": "2026-10-08T21:42:45.720935+00:00", "game_date": "2026-10-08", "poll": true}
 {"category": "recalled", "date": "2026-10-08", "first_seen_utc": "2026-10-08T21:42:45.720935+00:00", "player": "Luis Gil", "player_id": 661563, "team": "NYY", "transaction_id": 945385}
+{"fetched_utc": "2026-10-08T21:54:15.006018+00:00", "game_date": "2026-10-08", "poll": true}
+{"category": "recalled", "date": "2026-10-08", "first_seen_utc": "2026-10-08T21:54:15.006018+00:00", "player": "Bradley Hanner", "player_id": 690440, "team": "NYY", "transaction_id": 945386}
+{"category": "recalled", "date": "2026-10-08", "first_seen_utc": "2026-10-08T21:54:15.006018+00:00", "player": "Brendan Beck", "player_id": 694341, "team": "NYY", "transaction_id": 945387}
+{"category": "recalled", "date": "2026-10-08", "first_seen_utc": "2026-10-08T21:54:15.006018+00:00", "player": "Alex Cook", "player_id": 702047, "team": "TB", "transaction_id": 945388}
+{"category": "recalled", "date": "2026-10-08", "first_seen_utc": "2026-10-08T21:54:15.006018+00:00", "player": "Owen Murphy", "player_id": 702566, "team": "ATL", "transaction_id": 945389}
+{"category": "recalled", "date": "2026-10-08", "first_seen_utc": "2026-10-08T21:54:15.006018+00:00", "player": "Michael Grove", "player_id": 675627, "team": "ATL", "transaction_id": 945390}
+{"category": "recalled", "date": "2026-10-08", "first_seen_utc": "2026-10-08T21:54:15.006018+00:00", "player": "Kyle Hurt", "player_id": 669165, "team": "LAD", "transaction_id": 945391}
+{"category": "recalled", "date": "2026-10-08", "first_seen_utc": "2026-10-08T21:54:15.006018+00:00", "player": "Colton Gordon", "player_id": 676467, "team": "MIL", "transaction_id": 945392}
+{"category": "recalled", "date": "2026-10-08", "first_seen_utc": "2026-10-08T21:54:15.006018+00:00", "player": "Kyle Hart", "player_id": 606996, "team": "SD", "transaction_id": 945393}
+{"category": "il_activation", "date": "2026-10-08", "first_seen_utc": "2026-10-08T21:54:15.006018+00:00", "player": "Casey Mize", "player_id": 663554, "team": "SD", "transaction_id": 945394}
+{"category": "il_activation", "date": "2026-10-08", "first_seen_utc": "2026-10-08T21:54:15.006018+00:00", "player": "Angel Chivilli", "player_id": 683409, "team": "NYY", "transaction_id": 945395}
+{"category": "il_activation", "date": "2026-10-08", "first_seen_utc": "2026-10-08T21:54:15.006018+00:00", "player": "Yerry De los Santos", "player_id": 660787, "team": "NYY", "transaction_id": 945396}
+{"category": "il_activation", "date": "2026-10-08", "first_seen_utc": "2026-10-08T21:54:15.006018+00:00", "player": "Michael Fulmer", "player_id": 605242, "team": "NYY", "transaction_id": 945397}
+{"category": "il_activation", "date": "2026-10-08", "first_seen_utc": "2026-10-08T21:54:15.006018+00:00", "player": "Amed Rosario", "player_id": 642708, "team": "NYY", "transaction_id": 945398}
+{"category": "il_activation", "date": "2026-10-08", "first_seen_utc": "2026-10-08T21:54:15.006018+00:00", "player": "Jasson Dom\u00ednguez", "player_id": 691176, "team": "NYY", "transaction_id": 945399}
+{"category": "il_activation", "date": "2026-10-08", "first_seen_utc": "2026-10-08T21:54:15.006018+00:00", "player": "J.C. Escarra", "player_id": 641555, "team": "NYY", "transaction_id": 945400}
+{"category": "il_activation", "date": "2026-10-08", "first_seen_utc": "2026-10-08T21:54:15.006018+00:00", "player": "Aaron Judge", "player_id": 592450, "team": "NYY", "transaction_id": 945401}
+{"category": "il_activation", "date": "2026-10-08", "first_seen_utc": "2026-10-08T21:54:15.006018+00:00", "player": "Clarke Schmidt", "player_id": 657376, "team": "NYY", "transaction_id": 945402}
+{"category": "il_activation", "date": "2026-10-08", "first_seen_utc": "2026-10-08T21:54:15.006018+00:00", "player": "Tim Hill", "player_id": 657612, "team": "NYY", "transaction_id": 945403}
+{"category": "il_activation", "date": "2026-10-08", "first_seen_utc": "2026-10-08T21:54:15.006018+00:00", "player": "Elmer Rodr\u00edguez", "player_id": 695684, "team": "NYY", "transaction_id": 945404}
+{"category": "il_activation", "date": "2026-10-08", "first_seen_utc": "2026-10-08T21:54:15.006018+00:00", "player": "Max Schuemann", "player_id": 680474, "team": "NYY", "transaction_id": 945405}
+{"category": "il_activation", "date": "2026-10-08", "first_seen_utc": "2026-10-08T21:54:15.006018+00:00", "player": "Jhony Brito", "player_id": 666745, "team": "SD", "transaction_id": 945406}
+{"category": "il_activation", "date": "2026-10-08", "first_seen_utc": "2026-10-08T21:54:15.006018+00:00", "player": "Griffin Canning", "player_id": 656288, "team": "SD", "transaction_id": 945407}
+{"category": "il_activation", "date": "2026-10-08", "first_seen_utc": "2026-10-08T21:54:15.006018+00:00", "player": "Jeremiah Estrada", "player_id": 669093, "team": "SD", "transaction_id": 945408}
+{"category": "il_activation", "date": "2026-10-08", "first_seen_utc": "2026-10-08T21:54:15.006018+00:00", "player": "Garrett Hawkins", "player_id": 678184, "team": "SD", "transaction_id": 945409}
+{"category": "il_activation", "date": "2026-10-08", "first_seen_utc": "2026-10-08T21:54:15.006018+00:00", "player": "Mason McCoy", "player_id": 669200, "team": "SD", "transaction_id": 945410}
+{"category": "il_activation", "date": "2026-10-08", "first_seen_utc": "2026-10-08T21:54:15.006018+00:00", "player": "Wandy Peralta", "player_id": 593974, "team": "SD", "transaction_id": 945411}
+{"category": "il_activation", "date": "2026-10-08", "first_seen_utc": "2026-10-08T21:54:15.006018+00:00", "player": "JP Sears", "player_id": 676664, "team": "SD", "transaction_id": 945412}
+{"category": "il_activation", "date": "2026-10-08", "first_seen_utc": "2026-10-08T21:54:15.006018+00:00", "player": "Hunter Stratton", "player_id": 676702, "team": "SD", "transaction_id": 945413}
+{"category": "il_activation", "date": "2026-10-08", "first_seen_utc": "2026-10-08T21:54:15.006018+00:00", "player": "Randy V\u00e1squez", "player_id": 681190, "team": "SD", "transaction_id": 945414}
+{"category": "il_activation", "date": "2026-10-08", "first_seen_utc": "2026-10-08T21:54:15.006018+00:00", "player": "Will Wagner", "player_id": 695238, "team": "SD", "transaction_id": 945415}
+{"category": "il_activation", "date": "2026-10-08", "first_seen_utc": "2026-10-08T21:54:15.006018+00:00", "player": "Sung-Mun Song", "player_id": 823550, "team": "SD", "transaction_id": 945416}
+{"category": "il_activation", "date": "2026-10-08", "first_seen_utc": "2026-10-08T21:54:15.006018+00:00", "player": "Gage Workman", "player_id": 669398, "team": "SD", "transaction_id": 945417}
+{"fetched_utc": "2026-10-08T21:54:16.870496+00:00", "game_date": "2026-10-08", "poll": true}
