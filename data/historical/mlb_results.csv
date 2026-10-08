@@ -9821,3 +9821,7 @@ game_pk,date,start_time_utc,venue,game_type,away_team,home_team,away_team_id,hom
 849839,2026-10-05,2026-10-06T00:00:00Z,Tropicana Field,D,NYY,TB,147,139,Cam Schlittler,Freddy Peralta,693645,642547,2,5,TB,1,7,3,N,1
 849819,2026-10-06,2026-10-06T22:00:00Z,Truist Park,D,LAD,ATL,119,144,Yoshinobu Yamamoto,Chris Sale,808967,519242,3,1,LAD,0,4,2,N,1
 849826,2026-10-06,2026-10-07T01:30:00Z,Petco Park,D,MIL,SD,158,135,Dustin May,Nick Pivetta,669160,601713,3,4,SD,1,7,1,N,1
+849822,2026-10-07,2026-10-07T22:00:00Z,Truist Park,D,LAD,ATL,119,144,Tyler Glasnow,Tyler Mahle,607192,641816,4,1,LAD,0,5,3,N,1
+849827,2026-10-07,2026-10-08T02:00:00Z,Petco Park,D,MIL,SD,158,135,Robert Gasser,Walker Buehler,688107,621111,3,1,MIL,0,4,2,N,1
+849833,2026-10-07,2026-10-07T20:00:00Z,Rate Field,D,CLE,CWS,114,145,Daniel Espino,Sean Newcomb,682982,656794,9,3,CLE,0,12,6,N,1
+849838,2026-10-07,2026-10-08T00:00:00Z,Yankee Stadium,D,TB,NYY,139,147,Nick Martinez,Max Fried,607259,608331,4,3,TB,0,7,1,N,1

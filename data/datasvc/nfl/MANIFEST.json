@@ -22,16 +22,16 @@
  },
  "files": {
   "games.jsonl": {
-   "bytes": 1786151,
+   "bytes": 1786130,
    "newest": "2026-10-06T00:15:00Z",
    "records": 1696,
-   "sha256": "fe8568f5754d931718082049659d376fd823acf22f222aa700f8fa1e3cd8e66c"
+   "sha256": "74dfad38509f003e021876d35ba72e4cb10d9f83888e5ee5e75251e94f82cda5"
   },
   "injuries.jsonl": {
-   "bytes": 8365523,
-   "newest": "2026-10-04T10:19:56Z",
-   "records": 17977,
-   "sha256": "71c0f22205f411395c6ec1aa80534e8fd84b0cd29e023b519084359ecc3ac681"
+   "bytes": 8444227,
+   "newest": "2026-10-08T17:11:34Z",
+   "records": 18155,
+   "sha256": "47228f80f8d6ebad6ca6de89607b40098efdc7c617b4840831ed9df0bd9dbedf"
   },
   "player_games.jsonl": {
    "bytes": 8742523,
@@ -46,21 +46,37 @@
    "sha256": "f55b4c91b22b53d8b6010b58aa2ffd35140f8f79dd078130ba1b524fd2e778e0"
   }
  },
- "generated_utc": "2026-10-07T10:19:53Z",
+ "generated_utc": "2026-10-08T17:11:34Z",
  "last_run": {
-  "finished_utc": "2026-10-07T10:19:53Z",
-  "games": 0,
-  "injuries": 0,
+  "finished_utc": "2026-10-08T17:11:34Z",
+  "games": 29,
+  "injuries": 178,
   "kind": "update",
-  "missing_files": [
-   "https://github.com/nflverse/nflverse-data/releases/download/schedules/games.csv"
-  ],
-  "per_season": {},
+  "missing_files": [],
+  "per_season": {
+   "2026": {
+    "injuries": {
+     "dropped_full_participation_only": 541,
+     "dropped_no_status": 1,
+     "kept": 732,
+     "rows": 1274
+    },
+    "player_stats": {
+     "dropped_no_player_id": 4,
+     "dropped_not_offense": 2983,
+     "kept": 1462,
+     "rows": 4449
+    },
+    "team_games": 544,
+    "team_stats_rows": 128,
+    "team_stats_unmatched": []
+   }
+  },
   "player_games": 0,
   "seasons": [
    2026
   ],
-  "started_utc": "2026-10-07T10:19:53Z",
+  "started_utc": "2026-10-08T17:11:31Z",
   "stopped": null,
   "team_games": 0
  },
