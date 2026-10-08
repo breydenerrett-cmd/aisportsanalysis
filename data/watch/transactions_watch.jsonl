@@ -3771,3 +3771,5 @@
 {"fetched_utc": "2026-10-08T21:03:54.975458+00:00", "game_date": "2026-10-08", "poll": true}
 {"fetched_utc": "2026-10-08T21:16:06.880512+00:00", "game_date": "2026-10-08", "poll": true}
 {"fetched_utc": "2026-10-08T21:36:21.755723+00:00", "game_date": "2026-10-08", "poll": true}
+{"fetched_utc": "2026-10-08T21:42:45.720935+00:00", "game_date": "2026-10-08", "poll": true}
+{"category": "recalled", "date": "2026-10-08", "first_seen_utc": "2026-10-08T21:42:45.720935+00:00", "player": "Luis Gil", "player_id": 661563, "team": "NYY", "transaction_id": 945385}
