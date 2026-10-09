@@ -3833,3 +3833,4 @@
 {"category": "il_activation", "date": "2026-10-08", "first_seen_utc": "2026-10-09T00:20:06.706187+00:00", "player": "Rolddy Mu\u00f1oz", "player_id": 691548, "team": "ATL", "transaction_id": 945427}
 {"category": "il_activation", "date": "2026-10-08", "first_seen_utc": "2026-10-09T00:20:06.706187+00:00", "player": "Dominic Smith", "player_id": 642086, "team": "ATL", "transaction_id": 945428}
 {"category": "il_activation", "date": "2026-10-08", "first_seen_utc": "2026-10-09T00:20:06.706187+00:00", "player": "Tyler Uberstine", "player_id": 700413, "team": "ATL", "transaction_id": 945429}
+{"fetched_utc": "2026-10-09T00:30:19.626827+00:00", "game_date": "2026-10-08", "poll": true}
