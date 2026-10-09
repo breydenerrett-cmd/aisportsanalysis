@@ -3859,3 +3859,8 @@
 {"fetched_utc": "2026-10-09T20:31:11.371377+00:00", "game_date": "2026-10-09", "poll": true}
 {"fetched_utc": "2026-10-09T21:13:07.020884+00:00", "game_date": "2026-10-09", "poll": true}
 {"fetched_utc": "2026-10-09T21:32:37.717994+00:00", "game_date": "2026-10-09", "poll": true}
+{"fetched_utc": "2026-10-09T22:34:36.769535+00:00", "game_date": "2026-10-09", "poll": true}
+{"category": "designated", "date": "2026-10-09", "first_seen_utc": "2026-10-09T22:34:36.769535+00:00", "player": "Luke Williams", "player_id": 663897, "team": "ATL", "transaction_id": 945455}
+{"category": "other", "date": "2026-10-09", "first_seen_utc": "2026-10-09T22:34:36.769535+00:00", "player": "Luis Castillo", "player_id": 622491, "team": "CWS", "transaction_id": 945456}
+{"category": "other", "date": "2026-10-09", "first_seen_utc": "2026-10-09T22:34:36.769535+00:00", "player": "Danny Young", "player_id": 664849, "team": "ATL", "transaction_id": 945457}
+{"category": "other", "date": "2026-10-09", "first_seen_utc": "2026-10-09T22:34:36.769535+00:00", "player": "Blake Treinen", "player_id": 595014, "team": "LAD", "transaction_id": 945458}
