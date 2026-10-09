@@ -9825,3 +9825,4 @@ game_pk,date,start_time_utc,venue,game_type,away_team,home_team,away_team_id,hom
 849827,2026-10-07,2026-10-08T02:00:00Z,Petco Park,D,MIL,SD,158,135,Robert Gasser,Walker Buehler,688107,621111,3,1,MIL,0,4,2,N,1
 849833,2026-10-07,2026-10-07T20:00:00Z,Rate Field,D,CLE,CWS,114,145,Daniel Espino,Sean Newcomb,682982,656794,9,3,CLE,0,12,6,N,1
 849838,2026-10-07,2026-10-08T00:00:00Z,Yankee Stadium,D,TB,NYY,139,147,Nick Martinez,Max Fried,607259,608331,4,3,TB,0,7,1,N,1
+849832,2026-10-08,2026-10-09T00:00:00Z,Rate Field,D,CLE,CWS,114,145,Parker Messick,Hagen Smith,800048,696146,9,5,CLE,0,14,4,N,1
