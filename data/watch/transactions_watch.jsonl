@@ -3820,3 +3820,16 @@
 {"fetched_utc": "2026-10-08T23:43:35.174631+00:00", "game_date": "2026-10-08", "poll": true}
 {"fetched_utc": "2026-10-08T23:52:15.085771+00:00", "game_date": "2026-10-08", "poll": true}
 {"fetched_utc": "2026-10-09T00:04:44.267991+00:00", "game_date": "2026-10-08", "poll": true}
+{"fetched_utc": "2026-10-09T00:20:06.706187+00:00", "game_date": "2026-10-08", "poll": true}
+{"category": "il_activation", "date": "2026-10-08", "first_seen_utc": "2026-10-09T00:20:06.706187+00:00", "player": "Blake Burkhalter", "player_id": 686628, "team": "ATL", "transaction_id": 945418}
+{"category": "il_activation", "date": "2026-10-08", "first_seen_utc": "2026-10-09T00:20:06.706187+00:00", "player": "Mart\u00edn P\u00e9rez", "player_id": 527048, "team": "ATL", "transaction_id": 945419}
+{"category": "il_activation", "date": "2026-10-08", "first_seen_utc": "2026-10-09T00:20:06.706187+00:00", "player": "James Karinchak", "player_id": 675916, "team": "ATL", "transaction_id": 945420}
+{"category": "il_activation", "date": "2026-10-08", "first_seen_utc": "2026-10-09T00:20:06.706187+00:00", "player": "Luke Williams", "player_id": 663897, "team": "ATL", "transaction_id": 945421}
+{"category": "il_activation", "date": "2026-10-08", "first_seen_utc": "2026-10-09T00:20:06.706187+00:00", "player": "Kyle Farmer", "player_id": 571657, "team": "ATL", "transaction_id": 945422}
+{"category": "il_activation", "date": "2026-10-08", "first_seen_utc": "2026-10-09T00:20:06.706187+00:00", "player": "Bryce Elder", "player_id": 693821, "team": "ATL", "transaction_id": 945423}
+{"category": "il_activation", "date": "2026-10-08", "first_seen_utc": "2026-10-09T00:20:06.706187+00:00", "player": "Jim Jarvis", "player_id": 805347, "team": "ATL", "transaction_id": 945424}
+{"category": "il_activation", "date": "2026-10-08", "first_seen_utc": "2026-10-09T00:20:06.706187+00:00", "player": "DaShawn Keirsey Jr.", "player_id": 680577, "team": "ATL", "transaction_id": 945425}
+{"category": "il_activation", "date": "2026-10-08", "first_seen_utc": "2026-10-09T00:20:06.706187+00:00", "player": "Reynaldo L\u00f3pez", "player_id": 625643, "team": "ATL", "transaction_id": 945426}
+{"category": "il_activation", "date": "2026-10-08", "first_seen_utc": "2026-10-09T00:20:06.706187+00:00", "player": "Rolddy Mu\u00f1oz", "player_id": 691548, "team": "ATL", "transaction_id": 945427}
+{"category": "il_activation", "date": "2026-10-08", "first_seen_utc": "2026-10-09T00:20:06.706187+00:00", "player": "Dominic Smith", "player_id": 642086, "team": "ATL", "transaction_id": 945428}
+{"category": "il_activation", "date": "2026-10-08", "first_seen_utc": "2026-10-09T00:20:06.706187+00:00", "player": "Tyler Uberstine", "player_id": 700413, "team": "ATL", "transaction_id": 945429}
