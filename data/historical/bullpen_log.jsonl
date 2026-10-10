@@ -62507,3 +62507,4 @@
 {"batters_faced": 6, "date": "2026-10-08", "earned_runs": 4, "game_pk": 849832, "hits": 4, "innings": 0.0, "name": "Grant Taylor", "person_id": 691799, "pitches": 18, "started": false, "strikeouts": 0, "team": "CWS", "walks": 2}
 {"batters_faced": 4, "date": "2026-10-08", "earned_runs": 0, "game_pk": 849832, "hits": 0, "innings": 1.667, "name": "Bryan Hudson", "person_id": 663542, "pitches": 16, "started": false, "strikeouts": 0, "team": "CWS", "walks": 0}
 {"batters_faced": 8, "date": "2026-10-08", "earned_runs": 0, "game_pk": 849832, "hits": 1, "innings": 2.0, "name": "Tyler Davis", "person_id": 699823, "pitches": 27, "started": false, "strikeouts": 1, "team": "CWS", "walks": 1}
+{"date": "2026-10-09", "empty": true}

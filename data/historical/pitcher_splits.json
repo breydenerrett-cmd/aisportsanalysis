@@ -3130,7 +3130,7 @@
   }
  },
  "668909:2026": {
-  "as_of": "2026-10-05T10:14:36.918484+00:00",
+  "as_of": "2026-10-10T10:27:03.481004+00:00",
   "person_id": "668909",
   "season": "2026",
   "splits": {
@@ -3437,45 +3437,45 @@
   }
  },
  "669373:2026": {
-  "as_of": "2026-09-08T20:37:59.161278+00:00",
+  "as_of": "2026-10-10T10:27:03.537863+00:00",
   "person_id": "669373",
   "season": "2026",
   "splits": {
    "Away Games": {
-    "avg": 0.205,
-    "batters_faced": 229,
+    "avg": 0.193,
+    "batters_faced": 276,
     "home_runs": 5,
-    "innings": "60.1",
-    "ops": 0.566,
-    "strikeouts": 68,
-    "walks": 7
+    "innings": "74.1",
+    "ops": 0.518,
+    "strikeouts": 87,
+    "walks": 8
    },
    "Home Games": {
-    "avg": 0.232,
-    "batters_faced": 292,
-    "home_runs": 7,
-    "innings": "72.0",
-    "ops": 0.648,
-    "strikeouts": 91,
-    "walks": 15
+    "avg": 0.237,
+    "batters_faced": 344,
+    "home_runs": 9,
+    "innings": "84.1",
+    "ops": 0.667,
+    "strikeouts": 99,
+    "walks": 19
    },
    "vs Left": {
-    "avg": 0.271,
-    "batters_faced": 121,
+    "avg": 0.264,
+    "batters_faced": 144,
     "home_runs": 4,
-    "innings": "29.1",
-    "ops": 0.738,
-    "strikeouts": 41,
-    "walks": 3
+    "innings": "35.1",
+    "ops": 0.706,
+    "strikeouts": 49,
+    "walks": 4
    },
    "vs Right": {
-    "avg": 0.204,
-    "batters_faced": 400,
-    "home_runs": 8,
-    "innings": "102.2",
-    "ops": 0.572,
-    "strikeouts": 118,
-    "walks": 19
+    "avg": 0.202,
+    "batters_faced": 476,
+    "home_runs": 10,
+    "innings": "123.0",
+    "ops": 0.566,
+    "strikeouts": 137,
+    "walks": 23
    }
   }
  },
@@ -4383,45 +4383,45 @@
   }
  },
  "680732:2026": {
-  "as_of": "2026-09-08T20:37:59.893222+00:00",
+  "as_of": "2026-10-10T10:27:03.589241+00:00",
   "person_id": "680732",
   "season": "2026",
   "splits": {
    "Away Games": {
-    "avg": 0.219,
-    "batters_faced": 266,
+    "avg": 0.22,
+    "batters_faced": 286,
     "home_runs": 7,
-    "innings": "64.2",
-    "ops": 0.673,
-    "strikeouts": 72,
-    "walks": 25
+    "innings": "69.2",
+    "ops": 0.666,
+    "strikeouts": 76,
+    "walks": 27
    },
    "Home Games": {
-    "avg": 0.215,
-    "batters_faced": 369,
-    "home_runs": 11,
-    "innings": "90.0",
-    "ops": 0.659,
-    "strikeouts": 95,
-    "walks": 29
+    "avg": 0.229,
+    "batters_faced": 430,
+    "home_runs": 12,
+    "innings": "102.2",
+    "ops": 0.692,
+    "strikeouts": 109,
+    "walks": 35
    },
    "vs Left": {
-    "avg": 0.225,
-    "batters_faced": 369,
-    "home_runs": 12,
-    "innings": "88.2",
-    "ops": 0.702,
-    "strikeouts": 98,
-    "walks": 33
+    "avg": 0.23,
+    "batters_faced": 424,
+    "home_runs": 13,
+    "innings": "101.2",
+    "ops": 0.707,
+    "strikeouts": 109,
+    "walks": 38
    },
    "vs Right": {
-    "avg": 0.205,
-    "batters_faced": 266,
+    "avg": 0.218,
+    "batters_faced": 292,
     "home_runs": 6,
-    "innings": "64.2",
-    "ops": 0.612,
-    "strikeouts": 69,
-    "walks": 21
+    "innings": "69.1",
+    "ops": 0.646,
+    "strikeouts": 76,
+    "walks": 24
    }
   }
  },
