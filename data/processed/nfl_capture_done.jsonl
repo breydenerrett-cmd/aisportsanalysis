@@ -170,3 +170,4 @@
 {"game_id": "_gameday_refresh", "observed_utc": "2026-10-11T12:30:55.708727Z", "phase": "refresh"}
 {"game_id": "2026_05_PHI_JAX", "observed_utc": "2026-10-11T13:04:57.963407Z", "phase": "t30m"}
 {"game_id": "_gameday_refresh", "observed_utc": "2026-10-11T13:32:55.056406Z", "phase": "refresh"}
+{"game_id": "2026_05_DEN_LAC", "observed_utc": "2026-10-11T14:09:59.115971Z", "phase": "t6h"}
