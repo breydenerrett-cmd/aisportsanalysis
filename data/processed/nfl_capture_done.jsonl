@@ -199,3 +199,4 @@
 {"game_id": "2026_05_BAL_ATL", "observed_utc": "2026-10-11T18:20:49.747596Z", "phase": "t6h"}
 {"game_id": "2026_05_DET_ARI", "observed_utc": "2026-10-11T18:32:24.685350Z", "phase": "t2h"}
 {"game_id": "2026_05_SF_SEA", "observed_utc": "2026-10-11T18:32:24.685350Z", "phase": "t2h"}
+{"game_id": "_gameday_refresh", "observed_utc": "2026-10-11T18:58:17.088605Z", "phase": "refresh"}
