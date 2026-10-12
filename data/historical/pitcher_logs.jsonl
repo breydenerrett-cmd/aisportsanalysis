@@ -24212,7 +24212,7 @@
 {"person_id":687941,"date":"2026-09-25","season":"2026","is_home":true,"games_started":1,"innings_pitched":2.0,"earned_runs":3,"runs":3,"hits":4,"walks":1,"strikeouts":1,"home_runs":0,"batters_faced":11,"pitches":40,"game_type":"R"}
 {"person_id":687941,"date":"2026-09-29","season":"2026","is_home":false,"games_started":0,"innings_pitched":0.0,"earned_runs":2,"runs":2,"hits":3,"walks":1,"strikeouts":0,"home_runs":0,"batters_faced":4,"pitches":15,"game_type":"F"}
 {"person_id":687941,"date":"2026-09-30","season":"2026","is_home":false,"games_started":0,"innings_pitched":0.6666666666666666,"earned_runs":0,"runs":0,"hits":0,"walks":0,"strikeouts":0,"home_runs":0,"batters_faced":2,"pitches":7,"game_type":"F"}
-{"person_id":688107,"season":"2026","date":null,"empty":false,"checked_utc":"2026-10-10T10:26:52.244680+00:00"}
+{"person_id":688107,"season":"2026","date":null,"empty":false,"checked_utc":"2026-10-12T19:41:28.274131+00:00"}
 {"person_id":688107,"date":"2024-05-10","season":"2024","is_home":true,"games_started":1,"innings_pitched":6.0,"earned_runs":0,"runs":0,"hits":2,"walks":0,"strikeouts":4,"home_runs":0,"batters_faced":20,"pitches":79}
 {"person_id":688107,"date":"2024-05-15","season":"2024","is_home":true,"games_started":1,"innings_pitched":5.0,"earned_runs":1,"runs":1,"hits":6,"walks":1,"strikeouts":2,"home_runs":0,"batters_faced":22,"pitches":82}
 {"person_id":688107,"date":"2024-05-21","season":"2024","is_home":false,"games_started":1,"innings_pitched":6.0,"earned_runs":4,"runs":5,"hits":10,"walks":0,"strikeouts":0,"home_runs":0,"batters_faced":29,"pitches":80}
@@ -27001,7 +27001,7 @@
 {"person_id":808963,"date":"2026-09-22","season":"2026","is_home":true,"games_started":0,"innings_pitched":1.0,"earned_runs":0,"runs":0,"hits":2,"walks":0,"strikeouts":2,"home_runs":0,"batters_faced":5,"pitches":20}
 {"person_id":808963,"date":"2026-09-25","season":"2026","is_home":false,"games_started":0,"innings_pitched":1.0,"earned_runs":0,"runs":0,"hits":0,"walks":0,"strikeouts":2,"home_runs":0,"batters_faced":3,"pitches":14}
 {"person_id":808963,"date":"2026-09-27","season":"2026","is_home":false,"games_started":0,"innings_pitched":1.0,"earned_runs":0,"runs":0,"hits":0,"walks":0,"strikeouts":2,"home_runs":0,"batters_faced":3,"pitches":14}
-{"person_id":808967,"season":"2026","date":null,"empty":false,"checked_utc":"2026-10-11T10:20:16.531003+00:00"}
+{"person_id":808967,"season":"2026","date":null,"empty":false,"checked_utc":"2026-10-12T19:41:28.274131+00:00"}
 {"person_id":808967,"date":"2024-03-21","season":"2024","is_home":true,"games_started":1,"innings_pitched":1.0,"earned_runs":5,"runs":5,"hits":4,"walks":1,"strikeouts":2,"home_runs":0,"batters_faced":9,"pitches":43}
 {"person_id":808967,"date":"2024-03-30","season":"2024","is_home":true,"games_started":1,"innings_pitched":5.0,"earned_runs":0,"runs":0,"hits":2,"walks":0,"strikeouts":5,"home_runs":0,"batters_faced":17,"pitches":68}
 {"person_id":808967,"date":"2024-04-06","season":"2024","is_home":false,"games_started":1,"innings_pitched":5.0,"earned_runs":0,"runs":0,"hits":3,"walks":2,"strikeouts":8,"home_runs":0,"batters_faced":21,"pitches":80}
