@@ -4231,3 +4231,6 @@
 {"fetched_utc": "2026-10-12T14:06:53.371761+00:00", "game_date": "2026-10-12", "poll": true}
 {"fetched_utc": "2026-10-12T14:14:40.098599+00:00", "game_date": "2026-10-12", "poll": true}
 {"fetched_utc": "2026-10-12T14:27:32.371492+00:00", "game_date": "2026-10-12", "poll": true}
+{"fetched_utc": "2026-10-12T14:41:43.059141+00:00", "game_date": "2026-10-12", "poll": true}
+{"category": "other", "date": "2026-10-12", "first_seen_utc": "2026-10-12T14:41:43.059141+00:00", "player": "Daniel Schneemann", "player_id": 682177, "team": "CLE", "transaction_id": 945462}
+{"category": "il_activation", "date": "2026-10-12", "first_seen_utc": "2026-10-12T14:41:43.059141+00:00", "player": "Slade Cecconi", "player_id": 677944, "team": "CLE", "transaction_id": 945463}
