@@ -5164,3 +5164,5 @@
 {"game_date": "2026-10-12", "observed_utc": "2026-10-12T20:05:59.765704+00:00", "poll": true}
 {"commence_time": "2026-10-13T00:00:00Z", "crew": [{"id": 598411, "name": "Nestor Ceja", "officialType": "Home Plate"}, {"id": 427344, "name": "Bill Miller", "officialType": "First Base"}, {"id": 483919, "name": "Mark Ripperger", "officialType": "Second Base"}, {"id": 490319, "name": "Jordan Baker", "officialType": "Third Base"}, {"id": 431232, "name": "Chad Fairchild", "officialType": "Left Field"}, {"id": 503077, "name": "Adam Hamari", "officialType": "Right Field"}], "game_date": "2026-10-12", "game_pk": 849820, "game_state": "Pre-Game", "home_plate_umpire": "Nestor Ceja", "observed_utc": "2026-10-12T20:05:59.765704+00:00", "prev_poll_utc": "2026-10-12T19:52:20.807991+00:00", "revealed": true}
 {"game_date": "2026-10-13", "observed_utc": "2026-10-12T20:05:59.890203+00:00", "poll": true}
+{"game_date": "2026-10-12", "observed_utc": "2026-10-12T20:21:41.744711+00:00", "poll": true}
+{"game_date": "2026-10-13", "observed_utc": "2026-10-12T20:21:41.880683+00:00", "poll": true}
