@@ -12728,3 +12728,7 @@
 {"budget_band": "live_capture", "caller": "prop_prices.run", "credits_remaining": 97351, "credits_used_last": 0, "utc": "2026-10-12T19:25:48.430234Z"}
 {"budget_band": "live_capture", "caller": "batter_props.run", "credits_remaining": 97351, "credits_used_last": 0, "utc": "2026-10-12T19:25:49.024031Z"}
 {"budget_band": "live_capture", "caller": "nfl_capture.run", "credits_remaining": 97348, "credits_used_last": 0, "utc": "2026-10-12T19:26:53.813926Z"}
+{"budget_band": "live_capture", "caller": "dense.run", "credits_remaining": 97338, "credits_used_last": 0, "utc": "2026-10-12T19:52:21.325952Z"}
+{"budget_band": "live_capture", "caller": "prop_prices.run", "credits_remaining": 97335, "credits_used_last": 0, "utc": "2026-10-12T19:52:25.877029Z"}
+{"budget_band": "live_capture", "caller": "batter_props.run", "credits_remaining": 97334, "credits_used_last": 0, "utc": "2026-10-12T19:52:26.724524Z"}
+{"budget_band": "live_capture", "caller": "nfl_capture.run", "credits_remaining": 97331, "credits_used_last": 0, "utc": "2026-10-12T19:53:20.756260Z"}
