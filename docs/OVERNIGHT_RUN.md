@@ -6670,3 +6670,34 @@ end-to-end confirmation (above).
 - 2026-10-14T10:26Z daily_loop: research-readiness exit=0
 - 2026-10-14T10:27Z daily_loop: prereg-clv exit=0
 - 2026-10-14T10:28Z daily_loop: display stores refreshed (report /tmp/display_refresh_report.json)
+- 2026-10-14T14:48Z daily_loop: ingest 2026-09-30..2026-10-14 --game-types decisive exit=0
+- 2026-10-14T14:49Z daily_loop: standings catchup end=2026-10-14
+- 2026-10-14T14:49Z daily_loop: lineups+matchup_history date=2026-10-14
+- 2026-10-14T14:49Z daily_loop: pitcher splits date=2026-10-14
+- 2026-10-14T14:49Z daily_loop: pitch arsenals season=2026
+- 2026-10-14T14:49Z daily_loop: statcast --catchup exit=0
+- 2026-10-14T14:49Z daily_loop: gamekey --date 2026-10-13 --end 2026-10-14 exit=0
+- 2026-10-14T14:49Z daily_loop: gameflow --date 2026-10-13 exit=0
+- 2026-10-14T14:50Z daily_loop: engine slate --date 2026-10-14 exit=0
+- 2026-10-14T14:50Z daily_loop: engine slip --date 2026-10-14
+- 2026-10-14T14:51Z daily_loop: engine settle --date 2026-10-13 exit=0
+- 2026-10-14T14:51Z daily_loop: card settle --recent exit=0
+- 2026-10-14T14:51Z daily_loop: card settle --rule all --date 2026-10-13 exit=0
+- 2026-10-14T14:51Z daily_loop: nfl card settle --recent exit=0
+- 2026-10-14T14:52Z daily_loop: ufc data update
+- 2026-10-14T14:52Z daily_loop: nfl data update
+- 2026-10-14T14:52Z daily_loop: ufc autograde + settle 2026-10-13
+- 2026-10-14T14:52Z daily_loop: mlb value shadow settle --recent exit=0 (counts only)
+- 2026-10-14T14:52Z daily_loop: tennis discover
+- 2026-10-14T14:52Z daily_loop: tennis results --date 2026-10-13
+- 2026-10-14T14:53Z daily_loop: live settle (counts only)
+- 2026-10-14T14:53Z daily_loop: card calibration frozen 2026-09-15 (docs/CARD_CALIBRATION_FREEZE_2026-09-15.md), refit skipped
+- 2026-10-14T14:53Z daily_loop: eod --date 2026-10-13 exit=0
+- 2026-10-14T14:53Z daily_loop: postmortem --date 2026-10-13 exit=0
+- 2026-10-14T14:53Z daily_loop: train exit=0
+- 2026-10-14T14:53Z daily_loop: closing-audit exit=0
+- 2026-10-14T14:53Z daily_loop: calibration_drift_audit exit=1
+- 2026-10-14T14:53Z daily_loop: test_tier_ladder exit=1
+- 2026-10-14T14:54Z daily_loop: research-readiness exit=0
+- 2026-10-14T14:54Z daily_loop: prereg-clv exit=0
+- 2026-10-14T14:54Z daily_loop: display stores refreshed (report /tmp/display_refresh_report.json)
