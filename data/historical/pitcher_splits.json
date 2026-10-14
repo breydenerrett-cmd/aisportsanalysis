@@ -937,7 +937,7 @@
   }
  },
  "605483:2026": {
-  "as_of": "2026-10-04T15:04:44.035815+00:00",
+  "as_of": "2026-10-14T10:28:05.548791+00:00",
   "person_id": "605483",
   "season": "2026",
   "splits": {
@@ -1883,17 +1883,17 @@
   }
  },
  "643377:2026": {
-  "as_of": "2026-09-26T13:58:25.058164+00:00",
+  "as_of": "2026-10-14T10:28:05.715967+00:00",
   "person_id": "643377",
   "season": "2026",
   "splits": {
    "Away Games": {
-    "avg": 0.258,
-    "batters_faced": 204,
+    "avg": 0.255,
+    "batters_faced": 214,
     "home_runs": 6,
-    "innings": "49.1",
-    "ops": 0.703,
-    "strikeouts": 38,
+    "innings": "52.1",
+    "ops": 0.688,
+    "strikeouts": 39,
     "walks": 15
    },
    "Home Games": {
@@ -1906,21 +1906,21 @@
     "walks": 20
    },
    "vs Left": {
-    "avg": 0.245,
-    "batters_faced": 271,
+    "avg": 0.248,
+    "batters_faced": 276,
     "home_runs": 10,
-    "innings": "65.1",
-    "ops": 0.703,
+    "innings": "66.1",
+    "ops": 0.704,
     "strikeouts": 76,
     "walks": 20
    },
    "vs Right": {
-    "avg": 0.223,
-    "batters_faced": 178,
+    "avg": 0.216,
+    "batters_faced": 183,
     "home_runs": 5,
-    "innings": "43.2",
-    "ops": 0.651,
-    "strikeouts": 39,
+    "innings": "45.2",
+    "ops": 0.632,
+    "strikeouts": 40,
     "walks": 15
    }
   }
@@ -5492,7 +5492,7 @@
   }
  },
  "688107:2026": {
-  "as_of": "2026-10-13T10:22:12.928039+00:00",
+  "as_of": "2026-10-14T10:28:05.839759+00:00",
   "person_id": "688107",
   "season": "2026",
   "splits": {
