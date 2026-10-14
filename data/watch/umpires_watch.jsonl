@@ -5628,3 +5628,5 @@
 {"game_date": "2026-10-14", "observed_utc": "2026-10-14T20:38:05.745183+00:00", "poll": true}
 {"commence_time": "2026-10-15T00:00:00Z", "crew": [{"id": 427533, "name": "Mark Wegner", "officialType": "Home Plate"}, {"id": 484198, "name": "Alan Porter", "officialType": "First Base"}, {"id": 482663, "name": "David Rackley", "officialType": "Second Base"}, {"id": 483630, "name": "John Tumpane", "officialType": "Third Base"}, {"id": 554242, "name": "Edwin Moscoso", "officialType": "Left Field"}, {"id": 503490, "name": "Chris Segal", "officialType": "Right Field"}], "game_date": "2026-10-14", "game_pk": 849811, "game_state": "Pre-Game", "home_plate_umpire": "Mark Wegner", "observed_utc": "2026-10-14T20:38:05.745183+00:00", "prev_poll_utc": "2026-10-14T20:26:27.104094+00:00", "revealed": true}
 {"game_date": "2026-10-15", "observed_utc": "2026-10-14T20:38:05.850007+00:00", "poll": true}
+{"game_date": "2026-10-14", "observed_utc": "2026-10-14T20:52:15.408282+00:00", "poll": true}
+{"game_date": "2026-10-15", "observed_utc": "2026-10-14T20:52:15.497555+00:00", "poll": true}
