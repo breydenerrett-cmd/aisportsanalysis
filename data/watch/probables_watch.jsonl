@@ -4025,3 +4025,7 @@
 {"fetched_utc": "2026-10-15T03:33:57.467813+00:00", "game_date": "2026-10-14", "poll": true}
 {"fetched_utc": "2026-10-15T03:47:00.349357+00:00", "game_date": "2026-10-14", "poll": true}
 {"fetched_utc": "2026-10-15T03:58:02.181986+00:00", "game_date": "2026-10-14", "poll": true}
+{"fetched_utc": "2026-10-15T04:13:02.546073+00:00", "game_date": "2026-10-15", "poll": true}
+{"away_probable_id": 643377, "fetched_utc": "2026-10-15T04:13:02.546073+00:00", "game_pk": 849818, "home_probable_id": 668909}
+{"away_probable_id": null, "fetched_utc": "2026-10-15T04:13:02.546073+00:00", "game_pk": 849810, "home_probable_id": 607192}
+{"fetched_utc": "2026-10-15T04:13:04.461491+00:00", "game_date": "2026-10-15", "poll": true}
