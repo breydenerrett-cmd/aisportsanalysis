@@ -213,15 +213,33 @@ def sel_key(e):
             e.get("side"))
 
 
+AMBIGUOUS = "__ambiguous__"
+
+
 def event_map():
+    """{game_pk: [map rows]} and {event_id: game_pk}. A doubleheader is
+    resolved by the map with `ambiguous: true` and, on 2026-09-25 BAL@NYY,
+    both events were pinned to the same game_pk -- so any game_pk named as
+    a candidate on an ambiguous row, and any event on one, is refused
+    (marked AMBIGUOUS) rather than guessed."""
     by_pk = defaultdict(list)
     by_event = {}
+    bad_pk, bad_ev = set(), set()
     for line in open(EVENT_MAP, encoding="utf-8"):
         d = json.loads(line)
+        if d.get("ambiguous"):
+            bad_ev.add(d.get("event_id"))
+            bad_pk.add(str(d.get("game_pk")))
+            for c in d.get("candidates") or ():
+                bad_pk.add(str(c.get("game_pk")))
         if not d.get("resolved") or d.get("game_pk") is None:
             continue
         by_pk[str(d["game_pk"])].append(d)
         by_event[d["event_id"]] = str(d["game_pk"])
+    for pk in bad_pk:
+        by_pk[pk] = [AMBIGUOUS]
+    for ev in bad_ev:
+        by_event.pop(ev, None)
     return by_pk, by_event
 
 
@@ -229,6 +247,8 @@ def event_for(entry, by_pk):
     cands = by_pk.get(str(entry.get("game_pk"))) or []
     if not cands:
         return None
+    if cands == [AMBIGUOUS]:
+        return AMBIGUOUS
     fp = _t(entry.get("first_pitch_utc"))
     if fp is None or len(cands) == 1:
         return cands[0]["event_id"]
@@ -402,6 +422,10 @@ def measure(entry, pidx, gidx, by_pk):
     out["event_id"] = ev
     if ev is None:
         out["absence"] = "NO_EVENT"
+        return out
+    if ev == AMBIGUOUS:
+        out["event_id"] = None
+        out["absence"] = "AMBIGUOUS_EVENT"
         return out
     if prop:
         series = pidx.series((ev, entry.get("player"), entry.get("market"), float(entry.get("line"))))
@@ -880,6 +904,25 @@ def section_stale(meas, out):
             print(f"| {label} | {kind} | {len(g)} | {len(newer)} | {still}/{len(av)} | "
                   f"{fmt(mean([r[f'avail_cents_at_{tag}'] for r in av]), 1)} | "
                   f"{fmt(mean([r.get(f'drift_pts_at_{tag}') for r in av]))} | {gone} |")
+    print()
+    relock = [r for r in meas if r.get("best_at_lock") is not None]
+    if relock:
+        u_lock, n_lock = units_at(relock, price_key="best_at_lock")
+        w_, l_, u_act = record(relock)
+        print(f"- entries re-priced at the best price on the newest capture at or before locked_at: n={n_lock} ({w_}-{l_}); "
+              f"actual {u_act:+.2f} units, at the lock-time best price {u_lock:+.2f} units.")
+        worst = min(relock, key=lambda r: r["avail_cents_at_lock"])
+        print(f"- largest gap: {worst['date']} {worst.get('team_name') or worst.get('player')} graded {worst['price']:+d}, "
+              f"best at lock {worst['best_at_lock']:+.0f} ({worst['avail_cents_at_lock']:+.0f} cents), result {worst['result']}")
+    stale_props = [r for r in meas if r["kind"] == "prop" and (r.get("quote_age_at_lock_min") or 0) > 60
+                   and r.get("close_best_price") is not None]
+    if stale_props:
+        u_c, n_c = units_at(stale_props, price_key="close_best_price")
+        w_, l_, u_act = record(stale_props)
+        worse = sum(dec(r["close_best_price"]) < dec(r["price"]) for r in stale_props)
+        print(f"- props locked on a quote >60 min old with a capture after the lock (no capture exists between quote and lock "
+              f"for any prop): n={n_c} ({w_}-{l_}); actual {u_act:+.2f} units, at the best price on the first-after-lock/closing "
+              f"capture {u_c:+.2f}; that later best price was worse than the graded one on {worse}/{n_c}.")
     print()
     fp_gap = [((_t(r["first_published_utc"]) - _t(r["quote_utc"])).total_seconds() / 60.0, r["kind"])
               for r in meas if r.get("first_published_utc") and r.get("quote_utc")]

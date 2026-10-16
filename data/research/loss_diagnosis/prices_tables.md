@@ -4,25 +4,25 @@ Population: 178 graded V2 entries, 97-81, -1.416 units; 778 refused close calls 
 
 ## 1. Closing-line value
 
-Graded entries: 178. Measurable against a later quote: 84 (47.2%). Absences: {'NO_LATER_QUOTE': 93, 'NO_EVENT': 1}
+Graded entries: 178. Measurable against a later quote: 82 (46.1%). Absences: {'AMBIGUOUS_EVENT': 8, 'NO_LATER_QUOTE': 88}
 
-Instrument check: quote instant rebuilt for 177/178; graded price == best two-sided price at that instant on 176/177; frozen market_probability == rebuilt consensus (+-0.0011) on 175/177.
+Instrument check: quote instant rebuilt for 170/178; graded price == best two-sided price at that instant on 170/170; frozen market_probability == rebuilt consensus (+-0.0011) on 170/170.
 
 | kind | graded | measurable | % |
 |---|---|---|---|
-| game | 29 | 28 | 96.6 |
+| game | 29 | 26 | 89.7 |
 | prop | 149 | 56 | 37.6 |
 
-**Headline (all measurable, n=84):** CLV -1.71 pts [-2.10, -1.30]; consensus move +0.38 pts [+0.05, +0.73]; premium paid at lock +2.09 pts [+1.82, +2.35].
+**Headline (all measurable, n=82):** CLV -1.69 pts [-2.08, -1.28]; consensus move +0.43 pts [+0.10, +0.80]; premium paid at lock +2.13 pts [+1.85, +2.39].
 
-- same-book CLV (book that held the best price at the quote, its last later quote): +0.81 [+0.40, +1.22] (n=84)
-- same-book cents (our price minus that book's last later price; + = we beat it): +5.19 [+2.73, +7.86] (n=84)
-- cents vs the closing de-vigged fair price: -8.36 [-10.60, -5.74] (n=84)
-- vs best price on the closing board (pts): +0.40 [+0.01, +0.79] (n=84)
+- same-book CLV (book that held the best price at the quote, its last later quote): +0.86 [+0.47, +1.26] (n=82)
+- same-book cents (our price minus that book's last later price; + = we beat it): +5.40 [+3.00, +8.03] (n=82)
+- cents vs the closing de-vigged fair price: -8.31 [-10.56, -5.65] (n=82)
+- vs best price on the closing board (pts): +0.44 [+0.07, +0.84] (n=82)
 
 - closing capture lead before first pitch, prop: median 110 min (range 49-119); within 90 min on 8/56
-- closing capture lead before first pitch, game: median 13 min (range 1-826); within 90 min on 23/28
-- robustness, closes within 90 min of first pitch only (clv.py's CLOSING_LEAD_STALE_SECONDS): CLV -1.05 [-1.78, -0.06] (n=31)
+- closing capture lead before first pitch, game: median 13 min (range 1-826); within 90 min on 21/26
+- robustness, closes within 90 min of first pitch only (clv.py's CLOSING_LEAD_STALE_SECONDS): CLV -0.96 [-1.65, +0.04] (n=29)
 
 **By market**
 
@@ -31,7 +31,7 @@ Instrument check: quote instant rebuilt for 177/178; graded price == best two-si
 | batter_hits | 69 | 37-32 | +1.95 | 22 | -1.77 [-2.51, -1.11] | +0.13 [-0.48, +0.68] | 18 |
 | batter_runs_scored | 2 | 0-2 | -2.00 | 1 | +0.17 [n/a, n/a] | +2.88 [n/a, n/a] | 100 |
 | batter_total_bases | 78 | 41-37 | -6.19 | 33 | -2.32 [-2.87, -1.63] | +0.72 [+0.23, +1.33] | 6 |
-| moneyline | 29 | 19-10 | +4.83 | 28 | -1.01 [-1.55, -0.30] | +0.08 [-0.50, +0.78] | 18 |
+| moneyline | 29 | 19-10 | +4.83 | 26 | -0.90 [-1.51, -0.08] | +0.23 [-0.39, +1.05] | 15 |
 
 **By market and side**
 
@@ -44,13 +44,13 @@ Instrument check: quote instant rebuilt for 177/178; graded price == best two-si
 | batter_total_bases Over | 59 | 31-28 | -4.25 | 22 | -2.05 [-2.73, -0.71] | +0.87 [+0.25, +2.01] | 9 |
 | batter_total_bases Under | 19 | 10-9 | -1.94 | 11 | -2.88 [-3.87, -1.98] | +0.42 [-0.58, +1.30] | 0 |
 | moneyline away | 5 | 3-2 | +0.21 | 5 | -2.28 [-5.89, -0.85] | -1.02 [-4.68, +0.35] | 20 |
-| moneyline home | 24 | 16-8 | +4.62 | 23 | -0.74 [-1.48, +0.19] | +0.32 [-0.31, +1.13] | 17 |
+| moneyline home | 24 | 16-8 | +4.62 | 21 | -0.58 [-1.47, +0.42] | +0.53 [-0.21, +1.44] | 14 |
 
 **By price class**
 
 | segment | n graded | W-L | units | n CLV | mean CLV pts [95% CI] | mean move pts [95% CI] | beat close % |
 |---|---|---|---|---|---|---|---|
-| MAIN | 152 | 82-70 | -7.31 | 73 | -1.76 [-2.20, -1.29] | +0.34 [-0.05, +0.73] | 12 |
+| MAIN | 152 | 82-70 | -7.31 | 71 | -1.75 [-2.18, -1.29] | +0.40 [+0.01, +0.79] | 11 |
 | PLUS_MONEY | 26 | 15-11 | +5.89 | 11 | -1.36 [-2.62, +0.07] | +0.65 [-0.40, +1.88] | 27 |
 
 **By entry class (pick vs fill)**
@@ -58,14 +58,14 @@ Instrument check: quote instant rebuilt for 177/178; graded price == best two-si
 | segment | n graded | W-L | units | n CLV | mean CLV pts [95% CI] | mean move pts [95% CI] | beat close % |
 |---|---|---|---|---|---|---|---|
 | fill | 68 | 43-25 | +7.85 | 56 | -1.55 [-2.06, -0.99] | +0.45 [-0.03, +0.94] | 11 |
-| pick | 110 | 54-56 | -9.26 | 28 | -2.02 [-2.92, -1.40] | +0.23 [-0.68, +0.74] | 21 |
+| pick | 110 | 54-56 | -9.26 | 26 | -1.99 [-2.89, -1.29] | +0.39 [-0.35, +0.85] | 19 |
 
 **By hours before first pitch at lock**
 
 | segment | n graded | W-L | units | n CLV | mean CLV pts [95% CI] | mean move pts [95% CI] | beat close % |
 |---|---|---|---|---|---|---|---|
 | a <2h | 90 | 46-44 | -7.12 | 2 | -1.28 [n/a, n/a] | -0.21 [n/a, n/a] | 0 |
-| b 2-4h | 66 | 37-29 | +0.35 | 64 | -1.68 [-2.17, -1.10] | +0.46 [+0.04, +0.91] | 11 |
+| b 2-4h | 66 | 37-29 | +0.35 | 62 | -1.66 [-2.14, -1.07] | +0.54 [+0.11, +0.98] | 10 |
 | c 4-12h | 2 | 1-1 | -0.09 | 2 | -3.88 [n/a, n/a] | -3.22 [n/a, n/a] | 0 |
 | d >=12h | 20 | 13-7 | +5.44 | 16 | -1.61 [-2.75, -0.48] | +0.56 [-0.25, +1.32] | 31 |
 
@@ -77,14 +77,14 @@ Instrument check: quote instant rebuilt for 177/178; graded price == best two-si
 | 03 | 28 | 16-12 | +1.57 | 16 | -2.70 [-3.26, -2.08] | +0.18 [-0.40, +0.71] | 0 |
 | 04 | 88 | 41-47 | -12.35 | 24 | -1.95 [-2.63, -1.30] | +0.40 [-0.07, +0.88] | 17 |
 | 05-06 | 8 | 4-4 | -1.03 | 3 | -0.95 [-2.03, -0.40] | +0.48 [-0.46, +1.08] | 0 |
-| 07+ | 33 | 20-13 | +2.44 | 27 | -1.03 [-1.56, -0.30] | +0.06 [-0.51, +0.78] | 19 |
+| 07+ | 33 | 20-13 | +2.44 | 25 | -0.92 [-1.54, -0.07] | +0.21 [-0.42, +1.06] | 16 |
 
 **By kind x hours before first pitch**
 
 | segment | n graded | W-L | units | n CLV | mean CLV pts [95% CI] | mean move pts [95% CI] | beat close % |
 |---|---|---|---|---|---|---|---|
 | game a <2h | 1 | 1-0 | +0.70 | 1 | -0.76 [n/a, n/a] | +0.30 [n/a, n/a] | 0 |
-| game b 2-4h | 25 | 16-9 | +3.49 | 24 | -0.96 [-1.60, -0.16] | +0.21 [-0.43, +0.96] | 17 |
+| game b 2-4h | 25 | 16-9 | +3.49 | 22 | -0.82 [-1.54, +0.16] | +0.40 [-0.28, +1.34] | 14 |
 | game c 4-12h | 2 | 1-1 | -0.09 | 2 | -3.88 [n/a, n/a] | -3.22 [n/a, n/a] | 0 |
 | game d >=12h | 1 | 1-0 | +0.74 | 1 | +3.14 [n/a, n/a] | +3.34 [n/a, n/a] | 100 |
 | prop a <2h | 89 | 45-44 | -7.81 | 1 | -1.80 [n/a, n/a] | -0.71 [n/a, n/a] | 0 |
@@ -103,14 +103,14 @@ Instrument check: quote instant rebuilt for 177/178; graded price == best two-si
 | population | n with later quote | toward us | flat | against us | mean move pts [95% CI] | mean move to next capture | mean max favourable | mean max adverse | mean pre-quote move (open->quote) |
 |---|---|---|---|---|---|---|---|---|---|
 | taken (graded) props | 56 | 21 (38%) | 18 | 17 (30%) | +0.53 [+0.12, +0.89] | +0.53 | +0.53 | +0.53 | n/a (n=0) |
-| taken (graded) moneylines | 28 | 9 (32%) | 9 | 10 (36%) | +0.08 [-0.50, +0.78] | -0.11 | +0.83 | -0.90 | +0.18 (n=25) |
+| taken (graded) moneylines | 26 | 8 (31%) | 9 | 9 (35%) | +0.23 [-0.39, +1.05] | -0.10 | +0.88 | -0.80 | +0.30 (n=23) |
 | refused close calls, props | 127 | 43 (34%) | 27 | 57 (45%) | -0.21 [-0.43, +0.04] | -0.21 | -0.21 | -0.21 | n/a (n=0) |
-| refused close calls, moneylines | 32 | 7 (22%) | 22 | 3 (9%) | -0.02 [-0.42, +0.41] | +0.15 | +0.39 | -0.28 | +0.35 (n=32) |
+| refused close calls, moneylines | 31 | 6 (19%) | 22 | 3 (10%) | -0.10 [-0.45, +0.37] | +0.11 | +0.32 | -0.33 | +0.36 (n=31) |
 
 - taken minus refused consensus move, prop: +0.74 pts [+0.32, +1.07]
-- taken minus refused consensus move, game: +0.11 pts [-0.50, +0.91]
-- refused close calls: CLV -2.72 [-2.94, -2.37] (n=159); premium at their quote +2.89 [+2.85, +2.95]
-- props: the graded quote is the selection's FIRST capture in the store on 104/149 graded props (56/56 of the measurable ones), so pre-quote drift is mostly unmeasurable for props.
+- taken minus refused consensus move, game: +0.33 pts [-0.41, +1.28]
+- refused close calls: CLV -2.74 [-2.97, -2.37] (n=158); premium at their quote +2.89 [+2.85, +2.95]
+- props: the graded quote is the selection's FIRST capture in the store on 100/144 graded props (56/56 of the measurable ones), so pre-quote drift is mostly unmeasurable for props.
 
 **Taken props by plate-appearance source at the quote (season_average = lineup not yet used)**
 
@@ -131,26 +131,26 @@ Instrument check: quote instant rebuilt for 177/178; graded price == best two-si
 | pre-quote move | n | mean post move pts | W-L | units |
 |---|---|---|---|---|
 | a market already moved toward us (>+0.5) | 9 | +0.65 | 5-4 | -0.25 |
-| b flat | 11 | +0.19 | 8-3 | +3.45 |
-| c market had moved against us (<-0.5) | 5 | -0.75 | 3-2 | +0.39 |
+| b flat | 10 | +0.11 | 7-3 | +2.60 |
+| c market had moved against us (<-0.5) | 4 | +0.23 | 2-2 | -0.45 |
 
 **Result by direction of the post-quote move (taken, measurable):**
 
 | move | n | W-L | hit % | units | mean price |
 |---|---|---|---|---|---|
-| toward us | 30 | 19-11 | 63.3 | +4.68 | -97 |
+| toward us | 29 | 18-11 | 62.1 | +3.83 | -97 |
 | flat | 27 | 12-15 | 44.4 | -4.92 | -100 |
-| against us | 27 | 19-8 | 70.4 | +7.35 | -102 |
+| against us | 26 | 18-8 | 69.2 | +6.50 | -101 |
 
 ## 3. Vig, book choice and the price we were graded at
 
 | market | n | premium vs lock consensus pts | best-book two-way hold % | mean board hold % | graded price vs board average (cents) | graded price == best at quote |
 |---|---|---|---|---|---|---|
-| batter_hits | 69 | +2.11 | 6.92 | 6.84 | +7.2 | 69/69 |
+| batter_hits | 69 | +2.11 | 6.91 | 6.83 | +7.0 | 65/65 |
 | batter_runs_scored | 2 | +3.04 | 7.44 | 7.45 | +4.4 | 2/2 |
-| batter_total_bases | 78 | +3.04 | 6.81 | 7.02 | +4.1 | 78/78 |
-| moneyline | 29 | +1.08 | 3.40 | 3.89 | +5.8 | 27/28 |
-| ALL | 178 | +2.36 | 6.32 | 6.46 | +5.6 | 176/177 |
+| batter_total_bases | 78 | +3.04 | 6.82 | 7.02 | +4.0 | 77/77 |
+| moneyline | 29 | +1.08 | 3.40 | 3.89 | +5.7 | 26/26 |
+| ALL | 178 | +2.36 | 6.34 | 6.47 | +5.4 | 170/170 |
 
 **Decomposition of the record (all 178 graded entries unless stated):**
 
@@ -159,10 +159,10 @@ Instrument check: quote instant rebuilt for 177/178; graded price == best two-si
 | actual, at the graded price | -1.42 | 97-81, n=178 |
 | same results at the lock consensus fair price (no vig) | +5.84 | n=178; the pick quality the lock market would have paid for |
 | vig cost actually paid (actual minus fair) | -7.26 | |
-| same results at the board AVERAGE price at the quote | -4.11 | n=177 (actual on that subset -0.42) |
-| HINDSIGHT: same results at the best price any book showed from the quote to first pitch | +0.94 | n=177 (actual on that subset -0.42); retrospective, not takeable |
+| same results at the board AVERAGE price at the quote | -4.11 | n=170 (actual on that subset -0.69) |
+| HINDSIGHT: same results at the best price any book showed from the quote to first pitch | +0.50 | n=170 (actual on that subset -0.69); retrospective, not takeable |
 | market-expected units at the graded price, lock consensus | -7.55 | what the lock market expected these bets to return |
-| market-expected units at the graded price, closing consensus | -2.58 | n=84 (actual on that subset +7.11) |
+| market-expected units at the graded price, closing consensus | -2.49 | n=82 (actual on that subset +5.42) |
 | expected wins at lock consensus vs actual wins | 94.4 vs 97 | breakeven wins at graded prices 98.6 |
 
 Hit rate minus lock consensus probability: +1.45 pts [-5.91, +10.32] per bet; hit rate minus breakeven of the graded price: -0.91 pts [-8.30, +8.02].
@@ -185,22 +185,22 @@ Hit rate minus lock consensus probability: +1.45 pts [-5.91, +10.32] per bet; hi
 | 03 | 28 | 16-12 | +1.57 | 16 | -2.70 [-3.26, -2.08] | +0.18 [-0.40, +0.71] | 0 |
 | 04 | 88 | 41-47 | -12.35 | 24 | -1.95 [-2.63, -1.30] | +0.40 [-0.07, +0.88] | 17 |
 | 05-06 | 8 | 4-4 | -1.03 | 3 | -0.95 [-2.03, -0.40] | +0.48 [-0.46, +1.08] | 0 |
-| 07+ | 33 | 20-13 | +2.44 | 27 | -1.03 [-1.56, -0.30] | +0.06 [-0.51, +0.78] | 19 |
+| 07+ | 33 | 20-13 | +2.44 | 25 | -0.92 [-1.54, -0.07] | +0.21 [-0.42, +1.06] | 16 |
 
 **Thin (1-2 books) vs 3+**
 
 | segment | n graded | W-L | units | n CLV | mean CLV pts [95% CI] | mean move pts [95% CI] | beat close % |
 |---|---|---|---|---|---|---|---|
 | 1-2 books | 21 | 16-5 | +7.96 | 14 | -1.64 [-2.70, -0.51] | +1.18 [+0.08, +2.20] | 21 |
-| 3+ books | 157 | 81-76 | -9.37 | 70 | -1.72 [-2.16, -1.23] | +0.22 [-0.11, +0.56] | 13 |
+| 3+ books | 157 | 81-76 | -9.37 | 68 | -1.70 [-2.16, -1.18] | +0.28 [-0.09, +0.66] | 12 |
 
 **Quote age at lock (locked_at minus quote instant)**
 
 | segment | n graded | W-L | units | n CLV | mean CLV pts [95% CI] | mean move pts [95% CI] | beat close % |
 |---|---|---|---|---|---|---|---|
 | a <=5m | 69 | 33-36 | -8.59 | 1 | -0.43 [n/a, n/a] | +0.60 [n/a, n/a] | 0 |
-| b 5-60m | 23 | 14-9 | +1.24 | 3 | -2.58 [-4.88, -0.76] | -1.68 [-4.68, +0.30] | 0 |
-| c 1-6h | 8 | 3-5 | -2.54 | 7 | -1.21 [-1.86, -0.73] | -0.09 [-0.69, +0.32] | 14 |
+| b 5-60m | 23 | 14-9 | +1.24 | 2 | -1.43 [-2.10, -0.76] | -0.18 [-0.65, +0.30] | 0 |
+| c 1-6h | 8 | 3-5 | -2.54 | 6 | -1.43 [-1.89, -0.99] | -0.27 [-0.70, +0.08] | 0 |
 | d >6h | 56 | 33-23 | +3.12 | 55 | -1.70 [-2.22, -1.06] | +0.62 [+0.17, +1.14] | 11 |
 | no lock stamp | 22 | 14-8 | +5.35 | 18 | -1.86 [-2.83, -1.08] | +0.14 [-0.61, +0.90] | 28 |
 
@@ -209,21 +209,21 @@ Hit rate minus lock consensus probability: +1.45 pts [-5.91, +10.32] per bet; hi
 | segment | n graded | W-L | units | n CLV | mean CLV pts [95% CI] | mean move pts [95% CI] | beat close % |
 |---|---|---|---|---|---|---|---|
 | G3_STALE fill | 24 | 14-10 | +0.58 | 24 | -2.13 [-2.81, -1.29] | +0.39 [-0.33, +1.23] | 8 |
-| fresh (no G3) | 154 | 83-71 | -2.00 | 60 | -1.54 [-2.00, -1.08] | +0.37 [-0.03, +0.76] | 17 |
+| fresh (no G3) | 154 | 83-71 | -2.00 | 58 | -1.51 [-2.03, -1.00] | +0.45 [+0.03, +0.86] | 16 |
 
 **Thin-or-stale vs fresh multi-book (3+ books, quote <=60m old at lock, no G3)**
 
 | segment | n graded | W-L | units | n CLV | mean CLV pts [95% CI] | mean move pts [95% CI] | beat close % |
 |---|---|---|---|---|---|---|---|
-| fresh multi-book | 106 | 54-52 | -7.01 | 21 | -1.78 [-2.72, -1.23] | +0.00 [-0.90, +0.66] | 24 |
-| thin or stale | 72 | 43-29 | +5.59 | 63 | -1.69 [-2.16, -1.16] | +0.50 [+0.10, +0.88] | 11 |
+| fresh multi-book | 106 | 54-52 | -7.01 | 20 | -1.63 [-2.42, -1.06] | +0.24 [-0.38, +0.80] | 25 |
+| thin or stale | 72 | 43-29 | +5.59 | 62 | -1.71 [-2.17, -1.20] | +0.50 [+0.10, +0.88] | 10 |
 
 **Age of the best book's own last update at the quote**
 
 | segment | n graded | W-L | units | n CLV | mean CLV pts [95% CI] | mean move pts [95% CI] | beat close % |
 |---|---|---|---|---|---|---|---|
-| best book updated <=30m | 177 | 97-80 | -0.42 | 84 | -1.71 [-2.10, -1.30] | +0.38 [+0.05, +0.73] | 14 |
-| unknown | 1 | 0-1 | -1.00 | 0 | n/a [n/a, n/a] | n/a [n/a, n/a] | n/a |
+| best book updated <=30m | 170 | 93-77 | -0.69 | 82 | -1.69 [-2.08, -1.28] | +0.43 [+0.10, +0.80] | 13 |
+| unknown | 8 | 4-4 | -0.73 | 0 | n/a [n/a, n/a] | n/a [n/a, n/a] | n/a |
 
 **Was the graded price still on the board? (newest capture at or before the moment, newer than the quote)**
 
@@ -232,10 +232,14 @@ Hit rate minus lock consensus probability: +1.45 pts [-5.91, +10.32] per bet; hi
 | first publish | prop | 149 | 0 | 0/0 | n/a | n/a | 0 |
 | first publish | game | 29 | 0 | 0/0 | n/a | n/a | 0 |
 | lock (locked_at) | prop | 149 | 0 | 0/0 | n/a | n/a | 0 |
-| lock (locked_at) | game | 29 | 22 | 10/22 | -2.8 | +0.33 | 0 |
+| lock (locked_at) | game | 29 | 20 | 9/20 | -3.0 | +0.39 | 0 |
 
-- quote age at first publish, prop: median 1 min, >60 min on 13/149, negative (quote after first publish) on 25
-- quote age at first publish, game: median -64 min, >60 min on 1/28, negative (quote after first publish) on 19
+- entries re-priced at the best price on the newest capture at or before locked_at: n=20 (13-7); actual +3.01 units, at the lock-time best price +3.17 units.
+- largest gap: 2026-10-04 Dodgers graded -147, best at lock -212 (-65 cents), result LOSS
+- props locked on a quote >60 min old with a capture after the lock (no capture exists between quote and lock for any prop): n=41 (22-19); actual -1.28 units, at the best price on the first-after-lock/closing capture -1.78; that later best price was worse than the graded one on 20/41.
+
+- quote age at first publish, prop: median 1 min, >60 min on 13/144, negative (quote after first publish) on 24
+- quote age at first publish, game: median -64 min, >60 min on 1/26, negative (quote after first publish) on 17
 
 `stale_board` on 175 published V2 card rows: {False: 175} (never set). `point_class` on evidence/decisions_v2.jsonl (5689 rows, the paper-system ledger, not the card): {'LATE_BOARD': 5689}. A field with one value cannot predict anything; neither is joinable to the card's entries.
 
@@ -243,11 +247,11 @@ Hit rate minus lock consensus probability: +1.45 pts [-5.91, +10.32] per bet; hi
 
 | date | team | side | fav/dog | entry | books | price | p_lock % | breakeven % | p_close % | move pts | CLV pts | same-book close | result |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 2026-09-23 | Orioles | home | fav | pick | 8 | -118 | 53.2 | 54.1 | 54.2 | +0.99 | +0.07 | -130 | WIN |
+| 2026-09-23 | Orioles | home | fav | pick | 8 | -118 | 53.2 | 54.1 | n/a | n/a | n/a | n/a | WIN |
 | 2026-09-23 | White Sox | away | fav | fill | 11 | -113 | 51.8 | 53.1 | 52.0 | +0.20 | -1.08 | -116 | LOSS |
 | 2026-09-24 | Yankees | home | fav | fill | 11 | -145 | 57.7 | 59.2 | 56.9 | -0.75 | -2.28 | -139 | WIN |
 | 2026-09-24 | Red Sox | home | fav | fill | 11 | -125 | 54.1 | 55.6 | 54.2 | +0.11 | -1.35 | -123 | LOSS |
-| 2026-09-25 | Yankees | home | fav | pick | 11 | -118 | 53.9 | 54.1 | 49.3 | -4.68 | -4.88 | 101 | WIN |
+| 2026-09-25 | Yankees | home | fav | pick | 11 | -118 | 53.9 | 54.1 | n/a | n/a | n/a | n/a | WIN |
 | 2026-09-25 | Yankees | home | fav | pick | 11 | -130 | 55.8 | 56.5 | n/a | n/a | n/a | n/a | LOSS |
 | 2026-09-25 | Blue Jays | home | fav | fill | 7 | -130 | 55.2 | 56.5 | 58.3 | +3.15 | +1.82 | -155 | WIN |
 | 2026-09-26 | Tigers | home | fav | fill | 9 | -114 | 52.3 | 53.3 | 51.8 | -0.43 | -1.43 | -114 | WIN |
@@ -276,40 +280,40 @@ Hit rate minus lock consensus probability: +1.45 pts [-5.91, +10.32] per bet; hi
 | group | n | W-L | units | n CLV | mean CLV pts | mean move pts |
 |---|---|---|---|---|---|---|
 | away favourite | 5 | 3-2 | +0.21 | 5 | -2.28 | -1.02 |
-| home favourite | 24 | 16-8 | +4.62 | 23 | -0.74 | +0.32 |
-| ALL | 29 | 19-10 | +4.83 | 28 | -1.01 | +0.08 |
+| home favourite | 24 | 16-8 | +4.62 | 21 | -0.58 | +0.53 |
+| ALL | 29 | 19-10 | +4.83 | 26 | -0.90 | +0.23 |
 
-Moneyline CLV, date-clustered: -1.01 pts [-1.55, -0.30].
+Moneyline CLV, date-clustered: -0.90 pts [-1.51, -0.08].
 
 ## 6. Market-efficiency baseline (open windows only)
 
-Props: de-vigged consensus Over probability at the last pre-game capture (>= 2 two-sided books), games 2026-08-28..2026-10-15, joined to box scores by (game_pk, player name) as settlement does; 998 contracts had no box row.
+Props: de-vigged consensus Over probability at the last pre-game capture (>= 2 two-sided books), games 2026-08-28..2026-10-15, joined to box scores by (game_pk, player name) as settlement does; 940 contracts had no box row.
 
 | contract | n | base rate % | Brier market | Brier base rate | Brier skill vs base rate % | log loss market | log loss base rate |
 |---|---|---|---|---|---|---|---|
-| batter_hits 0.5 | 3222 | 57.9 | 0.2382 | 0.2437 | 2.27 | 0.6691 | 0.6805 |
+| batter_hits 0.5 | 3155 | 57.9 | 0.2380 | 0.2437 | 2.36 | 0.6688 | 0.6806 |
 | batter_hits 1.5 | 239 | 34.7 | 0.2288 | 0.2267 | -0.93 | 0.6503 | 0.6457 |
-| batter_total_bases 0.5 | 1781 | 52.8 | 0.2460 | 0.2492 | 1.28 | 0.6851 | 0.6915 |
-| batter_total_bases 1.5 | 1746 | 40.0 | 0.2379 | 0.2401 | 0.91 | 0.6686 | 0.6732 |
+| batter_total_bases 0.5 | 1733 | 52.6 | 0.2463 | 0.2493 | 1.23 | 0.6856 | 0.6918 |
+| batter_total_bases 1.5 | 1718 | 40.3 | 0.2386 | 0.2407 | 0.86 | 0.6700 | 0.6744 |
 
 Calibration, batter_hits 0.5 (market consensus):
 
 | forecast band | n | mean forecast % | observed % |
 |---|---|---|---|
 | 0.30-0.40 | 1 | 39.4 | 0.0 |
-| 0.40-0.45 | 49 | 43.5 | 38.8 |
-| 0.45-0.50 | 218 | 48.1 | 43.6 |
-| 0.50-0.55 | 601 | 52.7 | 51.7 |
-| 0.55-0.60 | 964 | 57.5 | 54.4 |
-| 0.60-0.65 | 1009 | 62.5 | 64.2 |
-| 0.65-0.70 | 380 | 66.3 | 71.1 |
+| 0.40-0.45 | 48 | 43.4 | 37.5 |
+| 0.45-0.50 | 215 | 48.1 | 43.7 |
+| 0.50-0.55 | 580 | 52.7 | 51.2 |
+| 0.55-0.60 | 942 | 57.6 | 54.4 |
+| 0.60-0.65 | 993 | 62.5 | 64.4 |
+| 0.65-0.70 | 376 | 66.3 | 71.0 |
 
 Calibration, batter_total_bases 1.5 (market consensus):
 
 | forecast band | n | mean forecast % | observed % |
 |---|---|---|---|
-| 0.30-0.40 | 772 | 38.1 | 35.6 |
-| 0.40-0.45 | 765 | 42.1 | 42.1 |
+| 0.30-0.40 | 751 | 38.1 | 36.1 |
+| 0.40-0.45 | 758 | 42.1 | 42.2 |
 | 0.45-0.50 | 173 | 46.7 | 48.0 |
 | 0.50-0.55 | 30 | 51.8 | 50.0 |
 | 0.55-0.60 | 6 | 56.2 | 66.7 |
@@ -324,7 +328,7 @@ Calibration, batter_total_bases 1.5 (market consensus):
 
 | moneyline sample | n | home win % | Brier market | Brier base rate | skill % | log loss market | log loss base |
 |---|---|---|---|---|---|---|---|
-| moneyline home, 2026-08-28.. | 353 | 53.3 | 0.2387 | 0.2489 | 4.11 | 0.6701 | 0.6910 |
+| moneyline home, 2026-08-28.. | 345 | 52.5 | 0.2385 | 0.2494 | 4.35 | 0.6697 | 0.6919 |
 | moneyline home, 2024 season | 2456 | 52.2 | 0.2401 | 0.2495 | 3.76 | 0.6730 | 0.6922 |
 
 Calibration, 2024 moneyline home (closing consensus):
@@ -345,15 +349,15 @@ Calibration, 2024 moneyline home (closing consensus):
 
 | rule | n kept | W-L | units | ROI % | n CLV | mean CLV pts [95% CI] | units if graded at hindsight best |
 |---|---|---|---|---|---|---|---|
-| baseline (as graded) | 178 | 97-81 | -1.42 | -0.8 | 84 | -1.71 [-2.10, -1.30] | +0.94 |
-| min 3 books | 157 | 81-76 | -9.37 | -6.0 | 70 | -1.72 [-2.16, -1.23] | -7.18 |
-| min 4 books | 129 | 65-64 | -10.94 | -8.5 | 54 | -1.44 [-1.92, -0.94] | -8.86 |
-| quote <=60m old at lock | 92 | 47-45 | -7.35 | -8.0 | 4 | -2.04 [-4.88, -0.59] | -7.14 |
-| no G3_STALE fills | 154 | 83-71 | -2.00 | -1.3 | 60 | -1.54 [-2.00, -1.08] | +0.11 |
-| picks only (no fills) | 110 | 54-56 | -9.26 | -8.4 | 28 | -2.02 [-2.92, -1.40] | -7.65 |
-| >=2h before first pitch at lock | 88 | 51-37 | +5.70 | +6.5 | 82 | -1.72 [-2.12, -1.30] | +8.05 |
-| <4h before first pitch at lock | 156 | 83-73 | -6.77 | -4.3 | 66 | -1.67 [-2.14, -1.11] | -4.72 |
-| premium paid <=2 pts | 64 | 42-22 | +15.17 | +23.7 | 40 | -0.98 [-1.44, -0.45] | +17.18 |
-| moneylines only | 29 | 19-10 | +4.83 | +16.7 | 28 | -1.01 [-1.55, -0.30] | +6.65 |
-| props only | 149 | 78-71 | -6.25 | -4.2 | 56 | -2.06 [-2.47, -1.65] | -5.71 |
+| baseline (as graded) | 178 | 97-81 | -1.42 | -0.8 | 82 | -1.69 [-2.08, -1.28] | +0.50 |
+| min 3 books | 157 | 81-76 | -9.37 | -6.0 | 68 | -1.70 [-2.16, -1.18] | -7.62 |
+| min 4 books | 129 | 65-64 | -10.94 | -8.5 | 52 | -1.40 [-1.90, -0.88] | -9.46 |
+| quote <=60m old at lock | 92 | 47-45 | -7.35 | -8.0 | 3 | -1.10 [-2.10, -0.59] | -6.73 |
+| no G3_STALE fills | 154 | 83-71 | -2.00 | -1.3 | 58 | -1.51 [-2.03, -1.00] | -0.33 |
+| picks only (no fills) | 110 | 54-56 | -9.26 | -8.4 | 26 | -1.99 [-2.89, -1.29] | -8.09 |
+| >=2h before first pitch at lock | 88 | 51-37 | +5.70 | +6.5 | 80 | -1.70 [-2.09, -1.28] | +6.20 |
+| <4h before first pitch at lock | 156 | 83-73 | -6.77 | -4.3 | 64 | -1.65 [-2.13, -1.08] | -5.16 |
+| premium paid <=2 pts | 64 | 42-22 | +15.17 | +23.7 | 38 | -0.91 [-1.39, -0.33] | +14.74 |
+| moneylines only | 29 | 19-10 | +4.83 | +16.7 | 26 | -0.90 [-1.51, -0.08] | +4.80 |
+| props only | 149 | 78-71 | -6.25 | -4.2 | 56 | -2.06 [-2.47, -1.65] | -4.29 |
 
