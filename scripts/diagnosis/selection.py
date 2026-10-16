@@ -381,6 +381,7 @@ def ledger_entries():
                 "lead_at_observed_h": (((fp - obs).total_seconds() / 3600.0)
                                        if (fp and obs) else None),
                 "game_pk": g.get("game_pk"),
+                "observed_utc": g.get("observed_utc"),
             }
             out.append(e)
     return out
@@ -1518,6 +1519,55 @@ def section_trace():
 
 
 # ---------------------------------------------------------------------------
+# Q4 addendum: best price vs the average of books, on published props
+# ---------------------------------------------------------------------------
+
+def section_pricing():
+    """Every published prop entry: the price it was graded at (the BEST quote
+    across books) against the mean of the books' own quotes for the same side
+    at the same observation (newest quote per book at or before the entry's
+    observed_utc)."""
+    world = PropWorld()
+    E = [e for e in ledger_entries() if e["kind"] == "prop"]
+    rows = []
+    for e in E:
+        quotes = {}
+        for r in world.rows_by_date.get(e["date"]) or []:
+            if (r.get("player") != e["who"] or r.get("market") != e["market"]
+                    or str(r.get("line")) != str(e["line"]) or r.get("side") != e["side"]):
+                continue
+            eo = _dt(e.get("observed_utc"))
+            if eo is not None and r["_obs"] is not None and r["_obs"] > eo:
+                continue
+            held = quotes.get(r["book"])
+            if held is None or r["_obs"] > held[0]:
+                quotes[r["book"]] = (r["_obs"], r["price"])
+        if not quotes:
+            continue
+        decs = [dec(p) for _, p in quotes.values()]
+        mean_dec = sum(decs) / len(decs)
+        rows.append({"date": e["date"], "entry_class": e["entry_class"], "won": e["won"],
+                     "best_dec": dec(e["price"]), "mean_dec": mean_dec, "n_books": len(decs),
+                     "profit_best": e["profit"],
+                     "profit_mean": (mean_dec - 1.0) if e["won"] else -1.0})
+    n = len(rows)
+    return {
+        "_note": "The ledger grades every entry at `price`, the BEST quote across books "
+                 "(propboard.fair_and_best / opportunities best_price). This re-grades the "
+                 "same published props at the mean of the books' quotes (decimal mean).",
+        "n_props_priced": n,
+        "mean_best_decimal": _r(sum(r["best_dec"] for r in rows) / n),
+        "mean_avg_decimal": _r(sum(r["mean_dec"] for r in rows) / n),
+        "units_at_best": _r(sum(r["profit_best"] for r in rows), 2),
+        "units_at_mean_of_books": _r(sum(r["profit_mean"] for r in rows), 2),
+        "by_class": {cls: {"n": len(s), "units_at_best": _r(sum(r["profit_best"] for r in s), 2),
+                           "units_at_mean": _r(sum(r["profit_mean"] for r in s), 2)}
+                     for cls, s in (("pick", [r for r in rows if r["entry_class"] == "pick"]),
+                                    ("fill", [r for r in rows if r["entry_class"] == "fill"]))},
+    }
+
+
+# ---------------------------------------------------------------------------
 # Q2 for 2024: the moneyline model rebuilt pre-game, frozen numbers, point-in-time
 # ---------------------------------------------------------------------------
 
@@ -1698,6 +1748,13 @@ def section_y2024():
         "v2_pick_eligible_by_price_class": table([c for c in six if c["v2"] == "pick_eligible"],
                                                  lambda c: bbc.price_class(c["price"])),
         "home_fav_vs_away_fav": table(fav, lambda c: "home_fav" if c["home"] else "away_fav"),
+        "g6_fail_share_main_band_favourites": {
+            lab: {"n": len(s), "g6_fail_share": _r(sum(bbc.G6_FLOOR in c["failed_gates"] for c in s) / len(s), 3),
+                  "fill_eligible_or_pick_share": _r(sum(c["v2"] != "hard_fail" for c in s) / len(s), 3)}
+            for lab, s in (
+                ("home_fav", [c for c in six if c["fav"] and c["home"] and -160 <= c["price"] <= -100]),
+                ("away_fav", [c for c in six if c["fav"] and not c["home"] and -160 <= c["price"] <= -100]))
+            if s},
         "log_loss_home_side": _logloss([c for c in cands if c["home"]]),
         "corr_our_market_home_side": _corr([c["market_p"] for c in cands if c["home"]],
                                            [c["our_p"] for c in cands if c["home"]]),

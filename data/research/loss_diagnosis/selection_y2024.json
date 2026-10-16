@@ -349,6 +349,18 @@
    "z_vs_market": 0.54
   }
  },
+ "g6_fail_share_main_band_favourites": {
+  "away_fav": {
+   "fill_eligible_or_pick_share": 0.531,
+   "g6_fail_share": 0.451,
+   "n": 588
+  },
+  "home_fav": {
+   "fill_eligible_or_pick_share": 0.809,
+   "g6_fail_share": 0.17,
+   "n": 869
+  }
+ },
  "home_fav_vs_away_fav": {
   "away_fav": {
    "expected_units_at_market": -8.43,
