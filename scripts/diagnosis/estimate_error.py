@@ -54,6 +54,8 @@ FROZEN = json.load(open(C.p("data", "processed", "card_v2_frozen_params.json"),
 SLOT25 = {int(k): float(v) for k, v in FROZEN["slot_plate_appearances"].items()}
 RHO25 = float(FROZEN["RHO"])
 MARKDOWN = 0.038
+POST_RATIO = None   # set by postseason_ratio() before the pool is built
+POST_ORACLE = None  # realized 2026 ratio, ORACLE variant only
 
 TABLES = []   # (title, markdown) in order; written to estimate_error_tables.md
 
@@ -286,7 +288,26 @@ def paired(rows, a, b, ykey="y", metric="ll"):
     return C.clustered_boot(rows, lambda r: f(r[a], r[ykey]) - f(r[b], r[ykey]))
 
 
+def decisions_census():
+    """What evidence/decisions_v2.jsonl can and cannot contribute here."""
+    c = defaultdict(int)
+    same = defaultdict(int)
+    for r in C.iter_jsonl(C.p("evidence", "decisions_v2.jsonl")):
+        k = (r.get("market_key"), r.get("p_model_provenance"))
+        c[k] += 1
+        pm, cf = r.get("p_model"), r.get("consensus_fair")
+        if pm is not None and cf is not None and abs(float(pm) - float(cf)) < 1e-9:
+            same[k] += 1
+    emit("P-1. evidence/decisions_v2.jsonl: market and p_model provenance",
+         ["market_key", "p_model_provenance", "rows", "rows with p_model == consensus_fair"],
+         [[k[0], k[1], v, same.get(k, 0)] for k, v in sorted(c.items(), key=str)],
+         note="No prop rows. No row carries an independent model number: market_derived values are derived from "
+              "the market (equal to consensus_fair where the last column says so); placeholder / none carry no "
+              "model. This file cannot be used to score the prop model.")
+
+
 def run_published(ctx, pool_index=None):
+    decisions_census()
     raw = published_props()
     graded = [e for e in raw if e.get("result") in ("WIN", "LOSS")]
     rows = []
@@ -314,9 +335,12 @@ def run_published(ctx, pool_index=None):
     profit = sum(r["profit"] for r in rows)
     wins = sum(r["y"] for r in rows)
     emit("P0. Published graded props: population",
-         ["graded W/L", "wins", "losses", "units", "void", "unresolved", "dates"],
+         ["graded W/L", "wins", "losses", "units", "void", "unresolved", "dates", "first", "last",
+          "season_games min", "season_games max", "postseason share"],
          [[len(rows), wins, len(rows) - wins, C.fmt(profit, 2, True), n_void, n_unres,
-           len({r['date'] for r in rows})]],
+           len({r['date'] for r in rows}), min(r['date'] for r in rows), max(r['date'] for r in rows),
+           min(r['season_games'] for r in rows), max(r['season_games'] for r in rows),
+           C.fmt(C.mean(1 if r['game_type'] not in ('R', 'n/a') else 0 for r in rows), 3)]],
          note="Source: `card_ledger.history_v2(path='evidence/cards_v2.jsonl')`, kind == prop.")
 
     emit("P1. Published props: scores, ours vs market (same bets)",
@@ -458,7 +482,7 @@ def build_pool(ctx, pa_dist_24):
         b_avg = propboard.build(by_date[date], date=date, batters_by_name=ctx.by_name,
                                 league=lg, slots_by_player={})
         for reason, k in b_slot["refused"].items():
-            census["refused: " + reason[:50]] += k
+            census["refused: " + ("below the 40-PA floor" if "below the 40 floor" in reason else reason[:50])] += k
         avg_p = {(c["event_id"], c["player"], c["market"], c["line"]): c["probability"]
                  for c in b_avg["contracts"] if c["side"] == "Over"}
         by_key = defaultdict(dict)
@@ -509,6 +533,11 @@ def build_pool(ctx, pa_dist_24):
             }
             # Counterfactuals (all point-in-time except where named ORACLE / RETRO)
             r["p_slot25"] = _safe_price(**base, batting_slot=slot, slot_table=SLOT25)
+            r["expected_pa_avg"] = playerprops.price_prop(**base)["expected_pa"]
+            # TB over 0.5 is the same event as hits over 0.5; price it through the
+            # hits path, which carries the within-game correlation (rho) correction.
+            if market == "batter_total_bases" and float(line) == 0.5:
+                r["p_tb05_as_hits"] = _safe_price(**dict(base, market="batter_hits"), batting_slot=slot)
             r["p_rho25"] = _safe_price(**base, batting_slot=slot, rho=RHO25)
             r["p_rho0"] = _safe_price(**base, batting_slot=slot, rho=0.0)
             r["p_oracle_pa"] = (_safe_price(**base, expected_pa=float(r["pa"])) if r["pa"] > 0 else 0.0)
@@ -534,6 +563,18 @@ def build_pool(ctx, pa_dist_24):
                 r["p_k100"] = _safe_price(**base, batting_slot=slot)
             p25lines = [g for g in ctx.b25_by_name.get(player, [])]
             r["p_hist25"] = _safe_price(**dict(base, batter_lines=p25lines + prior), batting_slot=slot)
+            rates = playerprops.batter_rates(prior, lg)
+            m_post = POST_RATIO if r["game_type"] not in ("R", "n/a") else 1.0
+            eff_market = "batter_hits" if (market == "batter_total_bases" and float(line) == 0.5) else market
+            blend = 1.0
+            if st["st_25fwd"]:
+                f = playerprops.pitcher_hit_factor(st["st_25fwd"][0], st["st_25fwd"][1], lg["hit"])
+                blend = playerprops.STARTER_SHARE * f + (1.0 - playerprops.STARTER_SHARE)
+            r["p_post"] = playerprops.probability_over(market, line, rates, pr["expected_pa"], m_post)
+            r["p_post_oracle"] = playerprops.probability_over(
+                market, line, rates, pr["expected_pa"],
+                POST_ORACLE if r["game_type"] not in ("R", "n/a") else 1.0)
+            r["p_struct"] = playerprops.probability_over(eff_market, line, rates, pr["expected_pa"], blend * m_post)
             census["scored"] += 1
             rows.append(r)
     return rows, dict(census), qcounts
@@ -544,9 +585,34 @@ def run_pool(ctx, pub_rows):
     lu24 = [r for r in C.load_lineups() if str(r["date"])[:4] == "2024"]
     pa24 = pa_dists_from_lineups(lu24, box24)
     pa26 = pa_dists_from_lineups(ctx.lineups, ctx.batters)
+    global POST_RATIO, POST_ORACLE
+    POST_RATIO = postseason_ratio()
+    reg = [r for r in ctx.batters if ctx.game_type(r["game_pk"]) == "R"]
+    post = [r for r in ctx.batters if ctx.game_type(r["game_pk"]) not in ("R", None)]
+    reg_rate = sum(int(r.get("h") or 0) for r in reg) / sum(int(r.get("pa") or 0) for r in reg)
+    post_rate = sum(int(r.get("h") or 0) for r in post) / sum(int(r.get("pa") or 0) for r in post)
+    POST_ORACLE = post_rate / reg_rate
+    emit("X0b. 2026 forward window: realized postseason vs regular-season offence (box store; ORACLE, hindsight)",
+         ["", "batter rows", "H/PA"],
+         [["regular season 2026-08-30..end", len(reg), C.fmt(reg_rate, 4)],
+          ["postseason to 2026-10-15", len(post), C.fmt(post_rate, 4)],
+          ["ratio (used only by the ORACLE variant)", "", C.fmt(POST_ORACLE, 3)]])
+    team_games = FROZEN.get("DISPERSION_n_team_games")
+    emit("D1b. Why the 2025 frozen slot table is low: rows per slot vs team-games in the same fit",
+         ["slot", "rows counted in the 2025 fit", "team-games (DISPERSION_n_team_games)", "rows per team-game"],
+         [[k, v, team_games, C.fmt(v / team_games, 2) if team_games else "n/a"]
+          for k, v in sorted(FROZEN["slot_sample_sizes"].items(), key=lambda kv: int(kv[0]))],
+         note="Source: data/processed/card_v2_frozen_params.json. More than one row per slot per team-game means "
+              "substitutes who inherited a slot were averaged in with the starters (scripts/fit_card_v2_frozen_params.py "
+              "`fit_slot_table` reads every batter row's `batting_order`). Live V1 does not use this table.")
     rows, census, qcounts = build_pool(ctx, pa24)
     emit("Q0. Forward pool rebuild: census", ["item", "count"],
-         [[k, v] for k, v in sorted(qcounts.items())] + [[k, v] for k, v in sorted(census.items())],
+         [[k, v] for k, v in sorted(qcounts.items())] + [[k, v] for k, v in sorted(census.items())]
+         + [["first scored date", min(r["date"] for r in rows)], ["last scored date", max(r["date"] for r in rows)],
+            ["scored dates", len({r["date"] for r in rows})],
+            ["hits-0.5 contracts with prior PA < 120",
+             sum(1 for r in rows if r["market"] == "batter_hits" and float(r["line"]) == 0.5 and r["pa_sample"] < 120)],
+            ["hits-0.5 contracts, all", sum(1 for r in rows if r["market"] == "batter_hits" and float(r["line"]) == 0.5)]],
          note="Pre-game quotes only (observed_utc < commence_time); hits/total bases/runs; "
               "one row per (event, player, market, line), Over probability.")
     # --- reproduction check against the published bets
@@ -675,12 +741,85 @@ def run_pool(ctx, pub_rows):
 
 
 # ---------------------------------------------------------------------------
+# Prior-season postseason level (read-only GET to statsapi.mlb.com, cached)
+# ---------------------------------------------------------------------------
+
+POST_SEASONS = (2023, 2024, 2025)   # 2025 is TUNING-ONLY; 2026 is never fetched
+
+
+def _team_hitting(season, game_type):
+    if season not in POST_SEASONS:
+        raise ValueError(f"{season} is not fetched (2026 season totals include the sealed window)")
+    cache = os.path.join(OUT_DIR, f"statsapi_team_hitting_{season}_{game_type}.json")
+    if os.path.exists(cache):
+        return json.load(open(cache, encoding="utf-8"))
+    import urllib.request
+    url = ("https://statsapi.mlb.com/api/v1/teams/stats?season=%d&sportId=1&group=hitting"
+           "&stats=season&gameType=%s" % (season, game_type))
+    with urllib.request.urlopen(url, timeout=30) as resp:
+        data = json.load(resp)
+    splits = data["stats"][0]["splits"]
+    out = {"url": url, "teams": len(splits)}
+    for f in ("hits", "plateAppearances", "runs", "totalBases", "homeRuns"):
+        out[f] = sum(int(sp["stat"].get(f) or 0) for sp in splits)
+    with open(cache, "w", encoding="utf-8") as fh:
+        json.dump(out, fh, indent=1, sort_keys=True)
+    return out
+
+
+def postseason_ratio():
+    tab, ratios = [], []
+    for season in POST_SEASONS:
+        reg, post = _team_hitting(season, "R"), _team_hitting(season, "P")
+        rh, ph = reg["hits"] / reg["plateAppearances"], post["hits"] / post["plateAppearances"]
+        rr, pr = reg["runs"] / reg["plateAppearances"], post["runs"] / post["plateAppearances"]
+        ratios.append(ph / rh)
+        tab.append([("TUNING-ONLY " if season == 2025 else "") + str(season), post["plateAppearances"],
+                    C.fmt(rh, 4), C.fmt(ph, 4), C.fmt(ph / rh, 3), C.fmt(pr / rr, 3)])
+    m = sum(ratios) / len(ratios)
+    tab.append(["mean of the three (used as the point-in-time postseason multiplier for 2026)", "", "", "", C.fmt(m, 3), ""])
+    emit("X0. Prior-season postseason vs regular-season offence (statsapi.mlb.com team hitting totals, cached)",
+         ["season", "postseason PA", "regular H/PA", "postseason H/PA", "hit ratio", "run/PA ratio"], tab,
+         note="Fetched read-only from statsapi.mlb.com and cached under data/research/loss_diagnosis/. "
+              "No 2026 totals are fetched: 2026 season totals include the sealed window.")
+    return m
+
+
+def slope_ci(rows, n=500):
+    """Weighted slope of actual excess hits on predicted excess hits, with a
+    date-clustered bootstrap: x = (pred - league) * PA, y = hits - league * PA."""
+    import random
+    by_d = defaultdict(lambda: [0.0, 0.0])
+    for r in rows:
+        x = (r["hit_rate"] - r["league_hit"]) * r["pa"]
+        y = _hits(r) - r["league_hit"] * r["pa"]
+        acc = by_d[r["date"]]
+        acc[0] += x * y
+        acc[1] += x * x
+    keys = sorted(by_d)
+    if not keys:
+        return None, None, None
+    pt = sum(by_d[k][0] for k in keys) / sum(by_d[k][1] for k in keys)
+    rng = random.Random(C.BOOT_SEED)
+    st = []
+    for _ in range(n):
+        a = b = 0.0
+        for _k in keys:
+            g = by_d[keys[rng.randrange(len(keys))]]
+            a += g[0]
+            b += g[1]
+        st.append(a / b if b else 0.0)
+    st.sort()
+    return pt, st[int(0.025 * n)], st[int(0.975 * n) - 1]
+
+
+# ---------------------------------------------------------------------------
 # Part 3: decomposition
 # ---------------------------------------------------------------------------
 
 VARIANTS = [
     ("p_slot25", "slot table: 2025 frozen fit instead of V1 table (OOS, point-in-time)"),
-    ("p_mix24", "PA as a distribution (2024 slot PA distribution, or own prior PA counts)"),
+    ("p_mix24", "PA as a distribution (a prior season's slot PA distribution, or own prior PA counts)"),
     ("p_oracle_pa", "ORACLE: expected PA = actual PA (diagnostic only)"),
     ("p_rho25", "rho 0.05885 (2025 frozen) instead of 0.05065"),
     ("p_rho0", "rho 0 (plain binomial)"),
@@ -690,6 +829,10 @@ VARIANTS = [
     ("p_k400", "PA_REGRESSION 400 (shrink harder)"),
     ("p_k800", "PA_REGRESSION 800"),
     ("p_hist25", "batter rate from 2025 + 2026-forward lines (2025 TUNING-ONLY input)"),
+    ("p_tb05_as_hits", "TB over 0.5 priced as hits over 0.5 (same event, rho-corrected path)"),
+    ("p_post", "postseason level: hit rates x prior-season postseason/regular ratio (X0; 2025 TUNING-ONLY input)"),
+    ("p_struct", "COMPOSITE of the three structural fixes: TB0.5 via hits path + starter (2025+fwd) + postseason ratio"),
+    ("p_post_oracle", "ORACLE: postseason hit rates x the 2026 postseason's REALIZED ratio (hindsight upper bound)"),
 ]
 
 
@@ -731,6 +874,27 @@ def run_decomposition(rows, pub_rows, pa24, pa26, label):
         act = sum(_hits(r) for r in gg) / sum(r["pa"] for r in gg)
         rate_tab.append([lab, len(gg), C.fmt(pred, 4), C.fmt(act, 4), C.pts(pred - act, 2),
                          C.fmt(sxy / sx if sx else None, 2)])
+    hr = sorted(r["hit_rate"] for r in g)
+    if len(hr) >= 30:
+        c1, c2 = hr[len(hr) // 3], hr[2 * len(hr) // 3]
+        terc = []
+        for lab, sel in (("low (weak hitters)", lambda r: r["hit_rate"] < c1),
+                         ("mid", lambda r: c1 <= r["hit_rate"] < c2),
+                         ("high (strong hitters)", lambda r: r["hit_rate"] >= c2)):
+            gg = [r for r in g if sel(r)]
+            terc.append([lab, len(gg), C.fmt(C.mean(r["hit_rate"] for r in gg), 4),
+                         C.fmt(sum(_hits(r) for r in gg) / sum(r["pa"] for r in gg), 4),
+                         C.fmt(C.mean(r["p_card"] for r in gg)), C.fmt(C.mean(r["y"] for r in gg)),
+                         C.pts(C.mean(r["p_card"] - r["y"] for r in gg))])
+        emit(f"D3b. {label}: hits over 0.5 by predicted (shrunk) hit/PA tercile",
+             ["tercile", "n", "pred hit/PA", "actual hit/PA", "mean p", "hit rate", "bias pts"], terc,
+             note="If weak hitters come in BELOW prediction and strong hitters ABOVE, shrinkage is too strong; "
+                  "the reverse means the batter's own short-sample rate is over-trusted.")
+    for lab, gg in (("pooled <120 PA", [r for r in g if r["pa_sample"] < 120]),
+                    ("pooled 120+ PA", [r for r in g if r["pa_sample"] >= 120])):
+        if len(gg) >= 30:
+            sl = slope_ci(gg)
+            rate_tab.append([lab, len(gg), "", "", "", f"{sl[0]:.2f} [{sl[1]:.2f}, {sl[2]:.2f}]"])
     emit(f"D3. {label}: per-PA hit rate, predicted vs actual (hits rows, PA>0)",
          ["prior PA sample", "n", "pred hit/PA", "actual hit/PA", "level error pts", "slope actual-on-pred deviation (1 = right shrinkage)"],
          rate_tab, note="Slope < 1: the batter's own deviation from league is over-trusted; > 1: over-shrunk.")
@@ -817,7 +981,12 @@ def run_hist(season, pa24):
                     pid = r.get("player_id")
                     prior = hist.get(pid, [])
                     slot = slot_map.get((int(r["game_pk"]), int(pid))) if pid is not None else None
-                    if slot is None:
+                    if season == 2025:
+                        # No 2025 lineups are stored. Point-in-time proxy for "regular
+                        # starter": prior PA per game >= 3.5 (never tonight's PA).
+                        if not prior or sum(int(x.get("pa") or 0) for x in prior) / len(prior) < 3.5:
+                            continue
+                    elif slot is None:
                         continue   # starters only: the priced pool is mostly listed starters
                     if regime == "short" and len(prior) < 15:
                         continue
@@ -858,7 +1027,7 @@ def run_hist(season, pa24):
                         row["p_rho25"] = _safe_price(**base, batting_slot=slot_used, rho=RHO25)
                         row["p_rho0"] = _safe_price(**base, batting_slot=slot_used, rho=0.0)
                         row["p_oracle_pa"] = _safe_price(**base, expected_pa=float(pa)) if pa > 0 else 0.0
-                        if slot_used is not None and slot_used in pa24 and season != 2024:
+                        if slot_used is not None and slot_used in pa24:
                             row["p_mix24"] = mixture_p(dict(base, batting_slot=slot_used), pa24[slot_used])
                         else:
                             own = defaultdict(int)
@@ -921,13 +1090,20 @@ def _dist(values):
 # ---------------------------------------------------------------------------
 
 def fit_lambda(rows, pkey, mkey, ykey):
-    best = None
-    for i in range(0, 101):
-        lam = i / 100
-        l = C.mean(C.ll(r[mkey] + lam * (r[pkey] - r[mkey]), r[ykey]) for r in rows)
-        if best is None or l < best[1]:
-            best = (lam, l)
-    return best
+    """(lambda, mean log loss) minimising log loss of market + lambda*(model-market)
+    over lambda in [-0.5, 1.0]. Log loss is convex in lambda, so a ternary
+    search to 0.001 finds the grid minimum; the result is rounded to 0.01."""
+    def loss(lam):
+        return C.mean(C.ll(r[mkey] + lam * (r[pkey] - r[mkey]), r[ykey]) for r in rows)
+    lo, hi = -0.5, 1.0
+    while hi - lo > 0.001:
+        a, b = lo + (hi - lo) / 3, hi - (hi - lo) / 3
+        if loss(a) <= loss(b):
+            hi = b
+        else:
+            lo = a
+    lam = round((lo + hi) / 2, 2)
+    return lam, loss(lam)
 
 
 def run_shrink(pool_rows, pub_rows):
@@ -955,6 +1131,191 @@ def run_shrink(pool_rows, pub_rows):
          note=f"Realized: {realized:+.2f} units on the same {len(pub_rows)} bets; hit rate "
               f"{C.mean(r['y'] for r in pub_rows):.3f}; mean breakeven {C.mean(r['be'] for r in pub_rows):.3f}.")
     return lam_pool, lam_pub
+
+
+def run_extra(pool, pub, joined):
+    """Follow-ups on what the first pass showed: same-event TB/hits pairs, the
+    published bets' PA, the postseason level, the shrink-to-market fit's
+    uncertainty, and D5 split by the PA source the published number used."""
+    # (a) same player-game quoted on both hits 0.5 and TB 0.5
+    by_pg = defaultdict(dict)
+    for r in pool:
+        if r["mkt"] is None:
+            continue
+        if float(r["line"]) == 0.5 and r["market"] in ("batter_hits", "batter_total_bases"):
+            by_pg[(r["date"], r["game_pk"], r["player"])][r["market"]] = r
+    pairs = [(v["batter_hits"], v["batter_total_bases"]) for v in by_pg.values()
+             if "batter_hits" in v and "batter_total_bases" in v]
+    if pairs:
+        emit("X1. Same player-game priced on BOTH hits over 0.5 and total bases over 0.5 (identical event)",
+             ["n pairs", "hit rate", "model p (hits path)", "model p (TB path)", "market p hits", "market p TB",
+              "model TB minus hits (pts)"],
+             [[len(pairs), C.fmt(C.mean(h["y"] for h, t in pairs)), C.fmt(C.mean(h["p_card"] for h, t in pairs)),
+               C.fmt(C.mean(t["p_card"] for h, t in pairs)), C.fmt(C.mean(h["mkt"] for h, t in pairs)),
+               C.fmt(C.mean(t["mkt"] for h, t in pairs)), C.pts(C.mean(t["p_card"] - h["p_card"] for h, t in pairs), 2)]])
+    tb05 = [r for r in pool if r["market"] == "batter_total_bases" and float(r["line"]) == 0.5 and r["mkt"] is not None]
+    h05 = [r for r in pool if r["market"] == "batter_hits" and float(r["line"]) == 0.5 and r["mkt"] is not None]
+    emit("X2. Who gets a TB-0.5 line: population comparison (Over side)",
+         ["population", "n", "mean prior hit/PA (shrunk)", "mean expected PA", "share slot 7-9", "hit rate",
+          "mean model p", "mean market p", "model minus market (pts)"],
+         [[lab, len(g), C.fmt(C.mean(r["hit_rate"] for r in g), 4), C.fmt(C.mean(r["expected_pa"] for r in g)),
+           C.fmt(C.mean(1 if (r["slot"] or 0) >= 7 else 0 for r in g)), C.fmt(C.mean(r["y"] for r in g)),
+           C.fmt(C.mean(r["p_card"] for r in g)), C.fmt(C.mean(r["mkt"] for r in g)),
+           C.pts(C.mean(r["p_card"] - r["mkt"] for r in g))] for lab, g in (("hits over 0.5", h05), ("TB over 0.5", tb05))])
+    # (b) published bets: PA assumed vs actual, by the PA source the number used
+    idx = {(r["date"], r["game_pk"], r["player"], r["market"], float(r["line"])): r for r in pool}
+    tab = []
+    for src in ("batting_slot", "season_average"):
+        g = []
+        for b in pub:
+            if b["src"] != src:
+                continue
+            r = idx.get((b["date"], b["game_pk"], b["player"], b["market"], float(b["line"])))
+            if r is None:
+                continue
+            exp = r["expected_pa"] if src == "batting_slot" else r["expected_pa_avg"]
+            g.append((exp, r["pa"], r["slot"]))
+        if g:
+            tab.append([src, len(g), C.fmt(C.mean(e for e, a, s in g)), C.fmt(C.mean(a for e, a, s in g)),
+                        C.fmt(C.mean(e - a for e, a, s in g), 3, True), C.fmt(C.mean(1 if a <= 3 else 0 for e, a, s in g)),
+                        C.fmt(C.mean(1 if a <= 2 else 0 for e, a, s in g)),
+                        C.fmt(C.mean(1 if (s or 0) >= 7 else 0 for e, a, s in g))])
+    emit("X3. Published bets: assumed vs actual plate appearances, by the PA source the published number used",
+         ["PA source", "n", "mean assumed PA", "mean actual PA", "error", "share <=3 PA", "share <=2 PA",
+          "share slot 7-9 (stored)"], tab)
+    # (c) postseason level: league hit/PA the model used vs what happened
+    tab = []
+    for lab, sel in (("regular season", lambda r: r["game_type"] == "R"),
+                     ("postseason", lambda r: r["game_type"] != "R")):
+        g = [r for r in pool if sel(r) and r["market"] == "batter_hits" and float(r["line"]) == 0.5 and r["pa"] > 0]
+        if not g:
+            continue
+        tab.append([lab, len(g), len({r['date'] for r in g}), C.fmt(C.mean(r["league_hit"] for r in g), 4),
+                    C.fmt(C.mean(r["hit_rate"] for r in g), 4),
+                    C.fmt(sum(r["h_count"] for r in g) / sum(r["pa"] for r in g), 4),
+                    C.fmt(C.mean(1 if r["throws"] == "L" else 0 for r in g)),
+                    C.fmt(C.mean(r["expected_pa"] for r in g)), C.fmt(C.mean(r["pa"] for r in g))])
+    emit("X4. Regular season vs postseason: per-PA hit rate and PA the model used vs actual (hits-0.5 contracts, PA>0)",
+         ["games", "n", "dates", "league hit/PA used", "batter hit/PA used (shrunk)", "actual hit/PA", "share vs LHP",
+          "mean expected PA", "mean actual PA"], tab)
+    tab = []
+    for lab, sel in (("regular season", lambda r: r["game_type"] == "R"),
+                     ("postseason", lambda r: r["game_type"] != "R")):
+        for m, line in (("batter_hits", 0.5), ("batter_total_bases", 0.5), ("batter_total_bases", 1.5),
+                        ("batter_runs_scored", 0.5)):
+            g = [r for r in pool if sel(r) and r["market"] == m and float(r["line"]) == line and r["mkt"] is not None]
+            if not g:
+                continue
+            st = [r for r in g if r.get("p_st_25fwd") is not None]
+            tab.append([lab, f"{m} over {line}", len(g), C.fmt(C.mean(r["y"] for r in g)),
+                        C.pts(C.mean(r["p_card"] - r["y"] for r in g)), C.pts(C.mean(r["mkt"] - r["y"] for r in g)),
+                        C.pts(C.mean(r["p_st_25fwd"] - r["y"] for r in st))])
+    emit("X4b. Regular season vs postseason: bias by market (model as card, market, model with starter factor)",
+         ["games", "market", "n", "hit rate", "model bias pts", "market bias pts", "model+starter (2025+fwd) bias pts"], tab)
+    # (d) shrink-to-market lambda with date-clustered bootstrap
+    import random
+    mk = [r for r in pool if r["mkt"] is not None]
+    dates = sorted({r["date"] for r in mk})
+    by_d = defaultdict(list)
+    for r in mk:
+        by_d[r["date"]].append(r)
+    rng = random.Random(C.BOOT_SEED)
+    lams = []
+    for _ in range(300):
+        sample = []
+        for _k in dates:
+            sample.extend(by_d[dates[rng.randrange(len(dates))]])
+        lams.append(fit_lambda(sample, "p_card", "mkt", "y")[0])
+    lams.sort()
+    lam_pt = fit_lambda(mk, "p_card", "mkt", "y")[0]
+    per_mkt = []
+    for m, line in sorted({(r["market"], float(r["line"])) for r in mk}):
+        g = [r for r in mk if r["market"] == m and float(r["line"]) == line]
+        if len(g) >= 100:
+            per_mkt.append([f"{m} over {line}", len(g), C.fmt(fit_lambda(g, "p_card", "mkt", "y")[0], 2)])
+    emit("X5. Shrink toward market: q = market + lambda * (model - market), lambda fitted by log loss on the forward pool",
+         ["sample", "n", "lambda"],
+         [["all markets (95% date-clustered bootstrap, 300 resamples)", len(mk),
+           f"{lam_pt:.2f} [{lams[7]:.2f}, {lams[292]:.2f}]"]] + per_mkt,
+         note="lambda = 1 means trust the model's deviation from the market fully; 0 means it carries no information; "
+              "the grid is -0.50..1.00 in steps of 0.01.")
+    # (e) D5 split by PA source
+    for src in ("batting_slot", "season_average"):
+        g = [j for j in joined if j["src"] == src]
+        if not g:
+            continue
+        tab = []
+        for key, desc in VARIANTS:
+            vals = [j["d_" + key] for j in g if ("d_" + key) in j]
+            if vals:
+                tab.append([desc, len(vals), C.pts(C.mean(vals), 2)])
+        emit(f"X6. Published bets with PA source {src}: component shifts on our side probability",
+             ["component", "bets", "mean shift (pts)"], tab,
+             note="Shifts are measured against the slot-based rebuild; for season_average bets the published number "
+                  "used the batter's own PA per game instead (see X3).")
+    # (f) published bets: our side minus market, and how much of it was realized
+    subsets = (("all", pub), ("Over", [b for b in pub if b["side"] == "Over"]),
+               ("Under", [b for b in pub if b["side"] == "Under"]),
+               ("regular season", [b for b in pub if b["game_type"] == "R"]),
+               ("postseason", [b for b in pub if b["game_type"] not in ("R", "n/a")]))
+    rows = []
+    for lab, g in subsets:
+        if not g:
+            continue
+        gap = C.mean(b["our"] - b["mkt"] for b in g)
+        real = C.mean(b["y"] - b["mkt"] for b in g)
+        rows.append([lab, len(g), C.pts(gap), C.pts(real), C.fmt(real / gap if gap else None, 2)])
+    emit("X7. Published bets: our side probability minus market, against realized minus market",
+         ["subset", "n", "mean (our - market) pts", "mean (hit - market) pts", "share of the gap realized"], rows)
+
+    # (g) structural composite: does fixing the known structural terms close the gap?
+    mk2 = [r for r in pool if r["mkt"] is not None and r.get("p_struct") is not None]
+    tab = []
+    for m, line in sorted({(r["market"], float(r["line"])) for r in mk2}):
+        for gl, sel in (("regular", lambda r: r["game_type"] == "R"), ("post", lambda r: r["game_type"] != "R")):
+            g = [r for r in mk2 if r["market"] == m and float(r["line"]) == line and sel(r)]
+            if len(g) < 50:
+                continue
+            dl = C.clustered_boot(g, lambda r: C.ll(r["p_struct"], r["y"]) - C.ll(r["mkt"], r["y"]))
+            tab.append([f"{m} over {line}", gl, len(g), C.pts(C.mean(r["p_card"] - r["y"] for r in g)),
+                        C.pts(C.mean(r["p_struct"] - r["y"] for r in g)), C.pts(C.mean(r["mkt"] - r["y"] for r in g)),
+                        f"{C.fmt(dl[0], 4, True)} [{C.fmt(dl[1], 4, True)}, {C.fmt(dl[2], 4, True)}]"])
+    emit("X8. Structural composite vs card vs market on the forward pool",
+         ["market", "games", "n", "card bias pts", "composite bias pts", "market bias pts",
+          "LL composite minus market [95%] (+ = composite worse)"], tab)
+    lam_s = fit_lambda(mk2, "p_struct", "mkt", "y")[0]
+    dall = C.clustered_boot(mk2, lambda r: C.ll(r["p_struct"], r["y"]) - C.ll(r["mkt"], r["y"]))
+    emit("X9. Structural composite: still worse than the market overall?",
+         ["n", "LL composite minus market [95%]", "lambda (shrink-to-market) for the composite"],
+         [[len(mk2), f"{C.fmt(dall[0], 4, True)} [{C.fmt(dall[1], 4, True)}, {C.fmt(dall[2], 4, True)}]", C.fmt(lam_s, 2)]])
+    # published bets under the composite
+    pj = []
+    for b in pub:
+        r = idx.get((b["date"], b["game_pk"], b["player"], b["market"], float(b["line"])))
+        if r is None or r.get("p_struct") is None:
+            continue
+        base = r["p_card"] if b["src"] == "batting_slot" else r["p_avg"]
+        if base is None:
+            continue
+        shift = r["p_struct"] - r["p_card"]
+        q = b["our"] + (shift if b["side"] == "Over" else -shift)
+        pj.append(dict(b, q=min(max(q, 0.01), 0.99)))
+    rows = []
+    for lab, g in (("all", pj), ("Over", [b for b in pj if b["side"] == "Over"]),
+                   ("Under", [b for b in pj if b["side"] == "Under"]),
+                   ("regular season", [b for b in pj if b["game_type"] == "R"]),
+                   ("postseason", [b for b in pj if b["game_type"] not in ("R", "n/a")])):
+        if not g:
+            continue
+        ev = [b["q"] * odds_math.american_to_decimal(b["price"]) - 1 for b in g]
+        rows.append([lab, len(g), C.fmt(C.mean(b["our"] for b in g)), C.fmt(C.mean(b["q"] for b in g)),
+                     C.fmt(C.mean(b["mkt"] for b in g)), C.fmt(C.mean(b["y"] for b in g)),
+                     C.pts(C.mean(b["q"] - b["mkt"] for b in g)), C.fmt(sum(ev), 2, True)])
+    emit("X10. Published bets re-scored with the structural composite (RETROSPECTIVE)",
+         ["subset", "n", "our p", "composite p", "market p", "hit rate", "composite minus market pts",
+          "expected units at the price taken"], rows,
+         note="The composite applies the pool's own shift (composite minus slot-based card number) to the published "
+              "side probability. Whatever gap remains after it is not explained by these three terms.")
 
 
 def main(argv=None):
@@ -991,6 +1352,9 @@ def main(argv=None):
                 vals = [j["d_" + key] for j in joined if ("d_" + key) in j]
                 if vals:
                     tab.append([desc, len(vals), C.pts(C.mean(vals), 2)])
+            tb_all = [j.get("d_p_tb05_as_hits", 0.0) for j in joined]
+            tab.append(["TB over 0.5 via hits path, averaged over ALL matched bets (0 where not TB 0.5)", len(tb_all),
+                        C.pts(C.mean(tb_all), 2)])
             cl = [j for j in joined if j.get("mkt_close") is not None]
             tab.append(["market at publish -> market at last pre-game quote (side)", len(cl),
                         C.pts(C.mean(j["mkt_close"] - j["mkt"] for j in cl), 2)])
@@ -999,14 +1363,18 @@ def main(argv=None):
                  note="Negative = the correction lowers our number on the side we bet. "
                       "Last row: closing-line movement on the bets (negative = market moved against us).")
             run_shrink(pool, pub)
+            run_extra(pool, pub, joined)
     if args.part in ("all", "hist"):
         if pa24 is None:
             box24 = C.load_box_archive(2024)
             lu24 = [r for r in C.load_lineups() if str(r["date"])[:4] == "2024"]
             pa24 = pa_dists_from_lineups(lu24, box24)
+        box23 = C.load_box_archive(2023)
+        lu23 = [r for r in C.load_lineups() if str(r["date"])[:4] == "2023"]
+        pa23 = pa_dists_from_lineups(lu23, box23)
         seasons = [args.season] if args.season else [2024, 2025]
         for s in seasons:
-            run_hist(s, pa24)
+            run_hist(s, pa23 if s == 2024 else pa24)
     suffix = args.part if args.part != "hist" or not args.season else f"hist_{args.season}"
     with open(os.path.join(OUT_DIR, f"estimate_error_tables_{suffix}.md"), "w", encoding="utf-8") as fh:
         fh.write("# Generated by scripts/diagnosis/estimate_error.py --part " + args.part +

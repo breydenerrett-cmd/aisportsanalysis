@@ -1,0 +1,9 @@
+{
+ "hits": 742,
+ "homeRuns": 113,
+ "plateAppearances": 3636,
+ "runs": 377,
+ "teams": 12,
+ "totalBases": 1235,
+ "url": "https://statsapi.mlb.com/api/v1/teams/stats?season=2025&sportId=1&group=hitting&stats=season&gameType=P"
+}

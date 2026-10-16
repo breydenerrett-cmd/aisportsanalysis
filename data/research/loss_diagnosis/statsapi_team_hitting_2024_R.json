@@ -1,0 +1,9 @@
+{
+ "hits": 39823,
+ "homeRuns": 5453,
+ "plateAppearances": 182449,
+ "runs": 21343,
+ "teams": 30,
+ "totalBases": 65347,
+ "url": "https://statsapi.mlb.com/api/v1/teams/stats?season=2024&sportId=1&group=hitting&stats=season&gameType=R"
+}

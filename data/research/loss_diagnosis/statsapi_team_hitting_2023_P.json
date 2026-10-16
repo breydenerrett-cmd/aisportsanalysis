@@ -1,0 +1,9 @@
+{
+ "hits": 663,
+ "homeRuns": 110,
+ "plateAppearances": 3086,
+ "runs": 336,
+ "teams": 12,
+ "totalBases": 1126,
+ "url": "https://statsapi.mlb.com/api/v1/teams/stats?season=2023&sportId=1&group=hitting&stats=season&gameType=P"
+}
