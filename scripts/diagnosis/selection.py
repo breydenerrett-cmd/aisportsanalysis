@@ -950,6 +950,771 @@ def _lstsq(X, y):
 
 
 # ---------------------------------------------------------------------------
+# Q2 on the replayed candidate pool (props)
+# ---------------------------------------------------------------------------
+
+def _pkey(r):
+    return (r["date"], r["player"], r["market"], str(r["line"]), r["side"])
+
+
+def dedupe_run_pool(P):
+    """One row per (date, player, market, line, side): the last run instance
+    before first pitch - 4h (the lock lead), else the first instance; plus
+    whether the identity was EVER pick-eligible / a close call on any run."""
+    by = defaultdict(list)
+    for r in P:
+        if r["source"] == "run":
+            by[_pkey(r)].append(r)
+    out = []
+    for k, rs in by.items():
+        rs.sort(key=lambda r: r["now"])
+        fp = _dt(rs[0]["first_pitch_utc"])
+        before = [r for r in rs if fp and _dt(r["now"]) <= fp - timedelta(hours=4)]
+        rep = dict(before[-1] if before else rs[0])
+        rep["ever_pick_eligible"] = any(not r["failed_gates"] for r in rs)
+        rep["ever_close_call"] = any(r["failed_gates"] and bbc.is_fill_eligible(r["failed_gates"])
+                                     for r in rs)
+        rep["n_runs_seen"] = len(rs)
+        out.append(rep)
+    return out
+
+
+def _validation(P):
+    """How faithfully the replay reproduces the ledger: per publish run, the
+    share of the ledger's prop close calls, and of prop entries FIRST shown at
+    that run, that the replay produced with the identical price and our
+    number."""
+    pubs = published_rows()
+    by_run = defaultdict(dict)
+    for r in P:
+        if r["source"] == "run":
+            by_run[(r["date"], r["now"])][_pkey(r)] = r
+    seen_first = set()
+    tot = Counter()
+    for row in pubs:
+        now = _dt(row["published_utc"]).isoformat()
+        rep = by_run.get((row["date"], now))
+        if rep is None:
+            continue
+        for c in row.get("close_calls_not_shown") or []:
+            if c.get("kind") != "prop":
+                continue
+            k = (row["date"], c["player"], c["market"], str(c["line"]), c["side"])
+            tot["close_calls"] += 1
+            m = rep.get(k)
+            if m and m["price"] == c["price"] and abs((m["our_p"] or 0) - (c["our_probability"] or 0)) < 1e-6:
+                tot["close_calls_matched_exact"] += 1
+            elif m:
+                tot["close_calls_matched_identity_only"] += 1
+        for c in row.get("all_bets") or []:
+            if c.get("kind") != "prop":
+                continue
+            k = (row["date"], c["player"], c["market"], str(c["line"]), c["side"])
+            if k in seen_first:
+                continue
+            seen_first.add(k)
+            tot["entries_first_shown"] += 1
+            m = rep.get(k)
+            if m and m["price"] == c["price"] and abs((m["our_p"] or 0) - (c["our_probability"] or 0)) < 1e-6:
+                tot["entries_matched_exact"] += 1
+                if (not m["failed_gates"]) == (c.get("entry_class") == "pick"):
+                    tot["entries_matched_class"] += 1
+            elif m:
+                tot["entries_matched_identity_only"] += 1
+    return dict(tot)
+
+
+def section_pool():
+    P = load_replay()
+    res = {"_note": "Prop candidates rebuilt from local stores through the "
+                    "registered code path (propboard.build -> most_likely[:200] "
+                    "-> best_bets_card.failed_gates) at every actual publish "
+                    "instant, and the pregame-close board. Graded from box "
+                    "scores. Open window only (2026-09-03 onward)."}
+    res["validation_vs_ledger"] = _validation(P)
+    run = [_enrich_pool(r) for r in dedupe_run_pool(P)]
+    run_wl = [r for r in run if r["result"] in ("WIN", "LOSS") and r["market_p"] is not None]
+    pub = {}
+    for e in ledger_entries():
+        if e["kind"] == "prop":
+            pub[(e["date"], e["who"], e["market"], str(e["line"]), e["side"])] = e["entry_class"]
+    for r in run_wl:
+        r["published_as"] = pub.get(_pkey(r), "not_published")
+    order = [b for _, _, b in MM_EDGES]
+    res["run_pool"] = {
+        "n_identities": len(run), "n_graded_wl": len(run_wl),
+        "by_v2_class": table(run_wl, lambda r: r["v2_class"]),
+        "by_published_as": table(run_wl, lambda r: r["published_as"]),
+        "hit_by_mm_all": table(run_wl, lambda r: mm_bucket(r["mm"]), order),
+        "hit_by_mm_pick_eligible": table([r for r in run_wl if r["v2_class"] == "pick_eligible"],
+                                         lambda r: mm_bucket(r["mm"]), order),
+        "hit_by_mm_not_published": table([r for r in run_wl if r["published_as"] == "not_published"],
+                                         lambda r: mm_bucket(r["mm"]), order),
+        "hit_by_mm_and_market": table(run_wl, lambda r: f"{r['market']}|{mm_bucket(r['mm'])}"),
+        "shrinkage_all": shrinkage(run_wl),
+        "shrinkage_by_market": {m: shrinkage([r for r in run_wl if r["market"] == m])
+                                for m in sorted({r["market"] for r in run_wl})},
+        "shrinkage_mm_0_to_10": shrinkage([r for r in run_wl if 0 <= r["mm"] <= 0.10]),
+        "shrinkage_not_published": shrinkage([r for r in run_wl if r["published_as"] == "not_published"]),
+        "hit_by_price_band": table(run_wl, lambda r: price_band(r["price"])),
+        "hit_by_side": table(run_wl, lambda r: f"{r['market']}|{r['side']}"),
+        "fail_reasons": dict(Counter("+".join(r["failed_gates"]) or "none" for r in run_wl).most_common(15)),
+    }
+
+    close = [_enrich_pool(dict(r)) for r in P if r["source"] == "close"]
+    close_wl = [r for r in close if r["result"] in ("WIN", "LOSS") and r["market_p"] is not None]
+    fav = [r for r in close_wl if r["our_p"] > 0.5]
+    res["close_board"] = {
+        "_note": "both sides of every assessable contract on the newest pregame "
+                 "quotes; analysis restricted to the side our number favours "
+                 "(our_p > 0.5), the card's own candidate side (one row per contract).",
+        "n_contract_sides_wl": len(close_wl), "n_model_favoured": len(fav),
+        "hit_by_mm": table(fav, lambda r: mm_bucket(r["mm"]), order),
+        "hit_by_mm_card_window": table([r for r in fav if r["date"] >= "2026-09-22"],
+                                       lambda r: mm_bucket(r["mm"]), order),
+        "hit_by_mm_and_market": table(fav, lambda r: f"{r['market']}|{mm_bucket(r['mm'])}"),
+        "shrinkage_all": shrinkage(fav),
+        "shrinkage_card_window": shrinkage([r for r in fav if r["date"] >= "2026-09-22"]),
+        "shrinkage_pre_card_window": shrinkage([r for r in fav if r["date"] < "2026-09-22"]),
+        "shrinkage_by_market": {m: shrinkage([r for r in fav if r["market"] == m])
+                                for m in sorted({r["market"] for r in fav})},
+        "shrinkage_by_pa_source": {m: shrinkage([r for r in fav if r["expected_pa_source"] == m])
+                                   for m in sorted({str(r["expected_pa_source"]) for r in fav})
+                                   if any(str(r["expected_pa_source"]) == m for r in fav)},
+        "v2_gate_window_mm_4_to_10": summarise([r for r in fav if 0.04 <= r["mm"] <= 0.10]),
+        "v2_pick_eligible_at_close": summarise([r for r in fav if r["v2_class"] == "pick_eligible"]),
+        "market_only_calibration": _market_calibration(fav),
+        "model_only_calibration": _model_calibration(fav),
+        "log_loss": _logloss(fav),
+    }
+
+    # CLV: did the market move toward our number between decision and close?
+    close_mkt = {_pkey(r): r["market_p"] for r in close if r["market_p"] is not None}
+    clv_rows = []
+    for r in run:
+        cm = close_mkt.get(_pkey(r))
+        if cm is None or r["market_p"] is None:
+            continue
+        clv_rows.append({"date": r["date"], "mm": r["mm"], "clv": cm - r["market_p"],
+                         "v2_class": r["v2_class"], "market": r["market"]})
+    if clv_rows:
+        xs = [c["mm"] for c in clv_rows]
+        ys = [c["clv"] for c in clv_rows]
+        a, b = ols(xs, ys)
+        lo, hi = cluster_bootstrap(clv_rows, lambda s: ols([c["mm"] for c in s], [c["clv"] for c in s])[1])
+        res["clv"] = {
+            "_definition": "clv = close de-vigged market p - decision-time de-vigged market p, "
+                           "same contract and side. Positive = market moved toward our side.",
+            "n": len(clv_rows), "slope_clv_on_mm": _r(b), "slope_ci95": [_r(lo), _r(hi)],
+            "intercept": _r(a),
+            "mean_clv_by_mm_bucket": {
+                k: {"n": len(v), "mean_clv_pts": _r(100 * sum(v) / len(v), 2)}
+                for k, v in sorted(_group(clv_rows, lambda c: mm_bucket(c["mm"]),
+                                          lambda c: c["clv"]).items())},
+            "mean_clv_by_v2_class": {
+                k: {"n": len(v), "mean_clv_pts": _r(100 * sum(v) / len(v), 2)}
+                for k, v in sorted(_group(clv_rows, lambda c: c["v2_class"],
+                                          lambda c: c["clv"]).items())},
+        }
+
+    # What the score actually rewards: regress it on its ingredients over every
+    # fill-eligible candidate (picks + close calls), all graded or not.
+    sd_rows = [r for r in run if r["v2_class"] in ("pick_eligible", "close_call")
+               and r["market_p"] is not None]
+    if sd_rows:
+        X, y = [], []
+        for r in sd_rows:
+            X.append([1.0, r["mm"], r["breakeven"] - r["market_p"], dec(r["price"])])
+            y.append(bbc.score(r["our_p"], r["price"], bbc.V2))
+        beta = _lstsq(X, y)
+        mms = [x[1] for x in X]
+        vg = [x[2] for x in X]
+        res["score_drivers"] = {
+            "_definition": "score = Kelly fraction on (our_p - 0.038) at the best price; "
+                           "regressed on model-minus-market (mm), vig gap (breakeven - market) "
+                           "and decimal odds over all fill-eligible replayed candidates",
+            "n": len(sd_rows),
+            "beta": {"intercept": _r(beta[0]), "mm": _r(beta[1]), "vig_gap": _r(beta[2]),
+                     "decimal": _r(beta[3])},
+            "corr_score_mm": _corr(mms, y), "corr_score_vig_gap": _corr(vg, y),
+            "sd_mm_pts": _r(100 * (sum((m - sum(mms) / len(mms)) ** 2 for m in mms) / len(mms)) ** 0.5, 2),
+            "sd_vig_gap_pts": _r(100 * (sum((m - sum(vg) / len(vg)) ** 2 for m in vg) / len(vg)) ** 0.5, 2),
+        }
+
+    # Hindsight: alternative ranking keys over the same pick-eligible pool.
+    elig = [r for r in run_wl if r["v2_class"] == "pick_eligible"]
+    res["ranking_keys_HINDSIGHT"] = _ranking_keys(elig)
+    res["ranking_keys_all_fill_eligible_HINDSIGHT"] = _ranking_keys(
+        [r for r in run_wl if r["v2_class"] in ("pick_eligible", "close_call")])
+    return res
+
+
+def _group(rows, keyfn, valfn):
+    g = defaultdict(list)
+    for r in rows:
+        g[keyfn(r)].append(valfn(r))
+    return g
+
+
+def _market_calibration(rows):
+    g = defaultdict(list)
+    for r in rows:
+        b = min(9, int(r["market_p"] * 10))
+        g[b].append(r)
+    return {f"{b/10:.1f}-{(b+1)/10:.1f}": {"n": len(v), "pred": _r(sum(r['market_p'] for r in v) / len(v)),
+                                         "hit": _r(sum(r['won'] for r in v) / len(v))}
+            for b, v in sorted(g.items())}
+
+
+def _model_calibration(rows):
+    g = defaultdict(list)
+    for r in rows:
+        b = min(9, int(r["our_p"] * 10))
+        g[b].append(r)
+    return {f"{b/10:.1f}-{(b+1)/10:.1f}": {"n": len(v), "pred": _r(sum(r['our_p'] for r in v) / len(v)),
+                                         "hit": _r(sum(r['won'] for r in v) / len(v)),
+                                         "market_pred": _r(sum(r['market_p'] for r in v) / len(v))}
+            for b, v in sorted(g.items())}
+
+
+def _logloss(rows):
+    def ll(p, y):
+        p = min(max(p, 1e-6), 1 - 1e-6)
+        return -(math.log(p) if y else math.log(1 - p))
+    n = len(rows)
+    lm = sum(ll(r["market_p"], r["won"]) for r in rows) / n
+    lo = sum(ll(r["our_p"], r["won"]) for r in rows) / n
+    best = None
+    for w10 in range(0, 11):
+        w = w10 / 10
+        l = sum(ll(r["market_p"] + w * (r["our_p"] - r["market_p"]), r["won"]) for r in rows) / n
+        if best is None or l < best[1]:
+            best = (w, l)
+    return {"n": n, "market": _r(lm, 5), "ours": _r(lo, 5), "ours_minus_market": _r(lo - lm, 5),
+            "best_blend_weight_on_ours_grid": best[0], "best_blend_logloss": _r(best[1], 5)}
+
+
+def _ranking_keys(rows):
+    by = defaultdict(list)
+    for r in rows:
+        by[r["date"]].append(r)
+    keys = {
+        "score_desc_(the_rule)": lambda r: -(bbc.score(r["our_p"], r["price"], bbc.V2) or 0),
+        "mm_asc_(least_disagreement)": lambda r: r["mm"],
+        "market_p_desc_(likeliest_by_market)": lambda r: -r["market_p"],
+        "our_p_desc_(likeliest_by_model)": lambda r: -r["our_p"],
+        "price_desc_(longest_price)": lambda r: -r["price"],
+        "vig_gap_asc_(cheapest_vig)": lambda r: r["breakeven"] - r["market_p"],
+    }
+    out = {}
+    for name, kf in keys.items():
+        for cap in (1, 3):
+            sel = []
+            for d, rs in by.items():
+                seen = set()
+                for r in sorted(rs, key=lambda r: (kf(r), r["player"], r["market"])):
+                    if r["player"] in seen:
+                        continue
+                    seen.add(r["player"])
+                    sel.append(r)
+                    if len([x for x in sel if x["date"] == d]) >= cap:
+                        break
+            out[f"{name}|top{cap}"] = summarise(sel)
+    out["all_pool"] = summarise(rows)
+    return out
+
+
+# ---------------------------------------------------------------------------
+# Q5 moneylines
+# ---------------------------------------------------------------------------
+
+def _logit(p):
+    return math.log(p / (1 - p))
+
+
+def _sig(z):
+    return 1 / (1 + math.exp(-z))
+
+
+def ledger_game_candidates():
+    """Every moneyline candidate the card saw (all_bets, withdrawn, close calls,
+    ceiling_refused), one per game per date: the last instance before first
+    pitch - 4h, else the first. Graded from linescores."""
+    results = game_results()
+    by = defaultdict(list)
+    for row in published_rows():
+        for src in ("all_bets", "close_calls_not_shown", "ceiling_refused", "withdrawn"):
+            for c in row.get(src) or []:
+                if c.get("kind") != "game":
+                    continue
+                by[(row["date"], c.get("game_id"))].append((row["published_utc"], src, c))
+    out = []
+    for (date, gid), items in by.items():
+        items.sort(key=lambda t: t[0])
+        c0 = items[0][2]
+        fp = _dt(c0.get("first_pitch_utc") or c0.get("first_pitch"))
+        before = [t for t in items if fp and _dt(t[0]) <= fp - timedelta(hours=4)]
+        pu, src, c = before[-1] if before else items[0]
+        res = results.get(str(c.get("game_pk")))
+        g = cl.grade_pick(c, res or {})
+        if g["result"] not in ("WIN", "LOSS"):
+            continue
+        mp, op = c.get("market_probability"), c.get("our_probability")
+        if mp is None or op is None:
+            continue
+        out.append({
+            "date": date, "game_id": gid, "side": c.get("side"), "home": c.get("side") == "home",
+            "team": c.get("team_name"), "price": c["price"], "market_p": mp, "our_p": op,
+            "mm": op - mp, "breakeven": implied(c["price"]),
+            "won": g["result"] == "WIN", "profit": g["profit_units"],
+            "ev_mkt": mp * dec(c["price"]) - 1, "src": src,
+            # Frozen all_bets rows do not carry `calibrated` (not a V2 frozen
+        # field); every published game entry was calibrated, so default True.
+        "failed_gates": bbc.failed_gates(dict(c, observed_utc=_dt(c.get("observed_utc")),
+                                              calibrated=c.get("calibrated", True)),
+                                         now=_dt(pu), params=bbc.V2),
+        })
+    return out
+
+
+def _wager_key(r):
+    """decisions_v2 <-> paper_wagers_v2 join. `selection_id` is NOT unique
+    (56 values over 5,152 wagers), so the join is on the decision's own
+    identity: event, decision instant, system."""
+    return (r.get("event_id"), r.get("decision_utc"), r.get("system_id"))
+
+
+def _wager_index():
+    return {_wager_key(r): r for r in _jsonl(os.path.join("evidence", "paper_wagers_v2.jsonl"))}
+
+
+def section_moneyline():
+    E = [e for e in ledger_entries() if e["kind"] == "game"]
+    res = {}
+    res["entries"] = [{k: e[k] for k in ("date", "who", "side", "price", "market_p", "our_p",
+                                        "mm", "entry_class", "failed_gates", "won", "profit",
+                                        "withdrawn")} for e in E]
+    res["summary"] = {
+        "all": summarise(E),
+        "home_share": _r(sum(1 for e in E if e["home"]) / len(E), 3),
+        "by_home": table(E, lambda e: "home" if e["home"] else "away"),
+        "by_price_band": table(E, lambda e: price_band(e["price"])),
+        "by_entry_class_gate": table(E, lambda e: f"{e['entry_class']}|{'+'.join(e['failed_gates']) or 'none'}"),
+        "mean_mm_pts": _r(100 * sum(e["mm"] for e in E) / len(E), 2),
+        "all_favourites_by_market": all(e["market_p"] > 0.5 for e in E),
+        "all_negative_price": all(e["price"] < 0 for e in E),
+    }
+    frozen = json.load(open(os.path.join("data", "processed", "card_v2_frozen_params.json")))
+    cal = frozen["moneyline_calibration"]
+    a, b = cal["a"], cal["b"]
+    res["frozen_calibration"] = {
+        "a": a, "b": b, "fitted_on": "2025 (tuning season, frozen 2026-09-15)",
+        "home_bump_at_raw_0.50_pts": _r(100 * (_sig(a) - 0.5), 2),
+        "calibrated_home_at_raw": {str(p): _r(_sig(a + b * _logit(p))) for p in (0.40, 0.45, 0.50, 0.55, 0.60, 0.65)},
+        "_reading": "p_home = sigmoid(a + b*logit(raw)). b < 1 pulls every raw number "
+                    "toward 0.5; a > 0 adds a constant home lean. Applied to p_home, so "
+                    "an away side gets the lean subtracted.",
+    }
+    G = ledger_game_candidates()
+    xs = [g["market_p"] for g in G]
+    ys = [g["our_p"] for g in G]
+    n = len(G)
+    mx, my = sum(xs) / n, sum(ys) / n
+    cov = sum((x - mx) * (y - my) for x, y in zip(xs, ys)) / n
+    sx = math.sqrt(sum((x - mx) ** 2 for x in xs) / n)
+    sy = math.sqrt(sum((y - my) ** 2 for y in ys) / n)
+    X = [[1.0, x, 1.0 if g["home"] else 0.0] for x, g in zip(xs, G)]
+    beta = _lstsq(X, ys)
+    resid = [y - (beta[0] + beta[1] * x + beta[2] * h[2]) for x, y, h in zip(xs, ys, X)]
+    res["favoured_side_pool"] = {
+        "_note": "every market-favoured moneyline side the card evaluated (the registered "
+                 "path builds only that side), one per game per date, graded from linescores",
+        "n": n, "corr_our_vs_market": _r(cov / (sx * sy)),
+        "sd_market": _r(sx), "sd_ours": _r(sy),
+        "ours_on_market_and_home": {"intercept": _r(beta[0]), "slope_market": _r(beta[1]),
+                                    "home_coef_pts": _r(100 * beta[2], 2),
+                                    "resid_sd_pts": _r(100 * math.sqrt(sum(r * r for r in resid) / n), 2)},
+        "home_share": _r(sum(g["home"] for g in G) / n, 3),
+        "mean_mm_pts_home": _r(100 * sum(g["mm"] for g in G if g["home"]) / max(1, sum(g["home"] for g in G)), 2),
+        "mean_mm_pts_away": _r(100 * sum(g["mm"] for g in G if not g["home"]) / max(1, sum(not g["home"] for g in G)), 2),
+        "hit_all": summarise(G),
+        "hit_by_home": table(G, lambda g: "home" if g["home"] else "away"),
+        "hit_by_mm": table(G, lambda g: mm_bucket(g["mm"]), [x for _, _, x in MM_EDGES]),
+        "hit_by_gate_status": table(G, lambda g: (
+            "pick_eligible" if not g["failed_gates"] else
+            "close_call" if bbc.is_fill_eligible(g["failed_gates"]) else "hard_fail")),
+        "hard_fail_reasons": dict(Counter("+".join(g["failed_gates"]) for g in G
+                                          if g["failed_gates"] and not bbc.is_fill_eligible(g["failed_gates"])).most_common(8)),
+        "shrinkage": shrinkage(G),
+    }
+    # The engine's own h2h decisions: provenance of p_model on the card's games.
+    card_pks = {str(e["game_pk"]) for e in E}
+    wagers = _wager_index()
+    prov = Counter()
+    prov_card = Counter()
+    for d in _jsonl(DECISIONS):
+        if d.get("market_key") != "h2h":
+            continue
+        w = wagers.get(_wager_key(d)) or {}
+        prov[(d["verdict"], d["p_model_provenance"])] += 1
+        if str(w.get("game_pk")) in card_pks:
+            prov_card[(d["verdict"], d["p_model_provenance"])] += 1
+    res["engine_decisions_h2h"] = {
+        "_note": "evidence/decisions_v2.jsonl is the Stage-16 paper engine "
+                 "(selection_rule TOP_RANKED_PLAY_PER_SYSTEM_PER_GAME_V1), a separate "
+                 "pipeline. The public card (src/report/card_v2.py) never reads it.",
+        "all_h2h_verdict_provenance": {f"{k[0]}|{k[1]}": v for k, v in prov.items()},
+        "on_the_29_card_moneyline_games": {f"{k[0]}|{k[1]}": v for k, v in prov_card.items()},
+    }
+    return res
+
+
+# ---------------------------------------------------------------------------
+# Q6 close calls, ceiling, refusals, stale boards
+# ---------------------------------------------------------------------------
+
+def section_closecalls():
+    batters = [r for r in box_rows() if r.get("type") == "batter"]
+    box_index = cl._index_prop_box_rows(batters)
+    captured = cl._box_captured_game_pks(box_rows())
+    results = game_results()
+    shown = set()
+    for e in ledger_entries():
+        shown.add((e["date"], e["who"], e["market"], str(e["line"]), e["side"]))
+    by = defaultdict(list)
+    for row in published_rows():
+        for src in ("close_calls_not_shown", "ceiling_refused", "plus_money_dropped_by_subcap"):
+            for c in row.get(src) or []:
+                who = c.get("player") or c.get("team_name")
+                k = (row["date"], who, c.get("market"), str(c.get("line")), c.get("side"))
+                by[(src,) + k].append((row["published_utc"], c))
+    rows = []
+    for key, items in by.items():
+        src, date = key[0], key[1]
+        if key[1:] in shown:
+            continue  # later published as a pick/fill: graded on the ledger already
+        items.sort(key=lambda t: t[0])
+        c = items[-1][1]
+        fp = _dt(c.get("first_pitch_utc") or c.get("first_pitch"))
+        before = [t for t in items if fp and _dt(t[0]) <= fp - timedelta(hours=4)]
+        c = (before[-1] if before else items[0])[1]
+        if c.get("kind") == "prop":
+            g = cl.grade_prop_pick(c, box_index, box_captured_game_pks=captured)
+        else:
+            g = cl.grade_pick(c, results.get(str(c.get("game_pk"))) or {})
+        if g["result"] not in ("WIN", "LOSS"):
+            continue
+        mp, op = c.get("market_probability"), c.get("our_probability")
+        if mp is None or op is None:
+            continue
+        rows.append({"src": src, "date": date, "kind": c.get("kind"), "market": c.get("market"),
+                     "price": c["price"], "market_p": mp, "our_p": op, "mm": op - mp,
+                     "breakeven": implied(c["price"]), "won": g["result"] == "WIN",
+                     "profit": g["profit_units"], "ev_mkt": mp * dec(c["price"]) - 1,
+                     "books": c.get("books"),
+                     "failed_gates": "+".join(c.get("failed_gates") or []) or "none"})
+    res = {
+        "_note": "Entries that were close calls (or ceiling-refused) on some publish run "
+                 "and were NEVER published as a pick or fill that date; graded here at "
+                 "their last pre-lock-window instance. Hindsight only.",
+        "by_source": table(rows, lambda r: r["src"]),
+        "close_calls_by_kind_gate": table([r for r in rows if r["src"] == "close_calls_not_shown"],
+                                          lambda r: f"{r['kind']}|{r['failed_gates']}"),
+        "close_calls_by_mm": table([r for r in rows if r["src"] == "close_calls_not_shown"],
+                                   lambda r: mm_bucket(r["mm"]), [x for _, _, x in MM_EDGES]),
+        "ceiling_refused_by_kind": table([r for r in rows if r["src"] == "ceiling_refused"],
+                                         lambda r: f"{r['kind']}|{r['failed_gates']}"),
+        "n_publish_rows_with_ceiling_refusal": sum(1 for r in published_rows() if r.get("ceiling_refused")),
+        "n_publish_rows_with_subcap_drop": sum(1 for r in published_rows() if r.get("plus_money_dropped_by_subcap")),
+        "n_publish_rows_stale_board": sum(1 for r in published_rows() if r.get("stale_board")),
+    }
+    # Engine refusals (separate pipeline): grade the paper h2h wagers by verdict.
+    wagers = _wager_index()
+    eng = []
+    for d in _jsonl(DECISIONS):
+        w = wagers.get(_wager_key(d))
+        if not w or w.get("market_key") != "h2h" or not _open(w.get("date")):
+            continue
+        res_g = results.get(str(w.get("game_pk")))
+        if not res_g or w.get("price_american") is None or w.get("side") not in ("home", "away"):
+            continue
+        won = (res_g["home_score"] > res_g["away_score"]) == (w["side"] == "home")
+        if res_g["home_score"] == res_g["away_score"]:
+            continue
+        mp = d.get("consensus_fair")
+        eng.append({"date": w["date"], "verdict": d["verdict"], "prov": d["p_model_provenance"],
+                    "price": w["price_american"], "won": won,
+                    "profit": profit(w["price_american"], won),
+                    "market_p": mp, "breakeven": implied(w["price_american"]),
+                    "ev_mkt": (mp * dec(w["price_american"]) - 1) if mp is not None else None,
+                    "books": d.get("books_at_decision")})
+    res["engine_h2h_by_verdict_SEPARATE_PIPELINE"] = table(eng, lambda r: f"{r['verdict']}|{r['prov']}")
+    return res
+
+
+# ---------------------------------------------------------------------------
+# Q1 trace
+# ---------------------------------------------------------------------------
+
+def section_trace():
+    E = ledger_entries()
+    days = defaultdict(list)
+    for e in E:
+        days[e["date"]].append(e)
+    rec = {d: (sum(e["won"] for e in es), sum(not e["won"] for e in es),
+               round(sum(e["profit"] for e in es), 2)) for d, es in days.items()}
+    three_oh = [d for d, (w, l, u) in rec.items() if w == 3 and l == 0]
+    best = max(rec, key=lambda d: rec[d][2])
+    worst = min(rec, key=lambda d: rec[d][2])
+    chosen = {"winning_day": best, "losing_day": worst,
+              "three_oh_day": three_oh[0] if three_oh else None}
+    world = PropWorld()
+    out = {"records_by_day": {d: list(v) for d, v in sorted(rec.items())},
+           "three_oh_days": three_oh, "chosen": chosen, "traces": {}}
+    pubs = published_rows()
+    for label, date in chosen.items():
+        if not date:
+            continue
+        runs = [r for r in pubs if r["date"] == date]
+        run_summ = []
+        funnel = Counter()
+        for r in runs:
+            now = _dt(r["published_utc"])
+            cands = world.candidates(date, now)
+            gate_first = Counter()
+            for c in cands:
+                f = bbc.failed_gates(c, now=now, params=bbc.V2)
+                gate_first["+".join(f) if f else "PASS"] += 1
+                for g in f:
+                    funnel[g] += 1
+            game_cc = sum(1 for c in r.get("close_calls_not_shown") or [] if c.get("kind") == "game")
+            game_shown = sum(1 for c in r.get("all_bets") or [] if c.get("kind") == "game")
+            run_summ.append({
+                "published_utc": r["published_utc"],
+                "prop_candidates_replayed": len(cands),
+                "prop_pass_all_gates": gate_first.get("PASS", 0),
+                "top_fail_patterns": dict(gate_first.most_common(5)),
+                "ledger_n_picks": r.get("n_picks"), "ledger_n_fills": r.get("n_fills"),
+                "ledger_all_bets": len(r.get("all_bets") or []),
+                "ledger_close_calls_not_shown": len(r.get("close_calls_not_shown") or []),
+                "ledger_game_close_calls": game_cc, "ledger_game_entries": game_shown,
+                "ceiling_refused": len(r.get("ceiling_refused") or []),
+            })
+        graded = sorted(days[date], key=lambda e: (e["entry_class"] != "pick", -(e["score_calc"] or 0)))
+        out["traces"][label] = {
+            "date": date, "record": rec[date], "n_publish_runs": len(runs),
+            "runs": run_summ,
+            "gate_failure_counts_over_all_runs": dict(funnel.most_common()),
+            "graded_entries": [{
+                "entry_class": e["entry_class"], "withdrawn": e["withdrawn"], "who": e["who"],
+                "market": e["market"], "line": e["line"], "side": e["side"], "price": e["price"],
+                "books": e["books"], "market_p": _r(e["market_p"]), "our_p": _r(e["our_p"]),
+                "mm_pts": _r(100 * e["mm"], 1), "score": _r(e["score_calc"]),
+                "value_need": _r(e["value_need"]), "used": _r(e["used"]),
+                "failed_gates": e["failed_gates"], "first_shown_run": e["first_shown_run"],
+                "won": e["won"], "profit": e["profit"]} for e in graded],
+        }
+    return out
+
+
+# ---------------------------------------------------------------------------
+# Q2 for 2024: the moneyline model rebuilt pre-game, frozen numbers, point-in-time
+# ---------------------------------------------------------------------------
+
+ODDS_2024 = os.path.join("data", "archive", "historical", "odds_history", "mlb_2024.jsonl.gz")
+RESULTS_CSV = os.path.join("data", "historical", "mlb_results.csv")
+PITCHER_LOGS = os.path.join("data", "historical", "pitcher_logs.jsonl")
+BULLPEN_LOG = os.path.join("data", "historical", "bullpen_log.jsonl")
+
+
+def _season_ok(date):
+    """2023 (prior-season context) and 2024 only. Every other row -- 2025
+    tuning, the sealed 2026 window, the 2026 forward window -- is dropped on
+    its date column before any other field is kept."""
+    d = str(date or "")[:4]
+    return d in ("2023", "2024")
+
+
+def _pregame_h2h_2024():
+    """{event_id: {commence, home, away, quotes{book: (home_price, away_price)}}}
+    from the newest archive poll strictly before each event's commence time.
+    `snapshot_at` is the observation time (src/board/l1_historical.py)."""
+    best = {}
+    for poll in _jsonl(ODDS_2024):
+        snap = _dt(poll.get("snapshot_at"))
+        for ev in poll.get("events") or []:
+            ct = _dt(ev.get("commence_time"))
+            if ct is None or snap is None or snap >= ct or not _season_ok(ev["commence_time"]):
+                continue
+            held = best.get(ev["id"])
+            if held is not None and held["snap"] >= snap:
+                continue
+            quotes = {}
+            for bk in ev.get("bookmakers") or []:
+                for m in bk.get("markets") or []:
+                    if m.get("key") != "h2h":
+                        continue
+                    prices = {o["name"]: o["price"] for o in m.get("outcomes") or []}
+                    hp, ap = prices.get(ev["home_team"]), prices.get(ev["away_team"])
+                    if hp is not None and ap is not None:
+                        quotes[bk["key"]] = (hp, ap)
+            if quotes:
+                best[ev["id"]] = {"snap": snap, "commence": ct, "home": ev["home_team"],
+                                  "away": ev["away_team"], "quotes": quotes}
+    return best
+
+
+def section_y2024():
+    import csv
+    from src.analysis import calibrate, strength
+    from src.pipeline import bullpen, features as features_mod
+    from src.pipeline import slate as slate_mod
+
+    store = {}
+    with open(RESULTS_CSV, newline="", encoding="utf-8") as h:
+        for row in csv.DictReader(h):
+            if not _season_ok(row.get("date")):
+                continue
+            store[row["game_pk"]] = {k: (v if v != "" else None) for k, v in row.items()}
+    logs = {}
+    for r in _jsonl(PITCHER_LOGS):
+        if not _season_ok(r.get("date")):
+            continue
+        logs.setdefault(str(r["person_id"]), []).append(r)
+    for v in logs.values():
+        v.sort(key=lambda a: a.get("date") or "")
+    pen = [r for r in _jsonl(BULLPEN_LOG) if _season_ok(r.get("date"))]
+    frozen = json.load(open(os.path.join("data", "processed", "card_v2_frozen_params.json")))
+    mc = frozen["moneyline_calibration"]
+    cal = calibrate.Calibration(mc["a"], mc["b"], mc["n"], mc["base_rate"])
+    disp = frozen["DISPERSION"]
+
+    tab = features_mod.build_training_table(store, min_date="2024-04-15", max_date="2024-12-31",
+                                            pitcher_logs=logs, require_complete=True)
+    rows = tab["rows"]
+    by_date = defaultdict(list)
+    for r in rows:
+        by_date[r["date"]].append(r)
+    relief_cache = {}
+
+    def relief(date):
+        if date not in relief_cache:
+            relief_cache[date] = {t: x.get("rate") for t, x in
+                                  bullpen.relief_rates_by_team(pen, date).items() if x.get("rate")}
+        return relief_cache[date]
+
+    lines = {}
+    for date, rs in by_date.items():
+        league = strength.league_runs_per_game(rs)
+        rel = relief(date)
+        for r in rs:
+            f = dict(r)
+            f["away_bullpen_rate"] = rel.get(r["away_team"])
+            f["home_bullpen_rate"] = rel.get(r["home_team"])
+            try:
+                ln = strength.model_line(f, league_rpg=league, dispersion=disp)
+            except strength.StrengthError:
+                continue
+            lines[str(r["game_pk"])] = (cal.apply(ln["p_home"]), ln["p_home"])
+
+    odds = _pregame_h2h_2024()
+    # join events -> results by teams + start time within 6h
+    by_teams = defaultdict(list)
+    for pk, g in store.items():
+        if not str(g.get("date") or "").startswith("2024"):
+            continue
+        by_teams[(g["away_team"], g["home_team"])].append(g)
+    cands = []
+    unmatched = 0
+    for eid, ev in odds.items():
+        a = slate_mod.team_abbrev_from_name(ev["away"])
+        h = slate_mod.team_abbrev_from_name(ev["home"])
+        match = None
+        for g in by_teams.get((a, h), []):
+            st = _dt(g.get("start_time_utc"))
+            if st and abs((st - ev["commence"]).total_seconds()) < 6 * 3600:
+                match = g
+                break
+        if match is None or str(match["game_pk"]) not in lines:
+            unmatched += 1
+            continue
+        if match.get("away_score") is None or match.get("home_score") is None:
+            continue
+        p_home, p_home_raw = lines[str(match["game_pk"])]
+        fair_home = []
+        best = {"home": None, "away": None}
+        for hp, ap in ev["quotes"].values():
+            try:
+                fh, _fa = odds_math.devig_two_way(hp, ap)
+            except (odds_math.OddsError, ZeroDivisionError, ValueError):
+                continue
+            fair_home.append(fh)
+            for side, pr in (("home", hp), ("away", ap)):
+                if best[side] is None or dec(pr) > dec(best[side]):
+                    best[side] = pr
+        if len(fair_home) < 1:
+            continue
+        mh = sum(fair_home) / len(fair_home)
+        home_won = int(match["home_score"]) > int(match["away_score"])
+        for side in ("home", "away"):
+            mp = mh if side == "home" else 1 - mh
+            op = p_home if side == "home" else 1 - p_home
+            price = best[side]
+            won = home_won if side == "home" else not home_won
+            c = {"kind": "game", "price": price, "market_probability": mp, "our_probability": op,
+                 "books": len(fair_home), "observed_utc": ev["snap"], "has_started": False,
+                 "calibrated": True}
+            fails = bbc.failed_gates(c, now=ev["snap"], params=bbc.V2)
+            fails = [f for f in fails if f != bbc.G3_STALE]  # archive polls ~3/day; G3 not evaluable
+            cands.append({"date": match["date"], "side": side, "home": side == "home",
+                          "price": price, "market_p": mp, "our_p": op, "mm": op - mp,
+                          "breakeven": implied(price), "won": won, "profit": profit(price, won),
+                          "ev_mkt": mp * dec(price) - 1, "books": len(fair_home),
+                          "fav": mp > 0.5, "failed_gates": fails,
+                          "v2": ("pick_eligible" if not fails else
+                                 "close_call" if bbc.is_fill_eligible(fails) else "hard_fail")})
+    fav = [c for c in cands if c["fav"]]
+    six = [c for c in cands if c["books"] >= 6]
+    order = [b for _, _, b in MM_EDGES]
+    res = {
+        "_note": "2024 (open season). Run model strength.model_line with the FROZEN 2025 "
+                 "dispersion and Platt calibration, point-in-time features "
+                 "(features.build_training_table: games strictly before each date), "
+                 "relief rates strictly before each date, league runs/game from that "
+                 "date's own slate (as the live path does). Market = mean de-vigged "
+                 "h2h across books on the newest archive poll strictly before first "
+                 "pitch; price = best across books. G3 is not evaluable on a ~3-poll/day "
+                 "archive and is dropped. Not agent 1's method (unavailable to this agent).",
+        "n_games_modelled": len(lines), "n_events_with_pregame_odds": len(odds),
+        "unmatched_events": unmatched, "n_sides": len(cands),
+        "training_table_skipped": tab.get("skipped"),
+        "both_sides_hit_by_mm": table(cands, lambda c: mm_bucket(c["mm"]), order),
+        "favourite_side_hit_by_mm": table(fav, lambda c: mm_bucket(c["mm"]), order),
+        "shrinkage_both_sides": shrinkage(cands),
+        "shrinkage_favourite_side": shrinkage(fav),
+        "shrinkage_books_ge_6": shrinkage(six),
+        "by_v2_class_both_sides_books_ge_6": table(six, lambda c: c["v2"]),
+        "by_v2_class_favourite_side_books_ge_6": table([c for c in six if c["fav"]], lambda c: c["v2"]),
+        "v2_pick_eligible_by_price_class": table([c for c in six if c["v2"] == "pick_eligible"],
+                                                 lambda c: bbc.price_class(c["price"])),
+        "home_fav_vs_away_fav": table(fav, lambda c: "home_fav" if c["home"] else "away_fav"),
+        "log_loss_home_side": _logloss([c for c in cands if c["home"]]),
+        "corr_our_market_home_side": _corr([c["market_p"] for c in cands if c["home"]],
+                                           [c["our_p"] for c in cands if c["home"]]),
+    }
+    return res
+
+
+def _corr(xs, ys):
+    n = len(xs)
+    mx, my = sum(xs) / n, sum(ys) / n
+    cov = sum((x - mx) * (y - my) for x, y in zip(xs, ys))
+    sx = math.sqrt(sum((x - mx) ** 2 for x in xs))
+    sy = math.sqrt(sum((y - my) ** 2 for y in ys))
+    return _r(cov / (sx * sy))
+
+
+# ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
 

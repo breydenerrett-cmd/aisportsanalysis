@@ -1,0 +1,862 @@
+{
+ "engine_decisions_h2h": {
+  "_note": "evidence/decisions_v2.jsonl is the Stage-16 paper engine (selection_rule TOP_RANKED_PLAY_PER_SYSTEM_PER_GAME_V1), a separate pipeline. The public card (src/report/card_v2.py) never reads it.",
+  "all_h2h_verdict_provenance": {
+   "play|market_derived": 692,
+   "play|none": 1176,
+   "play|placeholder": 346
+  },
+  "on_the_29_card_moneyline_games": {
+   "play|market_derived": 32,
+   "play|none": 117,
+   "play|placeholder": 16
+  }
+ },
+ "entries": [
+  {
+   "date": "2026-10-15",
+   "entry_class": "fill",
+   "failed_gates": [
+    "G7_VALUE"
+   ],
+   "market_p": 0.5469,
+   "mm": -0.007565669783437645,
+   "our_p": 0.5393343302165624,
+   "price": -128,
+   "profit": 0.7812,
+   "side": "home",
+   "who": "Guardians",
+   "withdrawn": false,
+   "won": true
+  },
+  {
+   "date": "2026-10-15",
+   "entry_class": "fill",
+   "failed_gates": [
+    "G7_VALUE"
+   ],
+   "market_p": 0.58377,
+   "mm": -0.08232452692992542,
+   "our_p": 0.5014454730700746,
+   "price": -148,
+   "profit": -1.0,
+   "side": "home",
+   "who": "Dodgers",
+   "withdrawn": false,
+   "won": false
+  },
+  {
+   "date": "2026-10-12",
+   "entry_class": "fill",
+   "failed_gates": [
+    "G7_VALUE"
+   ],
+   "market_p": 0.60218,
+   "mm": -0.02402634573567386,
+   "our_p": 0.5781536542643262,
+   "price": -159,
+   "profit": -1.0,
+   "side": "home",
+   "who": "Rays",
+   "withdrawn": false,
+   "won": false
+  },
+  {
+   "date": "2026-10-11",
+   "entry_class": "pick",
+   "failed_gates": [],
+   "market_p": 0.50534,
+   "mm": 0.06531956926286075,
+   "our_p": 0.5706595692628608,
+   "price": -107,
+   "profit": 0.9346,
+   "side": "home",
+   "who": "Brewers",
+   "withdrawn": false,
+   "won": true
+  },
+  {
+   "date": "2026-10-10",
+   "entry_class": "fill",
+   "failed_gates": [
+    "G7_VALUE"
+   ],
+   "market_p": 0.55644,
+   "mm": -0.05062888493734463,
+   "our_p": 0.5058111150626554,
+   "price": -133,
+   "profit": 0.7519,
+   "side": "home",
+   "who": "Guardians",
+   "withdrawn": false,
+   "won": true
+  },
+  {
+   "date": "2026-10-07",
+   "entry_class": "fill",
+   "failed_gates": [
+    "G7_VALUE"
+   ],
+   "market_p": 0.53521,
+   "mm": 0.03174810122317295,
+   "our_p": 0.5669581012231729,
+   "price": -120,
+   "profit": -1.0,
+   "side": "home",
+   "who": "White Sox",
+   "withdrawn": false,
+   "won": false
+  },
+  {
+   "date": "2026-10-07",
+   "entry_class": "fill",
+   "failed_gates": [
+    "G7_VALUE"
+   ],
+   "market_p": 0.57791,
+   "mm": -0.06909589809497596,
+   "our_p": 0.5088141019050241,
+   "price": -143,
+   "profit": 0.6993,
+   "side": "away",
+   "who": "Dodgers",
+   "withdrawn": false,
+   "won": true
+  },
+  {
+   "date": "2026-10-06",
+   "entry_class": "pick",
+   "failed_gates": [],
+   "market_p": 0.50003,
+   "mm": 0.07295612080440872,
+   "our_p": 0.5729861208044087,
+   "price": -105,
+   "profit": -1.0,
+   "side": "home",
+   "who": "Braves",
+   "withdrawn": false,
+   "won": false
+  },
+  {
+   "date": "2026-10-04",
+   "entry_class": "fill",
+   "failed_gates": [
+    "G7_VALUE"
+   ],
+   "market_p": 0.5676,
+   "mm": 0.01808606088486553,
+   "our_p": 0.5856860608848655,
+   "price": -134,
+   "profit": 0.7463,
+   "side": "home",
+   "who": "Brewers",
+   "withdrawn": false,
+   "won": true
+  },
+  {
+   "date": "2026-10-04",
+   "entry_class": "fill",
+   "failed_gates": [
+    "G7_VALUE"
+   ],
+   "market_p": 0.58178,
+   "mm": -0.03130607032855259,
+   "our_p": 0.5504739296714474,
+   "price": -147,
+   "profit": -1.0,
+   "side": "home",
+   "who": "Dodgers",
+   "withdrawn": false,
+   "won": false
+  },
+  {
+   "date": "2026-09-30",
+   "entry_class": "fill",
+   "failed_gates": [
+    "G7_VALUE"
+   ],
+   "market_p": 0.55962,
+   "mm": 0.015821845082417796,
+   "our_p": 0.5754418450824178,
+   "price": -135,
+   "profit": 0.7407,
+   "side": "home",
+   "who": "Yankees",
+   "withdrawn": false,
+   "won": true
+  },
+  {
+   "date": "2026-09-30",
+   "entry_class": "fill",
+   "failed_gates": [
+    "G7_VALUE"
+   ],
+   "market_p": 0.55757,
+   "mm": -0.03208405304347628,
+   "our_p": 0.5254859469565237,
+   "price": -134,
+   "profit": 0.7463,
+   "side": "home",
+   "who": "Padres",
+   "withdrawn": false,
+   "won": true
+  },
+  {
+   "date": "2026-09-29",
+   "entry_class": "fill",
+   "failed_gates": [
+    "G3_STALE",
+    "G7_VALUE"
+   ],
+   "market_p": 0.58032,
+   "mm": -0.013631456153584853,
+   "our_p": 0.5666885438464151,
+   "price": -143,
+   "profit": 0.6993,
+   "side": "home",
+   "who": "Yankees",
+   "withdrawn": false,
+   "won": true
+  },
+  {
+   "date": "2026-09-27",
+   "entry_class": "fill",
+   "failed_gates": [
+    "G7_VALUE"
+   ],
+   "market_p": 0.57424,
+   "mm": -0.029415992799742607,
+   "our_p": 0.5448240072002574,
+   "price": -136,
+   "profit": 0.7353,
+   "side": "home",
+   "who": "Phillies",
+   "withdrawn": false,
+   "won": true
+  },
+  {
+   "date": "2026-09-27",
+   "entry_class": "fill",
+   "failed_gates": [
+    "G7_VALUE"
+   ],
+   "market_p": 0.57074,
+   "mm": -0.03178754424456043,
+   "our_p": 0.5389524557554396,
+   "price": -140,
+   "profit": -1.0,
+   "side": "away",
+   "who": "Guardians",
+   "withdrawn": false,
+   "won": false
+  },
+  {
+   "date": "2026-09-27",
+   "entry_class": "fill",
+   "failed_gates": [
+    "G7_VALUE"
+   ],
+   "market_p": 0.52323,
+   "mm": 0.0024067902383756445,
+   "our_p": 0.5256367902383756,
+   "price": -110,
+   "profit": 0.9091,
+   "side": "home",
+   "who": "Marlins",
+   "withdrawn": false,
+   "won": true
+  },
+  {
+   "date": "2026-09-26",
+   "entry_class": "fill",
+   "failed_gates": [
+    "G7_VALUE"
+   ],
+   "market_p": 0.52279,
+   "mm": -0.0052443448949305305,
+   "our_p": 0.5175456551050694,
+   "price": -114,
+   "profit": 0.8772,
+   "side": "home",
+   "who": "Tigers",
+   "withdrawn": false,
+   "won": true
+  },
+  {
+   "date": "2026-09-26",
+   "entry_class": "fill",
+   "failed_gates": [
+    "G7_VALUE"
+   ],
+   "market_p": 0.59621,
+   "mm": -0.04335478013468752,
+   "our_p": 0.5528552198653125,
+   "price": -157,
+   "profit": -1.0,
+   "side": "home",
+   "who": "Blue Jays",
+   "withdrawn": false,
+   "won": false
+  },
+  {
+   "date": "2026-09-26",
+   "entry_class": "fill",
+   "failed_gates": [
+    "G7_VALUE"
+   ],
+   "market_p": 0.54348,
+   "mm": -0.02715222518640137,
+   "our_p": 0.5163277748135986,
+   "price": -125,
+   "profit": 0.8,
+   "side": "away",
+   "who": "Braves",
+   "withdrawn": false,
+   "won": true
+  },
+  {
+   "date": "2026-09-26",
+   "entry_class": "fill",
+   "failed_gates": [
+    "G7_VALUE"
+   ],
+   "market_p": 0.59116,
+   "mm": 0.011257434267431199,
+   "our_p": 0.6024174342674312,
+   "price": -148,
+   "profit": 0.6757,
+   "side": "home",
+   "who": "Brewers",
+   "withdrawn": false,
+   "won": true
+  },
+  {
+   "date": "2026-09-26",
+   "entry_class": "fill",
+   "failed_gates": [
+    "G7_VALUE"
+   ],
+   "market_p": 0.52249,
+   "mm": -0.0019541697897843546,
+   "our_p": 0.5205358302102157,
+   "price": -115,
+   "profit": 0.8696,
+   "side": "home",
+   "who": "Padres",
+   "withdrawn": false,
+   "won": true
+  },
+  {
+   "date": "2026-09-26",
+   "entry_class": "fill",
+   "failed_gates": [
+    "G7_VALUE"
+   ],
+   "market_p": 0.57006,
+   "mm": -0.02679738677353183,
+   "our_p": 0.5432626132264682,
+   "price": -141,
+   "profit": 0.7092,
+   "side": "away",
+   "who": "Astros",
+   "withdrawn": false,
+   "won": true
+  },
+  {
+   "date": "2026-09-25",
+   "entry_class": "pick",
+   "failed_gates": [],
+   "market_p": 0.53929,
+   "mm": 0.07634708353687103,
+   "our_p": 0.6156370835368711,
+   "price": -118,
+   "profit": 0.8475,
+   "side": "home",
+   "who": "Yankees",
+   "withdrawn": false,
+   "won": true
+  },
+  {
+   "date": "2026-09-25",
+   "entry_class": "pick",
+   "failed_gates": [],
+   "market_p": 0.55798,
+   "mm": 0.05766944704690535,
+   "our_p": 0.6156494470469054,
+   "price": -130,
+   "profit": -1.0,
+   "side": "home",
+   "who": "Yankees",
+   "withdrawn": false,
+   "won": false
+  },
+  {
+   "date": "2026-09-25",
+   "entry_class": "fill",
+   "failed_gates": [
+    "G7_VALUE"
+   ],
+   "market_p": 0.55194,
+   "mm": 0.037604716935662585,
+   "our_p": 0.5895447169356626,
+   "price": -130,
+   "profit": 0.7692,
+   "side": "home",
+   "who": "Blue Jays",
+   "withdrawn": false,
+   "won": true
+  },
+  {
+   "date": "2026-09-24",
+   "entry_class": "fill",
+   "failed_gates": [
+    "G7_VALUE"
+   ],
+   "market_p": 0.57655,
+   "mm": 0.03977414977923077,
+   "our_p": 0.6163241497792308,
+   "price": -145,
+   "profit": 0.6897,
+   "side": "home",
+   "who": "Yankees",
+   "withdrawn": false,
+   "won": true
+  },
+  {
+   "date": "2026-09-24",
+   "entry_class": "fill",
+   "failed_gates": [
+    "G7_VALUE"
+   ],
+   "market_p": 0.54095,
+   "mm": 0.029390443287859447,
+   "our_p": 0.5703404432878595,
+   "price": -125,
+   "profit": -1.0,
+   "side": "home",
+   "who": "Red Sox",
+   "withdrawn": false,
+   "won": false
+  },
+  {
+   "date": "2026-09-23",
+   "entry_class": "pick",
+   "failed_gates": [],
+   "market_p": 0.53212,
+   "mm": 0.06202624468449369,
+   "our_p": 0.5941462446844937,
+   "price": -118,
+   "profit": 0.8475,
+   "side": "home",
+   "who": "Orioles",
+   "withdrawn": false,
+   "won": true
+  },
+  {
+   "date": "2026-09-23",
+   "entry_class": "fill",
+   "failed_gates": [
+    "G7_VALUE"
+   ],
+   "market_p": 0.51776,
+   "mm": 0.03642045557840912,
+   "our_p": 0.5541804555784091,
+   "price": -113,
+   "profit": -1.0,
+   "side": "away",
+   "who": "White Sox",
+   "withdrawn": false,
+   "won": false
+  }
+ ],
+ "favoured_side_pool": {
+  "_note": "every market-favoured moneyline side the card evaluated (the registered path builds only that side), one per game per date, graded from linescores",
+  "corr_our_vs_market": 0.1889,
+  "hard_fail_reasons": {},
+  "hit_all": {
+   "expected_units_at_market": -1.29,
+   "hit": 0.5942,
+   "hit_ci95": [
+    0.476,
+    0.702
+   ],
+   "hit_minus_market": 0.0409,
+   "losses": 28,
+   "mean_breakeven": 0.5638,
+   "mean_market_p": 0.5533,
+   "n": 69,
+   "roi_pct": 6.0,
+   "units": 4.16,
+   "wins": 41,
+   "z_vs_market": 0.69
+  },
+  "hit_by_gate_status": {
+   "close_call": {
+    "expected_units_at_market": -1.26,
+    "hit": 0.597,
+    "hit_ci95": [
+     0.477,
+     0.706
+    ],
+    "hit_minus_market": 0.0427,
+    "losses": 27,
+    "mean_breakeven": 0.5649,
+    "mean_market_p": 0.5543,
+    "n": 67,
+    "roi_pct": 6.4,
+    "units": 4.32,
+    "wins": 40,
+    "z_vs_market": 0.71
+   },
+   "pick_eligible": {
+    "expected_units_at_market": -0.03,
+    "hit": 0.5,
+    "hit_ci95": [
+     0.095,
+     0.905
+    ],
+    "hit_minus_market": -0.0197,
+    "losses": 1,
+    "mean_breakeven": 0.5267,
+    "mean_market_p": 0.5197,
+    "n": 2,
+    "roi_pct": -7.6,
+    "units": -0.15,
+    "wins": 1,
+    "z_vs_market": -0.06
+   }
+  },
+  "hit_by_home": {
+   "away": {
+    "expected_units_at_market": -0.29,
+    "hit": 0.5714,
+    "hit_ci95": [
+     0.326,
+     0.786
+    ],
+    "hit_minus_market": 0.0256,
+    "losses": 6,
+    "mean_breakeven": 0.5573,
+    "mean_market_p": 0.5458,
+    "n": 14,
+    "roi_pct": 2.6,
+    "units": 0.36,
+    "wins": 8,
+    "z_vs_market": 0.19
+   },
+   "home": {
+    "expected_units_at_market": -1.0,
+    "hit": 0.6,
+    "hit_ci95": [
+     0.468,
+     0.719
+    ],
+    "hit_minus_market": 0.0448,
+    "losses": 22,
+    "mean_breakeven": 0.5655,
+    "mean_market_p": 0.5552,
+    "n": 55,
+    "roi_pct": 6.9,
+    "units": 3.8,
+    "wins": 33,
+    "z_vs_market": 0.67
+   }
+  },
+  "hit_by_mm": {
+   "0-2": {
+    "expected_units_at_market": -0.25,
+    "hit": 0.5714,
+    "hit_ci95": [
+     0.326,
+     0.786
+    ],
+    "hit_minus_market": 0.033,
+    "losses": 6,
+    "mean_breakeven": 0.5482,
+    "mean_market_p": 0.5384,
+    "n": 14,
+    "roi_pct": 4.0,
+    "units": 0.56,
+    "wins": 8,
+    "z_vs_market": 0.25
+   },
+   "2-4": {
+    "expected_units_at_market": -0.25,
+    "hit": 0.5833,
+    "hit_ci95": [
+     0.32,
+     0.807
+    ],
+    "hit_minus_market": 0.0434,
+    "losses": 5,
+    "mean_breakeven": 0.5517,
+    "mean_market_p": 0.5399,
+    "n": 12,
+    "roi_pct": 3.7,
+    "units": 0.45,
+    "wins": 7,
+    "z_vs_market": 0.3
+   },
+   "4-6": {
+    "expected_units_at_market": -0.08,
+    "hit": 0.5,
+    "hit_ci95": [
+     0.15,
+     0.85
+    ],
+    "hit_minus_market": -0.0219,
+    "losses": 2,
+    "mean_breakeven": 0.5319,
+    "mean_market_p": 0.5219,
+    "n": 4,
+    "roi_pct": -4.8,
+    "units": -0.19,
+    "wins": 2,
+    "z_vs_market": -0.09
+   },
+   "6-8": {
+    "expected_units_at_market": -0.08,
+    "hit": 0.75,
+    "hit_ci95": [
+     0.301,
+     0.954
+    ],
+    "hit_minus_market": 0.2313,
+    "losses": 1,
+    "mean_breakeven": 0.529,
+    "mean_market_p": 0.5187,
+    "n": 4,
+    "roi_pct": 40.4,
+    "units": 1.62,
+    "wins": 3,
+    "z_vs_market": 0.93
+   },
+   "<0": {
+    "expected_units_at_market": -0.63,
+    "hit": 0.6,
+    "hit_ci95": [
+     0.436,
+     0.744
+    ],
+    "hit_minus_market": 0.0287,
+    "losses": 14,
+    "mean_breakeven": 0.5819,
+    "mean_market_p": 0.5713,
+    "n": 35,
+    "roi_pct": 5.0,
+    "units": 1.73,
+    "wins": 21,
+    "z_vs_market": 0.34
+   }
+  },
+  "home_share": 0.797,
+  "mean_mm_pts_away": -1.39,
+  "mean_mm_pts_home": -0.18,
+  "n": 69,
+  "ours_on_market_and_home": {
+   "home_coef_pts": 2.0,
+   "intercept": 0.4506,
+   "resid_sd_pts": 2.81,
+   "slope_market": 0.149
+  },
+  "sd_market": 0.0312,
+  "sd_ours": 0.0298,
+  "shrinkage": {
+   "days": 18,
+   "intercept": 0.0474,
+   "k_ci95": [
+    -1.7468,
+    4.421
+   ],
+   "k_through_origin": 1.3841,
+   "mean_gap": -0.0042,
+   "mean_realised_minus_market": 0.0409,
+   "n": 69,
+   "slope": 1.5157,
+   "slope_ci95": [
+    -1.5053,
+    4.618
+   ]
+  }
+ },
+ "frozen_calibration": {
+  "_reading": "p_home = sigmoid(a + b*logit(raw)). b < 1 pulls every raw number toward 0.5; a > 0 adds a constant home lean. Applied to p_home, so an away side gets the lean subtracted.",
+  "a": 0.071234,
+  "b": 0.685153,
+  "calibrated_home_at_raw": {
+   "0.4": 0.4485,
+   "0.45": 0.4834,
+   "0.5": 0.5178,
+   "0.55": 0.552,
+   "0.6": 0.5864,
+   "0.65": 0.6214
+  },
+  "fitted_on": "2025 (tuning season, frozen 2026-09-15)",
+  "home_bump_at_raw_0.50_pts": 1.78
+ },
+ "summary": {
+  "all": {
+   "expected_units_at_market": -0.55,
+   "hit": 0.6552,
+   "hit_ci95": [
+    0.473,
+    0.801
+   ],
+   "hit_minus_market": 0.1005,
+   "losses": 10,
+   "mean_breakeven": 0.5655,
+   "mean_market_p": 0.5547,
+   "n": 29,
+   "roi_pct": 16.7,
+   "units": 4.83,
+   "wins": 19,
+   "z_vs_market": 1.09
+  },
+  "all_favourites_by_market": true,
+  "all_negative_price": true,
+  "by_entry_class_gate": {
+   "fill|G3_STALE+G7_VALUE": {
+    "expected_units_at_market": -0.01,
+    "hit": 1.0,
+    "hit_ci95": [
+     0.207,
+     1.0
+    ],
+    "hit_minus_market": 0.4197,
+    "losses": 0,
+    "mean_breakeven": 0.5885,
+    "mean_market_p": 0.5803,
+    "n": 1,
+    "roi_pct": 69.9,
+    "units": 0.7,
+    "wins": 1,
+    "z_vs_market": 0.85
+   },
+   "fill|G7_VALUE": {
+    "expected_units_at_market": -0.46,
+    "hit": 0.6522,
+    "hit_ci95": [
+     0.449,
+     0.812
+    ],
+    "hit_minus_market": 0.0926,
+    "losses": 8,
+    "mean_breakeven": 0.5711,
+    "mean_market_p": 0.5596,
+    "n": 23,
+    "roi_pct": 15.2,
+    "units": 3.5,
+    "wins": 15,
+    "z_vs_market": 0.9
+   },
+   "pick|none": {
+    "expected_units_at_market": -0.08,
+    "hit": 0.6,
+    "hit_ci95": [
+     0.231,
+     0.882
+    ],
+    "hit_minus_market": 0.073,
+    "losses": 2,
+    "mean_breakeven": 0.5354,
+    "mean_market_p": 0.527,
+    "n": 5,
+    "roi_pct": 12.6,
+    "units": 0.63,
+    "wins": 3,
+    "z_vs_market": 0.33
+   }
+  },
+  "by_home": {
+   "away": {
+    "expected_units_at_market": -0.11,
+    "hit": 0.6,
+    "hit_ci95": [
+     0.231,
+     0.882
+    ],
+    "hit_minus_market": 0.044,
+    "losses": 2,
+    "mean_breakeven": 0.5686,
+    "mean_market_p": 0.556,
+    "n": 5,
+    "roi_pct": 4.2,
+    "units": 0.21,
+    "wins": 3,
+    "z_vs_market": 0.2
+   },
+   "home": {
+    "expected_units_at_market": -0.44,
+    "hit": 0.6667,
+    "hit_ci95": [
+     0.467,
+     0.82
+    ],
+    "hit_minus_market": 0.1123,
+    "losses": 8,
+    "mean_breakeven": 0.5649,
+    "mean_market_p": 0.5544,
+    "n": 24,
+    "roi_pct": 19.3,
+    "units": 4.62,
+    "wins": 16,
+    "z_vs_market": 1.11
+   }
+  },
+  "by_price_band": {
+   "a:-160..-140": {
+    "expected_units_at_market": -0.2,
+    "hit": 0.5,
+    "hit_ci95": [
+     0.237,
+     0.763
+    ],
+    "hit_minus_market": -0.0831,
+    "losses": 5,
+    "mean_breakeven": 0.5951,
+    "mean_market_p": 0.5831,
+    "n": 10,
+    "roi_pct": -15.3,
+    "units": -1.53,
+    "wins": 5,
+    "z_vs_market": -0.53
+   },
+   "b:-139..-120": {
+    "expected_units_at_market": -0.22,
+    "hit": 0.7273,
+    "hit_ci95": [
+     0.434,
+     0.903
+    ],
+    "hit_minus_market": 0.1735,
+    "losses": 3,
+    "mean_breakeven": 0.565,
+    "mean_market_p": 0.5538,
+    "n": 11,
+    "roi_pct": 27.9,
+    "units": 3.07,
+    "wins": 8,
+    "z_vs_market": 1.16
+   },
+   "c:-119..-100": {
+    "expected_units_at_market": -0.13,
+    "hit": 0.75,
+    "hit_ci95": [
+     0.409,
+     0.929
+    ],
+    "hit_minus_market": 0.2296,
+    "losses": 2,
+    "mean_breakeven": 0.5292,
+    "mean_market_p": 0.5204,
+    "n": 8,
+    "roi_pct": 41.1,
+    "units": 3.29,
+    "wins": 6,
+    "z_vs_market": 1.3
+   }
+  },
+  "home_share": 0.828,
+  "mean_mm_pts": 0.28
+ }
+}

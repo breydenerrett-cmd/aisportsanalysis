@@ -1,0 +1,2443 @@
+{
+ "_note": "Prop candidates rebuilt from local stores through the registered code path (propboard.build -> most_likely[:200] -> best_bets_card.failed_gates) at every actual publish instant, and the pregame-close board. Graded from box scores. Open window only (2026-09-03 onward).",
+ "close_board": {
+  "_note": "both sides of every assessable contract on the newest pregame quotes; analysis restricted to the side our number favours (our_p > 0.5), the card's own candidate side (one row per contract).",
+  "hit_by_mm": {
+   "0-2": {
+    "expected_units_at_market": -52.4,
+    "hit": 0.5805,
+    "hit_ci95": [
+     0.55,
+     0.611
+    ],
+    "hit_minus_market": -0.0154,
+    "losses": 417,
+    "mean_breakeven": 0.6292,
+    "mean_market_p": 0.5959,
+    "n": 994,
+    "roi_pct": -7.9,
+    "units": -78.31,
+    "wins": 577,
+    "z_vs_market": -0.99
+   },
+   "2-4": {
+    "expected_units_at_market": -52.45,
+    "hit": 0.5938,
+    "hit_ci95": [
+     0.563,
+     0.624
+    ],
+    "hit_minus_market": 0.0097,
+    "losses": 403,
+    "mean_breakeven": 0.6168,
+    "mean_market_p": 0.584,
+    "n": 992,
+    "roi_pct": -3.9,
+    "units": -38.22,
+    "wins": 589,
+    "z_vs_market": 0.62
+   },
+   "4-6": {
+    "expected_units_at_market": -41.49,
+    "hit": 0.5804,
+    "hit_ci95": [
+     0.546,
+     0.614
+    ],
+    "hit_minus_market": 0.0092,
+    "losses": 334,
+    "mean_breakeven": 0.6027,
+    "mean_market_p": 0.5712,
+    "n": 796,
+    "roi_pct": -3.7,
+    "units": -29.71,
+    "wins": 462,
+    "z_vs_market": 0.53
+   },
+   "6-8": {
+    "expected_units_at_market": -32.1,
+    "hit": 0.5649,
+    "hit_ci95": [
+     0.526,
+     0.604
+    ],
+    "hit_minus_market": 0.0051,
+    "losses": 268,
+    "mean_breakeven": 0.5908,
+    "mean_market_p": 0.5598,
+    "n": 616,
+    "roi_pct": -4.5,
+    "units": -27.44,
+    "wins": 348,
+    "z_vs_market": 0.26
+   },
+   "8-10": {
+    "expected_units_at_market": -23.7,
+    "hit": 0.5111,
+    "hit_ci95": [
+     0.465,
+     0.557
+    ],
+    "hit_minus_market": -0.0396,
+    "losses": 220,
+    "mean_breakeven": 0.5816,
+    "mean_market_p": 0.5507,
+    "n": 450,
+    "roi_pct": -12.7,
+    "units": -57.1,
+    "wins": 230,
+    "z_vs_market": -1.7
+   },
+   "<0": {
+    "expected_units_at_market": -130.89,
+    "hit": 0.65,
+    "hit_ci95": [
+     0.631,
+     0.669
+    ],
+    "hit_minus_market": 0.0196,
+    "losses": 854,
+    "mean_breakeven": 0.6662,
+    "mean_market_p": 0.6304,
+    "n": 2440,
+    "roi_pct": -2.6,
+    "units": -64.57,
+    "wins": 1586,
+    "z_vs_market": 2.02
+   },
+   ">10": {
+    "expected_units_at_market": -27.43,
+    "hit": 0.4811,
+    "hit_ci95": [
+     0.439,
+     0.524
+    ],
+    "hit_minus_market": -0.0397,
+    "losses": 275,
+    "mean_breakeven": 0.5494,
+    "mean_market_p": 0.5208,
+    "n": 530,
+    "roi_pct": -12.9,
+    "units": -68.27,
+    "wins": 255,
+    "z_vs_market": -1.84
+   }
+  },
+  "hit_by_mm_and_market": {
+   "batter_hits|0-2": {
+    "expected_units_at_market": -17.74,
+    "hit": 0.5742,
+    "hit_ci95": [
+     0.523,
+     0.624
+    ],
+    "hit_minus_market": -0.0241,
+    "losses": 155,
+    "mean_breakeven": 0.6291,
+    "mean_market_p": 0.5983,
+    "n": 364,
+    "roi_pct": -9.3,
+    "units": -33.7,
+    "wins": 209,
+    "z_vs_market": -0.94
+   },
+   "batter_hits|2-4": {
+    "expected_units_at_market": -16.3,
+    "hit": 0.6386,
+    "hit_ci95": [
+     0.586,
+     0.688
+    ],
+    "hit_minus_market": 0.0507,
+    "losses": 120,
+    "mean_breakeven": 0.6185,
+    "mean_market_p": 0.5879,
+    "n": 332,
+    "roi_pct": 3.3,
+    "units": 10.81,
+    "wins": 212,
+    "z_vs_market": 1.88
+   },
+   "batter_hits|4-6": {
+    "expected_units_at_market": -13.75,
+    "hit": 0.589,
+    "hit_ci95": [
+     0.532,
+     0.644
+    ],
+    "hit_minus_market": 0.0126,
+    "losses": 120,
+    "mean_breakeven": 0.6053,
+    "mean_market_p": 0.5765,
+    "n": 292,
+    "roi_pct": -2.2,
+    "units": -6.5,
+    "wins": 172,
+    "z_vs_market": 0.44
+   },
+   "batter_hits|6-8": {
+    "expected_units_at_market": -9.61,
+    "hit": 0.5245,
+    "hit_ci95": [
+     0.456,
+     0.592
+    ],
+    "hit_minus_market": -0.0438,
+    "losses": 97,
+    "mean_breakeven": 0.5968,
+    "mean_market_p": 0.5683,
+    "n": 204,
+    "roi_pct": -12.1,
+    "units": -24.65,
+    "wins": 107,
+    "z_vs_market": -1.27
+   },
+   "batter_hits|8-10": {
+    "expected_units_at_market": -6.42,
+    "hit": 0.5,
+    "hit_ci95": [
+     0.416,
+     0.584
+    ],
+    "hit_minus_market": -0.0651,
+    "losses": 66,
+    "mean_breakeven": 0.5944,
+    "mean_market_p": 0.5651,
+    "n": 132,
+    "roi_pct": -16.5,
+    "units": -21.79,
+    "wins": 66,
+    "z_vs_market": -1.53
+   },
+   "batter_hits|<0": {
+    "expected_units_at_market": -41.76,
+    "hit": 0.6583,
+    "hit_ci95": [
+     0.625,
+     0.69
+    ],
+    "hit_minus_market": 0.0339,
+    "losses": 285,
+    "mean_breakeven": 0.6574,
+    "mean_market_p": 0.6244,
+    "n": 834,
+    "roi_pct": -0.0,
+    "units": -0.33,
+    "wins": 549,
+    "z_vs_market": 2.03
+   },
+   "batter_hits|>10": {
+    "expected_units_at_market": -5.54,
+    "hit": 0.5424,
+    "hit_ci95": [
+     0.453,
+     0.63
+    ],
+    "hit_minus_market": -0.0179,
+    "losses": 54,
+    "mean_breakeven": 0.5883,
+    "mean_market_p": 0.5603,
+    "n": 118,
+    "roi_pct": -8.0,
+    "units": -9.48,
+    "wins": 64,
+    "z_vs_market": -0.4
+   },
+   "batter_runs_scored|0-2": {
+    "expected_units_at_market": -17.1,
+    "hit": 0.5819,
+    "hit_ci95": [
+     0.525,
+     0.636
+    ],
+    "hit_minus_market": -0.0199,
+    "losses": 125,
+    "mean_breakeven": 0.6384,
+    "mean_market_p": 0.6019,
+    "n": 299,
+    "roi_pct": -8.8,
+    "units": -26.39,
+    "wins": 174,
+    "z_vs_market": -0.71
+   },
+   "batter_runs_scored|2-4": {
+    "expected_units_at_market": -14.48,
+    "hit": 0.5922,
+    "hit_ci95": [
+     0.531,
+     0.651
+    ],
+    "hit_minus_market": 0.0089,
+    "losses": 104,
+    "mean_breakeven": 0.6184,
+    "mean_market_p": 0.5832,
+    "n": 255,
+    "roi_pct": -4.2,
+    "units": -10.73,
+    "wins": 151,
+    "z_vs_market": 0.29
+   },
+   "batter_runs_scored|4-6": {
+    "expected_units_at_market": -9.45,
+    "hit": 0.5868,
+    "hit_ci95": [
+     0.511,
+     0.659
+    ],
+    "hit_minus_market": 0.0219,
+    "losses": 69,
+    "mean_breakeven": 0.5989,
+    "mean_market_p": 0.5649,
+    "n": 167,
+    "roi_pct": -2.4,
+    "units": -3.97,
+    "wins": 98,
+    "z_vs_market": 0.57
+   },
+   "batter_runs_scored|6-8": {
+    "expected_units_at_market": -6.07,
+    "hit": 0.5138,
+    "hit_ci95": [
+     0.421,
+     0.606
+    ],
+    "hit_minus_market": -0.0299,
+    "losses": 53,
+    "mean_breakeven": 0.5758,
+    "mean_market_p": 0.5436,
+    "n": 109,
+    "roi_pct": -11.3,
+    "units": -12.3,
+    "wins": 56,
+    "z_vs_market": -0.63
+   },
+   "batter_runs_scored|8-10": {
+    "expected_units_at_market": -2.44,
+    "hit": 0.4444,
+    "hit_ci95": [
+     0.309,
+     0.588
+    ],
+    "hit_minus_market": -0.0852,
+    "losses": 25,
+    "mean_breakeven": 0.5602,
+    "mean_market_p": 0.5296,
+    "n": 45,
+    "roi_pct": -22.3,
+    "units": -10.05,
+    "wins": 20,
+    "z_vs_market": -1.15
+   },
+   "batter_runs_scored|<0": {
+    "expected_units_at_market": -62.63,
+    "hit": 0.6592,
+    "hit_ci95": [
+     0.631,
+     0.686
+    ],
+    "hit_minus_market": 0.0124,
+    "losses": 379,
+    "mean_breakeven": 0.6854,
+    "mean_market_p": 0.6467,
+    "n": 1112,
+    "roi_pct": -4.1,
+    "units": -45.83,
+    "wins": 733,
+    "z_vs_market": 0.87
+   },
+   "batter_runs_scored|>10": {
+    "expected_units_at_market": -5.9,
+    "hit": 0.4673,
+    "hit_ci95": [
+     0.376,
+     0.561
+    ],
+    "hit_minus_market": -0.0211,
+    "losses": 57,
+    "mean_breakeven": 0.5171,
+    "mean_market_p": 0.4884,
+    "n": 107,
+    "roi_pct": -10.5,
+    "units": -11.19,
+    "wins": 50,
+    "z_vs_market": -0.44
+   },
+   "batter_total_bases|0-2": {
+    "expected_units_at_market": -17.55,
+    "hit": 0.5861,
+    "hit_ci95": [
+     0.532,
+     0.638
+    ],
+    "hit_minus_market": -0.0017,
+    "losses": 137,
+    "mean_breakeven": 0.6208,
+    "mean_market_p": 0.5878,
+    "n": 331,
+    "roi_pct": -5.5,
+    "units": -18.23,
+    "wins": 194,
+    "z_vs_market": -0.06
+   },
+   "batter_total_bases|2-4": {
+    "expected_units_at_market": -21.67,
+    "hit": 0.558,
+    "hit_ci95": [
+     0.509,
+     0.606
+    ],
+    "hit_minus_market": -0.0233,
+    "losses": 179,
+    "mean_breakeven": 0.6143,
+    "mean_market_p": 0.5814,
+    "n": 405,
+    "roi_pct": -9.5,
+    "units": -38.29,
+    "wins": 226,
+    "z_vs_market": -0.95
+   },
+   "batter_total_bases|4-6": {
+    "expected_units_at_market": -18.28,
+    "hit": 0.5697,
+    "hit_ci95": [
+     0.516,
+     0.622
+    ],
+    "hit_minus_market": 0.0001,
+    "losses": 145,
+    "mean_breakeven": 0.6025,
+    "mean_market_p": 0.5696,
+    "n": 337,
+    "roi_pct": -5.7,
+    "units": -19.24,
+    "wins": 192,
+    "z_vs_market": 0.0
+   },
+   "batter_total_bases|6-8": {
+    "expected_units_at_market": -16.42,
+    "hit": 0.6106,
+    "hit_ci95": [
+     0.555,
+     0.664
+    ],
+    "hit_minus_market": 0.0506,
+    "losses": 118,
+    "mean_breakeven": 0.5921,
+    "mean_market_p": 0.5599,
+    "n": 303,
+    "roi_pct": 3.1,
+    "units": 9.51,
+    "wins": 185,
+    "z_vs_market": 1.78
+   },
+   "batter_total_bases|8-10": {
+    "expected_units_at_market": -14.85,
+    "hit": 0.5275,
+    "hit_ci95": [
+     0.468,
+     0.586
+    ],
+    "hit_minus_market": -0.0198,
+    "losses": 129,
+    "mean_breakeven": 0.5789,
+    "mean_market_p": 0.5473,
+    "n": 273,
+    "roi_pct": -9.3,
+    "units": -25.26,
+    "wins": 144,
+    "z_vs_market": -0.66
+   },
+   "batter_total_bases|<0": {
+    "expected_units_at_market": -26.5,
+    "hit": 0.6154,
+    "hit_ci95": [
+     0.572,
+     0.657
+    ],
+    "hit_minus_market": 0.0117,
+    "losses": 190,
+    "mean_breakeven": 0.638,
+    "mean_market_p": 0.6037,
+    "n": 494,
+    "roi_pct": -3.7,
+    "units": -18.41,
+    "wins": 304,
+    "z_vs_market": 0.53
+   },
+   "batter_total_bases|>10": {
+    "expected_units_at_market": -16.0,
+    "hit": 0.4623,
+    "hit_ci95": [
+     0.407,
+     0.518
+    ],
+    "hit_minus_market": -0.0546,
+    "losses": 164,
+    "mean_breakeven": 0.5457,
+    "mean_market_p": 0.5169,
+    "n": 305,
+    "roi_pct": -15.6,
+    "units": -47.6,
+    "wins": 141,
+    "z_vs_market": -1.92
+   }
+  },
+  "hit_by_mm_card_window": {
+   "0-2": {
+    "expected_units_at_market": -28.28,
+    "hit": 0.5925,
+    "hit_ci95": [
+     0.55,
+     0.633
+    ],
+    "hit_minus_market": -0.0025,
+    "losses": 218,
+    "mean_breakeven": 0.6284,
+    "mean_market_p": 0.5951,
+    "n": 535,
+    "roi_pct": -5.8,
+    "units": -30.87,
+    "wins": 317,
+    "z_vs_market": -0.12
+   },
+   "2-4": {
+    "expected_units_at_market": -30.34,
+    "hit": 0.6031,
+    "hit_ci95": [
+     0.562,
+     0.642
+    ],
+    "hit_minus_market": 0.0182,
+    "losses": 227,
+    "mean_breakeven": 0.6179,
+    "mean_market_p": 0.5849,
+    "n": 572,
+    "roi_pct": -2.2,
+    "units": -12.33,
+    "wins": 345,
+    "z_vs_market": 0.89
+   },
+   "4-6": {
+    "expected_units_at_market": -24.39,
+    "hit": 0.5636,
+    "hit_ci95": [
+     0.518,
+     0.608
+    ],
+    "hit_minus_market": -0.0047,
+    "losses": 206,
+    "mean_breakeven": 0.5994,
+    "mean_market_p": 0.5683,
+    "n": 472,
+    "roi_pct": -6.0,
+    "units": -28.26,
+    "wins": 266,
+    "z_vs_market": -0.21
+   },
+   "6-8": {
+    "expected_units_at_market": -19.92,
+    "hit": 0.5818,
+    "hit_ci95": [
+     0.532,
+     0.63
+    ],
+    "hit_minus_market": 0.0258,
+    "losses": 161,
+    "mean_breakeven": 0.5866,
+    "mean_market_p": 0.5561,
+    "n": 385,
+    "roi_pct": -0.9,
+    "units": -3.55,
+    "wins": 224,
+    "z_vs_market": 1.02
+   },
+   "8-10": {
+    "expected_units_at_market": -15.53,
+    "hit": 0.5374,
+    "hit_ci95": [
+     0.48,
+     0.594
+    ],
+    "hit_minus_market": -0.0077,
+    "losses": 136,
+    "mean_breakeven": 0.5757,
+    "mean_market_p": 0.5451,
+    "n": 294,
+    "roi_pct": -7.4,
+    "units": -21.61,
+    "wins": 158,
+    "z_vs_market": -0.27
+   },
+   "<0": {
+    "expected_units_at_market": -77.9,
+    "hit": 0.6575,
+    "hit_ci95": [
+     0.633,
+     0.681
+    ],
+    "hit_minus_market": 0.0245,
+    "losses": 497,
+    "mean_breakeven": 0.6691,
+    "mean_market_p": 0.633,
+    "n": 1451,
+    "roi_pct": -2.0,
+    "units": -29.12,
+    "wins": 954,
+    "z_vs_market": 1.94
+   },
+   ">10": {
+    "expected_units_at_market": -18.11,
+    "hit": 0.4659,
+    "hit_ci95": [
+     0.414,
+     0.518
+    ],
+    "hit_minus_market": -0.0516,
+    "losses": 188,
+    "mean_breakeven": 0.5458,
+    "mean_market_p": 0.5175,
+    "n": 352,
+    "roi_pct": -14.6,
+    "units": -51.52,
+    "wins": 164,
+    "z_vs_market": -1.95
+   }
+  },
+  "log_loss": {
+   "best_blend_logloss": 0.66359,
+   "best_blend_weight_on_ours_grid": 0.0,
+   "market": 0.66359,
+   "n": 6818,
+   "ours": 0.67385,
+   "ours_minus_market": 0.01026
+  },
+  "market_only_calibration": {
+   "0.3-0.4": {
+    "hit": 0.25,
+    "n": 8,
+    "pred": 0.3795
+   },
+   "0.4-0.5": {
+    "hit": 0.4264,
+    "n": 394,
+    "pred": 0.4713
+   },
+   "0.5-0.6": {
+    "hit": 0.5469,
+    "n": 3346,
+    "pred": 0.5613
+   },
+   "0.6-0.7": {
+    "hit": 0.6632,
+    "n": 2916,
+    "pred": 0.6363
+   },
+   "0.7-0.8": {
+    "hit": 0.7338,
+    "n": 154,
+    "pred": 0.7197
+   }
+  },
+  "model_only_calibration": {
+   "0.5-0.6": {
+    "hit": 0.5533,
+    "market_pred": 0.5661,
+    "n": 2720,
+    "pred": 0.5692
+   },
+   "0.6-0.7": {
+    "hit": 0.62,
+    "market_pred": 0.6059,
+    "n": 3845,
+    "pred": 0.6349
+   },
+   "0.7-0.8": {
+    "hit": 0.6132,
+    "market_pred": 0.6463,
+    "n": 243,
+    "pred": 0.7335
+   },
+   "0.8-0.9": {
+    "hit": 0.9,
+    "market_pred": 0.6673,
+    "n": 10,
+    "pred": 0.8116
+   }
+  },
+  "n_contract_sides_wl": 13636,
+  "n_model_favoured": 6818,
+  "shrinkage_all": {
+   "days": 34,
+   "intercept": 0.0071,
+   "k_ci95": [
+    -0.4495,
+    0.0612
+   ],
+   "k_through_origin": -0.1977,
+   "mean_gap": 0.021,
+   "mean_realised_minus_market": 0.002,
+   "n": 6818,
+   "slope": -0.2406,
+   "slope_ci95": [
+    -0.5129,
+    0.0412
+   ]
+  },
+  "shrinkage_by_market": {
+   "batter_hits": {
+    "days": 34,
+    "intercept": 0.0148,
+    "k_ci95": [
+     -0.5026,
+     0.1315
+    ],
+    "k_through_origin": -0.2013,
+    "mean_gap": 0.0192,
+    "mean_realised_minus_market": 0.0089,
+    "n": 2276,
+    "slope": -0.3043,
+    "slope_ci95": [
+     -0.6302,
+     0.0636
+    ]
+   },
+   "batter_runs_scored": {
+    "days": 29,
+    "intercept": 0.0017,
+    "k_ci95": [
+     -0.5701,
+     0.0976
+    ],
+    "k_through_origin": -0.2269,
+    "mean_gap": -0.002,
+    "mean_realised_minus_market": 0.0021,
+    "n": 2094,
+    "slope": -0.2259,
+    "slope_ci95": [
+     -0.5688,
+     0.1026
+    ]
+   },
+   "batter_total_bases": {
+    "days": 34,
+    "intercept": 0.0051,
+    "k_ci95": [
+     -0.4488,
+     0.1032
+    ],
+    "k_through_origin": -0.1764,
+    "mean_gap": 0.0423,
+    "mean_realised_minus_market": -0.0045,
+    "n": 2448,
+    "slope": -0.2273,
+    "slope_ci95": [
+     -0.5644,
+     0.1038
+    ]
+   }
+  },
+  "shrinkage_by_pa_source": {
+   "batting_slot": {
+    "days": 33,
+    "intercept": 0.0076,
+    "k_ci95": [
+     -0.4752,
+     0.0454
+    ],
+    "k_through_origin": -0.2117,
+    "mean_gap": 0.0211,
+    "mean_realised_minus_market": 0.0021,
+    "n": 6672,
+    "slope": -0.2577,
+    "slope_ci95": [
+     -0.5254,
+     0.0209
+    ]
+   },
+   "season_average": {
+    "days": 26,
+    "intercept": -0.009,
+    "k_ci95": [
+     -1.1403,
+     2.2527
+    ],
+    "k_through_origin": 0.4442,
+    "mean_gap": 0.0152,
+    "mean_realised_minus_market": -0.0017,
+    "n": 146,
+    "slope": 0.4842,
+    "slope_ci95": [
+     -1.2178,
+     2.4944
+    ]
+   }
+  },
+  "shrinkage_card_window": {
+   "days": 20,
+   "intercept": 0.014,
+   "k_ci95": [
+    -0.5465,
+    0.1032
+   ],
+   "k_through_origin": -0.1993,
+   "mean_gap": 0.0219,
+   "mean_realised_minus_market": 0.0078,
+   "n": 4061,
+   "slope": -0.2802,
+   "slope_ci95": [
+    -0.6491,
+    0.0499
+   ]
+  },
+  "shrinkage_pre_card_window": {
+   "days": 14,
+   "intercept": -0.0031,
+   "k_ci95": [
+    -0.6095,
+    0.2505
+   ],
+   "k_through_origin": -0.1949,
+   "mean_gap": 0.0196,
+   "mean_realised_minus_market": -0.0065,
+   "n": 2757,
+   "slope": -0.1748,
+   "slope_ci95": [
+    -0.6417,
+    0.2983
+   ]
+  },
+  "v2_gate_window_mm_4_to_10": {
+   "expected_units_at_market": -97.3,
+   "hit": 0.5585,
+   "hit_ci95": [
+    0.536,
+    0.581
+   ],
+   "hit_minus_market": -0.0039,
+   "losses": 822,
+   "mean_breakeven": 0.5937,
+   "mean_market_p": 0.5625,
+   "n": 1862,
+   "roi_pct": -6.1,
+   "units": -114.26,
+   "wins": 1040,
+   "z_vs_market": -0.34
+  },
+  "v2_pick_eligible_at_close": {
+   "expected_units_at_market": -1.05,
+   "hit": 0.5,
+   "hit_ci95": [
+    0.314,
+    0.686
+   ],
+   "hit_minus_market": -0.0411,
+   "losses": 12,
+   "mean_breakeven": 0.5659,
+   "mean_market_p": 0.5411,
+   "n": 24,
+   "roi_pct": -13.9,
+   "units": -3.33,
+   "wins": 12,
+   "z_vs_market": -0.4
+  }
+ },
+ "clv": {
+  "_definition": "clv = close de-vigged market p - decision-time de-vigged market p, same contract and side. Positive = market moved toward our side.",
+  "intercept": -0.0011,
+  "mean_clv_by_mm_bucket": {
+   "0-2": {
+    "mean_clv_pts": -0.12,
+    "n": 332
+   },
+   "2-4": {
+    "mean_clv_pts": -0.1,
+    "n": 370
+   },
+   "4-6": {
+    "mean_clv_pts": -0.02,
+    "n": 316
+   },
+   "6-8": {
+    "mean_clv_pts": 0.03,
+    "n": 268
+   },
+   "8-10": {
+    "mean_clv_pts": 0.05,
+    "n": 190
+   },
+   "<0": {
+    "mean_clv_pts": -0.17,
+    "n": 929
+   },
+   ">10": {
+    "mean_clv_pts": 0.22,
+    "n": 248
+   }
+  },
+  "mean_clv_by_v2_class": {
+   "close_call": {
+    "mean_clv_pts": -0.05,
+    "n": 778
+   },
+   "hard_fail": {
+    "mean_clv_pts": -0.07,
+    "n": 1803
+   },
+   "pick_eligible": {
+    "mean_clv_pts": 0.0,
+    "n": 72
+   }
+  },
+  "n": 2653,
+  "slope_ci95": [
+   0.0071,
+   0.0352
+  ],
+  "slope_clv_on_mm": 0.0204
+ },
+ "ranking_keys_HINDSIGHT": {
+  "all_pool": {
+   "expected_units_at_market": -3.36,
+   "hit": 0.4638,
+   "hit_ci95": [
+    0.351,
+    0.58
+   ],
+   "hit_minus_market": -0.0692,
+   "losses": 37,
+   "mean_breakeven": 0.5605,
+   "mean_market_p": 0.533,
+   "n": 69,
+   "roi_pct": -17.5,
+   "units": -12.09,
+   "wins": 32,
+   "z_vs_market": -1.16
+  },
+  "market_p_desc_(likeliest_by_market)|top1": {
+   "expected_units_at_market": -0.72,
+   "hit": 0.6667,
+   "hit_ci95": [
+    0.417,
+    0.848
+   ],
+   "hit_minus_market": 0.1171,
+   "losses": 5,
+   "mean_breakeven": 0.5776,
+   "mean_market_p": 0.5496,
+   "n": 15,
+   "roi_pct": 15.5,
+   "units": 2.32,
+   "wins": 10,
+   "z_vs_market": 0.91
+  },
+  "market_p_desc_(likeliest_by_market)|top3": {
+   "expected_units_at_market": -1.68,
+   "hit": 0.4857,
+   "hit_ci95": [
+    0.33,
+    0.644
+   ],
+   "hit_minus_market": -0.052,
+   "losses": 18,
+   "mean_breakeven": 0.5649,
+   "mean_market_p": 0.5377,
+   "n": 35,
+   "roi_pct": -14.8,
+   "units": -5.18,
+   "wins": 17,
+   "z_vs_market": -0.62
+  },
+  "mm_asc_(least_disagreement)|top1": {
+   "expected_units_at_market": -0.62,
+   "hit": 0.5333,
+   "hit_ci95": [
+    0.301,
+    0.752
+   ],
+   "hit_minus_market": 0.018,
+   "losses": 7,
+   "mean_breakeven": 0.5375,
+   "mean_market_p": 0.5153,
+   "n": 15,
+   "roi_pct": -4.4,
+   "units": -0.65,
+   "wins": 8,
+   "z_vs_market": 0.14
+  },
+  "mm_asc_(least_disagreement)|top3": {
+   "expected_units_at_market": -1.61,
+   "hit": 0.5143,
+   "hit_ci95": [
+    0.356,
+    0.67
+   ],
+   "hit_minus_market": -0.0113,
+   "losses": 17,
+   "mean_breakeven": 0.5511,
+   "mean_market_p": 0.5256,
+   "n": 35,
+   "roi_pct": -8.4,
+   "units": -2.94,
+   "wins": 18,
+   "z_vs_market": -0.13
+  },
+  "our_p_desc_(likeliest_by_model)|top1": {
+   "expected_units_at_market": -0.73,
+   "hit": 0.6,
+   "hit_ci95": [
+    0.357,
+    0.802
+   ],
+   "hit_minus_market": 0.0516,
+   "losses": 6,
+   "mean_breakeven": 0.5767,
+   "mean_market_p": 0.5484,
+   "n": 15,
+   "roi_pct": 4.5,
+   "units": 0.67,
+   "wins": 9,
+   "z_vs_market": 0.4
+  },
+  "our_p_desc_(likeliest_by_model)|top3": {
+   "expected_units_at_market": -1.75,
+   "hit": 0.4286,
+   "hit_ci95": [
+    0.28,
+    0.591
+   ],
+   "hit_minus_market": -0.1089,
+   "losses": 20,
+   "mean_breakeven": 0.566,
+   "mean_market_p": 0.5375,
+   "n": 35,
+   "roi_pct": -24.8,
+   "units": -8.69,
+   "wins": 15,
+   "z_vs_market": -1.3
+  },
+  "price_desc_(longest_price)|top1": {
+   "expected_units_at_market": -0.67,
+   "hit": 0.4,
+   "hit_ci95": [
+    0.198,
+    0.643
+   ],
+   "hit_minus_market": -0.0967,
+   "losses": 9,
+   "mean_breakeven": 0.5201,
+   "mean_market_p": 0.4967,
+   "n": 15,
+   "roi_pct": -24.8,
+   "units": -3.71,
+   "wins": 6,
+   "z_vs_market": -0.75
+  },
+  "price_desc_(longest_price)|top3": {
+   "expected_units_at_market": -1.59,
+   "hit": 0.4571,
+   "hit_ci95": [
+    0.305,
+    0.618
+   ],
+   "hit_minus_market": -0.0564,
+   "losses": 19,
+   "mean_breakeven": 0.5381,
+   "mean_market_p": 0.5135,
+   "n": 35,
+   "roi_pct": -15.3,
+   "units": -5.36,
+   "wins": 16,
+   "z_vs_market": -0.67
+  },
+  "score_desc_(the_rule)|top1": {
+   "expected_units_at_market": -0.62,
+   "hit": 0.4667,
+   "hit_ci95": [
+    0.248,
+    0.699
+   ],
+   "hit_minus_market": -0.0541,
+   "losses": 8,
+   "mean_breakeven": 0.5431,
+   "mean_market_p": 0.5207,
+   "n": 15,
+   "roi_pct": -15.7,
+   "units": -2.36,
+   "wins": 7,
+   "z_vs_market": -0.42
+  },
+  "score_desc_(the_rule)|top3": {
+   "expected_units_at_market": -1.6,
+   "hit": 0.4857,
+   "hit_ci95": [
+    0.33,
+    0.644
+   ],
+   "hit_minus_market": -0.0385,
+   "losses": 18,
+   "mean_breakeven": 0.5495,
+   "mean_market_p": 0.5242,
+   "n": 35,
+   "roi_pct": -11.2,
+   "units": -3.91,
+   "wins": 17,
+   "z_vs_market": -0.46
+  },
+  "vig_gap_asc_(cheapest_vig)|top1": {
+   "expected_units_at_market": -0.56,
+   "hit": 0.4667,
+   "hit_ci95": [
+    0.248,
+    0.699
+   ],
+   "hit_minus_market": -0.045,
+   "losses": 8,
+   "mean_breakeven": 0.5314,
+   "mean_market_p": 0.5116,
+   "n": 15,
+   "roi_pct": -14.5,
+   "units": -2.18,
+   "wins": 7,
+   "z_vs_market": -0.35
+  },
+  "vig_gap_asc_(cheapest_vig)|top3": {
+   "expected_units_at_market": -1.48,
+   "hit": 0.4857,
+   "hit_ci95": [
+    0.33,
+    0.644
+   ],
+   "hit_minus_market": -0.0344,
+   "losses": 18,
+   "mean_breakeven": 0.5432,
+   "mean_market_p": 0.5201,
+   "n": 35,
+   "roi_pct": -11.1,
+   "units": -3.9,
+   "wins": 17,
+   "z_vs_market": -0.41
+  }
+ },
+ "ranking_keys_all_fill_eligible_HINDSIGHT": {
+  "all_pool": {
+   "expected_units_at_market": -41.24,
+   "hit": 0.5668,
+   "hit_ci95": [
+    0.532,
+    0.601
+   ],
+   "hit_minus_market": 0.021,
+   "losses": 350,
+   "mean_breakeven": 0.5753,
+   "mean_market_p": 0.5459,
+   "n": 808,
+   "roi_pct": -1.2,
+   "units": -9.8,
+   "wins": 458,
+   "z_vs_market": 1.2
+  },
+  "market_p_desc_(likeliest_by_market)|top1": {
+   "expected_units_at_market": -0.73,
+   "hit": 0.6,
+   "hit_ci95": [
+    0.387,
+    0.781
+   ],
+   "hit_minus_market": 0.011,
+   "losses": 8,
+   "mean_breakeven": 0.6114,
+   "mean_market_p": 0.589,
+   "n": 20,
+   "roi_pct": -1.8,
+   "units": -0.36,
+   "wins": 12,
+   "z_vs_market": 0.1
+  },
+  "market_p_desc_(likeliest_by_market)|top3": {
+   "expected_units_at_market": -2.67,
+   "hit": 0.5167,
+   "hit_ci95": [
+    0.393,
+    0.638
+   ],
+   "hit_minus_market": -0.0656,
+   "losses": 29,
+   "mean_breakeven": 0.6095,
+   "mean_market_p": 0.5823,
+   "n": 60,
+   "roi_pct": -15.3,
+   "units": -9.19,
+   "wins": 31,
+   "z_vs_market": -1.03
+  },
+  "mm_asc_(least_disagreement)|top1": {
+   "expected_units_at_market": -1.05,
+   "hit": 0.55,
+   "hit_ci95": [
+    0.342,
+    0.742
+   ],
+   "hit_minus_market": -0.0122,
+   "losses": 9,
+   "mean_breakeven": 0.5932,
+   "mean_market_p": 0.5622,
+   "n": 20,
+   "roi_pct": -6.7,
+   "units": -1.34,
+   "wins": 11,
+   "z_vs_market": -0.11
+  },
+  "mm_asc_(least_disagreement)|top3": {
+   "expected_units_at_market": -3.07,
+   "hit": 0.6333,
+   "hit_ci95": [
+    0.507,
+    0.744
+   ],
+   "hit_minus_market": 0.0755,
+   "losses": 22,
+   "mean_breakeven": 0.588,
+   "mean_market_p": 0.5578,
+   "n": 60,
+   "roi_pct": 8.2,
+   "units": 4.94,
+   "wins": 38,
+   "z_vs_market": 1.18
+  },
+  "our_p_desc_(likeliest_by_model)|top1": {
+   "expected_units_at_market": -1.06,
+   "hit": 0.6,
+   "hit_ci95": [
+    0.387,
+    0.781
+   ],
+   "hit_minus_market": 0.0258,
+   "losses": 8,
+   "mean_breakeven": 0.6063,
+   "mean_market_p": 0.5742,
+   "n": 20,
+   "roi_pct": -1.3,
+   "units": -0.26,
+   "wins": 12,
+   "z_vs_market": 0.23
+  },
+  "our_p_desc_(likeliest_by_model)|top3": {
+   "expected_units_at_market": -3.24,
+   "hit": 0.65,
+   "hit_ci95": [
+    0.524,
+    0.758
+   ],
+   "hit_minus_market": 0.0826,
+   "losses": 21,
+   "mean_breakeven": 0.5998,
+   "mean_market_p": 0.5674,
+   "n": 60,
+   "roi_pct": 8.8,
+   "units": 5.27,
+   "wins": 39,
+   "z_vs_market": 1.29
+  },
+  "price_desc_(longest_price)|top1": {
+   "expected_units_at_market": -0.76,
+   "hit": 0.65,
+   "hit_ci95": [
+    0.433,
+    0.819
+   ],
+   "hit_minus_market": 0.187,
+   "losses": 7,
+   "mean_breakeven": 0.4813,
+   "mean_market_p": 0.463,
+   "n": 20,
+   "roi_pct": 33.9,
+   "units": 6.78,
+   "wins": 13,
+   "z_vs_market": 1.68
+  },
+  "price_desc_(longest_price)|top3": {
+   "expected_units_at_market": -2.52,
+   "hit": 0.5333,
+   "hit_ci95": [
+    0.409,
+    0.654
+   ],
+   "hit_minus_market": 0.0491,
+   "losses": 28,
+   "mean_breakeven": 0.5056,
+   "mean_market_p": 0.4842,
+   "n": 60,
+   "roi_pct": 5.9,
+   "units": 3.53,
+   "wins": 32,
+   "z_vs_market": 0.76
+  },
+  "score_desc_(the_rule)|top1": {
+   "expected_units_at_market": -0.76,
+   "hit": 0.5,
+   "hit_ci95": [
+    0.299,
+    0.701
+   ],
+   "hit_minus_market": -0.0034,
+   "losses": 10,
+   "mean_breakeven": 0.5236,
+   "mean_market_p": 0.5034,
+   "n": 20,
+   "roi_pct": -2.6,
+   "units": -0.53,
+   "wins": 10,
+   "z_vs_market": -0.03
+  },
+  "score_desc_(the_rule)|top3": {
+   "expected_units_at_market": -2.76,
+   "hit": 0.5167,
+   "hit_ci95": [
+    0.393,
+    0.638
+   ],
+   "hit_minus_market": -0.0039,
+   "losses": 29,
+   "mean_breakeven": 0.546,
+   "mean_market_p": 0.5206,
+   "n": 60,
+   "roi_pct": -3.9,
+   "units": -2.32,
+   "wins": 31,
+   "z_vs_market": -0.06
+  },
+  "vig_gap_asc_(cheapest_vig)|top1": {
+   "expected_units_at_market": -0.35,
+   "hit": 0.8,
+   "hit_ci95": [
+    0.584,
+    0.919
+   ],
+   "hit_minus_market": 0.2739,
+   "losses": 4,
+   "mean_breakeven": 0.5354,
+   "mean_market_p": 0.5261,
+   "n": 20,
+   "roi_pct": 51.0,
+   "units": 10.21,
+   "wins": 16,
+   "z_vs_market": 2.46
+  },
+  "vig_gap_asc_(cheapest_vig)|top3": {
+   "expected_units_at_market": -1.53,
+   "hit": 0.5833,
+   "hit_ci95": [
+    0.457,
+    0.699
+   ],
+   "hit_minus_market": 0.0489,
+   "losses": 25,
+   "mean_breakeven": 0.5484,
+   "mean_market_p": 0.5344,
+   "n": 60,
+   "roi_pct": 8.9,
+   "units": 5.34,
+   "wins": 35,
+   "z_vs_market": 0.76
+  }
+ },
+ "run_pool": {
+  "by_published_as": {
+   "fill": {
+    "expected_units_at_market": -2.16,
+    "hit": 0.6136,
+    "hit_ci95": [
+     0.466,
+     0.743
+    ],
+    "hit_minus_market": 0.0738,
+    "losses": 17,
+    "mean_breakeven": 0.5678,
+    "mean_market_p": 0.5398,
+    "n": 44,
+    "roi_pct": 8.3,
+    "units": 3.65,
+    "wins": 27,
+    "z_vs_market": 0.98
+   },
+   "not_published": {
+    "expected_units_at_market": -131.46,
+    "hit": 0.6149,
+    "hit_ci95": [
+     0.595,
+     0.634
+    ],
+    "hit_minus_market": 0.019,
+    "losses": 942,
+    "mean_breakeven": 0.6299,
+    "mean_market_p": 0.5959,
+    "n": 2446,
+    "roi_pct": -2.8,
+    "units": -68.13,
+    "wins": 1504,
+    "z_vs_market": 1.93
+   },
+   "pick": {
+    "expected_units_at_market": -5.05,
+    "hit": 0.4952,
+    "hit_ci95": [
+     0.401,
+     0.589
+    ],
+    "hit_minus_market": -0.0282,
+    "losses": 53,
+    "mean_breakeven": 0.5501,
+    "mean_market_p": 0.5234,
+    "n": 105,
+    "roi_pct": -8.9,
+    "units": -9.35,
+    "wins": 52,
+    "z_vs_market": -0.58
+   }
+  },
+  "by_v2_class": {
+   "close_call": {
+    "expected_units_at_market": -37.88,
+    "hit": 0.5765,
+    "hit_ci95": [
+     0.541,
+     0.612
+    ],
+    "hit_minus_market": 0.0294,
+    "losses": 313,
+    "mean_breakeven": 0.5767,
+    "mean_market_p": 0.5471,
+    "n": 739,
+    "roi_pct": 0.3,
+    "units": 2.28,
+    "wins": 426,
+    "z_vs_market": 1.61
+   },
+   "hard_fail": {
+    "expected_units_at_market": -97.43,
+    "hit": 0.6295,
+    "hit_ci95": [
+     0.607,
+     0.652
+    ],
+    "hit_minus_market": 0.0166,
+    "losses": 662,
+    "mean_breakeven": 0.6484,
+    "mean_market_p": 0.6129,
+    "n": 1787,
+    "roi_pct": -3.6,
+    "units": -64.03,
+    "wins": 1125,
+    "z_vs_market": 1.45
+   },
+   "pick_eligible": {
+    "expected_units_at_market": -3.36,
+    "hit": 0.4638,
+    "hit_ci95": [
+     0.351,
+     0.58
+    ],
+    "hit_minus_market": -0.0692,
+    "losses": 37,
+    "mean_breakeven": 0.5605,
+    "mean_market_p": 0.533,
+    "n": 69,
+    "roi_pct": -17.5,
+    "units": -12.09,
+    "wins": 32,
+    "z_vs_market": -1.16
+   }
+  },
+  "fail_reasons": {
+   "G3_STALE": 57,
+   "G3_STALE+G4_BAND+G5_MARKET+G6_FLOOR+G7_VALUE": 489,
+   "G3_STALE+G4_BAND+G5_MARKET+G6_FLOOR+G7_VALUE+G10_SAMPLE": 25,
+   "G3_STALE+G4_BAND+G5_MARKET+G6_FLOOR+G7_VALUE+G8_DISAGREEMENT": 17,
+   "G3_STALE+G5_MARKET+G7_VALUE": 22,
+   "G3_STALE+G7_VALUE": 325,
+   "G3_STALE+G8_DISAGREEMENT": 68,
+   "G4_BAND+G5_MARKET+G6_FLOOR": 21,
+   "G4_BAND+G5_MARKET+G6_FLOOR+G7_VALUE": 830,
+   "G4_BAND+G5_MARKET+G6_FLOOR+G7_VALUE+G10_SAMPLE": 42,
+   "G4_BAND+G5_MARKET+G6_FLOOR+G7_VALUE+G8_DISAGREEMENT": 18,
+   "G7_VALUE": 357,
+   "G7_VALUE+G10_SAMPLE": 18,
+   "G8_DISAGREEMENT": 100,
+   "none": 69
+  },
+  "hit_by_mm_all": {
+   "0-2": {
+    "expected_units_at_market": -17.36,
+    "hit": 0.6012,
+    "hit_ci95": [
+     0.547,
+     0.653
+    ],
+    "hit_minus_market": 0.0014,
+    "losses": 130,
+    "mean_breakeven": 0.6337,
+    "mean_market_p": 0.5998,
+    "n": 326,
+    "roi_pct": -5.1,
+    "units": -16.71,
+    "wins": 196,
+    "z_vs_market": 0.05
+   },
+   "2-4": {
+    "expected_units_at_market": -19.0,
+    "hit": 0.5822,
+    "hit_ci95": [
+     0.531,
+     0.632
+    ],
+    "hit_minus_market": -0.0043,
+    "losses": 150,
+    "mean_breakeven": 0.6194,
+    "mean_market_p": 0.5865,
+    "n": 359,
+    "roi_pct": -5.5,
+    "units": -19.82,
+    "wins": 209,
+    "z_vs_market": -0.17
+   },
+   "4-6": {
+    "expected_units_at_market": -16.18,
+    "hit": 0.5534,
+    "hit_ci95": [
+     0.498,
+     0.608
+    ],
+    "hit_minus_market": -0.0204,
+    "losses": 138,
+    "mean_breakeven": 0.6057,
+    "mean_market_p": 0.5738,
+    "n": 309,
+    "roi_pct": -8.7,
+    "units": -26.89,
+    "wins": 171,
+    "z_vs_market": -0.73
+   },
+   "6-8": {
+    "expected_units_at_market": -13.66,
+    "hit": 0.6314,
+    "hit_ci95": [
+     0.571,
+     0.688
+    ],
+    "hit_minus_market": 0.0701,
+    "losses": 94,
+    "mean_breakeven": 0.5933,
+    "mean_market_p": 0.5613,
+    "n": 255,
+    "roi_pct": 6.5,
+    "units": 16.55,
+    "wins": 161,
+    "z_vs_market": 2.27
+   },
+   "8-10": {
+    "expected_units_at_market": -10.14,
+    "hit": 0.5079,
+    "hit_ci95": [
+     0.437,
+     0.578
+    ],
+    "hit_minus_market": -0.037,
+    "losses": 93,
+    "mean_breakeven": 0.5761,
+    "mean_market_p": 0.545,
+    "n": 189,
+    "roi_pct": -12.5,
+    "units": -23.63,
+    "wins": 96,
+    "z_vs_market": -1.03
+   },
+   "<0": {
+    "expected_units_at_market": -49.89,
+    "hit": 0.6925,
+    "hit_ci95": [
+     0.662,
+     0.721
+    ],
+    "hit_minus_market": 0.0573,
+    "losses": 282,
+    "mean_breakeven": 0.6718,
+    "mean_market_p": 0.6351,
+    "n": 917,
+    "roi_pct": 2.9,
+    "units": 26.78,
+    "wins": 635,
+    "z_vs_market": 3.63
+   },
+   ">10": {
+    "expected_units_at_market": -12.45,
+    "hit": 0.4792,
+    "hit_ci95": [
+     0.417,
+     0.542
+    ],
+    "hit_minus_market": -0.0392,
+    "losses": 125,
+    "mean_breakeven": 0.5469,
+    "mean_market_p": 0.5183,
+    "n": 240,
+    "roi_pct": -12.5,
+    "units": -30.11,
+    "wins": 115,
+    "z_vs_market": -1.22
+   }
+  },
+  "hit_by_mm_and_market": {
+   "batter_hits|0-2": {
+    "expected_units_at_market": -6.51,
+    "hit": 0.5308,
+    "hit_ci95": [
+     0.445,
+     0.614
+    ],
+    "hit_minus_market": -0.0614,
+    "losses": 61,
+    "mean_breakeven": 0.6235,
+    "mean_market_p": 0.5921,
+    "n": 130,
+    "roi_pct": -14.1,
+    "units": -18.39,
+    "wins": 69,
+    "z_vs_market": -1.43
+   },
+   "batter_hits|2-4": {
+    "expected_units_at_market": -6.98,
+    "hit": 0.5915,
+    "hit_ci95": [
+     0.509,
+     0.669
+    ],
+    "hit_minus_market": 0.0082,
+    "losses": 58,
+    "mean_breakeven": 0.6137,
+    "mean_market_p": 0.5833,
+    "n": 142,
+    "roi_pct": -2.7,
+    "units": -3.87,
+    "wins": 84,
+    "z_vs_market": 0.2
+   },
+   "batter_hits|4-6": {
+    "expected_units_at_market": -5.96,
+    "hit": 0.5397,
+    "hit_ci95": [
+     0.453,
+     0.624
+    ],
+    "hit_minus_market": -0.0243,
+    "losses": 58,
+    "mean_breakeven": 0.5923,
+    "mean_market_p": 0.564,
+    "n": 126,
+    "roi_pct": -8.9,
+    "units": -11.16,
+    "wins": 68,
+    "z_vs_market": -0.55
+   },
+   "batter_hits|6-8": {
+    "expected_units_at_market": -4.11,
+    "hit": 0.5357,
+    "hit_ci95": [
+     0.43,
+     0.638
+    ],
+    "hit_minus_market": -0.0157,
+    "losses": 39,
+    "mean_breakeven": 0.5801,
+    "mean_market_p": 0.5514,
+    "n": 84,
+    "roi_pct": -6.8,
+    "units": -5.75,
+    "wins": 45,
+    "z_vs_market": -0.29
+   },
+   "batter_hits|8-10": {
+    "expected_units_at_market": -2.87,
+    "hit": 0.5085,
+    "hit_ci95": [
+     0.384,
+     0.632
+    ],
+    "hit_minus_market": -0.0338,
+    "losses": 29,
+    "mean_breakeven": 0.5704,
+    "mean_market_p": 0.5423,
+    "n": 59,
+    "roi_pct": -11.7,
+    "units": -6.92,
+    "wins": 30,
+    "z_vs_market": -0.53
+   },
+   "batter_hits|<0": {
+    "expected_units_at_market": -15.46,
+    "hit": 0.6465,
+    "hit_ci95": [
+     0.591,
+     0.699
+    ],
+    "hit_minus_market": 0.0312,
+    "losses": 105,
+    "mean_breakeven": 0.6491,
+    "mean_market_p": 0.6153,
+    "n": 297,
+    "roi_pct": -0.7,
+    "units": -1.94,
+    "wins": 192,
+    "z_vs_market": 1.11
+   },
+   "batter_hits|>10": {
+    "expected_units_at_market": -2.5,
+    "hit": 0.4727,
+    "hit_ci95": [
+     0.347,
+     0.602
+    ],
+    "hit_minus_market": -0.0564,
+    "losses": 29,
+    "mean_breakeven": 0.5549,
+    "mean_market_p": 0.5291,
+    "n": 55,
+    "roi_pct": -13.5,
+    "units": -7.45,
+    "wins": 26,
+    "z_vs_market": -0.85
+   },
+   "batter_runs_scored|0-2": {
+    "expected_units_at_market": -5.34,
+    "hit": 0.6947,
+    "hit_ci95": [
+     0.596,
+     0.778
+    ],
+    "hit_minus_market": 0.0711,
+    "losses": 29,
+    "mean_breakeven": 0.6608,
+    "mean_market_p": 0.6236,
+    "n": 95,
+    "roi_pct": 4.9,
+    "units": 4.69,
+    "wins": 66,
+    "z_vs_market": 1.44
+   },
+   "batter_runs_scored|2-4": {
+    "expected_units_at_market": -4.67,
+    "hit": 0.6463,
+    "hit_ci95": [
+     0.538,
+     0.741
+    ],
+    "hit_minus_market": 0.049,
+    "losses": 29,
+    "mean_breakeven": 0.6336,
+    "mean_market_p": 0.5974,
+    "n": 82,
+    "roi_pct": 2.7,
+    "units": 2.23,
+    "wins": 53,
+    "z_vs_market": 0.91
+   },
+   "batter_runs_scored|4-6": {
+    "expected_units_at_market": -3.32,
+    "hit": 0.6897,
+    "hit_ci95": [
+     0.562,
+     0.794
+    ],
+    "hit_minus_market": 0.095,
+    "losses": 18,
+    "mean_breakeven": 0.6308,
+    "mean_market_p": 0.5947,
+    "n": 58,
+    "roi_pct": 9.4,
+    "units": 5.47,
+    "wins": 40,
+    "z_vs_market": 1.48
+   },
+   "batter_runs_scored|6-8": {
+    "expected_units_at_market": -2.19,
+    "hit": 0.6316,
+    "hit_ci95": [
+     0.473,
+     0.766
+    ],
+    "hit_minus_market": 0.0568,
+    "losses": 14,
+    "mean_breakeven": 0.6099,
+    "mean_market_p": 0.5748,
+    "n": 38,
+    "roi_pct": 4.4,
+    "units": 1.69,
+    "wins": 24,
+    "z_vs_market": 0.71
+   },
+   "batter_runs_scored|8-10": {
+    "expected_units_at_market": -0.76,
+    "hit": 0.4615,
+    "hit_ci95": [
+     0.232,
+     0.709
+    ],
+    "hit_minus_market": -0.0995,
+    "losses": 7,
+    "mean_breakeven": 0.5961,
+    "mean_market_p": 0.561,
+    "n": 13,
+    "roi_pct": -25.3,
+    "units": -3.29,
+    "wins": 6,
+    "z_vs_market": -0.73
+   },
+   "batter_runs_scored|<0": {
+    "expected_units_at_market": -24.9,
+    "hit": 0.7204,
+    "hit_ci95": [
+     0.677,
+     0.76
+    ],
+    "hit_minus_market": 0.059,
+    "losses": 125,
+    "mean_breakeven": 0.7004,
+    "mean_market_p": 0.6614,
+    "n": 447,
+    "roi_pct": 2.6,
+    "units": 11.53,
+    "wins": 322,
+    "z_vs_market": 2.65
+   },
+   "batter_runs_scored|>10": {
+    "expected_units_at_market": -1.18,
+    "hit": 0.5455,
+    "hit_ci95": [
+     0.347,
+     0.731
+    ],
+    "hit_minus_market": 0.0413,
+    "losses": 10,
+    "mean_breakeven": 0.5329,
+    "mean_market_p": 0.5041,
+    "n": 22,
+    "roi_pct": 1.7,
+    "units": 0.37,
+    "wins": 12,
+    "z_vs_market": 0.39
+   },
+   "batter_total_bases|0-2": {
+    "expected_units_at_market": -5.51,
+    "hit": 0.604,
+    "hit_ci95": [
+     0.506,
+     0.694
+    ],
+    "hit_minus_market": 0.0167,
+    "losses": 40,
+    "mean_breakeven": 0.6213,
+    "mean_market_p": 0.5873,
+    "n": 101,
+    "roi_pct": -3.0,
+    "units": -3.01,
+    "wins": 61,
+    "z_vs_market": 0.34
+   },
+   "batter_total_bases|2-4": {
+    "expected_units_at_market": -7.35,
+    "hit": 0.5333,
+    "hit_ci95": [
+     0.449,
+     0.615
+    ],
+    "hit_minus_market": -0.0499,
+    "losses": 63,
+    "mean_breakeven": 0.6169,
+    "mean_market_p": 0.5833,
+    "n": 135,
+    "roi_pct": -13.5,
+    "units": -18.17,
+    "wins": 72,
+    "z_vs_market": -1.18
+   },
+   "batter_total_bases|4-6": {
+    "expected_units_at_market": -6.9,
+    "hit": 0.504,
+    "hit_ci95": [
+     0.418,
+     0.59
+    ],
+    "hit_minus_market": -0.07,
+    "losses": 62,
+    "mean_breakeven": 0.6076,
+    "mean_market_p": 0.574,
+    "n": 125,
+    "roi_pct": -17.0,
+    "units": -21.2,
+    "wins": 63,
+    "z_vs_market": -1.59
+   },
+   "batter_total_bases|6-8": {
+    "expected_units_at_market": -7.36,
+    "hit": 0.6917,
+    "hit_ci95": [
+     0.609,
+     0.764
+    ],
+    "hit_minus_market": 0.128,
+    "losses": 41,
+    "mean_breakeven": 0.5968,
+    "mean_market_p": 0.5637,
+    "n": 133,
+    "roi_pct": 15.5,
+    "units": 20.61,
+    "wins": 92,
+    "z_vs_market": 2.99
+   },
+   "batter_total_bases|8-10": {
+    "expected_units_at_market": -6.5,
+    "hit": 0.5128,
+    "hit_ci95": [
+     0.423,
+     0.602
+    ],
+    "hit_minus_market": -0.0317,
+    "losses": 57,
+    "mean_breakeven": 0.5767,
+    "mean_market_p": 0.5446,
+    "n": 117,
+    "roi_pct": -11.5,
+    "units": -13.43,
+    "wins": 60,
+    "z_vs_market": -0.69
+   },
+   "batter_total_bases|<0": {
+    "expected_units_at_market": -9.53,
+    "hit": 0.6994,
+    "hit_ci95": [
+     0.627,
+     0.763
+    ],
+    "hit_minus_market": 0.098,
+    "losses": 52,
+    "mean_breakeven": 0.6366,
+    "mean_market_p": 0.6014,
+    "n": 173,
+    "roi_pct": 9.9,
+    "units": 17.19,
+    "wins": 121,
+    "z_vs_market": 2.64
+   },
+   "batter_total_bases|>10": {
+    "expected_units_at_market": -8.77,
+    "hit": 0.4724,
+    "hit_ci95": [
+     0.397,
+     0.549
+    ],
+    "hit_minus_market": -0.0442,
+    "losses": 86,
+    "mean_breakeven": 0.5461,
+    "mean_market_p": 0.5166,
+    "n": 163,
+    "roi_pct": -14.1,
+    "units": -23.03,
+    "wins": 77,
+    "z_vs_market": -1.14
+   }
+  },
+  "hit_by_mm_not_published": {
+   "0-2": {
+    "expected_units_at_market": -17.16,
+    "hit": 0.6056,
+    "hit_ci95": [
+     0.551,
+     0.657
+    ],
+    "hit_minus_market": 0.0048,
+    "losses": 127,
+    "mean_breakeven": 0.6348,
+    "mean_market_p": 0.6008,
+    "n": 322,
+    "roi_pct": -4.5,
+    "units": -14.45,
+    "wins": 195,
+    "z_vs_market": 0.18
+   },
+   "2-4": {
+    "expected_units_at_market": -18.83,
+    "hit": 0.5831,
+    "hit_ci95": [
+     0.531,
+     0.633
+    ],
+    "hit_minus_market": -0.0039,
+    "losses": 148,
+    "mean_breakeven": 0.62,
+    "mean_market_p": 0.587,
+    "n": 355,
+    "roi_pct": -5.5,
+    "units": -19.53,
+    "wins": 207,
+    "z_vs_market": -0.15
+   },
+   "4-6": {
+    "expected_units_at_market": -15.67,
+    "hit": 0.5473,
+    "hit_ci95": [
+     0.49,
+     0.603
+    ],
+    "hit_minus_market": -0.0281,
+    "losses": 134,
+    "mean_breakeven": 0.6077,
+    "mean_market_p": 0.5754,
+    "n": 296,
+    "roi_pct": -10.3,
+    "units": -30.36,
+    "wins": 162,
+    "z_vs_market": -0.98
+   },
+   "6-8": {
+    "expected_units_at_market": -11.84,
+    "hit": 0.6204,
+    "hit_ci95": [
+     0.554,
+     0.682
+    ],
+    "hit_minus_market": 0.0532,
+    "losses": 82,
+    "mean_breakeven": 0.6002,
+    "mean_market_p": 0.5672,
+    "n": 216,
+    "roi_pct": 3.0,
+    "units": 6.54,
+    "wins": 134,
+    "z_vs_market": 1.58
+   },
+   "8-10": {
+    "expected_units_at_market": -6.08,
+    "hit": 0.5505,
+    "hit_ci95": [
+     0.457,
+     0.641
+    ],
+    "hit_minus_market": -0.0103,
+    "losses": 49,
+    "mean_breakeven": 0.594,
+    "mean_market_p": 0.5608,
+    "n": 109,
+    "roi_pct": -8.4,
+    "units": -9.17,
+    "wins": 60,
+    "z_vs_market": -0.22
+   },
+   "<0": {
+    "expected_units_at_market": -49.76,
+    "hit": 0.6926,
+    "hit_ci95": [
+     0.662,
+     0.722
+    ],
+    "hit_minus_market": 0.0572,
+    "losses": 281,
+    "mean_breakeven": 0.672,
+    "mean_market_p": 0.6354,
+    "n": 914,
+    "roi_pct": 2.9,
+    "units": 26.39,
+    "wins": 633,
+    "z_vs_market": 3.61
+   },
+   ">10": {
+    "expected_units_at_market": -12.12,
+    "hit": 0.4829,
+    "hit_ci95": [
+     0.42,
+     0.547
+    ],
+    "hit_minus_market": -0.0347,
+    "losses": 121,
+    "mean_breakeven": 0.5461,
+    "mean_market_p": 0.5176,
+    "n": 234,
+    "roi_pct": -11.8,
+    "units": -27.54,
+    "wins": 113,
+    "z_vs_market": -1.07
+   }
+  },
+  "hit_by_mm_pick_eligible": {
+   "4-6": {
+    "expected_units_at_market": -0.0,
+    "hit": 1.0,
+    "hit_ci95": [
+     0.207,
+     1.0
+    ],
+    "hit_minus_market": 0.481,
+    "losses": 0,
+    "mean_breakeven": 0.5215,
+    "mean_market_p": 0.519,
+    "n": 1,
+    "roi_pct": 91.7,
+    "units": 0.92,
+    "wins": 1,
+    "z_vs_market": 0.96
+   },
+   "6-8": {
+    "expected_units_at_market": -0.15,
+    "hit": 0.4,
+    "hit_ci95": [
+     0.118,
+     0.769
+    ],
+    "hit_minus_market": -0.1569,
+    "losses": 3,
+    "mean_breakeven": 0.5748,
+    "mean_market_p": 0.5569,
+    "n": 5,
+    "roi_pct": -33.8,
+    "units": -1.69,
+    "wins": 2,
+    "z_vs_market": -0.71
+   },
+   "8-10": {
+    "expected_units_at_market": -3.21,
+    "hit": 0.4603,
+    "hit_ci95": [
+     0.343,
+     0.582
+    ],
+    "hit_minus_market": -0.071,
+    "losses": 34,
+    "mean_breakeven": 0.5599,
+    "mean_market_p": 0.5313,
+    "n": 63,
+    "roi_pct": -18.0,
+    "units": -11.31,
+    "wins": 29,
+    "z_vs_market": -1.13
+   }
+  },
+  "hit_by_price_band": {
+   "a:-160..-140": {
+    "expected_units_at_market": -107.29,
+    "hit": 0.6394,
+    "hit_ci95": [
+     0.618,
+     0.66
+    ],
+    "hit_minus_market": 0.021,
+    "losses": 709,
+    "mean_breakeven": 0.6541,
+    "mean_market_p": 0.6183,
+    "n": 1966,
+    "roi_pct": -2.5,
+    "units": -49.97,
+    "wins": 1257,
+    "z_vs_market": 1.93
+   },
+   "b:-139..-120": {
+    "expected_units_at_market": -17.45,
+    "hit": 0.5588,
+    "hit_ci95": [
+     0.506,
+     0.611
+    ],
+    "hit_minus_market": 0.0239,
+    "losses": 150,
+    "mean_breakeven": 0.5639,
+    "mean_market_p": 0.5349,
+    "n": 340,
+    "roi_pct": -1.0,
+    "units": -3.24,
+    "wins": 190,
+    "z_vs_market": 0.88
+   },
+   "c:-119..-100": {
+    "expected_units_at_market": -8.82,
+    "hit": 0.4802,
+    "hit_ci95": [
+     0.408,
+     0.553
+    ],
+    "hit_minus_market": -0.0202,
+    "losses": 92,
+    "mean_breakeven": 0.5267,
+    "mean_market_p": 0.5004,
+    "n": 177,
+    "roi_pct": -9.1,
+    "units": -16.02,
+    "wins": 85,
+    "z_vs_market": -0.54
+   },
+   "d:+100..+150": {
+    "expected_units_at_market": -5.06,
+    "hit": 0.4636,
+    "hit_ci95": [
+     0.373,
+     0.556
+    ],
+    "hit_minus_market": 0.014,
+    "losses": 59,
+    "mean_breakeven": 0.4714,
+    "mean_market_p": 0.4496,
+    "n": 110,
+    "roi_pct": -2.4,
+    "units": -2.6,
+    "wins": 51,
+    "z_vs_market": 0.3
+   },
+   "e:+151..+250": {
+    "expected_units_at_market": -0.05,
+    "hit": 0.0,
+    "hit_ci95": [
+     0.0,
+     0.658
+    ],
+    "hit_minus_market": -0.3862,
+    "losses": 2,
+    "mean_breakeven": 0.3968,
+    "mean_market_p": 0.3862,
+    "n": 2,
+    "roi_pct": -100.0,
+    "units": -2.0,
+    "wins": 0,
+    "z_vs_market": -1.12
+   }
+  },
+  "hit_by_side": {
+   "batter_hits|Over": {
+    "expected_units_at_market": -39.09,
+    "hit": 0.5734,
+    "hit_ci95": [
+     0.539,
+     0.607
+    ],
+    "hit_minus_market": -0.0099,
+    "losses": 337,
+    "mean_breakeven": 0.6139,
+    "mean_market_p": 0.5833,
+    "n": 790,
+    "roi_pct": -6.9,
+    "units": -54.58,
+    "wins": 453,
+    "z_vs_market": -0.57
+   },
+   "batter_hits|Under": {
+    "expected_units_at_market": -5.3,
+    "hit": 0.5922,
+    "hit_ci95": [
+     0.496,
+     0.682
+    ],
+    "hit_minus_market": 0.0077,
+    "losses": 42,
+    "mean_breakeven": 0.6167,
+    "mean_market_p": 0.5845,
+    "n": 103,
+    "roi_pct": -0.9,
+    "units": -0.89,
+    "wins": 61,
+    "z_vs_market": 0.16
+   },
+   "batter_runs_scored|Over": {
+    "expected_units_at_market": -0.17,
+    "hit": 0.3333,
+    "hit_ci95": [
+     0.061,
+     0.792
+    ],
+    "hit_minus_market": -0.1205,
+    "losses": 2,
+    "mean_breakeven": 0.4799,
+    "mean_market_p": 0.4538,
+    "n": 3,
+    "roi_pct": -36.9,
+    "units": -1.11,
+    "wins": 1,
+    "z_vs_market": -0.42
+   },
+   "batter_runs_scored|Under": {
+    "expected_units_at_market": -42.19,
+    "hit": 0.6941,
+    "hit_ci95": [
+     0.66,
+     0.726
+    ],
+    "hit_minus_market": 0.0595,
+    "losses": 230,
+    "mean_breakeven": 0.6724,
+    "mean_market_p": 0.6346,
+    "n": 752,
+    "roi_pct": 3.2,
+    "units": 23.79,
+    "wins": 522,
+    "z_vs_market": 3.42
+   },
+   "batter_total_bases|Over": {
+    "expected_units_at_market": -29.1,
+    "hit": 0.5336,
+    "hit_ci95": [
+     0.491,
+     0.576
+    ],
+    "hit_minus_market": -0.0146,
+    "losses": 243,
+    "mean_breakeven": 0.5807,
+    "mean_market_p": 0.5481,
+    "n": 521,
+    "roi_pct": -8.6,
+    "units": -44.86,
+    "wins": 278,
+    "z_vs_market": -0.67
+   },
+   "batter_total_bases|Under": {
+    "expected_units_at_market": -22.84,
+    "hit": 0.6291,
+    "hit_ci95": [
+     0.582,
+     0.674
+    ],
+    "hit_minus_market": 0.0395,
+    "losses": 158,
+    "mean_breakeven": 0.6231,
+    "mean_market_p": 0.5896,
+    "n": 426,
+    "roi_pct": 0.9,
+    "units": 3.83,
+    "wins": 268,
+    "z_vs_market": 1.66
+   }
+  },
+  "n_graded_wl": 2595,
+  "n_identities": 2686,
+  "shrinkage_all": {
+   "days": 20,
+   "intercept": 0.0296,
+   "k_ci95": [
+    -0.7192,
+    0.0713
+   ],
+   "k_through_origin": -0.3265,
+   "mean_gap": 0.0231,
+   "mean_realised_minus_market": 0.018,
+   "n": 2595,
+   "slope": -0.5024,
+   "slope_ci95": [
+    -0.9122,
+    -0.0976
+   ]
+  },
+  "shrinkage_by_market": {
+   "batter_hits": {
+    "days": 20,
+    "intercept": 0.0001,
+    "k_ci95": [
+     -0.8758,
+     0.1395
+    ],
+    "k_through_origin": -0.3305,
+    "mean_gap": 0.024,
+    "mean_realised_minus_market": -0.0079,
+    "n": 893,
+    "slope": -0.3311,
+    "slope_ci95": [
+     -1.0492,
+     0.1859
+    ]
+   },
+   "batter_runs_scored": {
+    "days": 19,
+    "intercept": 0.0572,
+    "k_ci95": [
+     -0.9585,
+     0.3197
+    ],
+    "k_through_origin": -0.3386,
+    "mean_gap": -0.0106,
+    "mean_realised_minus_market": 0.0588,
+    "n": 755,
+    "slope": -0.1498,
+    "slope_ci95": [
+     -0.8363,
+     0.6201
+    ]
+   },
+   "batter_total_bases": {
+    "days": 20,
+    "intercept": 0.0467,
+    "k_ci95": [
+     -0.681,
+     0.0762
+    ],
+    "k_through_origin": -0.3185,
+    "mean_gap": 0.0492,
+    "mean_realised_minus_market": 0.0098,
+    "n": 947,
+    "slope": -0.7509,
+    "slope_ci95": [
+     -1.2808,
+     -0.1861
+    ]
+   }
+  },
+  "shrinkage_mm_0_to_10": {
+   "days": 20,
+   "intercept": -0.0023,
+   "k_ci95": [
+    -0.4376,
+    0.5935
+   ],
+   "k_through_origin": 0.068,
+   "mean_gap": 0.0444,
+   "mean_realised_minus_market": 0.0024,
+   "n": 1438,
+   "slope": 0.1055,
+   "slope_ci95": [
+    -1.3003,
+    1.2804
+   ]
+  },
+  "shrinkage_not_published": {
+   "days": 20,
+   "intercept": 0.0289,
+   "k_ci95": [
+    -0.7114,
+    0.0342
+   ],
+   "k_through_origin": -0.3443,
+   "mean_gap": 0.0199,
+   "mean_realised_minus_market": 0.019,
+   "n": 2446,
+   "slope": -0.4981,
+   "slope_ci95": [
+    -0.8886,
+    -0.1125
+   ]
+  }
+ },
+ "score_drivers": {
+  "_definition": "score = Kelly fraction on (our_p - 0.038) at the best price; regressed on model-minus-market (mm), vig gap (breakeven - market) and decimal odds over all fill-eligible replayed candidates",
+  "beta": {
+   "decimal": 0.0065,
+   "intercept": -0.1046,
+   "mm": 2.4099,
+   "vig_gap": -2.4021
+  },
+  "corr_score_mm": 0.9795,
+  "corr_score_vig_gap": -0.239,
+  "n": 853,
+  "sd_mm_pts": 3.72,
+  "sd_vig_gap_pts": 0.72
+ },
+ "validation_vs_ledger": {
+  "close_calls": 3327,
+  "close_calls_matched_exact": 2579,
+  "close_calls_matched_identity_only": 748,
+  "entries_first_shown": 169,
+  "entries_matched_class": 127,
+  "entries_matched_exact": 127,
+  "entries_matched_identity_only": 42
+ }
+}

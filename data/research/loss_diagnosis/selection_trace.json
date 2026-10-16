@@ -1,0 +1,859 @@
+{
+ "chosen": {
+  "losing_day": "2026-10-05",
+  "three_oh_day": "2026-10-08",
+  "winning_day": "2026-10-14"
+ },
+ "records_by_day": {
+  "2026-09-22": [
+   10,
+   12,
+   -4.65
+  ],
+  "2026-09-23": [
+   8,
+   3,
+   2.75
+  ],
+  "2026-09-24": [
+   6,
+   4,
+   0.35
+  ],
+  "2026-09-25": [
+   5,
+   3,
+   0.99
+  ],
+  "2026-09-26": [
+   7,
+   2,
+   3.33
+  ],
+  "2026-09-27": [
+   4,
+   2,
+   1.54
+  ],
+  "2026-09-29": [
+   1,
+   0,
+   0.7
+  ],
+  "2026-09-30": [
+   3,
+   2,
+   0.13
+  ],
+  "2026-10-01": [
+   2,
+   2,
+   0.07
+  ],
+  "2026-10-03": [
+   6,
+   4,
+   1.15
+  ],
+  "2026-10-04": [
+   4,
+   5,
+   -2.03
+  ],
+  "2026-10-05": [
+   3,
+   8,
+   -5.48
+  ],
+  "2026-10-06": [
+   4,
+   8,
+   -4.75
+  ],
+  "2026-10-07": [
+   7,
+   4,
+   2.24
+  ],
+  "2026-10-08": [
+   3,
+   0,
+   2.47
+  ],
+  "2026-10-10": [
+   3,
+   5,
+   -2.57
+  ],
+  "2026-10-11": [
+   4,
+   4,
+   -0.68
+  ],
+  "2026-10-12": [
+   6,
+   5,
+   0.71
+  ],
+  "2026-10-13": [
+   2,
+   1,
+   1.18
+  ],
+  "2026-10-14": [
+   6,
+   0,
+   5.56
+  ],
+  "2026-10-15": [
+   3,
+   7,
+   -4.42
+  ]
+ },
+ "three_oh_days": [
+  "2026-10-08"
+ ],
+ "traces": {
+  "losing_day": {
+   "date": "2026-10-05",
+   "gate_failure_counts_over_all_runs": {
+    "G10_SAMPLE": 42,
+    "G3_STALE": 265,
+    "G4_BAND": 256,
+    "G5_MARKET": 282,
+    "G6_FLOOR": 256,
+    "G7_VALUE": 430,
+    "G8_DISAGREEMENT": 70
+   },
+   "graded_entries": [
+    {
+     "books": 4,
+     "entry_class": "pick",
+     "failed_gates": [],
+     "first_shown_run": 7,
+     "line": 0.5,
+     "market": "batter_hits",
+     "market_p": 0.457,
+     "mm_pts": 9.3,
+     "our_p": 0.5505,
+     "price": 110,
+     "profit": 1.1,
+     "score": 0.0693,
+     "side": "Over",
+     "used": 0.5125,
+     "value_need": 0.4891,
+     "who": "Austin Wells",
+     "withdrawn": false,
+     "won": true
+    },
+    {
+     "books": 4,
+     "entry_class": "pick",
+     "failed_gates": [],
+     "first_shown_run": 1,
+     "line": 0.5,
+     "market": "batter_total_bases",
+     "market_p": 0.4425,
+     "mm_pts": 9.7,
+     "our_p": 0.5397,
+     "price": 114,
+     "profit": -1.0,
+     "score": 0.0646,
+     "side": "Over",
+     "used": 0.5017,
+     "value_need": 0.4805,
+     "who": "Colson Montgomery",
+     "withdrawn": true,
+     "won": false
+    },
+    {
+     "books": 4,
+     "entry_class": "pick",
+     "failed_gates": [],
+     "first_shown_run": 1,
+     "line": 0.5,
+     "market": "batter_total_bases",
+     "market_p": 0.5429,
+     "mm_pts": 9.4,
+     "our_p": 0.6369,
+     "price": -135,
+     "profit": -1.0,
+     "score": 0.0574,
+     "side": "Over",
+     "used": 0.5989,
+     "value_need": 0.5852,
+     "who": "George Lombard Jr.",
+     "withdrawn": false,
+     "won": false
+    },
+    {
+     "books": 4,
+     "entry_class": "pick",
+     "failed_gates": [],
+     "first_shown_run": 5,
+     "line": 0.5,
+     "market": "batter_total_bases",
+     "market_p": 0.5318,
+     "mm_pts": 8.8,
+     "our_p": 0.6203,
+     "price": -130,
+     "profit": 0.7692,
+     "score": 0.0393,
+     "side": "Over",
+     "used": 0.5823,
+     "value_need": 0.5761,
+     "who": "Chase Meidroth",
+     "withdrawn": false,
+     "won": true
+    },
+    {
+     "books": 4,
+     "entry_class": "pick",
+     "failed_gates": [],
+     "first_shown_run": 7,
+     "line": 0.5,
+     "market": "batter_total_bases",
+     "market_p": 0.57,
+     "mm_pts": 9.0,
+     "our_p": 0.6597,
+     "price": -154,
+     "profit": 0.6494,
+     "score": 0.0391,
+     "side": "Over",
+     "used": 0.6217,
+     "value_need": 0.6164,
+     "who": "Jonathan Aranda",
+     "withdrawn": false,
+     "won": true
+    },
+    {
+     "books": 4,
+     "entry_class": "pick",
+     "failed_gates": [],
+     "first_shown_run": 7,
+     "line": 0.5,
+     "market": "batter_hits",
+     "market_p": 0.5449,
+     "mm_pts": 8.2,
+     "our_p": 0.6266,
+     "price": -135,
+     "profit": -1.0,
+     "score": 0.0332,
+     "side": "Over",
+     "used": 0.5886,
+     "value_need": 0.5852,
+     "who": "Spencer Jones",
+     "withdrawn": false,
+     "won": false
+    },
+    {
+     "books": 4,
+     "entry_class": "pick",
+     "failed_gates": [],
+     "first_shown_run": 5,
+     "line": 0.5,
+     "market": "batter_total_bases",
+     "market_p": 0.5168,
+     "mm_pts": 7.7,
+     "our_p": 0.5942,
+     "price": -119,
+     "profit": -1.0,
+     "score": 0.0281,
+     "side": "Over",
+     "used": 0.5562,
+     "value_need": 0.5547,
+     "who": "Tristan Peters",
+     "withdrawn": false,
+     "won": false
+    },
+    {
+     "books": 4,
+     "entry_class": "pick",
+     "failed_gates": [],
+     "first_shown_run": 5,
+     "line": 0.5,
+     "market": "batter_total_bases",
+     "market_p": 0.5095,
+     "mm_pts": 8.4,
+     "our_p": 0.5931,
+     "price": -119,
+     "profit": -1.0,
+     "score": 0.0257,
+     "side": "Over",
+     "used": 0.5551,
+     "value_need": 0.5547,
+     "who": "Patrick Bailey",
+     "withdrawn": false,
+     "won": false
+    },
+    {
+     "books": 4,
+     "entry_class": "fill",
+     "failed_gates": [
+      "G3_STALE"
+     ],
+     "first_shown_run": 6,
+     "line": 0.5,
+     "market": "batter_hits",
+     "market_p": 0.4425,
+     "mm_pts": 8.6,
+     "our_p": 0.5285,
+     "price": 115,
+     "profit": -1.0,
+     "score": 0.0475,
+     "side": "Over",
+     "used": 0.4905,
+     "value_need": 0.4783,
+     "who": "Ryan McMahon",
+     "withdrawn": false,
+     "won": false
+    },
+    {
+     "books": 5,
+     "entry_class": "fill",
+     "failed_gates": [
+      "G3_STALE"
+     ],
+     "first_shown_run": 4,
+     "line": 0.5,
+     "market": "batter_hits",
+     "market_p": 0.5997,
+     "mm_pts": 6.8,
+     "our_p": 0.6672,
+     "price": -160,
+     "profit": -1.0,
+     "score": 0.0359,
+     "side": "Over",
+     "used": 0.6292,
+     "value_need": 0.6254,
+     "who": "Sam Antonacci",
+     "withdrawn": false,
+     "won": false
+    },
+    {
+     "books": 4,
+     "entry_class": "fill",
+     "failed_gates": [
+      "G3_STALE"
+     ],
+     "first_shown_run": 6,
+     "line": 0.5,
+     "market": "batter_hits",
+     "market_p": 0.5518,
+     "mm_pts": 7.2,
+     "our_p": 0.6236,
+     "price": -134,
+     "profit": -1.0,
+     "score": 0.0303,
+     "side": "Over",
+     "used": 0.5856,
+     "value_need": 0.5834,
+     "who": "Liam Hicks",
+     "withdrawn": false,
+     "won": false
+    }
+   ],
+   "n_publish_runs": 7,
+   "record": [
+    3,
+    8,
+    -5.48
+   ],
+   "runs": [
+    {
+     "ceiling_refused": 0,
+     "ledger_all_bets": 3,
+     "ledger_close_calls_not_shown": 33,
+     "ledger_game_close_calls": 2,
+     "ledger_game_entries": 0,
+     "ledger_n_fills": 0,
+     "ledger_n_picks": 3,
+     "prop_candidates_replayed": 89,
+     "prop_pass_all_gates": 3,
+     "published_utc": "2026-10-05T04:09:22.318260+00:00",
+     "top_fail_patterns": {
+      "G4_BAND+G5_MARKET+G6_FLOOR+G7_VALUE": 38,
+      "G5_MARKET+G7_VALUE": 3,
+      "G7_VALUE": 31,
+      "G8_DISAGREEMENT": 4,
+      "PASS": 3
+     }
+    },
+    {
+     "ceiling_refused": 0,
+     "ledger_all_bets": 3,
+     "ledger_close_calls_not_shown": 33,
+     "ledger_game_close_calls": 2,
+     "ledger_game_entries": 0,
+     "ledger_n_fills": 0,
+     "ledger_n_picks": 3,
+     "prop_candidates_replayed": 89,
+     "prop_pass_all_gates": 3,
+     "published_utc": "2026-10-05T04:23:48.076806+00:00",
+     "top_fail_patterns": {
+      "G4_BAND+G5_MARKET+G6_FLOOR+G7_VALUE": 38,
+      "G5_MARKET+G7_VALUE": 3,
+      "G7_VALUE": 31,
+      "G8_DISAGREEMENT": 4,
+      "PASS": 3
+     }
+    },
+    {
+     "ceiling_refused": 0,
+     "ledger_all_bets": 0,
+     "ledger_close_calls_not_shown": 33,
+     "ledger_game_close_calls": 2,
+     "ledger_game_entries": 0,
+     "ledger_n_fills": 0,
+     "ledger_n_picks": 0,
+     "prop_candidates_replayed": 89,
+     "prop_pass_all_gates": 0,
+     "published_utc": "2026-10-05T05:15:39.273591+00:00",
+     "top_fail_patterns": {
+      "G3_STALE": 3,
+      "G3_STALE+G4_BAND+G5_MARKET+G6_FLOOR+G7_VALUE": 38,
+      "G3_STALE+G5_MARKET+G7_VALUE": 3,
+      "G3_STALE+G7_VALUE": 31,
+      "G3_STALE+G8_DISAGREEMENT": 4
+     }
+    },
+    {
+     "ceiling_refused": 0,
+     "ledger_all_bets": 1,
+     "ledger_close_calls_not_shown": 30,
+     "ledger_game_close_calls": 2,
+     "ledger_game_entries": 0,
+     "ledger_n_fills": 1,
+     "ledger_n_picks": 0,
+     "prop_candidates_replayed": 89,
+     "prop_pass_all_gates": 0,
+     "published_utc": "2026-10-05T17:13:36.680770+00:00",
+     "top_fail_patterns": {
+      "G3_STALE": 3,
+      "G3_STALE+G4_BAND+G5_MARKET+G6_FLOOR+G7_VALUE": 36,
+      "G3_STALE+G5_MARKET": 3,
+      "G3_STALE+G7_VALUE": 28,
+      "G3_STALE+G8_DISAGREEMENT": 6
+     }
+    },
+    {
+     "ceiling_refused": 0,
+     "ledger_all_bets": 4,
+     "ledger_close_calls_not_shown": 32,
+     "ledger_game_close_calls": 2,
+     "ledger_game_entries": 0,
+     "ledger_n_fills": 1,
+     "ledger_n_picks": 3,
+     "prop_candidates_replayed": 91,
+     "prop_pass_all_gates": 3,
+     "published_utc": "2026-10-05T19:22:17.768025+00:00",
+     "top_fail_patterns": {
+      "G3_STALE+G4_BAND+G5_MARKET+G6_FLOOR+G7_VALUE": 19,
+      "G3_STALE+G7_VALUE": 13,
+      "G4_BAND+G5_MARKET+G6_FLOOR+G7_VALUE": 19,
+      "G7_VALUE": 15,
+      "G8_DISAGREEMENT": 3
+     }
+    },
+    {
+     "ceiling_refused": 0,
+     "ledger_all_bets": 6,
+     "ledger_close_calls_not_shown": 7,
+     "ledger_game_close_calls": 1,
+     "ledger_game_entries": 0,
+     "ledger_n_fills": 3,
+     "ledger_n_picks": 3,
+     "prop_candidates_replayed": 43,
+     "prop_pass_all_gates": 0,
+     "published_utc": "2026-10-05T21:43:21.097820+00:00",
+     "top_fail_patterns": {
+      "G3_STALE": 6,
+      "G3_STALE+G4_BAND+G5_MARKET+G6_FLOOR+G7_VALUE": 18,
+      "G3_STALE+G4_BAND+G5_MARKET+G6_FLOOR+G7_VALUE+G10_SAMPLE": 2,
+      "G3_STALE+G7_VALUE": 3,
+      "G3_STALE+G8_DISAGREEMENT": 8
+     }
+    },
+    {
+     "ceiling_refused": 0,
+     "ledger_all_bets": 10,
+     "ledger_close_calls_not_shown": 5,
+     "ledger_game_close_calls": 1,
+     "ledger_game_entries": 0,
+     "ledger_n_fills": 3,
+     "ledger_n_picks": 7,
+     "prop_candidates_replayed": 44,
+     "prop_pass_all_gates": 6,
+     "published_utc": "2026-10-05T22:13:18.238786+00:00",
+     "top_fail_patterns": {
+      "G4_BAND+G5_MARKET+G6_FLOOR+G7_VALUE": 18,
+      "G4_BAND+G5_MARKET+G6_FLOOR+G7_VALUE+G10_SAMPLE": 2,
+      "G7_VALUE": 4,
+      "G8_DISAGREEMENT": 8,
+      "PASS": 6
+     }
+    }
+   ]
+  },
+  "three_oh_day": {
+   "date": "2026-10-08",
+   "gate_failure_counts_over_all_runs": {
+    "G10_SAMPLE": 2,
+    "G3_STALE": 2,
+    "G4_BAND": 28,
+    "G5_MARKET": 30,
+    "G6_FLOOR": 28,
+    "G7_VALUE": 44,
+    "G8_DISAGREEMENT": 5
+   },
+   "graded_entries": [
+    {
+     "books": 4,
+     "entry_class": "pick",
+     "failed_gates": [],
+     "first_shown_run": 2,
+     "line": 0.5,
+     "market": "batter_hits",
+     "market_p": 0.5126,
+     "mm_pts": 9.4,
+     "our_p": 0.6062,
+     "price": -116,
+     "profit": 0.8621,
+     "score": 0.0673,
+     "side": "Over",
+     "used": 0.5682,
+     "value_need": 0.5485,
+     "who": "Brenton Doyle",
+     "withdrawn": false,
+     "won": true
+    },
+    {
+     "books": 4,
+     "entry_class": "fill",
+     "failed_gates": [
+      "G7_VALUE"
+     ],
+     "first_shown_run": 2,
+     "line": 0.5,
+     "market": "batter_total_bases",
+     "market_p": 0.5103,
+     "mm_pts": 6.8,
+     "our_p": 0.5784,
+     "price": -119,
+     "profit": 0.8403,
+     "score": -0.0065,
+     "side": "Over",
+     "used": 0.5404,
+     "value_need": 0.5547,
+     "who": "Munetaka Murakami",
+     "withdrawn": false,
+     "won": true
+    },
+    {
+     "books": 4,
+     "entry_class": "fill",
+     "failed_gates": [
+      "G7_VALUE"
+     ],
+     "first_shown_run": 2,
+     "line": 0.5,
+     "market": "batter_total_bases",
+     "market_p": 0.5321,
+     "mm_pts": 6.7,
+     "our_p": 0.599,
+     "price": -130,
+     "profit": 0.7692,
+     "score": -0.0097,
+     "side": "Over",
+     "used": 0.561,
+     "value_need": 0.5761,
+     "who": "Travis Bazzana",
+     "withdrawn": false,
+     "won": true
+    }
+   ],
+   "n_publish_runs": 2,
+   "record": [
+    3,
+    0,
+    2.47
+   ],
+   "runs": [
+    {
+     "ceiling_refused": 0,
+     "ledger_all_bets": 0,
+     "ledger_close_calls_not_shown": 0,
+     "ledger_game_close_calls": 0,
+     "ledger_game_entries": 0,
+     "ledger_n_fills": 0,
+     "ledger_n_picks": 0,
+     "prop_candidates_replayed": 3,
+     "prop_pass_all_gates": 0,
+     "published_utc": "2026-10-08T04:09:04.762532+00:00",
+     "top_fail_patterns": {
+      "G4_BAND+G5_MARKET+G6_FLOOR+G7_VALUE": 3
+     }
+    },
+    {
+     "ceiling_refused": 0,
+     "ledger_all_bets": 3,
+     "ledger_close_calls_not_shown": 13,
+     "ledger_game_close_calls": 0,
+     "ledger_game_entries": 0,
+     "ledger_n_fills": 2,
+     "ledger_n_picks": 1,
+     "prop_candidates_replayed": 47,
+     "prop_pass_all_gates": 1,
+     "published_utc": "2026-10-08T22:09:59.325627+00:00",
+     "top_fail_patterns": {
+      "G3_STALE+G4_BAND+G5_MARKET+G6_FLOOR+G7_VALUE": 2,
+      "G4_BAND+G5_MARKET+G6_FLOOR+G7_VALUE": 22,
+      "G7_VALUE": 15,
+      "G8_DISAGREEMENT": 2,
+      "G8_DISAGREEMENT+G10_SAMPLE": 2
+     }
+    }
+   ]
+  },
+  "winning_day": {
+   "date": "2026-10-14",
+   "gate_failure_counts_over_all_runs": {
+    "G10_SAMPLE": 16,
+    "G3_STALE": 98,
+    "G4_BAND": 126,
+    "G5_MARKET": 143,
+    "G6_FLOOR": 126,
+    "G7_VALUE": 185,
+    "G8_DISAGREEMENT": 41
+   },
+   "graded_entries": [
+    {
+     "books": 4,
+     "entry_class": "pick",
+     "failed_gates": [],
+     "first_shown_run": 1,
+     "line": 0.5,
+     "market": "batter_hits",
+     "market_p": 0.4313,
+     "mm_pts": 9.2,
+     "our_p": 0.5229,
+     "price": 125,
+     "profit": 1.25,
+     "score": 0.0728,
+     "side": "Under",
+     "used": 0.4849,
+     "value_need": 0.4583,
+     "who": "Andrew Vaughn",
+     "withdrawn": true,
+     "won": true
+    },
+    {
+     "books": 4,
+     "entry_class": "pick",
+     "failed_gates": [],
+     "first_shown_run": 1,
+     "line": 0.5,
+     "market": "batter_hits",
+     "market_p": 0.5007,
+     "mm_pts": 7.1,
+     "our_p": 0.5717,
+     "price": -105,
+     "profit": 0.9524,
+     "score": 0.0441,
+     "side": "Over",
+     "used": 0.5337,
+     "value_need": 0.5242,
+     "who": "Jake Bauers",
+     "withdrawn": true,
+     "won": true
+    },
+    {
+     "books": 4,
+     "entry_class": "pick",
+     "failed_gates": [],
+     "first_shown_run": 5,
+     "line": 0.5,
+     "market": "batter_hits",
+     "market_p": 0.5226,
+     "mm_pts": 8.5,
+     "our_p": 0.6073,
+     "price": -122,
+     "profit": 0.8197,
+     "score": 0.0438,
+     "side": "Over",
+     "used": 0.5693,
+     "value_need": 0.5607,
+     "who": "Cooper Pratt",
+     "withdrawn": false,
+     "won": true
+    },
+    {
+     "books": 2,
+     "entry_class": "pick",
+     "failed_gates": [],
+     "first_shown_run": 5,
+     "line": 0.5,
+     "market": "batter_hits",
+     "market_p": 0.4847,
+     "mm_pts": 7.0,
+     "our_p": 0.5545,
+     "price": 100,
+     "profit": 1.0,
+     "score": 0.033,
+     "side": "Over",
+     "used": 0.5165,
+     "value_need": 0.5123,
+     "who": "Miguel Rojas",
+     "withdrawn": false,
+     "won": true
+    },
+    {
+     "books": 4,
+     "entry_class": "pick",
+     "failed_gates": [],
+     "first_shown_run": 1,
+     "line": 0.5,
+     "market": "batter_hits",
+     "market_p": 0.564,
+     "mm_pts": 8.5,
+     "our_p": 0.649,
+     "price": -150,
+     "profit": 0.6667,
+     "score": 0.0275,
+     "side": "Over",
+     "used": 0.611,
+     "value_need": 0.6103,
+     "who": "Brice Turang",
+     "withdrawn": true,
+     "won": true
+    },
+    {
+     "books": 4,
+     "entry_class": "fill",
+     "failed_gates": [
+      "G3_STALE"
+     ],
+     "first_shown_run": 4,
+     "line": 0.5,
+     "market": "batter_hits",
+     "market_p": 0.5169,
+     "mm_pts": 7.5,
+     "our_p": 0.5914,
+     "price": -115,
+     "profit": 0.8696,
+     "score": 0.0398,
+     "side": "Over",
+     "used": 0.5534,
+     "value_need": 0.5464,
+     "who": "Garrett Mitchell",
+     "withdrawn": false,
+     "won": true
+    }
+   ],
+   "n_publish_runs": 5,
+   "record": [
+    6,
+    0,
+    5.56
+   ],
+   "runs": [
+    {
+     "ceiling_refused": 0,
+     "ledger_all_bets": 3,
+     "ledger_close_calls_not_shown": 12,
+     "ledger_game_close_calls": 0,
+     "ledger_game_entries": 0,
+     "ledger_n_fills": 0,
+     "ledger_n_picks": 3,
+     "prop_candidates_replayed": 48,
+     "prop_pass_all_gates": 4,
+     "published_utc": "2026-10-14T04:09:12.691614+00:00",
+     "top_fail_patterns": {
+      "G4_BAND+G5_MARKET+G6_FLOOR+G7_VALUE": 19,
+      "G4_BAND+G5_MARKET+G6_FLOOR+G7_VALUE+G10_SAMPLE": 3,
+      "G7_VALUE": 12,
+      "G8_DISAGREEMENT": 4,
+      "PASS": 4
+     }
+    },
+    {
+     "ceiling_refused": 0,
+     "ledger_all_bets": 3,
+     "ledger_close_calls_not_shown": 12,
+     "ledger_game_close_calls": 0,
+     "ledger_game_entries": 0,
+     "ledger_n_fills": 0,
+     "ledger_n_picks": 3,
+     "prop_candidates_replayed": 48,
+     "prop_pass_all_gates": 4,
+     "published_utc": "2026-10-14T04:23:07.414725+00:00",
+     "top_fail_patterns": {
+      "G4_BAND+G5_MARKET+G6_FLOOR+G7_VALUE": 19,
+      "G4_BAND+G5_MARKET+G6_FLOOR+G7_VALUE+G10_SAMPLE": 3,
+      "G7_VALUE": 12,
+      "G8_DISAGREEMENT": 4,
+      "PASS": 4
+     }
+    },
+    {
+     "ceiling_refused": 0,
+     "ledger_all_bets": 0,
+     "ledger_close_calls_not_shown": 13,
+     "ledger_game_close_calls": 0,
+     "ledger_game_entries": 0,
+     "ledger_n_fills": 0,
+     "ledger_n_picks": 0,
+     "prop_candidates_replayed": 48,
+     "prop_pass_all_gates": 0,
+     "published_utc": "2026-10-14T05:15:08.259446+00:00",
+     "top_fail_patterns": {
+      "G3_STALE": 4,
+      "G3_STALE+G4_BAND+G5_MARKET+G6_FLOOR+G7_VALUE": 19,
+      "G3_STALE+G4_BAND+G5_MARKET+G6_FLOOR+G7_VALUE+G10_SAMPLE": 3,
+      "G3_STALE+G7_VALUE": 12,
+      "G3_STALE+G8_DISAGREEMENT": 4
+     }
+    },
+    {
+     "ceiling_refused": 0,
+     "ledger_all_bets": 1,
+     "ledger_close_calls_not_shown": 15,
+     "ledger_game_close_calls": 1,
+     "ledger_game_entries": 0,
+     "ledger_n_fills": 1,
+     "ledger_n_picks": 0,
+     "prop_candidates_replayed": 48,
+     "prop_pass_all_gates": 0,
+     "published_utc": "2026-10-14T21:24:17.426676+00:00",
+     "top_fail_patterns": {
+      "G3_STALE": 5,
+      "G3_STALE+G4_BAND+G5_MARKET+G6_FLOOR+G7_VALUE": 20,
+      "G3_STALE+G4_BAND+G5_MARKET+G6_FLOOR+G7_VALUE+G10_SAMPLE": 3,
+      "G3_STALE+G7_VALUE": 12,
+      "G3_STALE+G8_DISAGREEMENT": 2
+     }
+    },
+    {
+     "ceiling_refused": 0,
+     "ledger_all_bets": 3,
+     "ledger_close_calls_not_shown": 13,
+     "ledger_game_close_calls": 0,
+     "ledger_game_entries": 0,
+     "ledger_n_fills": 1,
+     "ledger_n_picks": 2,
+     "prop_candidates_replayed": 54,
+     "prop_pass_all_gates": 3,
+     "published_utc": "2026-10-14T22:12:11.585442+00:00",
+     "top_fail_patterns": {
+      "G4_BAND+G5_MARKET+G6_FLOOR+G7_VALUE": 18,
+      "G4_BAND+G5_MARKET+G6_FLOOR+G7_VALUE+G10_SAMPLE": 3,
+      "G7_VALUE": 13,
+      "G8_DISAGREEMENT": 7,
+      "PASS": 3
+     }
+    }
+   ]
+  }
+ }
+}

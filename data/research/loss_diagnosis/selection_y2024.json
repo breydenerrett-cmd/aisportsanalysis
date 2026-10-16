@@ -1,0 +1,495 @@
+{
+ "_note": "2024 (open season). Run model strength.model_line with the FROZEN 2025 dispersion and Platt calibration, point-in-time features (features.build_training_table: games strictly before each date), relief rates strictly before each date, league runs/game from that date's own slate (as the live path does). Market = mean de-vigged h2h across books on the newest archive poll strictly before first pitch; price = best across books. G3 is not evaluable on a ~3-poll/day archive and is dropped. Not agent 1's method (unavailable to this agent).",
+ "both_sides_hit_by_mm": {
+  "0-2": {
+   "expected_units_at_market": -6.92,
+   "hit": 0.4597,
+   "hit_ci95": [
+    0.418,
+    0.502
+   ],
+   "hit_minus_market": -0.0301,
+   "losses": 288,
+   "mean_breakeven": 0.4964,
+   "mean_market_p": 0.4898,
+   "n": 533,
+   "roi_pct": -6.9,
+   "units": -36.78,
+   "wins": 245,
+   "z_vs_market": -1.4
+  },
+  "2-4": {
+   "expected_units_at_market": -5.3,
+   "hit": 0.4757,
+   "hit_ci95": [
+    0.43,
+    0.522
+   ],
+   "hit_minus_market": 0.0155,
+   "losses": 237,
+   "mean_breakeven": 0.4658,
+   "mean_market_p": 0.4602,
+   "n": 452,
+   "roi_pct": 2.4,
+   "units": 10.64,
+   "wins": 215,
+   "z_vs_market": 0.66
+  },
+  "4-6": {
+   "expected_units_at_market": -0.18,
+   "hit": 0.4715,
+   "hit_ci95": [
+    0.421,
+    0.523
+   ],
+   "hit_minus_market": 0.0355,
+   "losses": 195,
+   "mean_breakeven": 0.4394,
+   "mean_market_p": 0.4361,
+   "n": 369,
+   "roi_pct": 5.7,
+   "units": 20.96,
+   "wins": 174,
+   "z_vs_market": 1.39
+  },
+  "6-8": {
+   "expected_units_at_market": -2.47,
+   "hit": 0.3719,
+   "hit_ci95": [
+    0.318,
+    0.429
+   ],
+   "hit_minus_market": -0.0357,
+   "losses": 179,
+   "mean_breakeven": 0.4115,
+   "mean_market_p": 0.4076,
+   "n": 285,
+   "roi_pct": -9.6,
+   "units": -27.29,
+   "wins": 106,
+   "z_vs_market": -1.24
+  },
+  "8-10": {
+   "expected_units_at_market": -1.21,
+   "hit": 0.398,
+   "hit_ci95": [
+    0.333,
+    0.467
+   ],
+   "hit_minus_market": 0.003,
+   "losses": 121,
+   "mean_breakeven": 0.3978,
+   "mean_market_p": 0.395,
+   "n": 201,
+   "roi_pct": -0.4,
+   "units": -0.78,
+   "wins": 80,
+   "z_vs_market": 0.09
+  },
+  "<0": {
+   "expected_units_at_market": -31.78,
+   "hit": 0.5632,
+   "hit_ci95": [
+    0.542,
+    0.585
+   ],
+   "hit_minus_market": 0.0046,
+   "losses": 888,
+   "mean_breakeven": 0.5678,
+   "mean_market_p": 0.5586,
+   "n": 2033,
+   "roi_pct": -0.9,
+   "units": -17.77,
+   "wins": 1145,
+   "z_vs_market": 0.42
+  },
+  ">10": {
+   "expected_units_at_market": -1.2,
+   "hit": 0.3523,
+   "hit_ci95": [
+    0.288,
+    0.422
+   ],
+   "hit_minus_market": -0.0193,
+   "losses": 125,
+   "mean_breakeven": 0.3741,
+   "mean_market_p": 0.3716,
+   "n": 193,
+   "roi_pct": -6.2,
+   "units": -12.06,
+   "wins": 68,
+   "z_vs_market": -0.56
+  }
+ },
+ "by_v2_class_both_sides_books_ge_6": {
+  "close_call": {
+   "expected_units_at_market": -29.01,
+   "hit": 0.4995,
+   "hit_ci95": [
+    0.478,
+    0.521
+   ],
+   "hit_minus_market": 0.0059,
+   "losses": 1030,
+   "mean_breakeven": 0.5008,
+   "mean_market_p": 0.4936,
+   "n": 2058,
+   "roi_pct": 0.2,
+   "units": 4.12,
+   "wins": 1028,
+   "z_vs_market": 0.54
+  },
+  "hard_fail": {
+   "expected_units_at_market": -15.05,
+   "hit": 0.5282,
+   "hit_ci95": [
+    0.504,
+    0.553
+   ],
+   "hit_minus_market": -0.0025,
+   "losses": 744,
+   "mean_breakeven": 0.5378,
+   "mean_market_p": 0.5307,
+   "n": 1577,
+   "roi_pct": -2.5,
+   "units": -38.92,
+   "wins": 833,
+   "z_vs_market": -0.21
+  },
+  "pick_eligible": {
+   "expected_units_at_market": -4.75,
+   "hit": 0.3972,
+   "hit_ci95": [
+    0.352,
+    0.445
+   ],
+   "hit_minus_market": -0.0196,
+   "losses": 255,
+   "mean_breakeven": 0.4216,
+   "mean_market_p": 0.4167,
+   "n": 423,
+   "roi_pct": -6.7,
+   "units": -28.37,
+   "wins": 168,
+   "z_vs_market": -0.82
+  }
+ },
+ "by_v2_class_favourite_side_books_ge_6": {
+  "close_call": {
+   "expected_units_at_market": -15.67,
+   "hit": 0.5499,
+   "hit_ci95": [
+    0.519,
+    0.581
+   ],
+   "hit_minus_market": -0.0046,
+   "losses": 437,
+   "mean_breakeven": 0.5637,
+   "mean_market_p": 0.5545,
+   "n": 971,
+   "roi_pct": -2.2,
+   "units": -21.71,
+   "wins": 534,
+   "z_vs_market": -0.29
+  },
+  "hard_fail": {
+   "expected_units_at_market": -14.07,
+   "hit": 0.6085,
+   "hit_ci95": [
+    0.578,
+    0.638
+   ],
+   "hit_minus_market": 0.0087,
+   "losses": 397,
+   "mean_breakeven": 0.6102,
+   "mean_market_p": 0.5998,
+   "n": 1014,
+   "roi_pct": -0.6,
+   "units": -6.19,
+   "wins": 617,
+   "z_vs_market": 0.57
+  },
+  "pick_eligible": {
+   "expected_units_at_market": -0.67,
+   "hit": 0.5682,
+   "hit_ci95": [
+    0.422,
+    0.703
+   ],
+   "hit_minus_market": 0.0359,
+   "losses": 19,
+   "mean_breakeven": 0.5406,
+   "mean_market_p": 0.5323,
+   "n": 44,
+   "roi_pct": 5.0,
+   "units": 2.2,
+   "wins": 25,
+   "z_vs_market": 0.48
+  }
+ },
+ "corr_our_market_home_side": 0.7449,
+ "favourite_side_hit_by_mm": {
+  "0-2": {
+   "expected_units_at_market": -3.53,
+   "hit": 0.5087,
+   "hit_ci95": [
+    0.444,
+    0.573
+   ],
+   "hit_minus_market": -0.0382,
+   "losses": 113,
+   "mean_breakeven": 0.5554,
+   "mean_market_p": 0.5469,
+   "n": 230,
+   "roi_pct": -8.6,
+   "units": -19.67,
+   "wins": 117,
+   "z_vs_market": -1.17
+  },
+  "2-4": {
+   "expected_units_at_market": -1.8,
+   "hit": 0.5299,
+   "hit_ci95": [
+    0.44,
+    0.618
+   ],
+   "hit_minus_market": -0.0048,
+   "losses": 55,
+   "mean_breakeven": 0.5431,
+   "mean_market_p": 0.5347,
+   "n": 117,
+   "roi_pct": -2.9,
+   "units": -3.38,
+   "wins": 62,
+   "z_vs_market": -0.1
+  },
+  "4-6": {
+   "expected_units_at_market": 2.46,
+   "hit": 0.629,
+   "hit_ci95": [
+    0.505,
+    0.738
+   ],
+   "hit_minus_market": 0.0959,
+   "losses": 23,
+   "mean_breakeven": 0.5342,
+   "mean_market_p": 0.5331,
+   "n": 62,
+   "roi_pct": 16.0,
+   "units": 9.91,
+   "wins": 39,
+   "z_vs_market": 1.52
+  },
+  "6-8": {
+   "expected_units_at_market": -0.41,
+   "hit": 0.5833,
+   "hit_ci95": [
+    0.388,
+    0.755
+   ],
+   "hit_minus_market": 0.0433,
+   "losses": 10,
+   "mean_breakeven": 0.5495,
+   "mean_market_p": 0.54,
+   "n": 24,
+   "roi_pct": 6.9,
+   "units": 1.67,
+   "wins": 14,
+   "z_vs_market": 0.43
+  },
+  "8-10": {
+   "expected_units_at_market": -0.2,
+   "hit": 0.5,
+   "hit_ci95": [
+    0.28,
+    0.72
+   ],
+   "hit_minus_market": -0.022,
+   "losses": 8,
+   "mean_breakeven": 0.5288,
+   "mean_market_p": 0.522,
+   "n": 16,
+   "roi_pct": -5.1,
+   "units": -0.82,
+   "wins": 8,
+   "z_vs_market": -0.18
+  },
+  "<0": {
+   "expected_units_at_market": -26.99,
+   "hit": 0.5914,
+   "hit_ci95": [
+    0.567,
+    0.615
+   ],
+   "hit_minus_market": 0.0044,
+   "losses": 646,
+   "mean_breakeven": 0.5973,
+   "mean_market_p": 0.587,
+   "n": 1581,
+   "roi_pct": -1.0,
+   "units": -16.29,
+   "wins": 935,
+   "z_vs_market": 0.36
+  },
+  ">10": {
+   "expected_units_at_market": -0.06,
+   "hit": 0.6667,
+   "hit_ci95": [
+    0.208,
+    0.939
+   ],
+   "hit_minus_market": 0.1546,
+   "losses": 1,
+   "mean_breakeven": 0.5229,
+   "mean_market_p": 0.5121,
+   "n": 3,
+   "roi_pct": 27.7,
+   "units": 0.83,
+   "wins": 2,
+   "z_vs_market": 0.54
+  }
+ },
+ "home_fav_vs_away_fav": {
+  "away_fav": {
+   "expected_units_at_market": -8.43,
+   "hit": 0.566,
+   "hit_ci95": [
+    0.53,
+    0.601
+   ],
+   "hit_minus_market": 0.0027,
+   "losses": 322,
+   "mean_breakeven": 0.572,
+   "mean_market_p": 0.5633,
+   "n": 742,
+   "roi_pct": -1.2,
+   "units": -8.64,
+   "wins": 420,
+   "z_vs_market": 0.15
+  },
+  "home_fav": {
+   "expected_units_at_market": -22.11,
+   "hit": 0.5864,
+   "hit_ci95": [
+    0.559,
+    0.613
+   ],
+   "hit_minus_market": 0.0022,
+   "losses": 534,
+   "mean_breakeven": 0.5946,
+   "mean_market_p": 0.5842,
+   "n": 1291,
+   "roi_pct": -1.5,
+   "units": -19.12,
+   "wins": 757,
+   "z_vs_market": 0.16
+  }
+ },
+ "log_loss_home_side": {
+  "best_blend_logloss": 0.67252,
+  "best_blend_weight_on_ours_grid": 0.0,
+  "market": 0.67252,
+  "n": 2033,
+  "ours": 0.68031,
+  "ours_minus_market": 0.00779
+ },
+ "n_events_with_pregame_odds": 2472,
+ "n_games_modelled": 2194,
+ "n_sides": 4066,
+ "shrinkage_books_ge_6": {
+  "days": 165,
+  "intercept": 0.0,
+  "k_ci95": [
+   -0.3239,
+   0.2882
+  ],
+  "k_through_origin": -0.0115,
+  "mean_gap": -0.0,
+  "mean_realised_minus_market": 0.0,
+  "n": 4058,
+  "slope": -0.0115,
+  "slope_ci95": [
+   -0.3239,
+   0.2882
+  ]
+ },
+ "shrinkage_both_sides": {
+  "days": 165,
+  "intercept": 0.0,
+  "k_ci95": [
+   -0.3236,
+   0.2909
+  ],
+  "k_through_origin": -0.0108,
+  "mean_gap": -0.0,
+  "mean_realised_minus_market": 0.0,
+  "n": 4066,
+  "slope": -0.0108,
+  "slope_ci95": [
+   -0.3236,
+   0.2909
+  ]
+ },
+ "shrinkage_favourite_side": {
+  "days": 165,
+  "intercept": 0.0031,
+  "k_ci95": [
+   -0.3236,
+   0.2909
+  ],
+  "k_through_origin": -0.0108,
+  "mean_gap": -0.0368,
+  "mean_realised_minus_market": 0.0024,
+  "n": 2033,
+  "slope": 0.0201,
+  "slope_ci95": [
+   -0.3496,
+   0.3853
+  ]
+ },
+ "training_table_skipped": {
+  "error": 0,
+  "no_label": 0,
+  "not_training_game_type": 84,
+  "out_of_range": 2663,
+  "pitcher_unknown": 0,
+  "thin_sample": 0
+ },
+ "unmatched_events": 439,
+ "v2_pick_eligible_by_price_class": {
+  "MAIN": {
+   "expected_units_at_market": -0.67,
+   "hit": 0.5682,
+   "hit_ci95": [
+    0.422,
+    0.703
+   ],
+   "hit_minus_market": 0.0359,
+   "losses": 19,
+   "mean_breakeven": 0.5406,
+   "mean_market_p": 0.5323,
+   "n": 44,
+   "roi_pct": 5.0,
+   "units": 2.2,
+   "wins": 25,
+   "z_vs_market": 0.48
+  },
+  "PLUS_MONEY": {
+   "expected_units_at_market": -4.08,
+   "hit": 0.3773,
+   "hit_ci95": [
+    0.33,
+    0.427
+   ],
+   "hit_minus_market": -0.026,
+   "losses": 236,
+   "mean_breakeven": 0.4077,
+   "mean_market_p": 0.4033,
+   "n": 379,
+   "roi_pct": -8.1,
+   "units": -30.57,
+   "wins": 143,
+   "z_vs_market": -1.04
+  }
+ }
+}
