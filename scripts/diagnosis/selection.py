@@ -537,7 +537,10 @@ def build_replay():
             runs[row["date"]].append(row)
     os.makedirs(OUT_DIR, exist_ok=True)
     n_out = 0
-    with gzip.open(REPLAY_CACHE, "wt", encoding="utf-8") as fh:
+    import io
+    # mtime=0 so a rebuild from the same stores is byte-identical.
+    with io.TextIOWrapper(gzip.GzipFile(REPLAY_CACHE, mode="wb", mtime=0),
+                          encoding="utf-8") as fh:
         # (A) the card-run pool: every candidate at every publish run.
         for date in graded_dates:
             for run_no, row in enumerate(runs[date], start=1):
