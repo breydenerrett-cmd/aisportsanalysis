@@ -21,8 +21,9 @@ unselected forward pool (6,818 priced contracts), the model is close to calibrat
 lambda = -0.20 [-0.43, +0.05] (X5). The direction is up, on Overs, and it comes from three
 places: (1) selecting the model's largest disagreements with a market that knows more,
 about 4 of the 8 points; (2) total bases over 0.5 priced without the within-game correlation
-correction that the identical hits-over-0.5 event gets, +3.0 points on every such contract,
-in every season measured; (3) no opposing-pitcher term and no postseason adjustment, which
+correction that the identical hits-over-0.5 event gets, +2.95 points on average on the same
+player-games, with TB 0.5 2.7 to 3.9 points too high in every season measured; (3) no
+opposing-pitcher term and no postseason adjustment, which
 leaves the October pool 6 to 11 points too high.
 
 ## How this was measured
