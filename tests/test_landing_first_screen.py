@@ -100,7 +100,7 @@ class TheFirstScreenReadsInOrder(unittest.TestCase):
         subs = block.split('data-hook="hero-wyg-subscribers"')[1]
         self.assertIn("The full graded record", free)
         self.assertIn("MLB postseason odds", free)
-        self.assertIn("The daily MLB brief, before the game", subs)
+        self.assertIn("A brief for every game we cover, before it starts", subs)
         self.assertNotIn("Tonight's card", subs)
         self.assertIn("Matchups, odds and props", subs)
         self.assertEqual(block.count("<li"), 4)

@@ -125,6 +125,11 @@
       <a class="hero__record-link" href="why-we-paused.html" data-hook="hero-why-paused-link">Why we paused, in plain words &rarr;</a>
       <a class="hero__record-link" href="index.html#/record-card" data-hook="hero-record-link">Open the full record, every pick &rarr;</a>
       <a class="hero__record-link" href="sample.html" data-hook="hero-sample-link">Read a sample brief, free &rarr;</a>
+      <!-- WHICH SPORTS ARE LIVE TODAY: one sentence, filled from web/js/dom.js's
+           SPORTS_LIVE_TODAY by landing.js. The text here is the same sentence, so a
+           visitor with no script reads it too; tests/test_live_sports_sentence.py
+           fails if the two differ. -->
+      <p class="hero__cta-note" data-hook="sports-live-today">Live now: MLB postseason briefs and a weekly NFL card.</p>
     </div>
 
     <!-- WHAT YOU GET, IN FOUR LINES (change 3). Directly under the buttons and
@@ -142,7 +147,7 @@
       <div class="hero__wyg-col" data-hook="hero-wyg-subscribers">
         <p class="hero__wyg-head">For subscribers</p>
         <ul class="hero__wyg-list">
-          <li>The daily MLB brief, before the game</li>
+          <li>A brief for every game we cover, before it starts</li>
           <li>Matchups, odds and props</li>
         </ul>
       </div>
@@ -316,7 +321,7 @@
     <div class="story-card panel chamfer" data-rise data-delay="120" data-hook="wyg-subscribers">
       <div class="story-card__kicker">Subscribers</div>
       <ul class="pricing-card__list wyg-list">
-        <li data-hook="wyg-sub-card"><span class="wyg-name">The daily MLB brief, and the NFL card.</span> The brief calls each market take or pass, with the strongest case against any bet it takes, written before the game. The NFL card, with its prices, is written to the public ledger before the game and sits on its own page. MLB value picks are paused, as the top of this page says, and UFC picks are paused while we build real fight analysis.</li>
+        <li data-hook="wyg-sub-card"><span class="wyg-name">A brief for every game we cover, and the NFL card.</span> The brief calls each market take or pass, with the strongest case against any bet it takes, written before it starts. The NFL card, with its prices, is written to the public ledger before the game and sits on its own page. MLB value picks are paused, as the top of this page says, and UFC picks are paused while we build real fight analysis.</li>
         <li data-hook="wyg-sub-matchups"><span class="wyg-name">Matchups.</span> Every game on the slate, in depth.</li>
         <li data-hook="wyg-sub-odds"><span class="wyg-name">Odds.</span> Each tracked book's price for a game, side by side.</li>
         <li data-hook="wyg-sub-props"><span class="wyg-name">Props.</span> Player props priced for the night, ordered by how likely each one is.</li>
@@ -400,7 +405,7 @@
       <ul class="pricing-card__list">
         <li data-hook="pricing-cancel-line" hidden>Cancel anytime, no retention flow — access runs through what you've paid for</li>
         <li>One monthly plan today, no countdown, no percent-off badge</li>
-        <li data-hook="pricing-includes">The daily MLB brief and the NFL card before the game, plus Matchups, Odds, Props and the Tennis research board. The graded record stays free</li>
+        <li data-hook="pricing-includes">A brief for every game we cover and the NFL card before the game, plus Matchups, Odds, Props and the Tennis research board. The graded record stays free</li>
       </ul>
       <a class="btn btn--primary" href="index.html#/signup" data-hook="cta-signup" data-checkout-cta>Request early access</a>
     </div>
@@ -671,7 +676,7 @@
     </details>
     <details class="faq-item panel chamfer" data-hook="faq-sports-covered">
       <summary>Which sports do you cover?</summary>
-      <p class="faq-item__body">MLB has a daily written brief; MLB value picks are paused as of Oct 16, 2026, and
+      <p class="faq-item__body">MLB briefs are written for every game we cover; MLB value picks are paused as of Oct 16, 2026, and
         the picks already made stay on the record. NFL carries live picks, published before the game and graded
         automatically the next morning. UFC picks are paused while we build real fight analysis; the UFC picks already made
         are graded once results are entered by hand and stay on the record. Tennis is research only: a match

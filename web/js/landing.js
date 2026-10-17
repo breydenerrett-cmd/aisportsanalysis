@@ -16,7 +16,7 @@
  */
 
 import { apiGet, trackFunnelEvent } from "./api.js";
-import { el, clear } from "./dom.js";
+import { el, clear, SPORTS_LIVE_TODAY } from "./dom.js";
 import {
   FILL_TAG, POSTSEASON_TAG_SAMPLE, dayEntries, entryRow, isHeavyFavourite, tallyText,
 } from "./entrytext.js";
@@ -85,6 +85,13 @@ export function applyCheckoutCopy(state) {
   if (cancelLine) cancelLine.hidden = !state.on;
   const pricingHost = document.querySelector("[data-hook='pricing-host']");
   if (pricingHost) renderPricing(pricingHost, state);
+}
+
+/** The one sentence about which sports are live today (dom.js is its only source). */
+function fillLiveSports() {
+  document.querySelectorAll("[data-hook='sports-live-today']").forEach((node) => {
+    node.textContent = SPORTS_LIVE_TODAY;
+  });
 }
 
 async function fillCheckoutCopy() {
@@ -912,6 +919,7 @@ function boot() {
   if (disclaimerHost) renderDisclaimerFooter(disclaimerHost);
   if (pricingHost) renderPricing(pricingHost, NOT_ON);
   fillCheckoutCopy();
+  fillLiveSports();
   revealPublicDemoEntry();
   fillResearchCounts();
   fillCardRecord();

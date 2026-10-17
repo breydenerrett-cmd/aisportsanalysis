@@ -332,16 +332,16 @@ class TheAnalystRendersUnderNode(unittest.TestCase):
                    {"item": "bullpen", "kind": "absent", "reason": "no reliever appearances recorded"}]
         out = self.render("section", view([call("moneyline", "TAKE", "moneyline")], missing=missing))
         self.assertIn("What the analysis could not use", out["text"])
-        self.assertIn("Lineup not posted yet.", out["text"])
-        self.assertIn("No reliever appearances recorded.", out["text"])
+        self.assertIn("Lineups: not available.", out["text"])
+        self.assertIn("Bullpen usage: not available.", out["text"])
         self.assertLess(out["hooks"].index("analyst-call"), out["hooks"].index("analyst-missing"))
         self.assertNotIn("analyst-missing-more", out["hooks"])
 
     def test_a_long_missing_list_is_capped_with_a_count(self):
         missing = [{"item": f"x{i}", "kind": "absent", "reason": f"input {i} is absent"} for i in range(9)]
         out = self.render("section", view([call("moneyline", "TAKE", "moneyline")], missing=missing))
-        self.assertIn("Input 5 is absent.", out["text"])
-        self.assertNotIn("Input 6 is absent.", out["text"])
+        self.assertIn("X5: not available.", out["text"])
+        self.assertNotIn("X6: not available.", out["text"])
         self.assertIn("And 3 more items not listed here.", out["text"])
 
     def test_an_empty_list_says_nothing_was_missing_and_an_unread_one_says_nothing_at_all(self):

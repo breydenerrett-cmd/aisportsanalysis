@@ -33,12 +33,12 @@
 
 import { apiGet } from "./api.js";
 import { trackPublicPageView } from "./pageview.js";
-import { el, formatEasternClock } from "./dom.js";
+import { el, formatEasternClock, SPORTS_LIVE_TODAY } from "./dom.js";
 import { renderAnalystSection } from "./analyst.js";
 import { renderDisclaimerFooter } from "./meta.js";
 
 export const OFFER_LINE =
-  "MLB postseason briefs are posted before first pitch. The first 20 testers are hand-picked: "
+  "A brief for every game we cover, posted before it starts. The first 20 testers are hand-picked: "
   + "7 days free, no card. Not on sale yet; planned price $19.99 a month. Analysis, not advice.";
 
 /** The `page` label of this page's public_page_view (api/funnel.py PAGE_LABEL_RE). */
@@ -59,6 +59,8 @@ function facts(data) {
   const starts = formatEasternClock(data.first_pitch_utc);
   if (frozen) list.appendChild(el("li", { "data-hook": "sample-frozen", text: `Frozen at ${frozen}, before the game.` }));
   if (starts) list.appendChild(el("li", { "data-hook": "sample-first-pitch", text: `First pitch ${starts}.` }));
+  list.appendChild(el("li", { "data-hook": "sample-rounding",
+    text: "Numbers are rounded for reading. Hold the pointer over a dotted figure to see the exact one published." }));
   const a = data.analysis || {};
   if (a.graded) {
     const final = a.final;
@@ -91,7 +93,7 @@ export function renderSample(data) {
     const a = data.analysis;
     if (a.away && a.home) {
       page.appendChild(el("h2", { class: "sp-matchup", "data-hook": "sample-matchup",
-        text: `${a.away} at ${a.home}${a.date ? `, ${a.date}` : ""} (MLB postseason)` }));
+        text: `${a.away} at ${a.home}${a.date ? `, ${a.date}` : ""}` }));
     }
     page.appendChild(facts(data));
     page.appendChild(renderAnalystSection(data));
@@ -101,6 +103,7 @@ export function renderSample(data) {
   }
   page.appendChild(links());
   page.appendChild(el("p", { class: "sp-offer", "data-hook": "sample-offer", text: OFFER_LINE }));
+  page.appendChild(el("p", { class: "sp-live", "data-hook": "sample-live-today", text: SPORTS_LIVE_TODAY }));
   return page;
 }
 

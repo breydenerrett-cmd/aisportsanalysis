@@ -383,7 +383,7 @@ class StaticChecks(unittest.TestCase):
     def test_the_offer_is_one_line_with_the_terms_the_owner_set(self):
         m = re.search(r'OFFER_LINE =\s*"([^"]+)"\s*\+\s*"([^"]+)"', SAMPLE_JS)
         line = m.group(1) + m.group(2)
-        for phrase in ("MLB postseason briefs", "posted before first pitch", "7 days free",
+        for phrase in ("A brief for every game we cover", "posted before it starts", "7 days free",
                        "first 20 testers", "hand-picked", "no card", "Not on sale yet",
                        "planned price $19.99 a month", "Analysis, not advice."):
             self.assertIn(phrase, line)
@@ -453,7 +453,7 @@ class ThePageUnderNode(unittest.TestCase):
         self.assertIn("The case against", out["text"])
         self.assertIn("The home starter has the lower ERA.", out["text"])
         self.assertIn("What the analysis could not use", out["text"])
-        self.assertIn("Lineup not posted yet.", out["text"])
+        self.assertIn("Lineups: not available.", out["text"])
 
     def test_it_links_the_record_the_landing_page_and_signup_with_plain_addresses(self):
         out = self.render(brief())

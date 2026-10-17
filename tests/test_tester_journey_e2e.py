@@ -239,7 +239,10 @@ class SampleSignedOut(_Journey):
         for fact in ("7 days", "no card", "$19.99"):
             self.assertIn(fact, offer)
             self.assertIn(fact, hero)
-        self.assertIn("MLB postseason", offer)
+        # Which sports are live comes from one constant (web/js/dom.js SPORTS_LIVE_TODAY), not
+        # from the offer line, so the line cannot go false when the season ends.
+        self.assertNotIn("postseason", offer)
+        self.assertIn("A brief for every game we cover", offer)
         self.assertIn("Analysis, not advice", offer)
 
     def test_the_sample_offer_line_says_it_is_not_on_sale_and_hand_picked(self):

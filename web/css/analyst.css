@@ -54,6 +54,11 @@
 .an-call__pass-price, .an-call__change {
   margin: var(--sp-3) 0 0; font-size: 13.5px; line-height: 1.5; color: var(--v-t5);
 }
+.an-call__estimate { font-family: var(--font-mono); font-size: 13.5px; color: var(--v-t4); }
+.an-num { text-decoration: underline dotted; text-underline-offset: 3px; cursor: help; }
+.an-call__head .an-call__result--badge {
+  margin: 0 0 0 auto; padding: 2px 10px; border: 1px solid var(--v-edge); border-radius: 999px;
+}
 .an-call__result {
   margin: var(--sp-4) 0 0;
   font-family: var(--font-display); font-weight: 800; font-size: 13px;

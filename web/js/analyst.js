@@ -46,6 +46,7 @@
 import { apiGet } from "./api.js";
 import { el, formatAmerican, formatEasternClock } from "./dom.js";
 import { bookLabel } from "./labels.js";
+import { proseNodes } from "./numfmt.js";
 
 export const ANALYST_LABEL =
   "Written by an AI model from the data on this page. Unproven. Analysis, not advice.";
@@ -116,9 +117,10 @@ function unverified(call) {
 /** One reason as a list item: its claim, then (when the checker verified a calculation behind a number
  * in it) a small sentence per calculation saying where the number came from. */
 function reasonItem(reason) {
-  const li = el("li", { text: reason.claim });
+  // Words as published; long numbers shortened for reading, exact value on hover (numfmt.js).
+  const li = el("li", {}, proseNodes(reason.claim));
   for (const sentence of reason.derivations || []) {
-    if (sentence) li.appendChild(el("small", { class: "an-derived", "data-hook": "analyst-derivation", text: sentence }));
+    if (sentence) li.appendChild(el("small", { class: "an-derived", "data-hook": "analyst-derivation" }, proseNodes(sentence)));
   }
   return li;
 }
@@ -133,11 +135,11 @@ function reasonList(call) {
 
 function resultLine(call) {
   if (call.result && RESULT_WORDS[call.result]) {
-    return el("p", { class: `an-call__result an-call__result--${call.result.toLowerCase()}`,
+    return el("p", { class: `an-call__result an-call__result--badge an-call__result--${call.result.toLowerCase()}`,
       "data-hook": "analyst-result", text: RESULT_WORDS[call.result] });
   }
   if (call.verdict === "PASS" && call.would_have && WOULD_HAVE_WORDS[call.would_have.result]) {
-    return el("p", { class: "an-call__result an-call__result--pass", "data-hook": "analyst-result",
+    return el("p", { class: "an-call__result an-call__result--badge an-call__result--pass", "data-hook": "analyst-result",
       text: WOULD_HAVE_WORDS[call.would_have.result] });
   }
   return null;
@@ -154,29 +156,65 @@ function caseAgainst(call) {
   return block;
 }
 
+/** What the price needs to break even, as a whole percent (the chance an American price implies,
+ * vig included): plain arithmetic on the price the call already carries. Null for no price. */
+export function breakEvenPercent(price) {
+  const n = Number(price);
+  if (price === null || price === undefined || !Number.isFinite(n) || n === 0) return null;
+  const implied = n < 0 ? -n / (-n + 100) : 100 / (n + 100);
+  return `${Math.round(implied * 100)}%`;
+}
+
+/** "Moneyline", "Run line"... lower-cased for a sentence; null for a family this page has no word for. */
+function marketWord(call) {
+  const word = FAMILY_LABEL[call.family || call.market];
+  return word && (call.family || call.market) !== "prop" ? word.toLowerCase() : null;
+}
+
+/** The call, first: "Take MIL moneyline -128 at Lowvig". */
+function callHeadline(call) {
+  if (call.title) return `${call.title}: ${call.selection || ""}`;
+  const market = marketWord(call);
+  return [call.selection || "", market].filter(Boolean).join(" ");
+}
+
 export function callNode(call) {
   const node = el("article", {
     class: `an-call an-call--${String(call.verdict || "").toLowerCase()}`,
     "data-hook": "analyst-call", "data-verdict": call.verdict || "",
     "data-slot": call.slot_id || "",
   });
+  // THE CALL FIRST, THE RESULT BESIDE IT: verdict, the thing called, its price, then
+  // "analyst 58% vs price needs 56%" when both numbers exist, and the result badge at the end
+  // of the same row. The comparison is the analyst's own number against what the price needs to
+  // break even; the books' de-vigged number is not shown here because the call does not say
+  // which of the market's two sides it belongs to.
   const head = el("div", { class: "an-call__head" });
   head.appendChild(el("span", { class: "an-call__verdict", "data-hook": "analyst-verdict",
     text: verdictWord(call.verdict) }));
-  head.appendChild(el("span", { class: "an-call__what",
-    text: `${call.title ? call.title + ": " : ""}${call.selection || ""}` }));
+  head.appendChild(el("span", { class: "an-call__what", text: callHeadline(call) }));
+  head.appendChild(el("span", { class: "an-call__price", "data-hook": "analyst-price",
+    text: priceText(call) }));
+  const est = percentText(call.fair_estimate);
+  const needs = breakEvenPercent(call.price);
+  if (est && needs) {
+    head.appendChild(el("span", { class: "an-call__estimate", "data-hook": "analyst-estimate",
+      title: `The analyst's own number ${call.fair_estimate}; the price breaks even at ${needs}`,
+      text: `analyst ${est} vs price needs ${needs}` }));
+  } else if (est) {
+    head.appendChild(el("span", { class: "an-call__estimate", "data-hook": "analyst-estimate",
+      text: `analyst ${est}` }));
+  }
+  const result = resultLine(call);
+  if (result) head.appendChild(result);
   node.appendChild(head);
 
-  const facts = el("div", { class: "an-call__facts" });
-  facts.appendChild(el("span", { class: "an-call__price", "data-hook": "analyst-price",
-    text: priceText(call) }));
   if (call.confidence) {
+    const facts = el("div", { class: "an-call__facts" });
     facts.appendChild(el("span", { class: "an-call__confidence", "data-hook": "analyst-confidence",
       text: `${call.confidence} confidence` }));
+    node.appendChild(facts);
   }
-  const est = percentText(call.fair_estimate);
-  if (est) facts.appendChild(el("span", { class: "an-call__estimate", text: `Analyst number ${est}` }));
-  node.appendChild(facts);
 
   node.appendChild(reasonList(call));
   const against = caseAgainst(call);
@@ -188,10 +226,9 @@ export function callNode(call) {
       text: `${when} ${formatAmerican(call.pass_price)}` }));
   }
   if (call.what_would_change_it && !unverified(call)) {
-    node.appendChild(el("p", { class: "an-call__change", text: `What would change it: ${call.what_would_change_it}` }));
+    node.appendChild(el("p", { class: "an-call__change" },
+      ["What would change it: ", ...proseNodes(call.what_would_change_it)]));
   }
-  const result = resultLine(call);
-  if (result) node.appendChild(result);
   return node;
 }
 
@@ -217,6 +254,31 @@ function asSentence(text) {
   return /[.]$/.test(s) ? s : `${s}.`;
 }
 
+/* The packet's `item` names, in the words a reader uses; a name not listed is made readable
+ * mechanically (underscores to spaces), never dropped. */
+const MISSING_ITEM_WORDS = {
+  lineups: "Lineups", standings: "Standings", team_totals: "Team totals", props: "Player props",
+  prop_prices: "Player prop prices", bullpen: "Bullpen usage", matchup_depth: "Hitter-versus-pitcher detail",
+  matchup_history: "Matchup history", travel: "Travel", starters: "Starting pitcher numbers",
+  teams: "Team numbers", weather: "Weather", park: "Ballpark", splits: "Splits", news: "Injury and roster news",
+  moneyline: "Moneyline prices", run_line: "Run line prices", total: "Game total prices",
+};
+const MISSING_KIND_WORDS = {
+  absent: "not available", thin: "too little to go on", stale: "out of date",
+};
+
+/** One missing item as a short plain line: "Standings: not available." The server's own words
+ * for it ride along on `title`, unchanged. */
+export function missingLine(m) {
+  const raw = String((m && m.item) || "");
+  const [base, side] = raw.split(".");
+  const kind = MISSING_KIND_WORDS[m && m.kind];
+  if (!base || !kind) return { text: asSentence(m && m.reason), title: null };
+  const name = MISSING_ITEM_WORDS[base] || (base.charAt(0).toUpperCase() + base.slice(1).replace(/_/g, " "));
+  const where = side === "home" || side === "away" ? ` (${side})` : "";
+  return { text: `${name}${where}: ${kind}.`, title: String((m && m.reason) || "") || null };
+}
+
 /** The packet's own list of inputs the analysis could not use. `missing` null means the server
  * could not read the list: nothing is said, rather than "nothing was missing". */
 export function missingBlock(missing) {
@@ -229,8 +291,8 @@ export function missingBlock(missing) {
   }
   const list = el("ul", { class: "an-missing__list" });
   for (const m of missing.slice(0, MISSING_SHOWN)) {
-    const text = asSentence(m && m.reason);
-    if (text) list.appendChild(el("li", { text }));
+    const line = missingLine(m);
+    if (line.text) list.appendChild(el("li", line.title ? { title: line.title, text: line.text } : { text: line.text }));
   }
   block.appendChild(list);
   const more = missing.length - MISSING_SHOWN;
@@ -258,10 +320,10 @@ export function renderAnalystSection(data) {
 
   if (analysis.summary_status === "ok" && analysis.summary) {
     for (const para of String(analysis.summary).split(/\n{2,}/)) {
-      if (para.trim()) host.appendChild(el("p", { class: "an-summary", "data-hook": "analyst-summary", text: para.trim() }));
+      if (para.trim()) host.appendChild(el("p", { class: "an-summary", "data-hook": "analyst-summary" }, proseNodes(para.trim())));
     }
     for (const sentence of analysis.summary_derivations || []) {
-      if (sentence) host.appendChild(el("p", { class: "an-derived an-derived--summary", "data-hook": "analyst-derivation", text: sentence }));
+      if (sentence) host.appendChild(el("p", { class: "an-derived an-derived--summary", "data-hook": "analyst-derivation" }, proseNodes(sentence)));
     }
   } else {
     host.appendChild(el("p", { class: "an-summary an-summary--withheld", "data-hook": "analyst-summary",

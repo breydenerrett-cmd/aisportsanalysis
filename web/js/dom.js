@@ -1,4 +1,17 @@
 /**
+ * WHICH SPORTS ARE LIVE TODAY, IN ONE SENTENCE, FROM ONE PLACE (2026-10-17).
+ *
+ * The landing page and the sample page both said "MLB postseason briefs" / "the
+ * daily MLB brief" in prose, and the MLB season ends in about two weeks, so each
+ * would have gone false on its own date, in more than one file. They now say
+ * "a brief for every game we cover, posted before it starts" (true all year) and
+ * take the one sentence about what is live from this constant. When the season
+ * ends, change this line; tests/test_live_sports_sentence.py fails if any page
+ * carries a second copy that differs.
+ */
+export const SPORTS_LIVE_TODAY = "Live now: MLB postseason briefs and a weekly NFL card.";
+
+/**
  * Minimal DOM-construction and generic-JSON-rendering helpers shared by
  * every view module.
  *
