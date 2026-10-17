@@ -498,5 +498,82 @@ class MoneylineFillsLockOnTheBoardAtLock(LedgerCase):
         self.assertNotIn("lock_price_basis", row["fills"][0])
 
 
+# ---------------------------------------------------------------------------
+# Patch 5: withdrawn_label.patch
+# ---------------------------------------------------------------------------
+
+class WithdrawnPicksAreReportedAndLabelled(LedgerCase):
+    """A withdrawn pick was shown to readers and is graded. `settle_v2` sums
+    it into the per-day totals (97-81 on the 178 entries) while `record_v2`
+    leaves it out of every figure (86-75) and reported only a COUNT (19), so
+    one ledger said two records with no label (loss diagnosis 02 section 0)."""
+
+    def _day_with_one_kept_and_one_withdrawn(self):
+        fp = "2026-09-20T23:00:00Z"
+        kept = game_entry(game_pk=1, price=-140, first_pitch_utc=fp,
+                          observed_utc="2026-09-20T10:00:00Z")
+        gone = game_entry(game_pk=2, price=-140, first_pitch_utc=fp,
+                          observed_utc="2026-09-20T10:00:00Z")
+        cl.publish_v2(select_result(picks=[kept, gone]), now="2026-09-20T10:00:00Z",
+                      path=self.path)
+        # the 11:00Z read still passes game 1 and now fails game 2: withdrawn
+        k2 = game_entry(game_pk=1, price=-140, first_pitch_utc=fp,
+                        observed_utc="2026-09-20T11:00:00Z")
+        g2 = game_entry(game_pk=2, price=-140, first_pitch_utc=fp,
+                        observed_utc="2026-09-20T11:00:00Z", failed_gates=["G7_VALUE"])
+        row = cl.publish_v2(select_result(picks=[k2, g2]), now="2026-09-20T11:00:00Z",
+                            path=self.path)
+        self.assertEqual(1, len(row["withdrawn"]))
+        # game 1 LOSES (home 0), the withdrawn game 2 WINS (home 5)
+        cl.settle_v2("2026-09-20", {1: result_row(1, 0), 2: result_row(1, 5)},
+                     path=self.path)
+
+    @pending("withdrawn")
+    def test_record_v2_reports_how_the_withdrawn_picks_graded(self):
+        self._day_with_one_kept_and_one_withdrawn()
+        rec = cl.record_v2(path=self.path)
+        wg = rec["withdrawn_graded"]
+        self.assertEqual((1, 0, 1), (wg["wins"], wg["losses"], wg["n_staked"]))
+        self.assertAlmostEqual(0.7143, wg["profit_units"], places=4)
+
+    @pending("withdrawn")
+    def test_the_withdrawn_pick_is_in_none_of_the_headline_figures(self):
+        self._day_with_one_kept_and_one_withdrawn()
+        rec = cl.record_v2(path=self.path)
+        self.assertEqual((0, 1), (rec["main"]["wins"], rec["main"]["losses"]))
+        self.assertEqual((0, 1), (rec["combined"]["wins"], rec["combined"]["losses"]))
+
+    @pending("withdrawn")
+    def test_history_v2_days_say_their_totals_include_the_withdrawn(self):
+        self._day_with_one_kept_and_one_withdrawn()
+        day = cl.history_v2(path=self.path)["days"][0]
+        self.assertTrue(day["totals_include_withdrawn"])
+        self.assertEqual((1, 1), (day["wins"], day["losses"]))          # the old, pooled figure
+        self.assertEqual((0, 1), (day["shown"]["wins"], day["shown"]["losses"]))
+        self.assertEqual((1, 0), (day["withdrawn_graded"]["wins"], day["withdrawn_graded"]["losses"]))
+
+    @pending("withdrawn")
+    def test_shown_plus_withdrawn_is_the_pooled_total(self):
+        self._day_with_one_kept_and_one_withdrawn()
+        day = cl.history_v2(path=self.path)["days"][0]
+        self.assertAlmostEqual(
+            day["profit_units"],
+            day["shown"]["profit_units"] + day["withdrawn_graded"]["profit_units"], places=4)
+
+    def test_the_withdrawn_count_is_still_a_bare_int(self):
+        """Guard (passes before AND after): `record_v2()["withdrawn"]` is read
+        as a count by `effective_record`; the patch adds a key beside it."""
+        self._day_with_one_kept_and_one_withdrawn()
+        self.assertEqual(1, cl.record_v2(path=self.path)["withdrawn"])
+
+    def test_the_stored_settled_row_is_not_rewritten(self):
+        """Guard: the ledger is hash-chained; the label is added by the
+        readers, so the written row keeps its original keys."""
+        self._day_with_one_kept_and_one_withdrawn()
+        row = cl.settled_row("2026-09-20", path=self.path)
+        self.assertNotIn("totals_include_withdrawn", row)
+        self.assertEqual(1, row["wins"])
+
+
 if __name__ == "__main__":
     unittest.main()

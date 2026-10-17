@@ -1,0 +1,92 @@
+diff --git a/src/appstate/card_ledger.py b/src/appstate/card_ledger.py
+index d04224015..b6179fcff 100644
+--- a/src/appstate/card_ledger.py
++++ b/src/appstate/card_ledger.py
+@@ -3249,6 +3249,30 @@ def latest_settled_rows_v2(rows) -> list:
+     return list(latest.values())
+ 
+ 
++def _tally_entries(entries) -> dict:
++    """W-L-units for a list of graded entries, in `record_v2`'s own figure
++    shape (CARD V3 PATCH 5)."""
++    fig = {"wins": 0, "losses": 0, "pushes": 0, "voids": 0, "unresolved": 0,
++           "n_staked": 0, "profit_units": 0.0}
++    for entry in entries:
++        result = entry.get("result")
++        if result == RESULT_WIN:
++            fig["wins"] += 1
++        elif result == RESULT_LOSS:
++            fig["losses"] += 1
++        elif result == RESULT_PUSH:
++            fig["pushes"] += 1
++        elif result == RESULT_VOID:
++            fig["voids"] += 1
++        elif result == RESULT_UNRESOLVED:
++            fig["unresolved"] += 1
++        if result in (RESULT_WIN, RESULT_LOSS):
++            fig["n_staked"] += 1
++            fig["profit_units"] += entry.get("profit_units") or 0.0
++    fig["profit_units"] = round(fig["profit_units"], 4)
++    return fig
++
++
+ def record_v2(*, path: Optional[str] = None, since: Optional[str] = None,
+               until: Optional[str] = None, price_class: Optional[str] = None,
+               entry_class: Optional[str] = None) -> dict:
+@@ -3271,6 +3295,7 @@ def record_v2(*, path: Optional[str] = None, since: Optional[str] = None,
+ 
+     main_fig, plus_fig, fills_fig, combined = _blank(), _blank(), _blank(), _blank()
+     withdrawn_n = 0
++    withdrawn_entries: list = []
+     days_seen = set()
+ 
+     def _add(fig, entry):
+@@ -3303,6 +3328,7 @@ def record_v2(*, path: Optional[str] = None, since: Optional[str] = None,
+                 continue
+             if entry.get("withdrawn"):
+                 withdrawn_n += 1
++                withdrawn_entries.append(entry)
+                 continue
+             if entry.get("entry_class") == "fill":
+                 _add(fills_fig, entry)
+@@ -3314,6 +3340,7 @@ def record_v2(*, path: Optional[str] = None, since: Optional[str] = None,
+                 _add(main_fig, entry)
+                 _add(combined, entry)
+ 
++    withdrawn_graded = _tally_entries(withdrawn_entries)
+     for fig in (main_fig, plus_fig, fills_fig, combined):
+         fig["days"] = len(days_seen)
+         fig["profit_units"] = round(fig["profit_units"], 4)
+@@ -3326,6 +3353,12 @@ def record_v2(*, path: Optional[str] = None, since: Optional[str] = None,
+         "since": since, "until": until,
+         "main": main_fig, "plus_money": plus_fig, "fills": fills_fig,
+         "combined": combined, "withdrawn": withdrawn_n,
++        # CARD V3 PATCH 5. `withdrawn` stayed a bare count, so the record said
++        # "19 withdrawn" and nothing about how they graded, while a per-day
++        # reader of the same ledger summed them into "97-81". They are graded
++        # (a withdrawn pick was still shown to readers), they are in NONE of
++        # the figures above, and this is where their result is reported.
++        "withdrawn_graded": withdrawn_graded,
+     }
+ 
+ 
+@@ -3353,6 +3386,19 @@ def history_v2(*, path: Optional[str] = None, limit: Optional[int] = 60) -> dict
+             "pushes": row.get("pushes"), "voids": row.get("voids"),
+             "n_staked": row.get("n_staked"),
+             "profit_units": row.get("profit_units"),
++            # CARD V3 PATCH 5. The five figures above were written by
++            # `settle_v2` over EVERY graded entry, withdrawn ones included,
++            # while `record_v2` and the public record leave withdrawn entries
++            # out (loss diagnosis 02: 97-81 against 86-75 on the same 178
++            # entries). The row is not rewritten (the ledger is hash-chained
++            # and old rows would stay unlabelled); this reader says which
++            # basis they are and gives both halves, so no consumer has to
++            # re-derive the split.
++            "totals_include_withdrawn": True,
++            "shown": _tally_entries(
++                [g for g in (row.get("graded") or ()) if not g.get("withdrawn")]),
++            "withdrawn_graded": _tally_entries(
++                [g for g in (row.get("graded") or ()) if g.get("withdrawn")]),
+             "graded": row.get("graded") or [],
+             "graded_without_lock_run": row.get("graded_without_lock_run"),
+         }
