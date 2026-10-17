@@ -321,13 +321,39 @@ def run():
     return out, units
 
 
+def describe():
+    """Post-run, DESCRIPTIVE only (added after the registered run; changes no
+    registered number): how many prop captures each joinable posting had after
+    it, and how many each game had in total. Prints; writes nothing."""
+    results = it.read_results(P["results"])
+    by_event, bad_pk, pk_events = it.read_event_map(P["event_map"])
+    events, _, _ = prepare_events(results, by_event, bad_pk, pk_events)
+    props = it.read_props(P["props"], {e["event_id"] for e in events})
+    after, per_game = Counter(), {}
+    for e in events:
+        inst = sorted({t for k in (props.get(e["event_id"]) or {})
+                       for t in (it.parse_t(s) for s in props[e["event_id"]][k])
+                       if t is not None and t < e["first_pitch"]})
+        per_game[e["event_id"]] = len(inst)
+        after[sum(1 for t in inst if t > e["t_info"])] += 1
+    print("joinable postings by number of pre-pitch prop captures after the posting:",
+          dict(sorted(after.items())))
+    print("joinable games by number of pre-pitch prop captures in total:",
+          dict(sorted(Counter(per_game.values()).items())))
+    return 0
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--print", action="store_true")
+    ap.add_argument("--describe", action="store_true",
+                    help="post-run descriptive capture counts; writes nothing")
     args = ap.parse_args(argv)
     if args.print:
         print(open(OUT, encoding="utf-8").read())
         return 0
+    if args.describe:
+        return describe()
     if os.path.exists(OUT):
         print(f"REFUSED: {OUT} exists; one registered run.")
         return 2

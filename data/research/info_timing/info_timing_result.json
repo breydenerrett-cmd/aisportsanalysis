@@ -1,0 +1,711 @@
+{
+ "coverage": {
+  "bracket_width_min": {
+   "max": 255.14194846666666,
+   "median": 48.40157615,
+   "min": 1.97722745,
+   "n": 317,
+   "q25": 14.932633883333333,
+   "q75": 60.415686183333335
+  },
+  "game_cadence_median_gap_min_last_6h": {
+   "max": 155.59484193333336,
+   "median": 33.268408216666664,
+   "min": 11.395620099999999,
+   "n": 303,
+   "q25": 24.55772028333333,
+   "q75": 50.28270097083333
+  },
+  "game_line_capture_after_post": {
+   "events": 317,
+   "lag_quantiles": {
+    "max": 159.62556323333334,
+    "median": 0.026087850000000003,
+    "min": 0.0112903,
+    "n": 305,
+    "q25": 0.02323875,
+    "q75": 0.031961616666666665
+   },
+   "none_before_pitch": 12,
+   "with_capture": 305,
+   "within_120": 304,
+   "within_30": 273,
+   "within_60": 298
+  },
+  "post_to_first_pitch_min": {
+   "max": 364.33288188333336,
+   "median": 180.10102775,
+   "min": 7.06825015,
+   "n": 317,
+   "q25": 132.99012771666668,
+   "q75": 217.11008241666664
+  },
+  "prop_cadence_median_gap_min_last_6h": {
+   "max": 307.12971385000003,
+   "median": 254.87854629999998,
+   "min": 44.92478885,
+   "n": 23,
+   "q25": 254.85679335833333,
+   "q75": 254.89155935833332
+  },
+  "prop_capture_after_post": {
+   "events": 317,
+   "lag_quantiles": {
+    "max": 275.78633033333335,
+    "median": 89.07048120833335,
+    "min": 0.19488861666666668,
+    "n": 254,
+    "q25": 48.92377544166666,
+    "q75": 118.28882055
+   },
+   "none_before_pitch": 63,
+   "with_capture": 254,
+   "within_120": 194,
+   "within_30": 53,
+   "within_60": 82
+  },
+  "prop_capture_after_post_games_with_any_prop_capture": {
+   "events": 297,
+   "lag_quantiles": {
+    "max": 275.78633033333335,
+    "median": 89.07048120833335,
+    "min": 0.19488861666666668,
+    "n": 254,
+    "q25": 48.92377544166666,
+    "q75": 118.28882055
+   },
+   "none_before_pitch": 43,
+   "with_capture": 254,
+   "within_120": 194,
+   "within_30": 53,
+   "within_60": 82
+  }
+ },
+ "events": {
+  "admissible_joinable": 317,
+  "by_side_dates": 25,
+  "excluded": {
+   "AMBIGUOUS_EVENT": 28,
+   "NO_GAME_IN_RESULTS": 88,
+   "OUT_OF_WINDOW": 203,
+   "PARTIAL_LINEUP": 1,
+   "POSTED_AFTER_FIRST_PITCH": 31
+  },
+  "odds_commence_earlier_than_mlb_by_5min": 4
+ },
+ "freeze_sha256": "4b6a8833a0a9d705db7f661d8cc6663db3d53256399c4d0fa19c86f8f9bc1c92",
+ "r1_batter_matching": {
+  "MATCHED": 2594,
+  "NO_PROP_QUOTED": 259
+ },
+ "r2_player_status": {
+  "AMBIGUOUS_NAME": 9,
+  "NAME_UNMATCHED": 8,
+  "ONE_SIDE_ONLY": 2,
+  "POSTED": 1466,
+  "R2": 234
+ },
+ "r3_event_status": {
+  "DIRECTION": 138,
+  "NO_DIRECTION": 56,
+  "NO_HISTORY": 123
+ },
+ "r3_k_absent_distribution": {
+  "0": 56,
+  "1": 73,
+  "2": 51,
+  "3": 11,
+  "4": 2,
+  "5": 1
+ },
+ "raw_reconciliation": {
+  "game_instants": 813,
+  "game_instants_with_raw_featured_envelope_5min": 0.977859778597786,
+  "prop_instants": 240,
+  "prop_instants_with_raw_event_envelope_5min": 1.0,
+  "raw_event_envelopes": 2698,
+  "raw_featured_envelopes": 960
+ },
+ "registration": "INFO_TIMING:lineup_post_first_capture_clv:hitter_props",
+ "registry_result": "below_floor",
+ "summary": {
+  "batter_hits": {
+   "close_to_pitch_min": {
+    "max": 68.22324758333333,
+    "median": 68.22324758333333,
+    "min": 43.22765806666666,
+    "n": 35,
+    "q25": 43.22765806666666,
+    "q75": 68.22324758333333
+   },
+   "lag_min": {
+    "max": 45.9220659,
+    "median": 45.914955,
+    "min": 0.8722375333333333,
+    "n": 35,
+    "q25": 23.393596266666666,
+    "q75": 45.91851045
+   },
+   "m1": {
+    "high": null,
+    "low": null,
+    "mde": null,
+    "mean": 0.08747712869397017,
+    "n": 35,
+    "n_dates": 1,
+    "n_events": 4,
+    "se": null
+   },
+   "m2": {
+    "high": null,
+    "low": null,
+    "mde": null,
+    "mean": -3.6686900106527243,
+    "n": 35,
+    "n_dates": 1,
+    "n_events": 4,
+    "se": null
+   },
+   "m2_best": {
+    "high": null,
+    "low": null,
+    "mde": null,
+    "mean": -2.6240938847762756,
+    "n": 35,
+    "n_dates": 1,
+    "n_events": 4,
+    "se": null
+   },
+   "pre_move": {
+    "high": null,
+    "low": null,
+    "mde": null,
+    "mean": null,
+    "n": 0,
+    "n_dates": 0,
+    "n_events": 0,
+    "se": null
+   }
+  },
+  "batter_total_bases": {
+   "close_to_pitch_min": {
+    "max": 68.22324758333333,
+    "median": 55.725452825,
+    "min": 43.22765806666666,
+    "n": 36,
+    "q25": 43.22765806666666,
+    "q75": 68.22324758333333
+   },
+   "lag_min": {
+    "max": 45.9220659,
+    "median": 45.914955,
+    "min": 0.8722375333333333,
+    "n": 36,
+    "q25": 34.654275633333334,
+    "q75": 45.916732725
+   },
+   "m1": {
+    "high": null,
+    "low": null,
+    "mde": null,
+    "mean": 0.026670391634576556,
+    "n": 36,
+    "n_dates": 1,
+    "n_events": 4,
+    "se": null
+   },
+   "m2": {
+    "high": null,
+    "low": null,
+    "mde": null,
+    "mean": -3.3923908962084677,
+    "n": 36,
+    "n_dates": 1,
+    "n_events": 4,
+    "se": null
+   },
+   "m2_best": {
+    "high": null,
+    "low": null,
+    "mde": null,
+    "mean": -2.2560294662754234,
+    "n": 36,
+    "n_dates": 1,
+    "n_events": 4,
+    "se": null
+   },
+   "pre_move": {
+    "high": null,
+    "low": null,
+    "mde": null,
+    "mean": null,
+    "n": 0,
+    "n_dates": 0,
+    "n_events": 0,
+    "se": null
+   }
+  },
+  "hitter_props_R1": {
+   "close_to_pitch_min": {
+    "max": 68.22324758333333,
+    "median": 68.22324758333333,
+    "min": 43.22765806666666,
+    "n": 71,
+    "q25": 43.22765806666666,
+    "q75": 68.22324758333333
+   },
+   "lag_min": {
+    "max": 45.9220659,
+    "median": 45.914955,
+    "min": 0.8722375333333333,
+    "n": 71,
+    "q25": 23.393596266666666,
+    "q75": 45.91851045
+   },
+   "m1": {
+    "high": null,
+    "low": null,
+    "mde": null,
+    "mean": 0.056645543706108616,
+    "n": 71,
+    "n_dates": 1,
+    "n_events": 4,
+    "se": null
+   },
+   "m2": {
+    "high": null,
+    "low": null,
+    "mde": null,
+    "mean": -3.5285946850190166,
+    "n": 71,
+    "n_dates": 1,
+    "n_events": 4,
+    "se": null
+   },
+   "m2_best": {
+    "high": null,
+    "low": null,
+    "mde": null,
+    "mean": -2.43746967257866,
+    "n": 71,
+    "n_dates": 1,
+    "n_events": 4,
+    "se": null
+   },
+   "pre_move": {
+    "high": null,
+    "low": null,
+    "mde": null,
+    "mean": null,
+    "n": 0,
+    "n_dates": 0,
+    "n_events": 0,
+    "se": null
+   }
+  },
+  "hitter_props_R2": {
+   "close_to_pitch_min": null,
+   "lag_min": null,
+   "m1": {
+    "high": null,
+    "low": null,
+    "mde": null,
+    "mean": null,
+    "n": 0,
+    "n_dates": 0,
+    "n_events": 0,
+    "se": null
+   },
+   "m2": {
+    "high": null,
+    "low": null,
+    "mde": null,
+    "mean": null,
+    "n": 0,
+    "n_dates": 0,
+    "n_events": 0,
+    "se": null
+   },
+   "m2_best": {
+    "high": null,
+    "low": null,
+    "mde": null,
+    "mean": null,
+    "n": 0,
+    "n_dates": 0,
+    "n_events": 0,
+    "se": null
+   },
+   "pre_move": {
+    "high": null,
+    "low": null,
+    "mde": null,
+    "mean": null,
+    "n": 0,
+    "n_dates": 0,
+    "n_events": 0,
+    "se": null
+   }
+  },
+  "hitter_props_pooled": {
+   "close_to_pitch_min": {
+    "max": 68.22324758333333,
+    "median": 68.22324758333333,
+    "min": 43.22765806666666,
+    "n": 71,
+    "q25": 43.22765806666666,
+    "q75": 68.22324758333333
+   },
+   "lag_min": {
+    "max": 45.9220659,
+    "median": 45.914955,
+    "min": 0.8722375333333333,
+    "n": 71,
+    "q25": 23.393596266666666,
+    "q75": 45.91851045
+   },
+   "m1": {
+    "high": null,
+    "low": null,
+    "mde": null,
+    "mean": 0.056645543706108616,
+    "n": 71,
+    "n_dates": 1,
+    "n_events": 4,
+    "se": null
+   },
+   "m2": {
+    "high": null,
+    "low": null,
+    "mde": null,
+    "mean": -3.5285946850190166,
+    "n": 71,
+    "n_dates": 1,
+    "n_events": 4,
+    "se": null
+   },
+   "m2_best": {
+    "high": null,
+    "low": null,
+    "mde": null,
+    "mean": -2.43746967257866,
+    "n": 71,
+    "n_dates": 1,
+    "n_events": 4,
+    "se": null
+   },
+   "pre_move": {
+    "high": null,
+    "low": null,
+    "mde": null,
+    "mean": null,
+    "n": 0,
+    "n_dates": 0,
+    "n_events": 0,
+    "se": null
+   }
+  },
+  "hitter_props_postseason": {
+   "close_to_pitch_min": null,
+   "lag_min": null,
+   "m1": {
+    "high": null,
+    "low": null,
+    "mde": null,
+    "mean": null,
+    "n": 0,
+    "n_dates": 0,
+    "n_events": 0,
+    "se": null
+   },
+   "m2": {
+    "high": null,
+    "low": null,
+    "mde": null,
+    "mean": null,
+    "n": 0,
+    "n_dates": 0,
+    "n_events": 0,
+    "se": null
+   },
+   "m2_best": {
+    "high": null,
+    "low": null,
+    "mde": null,
+    "mean": null,
+    "n": 0,
+    "n_dates": 0,
+    "n_events": 0,
+    "se": null
+   },
+   "pre_move": {
+    "high": null,
+    "low": null,
+    "mde": null,
+    "mean": null,
+    "n": 0,
+    "n_dates": 0,
+    "n_events": 0,
+    "se": null
+   }
+  },
+  "hitter_props_regular_season": {
+   "close_to_pitch_min": {
+    "max": 68.22324758333333,
+    "median": 68.22324758333333,
+    "min": 43.22765806666666,
+    "n": 71,
+    "q25": 43.22765806666666,
+    "q75": 68.22324758333333
+   },
+   "lag_min": {
+    "max": 45.9220659,
+    "median": 45.914955,
+    "min": 0.8722375333333333,
+    "n": 71,
+    "q25": 23.393596266666666,
+    "q75": 45.91851045
+   },
+   "m1": {
+    "high": null,
+    "low": null,
+    "mde": null,
+    "mean": 0.056645543706108616,
+    "n": 71,
+    "n_dates": 1,
+    "n_events": 4,
+    "se": null
+   },
+   "m2": {
+    "high": null,
+    "low": null,
+    "mde": null,
+    "mean": -3.5285946850190166,
+    "n": 71,
+    "n_dates": 1,
+    "n_events": 4,
+    "se": null
+   },
+   "m2_best": {
+    "high": null,
+    "low": null,
+    "mde": null,
+    "mean": -2.43746967257866,
+    "n": 71,
+    "n_dates": 1,
+    "n_events": 4,
+    "se": null
+   },
+   "pre_move": {
+    "high": null,
+    "low": null,
+    "mde": null,
+    "mean": null,
+    "n": 0,
+    "n_dates": 0,
+    "n_events": 0,
+    "se": null
+   }
+  },
+  "moneyline": {
+   "close_to_pitch_min": {
+    "max": 130.70953476666668,
+    "median": 13.066646733333332,
+    "min": 0.0507096,
+    "n": 128,
+    "q25": 4.295973733333333,
+    "q75": 33.73669954166667
+   },
+   "lag_min": {
+    "max": 105.30596575,
+    "median": 0.02889765,
+    "min": 0.016909866666666665,
+    "n": 128,
+    "q25": 0.024197633333333336,
+    "q75": 0.0322726
+   },
+   "m1": {
+    "high": 0.05186,
+    "low": -0.06771,
+    "mde": 0.08203169511138507,
+    "mean": -0.015435420279547505,
+    "n": 128,
+    "n_dates": 18,
+    "n_events": 125,
+    "se": 0.029297033968351812
+   },
+   "m2": {
+    "high": -1.86128,
+    "low": -2.00253,
+    "mde": 0.0984377424286419,
+    "mean": -1.9274715819278267,
+    "n": 128,
+    "n_dates": 18,
+    "n_events": 125,
+    "se": 0.03515633658165782
+   },
+   "m2_best": {
+    "high": -0.82628,
+    "low": -0.99648,
+    "mde": 0.1241025303134411,
+    "mean": -0.9178594844768256,
+    "n": 128,
+    "n_dates": 18,
+    "n_events": 125,
+    "se": 0.044322332254800395
+   },
+   "pre_move": {
+    "high": 0.08047,
+    "low": -0.02834,
+    "mde": 0.07679000232247421,
+    "mean": 0.029301434899143674,
+    "n": 128,
+    "n_dates": 18,
+    "n_events": 125,
+    "se": 0.02742500082945508
+   }
+  },
+  "run_line": {
+   "close_to_pitch_min": {
+    "max": 130.70953476666668,
+    "median": 13.2314486,
+    "min": 0.0507096,
+    "n": 128,
+    "q25": 4.438675566666666,
+    "q75": 35.36182851666667
+   },
+   "lag_min": {
+    "max": 105.30596575,
+    "median": 0.02889765,
+    "min": 0.016909866666666665,
+    "n": 128,
+    "q25": 0.024197633333333336,
+    "q75": 0.0322726
+   },
+   "m1": {
+    "high": 0.03711,
+    "low": -0.05788,
+    "mde": 0.06668237893732065,
+    "mean": -0.009709388655344384,
+    "n": 128,
+    "n_dates": 18,
+    "n_events": 125,
+    "se": 0.023815135334757376
+   },
+   "m2": {
+    "high": -2.00519,
+    "low": -2.18289,
+    "mde": 0.11872109169444738,
+    "mean": -2.099231089999443,
+    "n": 128,
+    "n_dates": 18,
+    "n_events": 125,
+    "se": 0.042400389890874066
+   },
+   "m2_best": {
+    "high": -0.79224,
+    "low": -1.10142,
+    "mde": 0.22031535980727082,
+    "mean": -0.9387074425459716,
+    "n": 128,
+    "n_dates": 18,
+    "n_events": 125,
+    "se": 0.0786840570740253
+   },
+   "pre_move": {
+    "high": 0.05267,
+    "low": -0.06684,
+    "mde": 0.08101707664161185,
+    "mean": 0.0014121735604881393,
+    "n": 127,
+    "n_dates": 18,
+    "n_events": 124,
+    "se": 0.028934670229147093
+   }
+  },
+  "total": {
+   "close_to_pitch_min": {
+    "max": 224.42618756666667,
+    "median": 17.299255366666667,
+    "min": 0.0507096,
+    "n": 119,
+    "q25": 6.945843050000001,
+    "q75": 48.960461050000006
+   },
+   "lag_min": {
+    "max": 78.94721296666667,
+    "median": 0.02889765,
+    "min": 0.016909866666666665,
+    "n": 119,
+    "q25": 0.024197633333333336,
+    "q75": 0.0322726
+   },
+   "m1": {
+    "high": 0.294,
+    "low": -0.04788,
+    "mde": 0.21497645631506535,
+    "mean": 0.0816925005634583,
+    "n": 119,
+    "n_dates": 17,
+    "n_events": 116,
+    "se": 0.07677730582680906
+   },
+   "m2": {
+    "high": -2.03584,
+    "low": -2.43105,
+    "mde": 0.24207472855677734,
+    "mean": -2.2895170636900093,
+    "n": 119,
+    "n_dates": 17,
+    "n_events": 116,
+    "se": 0.08645526019884905
+   },
+   "m2_best": {
+    "high": -1.01896,
+    "low": -1.40753,
+    "mde": 0.2598876306124023,
+    "mean": -1.2424534627247394,
+    "n": 119,
+    "n_dates": 17,
+    "n_events": 116,
+    "se": 0.09281701093300082
+   },
+   "pre_move": {
+    "high": 0.1094,
+    "low": -0.10908,
+    "mde": 0.15337011475984696,
+    "mean": 0.002865417448035318,
+    "n": 116,
+    "n_dates": 16,
+    "n_events": 113,
+    "se": 0.054775040985659634
+   }
+  }
+ },
+ "unit_status": {
+  "batter_hits|R1|NO_ENTRY_CAPTURE": 509,
+  "batter_hits|R1|NO_LATER_CAPTURE": 2212,
+  "batter_hits|R1|OK": 35,
+  "batter_hits|R2|NO_ENTRY_CAPTURE": 234,
+  "batter_total_bases|R1|NO_ENTRY_CAPTURE": 1332,
+  "batter_total_bases|R1|NO_LATER_CAPTURE": 2289,
+  "batter_total_bases|R1|OK": 36,
+  "batter_total_bases|R2|NO_ENTRY_CAPTURE": 188,
+  "batter_total_bases|R2|NO_LATER_CAPTURE": 48,
+  "moneyline|R3|NO_ENTRY_CAPTURE": 8,
+  "moneyline|R3|NO_LATER_CAPTURE": 2,
+  "moneyline|R3|OK": 128,
+  "run_line|R3|NO_ENTRY_CAPTURE": 8,
+  "run_line|R3|NO_LATER_CAPTURE": 2,
+  "run_line|R3|OK": 128,
+  "total|R3|LINE_ABSENT_AT_CLOSE": 9,
+  "total|R3|NO_ENTRY_CAPTURE": 8,
+  "total|R3|NO_LATER_CAPTURE": 2,
+  "total|R3|OK": 119
+ },
+ "verdict": "NOT MEASURABLE",
+ "window": [
+  "2026-09-08",
+  "2026-10-15"
+ ]
+}
