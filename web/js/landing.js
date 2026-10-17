@@ -343,6 +343,52 @@ function cohortUnitsText(cohort) {
   return `${sign}${Math.abs(cohort.profit_units).toFixed(2)}`;
 }
 
+/**
+ * THE CURRENT METHOD'S HEADLINE (owner brief 2026-10-17; docs/PREREG_CARD_V2.md
+ * 11.1, R4, R5).
+ *
+ * Section 11.1 counts a pick only if its game is a regular-season game;
+ * "Postseason picks are published, graded and shown on the record, but not
+ * counted." R4: no number anywhere adds two populations together. So the page
+ * shows the counted regular-season figure and the postseason figure as two
+ * figures of the same size and never a sum, and says in one sentence why the
+ * registration counts only one. The sentence gives no reason the registration
+ * does not give: it counts a sample fixed in advance, regular-season games.
+ */
+export const COUNTED_SCOPE_LABEL = "regular season, counted";
+export const POSTSEASON_LABEL = "Postseason · graded, not counted";
+export const WHY_ONE_COUNTS =
+  "The registered test counts only regular-season games, a sample fixed before play began; "
+  + "postseason games are graded and shown here but never added to it.";
+
+/**
+ * THE EARLIER METHOD'S CAVEAT (registration R3/R5 and section 1: its nightly
+ * refit read games it should not have). It is a shadow record, closed at the
+ * cutover, not a public record, and what it shows is not evidence the method
+ * worked. Keyed by the rule-block prefix so it attaches to the MLB earlier
+ * method only: the NFL and UFC tiles have a different history.
+ */
+export const EARLIER_METHOD_CAVEAT =
+  "Shadow record, not a public record: this method's nightly refit read games it should not have, "
+  + "so these figures are not evidence that it worked. Kept as it was and never added to the current method's numbers.";
+const PREVIOUS_RULE_CAVEAT = {
+  "sport-tile-mlb-previous": EARLIER_METHOD_CAVEAT,
+  "hero-previous": EARLIER_METHOD_CAVEAT,
+};
+
+/** THE ONE PLACE PROFIT SIGN TOUCHES RENDERING: a colour class, the same rule
+ * for the counted figure, the postseason figure and the earlier method. */
+function paintUnits(unitsNode, cohort) {
+  if (unitsNode && typeof cohort.profit_units === "number") {
+    unitsNode.classList.add(cohort.profit_units >= 0 ? "is-up" : "is-down");
+  }
+}
+
+function hasPostseason(cohort) {
+  const ps = cohort && cohort.postseason;
+  return !!ps && ((ps.n_staked > 0) || (ps.days > 0));
+}
+
 /** "By market: game 3-2, player prop 5-1." -- only the markets this
  * cohort actually staked a pick in, in a fixed order, so a rule that has
  * never carried totals never shows an empty "run/point total 0-0". */
@@ -368,17 +414,20 @@ export function marketBreakdownSentence(breakdown) {
  */
 function fillRuleBlock(root, prefix, cohort, roleLabel) {
   const labelNode = root.querySelector(`[data-hook='${prefix}-label']`);
-  if (labelNode) labelNode.textContent = roleLabel;
+  // WHEN A POSTSEASON FIGURE SITS BESIDE THIS ONE (2026-10-17), the counted
+  // figure says what it counts, in the label a reader reads first, so the two
+  // figures cannot be taken for one.
+  const postseasonActive = hasPostseason(cohort);
+  if (labelNode) {
+    labelNode.textContent = postseasonActive ? `${roleLabel} · ${COUNTED_SCOPE_LABEL}` : roleLabel;
+  }
 
   const stateNode = root.querySelector(`[data-hook='${prefix}-state']`);
   const graded = cohort && cohort.available && cohort.grading_state === "graded";
 
   if (graded) {
     tileSet(root, `${prefix}-wl`, cohortWL(cohort));
-    const unitsNode = tileSet(root, `${prefix}-units`, cohortUnitsText(cohort));
-    if (unitsNode && typeof cohort.profit_units === "number") {
-      unitsNode.classList.add(cohort.profit_units >= 0 ? "is-up" : "is-down");
-    }
+    paintUnits(tileSet(root, `${prefix}-units`, cohortUnitsText(cohort)), cohort);
     tileSet(root, `${prefix}-days`, String(cohort.days));
     if (stateNode) {
       const dateSpan = cohort.date_span;
@@ -392,7 +441,10 @@ function fillRuleBlock(root, prefix, cohort, roleLabel) {
       // before it describes how the existing record was graded.
       const cadence = /(^|-)ufc-/.test(prefix)
         ? "Picks paused while we build real fight analysis. Graded after each event" : "Graded nightly";
-      stateNode.textContent = `${named}${cadence}${span ? `, ${span}` : ""}.`;
+      const graded_line = `${named}${cadence}${span ? `, ${span}` : ""}.`;
+      const caveat = PREVIOUS_RULE_CAVEAT[prefix];
+      stateNode.textContent = caveat ? `${caveat} ${graded_line}` : graded_line;
+      if (caveat) stateNode.classList.add("hero__proof-sub--caveat");
     }
     const marketsNode = root.querySelector(`[data-hook='${prefix}-markets']`);
     const sentence = marketBreakdownSentence(cohort.market_breakdown);
@@ -427,17 +479,48 @@ function fillRuleBlock(root, prefix, cohort, roleLabel) {
   if (postseasonNode) {
     const postseason = cohort && cohort.postseason;
     const active = postseason && ((postseason.n_staked > 0) || (postseason.days > 0));
+    clear(postseasonNode);
     if (active) {
-      const wl = cohortWL(postseason);
-      const units = cohortUnitsText(postseason);
       const nights = postseason.days || 0;
       // Nights with a card but no staked pick (fills only) used to print
       // "0–0, +0.00u over 2 nights", which reads as a result. It is the
       // absence of one, so it says that.
       const nightWord = `night${nights === 1 ? "" : "s"}`;
-      postseasonNode.textContent = postseason.n_staked > 0
-        ? `Postseason: ${wl}, ${units}u over ${nights} ${nightWord}. Graded, not counted.`
-        : `Postseason: no picks on ${nights} ${nightWord} so far. Graded, not counted.`;
+      if (postseason.n_staked > 0) {
+        // THE SAME COMPONENT AT THE SAME SIZE as the counted figure above
+        // (.hero__proof-grid / .hero__stat), filled by the same
+        // cohortWL/cohortUnitsText helpers and coloured by the same sign rule
+        // as the counted units: the postseason figure may not read as an
+        // aside to the one the registration counts.
+        postseasonNode.appendChild(el("p", {
+          class: "eyebrow eyebrow--muted", "data-hook": `${prefix}-postseason-label`,
+          text: POSTSEASON_LABEL,
+        }));
+        const grid = el("div", { class: "hero__proof-grid" });
+        const cells = [
+          [cohortWL(postseason), "Won–lost", "wl"],
+          [cohortUnitsText(postseason), "Units", "units"],
+          [String(nights), nights === 1 ? "Night graded" : "Nights graded", "days"],
+        ];
+        for (const [value, label, kind] of cells) {
+          const stat = el("div", { class: "hero__stat" });
+          const valueNode = el("span", {
+            class: "hero__stat-value", "data-hook": `${prefix}-postseason-${kind}`,
+            text: value || "—",
+          });
+          if (kind === "units") paintUnits(valueNode, postseason);
+          stat.appendChild(valueNode);
+          stat.appendChild(el("span", { class: "hero__stat-label", text: label }));
+          grid.appendChild(stat);
+        }
+        postseasonNode.appendChild(grid);
+        postseasonNode.appendChild(el("p", {
+          class: "hero__proof-sub", "data-hook": `${prefix}-postseason-why`, text: WHY_ONE_COUNTS,
+        }));
+      } else {
+        postseasonNode.appendChild(document.createTextNode(
+          `Postseason: no picks on ${nights} ${nightWord} so far. Graded, not counted.`));
+      }
       postseasonNode.hidden = false;
     } else {
       postseasonNode.hidden = true;
@@ -490,7 +573,7 @@ function fillRuleSet(root, prefix, snapshot) {
   }
 }
 
-async function fillProofPanel() {
+export async function fillProofPanel() {
   const panel = document.querySelector("[data-hook='hero-proof']");
   if (!panel) return;
   try {
@@ -499,12 +582,18 @@ async function fillProofPanel() {
       && meta.effective_record.sports.mlb;
     if (!mlb) return;
     fillRuleSet(panel, "hero", mlb);
+    // The earlier method is kept OFF THE FIRST SCREEN (2026-10-17): a retired
+    // method's figure beside the current one reads as "the old method worked".
+    // It stays on the MLB tile below and on the record page, with its caveat;
+    // the hero says in one sentence that it exists and what it is.
+    const earlier = panel.querySelector("[data-hook='hero-previous-block']");
+    if (earlier) earlier.hidden = true;
   } catch (err) {
     // Leave the dashes in place -- never a guessed figure.
   }
 }
 
-async function fillSportTiles() {
+export async function fillSportTiles() {
   const host = document.querySelector("[data-hook='sport-record-tiles']");
   if (!host) return;
   try {
@@ -575,7 +664,12 @@ export function provenRecordSentence(cohort) {
     : "The record so far for the current method";
   const tail = negative ? "."
     : ". That is a result so far, not evidence that the picks make money.";
-  return `${lead}: ${figures}${tail}`;
+  const ps = cohort.postseason;
+  const postseason = hasPostseason(cohort) && ps.n_staked > 0
+    ? ` Postseason games, graded but not counted by the registration: ${cohortWL(ps)}, ${cohortUnitsText(ps)} units over ${ps.days || 0} night${ps.days === 1 ? "" : "s"}.`
+    : "";
+  const scope = postseason ? " (regular season only)" : "";
+  return `${lead}: ${figures}${scope}${tail}${postseason}`;
 }
 
 /** The research line of "what is proven", from /meta.research -- the same

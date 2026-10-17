@@ -363,10 +363,21 @@ class NoPredecessorMeansNoBlockNotDashes(unittest.TestCase):
         NFL's retired favourites rule) -- their blocks must NOT carry
         `hidden` in the static markup, or a real previous-rule record
         would be suppressed by default."""
-        for prefix in ("sport-tile-mlb", "sport-tile-nfl", "hero"):
+        for prefix in ("sport-tile-mlb", "sport-tile-nfl"):
             block = _block_html(HTML, f"{prefix}-previous-block")
             opening_tag = block.split(">", 1)[0]
             self.assertNotRegex(opening_tag, r"\bhidden\b", prefix)
+
+    def test_the_hero_keeps_the_earlier_method_off_the_first_screen(self):
+        """2026-10-17: a retired method's figure beside the current one on the
+        first screen reads as "the old method worked". The hero's earlier-method
+        block starts hidden and fillProofPanel keeps it hidden; the MLB tile
+        below still shows it, with the registration's caveat."""
+        block = _block_html(HTML, "hero-previous-block")
+        self.assertRegex(block.split(">", 1)[0], r"\bhidden\b")
+        panel = JS.split("async function fillProofPanel()", 1)[1].split("\n}\n", 1)[0]
+        self.assertIn("hero-previous-block", panel)
+        self.assertIn(".hidden = true", panel)
 
     def test_fillRuleSet_hides_the_previous_block_only_when_the_cohort_is_null(self):
         """Pinned by exact source text: the ONLY condition that hides a

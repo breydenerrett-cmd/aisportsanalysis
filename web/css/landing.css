@@ -492,6 +492,17 @@
   margin-top: 22px; padding-top: 22px;
   border-top: 1px solid rgba(255, 255, 255, .08);
 }
+/* The postseason figure under the counted one (2026-10-17): the same grid and
+   stat component at the same size, so neither reads as an aside. */
+.hero__postseason {
+  margin-top: 22px; padding-top: 18px;
+  border-top: 1px solid rgba(255, 255, 255, .08);
+}
+.hero__postseason > .eyebrow { margin: 0; }
+/* The earlier method's caveat is a full-contrast sentence, not grey fine print. */
+.hero__proof-sub--caveat {
+  font-size: 15px; font-weight: 600; color: rgba(255, 255, 255, .92);
+}
 .hero__proof-note {
   margin-top: 16px; font-size: 14px; line-height: 1.55; color: rgba(255, 255, 255, .72);
 }
