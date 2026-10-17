@@ -370,6 +370,11 @@ DECLARED_MANUAL_SCRIPTS = {
     "probe_lineup_direction.py",    # docs/PREREG_LINEUP_DIRECTION.md, --forward for V6
     "probe_slot_prop.py",           # docs/PREREG_SLOT_PROP.md (V7)
     "probe_bunched_counts.py",      # reports it cannot run until the box store is deep enough
+    "readiness_battery_read.py",    # one system, one date, written once and
+                                    # never overwritten; it is a research read
+                                    # that refuses to touch the scorecard
+                                    # chain, so scheduling it would only
+                                    # produce more vacuous verdicts
 
     # --- credit-metered or long-running research runs, started deliberately
     #     with a budget in mind (docs/RESOURCE_POLICY.md).

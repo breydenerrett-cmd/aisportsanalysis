@@ -1,0 +1,189 @@
+{
+  "appended_to_scorecard_ledger": false,
+  "as_of": "2026-10-16",
+  "battery_entry_point": "src.research.battery.run",
+  "battery_min_n": 30,
+  "battery_result": {
+    "fatal": [],
+    "ran": true,
+    "report": {
+      "baseline": {
+        "ci": {
+          "clusters": 14,
+          "high": 0.10026,
+          "low": -0.28232,
+          "reason": null,
+          "resamples": 2000
+        },
+        "effect": -0.09892,
+        "n": 32,
+        "note": "mean(won - implied), p and interval clustered by date",
+        "p": 0.316474
+      },
+      "book_concentration": {
+        "skipped": "no 'book' key present"
+      },
+      "dose_response": {
+        "skipped": "no dose_key configured"
+      },
+      "extreme_removal": {
+        "dropped_dates": [
+          "2026-09-25"
+        ],
+        "effect": null,
+        "fatal": false,
+        "n": 28,
+        "note": "dropped the 1 date(s) contributing most to the effect; FATAL when the remaining effect crosses zero",
+        "p": null
+      },
+      "favorite_underdog": {
+        "fatal": false,
+        "n": 32,
+        "note": "report only -- favorite means implied > 0.5",
+        "splits": {
+          "favorite": {
+            "effect": null,
+            "n": 22,
+            "note": "below the 30-row floor; reported, never judged",
+            "p": null
+          },
+          "underdog": {
+            "effect": null,
+            "n": 10,
+            "note": "below the 30-row floor; reported, never judged",
+            "p": null
+          }
+        }
+      },
+      "home_away": {
+        "skipped": "no 'side' key present"
+      },
+      "price_bands": {
+        "bands": [
+          {
+            "effect": null,
+            "hi": 0.4,
+            "lo": 0.0,
+            "n": 4,
+            "note": "below the 30-row floor; reported, never judged",
+            "p": null
+          },
+          {
+            "effect": null,
+            "hi": 0.5,
+            "lo": 0.4,
+            "n": 6,
+            "note": "below the 30-row floor; reported, never judged",
+            "p": null
+          },
+          {
+            "effect": null,
+            "hi": 0.6,
+            "lo": 0.5,
+            "n": 11,
+            "note": "below the 30-row floor; reported, never judged",
+            "p": null
+          },
+          {
+            "effect": null,
+            "hi": 1.0,
+            "lo": 0.6,
+            "n": 11,
+            "note": "below the 30-row floor; reported, never judged",
+            "p": null
+          }
+        ],
+        "fatal": false,
+        "n": 32,
+        "note": "report only -- effect by implied-probability band"
+      },
+      "season_split": {
+        "skipped": "no 'season' key present"
+      },
+      "team_concentration": {
+        "skipped": "no 'team' key present"
+      },
+      "threshold_sensitivity": {
+        "skipped": "no dose_key configured"
+      }
+    },
+    "rules": {
+      "fingerprint": "ac74c7a7f715f9ec",
+      "version": "2.0.0"
+    },
+    "survives": true
+  },
+  "fatal_rules_judged": [],
+  "fatal_rules_unjudged": {
+    "book_concentration": "no 'book' key present",
+    "dose_response": "no dose_key configured",
+    "extreme_removal": "remaining sample under the 30-row floor, effect not read",
+    "season_split": "no 'season' key present",
+    "team_concentration": "no 'team' key present"
+  },
+  "not_appended_because": "the hourly loop owns the hash chain evidence/scorecards_v2.jsonl and run_settle is its only writer; this row came from a different join than run_settle's, and carries no judged fatal rule",
+  "rows_given_to_battery": 32,
+  "rows_source": "scripts/research_readiness.py graded_by_system(): paper-account WIN/LOSS settlements joined to the decision's consensus_fair",
+  "rows_the_settle_path_would_give": 27,
+  "scorecard": {
+    "account": {
+      "bankroll": 993.696499684128,
+      "drawdown": 10.168030406859998,
+      "profit_units": -6.303500315871972,
+      "roi_units": -0.19698438487099912,
+      "units": 32.0
+    },
+    "avg_odds_decimal": 1.9120590447017984,
+    "battery_rules_version": "2.0.0",
+    "battery_verdict": "PASS",
+    "brier": 0.25,
+    "clv_bps_mean": 0.0,
+    "cscv_pbo": 1.0,
+    "effective_tests": 0,
+    "logloss_vs_market": 0.6931471805599453,
+    "market_key": "h2h",
+    "n_decisions": 92,
+    "n_independent_clusters": 2,
+    "placebo_percentile": 0.0,
+    "point_class": "LATE_BOARD",
+    "price_sensitivity": {
+      "shrink_fraction": 0.25,
+      "survives_shrink": false,
+      "survives_worst_book": false
+    },
+    "raw_tests": 0,
+    "realized_return": 0.0,
+    "realized_return_ci": [],
+    "reliability_bins": [],
+    "spa_p": 1.0,
+    "stability": {
+      "n_returns": 32,
+      "p_model_provenance_counts": {
+        "none": 92
+      },
+      "season_month_stability": null,
+      "volatility_stdev_of_returns": 0.9567891299185376
+    },
+    "system_id": "606be696ff199952",
+    "top5_win_share": 0.0,
+    "total_searched_at_verdict": 0,
+    "window": "2026-10-16",
+    "world": "real"
+  },
+  "scorecard_absent_components": [
+    "AbsentComponent(field='economic.realized_return', reason=\"no verdict=='play' decision carries a model_derived edge_bps (edge_bps is structurally null for none/placeholder/market_derived provenance -- see DecisionRecord's invariant)\")",
+    "AbsentComponent(field='economic.logloss_vs_market', reason='no decision/review pair carries both a model_derived p_model and a win/loss settlement (a placeholder or market_derived p_model is never folded into a calibration claim)')",
+    "AbsentComponent(field='robustness', reason='no CSCV/SPA/placebo artifact supplied')",
+    "AbsentComponent(field='forward_survival.out_of_sample/within_sealed_epochs', reason='no epoch-registry artifact supplied')",
+    "AbsentComponent(field='price_resilience', reason='no worst-book/shrink sensitivity artifact supplied')",
+    "AbsentComponent(field='multiplicity', reason='no BH-FDR funnel family artifact supplied')",
+    "AbsentComponent(field='clv_bps_mean', reason='no decision/review pair carries a captured close_price')",
+    "AbsentComponent(field='reliability_bins', reason='no model_derived or market_derived decision exists for this system -- a placeholder or none-provenance p_model is not a calibration attempt (docs/PREREG_CALIBRATED_PROBABILITY.md \u00a74)')",
+    "AbsentComponent(field='realized_return_ci', reason='no clustered-bootstrap CI implementation exists')",
+    "AbsentComponent(field='stability.season_month_stability', reason='season/month/market stability has no implementation anywhere in this codebase (checkpoint 2026-09-03 hardest truth 9)')"
+  ],
+  "settle_path_reaches_the_floor": false,
+  "settle_path_source": "src/engine/settle_slate.py _battery_rows_for_system(): decision/review pairs settled WIN or LOSS",
+  "system_id": "606be696ff199952",
+  "vacuous": true
+}

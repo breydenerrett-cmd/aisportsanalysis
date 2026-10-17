@@ -138,3 +138,16 @@ fault to fix today, the other is a normal wait.
 Verified against the live population: **57 forward-test systems collapse
 into 28 families**, 29 merged. The clustering is doing substantial work, and
 the null will be collapsed the same way the real counts are.
+
+### READ 2026-10-17: NOT ADOPT
+
+Answerable (22 usable dates, 2026-08-31 to 2026-10-15; 347 wagers) and it
+fails two of the three conditions above: real family agreement is **below** the
+null (5.03 against 7.13 families per wager), and the split halves disagree by
+2 families (the rule allows 1). The null's ladder would have been STRONG ≥ 16,
+BUILDING ≥ 11, THIN ≥ 6, and the rule refuses it. `EVIDENCE_STRONG_MIN_FAMILIES`
+stays at 3 and the debt stays recorded. The rule does not say what STRONG
+should now mean; that choice is the owner's, in
+`docs/decisions/evidence_strong_tier.md`. Full result, the checks on the
+surprising sign, and the registry row: `docs/research/TIER_LADDER_RESULT.md`.
+This section is below the frozen rule text and does not change its hash.

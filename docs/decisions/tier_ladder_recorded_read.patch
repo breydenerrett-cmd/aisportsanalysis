@@ -1,0 +1,29 @@
+--- a/scripts/daily_loop.sh
++++ b/scripts/daily_loop.sh
+@@ -640,9 +640,24 @@
+ LADDER_OUT=$(python3 scripts/test_tier_ladder.py 2>&1)
+ LADDER_STATUS=$?
+ echo "$LADDER_OUT" | sed 's/^/  /'
++# THE READ WAS PERFORMED AND RECORDED (docs/research/TIER_LADDER_RESULT.md,
++# data/research/tier_ladder/tier_ladder_result.json, and an alpha-registry
++# verdict row naming that file's sha256). While that record verifies -- the
++# registration text and the registered script's constants still match what the
++# read froze, and the registry row is there -- the nightly re-run is
++# informational: "did not adopt" is no longer news, so it prints RECORDED
++# instead of ESCALATE. This does NOT mean EVIDENCE_STRONG is calibrated. It is
++# not, and the drift audit above keeps saying so until the owner chooses
++# (docs/decisions/evidence_strong_tier.md). If the record stops verifying the
++# ESCALATE comes back; a recorded ADOPT never verifies, so it escalates too.
+ if [ "$LADDER_STATUS" -ne 0 ]; then
+-    echo "ESCALATE: the tier ladder pre-registration is now answerable and did not adopt -- read the checks above; EVIDENCE_STRONG has been mis-calibrated since 2026-09-10"
+-    type foundry_beat >/dev/null 2>&1 && foundry_beat daily_loop escalate escalate "" "tier ladder answerable" || true
++    if RECORDED_OUT=$(python3 scripts/tier_ladder_read.py --check-recorded 2>&1); then
++        echo "$RECORDED_OUT"
++    else
++        echo "  ($RECORDED_OUT)"
++        echo "ESCALATE: the tier ladder pre-registration is now answerable and did not adopt -- read the checks above; EVIDENCE_STRONG has been mis-calibrated since 2026-09-10"
++        type foundry_beat >/dev/null 2>&1 && foundry_beat daily_loop escalate escalate "" "tier ladder answerable" || true
++    fi
+ elif echo "$LADDER_OUT" | grep -q "ADOPT THIS LADDER"; then
+     echo "ESCALATE: the tier ladder pre-registration is answerable and ADOPTS -- src/engine/slip.py's thresholds should now be changed to the ones printed above, and docs/PREREG_TIER_LADDER.md updated"
+     type foundry_beat >/dev/null 2>&1 && foundry_beat daily_loop escalate escalate "" "tier ladder ready to adopt" || true
