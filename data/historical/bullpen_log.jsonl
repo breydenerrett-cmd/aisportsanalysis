@@ -62582,3 +62582,4 @@
 {"batters_faced": 2, "date": "2026-10-15", "earned_runs": 0, "game_pk": 849810, "hits": 0, "innings": 0.333, "name": "Alex Vesia", "person_id": 681911, "pitches": 9, "started": false, "strikeouts": 0, "team": "LAD", "walks": 1}
 {"batters_faced": 4, "date": "2026-10-15", "earned_runs": 1, "game_pk": 849810, "hits": 1, "innings": 1.0, "name": "Tanner Scott", "person_id": 656945, "pitches": 24, "started": false, "strikeouts": 2, "team": "LAD", "walks": 0}
 {"batters_faced": 10, "date": "2026-10-15", "earned_runs": 1, "game_pk": 849810, "hits": 1, "innings": 3.0, "name": "Edwin D\u00edaz", "person_id": 621242, "pitches": 37, "started": false, "strikeouts": 2, "team": "LAD", "walks": 0}
+{"date": "2026-10-16", "empty": true}
