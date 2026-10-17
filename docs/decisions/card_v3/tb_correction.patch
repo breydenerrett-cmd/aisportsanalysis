@@ -1,0 +1,35 @@
+diff --git a/src/analysis/playerprops.py b/src/analysis/playerprops.py
+index 6478e4107..1bbf53893 100644
+--- a/src/analysis/playerprops.py
++++ b/src/analysis/playerprops.py
+@@ -659,12 +659,25 @@ def probability_over(market: str, line: float, rates: Mapping,
+         need = int(math.floor(line)) + 1
+         return _at_least(adjusted["home_run"], expected_pa, need, rho)
+     if market == "batter_total_bases":
+-        # NOT rho-corrected. This market measured calibrated to within about
+-        # one point already (`scripts/backtest_player_props.py`), so a
+-        # correction fitted for the hits market has nothing to fix here and
+-        # applying it would move a number that is right.
+-        dist = total_bases_distribution(adjusted, expected_pa)
+         need = int(math.floor(line)) + 1
++        if need == 1:
++            # CARD V3 PATCH (docs/decisions/card_v3/README.md, patch 1).
++            # TB over 0.5 is "at least one total base", which is exactly "at
++            # least one hit": the SAME event hits over 0.5 prices, through
++            # the correlation-corrected beta-binomial. Routing it through the
++            # uncorrected convolution below priced one event two ways on the
++            # same plate appearances: +2.95 points above our own hits number
++            # on 1,163 player-games (docs/research/loss_diagnosis/
++            # 01_estimate_error.md section 3d), +2.7 to +3.9 points of bias
++            # in 2024 and 2025 and +6.7 on the 2026 forward pool.
++            return _at_least(adjusted["hit"], expected_pa, 1, rho)
++        # Over 1.5 and above stay on the uncorrected convolution: that line
++        # measured calibrated to within about a point in the backtest
++        # (`scripts/backtest_player_props.py`; the loss diagnosis found it
++        # 1.5 to 2.3 points high in 2024/2025, which this patch does not
++        # touch -- a rho fitted for the at-least-one event has no standing
++        # on the at-least-two event).
++        dist = total_bases_distribution(adjusted, expected_pa)
+         return sum(dist[need:])
+     if market == "batter_runs_scored":
+         need = int(math.floor(line)) + 1
