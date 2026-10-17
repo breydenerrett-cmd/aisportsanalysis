@@ -44,8 +44,12 @@ from __future__ import annotations
 # registered and read the same night. Both its bands were killed on
 # discovery data (docs/SR1_RESULT_2026-09-16.md), which is what "tested"
 # counts: read, verdict recorded, loser published.
+# 2026-10-16: INFO_TIMING (lineup-post timing) registered and read as
+# below_floor (the prop store cannot measure it), so the READ count stays 40
+# while the registry holds 51 registrations across 14 families. The families
+# fallback had been left at 6 since before K_BASELINE; it now matches.
 _LAST_KNOWN_HYPOTHESES = 40
-_LAST_KNOWN_FAMILIES = 6
+_LAST_KNOWN_FAMILIES = 14
 
 _UNITS = ("zero", "one", "two", "three", "four", "five", "six", "seven",
           "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen",
