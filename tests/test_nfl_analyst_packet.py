@@ -109,6 +109,12 @@ class WhatItHolds(Env):
         self.assertEqual(p["sections"]["matchup"]["values"]["differentials"]["rest_days_since_last_game"]["diff"],
                          (home["rest"]["days_since_last_game"] - away["rest"]["days_since_last_game"]))
 
+    def test_each_window_holds_points_totals_so_a_point_differential_can_be_declared(self):
+        w = self.build()["sections"]["home"]["values"]["form"]["season_to_date"]
+        self.assertIsInstance(w["points_for"], int)
+        self.assertIsInstance(w["points_against"], int)
+        self.assertAlmostEqual((w["points_for"] - w["points_against"]) / w["games"], w["margin_per_game"], places=3)
+
     def test_a_difference_is_home_minus_away_and_the_packet_says_so(self):
         p = self.build()
         d = p["sections"]["matchup"]["values"]["differentials"]["form_last_3_points_for_per_game"]

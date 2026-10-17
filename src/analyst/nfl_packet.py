@@ -311,7 +311,7 @@ def _total(rows, away, home, cutoff, start) -> Optional[dict]:
 
 def _window(w: Mapping) -> dict:
     """One form window, compacted: the games it rests on and the figures, no timestamps."""
-    out = {k: w.get(k) for k in ("games", "wins", "losses", "ties", "points_for_per_game",
+    out = {k: w.get(k) for k in ("games", "wins", "losses", "ties", "points_for", "points_against", "points_for_per_game",
                                  "points_against_per_game", "margin_per_game")}
     for name in ("yards_per_play", "yards_per_play_allowed"):
         fig = w.get(name) or {}
