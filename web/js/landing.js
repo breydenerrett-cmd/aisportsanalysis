@@ -23,7 +23,7 @@ import {
 import { renderDisclaimerFooter, meta as fetchMeta } from "./meta.js";
 import { BETA_TIER } from "./pricing.js";
 import {
-  loadCheckoutState, NOT_ON, ctaLabel, heroNote, pricingNote, trialPhrase, monthlyPrice,
+  loadCheckoutState, NOT_ON, ctaLabel, heroNote, pricingNote, notOnSaleNote, trialPhrase, monthlyPrice,
 } from "./checkout.js";
 import { renderWordmark } from "./brand.js";
 import { armEntrances, armParallax, armCharts } from "./motion.js";
@@ -39,7 +39,7 @@ function renderPricing(host, state) {
       class: "pricing-tier", "data-hook": "pricing-tier",
       "data-price": String(BETA_TIER.price_cents),
     });
-    planned.appendChild(el("span", { "data-hook": "pricing-tier-note", text: pricingNote(state) }));
+    planned.appendChild(el("span", { "data-hook": "pricing-tier-note", text: notOnSaleNote(state) }));
     host.appendChild(planned);
     return;
   }

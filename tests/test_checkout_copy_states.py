@@ -213,6 +213,15 @@ TRIAL_RE = re.compile(r"trial|cancel anytime|cancel before|7-day|7 day", re.I)
 EARLY_ACCESS_SENTENCE = "Early access: the first 20 testers get 7 days free, no card."
 
 
+# Owner brief 2026-10-17: while checkout is not on, the landing pricing block and
+# the signup form say exactly this (the 20 and the 7 are the early-access offer,
+# never a trial anyone can start).
+PRICING_OFF_BLOCK = ("Not on sale yet. Planned price $19.99 a month. "
+                     "The first 20 testers get 7 days free, no card.")
+SIGNUP_OFF_OFFER = ("The first 20 testers are hand-picked: 7 days free, no card. "
+                    "Not on sale yet; planned price $19.99 a month. Analysis, not advice.")
+
+
 @unittest.skipUnless(shutil.which("node"), "node not installed")
 class CheckoutCopyInEveryState(unittest.TestCase):
     @classmethod
@@ -293,8 +302,11 @@ class CheckoutCopyInEveryState(unittest.TestCase):
                 out = self.run_scenario(kind="signup", meta=meta)
                 self.assertEqual(out["title"], "Request early access")
                 self.assertEqual(out["button"], "Request early access")
-                self.assertIn("Planned price: $19.99/month", out["text"])
-                self.assertIsNone(TRIAL_RE.search(out["text"]), out["text"])
+                self.assertIn(SIGNUP_OFF_OFFER, out["text"])
+                self.assertNotIn("Tonight's bets", out["text"])
+                self.assertNotIn("Every pick on the card", out["text"])
+                self.assertNotIn("A card is required", out["text"])
+                self.assertIsNone(TRIAL_RE.search(out["text"].replace(SIGNUP_OFF_OFFER, "")), out["text"])
                 self.assertNotIn("signup-card-required", out["hooks"])
                 self.assertNotIn("founding price", out["text"].lower())
                 self.assertNotIn("founding members", out["text"].lower())
@@ -436,7 +448,7 @@ class CheckoutCopyInEveryState(unittest.TestCase):
                                  "Early access: the first 20 testers get 7 days free, no card. Not on sale yet; planned price $19.99 a month. The record and the postseason odds are free now.")
                 self.assertTrue(by["pricing-trial-badge"]["hidden"])
                 self.assertTrue(by["pricing-cancel-line"]["hidden"])
-                self.assertEqual(by["pricing-host"]["text"].strip(), "Planned price: $19.99/month")
+                self.assertEqual(by["pricing-host"]["text"].strip(), PRICING_OFF_BLOCK)
         out = self.run_scenario(kind="landing", meta=ON14, nodes=nodes)
         by = {n["hook"]: n for n in out["nodes"]}
         for hook in ("cta-primary", "cta-signup-hero", "cta-signup", "cta-signup-bottom"):

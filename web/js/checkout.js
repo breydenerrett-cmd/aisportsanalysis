@@ -265,6 +265,24 @@ export function heroNote(state) {
 }
 
 /**
+ * The pricing block while checkout is NOT on (landing pricing card, signup form):
+ * not on sale, the planned price when there is one, and the early-access offer.
+ * Never a trial, never "cancel anytime". Owner brief 2026-10-17.
+ */
+export function notOnSaleNote(state) {
+  const amount = dollars(state && state.priceCents);
+  const sale = amount ? `Not on sale yet. Planned price ${amount} a month.` : "Not on sale yet.";
+  return `${sale} The first 20 testers get 7 days free, no card.`;
+}
+
+/** The one sentence under the signup form's heading while checkout is not on. */
+export function signupOffOffer(state) {
+  const amount = dollars(state && state.priceCents);
+  const sale = amount ? `Not on sale yet; planned price ${amount} a month.` : "Not on sale yet.";
+  return `The first 20 testers are hand-picked: 7 days free, no card. ${sale} Analysis, not advice.`;
+}
+
+/**
  * The pricing note on the signup form and the landing pricing card. Off:
  * "Planned price: $19.99/month" and nothing more. On: the hero note plus the
  * founding-price explanation that only means anything when you can buy.

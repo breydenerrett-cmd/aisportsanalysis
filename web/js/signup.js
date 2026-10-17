@@ -44,7 +44,7 @@ import { attributionPayload, firstTouchProperties } from "./attribution.js";
 import { el, clear, renderError } from "./dom.js";
 import { BETA_TIER } from "./pricing.js";
 import {
-  loadCheckoutState, ctaLabel, pricingNote, plannedPrice, monthlyPrice,
+  loadCheckoutState, ctaLabel, pricingNote, signupOffOffer, plannedPrice, monthlyPrice,
   cardRequiredNotice, trialStartedNote, WAITLIST_CONFIRMATION, testerSignupNotice,
 } from "./checkout.js";
 import {
@@ -60,10 +60,10 @@ import {
 // the price needs. This list used to sell the fair price across every book,
 // which is the register he retired.
 const BENEFITS = [
-  "Each pick starts with who is more likely to win — by the whole market and by our own numbers — then what the price needs to break even.",
-  "Every pick published before first pitch; locked at the last price check, so the call doesn't change after that.",
-  "Results published win or lose — the record is checkable, not curated.",
-  "Player props on the same footing: how often it actually happens first, what the price needs second.",
+  "A brief for every game we cover, posted before it starts: each market called take or pass.",
+  "The strongest case against any bet it takes, and what the analysis could not know.",
+  "Every call graded in public, win or lose: the record is checkable, not curated.",
+  "Analysis, not advice. It does not claim to beat the market.",
 ];
 
 /**
@@ -117,12 +117,6 @@ function renderBenefits() {
  */
 const readBilling = loadCheckoutState;
 
-// The signup page while nothing is on sale: the offer in one sentence, under a
-// heading that is checkout.js's own button label (one decision, one file). No
-// trial, no price promise.
-export const OFF_OFFER = "The first 20 testers get one week of early access, no card. "
-  + "Performance is not proven and nothing is on sale yet. Leave your email and, if "
-  + "you're picked, your access link comes from Brey.";
 
 export async function renderSignup(main) {
   clear(main);
@@ -139,11 +133,12 @@ export async function renderSignup(main) {
   card.appendChild(el("h1", { class: "signup-card__title", "data-hook": "signup-title",
     text: ctaText }));
   card.appendChild(el("p", { class: "signup-card__subhead", "data-hook": "signup-kicker",
-    text: "Tonight's bets, written down before first pitch." }));
+    text: "An AI analyst reads each matchup and calls every market take or pass, with the strongest case against any bet it takes." }));
   if (billing.on) {
     card.appendChild(el("p", { class: "signup-card__subhead", text:
-      // No count promised (2026-09-21): the card held 7-13 picks a day, not 3-5.
-      "Every pick on the card: which side is more likely, what the price needs, and the record of every one — win or lose." }));
+      // The brief, not the paused MLB value picks (2026-10-17): no pick count,
+      // no result promised.
+      "Each brief says what the analysis could not know, and every call is graded in public — win or lose." }));
     card.appendChild(renderPricingBadge(billing));
     card.appendChild(renderBenefits());
   } else {
@@ -153,7 +148,7 @@ export async function renderSignup(main) {
     // no and then asked to scroll. The offer in one sentence, the field, the
     // button; what the product is follows below for anyone who wants it.
     card.appendChild(el("p", { class: "signup-card__subhead", "data-hook": "signup-offer",
-      text: OFF_OFFER }));
+      text: signupOffOffer(billing) }));
   }
 
   const form = el("form", { class: "signup-card__form", "data-hook": "signup-form" });
@@ -185,7 +180,8 @@ export async function renderSignup(main) {
   const resultHost = el("div", { class: "signup-card__result", "data-hook": "signup-result" });
   card.appendChild(resultHost);
   if (!billing.on) {
-    card.appendChild(renderPricingBadge(billing));
+    // The planned price rides in the offer sentence above the form; a second
+    // price line here would only repeat it.
     card.appendChild(renderBenefits());
   }
 

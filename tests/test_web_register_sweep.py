@@ -103,14 +103,17 @@ class TheSignupPageSellsThePicks(unittest.TestCase):
     def test_no_retired_phrase_is_rendered(self):
         self.assertEqual(_offenders(_signup_copy(), RETIRED, "signup.js"), [])
 
-    def test_it_leads_with_likelihood_then_the_price(self):
+    def test_it_describes_the_brief_not_the_paused_picks(self):
         copy = " ".join(t for _n, t in _signup_copy()).lower()
-        self.assertIn("more likely", copy)
-        self.assertIn("break even", copy)
+        self.assertIn("take or pass", copy)
+        self.assertIn("graded in public", copy)
+        self.assertIn("could not know", copy)
+        for stale in ("tonight's bets", "every pick on the card", "written down before first pitch"):
+            self.assertNotIn(stale, copy)
 
     def test_the_benefits_were_actually_read(self):
         self.assertGreaterEqual(
-            len([t for _n, t in _signup_copy() if "first pitch" in t.lower()]), 2)
+            len([t for _n, t in _signup_copy() if "before it starts" in t.lower()]), 1)
 
 
 def _visible_html(path: Path) -> str:
