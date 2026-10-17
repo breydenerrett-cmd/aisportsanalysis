@@ -1,6 +1,6 @@
 # LineHound survival dashboard
 
-Generated 2026-10-17 02:49Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-10-17 15:42Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
@@ -151,10 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-10-16: loss diagnosis finished and independently refuted (docs/research/loss_diagnosis/00_SYNTHESIS.md): every published bet paid about 2.4 points over the market's fair number; the model's disagreement with the market carries zero or negative information on 6,818 priced contracts; the card ranks by that disagreement; a total-bases code defect inflates Overs about 3 points; grading was at best price, not the ruled average; the record ran lucky (expected -7.6u, got -1.4u).
-- Public MLB value picks PAUSED from the 2026-10-17 slate (config/mlb_public_card.json, one date to reverse). The brief, the board, the record and the shadow arms continue. Landing page now sells the brief, not tonight's picks.
-- Card V3 prepared as patch files, not applied (docs/decisions/card_v3/): total-bases fix, average-odds grading, real stale flag, fill lock price, withdrawn label. Applying any restarts the counted sample; they belong to a successor registration (docs/PREREG_CARD_V3.md, draft).
-- Information timing (the one lead): NOT MEASURABLE for props (prop captures a median 4 hours apart) and no signal on game lines. No candidate value rule remains for V3.
-- Daily job: the red run since 10-07 (a few-byte re-serialisation shrink) is fixed; the unauthorized tennis key no longer prints an error.
-- Autonomy: a local scheduled session runs at 8:30 am and 1:30 pm PT while the app is open (brief, grading, health, checkpoint). Sends 0, testers 0, paid 0.
+- 2026-10-17 08:40 PT run: ALCS Game 4 (Rays at Guardians) moved to tonight 5:08 pm PT; Game 5 (the 10-16 makeup) Sun 2:08 pm PT. The 1:30 pm PT run writes tonight's brief.
+- Public MLB value picks paused from the 2026-10-17 slate (config/mlb_public_card.json). Brief, board, record and shadow arms continue.
+- Daily job: the byte-shrink refusal is gone; still red on new escalations: settle of 2026-10-16 refuses because the postponed game (849817) has no result, and the tier-ladder pre-registration check reports it did not adopt.
+- Production deploy still stuck behind an unfinished run (about 4.6 h); site odds 5.7 h old. Owner: apply docs/decisions/deploy-timeout.patch.
+- Public sample still the newest graded brief (SD at MIL, 2026-10-04). Sends 0, replies 0, testers 0, paid 0.
 
