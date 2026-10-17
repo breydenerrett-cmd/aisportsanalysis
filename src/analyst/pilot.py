@@ -500,13 +500,14 @@ class CheckReport:
         return sum(1 for c in self.calls if not c.kept)
 
 
-def evaluate(packet: Mapping, response: Mapping) -> CheckReport:
+def evaluate(packet: Mapping, response: Mapping, *, verify: Optional[Callable] = None) -> CheckReport:
     """The pipeline's own validation and checker over a response, as a report. The same two calls
-    the API path makes; nothing is decided here."""
+    the API path makes; nothing is decided here. `verify(packet, response)` is the sport's checker
+    (default: MLB's `critic.verify`; the NFL pilot passes `nfl_analyst.verify`)."""
     errors = analyst_mod.validate_output(response, packet)
     if errors:
         return CheckReport(shape_errors=errors)
-    verified = critic.verify(packet, response)
+    verified = (verify or critic.verify)(packet, response)
     struck = {s["slot_id"]: s["problems"] for s in verified.struck}
     report = CheckReport(shape_errors=[], summary_status=verified.summary_status,
                          summary_problems=list(verified.summary_problems), verified=verified)

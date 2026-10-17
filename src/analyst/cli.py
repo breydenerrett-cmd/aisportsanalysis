@@ -69,6 +69,10 @@ EXIT_OK, EXIT_ERROR, EXIT_BLOCKED, EXIT_CAP = 0, 2, 3, 4
 # `--sport` on run, grade and record. mlb is the default and is everything below this line;
 # ufc hands the same arguments to src/analyst/ufc_cli.py.
 SPORTS = ("mlb", "ufc")
+# The NFL analyst is the supervised-session pilot only (src/analyst/nfl_pilot.py, nfl_cli.py): it has
+# no `run`, so `--sport nfl` is accepted by grade, record and pilot and refused by run.
+GRADE_SPORTS = SPORTS + ("nfl",)
+PILOT_SPORTS = ("mlb", "nfl")
 
 # After this many games in a row fail at the API (not malformed output: the
 # API itself), the run stops instead of burning the slate on a dead key or an
@@ -106,27 +110,34 @@ def add_parser(sub) -> None:
                           "situation layer, its own ledger) or both. Default: the config switch "
                           "situation_arm.enabled, which is off, so A only")
     grade = inner.add_parser("grade", help="grade a date's published games")
-    grade.add_argument("--sport", choices=SPORTS, default="mlb", help="mlb (default) or ufc")
+    grade.add_argument("--sport", choices=GRADE_SPORTS, default="mlb",
+                       help="mlb (default), ufc, or nfl (the NFL pilot's briefs, graded from the NFL data store)")
     grade.add_argument("--date", required=True, help="YYYY-MM-DD")
     grade.add_argument("--arm", choices=situation_arm.ARM_CHOICES, default=None,
                        help="which arm's ledger to grade. Default: A, and B too when its ledger exists")
     record = inner.add_parser("record", help="the record by market family, daily cost, ledger integrity")
-    record.add_argument("--sport", choices=SPORTS, default="mlb", help="mlb (default) or ufc")
+    record.add_argument("--sport", choices=GRADE_SPORTS, default="mlb", help="mlb (default), ufc or nfl")
     record.add_argument("--arm", choices=("A", "B"), default="A", help="which arm's record to print (default A)")
     pilot = inner.add_parser("pilot", help="the supervised-session pilot: prepare, check, publish "
                                            "(MLB only; its own stores)")
     pilot_sub = pilot.add_subparsers(dest="pilot_command", required=True)
     prep = pilot_sub.add_parser("prepare", help="build the packet and the exact request for one game")
-    prep.add_argument("--date", required=True, help="YYYY-MM-DD")
-    prep.add_argument("--game", required=True, help="AWAY@HOME (e.g. NYY@TB)")
+    prep.add_argument("--sport", choices=PILOT_SPORTS, default="mlb",
+                      help="mlb (default) or nfl (its own packet, prompt and ledger; src/analyst/nfl_pilot.py)")
+    prep.add_argument("--date", required=True, help="YYYY-MM-DD (NFL: the Eastern game date)")
+    prep.add_argument("--game", required=True, help="AWAY@HOME (e.g. NYY@TB, or HOU@JAX for the NFL)")
     prep.add_argument("--scratch", default=None,
                       help="write to this folder instead and mark it a rehearsal (it can be checked, "
                            "never published)")
     chk = pilot_sub.add_parser("check", help="validate and run the checker on a response and record it as an "
                                              "attempt (publication rule); publishes nothing")
+    chk.add_argument("--sport", choices=PILOT_SPORTS, default=None,
+                     help="the folder's sport; read from the prepared folder when omitted")
     chk.add_argument("--dir", required=True, help="the prepared folder")
     chk.add_argument("--response", required=True, help="the JSON answer the session wrote")
     pub = pilot_sub.add_parser("publish", help="freeze a response into the pilot ledger")
+    pub.add_argument("--sport", choices=PILOT_SPORTS, default=None,
+                     help="the folder's sport; read from the prepared folder when omitted")
     pub.add_argument("--dir", required=True, help="the prepared folder")
     pub.add_argument("--response", required=True, help="the JSON answer the session wrote")
     pub.add_argument("--model", required=True, help="the model that wrote the answer, as the session names it")
@@ -532,11 +543,30 @@ def execute_record(*, out: Callable = print, store_path: Optional[str] = None,
     return EXIT_OK if ok else EXIT_ERROR
 
 
+def _folder_sport(folder: str) -> str:
+    """The sport a prepared pilot folder was made for ("mlb" for a folder prepared before the NFL
+    pilot existed, which has no `sport`, or for anything unreadable: the MLB pilot then says so)."""
+    try:
+        meta = json.loads((Path(folder) / "prepare.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return "mlb"
+    return str(meta.get("sport") or "mlb") if isinstance(meta, dict) else "mlb"
+
+
 def main(args) -> int:
     """Dispatch for `src.cli`."""
     if args.analyst_command == "compare":
         from src.analyst import compare
         return compare.execute_compare(sport=args.sport, as_json=args.as_json)
+    sport = getattr(args, "sport", None)
+    if args.analyst_command == "pilot" and sport is None:
+        sport = _folder_sport(args.dir)            # check and publish follow the folder they are given
+    if sport == "nfl":
+        from src.analyst import nfl_cli      # lazy: nfl_cli imports this module
+        return nfl_cli.main(args)
+    if args.analyst_command == "pilot" and sport == "mlb" and getattr(args, "dir", None)             and _folder_sport(args.dir) == "nfl":
+        print(f"{args.dir} was prepared for the NFL; use --sport nfl")
+        return EXIT_ERROR
     if getattr(args, "sport", "mlb") == "ufc":
         from src.analyst import ufc_cli     # lazy: ufc_cli imports this module
         return ufc_cli.main(args)

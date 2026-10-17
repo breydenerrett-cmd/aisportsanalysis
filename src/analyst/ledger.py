@@ -199,6 +199,14 @@ def read_packet(row: Mapping, *, root: Optional[Path] = None) -> dict:
     return packet
 
 
+def start_utc(game: Mapping) -> Any:
+    """When a game starts, as its packet block spells it: `first_pitch_utc` (MLB) or `kickoff_utc`
+    (NFL). The one place the two spellings meet, so the "before the start" rule below is the same
+    rule for every sport that publishes a game block."""
+    value = game.get("first_pitch_utc")
+    return value if value is not None else game.get("kickoff_utc")
+
+
 def publish_refusal(packet: Mapping, now: datetime, lock_lead_minutes: float = 0.0) -> Optional[str]:
     """Why this game cannot be published at `now`, or None.
 
@@ -207,13 +215,14 @@ def publish_refusal(packet: Mapping, now: datetime, lock_lead_minutes: float = 0
     published is never paid for.
     """
     game = packet["game"]
-    first = _utc(game.get("first_pitch_utc"))
+    first = _utc(start_utc(game))
+    word = "kickoff" if game.get("first_pitch_utc") is None and game.get("kickoff_utc") is not None         else "first pitch"
     if first is None:
-        return "first pitch is unknown, so it cannot be shown to be ahead"
+        return f"{word} is unknown, so it cannot be shown to be ahead"
     if game.get("state") not in PUBLISHABLE_STATES:
         return f"the game is {game.get('state')!r}, not pending"
     if now >= first - timedelta(minutes=float(lock_lead_minutes)):
-        return (f"first pitch {_iso(first)} has passed or is inside the "
+        return (f"{word} {_iso(first)} has passed or is inside the "
                 f"{lock_lead_minutes}-minute lock; nothing can be published")
     return None
 
@@ -258,7 +267,7 @@ def publish(packet: Mapping, verified, *, now: datetime, model: str,
         "kind": KIND_PUBLISHED,
         "game_id": gid, "game_pk": game.get("game_pk"), "date": game["date"],
         "away": game["away"], "home": game["home"],
-        "first_pitch_utc": game["first_pitch_utc"],
+        "first_pitch_utc": start_utc(game),
         "published_utc": _iso(now),
         "version": len(existing) + 1,
         "supersedes": existing[-1]["row_hash"] if existing else None,
@@ -300,10 +309,14 @@ def _progress(old: Optional[Mapping], new_calls: Sequence[Mapping]) -> bool:
 
 
 def grade_date(date: str, results_by_pk: Mapping, box_rows: Sequence, *,
-               now: datetime, path: Optional[str] = None) -> dict:
+               now: datetime, path: Optional[str] = None, grade_game=None) -> dict:
     """Grade every published game of `date` that can be advanced. Appends one
     graded row per game whose picture changed; returns counts and a reason for
-    every game left alone. Idempotent: running it again changes nothing."""
+    every game left alone. Idempotent: running it again changes nothing.
+
+    `grade_game(published, result, box_rows)` is the sport's grader (default: MLB's,
+    `grading.grade_game`); the NFL analyst passes its own (`nfl_grading.grade_game`)."""
+    grade_game = grade_game or grading.grade_game
     ledger = _ledger(path)
     all_rows = ledger.read()
     pubs = [p for p in latest_published(all_rows).values() if p["date"] == date]
@@ -316,7 +329,7 @@ def grade_date(date: str, results_by_pk: Mapping, box_rows: Sequence, *,
             continue
         pk = pub.get("game_pk")
         result = results_by_pk.get(pk) or results_by_pk.get(str(pk))
-        body = grading.grade_game(pub, result, box_rows)
+        body = grade_game(pub, result, box_rows)
         # An all-unresolved picture is not a grade: nothing is written until
         # at least one call has a result (or a passed side has one).
         meaningful = any(c["result"] in grading.SETTLED or c.get("would_have")
@@ -361,7 +374,7 @@ def correct(game_id: str, slot_id: str, fields: Mapping, reason: str, *,
 # ---------------------------------------------------------------------------
 
 _FAMILY_TITLES = {"moneyline": "Moneyline", "run_line": "Run line", "total": "Game total",
-                  "team_total": "Team total"}
+                  "team_total": "Team total", "spread": "Point spread"}
 
 
 def call_title(spec: Mapping) -> str:
@@ -460,8 +473,11 @@ def _blank_family() -> dict:
 
 
 def record(*, path: Optional[str] = None, min_graded: int = 30,
-           all_rows: Optional[Sequence[Mapping]] = None, recent: int = 20) -> dict:
+           all_rows: Optional[Sequence[Mapping]] = None, recent: int = 20,
+           families: Optional[Sequence[str]] = None) -> dict:
     """The public record, by market family. Pure fold over the ledger.
+
+    `families` names the sport's market families (default: MLB's, `grading.FAMILIES`).
 
     A win rate and a return appear for a family only at `min_graded` graded
     calls (win, loss or push); below that they are None and
@@ -471,7 +487,7 @@ def record(*, path: Optional[str] = None, min_graded: int = 30,
     all_rows = rows(path) if all_rows is None else all_rows
     graded_by_hash = latest_graded(all_rows)
     corrections = corrections_for(all_rows)
-    families = {f: _blank_family() for f in grading.FAMILIES}
+    families = {f: _blank_family() for f in (families or grading.FAMILIES)}
     settled_games = published_games = 0
     recent_calls: list = []
     for pub in latest_published(all_rows).values():

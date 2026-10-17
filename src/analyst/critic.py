@@ -69,7 +69,7 @@ import math
 import re
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Mapping, Optional, Sequence
+from typing import Any, Callable, Mapping, Optional, Sequence
 
 from src.analyst import packet as packet_mod
 from src.analyst.analyst import (DERIVATION_UNITS, MAX_DERIVATIONS, TAKE_PRICE_FLOOR,
@@ -496,6 +496,8 @@ def _label(packet: Mapping, path: str) -> str:
     last key in words, with the key before it when the last is too bare to say what it is."""
     if path == "game.first_pitch_utc":
         return "first pitch"
+    if path == "game.kickoff_utc":
+        return "kickoff"
     if path == "game.date":
         return "the game date"
     m = re.match(r"^markets\.(\w+)\.options\[(\d+)\]\.(.+)$", path)
@@ -935,11 +937,28 @@ def _published_reason(reason: Any, derived: Optional[Sequence[Mapping]]) -> Any:
     return out
 
 
+def _call_prose(call: Mapping) -> list:
+    """`(where, text)` for every sentence of a call a reader sees: each reason's claim, the case
+    against's claim and what_would_change_it. The shape the sport-specific `text_check` is run over."""
+    out = []
+    for j, reason in enumerate(call.get("reasons") or []):
+        if isinstance(reason, Mapping) and isinstance(reason.get("claim"), str):
+            out.append((f"reasons[{j}]", reason["claim"]))
+    against = call.get("case_against")
+    # a PASS publishes no case against whatever was sent (see `verify`), so none is held to a rule
+    if call.get("verdict") != "PASS" and isinstance(against, Mapping) and isinstance(against.get("claim"), str):
+        out.append(("case_against", against["claim"]))
+    if isinstance(call.get("what_would_change_it"), str):
+        out.append(("what_would_change_it", call["what_would_change_it"]))
+    return out
+
+
 def verify(packet: Mapping, output: Mapping, *,
            model_critic: Optional[Mapping] = None,
            model_critic_status: str = "off",
            known: Optional[KnownNames] = None,
-           extra_numbers: Sequence[float] = ()) -> Verified:
+           extra_numbers: Sequence[float] = (),
+           text_check: Optional[Callable[[str, str], Sequence[str]]] = None) -> Verified:
     """Run the deterministic pass (and fold in a model critic's verdict, when
     one ran) over a shape-valid analysis. Never raises on bad content: bad
     content is what it exists to strike.
@@ -950,6 +969,12 @@ def verify(packet: Mapping, output: Mapping, *,
     another sport passes its own (`ufc_analyst.known_names`). `extra_numbers`
     are numbers the packet states inside a string and a claim may repeat (the
     number in an event's name); the default adds nothing.
+
+    `text_check(where, text)` is a sport's extra rule over prose a reader sees (the NFL analyst
+    holds a spread or total number named in a sentence to a quoted option, `nfl_analyst`). It is
+    called for every reason's claim, the case against, `what_would_change_it` and the summary, and
+    returns plain problem strings; any problem strikes the call or withholds the summary exactly
+    as a failed number check does. The default adds no rule.
     """
     base_pool = NumberPool.base(packet)
     if extra_numbers:
@@ -965,6 +990,9 @@ def verify(packet: Mapping, output: Mapping, *,
     for call in output.get("calls") or []:
         check = check_call(packet, call, base_pool.plus([call]), known)
         problems = list(check.problems)
+        if text_check is not None:
+            for where, text in _call_prose(call):
+                problems.extend(text_check(where, text))
         if call.get("slot_id") in flagged:
             problems.append("model critic: " + flagged[call["slot_id"]])
         if problems:
@@ -1008,6 +1036,8 @@ def verify(packet: Mapping, output: Mapping, *,
             s_problems.append(f"the summary uses the banned word {word!r}")
         for run in unsupported_names(summary, known):
             s_problems.append(f"the summary names {run!r}, which is not a name in the packet")
+        if text_check is not None:
+            s_problems.extend(text_check("the summary", summary))
     else:
         s_problems.append("the summary is missing")
     if model_critic and model_critic.get("summary_supported") is False:
