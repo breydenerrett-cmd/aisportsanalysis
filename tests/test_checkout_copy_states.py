@@ -477,6 +477,12 @@ class CheckoutCopyInEveryState(unittest.TestCase):
                 continue
             self.assertIn("hidden", tag, f"static trial wording outside a hidden element: {match.group(0)!r}")
 
+    def test_the_static_pricing_block_is_the_off_wording(self):
+        """No script, no /meta: the pricing card already says what is true."""
+        html = (WEB / "landing.html").read_text(encoding="utf-8")
+        host = re.search(r'<div data-hook="pricing-host">(.*?)</div>', html, flags=re.S).group(1)
+        self.assertEqual(re.sub(r"<[^>]+>", "", host).strip(), PRICING_OFF_BLOCK)
+
     def test_the_meta_description_makes_no_trial_promise(self):
         html = (WEB / "landing.html").read_text(encoding="utf-8")
         desc = re.search(r'<meta name="description" content="([^"]*)"', html).group(1)
