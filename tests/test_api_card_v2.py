@@ -141,7 +141,8 @@ class CardRouteRuleDispatch(unittest.TestCase):
         # after 2026-10-16 before a rule is dispatched; this test is about
         # dispatch, so the pause is lifted for it.
         from src.appstate import mlb_public_card
-        with mock.patch.object(mlb_public_card, "paused_card", return_value=None), \n             mock.patch.object(card_v2_mod, "frozen_card_v2", return_value=None), \
+        with mock.patch.object(mlb_public_card, "paused_card", return_value=None), \
+             mock.patch.object(card_v2_mod, "frozen_card_v2", return_value=None), \
              mock.patch.object(card_v2_mod, "card_v2_for_date",
                                return_value=_v2_payload()) as fake_build:
             card_mod.get_card_today(request=_FakeRequest(), rule="v2")
