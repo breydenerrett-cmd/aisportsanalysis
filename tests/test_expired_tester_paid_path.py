@@ -79,7 +79,17 @@ class _Base(acceptance._Case):
 
     def setUp(self):
         super().setUp()
+        # Restored afterwards: a leaked override moved users.db_path() for every later test in
+        # the same process (seen in a sharded full run on 2026-10-17).
+        previous = os.environ.get("APP_DB_PATH")
         os.environ["APP_DB_PATH"] = str(self.db)
+
+        def _restore():
+            if previous is None:
+                os.environ.pop("APP_DB_PATH", None)
+            else:
+                os.environ["APP_DB_PATH"] = previous
+        self.addCleanup(_restore)
 
     # -- fixtures -----------------------------------------------------------
 

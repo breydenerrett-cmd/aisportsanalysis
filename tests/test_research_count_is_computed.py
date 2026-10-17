@@ -119,6 +119,8 @@ class TheRegistryIsTheSource(unittest.TestCase):
         except ImportError:
             self.skipTest('fastapi is not installed in this job')
         from api import meta as meta_api
+        # /meta memoises its record; an earlier test in the same process may have filled it.
+        meta_api.reset_record_cache_for_tests()
         with mock.patch("src.research.alpha_registry.public_research_counts",
                         side_effect=RuntimeError("gone")):
             payload = meta_api.get_meta()
