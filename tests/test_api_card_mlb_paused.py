@@ -163,12 +163,13 @@ class ThePausedAnswer(_ApiCase):
         self.assertNotIn("paused", served)
         self.assertEqual(served["picks"], [{"rank": 1}])
 
-    def test_the_paused_answer_is_a_plain_page_view_not_a_value_action(self):
+    def test_the_paused_answer_is_recorded_as_a_card_view(self):
+        # The page still serves product content (the reason, the record and brief links), and the
+        # activation contract (tests/test_activation_routes.py) counts every labelled route once.
         recorder = self.patch(self.card_api, "_record_page_view")
         request = object()
         self.card_api.get_card_for_date("2026-10-17", request=request, sport="mlb")
-        recorder.assert_called_with(request, "card", "2026-10-17")
-        self.assertEqual(recorder.call_args.kwargs, {})
+        recorder.assert_called_with(request, "card", "2026-10-17", surface="card")
 
     def test_the_payload_is_json_and_carries_no_rule_or_prices(self):
         payload = self.ask("2026-10-17")

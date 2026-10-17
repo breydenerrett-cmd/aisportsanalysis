@@ -282,7 +282,12 @@ class TheLedgerStillReadsOldRows(unittest.TestCase):
     def test_the_real_ledger_has_rows_without_the_new_fields(self):
         published = [r for r in ledger.rows(str(self.store)) if r["kind"] == ledger.KIND_PUBLISHED]
         self.assertTrue(published)
-        self.assertTrue(all("attempts" not in r and "attempt_hashes" not in r for r in published))
+        # Rows published before the rule (2026-10-04) carry neither field; rows published after it
+        # (the first was 2026-10-17) carry both. Both kinds must load from the one file.
+        old = [r for r in published if "attempts" not in r and "attempt_hashes" not in r]
+        self.assertTrue(old, "the ledger should still hold its pre-rule rows")
+        for r in published:
+            self.assertEqual("attempts" in r, "attempt_hashes" in r, r.get("game_id"))
 
     def test_the_chain_and_every_packet_file_verify_exactly_as_before(self):
         result = ledger.verify(str(self.store), root=self.root)
@@ -296,11 +301,12 @@ class TheLedgerStillReadsOldRows(unittest.TestCase):
 
     def test_old_rows_grade_and_the_chain_holds_afterwards(self):
         # The published rows only, so there is something left to grade; they are a valid chain prefix.
+        # The chain prefix that ends just before the first graded row: the 2026-10-04 published rows.
         rows = ledger.rows(str(self.store))
-        keep = [r for r in rows if r["kind"] == ledger.KIND_PUBLISHED]
+        first_graded = next(i for i, r in enumerate(rows) if r["kind"] != ledger.KIND_PUBLISHED)
         lines = self.original_bytes.decode("utf-8").splitlines()
         copy = self.root / "grade_copy.jsonl"
-        copy.write_text("\n".join(lines[:len(keep)]) + "\n", encoding="utf-8")
+        copy.write_text("\n".join(lines[:first_graded]) + "\n", encoding="utf-8")
         self.assertTrue(ledger.verify(str(copy), root=self.root)["ok"])
         pub = ledger.latest_published(ledger.rows(str(copy)))["ATL-LAD-2026-10-04-1"]
         results = {pub["game_pk"]: {"away_score": "3", "home_score": "5"}}   # invented, for the test only

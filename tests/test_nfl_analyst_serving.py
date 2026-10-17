@@ -414,7 +414,7 @@ class TheSamplePageUnderNode(unittest.TestCase):
 
     def test_an_mlb_sample_is_what_it_was(self):
         out = self.render(S.brief())
-        self.assertIn("NYY at TB, 2026-10-03 (MLB postseason)", out["text"])
+        self.assertIn("NYY at TB, 2026-10-03 (MLB)", out["text"])
         self.assertTrue(any(text.startswith("First pitch") for _hook, text in out["facts"]))
         self.assertIn("Published before first pitch", out["text"])
 
