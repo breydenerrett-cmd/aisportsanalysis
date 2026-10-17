@@ -39,6 +39,19 @@ class TennisResultsError(RuntimeError):
     """Raised when tennis results configuration or retrieval fails."""
 
 
+class TennisResultsUnauthorized(TennisResultsError):
+    """The feed answered 401 or 403: the key is not entitled to this feed.
+
+    A different fact from "the feed is down" and from every other failure here,
+    and a standing one: the BALLDONTLIE key has not covered ATP/WTA results
+    since the trial ended (docs/reports/2026-09-21_WHERE_WE_ARE.md), so the
+    daily loop's read-only results check printed `ERROR: balldontlie API
+    returned HTTP 401` every day. A subclass of TennisResultsError, so every
+    caller that handles the general failure still does; only the command that
+    can say "skipped: key unauthorized" once, and move on, looks for this one.
+    """
+
+
 class ResultsFeed(ABC):
     """Base interface for a tennis results feed.
 
@@ -234,6 +247,9 @@ class BallDontLieFeed(ResultsFeed):
             with urllib.request.urlopen(request, timeout=self._timeout) as response:
                 return json.loads(response.read().decode("utf-8"))
         except urllib.error.HTTPError as exc:
+            if exc.code in (401, 403):
+                raise TennisResultsUnauthorized(
+                    f"balldontlie API returned HTTP {exc.code}") from None
             raise TennisResultsError(
                 f"balldontlie API returned HTTP {exc.code}") from None
         except urllib.error.URLError as exc:

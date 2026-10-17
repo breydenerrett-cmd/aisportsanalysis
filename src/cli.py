@@ -4010,6 +4010,13 @@ def cmd_tennis(args) -> int:
 
         try:
             outcome = tennis_results.results_for(args.date)
+        except tennis_results.TennisResultsUnauthorized:
+            # A standing fact about the key, not a failure of this run: the
+            # daily loop printed `ERROR: balldontlie API returned HTTP 401`
+            # every day for it (2026-10-16). Said once, on stdout, exit 0.
+            print(f"tennis results {args.date}: skipped: key unauthorized "
+                  "(the BALLDONTLIE key is not entitled to the tennis results feed)")
+            return EXIT_OK
         except tennis_results.TennisResultsError as exc:
             print(f"ERROR: {exc}", file=sys.stderr)
             return EXIT_ERROR

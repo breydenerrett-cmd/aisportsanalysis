@@ -61,7 +61,7 @@ read_append_only_stores() {
 }
 
 guard_staged_no_shrink() {
-    local path staged_blob head_blob staged_n head_n unit
+    local path staged_blob head_blob staged_n head_n unit tol_helper tol_msg
     for path in "$@"; do
         # No HEAD version to compare against: a brand-new file cannot shrink.
         head_blob=$(git rev-parse "HEAD:$path" 2>/dev/null) || continue
@@ -98,6 +98,32 @@ guard_staged_no_shrink() {
                 ;;
         esac
 
+        # A JSON STORE THAT ONLY GOT RE-SERIALISED IS NOT A SHRINK (2026-10-16).
+        # data/historical/arsenals/*.json is rewritten by the loop's own refresh,
+        # and a different spelling of a float (0.30 / 0.3) moved the file by 1 to
+        # 4 bytes with every record intact; the guard read that as a shrink and
+        # turned every daily-loop run since 2026-10-07 red. scripts/
+        # shrink_tolerance.py tolerates a byte shrink ONLY when it is under 0.1%
+        # of the file AND the record count is unchanged, and prints both byte
+        # counts and both record counts. Anything else, a helper that is missing,
+        # or a file it cannot parse, falls through to the refusal below: failing
+        # toward keeping data is this guard's whole job. Only bytes-unit paths
+        # (not .jsonl, which counts rows exactly) are eligible.
+        if [ "$unit" = "bytes" ] && [ -n "$staged_blob" ] && [ "$staged_n" -lt "$head_n" ]; then
+            tol_helper="$(dirname "${BASH_SOURCE[0]}")/shrink_tolerance.py"
+            if [ -f "$tol_helper" ]; then
+                if tol_msg=$(python3 "$tol_helper" "$head_blob" "$staged_blob" 2>/dev/null); then
+                    echo "NOTE: $path re-serialised, not shrunk, keeping it: ${tol_msg%$'\r'}"
+                    continue
+                fi
+                tol_msg="${tol_msg%$'\r'}"
+            else
+                tol_msg=""
+            fi
+        else
+            tol_msg=""
+        fi
+
         if [ "$staged_n" -lt "$head_n" ]; then
             # Unstage AND restore the worktree copy from HEAD for this path
             # only -- the rest of whatever else is staged in this commit
@@ -109,6 +135,12 @@ guard_staged_no_shrink() {
             # exits non-zero for a NEW one -- this routes into the existing
             # alarm channel with no new state or constant.
             echo "ESCALATE: $path would shrink $head_n -> $staged_n $unit, refusing"
+            # Why the tolerance did not apply: both byte counts and both record
+            # counts, on a line that does NOT start "ESCALATE:" (escalations.py
+            # matches only lines that do), so the alarm count is unchanged.
+            if [ -n "$tol_msg" ]; then
+                echo "  not tolerated: $tol_msg"
+            fi
         fi
     done
 }
