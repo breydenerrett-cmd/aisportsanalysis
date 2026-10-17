@@ -17,6 +17,16 @@ meter and the critic and adding its own packet, prompt, grader, ledger and CLI:
     ufc_ledger.py   evidence/analyst_ufc_v1.jsonl, its own chain and record
     ufc_cli.py      `--sport ufc`
 
+The NFL analyst is the same four steps for football, as the supervised-session pilot only (no API
+path, so no `run`), sharing the request, the schema, the critic and the ledger and adding its own
+packet, prompt, number-line check, grader, pilot flow and CLI:
+
+    nfl_packet.py   one game packet from the NFL data store and the multibook odds
+    nfl_analyst.py  the football prompt, the name vocabulary and the spread and total number check
+    nfl_grading.py  moneyline, spread and total from the NFL store's final scores
+    nfl_pilot.py    prepare, check, publish into evidence/analyst_pilot_nfl_v1.jsonl
+    nfl_cli.py      `--sport nfl` (pilot, grade, record)
+
 Each analyst's record is its own. None is merged into the card record or into another
 analyst's, and none changes a card rule, gate, pick or published result. Nothing in this
 package places a bet or can.

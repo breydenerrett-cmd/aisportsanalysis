@@ -977,6 +977,231 @@ offline (the HTTP caller is injected; the shared fixtures read no repo data), pl
 code. The pilot has `tests/test_analyst_pilot.py`, `test_analyst_pilot_serving.py` and
 `test_sample_brief.py`.
 
+## The NFL brief (`src/analyst/nfl_*.py`)
+
+The matchup brief for football. It exists as the supervised-session pilot only: there is no
+`analyst run --sport nfl` and no API path, so nothing here needs a key. A Claude session writes the
+answer from the exact request the API would send, and the same shape check, code checker and ledger
+publish it, into the NFL pilot's own files. It is labelled exactly as the MLB pilot's briefs are
+(`PILOT_LABEL`) and its record is its own: never added to the MLB pilot's, the API analyst's or the
+UFC analyst's, and never to a card record.
+
+### What is shared and what is new
+
+Shared, called and not copied: the request body and JSON schema (`analyst.schema_for` picks the MLB
+one for an NFL packet, because the packet has a `game` block and no `bout`, so a take carries a case
+against and a calculated number is declared and recomputed), `validate_output`, `critic.verify`,
+`ledger.publish`, `ledger.game_view`, the pilot's attempt record and publication rule, the
+`-200` cap, the banned words and the two internal words ("packet" and "repo") a reader must never be
+shown. New: the packet (`nfl_packet.py`), the prompt and the number-line check (`nfl_analyst.py`),
+grading from the NFL data store (`nfl_grading.py`), the pilot flow (`nfl_pilot.py`) and its commands
+(`nfl_cli.py`), `api/analyst_nfl.py` and `web/js/analyst_nfl.js`. Small, backwards-compatible hooks
+were added to shared code: `critic.verify(text_check=...)`, `ledger.start_utc` (a game block may say
+`kickoff_utc` instead of `first_pitch_utc`), `ledger.grade_date(grade_game=...)`,
+`ledger.record(families=...)` and `pilot.evaluate(verify=...)`. Every MLB path is the default.
+
+### 1. The packet (`nfl_packet.build_packet(store, game_id, built_at=..., multibook_rows=...)`)
+
+Pure: it reads the NFL data store it is handed and the odds rows it is handed, and nothing else. The
+teams, their form, rest, travel, quarterbacks, injuries and head to head come from
+`src.datasvc.nfl.matchup.matchup`, the NFL data service's fact sheet (`docs/datasvc/NFL_FEATURES.md`).
+The prices come from `data/processed/odds_multibook.jsonl`: one quote per book per market with the
+time it was captured. The schedule file's own spread, total and moneyline are never used: it is one
+value per game that nflverse overwrites as the market moves, with no capture time.
+
+```
+packet_version  analyst_nfl_packet_v1
+built_at        the instant the packet was built
+game            game_id (the store's, e.g. 2026_06_LAC_KC), date (the Eastern game date), season, week,
+                game_type, away and home (club codes), their names, kickoff_utc, state, stadium, neutral_site
+figure_units    what each form figure measures, once
+sections        schedule, away, home, matchup, reference
+markets         moneyline, spread, total: each with options (the lean first), per-book quotes with
+                capture times, the best quote and the margin-free consensus (fair_probability)
+slots           the calls to make, in order
+missing         [{item, kind: absent | stale | thin, reason}]
+limits          what the packet does not cover
+how_to_read     which way a difference points, what a window's games mean, how a spread is signed
+```
+
+**Markets.** `moneyline`: the two clubs, the likelier side first. `spread`: the two clubs at the number
+most books quote, each selection with its own signed number ("LAC +7.5", "KC -7.5"), and a `context`
+that counts the books on this number and on others and says where the number stood the first time the
+store captured it. `total`: Over and Under the most-quoted number, with the same context. A slot exists
+only when both sides are quoted. No NFL player-prop, alternate-line or team-total price is stored
+anywhere, so there is no slot for one and `missing` says so.
+
+**Sections.** `schedule` (week, slot, primetime, divisional, neutral site, stadium, roof, surface).
+`away` and `home`: this season's record and streak; three form windows (the last three games, the last
+five, the season so far) with points for and against, margin, net yards per play for and against and
+turnover margin, each stating the games it rests on; the last three games; rest (days, short week, bye);
+travel (miles, time zones, the team's own clock at kickoff); the quarterback of the last game and the one
+the schedule lists for this game (a projection, with when it was listed); and the injury report counts by
+position group with every listed quarterback, running back, receiver and tight end named with their
+designations. `matchup`: every difference as home minus away, with a `thin_sample` flag, and the head to
+head since the store begins. `reference`: the scoring values (a field goal 3, a touchdown 6, an extra
+point 1, a two-point conversion 2, a safety 2) and the key numbers 3, 6, 7, 10 and 14, stated as facts of
+how the game is scored. No frequency of any margin is in the packet, so none can be quoted.
+
+**No future leakage.** (1) Features are as of the earlier of `built_at` and the start, so a result that
+finished after the freeze is not in a form figure. (2) The game block is a whitelist; a finished game's
+score never enters it. (3) A quote enters only when it was captured at or before `built_at` and strictly
+before the start, which is the earlier of the schedule's kickoff and the odds feed's `commence_time`; a
+quote that cannot be dated is dropped. (4) The quarterback the schedule lists is kept only when the
+schedule row was fetched before `built_at`, and a team's injury report is withdrawn whole if any of its
+rows was first fetched after `built_at`, because the store keeps only the newest version of a row.
+(5) Observed temperature and wind are recorded at game time and are never read.
+
+**What `missing` says, typed.** `absent`: player props; weather for a game not known to be indoors; a
+missing roof type; a market with no quotes; an injury report the store does not hold for the week; a
+quarterback the schedule has not listed. `stale`: a market whose newest quote is older than
+`stale_quote_minutes` (180). `thin`: a form window with fewer games than it names, a season figure from
+fewer than three games, a venue the schedule flags, a kickoff the schedule and the odds feed disagree
+about. Everything the data service itself reports missing for a team is passed on with the team's code.
+
+### 2. The prompt, verbatim (`NFL_PROMPT_VERSION = analyst_prompt_nfl_v1`)
+
+Every rule of the MLB v5 prompt with the baseball words changed, plus rules F1 to F8: the spread (name
+the side and the number the packet quotes, never another; a team followed by a signed number is only ever
+a spread claim), the total (name the number), key numbers (discuss 3 and 7 and the other scoring facts the
+packet lists, never invent one, never state how often a margin occurs), the moneyline, quarterbacks and
+injuries, rest and travel and venue, small samples, and consistency. The schema is the MLB one.
+
+```
+You are a football betting analyst. You write the analysis of one NFL game and make a call on every market the packet prices. You are an AI model and the reader knows it. Your work is published before the game, graded afterward, and shown next to its record whatever that record turns out to be. Write like a sharp human analyst talking to a smart friend: plain words, a point of view, no hype.
+
+THE PACKET IS YOUR ONLY SOURCE
+1. Reason only from the packet. Use no outside knowledge of any team, player, coach, injury, weather, standing or result, even if you are sure of it. If something matters and is not in the packet, say it is missing.
+2. A claim without a packet path is forbidden. Every reason has evidence: a list of {path, value}. A path names one value in the packet and starts at the packet's own top-level key. The value is copied exactly. Examples of real paths: markets.spread.options[0].best.price and sections.home.values.form.last_3.points_for_per_game. Never start a path with data. or packet.
+3. Every number you write in prose must appear in the packet, or be a price or probability you are yourself giving in a call. Do no arithmetic of your own on packet numbers in prose (no differences, sums or ratios); quote the packet's numbers, including the differences it already holds in sections.matchup. Do not write clock times.
+3a. The one exception to doing arithmetic is a calculation you declare. A number you work out yourself (a difference, a sum, a ratio, a percent change, the days between two dates, the chance a price implies, a count or an average) may appear in a reason, a case against or the summary only if that item lists it in `derived` as {value, unit, op, inputs, note}. `op` is one of difference, sum, ratio, percent_change, days_between, implied_probability, count, mean. `inputs` are packet paths, in order: difference is the first minus the second, ratio is the first over the second, percent_change is the change from the first to the second as a percent of the first, days_between is the calendar days between two dates in UTC (later minus earlier), implied_probability takes one American price, count takes one list. `unit` is what the value is measured in (days, points, percent, and so on) and `note` says in plain words what it is. The checker recomputes every derived value from the packet, and a wrong one strikes the call. Put the summary's in `summary_derived`. An item with no calculated number has an empty `derived`.
+4. `missing` lists what is absent, stale or thin. Weigh it. A call that rests on something listed there is a PASS.
+
+THE CALLS
+5. Make exactly one call for every entry in `slots`, in the same order, using its slot_id and its market. `selection` must be one of that slot's selections, written exactly as listed. The first selection is the lean: the side the books favour.
+6. Verdicts. TAKE: bet the lean (the first selection) at the price you name. TAKE_OTHER_SIDE: bet the other selection, the side the books do not favour. PASS: bet nothing in this market.
+7. PASS is the default. When the evidence is thin, or the packet gives you nothing about this market beyond its own price, PASS. Say plainly when the market is probably right, and what makes you think so.
+8. Never TAKE any bet at a price of -200 or worse, in any market (-200, -250, -325 and so on). PASS it, or if the other side is the one you like, take that.
+9. price and book: the quote you would take, copied from the selection's quotes in the packet. For a PASS you may give the best quote or null.
+10. fair_estimate: your own probability that the selection wins, between 0.01 and 0.99. The books' own de-vigged number is in the packet as fair_probability. If you depart from the books by more than a few points, the reasons must show what the packet knows that the price does not. For a PASS you may give null.
+11. pass_price: the American price at which the selection stops being worth taking, which is the break-even price of your fair_estimate. On a PASS, the price at which you would start to take it, or null if no price would do.
+12. confidence: low, medium or high. High only when several independent packet facts agree and nothing relevant is in `missing`.
+13. what_would_change_it: one sentence naming a specific new fact that would flip the call, such as a quarterback change, a player ruled out on the injury report, or the number moving off a key number. If it names a price, that price is your pass_price.
+13a. case_against: for a TAKE or a TAKE_OTHER_SIDE, the strongest reason from the packet that this bet loses, written as {claim, evidence} and built like a reason. It must name a specific weakness in this bet, such as a number in the packet that points the other way, not general risk: "anything can happen on Sunday" is not a case against. Cite at least one packet path, and quote only numbers that are in the packet. Argue it as hard as you would argue the other side. For a PASS it is null.
+
+THE FOOTBALL
+F1. The spread. Its two selections are the two sides of one number, each written with its own signed number as the packet lists it (a selection like "KC -3.5" lays 3.5 points and "LAC +3.5" gets 3.5). A spread call names the side and the number, and the number is the one the packet quotes. Never write a spread number the packet does not quote for that team; when you mean something else with a sign (a turnover margin, a point difference), write it as a plain number with its name, such as "a turnover margin of -1.5", never a team followed by a signed number. The lean of a spread is the side with the higher margin-free probability at that number, which is close to a coin flip by design: a TAKE needs a reason the number is wrong, in points, not a reason the team is good. `markets.spread.context` says where the number was first captured; if the number has moved, say which way.
+F2. The total. A total call names the number (Over 41.5, Under 41.5). Set both teams' points scored and allowed per game, yards per play, and turnover margin against the number, and say whether the price already holds them. A total that a quarterback change or an injury report could move is a reason for care.
+F3. Key numbers. Margins and totals land on 3, 7 and a few others far more often than on their neighbours because of how the game is scored. You may discuss a spread or total sitting on, or half a point off, one of those numbers, using only `sections.reference.values` for the scoring facts. Never state how often a margin occurs, any historical rate, or any percentage the packet does not hold. Never invent a key number: use the ones the packet lists.
+F4. The moneyline. A moneyline is a view on who wins, priced; a heavy favourite is never a TAKE at -200 or worse (rule 8), and the underdog is the other side. Say what the price needs for the underdog to be worth taking, using the packet's own fair_probability and the declared implied probability if you need one.
+F5. Quarterbacks and injuries. The quarterback a team lists for the game is the schedule's projection (`projected`, with the time it was listed); a changed quarterback from the last game, or a quarterback with few prior starts, is a reason for care. The injury report is the weekly report as stored: counts by position and named skill players with their designations. A player listed as out matters more than one listed as questionable, and a long list is not the same as a long list of starters: the packet does not measure a player's importance, so do not claim it. Never claim an injury, a scratch or a snap count that is not in the packet.
+F6. Rest, travel and venue. Use days of rest, a short week, a bye, miles, time zones crossed, the team's own clock at kickoff, a neutral site and the roof exactly as the packet gives them. A neutral-site game has a nominal home team. Weather is not in the packet unless it says so: when `missing` lists weather as absent for an outdoor game, say you cannot see it, and do not guess at wind or cold.
+F7. Samples. A season is seventeen games and this is early in it: a window of three games is noise, and every form figure states how many games it rests on (`games`). Where a team has few games, where `thin_sample` is true or `missing` says a window is thin, prefer PASS, say it is thin, and lean on what is solid. Head to head covers only the meetings since the data store begins.
+F8. Keep the calls consistent with each other and with the summary. A side you expect to win comfortably is not also a spread you pass for being too close, and a total you take Under is not argued with a pace that favours Over.
+
+THE WORDS
+14. Never write: lock, guaranteed, free money, sure thing, can't lose, +EV. Never claim a profit, an edge you have, or certainty. No exclamation marks.
+14a. Everything a reader sees (the summary, every reason's claim, the case against and what_would_change_it) is read by a customer who has never heard of a packet. In those fields call the data "the data" or "what we have", never "the packet". The checker strikes the word "packet" there. Likewise never write "repo", "repos", "repository" or "the repo model". The checker strikes those words too. Evidence paths keep their own form.
+15. Do not recommend a stake size and do not describe anything as a bet you or we placed.
+
+THE SUMMARY
+16. `summary` is the argument in 120 to 200 words of plain prose, one or two paragraphs, no lists, no markdown. Say where you lean and why, where you pass, what the market probably has right, and which missing inputs matter. A voice like: "The home side is the better team on the numbers, but the spread already asks for a touchdown and the injury list on the other side is long without telling us who is out, so I pass on the number and look at the total." Only with facts that are actually in the packet.
+
+Reply with one JSON object that matches the schema and nothing else.
+```
+
+### 3. The checker (`nfl_analyst.verify`)
+
+`critic.verify` with the NFL name vocabulary (no baseball club is vouched for; players and clubs come
+from the packet's own text) and one more rule. The generic number check lets a number through if it
+appears anywhere in the packet, so "LAC +4" passes it when the spread is LAC +7.5 because a 4 sits in a
+games count two sections away. For a spread that is the whole claim, so `line_problems` reads the prose:
+a club (code, nickname or full name) directly followed by a signed number must name a number that club is
+quoted at (or where that number was first captured), and "Over" or "Under" directly followed by a
+two-digit number must name the quoted total. A call that fails it is struck to a PASS, a summary that fails
+it is withheld, and the struck original goes to the ledger row's audit trail. The rule leans strict: a team
+written next to a signed turnover margin reads as a spread claim, and the prompt says how to avoid it. The
+rest is the MLB checker: every evidence path and value, every number in prose, every name, the price and
+book of a take, the lean, the `-200` cap in every market, a case against on every take, declared
+calculations recomputed from the packet.
+
+### 4. The pilot flow (`nfl_pilot.py`, `nfl_cli.py`)
+
+```
+python -m src.cli analyst pilot prepare --sport nfl --date 2026-10-18 --game LAC@KC [--scratch DIR]
+python -m src.cli analyst pilot check   --sport nfl --dir evidence/analyst_pilot_nfl/2026-10-18_LAC-KC --response answer.json
+python -m src.cli analyst pilot publish --sport nfl --dir evidence/analyst_pilot_nfl/2026-10-18_LAC-KC --response answer.json \
+    --model <name> [--tokens-in N --tokens-out N --seconds S --operator-minutes M] [--refresh]
+python -m src.cli analyst grade  --sport nfl --date 2026-10-18
+python -m src.cli analyst record --sport nfl
+```
+
+`--date` is the game's Eastern calendar date (a Sunday night game that kicks off after midnight UTC is
+still that Sunday) and `--game` is `AWAY@HOME` in the nflverse codes (the Rams are `LA`; `LAR` and `WSH`
+are read as `LA` and `WAS`). `check` and `publish` read the sport from the prepared folder when
+`--sport` is left out, and an MLB folder is refused by the NFL commands and the other way round.
+
+- **prepare** reads the NFL data store (`data/datasvc/nfl`) and the multibook store one line at a time,
+  builds the packet, refuses a game that is not pending, has kicked off or prices no market (with the
+  ledger's own words, `kickoff ... has passed`), and writes `packet.json`, `request.json` and
+  `prepare.json` (sport, packet hash, prompt version and hash, built time, kickoff, token estimate) to
+  `evidence/analyst_pilot_nfl/<date>_<AWAY>-<HOME>/`. It prints the request's input token estimate.
+- **check** and **publish** are the MLB pilot's: the publication rule (the first answer is the candidate,
+  a re-answer only after a checker rejection and at most twice, the latest attempt is the only one
+  that can be published, a reroll never), the packet age limit (90 minutes), the rehearsal refusal,
+  the changed-prompt refusal and the kickoff refusal. See "The supervised-session pilot".
+- **Stores.** `evidence/analyst_pilot_nfl_v1.jsonl`, `evidence/analyst_pilot_nfl_usage_v1.jsonl` and
+  `evidence/analyst_pilot_nfl_packets_v1/`. Every ledger call passes an explicit NFL path; no MLB store
+  and no main store is read or written. A row carries `sport: "nfl"`, `game_pk` (the store's game id),
+  `first_pitch_utc` (the kickoff, under the name the ledger already reads) and `kickoff_utc`, plus
+  the pilot's `provenance`, `attempts` and `attempt_hashes`.
+
+### 5. How grading works (`nfl_grading.py`)
+
+The card ledger's own `grade_pick` and `grade_total_pick`, against the final scores in the NFL data
+store (`nfl_grading.results_for`: final games of the date with two integer scores). A spread is graded
+by the margin against the number, a total by the points against the line, and a moneyline by who won; a
+tie is a push on the moneyline. A game the store has not been updated for grades `UNRESOLVED`, never a
+loss; `python -m src.datasvc.cli nfl update` is what brings a finished game's score in. Families are
+`moneyline`, `spread` and `total`, each graded on its own, with a rate and units withheld until a family
+has 30 graded calls. A PASS reports what the side passed on would have done.
+
+### 6. Where it shows
+
+- `GET /analyst/nfl/{date}/{away}/{home}` (`api/analyst_nfl.py`): paid, the same gate as the MLB route.
+  The published brief and its grade, with `PILOT_LABEL`, `provenance: "session_assisted"`, `sport: "nfl"`,
+  each take's case against and the packet's `missing` list; or `available: false` with a plain reason. It
+  reads the NFL pilot's ledger and nothing else and never calls a model.
+- `#/nfl/brief/{date}/{away}/{home}` (`web/js/analyst_nfl.js`): the NFL's first per-game page, drawn by the
+  same `renderAnalystSection` as the MLB game page. The NFL has a card and a record and no game page, so
+  nothing on the card links to it yet.
+- `config/sample_brief.json` may carry `"sport": "nfl"` (default `"mlb"`): `GET /sample/brief` then serves
+  that game from the NFL pilot's ledger, and the sample page says NFL and kickoff.
+
+### 7. What the NFL store cannot support, so a brief is thin
+
+No player-prop prices (so no prop calls). No weather forecast for a stadium (observed temperature and wind
+exist only after the game). Injury reports from 2025 on carry no timestamp, so a report is taken as out
+24 hours before kickoff, an assumption the packet states. The starting quarterback is a projection the
+schedule lists for the current and next week. A season is 17 games, so before about week 4 a form window is
+three games or fewer. No depth chart, snap counts, play-by-play detail, officials or coaching news. A
+player's importance is not measured, so a long injury list does not say who is out. Head to head covers
+the meetings since 2021 only. A neutral-site game has a nominal home team.
+
+### 8. What it does not claim
+
+It does not say the brief is good, only what the record later shows. It places no bet and prices none: a
+price in the brief is a quote the books showed at a time. The sample behind any rate is small until a
+family has 30 graded calls, and a graded NFL slate is at most about sixteen games a week.
+
+### 9. Tests
+
+`tests/test_nfl_analyst_packet.py` (point in time, the missing list, the quotes),
+`tests/test_nfl_analyst_checker.py` (the prompt pins, the number-line rule, the cap, the names),
+`tests/test_nfl_analyst_pilot.py` (prepare, check, publish, the publication rule, the chain, grading, the
+commands, loading without FastAPI), `tests/test_nfl_analyst_serving.py` (the route, the sample, the page)
+and `tests/test_nfl_analyst_docs.py` (this section quotes the code).
+
 ## The UFC analyst
 
 The same analyst for fights: every bout on a card gets a model-written call, with reasons, on every

@@ -17,6 +17,11 @@
             stores, labelled as written in a supervised session. `grade` and `record`
             also cover the pilot's rows (under their own heading) once its store exists.
 
+`--sport nfl` (pilot prepare, check and publish, grade and record take it; there is no NFL `run`) hands
+the same arguments to `nfl_cli.py`: the NFL analyst is the supervised-session pilot only, with its own
+packet, prompt, ledger (`evidence/analyst_pilot_nfl_v1.jsonl`) and record. `check` and `publish` read the
+sport from the prepared folder when `--sport` is omitted.
+
 `--sport ufc` (run, grade and record all take it; `--sport mlb` is the default and is
 everything in this file) hands the same arguments to `ufc_cli.py`: the UFC analyst has its
 own packet, prompt, ledger and record and shares only the model call, the spend meter and
