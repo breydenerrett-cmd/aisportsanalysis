@@ -30,3 +30,6 @@ tests/fixtures/example_accounts/*.jsonl text eol=lf
 # it and rescan every file (api/datasvc.py StoreHolder._measure).
 data/datasvc/**/*.jsonl text eol=lf
 data/datasvc/**/MANIFEST.json text eol=lf
+# Card V3 patch files (docs/decisions/card_v3/) are applied by the apply tool,
+# which rejects a CRLF patch against an LF tree. They stay LF in every checkout.
+docs/decisions/card_v3/*.patch text eol=lf
