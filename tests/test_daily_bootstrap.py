@@ -32,11 +32,14 @@ cold checkout.
 from __future__ import annotations
 
 import json
+import os
 import pathlib
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 
 REPO = pathlib.Path(__file__).resolve().parent.parent
@@ -56,10 +59,64 @@ def _run_bootstrap(data_dir, timeout=60):
     env = {"AISPORTS_DATA_DIR": str(data_dir),
            "AISPORTS_STATCAST_SEED_REF": "data-seed/statcast-does-not-exist",
            "PATH": __import__("os").environ["PATH"]}
-    return subprocess.run(
-        ["bash", str(BOOTSTRAP)],
-        cwd=REPO, capture_output=True, text=True, env=env, timeout=timeout,
-    )
+    return _run_in_group(["bash", str(BOOTSTRAP)], cwd=REPO, env=env,
+                         timeout=timeout)
+
+
+def _kill_group(proc):
+    """Kill `proc` AND everything it spawned. Best effort on Windows."""
+    if os.name == "posix":
+        try:
+            os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+        except (ProcessLookupError, PermissionError):
+            pass  # group already gone
+    else:
+        # No process groups to signal; taskkill /T walks the child tree.
+        try:
+            subprocess.run(["taskkill", "/F", "/T", "/PID", str(proc.pid)],
+                           capture_output=True, timeout=10)
+        except (OSError, subprocess.SubprocessError):
+            pass
+    proc.kill()  # harmless if already dead; covers the taskkill-missing case
+
+
+def _run_in_group(cmd, cwd, env, timeout):
+    """`subprocess.run` that cannot leak grandchildren on timeout.
+
+    Why: `subprocess.run` kills only the direct child on TimeoutExpired.
+    daily_bootstrap.sh launches Python grandchildren that keep writing into
+    the test's temp dir after bash dies, so the TemporaryDirectory teardown
+    raced them and failed with `OSError: [Errno 39] Directory not empty` on
+    Linux CI (2026-10-17, py3.12; passed on 3.10/3.11 by luck). The script
+    gets its own session/process group, and on timeout the whole group is
+    killed and reaped before TimeoutExpired is re-raised, so nothing writes
+    afterwards. Re-raising keeps the callers' "timeout == still rebuilding"
+    reading and their access to partial stdout.
+    """
+    kwargs = {}
+    if os.name == "posix":
+        kwargs["start_new_session"] = True
+    else:
+        kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP
+    proc = subprocess.Popen(cmd, cwd=cwd, env=env, text=True,
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                            **kwargs)
+    try:
+        stdout, stderr = proc.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired as exc:
+        _kill_group(proc)
+        try:
+            stdout, stderr = proc.communicate(timeout=10)
+        except subprocess.TimeoutExpired:
+            stdout, stderr = exc.stdout, exc.stderr  # pipe held by an escapee
+        proc.wait()
+        raise subprocess.TimeoutExpired(cmd, timeout, output=stdout,
+                                        stderr=stderr) from None
+    except BaseException:
+        _kill_group(proc)
+        proc.wait()
+        raise
+    return subprocess.CompletedProcess(cmd, proc.returncode, stdout, stderr)
 
 
 class DailyBootstrapParsesTest(unittest.TestCase):
@@ -117,7 +174,9 @@ class DailyBootstrapProceedsWithStatcastManifestTest(unittest.TestCase):
     too strict) is just as bad as never refusing at all."""
 
     def setUp(self):
-        self._tmp = tempfile.TemporaryDirectory()
+        # ignore_cleanup_errors: this class tolerates a timed-out (killed)
+        # run, so a straggler file must never turn teardown into an error.
+        self._tmp = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
         self.addCleanup(self._tmp.cleanup)
         self.data_dir = pathlib.Path(self._tmp.name)
         statcast_dir = self.data_dir / "historical" / "statcast"
@@ -144,6 +203,45 @@ class DailyBootstrapProceedsWithStatcastManifestTest(unittest.TestCase):
             output = result.stdout
         self.assertIn("statcast manifest present", output)
         self.assertNotIn("ESCALATE: no Statcast manifest", output)
+
+
+def _pid_alive(pid):
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    try:  # a zombie awaiting a reaper is dead for our purposes
+        with open(f"/proc/{pid}/stat") as fh:
+            return fh.read().rsplit(")", 1)[1].split()[0] != "Z"
+    except OSError:
+        return True
+
+
+@unittest.skipUnless(os.name == "posix" and shutil.which("bash"),
+                     "process-group kill is POSIX/bash only")
+class TimedOutRunLeavesNoChildTest(unittest.TestCase):
+    """Regression for the Linux-CI teardown race: a timed-out bootstrap run
+    must not leave grandchildren alive to write into the temp dir."""
+
+    def test_timeout_kills_grandchildren(self):
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
+            tmp = pathlib.Path(tmp)
+            pidfile = tmp / "child.pid"
+            script = tmp / "fake_bootstrap.sh"
+            script.write_text(
+                "#!/bin/bash\n"
+                f"sleep 300 &\necho $! > '{pidfile}'\nwait\n")
+            with self.assertRaises(subprocess.TimeoutExpired):
+                _run_in_group(["bash", str(script)], cwd=tmp,
+                              env={"PATH": os.environ["PATH"]}, timeout=2)
+            pid = int(pidfile.read_text().strip())
+            deadline = time.monotonic() + 5
+            while _pid_alive(pid) and time.monotonic() < deadline:
+                time.sleep(0.1)
+            alive = _pid_alive(pid)
+            if alive:
+                os.kill(pid, signal.SIGKILL)  # do not leak from the test itself
+            self.assertFalse(alive, "grandchild survived a timed-out run")
 
 
 class DailyBootstrapStatcastSeedTest(unittest.TestCase):
