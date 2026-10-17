@@ -2685,8 +2685,16 @@ def _cmd_engine_settle(args) -> int:
     from src.engine import settle_slate
     from src.pipeline import history
 
+    if getattr(args, "recent", False):
+        return _cmd_engine_settle_carried(args)
+
     try:
-        report = settle_slate.run_settle(args.date)
+        # `makeup_lookup`: a game Postponed on this date and not yet made up
+        # (same game_pk, later date) is "pending makeup", not a refusal -- see
+        # history.postponed_makeup. The lookup only runs for a game with no
+        # result at all.
+        report = settle_slate.run_settle(
+            args.date, makeup_lookup=history.postponed_makeup)
     except settle_slate.NoWagersError as exc:
         # An off day is not a missed slate: with no game scheduled there was
         # nothing to stake, so nothing is owed. Only the results manifest's
@@ -2725,7 +2733,65 @@ def _cmd_engine_settle(args) -> int:
         if s.scorecard_absent:
             print(f"    scorecard absent    : "
                   f"{[a.field for a in s.scorecard_absent]}")
+    for pending in report.pending_makeup:
+        when = pending["makeup_date"] or "a date not yet set"
+        print(f"  pending makeup on {when}: game_pk {pending['game_pk']} "
+              f"({pending['n_wagers']} wager(s)) was postponed from "
+              f"{args.date}; it settles from the result of the same game_pk "
+              "once that game is final -- not an error, nothing was written "
+              "for it")
     return EXIT_OK
+
+
+# How far back `engine settle --recent` looks for a date still owed a
+# settlement. Matches card_ledger.CARD_SETTLE_WINDOW_DAYS so the paper-wager
+# and card records retry the same week.
+ENGINE_SETTLE_CARRY_DAYS = 7
+
+
+def _cmd_engine_settle_carried(args) -> int:
+    """`engine settle --date D --recent`: settle every date from 2 to
+    ENGINE_SETTLE_CARRY_DAYS days before `--date` (the loop's "today")
+    that still holds unsettled paper wagers.
+
+    WHY (2026-10-17). `engine settle --date <yesterday>` is a single shot: a
+    postponed game's wagers (dated the day it was rained out) are deferred as
+    "pending makeup" that day, and nothing would ever look at that date again
+    once it stopped being yesterday. This is the retry, the engine
+    counterpart of `card settle --recent`. A date with every wager settled is
+    skipped without opening any ledger; a date that still refuses (a true
+    gap, not a pending makeup) returns the error code so the loop escalates
+    it every morning until it is fixed instead of dropping it silently.
+    """
+    from src.engine import settle_slate
+
+    anchor = date.fromisoformat(args.date)
+    settled_ids: dict = {}
+    worst = EXIT_OK
+    checked = 0
+    for offset in range(2, ENGINE_SETTLE_CARRY_DAYS + 1):
+        day = (anchor - timedelta(days=offset)).isoformat()
+        wagers = settle_slate.wagers_for_date(day)
+        owed = False
+        for w in wagers:
+            ids = settled_ids.get(w["system_id"])
+            if ids is None:
+                ids = settled_ids[w["system_id"]] = \
+                    settle_slate.already_settled_bet_ids(w["system_id"])
+            if w["bet_id"] not in ids:
+                owed = True
+                break
+        if not owed:
+            continue
+        checked += 1
+        sub = argparse.Namespace(date=day, recent=False)
+        code = _cmd_engine_settle(sub)
+        if code != EXIT_OK:
+            worst = code
+        settled_ids.clear()
+    print(f"engine settle --recent: {checked} earlier date(s) still owed a "
+          "settlement checked")
+    return worst
 
 
 def _cmd_engine_slip(args) -> int:
@@ -3061,6 +3127,54 @@ def _record_from_row(cls, row):
     return cls(**{k: v for k, v in row.items() if k in valid})
 
 
+def _add_makeup_rows(by_pk: dict, date_str: str, store) -> dict:
+    """Add to `by_pk` (this date's results, keyed by game_pk three ways) the
+    results of games POSTPONED from `date_str` and made up under the same
+    game_pk on a later day.
+
+    The results store files a game under the day it was played, so a pick on
+    a game rained out on 10-16 and played 10-18 found nothing under 10-16 and
+    sat UNRESOLVED until the 7-day window expired. Only a game the date's
+    schedule calls Postponed whose makeup is final and stored is added
+    (history.makeup_results_for_date); every other pick on that date still
+    grades or stays UNRESOLVED exactly as before. A schedule failure adds
+    nothing.
+    """
+    from src.pipeline import history as history_mod
+    for pk, row in history_mod.makeup_results_for_date(date_str, store).items():
+        by_pk[pk] = row
+        by_pk[row.get("game_pk")] = row
+        try:
+            by_pk[int(pk)] = row
+        except (TypeError, ValueError):
+            pass
+    return by_pk
+
+
+def _pending_makeup_note(date_str: str) -> str:
+    """` [pending makeup on <date>: game_pk ...]` for a MISS line, or ''."""
+    from src.pipeline import history as history_mod
+    try:
+        entry = history_mod.read_manifest(history_mod.DEFAULT_MANIFEST).get(date_str)
+    except history_mod.HistoryError:
+        return ""
+    if not isinstance(entry, dict) or not entry.get("cancelled"):
+        return ""
+    try:
+        games = mlb.fetch_games(date_str)
+    except Exception:  # noqa: BLE001 -- a note, never a failure
+        return ""
+    notes = []
+    for game in games:
+        if game.get("detailed_state") != "Postponed":
+            continue
+        info = history_mod.postponed_makeup(game.get("game_pk"), date_str)
+        if info and info["status"] == history_mod.MAKEUP_PENDING:
+            notes.append(f"game_pk {info['game_pk']} on "
+                         f"{info['makeup_date'] or 'a date not yet set'}")
+    return f" [pending makeup: {'; '.join(notes)}]" if notes else ""
+
+
 def _mlb_fetch_results_recent():
     """A `fetch_results(date_str)` closure for
     `card_ledger.settle_recent` (MLB, R-2026-09-19).
@@ -3097,7 +3211,7 @@ def _mlb_fetch_results_recent():
                     by_pk[int(pk)] = row
                 except (TypeError, ValueError):
                     pass
-        return by_pk
+        return _add_makeup_rows(by_pk, date_str, cache["store"])
 
     return fetch
 
@@ -3165,7 +3279,10 @@ def _cmd_card_settle_recent(sport: str) -> int:
     print(f"dates_checked={totals['dates_checked']} "
           f"settled={totals['settled']} misses={len(totals['misses'])}")
     for miss in totals["misses"]:
-        print(f"  MISS {miss['date']}: {miss['reason']}")
+        # A pick on a game Postponed that day is waiting for its makeup, not
+        # lost: say so, with the makeup date (a note only, MLB only).
+        note = _pending_makeup_note(miss["date"]) if sport == "mlb" else ""
+        print(f"  MISS {miss['date']}: {miss['reason']}{note}")
     return EXIT_OK
 
 
@@ -3216,6 +3333,7 @@ def cmd_card(args) -> int:
                     by_pk[int(pk)] = row
                 except (TypeError, ValueError):
                     pass
+        _add_makeup_rows(by_pk, for_date, store)
         from src.pipeline import boxscores as boxscores_mod
         try:
             prop_box_rows = boxscores_mod.read(
@@ -3261,14 +3379,14 @@ def cmd_card(args) -> int:
         print(f"  chain: {'intact' if getattr(chain, 'ok', True) else 'BROKEN'}")
         return EXIT_OK
 
-    if sub == "settle" and getattr(args, "recent", False):
+    if sub == "settle" and getattr(args, "recent", False) and rule == "v1":
         # R-2026-09-19: the self-healing window, replacing single-shot
         # `--date $YESTERDAY`. Checked before `date_str = args.date` below
         # -- --recent does not require --date at all.
         return _cmd_card_settle_recent(sport)
 
     date_str = args.date
-    if sub == "settle" and not date_str:
+    if sub == "settle" and not date_str and not getattr(args, "recent", False):
         print("ERROR: --date is required unless --recent is given",
               file=sys.stderr)
         return EXIT_ERROR
@@ -3320,12 +3438,6 @@ def cmd_card(args) -> int:
                 return EXIT_ERROR
             from src.appstate import card_ledger
 
-            by_pk, prop_box_rows = _results_and_box_rows(date_str)
-            if by_pk is None:
-                print("historical store is empty -- run `ingest` first.",
-                      file=sys.stderr)
-                return EXIT_ERROR
-
             stores = {
                 "v2": card_ledger.CARD_STORE_V2,
                 "shadow-a": card_ledger.CARD_STORE_V2_SHADOW_A,
@@ -3333,6 +3445,60 @@ def cmd_card(args) -> int:
                 "shadow-e": card_ledger.CARD_STORE_V2_SHADOW_E,
             }
             names = list(stores) if rule == "all" else [rule]
+
+            if getattr(args, "recent", False):
+                # The V2 family's self-healing window (the V1 counterpart is
+                # `_cmd_card_settle_recent`): yesterday plus every earlier
+                # day in card_ledger.CARD_SETTLE_WINDOW_DAYS, so a pick on a
+                # postponed game is graded from its makeup when it lands, not
+                # only on the one morning it was yesterday. `settle_v2`
+                # returns None for a date with nothing published or nothing
+                # left UNRESOLVED, and never re-grades a terminal entry.
+                anchor = date.fromisoformat(date_str) if date_str \
+                    else datetime.now(timezone.utc).date()
+                settled_n = 0
+                for offset in range(1, card_ledger.CARD_SETTLE_WINDOW_DAYS + 1):
+                    day = (anchor - timedelta(days=offset)).isoformat()
+                    # Only the stores that still owe this day a grade (a
+                    # published card with nothing settled, or an UNRESOLVED
+                    # entry left) cost a results read.
+                    owing = []
+                    for name in names:
+                        if card_ledger.published_row(day, path=stores[name]) is None:
+                            continue
+                        prior = card_ledger.settled_row(day, path=stores[name])
+                        if prior is None or card_ledger._v2_has_unresolved(prior):
+                            owing.append(name)
+                    if not owing:
+                        continue
+                    by_pk, prop_box_rows = _results_and_box_rows(day)
+                    if by_pk is None:
+                        print("historical store is empty -- run `ingest` "
+                              "first.", file=sys.stderr)
+                        return EXIT_ERROR
+                    for name in owing:
+                        row = card_ledger.settle_v2(
+                            day, by_pk, prop_box_rows=prop_box_rows,
+                            path=stores[name])
+                        if row is None:
+                            continue
+                        settled_n += 1
+                        print(f"  {name}: settled {day}: "
+                              f"{row.get('wins', 0)}-{row.get('losses', 0)}"
+                              + (f"-{row['pushes']}" if row.get("pushes")
+                                 else "")
+                              + (f" ({row['unresolved']} still UNRESOLVED)"
+                                 if row.get("unresolved") else ""))
+                print(f"dates_settled={settled_n} (rule {rule}, window "
+                      f"{card_ledger.CARD_SETTLE_WINDOW_DAYS} days)")
+                return EXIT_OK
+
+            by_pk, prop_box_rows = _results_and_box_rows(date_str)
+            if by_pk is None:
+                print("historical store is empty -- run `ingest` first.",
+                      file=sys.stderr)
+                return EXIT_ERROR
+
             for name in names:
                 row = card_ledger.settle_v2(date_str, by_pk,
                                             prop_box_rows=prop_box_rows,
@@ -3367,6 +3533,7 @@ def cmd_card(args) -> int:
                     by_pk[int(pk)] = row
                 except (TypeError, ValueError):
                     pass
+        _add_makeup_rows(by_pk, date_str, store)
         # THIS DATE'S BATTER BOX ROWS, for grading the prop picks alongside
         # the game picks. FIXED 2026-09-12 (checker problem 6): this call
         # used to pass no `prop_box_rows` at all, so on the real scheduled
@@ -4544,6 +4711,11 @@ def build_parser() -> argparse.ArgumentParser:
         "settle", help="S6a: settle a date's paper wagers from real "
                       "results and append Scorecards")
     engine_settle.add_argument("--date", required=True, help="YYYY-MM-DD")
+    engine_settle.add_argument(
+        "--recent", action="store_true",
+        help="instead of settling --date, settle every date 2-7 days before "
+             "it that still holds unsettled paper wagers (a postponed game's "
+             "wagers wait here until its makeup is final)")
 
     engine_slip = engine_sub.add_parser(
         "slip", help="rank a date's frozen plays into the published slip "

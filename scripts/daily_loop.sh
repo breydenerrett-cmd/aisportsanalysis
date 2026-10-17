@@ -60,12 +60,22 @@ DAILY_OUT=$(python3 -m src.cli daily 2>&1)
 echo "$DAILY_OUT" | sed 's/^/  /'
 
 echo "== ledger status =="
+# PENDING MAKEUP IS NOT A GAP (2026-10-17). A date whose every unsettled game
+# is a Postponed game with a makeup still to be played (same game_pk) is
+# printed on its own line, 'pending_makeup_dates', with the makeup date, and
+# left out of 'unsettled_past_dates' -- the only line the settlement-gap
+# ESCALATE at the bottom reads. Anything else stays a true gap.
 STATUS_OUT=$(python3 -c "
-from src.pipeline import ledger
+from src.pipeline import history, ledger
+entries = ledger.read()
 status = ledger.status()
+gap, pending = history.split_pending_makeup_dates(
+    status.get('unsettled_past_dates') or [],
+    ledger.recommendations(entries), ledger.settlements(entries))
 print('games_recorded:', status.get('games_recorded'),
       'pending:', status.get('pending'), 'settled:', status.get('settled'))
-print('unsettled_past_dates:', status.get('unsettled_past_dates'))
+print('unsettled_past_dates:', gap)
+print('pending_makeup_dates:', pending)
 " 2>&1)
 echo "$STATUS_OUT" | sed 's/^/  /'
 
@@ -316,6 +326,24 @@ if [ "$SETTLE_STATUS" -ne 0 ]; then
 fi
 echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: engine settle --date $YESTERDAY exit=$SETTLE_STATUS" >> "$RUN_NOTE"
 
+# A POSTPONED GAME IS PENDING, NOT A GAP (2026-10-17). ALCS game 4 (849817)
+# was rained out on 10-16 and is made up on 10-18 under the SAME game_pk. The
+# call above prints "pending makeup on <date>" for it and exits 0 (no
+# ESCALATE); this one is the retry for every earlier date (2-7 days back)
+# that still holds unsettled paper wagers, so the postponed day's wagers
+# settle, once, from the makeup's result on the first run after it is final.
+# A date that refuses for any OTHER reason (no result, unresolved event) is a
+# true gap and exits non-zero, which is the ESCALATE below.
+echo "== engine settle (carried dates, 2-7 days back) =="
+SETTLE_CARRY_OUT=$(python3 -m src.cli engine settle --date "$TODAY" --recent 2>&1)
+SETTLE_CARRY_STATUS=$?
+echo "$SETTLE_CARRY_OUT" | sed 's/^/  /'
+if [ "$SETTLE_CARRY_STATUS" -ne 0 ]; then
+    echo "ESCALATE: engine settle --recent found an earlier date it cannot settle (exit $SETTLE_CARRY_STATUS) -- a true gap, not a pending makeup; see output above"
+    type foundry_beat >/dev/null 2>&1 && foundry_beat daily_loop escalate escalate "" "engine settle carried date failed" || true
+fi
+echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: engine settle --recent exit=$SETTLE_CARRY_STATUS" >> "$RUN_NOTE"
+
 # THE CARD'S RECEIPTS. Grades yesterday's frozen card, plus any date in the
 # last card_ledger.CARD_SETTLE_WINDOW_DAYS (7) days that is still published
 # and unsettled, and appends each outcome as a SEPARATE ledger row -- the
@@ -358,15 +386,20 @@ echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: card settle --recent exit=$CARDS
 # grading every file "--rule all" publish wrote (scripts/capture_slot.sh).
 # Idempotent per date like every other settle call here: a date with
 # nothing published, or already settled, is a legible no-op, not a failure.
-echo "== card settle v2-family, yesterday ($YESTERDAY) =="
-CARDSETTLE_V2_OUT=$(python3 -m src.cli card settle --rule all --date "$YESTERDAY" 2>&1)
+# SELF-HEALING WINDOW (2026-10-17): `--recent` walks yesterday plus the last
+# card_ledger.CARD_SETTLE_WINDOW_DAYS days, so a V2 entry left UNRESOLVED on a
+# postponed game is graded from the makeup (same game_pk) when it is final,
+# exactly once, instead of being tried only on the one morning it was
+# yesterday. A date with nothing published or nothing UNRESOLVED is skipped.
+echo "== card settle v2-family (self-healing window: yesterday + unsettled last 7 days) =="
+CARDSETTLE_V2_OUT=$(python3 -m src.cli card settle --rule all --recent 2>&1)
 CARDSETTLE_V2_STATUS=$?
 echo "$CARDSETTLE_V2_OUT" | sed 's/^/  /'
 if [ "$CARDSETTLE_V2_STATUS" -ne 0 ]; then
     echo "ESCALATE: card settle --rule all failed (exit $CARDSETTLE_V2_STATUS) -- the V2 record stops updating silently if this keeps failing. See src/appstate/card_ledger.py."
     type foundry_beat >/dev/null 2>&1 && foundry_beat daily_loop escalate escalate "" "card settle --rule all failed" || true
 fi
-echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: card settle --rule all --date $YESTERDAY exit=$CARDSETTLE_V2_STATUS" >> "$RUN_NOTE"
+echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: card settle --rule all --recent exit=$CARDSETTLE_V2_STATUS" >> "$RUN_NOTE"
 
 echo "== nfl card settle (self-healing window: yesterday + unsettled last 7 days) =="
 NFLSETTLE_OUT=$(python3 -m src.cli card settle --sport nfl --recent 2>&1)

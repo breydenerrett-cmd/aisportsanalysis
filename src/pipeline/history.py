@@ -200,6 +200,156 @@ def no_games_scheduled(game_date, path=None):
     return None
 
 
+# ---------------------------------------------------------------------------
+# Postponed games that are made up under the SAME game_pk
+# ---------------------------------------------------------------------------
+
+MAKEUP_PENDING = "pending_makeup"
+MAKEUP_FINAL = "makeup_final"
+
+
+def _iso_day(value):
+    text = str(value or "")[:10]
+    return text if len(text) == 10 and text[4] == "-" and text[7] == "-" else None
+
+
+def postponed_makeup(game_pk, game_date, *, fetch_instances=None):
+    """What became of a game Postponed on `game_date`, or None.
+
+    WHY THIS EXISTS (2026-10-17). ALCS game 4 (849817) was rained out on
+    2026-10-16 and is made up on 10-18 under the SAME game_pk. Every wager and
+    card pick dated 10-16 names that pk, `engine settle` found no result for it
+    and the daily loop went red on a game that was not a failure, only not
+    played yet. The settle contract is: a postponed game is settled from the
+    result of the same game_pk when that game is final, exactly once; until
+    then it is PENDING, reported with the makeup date, and never an error.
+
+    Returns {"game_pk", "pick_date", "status", "makeup_date", "detail"} where
+    `status` is MAKEUP_FINAL (the schedule shows a later instance final) or
+    MAKEUP_PENDING (a later instance exists but is not final, or the schedule
+    gives only the postponement and a new date). None means the schedule
+    gives no positive evidence of a postponement made up later: no Postponed
+    instance (a Cancelled game is never played, and is not this function's
+    business), no instance on a later day, an unanswered or empty lookup. An
+    unanswered question is never a "pending", so a broken schedule call cannot
+    hide a real gap.
+
+    SHAPE OF THE REAL ANSWER (verified against statsapi 2026-10-17). By
+    gamePk the schedule returns the Postponed entry AND the makeup entry, and
+    the Postponed one already carries the NEW officialDate (not the day it was
+    rained out), so an instance cannot be matched to the pick date by its
+    `date`. The Postponed state is the evidence; the makeup is the other entry
+    on a day after the pick date.
+    """
+    if fetch_instances is None:
+        fetch_instances = mlb.fetch_game_instances
+    pick_day = _iso_day(game_date)
+    if pick_day is None:
+        return None
+    try:
+        instances = list(fetch_instances(game_pk) or [])
+    except Exception:  # noqa: BLE001 -- any provider failure means "ask again"
+        return None
+    postponed = [g for g in instances if g.get("detailed_state") == "Postponed"]
+    if not postponed:
+        return None
+    others = [g for g in instances if g.get("detailed_state") != "Postponed"
+              and (_iso_day(g.get("date")) or "") > pick_day]
+    finals = sorted((g for g in others if g.get("state") == "final"),
+                    key=lambda g: g["date"])
+    key = str(game_pk)
+    if finals:
+        day = _iso_day(finals[-1]["date"])
+        return {"game_pk": key, "pick_date": pick_day, "status": MAKEUP_FINAL,
+                "makeup_date": day,
+                "detail": f"postponed from {pick_day}, final on {day}"}
+    if others:
+        day = min(_iso_day(g["date"]) for g in others)
+    else:
+        moved = sorted(d for d in (_iso_day(g.get("date")) for g in postponed)
+                       if d and d > pick_day)
+        day = moved[0] if moved else None
+    return {"game_pk": key, "pick_date": pick_day, "status": MAKEUP_PENDING,
+            "makeup_date": day,
+            "detail": (f"postponed from {pick_day}, makeup "
+                       + (f"on {day}" if day else "date not yet set"))}
+
+
+def makeup_results_for_date(game_date, store=None, *, manifest_path=None,
+                            fetch_games=None, fetch_instances=None) -> dict:
+    """`{str(game_pk): results-store row}` for games Postponed on `game_date`
+    whose makeup is final in the store.
+
+    Card settling grades a date from the results stored UNDER that date, so a
+    pick on a game postponed from 10-16 and played 10-18 found nothing on 10-16
+    forever. This adds exactly those rows, and only on positive evidence from
+    both sides: the date's schedule lists the pk as Postponed, the by-game
+    schedule shows the makeup final, and the results store holds that pk.
+
+    The manifest is the cheap gate: a date whose manifest entry shows no
+    cancelled/postponed game costs no request at all. Any failure returns what
+    was found so far (nothing), never a guess.
+    """
+    entry = None
+    try:
+        entry = read_manifest(manifest_path if manifest_path is not None
+                              else DEFAULT_MANIFEST).get(str(game_date))
+    except HistoryError:
+        return {}
+    if not isinstance(entry, Mapping) or not entry.get("cancelled"):
+        return {}
+    if store is None:
+        store = read_results()
+    if fetch_games is None:
+        fetch_games = mlb.fetch_games
+    try:
+        games = list(fetch_games(game_date) or [])
+    except Exception:  # noqa: BLE001
+        return {}
+    out = {}
+    for game in games:
+        if game.get("detailed_state") != "Postponed":
+            continue
+        pk = str(game.get("game_pk"))
+        info = postponed_makeup(pk, game_date, fetch_instances=fetch_instances)
+        row = store.get(pk)
+        if (info and info["status"] == MAKEUP_FINAL and row
+                and (_iso_day(row.get("date")) or "") > _iso_day(game_date)):
+            out[pk] = row
+    return out
+
+
+def split_pending_makeup_dates(dates, recs, settled_pks, *, lookup=None):
+    """`(true_gap_dates, pending)` for the settlement-gap check.
+
+    `dates` are the ledger's unsettled past dates, `recs` its recommendations
+    (each with `date` and `game_pk`), `settled_pks` the set of settled game_pks.
+    A date is PENDING only when every unsettled recommendation on it is for a
+    game `postponed_makeup` shows Postponed and not yet final; `pending` maps
+    date -> {pk: makeup_date}. Anything else, including a date whose makeup is
+    already final but still unsettled (settlement should have run), stays a
+    true gap.
+    """
+    if lookup is None:
+        lookup = postponed_makeup
+    gap, pending = [], {}
+    for day in dates:
+        unsettled = [r for r in recs
+                     if r.get("date") == day and r.get("game_pk") not in settled_pks]
+        found = {}
+        for rec in unsettled:
+            info = lookup(rec["game_pk"], day)
+            if not info or info["status"] != MAKEUP_PENDING:
+                found = None
+                break
+            found[str(rec["game_pk"])] = info["makeup_date"]
+        if found:
+            pending[day] = found
+        else:
+            gap.append(day)
+    return gap, pending
+
+
 def missing_dates(start, end, path=DEFAULT_MANIFEST,
                   include_unfinished: bool = True, game_types=None) -> list:
     """Dates in a range that still owe us results.

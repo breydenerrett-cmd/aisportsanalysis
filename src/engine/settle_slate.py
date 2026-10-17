@@ -470,6 +470,11 @@ class SettleReport:
     # The ones THIS run voided: `({"bet_id", "system_id", "event_id",
     # "sport", "reason"}, ...)`.
     voided_not_mlb: tuple = ()
+    # Wagers left unsettled on purpose because their game was Postponed and
+    # its makeup (same game_pk) is not final yet: `({"game_pk", "makeup_date",
+    # "detail", "n_wagers"}, ...)`. Not a failure; the same game_pk settles
+    # them, once, on the first run after the makeup is in the results store.
+    pending_makeup: tuple = ()
 
 
 def run_settle(date_str: str, *, wagers_path=None, results_path=MLB_RESULTS_CSV,
@@ -481,6 +486,7 @@ def run_settle(date_str: str, *, wagers_path=None, results_path=MLB_RESULTS_CSV,
                game_pk_map_path=None,
                sport_source_paths=None,
                battery_run=battery.run,
+               makeup_lookup=None,
                now: datetime | None = None) -> SettleReport:
     """Settle `date_str`'s paper wagers (module docstring).
 
@@ -489,7 +495,17 @@ def run_settle(date_str: str, *, wagers_path=None, results_path=MLB_RESULTS_CSV,
     stores the production L1 is projected from
     (`glue.sport_tag_paths(glue.L1_PATH)`); an explicit sequence (`()`
     included) is used as given -- how a test stays off the real stores.
-    Read only when some wager's game_pk is still unresolved."""
+    Read only when some wager's game_pk is still unresolved.
+
+    `makeup_lookup(game_pk, date) -> dict | None` is `history.postponed_makeup`
+    in production (the CLI passes it); `None` keeps the strict behaviour. A
+    wager whose game has NO result is normally a refusal. When the lookup shows
+    that game was Postponed and its makeup under the same game_pk is not final
+    yet, its wagers are deferred instead (`SettleReport.pending_makeup`) and
+    the date's other wagers settle normally. Nothing is written for a deferred
+    wager: when the makeup lands in the results store the same call finds the
+    result by game_pk and settles it, and `already_settled_bet_ids` makes every
+    later call a no-op, so a postponed game settles exactly once."""
     game_pk_index = gamekey.load_map(
         game_pk_map_path if game_pk_map_path is not None
         else gamekey.DEFAULT_MAP_PATH)
@@ -520,6 +536,14 @@ def run_settle(date_str: str, *, wagers_path=None, results_path=MLB_RESULTS_CSV,
     game_pks = sorted({game_pk_key(w.get("game_pk")) for w in mlb_wagers
                        if w.get("game_pk") is not None})
     missing = [pk for pk in game_pks if pk not in results]
+    deferred: dict = {}
+    if missing and makeup_lookup is not None:
+        from src.pipeline import history as _history
+        for pk in missing:
+            info = makeup_lookup(pk, date_str)
+            if info and info.get("status") == _history.MAKEUP_PENDING:
+                deferred[pk] = info
+        missing = [pk for pk in missing if pk not in deferred]
     unresolved_events = sorted({w.get("event_id") for w in mlb_wagers
                                 if w.get("game_pk") is None})
     if missing or unresolved_events:
@@ -555,6 +579,7 @@ def run_settle(date_str: str, *, wagers_path=None, results_path=MLB_RESULTS_CSV,
         by_system.setdefault(w["system_id"], []).append(w)
 
     voided_not_mlb: list = []
+    deferred_counts: dict = {}
     system_settlements = []
     for system_id, rows in sorted(by_system.items()):
         already = already_settled_bet_ids(system_id, account_ledger_path_fn)
@@ -615,6 +640,10 @@ def run_settle(date_str: str, *, wagers_path=None, results_path=MLB_RESULTS_CSV,
                     append_review(review)
                 continue
             game_pk = w.get("game_pk")
+            if game_pk_key(game_pk) in deferred:
+                deferred_counts[game_pk_key(game_pk)] = (
+                    deferred_counts.get(game_pk_key(game_pk), 0) + 1)
+                continue
             result = build_game_result(game_pk, results, f5_historical, f5_boxscore)
             if result is None:
                 # Should be unreachable given the pre-flight check above,
@@ -711,7 +740,12 @@ def run_settle(date_str: str, *, wagers_path=None, results_path=MLB_RESULTS_CSV,
     return SettleReport(date=date_str, n_wagers_considered=len(wagers),
                         n_games=len(game_pks), systems=tuple(system_settlements),
                         n_not_mlb_wagers=len(not_mlb),
-                        voided_not_mlb=tuple(voided_not_mlb))
+                        voided_not_mlb=tuple(voided_not_mlb),
+                        pending_makeup=tuple(
+                            {"game_pk": pk, "makeup_date": info.get("makeup_date"),
+                             "detail": info.get("detail"),
+                             "n_wagers": deferred_counts.get(pk, 0)}
+                            for pk, info in sorted(deferred.items())))
 
 
 def _replay_prior_settlements(account: PaperAccount) -> None:
