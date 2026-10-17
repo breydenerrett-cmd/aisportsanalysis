@@ -536,8 +536,9 @@ class WithdrawnPicksAreReportedAndLabelled(LedgerCase):
         self.assertEqual((1, 0, 1), (wg["wins"], wg["losses"], wg["n_staked"]))
         self.assertAlmostEqual(0.7143, wg["profit_units"], places=4)
 
-    @pending("withdrawn")
     def test_the_withdrawn_pick_is_in_none_of_the_headline_figures(self):
+        """Guard (passes before AND after): the patch ADDS the withdrawn
+        figure; it must not move the headline ones."""
         self._day_with_one_kept_and_one_withdrawn()
         rec = cl.record_v2(path=self.path)
         self.assertEqual((0, 1), (rec["main"]["wins"], rec["main"]["losses"]))
