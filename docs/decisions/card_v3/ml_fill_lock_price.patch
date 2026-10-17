@@ -1,0 +1,107 @@
+diff --git a/src/appstate/card_ledger.py b/src/appstate/card_ledger.py
+index d04224015..dacb903df 100644
+--- a/src/appstate/card_ledger.py
++++ b/src/appstate/card_ledger.py
+@@ -2735,6 +2735,89 @@ def _apply_ceiling_v2(merged: list, params, *,
+     return refused
+ 
+ 
++LOCK_BASIS_BOARD = "board_at_lock"
++LOCK_BASIS_NO_READ = "last_published_no_read_at_lock"
++LOCK_BASIS_FAILED = "board_at_lock_failed_hard_gate"
++
++# What a moneyline fill takes from the locking run's read of the same game:
++# the market side of the bet, never our own number (which stays as shown).
++_MONEYLINE_LOCK_RESTAMP_FIELDS = (
++    "price", "book", "books", "observed_utc", "market_probability",
++    "average_decimal", "breakeven", "value_need", "bet",
++)
++
++
++def _is_moneyline_fill(entry: Mapping) -> bool:
++    return (entry.get("entry_class") == "fill"
++            and entry.get("kind") != "prop"
++            and entry.get("market") == "moneyline")
++
++
++def _lock_moneyline_fill_at_board_price(entry: Mapping, fresh_entry, moment):
++    """Lock a provisional moneyline FILL at the price on the board when it
++    locks, not at the price it was last published at (CARD V3 PATCH 4,
++    docs/decisions/card_v3/README.md).
++
++    Registration L3 locks an entry "as last published", and a fill may be
++    added on a stale quote (G3 is not required of a fill). The loss diagnosis
++    (03 section 4) found 20 of the 29 graded moneylines had a newer
++    multi-book capture before `locked_at`, and on 11 of those 20 the graded
++    price was no longer on any book (mean -3.0 cents; worst case a Dodgers
++    fill graded at -147 with -212 the best price at lock). A reader could
++    not have taken the price the record graded.
++
++    What this does, by what the locking run saw:
++
++    * a read of the same game that clears every hard gate (it may still
++      fail G3/G7, as any fill does): the fill locks on THAT read's market
++      side -- price, book, books, quote time, market probability, average
++      price, break-even and value need -- and keeps the price it was shown at
++      in `price_when_shown`. `lock_price_basis` is "board_at_lock".
++    * a read that FAILS a hard gate (for instance the price has moved outside
++      the registered band): the fill is withdrawn, exactly as a provisional
++      fill is withdrawn outside the window. It is still graded, labelled
++      withdrawn, at the price it was last shown.
++    * NO read of the game at this run: the fill locks as last published and
++      `lock_price_basis` says "last_published_no_read_at_lock", so a reader
++      and a grader can tell a verified price from an unverified one. The
++      ledger cannot know why the candidate is absent, so it does not guess.
++
++    Our own probability is never refreshed: the fill is the bet that was
++    shown, repriced to what the market was paying when it locked.
++    """
++    if fresh_entry is None:
++        out = dict(entry)
++        out["locked"], out["locked_at"] = True, moment.isoformat()
++        out["lock_price_basis"] = LOCK_BASIS_NO_READ
++        return out
++    fails = list(fresh_entry.get("failed_gates") or ())
++    if set(fails) - _v2_rule._FILL_ALLOWED_FAILURES:
++        out = dict(entry)
++        out["withdrawn"] = True
++        out["withdrawn_at"] = moment.isoformat()
++        out["withdrawal_reason"] = fails
++        out["lock_price_basis"] = LOCK_BASIS_FAILED
++        return out
++    out = dict(entry)
++    out["locked"], out["locked_at"] = True, moment.isoformat()
++    shown = _parse_utc(entry.get("observed_utc"))
++    read = _parse_utc(fresh_entry.get("observed_utc"))
++    if read is None or fresh_entry.get("price") is None or (
++            shown is not None and read < shown):
++        out["lock_price_basis"] = LOCK_BASIS_NO_READ
++        return out
++    out["price_when_shown"] = entry.get("price")
++    out["observed_utc_when_shown"] = entry.get("observed_utc")
++    for key in _MONEYLINE_LOCK_RESTAMP_FIELDS:
++        if fresh_entry.get(key) is not None:
++            out[key] = fresh_entry[key]
++    our, breakeven = out.get("our_probability"), out.get("breakeven")
++    if our is not None and breakeven is not None:
++        out["gap"] = our - breakeven
++    out["lock_price_basis"] = LOCK_BASIS_BOARD
++    return out
++
++
+ def _lock_and_merge_v2(prior: Sequence[Mapping], fresh: Sequence[Mapping], *,
+                         moment: datetime, lock_lead_hours: float, params,
+                         fresh_seconds: Optional[float] = None,
+@@ -2791,6 +2874,12 @@ def _lock_and_merge_v2(prior: Sequence[Mapping], fresh: Sequence[Mapping], *,
+         fresh_entry = fresh_by_key.get(key)
+ 
+         if _is_locked_v2(entry, moment, lock_lead_hours):
++            if _is_moneyline_fill(entry):
++                relocked = _lock_moneyline_fill_at_board_price(
++                    entry, fresh_entry, moment)
++                (withdrawn if relocked.get("withdrawn") else merged).append(relocked)
++                seen.add(key)
++                continue
+             stamped = dict(entry)
+             stamped["locked"] = True
+             stamped["locked_at"] = moment.isoformat()

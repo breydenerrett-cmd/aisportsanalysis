@@ -386,5 +386,117 @@ class StaleBoardIsComputedFromTheQuoteAgesG3Used(unittest.TestCase):
         self.assertIsNone(self._select([])["stale_board"])
 
 
+# ---------------------------------------------------------------------------
+# Patch 4: ml_fill_lock_price.patch
+# ---------------------------------------------------------------------------
+
+class MoneylineFillsLockOnTheBoardAtLock(LedgerCase):
+    """Registration L3 locked an entry "as last published", and a fill may be
+    added on a stale quote, so a fill added on the 04:00Z baseline locked at
+    that morning price. 11 of the 20 graded moneylines with a newer capture
+    before `locked_at` were graded at a price no longer on any book (loss
+    diagnosis 03 section 4; a Dodgers fill graded -147 with -212 the best at
+    lock)."""
+
+    FP = "2026-09-20T23:00:00Z"
+    SHOWN = "2026-09-20T10:00:00Z"      # provisional publish, outside the window
+    LOCK_RUN = "2026-09-20T19:30:00Z"   # first run inside T-4h
+
+    def _fill(self, price, observed, **kw):
+        e = game_entry(game_pk=1, price=price, entry_class="fill",
+                       failed_gates=["G7_VALUE"], first_pitch_utc=self.FP,
+                       observed_utc=observed)
+        e.update(kw)
+        return e
+
+    def _publish_shown(self, price=-128):
+        cl.publish_v2(select_result(fills=[self._fill(price, self.SHOWN)]),
+                      now=self.SHOWN, path=self.path)
+
+    def _lock_run(self, fresh_fills):
+        return cl.publish_v2(select_result(fills=fresh_fills), now=self.LOCK_RUN,
+                             path=self.path)
+
+    @pending("mlfill")
+    def test_the_fill_locks_on_the_price_that_was_on_the_board_at_lock(self):
+        self._publish_shown(-128)
+        row = self._lock_run([self._fill(-135, "2026-09-20T19:25:00Z",
+                                         average_decimal=1.72)])
+        fill = row["fills"][0]
+        self.assertTrue(fill["locked"])
+        self.assertEqual(-135, fill["price"])
+        self.assertEqual("2026-09-20T19:25:00Z", fill["observed_utc"])
+        self.assertEqual(-128, fill["price_when_shown"])
+        self.assertEqual("board_at_lock", fill["lock_price_basis"])
+
+    @pending("mlfill")
+    @pending("avg")
+    def test_the_average_price_moves_with_the_best_price(self):
+        """Needs patch 2 too (the field is frozen there): a fill locked on the
+        lock-time board must carry that board's average, not the morning's."""
+        self._publish_shown(-128)
+        row = self._lock_run([self._fill(-135, "2026-09-20T19:25:00Z",
+                                         average_decimal=1.72)])
+        self.assertEqual(1.72, row["fills"][0]["average_decimal"])
+
+    @pending("mlfill")
+    def test_it_is_graded_at_the_lock_price(self):
+        self._publish_shown(-128)
+        self._lock_run([self._fill(-135, "2026-09-20T19:25:00Z")])
+        g = cl.settle_v2("2026-09-20", {1: result_row(1, 5)}, path=self.path)["graded"][0]
+        self.assertEqual("WIN", g["result"])
+        self.assertAlmostEqual(0.7407, g["profit_units"], places=4)   # -135, not -128
+
+    @pending("mlfill")
+    def test_no_read_at_the_locking_run_locks_as_published_and_says_so(self):
+        """The ledger cannot know why the candidate is absent, so it keeps the
+        shown price and labels it unverified rather than guessing."""
+        self._publish_shown(-128)
+        row = self._lock_run([])
+        fill = row["fills"][0]
+        self.assertTrue(fill["locked"])
+        self.assertEqual(-128, fill["price"])
+        self.assertEqual("last_published_no_read_at_lock", fill["lock_price_basis"])
+
+    @pending("mlfill")
+    def test_a_read_that_fails_a_hard_gate_withdraws_the_fill(self):
+        """The registered band is -160..+250; a lock-time board at -212 has no
+        in-band price, so the fill is withdrawn, not locked at a price nobody
+        can take. It is still graded, labelled withdrawn, at its shown price."""
+        self._publish_shown(-128)
+        row = self._lock_run([self._fill(-212, "2026-09-20T19:25:00Z",
+                                         failed_gates=["G4_BAND"])])
+        self.assertEqual([], row["fills"])
+        self.assertEqual(1, len(row["withdrawn"]))
+        self.assertEqual(-128, row["withdrawn"][0]["price"])
+        g = cl.settle_v2("2026-09-20", {1: result_row(5, 1)}, path=self.path)["graded"]
+        self.assertTrue(g[0]["withdrawn"])
+
+    def test_a_pick_still_locks_as_last_published(self):
+        """Guard (passes before AND after): the patch is about fills. A
+        provisional PICK keeps registration L3, even against a failing read
+        (tests/test_card_v2_lock_and_withdraw.py pins the same)."""
+        pick = game_entry(game_pk=1, price=-128, first_pitch_utc=self.FP,
+                          observed_utc=self.SHOWN)
+        cl.publish_v2(select_result(picks=[pick]), now=self.SHOWN, path=self.path)
+        fresh = game_entry(game_pk=1, price=-135, first_pitch_utc=self.FP,
+                           observed_utc="2026-09-20T19:25:00Z")
+        row = cl.publish_v2(select_result(picks=[fresh]), now=self.LOCK_RUN, path=self.path)
+        self.assertEqual(-128, row["picks"][0]["price"])
+        self.assertTrue(row["picks"][0]["locked"])
+
+    def test_a_prop_fill_is_untouched(self):
+        """Guard: the capture store cannot say what a prop's board looked like
+        at lock (no capture between the quote and the lock), so props are out
+        of scope."""
+        fill = prop_entry(game_pk=9, price=-120, entry_class="fill",
+                          first_pitch_utc=self.FP, observed_utc=self.SHOWN)
+        cl.publish_v2(select_result(fills=[fill]), now=self.SHOWN, path=self.path)
+        fresh = dict(fill, price=-130, observed_utc="2026-09-20T19:25:00Z")
+        row = cl.publish_v2(select_result(fills=[fresh]), now=self.LOCK_RUN, path=self.path)
+        self.assertEqual(-120, row["fills"][0]["price"])
+        self.assertNotIn("lock_price_basis", row["fills"][0])
+
+
 if __name__ == "__main__":
     unittest.main()
