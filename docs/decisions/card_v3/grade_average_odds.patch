@@ -1,0 +1,224 @@
+diff --git a/src/analysis/opportunities.py b/src/analysis/opportunities.py
+index 77ed8d435..8113e38df 100644
+--- a/src/analysis/opportunities.py
++++ b/src/analysis/opportunities.py
+@@ -331,6 +331,7 @@ def build_opportunities(entries, *, date, now=None, engine_by_key=None,
+                 "wager_text": f"{side_team} moneyline",
+                 "best_price": best_price,
+                 "best_book": best_book,
++                "average_decimal": detail.get("average_decimal"),
+                 "books": books,
+                 "observed_utc": observed_utc,
+                 "age_seconds": verdict["age_seconds"],
+diff --git a/src/analysis/prices.py b/src/analysis/prices.py
+index 665f17baa..3d2aea10c 100644
+--- a/src/analysis/prices.py
++++ b/src/analysis/prices.py
+@@ -174,9 +174,15 @@ def snapshot(quotes) -> dict:
+         # available price can still imply MORE than the fair consensus.
+         implied_best = 1.0 / best_decimal
+         consensus_decimal = 1.0 / consensus
++        # CARD V3 PATCH 2: the mean decimal price of this same instant's
++        # board, for the ledger's grade at "average odds" (the owner's
++        # 2026-09-21 ruling). Same books as the best price above.
++        decimals = [d for d in (_decimal(entry[price_index]) for entry in priced)
++                    if d is not None]
+         sides[side] = {
+             "best_book": best_book,
+             "best_price": best_price,
++            "average_decimal": round(sum(decimals) / len(decimals), 5),
+             "consensus_probability": round(consensus, 5),
+             "improvement_points": round(consensus - implied_best, 5),
+             "improvement_return_pct": round(
+diff --git a/src/analysis/propboard.py b/src/analysis/propboard.py
+index 93224f8eb..bb8a31eb2 100644
+--- a/src/analysis/propboard.py
++++ b/src/analysis/propboard.py
+@@ -238,6 +238,49 @@ def fair_and_best(books: Mapping) -> tuple:
+     return sum(fair_overs) / len(fair_overs), best
+ 
+ 
++def average_decimal(books: Mapping, side: str, *, two_way: bool = True) -> Optional[float]:
++    """Mean DECIMAL price for `side` across the books the board counted.
++
++    CARD V3 PATCH 2 (docs/decisions/card_v3/README.md). The owner's
++    2026-09-21 ruling is that picks are graded at AVERAGE odds, not at the
++    best price any book showed; `fair_and_best` returns only the best, so the
++    ruling was never implemented and the public record claimed a price basis
++    that was never applied (loss diagnosis 03, finding 4).
++
++    The population is exactly the one `fair_and_best` reads its fair price
++    and best price from: books quoting BOTH sides whose two raw
++    probabilities sum to at least `MIN_TWO_WAY_BOOKSUM`, and at least
++    `MIN_BOOKS` of them. The best price is therefore the maximum of the same
++    set this averages, so the two numbers are comparable. `two_way=False`
++    (home runs: no book quotes the Under) averages every book quoting the
++    side. A mean of DECIMAL prices, not of American numbers (which are not on
++    a common scale across the -100/+100 seam) and not of implied
++    probabilities: the decimal mean is the payout a bettor drawing a book at
++    random would have been paid per unit staked, which is what a grade at
++    "average odds" means. `None` when the board cannot support an average.
++    """
++    prices = []
++    for _book, sides in (books or {}).items():
++        mine = sides.get(side)
++        if mine is None:
++            continue
++        try:
++            if two_way:
++                other = sides.get("Under" if side == "Over" else "Over")
++                if other is None:
++                    continue
++                raw = (odds_math.american_to_probability(mine)
++                       + odds_math.american_to_probability(other))
++                if raw < MIN_TWO_WAY_BOOKSUM:
++                    continue
++            prices.append(odds_math.american_to_decimal(mine))
++        except (odds_math.OddsError, TypeError, ValueError, ZeroDivisionError):
++            continue
++    if not prices or (two_way and len(prices) < MIN_BOOKS):
++        return None
++    return sum(prices) / len(prices)
++
++
+ def best_over_only(books: Mapping) -> dict:
+     """{"Over": (american, decimal, book)} for a one-sided market, or {}.
+ 
+@@ -352,6 +395,7 @@ def build(prop_rows: Iterable[Mapping], *, date: str,
+                 continue
+             american, decimal, book = quote
+             breakeven = 1.0 / decimal
++            average = average_decimal(books, side, two_way=not one_sided)
+             if market_over is None:
+                 market_p = None
+             else:
+@@ -366,6 +410,10 @@ def build(prop_rows: Iterable[Mapping], *, date: str,
+                 "breakeven": breakeven,
+                 "gap_vs_breakeven": model_p - breakeven,
+                 "price": american, "book": book,
++                # CARD V3 PATCH 2: the mean decimal price of the same board,
++                # the price a grade at "average odds" uses.
++                "average_decimal": (None if average is None
++                                    else round(average, 5)),
+                 "books": books_count,
+                 "expected_pa": priced.get("expected_pa"),
+                 "expected_pa_source": priced.get("expected_pa_source"),
+diff --git a/src/appstate/card_ledger.py b/src/appstate/card_ledger.py
+index d04224015..432286b6d 100644
+--- a/src/appstate/card_ledger.py
++++ b/src/appstate/card_ledger.py
+@@ -2503,6 +2503,10 @@ V2_FROZEN_FIELDS = FROZEN_FIELDS + (
+     "breakeven", "value_need", "gap", "lineup_posted", "expected_pa_source",
+     "season_games", "failed_gates", "game_type", "entry_class", "take",
+     "no_take_reason", "player", "player_id", "game_id",
++    # CARD V3 PATCH 2: mean decimal price of the board the bet was priced
++    # from, frozen beside the best `price` so settlement can grade at the
++    # average and keep the best price as a second field.
++    "average_decimal",
+ )
+ 
+ # Fills carry everything a pick carries PLUS the quote age and run instant
+@@ -3103,6 +3107,47 @@ def _v2_has_unresolved(row: Optional[Mapping]) -> bool:
+     return False
+ 
+ 
++GRADED_AT_AVERAGE = "average"
++GRADED_AT_BEST_NO_AVERAGE = "best_price_no_average_recorded"
++
++
++def _grade_at_average_odds(entry: Mapping, grade: dict) -> dict:
++    """Re-price a WIN/LOSS grade at the board's AVERAGE odds (CARD V3 PATCH 2).
++
++    The owner ruled on 2026-09-21 that picks are graded at average odds. The
++    ledger instead graded every entry at `price`, the BEST quote any book
++    showed (loss diagnosis 03: the same 170 bets are -4.11 units at the board
++    average against -0.69 at the best price). This keeps both:
++
++    * `profit_units` is the one every reader sums (`record_v2`, `history_v2`,
++      the per-day totals), and is now at the average;
++    * `profit_units_at_best` is the profit at the recorded best `price`, the
++      figure the ledger used to publish, kept so the difference is never
++      hidden;
++    * `graded_price_basis` says which price `profit_units` used. An entry
++      frozen before the average was recorded (or on a board too thin to
++      average) has no average to grade at; it stays graded at its best price
++      and SAYS so, rather than receiving a guessed average.
++
++    A grade that is not a WIN or LOSS (push, void, unresolved) has no price
++    to re-take and is returned untouched.
++    """
++    result = grade.get("result")
++    if result not in (RESULT_WIN, RESULT_LOSS):
++        return grade
++    out = dict(grade)
++    out["profit_units_at_best"] = grade.get("profit_units")
++    average = entry.get("average_decimal")
++    if (isinstance(average, (int, float)) and not isinstance(average, bool)
++            and average > 1.0):
++        out["profit_units"] = (round(float(average) - 1.0, 4)
++                               if result == RESULT_WIN else -1.0)
++        out["graded_price_basis"] = GRADED_AT_AVERAGE
++    else:
++        out["graded_price_basis"] = GRADED_AT_BEST_NO_AVERAGE
++    return out
++
++
+ def settle_v2(date: str, results_by_game_pk: Mapping, *,
+               prop_box_rows: Optional[Sequence] = None,
+               now: Optional[str] = None,
+@@ -3179,6 +3224,7 @@ def settle_v2(date: str, results_by_game_pk: Mapping, *,
+             result = (results_by_game_pk.get(lookup_key)
+                      or results_by_game_pk.get(str(lookup_key)) or {})
+             grade = grade_pick(entry, result)
++        grade = _grade_at_average_odds(entry, grade)
+         out = dict(entry)
+         out.update(grade)
+         out["withdrawn"] = withdrawn
+diff --git a/src/report/card_v2.py b/src/report/card_v2.py
+index 5e7dc21f9..66d151acc 100644
+--- a/src/report/card_v2.py
++++ b/src/report/card_v2.py
+@@ -194,6 +194,12 @@ def _build_game_candidates(entries: Sequence, opportunity_rows: Sequence, *,
+ 
+     game_type_by_id = {g["game_id"]: g.get("game_type", "R") for g in games}
+     calibrated = cal is not None
++    # CARD V3 PATCH 2: the average price lives on the moneyline row, which
++    # `daily_card.build_pick_candidates` does not copy; read it from the row
++    # the candidate's side came from rather than widening that function.
++    average_by_game_side = {
++        (gid, side): (row or {}).get("average_decimal")
++        for gid, sides in ml_rows.items() for side, row in sides.items()}
+ 
+     candidates = []
+     for c in raw_candidates:
+@@ -205,6 +211,8 @@ def _build_game_candidates(entries: Sequence, opportunity_rows: Sequence, *,
+             "player_id": None,
+             "player": None,
+             "price": price,
++            "average_decimal": average_by_game_side.get(
++                (c.get("game_id"), c.get("side"))),
+             "market_probability": c.get("market_probability"),
+             "our_probability": c.get("model_probability"),
+             # Aliased for `card.attach_knowledge`'s "+" grade bonus, which
+@@ -255,6 +263,7 @@ def _build_prop_candidates(entries: Sequence, *, date: str, now: datetime,
+             "player_id": player,
+             "player": player,
+             "price": c.get("price"),
++            "average_decimal": c.get("average_decimal"),
+             "market_probability": c.get("market_probability"),
+             "our_probability": c.get("probability"),
+             "books": c.get("books"),
+diff --git a/src/report/props.py b/src/report/props.py
+index 130c5bf92..a32271ad9 100644
+--- a/src/report/props.py
++++ b/src/report/props.py
+@@ -193,6 +193,9 @@ def _public(contract: Mapping) -> dict:
+             float(contract.get("gap_vs_breakeven") or 0.0), 4),
+         "price": contract.get("price"),
+         "book": contract.get("book"),
++        # CARD V3 PATCH 2: carried through for the ledger's grade at average
++        # odds; additive, nothing that reads this board is affected.
++        "average_decimal": contract.get("average_decimal"),
+         "books": contract.get("books"),
+         "expected_pa": contract.get("expected_pa"),
+         "expected_pa_source": contract.get("expected_pa_source"),

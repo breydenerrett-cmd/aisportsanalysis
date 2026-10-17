@@ -1,0 +1,80 @@
+{
+ "_note": "HINDSIGHT. Average = mean DECIMAL price over the books on the board at the quote instant (the patch's definition). Entries whose board cannot be rebuilt keep their best-price grade in the all-entries units.",
+ "all_178": {
+  "mean_average_decimal": 1.7852,
+  "mean_best_decimal": 1.818,
+  "n": 178,
+  "n_with_rebuilt_average": 170,
+  "units_at_average": -4.77,
+  "units_at_average_on_rebuilt_subset": -4.04,
+  "units_at_best": -1.42,
+  "units_at_best_on_rebuilt_subset": -0.69,
+  "units_at_mean_implied_prob_on_rebuilt_subset": -4.11
+ },
+ "fills": {
+  "mean_average_decimal": 1.7326,
+  "mean_best_decimal": 1.7621,
+  "n": 68,
+  "n_with_rebuilt_average": 68,
+  "units_at_average": 6.51,
+  "units_at_average_on_rebuilt_subset": 6.51,
+  "units_at_best": 7.85,
+  "units_at_best_on_rebuilt_subset": 7.85,
+  "units_at_mean_implied_prob_on_rebuilt_subset": 6.49
+ },
+ "moneylines": {
+  "mean_average_decimal": 1.7359,
+  "mean_best_decimal": 1.767,
+  "n": 29,
+  "n_with_rebuilt_average": 26,
+  "units_at_average": 4.25,
+  "units_at_average_on_rebuilt_subset": 3.56,
+  "units_at_best": 4.83,
+  "units_at_best_on_rebuilt_subset": 4.13,
+  "units_at_mean_implied_prob_on_rebuilt_subset": 3.56
+ },
+ "picks": {
+  "mean_average_decimal": 1.8203,
+  "mean_best_decimal": 1.8553,
+  "n": 110,
+  "n_with_rebuilt_average": 102,
+  "units_at_average": -11.28,
+  "units_at_average_on_rebuilt_subset": -10.55,
+  "units_at_best": -9.26,
+  "units_at_best_on_rebuilt_subset": -8.54,
+  "units_at_mean_implied_prob_on_rebuilt_subset": -10.6
+ },
+ "props": {
+  "mean_average_decimal": 1.7941,
+  "mean_best_decimal": 1.8272,
+  "n": 149,
+  "n_with_rebuilt_average": 144,
+  "units_at_average": -9.02,
+  "units_at_average_on_rebuilt_subset": -7.6,
+  "units_at_best": -6.25,
+  "units_at_best_on_rebuilt_subset": -4.82,
+  "units_at_mean_implied_prob_on_rebuilt_subset": -7.66
+ },
+ "shown_not_withdrawn": {
+  "mean_average_decimal": 1.7711,
+  "mean_best_decimal": 1.8024,
+  "n": 161,
+  "n_with_rebuilt_average": 153,
+  "units_at_average": -9.16,
+  "units_at_average_on_rebuilt_subset": -8.43,
+  "units_at_best": -6.43,
+  "units_at_best_on_rebuilt_subset": -5.7,
+  "units_at_mean_implied_prob_on_rebuilt_subset": -8.48
+ },
+ "withdrawn": {
+  "mean_average_decimal": 1.9118,
+  "mean_best_decimal": 1.9582,
+  "n": 17,
+  "n_with_rebuilt_average": 17,
+  "units_at_average": 4.39,
+  "units_at_average_on_rebuilt_subset": 4.39,
+  "units_at_best": 5.01,
+  "units_at_best_on_rebuilt_subset": 5.01,
+  "units_at_mean_implied_prob_on_rebuilt_subset": 4.37
+ }
+}
