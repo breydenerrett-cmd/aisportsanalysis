@@ -590,19 +590,48 @@ def _post_all(url: str, messages: list):
 # Orchestration.
 # ---------------------------------------------------------------------------
 
+def _mlb_card_paused(sport: str, date_str: str, record_only: bool,
+                     pause_config_path: Optional[str] = None) -> bool:
+    """True when this run would post the MLB CARD for a date after the pause
+    (owner decision 2026-10-16, docs/decisions/MLB_VALUE_PICKS_PAUSED.md,
+    config/mlb_public_card.json).
+
+    The card publisher writes no row for such a date, so `_frozen_card` is
+    already None and nothing posts. This is the explicit second lock: a stray
+    frozen row (a republish, a hand-written ledger line) still posts nothing,
+    because a "card" message for a paused day would put "picks" copy in front
+    of the community that the product no longer publishes. The record post
+    (`record_only`) is not gated: it states the graded record, which stays
+    public. NFL and UFC are not read by this pause."""
+    if sport != "mlb" or record_only:
+        return False
+    from src.appstate import mlb_public_card
+    return mlb_public_card.is_paused_for(date_str, pause_config_path)
+
+
 def run(sport: str, date_str: str, *, webhook_url: Optional[str] = None,
         webhook_urls: Optional[list] = None,
         dry_run: bool = False, record_only: bool = False,
         marker_path: str = DEFAULT_MARKER_PATH, card_path: Optional[str] = None,
         snapshot_provider: Optional[Callable] = None,
-        snapshot_kwargs: Optional[dict] = None) -> int:
+        snapshot_kwargs: Optional[dict] = None,
+        pause_config_path: Optional[str] = None) -> int:
     """Deliver one (sport, date) to every webhook, each independently.
     `webhook_url` (one) and `webhook_urls` (a list, or raw comma/newline
     text) are merged and de-duplicated. Returns 0 only when every webhook
-    is posted-or-already-posted (or there was nothing to post)."""
+    is posted-or-already-posted (or there was nothing to post).
+
+    An MLB card for a paused date posts NOTHING -- no "no picks today"
+    message either -- writes no marker, and exits 0, so it is idempotent by
+    construction (see `_mlb_card_paused`)."""
     if isinstance(webhook_urls, str):
         webhook_urls = [webhook_urls]
     urls = parse_webhook_urls(webhook_url, *(webhook_urls or ()))
+
+    if _mlb_card_paused(sport, date_str, record_only, pause_config_path):
+        print(f"nothing to post for {sport} {date_str}: MLB value picks are paused "
+              f"(config/mlb_public_card.json)")
+        return 0
 
     def build(is_update: bool):
         return assemble(sport, date_str, record_only=record_only, is_update=is_update,

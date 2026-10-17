@@ -490,9 +490,9 @@ class MainEntryPointTest(unittest.TestCase):
     def test_main_dry_run_no_card_date_exits_zero(self):
         buf = io.StringIO()
         with redirect_stdout(buf):
-            rc = discord_feed.main(["--sport", "mlb", "--date", "2099-01-01", "--dry-run"])
+            rc = discord_feed.main(["--sport", "mlb", "--date", "2025-01-01", "--dry-run"])
         self.assertEqual(rc, 0)
-        self.assertIn("no published card for 2099-01-01", buf.getvalue())
+        self.assertIn("no published card for 2025-01-01", buf.getvalue())
 
     def test_main_rejects_a_malformed_date(self):
         with self.assertRaises(SystemExit):
@@ -746,6 +746,59 @@ class MultiWebhookTest(_FeedFixture):
         by_url = dict(titles)
         self.assertIn("card update", by_url[URL_A].lower())
         self.assertNotIn("card update", by_url[URL_B].lower(), "B never saw the first card")
+
+
+class PausedMlbDayTest(_FeedFixture):
+    """MLB value picks are paused after the date in config/mlb_public_card.json
+    (owner decision 2026-10-16, docs/decisions/MLB_VALUE_PICKS_PAUSED.md). A
+    paused MLB day posts nothing -- not a card, not "no picks today" -- writes no
+    marker, and exits 0, run after run. The fixture ledger holds a STRAY frozen
+    row for DATE, the case the lock exists for."""
+
+    def _config(self, last_public_date):
+        path = os.path.join(self._tmp.name, "mlb_public_card.json")
+        with open(path, "w", encoding="utf-8") as fh:
+            json.dump({"value_picks_last_public_date": last_public_date}, fh)
+        return path
+
+    def test_a_paused_day_posts_nothing_even_with_a_frozen_row_and_a_webhook(self):
+        config = self._config("2026-09-19")          # DATE is 2026-09-20: paused
+        for attempt in (1, 2):                       # idempotent: the same twice
+            rc, out, _ = self._run(webhook_urls=[URL_A], pause_config_path=config)
+            self.assertEqual(rc, 0, attempt)
+            self.assertEqual(self.attempted, [], "a paused day reached a webhook")
+            self.assertIn("MLB value picks are paused", out)
+            self.assertNotIn("no picks", out.lower())
+            self.assertFalse(os.path.exists(self.marker_path), "a paused day wrote a marker")
+
+    def test_a_paused_day_prints_no_payload_on_a_dry_run(self):
+        config = self._config("2026-09-19")
+        rc, out, _ = self._run(dry_run=True, pause_config_path=config)
+        self.assertEqual(rc, 0)
+        self.assertNotIn('"embeds"', out)
+
+    def test_the_last_public_day_itself_still_posts(self):
+        config = self._config(DATE)
+        rc, _, _ = self._run(webhook_urls=[URL_A], pause_config_path=config)
+        self.assertEqual(rc, 0)
+        self.assertEqual(self.posted, [URL_A])
+
+    def test_the_record_post_and_the_nfl_feed_are_not_paused(self):
+        config = self._config("2026-09-19")
+        rc, _, _ = self._run(webhook_urls=[URL_A], record_only=True, pause_config_path=config)
+        self.assertEqual(rc, 0)
+        self.assertEqual(self.posted, [URL_A], "the graded record stays public")
+        rc, out, _ = self._run(sport="nfl", webhook_urls=[URL_B], pause_config_path=config)
+        self.assertEqual(rc, 0)
+        self.assertNotIn("paused", out)
+        self.assertEqual(self.posted, [URL_A, URL_B], "NFL is not read by the MLB pause")
+
+    def test_the_real_config_pauses_the_day_after_the_decision(self):
+        # The shipped config (last public date 2026-10-16): the 17th posts nothing.
+        rc, out, _ = self._run(date_str="2026-10-17", webhook_urls=[URL_A])
+        self.assertEqual(rc, 0)
+        self.assertEqual(self.attempted, [])
+        self.assertIn("MLB value picks are paused", out)
 
 
 class WebhookListParsingTest(unittest.TestCase):

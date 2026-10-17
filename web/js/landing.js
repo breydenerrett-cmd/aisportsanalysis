@@ -787,8 +787,8 @@ export function renderLastCard(section, payload, now = new Date()) {
  * goes back to, the record link. The hook (`cta-record-secondary`) never
  * changes: clicks are counted by hook.
  */
-export const SAMPLE_BUTTON = "See last night's card, graded";
-export const RECORD_BUTTON = "See every pick, graded";
+export const SAMPLE_BUTTON = "See the latest graded card";
+export const RECORD_BUTTON = "Open the graded record";
 
 export function pointSampleButton(sampleShown) {
   const button = document.querySelector("[data-hook='cta-record-secondary']");

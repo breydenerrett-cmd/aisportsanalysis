@@ -57,6 +57,17 @@
  * -- the module is hidden outright and the record line already in the
  * claim block above is the only thing the hero shows. Never fabricate a
  * pick to fill the gap.
+ *
+ * WHEN THE MLB PICKS ARE PAUSED (owner decision 2026-10-16,
+ * docs/decisions/MLB_VALUE_PICKS_PAUSED.md)
+ * -------------------------------------------------------------------
+ * `GET /card` answers `paused: true`, no picks, and the reason. Then this
+ * module shows the paused panel (`[data-hook="hero-paused"]`: the server's
+ * reason verbatim, a sample brief, the record and the price board) and
+ * nothing else: no featured game, no price, and not the no-card fallback
+ * below, which would put the first game of the price board where a pick
+ * used to be. The panel starts hidden, so a failed or signed-out fetch
+ * leaves only the page's static pause sentence, never an empty card.
  */
 
 import { apiGet } from "./api.js";
@@ -209,6 +220,18 @@ function showSampleFallback(root) {
   setHidden(root, "hero-feature", true);
 }
 
+/** The paused state. The reason is the server's own sentences, rendered
+ * verbatim (a substitute written here would be this page describing the
+ * decision); the markup already carries the same words as its default.
+ * Everything that could read as a pick is hidden. */
+function showPausedHero(root, card) {
+  setHidden(root, "hero-feature", true);
+  if (typeof card.reason === "string" && card.reason.trim()) {
+    setText(root, "hero-paused-reason", card.reason.trim());
+  }
+  setHidden(root, "hero-paused", false);
+}
+
 function applyLiveHero(root, { gamesCount, featured }) {
   const { awayAbbr, homeAbbr, firstPitchUtc, awayProbable, homeProbable, price } = featured;
 
@@ -296,6 +319,21 @@ function applyLiveHero(root, { gamesCount, featured }) {
  * rest of the page.
  */
 export async function mountLiveHero(root = document) {
+  // The card first: a paused answer decides the whole module, whatever
+  // /today says.
+  let card = null;
+  try {
+    card = await apiGet("/card");
+  } catch (err) {
+    // /card is optional here -- /today's first game is still an honest
+    // fallback featured matchup.
+    card = null;
+  }
+  if (card && card.paused === true) {
+    showPausedHero(root, card);
+    return;
+  }
+
   let today;
   try {
     today = await apiGet("/today");
@@ -306,15 +344,6 @@ export async function mountLiveHero(root = document) {
   if (!today || !Array.isArray(today.games) || today.games.length === 0) {
     showSampleFallback(root);
     return;
-  }
-
-  let card = null;
-  try {
-    card = await apiGet("/card");
-  } catch (err) {
-    // /card is optional here -- /today's first game is still an honest
-    // fallback featured matchup.
-    card = null;
   }
 
   const featured = resolveFeatured(today, card);

@@ -259,15 +259,18 @@ class TheCopyIsPlainAndCautious(unittest.TestCase):
         # says what a card holds; the by-hand UFC grading fact is no longer in
         # the hero but must still be on the page, in the FAQ and the sport tiles.
         claim = re.search(r'<p class="hero__claim-body">(.*?)</p>', HTML, re.S).group(1)
-        self.assertEqual(
-            claim.strip(),
-            "A short card each night: the bet, the best price and where to find it, and why. "
-            "Every card is graded in public afterwards, wins and losses.")
+        self.assertEqual(claim.strip(), (
+            "An AI analyst reads each matchup, calls every market take or pass, gives the strongest case "
+            "against any bet it takes, and says what it could not know. Every call is graded in public. "
+            "This is analysis, not advice, and it does not claim to beat the market."))
         self.assertNotIn("entered by hand", claim)
         faq = re.sub(r"\s+", " ", _section("faq"))
         # 2026-10-03: UFC picks paused (config/ufc_public_card.json). The FAQ still
         # carries both grading facts, and now the pause too.
-        self.assertIn("MLB and NFL carry live picks, published before the game and graded "
+        # 2026-10-16: MLB value picks paused; the FAQ says so and keeps NFL's schedule.
+        self.assertIn("MLB value picks are paused as of Oct 16, 2026", faq)
+        self.assertNotIn("MLB and NFL carry live picks", faq)
+        self.assertIn("NFL carries live picks, published before the game and graded "
                       "automatically the next morning.", faq)
         self.assertIn("UFC picks are paused while we build real fight analysis; the UFC picks "
                       "already made are graded once results are entered by hand", faq)

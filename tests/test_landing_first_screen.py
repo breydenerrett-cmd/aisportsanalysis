@@ -77,15 +77,18 @@ class TheFirstScreenReadsInOrder(unittest.TestCase):
 
     def test_the_headline_names_the_product_not_our_behaviour(self):
         title = re.search(r'<h1 class="hero__claim-title">(.*?)</h1>', MARKUP, re.S).group(1)
-        self.assertEqual(title.strip(), "Tonight's MLB and NFL bets, posted before the game.")
+        # 2026-10-16: the MLB value picks are paused (docs/decisions/MLB_VALUE_PICKS_PAUSED.md),
+        # so the headline names what is live, the brief, not "tonight's bets".
+        self.assertEqual(title.strip(), 'MLB matchup briefs: take or pass on every market, with the case against.')
+        self.assertNotRegex(title.lower(), r"tonight|picks|bets|posted before")
         self.assertEqual(MARKUP.count("<h1"), 1)
 
     def test_the_lede_is_one_short_paragraph_with_no_schedule_and_no_figure(self):
         lede = re.search(r'<p class="hero__claim-body">(.*?)</p>', MARKUP, re.S).group(1).strip()
-        self.assertEqual(
-            lede,
-            "A short card each night: the bet, the best price and where to find it, and why. "
-            "Every card is graded in public afterwards, wins and losses.")
+        self.assertEqual(lede, (
+            "An AI analyst reads each matchup, calls every market take or pass, gives the strongest case "
+            "against any bet it takes, and says what it could not know. Every call is graded in public. "
+            "This is analysis, not advice, and it does not claim to beat the market."))
 
     def test_the_what_you_get_block_has_two_short_groups_and_no_bet_check(self):
         block = re.search(r'<div class="hero__wyg" data-hook="hero-wyg".*?</ul>\s*</div>\s*</div>',
@@ -97,7 +100,8 @@ class TheFirstScreenReadsInOrder(unittest.TestCase):
         subs = block.split('data-hook="hero-wyg-subscribers"')[1]
         self.assertIn("The full graded record", free)
         self.assertIn("MLB postseason odds", free)
-        self.assertIn("Tonight's card, before the game", subs)
+        self.assertIn("The daily MLB brief, before the game", subs)
+        self.assertNotIn("Tonight's card", subs)
         self.assertIn("Matchups, odds and props", subs)
         self.assertEqual(block.count("<li"), 4)
         self.assertNotRegex(text, r"\d", "a figure typed into the what-you-get block goes stale")
@@ -119,7 +123,7 @@ class TheSecondButtonAndTheFullRecordLink(unittest.TestCase):
         # must not point at it: with scripts off that button went nowhere.
         # landing.js upgrades it once the sample is showing (tested below).
         tag = re.search(r'<a\b[^>]*data-hook="cta-record-secondary"[^>]*>(.*?)</a>', MARKUP, re.S)
-        self.assertEqual(tag.group(1).strip(), "See every pick, graded")
+        self.assertEqual(tag.group(1).strip(), "Open the graded record")
         self.assertIn('href="index.html#/record-card"', tag.group(0))
         self.assertNotIn('href="#free-sample"', tag.group(0))
         self.assertIn('id="free-sample"', MARKUP)
@@ -361,7 +365,7 @@ if (scenario.kind === "labels") {
     return n;
   };
   const button = mk("a", "cta-record-secondary", { href: "#free-sample" });
-  button.textContent = "See last night's card, graded";
+  button.textContent = "See the latest graded card";
   const section = mk("section", "last-card", { hidden: "" });
   const bodyNode = mk("div", "last-card-body");
   section.appendChild(bodyNode);
@@ -463,7 +467,7 @@ class UnderNode(unittest.TestCase):
             with self.subTest(case=name):
                 out = self.run_scenario(kind="button", history=history)
                 self.assertTrue(out["hidden"])
-                self.assertEqual(out["label"], "See every pick, graded")
+                self.assertEqual(out["label"], "Open the graded record")
                 self.assertEqual(out["href"], "index.html#/record-card")
 
     def test_the_secondary_button_stays_on_the_sample_when_it_is_showing(self):
@@ -475,7 +479,7 @@ class UnderNode(unittest.TestCase):
              "reason": None, "bet": None, "game_type": "R"}]}
         out = self.run_scenario(kind="button", history={"status": 200, "body": {"days": [day]}})
         self.assertFalse(out["hidden"])
-        self.assertEqual(out["label"], "See last night's card, graded")
+        self.assertEqual(out["label"], "See the latest graded card")
         self.assertEqual(out["href"], "#free-sample")
 
     # ---- change 7: one footer, at run time too ------------------------------
