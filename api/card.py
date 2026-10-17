@@ -95,6 +95,22 @@ _mma_card_cache = freshness.SingleFlightTTLCache(ttl_s=120.0, stale_while_revali
 # served at once while it rebuilds in the background, so no visitor waits.
 _mlb_live_card_cache = freshness.SingleFlightTTLCache(ttl_s=120.0, stale_while_revalidate_s=900.0)
 
+# What every figure on the MLB record page is, in one sentence (2026-10-16).
+# Three facts a reader cannot see from the numbers: the price a pick is graded
+# at (the best price any book offered on a market quoted on both sides, the
+# propboard `fair_and_best` basis, docs/PREREG_CARD_V2.md section 2 -- NOT the
+# board average the owner ruled on 2026-09-21; see
+# docs/research/loss_diagnosis/00_SYNTHESIS.md fact 5), that the postseason is
+# graded but not counted, and that withdrawn picks are counted on their own and
+# never inside the totals. Plain words: tests/test_customer_language holds web/
+# to the same sweep.
+RECORD_BASIS_SENTENCE = (
+    "Each pick is graded at the best price any book offered for it when we "
+    "quoted it, on markets that had a price on both sides; postseason games "
+    "are not counted, and withdrawn picks are counted separately and are not "
+    "in these totals."
+)
+
 # GET /card/history's page size. Capped, not unlimited -- the record page
 # is the public sales pitch, not a data export; a reader who wants the
 # whole ledger can read evidence/cards_v1.jsonl directly, which is the
@@ -747,6 +763,13 @@ def _card_record_uncached(request: Request = None, sport: str = "mlb",
         payload["rule"] = "v2"
         payload["basis"] = best_bets_card.BASIS
         payload["disclaimer"] = best_bets_card.DISCLAIMER
+        # THE ONE SENTENCE THAT SAYS WHAT THE FIGURES ARE (2026-10-16, loss
+        # diagnosis fact 5 and change 4): the page's totals and the ledger's
+        # entry counts were readable as "97-81" and "16-17" from the same
+        # ledger with nothing saying which was which. `withdrawn` (already in
+        # this payload, from record_v2) is the count of entries pulled before
+        # their game; they are in neither the totals nor the win rate.
+        payload["record_basis"] = RECORD_BASIS_SENTENCE
         payload.update(_effective_record_extras("mlb", None))
         # POSTSEASON, GRADED BUT NOT COUNTED (owner ruling, registration
         # 11.1; docs/PREREG_CARD_V2.md lines 1087-1089 and 3203-3205).

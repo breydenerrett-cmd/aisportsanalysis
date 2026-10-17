@@ -176,6 +176,15 @@ function headline(record, sport = "mlb") {
     ? figure(roiFmt(record.roi_pct), record.roi_pct > 0 ? "pos" : record.roi_pct < 0 ? "neg" : null)
     : absentFigure()));
   grid.appendChild(statTile("DAYS SETTLED", figure(String(record.days || 0))));
+  // THE WITHDRAWN COUNT, BESIDE THE TOTALS (2026-10-16, loss diagnosis change
+  // 4). Entries pulled before their game are in none of the figures above, and
+  // a reader holding "97-81" from one place and this record's count from
+  // another had no way to tell why they differ. Only the V2 record carries the
+  // number (`record.withdrawn`); a payload without it draws no tile rather than
+  // a zero that was never measured.
+  if (sport === "mlb" && record.rule === "v2" && typeof record.withdrawn === "number") {
+    grid.appendChild(statTile("WITHDRAWN (NOT COUNTED)", figure(String(record.withdrawn))));
+  }
 
   wrap.appendChild(grid);
 
@@ -187,6 +196,16 @@ function headline(record, sport = "mlb") {
           + `a percentage.` }));
   }
   return wrap;
+}
+
+/** THE RECORD'S BASIS, IN ONE SENTENCE (2026-10-16). The server writes it
+ * (api/card.py's RECORD_BASIS_SENTENCE) so the page cannot drift from what the
+ * ledger is graded on; it is drawn VERBATIM, and an older server that sends
+ * none draws nothing rather than a sentence composed here. */
+export function basisNote(record) {
+  const text = record && typeof record.record_basis === "string" ? record.record_basis.trim() : "";
+  if (!text) return null;
+  return el("p", { class: "crp-voids", "data-hook": "record-basis", text });
 }
 
 /** What the NFL headline's one count holds (2026-09-20). MLB's page splits
@@ -1145,6 +1164,8 @@ export async function renderCardRecord(container, options = {}) {
   const nothingSettled = !record.days;
   if (!nothingSettled) {
     screen.appendChild(headline(record, sport));
+    const basis = basisNote(record);
+    if (basis) screen.appendChild(basis);
     screen.appendChild(voidsNote(record));
   }
   screen.appendChild(unitsNote());

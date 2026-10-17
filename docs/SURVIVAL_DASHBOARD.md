@@ -1,10 +1,10 @@
 # LineHound survival dashboard
 
-Generated 2026-10-04 21:31Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-10-17 02:14Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
-| Days until 2026-10-31 | **27** |
+| Days until 2026-10-31 | **14** |
 | Current monthly burn (known + estimated infrastructure) | $78.00 |
 | Current monthly burn incl. Claude at the planning assumption | $278.00 (unknown: Claude subscription that operates the business, BALLDONTLIE) |
 | Identified monthly savings (not yet realised) | $29.00: The Odds API (100K tier): $29.00 (downgrade to the $30 20K tier; NOT confirmed, owner decision) |
@@ -66,12 +66,12 @@ Read from `docs/sales/outreach_queue.csv`, people only. A forum thread is a publ
   - game: n=3: 2-1, +0.69u (too few for a rate)
   - prop: n=30: 14-16, -5.74u, ROI -19.1%
   - fills (shown apart, never counted): n=29: 21-8, +7.68u (too few for a rate)
-  - postseason (graded, not counted): n=10: 5-5, -0.48u (too few for a rate)
+  - postseason (graded, not counted): n=60: 27-33, -9.22u, ROI -15.4%
 - **MLB previous** (Our first card rule; 2026-09-10..2026-09-22): n=230: 151-79, +7.98u, ROI +3.5%
   - game: n=113: 73-40, +7.61u, ROI +6.7%
   - prop: n=117: 78-39, +0.38u, ROI +0.3%
-- **NFL current** (Our NFL value rule; 2026-09-27..2026-09-27): n=1: 1-0, +0.93u (too few for a rate)
-  - game: n=1: 1-0, +0.93u (too few for a rate)
+- **NFL current** (Our NFL value rule; 2026-09-27..2026-10-11): n=3: 2-1, +1.00u (too few for a rate)
+  - game: n=3: 2-1, +1.00u (too few for a rate)
 - **NFL previous** (Our first NFL rule; 2026-09-17..2026-09-21): n=10: 7-3, -0.26u (too few for a rate)
   - game: n=10: 7-3, -0.26u (too few for a rate)
 - **MMA current** (Our UFC card; 2026-09-22..2026-10-03): n=9: 8-1, +4.80u (too few for a rate)
@@ -79,10 +79,11 @@ Read from `docs/sales/outreach_queue.csv`, people only. A forum thread is a publ
 
 Closing-line value: see `docs/VALUE_SCAN.md` (the standing measurement; no CLV figure is computed or copied here). No rule here has evidence of an edge.
 
-- V2 MAIN picks 16-17, -5.05u; 19 of the 33 are one day (2026-09-22, cap breach, -5.14u).
-- Everything shown to readers under V2 (picks plus fills): 41-27, +3.46u.
-- Closing-line value is negative in every segment measured (V1 games -1.21 pts, n=51; props about -3.5).
-- Our number scored worse than the market's in 12 of 16 populations and never significantly better.
+- Two true counts of the same ledger, as of 2026-10-15 (docs/research/loss_diagnosis/00_SYNTHESIS.md): the public headline is regular-season MAIN picks 16-17, -5.05u, with the postseason shown apart and not counted (27-33, -9.22u); the whole graded V2 ledger is 97-81, -1.42u over 178 entries, 17 of them withdrawn picks that the record reports separately. The record page now says which is which.
+- Every graded bet was priced worse than the market's own fair number, by 2.36 probability points on average. At the market's numbers the 178 bets were expected to lose 7.55u and lost 1.42u: the card ran lucky, it did not run unlucky. At a fair price the non-withdrawn bets come to +0.01u, which is what a forecast with no information produces, not evidence of good sides.
+- Our forecasts carry nothing the market lacks. On 6,818 priced prop contracts the model's log loss is worse than the market's by 0.0103 nats, and the best weight to give our disagreement with the market is -0.20 (about -0.46 to +0.07): zero or negative. The card ranks by that disagreement, so it publishes our largest errors by construction.
+- Closing-line value is negative wherever it can be measured: -1.69 points per bet [-2.09, -1.28] on 82 bets (26 of 29 moneylines, 56 of 149 props). The 93 props that could not be measured hold most of the loss, so the prop figure is not representative.
+- Public MLB value picks are paused after 2026-10-16 (docs/decisions/MLB_VALUE_PICKS_PAUSED.md); the brief and the price board continue. They resume only if a forward test registered in advance shows closing-line value whose interval excludes zero. No rule here has evidence of an edge.
 
 ## Production health and capture cost
 
