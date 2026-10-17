@@ -306,5 +306,85 @@ class TheAverageReachesTheCandidate(unittest.TestCase):
         self.assertEqual(-130, snap["sides"]["home"]["best_price"])
 
 
+# ---------------------------------------------------------------------------
+# Patch 3: stale_board_real.patch
+# ---------------------------------------------------------------------------
+
+from datetime import datetime, timedelta, timezone  # noqa: E402
+
+from src.analysis import best_bets_card  # noqa: E402
+
+NOW = datetime(2026, 10, 5, 5, 15, tzinfo=timezone.utc)
+
+
+def _cand(i=1, age=60, **over):
+    base = dict(game_id=f"G{i}", price=-140, market_probability=0.55,
+                our_probability=0.65, books=8,
+                observed_utc=None if age is None else NOW - timedelta(seconds=age),
+                has_started=False, calibrated=True, bet_sentence="x",
+                first_pitch="2026-10-05T23:00:00Z")
+    base.update(over)
+    return base
+
+
+class StaleBoardIsComputedFromTheQuoteAgesG3Used(unittest.TestCase):
+    """`select()` hard-coded `stale_board: None` (best_bets_card.py ~616), so
+    a run on which every candidate failed G3 recorded "no stale board". The
+    registration (PREREG_CARD_V2 section 6) defines it: no quote on the
+    newest board within the freshness threshold (G3's 3,600 s) of the publish
+    instant."""
+
+    def _select(self, cands):
+        return best_bets_card.select(cands, now=NOW, params=best_bets_card.V2)
+
+    @pending("stale")
+    def test_a_board_where_every_quote_is_older_than_an_hour_is_stale(self):
+        out = self._select([_cand(1, age=7200), _cand(2, age=9000)])
+        self.assertIsNotNone(out["stale_board"])
+        self.assertEqual(7200.0, out["stale_board"]["age_seconds"],
+                         "the age read from the board is the NEWEST quote's")
+        self.assertEqual(3600, out["stale_board"]["threshold_seconds"])
+        self.assertEqual(2, out["stale_board"]["n_quotes"])
+
+    @pending("stale")
+    def test_the_threshold_is_g3s_exactly(self):
+        """3,600 s passes G3 (it fails above it), so it is a fresh board;
+        3,601 s fails G3 on every candidate, so it is a stale one."""
+        fresh = self._select([_cand(1, age=3600)])
+        self.assertEqual([], fresh["picks"][0]["failed_gates"] if fresh["picks"] else [])
+        self.assertIsNone(fresh["stale_board"])
+        stale = self._select([_cand(1, age=3601)])
+        self.assertIsNotNone(stale["stale_board"])
+
+    @pending("stale")
+    def test_stale_board_agrees_with_g3_on_every_candidate(self):
+        for ages in ([7200, 8000], [7200, 60], [3601, 3601, 3601], [60, 30]):
+            with self.subTest(ages=ages):
+                cands = [_cand(i, age=a) for i, a in enumerate(ages)]
+                g3_all_fail = all(
+                    best_bets_card.G3_STALE in best_bets_card.failed_gates(
+                        c, now=NOW, params=best_bets_card.V2) for c in cands)
+                out = self._select(cands)
+                self.assertEqual(g3_all_fail, out["stale_board"] is not None)
+
+    @pending("stale")
+    def test_candidates_with_no_observed_time_make_a_stale_board_with_no_age(self):
+        out = self._select([_cand(1, age=None), _cand(2, age=None)])
+        self.assertIsNotNone(out["stale_board"])
+        self.assertIsNone(out["stale_board"]["age_seconds"])
+        self.assertEqual(2, out["stale_board"]["n_unparseable"])
+
+    def test_one_fresh_quote_keeps_the_board_fresh(self):
+        """Guard (passes before AND after): the registration's test is "no
+        quote within the threshold", not "some quote is old"."""
+        out = self._select([_cand(1, age=7200), _cand(2, age=120)])
+        self.assertIsNone(out["stale_board"])
+
+    def test_an_empty_pool_is_not_a_stale_board(self):
+        """Guard: no board at all is `raw_pool_size == 0`, which the report
+        layer words differently; it must not be reported as stale."""
+        self.assertIsNone(self._select([])["stale_board"])
+
+
 if __name__ == "__main__":
     unittest.main()

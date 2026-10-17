@@ -1,0 +1,63 @@
+diff --git a/src/analysis/best_bets_card.py b/src/analysis/best_bets_card.py
+index ada77b174..f3baff820 100644
+--- a/src/analysis/best_bets_card.py
++++ b/src/analysis/best_bets_card.py
+@@ -328,6 +328,49 @@ def quote_age_seconds(observed_utc: Any, now: Any) -> Optional[float]:
+         return None
+ 
+ 
++def stale_board(candidates: Sequence[Mapping[str, Any]], *, now: Any,
++                params: "RuleParams") -> Optional[dict]:
++    """The stale-board state, computed from the quote ages `failed_gates`
++    actually used (CARD V3 PATCH 3, docs/decisions/card_v3/README.md).
++
++    `select()` used to write `"stale_board": None` unconditionally, so all
++    175 published rows carried "no stale board" including runs where every
++    candidate failed G3 (2026-10-05 05:15Z, 2026-10-14 05:15Z; loss diagnosis
++    02 section 6.3). A reader counting stale boards from the ledger got zero,
++    and the zero meant "never computed".
++
++    THE DEFINITION IS THE REGISTRATION'S (PREREG_CARD_V2 section 6, "Stale
++    board"): the board is stale when NO quote on the newest board for the
++    slate is within `params.fresh_seconds` of the publish instant. That
++    threshold is G3's 3,600 seconds (`grade.FRESH_SECONDS`), which the
++    registration ties to the capture schedule: the dense capture widens to
++    the full slate once an hour, so a quote older than an hour means the
++    hourly pass was missed or late. The ages are the very ones G3 compares,
++    `quote_age_seconds(observed_utc, now)` per candidate, so "the board is
++    stale" and "every candidate fails G3" cannot disagree.
++
++    Returns `None` for a fresh board AND for an empty pool (no board at all
++    is `raw_pool_size == 0`, a different state with its own message), else
++    `{"age_seconds", "threshold_seconds", "n_quotes", "n_unparseable"}`.
++    `age_seconds` is the age of the NEWEST quote (the one closest to the
++    threshold), or `None` when no candidate carries a parseable
++    `observed_utc` -- which G3 also fails, per the registration.
++    """
++    if not candidates:
++        return None
++    ages = [quote_age_seconds(c.get("observed_utc"), now) for c in candidates]
++    known = [a for a in ages if a is not None]
++    newest = min(known) if known else None
++    if newest is not None and newest <= params.fresh_seconds:
++        return None
++    return {
++        "age_seconds": None if newest is None else round(newest, 1),
++        "threshold_seconds": params.fresh_seconds,
++        "n_quotes": len(candidates),
++        "n_unparseable": len(ages) - len(known),
++    }
++
++
+ def _kind_is_prop(candidate: Mapping[str, Any]) -> bool:
+     return candidate.get("kind") == "prop"
+ 
+@@ -613,7 +656,7 @@ def select(
+         "n_plus_money_picks": n_plus_money_picks,
+         "plus_money_dropped_by_subcap": plus_money_dropped_by_subcap,
+         "ceiling_refused": ceiling_refused,
+-        "stale_board": None,
++        "stale_board": stale_board(candidates, now=now, params=params),
+         "basis": BASIS,
+         "disclaimer": DISCLAIMER,
+     }

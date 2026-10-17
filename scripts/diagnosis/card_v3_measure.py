@@ -32,7 +32,7 @@ import json
 import math
 import os
 import sys
-from collections import defaultdict
+from collections import Counter, defaultdict
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -397,11 +397,66 @@ def price_reports():
     return out
 
 
+def stale_report():
+    """Patch 3: how many publish runs the real `stale_board` would have
+    flagged, from the loss diagnosis' replay of the prop candidate pool at
+    each publish instant (`data/research/loss_diagnosis/prop_replay_pool.
+    jsonl.gz`, built by `scripts/diagnosis/selection.py replay`: 164 of the
+    175 published runs).
+
+    PROP POOL ONLY: the replay has no game candidates, and the patch's
+    definition counts a fresh game quote as a fresh board. So a run flagged
+    here could be called fresh by the patch if a game quote was within the
+    hour (the hourly full-slate capture prices games and props together, so
+    the two agree most of the time, but this is an estimate, not the
+    patch's exact output). The ledger's own `stale_board` field was `None` on
+    every published row.
+    """
+    rows = [r for r in C.iter_jsonl(C.p("data", "research", "loss_diagnosis",
+                                       "prop_replay_pool.jsonl.gz"))
+            if r.get("source") == "run"]
+    runs = defaultdict(list)
+    for r in rows:
+        C.guard(r["date"])
+        runs[(r["date"], r["run"])].append(r)
+    flags = {}
+    for key, pool in runs.items():
+        now = C.parse_utc(pool[0]["now"])
+        ages = [(now - C.parse_utc(r["observed_utc"])).total_seconds()
+                for r in pool if C.parse_utc(r.get("observed_utc")) is not None]
+        flags[key] = (min(ages) if ages else None)
+    stale = {k: v for k, v in flags.items() if v is None or v > 3600}
+    by_date = defaultdict(list)
+    for (date, _run), v in flags.items():
+        by_date[date].append(v is None or v > 3600)
+    published = [r for r in C.iter_jsonl(C.p("evidence", "cards_v2.jsonl"))
+                 if r.get("kind") == "card_published"]
+    out = {
+        "published_rows_in_ledger": len(published),
+        "recorded_stale_board_flags_in_ledger": sum(1 for r in published if r.get("stale_board")),
+        "runs_replayed": len(flags),
+        "runs_stale_by_registration_definition_prop_pool": len(stale),
+        "share_of_replayed_runs": round(len(stale) / len(flags), 3) if flags else None,
+        "dates": len(by_date),
+        "dates_with_at_least_one_stale_run": sum(1 for v in by_date.values() if any(v)),
+        "dates_with_every_replayed_run_stale": sum(1 for v in by_date.values() if all(v)),
+        "stale_runs_by_utc_hour": dict(sorted(Counter(
+            (sorted(runs[k], key=lambda r: r["now"])[0]["now"][11:13]) for k in stale).items())),
+        "_note": "ESTIMATE from the prop pool only; the ledger recorded None on every row.",
+    }
+    os.makedirs(OUT_DIR, exist_ok=True)
+    with open(os.path.join(OUT_DIR, "measured_stale_board_real.json"), "w", encoding="utf-8") as fh:
+        json.dump(out, fh, indent=1, default=float, sort_keys=True)
+    return out
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser()
-    ap.add_argument("part", choices=("tb", "avg", "ml"))
+    ap.add_argument("part", choices=("tb", "avg", "ml", "stale"))
     args = ap.parse_args(argv)
-    if args.part == "tb":
+    if args.part == "stale":
+        print(json.dumps(stale_report(), indent=1, default=float, sort_keys=True))
+    elif args.part == "tb":
         print(json.dumps(tb_report(), indent=1, default=float, sort_keys=True))
     else:
         out = price_reports()

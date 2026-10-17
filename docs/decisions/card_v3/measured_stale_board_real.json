@@ -1,0 +1,29 @@
+{
+ "_note": "ESTIMATE from the prop pool only; the ledger recorded None on every row.",
+ "dates": 20,
+ "dates_with_at_least_one_stale_run": 18,
+ "dates_with_every_replayed_run_stale": 0,
+ "published_rows_in_ledger": 175,
+ "recorded_stale_board_flags_in_ledger": 0,
+ "runs_replayed": 164,
+ "runs_stale_by_registration_definition_prop_pool": 78,
+ "share_of_replayed_runs": 0.476,
+ "stale_runs_by_utc_hour": {
+  "05": 18,
+  "06": 1,
+  "07": 2,
+  "08": 3,
+  "09": 1,
+  "10": 6,
+  "12": 2,
+  "13": 9,
+  "14": 4,
+  "16": 4,
+  "17": 6,
+  "18": 1,
+  "19": 5,
+  "20": 10,
+  "21": 4,
+  "22": 2
+ }
+}
