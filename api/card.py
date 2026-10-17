@@ -340,10 +340,12 @@ def _build_payload(date: str, request: Optional[Request], route: str,
     # falls through untouched, frozen rows included. The record routes below
     # (/card/record, /card/history) do not read the pause.
     #
-    # A plain page_view, not a value action: no product content was served.
+    # Recorded as a card view like any other: the page still serves product
+    # content (the reason, the record and brief links), and the activation
+    # contract (tests/test_activation_routes.py) counts every labelled route.
     paused = mlb_public_card.paused_card(date)
     if paused is not None:
-        _record_page_view(request, route, date)
+        _record_page_view(request, route, date, surface="card")
         return paused
 
     # MLB, rule v2: the PREVIEW path (T5). Kept entirely separate from the
