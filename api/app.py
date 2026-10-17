@@ -38,6 +38,7 @@ from api.analyst import public_router as analyst_public_router, router as analys
 from api.sample import public_router as sample_public_router
 from api.analyst_ufc import (public_router as analyst_ufc_public_router,
                              router as analyst_ufc_router)
+from api.analyst_nfl import router as analyst_nfl_router
 from api.opportunities import router as opportunities_router
 from api.performance import router as performance_router
 from api.live import router as live_router
@@ -118,6 +119,10 @@ app.include_router(analyst_ufc_public_router)
 # /analyst/ufc/{event_id} -- one UFC event's published AI analysis, every bout, read from
 # the ledger (never the model), same paid-demo gate as /game/... and /analyst/...
 app.include_router(analyst_ufc_router, dependencies=_authed_paid)
+# /analyst/nfl/{date}/{away}/{home} -- one NFL game's supervised-session brief, read from
+# evidence/analyst_pilot_nfl_v1.jsonl (never the model), same paid-demo gate. Four path segments, so
+# it can never be captured by the MLB route's three; there is no public NFL record route yet.
+app.include_router(analyst_nfl_router, dependencies=_authed_paid)
 # /card/{date}, /card -- THE CARD, the three-to-five bets the front page
 # leads with. Paid, like every other read-only game surface: it is the
 # product, and the free surface is Bet Check.

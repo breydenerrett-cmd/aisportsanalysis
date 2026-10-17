@@ -58,7 +58,9 @@ function facts(data) {
   const frozen = formatEasternClock(data.published_utc);
   const starts = formatEasternClock(data.first_pitch_utc);
   if (frozen) list.appendChild(el("li", { "data-hook": "sample-frozen", text: `Frozen at ${frozen}, before the game.` }));
-  if (starts) list.appendChild(el("li", { "data-hook": "sample-first-pitch", text: `First pitch ${starts}.` }));
+  // The NFL's brief says kickoff (the server marks the sport; a row from before the field is MLB's).
+  const startWord = data.sport === "nfl" ? "Kickoff" : "First pitch";
+  if (starts) list.appendChild(el("li", { "data-hook": "sample-first-pitch", text: `${startWord} ${starts}.` }));
   list.appendChild(el("li", { "data-hook": "sample-rounding",
     text: "Numbers are rounded for reading. Hold the pointer over a dotted figure to see the exact one published." }));
   const a = data.analysis || {};
@@ -93,7 +95,7 @@ export function renderSample(data) {
     const a = data.analysis;
     if (a.away && a.home) {
       page.appendChild(el("h2", { class: "sp-matchup", "data-hook": "sample-matchup",
-        text: `${a.away} at ${a.home}${a.date ? `, ${a.date}` : ""}` }));
+        text: `${a.away} at ${a.home}${a.date ? `, ${a.date}` : ""} (${data.sport === "nfl" ? "NFL" : "MLB"})` }));
     }
     page.appendChild(facts(data));
     page.appendChild(renderAnalystSection(data));

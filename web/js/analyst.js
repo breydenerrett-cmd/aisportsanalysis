@@ -52,10 +52,11 @@ export const ANALYST_LABEL =
   "Written by an AI model from the data on this page. Unproven. Analysis, not advice.";
 
 /* Families in the order they are shown; the words a reader sees for each. */
-export const FAMILY_ORDER = ["moneyline", "run_line", "total", "team_total", "prop"];
+export const FAMILY_ORDER = ["moneyline", "run_line", "spread", "total", "team_total", "prop"];
 export const FAMILY_LABEL = {
   moneyline: "Moneyline",
   run_line: "Run line",
+  spread: "Point spread",
   total: "Game total",
   team_total: "Team totals",
   prop: "Player props",
@@ -339,8 +340,10 @@ export function renderAnalystSection(data) {
   }
   const missing = missingBlock(analysis.missing);
   if (missing) host.appendChild(missing);
+  // The NFL's brief says kickoff; the server marks it (api/analyst_nfl.py adds `sport`).
+  const start = analysis.sport === "nfl" ? "kickoff" : "first pitch";
   host.appendChild(el("p", { class: "an-foot",
-    text: "Published before first pitch and graded afterward, on the record page. Passes are shown as plainly as takes." }));
+    text: `Published before ${start} and graded afterward, on the record page. Passes are shown as plainly as takes.` }));
   return host;
 }
 

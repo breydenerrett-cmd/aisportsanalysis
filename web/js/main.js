@@ -89,6 +89,7 @@ import { renderComingSoon } from "./comingsoon.js";
 import { renderToday } from "./today.js";
 import { renderCard } from "./card.js";
 import { renderFightNight } from "./ufcfights.js";
+import { renderNflBrief } from "./analyst_nfl.js";
 import { fetchUfcAnalyst, boutNode as ufcAnalystBout } from "./analyst_ufc.js";
 import { renderTennisBoard } from "./tennis.js";
 import { renderGamesList, renderGameDetail } from "./games.js";
@@ -315,7 +316,11 @@ async function _renderRouteInner(main) {
     // #/nfl/record?rule=NFL_CARD_V1 is the retired favourites rule's own
     // record (2026-09-20) -- kept apart from the live rule's, never pooled.
     // Only that one known id is passed on; any other ?rule= is ignored.
-    if (route === "record" && query.rule === NFL_RETIRED_RULE) {
+    if (route === "brief" && rest.length >= 3) {
+      // #/nfl/brief/{date}/{away}/{home}: one game's supervised-session brief (analyst_nfl.js), the
+      // NFL's first per-game page. The card and its record are unchanged.
+      await renderNflBrief(main, rest[0], rest[1], rest[2]);
+    } else if (route === "record" && query.rule === NFL_RETIRED_RULE) {
       await renderCardRecord(main, { sport: "nfl", rule: NFL_RETIRED_RULE });
     } else if (route === "record") {
       await renderCardRecord(main, { sport: "nfl" });

@@ -12,8 +12,11 @@ record route never serves an unsettled game's calls, so this is the single, narr
 WHAT IT SERVES, AND ONLY THAT
 -----------------------------
 `config/sample_brief.json` names the game: `{"date": "2026-10-03", "away": "NYY", "home": "TB"}`, or
-`null` for no sample. The route serves that game's row from the PILOT ledger and nothing else: no
-query parameter picks a game, no other game can be reached, and the main (API) ledger is never read.
+`null` for no sample. An optional `"sport"` field (`"mlb"`, the default, or `"nfl"`) says which pilot
+ledger the game is in: MLB's `evidence/analyst_pilot_v1.jsonl` or the NFL pilot's
+`evidence/analyst_pilot_nfl_v1.jsonl`. Any other sport is malformed and serves nothing. The route
+serves that game's row from the PILOT ledger of that one sport and nothing else: no query parameter
+picks a game, no other game can be reached, and the main (API) ledger is never read.
 When the file says null, names a game with no pilot row, or is malformed, the answer is
 `available: false` with a plain reason, never an error and never a different game. The owner changes
 the sample by editing one small file that ships in the image (`config/` is copied by
@@ -33,6 +36,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends
 
 from api import analyst as analyst_api
+from api import analyst_nfl as analyst_nfl_api
 from src.analyst import PILOT_LABEL
 from src.appstate import ratelimit
 from src.paths import repo_root
@@ -46,6 +50,7 @@ _rate_limit = ratelimit.limiter_dependency(_limiter)
 
 _ISO_DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 _TEAM = re.compile(r"^[A-Za-z]{2,4}$")
+SPORTS = ("mlb", "nfl")
 
 NONE_YET = "There is no sample brief to show right now."
 
@@ -60,6 +65,9 @@ def designated() -> Optional[dict]:
     if not isinstance(raw, dict):
         return None
     date, away, home = raw.get("date"), raw.get("away"), raw.get("home")
+    sport = raw.get("sport", "mlb")
+    if sport not in SPORTS:
+        return None
     if not (isinstance(date, str) and _ISO_DATE.match(date) and isinstance(away, str)
             and isinstance(home, str) and _TEAM.match(away) and _TEAM.match(home)):
         return None
@@ -67,12 +75,12 @@ def designated() -> Optional[dict]:
         datetime.strptime(date, "%Y-%m-%d")
     except ValueError:
         return None
-    return {"date": date, "away": away.upper(), "home": home.upper()}
+    return {"date": date, "away": away.upper(), "home": home.upper(), "sport": sport}
 
 
 def _unavailable() -> dict:
     return {"available": False, "label": PILOT_LABEL, "analysis": None, "reason": NONE_YET,
-            "first_pitch_utc": None, "published_utc": None}
+            "first_pitch_utc": None, "published_utc": None, "sport": None}
 
 
 @public_router.get("/sample/brief", dependencies=[Depends(_rate_limit)])
@@ -81,8 +89,12 @@ def get_sample_brief() -> dict:
     game = designated()
     if game is None:
         return _unavailable()
-    view = analyst_api.pilot_view(game["date"], game["away"], game["home"])
+    if game["sport"] == "nfl":
+        view = analyst_nfl_api.nfl_view(game["date"], game["away"], game["home"])
+    else:
+        view = analyst_api.pilot_view(game["date"], game["away"], game["home"])
     if view is None:
         return _unavailable()
     return {"available": True, "label": PILOT_LABEL, "analysis": view, "reason": None,
-            "first_pitch_utc": view["first_pitch_utc"], "published_utc": view["published_utc"]}
+            "first_pitch_utc": view["first_pitch_utc"], "published_utc": view["published_utc"],
+            "sport": game["sport"]}
