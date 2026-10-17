@@ -1138,8 +1138,9 @@ function emptyCard(payload, sport = "mlb") {
   return wrap;
 }
 
-/** THE PAUSED STATE (UFC, owner decision 2026-10-03;
- * docs/decisions/UFC_FAVOURITES_PAUSED.md).
+/** THE PAUSED STATE (UFC, owner decision 2026-10-03,
+ * docs/decisions/UFC_FAVOURITES_PAUSED.md; MLB, owner decision 2026-10-16,
+ * docs/decisions/MLB_VALUE_PICKS_PAUSED.md).
  *
  * For a date after the cut-off the server answers `paused: true`, no picks,
  * and a few plain sentences of `reason`. They are rendered VERBATIM, like
@@ -1160,12 +1161,29 @@ function pausedCard(payload) {
   const panel = el("div", { class: "panel chamfer card2empty card2empty--paused" });
   panel.appendChild(el("span", { class: "card2empty__label", text: "PICKS PAUSED" }));
   panel.appendChild(el("p", { class: "card2empty__body", "data-hook": "card-paused-reason",
-    text: payload.reason || "UFC picks are paused." }));
+    text: payload.reason || "Picks are paused." }));
   const actions = el("div", { class: "card2empty__actions" });
-  actions.appendChild(el("a", { class: "btn btn--primary chamfer chamfer--btn",
-    href: "#/ufc/record", "data-hook": "card-record-link", text: "VIEW THE UFC RECORD" }));
-  actions.appendChild(el("a", { class: "btn btn--ghost chamfer chamfer--btn",
-    href: "#/today", "data-hook": "card-paused-mlb-link", text: "SEE TONIGHT'S MLB PICKS" }));
+  // MLB (owner decision 2026-10-16, docs/decisions/MLB_VALUE_PICKS_PAUSED.md):
+  // the server sends the links a reader should use instead (the record, a
+  // sample brief, the price board), so the page does not decide where a
+  // stopped product points. Only a link with both a label and an href is
+  // drawn. UFC sends none and keeps its two fixed links below.
+  const links = Array.isArray(payload.links)
+    ? payload.links.filter((l) => l && typeof l.label === "string" && typeof l.href === "string")
+    : [];
+  if (links.length) {
+    links.forEach((link, i) => {
+      actions.appendChild(el("a", {
+        class: i === 0 ? "btn btn--primary chamfer chamfer--btn" : "btn btn--ghost chamfer chamfer--btn",
+        href: link.href, "data-hook": i === 0 ? "card-record-link" : `card-paused-link-${i}`,
+        text: link.label }));
+    });
+  } else {
+    actions.appendChild(el("a", { class: "btn btn--primary chamfer chamfer--btn",
+      href: "#/ufc/record", "data-hook": "card-record-link", text: "VIEW THE UFC RECORD" }));
+    actions.appendChild(el("a", { class: "btn btn--ghost chamfer chamfer--btn",
+      href: "#/today", "data-hook": "card-paused-mlb-link", text: "SEE TONIGHT'S MLB PICKS" }));
+  }
   panel.appendChild(actions);
   wrap.appendChild(panel);
   return wrap;

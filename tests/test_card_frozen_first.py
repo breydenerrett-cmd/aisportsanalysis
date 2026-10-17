@@ -180,7 +180,10 @@ class AFrozenCardCostsOneLedgerRead(unittest.TestCase):
         apicard.card_mod.card_for_date = lambda *a, **k: {"picks": [],
                                                           "frozen": False}
         try:
-            payload = apicard._build_payload("2099-01-01", None, "card", rule="v1")
+            # A date ON OR BEFORE the MLB pause cut-off (2026-10-16,
+            # config/mlb_public_card.json): a date after it is answered as
+            # paused and never built (tests/test_api_card_mlb_paused.py).
+            payload = apicard._build_payload("2026-10-10", None, "card", rule="v1")
         finally:
             apicard.card_mod.card_for_date = saved_live
         self.assertEqual(called["entries"], 1)

@@ -30,6 +30,7 @@ from src.analysis import opportunities as opportunities_mod
 from src.analysis import strength
 from src.appstate import freshness
 from src.appstate import ratelimit
+from src.appstate import mlb_public_card
 from src.appstate import ufc_public_card
 from src.report import card as card_mod
 
@@ -310,6 +311,24 @@ def _build_payload(date: str, request: Optional[Request], route: str,
         return payload
 
     resolved_rule = _resolve_rule(rule)
+
+    # PAUSED AFTER THE CUT-OFF (owner decision 2026-10-16,
+    # docs/decisions/MLB_VALUE_PICKS_PAUSED.md). The MLB value picks are no
+    # longer public and the branches below would still serve or BUILD them: a
+    # date with no published row is built live from the odds board and
+    # comes back as provisional picks, which would show the stopped product as
+    # live. So a date after the last public date (config/mlb_public_card.json,
+    # read through mlb_public_card) is answered here, for every rule, before
+    # the ledger, the board or any cache is touched: no picks, the reason and
+    # the links a reader should use instead. A date on or before the cut-off
+    # falls through untouched, frozen rows included. The record routes below
+    # (/card/record, /card/history) do not read the pause.
+    #
+    # A plain page_view, not a value action: no product content was served.
+    paused = mlb_public_card.paused_card(date)
+    if paused is not None:
+        _record_page_view(request, route, date)
+        return paused
 
     # MLB, rule v2: the PREVIEW path (T5). Kept entirely separate from the
     # branch below so `rule=None`/`rule="v1"` -- every existing caller --

@@ -3409,6 +3409,33 @@ def cmd_card(args) -> int:
 
     # publish
 
+    # THE MLB VALUE PICKS ARE PAUSED AFTER THE CUT-OFF DATE (owner decision
+    # 2026-10-16, docs/decisions/MLB_VALUE_PICKS_PAUSED.md; the one value is
+    # config/mlb_public_card.json, read through src.appstate.mlb_public_card).
+    # For a slate date after it:
+    #   * `--rule v1` (the default, which scripts/afternoon_slate.sh runs) and
+    #     `--rule v2` write NOTHING: the public V2 card and the V1 row beside it
+    #     are not built, and the `  no card:` line below is what the shell
+    #     scripts already read as a fact about the slate and not an error
+    #     (exit 0);
+    #   * `--rule all` (scripts/capture_slot.sh) skips V1 and V2 the same way
+    #     and still publishes the three registered V2 shadows (A, C, E), which
+    #     are forward tests and not public -- they are the evidence a future
+    #     value product would be judged on;
+    #   * `--rule shadow-a|shadow-c|shadow-e` are not public and are untouched.
+    # A date on or before the cut-off behaves exactly as it did.
+    mlb_paused = False
+    mlb_last_public = None
+    if sport == "mlb":
+        from src.appstate import mlb_public_card
+        mlb_paused = mlb_public_card.is_paused_for(date_str)
+        mlb_last_public = mlb_public_card.last_public_date()
+    if mlb_paused and rule in ("v1", "v2"):
+        print(f"THE CARD -- {date_str}")
+        print(f"  no card: value picks paused after {mlb_last_public} "
+              "(config/mlb_public_card.json)")
+        return EXIT_OK
+
     # T5 (docs/CARD_V2_BUILD_PLAN.md): every rule id besides "v1" is MLB
     # only -- V2 and its shadows have no NFL/tennis counterpart -- and
     # entirely separate from the v1 branch below, so `--rule v1` (the
@@ -3467,6 +3494,40 @@ def cmd_card(args) -> int:
                 print(f"  [FILL {fill.get('price_class')}] "
                       f"{fill.get('bet_sentence')}   failed: "
                       f"{', '.join(fill.get('failed_gates') or ())}")
+
+        if rule == "all" and mlb_paused:
+            # PAUSED (see the block above `rule != "v1"`): V1 and V2 are not
+            # built or written; the registered shadows still are. This does
+            # what `card.publish_all` does for them -- build each from the one
+            # shared board, publish into its own store -- without the V1 and
+            # V2 rows `publish_all` always includes (card.py is
+            # fingerprinted, so the cut is made here).
+            print(f"THE CARD -- {date_str}")
+            print(f"  no card: value picks paused after {mlb_last_public} "
+                  "(config/mlb_public_card.json)")
+            shadow_names = [n for n in rule_table if n.startswith("shadow-")]
+            shadow_cards = {}
+            for name in shadow_names:
+                try:
+                    shadow_cards[name] = card_v2_mod.card_v2_for_date(
+                        entries, opportunity_rows, date=date_str, now=now,
+                        params=rule_table[name][0])
+                except card_v2_mod.CardV2Error as exc:
+                    print(f"  {name}: ERROR: {exc}", file=sys.stderr)
+                    continue
+                _print_one(name, shadow_cards[name])
+            if getattr(args, "dry_run", False):
+                print("  --dry-run: nothing written.")
+                return EXIT_OK
+            for name, shadow_card in shadow_cards.items():
+                row = card_ledger.publish_v2(
+                    shadow_card, now=now.isoformat(), path=rule_table[name][1])
+                print(f"  {name}: published "
+                      f"{row.get('n_picks', len(row.get('picks') or ()))} "
+                      "pick(s)"
+                      + ("  (already published, no change)"
+                         if row.get("already_published") else ""))
+            return EXIT_OK
 
         if rule == "all":
             # ONE shared board (`entries`/`opportunity_rows`, already
