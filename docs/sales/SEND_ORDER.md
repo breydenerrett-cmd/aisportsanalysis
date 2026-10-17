@@ -51,6 +51,12 @@ Public reply if DMs are closed (233 characters; X counts a link as 23):
 Tommy, I built an AI brief for each MLB playoff game that argues against its own bets and is graded in public. Analysis, not advice; no edge claimed; not on sale. The latest: https://linehound.app/web/sample.html?utm_source=l009-tommy-lorenzo&utm_medium=x_account&utm_campaign=brief_01 Would you tell me what is missing?
 ```
 
+If someone answers, you may add this one sentence (it is about us, not about them):
+
+```
+We paused our own picks this week and wrote up why: https://linehound.app/web/why-we-paused.html?utm_source=l009-tommy-lorenzo&utm_medium=x_account&utm_campaign=why_paused
+```
+
 Log: `python scripts/outreach_batch.py sent --batch 1 --items 9 --version v3e-ready`
 
 ### Item 3, Peter Appel (LEAD `l003-justbaseball-betting`, CHANNEL `creator`)
@@ -75,6 +81,12 @@ Public reply if DMs are closed (233 characters; X counts a link as 23):
 
 ```
 Peter, I built an AI brief for each MLB playoff game that argues against its own bets and is graded in public. Analysis, not advice; no edge claimed; not on sale. The latest: https://linehound.app/web/sample.html?utm_source=l003-justbaseball-betting&utm_medium=creator&utm_campaign=brief_01 Would you tell me what is missing?
+```
+
+If someone answers, you may add this one sentence (it is about us, not about them):
+
+```
+We paused our own picks this week and wrote up why: https://linehound.app/web/why-we-paused.html?utm_source=l003-justbaseball-betting&utm_medium=creator&utm_campaign=why_paused
 ```
 
 Log: `python scripts/outreach_batch.py sent --batch 1 --items 3 --version v3e-ready`
@@ -103,6 +115,12 @@ Public reply if DMs are closed (233 characters; X counts a link as 23):
 Tyler, I built an AI brief for each MLB playoff game that argues against its own bets and is graded in public. Analysis, not advice; no edge claimed; not on sale. The latest: https://linehound.app/web/sample.html?utm_source=l008-tyler-shoemaker&utm_medium=x_account&utm_campaign=brief_01 Would you tell me what is missing?
 ```
 
+If someone answers, you may add this one sentence (it is about us, not about them):
+
+```
+We paused our own picks this week and wrote up why: https://linehound.app/web/why-we-paused.html?utm_source=l008-tyler-shoemaker&utm_medium=x_account&utm_campaign=why_paused
+```
+
 Log: `python scripts/outreach_batch.py sent --batch 1 --items 8 --version v3e-ready`
 
 ### Item 11, Picks with the Professor (LEAD `l011-picks-with-the-professor`, CHANNEL `x_account`)
@@ -129,6 +147,12 @@ Public reply if DMs are closed (237 characters; X counts a link as 23):
 Professor, I built an AI brief for each MLB playoff game that argues against its own bets and is graded in public. Analysis, not advice; no edge claimed; not on sale. The latest: https://linehound.app/web/sample.html?utm_source=l011-picks-with-the-professor&utm_medium=x_account&utm_campaign=brief_01 Would you tell me what is missing?
 ```
 
+If someone answers, you may add this one sentence (it is about us, not about them):
+
+```
+We paused our own picks this week and wrote up why: https://linehound.app/web/why-we-paused.html?utm_source=l011-picks-with-the-professor&utm_medium=x_account&utm_campaign=why_paused
+```
+
 Log: `python scripts/outreach_batch.py sent --batch 1 --items 11 --version v3e-ready`
 
 ### Item 12, Unit Circle (LEAD `l012-unit-circle`, CHANNEL `discord`)
@@ -141,6 +165,12 @@ One message (777 characters including the link):
 
 ```
 Hello, I'm Brey. I found Unit Circle on Disboard while looking for MLB betting communities, so I am asking the mods first and not posting in the server. I built an AI brief for each MLB playoff game: a take or pass on every market it has prices for, the strongest case against its own bets, what it could not know, graded in public afterward. The latest one: https://linehound.app/web/sample.html?utm_source=l012-unit-circle&utm_medium=discord&utm_campaign=brief_01 Would you look at it and tell me whether it is something your members would want, or whether I should not share it here? It is AI analysis, not advice, and I claim no edge. It is not on sale yet; the planned price is $19.99 a month. If it is useful, I am hand-picking the first 20 testers: 7 days free, no card.
+```
+
+If someone answers, you may add this one sentence (it is about us, not about them):
+
+```
+We paused our own picks this week and wrote up why: https://linehound.app/web/why-we-paused.html?utm_source=l012-unit-circle&utm_medium=discord&utm_campaign=why_paused
 ```
 
 Log: `python scripts/outreach_batch.py sent --batch 1 --items 12 --version v3e-ready`

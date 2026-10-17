@@ -122,5 +122,15 @@ class FiveMessages(unittest.TestCase):
         self.assertNotIn("tonight's", self.section.lower())
 
 
+    def test_each_item_offers_one_honest_sentence_pointing_at_the_pause_page(self):
+        for n, (lead, channel) in FIVE.items():
+            want = ("We paused our own picks this week and wrote up why: "
+                    f"https://linehound.app/web/why-we-paused.html?utm_source={lead}"
+                    f"&utm_medium={channel}&utm_campaign=why_paused")
+            self.assertIn(want, self.items[n], f"item {n}: the pause sentence is missing or mistagged")
+            # one sentence, no claim: the banned-word and placeholder checks above already cover this block
+            self.assertEqual(sum(1 for m in self.items[n] if "why-we-paused" in m), 1, n)
+
+
 if __name__ == "__main__":
     unittest.main()
