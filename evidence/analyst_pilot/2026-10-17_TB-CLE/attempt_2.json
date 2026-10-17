@@ -1,0 +1,656 @@
+{
+ "summary": "I mostly pass here. The books have the moneyline close to even, with Tampa Bay at 0.5104 de-vigged, and the data does not give a strong reason to disagree: Tampa Bay's starter has the better season ERA, but Cleveland's lineup has the platoon advantage. The 6.5 total is also split almost evenly, and the run line is priced steeply on Cleveland, so I leave all three alone. Most player props either agree with LineHound's own model or sit at prices near or beyond the limit I will take, and several are quoted by only two books. The one lean is Victor Mesa Jr. to get a total base, where LineHound's own model is clearly above the market and the price is still short of my cutoff, though confidence is low. Missing inputs matter: there is no standings snapshot, no team-total prices, and many props were left out of the review. Cleveland's starter has a short track record in the starter role, so the pitching read carries more uncertainty than the ERA suggests.",
+ "calls": [
+  {
+   "slot_id": "moneyline",
+   "market": "moneyline",
+   "selection": "TB",
+   "verdict": "PASS",
+   "price": -108,
+   "book": "betus",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books have this close to a coin flip, and the data gives no clear reason to disagree with them.",
+     "evidence": [
+      {
+       "path": "markets.moneyline.options[0].fair_probability",
+       "value": 0.5104
+      },
+      {
+       "path": "markets.moneyline.options[1].fair_probability",
+       "value": 0.4896
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "Tampa Bay has the better season ERA for its starter, but Cleveland's lineup has the platoon advantage, so the signals largely cancel.",
+     "evidence": [
+      {
+       "path": "sections.starters.values.away_sp_era",
+       "value": 3.1
+      },
+      {
+       "path": "sections.lineups.values.home.platoon_advantage.share",
+       "value": 0.889
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A late lineup change or a clear price move away from the current number would make me revisit it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "run_line",
+   "market": "run_line",
+   "selection": "CLE +1.5",
+   "verdict": "PASS",
+   "price": -185,
+   "book": "mybookieag",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books price CLE +1.5 as a heavy favorite, and nothing in the data says that price is wrong.",
+     "evidence": [
+      {
+       "path": "markets.run_line.options[0].fair_probability",
+       "value": 0.6297
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The price is steep, and the data has little on run margins beyond team run differential.",
+     "evidence": [
+      {
+       "path": "sections.teams.values.away_run_diff_pg",
+       "value": 0.464
+      },
+      {
+       "path": "sections.teams.values.home_run_diff_pg",
+       "value": 0.144
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A price on CLE +1.5 well inside the current number, or news of an injury to a key Tampa Bay bat, would change it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "total",
+   "market": "total",
+   "selection": "Over 6.5",
+   "verdict": "PASS",
+   "price": -110,
+   "book": "williamhill_us",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The total is split almost evenly by the books, and the data offers no strong push either way.",
+     "evidence": [
+      {
+       "path": "markets.total.options[0].fair_probability",
+       "value": 0.5063
+      },
+      {
+       "path": "markets.total.options[1].fair_probability",
+       "value": 0.4937
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "Cold weather and a light wind do not clearly move this line, and no team-total prices were captured to cross-check.",
+     "evidence": [
+      {
+       "path": "sections.weather.values.temp_f",
+       "value": 44.9
+      },
+      {
+       "path": "sections.weather.values.wind_mph",
+       "value": 4.3
+      },
+      {
+       "path": "missing[2].item",
+       "value": "team_totals"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A confirmed bullpen or lineup change that shifts expected run scoring would be needed.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_01",
+   "market": "prop",
+   "selection": "Under 2.5",
+   "verdict": "PASS",
+   "price": -164,
+   "book": "fanduel",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The under is already priced steeply, and the data's strikeout rate for Martinez points to a low total, which the books have priced in.",
+     "evidence": [
+      {
+       "path": "markets.prop_01.options[0].fair_probability",
+       "value": 0.5918
+      },
+      {
+       "path": "sections.starters.values.away_sp_k9",
+       "value": 5.45
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "There is no model number for this prop in the data, so nothing separates us from the market.",
+     "evidence": [
+      {
+       "path": "sections.starters.values.away_sp_recent_ip_per_start",
+       "value": 4.556
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A price on the under that is clearly better than current, or a confirmed short leash for Martinez, would change it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_02",
+   "market": "prop",
+   "selection": "Under 0.5",
+   "verdict": "PASS",
+   "price": -256,
+   "book": "draftkings",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "LineHound's own model and the market are close on Liam Hicks, and few books quote it, so there is little to act on.",
+     "evidence": [
+      {
+       "path": "markets.prop_02.context.repo_model_probability",
+       "value": 0.6845
+      },
+      {
+       "path": "markets.prop_02.context.repo_market_probability",
+       "value": 0.6764
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A change in lineup spot or a much better price would change it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_03",
+   "market": "prop",
+   "selection": "Under 0.5",
+   "verdict": "PASS",
+   "price": -250,
+   "book": "betmgm",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "LineHound's own model and the market are close on Nathaniel Lowe, and few books quote it, so there is little to act on.",
+     "evidence": [
+      {
+       "path": "markets.prop_03.context.repo_model_probability",
+       "value": 0.6792
+      },
+      {
+       "path": "markets.prop_03.context.repo_market_probability",
+       "value": 0.6696
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A change in lineup spot or a much better price would change it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_04",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": -185,
+   "book": "betonlineag",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "LineHound's own model likes DeLauter more than the market does, but the over is priced near the limit I will take and the gap alone does not show what the data knows that the price does not.",
+     "evidence": [
+      {
+       "path": "markets.prop_04.context.repo_model_probability",
+       "value": 0.6758
+      },
+      {
+       "path": "markets.prop_04.context.repo_market_probability",
+       "value": 0.6123
+      },
+      {
+       "path": "markets.prop_04.options[0].best.price",
+       "value": -185
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A price on the over that is clearly better than the current best quote would change it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_05",
+   "market": "prop",
+   "selection": "Under 0.5",
+   "verdict": "PASS",
+   "price": -295,
+   "book": "betmgm",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "LineHound's own model and the market are close on Taylor Walls, and few books quote it, so there is little to act on.",
+     "evidence": [
+      {
+       "path": "markets.prop_05.context.repo_model_probability",
+       "value": 0.6637
+      },
+      {
+       "path": "markets.prop_05.context.repo_market_probability",
+       "value": 0.7048
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A change in lineup spot or a much better price would change it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_06",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": -220,
+   "book": "betmgm",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books and LineHound's own model agree closely, and the over is priced beyond what I would take.",
+     "evidence": [
+      {
+       "path": "markets.prop_06.context.repo_model_probability",
+       "value": 0.6581
+      },
+      {
+       "path": "markets.prop_06.context.repo_market_probability",
+       "value": 0.6498
+      },
+      {
+       "path": "markets.prop_06.options[0].best.price",
+       "value": -220
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A much shorter price on the over would change it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_07",
+   "market": "prop",
+   "selection": "Under 0.5",
+   "verdict": "PASS",
+   "price": -275,
+   "book": "betmgm",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "LineHound's own model and the market are close on Richie Palacios, and few books quote it, so there is little to act on.",
+     "evidence": [
+      {
+       "path": "markets.prop_07.context.repo_model_probability",
+       "value": 0.657
+      },
+      {
+       "path": "markets.prop_07.context.repo_market_probability",
+       "value": 0.7084
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A change in lineup spot or a much better price would change it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_08",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "TAKE",
+   "price": -135,
+   "book": "betmgm",
+   "fair_estimate": 0.6,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "LineHound's own model has Mesa getting a total base well more often than the market does, and his season rate is in line with the model.",
+     "evidence": [
+      {
+       "path": "markets.prop_08.context.repo_model_probability",
+       "value": 0.6513
+      },
+      {
+       "path": "markets.prop_08.context.repo_market_probability",
+       "value": 0.5482
+      },
+      {
+       "path": "markets.prop_08.context.season_rate",
+       "value": 0.6552
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "Most of Tampa Bay's lineup has the platoon advantage against a right-handed starter who has allowed more damage to left-handed hitters.",
+     "evidence": [
+      {
+       "path": "sections.lineups.values.away.platoon_advantage.share",
+       "value": 0.667
+      },
+      {
+       "path": "sections.matchup_depth.values.away.handedness.starter.vs_left_woba",
+       "value": 0.3479
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": -150,
+   "what_would_change_it": "A lineup change that drops Mesa out of the sixth spot, or a price worse than -150, would flip it to a pass.",
+   "case_against": {
+    "claim": "The market sits well below the model, and the opposing starter has allowed a much lower wOBA to right-handed hitters, so if Mesa is a right-handed bat the matchup is worse than the model suggests.",
+    "evidence": [
+     {
+      "path": "markets.prop_08.context.repo_market_probability",
+      "value": 0.5482
+     },
+     {
+      "path": "sections.matchup_depth.values.away.handedness.starter.vs_right_woba",
+      "value": 0.277
+     }
+    ],
+    "derived": []
+   }
+  },
+  {
+   "slot_id": "prop_09",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": -185,
+   "book": "betmgm",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "LineHound's own model is above the market, but the over costs a lot and only three books quote it.",
+     "evidence": [
+      {
+       "path": "markets.prop_09.context.repo_model_probability",
+       "value": 0.6488
+      },
+      {
+       "path": "markets.prop_09.context.repo_market_probability",
+       "value": 0.6082
+      },
+      {
+       "path": "markets.prop_09.options[0].best.price",
+       "value": -185
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A better price on the over or more books quoting it would change it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_10",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": -172,
+   "book": "betonlineag",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "LineHound's own model is above the market for Caminero, but the gap is modest and only three books quote the prop.",
+     "evidence": [
+      {
+       "path": "markets.prop_10.context.repo_model_probability",
+       "value": 0.6486
+      },
+      {
+       "path": "markets.prop_10.context.repo_market_probability",
+       "value": 0.5927
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A better price on the over would change it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_11",
+   "market": "prop",
+   "selection": "Under 0.5",
+   "verdict": "PASS",
+   "price": -325,
+   "book": "betmgm",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "LineHound's own model and the market are close on Brayan Rocchio, and few books quote it, so there is little to act on.",
+     "evidence": [
+      {
+       "path": "markets.prop_11.context.repo_model_probability",
+       "value": 0.6483
+      },
+      {
+       "path": "markets.prop_11.context.repo_market_probability",
+       "value": 0.7158
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A change in lineup spot or a much better price would change it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_12",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": -268,
+   "book": "draftkings",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The over is priced past the limit I will take, and one of the quotes for Simpson is old.",
+     "evidence": [
+      {
+       "path": "markets.prop_12.options[0].best.price",
+       "value": -268
+      },
+      {
+       "path": "markets.prop_12.options[0].quotes[1].captured_utc",
+       "value": "2026-10-17T04:06:38Z"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A much shorter price on the over would change it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_13",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": -152,
+   "book": "betonlineag",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "LineHound's own model is above the market for Adell, but the gap alone does not show what the data knows that the price does not.",
+     "evidence": [
+      {
+       "path": "markets.prop_13.context.repo_model_probability",
+       "value": 0.6457
+      },
+      {
+       "path": "markets.prop_13.context.repo_market_probability",
+       "value": 0.567
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A better price on the over would change it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_14",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": -196,
+   "book": "betonlineag",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The over for DeLauter hits sits right at the limit at several books, so there is nothing safe to take.",
+     "evidence": [
+      {
+       "path": "markets.prop_14.options[0].best.price",
+       "value": -196
+      },
+      {
+       "path": "markets.prop_14.options[0].quotes[0].price",
+       "value": -200
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A price on the over clearly better than the current best would change it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_15",
+   "market": "prop",
+   "selection": "Under 1.5",
+   "verdict": "PASS",
+   "price": -182,
+   "book": "williamhill_us",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "LineHound's own model and the market are close on Simpson's total bases, with the under priced steeply.",
+     "evidence": [
+      {
+       "path": "markets.prop_15.context.repo_model_probability",
+       "value": 0.6338
+      },
+      {
+       "path": "markets.prop_15.context.repo_market_probability",
+       "value": 0.6069
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A better price on the under would change it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_16",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": -152,
+   "book": "betonlineag",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "LineHound's own model is above the market for Hicks, but his season rate is lower than the model's number and the data does not explain the gap.",
+     "evidence": [
+      {
+       "path": "markets.prop_16.context.repo_model_probability",
+       "value": 0.6338
+      },
+      {
+       "path": "markets.prop_16.context.repo_market_probability",
+       "value": 0.5651
+      },
+      {
+       "path": "markets.prop_16.context.season_rate",
+       "value": 0.4815
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A better price on the over would change it.",
+   "case_against": null
+  }
+ ],
+ "summary_derived": []
+}

@@ -1,0 +1,3179 @@
+{
+  "packet_version": "analyst_packet_v1",
+  "built_at": "2026-10-17T22:11:29Z",
+  "game": {
+    "game_id": "TB-CLE-2026-10-17-1",
+    "game_pk": 849816,
+    "date": "2026-10-17",
+    "away": "TB",
+    "home": "CLE",
+    "venue": "Progressive Field",
+    "first_pitch_utc": "2026-10-18T00:08:00Z",
+    "state": "pending",
+    "detailed_state": "Pre-Game",
+    "game_type": "L",
+    "probables": {
+      "away": {
+        "name": "Nick Martinez"
+      },
+      "home": {
+        "name": "Shawn Armstrong"
+      }
+    }
+  },
+  "sections": {
+    "teams": {
+      "as_of": "2026-10-15",
+      "as_of_basis": "stats through this date",
+      "values": {
+        "away_away_win_pct": 0.5185,
+        "away_games_played": 166,
+        "away_home_win_pct": 0.6824,
+        "away_last10_games": 10,
+        "away_last10_run_diff_pg": 0.9,
+        "away_last10_runs_scored_pg": 3.9,
+        "away_last10_wins": 6,
+        "away_last5_games": 5,
+        "away_last5_run_diff_pg": 0.2,
+        "away_last5_runs_scored_pg": 3.4,
+        "away_last5_wins": 3,
+        "away_losses": 66,
+        "away_rest_days": 2,
+        "away_run_diff_pg": 0.464,
+        "away_runs_allowed_pg": 3.994,
+        "away_runs_scored_pg": 4.458,
+        "away_sample_is_thin": false,
+        "away_streak": -1,
+        "away_win_pct": 0.6024,
+        "away_wins": 100,
+        "diff_run_diff_pg": -0.32,
+        "diff_runs_allowed_pg": 0.018,
+        "diff_runs_scored_pg": -0.302,
+        "diff_win_pct": -0.0695,
+        "either_sample_thin": false,
+        "home_away_win_pct": 0.561,
+        "home_games_played": 167,
+        "home_home_win_pct": 0.5059,
+        "home_last10_games": 10,
+        "home_last10_run_diff_pg": 1.6,
+        "home_last10_runs_scored_pg": 4.7,
+        "home_last10_wins": 6,
+        "home_last5_games": 5,
+        "home_last5_run_diff_pg": 1.8,
+        "home_last5_runs_scored_pg": 4.4,
+        "home_last5_wins": 4,
+        "home_losses": 78,
+        "home_rest_days": 2,
+        "home_run_diff_pg": 0.144,
+        "home_runs_allowed_pg": 4.012,
+        "home_runs_scored_pg": 4.156,
+        "home_sample_is_thin": false,
+        "home_streak": 1,
+        "home_win_pct": 0.5329,
+        "home_wins": 89
+      }
+    },
+    "starters": {
+      "as_of": "2026-10-15",
+      "as_of_basis": "stats through this date",
+      "values": {
+        "away_sp_appearances": 31,
+        "away_sp_bb9": 1.3,
+        "away_sp_days_rest": 14,
+        "away_sp_era": 3.1,
+        "away_sp_fip": 4.1224,
+        "away_sp_hr9": 1.1,
+        "away_sp_innings": 180.0,
+        "away_sp_ip_per_start": 5.806,
+        "away_sp_k9": 5.45,
+        "away_sp_k_bb_pct": 0.115,
+        "away_sp_known": true,
+        "away_sp_recent_era": 5.2683,
+        "away_sp_recent_ip_per_start": 4.556,
+        "away_sp_recent_starts": 3,
+        "away_sp_starts": 31,
+        "away_sp_thin": false,
+        "away_sp_whip": 1.0944,
+        "both_sp_known": true,
+        "diff_sp_era": 1.4849,
+        "diff_sp_fip": 0.3493,
+        "diff_sp_ip_per_start": null,
+        "diff_sp_k9": 3.2104,
+        "diff_sp_k_bb_pct": -0.0176,
+        "diff_sp_whip": 0.2924,
+        "either_sp_thin": false,
+        "home_sp_appearances": 41,
+        "home_sp_bb9": 4.8396,
+        "home_sp_days_rest": 14,
+        "home_sp_era": 4.5849,
+        "home_sp_fip": 4.4717,
+        "home_sp_hr9": 1.0189,
+        "home_sp_innings": 35.33,
+        "home_sp_ip_per_start": null,
+        "home_sp_k9": 8.6604,
+        "home_sp_k_bb_pct": 0.0974,
+        "home_sp_known": true,
+        "home_sp_recent_era": null,
+        "home_sp_recent_ip_per_start": null,
+        "home_sp_recent_starts": 0,
+        "home_sp_starts": 0,
+        "home_sp_thin": false,
+        "home_sp_whip": 1.3868
+      }
+    },
+    "lineups": {
+      "as_of": "2026-10-17T22:12:02Z",
+      "as_of_basis": "when the game payload was built",
+      "values": {
+        "away": {
+          "batters": [
+            {
+              "name": "Yandy D\u00edaz",
+              "order": 1,
+              "position": "DH"
+            },
+            {
+              "name": "Jonathan Aranda",
+              "order": 2,
+              "position": "1B"
+            },
+            {
+              "name": "Chandler Simpson",
+              "order": 3,
+              "position": "LF"
+            },
+            {
+              "name": "Junior Caminero",
+              "order": 4,
+              "position": "3B"
+            },
+            {
+              "name": "Liam Hicks",
+              "order": 5,
+              "position": "C"
+            },
+            {
+              "name": "Victor Mesa Jr.",
+              "order": 6,
+              "position": "RF"
+            },
+            {
+              "name": "Jonny DeLuca",
+              "order": 7,
+              "position": "CF"
+            },
+            {
+              "name": "Richie Palacios",
+              "order": 8,
+              "position": "2B"
+            },
+            {
+              "name": "Taylor Walls",
+              "order": 9,
+              "position": "SS"
+            }
+          ],
+          "faces_starter_throwing": "R",
+          "handedness": {
+            "L": 5,
+            "R": 3,
+            "S": 1,
+            "known": 9,
+            "unknown": 0
+          },
+          "platoon_advantage": {
+            "advantaged": 6,
+            "counts": {
+              "L": 5,
+              "R": 3,
+              "S": 1,
+              "known": 9,
+              "unknown": 0
+            },
+            "known": 9,
+            "reason": null,
+            "share": 0.667
+          }
+        },
+        "home": {
+          "batters": [
+            {
+              "name": "Steven Kwan",
+              "order": 1,
+              "position": "LF"
+            },
+            {
+              "name": "Jos\u00e9 Ram\u00edrez",
+              "order": 2,
+              "position": "3B"
+            },
+            {
+              "name": "Chase DeLauter",
+              "order": 3,
+              "position": "RF"
+            },
+            {
+              "name": "Jo Adell",
+              "order": 4,
+              "position": "DH"
+            },
+            {
+              "name": "Nathaniel Lowe",
+              "order": 5,
+              "position": "1B"
+            },
+            {
+              "name": "Travis Bazzana",
+              "order": 6,
+              "position": "2B"
+            },
+            {
+              "name": "Patrick Bailey",
+              "order": 7,
+              "position": "C"
+            },
+            {
+              "name": "Petey Halpin",
+              "order": 8,
+              "position": "CF"
+            },
+            {
+              "name": "Brayan Rocchio",
+              "order": 9,
+              "position": "SS"
+            }
+          ],
+          "faces_starter_throwing": "R",
+          "handedness": {
+            "L": 5,
+            "R": 1,
+            "S": 3,
+            "known": 9,
+            "unknown": 0
+          },
+          "platoon_advantage": {
+            "advantaged": 8,
+            "counts": {
+              "L": 5,
+              "R": 1,
+              "S": 3,
+              "known": 9,
+              "unknown": 0
+            },
+            "known": 9,
+            "reason": null,
+            "share": 0.889
+          }
+        }
+      }
+    },
+    "matchup_history": {
+      "as_of": "2026-10-17T22:12:02Z",
+      "as_of_basis": "when the game payload was built",
+      "values": {
+        "away": null,
+        "home": {
+          "aggregate_avg": 0.208,
+          "batters": [
+            {
+              "at_bats": 7,
+              "avg": 0.429,
+              "hits": 3,
+              "home_runs": 0,
+              "name": "Steven Kwan",
+              "ops": 1.143,
+              "order": 1,
+              "strikeouts": 1,
+              "walks": 0
+            },
+            {
+              "at_bats": 11,
+              "avg": 0.091,
+              "hits": 1,
+              "home_runs": 0,
+              "name": "Jos\u00e9 Ram\u00edrez",
+              "ops": 0.182,
+              "order": 2,
+              "strikeouts": 1,
+              "walks": 0
+            },
+            {
+              "at_bats": 3,
+              "avg": 0.333,
+              "hits": 1,
+              "home_runs": 0,
+              "name": "Chase DeLauter",
+              "ops": 0.666,
+              "order": 3,
+              "strikeouts": 0,
+              "walks": 0
+            },
+            {
+              "at_bats": 3,
+              "avg": 0.0,
+              "hits": 0,
+              "home_runs": 0,
+              "name": "Jo Adell",
+              "ops": 0.4,
+              "order": 4,
+              "strikeouts": 1,
+              "walks": 1
+            },
+            {
+              "at_bats": 6,
+              "avg": 0.333,
+              "hits": 2,
+              "home_runs": 0,
+              "name": "Nathaniel Lowe",
+              "ops": 0.833,
+              "order": 5,
+              "strikeouts": 1,
+              "walks": 0
+            },
+            {
+              "at_bats": 5,
+              "avg": 0.2,
+              "hits": 1,
+              "home_runs": 0,
+              "name": "Travis Bazzana",
+              "ops": 0.533,
+              "order": 6,
+              "strikeouts": 1,
+              "walks": 1
+            },
+            {
+              "at_bats": 7,
+              "avg": 0.286,
+              "hits": 2,
+              "home_runs": 0,
+              "name": "Patrick Bailey",
+              "ops": 0.715,
+              "order": 7,
+              "strikeouts": 3,
+              "walks": 0
+            },
+            {
+              "at_bats": 2,
+              "avg": 0.0,
+              "hits": 0,
+              "home_runs": 0,
+              "name": "Petey Halpin",
+              "ops": 0.0,
+              "order": 8,
+              "strikeouts": 0,
+              "walks": 0
+            },
+            {
+              "at_bats": 4,
+              "avg": 0.0,
+              "hits": 0,
+              "home_runs": 0,
+              "name": "Brayan Rocchio",
+              "ops": 0.2,
+              "order": 9,
+              "strikeouts": 1,
+              "walks": 1
+            }
+          ],
+          "reason": "the whole lineup has only 48 career at-bats against him; a read needs at least 60",
+          "total_at_bats": 48,
+          "total_hits": 10,
+          "total_home_runs": 0,
+          "total_strikeouts": 9,
+          "usable": false
+        }
+      }
+    },
+    "matchup_depth": {
+      "as_of": "2026-10-17T22:12:02Z",
+      "as_of_basis": "when the game payload was built",
+      "values": {
+        "away": {
+          "concentration": {
+            "absent": [],
+            "bottom": {
+              "pa": 1418,
+              "woba": 0.2946
+            },
+            "gap": 0.0664,
+            "sentences": [
+              "Lineup slots 1-4 have run 0.361 wOBA across all pitchers before the cutoff (1669 PA).",
+              "Lineup slots 5-9 have run 0.295 wOBA across all pitchers before the cutoff (1418 PA).",
+              "Top-minus-bottom concentration: +0.066 wOBA (1669 PA vs 1418 PA)."
+            ],
+            "top": {
+              "pa": 1669,
+              "woba": 0.361
+            },
+            "warnings": []
+          },
+          "handedness": {
+            "absent": [],
+            "lineup": {
+              "advantaged": 6,
+              "known": 9,
+              "share": 0.667
+            },
+            "lineup_counts": {
+              "L": 5,
+              "R": 3,
+              "S": 1,
+              "known": 9,
+              "unknown": 0
+            },
+            "sentences": [
+              "The posted lineup bats 5L / 3R / 1S (9 of 9 bat sides known).",
+              "6 of the 9 hitters with a known bat side hold the platoon advantage against this right-handed starter (66.7%).",
+              "That starter has allowed 0.348 wOBA to left-handed hitters (211 batters faced) and 0.277 to right-handed (289 faced) before the cutoff -- a gap of +0.071."
+            ],
+            "starter": {
+              "gap": 0.0709,
+              "vs_left_faced": 211,
+              "vs_left_woba": 0.3479,
+              "vs_right_faced": 289,
+              "vs_right_woba": 0.277,
+              "weaker_against": "L"
+            },
+            "warnings": []
+          },
+          "opposing_starter_id": "542888",
+          "opposing_starter_throws": "R",
+          "pitch_mix": {
+            "absent": [],
+            "batters": [
+              {
+                "name": "Yandy D\u00edaz",
+                "order": 1,
+                "pa": 95,
+                "woba": 0.4021
+              },
+              {
+                "name": "Jonathan Aranda",
+                "order": 2,
+                "pa": 25,
+                "woba": 0.386
+              },
+              {
+                "name": "Junior Caminero",
+                "order": 4,
+                "pa": 15,
+                "woba": 0.3467
+              },
+              {
+                "name": "Jonny DeLuca",
+                "order": 7,
+                "pa": 36,
+                "woba": 0.0889
+              },
+              {
+                "name": "Richie Palacios",
+                "order": 8,
+                "pa": 46,
+                "woba": 0.3141
+              },
+              {
+                "name": "Taylor Walls",
+                "order": 9,
+                "pa": 48,
+                "woba": 0.2812
+              }
+            ],
+            "lineup_vs_primary": {
+              "batters_measured": 6,
+              "pa": 265,
+              "woba": 0.3177
+            },
+            "primary": {
+              "pitch_type": "FC",
+              "pitches": 644,
+              "total_pitches": 1906,
+              "usage_pct": 33.8
+            },
+            "sentences": [
+              "The opposing starter's most-used pitch before the cutoff is the FC at 33.8% usage (644 of 1906 pitches).",
+              "This lineup has run 0.318 wOBA against that pitch type across 265 PA (6 of 9 posted hitters have a measured line)."
+            ],
+            "warnings": []
+          },
+          "starter_stuff": {
+            "absent": [
+              "starter fastball velocity: only 28 measured fastballs across the pitcher's last 5 appearances before the cutoff; the velocity read needs 100"
+            ],
+            "groundball": {
+              "batted_balls": 340,
+              "share": 0.3706
+            },
+            "sentences": [
+              "Ground balls make up 37.1% of the batted balls against that starter before the cutoff (340 batted balls)."
+            ],
+            "velocity": null,
+            "warnings": [
+              "Small sample: only 28 measured fastballs across the pitcher's last 5 appearances before the cutoff; the velocity read needs 100."
+            ]
+          },
+          "team": "TB"
+        },
+        "cutoff": "2026-10-17",
+        "floors": {
+          "groundball_batted_balls": 50,
+          "half_pa": 60,
+          "lineup_vs_pitch_pa": 60,
+          "pitch_mix_pitches": 50,
+          "platoon_bf_per_side": 60,
+          "velocity_fastballs": 100
+        },
+        "home": {
+          "concentration": {
+            "absent": [],
+            "bottom": {
+              "pa": 2604,
+              "woba": 0.3184
+            },
+            "gap": 0.0242,
+            "sentences": [
+              "Lineup slots 1-4 have run 0.343 wOBA across all pitchers before the cutoff (3100 PA).",
+              "Lineup slots 5-9 have run 0.318 wOBA across all pitchers before the cutoff (2604 PA).",
+              "Top-minus-bottom concentration: +0.024 wOBA (3100 PA vs 2604 PA)."
+            ],
+            "top": {
+              "pa": 3100,
+              "woba": 0.3426
+            },
+            "warnings": []
+          },
+          "handedness": {
+            "absent": [],
+            "lineup": {
+              "advantaged": 8,
+              "known": 9,
+              "share": 0.889
+            },
+            "lineup_counts": {
+              "L": 5,
+              "R": 1,
+              "S": 3,
+              "known": 9,
+              "unknown": 0
+            },
+            "sentences": [
+              "The posted lineup bats 5L / 1R / 3S (9 of 9 bat sides known).",
+              "8 of the 9 hitters with a known bat side hold the platoon advantage against this right-handed starter (88.9%).",
+              "That starter has allowed 0.314 wOBA to left-handed hitters (454 batters faced) and 0.280 to right-handed (566 faced) before the cutoff -- a gap of +0.034."
+            ],
+            "starter": {
+              "gap": 0.034,
+              "vs_left_faced": 454,
+              "vs_left_woba": 0.3144,
+              "vs_right_faced": 566,
+              "vs_right_woba": 0.2804,
+              "weaker_against": "L"
+            },
+            "warnings": []
+          },
+          "opposing_starter_id": "607259",
+          "opposing_starter_throws": "R",
+          "pitch_mix": {
+            "absent": [],
+            "batters": [
+              {
+                "name": "Steven Kwan",
+                "order": 1,
+                "pa": 143,
+                "woba": 0.2881
+              },
+              {
+                "name": "Jos\u00e9 Ram\u00edrez",
+                "order": 2,
+                "pa": 251,
+                "woba": 0.3394
+              },
+              {
+                "name": "Jo Adell",
+                "order": 4,
+                "pa": 34,
+                "woba": 0.2485
+              },
+              {
+                "name": "Nathaniel Lowe",
+                "order": 5,
+                "pa": 105,
+                "woba": 0.3314
+              },
+              {
+                "name": "Patrick Bailey",
+                "order": 7,
+                "pa": 104,
+                "woba": 0.2788
+              },
+              {
+                "name": "Brayan Rocchio",
+                "order": 9,
+                "pa": 80,
+                "woba": 0.1775
+              }
+            ],
+            "lineup_vs_primary": {
+              "batters_measured": 6,
+              "pa": 717,
+              "woba": 0.2968
+            },
+            "primary": {
+              "pitch_type": "CH",
+              "pitches": 964,
+              "total_pitches": 3876,
+              "usage_pct": 24.9
+            },
+            "sentences": [
+              "The opposing starter's most-used pitch before the cutoff is the CH at 24.9% usage (964 of 3876 pitches).",
+              "This lineup has run 0.297 wOBA against that pitch type across 717 PA (6 of 9 posted hitters have a measured line)."
+            ],
+            "warnings": []
+          },
+          "starter_stuff": {
+            "absent": [],
+            "groundball": {
+              "batted_balls": 741,
+              "share": 0.4453
+            },
+            "sentences": [
+              "The opposing starter's fastball has averaged 92.1 mph over his last 5 measured appearances before the cutoff (195 fastballs), against a league average of 93.9 mph at the same cutoff -- a gap of -1.8 mph.",
+              "Ground balls make up 44.5% of the batted balls against that starter before the cutoff (741 batted balls)."
+            ],
+            "velocity": {
+              "avg": 92.13,
+              "fastballs": 195,
+              "games": 5,
+              "gap": -1.81,
+              "league_avg": 93.94
+            },
+            "warnings": []
+          },
+          "team": "CLE"
+        },
+        "nature": "Observations of play recorded before the cutoff, from pitch-level rows that already existed. Nothing in this section is a prediction.",
+        "stuff_note": "Starter stuff: a fastball below the league average at the same cutoff marks lost velocity before the season line reflects it, and a high ground-ball share takes balls out of the air. V5 tested both features against the market and found nothing (docs/RESEARCH_V5_STUFF.md), so these are observations, not an edge."
+      }
+    },
+    "splits": {
+      "as_of": "2026-10-17T10:21:38.790334+00:00",
+      "as_of_basis": "newest stamp inside the section",
+      "values": {
+        "away": {
+          "platoon": {
+            "gap": -0.046,
+            "reason": null,
+            "usable": true,
+            "vs_left_faced": 419,
+            "vs_left_ops": 0.659,
+            "vs_right_faced": 303,
+            "vs_right_ops": 0.705,
+            "weaker_against": "R"
+          },
+          "record": {
+            "as_of": "2026-10-17T10:21:38.790334+00:00",
+            "season": "2026",
+            "splits": {
+              "Away_Games": {
+                "avg": 0.232,
+                "batters_faced": 372,
+                "home_runs": 8,
+                "innings": "94.2",
+                "ops": 0.618,
+                "strikeouts": 55,
+                "walks": 13
+              },
+              "Home_Games": {
+                "avg": 0.267,
+                "batters_faced": 350,
+                "home_runs": 14,
+                "innings": "85.1",
+                "ops": 0.742,
+                "strikeouts": 54,
+                "walks": 13
+              },
+              "vs_Left": {
+                "avg": 0.236,
+                "batters_faced": 419,
+                "home_runs": 13,
+                "innings": "105.0",
+                "ops": 0.659,
+                "strikeouts": 66,
+                "walks": 17
+              },
+              "vs_Right": {
+                "avg": 0.267,
+                "batters_faced": 303,
+                "home_runs": 9,
+                "innings": "73.2",
+                "ops": 0.705,
+                "strikeouts": 43,
+                "walks": 9
+              }
+            }
+          }
+        },
+        "home": {
+          "platoon": {
+            "gap": -0.091,
+            "reason": null,
+            "usable": true,
+            "vs_left_faced": 81,
+            "vs_left_ops": 0.657,
+            "vs_right_faced": 73,
+            "vs_right_ops": 0.748,
+            "weaker_against": "R"
+          },
+          "record": {
+            "as_of": "2026-10-17T10:21:38.609059+00:00",
+            "season": "2026",
+            "splits": {
+              "Away_Games": {
+                "avg": 0.219,
+                "batters_faced": 75,
+                "home_runs": 1,
+                "innings": "18.0",
+                "ops": 0.639,
+                "strikeouts": 16,
+                "walks": 9
+              },
+              "Home_Games": {
+                "avg": 0.239,
+                "batters_faced": 79,
+                "home_runs": 3,
+                "innings": "17.1",
+                "ops": 0.757,
+                "strikeouts": 18,
+                "walks": 10
+              },
+              "vs_Left": {
+                "avg": 0.222,
+                "batters_faced": 81,
+                "home_runs": 2,
+                "innings": "20.0",
+                "ops": 0.657,
+                "strikeouts": 21,
+                "walks": 8
+              },
+              "vs_Right": {
+                "avg": 0.237,
+                "batters_faced": 73,
+                "home_runs": 2,
+                "innings": "15.1",
+                "ops": 0.748,
+                "strikeouts": 13,
+                "walks": 11
+              }
+            }
+          }
+        }
+      }
+    },
+    "arsenals": {
+      "as_of": "2026-10-17T22:12:02Z",
+      "as_of_basis": "when the game payload was built",
+      "values": {
+        "away": [
+          {
+            "est_woba": 0.336,
+            "hard_hit_pct": 37.5,
+            "k_pct": 17.3,
+            "pa": 243.0,
+            "pitch": "Sinker",
+            "pitcher": "Martinez, Nick",
+            "usage_pct": 31.7,
+            "whiff_pct": 9.3,
+            "woba": 0.315
+          },
+          {
+            "est_woba": 0.241,
+            "hard_hit_pct": 23.2,
+            "k_pct": 20.3,
+            "pa": 187.0,
+            "pitch": "Changeup",
+            "pitcher": "Martinez, Nick",
+            "usage_pct": 25.8,
+            "whiff_pct": 30.7,
+            "woba": 0.231
+          },
+          {
+            "est_woba": 0.314,
+            "hard_hit_pct": 30.3,
+            "k_pct": 7.1,
+            "pa": 170.0,
+            "pitch": "Cutter",
+            "pitcher": "Martinez, Nick",
+            "usage_pct": 22.0,
+            "whiff_pct": 13.0,
+            "woba": 0.283
+          },
+          {
+            "est_woba": 0.307,
+            "hard_hit_pct": 43.3,
+            "k_pct": 18.7,
+            "pa": 91.0,
+            "pitch": "4-Seam Fastball",
+            "pitcher": "Martinez, Nick",
+            "usage_pct": 12.6,
+            "whiff_pct": 16.6,
+            "woba": 0.344
+          }
+        ],
+        "home": [
+          {
+            "est_woba": 0.361,
+            "hard_hit_pct": 48.6,
+            "k_pct": 28.1,
+            "pa": 57.0,
+            "pitch": "4-Seam Fastball",
+            "pitcher": "Armstrong, Shawn",
+            "usage_pct": 30.9,
+            "whiff_pct": 23.4,
+            "woba": 0.333
+          }
+        ]
+      }
+    },
+    "bullpen": {
+      "as_of": "2026-10-17",
+      "as_of_basis": "newest stamp inside the section",
+      "values": {
+        "CLE": {
+          "as_of": "2026-10-17",
+          "reliever_count": 8,
+          "relievers": [
+            {
+              "appearances": [
+                {
+                  "date": "2026-10-15",
+                  "days_ago": 2,
+                  "innings": 1.333,
+                  "pitches": 18
+                },
+                {
+                  "date": "2026-10-12",
+                  "days_ago": 5,
+                  "innings": 1.0,
+                  "pitches": 6
+                },
+                {
+                  "date": "2026-10-10",
+                  "days_ago": 7,
+                  "innings": 1.667,
+                  "pitches": 27
+                }
+              ],
+              "availability": "available",
+              "availability_reason": "last pitched 2 days ago",
+              "innings": 4.0,
+              "name": "Cade Smith",
+              "pitches": 51,
+              "pitches_known": true
+            },
+            {
+              "appearances": [
+                {
+                  "date": "2026-10-15",
+                  "days_ago": 2,
+                  "innings": 0.667,
+                  "pitches": 9
+                },
+                {
+                  "date": "2026-10-12",
+                  "days_ago": 5,
+                  "innings": 1.0,
+                  "pitches": 13
+                },
+                {
+                  "date": "2026-10-10",
+                  "days_ago": 7,
+                  "innings": 1.333,
+                  "pitches": 24
+                }
+              ],
+              "availability": "available",
+              "availability_reason": "last pitched 2 days ago",
+              "innings": 3.0,
+              "name": "Hunter Gaddis",
+              "pitches": 46,
+              "pitches_known": true
+            },
+            {
+              "appearances": [
+                {
+                  "date": "2026-10-15",
+                  "days_ago": 2,
+                  "innings": 1.0,
+                  "pitches": 10
+                },
+                {
+                  "date": "2026-10-12",
+                  "days_ago": 5,
+                  "innings": 1.0,
+                  "pitches": 14
+                },
+                {
+                  "date": "2026-10-10",
+                  "days_ago": 7,
+                  "innings": 0.333,
+                  "pitches": 5
+                }
+              ],
+              "availability": "available",
+              "availability_reason": "last pitched 2 days ago",
+              "innings": 2.33,
+              "name": "Erik Sabrowski",
+              "pitches": 29,
+              "pitches_known": true
+            },
+            {
+              "appearances": [
+                {
+                  "date": "2026-10-15",
+                  "days_ago": 2,
+                  "innings": 1.0,
+                  "pitches": 12
+                },
+                {
+                  "date": "2026-10-12",
+                  "days_ago": 5,
+                  "innings": 1.0,
+                  "pitches": 14
+                }
+              ],
+              "availability": "available",
+              "availability_reason": "last pitched 2 days ago",
+              "innings": 2.0,
+              "name": "Daniel Espino",
+              "pitches": 26,
+              "pitches_known": true
+            },
+            {
+              "appearances": [
+                {
+                  "date": "2026-10-13",
+                  "days_ago": 4,
+                  "innings": 1.667,
+                  "pitches": 20
+                }
+              ],
+              "availability": "available",
+              "availability_reason": "last pitched 4 days ago",
+              "innings": 1.67,
+              "name": "Shawn Armstrong",
+              "pitches": 20,
+              "pitches_known": true
+            },
+            {
+              "appearances": [
+                {
+                  "date": "2026-10-12",
+                  "days_ago": 5,
+                  "innings": 1.0,
+                  "pitches": 17
+                }
+              ],
+              "availability": "available",
+              "availability_reason": "last pitched 5 days ago",
+              "innings": 1.0,
+              "name": "Joey Cantillo",
+              "pitches": 17,
+              "pitches_known": true
+            },
+            {
+              "appearances": [
+                {
+                  "date": "2026-10-13",
+                  "days_ago": 4,
+                  "innings": 1.0,
+                  "pitches": 16
+                }
+              ],
+              "availability": "available",
+              "availability_reason": "last pitched 4 days ago",
+              "innings": 1.0,
+              "name": "Slade Cecconi",
+              "pitches": 16,
+              "pitches_known": true
+            },
+            {
+              "appearances": [
+                {
+                  "date": "2026-10-13",
+                  "days_ago": 4,
+                  "innings": 0.333,
+                  "pitches": 6
+                }
+              ],
+              "availability": "available",
+              "availability_reason": "last pitched 4 days ago",
+              "innings": 0.33,
+              "name": "Tim Herrin",
+              "pitches": 6,
+              "pitches_known": true
+            }
+          ],
+          "team": "CLE",
+          "total_innings": 15.33,
+          "window_days": 7
+        },
+        "TB": {
+          "as_of": "2026-10-17",
+          "reliever_count": 7,
+          "relievers": [
+            {
+              "appearances": [
+                {
+                  "date": "2026-10-15",
+                  "days_ago": 2,
+                  "innings": 2.0,
+                  "pitches": 26
+                },
+                {
+                  "date": "2026-10-12",
+                  "days_ago": 5,
+                  "innings": 0.333,
+                  "pitches": 6
+                }
+              ],
+              "availability": "available",
+              "availability_reason": "last pitched 2 days ago",
+              "innings": 2.33,
+              "name": "Tyler Wells",
+              "pitches": 32,
+              "pitches_known": true
+            },
+            {
+              "appearances": [
+                {
+                  "date": "2026-10-13",
+                  "days_ago": 4,
+                  "innings": 1.333,
+                  "pitches": 15
+                },
+                {
+                  "date": "2026-10-12",
+                  "days_ago": 5,
+                  "innings": 0.667,
+                  "pitches": 9
+                }
+              ],
+              "availability": "available",
+              "availability_reason": "last pitched 4 days ago",
+              "innings": 2.0,
+              "name": "Ian Seymour",
+              "pitches": 24,
+              "pitches_known": true
+            },
+            {
+              "appearances": [
+                {
+                  "date": "2026-10-15",
+                  "days_ago": 2,
+                  "innings": 2.0,
+                  "pitches": 25
+                }
+              ],
+              "availability": "available",
+              "availability_reason": "last pitched 2 days ago",
+              "innings": 2.0,
+              "name": "Steven Matz",
+              "pitches": 25,
+              "pitches_known": true
+            },
+            {
+              "appearances": [
+                {
+                  "date": "2026-10-12",
+                  "days_ago": 5,
+                  "innings": 1.0,
+                  "pitches": 8
+                }
+              ],
+              "availability": "available",
+              "availability_reason": "last pitched 5 days ago",
+              "innings": 1.0,
+              "name": "Cam Booser",
+              "pitches": 8,
+              "pitches_known": true
+            },
+            {
+              "appearances": [
+                {
+                  "date": "2026-10-13",
+                  "days_ago": 4,
+                  "innings": 0.667,
+                  "pitches": 17
+                },
+                {
+                  "date": "2026-10-12",
+                  "days_ago": 5,
+                  "innings": 0.333,
+                  "pitches": 5
+                }
+              ],
+              "availability": "available",
+              "availability_reason": "last pitched 4 days ago",
+              "innings": 1.0,
+              "name": "Kevin Kelly",
+              "pitches": 22,
+              "pitches_known": true
+            },
+            {
+              "appearances": [
+                {
+                  "date": "2026-10-13",
+                  "days_ago": 4,
+                  "innings": 1.0,
+                  "pitches": 8
+                }
+              ],
+              "availability": "available",
+              "availability_reason": "last pitched 4 days ago",
+              "innings": 1.0,
+              "name": "Bryan Baker",
+              "pitches": 8,
+              "pitches_known": true
+            },
+            {
+              "appearances": [
+                {
+                  "date": "2026-10-12",
+                  "days_ago": 5,
+                  "innings": 0.667,
+                  "pitches": 27
+                }
+              ],
+              "availability": "available",
+              "availability_reason": "last pitched 5 days ago",
+              "innings": 0.67,
+              "name": "Cole Sulser",
+              "pitches": 27,
+              "pitches_known": true
+            }
+          ],
+          "team": "TB",
+          "total_innings": 10.0,
+          "window_days": 7
+        }
+      }
+    },
+    "travel": {
+      "as_of": "2026-10-17T22:12:02Z",
+      "as_of_basis": "when the game payload was built",
+      "values": {
+        "CLE": {
+          "days_since_last_game": 2,
+          "dense_stretch": false,
+          "eastward": false,
+          "games_last_7": 4,
+          "last_venue": "CLE",
+          "long_trip": false,
+          "miles": 0.0,
+          "reason": null,
+          "team": "CLE",
+          "zones": 0.0
+        },
+        "TB": {
+          "days_since_last_game": 2,
+          "dense_stretch": false,
+          "eastward": false,
+          "games_last_7": 3,
+          "last_venue": "CLE",
+          "long_trip": false,
+          "miles": 0.0,
+          "reason": null,
+          "team": "TB",
+          "zones": 0.0
+        }
+      }
+    },
+    "weather": {
+      "as_of": "2026-10-18T00:00",
+      "as_of_basis": "forecast for the hour shown",
+      "values": {
+        "hours_from_first_pitch": 0.13,
+        "humidity_pct": 80,
+        "observed_utc": "2026-10-18T00:00",
+        "precip_probability_pct": 0,
+        "pressure_hpa": 1005.4,
+        "temp_f": 44.9,
+        "wind_from_deg": 218,
+        "wind_mph": 4.3
+      }
+    },
+    "park": {
+      "as_of": "2026-10-17T22:12:02Z",
+      "as_of_basis": "when the game payload was built",
+      "values": {
+        "altitude_m": 200,
+        "name": "Progressive Field",
+        "roof": "open",
+        "team": "CLE"
+      }
+    },
+    "news": {
+      "as_of": "2026-10-17T22:12:02Z",
+      "as_of_basis": "when the game payload was built",
+      "values": {
+        "CLE": [
+          {
+            "category": "il_activation",
+            "date": "2026-10-12",
+            "description": "Cleveland Guardians activated RHP Slade Cecconi.",
+            "filed_date": "2026-10-12",
+            "from_team": null,
+            "injury_note": null,
+            "player": "Slade Cecconi",
+            "sentence": "Cleveland Guardians activated RHP Slade Cecconi.",
+            "team": "CLE",
+            "to_team": "CLE",
+            "transaction_id": 945463,
+            "type_desc": "Status Change"
+          }
+        ],
+        "TB": [
+          {
+            "category": "il_activation",
+            "date": "2026-10-12",
+            "description": "Tampa Bay Rays activated RHP Brody Hopkins.",
+            "filed_date": "2026-10-12",
+            "from_team": null,
+            "injury_note": null,
+            "player": "Brody Hopkins",
+            "sentence": "Tampa Bay Rays activated RHP Brody Hopkins.",
+            "team": "TB",
+            "to_team": "TB",
+            "transaction_id": 945465,
+            "type_desc": "Status Change"
+          },
+          {
+            "category": "recalled",
+            "date": "2026-10-08",
+            "description": "Tampa Bay Rays recalled RHP Alex Cook from Durham Bulls.",
+            "filed_date": "2026-10-08",
+            "from_team": null,
+            "injury_note": null,
+            "player": "Alex Cook",
+            "sentence": "Tampa Bay Rays recalled RHP Alex Cook from Durham Bulls.",
+            "team": "TB",
+            "to_team": "TB",
+            "transaction_id": 945388,
+            "type_desc": "Recalled"
+          }
+        ]
+      }
+    }
+  },
+  "markets": {
+    "moneyline": {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "label": "TB at CLE moneyline",
+      "as_of": "2026-10-17T22:08:40Z",
+      "lean": "TB",
+      "options": [
+        {
+          "selection": "TB",
+          "side": "away",
+          "line": null,
+          "books": 11,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": -115,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "betonlineag",
+              "price": -110,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "betrivers",
+              "price": -114,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "betus",
+              "price": -108,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "bovada",
+              "price": -113,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "draftkings",
+              "price": -112,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "fanatics",
+              "price": -115,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "fanduel",
+              "price": -110,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "lowvig",
+              "price": -110,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "mybookieag",
+              "price": -112,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "williamhill_us",
+              "price": -121,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            }
+          ],
+          "best": {
+            "price": -108,
+            "book": "betus"
+          },
+          "fair_probability": 0.5104
+        },
+        {
+          "selection": "CLE",
+          "side": "home",
+          "line": null,
+          "books": 11,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": -105,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "betonlineag",
+              "price": 100,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "betrivers",
+              "price": -105,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "betus",
+              "price": -102,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "bovada",
+              "price": -107,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "draftkings",
+              "price": -107,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "fanatics",
+              "price": -105,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "fanduel",
+              "price": -106,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "lowvig",
+              "price": 100,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "mybookieag",
+              "price": -105,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "williamhill_us",
+              "price": 105,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            }
+          ],
+          "best": {
+            "price": 105,
+            "book": "williamhill_us"
+          },
+          "fair_probability": 0.4896
+        }
+      ]
+    },
+    "run_line": {
+      "slot_id": "run_line",
+      "market": "run_line",
+      "label": "TB at CLE run line",
+      "as_of": "2026-10-17T22:08:40Z",
+      "lean": "CLE +1.5",
+      "options": [
+        {
+          "selection": "CLE +1.5",
+          "side": "home",
+          "line": 1.5,
+          "books": 11,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": -190,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "betonlineag",
+              "price": -185,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "betrivers",
+              "price": -200,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "betus",
+              "price": -185,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "bovada",
+              "price": -195,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "draftkings",
+              "price": -193,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "fanatics",
+              "price": -190,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "fanduel",
+              "price": -196,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "lowvig",
+              "price": -185,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "mybookieag",
+              "price": -185,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "williamhill_us",
+              "price": -190,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            }
+          ],
+          "best": {
+            "price": -185,
+            "book": "mybookieag"
+          },
+          "fair_probability": 0.6297
+        },
+        {
+          "selection": "TB -1.5",
+          "side": "away",
+          "line": -1.5,
+          "books": 11,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": 155,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "betonlineag",
+              "price": 161,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "betrivers",
+              "price": 160,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "betus",
+              "price": 160,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "bovada",
+              "price": 165,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "draftkings",
+              "price": 158,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "fanatics",
+              "price": 155,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "fanduel",
+              "price": 162,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "lowvig",
+              "price": 162,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "mybookieag",
+              "price": 157,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "williamhill_us",
+              "price": 159,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            }
+          ],
+          "best": {
+            "price": 165,
+            "book": "bovada"
+          },
+          "fair_probability": 0.3703
+        }
+      ]
+    },
+    "total": {
+      "slot_id": "total",
+      "market": "total",
+      "label": "TB at CLE game total runs",
+      "as_of": "2026-10-17T22:08:40Z",
+      "lean": "Over 6.5",
+      "options": [
+        {
+          "selection": "Over 6.5",
+          "side": "over",
+          "line": 6.5,
+          "books": 11,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": -115,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "betonlineag",
+              "price": -113,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "betrivers",
+              "price": -110,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "betus",
+              "price": -110,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "bovada",
+              "price": -110,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "draftkings",
+              "price": -116,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "fanatics",
+              "price": -115,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "fanduel",
+              "price": -114,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "lowvig",
+              "price": -110,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "mybookieag",
+              "price": -115,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "williamhill_us",
+              "price": -110,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            }
+          ],
+          "best": {
+            "price": -110,
+            "book": "williamhill_us"
+          },
+          "fair_probability": 0.5063
+        },
+        {
+          "selection": "Under 6.5",
+          "side": "under",
+          "line": 6.5,
+          "books": 11,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": -105,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "betonlineag",
+              "price": -107,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "betrivers",
+              "price": -110,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "betus",
+              "price": -110,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "bovada",
+              "price": -110,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "draftkings",
+              "price": -104,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "fanatics",
+              "price": -105,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "fanduel",
+              "price": -106,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "lowvig",
+              "price": -104,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "mybookieag",
+              "price": -106,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            },
+            {
+              "book": "williamhill_us",
+              "price": -107,
+              "captured_utc": "2026-10-17T22:08:40Z"
+            }
+          ],
+          "best": {
+            "price": -104,
+            "book": "lowvig"
+          },
+          "fair_probability": 0.4937
+        }
+      ]
+    },
+    "prop_01": {
+      "slot_id": "prop_01",
+      "market": "prop",
+      "label": "Nick Martinez strikeouts",
+      "as_of": "2026-10-17T21:13:15Z",
+      "lean": "Under 2.5",
+      "options": [
+        {
+          "selection": "Under 2.5",
+          "side": "under",
+          "line": 2.5,
+          "books": 7,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": -175,
+              "captured_utc": "2026-10-17T21:13:15Z"
+            },
+            {
+              "book": "betonlineag",
+              "price": -182,
+              "captured_utc": "2026-10-17T21:13:15Z"
+            },
+            {
+              "book": "bovada",
+              "price": -165,
+              "captured_utc": "2026-10-17T21:13:15Z"
+            },
+            {
+              "book": "draftkings",
+              "price": -168,
+              "captured_utc": "2026-10-17T21:13:15Z"
+            },
+            {
+              "book": "fanatics",
+              "price": -165,
+              "captured_utc": "2026-10-17T21:13:15Z"
+            },
+            {
+              "book": "fanduel",
+              "price": -164,
+              "captured_utc": "2026-10-17T21:13:15Z"
+            },
+            {
+              "book": "mybookieag",
+              "price": -182,
+              "captured_utc": "2026-10-17T21:13:15Z"
+            }
+          ],
+          "best": {
+            "price": -164,
+            "book": "fanduel"
+          },
+          "fair_probability": 0.5918
+        },
+        {
+          "selection": "Over 2.5",
+          "side": "over",
+          "line": 2.5,
+          "books": 7,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": 130,
+              "captured_utc": "2026-10-17T21:13:15Z"
+            },
+            {
+              "book": "betonlineag",
+              "price": 139,
+              "captured_utc": "2026-10-17T21:13:15Z"
+            },
+            {
+              "book": "bovada",
+              "price": 125,
+              "captured_utc": "2026-10-17T21:13:15Z"
+            },
+            {
+              "book": "draftkings",
+              "price": 131,
+              "captured_utc": "2026-10-17T21:13:15Z"
+            },
+            {
+              "book": "fanatics",
+              "price": 125,
+              "captured_utc": "2026-10-17T21:13:15Z"
+            },
+            {
+              "book": "fanduel",
+              "price": 128,
+              "captured_utc": "2026-10-17T21:13:15Z"
+            },
+            {
+              "book": "mybookieag",
+              "price": 130,
+              "captured_utc": "2026-10-17T21:13:15Z"
+            }
+          ],
+          "best": {
+            "price": 139,
+            "book": "betonlineag"
+          },
+          "fair_probability": 0.4082
+        }
+      ],
+      "context": {
+        "player": "Nick Martinez",
+        "stat": "pitcher_strikeouts"
+      }
+    },
+    "prop_02": {
+      "slot_id": "prop_02",
+      "market": "prop",
+      "label": "Liam Hicks runs scored",
+      "as_of": "2026-10-17T22:08:43Z",
+      "lean": "Under 0.5",
+      "options": [
+        {
+          "selection": "Under 0.5",
+          "side": "under",
+          "line": 0.5,
+          "books": 2,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": -275,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "draftkings",
+              "price": -256,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            }
+          ],
+          "best": {
+            "price": -256,
+            "book": "draftkings"
+          },
+          "fair_probability": 0.6764
+        },
+        {
+          "selection": "Over 0.5",
+          "side": "over",
+          "line": 0.5,
+          "books": 2,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": 195,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "draftkings",
+              "price": 181,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            }
+          ],
+          "best": {
+            "price": 195,
+            "book": "betmgm"
+          },
+          "fair_probability": 0.3236
+        }
+      ],
+      "context": {
+        "player": "Liam Hicks",
+        "stat": "batter_runs_scored",
+        "repo_model_side": "under",
+        "repo_model_probability": 0.6845,
+        "repo_market_probability": 0.6764,
+        "season_games": 27,
+        "expected_pa": 4.105,
+        "batting_slot": 5
+      }
+    },
+    "prop_03": {
+      "slot_id": "prop_03",
+      "market": "prop",
+      "label": "Nathaniel Lowe runs scored",
+      "as_of": "2026-10-17T22:08:43Z",
+      "lean": "Under 0.5",
+      "options": [
+        {
+          "selection": "Under 0.5",
+          "side": "under",
+          "line": 0.5,
+          "books": 2,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": -250,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "draftkings",
+              "price": -261,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            }
+          ],
+          "best": {
+            "price": -250,
+            "book": "betmgm"
+          },
+          "fair_probability": 0.6696
+        },
+        {
+          "selection": "Over 0.5",
+          "side": "over",
+          "line": 0.5,
+          "books": 2,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": 180,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "draftkings",
+              "price": 184,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            }
+          ],
+          "best": {
+            "price": 184,
+            "book": "draftkings"
+          },
+          "fair_probability": 0.3304
+        }
+      ],
+      "context": {
+        "player": "Nathaniel Lowe",
+        "stat": "batter_runs_scored",
+        "repo_model_side": "under",
+        "repo_model_probability": 0.6792,
+        "repo_market_probability": 0.6696,
+        "season_games": 31,
+        "expected_pa": 4.105,
+        "batting_slot": 5
+      }
+    },
+    "prop_04": {
+      "slot_id": "prop_04",
+      "market": "prop",
+      "label": "Chase DeLauter total bases",
+      "as_of": "2026-10-17T22:08:43Z",
+      "lean": "Over 0.5",
+      "options": [
+        {
+          "selection": "Over 0.5",
+          "side": "over",
+          "line": 0.5,
+          "books": 4,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": -200,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "betonlineag",
+              "price": -185,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "mybookieag",
+              "price": -186,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "williamhill_us",
+              "price": -193,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            }
+          ],
+          "best": {
+            "price": -185,
+            "book": "betonlineag"
+          },
+          "fair_probability": 0.6123
+        },
+        {
+          "selection": "Under 0.5",
+          "side": "under",
+          "line": 0.5,
+          "books": 4,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": 145,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "betonlineag",
+              "price": 142,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "mybookieag",
+              "price": 133,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "williamhill_us",
+              "price": 143,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            }
+          ],
+          "best": {
+            "price": 145,
+            "book": "betmgm"
+          },
+          "fair_probability": 0.3877
+        }
+      ],
+      "context": {
+        "player": "Chase DeLauter",
+        "stat": "batter_total_bases",
+        "repo_model_side": "over",
+        "repo_model_probability": 0.6758,
+        "repo_market_probability": 0.6123,
+        "season_rate": 0.6667,
+        "season_games": 27,
+        "expected_pa": 4.326,
+        "batting_slot": 3
+      }
+    },
+    "prop_05": {
+      "slot_id": "prop_05",
+      "market": "prop",
+      "label": "Taylor Walls runs scored",
+      "as_of": "2026-10-17T22:08:43Z",
+      "lean": "Under 0.5",
+      "options": [
+        {
+          "selection": "Under 0.5",
+          "side": "under",
+          "line": 0.5,
+          "books": 2,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": -295,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "draftkings",
+              "price": -321,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            }
+          ],
+          "best": {
+            "price": -295,
+            "book": "betmgm"
+          },
+          "fair_probability": 0.7048
+        },
+        {
+          "selection": "Over 0.5",
+          "side": "over",
+          "line": 0.5,
+          "books": 2,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": 210,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "draftkings",
+              "price": 223,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            }
+          ],
+          "best": {
+            "price": 223,
+            "book": "draftkings"
+          },
+          "fair_probability": 0.2952
+        }
+      ],
+      "context": {
+        "player": "Taylor Walls",
+        "stat": "batter_runs_scored",
+        "repo_model_side": "under",
+        "repo_model_probability": 0.6637,
+        "repo_market_probability": 0.7048,
+        "season_games": 19,
+        "expected_pa": 3.461,
+        "batting_slot": 9
+      }
+    },
+    "prop_06": {
+      "slot_id": "prop_06",
+      "market": "prop",
+      "label": "Steven Kwan hits",
+      "as_of": "2026-10-17T22:08:43Z",
+      "lean": "Over 0.5",
+      "options": [
+        {
+          "selection": "Over 0.5",
+          "side": "over",
+          "line": 0.5,
+          "books": 4,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": -220,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "betonlineag",
+              "price": -222,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "betrivers",
+              "price": -250,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "draftkings",
+              "price": -238,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            }
+          ],
+          "best": {
+            "price": -220,
+            "book": "betmgm"
+          },
+          "fair_probability": 0.6498
+        },
+        {
+          "selection": "Under 0.5",
+          "side": "under",
+          "line": 0.5,
+          "books": 3,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": 160,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "betonlineag",
+              "price": 167,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "draftkings",
+              "price": 176,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            }
+          ],
+          "best": {
+            "price": 176,
+            "book": "draftkings"
+          },
+          "fair_probability": 0.3502
+        }
+      ],
+      "context": {
+        "player": "Steven Kwan",
+        "stat": "batter_hits",
+        "repo_model_side": "over",
+        "repo_model_probability": 0.6581,
+        "repo_market_probability": 0.6498,
+        "season_rate": 0.7273,
+        "season_games": 33,
+        "expected_pa": 4.467,
+        "batting_slot": 1
+      }
+    },
+    "prop_07": {
+      "slot_id": "prop_07",
+      "market": "prop",
+      "label": "Richie Palacios runs scored",
+      "as_of": "2026-10-17T22:08:43Z",
+      "lean": "Under 0.5",
+      "options": [
+        {
+          "selection": "Under 0.5",
+          "side": "under",
+          "line": 0.5,
+          "books": 2,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": -275,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "draftkings",
+              "price": -356,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            }
+          ],
+          "best": {
+            "price": -275,
+            "book": "betmgm"
+          },
+          "fair_probability": 0.7084
+        },
+        {
+          "selection": "Over 0.5",
+          "side": "over",
+          "line": 0.5,
+          "books": 2,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": 200,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "draftkings",
+              "price": 245,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            }
+          ],
+          "best": {
+            "price": 245,
+            "book": "draftkings"
+          },
+          "fair_probability": 0.2916
+        }
+      ],
+      "context": {
+        "player": "Richie Palacios",
+        "stat": "batter_runs_scored",
+        "repo_model_side": "under",
+        "repo_model_probability": 0.657,
+        "repo_market_probability": 0.7084,
+        "season_games": 27,
+        "expected_pa": 3.623,
+        "batting_slot": 8
+      }
+    },
+    "prop_08": {
+      "slot_id": "prop_08",
+      "market": "prop",
+      "label": "Victor Mesa Jr. total bases",
+      "as_of": "2026-10-17T22:08:43Z",
+      "lean": "Over 0.5",
+      "options": [
+        {
+          "selection": "Over 0.5",
+          "side": "over",
+          "line": 0.5,
+          "books": 4,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": -135,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "betonlineag",
+              "price": -143,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "mybookieag",
+              "price": -145,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "williamhill_us",
+              "price": -148,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            }
+          ],
+          "best": {
+            "price": -135,
+            "book": "betmgm"
+          },
+          "fair_probability": 0.5482
+        },
+        {
+          "selection": "Under 0.5",
+          "side": "under",
+          "line": 0.5,
+          "books": 4,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": 100,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "betonlineag",
+              "price": 110,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "mybookieag",
+              "price": 105,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "williamhill_us",
+              "price": 111,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            }
+          ],
+          "best": {
+            "price": 111,
+            "book": "williamhill_us"
+          },
+          "fair_probability": 0.4518
+        }
+      ],
+      "context": {
+        "player": "Victor Mesa Jr.",
+        "stat": "batter_total_bases",
+        "repo_model_side": "over",
+        "repo_model_probability": 0.6513,
+        "repo_market_probability": 0.5482,
+        "season_rate": 0.6552,
+        "season_games": 29,
+        "expected_pa": 3.919,
+        "batting_slot": 6
+      }
+    },
+    "prop_09": {
+      "slot_id": "prop_09",
+      "market": "prop",
+      "label": "Jonathan Aranda total bases",
+      "as_of": "2026-10-17T22:08:43Z",
+      "lean": "Over 0.5",
+      "options": [
+        {
+          "selection": "Over 0.5",
+          "side": "over",
+          "line": 0.5,
+          "books": 3,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": -185,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "betonlineag",
+              "price": -189,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "mybookieag",
+              "price": -189,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            }
+          ],
+          "best": {
+            "price": -185,
+            "book": "betmgm"
+          },
+          "fair_probability": 0.6082
+        },
+        {
+          "selection": "Under 0.5",
+          "side": "under",
+          "line": 0.5,
+          "books": 3,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": 135,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "betonlineag",
+              "price": 144,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "mybookieag",
+              "price": 135,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            }
+          ],
+          "best": {
+            "price": 144,
+            "book": "betonlineag"
+          },
+          "fair_probability": 0.3918
+        }
+      ],
+      "context": {
+        "player": "Jonathan Aranda",
+        "stat": "batter_total_bases",
+        "repo_model_side": "over",
+        "repo_model_probability": 0.6488,
+        "repo_market_probability": 0.6082,
+        "season_rate": 0.6552,
+        "season_games": 29,
+        "expected_pa": 4.444,
+        "batting_slot": 2
+      }
+    },
+    "prop_10": {
+      "slot_id": "prop_10",
+      "market": "prop",
+      "label": "Junior Caminero total bases",
+      "as_of": "2026-10-17T22:08:43Z",
+      "lean": "Over 0.5",
+      "options": [
+        {
+          "selection": "Over 0.5",
+          "side": "over",
+          "line": 0.5,
+          "books": 3,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": -175,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "betonlineag",
+              "price": -172,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "mybookieag",
+              "price": -174,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            }
+          ],
+          "best": {
+            "price": -172,
+            "book": "betonlineag"
+          },
+          "fair_probability": 0.5927
+        },
+        {
+          "selection": "Under 0.5",
+          "side": "under",
+          "line": 0.5,
+          "books": 3,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": 130,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "betonlineag",
+              "price": 133,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "mybookieag",
+              "price": 125,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            }
+          ],
+          "best": {
+            "price": 133,
+            "book": "betonlineag"
+          },
+          "fair_probability": 0.4073
+        }
+      ],
+      "context": {
+        "player": "Junior Caminero",
+        "stat": "batter_total_bases",
+        "repo_model_side": "over",
+        "repo_model_probability": 0.6486,
+        "repo_market_probability": 0.5927,
+        "season_rate": 0.697,
+        "season_games": 33,
+        "expected_pa": 4.234,
+        "batting_slot": 4
+      }
+    },
+    "prop_11": {
+      "slot_id": "prop_11",
+      "market": "prop",
+      "label": "Brayan Rocchio runs scored",
+      "as_of": "2026-10-17T22:08:43Z",
+      "lean": "Under 0.5",
+      "options": [
+        {
+          "selection": "Under 0.5",
+          "side": "under",
+          "line": 0.5,
+          "books": 2,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": -325,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "draftkings",
+              "price": -328,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            }
+          ],
+          "best": {
+            "price": -325,
+            "book": "betmgm"
+          },
+          "fair_probability": 0.7158
+        },
+        {
+          "selection": "Over 0.5",
+          "side": "over",
+          "line": 0.5,
+          "books": 2,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": 230,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "draftkings",
+              "price": 228,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            }
+          ],
+          "best": {
+            "price": 230,
+            "book": "betmgm"
+          },
+          "fair_probability": 0.2842
+        }
+      ],
+      "context": {
+        "player": "Brayan Rocchio",
+        "stat": "batter_runs_scored",
+        "repo_model_side": "under",
+        "repo_model_probability": 0.6483,
+        "repo_market_probability": 0.7158,
+        "season_games": 31,
+        "expected_pa": 3.461,
+        "batting_slot": 9
+      }
+    },
+    "prop_12": {
+      "slot_id": "prop_12",
+      "market": "prop",
+      "label": "Chandler Simpson hits",
+      "as_of": "2026-10-17T22:08:43Z",
+      "lean": "Over 0.5",
+      "options": [
+        {
+          "selection": "Over 0.5",
+          "side": "over",
+          "line": 0.5,
+          "books": 4,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": -275,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "betonlineag",
+              "price": -270,
+              "captured_utc": "2026-10-17T04:06:38Z"
+            },
+            {
+              "book": "betrivers",
+              "price": -286,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "draftkings",
+              "price": -268,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            }
+          ],
+          "best": {
+            "price": -268,
+            "book": "draftkings"
+          },
+          "fair_probability": 0.6832
+        },
+        {
+          "selection": "Under 0.5",
+          "side": "under",
+          "line": 0.5,
+          "books": 3,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": 190,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "betonlineag",
+              "price": 199,
+              "captured_utc": "2026-10-17T04:06:38Z"
+            },
+            {
+              "book": "draftkings",
+              "price": 197,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            }
+          ],
+          "best": {
+            "price": 199,
+            "book": "betonlineag"
+          },
+          "fair_probability": 0.3168
+        }
+      ],
+      "context": {
+        "player": "Chandler Simpson",
+        "stat": "batter_hits",
+        "repo_model_side": "over",
+        "repo_model_probability": 0.6476,
+        "repo_market_probability": 0.682,
+        "season_rate": 0.6897,
+        "season_games": 29,
+        "expected_pa": 4.326,
+        "batting_slot": 3
+      }
+    },
+    "prop_13": {
+      "slot_id": "prop_13",
+      "market": "prop",
+      "label": "Jo Adell total bases",
+      "as_of": "2026-10-17T22:08:43Z",
+      "lean": "Over 0.5",
+      "options": [
+        {
+          "selection": "Over 0.5",
+          "side": "over",
+          "line": 0.5,
+          "books": 4,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": -155,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "betonlineag",
+              "price": -152,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "mybookieag",
+              "price": -154,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "williamhill_us",
+              "price": -159,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            }
+          ],
+          "best": {
+            "price": -152,
+            "book": "betonlineag"
+          },
+          "fair_probability": 0.567
+        },
+        {
+          "selection": "Under 0.5",
+          "side": "under",
+          "line": 0.5,
+          "books": 4,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": 115,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "betonlineag",
+              "price": 117,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "mybookieag",
+              "price": 111,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "williamhill_us",
+              "price": 119,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            }
+          ],
+          "best": {
+            "price": 119,
+            "book": "williamhill_us"
+          },
+          "fair_probability": 0.433
+        }
+      ],
+      "context": {
+        "player": "Jo Adell",
+        "stat": "batter_total_bases",
+        "repo_model_side": "over",
+        "repo_model_probability": 0.6457,
+        "repo_market_probability": 0.567,
+        "season_rate": 0.7059,
+        "season_games": 34,
+        "expected_pa": 4.234,
+        "batting_slot": 4
+      }
+    },
+    "prop_14": {
+      "slot_id": "prop_14",
+      "market": "prop",
+      "label": "Chase DeLauter hits",
+      "as_of": "2026-10-17T22:08:43Z",
+      "lean": "Over 0.5",
+      "options": [
+        {
+          "selection": "Over 0.5",
+          "side": "over",
+          "line": 0.5,
+          "books": 4,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": -200,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "betonlineag",
+              "price": -196,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "betrivers",
+              "price": -225,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "draftkings",
+              "price": -203,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            }
+          ],
+          "best": {
+            "price": -196,
+            "book": "betonlineag"
+          },
+          "fair_probability": 0.623
+        },
+        {
+          "selection": "Under 0.5",
+          "side": "under",
+          "line": 0.5,
+          "books": 3,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": 145,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "betonlineag",
+              "price": 148,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "draftkings",
+              "price": 151,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            }
+          ],
+          "best": {
+            "price": 151,
+            "book": "draftkings"
+          },
+          "fair_probability": 0.377
+        }
+      ],
+      "context": {
+        "player": "Chase DeLauter",
+        "stat": "batter_hits",
+        "repo_model_side": "over",
+        "repo_model_probability": 0.6423,
+        "repo_market_probability": 0.623,
+        "season_rate": 0.6667,
+        "season_games": 27,
+        "expected_pa": 4.326,
+        "batting_slot": 3
+      }
+    },
+    "prop_15": {
+      "slot_id": "prop_15",
+      "market": "prop",
+      "label": "Chandler Simpson total bases",
+      "as_of": "2026-10-17T22:08:43Z",
+      "lean": "Under 1.5",
+      "options": [
+        {
+          "selection": "Under 1.5",
+          "side": "under",
+          "line": 1.5,
+          "books": 6,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": -190,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "betonlineag",
+              "price": -182,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "bovada",
+              "price": -185,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "draftkings",
+              "price": -190,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "mybookieag",
+              "price": -182,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "williamhill_us",
+              "price": -182,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            }
+          ],
+          "best": {
+            "price": -182,
+            "book": "williamhill_us"
+          },
+          "fair_probability": 0.6069
+        },
+        {
+          "selection": "Over 1.5",
+          "side": "over",
+          "line": 1.5,
+          "books": 6,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": 140,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "betonlineag",
+              "price": 139,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "bovada",
+              "price": 140,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "draftkings",
+              "price": 142,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "mybookieag",
+              "price": 130,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "williamhill_us",
+              "price": 136,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            }
+          ],
+          "best": {
+            "price": 142,
+            "book": "draftkings"
+          },
+          "fair_probability": 0.3931
+        }
+      ],
+      "context": {
+        "player": "Chandler Simpson",
+        "stat": "batter_total_bases",
+        "repo_model_side": "under",
+        "repo_model_probability": 0.6338,
+        "repo_market_probability": 0.6069,
+        "season_rate": 0.3448,
+        "season_games": 29,
+        "expected_pa": 4.326,
+        "batting_slot": 3
+      }
+    },
+    "prop_16": {
+      "slot_id": "prop_16",
+      "market": "prop",
+      "label": "Liam Hicks total bases",
+      "as_of": "2026-10-17T22:08:43Z",
+      "lean": "Over 0.5",
+      "options": [
+        {
+          "selection": "Over 0.5",
+          "side": "over",
+          "line": 0.5,
+          "books": 4,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": -155,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "betonlineag",
+              "price": -152,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "mybookieag",
+              "price": -154,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "williamhill_us",
+              "price": -154,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            }
+          ],
+          "best": {
+            "price": -152,
+            "book": "betonlineag"
+          },
+          "fair_probability": 0.5651
+        },
+        {
+          "selection": "Under 0.5",
+          "side": "under",
+          "line": 0.5,
+          "books": 4,
+          "quotes": [
+            {
+              "book": "betmgm",
+              "price": 115,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "betonlineag",
+              "price": 117,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "mybookieag",
+              "price": 111,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            },
+            {
+              "book": "williamhill_us",
+              "price": 115,
+              "captured_utc": "2026-10-17T22:08:43Z"
+            }
+          ],
+          "best": {
+            "price": 117,
+            "book": "betonlineag"
+          },
+          "fair_probability": 0.4349
+        }
+      ],
+      "context": {
+        "player": "Liam Hicks",
+        "stat": "batter_total_bases",
+        "repo_model_side": "over",
+        "repo_model_probability": 0.6338,
+        "repo_market_probability": 0.5651,
+        "season_rate": 0.4815,
+        "season_games": 27,
+        "expected_pa": 4.105,
+        "batting_slot": 5
+      }
+    }
+  },
+  "slots": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "label": "TB at CLE moneyline",
+      "selections": [
+        "TB",
+        "CLE"
+      ]
+    },
+    {
+      "slot_id": "run_line",
+      "market": "run_line",
+      "label": "TB at CLE run line",
+      "selections": [
+        "CLE +1.5",
+        "TB -1.5"
+      ]
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "label": "TB at CLE game total runs",
+      "selections": [
+        "Over 6.5",
+        "Under 6.5"
+      ]
+    },
+    {
+      "slot_id": "prop_01",
+      "market": "prop",
+      "label": "Nick Martinez strikeouts",
+      "selections": [
+        "Under 2.5",
+        "Over 2.5"
+      ]
+    },
+    {
+      "slot_id": "prop_02",
+      "market": "prop",
+      "label": "Liam Hicks runs scored",
+      "selections": [
+        "Under 0.5",
+        "Over 0.5"
+      ]
+    },
+    {
+      "slot_id": "prop_03",
+      "market": "prop",
+      "label": "Nathaniel Lowe runs scored",
+      "selections": [
+        "Under 0.5",
+        "Over 0.5"
+      ]
+    },
+    {
+      "slot_id": "prop_04",
+      "market": "prop",
+      "label": "Chase DeLauter total bases",
+      "selections": [
+        "Over 0.5",
+        "Under 0.5"
+      ]
+    },
+    {
+      "slot_id": "prop_05",
+      "market": "prop",
+      "label": "Taylor Walls runs scored",
+      "selections": [
+        "Under 0.5",
+        "Over 0.5"
+      ]
+    },
+    {
+      "slot_id": "prop_06",
+      "market": "prop",
+      "label": "Steven Kwan hits",
+      "selections": [
+        "Over 0.5",
+        "Under 0.5"
+      ]
+    },
+    {
+      "slot_id": "prop_07",
+      "market": "prop",
+      "label": "Richie Palacios runs scored",
+      "selections": [
+        "Under 0.5",
+        "Over 0.5"
+      ]
+    },
+    {
+      "slot_id": "prop_08",
+      "market": "prop",
+      "label": "Victor Mesa Jr. total bases",
+      "selections": [
+        "Over 0.5",
+        "Under 0.5"
+      ]
+    },
+    {
+      "slot_id": "prop_09",
+      "market": "prop",
+      "label": "Jonathan Aranda total bases",
+      "selections": [
+        "Over 0.5",
+        "Under 0.5"
+      ]
+    },
+    {
+      "slot_id": "prop_10",
+      "market": "prop",
+      "label": "Junior Caminero total bases",
+      "selections": [
+        "Over 0.5",
+        "Under 0.5"
+      ]
+    },
+    {
+      "slot_id": "prop_11",
+      "market": "prop",
+      "label": "Brayan Rocchio runs scored",
+      "selections": [
+        "Under 0.5",
+        "Over 0.5"
+      ]
+    },
+    {
+      "slot_id": "prop_12",
+      "market": "prop",
+      "label": "Chandler Simpson hits",
+      "selections": [
+        "Over 0.5",
+        "Under 0.5"
+      ]
+    },
+    {
+      "slot_id": "prop_13",
+      "market": "prop",
+      "label": "Jo Adell total bases",
+      "selections": [
+        "Over 0.5",
+        "Under 0.5"
+      ]
+    },
+    {
+      "slot_id": "prop_14",
+      "market": "prop",
+      "label": "Chase DeLauter hits",
+      "selections": [
+        "Over 0.5",
+        "Under 0.5"
+      ]
+    },
+    {
+      "slot_id": "prop_15",
+      "market": "prop",
+      "label": "Chandler Simpson total bases",
+      "selections": [
+        "Under 1.5",
+        "Over 1.5"
+      ]
+    },
+    {
+      "slot_id": "prop_16",
+      "market": "prop",
+      "label": "Liam Hicks total bases",
+      "selections": [
+        "Over 0.5",
+        "Under 0.5"
+      ]
+    }
+  ],
+  "missing": [
+    {
+      "item": "props",
+      "kind": "thin",
+      "reason": "144 player props were priced and 16 analyzed: 27 player props had fewer than 2 books quoting them and 101 were left out by the limit of 16 props per game"
+    },
+    {
+      "item": "standings",
+      "kind": "absent",
+      "reason": "no standings snapshot stored for 2026-10-17"
+    },
+    {
+      "item": "team_totals",
+      "kind": "absent",
+      "reason": "no team-total prices were captured for this game"
+    }
+  ],
+  "limits": [
+    "Only the most-quoted line of each market is analyzed; alternate run lines and alternate totals are not.",
+    "First-five-inning markets are not analyzed.",
+    "Player props are capped per game; the contracts left out are counted in `missing`.",
+    "Every quote is the newest one captured before this packet was built, with its capture time; nothing was captured after it."
+  ]
+}

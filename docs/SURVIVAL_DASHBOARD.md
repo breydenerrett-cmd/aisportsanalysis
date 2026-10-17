@@ -1,6 +1,6 @@
 # LineHound survival dashboard
 
-Generated 2026-10-17 15:42Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-10-17 22:15Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
@@ -151,9 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-10-17 08:40 PT run: ALCS Game 4 (Rays at Guardians) moved to tonight 5:08 pm PT; Game 5 (the 10-16 makeup) Sun 2:08 pm PT. The 1:30 pm PT run writes tonight's brief.
-- Public MLB value picks paused from the 2026-10-17 slate (config/mlb_public_card.json). Brief, board, record and shadow arms continue.
-- Daily job: the byte-shrink refusal is gone; still red on new escalations: settle of 2026-10-16 refuses because the postponed game (849817) has no result, and the tier-ladder pre-registration check reports it did not adopt.
-- Production deploy still stuck behind an unfinished run (about 4.6 h); site odds 5.7 h old. Owner: apply docs/decisions/deploy-timeout.patch.
-- Public sample still the newest graded brief (SD at MIL, 2026-10-04). Sends 0, replies 0, testers 0, paid 0.
+- 2026-10-17 1:30 pm PT run: ALCS Game 4 brief (Rays at Guardians, 5:08 pm PT) published 22:14Z from a packet frozen 22:12Z with both lineups and gate-phase prop prices; one model reading, 18 passes and 1 low-confidence prop take.
+- Attempt 1 was rejected by the checker (banned word in two reasons and the summary); attempt 2 was clean and is the published answer.
+- Public MLB value picks paused from the 2026-10-17 slate (config/mlb_public_card.json).
+- Production deploys now finishing (three green runs 18:01Z to 20:11Z); daily job still red on the postponed-game settlement and the tier-ladder pre-registration check.
+- Public sample stays SD at MIL 2026-10-04, the newest graded brief, until tonight's game is graded. Sends 0, replies 0, testers 0, paid 0.
 
