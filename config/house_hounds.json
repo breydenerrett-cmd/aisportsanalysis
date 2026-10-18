@@ -15,7 +15,28 @@
       "markets": [
         "h2h"
       ],
-      "rule_text": "Bets the home team on the moneyline in every game, one unit, at the best price on the board. It uses no information at all, which is the point: it is the bar a real hound has to clear."
+      "rule_text": "Bets the home team on the moneyline in every game, one unit, at the best price on the board. It uses no information at all, which is the point: it is the bar a real hound has to clear.",
+      "persona": {
+        "bio": "Always heads home. Bets the home team on the moneyline in every single game. No information, no feelings. It is the bar everyone else has to clear.",
+        "catchphrase": "Home is where the bet is.",
+        "vibe": "grinder",
+        "roasts": [
+          "Bet the home team in every game and still lost tonight. Wow.",
+          "No thought, no brain, no result. A strategy, technically.",
+          "Home field is not a personality. Go outside.",
+          "You didn't study anything. The score noticed.",
+          "Same bet, every day, same disappointment."
+        ],
+        "brags": [
+          "Home team won. Of course you did not do anything. Good dog.",
+          "Autopilot cashed. Rude.",
+          "No effort, full bag. Do not tell the nerds.",
+          "Bet home, home won. The simplest brag in the kennel.",
+          "The laziest dog in the kennel is up. I hate this job."
+        ],
+        "epitaph": "Headed home for the last time.",
+        "verb": "went home with"
+      }
     },
     {
       "id": "basset",
@@ -31,7 +52,28 @@
       "markets": [
         "totals"
       ],
-      "rule_text": "Bets the under on the game total in every game, one unit, at the best price on the board. The direction was fixed in code before any board was read and never changes, so it is a baseline, not a pick."
+      "rule_text": "Bets the under on the game total in every game, one unit, at the best price on the board. The direction was fixed in code before any board was read and never changes, so it is a baseline, not a pick.",
+      "persona": {
+        "bio": "Always takes the under. Every game, every day, one unit, no matter what. The direction was fixed in code before any board was read.",
+        "catchphrase": "Under. Always under.",
+        "vibe": "grinder",
+        "roasts": [
+          "Under the total and the bats woke up. Bad timing, Basset.",
+          "You always take the under. Today the under took you.",
+          "Eight runs in the ninth. Your favorite number: pain.",
+          "Never over, never right tonight.",
+          "Consistency is only impressive when you win."
+        ],
+        "brags": [
+          "Pitchers' duel and you were here for it. Good dog.",
+          "The under hit and nobody scored. Dream night.",
+          "Always under, finally paid. Sit and be smug.",
+          "Low-scoring game, high-fives. Quietly.",
+          "Zero runs, one grin. Fine."
+        ],
+        "epitaph": "Went under one last time.",
+        "verb": "took"
+      }
     },
     {
       "id": "collie",
@@ -47,12 +89,33 @@
       "markets": [
         "totals"
       ],
-      "rule_text": "Bets the over on the game total in every game, one unit, at the best price on the board. Its own probability is just the market's de-vigged number republished unchanged, so it claims no opinion and no edge; it measures how good the market's own number is."
+      "rule_text": "Bets the over on the game total in every game, one unit, at the best price on the board. Its own probability is just the market's de-vigged number republished unchanged, so it claims no opinion and no edge; it measures how good the market's own number is.",
+      "persona": {
+        "bio": "Follows the herd, always over. Bets the over on the game total in every game, using the market's own number. It claims no opinion. It measures how good the market is.",
+        "catchphrase": "Over. Everybody's doing it.",
+        "vibe": "grinder",
+        "roasts": [
+          "Over the total and nobody could hit. Collie's world crumbles.",
+          "Bet the over, got a pitching clinic.",
+          "Following the herd and the herd walked off a cliff.",
+          "No opinion, no plan, no units.",
+          "You went over and the game went under."
+        ],
+        "brags": [
+          "Runs everywhere. Collie smiled for the first time all year.",
+          "The over hit. Herd mentality: 1, Everything else: 0.",
+          "Bats were out. Collie was in.",
+          "Over cashed. Do not ask me why.",
+          "Follow the herd to the bank, fine."
+        ],
+        "epitaph": "Followed the herd until the herd stopped.",
+        "verb": "followed the herd:"
+      }
     },
     {
       "id": "pointer",
       "name": "Pointer",
-      "tagline": "Locks onto the pitcher matchup.",
+      "tagline": "Zeroes in on the pitcher matchup.",
       "kind": "house",
       "category": "stats",
       "style": "pre-registered pitching signals",
@@ -63,7 +126,28 @@
       "markets": [
         "h2h"
       ],
-      "rule_text": "Bets the full-game moneyline, one unit, at most one bet a game, only once the lineups are posted, and only when at least 3 books are quoting it. It takes the best price on the board. It watches 3 pre-registered signals, each with its direction fixed before any results were known: (1) how heavily a starter leans on his one favourite pitch (the side facing the more predictable starter is favoured), firing at a median-sized gap between the two teams, counted double; (2) how ground-ball-heavy a starter is (the side facing the bigger ground-ball pitcher is hurt), firing at a median-sized gap between the two teams; (3) how far a starter's fastball sits above league pace (the side facing the harder thrower is hurt), firing at a median-sized gap between the two teams. Each signal that fires adds its weight to the side it points at; it bets a side once that total reaches 1 and at least 1 signal agrees. If both sides qualify the heavier side is bet, and a tie is no bet. It never uses the price to choose a side."
+      "rule_text": "Bets the full-game moneyline, one unit, at most one bet a game, only once the lineups are posted, and only when at least 3 books are quoting it. It takes the best price on the board. It watches 3 pre-registered signals, each with its direction fixed before any results were known: (1) how heavily a starter leans on his one favourite pitch (the side facing the more predictable starter is favoured), firing at a median-sized gap between the two teams, counted double; (2) how ground-ball-heavy a starter is (the side facing the bigger ground-ball pitcher is hurt), firing at a median-sized gap between the two teams; (3) how far a starter's fastball sits above league pace (the side facing the harder thrower is hurt), firing at a median-sized gap between the two teams. Each signal that fires adds its weight to the side it points at; it bets a side once that total reaches 1 and at least 1 signal agrees. If both sides qualify the heavier side is bet, and a tie is no bet. It never uses the price to choose a side.",
+      "persona": {
+        "bio": "Zeroes in on the pitcher matchup. Watches three pitch-level signals before it bets the moneyline, and never lets the price decide the side.",
+        "catchphrase": "I see the starter's favorite pitch coming.",
+        "vibe": "nerd",
+        "roasts": [
+          "Pointed right at the matchup and missed. Eyes front, Pointer.",
+          "You read a starter's pitch mix and the bats ignored it.",
+          "Three signals fired and none of them mattered.",
+          "A tidy breakdown and a sloppy loss.",
+          "The pitcher read you instead."
+        ],
+        "brags": [
+          "Pointed right and cashed. Nose to the ball.",
+          "The pitch mix mattered tonight. Do not smirk.",
+          "Starter got hit, Pointer got paid.",
+          "Signals aligned. Good dog.",
+          "Pitch-level nerd, win-level win. Fine."
+        ],
+        "epitaph": "Pointed at the matchup. The matchup pointed back.",
+        "verb": "pointed at"
+      }
     },
     {
       "id": "setter",
@@ -79,7 +163,28 @@
       "markets": [
         "h2h"
       ],
-      "rule_text": "Bets the full-game moneyline, one unit, at most one bet a game, only once the lineups are posted, and only when at least 3 books are quoting it. It takes the best price on the board. It watches 3 pre-registered signals, each with its direction fixed before any results were known: (1) how well a lineup has hit the single pitch the opposing starter throws most (the better-hitting side is favoured), firing at a median-sized gap between the two teams; (2) how heavily a starter leans on his one favourite pitch (the side facing the more predictable starter is favoured), firing at a median-sized gap between the two teams, counted double; (3) how top-heavy a batting order is (the more top-heavy side is favoured), firing at a median-sized gap between the two teams. Each signal that fires adds its weight to the side it points at; it bets a side once that total reaches 1 and at least 1 signal agrees. If both sides qualify the heavier side is bet, and a tie is no bet. It never uses the price to choose a side."
+      "rule_text": "Bets the full-game moneyline, one unit, at most one bet a game, only once the lineups are posted, and only when at least 3 books are quoting it. It takes the best price on the board. It watches 3 pre-registered signals, each with its direction fixed before any results were known: (1) how well a lineup has hit the single pitch the opposing starter throws most (the better-hitting side is favoured), firing at a median-sized gap between the two teams; (2) how heavily a starter leans on his one favourite pitch (the side facing the more predictable starter is favoured), firing at a median-sized gap between the two teams, counted double; (3) how top-heavy a batting order is (the more top-heavy side is favoured), firing at a median-sized gap between the two teams. Each signal that fires adds its weight to the side it points at; it bets a side once that total reaches 1 and at least 1 signal agrees. If both sides qualify the heavier side is bet, and a tie is no bet. It never uses the price to choose a side.",
+      "persona": {
+        "bio": "Sets up on the starter's favorite pitch. Checks how well a lineup hit that pitch, how predictable the starter is, and how top-heavy the order looks.",
+        "catchphrase": "He throws the slider a lot. I noticed.",
+        "vibe": "nerd",
+        "roasts": [
+          "Set up on the pitch and got struck out on it.",
+          "Too much homework, not enough hits.",
+          "Top-heavy lineup, bottom-heavy night.",
+          "You read the batting order and the batting order lost.",
+          "Lined up the shot and shanked it."
+        ],
+        "brags": [
+          "Set up perfectly and delivered. Retrieve your treat.",
+          "The slider came and the lineup hit it. Nice.",
+          "Good eyes, good bet, good night.",
+          "Top-heavy order fed the machine. Fine.",
+          "Read the pitch, cashed the ticket. Hmph."
+        ],
+        "epitaph": "Set up, set down.",
+        "verb": "set up on"
+      }
     },
     {
       "id": "whippet",
@@ -95,7 +200,28 @@
       "markets": [
         "h2h"
       ],
-      "rule_text": "Bets the full-game moneyline, one unit, at most one bet a game, only once the lineups are posted, and only when at least 3 books are quoting it. It takes the best price on the board. It watches 3 pre-registered signals, each with its direction fixed before any results were known: (1) how well a lineup has hit the single pitch the opposing starter throws most (the better-hitting side is favoured), firing at a median-sized gap between the two teams, counted double; (2) how ground-ball-heavy a starter is (the side facing the bigger ground-ball pitcher is hurt), firing at a 75th-percentile gap between the two teams; (3) how far a starter's fastball sits above league pace (the side facing the harder thrower is hurt), firing at a 75th-percentile gap between the two teams. Each signal that fires adds its weight to the side it points at; it bets a side once that total reaches 1 and at least 1 signal agrees. If both sides qualify the heavier side is bet, and a tie is no bet. It never uses the price to choose a side."
+      "rule_text": "Bets the full-game moneyline, one unit, at most one bet a game, only once the lineups are posted, and only when at least 3 books are quoting it. It takes the best price on the board. It watches 3 pre-registered signals, each with its direction fixed before any results were known: (1) how well a lineup has hit the single pitch the opposing starter throws most (the better-hitting side is favoured), firing at a median-sized gap between the two teams, counted double; (2) how ground-ball-heavy a starter is (the side facing the bigger ground-ball pitcher is hurt), firing at a 75th-percentile gap between the two teams; (3) how far a starter's fastball sits above league pace (the side facing the harder thrower is hurt), firing at a 75th-percentile gap between the two teams. Each signal that fires adds its weight to the side it points at; it bets a side once that total reaches 1 and at least 1 signal agrees. If both sides qualify the heavier side is bet, and a tie is no bet. It never uses the price to choose a side.",
+      "persona": {
+        "bio": "Quick on lineup-versus-pitch mismatches. Fast to jump on a hitter-versus-pitch gap, slower to jump on a pitcher with ground-ball or velocity tilt.",
+        "catchphrase": "Speed kills. Usually the other team.",
+        "vibe": "nerd",
+        "roasts": [
+          "Fast out of the gate and straight into the wall.",
+          "Quick to bet, slow to win.",
+          "You sprinted into a mismatch that wasn't one.",
+          "All legs, no results.",
+          "Speed isn't a strategy, Whippet."
+        ],
+        "brags": [
+          "Fast dog, fast cash. Good run.",
+          "The mismatch was real and you saw it first. Good eyes.",
+          "Sprinted to the window and won. Cute.",
+          "Quick nose, quicker bag.",
+          "Run along, you earned it."
+        ],
+        "epitaph": "Ran out of track.",
+        "verb": "sprinted to"
+      }
     },
     {
       "id": "terrier",
@@ -111,7 +237,28 @@
       "markets": [
         "h2h"
       ],
-      "rule_text": "Bets the full-game moneyline, one unit, at most one bet a game, only once the lineups are posted, and only when at least 3 books are quoting it. It takes the best price on the board. It watches 3 pre-registered signals, each with its direction fixed before any results were known: (1) how heavily a starter leans on his one favourite pitch (the side facing the more predictable starter is favoured), firing at a median-sized gap between the two teams; (2) how ground-ball-heavy a starter is (the side facing the bigger ground-ball pitcher is hurt), firing at a 75th-percentile gap between the two teams; (3) how top-heavy a batting order is (the more top-heavy side is favoured), firing at a 75th-percentile gap between the two teams. Each signal that fires adds its weight to the side it points at; it bets a side once that total reaches 1 and at least 1 signal agrees. If both sides qualify the heavier side is bet, and a tie is no bet. It never uses the price to choose a side."
+      "rule_text": "Bets the full-game moneyline, one unit, at most one bet a game, only once the lineups are posted, and only when at least 3 books are quoting it. It takes the best price on the board. It watches 3 pre-registered signals, each with its direction fixed before any results were known: (1) how heavily a starter leans on his one favourite pitch (the side facing the more predictable starter is favoured), firing at a median-sized gap between the two teams; (2) how ground-ball-heavy a starter is (the side facing the bigger ground-ball pitcher is hurt), firing at a 75th-percentile gap between the two teams; (3) how top-heavy a batting order is (the more top-heavy side is favoured), firing at a 75th-percentile gap between the two teams. Each signal that fires adds its weight to the side it points at; it bets a side once that total reaches 1 and at least 1 signal agrees. If both sides qualify the heavier side is bet, and a tie is no bet. It never uses the price to choose a side.",
+      "persona": {
+        "bio": "Digs at top-heavy lineups and one-pitch starters. Bets the moneyline when three pre-set signals line up on a side, and passes the rest.",
+        "catchphrase": "Dig dig dig. Found something.",
+        "vibe": "nerd",
+        "roasts": [
+          "Dug up a one-pitch starter and he threw five other pitches. Rude.",
+          "Top-heavy lineup went cold. Not your fault. Still your loss.",
+          "You dug a hole and fell in.",
+          "Three signals, three shrugs.",
+          "Dirt on your nose and nothing in your pocket."
+        ],
+        "brags": [
+          "Dug in the right place. Dirt on the nose, cash in the paws.",
+          "The one-pitch starter got found out. Good digging.",
+          "Top-heavy order scored early. Easy.",
+          "Terrier got his bone tonight.",
+          "Nose down, units up. Sit."
+        ],
+        "epitaph": "Dug too deep.",
+        "verb": "dug in on"
+      }
     },
     {
       "id": "spaniel",
@@ -127,7 +274,28 @@
       "markets": [
         "h2h"
       ],
-      "rule_text": "Bets the full-game moneyline, one unit, at most one bet a game, only once the lineups are posted, and only when at least 3 books are quoting it. It takes the best price on the board. It watches 3 pre-registered signals, each with its direction fixed before any results were known: (1) how much of a posted lineup holds the platoon advantage over the starter it faces (the side with more of it is favoured), firing at a median-sized gap between the two teams; (2) how well a lineup has hit the single pitch the opposing starter throws most (the better-hitting side is favoured), firing at a median-sized gap between the two teams; (3) how heavily a starter leans on his one favourite pitch (the side facing the more predictable starter is favoured), firing at a 75th-percentile gap between the two teams. Each signal that fires adds its weight to the side it points at; it bets a side once that total reaches 1 and at least 1 signal agrees. If both sides qualify the heavier side is bet, and a tie is no bet. It never uses the price to choose a side."
+      "rule_text": "Bets the full-game moneyline, one unit, at most one bet a game, only once the lineups are posted, and only when at least 3 books are quoting it. It takes the best price on the board. It watches 3 pre-registered signals, each with its direction fixed before any results were known: (1) how much of a posted lineup holds the platoon advantage over the starter it faces (the side with more of it is favoured), firing at a median-sized gap between the two teams; (2) how well a lineup has hit the single pitch the opposing starter throws most (the better-hitting side is favoured), firing at a median-sized gap between the two teams; (3) how heavily a starter leans on his one favourite pitch (the side facing the more predictable starter is favoured), firing at a 75th-percentile gap between the two teams. Each signal that fires adds its weight to the side it points at; it bets a side once that total reaches 1 and at least 1 signal agrees. If both sides qualify the heavier side is bet, and a tie is no bet. It never uses the price to choose a side.",
+      "persona": {
+        "bio": "Retrieves platoon advantages. Likes lineups loaded with the platoon advantage in handedness, plus the pitch-mix reads the other hounds use.",
+        "catchphrase": "Platoon splits are my love language.",
+        "vibe": "nerd",
+        "roasts": [
+          "Fetched a platoon advantage and the lefty came out swinging anyway.",
+          "You went for the splits and got split.",
+          "Right-handed bats, left-handed luck.",
+          "A great retrieve, a terrible result.",
+          "The advantage you found was a mirage."
+        ],
+        "brags": [
+          "Platoon advantage played. Good boy.",
+          "Handedness paid tonight. Who knew.",
+          "Fetched the winner. Sit and wag.",
+          "Splits delivered. The Spaniel is unbearable now.",
+          "Lefty-righty homework gets an A."
+        ],
+        "epitaph": "Retrieved one platoon too many.",
+        "verb": "retrieved"
+      }
     },
     {
       "id": "old-dog",
@@ -149,7 +317,28 @@
         "date": "2026-10-16",
         "cause": "paused 2026-10-16: paid a premium over the market's fair number"
       },
-      "verdict_sentence": "The referee does not re-measure this hound: its bets are entries on the published card, not engine decisions with a stored closing board. The owner's pause cites a separate diagnosis that found closing-line value negative wherever it could be measured (docs/decisions/MLB_VALUE_PICKS_PAUSED.md)."
+      "verdict_sentence": "The referee does not re-measure this hound: its bets are entries on the published card, not engine decisions with a stored closing board. The owner's pause cites a separate diagnosis that found closing-line value negative wherever it could be measured (docs/decisions/MLB_VALUE_PICKS_PAUSED.md).",
+      "persona": {
+        "bio": "The original public value card. Ranked baseball bets by how far its model sat from the market and filled out three a day. Paused by the owner after 2026-10-16. Retired, not forgotten.",
+        "catchphrase": "I did this before you were born.",
+        "vibe": "grinder",
+        "roasts": [
+          "The Old Dog is on pause. Nothing to roast. Rest.",
+          "Old dogs don't learn new tricks, and old picks don't learn new numbers.",
+          "Still on the record, still down. Let him sleep.",
+          "The card is closed. The record is open.",
+          "Paused for a reason. We published the reason."
+        ],
+        "brags": [
+          "The Old Dog is on pause. Nothing to brag about. Rest.",
+          "Old record, old numbers. Look, don't touch.",
+          "He ran it. We stopped it. Fair.",
+          "The Old Dog is a legend. A paused one.",
+          "No new tricks. No new picks."
+        ],
+        "epitaph": "Paused after 2026-10-16. The record stays.",
+        "verb": "took"
+      }
     }
   ]
 }

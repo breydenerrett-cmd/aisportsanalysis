@@ -168,6 +168,7 @@ def definitions(house_cfg_path, pack_cfg_path, desk_cfg_path=None) -> list:
                 "card": bool(entry.get("card")),
                 "retired": entry.get("retired"),
                 "verdict_sentence": entry.get("verdict_sentence"),
+                "persona": entry.get("persona") if isinstance(entry.get("persona"), dict) else None,
                 "source": source,
                 "not_started_when_empty": source == "desk_cfg",
             })

@@ -47,6 +47,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from src.hounds.desk import schemas
+from src.hounds.desk.personas import DESK_PERSONAS
 
 PROMPT_VERSION = "desk_prompt_v1"
 
@@ -455,6 +456,7 @@ def config_document() -> dict:
             {"id": h["id"], "name": h["name"], "tagline": h["tagline"], "category": h["category"],
              "style": h["style"], "rule_text": h["rule_text"], "sports": list(SPORTS),
              "markets": list(MARKETS), "who_decided": "model", "stages": list(h["stages"]),
-             "prompt_version": PROMPT_VERSION, "prompt_hash": hound_prompt_hash(h["id"])}
+             "prompt_version": PROMPT_VERSION, "prompt_hash": hound_prompt_hash(h["id"]),
+             "persona": DESK_PERSONAS[h["id"]]}
             for h in HOUNDS],
     }
