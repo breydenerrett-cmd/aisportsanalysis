@@ -131,6 +131,20 @@ def run_pass(*, now: Optional[datetime] = None, ledger: Optional[str] = None,
         settled = user_settle.settle(ledger=ledger, now=moment, **kwargs)
         report["settle"] = {k: settled[k] for k in ("considered", "graded", "pending")}
         report["wrote"] += settled["graded"]
+        # The learning loop's user scope (src/hounds/learning/user_scope.py): shadow the live
+        # challengers on the same boards, settle them, and once a day run the referee and the system
+        # scorecard. Nothing to do (one small file read) until the owner has switched the coach on and a
+        # proposal has been accepted. A failure here is reported and never stops the champions' pass.
+        try:
+            from src.hounds.learning import user_scope
+            learning = user_scope.tick(now=moment, ledger=ledger, multibook_path=multibook_path,
+                                       game_pk_index=index, settle_kwargs=settle_kwargs)
+            report["learning"] = {k: v for k, v in learning.items() if k in ("live", "errors")}
+            if (learning.get("referee") or {}).get("promoted"):
+                report["wrote"] += 1                      # a new version is public state: refresh the stats
+        except Exception as exc:  # noqa: BLE001
+            logger.exception("learning tick failed")
+            report["learning"] = {"errors": [repr(exc)]}
     if report["wrote"]:
         (refresh_stats or stats.refresh_async)()
     return report

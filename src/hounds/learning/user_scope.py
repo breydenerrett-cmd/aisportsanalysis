@@ -54,3 +54,40 @@ def champion_current(c: L.Challenger, state: L.State, *, db=None) -> bool:
 
 def champion_ledger() -> str:
     return user_engine.ledger_path()
+
+
+def tick(*, now: datetime, ledger: Optional[str] = None, rows_for: Optional[Callable] = None,
+         multibook_path: Optional[str] = None, game_pk_index: Optional[Mapping] = None,
+         settle_kwargs: Optional[dict] = None, book=None, attach_fn: Optional[Callable] = None,
+         scope: Optional[L.Scope] = None, daily: bool = True) -> dict:
+    """One pass of the user scope, called by ``user_runner.run_pass`` after the champions' engine and
+    settle. Cheap when nothing is going on (one small file read). Steps fail independently."""
+    from src.hounds.learning import runner, shadow
+    from src.hounds import user_runner
+    champions_ledger = user_engine.ledger_path(ledger)
+    sc = scope or L.Scope.user(Path(champions_ledger).parent)
+    state = L.read_state(sc)
+    live = [c for c in state.live() if c.kind == "user"]
+    out: dict = {"live": len(live), "errors": []}
+    if live:
+        try:
+            out["shadow"] = shadow.run_user(sc, user_runner.pass_dates(now), now=now, rows_for=rows_for,
+                                            multibook_path=multibook_path, game_pk_index=game_pk_index)
+            out["settled"] = shadow.settle_user(sc, now=now, **(settle_kwargs or {}))
+        except Exception as exc:  # noqa: BLE001 -- the shadow pass never takes the champions' pass down
+            out["errors"].append(f"shadow: {exc!r}")
+    if daily and runner.scorecard_due(sc, now):
+        try:
+            out["referee"] = runner.run_referee(
+                sc, now=now, champion_ledger=champions_ledger, attach_fn=attach_fn, kinds=("user",),
+                champion_current=lambda c, st: champion_current(c, st),
+                apply_user_promotion=lambda c, promo: apply_promotion(c, promo, now=now))
+        except Exception as exc:  # noqa: BLE001
+            out["errors"].append(f"referee: {exc!r}")
+        try:
+            from src.hounds import stats
+            out["scorecard"] = runner.run_scorecard(sc, now=now, book=book or stats.peek_book(),
+                                                    champion_ledger=champions_ledger, attach_fn=attach_fn)
+        except Exception as exc:  # noqa: BLE001
+            out["errors"].append(f"scorecard: {exc!r}")
+    return out

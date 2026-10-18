@@ -63,6 +63,11 @@ class HoundBook:
     built_utc: str
     fingerprint: tuple
     build_seconds: float = 0.0
+    # Every measurable forward bet's closing-line value with the game it was on:
+    # ``(hound_id, event_id, market_key, date, clv_pts)``. The learning loop's scorecard needs to
+    # compare the champions with the random controls on THE SAME GAMES (src/hounds/learning/scorecard.py),
+    # which the per-hound ``clv_points`` (date, pts) cannot do. A few thousand small tuples.
+    clv_bets: list = field(default_factory=list)
 
 
 # ---- unit arithmetic ---------------------------------------------------------------
@@ -395,6 +400,17 @@ def build(src: Sources) -> HoundBook:
                 defs_by_id[b.hound_id] = _def_from_ledger(b.hound_id, {}, label)
             all_bets.setdefault(b.hound_id, []).append(b)
 
+    # The learning loop (docs/PREREG_LEARNING_LOOP.md section 8): a pack hound promoted from a challenger
+    # has bets stamped with their version. The current version keeps the hound's id; each earlier version
+    # becomes its own retired entry with its own record. No promotion on record: nothing changes.
+    try:
+        from src.hounds.learning import champions, lineage
+        lineage.split_versions(
+            defs_by_id, all_bets,
+            [champions.events_path_beside(p) for label, p in src.pack_ledgers if label == "house"])
+    except Exception:  # noqa: BLE001 -- a broken registry must not take the public race down
+        logger.warning("hounds: could not split pack hounds by version", exc_info=True)
+
     scan_bets = [b for hid, rows in all_bets.items()
                  if not defs_by_id[hid].get("card") for b in rows]
     dated = [b.date for b in scan_bets if b.date]
@@ -412,11 +428,16 @@ def build(src: Sources) -> HoundBook:
     hounds = {}
     for hid, defn in defs_by_id.items():
         hounds[hid] = summarize(defn, all_bets.get(hid, []), teams_of, as_of)
+    clv_bets = [(hid, b.event_id, b.market_key, b.date, b.clv_pts)
+                for hid, rows in all_bets.items() if not defs_by_id[hid].get("card")
+                for b in rows if b.segment == "forward" and b.clv_measurable
+                and b.clv_pts is not None and b.event_id]
     return HoundBook(
         hounds=hounds,
         stream=_stream(defs_by_id, all_bets, teams_of, refusals),
         as_of=as_of, built_utc=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        fingerprint=src.fingerprint(), build_seconds=round(time.time() - started, 2))
+        fingerprint=src.fingerprint(), build_seconds=round(time.time() - started, 2),
+        clv_bets=clv_bets)
 
 
 def _def_from_ledger(hid: str, row: dict, label: str) -> dict:

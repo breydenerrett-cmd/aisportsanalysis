@@ -59,3 +59,39 @@ class BetSource:
             champ = [b for b in self._champ if b.hound_id == c.hound_id
                      and b.hound_version == c.parent_version]
         return champ, [b for b in self._chall if b.hound_id == c.id]
+
+
+def matured_lookup(state: L.State, champion_ledger, *, attach_fn: Optional[Callable] = None) -> Callable:
+    """``fn(promotion) -> (mean of the first 100 measurable bets, how many measurable) | None`` for the
+    scorecard's promotion hit rate (prereg section 9b): the NEW champion version's own forward bets
+    since its promotion. Reads the champion ledger once and measures once."""
+    promos = [p for p in state.promotions if p.get("applied")]
+    if not promos:
+        return lambda promo: None
+    attach_fn = attach_fn or attach
+    bets, _defs = ledgers.pack_ledger_rows(champion_ledger)
+    mine = {}
+    for p in promos:
+        if p.get("kind_of") == "user":
+            hid = p.get("new_hound_id")
+            picked = [b for b in bets if b.hound_id == hid] if hid else []
+        else:
+            picked = [b for b in bets if b.hound_id == p.get("hound_id")
+                      and b.hound_version == int(p["to_version"])]
+        since = L.parse(p.get("effective_utc") or p.get("utc"))
+        picked = [b for b in picked if b.segment == "forward"
+                  and (L.parse(b.decision_utc) or since) >= since]
+        mine[p["challenger_id"]] = picked
+    attach_fn([b for group in mine.values() for b in group])
+
+    def fn(promo: dict):
+        usable = sorted((b for b in mine.get(promo.get("challenger_id"), [])
+                         if b.clv_measurable and b.clv_pts is not None),
+                        key=lambda b: (b.decision_utc or "", b.event_id or ""))
+        if not usable:
+            return None
+        from src.hounds.learning import rules
+        first = usable[:rules.MATURE_BETS]
+        return round(sum(b.clv_pts for b in first) / len(first), 4), len(usable)
+
+    return fn

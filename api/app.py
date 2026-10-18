@@ -30,6 +30,7 @@ from api.billing import router as billing_router
 from api.onboarding import router as onboarding_router
 from api.signup import router as signup_router
 from api.hounds_create import router as hounds_create_router
+from api.hounds_learning import router as hounds_learning_router
 from api.support import router as support_router
 from api.betcheck import free_router as free_betcheck_router, router as betcheck_router
 from api.daily import router as daily_router
@@ -73,6 +74,9 @@ app.include_router(health_router)
 # Public reads are rate-limited; create/retire/undo carry their own sign-in; the signed coach
 # door carries no bearer token by design (HMAC-signed, one-use round, off by default).
 app.include_router(hounds_create_router)
+# the learning loop's public reads (api/hounds_learning.py): /hounds/learning is a literal path under
+# /hounds/{id}, so it too is mounted before api.hounds.
+app.include_router(hounds_learning_router)
 
 # /games/{date}, /game/{date}/{away}/{home}, /changed/{date} -- api/games.py
 # owns the fetch-and-build wiring for those three; this file only mounts it,
