@@ -1,0 +1,167 @@
+{
+ "summary": "Los Angeles is the better side on the numbers, but the market already knows it. The moneyline is -750 at the best price, too short to take, and the spread is priced as a coin flip, with fair probabilities of 0.5008 and 0.4992 at 13 points. Arizona has lost four of five and allows 32.4 points per game and 6.1803 net yards per play, against 24 points and 4.8503 for the Rams. That gap is real, but Los Angeles has a margin of -0.2 per game and a turnover margin of -0.6 over five games, so laying 13 asks a lot of a team that has not dominated. Arizona has three players out, including a running back, though the data does not measure importance. On the total, 51.5 has moved up from 50.5, the game is indoors, and the scoring and yards-per-play figures do not clearly point either way. Both quarterbacks are projections, not confirmed, and props are missing. I pass on all three markets.",
+ "calls": [
+  {
+   "slot_id": "moneyline",
+   "market": "moneyline",
+   "selection": "LA",
+   "verdict": "PASS",
+   "price": -750,
+   "book": "draftkings",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books make Los Angeles a heavy favourite, with a fair probability of 0.8598, and nothing in the data gives a reason to doubt that.",
+     "evidence": [
+      {
+       "path": "markets.moneyline.options[0].fair_probability",
+       "value": 0.8598
+      },
+      {
+       "path": "markets.moneyline.options[0].best.price",
+       "value": -750
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "Arizona has lost four of its five games and allows 32.4 points per game, which supports the market view rather than challenging it.",
+     "evidence": [
+      {
+       "path": "sections.away.values.form.season_to_date.losses",
+       "value": 4
+      },
+      {
+       "path": "sections.away.values.form.season_to_date.points_against_per_game",
+       "value": 32.4
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A change of starting quarterback for Los Angeles from Matthew Stafford would make the price worth rechecking.",
+   "case_against": null
+  },
+  {
+   "slot_id": "spread",
+   "market": "spread",
+   "selection": "LA -13",
+   "verdict": "PASS",
+   "price": -105,
+   "book": "lowvig",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The two sides of 13 points are priced as a coin flip, so the number looks about right.",
+     "evidence": [
+      {
+       "path": "markets.spread.options[0].fair_probability",
+       "value": 0.5008
+      },
+      {
+       "path": "markets.spread.options[1].fair_probability",
+       "value": 0.4992
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "Arizona allows 6.1803 net yards per play against 4.8503 for Los Angeles, which backs the favourite.",
+     "evidence": [
+      {
+       "path": "sections.away.values.form.season_to_date.yards_per_play_allowed.value",
+       "value": 6.1803
+      },
+      {
+       "path": "sections.home.values.form.season_to_date.yards_per_play_allowed.value",
+       "value": 4.8503
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "Los Angeles has a margin of -0.2 per game over five games, which is thin support for laying 13 points.",
+     "evidence": [
+      {
+       "path": "sections.home.values.form.season_to_date.margin_per_game",
+       "value": -0.2
+      },
+      {
+       "path": "sections.home.values.form.season_to_date.games",
+       "value": 5
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "Word that Jacoby Brissett will not start for Arizona, or a Los Angeles quarterback change from Matthew Stafford, would reopen this.",
+   "case_against": null
+  },
+  {
+   "slot_id": "total",
+   "market": "total",
+   "selection": "Under 51.5",
+   "verdict": "PASS",
+   "price": -105,
+   "book": "draftkings",
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The two sides of 51.5 are priced as a coin flip, and the number has moved up from 50.5.",
+     "evidence": [
+      {
+       "path": "markets.total.options[0].fair_probability",
+       "value": 0.5002
+      },
+      {
+       "path": "markets.total.context.number_first_captured",
+       "value": 50.5
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "Arizona scores 21.6 points per game and allows 32.4, while Los Angeles scores 23.8 and allows 24, so the scoring figures do not clearly point either way.",
+     "evidence": [
+      {
+       "path": "sections.away.values.form.season_to_date.points_for_per_game",
+       "value": 21.6
+      },
+      {
+       "path": "sections.away.values.form.season_to_date.points_against_per_game",
+       "value": 32.4
+      },
+      {
+       "path": "sections.home.values.form.season_to_date.points_for_per_game",
+       "value": 23.8
+      },
+      {
+       "path": "sections.home.values.form.season_to_date.points_against_per_game",
+       "value": 24
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The game is played in a dome, so weather is not a factor here.",
+     "evidence": [
+      {
+       "path": "sections.schedule.values.venue.roof",
+       "value": "dome"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A quarterback change for either side, or the number moving from 51.5 to a different total, would make this worth another look.",
+   "case_against": null
+  }
+ ],
+ "summary_derived": []
+}

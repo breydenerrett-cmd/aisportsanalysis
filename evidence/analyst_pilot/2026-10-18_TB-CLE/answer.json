@@ -1,0 +1,134 @@
+{
+  "summary": "This looks close to a coin flip, and I pass on all three markets. On the moneyline TB is favoured, with a best price of -123 and a de-vigged probability of 0.5432, but the two starters are almost level: Drew Rasmussen has a 2.6686 ERA and a 2.9042 FIP, Parker Messick a 2.5599 ERA and a 3.2146 FIP. Rasmussen's FIP and his recent form (a 0.9643 ERA over his last 3 starts) lean TB, while CLE's lineup holds the platoon advantage in 8 of 9 spots against a right-hander and TB's hitters have it in 6 of 9 against a lefty. Those pull in opposite directions, so the price looks about right. The run line and the total are similar: the quotes already reflect the matchup and the data gives me nothing beyond them. Under 6.5 at -112 is close to even money, with a fair probability of 0.5153. The missing inputs that matter are the standings snapshot, team totals and usable player props. Without those I would not argue with the market.",
+  "calls": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "selection": "TB",
+      "verdict": "PASS",
+      "price": -123,
+      "book": "betus",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The starters are nearly level on results: Rasmussen's ERA is 2.6686 against Messick's 2.5599, so neither side has a clear pitching advantage.",
+          "evidence": [
+            { "path": "sections.starters.values.away_sp_era", "value": 2.6686 },
+            { "path": "sections.starters.values.home_sp_era", "value": 2.5599 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Rasmussen's FIP of 2.9042 is better than Messick's 3.2146, which gives TB a small lean on underlying numbers, but it is small and the market already prices TB as the favourite.",
+          "evidence": [
+            { "path": "sections.starters.values.away_sp_fip", "value": 2.9042 },
+            { "path": "sections.starters.values.home_sp_fip", "value": 3.2146 },
+            { "path": "markets.moneyline.options[0].fair_probability", "value": 0.5432 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The lineup matchups point in opposite directions: 0.889 of CLE's hitters have the platoon advantage against the right-handed starter, and 0.667 of TB's do against the left-hander, so the matchups cancel out rather than favour one side.",
+          "evidence": [
+            { "path": "sections.lineups.values.home.platoon_advantage.share", "value": 0.889 },
+            { "path": "sections.lineups.values.away.platoon_advantage.share", "value": 0.667 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Nothing in what we have separates this game from the books' own number. Standings are missing, so there is no extra read on team quality beyond season records.",
+          "evidence": [
+            { "path": "missing[1].reason", "value": "no standings snapshot stored for 2026-10-18" },
+            { "path": "sections.teams.values.away_win_pct", "value": 0.6048 },
+            { "path": "sections.teams.values.home_win_pct", "value": 0.5298 }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A late scratch or a changed lineup for either side, or a TB price drifting well above the best quote of -123, would make me revisit it.",
+      "case_against": null
+    },
+    {
+      "slot_id": "run_line",
+      "market": "run_line",
+      "selection": "CLE +1.5",
+      "verdict": "PASS",
+      "price": -160,
+      "book": "lowvig",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The best CLE +1.5 price is -160 with a de-vigged probability of 0.5962, so the market already charges a steep price for the cushion.",
+          "evidence": [
+            { "path": "markets.run_line.options[0].best.price", "value": -160 },
+            { "path": "markets.run_line.options[0].fair_probability", "value": 0.5962 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Both starters have low ERAs, which fits a close game, but the data gives no reason to think the margin will be tighter or wider than the price assumes.",
+          "evidence": [
+            { "path": "sections.starters.values.away_sp_era", "value": 2.6686 },
+            { "path": "sections.starters.values.home_sp_era", "value": 2.5599 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "TB's season run differential per game is 0.485 against CLE's 0.119, which favours TB, but this is a season-long figure and says little about one game's margin.",
+          "evidence": [
+            { "path": "sections.teams.values.away_run_diff_pg", "value": 0.485 },
+            { "path": "sections.teams.values.home_run_diff_pg", "value": 0.119 }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A lineup change or scratch that clearly moved the expected margin, or a much shorter CLE +1.5 price than -160, would change the call.",
+      "case_against": null
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "selection": "Under 6.5",
+      "verdict": "PASS",
+      "price": -112,
+      "book": "williamhill_us",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The de-vigged probability on Under 6.5 is 0.5153, which is close to a coin flip, so the market sees little lean either way.",
+          "evidence": [
+            { "path": "markets.total.options[0].fair_probability", "value": 0.5153 },
+            { "path": "markets.total.options[0].best.price", "value": -112 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Both starters have strong season numbers, which supports the low total, but both have also pitched short recently or are only one view of a bullpen-heavy game, so it does not move the line by itself.",
+          "evidence": [
+            { "path": "sections.starters.values.away_sp_ip_per_start", "value": 5.733 },
+            { "path": "sections.starters.values.home_sp_ip_per_start", "value": 5.823 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The weather is mild with a light wind and no rain, so conditions give no clear push toward more or fewer runs.",
+          "evidence": [
+            { "path": "sections.weather.values.wind_mph", "value": 8.7 },
+            { "path": "sections.weather.values.temp_f", "value": 60.4 },
+            { "path": "sections.weather.values.precip_probability_pct", "value": 0 }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A change in the posted lineups or a clear shift in the wind forecast would be the kind of new fact that could move this off a pass.",
+      "case_against": null
+    }
+  ],
+  "summary_derived": []
+}

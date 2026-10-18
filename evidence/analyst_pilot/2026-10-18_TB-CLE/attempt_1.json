@@ -1,0 +1,157 @@
+{
+ "summary": "I pass on all three markets. TB is the book favourite at -123 at the best price, and the starters back that up only a little: Drew Rasmussen has a 2.6686 ERA and a 2.9042 FIP, and he has been sharper lately with a 0.9643 ERA over his last three starts. Parker Messick has a 2.5599 ERA but a 3.2146 FIP, so the underlying numbers lean to TB. Against that, CLE's posted lineup is almost all platoon-advantaged against a right-hander, and TB faces a left-hander with a thinner share of advantages. The books' own de-vigged number for TB is 0.5432, which is close to a coin flip, and nothing in the data shows LineHound's picture differing from the market in a way the price does not already hold. The run line has CLE +1.5 at -160, which is a heavy price for a small cushion. The total of 6.5 is priced almost evenly, with two good starters and a fully available bullpen on each side, but I have nothing beyond the price to lean on. Missing: standings and team totals, and no usable history of these hitters against the starter. The market looks about right.",
+ "calls": [
+  {
+   "slot_id": "moneyline",
+   "market": "moneyline",
+   "selection": "TB",
+   "verdict": "PASS",
+   "price": -123,
+   "book": "betus",
+   "fair_estimate": 0.54,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "Both starters have strong season lines and the books already price TB as a modest favourite; our own read of the starters lands close to the market.",
+     "evidence": [
+      {
+       "path": "sections.starters.values.away_sp_era",
+       "value": 2.6686
+      },
+      {
+       "path": "sections.starters.values.home_sp_era",
+       "value": 2.5599
+      },
+      {
+       "path": "sections.starters.values.away_sp_fip",
+       "value": 2.9042
+      },
+      {
+       "path": "sections.starters.values.home_sp_fip",
+       "value": 3.2146
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The books' de-vigged number for TB is near a coin flip, and the data gives nothing that clearly moves it.",
+     "evidence": [
+      {
+       "path": "markets.moneyline.options[0].fair_probability",
+       "value": 0.5432
+      },
+      {
+       "path": "markets.moneyline.options[0].best.price",
+       "value": -123
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "CLE's lineup holds the platoon advantage against the right-handed starter far more often than TB's does against the left-hander, which offsets TB's pitching edge.",
+     "evidence": [
+      {
+       "path": "sections.lineups.values.home.platoon_advantage.share",
+       "value": 0.889
+      },
+      {
+       "path": "sections.lineups.values.away.platoon_advantage.share",
+       "value": 0.667
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": -110,
+   "what_would_change_it": "A late scratch of either starter, or TB's price moving to -110 or better, would change the call.",
+   "case_against": null
+  },
+  {
+   "slot_id": "run_line",
+   "market": "run_line",
+   "selection": "CLE +1.5",
+   "verdict": "PASS",
+   "price": -160,
+   "book": "lowvig",
+   "fair_estimate": 0.59,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The +1.5 side is the book favourite but costs a heavy price, and the de-vigged number already reflects that.",
+     "evidence": [
+      {
+       "path": "markets.run_line.options[0].best.price",
+       "value": -160
+      },
+      {
+       "path": "markets.run_line.options[0].fair_probability",
+       "value": 0.5962
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The moneyline is close to even, so the cushion is priced about right and nothing in the data says otherwise.",
+     "evidence": [
+      {
+       "path": "markets.moneyline.options[0].fair_probability",
+       "value": 0.5432
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": -150,
+   "what_would_change_it": "CLE +1.5 at -150 or better, or a late change to either starter, would change the call.",
+   "case_against": null
+  },
+  {
+   "slot_id": "total",
+   "market": "total",
+   "selection": "Under 6.5",
+   "verdict": "PASS",
+   "price": -112,
+   "book": "williamhill_us",
+   "fair_estimate": 0.52,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The total is priced nearly evenly at 6.5 and the data adds little beyond two good starters.",
+     "evidence": [
+      {
+       "path": "markets.total.options[0].best.price",
+       "value": -112
+      },
+      {
+       "path": "markets.total.options[0].fair_probability",
+       "value": 0.5153
+      },
+      {
+       "path": "markets.total.options[0].line",
+       "value": 6.5
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The park is open-roofed with a light wind in the forecast, and neither points strongly either way.",
+     "evidence": [
+      {
+       "path": "sections.park.values.roof",
+       "value": "open"
+      },
+      {
+       "path": "sections.weather.values.wind_mph",
+       "value": 8.7
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": 100,
+   "what_would_change_it": "A late starter scratch or Under 6.5 at even money or better would change the call.",
+   "case_against": null
+  }
+ ],
+ "summary_derived": []
+}

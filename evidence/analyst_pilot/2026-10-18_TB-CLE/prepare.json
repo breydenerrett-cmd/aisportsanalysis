@@ -1,0 +1,23 @@
+{
+  "game_id": "TB-CLE-2026-10-18-1",
+  "date": "2026-10-18",
+  "away": "TB",
+  "home": "CLE",
+  "first_pitch_utc": "2026-10-18T21:08:00Z",
+  "built_at": "2026-10-18T18:15:40Z",
+  "packet_hash": "894ce73d3188050c279cb940dceb2390a2f08aa0fea6f254af7e43973b708192",
+  "prompt_version": "analyst_prompt_v5",
+  "prompt_hash": "acf8a530117b6bda68c72d69b1fe643951cb5e399054cff45920c5b3a3b8e08c",
+  "token_estimate": 11441,
+  "model": "claude-sonnet-5-5",
+  "slots": [
+    "moneyline",
+    "run_line",
+    "total"
+  ],
+  "missing_items": 3,
+  "rehearsal": false,
+  "mode": "session_assisted",
+  "packet_source": "data_client",
+  "data_version": "dv1-bee354987cebe1e400eaf883"
+}

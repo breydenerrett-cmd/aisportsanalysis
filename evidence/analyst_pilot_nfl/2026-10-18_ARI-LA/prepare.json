@@ -1,0 +1,23 @@
+{
+  "sport": "nfl",
+  "game_id": "2026_06_ARI_LA",
+  "date": "2026-10-18",
+  "away": "ARI",
+  "home": "LA",
+  "kickoff_utc": "2026-10-18T20:05:00Z",
+  "built_at": "2026-10-18T18:13:08Z",
+  "packet_hash": "873488c247ff5209cedab83ce1aa520a7be9596a62ef45d2e2bc6f569a6d5ee5",
+  "prompt_version": "analyst_prompt_nfl_v1",
+  "prompt_hash": "8b80fc0cc2622da7497bed03b851d3934b8d687a6ca9c5a17d3eeb2d1c56ea7b",
+  "token_estimate": 9460,
+  "model": "claude-sonnet-5-5",
+  "slots": [
+    "moneyline",
+    "spread",
+    "total"
+  ],
+  "missing_items": 1,
+  "rehearsal": false,
+  "mode": "session_assisted",
+  "packet_source": "nfl_store+odds_multibook"
+}

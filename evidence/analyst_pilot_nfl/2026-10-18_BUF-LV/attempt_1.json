@@ -1,0 +1,125 @@
+{
+  "summary": "Buffalo is the better team on the numbers we have, but the market already knows it. The moneyline has Buffalo at -230 at the best book, a price I will not take, and Las Vegas at +200 needs more than the books' own number of 0.3247 to be worth it. Las Vegas allows 6.1201 yards per play and lost by 28 in its last game, so I have no reason to go above that, and I pass on the moneyline. The spread is BUF -5, up from -4.5 when first captured, and 5 is not one of the key numbers of 3, 6, 7, 10 or 14, so I do not see where the number is wrong in points and I pass. The total is 54, up from 51.5 when first captured. Buffalo scores 32.8 points and allows 28.2 per game, Las Vegas scores 26.4 and allows 25.8, and the game is in a dome, so the higher number looks like it already holds that. Both quarterbacks are projections, the injury report does not say how much the listed players matter, and each team has only five games behind it, so I pass on all three markets.",
+  "calls": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "selection": "LV",
+      "verdict": "PASS",
+      "price": 200,
+      "book": "fanduel",
+      "fair_estimate": 0.31,
+      "confidence": "medium",
+      "reasons": [
+        {
+          "claim": "The books' own de-vigged number for Las Vegas is 0.3247, and nothing in what we have gives a reason to put the home side meaningfully higher than that.",
+          "evidence": [
+            {"path": "markets.moneyline.options[1].fair_probability", "value": 0.3247},
+            {"path": "markets.moneyline.options[1].best.price", "value": 200}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Las Vegas has been weaker lately: it allows 6.1201 yards per play on the season and lost by 28 in its last game, which argues against paying for the underdog.",
+          "evidence": [
+            {"path": "sections.home.values.form.season_to_date.yards_per_play_allowed.value", "value": 6.1201},
+            {"path": "sections.home.values.last_three[0].margin", "value": -28}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Buffalo is the favourite but at -230 at the best book, a price at which I never take a side, so the favourite is not an option either.",
+          "evidence": [
+            {"path": "markets.moneyline.options[0].best.price", "value": -230}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": 225,
+      "what_would_change_it": "A move to +225 or better on Las Vegas, or news that Buffalo's projected quarterback is not starting, would make me look again.",
+      "case_against": null
+    },
+    {
+      "slot_id": "spread",
+      "market": "spread",
+      "selection": "LV +5",
+      "verdict": "PASS",
+      "price": -105,
+      "book": "betmgm",
+      "fair_estimate": 0.5,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The two sides of the spread are priced as a coin flip, and the number has moved from BUF -4.5 when first captured to BUF -5, so the market has already leaned a little toward Buffalo.",
+          "evidence": [
+            {"path": "markets.spread.options[0].fair_probability", "value": 0.5022},
+            {"path": "markets.spread.options[1].fair_probability", "value": 0.4978},
+            {"path": "markets.spread.context.away_number_first_captured", "value": -4.5}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Five is not on the list of key numbers, so there is no scoring-structure reason to prefer either side of this number.",
+          "evidence": [
+            {"path": "sections.reference.values.key_numbers", "value": "3,6,7,10,14"}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Form points both ways: Buffalo has the better season margin per game, but Las Vegas is at home and each team rests on only five games.",
+          "evidence": [
+            {"path": "sections.away.values.form.season_to_date.margin_per_game", "value": 4.6},
+            {"path": "sections.home.values.form.season_to_date.margin_per_game", "value": 0.6},
+            {"path": "sections.home.values.form.season_to_date.games", "value": 5}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": 100,
+      "what_would_change_it": "A confirmed quarterback change for either team or a move of the number to BUF -6 or BUF -3 would make me reconsider.",
+      "case_against": null
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "selection": "Under 54",
+      "verdict": "PASS",
+      "price": -107,
+      "book": "lowvig",
+      "fair_estimate": 0.5,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The total is priced as a coin flip at 54, up from 51.5 when first captured, so the market has already moved toward more scoring.",
+          "evidence": [
+            {"path": "markets.total.options[0].fair_probability", "value": 0.5011},
+            {"path": "markets.total.context.number_first_captured", "value": 51.5}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Buffalo scores 32.8 points and allows 28.2 per game while Las Vegas scores 26.4 and allows 25.8, which points toward points, and the higher number seems to hold it already.",
+          "evidence": [
+            {"path": "sections.away.values.form.season_to_date.points_for_per_game", "value": 32.8},
+            {"path": "sections.away.values.form.season_to_date.points_against_per_game", "value": 28.2},
+            {"path": "sections.home.values.form.season_to_date.points_for_per_game", "value": 26.4},
+            {"path": "sections.home.values.form.season_to_date.points_against_per_game", "value": 25.8}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The game is in a dome, so weather is not a concern, but both quarterbacks are only projections and could move the number.",
+          "evidence": [
+            {"path": "sections.schedule.values.venue.roof", "value": "dome"},
+            {"path": "sections.home.values.qb.listed_for_this_game.projected", "value": true}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": 100,
+      "what_would_change_it": "A confirmed quarterback change for either team, or the total moving to 51.5 or lower, would make me look at the Under again.",
+      "case_against": null
+    }
+  ],
+  "summary_derived": []
+}

@@ -1,0 +1,104 @@
+{
+  "summary": "Kansas City is the better team on what we have: four wins from four games, 29.5 points per game and 6.5397 yards per play, coming off a bye with 14 days since its last game. Los Angeles has lost all five games it has played, and its injury report lists 20 players, with 5 out. The books agree, pricing Kansas City at -390 at best, which I cannot take under my own price rule, and the Chargers at +344, which sits almost exactly on the books' fair number of 0.2243. I pass on the moneyline. The spread is 7.5, a half point off the key number of 7, and the two sides are priced almost evenly, so I see no reason in points that the number is wrong and pass. The total is 41.5, down from 45.5 when first captured. The Chargers score 16.8 per game and Kansas City allows 19.25, which fits a lower number, but the price already holds that, so I pass there too. Weather is missing for an outdoor game, and Kansas City has only four games behind its numbers.",
+  "calls": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "selection": "LAC",
+      "verdict": "PASS",
+      "price": 344,
+      "book": "lowvig",
+      "fair_estimate": 0.22,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The books' own fair number for the Chargers is 0.2243 and the best price is +344, so the price already matches the books' view and gives no reason to step in on the underdog.",
+          "evidence": [
+            { "path": "markets.moneyline.options[1].fair_probability", "value": 0.2243 },
+            { "path": "markets.moneyline.options[1].best.price", "value": 344 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Kansas City is the stronger side on the season so far, but it is the favourite at -390 at best, a price I do not take, and its form rests on only four games.",
+          "evidence": [
+            { "path": "markets.moneyline.options[0].best.price", "value": -390 },
+            { "path": "sections.home.values.form.season_to_date.games", "value": 4 },
+            { "path": "sections.away.values.record.season.losses", "value": 5 }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": 355,
+      "what_would_change_it": "A Chargers price of +355 or longer would make the underdog worth taking on my own estimate, as would news that the quarterback listed for Kansas City will not play.",
+      "case_against": null
+    },
+    {
+      "slot_id": "spread",
+      "market": "spread",
+      "selection": "LAC +7.5",
+      "verdict": "PASS",
+      "price": -110,
+      "book": "mybookieag",
+      "fair_estimate": 0.5,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The two sides of the 7.5 number are priced almost evenly by the books, so the market sees this as close to a coin flip and I have no reason in points that the number is wrong.",
+          "evidence": [
+            { "path": "markets.spread.options[0].fair_probability", "value": 0.5077 },
+            { "path": "markets.spread.options[1].fair_probability", "value": 0.4923 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The number has not moved from where it was first captured. Kansas City has the better form, but the Chargers' losses have been by one score, with a last-three margin of -7 per game, which fits a number near a touchdown.",
+          "evidence": [
+            { "path": "markets.spread.context.away_number_first_captured", "value": 7.5 },
+            { "path": "sections.away.values.form.last_3.margin_per_game", "value": -7 },
+            { "path": "sections.home.values.form.last_3.margin_per_game", "value": 6.6667 }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": 100,
+      "what_would_change_it": "A move of the number off 7.5 toward the key number of 7, or news that Kansas City's listed quarterback is out, would make me look at this again.",
+      "case_against": null
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "selection": "Under 41.5",
+      "verdict": "PASS",
+      "price": -105,
+      "book": "betonlineag",
+      "fair_estimate": 0.5,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The total has come down from 45.5 when first captured to 41.5, and the two sides are priced at almost exactly even by the books, so the market already holds the low scoring of the Chargers and the strong defence of Kansas City.",
+          "evidence": [
+            { "path": "markets.total.context.number_first_captured", "value": 45.5 },
+            { "path": "markets.total.options[0].fair_probability", "value": 0.5006 },
+            { "path": "markets.total.options[1].fair_probability", "value": 0.4994 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The Chargers score 16.8 points per game and Kansas City allows 19.25, which points low, but Kansas City scores 29.5 per game with 6.5397 yards per play, which points the other way, and weather is missing for an outdoor game.",
+          "evidence": [
+            { "path": "sections.away.values.form.season_to_date.points_for_per_game", "value": 16.8 },
+            { "path": "sections.home.values.form.season_to_date.points_against_per_game", "value": 19.25 },
+            { "path": "sections.home.values.form.season_to_date.points_for_per_game", "value": 29.5 },
+            { "path": "sections.home.values.form.season_to_date.yards_per_play.value", "value": 6.5397 }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": 100,
+      "what_would_change_it": "A weather forecast showing hard wind or cold for an outdoor game, or a quarterback change on either side, would give a reason to move off this pass.",
+      "case_against": null
+    }
+  ],
+  "summary_derived": []
+}

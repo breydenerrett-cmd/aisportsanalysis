@@ -1,0 +1,129 @@
+{
+  "summary": "The books make the Rams a heavy home favorite, and at -750 the moneyline is off limits for a bet, while Arizona at +613 only pays if you believe they win outright. Nothing in the data argues for that: Arizona has one win and four losses and allows 32.4 points per game. So I pass on the moneyline. The spread is where I lean the other way. The number has grown from 10.5 when first captured to 13, yet the Rams' own season margin is -0.2 per game, Arizona's is -10.8, and the gap between them in the data is 10.6. Past meetings since 2021 average 6.2727 points for the Rams. That suggests 13 asks for more than the numbers show, so I take ARI +13 at low confidence. It is a small lean: Arizona lost by 24 last week, three of their players are out, and both quarterbacks are projections, not confirmed starters. I pass the total at 51.5. Both teams are in a dome and the price already holds the scoring and yardage numbers, so I see no reason the market is wrong. Props are not covered by what we have.",
+  "calls": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "selection": "LA",
+      "verdict": "PASS",
+      "price": -750,
+      "book": "draftkings",
+      "fair_estimate": null,
+      "confidence": "medium",
+      "reasons": [
+        {
+          "claim": "The Rams price of -750 is worse than -200, so it cannot be a bet, and the books' own fair number for Arizona is low.",
+          "evidence": [
+            {"path": "markets.moneyline.options[0].best.price", "value": -750},
+            {"path": "markets.moneyline.options[1].fair_probability", "value": 0.1402}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Arizona has one win and four losses this season, so the data gives no case for an outright upset at +613 either.",
+          "evidence": [
+            {"path": "sections.away.values.form.season_to_date.wins", "value": 1},
+            {"path": "sections.away.values.form.season_to_date.losses", "value": 4},
+            {"path": "markets.moneyline.options[1].best.price", "value": 613}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A confirmed quarterback change for the Rams would be the kind of news that could make Arizona at a much longer price worth a look.",
+      "case_against": null
+    },
+    {
+      "slot_id": "spread",
+      "market": "spread",
+      "selection": "ARI +13",
+      "verdict": "TAKE_OTHER_SIDE",
+      "price": -105,
+      "book": "lowvig",
+      "fair_estimate": 0.52,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The number has moved from 10.5 to 13, while the data's own gap in season margin per game between the teams is 10.6, so the line asks for more than the form shows.",
+          "evidence": [
+            {"path": "markets.spread.context.away_number_first_captured", "value": 10.5},
+            {"path": "markets.spread.options[0].line", "value": -13.0},
+            {"path": "sections.matchup.values.differentials.form_season_to_date_margin_per_game.diff", "value": 10.6}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The Rams are not dominating anyone themselves: their season margin is -0.2 per game and their last three games sit at -1, which makes laying 13 a big ask.",
+          "evidence": [
+            {"path": "sections.home.values.form.season_to_date.margin_per_game", "value": -0.2},
+            {"path": "sections.home.values.form.last_3.margin_per_game", "value": -1}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Meetings since 2021 average a Rams margin well below the number.",
+          "evidence": [
+            {"path": "sections.matchup.values.head_to_head.average_margin_for_home_team", "value": 6.2727},
+            {"path": "sections.matchup.values.head_to_head.meetings", "value": 11}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": -108,
+      "what_would_change_it": "Arizona ruling out its projected quarterback, or the number moving to ARI +14 or beyond with a worse price, would change this; at -108 or worse I would no longer take it.",
+      "case_against": {
+        "claim": "Arizona is allowing 39 points per game over its last three and lost by 24 last week, and the Rams allow far fewer yards per play, so a blowout of more than 13 is a live outcome.",
+        "evidence": [
+          {"path": "sections.away.values.form.last_3.points_against_per_game", "value": 39},
+          {"path": "sections.away.values.last_three[0].margin", "value": -24},
+          {"path": "sections.away.values.form.season_to_date.yards_per_play_allowed", "value": 6.1803},
+          {"path": "sections.home.values.form.season_to_date.yards_per_play_allowed", "value": 4.8503}
+        ],
+        "derived": []
+      }
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "selection": "Under 51.5",
+      "verdict": "PASS",
+      "price": -105,
+      "book": "draftkings",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The total has moved up from 50.5 to 51.5 and the books' fair split is an even coin flip, so the price already holds both teams' scoring and yardage.",
+          "evidence": [
+            {"path": "markets.total.context.number_first_captured", "value": 50.5},
+            {"path": "markets.total.options[0].fair_probability", "value": 0.5002},
+            {"path": "markets.total.options[1].fair_probability", "value": 0.4998}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The scoring numbers point both ways: the Rams score 23.8 and allow 24 per game, while Arizona scores 21.6 and allows 32.4, so there is no clear reason to lean either way.",
+          "evidence": [
+            {"path": "sections.home.values.form.season_to_date.points_for_per_game", "value": 23.8},
+            {"path": "sections.home.values.form.season_to_date.points_against_per_game", "value": 24},
+            {"path": "sections.away.values.form.season_to_date.points_for_per_game", "value": 21.6},
+            {"path": "sections.away.values.form.season_to_date.points_against_per_game", "value": 32.4}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The game is in a dome, so weather is not a factor, but both quarterbacks are projections and a change could move the number.",
+          "evidence": [
+            {"path": "sections.schedule.values.venue.roof", "value": "dome"},
+            {"path": "sections.home.values.qb.listed_for_this_game.projected", "value": true}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A quarterback change for either team, or a player ruled out on the injury report, could move the number enough to make a side worth taking.",
+      "case_against": null
+    }
+  ],
+  "summary_derived": []
+}

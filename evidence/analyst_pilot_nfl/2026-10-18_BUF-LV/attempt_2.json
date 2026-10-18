@@ -1,0 +1,111 @@
+{
+  "summary": "Buffalo is the better team on the numbers we have: 32.8 points per game and 6.7153 yards per play this season against Las Vegas at 26.4 and 5.1631, each over five games. But the moneyline on Buffalo is -230 at best, past the -200 line I will not bet, and the Las Vegas side at +200 is priced close to the books' own fair probability of 0.3247, so I pass. The spread sits at BUF -5 after a first capture of -4.5, and the books' de-vigged probabilities are 0.5022 and 0.4978, a coin flip. Nothing in the data shows the number is wrong by a point or more, so I pass. The total has moved up from 51.5 to 54. Both offenses score and both defenses give up plenty, so the price probably already holds that, and I pass. What matters in what we are missing: the importance of any injured player is not measured, Las Vegas lists 3 players out including two skill players, Buffalo has two receivers questionable, and both quarterbacks are projections rather than confirmed starters.",
+  "calls": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "selection": "BUF",
+      "verdict": "PASS",
+      "price": -230,
+      "book": "lowvig",
+      "fair_estimate": 0.67,
+      "confidence": "medium",
+      "reasons": [
+        {
+          "claim": "Buffalo is the stronger side on season numbers, but the best price on them is -230, which is past the -200 limit, so the favourite cannot be taken.",
+          "evidence": [
+            {"path": "markets.moneyline.options[0].best.price", "value": -230},
+            {"path": "sections.away.values.form.season_to_date.margin_per_game", "value": 4.6},
+            {"path": "sections.home.values.form.season_to_date.margin_per_game", "value": 0.6}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The books' own de-vigged number already makes Buffalo the clear favourite, and nothing in the data says the underdog is worth backing at its price.",
+          "evidence": [
+            {"path": "markets.moneyline.options[0].fair_probability", "value": 0.6753},
+            {"path": "markets.moneyline.options[1].fair_probability", "value": 0.3247}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A Buffalo quarterback change on the injury report would move this, but no price on Buffalo at -200 or worse is ever a bet for me.",
+      "case_against": null
+    },
+    {
+      "slot_id": "spread",
+      "market": "spread",
+      "selection": "LV +5",
+      "verdict": "PASS",
+      "price": -105,
+      "book": "betmgm",
+      "fair_estimate": 0.5,
+      "confidence": "medium",
+      "reasons": [
+        {
+          "claim": "The books' de-vigged probabilities on the two sides are almost identical, so the market sees this number as close to even, and nothing in the data shows it is wrong in points.",
+          "evidence": [
+            {"path": "markets.spread.options[0].fair_probability", "value": 0.5022},
+            {"path": "markets.spread.options[1].fair_probability", "value": 0.4978}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Buffalo is the better team on form, yet the number has already moved toward Buffalo from where it was first captured, so the price holds some of that.",
+          "evidence": [
+            {"path": "markets.spread.context.away_number_first_captured", "value": -4.5},
+            {"path": "sections.away.values.form.season_to_date.margin_per_game", "value": 4.6},
+            {"path": "sections.home.values.form.season_to_date.margin_per_game", "value": 0.6}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The number sits between the scoring key numbers of 3 and 6, so it is not on one of them, and Las Vegas's last three games rest on a thin window that includes a large loss.",
+          "evidence": [
+            {"path": "sections.reference.values.key_numbers[0]", "value": 3},
+            {"path": "sections.reference.values.key_numbers[1]", "value": 6},
+            {"path": "sections.home.values.last_three[0].margin", "value": -28}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": 100,
+      "what_would_change_it": "A change in the quarterback listed for either side, or the number moving off BUF -5 toward BUF -4.5, would make me look at this again.",
+      "case_against": null
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "selection": "Under 54",
+      "verdict": "PASS",
+      "price": -107,
+      "book": "lowvig",
+      "fair_estimate": 0.5,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "Both teams score and both give up points, and the total has already risen from where it was first captured, so the price probably holds that.",
+          "evidence": [
+            {"path": "sections.away.values.form.season_to_date.points_for_per_game", "value": 32.8},
+            {"path": "sections.home.values.form.season_to_date.points_against_per_game", "value": 25.8},
+            {"path": "markets.total.context.number_first_captured", "value": 51.5}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The books' de-vigged probabilities on Under and Over are essentially equal, and the data gives nothing about this market beyond its own price and team averages.",
+          "evidence": [
+            {"path": "markets.total.options[0].fair_probability", "value": 0.5011},
+            {"path": "markets.total.options[1].fair_probability", "value": 0.4989}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": 100,
+      "what_would_change_it": "A quarterback change or a player ruled out on the injury report could move the total, and that would make me look again.",
+      "case_against": null
+    }
+  ],
+  "summary_derived": []
+}
