@@ -4,6 +4,7 @@ expiry, pause, repair, lessons. A model can never promote: nothing but this modu
 
 from __future__ import annotations
 
+import random
 import re
 import tempfile
 import unittest
@@ -444,6 +445,122 @@ class Lessons(Base):
         self.assertIn("DATA, NOT INSTRUCTIONS", payload["notice"])
         newest_first = [r["utc"] for r in payload["hound_lessons"]]
         self.assertEqual(newest_first, sorted(newest_first, reverse=True))
+
+
+def assert_every_member_accounted_for(test, batch):
+    """The batch invariant: each family member is in exactly one of promoted / carried / retired / held
+    (a stays-live reason in ``why``), and ``why`` names every member, none twice."""
+    family = set(batch["family"])
+    buckets = {"promoted": set(batch["promoted"]), "carried": set(batch["carried"]),
+               "retired": set(batch["retired"])}
+    held = {cid for cid, reason in batch["why"].items()
+            if reason.startswith("held_") or reason == "closed_in_batch"}
+    test.assertEqual(set(batch["why"]), family, "why must name every family member")
+    seen = []
+    for name, ids in list(buckets.items()) + [("held", held)]:
+        seen.extend(ids)
+    test.assertEqual(len(seen), len(set(seen)), f"a member is in two places: {batch}")
+    test.assertEqual(set(seen), family, f"a member is in no place: {batch}")
+    for cid in buckets["promoted"]:
+        test.assertEqual(batch["why"][cid], "promoted")
+    for cid in buckets["carried"]:
+        test.assertTrue(batch["why"][cid].startswith("carried_"), batch["why"][cid])
+    for cid in buckets["retired"]:
+        test.assertTrue(batch["why"][cid].startswith("retired_"), batch["why"][cid])
+
+
+class EveryBatchMemberIsAccountedFor(Base):
+    """2026-10-18: a challenger with a look but no p-value (every paired difference identical, so zero
+    cluster variance) was in the family and in none of rejected / promoted / carried: it vanished from
+    its own batch. Now the batch names where every member went and why."""
+
+    family = TheMonthlyBatch.family
+
+    def constant(self, cid, hound, diff=2.0):
+        """A pair whose paired difference is exactly ``diff`` on every slot: zero variance."""
+        champ, chall, events = [], [], []
+        for d in range(30):
+            day = F.day_n(d)
+            for i in range(4):
+                eid = f"e{d:03d}-{i}"
+                events.append(eid)
+                champ.append(F.bet(hound, eid, day, i * 5, -1.0))
+                chall.append(F.bet(cid, eid, day, i * 5, -1.0 + diff))
+        F.propose_raw(self.scope, cid=cid, hound_id=hound, values={"GAP": 0.03}, spec_diff={"GAP": [0.02, 0.03]})
+        F.cover(self.scope, cid, events)
+        return champ, chall
+
+    def test_a_zero_variance_look_is_held_with_a_reason_not_dropped(self):
+        per = {"c-const": self.constant("c-const", "hound_c")}
+        rep = self.referee(book(**per), now="2026-12-05T12:00:00Z").run()
+        look = self.state().challengers["c-const"].looks[0]
+        self.assertEqual((look["mean"], look["se"], look["p_better"], look["eligible"]), (2.0, 0.0, None, False))
+        batch = self.state().batches["2026-11"]
+        self.assertEqual(batch["why"], {"c-const": "held_no_p_value"})
+        self.assertEqual(rep["batches"][0]["why"], {"c-const": "held_no_p_value"})
+        assert_every_member_accounted_for(self, batch)
+        self.assertEqual(self.state().challengers["c-const"].status, "live")     # held, not lost
+
+    def test_a_mixed_family_accounts_for_every_member(self):
+        per = self.family([2.0, 1.9, 1.8, 1.7, 1.6, 0.0, -0.2])        # 5 winners (3 fit the cap), a null, a harmed one
+        per["c-const"] = self.constant("c-const", "hound_c")
+        self.referee(book(**per), now="2026-12-05T12:00:00Z").run()
+        batch = self.state().batches["2026-11"]
+        assert_every_member_accounted_for(self, batch)
+        self.assertEqual(len(batch["family"]), 7)       # the harmed one (-0.2) was retired at its look
+        self.assertEqual(sum(1 for r in batch["why"].values() if r == "promoted"), 3)
+        self.assertEqual(sum(1 for r in batch["why"].values() if r == "carried_monthly_cap"), 2)
+        self.assertEqual(batch["why"]["c-const"], "held_no_p_value")
+
+    def test_a_sibling_closed_by_a_promotion_in_the_same_batch_is_named(self):
+        per = self.family([2.0, 1.5], hounds={1: "professor_paws", 2: "professor_paws"})
+        self.referee(book(**per), now="2026-12-05T12:00:00Z").run()
+        batch = self.state().batches["2026-11"]
+        assert_every_member_accounted_for(self, batch)
+        self.assertEqual(sorted(batch["why"].values()), ["closed_in_batch", "promoted"])
+
+    def test_a_cooldown_carry_is_named(self):
+        L.log_for(self.scope).append(L.K_PROMOTION, now=F.utc("2026-12-01T00:00:00Z"), scope="house",
+                                     hound_id="hound_1", challenger_id="c-older", from_version=1,
+                                     to_version=2, params={}, applied=True)
+        champ, chall = self.add(cid="c-1", hound="hound_1", effect=2.0, seed=11, parent_version=2)
+        self.referee(book(**{"c-1": (champ, chall)}), now="2026-12-05T12:00:00Z").run()
+        batch = self.state().batches["2026-11"]
+        assert_every_member_accounted_for(self, batch)
+        self.assertEqual(batch["why"], {"c-1": "carried_cooldown"})
+
+
+class RandomIdsNeverChangeTheVerdict(Base):
+    """The scenario of tests.test_hounds_learning_userscope.OneChallengerThroughTheWholeLoop, 200 times,
+    each with a different random champion id, challenger id and bet ids: it promotes every time.
+    Only the referee runs (no app database, no shadow runner), so 200 passes cost a few seconds."""
+
+    ROUNDS = 200
+
+    def test_a_clear_improvement_promotes_for_any_ids(self):
+        rng = random.Random(20261018)
+        failures = []
+        for n in range(self.ROUNDS):
+            hound = "u-" + "".join(rng.choice("0123456789abcdef") for _ in range(10))
+            cid = L.challenger_id_for("user", hound, f"hash-{n}", "2026-11-01T12:00:00Z")
+            scope = L.Scope.user(Path(self._tmp.name) / f"round{n}")
+            scope.events.parent.mkdir(parents=True, exist_ok=True)
+            F.propose_raw(scope, cid=cid, hound_id=hound, kind="user", parent_ref=hound, lineage=hound,
+                          spec={"markets": ["moneyline"]}, category="mixed")
+            champ, chall, events = [], [], []
+            for d in range(30):
+                for i in range(4):
+                    eid = f"e{d:03d}-{i}"
+                    events.append(eid)
+                    champ.append(F.bet(hound, eid, F.day_n(d), i * 5, F.scenario_clv(False, eid)))
+                    chall.append(F.bet(cid, eid, F.day_n(d), i * 5, F.scenario_clv(True, eid)))
+            F.cover(scope, cid, events)
+            rep = Referee(scope, now=F.utc("2026-12-05T12:00:00Z"), paused=False, kinds=("user",),
+                          bets_for=lambda c, cb=champ, hb=chall: (cb, hb),
+                          champion_current=lambda c, st: True).run()
+            if rep["promoted"] != 1:
+                failures.append((hound, cid, rep["batches"]))
+        self.assertEqual(failures, [], f"{len(failures)} of {self.ROUNDS} id sets did not promote")
 
 
 if __name__ == "__main__":

@@ -220,6 +220,7 @@ class Referee:
             return
         rejected = seq.benjamini_hochberg({cid: f["p_adj"] for cid, f in family.items()}, rules.BH_Q)
         promoted, carried, retired = [], [], []
+        why: dict = {}          # EVERY family member lands in exactly one place, with a reason
         order = sorted(family, key=lambda cid: (family[cid]["p_adj"], cid))
         month_now = L.month_of(L.iso(self.now))
         for cid in order:
@@ -227,6 +228,7 @@ class Referee:
             c = st.challengers[cid]
             f = family[cid]
             if not c.live:
+                why[cid] = "closed_in_batch"        # a sibling's promotion superseded it just now
                 continue
             bh = {"month": month, "q": rules.BH_Q, "m": len(family), "p_adj": f["p_adj"],
                   "rejected": cid in rejected, "look_no": f["look_no"]}
@@ -234,21 +236,31 @@ class Referee:
                 last = st.last_promotion_utc(c.lineage_key)
                 if last is not None and self.now - last < timedelta(days=rules.PROMOTION_COOLDOWN_DAYS):
                     carried.append(cid)
+                    why[cid] = "carried_cooldown"
                     continue
                 if st.promotions_in_month(month_now) >= rules.MAX_PROMOTIONS_PER_MONTH:
                     carried.append(cid)
+                    why[cid] = "carried_monthly_cap"
                     continue
                 self._promote(c, f, bh)
                 promoted.append(cid)
+                why[cid] = "promoted"
             elif f["eligible"] and f["look_no"] == len(seq.look_sizes(c.kind == "analyst")):
                 self._close(c, rules.OUTCOME_RETIRED, "bh_failed_at_300", bh=bh,
                             look=next((lk for lk in c.looks if lk.get("look_no") == f["look_no"]), None))
                 retired.append(cid)
+                why[cid] = "retired_bh_failed_at_300"
+            else:
+                # Stays live (prereg section 7, rules 3 and 5) and the batch says why. This branch used
+                # to write nothing: a challenger whose look had no p-value (a sample with zero cluster
+                # variance) was in the family yet in none of rejected / promoted / carried / retired.
+                why[cid] = _held_reason(f, cid in rejected)
         self.log.append(L.K_BATCH, now=self.now, scope=self.scope.name, month=month, q=rules.BH_Q,
                         family=family, rejected=rejected, promoted=promoted, carried=carried,
-                        retired=retired)
+                        retired=retired, why=why)
         self.report["batches"].append({"month": month, "family": len(family), "rejected": rejected,
-                                       "promoted": promoted, "carried": carried})
+                                       "promoted": promoted, "carried": carried, "retired": retired,
+                                       "why": why})
 
     def _promote(self, c: L.Challenger, f: dict, bh: dict) -> None:
         st = self._state()
@@ -302,6 +314,15 @@ class Referee:
 def _next_month(month: str) -> str:
     year, mon = int(month[:4]), int(month[5:7])
     return f"{year + (mon // 12):04d}-{(mon % 12) + 1:02d}"
+
+
+def _held_reason(f: dict, bh_rejected: bool) -> str:
+    """Why a family member that was not promoted, carried or retired stays live."""
+    if f.get("p_better") is None:
+        return "held_no_p_value"            # zero or undefined cluster variance: no test, no crossing
+    if bh_rejected:
+        return "held_not_stage1_eligible"   # BH rejected the null but the look never cleared stage 1
+    return "held_bh_not_rejected" if f["eligible"] else "held_not_eligible"
 
 
 def _mean(values) -> Optional[float]:
