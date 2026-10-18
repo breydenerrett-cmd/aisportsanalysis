@@ -274,23 +274,23 @@ def graveyard_line(graveyard_hounds: list) -> Optional[str]:
     return None
 
 
-def race_day(leaderboard: dict) -> Optional[int]:
-    """Day 1 is the earliest first bet on the board; None when it cannot be worked out."""
-    firsts = [str(h.get("first_bet_utc") or "")[:10] for h in leaderboard.get("hounds") or []
-              if isinstance(h, dict) and h.get("first_bet_utc")]
+def race_date(leaderboard: dict) -> Optional[str]:
+    """The board's own date as 'Sun Oct 18'; None when the board carries no date. (A "Day N" count was
+    dropped: the board includes back-filled history, so it overstated how long the live race has run.)"""
     today = str(leaderboard.get("data_as_of") or leaderboard.get("as_of") or "")[:10]
     try:
-        return (date_cls.fromisoformat(today) - date_cls.fromisoformat(min(firsts))).days + 1
+        d = date_cls.fromisoformat(today)
     except (ValueError, TypeError):
         return None
+    return f"{d.strftime('%a %b')} {d.day}"
 
 
 # ---- assembly --------------------------------------------------------------------------------------
 
 def _assemble(leaderboard: dict, middle: list) -> str:
-    day = race_day(leaderboard)
-    head = "🐶 LineHound Hounds" + (f" | Day {day}" if day and day > 0 else "")
-    lines = [head, f"{len(leaderboard['hounds'])} strategies racing on paper (MLB and NFL)."]
+    when = race_date(leaderboard)
+    head = "🐶 LineHound Kennel" + (f" | {when}" if when else "")
+    lines = [head, f"{len(leaderboard['hounds'])} dogs in the race (paper bets, MLB and NFL)."]
     lines.extend(middle)
     lines.extend([CLOSING_LINE, LINK])
     return "\n".join(lines)

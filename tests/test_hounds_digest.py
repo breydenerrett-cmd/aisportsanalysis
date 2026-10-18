@@ -81,7 +81,7 @@ class Counts(unittest.TestCase):
         hs = [hound(f"h{i}") for i in range(32)] + [hound("beagle", category="baseline")] * 3
         out = D.digest(board(hs))
         self.assertEqual(out["hounds_total"], 35)
-        self.assertIn("35 strategies racing on paper (MLB and NFL).", out["post"].splitlines())
+        self.assertIn("35 dogs in the race (paper bets, MLB and NFL).", out["post"].splitlines())
 
     def test_the_shape(self):
         out = D.digest(board([hound("a")]))
@@ -90,17 +90,19 @@ class Counts(unittest.TestCase):
         self.assertIs(out["paper_only"], True)
         self.assertEqual(out["as_of"], "2026-10-18")
 
-    def test_header_day_counts_from_the_earliest_first_bet(self):
+    def test_header_shows_the_boards_own_date(self):
         hs = [hound("a", first="2026-10-10T12:00:00Z"), hound("b", first="2026-10-05T01:00:00Z"),
               hound("c", first=None)]
-        self.assertEqual(D.digest(board(hs))["post"].splitlines()[0], "🐶 LineHound Hounds | Day 14")
-        # a stale copy's as_of is the BUILD time; the day comes from the data's own day
+        self.assertEqual(D.digest(board(hs))["post"].splitlines()[0], "🐶 LineHound Kennel | Sun Oct 18")
+        # a stale copy's as_of is the BUILD time; the date comes from the data's own day
         stale = board(hs, as_of="2026-10-18T05:07:09Z", data_as_of="2026-10-17", stale=True)
-        self.assertEqual(D.digest(stale)["post"].splitlines()[0], "🐶 LineHound Hounds | Day 13")
+        self.assertEqual(D.digest(stale)["post"].splitlines()[0], "🐶 LineHound Kennel | Sat Oct 17")
 
-    def test_no_first_bet_anywhere_drops_the_day_not_the_post(self):
-        self.assertEqual(D.digest(board([hound("a", first=None)]))["post"].splitlines()[0],
-                         "🐶 LineHound Hounds")
+    def test_a_board_without_a_date_drops_the_date_not_the_post(self):
+        b = board([hound("a", first=None)])
+        b.pop("data_as_of", None)
+        b["as_of"] = ""
+        self.assertEqual(D.build_post(b).splitlines()[0], "🐶 LineHound Kennel")
 
     def test_always_ends_with_the_gambling_line_and_link(self):
         for hs in ([hound("a")], [hound("a", 5, 1, 3.0, BEAT)]):
@@ -266,7 +268,7 @@ class Limits(unittest.TestCase):
              [hound("z", 0, 9, -5.0, name="Z" * 400)]
         out = D.digest(board(hs), graveyard((long, "2026-10-01", "x" * 800)))
         assert_clean(self, out["post"])
-        self.assertTrue(out["post"].startswith("🐶 LineHound Hounds"))
+        self.assertTrue(out["post"].startswith("🐶 LineHound Kennel"))
         self.assertIn("🧠", out["post"])
 
     def test_graveyard_is_the_first_line_dropped(self):
@@ -376,7 +378,7 @@ class Route(unittest.TestCase):
         self.assertIs(body["paper_only"], True)
         self.assertEqual(body["hounds_total"], len(stats.leaderboard(book)))
         self.assertEqual(body["as_of"], book.as_of)
-        self.assertIn(f"{len(stats.leaderboard(book))} strategies racing on paper", body["post"])
+        self.assertIn(f"{len(stats.leaderboard(book))} dogs in the race (paper bets", body["post"])
         assert_clean(self, body["post"])
         self.assertIn("max-age", r.headers["cache-control"])
 
