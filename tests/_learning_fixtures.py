@@ -7,6 +7,7 @@ closing-line values already attached (the referee's input), so a test states the
 
 from __future__ import annotations
 
+import hashlib
 import random
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
@@ -16,6 +17,21 @@ from src.hounds.learning import ledger as L
 
 UTC = timezone.utc
 FIRST_DAY = date(2026, 11, 2)
+
+
+def scenario_clv(is_challenger: bool, event_id: str) -> float:
+    """The closing-line value of the "must promote every time" scenario: +1.0 (challenger) or -1.0
+    (champion) plus a per-slot noise of 0 to 0.5, so every paired difference lies in [1.5, 2.5] and the
+    differences are NOT all equal.
+
+    The noise is a function of the EVENT and the ROLE only, never of a bet id or a hound id. It used to
+    be ``sum(map(ord, bet_id)) % 11``; the champion's and the challenger's bet ids differ by a prefix,
+    so whenever the two prefixes' character sums agreed mod 11 (roughly one random id set in nine) the
+    noise was identical on both sides, every difference was exactly +2.0, the cluster variance was
+    exactly 0, the look had no p-value (the statistic gives none without variance) and the challenger
+    could not cross. That was the intermittent failure: the TEST's data, not the referee's arithmetic."""
+    digest = hashlib.sha256(f"{'chall' if is_challenger else 'champ'}|{event_id}".encode()).hexdigest()
+    return (1.0 if is_challenger else -1.0) + (int(digest, 16) % 11) / 20
 
 
 def utc(text: str) -> datetime:

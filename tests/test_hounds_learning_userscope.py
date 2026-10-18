@@ -5,6 +5,7 @@ champion's old record stays. Plus the tick's isolation from the champions' pass.
 
 from __future__ import annotations
 
+import itertools
 import os
 import tempfile
 import unittest
@@ -82,6 +83,14 @@ class TickIsCheapAndIsolated(Case):
 
 
 class OneChallengerThroughTheWholeLoop(Case):
+    def setUp(self):
+        # Fixed hound ids (the store draws them from ``secrets``): the test reads the same on every run.
+        counter = itertools.count(1)
+        patch = mock.patch.object(user_store, "new_hound_id", lambda: f"u-fixed{next(counter):04d}")
+        patch.start()
+        self.addCleanup(patch.stop)
+        super().setUp()
+
     def test_shadow_settle_referee_promotion_new_version_old_record_kept(self):
         # 1. the coach proposes through the real door's guards (recorded as a live challenger)
         spec = dict(self.hound["spec"], markets=["moneyline"])
@@ -103,13 +112,15 @@ class OneChallengerThroughTheWholeLoop(Case):
 
         def attach(bets):
             for b in bets:                                   # the closing-line values the odds scan would give
-                b.clv_measurable, b.clv_pts = True, (1.0 if b.hound_id == ch.id else -1.0) + (sum(map(ord, b.bet_id)) % 11) / 20
+                b.clv_measurable, b.clv_pts = True, F.scenario_clv(b.hound_id == ch.id, b.event_id)
 
         card_book = SimpleNamespace(hounds={}, clv_bets=[])
         out = user_scope.tick(now=NOW, ledger=self.ledger, daily=True, attach_fn=attach, book=card_book,
                               rows_for=lambda d, s: [])
         self.assertEqual(out["errors"], [], out)
         self.assertEqual(out["referee"]["promoted"], 1, out)
+        look = L.read_state(self.scope).challengers[ch.id].looks[0]
+        self.assertGreater(look["se"], 0, "a zero-variance scenario has no p-value and cannot promote")
         # 3. a real new version exists; the old one is retired with its spec and ledger rows untouched
         lineage = user_store.lineage(self.hound["id"])
         self.assertEqual([h["version_no"] for h in lineage], [1, 2])
