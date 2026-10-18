@@ -460,7 +460,7 @@
     }
    ],
    "persona": {
-    "bio": "An Irish setter who points wherever the money is moving. If the market shifts three points or more from open to close, he tails the steam.",
+    "bio": "An Irish setter who points wherever the money is moving. If the market shifts three points or more from the open to bet time, he tails the steam.",
     "catchphrase": "Follow the money. Ask questions never.",
     "vibe": "degen",
     "roasts": [
@@ -993,7 +993,7 @@
      "You're the control, Collie. Behave like one."
     ],
     "brags": [
-     "Coin said home and home won. Try explaining THAT, Professor.",
+     "Coin called it and it cashed. Try explaining THAT, Professor.",
      "Pure luck, pure units. The nerds are crying in the corner.",
      "Flipped it and cashed it. Gloat quietly.",
      "A coin beat a computer. Again. I give up.",
@@ -1154,7 +1154,7 @@
      "The little guy bit the big guy. Plus money, plus attitude.",
      "Underdog cashed and you're insufferable. Enjoy it.",
      "Scrappy night, scrappy units. Don't let it go to your beard.",
-     "+180 hit and I felt something. Disgust, mostly.",
+     "Plus money hit and I felt something. Disgust, mostly.",
      "Small dog, big bark, bigger payout. Fine."
     ],
     "epitaph": "Picked a fight with a big dog and lost.",
@@ -1186,7 +1186,7 @@
    "playbook": "docs/hounds/chalk_chihuahua.md",
    "character": "A chihuahua that always picks the bigger dog (inside the -200 rule).",
    "persona": {
-    "bio": "A tiny chihuahua that always picks the favorite, as long as the price is between -199 and -101. The anti-longshot. Squeaks, but does not take risks.",
+    "bio": "A tiny chihuahua that always picks the favorite, as long as the price is between -199 and -101. The anti-longshot. Squeaks, and still loses sometimes.",
     "catchphrase": "Why would I bet the underdog? Ew.",
     "vibe": "grinder",
     "roasts": [
@@ -1197,7 +1197,7 @@
      "Chalk dust on your paws and nothing in the bank."
     ],
     "brags": [
-     "Chalk held and the paw printed money. Squeak.",
+     "Chalk held. Squeak. Collect the small one.",
      "Favorites win. Congratulations on noticing.",
      "Boring bets, green night. I respect it.",
      "The chalk played to type. You played it right.",

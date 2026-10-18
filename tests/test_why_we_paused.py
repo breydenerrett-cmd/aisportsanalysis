@@ -1,4 +1,4 @@
-"""The public page web/why-we-paused.html (visible title "Why we stopped selling picks"), the posts that point at it,
+"""The public page web/why-we-paused.html (visible title "Why we stopped publishing MLB picks"), the posts that point at it,
 and the one link to it on the landing page.
 
 THE PAGE is static copy for a reader who bets but does not code. It is the owner's honest account of why MLB
@@ -51,9 +51,9 @@ class ThePageIsServed(unittest.TestCase):
 
     def test_the_files_exist_and_the_title_is_the_agreed_one(self):
         self.assertTrue(PAGE.is_file() and SCRIPT.is_file())
-        # owner voice pass, 2026-10-18: the visible title is "Why we stopped selling picks"; the file name and URL stay
-        self.assertIn("<title>Why we stopped selling picks", MARKUP)
-        self.assertIn('<h1 data-hook="why-paused-title">Why we stopped selling picks</h1>', MARKUP)
+        # owner voice pass, 2026-10-18: the visible title is "Why we stopped publishing MLB picks"; the file name and URL stay
+        self.assertIn("<title>Why we stopped publishing MLB picks", MARKUP)
+        self.assertIn('<h1 data-hook="why-paused-title">Why we stopped publishing MLB picks</h1>', MARKUP)
         self.assertNotIn("paused our picks", visible_text())
         self.assertIn(f'<link rel="canonical" href="{URL}">', MARKUP)
 
@@ -155,7 +155,7 @@ class TheLandingPageLinksToIt(unittest.TestCase):
         line = re.search(r'<p class="kennel__straight" data-hook="kennel-straight">(.*?)</p>', landing, re.S).group(1)
         self.assertEqual(landing.count('data-hook="hero-why-paused-link"'), 1)
         self.assertIn('href="why-we-paused.html"', line)
-        self.assertIn("Why we stopped selling picks", line)
+        self.assertIn("Why we stopped publishing MLB picks", line)
         self.assertLess(len(_visible(line)), 220, "one line, not an essay")
         self.assertEqual(landing.count("why-we-paused.html"), 1)
         # it sits inside the first screen, before the AI desk section

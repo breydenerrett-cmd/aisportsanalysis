@@ -239,7 +239,7 @@
       ],
       "rule_text": "Bets the full-game moneyline, one unit, at most one bet a game, only once the lineups are posted, and only when at least 3 books are quoting it. It takes the best price on the board. It watches 3 pre-registered signals, each with its direction fixed before any results were known: (1) how heavily a starter leans on his one favourite pitch (the side facing the more predictable starter is favoured), firing at a median-sized gap between the two teams; (2) how ground-ball-heavy a starter is (the side facing the bigger ground-ball pitcher is hurt), firing at a 75th-percentile gap between the two teams; (3) how top-heavy a batting order is (the more top-heavy side is favoured), firing at a 75th-percentile gap between the two teams. Each signal that fires adds its weight to the side it points at; it bets a side once that total reaches 1 and at least 1 signal agrees. If both sides qualify the heavier side is bet, and a tie is no bet. It never uses the price to choose a side.",
       "persona": {
-        "bio": "Digs at top-heavy lineups and one-pitch starters. Bets the moneyline when three pre-set signals line up on a side, and passes the rest.",
+        "bio": "Digs at top-heavy lineups and one-pitch starters. Bets the moneyline when its pre-set signals tip to one side, and passes the rest.",
         "catchphrase": "Dig dig dig. Found something.",
         "vibe": "nerd",
         "roasts": [

@@ -95,10 +95,10 @@ class TheStaticPageNoLongerSellsPicks(unittest.TestCase):
         note = re.search(r'<p class="kennel__straight" data-hook="kennel-straight">(.*?)</p>', MARKUP, re.S)
         self.assertIsNotNone(note, "no pause line on the first screen")
         text = _visible(note.group(1))
-        self.assertIn("We stopped selling MLB picks on Oct 16, 2026 because they didn't beat the market.", text)
+        self.assertIn("We stopped publishing MLB value picks on Oct 16, 2026 because they didn't beat the market.", text)
         self.assertIn("The graded record stays public", text)
         self.assertIn("NFL picks carry on", text)
-        self.assertIn("Why we stopped selling picks", text)
+        self.assertIn("Why we stopped publishing MLB picks", text)
         self.assertLess(len(text), 220, "one line, not an essay")
         self.assertLess(MARKUP.index("kennel-straight"), MARKUP.index('data-hook="hero"'))
         # the record link and the sample brief are still one click away in the AI desk section
