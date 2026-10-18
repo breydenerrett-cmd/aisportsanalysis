@@ -91,6 +91,9 @@ class Bet:
     selection_text: str = ""
     game_text: str = ""
     verdict: str = "play"
+    # The learning loop (src/hounds/learning, docs/PREREG_LEARNING_LOOP.md): a pack hound promoted from
+    # a challenger writes bets stamped with its version; a row without one is version 1.
+    hound_version: int = 1
     decision: Optional[dict] = None         # trimmed engine decision (for CLV)
     # filled by src.hounds.boards:
     avg_price: Optional[int] = None
@@ -529,6 +532,9 @@ def pack_rows(rows: Iterable) -> tuple:
             bet = Bet(hound_id=str(hid), bet_id=str(key))
             merged[key] = bet
         bet.date = date or bet.date
+        version = _int_or_none(row.get("hound_version"))
+        if version is not None and version >= 1:
+            bet.hound_version = version
         bet.event_id = str(event) if event is not None else bet.event_id
         bet.sport = str(row.get("sport") or bet.sport or "mlb").lower()
         bet.market_key = market or bet.market_key

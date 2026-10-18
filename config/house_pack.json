@@ -30,7 +30,41 @@
    "module": "src.hounds.pack.professor_paws",
    "ledger": "evidence/hounds_house_v1.jsonl",
    "playbook": "docs/hounds/professor_paws.md",
-   "character": "A tweed-jacketed spaniel who trusts the house run model, but only halfway."
+   "character": "A tweed-jacketed spaniel who trusts the house run model, but only halfway.",
+   "tunable": [
+    {
+     "name": "GAP",
+     "label": "How far the shrunk model must beat the market to bet (probability)",
+     "kind": "float",
+     "default": 0.02,
+     "min": 0.015,
+     "max": 0.04,
+     "step": 0.005,
+     "renders": [
+      {
+       "literal": "2.0 points or more",
+       "format": "{:.1f} points or more",
+       "scale": 100
+      }
+     ]
+    },
+    {
+     "name": "SHRINK",
+     "label": "How much weight the model gets against the market",
+     "kind": "float",
+     "default": 0.5,
+     "min": 0.3,
+     "max": 0.7,
+     "step": 0.1,
+     "renders": [
+      {
+       "literal": "50% toward",
+       "format": "{:.0f}% toward",
+       "scale": 100
+      }
+     ]
+    }
+   ]
   },
   {
    "id": "totals_terrier",
@@ -54,7 +88,25 @@
    "module": "src.hounds.pack.totals_terrier",
    "ledger": "evidence/hounds_house_v1.jsonl",
    "playbook": "docs/hounds/totals_terrier.md",
-   "character": "A wire-haired terrier who digs for runs and barks at the total."
+   "character": "A wire-haired terrier who digs for runs and barks at the total.",
+   "tunable": [
+    {
+     "name": "GAP",
+     "label": "How far the shrunk model total must be from the market to bet (probability)",
+     "kind": "float",
+     "default": 0.03,
+     "min": 0.02,
+     "max": 0.05,
+     "step": 0.005,
+     "renders": [
+      {
+       "literal": "3.0 points or more",
+       "format": "{:.1f} points or more",
+       "scale": 100
+      }
+     ]
+    }
+   ]
   },
   {
    "id": "relief_retriever",
@@ -78,7 +130,25 @@
    "module": "src.hounds.pack.relief_retriever",
    "ledger": "evidence/hounds_house_v1.jsonl",
    "playbook": "docs/hounds/relief_retriever.md",
-   "character": "A Labrador who counts every pitch the bullpen threw this week."
+   "character": "A Labrador who counts every pitch the bullpen threw this week.",
+   "tunable": [
+    {
+     "name": "GAP",
+     "label": "Relief pitches thrown over three days that separate the bullpens",
+     "kind": "int",
+     "default": 120,
+     "min": 80,
+     "max": 200,
+     "step": 20,
+     "renders": [
+      {
+       "literal": "120 or more pitches",
+       "format": "{:.0f} or more pitches",
+       "scale": 1
+      }
+     ]
+    }
+   ]
   },
   {
    "id": "gridiron_greyhound",
@@ -102,7 +172,30 @@
    "module": "src.hounds.pack.gridiron_greyhound",
    "ledger": "evidence/hounds_house_v1.jsonl",
    "playbook": "docs/hounds/gridiron_greyhound.md",
-   "character": "A lean racing greyhound that only reads the scoreboard."
+   "character": "A lean racing greyhound that only reads the scoreboard.",
+   "tunable": [
+    {
+     "name": "BAR",
+     "label": "Expected margin against the spread that triggers a bet (points)",
+     "kind": "float",
+     "default": 3.0,
+     "min": 2.0,
+     "max": 4.5,
+     "step": 0.5,
+     "renders": [
+      {
+       "literal": "+3.0 or more",
+       "format": "{:+.1f} or more",
+       "scale": 1
+      },
+      {
+       "literal": "-3.0 or less",
+       "format": "{:.1f} or less",
+       "scale": -1
+      }
+     ]
+    }
+   ]
   },
   {
    "id": "elimination_basset",
@@ -152,7 +245,25 @@
    "module": "src.hounds.pack.jetlag_jack",
    "ledger": "evidence/hounds_house_v1.jsonl",
    "playbook": "docs/hounds/jetlag_jack.md",
-   "character": "A Jack Russell who never takes the red-eye and bets against those who do."
+   "character": "A Jack Russell who never takes the red-eye and bets against those who do.",
+   "tunable": [
+    {
+     "name": "NFL_REST_GAP",
+     "label": "Extra days of rest that count (NFL)",
+     "kind": "int",
+     "default": 3,
+     "min": 2,
+     "max": 5,
+     "step": 1,
+     "renders": [
+      {
+       "literal": "3 or more extra days",
+       "format": "{:.0f} or more extra days",
+       "scale": 1
+      }
+     ]
+    }
+   ]
   },
   {
    "id": "steamy_setter",
@@ -177,7 +288,25 @@
    "module": "src.hounds.pack.steamy_setter",
    "ledger": "evidence/hounds_house_v1.jsonl",
    "playbook": "docs/hounds/steamy_setter.md",
-   "character": "An Irish setter that points wherever the money is moving."
+   "character": "An Irish setter that points wherever the money is moving.",
+   "tunable": [
+    {
+     "name": "MOVE",
+     "label": "Consensus move from open to lock that counts as steam (probability)",
+     "kind": "float",
+     "default": 0.03,
+     "min": 0.02,
+     "max": 0.05,
+     "step": 0.005,
+     "renders": [
+      {
+       "literal": "3.0 points or more",
+       "format": "{:.1f} points or more",
+       "scale": 100
+      }
+     ]
+    }
+   ]
   },
   {
    "id": "contrary_corgi",
@@ -229,7 +358,41 @@
    "module": "src.hounds.pack.stale_bread_beagle",
    "ledger": "evidence/hounds_house_v1.jsonl",
    "playbook": "docs/hounds/stale_bread_beagle.md",
-   "character": "A beagle with a nose for a book that forgot to move its line."
+   "character": "A beagle with a nose for a book that forgot to move its line.",
+   "tunable": [
+    {
+     "name": "EDGE",
+     "label": "Smallest edge to the best price that triggers a bet (probability)",
+     "kind": "float",
+     "default": 0.025,
+     "min": 0.02,
+     "max": 0.05,
+     "step": 0.005,
+     "renders": [
+      {
+       "literal": "2.5 points or more",
+       "format": "{:.1f} points or more",
+       "scale": 100
+      }
+     ]
+    },
+    {
+     "name": "MIN_BOOKS",
+     "label": "Books quoting the line before a price is trusted",
+     "kind": "int",
+     "default": 5,
+     "min": 3,
+     "max": 8,
+     "step": 1,
+     "renders": [
+      {
+       "literal": "5+ books",
+       "format": "{:.0f}+ books",
+       "scale": 1
+      }
+     ]
+    }
+   ]
   },
   {
    "id": "bargain_bloodhound",
@@ -254,7 +417,25 @@
    "module": "src.hounds.pack.bargain_bloodhound",
    "ledger": "evidence/hounds_house_v1.jsonl",
    "playbook": "docs/hounds/bargain_bloodhound.md",
-   "character": "A bloodhound who never pays retail."
+   "character": "A bloodhound who never pays retail.",
+   "tunable": [
+    {
+     "name": "MARGIN",
+     "label": "How far below the consensus the best price's break-even must be (probability)",
+     "kind": "float",
+     "default": 0.005,
+     "min": 0.003,
+     "max": 0.012,
+     "step": 0.001,
+     "renders": [
+      {
+       "literal": "0.5 points below",
+       "format": "{:.1f} points below",
+       "scale": 100
+      }
+     ]
+    }
+   ]
   },
   {
    "id": "kelly_kelpie",
@@ -305,7 +486,25 @@
    "module": "src.hounds.pack.hot_streak_husky",
    "ledger": "evidence/hounds_house_v1.jsonl",
    "playbook": "docs/hounds/hot_streak_husky.md",
-   "character": "A husky that runs with whoever is hot."
+   "character": "A husky that runs with whoever is hot.",
+   "tunable": [
+    {
+     "name": "MLB_HOT",
+     "label": "Wins in the last ten games that make a club hot (MLB)",
+     "kind": "int",
+     "default": 7,
+     "min": 6,
+     "max": 8,
+     "step": 1,
+     "renders": [
+      {
+       "literal": "won 7 or more",
+       "format": "won {:.0f} or more",
+       "scale": 1
+      }
+     ]
+    }
+   ]
   },
   {
    "id": "grudge_bulldog",
@@ -331,7 +530,41 @@
    "module": "src.hounds.pack.grudge_bulldog",
    "ledger": "evidence/hounds_house_v1.jsonl",
    "playbook": "docs/hounds/grudge_bulldog.md",
-   "character": "A bulldog that never forgets who beat it."
+   "character": "A bulldog that never forgets who beat it.",
+   "tunable": [
+    {
+     "name": "NFL_MARGIN",
+     "label": "Losing margin of the last meeting that sets up a grudge (NFL points)",
+     "kind": "int",
+     "default": 7,
+     "min": 4,
+     "max": 10,
+     "step": 1,
+     "renders": [
+      {
+       "literal": "by 7 or more points",
+       "format": "by {:.0f} or more points",
+       "scale": 1
+      }
+     ]
+    },
+    {
+     "name": "MLB_MARGIN",
+     "label": "Losing margin of yesterday's game that sets up a grudge (MLB runs)",
+     "kind": "int",
+     "default": 5,
+     "min": 3,
+     "max": 7,
+     "step": 1,
+     "renders": [
+      {
+       "literal": "by 5 or more runs",
+       "format": "by {:.0f} or more runs",
+       "scale": 1
+      }
+     ]
+    }
+   ]
   },
   {
    "id": "numerology_newfie",
@@ -458,7 +691,25 @@
    "module": "src.hounds.pack.pack_leader",
    "ledger": "evidence/hounds_house_v1.jsonl",
    "playbook": "docs/hounds/pack_leader.md",
-   "character": "The alpha who only moves when the pack agrees."
+   "character": "The alpha who only moves when the pack agrees.",
+   "tunable": [
+    {
+     "name": "MIN_VOTES",
+     "label": "Votes a side needs from the voters",
+     "kind": "int",
+     "default": 2,
+     "min": 2,
+     "max": 3,
+     "step": 1,
+     "renders": [
+      {
+       "literal": "2 or more votes",
+       "format": "{:.0f} or more votes",
+       "scale": 1
+      }
+     ]
+    }
+   ]
   },
   {
    "id": "scrappy_schnauzer",
@@ -535,5 +786,6 @@
    "playbook": "docs/hounds/home_dog_hank.md",
    "character": "A hound that never leaves home and loves an underdog."
   }
- ]
+ ],
+ "tunable_note": "Each hound's `tunable` lists the only knobs a challenger may change (docs/PREREG_LEARNING_LOOP.md section 2b). `default` is the live value in the hound's module; a test holds the two together. `renders` are the exact strings of `rule_text` that state the knob, so a challenger's published rule is generated, not written."
 }

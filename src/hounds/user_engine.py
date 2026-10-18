@@ -609,6 +609,10 @@ def run(date: str, hounds: Sequence[Mapping], rows: Iterable[Mapping], *,
                 "recorded_utc": _iso(t), "provenance": mode,
             }
             row.update(contract_fields(row, spec, mode))
+            # The learning loop's shadow challengers stamp ``role``, ``challenger_id`` and the parent
+            # (src/hounds/learning); a plain hound has no ``row_extra`` and its row is unchanged.
+            for key, value in (hound.get("row_extra") or {}).items():
+                row.setdefault(key, value)
             store.append(row)
             seen_ids.add(bet_id)
             per_day[(hound["id"], date)] += 1

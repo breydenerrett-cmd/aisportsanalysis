@@ -77,7 +77,7 @@ def bet_row(hound, ctx: base.Context, board: Mapping, sel: base.Selection, *, se
         line = mb["line"]
     else:
         line = None
-    return {
+    row = {
         "kind": KIND_BET, "pack": pack_mod.PACK_ID, "hound_id": hound.id, "date": ctx.date, "sport": ctx.sport,
         "event_id": ctx.event_id, "game_pk": ctx.game_pk if ctx.sport == "mlb" else None,
         "nfl_game_id": ctx.nfl_game_id if ctx.sport == "nfl" else None,
@@ -90,6 +90,12 @@ def bet_row(hound, ctx: base.Context, board: Mapping, sel: base.Selection, *, se
         "reason": sel.reason, "who_decided": hound.who_decided, "segment": segment,
         "stake": float(sel.stake), "score": sel.score, "written_utc": base.iso(written),
     }
+    # The learning loop's stamps (src/hounds/learning): a promoted champion version writes
+    # ``hound_version`` and its knob values; a shadow challenger writes ``role: "challenger"``, its
+    # ``challenger_id`` and its parent. A plain hound has no ``row_extra``, so its rows are unchanged.
+    for key, value in (getattr(hound, "row_extra", None) or {}).items():
+        row.setdefault(key, value)
+    return row
 
 
 def in_band(hound, price: int) -> bool:
@@ -120,7 +126,13 @@ def run(stores: base.Stores, dates: Sequence[str], *, replay: bool, now: datetim
     per_day: dict = {}
     for r in existing:
         per_day[(r["hound_id"], r["date"])] = per_day.get((r["hound_id"], r["date"]), 0) + 1
-    hounds = tuple(hounds or pack_mod.PACK)
+    if hounds:
+        hounds = tuple(hounds)
+    else:
+        # A promoted champion version runs with its own knob values (src/hounds/learning); with no
+        # promotion on record this is exactly pack_mod.PACK.
+        from src.hounds.learning import champions
+        hounds = champions.champion_versions(pack_mod.PACK, champions.events_path_beside(ledger_path(path)))
     counts = {"games": 0, "written": 0, "skipped_not_locked": 0, "skipped_started": 0, "passes": 0}
     for lock, eid, ctx in events_for_dates(stores, dates):
         if now < lock:
@@ -140,6 +152,9 @@ def run(stores: base.Stores, dates: Sequence[str], *, replay: bool, now: datetim
         board = base.lock_board(stores, ctx)
         for hound in hounds:
             if not hound.applies_to(ctx.sport):
+                continue
+            accepts = getattr(hound, "accepts", None)
+            if accepts is not None and not accepts(ctx):
                 continue
             if (hound.id, eid) in taken_game or per_day.get((hound.id, ctx.date), 0) >= base.MAX_PER_DAY:
                 continue
