@@ -116,6 +116,23 @@ def _caps_guard(state: L.State, *, lineage_key: str) -> None:
                             f"challengers in this scope; wait for one to be decided", 409)
 
 
+def eligibility(state: L.State, lineage_key: str, *, graded: int, now: datetime) -> Optional[tuple]:
+    """Would the hound's lineage get past the record, rate and cap guards right now?
+
+    ``None`` when it would, else ``(code, message)`` of the guard that stops it. READ ONLY and pure: it
+    runs the same two guard functions ``propose_pack`` runs, in the same order, and records nothing
+    (not even the refusal event a real proposal would write). It exists so the weekly coach brief can
+    list only hounds a proposal could reach, without a second copy of the rules to drift. The switch
+    (coach off, loop paused) and the spec guards (text, knobs, repeats) are not asked here: the first
+    is the caller's whole-brief answer, the rest depend on what the coach proposes."""
+    try:
+        _record_and_rate_guard(state, graded=graded, lineage_key=lineage_key, now=now)
+        _caps_guard(state, lineage_key=lineage_key)
+    except ProposalError as exc:
+        return exc.code, str(exc)
+    return None
+
+
 def retired_recent(state: L.State, lineage_key: str, now: datetime) -> list:
     """Challengers of the lineage that LOST or never won (outcome retired) in the dedupe window."""
     window = timedelta(days=rules.DEDUPE_DAYS)
