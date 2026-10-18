@@ -1,10 +1,10 @@
 # LineHound survival dashboard
 
-Generated 2026-10-17 22:15Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-10-18 14:15Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
-| Days until 2026-10-31 | **14** |
+| Days until 2026-10-31 | **13** |
 | Current monthly burn (known + estimated infrastructure) | $78.00 |
 | Current monthly burn incl. Claude at the planning assumption | $278.00 (unknown: Claude subscription that operates the business, BALLDONTLIE) |
 | Identified monthly savings (not yet realised) | $29.00: The Odds API (100K tier): $29.00 (downgrade to the $30 20K tier; NOT confirmed, owner decision) |
@@ -151,9 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-10-17 1:30 pm PT run: ALCS Game 4 brief (Rays at Guardians, 5:08 pm PT) published 22:14Z from a packet frozen 22:12Z with both lineups and gate-phase prop prices; one model reading, 18 passes and 1 low-confidence prop take.
-- Attempt 1 was rejected by the checker (banned word in two reasons and the summary); attempt 2 was clean and is the published answer.
-- Public MLB value picks paused from the 2026-10-17 slate (config/mlb_public_card.json).
-- Production deploys now finishing (three green runs 18:01Z to 20:11Z); daily job still red on the postponed-game settlement and the tier-ladder pre-registration check.
-- Public sample stays SD at MIL 2026-10-04, the newest graded brief, until tonight's game is graded. Sends 0, replies 0, testers 0, paid 0.
+- 2026-10-18 7:00 am PT run: three NFL briefs published before the 10:00 am PT kickoffs (Steelers at Buccaneers, Ravens at Browns, Panthers at Eagles), frozen 14:13Z; one model reading each, all three markets passed in every game.
+- Checker rejections fixed by re-answers with the rejection lines only: Ravens at Browns clean on attempt 2, Panthers at Eagles on attempt 3; Steelers at Buccaneers clean on attempt 1.
+- Yesterday's ALCS Game 4 brief (Rays at Guardians) is graded; the public sample now points at it.
+- Public MLB value picks remain paused (config/mlb_public_card.json). ALCS Game 5 (2:08 pm PT) is covered by the 11:00 am PT run.
+- Daily job still red on one known check (tier-ladder pre-registration, owner decision); CI green; production healthy. Sends 0, replies 0, testers 0, paid 0.
 
