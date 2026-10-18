@@ -211,8 +211,13 @@ export function verdictRank(label) {
 }
 
 /**
- * Leaderboard order: the VERDICT first. Inside one verdict, the hound with more settled bets first (a
+ * Verdict order: the VERDICT first. Inside one verdict, the hound with more settled bets first (a
  * bigger sample is the better-supported row), then name. Units are never a sort key.
+ *
+ * THE KENNEL PAGE NO LONGER USES THIS ORDER (owner voice pass, 2026-10-18): its leaderboard is ranked by
+ * paper units (hounds-voice.js sortByUnits) and the old verdict rides beside each dog as a badge, so a dog can
+ * lead the board and still wear FEEDING THE BOOK. This helper stays for anything that still wants the
+ * referee's order.
  */
 export function sortByVerdict(hounds) {
   const betsOf = (x) => (x && x.record && isNum(x.record.bets) ? x.record.bets : 0);
