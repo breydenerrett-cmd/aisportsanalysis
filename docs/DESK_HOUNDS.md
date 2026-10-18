@@ -154,7 +154,7 @@ figure at list price when both are given, in the `desk_game` row.
 
 * The ledger path `evidence/hounds_desk_v1.jsonl` is not in `ledgers.Sources.pack_ledgers`; adding
   `("house", evidence_path("hounds_desk_v1.jsonl"))` makes the existing reader pick it up (rows are in its shape,
-  and `tests/test_desk_hounds_flow.py` runs `pack_ledger_rows` over a desk ledger to prove it).
+  and `tests/test_desk_hounds_grade.py` runs `pack_ledger_rows` over a desk ledger to prove it).
 * The definition rows' `category` is `ai-desk` or `persona`, neither in `contract.CATEGORIES`.
 * The transcript and disagreement files are under `evidence/`, which the image copies whole.
 

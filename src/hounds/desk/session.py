@@ -161,6 +161,23 @@ def plan(date: str, *, cfg: Optional[Mapping] = None, now: Optional[Callable] = 
     return result
 
 
+def plan_json(date: str, result: Mapping) -> dict:
+    """The plan as plain data, for a scheduled task that wants the list without parsing text: every job
+    with its request file, its answer file and the exact subagent prompt."""
+    return {
+        "date": date,
+        "jobs": [{"game_id": j["game"].game_id, "stage": j["stage"], "attempt": j["attempt"],
+                  "request": str(j["request"]), "answer": str(j["answer"]),
+                  "prompt": SUBAGENT_PROMPT.format(request=j["request"], answer=j["answer"])}
+                 for j in result["jobs"]],
+        "waiting_to_be_checked": [{"game_id": u["game"].game_id, "stage": u["stage"], "attempt": u["attempt"]}
+                                  for u in result["unchecked"]],
+        "deferred_games": [g.game_id for g in result["deferred"]],
+        "every_stage_final": bool(result["final"]),
+        "caps": {"games_per_run": state.MAX_GAMES_PER_RUN, "answers_per_run": state.MAX_ANSWERS_PER_RUN},
+    }
+
+
 # ---------------------------------------------------------------------------
 # check
 # ---------------------------------------------------------------------------

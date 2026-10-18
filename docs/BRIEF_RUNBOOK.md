@@ -179,7 +179,7 @@ games leave 4 re-answers). Football works the same way with `--sport nfl`.
    marks a folder that can be planned and checked but never published (use it for a dry run).
 3. Plan: `python -m src.hounds.desk session-plan --date YYYY-MM-DD`
    It writes every request that is ready and prints the jobs: one request file and one answer file each, plus the
-   exact subagent prompt. The first plan lists the four analysts and the six personas for each game (wave 1).
+   exact subagent prompt. The first plan lists the four analysts and the six personas for each game (wave 1). Add `--json` to get the same jobs as one JSON object (request, answer and prompt per job) for a scheduled task.
 4. Start one FOREGROUND Sonnet subagent per job (all jobs of a wave in one message, so they run together). Each is
    given only the prompt the plan printed: read that one request file, write that one answer file. No other file, no
    search, no hint about which way to lean. Do not edit an answer by hand.

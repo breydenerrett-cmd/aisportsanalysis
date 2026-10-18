@@ -59,6 +59,9 @@ def build_parser() -> argparse.ArgumentParser:
         q.add_argument("--date", required=True)
         if name != "session-status":
             q.add_argument("--game", default=None, help="only this game, AWAY@HOME")
+        if name == "session-plan":
+            q.add_argument("--json", action="store_true",
+                           help="print the jobs as one JSON object (for a scheduled task) instead of text")
 
     c = sub.add_parser("check", help="record and check one answer file")
     c.add_argument("--dir", required=True, help="the prepared game folder")
@@ -121,7 +124,12 @@ def main(argv: Optional[Sequence[str]] = None, *, out: Callable = print, now: Op
                                        cfg=cfg, loader=seams.get("loader"), store=seams.get("store"),
                                        rows=seams.get("rows"), now=now, out=out, root=root)
         if cmd == "session-plan":
-            session.plan(args.date, cfg=cfg, now=now, out=out, root=root, only=args.game)
+            if args.json:
+                result = session.plan(args.date, cfg=cfg, now=now, out=lambda *_: None, root=root,
+                                      only=args.game)
+                out(json.dumps(session.plan_json(args.date, result), indent=2))
+            else:
+                session.plan(args.date, cfg=cfg, now=now, out=out, root=root, only=args.game)
             return EXIT_OK
         if cmd == "session-check":
             session.check_all(args.date, now=now, out=out, root=root, only=args.game)

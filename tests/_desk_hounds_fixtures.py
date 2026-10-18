@@ -14,7 +14,7 @@ import unittest
 from pathlib import Path
 
 from src.hounds.desk import prepare as prepare_mod
-from src.hounds.desk import roles, state
+from src.hounds.desk import publish, roles, session, state
 from tests import analyst_fixtures as F
 from tests import nfl_analyst_fixtures as NF
 
@@ -133,3 +133,53 @@ def just_above_fair(packet, slot_id, selection, bump=0.04) -> float:
     from src.hounds.desk import risk
     avg = risk.board_average(opt)
     return round(max(opt["fair_probability"], risk.break_even(avg)) + bump, 4)
+
+
+def other_item(away, home, pk):
+    """A second synthetic game: the shared one under other clubs and another game pk."""
+    item = mlb_item()
+    adv = item["payload"]["advanced"]
+    adv["away_team"], adv["home_team"] = away, home
+    adv["game_id"] = f"{away}-{home}-2026-10-03-1"
+    adv["game"].update(away_team=away, home_team=home, game_pk=pk)
+    return item
+
+
+class Flow(Env):
+    """Helpers to drive a prepared game through its stages."""
+
+    def setUp(self):
+        super().setUp()
+        self.takes: dict = {}          # stage -> [take builder(packet) -> decision]
+
+    def silent(self, *_):
+        pass
+
+    def plan(self, **kw):
+        return session.plan(F.DATE, cfg=F.CFG, now=self.clock(), out=self.out.append, root=self.root, **kw)
+
+    def check_all(self):
+        return session.check_all(F.DATE, now=self.clock(), out=self.out.append, root=self.root)
+
+    def answer_for(self, game, stage):
+        role = roles.ROLES[stage]
+        if role.kind == roles.KIND_REPORT:
+            return report_answer(game.packet, stage)
+        takes = [t(game.packet) for t in self.takes.get(stage, [])]
+        return decision_answer(game.packet, stage, takes)
+
+    def drive(self, rounds=6):
+        """Plan, answer every job cleanly, check; repeat until nothing is left to ask."""
+        for _ in range(rounds):
+            result = self.plan()
+            if not result["jobs"]:
+                return result
+            for job in result["jobs"]:
+                self.write(job["answer"], self.answer_for(job["game"], job["stage"]))
+            self.check_all()
+        return self.plan()
+
+    def publish(self, **kw):
+        kw.setdefault("model", "claude-sonnet-5-5")
+        return publish.publish(self.mlb_game(), cfg=F.CFG, now=self.clock(), out=self.out.append,
+                               root=self.root, **kw)
