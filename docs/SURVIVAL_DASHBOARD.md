@@ -1,6 +1,6 @@
 # LineHound survival dashboard
 
-Generated 2026-10-18 14:15Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-10-18 15:41Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
@@ -154,6 +154,6 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 - 2026-10-18 7:00 am PT run: three NFL briefs published before the 10:00 am PT kickoffs (Steelers at Buccaneers, Ravens at Browns, Panthers at Eagles), frozen 14:13Z; one model reading each, all three markets passed in every game.
 - Checker rejections fixed by re-answers with the rejection lines only: Ravens at Browns clean on attempt 2, Panthers at Eagles on attempt 3; Steelers at Buccaneers clean on attempt 1.
 - Yesterday's ALCS Game 4 brief (Rays at Guardians) is graded; the public sample now points at it.
-- Public MLB value picks remain paused (config/mlb_public_card.json). ALCS Game 5 (2:08 pm PT) is covered by the 11:00 am PT run.
-- Daily job still red on one known check (tier-ladder pre-registration, owner decision); CI green; production healthy. Sends 0, replies 0, testers 0, paid 0.
+- Public MLB value picks remain paused (config/mlb_public_card.json). ALCS Game 5 (2:08 pm PT) and the 1:05/1:25 pm PT NFL games are covered by the 11:00 am PT run.
+- 08:40 am PT check: daily job still red on the same known check (tier-ladder pre-registration, owner decision); CI green; production healthy, deploys green, odds 0.5 h old. Sends 0, replies 0, testers 0, paid 0.
 
