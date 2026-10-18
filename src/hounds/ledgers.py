@@ -489,8 +489,9 @@ def pack_ledger_rows(path) -> tuple:
         bet.market_key = market or bet.market_key
         side = _side_of(row)
         bet.side = side or bet.side
-        if row.get("selection"):
-            bet.selection_text = str(row["selection"])
+        text = str(row.get("selection") or "").strip()
+        if text and text.lower() not in SIDES:
+            bet.selection_text = text      # a bare side is rebuilt from team names
         if row.get("line") is not None:
             bet.line = str(row["line"])
         best = _int_or_none(row.get("price_best"))

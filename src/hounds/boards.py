@@ -92,7 +92,11 @@ def _side_price(shape_side, row: dict, line) -> Optional[int]:
     if shape_side.line_field is not None and row.get(shape_side.line_field) != line:
         return None
     price = row.get(shape_side.price_field)
-    return int(price) if isinstance(price, (int, float)) else None
+    # An American price inside (-100, 100) is not a price; one in the store is a
+    # data fault and must not take the whole pass down.
+    if isinstance(price, bool) or not isinstance(price, (int, float)):
+        return None
+    return int(price) if abs(price) >= 100 else None
 
 
 def american_mean(prices: list) -> Optional[int]:

@@ -44,3 +44,6 @@ test_api_digest
 # module docstring for why that's fast enough to be a real report and still
 # too slow for the FAST tier's per-module budget here).
 test_factory_overlap_report
+# test_hounds_live builds the real hound book once under tracemalloc (~20-40s):
+# streams ~1M odds rows and ~39k decision rows. Kept in the full run on purpose.
+test_hounds_live

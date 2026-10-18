@@ -303,7 +303,7 @@ def summarize(defn: dict, bets: list, teams_of: dict, as_of: Optional[str]) -> H
         first_bet_utc=min(stamps, default=None), last_bet_utc=max(stamps, default=None),
         verified=verified, verified_share=_round(verified_share),
         checkable_share=_round(checkable_share),
-        replay=(tally(replay_graded := [b for b in replay if b.graded], ReplayBlock)
+        replay=(tally([b for b in replay if b.graded], ReplayBlock)
                 if replay else None),
         spark=[_round(x, 3) for x in spark_src[-SPARK_POINTS:]],
         source=defn.get("source", ""))
@@ -322,8 +322,8 @@ def _stream(defs_by_id: dict, all_bets: dict, teams_of: dict, refusals: list) ->
     for hid, bets in all_bets.items():
         name = defs_by_id[hid]["name"]
         for b in bets:
-            if defs_by_id[hid].get("card"):
-                continue        # the paused card is history, not a live stream
+            if defs_by_id[hid].get("card") or b.segment != "forward":
+                continue        # the paused card is history; replay is not "live"
             row = bet_row(b, teams_of.get(b.event_id))
             items.append(StreamItem(
                 **{k: getattr(row, k) for k in row.__dataclass_fields__},
