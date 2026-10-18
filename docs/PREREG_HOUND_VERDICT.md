@@ -180,9 +180,22 @@ referee reads only the forward record from 2026-08-28 onward; the sealed
 
 Paper only. Not advice.
 
-## 8. Changes
+## 8. Changes (and the one erratum)
 
 This file is frozen at its commit. A change to a threshold, a label rule or the
 measurable-bet definition is a new dated section with the reason, and the code
 constants in `src/hounds/verdict.py` must cite this file; nothing is tuned to
 make a hound's label change.
+
+### 2026-10-17 erratum (wording only, no threshold changed)
+
+Section 5's sentence beginning "The 25-unit figure is about 8 standard
+deviations of nothing" is garbled. What it meant: 25 units is the stated
+number and nothing is derived from it; for scale, the luck-only spread of a
+1,000-bet flat-stake total is about 32 units (section 4). The rule is the 25
+units written in section 5, and nothing else.
+
+Section 5's walk reads the hound's forward bets by the day they were graded;
+the CLV condition counts a bet from the day its result was graded, using the
+bet's decision date as the bootstrap cluster. Hounds with no average-price
+board use recorded-price units for the 25-unit rule (stated in section 5).

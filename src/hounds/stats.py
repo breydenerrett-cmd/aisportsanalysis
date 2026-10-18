@@ -306,6 +306,7 @@ def summarize(defn: dict, bets: list, teams_of: dict, as_of: Optional[str]) -> H
         replay=(tally([b for b in replay if b.graded], ReplayBlock)
                 if replay else None),
         spark=[_round(x, 3) for x in spark_src[-SPARK_POINTS:]],
+        spark_basis="average_price" if avg_available else "recorded_price",
         source=defn.get("source", ""))
     rows = sorted(bets, key=lambda b: (b.decision_utc or b.date or "", b.date),
                   reverse=True)

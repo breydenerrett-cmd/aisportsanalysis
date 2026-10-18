@@ -159,7 +159,7 @@ class ContractShapes(unittest.TestCase):
         "id", "name", "tagline", "kind", "category", "style", "owner_display",
         "sports", "markets", "rule_text", "status", "retired", "record", "clv",
         "verdict", "first_bet_utc", "last_bet_utc", "verified", "verified_share",
-        "checkable_share", "replay", "spark", "source"}
+        "checkable_share", "replay", "spark", "spark_basis", "source"}
 
     def test_summary_keys_and_nested_record(self):
         s = contract.to_json(contract.HoundSummary(id="x", name="X"))

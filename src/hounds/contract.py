@@ -31,7 +31,9 @@ HoundSummary
   verdict {label, sentence, units_note}, first_bet_utc, last_bet_utc,
   verified (bool), verified_share | null, checkable_share | null,
   replay {bets, wins, losses, pushes, voids, units_recorded_price} | null,
-  spark [..] (leaderboard only: last 30 cum_units_average_price points).
+  spark [..] (last 30 points of cum_units_average_price; when the average
+  price is unavailable for the hound it is the recorded-price series and
+  spark_basis says so), spark_basis, source.
 
 HoundDetail = HoundSummary + series [SeriesPoint] + bets (a page of BetRow).
 SeriesPoint {date, cum_units_average_price, cum_units_recorded_price,
@@ -42,7 +44,9 @@ BetRow {hound_id, date, game, market, selection, line, price, price_average,
   | "rule"), reason, segment ("forward" | "replay"), verified (bool | null)}.
 StreamItem = BetRow fields + hound_name + verdict ("play" | "refused_*") +
   refused (bool); result/units are null for a not-yet-graded decision.
-GraveyardEntry = HoundSummary + cause + retired_on.
+Graveyard entries are HoundSummary with status "retired" and retired
+  {date, cause} ("retired: down more than 25 units", "paused 2026-10-16: ...",
+  "retired by the owner").
 """
 
 from __future__ import annotations
@@ -147,6 +151,7 @@ class HoundSummary:
     checkable_share: Optional[float] = None
     replay: Optional[ReplayBlock] = None
     spark: Optional[list] = None
+    spark_basis: Optional[str] = None     # "average_price" | "recorded_price"
     source: str = ""
 
 
