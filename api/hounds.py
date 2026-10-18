@@ -7,6 +7,7 @@ Every payload carries ``paper_only: true`` and the not-advice line
 
     GET /hounds                      the leaderboard (running + benched hounds)
     GET /hounds/graveyard            retired hounds, each with its cause
+    GET /hounds/digest               the daily Discord post, built by code from the leaderboard
     GET /hounds/stream?page=         newest decisions across all hounds, with
                                      refusals marked as such
     GET /hounds/series?ids=a,b,c     cumulative-units series for line charts
@@ -42,7 +43,7 @@ from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query, Response
 
-from src.hounds import desk_view, stats, user_view
+from src.hounds import desk_view, digest as digest_mod, stats, user_view
 from src.hounds.contract import (
     DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, bets_payload, graveyard_payload,
     hound_payload, leaderboard_payload, paginate, series_payload,
@@ -84,6 +85,23 @@ def graveyard(response: Response):
     if warming:
         return stats.saved_payload("graveyard") or warming_payload({"hounds": []})
     return graveyard_payload(stats.graveyard(book), book.as_of)
+
+
+@router.get("/hounds/digest")
+def digest(response: Response):
+    """The daily Discord post (src/hounds/digest.py): same book, saved copy and cache headers as
+    ``/hounds``, but a caller that cannot be answered gets ``skip: true`` (HTTP 200), never ``warming_up``
+    or a 503, because the consumer is a scheduled job that posts whatever ``post`` holds. The live book
+    gives last-7-days records; the saved copy has no per-bet rows, so its post uses season records."""
+    try:
+        book, warming = _book(response)
+    except HTTPException:
+        return digest_mod.skip_payload()
+    if warming:
+        return digest_mod.digest(stats.saved_payload("leaderboard"), stats.saved_payload("graveyard"))
+    return digest_mod.digest(leaderboard_payload(stats.leaderboard(book), book.as_of),
+                             graveyard_payload(stats.graveyard(book), book.as_of),
+                             window=digest_mod.week_stats(book.hounds, book.as_of))
 
 
 @router.get("/hounds/stream")
