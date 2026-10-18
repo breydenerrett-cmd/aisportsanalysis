@@ -303,3 +303,4 @@
 {"game_id": "_gameday_refresh", "observed_utc": "2026-10-18T17:00:29.602201Z", "phase": "refresh"}
 {"game_id": "_gameday_refresh", "observed_utc": "2026-10-18T17:25:34.970432Z", "phase": "refresh"}
 {"game_id": "_gameday_refresh", "observed_utc": "2026-10-18T17:53:27.372401Z", "phase": "refresh"}
+{"game_id": "2026_06_ARI_LA", "observed_utc": "2026-10-18T18:05:02.297632Z", "phase": "t2h"}
