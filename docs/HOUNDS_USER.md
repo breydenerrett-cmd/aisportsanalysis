@@ -67,8 +67,9 @@ Postponed and made up under the same game_pk it is reported "pending makeup on <
 from that final (same policy as `src/engine/settle_slate.py`). A void follows the existing contract
 (`result["void"]`). CLV is closing average vs the bet's average price on the same line, null otherwise.
 
-Verdict (`user_settle.verdict_for`): no verdict under 30 graded bets; after that it follows the CLV
-interval. The house worker's `verdict.py` supersedes this when it lands.
+Verdict: `user_settle.verdict_for` is the engine's own early stand-in and is **not public**. The label a
+visitor sees is `src/hounds/verdict.py`'s (150 measurable bets, a date-clustered bootstrap), through
+`src/hounds/user_view.py`.
 
 ## API (`api/hounds_create.py`)
 
@@ -88,18 +89,42 @@ interval. The house worker's `verdict.py` supersedes this when it lands.
 Mount order: `api/app.py` mounts this router first so `/hounds/menu` and `/hounds/mine` are never read
 as `/hounds/{id}` by the house router.
 
-## Where the engine runs (decision needed)
+## Where the engine runs (decided 2026-10-18; reversible)
 
 The running hounds are in the app database (`data/app/app.db`, on the production volume). The capture slot
-runs in GitHub Actions and has no copy of it. To run the engine the hounds must be visible to it: either
-(a) run `scripts/hounds_run.sh` on the production machine (ledger on the volume, not in git), or
-(b) export specs into git (`python -m src.hounds.user_engine export-specs > ...`, read back with
-`run --hounds-file`) from a place that can reach the database. Either way the one line to add to
-`scripts/capture_slot.sh`, after the game map, is:
+runs in GitHub Actions and has no copy of it, so the engine does **not** run there. It runs **inside the API
+process on the machine that owns the database**: `src/hounds/user_runner.py`, started from `api/app.py`.
 
-    bash scripts/hounds_run.sh 2>&1 | sed 's/^/  /' || true
+* **Off unless `HOUNDS_ENGINE=on`** (anything else, or nothing, starts no thread). `HOUNDS_ENGINE_INTERVAL_SECONDS`
+  overrides the 900 s cadence (floor 30 s).
+* One daemon thread. Every 15 minutes: read the running hounds from the app database (none: stop, the odds
+  store is not opened), run the engine for today's Eastern slate (plus tomorrow's after 20:00 Eastern),
+  settle the last 14 days, and, if a row was written, start one background rebuild of the public stats.
+* **One at a time.** The pass holds the process-wide build gate (`src/appstate/freshness.py`), the same one
+  every page cache and the hounds' stats build take. It waits for the first cache warm-up pass. `GET /health`
+  reports it under `hounds_engine` (passes, last report, last error).
+* **Memory.** The odds store is streamed a row at a time (`user_engine.iter_rows`), only the slate's games are
+  kept and only the fields the engine reads. Measured with tracemalloc against the real local store, a
+  15-game regular-season slate peaks near 29 MB; the budget is 150 MB and `tests/test_hounds_integration.py`
+  pins it.
+* **The ledger is written beside the app database** (`data/app/hounds_user_v1.jsonl` locally; on the Fly volume
+  in production), not to `evidence/`, which is baked into the image. `HOUNDS_USER_LEDGER` overrides the path.
+  `src.hounds.user_engine.ledger_path()` is the one place the engine, the settler and the public stats all read it
+  from. It is still a hash chain: `python -m src.hounds.user_engine verify`.
+* `scripts/hounds_run.sh` still runs the same three steps by hand (against whatever `HOUNDS_USER_LEDGER`
+  or `--ledger` says) and is **not** wired into `scripts/capture_slot.sh`.
 
-It is not wired in.
+How to turn it on for staging (an owner step; nothing in the deploy config changes): see
+docs/HOUNDS_INTEGRATION.md, "Owner steps".
+
+## What is public about a user hound
+
+Everything public (record, CLV, verdict, `verified`, series, status) comes from `src/hounds/stats.py` and the
+pre-registered referee `src/hounds/verdict.py`, reading this ledger. The CLV and verdict columns that
+`user_settle` computes for itself stay in the ledger code and reach no public payload. The ledger rows carry
+the contract's field names beside the engine's own (`price_average` = the board average, `price_best` = the best
+quote recorded at lock, `book`, `book_count`, `start_utc`, `segment`, `who_decided`, `reason`; a graded row also
+`units` = units at the best price). `units_average_price` (the headline) is the same bets settled at the average.
 
 ## The Houndmaster (coach)
 

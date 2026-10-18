@@ -20,10 +20,12 @@
 #     bash scripts/hounds_run.sh 2>&1 | sed 's/^/  /' || true
 #
 # WHERE IT MUST RUN: the running hounds live in the app database (data/app/app.db, APP_DB_PATH). A
-# runner with no copy of that database sees no hounds and writes nothing. See docs/HOUNDS_USER.md,
-# "Where the engine runs", before wiring this into a GitHub Actions slot.
+# runner with no copy of that database sees no hounds and writes nothing. In production the engine runs
+# inside the API process instead (HOUNDS_ENGINE=on, src/hounds/user_runner.py; docs/HOUNDS_USER.md,
+# "Where the engine runs"); this script is the by-hand equivalent on a machine that has the database.
 #
-# Environment: HOUNDS_PY (default python3), HOUNDS_LEDGER (default evidence/hounds_user_v1.jsonl).
+# Environment: HOUNDS_PY (default python3), HOUNDS_LEDGER (default: beside the app database, as the
+# engine's ledger_path() says; HOUNDS_USER_LEDGER does the same for the python modules).
 
 set -u
 cd "$(dirname "$0")/.."

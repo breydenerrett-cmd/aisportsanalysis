@@ -13,7 +13,7 @@ running hound and every game on its menu whose LOCK TIME has arrived and whose s
   3. prices the bet at the board AVERAGE across the books (owner grading ruling 2026-09-21: picks,
      not price shopping; the average is taken in decimal odds because a mean of American prices is
      meaningless across even money), and records the best single price beside it;
-  4. appends the bet to the hash-chained ledger `evidence/hounds_user_v1.jsonl`, at most
+  4. appends the bet to the hash-chained ledger (`ledger_path()`: beside the app database), at most
      `max_bets_per_day` per hound per slate date.
 
 WHY "THE BOARD AT LOCK" AND NOT "THE BOARD WHEN THE JOB HAPPENED TO RUN"

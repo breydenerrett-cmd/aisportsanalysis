@@ -26,8 +26,9 @@ Every response carries `paper_only: true` and the not-advice line. Nothing here 
 suggests a real bet; a hound is a rule whose simulated picks are recorded and graded.
 
 Thin wiring: all logic lives in src/hounds (user_spec, user_store, user_coach), same api/ <-> src/
-split as every other pairing here. The summary shape matches the shared hound summary
-(kind "user"); the house-hound worker's contract module supersedes the local assembly when it lands.
+split as every other pairing here. A hound's summary IS the shared HoundSummary of src/hounds/contract.py
+(kind "user"), built by the public stats and the pre-registered referee (src/hounds/user_view.py), plus a
+few owner-only extras; this module computes no record, CLV or verdict of its own.
 """
 
 from __future__ import annotations

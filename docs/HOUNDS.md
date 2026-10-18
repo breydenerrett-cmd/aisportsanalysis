@@ -157,6 +157,8 @@ verdict must carry the store's `event_id` and a `lock_utc` before `start_utc`.
   describe what the code actually does.
 * **From the pack:** define it in `config/house_pack.json` and write its bets to
   `evidence/hounds_house_v1.jsonl`.
-* **A user hound:** `api/hounds_create.py` writes `evidence/hounds_user_v1.jsonl`.
+* **A user hound:** the engine (`src/hounds/user_runner.py`, in the API process) writes
+  `hounds_user_v1.jsonl` beside the app database; `api/hounds_create.py` writes only the hound's definition,
+  to the app database. docs/HOUNDS_INTEGRATION.md has the whole picture.
 
 No hound may claim an edge. The copy tests reject guarantee/profit language.
