@@ -1,22 +1,22 @@
 {
  "files": {
   "bouts.jsonl": {
-   "bytes": 1438108,
-   "newest": "2026-10-13T23:00Z",
+   "bytes": 1438267,
+   "newest": "2026-10-18T00:00Z",
    "records": 1702,
-   "sha256": "140e83cdc542e6bc9cf3d832cf3b1bf839b9852e569cf0326aa17832c36953d5"
+   "sha256": "00346dc7995591a3add120717005435193634467f5acb42672079d6ff3aafc90"
   },
   "events.jsonl": {
-   "bytes": 80269,
-   "newest": "2026-10-13T23:00Z",
+   "bytes": 80261,
+   "newest": "2026-10-17T21:00Z",
    "records": 156,
-   "sha256": "0ff8d0ce34c21473513d6d7955500e63cc9cba2e3e5d29671968876f5a9b5202"
+   "sha256": "7e0bf672efa026bba037e4c12cf01d4bf85ba6edbe46f8f6cd8528013f183fa2"
   },
   "fight_stats.jsonl": {
-   "bytes": 5605969,
-   "newest": "2026-10-13T23:00Z",
-   "records": 3254,
-   "sha256": "49c3e8ed74d746cfbd8971a6c35f5bb38cf5381186f75d30558b914b3c8acfaa"
+   "bytes": 5650468,
+   "newest": "2026-10-18T00:00Z",
+   "records": 3280,
+   "sha256": "176811f9755f399353602c6af75098b8672617fca832f16d11c71080d4f0513f"
   },
   "fighters.jsonl": {
    "bytes": 609912,
@@ -25,10 +25,10 @@
    "sha256": "f58cf30bd906b88b6ca06550a933f7afb9adce97fa39129720f2010f601639e1"
   },
   "odds.jsonl": {
-   "bytes": 6134612,
-   "newest": "2026-10-17T13:28:06Z",
-   "records": 4048,
-   "sha256": "c81a968bf86c7d67a2fe9e72cc3595dca17732b589058719bba8139e7787b889"
+   "bytes": 6143893,
+   "newest": "2026-10-18T10:26:41Z",
+   "records": 4055,
+   "sha256": "18acf49074aea04b76a0d7d0c1ad75f3110d6c3de0b9bf22d1cf2ef0d5f0b516"
   },
   "ufccom_profiles.jsonl": {
    "bytes": 1263862,
@@ -37,17 +37,17 @@
    "sha256": "f9d7f7ec8aa1bf8e6c6f556c4a324c4546537888cfff4654f15de97323098267"
   }
  },
- "generated_utc": "2026-10-17T13:28:19Z",
+ "generated_utc": "2026-10-18T10:26:52Z",
  "last_run": {
   "bouts": 81,
   "events": 7,
-  "fight_stats": 34,
+  "fight_stats": 60,
   "fighters": 0,
-  "finished_utc": "2026-10-17T13:28:18Z",
+  "finished_utc": "2026-10-18T10:26:52Z",
   "kind": "update",
-  "odds": 28,
+  "odds": 35,
   "profiles": 0,
-  "started_utc": "2026-10-17T13:26:51Z",
+  "started_utc": "2026-10-18T10:25:02Z",
   "stopped": null
  },
  "last_run_errors": 0
