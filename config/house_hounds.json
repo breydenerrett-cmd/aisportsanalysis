@@ -1,0 +1,155 @@
+{
+  "_note": "Hound definitions for systems the engine already paper-trades. Edit copy freely; ids and system_id are load-bearing. rule_text for the five signal hounds is generated from the genome by src/hounds/house.py:genome_rule_text and checked by tests/test_hounds_house.py.",
+  "hounds": [
+    {
+      "id": "beagle",
+      "name": "Beagle",
+      "tagline": "Always heads home.",
+      "kind": "baseline",
+      "category": "baseline",
+      "style": "always home",
+      "system_id": "trivial_always_home",
+      "sports": [
+        "mlb"
+      ],
+      "markets": [
+        "h2h"
+      ],
+      "rule_text": "Bets the home team on the moneyline in every game, one unit, at the best price on the board. It uses no information at all, which is the point: it is the bar a real hound has to clear."
+    },
+    {
+      "id": "basset",
+      "name": "Basset",
+      "tagline": "Always takes the under.",
+      "kind": "baseline",
+      "category": "baseline",
+      "style": "always under",
+      "system_id": "trivial_under_total",
+      "sports": [
+        "mlb"
+      ],
+      "markets": [
+        "totals"
+      ],
+      "rule_text": "Bets the under on the game total in every game, one unit, at the best price on the board. The direction was fixed in code before any board was read and never changes, so it is a baseline, not a pick."
+    },
+    {
+      "id": "collie",
+      "name": "Collie",
+      "tagline": "Follows the herd, always over.",
+      "kind": "baseline",
+      "category": "baseline",
+      "style": "market follower",
+      "system_id": "market_derived_consensus_totals_over",
+      "sports": [
+        "mlb"
+      ],
+      "markets": [
+        "totals"
+      ],
+      "rule_text": "Bets the over on the game total in every game, one unit, at the best price on the board. Its own probability is just the market's de-vigged number republished unchanged, so it claims no opinion and no edge; it measures how good the market's own number is."
+    },
+    {
+      "id": "pointer",
+      "name": "Pointer",
+      "tagline": "Locks onto the pitcher matchup.",
+      "kind": "house",
+      "category": "stats",
+      "style": "pre-registered pitching signals",
+      "system_id": "e5ff00d4b3899ccc",
+      "sports": [
+        "mlb"
+      ],
+      "markets": [
+        "h2h"
+      ],
+      "rule_text": "Bets the full-game moneyline, one unit, at most one bet a game, only once the lineups are posted, and only when at least 3 books are quoting it. It takes the best price on the board. It watches 3 pre-registered signals, each with its direction fixed before any results were known: (1) how heavily a starter leans on his one favourite pitch (the side facing the more predictable starter is favoured), firing at a median-sized gap between the two teams, counted double; (2) how ground-ball-heavy a starter is (the side facing the bigger ground-ball pitcher is hurt), firing at a median-sized gap between the two teams; (3) how far a starter's fastball sits above league pace (the side facing the harder thrower is hurt), firing at a median-sized gap between the two teams. Each signal that fires adds its weight to the side it points at; it bets a side once that total reaches 1 and at least 1 signal agrees. If both sides qualify the heavier side is bet, and a tie is no bet. It never uses the price to choose a side."
+    },
+    {
+      "id": "setter",
+      "name": "Setter",
+      "tagline": "Sets up on the starter's favourite pitch.",
+      "kind": "house",
+      "category": "stats",
+      "style": "pre-registered lineup-vs-pitch signals",
+      "system_id": "e7f41ed66082c279",
+      "sports": [
+        "mlb"
+      ],
+      "markets": [
+        "h2h"
+      ],
+      "rule_text": "Bets the full-game moneyline, one unit, at most one bet a game, only once the lineups are posted, and only when at least 3 books are quoting it. It takes the best price on the board. It watches 3 pre-registered signals, each with its direction fixed before any results were known: (1) how well a lineup has hit the single pitch the opposing starter throws most (the better-hitting side is favoured), firing at a median-sized gap between the two teams; (2) how heavily a starter leans on his one favourite pitch (the side facing the more predictable starter is favoured), firing at a median-sized gap between the two teams, counted double; (3) how top-heavy a batting order is (the more top-heavy side is favoured), firing at a median-sized gap between the two teams. Each signal that fires adds its weight to the side it points at; it bets a side once that total reaches 1 and at least 1 signal agrees. If both sides qualify the heavier side is bet, and a tie is no bet. It never uses the price to choose a side."
+    },
+    {
+      "id": "whippet",
+      "name": "Whippet",
+      "tagline": "Quick on lineup-versus-pitch mismatches.",
+      "kind": "house",
+      "category": "stats",
+      "style": "pre-registered lineup and pitcher signals",
+      "system_id": "7f7b7086400aea0b",
+      "sports": [
+        "mlb"
+      ],
+      "markets": [
+        "h2h"
+      ],
+      "rule_text": "Bets the full-game moneyline, one unit, at most one bet a game, only once the lineups are posted, and only when at least 3 books are quoting it. It takes the best price on the board. It watches 3 pre-registered signals, each with its direction fixed before any results were known: (1) how well a lineup has hit the single pitch the opposing starter throws most (the better-hitting side is favoured), firing at a median-sized gap between the two teams, counted double; (2) how ground-ball-heavy a starter is (the side facing the bigger ground-ball pitcher is hurt), firing at a 75th-percentile gap between the two teams; (3) how far a starter's fastball sits above league pace (the side facing the harder thrower is hurt), firing at a 75th-percentile gap between the two teams. Each signal that fires adds its weight to the side it points at; it bets a side once that total reaches 1 and at least 1 signal agrees. If both sides qualify the heavier side is bet, and a tie is no bet. It never uses the price to choose a side."
+    },
+    {
+      "id": "terrier",
+      "name": "Terrier",
+      "tagline": "Digs at top-heavy lineups and one-pitch starters.",
+      "kind": "house",
+      "category": "stats",
+      "style": "pre-registered lineup shape signals",
+      "system_id": "6093c1cf8a6d6c08",
+      "sports": [
+        "mlb"
+      ],
+      "markets": [
+        "h2h"
+      ],
+      "rule_text": "Bets the full-game moneyline, one unit, at most one bet a game, only once the lineups are posted, and only when at least 3 books are quoting it. It takes the best price on the board. It watches 3 pre-registered signals, each with its direction fixed before any results were known: (1) how heavily a starter leans on his one favourite pitch (the side facing the more predictable starter is favoured), firing at a median-sized gap between the two teams; (2) how ground-ball-heavy a starter is (the side facing the bigger ground-ball pitcher is hurt), firing at a 75th-percentile gap between the two teams; (3) how top-heavy a batting order is (the more top-heavy side is favoured), firing at a 75th-percentile gap between the two teams. Each signal that fires adds its weight to the side it points at; it bets a side once that total reaches 1 and at least 1 signal agrees. If both sides qualify the heavier side is bet, and a tie is no bet. It never uses the price to choose a side."
+    },
+    {
+      "id": "spaniel",
+      "name": "Spaniel",
+      "tagline": "Retrieves platoon edges.",
+      "kind": "house",
+      "category": "stats",
+      "style": "pre-registered platoon signals",
+      "system_id": "e64c85130b4664cc",
+      "sports": [
+        "mlb"
+      ],
+      "markets": [
+        "h2h"
+      ],
+      "rule_text": "Bets the full-game moneyline, one unit, at most one bet a game, only once the lineups are posted, and only when at least 3 books are quoting it. It takes the best price on the board. It watches 3 pre-registered signals, each with its direction fixed before any results were known: (1) how much of a posted lineup holds the platoon advantage over the starter it faces (the side with more of it is favoured), firing at a median-sized gap between the two teams; (2) how well a lineup has hit the single pitch the opposing starter throws most (the better-hitting side is favoured), firing at a median-sized gap between the two teams; (3) how heavily a starter leans on his one favourite pitch (the side facing the more predictable starter is favoured), firing at a 75th-percentile gap between the two teams. Each signal that fires adds its weight to the side it points at; it bets a side once that total reaches 1 and at least 1 signal agrees. If both sides qualify the heavier side is bet, and a tie is no bet. It never uses the price to choose a side."
+    },
+    {
+      "id": "old-dog",
+      "name": "The Old Dog",
+      "tagline": "Retired: the original public value card.",
+      "kind": "house",
+      "category": "stats",
+      "style": "value card (paused)",
+      "card": true,
+      "sports": [
+        "mlb"
+      ],
+      "markets": [
+        "props",
+        "h2h"
+      ],
+      "rule_text": "Each day it published a short card of baseball bets, mostly batter props with some moneylines, ranked by how far its own model's probability sat from the market's de-vigged number, and always filled the card out to three bets with labelled fills. Paused by the owner after 2026-10-16: its picks paid a premium over the market's fair number, and its forecasts carried nothing the market did not already know (docs/decisions/MLB_VALUE_PICKS_PAUSED.md).",
+      "retired": {
+        "date": "2026-10-16",
+        "cause": "paused 2026-10-16: paid a premium over the market's fair number"
+      },
+      "verdict_sentence": "The referee does not re-measure this hound: its bets are entries on the published card, not engine decisions with a stored closing board. The owner's pause cites a separate diagnosis that found closing-line value negative wherever it could be measured (docs/decisions/MLB_VALUE_PICKS_PAUSED.md)."
+    }
+  ]
+}

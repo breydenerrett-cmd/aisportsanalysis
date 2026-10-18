@@ -48,6 +48,7 @@ from api.props import router as props_router
 from api.datasvc import router as datasvc_router
 from api.ufc_fights import router as ufc_fights_router
 from api.meta import router as meta_router
+from api.hounds import router as hounds_router
 from api.postseason import router as postseason_router
 from api.web import router as web_router
 from api.odds import router as odds_router
@@ -158,6 +159,9 @@ app.include_router(ufc_fights_router)
 # same paid-demo gate as the rest of the read-only game surface.
 app.include_router(daily_router, dependencies=_authed_paid)
 app.include_router(meta_router)
+# GET /hounds[/...] -- the public paper-only race of betting strategies (api/hounds.py,
+# docs/HOUNDS.md). Public like the record: no auth, read-only, cached.
+app.include_router(hounds_router)
 # GET /postseason -- the free MLB postseason page's data. Public like /meta:
 # no auth dependency and not in the paid group (api/postseason.py).
 app.include_router(postseason_router)
