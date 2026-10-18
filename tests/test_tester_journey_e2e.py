@@ -132,9 +132,14 @@ class _Journey(unittest.TestCase):
 
         self.designated = sample_api.designated()
         self.date = (self.designated or {}).get("date", "2026-10-04")
+        # The game follows the designated sample too: the scheduled brief run moves the sample to
+        # the newest graded game (2026-10-17 TB@CLE), and a date from one game with the teams of
+        # another asks for a brief that does not exist.
+        self.away = (self.designated or {}).get("away", AWAY)
+        self.home = (self.designated or {}).get("home", HOME)
 
         def schedule(date):
-            return [{"game_pk": 990777, "date": date, "away_team": AWAY, "home_team": HOME,
+            return [{"game_pk": 990777, "date": date, "away_team": self.away, "home_team": self.home,
                      "venue": "American Family Field", "start_time_utc": f"{date}T20:10:00Z"}]
 
         patches = [
@@ -373,8 +378,8 @@ class TesterSignedIn(_Journey):
     def test_the_game_surface_and_the_brief_answer_with_the_token_and_401_without(self):
         from src.analyst import PILOT_LABEL
         token = self.grant("a@example.test")["token"]
-        paths = [f"/games/{self.date}", f"/game/{self.date}/{AWAY}/{HOME}",
-                 f"/analyst/{self.date}/{AWAY}/{HOME}"]
+        paths = [f"/games/{self.date}", f"/game/{self.date}/{self.away}/{self.home}",
+                 f"/analyst/{self.date}/{self.away}/{self.home}"]
         for path in paths:
             self.assertEqual(self.call("GET", path, token=token)[0], 200, path)
             status, body = self.call("GET", path)
@@ -401,7 +406,7 @@ class Activation(_Journey):
         self.assertFalse(row["activated"])
         self.assertEqual(self.activation()["activated"], 0)
         self.call("GET", f"/games/{self.date}", token=token)
-        self.call("GET", f"/game/{self.date}/{AWAY}/{HOME}", token=token)
+        self.call("GET", f"/game/{self.date}/{self.away}/{self.home}", token=token)
         row = self.row_for(uid)
         self.assertTrue(row["activated"])
         self.assertEqual(set(row["features"]), {"slate", "matchup"})
@@ -437,8 +442,8 @@ class DayEight(_Journey):
         grant = self.grant("a@example.test")
         token = grant["token"]
         past = self.expire(grant["user_id"])
-        for path in (f"/games/{self.date}", f"/game/{self.date}/{AWAY}/{HOME}",
-                     f"/analyst/{self.date}/{AWAY}/{HOME}"):
+        for path in (f"/games/{self.date}", f"/game/{self.date}/{self.away}/{self.home}",
+                     f"/analyst/{self.date}/{self.away}/{self.home}"):
             status, body = self.call("GET", path, token=token)
             self.assertEqual(status, 401, path)
             self.assertEqual(body["detail"]["error"], "tester_access_expired")
