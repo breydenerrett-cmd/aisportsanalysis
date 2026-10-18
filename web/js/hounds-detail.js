@@ -23,6 +23,7 @@ import {
   AVERAGE_PRICE_WORDS, BEST_PRICE_WORDS, isWarming, retryWhileWarming, stopWarmingRetry, WARMING_FALLBACK_TEXT,
 } from "./hounds-core.js";
 import { renderLineChart } from "./hounds-chart.js";
+import { bootDesk } from "./hounds-desk.js";
 
 export const PAGE_SIZE = 20;
 const AVG_COLOR = "#00E0FF";
@@ -84,7 +85,7 @@ function renderHeader(hound) {
       h("span", { class: "hd-badge", text: hound.kind === "user"
         ? (hound.owner_display ? `Built by ${hound.owner_display}` : "Builder hound") : "House hound" }),
       h("span", { class: `hd-status hd-status--${hound.status || "unknown"}`, "data-hook": "hound-status",
-        text: { running: "Running", benched: "Benched", retired: "Retired" }[hound.status] || "Status not reported" }),
+        text: { running: "Running", benched: "Benched", retired: "Retired", not_started: "Not started" }[hound.status] || "Status not reported" }),
       verified,
     ]),
   ]));
@@ -374,6 +375,9 @@ export async function boot() {
   renderRule(hound, `build-a-hound.html?from=${encodeURIComponent(state.id)}`);
   const notice = noticeLine(hound);
   if (notice) q("hound-notice").textContent = notice;
+
+  // the AI desk's hounds also show how they argued their newest game (every other hound never sees this)
+  bootDesk(hound);
 
   // bets: the first page rides with the detail payload; the rest are the server's pages
   if (hound.bets && typeof hound.bets === "object") { state.bets = betsPageOf(hound.bets); renderBets(); } else { loadBets(1); }

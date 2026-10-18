@@ -906,5 +906,186 @@ class TheRealHousePack(unittest.TestCase):
         self.assertEqual((sample.price, sample.price_average), (row["price_best"], row["price_average"]))
 
 
+# ---- the AI desk -----------------------------------------------------------------------------------------
+
+import hashlib
+
+from src.hounds import desk_view
+from tests import hounds_web_fixtures as WF
+
+DESK_CFG = {"version": 1, "ledger": "evidence/hounds_desk_v1.jsonl", "hounds": [
+    {"id": "desk_ai", "name": "The Desk", "tagline": "Argues in the open.", "category": "ai-desk",
+     "style": "AI desk", "rule_text": "Four AI analysts, a bull, a bear and a head. One model; paper only.",
+     "sports": ["mlb"], "markets": ["moneyline"], "who_decided": "model"},
+    {"id": "desk_sharp", "name": "The Sharp", "tagline": "Price only.", "category": "persona",
+     "style": "persona: price only", "rule_text": "An AI persona that ignores narratives.",
+     "sports": ["mlb"], "markets": ["moneyline"], "who_decided": "model"}]}
+
+
+def desk_world(root: Path, publish: bool):
+    """A desk config, and (if ``publish``) a ledger and a game folder in the shapes src/hounds/desk/ writes."""
+    (root / "config").mkdir(parents=True, exist_ok=True)
+    cfg = root / "config" / "desk_hounds.json"
+    cfg.write_text(json.dumps(DESK_CFG), encoding="utf-8")
+    ledger = root / "evidence" / "hounds_desk_v1.jsonl"
+    folder = root / "evidence" / "hounds_desk"
+    if publish:
+        game = "2026-10-24_NYY-BOS"
+        (folder / game).mkdir(parents=True)
+        t_bytes = (json.dumps(WF.desk_transcript(game), indent=2) + "\n").encode("utf-8")
+        (folder / game / "transcript.json").write_bytes(t_bytes)
+        (folder / game / "disagreement.json").write_bytes((json.dumps(WF.desk_disagreement()) + "\n").encode("utf-8"))
+        bet = {"kind": "hound_bet", "hound_id": "desk_ai", "bet_id": f"desk:desk_ai:{game}:ml:Yankees",
+               "date": "2026-10-24", "sport": "mlb", "event_id": "E-DESK", "game_id": game,
+               "away": "New York Yankees", "home": "Boston Red Sox", "start_utc": "2026-10-24T23:10:00Z",
+               "lock_utc": "2026-10-24T19:00:00Z", "published_utc": "2026-10-24T19:45:00Z", "slot_id": "ml",
+               "market": "moneyline", "selection": "Yankees", "side": "away", "line": None, "price_best": -115,
+               "price_average": -120, "price": -115, "book": "bookB", "book_count": 5, "consensus_fair": 0.53,
+               "probability": 0.56, "reason": "Stated probability 0.56 against the books' de-vigged 0.53.",
+               "who_decided": "model", "segment": "forward"}
+        graded = {"kind": "hound_graded", "hound_id": "desk_ai", "bet_id": bet["bet_id"], "event_id": "E-DESK",
+                  "game_id": game, "date": "2026-10-24", "market": "moneyline", "selection": "Yankees",
+                  "line": None, "segment": "forward", "result": "win", "units_average_price": 0.8333,
+                  "units_best_price": 0.8696, "units": 0.8696}
+        game_row = {"kind": "desk_game", "game_id": game, "date": "2026-10-24", "sport": "mlb",
+                    "away": "New York Yankees", "home": "Boston Red Sox", "start_utc": "2026-10-24T23:10:00Z",
+                    "published_utc": "2026-10-24T19:45:00Z",
+                    "hounds": {"desk_ai": {"takes": 1, "attempts": 1, "decision_readable": True},
+                               "desk_sharp": {"takes": 1, "attempts": 1, "decision_readable": True}},
+                    "transcript": f"{game}/transcript.json",
+                    "transcript_sha256": hashlib.sha256(t_bytes).hexdigest(),
+                    "disagreement": f"{game}/disagreement.json",
+                    "disagreement_counts": {"split": 1, "agree": 0, "lone": 0, "none": 1}, "segment": "forward"}
+        defs = [{"kind": "hound", "hound_id": h["id"], "name": h["name"], "category": h["category"],
+                 "style": h["style"], "rule_text": h["rule_text"], "segment": "forward"} for h in DESK_CFG["hounds"]]
+        write_jsonl(ledger, defs + [bet, graded, game_row])
+    return cfg, ledger, folder
+
+
+class TheDeskLedgerAndFiles(unittest.TestCase):
+    """The desk is a fourth source for the leaderboard (its ledger and config) and for the hound page (its
+    per-game transcript and disagreement files)."""
+
+    def test_before_the_first_publish_the_desk_hounds_are_not_started_and_keep_their_rule_text(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cfg, ledger, _folder = desk_world(Path(tmp), publish=False)
+            world = World(Path(tmp))
+            src = dataclasses.replace(world.sources(), house_desk_cfg=cfg,
+                                      pack_ledgers=(("house", ledger),), user_hounds=None, user_stamp=None)
+            book = stats.build(src)                                  # the ledger file does not exist
+            self.assertFalse(ledger.exists())
+        for hid, cat in (("desk_ai", "ai-desk"), ("desk_sharp", "persona")):
+            s = book.hounds[hid].summary
+            self.assertEqual((s.status, s.category, s.record.bets), ("not_started", cat, 0))
+            self.assertEqual(s.verdict.label, "TOO EARLY")
+            self.assertTrue(s.rule_text.endswith("paper only.") or "AI persona" in s.rule_text)
+        self.assertIn("desk_ai", [h.id for h in stats.leaderboard(book)])      # listed, not hidden
+
+    def test_after_a_publish_the_desks_bet_is_a_forward_model_bet_with_both_prices(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cfg, ledger, _folder = desk_world(Path(tmp), publish=True)
+            src = dataclasses.replace(World(Path(tmp)).sources(), house_desk_cfg=cfg,
+                                      pack_ledgers=(("house", ledger),), user_hounds=None, user_stamp=None)
+            book = stats.build(src)
+        d = book.hounds["desk_ai"]
+        s = d.summary
+        self.assertEqual((s.status, s.record.bets, s.record.wins), ("running", 1, 1))
+        self.assertEqual(s.record.units_recorded_price, 0.8696)
+        self.assertEqual(s.record.units_average_price, round(100 / 120, 4))
+        self.assertEqual(d.bets[0].who_decided, "model")
+        self.assertEqual((d.bets[0].price, d.bets[0].price_average, d.bets[0].segment), (-115, -120, "forward"))
+        self.assertEqual(len(d.bets), 1)                          # the desk_game row (no hound_id) is not a bet
+        self.assertEqual(book.hounds["desk_sharp"].summary.status, "not_started")   # no bet of its own yet
+
+    def test_the_default_sources_name_the_desk_config_and_ledger(self):
+        src = Sources.default()
+        self.assertTrue(str(src.house_desk_cfg).endswith("desk_hounds.json"))
+        self.assertTrue(any(str(p).endswith("hounds_desk_v1.jsonl") for _k, p in src.pack_ledgers))
+        self.assertTrue(any(str(p).endswith("desk_hounds.json") for p, *_ in src.fingerprint()
+                            if isinstance(p, str)))
+
+    def test_the_games_for_a_hound_are_listed_newest_first_and_empty_before_a_publish(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            _cfg, ledger, folder = desk_world(Path(tmp), publish=True)
+            out = desk_view.games_for("desk_ai", ledger=ledger)
+            self.assertTrue(out["started"])
+            self.assertEqual([g["game_id"] for g in out["games"]], ["2026-10-24_NYY-BOS"])
+            self.assertEqual((out["games"][0]["takes"], out["games"][0]["has_disagreement"]), (1, True))
+            self.assertEqual(desk_view.games_for("desk_fader", ledger=ledger)["games"], [])
+            nothing = desk_view.games_for("desk_ai", ledger=Path(tmp) / "none.jsonl")
+            self.assertEqual((nothing["started"], nothing["games"]), (False, []))
+            self.assertIs(nothing["paper_only"], True)
+
+    def test_a_game_payload_carries_both_files_and_says_whether_the_checksum_matches(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            _cfg, ledger, folder = desk_world(Path(tmp), publish=True)
+            ok = desk_view.game_payload("desk_ai", "2026-10-24_NYY-BOS", ledger=ledger, folder=folder)
+            self.assertIs(ok["transcript_sha256_ok"], True)
+            self.assertEqual(ok["transcript"]["model"], "a-test-model")
+            self.assertEqual(ok["disagreement"]["counts"]["split"], 1)
+            (folder / "2026-10-24_NYY-BOS" / "transcript.json").write_bytes(b'{"changed": true}\n')
+            bad = desk_view.game_payload("desk_ai", "2026-10-24_NYY-BOS", ledger=ledger, folder=folder)
+            self.assertIs(bad["transcript_sha256_ok"], False)
+            self.assertEqual(bad["transcript"], {"changed": True})   # shown, and labelled by the checksum flag
+            (folder / "2026-10-24_NYY-BOS" / "disagreement.json").unlink()
+            gone = desk_view.game_payload("desk_ai", "2026-10-24_NYY-BOS", ledger=ledger, folder=folder)
+            self.assertIsNone(gone["disagreement"])
+            self.assertIn("not there", gone["disagreement_problem"])
+
+    def test_a_game_id_is_a_ledger_lookup_never_a_path(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            _cfg, ledger, folder = desk_world(Path(tmp), publish=True)
+            secret = Path(tmp) / "secret.json"
+            secret.write_text('{"x": 1}', encoding="utf-8")
+            for evil in ("../secret.json", "..", "../../hounds_desk_v1.jsonl", "2026-10-24_NYY-BOS/../../secret"):
+                self.assertIsNone(desk_view.game_payload("desk_ai", evil, ledger=ledger, folder=folder), evil)
+            # even a ledger row naming a file outside the folder is refused
+            rows = [json.loads(line) for line in ledger.read_text(encoding="utf-8").splitlines()]
+            for r in rows:
+                if r.get("kind") == "desk_game":
+                    r["transcript"] = "../../secret.json"
+            write_jsonl(ledger, rows)
+            out = desk_view.game_payload("desk_ai", "2026-10-24_NYY-BOS", ledger=ledger, folder=folder)
+            self.assertIsNone(out["transcript"])
+            self.assertIn("outside the desk's evidence folder", out["transcript_problem"])
+
+    def test_the_desk_hound_ids_come_from_the_config(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cfg, _l, _f = desk_world(Path(tmp), publish=False)
+            self.assertEqual(desk_view.desk_hound_ids(cfg), ["desk_ai", "desk_sharp"])
+            self.assertEqual(desk_view.desk_hound_ids(Path(tmp) / "nope.json"), [])
+
+
+@unittest.skipUnless(HAS_FASTAPI, "fastapi not installed")
+class TheDeskRoutes(unittest.TestCase):
+    def test_the_two_desk_routes_read_the_ledger_and_404_for_other_hounds(self):
+        from api.app import app
+        client = TestClient(app)
+        with tempfile.TemporaryDirectory() as tmp:
+            cfg, ledger, folder = desk_world(Path(tmp), publish=True)
+            real_ids, real_games, real_game = desk_view.desk_hound_ids, desk_view.games_for, desk_view.game_payload
+            ids = lambda config=None: real_ids(cfg)                          # noqa: E731
+            with mock.patch.object(desk_view, "desk_hound_ids", ids), \
+                    mock.patch.object(desk_view, "games_for", lambda h: real_games(h, ledger=ledger)), \
+                    mock.patch.object(desk_view, "game_payload",
+                                      lambda h, g: real_game(h, g, ledger=ledger, folder=folder)):
+                listing = client.get("/hounds/desk_ai/desk")
+                self.assertEqual(listing.status_code, 200, listing.text)
+                self.assertEqual(listing.json()["games"][0]["game_id"], "2026-10-24_NYY-BOS")
+                game = client.get("/hounds/desk_sharp/desk/2026-10-24_NYY-BOS")
+                self.assertEqual(game.status_code, 200)
+                self.assertIs(game.json()["paper_only"], True)
+                self.assertEqual(client.get("/hounds/closer/desk").status_code, 404)        # not a desk hound
+                self.assertEqual(client.get("/hounds/desk_ai/desk/nope").status_code, 404)
+                self.assertEqual(client.get("/hounds/desk_ai/desk/..%2Fsecret").status_code, 404)
+
+    def test_route_order_the_desk_paths_do_not_shadow_or_get_shadowed(self):
+        from api.app import app
+        self.assertEqual(handler_for(app, "/hounds/desk_ai/desk"), "desk_games")
+        self.assertEqual(handler_for(app, "/hounds/desk_ai/desk/g1"), "desk_game")
+        self.assertEqual(handler_for(app, "/hounds/desk_ai/bets"), "hound_bets")
+        self.assertEqual(handler_for(app, "/hounds/desk_ai"), "hound")
+
+
 if __name__ == "__main__":
     unittest.main()

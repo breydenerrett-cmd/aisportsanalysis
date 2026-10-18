@@ -158,7 +158,7 @@ function toggle(id) {
 // ---- leaderboard ----------------------------------------------------------------------------------
 
 function statusLine(hound) {
-  const word = { running: "Running", benched: "Benched", retired: "Retired" }[hound.status] || "Status not reported";
+  const word = { running: "Running", benched: "Benched", retired: "Retired", not_started: "Not started" }[hound.status] || "Status not reported";
   return h("span", { class: `hd-status hd-status--${hound.status || "unknown"}`, text: word });
 }
 

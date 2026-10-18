@@ -272,10 +272,12 @@ export const AVATAR_COLORS = [
 export const CATEGORY_COLORS = {
   stats: "#6E9BFF", history: "#FFB020", market: "#00E0FF", math: "#B58CFF", intangibles: "#FF8AD8",
   esoteric: "#F2E34B", random: "#FF7A7A", mixed: "#2ED47A", simple: "#7FD6C2", baseline: "#A3A9B5",
+  "ai-desk": "#8FE9FA", persona: "#F29BD5",
 };
 export const CATEGORY_LABELS = {
   stats: "Stats", history: "History", market: "Market", math: "Math", intangibles: "Intangibles",
   esoteric: "Esoteric", random: "Random", mixed: "Mixed", simple: "Simple", baseline: "Baseline",
+  "ai-desk": "AI desk", persona: "Persona",
 };
 /** Hounds in these categories carry a small tag, in the same type size as their name, and are never hidden. */
 export const FUN_CATEGORIES = ["esoteric", "random"];

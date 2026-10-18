@@ -129,7 +129,8 @@ class Sources:
     card_v2: Optional[Path]      # evidence/cards_v2.jsonl
     house_hounds_cfg: Path
     house_pack_cfg: Path
-    pack_ledgers: tuple = ()       # (("house", path), ("user", path)) -- kind, path
+    pack_ledgers: tuple = ()
+    house_desk_cfg: Optional[Path] = None      # config/desk_hounds.json (the AI desk and the personas)       # (("house", path), ("user", path)) -- kind, path
     # User hounds' names, rules and owners live in the app database, not in a ledger.
     # ``user_hounds()`` -> definitions (src.hounds.user_defs.definitions); ``user_stamp()`` ->
     # a cheap tuple folded into the cache key. Both None for a world with no app database.
@@ -149,8 +150,12 @@ class Sources:
             card_v2=evidence_path("cards_v2.jsonl"),
             house_hounds_cfg=root / "config" / "house_hounds.json",
             house_pack_cfg=root / "config" / "house_pack.json",
+            house_desk_cfg=root / "config" / "desk_hounds.json",
             pack_ledgers=(
                 ("house", evidence_path("hounds_house_v1.jsonl")),
+                # The AI desk's ledger. It does not exist until the first publish; a missing file is
+                # an empty ledger (jsonl_rows), and the desk hounds read "not started".
+                ("house", evidence_path("hounds_desk_v1.jsonl")),
                 # The user ledger sits beside the app database (user_engine.ledger_path),
                 # outside the repository: the engine that writes it runs in the API process.
                 ("user", Path(user_engine.ledger_path())),
@@ -167,6 +172,8 @@ class Sources:
         from src.pipeline import store_archive
         paths = [self.decisions, self.wagers, self.multibook,
                  self.house_hounds_cfg, self.house_pack_cfg]
+        if self.house_desk_cfg is not None:
+            paths.append(self.house_desk_cfg)
         paths += [p for _, p in self.pack_ledgers]
         if self.card_v2 is not None:
             paths.append(self.card_v2)

@@ -255,6 +255,137 @@ def routes(forward: bool = True, bets_n: int = 45) -> dict:
     return r
 
 
+# ---- the AI desk (src/hounds/desk/publish.py's shapes; the desk code itself is not in every checkout) ----
+
+DESK_HOUNDS = [("desk_ai", "The Desk", "ai-desk", "AI desk: analysts, bull and bear, desk head"),
+               ("desk_sharp", "The Sharp", "persona", "persona: price only"),
+               ("desk_square", "The Square", "persona", "persona: control"),
+               ("desk_fader", "The Fader", "persona", "persona: contrarian")]
+DESK_RULE = ("Four AI analysts each write a checked report from the same frozen data. A bull and a bear then argue "
+             "from those reports, and a desk head may take at most two bets, or pass the whole game. One model reading, "
+             "unproven; paper only.")
+
+
+def desk_summary(hid="desk_ai", started=False):
+    """A desk hound's HoundSummary. ``started=False`` is the state before the first publish."""
+    _id, name, cat, style = next(x for x in DESK_HOUNDS if x[0] == hid)
+    rec = Record(bets=2, wins=1, losses=1, units_recorded_price=0.1, units_average_price=0.0) if started else Record()
+    return HoundSummary(
+        id=hid, name=name, tagline="Argues every game in the open.", kind="house", category=cat, style=style,
+        sports=["mlb", "nfl"], markets=["moneyline", "total"], rule_text=DESK_RULE,
+        status="running" if started else "not_started", record=rec, clv=None,
+        verdict=VerdictBlock(label="TOO EARLY", sentence=VERDICT_SENTENCES["TOO EARLY"], units_note=vd.units_note(rec.bets)),
+        first_bet_utc="2026-10-24T20:00:00Z" if started else None, last_bet_utc="2026-10-24T20:00:00Z" if started else None,
+        verified=False, replay=None, spark=[], spark_basis="average_price", source="desk_cfg")
+
+
+def _reason(claim, n=1):
+    return {"claim": claim, "evidence": [{"path": f"markets.ml.options[{i}].price", "value": -115} for i in range(n)], "derived": []}
+
+
+def _report_stage(stage, title, text, claims, attempts=1):
+    attempt = {"attempt": attempts, "utc": "2026-10-24T19:30:00Z", "sha256": "ab" * 32, "kept": len(claims), "struck": 0,
+               "rejected": 0, "summary_status": "ok", "rejection_lines": [],
+               "response": {"text": text, "text_derived": [], "findings": [_reason(c, 2) for c in claims], "focus": []}}
+    return {"stage": stage, "title": title, "kind": "report", "state": "final", "final_attempt": attempts,
+            "request_sha256": "cd" * 32, "prompt_hash": "ef" * 32, "attempts": [attempt]}
+
+
+def _decision_stage(stage, title, summary, takes, attempts=1):
+    decisions = [{"slot_id": t["slot_id"], "selection": t["selection"], "verdict": "TAKE", "price": t["price"],
+                  "book": t["book"], "probability": t["probability"], "reasons": [_reason(t["claim"])],
+                  "case_against": _reason("The bullpen is rested."), "what_would_change_it": "A late scratch."}
+                 for t in takes]
+    attempt = {"attempt": attempts, "utc": "2026-10-24T19:40:00Z", "sha256": "12" * 32, "kept": len(takes), "struck": 0,
+               "rejected": 0, "summary_status": "ok", "rejection_lines": [],
+               "response": {"summary": summary, "summary_derived": [], "decisions": decisions}}
+    return {"stage": stage, "title": title, "kind": "decision", "state": "final", "final_attempt": attempts,
+            "request_sha256": "34" * 32, "prompt_hash": "56" * 32, "attempts": [attempt]}
+
+
+DESK_TAKE = {"slot_id": "ml", "selection": "Yankees", "price": -115, "book": "bookB", "probability": 0.56,
+             "claim": "The Yankees' starter has the better run prevention."}
+
+
+def desk_transcript(game_id="2026-10-24_NYY-BOS"):
+    """transcript.json in publish.py's shape: seven stages of the Desk, one persona stage, per-hound results."""
+    return {
+        "game_id": game_id, "sport": "mlb", "date": "2026-10-24", "away": "New York Yankees", "home": "Boston Red Sox",
+        "start_utc": "2026-10-24T23:10:00Z", "built_at": "2026-10-24T19:00:00Z", "published_utc": "2026-10-24T19:45:00Z",
+        "packet_hash": "99" * 32, "prompt_version": "desk_prompt_v1", "model": "a-test-model",
+        "label": "Written by AI models from the data on this page. Unproven. Paper only, not advice.",
+        "stages": [
+            _report_stage("analyst_stats", "the stats analyst", "Run prevention favours the road side.", ["Starter ERA is lower."]),
+            _report_stage("analyst_situation", "the situation and news analyst", "A normal travel day.", ["No rest gap."]),
+            _report_stage("analyst_market", "the market analyst", "The price has not moved.", ["Five books agree."]),
+            _report_stage("analyst_injury", "the injuries and lineups analyst", "No late news.", ["The lineup is posted."]),
+            _report_stage("bull", "the bull researcher", "The Yankees are the better side at the price.", ["Better run prevention."]),
+            _report_stage("bear", "the bear researcher", "The price already knows this.", ["The market is efficient here."]),
+            _decision_stage("head", "the desk head", "One take, at the best quoted price.", [DESK_TAKE]),
+            _decision_stage("persona_sharp", "the Sharp", "Price beats the books' number.", [DESK_TAKE]),
+        ],
+        "hounds": {
+            "desk_ai": {"takes": [{k: DESK_TAKE[k] for k in ("slot_id", "selection", "price", "book", "probability")}],
+                        "struck": [{"slot_id": "tot", "selection": "Over 8.5", "rule": "price_cap",
+                                    "reason": "the price is -210, -200 or worse"}]},
+            "desk_sharp": {"takes": [{k: DESK_TAKE[k] for k in ("slot_id", "selection", "price", "book", "probability")}],
+                           "struck": []},
+            "desk_square": None,
+            "desk_fader": {"takes": [], "struck": []},
+        },
+        "disagreement": None,
+    }
+
+
+def desk_disagreement():
+    """disagreement.json in disagree.build's shape."""
+    take = {"decision": "TAKE", "selection": "Yankees", "price": -115, "book": "bookB", "probability": 0.56}
+    return {"slots": [
+        {"slot_id": "ml", "label": "Moneyline", "market": "h2h", "status": "split", "takers": 2, "hounds": {
+            "desk_ai": take, "desk_sharp": take, "desk_square": {"decision": "unanswered"},
+            "desk_fader": {"decision": "TAKE", "selection": "Red Sox", "price": 105, "book": "bookA", "probability": 0.5}}},
+        {"slot_id": "tot", "label": "Game total", "market": "totals", "status": "none", "takers": 0, "hounds": {
+            "desk_ai": {"decision": "PASS", "struck": [{"selection": "Over 8.5", "rule": "price_cap",
+                                                          "reason": "the price is -210"}]},
+            "desk_sharp": {"decision": "PASS"}, "desk_square": {"decision": "unanswered"}, "desk_fader": {"decision": "PASS"}}},
+    ], "counts": {"split": 1, "agree": 0, "lone": 0, "none": 1},
+        "note": "The Desk and the six personas are one model reading the same data under different instructions. "
+                "Agreement among them is not confirmation, and a split is not a signal. Paper only."}
+
+
+def desk_game_payload(hid, transcript=None, disagreement=None, **over):
+    t = desk_transcript() if transcript is None else transcript
+    out = {"hound_id": hid, "game_id": "2026-10-24_NYY-BOS", "date": "2026-10-24", "away": "New York Yankees",
+           "home": "Boston Red Sox", "start_utc": "2026-10-24T23:10:00Z", "published_utc": "2026-10-24T19:45:00Z",
+           "transcript": t, "transcript_problem": None, "transcript_sha256_ok": True,
+           "disagreement": desk_disagreement() if disagreement is None else disagreement, "disagreement_problem": None,
+           "paper_only": True, "not_advice": user_spec.NOT_ADVICE}
+    out.update(over)
+    return out
+
+
+def desk_games_payload(hid, games=1):
+    items = [{"game_id": "2026-10-24_NYY-BOS", "date": "2026-10-24", "sport": "mlb", "away": "New York Yankees",
+              "home": "Boston Red Sox", "start_utc": "2026-10-24T23:10:00Z", "published_utc": "2026-10-24T19:45:00Z",
+              "takes": 1, "attempts": 1, "decision_readable": True, "has_disagreement": True,
+              "disagreement_counts": {"split": 1, "agree": 0, "lone": 0, "none": 1}},
+             {"game_id": "2026-10-23_SEA-HOU", "date": "2026-10-23", "sport": "mlb", "away": "Seattle Mariners",
+              "home": "Houston Astros", "start_utc": "2026-10-23T23:10:00Z", "published_utc": "2026-10-23T19:45:00Z",
+              "takes": 0, "attempts": 1, "decision_readable": True, "has_disagreement": False,
+              "disagreement_counts": None}][:games]
+    return {"hound_id": hid, "started": bool(items), "games": items, "paper_only": True, "not_advice": user_spec.NOT_ADVICE}
+
+
+def desk_routes(hid="desk_ai", started=True, games=1, **over):
+    """Routes for the hound page of a desk hound."""
+    detail = contract.hound_payload(desk_summary(hid, started), [], paginate([], 1, 25), AS_OF)
+    r = {f"/hounds/{hid}": (200, detail), f"/hounds/{hid}/desk": (200, desk_games_payload(hid, games if started else 0))}
+    if started:
+        r[f"/hounds/{hid}/desk/2026-10-24_NYY-BOS"] = (200, desk_game_payload(hid))
+    r.update(over)
+    return r
+
+
 def respond(path_and_query: str, forward: bool = True):
     path, _, query = path_and_query.partition("?")
     params = dict(p.split("=", 1) for p in query.split("&") if "=" in p)

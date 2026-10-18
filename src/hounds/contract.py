@@ -25,7 +25,7 @@ HoundSummary
   ("stats" | "history" | "market" | "math" | "intangibles" | "esoteric" |
   "random" | "simple" | "mixed" | "baseline"), style (a short label), owner_display (user hounds only),
   sports [..], markets [..], rule_text (plain English, copyable),
-  status ("running" | "benched" | "retired"), retired {date, cause} | null,
+  status ("running" | "benched" | "retired" | "not_started"), retired {date, cause} | null,
   record {bets, wins, losses, pushes, voids, units_recorded_price,
   units_average_price | null}, clv {n, mean_pts, ci_low, ci_high} | null,
   verdict {label, sentence, units_note}, first_bet_utc, last_bet_utc,
@@ -64,8 +64,17 @@ KINDS = (KIND_HOUSE, KIND_USER, KIND_BASELINE)
 # "intangibles" and "simple" are the house pack's own (config/house_pack.json) and the pages already
 # knew them; they were missing here, so the reader quietly filed 4 pack hounds under "mixed" (found
 # 2026-10-18 reading the real pack config).
+#
+# "ai-desk" and "persona" are the AI desk's (config/desk_hounds.json, docs/PREREG_DESK_HOUNDS.md): the
+# desk hound argued by analysts, a bull, a bear and a head, and the personas that read the same data
+# under one instruction each.
 CATEGORIES = ("stats", "history", "market", "math", "intangibles", "esoteric", "random",
-              "simple", "mixed", "baseline")
+              "simple", "mixed", "baseline", "ai-desk", "persona")
+
+# A hound that has never made a bet of any kind (the desk before its first publish) is "not_started":
+# not benched (nothing has stopped), not running (nothing has run). Only a definition that says it is
+# forward-only ever gets it (house.definitions marks the desk's); a user hound uses its store status.
+STATUS_NOT_STARTED = "not_started"
 
 WHO_DECIDED = ("code", "model", "rule")
 SEGMENTS = ("forward", "replay")

@@ -131,14 +131,20 @@ def _norm_category(value, kind) -> str:
     return "baseline" if kind == KIND_BASELINE else "mixed"
 
 
-def definitions(house_cfg_path, pack_cfg_path) -> list:
-    """Hound definitions from the two config files, in file order.
+def definitions(house_cfg_path, pack_cfg_path, desk_cfg_path=None) -> list:
+    """Hound definitions from the config files, in file order.
 
     A later entry with an id already seen is ignored (the house file wins), so
-    the pack file can never silently shadow a house hound.
+    the pack file can never silently shadow a house hound. The desk's file
+    (config/desk_hounds.json) is the third; its hounds are forward-only (a
+    model has no replay), so one with no bet at all reads "not started" with
+    its rule text, rather than "benched".
     """
     out, seen = [], set()
-    for source, path in (("house_cfg", house_cfg_path), ("pack_cfg", pack_cfg_path)):
+    sources = [("house_cfg", house_cfg_path), ("pack_cfg", pack_cfg_path)]
+    if desk_cfg_path is not None:
+        sources.append(("desk_cfg", desk_cfg_path))
+    for source, path in sources:
         for entry in _entries(load_json(path)):
             hid = str(entry["id"])
             if hid in seen:
@@ -163,6 +169,7 @@ def definitions(house_cfg_path, pack_cfg_path) -> list:
                 "retired": entry.get("retired"),
                 "verdict_sentence": entry.get("verdict_sentence"),
                 "source": source,
+                "not_started_when_empty": source == "desk_cfg",
             })
     return out
 

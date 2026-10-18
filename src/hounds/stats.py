@@ -39,7 +39,7 @@ from src.core import odds as odds_math
 from src.hounds import boards, house, ledgers, verdict as vd
 from src.hounds.contract import (
     BetRow, ClvBlock, HoundSummary, KIND_BASELINE, Record, ReplayBlock,
-    RetiredBlock, SeriesPoint, SPARK_POINTS, StreamItem, VerdictBlock)
+    RetiredBlock, SeriesPoint, SPARK_POINTS, STATUS_NOT_STARTED, StreamItem, VerdictBlock)
 from src.hounds.ledgers import Bet, Sources
 from src.report import clv
 
@@ -282,7 +282,9 @@ def summarize(defn: dict, bets: list, teams_of: dict, as_of: Optional[str]) -> H
     stamps = [b.decision_utc or b.date for b in forward if (b.decision_utc or b.date)]
     last_day = max((str(s)[:10] for s in stamps), default=None)
     status = vd.status_for(last_day, as_of, retired is not None)
-    if (not forward and retired is None
+    if not bets and retired is None and defn.get("not_started_when_empty"):
+        status = STATUS_NOT_STARTED       # the desk before its first publish: nothing has run, nothing has stopped
+    elif (not forward and retired is None
             and defn.get("status_hint") in (vd.STATUS_RUNNING, vd.STATUS_BENCHED)):
         # A user hound with no bet yet: the referee's bench rule counts days since the last bet
         # and there is none, so it would read "benched" the minute it is created. The store
@@ -356,7 +358,7 @@ def _stream(defs_by_id: dict, all_bets: dict, teams_of: dict, refusals: list) ->
 
 def build(src: Sources) -> HoundBook:
     started = time.time()
-    defs = house.definitions(src.house_hounds_cfg, src.house_pack_cfg)
+    defs = house.definitions(src.house_hounds_cfg, src.house_pack_cfg, src.house_desk_cfg)
     defs_by_id = {d["id"]: d for d in defs}
 
     engine_map = house.engine_system_map(defs)
@@ -557,7 +559,7 @@ def get_book_nowait(src: Optional[Sources] = None) -> tuple:
 def _order_key(data: HoundData):
     s = data.summary
     return (s.kind == KIND_BASELINE,
-            {"running": 0, "benched": 1, "retired": 2}.get(s.status, 3),
+            {"running": 0, "benched": 1, "not_started": 2, "retired": 3}.get(s.status, 4),
             vd.LABEL_RANK.get(s.verdict.label, 9),
             -(s.clv.n if s.clv else 0), s.name)
 

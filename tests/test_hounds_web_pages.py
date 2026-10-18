@@ -698,6 +698,177 @@ class TheChartsRenderEmptyAndOnePointSeriesHonestly(unittest.TestCase):
 # ---------------------------------------------------------------------------------------------------
 
 @unittest.skipUnless(HAS_NODE, "node not installed")
+class TheDeskSections(unittest.TestCase):
+    """"How the desk argued" (transcript.json) and "Where they disagree" (disagreement.json) on web/hound.html,
+    for the hounds in the categories ai-desk and persona only."""
+
+    def page(self, hid, routes_, **kw):
+        return run_page("hound", routes=routes_, search=f"?id={hid}", **kw)
+
+    def test_the_desk_hound_shows_analysts_bull_bear_and_head_from_the_transcript(self):
+        out = self.page("desk_ai", F.desk_routes("desk_ai"), queries=[
+            q("shown", "[data-hook='hound-desk-section']", "hidden"),
+            q("title", "#desk-h"),
+            q("analysts", "[data-hook='desk-analyst']", "texts"),
+            q("analyst_stages", "[data-hook='desk-analyst']", "attrs", attr="data-stage"),
+            q("bull", "[data-hook='desk-bull']"), q("bear", "[data-hook='desk-bear']"),
+            q("head", "[data-hook='desk-head']"),
+            q("takes", "[data-hook='desk-takes'] tbody tr", "texts"),
+            q("struck", "[data-hook='desk-struck'] li", "texts"),
+            q("kept", "[data-hook='desk-kept']"),
+            q("label", "[data-hook='desk-label']"), q("line", "[data-hook='desk-game-line']"),
+            q("hash", "[data-hook='desk-hash-ok']"),
+            q("dis_hidden", "[data-hook='hound-disagree-section']", "hidden"),
+            q("cat", ".hd-chip-cat")])
+        f = out["final"]
+        self.assertFalse(f["shown"])
+        self.assertEqual(f["title"], "How the desk argued")
+        self.assertEqual(f["analyst_stages"], ["analyst_stats", "analyst_situation", "analyst_market", "analyst_injury"])
+        self.assertIn("The stats analyst", f["analysts"][0])
+        self.assertIn("Run prevention favours the road side.", f["analysts"][0])
+        self.assertIn("Starter ERA is lower.", f["analysts"][0])
+        self.assertIn("2 pieces of evidence", f["analysts"][0])
+        self.assertIn("The Yankees are the better side at the price.", f["bull"])
+        self.assertIn("The price already knows this.", f["bear"])
+        self.assertIn("One take, at the best quoted price.", f["head"])
+        self.assertEqual(len(f["takes"]), 1)
+        self.assertIn("Yankees", f["takes"][0])
+        self.assertIn("-115 (bookB)", f["takes"][0])
+        self.assertIn("56.0%", f["takes"][0])
+        self.assertIn("A late scratch.", f["takes"][0])
+        self.assertEqual(f["struck"], ["Struck (Over 8.5) by price_cap: the price is -210, -200 or worse"])
+        self.assertIn("1 take stands", f["kept"])
+        self.assertIn("Written by AI models", f["label"])
+        self.assertIn("New York Yankees at Boston Red Sox", f["line"])
+        self.assertIn("a-test-model", f["line"])
+        self.assertIn("matches the checksum", f["hash"])
+        self.assertTrue(f["dis_hidden"])                    # the disagreement table is for the personas
+        self.assertEqual(f["cat"], "AI desk")
+
+    def test_a_persona_shows_its_own_call_and_the_table_of_where_they_disagree(self):
+        out = self.page("desk_sharp", F.desk_routes("desk_sharp"), queries=[
+            q("persona", "[data-hook='desk-persona']"), q("analysts", "[data-hook='desk-analyst']", "count"),
+            q("head", "[data-hook='desk-head']", "count"),
+            q("dis_hidden", "[data-hook='hound-disagree-section']", "hidden"), q("dis_title", "#disagree-h"),
+            q("heads", "[data-hook='disagree-table'] thead th", "texts"),
+            q("rows", "[data-hook='disagree-table'] tbody tr", "attrs", attr="data-status"),
+            q("ml", "[data-hook='disagree-table'] tbody tr[data-slot='ml']"),
+            q("tot", "[data-hook='disagree-table'] tbody tr[data-slot='tot']"),
+            q("mine", "[data-hook='disagree-table'] td.hd-desk__me", "count"),
+            q("cells", "[data-hook='disagree-table'] tbody tr[data-slot='ml'] td", "attrs", attr="data-cell"),
+            q("counts", "[data-hook='disagree-counts']"), q("note", "[data-hook='disagree-note']")])
+        f = out["final"]
+        self.assertIn("Price beats the books' number.", f["persona"])
+        self.assertEqual((f["analysts"], f["head"]), (0, 0))        # a persona has no analysts, bull, bear or head
+        self.assertFalse(f["dis_hidden"])
+        self.assertEqual(f["dis_title"], "Where they disagree")
+        self.assertEqual(f["heads"], ["Market", "Status", "Desk", "Sharp", "Square", "Fader"])
+        self.assertEqual(f["rows"], ["split", "none"])
+        self.assertIn("Split: opposite sides taken", f["ml"])
+        self.assertIn("Yankees -115", f["ml"])
+        self.assertIn("Red Sox +105", f["ml"])
+        self.assertIn("not answered", f["ml"])                      # an unanswered hound is not a pass
+        self.assertIn("struck by price_cap: the price is -210", f["tot"])
+        self.assertEqual(f["cells"][2:], ["take", "take", "unanswered", "take"])
+        self.assertEqual(f["mine"], 2)                              # this hound's column is marked in both rows
+        self.assertEqual(f["counts"], "Markets: 1 split, 0 agree, 0 lone, 1 none.")
+        self.assertIn("Agreement among them is not confirmation", f["note"])
+
+    def test_before_the_first_publish_both_sections_say_so_and_invent_nothing(self):
+        out = self.page("desk_sharp", F.desk_routes("desk_sharp", started=False), queries=[
+            q("status", "[data-hook='hound-status']"), q("none", "[data-hook='desk-none']"),
+            q("dis", "[data-hook='disagree-none']"), q("rule", "[data-hook='rule-text']"),
+            q("picker", "[data-hook='desk-game']", "count"), q("table", "[data-hook='disagree-table']", "count"),
+            q("sample", "[data-hook='hound-verdict']")])
+        f = out["final"]
+        self.assertEqual(f["status"], "Not started")
+        self.assertIn("The desk has not published a game yet", f["none"])
+        self.assertIn("No game has been published yet", f["dis"])
+        self.assertIn("One model reading, unproven", f["rule"])      # the rule text is there before any game
+        self.assertEqual((f["picker"], f["table"]), (0, 0))
+        self.assertIn("Sample size: 0 settled forward bets", f["sample"])
+
+    def test_a_stage_missing_or_unreadable_in_the_transcript_is_said_not_filled_in(self):
+        t = F.desk_transcript()
+        t["stages"] = [s for s in t["stages"] if s["stage"] != "bull"]
+        for s in t["stages"]:
+            if s["stage"] == "analyst_market":
+                s["attempts"][0]["response"] = None                 # an answer that could not be read
+            if s["stage"] == "head":
+                s["attempts"][0]["response"]["decisions"] = []      # the head passed
+        t["hounds"]["desk_ai"] = {"takes": [], "struck": []}
+        r = F.desk_routes("desk_ai", **{"/hounds/desk_ai/desk/2026-10-24_NYY-BOS": (200, F.desk_game_payload("desk_ai", transcript=t))})
+        out = self.page("desk_ai", r, queries=[
+            q("bull", "[data-hook='desk-bull']"), q("market", "[data-hook='desk-analyst'][data-stage='analyst_market']"),
+            q("passed", "[data-hook='desk-passed']"), q("takes", "[data-hook='desk-takes']", "count"),
+            q("bear", "[data-hook='desk-bear']")])
+        f = out["final"]
+        self.assertIn("This stage is not in this game's transcript.", f["bull"])
+        self.assertIn("could not be read, so nothing is shown for it", f["market"])
+        self.assertIn("It took nothing: a pass is a decision.", f["passed"])
+        self.assertEqual(f["takes"], 0)
+        self.assertIn("The price already knows this.", f["bear"])    # the other stages are unaffected
+
+    def test_no_transcript_no_disagreement_file_and_a_changed_checksum_are_each_named(self):
+        r = F.desk_routes("desk_sharp", **{"/hounds/desk_sharp/desk/2026-10-24_NYY-BOS": (200, F.desk_game_payload(
+            "desk_sharp", disagreement=None, transcript_sha256_ok=False))})
+        payload = r["/hounds/desk_sharp/desk/2026-10-24_NYY-BOS"][1]
+        payload["disagreement"] = None
+        payload["disagreement_problem"] = "the named file is not there"
+        out = self.page("desk_sharp", r, queries=[
+            q("bad", "[data-hook='desk-hash-bad']"), q("dis", "[data-hook='disagree-missing']"),
+            q("ok", "[data-hook='desk-hash-ok']", "count")])
+        self.assertIn("does not match the checksum the ledger recorded", out["final"]["bad"])
+        self.assertIn("There is no disagreement table for this game: the named file is not there", out["final"]["dis"])
+        self.assertEqual(out["final"]["ok"], 0)
+        gone = F.desk_routes("desk_ai", **{"/hounds/desk_ai/desk/2026-10-24_NYY-BOS": (200, F.desk_game_payload(
+            "desk_ai", transcript_problem="the named file is not there"))})
+        gone["/hounds/desk_ai/desk/2026-10-24_NYY-BOS"][1]["transcript"] = None
+        out2 = self.page("desk_ai", gone, queries=[q("t", "[data-hook='transcript-missing']")])
+        self.assertIn("transcript is not available: the named file is not there", out2["final"]["t"])
+
+    def test_an_empty_slot_list_and_a_down_server_have_honest_states(self):
+        r = F.desk_routes("desk_sharp", **{"/hounds/desk_sharp/desk/2026-10-24_NYY-BOS": (200, F.desk_game_payload(
+            "desk_sharp", disagreement={"slots": [], "counts": {}, "note": ""}))})
+        out = self.page("desk_sharp", r, queries=[q("e", "[data-hook='disagree-empty']")])
+        self.assertIn("lists no market slots", out["final"]["e"])
+        down = self.page("desk_ai", F.desk_routes("desk_ai"), down=["/hounds/desk_ai/desk"], queries=[
+            q("s", "[data-hook='hound-desk'] [data-hook='section-state']")])
+        self.assertIn("Could not reach the desk's games", down["final"]["s"])
+
+    def test_a_picker_lists_the_games_newest_first_and_loads_the_one_chosen(self):
+        r = F.desk_routes("desk_ai", games=2)
+        second = F.desk_transcript("2026-10-23_SEA-HOU")
+        second.update(away="Seattle Mariners", home="Houston Astros", date="2026-10-23")
+        r["/hounds/desk_ai/desk/2026-10-23_SEA-HOU"] = (200, F.desk_game_payload(
+            "desk_ai", transcript=second, game_id="2026-10-23_SEA-HOU", away="Seattle Mariners", home="Houston Astros"))
+        out = self.page("desk_ai", r, captureInitial=[q("line", "[data-hook='desk-game-line']")],
+                        queries=[q("options", "[data-hook='desk-game'] option", "texts"),
+                                 q("line", "[data-hook='desk-game-line']")],
+                        actions=[dict(do="set", sel="[data-hook='desk-game']", value="2026-10-23_SEA-HOU"),
+                                 dict(do="check", sel="[data-hook='desk-game']", checked=True, wait=120)])
+        self.assertEqual(out["final"]["options"], ["Oct 24: New York Yankees at Boston Red Sox, 1 take",
+                                                   "Oct 23: Seattle Mariners at Houston Astros, 0 takes"])
+        self.assertIn("New York Yankees at Boston Red Sox", out["captures"]["initial"]["line"])
+        self.assertIn("Seattle Mariners at Houston Astros", out["final"]["line"])
+
+    def test_an_ordinary_hound_never_sees_the_desk_sections_or_asks_for_them(self):
+        out = run_page("hound", routes=routes(), search="?id=closer", queries=[
+            q("desk", "[data-hook='hound-desk-section']", "hidden"), q("dis", "[data-hook='hound-disagree-section']", "hidden")])
+        self.assertTrue(out["final"]["desk"] and out["final"]["dis"])
+        self.assertFalse([g for g in out["gets"] if "/desk" in g])
+
+    def test_the_two_new_categories_have_a_label_a_colour_and_are_in_the_contract(self):
+        for cat, label in (("ai-desk", "AI desk"), ("persona", "Persona")):
+            self.assertIn(cat, contract.CATEGORIES)
+        core = (WEB / "js" / "hounds-core.js").read_text(encoding="utf-8")
+        self.assertIn('"ai-desk": "AI desk"', core)
+        self.assertIn('persona: "Persona"', core)
+        self.assertRegex(core, r'"ai-desk": "#[0-9A-Fa-f]{6}"')
+        self.assertRegex(core, r'persona: "#[0-9A-Fa-f]{6}"')
+
+
+@unittest.skipUnless(HAS_NODE, "node not installed")
 class TheFirstVisitWhileTheServerWarmsUp(unittest.TestCase):
     """MISALIGNMENT 5. The first request after a start gets ``warming_up: true`` (HTTP 200) while the
     stats are first built. The pages say so, show nothing made up, and ask again."""
