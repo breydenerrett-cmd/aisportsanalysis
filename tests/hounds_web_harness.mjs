@@ -7,7 +7,12 @@
 // visibility / wait) before reporting what is on the page.
 import fs from "node:fs";
 
-const scenario = JSON.parse(process.env.SCENARIO);
+// The scenario comes in a file (SCENARIO_FILE): Linux refuses an environment variable over
+// 128 KB (E2BIG, "Argument list too long"), and a fixture race is bigger than that.
+import { readFileSync as __readScenario } from "node:fs";
+const scenario = JSON.parse(process.env.SCENARIO_FILE
+  ? __readScenario(process.env.SCENARIO_FILE, "utf8")
+  : process.env.SCENARIO);
 
 // ---- fake DOM -------------------------------------------------------------------------------------
 const VOID = new Set(["meta", "link", "br", "img", "input", "hr", "area", "base", "col", "source", "wbr"]);

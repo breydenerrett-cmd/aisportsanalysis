@@ -6,6 +6,7 @@ Shared by tests/test_hounds_web_*.py. See tests/hounds_web_harness.mjs for the s
 from __future__ import annotations
 
 import atexit
+import itertools
 import json
 import os
 import shutil
@@ -24,6 +25,7 @@ PAGES = {
 }
 
 _tmp = None
+_counter = itertools.count()
 
 
 def _workdir() -> Path:
@@ -43,7 +45,10 @@ def run_page(page: str, **scenario) -> dict:
     work = _workdir()
     scenario["html"] = str(WEB / html)
     scenario["module"] = (work / module).as_uri()
-    env = dict(os.environ, SCENARIO=json.dumps(scenario))
+    # In a file, not the environment: Linux caps one environment variable at 128 KB.
+    scenario_file = work / f"scenario_{os.getpid()}_{next(_counter)}.json"
+    scenario_file.write_text(json.dumps(scenario), encoding="utf-8")
+    env = dict(os.environ, SCENARIO_FILE=str(scenario_file))
     proc = subprocess.run(["node", "hounds_web_harness.mjs"], cwd=work, env=env, capture_output=True, text=True,
                           encoding="utf-8", timeout=90)
     lines = [ln for ln in proc.stdout.splitlines() if ln.startswith("@@")]
