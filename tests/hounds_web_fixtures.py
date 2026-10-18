@@ -51,6 +51,54 @@ _FWD = {row[0]: row[6] for row in _HOUNDS}
 AS_OF = "2026-10-24"
 BASIS = contract.BASIS
 
+# The voice (docs/VOICE.md). Three fixture dogs carry a persona; the rest do not, which is how a builder's dog
+# (and an older saved copy of the race) arrives, so the pages' fallbacks are exercised too.
+PERSONAS = {
+    "closer": {"bio": "Grabs the price before it moves and tells everyone about it.", "catchphrase": "I was here first.",
+               "vibe": "degen", "verb": "grabbed the early number on",
+               "roasts": ["Closer roast 1.", "Closer roast 2.", "Closer roast 3.", "Closer roast 4.", "Closer roast 5."],
+               "brags": ["Closer brag 1.", "Closer brag 2.", "Closer brag 3.", "Closer brag 4.", "Closer brag 5."],
+               "epitaph": "Got there first. Stayed too long."},
+    "almanac": {"bio": "Remembers every old matchup, wrongly.", "catchphrase": "In 1998, this exact thing happened.",
+                "vibe": "nerd", "verb": "cited the archives and took",
+                "roasts": ["Almanac roast 1.", "Almanac roast 2.", "Almanac roast 3.", "Almanac roast 4.", "Almanac roast 5."],
+                "brags": ["Almanac brag 1.", "Almanac brag 2.", "Almanac brag 3.", "Almanac brag 4.", "Almanac brag 5."],
+                "epitaph": "Lived in the past."},
+    "moon-dog": {"bio": "Howls at the full moon and bets on it.", "catchphrase": "The moon has a say.",
+                 "vibe": "psychic", "verb": "howled at the moon and took",
+                 "roasts": ["Moon roast 1.", "Moon roast 2.", "Moon roast 3.", "Moon roast 4.", "Moon roast 5."],
+                 "brags": ["Moon brag 1.", "Moon brag 2.", "Moon brag 3.", "Moon brag 4.", "Moon brag 5."],
+                 "epitaph": "Howled until the moon stopped answering."},
+}
+
+#: how each fixture dog's last settled day went, so the page picks a roast, a brag, or says nothing
+_LAST_DAY = {"closer": "loss", "steamer": "win", "almanac": "flat", "poisson": "loss", "moon-dog": "win"}
+
+
+def form_for(hid: str, bets: int):
+    """A fixture ``form`` block (stats.compute_form's shape). Deterministic, made up, never a real result."""
+    if bets <= 0:
+        return None
+    rnd = _lcg(hid + "form")
+    kind = "W" if next(rnd) > 0.5 else "L"
+    length = 1 + int(next(rnd) * 4)
+    last7_bets = min(bets, 3 + int(next(rnd) * 4))
+    wins = int(last7_bets * (0.3 + next(rnd) * 0.5))
+    units = round((next(rnd) - 0.45) * 6, 2)
+    result = _LAST_DAY.get(hid, "win" if units > 0 else "loss")
+    return {
+        "streak": {"kind": kind, "length": length},
+        "last7": {"bets": last7_bets, "wins": wins, "losses": last7_bets - wins, "units": units},
+        "last_day": {"date": "2026-10-24", "bets": 2, "wins": 1 if result != "loss" else 0,
+                     "losses": 1 if result != "win" else 0,
+                     "units": {"win": 0.91, "loss": -1.0, "flat": 0.0}[result], "result": result},
+        "best_bet": {"date": "2026-10-21", "game": "Yankees at Red Sox", "selection": "Yankees to win", "price": 135,
+                     "units": 1.35, "market_fair": 0.42},
+        "worst_beat": {"date": "2026-10-22", "game": "Mariners at Astros", "selection": "Astros to win", "price": -140,
+                       "units": -1.0, "market_fair": 0.58},
+        "units_basis": "average_price",
+    }
+
 
 def _lcg(seed: str):
     state = sum(ord(c) * (i + 3) for i, c in enumerate(seed)) % 2147483647 or 1
@@ -145,7 +193,7 @@ def summaries(forward: bool = True) -> list:
             replay=ReplayBlock(bets=rbets, wins=replay.wins, losses=replay.losses, pushes=replay.pushes,
                                voids=0, units_recorded_price=replay.units_recorded_price),
             spark=[p.cum_units_average_price for p in series][-30:], spark_basis="average_price",
-            source="fixture"))
+            source="fixture", persona=PERSONAS.get(hid), form=form_for(hid, fb)))
     return out
 
 
@@ -173,7 +221,7 @@ def stream() -> dict:
         StreamItem(hound_id="coin-flip", hound_name="Coin Flip", date="2026-10-24", game="Padres at Dodgers", market="total",
                    selection="Over 8.5", line="8.5", price=100, price_average=-108, book="bookA", who_decided="model",
                    reason="Seeded coin flip: over. A control.", segment="forward", verdict="play", refused=False,
-                   decided_utc="2026-10-24T22:12:00Z"),
+                   result="loss", units=-1.0, decided_utc="2026-10-24T22:12:00Z"),
     ]
     return contract.stream_payload(paginate(items, 1, 25), AS_OF)
 
@@ -187,7 +235,18 @@ def graveyard() -> dict:
         record=Record(bets=60, wins=28, losses=31, pushes=1, voids=0, units_recorded_price=-3.1, units_average_price=-4.0),
         clv=None, verdict=VerdictBlock(label="TOO EARLY", sentence=VERDICT_SENTENCES["TOO EARLY"], units_note=vd.units_note(60)),
         last_bet_utc="2026-10-20T20:00:00Z", spark=[], spark_basis="average_price", source="fixture")
-    return contract.graveyard_payload([s], AS_OF)
+    # a house dog with a persona, put down by the 25-unit rule: its tombstone carries its own epitaph
+    t = HoundSummary(
+        id="slowpoke", name="Slowpoke", tagline="Took the under, every night.", kind="house", category="baseline",
+        style="always under", sports=["mlb"], markets=["total"], rule_text=_rule_text("under"), status="retired",
+        retired=RetiredBlock(date="2026-10-14", cause="retired: down more than 25 units"),
+        record=Record(bets=468, wins=205, losses=263, pushes=0, voids=0, units_recorded_price=-35.0, units_average_price=-36.2),
+        clv=None, verdict=VerdictBlock(label="PAYING THE VIG", sentence=VERDICT_SENTENCES["PAYING THE VIG"],
+                                       units_note=vd.units_note(468)),
+        last_bet_utc="2026-10-14T20:00:00Z", spark=[], spark_basis="average_price", source="fixture",
+        persona={"bio": "Always under.", "catchphrase": "Under. Always under.", "vibe": "grinder", "verb": "took",
+                 "roasts": ["a"] * 5, "brags": ["b"] * 5, "epitaph": "Went under one last time."})
+    return contract.graveyard_payload([s, t], AS_OF)
 
 
 def menu() -> dict:

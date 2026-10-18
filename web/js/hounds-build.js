@@ -28,11 +28,37 @@
 import { apiGet, apiPost, getToken } from "./api.js";
 import {
   h, clearNode, optionOf, buildSpec, specToForm, previewRuleSentence, describeError, houndHref, isNum,
-  americanDecimal, NAME_MAX, TAGLINE_MAX, HOUND_LIMIT,
+  americanDecimal, avatarSvg, NAME_MAX, TAGLINE_MAX, HOUND_LIMIT,
 } from "./hounds-core.js";
 
 export const PAPER_NOTICE =
-  "Paper only. Your hound never places a real bet. The -200-or-worse cap is always on.";
+  "Paper bets only. Your dog never places a real bet, and it never takes a price of -200 or worse.";
+
+/**
+ * Side rules, said the way bettors say them. Keyed on the menu's own `value`; the menu's plain label stays
+ * beside each one as a hint, so nothing about what the rule does is hidden behind the joke. A value this
+ * table does not know keeps the menu's label. `vibe` is the accessory the preview dog wears.
+ */
+export const SIDE_PLAY = {
+  favourite: { label: "Always the chalk", vibe: "grinder" },
+  underdog: { label: "Dogs only", vibe: "degen" },
+  home: { label: "Home cooking", vibe: "grinder" },
+  away: { label: "Road warriors", vibe: "chaos" },
+  over: { label: "Overs machine", vibe: "chaos" },
+  under: { label: "Unders only", vibe: "nerd" },
+  market_moved_toward: { label: "Tail the steam", vibe: "degen" },
+  market_moved_away: { label: "Fade the steam", vibe: "chaos" },
+};
+
+/** The menu's side rules, with the playful label first and the menu's own label kept as a hint. */
+export function playfulSides(sides) {
+  return (sides || []).map((o) => {
+    const opt = optionOf(o);
+    const play = SIDE_PLAY[opt.id];
+    return play ? Object.assign({}, o, { value: opt.id, label: play.label, hint: opt.label, markets: opt.markets || o.markets })
+      : o;
+  });
+}
 
 const q = (hook) => document.querySelector(`[data-hook='${hook}']`);
 
@@ -56,9 +82,13 @@ function labelled(labelText, control, hint, id) {
 }
 
 function checkGroup(legend, options, type, name) {
-  const items = options.map(optionOf).map((o) => {
+  const items = options.map((raw) => {
+    const o = optionOf(raw);
+    const hint = raw && typeof raw === "object" && raw.hint ? String(raw.hint) : "";
     const input = h("input", { type, name, value: o.id, id: `hd-${name}-${o.id}` });
-    const node = h("label", { class: "hd-check", for: `hd-${name}-${o.id}` }, [input, h("span", { text: o.label })]);
+    const node = h("label", { class: "hd-check", for: `hd-${name}-${o.id}` }, [input, h("span", {}, [
+      h("span", { class: "hd-check__label", text: o.label }),
+      hint ? h("span", { class: "hd-check__hint", text: hint }) : null])]);
     return { id: o.id, markets: o.markets, input, node };
   });
   return { items, node: h("fieldset", { class: "hd-fieldset", "data-field": name }, [h("legend", { text: legend }),
@@ -90,7 +120,7 @@ export function buildForm(menu) {
   f.nameCount = nameCount; f.tagCount = tagCount;
   f.sports = checkGroup("Sports", menu.sports || [], "checkbox", "sport");
   f.markets = checkGroup("Markets", menu.markets || [], "checkbox", "market");
-  f.sides = checkGroup("Side rule", menu.side_rules || [], "radio", "side");
+  f.sides = checkGroup("Pick your style", playfulSides(menu.side_rules || []), "radio", "side");
   const lowest = menu.price_min && isNum(menu.price_min.lowest) ? menu.price_min.lowest : undefined;
   const highest = menu.price_max && isNum(menu.price_max.highest) ? menu.price_max.highest : undefined;
   f.price_min = numberInput({ min: lowest, max: highest }, { "data-hook": "f-price-min", list: "hd-presets-min", placeholder: "e.g. -150" });
@@ -105,21 +135,21 @@ export function buildForm(menu) {
   if (choices.length) f.lock.value = String(choices[0]);
   const bounds = (b, label) => (b && isNum(b.min) ? `${label} ${b.min} to ${b.max}.` : undefined);
   const form = h("form", { class: "hd-form", "data-hook": "build-form", novalidate: "" }, [
-    h("div", { class: "hd-field" }, [h("label", { for: "hd-name", text: "Name" }),
+    h("div", { class: "hd-field" }, [h("label", { for: "hd-name", text: "Name your dog" }),
       (f.name.setAttribute("id", "hd-name"), f.name),
       h("p", { class: "hd-fine" }, [`${menu.name && isNum(menu.name.min) ? `${menu.name.min} to ` : "Up to "}${nameMax} characters. `, nameCount])]),
-    h("div", { class: "hd-field" }, [h("label", { for: "hd-tagline", text: "Tagline" }),
+    h("div", { class: "hd-field" }, [h("label", { for: "hd-tagline", text: "One-line bio" }),
       (f.tagline.setAttribute("id", "hd-tagline"), f.tagline),
-      h("p", { class: "hd-fine" }, [`Up to ${taglineMax} characters. Describe the idea, not a promise. `, tagCount])]),
+      h("p", { class: "hd-fine" }, [`Up to ${taglineMax} characters. Say what it does, not what it'll win. `, tagCount])]),
     f.sports.node, f.markets.node, f.sides.node,
-    h("fieldset", { class: "hd-fieldset" }, [h("legend", { text: "Price band (American odds)" }), h("div", { class: "hd-pair" }, [
+    h("fieldset", { class: "hd-fieldset" }, [h("legend", { text: "Price range (American odds)" }), h("div", { class: "hd-pair" }, [
       labelled("Shortest price", f.price_min, menu.price_cap_note || undefined),
       labelled("Longest price", f.price_max)]),
       presetList("hd-presets-min", menu.price_min && menu.price_min.presets),
       presetList("hd-presets-max", menu.price_max && menu.price_max.presets)]),
     labelled("Books quoting the price (at least)", f.min_books, bounds(menu.min_books, "Menu allows")),
-    labelled("Most bets per day", f.max_bets, bounds(menu.max_bets_per_day, "Menu allows")),
-    labelled("Lock the price", f.lock),
+    labelled("Most bets a day", f.max_bets, bounds(menu.max_bets_per_day, "Menu allows")),
+    labelled("When it bets", f.lock),
   ]);
   return { form, fields: f };
 }
@@ -176,7 +206,7 @@ export function validate(values, menu) {
   const nameMax = menu.name && isNum(menu.name.max) ? menu.name.max : NAME_MAX;
   const nameMin = menu.name && isNum(menu.name.min) ? menu.name.min : 1;
   const taglineMax = menu.tagline && isNum(menu.tagline.max) ? menu.tagline.max : TAGLINE_MAX;
-  if (!values.name) problems.push("Give your hound a name.");
+  if (!values.name) problems.push("Give your dog a name.");
   else if (values.name.length < nameMin) problems.push(`The name needs at least ${nameMin} characters.`);
   if (values.name.length > nameMax) problems.push(`The name is over ${nameMax} characters.`);
   if (values.tagline.length > taglineMax) problems.push(`The tagline is over ${taglineMax} characters.`);
@@ -223,7 +253,7 @@ export function errorText(err) {
     }
     return d.message || d.error || JSON.stringify(d);
   }
-  return err && err.message ? err.message : "The server refused this hound.";
+  return err && err.message ? err.message : "The server refused this dog.";
 }
 
 /** POST /hounds answers `{hound: {id, ...}}`. */
@@ -237,8 +267,8 @@ function renderGate() {
   clearNode(gate);
   if (!ctx.signedIn) {
     gate.hidden = false; gate.removeAttribute("hidden");
-    gate.appendChild(h("p", {}, [h("strong", { text: "Sign in to create a hound. " }),
-      "You can fill in the form and watch the rule take shape; creating it needs an account."]));
+    gate.appendChild(h("p", {}, [h("strong", { text: "Sign in to send your dog in. " }),
+      "You can fill in the form and watch your dog take shape; sending it in needs an account."]));
     gate.appendChild(h("p", { class: "hd-gate__links" }, [
       h("a", { class: "btn btn--primary", href: "index.html#/signup", "data-hook": "gate-early-access", text: "Request early access" }),
       " ", h("a", { class: "btn btn--ghost", href: "index.html#/signin", "data-hook": "gate-signin", text: "I have an account: sign in" })]));
@@ -252,8 +282,8 @@ function renderLimit() {
   clearNode(box);
   const used = ctx.mine === null ? null : ctx.mine;
   box.appendChild(h("p", { "data-hook": "limit-text", text: used === null
-    ? `Each person can have up to ${ctx.limit} hounds.`
-    : `You have ${used} of ${ctx.limit} hounds.` }));
+    ? `Up to ${ctx.limit} dogs a person.`
+    : `You have ${used} of ${ctx.limit} dogs.` }));
 }
 
 function atLimit() {
@@ -264,10 +294,34 @@ function refreshSubmit() {
   const btn = q("build-submit");
   if (!btn) return;
   let reason = "";
-  if (!ctx.signedIn) reason = "Sign in to create your hound";
-  else if (atLimit()) reason = `You already have ${ctx.limit} hounds`;
-  btn.textContent = reason || "Create my hound";
+  if (!ctx.signedIn) reason = "Sign in to send your dog in";
+  else if (atLimit()) reason = `You already have ${ctx.limit} dogs`;
+  btn.textContent = reason || "Send my dog in";
   if (reason || ctx.busy) btn.setAttribute("disabled", ""); else btn.removeAttribute("disabled");
+}
+
+/** The live card: the dog's portrait, name and bio as you type, wearing the vibe of the style you picked. */
+export function renderDogCard(values, menu) {
+  const box = q("build-dog-card");
+  if (!box) return;
+  clearNode(box);
+  const sideLabel = (menu && (menu.side_rules || []).map(optionOf).find((o) => o.id === values.side_rule)) || null;
+  const play = SIDE_PLAY[values.side_rule] || null;
+  const style = play ? play.label : sideLabel ? sideLabel.label : "";
+  const name = values.name || "Your dog";
+  const labelsOf = (ids, list) => (ids || []).map((id) => {
+    const found = ((menu && list) || []).map(optionOf).find((o) => o.id === id);
+    return found ? found.label : id;
+  });
+  const where = [labelsOf(values.sports, menu && menu.sports).join(", "),
+    labelsOf(values.markets, menu && menu.markets).join(", ").toLowerCase()].filter(Boolean).join(" ");
+  const bio = values.tagline || (style ? `${style}${where ? `. ${where}` : ""}.` : "Still deciding what it's about.");
+  box.appendChild(avatarSvg(name, { size: 96, vibe: play ? play.vibe : "grinder", category: "mixed" }));
+  box.appendChild(h("div", { class: "hd-dogcard__text" }, [
+    h("p", { class: "hd-dogcard__name", "data-hook": "dog-name", text: name }),
+    h("p", { class: "hd-dogcard__bio", "data-hook": "dog-bio", text: bio }),
+    style ? h("span", { class: "hd-badge", "data-hook": "dog-style", text: style }) : null,
+  ]));
 }
 
 function refreshPreview() {
@@ -276,6 +330,7 @@ function refreshPreview() {
   if (!box || !ctx.fields) return;
   refreshSideRules(ctx.fields);
   const values = readForm(ctx.fields);
+  renderDogCard(values, ctx.menu);
   out.textContent = previewRuleSentence(values, ctx.menu);
   ctx.fields.nameCount.textContent = `${values.name.length} / ${ctx.nameMax}`;
   ctx.fields.tagCount.textContent = `${values.tagline.length} / ${ctx.taglineMax}`;
@@ -286,7 +341,7 @@ async function submit(evt) {
   const msg = q("build-message");
   clearNode(msg);
   if (!ctx.signedIn) { renderGate(); return; }
-  if (atLimit()) { msg.appendChild(stateBox("down", `You already have ${ctx.limit} hounds. Retire one to make room.`)); return; }
+  if (atLimit()) { msg.appendChild(stateBox("down", `You already have ${ctx.limit} dogs. Retire one to make room.`)); return; }
   const values = readForm(ctx.fields);
   const problems = validate(values, ctx.menu);
   if (problems.length) {
@@ -299,22 +354,22 @@ async function submit(evt) {
     const res = await apiPost("/hounds", buildSpec(values, ctx.copiedFrom));
     const id = newId(res);
     if (id) {
-      msg.appendChild(h("p", { role: "status", "data-hook": "build-done", text: "Created. Taking you to your hound..." }));
+      msg.appendChild(h("p", { role: "status", "data-hook": "build-done", text: "Your dog's in the kennel. Taking you to it..." }));
       window.location.href = houndHref(id);
     } else {
-      msg.appendChild(stateBox("down", "The server accepted the hound but did not say where it is. Check the race page."));
+      msg.appendChild(stateBox("down", "The server took the dog but didn't say where it is. Check the kennel."));
     }
   } catch (err) {
     if (err && err.status === 401) {
       ctx.signedIn = false; renderGate();
-      msg.appendChild(stateBox("down", "Your sign-in was not accepted. Sign in again to create a hound."));
+      msg.appendChild(stateBox("down", "Your sign-in was not accepted. Sign in again to send your dog in."));
     } else if (err && err.status === 404) {
-      msg.appendChild(stateBox("missing", "Creating hounds is not switched on yet on this server."));
+      msg.appendChild(stateBox("missing", "Building dogs is not switched on yet on this server."));
     } else if (err && (err.status === null || err.status === undefined)) {
       msg.appendChild(stateBox("down", "Could not reach the server. Nothing was created; try again."));
     } else {
       msg.appendChild(h("div", { class: "hd-state hd-state--down", role: "alert", "data-hook": "build-server-error" },
-        [h("p", { text: `The server did not accept this hound: ${errorText(err)}` })]));
+        [h("p", { text: `The kennel didn't accept this dog: ${errorText(err)}` })]));
     }
   } finally {
     ctx.busy = false; refreshSubmit();
@@ -334,7 +389,7 @@ export async function boot() {
     if (isNum(menu.max_running_per_account)) ctx.limit = menu.max_running_per_account;
   } catch (err) {
     clearNode(host);
-    const e = describeError(err, "the hound menu");
+    const e = describeError(err, "the dog menu");
     host.appendChild(stateBox(e.kind, e.text, () => { boot(); }));
     q("build-preview").setAttribute("hidden", "");
     return;
@@ -374,9 +429,9 @@ export async function boot() {
       const values = specToForm(payload);
       applyForm(fields, values);
       ctx.copiedFrom = values.copied_from || from;
-      note.textContent = "Pre-filled from that hound's rule. The name is a suggestion, because every hound's name is unique; change it and anything else you like.";
+      note.textContent = "Pre-filled from that dog's rules. The name is a suggestion, because every dog's name is unique; change it and anything else you like.";
     } catch (err) {
-      note.textContent = "Could not load that hound's rule to pre-fill the form, so the form is blank.";
+      note.textContent = "Couldn't load that dog's rules to pre-fill the form, so the form is blank.";
     }
     note.removeAttribute("hidden"); note.hidden = false;
   }

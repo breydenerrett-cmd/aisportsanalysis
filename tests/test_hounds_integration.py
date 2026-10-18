@@ -738,22 +738,22 @@ class PagesReadTheRealApi(unittest.TestCase):
             q("alpha", ".hd-row[data-hound='alpha']"),
             q("alpha_replay", ".hd-row[data-hound='alpha'] [data-hook='replay-line']"),
             q("charlie", ".hd-row[data-hound='charlie']"),
-            q("units", ".hd-row[data-hound='alpha'] [data-hook='row-units']"),
+            q("units", ".hd-row[data-hound='alpha'] [data-hook='units-pair']"),
             q("lines", "[data-hook='hounds-chart-panel'] .hd-line", "count"),
             q("user", ".hd-row[data-hound='u-1']"),
-            q("stream", "[data-hook='stream-list'] .hd-stream__text", "texts"),
+            q("stream", "[data-hook='stream-list'] .hd-chat__text", "texts"),
             q("refused", "[data-hook='stream-list'] li", "attrs", attr="data-refused"),
             q("basis", "[data-hook='hounds-basis']")])
         final = out["final"]
         self.assertEqual(set(final["ids"]), {"alpha", "bravo", "charlie", "delta", "u-1"})
         # alpha: 3 forward bets, its replay bet in a separate line (never in the forward record)
         self.assertIn("3 bets", final["alpha"])
-        self.assertIn("replay", final["alpha_replay"].lower())
+        self.assertIn("rehearsal", final["alpha_replay"].lower())      # the replay block, said as an old-board rehearsal
         self.assertIn("average price", final["units"])
         self.assertIn("best price", final["units"])
         self.assertGreater(final["lines"], 0)
         self.assertIn("Paper only", final["basis"])
-        self.assertTrue(any(t.startswith("Passed") for t in final["stream"]), final["stream"])
+        self.assertTrue(any("sat this one out" in t for t in final["stream"]), final["stream"])
         self.assertIn("true", final["refused"])
         self.assertNotIn("warming", out["text"].lower())
 
@@ -761,12 +761,12 @@ class PagesReadTheRealApi(unittest.TestCase):
         out = run_page("hound", routes=self.routes, search="?id=alpha", queries=[
             q("rows", "[data-hook='bets-table'] tbody tr", "count"), q("page", "[data-hook='bets-page']"),
             q("name", "[data-hook='hound-name']"), q("rule", "[data-hook='rule-text']"),
-            q("verdict", "[data-hook='verdict-chip']"),
+            q("verdict", "[data-hook='hound-verdict'] [data-hook='badge']"),
             q("heads", "[data-hook='bets-table'] thead th", "texts"),
             q("next_off", "[data-hook='bets-next']", "disabled")])
         self.assertEqual(out["final"]["name"], "Alpha")
         self.assertEqual(out["final"]["rule"], "Alpha rule.")
-        self.assertIn("TOO EARLY", out["final"]["verdict"])
+        self.assertIn("ROOKIE", out["final"]["verdict"])             # TOO EARLY wears the rookie badge
         total = self.routes["/hounds/alpha"][1]["bets"]["total"]
         self.assertGreater(total, 0)
         self.assertGreater(out["final"]["rows"], 0)
