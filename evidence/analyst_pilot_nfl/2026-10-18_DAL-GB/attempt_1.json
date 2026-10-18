@@ -1,0 +1,104 @@
+{
+  "summary": "This is a coin flip by the books' own numbers, and I pass on all three markets. The moneyline has Green Bay at a de-vigged 0.5072 and Dallas at 0.4928, and the spread sits at zero, so the market sees two evenly matched teams. The data gives me no clear reason to disagree. Green Bay's defence allows 4.7043 net yards per play against 6.3774 for Dallas, which is a real gap, but Green Bay scores only 20.8 points per game and sits at a margin of -1.6 per game over five games, so the stories cancel out and five games is a small sample. Both quarterbacks are the projected starters, and Dallas has had 10 days of rest to Green Bay's 7. Green Bay lists 13 players on the injury report with 4 out, including receiver Skyy Moore, but the data does not say how much any of them matters. On the total, the number has moved from 50.0 to 53.5, a big jump, and Green Bay's numbers lean lower than that, yet Dallas allows 27.2 points per game. Weather is missing for an outdoor night game at Lambeau Field, so I cannot see wind or cold.",
+  "calls": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "selection": "GB",
+      "verdict": "PASS",
+      "price": -110,
+      "book": "fanduel",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The books price this as a near even game, with Green Bay at 0.5072 after the margin is removed, and nothing in the data clearly says that is wrong.",
+          "evidence": [
+            {"path": "markets.moneyline.options[0].fair_probability", "value": 0.5072},
+            {"path": "markets.moneyline.options[1].fair_probability", "value": 0.4928}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Green Bay's defence is much better on yards per play allowed, but its season margin per game is negative and it rests on only five games, so the edge is not solid.",
+          "evidence": [
+            {"path": "sections.home.values.form.season_to_date.yards_per_play_allowed.value", "value": 4.7043},
+            {"path": "sections.away.values.form.season_to_date.yards_per_play_allowed.value", "value": 6.3774},
+            {"path": "sections.home.values.form.season_to_date.margin_per_game", "value": -1.6},
+            {"path": "sections.home.values.form.season_to_date.games", "value": 5}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A quarterback change for either side, or the injury report showing a key starter ruled out, would make me look again.",
+      "case_against": null
+    },
+    {
+      "slot_id": "spread",
+      "market": "spread",
+      "selection": "DAL -0",
+      "verdict": "PASS",
+      "price": -107,
+      "book": "lowvig",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The spread is a pick'em, so it is the moneyline in another form, and only three books quote this number.",
+          "evidence": [
+            {"path": "markets.spread.options[0].fair_probability", "value": 0.5015},
+            {"path": "markets.spread.options[1].fair_probability", "value": 0.4985},
+            {"path": "markets.spread.context.books_on_this_number", "value": 3}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The number has moved from Dallas giving 2.0 when it was first captured to a pick'em now, so the market has already come toward Green Bay, and I have no reason in points to say it has gone too far.",
+          "evidence": [
+            {"path": "markets.spread.context.away_number_first_captured", "value": -2.0}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A confirmed quarterback change or a key player ruled out on the injury report would move me, as would a number that moves off zero to land on a key number such as 3.",
+      "case_against": null
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "selection": "Over 53.5",
+      "verdict": "PASS",
+      "price": -108,
+      "book": "williamhill_us",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The total has moved from 50.0 when first captured to 53.5, and Green Bay scores 20.8 per game and allows 22.4, which does not obviously support a number that high, but Dallas scores 27.6 and allows 27.2, so the two sides pull in different directions.",
+          "evidence": [
+            {"path": "markets.total.context.number_first_captured", "value": 50.0},
+            {"path": "sections.home.values.form.season_to_date.points_for_per_game", "value": 20.8},
+            {"path": "sections.home.values.form.season_to_date.points_against_per_game", "value": 22.4},
+            {"path": "sections.away.values.form.season_to_date.points_for_per_game", "value": 27.6},
+            {"path": "sections.away.values.form.season_to_date.points_against_per_game", "value": 27.2}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Weather is missing for an outdoor game and every form figure rests on five games, so I cannot lean on either side of the total with any weight.",
+          "evidence": [
+            {"path": "sections.schedule.values.venue.roof", "value": "outdoors"},
+            {"path": "missing[1].item", "value": "weather"}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A weather forecast showing heavy wind or cold, or a quarterback change on either side, would change this call.",
+      "case_against": null
+    }
+  ],
+  "summary_derived": []
+}

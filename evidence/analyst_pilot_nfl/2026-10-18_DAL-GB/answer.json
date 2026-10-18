@@ -1,0 +1,112 @@
+{
+"summary": "This looks like a pick'em that the market has priced about right, so I pass on all three markets. Green Bay is the home side and its defense has been the stronger unit, allowing 4.7043 net yards per play against 6.3774 for Dallas over the same stretch. Dallas has scored more, 27.6 points per game to Green Bay's 20.8, and Dallas also gives up more, 27.2 per game against 22.4. Those pull in opposite directions, and each rests on only five games, so I would not push far from the books. The spread sits at pick'em after first being captured with Dallas laying 2.0, so the number has moved toward Green Bay, and the moneyline fair probabilities are close to even. Green Bay has 13 players on its injury report with 4 out, and Dallas has 7 with 2 out, but we do not measure how much any of them matter. The total is 53.5 after first being captured at 50.0, which already reflects the Dallas scoring. Weather at an outdoor night game is missing from what we have, which matters for a total this high.",
+"summary_derived": [],
+"calls": [
+{
+"slot_id": "moneyline",
+"market": "moneyline",
+"selection": "GB",
+"verdict": "PASS",
+"price": -110,
+"book": "fanduel",
+"fair_estimate": null,
+"confidence": "low",
+"reasons": [
+{
+"claim": "The books see this as a coin flip, with Green Bay only a hair above even once the bookmaker margin is removed, so the price already holds what we can see.",
+"evidence": [
+{"path": "markets.moneyline.options[0].fair_probability", "value": 0.5072},
+{"path": "markets.moneyline.options[1].fair_probability", "value": 0.4928}
+],
+"derived": []
+},
+{
+"claim": "Green Bay's defense has allowed fewer yards per play, but Dallas has scored more per game, and each figure rests on five games, so nothing here is strong enough to disagree with the books.",
+"evidence": [
+{"path": "sections.home.values.form.season_to_date.yards_per_play_allowed.value", "value": 4.7043},
+{"path": "sections.away.values.form.season_to_date.yards_per_play_allowed.value", "value": 6.3774},
+{"path": "sections.away.values.form.season_to_date.points_for_per_game", "value": 27.6},
+{"path": "sections.home.values.form.season_to_date.points_for_per_game", "value": 20.8}
+],
+"derived": []
+}
+],
+"pass_price": null,
+"what_would_change_it": "A quarterback change for either side before kickoff, or a key player ruled out on an updated injury report, would make me revisit it.",
+"case_against": null
+},
+{
+"slot_id": "spread",
+"market": "spread",
+"selection": "DAL -0",
+"verdict": "PASS",
+"price": -107,
+"book": "lowvig",
+"fair_estimate": null,
+"confidence": "low",
+"reasons": [
+{
+"claim": "The spread is a pick'em, and the two sides are priced almost identically after the margin is removed, so there is no number to disagree with.",
+"evidence": [
+{"path": "markets.spread.options[0].fair_probability", "value": 0.5015},
+{"path": "markets.spread.options[1].fair_probability", "value": 0.4985}
+],
+"derived": []
+},
+{
+"claim": "The number has moved toward Green Bay since it was first captured with Dallas laying 2.0, but only 3 books quote this exact number, so the move is a thin read.",
+"evidence": [
+{"path": "markets.spread.context.away_number_first_captured", "value": -2.0},
+{"path": "markets.spread.context.books_on_this_number", "value": 3}
+],
+"derived": []
+}
+],
+"pass_price": null,
+"what_would_change_it": "The line moving to a key number such as 3 in either direction, or a quarterback change, would make me look again.",
+"case_against": null
+},
+{
+"slot_id": "total",
+"market": "total",
+"selection": "Over 53.5",
+"verdict": "PASS",
+"price": -108,
+"book": "williamhill_us",
+"fair_estimate": null,
+"confidence": "low",
+"reasons": [
+{
+"claim": "The total started at 50.0 and now sits at 53.5, so the market has already moved up toward Dallas's scoring, and both sides are priced almost evenly.",
+"evidence": [
+{"path": "markets.total.context.number_first_captured", "value": 50.0},
+{"path": "markets.total.options[0].line", "value": 53.5},
+{"path": "markets.total.options[0].fair_probability", "value": 0.5002}
+],
+"derived": []
+},
+{
+"claim": "Dallas scores and allows a lot, while Green Bay scores and allows less, so the scoring figures point both ways, and the yards-per-play figures lean toward Green Bay's defense.",
+"evidence": [
+{"path": "sections.away.values.form.season_to_date.points_for_per_game", "value": 27.6},
+{"path": "sections.away.values.form.season_to_date.points_against_per_game", "value": 27.2},
+{"path": "sections.home.values.form.season_to_date.points_for_per_game", "value": 20.8},
+{"path": "sections.home.values.form.season_to_date.points_against_per_game", "value": 22.4}
+],
+"derived": []
+},
+{
+"claim": "This is an outdoor game at night and we cannot see the weather, which matters for a total this high.",
+"evidence": [
+{"path": "sections.schedule.values.venue.roof", "value": "outdoors"},
+{"path": "missing[1].item", "value": "weather"}
+],
+"derived": []
+}
+],
+"pass_price": null,
+"what_would_change_it": "A weather forecast showing calm conditions, or the total falling back toward 50.0, would make me reconsider the Over.",
+"case_against": null
+}
+]
+}

@@ -171,7 +171,10 @@ class TheRoute(unittest.TestCase):
     def test_the_shipped_config_is_readable_from_any_working_directory_and_is_valid(self):
         self.assertTrue(self.sample.repo_root().joinpath(self.sample.CONFIG_PATH).is_file())
         shipped = json.loads((ROOT / "config" / "sample_brief.json").read_text(encoding="utf-8"))
-        self.assertTrue(shipped is None or set(shipped) == {"date", "away", "home"})
+        self.assertTrue(shipped is None or set(shipped) in ({"date", "away", "home"},
+                                                          {"date", "away", "home", "sport"}))
+        if shipped is not None:
+            self.assertIsNotNone(self.sample.designated())
 
     def test_the_module_imports_no_model_code(self):
         text = (ROOT / "api" / "sample.py").read_text(encoding="utf-8")
