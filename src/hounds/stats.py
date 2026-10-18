@@ -463,6 +463,8 @@ def get_book(src: Optional[Sources] = None) -> HoundBook:
 def clear_cache() -> None:
     with _LOCK:
         _CACHE["book"] = None
+    _BG["error"] = None
+    _BG["failed_at"] = 0.0
 
 
 def warm() -> HoundBook:

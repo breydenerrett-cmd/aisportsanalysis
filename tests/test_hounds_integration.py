@@ -257,5 +257,217 @@ class PackLedgerShape(unittest.TestCase):
         self.assertEqual(stats.average_units(bets[0]), round(100 / 108, 4))
 
 
+# ---- routes ---------------------------------------------------------------------------------------
+
+try:
+    import fastapi  # noqa: F401
+    HAS_FASTAPI = True
+except ImportError:  # pragma: no cover -- Linux CI installs none; the core above runs without it
+    HAS_FASTAPI = False
+
+if HAS_FASTAPI:
+    from fastapi.testclient import TestClient
+    from starlette.routing import Match
+
+from tests import _hounds_fixtures as F
+
+
+def handler_for(app, path: str, method: str = "GET") -> str:
+    """The name of the first route in mount order that matches this request path."""
+    scope = {"type": "http", "path": path, "method": method, "root_path": "", "query_string": b"",
+             "headers": []}
+    for route in app.router.routes:
+        match, _child = route.matches(scope)
+        if match != Match.FULL:
+            continue
+        # FastAPI wraps an included router in an _IncludedRouter; the mount order of those wrappers
+        # is the order requests are matched in, and the first one with a full match owns the path.
+        inner = getattr(getattr(route, "original_router", None), "routes", None)
+        for sub in inner if inner is not None else [route]:
+            if sub.matches(scope)[0] == Match.FULL:
+                return sub.endpoint.__name__
+    return "<none>"
+
+
+@unittest.skipUnless(HAS_FASTAPI, "fastapi not installed")
+class RouteOrder(unittest.TestCase):
+    """MISALIGNMENT 3. ``GET /hounds/{id}`` (api/hounds.py) swallows any one-segment path under
+    /hounds, so ``/hounds/menu`` and ``/hounds/mine`` (api/hounds_create.py) only work because
+    api/app.py mounts that router first, and ``stream``, ``series`` and ``graveyard`` only work
+    because they are declared before ``{id}``. Pinned against the real app."""
+
+    @classmethod
+    def setUpClass(cls):
+        from api.app import app
+        cls.app = app
+
+    def test_each_literal_path_goes_to_its_own_handler_not_to_the_id_route(self):
+        expected = {
+            "/hounds/menu": "hounds_menu",
+            "/hounds/mine": "my_hounds",
+            "/hounds/stream": "stream",
+            "/hounds/series": "series",
+            "/hounds/graveyard": "graveyard",
+            "/hounds": "leaderboard",
+            "/hounds/u-abc123": "hound",
+            "/hounds/u-abc123/bets": "hound_bets",
+            "/hounds/u-abc123/spec": "hound_spec",
+            "/hounds/u-abc123/scorecard": "hound_scorecard",
+        }
+        for path, handler in expected.items():
+            with self.subTest(path=path):
+                self.assertEqual(handler_for(self.app, path), handler)
+
+    def test_the_hazard_is_real_mounted_the_other_way_round_menu_is_read_as_an_id(self):
+        """A negative control: this is what api/app.py's mount order prevents."""
+        from fastapi import FastAPI
+        from api import hounds, hounds_create
+        wrong = FastAPI()
+        wrong.include_router(hounds.router)
+        wrong.include_router(hounds_create.router)
+        self.assertEqual(handler_for(wrong, "/hounds/menu"), "hound")
+        self.assertEqual(handler_for(wrong, "/hounds/mine"), "hound")
+        self.assertEqual(handler_for(wrong, "/hounds/stream"), "stream")   # declared before {id}
+
+    def test_a_user_hound_id_can_never_equal_a_literal_route(self):
+        """The create route's ids are ``u-<hex>``; none can collide with the literal paths."""
+        from src.hounds import user_store
+        for _ in range(50):
+            self.assertTrue(user_store.new_hound_id().startswith("u-"))
+
+    def test_served_over_http_each_literal_path_answers_with_its_own_shape(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            src = F.make_world(Path(tmp))
+            with mock.patch.object(Sources, "default", staticmethod(lambda: src)):
+                stats.clear_cache()
+                stats.get_book(src)
+                client = TestClient(self.app)
+                menu = client.get("/hounds/menu")
+                self.assertEqual(menu.status_code, 200, menu.text)
+                self.assertIn("side_rules", menu.json())             # the create router's menu
+                mine = client.get("/hounds/mine")
+                self.assertEqual(mine.status_code, 401, mine.text)   # needs a sign-in, not "no such hound"
+                self.assertIn("items", client.get("/hounds/stream").json())
+                self.assertIn("series", client.get("/hounds/series?ids=alpha").json())
+                self.assertIn("hounds", client.get("/hounds/graveyard").json())
+                self.assertEqual(client.get("/hounds/alpha").json()["id"], "alpha")
+                self.assertEqual(client.get("/hounds/nope").status_code, 404)
+                stats.clear_cache()
+
+
+@unittest.skipUnless(HAS_FASTAPI, "fastapi not installed")
+class WarmingUp(unittest.TestCase):
+    """MISALIGNMENT 5. A cold build streams about a million odds rows (5 to 10 s here). The first
+    request must not wait for it and startup must not carry it: it answers ``warming_up`` within a
+    second and builds ONCE in the background, under the app's one-build-at-a-time gate."""
+
+    def setUp(self):
+        import threading
+        from api.app import app
+        self._tmp = tempfile.TemporaryDirectory()
+        self.src = F.make_world(Path(self._tmp.name))
+        self._patch = mock.patch.object(Sources, "default", staticmethod(lambda: self.src))
+        self._patch.start()
+        stats.clear_cache()
+        self.client = TestClient(app)
+        self.release = threading.Event()
+        self.calls = []
+        self.real_build = stats.build
+
+        def slow_build(src):
+            self.calls.append(1)
+            self.release.wait(10)
+            return self.real_build(src)
+
+        self._build = mock.patch.object(stats, "build", slow_build)
+        self._build.start()
+
+    def tearDown(self):
+        self.release.set()
+        thread = stats._BG["thread"]
+        if thread is not None:
+            thread.join(10)
+        self._build.stop()
+        self._patch.stop()
+        stats.clear_cache()
+        self._tmp.cleanup()
+
+    def wait_built(self):
+        self.release.set()
+        stats._BG["thread"].join(10)
+
+    def test_the_first_request_answers_warming_within_a_second_and_never_waits_for_the_build(self):
+        import time
+        started = time.time()
+        r = self.client.get("/hounds")
+        self.assertLess(time.time() - started, 1.0)
+        self.assertEqual(r.status_code, 200)
+        body = r.json()
+        self.assertIs(body["warming_up"], True)
+        self.assertEqual(body["hounds"], [])
+        self.assertGreaterEqual(body["retry_after_seconds"], 1)
+        self.assertIs(body["paper_only"], True)
+        self.assertEqual(r.headers["cache-control"], "no-store")
+
+    def test_every_route_has_a_warming_shape_of_its_own(self):
+        for path, key in (("/hounds", "hounds"), ("/hounds/graveyard", "hounds"),
+                          ("/hounds/stream", "items"), ("/hounds/series?ids=alpha", "series"),
+                          ("/hounds/alpha", "id"), ("/hounds/alpha/bets", "items")):
+            with self.subTest(path=path):
+                body = self.client.get(path).json()
+                self.assertIs(body["warming_up"], True)
+                self.assertIn(key, body)
+
+    def test_many_requests_while_cold_start_one_build_only(self):
+        for _ in range(8):
+            self.client.get("/hounds")
+        self.wait_built()
+        self.assertEqual(len(self.calls), 1)
+
+    def test_once_built_the_same_request_returns_the_race(self):
+        self.client.get("/hounds")
+        self.wait_built()
+        body = self.client.get("/hounds").json()
+        self.assertNotIn("warming_up", body)
+        self.assertIn("alpha", [h["id"] for h in body["hounds"]])
+        self.assertIn("max-age", self.client.get("/hounds").headers["cache-control"])
+
+    def test_a_changed_ledger_serves_the_old_book_while_one_rebuild_runs(self):
+        self.release.set()
+        stats.get_book(self.src)                        # warm, synchronously
+        self.release.clear()
+        before = self.client.get("/hounds").json()
+        with open(self.src.pack_ledgers[0][1], "a", encoding="utf-8") as fh:
+            fh.write("\n")                              # an input changed size
+        self.calls.clear()
+        r = self.client.get("/hounds")
+        self.assertNotIn("warming_up", r.json())
+        self.assertEqual([h["id"] for h in r.json()["hounds"]],
+                         [h["id"] for h in before["hounds"]])
+        self.assertEqual(r.headers["cache-control"], "no-store")   # a shared cache must not keep it
+        self.client.get("/hounds")
+        self.wait_built()
+        self.assertEqual(len(self.calls), 1)
+
+    def test_a_failed_first_build_is_a_503_not_an_empty_race(self):
+        def broken(src):
+            raise RuntimeError("boom")
+
+        with mock.patch.object(stats, "build", broken):
+            self.client.get("/hounds")
+            stats._BG["thread"].join(10)
+            r = self.client.get("/hounds")
+        self.assertEqual(r.status_code, 503)
+        self.assertNotIn("warming_up", r.text)
+
+    def test_the_build_takes_the_apps_build_gate(self):
+        from src.appstate import freshness
+        before = freshness.build_stats()["total"]
+        self.client.get("/hounds")
+        self.wait_built()
+        self.assertGreater(freshness.build_stats()["total"], before)
+        self.assertLessEqual(freshness.build_stats()["max_running"], 1)
+
+
 if __name__ == "__main__":
     unittest.main()
