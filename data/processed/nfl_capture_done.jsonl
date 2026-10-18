@@ -261,3 +261,5 @@
 {"game_id": "2026_06_LAC_KC", "observed_utc": "2026-10-17T20:39:56.041924Z", "phase": "t24h"}
 {"game_id": "2026_06_BUF_LV", "observed_utc": "2026-10-17T20:39:56.041924Z", "phase": "t24h"}
 {"game_id": "2026_06_DAL_GB", "observed_utc": "2026-10-18T00:27:40.333939Z", "phase": "t24h"}
+{"game_id": "2026_06_HOU_JAX", "observed_utc": "2026-10-18T07:36:19.975057Z", "phase": "t6h"}
+{"game_id": "_gameday_refresh", "observed_utc": "2026-10-18T08:05:08.958834Z", "phase": "refresh"}
