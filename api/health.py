@@ -96,6 +96,10 @@ def get_health(response: Response) -> dict:
     # read `passes_completed` to wait before exercising pages.
     from api import warmup
     data["warmup"] = warmup.status()
+    # The user hounds' engine loop (src/hounds/user_runner.py): off unless HOUNDS_ENGINE=on.
+    # Informational, like the warm-up: a failing pass is shown here, it never fails /health.
+    from src.hounds import user_runner
+    data["hounds_engine"] = user_runner.status()
     try:
         data["runtime"] = runtime()
     except Exception:  # noqa: BLE001 -- informational; never the reason /health fails

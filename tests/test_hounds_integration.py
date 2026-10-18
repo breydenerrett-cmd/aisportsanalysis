@@ -469,5 +469,223 @@ class WarmingUp(unittest.TestCase):
         self.assertLessEqual(freshness.build_stats()["max_running"], 1)
 
 
+# ---- the in-process scheduler -----------------------------------------------------------------------
+
+import threading
+import time
+import tracemalloc
+
+from src.appstate import freshness
+from src.hounds import user_runner, user_store
+
+
+class SchedulerSwitch(unittest.TestCase):
+    """MISALIGNMENT 4. The capture slot runs in GitHub Actions with no app database, while user
+    hounds live in the production app database. The engine therefore runs inside the API process,
+    OFF unless HOUNDS_ENGINE=on."""
+
+    def test_off_by_default_and_for_anything_but_on(self):
+        self.assertFalse(user_runner.enabled({}))
+        for value in ("", "off", "0", "no", "false", "maybe"):
+            self.assertFalse(user_runner.enabled({"HOUNDS_ENGINE": value}), value)
+        for value in ("on", "ON", " on ", "1", "true"):
+            self.assertTrue(user_runner.enabled({"HOUNDS_ENGINE": value}), value)
+
+    def test_off_starts_no_thread_at_all(self):
+        before = threading.active_count()
+        self.assertIsNone(user_runner.start_loop(env={}, do_pass=lambda: self.fail("ran")))
+        self.assertIsNone(user_runner.start_loop(env={"HOUNDS_ENGINE": "off"}))
+        self.assertEqual(threading.active_count(), before)
+
+    def test_the_interval_is_15_minutes_and_a_typo_is_not_a_hot_loop(self):
+        self.assertEqual(user_runner.interval_seconds({}), 900.0)
+        self.assertEqual(user_runner.interval_seconds({"HOUNDS_ENGINE_INTERVAL_SECONDS": "60"}), 60.0)
+        self.assertEqual(user_runner.interval_seconds({"HOUNDS_ENGINE_INTERVAL_SECONDS": "0.01"}),
+                         user_runner.MIN_INTERVAL_SECONDS)
+        self.assertEqual(user_runner.interval_seconds({"HOUNDS_ENGINE_INTERVAL_SECONDS": "soon"}), 900.0)
+
+    def test_on_runs_passes_on_a_cadence_one_at_a_time_and_stops_when_told(self):
+        stop = threading.Event()
+        ran = []
+        gate = threading.Event()
+
+        def do_pass():
+            ran.append(time.time())
+            gate.set()
+
+        thread = user_runner.start_loop(env={"HOUNDS_ENGINE": "on"}, interval_s=0.05,
+                                        stop_event=stop, do_pass=do_pass)
+        try:
+            self.assertTrue(gate.wait(5))
+            time.sleep(0.3)
+        finally:
+            stop.set()
+            thread.join(5)
+        self.assertFalse(thread.is_alive())
+        self.assertGreaterEqual(len(ran), 2)
+        self.assertEqual(sum(1 for t in threading.enumerate() if t.name == "hounds-engine"), 0)
+
+    def test_it_waits_for_the_first_cache_warm_up_before_its_first_pass(self):
+        stop = threading.Event()
+        ready = {"yes": False}
+        ran = threading.Event()
+        thread = user_runner.start_loop(env={"HOUNDS_ENGINE": "on"}, interval_s=60, stop_event=stop,
+                                        ready=lambda: ready["yes"], do_pass=ran.set)
+        try:
+            self.assertFalse(ran.wait(0.3))
+            ready["yes"] = True
+            self.assertTrue(ran.wait(10))
+        finally:
+            stop.set()
+            thread.join(10)
+
+    def test_the_app_starts_no_engine_thread_without_the_flag(self):
+        if not HAS_FASTAPI:
+            self.skipTest("fastapi not installed")
+        from api import app as app_mod
+        with mock.patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("HOUNDS_ENGINE", None)
+            app_mod._start_hounds_engine()
+        self.assertEqual(sum(1 for t in threading.enumerate() if t.name == "hounds-engine"), 0)
+
+
+class SchedulerPass(unittest.TestCase):
+    """One pass of user_runner.run_pass against a small world (the engine, the ledger beside the
+    database, settlement), one at a time under the app's build gate."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        root = Path(self._tmp.name)
+        self.w = World(root)
+        self.h = self.w.add_hound(price_min=100, price_max=300)
+        self.ledger = self.w.ledger
+        self.kw = dict(ledger=self.ledger, multibook_path=str(self.w.multibook),
+                       hounds=[hound_for(self.w.hounds[0])],
+                       refresh_stats=lambda: self.refreshed.append(1))
+        self.refreshed = []
+        self.index_patch = mock.patch.object(eng, "_load_game_pk_index", lambda: INDEX)
+        self.index_patch.start()
+
+    def tearDown(self):
+        self.index_patch.stop()
+        self._tmp.cleanup()
+
+    def settle_kwargs(self):
+        return dict(close_fn=lambda b: None, game_pk_index=INDEX,
+                    mlb_results={PK: result_row(PK, DATE, "BOS", "SEA", 5, 3)})
+
+    def test_a_pass_writes_the_bet_then_grades_it_and_a_second_pass_adds_nothing(self):
+        first = user_runner.run_pass(now=AT_LOCK, settle_kwargs=self.settle_kwargs(), **self.kw)
+        self.assertEqual(first["engine"][0]["bets_written"], 1)
+        self.assertEqual(first["settle"]["graded"], 0)         # the game has not started at the lock
+        self.assertEqual(self.refreshed, [1])                   # new rows: one stats rebuild asked for
+        later = user_runner.run_pass(now=NEXT_DAY, settle_kwargs=self.settle_kwargs(), **self.kw)
+        self.assertEqual(later["settle"]["graded"], 1)
+        again = user_runner.run_pass(now=NEXT_DAY, settle_kwargs=self.settle_kwargs(), **self.kw)
+        self.assertEqual((again["wrote"], again["engine"][0]["bets_written"]), (0, 0))
+        self.assertEqual(self.refreshed, [1, 1])                # nothing new, nothing asked for
+        rows = read_rows(self.ledger)
+        self.assertEqual([r["kind"] for r in rows], [eng.KIND_BET, st.KIND_GRADED])
+        self.assertTrue(eng.verify_ledger(self.ledger).ok)
+
+    def test_no_running_hounds_means_the_odds_store_is_never_opened(self):
+        with mock.patch.object(eng, "iter_rows", side_effect=AssertionError("read the store")):
+            report = user_runner.run_pass(now=AT_LOCK, ledger=self.ledger, hounds=[],
+                                          refresh_stats=lambda: self.fail("rebuilt"))
+        self.assertEqual(report["skipped"], "no running hounds")
+        self.assertFalse(os.path.exists(self.ledger))
+
+    def test_the_pass_streams_the_store_instead_of_listing_it(self):
+        seen = {}
+        real = eng.iter_rows
+
+        def spy(*a, **k):
+            gen = real(*a, **k)
+            seen["is_generator"] = hasattr(gen, "__next__") and not isinstance(gen, list)
+            return gen
+
+        with mock.patch.object(eng, "iter_rows", spy):
+            user_runner.run_pass(now=AT_LOCK, settle_kwargs=self.settle_kwargs(), **self.kw)
+        self.assertTrue(seen["is_generator"])
+
+    def test_tomorrows_slate_is_included_only_late_in_the_eastern_evening(self):
+        noon = datetime(2026, 10, 20, 16, 0, tzinfo=timezone.utc)       # 12:00 Eastern
+        late = datetime(2026, 10, 21, 1, 30, tzinfo=timezone.utc)       # 21:30 Eastern on the 20th
+        self.assertEqual(user_runner.pass_dates(noon), ["2026-10-20"])
+        self.assertEqual(user_runner.pass_dates(late), ["2026-10-20", "2026-10-21"])
+
+    def test_the_pass_takes_the_build_gate_and_never_runs_beside_another_build(self):
+        held = threading.Event()
+        release = threading.Event()
+
+        def other_build():
+            with freshness._gated_build():
+                held.set()
+                release.wait(10)
+
+        t = threading.Thread(target=other_build)
+        t.start()
+        self.assertTrue(held.wait(5))
+        done = threading.Event()
+        result = {}
+
+        def run():
+            result["r"] = user_runner.run_pass(now=AT_LOCK, settle_kwargs=self.settle_kwargs(), **self.kw)
+            done.set()
+
+        runner = threading.Thread(target=run)
+        runner.start()
+        self.assertFalse(done.wait(0.5), "the pass ran while another build held the gate")
+        release.set()
+        self.assertTrue(done.wait(10))
+        t.join(5)
+        runner.join(5)
+        self.assertEqual(result["r"]["engine"][0]["bets_written"], 1)
+        self.assertLessEqual(freshness.build_stats()["max_running"], 1)
+
+    def test_a_crashing_pass_is_logged_and_the_loop_survives(self):
+        before = user_runner.status()["passes"]
+        with mock.patch.object(user_runner, "run_pass", side_effect=RuntimeError("boom")):
+            out = user_runner.pass_safely()
+        self.assertIn("boom", out["error"])
+        self.assertEqual(user_runner.status()["passes"], before + 1)
+        self.assertIn("boom", user_runner.status()["last_error"])
+
+
+REAL_MULTIBOOK = Path(__file__).resolve().parent.parent / "data" / "processed" / "odds_multibook.jsonl"
+PEAK_BUDGET_BYTES = 150 * 1024 * 1024         # the task's budget for one pass on the 1 GB machine
+
+
+@unittest.skipUnless(REAL_MULTIBOOK.exists(), "no local odds store")
+class SchedulerMemoryOnTheRealStore(unittest.TestCase):
+    """Peak Python memory of one engine pass against the REAL odds store (read-only), measured with
+    tracemalloc. A slate of 15 games at the busiest part of the regular season; the budget is 150 MB.
+    Whole-store reads were the 2026-10-01 incident; this pass keeps one slate and trimmed rows."""
+
+    def test_one_pass_over_a_full_regular_season_slate_stays_under_150_mb(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            db = Path(tmp) / "app" / "app.db"
+            ledger = str(Path(tmp) / "app" / "hounds_user_v1.jsonl")
+            with mock.patch.dict(os.environ, {"APP_DB_PATH": str(db)}):
+                from src.appstate import users as users_store
+                user = users_store.create_user("mem@example.com", status="active")
+                base = dict(tagline="", sports=["MLB"], side_rule="underdog", price_min=-199,
+                            price_max=1000, min_books=1, max_bets_per_day=5, lock_minutes=120)
+                long_ago = datetime(2026, 9, 1, tzinfo=timezone.utc)
+                user_store.create_hound(user.id, dict(base, name="Mem Dog", markets=["moneyline", "spread"]),
+                                        now=long_ago)
+                user_store.create_hound(user.id, dict(base, name="Mem Over", markets=["total"],
+                                                      side_rule="over"), now=long_ago)
+                tracemalloc.start()
+                try:
+                    report = user_runner.run_pass(now=datetime(2026, 9, 20, 17, 0, tzinfo=timezone.utc),
+                                                  ledger=ledger, refresh_stats=lambda: None)
+                    _cur, peak = tracemalloc.get_traced_memory()
+                finally:
+                    tracemalloc.stop()
+        self.assertGreaterEqual(report["engine"][0]["games_seen"], 10, report)
+        self.assertLess(peak, PEAK_BUDGET_BYTES, f"one pass peaked at {peak / 1e6:.0f} MB")
+
+
 if __name__ == "__main__":
     unittest.main()

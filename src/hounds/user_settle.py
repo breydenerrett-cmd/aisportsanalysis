@@ -247,12 +247,12 @@ def make_close_fn(rows_for: Optional[Callable[[str, str], list]] = None):
     def loader(date: str, sport: str):
         if rows_for is not None:
             return rows_for(date, sport)
-        return user_engine.load_rows(date, [sport])
+        return user_engine.iter_rows(date, [sport])
 
     def close_fn(bet: Mapping) -> Optional[int]:
         key = (bet["slate_date"], bet["sport"])
         if key not in cache:
-            cache[key] = user_engine.build_games(loader(*key))
+            cache[key] = user_engine.build_games(loader(*key), near_date=bet["slate_date"])
         game = cache[key].get(bet["event_id"])
         if game is None:
             return None

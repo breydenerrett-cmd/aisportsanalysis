@@ -328,25 +328,52 @@ def sport_of_row(row: Mapping) -> str:
     return (row.get("sport") or "mlb").upper()
 
 
-def build_games(rows: Iterable[Mapping]) -> dict:
-    """{event_id: GameBoards} from raw multibook rows. Rows observed at or after their own start
-    (in-play) are dropped here, once, so nothing downstream can use one."""
+# The only fields of a board row the engine reads. Kept rows are trimmed to these: a slate's boards
+# held whole were most of the engine's memory (the server has 1 GB, and a past incident was
+# whole-store reads).
+_KEEP_FIELDS = ("book", "home_price", "away_price", "home_line", "away_line", "total",
+                "over_price", "under_price", "home_team", "away_team", "commence_time")
+
+
+def _slim(row: Mapping) -> dict:
+    return {k: row[k] for k in _KEEP_FIELDS if k in row}
+
+
+def build_games(rows: Iterable[Mapping], near_date: Optional[str] = None) -> dict:
+    """{event_id: GameBoards} from raw multibook rows, consumed ONE AT A TIME (a generator is
+    fine, and is what production passes). Rows observed at or after their own start (in-play) are
+    dropped here, once, so nothing downstream can use one.
+
+    ``near_date`` (an Eastern slate date) keeps only rows of games starting within a day of that
+    date, so a pass for today does not hold the other weeks' games in memory. The day either side
+    is kept because a rescheduled game's earlier rows carry its old start; the exact slate filter
+    (the game's latest start) still happens in ``run``."""
     games: dict = {}
+    near: dict = {}
     for row in rows:
         market = _ROW_MARKET.get(row.get("market"))
         event_id, observed = row.get("event_id"), _utc(row.get("observed_utc"))
-        start = _utc(row.get("commence_time"))
+        raw_start = row.get("commence_time")
+        start = _utc(raw_start)
         if market is None or not event_id or observed is None or start is None:
             continue
         if observed >= start:
             continue
+        if near_date is not None:
+            keep = near.get(raw_start)
+            if keep is None:
+                keep = near[raw_start] = abs(
+                    (datetime.fromisoformat(slate_date_of(start)) -
+                     datetime.fromisoformat(near_date)).days) <= 1
+            if not keep:
+                continue
         sport = sport_of_row(row)
         if sport not in user_spec.SPORTS:
             continue
         game = games.get(event_id)
         if game is None:
             game = games[event_id] = GameBoards(event_id, sport)
-        game.add(market, observed, row)
+        game.add(market, observed, _slim(row))
     for game in games.values():
         game.commence = game.commence_at(datetime.max.replace(tzinfo=timezone.utc))
     return games
@@ -357,15 +384,19 @@ def slate_date_of(commence: datetime) -> str:
     return snapshots.official_date(_iso(commence))
 
 
-def load_rows(date: str, sports: Iterable[str], *, multibook_path: Optional[str] = None) -> list:
-    """The raw rows that can matter for one slate date, through the shared windowed reader."""
+def iter_rows(date: str, sports: Iterable[str], *, multibook_path: Optional[str] = None):
+    """The raw rows that can matter for one slate date, STREAMED through the shared windowed
+    reader: one row at a time, never a list. This is what the in-process scheduler uses."""
     from src.pipeline import snapshots
     path = multibook_path or snapshots.DEFAULT_MULTIBOOK_PATH
-    out: list = []
     for sport in sorted({s.lower() for s in sports}):
         since, until = snapshots.window_for_date(date, sport)
-        out.extend(snapshots.iter_multibook(path, sport=sport, since=since, until=until))
-    return out
+        yield from snapshots.iter_multibook(path, sport=sport, since=since, until=until)
+
+
+def load_rows(date: str, sports: Iterable[str], *, multibook_path: Optional[str] = None) -> list:
+    """``iter_rows`` as a list (tests and the CLI; the scheduler streams instead)."""
+    return list(iter_rows(date, sports, multibook_path=multibook_path))
 
 
 # ---------------------------------------------------------------------------
@@ -511,7 +542,7 @@ def run(date: str, hounds: Sequence[Mapping], rows: Iterable[Mapping], *,
     seen_ids = {r["bet_id"] for r in existing if r.get("kind") == KIND_BET}
     per_day: Counter = Counter((r["hound_id"], r["slate_date"]) for r in existing
                                if r.get("kind") == KIND_BET)
-    games = {eid: g for eid, g in build_games(rows).items()
+    games = {eid: g for eid, g in build_games(rows, near_date=date).items()
              if g.commence is not None and slate_date_of(g.commence) == date}
     skipped: Counter = Counter()
     written_by: Counter = Counter()

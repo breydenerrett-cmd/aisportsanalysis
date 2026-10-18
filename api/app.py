@@ -263,6 +263,26 @@ def _start_display_refresh_guard() -> None:
     display_refresh.start_background_guard(ready=_warm_up_done, busy=_caches_busy)
 
 
+# -- user hounds' engine (src/hounds/user_runner.py) -------------------------
+#
+# The hounds people build live in THIS app's database, on the volume, so the engine that turns them
+# into paper bets runs here, every 15 minutes, in one daemon thread: it reads this server's own odds
+# store (streamed, one slate in memory), writes the hash-chained ledger beside the database, and
+# settles recent bets. It takes the same one-build-at-a-time gate as every page cache, and it waits
+# for the first cache warm-up pass so the two never compete on a cold machine. OFF unless
+# HOUNDS_ENGINE=on (a laptop or a test client never starts one); HOUNDS_ENGINE_INTERVAL_SECONDS
+# overrides the 900 s cadence. Staging turns it on first: docs/HOUNDS_INTEGRATION.md has the command.
+@app.on_event("startup")
+def _start_hounds_engine() -> None:
+    from src.hounds import user_runner
+
+    def _warm_up_done() -> bool:
+        status = warmup.status()
+        return (not status.get("enabled")) or int(status.get("passes_completed") or 0) >= 1
+
+    user_runner.start_loop(ready=_warm_up_done)
+
+
 # -- request logging + structured 500s -------------------------------------
 #
 # One middleware does both jobs (a per-request log line, and turning an
