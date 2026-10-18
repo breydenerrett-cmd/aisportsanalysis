@@ -65,6 +65,25 @@ function stateBox(kind, text, retry) {
   return box;
 }
 
+/**
+ * A restart answers from the last saved copy (`stale: true`, `as_of` = when it was built) while the server
+ * works the new numbers out. The page says so in one small line and asks again on the server's cadence
+ * until a real answer replaces it. The numbers shown are the earlier ones, never edited.
+ */
+export function isStale(payload) {
+  return !!(payload && typeof payload === "object" && payload.stale === true);
+}
+
+export function staleText(payload) {
+  const when = fmtWhen(payload && payload.as_of) || (payload && payload.as_of) || "";
+  return when ? `Updated ${when}, from the last saved copy while the latest numbers are worked out.`
+    : "From the last saved copy while the latest numbers are worked out.";
+}
+
+function staleNote(payload) {
+  return h("p", { class: "hd-fine", "data-hook": "stale-note", text: staleText(payload) });
+}
+
 function warmingBox(payload) {
   return h("div", { class: "hd-state hd-state--warming", role: "status", "data-hook": "section-state",
     "data-kind": "warming" }, [h("p", { text: (payload && payload.message) || WARMING_FALLBACK_TEXT })]);
@@ -312,7 +331,7 @@ function renderMeta() {
     const notice = noticeLine(p);
     basis.textContent = [
       p.basis ? `Basis: ${p.basis}` : "Basis: the server did not send a basis sentence.",
-      p.as_of ? `As of ${fmtWhen(p.as_of) || p.as_of}.` : "",
+      isStale(p) ? staleText(p) : (p.as_of ? `As of ${fmtWhen(p.as_of) || p.as_of}.` : ""),
       notice,
     ].filter(Boolean).join(" ");
   }
@@ -355,8 +374,9 @@ export async function loadStream() {
       retryWhileWarming("stream", loadStream, data);
       return;
     }
-    stopWarmingRetry("stream");
+    if (isStale(data)) retryWhileWarming("stream", loadStream, data); else stopWarmingRetry("stream");
     const items = Array.isArray(data && data.items) ? data.items : [];
+    if (isStale(data)) box.appendChild(staleNote(data));
     if (items.length === 0) {
       box.appendChild(h("p", { class: "hd-muted", "data-hook": "stream-empty",
         text: "No decisions yet. Each one will show here with who made it: the rule, the code or the model." }));
@@ -412,8 +432,9 @@ export async function loadGraveyard() {
       retryWhileWarming("graveyard", loadGraveyard, data);
       return;
     }
-    stopWarmingRetry("graveyard");
+    if (isStale(data)) retryWhileWarming("graveyard", loadGraveyard, data); else stopWarmingRetry("graveyard");
     const list = Array.isArray(data && data.hounds) ? data.hounds : [];
+    if (isStale(data)) box.appendChild(staleNote(data));
     if (list.length === 0) {
       box.appendChild(h("p", { class: "hd-muted", "data-hook": "grave-empty",
         text: "Nobody has been retired yet. When a hound is retired, or retires itself, it is listed here with the cause." }));
@@ -433,7 +454,10 @@ export async function loadGraveyard() {
 
 export async function loadBoard() {
   const list = q("hounds-list");
-  if (list) { clearNode(list); list.appendChild(h("li", { class: "hd-muted", text: "Loading the race..." })); }
+  // (a retry while the numbers are a saved copy keeps the rows it has, rather than blanking them every 5 s)
+  if (list && state.hounds.length === 0) {
+    clearNode(list); list.appendChild(h("li", { class: "hd-muted", text: "Loading the race..." }));
+  }
   try {
     const data = await apiGet("/hounds");
     if (isWarming(data)) {
@@ -447,7 +471,7 @@ export async function loadBoard() {
       retryWhileWarming("board", loadBoard, data);
       return false;
     }
-    stopWarmingRetry("board");
+    if (isStale(data)) retryWhileWarming("board", loadBoard, data); else stopWarmingRetry("board");
     state.payload = data || {};
     state.hounds = Array.isArray(data && data.hounds) ? data.hounds : [];
     state.seriesError = null;

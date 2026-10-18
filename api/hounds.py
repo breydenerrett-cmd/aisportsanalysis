@@ -28,6 +28,12 @@ app's other cache builds, runs in the background. A cold build streams about
 a million odds rows (5 to 10 s on a laptop, more on the 1 GB machine): the
 first visitor must not wait for it, and startup must not carry it
 (docs/HOUNDS_INTEGRATION.md).
+
+A RESTART DOES NOT EMPTY THE RACE FOR A CALLER. The app redeploys hourly, and a once-a-day caller (a
+scheduled digest) that landed in the warming window skipped its day. So the leaderboard, graveyard,
+stream page 1 and series answer from ``stats.saved_payload`` -- the public payloads the last good build
+wrote beside the app db, under 24 h old -- flagged ``stale: true`` with ``as_of`` = when they were built,
+while the one rebuild runs. No usable copy: ``warming_up``, as before. The per-hound routes still warm.
 """
 
 from __future__ import annotations
@@ -55,7 +61,7 @@ def _book(response: Response):
     book, state = stats.get_book_nowait()
     if book is None:
         response.headers["Cache-Control"] = _NO_STORE
-        if state == stats.STATE_FAILED:
+        if state == stats.STATE_FAILED and stats.load_snapshot() is None:
             raise HTTPException(status_code=503, detail="the hounds could not be worked out right "
                                                          "now; try again in a minute")
         return None, True
@@ -68,7 +74,7 @@ def _book(response: Response):
 def leaderboard(response: Response):
     book, warming = _book(response)
     if warming:
-        return warming_payload({"hounds": []})
+        return stats.saved_payload("leaderboard") or warming_payload({"hounds": []})
     return leaderboard_payload(stats.leaderboard(book), book.as_of)
 
 
@@ -76,7 +82,7 @@ def leaderboard(response: Response):
 def graveyard(response: Response):
     book, warming = _book(response)
     if warming:
-        return warming_payload({"hounds": []})
+        return stats.saved_payload("graveyard") or warming_payload({"hounds": []})
     return graveyard_payload(stats.graveyard(book), book.as_of)
 
 
@@ -85,17 +91,18 @@ def stream(response: Response, page: int = Query(1, ge=1),
            page_size: int = Query(DEFAULT_PAGE_SIZE, ge=1, le=MAX_PAGE_SIZE)):
     book, warming = _book(response)
     if warming:
-        return warming_payload({"items": [], "page": page, "page_size": page_size,
-                                "total": 0, "pages": 1})
+        return stats.saved_payload("stream", page=page, page_size=page_size) or warming_payload(
+            {"items": [], "page": page, "page_size": page_size, "total": 0, "pages": 1})
     return stream_payload(paginate(book.stream, page, page_size), book.as_of)
 
 
 @router.get("/hounds/series")
 def series(response: Response, ids: str = Query("", max_length=2000)):
     book, warming = _book(response)
-    if warming:
-        return warming_payload({"series": {}})
     wanted = [i.strip() for i in ids.split(",") if i.strip()][:MAX_SERIES_IDS]
+    if warming:
+        return stats.saved_payload("series", ids=wanted) or warming_payload({"series": {}})
+    stats.note_series_request([i for i in wanted if i in book.hounds])
     out = {i: book.hounds[i].series for i in wanted if i in book.hounds}
     return series_payload(out, book.as_of)
 

@@ -22,13 +22,18 @@ WHAT IS COUNTED
     the closing capture was fresh. Everything else is a named absence upstream
     (``src.report.clv``) and simply is not in ``n``.
 
-NOTHING HERE WRITES ANYTHING. The only side effects are the in-memory cache and
-reading the ledgers named in ``Sources``.
+NOTHING HERE WRITES A LEDGER. The side effects are the in-memory cache, reading the ledgers named
+in ``Sources``, and ONE small derived file: the last built public payloads (see "the saved copy"
+below), so a restart can answer at once instead of "warming up".
 """
 
 from __future__ import annotations
 
+import calendar
+import json
 import logging
+import os
+import tempfile
 import threading
 import time
 from dataclasses import dataclass, field
@@ -38,8 +43,10 @@ from typing import Optional
 from src.core import odds as odds_math
 from src.hounds import boards, house, ledgers, verdict as vd
 from src.hounds.contract import (
-    BetRow, ClvBlock, HoundSummary, KIND_BASELINE, Record, ReplayBlock,
-    RetiredBlock, SeriesPoint, SPARK_POINTS, STATUS_NOT_STARTED, StreamItem, VerdictBlock)
+    BetRow, ClvBlock, DEFAULT_PAGE_SIZE, HoundSummary, KIND_BASELINE, Record, ReplayBlock,
+    RetiredBlock, SeriesPoint, SPARK_POINTS, STATUS_NOT_STARTED, StreamItem, VerdictBlock,
+    WARMING_RETRY_SECONDS, graveyard_payload, leaderboard_payload, paginate, series_payload,
+    stream_payload)
 from src.hounds.ledgers import Bet, Sources
 from src.report import clv
 
@@ -484,10 +491,22 @@ def get_book(src: Optional[Sources] = None) -> HoundBook:
 
 
 def clear_cache() -> None:
+    """Forget the in-memory book AND the saved copy (a script or a test; no request path calls this).
+    The saved copy is a derived file, so dropping it loses nothing a rebuild does not restore; keeping
+    it would let one test's world answer the next test's cold start."""
     with _LOCK:
         _CACHE["book"] = None
     _BG["error"] = None
     _BG["failed_at"] = 0.0
+    _SNAP["written_built"] = None
+    _SNAP["refused_logged"] = False
+    _SERIES_REQUESTS.clear()
+    path = snapshot_path()
+    if path is not None:
+        try:
+            path.unlink()
+        except OSError:
+            pass
 
 
 def warm() -> HoundBook:
@@ -523,8 +542,9 @@ def _background_build(src: Sources) -> None:
     from src.appstate import freshness
     try:
         with freshness._gated_build():
-            get_book(src)
+            book = get_book(src)
         _BG["error"] = None
+        write_snapshot(book)
     except Exception as exc:  # noqa: BLE001 -- recorded; the next request after the retry delay tries again
         logger.exception("hounds: background book build failed")
         _BG["error"] = repr(exc)
@@ -573,6 +593,171 @@ def get_book_nowait(src: Optional[Sources] = None) -> tuple:
     if _BG["error"] and not building():
         return None, STATE_FAILED
     return None, STATE_WARMING
+
+
+# ---- the saved copy: what a restart answers with while the first build runs ------------------------------
+#
+# WHY (2026-10-18). The app redeploys hourly and every restart empties the in-memory book, so the first
+# GET /hounds after one answered ``warming_up`` for the 5 to 10 s the build takes. A once-a-day caller
+# (the Zapier digest) that lands in that window gets an empty race and skips the day. So every successful
+# background build also writes the PUBLIC payloads (leaderboard, graveyard, page 1 of the stream, the
+# series for the ids people ask for) to ONE small JSON file on the persistent data volume, next to the app
+# db (``users.db_path().parent``, never inside the repo: a redeploy replaces the repo, not the volume).
+# A cold start serves that file at once, flagged ``stale: true`` with ``as_of`` = when it was BUILT (the
+# data's own as-of day rides along as ``data_as_of``), while the ordinary single background rebuild,
+# serialised on the build gate, replaces it. No file, a file older than 24 h, or a file that does not
+# parse: the endpoint answers ``warming_up`` exactly as before. A day-old race is better than an empty
+# one; past a day, saying nothing is the honest answer.
+#
+# The file holds only what the public routes already return (the envelope even carries the not-advice
+# line). No user id or token enters it: a user hound appears exactly as the public route shows it (id,
+# name, ``owner_display``, rule text), and ``HoundSummary`` has no field that holds anything private.
+
+SNAPSHOT_FILENAME = "hounds_public_cache.json"
+SNAPSHOT_VERSION = 1
+SNAPSHOT_MAX_AGE_S = 24 * 3600
+SNAPSHOT_MAX_BYTES = 2 * 1024 * 1024
+#: A saved copy stamped further in the future than this is a bad clock, not a fresh build.
+SNAPSHOT_CLOCK_SKEW_S = 300
+SNAPSHOT_SERIES_IDS = 12            # the series route's own cap (api.hounds.MAX_SERIES_IDS)
+ENV_SNAPSHOT_PATH = "HOUNDS_SNAPSHOT_PATH"
+_SNAP_KINDS = ("leaderboard", "graveyard", "stream", "series")
+
+_SNAP: dict = {"written_built": None, "refused_logged": False}
+_SERIES_REQUESTS: dict = {}          # hound id -> times asked for, this process only
+
+
+def snapshot_path():
+    """Where the saved copy lives: ``$HOUNDS_SNAPSHOT_PATH`` if set, else beside the app db."""
+    override = (os.environ.get(ENV_SNAPSHOT_PATH) or "").strip()
+    if override:
+        from pathlib import Path
+        return Path(override).expanduser()
+    from src.appstate import users
+    return users.db_path().parent / SNAPSHOT_FILENAME
+
+
+def note_series_request(ids: list) -> None:
+    """Count the hound ids the series route was asked for, so the saved copy keeps the ones in demand."""
+    for hid in ids:
+        _SERIES_REQUESTS[hid] = _SERIES_REQUESTS.get(hid, 0) + 1
+
+
+def _snapshot_series_ids(book: HoundBook) -> list:
+    asked = sorted((i for i in _SERIES_REQUESTS if i in book.hounds),
+                   key=lambda i: (-_SERIES_REQUESTS[i], i))
+    order = [s.id for s in leaderboard(book)]
+    out: list = []
+    for hid in asked + order:
+        if hid not in out:
+            out.append(hid)
+    return out[:SNAPSHOT_SERIES_IDS]
+
+
+def build_snapshot(book: HoundBook) -> dict:
+    ids = _snapshot_series_ids(book)
+    return {
+        "version": SNAPSHOT_VERSION,
+        "built_utc": book.built_utc,
+        "leaderboard": leaderboard_payload(leaderboard(book), book.as_of),
+        "graveyard": graveyard_payload(graveyard(book), book.as_of),
+        "stream": stream_payload(paginate(book.stream, 1, DEFAULT_PAGE_SIZE), book.as_of),
+        "series": series_payload({i: book.hounds[i].series for i in ids}, book.as_of),
+    }
+
+
+def write_snapshot(book: HoundBook) -> bool:
+    """Save the public payloads of ``book`` atomically (temp file in the same directory, then
+    ``os.replace``, so a reader never sees half a file). Never raises: a failure here must not turn a
+    good build into a failed one. Refuses, and says so once, if the file would pass 2 MB."""
+    if _SNAP["written_built"] == book.built_utc:
+        return False
+    try:
+        data = json.dumps(build_snapshot(book), separators=(",", ":"), allow_nan=False).encode("utf-8")
+    except (TypeError, ValueError):
+        logger.exception("hounds: the saved copy could not be serialised; none written")
+        return False
+    if len(data) > SNAPSHOT_MAX_BYTES:
+        if not _SNAP["refused_logged"]:
+            _SNAP["refused_logged"] = True
+            logger.warning("hounds: the saved copy would be %d bytes (cap %d); not written",
+                           len(data), SNAPSHOT_MAX_BYTES)
+        return False
+    path = snapshot_path()
+    tmp_name = None
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        fd, tmp_name = tempfile.mkstemp(dir=str(path.parent), prefix=path.name + ".", suffix=".tmp")
+        with os.fdopen(fd, "wb") as fh:
+            fh.write(data)
+            fh.flush()
+            os.fsync(fh.fileno())
+        os.replace(tmp_name, path)
+        tmp_name = None
+    except OSError:
+        logger.exception("hounds: the saved copy could not be written")
+        return False
+    finally:
+        if tmp_name is not None:
+            try:
+                os.unlink(tmp_name)
+            except OSError:
+                pass
+    _SNAP["written_built"] = book.built_utc
+    return True
+
+
+def _parse_utc(text) -> Optional[float]:
+    try:
+        return float(calendar.timegm(time.strptime(text, "%Y-%m-%dT%H:%M:%SZ")))
+    except (TypeError, ValueError):
+        return None
+
+
+def load_snapshot(now: Optional[float] = None) -> Optional[dict]:
+    """The saved copy if it exists, parses, has every part and is under 24 h old; else None."""
+    path = snapshot_path()
+    try:
+        if path.stat().st_size > SNAPSHOT_MAX_BYTES:
+            return None
+        snap = json.loads(path.read_bytes().decode("utf-8"))
+    except (OSError, ValueError):
+        return None
+    if not isinstance(snap, dict) or snap.get("version") != SNAPSHOT_VERSION:
+        return None
+    if not all(isinstance(snap.get(k), dict) for k in _SNAP_KINDS):
+        return None
+    built = _parse_utc(snap.get("built_utc"))
+    if built is None:
+        return None
+    age = (time.time() if now is None else now) - built
+    if age > SNAPSHOT_MAX_AGE_S or age < -SNAPSHOT_CLOCK_SKEW_S:
+        return None
+    return snap
+
+
+def saved_payload(kind: str, ids: Optional[list] = None, page: int = 1,
+                  page_size: int = DEFAULT_PAGE_SIZE) -> Optional[dict]:
+    """The saved copy of one public route's answer, marked ``stale: true``, or None when there is no
+    usable copy or it cannot answer THIS request (a stream page past 1, a series id it did not keep:
+    a partial answer would read as a complete one, so those fall back to ``warming_up``)."""
+    if kind == "stream" and (page != 1 or page_size != DEFAULT_PAGE_SIZE):
+        return None
+    snap = load_snapshot()
+    if snap is None:
+        return None
+    payload = snap[kind]
+    if kind == "series":
+        have = payload.get("series")
+        if not isinstance(have, dict) or any(i not in have for i in (ids or [])):
+            return None
+        payload = {**payload, "series": {i: have[i] for i in (ids or [])}}
+    payload = dict(payload)
+    payload["data_as_of"] = payload.get("as_of")
+    payload["as_of"] = snap["built_utc"]
+    payload["stale"] = True
+    payload["retry_after_seconds"] = WARMING_RETRY_SECONDS
+    return payload
 
 
 # ---- views --------------------------------------------------------------------------------------------
