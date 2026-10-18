@@ -400,7 +400,7 @@ def scorecard(hound_id: str, *, rows: Optional[Sequence[Mapping]] = None, db=Non
         last30.append({"slate_date": bet["slate_date"], "selection": bet["selection"],
                        "market": bet["market"], "price": bet["price"],
                        "result": g["result"] if g else "pending",
-                       "profit_units": g["profit_units"] if g else None,
+                       "units": g["profit_units"] if g else None,
                        "clv_pts": g.get("clv_pts") if g else None})
     ranked = []
     for h in user_store.list_all(db=db):
