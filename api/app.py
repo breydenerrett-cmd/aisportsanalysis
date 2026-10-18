@@ -31,6 +31,7 @@ from api.onboarding import router as onboarding_router
 from api.signup import router as signup_router
 from api.hounds_create import router as hounds_create_router
 from api.hounds_learning import router as hounds_learning_router
+from api.feeds import router as feeds_router
 from api.support import router as support_router
 from api.betcheck import free_router as free_betcheck_router, router as betcheck_router
 from api.daily import router as daily_router
@@ -77,6 +78,9 @@ app.include_router(hounds_create_router)
 # the learning loop's public reads (api/hounds_learning.py): /hounds/learning is a literal path under
 # /hounds/{id}, so it too is mounted before api.hounds.
 app.include_router(hounds_learning_router)
+# the Zapier feeds and the coach brief (api/feeds.py). /hounds/coach-brief is a literal path under
+# /hounds/{id}, so this is mounted after the two routers above and BEFORE api.hounds (tests pin the order).
+app.include_router(feeds_router)
 
 # /games/{date}, /game/{date}/{away}/{home}, /changed/{date} -- api/games.py
 # owns the fetch-and-build wiring for those three; this file only mounts it,
