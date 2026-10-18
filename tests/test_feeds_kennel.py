@@ -23,7 +23,7 @@ except ImportError:  # pragma: no cover
     HAS_FASTAPI = False
 
 from src.hounds import kennel_feed as K
-from src.hounds import rss, user_spec
+from src.hounds import user_spec
 from src.hounds.contract import BetRow, HoundSummary, Record, RetiredBlock
 from src.hounds.learning import ledger as L
 from tests import _hounds_user_fixtures as UF
