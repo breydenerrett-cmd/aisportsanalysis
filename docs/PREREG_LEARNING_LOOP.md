@@ -346,3 +346,27 @@ scorecard, referee or director commands.**
 This loop does not claim that any champion has an edge, that a promotion
 improves anything (section 9 exists to find out), or that closing-line value
 is profit. A system that promotes nothing for months is working as designed.
+
+## 14. Scopes (added 2026-10-18, still before any code; written after reading where the data lives)
+
+"System-wide" in sections 3, 7 and 9 cannot mean one ledger, because the
+facts live on two machines: the house pack's ledgers are files in this
+repository (written by the scheduled sessions and CI), while the user hounds,
+their app database and their ledger live on the API's persistent volume. A
+single joint ledger would need one of them to write where it cannot. So the
+loop runs in **scopes**, each with its own hash-chained event ledger, its own
+challenger ledger and its own lessons ledger:
+
+| scope | what it covers | where its ledgers live | who runs it |
+|---|---|---|---|
+| `house` | pack hounds (and the analyst prompt arm) | `evidence/hounds_learning_v1.jsonl`, `evidence/hounds_challengers_v1.jsonl`, `evidence/hounds_lessons_v1.jsonl` | the operator CLI / scheduled session |
+| `user` | user-built hounds | the same three names, `_user` inserted, beside the app database | the API process (the hounds engine loop) |
+
+Each scope applies sections 3 to 10 to its own population: its own 3-per-hound
+and 30-live caps, its own monthly Benjamini-Hochberg family, its own lessons,
+its own auto-pause. The two scopes' scorecards are SUMMED where they are
+counts (proposals, promotions, matured promotions and their hits) and the
+public `GET /hounds/learning` shows both and the sum. The "better than chance"
+line (9b) reads one shared source, the public stats book, so it is the same
+number in both. Lessons are read across scopes for the coach's payload (the
+same category, whichever scope wrote it) where both files are reachable.
