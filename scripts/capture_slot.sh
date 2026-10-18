@@ -567,6 +567,15 @@ echo "$CARD_OUT" | tail -n 25 | sed 's/^/  /'
 echo "== mlb value shadow ($SLATE_DATE) =="
 python3 -m src.analysis.mlb_value_shadow publish --date "$SLATE_DATE" 2>&1 | tail -n 15 | sed 's/^/  /' || true
 
+# HOUSE PACK HOUNDS (docs/PREREG_HOUSE_PACK_V1.md): the public paper-only race.
+# Forward bets for games whose lock (60 min before start) has arrived, from the
+# stored boards above only -- no odds-API spend -- then settle what is final.
+# Idempotent per (hound, game, market); writes only evidence/hounds_house_v1.jsonl
+# (staged with evidence/ below). Paper only. Never fails the slot.
+echo "== house pack hounds ($SLATE_DATE) =="
+python3 -m src.hounds.pack_run --date "$SLATE_DATE" 2>&1 | tail -n 8 | sed 's/^/  /' || true
+python3 -m src.hounds.pack_settle 2>&1 | tail -n 4 | sed 's/^/  /' || true
+
 echo "== nfl capture =="
 python3 -m src.cli nfl capture 2>&1 | sed 's/^/  /' || true
 
