@@ -46,6 +46,8 @@ K_SCORECARD = "scorecard"
 K_PAUSE = "pause"
 K_RESUME = "resume"
 K_UNDO = "undo"
+K_COVERAGE = "shadow_coverage"      # which games the shadow runner actually looked at (new ids only)
+K_BATCH = "batch"                   # the monthly Benjamini-Hochberg batch for one calendar month
 
 HOUSE_EVENTS = "hounds_learning_v1.jsonl"
 HOUSE_BETS = "hounds_challengers_v1.jsonl"
@@ -194,6 +196,8 @@ class State:
     undos: list = field(default_factory=list)
     scorecards: list = field(default_factory=list)         # the scorecard rows, oldest first
     pauses: list = field(default_factory=list)             # pause / resume rows, oldest first
+    coverage: dict = field(default_factory=dict)           # challenger id -> {event ids the shadow looked at}
+    batches: dict = field(default_factory=dict)            # "YYYY-MM" -> the batch event
 
     # ---- challengers
     def live(self) -> list:
@@ -220,7 +224,8 @@ class State:
 
     # ---- champions
     def promotions_for(self, hound_id: str) -> list:
-        return [p for p in self.promotions if p.get("hound_id") == hound_id]
+        return [p for p in self.promotions
+                if p.get("hound_id") == hound_id or p.get("lineage_key") == hound_id]
 
     def champion_version(self, hound_id: str) -> int:
         promos = self.promotions_for(hound_id)
@@ -293,6 +298,11 @@ def fold(events: Iterable[Mapping]) -> State:
             st.scorecards.append(dict(ev))
         elif kind in (K_PAUSE, K_RESUME):
             st.pauses.append(dict(ev))
+        elif kind == K_COVERAGE:
+            for cid, ids in (ev.get("covered") or {}).items():
+                st.coverage.setdefault(cid, set()).update(str(i) for i in ids)
+        elif kind == K_BATCH:
+            st.batches[str(ev.get("month"))] = dict(ev)
     for p in st.promotions:
         hit = applied.get(p.get("challenger_id"))
         if hit is not None:

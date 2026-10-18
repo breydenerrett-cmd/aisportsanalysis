@@ -547,6 +547,9 @@ def run(date: str, hounds: Sequence[Mapping], rows: Iterable[Mapping], *,
     skipped: Counter = Counter()
     written_by: Counter = Counter()
     written = 0
+    # Games a hound actually looked at (lock passed, not started): the learning loop's shadow coverage
+    # (src/hounds/learning/pairing.py) needs to know a challenger's silence was a pass, not an absence.
+    considered: dict = {}
 
     for hound in sorted(hounds, key=lambda h: h["id"]):
         spec = hound["spec"]
@@ -572,6 +575,7 @@ def run(date: str, hounds: Sequence[Mapping], rows: Iterable[Mapping], *,
                     if created is not None and created > lock_utc:
                         skipped["hound_created_after_lock"] += 1
                         continue
+                considered.setdefault(hound["id"], set()).add(event_id)
                 cand, reason = evaluate(spec, game, market, lock_utc, commence)
                 if cand is None:
                     skipped[reason] += 1
@@ -620,6 +624,7 @@ def run(date: str, hounds: Sequence[Mapping], rows: Iterable[Mapping], *,
             written += 1
     return {"date": date, "mode": mode, "hounds": len(hounds), "games_seen": len(games),
             "bets_written": written, "by_hound": dict(written_by), "skipped": dict(skipped),
+            "considered": {hid: sorted(ids) for hid, ids in considered.items()},
             "paper_only": True}
 
 

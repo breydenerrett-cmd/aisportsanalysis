@@ -58,6 +58,34 @@ def pack_hounds(state: L.State, *, tun_cfg: Optional[Mapping] = None, registry: 
     return out
 
 
+def record_coverage(scope: L.Scope, covered: Mapping, *, now: datetime) -> int:
+    """Append ONE ``shadow_coverage`` event holding only the event ids not yet recorded for each
+    challenger (a run every 15 minutes must not write 96 rows a day). Returns how many ids were new."""
+    state = L.read_state(scope)
+    fresh = {}
+    for cid, ids in covered.items():
+        new = sorted(set(map(str, ids)) - state.coverage.get(cid, set()))
+        if new:
+            fresh[cid] = new
+    if fresh:
+        L.log_for(scope).append(L.K_COVERAGE, now=now, scope=scope.name, covered=fresh)
+    return sum(len(v) for v in fresh.values())
+
+
+def pack_covered(stores, dates: Sequence[str], hounds: Sequence, *, now: datetime) -> dict:
+    """Per challenger, the games it was in a position to bet at ``now``: lock passed, not started, its
+    sport, and its own start floor."""
+    from src.hounds import pack_run
+    out = {h.id: set() for h in hounds}
+    for lock, eid, ctx in pack_run.events_for_dates(stores, dates):
+        if not (lock <= now < ctx.start):
+            continue
+        for h in hounds:
+            if h.applies_to(ctx.sport) and h.accepts(ctx):
+                out[h.id].add(eid)
+    return out
+
+
 def run_pack(stores, dates: Sequence[str], scope: L.Scope, *, now: datetime,
              tun_cfg: Optional[Mapping] = None, registry: Optional[Mapping] = None) -> dict:
     """Ask every live pack challenger about every game on ``dates``; append its rows (forward)."""
@@ -68,6 +96,7 @@ def run_pack(stores, dates: Sequence[str], scope: L.Scope, *, now: datetime,
     counts = pack_run.run(stores, dates, replay=False, now=now, path=str(scope.challenger_bets),
                           hounds=hounds, out=lambda *_a, **_k: None)
     counts["challengers"] = len(hounds)
+    counts["covered_new"] = record_coverage(scope, pack_covered(stores, dates, hounds, now=now), now=now)
     return counts
 
 
@@ -100,6 +129,7 @@ def run_user(scope: L.Scope, dates: Iterable[str], *, now: datetime,
     if not hounds:
         return report
     sports = {s for h in hounds for s in h["spec"]["sports"]}
+    seen: dict = {}
     index = game_pk_index if game_pk_index is not None else user_engine._load_game_pk_index()
     for date in dates:
         rows = (rows_for(date, sports) if rows_for is not None
@@ -108,6 +138,9 @@ def run_user(scope: L.Scope, dates: Iterable[str], *, now: datetime,
                               mode="live", game_pk_index=index)
         report["by_date"].append({k: out[k] for k in ("date", "games_seen", "bets_written", "skipped")})
         report["written"] += out["bets_written"]
+        for cid, ids in out["considered"].items():
+            seen.setdefault(cid, set()).update(ids)
+    report["covered_new"] = record_coverage(scope, seen, now=now)
     return report
 
 
