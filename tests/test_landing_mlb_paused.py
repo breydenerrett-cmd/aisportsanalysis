@@ -58,11 +58,13 @@ class TheStaticPageNoLongerSellsPicks(unittest.TestCase):
             self.assertNotRegex(text.lower(), r"tonight|frozen before|posted before the game|"
                                 r"every pick published", label)
             self.assertNotRegex(text.lower(), r"bet[\s-]*check", label)
-        self.assertIn("brief", title.lower())
-        self.assertIn("brief", og_title.lower())
-        self.assertIn("take or pass", desc)
+        # owner voice pass, 2026-10-18: the page sells the kennel first; the brief is the second section
+        self.assertIn("paper betting", title.lower())
+        self.assertIn("paper betting", og_title.lower())
+        self.assertIn("AI desk", desc)
         self.assertIn("paused", desc)
         self.assertIn("paused", og_desc)
+        self.assertIn("Paper bets only, not advice", desc)
         self.assertIn("Planned price: $19.99/month", desc)
         self.assertNotRegex(desc + og_desc, r"(?i)\bwin rate\b|\bprofit\b|\bROI\b")
 
@@ -75,29 +77,34 @@ class TheStaticPageNoLongerSellsPicks(unittest.TestCase):
 
     def test_the_first_screen_says_what_is_live(self):
         text = _visible(_first_screen())
+        self.assertIn("21+ paper betting bots fighting it out every day.", text)
+        self.assertIn("Our AI desk reads every game.", text)           # the brief, now the second section
         self.assertIn("take or pass", text)
         self.assertIn("strongest case against any bet it takes", text)
         self.assertIn("what it could not know", text)
         self.assertIn("graded in public", text)
-        self.assertIn("analysis, not advice", text)
+        self.assertIn("Analysis, not advice", text)
         self.assertIn("MLB briefs", text)
         self.assertIn("The graded record stays public", text)
         # unchanged offer facts
         self.assertIn("the first 20 testers get 7 days free, no card", text)
         self.assertIn("Not on sale yet; planned price $19.99 a month", text)
 
-    def test_the_pause_is_one_sentence_with_the_reason_beside_the_record_link(self):
-        note = re.search(r'<p class="[^"]*" data-hook="hero-pause-note">(.*?)</p>', MARKUP, re.S)
-        self.assertIsNotNone(note, "no pause sentence in the hero")
+    def test_the_pause_is_one_human_line_with_the_reason_and_a_link_on_the_first_screen(self):
+        # owner voice pass, 2026-10-18: the long pause paragraph is one line and a link to the full story
+        note = re.search(r'<p class="kennel__straight" data-hook="kennel-straight">(.*?)</p>', MARKUP, re.S)
+        self.assertIsNotNone(note, "no pause line on the first screen")
         text = _visible(note.group(1))
-        self.assertTrue(text.startswith(PAUSE_SENTENCE), text)
+        self.assertIn("We stopped selling MLB picks on Oct 16, 2026 because they didn't beat the market.", text)
         self.assertIn("The graded record stays public", text)
-        self.assertIn("NFL picks are unaffected", text)
-        # beside the record link: same call-to-action group, note before the links
+        self.assertIn("NFL picks carry on", text)
+        self.assertIn("Why we stopped selling picks", text)
+        self.assertLess(len(text), 220, "one line, not an essay")
+        self.assertLess(MARKUP.index("kennel-straight"), MARKUP.index('data-hook="hero"'))
+        # the record link and the sample brief are still one click away in the AI desk section
         group = re.search(r'<div class="hero__cta-group".*?</div>', MARKUP, re.S).group(0)
-        for hook in ("hero-pause-note", "hero-record-link", "hero-sample-link"):
+        for hook in ("hero-record-link", "hero-sample-link"):
             self.assertIn(f'data-hook="{hook}"', group, hook)
-        self.assertLess(group.index("hero-pause-note"), group.index("hero-record-link"))
         # no profit or win-rate claim, no figure other than the date
         self.assertNotRegex(re.sub(r"Oct 16, 2026", "", text), r"\d")
         self.assertNotRegex(text.lower(), r"profit|win rate|roi\b|guarantee")

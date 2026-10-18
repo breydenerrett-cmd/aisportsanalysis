@@ -23,6 +23,8 @@ PAGES = {
     "hound": ("hound.html", "hounds-detail.js"),
     "build": ("build-a-hound.html", "hounds-build.js"),
     "learning": ("learning.html", "hounds-learning.js"),
+    # the landing page's kennel panel: landing-kennel.js has no auto-run, so a two-line boot file runs it
+    "landing_kennel": ("landing.html", "kennel_boot.js"),
 }
 
 _tmp = None
@@ -38,6 +40,8 @@ def _workdir() -> Path:
             shutil.copy(path, _tmp.name)
         shutil.copy(Path(__file__).parent / "hounds_web_harness.mjs", _tmp.name)
         Path(_tmp.name, "package.json").write_text('{"type": "module"}', encoding="utf-8")
+        Path(_tmp.name, "kennel_boot.js").write_text(
+            'import { fillKennel } from "./landing-kennel.js";\nawait fillKennel();\n', encoding="utf-8")
     return Path(_tmp.name)
 
 

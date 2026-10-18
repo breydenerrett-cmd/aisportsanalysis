@@ -234,6 +234,13 @@ export function friendlyLesson(text) {
     .replace(/; adjusted p ([\d.]+)/g, "; fluke-check number $1 (lower is better)");
 }
 
+/** A sentence the server wrote about the learning loop, in camp's words (the loop is camp, a challenger a rookie). */
+export function campWords(text) {
+  return String(text || "")
+    .replace(/\bchallengers\b/g, "rookies").replace(/\bchallenger\b/g, "rookie")
+    .replace(/\bThe loop\b/g, "Camp").replace(/\bthe loop\b/g, "camp");
+}
+
 export const STATUS_WORDS = {
   running: "Running", benched: "Napping", retired: "Put down 💀", not_started: "Not started",
 };

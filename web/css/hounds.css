@@ -444,8 +444,8 @@
 .hd-tile--down .hd-tile__big { color: #FF8896; }
 .hd-tile--hot .hd-tile__big { color: var(--hd-gold); }
 .hd-tile--cold .hd-tile__big { color: var(--hd-ice); }
-.hd-tile[data-slot="best"], .hd-tile[data-slot="worst"] { grid-column: span 1; }
-@media (min-width: 760px) { .hd-tile[data-slot="best"], .hd-tile[data-slot="worst"] { grid-column: span 1; } }
+/* a bet's name is a sentence, not a number: smaller type so a long team name does not eat the tile */
+.hd-tile[data-slot="best"] .hd-tile__big, .hd-tile[data-slot="worst"] .hd-tile__big { font-size: clamp(20px, 5.2vw, 26px); }
 .hd-master-panel { border-left: 6px solid var(--hd-gold); }
 .hd-master-panel .hd-master { background: transparent; border: 0; padding: 0; }
 .hd-master--roast .hd-master__line strong { color: #FF8896; }

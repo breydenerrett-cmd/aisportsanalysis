@@ -102,7 +102,7 @@ class LandingPublicDemoEntryTests(unittest.TestCase):
         # free-Bet-Check pricing card headline, removed with the rest of
         # that offer in the landing redesign.
         self.assertIn("One plan. No tiers to compare.", self.html)
-        self.assertIn("Frequently asked questions.", self.html)
+        self.assertIn("Questions people ask.", self.html)     # owner voice pass, 2026-10-18
 
 
 class GamesConsolidatedGapPanelTests(unittest.TestCase):

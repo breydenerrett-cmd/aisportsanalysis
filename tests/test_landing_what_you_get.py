@@ -1,6 +1,10 @@
 """The landing page tells a stranger what is free, what is for subscribers,
 what is proven and what is not, and shows one real graded card.
 
+OWNER VOICE PASS, 2026-10-18: the "what is proven and what is not" essay was cut to one human line and a link
+(web/landing.html, data-hook "kennel-straight"), so the class that pinned its five lines is now a class that pins
+the cut. The two columns, the free sample and the pricing card are unchanged.
+
 Written 2026-10-01. A stranger could not tell what $19.99 buys that the free
 record does not already show: the pricing card said "Every pick, every sport,
 the full record" while the full graded record is public (api/card.py's
@@ -97,7 +101,7 @@ class TheWhatYouGetColumns(unittest.TestCase):
         self.assertNotIn("<section", between,
                          "another section sits between the hero and 'What you get'")
         self.assertEqual(between.strip(), "", "markup sits between the hero and 'What you get'")
-        self.assertLess(HTML.index('data-hook="what-you-get"'), HTML.index('id="how-it-works"'))
+        self.assertLess(HTML.index('data-hook="what-you-get"'), HTML.index('data-hook="last-card"'))
 
     def test_free_column_names_the_record_and_the_postseason_page(self):
         free = HTML.split('data-hook="wyg-free"')[1].split('data-hook="wyg-subscribers"')[0]
@@ -114,7 +118,7 @@ class TheWhatYouGetColumns(unittest.TestCase):
                                  "wyg-sub-props", "wyg-sub-tennis"])
 
     def test_nothing_in_the_new_blocks_names_bet_check(self):
-        for hook in ("what-you-get", "proven-block", "last-card"):
+        for hook in ("what-you-get", "last-card"):
             block = _section(hook)
             self.assertNotRegex(block, r"(?i)bet[\s-]*check", hook)
             self.assertNotIn("betcheck", block.lower(), hook)
@@ -161,27 +165,26 @@ class EachYouGetLineIsTiedToARealRoute(unittest.TestCase):
         self.assertIn('"#/record-card"', main_js)
 
 
-class TheProvenBlock(unittest.TestCase):
-    def test_five_short_lines_with_their_hooks(self):
-        block = _section("proven-block")
-        for hook in ("proven-published", "proven-graded", "proven-record",
-                     "proven-research", "proven-postseason"):
-            self.assertIn(f'data-hook="{hook}"', block)
-            self.assertIn(f'data-hook="{hook}-text"', block)
-        self.assertEqual(block.count("<li "), 5)
+class TheProvenEssayIsCutToOneLine(unittest.TestCase):
+    def test_the_five_callouts_and_the_prose_are_gone_from_the_page(self):
+        self.assertNotIn('data-hook="proven-block"', HTML)
+        for hook in ("proven-published", "proven-graded", "proven-record", "proven-research", "proven-postseason",
+                     "honesty-story"):
+            self.assertNotIn(f'data-hook="{hook}', HTML, hook)
+        self.assertNotIn("What is proven and what is not", _visible(HTML))
 
-    def test_the_static_sentences_carry_no_figure(self):
-        block = _visible(_section("proven-block"))
-        self.assertNotRegex(block, r"\d", f"a figure in the no-JS wording goes stale: {block!r}")
+    def test_what_replaces_it_is_one_human_line_and_one_link(self):
+        line = re.search(r'<p class="kennel__straight" data-hook="kennel-straight">(.*?)</p>', HTML, re.S).group(1)
+        self.assertIn("didn't beat the market", line)
+        self.assertEqual(len(re.findall(r"<a\b", line)), 1)
+        self.assertIn('href="why-we-paused.html"', line)
+        self.assertNotRegex(_visible(line), r"(?i)profit|win rate|guarantee|\bedge\b")
 
-    def test_the_static_record_line_does_not_imply_the_picks_make_money(self):
-        block = _section("proven-block")
-        line = re.search(r'data-hook="proven-record-text">([^<]*)<', block).group(1)
-        self.assertIn("has not shown that the picks make money", line)
-
-    def test_numbers_come_from_meta_not_the_markup(self):
-        self.assertIn("meta.research", NEW_JS)
-        self.assertIn("effective_record", NEW_JS)
+    def test_the_fill_for_the_cut_section_is_a_harmless_no_op_without_its_nodes(self):
+        # landing.js still carries fillProvenBlock (the record sentence is also pinned elsewhere); with no node
+        # to fill it returns before it fetches anything
+        body = LANDING_JS.split("async function fillProvenBlock(")[1].split("\n}\n")[0]
+        self.assertIn("if (!recordNode && !researchNode) return;", body)
         self.assertIn("fillProvenBlock();", LANDING_JS)
 
 
@@ -206,7 +209,7 @@ class TheSampleBlockIsHiddenUntilItHasSomethingToShow(unittest.TestCase):
 
 
 class TheCopyIsPlainAndCautious(unittest.TestCase):
-    NEW_HTML_BLOCKS = ("what-you-get", "proven-block", "last-card")
+    NEW_HTML_BLOCKS = ("what-you-get", "last-card", "kennel-hero")
 
     def test_no_banned_word_in_the_new_html_blocks(self):
         for hook in self.NEW_HTML_BLOCKS:
@@ -217,7 +220,8 @@ class TheCopyIsPlainAndCautious(unittest.TestCase):
     def test_no_banned_word_in_the_hero_sub_line_or_the_pricing_list(self):
         claim = re.search(r'<p class="hero__claim-body">(.*?)</p>', HTML, re.S).group(1)
         includes = re.search(r'<li data-hook="pricing-includes">(.*?)</li>', HTML, re.S).group(1)
-        for text in (claim, includes):
+        title = re.search(r'<h1 class="kennel__title"[^>]*>(.*?)</h1>', HTML, re.S).group(1)
+        for text in (claim, includes, title):
             for pattern, label in BANNED:
                 self.assertIsNone(re.search(pattern, text, re.I), f"{label!r} in {text!r}")
 
@@ -227,7 +231,7 @@ class TheCopyIsPlainAndCautious(unittest.TestCase):
                 self.assertIsNone(re.search(pattern, literal, re.I), f"{label!r} in {literal!r}")
 
     def test_no_typed_record_figure_or_trial_wording_in_the_new_blocks(self):
-        for hook in ("what-you-get", "proven-block"):
+        for hook in ("what-you-get",):
             text = _visible(_section(hook))
             self.assertNotRegex(text, r"\d", hook)
             self.assertIsNone(TRIAL_RE.search(text), (hook, text))
@@ -240,7 +244,7 @@ class TheCopyIsPlainAndCautious(unittest.TestCase):
     def test_no_units_or_won_lost_figure_is_typed_anywhere_new(self):
         page = _visible(HTML)
         self.assertIsNone(re.search(r"[+\-−]\d+\.\d{2}\s*units", page))
-        for hook in ("what-you-get", "proven-block", "last-card"):
+        for hook in ("what-you-get", "last-card"):
             self.assertIsNone(re.search(r"(?<![\d-])\d{1,3}\s*[-–]\s*\d{1,3}(?![\d-])", _visible(_section(hook))))
 
     def test_the_pricing_card_lists_the_subscriber_items_not_the_old_line(self):
@@ -262,7 +266,7 @@ class TheCopyIsPlainAndCautious(unittest.TestCase):
         self.assertEqual(claim.strip(), (
             "An AI analyst reads each matchup, calls every market take or pass, gives the strongest case "
             "against any bet it takes, and says what it could not know. Every call is graded in public. "
-            "This is analysis, not advice, and it does not claim to beat the market."))
+            "Analysis, not advice."))
         self.assertNotIn("entered by hand", claim)
         faq = re.sub(r"\s+", " ", _section("faq"))
         # 2026-10-03: UFC picks paused (config/ufc_public_card.json). The FAQ still

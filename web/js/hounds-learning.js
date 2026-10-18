@@ -20,7 +20,7 @@
 
 import { apiGet } from "./api.js";
 import { h, clearNode, signed, isNum, fmtWhen, describeError, NOT_REPORTED } from "./hounds-core.js";
-import { friendlyLesson } from "./hounds-voice.js";
+import { friendlyLesson, campWords } from "./hounds-voice.js";
 import { renderLineChart } from "./hounds-chart.js";
 
 export const CHAMPION_COLOR = "#00E0FF";
@@ -112,7 +112,7 @@ function renderChance(payload) {
   const vr = system.vs_random;
   if (!payload.computed || !vr) {
     box.appendChild(h("p", { class: "hd-muted", "data-hook": "not-computed",
-      text: payload.message || "No daily scorecard has been stored yet." }));
+      text: campWords(payload.message) || "No daily scorecard has been stored yet." }));
     return;
   }
   const wins = vr.windows || {};
@@ -156,7 +156,7 @@ function renderActivity(payload) {
   const system = payload.system || {};
   const act = system.activity;
   if (!act) {
-    box.appendChild(h("p", { class: "hd-muted", text: payload.message || "Not computed yet." }));
+    box.appendChild(h("p", { class: "hd-muted", text: campWords(payload.message) || "Not computed yet." }));
     return;
   }
   const items = [["Rookies sent to tryouts", act.proposals], ["Tryouts turned away", act.refusals],

@@ -28,6 +28,7 @@ import {
 import { renderWordmark } from "./brand.js";
 import { armEntrances, armParallax, armCharts } from "./motion.js";
 import { mountLiveHero } from "./landing-live.js";
+import { fillKennel } from "./landing-kennel.js";
 import { captureFirstTouch } from "./attribution.js";
 
 function renderPricing(host, state) {
@@ -690,6 +691,9 @@ export function researchSentence(research) {
   return `${research.surviving} of ${research.read} research ideas tested have survived our checks.`;
 }
 
+// OWNER VOICE PASS, 2026-10-18: the "what is proven and what is not" section this fills was cut to one human
+// line and a link to /web/why-we-paused.html. With no node to fill, this returns before it fetches anything;
+// the sentence builders above stay because the record page's wording tests still pin them.
 async function fillProvenBlock() {
   const recordNode = document.querySelector("[data-hook='proven-record-text']");
   const researchNode = document.querySelector("[data-hook='proven-research-text']");
@@ -920,6 +924,8 @@ function boot() {
   if (pricingHost) renderPricing(pricingHost, NOT_ON);
   fillCheckoutCopy();
   fillLiveSports();
+  // The kennel panel (top three dogs, the latest put down), fire-and-forget like every fill here.
+  fillKennel();
   revealPublicDemoEntry();
   fillResearchCounts();
   fillCardRecord();

@@ -1,0 +1,78 @@
+/*
+ * The landing page's first screen: the kennel (voice pass, 2026-10-18; docs/VOICE.md).
+ * Loud on purpose, built on the page's own tokens: big condensed type, hot pink and lime against the dark
+ * ground, thumb-sized buttons, one column on a phone and two from 900px. Meaning never rides on colour
+ * alone: every badge carries its words and an emoji, every figure its sign.
+ */
+
+.kennel {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 22px 16px 34px;
+  display: grid;
+  gap: 22px;
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (min-width: 900px) {
+  .kennel { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); align-items: center; gap: 40px; padding: 56px 24px 52px; }
+}
+
+.kennel__live {
+  display: inline-flex; align-items: center; gap: 8px; margin: 0; font-family: var(--font-mono, monospace);
+  font-weight: 700; font-size: 13px; letter-spacing: .2em; color: #FF6274;
+}
+.kennel__dot { width: 10px; height: 10px; border-radius: 50%; background: #FF3D57; animation: kennel-pulse 1.6s ease-out infinite; }
+@keyframes kennel-pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 61, 87, .75); } 80%, 100% { box-shadow: 0 0 0 10px rgba(255, 61, 87, 0); } }
+@media (prefers-reduced-motion: reduce) { .kennel__dot { animation: none; } }
+
+.kennel__title {
+  margin: 8px 0 18px; font-family: var(--font-display, 'Barlow Condensed', sans-serif); font-weight: 800;
+  text-transform: uppercase; font-size: clamp(38px, 10.5vw, 78px); line-height: .96; color: #fff;
+  text-shadow: 3px 3px 0 #FF3D8B;
+}
+.kennel__sub { display: block; margin-top: 10px; color: #FFD34D; text-shadow: 2px 2px 0 rgba(255, 61, 139, .55); font-size: .66em; line-height: 1.02; }
+
+.kennel__cta { display: flex; flex-wrap: wrap; gap: 12px; margin: 0 0 14px; }
+.kennel__cta .btn { min-height: 52px; font-size: 18px; flex: 1 1 200px; justify-content: center; }
+.kennel__legal { margin: 0 0 8px; font-size: 15px; color: var(--text-2, #D6DBE4); }
+.kennel__legal strong { color: #fff; }
+.kennel__straight { margin: 0; font-size: 15px; color: var(--text-3, #B9C0CC); }
+.kennel__straight a { color: #fff; text-decoration: underline; text-underline-offset: 3px; font-weight: 600; }
+
+.kennel__panel {
+  background: #111317; border: 3px solid #FF3D8B; box-shadow: 6px 6px 0 rgba(255, 61, 139, .3); padding: 16px 14px 14px; min-width: 0;
+}
+.kennel__panel-title { margin: 0 0 10px; font-family: var(--font-display, sans-serif); font-size: 28px; text-transform: uppercase; line-height: 1; color: #fff; }
+.kennel__board { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.kennel__row {
+  display: grid; grid-template-columns: 30px 44px minmax(0, 1fr) auto; grid-template-areas: "rank avatar who units" "badge badge badge badge";
+  align-items: center; gap: 6px 10px; padding: 8px 10px; background: #15171B; border: 1px solid rgba(255, 255, 255, .1);
+}
+.kennel__rank { grid-area: rank; font-family: var(--font-display, sans-serif); font-weight: 800; font-size: 22px; color: #A3A9B5; }
+.kennel__row > svg { grid-area: avatar; }
+.kennel .hd-avatar { flex: none; overflow: visible; border-radius: 50%; }
+.kennel__who { grid-area: who; display: grid; min-width: 0; }
+.kennel__name { font-family: var(--font-display, sans-serif); font-weight: 800; font-size: 22px; line-height: 1.05; color: #fff; overflow-wrap: anywhere; }
+.kennel__wl { font-size: 13px; color: #B9C0CC; }
+.kennel__units { grid-area: units; font-family: var(--font-display, sans-serif); font-weight: 800; font-size: 30px; line-height: 1; white-space: nowrap; }
+.kennel__units--up { color: #B6FF3C; }
+.kennel__units--down { color: #FF8896; }
+.kennel__units--flat { color: #B9C0CC; }
+.kennel__badge {
+  grid-area: badge; justify-self: start; padding: 2px 10px; border: 1px solid; font-family: var(--font-display, sans-serif);
+  font-weight: 800; font-size: 14px; letter-spacing: .04em; text-transform: uppercase;
+}
+.kennel__badge--good { color: #7BE8AC; border-color: #7BE8AC; background: rgba(46, 212, 122, .1); }
+.kennel__badge--flat { color: #B9C0CC; border-color: #B9C0CC; background: rgba(185, 192, 204, .08); }
+.kennel__badge--early { color: #FFD98A; border-color: #FFD98A; background: rgba(255, 176, 32, .09); }
+.kennel__badge--bad { color: #FF9AA6; border-color: #FF9AA6; background: rgba(255, 61, 87, .1); }
+.kennel__badge--unknown { color: #A3A9B5; border-color: #A3A9B5; }
+.kennel__empty { padding: 14px; color: #D6DBE4; border: 1px dashed rgba(255, 255, 255, .2); font-size: 15px; }
+
+.kennel__putdown { margin-top: 12px; padding: 10px 12px; background: linear-gradient(#2E323C, #23262E); border: 2px solid #5A606D; }
+.kennel__putdown[hidden] { display: none; }
+.kennel__putdown-label { margin: 0 0 6px; font-weight: 800; font-size: 14px; letter-spacing: .08em; text-transform: uppercase; color: #C9CED8; }
+.kennel__stone { display: flex; align-items: center; gap: 12px; }
+.kennel__epitaph { margin: 2px 0 0; font-style: italic; color: #E1E5EC; font-size: 15px; }
+.kennel__cause { margin: 2px 0 0; color: #B9C0CC; font-size: 13px; }
+.kennel__more { display: inline-block; margin-top: 12px; min-height: 44px; line-height: 44px; font-weight: 700; color: #8FE9FA; }
