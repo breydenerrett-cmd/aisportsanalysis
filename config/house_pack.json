@@ -1,0 +1,539 @@
+{
+ "pack": "house_v1",
+ "title": "LineHound Hounds: the house pack",
+ "prereg": "docs/PREREG_HOUSE_PACK_V1.md",
+ "ledger": "evidence/hounds_house_v1.jsonl",
+ "registered": "2026-10-17",
+ "paper_only": true,
+ "disclaimer": "Paper-only race of strategies. No hound claims an edge or a profit. Esoteric and random hounds are entertainment and controls.",
+ "grading": "Board-average price at lock (owner ruling); best price shown separately. CLV vs the close.",
+ "hounds": [
+  {
+   "id": "professor_paws",
+   "name": "Professor Paws",
+   "tagline": "The house model, on a leash.",
+   "category": "stats",
+   "style": "model vs market, shrunk halfway to the market",
+   "label": null,
+   "sports": [
+    "mlb"
+   ],
+   "markets": [
+    "moneyline"
+   ],
+   "price_band": [
+    -199,
+    400
+   ],
+   "who_decided": "model",
+   "rule_text": "MLB moneyline. Feed the house run model (strength.model_line) each club's runs scored and allowed per game since 2026-08-28 (games before today; both clubs need 5+). Shrink its home win probability 50% toward the de-vigged consensus. Bet the side whose shrunk probability beats the consensus by 2.0 points or more.",
+   "module": "src.hounds.pack.professor_paws",
+   "ledger": "evidence/hounds_house_v1.jsonl",
+   "playbook": "docs/hounds/professor_paws.md",
+   "character": "A tweed-jacketed spaniel who trusts the house run model, but only halfway."
+  },
+  {
+   "id": "totals_terrier",
+   "name": "Totals Terrier",
+   "tagline": "Smells runs.",
+   "category": "stats",
+   "style": "model total vs market total",
+   "label": null,
+   "sports": [
+    "mlb"
+   ],
+   "markets": [
+    "total"
+   ],
+   "price_band": [
+    -199,
+    400
+   ],
+   "who_decided": "model",
+   "rule_text": "MLB game total, main line, half-point lines only. Same house run model and inputs as Professor Paws. Shrink its Over probability 50% toward the de-vigged consensus. Bet the Over if the shrunk probability beats the consensus Over by 3.0 points or more, the Under if it trails by 3.0 points or more.",
+   "module": "src.hounds.pack.totals_terrier",
+   "ledger": "evidence/hounds_house_v1.jsonl",
+   "playbook": "docs/hounds/totals_terrier.md",
+   "character": "A wire-haired terrier who digs for runs and barks at the total."
+  },
+  {
+   "id": "relief_retriever",
+   "name": "Relief Retriever",
+   "tagline": "Counts the bullpen's pitches.",
+   "category": "stats",
+   "style": "bullpen fatigue",
+   "label": null,
+   "sports": [
+    "mlb"
+   ],
+   "markets": [
+    "moneyline"
+   ],
+   "price_band": [
+    -199,
+    400
+   ],
+   "who_decided": "rule",
+   "rule_text": "MLB moneyline. Add up each club's relief pitches (bullpen log, non-starters) over the three calendar days before the game. If one bullpen threw 120 or more pitches more than the other, bet the club with the fresher bullpen. All three days must be in the bullpen log.",
+   "module": "src.hounds.pack.relief_retriever",
+   "ledger": "evidence/hounds_house_v1.jsonl",
+   "playbook": "docs/hounds/relief_retriever.md",
+   "character": "A Labrador who counts every pitch the bullpen threw this week."
+  },
+  {
+   "id": "gridiron_greyhound",
+   "name": "Gridiron Greyhound",
+   "tagline": "Point differential with a whistle.",
+   "category": "stats",
+   "style": "simple rating vs spread",
+   "label": null,
+   "sports": [
+    "nfl"
+   ],
+   "markets": [
+    "spread"
+   ],
+   "price_band": [
+    -199,
+    400
+   ],
+   "who_decided": "rule",
+   "rule_text": "NFL spread, main line. Expected home margin = half of (home point differential per game minus away point differential per game, 2026 finals before kickoff, 2+ games each) plus 1.5 for home field. Add the home spread line. Bet the home side if that is +3.0 or more, the away side if -3.0 or less.",
+   "module": "src.hounds.pack.gridiron_greyhound",
+   "ledger": "evidence/hounds_house_v1.jsonl",
+   "playbook": "docs/hounds/gridiron_greyhound.md",
+   "character": "A lean racing greyhound that only reads the scoreboard."
+  },
+  {
+   "id": "elimination_basset",
+   "name": "Elimination Basset",
+   "tagline": "Home when it's do or die.",
+   "category": "history",
+   "style": "postseason series state",
+   "label": null,
+   "sports": [
+    "mlb"
+   ],
+   "markets": [
+    "moneyline"
+   ],
+   "price_band": [
+    -199,
+    400
+   ],
+   "who_decided": "rule",
+   "rule_text": "MLB postseason moneyline. From this postseason's finished games between the two clubs, find their current series. If the home club is one loss from elimination, bet the home club. Otherwise pass.",
+   "module": "src.hounds.pack.elimination_basset",
+   "ledger": "evidence/hounds_house_v1.jsonl",
+   "playbook": "docs/hounds/elimination_basset.md",
+   "character": "A mournful basset hound who backs the home club when the season is on the line."
+  },
+  {
+   "id": "jetlag_jack",
+   "name": "Jet-Lag Jack",
+   "tagline": "Rested legs beat red-eyes.",
+   "category": "history",
+   "style": "rest and travel",
+   "label": null,
+   "sports": [
+    "mlb",
+    "nfl"
+   ],
+   "markets": [
+    "moneyline",
+    "spread"
+   ],
+   "price_band": [
+    -199,
+    400
+   ],
+   "who_decided": "rule",
+   "rule_text": "MLB moneyline: bet a club that did not play yesterday when its opponent played yesterday in a different ballpark from today's (the opponent travelled overnight); yesterday must be covered by the results stores. NFL spread: bet the club with 3 or more extra days of rest since its previous 2026 game.",
+   "module": "src.hounds.pack.jetlag_jack",
+   "ledger": "evidence/hounds_house_v1.jsonl",
+   "playbook": "docs/hounds/jetlag_jack.md",
+   "character": "A Jack Russell who never takes the red-eye and bets against those who do."
+  },
+  {
+   "id": "steamy_setter",
+   "name": "Steamy Setter",
+   "tagline": "Follows the steam.",
+   "category": "market",
+   "style": "line movement, with it",
+   "label": null,
+   "sports": [
+    "mlb",
+    "nfl"
+   ],
+   "markets": [
+    "moneyline"
+   ],
+   "price_band": [
+    -199,
+    400
+   ],
+   "who_decided": "rule",
+   "rule_text": "Moneyline, MLB and NFL. Compare the de-vigged consensus at the open (earliest capture with 3+ books, within 24 hours for MLB or 7 days for NFL, at least an hour before lock) with the consensus at lock. Bet the side the consensus moved toward if it moved 3.0 points or more.",
+   "module": "src.hounds.pack.steamy_setter",
+   "ledger": "evidence/hounds_house_v1.jsonl",
+   "playbook": "docs/hounds/steamy_setter.md",
+   "character": "An Irish setter that points wherever the money is moving."
+  },
+  {
+   "id": "contrary_corgi",
+   "name": "Contrary Corgi",
+   "tagline": "Fades the steam.",
+   "category": "market",
+   "style": "line movement, against it",
+   "label": null,
+   "sports": [
+    "mlb",
+    "nfl"
+   ],
+   "markets": [
+    "moneyline"
+   ],
+   "price_band": [
+    -199,
+    400
+   ],
+   "who_decided": "rule",
+   "rule_text": "Moneyline, MLB and NFL. Same trigger as Steamy Setter (the consensus moved 3.0 points or more from the open to lock). Bet the other side.",
+   "module": "src.hounds.pack.contrary_corgi",
+   "ledger": "evidence/hounds_house_v1.jsonl",
+   "playbook": "docs/hounds/contrary_corgi.md",
+   "character": "A corgi who digs in its short legs and goes the other way."
+  },
+  {
+   "id": "stale_bread_beagle",
+   "name": "Stale-Bread Beagle",
+   "tagline": "Sniffs out a stale book.",
+   "category": "market",
+   "style": "book disagreement",
+   "label": null,
+   "sports": [
+    "mlb",
+    "nfl"
+   ],
+   "markets": [
+    "moneyline",
+    "spread",
+    "total"
+   ],
+   "price_band": [
+    -199,
+    400
+   ],
+   "who_decided": "rule",
+   "rule_text": "MLB and NFL, moneyline, main spread and main total, sides with 5+ books on the line. Edge = the side's de-vigged consensus minus the raw implied probability of its best price. Bet the single largest edge if it is 2.5 points or more. Graded at the board average like every hound.",
+   "module": "src.hounds.pack.stale_bread_beagle",
+   "ledger": "evidence/hounds_house_v1.jsonl",
+   "playbook": "docs/hounds/stale_bread_beagle.md",
+   "character": "A beagle with a nose for a book that forgot to move its line."
+  },
+  {
+   "id": "bargain_bloodhound",
+   "name": "Bargain Bloodhound",
+   "tagline": "Only buys below fair.",
+   "category": "math",
+   "style": "best price vs de-vigged consensus",
+   "label": null,
+   "sports": [
+    "mlb",
+    "nfl"
+   ],
+   "markets": [
+    "moneyline"
+   ],
+   "price_band": [
+    -199,
+    400
+   ],
+   "who_decided": "rule",
+   "rule_text": "Moneyline, MLB and NFL. Bet the side whose best price has a break-even probability at least 0.5 points below the de-vigged consensus (the larger margin if both sides qualify).",
+   "module": "src.hounds.pack.bargain_bloodhound",
+   "ledger": "evidence/hounds_house_v1.jsonl",
+   "playbook": "docs/hounds/bargain_bloodhound.md",
+   "character": "A bloodhound who never pays retail."
+  },
+  {
+   "id": "kelly_kelpie",
+   "name": "Kelly the Kelpie",
+   "tagline": "Bets the Kelly fraction.",
+   "category": "math",
+   "style": "fractional Kelly staking",
+   "label": null,
+   "sports": [
+    "mlb",
+    "nfl"
+   ],
+   "markets": [
+    "moneyline"
+   ],
+   "price_band": [
+    -199,
+    400
+   ],
+   "who_decided": "rule",
+   "rule_text": "Same selections as Bargain Bloodhound. Stake = a quarter of the full Kelly fraction (consensus fair probability at the best price) of a 100-unit bankroll, capped at 3 units, rounded to 0.01; pass if under 0.05 units. Results scale by the stake.",
+   "module": "src.hounds.pack.kelly_kelpie",
+   "ledger": "evidence/hounds_house_v1.jsonl",
+   "playbook": "docs/hounds/kelly_kelpie.md",
+   "character": "A working kelpie that herds its bankroll by the Kelly fraction."
+  },
+  {
+   "id": "hot_streak_husky",
+   "name": "Hot-Streak Husky",
+   "tagline": "Rides the hot hand.",
+   "category": "intangibles",
+   "style": "momentum",
+   "label": null,
+   "sports": [
+    "mlb",
+    "nfl"
+   ],
+   "markets": [
+    "moneyline",
+    "spread"
+   ],
+   "price_band": [
+    -199,
+    400
+   ],
+   "who_decided": "rule",
+   "rule_text": "MLB moneyline: over each club's last 10 games since 2026-08-28, bet a club that won 7 or more against one that won 4 or fewer. NFL spread: bet a club on a 2026 winning streak of 3 or more against one on a losing streak of 2 or more.",
+   "module": "src.hounds.pack.hot_streak_husky",
+   "ledger": "evidence/hounds_house_v1.jsonl",
+   "playbook": "docs/hounds/hot_streak_husky.md",
+   "character": "A husky that runs with whoever is hot."
+  },
+  {
+   "id": "grudge_bulldog",
+   "name": "Grudge Bulldog",
+   "tagline": "Never forgets.",
+   "category": "intangibles",
+   "style": "revenge and bounce-back",
+   "label": null,
+   "sports": [
+    "mlb",
+    "nfl"
+   ],
+   "markets": [
+    "moneyline",
+    "spread"
+   ],
+   "price_band": [
+    -199,
+    400
+   ],
+   "who_decided": "rule",
+   "rule_text": "NFL spread: bet a club that lost the two clubs' most recent meeting (a final since 2021, within 450 days before kickoff) by 7 or more points. MLB moneyline: bet a club that lost to the same opponent yesterday by 5 or more runs.",
+   "module": "src.hounds.pack.grudge_bulldog",
+   "ledger": "evidence/hounds_house_v1.jsonl",
+   "playbook": "docs/hounds/grudge_bulldog.md",
+   "character": "A bulldog that never forgets who beat it."
+  },
+  {
+   "id": "numerology_newfie",
+   "name": "Numerology Newfie",
+   "tagline": "Reads the numbers, not the games. For fun.",
+   "category": "esoteric",
+   "style": "gematria (entertainment)",
+   "label": "entertainment",
+   "sports": [
+    "mlb",
+    "nfl"
+   ],
+   "markets": [
+    "moneyline"
+   ],
+   "price_band": [
+    -199,
+    400
+   ],
+   "who_decided": "rule",
+   "rule_text": "For fun, moneyline, MLB and NFL. Team number = digital root of the English ordinal gematria (A=1..Z=26) of the odds feed's full team name. Date number = digital root of the digits of the game's date. Bet the club whose number is closer to the date number; equal distance passes.",
+   "module": "src.hounds.pack.numerology_newfie",
+   "ledger": "evidence/hounds_house_v1.jsonl",
+   "playbook": "docs/hounds/numerology_newfie.md",
+   "character": "A Newfoundland who reads the stars in the alphabet. Entertainment only."
+  },
+  {
+   "id": "lunar_lab",
+   "name": "Lunar Lab",
+   "tagline": "Howls at the moon. For fun.",
+   "category": "esoteric",
+   "style": "moon phase (entertainment)",
+   "label": "entertainment",
+   "sports": [
+    "mlb",
+    "nfl"
+   ],
+   "markets": [
+    "total"
+   ],
+   "price_band": [
+    -199,
+    400
+   ],
+   "who_decided": "rule",
+   "rule_text": "For fun, game total, MLB and NFL. Moon age at the start = days since the 2000-01-06 18:14 UTC new moon, modulo 29.530588853. Within 1.5 days of full moon bet the Over; within 1.5 days of new moon bet the Under; otherwise pass.",
+   "module": "src.hounds.pack.lunar_lab",
+   "ledger": "evidence/hounds_house_v1.jsonl",
+   "playbook": "docs/hounds/lunar_lab.md",
+   "character": "A lab that howls at the full moon and goes quiet at the new one. Entertainment only."
+  },
+  {
+   "id": "coin_flip_collie",
+   "name": "Coin-Flip Collie",
+   "tagline": "The control.",
+   "category": "random",
+   "style": "seeded coin flip (control)",
+   "label": "control",
+   "sports": [
+    "mlb",
+    "nfl"
+   ],
+   "markets": [
+    "moneyline"
+   ],
+   "price_band": [
+    -199,
+    400
+   ],
+   "who_decided": "random",
+   "rule_text": "Control, moneyline, MLB and NFL. Seed = sha256 of 'coin_flip_collie|' plus the odds event id. Home if the seed's first byte is even, away if odd. Every game qualifies.",
+   "module": "src.hounds.pack.coin_flip_collie",
+   "ledger": "evidence/hounds_house_v1.jsonl",
+   "playbook": "docs/hounds/coin_flip_collie.md",
+   "character": "A border collie with a coin. This is the control."
+  },
+  {
+   "id": "dartboard_dalmatian",
+   "name": "Dartboard Dalmatian",
+   "tagline": "Throws a dart at the board.",
+   "category": "random",
+   "style": "seeded random market and side (control)",
+   "label": "control",
+   "sports": [
+    "mlb",
+    "nfl"
+   ],
+   "markets": [
+    "moneyline",
+    "spread",
+    "total"
+   ],
+   "price_band": [
+    -199,
+    400
+   ],
+   "who_decided": "random",
+   "rule_text": "Control, MLB and NFL. Seed = sha256 of 'dartboard_dalmatian|' plus the odds event id. Market = moneyline, spread or total by the first byte mod 3; side = home/Over if the second byte is even, away/Under if odd. Pass if that market is not on the board.",
+   "module": "src.hounds.pack.dartboard_dalmatian",
+   "ledger": "evidence/hounds_house_v1.jsonl",
+   "playbook": "docs/hounds/dartboard_dalmatian.md",
+   "character": "A dalmatian throwing darts at the whole board. A control."
+  },
+  {
+   "id": "pack_leader",
+   "name": "Pack Leader",
+   "tagline": "Goes with the pack.",
+   "category": "mixed",
+   "style": "ensemble vote",
+   "label": null,
+   "sports": [
+    "mlb",
+    "nfl"
+   ],
+   "markets": [
+    "moneyline"
+   ],
+   "price_band": [
+    -199,
+    400
+   ],
+   "who_decided": "rule",
+   "rule_text": "Moneyline, MLB and NFL. Voters: Professor Paws, Relief Retriever, Gridiron Greyhound, Elimination Basset, Jet-Lag Jack, Steamy Setter and Stale-Bread Beagle (moneyline and spread picks only), asked about this game before any daily cap. Bet a club's moneyline when it has 2 or more votes and the other club has none.",
+   "module": "src.hounds.pack.pack_leader",
+   "ledger": "evidence/hounds_house_v1.jsonl",
+   "playbook": "docs/hounds/pack_leader.md",
+   "character": "The alpha who only moves when the pack agrees."
+  },
+  {
+   "id": "scrappy_schnauzer",
+   "name": "Scrappy Schnauzer",
+   "tagline": "The underdog hunter.",
+   "category": "mixed",
+   "style": "underdogs with a reason",
+   "label": null,
+   "sports": [
+    "mlb",
+    "nfl"
+   ],
+   "markets": [
+    "moneyline"
+   ],
+   "price_band": [
+    100,
+    250
+   ],
+   "who_decided": "rule",
+   "rule_text": "Moneyline underdogs priced +100 to +250 on the board average, MLB and NFL. Bet the underdog when at least one of Professor Paws, Gridiron Greyhound, Steamy Setter or Hot-Streak Husky picks that club in this game.",
+   "module": "src.hounds.pack.scrappy_schnauzer",
+   "ledger": "evidence/hounds_house_v1.jsonl",
+   "playbook": "docs/hounds/scrappy_schnauzer.md",
+   "character": "A schnauzer that only bites the big dogs: underdogs from +100 to +250."
+  },
+  {
+   "id": "chalk_chihuahua",
+   "name": "Chalk Chihuahua",
+   "tagline": "Always the favourite.",
+   "category": "simple",
+   "style": "favourites",
+   "label": null,
+   "sports": [
+    "mlb",
+    "nfl"
+   ],
+   "markets": [
+    "moneyline"
+   ],
+   "price_band": [
+    -199,
+    -101
+   ],
+   "who_decided": "rule",
+   "rule_text": "Moneyline, MLB and NFL. Bet the favourite (the side with the higher de-vigged consensus) when its board-average price is between -199 and -101.",
+   "module": "src.hounds.pack.chalk_chihuahua",
+   "ledger": "evidence/hounds_house_v1.jsonl",
+   "playbook": "docs/hounds/chalk_chihuahua.md",
+   "character": "A chihuahua that always picks the bigger dog (inside the -200 rule)."
+  },
+  {
+   "id": "home_dog_hank",
+   "name": "Home Dog Hank",
+   "tagline": "The home underdog.",
+   "category": "simple",
+   "style": "home underdogs",
+   "label": null,
+   "sports": [
+    "mlb",
+    "nfl"
+   ],
+   "markets": [
+    "moneyline"
+   ],
+   "price_band": [
+    100,
+    400
+   ],
+   "who_decided": "rule",
+   "rule_text": "Moneyline, MLB and NFL. Bet the home club when its board-average price is +100 to +400.",
+   "module": "src.hounds.pack.home_dog_hank",
+   "ledger": "evidence/hounds_house_v1.jsonl",
+   "playbook": "docs/hounds/home_dog_hank.md",
+   "character": "A hound that never leaves home and loves an underdog."
+  }
+ ]
+}
