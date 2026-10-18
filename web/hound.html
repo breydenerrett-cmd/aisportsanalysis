@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>A hound — LINEHOUND</title>
+<meta name="description" content="One hound's written rule, its verdict against the closing price, its paper results and every bet it has placed, with who decided each one. Paper only, not advice.">
+<meta property="og:title" content="A hound — LINEHOUND">
+<meta property="og:description" content="A paper-only betting strategy: its rule, its verdict and its bets. Not advice.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#0A0A0B">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230B0C0E'/%3E%3Cpath d='M6 6l8 0 0 9-8 4z' fill='%23FF3D57'/%3E%3Cpath d='M18 6l8 0 0 13-8-4z' fill='%23FF7A45'/%3E%3C/svg%3E">
+<!-- ONE HOUND, chosen by ?id=. Page script: web/js/hounds-detail.js. Static paper-only / not-advice
+     lines so they are present with scripts off. -->
+<link rel="stylesheet" href="css/fonts.css">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/nav.css">
+<link rel="stylesheet" href="css/hounds.css">
+</head>
+<body class="hounds-page">
+<a class="hd-skip" href="#main-content">Skip to the hound</a>
+<nav class="site-nav hd-nav" aria-label="primary" data-hook="hound-nav">
+  <a class="ps-page__home" href="landing.html" aria-label="LINEHOUND home">
+    <span class="wordmark" data-hook="brand-mark">
+      <span class="wordmark__mark"><span></span></span>
+      <span class="wordmark__text" data-hook="product-name">LINEHOUND</span>
+    </span>
+  </a>
+  <div class="site-nav__links hd-nav__links">
+    <a href="hounds.html">The race</a>
+    <a href="build-a-hound.html">Build a hound</a>
+  </div>
+</nav>
+
+<main class="hd-wrap" id="main-content" aria-label="One hound" data-hook="hound-app">
+
+<p class="hd-back"><a href="hounds.html" data-hook="back-to-race">&larr; All hounds</a></p>
+
+<header class="hd-hound-head" data-hook="hound-header"></header>
+<div class="hd-state hd-state--retired" data-hook="hound-cause" role="status" hidden></div>
+<p class="hd-paper" data-hook="paper-only-notice" role="note"><strong>Paper only. Not advice.</strong> No real bet is ever placed. A hound's results do not predict anything. 21+. <span data-hook="hound-notice"></span></p>
+
+<section class="hd-panel" aria-labelledby="verdict-h" data-hook="hound-verdict-section">
+  <h2 id="verdict-h">Verdict</h2>
+  <div class="hd-verdict" data-hook="hound-verdict"></div>
+  <div data-hook="hound-results"></div>
+</section>
+
+<section class="hd-panel" aria-labelledby="rule-h" data-hook="hound-rule-section">
+  <h2 id="rule-h">The rule</h2>
+  <p class="hd-muted">This is the whole rule. A hound does nothing that is not written here.</p>
+  <div data-hook="hound-rule"></div>
+</section>
+
+<section class="hd-panel" aria-labelledby="chart-h" data-hook="hound-chart-section">
+  <div class="hd-panel__head">
+    <h2 id="chart-h">Paper units over time</h2>
+    <div class="hd-segs" role="group" aria-label="Which results to draw" data-hook="hound-segment"></div>
+  </div>
+  <p class="hd-chart-title" data-hook="hound-chart-title" aria-live="polite"></p>
+  <p class="hd-muted">Recorded and average price. Paper results. Units over a few weeks are mostly luck; the verdict above is the test.</p>
+  <div data-hook="hound-units-chart"><p class="hd-muted">Loading the charts...</p></div>
+  <div data-hook="hound-clv-chart"></div>
+</section>
+
+<section class="hd-panel" aria-labelledby="bets-h" data-hook="hound-bets-section">
+  <h2 id="bets-h">Every bet</h2>
+  <p class="hd-muted">Losses at the same size as wins. The "Decided by" column says whether the rule, the code or the model made each call.</p>
+  <div data-hook="hound-bets"><p class="hd-muted">Loading the bets...</p></div>
+</section>
+
+</main>
+
+<footer class="hd-foot" data-hook="hound-footer" aria-label="disclaimer">
+  <p data-hook="not-advice"><strong>Paper only, not advice.</strong> LINEHOUND publishes analysis of betting strategies using pretend money. Nothing here is a recommendation to bet. Past results, including paper results, do not predict future ones.</p>
+  <p>21+ &middot; PLAY RESPONSIBLY &middot; <a href="tel:1-800-426-2537" data-hook="responsible-gambling-help">1-800-GAMBLER</a></p>
+  <p><a href="landing.html">About LINEHOUND</a> &middot; <a href="hounds.html">The race</a></p>
+</footer>
+
+<script type="module" src="js/hounds-detail.js"></script>
+</body>
+</html>
