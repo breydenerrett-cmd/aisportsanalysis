@@ -131,11 +131,11 @@
     "Thin content: MLB has had no counted pick since 2026-09-26 (fills only, 2 to 4 postseason games a day); NFL has published 11 picks on 4 dates, 1 since 2026-09-21; UFC is ungraded. After the World Series (about Nov 1) only NFL remains. Gates are not being loosened to fill the card; what is sold is the nightly card with labelled fills, the price view and the public record."
   ],
   "today": [
-    "2026-10-18 7:00 am PT run: three NFL briefs published before the 10:00 am PT kickoffs (Steelers at Buccaneers, Ravens at Browns, Panthers at Eagles), frozen 14:13Z; one model reading each, all three markets passed in every game.",
-    "Checker rejections fixed by re-answers with the rejection lines only: Ravens at Browns clean on attempt 2, Panthers at Eagles on attempt 3; Steelers at Buccaneers clean on attempt 1.",
-    "Yesterday's ALCS Game 4 brief (Rays at Guardians) is graded; the public sample now points at it.",
-    "Public MLB value picks remain paused (config/mlb_public_card.json). ALCS Game 5 (2:08 pm PT) and the 1:05/1:25 pm PT NFL games are covered by the 11:00 am PT run.",
-    "08:40 am PT check: daily job still red on the same known check (tier-ladder pre-registration, owner decision); CI green; production healthy, deploys green, odds 0.5 h old. Sends 0, replies 0, testers 0, paid 0."
+    "2026-10-18: seven briefs published today, one model reading each, all markets passed in every game.",
+    "Morning (frozen 14:13Z): Steelers at Buccaneers, Ravens at Browns, Panthers at Eagles, before the 10:00 am PT kickoffs.",
+    "11:00 am PT run (frozen ~18:13Z): Cardinals at Rams, Bills at Raiders, Chargers at Chiefs, and ALCS Game 5 Rays at Guardians (both lineups in the packet); each clean on attempt 2 after re-answers given only the checker's rejection lines.",
+    "Public MLB value picks remain paused (config/mlb_public_card.json). Public sample stays on the graded ALCS Game 4 brief.",
+    "Daily job still red on the known tier-ladder check (owner decision); CI green; production healthy, odds 0.1 h old. Sends 0, replies 0, testers 0, paid 0."
   ],
   "next_customer_action": "Batch 1 goes out in five small groups, best fit first; group 1 is written and waiting. Log sends and replies with scripts/outreach_batch.py (exact words stay in a private local file). Grant tester spots only to people who bet these sports, will use it and will give feedback (docs/sales/DISCOVERY_GUIDE.md). After five real conversations: stop and synthesise before changing the product.",
   "next_research_action": "No market shows repeatable value (docs/PERFORMANCE_MATRIX.md: 110 measured populations, 0 candidates; moneyline closing-line value negative on 26 of 26 rows). The props question cannot be answered before 2026-10-31: the best-placed family, batter total bases, reaches a minimum sample about five weeks into the 2027 season (docs/PROP_EXPERIMENT_INVENTORY.md, docs/PREREG_PROP_FAMILIES_DRAFT.md, a DRAFT with seven owner decisions). Until then: sell the public record and the price comparison, not an edge. AI critic: adds one catch over a plain rule on 8 cases and is not ready to show customers (docs/AI_CRITIC_BENCHMARK.md).",
