@@ -104,6 +104,9 @@ unless that board exists for 90% of priced bets.
 | `GET /hounds/stream?page=` | newest decisions across all hounds, refusals marked |
 | `GET /hounds/graveyard` | retired hounds with their cause |
 | `GET /hounds/series?ids=a,b,c` | cumulative-units series for line charts |
+| `GET /hounds/learning` | the learning loop's system scorecard (promotion hit rate, champions vs the random controls on the same games, activity, the false-discovery budget, the pause) |
+| `GET /hounds/learning/lessons?hound=&category=&page=` | every ended challenger's lesson, newest first |
+| `GET /hounds/{id}/lineage` | a hound's versions (each with its own record), live challengers, tried-and-failed list and lessons |
 
 Shapes are in `src/hounds/contract.py` (dataclasses + `to_json`). Every payload
 has `paper_only: true`, `not_advice`, `as_of` (the newest decision day in the
@@ -147,6 +150,16 @@ never read (`ledgers.FIRST_OPEN_DAY`).
 CLV, verification and the average price come from the odds store by `event_id`
 (the same ids the odds store uses), so a pack bet that wants a closing-line
 verdict must carry the store's `event_id` and a `lock_utc` before `start_utc`.
+
+## How the hounds learn
+
+A hound is never edited. A coach may propose a **challenger**; it runs in shadow beside the champion on the
+same games at the same prices; and only the referee, by a pre-set sequential test on the paired
+closing-line value controlled for false discoveries across all challengers, can promote it, as the next
+**version**. The old version keeps its own record (`<id>@v<n>` in the graveyard). The loop also computes
+whether it is improving anything and pauses itself when it cannot show it. The rules, with every number, are
+`docs/PREREG_LEARNING_LOOP.md` (committed before the code); the operator's guide is `docs/HOUNDS_LEARNING.md`;
+the pages are `web/learning.html` and the "Versions and challengers" section of `web/hound.html`.
 
 ## How to add a hound
 

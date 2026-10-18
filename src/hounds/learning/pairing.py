@@ -70,6 +70,16 @@ def volume_ok(vol: dict) -> bool:
             and vol["challenger_bets"] >= rules.VOLUME_FLOOR_SHARE * vol["champion_bets"])
 
 
+def volume_ok_analyst(vol: dict) -> bool:
+    """The analyst arm's floor (prereg section 12): TAKE calls in at least half as many games as the
+    champion prompt. The 50-bet minimum does not apply: a game's calls are not bets in that sense."""
+    return vol["challenger_bets"] >= rules.ANALYST_MIN_TAKE_GAME_SHARE * vol["champion_bets"]
+
+
+def volume_ok_for(kind: str, vol: dict) -> bool:
+    return volume_ok_analyst(vol) if kind == "analyst" else volume_ok(vol)
+
+
 def _key(bet) -> tuple:
     return (str(bet.event_id), str(bet.market_key))
 

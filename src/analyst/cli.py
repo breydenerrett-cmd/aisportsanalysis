@@ -399,7 +399,8 @@ def execute_run(date: str, *, game: Optional[str] = None, dry_run: bool = False,
                          "attempts": result.attempts, "request_ids": result.request_ids},
                     path=run.store_path, packet_dir=run.packet_dir, lock_lead_minutes=lead,
                     refresh=refresh, prompt_version=run.arm.prompt_version,
-                    system_prompt=run.arm.system_prompt if run.arm.situation else None,
+                    system_prompt=(run.arm.system_prompt
+                                   if (run.arm.situation or run.arm.prompt_version) else None),
                     extra=run.arm.extra)
             except ledger.AnalystLedgerError as exc:
                 out(f"{tag}REFUSED {gid}: {exc}")

@@ -31,7 +31,7 @@ def run_referee(scope: L.Scope, *, now: datetime, champion_ledger, attach_fn: Op
     src = measure.BetSource(scope, champion_ledger, attach_fn=attach_fn)
     src.load(live)
     return Referee(scope, now=now, bets_for=src.bets_for, champion_current=champion_current,
-                   apply_user_promotion=apply_user_promotion).run()
+                   apply_user_promotion=apply_user_promotion, kinds=kinds).run()
 
 
 def hound_info_from_book(book) -> dict:

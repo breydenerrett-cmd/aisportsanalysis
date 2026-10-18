@@ -37,7 +37,8 @@ class Referee:
     def __init__(self, scope: L.Scope, *, now: Optional[datetime] = None,
                  bets_for: Optional[Callable] = None, pairing_for: Optional[Callable] = None,
                  champion_current: Optional[Callable] = None,
-                 apply_user_promotion: Optional[Callable] = None, paused: Optional[bool] = None):
+                 apply_user_promotion: Optional[Callable] = None, paused: Optional[bool] = None,
+                 kinds: tuple = ("pack", "user", "analyst")):
         """``bets_for(challenger)`` -> ``(champion_bets, challenger_bets)`` with closing-line values
         attached (``measure.BetSource.bets_for``); the pairing is built from them. An analyst prompt
         challenger has no bets: its caller passes ``pairing_for(challenger, state)`` -> a
@@ -51,6 +52,7 @@ class Referee:
         self.pairing_for = pairing_for
         self.champion_current = champion_current
         self.apply_user_promotion = apply_user_promotion
+        self.kinds = tuple(kinds)       # which challengers THIS run examines; the monthly batch sees all
         self.paused = pause.is_paused(scope) if paused is None else paused
         self.log = L.log_for(scope)
         self.report = {"scope": scope.name, "looks": 0, "retired": 0, "promoted": 0, "undecided": 0,
@@ -154,7 +156,7 @@ class Referee:
                 continue
             res = seq.evaluate_look(k, [(s.date, s.diff) for s in pr.slots[:n]], analyst=analyst)
             vol = pr.volume(n)
-            ok = pairing.volume_ok(vol)
+            ok = pairing.volume_ok_for(c.kind, vol)
             ev = self._look_event(c, k, res, pr, vol, ok)
             self.report["looks"] += 1
             c = self._state().challengers[c.id]
@@ -288,7 +290,8 @@ class Referee:
     def run(self) -> dict:
         self._repair()
         for c in list(self._state().live()):
-            self._examine(c)
+            if c.kind in self.kinds:
+                self._examine(c)
         if not self.paused:
             for month in self._months_to_batch(self._state()):
                 self._batch(month)

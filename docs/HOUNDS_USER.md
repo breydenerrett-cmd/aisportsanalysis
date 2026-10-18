@@ -128,8 +128,11 @@ quote recorded at lock, `book`, `book_count`, `start_utc`, `segment`, `who_decid
 
 ## The Houndmaster (coach)
 
-The door a future coach (a capped model call, **not built**) must use to change a user's hound. It cannot
-do anything the guards do not allow.
+The door a future coach (a capped model call, **not built**) must use to PROPOSE a change to a user's
+hound. **Since 2026-10-18 a proposal creates a challenger, never a change** (champion / challenger,
+`docs/HOUNDS_LEARNING.md`, `docs/PREREG_LEARNING_LOOP.md`): the proposed spec runs in shadow beside the
+champion on the same games at the same prices, and only the referee, by a pre-set test on the paired
+closing-line value, can promote it (as a new version, below). It cannot do anything the guards do not allow.
 
 * **Off by default.** `config/hounds_coach.json` `{"enabled": false}` is read on every request; a missing,
   unreadable or malformed file means off. Owner undo still works when it is off.
@@ -141,20 +144,30 @@ do anything the guards do not allow.
   minutes and returns it once. The proposal is `POST /hounds/{id}/coach` with headers `X-Coach-Round`,
   `X-Coach-Ts` (unix seconds), `X-Coach-Sig` = hex HMAC-SHA256(secret, `"{ts}.POST./hounds/{id}/coach.{body}"`).
   A wrong signature does not burn the key; a valid one burns it whatever happens next. Body: `spec`,
-  `reason` (<= 200), `quip` (<= 90), nothing else.
+  `reason` (<= 200), `quip` (<= 90), and, when the spec differs from the champion's, `hypothesis` (20 to 400
+  chars: why this should beat the champion) and `evidence` (1 to 10 references to scorecard fields or lesson
+  ids); nothing else (a `promote` or `retire` field is refused as a bad body).
 * **Guards**: kill switch on; hound running and opted in; **one round per lineage per 7 days** (applied or
   held); **at least 50 graded bets on the current version** (refused with the count otherwise); the new
   spec passes the menu (-200 cap always on) and may only keep or narrow sports, markets and price band,
-  keep or lower max bets per day, keep or raise min books; name and tagline cannot change; reason and quip
-  pass the language filter and are plain text.
-* **Applying** creates a new version (`version_of` = old id) with a **fresh record**; the old version
-  stays visible with its own. An identical spec is recorded as "held".
-* **Undo** (`POST /hounds/{id}/coach/undo`, owner): retires the coached version and resumes the previous
-  spec as another new version. It does not reopen the 7-day allowance.
+  keep or lower max bets per day, keep or raise min books; name and tagline cannot change, and neither can
+  `lock_minutes` (the pair must lock at the same instant); reason, quip and hypothesis pass the language
+  filter and are plain text. The loop adds: at most 3 live challengers per hound and 30 in the scope; no
+  near-copy of the champion, of a live challenger, or of a challenger that lost in the last 90 days.
+* **A proposal creates a challenger** (decision `challenger` in the diary). A **promotion** (made by the
+  referee, never by the model) creates a new version (`version_of` = old id) with a **fresh record**; the old
+  version stays visible with its own. The diary row for a promotion is `applied`, `decided_by: referee`.
+  An identical spec is recorded as "held".
+* **The loop can switch the door off by itself**: an auto-pause (a failing promotion hit rate, or 60 days
+  trailing the random controls) writes a pause flag beside the app database; `coach_enabled()` is the config
+  AND no pause. Only the owner's `python -m src.hounds.learning resume --scope user` lifts it.
+* **Undo** (`POST /hounds/{id}/coach/undo`, owner): retires a promoted (or legacy coached) version and
+  resumes the previous spec as another new version. It does not reopen the 7-day allowance, and it is
+  counted in the loop's scorecard.
 * **Diary** (`coach_diary` table; `GET .../coach/diary`): one row per round (when, hound, verdict then,
-  decision applied/held/rejected/undone, old/new spec, reason, quip, who decided), plus per-hound and
-  global metrics: rewrites, holds, refusals, undos, and coached-vs-replaced CLV, which is null until
-  each side has 50 bets with a CLV.
+  decision challenger/applied/held/rejected/undone, old/new spec, reason, quip, who decided, the challenger
+  id), plus per-hound and global metrics: challengers, rewrites (promotions), holds, refusals, undos, and
+  promoted-vs-replaced CLV, which is null until each side has 50 bets with a CLV.
 
 Why the limits: a reference auto-coach rewrote rules 29 times in 11 days, was never undone, and its
 review called it statistical malpractice. Rate, evidence, fresh records and undo are the answer.

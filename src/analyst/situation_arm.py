@@ -91,7 +91,12 @@ class Arm:
 
 def mlb_arm(name: str) -> Arm:
     if name == ARM_A:
-        return Arm(ARM_A, "mlb", False, analyst_mod.SYSTEM_PROMPT, None, mlb_ledger.STORE,
+        # The champion prompt: the shipped one until the learning loop promotes a challenger
+        # (src/analyst/prompt_arm.py, docs/PREREG_LEARNING_LOOP.md section 12). With no promotion on
+        # record this is exactly the prompt it has always been, with no prompt_version override.
+        from src.analyst import prompt_arm
+        prompt, version = prompt_arm.champion()
+        return Arm(ARM_A, "mlb", False, prompt, version, mlb_ledger.STORE,
                    mlb_ledger.USAGE_STORE, mlb_ledger.PACKET_DIR, None)
     if name == ARM_B:
         return Arm(ARM_B, "mlb", True, analyst_mod.SITUATION_SYSTEM_PROMPT,
