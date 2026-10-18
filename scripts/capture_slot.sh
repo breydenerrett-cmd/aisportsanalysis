@@ -575,6 +575,10 @@ python3 -m src.analysis.mlb_value_shadow publish --date "$SLATE_DATE" 2>&1 | tai
 echo "== house pack hounds ($SLATE_DATE) =="
 python3 -m src.hounds.pack_run --date "$SLATE_DATE" 2>&1 | tail -n 8 | sed 's/^/  /' || true
 python3 -m src.hounds.pack_settle 2>&1 | tail -n 4 | sed 's/^/  /' || true
+# The learning loop's house tick (docs/PREREG_LEARNING_LOOP.md): shadow any live
+# challengers on the same games and prices, settle them, apply the referee's
+# looks. Never promotes on a model's say-so; never fails the slot.
+python3 -m src.hounds.learning tick --skip-scorecard 2>&1 | tail -n 6 | sed 's/^/  /' || true
 
 echo "== nfl capture =="
 python3 -m src.cli nfl capture 2>&1 | sed 's/^/  /' || true
