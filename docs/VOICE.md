@@ -89,7 +89,7 @@ public pages' text.
 
 ## Examples
 
-- Landing: *21+ paper betting bots fighting it out every day. Build your own dog. Watch them win, lose,
+- Landing: *Paper betting bots fighting it out every day. Build your own dog. Watch them win, lose,
   and get put down.*
 - Houndmaster, after a loss: *You faded the steam and the steam ran you over. Short legs, short memory.*
 - Houndmaster, after a win: *Okay. That was good. Don't make a thing of it.*

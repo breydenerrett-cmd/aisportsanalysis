@@ -1,6 +1,6 @@
 """The landing page's AI-desk section (the old first screen), per docs/CONVERSION_REVIEW_2026-10-02.md.
 
-OWNER VOICE PASS, 2026-10-18 (docs/VOICE.md): the first screen is now the kennel ("21+ paper betting bots
+OWNER VOICE PASS, 2026-10-18 (docs/VOICE.md): the first screen is now the kennel ("Paper betting bots
 fighting it out every day ..."), and everything this file pins about the old first screen is the SECOND
 section, "Our AI desk reads every game", unchanged in order and in its funnel hooks. The long honesty essays
 (what is proven, a pick we got wrong, the research-count FAQ) are cut to one human line and a link; the tests
@@ -194,7 +194,7 @@ class TheRecordPanelUsesPlainWords(unittest.TestCase):
 
 
 class TheKennelIsTheFirstScreen(unittest.TestCase):
-    TITLE = ("21+ paper betting bots fighting it out every day. "
+    TITLE = ("Paper betting bots fighting it out every day. "
              "Build your own dog. Watch them win, lose, and get put down.")
 
     def test_the_one_h1_is_the_kennel_headline_verbatim(self):

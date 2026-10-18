@@ -77,7 +77,7 @@ class TheStaticPageNoLongerSellsPicks(unittest.TestCase):
 
     def test_the_first_screen_says_what_is_live(self):
         text = _visible(_first_screen())
-        self.assertIn("21+ paper betting bots fighting it out every day.", text)
+        self.assertIn("Paper betting bots fighting it out every day.", text)
         self.assertIn("Our AI desk reads every game.", text)           # the brief, now the second section
         self.assertIn("take or pass", text)
         self.assertIn("strongest case against any bet it takes", text)
