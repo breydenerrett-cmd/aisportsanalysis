@@ -29,6 +29,7 @@ from fastapi import Depends
 from api.billing import router as billing_router
 from api.onboarding import router as onboarding_router
 from api.signup import router as signup_router
+from api.hounds_create import router as hounds_create_router
 from api.support import router as support_router
 from api.betcheck import free_router as free_betcheck_router, router as betcheck_router
 from api.daily import router as daily_router
@@ -66,6 +67,12 @@ app = FastAPI(title="aisportsanalysis api", description=(
 # GET /health -- no auth, mounted first so it is never shadowed by a
 # same-named route added to another router later.
 app.include_router(health_router)
+
+# build-your-own hound (api/hounds_create.py). Mounted BEFORE any router that declares
+# GET /hounds/{id}, so the literal /hounds/menu and /hounds/mine are never read as a hound id.
+# Public reads are rate-limited; create/retire/undo carry their own sign-in; the signed coach
+# door carries no bearer token by design (HMAC-signed, one-use round, off by default).
+app.include_router(hounds_create_router)
 
 # /games/{date}, /game/{date}/{away}/{home}, /changed/{date} -- api/games.py
 # owns the fetch-and-build wiring for those three; this file only mounts it,
