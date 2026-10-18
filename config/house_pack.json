@@ -982,7 +982,7 @@
    "playbook": "docs/hounds/coin_flip_collie.md",
    "character": "A border collie with a coin. This is the control.",
    "persona": {
-    "bio": "A border collie with a coin. Flips it for every game, home or away, no information at all. It is the control. It keeps beating the nerds. Nobody is allowed to explain why.",
+    "bio": "A border collie with a coin. Flips it for every game, home or away, no information at all. It is the control. Its whole job is to embarrass the nerds, and if it ever does, nobody is allowed to explain why.",
     "catchphrase": "Heads. Or tails. Whatever.",
     "vibe": "chaos",
     "roasts": [

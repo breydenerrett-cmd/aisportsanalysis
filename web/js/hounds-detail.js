@@ -495,7 +495,8 @@ export async function boot() {
   renderVerdict(hound);
   renderRule(hound, `build-a-hound.html?from=${encodeURIComponent(state.id)}`);
   const notice = noticeLine(hound);
-  if (notice) q("hound-notice").textContent = notice;
+  // The page already says paper-only, not advice and 21+; the server line is shown only if it adds something.
+  if (notice && !/paper only, not advice/i.test(notice)) q("hound-notice").textContent = notice;
 
   // the AI desk's hounds also show how they argued their newest game (every other hound never sees this)
   bootDesk(hound);

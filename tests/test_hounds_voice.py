@@ -106,7 +106,7 @@ class EveryDogHasAPersona(unittest.TestCase):
         by_id = {h["id"]: h["persona"] for h in every_hound()}
         self.assertEqual(by_id["coin_flip_collie"]["vibe"], "chaos")
         self.assertIn("coin", by_id["coin_flip_collie"]["bio"].lower())
-        self.assertIn("nerds", by_id["coin_flip_collie"]["bio"].lower())          # the troll that keeps beating the nerds
+        self.assertIn("nerds", by_id["coin_flip_collie"]["bio"].lower())          # the troll whose job is to embarrass the nerds
         self.assertEqual(by_id["professor_paws"]["vibe"], "nerd")
         self.assertIn("model", by_id["professor_paws"]["bio"].lower())
         for hid, word in (("numerology_newfie", "gematria"), ("lunar_lab", "moon")):
