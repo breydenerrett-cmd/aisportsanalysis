@@ -1,0 +1,129 @@
+{
+  "summary": "Pittsburgh is the better team on recent form, and Tampa Bay is down to a quarterback with 2 prior starts in the data after Baker Mayfield was listed out. That points toward Pittsburgh, but the books already lay 2.5 and price Pittsburgh at -134 on the moneyline, and the injury report is public, so I think the market has most of this right. The season samples are only 5 games per team, and Pittsburgh's strong three-game stretch is exactly the kind of window that is noise this early. On the spread, 2.5 sits half a point off the key number 3, which helps the side laying it, but that is not enough on its own to call the number wrong. On the total, 38.5 has come down from 39.0 and both teams score and allow in the low twenties per game, so the price already holds the picture. We cannot see weather for an outdoor game, and the quarterbacks are projections. I pass on all three markets and would need a better price or a new fact to change that.",
+  "calls": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "selection": "PIT",
+      "verdict": "PASS",
+      "price": -134,
+      "book": "fanduel",
+      "fair_estimate": 0.56,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "Pittsburgh has the better recent form, with a points margin per game of 4 over three games against -0.6667 for Tampa Bay, but three games is a thin window.",
+          "evidence": [
+            {"path": "sections.away.values.form.last_3.margin_per_game", "value": 4},
+            {"path": "sections.home.values.form.last_3.margin_per_game", "value": -0.6667},
+            {"path": "sections.away.values.form.last_3.games", "value": 3}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Tampa Bay lists Jalon Daniels with 2 prior starts in the data while Baker Mayfield is out. That favours Pittsburgh, but the injury report is public and the books have likely already priced it.",
+          "evidence": [
+            {"path": "sections.home.values.qb.listed_for_this_game.prior_starts_in_store", "value": 2},
+            {"path": "sections.home.values.injuries.skill_players_listed[0].report_status", "value": "out"}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The books' de-vigged number already makes Pittsburgh the favourite, and nothing in what we have shows the price missing something.",
+          "evidence": [
+            {"path": "markets.moneyline.options[0].fair_probability", "value": 0.5573},
+            {"path": "markets.moneyline.options[0].best.price", "value": -134}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": -127,
+      "what_would_change_it": "Pittsburgh at -127 or better, or a report that Daniels will not start for Tampa Bay, would make me look again.",
+      "case_against": null
+    },
+    {
+      "slot_id": "spread",
+      "market": "spread",
+      "selection": "PIT -2.5",
+      "verdict": "PASS",
+      "price": -104,
+      "book": "fanduel",
+      "fair_estimate": 0.5,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The spread is a near coin flip by the books' own numbers, and the number has not moved from where it was first captured.",
+          "evidence": [
+            {"path": "markets.spread.options[0].fair_probability", "value": 0.5023},
+            {"path": "markets.spread.context.away_number_first_captured", "value": -2.5}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The 2.5 sits half a point off the key number 3, which helps the side laying it, but season margins are close for the two teams (0.4 for Pittsburgh, -2.4 for Tampa Bay over 5 games), so this does not show the number is wrong.",
+          "evidence": [
+            {"path": "sections.reference.values.key_numbers[0]", "value": 3},
+            {"path": "sections.away.values.form.season_to_date.margin_per_game", "value": 0.4},
+            {"path": "sections.home.values.form.season_to_date.margin_per_game", "value": -2.4}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Both quarterbacks are schedule projections, and Tampa Bay's has 2 prior starts, so a change either way could move the number.",
+          "evidence": [
+            {"path": "sections.home.values.qb.listed_for_this_game.projected", "value": true},
+            {"path": "sections.home.values.qb.listed_for_this_game.prior_starts_in_store", "value": 2}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": 100,
+      "what_would_change_it": "Pittsburgh -2.5 at even money or better, or the number moving to 3 or higher against Pittsburgh, would make me reconsider.",
+      "case_against": null
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "selection": "Under 38.5",
+      "verdict": "PASS",
+      "price": -102,
+      "book": "draftkings",
+      "fair_estimate": 0.5,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The books split the total evenly at 38.5, down from 39.0 when first captured, so the market has already leaned a little toward fewer points.",
+          "evidence": [
+            {"path": "markets.total.options[0].fair_probability", "value": 0.5004},
+            {"path": "markets.total.context.number_first_captured", "value": 39.0}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Both teams score and allow in the low twenties per game (Pittsburgh scores 22.2 and allows 21.8, Tampa Bay scores 20 and allows 22.4), with modest yards per play of 5.2695 and 5.0395, so the picture is mixed rather than clearly high or low.",
+          "evidence": [
+            {"path": "sections.away.values.form.season_to_date.points_for_per_game", "value": 22.2},
+            {"path": "sections.away.values.form.season_to_date.points_against_per_game", "value": 21.8},
+            {"path": "sections.home.values.form.season_to_date.points_for_per_game", "value": 20},
+            {"path": "sections.home.values.form.season_to_date.points_against_per_game", "value": 22.4},
+            {"path": "sections.away.values.form.season_to_date.yards_per_play.value", "value": 5.2695},
+            {"path": "sections.home.values.form.season_to_date.yards_per_play.value", "value": 5.0395}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "We cannot see weather for an outdoor game, and the Tampa Bay quarterback situation could move the total.",
+          "evidence": [
+            {"path": "missing[1].item", "value": "weather"},
+            {"path": "sections.schedule.values.venue.roof", "value": "outdoors"}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": 100,
+      "what_would_change_it": "A forecast showing strong wind or rain, or Under 38.5 at even money or better, would make me look again.",
+      "case_against": null
+    }
+  ],
+  "summary_derived": []
+}

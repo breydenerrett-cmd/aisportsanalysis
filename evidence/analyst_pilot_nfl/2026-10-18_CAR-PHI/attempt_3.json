@@ -1,0 +1,122 @@
+{
+  "summary": "Carolina is the side the books favour, and the data gives a reason: Philadelphia lists Tanner McKee, who has 2 prior starts in the store, with Jalen Hurts and Saquon Barkley both out, while Carolina comes off a bye with 14 days since its last game. Carolina averages 30.25 points per game this season against 18.4 for Philadelphia. But the market has already seen all of that. The spread has moved from 2 to 3 toward Carolina, the moneyline de-vigs to 0.6019 for Carolina, and the spread sits at a fair probability of 0.5091, which is close to a coin flip. Carolina's season rests on only 4 games, so I pass on the moneyline and the spread. The total of 39 is down from 42.5 when first captured. Philadelphia scores 18.4 per game and allows 22.4, Carolina scores 30.25 and allows 27.25, which pull in opposite directions, and the quarterback situation plus a missing forecast for an outdoor game keep me away. I pass on all three; the market looks about right.",
+  "calls": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "selection": "CAR",
+      "verdict": "PASS",
+      "price": -162,
+      "book": "draftkings",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The books already price Carolina as the clear favourite, and the quarterback change and injuries on the Philadelphia side are in the data they had when the lines were posted, so the price likely holds them.",
+          "evidence": [
+            {"path": "markets.moneyline.options[0].fair_probability", "value": 0.6019},
+            {"path": "sections.home.values.qb.listed_for_this_game.name", "value": "Tanner McKee"},
+            {"path": "sections.home.values.qb.listed_for_this_game.prior_starts_in_store", "value": 2}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Carolina's form is good, but it rests on only 4 games this season, which is a thin base for disagreeing with the books.",
+          "evidence": [
+            {"path": "sections.away.values.form.season_to_date.games", "value": 4},
+            {"path": "sections.away.values.form.season_to_date.points_for_per_game", "value": 30.25}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A confirmed change from the projected quarterback listed for Philadelphia, or a Carolina starter ruled out, would make me reassess this market.",
+      "case_against": null
+    },
+    {
+      "slot_id": "spread",
+      "market": "spread",
+      "selection": "CAR -3",
+      "verdict": "PASS",
+      "price": -107,
+      "book": "lowvig",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The spread is close to a coin flip by design, and the books' fair probability for Carolina at this number is barely above half. A pass needs no reason the number is wrong, and I do not have one in points.",
+          "evidence": [
+            {"path": "markets.spread.options[0].fair_probability", "value": 0.5091},
+            {"path": "markets.spread.options[1].fair_probability", "value": 0.4909}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The number has already moved toward Carolina since it was first captured, from 2 to 3, so the news on the quarterback is likely in it. It now sits on 3, a key number from the scoring facts, which makes the margin around it hard to call.",
+          "evidence": [
+            {"path": "markets.spread.context.away_number_first_captured", "value": 2.0},
+            {"path": "markets.spread.options[0].line", "value": -3.0},
+            {"path": "sections.reference.values.key_numbers[0]", "value": 3}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Philadelphia lists 9 players out, but the data does not measure who matters most beyond the named skill players, so I will not claim more about the injuries than the report shows.",
+          "evidence": [
+            {"path": "sections.home.values.injuries.totals.out", "value": 9},
+            {"path": "sections.home.values.injuries.skill_players_listed[0].report_status", "value": "out"}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "If the number moved off the field goal it sits on now, in either direction, or the projected Philadelphia quarterback changed, I would look at this again.",
+      "case_against": null
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "selection": "Over 39",
+      "verdict": "PASS",
+      "price": -109,
+      "book": "williamhill_us",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The two teams point in opposite directions: Philadelphia scores 18.4 per game this season and allows 22.4, while Carolina scores 30.25 and allows 27.25. The books' fair probability is almost exactly even on both sides.",
+          "evidence": [
+            {"path": "sections.home.values.form.season_to_date.points_for_per_game", "value": 18.4},
+            {"path": "sections.home.values.form.season_to_date.points_against_per_game", "value": 22.4},
+            {"path": "sections.away.values.form.season_to_date.points_for_per_game", "value": 30.25},
+            {"path": "sections.away.values.form.season_to_date.points_against_per_game", "value": 27.25},
+            {"path": "markets.total.options[0].fair_probability", "value": 0.5011}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The total has fallen from 42.5 when first captured to 39, so the market has already marked the game down. Philadelphia gains 4.5363 yards per play while Carolina gains 6.056, and the quarterback situation could still move this number.",
+          "evidence": [
+            {"path": "markets.total.context.number_first_captured", "value": 42.5},
+            {"path": "markets.total.options[0].line", "value": 39.0},
+            {"path": "sections.home.values.form.season_to_date.yards_per_play.value", "value": 4.5363},
+            {"path": "sections.away.values.form.season_to_date.yards_per_play.value", "value": 6.056}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "This is an outdoor game and we cannot see a weather forecast, so wind or cold, which could matter for a total, is missing.",
+          "evidence": [
+            {"path": "sections.schedule.values.venue.roof", "value": "outdoors"},
+            {"path": "missing[2].item", "value": "weather"}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A confirmed change at quarterback for Philadelphia, or a weather forecast that shows a clear wind or cold problem, would let me take a side on this total.",
+      "case_against": null
+    }
+  ],
+  "summary_derived": []
+}

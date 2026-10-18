@@ -1,0 +1,193 @@
+{
+  "summary": "Carolina looks like the better side on recent form: it has scored 28 points per game over its last 3 games while Philadelphia has scored 14.6667, and Philadelphia is on a losing streak of 3. But the market already prices that in. Carolina is a 3 point favourite, and the books' own de-vigged number for the Carolina moneyline is 0.6019. I see nothing in the data that the price does not already hold, so I pass on all three markets. The biggest question is Philadelphia's quarterback. Tanner McKee is the projected starter with 2 prior starts, Jalen Hurts is listed out, and the report shows 9 Philadelphia players out in total. The books can see that too, and the data does not measure how much each absence is worth. The spread sits on 3, a key number, so a small difference of opinion does not make a bet. The total has come down to 39 from 42.5 when first captured, and weather is missing for an outdoor game, so I stay away from it as well.",
+  "calls": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "selection": "CAR",
+      "verdict": "PASS",
+      "price": -162,
+      "book": "draftkings",
+      "fair_estimate": 0.6,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "Carolina is the favourite at -162 and the books' own de-vigged number already gives it 0.6019. The price looks about right given the form gap, so there is nothing to push against.",
+          "evidence": [
+            {
+              "path": "markets.moneyline.options[0].best.price",
+              "value": -162
+            },
+            {
+              "path": "markets.moneyline.options[0].fair_probability",
+              "value": 0.6019
+            }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Philadelphia's projected quarterback is Tanner McKee, who has 2 prior starts, and the listed quarterback changed from last game. That favours Carolina, but the books can see it and the data does not measure its value, so it does not justify a departure from their number.",
+          "evidence": [
+            {
+              "path": "sections.home.values.qb.listed_for_this_game.name",
+              "value": "Tanner McKee"
+            },
+            {
+              "path": "sections.home.values.qb.listed_for_this_game.prior_starts_in_store",
+              "value": 2
+            },
+            {
+              "path": "sections.home.values.qb.listed_for_this_game.changed_since_last_game",
+              "value": true
+            }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Carolina scored more and allowed fewer points over the last 3 games than Philadelphia, and is coming off a bye, but that window is only 3 games.",
+          "evidence": [
+            {
+              "path": "sections.away.values.form.last_3.points_for_per_game",
+              "value": 28
+            },
+            {
+              "path": "sections.home.values.form.last_3.points_for_per_game",
+              "value": 14.6667
+            },
+            {
+              "path": "sections.away.values.rest.coming_off_bye",
+              "value": true
+            }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": -150,
+      "what_would_change_it": "A Carolina price of -150 or shorter would be worth taking at my 0.6 estimate, and a late change to Philadelphia's projected quarterback would also move the view.",
+      "case_against": null
+    },
+    {
+      "slot_id": "spread",
+      "market": "spread",
+      "selection": "CAR -3",
+      "verdict": "PASS",
+      "price": -107,
+      "book": "lowvig",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The two sides are priced as a near coin flip at 3, with fair probabilities of 0.5091 and 0.4909. The market has already moved from Carolina 2 when first captured to Carolina 3 now, so the move towards Carolina is already in the number.",
+          "evidence": [
+            {
+              "path": "markets.spread.options[0].fair_probability",
+              "value": 0.5091
+            },
+            {
+              "path": "markets.spread.options[1].fair_probability",
+              "value": 0.4909
+            },
+            {
+              "path": "markets.spread.context.away_number_first_captured",
+              "value": 2.0
+            }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The number sits on 3, which the data lists as a key number, because a field-goal margin is a common way for the game to finish. Laying exactly 3 or taking exactly 3 is a different bet from a number half a point away, and I have no reason to say 3 is wrong.",
+          "evidence": [
+            {
+              "path": "sections.reference.values.key_numbers[0]",
+              "value": 3
+            },
+            {
+              "path": "sections.reference.values.scoring.field_goal",
+              "value": 3
+            }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Philadelphia is missing its listed quarterback and has 9 players out, which should help Carolina, but the data does not tell us how much that is worth, so I cannot say the number is off.",
+          "evidence": [
+            {
+              "path": "sections.matchup.values.differentials.injuries_out.home",
+              "value": 9
+            },
+            {
+              "path": "sections.home.values.qb.listed_for_this_game.name",
+              "value": "Tanner McKee"
+            }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "If the line moved off 3 to Carolina 3.5 or Carolina 2.5 with the same information, I would re-check, as would a confirmed change in either quarterback.",
+      "case_against": null
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "selection": "Over 39",
+      "verdict": "PASS",
+      "price": -109,
+      "book": "williamhill_us",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The total is priced as a coin flip at 39, with fair probabilities of 0.5011 for Over and 0.4989 for Under. It was first captured at 42.5, so the number has already come down.",
+          "evidence": [
+            {
+              "path": "markets.total.options[0].fair_probability",
+              "value": 0.5011
+            },
+            {
+              "path": "markets.total.options[1].fair_probability",
+              "value": 0.4989
+            },
+            {
+              "path": "markets.total.context.number_first_captured",
+              "value": 42.5
+            }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The scoring numbers point both ways: Carolina has scored 30.25 points per game this season while Philadelphia has scored 18.4, and the team yards per play figures differ widely. A quarterback change on the Philadelphia side could also move the total, which is a reason for care.",
+          "evidence": [
+            {
+              "path": "sections.away.values.form.season_to_date.points_for_per_game",
+              "value": 30.25
+            },
+            {
+              "path": "sections.home.values.form.season_to_date.points_for_per_game",
+              "value": 18.4
+            },
+            {
+              "path": "sections.home.values.qb.listed_for_this_game.changed_since_last_game",
+              "value": true
+            }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "This is an outdoor game and no weather forecast is in what we have, so I cannot see wind or cold, which matter for a total.",
+          "evidence": [
+            {
+              "path": "sections.schedule.values.venue.roof",
+              "value": "outdoors"
+            }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A confirmed weather forecast showing a strong wind, or a confirmed starting quarterback different from the projection, would change my view of the total.",
+      "case_against": null
+    }
+  ],
+  "summary_derived": []
+}

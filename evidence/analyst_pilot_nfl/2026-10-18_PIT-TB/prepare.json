@@ -1,0 +1,23 @@
+{
+  "sport": "nfl",
+  "game_id": "2026_06_PIT_TB",
+  "date": "2026-10-18",
+  "away": "PIT",
+  "home": "TB",
+  "kickoff_utc": "2026-10-18T17:00:00Z",
+  "built_at": "2026-10-18T14:11:37Z",
+  "packet_hash": "66b03fc49a67701963c0734e85066b9aed505b03320171743755012508b8f5db",
+  "prompt_version": "analyst_prompt_nfl_v1",
+  "prompt_hash": "8b80fc0cc2622da7497bed03b851d3934b8d687a6ca9c5a17d3eeb2d1c56ea7b",
+  "token_estimate": 9735,
+  "model": "claude-sonnet-5-5",
+  "slots": [
+    "moneyline",
+    "spread",
+    "total"
+  ],
+  "missing_items": 2,
+  "rehearsal": false,
+  "mode": "session_assisted",
+  "packet_source": "nfl_store+odds_multibook"
+}

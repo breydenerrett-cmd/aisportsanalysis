@@ -1,0 +1,106 @@
+{
+  "summary": "Baltimore is the better team on the numbers we have: 29.2 points per game against 18.6 for Cleveland this season, and 6.3581 yards per play against 4.6531. But the thing that matters most is unsettled. The schedule lists Lamar Jackson as Baltimore's quarterback, which is a projection, while the injury report lists him as out with an ankle. Baltimore's last game was started by Tyler Huntley. We cannot tell which quarterback plays, and the price may already reflect that, so I pass on the moneyline at -170, where the books' own number puts Baltimore at 0.6101. The spread sits on 3, one of the key numbers, and has moved from 1.5 when first captured. The market has probably priced the quarterback news better than we can, so I pass there too. The total of 39.5 could move with a quarterback change, and weather is missing for an outdoor game, so I pass on that as well.",
+  "calls": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "selection": "BAL",
+      "verdict": "PASS",
+      "price": -170,
+      "book": "lowvig",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "Baltimore's quarterback is unclear: the schedule projects Lamar Jackson, but the injury report lists him as out.",
+          "evidence": [
+            {"path": "sections.away.values.qb.listed_for_this_game.name", "value": "Lamar Jackson"},
+            {"path": "sections.away.values.qb.listed_for_this_game.projected", "value": true},
+            {"path": "sections.away.values.injuries.skill_players_listed[0].report_status", "value": "out"},
+            {"path": "sections.away.values.qb.last_game_starter", "value": "Tyler Huntley"}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The books make Baltimore the favourite, with a de-vigged win probability of 0.6101, and Baltimore's season scoring and yards per play are ahead of Cleveland's, so the price looks roughly right.",
+          "evidence": [
+            {"path": "markets.moneyline.options[0].fair_probability", "value": 0.6101},
+            {"path": "sections.away.values.form.season_to_date.points_for_per_game", "value": 29.2},
+            {"path": "sections.home.values.form.season_to_date.points_for_per_game", "value": 18.6}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A confirmed Baltimore starting quarterback, or Jackson being ruled out, would let us judge whether the books' number for Baltimore is too high or too low.",
+      "case_against": null
+    },
+    {
+      "slot_id": "spread",
+      "market": "spread",
+      "selection": "BAL -3",
+      "verdict": "PASS",
+      "price": -113,
+      "book": "williamhill_us",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The number sits on 3, one of the scoring key numbers, so a small move either way matters more than usual, and nothing here shows the number is wrong in points.",
+          "evidence": [
+            {"path": "markets.spread.options[0].line", "value": -3.0},
+            {"path": "sections.reference.values.key_numbers[0]", "value": 3},
+            {"path": "markets.spread.options[0].fair_probability", "value": 0.5127}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The number has moved toward Baltimore since it was first captured, and the quarterback situation behind that is unresolved in the data.",
+          "evidence": [
+            {"path": "markets.spread.context.away_number_first_captured", "value": -1.5},
+            {"path": "sections.away.values.injuries.skill_players_listed[0].report_status", "value": "out"},
+            {"path": "sections.away.values.qb.listed_for_this_game.projected", "value": true}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A confirmed Baltimore quarterback, or the number moving off 3, would change how we read this side.",
+      "case_against": null
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "selection": "Over 39.5",
+      "verdict": "PASS",
+      "price": -105,
+      "book": "fanduel",
+      "fair_estimate": null,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The two sides are split almost evenly by the books, and the total started at 40.0 and now sits at 39.5, so the price already holds what the data shows.",
+          "evidence": [
+            {"path": "markets.total.options[0].fair_probability", "value": 0.5003},
+            {"path": "markets.total.options[1].fair_probability", "value": 0.4997},
+            {"path": "markets.total.context.number_first_captured", "value": 40.0}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "A Baltimore quarterback change could move the total, and with no weather forecast for an outdoor stadium we cannot see wind or cold.",
+          "evidence": [
+            {"path": "sections.away.values.qb.listed_for_this_game.changed_since_last_game", "value": true},
+            {"path": "sections.schedule.values.venue.roof", "value": "outdoors"},
+            {"path": "missing[1].item", "value": "weather"}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A confirmed Baltimore quarterback or a weather forecast showing wind or cold would give us a reason to lean on one side of the total.",
+      "case_against": null
+    }
+  ],
+  "summary_derived": []
+}

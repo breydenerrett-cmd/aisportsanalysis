@@ -1,0 +1,113 @@
+{
+  "summary": "Carolina is the better team on the numbers we have: it averages 30.25 points a game this season against 18.4 for Philadelphia, it is coming off a bye with 14 days of rest, and Philadelphia's listed quarterback is Tanner McKee with two prior starts after Jalen Hurts was ruled out on the report. That is a lot of news, but the books have already priced it. Carolina is a road favourite of 3, which is a key number, and the moneyline sits at -162 with a de-vigged win probability of 0.6019. The spread was first captured at 2.0, so it has moved toward Carolina, and the total has dropped from 42.5 to 39. I cannot show that the market is wrong by a point or two, so I pass on the moneyline, the spread and the total. The total is pulled both ways: Carolina's offence is strong, Philadelphia's is weak, and a quarterback change could move it again. Weather is missing for an outdoor game, and the injury report does not measure how much each absence matters, so I keep those in mind.",
+  "calls": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "selection": "CAR",
+      "verdict": "PASS",
+      "price": -162,
+      "book": "draftkings",
+      "fair_estimate": 0.61,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "Carolina is the better team on form and has the rest edge, but the books already price a clear Carolina win at -162, with a de-vigged probability of 0.6019. The data gives no reason to say the true number is meaningfully different.",
+          "evidence": [
+            {"path": "markets.moneyline.options[0].best.price", "value": -162},
+            {"path": "markets.moneyline.options[0].fair_probability", "value": 0.6019},
+            {"path": "sections.matchup.values.differentials.form_last_3_margin_per_game.diff", "value": -20.0}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Philadelphia lists Tanner McKee, with two prior starts, after Jalen Hurts was ruled out. Nine Philadelphia players are out in total. That favours Carolina, but it is public information that the price should already hold.",
+          "evidence": [
+            {"path": "sections.home.values.qb.listed_for_this_game.name", "value": "Tanner McKee"},
+            {"path": "sections.home.values.qb.listed_for_this_game.prior_starts_in_store", "value": 2},
+            {"path": "sections.home.values.injuries.skill_players_listed[0].report_status", "value": "out"},
+            {"path": "sections.home.values.injuries.totals.out", "value": 9}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": -156,
+      "what_would_change_it": "A Carolina price of -156 or better would start to be worth taking at my 0.61 estimate, as would a report that Carolina's quarterback is out.",
+      "case_against": null
+    },
+    {
+      "slot_id": "spread",
+      "market": "spread",
+      "selection": "CAR -3",
+      "verdict": "PASS",
+      "price": -107,
+      "book": "lowvig",
+      "fair_estimate": 0.51,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The spread asks Carolina to win by a field goal, which is a key number, and the books split it almost evenly at 0.5091 for Carolina. A take needs a reason the number is wrong in points, and the data does not give one beyond what the price already shows.",
+          "evidence": [
+            {"path": "markets.spread.options[0].line", "value": -3.0},
+            {"path": "markets.spread.options[0].fair_probability", "value": 0.5091},
+            {"path": "sections.reference.values.key_numbers", "value": "3,6,7,10,14"}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The away number was first captured at 2.0 and now sits at 3, so the line has already moved toward Carolina as the Philadelphia quarterback news came in. The move is a sign the market has the change.",
+          "evidence": [
+            {"path": "markets.spread.context.away_number_first_captured", "value": 2.0},
+            {"path": "sections.home.values.qb.listed_for_this_game.changed_since_last_game", "value": true}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": -104,
+      "what_would_change_it": "Carolina getting a number under 3 at a normal price, or news that moves the quarterback or injury picture again, would change this call.",
+      "case_against": null
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "selection": "Over 39",
+      "verdict": "PASS",
+      "price": -109,
+      "book": "williamhill_us",
+      "fair_estimate": 0.5,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The total has come down from 42.5 to 39, so the price already holds Philadelphia's weak scoring, 18.4 points a game, and its 4.5363 yards per play, along with the quarterback change.",
+          "evidence": [
+            {"path": "markets.total.context.number_first_captured", "value": 42.5},
+            {"path": "markets.total.options[0].line", "value": 39.0},
+            {"path": "sections.home.values.form.season_to_date.points_for_per_game", "value": 18.4},
+            {"path": "sections.home.values.form.season_to_date.yards_per_play.value", "value": 4.5363}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Carolina pulls the other way: 30.25 points a game for and 27.25 allowed, over four games only, so the pace argument does not settle it. The books split Over and Under at 0.5011 to 0.4989.",
+          "evidence": [
+            {"path": "sections.away.values.form.season_to_date.points_for_per_game", "value": 30.25},
+            {"path": "sections.away.values.form.season_to_date.points_against_per_game", "value": 27.25},
+            {"path": "markets.total.options[0].fair_probability", "value": 0.5011}
+          ],
+          "derived": []
+        },
+        {
+          "claim": "Weather is missing for an outdoor game, and a late quarterback or injury change could still move the number.",
+          "evidence": [
+            {"path": "sections.schedule.values.venue.roof", "value": "outdoors"}
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": -100,
+      "what_would_change_it": "A weather forecast showing strong wind or cold for the outdoor game, or a quarterback change at either position, would change this call.",
+      "case_against": null
+    }
+  ],
+  "summary_derived": []
+}
