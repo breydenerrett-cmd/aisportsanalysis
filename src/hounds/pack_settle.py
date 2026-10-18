@@ -75,10 +75,40 @@ def grade_score(market: str, side: str, market_line: Optional[float], away: int,
     return "WIN" if (total > market_line) == (side == "over") else "LOSS"
 
 
-def find_result(bet: Mapping, mlb: Mapping, nfl: Mapping) -> tuple:
+def resolve_pk(bet: Mapping, stores: base.Stores, mlb: Mapping) -> Optional[str]:
+    """The game_pk of a bet whose map row was ambiguous (a doubleheader): the k-th odds event of this
+    pair on this date (by start) is the game with the k-th game_number among the map's candidates.
+    None when the counts disagree or a candidate has no result yet."""
+    if bet.get("game_pk"):
+        return str(bet["game_pk"])
+    m = stores.event_map.get(bet["event_id"])
+    cands = [str(c.get("game_pk")) for c in (m or {}).get("candidates") or []]
+    if not cands or any(c not in mlb or mlb[c].get("game_number") is None for c in cands):
+        return None
+    same = []
+    for eid, ev in stores.events.items():
+        if ev.get("sport") != "mlb":
+            continue
+        start = base.resolve_start(ev)
+        if start is None or base.eastern_date(start) != bet["date"]:
+            continue
+        if base.mlb_codes(ev) == (bet.get("away_code"), bet.get("home_code")):
+            same.append((start, eid))
+    same.sort()
+    order = sorted(cands, key=lambda c: mlb[c]["game_number"])
+    if len(same) != len(order):
+        return None
+    for (_, eid), pk in zip(same, order):
+        if eid == bet["event_id"]:
+            return pk
+    return None
+
+
+def find_result(bet: Mapping, mlb: Mapping, nfl: Mapping, stores: Optional[base.Stores] = None) -> tuple:
     """(result row normalised to {away_score, home_score, start, date, source} or None, raw found?)."""
     if bet["sport"] == "mlb":
-        g = mlb.get(str(bet.get("game_pk")))
+        pk = resolve_pk(bet, stores, mlb) if stores is not None else bet.get("game_pk")
+        g = mlb.get(str(pk)) if pk else None
         if g is None:
             return None, False
         return {"away_score": g.get("away_score"), "home_score": g.get("home_score"),
@@ -101,7 +131,7 @@ def close_of(stores: base.Stores, bet: Mapping) -> Optional[dict]:
 
 def grade_bet(bet: Mapping, stores: base.Stores, mlb: Mapping, nfl: Mapping, *, now: datetime) -> Optional[dict]:
     start = base.parse_utc(bet["start_utc"])
-    res, _ = find_result(bet, mlb, nfl)
+    res, _ = find_result(bet, mlb, nfl, stores)
     result, note = None, None
     if res is None:
         if now < start + timedelta(days=PENDING_DAYS):
@@ -131,6 +161,7 @@ def grade_bet(bet: Mapping, stores: base.Stores, mlb: Mapping, nfl: Mapping, *, 
         "market": bet["market"], "selection": bet["selection"], "side": bet["side"], "date": bet["date"],
         "sport": bet["sport"], "segment": bet.get("segment"), "bet_row_hash": bet.get("row_hash"),
         "result": result, "note": note, "stake": stake,
+        "game_pk": (resolve_pk(bet, stores, mlb) if bet["sport"] == "mlb" else None),
         "units_average_price": base.units_for(result, bet["price_average"], stake) if result != "UNRESOLVED" else None,
         "units_best_price": base.units_for(result, bet["price_best"], stake) if result != "UNRESOLVED" else None,
         "close_price": close_side["price_average"] if close_side else None,
@@ -156,16 +187,23 @@ def settle(stores: base.Stores, *, now: datetime, path: Optional[str] = None) ->
         if bet.get("kind") != KIND_BET:
             continue
         prior = graded.get(_key(bet))
-        if prior is not None and prior.get("result") in FINAL:
+        # A final grade stands, except a VOID for "no result" when a result has since appeared (a
+        # backfilled store, a doubleheader matched later): that is re-graded and the new row names
+        # the row it corrects. The ledger is append-only; the newest graded row counts.
+        late_void = (prior is not None and prior.get("result") == "VOID"
+                     and str(prior.get("note") or "").startswith("no result"))
+        if prior is not None and prior.get("result") in FINAL and not late_void:
             counts["already"] += 1
             continue
         g = grade_bet(bet, stores, mlb, nfl, now=now)
         if g is None:
             counts["pending"] += 1
             continue
-        if prior is not None and prior.get("result") == g["result"]:
+        if prior is not None and (prior.get("result"), prior.get("note")) == (g["result"], g["note"]):
             counts["already"] += 1
             continue
+        if prior is not None:
+            g["corrects"] = prior.get("row_hash")
         led.append(g)
         graded[_key(bet)] = g
         counts["graded"] += 1

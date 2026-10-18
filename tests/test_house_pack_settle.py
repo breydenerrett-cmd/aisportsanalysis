@@ -85,6 +85,18 @@ class SettleTests(unittest.TestCase):
         again = pack_settle.settle(self.st, now=START + timedelta(hours=6), path=self.path)
         self.assertEqual(again["graded"], 0)
 
+    def test_a_late_result_corrects_a_no_result_void(self):
+        pack_settle.settle(self.st, now=START + timedelta(days=5), path=self.path)
+        self.assertTrue(all(r["result"] == "VOID" for r in self.graded()))
+        self.st.mlb_games.append(mlb_game(900001, "2026-09-20", "NYY", "BOS", 7, 2))
+        pack_settle.settle(self.st, now=START + timedelta(days=6), path=self.path)
+        latest = {}
+        for r in self.graded():
+            latest[(r["hound_id"], r["market"])] = r
+        self.assertTrue(all(r["result"] in ("WIN", "LOSS", "PUSH") and r.get("corrects") for r in latest.values()))
+        self.assertTrue(pack_run.verify(self.path)[0])
+
+
     def test_unresolved_is_replaced_when_the_score_arrives(self):
         self.st.mlb_games.append(mlb_game(900001, "2026-09-20", "NYY", "BOS", None, None))
         pack_settle.settle(self.st, now=START + timedelta(hours=5), path=self.path)
@@ -95,6 +107,29 @@ class SettleTests(unittest.TestCase):
         for bet in self.bets:
             rec = summ[bet["hound_id"]]["record"]
             self.assertEqual(rec["U"] + rec["pending"], 0)
+
+
+class DoubleheaderTests(unittest.TestCase):
+    def test_ambiguous_map_rows_match_by_game_order(self):
+        st = base.Stores()
+        early, late = START - timedelta(hours=6), START
+        for r in game_rows("evG1", early) + game_rows("evG2", late):
+            st.add_row(r)
+        cands = [{"game_pk": "702"}, {"game_pk": "701"}]
+        st.event_map = {"evG1": {"game_pk": "702", "ambiguous": True, "candidates": cands},
+                        "evG2": {"game_pk": "702", "ambiguous": True, "candidates": cands}}
+        st.mlb_games = [dict(mlb_game(701, "2026-09-20", "NYY", "BOS", 1, 0), game_number=1),
+                        dict(mlb_game(702, "2026-09-20", "NYY", "BOS", 0, 5), game_number=2)]
+        st.finalize()
+        mlb = pack_settle.mlb_results_index(st)
+        ctx1 = base.build_context(st, "evG1")
+        self.assertIsNone(ctx1.game_pk)          # no game_pk claimed at bet time
+        bet = {"event_id": "evG1", "date": "2026-09-20", "away_code": "NYY", "home_code": "BOS", "game_pk": None}
+        self.assertEqual(pack_settle.resolve_pk(bet, st, mlb), "701")
+        self.assertEqual(pack_settle.resolve_pk(dict(bet, event_id="evG2"), st, mlb), "702")
+        st.mlb_games = st.mlb_games[:1]          # game 2 has no result yet: no guess
+        self.assertIsNone(pack_settle.resolve_pk(dict(bet, event_id="evG2"), st,
+                                                 pack_settle.mlb_results_index(st)))
 
 
 if __name__ == "__main__":

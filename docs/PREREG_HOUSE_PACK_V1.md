@@ -278,4 +278,17 @@ whose start has not. The replay table lives in `docs/HOUSE_PACK.md`.
 
 ## Changelog
 
-* v1 frozen (this commit). No changes yet.
+* v1 frozen at commit `20cd68eb8`. **No rule, threshold or band has changed since.**
+* Implementation fix, before the full replay (commit `766fcca64`): the results and bullpen stores
+  spell two clubs AZ and ATH while the odds-name map gives ARI and OAK, so those clubs had no form,
+  bullpen or travel inputs. Found in a one-day smoke run of 2026-09-20 on a scratch ledger (a pick's
+  reason read "Athletics relievers 0"); every club code now goes through `src.data.parks.canonical_team`.
+  Disclosure: that smoke day was also settled on the scratch ledger and its small table was seen
+  before the full replay; nothing was changed because of it.
+* Settlement fix, after the full replay: 36 bets on doubleheader games graded VOID "no result"
+  because the event map marks a doubleheader's row ambiguous and the runner claimed no game_pk for
+  it. Settlement now matches the k-th odds event of the pair that day to the game with the k-th
+  game_number (`pack_settle.resolve_pk`), and a "no result" VOID is re-graded when a result appears.
+  The original VOID rows stay in the ledger; each corrected grade is a new row with `corrects`
+  naming the row it replaces. Bet rows and rules are untouched.
+* Added for the playbooks (coordinator request, before the replay): `docs/hounds/<id>.md` per hound.

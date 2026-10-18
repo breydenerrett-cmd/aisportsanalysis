@@ -362,7 +362,7 @@ def read_mlb_results(path: str, *, since: str = SEAL_FLOOR) -> List[dict]:
                 "game_pk": str(row.get("game_pk")), "date": day, "start_utc": row.get("start_time_utc"),
                 "game_type": row.get("game_type"), "away": mlb_code(row.get("away_team")),
                 "home": mlb_code(row.get("home_team")), "away_score": a, "home_score": h,
-                "source": "results",
+                "game_number": _int(row.get("game_number")), "source": "results",
             })
     return out
 
@@ -457,8 +457,8 @@ def read_event_map(path: str) -> dict:
             if not line:
                 continue
             r = json.loads(line)
-            if r.get("resolved") and r.get("game_pk") and not r.get("ambiguous"):
-                out[r["event_id"]] = r
+            if r.get("resolved") and r.get("game_pk"):
+                out[r["event_id"]] = r          # ambiguous rows kept: settlement matches doubleheaders
     return out
 
 
@@ -608,7 +608,9 @@ def build_context(stores: Stores, event_id: str) -> Optional[Context]:
     ctx.open_board = open_board(quotes, lock=lock, start=start, sport=sport)
     if sport == "mlb":
         m = stores.event_map.get(event_id)
-        ctx.game_pk = str(m["game_pk"]) if m else None
+        # A doubleheader's map row is "ambiguous" (picked by nearest start): no game_pk is claimed at
+        # bet time; settlement matches the game by its order in the day (`pack_settle.resolve_pk`).
+        ctx.game_pk = str(m["game_pk"]) if m and not m.get("ambiguous") else None
         cutoff = lock - MLB_PRIOR_GAME_LAG
         for g in stores.mlb_games:
             if g["date"] >= ctx.date:
