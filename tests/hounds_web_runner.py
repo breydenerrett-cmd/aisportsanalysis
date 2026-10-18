@@ -22,6 +22,7 @@ PAGES = {
     "hounds": ("hounds.html", "hounds-page.js"),
     "hound": ("hound.html", "hounds-detail.js"),
     "build": ("build-a-hound.html", "hounds-build.js"),
+    "learning": ("learning.html", "hounds-learning.js"),
 }
 
 _tmp = None

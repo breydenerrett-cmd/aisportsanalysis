@@ -47,6 +47,27 @@ def _public_lesson(r: Mapping) -> dict:
 
 # ---- GET /hounds/learning -----------------------------------------------------------------------------------
 
+HISTORY_DAYS = 180
+
+
+def history_from(states: Mapping) -> list:
+    """The champions-against-controls line over time, one row per day, from the stored daily scorecards
+    (the chance line is shared by the scopes, so the first scope to have a day supplies it)."""
+    by_day: dict = {}
+    for name in sorted(states):
+        for sc in states[name].scorecards:
+            win = ((sc.get("payload") or {}).get("vs_random") or {}).get("windows") or {}
+            row = {"date": str(sc.get("date"))}
+            for days in ("30", "90"):
+                w = win.get(days) or {}
+                row[f"champion_mean_{days}"] = w.get("champion_mean")
+                row[f"control_mean_{days}"] = w.get("control_mean")
+                row[f"difference_{days}"] = w.get("difference")
+                row[f"champion_bets_{days}"] = w.get("champion_bets")
+            by_day.setdefault(row["date"], row)
+    return [by_day[d] for d in sorted(by_day)][-HISTORY_DAYS:]
+
+
 def learning_payload(scope_map: Optional[Mapping] = None) -> dict:
     scope_map = scope_map if scope_map is not None else scopes()
     cards = {name: scorecard.latest(sc) for name, sc in scope_map.items()}
@@ -62,6 +83,7 @@ def learning_payload(scope_map: Optional[Mapping] = None) -> dict:
         "as_of": max((c.get("date") for c in cards.values() if c), default=None),
         "system": merged,
         "scopes": {name: card for name, card in cards.items() if card},
+        "history": history_from(states),
         "live_challengers": len(live),
         "caps": {"live_per_hound": rules.MAX_LIVE_PER_HOUND, "live_per_scope": rules.MAX_LIVE_PER_SCOPE,
                  "promotions_per_month_per_scope": rules.MAX_PROMOTIONS_PER_MONTH,

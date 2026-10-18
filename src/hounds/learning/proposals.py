@@ -28,7 +28,7 @@ from src.hounds import user_spec
 from src.hounds.learning import ledger as L
 from src.hounds.learning import pause, rules, tunables
 
-_TEXT_RE = re.compile(r"^[A-Za-z0-9 .,'!?&()/+:%\-;=<>_]*$")
+_TEXT_RE = re.compile(r"^[A-Za-z0-9 .,'!?&()/+:%\-;_]*$")
 # What evidence references look like: a scorecard field path or a lesson/challenger id.
 _REF_RE = re.compile(r"^[A-Za-z0-9_.:\[\]\-/ ]+$")
 

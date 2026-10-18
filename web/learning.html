@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>How the hounds learn — LINEHOUND</title>
+<meta name="description" content="The Hound race changes a strategy only when a pre-set test says a challenger priced better than it did against the closing line, and stops itself when it cannot show it is helping. The scorecard, with the random-control line. Paper only, not advice.">
+<meta property="og:title" content="How the hounds learn — LINEHOUND">
+<meta property="og:description" content="Challengers, a referee that is never a model, and a scorecard that says whether any of it helps. Paper only. Not advice.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://linehound.app/web/learning.html">
+<link rel="canonical" href="https://linehound.app/web/learning.html">
+<meta name="theme-color" content="#0A0A0B">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230B0C0E'/%3E%3Cpath d='M6 6l8 0 0 9-8 4z' fill='%23FF3D57'/%3E%3Cpath d='M18 6l8 0 0 13-8-4z' fill='%23FF7A45'/%3E%3C/svg%3E">
+<!-- HOW THE HOUNDS LEARN (public, no sign-in to read). Page script: web/js/hounds-learning.js, which reads
+     GET /hounds/learning and GET /hounds/learning/lessons (src/hounds/learning/views.py). The rules are in
+     docs/PREREG_LEARNING_LOOP.md. The paper-only / not-advice lines are STATIC markup so they are on the page
+     with scripts off. Every dynamic region says honestly what happened if its endpoint is missing, and a
+     scorecard that has not been computed yet is a sentence, never a made-up number. No external images. -->
+<link rel="stylesheet" href="css/fonts.css">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/nav.css">
+<link rel="stylesheet" href="css/hounds.css">
+</head>
+<body class="hounds-page">
+<a class="hd-skip" href="#main-content">Skip to the scorecard</a>
+<nav class="site-nav hd-nav" aria-label="primary" data-hook="learning-nav">
+  <a class="ps-page__home" href="landing.html" aria-label="LINEHOUND home">
+    <span class="wordmark" data-hook="brand-mark">
+      <span class="wordmark__mark"><span></span></span>
+      <span class="wordmark__text" data-hook="product-name">LINEHOUND</span>
+    </span>
+  </a>
+  <div class="site-nav__links hd-nav__links">
+    <a href="hounds.html">The race</a>
+    <a href="learning.html" aria-current="page">How they learn</a>
+    <a href="build-a-hound.html">Build a hound</a>
+  </div>
+</nav>
+
+<main class="hd-wrap" id="main-content" aria-label="How the hounds learn" data-hook="learning-app">
+
+<header class="hd-hero">
+  <h1 data-hook="learning-title">How the hounds learn</h1>
+  <p class="hd-lede">A hound changes only when a test written in advance says a challenger priced better than it did against the closing line. A model can propose a challenger. A model can never promote one. And the loop stops itself if it cannot show it is helping.</p>
+  <p class="hd-paper" data-hook="paper-only-notice" role="note"><strong>Paper only. Not advice.</strong> No real bet is ever placed, nothing here tells you what to bet, and a hound's results do not predict anything. 21+.</p>
+</header>
+
+<div class="hd-state hd-state--down" data-hook="learning-paused" role="status" hidden></div>
+
+<section class="hd-panel" aria-labelledby="chance-h" data-hook="learning-chance-section">
+  <h2 id="chance-h">Are the champions better than chance?</h2>
+  <p class="hd-muted">This is the only honest question. Two control hounds pick by a seeded coin and a seeded dart. Every hound pays the book's margin, so a strategy with no skill sits at the controls' level. The line below compares the two over the same games only.</p>
+  <div data-hook="learning-chance"><p class="hd-muted">Loading the scorecard...</p></div>
+  <div data-hook="learning-chance-chart"></div>
+</section>
+
+<section class="hd-panel" aria-labelledby="hold-h" data-hook="learning-hold-section">
+  <h2 id="hold-h">Does a promotion hold up?</h2>
+  <p class="hd-muted">Of the challengers that were promoted and have since made 100 measurable bets as the new champion, the share whose bets priced at least as well as the champion they replaced. It stays empty until a promotion has had 100 bets.</p>
+  <div data-hook="learning-hold"></div>
+</section>
+
+<section class="hd-panel" aria-labelledby="act-h" data-hook="learning-activity-section">
+  <h2 id="act-h">What has happened, and the false-discovery budget</h2>
+  <p class="hd-muted">Many challengers are tested at once, so one that looks good by luck is expected. Each month's finished tests are put through a Benjamini-Hochberg control, there are never more than three promotions a month, and the running total of how many promotions could be flukes is below.</p>
+  <div data-hook="learning-activity"></div>
+</section>
+
+<section class="hd-panel" aria-labelledby="rules-h" data-hook="learning-rules-section">
+  <h2 id="rules-h">The rules, in brief</h2>
+  <div data-hook="learning-rules"></div>
+  <p class="hd-muted">In full, with every number: <code>docs/PREREG_LEARNING_LOOP.md</code>, written before the code existed.</p>
+</section>
+
+<section class="hd-panel" aria-labelledby="lessons-h" data-hook="learning-lessons-section">
+  <h2 id="lessons-h">What the failures taught</h2>
+  <p class="hd-muted">One line for every challenger that ended, written by code from the numbers. The coach reads these before it proposes anything, and a near-copy of a failed idea is refused for 90 days.</p>
+  <div data-hook="learning-lessons"><p class="hd-muted">Loading the lessons...</p></div>
+</section>
+
+</main>
+
+<footer class="hd-foot" data-hook="learning-footer" aria-label="disclaimer">
+  <p data-hook="not-advice"><strong>Paper only, not advice.</strong> LINEHOUND publishes analysis of betting strategies using pretend money. Nothing here is a recommendation to bet. Past results, including paper results, do not predict future ones.</p>
+  <p>21+ &middot; PLAY RESPONSIBLY &middot; <a href="tel:1-800-426-2537" data-hook="responsible-gambling-help">1-800-GAMBLER</a></p>
+  <p><a href="landing.html">About LINEHOUND</a> &middot; <a href="hounds.html">The race</a></p>
+</footer>
+
+<script type="module" src="js/hounds-learning.js"></script>
+</body>
+</html>

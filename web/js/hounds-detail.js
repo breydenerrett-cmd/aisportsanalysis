@@ -24,6 +24,7 @@ import {
 } from "./hounds-core.js";
 import { renderLineChart } from "./hounds-chart.js";
 import { bootDesk } from "./hounds-desk.js";
+import { bootLineage } from "./hounds-lineage.js";
 
 export const PAGE_SIZE = 20;
 const AVG_COLOR = "#00E0FF";
@@ -378,6 +379,9 @@ export async function boot() {
 
   // the AI desk's hounds also show how they argued their newest game (every other hound never sees this)
   bootDesk(hound);
+
+  // versions and challengers (the learning loop): loads on its own and never takes this page down
+  bootLineage(hound);
 
   // bets: the first page rides with the detail payload; the rest are the server's pages
   if (hound.bets && typeof hound.bets === "object") { state.bets = betsPageOf(hound.bets); renderBets(); } else { loadBets(1); }
