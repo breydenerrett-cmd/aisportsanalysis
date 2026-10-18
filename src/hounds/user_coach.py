@@ -1,5 +1,16 @@
 """The Houndmaster (coach) door: the only way a machine may change a user's hound.
 
+CHAMPION / CHALLENGER (2026-10-18, docs/PREREG_LEARNING_LOOP.md)
+---------------------------------------------------------------
+A coach submission no longer changes a hound. It creates a CHALLENGER: the proposed spec plus a
+written hypothesis and the evidence the coach read, run in SHADOW on the same games at the same prices
+as the champion (src/hounds/learning/shadow.py). Only the referee (src/hounds/learning/referee.py), by a
+pre-set sequential test on the paired closing-line value controlled for false discoveries across all
+challengers, can promote one, and a promotion is a new version through the same `create_version` and
+diary this module always used, so the owner's undo still works on it. A model can never promote. Every
+guard below is kept; the proposal guards the loop adds (live-challenger caps, no repeat of a recently
+failed idea, the frozen `lock_minutes`) are in src/hounds/learning/proposals.py.
+
 THIS MODULE BUILDS THE SAFE DOOR, NOT THE COACH
 -----------------------------------------------
 No model is called here. A later step may run a capped model that reads a hound's public
@@ -15,8 +26,8 @@ by is not learning, it is noise with a story attached. So:
   * at most ONE rewrite per hound lineage per 7 days (a "hold" round uses the allowance too);
   * a rewrite is accepted only when the hound's current version has at least
     MIN_GRADED_BEFORE_REWRITE (50) graded bets, so the verdict it is judged on exists;
-  * every rewrite is a NEW hound version with a fresh record; the old version stays visible with
-    its own record, never merged and never rewritten;
+  * every promoted challenger is a NEW hound version with a fresh record; the old version stays
+    visible with its own record, never merged and never rewritten;
   * the owner can undo any coached version (it is retired and the previous rule resumes as another
     new version);
   * a global kill switch, `config/hounds_coach.json` {"enabled": true}, is read on EVERY request and
@@ -25,7 +36,9 @@ by is not learning, it is noise with a story attached. So:
 WHAT A PROPOSAL MAY DO (and nothing else)
 -----------------------------------------
 It carries ONLY a new spec (validated by the same menu, with the -200 cap always on), a `reason`
-(<= 200 chars) and a `quip` (<= 90 chars). The new spec may keep or NARROW the sports and markets,
+(<= 200 chars), a `quip` (<= 90 chars), and, when the spec differs from the champion's, a `hypothesis`
+(20 to 400 chars: why this should beat the champion) and `evidence` (1 to 10 references to scorecard
+fields or lesson ids). The new spec may keep or NARROW the sports and markets,
 keep or LOWER the most bets a day, keep or NARROW the price band and keep or RAISE the minimum
 books: it may make a hound more careful, never more exposed. Name and tagline are the owner's and
 cannot change. Reason and quip go through the same language filter as a hound's name, are stored as
@@ -61,6 +74,11 @@ from src import paths
 from src.hounds import user_engine, user_settle, user_spec, user_store, user_view
 from src.hounds import verdict as verdict_mod
 from src.hounds.contract import to_json
+from src.hounds.learning import ledger as learning_ledger
+from src.hounds.learning import lessons as learning_lessons
+from src.hounds.learning import pause as learning_pause
+from src.hounds.learning import proposals
+from src.hounds.learning import rules as learning_rules
 
 CONFIG_ENV = "HOUNDS_COACH_CONFIG"
 CONFIG_RELATIVE = os.path.join("config", "hounds_coach.json")
@@ -89,12 +107,14 @@ def config_path() -> Path:
 
 def coach_enabled() -> bool:
     """The kill switch, read fresh every call. Anything but a JSON object whose `enabled` is the
-    boolean true means OFF."""
+    boolean true means OFF. The learning loop can also switch it off by itself (auto-pause,
+    docs/PREREG_LEARNING_LOOP.md section 10): a pause file beside the app database says so, and only
+    the owner's `python -m src.hounds.learning resume` clears it."""
     try:
         data = json.loads(config_path().read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return False
-    return isinstance(data, dict) and data.get("enabled") is True
+    return isinstance(data, dict) and data.get("enabled") is True and not learning_pause.user_paused()
 
 
 def _require_enabled() -> None:
@@ -224,14 +244,17 @@ def _verdict_snapshot(hound_id: str, rows: Sequence[Mapping]) -> dict:
 
 def submit(hound_id: str, *, round_id: Optional[str], ts: Optional[str], sig: Optional[str],
            body: str, now: Optional[datetime] = None, rows: Optional[Sequence[Mapping]] = None,
-           db=None) -> dict:
-    """Accept or refuse one signed proposal. Returns {'decision','hound','new_hound',...}.
+           db=None, scope: Optional[learning_ledger.Scope] = None) -> dict:
+    """Accept or refuse one signed proposal. Returns {'decision','hound','new_hound': None,
+    'challenger',...}: an accepted proposal is a CHALLENGER (decision 'challenger'), an identical spec
+    is 'held'. Nothing here changes a hound.
 
     Order, and why: kill switch; round exists for THIS hound; timestamp fresh; signature (no
     burn on a bad one); state guards that do not depend on the body (still no burn); then the key
     is burned and everything after is recorded in the diary, accepted or refused."""
     now = now or datetime.now(timezone.utc)
     _require_enabled()
+    scope = scope or learning_ledger.Scope.user()
     rows = user_engine.read_ledger() if rows is None else rows
     rnd = user_store.get_round(round_id, db=db) if round_id else None
     if rnd is None or rnd["hound_id"] != hound_id:
@@ -269,9 +292,9 @@ def submit(hound_id: str, *, round_id: Optional[str], ts: Optional[str], sig: Op
         payload = json.loads(body)
     except ValueError:
         refuse("bad_body", "the body is not JSON", 400)
-    if not isinstance(payload, dict) or set(payload) - {"spec", "reason", "quip"} \
+    if not isinstance(payload, dict) or set(payload) - {"spec", "reason", "quip", "hypothesis", "evidence"} \
             or "spec" not in payload:
-        refuse("bad_body", "the body may carry only spec, reason and quip", 400)
+        refuse("bad_body", "the body may carry only spec, reason, quip, hypothesis and evidence", 400)
     try:
         reason = _clean_text(payload.get("reason"), "reason", REASON_MAX, required=True)
         quip = _clean_text(payload.get("quip"), "quip", QUIP_MAX, required=False)
@@ -292,16 +315,26 @@ def submit(hound_id: str, *, round_id: Optional[str], ts: Optional[str], sig: Op
             round_id=round_id, hound=hound, decision=user_store.DECISION_HELD, decided_by="coach",
             verdict=snapshot, old_spec=hound["spec"], new_spec=new_spec, reason=reason,
             quip=quip, now=now, db=db)
+        proposals.record_held(scope, hound, reason=reason, now=now)
         return {"decision": user_store.DECISION_HELD, "diary_id": diary_id, "hound": hound,
-                "new_hound": None, "reason": reason, "quip": quip, "paper_only": True}
+                "new_hound": None, "challenger": None, "reason": reason, "quip": quip,
+                "paper_only": True}
 
-    new = user_store.create_version(hound_id, new_spec, actor="coach", reason=reason, now=now, db=db)
+    # The proposal creates a CHALLENGER and nothing else. Whatever the model "thinks" it is asking
+    # for, the only effect reachable from here is one `proposal` event and one diary row.
+    try:
+        challenger = proposals.propose_user(
+            scope, hound, new_spec, payload.get("hypothesis"), payload.get("evidence"),
+            graded=graded_count(hound["id"], rows), coach_on=True, now=now)
+    except proposals.ProposalError as exc:
+        refuse(exc.code, str(exc), exc.status, new_spec=new_spec)
     diary_id = user_store.add_diary(
-        round_id=round_id, hound=hound, decision=user_store.DECISION_APPLIED, decided_by="coach",
-        verdict=snapshot, old_spec=hound["spec"], new_spec=new_spec, new_hound_id=new["id"],
+        round_id=round_id, hound=hound, decision=user_store.DECISION_CHALLENGER, decided_by="coach",
+        verdict=snapshot, old_spec=hound["spec"], new_spec=new_spec, challenger_id=challenger.id,
         reason=reason, quip=quip, now=now, db=db)
-    return {"decision": user_store.DECISION_APPLIED, "diary_id": diary_id, "hound": hound,
-            "new_hound": new, "reason": reason, "quip": quip, "paper_only": True}
+    return {"decision": user_store.DECISION_CHALLENGER, "diary_id": diary_id, "hound": hound,
+            "new_hound": None, "challenger": challenger.to_json(), "reason": reason, "quip": quip,
+            "paper_only": True}
 
 
 # ---------------------------------------------------------------------------
@@ -328,6 +361,12 @@ def undo(hound_id: str, *, now: Optional[datetime] = None, db=None) -> dict:
         round_id=applied["round_id"], hound=hound, decision=user_store.DECISION_UNDONE,
         decided_by="owner", old_spec=hound["spec"], new_spec=applied["old_spec"],
         new_hound_id=resumed["id"], reason="owner undid the coach's change", quip="", now=now, db=db)
+    try:
+        learning_ledger.log_for(learning_ledger.Scope.user()).append(
+            learning_ledger.K_UNDO, now=now, scope="user", hound_id=hound_id, resumed_id=resumed["id"],
+            challenger_id=applied.get("challenger_id"))
+    except OSError:
+        pass                      # the scorecard's undo count is a convenience; the diary is the record
     return {"retired": user_store.get_hound(hound_id, db=db), "resumed": resumed, "paper_only": True}
 
 
@@ -353,14 +392,16 @@ def _metrics_from(diary_rows: Sequence[Mapping], records: Mapping) -> dict:
     deltas = [p["delta_mean_pts"] for p in pairs if p["delta_mean_pts"] is not None]
     return {
         "rewrites": len(applied),
+        "challengers": sum(1 for d in diary_rows if d["decision"] == user_store.DECISION_CHALLENGER),
         "holds": sum(1 for d in diary_rows if d["decision"] == user_store.DECISION_HELD),
         "refusals": sum(1 for d in diary_rows if d["decision"] == user_store.DECISION_REJECTED),
         "undos": sum(1 for d in diary_rows if d["decision"] == user_store.DECISION_UNDONE),
         "pairs": pairs,
         "comparable_pairs": len(deltas),
         "mean_delta_clv_pts": round(sum(deltas) / len(deltas), 3) if deltas else None,
-        "note": (f"A coached version and the version it replaced are compared on closing-line value "
-                 f"only once each has {COMPARE_MIN_BETS} bets; until then the comparison is null."),
+        "note": (f"A promoted version and the version it replaced are compared on closing-line value "
+                 f"only once each has {COMPARE_MIN_BETS} bets; until then the comparison is null. "
+                 f"'rewrites' counts promotions; 'challengers' counts proposals the coach made."),
     }
 
 
@@ -386,7 +427,42 @@ def diary(hound_id: str, *, rows: Optional[Sequence[Mapping]] = None, db=None) -
     }
 
 
-def scorecard(hound_id: str, *, rows: Optional[Sequence[Mapping]] = None, db=None) -> Optional[dict]:
+def learning_block(hound: Mapping, scope: Optional[learning_ledger.Scope] = None) -> dict:
+    """What the loop knows about this hound's lineage, as data: its live challengers (so a coach does
+    not propose the same thing twice), the challengers it tried and retired, and the lessons (the
+    hound's last 10 and the category's), docs/PREREG_LEARNING_LOOP.md section 9a."""
+    scope = scope or learning_ledger.Scope.user()
+    state = learning_ledger.read_state(scope)
+    mine = [c for c in state.challengers.values() if c.lineage_key == hound["root_id"]]
+
+    def brief(c):
+        return {"challenger_id": c.id, "status": c.status, "outcome_reason": c.outcome_reason,
+                "spec_diff": c.spec_diff, "hypothesis": c.hypothesis, "created_utc": c.created_utc,
+                "ended_utc": c.ended_utc,
+                "paired_slots": max([lk.get("n") or 0 for lk in c.looks if not lk.get("skipped")], default=0)}
+
+    return {
+        "live_challengers": [brief(c) for c in mine if c.live],
+        "ended_challengers": [brief(c) for c in mine if not c.live][-10:],
+        "lessons": learning_lessons.coach_payload(
+            [learning_ledger.Scope.house(), scope], hound["id"], hound["root_id"], "mixed"),
+        "paused": learning_pause.is_paused(scope),
+        "rules": {
+            "a_proposal_creates": "a challenger that runs in shadow beside the champion; it never changes the hound",
+            "only_the_referee_promotes": "a pre-set sequential test on the paired closing-line value, "
+                                         "controlled for false discoveries across all challengers",
+            "frozen": ["name", "tagline", "lock_minutes"],
+            "needs": ["hypothesis (20-400 chars): why this should beat the champion",
+                      "evidence (1-10 references to fields of this scorecard or lesson ids)"],
+            "not_repeated": f"a near-duplicate of a challenger retired in the last {learning_rules.DEDUPE_DAYS} "
+                            f"days, of a live challenger, or of the champion is refused",
+            "live_challenger_caps": [learning_rules.MAX_LIVE_PER_HOUND, learning_rules.MAX_LIVE_PER_SCOPE],
+        },
+    }
+
+
+def scorecard(hound_id: str, *, rows: Optional[Sequence[Mapping]] = None, db=None,
+              scope: Optional[learning_ledger.Scope] = None) -> Optional[dict]:
     """Everything a coach may read about one hound, as data. None when the hound is unknown."""
     hound = user_store.get_hound(hound_id, db=db)
     if hound is None:
@@ -431,10 +507,12 @@ def scorecard(hound_id: str, *, rows: Optional[Sequence[Mapping]] = None, db=Non
         "verdict": to_json(own.summary.verdict),
         "last_30_bets": last30,
         "top_3_rule_texts_by_verdict": top3,
+        "learning": learning_block(hound, scope),
         "coach_rules": {"min_graded_bets": MIN_GRADED_BEFORE_REWRITE,
                         "one_rewrite_per_days": user_store.COACH_COOLDOWN.days,
                         "may_only": "keep or narrow sports/markets/price band, keep or lower max "
-                                    "bets per day, keep or raise min books"},
+                                    "bets per day, keep or raise min books; the proposal becomes a "
+                                    "challenger, never a change"},
         "paper_only": True, "not_advice": user_spec.NOT_ADVICE,
     }
 
@@ -456,5 +534,15 @@ def scorecard_text(card: Mapping) -> str:
     lines += ["", "Top 3 hounds by verdict (rule text):"]
     for t in card["top_3_rule_texts_by_verdict"]:
         lines.append(f"  {t['hound_id']}: {t['rule_text']}")
+    learning = card.get("learning") or {}
+    lines += ["", "Live challengers (quoted):"]
+    for c in learning.get("live_challengers", []):
+        lines.append(f"  {c['challenger_id']} {c['spec_diff']} hypothesis={c['hypothesis']!r}")
+    lines += ["", "Lessons from earlier challengers (this hound; quoted, one line each):"]
+    for r in (learning.get("lessons") or {}).get("hound_lessons", []):
+        lines.append(f"  {r['lesson']}")
+    lines += ["", "Lessons for the category:"]
+    for r in (learning.get("lessons") or {}).get("category_lessons", []):
+        lines.append(f"  {r['lesson']}")
     lines += ["", card["not_advice"]]
     return "\n".join(lines)

@@ -52,7 +52,8 @@ STATUSES = (STATUS_RUNNING, STATUS_BENCHED, STATUS_RETIRED)
 ROUND_TTL = timedelta(minutes=15)
 COACH_COOLDOWN = timedelta(days=7)
 
-DECISION_APPLIED = "applied"
+DECISION_APPLIED = "applied"            # a version was made: by the referee's promotion (or, before the learning loop, the coach)
+DECISION_CHALLENGER = "challenger"      # the coach proposed a challenger; it runs in shadow (src/hounds/learning)
 DECISION_HELD = "held"
 DECISION_REJECTED = "rejected"
 DECISION_UNDONE = "undone"
@@ -127,6 +128,10 @@ def _ensure_schema(conn: sqlite3.Connection) -> None:
         )
     """)
     conn.execute("CREATE INDEX IF NOT EXISTS coach_diary_root ON coach_diary(root_id, decided_at)")
+    # Additive migration (the learning loop): the challenger a diary row created or promoted.
+    cols = {r[1] for r in conn.execute("PRAGMA table_info(coach_diary)").fetchall()}
+    if "challenger_id" not in cols:
+        conn.execute("ALTER TABLE coach_diary ADD COLUMN challenger_id TEXT")
 
 
 @contextmanager
@@ -348,9 +353,9 @@ def last_coach_decision(root_id: str, *, db: Optional[Path] = None) -> Optional[
     """The newest diary row for the lineage that used up the 7-day allowance (applied or held)."""
     with _connect(db) as conn:
         row = conn.execute(
-            "SELECT * FROM coach_diary WHERE root_id = ? AND decision IN (?, ?) "
+            "SELECT * FROM coach_diary WHERE root_id = ? AND decision IN (?, ?, ?) "
             "ORDER BY decided_at DESC, id DESC LIMIT 1",
-            (root_id, DECISION_APPLIED, DECISION_HELD)).fetchone()
+            (root_id, DECISION_APPLIED, DECISION_HELD, DECISION_CHALLENGER)).fetchone()
     return dict(row) if row else None
 
 
@@ -395,17 +400,18 @@ def burn_round(round_id: str, now: datetime, *, db: Optional[Path] = None) -> bo
 def add_diary(*, round_id: str, hound: Mapping, decision: str, decided_by: str,
               verdict: Any = None, old_spec: Any = None, new_spec: Any = None,
               new_hound_id: Optional[str] = None, reason: str = "", quip: str = "",
+              challenger_id: Optional[str] = None,
               now: Optional[datetime] = None, db: Optional[Path] = None) -> int:
     with _connect(db) as conn:
         cur = conn.execute(
             "INSERT INTO coach_diary (round_id, hound_id, root_id, decided_at, verdict_json, "
-            "decision, old_spec_json, new_spec_json, new_hound_id, reason, quip, decided_by) "
-            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+            "decision, old_spec_json, new_spec_json, new_hound_id, reason, quip, decided_by, "
+            "challenger_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (round_id, hound["id"], hound["root_id"], _iso(_now(now)),
              json.dumps(verdict, sort_keys=True) if verdict is not None else None, decision,
              json.dumps(old_spec, sort_keys=True) if old_spec is not None else None,
              json.dumps(new_spec, sort_keys=True) if new_spec is not None else None,
-             new_hound_id, reason, quip, decided_by))
+             new_hound_id, reason, quip, decided_by, challenger_id))
         return cur.lastrowid
 
 

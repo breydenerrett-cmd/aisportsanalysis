@@ -278,20 +278,30 @@ class CoachRoutes(ApiCase):
         self.assertEqual(ctx.exception.status_code, 409)
 
     def test_full_round_trip_through_the_routes_then_diary_then_undo(self):
+        from src.hounds.learning import ledger as L, user_scope
         rnd = self.api.coach_round(self.hound["id"], x_admin_token=ADMIN)["round"]
-        body = json.dumps({"spec": dict(self.hound["spec"], max_bets_per_day=2),
-                           "reason": "Quieter days.", "quip": "Less barking."})
+        body = json.dumps({"spec": dict(self.hound["spec"], max_bets_per_day=1),
+                           "reason": "Quieter days.", "quip": "Less barking.",
+                           "hypothesis": "Fewer bets a day should keep only the best-priced ones.",
+                           "evidence": ["record.bets", "last_30_bets"]})
         out = self.signed_call(rnd, body)
-        self.assertEqual(out["decision"], "applied")
-        self.assertEqual(out["new_hound"]["version_of"], self.hound["id"])
+        self.assertEqual(out["decision"], "challenger")
+        self.assertIsNone(out["new_hound"])                                    # a proposal changes nothing
+        self.assertEqual(out["challenger"]["status"], "live")
+        self.assertEqual(out["challenger"]["parent_ref"], self.hound["id"])
+        self.assertEqual(user_store.get_hound(self.hound["id"])["status"], "running")
         self.assertTrue(out["paper_only"])
         with self.assertRaises(HTTPException) as ctx:                          # key is one-use
             self.signed_call(rnd, body)
         self.assertEqual((ctx.exception.status_code, ctx.exception.detail["error"]), (401, "round_used"))
         diary = self.api.coach_diary(self.hound["id"], _rl=None)["diary"]
-        self.assertEqual(diary["metrics"]["rewrites"], 1)
+        self.assertEqual(diary["metrics"]["challengers"], 1)
+        self.assertEqual(diary["metrics"]["rewrites"], 0)
         self.assertEqual(diary["entries"][0]["quip"], "Less barking.")
-        new_id = out["new_hound"]["id"]
+        # the referee promotes (here: the same effect it applies); the owner may undo that version
+        state = L.read_state(L.Scope.user())
+        challenger = state.challengers[out["challenger"]["id"]]
+        new_id = user_scope.apply_promotion(challenger, {"p_adj": 0.01})
         with self.assertRaises(HTTPException) as ctx:                          # not the owner
             self.api.coach_undo(new_id, current_user=self.other, _rl=None)
         self.assertEqual(ctx.exception.status_code, 404)

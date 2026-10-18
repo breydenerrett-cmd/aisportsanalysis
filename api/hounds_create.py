@@ -12,7 +12,9 @@ WHO CAN DO WHAT
   POST /hounds/{id}/coach/opt-in    the owner
   POST /hounds/{id}/coach/undo      the owner
   POST /hounds/{id}/coach/round     an admin: opens a signed round (secret returned once)
-  POST /hounds/{id}/coach           the Houndmaster: signed proposal, no bearer token
+  POST /hounds/{id}/coach           the Houndmaster: signed proposal, no bearer token. A proposal creates a
+                                    CHALLENGER (shadow run, judged by the referee); it never changes the hound
+                                    (docs/PREREG_LEARNING_LOOP.md)
 
 ROUTE ORDER MATTERS
 -------------------
@@ -296,4 +298,5 @@ def _coach_submit_sync(hound_id, round_id, ts, sig, body) -> dict:
         "decision": out["decision"], "reason": out["reason"], "quip": out["quip"],
         "hound": hound_summary(out["hound"]),
         "new_hound": hound_summary(out["new_hound"]) if out["new_hound"] else None,
+        "challenger": out.get("challenger"),
     })
