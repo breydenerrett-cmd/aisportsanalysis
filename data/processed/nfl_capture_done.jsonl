@@ -291,3 +291,4 @@
 {"game_id": "2026_06_NO_NYG", "observed_utc": "2026-10-18T15:01:04.076773Z", "phase": "t2h"}
 {"game_id": "2026_06_CAR_PHI", "observed_utc": "2026-10-18T15:01:04.076773Z", "phase": "t2h"}
 {"game_id": "2026_06_PIT_TB", "observed_utc": "2026-10-18T15:01:04.076773Z", "phase": "t2h"}
+{"game_id": "_gameday_refresh", "observed_utc": "2026-10-18T15:30:07.391055Z", "phase": "refresh"}
