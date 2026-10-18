@@ -236,6 +236,25 @@ def paginate(items: list, page: Any, page_size: Any = None) -> dict:
             "items": items[start:start + size]}
 
 
+# ---- the "warming up" payload --------------------------------------------------------
+
+WARMING_RETRY_SECONDS = 5
+WARMING_MESSAGE = ("The race is warming up: the numbers are being worked out from the "
+                   "stored boards and this takes a few seconds the first time. Nothing is "
+                   "wrong and nothing is missing; try again in a moment.")
+
+
+def warming_payload(empty: dict) -> dict:
+    """What every GET /hounds route answers (HTTP 200, within a second) while the first build of
+    the stats is still running: the route's own shape EMPTY, plus ``warming_up: true``. A page
+    that ignores the flag renders an empty race, never a made-up one; a page that reads it shows
+    the message and asks again after ``retry_after_seconds``. Never cached."""
+    out = dict(empty)
+    out.update({"warming_up": True, "retry_after_seconds": WARMING_RETRY_SECONDS,
+                "message": WARMING_MESSAGE, "as_of": None})
+    return envelope(out)
+
+
 # ---- payload builders --------------------------------------------------------------
 
 def leaderboard_payload(summaries: list, as_of: Optional[str]) -> dict:

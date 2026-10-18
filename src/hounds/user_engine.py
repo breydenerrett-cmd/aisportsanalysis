@@ -108,8 +108,29 @@ def _number(value: Any) -> Optional[float]:
         return None
 
 
+ENV_LEDGER = "HOUNDS_USER_LEDGER"
+LEDGER_NAME = "hounds_user_v1.jsonl"
+
+
 def ledger_path(path: Optional[str] = None) -> str:
-    return path or str(paths.repo_root() / LEDGER)
+    """Where the user hounds' hash-chained ledger lives.
+
+    An explicit path wins (tests, the CLI's --ledger). Otherwise HOUNDS_USER_LEDGER, otherwise a
+    file BESIDE THE APP DATABASE (``data/app/`` locally, the persistent Fly volume in production).
+
+    WHY BESIDE THE DATABASE AND NOT ``evidence/`` (decision 2026-10-18, docs/HOUNDS_USER.md): the
+    running hounds live in the app database, so the engine that turns them into bets runs in the
+    API process on the machine that owns that database (api/hounds_engine.py). ``evidence/`` is a
+    git-tracked directory baked into the image, so a ledger written there on the server would be
+    lost at the next deploy and could never reach git. The volume survives deploys. The one place
+    both the engine and the public reader (stats.Sources.default) resolve this from is here."""
+    if path:
+        return path
+    override = (os.environ.get(ENV_LEDGER) or "").strip()
+    if override:
+        return override
+    from src.appstate import users as users_store
+    return str(users_store.db_path().parent / LEDGER_NAME)
 
 
 # ---------------------------------------------------------------------------
@@ -367,6 +388,38 @@ def _selection_text(game: GameBoards, market: str, side: str, line: Optional[flo
     return f"{team} to win"
 
 
+def _fmt_price(p: int) -> str:
+    return f"+{p}" if p > 0 else str(p)
+
+
+def contract_fields(row: Mapping, spec: Mapping, mode: str) -> dict:
+    """The bet row's fields under the NAMES src/hounds/contract.py and the shared ledger reader
+    (src.hounds.ledgers.pack_ledger_rows) use, so the public stats read this ledger without a
+    translation layer. Added beside the engine's own names, never instead of them.
+
+    The two prices (owner grading ruling 2026-09-21, and what both halves now mean):
+      price_average  the mean decimal price across the books on the board at lock, the price the
+                     bet is HEADLINE-graded at (``units_average_price``). Same number as ``price``.
+      price_best     the single best quote on that board (``book`` names the book), the price
+                     recorded at lock (``units_recorded_price``). Same number as ``best_price``.
+    ``segment`` is ``forward`` for a live run and ``replay`` for a backfill (prereg 1a)."""
+    side = row["side"]
+    if row["market"] == "total":
+        what = f"the {side}"
+    else:
+        what = f"the {side} side"
+    reason = (f"Rule: {user_spec.SIDE_LABELS[spec['side_rule']].lower()}. It backed {what} "
+              f"({row['selection']}) at the board average of {_fmt_price(row['price'])} across "
+              f"{row['n_books']} books; the best single price was {_fmt_price(row['best_price'])} "
+              f"at {row['best_book']}.")
+    return {
+        "date": row["slate_date"], "price_average": row["price"], "price_best": row["best_price"],
+        "book": row["best_book"], "book_count": row["n_books"], "start_utc": row["commence_time"],
+        "segment": "replay" if mode == "replay" else "forward", "who_decided": "rule",
+        "reason": reason,
+    }
+
+
 def evaluate(spec: Mapping, game: GameBoards, market: str, lock_utc: datetime,
              commence: datetime) -> tuple:
     """(candidate_dict | None, reason). The reason is a stable code when there is no candidate."""
@@ -524,6 +577,7 @@ def run(date: str, hounds: Sequence[Mapping], rows: Iterable[Mapping], *,
                 "board_age_minutes": cand["board_age_minutes"], "units": 1,
                 "recorded_utc": _iso(t), "provenance": mode,
             }
+            row.update(contract_fields(row, spec, mode))
             store.append(row)
             seen_ids.add(bet_id)
             per_day[(hound["id"], date)] += 1

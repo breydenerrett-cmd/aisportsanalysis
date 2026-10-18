@@ -195,11 +195,19 @@ def settle(*, ledger: Optional[str] = None, now: Optional[datetime] = None,
             print(f"hounds settle: close price unavailable for {bet['bet_id']}: {exc!r}",
                   file=sys.stderr)
             close = None
+        avg_units = _profit_at(outcome, bet["price"])
+        best_units = _profit_at(outcome, bet["best_price"])
         row = {
             "kind": KIND_GRADED, "ledger_version": user_engine.LEDGER_VERSION, "paper_only": True,
             "bet_id": bet["bet_id"], "hound_id": bet["hound_id"], "result": outcome,
-            "profit_units": _profit_at(outcome, bet["price"]),
-            "profit_units_best": _profit_at(outcome, bet["best_price"]),
+            "profit_units": avg_units,
+            "profit_units_best": best_units,
+            # The contract's names (src.hounds.contract Record): ``units`` is units at the price
+            # recorded at lock, the BEST quote, which is what ``units_recorded_price`` sums;
+            # the headline ``units_average_price`` is re-derived by the public stats from the
+            # bet row's ``price_average``. The pack's graded rows use the same two names.
+            "units": best_units, "units_best_price": best_units, "units_average_price": avg_units,
+            "date": bet["slate_date"], "segment": bet.get("segment") or "forward",
             "away_score": graded.get("away_score"), "home_score": graded.get("home_score"),
             "reason": graded.get("reason"), "close_price": close,
             "clv_pts": clv_points(bet["price"], close), "graded_utc": user_engine._iso(now),

@@ -42,7 +42,7 @@ from pydantic import BaseModel
 
 from src.appstate import ratelimit
 from src.appstate import users as users_store
-from src.hounds import user_coach, user_engine, user_settle, user_spec, user_store
+from src.hounds import user_coach, user_defs, user_engine, user_spec, user_store, user_view
 
 from api import auth as auth_mod
 from api.auth import get_current_user, require_paid_access
@@ -82,36 +82,26 @@ def _wrap(payload: dict) -> dict:
 
 
 def _owner_display(owner_user_id: int) -> str:
-    digest = hashlib.sha256(f"hound-owner:{owner_user_id}".encode()).hexdigest()[:4].upper()
-    return f"Handler {digest}"
+    return user_defs.owner_display(owner_user_id)
 
 
-def hound_summary(hound: dict, records: Optional[dict] = None, *, verified: Optional[bool] = None) -> dict:
-    """The shared hound-summary shape for a user hound."""
-    spec = hound["spec"]
-    rec = (records or {}).get(hound["id"])
-    empty = {"bets": 0, "wins": 0, "losses": 0, "pushes": 0, "voids": 0,
-             "units_recorded_price": 0.0, "units_average_price": 0.0}
-    return {
-        "id": hound["id"], "name": hound["name"], "tagline": hound["tagline"], "kind": "user",
-        "owner_display": _owner_display(hound["owner_user_id"]),
-        "sport": "/".join(spec["sports"]), "sports": spec["sports"], "markets": spec["markets"],
-        "rule_text": user_spec.rule_text(spec), "status": hound["status"],
-        "record": (rec or {}).get("record") or empty,
-        "clv": (rec or {}).get("clv"),
-        "verdict": user_settle.verdict_for(rec),
-        "first_bet_utc": (rec or {}).get("first_bet_utc"),
-        "last_bet_utc": (rec or {}).get("last_bet_utc"),
-        "verified": user_engine.ledger_verified() if verified is None else verified,
+def hound_summary(hound: dict, *, verified: Optional[bool] = None) -> dict:
+    """The shared hound summary (src/hounds/contract.py ``HoundSummary``) for a user hound, plus the
+    fields only the owner's surfaces need.
+
+    EVERYTHING PUBLIC COMES FROM THE ONE REFEREE. record, clv, verdict, verified, replay, first/last
+    bet, status and retired are ``src.hounds.stats`` (CLV by ``src.report.clv``, label by
+    ``src.hounds.verdict``); this module computes none of them. ``verified`` in the summary is the referee's (was the recorded price on
+    the board at lock); ``ledger_chain_ok`` is this ledger's hash chain, a different question."""
+    out = user_view.summary(hound)
+    out.update({
+        "ledger_chain_ok": user_engine.ledger_verified() if verified is None else verified,
         "version_no": hound["version_no"], "version_of": hound["version_of"],
         "copied_from": hound["copied_from"], "coach_opt_in": hound["coach_opt_in"],
         "retire_reason": hound["retire_reason"], "created_at": hound["created_at"],
         "paper_only": True, "not_advice": user_spec.NOT_ADVICE,
-    }
-
-
-def _records() -> dict:
-    return user_settle.records_by_hound(user_engine.read_ledger())
+    })
+    return out
 
 
 def _spec_error(exc: user_spec.SpecError) -> HTTPException:
@@ -169,15 +159,14 @@ def create_hound(body: CreateHoundRequest,
         raise _spec_error(exc)
     except user_store.StoreError as exc:
         raise _store_error(exc)
-    return _wrap({"hound": hound_summary(hound, {})})
+    return _wrap({"hound": hound_summary(hound)})
 
 
 @router.get("/hounds/mine")
 def my_hounds(current_user: users_store.User = Depends(get_current_user),
               _rl: None = Depends(_rate_limit_read)) -> dict:
-    records = _records()
     verified = user_engine.ledger_verified()
-    return _wrap({"hounds": [hound_summary(h, records, verified=verified)
+    return _wrap({"hounds": [hound_summary(h, verified=verified)
                              for h in user_store.list_for_owner(current_user.id)],
                   "limit_running": user_spec.MAX_RUNNING_PER_ACCOUNT})
 
@@ -217,7 +206,7 @@ def retire_hound(hound_id: str, body: RetireRequest,
         retired = user_store.retire_hound(hound["id"], by=actor, reason=body.reason)
     except user_store.StoreError as exc:
         raise _store_error(exc)
-    return _wrap({"hound": hound_summary(retired, _records())})
+    return _wrap({"hound": hound_summary(retired)})
 
 
 def _manage_check(user: users_store.User) -> None:
@@ -253,7 +242,7 @@ def coach_opt_in(hound_id: str, body: OptInRequest,
                  _rl: None = Depends(_rate_limit_manage)) -> dict:
     _owned(hound_id, current_user)
     hound = user_store.set_coach_opt_in(hound_id, body.enabled)
-    return _wrap({"hound": hound_summary(hound, _records())})
+    return _wrap({"hound": hound_summary(hound)})
 
 
 @router.post("/hounds/{hound_id}/coach/undo")
@@ -266,9 +255,8 @@ def coach_undo(hound_id: str, current_user: users_store.User = Depends(get_curre
         raise _coach_error(exc)
     except user_store.StoreError as exc:
         raise _store_error(exc)
-    records = _records()
-    return _wrap({"retired": hound_summary(out["retired"], records),
-                  "resumed": hound_summary(out["resumed"], records)})
+    return _wrap({"retired": hound_summary(out["retired"]),
+                  "resumed": hound_summary(out["resumed"])})
 
 
 @router.get("/hounds/{hound_id}/coach/diary")
@@ -303,9 +291,8 @@ def _coach_submit_sync(hound_id, round_id, ts, sig, body) -> dict:
         out = user_coach.submit(hound_id, round_id=round_id, ts=ts, sig=sig, body=body)
     except user_coach.CoachError as exc:
         raise _coach_error(exc)
-    records = _records()
     return _wrap({
         "decision": out["decision"], "reason": out["reason"], "quip": out["quip"],
-        "hound": hound_summary(out["hound"], records),
-        "new_hound": hound_summary(out["new_hound"], records) if out["new_hound"] else None,
+        "hound": hound_summary(out["hound"]),
+        "new_hound": hound_summary(out["new_hound"]) if out["new_hound"] else None,
     })

@@ -37,7 +37,7 @@ import os
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Iterable, Optional
+from typing import Callable, Iterable, Optional
 
 from src.paths import data_path, evidence_path, repo_root
 
@@ -57,6 +57,13 @@ MARKET_ALIASES = {
 SIDES = ("home", "away", "over", "under")
 
 PROVENANCE_TO_WHO = {"model_derived": "model"}
+
+# A pack hound that decides by a seeded draw (coin, dart) says "random". The
+# contract's closed set is code | model | rule (src.hounds.contract.WHO_DECIDED),
+# and a seeded draw is made by code, so that is the word the page shows. Found
+# 2026-10-18 reading evidence/hounds_house_v1.jsonl: the reader silently
+# defaulted every random hound to "rule".
+WHO_ALIASES = {"random": "code", "seeded": "code", "coin": "code"}
 
 
 @dataclass
@@ -123,10 +130,16 @@ class Sources:
     house_hounds_cfg: Path
     house_pack_cfg: Path
     pack_ledgers: tuple = ()       # (("house", path), ("user", path)) -- kind, path
+    # User hounds' names, rules and owners live in the app database, not in a ledger.
+    # ``user_hounds()`` -> definitions (src.hounds.user_defs.definitions); ``user_stamp()`` ->
+    # a cheap tuple folded into the cache key. Both None for a world with no app database.
+    user_hounds: Optional[Callable[[], list]] = None
+    user_stamp: Optional[Callable[[], tuple]] = None
 
     @staticmethod
     def default() -> "Sources":
         root = repo_root()
+        from src.hounds import user_defs, user_engine
         from src.pipeline import snapshots
         return Sources(
             decisions=evidence_path("decisions_v2.jsonl"),
@@ -138,8 +151,11 @@ class Sources:
             house_pack_cfg=root / "config" / "house_pack.json",
             pack_ledgers=(
                 ("house", evidence_path("hounds_house_v1.jsonl")),
-                ("user", evidence_path("hounds_user_v1.jsonl")),
+                # The user ledger sits beside the app database (user_engine.ledger_path),
+                # outside the repository: the engine that writes it runs in the API process.
+                ("user", Path(user_engine.ledger_path())),
             ),
+            user_hounds=user_defs.definitions, user_stamp=user_defs.stamp,
         )
 
     def fingerprint(self) -> tuple:
@@ -168,6 +184,8 @@ class Sources:
                 out.append((str(p), st.st_size, st.st_mtime_ns))
             except OSError:
                 out.append((str(p), None, None))
+        if self.user_stamp is not None:
+            out.append(self.user_stamp())
         return tuple(out)
 
 
@@ -459,9 +477,15 @@ def _side_of(row: dict) -> Optional[str]:
 
 def pack_ledger_rows(path) -> tuple:
     """``(bets, hound_defs)`` from one hash-chained pack/user ledger."""
+    return pack_rows(jsonl_rows(path))
+
+
+def pack_rows(rows: Iterable) -> tuple:
+    """``(bets, hound_defs)`` from ledger rows already in hand (the file reader above, or a test)."""
     merged: dict = {}
     defs: dict = {}
-    for row in jsonl_rows(path):
+    by_row_hash: dict = {}      # a bet row's own row_hash -> its merge key
+    for row in rows:
         kind = row.get("kind")
         if kind in ("hound", "hound_def", "hound_meta"):
             hid = row.get("hound_id") or row.get("id")
@@ -471,14 +495,28 @@ def pack_ledger_rows(path) -> tuple:
         hid = row.get("hound_id")
         if not hid:
             continue
-        date = _day(row.get("date") or row.get("lock_utc"))
+        # ``slate_date`` is the user engine's original name for ``date`` (rows written before it
+        # also wrote the contract's names stay readable).
+        date = _day(row.get("date") or row.get("slate_date") or row.get("lock_utc"))
         if _sealed(date):
             continue
         event = row.get("event_id") or row.get("game_id")
         market = _market_of(row)
-        key = row.get("bet_id") or "|".join(str(x) for x in (
-            hid, event, market, row.get("selection") or row.get("side"),
-            row.get("line"), row.get("segment") or "forward"))
+        # How a graded row finds its bet: an explicit bet_id; else the hash of
+        # the bet row it grades (the house pack writes ``bet_row_hash``, and
+        # its graded rows carry no ``line``, so the fallback key below never
+        # matches a spread or a total and the bet showed up twice, once
+        # ungraded); else the fallback key. Found 2026-10-18 on the real pack
+        # ledger: 126 "bets" for a hound that made 63.
+        key = row.get("bet_id")
+        if not key and row.get("bet_row_hash") in by_row_hash:
+            key = by_row_hash[row["bet_row_hash"]]
+        if not key:
+            key = "|".join(str(x) for x in (
+                hid, event, market, row.get("selection") or row.get("side"),
+                row.get("line"), row.get("segment") or "forward"))
+        if row.get("row_hash") and row.get("result") is None:
+            by_row_hash[row["row_hash"]] = key
         bet = merged.get(key)
         if bet is None:
             bet = Bet(hound_id=str(hid), bet_id=str(key))
@@ -494,35 +532,55 @@ def pack_ledger_rows(path) -> tuple:
             bet.selection_text = text      # a bare side is rebuilt from team names
         if row.get("line") is not None:
             bet.line = str(row["line"])
+        # The two prices. ``price_best`` is the price recorded at lock (units_recorded_price);
+        # ``price_average`` the board average (units_average_price). The user engine's original
+        # names for them were ``best_price`` and ``price`` (= the average); read those too, so a
+        # ledger row from before the engine wrote the contract's names means the same thing.
         best = _int_or_none(row.get("price_best"))
+        if best is None:
+            best = _int_or_none(row.get("best_price"))
         avg = _int_or_none(row.get("price_average"))
-        legacy = _int_or_none(row.get("price") or row.get("price_american"))
+        if avg is None and row.get("best_price") is not None:
+            avg = _int_or_none(row.get("price"))
+        legacy = (None if row.get("best_price") is not None
+                  else _int_or_none(row.get("price") or row.get("price_american")))
         taken = best if best is not None else (legacy if legacy is not None else avg)
         if taken is not None:
             bet.price = taken
         if avg is not None:
             bet.price_average = avg
-        if row.get("book"):
-            bet.book = str(row["book"])
-        if row.get("book_count") is not None:
-            bet.book_count = _int_or_none(row.get("book_count"))
+        if row.get("book") or row.get("best_book"):
+            bet.book = str(row.get("book") or row.get("best_book"))
+        count = row.get("book_count", row.get("n_books"))
+        if count is not None:
+            bet.book_count = _int_or_none(count)
         if row.get("lock_utc"):
             bet.decision_utc = row["lock_utc"]
-        if row.get("start_utc"):
-            bet.start_utc = row["start_utc"]
+        if row.get("start_utc") or row.get("commence_time"):
+            bet.start_utc = row.get("start_utc") or row.get("commence_time")
         if row.get("reason"):
             bet.reason = str(row["reason"])
         who = str(row.get("who_decided") or "").lower()
+        who = WHO_ALIASES.get(who, who)
         if who in ("code", "model", "rule"):
             bet.who_decided = who
-        segment = str(row.get("segment") or bet.segment or "forward").lower()
+        segment = str(row.get("segment") or ("replay" if row.get("provenance") == "replay" else "")
+                      or bet.segment or "forward").lower()
         bet.segment = segment if segment in ("forward", "replay") else "forward"
         if row.get("consensus_fair") is not None:
             bet.consensus_fair = _float_or_none(row["consensus_fair"])
         result = str(row.get("result") or "").lower()
         if result in RESULTS:
             bet.result = result
-            units = row.get("units", row.get("profit_units"))
+            # ``units`` is units at the RECORDED (best) price; the house pack
+            # names it ``units_best_price``. ``profit_units`` is deliberately
+            # NOT read: in the user ledger it is profit at the AVERAGE price,
+            # and ``average_units`` recomputes that from ``price_average``.
+            units = None
+            for field_name in ("units", "units_best_price", "profit_units_best"):
+                if row.get(field_name) is not None:
+                    units = row[field_name]
+                    break
             if units is not None:
                 bet.units = _float_or_none(units)
     return list(merged.values()), defs

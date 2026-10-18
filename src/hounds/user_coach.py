@@ -58,7 +58,9 @@ from pathlib import Path
 from typing import Any, Mapping, Optional, Sequence
 
 from src import paths
-from src.hounds import user_engine, user_settle, user_spec, user_store
+from src.hounds import user_engine, user_settle, user_spec, user_store, user_view
+from src.hounds import verdict as verdict_mod
+from src.hounds.contract import to_json
 
 CONFIG_ENV = "HOUNDS_COACH_CONFIG"
 CONFIG_RELATIVE = os.path.join("config", "hounds_coach.json")
@@ -215,7 +217,7 @@ def _clean_text(value: Any, field: str, limit: int, *, required: bool) -> str:
 
 def _verdict_snapshot(hound_id: str, rows: Sequence[Mapping]) -> dict:
     rec = user_settle.records_by_hound(rows).get(hound_id)
-    return {"verdict": user_settle.verdict_for(rec),
+    return {"verdict": user_view.verdict_block(hound_id, rows),
             "record": (rec or {}).get("record"), "clv": (rec or {}).get("clv"),
             "graded": (rec or {}).get("graded", 0)}
 
@@ -389,9 +391,10 @@ def scorecard(hound_id: str, *, rows: Optional[Sequence[Mapping]] = None, db=Non
     hound = user_store.get_hound(hound_id, db=db)
     if hound is None:
         return None
+    injected = rows is not None
     rows = user_engine.read_ledger() if rows is None else rows
     records = user_settle.records_by_hound(rows)
-    mine = records.get(hound_id)
+    own = user_view.hound_data(hound_id, kick_build=False, rows=rows if injected else None)
     bets = [r for r in rows if r.get("kind") == user_engine.KIND_BET and r["hound_id"] == hound_id]
     graded = {r["bet_id"]: r for r in rows if r.get("kind") == user_settle.KIND_GRADED}
     last30 = []
@@ -406,10 +409,12 @@ def scorecard(hound_id: str, *, rows: Optional[Sequence[Mapping]] = None, db=Non
     for h in user_store.list_all(db=db):
         if h["status"] != user_store.STATUS_RUNNING:
             continue
-        rec = records.get(h["id"])
-        verdict = user_settle.verdict_for(rec)
-        if verdict["label"] == "ahead_of_close":
-            ranked.append((-(rec["clv"]["mean_pts"]), h["id"], h, verdict))
+        # The single referee decides who is "ahead": src.hounds.verdict, through the stats.
+        data = user_view.hound_data(h["id"], kick_build=False, rows=rows if injected else None)
+        if data is None or data.summary.verdict.label != verdict_mod.BEATING_THE_CLOSE:
+            continue
+        verdict = to_json(data.summary.verdict)
+        ranked.append((-(data.summary.clv.mean_pts or 0.0), h["id"], h, verdict))
     ranked.sort(key=lambda x: (x[0], x[1]))
     top3 = [{"hound_id": h["id"], "rule_text": user_spec.rule_text(h["spec"]),
              "verdict": v} for _k, _i, h, v in ranked[:3]]
@@ -419,12 +424,11 @@ def scorecard(hound_id: str, *, rows: Optional[Sequence[Mapping]] = None, db=Non
                   "status": hound["status"], "version_no": hound["version_no"],
                   "version_of": hound["version_of"], "coach_opt_in": hound["coach_opt_in"]},
         "spec": hound["spec"], "rule_text": user_spec.rule_text(hound["spec"]),
-        "record": (mine or {}).get("record") or {"bets": 0, "wins": 0, "losses": 0, "pushes": 0,
-                                                 "voids": 0, "units_recorded_price": 0.0,
-                                                 "units_average_price": 0.0},
-        "clv": (mine or {}).get("clv"),
-        "graded_bets": (mine or {}).get("graded", 0),
-        "verdict": user_settle.verdict_for(mine),
+        # record, clv and verdict are the referee's (stats + verdict.py), forward bets only.
+        "record": to_json(own.summary.record),
+        "clv": to_json(own.summary.clv),
+        "graded_bets": own.summary.record.bets,
+        "verdict": to_json(own.summary.verdict),
         "last_30_bets": last30,
         "top_3_rule_texts_by_verdict": top3,
         "coach_rules": {"min_graded_bets": MIN_GRADED_BEFORE_REWRITE,

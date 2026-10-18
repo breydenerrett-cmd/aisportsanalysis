@@ -11,7 +11,9 @@ from unittest import mock
 
 from src.appstate import users as users_store
 from src.hounds import user_coach as coach
-from src.hounds import user_engine, user_settle, user_spec, user_store
+from src.hounds import user_engine, user_settle, user_spec, user_store, user_view
+from src.hounds import verdict as verdict_mod
+from src.hounds.contract import ClvBlock, VerdictBlock
 from tests._hounds_user_fixtures import spec_dict
 
 NOW = datetime(2026, 11, 2, 15, 0, tzinfo=timezone.utc)
@@ -22,12 +24,20 @@ def ledger_rows(hound_id: str, n: int, *, clv: float = 0.5) -> list:
     rows = []
     for i in range(n):
         bet_id = f"b-{hound_id}-{i}"
+        day = f"2026-10-{(i % 28) + 1:02d}"
         rows.append({"kind": user_engine.KIND_BET, "bet_id": bet_id, "hound_id": hound_id,
-                     "recorded_utc": f"2026-10-{(i % 28) + 1:02d}T12:00:00Z", "slate_date": "2026-10-01",
-                     "selection": f"Team {i} to win", "market": "moneyline", "price": 120})
+                     "recorded_utc": f"{day}T12:00:00Z", "slate_date": day,
+                     "selection": f"Team {i} to win", "market": "moneyline", "price": 120,
+                     # the contract's names, as the engine now writes them (user_engine.contract_fields)
+                     "date": day, "event_id": f"e{i}", "sport": "MLB", "side": "away",
+                     "price_average": 120, "price_best": 125, "best_price": 125, "book": "book_a",
+                     "book_count": 5, "lock_utc": f"{day}T18:00:00Z", "start_utc": f"{day}T20:00:00Z",
+                     "segment": "forward", "who_decided": "rule", "reason": "test"})
+        win = bool(i % 2)
         rows.append({"kind": user_settle.KIND_GRADED, "bet_id": bet_id, "hound_id": hound_id,
-                     "result": "WIN" if i % 2 else "LOSS", "profit_units": 1.2 if i % 2 else -1.0,
-                     "profit_units_best": 1.3 if i % 2 else -1.0,
+                     "result": "WIN" if win else "LOSS", "profit_units": 1.2 if win else -1.0,
+                     "profit_units_best": 1.25 if win else -1.0,
+                     "units": 1.25 if win else -1.0, "date": day,
                      "clv_pts": clv + (0.1 if i % 3 else -0.1)})
     return rows
 
@@ -419,9 +429,13 @@ class Scorecard(CoachCase):
         self.assertEqual(card["spec"], self.hound["spec"])
         self.assertEqual(card["rule_text"], user_spec.rule_text(self.hound["spec"]))
         self.assertEqual(card["record"]["bets"], 50)
-        self.assertEqual(card["clv"]["n"], 50)
+        # CLV and the label are the single referee's (src.hounds.verdict). With no captured boards
+        # behind these rows nothing is measurable, so it says so rather than quoting the engine's
+        # own CLV column (which is NOT public any more).
+        self.assertIsNone(card["clv"])
         self.assertEqual(len(card["last_30_bets"]), 30)
-        self.assertIn(card["verdict"]["label"], ("ahead_of_close", "unclear", "behind_close"))
+        self.assertIn(card["verdict"]["label"], verdict_mod.LABELS)
+        self.assertEqual(card["verdict"]["label"], "TOO EARLY")
         self.assertTrue(card["paper_only"])
         self.assertIn("coach_rules", card)
 
@@ -433,10 +447,25 @@ class Scorecard(CoachCase):
         rows = list(self.rows)
         for i, h in enumerate(pack):
             rows += ledger_rows(h["id"], 40, clv=3.0 - i)
-        card = coach.scorecard(self.hound["id"], rows=rows)
+        # The referee needs boards to measure CLV, so stand in for it: hound i is BEATING THE CLOSE
+        # by (3 - i) points, and the first one is not.
+        real = user_view.hound_data
+
+        def fake(hid, **kw):
+            data = real(hid, **kw)
+            if data is None or hid not in {h["id"] for h in pack}:
+                return data
+            i = [h["id"] for h in pack].index(hid)
+            s = data.summary
+            s.verdict = VerdictBlock(label=verdict_mod.BEATING_THE_CLOSE, sentence="test", units_note="")
+            s.clv = ClvBlock(n=200, mean_pts=3.0 - i, ci_low=0.5, ci_high=5.0)
+            return data
+
+        with mock.patch.object(user_view, "hound_data", fake):
+            card = coach.scorecard(self.hound["id"], rows=rows)
         top = card["top_3_rule_texts_by_verdict"]
-        self.assertLessEqual(len(top), 3)
-        self.assertEqual(top[0]["hound_id"], pack[0]["id"])
+        self.assertEqual(len(top), 3)
+        self.assertEqual([t["hound_id"] for t in top], [h["id"] for h in pack[:3]])
         for t in top:
             self.assertEqual(set(t), {"hound_id", "rule_text", "verdict"})   # no user-written text
 

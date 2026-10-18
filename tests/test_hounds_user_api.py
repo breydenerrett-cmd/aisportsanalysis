@@ -21,7 +21,7 @@ except ImportError:  # pragma: no cover
     HAS_FASTAPI = False
 
 from src.appstate import users as users_store
-from src.hounds import user_coach, user_engine, user_spec, user_store
+from src.hounds import stats, user_coach, user_engine, user_spec, user_store
 from tests._hounds_user_fixtures import spec_dict
 from tests.test_hounds_user_coach import ledger_rows
 
@@ -55,6 +55,10 @@ class ApiCase(unittest.TestCase):
                                          "APP_ADMIN_TOKEN": ADMIN}),
             mock.patch.object(user_engine, "LEDGER", self.ledger),
             mock.patch.object(user_engine, "ledger_path", lambda p=None: p or self.ledger),
+            # A summary read starts one background build of the public stats (a pass over the real
+            # odds store). Never in a test: it would outlive it and hold this temp database open.
+            mock.patch.object(stats, "refresh_async", lambda *a, **k: False),
+            mock.patch.object(stats, "peek_book", lambda: None),
         ]
         for p in self._patches:
             p.start()
@@ -119,9 +123,14 @@ class CreateAndList(ApiCase):
         out = self.create(name="Dog Days", tagline="Dogs bark")
         self.assertTrue(out["paper_only"] and out["not_advice"])
         h = out["hound"]
-        for key in ("id", "name", "tagline", "kind", "owner_display", "sport", "markets", "rule_text",
-                    "status", "record", "clv", "verdict", "first_bet_utc", "last_bet_utc", "verified"):
+        # exactly the contract's HoundSummary fields (src/hounds/contract.py), plus the owner extras
+        from dataclasses import fields as dc_fields
+        from src.hounds.contract import HoundSummary
+        for f in dc_fields(HoundSummary):
+            self.assertIn(f.name, h)
+        for key in ("version_no", "version_of", "copied_from", "coach_opt_in", "ledger_chain_ok"):
             self.assertIn(key, h)
+        self.assertEqual(h["verdict"]["label"], "TOO EARLY")
         self.assertEqual((h["kind"], h["status"], h["clv"], h["first_bet_utc"]),
                          ("user", "running", None, None))
         self.assertEqual(h["record"]["bets"], 0)
@@ -156,8 +165,13 @@ class CreateAndList(ApiCase):
         for row in ledger_rows(h["id"], 4):
             chain.append(row)
         out = self.api.my_hounds(current_user=self.user, _rl=None)["hounds"][0]
-        self.assertEqual((out["record"]["bets"], out["verified"]), (4, True))
-        self.assertEqual(out["verdict"]["label"], "too_early")
+        self.assertEqual((out["record"]["bets"], out["ledger_chain_ok"]), (4, True))
+        # the label is the pre-registered referee's, never this module's own
+        self.assertEqual(out["verdict"]["label"], "TOO EARLY")
+        self.assertIn("150", out["verdict"]["sentence"])
+        # units: average price is the headline, the best recorded price the small print
+        self.assertEqual(out["record"]["units_average_price"], 0.4)       # +1.2, -1.0, +1.2, -1.0 at +120
+        self.assertEqual(out["record"]["units_recorded_price"], 0.5)      # +1.25, -1.0, +1.25, -1.0 at +125
 
 
 class RetireAndCopy(ApiCase):

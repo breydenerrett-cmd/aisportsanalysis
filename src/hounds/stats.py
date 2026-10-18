@@ -28,6 +28,7 @@ reading the ledgers named in ``Sources``.
 
 from __future__ import annotations
 
+import logging
 import threading
 import time
 from dataclasses import dataclass, field
@@ -43,6 +44,7 @@ from src.hounds.ledgers import Bet, Sources
 from src.report import clv
 
 PROVENANCE_PRE = clv.PROVENANCE_PRE_COMMITMENT
+logger = logging.getLogger("linehound.hounds")
 
 
 @dataclass
@@ -280,6 +282,12 @@ def summarize(defn: dict, bets: list, teams_of: dict, as_of: Optional[str]) -> H
     stamps = [b.decision_utc or b.date for b in forward if (b.decision_utc or b.date)]
     last_day = max((str(s)[:10] for s in stamps), default=None)
     status = vd.status_for(last_day, as_of, retired is not None)
+    if (not forward and retired is None
+            and defn.get("status_hint") in (vd.STATUS_RUNNING, vd.STATUS_BENCHED)):
+        # A user hound with no bet yet: the referee's bench rule counts days since the last bet
+        # and there is none, so it would read "benched" the minute it is created. The store
+        # knows it is running.
+        status = defn["status_hint"]
 
     checkable = [b for b in priced if b.checkable]
     verified_n = sum(1 for b in checkable if b.verified)
@@ -360,6 +368,18 @@ def build(src: Sources) -> HoundBook:
     card_id = house.card_hound_id(defs)
     if card_id:
         all_bets[card_id].extend(ledgers.card_bets(src, card_id))
+
+    # User hounds: names and rules from the app database, bets from their ledger below.
+    if src.user_hounds is not None:
+        try:
+            user_defs = src.user_hounds()
+        except Exception:  # noqa: BLE001 -- an unreadable app db must not take the house hounds down
+            logger.warning("hounds: user hound definitions unreadable", exc_info=True)
+            user_defs = []
+        for d in user_defs:
+            if d["id"] not in defs_by_id:
+                defs_by_id[d["id"]] = d
+                all_bets[d["id"]] = []
 
     for label, path in src.pack_ledgers:
         pbets, ldefs = ledgers.pack_ledger_rows(path)
@@ -446,8 +466,88 @@ def clear_cache() -> None:
 
 
 def warm() -> HoundBook:
-    """Build the book now (call at process start to keep the first request fast)."""
+    """Build the book now, on the calling thread (a script or a test; a request never calls this)."""
     return get_book()
+
+
+# ---- the request path: never wait for a build ---------------------------------------------------------
+#
+# WHY (2026-10-18). A cold build streams ~1,000,000 odds rows (5 to 10 s here, longer on the 1 GB
+# machine). Doing that on the first visitor's request is the "spinning page" this app has already paid
+# for once (api/warmup.py). Adding it to startup instead would put a multi-second, memory-heavy pass
+# next to the cache warm-up on a machine that was OOM-killed for exactly that (2026-10-01). So: the
+# request path asks ``get_book_nowait``, which answers from memory in microseconds. A cold start gets
+# ``(None, "warming")`` and ONE background build is started; a book that has gone stale (a ledger
+# changed) is served as it is while ONE rebuild runs. The build takes the process-wide build gate
+# (src.appstate.freshness), so it is serialised with every other cache build and can never be the
+# second thing running.
+
+BUILD_RETRY_AFTER_FAILURE_S = 30.0
+STATE_FRESH, STATE_STALE, STATE_WARMING, STATE_FAILED = "fresh", "stale", "warming", "failed"
+
+_BG_LOCK = threading.Lock()
+_BG: dict = {"thread": None, "error": None, "failed_at": 0.0, "builds": 0}
+
+
+def peek_book() -> Optional[HoundBook]:
+    """The cached book, fresh or stale, or None. Never builds, never touches a ledger."""
+    return _CACHE["book"]
+
+
+def _background_build(src: Sources) -> None:
+    from src.appstate import freshness
+    try:
+        with freshness._gated_build():
+            get_book(src)
+        _BG["error"] = None
+    except Exception as exc:  # noqa: BLE001 -- recorded; the next request after the retry delay tries again
+        logger.exception("hounds: background book build failed")
+        _BG["error"] = repr(exc)
+        _BG["failed_at"] = time.time()
+    finally:
+        _BG["builds"] += 1
+
+
+def refresh_async(src: Optional[Sources] = None) -> bool:
+    """Start ONE background build unless one is already running (or one failed moments ago).
+    True when a thread was started."""
+    src = src or Sources.default()
+    with _BG_LOCK:
+        thread = _BG["thread"]
+        if thread is not None and thread.is_alive():
+            return False
+        if time.time() - _BG["failed_at"] < BUILD_RETRY_AFTER_FAILURE_S and _BG["error"]:
+            return False
+        thread = threading.Thread(target=_background_build, args=(src,), daemon=True,
+                                  name="hounds-book-build")
+        _BG["thread"] = thread
+        thread.start()
+        return True
+
+
+def building() -> bool:
+    thread = _BG["thread"]
+    return thread is not None and thread.is_alive()
+
+
+def get_book_nowait(src: Optional[Sources] = None) -> tuple:
+    """``(book | None, state)`` without ever waiting for a build.
+
+    fresh    the cached book matches the inputs.
+    stale    a book exists but an input changed; it is returned as it is and one rebuild is running.
+    warming  nothing is cached yet; one build is running (or was just started). ``book`` is None.
+    failed   nothing is cached and the last build raised; retried after BUILD_RETRY_AFTER_FAILURE_S.
+    """
+    src = src or Sources.default()
+    book = _CACHE["book"]
+    if book is not None and book.fingerprint == src.fingerprint():
+        return book, STATE_FRESH
+    refresh_async(src)
+    if book is not None:
+        return book, STATE_STALE
+    if _BG["error"] and not building():
+        return None, STATE_FAILED
+    return None, STATE_WARMING
 
 
 # ---- views --------------------------------------------------------------------------------------------

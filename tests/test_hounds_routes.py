@@ -36,6 +36,7 @@ class RouteTests(unittest.TestCase):
         cls._patch = mock.patch.object(Sources, "default", staticmethod(lambda: src))
         cls._patch.start()
         stats.clear_cache()
+        stats.get_book(src)          # the routes never wait for a build: warm it, as the app does
         app = FastAPI()
         app.include_router(router)
         cls.client = TestClient(app)
@@ -140,6 +141,7 @@ class MountedInTheRealApp(unittest.TestCase):
             src = F.make_world(Path(tmp))
             with mock.patch.object(Sources, "default", staticmethod(lambda: src)):
                 stats.clear_cache()
+                stats.get_book(src)
                 client = TestClient(app)
                 r = client.get("/hounds")
                 self.assertEqual(r.status_code, 200, r.text)
