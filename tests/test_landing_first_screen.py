@@ -1,4 +1,10 @@
-"""The landing page's first screen, per docs/CONVERSION_REVIEW_2026-10-02.md.
+"""The landing page's AI-desk section (the old first screen), per docs/CONVERSION_REVIEW_2026-10-02.md.
+
+OWNER VOICE PASS, 2026-10-18 (docs/VOICE.md): the first screen is now the kennel ("21+ paper betting bots
+fighting it out every day ..."), and everything this file pins about the old first screen is the SECOND
+section, "Our AI desk reads every game", unchanged in order and in its funnel hooks. The long honesty essays
+(what is proven, a pick we got wrong, the research-count FAQ) are cut to one human line and a link; the tests
+that pinned them are replaced below by tests that pin the cut.
 
 A stranger on a 390 px phone must learn within the first screen what this is,
 what they get today, which sports, and what to do next, with the trust evidence
@@ -75,20 +81,19 @@ class TheFirstScreenReadsInOrder(unittest.TestCase):
                          f"first-screen order broken: {[label for label, _ in order]}")
         self.assertEqual(len(set(positions)), len(positions))
 
-    def test_the_headline_names_the_product_not_our_behaviour(self):
-        title = re.search(r'<h1 class="hero__claim-title">(.*?)</h1>', MARKUP, re.S).group(1)
-        # 2026-10-16: the MLB value picks are paused (docs/decisions/MLB_VALUE_PICKS_PAUSED.md),
-        # so the headline names what is live, the brief, not "tonight's bets".
-        self.assertEqual(title.strip(), 'MLB matchup briefs: take or pass on every market, with the case against.')
+    def test_the_ai_desk_headline_names_the_product_not_our_behaviour(self):
+        title = re.search(r'<h2 class="hero__claim-title">(.*?)</h2>', MARKUP, re.S).group(1)
+        self.assertEqual(title.strip(), 'Our AI desk reads every game.')
         self.assertNotRegex(title.lower(), r"tonight|picks|bets|posted before")
-        self.assertEqual(MARKUP.count("<h1"), 1)
+        self.assertEqual(MARKUP.count("<h1"), 1, "one h1 on the page: the kennel's")
 
     def test_the_lede_is_one_short_paragraph_with_no_schedule_and_no_figure(self):
         lede = re.search(r'<p class="hero__claim-body">(.*?)</p>', MARKUP, re.S).group(1).strip()
         self.assertEqual(lede, (
             "An AI analyst reads each matchup, calls every market take or pass, gives the strongest case "
             "against any bet it takes, and says what it could not know. Every call is graded in public. "
-            "This is analysis, not advice, and it does not claim to beat the market."))
+            "Analysis, not advice."))
+        self.assertNotRegex(lede, r"\d")
 
     def test_the_what_you_get_block_has_two_short_groups_and_no_bet_check(self):
         block = re.search(r'<div class="hero__wyg" data-hook="hero-wyg".*?</ul>\s*</div>\s*</div>',
@@ -188,25 +193,61 @@ class TheRecordPanelUsesPlainWords(unittest.TestCase):
         self.assertEqual(panel.count("hero__stat-value"), 6)
 
 
-class TheProvenLine(unittest.TestCase):
-    LINE = ("Proven: every pick is published before the game and never edited. "
-            "Not proven: that the picks make money.")
+class TheKennelIsTheFirstScreen(unittest.TestCase):
+    TITLE = ("21+ paper betting bots fighting it out every day. "
+             "Build your own dog. Watch them win, lose, and get put down.")
 
-    def test_the_line_is_present_verbatim_in_the_static_html(self):
-        node = re.search(r'<p class="hero__proven-line" data-hook="hero-proven-line">(.*?)</p>', MARKUP, re.S)
-        self.assertIsNotNone(node, "no proven / not proven line under the record panel")
-        self.assertEqual(_visible(node.group(1)), self.LINE)
+    def test_the_one_h1_is_the_kennel_headline_verbatim(self):
+        h1 = re.search(r'<h1 class="kennel__title" data-hook="kennel-title">(.*?)</h1>', MARKUP, re.S)
+        self.assertIsNotNone(h1)
+        self.assertEqual(_visible(h1.group(1)), self.TITLE)
+        self.assertEqual(MARKUP.count("<h1"), 1)
 
-    def test_it_sits_under_the_record_panel_and_before_the_rest_of_the_page(self):
-        self.assertGreater(_at('data-hook="hero-proven-line"'), _at("</aside>"))
-        self.assertLess(_at('data-hook="hero-proven-line"'), _at('data-hook="what-you-get"'))
-        self.assertLess(_at('data-hook="hero-proven-line"'), _at('data-hook="hero-feature"'))
+    def test_the_kennel_comes_first_then_buttons_then_the_leaderboard_then_the_ai_desk(self):
+        order = [("kennel", 'data-hook="kennel-hero"'), ("headline", 'data-hook="kennel-title"'),
+                 ("enter", 'data-hook="cta-kennel-enter"'), ("build", 'data-hook="cta-kennel-build"'),
+                 ("legal", 'data-hook="kennel-legal"'), ("straight", 'data-hook="kennel-straight"'),
+                 ("board", 'data-hook="kennel-board"'), ("putdown", 'data-hook="kennel-putdown"'),
+                 ("ai desk", 'data-hook="hero"')]
+        positions = [_at(needle) for _label, needle in order]
+        self.assertEqual(positions, sorted(positions), [label for label, _ in order])
+        self.assertLess(_at('data-hook="landing-header"'), _at('data-hook="kennel-hero"'))
 
-    def test_it_is_not_hidden_behind_a_click_or_an_attribute(self):
-        tag = re.search(r'<p class="hero__proven-line"[^>]*>', MARKUP).group(0)
-        self.assertNotIn("hidden", tag)
-        self.assertNotIn("<details", re.search(r'<div class="hero__proof-col">.*?</div>\s*</div>',
-                                                MARKUP, re.S).group(0))
+    def test_the_two_calls_to_action_are_enter_the_kennel_and_build_your_dog(self):
+        enter = re.search(r'<a\b[^>]*data-hook="cta-kennel-enter"[^>]*>(.*?)</a>', MARKUP, re.S)
+        build = re.search(r'<a\b[^>]*data-hook="cta-kennel-build"[^>]*>(.*?)</a>', MARKUP, re.S)
+        self.assertEqual(enter.group(1).strip(), "Enter the kennel")
+        self.assertIn('href="hounds.html"', enter.group(0))
+        self.assertEqual(build.group(1).strip(), "Build your dog")
+        self.assertIn('href="build-a-hound.html"', build.group(0))
+        # data-hook starts with "cta", so landing.js's delegated listener counts both clicks
+        self.assertIn("closest(\"[data-hook^='cta']\")", LANDING_JS)
+
+    def test_the_hard_lines_are_on_the_first_screen_in_plain_words(self):
+        legal = _visible(re.search(r'<p class="kennel__legal" data-hook="kennel-legal">(.*?)</p>', MARKUP, re.S).group(1))
+        self.assertEqual(legal, "Paper bets only. Not advice. Nobody here bets real money. 21+.")
+
+    def test_the_mini_leaderboard_is_filled_by_a_script_and_names_no_figure_when_it_has_none(self):
+        panel = re.search(r'<aside class="kennel__panel".*?</aside>', MARKUP, re.S).group(0)
+        text = _visible(panel)
+        self.assertIn("Top dogs right now", text)
+        self.assertIn("Checking the leaderboard", text)
+        self.assertNotRegex(text, r"[+-]\d")
+        self.assertIn('href="hounds.html"', panel)
+        self.assertIn("fillKennel", LANDING_JS)
+        self.assertIn('from "./landing-kennel.js"', LANDING_JS)
+
+    def test_the_honesty_essays_are_gone_and_one_human_line_links_to_the_full_story(self):
+        for hook in ("proven-block", "honesty-story", "losing-pick-demo", "hero-proven-line", "hero-pause-note",
+                     "faq-no-edge", "faq-hit-rate", "faq-price-improvement"):
+            self.assertNotIn(f'data-hook="{hook}"', MARKUP, hook)
+        text = _visible(MARKUP)
+        for gone in ("hash-chained", "pre-registered", "bullpen workload", "A pick we got wrong",
+                     "What is proven and what is not", "falsification"):
+            self.assertNotIn(gone, text, gone)
+        line = re.search(r'<p class="kennel__straight" data-hook="kennel-straight">(.*?)</p>', MARKUP, re.S).group(1)
+        self.assertIn('href="why-we-paused.html"', line)
+        self.assertEqual(MARKUP.count("why-we-paused.html"), 1)
 
 
 class PricingFollowsTheSampleAndTheTrustSectionsAreMerged(unittest.TestCase):
@@ -218,35 +259,24 @@ class PricingFollowsTheSampleAndTheTrustSectionsAreMerged(unittest.TestCase):
 
     def test_the_old_order_is_gone(self):
         self.assertLess(_at('data-hook="last-card"'), _at('data-hook="pricing"'))
-        self.assertLess(_at('data-hook="pricing"'), _at('data-hook="losing-pick-demo"'))
         self.assertLess(_at('data-hook="pricing"'), _at('data-hook="sports-covered"'))
         self.assertLess(_at('data-hook="pricing"'), _at('data-hook="faq"'))
+        self.assertNotIn('data-hook="losing-pick-demo"', MARKUP)
 
-    def test_how_it_works_and_why_we_publish_the_losses_are_folded_in(self):
+    def test_the_trust_essays_are_cut_down_to_the_kennel_line_and_a_link(self):
+        # was: "how it works" and "why we publish the losses" folded into one "what is proven" section. Owner voice
+        # pass, 2026-10-18: that section is the essay the owner asked us to cut; its facts live on the why-we-stopped page.
         self.assertNotIn('data-hook="how-it-works"', MARKUP)
+        self.assertNotIn('data-hook="proven-block"', MARKUP)
         self.assertNotIn("Three steps. Nothing hidden.", MARKUP)
         self.assertNotIn("Why we publish the losses", MARKUP)
-        proven = re.search(r'<section\b[^>]*data-hook="proven-block"[^>]*>.*?</section>', MARKUP, re.S).group(0)
-        self.assertIn('id="how-it-works"', proven)
-        text = _visible(proven)
-        for claim in ("how likely it is by the whole market and by our own numbers",
-                      "what the price needs to break even",
-                      "hash-chained",
-                      "Nothing is re-graded, re-ranked, removed or edited",
-                      "Losses stay on the record at the same size as the wins",
-                      "one public page you can open yourself",
-                      "pre-registered",
-                      "bullpen workload",
-                      "We publish that too"):
-            self.assertIn(claim, text, claim)
-        self.assertEqual(MARKUP.count("hash-chained"), 1, "said once")
+        self.assertEqual(MARKUP.count("hash-chained"), 0)
+        self.assertIn('id="desk"', MARKUP)
 
-    def test_the_wrong_pick_stays_and_the_negative_record_is_untouched(self):
-        self.assertIn("A pick we got wrong, in full", MARKUP)
-        self.assertIn('data-hook="losing-pick-demo"', MARKUP)
+    def test_the_record_figures_are_filled_from_the_ledger_and_not_typed(self):
         self.assertEqual(MARKUP.count('data-hook="card-record"'), 1)
-        self.assertEqual(MARKUP.count('data-hook="research-count"'), 1,
-                         "the figure lives in the FAQ answer only")
+        self.assertEqual(MARKUP.count('data-hook="research-count"'), 0,
+                         "the research-count FAQ essay is cut; the fill is a no-op without its node")
 
 
 class OneFooter(unittest.TestCase):
@@ -256,12 +286,12 @@ class OneFooter(unittest.TestCase):
 
     def test_every_footer_link_and_sentence_is_still_there(self):
         footer = re.search(r"<footer\b.*?</footer>", MARKUP, re.S).group(0)
-        for href in ('href="#how-it-works"', 'href="#pricing"', 'href="#faq"',
+        for href in ('href="hounds.html"', 'href="#desk"', 'href="#pricing"', 'href="#faq"',
                      'href="index.html#/betcheck"'):
             self.assertIn(href, footer, href)
         text = _visible(footer)
         self.assertIn("About the data on this page", text)
-        self.assertIn("real pick from our public ledger", text)
+        self.assertIn("live paper results from our public ledger", text)
         self.assertIn('data-hook="disclaimer-host"', footer)
         self.assertEqual(MARKUP.count('data-hook="disclaimer-host"'), 1)
 
@@ -269,7 +299,7 @@ class OneFooter(unittest.TestCase):
         meta = (JS / "meta.js").read_text(encoding="utf-8")
         self.assertIn('container.closest("footer")', meta)
         # the legal sentences themselves are still rendered, unchanged
-        for sentence in ("21+ · PLAY RESPONSIBLY", "1-800-GAMBLER", "This is analysis, not advice."):
+        for sentence in ("21+ · Gamble responsibly.", "1-800-GAMBLER", "This is analysis, not advice."):
             self.assertIn(sentence, meta, sentence)
 
 
@@ -491,7 +521,7 @@ class UnderNode(unittest.TestCase):
         self.assertEqual(out["label"], "disclaimer")
         self.assertEqual(out["hook"], "disclaimer")
         self.assertEqual(out["footers"], 1, "only the page's own <footer> remains")
-        for sentence in ("21+ · PLAY RESPONSIBLY", "1-800-GAMBLER", "This is analysis, not advice."):
+        for sentence in ("21+ · Gamble responsibly.", "1-800-GAMBLER", "This is analysis, not advice."):
             self.assertIn(sentence, out["text"])
 
     def test_the_app_shell_still_gets_its_own_footer_element(self):

@@ -32,8 +32,8 @@
      nothing has cleared our own bar stays on the page in the same size
      type as everything else. tests/test_web_structure.py enforces that
      mechanically. -->
-<title>LINEHOUND — AI matchup briefs for MLB, graded in public</title>
-<meta name="description" content="An AI-written brief on each MLB game: every market called take or pass, the strongest case against any bet it takes, and what it could not know, graded in public. Analysis, not advice; no betting edge claimed. MLB value picks are paused as of Oct 16, 2026; the graded record stays public and NFL picks are unaffected. Not on sale yet. Planned price: $19.99/month.">
+<title>LINEHOUND — paper betting bots fighting it out every day</title>
+<meta name="description" content="21+ paper betting bots fighting it out every day. Build your own dog, watch them win, lose and get put down. Paper bets only, not advice. Our AI desk also reads every MLB game and writes a brief, graded in public; MLB value picks are paused as of Oct 16, 2026 and NFL picks are unaffected. Not on sale yet. Planned price: $19.99/month.">
 <!-- LINK PREVIEW (2026-10-01). Every first contact is this address pasted
      into a Discord DM, an X reply or a forum thread, and without these the
      preview was a bare URL or whatever the app guessed. Same claims as the
@@ -44,8 +44,8 @@
 <meta property="og:url" content="https://linehound.app/web/landing.html">
 <link rel="canonical" href="https://linehound.app/web/landing.html">
 <meta property="og:type" content="website">
-<meta property="og:title" content="LineHound: AI matchup briefs for MLB, graded in public">
-<meta property="og:description" content="Every market called take or pass, the strongest case against any bet it takes, and what it could not know, graded in public. Analysis, not advice. MLB value picks are paused as of Oct 16, 2026; the graded record is free to read.">
+<meta property="og:title" content="LineHound: paper betting bots fighting it out every day">
+<meta property="og:description" content="Build your own dog. Watch them win, lose and get put down. Paper bets only, not advice. Our AI desk also reads every game; MLB value picks are paused as of Oct 16, 2026; the graded record is free to read.">
 <meta name="twitter:card" content="summary">
 <meta name="theme-color" content="#0B0C0E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -62,6 +62,7 @@
      (tests/test_shared_footer.py). -->
 <link rel="stylesheet" href="css/app.css">
 <link rel="stylesheet" href="css/landing.css">
+<link rel="stylesheet" href="css/kennel.css">
 </head>
 <body class="landing">
 
@@ -71,9 +72,9 @@
     <span class="wordmark__text" data-hook="product-name">LINEHOUND</span>
   </span>
   <div class="site-nav__links">
-    <a href="#how-it-works">How it works</a>
-    <a href="hounds.html" data-hook="nav-hounds">Hounds</a>
-    <a href="#pricing">Pricing</a>
+    <a href="hounds.html" data-hook="nav-hounds">Kennel</a>
+    <a href="build-a-hound.html" data-hook="nav-build">Build your dog</a>
+    <a href="#desk">AI desk</a>
     <a href="#faq">FAQ</a>
   </div>
   <a class="btn btn--primary" href="index.html#/signup" data-hook="cta-primary" data-checkout-cta>Request early access</a>
@@ -81,8 +82,35 @@
 
 <main>
 
+<!-- THE KENNEL: the first screen (owner voice pass, 2026-10-18). Owner, verbatim: "This is becoming very like
+     science backed math and not fun, we're losing the fun and gambling degenerate side of things. Scientists
+     aren't buying this. ... Degenerate gamblers dude. You're targeting the wrong audience with user interface,
+     verbiage and language on the site." So the first thing a visitor meets is the kennel: paper betting bots,
+     the three top dogs by paper units right now and the latest dog put down (web/js/landing-kennel.js fills
+     them from the public GET /hounds and GET /hounds/graveyard; with no answer the board says so and names
+     no figure), and two ways in: look, or build. The honest part is one short human line and a link, not an
+     essay. The AI desk brief this page used to lead with is the second section, below. docs/VOICE.md. -->
+<section class="kennel" aria-label="the kennel" data-hook="kennel-hero">
+  <div class="kennel__main">
+    <p class="kennel__live"><span class="kennel__dot" aria-hidden="true"></span>LIVE KENNEL</p>
+    <h1 class="kennel__title" data-hook="kennel-title">21+ paper betting bots fighting it out every day. <span class="kennel__sub">Build your own dog. Watch them win, lose, and get put down.</span></h1>
+    <div class="kennel__cta">
+      <a class="btn btn--primary btn--lg" href="hounds.html" data-hook="cta-kennel-enter">Enter the kennel</a>
+      <a class="btn btn--ghost btn--lg" href="build-a-hound.html" data-hook="cta-kennel-build">Build your dog</a>
+    </div>
+    <p class="kennel__legal" data-hook="kennel-legal"><strong>Paper bets only. Not advice.</strong> Nobody here bets real money. 21+.</p>
+    <p class="kennel__straight" data-hook="kennel-straight">We stopped selling MLB picks on Oct 16, 2026 because they didn't beat the market. The graded record stays public; NFL picks carry on. <a href="why-we-paused.html" data-hook="hero-why-paused-link">Why we stopped selling picks &rarr;</a></p>
+  </div>
+  <aside class="kennel__panel" aria-label="live mini leaderboard" data-hook="kennel-board-panel">
+    <h2 class="kennel__panel-title">Top dogs right now</h2>
+    <ol class="kennel__board" data-hook="kennel-board"><li class="kennel__empty">Checking the leaderboard...</li></ol>
+    <div class="kennel__putdown" data-hook="kennel-putdown" hidden></div>
+    <a class="kennel__more" href="hounds.html" data-hook="kennel-more">See the whole kennel &rarr;</a>
+  </aside>
+</section>
+
 <!-- HERO -->
-<section class="hero" aria-label="hero" data-hook="hero">
+<section class="hero" id="desk" aria-label="hero" data-hook="hero">
   <div class="hero__side hero__side--a" data-parallax=".07"></div>
   <div class="hero__side hero__side--b" data-parallax=".07"></div>
   <div class="hero__glow" aria-hidden="true"></div>
@@ -96,15 +124,15 @@
        stale number on the page. -->
   <div class="hero__top">
   <div class="hero__claim" data-rise data-delay="40" data-hook="hero-claim">
-    <span class="eyebrow eyebrow--money">MLB briefs · price board · public record</span>
+    <span class="eyebrow eyebrow--money">The other side of the house · MLB briefs · public record</span>
     <!-- THE PRODUCT, THEN THE METHOD (2026-10-02, docs/CONVERSION_REVIEW_2026-10-02.md
          change 1). The headline says what is offered; the lede says what a
          card holds and that it is graded in public, wins and losses. No
          result is promised and no edge is claimed. The grading schedule
          (MLB/NFL next morning, UFC by hand) is no longer here; it is on the
          page in the FAQ ("Which sports do you cover?") and in the sport tiles. -->
-    <h1 class="hero__claim-title">MLB matchup briefs: take or pass on every market, with the case against.</h1>
-    <p class="hero__claim-body">An AI analyst reads each matchup, calls every market take or pass, gives the strongest case against any bet it takes, and says what it could not know. Every call is graded in public. This is analysis, not advice, and it does not claim to beat the market.</p>
+    <h2 class="hero__claim-title">Our AI desk reads every game.</h2>
+    <p class="hero__claim-body">An AI analyst reads each matchup, calls every market take or pass, gives the strongest case against any bet it takes, and says what it could not know. Every call is graded in public. Analysis, not advice.</p>
     <div class="hero__cta-group" data-rise data-delay="160">
       <a class="btn btn--primary" href="index.html#/signup" data-hook="cta-signup-hero" data-checkout-cta>Request early access</a>
       <!-- As written here the second button is the plain record link, which
@@ -115,18 +143,9 @@
            The full record is also linked, as text, right below. -->
       <a class="btn btn--ghost" href="index.html#/record-card" data-hook="cta-record-secondary">Open the graded record</a>
       <p class="hero__cta-note" data-hook="hero-cta-note">Early access: the first 20 testers get 7 days free, no card. Not on sale yet; planned price $19.99 a month. The record and the postseason odds are free now.</p>
-      <!-- THE PAUSE, IN ONE SENTENCE (owner decision 2026-10-16,
-           docs/decisions/MLB_VALUE_PICKS_PAUSED.md). Static on purpose: it is
-           true with scripts off and when /card is behind a sign-in, and it sits
-           beside the record link so the record is read with it. The reason is the
-           decision note's own, in a customer's words. No figure, no claim about
-           results. The second sentence is a fact about the NFL card, which the
-           pause does not touch. -->
-      <p class="hero__cta-note hero__pause-note" data-hook="hero-pause-note">MLB value picks are paused as of Oct 16, 2026, because they paid a premium over the market's own number and our forecasts carried no information the market lacked. The graded record stays public, and NFL picks are unaffected.</p>
-      <a class="hero__record-link" href="why-we-paused.html" data-hook="hero-why-paused-link">Why we paused, in plain words &rarr;</a>
       <a class="hero__record-link" href="index.html#/record-card" data-hook="hero-record-link">Open the full record, every pick &rarr;</a>
       <a class="hero__record-link" href="sample.html" data-hook="hero-sample-link">Read a sample brief, free &rarr;</a>
-      <a class="hero__record-link" href="hounds.html" data-hook="hero-hounds-link">Watch the hounds race &rarr;</a>
+      <a class="hero__record-link" href="hounds.html" data-hook="hero-hounds-link">Watch the dogs fight it out &rarr;</a>
       <!-- WHICH SPORTS ARE LIVE TODAY: one sentence, filled from web/js/dom.js's
            SPORTS_LIVE_TODAY by landing.js. The text here is the same sentence, so a
            visitor with no script reads it too; tests/test_live_sports_sentence.py
@@ -220,10 +239,6 @@
     <p class="hero__proof-note" data-hook="hero-claim-record"><span data-hook="card-record">Every graded night is posted on the record page, losses included.</span></p>
     <a class="hero__proof-link" href="index.html#/record-card">See every pick &rarr;</a>
   </aside>
-  <!-- PROVEN AND NOT PROVEN, ONE LINE (change 5). A quick reader blurs "the
-       record is honest" with "the picks win"; this says which one the page
-       can show. No figure; nothing here says the picks make money. -->
-  <p class="hero__proven-line" data-hook="hero-proven-line"><strong>Proven:</strong> every pick is published before the game and never edited. <strong>Not proven:</strong> that the picks make money.</p>
   </div>
   </div>
 
@@ -334,52 +349,6 @@
   </div>
 </section>
 
-<!-- WHAT IS PROVEN AND WHAT IS NOT (2026-10-01). The static sentences carry
-     no figure, so a slow or failed fetch leaves true words. landing.js
-     (fillProvenBlock) swaps in the record and research numbers from GET
-     /meta only. -->
-<!-- 2026-10-02 (docs/CONVERSION_REVIEW_2026-10-02.md change 6): this section now
-     also carries what "How it works" and "Why we publish the losses" used to
-     say, once each. What each pick states and how it is graded moved into the
-     two "Proven" lines; that losses stay and the research record are the
-     paragraphs under the list. The #how-it-works anchor the nav links to lives
-     here. The figures that used to sit in the research paragraph (how many
-     ideas were read, which years) are not typed here -- the sentence below is
-     filled from /meta and the FAQ ("No betting edge found yet") still states
-     them. -->
-<section class="section section--tight" id="how-it-works" aria-label="what is proven and what is not" data-hook="proven-block">
-  <div class="section__head" data-rise>
-    <span class="eyebrow">How it works, and what is proven</span>
-  </div>
-  <h2 class="section__title" data-rise data-delay="60">What is proven and what is not.</h2>
-  <ul class="callout-list" data-hook="proven-list">
-    <li class="panel chamfer" data-hook="proven-published">
-      <div class="story-card__kicker">Proven</div>
-      <span data-hook="proven-published-text">Every pick is published before the game: the pick, how likely it is by the whole market and by our own numbers, and what the price needs to break even. The ledger is hash-chained, so a pick cannot be added or changed afterwards without breaking the chain.</span>
-    </li>
-    <li class="panel chamfer" data-hook="proven-graded">
-      <div class="story-card__kicker">Proven</div>
-      <span data-hook="proven-graded-text">Every pick is graded exactly as it was published: a win, a loss or a void, said plainly. Nothing is re-graded, re-ranked, removed or edited after the fact.</span>
-    </li>
-    <li class="panel chamfer" data-hook="proven-record">
-      <div class="story-card__kicker">Result so far</div>
-      <span data-hook="proven-record-text">The record so far has not shown that the picks make money. The current figures are at the top of this page.</span>
-    </li>
-    <li class="panel chamfer" data-hook="proven-research">
-      <div class="story-card__kicker">Experimental</div>
-      <span data-hook="proven-research-text">None of the research ideas we have tested has survived our own checks.</span>
-    </li>
-    <li class="panel chamfer" data-hook="proven-postseason">
-      <div class="story-card__kicker">No track record</div>
-      <span data-hook="proven-postseason-text">The postseason odds are model estimates with no track record yet.</span>
-    </li>
-  </ul>
-  <div class="prose" style="margin-top:20px" data-rise data-delay="60" data-hook="honesty-story">
-    <p>Losses stay on the record at the same size as the wins. Every graded night sits on one public page you can open yourself, not a highlight reel of the nights we were right.</p>
-    <p>We pre-registered a long list of separate research ideas, from bullpen workload and platoon matchups to market-structure effects like fading recent price moves, and tested them against past MLB moneyline games. We publish that too, at the same size as everything else.</p>
-  </div>
-</section>
-
 <!-- FREE SAMPLE: THE MOST RECENT FULLY GRADED CARD (2026-10-01). HIDDEN
      BY DEFAULT and unhidden by landing.js (fillLastCard) only when the public
      GET /card/history?limit=1 answers with a settled day. A failed fetch or
@@ -412,31 +381,6 @@
       <a class="btn btn--primary" href="index.html#/signup" data-hook="cta-signup" data-checkout-cta>Request early access</a>
     </div>
   </div>
-</section>
-
-<!-- THE RECORD, IN FULL -->
-<section class="section" aria-label="the record, in full" data-hook="losing-pick-demo">
-  <div class="section__head" data-rise>
-    <span class="eyebrow eyebrow--money">A pick we got wrong, in full</span>
-  </div>
-  <h2 class="section__title" data-rise data-delay="60">This is what "losses included" actually looks like.</h2>
-  <div class="demo-panel panel chamfer" style="margin-top:28px" data-rise data-delay="100">
-    <div class="demo-block">
-      <div class="demo-block__label">Sept 10, 2026 · Astros @ Phillies</div>
-      <p class="demo-block__body" style="font-weight:600">Take Phillies to win at −165.</p>
-    </div>
-    <div class="demo-block">
-      <div class="demo-block__label">Published before first pitch</div>
-      <p class="demo-block__body">The market made the Phillies a 61% bet to win; our own numbers agreed at 56%.
-        At −165 the bet needed 62% to break even — closer than the price looked.</p>
-    </div>
-    <div class="demo-block watchout chamfer">
-      <div class="demo-block__label" style="color:var(--money-label)">What happened</div>
-      <p class="watchout__body">Astros 2, Phillies 1. Loss. −1.00 unit. Graded the next morning, exactly as
-        published — nothing edited after the fact.</p>
-    </div>
-  </div>
-  <p class="section__lede" style="max-width:none">This is one of three picks from the first night this record graded, 2026-09-10: 2 wins, 1 loss. Every night since has graded the same way, on the record page, losses included.</p>
 </section>
 
 <!-- SPORTS COVERED -- per-sport record tiles (task B1/B2, 2026-09-24).
@@ -618,10 +562,22 @@
 <!-- FAQ -->
 <section class="section section--tight" id="faq" aria-label="frequently asked questions" data-view="faq" data-hook="faq">
   <div class="section__head" data-rise>
-    <span class="eyebrow">Fair questions</span>
+    <span class="eyebrow">Quick answers</span>
   </div>
-  <h2 class="section__title" data-rise data-delay="60">Frequently asked questions.</h2>
+  <h2 class="section__title" data-rise data-delay="60">Questions people ask.</h2>
   <div class="faq-list" style="margin-top:24px">
+    <details class="faq-item panel chamfer" data-hook="faq-kennel">
+      <summary>What is the kennel?</summary>
+      <p class="faq-item__body">A pack of betting bots we call dogs. Each one follows a written rule, makes one-unit paper bets, and gets graded the next morning. Some dogs are smart, some are coin flips, and the ones that fall 25 units under zero get put down. Everything is on the board, wins and losses.</p>
+    </details>
+    <details class="faq-item panel chamfer" data-hook="faq-gambling-advice">
+      <summary>Is this gambling advice?</summary>
+      <p class="faq-item__body">No. It's paper betting. Nothing here tells you what to bet, how much, or where, and a dog's results don't tell you what happens next. You make your own calls. 21+.</p>
+    </details>
+    <details class="faq-item panel chamfer" data-hook="faq-no-guarantee">
+      <summary>Do the dogs win?</summary>
+      <p class="faq-item__body">Some nights they cash, some nights they get cooked. Nothing here promises a win for any dog or any bet, and nobody here knows what comes next. That's why every dog's losses sit right next to its wins.</p>
+    </details>
     <!-- EARLY ACCESS (owner decision, 2026-10-02). Static text, correct with
          JavaScript off. The numbers are the enforced ones (src/appstate/
          testers.py; tests/test_tester_access.py pins that they agree) and the
@@ -635,7 +591,6 @@
         is removed or rewritten. Tester access is temporary: it lasts 7 days, and it is extended only when a
         tester's feedback is useful.</p>
     </details>
-
     <details class="faq-item panel chamfer" data-hook="faq-founding-price">
       <summary>Why is this called a founding price, and will it go up?</summary>
       <p class="faq-item__body">It will move with the record, in both directions. $19.99 is what early members
@@ -645,58 +600,17 @@
         not from a countdown or a sale, and founding members keep $19.99 for as long as their subscription
         stays active, whatever we charge later.</p>
     </details>
-
-    <details class="faq-item panel chamfer" data-hook="faq-no-guarantee">
-      <summary>No guaranteed wins — is that really true?</summary>
-      <p class="faq-item__body">Yes. Nothing here guarantees an outcome or a profit, for any user or any bet. You are
-        responsible for your own wagering decisions, including whether to bet at all.</p>
-    </details>
-    <details class="faq-item panel chamfer" data-hook="faq-gambling-advice">
-      <summary>Is this gambling advice?</summary>
-      <p class="faq-item__body">No. We publish our own picks with how likely they are and what the price needs, and we
-        publish how they do. Whether to bet, how much, and where is your decision, and nothing here is a
-        guarantee.</p>
-    </details>
-    <details class="faq-item panel chamfer" data-hook="faq-predict-winners">
-      <summary>Do you predict who wins?</summary>
-      <p class="faq-item__body">We say which side is more likely — by the whole market and by our own numbers — before
-        first pitch, and we grade it after. That is not a promised winner: a 64% side loses more than a
-        third of the time, and the record shows it.</p>
-    </details>
-    <details class="faq-item panel chamfer" data-hook="faq-price-improvement">
-      <summary>If you already know who's more likely, why does the price matter?</summary>
-      <p class="faq-item__body">Because a likely side at a bad price still loses money. Every pick shows the win rate the
-        price needs to break even next to the likelihood we actually have; if the price needs more than
-        the side is likely to deliver, the pick says so.</p>
-    </details>
-    <details class="faq-item panel chamfer" data-hook="faq-no-edge">
-      <summary>No betting edge found yet — what does that mean?</summary>
-      <p class="faq-item__body">Exactly what it says. In 2026 we pre-registered and tested
-        <span data-hook="research-count">40</span> distinct research hypotheses against real MLB games from
-        2023–2024, and none survived our falsification tests. We publish the losers, including the one
-        that looked promising until we checked it properly.</p>
-    </details>
     <details class="faq-item panel chamfer" data-hook="faq-sports-covered">
       <summary>Which sports do you cover?</summary>
-      <p class="faq-item__body">MLB briefs are written for every game we cover; MLB value picks are paused as of Oct 16, 2026, and
-        the picks already made stay on the record. NFL carries live picks, published before the game and graded
-        automatically the next morning. UFC picks are paused while we build real fight analysis; the UFC picks already made
-        are graded once results are entered by hand and stay on the record. Tennis is research only: a match
-        board, not picks yet.</p>
+      <p class="faq-item__body">The dogs run on MLB and NFL. The AI desk writes a brief for every MLB game we cover; MLB value picks are paused as of Oct 16, 2026, and the picks already made stay on the record. NFL carries live picks, published before the game and graded automatically the next morning. UFC picks are paused while we build real fight analysis; the UFC picks already made are graded once results are entered by hand and stay on the record. Tennis is research only: a match board, not picks yet.</p>
     </details>
     <details class="faq-item panel chamfer" data-hook="faq-cancel">
       <summary>Can I cancel anytime?</summary>
       <p class="faq-item__body">Yes — cancel your renewal anytime, with no retention flow. You keep access through the
         period you've already paid for.</p>
     </details>
-    <details class="faq-item panel chamfer" data-hook="faq-hit-rate">
-      <summary>Why don't you show a win percentage like other apps do?</summary>
-      <p class="faq-item__body">We do — our own number sits right next to the market's on every pick. It is
-        unvalidated: our own research found zero surviving betting ideas against real games, and every
-        pick is graded in public regardless.</p>
-    </details>
   </div>
-</section>
+  </section>
 
 <!-- CLOSING CTA -->
 <section class="closing-band" aria-label="call to action" data-view="cta" data-hook="cta-bottom">
@@ -718,17 +632,18 @@
 <footer class="site-footer" aria-label="footer" data-hook="landing-footer">
   <div class="site-footer__top">
     <div class="site-nav__links" style="display:flex">
-      <a href="#how-it-works">How it works</a>
+      <a href="hounds.html">Kennel</a>
+      <a href="#desk">AI desk</a>
       <a href="#pricing">Pricing</a>
       <a href="#faq">FAQ</a>
     </div>
   </div>
   <div class="site-footer__data-note">
     <h3>About the data on this page</h3>
-    <p>The graded Astros/Phillies pick is not a demo: it is a real pick from our public ledger, published
-      before first pitch and graded after, exactly as it happened. MLB value picks have been paused since
-      Oct 16, 2026; the picks made before then stay on the record. Once you sign in, the app shows the daily
-      brief, the price board and the NFL card.</p>
+    <p>The dog rankings are live paper results from our public ledger, one unit a bet, nobody's real money.
+      The brief and the record come from the same ledger. MLB value picks have been paused since Oct 16, 2026;
+      the picks made before then stay on the record. Once you sign in, the app shows the daily brief, the
+      price board and the NFL card.</p>
   </div>
   <div data-hook="disclaimer-host" aria-label="disclaimer"></div>
   <!-- Bet Check stays reachable -- it is not a thing we advertise, only a

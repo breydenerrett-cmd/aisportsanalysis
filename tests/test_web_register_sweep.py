@@ -147,7 +147,7 @@ class TheLandingPageAgreesWithTheProduct(unittest.TestCase):
 
     def test_it_says_what_the_price_needs(self):
         self.assertIn("break even", self.text)
-        self.assertIn("more likely", self.text)
+        # (the FAQ that said "more likely" was one of the honesty essays cut in the owner voice pass, 2026-10-18)
 
 
 class TheSlipLineNamesTheClub(unittest.TestCase):

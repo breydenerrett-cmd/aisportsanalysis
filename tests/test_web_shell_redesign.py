@@ -212,11 +212,12 @@ class FooterSummaryMatchesTheRedesign(unittest.TestCase):
     def test_old_overclaim_language_is_gone_from_the_summary_constant(self):
         self.assertNotIn("frozen before first pitch and graded", self.text)
 
-    def test_play_responsibly_stays_uppercase_in_source(self):
+    def test_gamble_responsibly_is_in_the_footer_source(self):
         # tests/test_shared_footer.py pins this case-sensitively too --
         # duplicated here since this file is the redesign-specific check
-        # the task asked for by name ("the footer SUMMARY").
-        self.assertIn("PLAY RESPONSIBLY", self.text)
+        # the task asked for by name ("the footer SUMMARY"). Owner voice pass,
+        # 2026-10-18: "Gamble responsibly." replaced the shouted "PLAY RESPONSIBLY".
+        self.assertIn("Gamble responsibly.", self.text)
 
 
 if __name__ == "__main__":

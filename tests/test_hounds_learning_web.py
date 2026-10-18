@@ -83,8 +83,9 @@ class StaticFacts(unittest.TestCase):
 
     def test_paper_only_not_advice_21_plus_and_the_help_line_are_static_markup(self):
         text = visible(self.HTML)
-        self.assertRegex(text, r"(?i)paper only, not advice")
+        self.assertRegex(text, r"(?i)paper bets only, not advice")
         self.assertIn("21+", text)
+        self.assertIn("Gamble responsibly.", text)
         self.assertIn("1-800-GAMBLER", text)
         self.assertIn("not-advice", self.HTML)
 
@@ -110,13 +111,13 @@ class StaticFacts(unittest.TestCase):
     def test_the_race_and_the_hound_page_link_to_it(self):
         for name in ("hounds.html", "hound.html"):
             html = (WEB / name).read_text(encoding="utf-8")
-            self.assertRegex(html, r'<a href="learning.html">How they learn</a>', name)
+            self.assertRegex(html, r'<a href="learning.html">Training camp</a>', name)
 
     def test_the_hound_page_has_the_versions_and_challengers_section(self):
         html = (WEB / "hound.html").read_text(encoding="utf-8")
         self.assertIn('data-hook="hound-lineage-section"', html)
-        self.assertIn("Versions and challengers", html)
-        self.assertIn("A hound is never edited", html)
+        self.assertIn("Versions and rookies", html)
+        self.assertIn("Dogs never get edited", html)
 
 
 @unittest.skipUnless(HAS_NODE, "node not installed")
@@ -141,18 +142,18 @@ class TheScorecardPage(unittest.TestCase):
         self.assertTrue(out["final"]["chart"])
         self.assertFalse(out["final"]["empty"])
         self.assertEqual(out["final"]["lines"], ["champions", "controls"])
-        self.assertIn("Champions (30-day mean) (points)", out["final"]["cols"])
-        self.assertIn("Random controls (30-day mean) (points)", out["final"]["cols"])
+        self.assertIn("Starters (30-day average) (points)", out["final"]["cols"])
+        self.assertIn("Random controls (30-day average) (points)", out["final"]["cols"])
         w30 = out["final"]["w30"]
         self.assertIn("above the controls", w30)               # -0.6 against -1.5 on the last day
         self.assertIn("60 shared games", w30)
-        self.assertIn("is a measurement, not a result", w30)
+        self.assertIn("read it as a scoreboard, not a verdict", w30)
         self.assertEqual(out["gets"], ["/hounds/learning"])
 
     def test_too_few_bets_says_so_with_the_counts_instead_of_a_number(self):
         out = self.page(learning_payload(self.root, enough=False), queries=[q("w30", "[data-hook='chance-30']")])
         self.assertIn("Not enough bets yet", out["final"]["w30"])
-        self.assertIn("10 champion bets and 10 control bets", out["final"]["w30"])
+        self.assertIn("10 starter bets and 10 control bets", out["final"]["w30"])
         self.assertIn("50 measurable bets on each side", out["final"]["w30"])
         self.assertNotRegex(out["final"]["w30"], r"averaged [-+]\d")
 
@@ -165,7 +166,7 @@ class TheScorecardPage(unittest.TestCase):
                                           q("rules", "[data-hook='rules-list'] li", "count")])
         self.assertIn("No daily scorecard has been stored yet", out["final"]["nc"])
         self.assertIn("nothing to hold up", out["final"]["hold"])
-        self.assertIn("No challenger has ended yet", out["final"]["lessons"])
+        self.assertIn("No tryout has ended yet", out["final"]["lessons"])
         self.assertGreaterEqual(out["final"]["rules"], 5)
         self.assertNotIn("NaN", out["text"])
         self.assertNotIn("undefined", out["text"])
@@ -175,7 +176,7 @@ class TheScorecardPage(unittest.TestCase):
             q("hidden", "[data-hook='learning-paused']", "hidden"), q("banner", "[data-hook='learning-paused']"),
             q("reason", "[data-hook='pause-reason']")])
         self.assertFalse(out["final"]["hidden"])
-        self.assertIn("paused itself", out["final"]["banner"])
+        self.assertIn("Camp has shut itself down", out["final"]["banner"])
         self.assertIn("until the owner turns it back on", out["final"]["banner"])
         self.assertIn("promotion hit rate 0.30 over 12 matured promotions", out["final"]["reason"])
 
@@ -188,9 +189,9 @@ class TheScorecardPage(unittest.TestCase):
             q("facts", "[data-hook='activity-facts'] dd", "texts"), q("budget", "[data-hook='budget-text']"),
             q("chain", "[data-hook='chain-status']")])
         self.assertEqual(out["final"]["facts"][:3], ["0", "0", "0"])
-        self.assertIn("False-discovery level 0.1", out["final"]["budget"])
+        self.assertIn("Fluke check level 0.1", out["final"]["budget"])
         self.assertIn("cap 3 per scope", out["final"]["budget"])
-        self.assertIn("passes its hash-chain check", out["final"]["chain"])
+        self.assertIn("passes its tamper check", out["final"]["chain"])
 
     def test_lessons_are_listed_newest_first_and_older_ones_load_on_demand(self):
         payload = learning_payload(self.root, lesson_count=7)
@@ -205,7 +206,7 @@ class TheScorecardPage(unittest.TestCase):
         self.assertEqual(out["final"]["n"], 5 + 2)
         self.assertTrue(out["final"]["more"])
         self.assertIn("Hypothesis number 6 written by the coach", out["final"]["first"])      # newest first
-        self.assertIn("Coach's reason, quoted", out["final"]["first"])
+        self.assertIn("The coach's pitch, quoted", out["final"]["first"])
         self.assertEqual(out["captures"]["0"]["n"], 7)
         self.assertTrue(out["captures"]["0"]["hidden"])
         self.assertTrue(any("page=2" in g for g in out["gets"]))
@@ -218,7 +219,7 @@ class TheScorecardPage(unittest.TestCase):
         self.assertTrue(out["final"]["kinds"])
         self.assertEqual(set(out["final"]["kinds"]), {"down"})
         self.assertEqual(out["final"]["retry"], 1)
-        self.assertIn("Paper only. Not advice.", out["final"]["paper"])
+        self.assertIn("Paper bets only. Not advice.", out["final"]["paper"])
 
     def test_a_broken_ledger_is_called_out(self):
         payload = learning_payload(self.root)
@@ -242,7 +243,7 @@ class ThePureText(unittest.TestCase):
         self.assertIn("1.00 points above the controls", out[0])
         self.assertIn("0.25 points below the controls", out[1])
         self.assertIn("level with the controls", out[2])
-        self.assertIn("Not enough bets yet (90 champion bets and 80 control bets on 60 shared games)", out[3])
+        self.assertIn("Not enough bets yet (90 starter bets and 80 control bets on 60 shared games)", out[3])
         self.assertEqual(out[4], "Not reported.")
 
     def test_hold_text_covers_no_promotions_none_matured_and_a_rate(self):
@@ -251,8 +252,8 @@ class ThePureText(unittest.TestCase):
                       "C.holdText({promotions: 12, matured: 10, hits: 4, rate: 0.4, floor: 0.4, min_matured_for_floor: 10}), "
                       "C.holdText(null)]));")
         self.assertIn("nothing to hold up", out[0])
-        self.assertIn("2 challengers have been promoted; none has made 100 bets", out[1])
-        self.assertIn("4 of 10 matured promotions priced at least as well", out[2])
+        self.assertIn("2 rookies have made the team; none has made 100 bets", out[1])
+        self.assertIn("4 of 10 rookies who made the team priced at least as well", out[2])
         self.assertIn("40%", out[2])
         self.assertIn("nothing to hold up", out[3])
 
@@ -271,10 +272,10 @@ class ThePureText(unittest.TestCase):
                       f"V.lookText({json.dumps({'latest_look': {'look_no': 2, 'n': 150, 'mean': -1.0, 'harm': True}})})]));")
         self.assertEqual(out[0], "GAP: 0.02 -> 0.03; markets: [moneyline, spread] -> [moneyline]")
         self.assertEqual(out[1], "no change recorded")
-        self.assertIn("Look 1, after 100 paired games: mean price difference against the champion +1.20 points (bounds +0.30 to +2.10)", out[2])
+        self.assertIn("Look 1, after 100 paired games: its prices beat the starter's by +1.20 points on average (somewhere between +0.30 and +2.10)", out[2])
         self.assertIn("cleared the first bar", out[2])
         self.assertIn("Waiting for its first look, at 100 paired games", out[3])
-        self.assertIn("doing worse than the champion", out[4])
+        self.assertIn("doing worse than the starter", out[4])
 
 
 @unittest.skipUnless(HAS_NODE, "node not installed")
@@ -307,7 +308,7 @@ class TheHoundPagesVersionsSection(unittest.TestCase):
             q("hidden", "[data-hook='hound-lineage-section']", "hidden"), q("empty", "[data-hook='lineage-empty']"),
             q("note", "[data-hook='referee-note']")])
         self.assertFalse(out["final"]["hidden"])
-        self.assertEqual(out["final"]["empty"], "This hound has one version and no challengers.")
+        self.assertEqual(out["final"]["empty"], "This dog has one version and no rookies trying out.")
         self.assertIn("never because of what anyone wrote about it", out["final"]["note"])
         self.assertIn("/hounds/closer/lineage", out["gets"])
 
@@ -320,7 +321,7 @@ class TheHoundPagesVersionsSection(unittest.TestCase):
             q("nolink", "[data-version='2'] [data-hook='version-link']", "count")])
         self.assertEqual(out["final"]["n"], 2)
         self.assertEqual(out["final"]["cur"], "true")
-        self.assertIn("Retired: superseded by version 2", out["final"]["old"])
+        self.assertIn("Cut: superseded by version 2", out["final"]["old"])
         self.assertIn("Its own record: 12 bets (6-6)", out["final"]["old"])
         self.assertIn("closer%40v1", out["final"]["link"])
         self.assertEqual(out["final"]["nolink"], 0)
@@ -331,9 +332,9 @@ class TheHoundPagesVersionsSection(unittest.TestCase):
                  "latest_look": {"look_no": 1, "n": 100, "mean": 0.8, "lower": -0.2, "upper": 1.8, "eligible": False}}]
         out = self.page(self.lineage([self.version(1, True)], live=live), queries=[
             q("c", "[data-hook='live-challengers'] li"), q("diff", ".hd-challenger__diff"), q("look", ".hd-challenger__look")])
-        self.assertIn("Challenger c-abc", out["final"]["c"])
+        self.assertIn("Rookie c-abc", out["final"]["c"])
         self.assertEqual(out["final"]["diff"], "What it changes: GAP: 0.02 -> 0.03")
-        self.assertIn("Why the coach proposed it (quoted): \"A wider bar keeps only the clearest disagreements.\"", out["final"]["c"])
+        self.assertIn("The coach's pitch (quoted): \"A wider bar keeps only the clearest disagreements.\"", out["final"]["c"])
         self.assertIn("Look 1, after 100 paired games", out["final"]["look"])
         self.assertNotIn("promoted", out["final"]["look"])
 
@@ -343,12 +344,14 @@ class TheHoundPagesVersionsSection(unittest.TestCase):
         rows = [{"lesson_id": "l-c-old", "lesson": "On professor_paws, GAP 0.02 -> 0.04 was retired: it did worse than the champion (100 paired slots, mean CLV difference -1.20 pts)."}]
         out = self.page(self.lineage([self.version(1, True)], failed=failed, lesson_rows=rows), queries=[
             q("f", "[data-hook='failed-challengers'] li")])
-        self.assertIn("Challenger c-old retired: harm", out["final"]["f"])
-        self.assertIn("it did worse than the champion", out["final"]["f"])
+        self.assertIn("Rookie c-old retired: harm", out["final"]["f"])
+        # the code-written lesson, said in camp's words: cut, the starter, plain numbers
+        self.assertIn("was cut: it did worse than the starter", out["final"]["f"])
+        self.assertIn("100 paired games, its prices beat the starter's by -1.20 pts on average", out["final"]["f"])
 
     def test_a_paused_loop_is_said_on_the_hound_page(self):
         out = self.page(self.lineage([self.version(1, True)], paused=True), queries=[q("p", "[data-hook='lineage-paused']")])
-        self.assertIn("paused itself", out["final"]["p"])
+        self.assertIn("Training camp has shut itself down", out["final"]["p"])
 
     def test_a_missing_lineage_endpoint_does_not_take_the_hound_page_down(self):
         out = self.page(None, queries=[q("s", "[data-hook='hound-lineage'] [data-hook='section-state']", "attr", attr="data-kind"),

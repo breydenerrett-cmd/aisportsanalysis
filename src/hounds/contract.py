@@ -33,7 +33,12 @@ HoundSummary
   replay {bets, wins, losses, pushes, voids, units_recorded_price} | null,
   spark [..] (last 30 points of cum_units_average_price; when the average
   price is unavailable for the hound it is the recorded-price series and
-  spark_basis says so), spark_basis, source.
+  spark_basis says so), spark_basis, source, persona {bio, catchphrase, vibe, roasts [5], brags [5],
+  epitaph} | null (the voice of a house hound, from the config files; a user hound has none),
+  form {streak {kind "W"|"L", length} | null, last7 {bets, wins, losses, units} | null, last_day {date,
+  result "win"|"loss"|"flat", wins, losses, units} | null, best_bet {...} | null, worst_beat {...} |
+  null, units_basis "average_price"|"recorded_price"} | null (forward bets only; derived from the same
+  graded bets as ``record``, never a new measurement).
 
 HoundDetail = HoundSummary + series [SeriesPoint] + bets (a page of BetRow).
 SeriesPoint {date, cum_units_average_price, cum_units_recorded_price,
@@ -85,12 +90,11 @@ SPARK_POINTS = 30
 
 BASIS = (
     "Every hound makes simulated one-unit bets by a written rule, recorded "
-    "before the game and graded afterwards. Each is refereed on whether the "
-    "price it took beat where the market closed (closing-line value, 95% "
-    "interval over whole dates), never on its win/loss units, and says TOO "
-    "EARLY until it has 150 measurable bets. Replay results are shown "
-    "separately from forward results and never counted in the verdict. Paper "
-    "only, not advice."
+    "before the game and graded afterwards. Units are the scoreboard. The "
+    "badge asks something else: did the price the dog grabbed beat where the "
+    "market closed? A dog stays a ROOKIE until it has 150 bets we can check "
+    "against the close. Replay bets (old boards, rule written later) are "
+    "shown apart and never count toward a badge. Paper only, not advice."
 )
 
 
@@ -165,6 +169,8 @@ class HoundSummary:
     spark: Optional[list] = None
     spark_basis: Optional[str] = None     # "average_price" | "recorded_price"
     source: str = ""
+    persona: Optional[dict] = None        # voice only (config files); see docs/VOICE.md
+    form: Optional[dict] = None           # streak, last 7 days, last settled day, best bet, worst beat
 
 
 @dataclass
@@ -216,6 +222,28 @@ def to_json(obj: Any) -> Any:
     if isinstance(obj, (list, tuple)):
         return [to_json(v) for v in obj]
     return obj
+
+
+_HOUNDMASTER: dict = {"loaded": False, "block": None}
+
+
+def houndmaster_block() -> Optional[dict]:
+    """The kennel boss's lines (config/house_pack.json, ``houndmaster``): the roasts and brags the site
+    uses for a hound with no lines of its own. Voice only. None when the file or key is missing, and the
+    pages then carry their own short fallback."""
+    if not _HOUNDMASTER["loaded"]:
+        block = None
+        try:
+            import json
+            from src.paths import repo_root
+            with open(repo_root() / "config" / "house_pack.json", encoding="utf-8") as fh:
+                loaded = json.load(fh).get("houndmaster")
+            block = loaded if isinstance(loaded, dict) else None
+        except (OSError, ValueError, ImportError):
+            block = None
+        _HOUNDMASTER["block"] = block
+        _HOUNDMASTER["loaded"] = True
+    return _HOUNDMASTER["block"]
 
 
 def envelope(payload: dict) -> dict:
@@ -270,7 +298,7 @@ def warming_payload(empty: dict) -> dict:
 # ---- payload builders --------------------------------------------------------------
 
 def leaderboard_payload(summaries: list, as_of: Optional[str]) -> dict:
-    return envelope({"as_of": as_of, "basis": BASIS,
+    return envelope({"as_of": as_of, "basis": BASIS, "houndmaster": houndmaster_block(),
                      "hounds": to_json(summaries)})
 
 
@@ -281,6 +309,7 @@ def hound_payload(summary: HoundSummary, series: list, bets_page: dict,
     out["bets"] = {**bets_page, "items": to_json(bets_page["items"])}
     out["as_of"] = as_of
     out["basis"] = BASIS
+    out["houndmaster"] = houndmaster_block()
     return envelope(out)
 
 
@@ -295,7 +324,8 @@ def stream_payload(page: dict, as_of: Optional[str]) -> dict:
 
 
 def graveyard_payload(entries: list, as_of: Optional[str]) -> dict:
-    return envelope({"as_of": as_of, "basis": BASIS, "hounds": to_json(entries)})
+    return envelope({"as_of": as_of, "basis": BASIS, "houndmaster": houndmaster_block(),
+                     "hounds": to_json(entries)})
 
 
 def series_payload(series_by_id: dict, as_of: Optional[str]) -> dict:

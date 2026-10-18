@@ -238,6 +238,88 @@ def bet_row(bet: Bet, teams: Optional[tuple]) -> BetRow:
         segment=bet.segment, verified=bet.verified)
 
 
+FORM_DAYS = 7           # "last 7 days" on the race page, counted back from the book's as-of day
+
+
+def _fair_of(bet: Bet) -> Optional[float]:
+    fair = bet.consensus_fair
+    return fair if isinstance(fair, (int, float)) and 0 < fair < 1 else None
+
+
+def _bet_brief(bet: Bet, teams: Optional[tuple], units: Optional[float]) -> dict:
+    avg = bet.price_average if bet.price_average is not None else bet.avg_price
+    return {"date": bet.date, "game": game_text(bet, teams), "selection": selection_text(bet, teams),
+            "price": avg if avg is not None else bet.price, "units": _round(units),
+            "market_fair": _round(_fair_of(bet))}
+
+
+def compute_form(fgraded: list, avg_available: bool, as_of: Optional[str], teams_of: dict) -> Optional[dict]:
+    """The scoreboard a bettor reads first: streak, the last seven days, the last settled day, the best bet
+    and the worst beat. Forward bets only, the same graded bets ``record`` counts, in the same units
+    (the average price when the hound has it, else the recorded price). Derived, never a new measurement;
+    None when nothing is graded.
+
+    WORST BEAT is the lost bet the market thought most likely to win (the highest de-vigged fair
+    probability on the row), the latest on a tie; with no fair probability on any loss it is the latest loss.
+    """
+    if not fgraded:
+        return None
+
+    def units_of(b: Bet) -> float:
+        value = average_units(b) if avg_available else recorded_units(b)
+        return value if value is not None else 0.0
+
+    decided = [b for b in fgraded if b.result in ("win", "loss")]
+    streak = None
+    if decided:
+        kind = decided[-1].result
+        length = 0
+        for b in reversed(decided):
+            if b.result != kind:
+                break
+            length += 1
+        streak = {"kind": "W" if kind == "win" else "L", "length": length}
+
+    by_day: dict = {}
+    for b in fgraded:
+        by_day.setdefault(b.date, []).append(b)
+    days = sorted(by_day)
+    rows = by_day[days[-1]]
+    total = round(sum(units_of(b) for b in rows), 4)
+    last_day = {"date": days[-1], "bets": len(rows),
+                "wins": sum(1 for b in rows if b.result == "win"),
+                "losses": sum(1 for b in rows if b.result == "loss"),
+                "units": total,
+                "result": "win" if total > 0 else "loss" if total < 0 else "flat"}
+
+    last7 = None
+    anchor = str(as_of or days[-1])[:10]
+    try:
+        floor = (date_cls.fromisoformat(anchor) - timedelta(days=FORM_DAYS - 1)).isoformat()
+    except ValueError:
+        floor = None
+    if floor:
+        recent = [b for b in fgraded if floor <= str(b.date)[:10] <= anchor]
+        last7 = {"bets": len(recent),
+                 "wins": sum(1 for b in recent if b.result == "win"),
+                 "losses": sum(1 for b in recent if b.result == "loss"),
+                 "units": round(sum(units_of(b) for b in recent), 4)}
+
+    wins = [b for b in decided if b.result == "win"]
+    losses = [b for b in decided if b.result == "loss"]
+    best_bet = worst_beat = None
+    if wins:
+        best = max(wins, key=lambda b: (units_of(b), b.date, b.decision_utc or ""))
+        best_bet = _bet_brief(best, teams_of.get(best.event_id), units_of(best))
+    if losses:
+        worst = max(losses, key=lambda b: (_fair_of(b) if _fair_of(b) is not None else -1.0,
+                                           b.date, b.decision_utc or ""))
+        worst_beat = _bet_brief(worst, teams_of.get(worst.event_id), units_of(worst))
+    return {"streak": streak, "last7": last7, "last_day": last_day, "best_bet": best_bet,
+            "worst_beat": worst_beat,
+            "units_basis": "average_price" if avg_available else "recorded_price"}
+
+
 def summarize(defn: dict, bets: list, teams_of: dict, as_of: Optional[str]) -> HoundData:
     forward = [b for b in bets if b.segment == "forward"]
     replay = [b for b in bets if b.segment == "replay"]
@@ -329,7 +411,9 @@ def summarize(defn: dict, bets: list, teams_of: dict, as_of: Optional[str]) -> H
                 if replay else None),
         spark=[_round(x, 3) for x in spark_src[-SPARK_POINTS:]],
         spark_basis="average_price" if avg_available else "recorded_price",
-        source=defn.get("source", ""))
+        source=defn.get("source", ""),
+        persona=defn.get("persona") if isinstance(defn.get("persona"), dict) else None,
+        form=compute_form(fgraded, avg_available, as_of, teams_of))
     rows = sorted(bets, key=lambda b: (b.decision_utc or b.date or "", b.date),
                   reverse=True)
     return HoundData(

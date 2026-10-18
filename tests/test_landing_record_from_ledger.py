@@ -48,7 +48,9 @@ class TheLandingFallbackNamesNoFigure(unittest.TestCase):
         body = re.sub(r"<script\b.*?</script>", " ", body, flags=re.S)
         body = re.sub(r"<[^>]+>", " ", body)
         hits = [m.group(0) for m in re.finditer(r"\b\d+ wins?, \d+ loss(?:es)?\b", body)]
-        self.assertEqual(hits, ["2 wins, 1 loss"],
+        # the one dated first-night sentence lived in "A pick we got wrong, in full", cut in the owner voice pass
+        # (2026-10-18); the page now types no record at all
+        self.assertEqual(hits, [],
                          "a running record is typed into the page; it belongs on /meta")
 
 

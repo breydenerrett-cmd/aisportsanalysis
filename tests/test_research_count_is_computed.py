@@ -239,7 +239,9 @@ class NoCustomerFileHardcodesIt(unittest.TestCase):
         html = (WEB / "landing.html").read_text(encoding="utf-8")
         fallbacks = re.findall(
             r'data-hook="research-count"[^>]*>([^<]*)<', html)
-        self.assertTrue(fallbacks, "landing.html has no research-count hook")
+        # Owner voice pass, 2026-10-18: the FAQ essay that carried this count was cut to one human line and a
+        # link (the figures live on the why-we-stopped page), so the page may carry no count at all. Any count
+        # it does carry must still be the registry's. landing.js's fill is a no-op without a node.
         for value in fallbacks:
             self.assertEqual(
                 expected, value.strip(),

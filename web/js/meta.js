@@ -140,15 +140,15 @@ export async function renderDisclaimerFooter(container, { linkPrefix = "" } = {}
   const row = el("div", { class: "sitefoot__row" });
   row.appendChild(el("span", { class: "sitefoot__mark", text: BRAND_NAME }));
   row.appendChild(el("span", { class: "sitefoot__hair", "aria-hidden": "true" }));
-  // Row 1's legal line (DESIGN_SYSTEM.md section 3): "21+ · Play
-  // responsibly · 1-800-GAMBLER" -- the source string stays uppercase
-  // "PLAY RESPONSIBLY" (tests/test_shared_footer.py pins it case-
-  // sensitively; CSS may transform the case it renders, the DOM text does
-  // not need to). The viewer's own zone abbreviation used to be prefixed
-  // onto this same line -- moved to its own row 4 below so the zone is
-  // stated once, not twice (section 3: do not duplicate the old
-  // zone-prefix phrase from elsewhere in the footer).
-  row.appendChild(el("span", { class: "sitefoot__legal", text: "21+ · PLAY RESPONSIBLY" }));
+  // Row 1's legal line (DESIGN_SYSTEM.md section 3): "21+ · Gamble
+  // responsibly. 1-800-GAMBLER" (owner voice pass, 2026-10-18: said the
+  // way a person says it; docs/VOICE.md). tests/test_shared_footer.py pins
+  // the words "Gamble responsibly" case-sensitively; CSS may transform the
+  // case it renders, the DOM text does not need to. The viewer's own zone
+  // abbreviation used to be prefixed onto this same line -- moved to its
+  // own row 4 below so the zone is stated once, not twice (section 3: do
+  // not duplicate the old zone-prefix phrase from elsewhere in the footer).
+  row.appendChild(el("span", { class: "sitefoot__legal", text: "21+ · Gamble responsibly." }));
   // A REACHABLE HELPLINE, not just the words "play responsibly".
   //
   // 1-800-GAMBLER existed only in design/linehound-v1 and -v2 mockups; it

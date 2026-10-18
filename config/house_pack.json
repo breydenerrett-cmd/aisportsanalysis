@@ -6,6 +6,32 @@
  "registered": "2026-10-17",
  "paper_only": true,
  "disclaimer": "Paper-only race of strategies. No hound claims an edge or a profit. Esoteric and random hounds are entertainment and controls.",
+ "houndmaster": {
+  "name": "The Houndmaster",
+  "bio": "Grumpy kennel boss. Seen every bad beat twice. Roasts the dogs when they lose, brags on them when they win, and tells the truth either way. Fair, never kind.",
+  "catchphrase": "I don't make the rules. I just enforce them.",
+  "vibe": "grumpy",
+  "roasts": [
+   "That was ugly, and I watched the whole thing.",
+   "Down a unit. Sit. Think about what you did.",
+   "No excuses. The scoreboard doesn't take excuses.",
+   "Tough night. Mostly your fault.",
+   "I've seen better picks from a cat on a keyboard."
+  ],
+  "brags": [
+   "Okay. That was good. Don't make a thing of it.",
+   "Up on the night. Treat's in the bowl. Behave.",
+   "One good night. Don't get cocky. They all get cocky.",
+   "Fair is fair: nice work.",
+   "That cashed. Do it again tomorrow, if you can."
+  ],
+  "put_down_lines": [
+   "Down more than 25 units. I don't make the rules.",
+   "Put down for being a bad dog. Rest in pieces.",
+   "The kennel doesn't keep losers. Fair is fair."
+  ],
+  "welcome": "Welcome to the kennel. Everyone here is on paper. Nobody here is a genius, and nobody here is a sure anything."
+ },
  "grading": "Board-average price at lock (owner ruling); best price shown separately. CLV vs the close.",
  "hounds": [
   {
@@ -64,7 +90,28 @@
       }
      ]
     }
-   ]
+   ],
+   "persona": {
+    "bio": "Tweed jacket, three footnotes, and a run model he only trusts halfway. Bets when his math is two points ahead of the market. Insufferable at parties.",
+    "catchphrase": "Statistically speaking, I meant to do that.",
+    "vibe": "nerd",
+    "roasts": [
+     "Two points of daylight on the market and you still got shut out. Put that in your footnotes.",
+     "Trusted the model halfway and lost all the way. Math is not supposed to work like that, Professor.",
+     "Your run model went oh-for-the-night. Feed it a sandwich and a hard look in the mirror.",
+     "Tweed does not soak up losses. Take it off and think about what you did.",
+     "Shrunk toward the market and STILL got it wrong. That takes real talent."
+    ],
+    "brags": [
+     "Fine. The Professor cooked tonight. Do not let it go to the tweed.",
+     "Half model, half market, all green. I hate that it worked.",
+     "Say 'I told you so' once, Professor. ONCE.",
+     "Math beat the street tonight. One night. Sit down.",
+     "Glasses up, ego down, units up. Tonight only."
+    ],
+    "epitaph": "Trusted the model halfway. The model did not return the favor.",
+    "verb": "ran the numbers and took"
+   }
   },
   {
    "id": "totals_terrier",
@@ -106,7 +153,28 @@
       }
      ]
     }
-   ]
+   ],
+   "persona": {
+    "bio": "A wire-haired digger who barks at the game total. Runs the same model as Professor Paws, but only plays the over or under when it is off by three points.",
+    "catchphrase": "Smell that? That's four runs in the sixth.",
+    "vibe": "nerd",
+    "roasts": [
+     "You dug all night and found a dead cat. The under, the over, doesn't matter. Wrong either way.",
+     "Three points of disagreement with the total, and the total won. Humbling, isn't it.",
+     "Sniffed the over, got a 1-0 game. Do you even watch baseball?",
+     "Every hole you dig, a pitcher fills it with strikeouts. Keep digging, champ.",
+     "A terrier never lets go of a bad bet. That's not a compliment."
+    ],
+    "brags": [
+     "Runs fell out of the sky and you caught them. Nice nose.",
+     "Over or under, you called the number. Fair is fair, good dig.",
+     "Bark all you want tonight. You earned it.",
+     "The total blinked and you pounced. Enjoy the bone.",
+     "Digging paid off. Do not dig up the yard to celebrate."
+    ],
+    "epitaph": "Dug until the hole was deeper than the bankroll.",
+    "verb": "dug up"
+   }
   },
   {
    "id": "relief_retriever",
@@ -148,7 +216,28 @@
       }
      ]
     }
-   ]
+   ],
+   "persona": {
+    "bio": "A Lab who counts every pitch the bullpen threw the last three days. When one pen is cooked by 120 pitches or more, he fetches the fresh side.",
+    "catchphrase": "Tired arms don't lie.",
+    "vibe": "grinder",
+    "roasts": [
+     "You fetched the fresh bullpen and it blew the game anyway. Arms are fresher than the closer's nerves, apparently.",
+     "Counted every pitch for three days and still lost. Maybe count something else.",
+     "The tired bullpen showed up and was somehow fine. Retrieve that.",
+     "All that homework and the manager brought in the wrong guy. Tough break. Still your fault.",
+     "Fresh legs, bad night. Drop the bone and go lie down."
+    ],
+    "brags": [
+     "Fresh arms, fat stack. Good boy.",
+     "The tired pen folded just like you said. Fetch yourself a treat.",
+     "Counting pitches pays tonight. Put that on the fridge.",
+     "Bullpen math came through. Do not ask me to explain it twice.",
+     "The tired side got tired. Shocking. Well done."
+    ],
+    "epitaph": "Counted the bullpen to the end. The bullpen did not count back.",
+    "verb": "fetched the fresh bullpen:"
+   }
   },
   {
    "id": "gridiron_greyhound",
@@ -195,7 +284,28 @@
       }
      ]
     }
-   ]
+   ],
+   "persona": {
+    "bio": "A lean racer who only reads the scoreboard. Compares point differentials, adds a bit for home field, and bets the NFL spread when the gap is three or more.",
+    "catchphrase": "The scoreboard is the only thing I trust.",
+    "vibe": "nerd",
+    "roasts": [
+     "You raced the point differentials and ran straight into a backdoor cover. Classic.",
+     "Three points of gap and the kicker missed. The kicker. You had a kicker problem.",
+     "Fast dog, slow brain. Wrong side again.",
+     "You read the scoreboard like a menu and ordered the wrong thing.",
+     "All speed, no steering. Pull over."
+    ],
+    "brags": [
+     "The numbers ran and the spread fell. Clean race.",
+     "Differential said go and you went. I'm almost proud.",
+     "Home field plus homework, and a cover. Sit.",
+     "Greyhound beat the number on pure arithmetic. Don't tell the others.",
+     "Fastest dog in the kennel tonight. Enjoy it, it expires at midnight."
+    ],
+    "epitaph": "Ran out of scoreboard.",
+    "verb": "raced to"
+   }
   },
   {
    "id": "elimination_basset",
@@ -219,7 +329,28 @@
    "module": "src.hounds.pack.elimination_basset",
    "ledger": "evidence/hounds_house_v1.jsonl",
    "playbook": "docs/hounds/elimination_basset.md",
-   "character": "A mournful basset hound who backs the home club when the season is on the line."
+   "character": "A mournful basset hound who backs the home club when the season is on the line.",
+   "persona": {
+    "bio": "A mournful basset who only wakes up when a team is one loss from going home. Backs the home club in do-or-die playoff games, passes on everything else.",
+    "catchphrase": "Nobody goes home. Not tonight.",
+    "vibe": "degen",
+    "roasts": [
+     "The home team was one loss from the exit and... took the exit. You were right to be sad, I guess.",
+     "Do-or-die means somebody dies. Tonight it was you.",
+     "You howled for the home club and the home club went home. Poetic.",
+     "Your whole personality is 'one loss from elimination' and it finally caught up.",
+     "Sad eyes do not move the line, Basset."
+    ],
+    "brags": [
+     "Backs to the wall and the wall held. Beautiful, tragic dog.",
+     "Home club stayed alive and so did you. Do not cry on the carpet.",
+     "You smelled desperation and it paid. Disgusting. Well done.",
+     "Elimination game, elimination of my doubts. Sit.",
+     "One loss from the cliff and they stepped back. Your finest hour."
+    ],
+    "epitaph": "Believed in the home club until the final out.",
+    "verb": "howled for"
+   }
   },
   {
    "id": "jetlag_jack",
@@ -263,7 +394,28 @@
       }
      ]
     }
-   ]
+   ],
+   "persona": {
+    "bio": "A Jack Russell who never takes the red-eye. Bets the rested club when the other side flew overnight, and the NFL club with three extra days of rest.",
+    "catchphrase": "I got eight hours. Did they?",
+    "vibe": "grinder",
+    "roasts": [
+     "The other team flew all night and beat you anyway. Rest is overrated, apparently.",
+     "You bet on a nap and got a nightmare.",
+     "Rested legs, rusty bat. Go back to bed, Jack.",
+     "Jet lag is a myth and you just bought it a steak dinner.",
+     "Eight hours of sleep and zero hits. I'm tired just looking at you."
+    ],
+    "brags": [
+     "Well-rested and well-paid. Good nap.",
+     "The red-eye crew looked cooked and you pounced. Nice.",
+     "Sleep pays. Do not tell the others, they'll want a pillow.",
+     "Fresh legs showed up. So did the units.",
+     "Rested wins. Fine. Go lie in the sun."
+    ],
+    "epitaph": "Slept through the whole season.",
+    "verb": "slept on it and took"
+   }
   },
   {
    "id": "steamy_setter",
@@ -306,7 +458,28 @@
       }
      ]
     }
-   ]
+   ],
+   "persona": {
+    "bio": "An Irish setter who points wherever the money is moving. If the market shifts three points or more from open to close, he tails the steam.",
+    "catchphrase": "Follow the money. Ask questions never.",
+    "vibe": "degen",
+    "roasts": [
+     "You tailed the steam and the steam turned to fog. The sharps were bluffing, or you were late.",
+     "Everybody moved the line and you moved with them. Everybody was wrong. Congrats on joining everybody.",
+     "Chased the move, caught nothing. A setter sets. This setter flopped.",
+     "You smelled money and found a burning couch.",
+     "Steam is just hot air with a good publicist."
+    ],
+    "brags": [
+     "Tailed the steam and it kept going. Look at you, swimming with the big fish.",
+     "The line moved and so did your bankroll. Fine, the nose works.",
+     "Followed the money to the cashier. Not bad.",
+     "You and the steam are on a first-name basis. Disgusting. Nice.",
+     "Pointed at the move, the move paid. Sit and be smug."
+    ],
+    "epitaph": "Followed the steam right off the pier.",
+    "verb": "tailed the steam on"
+   }
   },
   {
    "id": "contrary_corgi",
@@ -331,7 +504,28 @@
    "module": "src.hounds.pack.contrary_corgi",
    "ledger": "evidence/hounds_house_v1.jsonl",
    "playbook": "docs/hounds/contrary_corgi.md",
-   "character": "A corgi who digs in its short legs and goes the other way."
+   "character": "A corgi who digs in its short legs and goes the other way.",
+   "persona": {
+    "bio": "A corgi with short legs and strong opinions. Waits for the market to move three points or more, then bets the OTHER side. Fades everything, including advice.",
+    "catchphrase": "Everybody's wrong. Every time. Especially today.",
+    "vibe": "chaos",
+    "roasts": [
+     "You faded the steam and the steam ran you over. Short legs, short memory.",
+     "Contrarian is just a loser who pays attention. Today you paid.",
+     "You went the other way and so did the money. Both ways. Somehow.",
+     "Fading the crowd works until the crowd is right. Today the crowd was right.",
+     "Dug in your heels and dug your own hole. Classic corgi."
+    ],
+    "brags": [
+     "Faded the move and the move died. Spite wins one.",
+     "Everybody zigged. You zagged on stubby legs. Take a bow.",
+     "The steam was fake and you knew. Okay, I'll allow it.",
+     "Contrarian night, contrarian cash. Do not get used to it.",
+     "Short legs, long middle finger to the market. Beautiful."
+    ],
+    "epitaph": "Went the other way one time too many.",
+    "verb": "faded the steam on"
+   }
   },
   {
    "id": "stale_bread_beagle",
@@ -392,7 +586,28 @@
       }
      ]
     }
-   ]
+   ],
+   "persona": {
+    "bio": "A beagle with a nose for a book that forgot to move its line. Hunts for the one price that is two and a half points better than the market's real number, and bets it.",
+    "catchphrase": "Somebody left the price on the counter.",
+    "vibe": "grinder",
+    "roasts": [
+     "You sniffed out a stale line and it was stale for a reason. Some bread is just bad.",
+     "Best price on the board, worst game of the night. Price shopping is not a personality.",
+     "Found the bargain and the bargain bit back.",
+     "The book wasn't asleep. It was baiting you. Nice nose, though.",
+     "A stale price can still lose. That's how bread works."
+    ],
+    "brags": [
+     "Stale line, fresh money. Good nose.",
+     "The slow book stayed slow and you ate. Delicious.",
+     "Price shopping paid tonight. Do not frame it.",
+     "You found the one sleepy book. Stay quiet, they might wake up.",
+     "Sniffed it out, cashed it in. Fair is fair."
+    ],
+    "epitaph": "Ate too much stale bread.",
+    "verb": "sniffed out a stale line on"
+   }
   },
   {
    "id": "bargain_bloodhound",
@@ -435,7 +650,28 @@
       }
      ]
     }
-   ]
+   ],
+   "persona": {
+    "bio": "A bloodhound who never pays retail. Bets a side only when the best price on the board is cheaper than the market's own fair number.",
+    "catchphrase": "I don't pay retail.",
+    "vibe": "grinder",
+    "roasts": [
+     "You got the best price in town for a bet that lost. Cheap loss, still a loss.",
+     "Bargain bin bets, bargain bin results.",
+     "Shopped around all day and bought a lemon.",
+     "A discount on a bad idea is still a bad idea.",
+     "The price was right. The team wasn't. You can't win 'em all, Bloodhound."
+    ],
+    "brags": [
+     "Never paid retail and it paid you back. Fine.",
+     "Cheap price, rich night. Good shopping.",
+     "Found the sale rack and cleaned it out.",
+     "A bargain that actually delivered. Mark the calendar.",
+     "You smelled value and it was real. Tonight."
+    ],
+    "epitaph": "Never paid retail. The season charged anyway.",
+    "verb": "grabbed a bargain on"
+   }
   },
   {
    "id": "kelly_kelpie",
@@ -460,7 +696,28 @@
    "module": "src.hounds.pack.kelly_kelpie",
    "ledger": "evidence/hounds_house_v1.jsonl",
    "playbook": "docs/hounds/kelly_kelpie.md",
-   "character": "A working kelpie that herds its bankroll by the Kelly fraction."
+   "character": "A working kelpie that herds its bankroll by the Kelly fraction.",
+   "persona": {
+    "bio": "A working kelpie who herds her bankroll by the Kelly fraction. Same picks as Bargain Bloodhound, but sizes each bet: a quarter-Kelly stake, capped at three units.",
+    "catchphrase": "Size matters. Math says so.",
+    "vibe": "nerd",
+    "roasts": [
+     "Quarter-Kelly and you still found a way to bleed. Impressive restraint, terrible result.",
+     "You sized the bet perfectly and picked the wrong side. Math can't fix that.",
+     "Capped at three units and still lost two and a half. Cap harder.",
+     "A tidy stake on a tidy loss. Very orderly. Very down.",
+     "Shepherd your own bankroll for a while. It's wandering."
+    ],
+    "brags": [
+     "Right size, right side. Textbook.",
+     "Quarter-Kelly paid like a full one tonight. Do not tell her.",
+     "The herd moved in the right direction. Neat work.",
+     "Stake grew on a winner. Now THAT is the math doing something.",
+     "Sized it and nailed it. Go herd something."
+    ],
+    "epitaph": "Sized every bet right except the last one.",
+    "verb": "sized up"
+   }
   },
   {
    "id": "hot_streak_husky",
@@ -504,7 +761,28 @@
       }
      ]
     }
-   ]
+   ],
+   "persona": {
+    "bio": "A husky who runs with whoever's hot. Bets a club riding a hot streak against one in a slump, MLB last-ten or NFL win streaks.",
+    "catchphrase": "Hot hand? I AM the hot hand.",
+    "vibe": "degen",
+    "roasts": [
+     "You jumped on the hot team the night it cooled off. Perfect timing, as always.",
+     "Streaks end. That's the whole definition of a streak.",
+     "Rode the hot hand into a cold shower.",
+     "You chase hot like a moth chases a porch light.",
+     "Seven of the last ten and a loss on your slip. Congratulations on the last one."
+    ],
+    "brags": [
+     "The hot team stayed hot and so did you. Nice ride.",
+     "Hot hand, hot night. Do not blink.",
+     "You chased the heater and caught it. Disgusting. Well done.",
+     "Streak lived another day. So did your units.",
+     "Rode the wave. Do not stand up in the boat."
+    ],
+    "epitaph": "Rode a hot streak until it ended.",
+    "verb": "rode the heater on"
+   }
   },
   {
    "id": "grudge_bulldog",
@@ -564,7 +842,28 @@
       }
      ]
     }
-   ]
+   ],
+   "persona": {
+    "bio": "A bulldog that never forgets who beat it. Bets the club that got blown out in the last meeting, backing revenge on the NFL spread and the MLB moneyline.",
+    "catchphrase": "I remember what you did last time.",
+    "vibe": "degen",
+    "roasts": [
+     "Revenge game, no revenge. They got blown out twice. Grudges cost money.",
+     "You held a grudge on their behalf and they didn't care.",
+     "The team forgot. You didn't. That's the difference.",
+     "Bet on payback, got more pain. Classic.",
+     "Revenge is a dish best served cold. This was served ice cold, and empty."
+    ],
+    "brags": [
+     "Revenge tasted great. Sit down and chew on it.",
+     "The grudge paid. I take back everything.",
+     "They got blown out last time and snapped back. Beautiful spite.",
+     "Memory like an elephant, bite like a bulldog. Fine.",
+     "Payback night. Savor it, you petty little dog."
+    ],
+    "epitaph": "Held a grudge until it held him back.",
+    "verb": "held a grudge and took"
+   }
   },
   {
    "id": "numerology_newfie",
@@ -589,7 +888,28 @@
    "module": "src.hounds.pack.numerology_newfie",
    "ledger": "evidence/hounds_house_v1.jsonl",
    "playbook": "docs/hounds/numerology_newfie.md",
-   "character": "A Newfoundland who reads the stars in the alphabet. Entertainment only."
+   "character": "A Newfoundland who reads the stars in the alphabet. Entertainment only.",
+   "persona": {
+    "bio": "A Newfoundland who reads the stars in the alphabet. Turns team names into numbers with ordinal gematria, compares them to the date number, and bets the closer one. For fun. Entertainment only.",
+    "catchphrase": "The letters told me. I just listen.",
+    "vibe": "psychic",
+    "roasts": [
+     "The letters lied. Or you can't count. Both are on brand.",
+     "Gematria says go. Reality says nope. Reality has better lawyers.",
+     "You added up a team name and lost real fake money. Wonderful.",
+     "The cosmos blew it tonight. Blame Mercury, I do.",
+     "A digital root can't hit a curveball."
+    ],
+    "brags": [
+     "The numbers aligned and the team won. Do not look at the math.",
+     "Gematria strikes again. I refuse to explain this.",
+     "A to Z paid tonight. Sit in your robe.",
+     "The stars did it. Not you. The stars.",
+     "Mystic nonsense, real cash. I hate everything."
+    ],
+    "epitaph": "Counted the letters. The letters ran out.",
+    "verb": "read the letters and took"
+   }
   },
   {
    "id": "lunar_lab",
@@ -614,7 +934,28 @@
    "module": "src.hounds.pack.lunar_lab",
    "ledger": "evidence/hounds_house_v1.jsonl",
    "playbook": "docs/hounds/lunar_lab.md",
-   "character": "A lab that howls at the full moon and goes quiet at the new one. Entertainment only."
+   "character": "A lab that howls at the full moon and goes quiet at the new one. Entertainment only.",
+   "persona": {
+    "bio": "A lab that howls at the full moon. Bets the over near a full moon, the under near a new moon, and sits out the rest of the month. For fun. Entertainment only.",
+    "catchphrase": "The moon has a say in the total.",
+    "vibe": "psychic",
+    "roasts": [
+     "Full moon, no runs. The moon is a liar, and so are you.",
+     "You howled at the sky and the sky went under.",
+     "Moon says over. Pitchers said no. Pitchers outvote moons.",
+     "Waxing, waning, losing. Go sit outside.",
+     "Not even the tides care about your total."
+    ],
+    "brags": [
+     "Full moon, fireworks. Howl away.",
+     "The under hit on a new moon. Do not make it a religion.",
+     "Moon says go, cash says yes. Silly dog.",
+     "The sky came through. Take the night off from being right.",
+     "Astronomy beat analytics tonight. Everybody log off."
+    ],
+    "epitaph": "Howled at the moon until it stopped answering.",
+    "verb": "howled at the moon and took"
+   }
   },
   {
    "id": "coin_flip_collie",
@@ -639,7 +980,28 @@
    "module": "src.hounds.pack.coin_flip_collie",
    "ledger": "evidence/hounds_house_v1.jsonl",
    "playbook": "docs/hounds/coin_flip_collie.md",
-   "character": "A border collie with a coin. This is the control."
+   "character": "A border collie with a coin. This is the control.",
+   "persona": {
+    "bio": "A border collie with a coin. Flips it for every game, home or away, no information at all. It is the control. It keeps beating the nerds. Nobody is allowed to explain why.",
+    "catchphrase": "Heads. Or tails. Whatever.",
+    "vibe": "chaos",
+    "roasts": [
+     "You flipped a coin and lost. How? It's a coin. It's HALF the time.",
+     "Even random can have a bad day. Welcome to the club.",
+     "The nerds laughed. For one night. Enjoy it, nerds.",
+     "Heads you lose, tails you also lose, apparently.",
+     "You're the control, Collie. Behave like one."
+    ],
+    "brags": [
+     "Coin said home and home won. Try explaining THAT, Professor.",
+     "Pure luck, pure units. The nerds are crying in the corner.",
+     "Flipped it and cashed it. Gloat quietly.",
+     "A coin beat a computer. Again. I give up.",
+     "Heads! Or tails! Who cares! Green!"
+    ],
+    "epitaph": "The coin finally landed standing up.",
+    "verb": "flipped a coin on"
+   }
   },
   {
    "id": "dartboard_dalmatian",
@@ -666,7 +1028,28 @@
    "module": "src.hounds.pack.dartboard_dalmatian",
    "ledger": "evidence/hounds_house_v1.jsonl",
    "playbook": "docs/hounds/dartboard_dalmatian.md",
-   "character": "A dalmatian throwing darts at the whole board. A control."
+   "character": "A dalmatian throwing darts at the whole board. A control.",
+   "persona": {
+    "bio": "A dalmatian throwing darts at the whole board: moneyline, spread or total, home or away, over or under. Pure random. A control with spots.",
+    "catchphrase": "I aim for chaos. I hit chaos.",
+    "vibe": "chaos",
+    "roasts": [
+     "You threw a dart at the board and hit the wall. Great aim.",
+     "Spots on the coat, holes in the bankroll.",
+     "Random in, random out. Today the output was bad.",
+     "No plan, no brain, no cash. Honest work.",
+     "The dart landed on a loser. Throw another."
+    ],
+    "brags": [
+     "The dart found the winner. Sit and spin.",
+     "Throwing darts blind and hitting bulls. Rude.",
+     "Chaos paid again. The nerds are furious.",
+     "Spotted dog, spotless night.",
+     "Bullseye by accident. Own it."
+    ],
+    "epitaph": "Threw the last dart at the wrong board.",
+    "verb": "threw a dart at"
+   }
   },
   {
    "id": "pack_leader",
@@ -709,7 +1092,28 @@
       }
      ]
     }
-   ]
+   ],
+   "persona": {
+    "bio": "The alpha who only moves when the pack agrees. Needs two or more of the other hounds on one side and none on the other before betting the moneyline.",
+    "catchphrase": "I only go where the pack goes.",
+    "vibe": "grinder",
+    "roasts": [
+     "The whole pack agreed and the whole pack was wrong. Great leadership.",
+     "Consensus is just a group project. Everybody failed it.",
+     "You followed your own followers and fell off a cliff.",
+     "Two votes, zero results. Democracy is overrated.",
+     "Alpha dog, beta night. Sit."
+    ],
+    "brags": [
+     "The pack agreed and the pack ate. Lead on.",
+     "Consensus paid for once. Don't make it a speech.",
+     "Everybody pointed the same way. For once they were right.",
+     "Alpha energy, alpha units.",
+     "Followed the pack to the bank. Sit proud."
+    ],
+    "epitaph": "Led the pack off a cliff.",
+    "verb": "led the pack to"
+   }
   },
   {
    "id": "scrappy_schnauzer",
@@ -734,7 +1138,28 @@
    "module": "src.hounds.pack.scrappy_schnauzer",
    "ledger": "evidence/hounds_house_v1.jsonl",
    "playbook": "docs/hounds/scrappy_schnauzer.md",
-   "character": "A schnauzer that only bites the big dogs: underdogs from +100 to +250."
+   "character": "A schnauzer that only bites the big dogs: underdogs from +100 to +250.",
+   "persona": {
+    "bio": "A schnauzer that only bites the big dogs. Bets moneyline underdogs from +100 to +250, but only when one of four other hounds already likes that side.",
+    "catchphrase": "Bark at the big dogs. Win the fight.",
+    "vibe": "degen",
+    "roasts": [
+     "The underdog stayed an underdog. That's how it works, Schnauzer.",
+     "You bit off more than you can chew. Again.",
+     "Plus money and minus night. Small dog, big loss.",
+     "Underdogs are called underdogs for a reason. Remember the reason.",
+     "Somebody has to lose the dog fights. Today you."
+    ],
+    "brags": [
+     "The little guy bit the big guy. Plus money, plus attitude.",
+     "Underdog cashed and you're insufferable. Enjoy it.",
+     "Scrappy night, scrappy units. Don't let it go to your beard.",
+     "+180 hit and I felt something. Disgust, mostly.",
+     "Small dog, big bark, bigger payout. Fine."
+    ],
+    "epitaph": "Picked a fight with a big dog and lost.",
+    "verb": "bit the big dog:"
+   }
   },
   {
    "id": "chalk_chihuahua",
@@ -759,7 +1184,28 @@
    "module": "src.hounds.pack.chalk_chihuahua",
    "ledger": "evidence/hounds_house_v1.jsonl",
    "playbook": "docs/hounds/chalk_chihuahua.md",
-   "character": "A chihuahua that always picks the bigger dog (inside the -200 rule)."
+   "character": "A chihuahua that always picks the bigger dog (inside the -200 rule).",
+   "persona": {
+    "bio": "A tiny chihuahua that always picks the favorite, as long as the price is between -199 and -101. The anti-longshot. Squeaks, but does not take risks.",
+    "catchphrase": "Why would I bet the underdog? Ew.",
+    "vibe": "grinder",
+    "roasts": [
+     "The favorite lost and you lost with it. Chalk makes lousy friends.",
+     "Favorites lose sometimes. Tonight was sometimes.",
+     "Tiny dog, huge chalk, small brain.",
+     "You paid extra to lose. That's what favorites are for.",
+     "Chalk dust on your paws and nothing in the bank."
+    ],
+    "brags": [
+     "Chalk held and the paw printed money. Squeak.",
+     "Favorites win. Congratulations on noticing.",
+     "Boring bets, green night. I respect it.",
+     "The chalk played to type. You played it right.",
+     "Tiny dog, tiny win, giant smile."
+    ],
+    "epitaph": "Always picked the favorite, until it didn't.",
+    "verb": "squeaked for the chalk:"
+   }
   },
   {
    "id": "home_dog_hank",
@@ -784,7 +1230,28 @@
    "module": "src.hounds.pack.home_dog_hank",
    "ledger": "evidence/hounds_house_v1.jsonl",
    "playbook": "docs/hounds/home_dog_hank.md",
-   "character": "A hound that never leaves home and loves an underdog."
+   "character": "A hound that never leaves home and loves an underdog.",
+   "persona": {
+    "bio": "A hound that never leaves home and loves an underdog. Bets the home club whenever its price is plus money, +100 to +400.",
+    "catchphrase": "Home sweet payout.",
+    "vibe": "degen",
+    "roasts": [
+     "Home dog, home loss. Bring the receipt.",
+     "The home crowd did nothing for you. The home crowd does nothing for anyone.",
+     "You got a nice price on a team that didn't show.",
+     "Hank, the road team showed up. They always do.",
+     "Staying home was supposed to be safe. It wasn't."
+    ],
+    "brags": [
+     "Home underdog cashed. Call it a house warming.",
+     "Hank stayed home and got paid. Lucky dog.",
+     "Plus money, plus porch. I'll allow it.",
+     "The home dog barked and the board blinked.",
+     "Never left the yard and won a fight. Stay put."
+    ],
+    "epitaph": "Never left home. Home never paid rent.",
+    "verb": "stayed home and took"
+   }
   }
  ],
  "tunable_note": "Each hound's `tunable` lists the only knobs a challenger may change (docs/PREREG_LEARNING_LOOP.md section 2b). `default` is the live value in the hound's module; a test holds the two together. `renders` are the exact strings of `rule_text` that state the knob, so a challenger's published rule is generated, not written."

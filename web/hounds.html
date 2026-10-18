@@ -3,21 +3,23 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>The Hound Race — LINEHOUND</title>
-<meta name="description" content="A public, paper-only race of betting strategies called hounds. Each has a written rule, a verdict that asks whether it beat the closing price, and a record that includes its losses. Paper only, not advice.">
-<meta property="og:title" content="The Hound Race — LINEHOUND">
-<meta property="og:description" content="Paper-only betting strategies racing in public, judged on whether they beat the closing price. Not advice.">
+<title>Live Kennel — LINEHOUND</title>
+<meta name="description" content="Paper betting dogs fighting it out every day. See who's hot, who's on tilt and who gets put down next. Paper bets only, not advice, 21+.">
+<meta property="og:title" content="Live Kennel — LINEHOUND">
+<meta property="og:description" content="Paper betting dogs fighting it out every day. Who's hot, who's on tilt, who gets put down next. Paper only, not advice.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://linehound.app/web/hounds.html">
 <link rel="canonical" href="https://linehound.app/web/hounds.html">
 <meta name="theme-color" content="#0A0A0B">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230B0C0E'/%3E%3Cpath d='M6 6l8 0 0 9-8 4z' fill='%23FF3D57'/%3E%3Cpath d='M18 6l8 0 0 13-8-4z' fill='%23FF7A45'/%3E%3C/svg%3E">
-<!-- THE HOUND RACE (public, no sign-in to read). Page script: web/js/hounds-page.js, which reads
+<!-- THE LIVE KENNEL (public, no sign-in to read). Page script: web/js/hounds-page.js, which reads
      GET /hounds, /hounds/series, /hounds/stream and /hounds/graveyard. Every dynamic region below is
      filled by script and says honestly what happened if its endpoint is missing. The paper-only /
      not-advice lines are STATIC markup so they are on the page with scripts off. No external images;
-     avatars are inline SVG. The shared disclaimer footer is not used here: it links to features this
-     page should not advertise, so the page carries its own responsible-gambling line. -->
+     avatars are inline SVG. The page carries its own responsible-gambling line.
+     VOICE (owner, 2026-10-18): this is a page for people who like the action, not for scientists. Short
+     lines, the numbers a bettor reads (W-L, units, streaks), the old verdict wearing a badge. The
+     honest check is still here, as the badge beside each dog. docs/VOICE.md is the guide. -->
 <link rel="stylesheet" href="css/fonts.css">
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/base.css">
@@ -26,7 +28,7 @@
 <link rel="stylesheet" href="css/hounds.css">
 </head>
 <body class="hounds-page">
-<a class="hd-skip" href="#main-content">Skip to the race</a>
+<a class="hd-skip" href="#main-content">Skip to the kennel</a>
 <nav class="site-nav hd-nav" aria-label="primary" data-hook="hounds-header">
   <a class="ps-page__home" href="landing.html" aria-label="LINEHOUND home">
     <span class="wordmark" data-hook="brand-mark">
@@ -35,69 +37,81 @@
     </span>
   </a>
   <div class="site-nav__links hd-nav__links">
-    <a href="hounds.html" aria-current="page">The race</a>
-    <a href="learning.html">How they learn</a>
-    <a href="build-a-hound.html">Build a hound</a>
+    <a href="hounds.html" aria-current="page">Kennel</a>
+    <a href="learning.html">Training camp</a>
+    <a href="build-a-hound.html">Build your dog</a>
   </div>
 </nav>
 
-<main class="hd-wrap" id="main-content" aria-label="The hound race" data-hook="hounds-app">
+<main class="hd-wrap" id="main-content" aria-label="The live kennel" data-hook="hounds-app">
 
 <header class="hd-hero">
-  <h1 data-hook="hounds-title">The Hound Race</h1>
-  <p class="hd-lede">Betting strategies with names and written rules, racing in public on paper. Every move is logged, every hound is graded against the closing price, and the ones that fail are retired where you can see them.</p>
-  <p class="hd-paper" data-hook="paper-only-notice" role="note"><strong>Paper only. Not advice.</strong> No real bet is ever placed, nothing here tells you what to bet, and a hound's results do not predict anything. 21+.</p>
+  <p class="hd-live"><span class="hd-live__dot" aria-hidden="true"></span> LIVE</p>
+  <h1 data-hook="hounds-title">LIVE KENNEL</h1>
+  <p class="hd-lede">Paper betting dogs, fighting it out every day. Pick a favorite, tail one, fade one, or build your own and send it in.</p>
+  <p class="hd-paper" data-hook="paper-only-notice" role="note"><strong>Paper bets only. Not advice.</strong> Nobody here is betting real money and nothing here tells you what to bet. 21+.</p>
 </header>
 
-<section class="hd-panel" aria-labelledby="chart-h" data-hook="hounds-chart-section">
-  <div class="hd-panel__head">
-    <h2 id="chart-h">Paper results</h2>
-  </div>
-  <p class="hd-chart-title" data-hook="hounds-chart-title" aria-live="polite"></p>
-  <p class="hd-muted" data-hook="chart-label">Paper results. Units over a few weeks are mostly luck; the verdict below each hound is the test.</p>
-  <div data-hook="hounds-chart-panel"><p class="hd-muted">Loading the chart...</p></div>
+<section class="hd-form" aria-labelledby="form-h" data-hook="hounds-form-strip">
+  <h2 id="form-h" class="hd-sr-only">This week's form</h2>
+  <div class="hd-form__grid" data-hook="hounds-form-grid"><p class="hd-muted">Checking who's hot...</p></div>
+  <div class="hd-master" data-hook="houndmaster-banner" hidden></div>
 </section>
 
-<section class="hd-panel" aria-labelledby="race-h" data-hook="hounds-race">
+<section class="hd-panel hd-panel--race" aria-labelledby="race-h" data-hook="hounds-race">
   <div class="hd-panel__head">
-    <h2 id="race-h">The race, in verdict order</h2>
-    <div class="hd-segs" role="group" aria-label="Whose hounds to show" data-hook="hounds-filter"></div>
+    <h2 id="race-h">The leaderboard</h2>
+    <div class="hd-segs" role="group" aria-label="Whose dogs to show" data-hook="hounds-filter"></div>
   </div>
-  <div class="hd-segs hd-segs--cats" role="group" aria-label="Kind of hound" data-hook="hounds-categories"></div>
-  <p class="hd-explainer" data-hook="units-explainer">Units over a few weeks are mostly luck. The verdict asks whether a hound beat the closing price, using a test written before the race started.</p>
-  <p class="hd-muted hd-order-note">Ordered by verdict: BEATING THE CLOSE, then NO DIFFERENT FROM THE MARKET, then TOO EARLY, then PAYING THE VIG. Inside a verdict, the hound with more settled bets comes first. Units never set the order. The headline numbers are forward results, bets placed after each rule was written.</p>
-  <ol class="hd-list" data-hook="hounds-list" aria-label="Hounds"><li class="hd-muted">Loading the race...</li></ol>
+  <div class="hd-segs hd-segs--cats" role="group" aria-label="Kind of dog" data-hook="hounds-categories"></div>
+  <p class="hd-explainer" data-hook="units-explainer">Ranked by paper units this season (1 unit a bet, average price). Tap a badge to see what it means.</p>
+  <ol class="hd-list" data-hook="hounds-list" aria-label="Dogs"><li class="hd-muted">Loading the kennel...</li></ol>
   <details class="hd-baselines" data-hook="hounds-baselines" hidden>
     <summary data-hook="hounds-baselines-summary">Baselines</summary>
-    <ol class="hd-list" data-hook="hounds-baselines-list" aria-label="Baseline hounds"></ol>
+    <ol class="hd-list" data-hook="hounds-baselines-list" aria-label="Baseline dogs"></ol>
   </details>
   <p class="hd-basis" data-hook="hounds-basis"></p>
 </section>
 
+<section class="hd-panel hd-poll" aria-labelledby="poll-h" data-hook="hounds-poll">
+  <h2 id="poll-h">Which dog gets put down next? 💀</h2>
+  <p class="hd-muted" data-hook="poll-rule">The rule is cold: go 25 units under zero and you're done. These three are closest.</p>
+  <div data-hook="hounds-poll-list"><p class="hd-muted">Checking the pound...</p></div>
+</section>
+
+<section class="hd-panel" aria-labelledby="chart-h" data-hook="hounds-chart-section">
+  <div class="hd-panel__head">
+    <h2 id="chart-h">Bankroll race (paper units)</h2>
+  </div>
+  <p class="hd-chart-title" data-hook="hounds-chart-title" aria-live="polite"></p>
+  <p class="hd-muted" data-hook="chart-label">Paper units, one a bet. Tap a name to hide a dog.</p>
+  <div data-hook="hounds-chart-panel"><p class="hd-muted">Loading the chart...</p></div>
+</section>
+
+<section class="hd-panel hd-panel--chat" aria-labelledby="stream-h" data-hook="hounds-stream-section">
+  <h2 id="stream-h">Live from the kennel</h2>
+  <p class="hd-muted">Every move as it happens, and who made the call: the rule, the code or the model.</p>
+  <div data-hook="hounds-stream" aria-live="polite"><p class="hd-muted">Loading the feed...</p></div>
+</section>
+
+<section class="hd-panel hd-panel--grave" aria-labelledby="grave-h" data-hook="hounds-graveyard-section">
+  <h2 id="grave-h">The graveyard 🪦</h2>
+  <p class="hd-muted">Put-down dogs stay on the record. Nobody gets their losses scrubbed.</p>
+  <div data-hook="hounds-graveyard"><p class="hd-muted">Digging...</p></div>
+</section>
+
 <section class="hd-panel hd-cta" aria-labelledby="cta-h" data-hook="hounds-cta">
-  <h2 id="cta-h">Build your own hound</h2>
-  <p>Pick a sport, a market and a rule from a menu, name your hound, and watch it race. It is paper only: your hound never places a real bet. Each person can have up to 3.</p>
-  <a class="btn btn--primary btn--lg" href="build-a-hound.html" data-hook="build-cta">Build your own hound</a>
-</section>
-
-<section class="hd-panel" aria-labelledby="stream-h" data-hook="hounds-stream-section">
-  <h2 id="stream-h">Decision stream</h2>
-  <p class="hd-muted">Every move, and who made it: the rule, the code or the model. Refreshes every minute while this page is open and visible.</p>
-  <div data-hook="hounds-stream" aria-live="polite"><p class="hd-muted">Loading the stream...</p></div>
-</section>
-
-<section class="hd-panel" aria-labelledby="grave-h" data-hook="hounds-graveyard-section">
-  <h2 id="grave-h">Graveyard</h2>
-  <p class="hd-muted">Hounds that were retired, and why. Losers stay on the record.</p>
-  <div data-hook="hounds-graveyard"><p class="hd-muted">Loading the graveyard...</p></div>
+  <h2 id="cta-h">Build your own dog</h2>
+  <p>Pick a sport, a market and a rule, name your dog, and watch it fight. It's paper only: your dog never places a real bet. Three dogs a person.</p>
+  <a class="btn btn--primary btn--lg" href="build-a-hound.html" data-hook="build-cta">Build your dog</a>
 </section>
 
 </main>
 
 <footer class="hd-foot" data-hook="hounds-footer" aria-label="disclaimer">
-  <p data-hook="not-advice"><strong>Paper only, not advice.</strong> LINEHOUND publishes analysis of betting strategies using pretend money. Nothing here is a recommendation to bet. Past results, including paper results, do not predict future ones.</p>
-  <p>21+ &middot; PLAY RESPONSIBLY &middot; <a href="tel:1-800-426-2537" data-hook="responsible-gambling-help">1-800-GAMBLER</a></p>
-  <p><a href="landing.html">About LINEHOUND</a> &middot; <a href="why-we-paused.html">Why we paused our picks</a></p>
+  <p data-hook="not-advice"><strong>Paper bets only, not advice.</strong> LINEHOUND runs betting dogs on pretend money. Nothing here is a tip. Past results, even paper ones, don't tell you what happens next.</p>
+  <p>21+ &middot; Gamble responsibly. <a href="tel:1-800-426-2537" data-hook="responsible-gambling-help">1-800-GAMBLER</a></p>
+  <p><a href="landing.html">About LINEHOUND</a> &middot; <a href="why-we-paused.html">Why we stopped selling picks</a></p>
 </footer>
 
 <script type="module" src="js/hounds-page.js"></script>

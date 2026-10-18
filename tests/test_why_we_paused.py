@@ -1,4 +1,5 @@
-"""The public page web/why-we-paused.html, the posts that point at it, and the one link to it on the landing page.
+"""The public page web/why-we-paused.html (visible title "Why we stopped selling picks"), the posts that point at it,
+and the one link to it on the landing page.
 
 THE PAGE is static copy for a reader who bets but does not code. It is the owner's honest account of why MLB
 picks were paused (docs/decisions/MLB_VALUE_PICKS_PAUSED.md, docs/research/loss_diagnosis/00_SYNTHESIS.md),
@@ -38,6 +39,10 @@ def _visible(html: str) -> str:
 
 
 ARTICLE = _visible(MARKUP.split("<article", 1)[1].split("</article>", 1)[0])
+
+
+def visible_text() -> str:
+    return _visible(MARKUP)
 BANNED = ("bet check", "betcheck", "guarantee", "profit", "win rate", "win-rate", "sharp", "winning",
           "lock of", "free money")
 
@@ -46,8 +51,10 @@ class ThePageIsServed(unittest.TestCase):
 
     def test_the_files_exist_and_the_title_is_the_agreed_one(self):
         self.assertTrue(PAGE.is_file() and SCRIPT.is_file())
-        self.assertIn("<title>Why we paused our picks", MARKUP)
-        self.assertIn('<h1 data-hook="why-paused-title">Why we paused our picks</h1>', MARKUP)
+        # owner voice pass, 2026-10-18: the visible title is "Why we stopped selling picks"; the file name and URL stay
+        self.assertIn("<title>Why we stopped selling picks", MARKUP)
+        self.assertIn('<h1 data-hook="why-paused-title">Why we stopped selling picks</h1>', MARKUP)
+        self.assertNotIn("paused our picks", visible_text())
         self.assertIn(f'<link rel="canonical" href="{URL}">', MARKUP)
 
     @unittest.skipUnless(HAS_FASTAPI, "FastAPI not installed")
@@ -91,19 +98,19 @@ class TheCopyIsTheAgreedAccount(unittest.TestCase):
 
     def test_the_key_sentences(self):
         for sentence in (
-            "Since September 22 we published 178 graded bets: mostly player props, some moneylines.",
+            "Since September 22 we put out 178 graded bets: mostly player props, some moneylines.",
             "The 178 bets went 97-81 and finished 1.4 units down.",
             "We paid extra on every bet, by design.",
-            "Our forecasts carried nothing the market lacked.",
-            "Our ranking picked our biggest mistakes.",
+            "Our forecasts had nothing the market didn't.",
+            "Our ranking picked our worst mistakes.",
             "At the market's own numbers, bets like ours were expected to lose about 7.6 units. We lost 1.4.",
-            "Picks come back only if a test we register in advance shows that we beat the closing price.",
+            "Picks come back only if a test we set up in advance shows that we beat the closing price.",
         ):
             self.assertIn(sentence, ARTICLE, sentence)
 
     def test_every_section_is_there_in_order(self):
-        order = ["What we published", "How it went", "What we found when we took it apart",
-                 "The bug we found", "Where we got lucky", "What we are doing", "What we are not claiming"]
+        order = ["What we put out", "How it went", "What we found when we took it apart",
+                 "The bug", "Where we got lucky", "What happens now", "What we're not saying"]
         heads = re.findall(r"<h2>(.*?)</h2>", MARKUP)
         self.assertEqual(heads, order)
 
@@ -121,7 +128,7 @@ class TheCopyIsTheAgreedAccount(unittest.TestCase):
         self.assertEqual(len(re.findall(r"<li>", block)), 4)
         text = _visible(block)
         self.assertIn("analysis, not advice", text)
-        self.assertIn("is a small sample", text)
+        self.assertIn("a small sample", text)
 
     def test_links_to_the_record_the_sample_and_the_synthesis(self):
         links = re.search(r'data-hook="why-paused-links">(.*?)</ul>', MARKUP, re.S).group(1)
@@ -142,15 +149,17 @@ class TheCopyIsTheAgreedAccount(unittest.TestCase):
 
 class TheLandingPageLinksToIt(unittest.TestCase):
 
-    def test_one_link_sits_beside_the_pause_sentence(self):
-        landing = LANDING.read_text(encoding="utf-8")
-        group = re.search(r'<div class="hero__cta-group".*?</div>', landing, re.S).group(0)
+    def test_one_short_human_line_on_the_kennel_screen_links_to_it(self):
+        # owner voice pass, 2026-10-18: the honesty essays on the landing page are one human line and this link
+        landing = re.sub(r"<!--.*?-->", "", LANDING.read_text(encoding="utf-8"), flags=re.S)
+        line = re.search(r'<p class="kennel__straight" data-hook="kennel-straight">(.*?)</p>', landing, re.S).group(1)
         self.assertEqual(landing.count('data-hook="hero-why-paused-link"'), 1)
-        self.assertIn('href="why-we-paused.html"', group)
-        # after the pause sentence, before the record link, so the order the pause test pins is unchanged
-        self.assertLess(group.index("hero-pause-note"), group.index("hero-why-paused-link"))
-        self.assertLess(group.index("hero-why-paused-link"), group.index("hero-record-link"))
+        self.assertIn('href="why-we-paused.html"', line)
+        self.assertIn("Why we stopped selling picks", line)
+        self.assertLess(len(_visible(line)), 220, "one line, not an essay")
         self.assertEqual(landing.count("why-we-paused.html"), 1)
+        # it sits inside the first screen, before the AI desk section
+        self.assertLess(landing.index("kennel-straight"), landing.index('data-hook="hero"'))
 
 
 class ThePostsRespectTheSameRules(unittest.TestCase):

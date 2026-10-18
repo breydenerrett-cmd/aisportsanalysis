@@ -175,7 +175,8 @@ class ResponsibleGamblingIsActionable(unittest.TestCase):
             "this on, a tel: link is one tap")
 
     def test_the_play_responsibly_notice_is_still_there(self):
-        self.assertIn("PLAY RESPONSIBLY", self.code)
+        # owner voice pass, 2026-10-18 (docs/VOICE.md): said the way a person says it
+        self.assertIn("21+ · Gamble responsibly.", self.code)
         self.assertIn("21+", self.code)
 
 

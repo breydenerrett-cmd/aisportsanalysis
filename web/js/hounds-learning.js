@@ -20,6 +20,7 @@
 
 import { apiGet } from "./api.js";
 import { h, clearNode, signed, isNum, fmtWhen, describeError, NOT_REPORTED } from "./hounds-core.js";
+import { friendlyLesson, campWords } from "./hounds-voice.js";
 import { renderLineChart } from "./hounds-chart.js";
 
 export const CHAMPION_COLOR = "#00E0FF";
@@ -41,32 +42,32 @@ function stateBox(kind, text, retry) {
 /** One rolling window of the chance comparison, in words. */
 export function chanceLine(w) {
   if (!w) return "Not reported.";
-  const counts = `${w.champion_bets || 0} champion bets and ${w.control_bets || 0} control bets on ${w.games || 0} shared games`;
+  const counts = `${w.champion_bets || 0} starter bets and ${w.control_bets || 0} control bets on ${w.games || 0} shared games`;
   if (!w.enough || !isNum(w.difference)) {
     return `Not enough bets yet (${counts}). ${MIN_BETS_TEXT}`;
   }
   const where = w.difference > 0 ? "above" : w.difference < 0 ? "below" : "level with";
   const gap = w.difference === 0 ? "" : `${Math.abs(w.difference).toFixed(2)} points `;
-  return `The champions' prices averaged ${signed(w.champion_mean, 2)} points against the close and the controls' ${signed(w.control_mean, 2)}: `
-    + `${gap}${where} the controls (${counts}). Averages from this many bets move a lot; this is a measurement, not a result.`;
+  return `The starters' prices averaged ${signed(w.champion_mean, 2)} points against the closing line and the controls' ${signed(w.control_mean, 2)}: `
+    + `${gap}${where} the controls (${counts}). Averages from this many bets swing a lot, so read it as a scoreboard, not a verdict.`;
 }
 
 export function holdText(hit) {
   if (!hit || !isNum(hit.promotions) || hit.promotions === 0) {
-    return "No challenger has been promoted yet, so there is nothing to hold up. That is expected for a loop that promotes only on evidence.";
+    return "No rookie has made the team yet, so there is nothing to hold up. That's what camp looks like when it only promotes on evidence.";
   }
   if (!isNum(hit.matured) || hit.matured === 0) {
-    return `${hit.promotions} ${hit.promotions === 1 ? "challenger has" : "challengers have"} been promoted; none has made 100 bets as champion yet, so there is no hit rate to report.`;
+    return `${hit.promotions} ${hit.promotions === 1 ? "rookie has" : "rookies have"} made the team; none has made 100 bets as the starter yet, so there is no hit rate to report.`;
   }
   const pct = isNum(hit.rate) ? `${Math.round(hit.rate * 100)}%` : NOT_REPORTED;
-  return `${hit.hits} of ${hit.matured} matured promotions priced at least as well as the champion they replaced (${pct}). `
-    + `The loop pauses itself below ${Math.round((hit.floor || 0.4) * 100)}% once ${hit.min_matured_for_floor || 10} have matured.`;
+  return `${hit.hits} of ${hit.matured} rookies who made the team priced at least as well as the starter they replaced (${pct}). `
+    + `Camp shuts itself down below ${Math.round((hit.floor || 0.4) * 100)}% once ${hit.min_matured_for_floor || 10} of them have made 100 bets.`;
 }
 
 export function budgetText(fd) {
   if (!fd) return "Not reported.";
-  return `False-discovery level ${fd.q}. Promotions this month: ${fd.promotions_this_month} (cap ${fd.monthly_cap_per_scope || fd.monthly_cap} per scope). `
-    + `Expected number of those that are flukes, at most: ${isNum(fd.expected_false_promotions_bound) ? fd.expected_false_promotions_bound.toFixed(2) : NOT_REPORTED}.`;
+  return `Fluke check level ${fd.q}. Rookies who made the team this month: ${fd.promotions_this_month} (cap ${fd.monthly_cap_per_scope || fd.monthly_cap} per scope). `
+    + `Most of those we'd expect to be flukes: ${isNum(fd.expected_false_promotions_bound) ? fd.expected_false_promotions_bound.toFixed(2) : NOT_REPORTED}.`;
 }
 
 /** The two lines of the chart: only the days both means were reported. */
@@ -74,9 +75,9 @@ export function historySeries(history) {
   const rows = (Array.isArray(history) ? history : []).filter(
     (r) => r && isNum(r.champion_mean_30) && isNum(r.control_mean_30));
   return [
-    { id: "champions", name: "Champions (30-day mean)", color: CHAMPION_COLOR,
+    { id: "champions", name: "Starters (30-day average)", color: CHAMPION_COLOR,
       points: rows.map((r) => ({ date: r.date, value: r.champion_mean_30, bets: r.champion_bets_30 })) },
-    { id: "controls", name: "Random controls (30-day mean)", color: CONTROL_COLOR,
+    { id: "controls", name: "Random controls (30-day average)", color: CONTROL_COLOR,
       points: rows.map((r) => ({ date: r.date, value: r.control_mean_30 })) },
   ];
 }
@@ -90,8 +91,8 @@ function renderPaused(system) {
     box.hidden = false;
     box.removeAttribute("hidden");
     const reasons = Array.isArray(system.pause_reasons) ? system.pause_reasons : [];
-    box.appendChild(h("p", {}, [h("strong", { text: "The loop has paused itself. " }),
-      "No new challenger is accepted and none is promoted until the owner turns it back on."]));
+    box.appendChild(h("p", {}, [h("strong", { text: "Camp has shut itself down. " }),
+      "No new rookie is accepted and none makes the team until the owner turns it back on."]));
     for (const r of reasons) {
       box.appendChild(h("p", { class: "hd-fine", "data-hook": "pause-reason",
         text: `${r.scope}: ${r.reason || "no reason recorded"}${r.since ? ` (since ${fmtWhen(r.since)})` : ""}` }));
@@ -111,7 +112,7 @@ function renderChance(payload) {
   const vr = system.vs_random;
   if (!payload.computed || !vr) {
     box.appendChild(h("p", { class: "hd-muted", "data-hook": "not-computed",
-      text: payload.message || "No daily scorecard has been stored yet." }));
+      text: campWords(payload.message) || "No daily scorecard has been stored yet." }));
     return;
   }
   const wins = vr.windows || {};
@@ -120,24 +121,26 @@ function renderChance(payload) {
     return h("div", { "data-window": key }, [h("dt", { text: title }), h("dd", { "data-hook": `chance-${key}`, text: chanceLine(w) })]);
   });
   box.appendChild(h("dl", { class: "hd-row__facts hd-facts--big", "data-hook": "chance-windows" }, rows));
-  if (vr.basis) box.appendChild(h("p", { class: "hd-fine", text: vr.basis }));
+  // (the server's own `basis` sentence is written in the vocabulary of the rulebook; the page words this itself)
+  box.appendChild(h("p", { class: "hd-fine", "data-hook": "chance-basis",
+    text: "Both sides pay the book's cut, so a dog that is no better than chance sits at the controls' level. \"Enough\" means 50 measurable bets on each side." }));
   if (isNum(vr.trailing_days) && vr.trailing_days > 0) {
     box.appendChild(h("p", { class: "hd-fine", "data-hook": "trailing",
-      text: `The champions have trailed the controls on the last ${vr.trailing_days} daily scorecards in a row. The loop pauses itself at 60.` }));
+      text: `The starters have trailed the controls on the last ${vr.trailing_days} daily scorecards in a row. Camp shuts itself down at 60.` }));
   }
   const series = historySeries(payload.history);
   chart.appendChild(renderLineChart({
     hook: "chance-chart", series, width: 640, height: 260, unit: "pts",
-    label: "Rolling 30-day mean price against the closing price, in points: the champions and the two random controls, same games",
-    zeroLabel: "0 = the closing price",
+    label: "Rolling 30-day average price against the closing price, in points: the starters and the two random controls, same games",
+    zeroLabel: "0 = the closing line",
     emptyText: "No daily scorecards with both lines yet.",
   }));
   chart.appendChild(h("ul", { class: "hd-legend hd-legend--static" }, [
-    h("li", {}, [h("span", { class: "hd-tip__swatch", style: `background:${CHAMPION_COLOR}` }), " Champions: every running hound that is not a baseline, a control or a for-fun hound"]),
-    h("li", {}, [h("span", { class: "hd-tip__swatch", style: `background:${CONTROL_COLOR}` }), " Random controls: Coin-Flip Collie and Dartboard Dalmatian"]),
+    h("li", {}, [h("span", { class: "hd-tip__swatch", style: `background:${CHAMPION_COLOR}` }), " Starters: every running dog that is not a baseline, a control or a for-fun dog"]),
+    h("li", {}, [h("span", { class: "hd-tip__swatch", style: `background:${CONTROL_COLOR}` }), " Random controls: Coin-Flip Collie and Dartboard Dalmatian (the coin and the dart)"]),
   ]));
   chart.appendChild(h("p", { class: "hd-fine",
-    text: "Both lines sit below zero because every price taken carries the book's margin and the close does not. What matters is the gap between them." }));
+    text: "Both lines sit below zero because every price taken carries the book's cut and the closing line doesn't. What matters is the gap between them." }));
 }
 
 function renderHold(payload) {
@@ -153,13 +156,13 @@ function renderActivity(payload) {
   const system = payload.system || {};
   const act = system.activity;
   if (!act) {
-    box.appendChild(h("p", { class: "hd-muted", text: payload.message || "Not computed yet." }));
+    box.appendChild(h("p", { class: "hd-muted", text: campWords(payload.message) || "Not computed yet." }));
     return;
   }
-  const items = [["Challengers proposed", act.proposals], ["Proposals refused", act.refusals],
-    ["Rounds where the coach held", act.held_rounds], ["Promoted", act.promotions], ["Retired", act.retirements],
-    ["Closed undecided", act.undecided], ["Coach changes the owner undid", act.undos],
-    ["Running in shadow now", payload.live_challengers]];
+  const items = [["Rookies sent to tryouts", act.proposals], ["Tryouts turned away", act.refusals],
+    ["Rounds the coach sat out", act.held_rounds], ["Made the team", act.promotions], ["Cut", act.retirements],
+    ["Tryouts that ended undecided", act.undecided], ["Coach moves the owner undid", act.undos],
+    ["Trying out right now", payload.live_challengers]];
   box.appendChild(h("dl", { class: "hd-row__facts", "data-hook": "activity-facts" },
     items.map(([k, v]) => h("div", {}, [h("dt", { text: k }), h("dd", { text: isNum(v) ? String(v) : NOT_REPORTED })]))));
   box.appendChild(h("p", { "data-hook": "budget-text", text: budgetText(system.false_discovery_budget) }));
@@ -167,7 +170,7 @@ function renderActivity(payload) {
   const broken = Object.entries(chain).filter(([, ok]) => ok === false).map(([k]) => k);
   box.appendChild(h("p", { class: broken.length ? "hd-state hd-state--down" : "hd-fine", "data-hook": "chain-status",
     text: broken.length ? `A ledger failed its integrity check (${broken.join(", ")}). Do not trust the numbers above until it is looked at.`
-      : "Every ledger of the loop passes its hash-chain check." }));
+      : "Every ledger in camp passes its tamper check." }));
 }
 
 function renderRules(payload) {
@@ -175,13 +178,14 @@ function renderRules(payload) {
   clearNode(box);
   const r = payload.rule_summary || {};
   const caps = payload.caps || {};
+  const fd = payload.system && payload.system.false_discovery_budget;
   const lines = [
-    `Who decides: ${r.who_decides || "the referee, never a model"}.`,
-    `The test: ${r.test || "paired closing-line value, challenger minus champion"}.`,
-    r.looks ? `Looks at ${r.looks.join(", ")} paired games, with the error spent across them (${(r.alpha_spend || []).join(", ")}).` : null,
-    r.false_discovery_control ? `Across all challengers: ${r.false_discovery_control}.` : null,
-    caps.live_per_hound ? `At most ${caps.live_per_hound} challengers per hound and ${caps.live_per_scope} at once; one proposal per hound per ${caps.proposals_per_hound_days} days; at most ${caps.promotions_per_month_per_scope} promotions a month.` : null,
-    r.auto_pause ? `It pauses itself if fewer than ${Math.round(r.auto_pause.hit_rate_floor * 100)}% of matured promotions hold up (after ${r.auto_pause.after_matured_promotions}), or if the champions trail the random controls for ${r.auto_pause.trailing_the_random_controls_days} days.` : null,
+    "Who decides: a fixed rulebook, never an AI's opinion.",
+    "The test: does the rookie's price beat the closing line by more than the starter's, on the same games. A pass counts as zero.",
+    r.looks ? `The bar gets checked at ${r.looks.join(", ")} games in, and the allowance for luck is split across those checks (${(r.alpha_spend || []).join(", ")}).` : null,
+    fd && fd.q !== undefined ? `Fluke check across each month's finished tryouts, at level ${fd.q}.` : "A fluke check runs across each month's finished tryouts.",
+    caps.live_per_hound ? `At most ${caps.live_per_hound} rookies per dog and ${caps.live_per_scope} at once; one tryout offer per dog per ${caps.proposals_per_hound_days} days; at most ${caps.promotions_per_month_per_scope} rookies a month make the team.` : null,
+    r.auto_pause ? `Camp shuts itself down if fewer than ${Math.round(r.auto_pause.hit_rate_floor * 100)}% of the rookies who made the team hold up (once ${r.auto_pause.after_matured_promotions} of them have made 100 bets), or if the starters trail the random controls for ${r.auto_pause.trailing_the_random_controls_days} days.` : null,
   ].filter(Boolean);
   box.appendChild(h("ul", { class: "hd-list-plain", "data-hook": "rules-list" }, lines.map((t) => h("li", { text: t }))));
 }
@@ -189,8 +193,8 @@ function renderRules(payload) {
 export function lessonItem(l) {
   const when = l.utc ? fmtWhen(l.utc) : "";
   return h("li", { class: "hd-lesson", "data-outcome": l.outcome || "" }, [
-    h("p", { class: "hd-lesson__line", text: l.lesson || NOT_REPORTED }),
-    h("p", { class: "hd-fine", text: `${when ? `${when}. ` : ""}Coach's reason, quoted: ${l.hypothesis ? `"${l.hypothesis}"` : NOT_REPORTED}` }),
+    h("p", { class: "hd-lesson__line", text: friendlyLesson(l.lesson) || NOT_REPORTED }),
+    h("p", { class: "hd-fine", text: `${when ? `${when}. ` : ""}The coach's pitch, quoted: ${l.hypothesis ? `"${l.hypothesis}"` : NOT_REPORTED}` }),
   ]);
 }
 
@@ -200,7 +204,7 @@ function renderLessons(payload) {
   const info = payload.lessons || { count: 0, latest: [] };
   if (!info.count) {
     box.appendChild(h("p", { class: "hd-muted", "data-hook": "lessons-empty",
-      text: "No challenger has ended yet, so there are no lessons. They appear here the day one does." }));
+      text: "No tryout has ended yet, so there are no lessons. They show up here the day one does." }));
     return;
   }
   box.appendChild(h("ol", { class: "hd-lessons", "data-hook": "lessons-list" }, info.latest.map(lessonItem)));

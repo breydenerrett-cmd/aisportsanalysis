@@ -1,8 +1,10 @@
 """The three Hounds pages, run for real (their own scripts, their own HTML) under node against a fake DOM.
 
-  web/hounds.html         the race: chart, verdict-ordered leaderboard, stream, graveyard
-  web/hound.html?id=      one hound: rule + Copy, verdict, charts, paged bets
-  web/build-a-hound.html  the build form, generated from /hounds/menu
+  web/hounds.html         the live kennel: form strip, units-ranked leaderboard with badges, the put-down poll,
+                          the bankroll chart, the chat-style stream, the tombstones
+  web/hound.html?id=      one dog: portrait, bio, scoreboard, the Houndmaster, the badge, the rules with copy buttons,
+                          and the collapsed receipts (verdict, charts, paged bets)
+  web/build-a-hound.html  the build form (playful side rules, a live name-and-bio card), generated from /hounds/menu
 
 Skipped when node is not installed. Fixtures: tests/hounds_web_fixtures.py. Static checks (not-advice on
 every page, no Bet Check, no external images) and "the pages are served" need no node.
@@ -64,14 +66,15 @@ class EveryPageSaysPaperOnlyNotAdviceAndIs21Plus(unittest.TestCase):
         for name, html in HTML.items():
             text = visible(html)
             with self.subTest(page=name):
-                self.assertRegex(text, r"(?i)paper only, not advice", name)
+                self.assertRegex(text, r"(?i)paper bets only, not advice", name)
                 self.assertIn("21+", text)
+                self.assertIn("Gamble responsibly.", text)
                 self.assertIn("1-800-GAMBLER", text)
                 self.assertIn("not-advice", html)   # the data-hook the footer line carries
 
     def test_the_minus_200_cap_notice_is_static_on_the_build_page(self):
         text = visible(HTML["build-a-hound.html"])
-        self.assertIn("Paper only. Your hound never places a real bet. The -200-or-worse cap is always on.", text)
+        self.assertIn("Paper bets only. Your dog never places a real bet, and it never takes a price of -200 or worse.", text)
 
     def test_the_pages_never_name_the_product_they_do_not_advertise_or_claim_an_edge(self):
         for path in [WEB / n for n in HTML] + [WEB / "css" / "hounds.css"] + sorted((WEB / "js").glob("hounds-*.js")):
@@ -109,10 +112,11 @@ class EveryPageSaysPaperOnlyNotAdviceAndIs21Plus(unittest.TestCase):
         # artifacts/demo_latest.html is owned elsewhere; nothing in this lane writes it
         self.assertFalse(any("demo_latest" in (WEB / n).read_text(encoding="utf-8") for n in HTML))
 
-    def test_the_landing_page_links_to_the_race_in_its_first_screen(self):
+    def test_the_landing_page_links_to_the_kennel_in_its_first_screen(self):
         landing = (WEB / "landing.html").read_text(encoding="utf-8")
-        first = landing[landing.index('data-hook="hero"'):landing.index('data-hook="hero-wyg"')]
-        self.assertRegex(first, r'<a [^>]*href="hounds.html"[^>]*>Watch the hounds race')
+        first = landing[landing.index('data-hook="kennel-hero"'):landing.index('data-hook="hero"')]
+        self.assertRegex(first, r'<a [^>]*href="hounds.html"[^>]*>Enter the kennel')
+        self.assertRegex(first, r'<a [^>]*href="build-a-hound.html"[^>]*>Build your dog')
 
 
 class ThePagesAreServed(unittest.TestCase):
@@ -154,52 +158,129 @@ class ThePagesAreServed(unittest.TestCase):
 # ---------------------------------------------------------------------------------------------------
 
 @unittest.skipUnless(HAS_NODE, "node not installed")
-class TheLeaderboardIsOrderedByVerdictNotUnits(unittest.TestCase):
-    def test_rows_follow_the_verdict_even_when_units_say_the_opposite(self):
+class TheLeaderboardIsRankedByUnitsWithTheBadgeBesideEachDog(unittest.TestCase):
+    def test_rows_follow_the_units_and_each_dog_wears_the_badge_of_its_own_verdict(self):
         hs = [mk("rich", "Rich", "PAYING THE VIG", bets=60, units=+80.0),
               mk("mid", "Mid", "TOO EARLY", bets=8, units=+30.0),
               mk("flat", "Flat", "NO DIFFERENT FROM THE MARKET", bets=40, units=+10.0),
-              mk("poor", "Poor", "BEATING THE CLOSE", bets=45, units=-25.0)]
+              mk("poor", "Poor", "BEATING THE CLOSE", bets=45, units=-25.0),
+              mk("gone", "Gone", "PAYING THE VIG", bets=90, units=-31.0, status="retired")]
         r = routes(**{"/hounds": [200, {"hounds": hs, "basis": "b", "as_of": "2026-10-24T23:00:00Z"}]})
         r["/hounds/series"] = [404, {}]
         out = run_page("hounds", routes=r, queries=[
             q("ids", "[data-hook='hounds-list'] .hd-row", "attrs", attr="data-hound"),
-            q("chips", "[data-hook='hounds-list'] [data-hook='verdict-chip']", "texts")])
-        self.assertEqual(out["final"]["ids"], ["poor", "flat", "mid", "rich"])
-        self.assertEqual([re.sub(r"^\W+\s*", "", c) for c in out["final"]["chips"]],
-                         ["BEATING THE CLOSE", "NO DIFFERENT FROM THE MARKET", "TOO EARLY", "PAYING THE VIG"])
+            q("ranks", "[data-hook='hounds-list'] [data-hook='rank']", "texts"),
+            q("badges", "[data-hook='hounds-list'] [data-hook='badge']", "texts"),
+            q("keys", "[data-hook='hounds-list'] [data-hook='badge']", "attrs", attr="data-badge"),
+            q("units", "[data-hook='hounds-list'] [data-hook='row-units']", "texts")])
+        # most paper units first: the sorting rule is units, and a dog that is put down sinks below the live ones
+        self.assertEqual(out["final"]["ids"], ["rich", "mid", "flat", "poor", "gone"])
+        self.assertEqual(out["final"]["ranks"], ["#1", "#2", "#3", "#4", "💀"])
+        self.assertEqual([re.sub(r"^\W+\s*", "", c) for c in out["final"]["badges"]],
+                         ["FEEDING THE BOOK 💸", "ROOKIE 🐣", "COIN FLIP 🪙", "SHARP 🔥", "FEEDING THE BOOK 💸"])
+        self.assertEqual(out["final"]["keys"], ["feeding_the_book", "rookie", "coin_flip", "sharp", "feeding_the_book"])
+        self.assertEqual(out["final"]["units"], ["+80.00u", "+30.00u", "+10.00u", "-25.00u", "-31.00u"])
 
-    def test_the_page_says_so_and_shows_units_as_small_print(self):
+    def test_tapping_a_badge_opens_one_plain_line_and_tapping_again_closes_it(self):
         out = run_page("hounds", routes=routes(), queries=[
-            q("explainer", "[data-hook='units-explainer']"), q("units", "[data-hook='row-units']", "texts")])
-        self.assertEqual(out["final"]["explainer"],
-                         "Units over a few weeks are mostly luck. The verdict asks whether a hound beat the closing price, "
-                         "using a test written before the race started.")
-        self.assertTrue(out["final"]["units"])
-        self.assertTrue(all(u.startswith("Units, small print:") or u == "Units: none yet" for u in out["final"]["units"]))
+            q("closed", ".hd-row[data-hound='closer'] [data-hook='badge']", "attr", attr="aria-expanded"),
+            q("hidden", ".hd-row[data-hound='closer'] [data-hook='badge-explain']", "hidden")],
+            actions=[dict(do="click", sel=".hd-row[data-hound='closer'] [data-hook='badge']", label="open",
+                          capture=[q("open", ".hd-row[data-hound='closer'] [data-hook='badge']", "attr", attr="aria-expanded"),
+                                   q("hidden", ".hd-row[data-hound='closer'] [data-hook='badge-explain']", "hidden"),
+                                   q("text", ".hd-row[data-hound='closer'] [data-hook='badge-explain']")]),
+                     dict(do="click", sel=".hd-row[data-hound='closer'] [data-hook='badge']", label="shut",
+                          capture=[q("hidden", ".hd-row[data-hound='closer'] [data-hook='badge-explain']", "hidden")])])
+        self.assertEqual(out["final"]["closed"], "true" if False else out["final"]["closed"])
+        self.assertTrue(out["captures"]["open"]["hidden"] is False)
+        self.assertEqual(out["captures"]["open"]["open"], "true")
+        self.assertEqual(out["captures"]["open"]["text"],
+                         "Its prices keep beating where the market closes. Good shopping, not a promise of wins.")
+        self.assertTrue(out["captures"]["shut"]["hidden"])
 
-    def test_each_row_carries_the_fields_the_brief_asks_for(self):
+    def test_the_page_says_how_the_board_is_ranked(self):
+        out = run_page("hounds", routes=routes(), queries=[q("explainer", "[data-hook='units-explainer']")])
+        self.assertEqual(out["final"]["explainer"],
+                         "Ranked by paper units this season (1 unit a bet, average price). Tap a badge to see what it means.")
+
+    def test_each_row_carries_the_fields_a_bettor_reads_first(self):
         out = run_page("hounds", routes=routes(), queries=[
             q("first", ".hd-row[data-hound='closer']"), q("spark", ".hd-row[data-hound='closer'] [data-hook='spark']", "count"),
             q("tick", ".hd-row[data-hound='closer'] [data-hook='verified']"), q("avatar", ".hd-row[data-hound='closer'] .hd-avatar", "count"),
+            q("vibe", ".hd-row[data-hound='closer'] .hd-avatar", "attr", attr="data-vibe"),
             q("untick", ".hd-row[data-hound='rusty'] [data-hook='verified']", "count"),
+            q("catch", ".hd-row[data-hound='closer'] [data-hook='catchphrase']"),
+            q("tagline_fallback", ".hd-row[data-hound='steamer'] .hd-row__tagline"),
+            q("wl", ".hd-row[data-hound='closer'] [data-hook='row-wl']"),
+            q("streak", ".hd-row[data-hound='closer'] [data-hook='streak']"),
+            q("week", ".hd-row[data-hound='closer'] [data-hook='week']"),
+            q("receipts_open", ".hd-row[data-hound='closer'] [data-hook='receipts']", "attr", attr="open"),
             q("basis", "[data-hook='hounds-basis']")])
         row = out["final"]["first"]
-        for needle in ("Closer", "Takes the price before it moves.", "BEATING THE CLOSE", "Forward record", "41 bets",
-                       "Forward price vs the close (CLV)", "interval", "n=41", "Running", "verified", "Stats", "House hound"):
+        for needle in ("Closer", "“I was here first.”", "SHARP", "41 bets", "The receipts", "Live record",
+                       "Price vs the close", "better than the closing line on average, over 41 bets", "Running", "verified",
+                       "Stats", "House dog"):
             self.assertIn(needle, row)
         self.assertEqual(out["final"]["spark"], 1)
         self.assertEqual(out["final"]["avatar"], 1)
-        self.assertEqual(out["final"]["untick"], 0)     # an unverified hound has no tick
-        self.assertIn("Basis: " + contract.BASIS[:60], out["final"]["basis"])
-        self.assertIn(F.leaderboard()["not_advice"], out["final"]["basis"])   # the server's own line is shown
+        self.assertEqual(out["final"]["vibe"], "degen")                # a persona's vibe picks the accessory
+        self.assertEqual(out["final"]["untick"], 0)                    # an unverified hound has no tick
+        self.assertEqual(out["final"]["catch"], "“I was here first.”")
+        self.assertEqual(out["final"]["tagline_fallback"], "Rides early line moves.")   # no persona: the tagline
+        self.assertRegex(out["final"]["wl"], r"^\d+-\d+(-\d+)? · 41 bets$")
+        self.assertRegex(out["final"]["streak"], r"^(🔥+ |🥶 )?[WL]\d$")
+        self.assertRegex(out["final"]["week"], r"this week \(\d+-\d+\)$")
+        self.assertIsNone(out["final"]["receipts_open"])                # the receipts are collapsed
+        self.assertIn(contract.BASIS[:60], out["final"]["basis"])
+        self.assertIn("As of", out["final"]["basis"])
+
+    def test_the_form_strip_names_a_hot_dog_an_ice_cold_dog_and_one_on_tilt_and_the_houndmaster_weighs_in(self):
+        out = run_page("hounds", routes=routes(), queries=[
+            q("titles", ".hd-formcard__title", "texts"), q("slots", ".hd-formcard", "attrs", attr="data-slot"),
+            q("names", ".hd-formcard__name", "texts"), q("details", ".hd-formcard__detail", "texts"),
+            q("master", "[data-hook='houndmaster-line']"), q("kind", "[data-hook='houndmaster-line']", "attr", attr="data-kind"),
+            q("master_hidden", "[data-hook='houndmaster-banner']", "hidden")])
+        self.assertEqual(out["final"]["titles"], ["Hot dog 🔥", "Ice cold 🥶", "On tilt 😵"])
+        self.assertEqual(out["final"]["slots"], ["hot", "cold", "tilt"])
+        self.assertEqual(len(out["final"]["names"]), 3)
+        self.assertEqual(len(set(out["final"]["names"])), 3, "one dog is never named twice")
+        self.assertTrue(all(re.search(r"this week \(\d+-\d+\)$|losses in a row$", d) for d in out["final"]["details"]))
+        self.assertFalse(out["final"]["master_hidden"])
+        self.assertIn("The Houndmaster to ", out["final"]["master"])
+        self.assertIn(out["final"]["kind"], ("roast", "brag"))
+
+    def test_nobody_is_named_hot_cold_or_tilting_on_fewer_than_three_bets_that_week(self):
+        hs = [mk("a", "A", "TOO EARLY", bets=9, units=2.0,
+                 form={"streak": {"kind": "L", "length": 1}, "last7": {"bets": 2, "wins": 0, "losses": 2, "units": -2.0}})]
+        r = routes(**{"/hounds": [200, {"hounds": hs}]})
+        out = run_page("hounds", routes=r, queries=[
+            q("empties", ".hd-formcard__empty", "texts"), q("master_hidden", "[data-hook='houndmaster-banner']", "hidden")])
+        self.assertEqual(out["final"]["empties"], ["Nobody's above water this week.", "Nobody's freezing. Yet.",
+                                                   "Nobody's on tilt. Enjoy it."])
+        self.assertTrue(out["final"]["master_hidden"])
+
+    def test_which_dog_gets_put_down_next_shows_the_three_closest_to_the_25_unit_line_and_has_no_ballot(self):
+        hs = [mk("a", "Alpha", "TOO EARLY", units=12.0), mk("b", "Bravo", "TOO EARLY", units=-20.0),
+              mk("c", "Charlie", "TOO EARLY", units=-3.5), mk("d", "Delta", "TOO EARLY", units=-24.0),
+              mk("e", "Echo", "TOO EARLY", units=-1.0)]
+        out = run_page("hounds", routes=routes(**{"/hounds": [200, {"hounds": hs}]}), queries=[
+            q("title", "#poll-h"), q("opts", "[data-hook='poll-option']", "attrs", attr="data-hound"),
+            q("texts", ".hd-poll__text", "texts"), q("note", "[data-hook='poll-note']"),
+            q("buttons", "[data-hook='hounds-poll'] button", "count")])
+        self.assertEqual(out["final"]["title"], "Which dog gets put down next? 💀")
+        self.assertEqual(out["final"]["opts"], ["d", "b", "c"])
+        self.assertEqual(out["final"]["texts"][0], "-24.00u so far · 1.0 units from the doghouse")
+        self.assertIn("No ballot yet. The rule decides: 25 units under zero", out["final"]["note"])
+        self.assertEqual(out["final"]["buttons"], 0, "static for now: no vote is faked")
 
     def test_a_hound_with_no_line_yet_says_so_instead_of_drawing_a_flat_one(self):
         hs = [mk("new", "New", "TOO EARLY", bets=0, spark=[])]
         r = routes(**{"/hounds": [200, {"hounds": hs}]})
         r["/hounds/series"] = [200, {"series": {}}]
-        out = run_page("hounds", routes=r, queries=[q("none", "[data-hook='spark-none']", "count")])
+        out = run_page("hounds", routes=r, queries=[q("none", "[data-hook='spark-none']", "count"),
+                                                    q("units", "[data-hook='row-units']")])
         self.assertEqual(out["final"]["none"], 1)
+        self.assertEqual(out["final"]["units"], "no bets yet")
 
     def test_house_and_builder_filter_and_category_chips(self):
         out = run_page("hounds", routes=routes(), queries=[
@@ -248,22 +329,22 @@ class TheLeaderboardIsOrderedByVerdictNotUnits(unittest.TestCase):
         html = HTML["hounds.html"]
         self.assertLess(html.index('data-hook="hounds-list"'), html.index('data-hook="hounds-baselines"'))
 
-    def test_forward_is_the_headline_and_replay_is_a_separate_smaller_line(self):
+    def test_live_is_the_headline_and_the_rehearsal_is_a_separate_smaller_line(self):
         out = run_page("hounds", routes=routes(), queries=[
             q("fwd", ".hd-row[data-hound='closer'] [data-hook='forward-facts']"),
             q("replay", ".hd-row[data-hound='closer'] [data-hook='replay-line']"),
             q("none_fwd", ".hd-row[data-hound='rusty'] [data-hook='forward-facts']"),
             q("none_replay", ".hd-row[data-hound='rusty'] [data-hook='replay-line']")])
-        self.assertIn("Forward record", out["final"]["fwd"])
+        self.assertIn("Live record", out["final"]["fwd"])
         self.assertIn("41 bets", out["final"]["fwd"])
         self.assertNotIn("160 bets", out["final"]["fwd"])
         self.assertRegex(out["final"]["replay"],
-                         r"^replay \(the same rule applied to boards captured before it was written\)\s*:")
+                         r"^old-board rehearsal \(the same rule on earlier games; written after, so it never counts\)\s*:")
         self.assertIn("160 bets", out["final"]["replay"])
         # the replay block carries one price only (units_recorded_price): it is labelled the best price
         self.assertIn("best price", out["final"]["replay"])
         self.assertNotIn("average price", out["final"]["replay"])
-        self.assertIn("No forward bets yet", out["final"]["none_fwd"])
+        self.assertIn("No live bets yet", out["final"]["none_fwd"])
         self.assertIn("40 bets", out["final"]["none_replay"])
         css = (WEB / "css" / "hounds.css").read_text(encoding="utf-8")
         self.assertRegex(css, r"\.hd-row__replay\s*\{[^}]*font-size:\s*13px")
@@ -278,9 +359,9 @@ class TheLeaderboardIsOrderedByVerdictNotUnits(unittest.TestCase):
             q("toggle", "[data-hook='hounds-segment']", "count"),
             q("empty", "[data-hook='chart-empty']"),
             q("replay_rows", "[data-hook='replay-line']", "count")])
-        self.assertTrue(out["final"]["title"].startswith("Forward results"))
+        self.assertTrue(out["final"]["title"].startswith("Live bets only") or out["final"]["title"] == "")
         self.assertEqual(out["final"]["toggle"], 0)
-        self.assertIn("No forward results yet", out["final"]["empty"])
+        self.assertIn("No live bets yet", out["final"]["empty"])
         self.assertIn("never drawn here", out["final"]["empty"])
         self.assertEqual(out["final"]["replay_rows"], 13)          # every hound's replay result is on its row
 
@@ -289,7 +370,7 @@ class TheLeaderboardIsOrderedByVerdictNotUnits(unittest.TestCase):
             q("title", "[data-hook='hounds-chart-title']"),
             q("toggle", "[data-hook='hounds-segment']", "count"),
             q("lines", "[data-hook='hounds-chart-panel'] .hd-line path", "count")])
-        self.assertTrue(out["final"]["title"].startswith("Forward results"))
+        self.assertTrue(out["final"]["title"].startswith("Live bets only"))
         self.assertEqual(out["final"]["toggle"], 0)
         self.assertGreater(out["final"]["lines"], 0)
 
@@ -303,8 +384,7 @@ class TheLeaderboardIsOrderedByVerdictNotUnits(unittest.TestCase):
             q("legend_avatars", "[data-hook='chart-legend'] .hd-avatar", "count"),
             q("svg_role", "[data-hook='hounds-chart-panel'] .hd-chart__svg", "attr", attr="role")])
         self.assertEqual(out["final"]["zero"], 1)
-        self.assertIn("Paper results. Units over a few weeks are mostly luck; the verdict below each hound is the test.",
-                      out["final"]["label"])
+        self.assertIn("Paper units, one a bet. Tap a name to hide a dog.", out["final"]["label"])
         self.assertEqual(out["final"]["rows"], 8)                  # the zero point the day before, then seven forward dates
         self.assertEqual(out["final"]["cols"], 1 + 11)             # date + the 11 non-baseline hounds on the chart
         self.assertEqual(out["final"]["legend"], 13)               # every hound has a legend button, baselines included
@@ -351,13 +431,13 @@ class TheRaceIsHonestWhenThereIsNothingOrNothingAnswers(unittest.TestCase):
             q("empty", "[data-hook='board-empty']"), q("cta", "[data-hook='board-empty'] a", "attr", attr="href"),
             q("stream", "[data-hook='stream-empty']"), q("grave", "[data-hook='grave-empty']"),
             q("chart", "[data-hook='hounds-chart-panel']"), q("basis", "[data-hook='hounds-basis']")])
-        self.assertIn("No hounds are racing yet", out["final"]["empty"])
+        self.assertIn("Nobody's in the ring yet", out["final"]["empty"])
         self.assertEqual(out["final"]["cta"], "build-a-hound.html")
-        self.assertIn("No decisions yet", out["final"]["stream"])
-        self.assertIn("Nobody has been retired yet", out["final"]["grave"])
-        self.assertIn("No hounds yet, so there is nothing to draw", out["final"]["chart"])
+        self.assertIn("Quiet in the kennel", out["final"]["stream"])
+        self.assertIn("No tombstones yet", out["final"]["grave"])
+        self.assertIn("No dogs yet, so there is nothing to draw", out["final"]["chart"])
         self.assertFalse([g for g in out["gets"] if g.startswith("/hounds/series")])
-        self.assertIn("Basis: b", out["final"]["basis"])
+        self.assertEqual(out["final"]["basis"], "b")
 
     def test_missing_endpoints_say_not_switched_on_in_each_section_and_the_page_still_stands(self):
         out = run_page("hounds", routes={}, queries=[
@@ -369,9 +449,9 @@ class TheRaceIsHonestWhenThereIsNothingOrNothingAnswers(unittest.TestCase):
         self.assertEqual(out["final"]["kinds"], ["missing", "missing", "missing"])
         for key in ("board", "stream", "grave"):
             self.assertIn("not switched on yet", out["final"][key], key)
-        self.assertIn("Paper only. Not advice.", out["final"]["paper"])
+        self.assertIn("Paper bets only. Not advice.", out["final"]["paper"])
         self.assertEqual(out["final"]["cta"], "build-a-hound.html")
-        self.assertIn("Paper only, not advice", out["final"]["footer"])
+        self.assertIn("Paper bets only, not advice", out["final"]["footer"])
         self.assertIn("needs the leaderboard", out["final"]["chart"])
         # nothing was drawn from nothing
         self.assertNotIn("0.00", out["text"])
@@ -400,24 +480,33 @@ class TheRaceIsHonestWhenThereIsNothingOrNothingAnswers(unittest.TestCase):
         self.assertEqual(out["final"]["who"], ["Decided by: Rule", "Decided by: Code", "Decided by: Model"])
         self.assertEqual(out["final"]["items"], 3)
 
-    def test_stream_items_are_written_from_the_contracts_fields_and_a_refusal_says_it_passed(self):
+    def test_the_stream_reads_like_a_chat_and_a_refusal_says_it_sat_out(self):
         out = run_page("hounds", routes=routes(), queries=[
-            q("texts", "[data-hook='stream-list'] .hd-stream__text", "texts"),
+            q("texts", "[data-hook='stream-list'] .hd-chat__text", "texts"),
             q("refused", "[data-hook='stream-list'] li", "attrs", attr="data-refused"),
-            q("when", "[data-hook='stream-list'] .hd-stream__when", "texts")])
+            q("outcome", "[data-hook='chat-outcome']", "texts"),
+            q("when", "[data-hook='stream-list'] .hd-stream__when", "texts"),
+            q("avatars", "[data-hook='stream-list'] .hd-avatar", "count")])
         play, passed, flip = out["final"]["texts"]
-        self.assertIn("Yankees to win in Yankees at Red Sox at -120 average price, -115 best price at bookB", play)
-        self.assertTrue(passed.startswith("Passed in Mariners at Astros: too few books"), passed)
-        self.assertNotIn("Refused: Refused", passed)
-        self.assertIn("Over 8.5 in Padres at Dodgers", flip)
+        # a dog with a persona uses its own verb; one without says "took". The headline price is the average price.
+        self.assertEqual(play, "Closer just grabbed the early number on Yankees to win at -120")
+        self.assertEqual(passed, "Poisson sat this one out. Too few books were quoting this market to trust a price.")
+        self.assertEqual(flip, "Coin Flip just took Over 8.5 at -108 ❌ lost -1.00u")
+        self.assertEqual(out["final"]["outcome"], ["❌ lost -1.00u"])
         self.assertEqual(out["final"]["refused"], ["false", "true", "false"])
-        self.assertEqual(out["final"]["when"][0], "Oct 24 22:41 UTC")
+        self.assertIn("Oct 24 22:41 UTC", out["final"]["when"][0])
+        self.assertEqual(out["final"]["avatars"], 3)
 
-    def test_the_graveyard_lists_hounds_with_their_cause(self):
-        out = run_page("hounds", routes=routes(), queries=[q("cause", "[data-hook='grave-cause']", "texts")])
-        self.assertEqual(len(out["final"]["cause"]), 1)
+    def test_the_graveyard_is_tombstones_with_an_epitaph_and_the_cause_of_death(self):
+        out = run_page("hounds", routes=routes(), queries=[
+            q("cause", "[data-hook='grave-cause']", "texts"), q("epitaph", "[data-hook='epitaph']", "texts"),
+            q("rip", ".hd-stone__rip", "texts"), q("dead", ".hd-stone .hd-avatar", "attrs", attr="data-dead")])
         # contract: a retired hound is a HoundSummary with retired {date, cause}
-        self.assertEqual(out["final"]["cause"][0], "Cause: retired by the owner (Oct 20)")
+        self.assertEqual(out["final"]["cause"], ["Cause of death: Cut by the kennel boss. (Oct 20)",
+                                                 "Cause of death: Went more than 25 units under. (Oct 14)"])
+        self.assertEqual(out["final"]["epitaph"], ["“Gone, but still on the record.”", "“Went under one last time.”"])
+        self.assertEqual(out["final"]["rip"], ["R.I.P.", "R.I.P."])
+        self.assertEqual(out["final"]["dead"], ["true", "true"])
 
 
 @unittest.skipUnless(HAS_NODE, "node not installed")
@@ -475,28 +564,121 @@ class TheHoundPage(unittest.TestCase):
                         queries=[q("rule", "[data-hook='rule-text']"), q("btn", "[data-hook='copy-rule']"),
                                  q("from", "[data-hook='build-from']", "attr", attr="href")])
         self.assertEqual(out["final"]["rule"], rule)
-        self.assertEqual(out["final"]["btn"], "Copy rule")
+        self.assertEqual(out["final"]["btn"], "Copy this dog's rules")
         self.assertEqual(out["clipboard"], [rule])
-        self.assertEqual(out["captures"]["copy"]["status"], "Copied.")
+        self.assertEqual(out["captures"]["copy"]["status"], "Copied: the rules.")
         self.assertEqual(out["final"]["from"], "build-a-hound.html?from=closer")
+
+    def test_tail_it_and_fade_it_copy_a_pasteable_paper_only_take(self):
+        rule = F.hounds()[0]["rule_text"]
+        out = self.page(actions=[dict(do="click", sel="[data-hook='copy-tail']", label="tail"),
+                                 dict(do="click", sel="[data-hook='copy-fade']", label="fade",
+                                      capture=[q("status", "[data-hook='copy-status']")])],
+                        queries=[q("tail", "[data-hook='copy-tail']"), q("fade", "[data-hook='copy-fade']"),
+                                 q("note", "[data-hook='tail-fade-note']")])
+        self.assertEqual(out["final"]["tail"], "Tail it 🐕")
+        self.assertEqual(out["final"]["fade"], "Fade it 🙃")
+        tail, fade = out["clipboard"]
+        self.assertTrue(tail.startswith("Tailing Closer 🐕 (paper bets only, not advice):\n" + rule))
+        self.assertTrue(fade.startswith("Fading Closer 🙃 (paper bets only, not advice):\nThe opposite of: " + rule))
+        self.assertTrue(tail.endswith("linehound.app") and fade.endswith("linehound.app"))
+        self.assertEqual(out["captures"]["fade"]["status"], "Copied: a fade.")
+        self.assertIn("paper-only fun, not a tip", out["final"]["note"])
 
     def test_a_blocked_clipboard_says_so_and_does_not_claim_it_copied(self):
         out = self.page(clipboardFails=True, actions=[dict(do="click", sel="[data-hook='copy-rule']", label="copy",
                                                            capture=[q("status", "[data-hook='copy-status']")])])
         self.assertEqual(out["clipboard"], [])
-        self.assertIn("Could not copy", out["captures"]["copy"]["status"])
-        self.assertNotIn("Copied.", out["captures"]["copy"]["status"])
+        self.assertIn("Couldn't copy", out["captures"]["copy"]["status"])
+        self.assertNotIn("Copied", out["captures"]["copy"]["status"])
 
-    def test_the_verdict_comes_with_its_plain_language_meaning_and_the_sample_size(self):
-        out = self.page(queries=[q("chip", "[data-hook='verdict-chip']"), q("sentence", "[data-hook='verdict-sentence']"),
+    def test_the_badge_comes_with_a_plain_line_a_meaning_and_the_sample_size_and_the_sentence_is_in_the_receipts(self):
+        out = self.page(queries=[q("badge", "[data-hook='hound-verdict'] [data-hook='badge']"),
+                                 q("explain", "[data-hook='hound-verdict'] [data-hook='badge-explain']"),
+                                 q("sentence", "[data-hook='verdict-sentence']"),
                                  q("meaning", "[data-hook='verdict-meaning']"), q("name", "[data-hook='hound-name']"),
-                                 q("verdict", "[data-hook='hound-verdict']")])
-        self.assertIn("BEATING THE CLOSE", out["final"]["chip"])
+                                 q("verdict", "[data-hook='hound-verdict']"), q("title", "#verdict-h"),
+                                 q("sentence_in_receipts", "[data-hook='hound-details'] [data-hook='verdict-sentence']", "count")])
+        self.assertEqual(out["final"]["badge"], "SHARP 🔥")
+        self.assertEqual(out["final"]["title"], "Sharp or lucky?")
+        self.assertEqual(out["final"]["explain"],
+                         "Its prices keep beating where the market closes. Good shopping, not a promise of wins.")
         self.assertIn("beat the closing market", out["final"]["sentence"])
-        self.assertIn("not a profit claim", out["final"]["meaning"])
-        self.assertIn("Sample size: 41 settled forward bets. That is a small sample.", out["final"]["verdict"])
+        self.assertEqual(out["final"]["sentence_in_receipts"], 1)      # the referee's own sentence is in the collapsed block
+        self.assertIn("it's not a tip", out["final"]["meaning"])
+        self.assertIn("Based on 41 live bets. That's a small sample.", out["final"]["verdict"])
         self.assertEqual(out["final"]["name"], "Closer")
         self.assertEqual(out["title"], "Closer — LINEHOUND")
+
+    def test_the_top_of_the_page_is_the_dog_portrait_bio_catchphrase_and_a_scoreboard(self):
+        out = self.page(queries=[
+            q("vibe", "[data-hook='portrait']", "attr", attr="data-vibe"), q("tag", "[data-hook='vibe']"),
+            q("avatar_vibe", "[data-hook='portrait'] .hd-avatar", "attr", attr="data-vibe"),
+            q("catch", "[data-hook='catchphrase']"), q("bio", "[data-hook='bio']"),
+            q("tiles", "[data-hook='scoreboard-tiles'] .hd-tile", "attrs", attr="data-slot"),
+            q("record", ".hd-tile[data-slot='record']"), q("units", ".hd-tile[data-slot='units']"),
+            q("streak", ".hd-tile[data-slot='streak']"), q("week", ".hd-tile[data-slot='week']"),
+            q("best", ".hd-tile[data-slot='best']"), q("worst", ".hd-tile[data-slot='worst']"),
+            q("details_open", "[data-hook='hound-details']", "attr", attr="open"),
+            q("order", "h2", "texts")])
+        f = out["final"]
+        self.assertEqual((f["vibe"], f["avatar_vibe"]), ("degen", "degen"))
+        self.assertEqual(f["tag"], "Degen 🎉")
+        self.assertEqual(f["catch"], "“I was here first.”")
+        self.assertEqual(f["bio"], "Grabs the price before it moves and tells everyone about it.")
+        self.assertEqual(f["tiles"], ["record", "units", "streak", "week", "best", "worst"])
+        self.assertRegex(f["record"], r"Record \d+-\d+-1 41 bets, a small sample")
+        self.assertRegex(f["units"], r"Paper units [+-]\d+\.\d\du average price; best price [+-]\d+\.\d\du")
+        self.assertRegex(f["streak"], r"Streak (🔥+ |🥶 )?[WL]\d \d+ (wins?|losses) in a row")
+        self.assertRegex(f["week"], r"This week [+-]\d+\.\d\du \(\d+-\d+\) last 7 days")
+        self.assertIn("Best bet 🏆 Yankees to win at +135 Yankees at Red Sox. +1.35u, Oct 21.", f["best"])
+        self.assertIn("Worst beat 💔 Astros to win at -140 Mariners at Astros. -1.00u, Oct 22. The market had it 58% to win.",
+                      f["worst"])
+        self.assertIsNone(f["details_open"], "the details are collapsed")
+        self.assertEqual(f["order"][:4], ["The scoreboard", "What the Houndmaster said", "Sharp or lucky?", "The rules"])
+
+    def test_the_houndmasters_line_follows_the_last_settled_day_and_is_the_same_all_day(self):
+        roast_pool = ["Closer roast 1.", "Closer roast 2.", "Closer roast 3.", "Closer roast 4.", "Closer roast 5."]
+        brag_pool = ["Closer brag 1.", "Closer brag 2.", "Closer brag 3.", "Closer brag 4.", "Closer brag 5."]
+        lost = self.page(queries=[q("line", "[data-hook='houndmaster-line']"),
+                                  q("kind", "[data-hook='houndmaster-line']", "attr", attr="data-kind"),
+                                  q("why", "[data-hook='houndmaster-why']")])
+        again = self.page(queries=[q("line", "[data-hook='houndmaster-line']")])
+        self.assertEqual(lost["final"]["kind"], "roast")                 # the fixture's last day was a loss
+        self.assertTrue(any(line in lost["final"]["line"] for line in roast_pool), lost["final"]["line"])
+        self.assertEqual(lost["final"]["line"], again["final"]["line"])  # a reload says the same thing
+        self.assertEqual(lost["final"]["why"], "After Oct 24: 0-1, -1.00u.")
+        d = F.detail("closer")
+        d["form"] = dict(d["form"], last_day={"date": "2026-10-24", "bets": 1, "wins": 1, "losses": 0, "units": 0.91, "result": "win"})
+        won = self.page(routes={"/hounds/closer": [200, d]}, queries=[
+            q("line", "[data-hook='houndmaster-line']"), q("kind", "[data-hook='houndmaster-line']", "attr", attr="data-kind")])
+        self.assertEqual(won["final"]["kind"], "brag")
+        self.assertTrue(any(line in won["final"]["line"] for line in brag_pool), won["final"]["line"])
+        d["form"] = dict(d["form"], last_day={"date": "2026-10-24", "bets": 1, "wins": 0, "losses": 0, "units": 0.0, "result": "flat"})
+        flat = self.page(routes={"/hounds/closer": [200, d]}, queries=[
+            q("kind", "[data-hook='houndmaster-line']", "attr", attr="data-kind"), q("line", "[data-hook='houndmaster-line']")])
+        self.assertEqual(flat["final"]["kind"], "quiet")
+        self.assertEqual(flat["final"]["line"], "Nothing settled yet. The Houndmaster is watching.")
+
+    def test_a_dog_with_no_persona_gets_a_generic_portrait_and_the_bosses_own_lines(self):
+        out = self.page(hid="steamer", queries=[
+            q("catch", "[data-hook='catchphrase']", "count"), q("bio", "[data-hook='bio']"),
+            q("vibe", "[data-hook='portrait']", "attr", attr="data-vibe"),
+            q("line", "[data-hook='houndmaster-line']"), q("kind", "[data-hook='houndmaster-line']", "attr", attr="data-kind")])
+        self.assertEqual(out["final"]["catch"], 0)
+        self.assertEqual(out["final"]["bio"], "Rides early line moves.")       # the tagline stands in for a bio
+        self.assertEqual(out["final"]["vibe"], "degen")                         # a market dog wears the market vibe
+        self.assertEqual(out["final"]["kind"], "brag")                          # the fixture's last day for steamer was a win
+        self.assertIn(out["final"]["line"].split("“")[1].rstrip("”"), [
+            "Okay. That was good. Don't make a thing of it.", "Up on the night. Treat's in the bowl. Behave.",
+            "One good night. Don't get cocky. They all get cocky.", "Fair is fair: nice work.",
+            "That cashed. Do it again tomorrow, if you can."])
+
+    def test_a_dog_with_no_bets_has_an_honest_empty_scoreboard(self):
+        out = self.page(hid="rusty", forward=False, queries=[q("empty", "[data-hook='scoreboard-empty']"),
+                                                             q("tiles", "[data-hook='scoreboard-tiles']", "count")])
+        self.assertEqual(out["final"]["empty"], "No live bets yet. This dog hasn't put a unit down yet.")
+        self.assertEqual(out["final"]["tiles"], 0)
 
     def test_two_lines_for_units_and_a_clv_panel_each_with_a_zero_line_and_a_table(self):
         out = self.page(queries=[
@@ -521,12 +703,12 @@ class TheHoundPage(unittest.TestCase):
             q("rep", "[data-hook='replay-line']"), q("note", "[data-hook='replay-note']"),
             q("empty", "[data-hook='hound-units-chart'] [data-hook='chart-empty']"),
             q("toggle", "[data-hook='hound-segment']", "count")])
-        self.assertIn("none yet", out["final"]["title"])
-        self.assertIn("No forward bets yet", out["final"]["fwd"])
+        self.assertIn("No live bets yet", out["final"]["title"])
+        self.assertIn("No live bets yet", out["final"]["fwd"])
         self.assertTrue(out["final"]["rep"].startswith(
-            "replay (the same rule applied to boards captured before it was written)"))
+            "old-board rehearsal (the same rule on earlier games; written after, so it never counts)"))
         self.assertIn("never counted in the verdict", out["final"]["note"])     # the server's own note
-        self.assertIn("A replay result is not drawn here", out["final"]["empty"])
+        self.assertIn("A rehearsal result is not drawn here", out["final"]["empty"])
         self.assertEqual(out["final"]["toggle"], 0)
 
     def test_bets_are_paged_by_the_server_with_a_clear_who_decided_and_accessible_results(self):
@@ -594,9 +776,9 @@ class TheHoundPage(unittest.TestCase):
             actions=[dict(do="click", sel="[data-hook='bets-segment'] [data-segment='forward']", label="fwd",
                           capture=[q("empty", "[data-hook='bets-empty']")])])
         first = out["captures"]["initial"]
-        self.assertEqual(first["seg"], ["All bets", "Forward", "Replay"])
+        self.assertEqual(first["seg"], ["All bets", "Live", "Rehearsal"])
         self.assertTrue(first["tags"] and set(first["tags"]) == {"replay"})
-        self.assertIn("No forward bets for this hound", out["captures"]["fwd"]["empty"])
+        self.assertIn("No live bets for this dog", out["captures"]["fwd"]["empty"])
         self.assertTrue([g for g in out["gets"] if g.endswith("&segment=forward")])
 
     def test_a_retired_hound_shows_its_cause(self):
@@ -606,8 +788,8 @@ class TheHoundPage(unittest.TestCase):
             q("cause", "[data-hook='hound-cause']"), q("hidden", "[data-hook='hound-cause']", "hidden"),
             q("status", "[data-hook='hound-status']")])
         self.assertFalse(out["final"]["hidden"])
-        self.assertIn("Retired. Cause: retired: down more than 25 units", out["final"]["cause"])
-        self.assertEqual(out["final"]["status"], "Retired")
+        self.assertIn("Put down 💀. Cause of death: Went more than 25 units under.", out["final"]["cause"])
+        self.assertEqual(out["final"]["status"], "Put down 💀")
 
     def test_a_running_hound_has_no_cause_box(self):
         out = self.page(queries=[q("hidden", "[data-hook='hound-cause']", "hidden")])
@@ -616,13 +798,13 @@ class TheHoundPage(unittest.TestCase):
     def test_unknown_hound_missing_id_and_down_server(self):
         gone = run_page("hound", routes=routes(), search="?id=nope", queries=[q("t", "[data-hook='hound-header']"),
                                                                               q("v", "[data-hook='hound-verdict-section']", "hidden")])
-        self.assertIn("There is no hound with this id", gone["final"]["t"])
+        self.assertIn("There's no dog with this id", gone["final"]["t"])
         self.assertTrue(gone["final"]["v"])
         noid = run_page("hound", routes=routes(), search="", queries=[q("t", "[data-hook='hound-header']")])
-        self.assertIn("No hound was chosen", noid["final"]["t"])
+        self.assertIn("No dog was chosen", noid["final"]["t"])
         down = run_page("hound", routes=routes(), search="?id=closer", down=["/hounds/closer"],
                         queries=[q("t", "[data-hook='hound-header']")])
-        self.assertIn("Could not reach this hound", down["final"]["t"])
+        self.assertIn("Could not reach this dog", down["final"]["t"])
 
     def test_the_detail_payloads_own_series_draws_the_chart_without_a_second_request(self):
         out = self.page(queries=[q("lines", "[data-hook='hound-units-chart'] .hd-line", "count")])
@@ -661,10 +843,10 @@ class TheChartsRenderEmptyAndOnePointSeriesHonestly(unittest.TestCase):
     def test_empty_series_draws_a_frame_and_says_nothing_to_draw_not_a_flat_zero_line(self):
         out = self.detail_with_series([])
         self.assertEqual(out["final"]["empty_n"], 1)
-        self.assertIn("No forward results yet", out["final"]["empty"])
+        self.assertIn("No live bets yet", out["final"]["empty"])
         self.assertEqual(out["final"]["zero"], 0)      # no baseline drawn for a chart with nothing on it
         self.assertEqual(out["final"]["paths"], 0)
-        self.assertIn("No CLV measured yet", out["final"]["clv_empty"])
+        self.assertIn("Nothing measured against the close yet", out["final"]["clv_empty"])
 
     def test_one_point_series_is_a_single_dot_and_one_table_row(self):
         out = self.detail_with_series([{"date": "2026-10-18", "cum_units_average_price": 1.5, "cum_units_recorded_price": 1.7,
@@ -679,7 +861,7 @@ class TheChartsRenderEmptyAndOnePointSeriesHonestly(unittest.TestCase):
         pts = [{"date": f"2026-10-{18 + i}", "cum_units_average_price": i, "cum_units_recorded_price": i,
                 "bets_settled": i + 1, "cum_clv_mean_pts": None, "segment": "forward"} for i in range(4)]
         out = self.detail_with_series(pts)
-        self.assertIn("No CLV measured yet", out["final"]["clv_empty"])
+        self.assertIn("Nothing measured against the close yet", out["final"]["clv_empty"])
         self.assertEqual(out["final"]["paths"], 2)
 
     def test_the_leaderboard_chart_with_no_series_for_anyone_says_so(self):
@@ -688,7 +870,7 @@ class TheChartsRenderEmptyAndOnePointSeriesHonestly(unittest.TestCase):
         out = run_page("hounds", routes=r, queries=[q("chart", "[data-hook='hounds-chart-panel']"),
                                                     q("zero", "[data-hook='chart-zero']", "count"),
                                                     q("rows", "[data-hound]", "count")])
-        self.assertIn("No forward results yet", out["final"]["chart"])
+        self.assertIn("No live bets yet", out["final"]["chart"])
         self.assertEqual(out["final"]["zero"], 0)
         self.assertGreater(out["final"]["rows"], 5)       # the leaderboard itself is unaffected
 
@@ -786,7 +968,7 @@ class TheDeskSections(unittest.TestCase):
         self.assertIn("No game has been published yet", f["dis"])
         self.assertIn("One model reading, unproven", f["rule"])      # the rule text is there before any game
         self.assertEqual((f["picker"], f["table"]), (0, 0))
-        self.assertIn("Sample size: 0 settled forward bets", f["sample"])
+        self.assertIn("Based on 0 live bets.", f["sample"])
 
     def test_a_stage_missing_or_unreadable_in_the_transcript_is_said_not_filled_in(self):
         t = F.desk_transcript()
@@ -899,7 +1081,8 @@ class TheFirstVisitWhileTheServerWarmsUp(unittest.TestCase):
         self.assertEqual(out["final"]["kinds"], 0)
         self.assertEqual(out["final"]["rows"], 11)
         self.assertEqual(out["final"]["stream"], 3)
-        self.assertEqual(out["final"]["grave"], ["Cause: retired by the owner (Oct 20)"])
+        self.assertEqual(out["final"]["grave"], ["Cause of death: Cut by the kennel boss. (Oct 20)",
+                                                 "Cause of death: Went more than 25 units under. (Oct 14)"])
         self.assertEqual(out["intervals"], [60000])               # the warming retries stopped themselves
 
     def test_the_retry_follows_the_servers_own_cadence(self):
@@ -986,10 +1169,11 @@ class TheBuildPage(unittest.TestCase):
         self.assertEqual(out["final"]["tag_max"], "20")
         self.assertEqual(out["final"]["presets"], ["-180", "-150", "100", "300"])
         self.assertIn("No selection at -200 or worse, ever.", out["final"]["cap"])
-        self.assertEqual(out["final"]["limit"], "Each person can have up to 2 hounds.")
+        self.assertEqual(out["final"]["limit"], "Up to 2 dogs a person.")
         self.assertEqual(out["final"]["counts"], "0 / 10")
         # the page's own HTML and script name no sport, market or rule
-        for word in ("MLB", "NFL", "Moneyline", "moneyline", "underdog", "Underdog", "curling"):
+        # (the playful side-rule table decorates the menu's own options by their `value`; it adds no option)
+        for word in ("MLB", "NFL", "Moneyline", "moneyline", "curling"):
             self.assertNotIn(word, HTML["build-a-hound.html"])
             self.assertNotIn(word, (WEB / "js" / "hounds-build.js").read_text(encoding="utf-8"), word)
 
@@ -1002,6 +1186,10 @@ class TheBuildPage(unittest.TestCase):
         self.assertEqual(out["final"]["sports"], ["MLB", "NFL"])
         self.assertEqual(out["final"]["markets"], ["Moneyline", "Spread / run line", "Game total"])
         self.assertEqual(len(out["final"]["sides"]), 8)
+        for playful in ("Always the chalk", "Dogs only", "Tail the steam", "Fade the steam", "Overs machine", "Unders only"):
+            self.assertTrue(any(s.startswith(playful) for s in out["final"]["sides"]), playful)
+        # the plain label stays beside the joke, so nothing about what the rule does is hidden
+        self.assertTrue(any("The favourite" in s for s in out["final"]["sides"]))
         self.assertEqual(out["final"]["lock"], [f"{m} minutes before the start" for m in (60, 120, 180)])
         self.assertEqual((out["final"]["pmin"], out["final"]["pmax"]), ("-199", "1000"))   # never -200 or worse
         self.assertEqual(out["final"]["name_max"], "24")
@@ -1028,6 +1216,32 @@ class TheBuildPage(unittest.TestCase):
         self.assertEqual([x is not None for x in moneyline], [False, False, False, False, True, True, False, False])
         self.assertIn("Choose a sport, a market and a side rule", out["captures"]["moneyline"]["preview"])   # 'over' was cleared
 
+    def test_the_side_rules_are_said_the_way_bettors_say_them_and_the_card_follows_the_form(self):
+        out = self.build(queries=[
+            q("side_labels", "[data-field='side'] .hd-check__label", "texts"),
+            q("hints", "[data-field='side'] .hd-check__hint", "texts")],
+            captureInitial=[q("card_name", "[data-hook='dog-name']"), q("card_bio", "[data-hook='dog-bio']")],
+            actions=[
+                dict(do="check", sel="[data-field='sport'] input", index=0),
+                dict(do="check", sel="[data-field='market'] input", index=0),
+                dict(do="check", sel="[data-field='side'] input", index=7, label="fade",
+                     capture=[q("style", "[data-hook='dog-style']"), q("bio", "[data-hook='dog-bio']"),
+                              q("vibe", "[data-hook='build-dog-card'] .hd-avatar", "attr", attr="data-vibe")]),
+                dict(do="set", sel="[data-hook='f-name']", value="Spite Pup", label="named",
+                     capture=[q("name", "[data-hook='dog-name']")]),
+                dict(do="set", sel="[data-hook='f-tagline']", value="Does the opposite", label="bio",
+                     capture=[q("bio", "[data-hook='dog-bio']")])])
+        self.assertEqual(out["final"]["side_labels"], ["Always the chalk", "Dogs only", "Home cooking", "Road warriors",
+                                                       "Overs machine", "Unders only", "Tail the steam", "Fade the steam"])
+        self.assertEqual(out["final"]["hints"][0], "The favourite")
+        self.assertEqual(out["captures"]["initial"]["card_name"], "Your dog")
+        self.assertEqual(out["captures"]["initial"]["card_bio"], "Still deciding what it's about.")
+        self.assertEqual(out["captures"]["fade"]["style"], "Fade the steam")
+        self.assertEqual(out["captures"]["fade"]["bio"], "Fade the steam. MLB moneyline.")
+        self.assertEqual(out["captures"]["fade"]["vibe"], "chaos")
+        self.assertEqual(out["captures"]["named"]["name"], "Spite Pup")
+        self.assertEqual(out["captures"]["bio"]["bio"], "Does the opposite")
+
     def test_a_missing_menu_gives_a_not_switched_on_sentence_and_no_form(self):
         r = routes()
         r.pop("/hounds/menu")
@@ -1037,12 +1251,13 @@ class TheBuildPage(unittest.TestCase):
         self.assertIn("not switched on yet", out["final"]["host"])
         self.assertEqual(out["final"]["form"], 0)
         self.assertTrue(out["final"]["preview_hidden"])
-        self.assertIn("The -200-or-worse cap is always on.", out["final"]["notice"])
+        self.assertIn("never takes a price of -200 or worse", out["final"]["notice"])
 
     def test_the_hard_notice_is_on_the_page_with_the_form_present(self):
         out = self.build(queries=[q("notice", "[data-hook='paper-notice']")])
-        self.assertIn("Paper only. Your hound never places a real bet. The -200-or-worse cap is always on.", out["final"]["notice"])
-        self.assertIn("Paper only. Your hound never places a real bet. The -200-or-worse cap is always on.", out["text"])
+        line = "Paper bets only. Your dog never places a real bet, and it never takes a price of -200 or worse."
+        self.assertIn(line, out["final"]["notice"])
+        self.assertIn(line, out["text"])
 
     def test_signed_out_shows_the_form_a_sign_in_gate_and_a_disabled_create_button(self):
         out = self.build(queries=[
@@ -1054,10 +1269,10 @@ class TheBuildPage(unittest.TestCase):
             actions=[dict(do="set", sel="[data-hook='f-name']", value="Pup"),
                      dict(do="click", sel="[data-hook='build-submit']", label="click")])
         self.assertFalse(out["final"]["gate_hidden"])
-        self.assertIn("Sign in to create a hound", out["final"]["gate"])
+        self.assertIn("Sign in to send your dog in", out["final"]["gate"])
         self.assertEqual(out["final"]["early"], "index.html#/signup")
         self.assertEqual(out["final"]["signin"], "index.html#/signin")
-        self.assertEqual(out["final"]["btn"], "Sign in to create your hound")
+        self.assertEqual(out["final"]["btn"], "Sign in to send your dog in")
         self.assertTrue(out["final"]["disabled"])
         self.assertEqual(out["final"]["form"], 1)         # they can still play with the form and the preview
         self.assertEqual(out["posts"], [])
@@ -1077,7 +1292,7 @@ class TheBuildPage(unittest.TestCase):
                 dict(do="set", sel="[data-hook='f-name']", value="Pup", label="name",
                      capture=[q("count", "[data-hook='name-count']")])])
         self.assertIn("preview", out["final"]["label"].lower())
-        self.assertIn("Preview, written by this page", out["final"]["label"])
+        self.assertIn("A preview, written by this page", out["final"]["label"])
         self.assertIn("Bet the underdog in moneyline (MLB)", out["captures"]["rule"]["text"])
         self.assertIn("never takes a price of -200 or worse", out["captures"]["rule"]["text"])
         # the engine prices a bet at the board AVERAGE, and the preview says so (it used to say "best price")
@@ -1104,7 +1319,7 @@ class TheBuildPage(unittest.TestCase):
         self.assertEqual((spec["price_min"], spec["price_max"], spec["min_books"]), (-150, 250, 1))
         self.assertEqual((spec["max_bets_per_day"], spec["lock_minutes"]), (1, 60))
         self.assertEqual(out["navigations"], ["hound.html?id=u-pup1"])
-        self.assertEqual(out["final"]["limit"], "You have 0 of 3 hounds.")
+        self.assertEqual(out["final"]["limit"], "You have 0 of 3 dogs.")
 
     def test_the_three_hound_limit_is_shown_and_enforced_in_the_button(self):
         r = routes()
@@ -1113,19 +1328,19 @@ class TheBuildPage(unittest.TestCase):
             q("limit", "[data-hook='limit-text']"), q("btn", "[data-hook='build-submit']"),
             q("disabled", "[data-hook='build-submit']", "disabled")],
             actions=[dict(do="click", sel="[data-hook='build-submit']")])
-        self.assertEqual(out["final"]["limit"], "You have 3 of 3 hounds.")
-        self.assertEqual(out["final"]["btn"], "You already have 3 hounds")
+        self.assertEqual(out["final"]["limit"], "You have 3 of 3 dogs.")
+        self.assertEqual(out["final"]["btn"], "You already have 3 dogs")
         self.assertTrue(out["final"]["disabled"])
         self.assertEqual(out["posts"], [])
         signed_out = self.build(queries=[q("limit", "[data-hook='limit-text']")])
-        self.assertEqual(signed_out["final"]["limit"], "Each person can have up to 3 hounds.")
+        self.assertEqual(signed_out["final"]["limit"], "Up to 3 dogs a person.")
 
     def test_a_retired_hound_does_not_count_toward_the_limit(self):
         r = routes()
         r["/hounds/mine"] = [200, {"hounds": [{"id": "a", "status": "running"}, {"id": "b", "status": "retired"},
                                               {"id": "c", "status": "retired"}], "limit_running": 3}]
         out = self.build(routes=r, stored={TOKEN_KEY: "tok"}, queries=[q("limit", "[data-hook='limit-text']")])
-        self.assertEqual(out["final"]["limit"], "You have 1 of 3 hounds.")
+        self.assertEqual(out["final"]["limit"], "You have 1 of 3 dogs.")
 
     def test_problems_are_listed_and_nothing_is_posted_until_the_form_is_valid(self):
         out = self.build(stored={TOKEN_KEY: "tok"}, actions=[
@@ -1143,7 +1358,7 @@ class TheBuildPage(unittest.TestCase):
             dict(do="set", sel="[data-hook='f-price-max']", value="-110"),
             dict(do="click", sel="[data-hook='build-submit']", label="order",
                  capture=[q("p", "[data-hook='build-problems']")])])
-        self.assertIn("Give your hound a name.", out["captures"]["empty"]["p"])
+        self.assertIn("Give your dog a name.", out["captures"]["empty"]["p"])
         self.assertIn("Choose at least one sport.", out["captures"]["empty"]["p"])
         self.assertIn("Enter the shortest price", out["captures"]["empty"]["p"])
         self.assertIn("The shortest price cannot be -200 or worse", out["captures"]["cap"]["p"])
@@ -1174,7 +1389,7 @@ class TheBuildPage(unittest.TestCase):
         r["POST /hounds"] = [200, {"ok": True}]
         no_id = self.build(routes=r, stored={TOKEN_KEY: "tok"}, actions=self.FILL + click,
                            queries=[q("m", "[data-hook='build-message']")])
-        self.assertIn("did not say where it is", no_id["final"]["m"])
+        self.assertIn("didn't say where it is", no_id["final"]["m"])
         self.assertEqual(no_id["navigations"], [])
 
     def test_from_prefills_the_form_from_the_hounds_spec_including_the_suggested_name(self):
@@ -1188,7 +1403,7 @@ class TheBuildPage(unittest.TestCase):
         self.assertEqual((out["final"]["pmin"], out["final"]["pmax"], out["final"]["books"], out["final"]["lock"]),
                          ("-150", "250", "4", "60"))
         self.assertIn("Bet the underdog in moneyline (MLB)", out["final"]["preview"])
-        self.assertIn("Pre-filled from that hound's rule", out["final"]["note"])
+        self.assertIn("Pre-filled from that dog's rules", out["final"]["note"])
         self.assertEqual(out["final"]["name"], "Closer II")        # the server suggests a free name (names are unique)
         self.assertEqual(out["final"]["tagline"], "Takes the price before it moves.")
 
