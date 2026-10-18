@@ -251,6 +251,16 @@ class Route(unittest.TestCase):
         self.assertEqual(r.json()["instructions"], B.INSTRUCTIONS)
         build.assert_called_once()
 
+    def test_the_raw_body_of_an_empty_brief_holds_the_text_docs_zaps_md_filters_on(self):
+        """docs/ZAPS.md tells the Zap's Filter step to stop when the response body contains "hounds":[] ."""
+        w = World()
+        self.addCleanup(w.close)
+        for brief, expect_empty in ((w.brief(coach_on=False), True), (w.brief(), False)):
+            with mock.patch("src.hounds.stats.get_book_nowait", return_value=(w.book, "fresh")), \
+                    mock.patch.object(B, "build", return_value=brief):
+                body = self.client().get("/hounds/coach-brief").text
+            self.assertIs('"hounds":[]' in body, expect_empty, body[:200])
+
     def test_while_the_book_is_warming_it_answers_503(self):
         with mock.patch("src.hounds.stats.get_book_nowait", return_value=(None, "warming")):
             r = self.client().get("/hounds/coach-brief")
