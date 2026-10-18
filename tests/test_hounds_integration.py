@@ -820,5 +820,91 @@ class PagesReadTheRealApi(unittest.TestCase):
         user_spec.validate_spec(model.spec)
 
 
+# ---- the real house pack ---------------------------------------------------------------------------------
+
+import dataclasses
+
+
+def _pack_paths():
+    """config/house_pack.json and evidence/hounds_house_v1.jsonl, or the paths in HOUNDS_PACK_CFG and
+    HOUNDS_PACK_LEDGER (a way to run this against another checkout's copy of the pack)."""
+    default = Sources.default()
+    cfg = Path(os.environ.get("HOUNDS_PACK_CFG") or default.house_pack_cfg)
+    ledger = Path(os.environ.get("HOUNDS_PACK_LEDGER") or dict(default.pack_ledgers)["house"])
+    return cfg, ledger
+
+
+_PACK_CFG, _PACK_LEDGER = _pack_paths()
+
+
+@unittest.skipUnless(_PACK_CFG.exists() and _PACK_LEDGER.exists(), "the house pack files are not in this checkout")
+class TheRealHousePack(unittest.TestCase):
+    """The pack worker's real ledger (replay segment only) read by H1's reader. The first run of the
+    reader on the real file found three disagreements, all fixed on the READER side: a graded row carries
+    ``bet_row_hash`` and no ``line`` (spread and total bets were counted twice), ``who_decided`` is
+    ``random`` for the seeded hounds, and the units fields are ``units_best_price`` / ``units_average_price``."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.cfg = json.loads(_PACK_CFG.read_text(encoding="utf-8"))["hounds"]
+        with tempfile.TemporaryDirectory() as tmp:
+            # the engine hounds' ledgers are not under test here: an empty world beside the real pack files
+            world = World(Path(tmp))
+            src = dataclasses.replace(world.sources(), house_pack_cfg=_PACK_CFG,
+                                      pack_ledgers=(("house", _PACK_LEDGER),),
+                                      user_hounds=None, user_stamp=None)
+            cls.book = stats.build(src)
+        cls.rows = read_rows(_PACK_LEDGER)
+
+    def test_every_pack_hound_in_the_config_is_listed_with_its_category_style_and_rule(self):
+        self.assertEqual(len(self.cfg), 21)
+        for entry in self.cfg:
+            with self.subTest(hound=entry["id"]):
+                s = self.book.hounds[entry["id"]].summary
+                self.assertEqual((s.name, s.category, s.style, s.rule_text),
+                                 (entry["name"], entry["category"], entry["style"], entry["rule_text"]))
+                self.assertEqual(s.kind, "house")
+
+    def test_the_replay_ledger_shows_as_a_replay_block_and_never_as_a_forward_number(self):
+        graded = {}
+        for r in self.rows:
+            if r.get("kind") == "hound_graded":
+                graded[r["bet_row_hash"]] = r                    # the last grading of a bet wins
+        by_hound = {}
+        for r in graded.values():
+            by_hound.setdefault(r["hound_id"], []).append(r)
+        for entry in self.cfg:
+            hid = entry["id"]
+            with self.subTest(hound=hid):
+                d = self.book.hounds[hid]
+                expected = len(by_hound.get(hid, []))
+                self.assertEqual(d.summary.record.bets, 0)       # every row of the pack ledger is replay
+                self.assertEqual(d.summary.verdict.label, "TOO EARLY")
+                self.assertEqual(d.series, [])
+                self.assertEqual(d.summary.replay.bets if d.summary.replay else 0, expected)
+                self.assertTrue(all(b.segment == "replay" for b in d.bets))
+
+    def test_a_bet_is_one_row_however_many_times_it_was_graded(self):
+        bet_rows = [r for r in self.rows if r.get("kind") == "hound_bet"]
+        for entry in self.cfg:
+            hid = entry["id"]
+            with self.subTest(hound=hid):
+                self.assertEqual(len(self.book.hounds[hid].bets),
+                                 sum(1 for r in bet_rows if r["hound_id"] == hid))
+
+    def test_every_decider_is_in_the_contracts_closed_set(self):
+        for d in self.book.hounds.values():
+            for b in d.bets:
+                self.assertIn(b.who_decided, contract.WHO_DECIDED)
+        coin = self.book.hounds["coin_flip_collie"]
+        self.assertEqual({b.who_decided for b in coin.bets}, {"code"})
+
+    def test_prices_are_the_recorded_best_quote_and_the_board_average(self):
+        sample = next(b for d in self.book.hounds.values() for b in d.bets if b.price_average is not None)
+        row = next(r for r in self.rows if r.get("kind") == "hound_bet" and r["hound_id"] == sample.hound_id
+                   and r["date"] == sample.date and r["selection"] == sample.selection)
+        self.assertEqual((sample.price, sample.price_average), (row["price_best"], row["price_average"]))
+
+
 if __name__ == "__main__":
     unittest.main()

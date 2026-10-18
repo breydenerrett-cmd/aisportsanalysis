@@ -22,8 +22,8 @@ Field catalogue
 
 HoundSummary
   id, name, tagline, kind ("house" | "user" | "baseline"), category
-  ("stats" | "history" | "market" | "math" | "esoteric" | "random" | "mixed" |
-  "baseline" | ...), style (a short label), owner_display (user hounds only),
+  ("stats" | "history" | "market" | "math" | "intangibles" | "esoteric" |
+  "random" | "simple" | "mixed" | "baseline"), style (a short label), owner_display (user hounds only),
   sports [..], markets [..], rule_text (plain English, copyable),
   status ("running" | "benched" | "retired"), retired {date, cause} | null,
   record {bets, wins, losses, pushes, voids, units_recorded_price,
@@ -61,8 +61,11 @@ KIND_USER = "user"
 KIND_BASELINE = "baseline"
 KINDS = (KIND_HOUSE, KIND_USER, KIND_BASELINE)
 
-CATEGORIES = ("stats", "history", "market", "math", "esoteric", "random",
-              "mixed", "baseline")
+# "intangibles" and "simple" are the house pack's own (config/house_pack.json) and the pages already
+# knew them; they were missing here, so the reader quietly filed 4 pack hounds under "mixed" (found
+# 2026-10-18 reading the real pack config).
+CATEGORIES = ("stats", "history", "market", "math", "intangibles", "esoteric", "random",
+              "simple", "mixed", "baseline")
 
 WHO_DECIDED = ("code", "model", "rule")
 SEGMENTS = ("forward", "replay")
