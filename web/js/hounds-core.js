@@ -2,16 +2,29 @@
  * Shared, mostly pure helpers for the three Hounds pages (web/hounds.html, web/hound.html,
  * web/build-a-hound.html). Nothing in here fetches; nothing claims anything the server did not send.
  *
- * WHAT THE PAGES ASSUME ABOUT THE API (built against the contract, in parallel with the API workers):
- *   GET /hounds            {hounds[], as_of, basis, paper_only, <not-advice line>}
- *   GET /hounds/series?ids=a,b  per hound [{date, cum_units_average_price, cum_units_recorded_price,
- *                                           bets_settled, cum_clv_mean_pts}] -- `normalizeSeries` accepts
- *                          {series:{id:[...]}}, {id:[...]}, {series:[{id,points}]} or [{id,points}].
- *   GET /hounds/stream     {items[], page}      GET /hounds/graveyard {hounds[] with cause}
- *   GET /hounds/{id}       summary (+ bets[])   GET /hounds/{id}/bets {bets[]}
- *   GET /hounds/menu       {sports[], markets[], side_rules[], price_band{min,max}, books{min,max},
- *                          max_bets_per_day{min,max}, lock_minutes[]}
- *   GET /hounds/{id}/spec, POST /hounds, GET /hounds/mine
+ * THE SHAPES THE PAGES READ ARE THE SHAPES OF src/hounds/contract.py (the single source of truth) AND
+ * OF api/hounds_create.py. They were first written against a guess; tests/test_hounds_integration.py
+ * now feeds the pages payloads built by the real Python code, and tests/hounds_web_fixtures.py builds
+ * its fixtures from the same builders, so a drift fails a test instead of a visitor.
+ *
+ *   GET /hounds                {hounds: [HoundSummary], as_of, basis, paper_only, not_advice}
+ *   GET /hounds/series?ids=    {series: {id: [SeriesPoint]}} -- FORWARD points only; a zero point first
+ *   GET /hounds/stream         {items: [StreamItem], page, page_size, total, pages, as_of}
+ *   GET /hounds/graveyard      {hounds: [HoundSummary with status "retired" and retired {date, cause}]}
+ *   GET /hounds/{id}           HoundSummary + series + bets {items, page, page_size, total, pages}
+ *   GET /hounds/{id}/bets?page={items: [BetRow], page, page_size, total, pages}
+ *   GET /hounds/menu           name{min,max}, tagline{max}, sports[{value,label}], markets[...],
+ *                              side_rules[{value,label,markets}], price_min{presets,lowest},
+ *                              price_max{presets,highest}, min_books{min,max}, max_bets_per_day{min,max},
+ *                              lock_minutes{choices}, max_running_per_account
+ *   GET /hounds/{id}/spec      {spec, copied_from, rule_text}
+ *   POST /hounds               {spec, copied_from?} -> {hound: HoundSummary}
+ *   GET /hounds/mine           {hounds: [HoundSummary], limit_running}
+ *   (any of the GETs)          {warming_up: true, retry_after_seconds, message} while the stats are first built
+ *
+ * HoundSummary: record and clv and verdict are FORWARD only; `replay` is its own block
+ * {bets, wins, losses, pushes, voids, units_recorded_price, note}; units_average_price (the board average,
+ * the headline) may be null; units_recorded_price is the best quote recorded at lock (the small print).
  * Every field is read defensively: a missing field renders as "not reported", never as a made-up value.
  *
  * ORDER IS BY VERDICT, NEVER BY UNITS. See VERDICT_ORDER / sortByVerdict.
@@ -28,6 +41,20 @@ export const VERDICT_ORDER = [
   "TOO EARLY",
   "PAYING THE VIG",
 ];
+
+/** Two prices, two words (owner grading ruling): the AVERAGE price is the headline, the BEST price small print. */
+export const AVERAGE_PRICE_WORDS = "average price";
+export const BEST_PRICE_WORDS = "best price";
+
+/**
+ * "+1.20u average price, +1.50u best price" for a record. The average price is the headline number a bettor
+ * shopping nothing would have seen; the best price is the single best quote recorded at lock. A null
+ * average is "not reported", never zero.
+ */
+export function unitsPairText(rec) {
+  const r = rec || {};
+  return `${fmtUnits(r.units_average_price)} ${AVERAGE_PRICE_WORDS}, ${fmtUnits(r.units_recorded_price)} ${BEST_PRICE_WORDS}`;
+}
 
 export const UNITS_EXPLAINER =
   "Units over a few weeks are mostly luck. The verdict asks whether a hound beat the closing price, "
@@ -110,6 +137,12 @@ export function signed(n, digits = 2) {
 
 export function fmtUnits(n) {
   return isNum(n) ? `${signed(n, 2)}u` : NOT_REPORTED;
+}
+
+/** Decimal odds of an American price (null for anything that is not one), for comparing two prices. */
+export function americanDecimal(p) {
+  if (!isNum(p) || (p > -100 && p < 100)) return null;
+  return p > 0 ? 1 + p / 100 : 1 + 100 / -p;
 }
 
 export function fmtPrice(p) {
@@ -302,7 +335,7 @@ export function avatarSvg(name, { size = 40, gray = false, category = "" } = {})
 
 // ---- series ---------------------------------------------------------------------------------------
 
-export const REPLAY_NOTE = "replay (rule written 2026-10-18, applied to earlier boards)";
+export const REPLAY_NOTE = "replay (the same rule applied to boards captured before it was written)";
 export const NO_FORWARD_TEXT = "No forward bets yet";
 
 /**
@@ -597,54 +630,126 @@ export function houndHref(id) {
   return `hound.html?id=${encodeURIComponent(String(id))}`;
 }
 
+/**
+ * One sentence for a stream item (contract StreamItem: a BetRow plus hound_name, verdict, refused,
+ * decided_utc). A refusal is said to be a refusal ("Passed: ..."); a play names the pick, the game and
+ * both prices, then the hound's own reason. Nothing is added that the item did not carry.
+ */
+export function streamSummary(item) {
+  const it = item || {};
+  const where = it.game ? ` in ${it.game}` : "";
+  if (it.refused) {
+    return `Passed${where}: ${it.reason || "no reason given"}`.replace(/: Refused: /, ": ");
+  }
+  const pick = it.selection || NOT_REPORTED;
+  const prices = [];
+  if (isNum(it.price_average)) prices.push(`${fmtPrice(it.price_average)} ${AVERAGE_PRICE_WORDS}`);
+  if (isNum(it.price)) prices.push(`${fmtPrice(it.price)} ${BEST_PRICE_WORDS}${it.book ? ` at ${it.book}` : ""}`);
+  const priced = prices.length ? ` at ${prices.join(", ")}` : "";
+  return `${pick}${where}${priced}.${it.reason ? ` ${it.reason}` : ""}`;
+}
+
+/** True while the server is still working out the numbers for the first time (a 200 with `warming_up`). */
+export function isWarming(payload) {
+  return !!(payload && typeof payload === "object" && payload.warming_up === true);
+}
+
+export const WARMING_DEFAULT_MS = 5000;
+
+/** How long to wait before asking again: the server's own `retry_after_seconds`, kept between 1 s and 30 s. */
+export function warmingRetryMs(payload) {
+  const s = payload && isNum(payload.retry_after_seconds) ? payload.retry_after_seconds : WARMING_DEFAULT_MS / 1000;
+  return Math.max(1000, Math.min(30000, Math.round(s * 1000)));
+}
+
+const warmTimers = new Map();
+
+/**
+ * While a section's answer is `warming_up`, ask again on the server's own cadence. One timer per key; the
+ * page calls `stopWarmingRetry(key)` as soon as a real answer arrives. (An interval, not a chain of
+ * timeouts, so a test can fire it by hand like the stream's poller.)
+ */
+export function retryWhileWarming(key, run, payload) {
+  if (warmTimers.has(key)) return;
+  warmTimers.set(key, globalThis.setInterval(() => { run(); }, warmingRetryMs(payload)));
+}
+
+export function stopWarmingRetry(key) {
+  if (!warmTimers.has(key)) return;
+  globalThis.clearInterval(warmTimers.get(key));
+  warmTimers.delete(key);
+}
+
+export const WARMING_FALLBACK_TEXT =
+  "The race is warming up: the numbers are being worked out and this takes a few seconds the first time. "
+  + "Nothing is wrong and nothing is missing.";
+
 export function whoLabel(who) {
   return { code: "Code", model: "Model", rule: "Rule" }[String(who || "").toLowerCase()] || "Not stated";
 }
 
 // ---- the build form: menu -> options, spec <-> form ------------------------------------------------
 
-/** A menu option is either a bare string or {id|value|key, label|name}. */
+/** A menu option is `{value, label}` (the real menu; `markets` rides along on side rules) or a bare string. */
 export function optionOf(opt) {
   if (opt && typeof opt === "object") {
-    const id = opt.id ?? opt.value ?? opt.key ?? opt.name ?? opt.label;
-    return { id: String(id), label: String(opt.label ?? opt.name ?? id) };
+    const id = opt.value ?? opt.id ?? opt.key ?? opt.name ?? opt.label;
+    return { id: String(id), label: String(opt.label ?? opt.name ?? id),
+      markets: Array.isArray(opt.markets) ? opt.markets.map(String) : null };
   }
-  return { id: String(opt), label: String(opt) };
+  return { id: String(opt), label: String(opt), markets: null };
 }
 
-export const NAME_MAX = 32;
+// Defaults only: the build page reads the real limits from GET /hounds/menu (name.max, tagline.max).
+export const NAME_MAX = 24;
 export const TAGLINE_MAX = 80;
 
-/** The body POSTed to /hounds. One place, so aligning it with the API is a one-line change. */
-export function buildSpec(form) {
-  return {
-    name: form.name,
-    tagline: form.tagline,
-    sports: form.sports,
-    markets: form.markets,
-    side_rule: form.side_rule,
-    price_min: form.price_min,
-    price_max: form.price_max,
-    min_books: form.min_books,
-    max_bets_per_day: form.max_bets_per_day,
-    lock_minutes: form.lock_minutes,
+/**
+ * The body POSTed to /hounds, exactly what api/hounds_create.py's CreateHoundRequest takes:
+ * `{spec: {name, tagline, sports, markets, side_rule, price_min, price_max, min_books,
+ * max_bets_per_day, lock_minutes}, copied_from?}`. `copiedFrom` is the id the form was pre-filled from
+ * (GET /hounds/{id}/spec -> `copied_from`); it travels beside the spec, never inside it, so a copy is
+ * recorded as one. The spec is the menu's fields and nothing else: the server refuses unknown keys.
+ */
+export function buildSpec(form, copiedFrom) {
+  const body = {
+    spec: {
+      name: form.name,
+      tagline: form.tagline,
+      sports: form.sports,
+      markets: form.markets,
+      side_rule: form.side_rule,
+      price_min: form.price_min,
+      price_max: form.price_max,
+      min_books: form.min_books,
+      max_bets_per_day: form.max_bets_per_day,
+      lock_minutes: form.lock_minutes,
+    },
   };
+  if (copiedFrom) body.copied_from = String(copiedFrom);
+  return body;
 }
 
-/** A spec from GET /hounds/{id}/spec -> form values (accepts the obvious variants of each field). */
-export function specToForm(spec) {
-  const sp = spec && typeof spec === "object" ? (spec.spec && typeof spec.spec === "object" ? spec.spec : spec) : {};
+/**
+ * GET /hounds/{id}/spec -> `{spec: {...}, copied_from, rule_text}` -> form values. The server suggests a
+ * fresh name for the copy (names are unique), which is pre-filled so the builder can keep or change it.
+ */
+export function specToForm(payload) {
+  const wrapped = payload && typeof payload === "object" && payload.spec && typeof payload.spec === "object";
+  const sp = wrapped ? payload.spec : (payload && typeof payload === "object" ? payload : {});
   const list = (v) => (Array.isArray(v) ? v.map((x) => optionOf(x).id) : v ? [optionOf(v).id] : []);
-  const band = sp.price_band || {};
   return {
-    sports: list(sp.sports ?? sp.sport),
-    markets: list(sp.markets ?? sp.market),
-    side_rule: sp.side_rule !== undefined ? optionOf(sp.side_rule).id : "",
-    price_min: sp.price_min ?? band.min,
-    price_max: sp.price_max ?? band.max,
-    min_books: sp.min_books ?? (sp.books && typeof sp.books === "object" ? sp.books.min : sp.books),
+    name: typeof sp.name === "string" ? sp.name : "",
+    tagline: typeof sp.tagline === "string" ? sp.tagline : "",
+    sports: list(sp.sports),
+    markets: list(sp.markets),
+    side_rule: sp.side_rule !== undefined ? String(sp.side_rule) : "",
+    price_min: sp.price_min,
+    price_max: sp.price_max,
+    min_books: sp.min_books,
     max_bets_per_day: sp.max_bets_per_day,
     lock_minutes: sp.lock_minutes,
+    copied_from: wrapped && payload.copied_from ? String(payload.copied_from) : "",
   };
 }
 
@@ -664,9 +769,11 @@ export function previewRuleSentence(form, menu) {
   if (!sports.length || !markets.length || !form.side_rule) {
     return "Choose a sport, a market and a side rule to see the rule in words.";
   }
-  const parts = [`Bet ${labelFor(menu && menu.side_rules, form.side_rule)} in ${joinWords(markets)} (${joinWords(sports)})`];
+  const side = labelFor(menu && menu.side_rules, form.side_rule);
+  const parts = [`Bet ${side.charAt(0).toLowerCase()}${side.slice(1)} in ${joinWords(markets)} (${joinWords(sports)})`];
   if (isNum(form.price_min) && isNum(form.price_max)) {
-    parts.push(`only when the best price is between ${fmtPrice(form.price_min)} and ${fmtPrice(form.price_max)}`);
+    // the engine prices a bet at the board AVERAGE across the books (not the best single quote)
+    parts.push(`only when the average price across the books is between ${fmtPrice(form.price_min)} and ${fmtPrice(form.price_max)}`);
   }
   if (isNum(form.min_books)) parts.push(`at least ${form.min_books} ${form.min_books === 1 ? "book" : "books"} must be posting a price`);
   if (isNum(form.max_bets_per_day)) parts.push(`at most ${form.max_bets_per_day} ${form.max_bets_per_day === 1 ? "bet" : "bets"} a day`);

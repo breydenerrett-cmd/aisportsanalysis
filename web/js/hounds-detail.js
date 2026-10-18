@@ -1,15 +1,17 @@
 /**
  * web/hound.html?id=<hound id>: one hound.
  *
- * Reads GET /hounds/{id} (the summary, and bets[] when it carries them), GET /hounds/{id}/bets when it
- * does not, and GET /hounds/series?ids=<id> for the charts. Each part loads on its own and says honestly
- * what happened when its endpoint is missing.
+ * Reads GET /hounds/{id} (a HoundSummary plus `series` and the first page of `bets`, an object
+ * {items, page, page_size, total, pages}), GET /hounds/{id}/bets?page=&segment= for the other pages, and
+ * GET /hounds/series?ids=<id> when the detail payload does not carry the series. The shapes are
+ * src/hounds/contract.py's. Each part loads on its own and says honestly what happened when its endpoint
+ * is missing.
  *
  * What it shows: the rule in a box with a Copy button (and a link that opens the builder pre-filled from
  * /hounds/{id}/spec); the verdict with its meaning in plain words; FORWARD results as the headline and the
- * REPLAY result as a separate, smaller line; a units chart with two lines (recorded price and average
- * price) and a running-mean-CLV chart with its zero line; the bets, paged, saying who decided each;
- * and, for a retired hound, the cause.
+ * REPLAY block as a separate, smaller line; a units chart with two lines (the AVERAGE price, the headline,
+ * and the BEST price, small) and a running-mean-CLV chart with its zero line, both forward only; the bets,
+ * paged by the server, saying who decided each; and, for a retired hound, the cause.
  */
 
 import { apiGet } from "./api.js";
@@ -17,16 +19,16 @@ import {
   h, clearNode, avatarSvg, categoryOf, categoryLabel, houndColor, verdictLabel, verdictTone, verdictGlyph,
   VERDICT_MEANING, fmtRecord, fmtClv, fmtUnits, fmtPrice, fmtWhen, shortDate, signed, isNum, whoLabel,
   normalizeSeries, pointsFor, hasForwardData, toChartPoints, segmentView, describeError, noticeLine,
-  FUN_CATEGORIES, FUN_TAG, REPLAY_NOTE, NO_FORWARD_TEXT, NOT_REPORTED, dayKey,
+  FUN_CATEGORIES, FUN_TAG, REPLAY_NOTE, NO_FORWARD_TEXT, NOT_REPORTED, dayKey, unitsPairText,
+  AVERAGE_PRICE_WORDS, BEST_PRICE_WORDS, isWarming, retryWhileWarming, stopWarmingRetry, WARMING_FALLBACK_TEXT,
 } from "./hounds-core.js";
 import { renderLineChart } from "./hounds-chart.js";
 
 export const PAGE_SIZE = 20;
 const AVG_COLOR = "#00E0FF";
-const REC_COLOR = "#FFB020";
+const BEST_COLOR = "#FFB020";
 
-const state = { id: "", hound: null, bets: null, betsError: null, page: 0, series: null, seriesError: null,
-  segment: null };
+const state = { id: "", hound: null, bets: null, betsError: null, betSegment: "", series: null, seriesError: null };
 
 const q = (hook) => document.querySelector(`[data-hook='${hook}']`);
 
@@ -70,7 +72,7 @@ function renderHeader(hound) {
   document.title = `${hound.name || "Hound"} — LINEHOUND`;
   const verified = hound.verified === true
     ? h("span", { class: "hd-verified" }, [h("span", { "aria-hidden": "true", text: "✓ " }), "verified"])
-    : hound.verified === false ? h("span", { class: "hd-unverified", text: "not verified" }) : null;
+    : hound.verified === false && isNum(hound.verified_share) ? h("span", { class: "hd-unverified", text: "not verified" }) : null;
   box.appendChild(avatarSvg(hound.name, { size: 72, category: cat }));
   box.appendChild(h("div", {}, [
     h("h1", { "data-hook": "hound-name", text: hound.name || NOT_REPORTED }),
@@ -86,17 +88,21 @@ function renderHeader(hound) {
       verified,
     ]),
   ]));
-  const cause = hound.cause || hound.retired_cause || hound.status_reason;
+  // Contract: a retired hound carries `retired: {date, cause}`.
+  const retired = hound.retired && typeof hound.retired === "object" ? hound.retired : null;
   const causeBox = q("hound-cause");
   clearNode(causeBox);
   if (hound.status === "retired") {
     causeBox.hidden = false;
     causeBox.removeAttribute("hidden");
-    causeBox.appendChild(h("p", {}, [h("strong", { text: "Retired. Cause: " }), cause || "the server did not state one"]));
-  } else if (hound.status === "benched" && cause) {
+    causeBox.appendChild(h("p", {}, [h("strong", { text: "Retired. Cause: " }),
+      (retired && retired.cause) || "the server did not state one",
+      retired && retired.date ? h("span", { class: "hd-fine", text: ` (${fmtWhen(retired.date)})` }) : null]));
+  } else if (hound.status === "benched" && hound.last_bet_utc) {
     causeBox.hidden = false;
     causeBox.removeAttribute("hidden");
-    causeBox.appendChild(h("p", {}, [h("strong", { text: "Benched. Why: " }), cause]));
+    causeBox.appendChild(h("p", {}, [h("strong", { text: "Benched. Why: " }),
+      `its last bet was ${fmtWhen(hound.last_bet_utc)}, and a hound with no bet for more than 7 days is benched.`]));
   }
 }
 
@@ -104,7 +110,6 @@ function resultLines(hound) {
   const box = q("hound-results");
   clearNode(box);
   const fwd = segmentView(hound, "forward");
-  const rep = segmentView(hound, "replay");
   const fRec = fwd && fwd.record;
   const fClv = fmtClv(fwd && fwd.clv);
   box.appendChild(h("dl", { class: "hd-row__facts hd-facts--big", "data-hook": "forward-facts" }, [
@@ -117,14 +122,14 @@ function resultLines(hound) {
   ]));
   if (fRec && fRec.bets > 0) {
     box.appendChild(h("p", { class: "hd-row__units", "data-hook": "row-units",
-      text: `Units, small print: ${fmtUnits(fRec.units_recorded_price)} recorded price, ${fmtUnits(fRec.units_average_price)} average price. Units over a few weeks are mostly luck.` }));
+      text: `Units, small print: ${unitsPairText(fRec)}. Units over a few weeks are mostly luck.` }));
   }
-  if (rep && rep.record) {
-    const c = fmtClv(rep.clv);
+  const rep = hound.replay && typeof hound.replay === "object" ? hound.replay : null;
+  if (rep) {
     box.appendChild(h("p", { class: "hd-row__replay", "data-hook": "replay-line" }, [
-      h("strong", { text: REPLAY_NOTE }), ": ", rep.record.bets > 0 ? fmtRecord(rep.record) : "no replay result reported",
-      rep.record.bets > 0 ? `; price vs the close ${c.main}${c.detail ? ` (${c.detail})` : ""}` : "",
-      rep.record.bets > 0 ? `; units, small print: ${fmtUnits(rep.record.units_recorded_price)} recorded, ${fmtUnits(rep.record.units_average_price)} average` : ""]));
+      h("strong", { text: REPLAY_NOTE }), ": ", rep.bets > 0 ? fmtRecord(rep) : "no replay result reported",
+      rep.bets > 0 ? `; units, small print: ${fmtUnits(rep.units_recorded_price)} ${BEST_PRICE_WORDS}` : ""]));
+    if (rep.note) box.appendChild(h("p", { class: "hd-fine", "data-hook": "replay-note", text: rep.note }));
   }
 }
 
@@ -143,6 +148,9 @@ function renderVerdict(hound) {
   const rec = hound.record || (segmentView(hound, "forward") || {}).record;
   if (rec && isNum(rec.bets)) {
     box.appendChild(h("p", { class: "hd-fine", text: `Sample size: ${rec.bets} settled forward ${rec.bets === 1 ? "bet" : "bets"}.${rec.bets < 100 ? " That is a small sample." : ""}` }));
+  }
+  if (hound.verdict && hound.verdict.units_note) {
+    box.appendChild(h("p", { class: "hd-fine", "data-hook": "units-note", text: hound.verdict.units_note }));
   }
 }
 
@@ -164,11 +172,6 @@ function renderRule(hound, specHref) {
 
 // ---- charts ---------------------------------------------------------------------------------------
 
-function effectiveSegment() {
-  if (state.segment) return state.segment;
-  return state.series && hasForwardData(state.series) ? "forward" : "replay";
-}
-
 function chartWidth(panel) {
   const box = panel && panel.getBoundingClientRect ? panel.getBoundingClientRect() : null;
   const w = box && box.width ? box.width : 640;
@@ -178,8 +181,7 @@ function chartWidth(panel) {
 export function renderCharts() {
   const units = q("hound-units-chart");
   const clv = q("hound-clv-chart");
-  const bar = q("hound-segment");
-  clearNode(bar); clearNode(units); clearNode(clv);
+  clearNode(units); clearNode(clv);
   if (state.seriesError) {
     const e = describeError(state.seriesError, "the charts");
     units.appendChild(stateBox(e.kind, e.text));
@@ -189,31 +191,30 @@ export function renderCharts() {
     units.appendChild(h("p", { class: "hd-muted", text: "Loading the charts..." }));
     return;
   }
-  const seg = effectiveSegment();
-  for (const [key, text] of [["forward", "Forward"], ["replay", "Replay"]]) {
-    bar.appendChild(h("button", { type: "button", class: "hd-seg", "data-segment": key,
-      "aria-pressed": seg === key ? "true" : "false", on: { click: () => { state.segment = key; renderCharts(); } } }, text));
-  }
   const title = q("hound-chart-title");
-  title.textContent = seg === "replay"
-    ? (hasForwardData(state.series) ? `Replay: ${REPLAY_NOTE}.` : `Replay only for now: ${REPLAY_NOTE}. No forward results exist yet.`)
-    : "Forward results: paper bets placed after the rule was written.";
-  const pts = pointsFor(state.series, state.id, seg);
+  const pts = pointsFor(state.series, state.id, "forward");
+  const hasPoints = pts.length > 0 || hasForwardData(state.series);
+  title.textContent = hasPoints
+    ? "Forward results: paper bets placed after the rule was written."
+    : "Forward results: none yet. This hound's replay result, if it has one, is in the results above and is never drawn here.";
   const width = chartWidth(units);
   units.appendChild(renderLineChart({
     hook: "units-chart",
     series: [
       { id: "avg", name: "Average price", color: AVG_COLOR, points: toChartPoints(pts, "cum_units_average_price") },
-      { id: "rec", name: "Recorded price", color: REC_COLOR, points: toChartPoints(pts, "cum_units_recorded_price") },
+      { id: "best", name: "Best price", color: BEST_COLOR, points: toChartPoints(pts, "cum_units_recorded_price") },
     ],
     dashes: [undefined, "7 4"], width, height: width < 480 ? 240 : 300, unit: "units",
-    label: `Cumulative paper units, ${seg} results, at the recorded price and at the average price`,
+    label: "Cumulative paper units, forward results, at the average price and at the best price",
     zeroLabel: "0 units",
-    emptyText: seg === "forward" ? "No forward results yet. Switch to Replay to see the rule on earlier boards." : "No settled bets to draw yet.",
+    emptyText: hasPoints ? "No settled bets to draw yet."
+      : "No forward results yet. A replay result is not drawn here.",
   }));
   units.appendChild(h("ul", { class: "hd-legend hd-legend--static" }, [
-    h("li", {}, [h("span", { class: "hd-tip__swatch", style: `background:${AVG_COLOR}` }), " Average price: the market's typical price when the bet was made"]),
-    h("li", {}, [h("span", { class: "hd-tip__swatch", style: `background:${REC_COLOR}` }), " Recorded price: the price this hound was graded at"]),
+    h("li", {}, [h("span", { class: "hd-tip__swatch", style: `background:${AVG_COLOR}` }),
+      ` Average price: the mean price across the books when the bet was locked (the headline)`]),
+    h("li", {}, [h("span", { class: "hd-tip__swatch", style: `background:${BEST_COLOR}` }),
+      ` Best price: the single best quote recorded at the lock (small print)`]),
   ]));
   clv.appendChild(h("h3", { class: "hd-h3", text: "Running mean price vs the close (CLV)" }));
   const clvPts = toChartPoints(pts, "cum_clv_mean_pts");
@@ -221,7 +222,7 @@ export function renderCharts() {
     hook: "clv-chart",
     series: [{ id: "clv", name: "Running mean CLV", color: houndColor(state.hound || {}), points: clvPts }],
     width, height: 190, unit: "pts",
-    label: `Running mean of price versus the closing price, in points, ${seg} results`,
+    label: "Running mean of price versus the closing price, in points, forward results",
     zeroLabel: "0 = same as the close",
     emptyText: "No CLV measured yet for this view.",
   }));
@@ -231,7 +232,7 @@ export function renderCharts() {
 // ---- bets -----------------------------------------------------------------------------------------
 
 export function resultCell(result) {
-  const r = String(result || "").toLowerCase();
+  const r = String(result || "pending").toLowerCase();
   const map = { win: ["W", "Win", "win"], won: ["W", "Win", "win"], w: ["W", "Win", "win"],
     loss: ["L", "Loss", "loss"], lost: ["L", "Loss", "loss"], l: ["L", "Loss", "loss"],
     push: ["P", "Push", "push"], p: ["P", "Push", "push"], void: ["V", "Void", "void"], v: ["V", "Void", "void"],
@@ -241,29 +242,51 @@ export function resultCell(result) {
     h("span", { "aria-hidden": "true", text: glyph + " " }), word]);
 }
 
+/** A page of bets as the server sends it: {items, page, page_size, total, pages}. */
+function betsPageOf(data) {
+  if (Array.isArray(data)) return { items: data, page: 1, page_size: data.length || PAGE_SIZE, total: data.length, pages: 1 };
+  const items = Array.isArray(data && data.items) ? data.items : [];
+  const total = isNum(data && data.total) ? data.total : items.length;
+  const size = isNum(data && data.page_size) && data.page_size > 0 ? data.page_size : PAGE_SIZE;
+  return { items, page: isNum(data && data.page) ? data.page : 1, page_size: size, total,
+    pages: isNum(data && data.pages) ? data.pages : Math.max(1, Math.ceil(total / size)) };
+}
+
+function renderSegmentBar() {
+  const bar = q("bets-segment");
+  if (!bar) return;
+  clearNode(bar);
+  for (const [key, text] of [["", "All bets"], ["forward", "Forward"], ["replay", "Replay"]]) {
+    bar.appendChild(h("button", { type: "button", class: "hd-seg", "data-segment": key || "all",
+      "aria-pressed": state.betSegment === key ? "true" : "false",
+      on: { click: () => { state.betSegment = key; loadBets(1); } } }, text));
+  }
+}
+
 function renderBets() {
   const box = q("hound-bets");
   clearNode(box);
+  renderSegmentBar();
   if (state.betsError) {
     const e = describeError(state.betsError, "the bets list");
-    box.appendChild(stateBox(e.kind, e.text, () => { loadBets(); }));
+    box.appendChild(stateBox(e.kind, e.text, () => { loadBets(state.bets ? state.bets.page : 1); }));
     return;
   }
   if (state.bets === null) { box.appendChild(h("p", { class: "hd-muted", text: "Loading the bets..." })); return; }
-  if (state.bets.length === 0) {
+  const page = state.bets;
+  if (page.total === 0) {
     box.appendChild(h("p", { class: "hd-muted", "data-hook": "bets-empty",
-      text: "No bets yet. This hound has not placed a paper bet." }));
+      text: state.betSegment ? `No ${state.betSegment} bets for this hound.` : "No bets yet. This hound has not placed a paper bet." }));
     return;
   }
-  const pages = Math.ceil(state.bets.length / PAGE_SIZE);
-  state.page = Math.max(0, Math.min(pages - 1, state.page));
-  const slice = state.bets.slice(state.page * PAGE_SIZE, (state.page + 1) * PAGE_SIZE);
-  const head = ["Date", "Game", "Market", "Selection", "Price (book)", "Market fair value", "Result", "Units", "CLV", "Decided by", "Why"];
-  const rows = slice.map((b) => h("tr", { "data-who": String(b.who_decided || "") }, [
+  const head = ["Date", "Game", "Market", "Selection", "Average price", "Best price (book)", "Market fair value", "Result",
+    "Units at best price", "CLV", "Decided by", "Why"];
+  const rows = page.items.map((b) => h("tr", { "data-who": String(b.who_decided || ""), "data-segment": String(b.segment || "") }, [
     h("td", { text: shortDate(b.date) || NOT_REPORTED }),
     h("td", { text: b.game || NOT_REPORTED }),
     h("td", { text: b.market || NOT_REPORTED }),
     h("td", { text: b.selection || NOT_REPORTED }),
+    h("td", { text: fmtPrice(b.price_average) }),
     h("td", { text: `${fmtPrice(b.price)}${b.book ? ` (${b.book})` : ""}` }),
     h("td", { text: isNum(b.consensus_fair) ? (b.consensus_fair > 1 || b.consensus_fair < -1 ? fmtPrice(b.consensus_fair) : `${(b.consensus_fair * 100).toFixed(1)}%`) : NOT_REPORTED }),
     h("td", {}, [resultCell(b.result), b.segment ? h("span", { class: "hd-fine", text: ` ${b.segment}` }) : null]),
@@ -279,21 +302,23 @@ function renderBets() {
       h("tbody", {}, rows)])]));
   box.appendChild(h("div", { class: "hd-pager", "data-hook": "bets-pager" }, [
     h("button", { type: "button", class: "btn btn--ghost", "data-hook": "bets-prev", text: "Newer",
-      disabled: state.page === 0 ? "" : undefined, on: { click: () => { state.page -= 1; renderBets(); } } }),
+      disabled: page.page <= 1 ? "" : undefined, on: { click: () => { loadBets(page.page - 1); } } }),
     h("span", { class: "hd-fine", "data-hook": "bets-page", role: "status",
-      text: `Page ${state.page + 1} of ${pages} (${state.bets.length} bets)` }),
+      text: `Page ${page.page} of ${page.pages} (${page.total} bets)` }),
     h("button", { type: "button", class: "btn btn--ghost", "data-hook": "bets-next", text: "Older",
-      disabled: state.page >= pages - 1 ? "" : undefined, on: { click: () => { state.page += 1; renderBets(); } } }),
+      disabled: page.page >= page.pages ? "" : undefined, on: { click: () => { loadBets(page.page + 1); } } }),
   ]));
 }
 
-async function loadBets() {
+/** One page of bets from the server (the server pages: a hound can have hundreds). */
+async function loadBets(pageNo = 1) {
   state.betsError = null;
-  state.bets = null;
   renderBets();
+  const size = state.bets ? state.bets.page_size : PAGE_SIZE;
+  const seg = state.betSegment ? `&segment=${state.betSegment}` : "";
   try {
-    const data = await apiGet(`/hounds/${encodeURIComponent(state.id)}/bets`);
-    state.bets = Array.isArray(data) ? data : Array.isArray(data && data.bets) ? data.bets : [];
+    const data = await apiGet(`/hounds/${encodeURIComponent(state.id)}/bets?page=${pageNo}&page_size=${size}${seg}`);
+    state.bets = betsPageOf(data);
   } catch (err) {
     state.betsError = err;
   }
@@ -325,6 +350,23 @@ export async function boot() {
     }
     return;
   }
+  if (isWarming(hound)) {
+    // the server is still working out the numbers for the first time: say so, ask again, show nothing made up
+    clearNode(hero);
+    hero.appendChild(stateBox("warming", hound.message || WARMING_FALLBACK_TEXT));
+    for (const hook of ["hound-verdict-section", "hound-rule-section", "hound-chart-section", "hound-bets-section"]) {
+      const sec = q(hook); if (sec) sec.setAttribute("hidden", "");
+    }
+    retryWhileWarming("hound", () => {
+      stopWarmingRetry("hound");
+      for (const hook of ["hound-verdict-section", "hound-rule-section", "hound-chart-section", "hound-bets-section"]) {
+        const sec = q(hook); if (sec) sec.removeAttribute("hidden");
+      }
+      clearNode(hero);
+      boot();
+    }, hound);
+    return;
+  }
   state.hound = hound;
   renderHeader(hound);
   resultLines(hound);
@@ -333,22 +375,27 @@ export async function boot() {
   const notice = noticeLine(hound);
   if (notice) q("hound-notice").textContent = notice;
 
-  // bets: from the detail payload when it carries them, else their own endpoint
-  if (Array.isArray(hound.bets)) { state.bets = hound.bets; renderBets(); } else { loadBets(); }
+  // bets: the first page rides with the detail payload; the rest are the server's pages
+  if (hound.bets && typeof hound.bets === "object") { state.bets = betsPageOf(hound.bets); renderBets(); } else { loadBets(1); }
 
   renderCharts();
-  try {
-    state.series = normalizeSeries(await apiGet(`/hounds/series?ids=${encodeURIComponent(state.id)}`));
+  if (Array.isArray(hound.series)) {
+    state.series = normalizeSeries({ series: { [state.id]: hound.series } });
     state.seriesError = null;
-  } catch (err) {
-    state.series = null;
-    state.seriesError = err;
+  } else {
+    try {
+      state.series = normalizeSeries(await apiGet(`/hounds/series?ids=${encodeURIComponent(state.id)}`));
+      state.seriesError = null;
+    } catch (err) {
+      state.series = null;
+      state.seriesError = err;
+    }
   }
   renderCharts();
 }
 
 export const __state = state;
-export { dayKey };
+export { dayKey, AVERAGE_PRICE_WORDS };
 
 if (typeof document !== "undefined" && typeof window !== "undefined") {
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);

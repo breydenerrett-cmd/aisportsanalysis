@@ -687,5 +687,138 @@ class SchedulerMemoryOnTheRealStore(unittest.TestCase):
         self.assertLess(peak, PEAK_BUDGET_BYTES, f"one pass peaked at {peak / 1e6:.0f} MB")
 
 
+# ---- the pages against the real API --------------------------------------------------------------------
+
+from tests.hounds_web_runner import HAS_NODE, run_page
+
+
+def q(name, sel, mode="text", **kw):
+    return dict(name=name, sel=sel, mode=mode, **kw)
+
+
+@unittest.skipUnless(HAS_FASTAPI and HAS_NODE, "needs FastAPI and node")
+class PagesReadTheRealApi(unittest.TestCase):
+    """MISALIGNMENT 1, end to end. The pages' payloads are fetched from the REAL app (TestClient over
+    ``api.app``, the real routers, the real stats over the H1 synthetic world) and handed to the pages'
+    own scripts under node. Nothing in between is a hand-written fixture."""
+
+    @classmethod
+    def setUpClass(cls):
+        from api.app import app
+        cls._tmp = tempfile.TemporaryDirectory()
+        cls.src = F.make_world(Path(cls._tmp.name))
+        cls._patch = mock.patch.object(Sources, "default", staticmethod(lambda: cls.src))
+        cls._patch.start()
+        stats.clear_cache()
+        stats.get_book(cls.src)
+        client = TestClient(app)
+        cls.routes = {}
+        for path in ("/hounds", "/hounds/stream", "/hounds/graveyard", "/hounds/menu", "/hounds/alpha",
+                     "/hounds/charlie", "/hounds/delta", "/hounds/alpha/bets?page=2&page_size=2"):
+            r = client.get(path)
+            assert r.status_code == 200, (path, r.text)
+            cls.routes[path.split("?")[0] if "?" not in path else path] = [200, r.json()]
+        ids = ",".join(h["id"] for h in cls.routes["/hounds"][1]["hounds"])
+        cls.routes["/hounds/series"] = [200, client.get(f"/hounds/series?ids={ids}").json()]
+        cls.routes["/hounds/mine"] = [200, {"hounds": [], "limit_running": 3}]
+        cls.routes["/hounds/alpha/spec"] = [200, {"spec": dict(
+            name="Alpha II", tagline="", sports=["MLB"], markets=["moneyline"], side_rule="underdog",
+            price_min=100, price_max=250, min_books=3, max_bets_per_day=2, lock_minutes=120),
+            "copied_from": "alpha", "rule_text": "x"}]
+
+    @classmethod
+    def tearDownClass(cls):
+        cls._patch.stop()
+        stats.clear_cache()
+        cls._tmp.cleanup()
+
+    def test_the_race_page_lists_every_hound_with_its_real_numbers_and_the_replay_apart(self):
+        out = run_page("hounds", routes=self.routes, queries=[
+            q("ids", ".hd-row", "attrs", attr="data-hound"),
+            q("alpha", ".hd-row[data-hound='alpha']"),
+            q("alpha_replay", ".hd-row[data-hound='alpha'] [data-hook='replay-line']"),
+            q("charlie", ".hd-row[data-hound='charlie']"),
+            q("units", ".hd-row[data-hound='alpha'] [data-hook='row-units']"),
+            q("lines", "[data-hook='hounds-chart-panel'] .hd-line", "count"),
+            q("user", ".hd-row[data-hound='u-1']"),
+            q("stream", "[data-hook='stream-list'] .hd-stream__text", "texts"),
+            q("refused", "[data-hook='stream-list'] li", "attrs", attr="data-refused"),
+            q("basis", "[data-hook='hounds-basis']")])
+        final = out["final"]
+        self.assertEqual(set(final["ids"]), {"alpha", "bravo", "charlie", "delta", "u-1"})
+        # alpha: 3 forward bets, its replay bet in a separate line (never in the forward record)
+        self.assertIn("3 bets", final["alpha"])
+        self.assertIn("replay", final["alpha_replay"].lower())
+        self.assertIn("average price", final["units"])
+        self.assertIn("best price", final["units"])
+        self.assertGreater(final["lines"], 0)
+        self.assertIn("Paper only", final["basis"])
+        self.assertTrue(any(t.startswith("Passed") for t in final["stream"]), final["stream"])
+        self.assertIn("true", final["refused"])
+        self.assertNotIn("warming", out["text"].lower())
+
+    def test_the_hound_page_shows_the_bets_the_server_sent_and_pages_with_the_servers_numbers(self):
+        out = run_page("hound", routes=self.routes, search="?id=alpha", queries=[
+            q("rows", "[data-hook='bets-table'] tbody tr", "count"), q("page", "[data-hook='bets-page']"),
+            q("name", "[data-hook='hound-name']"), q("rule", "[data-hook='rule-text']"),
+            q("verdict", "[data-hook='verdict-chip']"),
+            q("heads", "[data-hook='bets-table'] thead th", "texts"),
+            q("next_off", "[data-hook='bets-next']", "disabled")])
+        self.assertEqual(out["final"]["name"], "Alpha")
+        self.assertEqual(out["final"]["rule"], "Alpha rule.")
+        self.assertIn("TOO EARLY", out["final"]["verdict"])
+        total = self.routes["/hounds/alpha"][1]["bets"]["total"]
+        self.assertGreater(total, 0)
+        self.assertGreater(out["final"]["rows"], 0)
+        self.assertIn("Average price", out["final"]["heads"])
+        self.assertIn(f"({total} bets)", out["final"]["page"])
+        self.assertTrue(out["final"]["next_off"])               # one page of 5 bets: nothing older to fetch
+
+    def test_a_replay_only_pack_hound_has_no_forward_numbers_and_its_replay_result_is_shown_apart(self):
+        out = run_page("hound", routes=self.routes, search="?id=charlie", queries=[
+            q("fwd", "[data-hook='forward-facts']"), q("rep", "[data-hook='replay-line']"),
+            q("chart", "[data-hook='hound-chart-title']")])
+        charlie = self.routes["/hounds/charlie"][1]
+        self.assertEqual(charlie["record"]["bets"], 1)         # the fixture's one forward bet
+        self.assertEqual(charlie["replay"]["bets"], 1)
+
+    def test_the_build_form_posts_what_the_real_create_route_accepts(self):
+        """The page's own script posts the JSON; the real request model and the real menu validation take it."""
+        from api.hounds_create import CreateHoundRequest
+        from src.hounds import user_spec
+        r = dict(self.routes)
+        r["/hounds/menu"] = [200, user_spec.menu()]
+        r["POST /hounds"] = [200, {"hound": {"id": "u-x"}}]
+        out = run_page("build", routes=r, stored={"aisportsanalysis.invite_token": "tok"}, actions=[
+            dict(do="set", sel="[data-hook='f-name']", value="Pup Test"),
+            dict(do="set", sel="[data-hook='f-tagline']", value="Fetches"),
+            dict(do="check", sel="[data-field='sport'] input", index=0),
+            dict(do="check", sel="[data-field='market'] input", index=0),
+            dict(do="check", sel="[data-field='side'] input", index=1),
+            dict(do="set", sel="[data-hook='f-price-min']", value="-150"),
+            dict(do="set", sel="[data-hook='f-price-max']", value="250"),
+            dict(do="click", sel="[data-hook='build-submit']", label="go", wait=80)])
+        self.assertEqual(len(out["posts"]), 1)
+        body = out["posts"][0]["body"]
+        model = CreateHoundRequest(**body)                      # the request model accepts it as it stands
+        spec = user_spec.validate_spec(model.spec)              # and so does the menu's own validation
+        self.assertEqual((spec["name"], spec["side_rule"], spec["price_min"], spec["price_max"]),
+                         ("Pup Test", "underdog", -150, 250))
+        self.assertEqual(out["navigations"], ["hound.html?id=u-x"])
+
+    def test_the_copy_flow_posts_the_spec_endpoints_answer_back_with_copied_from(self):
+        from api.hounds_create import CreateHoundRequest
+        from src.hounds import user_spec
+        r = dict(self.routes)
+        r["/hounds/menu"] = [200, user_spec.menu()]
+        r["POST /hounds"] = [200, {"hound": {"id": "u-y"}}]
+        out = run_page("build", routes=r, search="?from=alpha", stored={"aisportsanalysis.invite_token": "tok"},
+                       actions=[dict(do="click", sel="[data-hook='build-submit']", label="go", wait=80)])
+        body = out["posts"][0]["body"]
+        model = CreateHoundRequest(**body)
+        self.assertEqual(model.copied_from, "alpha")
+        user_spec.validate_spec(model.spec)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -233,6 +233,14 @@ class TheSeriesShapes(unittest.TestCase):
                  "{date:'2026-10-02',cum_clv_mean_pts:0.5,bets_settled:2}],'cum_clv_mean_pts')));")
         self.assertEqual(out, [{"date": "2026-10-02", "value": 0.5, "bets": 2}])
 
+    def test_the_replay_block_of_the_contract_is_a_record_not_a_series(self):
+        """contract.ReplayBlock is {bets, wins, losses, pushes, voids, units_recorded_price, note}."""
+        out = js("const h={record:{bets:3},clv:null,replay:{bets:90,wins:40,losses:50,pushes:0,voids:0,"
+                 "units_recorded_price:-4.2,note:'n'}};"
+                 "console.log(JSON.stringify({r:C.segmentView(h,'replay'),f:C.segmentView(h,'forward')}));")
+        self.assertEqual(out["r"]["record"]["bets"], 90)
+        self.assertEqual(out["f"]["record"]["bets"], 3)
+
     def test_segment_views_forward_headline_replay_separate(self):
         out = js("const h={record:{bets:3},clv:null,replay:{record:{bets:90},clv:{n:90,mean_pts:1}}};"
                  "const only={segments:{replay:{record:{bets:5}}}};"
@@ -305,21 +313,71 @@ class TheRulePreviewAndTheSpec(unittest.TestCase):
         out = js(f"console.log(JSON.stringify(C.previewRuleSentence({{sports:[],markets:[],side_rule:''}},{json.dumps(self.MENU)})));")
         self.assertIn("Choose a sport, a market and a side rule", out)
 
-    def test_spec_to_form_accepts_the_obvious_variants(self):
-        out = js("console.log(JSON.stringify([C.specToForm({spec:{sport:'mlb',market:'moneyline',side_rule:'underdog',"
-                 "price_band:{min:-100,max:200},books:{min:3},max_bets_per_day:2,lock_minutes:60}}),"
-                 "C.specToForm({sports:['nfl'],markets:['total'],side_rule:{id:'home'},price_min:-110,price_max:150,min_books:5})]));")
-        self.assertEqual(out[0], {"sports": ["mlb"], "markets": ["moneyline"], "side_rule": "underdog", "price_min": -100,
-                                  "price_max": 200, "min_books": 3, "max_bets_per_day": 2, "lock_minutes": 60})
-        self.assertEqual(out[1]["sports"], ["nfl"])
-        self.assertEqual(out[1]["side_rule"], "home")
-        self.assertEqual(out[1]["min_books"], 5)
+    def test_spec_to_form_reads_what_get_spec_really_answers(self):
+        """GET /hounds/{id}/spec -> {spec, copied_from, rule_text} (api/hounds_create.py): the form is
+        filled from `spec`, including the fresh name the server suggests, and remembers `copied_from`."""
+        payload = {"spec": {"name": "Closer II", "tagline": "t", "sports": ["MLB", "NFL"], "markets": ["moneyline", "total"],
+                            "side_rule": "market_moved_toward", "price_min": -150, "price_max": 250, "min_books": 4,
+                            "max_bets_per_day": 3, "lock_minutes": 60},
+                   "copied_from": "u-ab12", "rule_text": "x"}
+        out = js(f"console.log(JSON.stringify(C.specToForm({json.dumps(payload)})));")
+        self.assertEqual(out, {"name": "Closer II", "tagline": "t", "sports": ["MLB", "NFL"], "markets": ["moneyline", "total"],
+                               "side_rule": "market_moved_toward", "price_min": -150, "price_max": 250, "min_books": 4,
+                               "max_bets_per_day": 3, "lock_minutes": 60, "copied_from": "u-ab12"})
+        bare = js("console.log(JSON.stringify(C.specToForm(null)));")
+        self.assertEqual((bare["sports"], bare["side_rule"], bare["copied_from"]), ([], "", ""))
 
-    def test_the_posted_body_is_one_flat_spec(self):
-        out = js("console.log(JSON.stringify(C.buildSpec({name:'N',tagline:'T',sports:['mlb'],markets:['m'],side_rule:'s',"
-                 "price_min:-100,price_max:200,min_books:3,max_bets_per_day:2,lock_minutes:30,extra:'dropped'})));")
-        self.assertEqual(sorted(out), ["lock_minutes", "markets", "max_bets_per_day", "min_books", "name", "price_max",
-                                       "price_min", "side_rule", "sports", "tagline"])
+    def test_the_posted_body_is_what_create_hound_takes_a_spec_and_copied_from(self):
+        """api/hounds_create.py CreateHoundRequest: {spec: {...}, copied_from?}. The spec holds the menu's
+        fields and nothing else (the server refuses unknown keys), and copied_from rides beside it."""
+        form = ("{name:'N',tagline:'T',sports:['MLB'],markets:['moneyline'],side_rule:'underdog',"
+                "price_min:-100,price_max:200,min_books:3,max_bets_per_day:2,lock_minutes:60,extra:'dropped',copied_from:'no'}")
+        plain, copy = js(f"console.log(JSON.stringify([C.buildSpec({form}), C.buildSpec({form}, 'u-ab12')]));")
+        self.assertEqual(sorted(plain), ["spec"])
+        self.assertEqual(sorted(plain["spec"]), ["lock_minutes", "markets", "max_bets_per_day", "min_books", "name",
+                                                 "price_max", "price_min", "side_rule", "sports", "tagline"])
+        self.assertEqual(sorted(copy), ["copied_from", "spec"])
+        self.assertEqual(copy["copied_from"], "u-ab12")
+
+    def test_menu_options_are_value_label_pairs_and_side_rules_carry_their_markets(self):
+        out = js("console.log(JSON.stringify([C.optionOf({value:'over',label:'The over',markets:['total']}),"
+                 "C.optionOf({id:'old',label:'Old'}), C.optionOf('bare')]));")
+        self.assertEqual(out[0], {"id": "over", "label": "The over", "markets": ["total"]})
+        self.assertEqual(out[1]["id"], "old")
+        self.assertEqual((out[2]["id"], out[2]["markets"]), ("bare", None))
+
+    def test_american_prices_compare_by_decimal_odds(self):
+        out = js("console.log(JSON.stringify([C.americanDecimal(-150), C.americanDecimal(120), C.americanDecimal(50),"
+                 "C.americanDecimal(null), C.americanDecimal(-100), C.americanDecimal(100)]));")
+        self.assertEqual(out[0], 1 + 100 / 150)
+        self.assertEqual(out[1], 2.2)
+        self.assertIsNone(out[2])           # +50 is not an American price
+        self.assertIsNone(out[3])
+        self.assertEqual((out[4], out[5]), (2.0, 2.0))
+
+
+@unittest.skipUnless(HAS_NODE, "node not installed")
+class TheStreamTheWarmingAndTheUnitsWords(unittest.TestCase):
+    def test_a_stream_item_reads_from_the_contract_fields_and_a_refusal_says_it_passed(self):
+        play = {"selection": "Yankees to win", "game": "Yankees at Red Sox", "price": -115, "price_average": -120,
+                "book": "bookB", "reason": "Rule: the underdog.", "refused": False}
+        refusal = {"game": "Mariners at Astros", "reason": "Refused: too few books were quoting this market.",
+                   "refused": True, "selection": "(no bet)"}
+        out = js(f"console.log(JSON.stringify([C.streamSummary({json.dumps(play)}), C.streamSummary({json.dumps(refusal)})]));")
+        self.assertEqual(out[0], "Yankees to win in Yankees at Red Sox at -120 average price, -115 best price at bookB. Rule: the underdog.")
+        self.assertEqual(out[1], "Passed in Mariners at Astros: too few books were quoting this market.")
+
+    def test_warming_is_a_flag_on_a_200_and_the_retry_follows_the_servers_cadence_within_bounds(self):
+        out = js("console.log(JSON.stringify([C.isWarming({warming_up:true}), C.isWarming({hounds:[]}), C.isWarming(null),"
+                 "C.warmingRetryMs({retry_after_seconds:5}), C.warmingRetryMs({retry_after_seconds:0}),"
+                 "C.warmingRetryMs({retry_after_seconds:900}), C.warmingRetryMs({})]));")
+        self.assertEqual(out, [True, False, False, 5000, 1000, 30000, 5000])
+
+    def test_the_two_prices_are_labelled_average_first_and_best_second(self):
+        out = js("console.log(JSON.stringify([C.unitsPairText({units_average_price:1.2,units_recorded_price:1.5}),"
+                 "C.unitsPairText({units_average_price:null,units_recorded_price:-2})]));")
+        self.assertEqual(out[0], "+1.20u average price, +1.50u best price")
+        self.assertEqual(out[1], "not reported average price, -2.00u best price")
 
 
 @unittest.skipUnless(HAS_NODE, "node not installed")

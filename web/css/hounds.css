@@ -186,6 +186,7 @@
 .hd-state { border: 1px solid var(--hd-line); background: var(--hd-card-2); padding: 12px 14px; margin: 8px 0; color: var(--hd-text-2); }
 .hd-state--down { border-color: var(--hd-bad); }
 .hd-state--missing { border-color: var(--hd-warn); }
+.hd-state--warming { border-color: var(--hd-accent); }
 .hd-state--retired { border-color: var(--hd-bad); }
 .hd-retry { margin-top: 8px; }
 .hd-empty { padding: 18px; border: 1px dashed var(--hd-line); text-align: center; }

@@ -2,12 +2,14 @@
  * web/hounds.html: the race.
  *
  * WHAT IT SHOWS, TOP TO BOTTOM
- *   - a multi-line chart of cumulative paper units at the AVERAGE price, one line per hound, with a zero
- *     baseline, a hover tooltip and a Forward / Replay toggle. It defaults to REPLAY until forward data
- *     exists and says so in its title;
+ *   - a multi-line chart of cumulative paper units at the AVERAGE price (the headline price), one line
+ *     per hound, with a zero baseline and a hover tooltip. It draws FORWARD results only: that is all
+ *     GET /hounds/series sends (src/hounds/contract.py: replay results are a record block on each hound,
+ *     never a series, and never mixed into a forward figure);
  *   - the leaderboard, ORDERED BY VERDICT (hounds-core.js sortByVerdict), never by units. Every hound's
  *     headline is its FORWARD result; the replay result (the same rule applied to earlier boards) is a
- *     separate, smaller line. Units are small print. A sparkline per row;
+ *     separate, smaller line. Units are small print: the average price first, the best price after. A
+ *     sparkline per row;
  *   - category chips and a House / Builders' filter; esoteric and random hounds carry a small
  *     "for fun / control" tag in the same type size as their name and are never hidden; baselines sit in a
  *     collapsed "Baselines" group below the race, also never hidden;
@@ -16,9 +18,10 @@
  *   - the graveyard with causes; the basis sentence; the "Build your own hound" call to action.
  *
  * EVERY SECTION LOADS ON ITS OWN. A failed or missing endpoint puts an honest sentence in that section
- * (describeError) and leaves the others alone. Nothing is invented to fill a gap. The page never claims
- * an edge, never calls units profit, and the "paper only, not advice" line is static markup in the HTML so
- * it is there with scripts off.
+ * (describeError) and leaves the others alone. A server that is still working out the numbers for the
+ * first time answers `warming_up: true`; the section says so and asks again (retryWhileWarming). Nothing
+ * is invented to fill a gap. The page never claims an edge, never calls units profit, and the "paper only,
+ * not advice" line is static markup in the HTML so it is there with scripts off.
  */
 
 import { apiGet } from "./api.js";
@@ -27,12 +30,18 @@ import {
   houndColor, verdictLabel, verdictTone, verdictGlyph, avatarSvg, fmtRecord, fmtClv, fmtUnits, fmtWhen,
   houndHref, whoLabel, normalizeSeries, pointsFor, hasForwardData, toChartPoints, sparkValues, segmentView,
   describeError, noticeLine, createPoller, FUN_CATEGORIES, FUN_TAG, REPLAY_NOTE, NO_FORWARD_TEXT, NOT_REPORTED,
+  unitsPairText, BEST_PRICE_WORDS, streamSummary, isWarming, retryWhileWarming, stopWarmingRetry,
+  WARMING_FALLBACK_TEXT,
 } from "./hounds-core.js";
 import { renderLineChart, renderSparkline } from "./hounds-chart.js";
 
 export const STREAM_POLL_MS = 60000;
 export const CHART_LABEL =
   "Paper results. Units over a few weeks are mostly luck; the verdict below each hound is the test.";
+export const FORWARD_TITLE = "Forward results: paper bets placed after each rule was written.";
+export const NO_FORWARD_CHART_TEXT =
+  "No forward results yet. Each hound's replay result (its rule applied to earlier boards) is on its row below; "
+  + "it is never drawn here.";
 const DASHES = [undefined, "7 4", "2 3", "10 3 2 3", "14 4", "1 4"];
 
 const state = {
@@ -43,7 +52,6 @@ const state = {
   hiddenInitialised: false,
   series: null,           // { id: [points] } once loaded
   seriesError: null,
-  segment: null,          // "forward" | "replay"; null until chosen or defaulted
   payload: null,
 };
 
@@ -57,9 +65,9 @@ function stateBox(kind, text, retry) {
   return box;
 }
 
-function effectiveSegment() {
-  if (state.segment) return state.segment;
-  return state.series && hasForwardData(state.series) ? "forward" : "replay";
+function warmingBox(payload) {
+  return h("div", { class: "hd-state hd-state--warming", role: "status", "data-hook": "section-state",
+    "data-kind": "warming" }, [h("p", { text: (payload && payload.message) || WARMING_FALLBACK_TEXT })]);
 }
 
 // ---- chart ----------------------------------------------------------------------------------------
@@ -70,42 +78,23 @@ function chartWidth(panel) {
   return Math.max(300, Math.min(760, Math.round(w)));
 }
 
-function chartTitle(segment) {
-  const forwardExists = state.series && hasForwardData(state.series);
-  if (segment === "replay") {
-    return forwardExists
-      ? `Replay results: ${REPLAY_NOTE}.`
-      : `Replay only for now: ${REPLAY_NOTE}. No forward results exist yet.`;
-  }
-  return "Forward results: paper bets placed after each rule was written.";
-}
-
 function lineSample(color, dash) {
   return s("svg", { class: "hd-legend__line", viewBox: "0 0 22 6", width: 22, height: 6, "aria-hidden": "true",
     focusable: "false" }, [s("line", { x1: 1, x2: 21, y1: 3, y2: 3, stroke: color, "stroke-width": 2.25,
     "stroke-dasharray": dash || undefined, "stroke-linecap": "round" })]);
 }
 
-function renderSegmentToggle() {
-  const bar = q("hounds-segment");
-  if (!bar) return;
-  clearNode(bar);
-  const active = effectiveSegment();
-  for (const [key, text] of [["forward", "Forward"], ["replay", "Replay"]]) {
-    bar.appendChild(h("button", { type: "button", class: "hd-seg", "data-segment": key,
-      "aria-pressed": active === key ? "true" : "false",
-      on: { click: () => { state.segment = key; renderChartPanel(); } } }, text));
-  }
+/** The series field a hound is drawn with: the average price, unless the server says it has none for this hound. */
+function seriesKey(hound) {
+  return hound && hound.spark_basis === "recorded_price" ? "cum_units_recorded_price" : "cum_units_average_price";
 }
 
 function renderChartPanel() {
   const panel = q("hounds-chart-panel");
   if (!panel) return;
   clearNode(panel);
-  renderSegmentToggle();
   const titleNode = q("hounds-chart-title");
-  const segment = effectiveSegment();
-  if (titleNode) titleNode.textContent = state.series ? chartTitle(segment) : "";
+  if (titleNode) titleNode.textContent = state.series ? FORWARD_TITLE : "";
   if (state.seriesError) {
     const e = describeError(state.seriesError, "the results chart");
     panel.appendChild(stateBox(e.kind, e.text));
@@ -122,6 +111,7 @@ function renderChartPanel() {
   const legend = h("ul", { class: "hd-legend", "data-hook": "chart-legend", "aria-label": "Hounds on the chart" });
   const lines = [];
   const perCategory = {};
+  let usedBestPrice = false;
   shownAll.forEach((hound) => {
     const cat = categoryOf(hound);
     const color = houndColor(hound);
@@ -135,23 +125,29 @@ function renderChartPanel() {
     }, [avatarSvg(hound.name, { size: 22, category: cat }), lineSample(color, dash),
       h("span", { class: "hd-legend__name", text: hound.name })])]));
     if (!off) {
-      lines.push({ id: String(hound.id), name: hound.name, color, dash,
-        points: toChartPoints(pointsFor(state.series, hound.id, segment), "cum_units_average_price") });
+      const key = seriesKey(hound);
+      const points = toChartPoints(pointsFor(state.series, hound.id, "forward"), key);
+      if (key !== "cum_units_average_price" && points.length) usedBestPrice = true;
+      lines.push({ id: String(hound.id), name: hound.name, color, dash, points });
     }
   });
   const anyPoints = lines.some((l) => l.points.length > 0);
   const chart = renderLineChart({
     series: lines, width: chartWidth(panel), height: chartWidth(panel) < 480 ? 230 : 280, unit: "units",
-    label: `Cumulative paper units at the average price, ${segment} results, one line per hound`,
+    label: "Cumulative paper units at the average price, forward results, one line per hound",
     zeroLabel: "0 units",
     dashes: lines.map((l) => l.dash),
     emptyText: state.hounds.length === 0 ? "No hounds yet, so there is nothing to draw."
       : shown.length === 0 ? "No hounds in this filter."
-      : segment === "forward" && !anyPoints ? "No forward results yet. Switch to Replay to see the rules on earlier boards."
+      : !anyPoints && !hasForwardData(state.series) ? NO_FORWARD_CHART_TEXT
         : "No settled bets to draw yet.",
   });
   panel.appendChild(chart);
   panel.appendChild(legend);
+  if (usedBestPrice) {
+    panel.appendChild(h("p", { class: "hd-fine", "data-hook": "chart-basis-note",
+      text: "A hound whose boards could not all be averaged is drawn at its best recorded price instead." }));
+  }
 }
 
 function toggle(id) {
@@ -166,13 +162,33 @@ function statusLine(hound) {
   return h("span", { class: `hd-status hd-status--${hound.status || "unknown"}`, text: word });
 }
 
-function resultFacts(view, { replay = false } = {}) {
+/** Forward facts. The average price is the headline units figure, the best price the small print. */
+function resultFacts(view) {
   const rec = (view && view.record) || null;
   if (!rec || !(rec.bets > 0)) {
-    return { record: replay ? "no replay result reported" : NO_FORWARD_TEXT, clv: null, units: null };
+    return { record: NO_FORWARD_TEXT, clv: null, units: null };
   }
-  return { record: fmtRecord(rec), clv: fmtClv(view.clv),
-    units: `${fmtUnits(rec.units_recorded_price)} recorded price, ${fmtUnits(rec.units_average_price)} average price` };
+  return { record: fmtRecord(rec), clv: fmtClv(view.clv), units: unitsPairText(rec) };
+}
+
+/** The replay block is a record and a best-price figure only: no CLV, no average price, never a forward number. */
+function replayFacts(hound) {
+  const block = hound && hound.replay;
+  if (!block || typeof block !== "object") return null;
+  if (!(block.bets > 0)) return { record: "no replay result reported", units: null };
+  return { record: fmtRecord(block), units: `${fmtUnits(block.units_recorded_price)} ${BEST_PRICE_WORDS}` };
+}
+
+function verifiedBadge(hound) {
+  if (hound.verified === true) {
+    return h("span", { class: "hd-verified", "data-hook": "verified" }, [
+      h("span", { "aria-hidden": "true", text: "✓ " }), "verified"]);
+  }
+  // "not verified" is a finding about checked bets; a hound with nothing checkable yet has no finding.
+  if (hound.verified === false && hound.verified_share !== null && hound.verified_share !== undefined) {
+    return h("span", { class: "hd-unverified", text: "not verified" });
+  }
+  return null;
 }
 
 function row(hound) {
@@ -180,14 +196,9 @@ function row(hound) {
   const tone = verdictTone(label);
   const cat = categoryOf(hound);
   const forward = resultFacts(segmentView(hound, "forward"));
-  const replayView = segmentView(hound, "replay");
-  const replay = replayView ? resultFacts(replayView, { replay: true }) : null;
-  const verified = hound.verified === true
-    ? h("span", { class: "hd-verified", "data-hook": "verified" }, [
-      h("span", { "aria-hidden": "true", text: "✓ " }), "verified"])
-    : hound.verified === false ? h("span", { class: "hd-unverified", text: "not verified" }) : null;
-  const seg = effectiveSegment();
-  const seriesPts = state.series ? pointsFor(state.series, hound.id, seg) : null;
+  const replay = replayFacts(hound);
+  const verified = verifiedBadge(hound);
+  const seriesPts = state.series ? pointsFor(state.series, hound.id, "forward") : null;
   const fun = FUN_CATEGORIES.includes(cat);
   return h("li", { class: "hd-row", "data-hound": hound.id, "data-kind": hound.kind || "", "data-category": cat,
     "data-verdict": tone }, [
@@ -229,7 +240,6 @@ function row(hound) {
     replay ? h("p", { class: "hd-row__replay", "data-hook": "replay-line" }, [
       h("strong", { text: REPLAY_NOTE }), ": ",
       replay.record,
-      replay.clv ? `; price vs the close ${replay.clv.main}${replay.clv.detail ? ` (${replay.clv.detail})` : ""}` : "",
       replay.units ? `; units, small print: ${replay.units}` : ""]) : null,
   ]);
 }
@@ -320,13 +330,13 @@ function renderAll() {
 function streamItem(item) {
   const who = String(item.who_decided || "").toLowerCase();
   const name = item.hound_name || item.name || "";
-  const when = fmtWhen(item.at || item.ts || item.time_utc || item.created_utc || item.date);
-  const text = item.summary || item.text || item.reason || item.message || "";
-  return h("li", { class: "hd-stream__item", "data-who": who || "unknown" }, [
+  const when = fmtWhen(item.decided_utc || item.date);
+  const known = state.hounds.find((x) => String(x.id) === String(item.hound_id));
+  return h("li", { class: "hd-stream__item", "data-who": who || "unknown", "data-refused": item.refused ? "true" : "false" }, [
     h("span", { class: `hd-who hd-who--${who || "unknown"}`, "data-hook": "stream-who" }, `Decided by: ${whoLabel(who)}`),
-    name ? h("span", { class: "hd-stream__hound" }, [avatarSvg(name, { size: 18, category: item.category }),
+    name ? h("span", { class: "hd-stream__hound" }, [avatarSvg(name, { size: 18, category: known ? categoryOf(known) : "" }),
       item.hound_id !== undefined ? h("a", { href: houndHref(item.hound_id), text: name }) : h("span", { text: name })]) : null,
-    h("span", { class: "hd-stream__text", text }),
+    h("span", { class: "hd-stream__text", text: streamSummary(item) }),
     when ? h("span", { class: "hd-fine hd-stream__when", text: when }) : null,
   ]);
 }
@@ -340,6 +350,12 @@ export async function loadStream() {
   try {
     const data = await apiGet("/hounds/stream");
     clearNode(box);
+    if (isWarming(data)) {
+      box.appendChild(warmingBox(data));
+      retryWhileWarming("stream", loadStream, data);
+      return;
+    }
+    stopWarmingRetry("stream");
     const items = Array.isArray(data && data.items) ? data.items : [];
     if (items.length === 0) {
       box.appendChild(h("p", { class: "hd-muted", "data-hook": "stream-empty",
@@ -367,15 +383,18 @@ export async function loadStream() {
 
 // ---- graveyard ------------------------------------------------------------------------------------
 
+/** Contract: a retired hound is a HoundSummary with `retired: {date, cause}`. */
 function graveRow(hound) {
   const fwd = segmentView(hound, "forward");
+  const retired = hound.retired || {};
   return h("li", { class: "hd-grave__item", "data-hound": hound.id }, [
     avatarSvg(hound.name, { size: 36, gray: true }),
     h("div", {}, [
       h("a", { class: "hd-row__name", href: houndHref(hound.id), text: hound.name || NOT_REPORTED }),
       hound.last_bet_utc ? h("span", { class: "hd-fine", text: ` last bet ${fmtWhen(hound.last_bet_utc)}` }) : null,
       h("p", { class: "hd-grave__cause", "data-hook": "grave-cause" }, [h("strong", { text: "Cause: " }),
-        hound.cause || hound.retired_cause || "not stated by the server"]),
+        retired.cause || "not stated by the server",
+        retired.date ? h("span", { class: "hd-fine", text: ` (${fmtWhen(retired.date)})` }) : null]),
       h("p", { class: "hd-fine", text: [fwd && fwd.record ? `forward ${fmtRecord(fwd.record)}` : "",
         hound.verdict && hound.verdict.label ? `verdict at the end: ${hound.verdict.label}` : ""].filter(Boolean).join("; ") }),
     ]),
@@ -388,6 +407,12 @@ export async function loadGraveyard() {
   try {
     const data = await apiGet("/hounds/graveyard");
     clearNode(box);
+    if (isWarming(data)) {
+      box.appendChild(warmingBox(data));
+      retryWhileWarming("graveyard", loadGraveyard, data);
+      return;
+    }
+    stopWarmingRetry("graveyard");
     const list = Array.isArray(data && data.hounds) ? data.hounds : [];
     if (list.length === 0) {
       box.appendChild(h("p", { class: "hd-muted", "data-hook": "grave-empty",
@@ -411,6 +436,18 @@ export async function loadBoard() {
   if (list) { clearNode(list); list.appendChild(h("li", { class: "hd-muted", text: "Loading the race..." })); }
   try {
     const data = await apiGet("/hounds");
+    if (isWarming(data)) {
+      state.hounds = [];
+      state.payload = null;
+      if (list) { clearNode(list); list.appendChild(h("li", {}, [warmingBox(data)])); }
+      renderFilter();
+      const panel = q("hounds-chart-panel");
+      if (panel) { clearNode(panel); panel.appendChild(h("p", { class: "hd-muted", "data-hook": "chart-needs-board",
+        text: "The chart appears as soon as the race has been worked out." })); }
+      retryWhileWarming("board", loadBoard, data);
+      return false;
+    }
+    stopWarmingRetry("board");
     state.payload = data || {};
     state.hounds = Array.isArray(data && data.hounds) ? data.hounds : [];
     state.seriesError = null;
@@ -437,7 +474,8 @@ export async function loadBoard() {
   const ids = state.hounds.map((x) => encodeURIComponent(String(x.id)));
   if (ids.length) {
     try {
-      state.series = normalizeSeries(await apiGet(`/hounds/series?ids=${ids.join(",")}`));
+      const raw = await apiGet(`/hounds/series?ids=${ids.join(",")}`);
+      state.series = isWarming(raw) ? {} : normalizeSeries(raw);
       state.seriesError = null;
     } catch (err) {
       state.series = null;

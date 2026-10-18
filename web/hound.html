@@ -57,10 +57,9 @@
 <section class="hd-panel" aria-labelledby="chart-h" data-hook="hound-chart-section">
   <div class="hd-panel__head">
     <h2 id="chart-h">Paper units over time</h2>
-    <div class="hd-segs" role="group" aria-label="Which results to draw" data-hook="hound-segment"></div>
   </div>
   <p class="hd-chart-title" data-hook="hound-chart-title" aria-live="polite"></p>
-  <p class="hd-muted">Recorded and average price. Paper results. Units over a few weeks are mostly luck; the verdict above is the test.</p>
+  <p class="hd-muted">Average price (the headline) and best price (the best single quote recorded at the lock). Forward results only. Paper results. Units over a few weeks are mostly luck; the verdict above is the test.</p>
   <div data-hook="hound-units-chart"><p class="hd-muted">Loading the charts...</p></div>
   <div data-hook="hound-clv-chart"></div>
 </section>
@@ -68,6 +67,7 @@
 <section class="hd-panel" aria-labelledby="bets-h" data-hook="hound-bets-section">
   <h2 id="bets-h">Every bet</h2>
   <p class="hd-muted">Losses at the same size as wins. The "Decided by" column says whether the rule, the code or the model made each call.</p>
+  <div class="hd-segs" role="group" aria-label="Which bets to list" data-hook="bets-segment"></div>
   <div data-hook="hound-bets"><p class="hd-muted">Loading the bets...</p></div>
 </section>
 

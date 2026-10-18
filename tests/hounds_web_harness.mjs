@@ -193,7 +193,12 @@ globalThis.fetch = async (url, init = {}) => {
   const after = (scenario.failAfter || {})[path];
   if (after !== undefined && counts[path] > after) return { ok: false, status: 503, text: async () => "{}" };
   const key = init.method === "POST" ? "POST " + path : path;
-  const hit = (scenario.routes || {})[key];
+  // a route may be keyed by the FULL url (path and query) to answer one page of a paged list; else by path
+  let hit = (scenario.routes || {})[(init.method === "POST" ? "POST " : "") + url] || (scenario.routes || {})[key];
+  // switchAfter: {path: [n, [status, payload]]}: from the (n+1)th call on, answer with the other payload
+  // (the server's first answer is "warming up", its later ones are the real thing)
+  const sw = (scenario.switchAfter || {})[path];
+  if (sw && counts[path] > sw[0]) hit = sw[1];
   if (!hit) return { ok: false, status: 404, text: async () => JSON.stringify({ detail: "Not Found" }) };
   const [status, payload] = hit;
   return { ok: status >= 200 && status < 300, status, text: async () => JSON.stringify(payload) };
