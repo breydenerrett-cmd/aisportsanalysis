@@ -32,7 +32,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Mapping, Optional
 
@@ -86,6 +86,7 @@ class Game:
     folder: Path
     meta: dict
     packet: dict
+    _first_hashes: dict = field(default_factory=dict, repr=False, compare=False)
 
     # --- paths -------------------------------------------------------------------------------
     def request_file(self, stage: str, attempt: int) -> Path:
@@ -111,10 +112,17 @@ class Game:
         return roles.ALL_STAGES
 
     def first_request_hash(self, stage: str) -> Optional[str]:
+        """sha256 of the stage's first request, the identity its attempts belong to. A request file is
+        never rewritten, so once read the hash is kept (it is read on every state lookup)."""
+        held = self._first_hashes.get(stage)
+        if held is not None:
+            return held
         target = self.request_file(stage, 1)
         if not target.exists():
             return None
-        return request_hash(read_json(target, f"{stage} request"))
+        digest = request_hash(read_json(target, f"{stage} request"))
+        self._first_hashes[stage] = digest
+        return digest
 
     def attempts(self, stage: str) -> list:
         digest = self.first_request_hash(stage)

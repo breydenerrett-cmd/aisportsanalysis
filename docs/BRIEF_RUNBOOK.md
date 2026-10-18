@@ -157,3 +157,55 @@ brief should say so and pass.
 
 No brief is published after first pitch. No call is edited after publishing; a correction is a
 new published version. Nothing here turns billing on or sends a message to anyone.
+
+## Desk and persona hounds
+
+Seven model-written hounds (the Desk and six personas) bet paper units into `evidence/hounds_desk_v1.jsonl`.
+The delivery is session-assisted exactly like the brief above: a Claude Code session must be open, the
+parent session spawns one foreground Sonnet subagent per request file, and there is no API key. Reference:
+`docs/DESK_HOUNDS.md`; rules: `docs/PREREG_DESK_HOUNDS.md` (read it once; every rule below is in it).
+
+Caps, enforced by code: at most 2 games a run and at most 30 subagent answers a run (a game is 13 answers, so two
+games leave 4 re-answers). Football works the same way with `--sport nfl`.
+
+### Parent steps
+
+1. Bring the stores current as in steps 1 and 2 of "Steps" above (display refresh, merge the latest captured
+   prices, refresh lineups). For football run `python -m src.datasvc.cli nfl update` first.
+2. Freeze at most two games, about 2.5 hours before first pitch (football: about 3 hours before kickoff).
+   The packet is good for 90 minutes at publish, so do not freeze a game you cannot finish:
+   `python -m src.hounds.desk prepare --date YYYY-MM-DD --game AWAY@HOME [--sport nfl]`
+   It prints the packet hash, the event id and the token estimate. A third open game is refused. `--rehearsal`
+   marks a folder that can be planned and checked but never published (use it for a dry run).
+3. Plan: `python -m src.hounds.desk session-plan --date YYYY-MM-DD`
+   It writes every request that is ready and prints the jobs: one request file and one answer file each, plus the
+   exact subagent prompt. The first plan lists the four analysts and the six personas for each game (wave 1).
+4. Start one FOREGROUND Sonnet subagent per job (all jobs of a wave in one message, so they run together). Each is
+   given only the prompt the plan printed: read that one request file, write that one answer file. No other file, no
+   search, no hint about which way to lean. Do not edit an answer by hand.
+5. Check: `python -m src.hounds.desk session-check --date YYYY-MM-DD`
+   Every answer file is recorded as an attempt and checked; rejections are printed with the checker's lines.
+6. Repeat 3 to 5. Wave 2 (bull, bear) appears when the four analysts are final, wave 3 (the desk head) when the
+   bull and bear are. A rejected stage appears again as a re-answer whose request holds the rejection lines and
+   nothing else.
+7. When `session-plan` prints `EVERY STAGE IS FINAL`, publish within 90 minutes of step 2 and before first pitch:
+   `python -m src.hounds.desk publish --date YYYY-MM-DD --model claude-sonnet-5-5 [--tokens-in N --tokens-out N --seconds S --operator-minutes M]`
+   A hound whose decision stage is not final is skipped (not counted as a pass) and can be published in a later
+   call before the game starts.
+8. At any point: `python -m src.hounds.desk session-status --date YYYY-MM-DD` shows answered, checked and published.
+9. After the games: `python -m src.hounds.desk grade --date YYYY-MM-DD` (football needs `nfl update` first), then
+   `python -m src.hounds.desk verify`. Commit the ledger and the game folders by path; push in the minute 15 to 39
+   window.
+
+### The publication rule (same as the brief, per stage)
+
+The first answer to a stage's request is the candidate. Answer again only because the checker rejected it, at most
+twice (three attempts), with the rejection lines as the only extra input. An answer to a stage that is already clean
+is refused. Never draw extra answers "to see". A strike by the code risk manager (a TAKE at -200 or worse, a price
+that is not the best quote, a probability that does not beat the market's number, a persona's rule, a third TAKE) is
+a pass and never earns a new answer.
+
+### What never happens
+
+Nothing here is published after first pitch, edited after publishing, or sized. Do not describe a hound's record as
+anything but paper results of one model's reading. A hound that changes (prompt, schema or rule) is a new hound id.

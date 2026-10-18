@@ -202,10 +202,12 @@ def publish(game: "state.Game", *, model: str, tokens_in=None, tokens_out=None, 
         "hounds": {h["id"]: view[h["id"]] for h in roles.HOUNDS},
         "disagreement": table,
     }
-    text = json.dumps(transcript, indent=2) + "\n"
-    (folder / transcript_name).write_text(text, encoding="utf-8")
-    (folder / table_name).write_text(json.dumps(table, indent=2) + "\n", encoding="utf-8")
-    transcript_sha = hashlib.sha256(text.encode("utf-8")).hexdigest()
+    # Written as BYTES: the hash must be of exactly what is on disk, and a text-mode write on Windows
+    # would turn each newline into a carriage return and newline after the hash was taken.
+    text = (json.dumps(transcript, indent=2) + "\n").encode("utf-8")
+    (folder / transcript_name).write_bytes(text)
+    (folder / table_name).write_bytes((json.dumps(table, indent=2) + "\n").encode("utf-8"))
+    transcript_sha = hashlib.sha256(text).hexdigest()
 
     # 2. registration (the first publish), then the rows
     ledger.register(root, published_utc, prereg_sha256(root))
