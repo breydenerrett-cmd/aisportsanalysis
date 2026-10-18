@@ -46,6 +46,10 @@ from src.ledger.chain import HashChainLedger
 
 KIND_GRADED = "hound_user_graded"
 DEFAULT_LOOKBACK_DAYS = 14
+# A game still without a final this long after its scheduled start is either postponed or very
+# late; only then is the schedule asked (one lookup per pending bet, so not on every settle pass
+# of a game still being played).
+POSTPONE_CHECK_AFTER = timedelta(hours=8)
 
 SETTLED = (card_ledger.RESULT_WIN, card_ledger.RESULT_LOSS, card_ledger.RESULT_PUSH,
            card_ledger.RESULT_VOID)
@@ -169,7 +173,7 @@ def settle(*, ledger: Optional[str] = None, now: Optional[datetime] = None,
             identity = bet["event_id"]
         if result is None:
             if (bet["sport"] == "MLB" and identity is not None and postponed_lookup is not None
-                    and start is not None and now - start > timedelta(hours=18)):
+                    and start is not None and now - start > POSTPONE_CHECK_AFTER):
                 try:
                     info = postponed_lookup(identity, bet["slate_date"])
                 except Exception:  # noqa: BLE001 -- an unanswered lookup is never "pending"

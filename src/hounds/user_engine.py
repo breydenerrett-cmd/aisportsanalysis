@@ -562,6 +562,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     p_run.add_argument("--replay", action="store_true")
     p_run.add_argument("--ledger")
     p_run.add_argument("--multibook")
+    p_run.add_argument("--hounds-file",
+                       help="JSON lines of {id, spec, created_at} instead of the app database")
+    p_exp = sub.add_parser("export-specs", help="print the running hounds as JSON lines")
     p_ver = sub.add_parser("verify")
     p_ver.add_argument("--ledger")
     args = parser.parse_args(argv)
@@ -573,7 +576,16 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         return 0 if result.ok else 1
 
     from src.hounds import user_store
-    hounds = user_store.list_running()
+    if args.cmd == "export-specs":
+        for h in user_store.list_running():
+            print(json.dumps({"id": h["id"], "spec": h["spec"], "spec_hash": h["spec_hash"],
+                              "created_at": h["created_at"]}, sort_keys=True))
+        return 0
+    if args.hounds_file:
+        hounds = [json.loads(line) for line in Path(args.hounds_file).read_text(
+            encoding="utf-8").splitlines() if line.strip()]
+    else:
+        hounds = user_store.list_running()
     dates = auto_dates() if args.date == "auto" else [args.date]
     sports = {s for h in hounds for s in h["spec"]["sports"]}
     index = _load_game_pk_index()
