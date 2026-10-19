@@ -244,7 +244,8 @@ class TheLeaderboardIsTheFirstScreen(unittest.TestCase):
     def test_the_mini_leaderboard_is_filled_by_a_script_and_names_no_figure_when_it_has_none(self):
         panel = re.search(r'<section class="lbpanel" aria-label="top models".*?</section>', MARKUP, re.S).group(0)
         text = _visible(panel)
-        self.assertIn("Top models by units", text)
+        self.assertIn("Top models by bankroll", text)
+        self.assertIn("Every model starts with the same $1,000 paper bankroll. 1 unit = $10.", text)   # the shared start, static
         self.assertIn("Checking the leaderboard", text)
         self.assertNotRegex(text, r"[+-]\d")
         self.assertIn('href="hounds.html"', panel)
