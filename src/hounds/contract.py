@@ -201,6 +201,12 @@ class BetRow:
     reason: str = ""
     segment: str = "forward"
     verified: Optional[bool] = None
+    # The two stamps behind the dog page's "locked in before the game" line (added 2026-10-18, additive).
+    # ``start_utc`` is first pitch / kickoff; ``recorded_utc`` is when the row was WRITTEN (never the lock
+    # deadline: a deadline is not a record). Either is None when the source did not carry it, and the page
+    # then says less rather than guessing.
+    start_utc: Optional[str] = None
+    recorded_utc: Optional[str] = None
 
 
 @dataclass

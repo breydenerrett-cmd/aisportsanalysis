@@ -7,6 +7,12 @@
  * src/hounds/contract.py's. Each part loads on its own and says honestly what happened when its endpoint
  * is missing.
  *
+ * WATCHABLE / TRANSPARENT / SHOWABLE / COACHABLE (owner, 2026-10-18: "transparent and showable and coachable
+ * and watchable"): under the portrait sit Follow (a star kept in this browser), Share this dog and Download
+ * card; then "Today's action", the dog's picks for today with a status chip each, refreshed every minute while
+ * the tab is open (hounds-watch.js); the rulebook is always open, rule first, then the dials with their
+ * current values and when the referee last changed them (hounds-rulebook.js); a tunable dog has "Coach this
+ * dog", a tip box that never changes the dog; every bet shows its own why and when it went on the record.
  * TOP OF THE PAGE IS THE DOG: a portrait (inline SVG wearing its vibe), name, catchphrase, bio; the
  * scoreboard (record, units, streak, this week, best bet, worst beat); what the Houndmaster said after the
  * dog's last settled day (picked by date, so it holds all day); the badge (SHARP / COIN FLIP / FEEDING THE
@@ -32,6 +38,10 @@ import {
 import { renderLineChart } from "./hounds-chart.js";
 import { bootDesk } from "./hounds-desk.js";
 import { bootLineage } from "./hounds-lineage.js";
+import { copyText, shareDog, downloadCard } from "./hounds-share.js";
+import { isFollowed, toggleFollow } from "./hounds-follow.js";
+import { watchToday, recordStamp } from "./hounds-watch.js";
+import { loadRulebook, renderDials, renderCoach } from "./hounds-rulebook.js";
 
 export const PAGE_SIZE = 20;
 const AVG_COLOR = "#00E0FF";
@@ -41,11 +51,11 @@ export const VIBE_LABELS = {
   degen: "Degen 🎉", nerd: "Nerd 🤓", grinder: "Grinder ⛏️", psychic: "Psychic 🔮", chaos: "Chaos 🎲", grumpy: "Boss 📣",
 };
 
-const SECTIONS = ["hound-scoreboard-section", "hound-master-section", "hound-verdict-section", "hound-rule-section",
-  "hound-details"];
+const SECTIONS = ["hound-actions", "hound-today-section", "hound-scoreboard-section", "hound-master-section",
+  "hound-verdict-section", "hound-rule-section", "hound-bets-section", "hound-details"];
 
 const state = { id: "", hound: null, houndmaster: null, bets: null, betsError: null, betSegment: "", series: null,
-  seriesError: null };
+  seriesError: null, rulebook: null, rulebookFailed: false, watcher: null };
 
 const q = (hook) => document.querySelector(`[data-hook='${hook}']`);
 
@@ -57,28 +67,9 @@ function stateBox(kind, text, retry) {
   return box;
 }
 
-// ---- copy -----------------------------------------------------------------------------------------
+// ---- copy ----------------------------------------------------------------------------------------
 
-/** Copy text; resolves true/false. Uses the async clipboard, then the old textarea route. */
-export async function copyText(text) {
-  try {
-    if (typeof navigator !== "undefined" && navigator.clipboard && navigator.clipboard.writeText) {
-      await navigator.clipboard.writeText(text);
-      return true;
-    }
-  } catch (err) { /* fall through */ }
-  try {
-    const area = h("textarea", { "aria-hidden": "true", readonly: "", style: "position:fixed;opacity:0;top:0;left:0" });
-    area.value = text;
-    document.body.appendChild(area);
-    if (area.select) area.select();
-    const ok = document.execCommand ? document.execCommand("copy") : false;
-    document.body.removeChild(area);
-    return !!ok;
-  } catch (err) {
-    return false;
-  }
-}
+// copyText lives in hounds-share.js (the share button needs it too) and is re-exported below.
 
 /** The pasteable take behind "Tail it" / "Fade it": fun for a group chat, paper only, never a tip. */
 export function shareText(hound, mode) {
@@ -138,6 +129,76 @@ function renderHeader(hound) {
     causeBox.appendChild(h("p", {}, [h("strong", { text: "Napping. Why: " }),
       `its last bet was ${fmtWhen(hound.last_bet_utc)}, and a dog with no bet for more than 7 days goes on the bench.`]));
   }
+}
+
+// ---- follow, share, download ----------------------------------------------------------------------------
+
+export function renderActions(hound) {
+  const box = q("hound-actions");
+  if (!box) return;
+  clearNode(box);
+  const status = h("span", { class: "hd-fine", role: "status", "data-hook": "action-status" });
+  const follow = h("button", { type: "button", class: "btn btn--ghost hd-follow", "data-hook": "follow-btn" });
+  const paintFollow = (note) => {
+    const on = isFollowed(state.id);
+    follow.textContent = on ? "⭐ Following" : "⭐ Follow";
+    follow.setAttribute("aria-pressed", on ? "true" : "false");
+    follow.setAttribute("aria-label", on ? `Stop following ${hound.name || "this dog"}` : `Follow ${hound.name || "this dog"} in My dogs`);
+    if (note) status.textContent = note;
+  };
+  follow.addEventListener("click", () => {
+    const res = toggleFollow(state.id);
+    paintFollow(res.followed
+      ? (res.saved ? "Followed. It shows up first on the kennel page, in My dogs." : "Followed for this visit. This browser won't remember it.")
+      : "Unfollowed.");
+  });
+  const share = h("button", { type: "button", class: "btn btn--ghost", "data-hook": "share-btn", text: "Share this dog 🔗",
+    on: { click: async () => { await shareDog(hound, state.id); } } });
+  const card = h("button", { type: "button", class: "btn btn--ghost", "data-hook": "card-btn", text: "Download card 🖼️",
+    on: { click: async () => { await downloadCard(hound, state.id); } } });
+  box.appendChild(follow);
+  box.appendChild(share);
+  box.appendChild(card);
+  box.appendChild(status);
+  paintFollow("");
+}
+
+// ---- today's action ---------------------------------------------------------------------------------------
+
+function startToday(hound) {
+  const box = q("hound-today");
+  if (!box) return;
+  if (state.watcher) { state.watcher.poller.stop(); state.watcher = null; }
+  const retired = hound.status === "retired";
+  const ctx = () => ({ trigger: state.rulebook && state.rulebook.trigger, retired });
+  const load = async () => {
+    const data = await apiGet(`/hounds/${encodeURIComponent(state.id)}/bets?page=1&page_size=${PAGE_SIZE}`);
+    return betsPageOf(data).items;
+  };
+  state.watcher = watchToday(box, q("today-note"), { load, ctx });
+  if (hound.bets && typeof hound.bets === "object") state.watcher.setBets(betsPageOf(hound.bets).items);
+  else state.watcher.run();
+  if (retired) state.watcher.poller.stop();
+}
+
+// ---- the rulebook's dials and the coach's chair ------------------------------------------------------------
+
+async function startRulebook(hound) {
+  const { rb, failed } = await loadRulebook(state.id);
+  state.rulebook = rb;
+  state.rulebookFailed = failed;
+  renderDials(q("hound-dials"), rb, failed);
+  const coach = q("hound-coach-section");
+  if (coach) {
+    const live = rb && rb.tunable && hound.status !== "retired";
+    if (live) {
+      coach.removeAttribute("hidden");
+      renderCoach(coach, { houndId: state.id, rb });
+    } else {
+      coach.setAttribute("hidden", "");
+    }
+  }
+  if (state.watcher) state.watcher.paint();      // the empty state names the dog's trigger once we have it
 }
 
 // ---- the scoreboard -------------------------------------------------------------------------------------
@@ -396,7 +457,7 @@ function renderBets() {
     return;
   }
   const head = ["Date", "Game", "Market", "Selection", "Average price", "Best price (book)", "Market fair value", "Result",
-    "Units at best price", "Vs the close", "Decided by", "Why"];
+    "Units at best price", "Vs the close", "Decided by", "Why", "On the record"];
   const rows = page.items.map((b) => h("tr", { "data-who": String(b.who_decided || ""), "data-segment": String(b.segment || "") }, [
     h("td", { text: shortDate(b.date) || NOT_REPORTED }),
     h("td", { text: b.game || NOT_REPORTED }),
@@ -409,7 +470,8 @@ function renderBets() {
     h("td", { text: isNum(b.units) ? fmtUnits(b.units) : NOT_REPORTED }),
     h("td", { text: isNum(b.clv_pts) ? `${signed(b.clv_pts, 1)} pts` : "not measured" }),
     h("td", {}, [h("span", { class: `hd-who hd-who--${String(b.who_decided || "unknown").toLowerCase()}`, text: whoLabel(b.who_decided) })]),
-    h("td", { class: "hd-td-reason", text: b.reason || "" }),
+    h("td", { class: "hd-td-reason", "data-hook": "bet-why", text: b.reason || "" }),
+    h("td", { class: "hd-td-stamp", "data-hook": "bet-stamp", text: recordStamp(b).text }),
   ]));
   box.appendChild(h("div", { class: "hd-tablewrap", tabindex: "0", role: "region", "aria-label": "Bets table, scrolls sideways on a phone" }, [
     h("table", { class: "hd-table", "data-hook": "bets-table" }, [
@@ -494,6 +556,9 @@ export async function boot() {
   resultLines(hound);
   renderVerdict(hound);
   renderRule(hound, `build-a-hound.html?from=${encodeURIComponent(state.id)}`);
+  renderActions(hound);
+  startToday(hound);
+  startRulebook(hound);           // loads on its own: the dials and the coach never hold the page up
   const notice = noticeLine(hound);
   // The page already says paper-only, not advice and 21+; the server line is shown only if it adds something.
   if (notice && !/paper only, not advice/i.test(notice)) q("hound-notice").textContent = notice;
@@ -523,6 +588,7 @@ export async function boot() {
   renderCharts();
 }
 
+export { copyText };
 export const __state = state;
 export { dayKey, AVERAGE_PRICE_WORDS, verdictLabel };
 

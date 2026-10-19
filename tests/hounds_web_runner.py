@@ -54,6 +54,8 @@ def run_page(page: str, **scenario) -> dict:
     scenario_file = work / f"scenario_{os.getpid()}_{next(_counter)}.json"
     scenario_file.write_text(json.dumps(scenario), encoding="utf-8")
     env = dict(os.environ, SCENARIO_FILE=str(scenario_file))
+    if scenario.get("tz"):
+        env["TZ"] = scenario["tz"]
     proc = subprocess.run(["node", "hounds_web_harness.mjs"], cwd=work, env=env, capture_output=True, text=True,
                           encoding="utf-8", timeout=90)
     lines = [ln for ln in proc.stdout.splitlines() if ln.startswith("@@")]

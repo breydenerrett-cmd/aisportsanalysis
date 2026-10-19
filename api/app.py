@@ -31,6 +31,8 @@ from api.onboarding import router as onboarding_router
 from api.signup import router as signup_router
 from api.hounds_create import router as hounds_create_router
 from api.hounds_learning import router as hounds_learning_router
+from api.hounds_share import router as hounds_share_router
+from api.hounds_tips import router as hounds_tips_router
 from api.feeds import router as feeds_router
 from api.support import router as support_router
 from api.betcheck import free_router as free_betcheck_router, router as betcheck_router
@@ -70,6 +72,10 @@ app = FastAPI(title="aisportsanalysis api", description=(
 # same-named route added to another router later.
 app.include_router(health_router)
 
+# GET /d/{hound_id} -- the share link for a dog: a tiny page of Open Graph tags that sends a person on to
+# the real dog page (api/hounds_share.py). Mounted early so no later catch-all can claim /d/...
+app.include_router(hounds_share_router)
+
 # build-your-own hound (api/hounds_create.py). Mounted BEFORE any router that declares
 # GET /hounds/{id}, so the literal /hounds/menu and /hounds/mine are never read as a hound id.
 # Public reads are rate-limited; create/retire/undo carry their own sign-in; the signed coach
@@ -78,6 +84,9 @@ app.include_router(hounds_create_router)
 # the learning loop's public reads (api/hounds_learning.py): /hounds/learning is a literal path under
 # /hounds/{id}, so it too is mounted before api.hounds.
 app.include_router(hounds_learning_router)
+# a dog's rulebook and the fan-tip box (api/hounds_tips.py): /hounds/tips/export is a literal path next to
+# /hounds/{id}/..., so it too is mounted before api.hounds (tests/test_hounds_tips_api.py pins the order).
+app.include_router(hounds_tips_router)
 # the Zapier feeds and the coach brief (api/feeds.py). /hounds/coach-brief is a literal path under
 # /hounds/{id}, so this is mounted after the two routers above and BEFORE api.hounds (tests pin the order).
 app.include_router(feeds_router)

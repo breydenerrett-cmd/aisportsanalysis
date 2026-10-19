@@ -38,6 +38,7 @@ import {
   causeText, epitaphFor, personaOf, chatLine, STATUS_WORDS, RETIRE_UNITS, houndmasterLine,
 } from "./hounds-voice.js";
 import { renderLineChart, renderSparkline } from "./hounds-chart.js";
+import { followedIds, pinFollowed } from "./hounds-follow.js";
 
 export const STREAM_POLL_MS = 60000;
 export const CHART_LABEL = "Paper units, one a bet. Tap a name to hide a dog.";
@@ -46,9 +47,18 @@ export const NO_FORWARD_CHART_TEXT =
   "No live bets yet. Each dog's old-board rehearsal is on its row below; it is never drawn here.";
 const DASHES = [undefined, "7 4", "2 3", "10 3 2 3", "14 4", "1 4"];
 
+/** The filter list with "mine" (the dogs this browser follows, ./hounds-follow.js) on top of core's house/user. */
+function scoped(filter, category = "all") {
+  if (filter === "mine") {
+    const mine = followedIds();
+    return filterHounds(state.hounds.filter((x) => mine.has(String(x.id))), "all", category);
+  }
+  return filterHounds(state.hounds, filter, category);
+}
+
 const state = {
   hounds: [],
-  filter: "all",          // all | house | user
+  filter: "all",          // all | house | user | mine
   category: "all",
   hidden: new Set(),      // hound ids off the chart
   hiddenInitialised: false,
@@ -192,9 +202,9 @@ function renderChartPanel() {
     panel.appendChild(h("p", { class: "hd-muted", "data-hook": "chart-loading", text: "Loading the chart..." }));
     return;
   }
-  const shown = sortByUnits(filterHounds(state.hounds, state.filter, state.category));
+  const shown = sortByUnits(scoped(state.filter, state.category));
   // baselines stay selectable but start off the chart; they are listed under the board, not hidden
-  const shownAll = shown.concat(sortByUnits(splitBaselines(filterHounds(state.hounds, state.filter)).baselines)
+  const shownAll = shown.concat(sortByUnits(splitBaselines(scoped(state.filter)).baselines)
     .filter((x) => !shown.includes(x)));
   const legend = h("ul", { class: "hd-legend", "data-hook": "chart-legend", "aria-label": "Dogs on the chart" });
   const lines = [];
@@ -325,6 +335,8 @@ function row(hound, rank) {
       h("div", { class: "hd-row__id" }, [
         h("span", { class: "hd-row__namebar" }, [
           h("a", { class: "hd-row__name", href: houndHref(hound.id), text: hound.name || NOT_REPORTED }),
+          followedIds().has(String(hound.id)) ? h("span", { class: "hd-row__star", "data-hook": "row-star",
+            role: "img", "aria-label": "You follow this dog", text: "⭐" }) : null,
           fun ? h("span", { class: "hd-tag", "data-hook": "fun-tag", text: FUN_TAG }) : null,
         ]),
         persona && persona.catchphrase
@@ -381,15 +393,16 @@ function filterButtons(bar, entries, current, onPick, dataKey) {
 function renderFilter() {
   const bar = q("hounds-filter");
   if (!bar) return;
-  const count = (f) => filterHounds(state.hounds, f).length;
-  filterButtons(bar, [["all", `All (${count("all")})`], ["house", `House (${count("house")})`],
-    ["user", `Builders' (${count("user")})`]], state.filter, (k) => { state.filter = k; renderAll(); }, "data-filter");
+  const count = (f) => scoped(f).length;
+  filterButtons(bar, [["all", `All (${count("all")})`], ["mine", `My dogs ⭐ (${count("mine")})`],
+    ["house", `House (${count("house")})`], ["user", `Builders' (${count("user")})`]],
+    state.filter, (k) => { state.filter = k; renderAll(); }, "data-filter");
   const cats = q("hounds-categories");
   if (!cats) return;
   clearNode(cats);
-  const present = presentCategories(filterHounds(state.hounds, state.filter));
+  const present = presentCategories(scoped(state.filter));
   if (state.category !== "all" && !present.includes(state.category)) state.category = "all";
-  const base = filterHounds(state.hounds, state.filter);
+  const base = scoped(state.filter);
   const n = (c) => base.filter((x) => categoryOf(x) === c).length;
   cats.appendChild(h("button", { type: "button", class: "hd-seg", "data-category": "all",
     "aria-pressed": state.category === "all" ? "true" : "false",
@@ -414,22 +427,25 @@ function renderBoard() {
   const baseBox = q("hounds-baselines-list");
   if (!list) return;
   clearNode(list);
-  const filtered = filterHounds(state.hounds, state.filter, state.category);
-  const race = boardOrder(splitBaselines(filtered).race);
+  const filtered = scoped(state.filter, state.category);
+  const ordered = boardOrder(splitBaselines(filtered).race);
+  const rankOf = new Map(ordered.map((x, i) => [x, i + 1]));
+  const race = pinFollowed(ordered);          // followed dogs first, in their own order; ranks stay true
   if (race.length === 0) {
     list.appendChild(h("li", { class: "hd-empty", "data-hook": "board-empty" }, [
       h("p", { text: state.hounds.length === 0
         ? "Nobody's in the ring yet. When the first dog puts down a paper bet it shows up here."
+        : state.filter === "mine" ? "You aren't following any dogs yet. Open a dog and tap ⭐ Follow."
         : "No dogs match this filter." }),
       h("a", { class: "btn btn--primary", href: "build-a-hound.html", text: "Build your dog" }),
     ]));
   }
-  race.forEach((hound, i) => list.appendChild(row(hound, i + 1)));
+  race.forEach((hound) => list.appendChild(row(hound, rankOf.get(hound))));
   // baselines: below the board, collapsed, always listed (the house/builder filter applies; the category filter does not)
   const group = q("hounds-baselines");
   if (group && baseBox) {
     clearNode(baseBox);
-    const baselines = boardOrder(splitBaselines(filterHounds(state.hounds, state.filter)).baselines);
+    const baselines = boardOrder(splitBaselines(scoped(state.filter)).baselines);
     group.hidden = baselines.length === 0;
     if (baselines.length === 0) group.setAttribute("hidden", ""); else group.removeAttribute("hidden");
     const sum = q("hounds-baselines-summary");

@@ -107,6 +107,18 @@ unless that board exists for 90% of priced bets.
 | `GET /hounds/learning` | the learning loop's system scorecard (promotion hit rate, champions vs the random controls on the same games, activity, the false-discovery budget, the pause) |
 | `GET /hounds/learning/lessons?hound=&category=&page=` | every ended challenger's lesson, newest first |
 | `GET /hounds/{id}/lineage` | a hound's versions (each with its own record), live challengers, tried-and-failed list and lessons |
+| `GET /hounds/{id}/rulebook` | the rule, the plain "bets when" line and, for a tunable pack hound, its dials with current values and when the referee last changed them (`src/hounds/dials.py`) |
+| `GET /hounds/{id}/tips` | the newest 20 fan tips for a tunable hound and the count |
+| `POST /hounds/{id}/tips` | send a fan tip `{values: {knob: value}, nickname?}`; same validation as the AI coach (bounds, step grid, at most 2 knobs); 3 a day per caller, 60 a day for the site, counted in the app database |
+| `GET /hounds/tips/export?since=` | every tip, oldest first, with the champion's values at the time (no addresses or hashes), for the grading job |
+| `GET /d/{id}` | not JSON: a tiny page of Open Graph tags (name, W-L, paper units, catchphrase) that sends a person on to the dog page; what the Share button links to |
+
+Every bet row also carries `start_utc` (first pitch) and `recorded_utc` (when the row was written, never the
+lock deadline). The dog page's "on the record before the game" line is `recorded_utc < start_utc` and says less
+when either is missing.
+
+**A fan tip never changes a dog.** It is a row in a table (`src/hounds/fan_tips.py`); only the referee
+changes a dog. Tips are graded later like the AI coach's proposals.
 
 Shapes are in `src/hounds/contract.py` (dataclasses + `to_json`). Every payload
 has `paper_only: true`, `not_advice`, `as_of` (the newest decision day in the
