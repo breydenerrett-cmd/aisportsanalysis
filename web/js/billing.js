@@ -37,6 +37,9 @@ import { el, clear, renderError } from "./dom.js";
 import { BETA_TIER } from "./pricing.js";
 
 const STATUS_NOT_CONFIGURED = "not_configured";
+// A free member (src/appstate/comps.py): GET /billing/status answers
+// {status: "comp", plan: "comp", renews: false, label: "Free member"}.
+const STATUS_COMP = "comp";
 const STATUS_REDIRECT = "redirect";
 const STATUS_ERROR = "error";
 
@@ -173,6 +176,18 @@ function renderSubscribe(section, container) {
   section.appendChild(body);
 }
 
+/** A free member has no subscription: no price, no Subscribe button, no cancel
+ * and no renewal date. Saying so plainly is the whole page; the words are the
+ * server's (`label`), with a fallback if an older server sent none. */
+function renderFreeMember(section, payload) {
+  const body = panel("billing-free-member");
+  body.appendChild(el("h2", { text: "Your membership" }));
+  body.appendChild(el("p", { class: "billing__status" }, [
+    el("strong", { "data-hook": "billing-free-state", text: payload.label || "Free member" })]));
+  body.appendChild(note("Your access is free. There is nothing to pay and nothing renews."));
+  section.appendChild(body);
+}
+
 function renderManage(section, container, payload) {
   const body = panel("billing-status");
   body.appendChild(el("h2", { text: "Your subscription" }));
@@ -268,7 +283,9 @@ export async function renderBilling(container) {
   // `not_configured` means no webhook has ever reported a subscription for
   // this account -- which is the state of every prospective customer, so it
   // is the SUBSCRIBE state, not an error state.
-  if (!payload || payload.status === STATUS_NOT_CONFIGURED) {
+  if (payload && payload.status === STATUS_COMP) {
+    renderFreeMember(section, payload);
+  } else if (!payload || payload.status === STATUS_NOT_CONFIGURED) {
     renderSubscribe(section, container);
   } else {
     renderManage(section, container, payload);

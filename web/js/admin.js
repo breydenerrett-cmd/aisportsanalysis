@@ -2,9 +2,24 @@
  * ADMIN view -- web/admin.html. A structural (zero-aesthetic) ops page
  * over the admin surface: GET /admin/overview, GET /admin/funnel,
  * GET /admin/support, GET /admin/users, POST /admin/support/{id}/status,
- * GET/POST /admin/testers, POST /admin/testers/extend and GET /admin/activation
+ * GET/POST /admin/testers, POST /admin/testers/extend, GET /admin/activation,
+ * GET/POST /admin/comps, POST /admin/comps/revoke and POST /admin/users/reissue
  * (api/admin.py, api/funnel.py, api/support.py), all gated by
  * `X-Admin-Token` (api/auth.py's `_require_admin`).
+ *
+ * THE FREE MEMBERS SECTION (owner decision, 2026-10-19)
+ * -------------------------------------------------------------------
+ * "Free members" is the complimentary grant: full access, no card, no end date,
+ * until the owner revokes it (src/appstate/comps.py holds the policy). Email +
+ * reason + "Give free access forever" gives it to a new email, a waitlisted
+ * signup, an expired tester or an existing user; the Users list has an "Approve
+ * as free member" button on a waitlisted row that asks for the reason first. The
+ * grant returns the raw access token ONCE. It is shown with a copy button and the
+ * sign-in page's address, which carries NO token (the address is the same for
+ * everyone and the token is pasted into the page, so the secret never rides in a
+ * URL); like a tester's token it is never stored, never logged and is gone when
+ * the section is rebuilt. The list shows who has it and why, with Revoke (which
+ * ends the access and every token) and New token (the support re-issue).
  *
  * THE TESTERS SECTION (owner decision, 2026-10-02)
  * -------------------------------------------------------------------
@@ -523,11 +538,17 @@ async function renderSupportInbox(host) {
 // press of the grant button.
 let fillTesterForm = null;
 
+// The Free members section's "approve this user" hook, set while that section is
+// mounted. The users list calls it from a waitlisted user's button with the user
+// and a status element to write into; it asks for the reason itself.
+let approveFreeMember = null;
+
 export function renderUsers(host, users) {
   clear(host);
   const table = el("table", { class: "admin-users-table", "data-hook": "admin-users-table" });
   const head = el("tr");
-  for (const column of ["id", "email", "status", "plan", "created_at", "tester", "action"]) {
+  for (const column of ["id", "email", "status", "plan", "created_at", "tester", "free member",
+                        "action"]) {
     head.appendChild(el("th", { text: column }));
   }
   table.appendChild(el("thead", {}, [head]));
@@ -539,7 +560,20 @@ export function renderUsers(host, users) {
     }
     row.appendChild(el("td", { "data-hook": "admin-user-tester",
       text: user.tester ? `until ${utcLabel(user.tester_expires_at)}` : "no" }));
+    row.appendChild(el("td", { "data-hook": "admin-user-comp",
+      text: user.comp ? "yes" : (user.comp_revoked ? "ended" : "no") }));
     const action = el("td");
+    if (user.status === "waitlisted" && !user.comp) {
+      const approve = el("button", { type: "button", "data-hook": "admin-user-approve-free",
+        text: "Approve as free member" });
+      const approveStatus = el("span", { role: "status", "data-hook": "admin-user-approve-status" });
+      // Returns the hook's promise (a browser ignores it) so a caller that awaits
+      // the click handler waits for the request too.
+      approve.addEventListener("click", () => (
+        approveFreeMember ? approveFreeMember(user, approveStatus) : undefined));
+      action.appendChild(approve);
+      action.appendChild(approveStatus);
+    }
     if (user.status === "waitlisted" && !user.tester) {
       const shortcut = el("button", { type: "button", "data-hook": "admin-user-grant-tester",
         text: "Grant tester access" });
@@ -850,16 +884,288 @@ export async function mountTesters(host) {
   };
 }
 
+// ---------------------------------------------------------------------------
+// FREE MEMBERS -- see the module docstring. Everything shown comes from the server.
+// ---------------------------------------------------------------------------
+
+/** Where a free member signs in. The page is the product's own sign-in route
+ * (web/index.html#/signin), found beside this admin page so a staging copy points
+ * at staging; the production address is the fallback when the page's own address
+ * is not readable. It holds no secret: the token is pasted into the page. */
+const PRODUCTION_SIGNIN_URL = "https://linehound.app/web/index.html#/signin";
+
+export function signinUrl() {
+  try {
+    const here = window.location && window.location.href;
+    if (typeof here === "string" && here.indexOf("admin.html") > 0) {
+      return here.split("admin.html")[0] + "index.html#/signin";
+    }
+  } catch (err) {
+    /* fall through to the production address */
+  }
+  return PRODUCTION_SIGNIN_URL;
+}
+
+/** The message the owner sends. It carries the raw token, so it is only ever
+ * built to be copied to the clipboard on a click: never rendered, stored or
+ * logged. */
+function welcomeMessage(issued) {
+  return "You're in. This is free LINEHOUND access with no card and no end date.\n"
+    + "1. Open " + signinUrl() + "\n"
+    + "2. Paste this access code where it asks for the token, then press Save token:\n"
+    + issued.token + "\n"
+    + "Keep it to yourself. If you lose it, reply and I'll send a new one.";
+}
+
+/** The ONE place a freshly issued free-member token is shown: a read-only box,
+ * copy buttons, the sign-in address, and the reminder that it is not kept. */
+function renderFreeAccess(host, issued, verb) {
+  clear(host);
+  const wrap = el("div", { "data-hook": "admin-comp-result", role: "status" });
+  wrap.appendChild(el("p", { "data-hook": "admin-comp-result-summary",
+    text: verb + " for " + issued.email + ". It does not expire; it works until you revoke it." }));
+  const box = el("input", { type: "text", readonly: "readonly", size: "48",
+    value: issued.token, "aria-label": "Access token", "data-hook": "admin-comp-token" });
+  wrap.appendChild(box);
+  const copy = el("button", { type: "button", "data-hook": "admin-comp-copy", text: "Copy" });
+  copy.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(issued.token);
+      copy.textContent = "Copied";
+    } catch (err) {
+      copy.textContent = "Copy it by hand from the box";
+    }
+  });
+  wrap.appendChild(copy);
+  const link = signinUrl();
+  const linkRow = el("p", { "data-hook": "admin-comp-signin" });
+  linkRow.appendChild(el("span", { text: "Sign-in page to send them: " }));
+  linkRow.appendChild(el("a", { href: link, target: "_blank", rel: "noopener",
+    "data-hook": "admin-comp-signin-link", text: link }));
+  wrap.appendChild(linkRow);
+  const message = el("button", { type: "button", "data-hook": "admin-comp-copy-message",
+    text: "Copy the message to send" });
+  message.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(welcomeMessage(issued));
+      message.textContent = "Message copied";
+    } catch (err) {
+      message.textContent = "Copy blocked: send the token and the page address yourself";
+    }
+  });
+  wrap.appendChild(message);
+  wrap.appendChild(el("p", { "data-hook": "admin-comp-token-note",
+    text: "Send the token and the page address to them yourself; the token is not stored "
+        + "and cannot be shown again. If they lose it, press New token on their row." }));
+  host.appendChild(wrap);
+}
+
+function renderCompCount(host, data) {
+  host.textContent = data.active === 1 ? "1 free member" : data.active + " free members";
+}
+
+function renderCompTable(host, data, actions) {
+  clear(host);
+  const rows = data.comps || [];
+  if (!rows.length) {
+    host.appendChild(el("p", { "data-hook": "admin-comps-empty", text: "No free members yet." }));
+    return;
+  }
+  const table = el("table", { class: "admin-comps-table", "data-hook": "admin-comps-table" });
+  const head = el("tr");
+  for (const column of ["email", "status", "given", "why", "signed in", "state", "actions"]) {
+    head.appendChild(el("th", { text: column }));
+  }
+  table.appendChild(el("thead", {}, [head]));
+  const body = el("tbody");
+  for (const comp of rows) {
+    const row = el("tr", { "data-hook": "admin-comp-row", "data-user-id": String(comp.user_id) });
+    row.appendChild(el("td", { text: comp.email }));
+    row.appendChild(el("td", { text: comp.status }));
+    row.appendChild(el("td", { text: utcLabel(comp.granted_at) }));
+    row.appendChild(el("td", { "data-hook": "admin-comp-reason", text: comp.reason }));
+    row.appendChild(el("td", { "data-hook": "admin-comp-signed-in",
+      text: comp.first_used_at ? "yes" : "no" }));
+    row.appendChild(el("td", { "data-hook": "admin-comp-state",
+      text: comp.revoked_at
+        ? "revoked " + utcLabel(comp.revoked_at) + ": " + (comp.revoked_reason || "")
+        : (comp.active ? "free member" : "on hold (account suspended)") }));
+    const action = el("td");
+    if (!comp.revoked_at) {
+      const reason = el("input", { type: "text", maxlength: "500", autocomplete: "off",
+        placeholder: "Reason (kept in the log)", "aria-label": "Reason for " + comp.email,
+        "data-hook": "admin-comp-row-reason" });
+      const reissue = el("button", { type: "button", "data-hook": "admin-comp-reissue",
+        text: "New token" });
+      const revoke = el("button", { type: "button", "data-hook": "admin-comp-revoke",
+        text: "Revoke" });
+      const status = el("span", { role: "status", "data-hook": "admin-comp-row-status" });
+      reissue.addEventListener("click", () => actions.reissue(comp, reason, status));
+      revoke.addEventListener("click", () => actions.revoke(comp, reason, status));
+      action.appendChild(reason);
+      action.appendChild(reissue);
+      action.appendChild(revoke);
+      action.appendChild(status);
+    }
+    row.appendChild(action);
+    body.appendChild(row);
+  }
+  table.appendChild(body);
+  host.appendChild(table);
+}
+
+/** Build the Free members section into `host` and load it. `onChange` runs after
+ * every grant or revoke so the Users list can refresh. Rebuilding clears the host
+ * first, which is also what removes a token that was on screen. */
+export async function mountComps(host, onChange) {
+  clear(host);
+  approveFreeMember = null;
+  const count = el("p", { role: "status", "data-hook": "admin-comps-count" });
+  const formHost = el("div", { "data-hook": "admin-comp-form-host" });
+  const resultHost = el("div", { "data-hook": "admin-comp-result-host" });
+  const listHost = el("div", { "data-hook": "admin-comps-list" });
+  for (const part of [count, formHost, resultHost, listHost]) host.appendChild(part);
+
+  async function reload() {
+    let data;
+    try {
+      data = await adminGet("/admin/comps");
+    } catch (err) {
+      renderAuthState(listHost, err);
+      return null;
+    }
+    renderCompCount(count, data);
+    renderCompTable(listHost, data, { reissue: onReissue, revoke: onRevoke });
+    return data;
+  }
+
+  async function changed() {
+    await reload();
+    if (typeof onChange === "function") await onChange();
+  }
+
+  async function onReissue(comp, reasonInput, status) {
+    const reason = reasonInput.value.trim();
+    if (!reason) {
+      status.textContent = "Type the reason first: what did you verify?";
+      return;
+    }
+    status.textContent = "Issuing...";
+    let issued;
+    try {
+      issued = await adminPost("/admin/users/reissue", { user_id: comp.user_id, reason });
+    } catch (err) {
+      status.textContent = testerErrorText(err);
+      return;
+    }
+    renderFreeAccess(resultHost, issued, "New token issued");
+    status.textContent = "";
+    reasonInput.value = "";
+  }
+
+  async function onRevoke(comp, reasonInput, status) {
+    const reason = reasonInput.value.trim();
+    if (!reason) {
+      status.textContent = "Type the reason first: why is the access ending?";
+      return;
+    }
+    status.textContent = "Revoking...";
+    try {
+      await adminPost("/admin/comps/revoke", { user_id: comp.user_id, reason });
+    } catch (err) {
+      status.textContent = testerErrorText(err);
+      return;
+    }
+    clear(resultHost);          // a token on screen for this person is dead now
+    await changed();
+  }
+
+  const first = await reload();
+  if (!first) return;
+
+  const form = el("form", { "data-hook": "admin-comp-form" });
+  form.appendChild(el("label", { for: "admin-comp-email", text: "Email" }));
+  const email = el("input", { type: "email", id: "admin-comp-email", name: "email",
+    autocomplete: "off", "data-hook": "admin-comp-email" });
+  form.appendChild(email);
+  form.appendChild(el("label", { for: "admin-comp-reason", text: "Why" }));
+  const reason = el("input", { type: "text", id: "admin-comp-reason", name: "reason",
+    maxlength: "500", autocomplete: "off", size: "40",
+    placeholder: "e.g. early-access signup, friend of the project",
+    "data-hook": "admin-comp-reason-input" });
+  form.appendChild(reason);
+  const grant = el("button", { type: "submit", "data-hook": "admin-comp-grant",
+    text: "Give free access forever" });
+  form.appendChild(grant);
+  const formStatus = el("p", { role: "status", "data-hook": "admin-comp-form-status" });
+  form.appendChild(formStatus);
+  formHost.appendChild(form);
+
+  let pending = false;
+  async function give(body, statusEl, verb) {
+    if (pending) return false;
+    pending = true;
+    statusEl.textContent = "Granting...";
+    try {
+      const issued = await adminPost("/admin/comps", body);
+      renderFreeAccess(resultHost, issued, verb);
+      statusEl.textContent = "";
+      await changed();
+      return true;
+    } catch (err) {
+      statusEl.textContent = testerErrorText(err);
+      return false;
+    } finally {
+      pending = false;
+    }
+  }
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const address = email.value.trim();
+    const why = reason.value.trim();
+    if (!address) {
+      formStatus.textContent = "Enter an email.";
+      return;
+    }
+    if (!why) {
+      formStatus.textContent = "Type why: it is kept in the log.";
+      return;
+    }
+    if (await give({ email: address, reason: why }, formStatus, "Free access given")) {
+      email.value = "";
+      reason.value = "";
+    }
+  });
+
+  approveFreeMember = async (user, statusEl) => {
+    const ask = (typeof window !== "undefined" && typeof window.prompt === "function")
+      ? window.prompt : null;
+    const answer = ask
+      ? ask.call(window, "Why does " + user.email + " get free access forever? (kept in the log)")
+      : null;
+    const why = typeof answer === "string" ? answer.trim() : "";
+    if (!why) {
+      statusEl.textContent = "Not approved: a reason is required.";
+      return;
+    }
+    await give({ user_id: user.id, reason: why }, statusEl, "Approved as a free member");
+  };
+}
+
 async function loadAdmin(hosts) {
   clear(hosts.authState);
   for (const section of [hosts.overviewSection, hosts.funnelSection,
-                         hosts.supportSection, hosts.testersSection, hosts.usersSection]) {
+                         hosts.supportSection, hosts.testersSection, hosts.compsSection,
+                         hosts.usersSection]) {
     section.hidden = true;
   }
   // Emptied, not just hidden: a token left on screen from a previous grant must
   // not survive clearing or changing the admin token.
   clear(hosts.testersHost);
+  clear(hosts.compsHost);
   fillTesterForm = null;
+  approveFreeMember = null;
 
   let overview;
   try {
@@ -896,14 +1202,28 @@ async function loadAdmin(hosts) {
     hosts.testersSection.hidden = false;
   }
 
-  try {
-    const usersResult = await adminGet("/admin/users");
-    renderUsers(hosts.usersHost, usersResult.users || []);
-    hosts.usersSection.hidden = false;
-  } catch (err) {
-    renderAuthState(hosts.usersHost, err);
-    hosts.usersSection.hidden = false;
+  // The Users list is re-read after a free-member grant or revoke, so a waitlisted
+  // row stops offering "Approve" the moment it has been approved.
+  async function refreshUsers() {
+    try {
+      const usersResult = await adminGet("/admin/users");
+      renderUsers(hosts.usersHost, usersResult.users || []);
+      hosts.usersSection.hidden = false;
+    } catch (err) {
+      renderAuthState(hosts.usersHost, err);
+      hosts.usersSection.hidden = false;
+    }
   }
+
+  try {
+    await mountComps(hosts.compsHost, refreshUsers);
+    hosts.compsSection.hidden = false;
+  } catch (err) {
+    renderAuthState(hosts.compsHost, err);
+    hosts.compsSection.hidden = false;
+  }
+
+  await refreshUsers();
 }
 
 function boot() {
@@ -917,6 +1237,8 @@ function boot() {
     supportHost: document.querySelector("[data-hook='admin-support-host']"),
     testersSection: document.querySelector("[data-hook='admin-testers-section']"),
     testersHost: document.querySelector("[data-hook='admin-testers-host']"),
+    compsSection: document.querySelector("[data-hook='admin-comps-section']"),
+    compsHost: document.querySelector("[data-hook='admin-comps-host']"),
     usersSection: document.querySelector("[data-hook='admin-users-section']"),
     usersHost: document.querySelector("[data-hook='admin-users-host']"),
   };
