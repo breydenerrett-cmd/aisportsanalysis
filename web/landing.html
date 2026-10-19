@@ -12,12 +12,10 @@
 
      WHAT CHANGED
      - Every "Bet Check" offer/CTA/nav item/pricing card/FAQ line is gone
-       from marketing. Bet Check's route (#/betcheck) stays reachable, but
-       only as a small, unadvertised link in the footer -- see the
-       `.footnote-link` paragraph near the bottom of this file --
-       satisfying tests/test_funnel_attribution.py's
-       EveryCtaGoesWhereItPromises::test_the_page_links_to_the_free_check_at_all
-       without putting it back in the pitch.
+       from marketing, and (2026-10-19) so is the last footer link to it: this page,
+       the sign-in page and the signup page do not link to Bet Check at all. The
+       route itself stays; a signed-in member still finds it in the shared footer
+       (web/js/meta.js shows that link only while a token is stored).
      - The page is rebuilt around one hook (the record), a 3-step
        explanation, a proof section, sports covered, one pricing card and
        a short FAQ. The clutter (demo-matchup scanner walls of text, the
@@ -655,8 +653,8 @@
      that each began with the LINEHOUND mark. Now one <footer>: the page links,
      the data note, the shared legal block (it carries the brand mark, the 21+
      / play responsibly line, the helpline and the disclaimer, and mounts as a
-     group inside this footer) and the unadvertised Bet Check link. Every link
-     and every sentence that was in either block is still here. -->
+     group inside this footer). Every link and every sentence that was in either
+     block is still here. -->
 <footer class="site-footer" aria-label="footer" data-hook="landing-footer">
   <div class="site-footer__top">
     <div class="site-nav__links" style="display:flex">
@@ -674,15 +672,9 @@
       price board and the NFL card.</p>
   </div>
   <div data-hook="disclaimer-host" aria-label="disclaimer"></div>
-  <!-- Bet Check stays reachable -- it is not a thing we advertise, only a
-       tool that stays available if you already know you want it. Owner,
-       2026-09-22: "not advertising that that's what we do, because it's
-       not." A plain, unstyled utility link, not a CTA (data-hook does not
-       start with "cta", so it never enters the CTA-tracking / "advertised"
-       surface below), and never part of the pitch above the fold. -->
-  <p class="footnote-link">
-    <a href="index.html#/betcheck" data-hook="footer-betcheck-link">Bet Check</a>
-  </p>
+  <!-- No Bet Check link here. Owner, 2026-09-22: "not advertising that that's what
+       we do, because it's not." The route (#/betcheck) stays for people already
+       inside the app; a signed-out page does not point at it. -->
 </footer>
 
 <script type="module" src="js/landing.js"></script>

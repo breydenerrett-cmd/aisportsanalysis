@@ -190,6 +190,25 @@ def _is_cloudflare(address) -> bool:
                for net in CLOUDFLARE_IP_RANGES)
 
 
+IPV6_BUCKET_PREFIX = 64
+
+
+def _bucket(address) -> str:
+    """The rate-limit key for a parsed address. IPv4 is itself; IPv6 is its /64.
+
+    WHY. An ISP hands one subscriber a whole /64 (2^64 addresses) and the
+    privacy extensions rotate the host part at will, so a per-full-address key
+    gave one household a fresh bucket per request (red team 2026-10-19: every
+    per-IP limiter -- signup, login, fire, support -- was a no-op over IPv6).
+    The /64 is the smallest block a single site controls, so it is the unit
+    the limiter should count. Returned as the network address ("2001:db8::"),
+    which still parses as an IP address."""
+    if address.version == 6:
+        net = ipaddress.ip_network((address, IPV6_BUCKET_PREFIX), strict=False)
+        return str(net.network_address)
+    return str(address)
+
+
 def _header(headers, name: str) -> str:
     try:
         return (headers.get(name) or "").strip()
@@ -226,6 +245,8 @@ def client_ip(request) -> str:
     choose its bucket with that header: Fly overwrites `Fly-Client-IP` with the
     client's own (non-Cloudflare) address, and rule 1 does not fire.
 
+    An IPv6 address is keyed on its /64 (`_bucket`), IPv4 on itself.
+
     Every value is normalised through `ipaddress` before it becomes a key: a
     malformed header (garbage, an oversize string, an embedded newline) never
     raises and never becomes the limiter key verbatim; it falls through to the
@@ -246,11 +267,14 @@ def client_ip(request) -> str:
             if _is_cloudflare(fly):
                 real = _parse_ip(_header(headers, CF_CONNECTING_IP_HEADER))
                 if real is not None:
-                    return str(real)
-            return str(fly)
+                    return _bucket(real)
+            return _bucket(fly)
     client = getattr(request, "client", None)
     host = getattr(client, "host", None) if client is not None else None
-    return host or "unknown"
+    if not host:
+        return "unknown"
+    parsed = _parse_ip(host)
+    return _bucket(parsed) if parsed is not None else host
 
 
 # Old private name, kept so nothing importing it breaks.

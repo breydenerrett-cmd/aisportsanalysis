@@ -390,8 +390,10 @@ class TheAuditTrail(_Base):
         self.assertEqual([e.kind for e in rows],
                          [events.COMP_ACCESS_GRANTED, events.COMP_ACCESS_REVOKED])
         self.assertEqual(rows[0].properties,
-                         {"action": "grant", "kind": "new_email", "revoked_tokens": 0})
-        self.assertEqual(rows[1].properties, {"action": "revoke", "revoked_tokens": 1})
+                         {"action": "grant", "kind": "new_email", "revoked_tokens": 0,
+                          "had_password": False})
+        self.assertEqual(rows[1].properties, {"action": "revoke", "revoked_tokens": 1,
+                          "had_password": False})
         self.assertEqual({e.user_hash for e in rows}, {events.hash_user_id(grant.user_id)})
         blob = json.dumps([[e.user_hash, e.kind, e.properties, e.at] for e in rows])
         for secret in (grant.token, email, "jacob.private", "meetup", "changed my mind"):

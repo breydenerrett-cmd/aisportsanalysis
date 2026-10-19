@@ -15,7 +15,7 @@
  * and BETA_TIER already state; this file wires DOM plumbing, not copy.
  */
 
-import { apiGet, trackFunnelEvent } from "./api.js";
+import { apiGet, getToken, trackFunnelEvent } from "./api.js";
 import { el, clear, SPORTS_LIVE_TODAY } from "./dom.js";
 import {
   FILL_TAG, POSTSEASON_TAG_SAMPLE, dayEntries, entryRow, isHeavyFavourite, tallyText,
@@ -631,6 +631,8 @@ export async function fillSportTiles() {
 async function fillClosingCta() {
   const node = document.querySelector("[data-hook='closing-cta-title']");
   if (!node) return;
+  // GET /card is members-only: signed out it is a 401 in the console and the markup's fallback stays anyway.
+  if (!getToken()) return;
   try {
     const card = await apiGet("/card");
     if (!card || card.frozen !== true) return;

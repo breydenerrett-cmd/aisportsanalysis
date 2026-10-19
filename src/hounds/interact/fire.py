@@ -153,14 +153,24 @@ def cached_games(sports, now: datetime, rows_for: Optional[Callable] = None) -> 
     if rows_for is not None:
         return load_games(sports, now, rows_for)
     key = tuple(sorted(sports))
-    with _games_lock:
-        hit = _games_cache.get(key)
-        if hit and time.monotonic() - hit[0] < 60.0:
-            return hit[1]
+
+    def fresh():
+        with _games_lock:
+            hit = _games_cache.get(key)
+            return hit[1] if hit and time.monotonic() - hit[0] < 60.0 else None
+    hit = fresh()
+    if hit is not None:
+        return hit
     with _heavy():
+        # DOUBLE-CHECKED. Twenty simultaneous unsigned "Fire now" taps all missed the
+        # cache above and queued on the gate, and each then ran its own full load
+        # (red team 2026-10-19). Whoever waited re-reads the cache the builder filled.
+        hit = fresh()
+        if hit is not None:
+            return hit
         games = load_games(sports, now)
-    with _games_lock:
-        _games_cache[key] = (time.monotonic(), games)
+        with _games_lock:
+            _games_cache[key] = (time.monotonic(), games)
     return games
 
 
@@ -442,16 +452,23 @@ def default_stores(now: datetime):
     """The pack runner's stores, loaded for this moment and remembered for five minutes. Read once under the
     process-wide heavy gate, like the daily pack run and the coach grade."""
     from src.hounds.pack import base
-    with _stores_lock:
-        hit = _stores_cache.get("stores")
-        if hit and time.monotonic() - hit[0] < STORES_TTL_S:
-            return hit[1]
+
+    def fresh():
+        with _stores_lock:
+            hit = _stores_cache.get("stores")
+            return hit[1] if hit and time.monotonic() - hit[0] < STORES_TTL_S else None
+    hit = fresh()
+    if hit is not None:
+        return hit
     since = max(base.SEAL_FLOOR, base.day_before(common.eastern_date(now), 8))
     until = (datetime.fromisoformat(common.eastern_date(now)) + timedelta(days=6)).date().isoformat()
     with _heavy():
+        hit = fresh()                    # double-checked: see cached_games
+        if hit is not None:
+            return hit
         stores = base.load_stores(since=since, until=until)
-    with _stores_lock:
-        _stores_cache["stores"] = (time.monotonic(), stores)
+        with _stores_lock:
+            _stores_cache["stores"] = (time.monotonic(), stores)
     return stores
 
 

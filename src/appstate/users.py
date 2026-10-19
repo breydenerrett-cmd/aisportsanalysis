@@ -453,6 +453,40 @@ def _wipe_activation_tokens(conn: sqlite3.Connection, *, user_id: Optional[int] 
         f"WHERE {where} AND raw_token IS NOT NULL", (_now_iso(), arg))
 
 
+def password_exists_on(conn: sqlite3.Connection, user_id: int) -> bool:
+    """Whether user_id has a stored password, on the caller's open connection.
+
+    users.py cannot import passwords (it imports this module) and the table only
+    exists once passwords has opened the database, so this is plain SQL behind a
+    table-exists check, like `_wipe_activation_tokens`. Read BEFORE
+    `clear_password_on` when the audit row wants the `had_password` fact."""
+    exists = conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type = 'table' "
+        "AND name = 'user_passwords'").fetchone()
+    if not exists:
+        return False
+    return conn.execute("SELECT 1 FROM user_passwords WHERE user_id = ?",
+                        (user_id,)).fetchone() is not None
+
+
+def clear_password_on(conn: sqlite3.Connection, user_id: int) -> bool:
+    """Delete user_id's stored password on the caller's open transaction; True if
+    there was one.
+
+    WHY EVERY "REVOKE ALL TOKENS" CALLS THIS (red team 2026-10-19). A token alone
+    may set the FIRST password (POST /auth/password), so whoever held a leaked
+    access code could set one, and support's documented fix (re-issue, which
+    revokes every token) left that password in place: the attacker kept signing
+    in by email + password. A re-issue/revoke is a statement that the old
+    credential holder is not trusted, so the password they may have set goes in
+    the same transaction. The real owner signs in with the new access code and
+    sets a new password (the sign-in page already offers it)."""
+    if not password_exists_on(conn, user_id):
+        return False
+    conn.execute("DELETE FROM user_passwords WHERE user_id = ?", (user_id,))
+    return True
+
+
 def revoke_token(raw_token: str, *, db: Optional[Path] = None) -> bool:
     """Mark a token revoked. Returns True if a matching, not-already-revoked
     token was found. The unhashed copy the checkout activation bridge may still
@@ -479,6 +513,7 @@ def revoke_all_tokens(user_id: int, *, db: Optional[Path] = None) -> int:
             "WHERE user_id = ? AND revoked_at IS NULL",
             (_now_iso(), user_id))
         _wipe_activation_tokens(conn, user_id=user_id)
+        clear_password_on(conn, user_id)
         return cur.rowcount
 
 
@@ -540,7 +575,9 @@ def reissue_token(user_id: int, *, expires_at: datetime,
     stays (a "reissued" row for a re-issue that did not happen was the defect).
     An exception from `audit` rolls everything back and propagates.
 
-    Nothing here touches users.status, testers or any billing table."""
+    The stored password is deleted in the same transaction (`clear_password_on`):
+    a leaked token could have set it. Nothing else here touches users.status,
+    testers or any billing table."""
     when = now or datetime.now(timezone.utc)
     with _connect(db) as conn:
         cur = conn.execute(
@@ -551,7 +588,10 @@ def reissue_token(user_id: int, *, expires_at: datetime,
         _wipe_activation_tokens(conn, user_id=user_id)
         raw_token = insert_token(conn, user_id, ttl=expires_at - when, now=when)
         if audit is not None:
+            # Before the password goes, so the audit callback can read
+            # `password_exists_on` for its had_password fact.
             audit(conn, revoked)
+        clear_password_on(conn, user_id)
     return raw_token, revoked
 
 

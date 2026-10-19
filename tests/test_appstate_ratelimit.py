@@ -161,7 +161,7 @@ class ClientIpBehindCloudflareTests(unittest.TestCase):
 
     def test_a_cloudflare_ipv6_hop_resolves_to_cf_connecting_ip(self):
         req = _Req(headers={"fly-client-ip": self.CF_EDGE_V6, "cf-connecting-ip": "2001:db8::7"})
-        self.assertEqual(ratelimit.client_ip(req), "2001:db8::7")
+        self.assertEqual(ratelimit.client_ip(req), "2001:db8::")
 
     def test_two_visitors_through_cloudflare_get_different_keys(self):
         a = ratelimit.client_ip(_Req(headers={"fly-client-ip": self.CF_EDGE,
@@ -191,9 +191,30 @@ class ClientIpBehindCloudflareTests(unittest.TestCase):
 
     def test_addresses_are_normalised_through_ipaddress(self):
         got = ratelimit.client_ip(_Req(headers={"fly-client-ip": "2001:0DB8:0:0:0:0:0:1"}))
-        self.assertEqual(got, "2001:db8::1")
+        self.assertEqual(got, "2001:db8::")  # its /64
         got = ratelimit.client_ip(_Req(headers={"fly-client-ip": "::ffff:203.0.113.5"}))
         self.assertEqual(got, "203.0.113.5")
+
+    def test_ipv6_is_keyed_on_its_slash_64(self):
+        """Red team 2026-10-19: one subscriber owns a /64 and rotates inside it, so a
+        per-full-address key was a fresh bucket per request."""
+        a = ratelimit.client_ip(_Req(headers={"fly-client-ip": "2001:db8:1:2:aaaa::1"}))
+        b = ratelimit.client_ip(_Req(headers={"fly-client-ip": "2001:db8:1:2:bbbb:cccc:dddd:eeee"}))
+        c = ratelimit.client_ip(_Req(headers={"fly-client-ip": "2001:db8:1:3::1"}))
+        self.assertEqual(a, b)
+        self.assertNotEqual(a, c)
+
+    def test_ipv6_socket_peer_and_cloudflare_client_are_bucketed_too(self):
+        a = ratelimit.client_ip(_Req(host="2001:db8:9:9::1"))
+        b = ratelimit.client_ip(_Req(host="2001:db8:9:9:1234::5"))
+        self.assertEqual(a, b)
+        req = _Req(headers={"fly-client-ip": self.CF_EDGE_V6, "cf-connecting-ip": "2001:db8:5:5::1"})
+        req2 = _Req(headers={"fly-client-ip": self.CF_EDGE_V6, "cf-connecting-ip": "2001:db8:5:5::ffff"})
+        self.assertEqual(ratelimit.client_ip(req), ratelimit.client_ip(req2))
+
+    def test_ipv4_is_not_bucketed(self):
+        self.assertEqual(ratelimit.client_ip(_Req(headers={"fly-client-ip": "203.0.113.5"})),
+                         "203.0.113.5")
 
     def test_every_published_range_is_present_and_exact(self):
         got = sorted(str(n) for n in ratelimit.CLOUDFLARE_IP_RANGES)

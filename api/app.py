@@ -23,6 +23,7 @@ from src.appstate import freshness, reqlog
 from src.pipeline import history
 from src.providers import mlb
 
+from api.bodylimit import BodyLimitMiddleware
 from api.admin import router as admin_router
 from api.auth import get_current_user, require_paid_access, router as auth_router
 from fastapi import Depends
@@ -377,6 +378,14 @@ async def canonical_host(request: Request, call_next):
         target = f"https://{host[4:]}{request.url.path}" + (f"?{query}" if query else "")
         return RedirectResponse(url=target, status_code=308)
     return await call_next(request)
+
+
+# -- request body cap -------------------------------------------------------
+#
+# Registered AFTER the two @app.middleware layers above, so it is the OUTERMOST
+# layer: an oversized body is refused (413) before any other layer or route
+# reads it. Pure ASGI, see api/bodylimit.py for why and for the per-path table.
+app.add_middleware(BodyLimitMiddleware)
 
 
 def _route_template(request: Request) -> str:

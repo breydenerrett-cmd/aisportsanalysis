@@ -280,6 +280,9 @@ def grant_comp(*, email: Optional[str] = None, user_id: Optional[int] = None,
                 conn.execute("UPDATE users SET status = 'active' WHERE id = ?", (uid,))
 
         revoked = users_store.revoke_tokens_on(conn, uid, when=when)
+        # A token the person lost may have set a password (see
+        # users.clear_password_on); the grant revokes it, so the password goes too.
+        had_password = users_store.clear_password_on(conn, uid)
         raw_token = users_store.insert_token(conn, uid, ttl=COMP_TOKEN_TTL, now=when)
         if existing_comp is None:
             conn.execute(
@@ -291,7 +294,8 @@ def grant_comp(*, email: Optional[str] = None, user_id: Optional[int] = None,
                 "revoked_at = NULL, revoked_reason = NULL WHERE user_id = ?",
                 (when.isoformat(), why, COMP_GRANTED_BY, uid))
         _audit(conn, uid, events.COMP_ACCESS_GRANTED,
-               {"action": "grant", "kind": kind, "revoked_tokens": revoked}, when)
+               {"action": "grant", "kind": kind, "revoked_tokens": revoked,
+                "had_password": had_password}, when)
     return CompGrant(user_id=uid, email=mail, token=raw_token,
                      granted_at=when.isoformat(),
                      expires_at=(when + COMP_TOKEN_TTL).isoformat(),
@@ -321,8 +325,12 @@ def revoke_comp(user_id: Optional[int], reason: Optional[str], *,
             "UPDATE comps SET revoked_at = ?, revoked_reason = ? WHERE user_id = ?",
             (when.isoformat(), why, row["id"]))
         revoked = users_store.revoke_tokens_on(conn, row["id"], when=when)
+        # Same reason as the grant: a password set with a leaked token must not
+        # outlive the revoke of that token.
+        had_password = users_store.clear_password_on(conn, row["id"])
         _audit(conn, row["id"], events.COMP_ACCESS_REVOKED,
-               {"action": "revoke", "revoked_tokens": revoked}, when)
+               {"action": "revoke", "revoked_tokens": revoked,
+                "had_password": had_password}, when)
     return {"user_id": row["id"], "email": row["email"], "revoked_tokens": revoked,
             "revoked_at": when.isoformat()}
 
