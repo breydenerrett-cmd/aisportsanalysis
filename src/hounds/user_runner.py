@@ -10,7 +10,7 @@ loop in the API process (``api/hounds_engine.py``) that every 15 minutes calls `
      the odds store is not touched at all);
   2. ``user_engine.run`` for today's Eastern slate date (and tomorrow's after 20:00 Eastern, so a
      game that starts just after midnight is not missed), against this server's own odds store;
-  3. ``user_settle.settle`` for the last ``SETTLE_LOOKBACK_DAYS`` days, against the results store the
+  3. ``user_settle.settle`` for every owed date (a cancelled game is voided, a postponed one waits), against the results store the
      cards use;
   4. if either wrote a row, start one background rebuild of the public stats.
 
@@ -46,7 +46,6 @@ ENV_FLAG = "HOUNDS_ENGINE"
 ENV_INTERVAL = "HOUNDS_ENGINE_INTERVAL_SECONDS"
 DEFAULT_INTERVAL_SECONDS = 900.0          # 15 minutes: the capture slot's own cadence near a start
 MIN_INTERVAL_SECONDS = 30.0               # a typo must not make this a hot loop
-SETTLE_LOOKBACK_DAYS = 14                 # user_settle.DEFAULT_LOOKBACK_DAYS
 LATE_EVENING_ET_HOUR = 20                 # from here on, tomorrow's slate can already be locking
 WAIT_FOR_WARMUP_SECONDS = 600.0           # never wait longer than this for the cache warm-up
 
@@ -125,9 +124,11 @@ def run_pass(*, now: Optional[datetime] = None, ledger: Optional[str] = None,
                                                         "skipped")})
             report["wrote"] += out["bets_written"]
         kwargs = dict(settle_kwargs or {})
-        kwargs.setdefault("lookback_days", SETTLE_LOOKBACK_DAYS)
+        # No lookback window: a 14-day one stranded a bet on a game cancelled or made up after it.
         if "postponed_lookup" not in kwargs:
             kwargs["postponed_lookup"] = _postponed_lookup()
+        if "cancelled_lookup" not in kwargs:
+            kwargs["cancelled_lookup"] = _cancelled_lookup()
         settled = user_settle.settle(ledger=ledger, now=moment, **kwargs)
         report["settle"] = {k: settled[k] for k in ("considered", "graded", "pending")}
         report["wrote"] += settled["graded"]
@@ -135,7 +136,8 @@ def run_pass(*, now: Optional[datetime] = None, ledger: Optional[str] = None,
         # same grader, here, so a manual ticket settles without a second scheduler. Never stops the pass.
         try:
             from src.hounds.interact import manual
-            manual.maybe_settle(moment)
+            manual.maybe_settle(moment, **{k: kwargs[k] for k in ("postponed_lookup", "cancelled_lookup")
+                                           if kwargs.get(k) is not None})
         except Exception:  # noqa: BLE001
             logger.exception("manual settle failed")
         # The learning loop's user scope (src/hounds/learning/user_scope.py): shadow the live
@@ -163,6 +165,15 @@ def _postponed_lookup():
         from src.pipeline import history
         return lambda pk, day: history.postponed_makeup(pk, day)
     except Exception:  # noqa: BLE001 -- no lookup leaves postponed games pending, never an error
+        return None
+
+
+def _cancelled_lookup():
+    """The schedule lookup for a Cancelled-never-played game; None leaves such a bet pending."""
+    try:
+        from src.pipeline import history
+        return lambda pk, day: history.cancelled_game(pk, day)
+    except Exception:  # noqa: BLE001
         return None
 
 

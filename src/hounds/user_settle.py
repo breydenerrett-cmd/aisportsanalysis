@@ -28,7 +28,23 @@ injection point (production passes `history.postponed_makeup`, which asks the sc
 that fails or answers nothing is never read as "pending"). A VOID follows the existing contract:
 `result["void"]` truthy on the result mapping, or an unusable price.
 
-CLI:  python -m src.hounds.user_settle run [--recent DAYS] [--ledger PATH]
+CANCELLED GAMES: VOID, BY NAME
+------------------------------
+A game the schedule shows as Cancelled and never played (`cancelled_lookup`, production passes
+`history.cancelled_game`, the helper `engine settle` uses) is a VOID written once with the same
+named reason the engine's account ledger gives (`settle_slate.CANCELLED_VOID_REASON`). Without it a
+bet on BAL at NYY 2026-09-27 would sit pending forever and the page would later call it UNGRADED.
+Only positive evidence voids: no lookup, a failed lookup, an empty answer, or a Postponed/Suspended
+entry (those resume under the same game_pk) leave the bet pending.
+
+EVERY OWED DATE, NOT A WINDOW
+-----------------------------
+`lookback_days=None` (the default) sweeps every ungraded bet since the first one, the way
+`engine settle --recent` sweeps back to the first paper day. A 14-day window stranded a bet on a game
+made up (or cancelled) later than that, forever. Passing a number still narrows the sweep (the drill
+replays a bounded window on purpose). The schedule is asked at most once per game per pass.
+
+CLI:  python -m src.hounds.user_settle run [--recent DAYS] [--ledger PATH]   (no --recent = every owed date)
 """
 
 from __future__ import annotations
@@ -45,7 +61,7 @@ from src.hounds import user_engine, user_rules
 from src.ledger.chain import HashChainLedger
 
 KIND_GRADED = "hound_user_graded"
-DEFAULT_LOOKBACK_DAYS = 14
+DEFAULT_LOOKBACK_DAYS: Optional[int] = None     # None = every owed date since the first unsettled bet
 # A game still without a final this long after its scheduled start is either postponed or very
 # late; only then is the schedule asked (one lookup per pending bet, so not on every settle pass
 # of a game still being played).
@@ -85,6 +101,17 @@ def _resolve_mlb_result(bet: Mapping, results: Mapping, index: Optional[Mapping]
     if len(hits) == 1:
         return str(hits[0][0]), hits[0][1]
     return None, None
+
+
+def _cancelled_status() -> str:
+    from src.pipeline import history
+    return history.CANCELLED_NEVER_PLAYED
+
+
+def _cancelled_reason() -> str:
+    """The engine's own wording, so a dog's void and a card's void read the same."""
+    from src.engine import settle_slate
+    return settle_slate.CANCELLED_VOID_REASON
 
 
 def _pick_for(bet: Mapping, identity) -> dict:
@@ -168,30 +195,45 @@ def grade_bet(bet: Mapping, result: Mapping, identity) -> dict:
 
 
 def settle(*, ledger: Optional[str] = None, now: Optional[datetime] = None,
-           lookback_days: int = DEFAULT_LOOKBACK_DAYS,
+           lookback_days: Optional[int] = DEFAULT_LOOKBACK_DAYS,
            mlb_results: Optional[Mapping] = None,
            nfl_results: Optional[Callable[[str], Mapping]] = None,
            postponed_lookup: Optional[Callable] = None,
+           cancelled_lookup: Optional[Callable] = None,
            game_pk_index: Optional[Mapping] = None,
            close_fn: Optional[Callable[[Mapping], Optional[int]]] = None,
            box_index: Optional[Mapping] = None) -> dict:
-    """Grade every settled-able ungraded bet from the last `lookback_days`. Returns a report.
+    """Grade every settled-able ungraded bet (every owed date, or the last `lookback_days` when a
+    number is given). Returns a report.
 
     mlb_results: {game_pk: results-store row} (default: the repository store, read once).
     nfl_results: date -> {(away_code, home_code): {'home_score','away_score'}} (default: the NFL
     scores through src.pipeline.nfl_slate; any failure leaves those bets pending).
     postponed_lookup: (game_pk, slate_date) -> history.postponed_makeup-shaped dict or None.
+    cancelled_lookup: (game_pk, slate_date) -> history.cancelled_game-shaped dict or None; positive
+    evidence of a Cancelled-never-played game voids the bet with the named reason.
     close_fn: bet -> the board's AVERAGE closing price for the bet's side and line, or None
     (default: read from the captured board; None leaves CLV null, never a guess)."""
     now = now or datetime.now(timezone.utc)
     store = HashChainLedger(user_engine.ledger_path(ledger))
     rows = store.read()
     graded_ids = {r["bet_id"] for r in rows if r.get("kind") == KIND_GRADED}
-    cutoff = (now - timedelta(days=lookback_days)).strftime("%Y-%m-%d")
+    cutoff = (None if lookback_days is None
+              else (now - timedelta(days=lookback_days)).strftime("%Y-%m-%d"))
     todo = [r for r in rows if r.get("kind") == user_engine.KIND_BET and r["bet_id"] not in graded_ids
-            and r["slate_date"] >= cutoff]
+            and (cutoff is None or r["slate_date"] >= cutoff)]
     report = {"considered": len(todo), "graded": 0, "pending": 0, "pending_makeup": [],
-              "by_result": {}, "paper_only": True}
+              "voided_cancelled": [], "by_result": {}, "paper_only": True}
+    lookups: dict = {}          # (kind, game_pk, slate_date) -> answer: one schedule call per game per pass
+
+    def ask(kind: str, fn, identity, day):
+        key = (kind, identity, day)
+        if key not in lookups:
+            try:
+                lookups[key] = fn(identity, day)
+            except Exception:  # noqa: BLE001 -- an unanswered lookup is never "pending" and never a void
+                lookups[key] = None
+        return lookups[key]
     if not todo:
         return report
 
@@ -238,21 +280,27 @@ def settle(*, ledger: Optional[str] = None, now: Optional[datetime] = None,
             key = (nfl_teams.abbrev(bet.get("away_team")), nfl_teams.abbrev(bet.get("home_team")))
             result = nfl_cache[date].get(key)
             identity = bet["event_id"]
-        if result is None:
-            if (bet["sport"] == "MLB" and identity is not None and postponed_lookup is not None
-                    and start is not None and now - start > POSTPONE_CHECK_AFTER):
-                try:
-                    info = postponed_lookup(identity, bet["slate_date"])
-                except Exception:  # noqa: BLE001 -- an unanswered lookup is never "pending"
-                    info = None
-                if info and info.get("status") == "pending_makeup":
-                    report["pending_makeup"].append(
-                        {"bet_id": bet["bet_id"], "game_pk": identity,
-                         "makeup_date": info.get("makeup_date")})
-            report["pending"] += 1
-            continue
         is_prop = bet["market"] in user_rules.PROP_STATS
-        if is_prop:
+        if result is None:
+            late = (bet["sport"] == "MLB" and identity is not None and start is not None
+                    and now - start > POSTPONE_CHECK_AFTER)
+            cancelled = (ask("cancelled", cancelled_lookup, identity, bet["slate_date"])
+                         if late and cancelled_lookup is not None else None)
+            if cancelled and cancelled.get("status") == _cancelled_status():
+                graded = {"result": card_ledger.RESULT_VOID, "reason": _cancelled_reason(),
+                          "away_score": None, "home_score": None}
+                report["voided_cancelled"].append({"bet_id": bet["bet_id"], "game_pk": identity,
+                                                   "reason": graded["reason"]})
+            else:
+                if late and postponed_lookup is not None:
+                    info = ask("postponed", postponed_lookup, identity, bet["slate_date"])
+                    if info and info.get("status") == "pending_makeup":
+                        report["pending_makeup"].append(
+                            {"bet_id": bet["bet_id"], "game_pk": identity,
+                             "makeup_date": info.get("makeup_date")})
+                report["pending"] += 1
+                continue
+        elif is_prop:
             graded = grade_prop(bet, (box_index or {}).get(str(identity)))
         else:
             graded = grade_bet(bet, result, identity)
@@ -457,12 +505,14 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m src.hounds.user_settle")
     sub = parser.add_subparsers(dest="cmd", required=True)
     p_run = sub.add_parser("run")
-    p_run.add_argument("--recent", type=int, default=DEFAULT_LOOKBACK_DAYS)
+    p_run.add_argument("--recent", type=int, default=DEFAULT_LOOKBACK_DAYS,
+                       help="only the last DAYS of bets (default: every owed date)")
     p_run.add_argument("--ledger")
     args = parser.parse_args(argv)
     from src.pipeline import history
     report = settle(ledger=args.ledger, lookback_days=args.recent,
-                    postponed_lookup=lambda pk, day: history.postponed_makeup(pk, day))
+                    postponed_lookup=lambda pk, day: history.postponed_makeup(pk, day),
+                    cancelled_lookup=lambda pk, day: history.cancelled_game(pk, day))
     print(json.dumps(report, sort_keys=True))
     return 0
 
