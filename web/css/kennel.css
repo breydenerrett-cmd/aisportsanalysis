@@ -73,6 +73,7 @@ a.lbticket__model:hover { text-decoration: underline; text-underline-offset: 3px
 .lbres--lost { color: #2A0710; background: var(--lb-down); border-color: var(--lb-down); }
 .lbres--push, .lbres--void { color: var(--lb-mute); }
 .lbres--pending { color: var(--lb-amber); border-color: rgba(242, 184, 75, .5); }
+.lbres--ungraded { color: var(--lb-mute); border-style: dashed; }
 
 @media (max-width: 480px) {
   .lbpanel { padding: 10px 10px; }

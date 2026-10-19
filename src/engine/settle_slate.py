@@ -42,6 +42,19 @@ settlement -- no existing row is edited -- and counted on the report
 wager settles normally, and an MLB wager with no resolved game_pk or no
 result still refuses the whole date. An event the stores do not
 positively tag as another sport is never voided on a guess.
+
+A CANCELLED GAME IS VOIDED, NAMED, NEVER A PERMANENT BLOCK (2026-10-19)
+------------------------------------------------------------------------
+The same refusal blocked a whole date behind one game that was never played:
+BAL at NYY (game_pk 823490, 2026-09-27) was Cancelled with no makeup, so its 11
+wagers, and the other 97 wagers on 2026-09-27, sat ungraded for three weeks.
+When `cancelled_lookup(game_pk, date)` (`history.cancelled_game` in production)
+returns positive evidence that the schedule shows ONLY a Cancelled entry for
+the pk, its wagers settle VOID (zero profit, no stake exposure) with an explicit
+`void_reason`, the way a sportsbook voids a game that is not played. No lookup,
+an unanswered one, a Postponed or Suspended entry, or any entry that is final or
+live is never a void: the refusal stands. The date's other games settle in the
+same run.
 """
 
 from __future__ import annotations
@@ -246,6 +259,29 @@ class VoidedNotMlbBet(SettledBet):
         row["void_reason"] = self.void_reason
         row["event_id"] = self.event_id
         row["sport"] = self.sport
+        return row
+
+
+CANCELLED_VOID_REASON = (
+    "game cancelled and never played -- the schedule shows only a Cancelled "
+    "entry for this game_pk and no makeup, so the wager is voided, never graded")
+
+
+@dataclass(frozen=True, slots=True)
+class VoidedCancelledBet(SettledBet):
+    """A VOID settlement of a wager on an MLB game the schedule shows as
+    Cancelled (never played), carrying WHY and WHICH game on its own
+    account-ledger row, so it can be told from an ordinary VOID."""
+
+    void_reason: str = ""
+    event_id: str | None = None
+    game_pk: str | None = None
+
+    def to_dict(self) -> dict:
+        row = SettledBet.to_dict(self)
+        row["void_reason"] = self.void_reason
+        row["event_id"] = self.event_id
+        row["game_pk"] = self.game_pk
         return row
 
 
@@ -475,6 +511,14 @@ class SettleReport:
     # "detail", "n_wagers"}, ...)`. Not a failure; the same game_pk settles
     # them, once, on the first run after the makeup is in the results store.
     pending_makeup: tuple = ()
+    # The wagers THIS run voided because their game was Cancelled and never
+    # played: `({"bet_id", "system_id", "game_pk", "reason"}, ...)`.
+    voided_cancelled: tuple = ()
+
+
+def _cancelled_status() -> str:
+    from src.pipeline import history
+    return history.CANCELLED_NEVER_PLAYED
 
 
 def run_settle(date_str: str, *, wagers_path=None, results_path=MLB_RESULTS_CSV,
@@ -487,6 +531,7 @@ def run_settle(date_str: str, *, wagers_path=None, results_path=MLB_RESULTS_CSV,
                sport_source_paths=None,
                battery_run=battery.run,
                makeup_lookup=None,
+               cancelled_lookup=None,
                now: datetime | None = None) -> SettleReport:
     """Settle `date_str`'s paper wagers (module docstring).
 
@@ -505,7 +550,13 @@ def run_settle(date_str: str, *, wagers_path=None, results_path=MLB_RESULTS_CSV,
     the date's other wagers settle normally. Nothing is written for a deferred
     wager: when the makeup lands in the results store the same call finds the
     result by game_pk and settles it, and `already_settled_bet_ids` makes every
-    later call a no-op, so a postponed game settles exactly once."""
+    later call a no-op, so a postponed game settles exactly once.
+
+    `cancelled_lookup(game_pk, date) -> dict | None` is `history.cancelled_game`
+    in production. A game still without a result after the makeup check, for
+    which it returns positive evidence of a Cancelled-only schedule, has its
+    wagers settled VOID by name (module docstring); everything else about the
+    refusal is unchanged."""
     game_pk_index = gamekey.load_map(
         game_pk_map_path if game_pk_map_path is not None
         else gamekey.DEFAULT_MAP_PATH)
@@ -544,6 +595,13 @@ def run_settle(date_str: str, *, wagers_path=None, results_path=MLB_RESULTS_CSV,
             if info and info.get("status") == _history.MAKEUP_PENDING:
                 deferred[pk] = info
         missing = [pk for pk in missing if pk not in deferred]
+    cancelled: dict = {}
+    if missing and cancelled_lookup is not None:
+        for pk in missing:
+            info = cancelled_lookup(pk, date_str)
+            if info and info.get("status") == _cancelled_status():
+                cancelled[pk] = info
+        missing = [pk for pk in missing if pk not in cancelled]
     unresolved_events = sorted({w.get("event_id") for w in mlb_wagers
                                 if w.get("game_pk") is None})
     if missing or unresolved_events:
@@ -579,6 +637,7 @@ def run_settle(date_str: str, *, wagers_path=None, results_path=MLB_RESULTS_CSV,
         by_system.setdefault(w["system_id"], []).append(w)
 
     voided_not_mlb: list = []
+    voided_cancelled: list = []
     deferred_counts: dict = {}
     system_settlements = []
     for system_id, rows in sorted(by_system.items()):
@@ -643,6 +702,34 @@ def run_settle(date_str: str, *, wagers_path=None, results_path=MLB_RESULTS_CSV,
             if game_pk_key(game_pk) in deferred:
                 deferred_counts[game_pk_key(game_pk)] = (
                     deferred_counts.get(game_pk_key(game_pk), 0) + 1)
+                continue
+            if game_pk_key(game_pk) in cancelled:
+                bet = PaperBet(
+                    bet_id=w["bet_id"], system_id=w["system_id"],
+                    market_key=w["market_key"], selection_id=w["selection_id"],
+                    side=w["side"], line=w.get("line"),
+                    price_american=w["price_american"],
+                    settlement_rule=w["settlement_rule"],
+                    stake_units=w.get("stake_units", 1.0), game_pk=game_pk,
+                )
+                voided = VoidedCancelledBet(
+                    bet=bet, outcome=VOID, profit_units=0.0,
+                    void_reason=CANCELLED_VOID_REASON,
+                    event_id=w.get("event_id"), game_pk=game_pk_key(game_pk))
+                account._record_settlement(voided, date_str)
+                newly_settled.append(voided)
+                voided_cancelled.append({
+                    "bet_id": w["bet_id"], "system_id": w["system_id"],
+                    "game_pk": game_pk_key(game_pk),
+                    "reason": CANCELLED_VOID_REASON})
+                decision = decisions_by_key.get(
+                    (w.get("event_id"), w["system_id"], w["market_key"],
+                     w["selection_id"], w.get("decision_utc")))
+                review = build_void_review_for(decision, voided, settle_utc)
+                if review_path is not None:
+                    append_review(review, path=review_path)
+                else:
+                    append_review(review)
                 continue
             result = build_game_result(game_pk, results, f5_historical, f5_boxscore)
             if result is None:
@@ -741,6 +828,7 @@ def run_settle(date_str: str, *, wagers_path=None, results_path=MLB_RESULTS_CSV,
                         n_games=len(game_pks), systems=tuple(system_settlements),
                         n_not_mlb_wagers=len(not_mlb),
                         voided_not_mlb=tuple(voided_not_mlb),
+                        voided_cancelled=tuple(voided_cancelled),
                         pending_makeup=tuple(
                             {"game_pk": pk, "makeup_date": info.get("makeup_date"),
                              "detail": info.get("detail"),

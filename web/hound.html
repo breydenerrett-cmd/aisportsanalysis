@@ -60,6 +60,10 @@
   <p class="hd-fine" data-hook="today-note"></p>
 </section>
 
+<!-- Filled by web/js/hounds-detail.js only when the model has tickets more than 36 hours past their start with no
+     grade: an "Ungraded tickets (N)" panel. Empty (and invisible) otherwise. -->
+<div data-hook="hound-ungraded-slot"></div>
+
 <section class="hd-panel" aria-labelledby="bets-h" data-hook="hound-bets-section">
   <div class="hd-panel__head">
     <h2 id="bets-h">Graded tickets</h2>

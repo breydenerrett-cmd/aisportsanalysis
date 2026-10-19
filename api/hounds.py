@@ -12,7 +12,8 @@ Every payload carries ``paper_only: true`` and the not-advice line
                                      refusals marked as such
     GET /hounds/series?ids=a,b,c     cumulative-units series for line charts
     GET /hounds/{id}                 one hound: summary, series, first page of bets
-    GET /hounds/{id}/bets?page=      that hound's bets, newest first
+    GET /hounds/{id}/bets?page=      that hound's bets, newest first (``status=open|ungraded|graded`` splits
+                                     them; a ticket 36+ hours past its start with no grade is "ungraded", never "open")
     GET /hounds/{id}/desk            an AI desk hound's published games (empty before the first publish)
     GET /hounds/{id}/desk/{game}     how the desk argued that game: its transcript and disagreement table
 
@@ -158,7 +159,7 @@ def hound(hound_id: str, response: Response):
 def hound_bets(hound_id: str, response: Response, page: int = Query(1, ge=1),
                page_size: int = Query(DEFAULT_PAGE_SIZE, ge=1, le=MAX_PAGE_SIZE),
                segment: Optional[str] = Query(None, pattern="^(forward|replay)$"),
-               status: Optional[str] = Query(None, pattern="^(open|graded)$")):
+               status: Optional[str] = Query(None, pattern="^(open|graded|ungraded)$")):
     book, warming = _book(response)
     if warming:
         return warming_payload({"hound_id": hound_id, "items": [], "page": page,

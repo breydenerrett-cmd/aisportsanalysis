@@ -421,6 +421,7 @@ a.hd-ticket__model:hover { text-decoration: underline; text-underline-offset: 3p
 .hd-res--lost { color: #2A0710; background: var(--hd-bad); border-color: var(--hd-bad); }
 .hd-res--push, .hd-res--void { color: var(--hd-flat); }
 .hd-res--pending { color: var(--hd-warn); border-color: rgba(242, 184, 75, .5); }
+.hd-res--ungraded { color: var(--hd-text-2); border-style: dashed; border-color: var(--hd-mute); }
 .hd-units-text--up { color: var(--hd-good); }
 .hd-units-text--down { color: var(--hd-bad); }
 .hd-units-text--flat { color: var(--hd-flat); }
@@ -437,6 +438,33 @@ a.hd-ticket__model:hover { text-decoration: underline; text-underline-offset: 3p
   .hd-ticket__price { grid-area: price; justify-self: end; }
   .hd-ticket__rec { grid-area: rec; }
   .hd-drawer__body { padding-left: 12px; }
+}
+
+/* Tickets as stacked cards on a phone (web/js/hounds-tickets.js ticketCard). Under 640px a ticket table is swapped
+   for the same tickets as cards and a ticket row's grid is swapped for its card, so pick, price and result are never
+   cut off by a sideways scroll. Wider than that nothing changes: the table and the row grid are as they were. */
+.hd-cards { display: none; list-style: none; margin: 0; padding: 0; }
+.hd-card { display: none; }
+.hd-card__l1 { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.hd-card__pick { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; min-width: 0; font-size: 15px; color: #fff; overflow-wrap: anywhere; }
+.hd-card__price { font-size: 15px; color: #fff; }
+.hd-card__l2, .hd-card__l3, .hd-card__l4 { display: flex; flex-wrap: wrap; gap: 2px 10px; font-size: 12.5px; color: var(--hd-mute); overflow-wrap: anywhere; min-width: 0; }
+.hd-card__l2 { margin-top: 3px; }
+.hd-card__l3 { margin-top: 2px; }
+.hd-card__l4 { margin-top: 4px; padding-top: 4px; border-top: 1px dashed var(--hd-line); color: var(--hd-text-2); }
+.hd-card__model { font-weight: 600; color: #fff; text-decoration: none; }
+.hd-card__why { margin-top: 4px; font-size: 12.5px; color: var(--hd-mute); }
+.hd-card__why summary { cursor: pointer; }
+.hd-card__why p { margin: 4px 0 0; overflow-wrap: anywhere; }
+@media (max-width: 639px) {
+  .hd-ticketview > .hd-tablewrap--tickets { display: none; }
+  .hd-ticketview > .hd-cards { display: block; border: 1px solid var(--hd-line); border-radius: 4px; background: var(--hd-card); }
+  .hd-cardrow { padding: 10px 12px; border-top: 1px solid var(--hd-line); }
+  .hd-cardrow:first-child { border-top: 0; }
+  .hd-ticket > :not(.hd-card) { display: none; }
+  .hd-ticket { display: block; padding: 10px 12px; }
+  .hd-card { display: block; min-width: 0; }
+  .hd-ticketview, .hd-tickets, .hd-card { max-width: 100%; }
 }
 
 /* the model page */

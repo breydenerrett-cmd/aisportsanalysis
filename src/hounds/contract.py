@@ -29,7 +29,8 @@ HoundSummary
   record {bets, wins, losses, pushes, voids, units_recorded_price,
   units_average_price | null}, clv {n, mean_pts, ci_low, ci_high} | null,
   verdict {label, sentence, units_note}, first_bet_utc, last_bet_utc,
-  open_bets (forward tickets not yet graded; added 2026-10-19), verified (bool), verified_share | null, checkable_share | null,
+  open_bets (forward tickets not yet graded and not stale; added 2026-10-19), ungraded_bets (forward tickets more
+  than 36 hours past their start with no grade; added 2026-10-19, see ``ticket_status``), verified (bool), verified_share | null, checkable_share | null,
   replay {bets, wins, losses, pushes, voids, units_recorded_price} | null,
   spark [..] (last 30 points of cum_units_average_price; when the average
   price is unavailable for the hound it is the recorded-price series and
@@ -48,7 +49,8 @@ SeriesPoint {date, cum_units_average_price, cum_units_recorded_price,
   graded bets, preceded by a zero point on the day before its first bet.
 BetRow {hound_id, date, game, market, selection, line, price, price_average,
   book, consensus_fair, result, units, clv_pts, who_decided ("code" | "model"
-  | "rule"), reason, segment ("forward" | "replay"), verified (bool | null)}.
+  | "rule"), reason, segment ("forward" | "replay"), verified (bool | null),
+  status ("OPEN" | "GRADED" | "UNGRADED", stamped at read time by ``with_status``; "" on a refusal)}.
 StreamItem = BetRow fields + hound_name + verdict ("play" | "refused_*") +
   refused (bool); result/units are null for a not-yet-graded decision.
 Graveyard entries are HoundSummary with status "retired" and retired
@@ -58,7 +60,9 @@ Graveyard entries are HoundSummary with status "retired" and retired
 
 from __future__ import annotations
 
+import dataclasses
 from dataclasses import dataclass, field, fields, is_dataclass
+from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 
 from src.hounds import NOT_ADVICE, PAPER_ONLY
@@ -85,6 +89,14 @@ STATUS_NOT_STARTED = "not_started"
 
 WHO_DECIDED = ("code", "model", "rule")
 SEGMENTS = ("forward", "replay")
+
+# A ticket whose game started more than this many hours ago and still has no grade is UNGRADED, not open.
+# 36 hours is the pack settler's own makeup window (``pack_settle.MAKEUP_HOURS``): the longest a game that was
+# played at all is normally still waiting for the next morning's grading pass, a rainout's makeup aside.
+# Found 2026-10-19: 11 bets from 2026-09-22 sat on a model page as "open" for a month because the settler had
+# skipped them (tests/test_engine_settle_stranded_dates.py); the page must never call a month-old ticket open.
+UNGRADED_AFTER_HOURS = 36
+TICKET_OPEN, TICKET_GRADED, TICKET_UNGRADED = "OPEN", "GRADED", "UNGRADED"
 
 DEFAULT_PAGE_SIZE = 25
 MAX_PAGE_SIZE = 100
@@ -173,7 +185,8 @@ class HoundSummary:
     source: str = ""
     persona: Optional[dict] = None        # voice only (config files); see docs/VOICE.md
     form: Optional[dict] = None           # streak, last 7 days, last settled day, best bet, worst beat
-    open_bets: int = 0                    # forward tickets recorded and not yet graded (added 2026-10-19)
+    open_bets: int = 0                    # forward tickets recorded, not graded, and not yet stale (added 2026-10-19)
+    ungraded_bets: int = 0                # forward tickets more than UNGRADED_AFTER_HOURS past their start, no grade
 
 
 @dataclass
@@ -213,6 +226,9 @@ class BetRow:
     # How many books were quoting the market when the bet was decided (added 2026-10-19, additive). None
     # when the source did not carry it; the pages then show the book alone.
     book_count: Optional[int] = None
+    # "OPEN" | "GRADED" | "UNGRADED" (``ticket_status``), stamped when a payload is built, not when the book is
+    # cached, so the 36-hour line is exact at the moment of the request. "" until stamped and on a refusal.
+    status: str = ""
 
 
 @dataclass
@@ -221,6 +237,58 @@ class StreamItem(BetRow):
     verdict: str = "play"
     refused: bool = False
     decided_utc: Optional[str] = None
+
+
+# ---- ticket status ---------------------------------------------------------------
+
+def _utc(value) -> Optional[datetime]:
+    """A UTC datetime from an ISO stamp ("...Z" or an offset), or None when it does not parse."""
+    text = str(value or "").strip()
+    if not text:
+        return None
+    try:
+        when = datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return when if when.tzinfo else when.replace(tzinfo=timezone.utc)
+
+
+def _slate_end(day) -> Optional[datetime]:
+    """The last instant of a slate date (UTC), or None when the date does not parse."""
+    text = str(day or "")[:10]
+    try:
+        start = datetime.fromisoformat(text).replace(tzinfo=timezone.utc)
+    except ValueError:
+        return None
+    return start + timedelta(days=1)
+
+
+def ticket_status(result: Optional[str], start_utc, date, now: Optional[datetime] = None) -> str:
+    """``GRADED``, ``OPEN`` or ``UNGRADED`` for one ticket.
+
+    A ticket with a result is GRADED. One without is OPEN until its game started more than
+    ``UNGRADED_AFTER_HOURS`` ago (strictly: exactly 36 hours is still OPEN), then UNGRADED. When the start is
+    unknown the slate date stands in for it, counted as the END of that day (UTC), so a ticket with no start
+    is never called ungraded sooner than 36 hours after its slate day closed. With neither a start nor a
+    readable date there is no clock to judge by and the ticket stays OPEN: the page never claims more than the
+    record supports.
+    """
+    if result is not None:
+        return TICKET_GRADED
+    reference = _utc(start_utc) or _slate_end(date)
+    if reference is None:
+        return TICKET_OPEN
+    now = now or datetime.now(timezone.utc)
+    return TICKET_UNGRADED if now - reference > timedelta(hours=UNGRADED_AFTER_HOURS) else TICKET_OPEN
+
+
+def with_status(rows: list, now: Optional[datetime] = None) -> list:
+    """Copies of ``rows`` (BetRow or StreamItem) with ``status`` stamped. A refusal is not a ticket and keeps
+    its empty status."""
+    now = now or datetime.now(timezone.utc)
+    return [r if getattr(r, "refused", False)
+            else dataclasses.replace(r, status=ticket_status(r.result, r.start_utc, r.date, now))
+            for r in rows]
 
 
 # ---- serialisation ---------------------------------------------------------------
@@ -318,31 +386,34 @@ def hound_payload(summary: HoundSummary, series: list, bets_page: dict,
                   as_of: Optional[str]) -> dict:
     out = to_json(summary)
     out["series"] = to_json(series)
-    out["bets"] = {**bets_page, "items": to_json(bets_page["items"])}
+    out["bets"] = {**bets_page, "items": to_json(with_status(bets_page["items"]))}
     out["as_of"] = as_of
     out["basis"] = BASIS
     out["houndmaster"] = houndmaster_block()
     return envelope(out)
 
 
-def filter_by_status(rows: list, status: Optional[str]) -> list:
-    """``status`` "open" keeps the tickets not yet graded (``result`` is None), "graded" keeps the graded ones,
-    anything else keeps all. The model page lists open and graded tickets separately."""
-    if status == "open":
-        return [b for b in rows if b.result is None]
+def filter_by_status(rows: list, status: Optional[str], now: Optional[datetime] = None) -> list:
+    """``status`` "open" keeps the tickets not yet graded and not stale, "ungraded" the ones more than
+    ``UNGRADED_AFTER_HOURS`` past their start with no grade, "graded" the graded ones; anything else keeps all.
+    The model page lists open, ungraded and graded tickets separately, and a month-old bet is never "open"."""
     if status == "graded":
         return [b for b in rows if b.result is not None]
+    if status in ("open", "ungraded"):
+        want = TICKET_OPEN if status == "open" else TICKET_UNGRADED
+        now = now or datetime.now(timezone.utc)
+        return [b for b in rows if ticket_status(b.result, b.start_utc, b.date, now) == want]
     return rows
 
 
 def bets_payload(hound_id: str, bets_page: dict, as_of: Optional[str]) -> dict:
     return envelope({"hound_id": hound_id, "as_of": as_of,
-                     **{**bets_page, "items": to_json(bets_page["items"])}})
+                     **{**bets_page, "items": to_json(with_status(bets_page["items"]))}})
 
 
 def stream_payload(page: dict, as_of: Optional[str]) -> dict:
     return envelope({"as_of": as_of,
-                     **{**page, "items": to_json(page["items"])}})
+                     **{**page, "items": to_json(with_status(page["items"]))}})
 
 
 def graveyard_payload(entries: list, as_of: Optional[str]) -> dict:

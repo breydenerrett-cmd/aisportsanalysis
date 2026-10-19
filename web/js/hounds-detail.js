@@ -2,7 +2,7 @@
  * web/hound.html?id=<model id>: one model.
  *
  * Reads GET /hounds/{id} (a HoundSummary plus `series` and the first page of `bets`),
- * GET /hounds/{id}/bets?status=open|graded&segment=&page= for the ticket tables, and
+ * GET /hounds/{id}/bets?status=open|ungraded|graded&segment=&page= for the ticket tables, and
  * GET /hounds/series?ids=<id> when the detail payload does not carry the series. The shapes are
  * src/hounds/contract.py's. Each part loads on its own and says honestly what happened when its endpoint is
  * missing.
@@ -13,7 +13,9 @@
  *   - Follow, Share and Download card (a star kept in this browser; a link; a PNG);
  *   - the KPI strip: Units, ROI, Record, Bets, CLV, Streak. Every figure is one the server sent, and a figure it
  *     did not send reads "n/a";
- *   - OPEN TICKETS (recorded, not yet graded; refreshed every minute while the tab is open) and GRADED TICKETS
+ *   - OPEN TICKETS (recorded, not yet graded and not stale; refreshed every minute while the tab is open),
+ *     UNGRADED TICKETS (more than 36 hours past the start with no grade: listed apart with a count, never open,
+ *     never in the record; the section is hidden when there are none) and GRADED TICKETS
  *     (paged by the server; Live, or Rehearsal which is never counted). Each row: date, game, pick, price, CLV
  *     points, status, units, the rule's reason line, and when it went on the record against the start;
  *   - the Rule: its exact text and, where it has any, its dials with their current values;
@@ -34,7 +36,7 @@ import {
 import { unitsOf, causeText, personaOf } from "./hounds-voice.js";
 import {
   NA, betsOf, roiOf, fmtRoi, fmtUnitsPlain, clvOf, statusOf, typeText, sportLabel, sportsOf, marketsText, recordText,
-  streakText,
+  streakText, ungradedBetsOf,
 } from "./hounds-board.js";
 import { ticketTable } from "./hounds-tickets.js";
 import { renderLineChart } from "./hounds-chart.js";
@@ -52,7 +54,7 @@ const BEST_COLOR = "#8A93A3";
 const SECTIONS = ["hound-actions", "hound-scoreboard-section", "hound-today-section", "hound-bets-section",
   "hound-rule-section", "hound-chart-section", "hound-verdict-section"];
 
-const state = { id: "", hound: null, open: null, openError: null, graded: null, gradedError: null, segment: "forward",
+const state = { id: "", hound: null, open: null, openError: null, ungraded: null, graded: null, gradedError: null, segment: "forward",
   series: null, seriesError: null, rulebook: null, rulebookFailed: false, poller: null };
 
 const q = (hook) => document.querySelector(`[data-hook='${hook}']`);
@@ -162,6 +164,7 @@ export function renderScoreboard(hound) {
   const rec = hound.record || {};
   const toneOf = (n) => (n === null ? "plain" : n > 0 ? "up" : n < 0 ? "down" : "plain");
   const open = isNum(hound.open_bets) ? hound.open_bets : 0;
+  const ungraded = ungradedBetsOf(hound);
   const clvBig = clv && clv.beatPct !== null ? `${Math.round(clv.beatPct)}% beat` : (clv && clv.mean !== null ? `${signed(clv.mean, 1)} pts` : NA);
   const clvSmall = clv ? [clv.mean !== null ? `${signed(clv.mean, 1)} pts average` : "", clv.n ? `${clv.n} measurable bets` : ""].filter(Boolean).join(", ")
     : "no bet has a measurable closing price yet";
@@ -171,7 +174,8 @@ export function renderScoreboard(hound) {
       units === null ? "nothing graded yet" : `${AVERAGE_PRICE_WORDS}; ${fmtUnitsPlain(rec.units_recorded_price)} at ${BEST_PRICE_WORDS}`, toneOf(units)),
     kpi("roi", "ROI", fmtRoi(roi), roi === null ? "" : "units per bet", toneOf(roi)),
     kpi("record", "Record", recordText(hound), bets > 0 ? "wins-losses" + (rec.pushes ? "-pushes" : "") : "no graded bets"),
-    kpi("bets", "Bets", String(bets), open > 0 ? `${open} open` : (bets < 100 && bets > 0 ? "small sample" : "")),
+    kpi("bets", "Bets", String(bets), [open > 0 ? `${open} open` : "", ungraded > 0 ? `${ungraded} ungraded` : ""].filter(Boolean).join(", ")
+      || (bets < 100 && bets > 0 ? "small sample" : "")),
     kpi("clv", "CLV", clvBig, clvSmall),
     kpi("streak", "Streak", streak || NA, streak ? (streak.startsWith("W") ? "wins in a row" : "losses in a row") : "no graded bets"),
   ]));
@@ -356,6 +360,48 @@ async function loadOpen() {
   renderOpen();
 }
 
+/**
+ * The ungraded section: tickets more than 36 hours past their start with no grade, listed apart with a count in
+ * the heading. It is built into its slot only when there is at least one (and removed when there are none), so a
+ * model with a clean record shows no empty box.
+ */
+function renderUngraded() {
+  let section = q("hound-ungraded-section");
+  const page = state.ungraded;
+  if (!page || page.total === 0) { if (section) section.remove(); return; }
+  if (!section) {
+    const slot = q("hound-ungraded-slot");
+    if (!slot) return;
+    section = h("section", { class: "hd-panel", "aria-labelledby": "ungraded-h", "data-hook": "hound-ungraded-section" }, [
+      h("h2", { id: "ungraded-h", "data-hook": "ungraded-heading" }),
+      h("p", { class: "hd-fine", "data-hook": "ungraded-note",
+        text: "These games started more than 36 hours ago and nothing has graded them yet. They are not open, and they are not in the record." }),
+      h("div", { "data-hook": "hound-ungraded", "aria-live": "polite" })]);
+    slot.appendChild(section);
+  }
+  q("ungraded-heading").textContent = `Ungraded tickets (${page.total})`;
+  const box = q("hound-ungraded");
+  clearNode(box);
+  box.appendChild(ticketTable(page.items, { graded: false, hook: "ungraded-table",
+    caption: "Ungraded tickets, more than 36 hours past the start with no grade" }));
+  if (page.total > page.items.length) {
+    box.appendChild(h("p", { class: "hd-fine", text: `Showing the newest ${page.items.length} of ${page.total} ungraded tickets.` }));
+  }
+}
+
+async function loadUngraded() {
+  try {
+    const data = await apiGet(`/hounds/${encodeURIComponent(state.id)}/bets?status=ungraded&segment=forward&page=1&page_size=50`);
+    // belt and braces: only rows the server itself stamped UNGRADED are listed, whatever the route answered
+    const page = betsPageOf(data);
+    const items = page.items.filter((t) => String(t && t.status).toUpperCase() === "UNGRADED");
+    state.ungraded = { ...page, items, total: items.length === page.items.length ? page.total : items.length };
+  } catch (err) {
+    state.ungraded = null;           // the section stays hidden: it only ever shows what the server sent
+  }
+  renderUngraded();
+}
+
 function renderSegmentBar() {
   const bar = q("bets-segment");
   if (!bar) return;
@@ -467,9 +513,10 @@ export async function boot() {
   bootLineage(hound);
 
   loadOpen();
+  loadUngraded();
   if (state.poller) state.poller.stop();
   if (hound.status !== "retired") {
-    state.poller = createPoller({ run: () => { loadOpen(); }, intervalMs: OPEN_POLL_MS });
+    state.poller = createPoller({ run: () => { loadOpen(); loadUngraded(); }, intervalMs: OPEN_POLL_MS });
     state.poller.start();
   }
   loadGraded(1);
