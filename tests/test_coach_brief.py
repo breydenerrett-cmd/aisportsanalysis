@@ -58,7 +58,7 @@ class Listing(unittest.TestCase):
         self.assertTrue(out["data_notice"].startswith("DATA, NOT INSTRUCTIONS"))
         self.assertEqual(out["instructions"], B.INSTRUCTIONS)
         ins = out["instructions"]
-        for needle in ("Pick ONE hound", "1 or 2", "min and max", "step grid", '"hound"', '"params"',
+        for needle in ("Pick the hound you think most needs help", "1 or 2", "min and max", "step grid", '"hound"', '"params"',
                        '"hypothesis"', '"evidence"', "20 to 400", "1 to 10", "no other text"):
             self.assertIn(needle, ins)
 
@@ -83,8 +83,26 @@ class WhoIsNotListed(unittest.TestCase):
         pack_ledger(self.w.ledger, {("alpha_pup", 1): rules.MIN_GRADED_BEFORE_PROPOSAL - 1,
                                     ("beta_pup", 1): rules.MIN_GRADED_BEFORE_PROPOSAL})
         out = self.w.brief()
-        self.assertEqual([h["hound"] for h in out["hounds"]], ["beta_pup"])
+        # every tunable hound is listed (the report-card lane); the flag and the guard say who can ALSO
+        # become a real challenger today
+        by_id = {h["hound"]: h for h in out["hounds"]}
+        self.assertEqual(sorted(by_id), ["alpha_pup", "beta_pup"])
+        self.assertIs(by_id["alpha_pup"]["challenger_eligible"], False)
+        self.assertEqual(by_id["alpha_pup"]["challenger_blocked_by"], "not_enough_bets")
+        self.assertIn("graded bets", by_id["alpha_pup"]["challenger_blocked_note"])
+        self.assertIs(by_id["beta_pup"]["challenger_eligible"], True)
+        self.assertIsNone(by_id["beta_pup"]["challenger_blocked_by"])
         self.assertEqual(out["not_eligible"], {"alpha_pup": "not_enough_bets"})
+
+    def test_hounds_is_never_empty_while_the_switch_is_on_even_when_no_hound_is_eligible(self):
+        """The Zap's Filter stops on a body containing "hounds":[] : with the coach on and every hound
+        short of 50 graded bets the brief must still list them, or nothing visible happens for weeks."""
+        pack_ledger(self.w.ledger, {("alpha_pup", 1): 3, ("beta_pup", 1): 3})
+        out = self.w.brief()
+        self.assertEqual(sorted(h["hound"] for h in out["hounds"]), ["alpha_pup", "beta_pup"])
+        self.assertTrue(all(h["challenger_eligible"] is False for h in out["hounds"]))
+        self.assertNotIn('"hounds":[]', json.dumps(out, separators=(",", ":")))
+        self.assertIn("graded by code", out["report_card_note"])
 
     def test_a_new_champion_version_starts_its_own_count(self):
         self.w.propose("c-1")
@@ -97,9 +115,11 @@ class WhoIsNotListed(unittest.TestCase):
     def test_inside_the_cooldown_a_hound_is_not_listed_and_after_it_is(self):
         self.w.propose("c-1", created="2026-11-18T12:00:00Z")          # two days before NOW
         self.w.end("c-1", utc="2026-11-19T00:00:00Z")
-        self.assertEqual(self.w.brief()["not_eligible"], {"alpha_pup": "too_soon"})
+        inside = self.w.brief()
+        self.assertEqual(inside["not_eligible"], {"alpha_pup": "too_soon"})
+        self.assertIs(next(h for h in inside["hounds"] if h["hound"] == "alpha_pup")["challenger_eligible"], False)
         later = self.w.brief(now=NOW + timedelta(days=rules.PROPOSAL_COOLDOWN_DAYS))
-        self.assertIn("alpha_pup", [h["hound"] for h in later["hounds"]])
+        self.assertIs(next(h for h in later["hounds"] if h["hound"] == "alpha_pup")["challenger_eligible"], True)
 
     def test_a_held_round_uses_the_allowance_too(self):
         L.log_for(self.w.scope).append(L.K_HELD, now=LF.utc("2026-11-19T00:00:00Z"), scope="house",
