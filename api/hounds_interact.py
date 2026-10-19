@@ -47,6 +47,20 @@ _NO_STORE = "no-store"
 
 _fire_limiter = ratelimit.FixedWindowLimiter(limit=20, window_s=60.0)
 _rl_fire = ratelimit.limiter_dependency(_fire_limiter)
+# A person who is not signed in can still tap "Fire now", and each tap that misses the cache costs a store read.
+# The cache is shared (fire.py double-checks it under the build gate), but an unsigned caller also gets a tighter
+# per-address allowance than the 20 a minute the signed-in get (red team 2026-10-19).
+FIRE_UNSIGNED_PER_MIN = 8
+_fire_unsigned_limiter = ratelimit.FixedWindowLimiter(limit=FIRE_UNSIGNED_PER_MIN, window_s=60.0)
+_rl_fire_unsigned = ratelimit.limiter_dependency(_fire_unsigned_limiter)
+
+
+def _rl_fire_route(request: Request, authorization: Optional[str] = Header(default=None)) -> None:
+    _rl_fire(request)
+    if auth_mod.optional_user_id(authorization) is None:
+        _rl_fire_unsigned(request)
+
+
 _ask_limiter = ratelimit.FixedWindowLimiter(limit=40, window_s=60.0)
 _rl_ask = ratelimit.limiter_dependency(_ask_limiter)
 _read_limiter = ratelimit.FixedWindowLimiter(limit=120, window_s=60.0)
@@ -178,7 +192,7 @@ def kit(hound_id: str, response: Response, authorization: Optional[str] = Header
 
 @router.post("/hounds/{hound_id}/fire")
 def fire_now(hound_id: str, response: Response, authorization: Optional[str] = Header(default=None),
-             _rl: None = Depends(_rl_fire)) -> dict:
+             _rl: None = Depends(_rl_fire_route)) -> dict:
     response.headers["Cache-Control"] = _NO_STORE
     dog = _dog(hound_id)
     return envelope(_fire_payload(dog, _viewer_id(authorization)))
