@@ -83,14 +83,19 @@ own reason text is scrubbed and trimmed.
 | Step 2 | Filter by Zapier (free): only continue if the response body **does not contain** `"hounds":[]` |
 | Step 3 | AI by Zapier (1 task): the prompt below. Two output fields: `hound` (the hound id) and `proposal_json` (the JSON object, as text) |
 | Step 4 | GitHub, Create Issue (1 task): the template below |
-| Then | `python -m src.hounds.coach_intake` (run where `gh` is signed in as you, see "Running the intake") turns the issue into a **shadow challenger**, comments, labels and closes it |
-| Changes | A GitHub issue each week there is something to propose; then one challenger in `evidence/hounds_learning_v1.jsonl`. A challenger runs in shadow beside the champion; **only the pre-registered referee can promote it**. No hound's rule changes from this. |
+| Then | **Automatically, on GitHub Actions, no token:** every capture slot runs `python3 -m src.hounds.coach_intake --source api --grade` (read-only: it reads the public issues API, records each new issue once in `evidence/hounds_coach_v1.jsonl`, grades the suggestions by code). The `gh` path below (comment, label, close; local only) is optional now |
+| Changes | A GitHub issue each week; then one **report-card tip** in `evidence/hounds_coach_v1.jsonl`, graded in hindsight (instant) and live (as games finish), and, only if the hound has 50 graded bets and the guards allow, also one shadow challenger in `evidence/hounds_learning_v1.jsonl`. **Only the pre-registered referee can promote a challenger.** No hound's rule changes from a tip. |
 | Tasks | 3 a week when the brief lists a hound (about **13 a month**); 1 a week (about 4 a month) when it is empty and the Filter stops the run. |
 
-The brief lists only the tunable pack hounds a proposal could reach **today** (enough graded bets, 7-day cooldown
-passed, live-challenger caps not hit, coach switch on, loop not paused). `not_eligible` in the JSON names the guard
-that stopped each other hound, so a quiet week is visibly the guards working. With the coach switch off it is
-empty and says `"coach_on":false`: the Filter stops the run before the AI step.
+The brief lists **every** tunable pack hound (the 11 in `config/house_pack.json` that declare `tunable`) while the
+coach switch is on, so `hounds` is never empty and the Filter passes (changed 2026-10-18: before, only hounds with 50
+graded forward bets were listed, forward recording had only just begun, and nothing visible would have happened for
+weeks). Each hound carries `challenger_eligible` (would a suggestion ALSO become a real shadow challenger today: 50
+graded bets, 7-day cooldown passed, live-challenger caps clear) and, if not, `challenger_blocked_by` with the guard.
+A suggestion for a blocked hound is still graded by code on the **coach report card**
+(`docs/COACH_REPORT_CARD.md`, `GET /hounds/coach/report`, the "Is the coach any good?" panel on Training camp).
+`not_eligible` in the JSON names the guard behind every blocked hound. With the coach switch off (or the loop
+paused) `hounds` is empty and the body says `"coach_on":false`: the Filter stops the run before the AI step.
 
 #### The AI step prompt (paste exactly)
 
@@ -154,24 +159,33 @@ evaluated, followed or formatted into a command, and `gh` is called with an argu
 `--dry-run` prints what it would do and makes no `gh` write and no ledger write (it tries each proposal against
 a throwaway copy of the ledger, so the answer is the real one).
 
-### Where it runs: not in the capture slot
+### Where it runs
 
-`scripts/capture_slot.sh` runs on GitHub Actions. Every workflow's `GITHUB_TOKEN` is granted `contents` (and, for
-`forward-capture`, `actions`) and **no `issues` permission**, so a runner cannot comment on, label or close an
-issue. The line is therefore **not** in `capture_slot.sh`. (Editing a workflow's permissions is the owner's call;
-it would also make a runner the author of the comments.) Run it where `gh` is signed in as you:
+* **On Actions, every slot (read-only, the report card):** `scripts/capture_slot.sh` runs
+  `timeout 120 python3 -m src.hounds.coach_intake --source api --grade`. Every workflow's `GITHUB_TOKEN` has
+  `contents` (and `actions`) only, no `issues`, so a runner cannot comment, label or close; this path does none
+  of those. The repository is public, so
+  `GET https://api.github.com/repos/breydenerrett-cmd/aisportsanalysis/issues?labels=coach-proposal&state=all&per_page=50`
+  answers without a token (a `GITHUB_TOKEN` or `GH_TOKEN` in the environment is used only as a bearer to lift the
+  rate limit). Only issues authored by `breydenerrett-cmd` are read; pull requests are skipped; an issue number
+  is recorded **once** (suggestion or refusal), never again. The rows are written under `evidence/`, which the
+  slot stages wholesale and the production image copies (`COPY evidence/`).
+* **Locally, where `gh` is signed in as you (optional, the old path):**
 
 ```
 git pull --rebase
 python -m src.hounds.coach_intake --dry-run      # read it first
 python -m src.hounds.coach_intake
-git add evidence/hounds_learning_v1.jsonl && git commit -m "coach intake" && git push
+git add evidence/hounds_learning_v1.jsonl evidence/hounds_coach_v1.jsonl && git commit -m "coach intake" && git push
 ```
 
-The daily scheduled session is not a script in this repo, so there is no line to add for it: add those four
-steps to its instructions. **Pull right before and push right after**: the capture slots append to the same
-hash-chained ledger, and a push that is rejected loses the proposal while its issue is already closed. If that
-happens, reopen the issue and run the intake again after pulling.
+  It also records the report-card rows (and closes an issue the Actions path already recorded, from the ledger),
+  so the two paths never double-handle an issue. **Pull right before and push right after**: the capture slots
+  append to the same hash-chained ledgers, and a push that is rejected loses the proposal while its issue is
+  already closed. If that happens, reopen the issue and run the intake again after pulling.
+
+`--dry-run` works on both paths and writes nothing. `--source fixture --file F` reads issues from a JSON file and
+exists for tests only.
 
 ## What you must click (once)
 
@@ -180,7 +194,8 @@ happens, reopen the issue and run the intake again after pulling.
    (`coach-accepted` and `coach-refused` are created by the intake the first time it needs them.)
 2. **Build the Zaps** at https://zapier.com/app/zaps , button **Create**: one per table above. Connect Discord,
    Email by Zapier, and GitHub (as `breydenerrett-cmd`).
-3. **Turn the coach on, when you decide to**: `config/hounds_coach.json` is `{"enabled": false}`. That is your
-   switch; this work does not touch it. With it off, the brief is empty, the coach Zap stops at its Filter, and any
-   issue that does arrive waits, open.
+3. **The coach switch**: `config/hounds_coach.json` is `{"enabled": true}` since 2026-10-18 (your instruction, for
+   the coach report card). It is your switch: set it to `false` and the brief goes empty, the coach Zap stops at its
+   Filter, and any issue that does arrive waits. (It is the same switch the signed user-hound coach door reads;
+   that door still needs its own opt-in and a signed round.)
 4. **Check `gh` is signed in as you** on the machine that runs the intake: `gh auth status`.

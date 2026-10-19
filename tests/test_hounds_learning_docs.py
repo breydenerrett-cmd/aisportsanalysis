@@ -51,9 +51,11 @@ class TheOperatorGuide(unittest.TestCase):
         self.assertIn("150/225/300/375/450", DOC)
         self.assertEqual(rules.ANALYST_LOOKS, (150, 225, 300, 375, 450))
 
-    def test_the_coach_kill_switch_still_ships_off(self):
+    def test_the_coach_kill_switch_is_the_owners_plain_boolean(self):
+        """Shipped off; turned on by the owner on 2026-10-18 for the coach report card (docs/COACH_REPORT_CARD.md).
+        The pin is that it stays a plain boolean in the one file the loop's pause rewrites."""
         cfg = json.loads((ROOT / "config" / "hounds_coach.json").read_text(encoding="utf-8"))
-        self.assertIs(cfg["enabled"], False)
+        self.assertIsInstance(cfg["enabled"], bool)
 
     def test_nothing_in_the_loop_can_place_a_bet_or_claim_an_edge(self):
         banned = re.compile(r"(?i)\b(place_bet|stake_money|place a bet|guaranteed|sure thing)\b")

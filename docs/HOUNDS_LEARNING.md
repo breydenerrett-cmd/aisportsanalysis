@@ -35,7 +35,9 @@ the facts live on two machines). The public scorecard sums the counts and shows 
 
 ## Owner steps (nothing here was done for you)
 
-* **Turn the coach on**: `config/hounds_coach.json` `{"enabled": true}`. It ships **off**.
+* **The coach switch**: `config/hounds_coach.json` `{"enabled": true}`. It shipped off and the owner turned it on
+  on 2026-10-18 (`docs/COACH_REPORT_CARD.md`: the practice lane that grades every coach suggestion by code while
+  the pre-registered loop waits for its 50 graded bets).
 * **Run the house tick in the slot.** Add one line after the `pack_run` / `pack_settle` lines of
   `scripts/capture_slot.sh` (a workflow or script edit is the owner's, so it was not made):
   `python3 -m src.hounds.learning tick --skip-scorecard 2>&1 | tail -n 6 | sed 's/^/  /' || true`. Run

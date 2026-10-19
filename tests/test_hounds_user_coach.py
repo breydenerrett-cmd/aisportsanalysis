@@ -140,9 +140,12 @@ class KillSwitch(CoachCase):
         self.set_switch(True)                                     # flipped back: no restart needed
         self.assertEqual(self.send(rnd, self.body(**self.CHANGE))["decision"], "challenger")
 
-    def test_the_repository_default_file_ships_off(self):
+    def test_the_repository_switch_is_the_owners_plain_boolean(self):
+        """It shipped off. The owner turned it ON for the coach report card on 2026-10-18 (his switch, his
+        instruction); what is pinned now is that it stays a plain JSON boolean the loop's own pause can
+        rewrite, not that it is off."""
         shipped = Path(__file__).resolve().parent.parent / "config" / "hounds_coach.json"
-        self.assertIs(json.loads(shipped.read_text(encoding="utf-8"))["enabled"], False)
+        self.assertIsInstance(json.loads(shipped.read_text(encoding="utf-8"))["enabled"], bool)
 
     def test_the_loops_own_pause_closes_the_door_even_with_the_config_on(self):
         pause.pause(self.scope, "promotion hit rate 0.30 over 12 matured promotions", now=NOW)
