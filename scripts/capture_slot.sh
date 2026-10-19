@@ -579,6 +579,12 @@ python3 -m src.hounds.pack_settle 2>&1 | tail -n 4 | sed 's/^/  /' || true
 # challengers on the same games and prices, settle them, apply the referee's
 # looks. Never promotes on a model's say-so; never fails the slot.
 python3 -m src.hounds.learning tick --skip-scorecard 2>&1 | tail -n 6 | sed 's/^/  /' || true
+# The breeding program (docs/PREREG_BREEDING.md): every 3 days, at the first slot at or after 12:00 UTC,
+# breed at most 2 babies from the fittest members on FORWARD closing-line value, through the learning
+# loop's own proposal door (the referee alone promotes), and cull the worst. Any other slot does nothing.
+# Writes only evidence/hounds_breeding_v1.jsonl (and the house learning ledgers), staged with evidence/.
+# Switch: config/breeding.json. A hard 120 s cap and `|| true`: it can never cost the slot.
+timeout 120 python3 -m src.hounds.breeding tick 2>&1 | tail -n 6 | sed 's/^/  /' || true
 # The coach report card (docs/COACH_REPORT_CARD.md): read the weekly coach's GitHub issues from the PUBLIC
 # issues API (read-only, no token needed: no comment, no label, no close), record each new suggestion or
 # refusal once by issue number, then grade the suggestions by code (hindsight now, the live shadow

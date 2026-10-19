@@ -32,6 +32,7 @@ from api.onboarding import router as onboarding_router
 from api.signup import router as signup_router
 from api.hounds_create import router as hounds_create_router
 from api.hounds_learning import router as hounds_learning_router
+from api.hounds_breeding import router as hounds_breeding_router
 from api.hounds_share import router as hounds_share_router
 from api.hounds_tips import router as hounds_tips_router
 from api.feeds import router as feeds_router
@@ -85,6 +86,9 @@ app.include_router(hounds_create_router)
 # the learning loop's public reads (api/hounds_learning.py): /hounds/learning is a literal path under
 # /hounds/{id}, so it too is mounted before api.hounds.
 app.include_router(hounds_learning_router)
+# the breeding program's family tree (api/hounds_breeding.py): /hounds/breeding is a literal path under
+# /hounds/{id}, so it too is mounted before api.hounds (tests/test_hounds_breeding.py pins the order).
+app.include_router(hounds_breeding_router)
 # a dog's rulebook and the fan-tip box (api/hounds_tips.py): /hounds/tips/export is a literal path next to
 # /hounds/{id}/..., so it too is mounted before api.hounds (tests/test_hounds_tips_api.py pins the order).
 app.include_router(hounds_tips_router)
