@@ -240,12 +240,23 @@ SUPPORT_TOKEN_REISSUED = "support_token_reissued"
 TESTER_ACCESS_GRANTED = "tester_access_granted"
 TESTER_ACCESS_EXTENDED = "tester_access_extended"
 
+# The owner made someone a free ("comp") member, or took that away
+# (POST /admin/comps, POST /admin/comps/revoke; src/appstate/comps.py). Operational
+# like the two above: server-side only, refused from the public beacon. The
+# properties are `action`, `kind` (what the account was before: new_email,
+# waitlisted, tester, existing) and how many tokens were revoked -- never the
+# token, never the email and never the free-text reason (that lives in the
+# `comps` table, which only the admin routes read).
+COMP_ACCESS_GRANTED = "comp_access_granted"
+COMP_ACCESS_REVOKED = "comp_access_revoked"
+
 EVENT_KINDS = frozenset({
     PAGE_VIEW, BET_CHECK_RUN, FREE_BET_CHECK, BET_SAVED, INVITE_REDEEMED,
     SIGNUP_STARTED, ACCOUNT_CREATED, CHECKOUT_STARTED, CHECKOUT_COMPLETED,
     SUBSCRIPTION_CANCELLED, SUBSCRIPTION_REACTIVATED,
     DIGEST_VIEWED, LANDING_VIEW, CTA_CLICK, PUBLIC_PAGE_VIEW, SUPPORT_TOKEN_REISSUED,
     TESTER_ACCESS_GRANTED, TESTER_ACCESS_EXTENDED,
+    COMP_ACCESS_GRANTED, COMP_ACCESS_REVOKED,
 })
 
 

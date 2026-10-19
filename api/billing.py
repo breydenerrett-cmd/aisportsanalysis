@@ -67,6 +67,25 @@ class CheckoutRequest(BaseModel):
     plan_id: str
 
 
+def _free_member_body(user_id: int) -> Optional[dict]:
+    """The one answer a free (comp) member gets from every billing route, or None
+    for anyone else.
+
+    A free member is given access by the owner (src/appstate/comps.py): no card,
+    no renewal, nothing to subscribe to, cancel or resume. So GET /billing/status
+    reports `plan: "comp"` and `renews: false` (the page shows "Free member"),
+    and checkout, cancel and reactivate answer the same thing instead of opening a
+    Stripe checkout or touching a subscription -- even a lapsed record from before
+    the person was made a free member. `status` carries the same word so a client
+    that already branches on it (web/js/billing.js, support_recovery.js) needs no
+    new field to be told "this is not a subscription"."""
+    comp = customers.get_active_comp(user_id)
+    if comp is None:
+        return None
+    return {"status": "comp", "plan": "comp", "renews": False,
+            "label": "Free member", "granted_at": comp["granted_at"]}
+
+
 @router.post("/billing/checkout")
 def create_checkout(body: CheckoutRequest,
                      current_user: User = Depends(get_current_user),
@@ -88,7 +107,13 @@ def create_checkout(body: CheckoutRequest,
     exact same allowlist-then-resolve api/signup.py::_attempt_checkout
     already applies for the self-serve path, so calling this endpoint
     directly gets the identical guarantee.
+
+    A free member never reaches a checkout: they get the free-member answer
+    (see _free_member_body) before the plan is even looked at.
     """
+    free = _free_member_body(current_user.id)
+    if free is not None:
+        return free
     if body.plan_id != billing.BETA_PLAN_ID:
         raise HTTPException(status_code=400, detail={
             "error": "unknown_plan",
@@ -148,7 +173,14 @@ def billing_status(current_user: User = Depends(get_current_user)) -> dict:
     src.appstate.billing.apply_stripe_webhook_event), so this is always at
     most as fresh as the last webhook delivery -- an honest lag, not a
     fabricated up-to-the-second answer.
+
+    A free member (src/appstate/comps.py) gets `{"status": "comp", "plan":
+    "comp", "renews": false, "label": "Free member", "granted_at"}` and nothing
+    about a subscription: there is no card, no renewal and nothing to nag about.
     """
+    free = _free_member_body(current_user.id)
+    if free is not None:
+        return free
     record = customers.get_subscription_record(current_user.id)
     if record is None:
         # No webhook has ever reported a subscription for this user --
@@ -204,7 +236,13 @@ def cancel_subscription(current_user: User = Depends(get_current_user),
     user just canceled. Proactively updating here means the cancel button
     is correct immediately regardless of webhook delivery; a webhook that
     does arrive later just confirms (upserts) the same state again.
+
+    A free member has nothing to cancel: they get the free-member answer and no
+    provider call is made.
     """
+    free = _free_member_body(current_user.id)
+    if free is not None:
+        return free
     record = customers.get_subscription_record(current_user.id)
     if record is None:
         return {"status": "not_configured"}
@@ -241,7 +279,12 @@ def reactivate_subscription(current_user: User = Depends(get_current_user),
     reports the canceled state back unchanged and this returns it, so the
     caller learns a new checkout is required instead of being told a
     reactivation happened that did not.
+
+    A free member has nothing to resume: the free-member answer, no provider call.
     """
+    free = _free_member_body(current_user.id)
+    if free is not None:
+        return free
     record = customers.get_subscription_record(current_user.id)
     if record is None:
         return {"status": "not_configured"}

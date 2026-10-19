@@ -38,6 +38,11 @@ GET /admin/testers lists them, and GET /admin/activation is the aggregate of
 what they actually did (src/appstate/activation.py defines "activated" and
 "returning"). They reuse this module's one admin gate, return a raw token exactly
 once, and never put a token, an email or a reason into an event.
+
+POST /admin/comps, POST /admin/comps/revoke and GET /admin/comps are the free
+(complimentary) member: access with no card and no end date, until the owner
+revokes it (src/appstate/comps.py holds the policy). Same gate, same
+token-once rule, same "no token, no email, no reason in an event".
 """
 
 from __future__ import annotations
@@ -58,6 +63,7 @@ from api.auth import _require_admin
 from api.meta import APP_VERSION
 from src.appstate import apphealth
 from src.appstate import billing
+from src.appstate import comps
 from src.appstate import customers
 from src.appstate import events
 from src.appstate import tester_upgrade
@@ -223,11 +229,15 @@ def get_users(_admin: None = Depends(_require_admin)) -> dict:
     newest token) ends. The one place in this API an email appears -- see
     module docstring."""
     marks = testers.tester_marks()
+    free = comps.comp_marks()
     return {"users": [
         {"id": u.id, "email": u.email, "status": u.status, "plan": u.plan,
          "created_at": u.created_at, "tester": u.id in marks,
          "tester_granted_at": (marks.get(u.id) or {}).get("granted_at"),
-         "tester_expires_at": (marks.get(u.id) or {}).get("expires_at")}
+         "tester_expires_at": (marks.get(u.id) or {}).get("expires_at"),
+         # A free member in force now (not revoked); `comp_revoked` is a former one.
+         "comp": u.id in free and free[u.id]["revoked_at"] is None,
+         "comp_revoked": u.id in free and free[u.id]["revoked_at"] is not None}
         for u in users_store.list_users()
     ]}
 
@@ -253,7 +263,8 @@ def reissue_subscriber_token(body: ReissueTokenRequest,
       5. Never paste the token into a ticket, a log or a chat that persists.
       6. The event `support_token_reissued` records that it happened, not it.
 
-    Paid access is customers.has_paid_access (trialing counts); the token
+    Paid access is customers.has_subscription_access (trialing counts; a free
+    member is not a subscriber, POST /admin/users/reissue covers them); the token
     lives billing.SUBSCRIBER_TOKEN_TTL. The token is never logged here.
 
     SUPERSEDED for support recovery by POST /admin/users/reissue (below): that
@@ -270,7 +281,7 @@ def reissue_subscriber_token(body: ReissueTokenRequest,
         user = users_store.get_user(body.user_id)
     if user is None:
         raise HTTPException(status_code=404, detail="no such user")
-    if not customers.has_paid_access(user.id):
+    if not customers.has_subscription_access(user.id):
         raise HTTPException(
             status_code=409,
             detail="this user has no paid access, so no subscriber token was issued")
@@ -296,21 +307,14 @@ class ReissueAccessRequest(BaseModel):
 # A reason is a note ("verified by reply from the account mailbox, ticket 41"),
 # not an essay and not a place to paste the credential it is about.
 REISSUE_REASON_MAX = 500
-# What counts as "a token in the reason". The product's access tokens are
-# secrets.token_urlsafe(32): 43 characters of [A-Za-z0-9_-] (src/appstate/users.py
-# insert_token), so any 32-character run of that alphabet is refused wherever it
-# sits in the sentence. The rest are the ways a token is usually pasted with
-# something around it: an Authorization header, a token= or session_id= query
-# parameter, an admin header, a Stripe checkout session id (which is itself the
-# key to the activation bridge). A plain "lost bearer token" is fine.
-_LOOKS_LIKE_A_TOKEN = re.compile(r"[A-Za-z0-9_-]{32,}")
-_SECRET_HINTS = re.compile(
-    r"bearer\s+[A-Za-z0-9._~+/=-]{8,}"
-    r"|token\s*=\s*\S"
-    r"|session_id\s*="
-    r"|x-admin-token"
-    r"|\bcs_(?:test|live)_[A-Za-z0-9]{8,}",
-    re.IGNORECASE)
+# What counts as "a token in the reason": any 32-character run of the token
+# alphabet, or a token pasted with something around it (a bearer header, token=,
+# session_id=, the admin header, a Stripe checkout session id). The definition
+# moved to src/appstate/comps.py when the free-member grant needed the same
+# refusal; these are the same objects under the old names, so the support re-issue
+# and the comp grant can never disagree about what looks like a secret.
+_LOOKS_LIKE_A_TOKEN = comps.LOOKS_LIKE_A_TOKEN
+_SECRET_HINTS = comps.SECRET_HINTS
 
 # ONE refusal for every reason a re-issue cannot happen -- no such account, a
 # waitlisted signup, a lapsed subscriber, a suspended user, a tester with a
@@ -349,13 +353,19 @@ def _reissue_plan(user: Optional[users_store.User]):
         it). An ENDED window yields a token already past its end, which opens
         nothing but identifies the person to POST /billing/tester-checkout, the
         door an expired tester converts through.
+    comp: a free member in force (comps.py). The token ends comps.COMP_TOKEN_TTL
+        (10 years) from now, the same far-future end the grant gave; checked
+        first, so a free member who also has an old subscription record gets the
+        comp token.
     Anything else (a lapsed subscriber, a waitlisted signup, a suspended
     account) is None: the same stance as POST /admin/users/token, "do not work
     around it"."""
     if user is None or user.status == "suspended":
         return None
     now = datetime.now(timezone.utc)
-    if customers.has_paid_access(user.id, now):
+    if customers.has_active_comp(user.id):
+        return "comp", now + comps.COMP_TOKEN_TTL
+    if customers.has_subscription_access(user.id, now):
         return "subscriber", now + billing.SUBSCRIBER_TOKEN_TTL
     if customers.get_subscription_record(user.id) is not None:
         return None
@@ -616,3 +626,111 @@ def get_activation(_admin: None = Depends(_require_admin)) -> dict:
     `internal_excluded`. `unmeasured_features` lists labels no route can record
     yet, so a zero there is not read as "nobody used it"."""
     return testers.activation_report()
+
+
+# ---------------------------------------------------------------------------
+# Free (complimentary) members (src/appstate/comps.py holds the policy)
+# ---------------------------------------------------------------------------
+
+class CompGrantRequest(BaseModel):
+    """Exactly one of `email` or `user_id`, and a `reason` (always)."""
+    email: Optional[str] = None
+    # Any, not int: a value that is not a real account id is the same 404 as an
+    # unknown account, not a 422 or a 500. See _account_id.
+    user_id: Optional[Any] = None
+    reason: Optional[str] = None
+
+
+class CompRevokeRequest(BaseModel):
+    user_id: Optional[Any] = None
+    reason: Optional[str] = None
+
+
+def _comp_refusal(exc: comps.CompRefused) -> HTTPException:
+    """A comp refusal as this API's structured error: {"error", "message"} plus
+    any context it carries, with the status the policy chose."""
+    detail = {"error": exc.code, "message": exc.message}
+    detail.update(exc.extra)
+    return HTTPException(status_code=exc.status, detail=detail)
+
+
+@router.post("/admin/comps")
+def grant_comp_access(body: CompGrantRequest,
+                      _admin: None = Depends(_require_admin)) -> dict:
+    """Make one person a free member: full access, no card, no end date, until
+    revoked. Send exactly one of `email` (a new email creates the user) or
+    `user_id` (a waitlisted signup, an expired tester, an existing user), and a
+    `reason` (required, stored, never a token).
+
+    The account becomes `active`; every older token of the person is revoked and
+    ONE token is minted that ends 10 years from now (comps.COMP_TOKEN_TTL). The
+    response carries the RAW token ONCE; the owner sends it himself and nothing
+    is stored but its hash. 409 with a structured `error` and nothing written for
+    a suspended account (`user_suspended`), a live paid subscription
+    (`has_subscription`), an open checkout (`checkout_open`) and someone already
+    a free member (`already_comp`). The event `comp_access_granted` (written in
+    the same transaction) records what the account was before and how many
+    tokens were revoked, never the token, the email or the reason; a failure of
+    that write rolls the grant back (503), so there is no grant without its row.
+    """
+    if (body.email is None) == (body.user_id is None):
+        raise HTTPException(status_code=400,
+                            detail="send exactly one of email or user_id")
+    account_id = None
+    if body.user_id is not None:
+        account_id = _account_id(body.user_id)
+        if account_id is None:
+            # Not an id any account has: the unknown-account answer, after the
+            # reason is checked like every other request's.
+            try:
+                comps.check_reason(body.reason)
+            except comps.CompRefused as exc:
+                raise _comp_refusal(exc)
+            raise HTTPException(status_code=404, detail={
+                "error": "no_such_user", "message": "no such user"})
+    try:
+        grant = comps.grant_comp(email=body.email, user_id=account_id,
+                                 reason=body.reason)
+    except comps.CompRefused as exc:
+        raise _comp_refusal(exc)
+    except Exception as exc:  # noqa: BLE001 -- fail closed: the transaction rolled back
+        print(f"admin: comp grant failed, nothing changed: {exc!r}",
+              file=sys.stderr, flush=True)
+        raise HTTPException(status_code=503, detail={
+            "error": "comp_grant_failed",
+            "message": "the grant could not be written; nothing was issued or changed"})
+    return {"user_id": grant.user_id, "email": grant.email, "token": grant.token,
+            "expires_at": grant.expires_at, "kind": grant.kind,
+            "revoked_tokens": grant.revoked_tokens}
+
+
+@router.post("/admin/comps/revoke")
+def revoke_comp_access(body: CompRevokeRequest,
+                       _admin: None = Depends(_require_admin)) -> dict:
+    """Take a free member's access away: the comp is stamped revoked (with the
+    reason) and EVERY token of the person is revoked, in one transaction. 404
+    `no_such_user`, 409 `not_a_comp` for someone who is not a free member (now).
+    The account's status is left alone. The event `comp_access_revoked` records
+    the count of tokens revoked, never the token, the email or the reason."""
+    account_id = _account_id(body.user_id)
+    try:
+        if account_id is None:
+            comps.check_reason(body.reason)
+            raise comps.CompRefused("no_such_user", "no such user", status=404)
+        return comps.revoke_comp(account_id, body.reason)
+    except comps.CompRefused as exc:
+        raise _comp_refusal(exc)
+    except Exception as exc:  # noqa: BLE001 -- fail closed: the transaction rolled back
+        print(f"admin: comp revoke failed, nothing changed: {exc!r}",
+              file=sys.stderr, flush=True)
+        raise HTTPException(status_code=503, detail={
+            "error": "comp_revoke_failed",
+            "message": "the revoke could not be written; nothing was changed"})
+
+
+@router.get("/admin/comps")
+def get_comps(_admin: None = Depends(_require_admin)) -> dict:
+    """Every free member ever granted (user_id, email, status, granted_at, reason,
+    revoked_at, revoked_reason, first_used_at, and `active`), plus `active`, the
+    count in force. Never a token."""
+    return comps.list_comps()
