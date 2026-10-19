@@ -57,19 +57,19 @@ export function unitsPairText(rec) {
 }
 
 export const UNITS_EXPLAINER =
-  "Ranked by paper units this season (1 unit a bet, average price). Tap a badge to see what it means.";
+  "Ranked by paper units this season (1 unit a bet, average price).";
 
-/** What each badge means, a bit longer than the one-liner on the leaderboard. The badge is keyed on the referee's label. */
+/** What each status means, a bit longer than the one-liner on the leaderboard. Keyed on the referee's label. */
 export const VERDICT_MEANING = {
   "BEATING THE CLOSE":
-    "Over its bets so far, this dog's prices have beaten the closing line by more than luck alone usually does. "
-    + "That says it shops well. It doesn't say it will win, and it's not a tip.",
+    "Over its bets so far, this model's prices have beaten the closing line by more than luck alone usually does. "
+    + "That says it shops well. It does not say it will win, and it is not a tip.",
   "NO DIFFERENT FROM THE MARKET":
-    "This dog's prices can't be told apart from the closing line: not better, not worse. So far it's a coin flip.",
+    "This model's prices cannot be told apart from the closing line: not better, not worse.",
   "TOO EARLY":
-    "Not enough bets to say anything yet. At this size, a hot or cold run is mostly luck.",
+    "Not enough bets with a measurable closing price to say anything yet. At this size, a hot or cold run is mostly luck.",
   "PAYING THE VIG":
-    "This dog's prices have landed worse than the closing line, the way betting into the bookmaker's cut does. "
+    "This model's prices have landed worse than the closing line, the way betting into the bookmaker's cut does. "
     + "Wins and losses so far, good or bad, are mostly luck.",
 };
 
@@ -266,14 +266,14 @@ export function verdictGlyph(tone) {
 // ---- avatars --------------------------------------------------------------------------------------
 
 export const AVATAR_COLORS = [
-  "#FF7A7A", "#FFB020", "#F2E34B", "#2ED47A", "#00E0FF", "#6E9BFF", "#B58CFF", "#FF8AD8",
+  "#6E9BFF", "#E0A458", "#5CC8B5", "#B58CFF", "#78B8D8", "#C9A66B", "#8FA3C0", "#D68FB3",
 ];
 
-/** Categories the house pack uses. The avatar colour follows the category; the words are always written too. */
+/** Categories the house pack uses. The badge colour follows the category; the words are always written too. */
 export const CATEGORY_COLORS = {
-  stats: "#6E9BFF", history: "#FFB020", market: "#00E0FF", math: "#B58CFF", intangibles: "#FF8AD8",
-  esoteric: "#F2E34B", random: "#FF7A7A", mixed: "#2ED47A", simple: "#7FD6C2", baseline: "#A3A9B5",
-  "ai-desk": "#8FE9FA", persona: "#F29BD5",
+  stats: "#6E9BFF", history: "#E0A458", market: "#4FC3D9", math: "#B58CFF", intangibles: "#D68FB3",
+  esoteric: "#C9B458", random: "#C97B7B", mixed: "#5CC8B5", simple: "#7FB8A8", baseline: "#9AA3B2",
+  "ai-desk": "#8FE9FA", persona: "#D68FB3",
 };
 export const CATEGORY_LABELS = {
   stats: "Stats", history: "History", market: "Market", math: "Math", intangibles: "Intangibles",
@@ -303,129 +303,50 @@ export function hashName(name) {
   return hash >>> 0;
 }
 
-/** Colour by category when the hound has one; otherwise one of 8 by name. Ears always vary by name. */
-export function avatarSpec(name, category) {
-  const hash = hashName(name);
+/** Colour by category when the model has one; otherwise one of the palette by name. */
+export function categoryColor(name, category) {
   const cat = String(category || "").toLowerCase();
-  const color = CATEGORY_COLORS[cat] || AVATAR_COLORS[hash % AVATAR_COLORS.length];
-  return { colorIndex: hash % AVATAR_COLORS.length, color, ears: (hash >>> 3) % 2 ? "floppy" : "pointy" };
+  return CATEGORY_COLORS[cat] || AVATAR_COLORS[hashName(name) % AVATAR_COLORS.length];
 }
 
 export function houndColor(hound) {
-  return avatarSpec(hound && hound.name, categoryOf(hound)).color;
+  return categoryColor(hound && hound.name, categoryOf(hound));
 }
 
-/** The personalities a dog can wear (docs/VOICE.md). `grumpy` is the Houndmaster's alone. */
-export const VIBES = ["degen", "nerd", "grinder", "psychic", "chaos", "grumpy"];
 
-/** What a dog with no persona of its own (a builder's dog, or an older saved copy) wears, by category. */
-export const VIBE_BY_CATEGORY = {
-  stats: "nerd", history: "grinder", market: "degen", math: "nerd", intangibles: "degen",
-  esoteric: "psychic", random: "chaos", mixed: "grinder", simple: "grinder", baseline: "grinder",
-  "ai-desk": "nerd", persona: "nerd",
-};
+// ---- monogram badges -----------------------------------------------------------------------------
 
-/** The vibe of a hound: its own persona's, else its category's, else "grinder". */
-export function vibeOf(hound) {
-  const own = hound && hound.persona && String(hound.persona.vibe || "").toLowerCase();
-  if (own && VIBES.includes(own)) return own;
-  return VIBE_BY_CATEGORY[categoryOf(hound)] || "grinder";
-}
-
-const GOLD = "#FFD34D";
-const PAPER = "#F2F4F8";
-
-/** Accessories per vibe, drawn over the head in the avatar's 48x48 box. Inline SVG only, no images. */
-function accessories(vibe, ink, fill) {
-  switch (vibe) {
-    case "degen":
-      // a crooked party hat with a pom-pom, and two confetti dots
-      return [
-        s("g", { transform: "rotate(-16 24 12)" }, [
-          s("path", { d: "M16 12 L24 2 L32 12 Z", fill: "#FF3D8B", stroke: ink, "stroke-width": 1 }),
-          s("path", { d: "M18.5 9 L29.5 9", stroke: GOLD, "stroke-width": 1.6 }),
-          s("path", { d: "M20.8 6 L27.2 6", stroke: GOLD, "stroke-width": 1.6 }),
-          s("circle", { cx: 24, cy: 2, r: 2.2, fill: GOLD }),
-        ]),
-        s("circle", { cx: 7, cy: 6, r: 1.4, fill: GOLD }),
-        s("circle", { cx: 41, cy: 7, r: 1.4, fill: "#00E0FF" }),
-      ];
-    case "nerd":
-      // round glasses with a bridge, over the eyes
-      return [
-        s("circle", { cx: 19, cy: 22, r: 4.6, fill: "rgba(143,233,250,.18)", stroke: PAPER, "stroke-width": 1.5 }),
-        s("circle", { cx: 29, cy: 22, r: 4.6, fill: "rgba(143,233,250,.18)", stroke: PAPER, "stroke-width": 1.5 }),
-        s("path", { d: "M23.6 22 L24.4 22", stroke: PAPER, "stroke-width": 1.5 }),
-        s("path", { d: "M14.4 21.5 L12 20", stroke: PAPER, "stroke-width": 1.4 }),
-        s("path", { d: "M33.6 21.5 L36 20", stroke: PAPER, "stroke-width": 1.4 }),
-      ];
-    case "psychic":
-      // a crescent moon over one ear and a crystal ball under the chin
-      return [
-        s("path", { d: "M9 3 A6 6 0 1 0 15 11 A5 5 0 1 1 9 3 Z", fill: GOLD }),
-        s("circle", { cx: 38, cy: 40, r: 6.2, fill: "#B58CFF", stroke: PAPER, "stroke-width": 1 }),
-        s("path", { d: "M35 38 A3.6 3.6 0 0 1 38.5 35.6", stroke: PAPER, "stroke-width": 1.2, fill: "none" }),
-        s("path", { d: "M33 46 L43 46 L41.5 43.5 L34.5 43.5 Z", fill: ink }),
-        s("circle", { cx: 41, cy: 5, r: 1.2, fill: GOLD }),
-      ];
-    case "chaos":
-      // a spinning coin up top and one wild googly eye
-      return [
-        s("circle", { cx: 38, cy: 8, r: 6.4, fill: GOLD, stroke: "#B8860B", "stroke-width": 1.2 }),
-        s("path", { d: "M38 4.6 L38 11.4 M35.8 6.6 C36.6 5 39.6 5.6 39.8 7 C40 8.6 36 8.4 36.2 10 C36.4 11.4 39.4 11.6 40.2 10",
-          stroke: "#8A6508", "stroke-width": 1, fill: "none" }),
-        s("circle", { cx: 29, cy: 22, r: 4.2, fill: PAPER }),
-        s("circle", { cx: 30.2, cy: 23.2, r: 1.5, fill: ink }),
-      ];
-    case "grumpy":
-      // heavy angry brows and a peaked kennel-boss cap with a whistle
-      return [
-        s("path", { d: "M13.5 17.5 L22 20.5", stroke: PAPER, "stroke-width": 2.4, "stroke-linecap": "round" }),
-        s("path", { d: "M34.5 17.5 L26 20.5", stroke: PAPER, "stroke-width": 2.4, "stroke-linecap": "round" }),
-        s("path", { d: "M12 11 C12 3 36 3 36 11 Z", fill: "#1D2F55", stroke: ink, "stroke-width": 1 }),
-        s("path", { d: "M10 11.5 L38 11.5", stroke: GOLD, "stroke-width": 1.8, "stroke-linecap": "round" }),
-        s("circle", { cx: 24, cy: 6.4, r: 1.5, fill: GOLD }),
-        s("circle", { cx: 24, cy: 42, r: 2, fill: GOLD }),
-        s("path", { d: "M24 40 L24 36", stroke: GOLD, "stroke-width": 0.8 }),
-      ];
-    default:
-      // the grinder: a work cap with a bill and a sweatband
-      return [
-        s("path", { d: "M13 13 C13 4 35 4 35 13 Z", fill: "#2ED47A", stroke: ink, "stroke-width": 1 }),
-        s("path", { d: "M12 13.4 L41 13.4 C41 15.6 38 16 35 15.4 L12 14.8 Z", fill: "#1F9F5A", stroke: ink, "stroke-width": 1 }),
-        s("circle", { cx: 24, cy: 6.8, r: 1.1, fill: PAPER }),
-      ];
-  }
+/**
+ * Two letters for a model: the first letters of its first two words ("Steamy Setter" -> "SS"), or the first
+ * two letters of a one-word name ("Pointer" -> "PO"). Upper case, ASCII letters and digits only.
+ */
+export function initialsOf(name) {
+  const words = String(name || "").split(/[^A-Za-z0-9]+/).filter(Boolean);
+  if (words.length === 0) return "?";
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return (words[0].charAt(0) + words[1].charAt(0)).toUpperCase();
 }
 
 /**
- * A dog head in one of 8 colours, wearing its vibe: party hat (degen), glasses (nerd), moon and crystal ball
- * (psychic), a coin and a googly eye (chaos), a work cap (grinder), a cap and brows (the Houndmaster).
- * Decorative: the name is always written beside it. `dead` swaps the eyes for crosses (the graveyard);
- * `gray` greys the body out.
+ * The model's badge: a rounded tile with its two initials, coloured by category (the same colour the chart
+ * line uses). A plain element: no image, no drawing. Decorative: the name is always written beside it.
  */
-export function avatarSvg(name, { size = 40, gray = false, category = "", vibe = "", dead = false } = {}) {
-  const spec = avatarSpec(name, category);
-  const fill = gray ? "#6A707B" : spec.color;
-  const ink = "#0B0C0E";
-  const wears = VIBES.includes(vibe) ? vibe : "";
-  const ears = spec.ears === "floppy"
-    ? [s("path", { d: "M10 14 C4 14 3 28 8 33 C12 30 14 22 15 16 Z", fill: ink }),
-       s("path", { d: "M38 14 C44 14 45 28 40 33 C36 30 34 22 33 16 Z", fill: ink })]
-    : [s("path", { d: "M11 8 L19 15 L11 24 Z", fill: ink }), s("path", { d: "M37 8 L29 15 L37 24 Z", fill: ink })];
-  const eyes = dead
-    ? [s("path", { d: "M17 20 L21 24 M21 20 L17 24 M27 20 L31 24 M31 20 L27 24", stroke: fill, "stroke-width": 1.5, "stroke-linecap": "round" })]
-    : [s("circle", { cx: 19, cy: 22, r: 1.8, fill }), s("circle", { cx: 29, cy: 22, r: 1.8, fill })];
-  return s("svg", { class: "hd-avatar", viewBox: "0 0 48 48", width: size, height: size,
-    "aria-hidden": "true", focusable: "false", "data-avatar-color": fill,
-    "data-vibe": wears || undefined, "data-dead": dead ? "true" : undefined }, [
-    s("circle", { cx: 24, cy: 24, r: 24, fill }),
-    ...ears,
-    s("path", { d: "M14 17 C14 12 34 12 34 17 L34 28 C34 35 29 40 24 40 C19 40 14 35 14 28 Z", fill: ink }),
-    s("ellipse", { cx: 24, cy: 31, rx: 6, ry: 5, fill }),
-    s("ellipse", { cx: 24, cy: 29, rx: 2.4, ry: 1.7, fill: ink }),
-    ...eyes,
-    ...(wears ? accessories(wears, ink, fill) : []),
+export function monogram(name, { size = 36, category = "", muted = false } = {}) {
+  const color = muted ? "#6A707B" : categoryColor(name, category);
+  return h("span", { class: "hd-mono", "aria-hidden": "true", "data-monogram": initialsOf(name),
+    "data-category": String(category || "") || undefined,
+    style: `--mono:${color};width:${size}px;height:${size}px;font-size:${Math.round(size * 0.38)}px`,
+    text: initialsOf(name) });
+}
+
+/** The same badge as an SVG node, for the share card image (the card is drawn to a canvas from SVG). */
+export function monogramSvg(name, { size = 96, category = "", muted = false } = {}) {
+  const color = muted ? "#6A707B" : categoryColor(name, category);
+  return s("svg", { class: "hd-mono-svg", viewBox: "0 0 48 48", width: size, height: size, "aria-hidden": "true",
+    focusable: "false", "data-monogram": initialsOf(name) }, [
+    s("rect", { x: 1, y: 1, width: 46, height: 46, rx: 9, fill: "#171B22", stroke: color, "stroke-width": 2 }),
+    s("text", { x: 24, y: 30.5, "text-anchor": "middle", "font-size": 19, "font-weight": 700,
+      "font-family": "Arial, Helvetica, sans-serif", fill: color }, initialsOf(name)),
   ]);
 }
 

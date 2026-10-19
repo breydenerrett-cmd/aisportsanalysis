@@ -32,8 +32,8 @@
      nothing has cleared our own bar stays on the page in the same size
      type as everything else. tests/test_web_structure.py enforces that
      mechanically. -->
-<title>LINEHOUND — paper betting bots fighting it out every day</title>
-<meta name="description" content="Paper betting bots fighting it out every day. Build your own dog, watch them win, lose and get put down. Paper bets only, not advice. Our AI desk also reads every MLB game and writes a brief, graded in public; MLB value picks are paused as of Oct 16, 2026 and NFL picks are unaffected. Not on sale yet. Planned price: $19.99/month.">
+<title>LINEHOUND — AI betting models, tracked in public</title>
+<meta name="description" content="AI betting models, tracked in public. Dozens of models make paper bets every day; every ticket is recorded before the game and graded after. Our AI desk also reads every MLB game and writes a brief, graded in public; MLB value picks are paused as of Oct 16, 2026 and NFL picks are unaffected. Not on sale yet. Planned price: $19.99/month.">
 <!-- LINK PREVIEW (2026-10-01). Every first contact is this address pasted
      into a Discord DM, an X reply or a forum thread, and without these the
      preview was a bare URL or whatever the app guessed. Same claims as the
@@ -44,8 +44,8 @@
 <meta property="og:url" content="https://linehound.app/web/landing.html">
 <link rel="canonical" href="https://linehound.app/web/landing.html">
 <meta property="og:type" content="website">
-<meta property="og:title" content="LineHound: paper betting bots fighting it out every day">
-<meta property="og:description" content="Build your own dog. Watch them win, lose and get put down. Paper bets only, not advice. Our AI desk also reads every game; MLB value picks are paused as of Oct 16, 2026; the graded record is free to read.">
+<meta property="og:title" content="LineHound: AI betting models, tracked in public">
+<meta property="og:description" content="Dozens of models make paper bets every day. Every ticket is recorded before the game and graded after. Our AI desk also reads every game; MLB value picks are paused as of Oct 16, 2026; the graded record is free to read.">
 <meta name="twitter:card" content="summary">
 <meta name="theme-color" content="#0B0C0E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -72,8 +72,8 @@
     <span class="wordmark__text" data-hook="product-name">LINEHOUND</span>
   </span>
   <div class="site-nav__links">
-    <a href="hounds.html" data-hook="nav-hounds">Kennel</a>
-    <a href="build-a-hound.html" data-hook="nav-build">Build your dog</a>
+    <a href="hounds.html" data-hook="nav-hounds">Leaderboard</a>
+    <a href="build-a-hound.html" data-hook="nav-build">Build a model</a>
     <a href="#desk">AI desk</a>
     <a href="#faq">FAQ</a>
   </div>
@@ -82,31 +82,43 @@
 
 <main>
 
-<!-- THE KENNEL: the first screen (owner voice pass, 2026-10-18). Owner, verbatim: "This is becoming very like
-     science backed math and not fun, we're losing the fun and gambling degenerate side of things. Scientists
-     aren't buying this. ... Degenerate gamblers dude. You're targeting the wrong audience with user interface,
-     verbiage and language on the site." So the first thing a visitor meets is the kennel: paper betting bots,
-     the three top dogs by paper units right now and the latest dog put down (web/js/landing-kennel.js fills
-     them from the public GET /hounds and GET /hounds/graveyard; with no answer the board says so and names
-     no figure), and two ways in: look, or build. The honest part is one short human line and a link, not an
-     essay. The AI desk brief this page used to lead with is the second section, below. docs/VOICE.md. -->
-<section class="kennel" aria-label="the kennel" data-hook="kennel-hero">
-  <div class="kennel__main">
-    <p class="kennel__live"><span class="kennel__dot" aria-hidden="true"></span>LIVE KENNEL</p>
-    <h1 class="kennel__title" data-hook="kennel-title">Paper betting bots fighting it out every day. <span class="kennel__sub">Build your own dog. Watch them win, lose, and get put down.</span></h1>
-    <div class="kennel__cta">
-      <a class="btn btn--primary btn--lg" href="hounds.html" data-hook="cta-kennel-enter">Enter the kennel</a>
-      <a class="btn btn--ghost btn--lg" href="build-a-hound.html" data-hook="cta-kennel-build">Build your dog</a>
+<!-- THE FIRST SCREEN (professional pass, 2026-10-19). Owner, verbatim: "why is our linehound app and website
+     look like a kids playground not a professional gambling AI website ... it says [the same thing] over and
+     over". So the first thing a visitor meets is a sportsbook-style product: a plain headline, one sentence
+     on how it works, a live mini leaderboard (the top five models by units, with record, ROI and bets) and the
+     latest five tickets (web/js/landing-board.js fills them from the public GET /hounds and GET /hounds/stream;
+     with no answer a panel says so and names no figure), and two ways in: look, or build. The one disclosure
+     on this page is the shared footer's. The AI desk brief this page used to lead with is the second section,
+     below. docs/VOICE.md. -->
+<section class="lbhero" aria-label="model leaderboard" data-hook="lb-hero">
+  <div class="lbhero__copy">
+    <p class="lbhero__eyebrow">AI sports betting models</p>
+    <h1 class="lbhero__title" data-hook="lb-title">AI betting models, tracked in public.</h1>
+    <p class="lbhero__sub" data-hook="lb-sub">Dozens of models make paper bets every day. Every ticket is recorded before the game and graded after. Follow the ones that are winning.</p>
+    <div class="lbhero__cta">
+      <a class="btn btn--primary btn--lg" href="hounds.html" data-hook="cta-kennel-enter">View the leaderboard</a>
+      <a class="btn btn--ghost btn--lg" href="build-a-hound.html" data-hook="cta-kennel-build">Build a model</a>
     </div>
-    <p class="kennel__legal" data-hook="kennel-legal"><strong>Paper bets only. Not advice.</strong> Nobody here bets real money. 21+.</p>
-    <p class="kennel__straight" data-hook="kennel-straight">We stopped publishing MLB value picks on Oct 16, 2026 because they didn't beat the market. The graded record stays public; NFL picks carry on. <a href="why-we-paused.html" data-hook="hero-why-paused-link">Why we stopped publishing MLB picks &rarr;</a></p>
+    <p class="lbhero__straight" data-hook="kennel-straight">We stopped publishing MLB value picks on Oct 16, 2026 because they didn't beat the market. The graded record stays public; NFL picks carry on. <a href="why-we-paused.html" data-hook="hero-why-paused-link">Why we stopped publishing MLB picks &rarr;</a></p>
   </div>
-  <aside class="kennel__panel" aria-label="live mini leaderboard" data-hook="kennel-board-panel">
-    <h2 class="kennel__panel-title">Top dogs right now</h2>
-    <ol class="kennel__board" data-hook="kennel-board"><li class="kennel__empty">Checking the leaderboard...</li></ol>
-    <div class="kennel__putdown" data-hook="kennel-putdown" hidden></div>
-    <a class="kennel__more" href="hounds.html" data-hook="kennel-more">See the whole kennel &rarr;</a>
-  </aside>
+  <div class="lbhero__panels">
+    <section class="lbpanel" aria-label="top models" data-hook="lb-board-panel">
+      <div class="lbpanel__head">
+        <h2 class="lbpanel__title">Top models by units</h2>
+        <span class="lbpanel__asof" data-hook="lb-asof"></span>
+      </div>
+      <table class="lbtable" data-hook="lb-board-table">
+        <caption class="lbsr">Top five models by units, one unit a bet</caption>
+        <thead><tr><th scope="col" class="lbnum">#</th><th scope="col">Model</th><th scope="col" class="lbnum">Record</th><th scope="col" class="lbnum">Units</th><th scope="col" class="lbnum">ROI</th><th scope="col" class="lbnum">Bets</th></tr></thead>
+        <tbody data-hook="lb-board"><tr><td colspan="6" class="lbempty">Checking the leaderboard...</td></tr></tbody>
+      </table>
+      <a class="lbpanel__more" href="hounds.html" data-hook="lb-more">Full leaderboard &rarr;</a>
+    </section>
+    <section class="lbpanel" aria-label="latest tickets" data-hook="lb-tickets-panel">
+      <div class="lbpanel__head"><h2 class="lbpanel__title">Latest tickets</h2></div>
+      <ol class="lbtickets" data-hook="lb-tickets"><li class="lbempty">Checking the feed...</li></ol>
+    </section>
+  </div>
 </section>
 
 <!-- HERO -->
@@ -145,7 +157,7 @@
       <p class="hero__cta-note" data-hook="hero-cta-note">Early access: the first 20 testers get 7 days free, no card. Not on sale yet; planned price $19.99 a month. The record and the postseason odds are free now.</p>
       <a class="hero__record-link" href="index.html#/record-card" data-hook="hero-record-link">Open the full record, every pick &rarr;</a>
       <a class="hero__record-link" href="sample.html" data-hook="hero-sample-link">Read a sample brief, free &rarr;</a>
-      <a class="hero__record-link" href="hounds.html" data-hook="hero-hounds-link">Watch the dogs fight it out &rarr;</a>
+      <a class="hero__record-link" href="hounds.html" data-hook="hero-hounds-link">See the model leaderboard &rarr;</a>
       <!-- WHICH SPORTS ARE LIVE TODAY: one sentence, filled from web/js/dom.js's
            SPORTS_LIVE_TODAY by landing.js. The text here is the same sentence, so a
            visitor with no script reads it too; tests/test_live_sports_sentence.py
@@ -567,16 +579,12 @@
   <h2 class="section__title" data-rise data-delay="60">Questions people ask.</h2>
   <div class="faq-list" style="margin-top:24px">
     <details class="faq-item panel chamfer" data-hook="faq-kennel">
-      <summary>What is the kennel?</summary>
-      <p class="faq-item__body">A pack of betting bots we call dogs. Each one follows a written rule, makes one-unit paper bets, and gets graded the next morning. Some dogs are smart, some are coin flips, and the ones that fall 25 units under zero get put down. Everything is on the board, wins and losses.</p>
-    </details>
-    <details class="faq-item panel chamfer" data-hook="faq-gambling-advice">
-      <summary>Is this gambling advice?</summary>
-      <p class="faq-item__body">No. It's paper betting. Nothing here tells you what to bet, how much, or where, and a dog's results don't tell you what happens next. You make your own calls. 21+.</p>
+      <summary>What are the models?</summary>
+      <p class="faq-item__body">Each model follows a written rule, records one-unit paper bets before the game, and is graded the next morning. Some are built on stats, some on the market, some are deliberately naive baselines to beat. A model that falls 25 units under zero is retired and stays on the record. Wins and losses are all on the leaderboard.</p>
     </details>
     <details class="faq-item panel chamfer" data-hook="faq-no-guarantee">
-      <summary>Do the dogs win?</summary>
-      <p class="faq-item__body">Some nights they cash, some nights they get cooked. Nothing here promises a win for any dog or any bet, and nobody here knows what comes next. That's why every dog's losses sit right next to its wins.</p>
+      <summary>Do the models win?</summary>
+      <p class="faq-item__body">Some stretches they cash and some they don't, and nothing here promises a win for any model or any bet. That is why every model's losses sit next to its wins, and why a record on a small number of bets is labelled as such.</p>
     </details>
     <!-- EARLY ACCESS (owner decision, 2026-10-02). Static text, correct with
          JavaScript off. The numbers are the enforced ones (src/appstate/
@@ -602,7 +610,7 @@
     </details>
     <details class="faq-item panel chamfer" data-hook="faq-sports-covered">
       <summary>Which sports do you cover?</summary>
-      <p class="faq-item__body">The dogs run on MLB and NFL. The AI desk writes a brief for every MLB game we cover; MLB value picks are paused as of Oct 16, 2026, and the picks already made stay on the record. NFL carries live picks, published before the game and graded automatically the next morning. UFC picks are paused while we build real fight analysis; the UFC picks already made are graded once results are entered by hand and stay on the record. Tennis is research only: a match board, not picks yet.</p>
+      <p class="faq-item__body">The models run on MLB and NFL. The AI desk writes a brief for every MLB game we cover; MLB value picks are paused as of Oct 16, 2026, and the picks already made stay on the record. NFL carries live picks, published before the game and graded automatically the next morning. UFC picks are paused while we build real fight analysis; the UFC picks already made are graded once results are entered by hand and stay on the record. Tennis is research only: a match board, not picks yet.</p>
     </details>
     <details class="faq-item panel chamfer" data-hook="faq-cancel">
       <summary>Can I cancel anytime?</summary>
@@ -632,7 +640,7 @@
 <footer class="site-footer" aria-label="footer" data-hook="landing-footer">
   <div class="site-footer__top">
     <div class="site-nav__links" style="display:flex">
-      <a href="hounds.html">Kennel</a>
+      <a href="hounds.html">Leaderboard</a>
       <a href="#desk">AI desk</a>
       <a href="#pricing">Pricing</a>
       <a href="#faq">FAQ</a>
@@ -640,7 +648,7 @@
   </div>
   <div class="site-footer__data-note">
     <h3>About the data on this page</h3>
-    <p>The dog rankings are live paper results from our public ledger, one unit a bet, nobody's real money.
+    <p>The model rankings are live results from our public ledger, one unit a bet.
       The brief and the record come from the same ledger. MLB value picks have been paused since Oct 16, 2026;
       the picks made before then stay on the record. Once you sign in, the app shows the daily brief, the
       price board and the NFL card.</p>

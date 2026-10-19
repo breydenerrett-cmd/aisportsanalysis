@@ -67,6 +67,22 @@ class TicketsCarryTheirBookCount(unittest.TestCase):
         self.assertIn("book_count", contract.to_json(unknown))
 
 
+class OpenTicketCount(unittest.TestCase):
+    DEFN = {"id": "h", "name": "H", "tagline": "", "kind": "house", "category": "stats", "style": "",
+            "sports": ["mlb"], "markets": ["h2h"], "rule_text": ""}
+
+    def test_a_model_with_only_open_tickets_counts_them_and_has_no_graded_record(self):
+        bets = [mkbet("2026-10-18", None), mkbet("2026-10-18", None)]
+        summary = stats.summarize(self.DEFN, bets, {}, "2026-10-18").summary
+        self.assertEqual(summary.open_bets, 2)
+        self.assertEqual(summary.record.bets, 0)
+
+    def test_graded_tickets_are_not_open_and_replay_never_counts(self):
+        bets = [mkbet("2026-10-17", "win"), mkbet("2026-10-18", None), mkbet("2026-10-18", None, segment="replay")]
+        summary = stats.summarize(self.DEFN, bets, {}, "2026-10-18").summary
+        self.assertEqual((summary.open_bets, summary.record.bets), (1, 1))
+
+
 class OpenAndGradedFilter(unittest.TestCase):
     def test_open_is_not_yet_graded_and_graded_is_the_rest(self):
         rows = [stats.bet_row(mkbet("2026-10-10", r), None) for r in ("win", None, "loss", None)]

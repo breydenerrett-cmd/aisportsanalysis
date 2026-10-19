@@ -1,5 +1,5 @@
 /**
- * The rulebook and the coach's chair on a dog's page.
+ * The rule's dials and the coach panel on a model's page.
  *
  *   THE DIALS (transparent): the tunable numbers in a dog's rule, each in plain words at its current value
  *   ("Steam needed: 3 points"), and when the referee last changed them ("Last changed: never", or "v2 on
@@ -20,7 +20,7 @@ import { apiGet, apiPost } from "./api.js";
 export const MAX_CHANGED = 2;
 export const NICK_MAX = 20;
 export const NICK_RE = /^[A-Za-z0-9 ]+$/;
-export const NEVER_CHANGES = "Tips are graded like the AI coach's. Only the referee can change a dog.";
+export const NEVER_CHANGES = "Tips are graded like the AI coach's. Only the referee can change a model.";
 
 export function numberText(v) {
   const r = Math.round(Number(v) * 10) / 10;
@@ -51,7 +51,7 @@ export function sameValue(a, b) {
 /** "Last changed: never" / "Last changed: v2 on Oct 12 by the referee". */
 export function lastChangedText(rb) {
   const last = rb && rb.last_changed;
-  if (!last) return "Last changed: never. It's still on its starting numbers.";
+  if (!last) return "Last changed: never. It is still on its starting numbers.";
   const when = shortDate(last.utc);
   return `Last changed: v${last.version}${when ? ` on ${when}` : ""} by ${last.by || "the referee"}.`;
 }
@@ -62,15 +62,15 @@ export function renderDials(box, rb, failed) {
   clearNode(box);
   if (failed || !rb) {
     box.appendChild(h("p", { class: "hd-muted", "data-hook": "dials-unavailable", text:
-      "The dials didn't load just now. The rule above is still the whole playbook." }));
+      "The dials did not load just now. The rule above is still the whole rule." }));
     return;
   }
   if (rb.trigger) {
-    box.appendChild(h("p", { class: "hd-trigger", "data-hook": "rule-trigger", text: `This dog bets when ${rb.trigger}.` }));
+    box.appendChild(h("p", { class: "hd-trigger", "data-hook": "rule-trigger", text: `This model bets when ${rb.trigger}.` }));
   }
   if (!rb.tunable || !Array.isArray(rb.dials) || rb.dials.length === 0) {
     box.appendChild(h("p", { class: "hd-muted", "data-hook": "no-dials", text:
-      "No dials on this one. Its rule is fixed: what you read above is exactly what it does." }));
+      "No dials on this model. Its rule is fixed: what you read above is exactly what it does." }));
     return;
   }
   box.appendChild(h("h3", { class: "hd-h3", text: "The dials" }));
@@ -81,7 +81,7 @@ export function renderDials(box, rb, failed) {
     ]))));
   box.appendChild(h("p", { class: "hd-fine", "data-hook": "dials-last-changed", text: lastChangedText(rb) }));
   box.appendChild(h("p", { class: "hd-fine", "data-hook": "dials-referee",
-    text: "Only the referee turns these. Fans can send tips below; tips never change the dog." }));
+    text: "Only the referee turns these. Fans can send tips below; tips never change the model." }));
 }
 
 // ---- coach this dog ----------------------------------------------------------------------------------------
@@ -108,7 +108,7 @@ function tipLine(tip, dials) {
 }
 
 /** The live verdicts of the coach report card (src/hounds/coach_grade.py) as a fan reads them on a tip. */
-const GRADE_WORDS = { "HELPED": "HELPED ✅", "HURT": "HURT ❌", "NO DIFFERENCE": "NO DIFFERENCE 🪙", "TOO EARLY": "TOO EARLY 🐣" };
+const GRADE_WORDS = { "HELPED": "HELPED", "HURT": "HURT", "NO DIFFERENCE": "NO DIFFERENCE", "TOO EARLY": "TOO EARLY" };
 
 /** " Live: HELPED ✅ (+1.2u over 24 bets)" for a graded tip, "" for one the report card has not recorded yet. */
 export function gradeText(grade) {
@@ -123,7 +123,7 @@ export function gradeText(grade) {
 export function renderTips(box, data, dials, failed) {
   clearNode(box);
   if (failed) {
-    box.appendChild(h("p", { class: "hd-fine", "data-hook": "tips-unavailable", text: "The tip jar didn't load just now." }));
+    box.appendChild(h("p", { class: "hd-fine", "data-hook": "tips-unavailable", text: "Tips did not load just now." }));
     return;
   }
   const count = data && isNum(data.count) ? data.count : 0;
@@ -231,22 +231,22 @@ export function renderCoach(box, ctx) {
     send.setAttribute("disabled", "");
     try {
       await apiPost(`/hounds/${encodeURIComponent(ctx.houndId)}/tips`, body);
-      msg.textContent = "Tip sent. It's in the jar. The dog stays exactly as it was.";
+      msg.textContent = "Tip sent. The model stays exactly as it was.";
       for (const d of dials) picked[d.name] = d.current;
       sync();
       await refreshTips();
     } catch (err) {
       const detail = err && err.detail && typeof err.detail === "object" ? err.detail : null;
       msg.textContent = (detail && detail.message) || (err && err.status === 429
-        ? "That's the daily limit on tips. Come back tomorrow." : "Couldn't send that tip. Try again in a minute.");
+        ? "That is the daily limit on tips. Come back tomorrow." : "Could not send that tip. Try again in a minute.");
       sync();
     }
   }
   send.addEventListener("click", sendTip);
 
-  box.appendChild(h("h2", { id: "coach-h", text: "🧠 Coach this dog" }));
+  box.appendChild(h("h2", { id: "coach-h", text: "Coach this model" }));
   box.appendChild(h("p", { class: "hd-muted", text:
-    "Think a dial is off? Turn up to two and send a tip." }));
+    "Think a dial is off? Turn up to two and send a tip. It is graded against the model's results later." }));
   box.appendChild(h("p", { class: "hd-coach__rule", "data-hook": "coach-promise", text: NEVER_CHANGES }));
   box.appendChild(list);
   box.appendChild(count);

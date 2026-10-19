@@ -200,10 +200,10 @@ export function houndmasterLine(hound, houndmaster) {
 /** The cause of death in a bettor's words. Unknown causes are quoted as the server wrote them. */
 export function causeText(cause) {
   const text = String(cause || "").trim();
-  if (!text) return "the kennel did not say";
+  if (!text) return "no reason was given";
   if (/down more than 25 units/i.test(text)) return "Went more than 25 units under.";
-  if (/paying the vig/i.test(text)) return "300 bets of feeding the book.";
-  if (/retired by the owner/i.test(text)) return "Cut by the kennel boss.";
+  if (/paying the vig/i.test(text)) return "300 bets paying the vig.";
+  if (/retired by the owner/i.test(text)) return "Retired by the owner.";
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 

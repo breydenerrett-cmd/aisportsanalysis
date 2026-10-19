@@ -23,8 +23,8 @@ PAGES = {
     "hound": ("hound.html", "hounds-detail.js"),
     "build": ("build-a-hound.html", "hounds-build.js"),
     "learning": ("learning.html", "hounds-learning.js"),
-    # the landing page's kennel panel: landing-kennel.js has no auto-run, so a two-line boot file runs it
-    "landing_kennel": ("landing.html", "kennel_boot.js"),
+    # the landing page's leaderboard panel: landing-board.js has no auto-run, so a two-line boot file runs it
+    "landing_board": ("landing.html", "board_boot.js"),
 }
 
 _tmp = None

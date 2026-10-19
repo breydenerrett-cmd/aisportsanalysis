@@ -45,7 +45,12 @@ _HOUNDS = [
     ("always-dog", "Always Underdog", "baseline", "yardstick", "house", "PAYING THE VIG", 50, 200, "running", "Always the underdog."),
     ("home-field", "Home Field", "simple", "one rule", "house", "TOO EARLY", 9, 60, "running", "Home teams, nothing else."),
     ("rusty", "Rusty's Revenge", "mixed", "follows line moves", "user", "TOO EARLY", 0, 40, "running", "Built by a reader."),
+    ("night-owl", "Night Owl", "market", "late moves", "house", "TOO EARLY", 0, 30, "running", "Waits for the late number."),
+    ("quiet-one", "Quiet One", "simple", "one rule", "house", "TOO EARLY", 0, 20, "not_started", "Has not run yet."),
 ]
+
+#: forward tickets recorded and not yet graded, per fixture model (the "open tickets" count)
+_OPEN = {"closer": 2, "steamer": 1, "rusty": 3, "night-owl": 2}
 
 _FWD = {row[0]: row[6] for row in _HOUNDS}
 AS_OF = "2026-10-24"
@@ -97,6 +102,10 @@ def form_for(hid: str, bets: int):
         "worst_beat": {"date": "2026-10-22", "game": "Mariners at Astros", "selection": "Astros to win", "price": -140,
                        "units": -1.0, "market_fair": 0.58},
         "units_basis": "average_price",
+        # added 2026-10-19: what the model leaderboard reads (src/hounds/stats.py compute_form)
+        "last10": ["W" if next(rnd) > 0.5 else "L" for _ in range(min(10, bets))],
+        "avg_price": -105 - int(next(rnd) * 20),
+        "clv_beat": ({"n": bets, "beat": int(bets * 0.55), "pct": round(int(bets * 0.55) / bets, 4)} if bets >= 5 else None),
     }
 
 
@@ -193,7 +202,7 @@ def summaries(forward: bool = True) -> list:
             replay=ReplayBlock(bets=rbets, wins=replay.wins, losses=replay.losses, pushes=replay.pushes,
                                voids=0, units_recorded_price=replay.units_recorded_price),
             spark=[p.cum_units_average_price for p in series][-30:], spark_basis="average_price",
-            source="fixture", persona=PERSONAS.get(hid), form=form_for(hid, fb)))
+            source="fixture", persona=PERSONAS.get(hid), form=form_for(hid, fb), open_bets=_OPEN.get(hid, 0)))
     return out
 
 
@@ -214,14 +223,16 @@ def stream() -> dict:
         StreamItem(hound_id="closer", hound_name="Closer", date="2026-10-24", game="Yankees at Red Sox", market="moneyline",
                    selection="Yankees to win", price=-115, price_average=-120, book="bookB", who_decided="rule",
                    reason="Rule: the underdog. It backed the away side at the board average of -120 across 5 books.",
-                   segment="forward", verdict="play", refused=False, decided_utc="2026-10-24T22:41:00Z"),
+                   segment="forward", verdict="play", refused=False, decided_utc="2026-10-24T22:41:00Z",
+                   start_utc="2026-10-24T23:10:00Z", recorded_utc="2026-10-24T22:41:00Z", book_count=5),
         StreamItem(hound_id="poisson", hound_name="Poisson", date="2026-10-24", game="Mariners at Astros", market="moneyline",
                    selection="(no bet)", who_decided="code", reason="Refused: too few books were quoting this market to trust a price.",
                    segment="forward", verdict="refused_thin", refused=True, decided_utc="2026-10-24T22:30:00Z"),
         StreamItem(hound_id="coin-flip", hound_name="Coin Flip", date="2026-10-24", game="Padres at Dodgers", market="total",
                    selection="Over 8.5", line="8.5", price=100, price_average=-108, book="bookA", who_decided="model",
                    reason="Seeded coin flip: over. A control.", segment="forward", verdict="play", refused=False,
-                   result="loss", units=-1.0, decided_utc="2026-10-24T22:12:00Z"),
+                   result="loss", units=-1.0, decided_utc="2026-10-24T22:12:00Z",
+                   start_utc="2026-10-24T22:10:00Z", recorded_utc="2026-10-24T21:30:00Z", book_count=7),
     ]
     return contract.stream_payload(paginate(items, 1, 25), AS_OF)
 
@@ -277,14 +288,18 @@ def bet_rows(hid="closer", n=45) -> list:
     for i in range(n):
         d = date(2026, 10, 24) - timedelta(days=i // 3)
         res = results[int(next(rnd) * len(results))]
+        pending = i < _OPEN.get(hid, 0) and hid != "rusty"
         out.append(BetRow(
             hound_id=hid, date=d.isoformat(), game=f"NYY at BOS #{i + 1}", market="h2h",
             selection="Red Sox to win" if i % 2 else "Yankees to win", price=-115 + (i % 7) * 25,
-            price_average=-120 + (i % 7) * 25, book="bookA", consensus_fair=0.52, result=res,
-            units={"win": 0.83, "loss": -1.0, "push": 0.0, "void": 0.0}[res],
-            clv_pts=round((next(rnd) - 0.5) * 4, 1), who_decided=who[i % 3],
+            price_average=-120 + (i % 7) * 25, book="bookA", consensus_fair=0.52,
+            result=None if pending else res,
+            units=None if pending else {"win": 0.83, "loss": -1.0, "push": 0.0, "void": 0.0}[res],
+            clv_pts=None if pending else round((next(rnd) - 0.5) * 4, 1), who_decided=who[i % 3],
             reason=f"Inside the price band; {4 + i % 3} books posting.",
-            segment="forward" if hid != "rusty" else "replay"))
+            segment="forward" if hid != "rusty" else "replay",
+            start_utc=f"{d.isoformat()}T23:10:00Z", recorded_utc=f"{d.isoformat()}T22:20:00Z",
+            book_count=4 + i % 3))
     return out
 
 
@@ -292,8 +307,9 @@ def bets(hid="closer", n=45) -> list:
     return [contract.to_json(b) for b in bet_rows(hid, n)]
 
 
-def bets_payload(hid="closer", n=45, page=1, page_size=25, segment=None) -> dict:
+def bets_payload(hid="closer", n=45, page=1, page_size=25, segment=None, status=None) -> dict:
     rows = [b for b in bet_rows(hid, n) if segment is None or b.segment == segment]
+    rows = contract.filter_by_status(rows, status)
     return contract.bets_payload(hid, paginate(rows, page, page_size), AS_OF)
 
 
@@ -455,7 +471,7 @@ def respond(path_and_query: str, forward: bool = True):
         hid = path[len("/hounds/"):-len("/bets")]
         if hid in _FWD:
             return 200, bets_payload(hid, 45, int(params.get("page", 1)), int(params.get("page_size", 25)),
-                                     params.get("segment"))
+                                     params.get("segment"), params.get("status"))
     return routes(forward).get(path, (404, {"detail": "Not Found"}))
 
 

@@ -29,7 +29,7 @@ HoundSummary
   record {bets, wins, losses, pushes, voids, units_recorded_price,
   units_average_price | null}, clv {n, mean_pts, ci_low, ci_high} | null,
   verdict {label, sentence, units_note}, first_bet_utc, last_bet_utc,
-  verified (bool), verified_share | null, checkable_share | null,
+  open_bets (forward tickets not yet graded; added 2026-10-19), verified (bool), verified_share | null, checkable_share | null,
   replay {bets, wins, losses, pushes, voids, units_recorded_price} | null,
   spark [..] (last 30 points of cum_units_average_price; when the average
   price is unavailable for the hound it is the recorded-price series and
@@ -173,6 +173,7 @@ class HoundSummary:
     source: str = ""
     persona: Optional[dict] = None        # voice only (config files); see docs/VOICE.md
     form: Optional[dict] = None           # streak, last 7 days, last settled day, best bet, worst beat
+    open_bets: int = 0                    # forward tickets recorded and not yet graded (added 2026-10-19)
 
 
 @dataclass

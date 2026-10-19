@@ -455,7 +455,8 @@ def summarize(defn: dict, bets: list, teams_of: dict, as_of: Optional[str]) -> H
         spark_basis="average_price" if avg_available else "recorded_price",
         source=defn.get("source", ""),
         persona=defn.get("persona") if isinstance(defn.get("persona"), dict) else None,
-        form=compute_form(fgraded, avg_available, as_of, teams_of))
+        form=compute_form(fgraded, avg_available, as_of, teams_of),
+        open_bets=sum(1 for b in forward if not b.graded))
     if summary.form is not None:
         summary.form["clv_beat"] = clv_beat_share(points)
     rows = sorted(bets, key=lambda b: (b.decision_utc or b.date or "", b.date),

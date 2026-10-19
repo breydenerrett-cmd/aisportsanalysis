@@ -75,7 +75,12 @@ class Elem {
     }
     return !evt.defaultPrevented;
   }
-  closest() { return null; }
+  // the nearest ancestor-or-self matching one of the comma-separated compound selectors (tag, #id, .class, [attr])
+  closest(sel) {
+    const steps = String(sel).split(",").map((part) => parseSelector(part)[0]);
+    for (let n = this; n && n.nodeType === 1; n = n.parentNode) if (steps.some((s) => n.matches(s))) return n;
+    return null;
+  }
   click() { this.dispatchEvent({ type: "click", target: this }); if (this.localName === "a" && "download" in this.attrs) downloads.push({ href: this.attrs.href, download: this.attrs.download }); }
   getContext() {
     if (this.localName !== "canvas") return undefined;
