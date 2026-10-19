@@ -19,6 +19,9 @@ const scenario = JSON.parse(process.env.SCENARIO_FILE
   ? __readScenario(process.env.SCENARIO_FILE, "utf8")
   : process.env.SCENARIO);
 
+// scenario.now (an ISO instant) freezes Date.now(), for pages that compute "in 30 hours" or "last 7 days".
+if (scenario.now) { const frozen = Date.parse(scenario.now); Date.now = () => frozen; }
+
 // ---- fake DOM -------------------------------------------------------------------------------------
 const downloads = [];
 const canvases = [];
@@ -230,12 +233,13 @@ globalThis.clearInterval = (id) => { intervals.delete(id); };
 
 // ---- fake fetch -----------------------------------------------------------------------------------
 const gets = [];
+const getCalls = [];
 const posts = [];
 globalThis.fetch = async (url, init = {}) => {
   url = String(url);
   const path = url.split("?")[0];
   if (init.method === "POST") posts.push({ url, body: init.body ? JSON.parse(init.body) : null, headers: init.headers });
-  else gets.push(url);
+  else { gets.push(url); getCalls.push({ url, headers: init.headers || {} }); }
   if ((scenario.down || []).some((p) => path === p || (p.endsWith("*") && path.startsWith(p.slice(0, -1))))) {
     throw new TypeError("fetch failed");
   }
@@ -299,6 +303,9 @@ try {
       const el = find(a.sel, a.index || 0);
       el.checked = a.checked !== false;
       el.dispatchEvent({ type: "change", target: el });
+    } else if (a.do === "submit") {
+      const el = find(a.sel, a.index || 0);
+      el.dispatchEvent({ type: "submit", target: el, preventDefault() {} });
     } else if (a.do === "fire_timers") {
       for (const { fn } of [...intervals.values()]) fn();
     } else if (a.do === "visibility") {
@@ -324,6 +331,7 @@ try {
 }
 out.captures = captures;
 out.gets = gets;
+out.getCalls = getCalls;
 out.posts = posts;
 out.navigations = navigations;
 out.replaced = replaced;
