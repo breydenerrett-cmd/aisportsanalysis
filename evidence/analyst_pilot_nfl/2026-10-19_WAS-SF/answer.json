@@ -1,0 +1,118 @@
+{
+  "summary": "San Francisco is the better team on the numbers we have: five wins from five games, a margin of 12.2 points per game, and 6.4261 yards per play against 5.1156 for Washington. But the market already knows that. The moneyline on San Francisco is -380 at the best book, which is past the heavy-favourite limit I use, and the +345 on Washington sits close to what the books' own de-vigged number of 0.2274 implies, so I pass on both. The spread of 7.5 has not moved since it was first captured and sits half a point off the key number 7. Nothing in the data shows me the number is wrong, so I pass. The total is the one number that has moved, from 49.5 up to 52, which suggests the price already holds San Francisco's 30.8 points per game and the 29.8 Washington allows. I pass there too. Weather for an outdoor night game is missing, both quarterbacks are only projections, and the injury lists do not tell us how much the named absences matter.",
+  "calls": [
+    {
+      "slot_id": "moneyline",
+      "market": "moneyline",
+      "selection": "SF",
+      "verdict": "PASS",
+      "price": -380,
+      "book": "draftkings",
+      "fair_estimate": 0.77,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "San Francisco is a clear favourite, but the best price is -380, which is too expensive to bet under my own rule, and the books' de-vigged number already makes them about three in four to win.",
+          "evidence": [
+            { "path": "markets.moneyline.options[0].best.price", "value": -380 },
+            { "path": "markets.moneyline.options[0].fair_probability", "value": 0.7726 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "San Francisco has won all five games this season and has the better yards per play, so the market is probably right about who is the stronger side.",
+          "evidence": [
+            { "path": "sections.home.values.form.season_to_date.wins", "value": 5 },
+            { "path": "sections.home.values.form.season_to_date.yards_per_play.value", "value": 6.4261 },
+            { "path": "sections.away.values.form.season_to_date.yards_per_play.value", "value": 5.1156 }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": null,
+      "what_would_change_it": "A San Francisco price shorter than the heavy-favourite limit would be needed before I could take it, and the data gives me no reason to expect that.",
+      "case_against": null
+    },
+    {
+      "slot_id": "spread",
+      "market": "spread",
+      "selection": "WAS +7.5",
+      "verdict": "PASS",
+      "price": -110,
+      "book": "williamhill_us",
+      "fair_estimate": 0.5,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The books' own number is a coin flip on this spread, and the number of 7.5 has not moved since it was first captured, so the market has not been pushed either way.",
+          "evidence": [
+            { "path": "markets.spread.options[0].fair_probability", "value": 0.51 },
+            { "path": "markets.spread.context.away_number_first_captured", "value": 7.5 },
+            { "path": "markets.spread.options[0].line", "value": 7.5 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "San Francisco is clearly ahead on margin per game and Washington is behind, but that is a reason the home side is good, not a reason the 7.5 is wrong in points.",
+          "evidence": [
+            { "path": "sections.home.values.form.season_to_date.margin_per_game", "value": 12.2 },
+            { "path": "sections.away.values.form.season_to_date.margin_per_game", "value": -6.8 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "The number sits half a point off the key number 7, and the data holds nothing about how this game is likely to land around it, so I lean on no view of the hook.",
+          "evidence": [
+            { "path": "sections.reference.values.key_numbers[2]", "value": 7 }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": 100,
+      "what_would_change_it": "A Washington quarterback change, or the number moving off 7.5, would make me look again; at even money I would start to take Washington.",
+      "case_against": null
+    },
+    {
+      "slot_id": "total",
+      "market": "total",
+      "selection": "Under 52",
+      "verdict": "PASS",
+      "price": -110,
+      "book": "mybookieag",
+      "fair_estimate": 0.5,
+      "confidence": "low",
+      "reasons": [
+        {
+          "claim": "The total has already moved up from where it was first captured, so the price holds the high scoring on both sides rather than lagging behind it.",
+          "evidence": [
+            { "path": "markets.total.context.number_first_captured", "value": 49.5 },
+            { "path": "markets.total.options[0].line", "value": 52.0 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "San Francisco scores a lot and Washington allows a lot, which points toward Over, while San Francisco's own defence points the other way, so the two sides cancel out and I have no edge on either.",
+          "evidence": [
+            { "path": "sections.home.values.form.season_to_date.points_for_per_game", "value": 30.8 },
+            { "path": "sections.away.values.form.season_to_date.points_against_per_game", "value": 29.8 },
+            { "path": "sections.home.values.form.season_to_date.points_against_per_game", "value": 18.6 },
+            { "path": "sections.away.values.form.season_to_date.points_for_per_game", "value": 23 }
+          ],
+          "derived": []
+        },
+        {
+          "claim": "We cannot see the weather for an outdoor night game, and that matters for a total.",
+          "evidence": [
+            { "path": "sections.schedule.values.venue.roof", "value": "outdoors" },
+            { "path": "missing[1].item", "value": "weather" }
+          ],
+          "derived": []
+        }
+      ],
+      "pass_price": 105,
+      "what_would_change_it": "A weather forecast showing a clear driver of scoring, or a quarterback change on either side, would move me; I would start to take the Under at +105.",
+      "case_against": null
+    }
+  ],
+  "summary_derived": []
+}
