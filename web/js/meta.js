@@ -201,9 +201,8 @@ export async function renderDisclaimerFooter(container, { linkPrefix = "" } = {}
   // NOT ADVERTISED (owner ruling, 2026-09-22; applied to this footer 2026-10-19): the link is
   // hidden until a token is stored, so the landing, sign-in and signup pages -- all signed-out --
   // never point at it. The route and the link for a signed-in member stay.
-  const betCheckLink = el("a", { class: "sitefoot__support", href: route("#/betcheck"),
-    "data-hook": "footer-betcheck", text: "Bet Check" });
-  row.appendChild(betCheckLink);
+  // (2026-10-19) No Bet Check link here at all, signed in or not: owner ruling 2026-09-22 is that Bet
+  // Check is never advertised. The route stays and is reachable from matchup pages.
   // SUPPORT (#/support): before this it had ZERO inbound links anywhere
   // in web/ -- a working support form reachable only by typing the URL.
   // A paying customer with a problem could not find the one place built
@@ -227,7 +226,6 @@ export async function renderDisclaimerFooter(container, { linkPrefix = "" } = {}
   const syncBillingLink = () => {
     billingLink.hidden = !getToken();
     passwordLink.hidden = !getToken();
-    betCheckLink.hidden = !getToken();
   };
   syncBillingLink();
   try {

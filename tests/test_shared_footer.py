@@ -125,18 +125,11 @@ class FooterMatchesTheRedesign(unittest.TestCase):
             self.code,
         )
 
-    def test_footer_betcheck_link_exists(self):
-        # D7: CHECK leaves the primary navigation and the fixed "Check a
-        # bet" band goes with it, but Bet Check's route stays reachable
-        # from the footer.
-        self.assertIn('"data-hook": "footer-betcheck"', self.code)
-        self.assertIn('route("#/betcheck")', self.code)
-
-    def test_the_bet_check_link_is_not_shown_to_a_signed_out_visitor(self):
-        # Owner ruling 2026-09-22: Bet Check is never advertised. This footer is the one on the
-        # landing, sign-in and signup pages, so the link is hidden until a token is stored (the
-        # same rule as Billing and Change password); the route and a member's link stay.
-        self.assertIn("betCheckLink.hidden = !getToken();", self.code)
+    def test_bet_check_is_never_linked_from_the_footer(self):
+        # Owner ruling 2026-09-22: Bet Check is never advertised (not even to signed-in members, 2026-10-19).
+        # The route itself stays, reachable from matchup pages.
+        self.assertNotIn('"data-hook": "footer-betcheck"', self.code)
+        self.assertNotIn('route("#/betcheck")', self.code)
 
     def test_every_existing_footer_hook_is_kept(self):
         for hook in ("footer-support", "footer-record", "footer-performance", "footer-props"):
@@ -147,7 +140,7 @@ class FooterMatchesTheRedesign(unittest.TestCase):
         # Section 3: "links to Results, Research, Player props, Bet Check
         # and Support."
         hooks_in_order = ["footer-record", "footer-performance", "footer-props",
-                          "footer-betcheck", "footer-support"]
+                          "footer-support"]
         positions = [self.code.index(f'"data-hook": "{h}"') for h in hooks_in_order]
         self.assertEqual(positions, sorted(positions),
                          "footer links are not in Results/Research/Player props/"

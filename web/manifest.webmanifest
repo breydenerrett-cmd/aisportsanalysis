@@ -37,11 +37,6 @@
       "url": "/web/#/today"
     },
     {
-      "name": "Check a bet",
-      "short_name": "Check",
-      "url": "/web/#/betcheck"
-    },
-    {
       "name": "The record",
       "short_name": "Results",
       "url": "/web/#/performance"
