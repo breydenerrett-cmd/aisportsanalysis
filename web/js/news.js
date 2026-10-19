@@ -70,7 +70,7 @@ const STORAGE_KEY = "lh.news.dismissed";
  * Tennis were routed to their real pages. Bumped 2026-09-20: NFL switched
  * from the market favourite to value lines (NFL_CARD_V2), and its record
  * restarts with the new rule. */
-export const NEWS_VERSION = "2026-09-28";
+export const NEWS_VERSION = "2026-10-19";
 
 /** `href` is the bare app hash; `mountNews` applies `linkPrefix` at render
  * time so the same list works from `index.html` and, prefixed, from
@@ -79,22 +79,22 @@ export const NEWS_VERSION = "2026-09-28";
 export const NEWS_ITEMS = [
   {
     tag: "NEW",
-    text: "NFL no longer takes favourites. It now picks only prices that beat the rest of the market -- spreads, totals, and moneylines better than -200 -- and often picks nothing. Its record starts fresh with the new rule.",
+    text: "NFL picks now take only prices that beat the rest of the market: spreads, totals and moneylines better than -200. Often there is no pick. The record restarts under the new rule.",
     href: "#/nfl",
   },
   {
     tag: "NEW",
-    text: "Tennis: a research match board for ATP and WTA events. Price capture is paused, so the board may be empty for now. No picks until results can be graded.",
+    text: "Tennis: an ATP and WTA research board. Price capture is paused, so it may be empty. No picks until results can be graded.",
     href: "#/tennis",
   },
   {
     tag: "NEW",
-    text: "Player props now sit on the daily card with the game picks.",
+    text: "Player props are on the daily card with the game picks.",
     href: "#/today",
   },
   {
     tag: "NEW",
-    text: "Game times show in your own time zone.",
+    text: "Game times show in your time zone.",
     href: null,
   },
 ];

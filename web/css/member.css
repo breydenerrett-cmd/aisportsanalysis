@@ -1,0 +1,324 @@
+/*
+ * THE MEMBER APP, professional skin (web/index.html, 2026-10-19).
+ *
+ * The leaderboard, model and landing pages were rebuilt as a sportsbook-style dark UI (css/hounds.css). The app
+ * at web/index.html still wore the older look: chamfered corners, italic display headings, wide-tracked HUD
+ * labels. This file moves it onto the same system without touching any view's data or behaviour:
+ *
+ *   - Scoped under body.member-app, so no other page that shares tokens.css / screens.css changes.
+ *   - Loaded after every other app stylesheet (and before gotcha.css), so it re-points the colour tokens the
+ *     existing screens already read (surfaces, edges, text greys, the win/loss greens) and then flattens the
+ *     remaining shape and type rules: no clip-path corners, no italic display headings, no uppercase hero lines.
+ *   - Same fonts as the model pages (Barlow Condensed on the wordmark and buttons, Instrument Sans everywhere
+ *     else, JetBrains Mono only for code-like tokens), tabular numerals on every figure, 4-6px corners.
+ *
+ * Colour is never the only signal: every status keeps its word, every number its sign.
+ */
+
+body.member-app {
+  /* the model pages' palette (css/hounds.css .hounds-page) */
+  --mx-bg: #0E1116;
+  --mx-card: #141920;
+  --mx-card-2: #1A2029;
+  --mx-line: rgba(255, 255, 255, .09);
+  --mx-line-hi: rgba(255, 255, 255, .18);
+  --mx-text: #F2F4F8;
+  --mx-text-2: #D6DBE4;
+  --mx-mute: #9AA3B2;
+  --mx-good: #3DDC84;
+  --mx-bad: #FF6B7A;
+  --mx-warn: #F2B84B;
+  --mx-accent: #2FD07A;
+  --mx-radius: 4px;
+  --mx-radius-lg: 6px;
+
+  /* re-point the older tokens the existing screens read */
+  --ground: var(--mx-bg);
+  --rail: var(--mx-bg);
+  --rail-top: var(--mx-bg);
+  --tile-base: var(--mx-bg);
+  --surface-1-a: rgba(255, 255, 255, .03);
+  --surface-1-b: rgba(255, 255, 255, .03);
+  --edge-1: var(--mx-line);
+  --scanline: transparent;
+  --carbon: transparent;
+  --panel-3: var(--mx-bg);
+  --panel: var(--mx-card);
+  --panel-2: var(--mx-card-2);
+  --edge-soft: var(--mx-line);
+  --edge: var(--mx-line);
+  --edge-hi: var(--mx-line-hi);
+  --text-hi: #FFFFFF;
+  --text: var(--mx-text);
+  --text-2: var(--mx-text-2);
+  --text-3: #B9C0CC;
+  --text-mute: var(--mx-mute);
+  --text-faint: var(--mx-mute);
+  --text-dim: var(--mx-mute);
+  --text-ghost: var(--mx-mute);
+  --win: var(--mx-good);
+  --r-marker: 2px;
+  --r-chip: 3px;
+  --r-badge: 4px;
+  --r-btn: 4px;
+  --r-panel: 4px;
+  --r-tile: 4px;
+  --r-lg: 6px;
+  --r-xl: 6px;
+  /* headings and labels use the body face; Barlow stays on the wordmark and buttons */
+  --font-display: var(--font-body);
+  --font-wordmark: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+
+  background: var(--mx-bg);
+  color: var(--mx-text);
+  font-size: 15px;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* ===== shape and type: one rule set for everything inside the app ==================================== */
+
+/* no chamfer, no clip-path corner anywhere in the app chrome or a screen (the wordmark mark is the one drawn
+   shape; it lives under .wordmark and is excluded) */
+body.member-app .shell *:not(.wordmark__mark):not(.wordmark__mark *) { clip-path: none; }
+body.member-app .chamfer,
+body.member-app .btn,
+body.member-app .btn--primary { clip-path: none; }
+body.member-app .panel { background: var(--mx-card); box-shadow: none; border: 1px solid var(--mx-line); overflow: visible; }
+body.member-app .panel::before { content: none; }
+body.member-app .tex-carbon, body.member-app .tex-scanline { display: none; }
+
+/* no italic, no wide tracking, no shouted headings (the wordmark keeps its italic like the model pages' nav) */
+body.member-app .shell *:not(.wordmark__text):not(.wordmark__text *) { font-style: normal; }
+body.member-app .shell h1,
+body.member-app .shell h2,
+body.member-app .shell h3,
+body.member-app .shell h4 {
+  font-family: var(--font-body);
+  font-style: normal;
+  text-transform: none;
+  letter-spacing: 0;
+  line-height: 1.2;
+  color: var(--mx-text);
+}
+body.member-app .shell h1 { font-size: clamp(24px, 4.2vw, 32px); font-weight: 700; }
+body.member-app .shell h2 { font-size: 18px; font-weight: 650; }
+body.member-app .shell h3 { font-size: 16px; font-weight: 650; }
+body.member-app .shell h4 { font-size: 14px; font-weight: 650; }
+
+body.member-app .outlet *,
+body.member-app .appbar *,
+body.member-app .footer-host *,
+body.member-app .news * { letter-spacing: .01em; }
+body.member-app .outlet table th,
+body.member-app .outlet dt,
+body.member-app .eyebrow,
+body.member-app .sechead__label,
+body.member-app .sechead__meta { letter-spacing: .06em; }
+
+/* tabular numerals on every figure */
+body.member-app .outlet,
+body.member-app .appbar,
+body.member-app .news { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
+
+body.member-app a { color: var(--live-badge); }
+body.member-app a:hover { color: #FFFFFF; }
+
+/* ===== the app bar =================================================================================== */
+
+body.member-app .shell__column { margin-left: 0; }
+body.member-app .appbar {
+  position: sticky; top: 0; z-index: 60;
+  background: var(--mx-bg);
+  border-bottom: 1px solid var(--mx-line);
+}
+body.member-app .topstrip {
+  position: static;
+  height: 56px;
+  display: flex; flex-wrap: nowrap; align-items: center; gap: 22px;
+  padding: 0 24px;
+  background: transparent;
+  box-shadow: none;
+  max-width: 1320px; margin: 0 auto;
+}
+body.member-app .topstrip__home { gap: 0; }
+body.member-app .topstrip .wordmark__text,
+body.member-app .topstrip__wordmark { font-family: var(--font-wordmark); font-size: 21px; font-weight: 800; letter-spacing: .02em; }
+body.member-app .topstrip__rule { display: none; }
+body.member-app .topstrip__clock {
+  display: none; font-family: var(--font-body); font-size: 12.5px; color: var(--mx-mute); letter-spacing: 0;
+}
+@media (min-width: 1100px) { body.member-app .topstrip__clock { display: inline-flex; } }
+body.member-app [data-hook="sport-level-host"] { flex: 1 1 auto; min-width: 0; }
+body.member-app .sportlevel { flex: 0 1 auto; gap: 0; min-height: 0; }
+body.member-app .sportlevel__spacer, body.member-app .sportlevel__soon:empty { display: none; }
+body.member-app .sportlevel__tabs { gap: 4px; }
+body.member-app .sportlevel__tab {
+  min-height: 34px; padding: 0 14px; border: 1px solid transparent; border-radius: var(--mx-radius);
+  font-family: var(--font-body); font-size: 14px; font-weight: 600; color: var(--mx-text-2);
+  box-shadow: none;
+}
+body.member-app .sportlevel__tab:hover { background: rgba(255, 255, 255, .05); color: #fff; }
+body.member-app .sportlevel__tab[aria-current="page"] {
+  background: rgba(47, 208, 122, .13); border-color: var(--mx-accent); color: #fff; box-shadow: none;
+}
+body.member-app .sportlevel__soon-link {
+  font-family: var(--font-body); letter-spacing: 0; text-transform: none; font-size: 13.5px; color: var(--mx-mute);
+}
+body.member-app .topstrip .topstrip__account {
+  flex: none; min-height: 34px; padding: 0 14px; font-family: var(--font-wordmark); font-size: 15px; font-weight: 700;
+  text-transform: none; letter-spacing: .01em;
+  color: var(--mx-text-2); border-radius: var(--mx-radius); box-shadow: inset 0 0 0 1px var(--mx-line-hi);
+}
+body.member-app .topstrip__account:hover { background: rgba(255, 255, 255, .06); color: #fff; }
+body.member-app .topstrip__account[data-signed-in="true"] { color: var(--mx-accent); box-shadow: inset 0 0 0 1px rgba(47, 208, 122, .5); }
+
+/* section links: the second line of the bar */
+body.member-app .rail {
+  position: static; inset: auto; width: auto; max-width: 1320px; margin: 0 auto;
+  display: flex; flex-direction: row; align-items: stretch; gap: 2px;
+  padding: 0 24px; background: transparent; box-shadow: none; overflow-x: auto;
+}
+body.member-app .rail__heading, body.member-app .rail__plan, body.member-app .rail__item-sub { display: none; }
+body.member-app .rail__items { display: flex; flex-direction: row; width: auto; gap: 2px; }
+body.member-app .rail__item {
+  display: inline-flex; align-items: center; width: auto; min-height: 42px; padding: 0 14px;
+  box-shadow: inset 0 -2px 0 transparent; white-space: nowrap; background: transparent;
+}
+body.member-app .rail__item::before { content: none; }
+body.member-app .rail__item:hover { background: rgba(255, 255, 255, .04); }
+body.member-app .rail__item-label {
+  font-family: var(--font-body); font-size: 14.5px; font-weight: 600; color: var(--mx-text-2); text-transform: none;
+}
+body.member-app .rail__item[aria-current="page"] { background: transparent; box-shadow: inset 0 -2px 0 var(--primary); }
+body.member-app .rail__item[aria-current="page"] .rail__item-label { color: #fff; }
+
+@media (max-width: 899px) {
+  body.member-app .appbar { position: static; }
+  body.member-app .topstrip { height: auto; flex-wrap: wrap; gap: 0 10px; padding: 0 16px; }
+  body.member-app .topstrip__home { order: 1; min-height: 52px; }
+  body.member-app .topstrip__account { order: 2; margin-left: auto; }
+  body.member-app [data-hook="sport-level-host"] {
+    order: 3; flex: 1 0 100%; min-height: 44px; box-shadow: inset 0 1px 0 var(--mx-line); padding: 5px 0;
+  }
+  body.member-app .rail { display: none; }
+  body.member-app .shell__column { padding-bottom: calc(var(--tabbar-height) + 12px + env(safe-area-inset-bottom, 0px)); }
+}
+
+/* the phone tab bar: the same section links, flat */
+body.member-app .tabbar { background: var(--mx-bg); box-shadow: inset 0 1px 0 var(--mx-line); }
+body.member-app .tabbar__item { min-height: 56px; }
+body.member-app .tabbar__item:hover { background: transparent; }
+body.member-app .tabbar__item-label {
+  font-family: var(--font-body); font-size: 12.5px; font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--mx-mute);
+}
+body.member-app .tabbar__item[aria-current="page"] { background: transparent; box-shadow: inset 0 2px 0 var(--primary); }
+body.member-app .tabbar__item[aria-current="page"] .tabbar__item-label { color: #fff; }
+
+/* ===== the announcement: one slim, dismissible notice ================================================ */
+
+body.member-app .news-host { background: var(--mx-bg); }
+body.member-app .news {
+  max-width: 1320px; margin: 0 auto; padding: 6px 24px;
+  background: transparent; box-shadow: none;
+  display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto auto auto; align-items: center; gap: 0 10px;
+  border-bottom: 1px solid var(--mx-line);
+}
+body.member-app .news__row { display: contents; }
+body.member-app .news [data-hook="news-tag"] { grid-column: 1; grid-row: 1; }
+body.member-app .news__count { grid-column: 2; grid-row: 1; font-family: var(--font-body); font-size: 12px; color: var(--mx-mute); }
+body.member-app .news__text {
+  grid-column: 3; grid-row: 1; margin: 0; font-size: 13.5px; line-height: 1.4; color: var(--mx-text-2);
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden;
+}
+body.member-app .news__spacer { display: none; }
+body.member-app .news__nav { grid-row: 1; }
+body.member-app .news__nav[data-hook="news-prev"] { grid-column: 4; }
+body.member-app .news__nav[data-hook="news-next"] { grid-column: 5; }
+body.member-app .news__dismiss { grid-column: 6; grid-row: 1; }
+body.member-app .news__nav, body.member-app .news__dismiss { min-width: 36px; min-height: 36px; font-size: 16px; color: var(--mx-mute); }
+body.member-app .news__text a { color: var(--mx-text-2); text-decoration: none; }
+body.member-app .news__text a:hover { color: #fff; }
+body.member-app .news .chip {
+  min-height: 0; padding: 1px 7px; font-family: var(--font-body); font-size: 10.5px; font-weight: 700; letter-spacing: .06em;
+  border-radius: 3px; text-transform: uppercase;
+}
+@media (max-width: 899px) {
+  body.member-app .news { padding: 4px 16px; grid-template-columns: auto minmax(0, 1fr) auto; }
+  body.member-app .news__count, body.member-app .news__nav { display: none; }
+  body.member-app .news [data-hook="news-tag"] { grid-column: 1; }
+  body.member-app .news__text { grid-column: 2; font-size: 13px; }
+  body.member-app .news__dismiss { grid-column: 3; }
+}
+
+/* ===== buttons, chips, forms ========================================================================= */
+
+body.member-app .btn {
+  min-height: 40px; padding: 0 18px; border-radius: var(--mx-radius);
+  font-family: var(--font-wordmark); font-weight: 700; font-size: 15px; letter-spacing: .04em; text-transform: uppercase;
+}
+body.member-app .btn--primary {
+  min-height: 40px; background: var(--mx-accent); color: #04140B; font-size: 16px; font-weight: 800; box-shadow: none;
+}
+body.member-app .btn--primary:hover { background: #4BE08F; color: #04140B; }
+body.member-app .btn--ghost, body.member-app .btn--secondary, body.member-app .btn--cyan {
+  color: var(--mx-text-2); font-size: 16px; background: transparent; box-shadow: inset 0 0 0 1px var(--mx-line-hi);
+}
+body.member-app .btn--ghost:hover, body.member-app .btn--secondary:hover, body.member-app .btn--cyan:hover { background: rgba(255, 255, 255, .06); color: #fff; }
+body.member-app .btn--text { font-family: var(--font-body); font-size: 14px; text-transform: none; letter-spacing: 0; padding: 0; min-height: 36px; }
+body.member-app .btn--lg { min-height: 46px; font-size: 17px; }
+
+body.member-app .chip, body.member-app .badge {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 0; padding: 2px 8px; border-radius: 3px;
+  font-family: var(--font-body); font-size: 11.5px; font-weight: 600; letter-spacing: .02em; text-transform: none; line-height: 1.5;
+  background: transparent; box-shadow: none; border: 1px solid var(--mx-line-hi); color: var(--mx-text-2);
+}
+body.member-app .chip--confirmed, body.member-app .chip--win, body.member-app .chip--new { color: var(--mx-good); border-color: rgba(61, 220, 132, .5); background: rgba(61, 220, 132, .08); }
+body.member-app .chip--waiting { color: var(--mx-warn); border-color: rgba(242, 184, 75, .5); background: rgba(242, 184, 75, .08); }
+body.member-app .chip--coming-soon { color: var(--mx-text-2); border-color: var(--mx-line-hi); }
+body.member-app .chip::before { display: none; }
+body.member-app .badge--money, body.member-app .badge--live, body.member-app .badge--neutral { background: rgba(255, 255, 255, .08); color: var(--mx-text-2); }
+
+body.member-app input, body.member-app select, body.member-app textarea { border-radius: var(--mx-radius); }
+body.member-app .field-row label, body.member-app .field-row input, body.member-app .field-row select {
+  font-family: var(--font-body); letter-spacing: 0; text-transform: none;
+}
+body.member-app .field-row label { font-size: 13px; font-weight: 600; color: var(--mx-text-2); }
+body.member-app .field-row input, body.member-app .field-row select { background: var(--mx-bg); box-shadow: none; border: 1px solid var(--mx-line-hi); }
+body.member-app .field-row input:focus-visible, body.member-app .field-row select:focus-visible { box-shadow: none; outline: 2px solid #8FE9FA; outline-offset: 1px; }
+body.member-app .field-form { background: var(--mx-card); border: 1px solid var(--mx-line); border-radius: var(--mx-radius); box-shadow: none; }
+
+/* ===== states: loading, empty, error, gates ========================================================== */
+
+body.member-app .gate, body.member-app .state-loading, body.member-app .state-error, body.member-app .not-yet-available {
+  background: var(--mx-card); border: 1px solid var(--mx-line); border-radius: var(--mx-radius-lg); box-shadow: none;
+}
+body.member-app .gate { max-width: 560px; padding: 22px 24px; gap: 12px; }
+body.member-app .gate__eyebrow, body.member-app .eyebrow {
+  font-family: var(--font-body); font-size: 11px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--mx-mute);
+}
+body.member-app .gate__title { font-family: var(--font-body); font-size: 20px; font-weight: 700; color: #fff; }
+body.member-app .gate__body { font-size: 15px; color: var(--mx-text-2); }
+body.member-app .view-error { border-color: rgba(255, 107, 122, .5); }
+body.member-app .state-loading { padding: 16px 20px; }
+body.member-app .state-loading__figure, body.member-app .view-error__status, body.member-app .view-error__detail { font-family: var(--font-body); letter-spacing: 0; color: var(--mx-mute); }
+body.member-app .screen-state { padding: 40px 24px; }
+@media (max-width: 899px) { body.member-app .screen-state { padding: 28px 16px; } }
+
+/* ===== page scaffolding ============================================================================== */
+
+body.member-app .view { padding: 20px 24px 56px; gap: 18px; max-width: 1320px; margin: 0 auto; width: 100%; }
+@media (max-width: 899px) { body.member-app .view { padding: 16px 16px 40px; } }
+body.member-app .view__title { font-family: var(--font-body); font-style: normal; font-weight: 700; font-size: clamp(24px, 4.2vw, 32px); }
+
+/* ===== sign in ======================================================================================= */
+
+body.member-app .signin { --si-bg: var(--mx-bg); --si-card: var(--mx-card); --si-card-2: var(--mx-card-2); --si-line: var(--mx-line);
+  --si-text: var(--mx-text); --si-text-2: var(--mx-text-2); --si-mute: var(--mx-mute); --si-accent: var(--mx-accent); --si-bad: var(--mx-bad);
+  padding: 32px 16px 56px; }
+@media (min-width: 900px) { body.member-app .signin { padding: 56px 24px 72px; } }
+body.member-app .signin__card { border-radius: var(--mx-radius-lg); box-shadow: none; max-width: 420px; padding: 24px; }
+body.member-app .signin__title { font-family: var(--font-body); font-style: normal; font-weight: 700; font-size: 24px; line-height: 1.2; }
+body.member-app .signin__status a { color: var(--mx-accent); font-weight: 600; }
+body.member-app .signin__status { font-size: 14px; }

@@ -80,7 +80,7 @@
  */
 
 import { el, clear, formatEasternDate, formatEasternClock } from "./dom.js";
-import { setPublicDemo, getToken } from "./api.js";
+import { setPublicDemo, getToken, TOKEN_CHANGED_EVENT } from "./api.js";
 import { setShellStatus, mountSportLevel } from "./shell.js";
 import { renderDisclaimerFooter, meta as fetchMeta } from "./meta.js";
 import { parseSport, SPORTS, NFL_RETIRED_RULE, MLB_SHADOW_RULE } from "./sport.js";
@@ -107,6 +107,7 @@ import { renderCardRecord } from "./cardrecord.js";
 import { renderLive } from "./live.js";
 import { renderPostseason } from "./postseason.js";
 import { maybeGotcha } from "./gotcha.js";
+import { watchTables } from "./tablelabels.js";
 import { publicPageName, trackPublicPageView, rememberFirstTouch } from "./pageview.js";
 
 // MLB's sub menu (docs/DESIGN_SYSTEM.md section 3, D7): 01 GAMEDAY, 02
@@ -225,6 +226,18 @@ function mountNav(rail, tabbar, activeHash, sport = "mlb") {
   rail.appendChild(el("div", { class: "rail__plan", "data-hook": "sport-plan" }));
 }
 
+/** The app bar's account slot (web/index.html [data-hook='nav-signin']): "Sign in" for a visitor, "Account"
+ * for a member. Both go to #/signin, which shows the sign-in form or, once signed in, the account box with
+ * Change password and Sign out. Re-run on every route change and when the token changes in this tab. */
+function mountAccount() {
+  const link = document.querySelector("[data-hook='nav-signin']");
+  if (!link) return;
+  const signedIn = !!getToken();
+  link.textContent = signedIn ? "Account" : "Sign in";
+  link.setAttribute("href", "#/signin");
+  link.setAttribute("data-signed-in", signedIn ? "true" : "false");
+}
+
 function setClock() {
   const host = document.querySelector("[data-hook='shell-clock']");
   if (!host) return;
@@ -292,6 +305,7 @@ async function _renderRouteInner(main) {
   else if (sport === "tennis") activeHash = "#/tennis";
   else if (sport === "ufc") activeHash = route === "record" ? "#/ufc/record" : "#/ufc";
   mountNav(rail, tabbar, activeHash, sport);
+  mountAccount();
   setShellStatus(null);
   setClock();
   // Runs on every route change, not once at boot -- aria-current and the
@@ -490,6 +504,11 @@ function boot() {
       main.focus();
     });
   }
+
+  // Wide tables stack into cards under 640px (member-screens.css); this labels their cells for that.
+  watchTables(main);
+
+  window.addEventListener(TOKEN_CHANGED_EVENT, mountAccount);
 
   window.addEventListener("hashchange", () => {
     // Also checked here, not only at boot: clicking the link while the app

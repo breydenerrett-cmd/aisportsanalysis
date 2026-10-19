@@ -1,0 +1,154 @@
+/*
+ * THE MEMBER APP, screens (web/index.html, 2026-10-19). Second half of web/css/member.css: that file does the
+ * shell, the tokens and the shared shapes; this one flattens what each screen draws on top of them. Scoped under
+ * body.member-app and loaded right after member.css, so nothing else that shares screens.css changes.
+ */
+
+/* ===== type and surface normalisation shared by every screen ======================================== */
+
+body.member-app {
+  /* figures use the body face with tabular numerals, like the model pages (no typewriter face) */
+  --font-mono: var(--font-body);
+  /* the loud signal colours the older screens read are calmer here; red/green still say loss/win */
+  --money-lit: #FF6B7A;
+  --money-soft: #FF8A96;
+  --money-label: #FF9AA6;
+  --v-money-label: #FF9AA6;
+  --live: #4FC3D9;
+  --v-live: #4FC3D9;
+  /* the older fills are two-stop gradients between a colour and its "-2" partner; making the pair equal turns
+     every one of them into a flat fill without touching a selector */
+  --money: #FF4D63;
+  --money-2: #FF4D63;
+  --v-money: #FF4D63;
+  --v-money-2: #FF4D63;
+  --live-2: #4FC3D9;
+  --v-live-2: #4FC3D9;
+  --v-warn-2: var(--v-warn);
+  --v-win-2: var(--v-win);
+  --gutter-desktop: 24px;
+}
+body.member-app .outlet *:not(svg):not(svg *) { text-shadow: none; }
+body.member-app .outlet { max-width: 1320px; margin: 0 auto; width: 100%; }
+body.member-app .gv2-hero__tex, body.member-app .tex-carbon, body.member-app .tex-scanline, body.member-app .checkband__glow { display: none; }
+body.member-app .outlet code, body.member-app .outlet pre, body.member-app .signin__field--code input {
+  font-family: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+}
+
+/* shouted sentences become sentences: only table heads, small labels, tags and chips stay uppercase */
+body.member-app .outlet *:not(th):not(dt):not(.btn):not(.gv2-hero__headline):not([class*="label"]):not([class*="eyebrow"]):not([class*="tag"]):not([class*="chip"]):not([class*="badge"]):not([class*="flag"]):not([class*="kicker"]):not([class*="status"]):not(.sechead__label) {
+  text-transform: none;
+}
+body.member-app .outlet [class*="eyebrow"], body.member-app .outlet [class*="kicker"] {
+  font-size: 11.5px; font-weight: 600; letter-spacing: .06em; color: var(--mx-mute);
+}
+body.member-app .footer-host { max-width: 1320px; margin-left: auto; margin-right: auto; width: 100%; }
+
+/* section headers: a label and a count, not a HUD rule */
+body.member-app .sechead { margin-bottom: 10px; gap: 4px 12px; align-items: baseline; }
+body.member-app .sechead__label { font-size: 12px; font-weight: 700; color: var(--mx-text-2); }
+body.member-app .sechead__hair { display: none; }
+body.member-app .sechead__meta { font-size: 12px; letter-spacing: 0; color: var(--mx-mute); white-space: normal; margin-left: auto; }
+@media (max-width: 899px) {
+  body.member-app .sechead__label { font-size: 12px; }
+  body.member-app .sechead__meta { flex: 1 0 100%; margin-left: 0; font-size: 12.5px; color: var(--mx-mute); }
+}
+
+/* the hero on Gameday and the big price figure: a headline and a number, not a poster */
+body.member-app .gv2-hero {
+  padding: 20px; margin: 0 24px 18px; background: var(--mx-card); border: 1px solid var(--mx-line); box-shadow: none;
+  border-radius: var(--mx-radius-lg); overflow: visible;
+}
+body.member-app .gv2-hero--flagged, body.member-app .gv2-hero--noplay, body.member-app .gv2-hero--unavailable { background: var(--mx-card); box-shadow: none; }
+body.member-app .gv2-hero--flagged { border-left: 3px solid var(--mx-good); }
+body.member-app .gv2-hero--unavailable { border-left: 3px solid var(--mx-warn); }
+body.member-app .gv2-hero--bloom::after, body.member-app .gv2-hero__tex { display: none; }
+body.member-app .gv2-hero__headline { font-size: clamp(22px, 3.4vw, 30px); line-height: 1.2; font-weight: 700; letter-spacing: 0; text-transform: none; color: #fff; max-width: 820px; }
+/* the four Gameday headlines are fixed all-caps sentences in the view code (tests pin them): shown as sentences */
+body.member-app .gv2-hero__headline { text-transform: lowercase; }
+body.member-app .gv2-hero__headline::first-letter { text-transform: uppercase; }
+body.member-app .gv2-hero__body { font-size: 15px; margin-top: 8px; color: var(--mx-text-2); }
+body.member-app .gv2-hero__meta { letter-spacing: 0; font-size: 12.5px; color: var(--mx-mute); }
+body.member-app .gv2-hero__fraction { letter-spacing: .02em; font-size: 12.5px; color: var(--mx-mute); }
+body.member-app .gv2-price__figure { font-size: clamp(30px, 4vw, 40px); line-height: 1.05; font-weight: 700; letter-spacing: 0; text-shadow: none; }
+body.member-app .gv2-price__title { font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--mx-mute); }
+body.member-app .gv2-price__label { letter-spacing: .02em; text-transform: none; }
+body.member-app .gv2-price__pill { clip-path: none; background: var(--mx-card-2); border-radius: 3px; letter-spacing: 0; font-weight: 600; }
+body.member-app .gv2-price__books { color: var(--mx-text-2); }
+body.member-app .gv2-hero__row, body.member-app .gv2-hero__row2 { align-items: flex-start; }
+@media (max-width: 899px) { body.member-app .gv2-hero { margin: 0 16px 14px; padding: 16px; } }
+
+/* game tiles: a flat card instead of a team-colour poster */
+body.member-app .tile { background: var(--mx-card); border: 1px solid var(--mx-line); border-radius: var(--mx-radius-lg); opacity: 1; transform: none; }
+body.member-app .tile:hover { transform: none; border-color: var(--mx-line-hi); }
+body.member-app .tile__half, body.member-app .tile__sheen, body.member-app .tile__scrim, body.member-app .tile__spec,
+body.member-app .tile__corner, body.member-app .tile__ring { display: none; }
+body.member-app .tile__abbr { font-size: 26px; font-weight: 700; font-style: normal; line-height: 1.1; letter-spacing: 0; }
+
+/* a gutter inside a gutter doubled the side padding (the card panel and the record strip sat 32px in on a phone) */
+body.member-app .gutter .gutter, body.member-app .gutter .rec-strip { padding-left: 0; padding-right: 0; }
+
+/* big figures stay figures, not posters */
+body.member-app .card2__bet { font-size: clamp(22px, 3vw, 28px); line-height: 1.2; font-weight: 700; }
+body.member-app .ov2-summary__headline { font-size: clamp(22px, 3vw, 28px); line-height: 1.2; font-weight: 700; }
+body.member-app .ov2-panel__price { font-size: 34px; font-weight: 700; line-height: 1.1; }
+body.member-app .ov2-consensus-col__price { font-size: 26px; font-weight: 700; }
+
+/* the record strip on Gameday and the card pages: KPI cards that fill the row, whatever their count */
+body.member-app .rec-strip { padding: 0 24px 14px; }
+body.member-app .rec-strip__cells { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px; max-width: 760px; }
+body.member-app .rec-cell { padding: 10px 14px; border-radius: var(--mx-radius); background: var(--mx-card-2); gap: 4px; }
+body.member-app .rec-cell__label { font-size: 11px; font-weight: 600; letter-spacing: .07em; color: var(--mx-mute); }
+body.member-app .rec-cell__record { font-size: 17px; font-weight: 600; color: #fff; }
+body.member-app .rec-cell__units, body.member-app .rec-cell__pct { font-size: 17px; font-weight: 700; line-height: 1.2; }
+body.member-app .rec-cell__units--pos, body.member-app .rec-cell__pct--pos { color: var(--mx-good); }
+body.member-app .rec-cell__units--neg, body.member-app .rec-cell__pct--neg { color: var(--mx-bad); }
+body.member-app .rec-cell__sep { display: inline; color: var(--mx-mute); }
+@media (max-width: 899px) {
+  body.member-app .rec-strip { padding: 0 16px 12px; }
+  body.member-app .rec-strip__cells { grid-template-columns: 1fr; max-width: none; }
+  body.member-app .rec-cell__record, body.member-app .rec-cell__units, body.member-app .rec-cell__pct { font-size: 17px; }
+}
+
+/* ===== tables: the model leaderboard's table, and cards under 640px ================================== */
+
+body.member-app .outlet table { font-variant-numeric: tabular-nums; }
+body.member-app .outlet table thead th {
+  padding: 6px 10px; background: var(--mx-card-2); color: var(--mx-mute); font-size: 11px; font-weight: 600;
+  letter-spacing: .06em; text-transform: uppercase; text-align: left; white-space: nowrap; border-bottom: 1px solid var(--mx-line);
+}
+body.member-app .outlet table tbody td { padding: 8px 10px; font-size: 13.5px; font-family: var(--font-body); color: var(--mx-text-2); }
+body.member-app .outlet table tbody tr { box-shadow: inset 0 -1px 0 var(--mx-line); }
+body.member-app .outlet table tbody tr:hover { background: rgba(255, 255, 255, .025); }
+body.member-app .ov2-table-wrap, body.member-app .board-scroll {
+  background: var(--mx-card); border: 1px solid var(--mx-line); border-radius: var(--mx-radius); max-width: 100%;
+}
+
+@media (max-width: 639px) {
+  /* a table with labelled cells (web/js/tablelabels.js) becomes a stack of cards: the first cell is the title of
+     the card, every other cell a labelled line. The page never scrolls sideways. */
+  body.member-app .outlet table[data-stackable] { display: block; min-width: 0; width: 100%; table-layout: auto; }
+  body.member-app .outlet table[data-stackable] thead { display: none; }
+  body.member-app .outlet table[data-stackable] tbody { display: block; }
+  body.member-app .outlet table[data-stackable] tbody tr:not(.ov2-row--extra) {
+    display: block; padding: 10px 12px; box-shadow: none; border-top: 1px solid var(--mx-line);
+  }
+  body.member-app .outlet table[data-stackable] tbody tr:first-child { border-top: 0; }
+  body.member-app .outlet table[data-stackable] tbody tr.ov2-row--extra { display: none; }
+  body.member-app .ov2-table-wrap--expanded table[data-stackable] tbody tr.ov2-row--extra {
+    display: block; padding: 10px 12px; box-shadow: none; border-top: 1px solid var(--mx-line);
+  }
+  body.member-app .outlet table[data-stackable] tbody td {
+    display: flex; justify-content: flex-end; align-items: baseline; gap: 10px; width: auto; min-width: 0;
+    padding: 2px 0; text-align: right; font-size: 13.5px; overflow-wrap: anywhere;
+  }
+  body.member-app .outlet table[data-stackable] tbody td::before {
+    content: attr(data-label); flex: none; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--mx-mute); text-align: left; margin-right: auto;
+  }
+  body.member-app .outlet table[data-stackable] tbody td:first-child {
+    display: block; text-align: left; font-size: 15px; font-weight: 600; color: #fff; padding-bottom: 4px;
+  }
+  body.member-app .outlet table[data-stackable] tbody td:first-child::before { content: none; }
+  body.member-app .ov2-table-wrap, body.member-app .board-scroll { overflow-x: visible; }
+}

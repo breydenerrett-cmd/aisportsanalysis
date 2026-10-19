@@ -31,7 +31,7 @@
      certain to be replaced and a binary nobody can regenerate is a binary
      nobody dares change. -->
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#0A0A0B">
+<meta name="theme-color" content="#0E1116">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="LINEHOUND">
@@ -67,6 +67,12 @@
 <!-- FIGHT NIGHT (web/js/ufcfights.js): the UFC page's fight analysis under the paused
      notice. Same position and reason as analyst.css above. -->
 <link rel="stylesheet" href="css/ufcfights.css">
+<!-- THE MEMBER APP'S PROFESSIONAL SKIN (web/css/member.css, 2026-10-19). Scoped under body.member-app so it
+     restyles this page only: the same dark slate, type, tables, chips and KPI cards as the model leaderboard
+     (hounds.html / css/hounds.css), replacing the older chamfered, italic-display look. Loaded after every
+     other app stylesheet so it can sit on top of them, and before gotcha.css, which stays last. -->
+<link rel="stylesheet" href="css/member.css">
+<link rel="stylesheet" href="css/member-screens.css">
 <!-- The rickroll's theme. Loaded last so it can sit on top of the app
      shell, and scoped entirely under .gotcha* so it styles nothing unless
      web/js/gotcha.js has actually mounted the overlay. Delete this line
@@ -77,7 +83,7 @@
      the last-resort fallback if neither stylesheet loads. -->
 <style>[hidden]{display:none}</style>
 </head>
-<body>
+<body class="member-app">
 <!-- APP SHELL, docs/DESIGN_SYSTEM.md sections 3-4 ("the shell") and 8
      ("landmarks"): a skip link first, then the labelled desktop rail
      (228px, ABSOLUTE inside this wrapper, never fixed to the viewport),
@@ -100,27 +106,34 @@
      degrades to a plain same-page anchor jump if JS never boots. -->
 <a class="skip-link" data-hook="skip-link" href="#main-content">Skip to content</a>
 <div class="shell">
-  <nav class="rail" aria-label="MLB sections" data-hook="primary-nav"></nav>
-
   <div class="shell__column">
-    <header class="topstrip" data-hook="topstrip">
-      <a class="topstrip__home" href="landing.html" aria-label="LINEHOUND home">
-        <span class="hound" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
-        <span class="topstrip__wordmark" data-hook="product-name">LINEHOUND</span>
-      </a>
-      <span class="topstrip__rule" aria-hidden="true"></span>
-      <!-- ONE host: web/js/sport.js's renderSportLevel(host, activeSport,
-           {placement, linkPrefix}) builds a single <nav aria-label="Sports">
-           containing the live sport tabs, its own spacer and the two red
-           coming-soon links together (desktop strip items 3-5,
-           docs/DESIGN_SYSTEM.md section 3) and mounts the whole thing here
-           in one call -- never two separate hosts. CSS repositions this
-           same host between the desktop strip and the phone sport row
-           (section 3's "single renderSportLevel mount, not two"). -->
-      <div data-hook="sport-level-host"></div>
-      <span class="topstrip__rule topstrip__rule--wide" aria-hidden="true"></span>
-      <time class="topstrip__clock" data-hook="shell-clock"></time>
-    </header>
+    <!-- THE APP BAR (member.css): wordmark, sport tabs, account on the first line; the sport's own section
+         links (Gameday, Matchups, Props, Playoffs, Results) on the second. Both lines are sticky together on a
+         desktop. Below 900px the section links move to the fixed tab bar at the end of this file. -->
+    <div class="appbar">
+      <header class="topstrip" data-hook="topstrip">
+        <a class="topstrip__home" href="landing.html" aria-label="LINEHOUND home">
+          <span class="wordmark" data-hook="brand-mark">
+            <span class="wordmark__mark"><span></span></span>
+            <span class="wordmark__text topstrip__wordmark" data-hook="product-name">LINEHOUND</span>
+          </span>
+        </a>
+        <!-- ONE host: web/js/sport.js's renderSportLevel(host, activeSport,
+             {placement, linkPrefix}) builds a single <nav aria-label="Sports">
+             containing the live sport tabs, its own spacer and the two red
+             coming-soon links together and mounts the whole thing here
+             in one call -- never two separate hosts. CSS repositions this
+             same host between the desktop strip and the phone sport row
+             (docs/DESIGN_SYSTEM.md section 3's "single renderSportLevel
+             mount, not two"). -->
+        <div data-hook="sport-level-host"></div>
+        <time class="topstrip__clock" data-hook="shell-clock"></time>
+        <!-- Sign in for a visitor, Account for a member (main.js mountAccount). Static markup so the link is
+             on the page before any script runs. -->
+        <a class="btn btn--ghost topstrip__account" data-hook="nav-signin" href="#/signin">Sign in</a>
+      </header>
+      <nav class="rail" aria-label="MLB sections" data-hook="primary-nav"></nav>
+    </div>
 
     <!-- News banner (web/js/news.js), directly under the strip on
          desktop and under the sport row on phone (docs/DESIGN_SYSTEM.md
