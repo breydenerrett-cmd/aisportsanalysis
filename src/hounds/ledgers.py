@@ -95,6 +95,12 @@ class Bet:
     selection_text: str = ""
     game_text: str = ""
     verdict: str = "play"
+    # The bankroll view (src/hounds/bankroll.py, docs/BANKROLL.md). ``stake_units`` is the paper stake a MEMBER
+    # dog's spec chose (0.5 to 3), read from its own bet / graded row; None means one unit. ``graded_utc`` is when
+    # the bet was graded (a pack or member graded row carries it; the engine account ledgers and the card's
+    # per-bet rows do not, and the bankroll estimates the settle time then). Neither changes a record or a grade.
+    stake_units: Optional[float] = None
+    graded_utc: Optional[str] = None
     # The learning loop (src/hounds/learning, docs/PREREG_LEARNING_LOOP.md): a pack hound promoted from
     # a challenger writes bets stamped with its version; a row without one is version 1.
     hound_version: int = 1
@@ -184,6 +190,9 @@ class Sources:
         # the seasons file: moving a season's dates must rebuild the per-season figures
         from src.hounds import seasons
         paths.append(seasons.config_path())
+        # the bankroll constants: a changed starting balance or unit size must rebuild every account
+        from src.hounds import bankroll
+        paths.append(bankroll.config_path())
         paths += [p for _, p in self.pack_ledgers]
         if self.card_v2 is not None:
             paths.append(self.card_v2)
@@ -468,6 +477,7 @@ def card_bets(src: Sources, hound_id: str) -> list:
                 price=_int_or_none(entry.get("price")), book=entry.get("book"),
                 consensus_fair=_float_or_none(entry.get("market_probability")),
                 result=result, units=_float_or_none(entry.get("profit_units")),
+                graded_utc=day.get("settled_utc"),
                 who_decided="model",
                 reason=str(entry.get("why") or entry.get("reason") or
                            "A pick or fill on the public MLB value card."),
@@ -594,9 +604,15 @@ def pack_rows(rows: Iterable) -> tuple:
         bet.segment = segment if segment in ("forward", "replay") else "forward"
         if row.get("consensus_fair") is not None:
             bet.consensus_fair = _float_or_none(row["consensus_fair"])
+        # the member dog's paper stake rides on its bet row (a version-2 spec) and again on a graded row whose
+        # stake was not one; the house pack's own ``stake`` is deliberately not read (house dogs bet one unit)
+        if row.get("stake_units") is not None:
+            bet.stake_units = _float_or_none(row["stake_units"])
         result = str(row.get("result") or "").lower()
         if result in RESULTS:
             bet.result = result
+            if row.get("graded_utc"):
+                bet.graded_utc = str(row["graded_utc"])
             # ``units`` is units at the RECORDED (best) price; the house pack
             # names it ``units_best_price``. ``profit_units`` is deliberately
             # NOT read: in the user ledger it is profit at the AVERAGE price,

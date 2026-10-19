@@ -43,7 +43,7 @@ from typing import Optional
 from src.core import odds as odds_math
 import copy
 
-from src.hounds import boards, house, ledgers, seasons, verdict as vd
+from src.hounds import bankroll as bk, boards, house, ledgers, seasons, verdict as vd
 from src.hounds.contract import (
     BetRow, ClvBlock, DEFAULT_PAGE_SIZE, HoundSummary, KIND_BASELINE, Record, ReplayBlock,
     RetiredBlock, SeriesPoint, SPARK_POINTS, STATUS_NOT_STARTED, StreamItem, TICKET_OPEN,
@@ -204,24 +204,30 @@ def _day_before(day: str) -> str:
     return (date_cls.fromisoformat(day) - timedelta(days=1)).isoformat()
 
 
-def build_series(forward_graded: list, avg_available: bool) -> list:
-    """One point per day with graded bets, preceded by a zero point."""
+def build_series(forward_graded: list, avg_available: bool, kind: Optional[str] = None) -> list:
+    """One point per day with graded bets, preceded by a zero point. Each point also carries the account balance
+    in dollars (``bankroll_usd``: the opening balance plus the stake-weighted profit so far, on the same price
+    basis as the units); ``kind`` decides the stake (``bankroll.stake_of``: a member dog's own, else one unit)."""
     if not forward_graded:
         return []
+    prm = bk.params()
+    units_fn = average_units if avg_available else recorded_units
     by_day: dict = {}
     for bet in forward_graded:
         by_day.setdefault(bet.date, []).append(bet)
     days = sorted(by_day)
     out = [SeriesPoint(_day_before(days[0]), 0.0 if avg_available else None,
-                       0.0, 0, None)]
+                       0.0, 0, None, bankroll_usd=_round(prm.start, 2))]
     cum_rec = 0.0
     cum_avg = 0.0
+    cum_stake_units = 0.0
     n_clv = 0
     sum_clv = 0.0
     for day in days:
         for bet in by_day[day]:
             cum_rec += recorded_units(bet) or 0.0
             cum_avg += average_units(bet) or 0.0
+            cum_stake_units += (units_fn(bet) or 0.0) * bk.stake_of(bet, kind)
             if bet.clv_measurable and bet.clv_pts is not None:
                 n_clv += 1
                 sum_clv += bet.clv_pts
@@ -231,7 +237,8 @@ def build_series(forward_graded: list, avg_available: bool) -> list:
             cum_units_recorded_price=_round(cum_rec),
             bets_settled=len(by_day[day]),
             cum_clv_mean_pts=(_round(sum_clv / n_clv)
-                              if n_clv >= vd.CLV_SERIES_MIN_BETS else None)))
+                              if n_clv >= vd.CLV_SERIES_MIN_BETS else None),
+            bankroll_usd=_round(prm.start + cum_stake_units * prm.unit_usd, 2)))
     return out
 
 
@@ -417,7 +424,7 @@ def summarize(defn: dict, bets: list, teams_of: dict, as_of: Optional[str], now=
         clv_block = ClvBlock(n=verdict.n, mean_pts=verdict.mean_pts,
                              ci_low=verdict.ci_low, ci_high=verdict.ci_high) if verdict.n else None
 
-    series = build_series(fgraded, avg_available)
+    series = build_series(fgraded, avg_available, defn.get("kind"))
 
     retired = None
     if static_retired:
@@ -475,6 +482,8 @@ def summarize(defn: dict, bets: list, teams_of: dict, as_of: Optional[str], now=
         ungraded_bets=sum(1 for b in forward if _ticket_status(b, now) == TICKET_UNGRADED),
         settled=record.wins + record.losses + record.pushes)
     summary.ranked = summary.settled >= seasons.MIN_RANKED_BETS
+    bk.attach(summary, bk.events(fgraded, average_units if avg_available else recorded_units, defn.get("kind")),
+              "average_price" if avg_available else "recorded_price")
     if summary.form is not None:
         summary.form["clv_beat"] = clv_beat_share(points)
     rows = sorted(bets, key=lambda b: (b.decision_utc or b.date or "", b.date),
@@ -509,6 +518,7 @@ def summarize_window(defn: dict, bets: list, teams_of: dict, as_of: Optional[str
     s.record, s.clv, s.form = p.record, p.clv, p.form
     s.spark, s.spark_basis = p.spark, p.spark_basis
     s.open_bets, s.settled, s.ranked = p.open_bets, p.settled, p.ranked
+    s.bankroll, s._bankroll_events = p.bankroll, p._bankroll_events      # the season's own account, from $1,000
     s.verdict = VerdictBlock(label=full.summary.verdict.label, sentence=full.summary.verdict.sentence,
                              units_note=p.verdict.units_note, n=full.summary.verdict.n)
     return HoundData(summary=s, series=part.series, bets=part.bets, clv_points=part.clv_points)

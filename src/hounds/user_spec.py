@@ -761,5 +761,6 @@ def builder_menu() -> dict:
         "ranking_note": ("When more picks qualify than your daily cap, they are ranked by your rule. A pick "
                          "is made at its own decision time, so the ranking decides among the picks that qualify "
                          "in the same engine pass; a bet already made is never taken back."),
-        "stake_note": "A stake is a paper label. The public record counts every bet as one unit.",
+        "stake_note": ("Paper stake in units: 1 unit = $10 of a $1,000 paper bankroll. Your dog's bankroll, "
+                       "return and units use this stake; its win-loss record counts every bet once."),
     }

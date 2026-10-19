@@ -197,6 +197,10 @@ class HoundSummary:
     # enough to be ranked there (src.hounds.seasons.MIN_RANKED_BETS). Added 2026-10-19, additive.
     settled: int = 0
     ranked: bool = False
+    # The bankroll view of the same bets (``src.hounds.bankroll``, docs/BANKROLL.md; added 2026-10-19, additive):
+    # a $1,000 paper account, 1 unit = $10, with windows by settle time. Payload builders below recompute its
+    # windows against the clock. None only on a summary built outside ``stats.summarize``.
+    bankroll: Optional[dict] = None
 
 
 @dataclass
@@ -206,6 +210,9 @@ class SeriesPoint:
     cum_units_recorded_price: float
     bets_settled: int
     cum_clv_mean_pts: Optional[float]
+    # The account balance in dollars after this day (``src.hounds.bankroll``): the start plus the stake-weighted
+    # cumulative profit at the hound's price basis. The zero point is the opening balance. Added 2026-10-19.
+    bankroll_usd: Optional[float] = None
 
 
 @dataclass
@@ -301,6 +308,12 @@ def with_status(rows: list, now: Optional[datetime] = None) -> list:
             for r in rows]
 
 
+def _bankroll():
+    """``src.hounds.bankroll``, imported on use (it imports this module's time parser)."""
+    from src.hounds import bankroll
+    return bankroll
+
+
 # ---- serialisation ---------------------------------------------------------------
 
 def to_json(obj: Any) -> Any:
@@ -389,7 +402,8 @@ def warming_payload(empty: dict) -> dict:
 
 def leaderboard_payload(summaries: list, as_of: Optional[str], season: Optional[dict] = None) -> dict:
     """``season`` is ``seasons.meta(...)`` for the view the summaries were worked out for (absent: no key)."""
-    out = {"as_of": as_of, "basis": BASIS, "houndmaster": houndmaster_block(), "hounds": to_json(summaries)}
+    out = {"as_of": as_of, "basis": BASIS, "houndmaster": houndmaster_block(),
+           "bankroll_rules": _bankroll().public_block(), "hounds": to_json(_bankroll().refreshed_all(summaries))}
     if season is not None:
         out["season"] = season
     return envelope(out)
@@ -397,7 +411,8 @@ def leaderboard_payload(summaries: list, as_of: Optional[str], season: Optional[
 
 def hound_payload(summary: HoundSummary, series: list, bets_page: dict,
                   as_of: Optional[str], season: Optional[dict] = None) -> dict:
-    out = to_json(summary)
+    out = to_json(_bankroll().refreshed(summary))
+    out["bankroll_rules"] = _bankroll().public_block()
     out["series"] = to_json(series)
     out["bets"] = {**bets_page, "items": to_json(with_status(bets_page["items"]))}
     out["as_of"] = as_of
@@ -435,11 +450,12 @@ def stream_payload(page: dict, as_of: Optional[str]) -> dict:
 
 def graveyard_payload(entries: list, as_of: Optional[str]) -> dict:
     return envelope({"as_of": as_of, "basis": BASIS, "houndmaster": houndmaster_block(),
-                     "hounds": to_json(entries)})
+                     "bankroll_rules": _bankroll().public_block(), "hounds": to_json(_bankroll().refreshed_all(entries))})
 
 
 def series_payload(series_by_id: dict, as_of: Optional[str], season: Optional[dict] = None) -> dict:
-    out = {"as_of": as_of, "series": {k: to_json(v) for k, v in series_by_id.items()}}
+    out = {"as_of": as_of, "bankroll_rules": _bankroll().public_block(),
+           "series": {k: to_json(v) for k, v in series_by_id.items()}}
     if season is not None:
         out["season"] = season
     return envelope(out)
