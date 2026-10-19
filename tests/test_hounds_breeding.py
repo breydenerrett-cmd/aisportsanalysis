@@ -218,6 +218,42 @@ class CrossoverAndMutation(unittest.TestCase):
             baby = cross.make_baby(tun, (p, twin), cross.rng_for(f"d{i}", "professor_paws"))
             self.assertFalse(cross.same(baby.values, p.values))
 
+    def test_section_13_far_mutation_is_one_knob_two_steps_on_the_grid_in_bounds(self):
+        self.assertIn("## 13. Amendment, 2026-10-19", PREREG)
+        self.assertIn("**one knob by two steps**", PREREG)
+        self.assertEqual(rules.SINGLE_PARENT_STEPS, 2)
+        for hid, tun in TUN.items():
+            for i in range(30):
+                start = {k: cross.on_grid_value(kn, (0, cross.grid_index(kn, kn.hi),
+                                                     cross.grid_index(kn, kn.default))[i % 3])
+                         for k, kn in tun.knobs.items()}
+                out, mut = cross.mutate_far(tun, start, cross.rng_for(f"far-{i}", hid))
+                changed = [k for k in out if abs(out[k] - start[k]) > 1e-9]
+                self.assertEqual(changed, [mut["knob"]])
+                kn = tun.knobs[mut["knob"]]
+                self.assertTrue(kn.lo - 1e-9 <= out[mut["knob"]] <= kn.hi + 1e-9 and kn.on_grid(out[mut["knob"]]))
+                can_move_two = any(cross.grid_index(k2, start[n]) + 2 <= cross.grid_index(k2, k2.hi)
+                                   or cross.grid_index(k2, start[n]) >= 2 for n, k2 in tun.knobs.items())
+                self.assertEqual(mut["steps"], 2 if can_move_two else 1, (hid, start))
+
+    def test_single_parent_babies_clear_the_real_near_duplicate_guard(self):
+        """Every tunable hound at its defaults: the section-13 baby is NOT a near-duplicate of its parent under
+        tunables.near_duplicate (the guard proposals uses), except the two documented one-step-wide cases."""
+        stuck = {"pack_leader", "hot_streak_husky"}
+        for hid, tun in TUN.items():
+            p = member("p", hound=hid, values=tun.defaults())
+            for i in range(10):
+                baby = cross.make_baby(tun, (p,), cross.rng_for(f"2026-10-{21 + i}", hid))
+                self.assertEqual(tunables.near_duplicate(tun, p.values, baby.values), hid in stuck, (hid, baby.values))
+
+    def test_two_knobs_one_step_each_would_still_be_refused(self):
+        """Why section 13 moves one knob two steps and not two knobs one step each."""
+        tun = TUN["professor_paws"]
+        champ = tun.defaults()
+        self.assertTrue(tunables.near_duplicate(tun, champ, {"GAP": champ["GAP"] + 0.005,
+                                                             "SHRINK": round(champ["SHRINK"] + 0.1, 6)}))
+        self.assertFalse(tunables.near_duplicate(tun, champ, {"GAP": champ["GAP"] + 0.01, "SHRINK": champ["SHRINK"]}))
+
     def test_mutation_happens_about_half_the_time_on_distinct_parents(self):
         tun = TUN["professor_paws"]
         a, b = member("a", values={"GAP": 0.02, "SHRINK": 0.3}), member("b", values={"GAP": 0.04, "SHRINK": 0.7})
@@ -346,6 +382,20 @@ class TheCycle(Hermetic):
             outs.append([{k: r[k] for k in ("kind", "values", "origin", "mutation", "challenger_id") if k in r}
                          for r in F.breed_rows(w)])
         self.assertEqual(outs[0], outs[1])
+
+    def test_a_single_parent_baby_is_born_through_the_real_proposal_door(self):
+        """Section 13 end to end: only the champion is eligible, so the litter is single-parent; the real
+        propose_pack (every guard, near-duplicate included) accepts it."""
+        F.write_bets(self.w.champion_ledger, "professor_paws", 60, clv=0.5)
+        for d in (rules.ANCHOR_DATE, date(2026, 10, 24), date(2026, 10, 27)):
+            w = F.world(self.root / d.isoformat())
+            F.write_bets(w.champion_ledger, "professor_paws", 60, clv=0.5)
+            rep = cycle.tick(w, now=at(d))
+            self.assertEqual(rep["refused"], [], (d, rep["refused"]))
+            self.assertEqual([b["litter"] for b in rep["births"]], ["single"])
+            born = [r for r in F.breed_rows(w) if r["kind"] == "birth"][0]
+            self.assertEqual(born["mutation"]["steps"], 2)
+            self.assertEqual(L.read_state(w.scope).challengers[born["challenger_id"]].proposed_by, "breeding")
 
     def test_a_refusal_by_the_guards_is_recorded_not_worked_around(self):
         self.pair_world(champ_n=30)      # champion has 30 graded bets: rule 3.3 needs 50

@@ -3,8 +3,9 @@
 
 DETERMINISTIC. Every draw comes from ``rng_for(cycle_date, hound_id)``, one stream per family, in a fixed
 order: for a pair, one crossover draw per knob in name order, then the mutation draw, then (if it
-mutates) the knob draw and the direction draw. A single-parent baby skips the crossover and the mutation
-draws and always mutates. A crossover that copies either parent exactly is forced to mutate (its
+mutates) the knob draw and the direction draw. A single-parent baby (or a cull replacement) skips the
+crossover and the mutation draws and always mutates, by ONE knob TWO steps (``mutate_far``, prereg section
+13: a one-step move would be refused by the learning loop's near-duplicate guard). A crossover that copies either parent exactly is forced to mutate (its
 mutation draw is still consumed, so the stream stays aligned).
 """
 
@@ -72,6 +73,37 @@ def mutate(tun, values: Mapping, rng: random.Random) -> tuple:
     return out, {"knob": name, "from": values[name], "to": out[name]}
 
 
+def mutate_far(tun, values: Mapping, rng: random.Random) -> tuple:
+    """Prereg section 13: ONE knob moved TWO steps (single-parent babies and cull replacements). The knob is
+    drawn uniformly among the knobs that can move two steps inside the bounds in at least one direction;
+    then a direction draw, and a direction that would leave the bounds goes the other way. When no knob
+    can move two steps, a knob is drawn among all of them and goes to its bound farther from its value
+    (one step: that baby is still a near-duplicate and the guard will refuse it)."""
+    names = sorted(tun.knobs)
+    steps = rules.SINGLE_PARENT_STEPS
+
+    def fits(name: str) -> bool:
+        kn = tun.knobs[name]
+        idx, top = grid_index(kn, values[name]), grid_index(kn, kn.hi)
+        return idx + steps <= top or idx - steps >= 0
+
+    movable = [n for n in names if fits(n)]
+    pool = movable or names
+    name = pool[rng.randrange(len(pool))]
+    knob = tun.knobs[name]
+    direction = 1 if rng.random() < 0.5 else -1
+    idx, top = grid_index(knob, values[name]), grid_index(knob, knob.hi)
+    if movable:
+        new_idx = idx + direction * steps
+        if new_idx < 0 or new_idx > top:
+            new_idx = idx - direction * steps
+    else:
+        new_idx = top if (top - idx) >= idx else 0
+    out = dict(values)
+    out[name] = on_grid_value(knob, new_idx)
+    return out, {"knob": name, "from": values[name], "to": out[name], "steps": abs(new_idx - idx)}
+
+
 @dataclass
 class Baby:
     hound_id: str
@@ -92,7 +124,7 @@ def make_baby(tun, parents: Sequence[Member], rng: random.Random) -> Baby:
             values, mutation = mutate(tun, values, rng)
         return Baby(tun.hound_id, values, origin, mutation, (a, b))
     (a,) = parents
-    values, mutation = mutate(tun, dict(a.values), rng)
+    values, mutation = mutate_far(tun, dict(a.values), rng)
     return Baby(tun.hound_id, values, {k: "A" for k in sorted(tun.knobs)}, mutation, (a,))
 
 
@@ -141,7 +173,7 @@ def hypothesis(baby: Baby, cycle_date: str, generation: int, kind: str) -> str:
         body = (f"Breeding cycle: a variant of a top-ranked member of {baby.hound_id} ranked on forward "
                 f"closing-line value only, generation {generation}")
     if baby.mutation:
-        body += "; one knob moved one step"
+        body += "; one knob moved two steps" if baby.mutation.get("steps") == 2 else "; one knob moved one step"
     return body + ". It starts at 0-0 and only the referee can promote it."
 
 

@@ -26,6 +26,9 @@ PARENT_POOL = 4                           # the top 4 eligible members
 MUTATION_PROBABILITY = 0.5
 CROSSOVER_PROBABILITY = 0.5               # a knob comes from the better parent below this draw
 MUTATION_STEPS = 1
+# Section 13 (amendment 2026-10-19): a single-parent baby or a cull replacement moves ONE knob TWO steps, so it
+# clears the learning loop's near-duplicate guard (every knob within one step). Crossovers keep MUTATION_STEPS.
+SINGLE_PARENT_STEPS = 2
 MAX_LITTERS_PER_CYCLE = 2                 # proposals per cycle, refused ones included
 MAX_LIVE_BABIES = 6
 
