@@ -233,7 +233,8 @@ const posts = [];
 globalThis.fetch = async (url, init = {}) => {
   url = String(url);
   const path = url.split("?")[0];
-  if (init.method === "POST") posts.push({ url, body: init.body ? JSON.parse(init.body) : null, headers: init.headers });
+  const method = String(init.method || "GET").toUpperCase();
+  if (method !== "GET") posts.push({ url, method, body: init.body ? JSON.parse(init.body) : null, headers: init.headers });
   else gets.push(url);
   if ((scenario.down || []).some((p) => path === p || (p.endsWith("*") && path.startsWith(p.slice(0, -1))))) {
     throw new TypeError("fetch failed");
@@ -242,9 +243,9 @@ globalThis.fetch = async (url, init = {}) => {
   counts[path] = (counts[path] || 0) + 1;
   const after = (scenario.failAfter || {})[path];
   if (after !== undefined && counts[path] > after) return { ok: false, status: 503, text: async () => "{}" };
-  const key = init.method === "POST" ? "POST " + path : path;
+  const key = method !== "GET" ? method + " " + path : path;
   // a route may be keyed by the FULL url (path and query) to answer one page of a paged list; else by path
-  let hit = (scenario.routes || {})[(init.method === "POST" ? "POST " : "") + url] || (scenario.routes || {})[key];
+  let hit = (scenario.routes || {})[(method !== "GET" ? method + " " : "") + url] || (scenario.routes || {})[key];
   // switchAfter: {path: [n, [status, payload]]}: from the (n+1)th call on, answer with the other payload
   // (the server's first answer is "warming up", its later ones are the real thing)
   const sw = (scenario.switchAfter || {})[path];

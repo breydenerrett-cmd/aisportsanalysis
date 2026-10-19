@@ -10,6 +10,7 @@ import os
 import tempfile
 import unittest
 from datetime import timedelta
+from pathlib import Path
 from unittest import mock
 
 from src.hounds import user_engine as eng
@@ -89,10 +90,10 @@ class TheDrill(unittest.TestCase):
 
     def test_the_drill_does_not_see_the_dogs_real_tickets_or_add_to_them(self):
         eng.run(DATE, [hound("u-drill")], standard_rows(), ledger=self.ledger, now=utc("2026-10-20T21:10:00Z"))
-        real = open(self.ledger, "rb").read()
+        real = Path(self.ledger).read_bytes()
         out = run(user_dog())
         self.assertEqual(out["record"]["bets"], 1)                       # its own replay, not the ledger's row
-        self.assertEqual(open(self.ledger, "rb").read(), real)
+        self.assertEqual(Path(self.ledger).read_bytes(), real)
 
     def test_a_typed_in_spec_is_validated_like_a_created_dog(self):
         out = run(spec=spec_dict(name="Typed rule"))

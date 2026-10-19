@@ -1,0 +1,154 @@
+/*
+ * The dog kit and the training camp (web/js/dog-*.js): Fire now, Ask, manual picks, ratings, the locker room, your
+ * dogs in training, drills. Built on the model pages' own dark slate (hounds.css custom properties), the same
+ * panels, the same type. Phone first: one column, 16px gutters, every tap target at least 44px, nothing makes the
+ * page scroll sideways. Colour never carries meaning alone: a chip, a result or a check always says it in words.
+ */
+
+/* ---- layout ------------------------------------------------------------------------------------------------ */
+.dk-top { display: grid; gap: 18px; grid-template-columns: minmax(0, 1fr); margin: 0 0 18px; }
+.dk-top > .hd-panel, .dk-bottom > .hd-panel { margin-bottom: 0; }
+.dk-bottom { display: grid; gap: 18px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 980px) { .dk-top { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); align-items: start; } }
+.dk-panel h2 { font-size: 17px; }
+.dk-block { margin: 14px 0 0; }
+.dk-block .hd-h3 { margin: 0 0 6px; font-size: 14px; text-transform: uppercase; letter-spacing: .06em; color: var(--hd-mute); font-weight: 600; }
+.dk-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 8px 0; }
+.dk-status { margin: 0; min-height: 1.2em; }
+.dk-ok { color: var(--hd-good); font-weight: 600; margin: 4px 0; }
+.dk-panel .btn { min-height: 44px; }
+
+/* ---- chips ------------------------------------------------------------------------------------------------- */
+.dk-chip {
+  display: inline-block; padding: 1px 8px; border: 1px solid var(--hd-line); border-radius: 4px; font-size: 12px;
+  font-weight: 600; letter-spacing: .03em; color: var(--hd-text-2); background: var(--hd-card-2);
+}
+.dk-chip--warn { color: var(--hd-warn); border-color: rgba(242, 184, 75, .5); background: rgba(242, 184, 75, .08); }
+.dk-chip--good { color: var(--hd-good); border-color: rgba(61, 220, 132, .5); background: rgba(61, 220, 132, .08); }
+.dk-chip--bad { color: var(--hd-bad); border-color: rgba(255, 107, 122, .5); background: rgba(255, 107, 122, .08); }
+.dk-chip--hind { color: var(--hd-warn); border-color: var(--hd-warn); background: rgba(242, 184, 75, .1); font-size: 13px; padding: 3px 10px; }
+
+/* ---- fire now ---------------------------------------------------------------------------------------------- */
+.dk-headline { font-size: 17px; font-weight: 650; margin: 12px 0 2px; }
+.dk-picks, .dk-misses, .dk-tickets { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 8px; }
+.dk-pick, .dk-miss, .dk-ticket {
+  padding: 10px 12px; background: var(--hd-card-2); border: 1px solid var(--hd-line); border-radius: 4px;
+}
+.dk-pick { border-left: 3px solid var(--hd-accent); }
+.dk-pick p, .dk-miss p, .dk-ticket p { margin: 2px 0; }
+.dk-pick__head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.dk-pick__sel { font-size: 17px; color: #fff; }
+.dk-pick__game { color: var(--hd-text-2); font-size: 14px; }
+.dk-pick__price { font-size: 14px; color: var(--hd-text); }
+.dk-pick__reason { color: var(--hd-text-2); font-size: 14px; }
+.dk-pick__actions { margin-top: 8px; }
+.dk-checks { margin-top: 6px; font-size: 13px; color: var(--hd-text-2); }
+.dk-checks > summary { cursor: pointer; min-height: 32px; display: flex; align-items: center; color: var(--hd-mute); }
+.dk-checks ul { margin: 4px 0 0 18px; padding: 0; display: grid; gap: 3px; }
+.dk-miss { border-left: 3px solid var(--hd-flat); }
+
+/* ---- ask ---------------------------------------------------------------------------------------------------- */
+.dk-thread { display: grid; gap: 8px; max-height: 420px; overflow-y: auto; margin: 4px 0 8px; padding-right: 2px; }
+.dk-msg { padding: 8px 12px; border-radius: 6px; max-width: 94%; font-size: 15px; line-height: 1.45; }
+.dk-msg p { margin: 0 0 6px; }
+.dk-msg p:last-of-type { margin-bottom: 2px; }
+.dk-msg--you { justify-self: end; background: rgba(47, 208, 122, .13); border: 1px solid rgba(47, 208, 122, .4); color: #fff; }
+.dk-msg--dog { justify-self: start; background: var(--hd-card-2); border: 1px solid var(--hd-line); color: var(--hd-text); }
+.dk-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 8px; }
+.dk-chipbtn {
+  min-height: 44px; padding: 0 12px; border: 1px solid var(--hd-line); border-radius: 18px; background: transparent;
+  color: var(--hd-text-2); font-size: 13.5px; cursor: pointer;
+}
+.dk-chipbtn:hover { border-color: var(--hd-accent); color: #fff; }
+.dk-askrow { display: flex; gap: 8px; }
+.dk-askrow input {
+  flex: 1 1 auto; min-width: 0; min-height: 44px; padding: 8px 10px; background: #0B0C0E; color: #fff;
+  border: 1px solid rgba(255, 255, 255, .28); border-radius: 4px; font-size: 16px;
+}
+
+/* ---- ratings ------------------------------------------------------------------------------------------------ */
+.dk-vote { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-top: 6px; }
+.dk-vote__btn {
+  min-height: 44px; padding: 0 12px; border: 1px solid var(--hd-line); border-radius: 4px; background: transparent;
+  color: var(--hd-text-2); font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.dk-vote__btn[data-verdict="good"][aria-pressed="true"] { border-color: var(--hd-good); color: var(--hd-good); background: rgba(61, 220, 132, .08); }
+.dk-vote__btn[data-verdict="bad"][aria-pressed="true"] { border-color: var(--hd-bad); color: var(--hd-bad); background: rgba(255, 107, 122, .08); }
+.dk-note { display: flex; gap: 6px; flex: 1 1 260px; }
+.dk-note[hidden] { display: none; }
+.dk-note input {
+  flex: 1 1 auto; min-width: 0; min-height: 44px; padding: 6px 8px; background: #0B0C0E; color: #fff;
+  border: 1px solid rgba(255, 255, 255, .28); border-radius: 4px; font-size: 14px;
+}
+.dk-tickets .dk-ticket { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 14px; }
+.dk-tickets .dk-ticket .dk-vote { margin-top: 0; }
+.dk-ticket__text { flex: 1 1 280px; min-width: 0; overflow-wrap: anywhere; }
+
+/* ---- suggest ------------------------------------------------------------------------------------------------ */
+.dk-suggest { display: grid; gap: 8px; max-width: 520px; }
+.dk-suggest__row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.dk-suggest select, .dk-suggest input, .dk-field input, .dk-field select, .dk-select {
+  min-height: 44px; padding: 8px 10px; background: #0B0C0E; color: #fff; border: 1px solid rgba(255, 255, 255, .28);
+  border-radius: 4px; font-size: 16px; width: 100%;
+}
+.dk-field { display: grid; gap: 4px; margin-top: 8px; max-width: 220px; }
+.dk-field[hidden] { display: none; }
+
+/* ---- the badge and the locker room -------------------------------------------------------------------------- */
+.dk-badge { flex: none; display: block; border-radius: 14px; }
+.hd-modelhead .dk-badge { width: 56px; height: 56px; }
+.dk-locker { display: grid; gap: 18px; grid-template-columns: minmax(0, 1fr); margin: 8px 0; }
+@media (min-width: 760px) { .dk-locker { grid-template-columns: 170px minmax(0, 1fr); align-items: start; } }
+.dk-preview { display: flex; align-items: center; justify-content: center; padding: 16px; background: var(--hd-card-2); border: 1px solid var(--hd-line); border-radius: 6px; }
+.dk-locker__controls { display: grid; gap: 8px; }
+.dk-fieldset { padding: 6px 12px 10px; }
+.dk-fieldset legend { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--hd-mute); font-weight: 600; padding: 0 4px; }
+.dk-optrow { display: flex; flex-wrap: wrap; gap: 6px; }
+.dk-swatch {
+  width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--hd-line); background: var(--swatch, #888); cursor: pointer; padding: 0;
+}
+.dk-swatch[aria-pressed="true"] { border-color: #fff; box-shadow: 0 0 0 2px var(--hd-accent); }
+.dk-opt {
+  min-height: 44px; padding: 0 14px; border: 1px solid var(--hd-line); border-radius: 4px; background: transparent;
+  color: var(--hd-text-2); font-size: 14px; cursor: pointer;
+}
+.dk-opt[aria-pressed="true"] { border-color: var(--hd-accent); background: rgba(47, 208, 122, .13); color: #fff; }
+
+/* ---- the training camp -------------------------------------------------------------------------------------- */
+.dk-camp-dogs { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 14px; }
+.dk-camp-dog { padding: 14px; background: var(--hd-card-2); border: 1px solid var(--hd-line); border-radius: 6px; display: grid; gap: 10px; }
+.dk-camp-dog[data-status="retired"] { opacity: .75; }
+.dk-camp-dog__head { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.dk-camp-dog__name { font-size: 18px; font-weight: 650; color: #fff; }
+.dk-camp-dog__facts { display: grid; gap: 6px 16px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin: 0; }
+.dk-camp-dog__facts div { display: grid; gap: 1px; }
+.dk-camp-dog__facts dt { color: var(--hd-mute); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+.dk-camp-dog__facts dd { margin: 0; font-size: 16px; color: var(--hd-text); font-variant-numeric: tabular-nums; }
+.dk-mini { width: 100%; border-collapse: collapse; font-size: 13px; }
+.dk-mini th, .dk-mini td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--hd-line); }
+.dk-mini th { color: var(--hd-mute); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
+.dk-mini td.hd-num, .dk-mini th.hd-num { text-align: right; }
+.dk-tablewrap { overflow-x: auto; max-width: 100%; }
+.dk-camp-dog__tools { display: flex; flex-wrap: wrap; gap: 8px; }
+.dk-inline { border-top: 1px dashed var(--hd-line); padding-top: 10px; }
+.dk-inline[hidden] { display: none; }
+.dk-drill-controls { display: grid; gap: 10px; max-width: 560px; margin: 8px 0; }
+.dk-hindsight {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 12px; margin: 10px 0;
+  border: 1px solid var(--hd-warn); border-left-width: 4px; background: rgba(242, 184, 75, .07); border-radius: 4px;
+}
+.dk-hindsight strong { color: var(--hd-warn); }
+.dk-event { padding: 10px 12px; background: var(--hd-card-2); border: 1px solid var(--hd-line); border-radius: 4px; border-left: 4px solid var(--hd-flat); }
+.dk-event[data-outcome="promoted"] { border-left-color: var(--hd-good); }
+.dk-event[data-outcome="retired"] { border-left-color: var(--hd-bad); }
+.dk-events { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 8px; }
+.dk-events p { margin: 0 0 3px; }
+
+@media (max-width: 520px) {
+  .dk-suggest__row { grid-template-columns: 1fr; }
+  .dk-msg { max-width: 100%; }
+  .dk-camp-dog__facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .dk-chipbtn, .dk-swatch, .dk-opt, .dk-vote__btn { transition: border-color .12s ease, background-color .12s ease; }
+}

@@ -201,6 +201,7 @@ def plain_rule(text: str) -> str:
     """A rule as the dog says it: the boilerplate not-advice tail dropped (the page carries it once) and the word
     the site does not use for a placing time swapped for the plain words."""
     out = _NOT_ADVICE_TAIL.sub("", str(text or "")).strip()
+    out = re.sub(r"\bit backs\b", "I back", out)
     out = re.sub(r"\blocks\b", "placing times", out, flags=re.I)
     return re.sub(r"\block\b", "placing time", out, flags=re.I)
 
@@ -334,7 +335,7 @@ def _no_tickets(ctx: AskContext, what: str) -> str:
 
 def _intro(ctx: AskContext) -> dict:
     s = ctx.summary or {}
-    sports = ", ".join(s.get("sports") or []) or "my sports"
+    sports = ", ".join(x.upper() for x in (s.get("sports") or [])) or "my sports"
     rule = plain_rule(ctx.rule_english or ctx.rule_text)
     lines = [f"I am {ctx.name}." + (f" {ctx.catchphrase}" if ctx.catchphrase else "")]
     if rule:

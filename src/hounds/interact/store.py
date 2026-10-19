@@ -1,6 +1,6 @@
 """The two small tables this package adds to the app database: dog looks and dog feedback.
 
-SAME FILE, SAME PATTERN as src/hounds/user_store.py and fan_tips.py: ``users.db_path()`` (APP_DB_PATH
+SAME FILE, SAME PATTERN as src/hounds/user_store.py and the fan-tip box's module: ``users.db_path()`` (APP_DB_PATH
 overrides it), ``CREATE TABLE IF NOT EXISTS``, additive only, a connection per call.
 
 hound_looks     one row per LINEAGE (``root_id``), so a dog keeps its look when the referee or the owner makes

@@ -17,7 +17,7 @@ from datetime import datetime
 from typing import Optional
 
 from src.hounds import user_store
-from src.hounds.interact import ask, common, manual, store
+from src.hounds.interact import ask, common, fire, manual, store
 
 
 def look_of(dog: common.Dog) -> Optional[dict]:
@@ -92,6 +92,36 @@ def mine(user_id: int, *, now: Optional[datetime] = None) -> dict:
             "warming": summary is None,
         })
     return {"dogs": dogs, "count": len(dogs), "paper_only": True}
+
+
+def decorate_fire(dog: common.Dog, out: dict, viewer_id: Optional[int], *, now: Optional[datetime] = None) -> dict:
+    """The fire preview as the page gets it: the internal ledger row dropped, and for each pick what THIS viewer may
+    do about it (only the owner of a running builder dog can record a manual pick, and only from a fresh board,
+    once per game and market, within the five a day)."""
+    now = now or common.now_utc()
+    owner = dog.kind == common.KIND_USER and viewer_id is not None and dog.owner_user_id == viewer_id
+    already: set = set()
+    remaining = 0
+    if dog.kind == common.KIND_USER:
+        remaining = manual.remaining_today(dog.id, now)
+        already = {t["bet_id"] for t in manual.tickets(dog.id, now=now)}
+    for pick in out["picks"]:
+        pick.pop("row", None)
+        blocked = None
+        if not owner:
+            blocked = "only the owner can record a manual pick" if dog.kind == common.KIND_USER else "house dogs are read only"
+        elif dog.status != "running":
+            blocked = f"this dog is {dog.status}"
+        elif pick["stale"]:
+            blocked = f"the newest board is more than {fire.user_engine.MAX_BOARD_AGE_MINUTES} minutes old"
+        elif manual.manual_bet_id(dog.id, pick["event_id"], pick["market"]) in already:
+            blocked = "already recorded as a manual pick"
+        elif remaining <= 0:
+            blocked = f"{manual.PER_DAY_LIMIT} manual picks a day is the limit"
+        pick["manual"] = {"can_record": blocked is None, "blocked": blocked}
+    out["viewer_is_owner"] = owner
+    out["manual_remaining_today"] = remaining if owner else None
+    return out
 
 
 def ask_context(dog: common.Dog, viewer_id: Optional[int], *, now: Optional[datetime] = None,

@@ -118,7 +118,7 @@ class StaticFacts(unittest.TestCase):
         coach = html.index('data-hook="coach-section"')
         self.assertLess(coach, html.index('data-hook="learning-chance-section"'))
         text = visible(html)
-        for needle in ("Coach report card", "is the coach any good", "Hindsight", "TOO EARLY 🐣",
+        for needle in ("Coach report card", "is the coach any good", "Hindsight", "TOO EARLY",
                        "Graded by code, never by the coach", "Paper bets only, not advice"):
             self.assertIn(needle, text)
 
@@ -286,10 +286,10 @@ class TheCoachReportCard(unittest.TestCase):
         self.assertIn("5 tips so far.", f["summary"])
         self.assertIn("3 graded live: 1 helped, 1 hurt, 1 no difference.", f["summary"])
         self.assertIn("2 still too early to call", f["summary"])
-        self.assertEqual(f["facts"], ["Tips made", "Tips refused", "HELPED ✅", "HURT ❌", "NO DIFFERENCE 🪙",
-                                      "TOO EARLY 🐣"])
-        self.assertEqual(sorted(f["badges"]), sorted(["HELPED ✅", "HURT ❌", "NO DIFFERENCE 🪙", "TOO EARLY 🐣",
-                                                      "TOO EARLY 🐣"]))
+        self.assertEqual(f["facts"], ["Tips made", "Tips refused", "HELPED", "HURT", "NO DIFFERENCE",
+                                      "TOO EARLY"])
+        self.assertEqual(sorted(f["badges"]), sorted(["HELPED", "HURT", "NO DIFFERENCE", "TOO EARLY",
+                                                      "TOO EARLY"]))
         self.assertEqual(f["n"], 5)
         self.assertEqual(f["labels"][0], "TOO EARLY")                       # newest tip first (issue 5, no grade yet)
         self.assertTrue(any("Hindsight: +2.1u better. Live: helped (+3.2u over 25 bets)." in ln for ln in f["lines"]))
@@ -344,8 +344,8 @@ class TheCoachPureText(unittest.TestCase):
     def test_badges_always_carry_the_word_beside_the_emoji(self):
         out = self.js('console.log(JSON.stringify(["HELPED", "hurt", "NO DIFFERENCE", "TOO EARLY", "weird", null]'
                       '.map(C.coachBadge).map(b => b.text)));')
-        self.assertEqual(out, ["HELPED ✅", "HURT ❌", "NO DIFFERENCE 🪙", "TOO EARLY 🐣", "NOT GRADED 🐾",
-                               "NOT GRADED 🐾"])
+        self.assertEqual(out, ["HELPED", "HURT", "NO DIFFERENCE", "TOO EARLY", "NOT GRADED",
+                               "NOT GRADED"])
 
     def test_the_summary_sentence(self):
         s = {"suggestions": 1, "refused": 0, "helped": 0, "hurt": 0, "no_difference": 0, "too_early": 1}
