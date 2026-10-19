@@ -143,6 +143,8 @@ def _settled_run(book_rows) -> Optional[tuple]:
     for r in reversed(chronological):
         if r.result != last.result:
             break
+        if getattr(r, "beyond_cap", False):
+            return None            # a run that includes a -200-or-worse ticket (old rule) is never featured
         run += 1
     wins = sum(1 for r in chronological if r.result == "win")
     return last.result, run, last.date, wins, len(chronological) - wins
@@ -169,6 +171,18 @@ def streak_events(book, *, minimum: int = STREAK_MIN) -> list:
         if ev:
             out.append(ev)
     return out
+
+
+def _paper(units) -> str:
+    """``+0.7u = +$7 paper``: a units difference with the paper dollars it is at the shared $10 unit
+    (docs/BANKROLL.md). Anything that is not a number stays ``n/a`` as ``coach_report.units_text`` says it."""
+    from src.hounds import bankroll as bk
+    from src.hounds import coach_report as CR
+    text = CR.units_text(units)
+    if not isinstance(units, (int, float)) or isinstance(units, bool):
+        return text
+    dollars = int(round(float(units) * bk.params().unit_usd))
+    return f"{text} = {'-' if dollars < 0 else '+'}${abs(dollars):,} paper"
 
 
 def _diff_text(spec_diff: Optional[Mapping]) -> str:
@@ -243,7 +257,7 @@ def coach_events(report: Optional[Mapping], *, base_url: Optional[str] = None) -
         when = rss.parse_utc(item.get("recorded_utc"))
         h = item.get("hindsight") or {}
         if h.get("status") == "ok" and h.get("units_diff") is not None:
-            says = f"Hindsight says {CR.units_text(h.get('units_diff'))}."
+            says = f"Hindsight says {_paper(h.get('units_diff'))}."
         else:
             says = "Hindsight is still being worked out."
         name = _name(item.get("hound_name"), "a hound")
@@ -262,7 +276,7 @@ def coach_events(report: Optional[Mapping], *, base_url: Optional[str] = None) -
         title = (f"\U0001F4CB Coach report card: {s.get('suggestions', 0)} tips, {s.get('helped', 0)} helped, "
                  f"{s.get('hurt', 0)} hurt, {s.get('too_early', 0)} too early")
         why = (f"{s.get('refused', 0)} suggestions were refused. Live units difference: "
-               f"{CR.units_text(s.get('forward_units_diff'))}. Graded by code, on paper.")
+               f"{_paper(s.get('forward_units_diff'))}. Graded by code, on paper.")
         ev = _event(KIND_COACH_CARD, f"kennel:{KIND_COACH_CARD}:{day}", last, "", title, why, link=link)
         if ev:
             out.append(ev)
@@ -288,7 +302,7 @@ def fan_events(report: Optional[Mapping], *, base_url: Optional[str] = None) -> 
         who = _name(item.get("nickname"), "a fan")
         dog = _name(item.get("hound_name"), "a hound")
         title = (f"\U0001F436 Fan tip paid off: {who}'s tweak to {dog} is beating the dog "
-                 f"({CR.units_text(units)}, {n} bet{'' if n == 1 else 's'})")
+                 f"({_paper(units)}, {n} bet{'' if n == 1 else 's'})")
         why = ("Graded by code against the dog as it stands, on new games from the minute the tip landed. "
                "A tip never changes a dog, and a small number of games is a small number of games.")
         ev = _event(KIND_FAN_TIP, f"kennel:{KIND_FAN_TIP}:{tip_id}", when, str(item.get("hound") or ""),

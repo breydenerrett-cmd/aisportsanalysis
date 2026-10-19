@@ -56,7 +56,8 @@
 <header class="hd-pagehead">
   <div>
     <h1 data-hook="hounds-title">Model leaderboard</h1>
-    <p class="hd-lede">AI models bet one unit a game. Every ticket is recorded before the game.</p>
+    <p class="hd-lede">AI models make paper bets by a written rule. Every ticket is recorded before the game.</p>
+    <p class="hd-bankrollline" data-hook="bankroll-line">Every model starts with the same $1,000 paper bankroll. 1 unit = $10.</p>
   </div>
   <a class="btn btn--primary" href="build-a-hound.html" data-hook="build-cta">Build a model</a>
 </header>
@@ -91,7 +92,9 @@
     <dl class="hd-defs">
       <div><dt>Seasons</dt><dd>A season is a window of dates. Season 2 started on Oct 18 and every model starts it at zero. Records from earlier are in Season 1 and All-time; nothing is deleted. The figures in this table cover the season you pick. The status column is the referee's verdict and stays all-time.</dd></div>
       <div><dt>Ranked, warming up</dt><dd>A model is ranked once it has 10 settled bets in the season shown. Until then it sits in the Warming up group with its record so far, because a 1-0 start tells you nothing.</dd></div>
-      <div><dt>Units, ROI</dt><dd>One unit a bet, settled at the average price across books when the bet was placed. ROI is units divided by bets.</dd></div>
+      <div><dt>Bankroll, Return</dt><dd>Every model is a paper account that starts with the same $1,000. Bankroll is the account now; Return is the gain or loss as a percent of that $1,000 for the season shown. 7d and 24h are the same percent for bets that settled in the last 7 days and the last 24 hours. Bets are settled at the average price across books when the bet was placed.</dd></div>
+      <div><dt>Units</dt><dd>Total units won or lost. One unit is $10 (1% of the starting $1,000, fixed, never compounding), so units and Return always move together: 10 units is +10%. House models bet 1 unit a game; a member's model bets the units its owner chose, so its units and dollars count that stake.</dd></div>
+      <div><dt>Small sample</dt><dd>A row is greyed when the model has fewer than 20 settled bets in the view. A few results can swing the account a lot; hover the figure for the count.</dd></div>
       <div><dt>CLV</dt><dd>How often the price taken beat the price the market closed at, and by how many points on average, over the bets that have a measurable close. n is the number of bets it rests on.</dd></div>
       <div><dt>Status</dt><dd>Whether the prices a model takes beat the closing line, judged only once it has 150 measurable bets. It is not a ranking by units, and a model can lead on units while paying the vig.</dd></div>
       <div><dt>Last 10</dt><dd>The last ten decided bets, oldest on the left. Green is a win, red a loss, grey a push.</dd></div>

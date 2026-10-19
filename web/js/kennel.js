@@ -28,6 +28,7 @@ import { mountFire } from "./dog-fire.js";
 import { bootAsk } from "./dog-ask.js";
 import { mountManual } from "./dog-manual.js";
 import { ticketList } from "./hounds-tickets.js";
+import { bankrollNow, returnPctOf, fmtUsd, fmtPct, isSmallSample, smallSampleTitle } from "./hounds-board.js";
 
 const q = (hook) => document.querySelector(`[data-hook='${hook}']`);
 
@@ -54,6 +55,21 @@ export function unitsText(rec) {
   const u = rec && rec.units_average_price;
   if (!isNum(u)) return "0.00u";
   return `${u > 0 ? "+" : ""}${u.toFixed(2)}u`;
+}
+
+/** The dog's paper account now, "$1,023" (every dog starts with the same $1,000), or "n/a" without the server's block. */
+export function bankrollText(dog) {
+  return fmtUsd(bankrollNow(dog));
+}
+
+/** The account's return on that start, "+2.3%", or "n/a". */
+export function returnText(dog) {
+  return fmtPct(returnPctOf(dog));
+}
+
+/** "$1,023 (+2.3%)" for a one-line sub-title. */
+export function accountText(dog) {
+  return bankrollNow(dog) === null ? "n/a" : `${bankrollText(dog)} (${returnText(dog)})`;
 }
 
 /** "happy" after a winning last pick, "slump" after a losing one, else "idle". */
@@ -118,7 +134,10 @@ function dogCard(dog, { mine }, index) {
       dog.tagline ? h("p", { class: "kn-card__tag", text: dog.tagline }) : null,
       h("dl", { class: "kn-stats" }, [
         stat("Record", recordText(rec), { "data-hook": "dog-record" }),
-        stat("Units", unitsText(rec), { "data-hook": "dog-units", "data-count": "1" }),
+        stat("Bankroll", bankrollText(dog), Object.assign({ "data-hook": "dog-bankroll", "data-count": "1" },
+          isSmallSample(dog) ? { title: smallSampleTitle(dog), "data-small": "true" } : {})),
+        stat("Return", returnText(dog), Object.assign({ "data-hook": "dog-return" },
+          isSmallSample(dog) ? { title: smallSampleTitle(dog), "data-small": "true" } : {})),
         stat("Bets", String(rec.bets || 0), { "data-hook": "dog-bets", "data-count": "1" })]),
       h("p", { class: "kn-card__last", "data-hook": "dog-last", text: lastPickText(dog) }),
       h("div", { class: "kn-card__actions" }, actions)]),
@@ -252,7 +271,7 @@ function paintStudioHead(look) {
   }
   av.appendChild(dogBadge(look || dog.look || DEFAULT_LOOK, { size: 56, mood: moodOf(dog) }));
   q("studio-title").textContent = dog.name;
-  sub.textContent = `${recordText(dog.record)}, ${unitsText(dog.record)}${dog.tagline ? ` · ${dog.tagline}` : ""}`;
+  sub.textContent = `${recordText(dog.record)}, ${accountText(dog)}${dog.tagline ? ` · ${dog.tagline}` : ""}`;
   const link = q("studio-open");
   link.hidden = false;
   link.setAttribute("href", houndHref(dog.id));
@@ -302,9 +321,10 @@ async function buildTab(tab) {
 async function buildRecord(host, dog, kit) {
   const rec = dog.record || {};
   host.appendChild(h("dl", { class: "kn-stats kn-stats--wide", "data-hook": "studio-record-stats" }, [
-    stat("Record", recordText(rec)), stat("Units", unitsText(rec)), stat("Bets", String(rec.bets || 0)),
+    stat("Record", recordText(rec)), stat("Bankroll", bankrollText(dog)), stat("Return", returnText(dog)),
+    stat("Bets", String(rec.bets || 0)),
     stat("Open", String(dog.open_bets || 0))]));
-  host.appendChild(h("p", { class: "hd-fine", text: `${state.data.season && state.data.season.label ? state.data.season.label : "This season"}, one unit a bet at the average price.${(rec.bets || 0) < 30 ? " A small sample: it says little about what comes next." : ""}` }));
+  host.appendChild(h("p", { class: "hd-fine", text: `${state.data.season && state.data.season.label ? state.data.season.label : "This season"}, a paper account that started with $1,000 (1 unit = $10), bets settled at the average price.${(rec.bets || 0) < 30 ? " A small sample: it says little about what comes next." : ""}` }));
   const tickets = h("div", { "data-hook": "studio-tickets" });
   host.appendChild(h("h3", { class: "hd-h3", text: "Last tickets" }));
   host.appendChild(tickets);

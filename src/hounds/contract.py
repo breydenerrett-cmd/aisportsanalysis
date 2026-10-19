@@ -197,6 +197,13 @@ class HoundSummary:
     # enough to be ranked there (src.hounds.seasons.MIN_RANKED_BETS). Added 2026-10-19, additive.
     settled: int = 0
     ranked: bool = False
+    # The bankroll view of the same bets (``src.hounds.bankroll``, docs/BANKROLL.md; added 2026-10-19, additive):
+    # a $1,000 paper account, 1 unit = $10, with windows by settle time. Payload builders below recompute its
+    # windows against the clock. None only on a summary built outside ``stats.summarize``.
+    bankroll: Optional[dict] = None
+    # Forward settled bets in this view whose price was -200 or worse (the old rule; stats.beyond_cap). They stay
+    # in the record and the money, and the digest and the "best bet" boxes keep away from them. Added 2026-10-19.
+    old_rule_bets: int = 0
 
 
 @dataclass
@@ -206,6 +213,9 @@ class SeriesPoint:
     cum_units_recorded_price: float
     bets_settled: int
     cum_clv_mean_pts: Optional[float]
+    # The account balance in dollars after this day (``src.hounds.bankroll``): the start plus the stake-weighted
+    # cumulative profit at the hound's price basis. The zero point is the opening balance. Added 2026-10-19.
+    bankroll_usd: Optional[float] = None
 
 
 @dataclass
@@ -236,6 +246,8 @@ class BetRow:
     # How many books were quoting the market when the bet was decided (added 2026-10-19, additive). None
     # when the source did not carry it; the pages then show the book alone.
     book_count: Optional[int] = None
+    # True when the ticket sits at -200 or worse (``stats.beyond_cap``): the lists tag it "-200 or worse (old rule)".
+    beyond_cap: bool = False
     # "OPEN" | "GRADED" | "UNGRADED" (``ticket_status``), stamped when a payload is built, not when the book is
     # cached, so the 36-hour line is exact at the moment of the request. "" until stamped and on a refusal.
     status: str = ""
@@ -264,13 +276,21 @@ def _utc(value) -> Optional[datetime]:
 
 
 def _slate_end(day) -> Optional[datetime]:
-    """The last instant of a slate date (UTC), or None when the date does not parse."""
+    """The last instant of a slate date, as a UTC moment, or None when the date does not parse.
+
+    A slate date is MLB's OFFICIAL date of the game: the EASTERN calendar date of first pitch (see
+    src/hounds/seasons.py). Its last instant is therefore midnight at the end of that day in America/New_York, which
+    is 04:00 UTC the next morning in daylight time and 05:00 UTC in winter, not 00:00 UTC. Reading it as UTC midnight
+    (the first version) called a late west-coast game's ticket stale four to five hours too soon. The Eastern rules
+    come from ``src.data.eastern`` (no tz database needed, so this holds on a Windows machine too).
+    """
+    from src.data.eastern import eastern
     text = str(day or "")[:10]
     try:
-        start = datetime.fromisoformat(text).replace(tzinfo=timezone.utc)
+        local = datetime.fromisoformat(text) + timedelta(days=1)
     except ValueError:
         return None
-    return start + timedelta(days=1)
+    return local.replace(tzinfo=eastern()).astimezone(timezone.utc)
 
 
 def ticket_status(result: Optional[str], start_utc, date, now: Optional[datetime] = None) -> str:
@@ -278,7 +298,7 @@ def ticket_status(result: Optional[str], start_utc, date, now: Optional[datetime
 
     A ticket with a result is GRADED. One without is OPEN until its game started more than
     ``UNGRADED_AFTER_HOURS`` ago (strictly: exactly 36 hours is still OPEN), then UNGRADED. When the start is
-    unknown the slate date stands in for it, counted as the END of that day (UTC), so a ticket with no start
+    unknown the slate date stands in for it, counted as the END of that day in America/New_York (the game's official date), so a ticket with no start
     is never called ungraded sooner than 36 hours after its slate day closed. With neither a start nor a
     readable date there is no clock to judge by and the ticket stays OPEN: the page never claims more than the
     record supports.
@@ -299,6 +319,12 @@ def with_status(rows: list, now: Optional[datetime] = None) -> list:
     return [r if getattr(r, "refused", False)
             else dataclasses.replace(r, status=ticket_status(r.result, r.start_utc, r.date, now))
             for r in rows]
+
+
+def _bankroll():
+    """``src.hounds.bankroll``, imported on use (it imports this module's time parser)."""
+    from src.hounds import bankroll
+    return bankroll
 
 
 # ---- serialisation ---------------------------------------------------------------
@@ -389,7 +415,8 @@ def warming_payload(empty: dict) -> dict:
 
 def leaderboard_payload(summaries: list, as_of: Optional[str], season: Optional[dict] = None) -> dict:
     """``season`` is ``seasons.meta(...)`` for the view the summaries were worked out for (absent: no key)."""
-    out = {"as_of": as_of, "basis": BASIS, "houndmaster": houndmaster_block(), "hounds": to_json(summaries)}
+    out = {"as_of": as_of, "basis": BASIS, "houndmaster": houndmaster_block(),
+           "bankroll_rules": _bankroll().public_block(), "hounds": to_json(_bankroll().refreshed_all(summaries))}
     if season is not None:
         out["season"] = season
     return envelope(out)
@@ -397,7 +424,8 @@ def leaderboard_payload(summaries: list, as_of: Optional[str], season: Optional[
 
 def hound_payload(summary: HoundSummary, series: list, bets_page: dict,
                   as_of: Optional[str], season: Optional[dict] = None) -> dict:
-    out = to_json(summary)
+    out = to_json(_bankroll().refreshed(summary))
+    out["bankroll_rules"] = _bankroll().public_block()
     out["series"] = to_json(series)
     out["bets"] = {**bets_page, "items": to_json(with_status(bets_page["items"]))}
     out["as_of"] = as_of
@@ -435,11 +463,12 @@ def stream_payload(page: dict, as_of: Optional[str]) -> dict:
 
 def graveyard_payload(entries: list, as_of: Optional[str]) -> dict:
     return envelope({"as_of": as_of, "basis": BASIS, "houndmaster": houndmaster_block(),
-                     "hounds": to_json(entries)})
+                     "bankroll_rules": _bankroll().public_block(), "hounds": to_json(_bankroll().refreshed_all(entries))})
 
 
 def series_payload(series_by_id: dict, as_of: Optional[str], season: Optional[dict] = None) -> dict:
-    out = {"as_of": as_of, "series": {k: to_json(v) for k, v in series_by_id.items()}}
+    out = {"as_of": as_of, "bankroll_rules": _bankroll().public_block(),
+           "series": {k: to_json(v) for k, v in series_by_id.items()}}
     if season is not None:
         out["season"] = season
     return envelope(out)

@@ -46,6 +46,8 @@
 .kncard__links { display: flex; flex-wrap: wrap; gap: 10px; }
 @media (max-width: 1220px) { .kncard { margin-left: 16px; margin-right: 16px; } }
 .lbtone--small { color: var(--lb-mute); opacity: .7; cursor: help; }
+.lbbasis { display: block; font-size: 10px; font-weight: 400; color: var(--lb-mute); cursor: help; }
+.lbold { display: inline-block; margin-left: 6px; padding: 0 5px; border: 1px solid var(--lb-line); border-radius: 3px; font-size: 11px; color: var(--lb-mute); white-space: nowrap; cursor: help; }
 .lbpanel__season { font-weight: 500; color: var(--lb-mute); font-size: .85em; margin-left: 8px; }
 .lbpanel__note { margin: 8px 2px 0; font-size: 13px; color: var(--lb-mute); }
 .lbpanel__more { display: inline-block; margin-top: 8px; min-height: 36px; line-height: 36px; font-size: 14px; font-weight: 600; color: var(--lb-accent); }

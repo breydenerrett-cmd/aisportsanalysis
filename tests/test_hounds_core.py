@@ -160,7 +160,7 @@ class ContractShapes(unittest.TestCase):
         "sports", "markets", "rule_text", "status", "retired", "record", "clv",
         "verdict", "first_bet_utc", "last_bet_utc", "verified", "verified_share",
         "checkable_share", "replay", "spark", "spark_basis", "source", "persona", "form", "open_bets",
-        "ungraded_bets", "settled", "ranked"}
+        "ungraded_bets", "settled", "ranked", "bankroll", "old_rule_bets"}
 
     def test_summary_keys_and_nested_record(self):
         s = contract.to_json(contract.HoundSummary(id="x", name="X"))
@@ -176,7 +176,7 @@ class ContractShapes(unittest.TestCase):
         p = contract.to_json(contract.SeriesPoint("2026-10-01", None, 0.0, 0, None))
         self.assertEqual(set(p), {"date", "cum_units_average_price",
                                   "cum_units_recorded_price", "bets_settled",
-                                  "cum_clv_mean_pts"})
+                                  "cum_clv_mean_pts", "bankroll_usd"})
         row = contract.to_json(contract.BetRow(hound_id="x", date="2026-10-01"))
         self.assertTrue({"date", "game", "market", "selection", "price", "book",
                          "consensus_fair", "result", "units", "clv_pts",

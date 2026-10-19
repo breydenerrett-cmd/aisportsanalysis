@@ -111,7 +111,7 @@ class RouteTests(unittest.TestCase):
         self.assertEqual(set(body["series"]), {"alpha", "charlie"})
         self.assertEqual(set(body["series"]["alpha"][0]), {
             "date", "cum_units_average_price", "cum_units_recorded_price",
-            "bets_settled", "cum_clv_mean_pts"})
+            "bets_settled", "cum_clv_mean_pts", "bankroll_usd"})
         self.assertEqual(self.get("/hounds/series")["series"], {})
 
     def test_static_paths_are_not_read_as_hound_ids(self):

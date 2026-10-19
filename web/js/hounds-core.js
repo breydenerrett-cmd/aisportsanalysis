@@ -496,9 +496,10 @@ export function monotonePath(pts) {
 /**
  * Lay out a multi-line chart. `series` is [{id, name, color, points:[{date, value, bets}]}] (points from
  * toChartPoints). The y domain ALWAYS contains zero, so the zero baseline is always drawn. Returns plain
- * numbers and path strings; the renderer only has to draw them.
+ * numbers and path strings; the renderer only has to draw them. `tickLabel(value, step)` words the y ticks (the
+ * bankroll chart plots dollars above the $1,000 start and labels its ticks as balances).
  */
-export function layoutChart(series, { width = 640, height = 280, margin } = {}) {
+export function layoutChart(series, { width = 640, height = 280, margin, tickLabel: labelFn } = {}) {
   const m = Object.assign({ l: 44, r: 14, t: 12, b: 26 }, margin || {});
   const plot = { x0: m.l, x1: width - m.r, y0: m.t, y1: height - m.b };
   const all = [];
@@ -528,7 +529,7 @@ export function layoutChart(series, { width = 640, height = 280, margin } = {}) 
   const yTicks = [];
   for (let v = yMin; v <= yMax + step / 2; v += step) {
     const val = Math.round(v / step) * step;
-    yTicks.push({ value: val, y: y(val), label: tickLabel(val, step) });
+    yTicks.push({ value: val, y: y(val), label: (labelFn || tickLabel)(val, step) });
   }
   const days = [...new Set(all.map((p) => p.day))].sort((a, b) => a - b);
   const wanted = Math.min(days.length, 5);

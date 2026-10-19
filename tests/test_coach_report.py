@@ -169,7 +169,7 @@ class TheKennelFeed(Fixture):
         events, xml = self.feed()
         tip = next(e for e in events if e["kind"] == "coach_tip")
         self.assertEqual(tip["title"], '🧠 Coach tip for Fake Dog: "Smallest home price that gets a bet" from +100 '
-                                       "or more to +120 or more. Hindsight says +2.1u.")
+                                       "or more to +120 or more. Hindsight says +2.1u = +$21 paper.")
         self.assertEqual(tip["guid"], "kennel:coach_tip:7")
         self.assertEqual(tip["pub"].isoformat(), "2026-10-12T09:30:00+00:00")        # the tip's own time, not now
         item = ET.fromstring(xml).findall("./channel/item")[0]
@@ -182,7 +182,7 @@ class TheKennelFeed(Fixture):
         self.tip(1, hind=hindsight(-1.4))
         self.tip(2)
         by = {e["guid"]: e["title"] for e in self.feed()[0] if e["kind"] == "coach_tip"}
-        self.assertTrue(by["kennel:coach_tip:1"].endswith("Hindsight says -1.4u."))
+        self.assertTrue(by["kennel:coach_tip:1"].endswith("Hindsight says -1.4u = -$14 paper."))
         self.assertTrue(by["kennel:coach_tip:2"].endswith("Hindsight is still being worked out."))
 
     def test_the_report_card_item_appears_once_a_day_with_the_counts_and_a_dated_guid(self):

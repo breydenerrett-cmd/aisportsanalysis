@@ -96,6 +96,9 @@ class EveryPageSaysPaperOnlyNotAdviceAndIs21Plus(unittest.TestCase):
             body = re.sub(r"(?m)^\s*//.*$", "", body)
             body = re.sub(r"<!--.*?-->", "", body, flags=re.S)
             body = body.replace("It is not a profit claim", "")
+            # The owner's own label for the model page's yield tile (docs/BANKROLL.md, 2026-10-19): "profit per $ bet"
+            # says what a yield IS (dollars of result per dollar staked), not that any model is profitable.
+            body = body.replace("profit per $ bet", "")
             with self.subTest(file=path.name):
                 self.assertNotRegex(body.lower(), r"bet[\s_-]*check")
                 self.assertNotRegex(body, r"(?i)\b(profit|guarantee[sd]?|win rate|sure thing|beat the market)\b")
@@ -192,19 +195,19 @@ class TheChartsRenderEmptyAndOnePointSeriesHonestly(unittest.TestCase):
 
     def test_one_point_series_is_a_single_dot_and_one_table_row(self):
         out = self.detail_with_series([{"date": "2026-10-18", "cum_units_average_price": 1.5, "cum_units_recorded_price": 1.7,
-                                        "bets_settled": 2, "cum_clv_mean_pts": 0.4, "segment": "forward"}])
+                                        "bets_settled": 2, "cum_clv_mean_pts": 0.4, "bankroll_usd": 1015.0, "segment": "forward"}])
         self.assertEqual(out["final"]["empty_n"], 0)
         self.assertEqual(out["final"]["paths"], 0)     # no line from one point
-        self.assertEqual(out["final"]["singles"], 2)   # average and recorded, each a dot
+        self.assertEqual(out["final"]["singles"], 1)   # the bankroll dot (the CLV panel's one-point dot sits in the other figure)
         self.assertEqual(out["final"]["zero"], 1)
         self.assertEqual(out["final"]["rows"], 1)
 
     def test_a_null_clv_everywhere_is_an_empty_clv_panel_not_a_line_at_zero(self):
         pts = [{"date": f"2026-10-{18 + i}", "cum_units_average_price": i, "cum_units_recorded_price": i,
-                "bets_settled": i + 1, "cum_clv_mean_pts": None, "segment": "forward"} for i in range(4)]
+                "bets_settled": i + 1, "cum_clv_mean_pts": None, "bankroll_usd": 1000.0 + 10 * i, "segment": "forward"} for i in range(4)]
         out = self.detail_with_series(pts)
         self.assertIn("Nothing measured against the close yet", out["final"]["clv_empty"])
-        self.assertEqual(out["final"]["paths"], 2)
+        self.assertEqual(out["final"]["paths"], 1)     # the bankroll line only; no CLV line
 
 
 # ---------------------------------------------------------------------------------------------------

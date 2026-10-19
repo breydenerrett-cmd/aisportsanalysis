@@ -1,13 +1,14 @@
-"""The landing page's live mini leaderboard (web/js/landing-board.js): the top five models by units and the latest
-five tickets.
+"""The landing page's live mini leaderboard (web/js/landing-board.js): the top five models by paper bankroll and the
+latest five tickets.
 
 Runs the module's own code under node against a fake DOM built from the real web/landing.html and payloads built
 by the real contract code (tests/hounds_web_fixtures.py). The static half of the first screen (the headline, the
 subline, the two buttons, the one human line and its link) is pinned in tests/test_landing_first_screen.py.
 
 What this file holds the panel to:
-  * the board is the top five by units among running models with a graded bet, baselines left to the leaderboard
-    page, each row with its record, units, ROI and bet count, so a hot start on a few bets never reads as more;
+  * the board is the top five by bankroll (the $1,000 paper account, docs/BANKROLL.md) among running models with a
+    graded bet, baselines left to the leaderboard page, each row with its record, balance, return % and bet count,
+    so a hot start on a few bets never reads as more; a thin sample is greyed with the reason in its tooltip;
   * the latest five tickets are real bets (a refusal is not a ticket), each with its status word;
   * with no answer a panel says so and names no figure; a server still warming up says that and nothing else;
   * no cartoon drawing and no emoji.
@@ -61,32 +62,48 @@ class ThePanelsOnThePage(unittest.TestCase):
     def page(self, routes=None, **kw):
         return run_page("landing_board", routes=self.routes() if routes is None else routes, **kw)
 
-    def test_the_board_lists_five_models_with_record_units_roi_and_bets(self):
+    def test_the_board_lists_five_models_with_record_bankroll_return_and_bets(self):
         out = self.page(queries=[
             q("ids", "[data-hook='lb-board'] .lbrow", "attrs", attr="data-hound"), q("ranks", ".lbrank", "texts"),
-            q("units", "[data-hook='lb-units']", "texts"), q("roi", "[data-hook='lb-roi']", "texts"),
+            q("bank", "[data-hook='lb-bankroll']", "texts"), q("ret", "[data-hook='lb-return']", "texts"),
             q("bets", "[data-hook='lb-bets']", "texts"), q("rec", "[data-hook='lb-record']", "texts"),
             q("links", ".lbname", "attrs", attr="href"), q("heads", "[data-hook='lb-board-table'] thead th", "texts"),
-            q("asof", "[data-hook='lb-asof']")])
+            q("asof", "[data-hook='lb-asof']"), q("note", "[data-hook='lb-bankroll-note']"),
+            q("title", ".lbpanel__title", "texts")])
         f = out["final"]
         self.assertEqual(len(f["ids"]), 5)
         self.assertEqual(f["ranks"], ["1", "2", "3", "4", "5"])
-        units = [float(u) for u in f["units"]]
-        self.assertEqual(units, sorted(units, reverse=True), "most units first")
-        self.assertTrue(all(re.fullmatch(r"[+-]\d+\.\d\d", u) for u in f["units"]))
-        self.assertTrue(all(re.fullmatch(r"[+-]\d+\.\d%", r) for r in f["roi"]), f["roi"])
+        self.assertTrue(all(re.fullmatch(r"\$[\d,]+", b) for b in f["bank"]), f["bank"])
+        balances = [int(b.replace("$", "").replace(",", "")) for b in f["bank"]]
+        self.assertEqual(balances, sorted(balances, reverse=True), "most dollars first")
+        self.assertTrue(all(re.fullmatch(r"[+-]\d+\.\d%", r) for r in f["ret"]), f["ret"])
         self.assertTrue(all(re.fullmatch(r"\d+-\d+(-\d+)?", r) for r in f["rec"]), f["rec"])
         self.assertTrue(all(b.isdigit() for b in f["bets"]))
         self.assertTrue(all(h.startswith("hound.html?id=") for h in f["links"]))
-        self.assertEqual(f["heads"], ["#", "Model", "Record", "Units", "ROI", "Bets"])
+        self.assertEqual(f["heads"], ["#", "Model", "Record", "Bankroll", "Return", "Bets"])
         self.assertFalse({"always-fave", "always-dog"} & set(f["ids"]))           # baselines are the leaderboard page's business
         self.assertEqual(f["asof"], "Data as of Oct 24")
+        self.assertEqual(f["note"], "Every model starts with the same $1,000 paper bankroll. 1 unit = $10.")
+        self.assertIn("Top models by bankroll", f["title"][0])
 
-    def test_roi_is_the_units_over_the_bets_of_the_row(self):
-        out = self.page(queries=[q("units", "[data-hook='lb-units']", "texts"), q("roi", "[data-hook='lb-roi']", "texts"),
-                                 q("bets", "[data-hook='lb-bets']", "texts")])
-        for u, r, b in zip(out["final"]["units"], out["final"]["roi"], out["final"]["bets"]):
-            self.assertEqual(r, f"{float(u) / int(b) * 100:+.1f}%")
+    def test_the_return_is_the_balance_over_the_shared_thousand_dollar_start(self):
+        # Never a per-bet yield: a model up $14 on a $1,000 account shows +1.4%, whatever its bet count.
+        out = self.page(queries=[q("bank", "[data-hook='lb-bankroll']", "texts"), q("ret", "[data-hook='lb-return']", "texts")])
+        self.assertEqual(len(out["final"]["bank"]), 5)
+        for bank, ret in zip(out["final"]["bank"], out["final"]["ret"]):
+            dollars = int(bank.replace("$", "").replace(",", ""))
+            self.assertAlmostEqual(float(ret.rstrip("%")), (dollars - 1000) / 10, delta=0.06, msg=(bank, ret))
+
+    def test_a_ranked_model_under_twenty_settled_bets_is_greyed_with_the_reason(self):
+        board = json.loads(json.dumps(F.leaderboard()))
+        row = next(h for h in board["hounds"] if h["id"] == "closer")
+        row["bankroll"]["small_sample"] = True
+        r = self.routes(**{"/hounds": [200, board]})
+        out = self.page(routes=r, queries=[
+            q("grey", "[data-hook='lb-bankroll'].lbtone--small", "count"),
+            q("title", "[data-hook='lb-return'].lbtone--small", "attrs", attr="title")])
+        self.assertEqual(out["final"]["grey"], 1)
+        self.assertTrue(out["final"]["title"][0].startswith("Small sample:"), out["final"]["title"])
 
     def test_the_latest_tickets_are_real_bets_with_a_status_word_and_a_refusal_is_not_one(self):
         out = self.page(queries=[q("n", "[data-hook='lb-ticket']", "count"), q("models", ".lbticket__model", "texts"),

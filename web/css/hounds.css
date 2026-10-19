@@ -498,6 +498,12 @@ a.hd-ticket__model:hover { text-decoration: underline; text-underline-offset: 3p
 .hd-kpi__small { color: var(--hd-mute); font-size: 12px; line-height: 1.3; }
 .hd-kpi--up .hd-kpi__big { color: var(--hd-good); }
 .hd-kpi--down .hd-kpi__big { color: var(--hd-bad); }
+.hd-oldrule { display: inline-block; margin-left: 6px; padding: 0 5px; border: 1px solid var(--hd-line); border-radius: 3px; color: var(--hd-mute); font-size: 11px; white-space: nowrap; cursor: help; }
+.hd-basis { display: block; color: var(--hd-mute); font-size: 11px; font-weight: 400; cursor: help; }
+.hd-kpitabs { display: flex; gap: 4px; margin: 2px 0; }
+.hd-kpitab { background: transparent; border: 1px solid var(--hd-line); border-radius: 3px; color: var(--hd-mute); font: inherit; font-size: 11px; padding: 1px 6px; cursor: pointer; }
+.hd-kpitab[aria-selected="true"] { color: #fff; border-color: var(--hd-text-2); background: var(--hd-card); }
+.hd-bankrollline { margin: 6px 0 0; font-size: 14px; font-weight: 600; color: var(--hd-text-2); }
 .hd-scoreboard { padding: 10px; }
 .hd-badgeline { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
 .hd-badgeline__explain { margin: 0; flex: 1 1 260px; font-size: 14px; color: var(--hd-text-2); }

@@ -12,7 +12,8 @@
  *     has one, is a single small italic line; nothing else from a persona is shown;
  *   - Follow, Share and Download card (a star kept in this browser; a link; a PNG);
  *   - the season toggle (Season 2 | Season 1 | All-time; the URL's ?season=, then localStorage, then Season 2) for
- *     the numbers below it, and the KPI strip: Units, ROI, Record, Bets, CLV, Streak, all for that season. The
+ *     the numbers below it, and the KPI strip: Bankroll (the $1,000 paper account now), Return (24h / 7d / 30d / Season tabs), Units, Record,
+ *     Max drawdown, Yield ("profit per $ bet", the old ROI), Bets, CLV, Streak, all for that season. The
  *     referee's status stays all-time and says so. Every figure is one the server sent, and a figure it
  *     did not send reads "n/a";
  *   - OPEN TICKETS (recorded, not yet graded and not stale; refreshed every minute while the tab is open),
@@ -38,8 +39,10 @@ import {
 } from "./hounds-core.js";
 import { unitsOf, causeText, personaOf } from "./hounds-voice.js";
 import {
-  NA, betsOf, roiOf, fmtRoi, fmtUnitsPlain, clvOf, statusOf, typeText, sportLabel, sportsOf, marketsText, recordText,
-  streakText, ungradedBetsOf,
+  NA, betsOf, fmtUnitsPlain, clvOf, statusOf, typeText, sportLabel, sportsOf, marketsText, recordText,
+  streakText, ungradedBetsOf, bankrollOf, bankrollRules, bankrollNow, windowOf, totalUnitsOf, yieldOf, drawdownOf,
+  isSmallSample, smallSampleTitle, settledOf, fmtUsd, fmtSignedUsd, fmtPct, WINDOW_LABELS, WINDOW_WORDS,
+  basisOf, basisWords,
 } from "./hounds-board.js";
 import { ticketTable } from "./hounds-tickets.js";
 import { ALL_SEASON, seasonOptions, chooseSeason, saveSeason, seasonParam } from "./hounds-season.js";
@@ -203,12 +206,73 @@ function kpi(slot, label, big, small, tone) {
   ]);
 }
 
+export const RETURN_TABS = ["h24", "d7", "d30", "season"];
+
+/**
+ * The Return tile: one big percent (profit as a share of the $1,000 start) with 24h / 7d / 30d / Season tabs.
+ * The tabs switch the figure in place; "Season" is the whole view the page is showing. A window with no settled
+ * bet says so ("n/a") instead of a flat 0.0%.
+ */
+function returnTile(hound) {
+  const tone = (n) => (n === null ? "plain" : n > 0 ? "up" : n < 0 ? "down" : "plain");
+  const tile = h("div", { class: "hd-kpi hd-kpi--plain", "data-slot": "return" });
+  const big = h("span", { class: "hd-kpi__big hd-num", "data-count": "1", "data-hook": "return-big" });
+  const small = h("span", { class: "hd-kpi__small", "data-hook": "return-small" });
+  const bar = h("div", { class: "hd-kpitabs", role: "tablist", "aria-label": "Return window", "data-hook": "return-tabs" });
+  const show = (key) => {
+    const w = windowOf(hound, key);
+    const has = !!w && w.bets > 0;
+    big.textContent = has ? fmtPct(w.pct) : NA;
+    small.textContent = !w ? "nothing graded yet"
+      : has ? `${fmtSignedUsd(w.pnl, true)} from ${w.bets} graded ${w.bets === 1 ? "bet" : "bets"} settled in ${WINDOW_WORDS[key]}`
+        : `no bet settled in ${WINDOW_WORDS[key]}`;
+    tile.setAttribute("class", `hd-kpi hd-kpi--${tone(has ? w.pct : null)}`);
+    for (const b of bar.children) b.setAttribute("aria-selected", b.getAttribute("data-window") === key ? "true" : "false");
+    tile.setAttribute("data-window", key);
+  };
+  for (const key of RETURN_TABS) {
+    bar.appendChild(h("button", { type: "button", role: "tab", class: "hd-kpitab", "data-window": key,
+      "data-hook": `return-tab-${key}`, "aria-selected": "false", on: { click: () => show(key) } }, WINDOW_LABELS[key]));
+  }
+  tile.appendChild(h("span", { class: "hd-kpi__label", text: "Return" }));
+  tile.appendChild(bar);
+  tile.appendChild(big);
+  tile.appendChild(small);
+  show("season");
+  return tile;
+}
+
+/** The money tiles (bankroll, units, drawdown, yield): everything the server worked out in `hound.bankroll`. */
+function bankrollTiles(hound) {
+  const b = bankrollOf(hound);
+  const rules = bankrollRules(hound);
+  const toneOf = (n) => (n === null ? "plain" : n > 0 ? "up" : n < 0 ? "down" : "plain");
+  const now = bankrollNow(hound);
+  const units = totalUnitsOf(hound);
+  const dd = drawdownOf(hound);
+  const yld = yieldOf(hound);
+  const small = isSmallSample(hound);
+  const stake = b && Number.isFinite(b.avg_stake_units) ? b.avg_stake_units : 1;
+  const ret = b ? b.return_pct : null;
+  return {
+    bankroll: kpi("bankroll", "Bankroll", fmtUsd(now, true),
+      now === null || b.bets <= 0 ? "nothing graded yet" : `from ${fmtUsd(rules.start)}${b.peak > now ? `, peak ${fmtUsd(b.peak, true)}` : ""}${small ? ". Small sample." : ""}`
+        + (basisOf(hound) ? `. Settled ${basisWords(hound)}.` : ""),
+      toneOf(ret)),
+    units: kpi("units", "Units", units === null ? NA : fmtUnitsPlain(units),
+      units === null ? "nothing graded yet"
+        : `1 unit = ${fmtUsd(rules.unit)}${stake !== 1 ? `; this model bets ${stake} units a bet` : ""}`, toneOf(units)),
+    drawdown: kpi("drawdown", "Max drawdown", dd ? fmtUsd(dd.usd, true) : NA,
+      dd ? (dd.usd === 0 ? "never below a previous high" : `${dd.pct === null ? "" : `${dd.pct.toFixed(1)}% `}below the peak at its worst`) : "nothing graded yet"),
+    yield: kpi("yield", "Yield", fmtPct(yld), yld === null ? "" : "profit per $ bet", toneOf(yld)),
+  };
+}
+
 export function renderScoreboard(hound) {
   const box = q("hound-scoreboard");
   clearNode(box);
   const bets = betsOf(hound);
-  const units = unitsOf(hound);
-  const roi = roiOf(hound);
+  const money = bankrollTiles(hound);
   const clv = clvOf(hound);
   const rec = hound.record || {};
   const toneOf = (n) => (n === null ? "plain" : n > 0 ? "up" : n < 0 ? "down" : "plain");
@@ -219,10 +283,12 @@ export function renderScoreboard(hound) {
     : "no bet has a measurable closing price yet";
   const streak = streakText(hound);
   box.appendChild(h("div", { class: "hd-kpis", "data-hook": "scoreboard-tiles" }, [
-    kpi("units", "Units", units === null ? NA : fmtUnitsPlain(units),
-      units === null ? "nothing graded yet" : `${AVERAGE_PRICE_WORDS}; ${fmtUnitsPlain(rec.units_recorded_price)} at ${BEST_PRICE_WORDS}`, toneOf(units)),
-    kpi("roi", "ROI", fmtRoi(roi), roi === null ? "" : "units per bet", toneOf(roi)),
+    money.bankroll,
+    returnTile(hound),
+    money.units,
     kpi("record", "Record", recordText(hound), bets > 0 ? "wins-losses" + (rec.pushes ? "-pushes" : "") : "no graded bets"),
+    money.drawdown,
+    money.yield,
     kpi("bets", "Bets", String(bets), [open > 0 ? `${open} open` : "", ungraded > 0 ? `${ungraded} ungraded` : ""].filter(Boolean).join(", ")
       || (bets < 100 && bets > 0 ? "small sample" : "")),
     kpi("clv", "CLV", clvBig, clvSmall),
@@ -332,27 +398,26 @@ export function renderCharts() {
   const title = q("hound-chart-title");
   const pts = pointsFor(state.series, state.id, "forward");
   const hasPoints = pts.length > 0 || hasForwardData(state.series);
+  const rules = bankrollRules(state.hound);
   title.textContent = hasPoints
-    ? "Live bets only: placed after the rule was written. Cumulative units, one unit a bet."
+    ? `Live bets only: placed after the rule was written. The paper account in dollars, from the shared ${fmtUsd(rules.start)} start (1 unit = ${fmtUsd(rules.unit)}).`
     : "No graded live bets yet, so there is nothing to draw. A rehearsal result is never drawn here.";
   const width = chartWidth(units);
+  // The server's balance after each slate day. The chart draws dollars ABOVE the start, so its zero line is the
+  // starting bankroll, and words every tick and tooltip as the balance (hounds-chart.js `offset`).
+  const balance = toChartPoints(pts, "bankroll_usd").map((p) => ({ ...p, value: p.value - rules.start }));
   units.appendChild(renderLineChart({
     hook: "units-chart",
-    series: [
-      { id: "avg", name: "Average price", color: AVG_COLOR, points: toChartPoints(pts, "cum_units_average_price") },
-      { id: "best", name: "Best price", color: BEST_COLOR, points: toChartPoints(pts, "cum_units_recorded_price") },
-    ],
-    dashes: [undefined, "7 4"], width, height: width < 480 ? 240 : 300, unit: "units",
-    label: "Cumulative units, live bets, at the average price and at the best price",
-    zeroLabel: "0 units",
+    series: [{ id: "bankroll", name: "Bankroll", color: houndColor(state.hound || {}), points: balance }],
+    width, height: width < 480 ? 240 : 300, unit: "usd", offset: rules.start,
+    label: `Paper bankroll in dollars, live bets, from ${fmtUsd(rules.start)}`,
+    zeroLabel: `${fmtUsd(rules.start)} start`,
     emptyText: hasPoints ? "No graded bets to draw yet." : "No graded live bets yet.",
   }));
-  units.appendChild(h("ul", { class: "hd-legend hd-legend--static" }, [
-    h("li", {}, [h("span", { class: "hd-tip__swatch", style: `background:${AVG_COLOR}` }),
-      " Average price: the mean price across books when the bet was placed (the headline)"]),
-    h("li", {}, [h("span", { class: "hd-tip__swatch", style: `background:${BEST_COLOR}` }),
-      " Best price: the single best quote recorded when the bet was placed"]),
-  ]));
+  units.appendChild(h("p", { class: "hd-fine", "data-hook": "chart-basis",
+    text: `Bets are settled ${basisWords(state.hound) || "at the average price across books"}.${
+      basisOf(state.hound) === "recorded_price" ? " This model's average-price board is missing for more than 10% of its bets, so it is settled at the price it took; other models are settled at the average price." : ""
+    } A member's model counts the units its owner chose.` }));
   clv.appendChild(h("h3", { class: "hd-h3", text: "CLV, running average" }));
   clv.appendChild(renderLineChart({
     hook: "clv-chart",

@@ -505,7 +505,7 @@ class GradedLikeTheCoach(unittest.TestCase):
         ev = events[0]
         units, n = first["units_diff"], first["n_paired"]
         self.assertEqual(ev["title"], f"\U0001F436 Fan tip paid off: Ann's tweak to Fake Dog is beating the dog "
-                                      f"(+{units:.1f}u, {n} bets)")
+                                      f"(+{units:.1f}u = +${units * 10:,.0f} paper, {n} bets)")
         self.assertEqual(ev["guid"], "kennel:fan_tip:tip_00000000a1")
         self.assertEqual(ev["pub"].isoformat().replace("+00:00", "Z"), first["utc"])
         self.assertEqual(ev["kind"], "fan_tip")

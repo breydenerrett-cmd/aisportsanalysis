@@ -180,25 +180,35 @@ class TheLeaderboardTable(unittest.TestCase):
         out = self.page(queries=[q("sorts", "[data-hook='leaderboard-table'] thead [data-sort]", "attrs", attr="data-sort"),
                                  q("heads", "[data-hook='leaderboard-table'] thead th", "texts"),
                                  q("aria", "[data-hook='leaderboard-table'] thead th", "attrs", attr="aria-sort")])
-        self.assertEqual(out["final"]["sorts"], ["model", "type", "record", "units", "roi", "bets", "price", "clv", "last10", "status"])
+        self.assertEqual(out["final"]["sorts"], ["model", "type", "record", "bankroll", "return", "d7", "h24", "units", "bets",
+                                                 "price", "clv", "last10", "status"])
         heads = [re.sub(r"\s*[▲▼]", "", t) for t in out["final"]["heads"]]
-        self.assertEqual(heads, ["#", "Model", "Type", "Record", "Units", "ROI", "Bets", "Avg price", "CLV", "Last 10", "Status"])
-        # the default sort is units, high to low, and the header says so
+        self.assertEqual(heads, ["#", "Model", "Type", "Record", "Bankroll", "Return", "7d", "24h", "Units", "Bets", "Avg price",
+                                 "CLV", "Last 10", "Status"])
+        # the default sort is the bankroll, high to low, and the header says so; there is no ROI column any more
+        self.assertNotIn("ROI", heads)
         self.assertEqual(out["final"]["aria"][4], "descending")
-        self.assertEqual([a for i, a in enumerate(out["final"]["aria"]) if i != 4], [None] + ["none"] * 9)
+        self.assertEqual([a for i, a in enumerate(out["final"]["aria"]) if i != 4], [None] + ["none"] * 12)
 
-    def test_rows_default_to_units_high_to_low_and_show_record_units_roi_bets_price(self):
+    def test_rows_default_to_bankroll_high_to_low_and_show_record_money_units_bets_price(self):
         out = self.page(queries=[
             q("ids", self.ROW, "attrs", attr="data-hound"), q("units", f"{self.ROW} [data-hook='row-units']", "texts"),
-            q("roi", f"{self.ROW} [data-hook='row-roi']", "texts"), q("bets", f"{self.ROW} [data-hook='row-bets']", "texts"),
+            q("bank", f"{self.ROW} [data-hook='row-bankroll']", "texts"), q("ret", f"{self.ROW} [data-hook='row-return']", "texts"),
+            q("d7", f"{self.ROW} [data-hook='row-d7']", "texts"), q("h24", f"{self.ROW} [data-hook='row-h24']", "texts"),
+            q("bets", f"{self.ROW} [data-hook='row-bets']", "texts"),
             q("price", f"{self.ROW} [data-hook='row-price']", "texts"), q("record", f"{self.ROW} [data-hook='row-record']", "texts")])
         f = out["final"]
-        want = sorted(self.graded(), key=lambda h: (-h["record"]["units_average_price"], -h["record"]["bets"], h["name"]))
+        want = sorted(self.graded(), key=lambda h: (-h["bankroll"]["current"], -h["record"]["bets"], h["name"]))
         self.assertEqual(f["ids"], [h["id"] for h in want])
-        self.assertEqual(f["units"], [f"{h['record']['units_average_price']:+.2f}" for h in want])
+        self.assertEqual(f["units"], [f"{h['bankroll']['units_total']:+.2f}" for h in want])
         self.assertEqual(f["bets"], [str(h["record"]["bets"]) for h in want])
-        for h, roi in zip(want, f["roi"]):
-            self.assertEqual(roi, f"{h['record']['units_average_price'] / h['record']['bets'] * 100:+.1f}%")
+        for h, bank, ret in zip(want, f["bank"], f["ret"]):
+            self.assertTrue(bank.startswith(f"${h['bankroll']['current']:,.0f}"), bank)
+            self.assertEqual(ret, f"{h['bankroll']['return_pct']:+.1f}%")
+            # the owner's complaint: units and % must agree. One unit is $10 of the $1,000, so 1u = 1.0%.
+            self.assertAlmostEqual(h["bankroll"]["return_pct"], h["bankroll"]["units_total"], delta=0.01)
+        for h, w7 in zip(want, f["d7"]):
+            self.assertEqual(w7, f"{h['bankroll']['windows']['d7']['return_pct']:+.1f}%")
         for h, price in zip(want, f["price"]):
             self.assertEqual(price, f"{h['form']['avg_price']}")                    # an American price, as the server sent it
         for h, rec in zip(want, f["record"]):
@@ -215,7 +225,7 @@ class TheLeaderboardTable(unittest.TestCase):
         desc = out["captures"]["bets"]["ids"]
         bets = [by[i]["record"]["bets"] for i in desc]
         self.assertEqual(bets, sorted(bets, reverse=True))
-        self.assertEqual(out["captures"]["bets"]["aria"][6], "descending")
+        self.assertEqual(out["captures"]["bets"]["aria"][9], "descending")
         asc = [by[i]["record"]["bets"] for i in out["captures"]["bets_again"]["ids"]]
         self.assertEqual(asc, sorted(asc))
         names = [by[i]["name"].lower() for i in out["captures"]["model"]["ids"]]
@@ -450,11 +460,11 @@ class TheRetiredTable(unittest.TestCase):
             q("names", "[data-hook='grave-list'] .hd-modelname", "texts"),
             q("rec", "[data-hook='grave-list'] tbody tr", "texts"), q("cause", "[data-hook='grave-cause']", "texts"),
             q("heads", "[data-hook='grave-list'] thead th", "texts")])
-        self.assertEqual(out["final"]["heads"], ["Model", "Final record", "Units", "Reason", "Date"])
+        self.assertEqual(out["final"]["heads"], ["Model", "Final record", "Final bankroll", "Reason", "Date"])
         self.assertEqual(out["final"]["names"], ["Old Faithful", "Slowpoke"])
         self.assertEqual(out["final"]["cause"], ["Retired by the owner.", "Went more than 25 units under."])
         self.assertIn("205-263 (468 bets)", out["final"]["rec"][1])
-        self.assertIn("-36.20", out["final"]["rec"][1])
+        self.assertIn("$638 (-36.2%)", out["final"]["rec"][1])
         self.assertIn("Oct 14", out["final"]["rec"][1])
         # no tombstones, no epitaphs, no R.I.P.
         for word in ("R.I.P.", "Cause of death", "epitaph", "tomb"):
@@ -627,16 +637,25 @@ class TheModelPage(unittest.TestCase):
         self.assertEqual(out["final"]["catch"], 0)
         self.assertEqual(out["final"]["name"], "Steamer")
 
-    def test_the_kpi_strip_is_units_roi_record_bets_clv_streak(self):
+    def test_the_kpi_strip_is_bankroll_return_units_record_drawdown_yield_bets_clv_streak(self):
         out = self.page(queries=[q("slots", "[data-hook='scoreboard-tiles'] .hd-kpi", "attrs", attr="data-slot"),
-                                 q("units", ".hd-kpi[data-slot='units']"), q("roi", ".hd-kpi[data-slot='roi'] .hd-kpi__big"),
+                                 q("units", ".hd-kpi[data-slot='units']"), q("bank", ".hd-kpi[data-slot='bankroll']"),
+                                 q("yield", ".hd-kpi[data-slot='yield']"), q("dd", ".hd-kpi[data-slot='drawdown']"),
+                                 q("ret", ".hd-kpi[data-slot='return'] [data-hook='return-big']"),
                                  q("record", ".hd-kpi[data-slot='record']"), q("bets", ".hd-kpi[data-slot='bets']"),
                                  q("clv", ".hd-kpi[data-slot='clv']"), q("streak", ".hd-kpi[data-slot='streak']")])
         f = out["final"]
         h = F.hounds()[0]
-        self.assertEqual(f["slots"], ["units", "roi", "record", "bets", "clv", "streak"])
-        self.assertRegex(f["units"], r"Units [+-]\d+\.\d\d average price; [+-]\d+\.\d\d at best price")
-        self.assertEqual(f["roi"], f"{h['record']['units_average_price'] / h['record']['bets'] * 100:+.1f}%")
+        self.assertEqual(f["slots"], ["bankroll", "return", "units", "record", "drawdown", "yield", "bets", "clv", "streak"])
+        b = h["bankroll"]
+        self.assertRegex(f["units"], r"Units [+-]?\d+\.\d\d 1 unit = \$10")
+        self.assertIn(f"${b['current']:,.2f}", f["bank"])
+        self.assertIn("from $1,000", f["bank"])
+        self.assertEqual(f["ret"], f"{b['return_pct']:+.1f}%")                    # the season tab is the default
+        # the yield tile is the old ROI, labelled for what it is
+        self.assertIn(f"{b['yield_pct']:+.1f}%", f["yield"])
+        self.assertIn("profit per $ bet", f["yield"])
+        self.assertIn(f"${b['max_drawdown_usd']:,.2f}", f["dd"])
         self.assertRegex(f["record"], r"Record \d+-\d+-1 wins-losses-pushes")
         self.assertIn("Bets 41 2 open", f["bets"])
         self.assertIn("% beat", f["clv"])
@@ -645,11 +664,13 @@ class TheModelPage(unittest.TestCase):
 
     def test_a_model_with_no_graded_bets_shows_n_a_in_the_strip_not_zeroes(self):
         out = run_page("hound", routes=routes(**ticket_routes("night-owl")), search="?id=night-owl", queries=[
-            q("units", ".hd-kpi[data-slot='units'] .hd-kpi__big"), q("roi", ".hd-kpi[data-slot='roi'] .hd-kpi__big"),
+            q("units", ".hd-kpi[data-slot='units'] .hd-kpi__big"), q("roi", ".hd-kpi[data-slot='yield'] .hd-kpi__big"),
+            q("ret", ".hd-kpi[data-slot='return'] .hd-kpi__big"), q("dd", ".hd-kpi[data-slot='drawdown'] .hd-kpi__big"),
             q("clv", ".hd-kpi[data-slot='clv'] .hd-kpi__big"), q("streak", ".hd-kpi[data-slot='streak'] .hd-kpi__big"),
             q("record", ".hd-kpi[data-slot='record'] .hd-kpi__big")])
         f = out["final"]
         self.assertEqual((f["units"], f["roi"], f["clv"], f["streak"]), ("n/a", "n/a", "n/a", "n/a"))
+        self.assertEqual((f["ret"], f["dd"]), ("n/a", "n/a"))
         self.assertEqual(f["record"], "0-0")
 
     def test_open_and_graded_tickets_are_two_server_filtered_tables(self):
@@ -802,7 +823,7 @@ class TheModelPage(unittest.TestCase):
         self.assertTrue(out["final"]["rule"])
         self.assertEqual(out["final"]["open"], 2)
 
-    def test_the_chart_has_the_two_price_lines_and_a_clv_panel_each_with_a_zero_line(self):
+    def test_the_chart_is_the_bankroll_in_dollars_and_a_clv_panel_each_with_a_zero_line(self):
         out = self.page(queries=[
             q("units_zero", "[data-hook='hound-units-chart'] [data-hook='chart-zero']", "count"),
             q("clv_zero", "[data-hook='hound-clv-chart'] [data-hook='chart-zero']", "count"),
@@ -810,7 +831,7 @@ class TheModelPage(unittest.TestCase):
             q("clv_lines", "[data-hook='hound-clv-chart'] .hd-line", "attrs", attr="data-line"),
             q("clv_label", "[data-hook='hound-clv-chart'] .hd-chart__svg", "attr", attr="aria-label")])
         self.assertEqual((out["final"]["units_zero"], out["final"]["clv_zero"]), (1, 1))
-        self.assertEqual(out["final"]["units_lines"], ["avg", "best"])
+        self.assertEqual(out["final"]["units_lines"], ["bankroll"])
         self.assertEqual(out["final"]["clv_lines"], ["clv"])
         self.assertIn("closing price", out["final"]["clv_label"])
         self.assertFalse([g for g in out["gets"] if g.startswith("/hounds/series")])

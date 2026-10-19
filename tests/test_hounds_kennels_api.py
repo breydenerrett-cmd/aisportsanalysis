@@ -139,7 +139,16 @@ class NothingAboutTheAccountLeaves(KennelCase):
     def test_a_dog_entry_has_only_the_public_fields(self):
         dog = kennels.kennel_detail(self.jacob_handle)["dogs"][0]
         self.assertEqual(set(dog), {"id", "name", "tagline", "status", "version_no", "look", "sports", "record", "settled",
-                                    "open_bets", "new", "last_pick", "page_href"})
+                                    "open_bets", "new", "last_pick", "page_href", "bankroll"})
+
+    def test_every_dog_carries_its_paper_account_even_a_dog_with_no_bet(self):
+        for dog in kennels.kennel_detail(self.jacob_handle)["dogs"]:
+            b = dog["bankroll"]
+            self.assertIsNotNone(b, dog["id"])
+            self.assertEqual((b["start"], b["unit_usd"]), (1000.0, 10.0))
+            if dog["new"]:
+                self.assertEqual((b["current"], b["return_pct"], b["bets"]), (1000.0, 0.0, 0))
+            self.assertEqual(b["current"], round(1000.0 + b["pnl_usd"], 2))
 
 
 @unittest.skipUnless(HAS_FASTAPI, "fastapi not installed")

@@ -16,19 +16,27 @@
 import {
   h, s, clearNode, layoutChart, layoutSparkline, nearestDay, valuesAtDay, shortDate, signed, isNum,
 } from "./hounds-core.js";
+import { fmtUsd, fmtSignedUsd } from "./hounds-board.js";
 
-function fmtValue(v, unit) {
+/**
+ * "usd": the value is paper dollars ABOVE the shared start (`offset`, $1,000), so the zero baseline is the start;
+ * the words are the balance, with the gain or loss beside it: "$1,023.40 (+$23.40)".
+ */
+function fmtValue(v, unit, offset = 0) {
+  if (unit === "usd") return `${fmtUsd(v + offset, true)} (${fmtSignedUsd(v, true)})`;
   return unit === "pts" ? `${signed(v, 2)} pts` : `${signed(v, 2)}u`;
 }
 
+const UNIT_WORDS = { pts: "points", usd: "dollars", units: "units" };
+
 /** The hidden table: one row per date, one column per line. Same numbers as the picture. */
-export function dataTable(layout, { caption, unit }) {
+export function dataTable(layout, { caption, unit, offset = 0 }) {
   const head = h("tr", {}, [h("th", { scope: "col", text: "Date" }),
-    ...layout.lines.map((l) => h("th", { scope: "col", text: `${l.name} (${unit === "pts" ? "points" : "units"})` }))]);
+    ...layout.lines.map((l) => h("th", { scope: "col", text: `${l.name} (${UNIT_WORDS[unit] || "units"})` }))]);
   const rows = layout.days.map((day) => {
     const cells = layout.lines.map((l) => {
       const hit = l.points.find((p) => p.day === day);
-      return h("td", { text: hit ? fmtValue(hit.value, unit) + (isNum(hit.bets) ? `, ${hit.bets} settled` : "") : "-" });
+      return h("td", { text: hit ? fmtValue(hit.value, unit, offset) + (isNum(hit.bets) ? `, ${hit.bets} settled` : "") : "-" });
     });
     return h("tr", {}, [h("th", { scope: "row", text: shortDate(day) }), ...cells]);
   });
@@ -37,7 +45,7 @@ export function dataTable(layout, { caption, unit }) {
 }
 
 /**
- * opts: { series:[{id,name,color,points:[{date,value,bets}]}], width, height, unit:"units"|"pts",
+ * opts: { series:[{id,name,color,points:[{date,value,bets}]}], width, height, unit:"units"|"pts"|"usd", offset,
  *         label, zeroLabel, emptyText, dashes }
  * Returns a <figure>. An empty series set draws an honest empty frame and says so in words.
  */
@@ -45,7 +53,9 @@ export function renderLineChart(opts) {
   const unit = opts.unit || "units";
   const width = opts.width || 640;
   const height = opts.height || 280;
-  const layout = layoutChart(opts.series || [], { width, height });
+  const offset = Number.isFinite(opts.offset) ? opts.offset : 0;
+  const layout = layoutChart(opts.series || [], { width, height,
+    tickLabel: unit === "usd" ? (v) => fmtUsd(v + offset) : undefined });
   const figure = h("figure", { class: "hd-chart", "data-hook": opts.hook || "chart" });
   const tip = h("div", { class: "hd-tip", hidden: true, "aria-hidden": "true", "data-hook": "chart-tooltip" });
 
@@ -111,7 +121,7 @@ export function renderLineChart(opts) {
   figure.appendChild(svg);
   figure.appendChild(tip);
   if (opts.caption) figure.appendChild(h("figcaption", { class: "hd-chart__caption", text: opts.caption }));
-  figure.appendChild(dataTable(layout, { caption: opts.label, unit }));
+  figure.appendChild(dataTable(layout, { caption: opts.label, unit, offset }));
 
   let day = null;
   function show(d) {
@@ -133,7 +143,7 @@ export function renderLineChart(opts) {
       tip.appendChild(h("p", { class: "hd-tip__row" }, [
         h("span", { class: "hd-tip__swatch", style: `background:${r.color}` }),
         h("span", { class: "hd-tip__name", text: r.name }),
-        h("span", { class: "hd-tip__val", text: fmtValue(r.value, unit) }),
+        h("span", { class: "hd-tip__val", text: fmtValue(r.value, unit, offset) }),
         h("span", { class: "hd-tip__bets", text: isNum(r.bets) ? `${r.bets} settled` : "" }),
       ]));
     }

@@ -443,16 +443,16 @@ class TheDigestNamesRankedModelsWhenThereAreAny(unittest.TestCase):
         hounds = [d_hound("a", "Newcomer", 3, 0, 4.5, False), d_hound("b", "Veteran", 8, 5, 2.0, True),
                   d_hound("c", "Slump", 2, 9, -6.0, True), d_hound("d", "Rookie Cold", 0, 3, -3.0, False)]
         post = digest_mod.build_post({"hounds": hounds, "as_of": "2026-10-30"})
-        self.assertIn("Hottest dog: Veteran 8-5 season, +2.0u", post)
-        self.assertIn("Ice cold: Slump 2-9 season, -6.0u", post)
+        self.assertIn("Hottest dog: Veteran 8-5 season, +2.0% (+$20 paper)", post)
+        self.assertIn("Ice cold: Slump 2-9 season, -6.0% (-$60 paper)", post)
         self.assertNotIn("Newcomer", post)
         self.assertNotIn("Rookie Cold", post)
 
     def test_with_nobody_ranked_the_whole_race_is_considered_as_before(self):
         hounds = [d_hound("a", "Newcomer", 3, 0, 4.5, False), d_hound("d", "Rookie Cold", 0, 3, -3.0, False)]
         post = digest_mod.build_post({"hounds": hounds, "as_of": "2026-10-20"})
-        self.assertIn("Hottest dog: Newcomer 3-0 season, +4.5u", post)
-        self.assertIn("Ice cold: Rookie Cold 0-3 season, -3.0u", post)
+        self.assertIn("Hottest dog: Newcomer 3-0 season, +4.5% (+$45 paper)", post)
+        self.assertIn("Ice cold: Rookie Cold 0-3 season, -3.0% (-$30 paper)", post)
 
     def test_an_old_payload_with_no_ranked_flag_behaves_as_it_always_did(self):
         hounds = [{k: v for k, v in d_hound("a", "Old Faithful", 5, 2, 3.0, True).items() if k != "ranked"}]
@@ -462,7 +462,7 @@ class TheDigestNamesRankedModelsWhenThereAreAny(unittest.TestCase):
         hounds = [d_hound("a", "Newcomer", 3, 0, 4.5, False), d_hound("b", "Veteran", 8, 5, 2.0, True)]
         window = {"a": {"wins": 3, "losses": 0, "units": 3.0}, "b": {"wins": 4, "losses": 2, "units": 1.0}}
         post = digest_mod.build_post({"hounds": hounds, "as_of": "2026-10-30"}, window=window)
-        self.assertIn("Hottest dog: Veteran 4-2 last 7 days, +1.0u", post)
+        self.assertIn("Hottest dog: Veteran 4-2 last 7 days, +1.0% (+$10 paper)", post)
 
 
 if __name__ == "__main__":
