@@ -7405,3 +7405,6 @@ end-to-end confirmation (above).
 - 2026-10-19T16:52Z daily_loop: research-readiness exit=0
 - 2026-10-19T16:53Z daily_loop: prereg-clv exit=0
 - 2026-10-19T16:54Z daily_loop: display stores refreshed (report /tmp/display_refresh_report.json)
+- 2026-10-19T17:08Z afternoon_slate: engine slate --date 2026-10-19 exit=0
+- 2026-10-19T17:08Z afternoon_slate: card publish --date 2026-10-19 exit=0
+- 2026-10-19T17:08Z afternoon_slate: engine slip --date 2026-10-19
