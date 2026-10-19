@@ -102,42 +102,49 @@ function headShapes(look) {
 }
 
 /** The badge as an SVG element. `size` is the pixel width and height. */
-export function dogBadge(rawLook, { size = 56, label = "", decorative = true } = {}) {
+export function dogBadge(rawLook, { size = 56, label = "", decorative = true, mood = "idle" } = {}) {
   const look = cleanLook(rawLook);
   const coat = COATS[look.coat];
   const [bgA, bgB] = BACKGROUNDS[look.bg];
   const gradId = `dk-bg-${++uid}`;
-  const kids = [
-    s("defs", {}, [s("linearGradient", { id: gradId, x1: 0, y1: 0, x2: 0, y2: 1 }, [
-      s("stop", { offset: "0", "stop-color": bgA }), s("stop", { offset: "1", "stop-color": bgB })])]),
-    s("rect", { x: 0.5, y: 0.5, width: 79, height: 79, rx: 14, fill: `url(#${gradId})`, stroke: "rgba(255,255,255,.14)" }),
-    ...bodyShapes(look, coat),
+  // The head, the eyes and the body are separate groups so CSS can move them (css/lh.css: a slow bob, a blink, a happy
+  // wiggle, a slump). No script runs the motion, and prefers-reduced-motion switches it off.
+  const eyes = s("g", { class: "dk-eyes" }, [
+    s("circle", { cx: 31, cy: 35, r: 4, fill: "#F7F8FA" }), s("circle", { cx: 49, cy: 35, r: 4, fill: "#F7F8FA" }),
+    s("circle", { cx: 31.4, cy: 35.4, r: 2.9, fill: EYES[look.eyes] }), s("circle", { cx: 49.4, cy: 35.4, r: 2.9, fill: EYES[look.eyes] }),
+    s("circle", { cx: 31.6, cy: 35.6, r: 1.3, fill: "#0B0C0E" }), s("circle", { cx: 49.6, cy: 35.6, r: 1.3, fill: "#0B0C0E" }),
+    s("circle", { cx: 32.4, cy: 34.4, r: .8, fill: "#fff" }), s("circle", { cx: 50.4, cy: 34.4, r: .8, fill: "#fff" })]);
+  const headKids = [
     // ears behind the head, then the head, the muzzle, the nose and mouth
-    s("path", { d: "M21 25 C9 27 7 45 13 54 C20 56 26 47 27 36 Z", fill: coat.shade }),
-    s("path", { d: "M59 25 C71 27 73 45 67 54 C60 56 54 47 53 36 Z", fill: coat.shade }),
+    s("path", { class: "dk-ear dk-ear--l", d: "M21 25 C9 27 7 45 13 54 C20 56 26 47 27 36 Z", fill: coat.shade }),
+    s("path", { class: "dk-ear dk-ear--r", d: "M59 25 C71 27 73 45 67 54 C60 56 54 47 53 36 Z", fill: coat.shade }),
     s("path", { d: "M40 12 C57 12 66 25 65 40 C64 54 54 62 40 62 C26 62 16 54 15 40 C14 25 23 12 40 12 Z", fill: coat.base }),
     s("ellipse", { cx: 40, cy: 49, rx: 14, ry: 11, fill: coat.light }),
     s("ellipse", { cx: 40, cy: 43.5, rx: 5.2, ry: 3.8, fill: "#12151A" }),
     s("path", { d: "M40 47 V51 M34 52 Q40 57 46 52", stroke: "#12151A", "stroke-width": 1.5, fill: "none", "stroke-linecap": "round" }),
-    s("circle", { cx: 31, cy: 35, r: 4, fill: "#F7F8FA" }), s("circle", { cx: 49, cy: 35, r: 4, fill: "#F7F8FA" }),
-    s("circle", { cx: 31.4, cy: 35.4, r: 2.9, fill: EYES[look.eyes] }), s("circle", { cx: 49.4, cy: 35.4, r: 2.9, fill: EYES[look.eyes] }),
-    s("circle", { cx: 31.6, cy: 35.6, r: 1.3, fill: "#0B0C0E" }), s("circle", { cx: 49.6, cy: 35.6, r: 1.3, fill: "#0B0C0E" }),
-    s("circle", { cx: 32.4, cy: 34.4, r: .8, fill: "#fff" }), s("circle", { cx: 50.4, cy: 34.4, r: .8, fill: "#fff" }),
+    eyes,
   ];
   if (look.face === "sunglasses") {
-    kids.push(
+    headKids.push(
       s("path", { d: "M22 33 H58", stroke: "#0B0C0E", "stroke-width": 1.8, "stroke-linecap": "round" }),
       s("rect", { x: 23.5, y: 30.5, width: 14.5, height: 10, rx: 4, fill: "#0B0C0E" }),
       s("rect", { x: 42, y: 30.5, width: 14.5, height: 10, rx: 4, fill: "#0B0C0E" }),
       s("path", { d: "M26 33 L30 33 M44.5 33 L48.5 33", stroke: "rgba(255,255,255,.55)", "stroke-width": 1.4, "stroke-linecap": "round" }));
   }
-  kids.push(...headShapes(look));
+  headKids.push(...headShapes(look));
+  const kids = [
+    s("defs", {}, [s("linearGradient", { id: gradId, x1: 0, y1: 0, x2: 0, y2: 1 }, [
+      s("stop", { offset: "0", "stop-color": bgA }), s("stop", { offset: "1", "stop-color": bgB })])]),
+    s("rect", { x: 0.5, y: 0.5, width: 79, height: 79, rx: 14, fill: `url(#${gradId})`, stroke: "rgba(255,255,255,.14)" }),
+    s("g", { class: "dk-body" }, bodyShapes(look, coat)),
+    s("g", { class: "dk-head" }, headKids),
+  ];
   if (look.neck === "chain") {
     kids.push(
       s("path", { d: "M25 61 Q40 73 55 61", stroke: GOLD, "stroke-width": 2.4, fill: "none", "stroke-dasharray": "3.2 1.4", "stroke-linecap": "round" }),
       s("circle", { cx: 40, cy: 69, r: 3.4, fill: GOLD, stroke: "#8A6A1F", "stroke-width": .8 }));
   }
-  const attrs = { class: "dk-badge", viewBox: "0 0 80 80", width: size, height: size, focusable: "false",
+  const attrs = { class: "dk-badge", viewBox: "0 0 80 80", width: size, height: size, focusable: "false", "data-mood": mood,
     "data-coat": look.coat, "data-bg": look.bg, "data-head": look.head, "data-face": look.face, "data-neck": look.neck,
     "data-body": look.body };
   if (decorative) attrs["aria-hidden"] = "true"; else { attrs.role = "img"; attrs["aria-label"] = label || "Dog badge"; }

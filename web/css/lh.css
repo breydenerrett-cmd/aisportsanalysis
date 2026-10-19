@@ -1,0 +1,283 @@
+/*
+ * THE MINIMAL SKIN for the model pages (leaderboard, kennels, dog page, builder, training camp). Loaded LAST, after
+ * hounds.css / dog-kit.css / builder.css, and written as overrides so nothing those files promise (every data-hook, every
+ * state) changes: this file only calms the look.
+ *
+ * Owner, 2026-10-19: "less AI slop everywhere and more minimalism feel and more fun animated UI".
+ *   - one accent colour (green); red and green stay only on numbers and results, with their words and signs
+ *   - fewer boxes: sections are separated by space and one hairline, not by bordered cards
+ *   - a calm type scale (12 / 13 / 15 / 17 / 24 / 34), one family, no uppercase display headings
+ *   - motion that means something: rows rise in once, numbers count up when they enter view, a pulse dot marks a pending
+ *     game, cards lift on hover, the dog avatars bob and blink, tabs fade, a small burst of confetti marks a new dog
+ *     or a recorded pick. ALL of it is inside prefers-reduced-motion: no-preference, so reduced motion gets none.
+ */
+
+.hounds-page {
+  --lh-bg: #0B0D10;
+  --lh-ink: #EEF1F5;
+  --lh-ink2: #C9D0DB;
+  --lh-mute: #8D96A6;
+  --lh-line: rgba(255, 255, 255, .07);
+  --lh-soft: rgba(255, 255, 255, .05);
+  --lh-accent: #2FD07A;
+  --lh-ease: cubic-bezier(.2, .7, .2, 1);
+  --hd-bg: var(--lh-bg); --hd-card: transparent; --hd-card-2: var(--lh-soft); --hd-line: var(--lh-line);
+  --hd-text: var(--lh-ink); --hd-text-2: var(--lh-ink2); --hd-mute: var(--lh-mute); --hd-accent: var(--lh-accent);
+  background: var(--lh-bg); color: var(--lh-ink);
+  font-family: var(--font-body, 'Instrument Sans', system-ui, sans-serif); font-size: 15px; line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---- type ------------------------------------------------------------------------------------------------- */
+.hounds-page h1, .hounds-page h2, .hounds-page h3, .hounds-page .hd-h3 {
+  font-family: var(--font-body, 'Instrument Sans', system-ui, sans-serif); text-transform: none; font-style: normal; letter-spacing: -.012em;
+  color: var(--lh-ink);
+}
+.hounds-page .hd-wrap h1 { font-size: clamp(26px, 4.4vw, 34px); font-weight: 650; line-height: 1.1; margin: 4px 0 8px; }
+.hounds-page .hd-wrap h2 { font-size: 17px; font-weight: 600; line-height: 1.3; margin: 0 0 12px; }
+.hounds-page .hd-h3 { font-size: 15px; font-weight: 600; margin: 18px 0 6px; }
+.hounds-page .hd-lede { font-size: 16px; color: var(--lh-mute); margin: 0 0 8px; max-width: 46em; }
+.hounds-page .hd-muted, .hounds-page .hd-fine { color: var(--lh-mute); }
+.hounds-page .hd-muted { font-size: 14px; }
+.hounds-page .hd-fine { font-size: 12.5px; }
+.hounds-page a { text-underline-offset: 3px; }
+
+/* ---- layout: space, not boxes ------------------------------------------------------------------------------ */
+.hounds-page .hd-wrap { max-width: 1080px; padding: 28px 20px 96px; }
+.hounds-page .hd-panel { background: none; border: 0; padding: 0; margin: 0 0 44px; }
+.hounds-page .hd-panel + .hd-panel { padding-top: 32px; box-shadow: 0 -1px 0 var(--lh-line); }
+.hounds-page .hd-panel__head { margin-bottom: 12px; }
+.hounds-page .hd-pagehead { align-items: flex-end; margin-bottom: 8px; }
+.hounds-page .hd-back { font-size: 13px; }
+.hounds-page .hd-back a { color: var(--lh-mute); text-decoration: none; }
+.hounds-page .hd-back a:hover { color: var(--lh-ink); }
+
+/* the one disclosure line: small, quiet, no box */
+.hounds-page .hd-disclosure, .hounds-page .hd-notice, .hounds-page .hd-paper {
+  margin: 4px 0 22px; padding: 0; border: 0; background: none; font-size: 12.5px; color: var(--lh-mute);
+}
+.hounds-page .hd-disclosure strong, .hounds-page .hd-notice strong, .hounds-page .hd-paper strong { font-weight: 500; color: var(--lh-mute); }
+.hounds-page .hd-foot { max-width: 1080px; margin: 0 auto; padding: 24px 20px 40px; box-shadow: 0 -1px 0 var(--lh-line); color: var(--lh-mute); font-size: 12.5px; }
+.hounds-page .hd-foot p { margin: 0 0 6px; }
+.hounds-page .hd-foot a { color: var(--lh-ink2); }
+
+/* ---- controls --------------------------------------------------------------------------------------------- */
+.hounds-page .btn, .lh-btn { border-radius: 8px; clip-path: none; text-transform: none; letter-spacing: 0; font-weight: 600; font-family: var(--font-body, 'Instrument Sans', system-ui, sans-serif); font-style: normal; }
+.hounds-page .btn--primary { background: var(--lh-accent); border-color: var(--lh-accent); color: #04140B; }
+.hounds-page .btn--primary:hover { background: #4BE08F; border-color: #4BE08F; }
+.hounds-page .btn--ghost { background: var(--lh-soft); border-color: transparent; color: var(--lh-ink); }
+.hounds-page .btn--ghost:hover { background: rgba(255, 255, 255, .1); }
+.hounds-page .hd-segs { gap: 4px; }
+.hounds-page .hd-seg {
+  min-height: 34px; padding: 0 13px; border: 0; border-radius: 999px; background: var(--lh-soft); color: var(--lh-ink2);
+  font-size: 13px; font-weight: 500; transition: background-color .15s var(--lh-ease), color .15s var(--lh-ease);
+}
+.hounds-page .hd-seg:hover { background: rgba(255, 255, 255, .1); }
+.hounds-page .hd-seg[aria-pressed="true"] { background: var(--lh-ink); color: #0B0D10; font-weight: 600; }
+.hounds-page .hd-filters { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 6px 0 14px; }
+.hounds-page input[type="text"], .hounds-page input[type="number"], .hounds-page select, .hounds-page textarea {
+  background: var(--lh-soft); border: 1px solid transparent; border-radius: 8px; color: var(--lh-ink);
+}
+.hounds-page input:focus, .hounds-page select:focus, .hounds-page textarea:focus { border-color: var(--lh-accent); outline: none; }
+.hounds-page :focus-visible { outline: 2px solid var(--lh-accent); outline-offset: 2px; }
+
+/* ---- tabs ------------------------------------------------------------------------------------------------- */
+.lh-tabs { display: flex; gap: 2px; margin: 8px 0 26px; padding: 0; overflow-x: auto; scrollbar-width: none; box-shadow: 0 1px 0 var(--lh-line); }
+.lh-tabs::-webkit-scrollbar { display: none; }
+.lh-tabs [role="tab"] {
+  position: relative; flex: none; height: 42px; padding: 0 14px; border: 0; background: none; color: var(--lh-mute, #8D96A6);
+  font: 500 14px/1 var(--font-body, 'Instrument Sans', system-ui, sans-serif); cursor: pointer; transition: color .15s;
+}
+.lh-tabs [role="tab"]:hover { color: var(--lh-ink, #EEF1F5); }
+.lh-tabs [role="tab"][aria-selected="true"] { color: var(--lh-ink, #EEF1F5); }
+.lh-tabs [role="tab"]::after {
+  content: ""; position: absolute; left: 12px; right: 12px; bottom: -1px; height: 2px; border-radius: 2px; background: var(--lh-accent, #2FD07A);
+  transform: scaleX(0); transform-origin: 50% 50%;
+}
+.lh-tabs [role="tab"][aria-selected="true"]::after { transform: scaleX(1); }
+.lh-tabs [role="tab"][hidden] { display: none; }
+.lh-tabpanel[hidden] { display: none; }
+
+/* ---- tables and tickets: hairlines only -------------------------------------------------------------------- */
+.hounds-page .hd-tablewrap { border: 0; }
+.hounds-page .hd-table { border: 0; border-collapse: collapse; background: none; }
+.hounds-page .hd-table th {
+  background: none; border: 0; box-shadow: inset 0 -1px 0 var(--lh-line); color: var(--lh-mute); font-size: 11.5px; font-weight: 500;
+  letter-spacing: .04em; text-transform: uppercase;
+}
+.hounds-page .hd-table td { border: 0; box-shadow: inset 0 -1px 0 var(--lh-line); }
+.hounds-page .hd-table tbody tr { transition: background-color .15s var(--lh-ease); }
+.hounds-page .hd-table tbody tr:hover { background: var(--lh-soft); }
+.hounds-page .hd-qual__title, .hounds-page .hd-qual__ranked { font-size: 14px; font-weight: 600; color: var(--lh-ink2); }
+.hounds-page .hd-pill, .hounds-page .hd-st, .hounds-page .hd-chip, .hounds-page .hd-typechip, .hounds-page .hd-badge, .hounds-page .hd-style, .hounds-page .hd-chip-cat {
+  border-radius: 999px; border: 0; background: var(--lh-soft); color: var(--lh-ink2); font-weight: 500; padding: 2px 10px;
+}
+.hounds-page .hd-chip-cat { border-left: 0; }
+.hounds-page .hd-typechip { border-left: 0; }
+.hounds-page .hd-res { border-radius: 999px; border: 0; padding: 2px 10px; font-weight: 600; font-size: 12px; }
+.hounds-page .hd-res--won { background: rgba(61, 220, 132, .12); color: #5BE39A; }
+.hounds-page .hd-res--lost { background: rgba(255, 107, 122, .12); color: #FF8A96; }
+.hounds-page .hd-res--push, .hounds-page .hd-res--ungraded { background: var(--lh-soft); color: var(--lh-ink2); }
+.hounds-page .hd-res--pending { background: rgba(242, 184, 75, .12); color: #F2B84B; }
+.hounds-page .hd-res--pending::before { content: ""; display: inline-block; width: 6px; height: 6px; margin-right: 6px; border-radius: 50%; background: currentColor; vertical-align: 1px; }
+.hounds-page .hd-kpi { background: none; border: 0; padding: 0; }
+.hounds-page .hd-kpis { gap: 28px 40px; }
+.hounds-page .hd-kpi__label { font-size: 12px; font-weight: 500; letter-spacing: .02em; text-transform: none; color: var(--lh-mute); }
+.hounds-page .hd-kpi__big { font-size: 30px; font-weight: 650; letter-spacing: -.02em; font-family: var(--font-body, 'Instrument Sans', system-ui, sans-serif); }
+.hounds-page .hd-state { border: 0; border-radius: 12px; background: var(--lh-soft); font-size: 14px; }
+.hounds-page .hd-legend-box { background: none; border: 0; }
+.hounds-page details > summary { cursor: pointer; color: var(--lh-ink2); font-size: 13.5px; }
+
+/* ---- the dog page head ------------------------------------------------------------------------------------- */
+.hounds-page .hd-modelhead { margin-bottom: 8px; }
+.hounds-page .hd-actions { margin: 6px 0 18px; }
+.hounds-page .dk-top .dk-panel { background: var(--lh-soft); border-radius: 16px; padding: 20px; box-shadow: none; margin-bottom: 28px; }
+.hounds-page .dk-top .dk-panel h2 { margin-bottom: 6px; }
+.hounds-page .dk-panel { border: 0; }
+
+/* ---- the builder: quieter cards ---------------------------------------------------------------------------- */
+.hounds-page .bd-card { background: var(--lh-soft); border: 0; border-radius: 12px; }
+.hounds-page .bd-step__no { font-size: 12px; font-weight: 600; color: var(--lh-accent); letter-spacing: .04em; text-transform: uppercase; margin: 0 0 4px; }
+.hounds-page .bd-advanced { margin: 12px 0 4px; }
+.hounds-page .bd-advanced > summary {
+  display: inline-flex; align-items: center; height: 34px; padding: 0 14px; border-radius: 999px; background: var(--lh-soft); font-weight: 500; list-style: none;
+}
+.hounds-page .bd-advanced > summary::-webkit-details-marker { display: none; }
+.hounds-page .bd-advanced[open] > summary { background: rgba(255, 255, 255, .1); margin-bottom: 14px; }
+.hounds-page .bd-chips { gap: 6px; }
+.hounds-page .bd-step .bd-chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.hounds-page .bd-step .bd-chips::-webkit-scrollbar { display: none; }
+.hounds-page .bd-chips button, .hounds-page .bd-chip, .hounds-page .dk-chipbtn {
+  flex: none; white-space: nowrap; border: 0; border-radius: 999px; background: var(--lh-soft); color: var(--lh-ink2); font-size: 13px; padding: 7px 13px; clip-path: none;
+}
+.hounds-page .bd-chips button:hover, .hounds-page .dk-chipbtn:hover { background: rgba(255, 255, 255, .1); }
+
+/* ---- skeletons: shimmer instead of "Loading..." ------------------------------------------------------------ */
+.lh-skel {
+  display: block; border-radius: 12px; min-height: 96px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, .04) 0%, rgba(255, 255, 255, .09) 45%, rgba(255, 255, 255, .04) 90%);
+  background-size: 220% 100%;
+}
+.lh-skel--rows { height: 148px; -webkit-mask: repeating-linear-gradient(#000 0 30px, transparent 30px 44px); mask: repeating-linear-gradient(#000 0 30px, transparent 30px 44px); }
+.lh-skel--kpis { height: 62px; -webkit-mask: repeating-linear-gradient(90deg, #000 0 110px, transparent 110px 150px); mask: repeating-linear-gradient(90deg, #000 0 110px, transparent 110px 150px); }
+.lh-skel--chart { height: 220px; }
+.lh-skel--cards { height: 190px; -webkit-mask: repeating-linear-gradient(90deg, #000 0 calc(33.3% - 12px), transparent calc(33.3% - 12px) 33.3%); mask: repeating-linear-gradient(90deg, #000 0 calc(33.3% - 12px), transparent calc(33.3% - 12px) 33.3%); }
+.hd-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ---- the live dot and the confetti layer ------------------------------------------------------------------- */
+.lh-live { display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: var(--lh-accent); position: relative; vertical-align: 1px; }
+.lh-confetti { position: fixed; inset: 0; z-index: 200; pointer-events: none; overflow: hidden; }
+.lh-confetti i { position: absolute; border-radius: 2px; will-change: transform, opacity; }
+
+/* ---- the avatars: SVG groups moved by CSS ------------------------------------------------------------------ */
+.dk-badge { overflow: visible; }
+
+/* ---- MOTION: everything below is off for prefers-reduced-motion -------------------------------------------- */
+@media (prefers-reduced-motion: no-preference) {
+  .lh-skel { animation: lh-shimmer 1.5s linear infinite; }
+  .lh-tabs [role="tab"]::after { transition: transform .25s var(--lh-ease); }
+  .lh-tabpanel:not([hidden]) { animation: lh-fade .28s var(--lh-ease) both; }
+
+  /* rows, tickets and cards rise in once, when they first arrive (fx.js marks them data-rise; a click never replays it) */
+  [data-rise] { animation: lh-rise .5s var(--lh-ease) both; animation-delay: calc(var(--r, 0) * 40ms); }
+
+  .lh-live::after, .hounds-page .hd-res--pending::before { animation: lh-ping 1.8s var(--lh-ease) infinite; }
+  .lh-live::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: var(--lh-accent); }
+
+  .lh-btn:active, .hounds-page .btn:active, .kn-act:active { transform: scale(.97); }
+
+  /* the dog: a slow bob, an occasional blink and ear flick; happy after a win, slumped after a loss */
+  .dk-badge .dk-head { transform-box: view-box; transform-origin: 40px 62px; animation: dk-bob 4.2s ease-in-out infinite; }
+  .dk-badge .dk-eyes { transform-box: fill-box; transform-origin: 50% 50%; animation: dk-blink 5.6s infinite; }
+  .dk-badge .dk-ear--l { transform-box: fill-box; transform-origin: 85% 10%; animation: dk-ear 7s ease-in-out infinite; }
+  .dk-badge .dk-ear--r { transform-box: fill-box; transform-origin: 15% 10%; animation: dk-ear 7s ease-in-out 1.3s infinite reverse; }
+  .dk-badge[data-mood="happy"] .dk-head { animation: dk-wiggle 1.5s ease-in-out infinite; }
+  .dk-badge[data-mood="slump"] .dk-head { animation: dk-slump 5.5s ease-in-out infinite; }
+  .kn-card:hover .dk-badge .dk-head, .kn-kcard:hover .dk-badge .dk-head { animation: dk-perk .6s var(--lh-ease) 1, dk-bob 4.2s ease-in-out .6s infinite; }
+}
+
+@keyframes lh-shimmer { from { background-position: 120% 0; } to { background-position: -100% 0; } }
+@keyframes lh-fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@keyframes lh-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes lh-ping { 0% { box-shadow: 0 0 0 0 rgba(47, 208, 122, .55); transform: scale(1); } 70%, 100% { box-shadow: 0 0 0 7px rgba(47, 208, 122, 0); } }
+@keyframes dk-bob { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-1.4px) rotate(-1.2deg); } }
+@keyframes dk-blink { 0%, 93%, 100% { transform: scaleY(1); } 96% { transform: scaleY(.08); } }
+@keyframes dk-ear { 0%, 88%, 100% { transform: rotate(0deg); } 92% { transform: rotate(-9deg); } 96% { transform: rotate(3deg); } }
+@keyframes dk-wiggle { 0%, 100% { transform: rotate(0deg) translateY(0); } 20% { transform: rotate(-5deg) translateY(-2px); } 50% { transform: rotate(5deg) translateY(-3px); } 80% { transform: rotate(-3deg) translateY(-1px); } }
+@keyframes dk-slump { 0%, 100% { transform: translateY(2.4px) rotate(3deg); } 50% { transform: translateY(3px) rotate(3.8deg); } }
+@keyframes dk-perk { 0% { transform: translateY(0) rotate(0); } 35% { transform: translateY(-3px) rotate(-6deg); } 70% { transform: translateY(-1px) rotate(3deg); } 100% { transform: translateY(0) rotate(0); } }
+
+/* ---- phones ----------------------------------------------------------------------------------------------- */
+@media (max-width: 760px) {
+  .hounds-page .hd-wrap { padding: 20px 16px 40px; }
+  .hounds-page .hd-panel { margin-bottom: 32px; }
+  .hounds-page .hd-kpi__big { font-size: 26px; }
+}
+
+/* the type-of-model chips sit behind one quiet disclosure */
+.hounds-page .hd-morefilters { flex-basis: 100%; }
+.hounds-page .hd-morefilters > summary { display: inline-flex; align-items: center; height: 30px; padding: 0 12px; border-radius: 999px; background: none; color: var(--lh-mute); font-size: 13px; list-style: none; box-shadow: inset 0 0 0 1px var(--lh-line); }
+.hounds-page .hd-morefilters > summary::-webkit-details-marker { display: none; }
+.hounds-page .hd-morefilters[open] > summary { color: var(--lh-ink); }
+
+/* "How this works": the long explanation lives behind one small disclosure instead of a paragraph under every heading */
+.lh-how { margin: 0 0 12px; }
+.lh-how > summary { display: inline; color: var(--lh-mute); font-size: 12.5px; text-decoration: underline; text-underline-offset: 3px; list-style: none; cursor: pointer; }
+.lh-how > summary::-webkit-details-marker { display: none; }
+.lh-how > summary:hover { color: var(--lh-ink); }
+.lh-how[open] > p { margin-top: 8px; max-width: 46em; }
+
+/* the follow / share / download row: soft pills, no outlines */
+.hounds-page .hd-actions .btn { min-height: 36px; padding: 0 16px; font-size: 13.5px; }
+.hounds-page .hd-follow[aria-pressed="true"] { background: rgba(47, 208, 122, .15); color: #5BE39A; }
+.hounds-page .hd-mono { border-radius: 14px; border: 0; }
+.hounds-page .hd-modelhead .dk-badge { border-radius: 14px; }
+
+/* an empty chart is one short line, not a big dashed frame; the status sentence is said once */
+.hounds-page .hd-chart:has(.hd-chart__empty) .hd-chart__svg { max-height: 84px; }
+.hounds-page .hd-chart__frame { stroke: none; }
+.hounds-page .hd-chart__empty-note, .hounds-page .hd-chart__caption:empty { display: none; }
+.hounds-page .hd-verdict__meaning { display: none; }
+.hounds-page .hd-actions .btn { background: var(--lh-soft); border: 0; color: var(--lh-ink); }
+.hounds-page .hd-actions .btn:hover { background: rgba(255, 255, 255, .1); }
+
+/* fieldsets: a small label, no frame */
+.hounds-page .hd-fieldset { border: 0; padding: 0; margin: 0 0 14px; min-width: 0; }
+.hounds-page .hd-fieldset > legend { padding: 0; margin-bottom: 6px; font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--lh-mute); }
+.hounds-page .hd-col-clv { min-width: 128px; }
+
+/* plain links: quiet, with a soft underline; the kennel link is the one accent link */
+.hounds-page .hd-wrap a:not([class]) { color: var(--lh-ink2); text-decoration-color: rgba(255, 255, 255, .28); }
+.hounds-page .hd-wrap a:not([class]):hover { color: var(--lh-ink); }
+.hounds-page a.hd-kennellink { color: var(--lh-accent); text-decoration: none; }
+.hounds-page a.hd-kennellink:hover { text-decoration: underline; }
+
+/* the builder: steps without boxes, soft buttons */
+.hounds-page .bd-step { border: 0; background: none; padding: 0; }
+.hounds-page .bd-empty, .hounds-page .bd-sentences, .hounds-page .bd-read, .hounds-page .bd-diff { border: 0; border-radius: 12px; background: var(--lh-soft); }
+.hounds-page .bd-sentences { border-left: 0; }
+.hounds-page .bd-wrap .btn--ghost, .hounds-page .bd-actions .btn--ghost { background: var(--lh-soft); border: 0; color: var(--lh-ink); }
+.hounds-page .bd-dogrow, .hounds-page .bd-preview, .hounds-page .bd-mine { border: 0; border-radius: 14px; background: var(--lh-soft); }
+.hounds-page .bd-preview, .hounds-page .bd-mine { padding: 16px; }
+.hounds-page .bd-english { border-radius: 12px; }
+.hounds-page .bd-card { padding: 16px; }
+.hounds-page .bd-sentences { padding: 12px 14px; }
+
+/* the dog kit, quieter: soft fills and radii in place of outlines and left bars */
+.hounds-page .dk-chip { border: 0; border-radius: 999px; background: var(--lh-soft); padding: 2px 10px; }
+.hounds-page .dk-chip--warn { background: rgba(242, 184, 75, .12); }
+.hounds-page .dk-chip--good { background: rgba(61, 220, 132, .12); }
+.hounds-page .dk-chip--bad { background: rgba(255, 107, 122, .12); }
+.hounds-page .dk-pick, .hounds-page .dk-miss, .hounds-page .dk-event, .hounds-page .dk-ticket { border: 0; border-radius: 12px; background: var(--lh-soft); }
+.hounds-page .dk-msg { border: 0; border-radius: 14px; }
+.hounds-page .dk-msg--you { background: rgba(47, 208, 122, .16); }
+.hounds-page .dk-msg--dog { background: var(--lh-soft); }
+.hounds-page .dk-chipbtn, .hounds-page .dk-opt, .hounds-page .dk-vote__btn { border: 0; border-radius: 999px; background: var(--lh-soft); min-height: 36px; }
+.hounds-page .dk-opt[aria-pressed="true"], .hounds-page .dk-vote__btn[aria-pressed="true"] { background: rgba(47, 208, 122, .18); }
+.hounds-page .dk-swatch { border-width: 0; box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .12); }
+.hounds-page .dk-swatch[aria-pressed="true"] { box-shadow: 0 0 0 2px #0F1317, 0 0 0 4px var(--lh-accent); }
+.hounds-page .dk-preview { border: 0; border-radius: 18px; background: var(--lh-soft); }
+.hounds-page .dk-camp-dog { border: 0; border-radius: 18px; background: rgba(255, 255, 255, .04); }
+.hounds-page .dk-preview .dk-badge { border-radius: 22px; }
+.hounds-page .dk-actions .btn, .hounds-page .dk-pick__actions .btn { min-height: 38px; }
+.hounds-page .dk-askrow input { border-radius: 999px; padding: 0 16px; }

@@ -23,7 +23,7 @@ const GROUPS = [
   { key: "body", label: "Body", kind: "text", options: BODY },
 ];
 
-export function mountLocker(section, { id, name, kit, onSaved }) {
+export function mountLocker(section, { id, name, kit, onSaved, onChange }) {
   const body = section.querySelector("[data-hook='dog-locker']");
   if (!body) return;
   clearNode(body);
@@ -37,13 +37,14 @@ export function mountLocker(section, { id, name, kit, onSaved }) {
 
   const redraw = () => {
     clearNode(previewBox);
-    previewBox.appendChild(dogBadge(look, { size: 132, label: `${name || "Dog"}'s badge`, decorative: false }));
+    previewBox.appendChild(dogBadge(look, { size: 148, label: `${name || "Dog"}'s badge`, decorative: false }));
     for (const g of GROUPS) {
       for (const b of groupBoxes[g.key].querySelectorAll("button")) {
         b.setAttribute("aria-pressed", b.getAttribute("data-value") === look[g.key] ? "true" : "false");
       }
     }
     if (look.body === "jersey") numberRow.removeAttribute("hidden"); else numberRow.setAttribute("hidden", "");
+    if (onChange) onChange(look);
   };
   const set = (key, value) => {
     look = cleanLook(Object.assign({}, look, { [key]: value }));

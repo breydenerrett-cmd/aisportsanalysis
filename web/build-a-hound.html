@@ -24,35 +24,42 @@
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/components.css">
 <link rel="stylesheet" href="css/nav.css">
+<link rel="stylesheet" href="css/lhnav.css">
 <link rel="stylesheet" href="css/hounds.css">
 <link rel="stylesheet" href="css/builder.css">
+<link rel="stylesheet" href="css/lh.css">
 </head>
 <body class="hounds-page bd-page">
 <a class="hd-skip" href="#main-content">Skip to the builder</a>
-<nav class="site-nav hd-nav" aria-label="primary" data-hook="build-nav">
-  <a class="ps-page__home" href="landing.html" aria-label="LINEHOUND home">
-    <span class="wordmark" data-hook="brand-mark">
-      <span class="wordmark__mark"><span></span></span>
-      <span class="wordmark__text" data-hook="product-name">LINEHOUND</span>
-    </span>
-  </a>
-  <div class="site-nav__links hd-nav__links">
-    <a href="hounds.html">Leaderboard</a>
-    <a href="learning.html">Learning</a>
-    <a href="build-a-hound.html" aria-current="page">Build a model</a>
+<header class="lh-nav" aria-label="primary" data-hook="build-nav" data-current="build">
+  <div class="lh-nav__bar">
+    <a class="lh-nav__brand ps-page__home" href="landing.html" aria-label="LINEHOUND home">
+      <span class="wordmark" data-hook="brand-mark">
+        <span class="wordmark__mark"><span></span></span>
+        <span class="wordmark__text" data-hook="product-name">LINEHOUND</span>
+      </span>
+    </a>
+    <nav class="lh-nav__links" aria-label="Sections" data-hook="nav-links">
+      <a href="hounds.html" data-nav="leaderboard">Leaderboard</a>
+      <a href="kennels.html" data-nav="kennels">Kennels</a>
+      <a href="build-a-hound.html" data-nav="build" aria-current="page">Build</a>
+      <a href="learning.html" data-nav="camp">Training camp</a>
+    </nav>
+    <div class="lh-nav__account" data-hook="nav-account-area" data-signed-in="false">
+      <a class="lh-btn lh-btn--solid" href="index.html#/signin" data-hook="nav-signin">Sign in</a>
+    </div>
   </div>
-  <a class="btn btn--ghost site-nav__signin" href="index.html#/signin" data-hook="nav-signin">Sign in</a>
-</nav>
+</header>
 
 <main class="hd-wrap hd-wrap--wide bd-wrap" id="main-content" aria-label="Build your dog" data-hook="build-app">
 
 <header class="bd-head">
-  <p class="hd-back"><a href="hounds.html">&larr; Back to the leaderboard</a></p>
+  <p class="hd-back"><a href="kennel.html">&larr; My kennel</a></p>
   <h1 data-hook="build-title">Build your dog</h1>
-  <p class="hd-lede">Type the strategy the way you would say it. Your dog turns it into rules you can read and edit, and races them in public on paper money.</p>
+  <p class="hd-lede">Say the strategy the way you would say it. Your dog turns it into rules and races them on paper money.</p>
 </header>
 
-<p class="hd-notice" role="note" data-hook="paper-notice"><strong>Paper bets only. Your dog never places a real bet, and it never takes a price of -200 or worse.</strong> Not advice, a dog's results don't tell you what happens next, and 21+ applies.</p>
+<p class="hd-notice" role="note" data-hook="paper-notice">Paper bets only. Your dog never takes a price of -200 or worse. Not advice. 21+.</p>
 
 <div class="hd-state hd-state--missing" data-hook="build-gate" role="status" hidden></div>
 <p class="hd-fine" data-hook="build-from-note" hidden></p>
@@ -62,7 +69,7 @@
 
 <section class="hd-panel bd-step" aria-labelledby="s1-h" data-hook="step-describe">
   <p class="bd-step__no">Step 1</p>
-  <h2 id="s1-h">Describe your strategy</h2>
+  <h2 id="s1-h">Say it</h2>
   <label class="bd-sr" for="english-input">Your strategy in plain English</label>
   <textarea id="english-input" class="bd-english" rows="4" maxlength="600" data-hook="english-input"
     placeholder="e.g. Bet home underdogs between +120 and +200 when they're on 2+ days rest. Max 2 bets a day."></textarea>
@@ -86,26 +93,29 @@
 
 <section class="hd-panel bd-step" aria-labelledby="s2-h" data-hook="step-rules">
   <p class="bd-step__no">Step 2</p>
-  <h2 id="s2-h">Here's what your dog will do</h2>
+  <h2 id="s2-h">Check it</h2>
   <div class="bd-empty" data-hook="rules-empty">
-    <p>Describe a strategy above, or start from a blank rule. The rules appear here as plain sentences and as cards you can change.</p>
+    <p>Describe a strategy above, or start from a blank rule.</p>
   </div>
   <div data-hook="rules-body" hidden>
     <div class="bd-sentences" data-hook="rule-sentences" aria-live="polite"></div>
     <div class="bd-problems" data-hook="build-problems" role="alert" hidden></div>
-    <div class="bd-cards" data-hook="rule-cards"></div>
-    <p><button type="button" class="btn btn--ghost" data-hook="add-rule">Add another rule</button>
-       <span class="hd-fine" data-hook="rule-limit"></span></p>
-    <fieldset class="hd-fieldset bd-globals" data-hook="globals">
-      <legend>For the whole dog</legend>
-      <div class="bd-globals__grid" data-hook="globals-grid"></div>
-    </fieldset>
+    <details class="bd-advanced" data-hook="rules-advanced">
+      <summary>Edit rules</summary>
+      <div class="bd-cards" data-hook="rule-cards"></div>
+      <p><button type="button" class="btn btn--ghost" data-hook="add-rule">Add another rule</button>
+         <span class="hd-fine" data-hook="rule-limit"></span></p>
+      <fieldset class="hd-fieldset bd-globals" data-hook="globals">
+        <legend>For the whole dog</legend>
+        <div class="bd-globals__grid" data-hook="globals-grid"></div>
+      </fieldset>
+    </details>
   </div>
 </section>
 
 <section class="hd-panel bd-step" aria-labelledby="s3-h" data-hook="step-identity">
   <p class="bd-step__no">Step 3</p>
-  <h2 id="s3-h">Make it yours</h2>
+  <h2 id="s3-h">Name it</h2>
   <div class="bd-identity">
     <div class="bd-identity__fields">
       <div class="hd-field"><label for="f-name">Name</label>
@@ -124,7 +134,7 @@
   <div class="bd-diff" data-hook="diff" hidden>
     <h3 class="hd-h3">What changes if you save</h3>
     <ul class="bd-list" data-hook="diff-list"></ul>
-    <p class="hd-fine" data-hook="diff-note">The old version keeps its record and stops betting. The new version starts fresh on its own record.</p>
+    <p class="hd-fine" data-hook="diff-note">The old version keeps its record and stops betting. The new version starts fresh.</p>
   </div>
   <div data-hook="build-message" aria-live="polite"></div>
   <div class="hd-state hd-state--down" data-hook="build-server-error" role="alert" hidden></div>
@@ -142,13 +152,14 @@
     <h2 id="pv-h">Would have bet today</h2>
     <p class="bd-preview__count" data-hook="preview-count" aria-live="polite">Nothing to preview yet.</p>
     <ul class="bd-picks" data-hook="preview-list"></ul>
-    <p class="hd-fine" data-hook="preview-note">A read-only look at today's board. It places nothing, and your dog decides each bet shortly before its game starts.</p>
+    <p class="hd-fine" data-hook="preview-note">A read-only look at today's board. It places nothing.</p>
   </section>
 
   <section class="hd-panel bd-mine" aria-labelledby="mine-h" data-hook="my-dogs-panel">
     <h2 id="mine-h">My dogs</h2>
     <p class="hd-fine" data-hook="my-dogs-state">Sign in to see the dogs you have built.</p>
     <ul class="bd-doglist" data-hook="my-dogs"></ul>
+    <p class="hd-fine"><a href="kennel.html">Open my kennel</a></p>
   </section>
 </aside>
 </div>
@@ -158,11 +169,12 @@
 <div class="bd-pill" data-hook="preview-pill" role="status" aria-live="off" hidden></div>
 
 <footer class="hd-foot" data-hook="build-footer" aria-label="disclaimer">
-  <p data-hook="not-advice"><strong>Paper bets only, not advice.</strong> LINEHOUND runs betting dogs on pretend money. Nothing here is a tip. Past results, even paper ones, don't tell you what happens next.</p>
-  <p>21+ &middot; Gamble responsibly. <a href="tel:1-800-426-2537" data-hook="responsible-gambling-help">1-800-GAMBLER</a></p>
-  <p><a href="landing.html">About LINEHOUND</a> &middot; <a href="hounds.html">The leaderboard</a></p>
+  <p data-hook="not-advice">Paper bets only, not advice. 21+ &middot; Gamble responsibly. <a href="tel:1-800-426-2537" data-hook="responsible-gambling-help">1-800-GAMBLER</a></p>
+  <p><a href="landing.html">About LINEHOUND</a> &middot; <a href="hounds.html">Leaderboard</a></p>
 </footer>
 
 <script type="module" src="js/hounds-build.js"></script>
+<script type="module" src="js/fx.js"></script>
+<script type="module" src="js/nav.js"></script>
 </body>
 </html>

@@ -26,6 +26,7 @@
 
 import { apiGet, apiPost, getToken } from "./api.js";
 import { h, s, clearNode, describeError, houndHref, isNum, fmtPrice } from "./hounds-core.js";
+import { celebrate } from "./dog-common.js";
 
 export const PAPER_NOTICE =
   "Paper bets only. Your dog never places a real bet, and it never takes a price of -200 or worse.";
@@ -44,6 +45,17 @@ const JOB_POLL_MS = 2000;
 const JOB_POLL_MAX = 30;
 
 const q = (hook) => document.querySelector(`[data-hook='${hook}']`);
+
+/** Tell the page a dog was created or a new version saved (the kennel studio listens), with a small celebration. */
+function announce(type, dog, anchor) {
+  celebrate(anchor || q("build-submit"), type);
+  try {
+    const evt = new Event("linehound:dog-saved");
+    evt.detail = { type, id: dog && dog.id };
+    window.dispatchEvent(evt);
+  } catch (err) { /* no window or no Event */ }
+}
+const embedded = () => !!(q("build-app") && q("build-app").hasAttribute("data-embedded"));
 const clone = (x) => JSON.parse(JSON.stringify(x));
 
 const S = {
@@ -826,6 +838,7 @@ async function submit() {
         S.edit = null; S.diffReady = false;
         q("diff").hidden = true;
         await loadMine();
+        announce("version", dog);
       }
     } else {
       const body = { spec: saveSpec() };
@@ -835,6 +848,7 @@ async function submit() {
       setMessage(`${dog.name || "Your dog"} is in the kennel.`, "ok");
       if (dog.id) q("build-message").appendChild(h("p", {}, [h("a", { href: houndHref(dog.id), "data-hook": "new-dog-link", text: "See your dog" })]));
       await loadMine();
+      announce("created", dog);
     }
   } catch (err) {
     handleSaveError(err);
@@ -883,12 +897,13 @@ function showDiff(changes) {
 async function loadMine() {
   const state = q("my-dogs-state");
   const list = clearNode(q("my-dogs"));
-  if (!getToken()) { S.signedIn = false; S.mine = []; state.textContent = "Sign in to see the dogs you have built."; q("nav-signin").hidden = false; updateSave(); return; }
+  const signInLink = () => q("nav-signin");
+  if (!getToken()) { S.signedIn = false; S.mine = []; state.textContent = "Sign in to see the dogs you have built."; if (signInLink()) signInLink().hidden = false; updateSave(); return; }
   try {
     const res = await apiGet("/hounds/mine");
     S.signedIn = true;
     S.mine = (res.hounds || []).filter((d) => d.status !== "retired");
-    q("nav-signin").hidden = true;
+    if (signInLink()) signInLink().hidden = true;
     state.textContent = S.mine.length ? "" : "You have not built a dog yet.";
     for (const d of S.mine) list.appendChild(dogItem(d));
   } catch (err) {
@@ -940,8 +955,34 @@ function startEdit(d) {
   const note = q("build-from-note");
   note.hidden = false;
   note.textContent = `You are editing ${d.name}, version ${d.version_no}. Saving makes version ${d.version_no + 1}; the old version keeps its record.`;
-  if (typeof window.scrollTo === "function") window.scrollTo(0, 0);
+  if (!embedded() && typeof window.scrollTo === "function") window.scrollTo(0, 0);
 }
+
+/** For the kennel studio (web/js/kennel.js): reset the builder to a blank dog, or open one of the signed-in member's dogs. */
+export function openBlank() {
+  if (!S.menu) return false;
+  stopJobPolling();
+  S.edit = null; S.copiedFrom = ""; S.diffReady = false; S.started = false;
+  S.spec = blankSpec(); S.sentences = []; S.problems = []; S.saveProblems = [];
+  q("diff").hidden = true;
+  setMessage("");
+  serverError("");
+  q("english-read").hidden = true;
+  q("english-input").value = "";
+  q("build-title").textContent = "Build your dog";
+  q("build-from-note").hidden = true;
+  renderRules(); renderPickers(); fillIdentity(); updateDogCard(); updateSave();
+  return true;
+}
+
+export function openEdit(id) {
+  const dog = S.mine.find((d) => d.id === id);
+  if (!dog) return false;
+  startEdit(dog);
+  return true;
+}
+
+export const builderReady = () => !!S.menu;
 
 function stopEdit() {
   S.edit = null;
@@ -1021,4 +1062,5 @@ async function boot() {
   updateSave();
 }
 
-boot();
+/** Resolves when the builder has loaded its menu and the member's dogs (the kennel studio waits for it). */
+export const booted = q("build-app") ? boot() : Promise.resolve();

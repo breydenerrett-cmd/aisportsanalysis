@@ -111,7 +111,8 @@ class StaticFacts(unittest.TestCase):
     def test_the_race_and_the_hound_page_link_to_it(self):
         for name in ("hounds.html", "hound.html"):
             html = (WEB / name).read_text(encoding="utf-8")
-            self.assertRegex(html, r'<a href="learning.html">Learning</a>', name)
+            # the one navigation (web/js/nav.js) names it "Training camp"
+            self.assertRegex(html, r'<a href="learning.html" data-nav="camp"[^>]*>Training camp</a>', name)
 
     def test_the_coach_report_card_section_is_the_first_panel_and_wears_the_voice(self):
         html = self.HTML

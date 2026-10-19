@@ -1,0 +1,767 @@
+{
+ "summary": "I pass on every market here. Tampa Bay is the favourite with a de-vigged number of 0.5831, and nothing in the data says that price is wrong. Tampa Bay's starter has a full season line, but Cleveland's starter has almost no sample, so the one comparison that could move me cannot be made. The run line and the total have the same problem: the books are close to even on the total, and Cleveland plus the run and a half is already priced steeply. The fixed roof takes weather out of play, and no team totals were captured. On the player markets, the quotes are very old, 1008 minutes by the data's own count, and a lot of the contracts were thin or left out. Where LineHound's own model and the market agree, as with the Simpson and Caminero total bases unders, the price is already steep. Where only one side is priced, as with every home run line, there is no market number to test against. What would change this: a real read on Cleveland's starter, fresh player quotes, or a price that moves well away from what we have.",
+ "calls": [
+  {
+   "slot_id": "moneyline",
+   "market": "moneyline",
+   "selection": "TB",
+   "verdict": "PASS",
+   "price": -148,
+   "book": "betus",
+   "fair_estimate": 0.5831,
+   "confidence": "medium",
+   "reasons": [
+    {
+     "claim": "The books make Tampa Bay the favourite and the de-vigged number sits at 0.5831. Nothing in the data shows a gap that price misses.",
+     "evidence": [
+      {
+       "path": "markets.moneyline.options[0].fair_probability",
+       "value": 0.5831
+      },
+      {
+       "path": "markets.moneyline.options[0].best.price",
+       "value": -148
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "Tampa Bay's starter has a full season line, but Cleveland's starter has no season rate stats at all, so the starter comparison cannot be made.",
+     "evidence": [
+      {
+       "path": "sections.starters.values.home_sp_era",
+       "value": 4.4201
+      },
+      {
+       "path": "sections.starters.values.away_sp_era",
+       "value": null
+      },
+      {
+       "path": "sections.starters.values.away_sp_thin",
+       "value": true
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A Cleveland starter sample large enough to judge, or a price drift toward even money on Tampa Bay, would reopen it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "run_line",
+   "market": "run_line",
+   "selection": "CLE +1.5",
+   "verdict": "PASS",
+   "price": -165,
+   "book": "lowvig",
+   "fair_estimate": 0.6081,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The market already prices Cleveland plus the run and a half as a heavy favourite at -165 or worse. That is close to the cap on what we would ever take.",
+     "evidence": [
+      {
+       "path": "markets.run_line.options[0].best.price",
+       "value": -165
+      },
+      {
+       "path": "markets.run_line.options[0].fair_probability",
+       "value": 0.6081
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The Cleveland starter has almost no sample, so how the game gets to the bullets is not something the data can settle.",
+     "evidence": [
+      {
+       "path": "sections.starters.values.away_sp_thin",
+       "value": true
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A Cleveland starter with a real sample, or a better price on the run line, would change it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "total",
+   "market": "total",
+   "selection": "Over 6.5",
+   "verdict": "PASS",
+   "price": -118,
+   "book": "betrivers",
+   "fair_estimate": 0.5307,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The two sides are priced almost evenly, with the de-vigged over at 0.5307, so the market sees no clear lean.",
+     "evidence": [
+      {
+       "path": "markets.total.options[0].fair_probability",
+       "value": 0.5307
+      },
+      {
+       "path": "markets.total.options[1].fair_probability",
+       "value": 0.4693
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The park has a fixed roof, so wind and rain do not decide this one, and the data holds no team totals or other run-scoring detail to break the tie.",
+     "evidence": [
+      {
+       "path": "sections.park.values.roof",
+       "value": "fixed"
+      },
+      {
+       "path": "missing[4].item",
+       "value": "team_totals"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A real read on the Cleveland starter or a bullpen change would be needed to move off the market number.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_01",
+   "market": "prop",
+   "selection": "Under 1.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The market and LineHound's own model agree on Chandler Simpson's under, and the price is already steep, so there is nothing for us to add.",
+     "evidence": [
+      {
+       "path": "markets.prop_01.options[0].fair_probability",
+       "value": 0.6481
+      },
+      {
+       "path": "markets.prop_01.context.repo_model_probability",
+       "value": 0.6523
+      },
+      {
+       "path": "markets.prop_01.options[0].best.price",
+       "value": -218
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The player prices are far older than the game-day quotes, so they may no longer match what the books are showing.",
+     "evidence": [
+      {
+       "path": "missing[0].reason",
+       "value": "the newest player-prop quote is 1008 minutes old"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A fresh quote that moves the price well away from what we have would change it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_02",
+   "market": "prop",
+   "selection": "Under 1.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The market and LineHound's own model agree on Junior Caminero's under, and the price is already steep, so there is nothing for us to add.",
+     "evidence": [
+      {
+       "path": "markets.prop_02.options[0].fair_probability",
+       "value": 0.6072
+      },
+      {
+       "path": "markets.prop_02.context.repo_model_probability",
+       "value": 0.6105
+      },
+      {
+       "path": "markets.prop_02.options[0].best.price",
+       "value": -182
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The player prices are far older than the game-day quotes, so they may no longer match what the books are showing.",
+     "evidence": [
+      {
+       "path": "missing[0].reason",
+       "value": "the newest player-prop quote is 1008 minutes old"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A fresh quote that moves the price well away from what we have would change it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_03",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' de-vigged number for the over is 0.5259 and LineHound's own model is close to it, so the market looks about right.",
+     "evidence": [
+      {
+       "path": "markets.prop_03.options[0].fair_probability",
+       "value": 0.5259
+      },
+      {
+       "path": "markets.prop_03.context.repo_model_probability",
+       "value": 0.5402
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The player prices are far older than the game-day quotes, so they may no longer match what the books are showing.",
+     "evidence": [
+      {
+       "path": "missing[0].reason",
+       "value": "the newest player-prop quote is 1008 minutes old"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A confirmed lineup spot and fresh quotes with a clear price gap would change it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_04",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "Only the over is priced for Jonathan Aranda's home run, so the data has no de-vigged number to test against; all we have is LineHound's own model number of 0.1416.",
+     "evidence": [
+      {
+       "path": "markets.prop_04.options[0].fair_probability",
+       "value": null
+      },
+      {
+       "path": "markets.prop_04.context.repo_model_probability",
+       "value": 0.1416
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The player prices are far older than the game-day quotes, so they may no longer match what the books are showing.",
+     "evidence": [
+      {
+       "path": "missing[0].reason",
+       "value": "the newest player-prop quote is 1008 minutes old"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A fresh two-sided quote with a clear gap to LineHound's own model number would change it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_05",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "Only the over is priced for Travis Bazzana's home run, so the data has no de-vigged number to test against; all we have is LineHound's own model number of 0.1383.",
+     "evidence": [
+      {
+       "path": "markets.prop_05.options[0].fair_probability",
+       "value": null
+      },
+      {
+       "path": "markets.prop_05.context.repo_model_probability",
+       "value": 0.1383
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The player prices are far older than the game-day quotes, so they may no longer match what the books are showing.",
+     "evidence": [
+      {
+       "path": "missing[0].reason",
+       "value": "the newest player-prop quote is 1008 minutes old"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A fresh two-sided quote with a clear gap to LineHound's own model number would change it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_06",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "Only the over is priced for Junior Caminero's home run, so the data has no de-vigged number to test against; all we have is LineHound's own model number of 0.1294.",
+     "evidence": [
+      {
+       "path": "markets.prop_06.options[0].fair_probability",
+       "value": null
+      },
+      {
+       "path": "markets.prop_06.context.repo_model_probability",
+       "value": 0.1294
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The player prices are far older than the game-day quotes, so they may no longer match what the books are showing.",
+     "evidence": [
+      {
+       "path": "missing[0].reason",
+       "value": "the newest player-prop quote is 1008 minutes old"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A fresh two-sided quote with a clear gap to LineHound's own model number would change it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_07",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "Only the over is priced for Patrick Bailey's home run, so the data has no de-vigged number to test against; all we have is LineHound's own model number of 0.1272.",
+     "evidence": [
+      {
+       "path": "markets.prop_07.options[0].fair_probability",
+       "value": null
+      },
+      {
+       "path": "markets.prop_07.context.repo_model_probability",
+       "value": 0.1272
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The player prices are far older than the game-day quotes, so they may no longer match what the books are showing.",
+     "evidence": [
+      {
+       "path": "missing[0].reason",
+       "value": "the newest player-prop quote is 1008 minutes old"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A fresh two-sided quote with a clear gap to LineHound's own model number would change it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_08",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "Only the over is priced for Chase DeLauter's home run, so the data has no de-vigged number to test against; all we have is LineHound's own model number of 0.1177.",
+     "evidence": [
+      {
+       "path": "markets.prop_08.options[0].fair_probability",
+       "value": null
+      },
+      {
+       "path": "markets.prop_08.context.repo_model_probability",
+       "value": 0.1177
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The player prices are far older than the game-day quotes, so they may no longer match what the books are showing.",
+     "evidence": [
+      {
+       "path": "missing[0].reason",
+       "value": "the newest player-prop quote is 1008 minutes old"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A fresh two-sided quote with a clear gap to LineHound's own model number would change it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_09",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "Only the over is priced for Brayan Rocchio's home run, so the data has no de-vigged number to test against; all we have is LineHound's own model number of 0.1077.",
+     "evidence": [
+      {
+       "path": "markets.prop_09.options[0].fair_probability",
+       "value": null
+      },
+      {
+       "path": "markets.prop_09.context.repo_model_probability",
+       "value": 0.1077
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The player prices are far older than the game-day quotes, so they may no longer match what the books are showing.",
+     "evidence": [
+      {
+       "path": "missing[0].reason",
+       "value": "the newest player-prop quote is 1008 minutes old"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A fresh two-sided quote with a clear gap to LineHound's own model number would change it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_10",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "Only the over is priced for Nathaniel Lowe's home run, so the data has no de-vigged number to test against; all we have is LineHound's own model number of 0.1061.",
+     "evidence": [
+      {
+       "path": "markets.prop_10.options[0].fair_probability",
+       "value": null
+      },
+      {
+       "path": "markets.prop_10.context.repo_model_probability",
+       "value": 0.1061
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The player prices are far older than the game-day quotes, so they may no longer match what the books are showing.",
+     "evidence": [
+      {
+       "path": "missing[0].reason",
+       "value": "the newest player-prop quote is 1008 minutes old"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A fresh two-sided quote with a clear gap to LineHound's own model number would change it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_11",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "Only the over is priced for Petey Halpin's home run, so the data has no de-vigged number to test against; all we have is LineHound's own model number of 0.104.",
+     "evidence": [
+      {
+       "path": "markets.prop_11.options[0].fair_probability",
+       "value": null
+      },
+      {
+       "path": "markets.prop_11.context.repo_model_probability",
+       "value": 0.104
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The player prices are far older than the game-day quotes, so they may no longer match what the books are showing.",
+     "evidence": [
+      {
+       "path": "missing[0].reason",
+       "value": "the newest player-prop quote is 1008 minutes old"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A fresh two-sided quote with a clear gap to LineHound's own model number would change it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_12",
+   "market": "prop",
+   "selection": "Under 1.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' de-vigged number for Junior Caminero here is 0.5133, and the data holds no model number or form detail for this stat, so the market is the only guide.",
+     "evidence": [
+      {
+       "path": "markets.prop_12.options[0].fair_probability",
+       "value": 0.5133
+      },
+      {
+       "path": "markets.prop_12.options[0].best.price",
+       "value": -120
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The player prices are far older than the game-day quotes, so they may no longer match what the books are showing.",
+     "evidence": [
+      {
+       "path": "missing[0].reason",
+       "value": "the newest player-prop quote is 1008 minutes old"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A fresh quote or any model read on this stat would change it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_13",
+   "market": "prop",
+   "selection": "Over 0.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' de-vigged number for Brayan Rocchio here is 0.566, and the data holds no model number or form detail for this stat, so the market is the only guide.",
+     "evidence": [
+      {
+       "path": "markets.prop_13.options[0].fair_probability",
+       "value": 0.566
+      },
+      {
+       "path": "markets.prop_13.options[0].best.price",
+       "value": -150
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The player prices are far older than the game-day quotes, so they may no longer match what the books are showing.",
+     "evidence": [
+      {
+       "path": "missing[0].reason",
+       "value": "the newest player-prop quote is 1008 minutes old"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A fresh quote or any model read on this stat would change it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_14",
+   "market": "prop",
+   "selection": "Under 1.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' de-vigged number for Chandler Simpson here is 0.5326, and the data holds no model number or form detail for this stat, so the market is the only guide.",
+     "evidence": [
+      {
+       "path": "markets.prop_14.options[0].fair_probability",
+       "value": 0.5326
+      },
+      {
+       "path": "markets.prop_14.options[0].best.price",
+       "value": -125
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The player prices are far older than the game-day quotes, so they may no longer match what the books are showing.",
+     "evidence": [
+      {
+       "path": "missing[0].reason",
+       "value": "the newest player-prop quote is 1008 minutes old"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A fresh quote or any model read on this stat would change it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_15",
+   "market": "prop",
+   "selection": "Under 1.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' de-vigged number for Chase DeLauter here is 0.5718, and the data holds no model number or form detail for this stat, so the market is the only guide.",
+     "evidence": [
+      {
+       "path": "markets.prop_15.options[0].fair_probability",
+       "value": 0.5718
+      },
+      {
+       "path": "markets.prop_15.options[0].best.price",
+       "value": -150
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The player prices are far older than the game-day quotes, so they may no longer match what the books are showing.",
+     "evidence": [
+      {
+       "path": "missing[0].reason",
+       "value": "the newest player-prop quote is 1008 minutes old"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A fresh quote or any model read on this stat would change it.",
+   "case_against": null
+  },
+  {
+   "slot_id": "prop_16",
+   "market": "prop",
+   "selection": "Under 1.5",
+   "verdict": "PASS",
+   "price": null,
+   "book": null,
+   "fair_estimate": null,
+   "confidence": "low",
+   "reasons": [
+    {
+     "claim": "The books' de-vigged number for Jo Adell here is 0.5837, and the data holds no model number or form detail for this stat, so the market is the only guide.",
+     "evidence": [
+      {
+       "path": "markets.prop_16.options[0].fair_probability",
+       "value": 0.5837
+      },
+      {
+       "path": "markets.prop_16.options[0].best.price",
+       "value": -157
+      }
+     ],
+     "derived": []
+    },
+    {
+     "claim": "The player prices are far older than the game-day quotes, so they may no longer match what the books are showing.",
+     "evidence": [
+      {
+       "path": "missing[0].reason",
+       "value": "the newest player-prop quote is 1008 minutes old"
+      }
+     ],
+     "derived": []
+    }
+   ],
+   "pass_price": null,
+   "what_would_change_it": "A fresh quote or any model read on this stat would change it.",
+   "case_against": null
+  }
+ ],
+ "summary_derived": []
+}

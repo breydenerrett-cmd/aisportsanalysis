@@ -423,15 +423,27 @@ export function inQualifyingRound(rankedCount) {
   return rankedCount < QUALIFYING_UNDER;
 }
 
-/** "3/10 bets": settled bets so far over the bar (never shown above the bar). */
+/** A dog a member built (not a house or desk model). Members' dogs are always listed, even before their first bet. */
+export function isMemberDog(hound) {
+  return !!hound && hound.kind === "user";
+}
+
+/** A member's dog with nothing yet: no settled bet and no open ticket. It is listed, flagged "New". */
+export function isNewDog(hound) {
+  return isMemberDog(hound) && settledOf(hound) === 0 && openBetsOf(hound) === 0;
+}
+
+/** "3/10 bets": settled bets so far over the bar (never shown above the bar). A member's brand-new dog says so. */
 export function progressText(hound, min = MIN_RANKED_BETS) {
+  if (isNewDog(hound)) return "New: no bets yet";
   return `${Math.min(settledOf(hound), min)}/${min} bets`;
 }
 
 /**
  * The qualifying round's rows from the models that are not ranked: those with a settled bet or an open ticket,
- * most dollars first, then the better record (wins over wins + losses), then the more settled bets, then by name.
- * A model with nothing yet is left out (the page counts them in one line).
+ * and EVERY member's dog (a new one has no bet yet and is flagged "New"), most dollars first, then the better record
+ * (wins over wins + losses), then the more settled bets, then by name. A house or desk model with nothing yet is
+ * left out (the page counts those in one line); a member's dog never is.
  */
 export function qualifyingRows(hounds) {
   const share = (x) => {
@@ -439,7 +451,7 @@ export function qualifyingRows(hounds) {
     const w = isNum(rec.wins) ? rec.wins : 0, l = isNum(rec.losses) ? rec.losses : 0;
     return w + l > 0 ? w / (w + l) : -1;
   };
-  return (hounds || []).filter((x) => settledOf(x) > 0 || openBetsOf(x) > 0).sort((a, b) => {
+  return (hounds || []).filter((x) => settledOf(x) > 0 || openBetsOf(x) > 0 || isMemberDog(x)).sort((a, b) => {
     const ua = balanceKey(a), ub = balanceKey(b);
     if (ua === null && ub !== null) return 1;
     if (ub === null && ua !== null) return -1;

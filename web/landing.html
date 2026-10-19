@@ -55,6 +55,7 @@
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/components.css">
 <link rel="stylesheet" href="css/nav.css">
+<link rel="stylesheet" href="css/lhnav.css">
 <!-- app.css, on the MARKETING page, deliberately -- web/js/meta.js's
      renderDisclaimerFooter is shared between this page and the app shell,
      and its .sitefoot__* rules live here. Linked BEFORE landing.css so
@@ -66,20 +67,26 @@
 </head>
 <body class="landing">
 
-<nav class="site-nav" aria-label="primary" data-hook="landing-header">
-  <span class="wordmark" data-hook="brand-mark">
-    <span class="wordmark__mark"><span></span></span>
-    <span class="wordmark__text" data-hook="product-name">LINEHOUND</span>
-  </span>
-  <div class="site-nav__links">
-    <a href="hounds.html" data-hook="nav-hounds">Leaderboard</a>
-    <a href="build-a-hound.html" data-hook="nav-build">Build a model</a>
-    <a href="#desk">AI desk</a>
-    <a href="#faq">FAQ</a>
+<header class="lh-nav" aria-label="primary" data-hook="landing-header" data-current="">
+  <div class="lh-nav__bar">
+    <a class="lh-nav__brand ps-page__home" href="landing.html" aria-label="LINEHOUND home">
+      <span class="wordmark" data-hook="brand-mark">
+        <span class="wordmark__mark"><span></span></span>
+        <span class="wordmark__text" data-hook="product-name">LINEHOUND</span>
+      </span>
+    </a>
+    <nav class="lh-nav__links" aria-label="Sections" data-hook="nav-links">
+      <a href="hounds.html" data-nav="leaderboard">Leaderboard</a>
+      <a href="kennels.html" data-nav="kennels">Kennels</a>
+      <a href="build-a-hound.html" data-nav="build">Build</a>
+      <a href="learning.html" data-nav="camp">Training camp</a>
+    </nav>
+    <div class="lh-nav__account" data-hook="nav-account-area" data-signed-in="false">
+      <a class="lh-btn lh-btn--soft" href="index.html#/signin" data-hook="nav-signin">Sign in</a>
+      <a class="btn btn--primary" href="index.html#/signup" data-hook="cta-primary" data-checkout-cta data-nav-extra>Request early access</a>
+    </div>
   </div>
-  <a class="btn btn--ghost site-nav__signin" href="index.html#/signin" data-hook="nav-signin">Sign in</a>
-  <a class="btn btn--primary" href="index.html#/signup" data-hook="cta-primary" data-checkout-cta>Request early access</a>
-</nav>
+</header>
 
 <main>
 
@@ -125,6 +132,17 @@
 </section>
 
 <!-- HERO -->
+<section class="kncard" aria-label="Kennels" data-hook="kennels-card">
+  <div class="kncard__text">
+    <h2>Kennels</h2>
+    <p>Every member's dogs, kennel by kennel. Build one, dress it, fire it.</p>
+  </div>
+  <div class="kncard__links">
+    <a class="btn btn--primary" href="kennels.html" data-hook="kennels-card-browse">Browse the kennels</a>
+    <a class="btn btn--ghost" href="kennel.html" data-hook="kennels-card-mine">Your kennel</a>
+  </div>
+</section>
+
 <section class="hero" id="desk" aria-label="hero" data-hook="hero">
   <div class="hero__side hero__side--a" data-parallax=".07"></div>
   <div class="hero__side hero__side--b" data-parallax=".07"></div>
@@ -669,5 +687,6 @@
 </footer>
 
 <script type="module" src="js/landing.js"></script>
+<script type="module" src="js/nav.js"></script>
 </body>
 </html>

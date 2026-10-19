@@ -73,11 +73,12 @@ class ThePageIsServed(unittest.TestCase):
         sample = (ROOT / "web" / "sample.html").read_text(encoding="utf-8")
         sheets = lambda html: re.findall(r'<link rel="stylesheet" href="([^"]+)"', html)
         self.assertEqual(sheets(MARKUP), sheets(sample))
-        for hook in ('data-hook="app-outlet"', 'data-hook="disclaimer-host"', 'class="site-nav"'):
+        for hook in ('data-hook="app-outlet"', 'data-hook="disclaimer-host"', 'class="lh-nav"'):
             self.assertIn(hook, MARKUP)
         self.assertIn('name="viewport" content="width=device-width, initial-scale=1', MARKUP)
-        # one module script, the tracker; no inline script
-        self.assertEqual(re.findall(r"<script\b[^>]*>", MARKUP), ['<script type="module" src="js/why-paused.js">'])
+        # two module scripts, the tracker and the shared navigation; no inline script
+        self.assertEqual(re.findall(r"<script\b[^>]*>", MARKUP),
+                         ['<script type="module" src="js/why-paused.js">', '<script type="module" src="js/nav.js">'])
 
     def test_the_script_only_tracks_and_mounts_the_footer(self):
         js = SCRIPT.read_text(encoding="utf-8")
