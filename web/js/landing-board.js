@@ -23,6 +23,7 @@ import {
 } from "./hounds-core.js";
 import { unitsOf } from "./hounds-voice.js";
 import { dogFace, poseOfHound } from "./dog-avatar.js";
+import { renderRace } from "./landing-race.js";
 import {
   recordText, betsOf, onlyTickets, ticketState, ticketStatus, RESULT_WORDS, ticketPrice, pickOf,
   marketLabel, recordedText, freshness, isRanked, qualifyingRows, progressText, NA,
@@ -43,6 +44,32 @@ export function topModels(hounds, n = TOP_MODELS, min) {
     && x.status !== "retired" && x.status !== "not_started" && categoryOf(x) !== "baseline" && unitsOf(x) !== null
     && isRanked(x, min));
   return sortByBankroll(eligible).slice(0, n);
+}
+
+/** The models the board (and the race beside it) show, in order: the ranked top five, topped up from the qualifying round. */
+export function boardModels(hounds, meta) {
+  const min = minRanked(meta);
+  const top = topModels(hounds, TOP_MODELS, min);
+  return top.concat(top.length < TOP_MODELS ? qualifyingModels(hounds, TOP_MODELS - top.length, min) : []);
+}
+
+/** The faces on the kennel band: the models the board shows, as dogs, in the pose their own form earns. */
+function drawFaces(models) {
+  const box = q("kennels-card-faces");
+  if (!box) return;
+  clearNode(box);
+  for (const m of (models || []).slice(0, 5)) {
+    box.appendChild(h("span", { class: "kncard__face" }, [dogFace(m, { size: 56, pose: poseOfHound(m) })]));
+  }
+}
+
+let raceArgs = null;
+let raceResizeBound = false;
+
+/** Draw the hero race; redraw it (without replaying the run) when the width changes between layouts. */
+function drawRace(animate = true) {
+  if (!raceArgs) return;
+  try { renderRace(q("lb-race"), raceArgs.models, raceArgs.meta, undefined, { animate }); } catch (err) { /* the race is a bonus: the board stands without it */ }
 }
 
 function tone(n) {
@@ -166,6 +193,23 @@ export async function fillBoard() {
   }
   const seasonMeta = data.season && typeof data.season === "object" ? data.season : null;
   renderBoard(body, data.hounds, seasonMeta, q("lb-season-note"));
+  raceArgs = { models: boardModels(data.hounds, seasonMeta), meta: seasonMeta };
+  try { drawFaces(raceArgs.models); } catch (err) { /* decoration only */ }
+  drawRace(true);
+  if (!raceResizeBound && typeof window !== "undefined" && typeof window.addEventListener === "function") {
+    raceResizeBound = true;
+    let timer = null;
+    let lastWide = null;
+    window.addEventListener("resize", () => {
+      if (typeof setTimeout !== "function") return;
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        const host = q("lb-race");
+        const wide = host && host.getBoundingClientRect ? host.getBoundingClientRect().width >= 520 : null;
+        if (wide !== lastWide) { lastWide = wide; drawRace(false); }
+      }, 160);
+    });
+  }
   const rulesNote = q("lb-bankroll-note");
   if (rulesNote) rulesNote.textContent = bankrollRules(data).label;          // the server's sentence, never typed here
   const seasonTag = q("lb-season");

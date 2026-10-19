@@ -117,11 +117,16 @@ class ThePanelsOnThePage(unittest.TestCase):
         self.assertIn("-120", f["picks"][0])
         self.assertIn("recorded 29m before the start", f["game"][0])
 
-    def test_there_is_no_cartoon_and_no_emoji_in_the_first_screen(self):
-        out = self.page(queries=[q("svgs", "[data-hook='lb-hero'] svg", "count"), q("mono", ".hd-mono", "texts"),
-                                 q("hero", "[data-hook='lb-hero']")])
-        self.assertEqual(out["final"]["svgs"], 0)
-        self.assertEqual(len(out["final"]["mono"]), 5)
+    def test_the_first_screen_has_character_dogs_and_the_race_but_no_emoji_and_no_toy_voice(self):
+        # Design system v2 (owner, 2026-10-19): the first screen is alive. Each model is a dog drawn by the character rig
+        # (web/js/dog-rig.js), in the board and in the bankroll race (tests/test_landing_race.py), instead of an initials tile.
+        # What stays pinned from the earlier professional pass: no emoji, and none of the toy words in the copy.
+        out = self.page(queries=[q("race", "[data-hook='lb-hero'] svg.lbrace__svg", "count"), q("mono", ".hd-mono", "texts"),
+                                 q("boardDogs", "[data-hook='lb-board'] svg.dk-badge", "count"),
+                                 q("raceDogs", "[data-hook='lb-race'] svg.dk-badge", "count"), q("hero", "[data-hook='lb-hero']")])
+        self.assertEqual(out["final"]["race"], 1)
+        self.assertEqual(out["final"]["mono"], [], "the initials tile is gone from the first screen")
+        self.assertEqual((out["final"]["boardDogs"], out["final"]["raceDogs"]), (5, 5))
         self.assertEqual(EMOJI.findall(out["final"]["hero"]), [])
         self.assertNotRegex(out["final"]["hero"].lower(), r"kennel|houndmaster|put down|bark|doghouse")
 

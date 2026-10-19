@@ -62,6 +62,8 @@
 <link rel="stylesheet" href="css/app.css">
 <link rel="stylesheet" href="css/landing.css">
 <link rel="stylesheet" href="css/kennel.css">
+<link rel="stylesheet" href="css/lh.css">
+<link rel="stylesheet" href="css/landing-v2.css">
 </head>
 <body class="landing">
 
@@ -97,15 +99,29 @@
      on this page is the shared footer's. The AI desk brief this page used to lead with is the second section,
      below. docs/VOICE.md. -->
 <section class="lbhero" aria-label="model leaderboard" data-hook="lb-hero">
+  <div class="lbhero__inner">
   <div class="lbhero__copy">
-    <p class="lbhero__eyebrow">AI sports betting models</p>
+    <p class="lbhero__eyebrow"><i class="lh-live" aria-hidden="true"></i>AI sports betting models</p>
     <h1 class="lbhero__title" data-hook="lb-title">AI betting models, tracked in public.</h1>
     <p class="lbhero__sub" data-hook="lb-sub">Dozens of models make paper bets every day. Every ticket is recorded before the game and graded after. Follow the ones that are winning.</p>
     <div class="lbhero__cta">
       <a class="btn btn--primary btn--lg" href="hounds.html" data-hook="cta-kennel-enter">View the leaderboard</a>
-      <a class="btn btn--ghost btn--lg" href="build-a-hound.html" data-hook="cta-kennel-build">Build a model</a>
+      <a class="lbhero__alt" href="build-a-hound.html" data-hook="cta-kennel-build">Build a model</a>
     </div>
     <p class="lbhero__straight" data-hook="kennel-straight">We stopped publishing MLB value picks on Oct 16, 2026 because they didn't beat the market. The graded record stays public; NFL picks carry on. <a href="why-we-paused.html" data-hook="hero-why-paused-link">Why we stopped publishing MLB picks &rarr;</a></p>
+  </div>
+  <!-- THE RACE (design system v2, 2026-10-19): the top five models on their real paper bankroll, filled by web/js/landing-race.js from
+       the same GET /hounds payload as the board below. With no script this is the one line of text. -->
+  <div class="lbhero__race" data-hook="lb-race" data-layout="wide">
+    <div class="lbrace__head">
+      <span class="lbrace__title"><i class="lh-live" aria-hidden="true"></i>Bankroll race</span>
+      <button type="button" class="lbrace__replay" data-hook="lb-race-replay" hidden>Replay</button>
+    </div>
+    <p class="lbrace__sub" data-hook="lb-race-sub">Paper bankroll by model. The race draws once the leaderboard loads.</p>
+    <div class="lbrace__chart" data-hook="lb-race-chart"></div>
+    <ol class="lbrace__legend" data-hook="lb-race-legend"></ol>
+    <p class="lbrace__note" data-hook="lb-race-note"></p>
+  </div>
   </div>
   <div class="lbhero__panels">
     <section class="lbpanel" aria-label="top models" data-hook="lb-board-panel">
@@ -131,6 +147,7 @@
 
 <!-- HERO -->
 <section class="kncard" aria-label="Kennels" data-hook="kennels-card">
+  <div class="kncard__faces" data-hook="kennels-card-faces" aria-hidden="true"></div>
   <div class="kncard__text">
     <h2>Kennels</h2>
     <p>Every member's dogs, kennel by kennel. Build one, dress it, fire it.</p>
