@@ -60,7 +60,7 @@ jobs:
           ref: claude/sports-betting-analysis-review-g1o0co
       - uses: superfly/flyctl-actions/setup-flyctl@master
       - name: Deploy
-        run: flyctl deploy -c deploy/fly.production.toml -a linehound-prod --remote-only --yes
+               run: timeout 540 flyctl deploy -c deploy/fly.production.toml -a linehound-prod --remote-only --yes --wait-timeout 5m
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_PROD_API_TOKEN || secrets.FLY_ORG_TOKEN }}
       # Same two-phase shape as deploy-staging.yml's own health check
