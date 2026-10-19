@@ -1,6 +1,6 @@
 # LineHound survival dashboard
 
-Generated 2026-10-19 15:46Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-10-19 21:06Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
@@ -151,9 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-10-19: all seven 2026-10-18 NFL briefs graded (every market passed, nothing staked); ALCS Game 5 brief graded.
-- Public sample now points at the graded ALCS Game 5 brief (Rays at Guardians, 2026-10-18).
-- Next briefs: Monday night Commanders at 49ers (5:15 pm PT) and ALCS Game 6 Guardians at Rays (5:08 pm PT), both in the 1:30 pm PT run.
-- Production deploy timeout applied by the owner; deploys green since. Daily job still red on the known tier-ladder check (owner decision).
+- 2026-10-19 (1:30 pm PT run): ALCS Game 6 Guardians at Rays brief published (19 markets, all passes; one checker rejection, second answer clean).
+- Monday night Commanders at 49ers brief published (3 markets, all passes).
+- Public sample stays on the graded ALCS Game 5 brief until tonight's games are graded.
+- A production deploy has hung 2h45m: dispatches on the working branch use that branch's workflow file, which lacks the owner's timeout patch.
 - Public MLB value picks remain paused. Sends 0, replies 0, testers 0, paid 0.
 
