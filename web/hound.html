@@ -22,6 +22,7 @@
 <link rel="stylesheet" href="css/components.css">
 <link rel="stylesheet" href="css/nav.css">
 <link rel="stylesheet" href="css/hounds.css">
+<link rel="stylesheet" href="css/dog-kit.css">
 </head>
 <body class="hounds-page">
 <a class="hd-skip" href="#main-content">Skip to the model</a>
@@ -49,6 +50,19 @@
 <p class="hd-disclosure" data-hook="paper-only-notice" role="note"><strong>Paper bets only. Not betting advice. 21+.</strong> No real money is staked, and past results do not predict future results.</p>
 
 <div class="hd-actions" role="group" aria-label="Follow, share and download this model" data-hook="hound-actions"></div>
+
+<!-- THE DOG KIT (web/js/dog-kit.js, 2026-10-19): Fire now and Ask sit under the action bar. Every panel starts hidden and
+     the script shows it only when the server's kit says it is real for this visitor. -->
+<div class="dk-top" data-hook="dog-kit-top">
+  <section class="hd-panel dk-panel" aria-labelledby="fire-h" data-hook="dog-fire-section" hidden>
+    <h2 id="fire-h">Fire now</h2>
+    <div data-hook="dog-fire"></div>
+  </section>
+  <section class="hd-panel dk-panel" aria-labelledby="ask-h" data-hook="dog-ask-section" hidden>
+    <h2 id="ask-h">Ask this model</h2>
+    <div data-hook="dog-ask"></div>
+  </section>
+</div>
 
 <section class="hd-panel hd-scoreboard" aria-labelledby="score-h" data-hook="hound-scoreboard-section">
   <h2 id="score-h" class="hd-sr-only">Key numbers</h2>
@@ -117,6 +131,21 @@
 </section>
 
 <section class="hd-panel hd-coach" aria-labelledby="coach-h" data-hook="hound-coach-section" hidden></section>
+
+<div class="dk-bottom" data-hook="dog-kit-bottom">
+  <section class="hd-panel dk-panel" aria-labelledby="manual-h" data-hook="dog-manual-section" hidden>
+    <h2 id="manual-h">Manual picks</h2>
+    <div data-hook="dog-manual"></div>
+  </section>
+  <section class="hd-panel dk-panel" aria-labelledby="fans-h" data-hook="dog-fans-section" hidden>
+    <h2 id="fans-h">What fans think</h2>
+    <div data-hook="dog-fans"></div>
+  </section>
+  <section class="hd-panel dk-panel" aria-labelledby="locker-h" data-hook="dog-locker-section" hidden>
+    <h2 id="locker-h">Locker room</h2>
+    <div data-hook="dog-locker"></div>
+  </section>
+</div>
 
 </main>
 

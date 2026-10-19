@@ -1,0 +1,385 @@
+"""Interacting with a dog: fire it now, ask it, rate it, dress it, drill it, and the Training camp's own data.
+
+    GET  /hounds/{id}/kit             what this visitor can do on this dog's page (token optional)
+    POST /hounds/{id}/fire            "What would you bet right now?": the rule over the latest stored boards,
+                                      READ ONLY; public, rate limited per address
+    GET  /hounds/{id}/ask             the dog's greeting and the questions worth asking it
+    POST /hounds/{id}/ask             {"question": "..."}: an answer BUILT FROM THE DOG'S DATA (no model is called)
+    GET  /hounds/{id}/manual          the owner's manual tickets, kept apart from the rule's record
+    POST /hounds/{id}/manual          the owner records a manual pick: {"event_id", "market"} (paper only)
+    GET  /hounds/{id}/feedback        Good call / Bad call counts (and, for a signed-in caller, their own votes)
+    POST /hounds/{id}/feedback        signed in: {"target_kind", "target_id", "verdict": good|bad, "note"?}
+    POST /hounds/{id}/suggest         signed in, not the owner, builder dogs: a suggested change for the owner
+    GET  /hounds/{id}/look            a builder dog's look (public)
+    PUT  /hounds/{id}/look            the owner: {"look": {...}} validated against the locker-room whitelist
+    GET  /hounds/looks?ids=a,b        looks for several dogs at once (the lists draw their badges from this)
+    GET  /hounds/camp/mine            signed in: the caller's dogs for the Training camp
+    POST /hounds/drill                signed in: {"dog_id" | "spec", "days": 7|14|30}: a hindsight drill, never counted
+
+NOTHING HERE WRITES TO A DOG'S RULE RECORD. The fire route writes nothing. The manual pick goes to its own
+ledger (src/hounds/interact/manual.py). Feedback and looks are rows in two small tables. A drill replays in a
+temporary ledger. Every payload carries ``paper_only: true`` and the not-advice line.
+
+MOUNT ORDER. ``/hounds/looks``, ``/hounds/camp/mine`` and ``POST /hounds/drill`` are literal paths next to
+``/hounds/{id}``; this router is mounted BEFORE api.hounds (api/app.py does, and a test pins it).
+"""
+
+from __future__ import annotations
+
+from datetime import datetime
+from typing import Any, Dict, Optional
+
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, Response
+from pydantic import BaseModel
+
+from src.appstate import ratelimit
+from src.appstate import users as users_store
+from src.hounds import user_spec
+from src.hounds.contract import envelope
+from src.hounds.interact import ask, camp, common, drill, fire, look, manual, store
+
+from api import auth as auth_mod
+from api.auth import get_current_user
+
+router = APIRouter()
+
+_NO_STORE = "no-store"
+
+_fire_limiter = ratelimit.FixedWindowLimiter(limit=20, window_s=60.0)
+_rl_fire = ratelimit.limiter_dependency(_fire_limiter)
+_ask_limiter = ratelimit.FixedWindowLimiter(limit=40, window_s=60.0)
+_rl_ask = ratelimit.limiter_dependency(_ask_limiter)
+_read_limiter = ratelimit.FixedWindowLimiter(limit=120, window_s=60.0)
+_rl_read = ratelimit.limiter_dependency(_read_limiter)
+_write_limiter = ratelimit.FixedWindowLimiter(limit=60, window_s=3600.0)
+_rl_write = ratelimit.limiter_dependency(_write_limiter, user_dependency=get_current_user)
+_drill_limiter = ratelimit.FixedWindowLimiter(limit=10, window_s=3600.0)
+_rl_drill = ratelimit.limiter_dependency(_drill_limiter, user_dependency=get_current_user)
+_manual_limiter = ratelimit.FixedWindowLimiter(limit=30, window_s=3600.0)
+_rl_manual = ratelimit.limiter_dependency(_manual_limiter, user_dependency=get_current_user)
+
+
+# ---------------------------------------------------------------------------
+# helpers
+# ---------------------------------------------------------------------------
+
+def _err(status: int, code: str, message: str, **extra) -> HTTPException:
+    return HTTPException(status_code=status, detail={"error": code, "message": message, **extra})
+
+
+def _dog(hound_id: str) -> common.Dog:
+    dog = common.resolve(hound_id)
+    if dog is None:
+        raise _err(404, "not_found", "no such dog")
+    return dog
+
+
+def _owned(hound_id: str, user: users_store.User) -> common.Dog:
+    dog = _dog(hound_id)
+    if dog.kind != common.KIND_USER or dog.owner_user_id != user.id:
+        raise _err(404, "not_found", "no such dog")        # not-yours reads exactly like not-there
+    return dog
+
+
+def _viewer_id(authorization: Optional[str]) -> Optional[int]:
+    return auth_mod.optional_user_id(authorization)
+
+
+def _fire_payload(dog: common.Dog, viewer_id: Optional[int] = None) -> dict:
+    """The fire preview as the page gets it (src/hounds/interact/camp.py ``decorate_fire``)."""
+    try:
+        out = fire.fire(dog)
+    except fire.NotFirable as exc:
+        raise _err(422, "not_firable", str(exc))
+    return camp.decorate_fire(dog, out, viewer_id)
+
+
+def _graded_tips(dog: common.Dog) -> list:
+    """Graded tips (the coach's and the fans') about this dog, from the report card. Best effort."""
+    try:
+        from src.hounds import coach_report
+        report = coach_report.build()
+    except Exception:  # noqa: BLE001
+        return []
+    tips = []
+    for item in (report.get("items") or []):
+        if item.get("hound") == dog.id:
+            tips.append({"kind": "coach", "label": (item.get("forward") or {}).get("label") or "TOO EARLY",
+                         "line": item.get("line")})
+    for item in ((report.get("fans") or {}).get("items") or []):
+        if item.get("hound") == dog.id:
+            tips.append({"kind": "fan", "label": (item.get("forward") or {}).get("label") or "TOO EARLY",
+                         "line": item.get("line")})
+    return tips
+
+
+def _manual_error(exc: manual.ManualError) -> HTTPException:
+    return _err(exc.status, exc.code, str(exc))
+
+
+# ---------------------------------------------------------------------------
+# the kit
+# ---------------------------------------------------------------------------
+
+@router.get("/hounds/looks")
+def looks(response: Response, ids: str = Query("", max_length=1500), _rl: None = Depends(_rl_read)) -> dict:
+    """{dog_id: look} for the builder dogs among ``ids`` that have saved a look (at most 40 ids)."""
+    response.headers["Cache-Control"] = "public, max-age=30"
+    wanted = [i.strip() for i in ids.split(",") if i.strip()][:40]
+    roots: dict = {}
+    for hound_id in wanted:
+        dog = common.resolve(hound_id)
+        if dog is not None and dog.kind == common.KIND_USER:
+            roots[hound_id] = dog.root_id
+    by_root = store.get_looks(set(roots.values()))
+    return envelope({"looks": {hid: by_root[root] for hid, root in roots.items() if root in by_root}})
+
+
+@router.get("/hounds/camp/mine")
+def camp_mine(response: Response, current_user: users_store.User = Depends(get_current_user),
+              _rl: None = Depends(_rl_read)) -> dict:
+    response.headers["Cache-Control"] = _NO_STORE
+    manual.maybe_settle()
+    return envelope(camp.mine(current_user.id))
+
+
+class DrillRequest(BaseModel):
+    dog_id: Optional[str] = None
+    spec: Optional[Dict[str, Any]] = None
+    days: int = 14
+
+
+@router.post("/hounds/drill")
+def run_drill(body: DrillRequest, response: Response,
+              current_user: users_store.User = Depends(get_current_user),
+              _rl: None = Depends(_rl_drill)) -> dict:
+    """A hindsight drill: read only, labelled, never counted (src/hounds/interact/drill.py)."""
+    response.headers["Cache-Control"] = _NO_STORE
+    target = None
+    if body.dog_id:
+        target = _dog(body.dog_id)
+    try:
+        return envelope(drill.drill(days=body.days, dog=target, spec=body.spec if target is None else None))
+    except drill.DrillError as exc:
+        raise _err(exc.status, exc.code, str(exc), fields=exc.fields)
+
+
+@router.get("/hounds/{hound_id}/kit")
+def kit(hound_id: str, response: Response, authorization: Optional[str] = Header(default=None),
+        _rl: None = Depends(_rl_read)) -> dict:
+    response.headers["Cache-Control"] = _NO_STORE
+    dog = _dog(hound_id)
+    return envelope(camp.kit(dog, _viewer_id(authorization)))
+
+
+# ---------------------------------------------------------------------------
+# fire now and the manual pick
+# ---------------------------------------------------------------------------
+
+@router.post("/hounds/{hound_id}/fire")
+def fire_now(hound_id: str, response: Response, authorization: Optional[str] = Header(default=None),
+             _rl: None = Depends(_rl_fire)) -> dict:
+    response.headers["Cache-Control"] = _NO_STORE
+    dog = _dog(hound_id)
+    return envelope(_fire_payload(dog, _viewer_id(authorization)))
+
+
+@router.get("/hounds/{hound_id}/manual")
+def manual_tickets(hound_id: str, response: Response, _rl: None = Depends(_rl_read)) -> dict:
+    response.headers["Cache-Control"] = _NO_STORE
+    dog = _dog(hound_id)
+    if dog.kind != common.KIND_USER:
+        return envelope({"tickets": [], "record": manual.record_summary([]), "dog_id": dog.id})
+    manual.maybe_settle()
+    items = manual.tickets(dog.id)
+    return envelope({"dog_id": dog.id, "tickets": items, "record": manual.record_summary(items),
+                     "limit_per_day": manual.PER_DAY_LIMIT, "note": manual.NOTE_COUNTED})
+
+
+class ManualRequest(BaseModel):
+    event_id: str
+    market: str
+
+
+@router.post("/hounds/{hound_id}/manual")
+def record_manual(hound_id: str, body: ManualRequest, response: Response,
+                  current_user: users_store.User = Depends(get_current_user),
+                  _rl: None = Depends(_rl_manual)) -> dict:
+    response.headers["Cache-Control"] = _NO_STORE
+    dog = _owned(hound_id, current_user)
+    try:
+        ticket = manual.record(dog, current_user.id, body.event_id, body.market)
+    except manual.ManualError as exc:
+        raise _manual_error(exc)
+    items = manual.tickets(dog.id)
+    return envelope({"ticket": ticket, "record": manual.record_summary(items),
+                     "remaining_today": manual.remaining_today(dog.id, common.now_utc()),
+                     "note": manual.NOTE_COUNTED})
+
+
+# ---------------------------------------------------------------------------
+# ask
+# ---------------------------------------------------------------------------
+
+class AskRequest(BaseModel):
+    question: str
+
+
+def _context(dog: common.Dog, viewer_id: Optional[int]) -> ask.AskContext:
+    firable = dog.kind in (common.KIND_USER, common.KIND_HOUSE)
+    return camp.ask_context(dog, viewer_id, fire_fn=(lambda: _fire_payload(dog, viewer_id)) if firable else None,
+                            tips=_graded_tips(dog))
+
+
+@router.get("/hounds/{hound_id}/ask")
+def ask_open(hound_id: str, response: Response, authorization: Optional[str] = Header(default=None),
+             _rl: None = Depends(_rl_read)) -> dict:
+    response.headers["Cache-Control"] = _NO_STORE
+    dog = _dog(hound_id)
+    ctx = camp.ask_context(dog, _viewer_id(authorization))
+    hello = ask.answer("who are you", ctx)
+    return envelope({"dog_id": dog.id, "dog_name": dog.name, "greeting": hello["lines"],
+                     "suggestions": ask.suggestions(ctx), "warming": ctx.warming})
+
+
+@router.post("/hounds/{hound_id}/ask")
+def ask_dog(hound_id: str, body: AskRequest, response: Response,
+            authorization: Optional[str] = Header(default=None), _rl: None = Depends(_rl_ask)) -> dict:
+    response.headers["Cache-Control"] = _NO_STORE
+    dog = _dog(hound_id)
+    question = (body.question or "").strip()
+    if not question:
+        raise _err(422, "question_required", "ask something")
+    if len(question) > 300:
+        raise _err(422, "question_too_long", "keep the question under 300 characters")
+    return envelope(ask.answer(question, _context(dog, _viewer_id(authorization))))
+
+
+# ---------------------------------------------------------------------------
+# feedback and suggestions
+# ---------------------------------------------------------------------------
+
+class FeedbackRequest(BaseModel):
+    target_kind: str
+    target_id: Optional[str] = None
+    verdict: str
+    note: Optional[str] = None
+
+
+def _feedback_error(exc: store.FeedbackError) -> HTTPException:
+    return _err(exc.status, exc.code, str(exc))
+
+
+def _check_target(dog: common.Dog, kind: str, target_id: str) -> None:
+    """A vote lands on a thing that exists: a ticket this dog really has, a manual ticket, or an answer kind."""
+    if kind == store.KIND_DOG:
+        return
+    if kind == store.KIND_ANSWER:
+        if target_id not in ask.ANSWER_KINDS:
+            raise _err(422, "target_invalid", "that is not one of the dog's answers")
+        return
+    if kind == store.KIND_MANUAL:
+        if dog.kind != common.KIND_USER or target_id not in {t["bet_id"] for t in manual.tickets(dog.id)}:
+            raise _err(404, "target_not_found", "no such manual ticket")
+        return
+    data = common.hound_data(dog)
+    if data is None:
+        raise _err(503, "warming_up", "the tickets are still loading; try again in a minute")
+    keys = {ask.ticket_key(common.to_json(b)) for b in data.bets}
+    if target_id not in keys:
+        raise _err(404, "target_not_found", "no such ticket on this dog")
+
+
+@router.get("/hounds/{hound_id}/feedback")
+def feedback_read(hound_id: str, response: Response, authorization: Optional[str] = Header(default=None),
+                  _rl: None = Depends(_rl_read)) -> dict:
+    response.headers["Cache-Control"] = _NO_STORE
+    dog = _dog(hound_id)
+    viewer = _viewer_id(authorization)
+    out = {"dog_id": dog.id, "counts": store.counts(dog.root_id)}
+    if viewer is not None:
+        out["my_votes"] = store.my_votes(dog.root_id, viewer)
+        if dog.kind == common.KIND_USER and dog.owner_user_id == viewer:
+            out["notes"] = store.notes_for_owner(dog.root_id)
+            out["suggestions"] = store.suggestions_for_owner(dog.root_id)
+    return envelope(out)
+
+
+@router.post("/hounds/{hound_id}/feedback")
+def feedback_write(hound_id: str, body: FeedbackRequest, response: Response,
+                   current_user: users_store.User = Depends(get_current_user),
+                   _rl: None = Depends(_rl_write)) -> dict:
+    response.headers["Cache-Control"] = _NO_STORE
+    dog = _dog(hound_id)
+    try:
+        target = store.clean_target(body.target_kind, body.target_id)
+        note = store.clean_note(body.note)
+        _check_target(dog, body.target_kind, target)
+        saved = store.record_vote(hound_id=dog.id, root_id=dog.root_id, kind=body.target_kind, target_id=target,
+                                  verdict=body.verdict, note=note, user_id=current_user.id)
+    except store.FeedbackError as exc:
+        raise _feedback_error(exc)
+    return envelope({"saved": saved, "counts": store.counts(dog.root_id),
+                     "note": "Feedback never changes a dog. It is counted, and the owner reads it."})
+
+
+class SuggestRequest(BaseModel):
+    change: Dict[str, Any]
+    note: Optional[str] = None
+
+
+@router.post("/hounds/{hound_id}/suggest")
+def suggest_change(hound_id: str, body: SuggestRequest, response: Response,
+                   current_user: users_store.User = Depends(get_current_user),
+                   _rl: None = Depends(_rl_write)) -> dict:
+    """A suggested change to a builder dog's rule, for its owner to read. It changes nothing by itself."""
+    response.headers["Cache-Control"] = _NO_STORE
+    dog = _dog(hound_id)
+    if dog.kind != common.KIND_USER:
+        raise _err(422, "not_a_builder_dog", "suggest changes to a house dog with the tip box on its page")
+    if dog.owner_user_id == current_user.id:
+        raise _err(409, "own_dog", "this is your dog: change it in the builder")
+    change = dict(body.change or {})
+    if not change or len(change) > 2 or any(k not in user_spec.RULE_FIELDS for k in change):
+        raise _err(422, "change_invalid", "suggest one or two of the rule's own fields")
+    candidate = dict(dog.spec)
+    candidate.update(change)
+    try:
+        user_spec.validate_spec(candidate, taken_names=())
+        note = store.clean_note(body.note)
+        saved = store.record_suggestion(hound_id=dog.id, root_id=dog.root_id, change=change, note=note,
+                                        user_id=current_user.id)
+    except user_spec.SpecError as exc:
+        raise _err(422, "change_invalid", "that change is not a rule the menu allows", fields=exc.errors)
+    except store.FeedbackError as exc:
+        raise _feedback_error(exc)
+    return envelope({"saved": saved, "note": "Your suggestion goes to the owner. It changes nothing on its own."})
+
+
+# ---------------------------------------------------------------------------
+# the locker room
+# ---------------------------------------------------------------------------
+
+class LookRequest(BaseModel):
+    look: Dict[str, Any]
+
+
+@router.get("/hounds/{hound_id}/look")
+def look_read(hound_id: str, response: Response, _rl: None = Depends(_rl_read)) -> dict:
+    response.headers["Cache-Control"] = "public, max-age=30"
+    dog = _dog(hound_id)
+    return envelope({"dog_id": dog.id, "look": camp.look_of(dog), "menu": look.menu()})
+
+
+@router.put("/hounds/{hound_id}/look")
+def look_write(hound_id: str, body: LookRequest, response: Response,
+               current_user: users_store.User = Depends(get_current_user),
+               _rl: None = Depends(_rl_write)) -> dict:
+    response.headers["Cache-Control"] = _NO_STORE
+    dog = _owned(hound_id, current_user)
+    try:
+        clean = look.validate_look(body.look)
+    except look.LookError as exc:
+        raise _err(422, "look_invalid", "that look is not on the menu", fields=exc.errors)
+    store.set_look(dog.root_id, clean, current_user.id)
+    return envelope({"dog_id": dog.id, "look": clean})

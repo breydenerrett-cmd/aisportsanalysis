@@ -766,7 +766,7 @@ class ThePagesUnderNode(unittest.TestCase):
             q("coach_n", "[data-hook='coach-list'] li", "count"),
             q("coach_facts", "[data-hook='coach-facts'] dd", "texts"),
             q("block", "[data-hook='fans-block']", "count")])
-        self.assertEqual(f["title"], "Fans vs the coach 🧠🆚🐶")
+        self.assertEqual(f["title"], "Fans vs the coach")
         self.assertIn("never counts in the coach's own numbers", f["intro"])
         self.assertEqual(f["versus"], "Coach vs the fans: the coach helped 1 of 1 graded tips, the fans helped 1 of 2 "
                                       "(live grades only).")
@@ -776,7 +776,7 @@ class ThePagesUnderNode(unittest.TestCase):
         self.assertEqual(f["n"], 3)
         self.assertEqual(f["coach_n"], 1)                                       # the coach's list is the coach's only
         self.assertEqual(f["coach_facts"][0], "1")                              # tips made: the coach's one, not four
-        self.assertEqual(sorted(f["badges"]), sorted(["HELPED ✅", "HURT ❌", "TOO EARLY 🐣"]))
+        self.assertEqual(sorted(f["badges"]), sorted(["HELPED", "HURT", "TOO EARLY"]))
         self.assertTrue(any(ln.startswith("Ann told Fake Dog to change") and "Live: helped (+3.2u over 25 bets)" in ln
                             for ln in f["lines"]), f["lines"])
         self.assertTrue(any(ln.startswith("A fan told Fake Dog") for ln in f["lines"]))

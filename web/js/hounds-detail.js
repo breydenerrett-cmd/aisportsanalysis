@@ -49,6 +49,7 @@ import { bootLineage } from "./hounds-lineage.js";
 import { copyText, shareDog, downloadCard } from "./hounds-share.js";
 import { isFollowed, toggleFollow } from "./hounds-follow.js";
 import { loadRulebook, renderDials, renderCoach } from "./hounds-rulebook.js";
+import { bootDogKit } from "./dog-kit.js";
 
 export const PAGE_SIZE = 20;
 export const OPEN_POLL_MS = 60000;
@@ -576,6 +577,8 @@ export async function boot() {
   renderRule(hound, `build-a-hound.html?from=${encodeURIComponent(state.id)}`);
   renderActions(hound);
   startRulebook(hound);           // loads on its own: the dials and the coach never hold the page up
+  // fire now, ask, manual picks, ratings and (owner) the locker room: its own request, hidden until real
+  bootDogKit(hound).catch(() => null);
 
   // the AI desk's models also show how they argued their newest game (every other model never sees this)
   bootDesk(hound);

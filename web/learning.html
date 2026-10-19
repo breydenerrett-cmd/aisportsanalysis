@@ -28,6 +28,7 @@
 <link rel="stylesheet" href="css/components.css">
 <link rel="stylesheet" href="css/nav.css">
 <link rel="stylesheet" href="css/hounds.css">
+<link rel="stylesheet" href="css/dog-kit.css">
 </head>
 <body class="hounds-page">
 <a class="hd-skip" href="#main-content">Skip to the scorecard</a>
@@ -50,17 +51,35 @@
 
 <header class="hd-hero">
   <h1 data-hook="learning-title">Training camp</h1>
-  <p class="hd-lede">Dogs don't get edited. Rookies try out for the starting job. A rookie makes the team only when the numbers say it beat the starter on the same games, and a fixed rulebook does the cutting, never an AI's hunch. If camp can't show it's helping, it shuts itself down.</p>
+  <p class="hd-lede">Where dogs get better. Fire a dog on the latest boards, ask it why it did what it did, rate its calls, and replay its rule over past days. Dogs don't get edited: rookies try out for the starting job, a rookie makes the team only when the numbers say it beat the starter on the same games, and a fixed rulebook does the cutting, never an AI's hunch. If camp can't show it's helping, it shuts itself down.</p>
   <p class="hd-paper" data-hook="paper-only-notice" role="note"><strong>Paper bets only. Not advice.</strong> Nobody here is betting real money, nothing here tells you what to bet, and a dog's results don't tell you what happens next. 21+.</p>
 </header>
 
 <div class="hd-state hd-state--down" data-hook="learning-paused" role="status" hidden></div>
 
+<section class="hd-panel" id="dogs" aria-labelledby="dogs-h" data-hook="camp-dogs-section">
+  <h2 id="dogs-h">Your dogs in training</h2>
+  <p class="hd-muted">The dogs you built: this season's record, the last five tickets, what people think of each one and what they suggested. Fire a dog on the latest boards, ask it why it did something, or drill its rule on old boards.</p>
+  <div data-hook="camp-dogs"><p class="hd-muted">Loading your dogs...</p></div>
+</section>
+
 <section class="hd-panel" id="coach" aria-labelledby="coach-h" data-hook="coach-section">
-  <h2 id="coach-h">📋 Coach report card: is the coach any good?</h2>
-  <p class="hd-muted">Once a week the coach tells a dog to tweak one of its dials. We don't take its word for it. Code grades every tip two ways. <strong>Hindsight</strong> replays the 30 days before the tip with the old dial and the new one. The coach could see that stretch, so it's a rehearsal. <strong>Live</strong> is the honest one: from the minute the tip lands, both dials run side by side on new games. A verdict needs 20 settled bets. Until then it's TOO EARLY 🐣.</p>
+  <h2 id="coach-h">Coach report card: is the coach any good?</h2>
+  <p class="hd-muted">Once a week the coach tells a dog to tweak one of its dials. We don't take its word for it. Code grades every tip two ways. <strong>Hindsight</strong> replays the 30 days before the tip with the old dial and the new one. The coach could see that stretch, so it's a rehearsal. <strong>Live</strong> is the honest one: from the minute the tip lands, both dials run side by side on new games. A verdict needs 20 settled bets. Until then it's TOO EARLY.</p>
   <div data-hook="coach-body"><p class="hd-muted">Loading the report card...</p></div>
   <p class="hd-fine">Graded by code, never by the coach. A tip never changes a dog; only the rookie rulebook below can do that. Paper bets only, not advice.</p>
+</section>
+
+<section class="hd-panel" id="drills" aria-labelledby="drills-h" data-hook="camp-drills-section">
+  <h2 id="drills-h">Drills</h2>
+  <p class="hd-muted">Replay a dog's current rule over the last 7, 14 or 30 days of stored boards and see what it would have done. It is a rehearsal: you can see how those games ended, so a drill is never added to a record, a ranking or a verdict. A month can take up to a minute.</p>
+  <div data-hook="camp-drill"><p class="hd-muted">Loading drills...</p></div>
+</section>
+
+<section class="hd-panel" id="cuts" aria-labelledby="cuts-h" data-hook="camp-events-section">
+  <h2 id="cuts-h">Promotions and cuts</h2>
+  <p class="hd-muted">Every rookie that made the team, and every one that was cut, with the numbers that decided it. The rulebook below does the deciding.</p>
+  <div data-hook="camp-events"><p class="hd-muted">Loading the tryout results...</p></div>
 </section>
 
 <section class="hd-panel" aria-labelledby="chance-h" data-hook="learning-chance-section">
@@ -103,5 +122,6 @@
 </footer>
 
 <script type="module" src="js/hounds-learning.js"></script>
+<script type="module" src="js/dog-camp.js"></script>
 </body>
 </html>

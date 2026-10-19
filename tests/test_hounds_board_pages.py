@@ -616,7 +616,9 @@ class TheModelPage(unittest.TestCase):
         self.assertEqual(f["bio"], 0)
         for line in ("Grabs the price before it moves", "Closer roast", "Closer brag", "grabbed the early number"):
             self.assertNotIn(line, out["text"])
-        self.assertEqual(f["order"][:6], ["Key numbers", "Open tickets", "Graded tickets", "Rule", "Bankroll", "Status"])
+        # the dog kit's two panels (Fire now, Ask) sit under the action bar; they stay hidden until the server's kit says so
+        self.assertEqual(f["order"][:8], ["Fire now", "Ask this model", "Key numbers", "Open tickets", "Graded tickets", "Rule",
+                                          "Bankroll", "Status"])
         self.assertEqual(out["title"], "Closer — LINEHOUND")
 
     def test_a_model_with_no_persona_has_no_catchphrase_line(self):

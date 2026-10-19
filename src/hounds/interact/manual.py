@@ -1,0 +1,229 @@
+"""The owner's manual pick: "Record it as a manual pick".
+
+A MANUAL TICKET IS NOT THE DOG'S TICKET. The dog's rule record is the hash-chained user ledger the engine
+writes (``user_engine.ledger_path()``) and the public stats read. A manual pick goes to a SEPARATE ledger
+beside it (``hounds_manual_v1.jsonl``), which nothing in the stats, the leaderboard, the referee or the
+learning loop reads. So a manual pick can never reach the dog's record, its verdict, its CLV, or its rank:
+there is no filter to forget, because the rows are not in the file those readers open.
+
+It is graded the same way: the rows are the engine's own bet rows (``kind`` ``hound_user_bet``, plus
+``manual: true``), and ``user_settle.settle`` is pointed at the manual ledger, so the card ledger's grader, the
+same results store and the same two prices (average = headline, best = small print) decide the result.
+
+THE RULES (each is a refusal with a stable code, and each has a test):
+  * only the dog's OWNER, and only a RUNNING user dog;
+  * the pick must be one the dog's rule would make right now (the same ``fire_user`` evaluation: side rule,
+    price band, minimum books, and the -200 cap that is not a setting);
+  * the game must not have started, and the board the price comes from must be fresh (75 minutes, the
+    engine's own limit): no recording a price off a stale capture;
+  * one manual ticket per dog per game and market, and none on a game the rule ticket already covers;
+  * 5 a day per dog, counted from the ledger itself (the Eastern date it was recorded);
+  * paper only: the row says so and nothing is placed anywhere.
+
+The server recomputes the price from the stored board. The client sends only WHICH pick (game and market),
+never a price.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import os
+import threading
+import time
+from datetime import datetime, timedelta
+from pathlib import Path
+from typing import Callable, Optional
+
+from src.hounds import user_engine, user_spec
+from src.hounds.contract import ticket_status
+from src.hounds.interact import common, fire
+from src.ledger.chain import HashChainLedger
+
+LEDGER_NAME = "hounds_manual_v1.jsonl"
+ENV_LEDGER = "HOUNDS_MANUAL_LEDGER"
+PER_DAY_LIMIT = 5
+SETTLE_EVERY_S = 600.0
+
+NOTE_COUNTED = "Manual picks are kept apart. They are never counted in the dog's rule record or on the leaderboard."
+
+_write_lock = threading.Lock()
+_settle_state = {"at": 0.0}
+
+
+class ManualError(ValueError):
+    def __init__(self, code: str, message: str, status: int = 400):
+        self.code = code
+        self.status = status
+        super().__init__(message)
+
+
+def ledger_path(path: Optional[str] = None) -> str:
+    """Beside the user ledger (so a test that moves one moves the other), or HOUNDS_MANUAL_LEDGER."""
+    if path:
+        return path
+    override = (os.environ.get(ENV_LEDGER) or "").strip()
+    if override:
+        return override
+    return str(Path(user_engine.ledger_path()).with_name(LEDGER_NAME))
+
+
+def read_all(path: Optional[str] = None) -> list:
+    return HashChainLedger(ledger_path(path)).read()
+
+
+def _split(rows, hound_id: Optional[str] = None) -> tuple:
+    bets = [r for r in rows if r.get("kind") == user_engine.KIND_BET and (hound_id is None or r.get("hound_id") == hound_id)]
+    graded = {r["bet_id"]: r for r in rows if r.get("kind") == "hound_user_graded"}
+    return bets, graded
+
+
+def recorded_today(hound_id: str, now: datetime, path: Optional[str] = None) -> int:
+    today = common.eastern_date(now)
+    bets, _ = _split(read_all(path), hound_id)
+    n = 0
+    for r in bets:
+        when = user_engine._utc(r.get("recorded_utc"))
+        if when is not None and common.eastern_date(when) == today:
+            n += 1
+    return n
+
+
+def remaining_today(hound_id: str, now: datetime, path: Optional[str] = None) -> int:
+    return max(0, PER_DAY_LIMIT - recorded_today(hound_id, now, path))
+
+
+def manual_bet_id(hound_id: str, event_id: str, market: str) -> str:
+    return "m-" + hashlib.sha256(f"manual|{hound_id}|{event_id}|{market}".encode()).hexdigest()[:20]
+
+
+def _owner_stamp(user_id: int) -> str:
+    return hashlib.sha256(f"manual-owner:{user_id}".encode()).hexdigest()[:12]
+
+
+# ---------------------------------------------------------------------------
+# recording
+# ---------------------------------------------------------------------------
+
+def record(dog: common.Dog, user_id: int, event_id: str, market: str, *, now: Optional[datetime] = None,
+           games: Optional[dict] = None, ledger: Optional[str] = None, rule_ledger: Optional[str] = None,
+           rows_for: Optional[Callable] = None) -> dict:
+    """Record one manual ticket, or raise ``ManualError``. See the module docstring for every refusal."""
+    now = now or common.now_utc()
+    if dog.kind != common.KIND_USER or dog.hound is None:
+        raise ManualError("not_a_builder_dog", "manual picks are for dogs people built", 403)
+    if dog.owner_user_id != user_id:
+        raise ManualError("not_owner", "only the owner can record a manual pick", 403)
+    if dog.status != "running":
+        raise ManualError("not_running", f"this dog is {dog.status}; manual picks need a running dog", 409)
+    if market not in user_spec.MARKETS:
+        raise ManualError("market_invalid", "pick a market this dog bets", 422)
+    path = ledger_path(ledger)
+    if recorded_today(dog.id, now, path) >= PER_DAY_LIMIT:
+        raise ManualError("rate_limited", f"{PER_DAY_LIMIT} manual picks a day is the limit for one dog", 429)
+    # the dog's own evaluation, on the newest stored boards: the same function the preview shows
+    preview = fire.fire_user(dog, now=now, games=games, ledger=rule_ledger, rows_for=rows_for)
+    if any(t["event_id"] == event_id and t["market"] == market for t in preview["recorded"]):
+        raise ManualError("already_on_record", "the dog's own rule already has a ticket on that game and market", 409)
+    pick = next((p for p in preview["picks"] if p["event_id"] == event_id and p["market"] == market), None)
+    if pick is None:
+        raise ManualError("not_a_pick", "the dog's rule would not make that pick on the latest boards", 422)
+    commence = user_engine._utc(pick["start_utc"])
+    if commence is None or now >= commence:
+        raise ManualError("game_started", "that game has started; no manual pick can be recorded on it", 409)
+    if pick["stale"]:
+        raise ManualError("board_too_old",
+                          f"the newest board for that game is more than {user_engine.MAX_BOARD_AGE_MINUTES} "
+                          "minutes old; wait for the next capture", 409)
+    row = dict(pick["row"])
+    if user_spec.beyond_cap(row["price"]):          # belt and braces: the cap is not a setting
+        raise ManualError("price_cap", "that price is -200 or worse; the cap is always on", 422)
+    row.update({
+        "bet_id": manual_bet_id(dog.id, event_id, market), "manual": True, "provenance": "manual",
+        "segment": "manual", "who_decided": "owner", "lock_utc": user_engine._iso(now),
+        "recorded_utc": user_engine._iso(now), "manual_by": _owner_stamp(user_id),
+        "reason": ("Manual pick by the owner. The dog's rule makes the same pick on the latest board: "
+                   + pick["reason"]),
+    })
+    with _write_lock:                                 # re-checked under the lock: two taps cannot both pass
+        store = HashChainLedger(path)
+        existing = store.read()
+        bets, _ = _split(existing, dog.id)
+        if any(b["bet_id"] == row["bet_id"] for b in bets):
+            raise ManualError("already_on_record", "you already recorded a manual pick on that game and market", 409)
+        today = common.eastern_date(now)
+        used = sum(1 for b in bets if (user_engine._utc(b.get("recorded_utc")) is not None
+                                       and common.eastern_date(user_engine._utc(b["recorded_utc"])) == today))
+        if used >= PER_DAY_LIMIT:
+            raise ManualError("rate_limited", f"{PER_DAY_LIMIT} manual picks a day is the limit for one dog", 429)
+        store.append(row)
+    return ticket_view(row, None, now=now)
+
+
+# ---------------------------------------------------------------------------
+# reading and settling
+# ---------------------------------------------------------------------------
+
+def ticket_view(bet: dict, graded: Optional[dict], *, now: Optional[datetime] = None) -> dict:
+    result = (graded or {}).get("result")
+    status = ticket_status(result.lower() if result else None, bet.get("commence_time"), bet.get("slate_date"), now)
+    word = {"WIN": "WON", "LOSS": "LOST", "PUSH": "PUSH", "VOID": "VOID"}.get(result or "", None)
+    return {
+        "kind": "manual", "bet_id": bet["bet_id"], "hound_id": bet["hound_id"], "date": bet["slate_date"],
+        "game": f"{bet['away_team']} @ {bet['home_team']}", "market": bet["market"], "selection": bet["selection"],
+        "line": bet.get("line"), "price_average": bet["price"], "price_best": bet["best_price"],
+        "book": bet.get("best_book"), "book_count": bet.get("n_books"), "start_utc": bet["commence_time"],
+        "recorded_utc": bet["recorded_utc"], "reason": bet.get("reason"),
+        "status": word or ("UNGRADED" if status == "UNGRADED" else "PENDING"), "result": result,
+        "units_average_price": (graded or {}).get("units_average_price"),
+        "units_best_price": (graded or {}).get("units_best_price"),
+        "clv_pts": (graded or {}).get("clv_pts"), "counted_in_record": False,
+    }
+
+
+def tickets(hound_id: str, *, path: Optional[str] = None, now: Optional[datetime] = None) -> list:
+    bets, graded = _split(read_all(path), hound_id)
+    out = [ticket_view(b, graded.get(b["bet_id"]), now=now) for b in bets]
+    out.sort(key=lambda t: (t["recorded_utc"], t["bet_id"]), reverse=True)
+    return out
+
+
+def record_summary(items: list) -> dict:
+    """The manual record, apart: graded counts and units at the average price (the headline price)."""
+    wins = sum(1 for t in items if t["result"] == "WIN")
+    losses = sum(1 for t in items if t["result"] == "LOSS")
+    pushes = sum(1 for t in items if t["result"] == "PUSH")
+    voids = sum(1 for t in items if t["result"] == "VOID")
+    units = sum(t["units_average_price"] for t in items if isinstance(t.get("units_average_price"), (int, float))
+                and t["result"] in ("WIN", "LOSS", "PUSH"))
+    return {"tickets": len(items), "graded": wins + losses + pushes, "wins": wins, "losses": losses,
+            "pushes": pushes, "voids": voids, "open": sum(1 for t in items if t["result"] is None),
+            "units_average_price": round(units, 4), "note": NOTE_COUNTED}
+
+
+def settle_manual(*, now: Optional[datetime] = None, ledger: Optional[str] = None, **kwargs) -> dict:
+    """Grade the manual tickets whose games are final, with the same grader the dogs' tickets use."""
+    from src.hounds import user_settle
+    return user_settle.settle(ledger=ledger_path(ledger), now=now, **kwargs)
+
+
+def maybe_settle(now: Optional[datetime] = None, *, ledger: Optional[str] = None, force: bool = False,
+                 **kwargs) -> Optional[dict]:
+    """``settle_manual`` at most every ten minutes, and only when a manual ticket's game could be final. It is
+    called when a page reads the manual tickets (and by the engine pass), so a manual ticket grades without a
+    second scheduler. Never raises: a results store that cannot be read leaves the ticket ungraded."""
+    now = now or common.now_utc()
+    if not force and time.monotonic() - _settle_state["at"] < SETTLE_EVERY_S:
+        return None
+    path = ledger_path(ledger)
+    if not Path(path).exists():
+        return None
+    bets, graded = _split(read_all(path))
+    waiting = [b for b in bets if b["bet_id"] not in graded
+               and (user_engine._utc(b["commence_time"]) or now) + timedelta(hours=2) <= now]
+    if not waiting and not force:
+        return None
+    _settle_state["at"] = time.monotonic()
+    try:
+        return settle_manual(now=now, ledger=ledger, **kwargs)
+    except Exception:  # noqa: BLE001 -- ungraded is the honest state when the results cannot be read
+        return None

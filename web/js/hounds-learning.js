@@ -35,12 +35,12 @@ export const CHAMPION_COLOR = "#00E0FF";
 export const CONTROL_COLOR = "#FFB020";
 export const MIN_BETS_TEXT = "A comparison needs 50 measurable bets on each side.";
 
-/** The coach report card's four live verdicts (src/hounds/coach_grade.py), as badges: always a word beside the emoji. */
+/** The coach report card's four live verdicts (src/hounds/coach_grade.py), as badges: the verdict is the word. */
 export const COACH_BADGES = {
-  "HELPED": { word: "HELPED", emoji: "✅", tone: "good" },
-  "HURT": { word: "HURT", emoji: "❌", tone: "bad" },
-  "NO DIFFERENCE": { word: "NO DIFFERENCE", emoji: "🪙", tone: "flat" },
-  "TOO EARLY": { word: "TOO EARLY", emoji: "🐣", tone: "early" },
+  "HELPED": { word: "HELPED", tone: "good" },
+  "HURT": { word: "HURT", tone: "bad" },
+  "NO DIFFERENCE": { word: "NO DIFFERENCE", tone: "flat" },
+  "TOO EARLY": { word: "TOO EARLY", tone: "early" },
 };
 
 const q = (hook) => document.querySelector(`[data-hook='${hook}']`);
@@ -103,8 +103,8 @@ export function historySeries(history) {
 /** The badge for a live verdict label; an unknown label gets a neutral one, never a guess. */
 export function coachBadge(label) {
   const found = COACH_BADGES[String(label || "").trim().toUpperCase()];
-  if (!found) return { text: "NOT GRADED 🐾", tone: "unknown", label: "" };
-  return { text: `${found.word} ${found.emoji}`, tone: found.tone, label: found.word };
+  if (!found) return { text: "NOT GRADED", tone: "unknown", label: "" };
+  return { text: found.word, tone: found.tone, label: found.word };
 }
 
 function plural(n, one, many) {
@@ -192,7 +192,7 @@ function renderFans(box, report) {
   const fans = report && report.fans;
   if (!fans) return;     // an older server without the fan lane: the coach's card stands alone
   const block = h("div", { class: "hd-fans", "data-hook": "fans-block" });
-  block.appendChild(h("h3", { "data-hook": "fans-title", text: "Fans vs the coach 🧠🆚🐶" }));
+  block.appendChild(h("h3", { "data-hook": "fans-title", text: "Fans vs the coach" }));
   block.appendChild(h("p", { class: "hd-muted", "data-hook": "fans-intro",
     text: "Anybody can tweak a dog's dials from its page. Code grades those tips exactly like the coach's: hindsight first, then live on new games. A fan tip never changes a dog, and it never counts in the coach's own numbers above." }));
   const v = fans.versus || {};
@@ -223,8 +223,8 @@ function renderCoach(result) {
   const report = result.value || {};
   const s = report.summary || {};
   box.appendChild(h("p", { "data-hook": "coach-summary", text: coachSummaryText(s) }));
-  const facts = [["Tips made", s.suggestions], ["Tips refused", s.refused], ["HELPED ✅", s.helped],
-    ["HURT ❌", s.hurt], ["NO DIFFERENCE 🪙", s.no_difference], ["TOO EARLY 🐣", s.too_early]];
+  const facts = [["Tips made", s.suggestions], ["Tips refused", s.refused], ["HELPED", s.helped],
+    ["HURT", s.hurt], ["NO DIFFERENCE", s.no_difference], ["TOO EARLY", s.too_early]];
   box.appendChild(h("dl", { class: "hd-row__facts", "data-hook": "coach-facts" },
     facts.map(([k, v]) => h("div", {}, [h("dt", { text: k }), h("dd", { text: isNum(v) ? String(v) : NOT_REPORTED })]))));
   const totals = coachTotalsText(s);
