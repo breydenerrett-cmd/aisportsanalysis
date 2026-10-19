@@ -103,7 +103,7 @@ class FanCase(unittest.TestCase):
         out = io.StringIO()
         with mock.patch("src.hounds.learning.pause.config_path", return_value=self.w.root / "none.json"), \
                 redirect_stdout(out):
-            counts = I.record_fan_tips(rows, scope=self.w.scope, card_paths=self.paths, now=now,
+            counts = I.record_fan_lane(rows, scope=self.w.scope, card_paths=self.paths, now=now,
                                        tunable_cfg=self.w.cfg, registry=REGISTRY, say=say or (lambda *_a: None))
         return counts
 
@@ -465,7 +465,7 @@ class GradedLikeTheCoach(unittest.TestCase):
         rows = [{"id": "tip_00000000a1", "hound_id": "fake_dog", "values": values or {"MIN_PRICE": 120},
                  "nickname": nickname, "created_utc": "2026-10-02T00:00:00Z"}]
         with mock.patch("src.hounds.learning.pause.config_path", return_value=self.root / "none.json"):
-            return I.record_fan_tips(rows, scope=self.scope, card_paths=self.paths,
+            return I.record_fan_lane(rows, scope=self.scope, card_paths=self.paths,
                                      now=C.parse("2026-10-02T00:00:00Z"), tunable_cfg=self.cfg,
                                      registry=F.REGISTRY, say=lambda *_a: None)
 
@@ -727,7 +727,7 @@ class ThePagesUnderNode(unittest.TestCase):
                 dict(tip(2), nickname=None, values={"MIN_PRICE": 140}, hound_id="fake_dog"),
                 dict(tip(3), nickname="Cy", values={"MIN_PRICE": 160}, hound_id="fake_dog")]
         with mock.patch("src.hounds.learning.pause.config_path", return_value=self.root / "none.json"):
-            I.record_fan_tips(rows, scope=L.Scope.house(self.root / "ev"), card_paths=self.paths, now=NOW,
+            I.record_fan_lane(rows, scope=L.Scope.house(self.root / "ev"), card_paths=self.paths, now=NOW,
                               tunable_cfg=F.tunable_cfg(), registry=F.REGISTRY, say=lambda *_a: None)
         k = C.FAN_KEY_BASE
         C.append(self.paths, C.K_HINDSIGHT, now=NOW, issue=k + 1, hound="fake_dog", hindsight=True, status="ok",

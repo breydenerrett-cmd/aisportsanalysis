@@ -93,7 +93,7 @@ better. Live: too early (3 bets)."*
 
 ## The fan lane
 
-Fans can send a tip from any tunable dog's page (`POST /hounds/{id}/tips`, `src/hounds/fan_tips.py`; a tip is
+Fans can send a tip from any tunable dog's page (`POST /hounds/{id}/tips`, `the tip box`; a tip is
 a row in the app database and never changes a dog). The report card grades those tips **exactly like the coach's
 suggestions** and publishes them in their own block, never mixed into the coach's numbers.
 

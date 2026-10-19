@@ -10,7 +10,7 @@ WHAT IT SAYS, AND WHAT IT REFUSES TO SAY
   * Words for a knob come from the change list frozen on the suggestion row (the hound's own rule words), so a
     reader sees "4.0 points or more", not "0.04".
 
-THE FAN LANE. Fan tips (src/hounds/fan_tips.py) are graded by the same code and reported in their own block
+THE FAN LANE. Fan tips (the tip box on a dog's page) are graded by the same code and reported in their own block
 (``fans``: a summary and the latest 20 tips, each with its grades), never folded into the coach's counts. The
 ``versus`` line sets the two side by side on LIVE grades only; hindsight gets a separate, labelled line.
 

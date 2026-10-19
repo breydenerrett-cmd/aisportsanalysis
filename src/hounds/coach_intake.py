@@ -430,7 +430,7 @@ def run_readonly(issues: Sequence[Mapping], *, scope: L.Scope, card_paths: coach
 TIPS_PATH = "/hounds/tips/export"
 TIPS_TIMEOUT_S = 20
 TIPS_MAX_BYTES = 5_000_000
-TIPS_MAX_ROWS = 5000               # the export's own ceiling (fan_tips.EXPORT_LIMIT)
+TIPS_MAX_ROWS = 5000               # the export's own ceiling (the export's own EXPORT_LIMIT)
 TIPS_SINCE_SLACK_S = 60            # re-read a minute before the newest recorded tip; tip ids dedupe the overlap
 PROPOSED_BY_FAN = "fan"
 _TIP_ID = re.compile(r"^[A-Za-z0-9_-]{1,40}$")
@@ -453,7 +453,7 @@ def tips_since(card: coach_card.Card) -> Optional[str]:
 def fetch_tip_export(since: Optional[str], *, base_url: Optional[str] = None,
                      urlopen: Optional[Callable] = None) -> list:
     """The fan tips from the public export, oldest first, as raw dicts (each one re-validated by
-    ``record_fan_tips``). Raises ``IntakeError('tips_failed')`` on any transport or parse failure, a 404
+    ``record_fan_lane``). Raises ``IntakeError('tips_failed')`` on any transport or parse failure, a 404
     included (the route exists only after the deploy that ships it)."""
     base = (base_url or tips_base_url()).rstrip("/")
     url = base + TIPS_PATH + (("?since=" + urllib.parse.quote(since, safe="")) if since else "")
@@ -480,17 +480,18 @@ def fetch_tip_export(since: Optional[str], *, base_url: Optional[str] = None,
 
 def clean_nickname(raw) -> Optional[str]:
     """A fan's nickname made safe for a public page, or None. Intake never trusts the export: anything the
-    tip box would refuse is dropped here too (characters first, then the site's own text rules)."""
+    tip box would refuse is dropped here too (characters first, then the site's own text rules,
+    ``user_spec.text_problem``, the same ones a dog's name meets).
+
+    This module deliberately does NOT import the tip box's own module: the tip box's own test pins that
+    only the API imports it, so no code path can read a tip back into a dog. Intake reads the public export."""
     if not isinstance(raw, str):
         return None
     text = " ".join(_NICK_DROP.sub(" ", raw).split())[:20].strip()
     if not text:
         return None
-    from src.hounds import fan_tips
-    try:
-        return fan_tips.clean_nickname(text)
-    except fan_tips.TipError:
-        return None
+    from src.hounds import user_spec
+    return None if user_spec.text_problem(text) else text
 
 
 def _one_tip(raw) -> Optional[dict]:
@@ -512,7 +513,7 @@ def _tip_order(raw) -> tuple:
     return ("", "")
 
 
-def record_fan_tips(rows: Sequence, *, scope: L.Scope, card_paths: coach_card.Paths, now: datetime,
+def record_fan_lane(rows: Sequence, *, scope: L.Scope, card_paths: coach_card.Paths, now: datetime,
                     tunable_cfg: Optional[Mapping] = None, registry: Optional[Mapping] = None,
                     say: Callable = print) -> dict:
     """Record the unseen fan tips in the report card's fan lane. Returns counts.
@@ -721,7 +722,7 @@ def run_source(issues: Optional[Sequence[Mapping]], *, scope: L.Scope, card_path
         if tips is not None:
             if issues is not None:
                 say(f"coach intake: {len(tips)} fan tip(s) read")
-            fan_counts = record_fan_tips(tips, scope=work, card_paths=work_card, now=now,
+            fan_counts = record_fan_lane(tips, scope=work, card_paths=work_card, now=now,
                                          tunable_cfg=tunable_cfg, registry=registry, say=say)
             say("  fans: " + ", ".join(f"{k} {v}" for k, v in fan_counts.items()))
         if grade:

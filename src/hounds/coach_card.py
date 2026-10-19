@@ -23,7 +23,7 @@ ROWS (one hash-chained JSONL file, ``evidence/hounds_coach_v1.jsonl``, ``src.led
   fan_tip_count            the same tip sent again the same UTC day: the first row's ``count`` goes up by one
                            (the chain is append-only, so the count is a row of its own, not an edit)
 
-THE FAN LANE. A fan tip (src/hounds/fan_tips.py, the tip box on a dog's page) is graded exactly like a coach
+THE FAN LANE. A fan tip (the tip box on a dog's page) is graded exactly like a coach
 suggestion, by the same code, and published beside it, never mixed into the coach's own numbers. Its rows reuse
 the ``issue`` field as a SYNTHETIC KEY (``FAN_KEY_BASE`` plus a running number) so ``coach_grade`` can store its
 hindsight and forward rows under the same ``issue`` and the grading code needs no second path. The key is far
