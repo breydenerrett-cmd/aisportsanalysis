@@ -7,6 +7,10 @@ An event is something that HAPPENED, read from what the site already records, ne
   cut        a challenger's tryout was cut (a ``decision`` event whose outcome is ``retired``)
   new        a new user hound entered (the app database's first version of a hound)
   streak     a hound's latest settled day ends a run of 5+ wins or 5+ losses (from its graded bets)
+  coach_tip  a new coach suggestion (the report card, src/hounds/coach_report.py): the change in plain words
+             and what hindsight says; guid ``kennel:coach_tip:<issue>``, dated by the tip's recorded time
+  coach_card "Coach report card: n tips, h helped, x hurt, t too early", ONCE PER DAY and only on a day the
+             card changed: guid ``kennel:coach_card:<date of the newest card row>``
 
 Every event carries the three things a polling Zap needs (``src/hounds/rss.py``): a STABLE ``guid``
 built from the event's identity (hound + date + kind, or the challenger's id), the event's OWN
@@ -53,6 +57,8 @@ KIND_CUT = "cut"
 KIND_NEW = "new"
 KIND_WIN_STREAK = "win_streak"
 KIND_LOSS_STREAK = "loss_streak"
+KIND_COACH_TIP = "coach_tip"
+KIND_COACH_CARD = "coach_card"
 
 # Why a challenger was cut, in the words a fan reads. The codes are the referee's
 # (src/hounds/learning/referee.py); an unknown code falls back to the neutral line, never a guess.
@@ -86,10 +92,14 @@ def _sentence(text: str) -> str:
     return text if text[-1] in ".!?" else text + "."
 
 
-def _event(kind: str, guid: str, pub: Optional[datetime], hound_id: str, title: str, why: str) -> Optional[dict]:
+def _event(kind: str, guid: str, pub: Optional[datetime], hound_id: str, title: str, why: str,
+           link: Optional[str] = None) -> Optional[dict]:
     if pub is None:
         return None            # no recorded time, no item: an undated event cannot be ordered or deduped
-    return {"kind": kind, "guid": guid, "pub": pub, "hound_id": hound_id, "title": title, "why": why}
+    out = {"kind": kind, "guid": guid, "pub": pub, "hound_id": hound_id, "title": title, "why": why}
+    if link:
+        out["link"] = link
+    return out
 
 
 # ---- the five kinds -------------------------------------------------------------------------------------
@@ -211,13 +221,57 @@ def new_hound_events(user_rows: Iterable[Mapping]) -> list:
     return out
 
 
+def coach_link(base_url: str) -> str:
+    return f"{base_url.rstrip('/')}/web/learning.html?{UTM}#coach"
+
+
+def coach_events(report: Optional[Mapping], *, base_url: Optional[str] = None) -> list:
+    """The coach report card's events from ``coach_report.build``: one tip item per suggestion in the report
+    and, once a day when the card changed, the report-card line. Text comes from the report's frozen
+    change list and its code-computed grades; nothing is invented here."""
+    if not report or not report.get("computed"):
+        return []
+    from src.hounds import coach_report as CR
+    link = coach_link(base_url or site_base_url())
+    out = []
+    for item in report.get("items") or []:
+        when = rss.parse_utc(item.get("recorded_utc"))
+        h = item.get("hindsight") or {}
+        if h.get("status") == "ok" and h.get("units_diff") is not None:
+            says = f"Hindsight says {CR.units_text(h.get('units_diff'))}."
+        else:
+            says = "Hindsight is still being worked out."
+        name = _name(item.get("hound_name"), "a hound")
+        change = rss.clean(item.get("change_text")).replace("@", "")
+        title = f"\U0001F9E0 Coach tip for {name}: {change}. {says}"
+        why = (f"{CR.live_clause(item['forward'])} Hindsight is the 30 days before the tip, which the coach "
+               "could see, so it is a rehearsal and not proof. Graded by code.")
+        ev = _event(KIND_COACH_TIP, f"kennel:{KIND_COACH_TIP}:{item['issue']}", when, str(item.get("hound") or ""),
+                    title, why, link=link)
+        if ev:
+            out.append(ev)
+    s = report.get("summary") or {}
+    last = rss.parse_utc(report.get("last_change_utc"))
+    if last is not None and (s.get("suggestions") or s.get("refused")):
+        day = last.date().isoformat()
+        title = (f"\U0001F4CB Coach report card: {s.get('suggestions', 0)} tips, {s.get('helped', 0)} helped, "
+                 f"{s.get('hurt', 0)} hurt, {s.get('too_early', 0)} too early")
+        why = (f"{s.get('refused', 0)} suggestions were refused. Live units difference: "
+               f"{CR.units_text(s.get('forward_units_diff'))}. Graded by code, on paper.")
+        ev = _event(KIND_COACH_CARD, f"kennel:{KIND_COACH_CARD}:{day}", last, "", title, why, link=link)
+        if ev:
+            out.append(ev)
+    return out
+
+
 # ---- the feed ---------------------------------------------------------------------------------------------
 
-def build_events(book, states: Mapping, user_rows: Iterable[Mapping], *, limit: int = MAX_ITEMS) -> list:
+def build_events(book, states: Mapping, user_rows: Iterable[Mapping], *, limit: int = MAX_ITEMS,
+                 coach: Optional[Mapping] = None) -> list:
     """Every event, newest first (ties broken by guid so two polls order the same), trimmed to ``limit``."""
     names = {hid: data.summary.name for hid, data in book.hounds.items()}
     events = (retired_events(book) + streak_events(book) + learning_events(states, names)
-              + new_hound_events(user_rows))
+              + new_hound_events(user_rows) + coach_events(coach))
     seen, unique = set(), []
     for ev in events:
         if ev["guid"] in seen:
@@ -232,7 +286,7 @@ def build_events(book, states: Mapping, user_rows: Iterable[Mapping], *, limit: 
 def render_feed(events: Iterable[Mapping], *, base_url: Optional[str] = None,
                 self_url: Optional[str] = None) -> str:
     base = (base_url or site_base_url()).rstrip("/")
-    items = [{"title": e["title"], "link": hound_link(base, e["hound_id"]), "guid": e["guid"],
+    items = [{"title": e["title"], "link": e.get("link") or hound_link(base, e["hound_id"]), "guid": e["guid"],
               "pub": e["pub"], "description": f"{e['why']} {DISCLAIMER}"} for e in events]
     return rss.render(title="LINEHOUND kennel news",
                       link=f"{base}/web/hounds.html",
@@ -241,7 +295,8 @@ def render_feed(events: Iterable[Mapping], *, base_url: Optional[str] = None,
                       items=items, self_url=self_url)
 
 
-def collect(book, *, states: Optional[Mapping] = None, user_rows: Optional[Iterable[Mapping]] = None) -> list:
+def collect(book, *, states: Optional[Mapping] = None, user_rows: Optional[Iterable[Mapping]] = None,
+            coach: Optional[Mapping] = None) -> list:
     """The events from the live stores. ``states`` and ``user_rows`` default to the real ones (the two
     learning scopes' folded ledgers; the app database's hound rows) and are the tests' seams."""
     if states is None:
@@ -256,4 +311,10 @@ def collect(book, *, states: Optional[Mapping] = None, user_rows: Optional[Itera
                 user_rows = user_store.list_all()
             except Exception:  # noqa: BLE001 -- an unreadable app db means no "new dog" items, not a 500
                 user_rows = []
-    return build_events(book, states, user_rows)
+    if coach is None:
+        try:
+            from src.hounds import coach_report
+            coach = coach_report.build()
+        except Exception:  # noqa: BLE001 -- an unreadable report ledger means no coach items, not a 500
+            coach = None
+    return build_events(book, states, user_rows, coach=coach)

@@ -256,6 +256,13 @@ def safe_cause(cause) -> str:
     return text if text and not _banned(text) else _FALLBACK_CAUSE
 
 
+def _coach_line(line) -> Optional[str]:
+    """The coach line if it passes the post's own rules (one line, no banned phrase), else None: the digest
+    leaves a line out rather than print something it would not have written."""
+    text = " ".join(str(line or "").split())
+    return text if text and not _banned(text) else None
+
+
 def graveyard_line(graveyard_hounds: list) -> Optional[str]:
     """``💀 Graveyard: <name> (<cause>)`` for the most recently retired hound (latest retired date; a hound
     with no date ranks last), or None."""
@@ -296,25 +303,30 @@ def _assemble(leaderboard: dict, middle: list) -> str:
     return "\n".join(lines)
 
 
-def build_post(leaderboard: dict, graveyard: Optional[dict] = None, window: Optional[dict] = None) -> str:
+def build_post(leaderboard: dict, graveyard: Optional[dict] = None, window: Optional[dict] = None,
+               coach_line: Optional[str] = None) -> str:
     """The post text. ``window`` is ``week_stats`` output from the live book, or None to use season records
-    (the saved-copy path). Over MAX_POST_CHARS the optional lines go in this order: graveyard, Coin-Flip,
-    ice cold, hottest; the count, the closing-line verdict, the responsible-gambling line and the link
-    are never trimmed."""
+    (the saved-copy path). ``coach_line`` is the coach report card's one line (``coach_report.digest_line``),
+    present only once the coach has made a suggestion; it goes right after the closing-line verdict. Over
+    MAX_POST_CHARS the optional lines go in this order: graveyard, Coin-Flip, ice cold, hottest, the coach line
+    (the owner's priority: dropped last); the count, the closing-line verdict, the responsible-gambling line and
+    the link are never trimmed."""
     hounds = leaderboard["hounds"]
     hot, cold = hottest_line(hounds, window), coldest_line(hounds, window)
     optional = [("hot", hot), ("cold", cold), ("coin", coin_flip_line(hounds)),
-                ("grave", graveyard_line((graveyard or {}).get("hounds") or []))]
+                ("grave", graveyard_line((graveyard or {}).get("hounds") or [])),
+                ("coach", _coach_line(coach_line))]
     sharp = sharp_line(hounds)
     kept = [(k, v) for k, v in optional if v]
 
     def post_of(entries):
-        order = [v for k, v in entries if k in ("hot", "cold")] + [sharp] + \
-                [v for k, v in entries if k in ("coin", "grave")]
+        order = ([v for k, v in entries if k in ("hot", "cold")] + [sharp]
+                 + [v for k, v in entries if k == "coach"]
+                 + [v for k, v in entries if k in ("coin", "grave")])
         return _assemble(leaderboard, order)
 
     post = post_of(kept)
-    for drop in ("grave", "coin", "cold", "hot"):
+    for drop in ("grave", "coin", "cold", "hot", "coach"):
         if len(post) <= MAX_POST_CHARS:
             break
         kept = [(k, v) for k, v in kept if k != drop]
@@ -332,11 +344,11 @@ def skip_payload() -> dict:
 
 
 def digest(leaderboard: Optional[dict], graveyard: Optional[dict] = None,
-           window: Optional[dict] = None) -> dict:
+           window: Optional[dict] = None, coach_line: Optional[str] = None) -> dict:
     """The /hounds/digest body. ``skip`` is true only when there is no leaderboard to speak from: no live
     book, no saved copy (``warming_up``), or an empty race."""
     if not _usable(leaderboard):
         return skip_payload()
-    return {"post": build_post(leaderboard, graveyard, window), "skip": False,
+    return {"post": build_post(leaderboard, graveyard, window, coach_line), "skip": False,
             "as_of": leaderboard.get("as_of"), "hounds_total": len(leaderboard["hounds"]),
             "paper_only": True}

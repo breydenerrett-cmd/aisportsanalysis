@@ -2,7 +2,11 @@
  * web/learning.html: how the hounds learn, and whether it helps.
  *
  * Reads GET /hounds/learning (src/hounds/learning/views.py: learning_payload) and, for the lessons beyond
- * the five it carries, GET /hounds/learning/lessons?page=. Shapes:
+ * the five it carries, GET /hounds/learning/lessons?page=. The top section, "Is the coach any good?", reads
+ * GET /hounds/coach/report (src/hounds/coach_report.py): {computed, message, summary: {suggestions, refused,
+ * graded_forward, helped, hurt, no_difference, too_early, forward_units_diff, hindsight_units_diff},
+ * items: [{issue, hound_name, line, mode, hypothesis, recorded_utc, hindsight, forward: {label, n_paired,
+ * units_diff}}], chain_ok}. Shapes of the scorecard:
  *
  *   {computed, message, as_of, system: {promotion_hit_rate: {promotions, matured, hits, rate, floor,
  *      min_matured_for_floor}, vs_random: {windows: {"30": W, "90": W}, controls, basis, trailing_days},
@@ -19,13 +23,21 @@
  */
 
 import { apiGet } from "./api.js";
-import { h, clearNode, signed, isNum, fmtWhen, describeError, NOT_REPORTED } from "./hounds-core.js";
+import { h, clearNode, signed, isNum, fmtWhen, fmtUnits, describeError, NOT_REPORTED } from "./hounds-core.js";
 import { friendlyLesson, campWords } from "./hounds-voice.js";
 import { renderLineChart } from "./hounds-chart.js";
 
 export const CHAMPION_COLOR = "#00E0FF";
 export const CONTROL_COLOR = "#FFB020";
 export const MIN_BETS_TEXT = "A comparison needs 50 measurable bets on each side.";
+
+/** The coach report card's four live verdicts (src/hounds/coach_grade.py), as badges: always a word beside the emoji. */
+export const COACH_BADGES = {
+  "HELPED": { word: "HELPED", emoji: "✅", tone: "good" },
+  "HURT": { word: "HURT", emoji: "❌", tone: "bad" },
+  "NO DIFFERENCE": { word: "NO DIFFERENCE", emoji: "🪙", tone: "flat" },
+  "TOO EARLY": { word: "TOO EARLY", emoji: "🐣", tone: "early" },
+};
 
 const q = (hook) => document.querySelector(`[data-hook='${hook}']`);
 
@@ -80,6 +92,96 @@ export function historySeries(history) {
     { id: "controls", name: "Random controls (30-day average)", color: CONTROL_COLOR,
       points: rows.map((r) => ({ date: r.date, value: r.control_mean_30 })) },
   ];
+}
+
+// ---- the coach report card (GET /hounds/coach/report) ----------------------------------------------------
+
+/** The badge for a live verdict label; an unknown label gets a neutral one, never a guess. */
+export function coachBadge(label) {
+  const found = COACH_BADGES[String(label || "").trim().toUpperCase()];
+  if (!found) return { text: "NOT GRADED 🐾", tone: "unknown", label: "" };
+  return { text: `${found.word} ${found.emoji}`, tone: found.tone, label: found.word };
+}
+
+function plural(n, one, many) {
+  return `${n} ${n === 1 ? one : many}`;
+}
+
+/** The headline sentence of the report card, from the server's summary counts. */
+export function coachSummaryText(s) {
+  if (!s || !isNum(s.suggestions) || (s.suggestions === 0 && !(s.refused > 0))) {
+    return "No tips yet. The coach gets a shot every week, and every tip it makes is graded by code the day it lands.";
+  }
+  const decided = (s.helped || 0) + (s.hurt || 0) + (s.no_difference || 0);
+  const bits = [`${plural(s.suggestions, "tip", "tips")} so far.`];
+  bits.push(decided
+    ? `${decided} graded live: ${s.helped || 0} helped, ${s.hurt || 0} hurt, ${s.no_difference || 0} no difference.`
+    : "None has been graded live yet.");
+  if (s.too_early > 0) bits.push(`${s.too_early} still too early to call (a verdict needs 20 settled bets).`);
+  if (s.refused > 0) bits.push(`${plural(s.refused, "suggestion was", "suggestions were")} refused for breaking the rules.`);
+  return bits.join(" ");
+}
+
+/** The two unit totals, hindsight labelled as a rehearsal. */
+export function coachTotalsText(s) {
+  if (!s) return "";
+  const live = isNum(s.forward_units_diff) ? fmtUnits(s.forward_units_diff) : null;
+  const hind = isNum(s.hindsight_units_diff) ? fmtUnits(s.hindsight_units_diff) : null;
+  const parts = [];
+  parts.push(live === null ? "Live: no settled games yet." : `Live, all tips together: ${live} against leaving the dogs alone (paper).`);
+  if (hind !== null) {
+    parts.push(`Hindsight: ${hind}. The coach could see that stretch before it spoke, so that one is a rehearsal, not a result.`);
+  }
+  return parts.join(" ");
+}
+
+export function coachItem(it) {
+  const f = it.forward || {};
+  const badge = coachBadge(f.label);
+  const bits = [h("div", { class: "hd-badgeline" }, [
+    h("span", { class: `hd-chip hd-chip--${badge.tone}`, "data-hook": "coach-badge", text: badge.text }),
+    h("strong", { text: it.hound_name || it.hound || "A dog" }),
+    it.recorded_utc ? h("span", { class: "hd-fine", text: fmtWhen(it.recorded_utc) }) : null,
+  ]), h("p", { class: "hd-lesson__line", "data-hook": "coach-line", text: it.line || NOT_REPORTED })];
+  if (it.hypothesis) {
+    bits.push(h("p", { class: "hd-fine", text: `The coach's pitch, quoted: "${it.hypothesis}"` }));
+  }
+  if (it.mode === "challenger") {
+    bits.push(h("p", { class: "hd-fine", text: "This one also made the rookie tryouts, where the rulebook decides." }));
+  }
+  return h("li", { class: "hd-lesson hd-coach-item", "data-label": badge.label, "data-issue": it.issue }, bits);
+}
+
+function renderCoach(result) {
+  const box = q("coach-body");
+  if (!box) return;
+  clearNode(box);
+  if (!result || !result.ok) {
+    const e = describeError(result && result.error, "the coach report card");
+    box.appendChild(h("div", { class: `hd-state hd-state--${e.kind}`, role: "status", "data-hook": "coach-state",
+      "data-kind": e.kind }, [h("p", { text: e.text })]));
+    return;
+  }
+  const report = result.value || {};
+  const s = report.summary || {};
+  box.appendChild(h("p", { "data-hook": "coach-summary", text: coachSummaryText(s) }));
+  const facts = [["Tips made", s.suggestions], ["Tips refused", s.refused], ["HELPED ✅", s.helped],
+    ["HURT ❌", s.hurt], ["NO DIFFERENCE 🪙", s.no_difference], ["TOO EARLY 🐣", s.too_early]];
+  box.appendChild(h("dl", { class: "hd-row__facts", "data-hook": "coach-facts" },
+    facts.map(([k, v]) => h("div", {}, [h("dt", { text: k }), h("dd", { text: isNum(v) ? String(v) : NOT_REPORTED })]))));
+  const totals = coachTotalsText(s);
+  if (totals) box.appendChild(h("p", { class: "hd-fine", "data-hook": "coach-totals", text: totals }));
+  const items = Array.isArray(report.items) ? report.items : [];
+  if (!items.length) {
+    box.appendChild(h("p", { class: "hd-muted", "data-hook": "coach-empty",
+      text: campWords(report.message) || "The coach has not made a tip yet. The first one shows up here, graded." }));
+  } else {
+    box.appendChild(h("ol", { class: "hd-lessons", "data-hook": "coach-list" }, items.map(coachItem)));
+  }
+  if (report.chain_ok === false) {
+    box.appendChild(h("p", { class: "hd-state hd-state--down", "data-hook": "coach-chain",
+      text: "The coach ledger failed its integrity check. Do not trust these numbers until it is looked at." }));
+  }
 }
 
 // ---- sections -----------------------------------------------------------------------------------------
@@ -236,12 +338,25 @@ export function render(payload) {
   renderLessons(payload);
 }
 
+/** Fetch without throwing: ``{ok, value}`` or ``{ok: false, error}``. */
+async function settle(promise) {
+  try {
+    return { ok: true, value: await promise };
+  } catch (error) {
+    return { ok: false, error };
+  }
+}
+
 export async function boot() {
+  // The coach report card is its own request: an older server without it, or a slow one, never blanks the
+  // scorecard below it, and the scorecard being down never hides the card.
+  const coachResult = settle(apiGet("/hounds/coach/report"));
   let payload;
   try {
     payload = await apiGet("/hounds/learning");
     if (!payload || typeof payload !== "object") throw Object.assign(new Error("empty"), { status: 502 });
   } catch (err) {
+    renderCoach(await coachResult);
     const e = describeError(err, "the scorecard");
     for (const hook of ["learning-chance", "learning-hold", "learning-activity", "learning-rules", "learning-lessons"]) {
       const box = q(hook);
@@ -250,6 +365,7 @@ export async function boot() {
     return;
   }
   render(payload);
+  renderCoach(await coachResult);
 }
 
 if (typeof document !== "undefined" && typeof window !== "undefined") {

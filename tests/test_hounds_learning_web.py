@@ -113,6 +113,15 @@ class StaticFacts(unittest.TestCase):
             html = (WEB / name).read_text(encoding="utf-8")
             self.assertRegex(html, r'<a href="learning.html">Training camp</a>', name)
 
+    def test_the_coach_report_card_section_is_the_first_panel_and_wears_the_voice(self):
+        html = self.HTML
+        coach = html.index('data-hook="coach-section"')
+        self.assertLess(coach, html.index('data-hook="learning-chance-section"'))
+        text = visible(html)
+        for needle in ("Coach report card", "is the coach any good", "Hindsight", "TOO EARLY 🐣",
+                       "Graded by code, never by the coach", "Paper bets only, not advice"):
+            self.assertIn(needle, text)
+
     def test_the_hound_page_has_the_versions_and_challengers_section(self):
         html = (WEB / "hound.html").read_text(encoding="utf-8")
         self.assertIn('data-hook="hound-lineage-section"', html)
@@ -148,7 +157,7 @@ class TheScorecardPage(unittest.TestCase):
         self.assertIn("above the controls", w30)               # -0.6 against -1.5 on the last day
         self.assertIn("60 shared games", w30)
         self.assertIn("read it as a scoreboard, not a verdict", w30)
-        self.assertEqual(out["gets"], ["/hounds/learning"])
+        self.assertEqual(sorted(out["gets"]), ["/hounds/coach/report", "/hounds/learning"])
 
     def test_too_few_bets_says_so_with_the_counts_instead_of_a_number(self):
         out = self.page(learning_payload(self.root, enough=False), queries=[q("w30", "[data-hook='chance-30']")])
@@ -226,6 +235,136 @@ class TheScorecardPage(unittest.TestCase):
         payload["chain"]["house"] = False
         out = self.page(payload, queries=[q("chain", "[data-hook='chain-status']")])
         self.assertIn("failed its integrity check (house)", out["final"]["chain"])
+
+
+def coach_report_payload(root: Path, tips=()):
+    """The real report payload (src/hounds/coach_report.py) from a temp ledger. ``tips`` are
+    (issue, hindsight_units or None, forward label or None, n, units) tuples."""
+    from src.hounds import coach_card as CC, coach_report as CR
+    from tests import _coach_card_fixtures as CF
+    paths = CF.paths_in(root / "coach")
+    paths.ledger.parent.mkdir(parents=True, exist_ok=True)
+    for issue, hind, label, n, units in tips:
+        rec = f"2026-10-{10 + issue:02d}T12:00:00Z"
+        CC.append(paths, CC.K_SUGGESTION, now=CC.parse(rec), **CF.suggestion_row(issue=issue, recorded=rec))
+        if hind is not None:
+            CC.append(paths, CC.K_HINDSIGHT, now=CC.parse(rec), issue=issue, hound="fake_dog", hindsight=True,
+                      status="ok", units_diff=hind, window_first="2026-09-01", window_last="2026-10-01",
+                      window_days=30)
+        if label is not None:
+            CC.append(paths, CC.K_FORWARD, now=CC.parse(rec), issue=issue, hound="fake_dog", label=label,
+                      n_paired=n, n_dates=min(n, 5), units_diff=units)
+    CR._CACHE.clear()
+    return jsonable(CR.build(paths))
+
+
+@unittest.skipUnless(HAS_NODE, "node not installed")
+class TheCoachReportCard(unittest.TestCase):
+    """The top section, "Is the coach any good?", rendered by the real page script from the real payload."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.root = Path(self._tmp.name)
+
+    def page(self, report, *, status=200, **kw):
+        payload = learning_payload(self.root)
+        routes = {"/hounds/learning": [200, payload], "/hounds/coach/report": [status, report]}
+        return run_page("learning", routes=routes, queries=kw.pop("queries", []), **kw)
+
+    TIPS = ((1, 2.1, "HELPED", 25, 3.2), (2, -1.0, "HURT", 22, -2.0), (3, 0.5, "NO DIFFERENCE", 30, 0.1),
+            (4, 1.0, "TOO EARLY", 3, 0.5), (5, None, None, 0, 0.0))
+
+    def test_the_summary_the_four_badges_and_the_tip_lines_are_on_the_page(self):
+        out = self.page(coach_report_payload(self.root, self.TIPS), queries=[
+            q("summary", "[data-hook='coach-summary']"), q("facts", "[data-hook='coach-facts'] dt", "texts"),
+            q("badges", "[data-hook='coach-badge']", "texts"), q("n", "[data-hook='coach-list'] li", "count"),
+            q("lines", "[data-hook='coach-line']", "texts"), q("totals", "[data-hook='coach-totals']"),
+            q("labels", "[data-hook='coach-list'] li", "attrs", attr="data-label"),
+            q("title", "#coach-h")])
+        f = out["final"]
+        self.assertIn("5 tips so far.", f["summary"])
+        self.assertIn("3 graded live: 1 helped, 1 hurt, 1 no difference.", f["summary"])
+        self.assertIn("2 still too early to call", f["summary"])
+        self.assertEqual(f["facts"], ["Tips made", "Tips refused", "HELPED ✅", "HURT ❌", "NO DIFFERENCE 🪙",
+                                      "TOO EARLY 🐣"])
+        self.assertEqual(sorted(f["badges"]), sorted(["HELPED ✅", "HURT ❌", "NO DIFFERENCE 🪙", "TOO EARLY 🐣",
+                                                      "TOO EARLY 🐣"]))
+        self.assertEqual(f["n"], 5)
+        self.assertEqual(f["labels"][0], "TOO EARLY")                       # newest tip first (issue 5, no grade yet)
+        self.assertTrue(any("Hindsight: +2.1u better. Live: helped (+3.2u over 25 bets)." in ln for ln in f["lines"]))
+        self.assertTrue(any("Live: too early (0 bets)." in ln for ln in f["lines"]))
+        self.assertIn("Coach told Fake Dog to change", f["lines"][0])
+        self.assertIn("Hindsight:", f["totals"])
+        self.assertIn("rehearsal, not a result", f["totals"])             # hindsight is labelled on the page
+        self.assertIn("Coach report card", f["title"])
+
+    def test_before_any_tip_the_page_says_so_and_invents_nothing(self):
+        out = self.page(coach_report_payload(self.root), queries=[
+            q("summary", "[data-hook='coach-summary']"), q("empty", "[data-hook='coach-empty']")])
+        self.assertIn("No tips yet", out["final"]["summary"])
+        self.assertIn("has not made a suggestion yet", out["final"]["empty"])
+        self.assertNotIn("NaN", out["text"])
+        self.assertNotIn("undefined", out["text"])
+
+    def test_a_server_without_the_report_route_is_a_calm_note_and_the_scorecard_still_renders(self):
+        out = self.page({"detail": "Not Found"}, status=404, queries=[
+            q("state", "[data-hook='coach-state']"), q("kind", "[data-hook='coach-state']", "attr", attr="data-kind"),
+            q("chance", "[data-hook='chance-30']")])
+        self.assertIn("not switched on yet", out["final"]["state"])
+        self.assertEqual(out["final"]["kind"], "missing")
+        self.assertIn("above the controls", out["final"]["chance"])
+
+    def test_the_scorecard_being_down_does_not_hide_the_report_card(self):
+        payload = coach_report_payload(self.root, self.TIPS)
+        out = run_page("learning", routes={"/hounds/coach/report": [200, payload]}, down=["/hounds/learning"],
+                       queries=[q("n", "[data-hook='coach-list'] li", "count"),
+                                q("kinds", "[data-hook='section-state']", "attrs", attr="data-kind")])
+        self.assertEqual(out["final"]["n"], 5)
+        self.assertEqual(set(out["final"]["kinds"]), {"down"})
+
+    def test_a_broken_coach_ledger_is_called_out(self):
+        report = coach_report_payload(self.root, self.TIPS)
+        report["chain_ok"] = False
+        out = self.page(report, queries=[q("chain", "[data-hook='coach-chain']")])
+        self.assertIn("failed its integrity check", out["final"]["chain"])
+
+    def test_a_challenger_tip_says_it_also_made_the_tryouts(self):
+        report = coach_report_payload(self.root, self.TIPS)
+        report["items"][0]["mode"] = "challenger"
+        out = self.page(report, queries=[q("text", "[data-hook='coach-list']")])
+        self.assertIn("also made the rookie tryouts", out["final"]["text"])
+
+
+@unittest.skipUnless(HAS_NODE, "node not installed")
+class TheCoachPureText(unittest.TestCase):
+    def js(self, body):
+        return run_js('import * as C from "./hounds-learning.js";\n' + body)
+
+    def test_badges_always_carry_the_word_beside_the_emoji(self):
+        out = self.js('console.log(JSON.stringify(["HELPED", "hurt", "NO DIFFERENCE", "TOO EARLY", "weird", null]'
+                      '.map(C.coachBadge).map(b => b.text)));')
+        self.assertEqual(out, ["HELPED ✅", "HURT ❌", "NO DIFFERENCE 🪙", "TOO EARLY 🐣", "NOT GRADED 🐾",
+                               "NOT GRADED 🐾"])
+
+    def test_the_summary_sentence(self):
+        s = {"suggestions": 1, "refused": 0, "helped": 0, "hurt": 0, "no_difference": 0, "too_early": 1}
+        out = self.js(f"console.log(JSON.stringify([C.coachSummaryText({json.dumps(s)}), C.coachSummaryText(null), "
+                      f"C.coachSummaryText({json.dumps(dict(s, suggestions=0, too_early=0, refused=2))})]));")
+        self.assertIn("1 tip so far.", out[0])
+        self.assertIn("None has been graded live yet.", out[0])
+        self.assertIn("a verdict needs 20 settled bets", out[0])
+        self.assertIn("No tips yet", out[1])
+        self.assertIn("2 suggestions were refused", out[2])
+
+    def test_the_totals_label_hindsight_a_rehearsal_and_do_not_invent_a_live_number(self):
+        out = self.js('console.log(JSON.stringify([C.coachTotalsText({forward_units_diff: 1.25, '
+                      'hindsight_units_diff: -3}), C.coachTotalsText({forward_units_diff: null, '
+                      'hindsight_units_diff: null})]));')
+        self.assertIn("Live, all tips together: +1.25u", out[0])
+        self.assertIn("Hindsight: -3.00u", out[0])
+        self.assertIn("rehearsal, not a result", out[0])
+        self.assertEqual(out[1], "Live: no settled games yet.")
 
 
 @unittest.skipUnless(HAS_NODE, "node not installed")

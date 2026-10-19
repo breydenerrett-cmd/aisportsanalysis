@@ -13,7 +13,9 @@
 <meta name="theme-color" content="#0A0A0B">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230B0C0E'/%3E%3Cpath d='M6 6l8 0 0 9-8 4z' fill='%23FF3D57'/%3E%3Cpath d='M18 6l8 0 0 13-8-4z' fill='%23FF7A45'/%3E%3C/svg%3E">
 <!-- TRAINING CAMP (public, no sign-in to read). Page script: web/js/hounds-learning.js, which reads
-     GET /hounds/learning and GET /hounds/learning/lessons (src/hounds/learning/views.py). The rules are in
+     GET /hounds/learning and GET /hounds/learning/lessons (src/hounds/learning/views.py), and, for the top
+     "Is the coach any good?" section, GET /hounds/coach/report (src/hounds/coach_report.py,
+     docs/COACH_REPORT_CARD.md). The rules are in
      docs/PREREG_LEARNING_LOOP.md. The paper-only / not-advice lines are STATIC markup so they are on the page
      with scripts off. Every dynamic region says honestly what happened if its endpoint is missing, and a
      scorecard that has not been computed yet is a sentence, never a made-up number. No external images.
@@ -52,6 +54,13 @@
 </header>
 
 <div class="hd-state hd-state--down" data-hook="learning-paused" role="status" hidden></div>
+
+<section class="hd-panel" id="coach" aria-labelledby="coach-h" data-hook="coach-section">
+  <h2 id="coach-h">📋 Coach report card: is the coach any good?</h2>
+  <p class="hd-muted">Once a week the coach tells a dog to tweak one of its dials. We don't take its word for it. Code grades every tip two ways. <strong>Hindsight</strong> replays the 30 days before the tip with the old dial and the new one. The coach could see that stretch, so it's a rehearsal. <strong>Live</strong> is the honest one: from the minute the tip lands, both dials run side by side on new games. A verdict needs 20 settled bets. Until then it's TOO EARLY 🐣.</p>
+  <div data-hook="coach-body"><p class="hd-muted">Loading the report card...</p></div>
+  <p class="hd-fine">Graded by code, never by the coach. A tip never changes a dog; only the rookie rulebook below can do that. Paper bets only, not advice.</p>
+</section>
 
 <section class="hd-panel" aria-labelledby="chance-h" data-hook="learning-chance-section">
   <h2 id="chance-h">Are the dogs smarter than a coin?</h2>

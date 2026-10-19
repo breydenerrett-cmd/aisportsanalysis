@@ -97,11 +97,23 @@ def digest(response: Response):
         book, warming = _book(response)
     except HTTPException:
         return digest_mod.skip_payload()
+    coach_line = _coach_digest_line()
     if warming:
-        return digest_mod.digest(stats.saved_payload("leaderboard"), stats.saved_payload("graveyard"))
+        return digest_mod.digest(stats.saved_payload("leaderboard"), stats.saved_payload("graveyard"),
+                                 coach_line=coach_line)
     return digest_mod.digest(leaderboard_payload(stats.leaderboard(book), book.as_of),
                              graveyard_payload(stats.graveyard(book), book.as_of),
-                             window=digest_mod.week_stats(book.hounds, book.as_of))
+                             window=digest_mod.week_stats(book.hounds, book.as_of), coach_line=coach_line)
+
+
+def _coach_digest_line():
+    """The coach report card's one digest line, or None before the first tip (or if the ledger cannot be
+    read: the digest must still post)."""
+    try:
+        from src.hounds import coach_report
+        return coach_report.digest_line(coach_report.build())
+    except Exception:  # noqa: BLE001
+        return None
 
 
 @router.get("/hounds/stream")

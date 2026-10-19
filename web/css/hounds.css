@@ -270,6 +270,11 @@
 .hd-lesson[data-outcome="promoted"] { border-left: 4px solid var(--hd-good); }
 .hd-lesson[data-outcome="retired"] { border-left: 4px solid var(--hd-bad); }
 .hd-lesson[data-outcome="undecided"] { border-left: 4px solid var(--hd-flat); }
+/* the coach report card's tips: the border says the live verdict (web/js/hounds-learning.js coachItem) */
+.hd-coach-item { border-left: 4px solid var(--hd-warn); }
+.hd-coach-item[data-label="HELPED"] { border-left-color: var(--hd-good); }
+.hd-coach-item[data-label="HURT"] { border-left-color: var(--hd-bad); }
+.hd-coach-item[data-label="NO DIFFERENCE"] { border-left-color: var(--hd-flat); }
 
 /* =====================================================================================================
  * THE LIVE KENNEL (voice rewrite, 2026-10-18). Same tokens, louder: big type, bold colour, thumb-sized

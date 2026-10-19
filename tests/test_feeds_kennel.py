@@ -281,14 +281,15 @@ class Route(unittest.TestCase):
         scopes = {"house": L.Scope.house(Path(tmp) / "h"), "user": L.Scope.user(Path(tmp) / "u")}
         return (mock.patch("src.hounds.stats.get_book_nowait", return_value=(book, "fresh")),
                 mock.patch.object(L, "default_scopes", return_value=scopes),
+                mock.patch("src.hounds.coach_report.build", return_value=None),     # never the real report ledger
                 mock.patch("src.hounds.user_defs.db_exists", return_value=False))
 
     def test_the_route_serves_rss_with_the_right_type_and_is_stable(self):
         book = book_of((summary("basset", "Professor Paws", status="retired",
                                 retired=("2026-09-12", "retired: down more than 25 units")), []))
         with tempfile.TemporaryDirectory() as tmp:
-            a, b, c = self.patches(book, tmp)
-            with a, b, c:
+            a, b, c, d = self.patches(book, tmp)
+            with a, b, c, d:
                 client = self.client(book)
                 r1, r2 = client.get("/feeds/kennel.rss"), client.get("/feeds/kennel.rss")
         self.assertEqual(r1.status_code, 200, r1.text)

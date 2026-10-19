@@ -4,6 +4,8 @@
                                        random controls on the same games, activity and the
                                        false-discovery budget, the pause state and why
     GET /hounds/learning/lessons       every ended challenger's lesson, newest first (?hound=&category=)
+    GET /hounds/coach/report           the coach report card: tips made and refused, the live verdicts, and
+                                       the last 20 tips with both grades (src/hounds/coach_report.py)
     GET /hounds/{id}/lineage           a hound's versions (each with its own record), its live
                                        challengers, the tried-and-failed list and its lessons
 
@@ -12,8 +14,8 @@ computed on the request: the scorecard is the day's stored event, the lessons an
 hash-chained files, the versions come from the cached stats book (``stats.get_book_nowait``, which never
 waits for a build).
 
-MOUNT ORDER. ``/hounds/learning`` is a literal path under ``/hounds/{id}``: this router is mounted BEFORE
-``api.hounds`` (api/app.py does), or "learning" would be read as a hound id. ``/hounds/{id}/lineage`` has
+MOUNT ORDER. ``/hounds/learning`` and ``/hounds/coach/report`` are literal paths under ``/hounds/{id}``: this
+router is mounted BEFORE ``api.hounds`` (api/app.py does; a test pins it), or "learning" and "coach" would be read as hound ids. ``/hounds/{id}/lineage`` has
 a different shape and cannot collide with it.
 """
 
@@ -45,6 +47,16 @@ def learning_lessons(response: Response, hound: Optional[str] = Query(None, max_
                      page_size: int = Query(DEFAULT_PAGE_SIZE, ge=1, le=MAX_PAGE_SIZE)):
     response.headers["Cache-Control"] = _CACHE
     return views.lessons_payload(None, hound=hound, category=category, page=page, page_size=page_size)
+
+
+@router.get("/hounds/coach/report")
+def coach_report_route(response: Response):
+    """Read from the report-card ledger on disk, never from the stores; an absent ledger is a calm
+    "the coach has not made a suggestion yet" payload, not a 404."""
+    from src.hounds import coach_report
+    from src.hounds.learning import coach_brief
+    response.headers["Cache-Control"] = _CACHE
+    return coach_report.build(coach_on=coach_brief.coach_switch_on())
 
 
 def _user_versions(hound_id: str) -> list:

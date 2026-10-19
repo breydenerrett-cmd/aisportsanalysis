@@ -354,12 +354,16 @@ class Route(unittest.TestCase):
         self._default = mock.patch.object(Sources, "default", staticmethod(lambda: self.src))
         self._default.start()
         stats.clear_cache()
+        # never the real coach report ledger: the post must not depend on what evidence/ holds today
+        self._coach = mock.patch("api.hounds._coach_digest_line", return_value=None)
+        self._coach.start()
         app = FastAPI()
         app.include_router(router)
         self.client = TestClient(app)
 
     def tearDown(self):
         stats.clear_cache()
+        self._coach.stop()
         self._default.stop()
         self._env.stop()
         self._tmp.cleanup()
