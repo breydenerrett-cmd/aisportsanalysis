@@ -77,7 +77,7 @@ def description_for(info: Mapping) -> str:
     tagline, then to nothing."""
     record = info.get("record") or {}
     units = units_text(record)
-    units_part = f"{units}u paper" if units[:1] in "+-0123456789" else f"{units} (paper)"
+    units_part = f"{units}u paper" if units[:1] in "+-0123456789" else units
     parts = [wl_text(record), units_part]
     line = str(info.get("catchphrase") or info.get("tagline") or "").strip()
     if line:

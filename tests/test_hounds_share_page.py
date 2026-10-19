@@ -39,7 +39,7 @@ class TheDescriptionIsTheOwnersFormat(unittest.TestCase):
 
     def test_a_dog_with_no_bets_and_no_catchphrase_still_makes_a_sentence(self):
         page = sp.render_dog("rookie", {"id": "rookie", "name": "Rookie", "record": {"bets": 0}, "tagline": "New here."})
-        self.assertEqual(meta(page, "og:description"), "0-0 · no bets yet (paper) · New here.")
+        self.assertEqual(meta(page, "og:description"), "0-0 · no bets yet · New here.")
 
     def test_pushes_show_in_the_record_like_the_page(self):
         self.assertEqual(sp.wl_text({"bets": 10, "wins": 5, "losses": 4, "pushes": 1}), "5-4-1")
