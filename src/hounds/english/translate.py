@@ -101,7 +101,10 @@ def translation_menu() -> dict:
 
 
 def build_request(job_id: str, text: str, env: Optional[Mapping] = None) -> dict:
-    return {"job_id": job_id, "text": text, "menu": translation_menu(), "callback_url": callback_url(env)}
+    """The body of the POST to the Catch Hook. `menu` is JSON TEXT, not a nested object: Zapier flattens a
+    nested object into dozens of dotted fields, and the AI step needs the whole menu as one piece of text."""
+    return {"job_id": job_id, "text": text, "menu": json.dumps(translation_menu(), sort_keys=True, separators=(",", ":")),
+            "callback_url": callback_url(env)}
 
 
 def post_hook(url: str, payload: Mapping, *, timeout: float = HOOK_TIMEOUT_S,

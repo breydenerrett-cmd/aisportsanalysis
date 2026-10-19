@@ -174,8 +174,10 @@ class TranslatorWithoutFastApi(_Db):
         flat = json.dumps(payload)
         for secret in ("owner@example.com", "user_id", self.token):
             self.assertNotIn(secret, flat)
-        self.assertIn("role", [c["id"] for c in payload["menu"]["conditions"]])
-        ids = [c["id"] for c in payload["menu"]["conditions"]]
+        self.assertIn("role", [c["id"] for c in json.loads(payload["menu"])["conditions"]])
+        self.assertIsInstance(payload["menu"], str)                  # one piece of text for the Zap's AI step
+        menu = json.loads(payload["menu"])
+        ids = [c["id"] for c in menu["conditions"]]
         self.assertEqual("wind_direction" in ids, not user_spec_wind_unavailable())     # an unavailable condition is not offered
 
     def test_start_posts_to_the_hook_with_a_timeout_and_failures_mark_the_job_failed(self):
@@ -547,6 +549,48 @@ class ModuleLoad(unittest.TestCase):
             text = path.read_text(encoding="utf-8")
             for banned in ("import fastapi", "from fastapi", "from api", "import anthropic", "from anthropic"):
                 self.assertNotIn(banned, text, f"{path.name}: {banned}")
+
+
+class DeployFlags(unittest.TestCase):
+    def test_user_dogs_bet_on_staging_and_production_and_the_loop_reads_the_flag(self):
+        import tomllib
+        from src.hounds import user_runner
+        for name in ("fly.staging.toml", "fly.production.toml"):
+            env = tomllib.loads((REPO / "deploy" / name).read_text(encoding="utf-8"))["env"]
+            self.assertEqual(env.get("HOUNDS_ENGINE"), "on", name)
+            self.assertTrue(user_runner.enabled(env), name)
+
+
+class TheZapDocumentationMatchesTheCode(unittest.TestCase):
+    """docs/ZAPS.md section 5 is what the owner builds the Zap from: it must say what the code expects."""
+
+    def section(self) -> str:
+        text = (REPO / "docs" / "ZAPS.md").read_text(encoding="utf-8")
+        start = text.index("### 5. Strategy translator")
+        return text[start:text.index("## Running the intake", start)]
+
+    def test_the_section_names_the_trigger_the_steps_the_header_the_url_and_both_secrets(self):
+        doc = self.section()
+        for fragment in ("Catch Hook", "AI by Zapier", "Webhooks by Zapier", "POST", "X-Zap-Secret", translate.CALLBACK_PATH,
+                         translate.ENV_HOOK, translate.ENV_SECRET, "fly secrets set -a linehound-prod", "Read-Host",
+                         "-AsSecureString", "spec_json", "job_id", "callback_url"):
+            self.assertIn(fragment, doc, fragment)
+
+    def test_the_prompt_tells_the_model_the_same_keys_and_the_cap_the_code_enforces(self):
+        doc = self.section()
+        fence = "`" * 3
+        start = doc.index(fence + "\nYou turn")
+        prompt = doc[start + 4:doc.index(fence, start + 4)]
+        for key in translate.TOP_KEYS + translate.RULE_KEYS:
+            self.assertIn(key, prompt, key)
+        self.assertIn("-199", prompt)
+        self.assertIn("{{text}}", prompt)
+        self.assertIn("{{menu}}", prompt)
+        self.assertIn("Output ONLY the JSON object", prompt)
+        # the keys a model must never set are named as forbidden, and are the ones the cleaner drops
+        self.assertIn("Never include a name, a tagline, a colour, a badge or a label", prompt)
+        draft, dropped = translate.clean_model_spec({"name": "x", "tagline": "y", "color": "z", "badge": "w", "rules": []})
+        self.assertEqual(sorted(dropped), ["badge", "color", "name", "tagline"])
 
 
 if __name__ == "__main__":
