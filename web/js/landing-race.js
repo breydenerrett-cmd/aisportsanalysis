@@ -230,6 +230,7 @@ export function renderRace(host, models, meta, today, opts = {}) {
     host.setAttribute("data-run", "done");
   };
   const run = () => {
+    if (typeof document !== "undefined" && document.visibilityState === "hidden") { finish(); if (replay) replay.removeAttribute("hidden"); return; }   // a hidden tab shows the finished race
     if (reduced() || typeof requestAnimationFrame !== "function") { finish(); if (replay) replay.setAttribute("hidden", ""); return; }
     host.setAttribute("data-run", "running");
     if (replay) replay.setAttribute("hidden", "");
