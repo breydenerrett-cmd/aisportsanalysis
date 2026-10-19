@@ -53,6 +53,18 @@ export function boardModels(hounds, meta) {
   return top.concat(top.length < TOP_MODELS ? qualifyingModels(hounds, TOP_MODELS - top.length, min) : []);
 }
 
+/**
+ * The three dogs on the "how it works" steps: each `[data-step-dog="<id>|<name>|<pose>"]` becomes that house dog's face in that pose.
+ * The id and name pick the breed (dog-rig.js breedFor), so the step dogs are the same dogs the leaderboard shows. Decoration only.
+ */
+export function drawSteps(root = document) {
+  for (const holder of root.querySelectorAll("[data-step-dog]")) {
+    const [id, name, pose] = String(holder.getAttribute("data-step-dog")).split("|");
+    clearNode(holder);
+    holder.appendChild(dogFace({ id, name }, { size: 88, pose: pose || "idle" }));
+  }
+}
+
 /** The faces on the kennel band: the models the board shows, as dogs, in the pose their own form earns. */
 function drawFaces(models) {
   const box = q("kennels-card-faces");
@@ -171,6 +183,7 @@ export function renderTickets(list, items) {
 let retried = false;
 
 export async function fillBoard() {
+  try { drawSteps(); } catch (err) { /* decoration only */ }
   const body = q("lb-board");
   const list = q("lb-tickets");
   if (!body) return;

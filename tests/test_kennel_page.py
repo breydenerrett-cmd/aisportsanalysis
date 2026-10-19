@@ -113,7 +113,9 @@ class EveryPageHasTheOneNavigation(unittest.TestCase):
 
     def test_the_landing_page_has_a_big_kennels_card(self):
         html = read("landing.html")
-        self.assertRegex(html, r'<a class="btn btn--primary" href="kennels.html" data-hook="kennels-card-browse">Browse the kennels</a>')
+        # round 2 (2026-10-19): the band is "build your dog" with a primary build button; the kennels are one ghost button away
+        self.assertRegex(html, r'<a class="btn btn--primary" href="build-a-hound.html" data-hook="kennels-card-build">Build a dog</a>')
+        self.assertRegex(html, r'<a class="btn btn--ghost" href="kennels.html" data-hook="kennels-card-browse">Browse the kennels</a>')
         self.assertRegex(html, r'href="kennel.html" data-hook="kennels-card-mine">Your kennel</a>')
 
     def test_the_landing_page_keeps_its_early_access_button_in_the_bar(self):

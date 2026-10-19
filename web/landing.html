@@ -146,19 +146,47 @@
 </section>
 
 <!-- HERO -->
-<section class="kncard" aria-label="Kennels" data-hook="kennels-card">
+<section class="kncard" aria-label="Build your dog" data-hook="kennels-card" data-landing-section="build">
   <div class="kncard__faces" data-hook="kennels-card-faces" aria-hidden="true"></div>
   <div class="kncard__text">
-    <h2>Kennels</h2>
-    <p>Every member's dogs, kennel by kennel. Build one, dress it, fire it.</p>
+    <p class="lv-kicker">Build your dog</p>
+    <h2>Say a strategy. Get a dog that bets it.</h2>
+    <p>Dress it, give it a rule in plain English, and watch its paper record in public. Every member's dogs live in a kennel.</p>
   </div>
   <div class="kncard__links">
-    <a class="btn btn--primary" href="kennels.html" data-hook="kennels-card-browse">Browse the kennels</a>
+    <a class="btn btn--primary" href="build-a-hound.html" data-hook="kennels-card-build">Build a dog</a>
+    <a class="btn btn--ghost" href="kennels.html" data-hook="kennels-card-browse">Browse the kennels</a>
     <a class="btn btn--ghost" href="kennel.html" data-hook="kennels-card-mine">Your kennel</a>
   </div>
 </section>
 
-<section class="hero" id="desk" aria-label="hero" data-hook="hero">
+<!-- HOW IT WORKS (critic round 2, 2026-10-19): the landing is three sections with one visual each: the dog builder band above, these
+     three steps, and the AI desk card below; everything else is behind an accordion. The dogs are drawn by web/js/landing-board.js. -->
+<section class="lv-how" aria-label="How it works" data-hook="landing-steps" data-landing-section="how">
+  <h2 class="lv-title">How it works, in three steps.</h2>
+  <ol class="lv-steps" data-hook="how-steps">
+    <li class="lv-step" data-hook="how-step">
+      <span class="lv-step__dog" data-step-dog="professor_paws|Professor Paws|thinking" aria-hidden="true"></span>
+      <span class="lv-step__n">1</span>
+      <h3>Pick or build a model.</h3>
+      <p>Start from a house model or say a strategy in plain English. It becomes a model with a written rule.</p>
+    </li>
+    <li class="lv-step" data-hook="how-step">
+      <span class="lv-step__dog" data-step-dog="stale_bread_beagle|Stale-Bread Beagle|idle" aria-hidden="true"></span>
+      <span class="lv-step__n">2</span>
+      <h3>It makes paper bets.</h3>
+      <p>Each ticket is one unit of paper money, written down before the game. No real money is ever staked.</p>
+    </li>
+    <li class="lv-step" data-hook="how-step">
+      <span class="lv-step__dog" data-step-dog="chalk_chihuahua|Chalk Chihuahua|happy" aria-hidden="true"></span>
+      <span class="lv-step__n">3</span>
+      <h3>We grade it in public.</h3>
+      <p>The next morning every ticket is marked won or lost. Wins and losses stay on the board; past results do not promise future ones.</p>
+    </li>
+  </ol>
+</section>
+
+<section class="hero lv-desk" id="desk" aria-label="hero" data-hook="hero" data-landing-section="desk">
   <div class="hero__side hero__side--a" data-parallax=".07"></div>
   <div class="hero__side hero__side--b" data-parallax=".07"></div>
   <div class="hero__glow" aria-hidden="true"></div>
@@ -205,6 +233,8 @@
          above the record panel. The longer "What you get" section below
          carries the detail. Bet Check is not mentioned (owner ruling,
          2026-09-22). No figure is typed here. -->
+    <details class="lv-acc lv-acc--inline" data-hook="hero-wyg-acc">
+    <summary class="lv-acc__sum"><span class="lv-acc__title">Free, and for subscribers</span></summary>
     <div class="hero__wyg" data-hook="hero-wyg" data-rise data-delay="200">
       <div class="hero__wyg-col" data-hook="hero-wyg-free">
         <p class="hero__wyg-head">Free now</p>
@@ -221,6 +251,7 @@
         </ul>
       </div>
     </div>
+    </details>
   </div>
 
   <!-- THE PROOF PANEL (2026-09-22 redesign). Fills the hero's right side with
@@ -370,11 +401,13 @@
      and the primary navigation in web/js/main.js and web/js/sport.js. Bet
      Check is deliberately not mentioned (owner ruling, 2026-09-22). No
      figure is typed here. -->
-<section class="section section--tight" id="what-you-get" aria-label="what you get" data-hook="what-you-get">
+<section class="section section--tight lv-acc-section" id="what-you-get" aria-label="what you get" data-hook="what-you-get">
   <div class="section__head" data-rise>
     <span class="eyebrow eyebrow--money">What you get, in detail</span>
   </div>
-  <h2 class="section__title" data-rise data-delay="60">What is free, and what is for subscribers.</h2>
+  <details class="lv-acc" data-hook="wyg-acc">
+  <summary class="lv-acc__sum"><h2 class="section__title">What is free, and what is for subscribers.</h2><span class="lv-acc__hint">The record and postseason odds are free. Briefs, matchups, odds and props are for subscribers.</span></summary>
+  <div class="lv-acc__body">
   <div class="story-grid wyg-grid">
     <div class="story-card panel chamfer" data-rise data-delay="80" data-hook="wyg-free">
       <div class="story-card__kicker">Free, no account</div>
@@ -395,6 +428,8 @@
       <p class="story-card__body wyg-note">After the game, the NFL card joins the free record.</p>
     </div>
   </div>
+  </div>
+</details>
 </section>
 
 <!-- FREE SAMPLE: THE MOST RECENT FULLY GRADED CARD (2026-10-01). HIDDEN
@@ -402,21 +437,27 @@
      GET /card/history?limit=1 answers with a settled day. A failed fetch or
      an empty answer leaves this whole section hidden: no empty frame, no
      placeholder figure. -->
-<section class="section section--tight" id="free-sample" aria-label="last night's card" data-hook="last-card" hidden>
+<section class="section section--tight lv-acc-section" id="free-sample" aria-label="last night's card" data-hook="last-card" hidden>
   <div class="section__head">
     <span class="eyebrow eyebrow--money">A free sample</span>
   </div>
-  <h2 class="section__title" data-hook="last-card-title">Last night's card, as published, with what happened</h2>
+  <details class="lv-acc" data-hook="last-card-acc">
+  <summary class="lv-acc__sum"><h2 class="section__title" data-hook="last-card-title">Last night's card, as published, with what happened</h2><span class="lv-acc__hint">The latest graded card: every pick or fill, with how it ended.</span></summary>
+  <div class="lv-acc__body">
   <p class="section__lede" data-hook="last-card-date"></p>
   <div data-hook="last-card-body"></div>
+  </div>
+</details>
 </section>
 
 <!-- PRICING -->
-<section class="section" id="pricing" aria-label="pricing" data-view="pricing" data-hook="pricing">
+<section class="section lv-acc-section" id="pricing" aria-label="pricing" data-view="pricing" data-hook="pricing">
   <div class="section__head" data-rise>
     <span class="eyebrow eyebrow--money">Pricing</span>
   </div>
-  <h2 class="section__title" data-rise data-delay="60">One plan. No tiers to compare.</h2>
+  <details class="lv-acc" data-hook="pricing-acc">
+  <summary class="lv-acc__sum"><h2 class="section__title">One plan. No tiers to compare.</h2><span class="lv-acc__hint">Early access. Not on sale yet.</span></summary>
+  <div class="lv-acc__body">
   <div class="pricing-grid" style="margin-top:28px;grid-template-columns:minmax(0,1fr);max-width:460px">
     <div class="pricing-card pricing-card--founding panel chamfer" data-rise data-delay="80">
       <span class="badge badge--money chamfer chamfer--chip pricing-card__badge" data-hook="pricing-trial-badge" hidden></span>
@@ -429,6 +470,8 @@
       <a class="btn btn--primary" href="index.html#/signup" data-hook="cta-signup" data-checkout-cta>Request early access</a>
     </div>
   </div>
+  </div>
+</details>
 </section>
 
 <!-- SPORTS COVERED -- per-sport record tiles (task B1/B2, 2026-09-24).
@@ -443,11 +486,13 @@
      prominent than another by anything other than its own real number.
      The no-JS fallback text below names no figure, matching every other
      record surface on this page. -->
-<section class="section section--tight" aria-label="sports covered" data-hook="sports-covered">
+<section class="section section--tight lv-acc-section" aria-label="sports covered" data-hook="sports-covered">
   <div class="section__head" data-rise>
     <span class="eyebrow">Sports covered</span>
   </div>
-  <h2 class="section__title" data-rise data-delay="60">Where we're live, and where we're not.</h2>
+  <details class="lv-acc" data-hook="sports-acc">
+  <summary class="lv-acc__sum"><h2 class="section__title">Where we're live, and where we're not.</h2><span class="lv-acc__hint">MLB, NFL and UFC, each with its own graded record.</span></summary>
+  <div class="lv-acc__body">
   <p class="hero__proof-note" data-rise data-delay="80" style="margin-top:14px"><a class="hero__proof-link" href="postseason.html" data-hook="postseason-link">MLB postseason odds, free &rarr;</a></p>
   <div class="story-grid" style="margin-top:28px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))" data-hook="sport-record-tiles">
 
@@ -605,10 +650,12 @@
       <p class="story-card__body">A match board, not picks yet — research-stage, said plainly.</p>
     </div>
   </div>
+  </div>
+</details>
 </section>
 
 <!-- FAQ -->
-<section class="section section--tight" id="faq" aria-label="frequently asked questions" data-view="faq" data-hook="faq">
+<section class="section section--tight lv-acc-section" id="faq" aria-label="frequently asked questions" data-view="faq" data-hook="faq">
   <div class="section__head" data-rise>
     <span class="eyebrow">Quick answers</span>
   </div>

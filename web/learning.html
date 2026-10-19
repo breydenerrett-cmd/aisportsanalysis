@@ -64,77 +64,127 @@
   <p class="hd-paper" data-hook="paper-only-notice" role="note">Paper bets only. Not advice. 21+.</p>
 </header>
 
+
+<!-- THE CAMP AT A GLANCE (critic round 2, 2026-10-19): four figures, filled by js/camp-overview.js from the same endpoints the sections
+     read. A figure the server did not send is a dash. Counts are tips and tickets (paper); none of them says the coach is good. -->
+<ul class="cp-strip" data-hook="camp-strip" aria-label="The camp at a glance">
+  <li class="cp-stat"><span class="cp-stat__n" data-hook="camp-stat-tips">&mdash;</span><span class="cp-stat__l">Coach tips graded</span></li>
+  <li class="cp-stat"><span class="cp-stat__n" data-hook="camp-stat-helped">&mdash;</span><span class="cp-stat__l">Helped / hurt</span></li>
+  <li class="cp-stat"><span class="cp-stat__n" data-hook="camp-stat-next">&mdash;</span><span class="cp-stat__l">Next breeding cycle</span></li>
+  <li class="cp-stat"><span class="cp-stat__n" data-hook="camp-stat-dogs">&mdash;</span><span class="cp-stat__l">Your dogs in training</span></li>
+</ul>
+
 <div class="hd-state hd-state--down" data-hook="learning-paused" role="status" hidden></div>
 
 <section class="hd-panel" id="dogs" aria-labelledby="dogs-h" data-hook="camp-dogs-section">
-  <h2 id="dogs-h">Your dogs in training</h2>
+  <details class="cp-sec" data-hook="camp-sec-dogs">
+  <summary class="cp-sec__sum"><h2 id="dogs-h">Your dogs in training</h2><span class="cp-sec__num" data-hook="camp-num-dogs">&mdash;</span></summary>
+  <div class="cp-sec__body">
   <p class="hd-muted">The dogs you built: record, last tickets, what people think.</p>
   <details class="lh-how"><summary>How this works</summary><p class="hd-muted">The dogs you built: this season's record, the last five tickets, what people think of each one and what they suggested. Fire a dog on the latest boards, ask it why it did something, or drill its rule on old boards.</p></details>
   <div data-hook="camp-dogs"><p class="hd-muted">Loading your dogs...</p></div>
+  </div>
+  </details>
 </section>
 
 <section class="hd-panel" id="coach" aria-labelledby="coach-h" data-hook="coach-section">
-  <h2 id="coach-h">Coach report card: is the coach any good?</h2>
+  <details class="cp-sec" data-hook="camp-sec-coach">
+  <summary class="cp-sec__sum"><h2 id="coach-h">Coach report card: is the coach any good?</h2><span class="cp-sec__num" data-hook="camp-num-coach">&mdash;</span></summary>
+  <div class="cp-sec__body">
   <p class="hd-muted">Once a week the coach suggests one dial tweak. Code grades every tip. A verdict needs 20 settled bets.</p>
   <details class="lh-how"><summary>How this works</summary><p class="hd-muted">Once a week the coach tells a dog to tweak one of its dials. We don't take its word for it. Code grades every tip two ways. <strong>Hindsight</strong> replays the 30 days before the tip with the old dial and the new one. The coach could see that stretch, so it's a rehearsal. <strong>Live</strong> is the honest one: from the minute the tip lands, both dials run side by side on new games. A verdict needs 20 settled bets. Until then it's TOO EARLY.</p></details>
   <div data-hook="coach-body"><p class="hd-muted">Loading the report card...</p></div>
   <p class="hd-fine">Graded by code, never by the coach. A tip never changes a dog; only the rookie rulebook below can do that. Paper bets only, not advice.</p>
+  </div>
+  </details>
 </section>
 
 <section class="hd-panel" id="drills" aria-labelledby="drills-h" data-hook="camp-drills-section">
-  <h2 id="drills-h">Drills</h2>
+  <details class="cp-sec" data-hook="camp-sec-drills">
+  <summary class="cp-sec__sum"><h2 id="drills-h">Drills</h2><span class="cp-sec__num" data-hook="camp-num-drills">&mdash;</span></summary>
+  <div class="cp-sec__body">
   <p class="hd-muted">Replay a dog's rule over the last 7, 14 or 30 days. A rehearsal: never counted.</p>
   <details class="lh-how"><summary>How this works</summary><p class="hd-muted">Replay a dog's current rule over the last 7, 14 or 30 days of stored boards and see what it would have done. It is a rehearsal: you can see how those games ended, so a drill is never added to a record, a ranking or a verdict. A month can take up to a minute.</p></details>
   <div data-hook="camp-drill"><p class="hd-muted">Loading drills...</p></div>
+  </div>
+  </details>
 </section>
 
 <section class="hd-panel" id="cuts" aria-labelledby="cuts-h" data-hook="camp-events-section">
-  <h2 id="cuts-h">Promotions and cuts</h2>
+  <details class="cp-sec" data-hook="camp-sec-cuts">
+  <summary class="cp-sec__sum"><h2 id="cuts-h">Promotions and cuts</h2><span class="cp-sec__num" data-hook="camp-num-cuts">&mdash;</span></summary>
+  <div class="cp-sec__body">
   <p class="hd-muted">Every rookie that made the team or was cut, with the numbers that decided it.</p>
   <details class="lh-how"><summary>How this works</summary><p class="hd-muted">Every rookie that made the team, and every one that was cut, with the numbers that decided it. The rulebook below does the deciding.</p></details>
   <div data-hook="camp-events"><p class="hd-muted">Loading the tryout results...</p></div>
+  </div>
+  </details>
 </section>
 
 <section class="hd-panel" aria-labelledby="chance-h" data-hook="learning-chance-section">
-  <h2 id="chance-h">Are the dogs smarter than a coin?</h2>
+  <details class="cp-sec" data-hook="camp-sec-coin">
+  <summary class="cp-sec__sum"><h2 id="chance-h">Are the dogs smarter than a coin?</h2><span class="cp-sec__num" data-hook="camp-num-coin">&mdash;</span></summary>
+  <div class="cp-sec__body">
   <p class="hd-muted">Two control dogs pick by coin flip and dart. Every dog pays the book's cut.</p>
   <details class="lh-how"><summary>How this works</summary><p class="hd-muted">The only question that matters. Two control dogs pick with a seeded coin flip and a seeded dart throw. Every dog pays the book's cut, so a dog with no brains sits right at the controls. The line below compares the two on the same games only.</p></details>
   <div data-hook="learning-chance"><p class="hd-muted">Loading the scorecard...</p></div>
   <div data-hook="learning-chance-chart"></div>
+  </div>
+  </details>
 </section>
 
 <section class="hd-panel" aria-labelledby="hold-h" data-hook="learning-hold-section">
-  <h2 id="hold-h">Does making the team stick?</h2>
+  <details class="cp-sec" data-hook="camp-sec-hold">
+  <summary class="cp-sec__sum"><h2 id="hold-h">Does making the team stick?</h2><span class="cp-sec__num" data-hook="camp-num-hold">&mdash;</span></summary>
+  <div class="cp-sec__body">
   <p class="hd-muted">Do promoted rookies keep pricing as well as the dog they replaced?</p>
   <details class="lh-how"><summary>How this works</summary><p class="hd-muted">Of the rookies who made the team and have since made 100 measurable bets as the starter, how many priced at least as well as the dog they replaced. It stays empty until a promotion has had 100 bets.</p></details>
   <div data-hook="learning-hold"></div>
+  </div>
+  </details>
 </section>
 
 <section class="hd-panel" aria-labelledby="act-h" data-hook="learning-activity-section">
-  <h2 id="act-h">What's gone down in camp</h2>
+  <details class="cp-sec" data-hook="camp-sec-activity">
+  <summary class="cp-sec__sum"><h2 id="act-h">What's gone down in camp</h2><span class="cp-sec__num" data-hook="camp-num-activity">&mdash;</span></summary>
+  <div class="cp-sec__body">
   <p class="hd-muted">Camp checks each month for flukes and never promotes more than three rookies.</p>
   <details class="lh-how"><summary>How this works</summary><p class="hd-muted">Lots of rookies try out at once, so one looks good by pure luck every now and then. Camp keeps a fluke check on each month's finished tryouts, never lets more than three rookies make the team in a month, and keeps a running count of how many of them could be flukes.</p></details>
   <div data-hook="learning-activity"></div>
+  </div>
+  </details>
 </section>
 
 <section class="hd-panel" aria-labelledby="rules-h" data-hook="learning-rules-section">
-  <h2 id="rules-h">The rulebook, in brief</h2>
+  <details class="cp-sec" data-hook="camp-sec-rules">
+  <summary class="cp-sec__sum"><h2 id="rules-h">The rulebook, in brief</h2><span class="cp-sec__num" data-hook="camp-num-rules">&mdash;</span></summary>
+  <div class="cp-sec__body">
   <div data-hook="learning-rules"></div>
   <p class="hd-muted">The whole rulebook, every number in it, is in <code>docs/PREREG_LEARNING_LOOP.md</code>. It was written before the code existed.</p>
+  </div>
+  </details>
 </section>
 
 <section class="hd-panel" aria-labelledby="lessons-h" data-hook="learning-lessons-section">
-  <h2 id="lessons-h">What the cuts taught us</h2>
+  <details class="cp-sec" data-hook="camp-sec-lessons">
+  <summary class="cp-sec__sum"><h2 id="lessons-h">What the cuts taught us</h2><span class="cp-sec__num" data-hook="camp-num-lessons">&mdash;</span></summary>
+  <div class="cp-sec__body">
   <p class="hd-muted">One line for every rookie whose tryout ended.</p>
   <details class="lh-how"><summary>How this works</summary><p class="hd-muted">One line for every rookie whose tryout ended, written by code from the numbers. The coach reads these before it suggests anything, and a near-copy of a cut rookie is turned away for 90 days.</p></details>
   <div data-hook="learning-lessons"><p class="hd-muted">Loading the lessons...</p></div>
+  </div>
+  </details>
 </section>
 
 <section class="hd-panel" aria-labelledby="breeding-h" data-hook="learning-breeding-section">
-  <h2 id="breeding-h">Breeding program</h2>
+  <details class="cp-sec" data-hook="camp-sec-breeding">
+  <summary class="cp-sec__sum"><h2 id="breeding-h">Breeding program</h2><span class="cp-sec__num" data-hook="camp-num-breeding">&mdash;</span></summary>
+  <div class="cp-sec__body">
   <p class="hd-muted">Every three days the best dogs are crossed into new rookies.</p>
   <details class="lh-how"><summary>How this works</summary><p class="hd-muted">Every three days the best models with 25+ real bets are crossed into new rookies, and the worst with 40+ bets are cut or replaced. Babies start at 0-0 and race on new games; only the referee promotes. Rules: <code>docs/PREREG_BREEDING.md</code>.</p></details>
   <div data-hook="learning-breeding"><p class="hd-muted">Loading the family tree...</p></div>
+  </div>
+  </details>
 </section>
 
 </main>
@@ -146,6 +196,7 @@
 
 <script type="module" src="js/hounds-learning.js"></script>
 <script type="module" src="js/dog-camp.js"></script>
+<script type="module" src="js/camp-overview.js"></script>
 <script type="module" src="js/fx.js"></script>
 <script type="module">import { renderBreeding } from "./js/breeding.js"; renderBreeding(document.querySelector("[data-hook='learning-breeding']"));</script>
 <script type="module" src="js/nav.js"></script>
