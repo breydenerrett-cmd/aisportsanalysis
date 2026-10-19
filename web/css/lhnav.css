@@ -1,0 +1,111 @@
+/*
+ * THE ONE NAVIGATION (web/js/nav.js). Same bar and same phone tab bar on every page: the leaderboard, the kennels,
+ * the dog page, the builder, the training camp, the landing page and the member app.
+ *
+ * Calm and flat: a hairline under the bar, one accent (green), no boxes around links, the current place a soft
+ * pill. Phone: a compact top bar (wordmark and the account button) plus a bottom tab bar with the same five places.
+ * Motion is a small fade/rise on the account menu and a colour change on hover; none of it runs for
+ * prefers-reduced-motion.
+ */
+
+.lh-nav, .lh-tabbar, .lh-menu {
+  --lh-bg: #0B0D10;
+  --lh-ink: #EEF1F5;
+  --lh-mute: #8D96A6;
+  --lh-line: rgba(255, 255, 255, .07);
+  --lh-soft: rgba(255, 255, 255, .07);
+  --lh-accent: #2FD07A;
+  --lh-ease: cubic-bezier(.2, .7, .2, 1);
+}
+
+.lh-nav {
+  position: sticky; top: 0; z-index: 70;
+  background: rgba(11, 13, 16, .82);
+  -webkit-backdrop-filter: saturate(160%) blur(14px); backdrop-filter: saturate(160%) blur(14px);
+  box-shadow: 0 1px 0 var(--lh-line);
+  font-family: var(--font-body, 'Instrument Sans', system-ui, sans-serif);
+}
+.member-app .lh-nav { position: relative; }
+.lh-nav__bar {
+  max-width: 1180px; margin: 0 auto; height: 56px; padding: 0 20px;
+  display: flex; align-items: center; gap: 28px;
+}
+.lh-nav__brand { display: inline-flex; flex: none; text-decoration: none; }
+.lh-nav .wordmark__text { font-size: 19px; }
+.lh-nav__links { display: flex; align-items: center; gap: 2px; flex: 1; min-width: 0; }
+.lh-nav__links a {
+  display: inline-flex; align-items: center; height: 34px; padding: 0 12px; border-radius: 8px;
+  font-size: 14px; font-weight: 500; color: var(--lh-mute); text-decoration: none;
+  transition: color .15s var(--lh-ease), background-color .15s var(--lh-ease);
+}
+.lh-nav__links a:hover { color: var(--lh-ink); background: var(--lh-soft); }
+.lh-nav__links a[aria-current="page"] { color: var(--lh-ink); background: var(--lh-soft); }
+.lh-nav a:focus-visible, .lh-nav button:focus-visible, .lh-tab:focus-visible, .lh-menu__item:focus-visible {
+  outline: 2px solid var(--lh-accent); outline-offset: 2px;
+}
+
+.lh-nav__account { display: flex; align-items: center; gap: 8px; flex: none; }
+.lh-btn {
+  display: inline-flex; align-items: center; justify-content: center; height: 34px; padding: 0 14px; border-radius: 8px;
+  font: 600 14px/1 var(--font-body, 'Instrument Sans', system-ui, sans-serif); text-decoration: none; border: 0; cursor: pointer;
+  transition: background-color .15s var(--lh-ease), transform .15s var(--lh-ease);
+}
+.lh-btn--solid { background: var(--lh-accent); color: #04140B; }
+.lh-btn--solid:hover { background: #4BE08F; }
+.lh-btn--soft { background: var(--lh-soft); color: var(--lh-ink); }
+.lh-btn--soft:hover, .lh-btn--soft[aria-current="page"] { background: rgba(255, 255, 255, .12); }
+
+.lh-nav__menuwrap { position: relative; }
+.lh-avatar {
+  display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px 0 6px; border-radius: 999px;
+  background: var(--lh-soft); color: var(--lh-ink); border: 0; cursor: pointer;
+  font: 600 13px/1 var(--font-body, 'Instrument Sans', system-ui, sans-serif);
+  transition: background-color .15s var(--lh-ease);
+}
+.lh-avatar:hover, .lh-avatar[aria-expanded="true"] { background: rgba(255, 255, 255, .13); }
+.lh-avatar__dot { width: 22px; height: 22px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #7BF0B2, #1E9E5C); }
+
+.lh-menu {
+  position: absolute; right: 0; top: calc(100% + 8px); z-index: 80; min-width: 190px; padding: 6px;
+  background: #151A20; border-radius: 12px; box-shadow: 0 0 0 1px var(--lh-line), 0 18px 40px rgba(0, 0, 0, .55);
+  display: flex; flex-direction: column; font-family: var(--font-body, 'Instrument Sans', system-ui, sans-serif);
+}
+.lh-menu[hidden] { display: none; }
+.lh-menu__item {
+  display: flex; align-items: center; height: 38px; padding: 0 12px; border-radius: 8px; border: 0; background: none;
+  color: var(--lh-ink); font-size: 14px; font-weight: 500; text-align: left; text-decoration: none; cursor: pointer;
+}
+.lh-menu__item:hover { background: var(--lh-soft); }
+.lh-menu__item--button { width: 100%; color: #FF8A96; font-family: inherit; }
+@media (prefers-reduced-motion: no-preference) {
+  .lh-menu { animation: lh-pop .16s var(--lh-ease) both; transform-origin: 100% 0; }
+}
+@keyframes lh-pop { from { opacity: 0; transform: translateY(-4px) scale(.97); } to { opacity: 1; transform: none; } }
+
+/* the phone tab bar: the same places, bottom of the screen */
+.lh-tabbar { display: none; }
+@media (max-width: 760px) {
+  .lh-nav__bar { height: 52px; padding: 0 16px; gap: 12px; justify-content: space-between; }
+  .lh-nav__links { display: none; }
+  .lh-avatar__text { display: none; }
+  .lh-avatar { padding: 0 6px; }
+  .lh-nav__account .lh-btn--soft { display: none; }   /* My kennel lives in the tab bar and the menu */
+  body:not(.member-app) { padding-bottom: calc(62px + env(safe-area-inset-bottom, 0px)); }
+  .lh-tabbar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 70; display: grid; grid-template-columns: repeat(5, 1fr);
+    padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px));
+    background: rgba(11, 13, 16, .9); -webkit-backdrop-filter: saturate(160%) blur(14px); backdrop-filter: saturate(160%) blur(14px);
+    box-shadow: 0 -1px 0 var(--lh-line);
+  }
+  .lh-tab {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-height: 48px;
+    border-radius: 10px; color: var(--lh-mute); text-decoration: none; font: 500 11px/1 var(--font-body, 'Instrument Sans', system-ui, sans-serif);
+    transition: color .15s var(--lh-ease);
+  }
+  .lh-tab[aria-current="page"] { color: var(--lh-accent); }
+  .lh-tab__icon { transition: transform .2s var(--lh-ease); }
+  .lh-tab:active .lh-tab__icon { transform: scale(.88); }
+}
+
+/* the member app keeps its own sport tabs and clock; the shared bar above it owns the wordmark and the account */
+.member-app .topstrip__home, .member-app .topstrip__account { display: none; }

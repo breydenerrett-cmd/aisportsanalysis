@@ -35,13 +35,13 @@ import { apiGet } from "./api.js";
 import {
   h, clearNode, filterHounds, presentCategories, categoryOf, categoryLabel, monogram, fmtPrice,
   fmtWhen, shortDate, isNum, houndHref, describeError, createPoller, NOT_REPORTED, isWarming, retryWhileWarming,
-  stopWarmingRetry, WARMING_FALLBACK_TEXT,
+  stopWarmingRetry, WARMING_FALLBACK_TEXT, kennelHref, kennelName,
 } from "./hounds-core.js";
 import { wlText, unitsOf, causeText } from "./hounds-voice.js";
 import {
   COLUMNS, NA, betsOf, roiOf, fmtRoi, fmtUnitsPlain, avgPriceOf, clvOf, last10Of, openBetsOf, recordText, streakText,
   statusOf, typeText, sportLabel, sportsOf, marketsText, presentSports, filterBySport, sortHounds, splitRanked,
-  settledOf, onlyTickets, freshness, inQualifyingRound, qualifyingRows, progressText,
+  settledOf, onlyTickets, freshness, inQualifyingRound, qualifyingRows, progressText, isMemberDog, isNewDog,
 } from "./hounds-board.js";
 import {
   ALL_SEASON, seasonOptions, chooseSeason, saveSeason, seasonParam, seasonLine, minRanked,
@@ -244,6 +244,7 @@ function modelCell(hound, rank, open) {
   const mine = followedIds().has(String(hound.id));
   const sports = sportsOf(hound).map(sportLabel).join(", ");
   const where = [sports, marketsText(hound)].filter(Boolean).join(" · ");
+  const kennel = isMemberDog(hound) ? kennelHref(hound.owner_display) : "";
   return h("td", { class: "hd-col-model" }, [h("div", { class: "hd-modelcell" }, [
     h("button", { type: "button", class: "hd-expand", "data-hook": "expand", "aria-expanded": open ? "true" : "false",
       "aria-label": `${open ? "Hide" : "Show"} ${hound.name || "this model"}'s latest tickets`,
@@ -252,7 +253,8 @@ function modelCell(hound, rank, open) {
     h("span", { class: "hd-modelid" }, [
       h("a", { class: "hd-modelname", href: houndHref(hound.id), text: hound.name || NOT_REPORTED }),
       mine ? h("span", { class: "hd-tag hd-tag--follow", "data-hook": "row-follow", text: "Following" }) : null,
-      h("small", { class: "hd-aux", text: where || NA }),
+      h("small", { class: "hd-aux" }, [where || NA, kennel ? " · by " : null,
+        kennel ? h("a", { class: "hd-kennellink", href: kennel, "data-hook": "row-kennel", text: kennelName(hound.owner_display) }) : null]),
     ]),
   ])]);
 }
@@ -277,7 +279,7 @@ function tableRow(hound, rank, qual) {
     h("td", { class: "hd-col-record hd-num", "data-hook": "row-record" }, [
       h("strong", { text: recordText(hound) }),
       streak ? h("small", { class: "hd-aux", text: streak }) : null]),
-    h("td", { class: `hd-col-units hd-num hd-tone--${tone(units)}`, "data-hook": "row-units", text: fmtUnitsPlain(units) }),
+    h("td", { class: `hd-col-units hd-num hd-tone--${tone(units)}`, "data-hook": "row-units", "data-count": "1", text: fmtUnitsPlain(units) }),
     qual
       ? h("td", { class: "hd-col-roi hd-num hd-roi--small", "data-hook": "row-roi", title: "small sample", text: fmtRoi(roi) })
       : h("td", { class: `hd-col-roi hd-num hd-tone--${tone(roi)}`, "data-hook": "row-roi", text: fmtRoi(roi) }),
@@ -346,6 +348,7 @@ async function loadDrawer(id, force) {
 export function warmingNote(hound, min) {
   const settled = settledOf(hound);
   const open = openBetsOf(hound);
+  if (isNewDog(hound)) return "New: no bets yet";
   const parts = [];
   if (settled > 0) parts.push(`${recordText(hound)} so far`);
   parts.push(`${settled} of ${min} settled bets`);
@@ -356,20 +359,22 @@ export function warmingNote(hound, min) {
 
 function warmingBody(warming) {
   const min = minRanked(state.seasonMeta);
+  // the Builders' tab always lists every member dog, so its group is never collapsed
+  const open = state.warmOpen || state.scope === "user";
   const openTotal = warming.reduce((n, x) => n + openBetsOf(x), 0);
   const label = `Warming up (${warming.length})`;
   const summary = `ranked at ${min} settled bets · ${openTotal} open ${openTotal === 1 ? "ticket" : "tickets"}`;
-  const tbody = h("tbody", { class: "hd-warm", "data-hook": "warming-group", "data-open": state.warmOpen ? "true" : "false" }, [
+  const tbody = h("tbody", { class: "hd-warm", "data-hook": "warming-group", "data-open": open ? "true" : "false" }, [
     h("tr", { class: "hd-warm__head" }, [h("td", { colspan: COLUMNS.length + 1 }, [
       h("button", { type: "button", class: "hd-warm__toggle", "data-hook": "warming-toggle",
-        "aria-expanded": state.warmOpen ? "true" : "false",
+        "aria-expanded": open ? "true" : "false",
         on: { click: () => { state.warmOpen = !state.warmOpen; renderTable(); } } }, [
         h("span", { class: "hd-chev", "aria-hidden": "true" }),
         h("strong", { text: label }),
         h("span", { class: "hd-aux", text: ` ${summary}` }),
       ])])]),
   ]);
-  if (state.warmOpen) {
+  if (open) {
     for (const hound of warming) {
       const sports = sportsOf(hound).map(sportLabel).join(", ");
       tbody.appendChild(h("tr", { class: "hd-tr hd-tr--warm", "data-hound": hound.id }, [

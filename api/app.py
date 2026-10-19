@@ -36,6 +36,7 @@ from api.hounds_learning import router as hounds_learning_router
 from api.hounds_breeding import router as hounds_breeding_router
 from api.hounds_share import router as hounds_share_router
 from api.hounds_tips import router as hounds_tips_router
+from api.hounds_kennels import router as hounds_kennels_router
 from api.feeds import router as feeds_router
 from api.support import router as support_router
 from api.betcheck import free_router as free_betcheck_router, router as betcheck_router
@@ -84,6 +85,9 @@ app.include_router(hounds_share_router)
 # Public reads are rate-limited; create/retire/undo carry their own sign-in; the signed coach
 # door carries no bearer token by design (HMAC-signed, one-use round, off by default).
 app.include_router(hounds_create_router)
+# every member's public dogs (api/hounds_kennels.py): /hounds/kennels[/{handle}] is a literal path under /hounds/{id},
+# so it is mounted before api.hounds (tests/test_hounds_kennels_api.py pins the order).
+app.include_router(hounds_kennels_router)
 # the learning loop's public reads (api/hounds_learning.py): /hounds/learning is a literal path under
 # /hounds/{id}, so it too is mounted before api.hounds.
 app.include_router(hounds_learning_router)

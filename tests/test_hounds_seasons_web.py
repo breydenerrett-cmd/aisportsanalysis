@@ -408,6 +408,65 @@ class TheQualifyingRound(unittest.TestCase):
         self.assertEqual(out["final"]["rest"], "1 more model has no settled bet yet.")
 
 
+@unittest.skipUnless(HAS_NODE, "node not installed")
+class MemberDogsAreAlwaysListed(unittest.TestCase):
+    """2026-10-19: a member's two dogs (0 settled bets, no open ticket) could not be found, because the qualifying round
+    left out every model with nothing yet ("2 more models have no settled bet yet"). A dog a member built is ALWAYS
+    listed: in the qualifying round (flagged New), under Builders', and in the Builders' count."""
+    QROW = "[data-hook='qualifying-list'] .hd-tr"
+
+    @staticmethod
+    def world(extra=()):
+        member = lambda hid, name: mk(hid, name, bets=0, units=0.0, wins=0, kind="user", owner_display="Handler 21E8")  # noqa: E731
+        return QualifyingBase.world([
+            mk("top", "Top Dog", bets=6, units=2.5, wins=4),
+            member("u-d151fe52c7", "Jsmooth"), member("u-fcc8e8c168", "Jsmooth27"),
+            mk("quiet", "Quiet House", bets=0, units=0.0, wins=0)] + list(extra))
+
+    def test_a_zero_bet_member_dog_leads_nowhere_but_is_a_row_with_a_new_pill(self):
+        out = run_page("hounds", routes=self.world(), queries=[
+            q("ids", self.QROW, "attrs", attr="data-hound"),
+            q("pills", f"{self.QROW} [data-hook='progress']", "texts"),
+            q("rest", "[data-hook='qualifying-rest']")])
+        f = out["final"]
+        self.assertEqual(f["ids"], ["top", "u-d151fe52c7", "u-fcc8e8c168"])      # the two member dogs are rows, after the one with a bet
+        self.assertEqual(f["pills"], ["6/10 bets", "New: no bets yet", "New: no bets yet"])
+        self.assertEqual(f["rest"], "1 more model has no settled bet yet.")           # only the HOUSE model is counted in the line
+
+    def test_the_builders_count_is_the_number_of_member_dogs_the_page_shows(self):
+        out = run_page("hounds", routes=self.world(), actions=[
+            dict(do="click", sel="[data-filter='user']", label="builders", capture=[
+                q("ids", f"{self.QROW}", "attrs", attr="data-hound"), q("count", "[data-hook='hounds-count']")])],
+            queries=[q("filters", "[data-hook='hounds-filter'] .hd-seg", "texts")])
+        self.assertIn("Builders' (2)", out["final"]["filters"])
+        cap = out["captures"]["builders"]
+        self.assertEqual(cap["ids"], ["u-d151fe52c7", "u-fcc8e8c168"])
+        self.assertEqual(cap["count"], "2 models, 0 ranked")
+
+    def test_a_member_dog_links_to_its_owners_kennel(self):
+        out = run_page("hounds", routes=self.world(), queries=[
+            q("hrefs", f"{self.QROW} [data-hook='row-kennel']", "attrs", attr="href"),
+            q("texts", f"{self.QROW} [data-hook='row-kennel']", "texts")])
+        self.assertEqual(out["final"]["hrefs"], ["kennel.html?u=handler-21e8"] * 2)
+        self.assertEqual(out["final"]["texts"], ["Handler 21E8's kennel"] * 2)
+
+    def test_with_three_ranked_the_builders_tab_still_shows_them_expanded(self):
+        ranked = [mk(f"r{i}", f"R{i}", bets=12, units=1.0 + i, wins=6, kind="user", owner_display="Handler 0001") for i in range(3)]
+        out = run_page("hounds", routes=self.world(ranked), actions=[
+            dict(do="click", sel="[data-filter='user']", label="builders", capture=[
+                q("warm", ".hd-tr--warm", "attrs", attr="data-hound"), q("notes", "[data-hook='warming-note']", "texts")])])
+        cap = out["captures"]["builders"]
+        self.assertEqual(cap["warm"], ["u-d151fe52c7", "u-fcc8e8c168"])
+        self.assertEqual(cap["notes"], ["New: no bets yet"] * 2)
+
+    def test_pure_helpers_flag_only_a_member_dog_with_nothing_yet(self):
+        out = run_js('import * as B from "./hounds-board.js";'
+                     'const u = {kind: "user", record: {bets: 0}}, hs = {kind: "house", record: {bets: 0}}, ub = {kind: "user", record: {bets: 2, wins: 1, losses: 1}};'
+                     'console.log(JSON.stringify([B.isNewDog(u), B.isNewDog(hs), B.isNewDog(ub), B.progressText(u), B.progressText(ub),'
+                     'B.qualifyingRows([u, hs, ub]).length]));')
+        self.assertEqual(out, [True, False, False, "New: no bets yet", "2/10 bets", 2])
+
+
 # ---------------------------------------------------------------------------------------------------
 # the model page
 # ---------------------------------------------------------------------------------------------------
@@ -573,7 +632,11 @@ class TheMarkupIsStatic(unittest.TestCase):
         root = Path(__file__).resolve().parent.parent / "web"
         src = (root / "js" / "hounds-season.js").read_text(encoding="utf-8")
         self.assertNotRegex(src, r"https?://")
-        self.assertIsNone(re.search(r"<script", (root / "hounds.html").read_text(encoding="utf-8").replace('<script type="module" src="js/hounds-page.js"></script>', "")))
+        html = (root / "hounds.html").read_text(encoding="utf-8")
+        # only external module scripts (the page, the kennels view, tabs, motion, the shared nav): never an inline script or a CDN
+        for name in ("hounds-page", "kennels-index", "tabs", "fx", "nav"):
+            html = html.replace(f'<script type="module" src="js/{name}.js"></script>', "")
+        self.assertIsNone(re.search(r"<script", html))
 
 
 if __name__ == "__main__":

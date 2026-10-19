@@ -581,7 +581,7 @@ class TheChromeIsProfessional(unittest.TestCase):
         self.assertTrue(all(re.fullmatch(r"[A-Z0-9?]{1,2}", m) for m in out["final"]["mono"]), out["final"]["mono"])
 
     def test_the_voice_that_was_pulled_is_not_on_the_pages(self):
-        banned = ["houndmaster", "doghouse", "put down", "tombstone", "r.i.p", "graveyard", "good dog", "kennel", "roast", "brag",
+        banned = ["houndmaster", "doghouse", "put down", "tombstone", "r.i.p", "graveyard", "good dog", "roast", "brag",
                   "hot dog", "ice cold", "on tilt", "tail it", "fade it", "bark", "woof"]
         for name, out in self.pages():
             lowered = out["text"].lower()
@@ -616,9 +616,10 @@ class TheModelPage(unittest.TestCase):
         self.assertEqual(f["bio"], 0)
         for line in ("Grabs the price before it moves", "Closer roast", "Closer brag", "grabbed the early number"):
             self.assertNotIn(line, out["text"])
-        # the dog kit's two panels (Fire now, Ask) sit under the action bar; they stay hidden until the server's kit says so
-        self.assertEqual(f["order"][:8], ["Fire now", "Ask this model", "Key numbers", "Open tickets", "Graded tickets", "Rule",
-                                          "Bankroll", "Status"])
+        # Fire now sits above the tabs (hidden until the server's kit says so); then Overview: numbers, bankroll, status
+        self.assertEqual(f["order"][:4], ["Fire now", "Key numbers", "Bankroll", "Status"])
+        self.assertIn("Open tickets", f["order"])
+        self.assertIn("Rule", f["order"])
         self.assertEqual(out["title"], "Closer — LINEHOUND")
 
     def test_a_model_with_no_persona_has_no_catchphrase_line(self):

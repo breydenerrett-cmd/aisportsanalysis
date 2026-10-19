@@ -38,6 +38,13 @@
 .lbpanel__asof[data-stale="true"] { color: var(--lb-amber); }
 .lbpill { display: inline-block; padding: 1px 8px; border: 1px solid var(--lb-line, rgba(255,255,255,.18)); border-radius: 999px; font-size: 12px; font-weight: 600; color: var(--lb-mute); white-space: nowrap; }
 .lbrow--qual .lbname { opacity: .9; }
+
+/* the Kennels card between the first screen and the AI desk: a big, quiet door to the kennels */
+.kncard { max-width: 1180px; margin: 0 auto 32px; padding: 28px 28px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 24px; border-radius: 20px; background: rgba(255, 255, 255, .04); }
+.kncard h2 { margin: 0 0 4px; font-size: 26px; text-transform: none; }
+.kncard p { margin: 0; color: var(--lb-mute, #9AA3B2); font-size: 16px; }
+.kncard__links { display: flex; flex-wrap: wrap; gap: 10px; }
+@media (max-width: 1220px) { .kncard { margin-left: 16px; margin-right: 16px; } }
 .lbtone--small { color: var(--lb-mute); opacity: .7; cursor: help; }
 .lbpanel__season { font-weight: 500; color: var(--lb-mute); font-size: .85em; margin-left: 8px; }
 .lbpanel__note { margin: 8px 2px 0; font-size: 13px; color: var(--lb-mute); }

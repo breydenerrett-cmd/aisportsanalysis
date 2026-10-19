@@ -25,25 +25,37 @@
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/components.css">
 <link rel="stylesheet" href="css/nav.css">
+<link rel="stylesheet" href="css/lhnav.css">
 <link rel="stylesheet" href="css/app.css">
 <link rel="stylesheet" href="css/analyst.css">
 <style>[hidden]{display:none}</style>
 </head>
 <body class="sample-page">
-<nav class="site-nav" aria-label="primary" data-hook="sample-header">
-  <a class="ps-page__home" href="landing.html" aria-label="LINEHOUND home">
-    <span class="wordmark" data-hook="brand-mark">
-      <span class="wordmark__mark"><span></span></span>
-      <span class="wordmark__text" data-hook="product-name">LINEHOUND</span>
-    </span>
-  </a>
-  <a class="btn btn--ghost site-nav__signin" href="index.html#/signin" data-hook="nav-signin">Sign in</a>
-</nav>
+<header class="lh-nav" aria-label="primary" data-hook="sample-header" data-current="">
+  <div class="lh-nav__bar">
+    <a class="lh-nav__brand ps-page__home" href="landing.html" aria-label="LINEHOUND home">
+      <span class="wordmark" data-hook="brand-mark">
+        <span class="wordmark__mark"><span></span></span>
+        <span class="wordmark__text" data-hook="product-name">LINEHOUND</span>
+      </span>
+    </a>
+    <nav class="lh-nav__links" aria-label="Sections" data-hook="nav-links">
+      <a href="hounds.html" data-nav="leaderboard">Leaderboard</a>
+      <a href="kennels.html" data-nav="kennels">Kennels</a>
+      <a href="build-a-hound.html" data-nav="build">Build</a>
+      <a href="learning.html" data-nav="camp">Training camp</a>
+    </nav>
+    <div class="lh-nav__account" data-hook="nav-account-area" data-signed-in="false">
+      <a class="lh-btn lh-btn--solid" href="index.html#/signin" data-hook="nav-signin">Sign in</a>
+    </div>
+  </div>
+</header>
 
 <main class="outlet" data-hook="app-outlet" aria-label="page content" id="main-content"></main>
 
 <div class="footer-host" data-hook="disclaimer-host" aria-label="disclaimer"></div>
 
 <script type="module" src="js/sample.js"></script>
+<script type="module" src="js/nav.js"></script>
 </body>
 </html>

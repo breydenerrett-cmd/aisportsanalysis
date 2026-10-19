@@ -45,6 +45,7 @@
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/components.css">
 <link rel="stylesheet" href="css/nav.css">
+<link rel="stylesheet" href="css/lhnav.css">
 <link rel="stylesheet" href="css/app.css">
 <link rel="stylesheet" href="css/screens.css">
 <link rel="stylesheet" href="css/gamestory.css">
@@ -105,6 +106,25 @@
      no-inline-event-handler rule. The href stays so the link still
      degrades to a plain same-page anchor jump if JS never boots. -->
 <a class="skip-link" data-hook="skip-link" href="#main-content">Skip to content</a>
+<header class="lh-nav" aria-label="primary" data-hook="site-nav" data-current="" data-bottom="off">
+  <div class="lh-nav__bar">
+    <a class="lh-nav__brand ps-page__home" href="landing.html" aria-label="LINEHOUND home">
+      <span class="wordmark" data-hook="brand-mark">
+        <span class="wordmark__mark"><span></span></span>
+        <span class="wordmark__text" data-hook="product-name">LINEHOUND</span>
+      </span>
+    </a>
+    <nav class="lh-nav__links" aria-label="Sections" data-hook="nav-links">
+      <a href="hounds.html" data-nav="leaderboard">Leaderboard</a>
+      <a href="kennels.html" data-nav="kennels">Kennels</a>
+      <a href="build-a-hound.html" data-nav="build">Build</a>
+      <a href="learning.html" data-nav="camp">Training camp</a>
+    </nav>
+    <div class="lh-nav__account" data-hook="nav-account-area" data-signed-in="false">
+      <a class="lh-btn lh-btn--solid" href="index.html#/signin" data-hook="nav-signin">Sign in</a>
+    </div>
+  </div>
+</header>
 <div class="shell">
   <div class="shell__column">
     <!-- THE APP BAR (member.css): wordmark, sport tabs, account on the first line; the sport's own section
@@ -149,5 +169,6 @@
 </div>
 
 <script type="module" src="js/main.js"></script>
+<script type="module" src="js/nav.js"></script>
 </body>
 </html>

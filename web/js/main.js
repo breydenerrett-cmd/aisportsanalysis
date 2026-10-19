@@ -230,7 +230,8 @@ function mountNav(rail, tabbar, activeHash, sport = "mlb") {
  * for a member. Both go to #/signin, which shows the sign-in form or, once signed in, the account box with
  * Change password and Sign out. Re-run on every route change and when the token changes in this tab. */
 function mountAccount() {
-  const link = document.querySelector("[data-hook='nav-signin']");
+  // the strip's own account link (the shared bar above the shell, web/js/nav.js, has one too, with the same hook)
+  const link = document.querySelector("[data-hook='topstrip'] [data-hook='nav-signin']");
   if (!link) return;
   const signedIn = !!getToken();
   link.textContent = signedIn ? "Account" : "Sign in";

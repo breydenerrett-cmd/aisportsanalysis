@@ -29,6 +29,12 @@ PAGES = {
     "landing_board": ("landing.html", "board_boot.js"),
     # the admin dashboard (tests/test_admin_dashboard.py); its fixtures are tests/admin_dashboard_fixtures.py
     "admin": ("admin.html", "admin-app.js"),
+    # the kennel page (My kennel and a public kennel), the leaderboard's Kennels view, the shared navigation and the tabs.
+    # The navigation and the tabs run on whichever page the scenario names with `page_html`.
+    "kennel": ("kennel.html", "kennel.js"),
+    "kennels_index": ("hounds.html", "kennels-index.js"),
+    "nav": ("hounds.html", "nav.js"),
+    "tabs": ("hound.html", "tabs.js"),
 }
 
 _tmp = None
@@ -53,6 +59,7 @@ def _workdir() -> Path:
 
 def run_page(page: str, **scenario) -> dict:
     html, module = PAGES[page]
+    html = scenario.pop("page_html", html)
     work = _workdir()
     scenario["html"] = str(WEB / html)
     scenario["module"] = (work / module).as_uri()

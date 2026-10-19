@@ -253,7 +253,7 @@ class TheLeaderboardIsTheFirstScreen(unittest.TestCase):
         self.assertNotIn("landing-kennel", LANDING_JS)
 
     def test_the_first_screen_has_no_toy_voice_no_emoji_and_no_cartoon(self):
-        hero = re.search(r'<section class="lbhero".*?</section>\s*(?=<section class="hero")', MARKUP, re.S).group(0)
+        hero = re.search(r'<section class="lbhero".*?</section>\s*(?=<section class="(?:kncard|hero)")', MARKUP, re.S).group(0)
         text = _visible(hero).lower()
         for word in ("kennel", "dog", "bark", "put down", "doghouse", "houndmaster", "fighting it out"):
             self.assertNotIn(word, text, word)
