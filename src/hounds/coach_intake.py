@@ -247,7 +247,7 @@ def issue_url(number: int) -> str:
 
 def _refuse(card_paths, number, hound, code, message, *, now, created) -> Decision:
     coach_card.append(card_paths, coach_card.K_REFUSED, now=now, issue=number, issue_url=issue_url(number),
-                      hound=hound if isinstance(hound, str) else None, reason=code,
+                      hound=hound[:80] if isinstance(hound, str) else None, reason=code,
                       message=_echo(message), issue_created_utc=created, proposed_by=PROPOSED_BY)
     return Decision("refused", f"refused: {code} {_echo(message)}", LABEL_REFUSED, True)
 
@@ -405,8 +405,13 @@ def run_readonly(issues: Sequence[Mapping], *, scope: L.Scope, card_paths: coach
         if card.seen(number):
             counts["already"] += 1
             continue
-        d = decide(issue, scope=scope, coach_on=coach_on, champion_ledger=champion_ledger, now=now,
-                   owner=owner, tunable_cfg=tunable_cfg, card_paths=card_paths, registry=registry)
+        try:
+            d = decide(issue, scope=scope, coach_on=coach_on, champion_ledger=champion_ledger, now=now,
+                       owner=owner, tunable_cfg=tunable_cfg, card_paths=card_paths, registry=registry)
+        except Exception as exc:  # noqa: BLE001 -- one issue that breaks a reader must not stop the others
+            counts["errors"] = counts.get("errors", 0) + 1
+            say(f"  #{number} error: {type(exc).__name__}: {_echo(exc)}")
+            continue
         say(f"  #{number} {d.comment}")
         if d.outcome == "waiting":
             counts["waiting"] += 1

@@ -291,9 +291,26 @@ class InjectedText(IntakeCase):
 
     def test_a_hostile_refusal_message_is_stripped_of_mentions_and_capped(self):
         self.intake([api_issue(101, "```json\n" + json.dumps({"hound": "@everyone " + "x" * 900, "params": {}}) + "\n```")])
-        msg = self.card().refused[101]["message"]
-        self.assertNotIn("@", msg)
-        self.assertLessEqual(len(msg), I.MAX_ECHO_CHARS)
+        row = self.card().refused[101]
+        self.assertNotIn("@", row["message"])
+        self.assertLessEqual(len(row["message"]), I.MAX_ECHO_CHARS)
+        self.assertLessEqual(len(row["hound"]), 80)                # a 900-character "hound id" is not stored whole
+
+    def test_one_issue_that_breaks_the_reader_does_not_stop_the_next(self):
+        real = I.decide_card
+
+        def flaky(issue, **kw):
+            if issue["number"] == 102:
+                raise RuntimeError("boom with @mention")
+            return real(issue, **kw)
+
+        with mock.patch.object(I, "decide_card", flaky):
+            counts, out = self.intake([api_issue(102, body_of(good())), api_issue(103, body_of(good("beta_pup")))])
+        self.assertEqual(counts["errors"], 1)
+        self.assertIn(103, self.card().suggestions)
+        self.assertNotIn(102, self.card().suggestions)               # not recorded, so the next run tries again
+        self.assertIn("#102 error: RuntimeError", out)
+        self.assertNotIn("@", out)
 
 
 class TheCommandLine(IntakeCase):
@@ -395,6 +412,55 @@ class TheGhPathStillWorks(IntakeCase):
             I.run(runner=gh, scope=self.w.scope, coach_on=True, champion_ledger=self.w.ledger, now=NOW,
                   tunable_cfg=self.w.cfg)
         self.assertFalse(self.paths.ledger.exists())
+
+
+class TheWiring(unittest.TestCase):
+    """Green tests prove a component works, never that anything runs it. These walk from the real entry
+    points: the capture slot calls the intake, the slot stages the ledgers, the image carries them."""
+    ROOT = Path(__file__).resolve().parents[1]
+
+    def slot(self):
+        return (self.ROOT / "scripts" / "capture_slot.sh").read_text(encoding="utf-8")
+
+    def test_the_capture_slot_runs_the_api_intake_with_grading_a_hard_cap_and_never_fails_the_slot(self):
+        lines = [ln for ln in self.slot().splitlines() if "src.hounds.coach_intake" in ln and not ln.lstrip().startswith("#")]
+        self.assertEqual(len(lines), 1, lines)
+        line = lines[0]
+        self.assertIn("--source api --grade", line)
+        self.assertIn("timeout 120", line)
+        self.assertTrue(line.rstrip().endswith("|| true"))
+        self.assertIn("python3 -m src.hounds.coach_intake", line)
+
+    def test_it_runs_after_the_pack_ledger_is_current_and_before_the_commit(self):
+        text = self.slot()
+        tick = text.index("src.hounds.learning tick")
+        intake = text.index("src.hounds.coach_intake")
+        commit = text.index("git commit -q")
+        self.assertLess(text.index("src.hounds.pack_settle"), intake)
+        self.assertLess(tick, intake)
+        self.assertLess(intake, commit)
+
+    def test_the_slot_stages_evidence_wholesale_so_both_new_ledgers_are_committed(self):
+        text = self.slot()
+        self.assertRegex(text, r"for p in [^\n]*\n?[^\n]*evidence data/paper_accounts")
+        self.assertEqual(C.Paths.default(Path("evidence")).ledger.parent.name, "evidence")
+        from src import paths
+        self.assertEqual(Path(paths.evidence_path(C.LEDGER_NAME)).parent, Path(paths.evidence_path("x")).parent)
+
+    def test_the_production_image_copies_evidence_and_config_and_ignores_neither(self):
+        dockerfile = (self.ROOT / "deploy" / "Dockerfile").read_text(encoding="utf-8")
+        self.assertIn("COPY evidence/ evidence/", dockerfile)
+        self.assertIn("COPY config/ config/", dockerfile)
+        ignore = (self.ROOT / ".dockerignore").read_text(encoding="utf-8").splitlines()
+        active = [ln.strip() for ln in ignore if ln.strip() and not ln.startswith("#")]
+        for banned in ("evidence", "evidence/", "evidence/*", "config", "config/", "*.jsonl"):
+            self.assertNotIn(banned, active)
+
+    def test_the_workflows_are_untouched_by_this_lane(self):
+        """The report card needs no workflow permission: it reads a public API and writes under evidence/."""
+        yml = (self.ROOT / ".github" / "workflows" / "forward-capture.yml").read_text(encoding="utf-8")
+        self.assertNotIn("issues: write", yml)
+        self.assertNotIn("coach_intake", yml)
 
 
 if __name__ == "__main__":
