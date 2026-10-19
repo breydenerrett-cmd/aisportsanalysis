@@ -1,10 +1,9 @@
 """The kennel's voice, in Python: the badges, the Houndmaster's daily line, and nothing else.
 
-The site (web/js/hounds-voice.js) and any future Discord or X post need the SAME answer to two small
-questions: which badge does a verdict label wear, and which roast or brag does a dog get today. This
-module is the Python half; the JS half is checked against it by tests/test_hounds_voice.py, so the two
-cannot drift. Presentation only: nothing here touches a rule, the referee, a verdict or a result.
-The voice guide is docs/VOICE.md.
+NOT RENDERED BY THE SITE (2026-10-19). The professional pass (docs/VOICE.md) removed the badges, the
+roasts and the brags from the web pages; the leaderboard and the model page print plain status words
+(web/js/hounds-board.js statusOf). This module is kept, with its tests, as voice data for a future Discord
+or X post. Presentation only: nothing here touches a rule, the referee, a verdict or a result.
 """
 
 from __future__ import annotations

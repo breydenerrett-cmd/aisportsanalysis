@@ -86,8 +86,8 @@ function renderHeader(hound) {
     h("p", { class: "hd-chips" }, [
       h("span", { class: `hd-st hd-st--${st.tone}`, "data-hook": "hound-status", "data-status": st.key, title: st.title, text: st.text }),
       h("span", { class: "hd-typechip", "data-category": cat, text: typeText(hound) }),
-      sportsOf(hound).length ? h("span", { class: "hd-chip-plain", text: sportsOf(hound).map(sportLabel).join(", ") }) : null,
-      marketsText(hound) ? h("span", { class: "hd-chip-plain", text: marketsText(hound) }) : null,
+      sportsOf(hound).length || marketsText(hound) ? h("span", { class: "hd-chip-plain", "data-hook": "where",
+        text: [sportsOf(hound).map(sportLabel).join(", "), marketsText(hound)].filter(Boolean).join(" · ") }) : null,
       h("span", { class: "hd-chip-plain", text: hound.kind === "user"
         ? (hound.owner_display ? `Built by ${hound.owner_display}` : "Builder model") : hound.kind === "baseline" ? "Baseline" : "House model" }),
       verified,

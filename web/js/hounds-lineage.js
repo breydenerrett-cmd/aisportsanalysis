@@ -20,6 +20,7 @@ import { apiGet } from "./api.js";
 import { h, clearNode, signed, isNum, fmtRecord, fmtWhen, houndHref,
   describeError, isWarming, NOT_REPORTED } from "./hounds-core.js";
 import { statusOf } from "./hounds-board.js";
+import { friendlyLesson } from "./hounds-voice.js";
 
 export const NO_LINEAGE_TEXT = "This model has one version and no challengers testing.";
 export const REFEREE_NOTE = "A challenger is only a suggestion. It replaces the current version only if its prices beat the current version's against the closing line by a margin fixed in advance, after at least 100 paired games, and never because of what anyone wrote about it.";
@@ -42,6 +43,14 @@ export function lookText(c) {
   const mean = isNum(lk.mean) ? `${signed(lk.mean, 2)} points` : NOT_REPORTED;
   const flag = lk.harm ? " It is doing worse than the current version." : lk.eligible ? " It has cleared the first bar; the monthly fluke check comes next." : "";
   return `Look ${lk.look_no}, after ${lk.n} paired games: its prices beat the current version's by ${mean} on average${bounds}.${flag}`;
+}
+
+/** The code-written lesson, in plain words and this page's vocabulary (current version, challenger, promoted). */
+export function proLesson(text) {
+  return friendlyLesson(text)
+    .replace(/made the team/g, "was promoted").replace(/was cut:/g, "was retired:")
+    .replace(/the starter's/g, "the current version's").replace(/the starter\b/g, "the current version")
+    .replace(/its tryout/g, "its test").replace(/camp's fluke check/g, "the false-positive check");
 }
 
 function versionItem(v, currentId) {
@@ -76,7 +85,7 @@ function failedItem(c, lessons) {
     h("p", { class: "hd-challenger__head" }, [h("strong", { text: `Challenger ${c.id}` }), " ",
       h("span", { class: "hd-fine", text: `${c.status || ""}${c.outcome_reason ? `: ${c.outcome_reason}` : ""}` })]),
     h("p", { class: "hd-challenger__diff", text: `It changed: ${diffText(c.spec_diff)}` }),
-    h("p", { class: "hd-challenger__look", text: lesson ? lesson.lesson : lookText(c) }),
+    h("p", { class: "hd-challenger__look", text: lesson ? proLesson(lesson.lesson) : lookText(c) }),
   ]);
 }
 

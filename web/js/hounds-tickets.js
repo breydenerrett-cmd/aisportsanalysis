@@ -113,7 +113,16 @@ export function ticketTable(tickets, { graded = false, hook = "tickets-table", c
       cells.push(h("td", { class: `hd-num hd-tone--${!units ? "none" : t.units > 0 ? "up" : t.units < 0 ? "down" : "flat"}`,
         "data-hook": "ticket-units", text: units || NA }));
     }
-    cells.push(h("td", { class: "hd-td-reason", "data-hook": "bet-why", text: t.reason || NA }));
+    // a reason can run to hundreds of characters: three lines in the table, the whole text on a click
+    const why = h("td", { class: "hd-td-reason", "data-hook": "bet-why", tabindex: "0", "aria-expanded": "false",
+      title: "Show the whole reason" }, [h("div", { class: "hd-why", text: t.reason || NA })]);
+    const flip = () => {
+      const open = why.getAttribute("aria-expanded") === "true";
+      why.setAttribute("aria-expanded", open ? "false" : "true");
+    };
+    why.addEventListener("click", flip);
+    why.addEventListener("keydown", (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); flip(); } });
+    cells.push(why);
     cells.push(h("td", { class: "hd-td-stamp", "data-hook": "bet-stamp" }, [
       rehearsal ? h("span", { class: "hd-rec hd-rec--rehearsal", text: "Written after the games; never counted" }) : recordedCell(t)]));
     return h("tr", { class: "hd-trow", "data-status": status, "data-segment": String(t.segment || "") }, cells);

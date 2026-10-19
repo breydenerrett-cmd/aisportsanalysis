@@ -45,7 +45,7 @@
 .lbnum { text-align: right; font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; white-space: nowrap; }
 .lbrank { color: var(--lb-mute); width: 24px; }
 .lbmodel { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.lbname { font-weight: 600; color: #fff; text-decoration: none; overflow-wrap: anywhere; }
+.lbname { font-weight: 600; color: #fff; text-decoration: none; white-space: nowrap; }
 .lbname:hover { text-decoration: underline; text-underline-offset: 3px; }
 .lbtone--up { color: var(--lb-up); font-weight: 600; }
 .lbtone--down { color: var(--lb-down); font-weight: 600; }
@@ -73,3 +73,12 @@ a.lbticket__model:hover { text-decoration: underline; text-underline-offset: 3px
 .lbres--lost { color: #2A0710; background: var(--lb-down); border-color: var(--lb-down); }
 .lbres--push, .lbres--void { color: var(--lb-mute); }
 .lbres--pending { color: var(--lb-amber); border-color: rgba(242, 184, 75, .5); }
+
+@media (max-width: 480px) {
+  .lbpanel { padding: 10px 10px; }
+  .lbtable { font-size: 12.5px; }
+  .lbtable th, .lbtable td { padding: 6px 3px; }
+  .lbtable th { font-size: 10px; letter-spacing: .03em; }
+  .lbmodel .hd-mono { display: none; }
+  .lbrank { width: 16px; }
+}
