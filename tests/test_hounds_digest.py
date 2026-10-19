@@ -45,7 +45,10 @@ CLOSING = "Paper bets only, not advice. 21+. Gamble responsibly: 1-800-GAMBLER"
 LINK = ("https://linehound.app/web/hounds.html?utm_source=discord&utm_medium=digest"
         "&utm_campaign=hounds_daily")
 FORBIDDEN = re.compile(r"edge|guarantee|\block(s|ed)?\b|can'?t lose|sure thing|profitable|"
-                       r"tell you to bet|you should bet|money|\$|#", re.I)
+                       r"tell you to bet|you should bet|money|#", re.I)
+# Since the bankroll ruling (2026-10-19, docs/BANKROLL.md) a post may state a PAPER dollar figure, and only
+# in this shape; any other "$" (a name, a cause, an unlabelled amount) is still a failure.
+PAPER_DOLLARS = re.compile(r"[+-]\$\d[\d,]* paper")
 EMOJIS = ("🐶", "🔥", "🥶", "🪙", "💀", "🧠")
 
 
@@ -68,6 +71,7 @@ def graveyard(*rows):
 def assert_clean(test, post):
     test.assertLessEqual(len(post), 900)
     test.assertIsNone(FORBIDDEN.search(post), post)
+    test.assertNotIn("$", PAPER_DOLLARS.sub("", post), post)
     test.assertEqual(post.splitlines()[-2:], [CLOSING, LINK])
     stripped = post
     for e in EMOJIS:
@@ -114,20 +118,20 @@ class HottestAndColdest(unittest.TestCase):
         hs = [hound("setter", 63, 46, 11.3787), hound("pointer", 59, 55, -5.7032),
               hound("whippet", 51, 32, 6.2724)]
         post = D.digest(board(hs))["post"]
-        self.assertIn("🔥 Hottest dog: Setter 63-46 season, +11.4u", post)
-        self.assertIn("🥶 Ice cold: Pointer 59-55 season, -5.7u. Check its pulse.", post)
+        self.assertIn("🔥 Hottest dog: Setter 63-46 season, +11.4% (+$114 paper)", post)
+        self.assertIn("🥶 Ice cold: Pointer 59-55 season, -5.7% (-$57 paper). Check its pulse.", post)
 
     def test_units_fall_back_to_the_recorded_price_when_average_is_not_reported(self):
         h = hound("x", 5, 2, None)
         h["record"]["units_recorded_price"] = 2.25
-        self.assertIn("🔥 Hottest dog: X 5-2 season, +2.2u", D.digest(board([h]))["post"])
+        self.assertIn("🔥 Hottest dog: X 5-2 season, +2.2% (+$22 paper)", D.digest(board([h]))["post"])
 
     def test_week_window_is_used_when_given_and_labelled(self):
         hs = [hound("setter", 63, 46, 11.0), hound("pointer", 59, 55, -5.0)]
         window = {"setter": {"wins": 2, "losses": 4, "units": -1.26}, "pointer": {"wins": 5, "losses": 2, "units": 3.04}}
         post = D.digest(board(hs), window=window)["post"]
-        self.assertIn("🔥 Hottest dog: Pointer 5-2 last 7 days, +3.0u", post)
-        self.assertIn("🥶 Ice cold: Setter 2-4 last 7 days, -1.3u. Check its pulse.", post)
+        self.assertIn("🔥 Hottest dog: Pointer 5-2 last 7 days, +3.0% (+$30 paper)", post)
+        self.assertIn("🥶 Ice cold: Setter 2-4 last 7 days, -1.3% (-$13 paper). Check its pulse.", post)
         self.assertNotIn("season", post)
 
     def test_too_few_settled_or_no_direction_means_no_line(self):
@@ -196,15 +200,59 @@ class CoinFlip(unittest.TestCase):
 
     def test_ahead_behind_and_level(self):
         post = D.digest(board(self.pair((3, 2, 1.0), (2, 3, -1.5))))["post"]
-        self.assertIn("🪙 Coin-Flip Collie is ahead of Professor Paws (+1.0u vs -1.5u, season).", post)
+        self.assertIn("🪙 Coin-Flip Collie is ahead of Professor Paws (+1.0% vs -1.5%, season).", post)
         post = D.digest(board(self.pair((2, 3, -2.0), (3, 2, 1.0))))["post"]
-        self.assertIn("🪙 Coin-Flip Collie is behind Professor Paws (-2.0u vs +1.0u, season).", post)
+        self.assertIn("🪙 Coin-Flip Collie is behind Professor Paws (-2.0% vs +1.0%, season).", post)
         post = D.digest(board(self.pair((3, 2, 1.0), (4, 3, 1.0))))["post"]
         self.assertIn("is level with Professor Paws", post)
 
     def test_left_out_when_either_has_no_settled_bet_or_is_missing(self):
         self.assertNotIn("🪙", D.digest(board(self.pair((0, 0, None), (2, 3, -1.5))))["post"])
         self.assertNotIn("🪙", D.digest(board([self.pair((3, 2, 1.0), (1, 1, 0.0))[0]]))["post"])
+
+
+class PaperBankrollFigures(unittest.TestCase):
+    """The post speaks in the shared $1,000 paper bankroll (docs/BANKROLL.md), not in raw units."""
+
+    def test_text_helpers(self):
+        self.assertEqual(D.pct_text(-0.04), "+0.0%")
+        self.assertEqual(D.pct_text(3.04), "+3.0%")
+        self.assertEqual(D.money_text(-0.4), "+$0")
+        self.assertEqual(D.money_text(30.4), "+$30")
+        self.assertEqual(D.money_text(-12.6), "-$13")
+        self.assertEqual(D.money_text(1234.0), "+$1,234")
+
+    def test_a_member_dog_is_told_from_its_own_stake_weighted_bankroll(self):
+        # 3 wins of 3u each would be +0.9 flat units; its bankroll says +$27 (+2.7%): the post uses the bankroll.
+        h = hound("heavy", 4, 1, 0.9, bankroll={"pnl_usd": 27.0, "return_pct": 2.7})
+        self.assertIn("Hottest dog: Heavy 4-1 season, +2.7% (+$27 paper)", D.digest(board([h]))["post"])
+
+    def test_hottest_is_ranked_by_dollars_not_raw_units(self):
+        flat = hound("flat", 6, 2, 1.0)                                              # +$10
+        heavy = hound("heavy", 4, 3, 0.4, bankroll={"pnl_usd": 12.0, "return_pct": 1.2})   # fewer units, more dollars
+        self.assertIn("Hottest dog: Heavy", D.digest(board([flat, heavy]))["post"])
+
+    def test_the_week_window_takes_dollars_from_the_series_balance(self):
+        def point(day, usd):
+            return NS(date=day, cum_units_average_price=0.0, cum_units_recorded_price=0.0, bankroll_usd=usd)
+        data = NS(bets=[NS(segment="forward", result="win", date="2026-10-18")],
+                  series=[point("2026-10-10", 1000.0), point("2026-10-11", 1004.0), point("2026-10-18", 1031.0)],
+                  summary=NS(spark_basis="average_price"))
+        out = D.week_stats({"h": data}, "2026-10-18")
+        self.assertAlmostEqual(out["h"]["usd"], 27.0)            # 1031 minus the 10-11 balance of 1004
+        self.assertAlmostEqual(out["h"]["pct"], 2.7)
+
+    def test_a_week_with_no_dollar_series_falls_back_to_units_at_the_flat_unit(self):
+        out = D.week_stats({"h": NS(bets=[NS(segment="forward", result="win", date="2026-10-18")],
+                                    series=[NS(date="2026-10-18", cum_units_average_price=0.8,
+                                               cum_units_recorded_price=0.8)],
+                                    summary=NS(spark_basis="average_price"))}, "2026-10-18")
+        self.assertAlmostEqual(out["h"]["usd"], 8.0)
+
+    def test_every_dollar_in_a_post_is_labelled_paper(self):
+        post = D.digest(board([hound("a", 9, 1, 4.2, BEAT), hound("b", 2, 6, -4.4, VIG)]))["post"]
+        self.assertIn("$", post)
+        assert_clean(self, post)
 
 
 class SharpOrLucky(unittest.TestCase):

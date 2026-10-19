@@ -7,9 +7,13 @@ labels. The VOICE is fixed strings (short, punchy, a little trash talk, a few em
 is a betting Discord and the first version read like a science paper. Nothing here asks a model anything.
 
 WHAT THE FUN MAY AND MAY NOT SAY (owner rulings 2026-10-18):
-  allowed   units and W-L records (degens care): last 7 days when the live book is at hand, the season
-            record when only the saved copy is (it carries no per-bet rows, and a last-7-days line made
-            from a season record would be a false label; the line says which one it is)
+  allowed   W-L records and the PAPER bankroll figure (degens care): last 7 days when the live book is at
+            hand, the season record when only the saved copy is (it carries no per-bet rows, and a
+            last-7-days line made from a season record would be a false label; the line says which one it
+            is). Since the owner's bankroll ruling (2026-10-19, docs/BANKROLL.md) money is said the way the
+            site says it: a return on the shared $1,000 paper bankroll, "+3.0% (+$30 paper)", never raw
+            units. The word "paper" rides on every dollar figure; a "$" or "money" in a NAME or a CAUSE
+            (data from strangers) is still refused by ``BANNED``.
   never     a hound being profitable long term, an edge, a lock or a sure thing, any advice to bet
   always    the closing-line verdict line (the referee's one question), and the closing line:
             "Paper bets only, not advice. 21+. Gamble responsibly: 1-800-GAMBLER" then the link
@@ -105,6 +109,39 @@ def units_text(units: float) -> str:
     return f"{(0.0 if rounded == 0 else rounded):+.1f}u"
 
 
+def pct_text(pct: float) -> str:
+    """``+3.0%`` / ``-1.3%`` (a rounded zero is ``+0.0%``, never ``-0.0%``)."""
+    rounded = round(pct, 1)
+    return f"{(0.0 if rounded == 0 else rounded):+.1f}%"
+
+
+def money_text(usd: float) -> str:
+    """``+$30`` / ``-$13`` in whole paper dollars (a rounded zero is ``+$0``)."""
+    rounded = int(round(usd))
+    return f"{'-' if rounded < 0 else '+'}${abs(rounded):,}"
+
+
+def figure_text(row: dict) -> str:
+    """``+3.0% (+$30 paper)``: the return on the shared paper bankroll, then the dollars it is."""
+    return f"{pct_text(row['pct'])} ({money_text(row['usd'])} paper)"
+
+
+def _start() -> float:
+    from src.hounds import bankroll as bk
+    return bk.params().start
+
+
+def _money_of(units: float, block=None) -> tuple:
+    """``(usd, pct)``: from the hound's own bankroll figures when it reports them (they are stake-weighted for
+    a member dog), else the units at the shared flat unit (an old saved copy has no bankroll block)."""
+    from src.hounds import bankroll as bk
+    if isinstance(block, dict) and _num(block.get("pnl_usd")) is not None and _num(block.get("return_pct")) is not None:
+        return float(block["pnl_usd"]), float(block["return_pct"])
+    p = bk.params()
+    usd = units * p.unit_usd
+    return usd, usd / p.start * 100.0
+
+
 # ---- the numbers ----------------------------------------------------------------------------------
 
 def season_stats(hound: dict) -> Optional[dict]:
@@ -117,11 +154,29 @@ def season_stats(hound: dict) -> Optional[dict]:
     units = _num(record.get("units_average_price"))
     if units is None:
         units = _num(record.get("units_recorded_price"))
-    return None if units is None else {"wins": wins, "losses": losses, "units": units}
+    if units is None:
+        return None
+    usd, pct = _money_of(units, hound.get("bankroll"))
+    return {"wins": wins, "losses": losses, "units": units, "usd": usd, "pct": pct}
 
 
 def _window_start(as_of_day: str) -> str:
     return (date_cls.fromisoformat(as_of_day) - timedelta(days=WINDOW_DAYS - 1)).isoformat()
+
+
+def _cum_usd(series: list, on_or_before: Optional[str] = None, before: Optional[str] = None) -> Optional[float]:
+    """The account balance at the last series point inside the bound; None when a point has no dollar figure
+    (a series from before the bankroll view), so the caller falls back to units."""
+    last = None
+    for point in series:
+        day = str(getattr(point, "date", ""))[:10]
+        if (on_or_before is not None and day > on_or_before) or (before is not None and day >= before):
+            break
+        value = getattr(point, "bankroll_usd", None)
+        if value is None:
+            return None
+        last = value
+    return last
 
 
 def _cum_units(series: list, basis: str, on_or_before: Optional[str] = None,
@@ -160,8 +215,16 @@ def week_stats(hounds: dict, as_of: Optional[str]) -> dict:
         basis = data.summary.spark_basis or "recorded_price"
         units = (_cum_units(data.series, basis, on_or_before=end)
                  - _cum_units(data.series, basis, before=start))
+        block = None
+        end_bal = _cum_usd(data.series, on_or_before=end)
+        if end_bal is not None:
+            before_bal = _cum_usd(data.series, before=start)
+            usd_week = end_bal - (before_bal if before_bal is not None else _start())
+            block = {"pnl_usd": usd_week, "return_pct": usd_week / _start() * 100.0}
+        usd, pct = _money_of(units, block)
         out[hid] = {"wins": sum(1 for b in rows if b.result == "win"),
-                    "losses": sum(1 for b in rows if b.result == "loss"), "units": round(units, 4)}
+                    "losses": sum(1 for b in rows if b.result == "loss"), "units": round(units, 4),
+                    "usd": round(usd, 2), "pct": round(pct, 3)}
     return out
 
 
@@ -172,7 +235,13 @@ def _race(hounds: list) -> list:
 
 
 def _stats_for(hound: dict, window: Optional[dict]) -> Optional[dict]:
-    return season_stats(hound) if window is None else window.get(str(hound.get("id")))
+    if window is None:
+        return season_stats(hound)
+    s = window.get(str(hound.get("id")))
+    if not s or ("usd" in s and "pct" in s):
+        return s
+    usd, pct = _money_of(_num(s.get("units")) or 0.0)     # a window from before the bankroll view: units at the flat unit
+    return {**s, "usd": usd, "pct": pct}
 
 
 def _span(window: Optional[dict]) -> str:
@@ -190,14 +259,15 @@ def _pool(hounds: list) -> list:
 
 
 def _pick(hounds: list, window: Optional[dict], hot: bool):
-    """The hottest (or coldest) race hound by units: at least MIN_SETTLED_FOR_HIGHLIGHT settled bets in the
-    span, units strictly above (below) zero. Ties: more wins (losses) first, then name."""
+    """The hottest (or coldest) race hound by paper dollars: at least MIN_SETTLED_FOR_HIGHLIGHT settled bets in
+    the span, dollars strictly above (below) zero at the whole dollar the post prints. Ties: more wins (losses)
+    first, then name."""
     best = None
     for h in _pool(hounds):
         s, name = _stats_for(h, window), _name(h)
         if not s or not name or s["wins"] + s["losses"] < MIN_SETTLED_FOR_HIGHLIGHT:
             continue
-        shown = round(s["units"], 1)
+        shown = round(s["usd"])
         if (shown <= 0) if hot else (shown >= 0):
             continue
         key = (-shown if hot else shown, -(s["wins"] if hot else s["losses"]), name.casefold(), name)
@@ -211,7 +281,7 @@ def hottest_line(hounds: list, window: Optional[dict]) -> Optional[str]:
     if not best:
         return None
     _, name, s = best
-    return f"🔥 Hottest dog: {name} {s['wins']}-{s['losses']} {_span(window)}, {units_text(s['units'])}"
+    return f"🔥 Hottest dog: {name} {s['wins']}-{s['losses']} {_span(window)}, {figure_text(s)}"
 
 
 def coldest_line(hounds: list, window: Optional[dict]) -> Optional[str]:
@@ -219,12 +289,12 @@ def coldest_line(hounds: list, window: Optional[dict]) -> Optional[str]:
     if not best:
         return None
     _, name, s = best
-    return (f"🥶 Ice cold: {name} {s['wins']}-{s['losses']} {_span(window)}, {units_text(s['units'])}. "
+    return (f"🥶 Ice cold: {name} {s['wins']}-{s['losses']} {_span(window)}, {figure_text(s)}. "
             "Check its pulse.")
 
 
 def coin_flip_line(hounds: list) -> Optional[str]:
-    """Season units, whatever the window: a 7-day rivalry would flip on a single night. Both hounds need a
+    """Season return, whatever the window: a 7-day rivalry would flip on a single night. Both hounds need a
     settled bet or the line is left out."""
     by_id = {str(h.get("id")): h for h in hounds if isinstance(h, dict)}
     collie, prof = by_id.get(COIN_FLIP_ID), by_id.get(PROFESSOR_ID)
@@ -234,8 +304,8 @@ def coin_flip_line(hounds: list) -> Optional[str]:
     na, nb = _name(collie), _name(prof)
     if not (a and b and na and nb):
         return None
-    ua, ub = round(a["units"], 1), round(b["units"], 1)
-    both = f"({units_text(a['units'])} vs {units_text(b['units'])}, season)"
+    ua, ub = round(a["pct"], 1), round(b["pct"], 1)
+    both = f"({pct_text(a['pct'])} vs {pct_text(b['pct'])}, season)"
     if ua > ub:
         return f"🪙 {na} is ahead of {nb} {both}. The random dog is embarrassing the stats guys."
     if ua < ub:
