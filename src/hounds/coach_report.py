@@ -10,6 +10,10 @@ WHAT IT SAYS, AND WHAT IT REFUSES TO SAY
   * Words for a knob come from the change list frozen on the suggestion row (the hound's own rule words), so a
     reader sees "4.0 points or more", not "0.04".
 
+THE FAN LANE. Fan tips (src/hounds/fan_tips.py) are graded by the same code and reported in their own block
+(``fans``: a summary and the latest 20 tips, each with its grades), never folded into the coach's counts. The
+``versus`` line sets the two side by side on LIVE grades only; hindsight gets a separate, labelled line.
+
 READS THE FILE, NOT THE STORES. The ledger is small, so a request folds it (with a size+mtime cache). Nothing
 here opens an odds or results store, and nothing writes. Standard library plus ``coach_card``.
 """
@@ -27,6 +31,7 @@ REFUSED_SHOWN = 5
 DISCLAIMER = "Paper bets only, not advice. 21+."
 
 _CACHE: dict = {}
+_GRADES_CACHE: dict = {}
 
 
 def units_text(units) -> str:
@@ -131,15 +136,117 @@ def summarise(card: C.Card, items: list) -> dict:
     }
 
 
+# ---- the fan lane -------------------------------------------------------------------------------------------
+
+def fan_name(row: Mapping) -> str:
+    return row.get("nickname") or "A fan"
+
+
+def fan_one_liner(item: Mapping) -> str:
+    """``Ann told Steamy Setter to change "..." from 3.0 points or more to 4.0 points or more. Hindsight: ...
+    Live: ...`` (``A fan`` without a nickname; ``3 fans sent this`` when the same tip came in more than once)."""
+    name = item.get("hound_name") or item.get("hound") or "a hound"
+    who = item["fan_name"]
+    more = f" ({item['count']} fans sent this.)" if item.get("count", 1) > 1 else ""
+    return (f"{who} told {name} to change {item['change_text']}. {hindsight_clause(item['hindsight'])} "
+            f"{live_clause(item['forward'])}{more}")
+
+
+def _fan_item(row: Mapping, card: C.Card) -> dict:
+    key = row["issue"]
+    first = card.first_helped.get(key)
+    item = {
+        "issue": key, "tip_id": row.get("tip_id"), "hound": row.get("hound"),
+        "hound_name": row.get("hound_name") or row.get("hound"), "nickname": row.get("nickname"),
+        "fan_name": fan_name(row), "count": card.fan_counts.get(key, 1),
+        "tip_created_utc": row.get("tip_created_utc"), "recorded_utc": row.get("recorded_utc"),
+        "changes": row.get("changes") or [], "change_text": C.change_sentence(row.get("changes") or []),
+        "hindsight": hindsight_summary(card.hindsight.get(key)),
+        "forward": forward_summary(card.forward.get(key)),
+        "first_helped": None if first is None else {"utc": first.get("utc"), "units_diff": _num(first.get("units_diff")),
+                                                    "n_paired": int(first.get("n_paired") or 0)},
+    }
+    item["line"] = fan_one_liner(item)
+    return item
+
+
+def fans_summary(card: C.Card) -> dict:
+    """The fan lane's counts, shaped like the coach's ``summarise`` (so the page reads both the same way)."""
+    forward = [forward_summary(card.forward.get(k)) for k in card.fans]
+    count = lambda label: sum(1 for f in forward if f["label"] == label)  # noqa: E731
+    hind = [h for h in (hindsight_summary(card.hindsight.get(k)) for k in card.fans)
+            if h["status"] == "ok" and h["units_diff"] is not None]
+    helped, hurt, none_, early = (count(G.LABEL_HELPED), count(G.LABEL_HURT), count(G.LABEL_NONE),
+                                  count(G.LABEL_EARLY))
+    return {
+        "tips": len(card.fans), "sent": sum(card.fan_counts.get(k, 1) for k in card.fans),
+        "graded_forward": helped + hurt + none_, "helped": helped, "hurt": hurt, "no_difference": none_,
+        "too_early": early,
+        "forward_units_diff": round(sum(f["units_diff"] for f in forward), 4) if forward else None,
+        "hindsight_units_diff": round(sum(h["units_diff"] for h in hind), 4) if hind else None,
+        "hindsight_note": "Hindsight is the 30 days before each tip. A rehearsal, not evidence.",
+    }
+
+
+def versus(coach: Mapping, fans: Mapping) -> dict:
+    """The AI coach against the fans on LIVE grades: ``helped`` out of ``graded`` (a verdict other than TOO
+    EARLY) on each side. Hindsight totals get their own labelled line and never enter the live one."""
+    c_h, c_g = int(coach.get("helped") or 0), int(coach.get("graded_forward") or 0)
+    f_h, f_g = int(fans.get("helped") or 0), int(fans.get("graded_forward") or 0)
+    if c_g == 0 and f_g == 0:
+        line = "Coach vs the fans: nothing has a live grade yet on either side, so there is no scoreboard."
+    else:
+        line = (f"Coach vs the fans: the coach helped {c_h} of {c_g} graded tips, the fans helped {f_h} of "
+                f"{f_g} (live grades only).")
+    c_u, f_u = coach.get("hindsight_units_diff"), fans.get("hindsight_units_diff")
+    hind = None
+    if c_u is not None or f_u is not None:
+        hind = ("Hindsight, a rehearsal and not evidence: the coach " + (units_text(c_u) if c_u is not None else "n/a")
+                + ", the fans " + (units_text(f_u) if f_u is not None else "n/a") + ".")
+    return {"coach": {"helped": c_h, "graded": c_g}, "fans": {"helped": f_h, "graded": f_g},
+            "line": line, "hindsight_line": hind}
+
+
+def fans_block(card: C.Card, coach_summary: Mapping, *, limit: int = ITEMS_SHOWN) -> dict:
+    rows = sorted(card.fans.values(), key=lambda r: (str(r.get("recorded_utc") or ""), r["issue"]), reverse=True)
+    summary = fans_summary(card)
+    helped = sorted((_fan_item(r, card) for r in card.fans.values() if r["issue"] in card.first_helped),
+                    key=lambda i: (str((i["first_helped"] or {}).get("utc") or ""), i["issue"]), reverse=True)
+    return {
+        "computed": bool(card.fans), "summary": summary, "items": [_fan_item(r, card) for r in rows[:limit]],
+        "helped_events": helped[:50],
+        "versus": versus(coach_summary, summary),
+        "message": None if card.fans else
+        "No fan tips have been graded yet. Send one from a dog's page and it gets the coach's treatment.",
+    }
+
+
+def fan_grades(card: C.Card) -> dict:
+    """``{tip_id: {label, units_diff, n_paired, hindsight_units_diff}}`` for every recorded tip id (a repeat
+    of a tip shares its first row's grade). The dog page's tip list reads this."""
+    out = {}
+    for key, row in card.fans.items():
+        f = forward_summary(card.forward.get(key))
+        h = hindsight_summary(card.hindsight.get(key))
+        grade = {"label": f["label"], "units_diff": f["units_diff"], "n_paired": f["n_paired"],
+                 "hindsight_units_diff": h["units_diff"] if h["status"] == "ok" else None}
+        for tid in [row.get("tip_id"), *(t for t, k in card.fan_dup_of.items() if k == key)]:
+            if isinstance(tid, str):
+                out[tid] = grade
+    return out
+
+
 def build_from_card(card: C.Card, *, limit: int = ITEMS_SHOWN, chain_ok: Optional[bool] = None,
                     coach_on: Optional[bool] = None) -> dict:
     rows = sorted(card.suggestions.values(), key=lambda r: (str(r.get("recorded_utc") or ""), r["issue"]),
                   reverse=True)
     items = [_item(r, card) for r in rows[:limit]]
     refused = sorted(card.refused.values(), key=lambda r: r["issue"], reverse=True)[:REFUSED_SHOWN]
+    summary = summarise(card, items)
     return {
         "computed": bool(card.suggestions or card.refused),
-        "summary": summarise(card, items), "items": items,
+        "summary": summary, "items": items,
+        "fans": fans_block(card, summary, limit=limit),
         "recent_refused": [{"issue": r["issue"], "issue_url": r.get("issue_url"), "hound": r.get("hound"),
                             "reason": r.get("reason"), "utc": r.get("utc")} for r in refused],
         "last_change_utc": card.last_utc, "chain_ok": chain_ok, "coach_on": coach_on,
@@ -177,6 +284,23 @@ def build(paths: Optional[C.Paths] = None, *, limit: int = ITEMS_SHOWN, coach_on
     out = build_from_card(card, limit=limit, chain_ok=chain_ok, coach_on=coach_on)
     _CACHE.clear()
     _CACHE[sig] = out
+    return out
+
+
+def fan_grades_now(paths: Optional[C.Paths] = None) -> dict:
+    """``fan_grades`` from the ledger on disk (cached on its size and mtime). {} when there is none or it
+    cannot be read: a dog page's tip list must never fail because the report card did."""
+    paths = paths or C.Paths.default()
+    sig = _signature(paths)
+    hit = _GRADES_CACHE.get(sig)
+    if hit is not None:
+        return hit
+    try:
+        out = fan_grades(C.load(paths)) if paths.ledger.exists() else {}
+    except Exception:  # noqa: BLE001
+        return {}
+    _GRADES_CACHE.clear()
+    _GRADES_CACHE[sig] = out
     return out
 
 

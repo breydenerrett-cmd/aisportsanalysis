@@ -261,13 +261,20 @@ def grade_hindsight(row: Mapping, stores, *, now: datetime, registry: Mapping, t
 
 # ---- forward --------------------------------------------------------------------------------------------------------
 
+# The fan lane is graded by this same code (docs/COACH_REPORT_CARD.md, "The fan lane"). Each followed tip costs
+# two shadow hounds on every forward pass, and the slot has a 100 s budget, so only the newest tips are followed
+# live; an older one keeps its last grade. The coach's own suggestions are never trimmed (there are a few a week).
+FAN_FOLLOWED_MAX = 120
+
+
 def active_for_forward(card: C.Card, now: datetime) -> list:
-    out = []
-    for issue, row in sorted(card.suggestions.items()):
+    out, fans = [], []
+    for issue, row in sorted(card.gradable().items()):
         when = C.parse(row.get("recorded_utc"))
         if when is not None and now - when <= timedelta(days=FORWARD_MAX_DAYS):
-            out.append(row)
-    return out
+            (fans if issue in card.fans else out).append(row)
+    fans.sort(key=lambda r: (str(r.get("recorded_utc") or ""), r["issue"]))
+    return sorted(out + fans[-FAN_FOLLOWED_MAX:], key=lambda r: r["issue"])
 
 
 def run_forward(rows: list, stores, paths: C.Paths, *, now: datetime, registry: Mapping, tun_cfg: Mapping) -> dict:
@@ -316,7 +323,7 @@ def grade_all(paths: C.Paths, *, now: datetime, registry: Optional[Mapping] = No
     tun_cfg = tun_cfg if tun_cfg is not None else tunables.load()
     loader = loader or (lambda since, until: base.load_stores(since=since, until=until))
     card = C.load(paths)
-    todo_hind = [r for i, r in sorted(card.suggestions.items()) if i not in card.hindsight]
+    todo_hind = [r for i, r in sorted(card.gradable().items()) if i not in card.hindsight]
     follow = active_for_forward(card, now)
     result = {"hindsight": 0, "forward_rows": 0, "forward_written": 0, "stopped": None}
     if not todo_hind and not follow:

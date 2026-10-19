@@ -2,7 +2,8 @@
 
     GET  /hounds/{id}/rulebook      the rule, the plain trigger, and a tunable dog's dials with their current
                                     values and when the referee last changed them (src/hounds/dials.py)
-    GET  /hounds/{id}/tips          the newest 20 fan tips and how many there are
+    GET  /hounds/{id}/tips          the newest 20 fan tips and how many there are; a tip the coach report card has
+                                    graded carries ``grade`` {label, units_diff, n_paired, hindsight_units_diff}
     POST /hounds/{id}/tips          send a tip: {"values": {knob: value}, "nickname": "optional"}
     GET  /hounds/tips/export?since= every tip, oldest first, for the grading job (no addresses, no hashes)
 
@@ -50,6 +51,16 @@ def _rule_of(hound_id: str) -> tuple:
     return data.summary.rule_text or "", data.summary.tagline or ""
 
 
+def _grades_by_tip() -> dict:
+    """The coach report card's grade for each fan tip it has recorded ({} when it has none or cannot be read:
+    the tip list is the fans' page and must not fail because the report card did)."""
+    try:
+        from src.hounds import coach_report
+        return coach_report.fan_grades_now()
+    except Exception:  # noqa: BLE001
+        return {}
+
+
 @router.get("/hounds/tips/export")
 def tips_export(response: Response, since: Optional[str] = Query(None, max_length=64)):
     try:
@@ -72,8 +83,13 @@ def rulebook(hound_id: str, response: Response):
 @router.get("/hounds/{hound_id}/tips")
 def tips_for(hound_id: str, response: Response):
     response.headers["Cache-Control"] = _NO_STORE
+    tips = fan_tips.latest(hound_id)
+    grades = _grades_by_tip()
+    for tip in tips:
+        if tip["id"] in grades:
+            tip["grade"] = grades[tip["id"]]     # only a graded tip carries the key; the rest read as before
     return envelope({"hound_id": hound_id, "count": fan_tips.count_for(hound_id),
-                     "tips": fan_tips.latest(hound_id), "note": fan_tips.COPY_NEVER_CHANGES})
+                     "tips": tips, "note": fan_tips.COPY_NEVER_CHANGES})
 
 
 @router.post("/hounds/{hound_id}/tips")

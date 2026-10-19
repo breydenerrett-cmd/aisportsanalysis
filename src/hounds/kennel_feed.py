@@ -11,6 +11,10 @@ An event is something that HAPPENED, read from what the site already records, ne
              and what hindsight says; guid ``kennel:coach_tip:<issue>``, dated by the tip's recorded time
   coach_card "Coach report card: n tips, h helped, x hurt, t too early", ONCE PER DAY and only on a day the
              card changed: guid ``kennel:coach_card:<date of the newest card row>``
+  fan_tip    a fan's tip whose LIVE grade first turned HELPED (the fan lane of the report card): "Fan tip paid
+             off: <nickname or a fan>'s tweak to <dog> is beating the dog (+x.xu, n bets)"; guid
+             ``kennel:fan_tip:<tip id>``, dated by the first forward grade that said HELPED, with the numbers of
+             that grade, so the item never changes after it is first posted
 
 Every event carries the three things a polling Zap needs (``src/hounds/rss.py``): a STABLE ``guid``
 built from the event's identity (hound + date + kind, or the challenger's id), the event's OWN
@@ -59,6 +63,7 @@ KIND_WIN_STREAK = "win_streak"
 KIND_LOSS_STREAK = "loss_streak"
 KIND_COACH_TIP = "coach_tip"
 KIND_COACH_CARD = "coach_card"
+KIND_FAN_TIP = "fan_tip"
 
 # Why a challenger was cut, in the words a fan reads. The codes are the referee's
 # (src/hounds/learning/referee.py); an unknown code falls back to the neutral line, never a guess.
@@ -264,6 +269,35 @@ def coach_events(report: Optional[Mapping], *, base_url: Optional[str] = None) -
     return out
 
 
+def fan_events(report: Optional[Mapping], *, base_url: Optional[str] = None) -> list:
+    """One item per fan tip whose live grade has turned HELPED, from ``coach_report.build``'s ``fans`` block.
+    The numbers are the ones on the FIRST HELPED grade, so a later wobble never rewrites a posted item."""
+    fans = (report or {}).get("fans") or {}
+    link = coach_link(base_url or site_base_url())
+    out = []
+    for item in fans.get("helped_events") or []:
+        first = item.get("first_helped") or {}
+        tip_id = rss.clean(item.get("tip_id"))
+        when = rss.parse_utc(first.get("utc"))
+        units = first.get("units_diff")
+        n = first.get("n_paired")
+        if not tip_id or when is None or not isinstance(units, (int, float)) or isinstance(units, bool) \
+                or not isinstance(n, int):
+            continue
+        from src.hounds import coach_report as CR
+        who = _name(item.get("nickname"), "a fan")
+        dog = _name(item.get("hound_name"), "a hound")
+        title = (f"\U0001F436 Fan tip paid off: {who}'s tweak to {dog} is beating the dog "
+                 f"({CR.units_text(units)}, {n} bet{'' if n == 1 else 's'})")
+        why = ("Graded by code against the dog as it stands, on new games from the minute the tip landed. "
+               "A tip never changes a dog, and a small number of games is a small number of games.")
+        ev = _event(KIND_FAN_TIP, f"kennel:{KIND_FAN_TIP}:{tip_id}", when, str(item.get("hound") or ""),
+                    title, why, link=link)
+        if ev:
+            out.append(ev)
+    return out
+
+
 # ---- the feed ---------------------------------------------------------------------------------------------
 
 def build_events(book, states: Mapping, user_rows: Iterable[Mapping], *, limit: int = MAX_ITEMS,
@@ -271,7 +305,7 @@ def build_events(book, states: Mapping, user_rows: Iterable[Mapping], *, limit: 
     """Every event, newest first (ties broken by guid so two polls order the same), trimmed to ``limit``."""
     names = {hid: data.summary.name for hid, data in book.hounds.items()}
     events = (retired_events(book) + streak_events(book) + learning_events(states, names)
-              + new_hound_events(user_rows) + coach_events(coach))
+              + new_hound_events(user_rows) + coach_events(coach) + fan_events(coach))
     seen, unique = set(), []
     for ev in events:
         if ev["guid"] in seen:

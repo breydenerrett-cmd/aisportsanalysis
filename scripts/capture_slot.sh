@@ -582,12 +582,14 @@ python3 -m src.hounds.learning tick --skip-scorecard 2>&1 | tail -n 6 | sed 's/^
 # The coach report card (docs/COACH_REPORT_CARD.md): read the weekly coach's GitHub issues from the PUBLIC
 # issues API (read-only, no token needed: no comment, no label, no close), record each new suggestion or
 # refusal once by issue number, then grade the suggestions by code (hindsight now, the live shadow
-# comparison as games finish). Runs after the tick above so the pack ledger it compares with is current.
+# comparison as games finish). The same call also reads the fans' tips from the site's public export
+# (`tips`: fan lane, graded the same way, never a challenger; a site that has not shipped the export yet is a
+# printed line, not a failure). Runs after the tick above so the pack ledger it compares with is current.
 # Writes only evidence/hounds_coach_v1.jsonl and evidence/hounds_coach_shadow_v1.jsonl (and, when the
 # pre-registered guards allow, one challenger in the learning ledger); all under evidence/, staged below.
 # A hard 120 s cap and `|| true`: it can never cost the slot.
 echo "== coach report card =="
-timeout 120 python3 -m src.hounds.coach_intake --source api --grade 2>&1 | tail -n 8 | sed 's/^/  /' || true
+timeout 120 python3 -m src.hounds.coach_intake --source api,tips --grade 2>&1 | tail -n 8 | sed 's/^/  /' || true
 
 echo "== nfl capture =="
 python3 -m src.cli nfl capture 2>&1 | sed 's/^/  /' || true

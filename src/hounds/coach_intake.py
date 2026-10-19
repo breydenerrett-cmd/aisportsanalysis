@@ -64,8 +64,9 @@ import subprocess
 import sys
 import tempfile
 import urllib.error
+import urllib.parse
 import urllib.request
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Callable, Mapping, Optional, Sequence
 
@@ -424,6 +425,156 @@ def run_readonly(issues: Sequence[Mapping], *, scope: L.Scope, card_paths: coach
     return counts
 
 
+# ---- the fan lane (docs/COACH_REPORT_CARD.md, "The fan lane") -----------------------------------------------------
+
+TIPS_PATH = "/hounds/tips/export"
+TIPS_TIMEOUT_S = 20
+TIPS_MAX_BYTES = 5_000_000
+TIPS_MAX_ROWS = 5000               # the export's own ceiling (fan_tips.EXPORT_LIMIT)
+TIPS_SINCE_SLACK_S = 60            # re-read a minute before the newest recorded tip; tip ids dedupe the overlap
+PROPOSED_BY_FAN = "fan"
+_TIP_ID = re.compile(r"^[A-Za-z0-9_-]{1,40}$")
+_NICK_DROP = re.compile(r"[^A-Za-z0-9 ]")
+
+
+def tips_base_url() -> str:
+    """The site's public address, from the same setting the app's other public links read (PUBLIC_BASE_URL,
+    default https://linehound.app): tests point it at a fake."""
+    from src.hounds import kennel_feed
+    return kennel_feed.site_base_url()
+
+
+def tips_since(card: coach_card.Card) -> Optional[str]:
+    """Where to resume the export: a minute before the newest tip already recorded, or None for all of it."""
+    last = coach_card.parse(card.fan_last_tip_utc)
+    return coach_card.iso(last - timedelta(seconds=TIPS_SINCE_SLACK_S)) if last else None
+
+
+def fetch_tip_export(since: Optional[str], *, base_url: Optional[str] = None,
+                     urlopen: Optional[Callable] = None) -> list:
+    """The fan tips from the public export, oldest first, as raw dicts (each one re-validated by
+    ``record_fan_tips``). Raises ``IntakeError('tips_failed')`` on any transport or parse failure, a 404
+    included (the route exists only after the deploy that ships it)."""
+    base = (base_url or tips_base_url()).rstrip("/")
+    url = base + TIPS_PATH + (("?since=" + urllib.parse.quote(since, safe="")) if since else "")
+    opener = urlopen or urllib.request.urlopen
+    request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, "Accept": "application/json"})
+    try:
+        with opener(request, timeout=TIPS_TIMEOUT_S) as resp:
+            raw = resp.read(TIPS_MAX_BYTES + 1)
+    except urllib.error.HTTPError as exc:
+        raise IntakeError("tips_failed", f"the tip export answered {exc.code} ({url})") from None
+    except (urllib.error.URLError, OSError, ValueError) as exc:
+        raise IntakeError("tips_failed", f"could not reach the tip export: {type(exc).__name__}") from None
+    if len(raw) > TIPS_MAX_BYTES:
+        raise IntakeError("tips_failed", "the tip export is larger than expected; not read")
+    try:
+        body = json.loads(raw.decode("utf-8") if isinstance(raw, bytes) else raw)
+    except ValueError:
+        raise IntakeError("tips_failed", "the tip export did not return JSON") from None
+    rows = body.get("tips") if isinstance(body, Mapping) else None
+    if not isinstance(rows, list):
+        raise IntakeError("tips_failed", "the tip export has no list of tips")
+    return rows[:TIPS_MAX_ROWS]
+
+
+def clean_nickname(raw) -> Optional[str]:
+    """A fan's nickname made safe for a public page, or None. Intake never trusts the export: anything the
+    tip box would refuse is dropped here too (characters first, then the site's own text rules)."""
+    if not isinstance(raw, str):
+        return None
+    text = " ".join(_NICK_DROP.sub(" ", raw).split())[:20].strip()
+    if not text:
+        return None
+    from src.hounds import fan_tips
+    try:
+        return fan_tips.clean_nickname(text)
+    except fan_tips.TipError:
+        return None
+
+
+def _one_tip(raw) -> Optional[dict]:
+    """The fields intake reads from one export row, or None when it is not a tip."""
+    if not isinstance(raw, Mapping):
+        return None
+    tip_id, hound = raw.get("id"), raw.get("hound_id")
+    made = coach_card.parse(raw.get("created_utc"))
+    if not isinstance(tip_id, str) or not _TIP_ID.match(tip_id) or not isinstance(hound, str) \
+            or not hound.strip() or len(hound) > 80 or made is None or not isinstance(raw.get("values"), Mapping):
+        return None
+    return {"id": tip_id, "hound": hound.strip(), "values": raw["values"], "nickname": raw.get("nickname"),
+            "created": made}
+
+
+def _tip_order(raw) -> tuple:
+    if isinstance(raw, Mapping):
+        return (str(raw.get("created_utc")), str(raw.get("id")))
+    return ("", "")
+
+
+def record_fan_tips(rows: Sequence, *, scope: L.Scope, card_paths: coach_card.Paths, now: datetime,
+                    tunable_cfg: Optional[Mapping] = None, registry: Optional[Mapping] = None,
+                    say: Callable = print) -> dict:
+    """Record the unseen fan tips in the report card's fan lane. Returns counts.
+
+    Per tip, oldest first: a malformed row is dropped; a tip id already recorded (as a row or as a repeat) is
+    skipped; the hound must declare tunable knobs; the values meet ``tunables.validate`` against the hound's
+    CURRENT champion (bounds, grid, 1 or 2 knobs changed) or the tip is refused; a repeat of the day's tip (same
+    hound, same values, same UTC day the fan sent it) adds one to the first row's count; a day that already holds
+    ``FAN_PER_UTC_DAY`` rows takes no more. A tip is never offered to ``propose_pack``, so a fan can never cause
+    a challenger: the row's mode is ``fan`` and its challenger fields are empty. Refused and over-the-cap tips
+    are counted here but not written, so a ledger cannot be filled by bad input."""
+    from src.hounds import pack as pack_mod
+    cfg = tunable_cfg if tunable_cfg is not None else tunables.load()
+    reg = registry if registry is not None else pack_mod.BY_ID
+    counts = {"read": len(rows), "recorded": 0, "collapsed": 0, "already": 0, "invalid": 0, "not_tunable": 0,
+              "over_cap": 0, "malformed": 0}
+    card = coach_card.load(card_paths)
+    state = None
+    for raw in sorted(rows, key=_tip_order):
+        tip = _one_tip(raw)
+        if tip is None:
+            counts["malformed"] += 1
+            continue
+        if tip["id"] in card.fan_tip_ids:
+            counts["already"] += 1
+            continue
+        tun = cfg.get(tip["hound"])
+        if tun is None or tip["hound"] not in reg:
+            counts["not_tunable"] += 1
+            continue
+        if state is None:
+            state = L.read_state(scope)
+        champ = tunables.full_values(tun, state.champion_params(tip["hound"]))
+        try:
+            values = tunables.validate(tun, champ, tip["values"])
+        except tunables.TunableError as exc:
+            counts["invalid"] += 1
+            say(f"  tip {tip['id']} refused: {_echo(exc)}")
+            continue
+        day = coach_card.iso(tip["created"])[:10]
+        first = coach_card.fan_duplicate_of(card, tip["hound"], values, day)
+        if first is not None:
+            coach_card.append(card_paths, coach_card.K_FAN_COUNT, now=now, issue=first, tip_id=tip["id"],
+                              hound=tip["hound"], tip_created_utc=coach_card.iso(tip["created"]))
+            counts["collapsed"] += 1
+            card = coach_card.load(card_paths)
+            continue
+        if coach_card.fan_day_full(card, day):
+            counts["over_cap"] += 1
+            continue
+        coach_card.append(
+            card_paths, coach_card.K_FAN_TIP, now=now, issue=coach_card.next_fan_key(card), tip_id=tip["id"],
+            hound=tip["hound"], hound_name=tun.name, champion_version=state.champion_version(tip["hound"]),
+            champion_values=champ, suggested_values=values, changes=coach_card.change_list(tun, champ, values),
+            mode=coach_card.MODE_FAN, challenger_id=None, nickname=clean_nickname(tip.get("nickname")),
+            tip_created_utc=coach_card.iso(tip["created"]), recorded_utc=coach_card.iso(now),
+            proposed_by=PROPOSED_BY_FAN)
+        counts["recorded"] += 1
+        card = coach_card.load(card_paths)
+    return counts
+
+
 # ---- the run -------------------------------------------------------------------------------------------------
 
 def _already_said(issue: Mapping, comment: str) -> bool:
@@ -506,13 +657,29 @@ def run(*, runner: Runner, repo: str = REPO, dry_run: bool = False, scope: Optio
     return 1 if problems else 0
 
 
+SOURCES = ("gh", "api", "fixture", "tips")
+
+
+def parse_sources(text: str) -> tuple:
+    """``api,tips`` as ``("api", "tips")``. ``gh`` writes to GitHub and runs alone."""
+    found = tuple(dict.fromkeys(p.strip() for p in str(text).split(",") if p.strip()))
+    if not found or any(p not in SOURCES for p in found):
+        raise argparse.ArgumentTypeError(f"--source takes {', '.join(SOURCES)} (api, fixture and tips can be "
+                                         "combined with commas)")
+    if "gh" in found and len(found) > 1:
+        raise argparse.ArgumentTypeError("--source gh runs alone")
+    return found
+
+
 def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(prog="python -m src.hounds.coach_intake",
                                  description=__doc__.splitlines()[0])
-    ap.add_argument("--source", choices=("gh", "api", "fixture"), default="gh",
+    ap.add_argument("--source", type=parse_sources, default=("gh",), metavar="SOURCE[,SOURCE]",
                     help="gh = open issues through the gh CLI, then comment/label/close (local only); "
                          "api = the public GitHub REST API, read-only (runs on Actions); "
-                         "fixture = a JSON file (tests only)")
+                         "fixture = a JSON file (tests only); "
+                         "tips = the fans' tips from the site's public export (the fan lane). "
+                         "api, fixture and tips can be combined: --source api,tips")
     ap.add_argument("--file", help="the issues file for --source fixture")
     ap.add_argument("--grade", action="store_true",
                     help="after intake, grade the coach's suggestions (hindsight and the live shadow comparison)")
@@ -520,6 +687,8 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--dry-run", action="store_true",
                     help="print what would happen; no gh writes, no ledger writes")
     ap.add_argument("--repo", default=REPO)
+    ap.add_argument("--base-url", help="the site address for --source tips (default: PUBLIC_BASE_URL, else "
+                                       "https://linehound.app)")
     ap.add_argument("--root", help="house scope and report-card directory (testing seam)")
     ap.add_argument("--champion-ledger", help="the pack ledger (testing seam)")
     ap.add_argument("--coach-config", help="the kill-switch file (testing seam)")
@@ -527,24 +696,38 @@ def build_parser() -> argparse.ArgumentParser:
     return ap
 
 
-def run_source(issues: Sequence[Mapping], *, scope: L.Scope, card_paths: coach_card.Paths, coach_on: bool,
-               champion_ledger, now: datetime, dry_run: bool, grade: bool, time_budget_s: float,
-               tunable_cfg=None, registry=None, loader=None, say: Callable = print) -> int:
-    """The read-only path (api or fixture): record unseen owner issues, then optionally grade."""
+def run_source(issues: Optional[Sequence[Mapping]], *, scope: L.Scope, card_paths: coach_card.Paths,
+               coach_on: bool, champion_ledger, now: datetime, dry_run: bool, grade: bool, time_budget_s: float,
+               tunable_cfg=None, registry=None, loader=None, say: Callable = print,
+               tips: Optional[Sequence] = None) -> int:
+    """The read-only path (api, fixture, tips): record unseen owner issues (``issues``, None when that source
+    was not asked for) and the fans' tips (``tips``, None likewise), then optionally grade everything."""
     import time
-    say(f"coach intake: {len(issues)} {LABEL_PROPOSAL} issue(s) read"
-        + (" [dry run]" if dry_run else "") + ("" if coach_on else " [coach switch is off]"))
+    if issues is not None:
+        say(f"coach intake: {len(issues)} {LABEL_PROPOSAL} issue(s) read"
+            + (" [dry run]" if dry_run else "") + ("" if coach_on else " [coach switch is off]"))
+    elif tips is not None:
+        say(f"coach intake: {len(tips)} fan tip(s) read" + (" [dry run]" if dry_run else ""))
     with tempfile.TemporaryDirectory() as scratch:
         work = _dry_copy(scope, Path(scratch)) if dry_run else scope
         work_card = _dry_card(card_paths, Path(scratch)) if dry_run else card_paths
-        counts = run_readonly(issues, scope=work, card_paths=work_card, coach_on=coach_on,
-                              champion_ledger=champion_ledger, now=now, tunable_cfg=tunable_cfg,
-                              registry=registry, say=say)
-        say("  " + ", ".join(f"{k} {v}" for k, v in counts.items()))
+        if issues is not None:
+            counts = run_readonly(issues, scope=work, card_paths=work_card, coach_on=coach_on,
+                                  champion_ledger=champion_ledger, now=now, tunable_cfg=tunable_cfg,
+                                  registry=registry, say=say)
+            say("  " + ", ".join(f"{k} {v}" for k, v in counts.items()))
+        if tips is not None:
+            if issues is not None:
+                say(f"coach intake: {len(tips)} fan tip(s) read")
+            fan_counts = record_fan_tips(tips, scope=work, card_paths=work_card, now=now,
+                                         tunable_cfg=tunable_cfg, registry=registry, say=say)
+            say("  fans: " + ", ".join(f"{k} {v}" for k, v in fan_counts.items()))
         if grade:
             if dry_run:
-                n = len(coach_card.load(work_card).suggestions)
-                say(f"  grading skipped in a dry run ({n} suggestion(s) would be graded)")
+                card = coach_card.load(work_card)
+                n = len(card.suggestions)
+                extra = f" and {len(card.fans)} fan tip(s)" if card.fans else ""
+                say(f"  grading skipped in a dry run ({n} suggestion(s){extra} would be graded)")
             else:
                 from src.hounds import coach_grade
                 done = coach_grade.grade_all(work_card, now=now, deadline=time.monotonic() + time_budget_s,
@@ -556,33 +739,49 @@ def run_source(issues: Sequence[Mapping], *, scope: L.Scope, card_paths: coach_c
 def main(argv: Optional[Sequence[str]] = None, *, runner: Optional[Runner] = None,
          urlopen: Optional[Callable] = None) -> int:
     args = build_parser().parse_args(argv)
+    sources = args.source
     root = Path(args.root) if args.root else None
     scope = L.Scope.house(root)
     card_paths = coach_card.Paths.default(root)
     on = coach_brief.coach_switch_on(Path(args.coach_config) if args.coach_config else None)
     now = L.parse(args.now) if args.now else None
-    if args.source == "gh":
+    if sources == ("gh",):
         return run(runner=runner or default_runner, repo=args.repo, dry_run=args.dry_run, scope=scope,
                    coach_on=on, champion_ledger=args.champion_ledger, now=now, card_paths=card_paths)
     champion_ledger = args.champion_ledger
     if champion_ledger is None:
         from src.hounds import pack_run
         champion_ledger = pack_run.ledger_path()
-    try:
-        if args.source == "api":
-            token = (os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN") or "").strip() or None
-            issues = fetch_public_issues(urlopen=urlopen, token=token)
-        else:
-            if not args.file:
-                print("coach intake: --source fixture needs --file")
-                return 2
-            issues = read_fixture(args.file)
-    except (IntakeError, OSError, ValueError) as exc:
-        print(f"coach intake: {exc}")
+    issues, tips, failed = None, None, 0
+    # Each source fails alone: an unreachable GitHub must not cost the fans their grading, and a site that has
+    # not shipped the export yet (a 404) must not cost the coach's. Only when nothing at all could be read does
+    # the run stop before grading, as the single-source run always has.
+    if "api" in sources or "fixture" in sources:
+        try:
+            if "api" in sources:
+                token = (os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN") or "").strip() or None
+                issues = fetch_public_issues(urlopen=urlopen, token=token)
+            else:
+                if not args.file:
+                    print("coach intake: --source fixture needs --file")
+                    return 2
+                issues = read_fixture(args.file)
+        except (IntakeError, OSError, ValueError) as exc:
+            print(f"coach intake: {exc}")
+            failed += 1
+    if "tips" in sources:
+        try:
+            tips = fetch_tip_export(tips_since(coach_card.load(card_paths)), base_url=args.base_url,
+                                    urlopen=urlopen)
+        except (IntakeError, OSError, ValueError) as exc:
+            print(f"coach intake: fan tips: {exc}")
+            failed += 1
+    if issues is None and tips is None:
         return 1
-    return run_source(issues, scope=scope, card_paths=card_paths, coach_on=on, champion_ledger=champion_ledger,
+    code = run_source(issues, scope=scope, card_paths=card_paths, coach_on=on, champion_ledger=champion_ledger,
                       now=now or L.utc_now(), dry_run=args.dry_run, grade=args.grade,
-                      time_budget_s=args.time_budget_s)
+                      time_budget_s=args.time_budget_s, tips=tips)
+    return 1 if failed else code
 
 
 if __name__ == "__main__":  # pragma: no cover

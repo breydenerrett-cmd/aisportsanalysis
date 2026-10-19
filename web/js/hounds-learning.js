@@ -6,7 +6,11 @@
  * GET /hounds/coach/report (src/hounds/coach_report.py): {computed, message, summary: {suggestions, refused,
  * graded_forward, helped, hurt, no_difference, too_early, forward_units_diff, hindsight_units_diff},
  * items: [{issue, hound_name, line, mode, hypothesis, recorded_utc, hindsight, forward: {label, n_paired,
- * units_diff}}], chain_ok}. Shapes of the scorecard:
+ * units_diff}}], chain_ok, fans: {computed, message, summary: {tips, sent, helped, hurt, no_difference,
+ * too_early, graded_forward, forward_units_diff, hindsight_units_diff}, items: [{issue, tip_id, nickname,
+ * fan_name, count, hound_name, line, hindsight, forward}], versus: {line, hindsight_line, coach, fans}}}.
+ * The "Fans vs the coach" block sits under the coach's list and is built from `fans` alone: fan tips are graded
+ * by the same code and never counted in the coach's own numbers. Shapes of the scorecard:
  *
  *   {computed, message, as_of, system: {promotion_hit_rate: {promotions, matured, hits, rate, floor,
  *      min_matured_for_floor}, vs_random: {windows: {"30": W, "90": W}, controls, basis, trailing_days},
@@ -152,6 +156,60 @@ export function coachItem(it) {
   return h("li", { class: "hd-lesson hd-coach-item", "data-label": badge.label, "data-issue": it.issue }, bits);
 }
 
+// ---- the fans (the fan lane of the same report card) -----------------------------------------------------------
+
+/** The scoreboard line, from the server's `versus` block; hindsight is a second, labelled line. */
+export function fanVersusText(v) {
+  if (!v || typeof v.line !== "string") return "";
+  return v.line;
+}
+
+export function fanSummaryText(s) {
+  if (!s || !isNum(s.tips) || s.tips === 0) {
+    return "No fan tips yet. Open any dog, tweak a dial under Coach this dog, and send it. It gets graded the same way the coach's tips do.";
+  }
+  const decided = (s.helped || 0) + (s.hurt || 0) + (s.no_difference || 0);
+  const bits = [`${plural(s.tips, "fan tip", "fan tips")} graded so far.`];
+  bits.push(decided
+    ? `${decided} with a live verdict: ${s.helped || 0} helped, ${s.hurt || 0} hurt, ${s.no_difference || 0} no difference.`
+    : "None has a live verdict yet.");
+  if (s.too_early > 0) bits.push(`${s.too_early} still too early to call.`);
+  return bits.join(" ");
+}
+
+export function fanItem(it) {
+  const f = it.forward || {};
+  const badge = coachBadge(f.label);
+  const bits = [h("div", { class: "hd-badgeline" }, [
+    h("span", { class: `hd-chip hd-chip--${badge.tone}`, "data-hook": "fan-badge", text: badge.text }),
+    h("strong", { text: it.hound_name || it.hound || "A dog" }),
+    it.tip_created_utc ? h("span", { class: "hd-fine", text: fmtWhen(it.tip_created_utc) }) : null,
+  ]), h("p", { class: "hd-lesson__line", "data-hook": "fan-line", text: it.line || NOT_REPORTED })];
+  return h("li", { class: "hd-lesson hd-fan-item", "data-label": badge.label, "data-tip": it.tip_id || "" }, bits);
+}
+
+function renderFans(box, report) {
+  const fans = report && report.fans;
+  if (!fans) return;     // an older server without the fan lane: the coach's card stands alone
+  const block = h("div", { class: "hd-fans", "data-hook": "fans-block" });
+  block.appendChild(h("h3", { "data-hook": "fans-title", text: "Fans vs the coach 🧠🆚🐶" }));
+  block.appendChild(h("p", { class: "hd-muted", "data-hook": "fans-intro",
+    text: "Anybody can tweak a dog's dials from its page. Code grades those tips exactly like the coach's: hindsight first, then live on new games. A fan tip never changes a dog, and it never counts in the coach's own numbers above." }));
+  const v = fans.versus || {};
+  const line = fanVersusText(v);
+  if (line) block.appendChild(h("p", { "data-hook": "fans-versus", text: line }));
+  if (v.hindsight_line) block.appendChild(h("p", { class: "hd-fine", "data-hook": "fans-versus-hindsight", text: v.hindsight_line }));
+  const s = fans.summary || {};
+  block.appendChild(h("p", { "data-hook": "fans-summary", text: fanSummaryText(s) }));
+  const items = Array.isArray(fans.items) ? fans.items : [];
+  if (!items.length) {
+    block.appendChild(h("p", { class: "hd-muted", "data-hook": "fans-empty", text: campWords(fans.message) || fanSummaryText(null) }));
+  } else {
+    block.appendChild(h("ol", { class: "hd-lessons", "data-hook": "fans-list" }, items.map(fanItem)));
+  }
+  box.appendChild(block);
+}
+
 function renderCoach(result) {
   const box = q("coach-body");
   if (!box) return;
@@ -182,6 +240,7 @@ function renderCoach(result) {
     box.appendChild(h("p", { class: "hd-state hd-state--down", "data-hook": "coach-chain",
       text: "The coach ledger failed its integrity check. Do not trust these numbers until it is looked at." }));
   }
+  renderFans(box, report);
 }
 
 // ---- sections -----------------------------------------------------------------------------------------

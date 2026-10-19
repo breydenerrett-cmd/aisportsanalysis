@@ -107,6 +107,19 @@ function tipLine(tip, dials) {
   return `${tip.nickname || "A fan"}: ${parts.join(", ")}`;
 }
 
+/** The live verdicts of the coach report card (src/hounds/coach_grade.py) as a fan reads them on a tip. */
+const GRADE_WORDS = { "HELPED": "HELPED ✅", "HURT": "HURT ❌", "NO DIFFERENCE": "NO DIFFERENCE 🪙", "TOO EARLY": "TOO EARLY 🐣" };
+
+/** " Live: HELPED ✅ (+1.2u over 24 bets)" for a graded tip, "" for one the report card has not recorded yet. */
+export function gradeText(grade) {
+  if (!grade || !GRADE_WORDS[grade.label]) return "";
+  const n = isNum(grade.n_paired) ? grade.n_paired : 0;
+  const bets = `${n} bet${n === 1 ? "" : "s"}`;
+  if (grade.label === "TOO EARLY") return ` Live: ${GRADE_WORDS[grade.label]} (${bets})`;
+  const u = isNum(grade.units_diff) ? `${grade.units_diff >= 0 ? "+" : "-"}${Math.abs(grade.units_diff).toFixed(1)}u over ` : "";
+  return ` Live: ${GRADE_WORDS[grade.label]} (${u}${bets})`;
+}
+
 export function renderTips(box, data, dials, failed) {
   clearNode(box);
   if (failed) {
@@ -119,7 +132,7 @@ export function renderTips(box, data, dials, failed) {
   const tips = (data && data.tips) || [];
   if (tips.length) {
     box.appendChild(h("ul", { class: "hd-tiplist", "data-hook": "tips-list" }, tips.map((t) =>
-      h("li", { "data-tip": t.id, text: tipLine(t, dials) }))));
+      h("li", { "data-tip": t.id, text: tipLine(t, dials) + (gradeText(t.grade) ? `.${gradeText(t.grade)}` : "") }))));
   }
 }
 

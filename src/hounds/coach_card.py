@@ -18,6 +18,17 @@ ROWS (one hash-chained JSONL file, ``evidence/hounds_coach_v1.jsonl``, ``src.led
   coach_graded_hindsight   the 30 days BEFORE the suggestion, both value sets, settled. Labelled hindsight
   coach_graded_forward     the live shadow comparison from the recorded time on; a new row when the numbers
                            move, the newest row per issue wins
+  fan_tip                  a fan's tip (the "fan" lane, below): the same fields as a suggestion, ``mode``
+                           "fan", the tip's id and nickname, never a challenger
+  fan_tip_count            the same tip sent again the same UTC day: the first row's ``count`` goes up by one
+                           (the chain is append-only, so the count is a row of its own, not an edit)
+
+THE FAN LANE. A fan tip (src/hounds/fan_tips.py, the tip box on a dog's page) is graded exactly like a coach
+suggestion, by the same code, and published beside it, never mixed into the coach's own numbers. Its rows reuse
+the ``issue`` field as a SYNTHETIC KEY (``FAN_KEY_BASE`` plus a running number) so ``coach_grade`` can store its
+hindsight and forward rows under the same ``issue`` and the grading code needs no second path. The key is far
+above any GitHub issue number, so the two never meet. A fan tip is never offered to ``propose_pack``: the
+only way a dog changes is still the referee.
 
 An issue number appears at most once among suggestions and refusals: that is the dedupe the public-issues
 reader depends on (it sees every issue, closed or not, every run).
@@ -41,9 +52,22 @@ K_SUGGESTION = "coach_suggestion"
 K_REFUSED = "coach_refused"
 K_HINDSIGHT = "coach_graded_hindsight"
 K_FORWARD = "coach_graded_forward"
+K_FAN_TIP = "fan_tip"
+K_FAN_COUNT = "fan_tip_count"
 
 MODE_CHALLENGER = "challenger"
 MODE_PRACTICE = "practice"
+MODE_FAN = "fan"
+
+# A fan tip's key in the ``issue`` field. GitHub issue numbers are a few hundred at most; a billion leaves the
+# two ranges apart forever, and the running number is read off the ledger so it is stable and never reused.
+FAN_KEY_BASE = 1_000_000_000
+
+# Intake limits for fans, on top of the tip box's own (3 a day per caller, 60 a day for the site): the grading
+# job runs two shadow hounds per followed tip, so what it takes in is capped where it is recorded. Counted by
+# the day the fan SENT the tip, first come first served, so a re-run on another day records the same tips.
+FAN_PER_UTC_DAY = 20
+FAN_SAME_VALUES_PER_DAY = 1      # one row per (hound, values) a day; repeats raise the first row's count
 
 LEDGER_VERSION = 1
 
@@ -112,9 +136,26 @@ class Card:
     hindsight: dict = field(default_factory=dict)        # issue -> row
     forward: dict = field(default_factory=dict)          # issue -> newest row
     last_utc: Optional[str] = None                       # newest row of any kind
+    fans: dict = field(default_factory=dict)             # fan key -> fan_tip row (the fan lane)
+    fan_counts: dict = field(default_factory=dict)       # fan key -> how many fans sent that tip (>= 1)
+    fan_tip_ids: set = field(default_factory=set)        # every tip id recorded, a repeat's too
+    fan_dup_of: dict = field(default_factory=dict)       # a repeat's tip id -> the key of the first row
+    fan_last_tip_utc: Optional[str] = None               # newest ``tip_created_utc`` among fan rows
+    first_helped: dict = field(default_factory=dict)     # key -> the first forward row that said HELPED
 
     def seen(self, issue: int) -> bool:
         return issue in self.suggestions or issue in self.refused
+
+    def gradable(self) -> dict:
+        """Every row the grading job follows: the coach's suggestions and the fans' tips, by ``issue`` key."""
+        return {**self.suggestions, **self.fans}
+
+    def fan_key_for(self, tip_id: str) -> Optional[int]:
+        """The key of the row a tip id was recorded under (its own, or the first row it repeats)."""
+        for key, row in self.fans.items():
+            if row.get("tip_id") == tip_id:
+                return key
+        return self.fan_dup_of.get(tip_id)
 
     def outcome_of(self, issue: int) -> Optional[Mapping]:
         return self.suggestions.get(issue) or self.refused.get(issue)
@@ -124,9 +165,11 @@ def fold(rows) -> Card:
     card = Card()
     for r in rows:
         kind, issue = r.get("kind"), r.get("issue")
-        if kind not in (K_SUGGESTION, K_REFUSED, K_HINDSIGHT, K_FORWARD) or not isinstance(issue, int):
+        if kind not in (K_SUGGESTION, K_REFUSED, K_HINDSIGHT, K_FORWARD, K_FAN_TIP, K_FAN_COUNT)                 or not isinstance(issue, int) or isinstance(issue, bool):
             continue
-        if kind == K_SUGGESTION:
+        if kind in (K_FAN_TIP, K_FAN_COUNT):
+            _fold_fan(card, kind, issue, r)
+        elif kind == K_SUGGESTION:
             card.suggestions.setdefault(issue, r)
         elif kind == K_REFUSED:
             card.refused.setdefault(issue, r)
@@ -134,9 +177,28 @@ def fold(rows) -> Card:
             card.hindsight[issue] = r
         else:
             card.forward[issue] = r
+            if r.get("label") == "HELPED" and issue not in card.first_helped:
+                card.first_helped[issue] = r
         if isinstance(r.get("utc"), str) and (card.last_utc is None or r["utc"] > card.last_utc):
             card.last_utc = r["utc"]
     return card
+
+
+def _fold_fan(card: Card, kind: str, key: int, r: Mapping) -> None:
+    tip_id = r.get("tip_id")
+    if isinstance(tip_id, str):
+        card.fan_tip_ids.add(tip_id)
+    made = r.get("tip_created_utc")
+    if isinstance(made, str) and (card.fan_last_tip_utc is None or made > card.fan_last_tip_utc):
+        card.fan_last_tip_utc = made
+    if kind == K_FAN_TIP:
+        if key not in card.fans:
+            card.fans[key] = r
+            card.fan_counts[key] = card.fan_counts.get(key, 0) + 1
+    else:
+        if isinstance(tip_id, str):
+            card.fan_dup_of.setdefault(tip_id, key)
+        card.fan_counts[key] = card.fan_counts.get(key, 0) + 1
 
 
 def load(paths: Paths) -> Card:
@@ -164,6 +226,37 @@ def rate_limit_reason(card: Card, hound_id: str, now: datetime) -> Optional[str]
     if on_day >= PRACTICE_PER_UTC_DAY:
         return f"{REASON_TOO_SOON}: at most {PRACTICE_PER_UTC_DAY} practice suggestions per UTC day"
     return None
+
+
+# ---- the fan lane -------------------------------------------------------------------------------------------
+
+def next_fan_key(card: Card) -> int:
+    return max([FAN_KEY_BASE, *card.fans]) + 1
+
+
+def values_signature(values: Mapping) -> str:
+    """A tip's knob values as one comparable string (rounded, so 0.04 and 0.0400000001 are the same tip)."""
+    return ",".join(f"{k}={round(float(values[k]), 6):g}" for k in sorted(values))
+
+
+def fan_day(row: Mapping) -> Optional[str]:
+    """The UTC day the fan sent the tip (not the day intake read it)."""
+    when = parse(row.get("tip_created_utc"))
+    return iso(when)[:10] if when else None
+
+
+def fan_duplicate_of(card: Card, hound_id: str, values: Mapping, day: str) -> Optional[int]:
+    """The key of today's first row for the same hound and values, else None."""
+    sig = values_signature(values)
+    for key, row in card.fans.items():
+        if row.get("hound") == hound_id and fan_day(row) == day                 and values_signature(row.get("suggested_values") or {}) == sig:
+            return key
+    return None
+
+
+def fan_day_full(card: Card, day: str) -> bool:
+    """True when ``day`` already holds ``FAN_PER_UTC_DAY`` fan rows (repeats do not count: they are a count)."""
+    return sum(1 for row in card.fans.values() if fan_day(row) == day) >= FAN_PER_UTC_DAY
 
 
 # ---- the change, in words ------------------------------------------------------------------------------------
