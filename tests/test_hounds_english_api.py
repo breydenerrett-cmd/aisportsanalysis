@@ -553,10 +553,13 @@ class ModuleLoad(unittest.TestCase):
 
 class DeployFlags(unittest.TestCase):
     def test_user_dogs_bet_on_staging_and_production_and_the_loop_reads_the_flag(self):
-        import tomllib
+        import re
         from src.hounds import user_runner
+        # No tomllib on CI's Python 3.10: read the [env] table's simple key = "value" lines directly.
         for name in ("fly.staging.toml", "fly.production.toml"):
-            env = tomllib.loads((REPO / "deploy" / name).read_text(encoding="utf-8"))["env"]
+            text = (REPO / "deploy" / name).read_text(encoding="utf-8")
+            block = re.search(r"^\[env\]\s*$(.*?)(?=^\[|\Z)", text, re.M | re.S).group(1)
+            env = dict(re.findall(r'^\s*([A-Z_][A-Z0-9_]*)\s*=\s*"([^"]*)"', block, re.M))
             self.assertEqual(env.get("HOUNDS_ENGINE"), "on", name)
             self.assertTrue(user_runner.enabled(env), name)
 
