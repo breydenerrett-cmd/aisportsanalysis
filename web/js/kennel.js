@@ -166,13 +166,13 @@ function gate(kind) {
       h("p", { class: "hd-lede", text: "Your kennel is where you build, dress and fire your dogs." }),
       h("div", { class: "kn-empty__row" }, [
         h("a", { class: "lh-btn lh-btn--solid", href: SIGNIN_HREF, "data-hook": "kennel-signin-link", text: "Sign in" }),
-        h("a", { class: "lh-btn lh-btn--soft", href: "hounds.html?tab=kennels", "data-hook": "kennel-browse", text: "Browse kennels" })])]));
+        h("a", { class: "lh-btn lh-btn--soft", href: "kennels.html", "data-hook": "kennel-browse", text: "Browse kennels" })])]));
   } else {
     setHead({ eyebrow: "Kennel", title: "Kennel not found", sub: "" });
     box.appendChild(h("div", { class: "kn-empty", "data-hook": "kennel-missing" }, [
       h("h2", { text: "No kennel with that name" }),
       h("p", { class: "hd-lede", text: "It may have no public dogs, or the link is off." }),
-      h("a", { class: "lh-btn lh-btn--solid", href: "hounds.html?tab=kennels", text: "Browse kennels" })]));
+      h("a", { class: "lh-btn lh-btn--solid", href: "kennels.html", text: "Browse kennels" })]));
   }
 }
 

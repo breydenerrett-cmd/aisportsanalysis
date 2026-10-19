@@ -25,9 +25,9 @@ from tests.hounds_web_runner import HAS_NODE, WEB, run_js, run_page
 
 TOKEN_KEY = "aisportsanalysis.invite_token"
 SIGNED = dict(stored={TOKEN_KEY: "tok"})
-PAGES = ("hounds.html", "hound.html", "build-a-hound.html", "learning.html", "kennel.html", "landing.html", "why-we-paused.html",
+PAGES = ("kennels.html", "hounds.html", "hound.html", "build-a-hound.html", "learning.html", "kennel.html", "landing.html", "why-we-paused.html",
          "postseason.html", "sample.html", "index.html")
-LINKS = [("hounds.html", "Leaderboard"), ("hounds.html?tab=kennels", "Kennels"), ("build-a-hound.html", "Build"),
+LINKS = [("hounds.html", "Leaderboard"), ("kennels.html", "Kennels"), ("build-a-hound.html", "Build"),
          ("learning.html", "Training camp")]
 
 
@@ -99,6 +99,19 @@ class EveryPageHasTheOneNavigation(unittest.TestCase):
         self.assertIn('data-bottom="off"', read("index.html"))
         self.assertNotIn('data-bottom="off"', read("hounds.html"))
 
+    def test_kennels_is_its_own_page_apart_from_the_leaderboard(self):
+        html = read("kennels.html")
+        self.assertIn('data-hook="kennels-index"', html)
+        self.assertIn('<script type="module" src="js/kennels-index.js"></script>', html)
+        self.assertNotIn("hounds-page.js", html)                     # no leaderboard on it
+        self.assertIn('data-nav="kennels" aria-current="page"', html)
+        self.assertIn('href="kennel.html" data-hook="kennels-mine"', html)
+
+    def test_the_landing_page_has_a_big_kennels_card(self):
+        html = read("landing.html")
+        self.assertRegex(html, r'<a class="btn btn--primary" href="kennels.html" data-hook="kennels-card-browse">Browse the kennels</a>')
+        self.assertRegex(html, r'href="kennel.html" data-hook="kennels-card-mine">Your kennel</a>')
+
     def test_the_landing_page_keeps_its_early_access_button_in_the_bar(self):
         html = read("landing.html")
         self.assertRegex(html, r'<a class="btn btn--primary"[^>]*data-hook="cta-primary"[^>]*data-nav-extra[^>]*>Request early access</a>')
@@ -151,7 +164,7 @@ class TheNavigationRuns(unittest.TestCase):
         self.assertNotIn(TOKEN_KEY, out["storedAfter"])
 
     def test_the_current_place_follows_the_page_and_the_kennel_page_follows_its_query(self):
-        cases = [("hounds.html", "/web/hounds.html", "", ["Leaderboard"]), ("hounds.html", "/web/hounds.html", "?tab=kennels", ["Kennels"]),
+        cases = [("hounds.html", "/web/hounds.html", "", ["Leaderboard"]), ("kennels.html", "/web/kennels.html", "", ["Kennels"]),
                  ("hound.html", "/web/hound.html", "?id=closer", ["Leaderboard"]), ("build-a-hound.html", "/web/build-a-hound.html", "", ["Build"]),
                  ("learning.html", "/web/learning.html", "", ["Training camp"]), ("kennel.html", "/web/kennel.html", "?u=handler-1", ["Kennels"])]
         for page, path, search, want in cases:
@@ -192,7 +205,7 @@ class MyKennel(unittest.TestCase):
                                       q("browse", "[data-hook='kennel-browse']", "attr", attr="href")])
         f = out["final"]
         self.assertIn("Sign in to see your dogs", f["gate"])
-        self.assertEqual((f["cards"], f["signin"], f["browse"]), (0, "index.html#/signin", "hounds.html?tab=kennels"))
+        self.assertEqual((f["cards"], f["signin"], f["browse"]), (0, "index.html#/signin", "kennels.html"))
         self.assertEqual(out["gets"], [], "a visitor never asks for someone's kennel")
 
     def test_each_dog_is_a_card_with_its_numbers_status_and_four_one_tap_actions(self):
@@ -619,16 +632,15 @@ class TheMotionScript(unittest.TestCase):
     def test_with_motion_a_count_up_ends_on_the_exact_original_text(self):
         out = run_js(
             'globalThis.window = { matchMedia: () => ({ matches: false }) };\n'
-            'let now = 0;\nglobalThis.requestAnimationFrame = (fn) => setTimeout(() => { now += 400; fn(now); }, 0);\n'
+            'globalThis.requestAnimationFrame = (fn) => setTimeout(() => fn(performance.now() + 5000), 0);\n'
             'const { countUp } = await import("./fx.js");\n'
-            'const el = { text: "+1.80u", attrs: {}, get textContent() { return this.text; }, set textContent(v) { this.text = v; },\n'
+            'const writes = [];\n'
+            'const el = { text: "+1.80u", attrs: {}, get textContent() { return this.text; }, set textContent(v) { writes.push(v); this.text = v; },\n'
             '  getAttribute(k) { return this.attrs[k] ?? null; }, setAttribute(k, v) { this.attrs[k] = v; } };\n'
-            'const seen = [];\nconst tick = () => seen.push(el.text);\n'
-            'countUp(el, 700);\ntick();\nawait new Promise((r) => setTimeout(r, 60));\n'
-            'console.log(JSON.stringify([seen[0], el.text, el.attrs["data-counted"]]));')
-        self.assertEqual(out[1], "+1.80u")
-        self.assertEqual(out[2], "1")
+            'countUp(el, 700);\nawait new Promise((r) => setTimeout(r, 120));\n'
+            'console.log(JSON.stringify([writes[0], writes[writes.length - 1], el.text, el.attrs["data-counted"]]));')
         self.assertEqual(out[0], "+0.00u")                                              # it started from zero
+        self.assertEqual((out[1], out[2], out[3]), ("+1.80u", "+1.80u", "1"))           # and ended on the exact original text
 
     def test_a_count_up_never_runs_twice_on_one_element(self):
         out = run_js(

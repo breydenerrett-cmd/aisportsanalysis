@@ -27,7 +27,7 @@ export const PASSWORD_HREF = "index.html#/signin?password=1";
 /** The five places, in order. `key` is what `data-current` names; the tab bar shows `tab` when it has one. */
 export const PLACES = [
   { key: "leaderboard", label: "Leaderboard", tab: "Board", href: "hounds.html" },
-  { key: "kennels", label: "Kennels", tab: "Kennels", href: "hounds.html?tab=kennels" },
+  { key: "kennels", label: "Kennels", tab: "Kennels", href: "kennels.html" },
   { key: "build", label: "Build", tab: "Build", href: "build-a-hound.html" },
   { key: "camp", label: "Training camp", tab: "Camp", href: "learning.html" },
 ];
@@ -67,6 +67,7 @@ export const signedIn = () => !!getToken();
 export function placeFromAddress(loc = (typeof window !== "undefined" ? window.location : null)) {
   const path = String((loc && loc.pathname) || "").split("/").pop() || "";
   const params = new URLSearchParams((loc && loc.search) || "");
+  if (path === "kennels.html") return "kennels";
   if (path === "hounds.html" || path === "hound.html" || path === "") return params.get("tab") === "kennels" ? "kennels" : "leaderboard";
   if (path === "kennel.html") return params.get("u") ? "kennels" : "mykennel";
   if (path === "build-a-hound.html") return "build";
