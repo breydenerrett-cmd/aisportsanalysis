@@ -30,6 +30,19 @@ from tests import _hounds_user_fixtures as UF
 from tests import _learning_fixtures as LF
 
 ROOT = Path(__file__).resolve().parents[1]
+
+# Never the real coach report ledger: evidence/hounds_coach_v1.jsonl gains rows in production use, and a test
+# that reads it passes or fails depending on what the coach has done that day (it went red on 2026-10-19,
+# the morning the first real coach tip landed). Tests that want coach items pass ``coach=`` explicitly.
+_NO_REAL_COACH = mock.patch("src.hounds.coach_report.build", return_value=None)
+
+
+def setUpModule():
+    _NO_REAL_COACH.start()
+
+
+def tearDownModule():
+    _NO_REAL_COACH.stop()
 BANNED = re.compile(r"\block\b|guarantee|can't lose|sure thing|profit|lifetime|get rich", re.IGNORECASE)
 
 
