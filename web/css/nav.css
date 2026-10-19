@@ -347,3 +347,18 @@
 @media (min-width: 900px) {
   .tabbar { display: none; }
 }
+
+/* Sign in: always visible, pushed to the right edge of the bar (2026-10-19 owner ask:
+   a member with an access code had no obvious place to use it). */
+.site-nav__signin { margin-left: auto; white-space: nowrap; }
+.site-nav__signin + .btn { margin-left: 8px; }
+@media (max-width: 480px) { .site-nav__signin { padding: 6px 10px; font-size: 13px; } }
+/* Landing: four links + Sign in + the early-access button do not fit below ~960px.
+   Drop the in-page anchors first, then the page links, so Sign in and the CTA always show. */
+@media (max-width: 960px) {
+  [data-hook="landing-header"] .site-nav__links a[href^="#"] { display: none; }
+}
+@media (max-width: 640px) {
+  [data-hook="landing-header"] .site-nav__links { display: none; }
+  [data-hook="landing-header"] [data-hook="cta-primary"] { padding: 6px 10px; font-size: 13px; }
+}
