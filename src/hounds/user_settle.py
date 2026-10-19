@@ -258,7 +258,9 @@ def settle(*, ledger: Optional[str] = None, now: Optional[datetime] = None,
         box_index = load_box_index(wanted)
 
     for bet in sorted(todo, key=lambda b: (b["slate_date"], b["bet_id"])):
-        start = user_engine._utc(bet["commence_time"])
+        # Member engine rows carry commence_time; shadow challenger rows carry start_utc. The full sweep
+        # (2026-10-19) now reaches both, so read either.
+        start = user_engine._utc(bet.get("commence_time") or bet.get("start_utc"))
         if start is not None and start > now:
             report["pending"] += 1
             continue
