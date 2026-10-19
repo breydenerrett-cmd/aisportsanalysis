@@ -12,6 +12,11 @@ the whole thing is replaced wholesale (not migrated field-by-field) once a
 real provider is chosen. No password hashing, no reset flow, no password
 strength policy to get wrong in a first pass.
 
+UPDATE 2026-10-19: members can now also sign in with an email and password
+(src/appstate/passwords.py, api/passwords.py). That does not change anything
+above: a password is only a way to be handed a fresh token, so tokens remain the
+one session mechanism and the only thing every route checks.
+
 WHY TOKENS ARE HASHED AT REST
 ------------------------------
 The raw token is a bearer credential -- anyone who reads it out of the

@@ -259,6 +259,26 @@ EVENT_KINDS = frozenset({
     COMP_ACCESS_GRANTED, COMP_ACCESS_REVOKED,
 })
 
+# Email + password login (api/passwords.py, src/appstate/passwords.py), added
+# 2026-10-19. Declared and registered in their own block so they stay out of the
+# list above. Recorded server-side only (api/funnel.py's PUBLIC_FUNNEL_KINDS does
+# not list them). NONE of them carries an email, a password, a hash or a token:
+#   login_succeeded   properties {"method": "password", "kind": <access kind>}
+#   login_failed      properties {"method": "password", "reason": ...}, under
+#                     the fixed LOGIN_ANONYMOUS_USER_ID, never the account the
+#                     address belongs to (an unknown address and a wrong
+#                     password must leave identical traces)
+#   password_set      the member set or changed their own password
+#   support_password_reset   the admin cleared a member's password
+LOGIN_SUCCEEDED = "login_succeeded"
+LOGIN_FAILED = "login_failed"
+PASSWORD_SET = "password_set"
+SUPPORT_PASSWORD_RESET = "support_password_reset"
+LOGIN_ANONYMOUS_USER_ID = "login-attempt"
+EVENT_KINDS = frozenset(EVENT_KINDS | {
+    LOGIN_SUCCEEDED, LOGIN_FAILED, PASSWORD_SET, SUPPORT_PASSWORD_RESET,
+})
+
 
 def db_path() -> Path:
     override = (os.environ.get(ENV_DB_PATH) or "").strip()

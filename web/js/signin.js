@@ -1,29 +1,26 @@
 /**
- * #/signin -- INTERIM AUTH SCREEN.
+ * #/signin -- EMAIL + PASSWORD FIRST, THE ACCESS CODE SECOND.
  *
- * ============================================================
- * THIS IS NOT A DESIGNED SCREEN. It is explicitly interim.
- * ============================================================
- * design/linehound-v1 has nine artboards and none of them is an auth
- * experience; the frozen canvases never show one. Until Claude Design
- * ships that screen, this route holds the invite-token mechanics that
- * used to live in a token bar bolted to the app chrome on every page --
- * moved here so the chrome can be the compact top strip the artboards
- * actually show, and so a signed-out reader meets ONE customer-language
- * screen instead of a credential form following them around.
- *
- * It is built only from primitives that already exist (the panel/chamfer
- * surface, .btn, the shared field styling) -- no new visual language is
- * invented here, precisely so it is cheap to delete when the designed
- * screen lands. Do not treat this as visually complete and do not grow
- * it: new auth affordances belong in the design system first.
- *
- * Mechanics preserved verbatim from the retired chrome form: save the
- * token to localStorage via api.js, clear it, and say which happened.
- * This module never validates the token itself -- only the API can do
- * that, and it says so with a 401 (handled in dom.renderError). The one
- * thing it asks the API about is the ONE 401 a person can act on: an
+ * Members sign in with the email and password they set (POST /auth/login, which
+ * hands back an ordinary session token). The pasted access code is the way in
+ * for a member with no password yet, and the way back when one is forgotten: it
+ * sits behind "Have an access code?". Tokens are still the session: this module
+ * stores whatever token it is given via api.js and never decides what it is worth.
+ * Only the API can say that, with a 401 (handled in dom.renderError). The one
+ * other thing it asks the API about is the ONE 401 a person can act on: an
  * early-access tester token that has run out (see expiredTesterState).
+ *
+ * AFTER AN ACCESS-CODE SIGN-IN with no password set, a one-time card offers to
+ * set one ("so you can sign in with your email next time"); it is shown once per
+ * device and dismissible. A signed-in visitor sees an account box with "Change
+ * password" and "Sign out" (the footer's "Change password" link opens it via
+ * #/signin?password=1). Every sentence about a failure is the server's own
+ * (detail.message): the page does not guess why a sign-in failed, which is also
+ * what keeps it from telling a stranger whether an address has an account.
+ *
+ * Styled by web/css/signin.css (the model pages' slate look). The data-hook names
+ * the older token form used (invite-token-input, signin-form, clear-token,
+ * signin-status) are kept on the access-code form.
  */
 
 import { getToken, setToken, clearToken, apiGet, apiPost, ApiError } from "./api.js";
@@ -70,33 +67,202 @@ export async function expiredTesterState() {
   }
 }
 
+/** localStorage key remembering that the "set a password" card was shown on this
+ * device. Per-viewer convenience only: nothing depends on it being readable. */
+export const PASSWORD_CARD_SEEN_KEY = "linehound.password_card_seen";
+
+function passwordCardSeen() {
+  try {
+    return window.localStorage.getItem(PASSWORD_CARD_SEEN_KEY) === "1";
+  } catch (err) {
+    return true;     // no storage: never nag, the footer link is still there
+  }
+}
+
+function markPasswordCardSeen() {
+  try {
+    window.localStorage.setItem(PASSWORD_CARD_SEEN_KEY, "1");
+  } catch (err) { /* nothing to remember it in */ }
+}
+
+/** Whether the signed-in member has a password: true, false, or null when the
+ * token is not good / the service did not answer (callers then show nothing). */
+export async function passwordState() {
+  if (!getToken()) return null;
+  try {
+    const out = await apiGet("/auth/password");
+    return out && typeof out.has_password === "boolean" ? out.has_password : null;
+  } catch (err) {
+    return null;
+  }
+}
+
+/** The server's own plain sentence for a failed sign-in or password save, with
+ * a calm fallback when there is none (the service did not answer). */
+export function authErrorText(err, fallback) {
+  const detail = err instanceof ApiError ? err.detail : null;
+  if (detail && typeof detail === "object" && typeof detail.message === "string" && detail.message) {
+    return detail.message;
+  }
+  return fallback;
+}
+
+const LOGIN_FALLBACK = "Could not sign in. Check your connection and try again.";
+const SAVE_FALLBACK = "Could not save the password. Check your connection and try again.";
+
+/** Only an in-app hash route is a place to send someone after sign-in. */
+function safeNext(next) {
+  return typeof next === "string" && next.startsWith("#/") ? next : "#/today";
+}
+
+function field(label, id, attrs, wrapClass = "signin__field") {
+  const wrap = el("div", { class: wrapClass });
+  wrap.appendChild(el("label", { for: id, text: label }));
+  const input = el("input", Object.assign({ id }, attrs));
+  wrap.appendChild(input);
+  return { wrap, input };
+}
+
+/**
+ * The set-or-change-password form, used by the one-time card and the account
+ * box. `requireCurrent` adds the current-password field (the server demands it
+ * when a password exists). Resolves nothing itself: `onSaved` runs after the
+ * server accepted the new password.
+ */
+function passwordForm({ requireCurrent, submitLabel, hook, onSaved }) {
+  const form = el("form", { class: "signin__form", "data-hook": hook });
+  let current = null;
+  if (requireCurrent) {
+    current = field("Current password", hook + "-current", {
+      type: "password", name: "current_password", autocomplete: "current-password",
+      "data-hook": hook + "-current" });
+    form.appendChild(current.wrap);
+  }
+  const fresh = field("New password", hook + "-new", {
+    type: "password", name: "new_password", autocomplete: "new-password",
+    minlength: "10", "data-hook": hook + "-new" });
+  form.appendChild(fresh.wrap);
+  form.appendChild(el("p", { class: "signin__hint",
+    text: "At least 10 characters. Not your email, and nothing common." }));
+  const again = field("Confirm new password", hook + "-again", {
+    type: "password", name: "confirm_password", autocomplete: "new-password",
+    "data-hook": hook + "-again" });
+  form.appendChild(again.wrap);
+  const status = el("p", { class: "signin__status", role: "status", "data-hook": hook + "-status" });
+  const button = el("button", { type: "submit", class: "btn btn--primary",
+    "data-hook": hook + "-submit", text: submitLabel });
+  const actions = el("div", { class: "signin__actions" });
+  actions.appendChild(button);
+  form.appendChild(actions);
+  form.appendChild(status);
+
+  let busy = false;
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (busy) return;
+    if (fresh.input.value !== again.input.value) {
+      status.textContent = "The two new passwords do not match.";
+      return;
+    }
+    busy = true;
+    button.disabled = true;
+    status.textContent = "Saving...";
+    try {
+      const body = { new_password: fresh.input.value };
+      if (current) body.current_password = current.input.value;
+      await apiPost("/auth/password", body);
+      fresh.input.value = "";
+      again.input.value = "";
+      if (current) current.input.value = "";
+      status.textContent = "Password saved. You can sign in with your email and password from now on.";
+      if (onSaved) onSaved();
+    } catch (err) {
+      status.textContent = authErrorText(err, SAVE_FALLBACK);
+    } finally {
+      busy = false;
+      button.disabled = false;
+    }
+  });
+  return form;
+}
+
 export async function renderSignin(container, query = {}) {
   clear(container);
   const wrap = el("section", { class: "signin", "data-view": "signin" });
-  const panel = el("form", { class: "signin__panel panel chamfer", "data-hook": "signin-form" });
+  const card = el("div", { class: "signin__card", "data-hook": "signin-card" });
 
-  panel.appendChild(el("p", { class: "gate__eyebrow", text: "PRIVATE BETA" }));
-  panel.appendChild(el("h1", { class: "signin__title", text: "Sign in to view tonight's board." }));
+  card.appendChild(el("p", { class: "gate__eyebrow", text: "PRIVATE BETA" }));
+  card.appendChild(el("h1", { class: "signin__title", text: "Sign in to view tonight's board." }));
+
+  // ---- the account box: only for someone whose stored code is good ----------
+  const account = el("div", { class: "signin__section", "data-hook": "signin-account" });
+  account.hidden = true;
+  card.appendChild(account);
+
+  // ---- email + password (the primary way in) --------------------------------
+  const loginForm = el("form", { class: "signin__form", "data-hook": "login-form" });
+  loginForm.appendChild(el("p", { class: "signin__body",
+    text: "Sign in with your email and password." }));
+  const emailField = field("Email", "login-email", {
+    type: "email", name: "email", autocomplete: "username", inputmode: "email",
+    autocapitalize: "none", spellcheck: "false", required: "required",
+    "data-hook": "login-email" });
+  const passwordField = field("Password", "login-password", {
+    type: "password", name: "password", autocomplete: "current-password",
+    required: "required", "data-hook": "login-password" });
+  loginForm.appendChild(emailField.wrap);
+  loginForm.appendChild(passwordField.wrap);
+  const loginStatus = el("p", { class: "signin__status", role: "status", "data-hook": "login-status" });
+  const loginButton = el("button", { type: "submit", class: "btn btn--primary",
+    "data-hook": "login-submit", text: "Sign in" });
+  const loginActions = el("div", { class: "signin__actions" });
+  loginActions.appendChild(loginButton);
+  loginForm.appendChild(loginActions);
+  loginForm.appendChild(loginStatus);
+  card.appendChild(loginForm);
+
+  // ---- the access code (secondary) ------------------------------------------
+  const codeToggle = el("button", { type: "button", class: "btn btn--text",
+    "data-hook": "show-access-code", "aria-expanded": "false",
+    text: "Have an access code?" });
+  card.appendChild(codeToggle);
+
+  const panel = el("form", { class: "signin__form", "data-hook": "signin-form" });
+  panel.hidden = true;
   panel.appendChild(el("p", { class: "signin__body",
-    text: "Paste your access token: the one you were shown after checkout, or the one "
-        + "sent to you as an early-access tester. It is stored on this "
-        + "device only and is sent with each request to the board." }));
-
-  const field = el("div", { class: "signin__field" });
-  field.appendChild(el("label", { for: "invite-token-input", text: "Invite token" }));
-  const input = el("input", { type: "password", id: "invite-token-input", name: "token",
-    autocomplete: "off", value: getToken(), "data-hook": "invite-token-input" });
-  field.appendChild(input);
-  panel.appendChild(field);
+    text: "Paste your access code: the one you were shown after checkout, or "
+        + "the one sent to you as an early-access tester. It is stored on this device only "
+        + "and is sent with each request to the board." }));
+  const codeField = field("Access code", "invite-token-input", {
+    type: "password", name: "token", autocomplete: "off", value: getToken(),
+    "data-hook": "invite-token-input" }, "signin__field signin__field--code");
+  const input = codeField.input;
+  panel.appendChild(codeField.wrap);
 
   const status = el("p", { class: "signin__status", role: "status", "data-hook": "signin-status" });
   const actions = el("div", { class: "signin__actions" });
-  actions.appendChild(el("button", { type: "submit", class: "btn btn--primary chamfer chamfer--btn",
-    text: "Save token" }));
-  actions.appendChild(el("button", { type: "button", class: "btn btn--ghost chamfer chamfer--btn",
-    "data-hook": "clear-token", text: "Clear token" }));
+  actions.appendChild(el("button", { type: "submit", class: "btn btn--primary",
+    text: "Save access code" }));
+  const clearButton = el("button", { type: "button", class: "btn btn--ghost",
+    "data-hook": "clear-token", text: "Clear access code" });
+  actions.appendChild(clearButton);
   panel.appendChild(actions);
   panel.appendChild(status);
+  card.appendChild(panel);
+
+  function showCodeForm(open) {
+    panel.hidden = !open;
+    codeToggle.setAttribute("aria-expanded", open ? "true" : "false");
+  }
+  codeToggle.addEventListener("click", () => showCodeForm(panel.hidden));
+  // A visitor who already has a saved code (older sign-in, checkout hand-off)
+  // gets the form open: it is the thing they came to look at.
+  if (getToken()) showCodeForm(true);
+
+  // ---- the one-time "set a password" card ------------------------------------
+  const passwordCard = el("div", { class: "signin__section", "data-hook": "password-card" });
+  passwordCard.hidden = true;
+  card.appendChild(passwordCard);
 
   // AN EXPIRED EARLY-ACCESS TOKEN gets its own state, not the silence a wrong
   // token gets: what happened (the date), then the ONE next step that is true.
@@ -108,7 +274,7 @@ export async function renderSignin(container, query = {}) {
   // unreachable: only what the page does know, that the access ended and to
   // reply to Brey. Every word that names the offer is checkout.js's.
   const ended = el("div", { class: "signin__ended", "data-hook": "tester-ended" });
-  panel.appendChild(ended);
+  card.appendChild(ended);
 
   // Every await below can be overtaken: a second Save, a Save of a different
   // token, Clear. `generation` is bumped by each of those; a call that finds it
@@ -162,7 +328,7 @@ export async function renderSignin(container, query = {}) {
     if (label) {
       const outcome = el("div", { "data-hook": "tester-upgrade-outcome" });
       const button = el("button", { type: "button",
-        class: "btn btn--primary chamfer chamfer--btn",
+        class: "btn btn--primary",
         "data-hook": "tester-upgrade", text: label });
       button.addEventListener("click", () => startTesterCheckout(mine, button, outcome));
       ended.appendChild(button);
@@ -175,6 +341,97 @@ export async function renderSignin(container, query = {}) {
   }
   showExpiredTester();
 
+  // ---- the account box and the password card, both driven by passwordState ----
+  let accountGeneration = 0;
+
+  function openChangePassword(slot, hasPassword) {
+    clear(slot);
+    slot.appendChild(passwordForm({
+      requireCurrent: hasPassword, submitLabel: "Save password", hook: "change-password",
+      onSaved: () => { markPasswordCardSeen(); passwordCard.hidden = true; },
+    }));
+    slot.hidden = false;
+  }
+
+  async function refreshAccount() {
+    const mine = ++accountGeneration;
+    const has = await passwordState();
+    if (mine !== accountGeneration) return null;
+    clear(account);
+    if (has === null || !getToken()) {
+      account.hidden = true;
+      loginForm.hidden = false;
+      return null;
+    }
+    // Signed in: the account box replaces the email form (nothing to sign in
+    // to), and the access-code form folds away unless it has something to say.
+    account.hidden = false;
+    loginForm.hidden = true;
+    if (!status.textContent) showCodeForm(false);
+    account.appendChild(el("h2", { class: "signin__section-title", text: "You are signed in" }));
+    account.appendChild(el("p", { class: "signin__body", "data-hook": "account-line",
+      text: has ? "You can sign in with your email and password on any device."
+                : "No password is set yet. Set one to sign in with your email next time." }));
+    const slot = el("div", { "data-hook": "change-password-slot" });
+    slot.hidden = true;
+    const row = el("div", { class: "signin__actions" });
+    const change = el("button", { type: "button", class: "btn btn--ghost",
+      "data-hook": "change-password-open", text: has ? "Change password" : "Set a password" });
+    change.addEventListener("click", () => openChangePassword(slot, has));
+    const out = el("button", { type: "button", class: "btn btn--ghost",
+      "data-hook": "sign-out", text: "Sign out" });
+    out.addEventListener("click", signOut);
+    row.appendChild(change);
+    row.appendChild(out);
+    account.appendChild(row);
+    account.appendChild(slot);
+    if (query && (query.password === "1" || query.password === "true")) openChangePassword(slot, has);
+    return has;
+  }
+
+  async function signOut() {
+    // Revoke the session on the server (best effort: a dead token has nothing
+    // left to revoke), then forget it on this device whatever the answer was.
+    try { await apiPost("/auth/logout", {}); } catch (err) { /* already gone */ }
+    clearToken();
+    input.value = "";
+    generation++;
+    accountGeneration++;
+    clear(ended);
+    clear(account);
+    account.hidden = true;
+    loginForm.hidden = false;
+    showCodeForm(false);
+    passwordCard.hidden = true;
+    status.textContent = "";
+    loginStatus.textContent = "Signed out.";
+  }
+
+  // The one-time card: shown once per device, after an access-code sign-in, when
+  // the server says no password is set. Dismissing or saving both retire it.
+  async function offerPasswordCard() {
+    if (passwordCardSeen()) return;
+    const has = await passwordState();
+    if (has !== false || !getToken() || passwordCardSeen()) return;
+    markPasswordCardSeen();
+    clear(passwordCard);
+    passwordCard.appendChild(el("h2", { class: "signin__section-title",
+      text: "Set a password" }));
+    passwordCard.appendChild(el("p", { class: "signin__body", "data-hook": "password-card-line",
+      text: "Set a password so you can sign in with your email next time." }));
+    passwordCard.appendChild(passwordForm({
+      requireCurrent: false, submitLabel: "Save password", hook: "password-card-form",
+      onSaved: () => { refreshAccount(); },
+    }));
+    const skip = el("button", { type: "button", class: "btn btn--text",
+      "data-hook": "password-card-skip", text: "Not now" });
+    skip.addEventListener("click", () => { passwordCard.hidden = true; });
+    passwordCard.appendChild(skip);
+    passwordCard.hidden = false;
+  }
+
+  if (getToken()) refreshAccount();
+
   // The cautious wording first; the trial wording only when /meta says
   // checkout is on, with its own trial length (checkout.js, one decision for
   // every page).
@@ -182,32 +439,73 @@ export async function renderSignin(container, query = {}) {
     text: signinNote(NOT_ON) });
   const startTrial = el("a", { class: "gate__eyebrow", href: "#/signup",
     "data-hook": "signin-start-trial", text: signinLinkLabel(NOT_ON) });
-  panel.appendChild(signupNote);
-  panel.appendChild(startTrial);
+  card.appendChild(signupNote);
+  card.appendChild(startTrial);
   loadCheckoutState().then((state) => {
     signupNote.textContent = signinNote(state);
     startTrial.textContent = signinLinkLabel(state);
   });
   const back = el("a", { class: "gate__eyebrow", href: query.next || "#/today",
     "data-hook": "signin-continue", text: "CONTINUE TO THE BOARD" });
-  panel.appendChild(back);
+  card.appendChild(back);
+
+  // ---- behaviour --------------------------------------------------------------
+  let loginBusy = false;
+  loginForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (loginBusy) return;
+    loginBusy = true;
+    loginButton.disabled = true;
+    loginStatus.textContent = "Signing in...";
+    try {
+      const out = await apiPost("/auth/login", {
+        email: emailField.input.value.trim(), password: passwordField.input.value });
+      passwordField.input.value = "";
+      setToken(out.token);
+      generation++;                // a new session supersedes any check about the old one
+      refreshAccount();
+      if (out.access_active === false) {
+        // A tester whose window has ended: the token opens nothing, but it
+        // identifies them to the upgrade door, so show the ended state.
+        loginStatus.textContent = "Signed in.";
+        await showExpiredTester();
+      } else {
+        loginStatus.textContent = "Signed in. Opening the board...";
+        window.location.hash = safeNext(query.next);
+      }
+    } catch (err) {
+      loginStatus.textContent = authErrorText(err, LOGIN_FALLBACK);
+    } finally {
+      loginBusy = false;
+      loginButton.disabled = false;
+    }
+  });
 
   panel.addEventListener("submit", async (event) => {
     event.preventDefault();
     setToken(input.value.trim());
-    status.textContent = "Token saved. Open Today to load the board.";
+    status.textContent = "Access code saved. Open Today to load the board.";
     // The board cannot load for an ended tester token: say so here, once,
     // instead of leaving "open Today" to dead-end at the gate.
-    if (await showExpiredTester()) status.textContent = "Token saved.";
+    if (await showExpiredTester()) {
+      status.textContent = "Access code saved.";
+    } else {
+      refreshAccount();
+      offerPasswordCard();
+    }
   });
-  panel.querySelector("[data-hook='clear-token']").addEventListener("click", () => {
+  clearButton.addEventListener("click", () => {
     clearToken();
     input.value = "";
     generation++;
+    accountGeneration++;
     clear(ended);
-    status.textContent = "Token cleared.";
+    clear(account);
+    account.hidden = true;
+    loginForm.hidden = false;
+    status.textContent = "Access code cleared.";
   });
 
-  wrap.appendChild(panel);
+  wrap.appendChild(card);
   container.appendChild(wrap);
 }

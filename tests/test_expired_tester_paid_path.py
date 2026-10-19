@@ -1472,19 +1472,19 @@ class ThePagesUnderNode(unittest.TestCase):
         out = self.run_scenario(kind="signin", meta=OFF, status=EXPIRED_401, submit="old-tester-token")
         self.assertEqual(out["ended"], ENDED)
         self.assertEqual(out["notOpen"], NOT_OPEN)
-        self.assertEqual(out["status"], "Token saved.")
+        self.assertEqual(out["status"], "Access code saved.")
         self.assertIn({"url": "/billing/status", "method": "GET",
                        "auth": "Bearer old-tester-token"}, out["calls"])
 
     def test_saving_a_wrong_token_says_exactly_what_it_always_said(self):
         out = self.run_scenario(kind="signin", meta=OFF, status=PLAIN_401, submit="typo")
-        self.assertEqual(out["status"], "Token saved. Open Today to load the board.")
+        self.assertEqual(out["status"], "Access code saved. Open Today to load the board.")
         self.assertIsNone(out["ended"])
 
     def test_clearing_the_token_removes_the_ended_state(self):
         out = self.run_scenario(kind="signin", meta=OFF, token="old", status=EXPIRED_401, clear=True)
         self.assertIsNone(out["ended"])
-        self.assertEqual(out["status"], "Token cleared.")
+        self.assertEqual(out["status"], "Access code cleared.")
 
     def test_a_missing_date_still_reads_truthfully(self):
         no_date = {"code": 401, "body": {"detail": {"error": "tester_access_expired"}}}

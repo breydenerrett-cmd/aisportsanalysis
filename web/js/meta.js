@@ -216,7 +216,14 @@ export async function renderDisclaimerFooter(container, { linkPrefix = "" } = {}
   // survives every route change, including the one that signs the buyer in.
   const billingLink = el("a", { class: "sitefoot__support", href: route("#/billing"),
     "data-hook": "footer-billing", text: "Billing" });
-  const syncBillingLink = () => { billingLink.hidden = !getToken(); };
+  // CHANGE PASSWORD (#/signin?password=1), same visibility rule: it means
+  // nothing without a session. signin.js opens the account box on that query.
+  const passwordLink = el("a", { class: "sitefoot__support", href: route("#/signin?password=1"),
+    "data-hook": "footer-password", text: "Change password" });
+  const syncBillingLink = () => {
+    billingLink.hidden = !getToken();
+    passwordLink.hidden = !getToken();
+  };
   syncBillingLink();
   try {
     window.addEventListener(TOKEN_CHANGED_EVENT, syncBillingLink);
@@ -224,6 +231,7 @@ export async function renderDisclaimerFooter(container, { linkPrefix = "" } = {}
     window.addEventListener("storage", syncBillingLink);
   } catch (err) { /* no window: nothing to follow */ }
   row.appendChild(billingLink);
+  row.appendChild(passwordLink);
   region.appendChild(row);
 
   region.appendChild(el("p", { class: "sitefoot__summary", "data-hook": "disclaimer-summary",
