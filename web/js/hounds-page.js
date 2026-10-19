@@ -279,7 +279,7 @@ function tableRow(hound, rank, qual) {
     h("td", { class: "hd-col-record hd-num", "data-hook": "row-record" }, [
       h("strong", { text: recordText(hound) }),
       streak ? h("small", { class: "hd-aux", text: streak }) : null]),
-    h("td", { class: `hd-col-units hd-num hd-tone--${tone(units)}`, "data-hook": "row-units", text: fmtUnitsPlain(units) }),
+    h("td", { class: `hd-col-units hd-num hd-tone--${tone(units)}`, "data-hook": "row-units", "data-count": "1", text: fmtUnitsPlain(units) }),
     qual
       ? h("td", { class: "hd-col-roi hd-num hd-roi--small", "data-hook": "row-roi", title: "small sample", text: fmtRoi(roi) })
       : h("td", { class: `hd-col-roi hd-num hd-tone--${tone(roi)}`, "data-hook": "row-roi", text: fmtRoi(roi) }),

@@ -185,7 +185,7 @@ function render() {
   const retired = data.dogs.filter((d) => d.retired);
   const actions = clearNode(q("kennel-actions"));
   if (mine) {
-    setHead({ eyebrow: "My kennel", title: "My kennel",
+    setHead({ eyebrow: "Your dogs", title: "My kennel",
       sub: active.length ? `${active.length} ${active.length === 1 ? "dog" : "dogs"}. Tap one to dress it, edit it or fire it.` : "" });
     actions.appendChild(h("a", { class: "lh-btn lh-btn--soft", href: `kennel.html?u=${encodeURIComponent(data.handle)}`, "data-hook": "kennel-public-link", text: "Public page" }));
     actions.appendChild(h("button", { type: "button", class: "lh-btn lh-btn--solid", "data-hook": "kennel-build", text: "Build a dog",

@@ -198,7 +198,7 @@ async function switchSeason(id) {
 function kpi(slot, label, big, small, tone) {
   return h("div", { class: `hd-kpi hd-kpi--${tone || "plain"}`, "data-slot": slot }, [
     h("span", { class: "hd-kpi__label", text: label }),
-    h("span", { class: "hd-kpi__big hd-num", text: big }),
+    h("span", { class: "hd-kpi__big hd-num", "data-count": "1", text: big }),
     small ? h("span", { class: "hd-kpi__small", text: small }) : null,
   ]);
 }

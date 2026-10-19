@@ -12,7 +12,7 @@
  */
 
 import { get } from "./dog-common.js";
-import { dogBadge } from "./dog-avatar.js";
+import { dogBadge, DEFAULT_LOOK } from "./dog-avatar.js";
 import { mountFire } from "./dog-fire.js";
 import { bootAsk } from "./dog-ask.js";
 import { mountFans } from "./dog-feedback.js";
@@ -50,7 +50,8 @@ export async function bootDogKit(hound) {
   }
   if (!kit || typeof kit !== "object") return null;
   const name = hound.name || kit.name || "this model";
-  if (kit.look) applyHeaderBadge(kit.look, name, hound.status === "retired");
+  // a builder dog always wears a dog (its saved look, else the default one); the house models keep their initials
+  if (kit.look || hound.kind === "user") applyHeaderBadge(kit.look || DEFAULT_LOOK, name, hound.status === "retired");
   let manual = null;
   const jobs = [];
   if (hound.kind === "user" && sections.manual) {

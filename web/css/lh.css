@@ -213,3 +213,71 @@
   .hounds-page .hd-panel { margin-bottom: 32px; }
   .hounds-page .hd-kpi__big { font-size: 26px; }
 }
+
+/* the type-of-model chips sit behind one quiet disclosure */
+.hounds-page .hd-morefilters { flex-basis: 100%; }
+.hounds-page .hd-morefilters > summary { display: inline-flex; align-items: center; height: 30px; padding: 0 12px; border-radius: 999px; background: none; color: var(--lh-mute); font-size: 13px; list-style: none; box-shadow: inset 0 0 0 1px var(--lh-line); }
+.hounds-page .hd-morefilters > summary::-webkit-details-marker { display: none; }
+.hounds-page .hd-morefilters[open] > summary { color: var(--lh-ink); }
+
+/* "How this works": the long explanation lives behind one small disclosure instead of a paragraph under every heading */
+.lh-how { margin: 0 0 12px; }
+.lh-how > summary { display: inline; color: var(--lh-mute); font-size: 12.5px; text-decoration: underline; text-underline-offset: 3px; list-style: none; cursor: pointer; }
+.lh-how > summary::-webkit-details-marker { display: none; }
+.lh-how > summary:hover { color: var(--lh-ink); }
+.lh-how[open] > p { margin-top: 8px; max-width: 46em; }
+
+/* the follow / share / download row: soft pills, no outlines */
+.hounds-page .hd-actions .btn { min-height: 36px; padding: 0 16px; font-size: 13.5px; }
+.hounds-page .hd-follow[aria-pressed="true"] { background: rgba(47, 208, 122, .15); color: #5BE39A; }
+.hounds-page .hd-mono { border-radius: 14px; border: 0; }
+.hounds-page .hd-modelhead .dk-badge { border-radius: 14px; }
+
+/* an empty chart is one short line, not a big dashed frame; the status sentence is said once */
+.hounds-page .hd-chart:has(.hd-chart__empty) .hd-chart__svg { max-height: 84px; }
+.hounds-page .hd-chart__frame { stroke: none; }
+.hounds-page .hd-chart__empty-note, .hounds-page .hd-chart__caption:empty { display: none; }
+.hounds-page .hd-verdict__meaning { display: none; }
+.hounds-page .hd-actions .btn { background: var(--lh-soft); border: 0; color: var(--lh-ink); }
+.hounds-page .hd-actions .btn:hover { background: rgba(255, 255, 255, .1); }
+
+/* fieldsets: a small label, no frame */
+.hounds-page .hd-fieldset { border: 0; padding: 0; margin: 0 0 14px; min-width: 0; }
+.hounds-page .hd-fieldset > legend { padding: 0; margin-bottom: 6px; font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--lh-mute); }
+.hounds-page .hd-col-clv { min-width: 128px; }
+
+/* plain links: quiet, with a soft underline; the kennel link is the one accent link */
+.hounds-page .hd-wrap a:not([class]) { color: var(--lh-ink2); text-decoration-color: rgba(255, 255, 255, .28); }
+.hounds-page .hd-wrap a:not([class]):hover { color: var(--lh-ink); }
+.hounds-page a.hd-kennellink { color: var(--lh-accent); text-decoration: none; }
+.hounds-page a.hd-kennellink:hover { text-decoration: underline; }
+
+/* the builder: steps without boxes, soft buttons */
+.hounds-page .bd-step { border: 0; background: none; padding: 0; }
+.hounds-page .bd-empty, .hounds-page .bd-sentences, .hounds-page .bd-read, .hounds-page .bd-diff { border: 0; border-radius: 12px; background: var(--lh-soft); }
+.hounds-page .bd-sentences { border-left: 0; }
+.hounds-page .bd-wrap .btn--ghost, .hounds-page .bd-actions .btn--ghost { background: var(--lh-soft); border: 0; color: var(--lh-ink); }
+.hounds-page .bd-dogrow, .hounds-page .bd-preview, .hounds-page .bd-mine { border: 0; border-radius: 14px; background: var(--lh-soft); }
+.hounds-page .bd-preview, .hounds-page .bd-mine { padding: 16px; }
+.hounds-page .bd-english { border-radius: 12px; }
+.hounds-page .bd-card { padding: 16px; }
+.hounds-page .bd-sentences { padding: 12px 14px; }
+
+/* the dog kit, quieter: soft fills and radii in place of outlines and left bars */
+.hounds-page .dk-chip { border: 0; border-radius: 999px; background: var(--lh-soft); padding: 2px 10px; }
+.hounds-page .dk-chip--warn { background: rgba(242, 184, 75, .12); }
+.hounds-page .dk-chip--good { background: rgba(61, 220, 132, .12); }
+.hounds-page .dk-chip--bad { background: rgba(255, 107, 122, .12); }
+.hounds-page .dk-pick, .hounds-page .dk-miss, .hounds-page .dk-event, .hounds-page .dk-ticket { border: 0; border-radius: 12px; background: var(--lh-soft); }
+.hounds-page .dk-msg { border: 0; border-radius: 14px; }
+.hounds-page .dk-msg--you { background: rgba(47, 208, 122, .16); }
+.hounds-page .dk-msg--dog { background: var(--lh-soft); }
+.hounds-page .dk-chipbtn, .hounds-page .dk-opt, .hounds-page .dk-vote__btn { border: 0; border-radius: 999px; background: var(--lh-soft); min-height: 36px; }
+.hounds-page .dk-opt[aria-pressed="true"], .hounds-page .dk-vote__btn[aria-pressed="true"] { background: rgba(47, 208, 122, .18); }
+.hounds-page .dk-swatch { border-width: 0; box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .12); }
+.hounds-page .dk-swatch[aria-pressed="true"] { box-shadow: 0 0 0 2px #0F1317, 0 0 0 4px var(--lh-accent); }
+.hounds-page .dk-preview { border: 0; border-radius: 18px; background: var(--lh-soft); }
+.hounds-page .dk-camp-dog { border: 0; border-radius: 18px; background: rgba(255, 255, 255, .04); }
+.hounds-page .dk-preview .dk-badge { border-radius: 22px; }
+.hounds-page .dk-actions .btn, .hounds-page .dk-pick__actions .btn { min-height: 38px; }
+.hounds-page .dk-askrow input { border-radius: 999px; padding: 0 16px; }
