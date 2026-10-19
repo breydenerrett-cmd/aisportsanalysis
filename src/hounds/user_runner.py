@@ -131,6 +131,13 @@ def run_pass(*, now: Optional[datetime] = None, ledger: Optional[str] = None,
         settled = user_settle.settle(ledger=ledger, now=moment, **kwargs)
         report["settle"] = {k: settled[k] for k in ("considered", "graded", "pending")}
         report["wrote"] += settled["graded"]
+        # The owners' manual picks sit in their own ledger, never in the dogs' record; they are graded by the
+        # same grader, here, so a manual ticket settles without a second scheduler. Never stops the pass.
+        try:
+            from src.hounds.interact import manual
+            manual.maybe_settle(moment)
+        except Exception:  # noqa: BLE001
+            logger.exception("manual settle failed")
         # The learning loop's user scope (src/hounds/learning/user_scope.py): shadow the live
         # challengers on the same boards, settle them, and once a day run the referee and the system
         # scorecard. Nothing to do (one small file read) until the owner has switched the coach on and a

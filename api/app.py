@@ -30,6 +30,7 @@ from api.billing import router as billing_router
 from api.onboarding import router as onboarding_router
 from api.signup import router as signup_router
 from api.hounds_create import router as hounds_create_router
+from api.hounds_interact import router as hounds_interact_router
 from api.hounds_learning import router as hounds_learning_router
 from api.hounds_share import router as hounds_share_router
 from api.hounds_tips import router as hounds_tips_router
@@ -87,6 +88,9 @@ app.include_router(hounds_learning_router)
 # a dog's rulebook and the fan-tip box (api/hounds_tips.py): /hounds/tips/export is a literal path next to
 # /hounds/{id}/..., so it too is mounted before api.hounds (tests/test_hounds_tips_api.py pins the order).
 app.include_router(hounds_tips_router)
+# fire now / ask / feedback / locker room / drill / camp (api/hounds_interact.py): /hounds/looks, /hounds/camp/mine
+# and POST /hounds/drill are literal paths next to /hounds/{id}, so this is mounted before api.hounds too.
+app.include_router(hounds_interact_router)
 # the Zapier feeds and the coach brief (api/feeds.py). /hounds/coach-brief is a literal path under
 # /hounds/{id}, so this is mounted after the two routers above and BEFORE api.hounds (tests pin the order).
 app.include_router(feeds_router)
