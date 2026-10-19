@@ -285,7 +285,7 @@ def reissue_subscriber_token(body: ReissueTokenRequest,
         raise HTTPException(
             status_code=409,
             detail="this user has no paid access, so no subscriber token was issued")
-    revoked = users_store.revoke_all_tokens(user.id)
+    revoked = users_store.revoke_all_tokens(user.id)  # also clears the password
     raw_token = users_store.issue_invite_token(
         user.id, ttl=billing.SUBSCRIBER_TOKEN_TTL)
     events.record_event_safe(user.id, events.SUPPORT_TOKEN_REISSUED,
@@ -434,12 +434,15 @@ def reissue_access_token(body: ReissueAccessRequest,
       4. The response carries the raw token ONCE. Send it to the account's
          address; never paste it into a ticket, a chat or a log.
       5. Every earlier token of that user is revoked in the same transaction as
-         the new one is minted. Neither the tester window nor paid_through is
-         touched.
+         the new one is minted, and so is the member's stored PASSWORD: a leaked
+         access code can set the first password, so a re-issue that kept it left
+         the attacker signing in (red team 2026-10-19). The member signs in with
+         the new access code and sets a new password. Neither the tester window
+         nor paid_through is touched.
 
     AUDIT: one `support_token_reissued` event in the events table (the existing
     log, keyed by the user's hash) carrying `action: "reissue"`, `reason`, `kind`,
-    `revoked_tokens`, never a token or an email. It is written in the SAME
+    `revoked_tokens`, `had_password` (bool), never a token, hash or email. It is written in the SAME
     transaction as the revoke and the new token: a failure of either (503) leaves
     the accounts exactly as they were and no "reissue" row behind, so an unlogged
     issue and a logged non-issue are both impossible. A re-issue that failed is
@@ -480,9 +483,12 @@ def reissue_access_token(body: ReissueAccessRequest,
     def write_audit(conn, revoked: int) -> None:
         nonlocal audit_failed
         try:
+            # reissue_token deletes the stored password right after this callback,
+            # in the same transaction; the audit row records only that there was one.
             _write_reissue_audit(conn, user.id, {
                 "action": "reissue", "kind": kind, "reason": why,
-                "revoked_tokens": revoked})
+                "revoked_tokens": revoked,
+                "had_password": users_store.password_exists_on(conn, user.id)})
         except Exception:  # noqa: BLE001 -- noted, then re-raised to roll back
             audit_failed = True
             raise
