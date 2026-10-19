@@ -782,40 +782,60 @@ class PagesReadTheRealApi(unittest.TestCase):
         self.assertEqual(charlie["record"]["bets"], 1)         # the fixture's one forward bet
         self.assertEqual(charlie["replay"]["bets"], 1)
 
-    def test_the_build_form_posts_what_the_real_create_route_accepts(self):
-        """The page's own script posts the JSON; the real request model and the real menu validation take it."""
+    def test_the_builder_posts_what_the_real_create_route_accepts(self):
+        """The menu and the English answer come from the REAL routes (the real parser, the real validator); the
+        page's own script reads them, and what it posts is taken as it stands by the real request model and the
+        menu's own validation."""
+        from fastapi.testclient import TestClient
+        from api.app import app
         from api.hounds_create import CreateHoundRequest
         from src.hounds import user_spec
+        client = TestClient(app)
+        menu = client.get("/hounds/builder/menu")
+        self.assertEqual(menu.status_code, 200)
+        text = "bet home underdogs between +120 and +200 when they're on 2+ days rest. max 2 bets a day"
+        english = client.post("/hounds/english", json={"text": text})
+        self.assertEqual(english.status_code, 200)
+        self.assertEqual(english.json()["status"], "parsed")
         r = dict(self.routes)
-        r["/hounds/menu"] = [200, user_spec.menu()]
+        r["/hounds/builder/menu"] = [200, menu.json()]
+        r["POST /hounds/english"] = [200, english.json()]
+        r["POST /hounds/builder/preview"] = [200, {"qualifying": 0, "would_bet": 0, "max_bets_per_day": 2, "picks": [],
+                                                    "games_on_board": 1, "sentences": english.json()["sentences"]}]
         r["POST /hounds"] = [200, {"hound": {"id": "u-x"}}]
         out = run_page("build", routes=r, stored={"aisportsanalysis.invite_token": "tok"}, actions=[
+            dict(do="set", sel="[data-hook='english-input']", value=text),
+            dict(do="click", sel="[data-hook='english-go']", wait=300),
             dict(do="set", sel="[data-hook='f-name']", value="Pup Test"),
             dict(do="set", sel="[data-hook='f-tagline']", value="Fetches"),
-            dict(do="check", sel="[data-field='sport'] input", index=0),
-            dict(do="check", sel="[data-field='market'] input", index=0),
-            dict(do="check", sel="[data-field='side'] input", index=1),
-            dict(do="set", sel="[data-hook='f-price-min']", value="-150"),
-            dict(do="set", sel="[data-hook='f-price-max']", value="250"),
-            dict(do="click", sel="[data-hook='build-submit']", label="go", wait=80)])
-        self.assertEqual(len(out["posts"]), 1)
-        body = out["posts"][0]["body"]
-        model = CreateHoundRequest(**body)                      # the request model accepts it as it stands
+            dict(do="click", sel="[data-hook='build-submit']", label="go", wait=100)])
+        created = [p for p in out["posts"] if p["url"] == "/hounds"]
+        self.assertEqual(len(created), 1)
+        model = CreateHoundRequest(**created[0]["body"])        # the request model accepts it as it stands
         spec = user_spec.validate_spec(model.spec)              # and so does the menu's own validation
-        self.assertEqual((spec["name"], spec["side_rule"], spec["price_min"], spec["price_max"]),
-                         ("Pup Test", "underdog", -150, 250))
-        self.assertEqual(out["navigations"], ["hound.html?id=u-x"])
+        self.assertEqual((spec["name"], spec["max_bets_per_day"]), ("Pup Test", 2))
+        self.assertEqual((spec["rules"][0]["side"], spec["rules"][0]["price_min"], spec["rules"][0]["price_max"]),
+                         ("home", 120, 200))
 
     def test_the_copy_flow_posts_the_spec_endpoints_answer_back_with_copied_from(self):
+        from fastapi.testclient import TestClient
+        from api.app import app
         from api.hounds_create import CreateHoundRequest
         from src.hounds import user_spec
+        client = TestClient(app)
+        classic = self.routes["/hounds/alpha/spec"][1]["spec"]
+        draft = dict(user_spec.upgrade_v1(classic), name="Alpha II")
         r = dict(self.routes)
-        r["/hounds/menu"] = [200, user_spec.menu()]
+        r["/hounds/builder/menu"] = [200, client.get("/hounds/builder/menu").json()]
+        r["/hounds/alpha/spec"] = [200, {"spec": classic, "draft": draft, "rule_sentences": ["Alpha's rule."],
+                                         "copied_from": "alpha", "rule_text": "x"}]
+        r["POST /hounds/builder/preview"] = [200, {"qualifying": 0, "would_bet": 0, "max_bets_per_day": 2, "picks": [],
+                                                    "games_on_board": 1, "sentences": ["Alpha's rule."]}]
         r["POST /hounds"] = [200, {"hound": {"id": "u-y"}}]
         out = run_page("build", routes=r, search="?from=alpha", stored={"aisportsanalysis.invite_token": "tok"},
-                       actions=[dict(do="click", sel="[data-hook='build-submit']", label="go", wait=80)])
-        body = out["posts"][0]["body"]
-        model = CreateHoundRequest(**body)
+                       actions=[dict(do="click", sel="[data-hook='build-submit']", label="go", wait=100)])
+        created = [p for p in out["posts"] if p["url"] == "/hounds"]
+        model = CreateHoundRequest(**created[0]["body"])
         self.assertEqual(model.copied_from, "alpha")
         user_spec.validate_spec(model.spec)
 

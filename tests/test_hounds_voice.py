@@ -338,25 +338,6 @@ class TheSharedHelpersThePagesStillUse(unittest.TestCase):
         self.assertEqual(set(out), {"undefined"})
 
 
-class TheBuildPageSaysItLikeBettorsDo(unittest.TestCase):
-
-    def test_every_side_rule_has_a_playful_label_and_keeps_the_plain_one_as_a_hint(self):
-        from src.hounds import user_spec
-        out = run_js('import * as B from "./hounds-build.js";'
-                     f'console.log(JSON.stringify(B.playfulSides({json.dumps(user_spec.menu()["side_rules"])})));')
-        labels = {o["value"]: o["label"] for o in out}
-        self.assertEqual(labels["favourite"], "Always the chalk")
-        self.assertEqual(labels["underdog"], "Dogs only")
-        self.assertEqual(labels["market_moved_toward"], "Tail the steam")
-        self.assertEqual(labels["market_moved_away"], "Fade the steam")
-        self.assertEqual(labels["over"], "Overs machine")
-        self.assertEqual(labels["under"], "Unders only")
-        for o in out:
-            self.assertTrue(o["hint"], f"{o['value']} lost its plain label")
-            self.assertEqual(sorted(o["markets"]), sorted(next(
-                s for s in user_spec.menu()["side_rules"] if s["value"] == o["value"])["markets"]))
-
-
 class TheHardLinesStayAndTheAcademicWordsGo(unittest.TestCase):
 
     def test_every_public_page_says_paper_only_not_advice_and_21_plus_in_its_static_text(self):

@@ -15,7 +15,7 @@ from src.hounds import user_spec
 
 _STAKE = lambda s: f"{s:g} paper unit{'' if s == 1 else 's'}"          # noqa: E731
 _RANK_PHRASE = {
-    "earliest_lock": "the games that lock first",
+    "earliest_lock": "the earliest games",
     "longest_price": "the longest prices first",
     "shortest_price": "the shortest prices first",
     "most_books": "the picks the most books are quoting first",

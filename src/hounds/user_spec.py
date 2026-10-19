@@ -736,7 +736,7 @@ def builder_menu() -> dict:
         "name": {"min": NAME_MIN, "max": NAME_MAX}, "tagline": {"max": TAGLINE_MAX},
         "rule_label": {"max": RULE_LABEL_MAX},
         "sports": [{"value": s, "label": SPORT_LABELS[s]} for s in SPORTS],
-        "markets": [{"value": m, "label": R.MARKET_LABELS[m], "kind": R.market_kind(m),
+        "markets": [{"value": m, "label": R.MARKET_LABELS[m], "kind": R.market_kind(m), "has_line": m != "moneyline",
                      "sports": ["MLB"] if R.market_kind(m) == "prop" else list(SPORTS)} for m in R.ALL_MARKETS],
         "sides": [{"value": s, "label": R.SIDE_LABELS[s]} for s in R.SIDES],
         "side_by_kind": {"ml_spread": list(R.sides_for(["ml_spread"])), "total": list(R.sides_for(["total"])),
@@ -759,7 +759,7 @@ def builder_menu() -> dict:
                             "capture at or before your lock, up to "
                             f"{MAX_PROP_BOARD_AGE_MINUTES // 60} hours old."),
         "ranking_note": ("When more picks qualify than your daily cap, they are ranked by your rule. A pick "
-                         "is made at its own lock, so the ranking decides among the picks that qualify "
+                         "is made at its own decision time, so the ranking decides among the picks that qualify "
                          "in the same engine pass; a bet already made is never taken back."),
         "stake_note": "A stake is a paper label. The public record counts every bet as one unit.",
     }

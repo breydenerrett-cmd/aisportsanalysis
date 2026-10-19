@@ -514,7 +514,7 @@ def builder_preview(body: PreviewRequest, _rl: None = Depends(_rate_limit_previe
                    "spec": {k: v for k, v in spec.items() if k != "name" or raw["name"] != "Draft Dog"},
                    "games_on_board": len(slate.games), "board_observed_utc": slate.newest_observed(),
                    "as_of": now.strftime("%Y-%m-%dT%H:%M:%SZ"), "read_only": True,
-                   "note": "A preview from the board as it stands now. A game's bet is decided at its own lock."})
+                   "note": "A preview from the board as it stands now. A game's bet is decided at its own decision time."})
     return _wrap(result)
 
 

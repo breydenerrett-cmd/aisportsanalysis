@@ -91,7 +91,7 @@ def sides_for(kinds: Sequence[str]) -> tuple:
 
 RANK_RULES = ("earliest_lock", "longest_price", "shortest_price", "most_books", "biggest_steam")
 RANK_LABELS = {
-    "earliest_lock": "The game that locks first",
+    "earliest_lock": "The earliest game",
     "longest_price": "The longest price (the biggest underdog)",
     "shortest_price": "The shortest price (the safest-looking)",
     "most_books": "The pick the most books are quoting",
