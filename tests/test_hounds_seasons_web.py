@@ -632,7 +632,11 @@ class TheMarkupIsStatic(unittest.TestCase):
         root = Path(__file__).resolve().parent.parent / "web"
         src = (root / "js" / "hounds-season.js").read_text(encoding="utf-8")
         self.assertNotRegex(src, r"https?://")
-        self.assertIsNone(re.search(r"<script", (root / "hounds.html").read_text(encoding="utf-8").replace('<script type="module" src="js/hounds-page.js"></script>', "")))
+        html = (root / "hounds.html").read_text(encoding="utf-8")
+        # only external module scripts (the page, the kennels view, tabs, motion, the shared nav): never an inline script or a CDN
+        for name in ("hounds-page", "kennels-index", "tabs", "fx", "nav"):
+            html = html.replace(f'<script type="module" src="js/{name}.js"></script>', "")
+        self.assertIsNone(re.search(r"<script", html))
 
 
 if __name__ == "__main__":

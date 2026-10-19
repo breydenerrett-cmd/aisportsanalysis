@@ -15,6 +15,15 @@ export const SLOW_MS = 120000;           // a month-long drill replays a month o
 
 export const signedIn = () => !!getToken();
 
+/** A small burst of confetti from `el` (web/js/fx.js listens). Quiet when nothing listens or motion is reduced. */
+export function celebrate(el, what = "") {
+  try {
+    const evt = new Event("linehound:celebrate");
+    evt.detail = { el: el || null, what };
+    window.dispatchEvent(evt);
+  } catch (err) { /* no window or no Event: nothing to celebrate with */ }
+}
+
 export const get = (path) => apiGet(path);
 export const post = (path, body, timeoutMs) => (timeoutMs
   ? apiFetch(path, { method: "POST", body: JSON.stringify(body || {}), timeoutMs })

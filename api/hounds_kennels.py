@@ -18,8 +18,11 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 
 from src.appstate import ratelimit
+from src.appstate import users as users_store
 from src.hounds import kennels, seasons
 from src.hounds.contract import envelope
+
+from api.auth import get_current_user
 
 router = APIRouter()
 
@@ -39,6 +42,14 @@ def kennel_index(response: Response, season: Optional[str] = Query(None, max_len
                  _rl: None = Depends(_rl_read)) -> dict:
     response.headers["Cache-Control"] = "public, max-age=30"
     return envelope(kennels.kennel_list(_season(season)))
+
+
+@router.get("/hounds/kennels/mine")
+def my_kennel(response: Response, season: Optional[str] = Query(None, max_length=16),
+              current_user: users_store.User = Depends(get_current_user), _rl: None = Depends(_rl_read)) -> dict:
+    """The signed-in member's own dogs, retired ones flagged. Declared before {handle} so "mine" is never a handle."""
+    response.headers["Cache-Control"] = "no-store"
+    return envelope(kennels.my_kennel(current_user.id, _season(season)))
 
 
 @router.get("/hounds/kennels/{handle}")

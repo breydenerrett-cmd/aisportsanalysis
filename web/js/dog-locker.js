@@ -23,7 +23,7 @@ const GROUPS = [
   { key: "body", label: "Body", kind: "text", options: BODY },
 ];
 
-export function mountLocker(section, { id, name, kit, onSaved }) {
+export function mountLocker(section, { id, name, kit, onSaved, onChange }) {
   const body = section.querySelector("[data-hook='dog-locker']");
   if (!body) return;
   clearNode(body);
@@ -44,6 +44,7 @@ export function mountLocker(section, { id, name, kit, onSaved }) {
       }
     }
     if (look.body === "jersey") numberRow.removeAttribute("hidden"); else numberRow.setAttribute("hidden", "");
+    if (onChange) onChange(look);
   };
   const set = (key, value) => {
     look = cleanLook(Object.assign({}, look, { [key]: value }));

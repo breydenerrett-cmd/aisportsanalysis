@@ -27,25 +27,31 @@
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/components.css">
 <link rel="stylesheet" href="css/nav.css">
+<link rel="stylesheet" href="css/lhnav.css">
 <link rel="stylesheet" href="css/hounds.css">
 <link rel="stylesheet" href="css/dog-kit.css">
 </head>
 <body class="hounds-page">
 <a class="hd-skip" href="#main-content">Skip to the scorecard</a>
-<nav class="site-nav hd-nav" aria-label="primary" data-hook="learning-nav">
-  <a class="ps-page__home" href="landing.html" aria-label="LINEHOUND home">
-    <span class="wordmark" data-hook="brand-mark">
-      <span class="wordmark__mark"><span></span></span>
-      <span class="wordmark__text" data-hook="product-name">LINEHOUND</span>
-    </span>
-  </a>
-  <div class="site-nav__links hd-nav__links">
-    <a href="hounds.html">Leaderboard</a>
-    <a href="learning.html" aria-current="page">Learning</a>
-    <a href="build-a-hound.html">Build a model</a>
+<header class="lh-nav" aria-label="primary" data-hook="learning-nav" data-current="camp">
+  <div class="lh-nav__bar">
+    <a class="lh-nav__brand ps-page__home" href="landing.html" aria-label="LINEHOUND home">
+      <span class="wordmark" data-hook="brand-mark">
+        <span class="wordmark__mark"><span></span></span>
+        <span class="wordmark__text" data-hook="product-name">LINEHOUND</span>
+      </span>
+    </a>
+    <nav class="lh-nav__links" aria-label="Sections" data-hook="nav-links">
+      <a href="hounds.html" data-nav="leaderboard">Leaderboard</a>
+      <a href="hounds.html?tab=kennels" data-nav="kennels">Kennels</a>
+      <a href="build-a-hound.html" data-nav="build">Build</a>
+      <a href="learning.html" data-nav="camp" aria-current="page">Training camp</a>
+    </nav>
+    <div class="lh-nav__account" data-hook="nav-account-area" data-signed-in="false">
+      <a class="lh-btn lh-btn--solid" href="index.html#/signin" data-hook="nav-signin">Sign in</a>
+    </div>
   </div>
-  <a class="btn btn--ghost site-nav__signin" href="index.html#/signin" data-hook="nav-signin">Sign in</a>
-</nav>
+</header>
 
 <main class="hd-wrap" id="main-content" aria-label="Training camp" data-hook="learning-app">
 
@@ -130,5 +136,6 @@
 <script type="module" src="js/hounds-learning.js"></script>
 <script type="module" src="js/dog-camp.js"></script>
 <script type="module">import { renderBreeding } from "./js/breeding.js"; renderBreeding(document.querySelector("[data-hook='learning-breeding']"));</script>
+<script type="module" src="js/nav.js"></script>
 </body>
 </html>

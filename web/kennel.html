@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kennel — LINEHOUND</title>
+<meta name="description" content="A member's dogs: record, units, last pick and each one's page. Paper bets only, not advice, 21+.">
+<meta property="og:title" content="Kennel — LINEHOUND">
+<meta property="og:description" content="A member's betting dogs, tracked in public. Paper only, not advice.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#0B0D10">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230B0C0E'/%3E%3Cpath d='M6 6l8 0 0 9-8 4z' fill='%23FF3D57'/%3E%3Cpath d='M18 6l8 0 0 13-8-4z' fill='%23FF7A45'/%3E%3C/svg%3E">
+<!-- KENNEL (web/js/kennel.js). Two views of one page:
+       kennel.html           MY KENNEL, for a signed-in member: each dog as a card with its animated avatar and one-tap
+                             Fire now / Ask / Edit / Open, and "Build a dog". Clicking a dog opens the STUDIO, an
+                             in-place drawer with tabs (Look, Rules, Fire now, Ask, Record) that reuses the dog kit's and
+                             the builder's own modules. A signed-out visitor is asked to sign in or to browse kennels.
+       kennel.html?u=<handle>  a member's PUBLIC kennel: their non-retired dogs (a dog with no bet yet included), read
+                             only. The handle is the anonymous owner label as a slug ("handler-3f2a"); never an email.
+     Reads: GET /hounds/kennels/mine, GET /hounds/kennels/{handle}. The paper-only line is static. -->
+<link rel="stylesheet" href="css/fonts.css">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/nav.css">
+<link rel="stylesheet" href="css/lhnav.css">
+<link rel="stylesheet" href="css/hounds.css">
+<link rel="stylesheet" href="css/dog-kit.css">
+<link rel="stylesheet" href="css/builder.css">
+<link rel="stylesheet" href="css/lh.css">
+<link rel="stylesheet" href="css/studio.css">
+</head>
+<body class="hounds-page kn-page">
+<a class="hd-skip" href="#main-content">Skip to the kennel</a>
+<header class="lh-nav" aria-label="primary" data-hook="kennel-nav">
+  <div class="lh-nav__bar">
+    <a class="lh-nav__brand ps-page__home" href="landing.html" aria-label="LINEHOUND home">
+      <span class="wordmark" data-hook="brand-mark">
+        <span class="wordmark__mark"><span></span></span>
+        <span class="wordmark__text" data-hook="product-name">LINEHOUND</span>
+      </span>
+    </a>
+    <nav class="lh-nav__links" aria-label="Sections" data-hook="nav-links">
+      <a href="hounds.html" data-nav="leaderboard">Leaderboard</a>
+      <a href="hounds.html?tab=kennels" data-nav="kennels">Kennels</a>
+      <a href="build-a-hound.html" data-nav="build">Build</a>
+      <a href="learning.html" data-nav="camp">Training camp</a>
+    </nav>
+    <div class="lh-nav__account" data-hook="nav-account-area" data-signed-in="false">
+      <a class="lh-btn lh-btn--solid" href="index.html#/signin" data-hook="nav-signin">Sign in</a>
+    </div>
+  </div>
+</header>
+
+<main class="hd-wrap hd-wrap--wide" id="main-content" aria-label="Kennel" data-hook="kennel-app">
+
+<header class="kn-head">
+  <div>
+    <p class="kn-eyebrow" data-hook="kennel-eyebrow">Kennel</p>
+    <h1 data-hook="kennel-title">My kennel</h1>
+    <p class="hd-lede" data-hook="kennel-sub"></p>
+  </div>
+  <div class="kn-head__actions" data-hook="kennel-actions"></div>
+</header>
+
+<p class="hd-disclosure" data-hook="paper-only-notice" role="note">Paper bets only. Not betting advice. 21+.</p>
+
+<div data-hook="kennel-gate" hidden></div>
+<div class="kn-grid" data-hook="kennel-grid" aria-live="polite"><div class="lh-skel lh-skel--cards" aria-hidden="true"></div><p class="hd-sr-only">Loading the kennel...</p></div>
+<div data-hook="kennel-retired"></div>
+
+<!-- THE STUDIO: an in-place drawer for one dog (or a new one). Filled by web/js/kennel.js; hidden until a dog is opened. -->
+<div class="kn-scrim" data-hook="studio-scrim" hidden></div>
+<aside class="kn-studio" data-hook="studio" role="dialog" aria-modal="true" aria-labelledby="studio-title" hidden>
+  <header class="kn-studio__head">
+    <div class="kn-studio__avatar" data-hook="studio-avatar"></div>
+    <div class="kn-studio__who">
+      <h2 id="studio-title" data-hook="studio-title">Dog studio</h2>
+      <p class="hd-fine" data-hook="studio-sub"></p>
+    </div>
+    <a class="lh-btn lh-btn--soft" data-hook="studio-open" href="hounds.html" hidden>Open page</a>
+    <button type="button" class="kn-studio__close" data-hook="studio-close" aria-label="Close the studio">&times;</button>
+  </header>
+  <div class="lh-tabs lh-tabs--studio" role="tablist" aria-label="Studio" data-hook="studio-tabs">
+    <button type="button" role="tab" data-tab="look" aria-selected="true">Look</button>
+    <button type="button" role="tab" data-tab="rules" aria-selected="false">Rules</button>
+    <button type="button" role="tab" data-tab="fire" aria-selected="false">Fire now</button>
+    <button type="button" role="tab" data-tab="ask" aria-selected="false">Ask</button>
+    <button type="button" role="tab" data-tab="record" aria-selected="false">Record</button>
+  </div>
+  <div class="kn-studio__body">
+    <div class="lh-tabpanel" data-tabpanel="look" role="tabpanel" aria-label="Look" data-hook="studio-look"></div>
+    <div class="lh-tabpanel" data-tabpanel="rules" role="tabpanel" aria-label="Rules" data-hook="studio-rules" hidden></div>
+    <div class="lh-tabpanel" data-tabpanel="fire" role="tabpanel" aria-label="Fire now" data-hook="studio-fire" hidden></div>
+    <div class="lh-tabpanel" data-tabpanel="ask" role="tabpanel" aria-label="Ask" data-hook="studio-ask" hidden></div>
+    <div class="lh-tabpanel" data-tabpanel="record" role="tabpanel" aria-label="Record" data-hook="studio-record" hidden></div>
+  </div>
+</aside>
+
+</main>
+
+<footer class="hd-foot" data-hook="kennel-footer" aria-label="responsible gambling">
+  <p>Gamble responsibly. <a href="tel:1-800-426-2537" data-hook="responsible-gambling-help">1-800-GAMBLER</a></p>
+  <p><a href="landing.html">About LINEHOUND</a> &middot; <a href="hounds.html?tab=kennels">All kennels</a></p>
+</footer>
+
+<script type="module" src="js/kennel.js"></script>
+<script type="module" src="js/fx.js"></script>
+<script type="module" src="js/nav.js"></script>
+</body>
+</html>

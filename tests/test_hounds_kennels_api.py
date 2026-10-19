@@ -172,6 +172,24 @@ class TheRoutes(KennelCase):
             self.assertLess(kennel_at, source.index(later), later)
 
 
+class MyKennel(KennelCase):
+    def test_my_kennel_is_only_my_dogs_with_retired_ones_last_and_flagged(self):
+        user_store.retire_hound(self.gus["id"], by="owner", reason="done with it")
+        out = kennels.my_kennel(self.jacob.id)
+        self.assertEqual([d["name"] for d in out["dogs"]], ["Totals Tina", "Underdog Gus"])
+        self.assertEqual([d["retired"] for d in out["dogs"]], [False, True])
+        self.assertEqual(out["dog_count"], 1)
+        self.assertEqual(out["handle"], self.jacob_handle)
+        self.assertTrue(all(d["builder_href"].startswith("build-a-hound.html?from=u-") for d in out["dogs"]))
+        self.assertNotIn("Road Rex", json.dumps(out))
+        self.assertNotIn("example.com", json.dumps(out))
+
+    def test_a_member_with_no_dog_gets_an_empty_kennel_not_an_error(self):
+        nobody = users_store.create_user("nobody@example.com", status="active", db=self.db)
+        out = kennels.my_kennel(nobody.id)
+        self.assertEqual((out["dogs"], out["dog_count"]), ([], 0))
+
+
 class WithoutFastApi(unittest.TestCase):
     def test_the_logic_module_imports_with_fastapi_hidden(self):
         import subprocess

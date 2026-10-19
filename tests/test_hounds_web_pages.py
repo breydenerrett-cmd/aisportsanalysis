@@ -87,7 +87,7 @@ class EveryPageSaysPaperOnlyNotAdviceAndIs21Plus(unittest.TestCase):
 
     def test_the_minus_200_cap_notice_is_static_on_the_build_page(self):
         text = visible(HTML["build-a-hound.html"])
-        self.assertIn("Paper bets only. Your dog never places a real bet, and it never takes a price of -200 or worse.", text)
+        self.assertIn("Paper bets only. Your dog never takes a price of -200 or worse. Not advice. 21+.", text)
 
     def test_the_pages_never_name_the_product_they_do_not_advertise_or_claim_an_edge(self):
         for path in [WEB / n for n in HTML] + [WEB / "css" / "hounds.css"] + sorted((WEB / "js").glob("hounds-*.js")):

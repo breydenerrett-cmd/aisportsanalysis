@@ -90,7 +90,8 @@ SIGNED = dict(stored={TOKEN_KEY: "tok"})
 class StaticFacts(unittest.TestCase):
     def test_the_paper_notice_and_the_minus_200_line_are_static_text(self):
         text = re.sub(r"<[^>]+>", " ", re.sub(r"<!--.*?-->", "", HTML, flags=re.S))
-        self.assertIn("Paper bets only. Your dog never places a real bet, and it never takes a price of -200 or worse.", " ".join(text.split()))
+        # one short line (2026-10-19 minimalism pass): paper only, the -200 cap, not advice, 21+
+        self.assertIn("Paper bets only. Your dog never takes a price of -200 or worse. Not advice. 21+.", " ".join(text.split()))
         self.assertIn("21+", text)
         self.assertIn("Gamble responsibly.", text)
 
@@ -99,10 +100,22 @@ class StaticFacts(unittest.TestCase):
         self.assertEqual(order, sorted(order))
         for hook in ("english-input", "example-chips", "rule-cards", "preview-count", "my-dogs", "build-submit", "diff"):
             self.assertIn(f'data-hook="{hook}"', HTML, hook)
-        self.assertIn("Describe your strategy", HTML)
-        self.assertIn("Here's what your dog will do", HTML)
-        self.assertIn("Make it yours", HTML)
+        self.assertIn(">Say it<", HTML)
+        self.assertIn(">Check it<", HTML)
+        self.assertIn(">Name it<", HTML)
         self.assertIn("Would have bet today", HTML)
+
+    def test_the_advanced_rule_cards_are_collapsed_until_edit_rules_is_opened(self):
+        # the sentences stay visible; the cards, "add a rule" and the whole-dog settings sit in a closed <details>
+        match = re.search(r'<details[^>]*data-hook="rules-advanced"[^>]*>(.*?)</details>', HTML, re.S)
+        self.assertIsNotNone(match)
+        self.assertNotRegex(match.group(0).split(">", 1)[0], r"open")
+        self.assertIn("<summary>Edit rules</summary>", match.group(0))
+        for hook in ("rule-cards", "add-rule", "globals-grid"):
+            self.assertIn(f'data-hook="{hook}"', match.group(1), hook)
+        sentences = HTML.index('data-hook="rule-sentences"')
+        self.assertLess(sentences, match.start())
+        self.assertNotIn('data-hook="rule-sentences"', match.group(0))
 
     def test_the_script_names_no_sport_market_or_condition_outside_its_examples(self):
         code = re.sub(r"export const EXAMPLES = \[.*?\];", "", JS, flags=re.S)

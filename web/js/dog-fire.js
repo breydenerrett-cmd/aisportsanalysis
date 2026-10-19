@@ -14,7 +14,7 @@
  */
 
 import { h, clearNode, fmtPrice, isNum } from "./hounds-core.js";
-import { post, errorText, errorCode, whenText, spanText, statusLine, PAPER_NOTE } from "./dog-common.js";
+import { post, errorText, errorCode, whenText, spanText, statusLine, celebrate, PAPER_NOTE } from "./dog-common.js";
 
 const SLOW = 90000;
 
@@ -64,6 +64,7 @@ function pickCard(p, { id, canRecord, onRecord }) {
         status.textContent = "Recording...";
         try {
           const out = await post(`/hounds/${encodeURIComponent(id)}/manual`, { event_id: p.event_id, market: p.market });
+          celebrate(btn, "manual-pick");
           clearNode(actions);
           actions.appendChild(h("p", { class: "dk-ok", "data-hook": "manual-recorded",
             text: `Recorded as a manual pick at ${fmtPrice(out.ticket.price_average)}. It sits apart from the rule's record. ${out.remaining_today} left today.` }));

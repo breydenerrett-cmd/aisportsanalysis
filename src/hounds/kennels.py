@@ -156,3 +156,22 @@ def kennel_detail(handle: str, season: Optional[str] = None) -> Optional[dict]:
     dogs = box["dogs"]
     return {"handle": resolve_handle(handle), "display": box["display"], "dog_count": len(dogs),
             "best": _best(dogs), "dogs": dogs, "season": seasons.meta(sid)}
+
+
+def my_kennel(owner_user_id: int, season: Optional[str] = None) -> dict:
+    """The signed-in member's own dogs for the "My kennel" page: every dog they have, retired ones last and flagged,
+    with the same numbers a public kennel shows, plus their own handle so the page can link to the public view."""
+    sid = season or seasons.default_id()
+    rows = list(user_store.list_for_owner(owner_user_id)) if user_defs.db_exists() else []
+    order = {"running": 0, "benched": 1, "retired": 2}
+    rows.sort(key=lambda h: (order.get(h["status"], 3), h["created_at"]))
+    book = stats.peek_book()
+    looks = _looks(rows)
+    dogs = []
+    for row in rows:
+        entry = dog_entry(row, _stats_for(row, book, sid), looks.get(row["id"]))
+        entry["retired"] = row["status"] == "retired"
+        entry["builder_href"] = f"build-a-hound.html?from={row['id']}"
+        dogs.append(entry)
+    return {"handle": handle_for(owner_user_id), "display": user_defs.owner_display(owner_user_id),
+            "dog_count": sum(1 for d in dogs if not d["retired"]), "dogs": dogs, "season": seasons.meta(sid)}
