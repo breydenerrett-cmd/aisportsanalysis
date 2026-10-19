@@ -1,10 +1,10 @@
 # LineHound survival dashboard
 
-Generated 2026-10-18 20:54Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-10-19 15:46Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
-| Days until 2026-10-31 | **13** |
+| Days until 2026-10-31 | **12** |
 | Current monthly burn (known + estimated infrastructure) | $78.00 |
 | Current monthly burn incl. Claude at the planning assumption | $278.00 (unknown: Claude subscription that operates the business, BALLDONTLIE) |
 | Identified monthly savings (not yet realised) | $29.00: The Odds API (100K tier): $29.00 (downgrade to the $30 20K tier; NOT confirmed, owner decision) |
@@ -70,8 +70,8 @@ Read from `docs/sales/outreach_queue.csv`, people only. A forum thread is a publ
 - **MLB previous** (Our first card rule; 2026-09-10..2026-09-22): n=230: 151-79, +7.98u, ROI +3.5%
   - game: n=113: 73-40, +7.61u, ROI +6.7%
   - prop: n=117: 78-39, +0.38u, ROI +0.3%
-- **NFL current** (Our NFL value rule; 2026-09-27..2026-10-11): n=3: 2-1, +1.00u (too few for a rate)
-  - game: n=3: 2-1, +1.00u (too few for a rate)
+- **NFL current** (Our NFL value rule; 2026-09-27..2026-10-18): n=4: 2-2, -0.00u (too few for a rate)
+  - game: n=4: 2-2, -0.00u (too few for a rate)
 - **NFL previous** (Our first NFL rule; 2026-09-17..2026-09-21): n=10: 7-3, -0.26u (too few for a rate)
   - game: n=10: 7-3, -0.26u (too few for a rate)
 - **MMA current** (Our UFC card; 2026-09-22..2026-10-03): n=9: 8-1, +4.80u (too few for a rate)
@@ -151,9 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-10-18: eight briefs published today, one model reading each, all markets passed in every game.
-- Morning: Steelers at Buccaneers, Ravens at Browns, Panthers at Eagles. 11:00 am PT run: Cardinals at Rams, Bills at Raiders, Chargers at Chiefs, ALCS Game 5 Rays at Guardians.
-- 1:30 pm PT run: Cowboys at Packers (night game) frozen 20:45Z, clean on attempt 2 after a re-answer given only the checker's rejection line.
-- Graded so far: Ravens at Browns and Panthers at Eagles (passes, nothing staked). Public sample stays on the graded ALCS Game 4 brief.
-- Public MLB value picks remain paused. Daily job red on the known tier-ladder check (owner decision); a production deploy has been stuck 90+ min. Sends 0, replies 0, testers 0, paid 0.
+- 2026-10-19: all seven 2026-10-18 NFL briefs graded (every market passed, nothing staked); ALCS Game 5 brief graded.
+- Public sample now points at the graded ALCS Game 5 brief (Rays at Guardians, 2026-10-18).
+- Next briefs: Monday night Commanders at 49ers (5:15 pm PT) and ALCS Game 6 Guardians at Rays (5:08 pm PT), both in the 1:30 pm PT run.
+- Production deploy timeout applied by the owner; deploys green since. Daily job still red on the known tier-ladder check (owner decision).
+- Public MLB value picks remain paused. Sends 0, replies 0, testers 0, paid 0.
 
