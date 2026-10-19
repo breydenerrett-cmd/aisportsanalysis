@@ -108,7 +108,7 @@ def lookup(hound_id: str) -> tuple:
         if data is not None:
             return STATE_OK, info_from_summary(to_json(data.summary))
         return STATE_UNKNOWN, None
-    for source in (stats.saved_payload("leaderboard"), stats.saved_payload("graveyard")):
+    for source in (stats.saved_payload("leaderboard", season="all"), stats.saved_payload("graveyard")):
         for entry in (source or {}).get("hounds") or []:
             if isinstance(entry, Mapping) and entry.get("id") == hound_id:
                 return STATE_OK, info_from_summary(entry)

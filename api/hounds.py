@@ -5,16 +5,23 @@ Read-only GET routes only (creating a user hound is ``api/hounds_create.py``).
 Every payload carries ``paper_only: true`` and the not-advice line
 (``src.hounds.contract.envelope``).
 
-    GET /hounds                      the leaderboard (running + benched hounds)
+    GET /hounds?season=s2|s1|all     the leaderboard (running + benched hounds) for one season (default s2)
     GET /hounds/graveyard            retired hounds, each with its cause
     GET /hounds/digest               the daily Discord post, built by code from the leaderboard
     GET /hounds/stream?page=         newest decisions across all hounds, with
                                      refusals marked as such
-    GET /hounds/series?ids=a,b,c     cumulative-units series for line charts
-    GET /hounds/{id}                 one hound: summary, series, first page of bets
-    GET /hounds/{id}/bets?page=      that hound's bets, newest first
+    GET /hounds/series?ids=a,b,c     cumulative-units series for line charts (``&season=`` as above)
+    GET /hounds/{id}?season=         one hound: summary, series, first page of bets (default s2)
+    GET /hounds/{id}/bets?page=      that hound's bets, newest first (``&season=`` filters; absent = all-time)
     GET /hounds/{id}/desk            an AI desk hound's published games (empty before the first publish)
     GET /hounds/{id}/desk/{game}     how the desk argued that game: its transcript and disagreement table
+
+SEASONS (config/seasons.json, src/hounds/seasons.py). A season is a date window over the forward bets: the
+record, units, CLV, typical price, last ten and streak a summary carries are worked out from the bets in that
+window only (the same ``stats.summarize`` over the windowed bets), while the referee's badge, the status and
+the retirement stay all-time. ``?season=`` takes a configured id or ``all``; absent means the newest season
+(s2) on every route but ``/bets``, where absent means every bet; anything else is a 422. Each season-aware
+payload carries a ``season`` block, and the saved copy is kept per season.
 
 Static paths are declared before ``/hounds/{id}`` so ``stream``, ``graveyard``
 and ``series`` are never read as hound ids. In the real app
@@ -43,7 +50,7 @@ from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query, Response
 
-from src.hounds import desk_view, digest as digest_mod, stats, user_view
+from src.hounds import desk_view, digest as digest_mod, seasons, stats, user_view
 from src.hounds.contract import (
     DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, bets_payload, filter_by_status, graveyard_payload,
     hound_payload, leaderboard_payload, paginate, series_payload,
@@ -54,6 +61,17 @@ router = APIRouter()
 _CACHE_HEADER = "public, max-age=60"
 _NO_STORE = "no-store"
 MAX_SERIES_IDS = 12
+
+
+def _season(value: Optional[str], default: Optional[str] = None) -> str:
+    """The season id ``?season=`` means. Absent: ``default`` (the newest season unless the route says
+    otherwise). Not a configured id and not ``all``: 422."""
+    if value is None or not value.strip():
+        return default if default is not None else seasons.default_id()
+    sid = seasons.resolve(value)
+    if sid is None:
+        raise HTTPException(status_code=422, detail="season must be one of: " + ", ".join(seasons.ids() + [seasons.ALL]))
+    return sid
 
 
 def _book(response: Response):
@@ -72,11 +90,13 @@ def _book(response: Response):
 
 
 @router.get("/hounds")
-def leaderboard(response: Response):
+def leaderboard(response: Response, season: Optional[str] = Query(None, max_length=16)):
+    sid = _season(season)
     book, warming = _book(response)
     if warming:
-        return stats.saved_payload("leaderboard") or warming_payload({"hounds": []})
-    return leaderboard_payload(stats.leaderboard(book), book.as_of)
+        return stats.saved_payload("leaderboard", season=sid) or warming_payload(
+            {"hounds": [], "season": seasons.meta(sid)})
+    return leaderboard_payload(stats.leaderboard(book, sid), book.as_of, seasons.meta(sid))
 
 
 @router.get("/hounds/graveyard")
@@ -98,10 +118,11 @@ def digest(response: Response):
     except HTTPException:
         return digest_mod.skip_payload()
     coach_line = _coach_digest_line()
+    sid = seasons.default_id()      # the post names the dogs of the current season (hot / cold picks use only ranked ones)
     if warming:
-        return digest_mod.digest(stats.saved_payload("leaderboard"), stats.saved_payload("graveyard"),
+        return digest_mod.digest(stats.saved_payload("leaderboard", season=sid), stats.saved_payload("graveyard"),
                                  coach_line=coach_line)
-    return digest_mod.digest(leaderboard_payload(stats.leaderboard(book), book.as_of),
+    return digest_mod.digest(leaderboard_payload(stats.leaderboard(book, sid), book.as_of, seasons.meta(sid)),
                              graveyard_payload(stats.graveyard(book), book.as_of),
                              window=digest_mod.week_stats(book.hounds, book.as_of), coach_line=coach_line)
 
@@ -127,51 +148,62 @@ def stream(response: Response, page: int = Query(1, ge=1),
 
 
 @router.get("/hounds/series")
-def series(response: Response, ids: str = Query("", max_length=2000)):
+def series(response: Response, ids: str = Query("", max_length=2000),
+           season: Optional[str] = Query(None, max_length=16)):
+    sid = _season(season)
     book, warming = _book(response)
     wanted = [i.strip() for i in ids.split(",") if i.strip()][:MAX_SERIES_IDS]
     if warming:
-        return stats.saved_payload("series", ids=wanted) or warming_payload({"series": {}})
+        return stats.saved_payload("series", ids=wanted, season=sid) or warming_payload(
+            {"series": {}, "season": seasons.meta(sid)})
     stats.note_series_request([i for i in wanted if i in book.hounds])
-    out = {i: book.hounds[i].series for i in wanted if i in book.hounds}
-    return series_payload(out, book.as_of)
+    out = {i: book.hounds[i].view(sid).series for i in wanted if i in book.hounds}
+    return series_payload(out, book.as_of, seasons.meta(sid))
 
 
 @router.get("/hounds/{hound_id}")
-def hound(hound_id: str, response: Response):
+def hound(hound_id: str, response: Response, season: Optional[str] = Query(None, max_length=16)):
+    sid = _season(season)
     book, warming = _book(response)
     if warming:
-        return warming_payload({"id": hound_id})
+        return warming_payload({"id": hound_id, "season": seasons.meta(sid)})
     data = book.hounds.get(hound_id)
     if data is None:
         # A user hound created after the cached book was built: the person who made it is sent
         # straight to its page, which must not 404 for the few seconds until the rebuild lands.
-        payload = user_view.detail(hound_id)
+        payload = user_view.detail(hound_id, season=sid)
         if payload is None:
             raise HTTPException(status_code=404, detail="no such hound")
         return payload
-    page = paginate(data.bets, 1, DEFAULT_PAGE_SIZE)
-    return hound_payload(data.summary, data.series, page, book.as_of)
+    view = data.view(sid)
+    page = paginate(view.bets, 1, DEFAULT_PAGE_SIZE)
+    return hound_payload(view.summary, view.series, page, book.as_of, seasons.meta(sid))
 
 
 @router.get("/hounds/{hound_id}/bets")
 def hound_bets(hound_id: str, response: Response, page: int = Query(1, ge=1),
                page_size: int = Query(DEFAULT_PAGE_SIZE, ge=1, le=MAX_PAGE_SIZE),
                segment: Optional[str] = Query(None, pattern="^(forward|replay)$"),
-               status: Optional[str] = Query(None, pattern="^(open|graded)$")):
+               status: Optional[str] = Query(None, pattern="^(open|graded)$"),
+               season: Optional[str] = Query(None, max_length=16)):
+    # Unlike the other routes, no ``season`` here means EVERY bet: a ticket list is a record, and the model
+    # page narrows it with a season chip.
+    sid = _season(season, default=seasons.ALL)
     book, warming = _book(response)
     if warming:
         return warming_payload({"hound_id": hound_id, "items": [], "page": page,
-                                "page_size": page_size, "total": 0, "pages": 1})
+                                "page_size": page_size, "total": 0, "pages": 1, "season": seasons.meta(sid)})
     data = book.hounds.get(hound_id)
     if data is None:
-        payload = user_view.bets_for(hound_id, page=page, page_size=page_size, segment=segment, status=status)
+        payload = user_view.bets_for(hound_id, page=page, page_size=page_size, segment=segment, status=status,
+                                     season=sid)
         if payload is None:
             raise HTTPException(status_code=404, detail="no such hound")
         return payload
-    rows = data.bets if segment is None else [b for b in data.bets if b.segment == segment]
+    view = data.view(sid)
+    rows = view.bets if segment is None else [b for b in view.bets if b.segment == segment]
     rows = filter_by_status(rows, status)
-    return bets_payload(hound_id, paginate(rows, page, page_size), book.as_of)
+    return bets_payload(hound_id, paginate(rows, page, page_size), book.as_of, seasons.meta(sid))
 
 
 # ---- the AI desk: how it argued ---------------------------------------------------------------------------

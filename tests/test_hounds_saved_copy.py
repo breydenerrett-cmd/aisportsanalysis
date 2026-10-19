@@ -148,7 +148,7 @@ class WritingTheCopy(SavedCopyBase):
             self.assertFalse([k for k in keys if banned in k], banned)
         for banned in ("sha256", "Bearer ", "APP_DB_PATH", str(self._tmp.name)):
             self.assertNotIn(banned, text)
-        self.assertEqual(set(json.loads(text)), {"version", "built_utc", "leaderboard", "graveyard", "stream", "series"})
+        self.assertEqual(set(json.loads(text)), {"version", "built_utc", "graveyard", "stream", "views"})
 
     def test_a_file_over_2_mb_is_refused_and_said_once(self):
         book = self.built()
@@ -232,7 +232,7 @@ class ReadingTheCopy(SavedCopyBase):
     def test_a_series_request_the_copy_cannot_fully_answer_is_not_answered_in_part(self):
         book = self.built()
         stats.write_snapshot(book)
-        have = list(json.loads(self.path.read_text(encoding="utf-8"))["series"]["series"])
+        have = list(json.loads(self.path.read_text(encoding="utf-8"))["views"]["all"]["series"]["series"])
         out = stats.saved_payload("series", ids=have[:1])
         self.assertEqual(list(out["series"]), have[:1])
         self.assertIsNone(stats.saved_payload("series", ids=have[:1] + ["never-saved"]))

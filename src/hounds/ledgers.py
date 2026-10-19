@@ -181,6 +181,9 @@ class Sources:
                  self.house_hounds_cfg, self.house_pack_cfg]
         if self.house_desk_cfg is not None:
             paths.append(self.house_desk_cfg)
+        # the seasons file: moving a season's dates must rebuild the per-season figures
+        from src.hounds import seasons
+        paths.append(seasons.config_path())
         paths += [p for _, p in self.pack_ledgers]
         if self.card_v2 is not None:
             paths.append(self.card_v2)
