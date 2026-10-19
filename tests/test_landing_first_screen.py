@@ -316,9 +316,10 @@ class OneFooter(unittest.TestCase):
 
     def test_every_footer_link_and_sentence_is_still_there(self):
         footer = re.search(r"<footer\b.*?</footer>", MARKUP, re.S).group(0)
-        for href in ('href="hounds.html"', 'href="#desk"', 'href="#pricing"', 'href="#faq"',
-                     'href="index.html#/betcheck"'):
+        for href in ('href="hounds.html"', 'href="#desk"', 'href="#pricing"', 'href="#faq"'):
             self.assertIn(href, footer, href)
+        self.assertNotIn("betcheck", re.sub(r"<!--.*?-->", "", footer, flags=re.S).lower(),
+                         "Bet Check is never advertised on the landing page (owner ruling)")
         text = _visible(footer)
         self.assertIn("About the data on this page", text)
         self.assertIn("live results from our public ledger", text)

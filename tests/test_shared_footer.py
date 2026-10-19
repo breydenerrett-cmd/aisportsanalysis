@@ -132,6 +132,12 @@ class FooterMatchesTheRedesign(unittest.TestCase):
         self.assertIn('"data-hook": "footer-betcheck"', self.code)
         self.assertIn('route("#/betcheck")', self.code)
 
+    def test_the_bet_check_link_is_not_shown_to_a_signed_out_visitor(self):
+        # Owner ruling 2026-09-22: Bet Check is never advertised. This footer is the one on the
+        # landing, sign-in and signup pages, so the link is hidden until a token is stored (the
+        # same rule as Billing and Change password); the route and a member's link stay.
+        self.assertIn("betCheckLink.hidden = !getToken();", self.code)
+
     def test_every_existing_footer_hook_is_kept(self):
         for hook in ("footer-support", "footer-record", "footer-performance", "footer-props"):
             self.assertIn(f'"data-hook": "{hook}"', self.code,

@@ -166,10 +166,12 @@ class EveryCtaGoesWhereItPromises(unittest.TestCase):
             r'<a[^>]*href="([^"]+)"[^>]*data-hook="(cta[^"]*)"[^>]*>([^<]*)<',
             self.html)
 
-    def test_the_page_links_to_the_free_check_at_all(self):
-        self.assertIn("#/betcheck", self.html,
-                      "the landing page never links to the free Bet Check "
-                      "it spends four buttons advertising")
+    def test_the_page_does_not_link_to_bet_check_at_all(self):
+        """Owner ruling (2026-09-22, enforced on the footer 2026-10-19): Bet Check is
+        never advertised, so no link on the landing page may point at it. This test
+        used to demand the opposite while the page spent four buttons on it."""
+        hrefs = re.findall(r'href="([^"]*)"', self.html)
+        self.assertEqual([], [h for h in hrefs if "betcheck" in h.lower()])
 
     def test_bet_check_buttons_go_to_bet_check(self):
         wrong = [(hook, href) for href, hook, text in self.links
