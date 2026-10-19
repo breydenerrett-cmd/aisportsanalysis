@@ -113,6 +113,12 @@
   <div data-hook="learning-lessons"><p class="hd-muted">Loading the lessons...</p></div>
 </section>
 
+<section class="hd-panel" aria-labelledby="breeding-h" data-hook="learning-breeding-section">
+  <h2 id="breeding-h">Breeding program</h2>
+  <p class="hd-muted">Every three days the best models with 25+ real bets are crossed into new rookies, and the worst with 40+ bets are cut or replaced. Babies start at 0-0 and race on new games; only the referee promotes. Rules: <code>docs/PREREG_BREEDING.md</code>.</p>
+  <div data-hook="learning-breeding"><p class="hd-muted">Loading the family tree...</p></div>
+</section>
+
 </main>
 
 <footer class="hd-foot" data-hook="learning-footer" aria-label="disclaimer">
@@ -123,5 +129,6 @@
 
 <script type="module" src="js/hounds-learning.js"></script>
 <script type="module" src="js/dog-camp.js"></script>
+<script type="module">import { renderBreeding } from "./js/breeding.js"; renderBreeding(document.querySelector("[data-hook='learning-breeding']"));</script>
 </body>
 </html>
