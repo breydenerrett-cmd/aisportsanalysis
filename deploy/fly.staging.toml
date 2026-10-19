@@ -40,6 +40,14 @@ primary_region = "iad"  # US East -- change to whatever region the volume
   # (src/providers/odds.py DEFAULT_MARKETS), so serving them costs no credits.
   # docs/decisions/RUNLINE_TOTALS.md. "off" (or removing the line) hides them again.
   RUNLINE_TOTALS = "on"
+  # USER DOGS BET (2026-10-19). The dogs people build (web/build-a-hound.html) only place paper bets while
+  # this loop runs (src/hounds/user_runner.py, started at app boot, one pass every 15 minutes, under the
+  # one-build-at-a-time gate). Measured 2026-10-19 over 50 fixture dogs (20 classic, 30 rule-set with
+  # conditions and player props), streaming the stores: a pass grows the process by about 25 MB on a
+  # 4-game slate and about 57 MB on a synthetic 16-game slate (peak process 55 and 88 MB in a bare
+  # interpreter; the 2026-10-01 incident was whole-store reads, which this pass does not do). "off" (or
+  # removing the line) stops every user dog from betting; their records stay.
+  HOUNDS_ENGINE = "on"
   # Origin Stripe hosted Checkout redirects the browser back to
   # (src/appstate/billing.py's _public_base_url). Non-secret -- it is the
   # public hostname of this very app -- so it belongs here rather than in

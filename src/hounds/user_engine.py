@@ -60,7 +60,7 @@ from typing import Any, Callable, Iterable, Mapping, Optional, Sequence
 
 from src import paths
 from src.core import odds as odds_math
-from src.hounds import user_spec
+from src.hounds import user_rules, user_spec
 from src.ledger.chain import HashChainLedger
 
 LEDGER = os.path.join("evidence", "hounds_user_v1.jsonl")
@@ -73,7 +73,7 @@ MAX_BOARD_AGE_MINUTES = 75
 # A moneyline (or an unchanged line) must move by this much de-vigged win probability to count.
 MOVE_PROBABILITY = 0.005
 
-MARKET_ORDER = {m: i for i, m in enumerate(user_spec.MARKETS)}
+MARKET_ORDER = {m: i for i, m in enumerate(user_rules.ALL_MARKETS)}
 _ROW_MARKET = {None: "moneyline", "h2h": "moneyline", "spreads": "spread", "totals": "total"}
 
 
@@ -287,7 +287,16 @@ class GameBoards:
         self.away_team: Optional[str] = None
         self.commence: Optional[datetime] = None
         self.captures: dict = defaultdict(lambda: defaultdict(list))   # market -> observed -> rows
+        self.props: dict = defaultdict(lambda: defaultdict(list))      # prop market -> observed -> rows
         self._commence_by_obs: dict = {}
+
+    def add_prop(self, market: str, observed: datetime, row: Mapping) -> None:
+        self.props[market][observed].append(row)
+        self.home_team = row.get("home_team") or self.home_team
+        self.away_team = row.get("away_team") or self.away_team
+        c = _utc(row.get("commence_time"))
+        if c is not None:
+            self._commence_by_obs[observed] = c
 
     def add(self, market: str, observed: datetime, row: Mapping) -> None:
         self.captures[market][observed].append(row)
@@ -439,10 +448,17 @@ def contract_fields(row: Mapping, spec: Mapping, mode: str) -> dict:
         what = f"the {side}"
     else:
         what = f"the {side} side"
-    reason = (f"Rule: {user_spec.SIDE_LABELS[spec['side_rule']].lower()}. It backed {what} "
-              f"({row['selection']}) at the board average of {_fmt_price(row['price'])} across "
-              f"{row['n_books']} books; the best single price was {_fmt_price(row['best_price'])} "
-              f"at {row['best_book']}.")
+    if user_spec.is_v2(spec):
+        from src.hounds.english import render
+        rule = spec["rules"][row["rule_index"]]
+        reason = (f"Rule {row['rule_index'] + 1}: {render.rule_sentence(rule)} It backed {row['selection']} "
+                  f"at the board average of {_fmt_price(row['price'])} across {row['n_books']} books; the best "
+                  f"single price was {_fmt_price(row['best_price'])} at {row['best_book']}.")
+    else:
+        reason = (f"Rule: {user_spec.SIDE_LABELS[spec['side_rule']].lower()}. It backed {what} "
+                  f"({row['selection']}) at the board average of {_fmt_price(row['price'])} across "
+                  f"{row['n_books']} books; the best single price was {_fmt_price(row['best_price'])} "
+                  f"at {row['best_book']}.")
     return {
         "date": row["slate_date"], "price_average": row["price"], "price_best": row["best_price"],
         "book": row["best_book"], "book_count": row["n_books"], "start_utc": row["commence_time"],
@@ -527,13 +543,18 @@ def ledger_verified(path: Optional[str] = None) -> bool:
 def run(date: str, hounds: Sequence[Mapping], rows: Iterable[Mapping], *,
         ledger: Optional[str] = None, now: Optional[datetime] = None, mode: str = "live",
         game_pk_index: Optional[Mapping] = None,
-        clock: Optional[Callable[[], datetime]] = None) -> dict:
+        clock: Optional[Callable[[], datetime]] = None,
+        prop_rows: Optional[Iterable[Mapping]] = None, facts: Any = None) -> dict:
     """Write the paper bets the running `hounds` make on slate `date`. See the module docstring.
 
     hounds: [{'id', 'spec', 'created_at'}]. rows: raw multibook rows (any superset of the date).
     mode: 'live' enforces lock <= now < start and ignores games a hound did not yet exist for;
     'replay' backfills a past date at each game's own lock instant, tags rows 'replay', and is meant
-    for a scratch ledger. `now`/`clock` are injectable for tests."""
+    for a scratch ledger. `now`/`clock` are injectable for tests.
+
+    prop_rows / facts: only version-2 hounds use them. ``prop_rows`` are stored prop rows for the
+    date (default: streamed from the stores, and only when some hound has a prop rule); ``facts`` is
+    a `user_facts.FactBook` (default: one over the repository stores, read lazily)."""
     if mode not in ("live", "replay"):
         raise ValueError("mode must be 'live' or 'replay'")
     clock = clock or (lambda: now if now is not None else datetime.now(timezone.utc))
@@ -542,7 +563,17 @@ def run(date: str, hounds: Sequence[Mapping], rows: Iterable[Mapping], *,
     seen_ids = {r["bet_id"] for r in existing if r.get("kind") == KIND_BET}
     per_day: Counter = Counter((r["hound_id"], r["slate_date"]) for r in existing
                                if r.get("kind") == KIND_BET)
-    games = {eid: g for eid, g in build_games(rows, near_date=date).items()
+    all_games = build_games(rows, near_date=date)
+    v2_hounds = [h for h in hounds if user_spec.is_v2(h["spec"])]
+    if v2_hounds:
+        from src.hounds import user_engine_v2 as v2
+        if any(user_rules.market_kind(m) == "prop" for h in v2_hounds
+               for r in h["spec"]["rules"] for m in r["markets"]):
+            v2.add_prop_rows(all_games, prop_rows if prop_rows is not None else v2.iter_prop_rows(date))
+        if facts is None:
+            from src.hounds.user_facts import FactBook
+            facts = FactBook.from_stores(date)
+    games = {eid: g for eid, g in all_games.items()
              if g.commence is not None and slate_date_of(g.commence) == date}
     skipped: Counter = Counter()
     written_by: Counter = Counter()
@@ -555,35 +586,40 @@ def run(date: str, hounds: Sequence[Mapping], rows: Iterable[Mapping], *,
         spec = hound["spec"]
         created = _utc(hound.get("created_at"))
         candidates = []
-        for event_id, game in games.items():
-            if game.sport not in spec["sports"]:
-                continue
-            commence = game.commence
-            lock_utc = commence - timedelta(minutes=spec["lock_minutes"])
-            for market in spec["markets"]:
-                bet_id = bet_id_for(hound["id"], event_id, market)
-                if bet_id in seen_ids:
+        if user_spec.is_v2(spec):
+            candidates = v2.hound_candidates(hound, spec, games, facts, date, mode=mode, clock=clock,
+                                             seen_ids=seen_ids, game_pk_index=game_pk_index,
+                                             skipped=skipped, considered=considered)
+        else:
+            for event_id, game in games.items():
+                if game.sport not in spec["sports"]:
                     continue
-                if mode == "live":
-                    t = clock()
-                    if t >= commence:
-                        skipped["game_started"] += 1
+                commence = game.commence
+                lock_utc = commence - timedelta(minutes=spec["lock_minutes"])
+                for market in spec["markets"]:
+                    bet_id = bet_id_for(hound["id"], event_id, market)
+                    if bet_id in seen_ids:
                         continue
-                    if t < lock_utc:
-                        skipped["not_locked_yet"] += 1
+                    if mode == "live":
+                        t = clock()
+                        if t >= commence:
+                            skipped["game_started"] += 1
+                            continue
+                        if t < lock_utc:
+                            skipped["not_locked_yet"] += 1
+                            continue
+                        if created is not None and created > lock_utc:
+                            skipped["hound_created_after_lock"] += 1
+                            continue
+                    considered.setdefault(hound["id"], set()).add(event_id)
+                    cand, reason = evaluate(spec, game, market, lock_utc, commence)
+                    if cand is None:
+                        skipped[reason] += 1
                         continue
-                    if created is not None and created > lock_utc:
-                        skipped["hound_created_after_lock"] += 1
-                        continue
-                considered.setdefault(hound["id"], set()).add(event_id)
-                cand, reason = evaluate(spec, game, market, lock_utc, commence)
-                if cand is None:
-                    skipped[reason] += 1
-                    continue
-                candidates.append((lock_utc, event_id, MARKET_ORDER[market], market, game,
-                                   commence, cand, bet_id))
-        candidates.sort(key=lambda c: (c[0], c[1], c[2]))
-        for lock_utc, event_id, _o, market, game, commence, cand, bet_id in candidates:
+                    candidates.append(((lock_utc, event_id, MARKET_ORDER[market]), lock_utc, event_id,
+                                       market, game, commence, cand, bet_id))
+        candidates.sort(key=lambda c: c[0])
+        for _key, lock_utc, event_id, market, game, commence, cand, bet_id in candidates:
             if per_day[(hound["id"], date)] >= spec["max_bets_per_day"]:
                 skipped["daily_limit"] += 1
                 continue
@@ -612,6 +648,11 @@ def run(date: str, hounds: Sequence[Mapping], rows: Iterable[Mapping], *,
                 "board_age_minutes": cand["board_age_minutes"], "units": 1,
                 "recorded_utc": _iso(t), "provenance": mode,
             }
+            if user_spec.is_v2(spec):
+                # A version-2 bet also names its player (props), the rule that made it and its paper stake.
+                row.update({"player": cand.get("player"), "rule_index": cand["rule_index"],
+                            "stake_units": spec["stake_units"], "units": spec["stake_units"],
+                            "spec_version": user_spec.SPEC_VERSION_V2})
             row.update(contract_fields(row, spec, mode))
             # The learning loop's shadow challengers stamp ``role``, ``challenger_id`` and the parent
             # (src/hounds/learning); a plain hound has no ``row_extra`` and its row is unchanged.

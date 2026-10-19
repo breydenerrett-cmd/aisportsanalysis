@@ -235,6 +235,11 @@ def suggest_copy_name(source_name: str, *, db: Optional[Path] = None) -> str:
 
 def _insert(conn, *, hound_id, owner, spec, status, created_at, version_of, root_id, version_no,
             copied_from, coach_opt_in) -> None:
+    # The Houndmaster coach proposes version-1 specs and diffs their fixed fields; it has no way to
+    # read or narrow a rule set. A version-2 hound therefore cannot be opted in (the one place that
+    # enforces it, so a copy, an edit or a direct call all land the same way).
+    if user_spec.is_v2(spec):
+        coach_opt_in = False
     conn.execute(
         "INSERT INTO hounds (id, owner_user_id, name, name_key, tagline, spec_json, spec_hash, "
         "status, created_at, version_of, root_id, version_no, copied_from, coach_opt_in) "
@@ -337,6 +342,11 @@ def retire_hound(hound_id: str, *, by: str, reason: str, now: Optional[datetime]
 
 
 def set_coach_opt_in(hound_id: str, enabled: bool, *, db: Optional[Path] = None) -> dict:
+    if enabled:
+        current = get_hound(hound_id, db=db)
+        if current is not None and user_spec.is_v2(current["spec"]):
+            raise StoreError("coach_unsupported", "the Houndmaster coach works on classic dogs only; "
+                                                  "dogs with custom rules are edited by their owner")
     with _connect(db) as conn:
         cur = conn.execute("UPDATE hounds SET coach_opt_in = ? WHERE id = ?",
                            (1 if enabled else 0, hound_id))
