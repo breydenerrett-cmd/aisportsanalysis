@@ -1476,9 +1476,12 @@ class ThePagesUnderNode(unittest.TestCase):
         self.assertIn({"url": "/billing/status", "method": "GET",
                        "auth": "Bearer old-tester-token"}, out["calls"])
 
-    def test_saving_a_wrong_token_says_exactly_what_it_always_said(self):
+    def test_saving_a_wrong_token_is_refused_in_plain_words_not_reported_as_saved(self):
+        # 2026-10-19: the old page said "saved" for any text, so an admin password pasted here looked like a
+        # sign-in and changed nothing. The server is asked first; a plain 401 is a refusal.
         out = self.run_scenario(kind="signin", meta=OFF, status=PLAIN_401, submit="typo")
-        self.assertEqual(out["status"], "Access code saved. Open Today to load the board.")
+        self.assertTrue(out["status"].startswith("That code wasn't accepted."), out["status"])
+        self.assertIn("admin password goes on the admin page", out["status"])
         self.assertIsNone(out["ended"])
 
     def test_clearing_the_token_removes_the_ended_state(self):

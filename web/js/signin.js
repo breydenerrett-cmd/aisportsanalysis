@@ -67,6 +67,22 @@ export async function expiredTesterState() {
   }
 }
 
+/**
+ * What the server says about the stored token: "ok" (it authenticates), "rejected" (401), or "offline"
+ * (anything else: the server could not be asked). The expired-tester 401 is handled before this by
+ * expiredTesterState().
+ */
+export async function accessCodeVerdict() {
+  if (!getToken()) return "rejected";
+  try {
+    await apiGet("/billing/status");
+    return "ok";
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 401) return "rejected";
+    return "offline";
+  }
+}
+
 /** localStorage key remembering that the "set a password" card was shown on this
  * device. Per-viewer convenience only: nothing depends on it being readable. */
 export const PASSWORD_CARD_SEEN_KEY = "linehound.password_card_seen";
@@ -483,16 +499,37 @@ export async function renderSignin(container, query = {}) {
 
   panel.addEventListener("submit", async (event) => {
     event.preventDefault();
-    setToken(input.value.trim());
-    status.textContent = "Access code saved. Open Today to load the board.";
-    // The board cannot load for an ended tester token: say so here, once,
-    // instead of leaving "open Today" to dead-end at the gate.
+    const code = input.value.trim();
+    if (!code) {
+      status.textContent = "Paste your access code first.";
+      return;
+    }
+    setToken(code);
+    status.textContent = "Checking your access code...";
+    // Ask the server before saying anything (2026-10-19: "Save token" used to report success for any
+    // text, so an admin password pasted here looked like a sign-in and changed nothing).
+    // The board cannot load for an ended tester token: say so here, once.
     if (await showExpiredTester()) {
       status.textContent = "Access code saved.";
-    } else {
-      refreshAccount();
-      offerPasswordCard();
+      return;
     }
+    const verdict = await accessCodeVerdict();
+    if (verdict === "rejected") {
+      clearToken();
+      status.textContent = "That code wasn't accepted. Access codes are long (about 40 characters) and come from "
+        + "LineHound. Your admin password goes on the admin page, not here.";
+      return;
+    }
+    if (verdict === "offline") {
+      status.textContent = "Couldn't reach LineHound to check the code. It's saved on this device; try the board in a minute.";
+      return;
+    }
+    status.textContent = "";
+    status.appendChild(el("span", { text: "You're signed in. " }));
+    status.appendChild(el("a", { href: safeNext(query.next), "data-hook": "signin-go-board",
+                                 text: "Go to tonight's board →" }));
+    refreshAccount();
+    offerPasswordCard();
   });
   clearButton.addEventListener("click", () => {
     clearToken();
