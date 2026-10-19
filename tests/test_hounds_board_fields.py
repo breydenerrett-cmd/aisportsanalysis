@@ -8,10 +8,14 @@ in the comments. Everything here is synthetic.
 from __future__ import annotations
 
 import unittest
+from datetime import datetime, timezone
 
 from src.hounds import contract, stats
 from src.hounds.contract import filter_by_status
 from tests.test_hounds_voice import mkbet
+
+
+NOW = datetime(2026, 10, 18, 12, 0, tzinfo=timezone.utc)    # a fixed clock: whether a ticket is stale is time-dependent
 
 
 def form_of(bets, as_of="2026-10-18"):
@@ -73,23 +77,24 @@ class OpenTicketCount(unittest.TestCase):
 
     def test_a_model_with_only_open_tickets_counts_them_and_has_no_graded_record(self):
         bets = [mkbet("2026-10-18", None), mkbet("2026-10-18", None)]
-        summary = stats.summarize(self.DEFN, bets, {}, "2026-10-18").summary
+        summary = stats.summarize(self.DEFN, bets, {}, "2026-10-18", now=NOW).summary
         self.assertEqual(summary.open_bets, 2)
         self.assertEqual(summary.record.bets, 0)
 
     def test_graded_tickets_are_not_open_and_replay_never_counts(self):
         bets = [mkbet("2026-10-17", "win"), mkbet("2026-10-18", None), mkbet("2026-10-18", None, segment="replay")]
-        summary = stats.summarize(self.DEFN, bets, {}, "2026-10-18").summary
+        summary = stats.summarize(self.DEFN, bets, {}, "2026-10-18", now=NOW).summary
         self.assertEqual((summary.open_bets, summary.record.bets), (1, 1))
 
 
 class OpenAndGradedFilter(unittest.TestCase):
     def test_open_is_not_yet_graded_and_graded_is_the_rest(self):
         rows = [stats.bet_row(mkbet("2026-10-10", r), None) for r in ("win", None, "loss", None)]
-        self.assertEqual(len(filter_by_status(rows, "open")), 2)
-        self.assertEqual(len(filter_by_status(rows, "graded")), 2)
-        self.assertEqual(len(filter_by_status(rows, None)), 4)
-        self.assertTrue(all(r.result is None for r in filter_by_status(rows, "open")))
+        now = datetime(2026, 10, 10, 12, 0, tzinfo=timezone.utc)      # the slate day itself: not stale
+        self.assertEqual(len(filter_by_status(rows, "open", now)), 2)
+        self.assertEqual(len(filter_by_status(rows, "graded", now)), 2)
+        self.assertEqual(len(filter_by_status(rows, None, now)), 4)
+        self.assertTrue(all(r.result is None for r in filter_by_status(rows, "open", now)))
 
 
 if __name__ == "__main__":

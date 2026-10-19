@@ -44,9 +44,9 @@ from src.core import odds as odds_math
 from src.hounds import boards, house, ledgers, verdict as vd
 from src.hounds.contract import (
     BetRow, ClvBlock, DEFAULT_PAGE_SIZE, HoundSummary, KIND_BASELINE, Record, ReplayBlock,
-    RetiredBlock, SeriesPoint, SPARK_POINTS, STATUS_NOT_STARTED, StreamItem, VerdictBlock,
-    WARMING_RETRY_SECONDS, graveyard_payload, leaderboard_payload, paginate, series_payload,
-    stream_payload)
+    RetiredBlock, SeriesPoint, SPARK_POINTS, STATUS_NOT_STARTED, StreamItem, TICKET_OPEN,
+    TICKET_UNGRADED, VerdictBlock, WARMING_RETRY_SECONDS, graveyard_payload, leaderboard_payload,
+    paginate, series_payload, stream_payload, ticket_status)
 from src.hounds.ledgers import Bet, Sources
 from src.report import clv
 
@@ -362,7 +362,13 @@ def compute_form(fgraded: list, avg_available: bool, as_of: Optional[str], teams
             "last10": last10_results(fgraded), "avg_price": average_price_taken(fgraded)}
 
 
-def summarize(defn: dict, bets: list, teams_of: dict, as_of: Optional[str]) -> HoundData:
+def _ticket_status(bet: Bet, now) -> str:
+    """OPEN | GRADED | UNGRADED for a ledger bet (``contract.ticket_status``)."""
+    return ticket_status(bet.result, bet.start_utc, bet.date, now)
+
+
+def summarize(defn: dict, bets: list, teams_of: dict, as_of: Optional[str], now=None) -> HoundData:
+    """``now`` (a UTC datetime, default the clock) only decides which ungraded forward tickets are stale."""
     forward = [b for b in bets if b.segment == "forward"]
     replay = [b for b in bets if b.segment == "replay"]
     fgraded = sorted((b for b in forward if b.graded),
@@ -456,7 +462,8 @@ def summarize(defn: dict, bets: list, teams_of: dict, as_of: Optional[str]) -> H
         source=defn.get("source", ""),
         persona=defn.get("persona") if isinstance(defn.get("persona"), dict) else None,
         form=compute_form(fgraded, avg_available, as_of, teams_of),
-        open_bets=sum(1 for b in forward if not b.graded))
+        open_bets=sum(1 for b in forward if _ticket_status(b, now) == TICKET_OPEN),
+        ungraded_bets=sum(1 for b in forward if _ticket_status(b, now) == TICKET_UNGRADED))
     if summary.form is not None:
         summary.form["clv_beat"] = clv_beat_share(points)
     rows = sorted(bets, key=lambda b: (b.decision_utc or b.date or "", b.date),

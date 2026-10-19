@@ -77,6 +77,12 @@ export function openBetsOf(hound) {
   return isNum(n) && n > 0 ? n : 0;
 }
 
+/** Forward tickets more than 36 hours past their start with no grade (never counted as open). */
+export function ungradedBetsOf(hound) {
+  const n = hound && hound.ungraded_bets;
+  return isNum(n) && n > 0 ? n : 0;
+}
+
 /** "W3" / "L2" / "" from form.streak. */
 export function streakText(hound) {
   const st = hound && hound.form && hound.form.streak;
@@ -214,7 +220,7 @@ export function splitWarming(hounds) {
 
 // ---- tickets ---------------------------------------------------------------------------------------
 
-export const RESULT_WORDS = { pending: "PENDING", won: "WON", lost: "LOST", push: "PUSH", void: "VOID" };
+export const RESULT_WORDS = { pending: "PENDING", won: "WON", lost: "LOST", push: "PUSH", void: "VOID", ungraded: "UNGRADED" };
 
 /** The ticket's status key from a bet row's `result`. */
 export function ticketStatus(result) {
@@ -224,6 +230,17 @@ export function ticketStatus(result) {
   if (r === "push" || r === "p") return "push";
   if (r === "void" || r === "v") return "void";
   return "pending";
+}
+
+/**
+ * The ticket's status key from the whole ticket: the server's `status` says UNGRADED when the game started more
+ * than 36 hours ago and nothing graded it (src/hounds/contract.py ticket_status); anything else follows `result`.
+ * The page never decides that for itself: a missing `status` (an older payload) reads from `result` alone.
+ */
+export function ticketState(ticket) {
+  const t = ticket || {};
+  if (String(t.status || "").toUpperCase() === "UNGRADED" && ticketStatus(t.result) === "pending") return "ungraded";
+  return ticketStatus(t.result);
 }
 
 function parseMs(value) {
