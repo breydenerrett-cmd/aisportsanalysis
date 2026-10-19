@@ -114,10 +114,12 @@ def post_hook(url: str, payload: Mapping, *, timeout: float = HOOK_TIMEOUT_S,
         return int(getattr(resp, "status", 200))
 
 
-def start(job_id: str, text: str, *, env: Optional[Mapping] = None, poster: Callable = post_hook,
+def start(job_id: str, text: str, *, env: Optional[Mapping] = None, poster: Optional[Callable] = None,
           background: bool = True, db=None) -> Optional[threading.Thread]:
     """Send the request for a job. A failure marks the job `failed` (the person is told and can finish
-    by hand); it never raises into the request that created the job."""
+    by hand); it never raises into the request that created the job. `poster` is looked up at call time
+    so a test can replace `post_hook` on the module."""
+    poster = poster or post_hook
     url = hook_url(env)
     if url is None:
         jobs.finish(job_id, jobs.STATUS_FAILED, error="the translator is not configured", db=db)

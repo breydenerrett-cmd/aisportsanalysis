@@ -519,17 +519,14 @@ LINE_RANGE = (-30.0, 60.0)
 # stale a price may be.
 MAX_PROP_BOARD_AGE_MINUTES = 720
 
-_players_cache: dict = {}
-
 
 def _known_player_fn():
     """A predicate for 'is this a player in our box scores', or None when no box-score store is
     present at all (then names cannot be checked and are accepted if well formed)."""
-    if "fn" not in _players_cache:
-        from src.hounds.user_rules import fold_player
-        names = {fold_player(k) for k, kind in known_real_names().items() if kind == "player"}
-        _players_cache["fn"] = (lambda n: fold_player(n) in names) if names else None
-    return _players_cache["fn"]
+    from src.hounds.user_facts import known_player_keys
+    from src.hounds.user_rules import fold_player
+    names = known_player_keys()
+    return (lambda n: fold_player(n) in names) if names else None
 
 
 def _price_errors(raw: Mapping, errors: dict, prefix: str) -> tuple:
@@ -576,7 +573,7 @@ def _validate_rule(raw: Any, index: int, errors: dict) -> Optional[dict]:
         errors[f"{prefix}label"] = "must be text"
         label = ""
     else:
-        label = _check_tagline({"label": label}, errors, key=f"{prefix}label", maximum=RULE_LABEL_MAX)
+        label = _check_tagline({f"{prefix}label": label}, errors, key=f"{prefix}label", maximum=RULE_LABEL_MAX)
 
     sports = _as_list(raw.get("sports", raw.get("sport")))
     if not sports or any(s not in SPORTS for s in sports) or len(set(sports)) != len(sports):

@@ -8,6 +8,14 @@ WHO CAN DO WHAT
   GET  /hounds/{id}/coach/diary     public    the Houndmaster's rounds and the coach metrics
   POST /hounds                      signed in (paid or early-access tester): create or copy
   GET  /hounds/mine                 signed in: the caller's hounds
+  GET  /hounds/builder/menu         public    everything a custom-rules spec may contain, with bounds
+  POST /hounds/english              public    plain English -> spec draft (the free parser); a signed-in caller
+                                              also gets a Zapier translation job for what it could not read
+  POST /hounds/english/callback     the Zap    X-Zap-Secret header; 404 when no secret is configured
+  GET  /hounds/english/{job_id}     signed in: poll a translation job (its owner only)
+  POST /hounds/builder/preview      public    what a spec would bet on today's board (read-only)
+  POST /hounds/{id}/diff            the owner  plain-English difference before saving an edit
+  POST /hounds/{id}/version         the owner  save an edit as the next version (the old record stays)
   POST /hounds/{id}/retire          the owner, or an admin (X-Admin-Token) for moderation
   POST /hounds/{id}/coach/opt-in    the owner
   POST /hounds/{id}/coach/undo      the owner
@@ -37,15 +45,21 @@ from __future__ import annotations
 
 import hashlib
 import json
+import secrets
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 
-from src.appstate import ratelimit
+from src.appstate import freshness, ratelimit
 from src.appstate import users as users_store
-from src.hounds import user_coach, user_defs, user_engine, user_spec, user_store, user_view
+from src.hounds import user_coach, user_defs, user_engine, user_engine_v2, user_spec, user_store, user_view
+from src.hounds.english import jobs as english_jobs
+from src.hounds.english import parser as english_parser
+from src.hounds.english import render as english_render
+from src.hounds.english import translate as english_translate
 
 from api import auth as auth_mod
 from api.auth import get_current_user, require_paid_access
@@ -73,6 +87,24 @@ COACH_RATE_LIMIT_PER_MIN = 10
 _coach_limiter = ratelimit.FixedWindowLimiter(limit=COACH_RATE_LIMIT_PER_MIN, window_s=60.0)
 _rate_limit_coach = ratelimit.limiter_dependency(_coach_limiter)
 
+# The free parser is cheap but is still an open door; the preview reads the day's boards. By client
+# address, since a signed-out visitor drafts too.
+ENGLISH_RATE_LIMIT_PER_MIN = 30
+_english_limiter = ratelimit.FixedWindowLimiter(limit=ENGLISH_RATE_LIMIT_PER_MIN, window_s=60.0)
+_rate_limit_english = ratelimit.limiter_dependency(_english_limiter)
+PREVIEW_RATE_LIMIT_PER_MIN = 20
+_preview_limiter = ratelimit.FixedWindowLimiter(limit=PREVIEW_RATE_LIMIT_PER_MIN, window_s=60.0)
+_rate_limit_preview = ratelimit.limiter_dependency(_preview_limiter)
+# Each translation is a Zapier task on the owner's plan: a person gets a handful an hour.
+TRANSLATE_PER_USER_PER_HOUR = 8
+_translate_limiter = ratelimit.FixedWindowLimiter(limit=TRANSLATE_PER_USER_PER_HOUR, window_s=3600.0)
+MAX_CALLBACK_BYTES = 64 * 1024
+
+# One slate (the day's boards, facts and game keys) shared by every preview of that date. Building it
+# holds the process-wide build gate (SingleFlightTTLCache does), so a preview is never the second heavy
+# thing running on the 1 GB machine.
+_slate_cache = freshness.SingleFlightTTLCache(ttl_s=120.0, stale_while_revalidate_s=300.0)
+
 
 # ---------------------------------------------------------------------------
 # helpers
@@ -97,13 +129,31 @@ def hound_summary(hound: dict, *, verified: Optional[bool] = None) -> dict:
     ``src.hounds.verdict``); this module computes none of them. ``verified`` in the summary is the referee's (was the recorded price on
     the board at lock); ``ledger_chain_ok`` is this ledger's hash chain, a different question."""
     out = user_view.summary(hound)
+    spec = hound["spec"]
     out.update({
         "ledger_chain_ok": user_engine.ledger_verified() if verified is None else verified,
         "version_no": hound["version_no"], "version_of": hound["version_of"],
         "copied_from": hound["copied_from"], "coach_opt_in": hound["coach_opt_in"],
         "retire_reason": hound["retire_reason"], "created_at": hound["created_at"],
         "paper_only": True, "not_advice": user_spec.NOT_ADVICE,
+        # How the dog looks, and its rules in sentences, wherever a dog is listed.
+        "color": spec.get("color", "ember"), "badge": spec.get("badge", "bone"),
+        "custom_rules": user_spec.is_v2(spec), "root_id": hound["root_id"],
     })
+    return out
+
+
+def owner_summary(hound: dict, *, verified: Optional[bool] = None) -> dict:
+    """The summary plus what the builder needs to open this dog for editing: its spec as a version-2
+    draft (a classic dog is upgraded to the equivalent) and the rules in sentences."""
+    out = hound_summary(hound, verified=verified)
+    draft = hound["spec"] if user_spec.is_v2(hound["spec"]) else user_spec.upgrade_v1(hound["spec"])
+    out["spec"] = draft
+    try:
+        out["rule_sentences"] = (english_render.rule_sentences(draft) + english_render.global_sentences(draft)
+                                 if draft.get("rules") else [])
+    except (KeyError, TypeError):
+        out["rule_sentences"] = []
     return out
 
 
@@ -113,7 +163,8 @@ def _spec_error(exc: user_spec.SpecError) -> HTTPException:
 
 def _store_error(exc: user_store.StoreError) -> HTTPException:
     status = {"limit": 409, "no_account": 403, "account_suspended": 403, "not_found": 404,
-              "unknown_source": 404, "reason_required": 422, "retired": 409}.get(exc.code, 400)
+              "unknown_source": 404, "reason_required": 422, "retired": 409,
+              "coach_unsupported": 409}.get(exc.code, 400)
     return HTTPException(status_code=status, detail={"error": exc.code, "message": str(exc)})
 
 
@@ -169,7 +220,7 @@ def create_hound(body: CreateHoundRequest,
 def my_hounds(current_user: users_store.User = Depends(get_current_user),
               _rl: None = Depends(_rate_limit_read)) -> dict:
     verified = user_engine.ledger_verified()
-    return _wrap({"hounds": [hound_summary(h, verified=verified)
+    return _wrap({"hounds": [owner_summary(h, verified=verified)
                              for h in user_store.list_for_owner(current_user.id)],
                   "limit_running": user_spec.MAX_RUNNING_PER_ACCOUNT})
 
@@ -180,9 +231,14 @@ def hound_spec(hound_id: str, _rl: None = Depends(_rate_limit_read)) -> dict:
     is suggested fresh, because names are unique."""
     hound = _public_hound(hound_id)
     spec = dict(hound["spec"])
-    spec.pop("version", None)
+    if not user_spec.is_v2(spec):
+        spec.pop("version", None)
     spec["name"] = user_store.suggest_copy_name(hound["name"])
-    return _wrap({"spec": spec, "copied_from": hound["id"], "rule_text": user_spec.rule_text(hound["spec"]),
+    draft = hound["spec"] if user_spec.is_v2(hound["spec"]) else user_spec.upgrade_v1(hound["spec"])
+    draft = dict(draft, name=spec["name"])
+    sentences = (english_render.rule_sentences(draft) + english_render.global_sentences(draft)) if draft.get("rules") else []
+    return _wrap({"spec": spec, "draft": draft, "rule_sentences": sentences, "copied_from": hound["id"],
+                  "rule_text": user_spec.rule_text(hound["spec"]),
                   "how": "POST /hounds with {\"spec\": <this spec>, \"copied_from\": <copied_from>}"})
 
 
@@ -244,7 +300,10 @@ def coach_opt_in(hound_id: str, body: OptInRequest,
                  current_user: users_store.User = Depends(get_current_user),
                  _rl: None = Depends(_rate_limit_manage)) -> dict:
     _owned(hound_id, current_user)
-    hound = user_store.set_coach_opt_in(hound_id, body.enabled)
+    try:
+        hound = user_store.set_coach_opt_in(hound_id, body.enabled)
+    except user_store.StoreError as exc:
+        raise _store_error(exc)
     return _wrap({"hound": hound_summary(hound)})
 
 
@@ -300,3 +359,196 @@ def _coach_submit_sync(hound_id, round_id, ts, sig, body) -> dict:
         "new_hound": hound_summary(out["new_hound"]) if out["new_hound"] else None,
         "challenger": out.get("challenger"),
     })
+
+
+# ---------------------------------------------------------------------------
+# the builder: menu, English, preview, edit
+# ---------------------------------------------------------------------------
+
+@router.get("/hounds/builder/menu")
+def builder_menu(_rl: None = Depends(_rate_limit_read)) -> dict:
+    """Everything a version-2 spec may contain, with bounds: the builder page, the English parser and
+    the AI translator's output check are all generated from, and validated against, this."""
+    return _wrap(user_spec.builder_menu())
+
+
+def _optional_user_id(authorization: Optional[str]) -> Optional[int]:
+    return auth_mod.optional_user_id(authorization)
+
+
+class EnglishRequest(BaseModel):
+    text: str
+
+
+@router.post("/hounds/english")
+def english_to_spec(body: EnglishRequest, authorization: Optional[str] = Header(default=None),
+                    _rl: None = Depends(_rate_limit_english)) -> dict:
+    """Plain English into a version-2 spec draft.
+
+    The free deterministic parser runs first, on every call, and answers instantly. If it could not
+    read everything and the owner has switched the Zapier translator on, a signed-in caller also gets a
+    translation job (poll GET /hounds/english/{job_id}); a signed-out caller is told to sign in for it.
+    With the translator off, the answer says plainly which words were not understood. The result is
+    always a DRAFT: the page shows it as sentences and rule cards to confirm and edit."""
+    text = (body.text or "").strip()
+    if not text:
+        raise HTTPException(status_code=422, detail={"error": "text_required"})
+    if len(text) > english_parser.MAX_TEXT:
+        raise HTTPException(status_code=422, detail={"error": "text_too_long", "max": english_parser.MAX_TEXT})
+    parsed = english_parser.parse(text)
+    out = {"status": "parsed" if parsed["complete"] else "partial", "text": text, **parsed}
+    out["unread"] = [c["text"] for c in parsed["not_understood"] if c.get("text")]
+    if parsed["complete"]:
+        return _wrap(out)
+    out["translation"] = {"status": "unavailable"}
+    if english_translate.hook_url() is None:
+        out["message"] = ("I could not read " + (", ".join(f"\"{t}\"" for t in out["unread"]) or "any of that") +
+                          ". The rule cards below let you finish it by hand.")
+        return _wrap(out)
+    user_id = _optional_user_id(authorization)
+    if user_id is None:
+        out["translation"] = {"status": "sign_in_required"}
+        out["message"] = ("Sign in and I can have the translator take a second look at what I could not read; "
+                          "meanwhile the rule cards below let you finish it by hand.")
+        return _wrap(out)
+    check = _translate_limiter.check(ratelimit.key_for(f"user:{user_id}"))
+    if not check.allowed:
+        raise HTTPException(status_code=429, detail={"error": "rate_limited", "retry_after": check.retry_after})
+    job = english_jobs.create_job(user_id, text, partial={
+        "understood": parsed["understood"], "not_understood": parsed["not_understood"]})
+    english_translate.start(job["id"], text)
+    out.update({"job_id": job["id"], "status": english_jobs.STATUS_TRANSLATING,
+                "translation": {"status": english_jobs.STATUS_TRANSLATING, "job_id": job["id"]},
+                "message": "Part of that needs a second look; the translator is on it. The rest is below."})
+    return _wrap(out)
+
+
+class CallbackRequest(BaseModel):
+    job_id: str
+    spec_json: Any = None
+
+
+@router.post("/hounds/english/callback")
+async def english_callback(request: Request, x_zap_secret: Optional[str] = Header(default=None),
+                           _rl: None = Depends(_rate_limit_read)) -> dict:
+    """The owner's Zap posts the translation here. 404 when no secret is configured (the door does not
+    exist), 401 for a wrong or missing secret (compared in constant time), then the answer is treated as
+    untrusted text: cut to the menu's fields and validated like a form post."""
+    expected = english_translate.callback_secret()
+    if expected is None:
+        raise HTTPException(status_code=404, detail="not found")
+    if not x_zap_secret or not secrets.compare_digest(x_zap_secret.encode("utf-8"), expected.encode("utf-8")):
+        raise HTTPException(status_code=401, detail={"error": "bad_secret"})
+    raw = await request.body()
+    if len(raw) > MAX_CALLBACK_BYTES:
+        raise HTTPException(status_code=413, detail={"error": "too_large"})
+    try:
+        data = json.loads(raw.decode("utf-8"))
+        if not isinstance(data, dict) or not isinstance(data.get("job_id"), str):
+            raise ValueError("job_id required")
+    except (ValueError, UnicodeDecodeError):
+        raise HTTPException(status_code=422, detail={"error": "bad_body"})
+    status, body = english_translate.complete(data["job_id"], data.get("spec_json"))
+    if status != 200:
+        raise HTTPException(status_code=status, detail=body)
+    return body
+
+
+@router.get("/hounds/english/{job_id}")
+def english_job(job_id: str, current_user: users_store.User = Depends(get_current_user),
+                _rl: None = Depends(_rate_limit_read)) -> dict:
+    """Poll a translation job. Only the person who started it can read it; anyone else sees not found."""
+    job = english_jobs.get_job(job_id)
+    if job is None or job["user_id"] != current_user.id:
+        raise HTTPException(status_code=404, detail={"error": "not_found"})
+    if job["status"] == english_jobs.STATUS_TRANSLATING and english_jobs.is_expired(job):
+        english_jobs.finish(job_id, english_jobs.STATUS_FAILED, error="the translation took too long")
+        job = english_jobs.get_job(job_id)
+    return _wrap(english_translate.poll_payload(job))
+
+
+class PreviewRequest(BaseModel):
+    spec: Dict[str, Any]
+
+
+def _eastern_today(now: datetime) -> str:
+    from src.pipeline import snapshots
+    return snapshots.official_date(now.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
+
+
+def _slate_for(date: str, with_props: bool) -> "user_engine_v2.Slate":
+    slate, _meta = _slate_cache.get(
+        ("slate", date, with_props),
+        lambda: user_engine_v2.build_slate(date, user_spec.SPORTS, with_props=with_props))
+    return slate
+
+
+@router.post("/hounds/builder/preview")
+def builder_preview(body: PreviewRequest, _rl: None = Depends(_rate_limit_preview)) -> dict:
+    """What this spec would bet on today's board. READ-ONLY: it validates, evaluates against the boards
+    as they stand now (a game that has not reached its lock is read on the newest board and flagged
+    `locked: false`) and returns the picks. It writes no bet, no hound and no ledger row."""
+    raw = dict(body.spec)
+    if not str(raw.get("name") or "").strip():
+        raw["name"] = "Draft Dog"
+    try:
+        spec = user_spec.validate_spec(raw)
+    except user_spec.SpecError as exc:
+        raise _spec_error(exc)
+    if not user_spec.is_v2(spec):
+        spec = user_spec.validate_spec({**user_spec.upgrade_v1(spec), "name": "Draft Dog"})
+    from src.hounds import user_rules
+    with_props = any(user_rules.market_kind(m) == "prop" for r in spec["rules"] for m in r["markets"])
+    now = datetime.now(timezone.utc)
+    date = _eastern_today(now)
+    try:
+        slate = _slate_for(date, with_props)
+    except Exception as exc:  # noqa: BLE001 -- a board that cannot be read is a plain "not available"
+        raise HTTPException(status_code=503, detail={"error": "board_unavailable", "message": type(exc).__name__})
+    result = user_engine_v2.preview(spec, slate.games, slate.facts, date, now, game_pk_index=slate.game_pk_index)
+    result.update({"sentences": english_render.rule_sentences(spec) + english_render.global_sentences(spec),
+                   "spec": {k: v for k, v in spec.items() if k != "name" or raw["name"] != "Draft Dog"},
+                   "games_on_board": len(slate.games), "board_observed_utc": slate.newest_observed(),
+                   "as_of": now.strftime("%Y-%m-%dT%H:%M:%SZ"), "read_only": True,
+                   "note": "A preview from the board as it stands now. A game's bet is decided at its own lock."})
+    return _wrap(result)
+
+
+class VersionRequest(BaseModel):
+    spec: Dict[str, Any]
+    reason: Optional[str] = None
+
+
+@router.post("/hounds/{hound_id}/diff")
+def hound_diff(hound_id: str, body: PreviewRequest, current_user: users_store.User = Depends(get_current_user),
+               _rl: None = Depends(_rate_limit_manage)) -> dict:
+    """The plain-English difference between this dog and a spec the owner is about to save as its next
+    version. Nothing is saved."""
+    hound = _owned(hound_id, current_user)
+    try:
+        new_spec = user_spec.validate_spec(
+            body.spec, taken_names=[n for n in user_store.taken_names()
+                                    if user_spec._fold(n) != user_spec._fold(hound["name"])])
+    except user_spec.SpecError as exc:
+        raise _spec_error(exc)
+    return _wrap({"hound_id": hound_id, "changes": english_render.diff_specs(hound["spec"], new_spec),
+                  "rule_sentences": (english_render.rule_sentences(new_spec) + english_render.global_sentences(new_spec)
+                                     if user_spec.is_v2(new_spec) else [user_spec.rule_text(new_spec)])})
+
+
+@router.post("/hounds/{hound_id}/version")
+def hound_new_version(hound_id: str, body: VersionRequest,
+                      current_user: users_store.User = Depends(get_current_user),
+                      _rl: None = Depends(_rate_limit_manage)) -> dict:
+    """Save an edit as the next version of a dog. The old version is retired with its record intact and
+    the new one carries on under the same name (existing versioning, user_store.create_version)."""
+    hound = _owned(hound_id, current_user)
+    reason = " ".join((body.reason or "edited by its owner").split())[:120] or "edited by its owner"
+    try:
+        new = user_store.create_version(hound_id, body.spec, actor=f"owner:{current_user.id}", reason=reason)
+    except user_spec.SpecError as exc:
+        raise _spec_error(exc)
+    except user_store.StoreError as exc:
+        raise _store_error(exc)
+    return _wrap({"hound": owner_summary(new), "previous_id": hound_id,
+                  "changes": english_render.diff_specs(hound["spec"], new["spec"])})

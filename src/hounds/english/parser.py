@@ -874,15 +874,14 @@ def _team_sports(seg: Seg) -> list:
 # entry point
 # ---------------------------------------------------------------------------
 
-_SPLIT = re.compile(r"\.(?=\s|$)|[;\n]+|\b(?:and|also|plus|,)\s+(?:then\s+)?(?:also\s+)?(?=(?:bet|back|take|play|fade)\b)|\balso\b")
+_SPLIT = re.compile(r"\.(?=\s|$)|[;\n]+|\b(?:and|also|plus|,)\s+(?:then\s+)?(?:also\s+)?(?=(?:bet|back|take|play|fade)\b(?!-))|\balso\b")
 
 
 def _known_players() -> set:
     """Folded names of players in the box scores (the parser's list of 'who is a player')."""
     try:
-        from src.hounds.user_rules import fold_player
-        return {fold_player(k) for k, kind in user_spec.known_real_names().items() if kind == "player"
-                and len(k.split()) >= 2}
+        from src.hounds.user_facts import known_player_keys
+        return set(known_player_keys())
     except Exception:  # noqa: BLE001
         return set()
 

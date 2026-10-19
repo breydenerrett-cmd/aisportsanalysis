@@ -319,3 +319,42 @@ class FactBook:
             return out
 
         return cls(loaders={"mlb": mlb, "nfl": nfl, "box": box, "weather": weather})
+
+
+# ---------------------------------------------------------------------------
+# who is a player we know
+# ---------------------------------------------------------------------------
+
+_known_cache: dict = {}
+
+
+def known_player_keys(root: Optional[str] = None) -> frozenset:
+    """Folded names (`user_rules.fold_player`) of every player in the box-score store, read with a real
+    JSON parse so accented names ('Jose Ramirez') match. Cached on the file's size and mtime. Empty when
+    the store is absent, in which case callers accept a well-formed name rather than refuse everyone."""
+    from src.hounds.user_rules import fold_player
+    path = os.path.join(root or _root(), "data", "processed", "boxscores_2026.jsonl")
+    try:
+        stat = os.stat(path)
+    except OSError:
+        return frozenset()
+    stamp = (path, stat.st_size, stat.st_mtime_ns)
+    hit = _known_cache.get("v")
+    if hit and hit[0] == stamp:
+        return hit[1]
+    names = set()
+    with open(path, encoding="utf-8") as fh:
+        for line in fh:
+            if '"player_name"' not in line:
+                continue
+            try:
+                name = json.loads(line).get("player_name")
+            except ValueError:
+                continue
+            if isinstance(name, str):
+                key = fold_player(name)
+                if key:
+                    names.add(key)
+    result = frozenset(names)
+    _known_cache["v"] = (stamp, result)
+    return result

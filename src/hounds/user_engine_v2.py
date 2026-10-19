@@ -463,3 +463,43 @@ def preview(spec: Mapping, games: Mapping, facts, date: str, now: datetime, *,
             "qualifying": len(picks), "would_bet": min(len(picks), spec["max_bets_per_day"]),
             "max_bets_per_day": spec["max_bets_per_day"], "picks": picks,
             "skipped": dict(skipped)}
+
+
+# ---------------------------------------------------------------------------
+# a slate, built once, for the builder's preview
+# ---------------------------------------------------------------------------
+
+class Slate:
+    """One date's boards, facts and game-key map, built once and shared by every preview of that date."""
+
+    def __init__(self, date: str, games: dict, facts, game_pk_index: Optional[Mapping], with_props: bool):
+        self.date, self.games, self.facts = date, games, facts
+        self.game_pk_index, self.with_props = game_pk_index, with_props
+
+    def newest_observed(self) -> Optional[str]:
+        newest = None
+        for game in self.games.values():
+            for market in game.captures.values():
+                for t in market:
+                    newest = t if newest is None or t > newest else newest
+        return E._iso(newest) if newest else None
+
+
+def build_slate(date: str, sports: Iterable[str], *, with_props: bool, rows: Optional[Iterable] = None,
+                prop_rows: Optional[Iterable] = None, facts=None, game_pk_index: Optional[Mapping] = None) -> Slate:
+    """The boards of one slate date. Rows stream through the same windowed reader the engine uses, so
+    building a slate holds the date's games and nothing else; the caller holds the process-wide build
+    gate (the preview cache does, via `freshness.SingleFlightTTLCache`)."""
+    sports = sorted({s.upper() for s in sports}) or list(user_spec.SPORTS)
+    raw = rows if rows is not None else E.iter_rows(date, sports)
+    all_games = E.build_games(raw, near_date=date)
+    if with_props:
+        add_prop_rows(all_games, prop_rows if prop_rows is not None else iter_prop_rows(date))
+    games = {eid: g for eid, g in all_games.items()
+             if g.commence is not None and E.slate_date_of(g.commence) == date}
+    if facts is None:
+        from src.hounds.user_facts import FactBook
+        facts = FactBook.from_stores(date)
+    if game_pk_index is None:
+        game_pk_index = E._load_game_pk_index()
+    return Slate(date, games, facts, game_pk_index, with_props)
