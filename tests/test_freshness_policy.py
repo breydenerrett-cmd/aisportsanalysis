@@ -100,6 +100,10 @@ class TheLimitsLiveInOnePlace(unittest.TestCase):
         self.assertIs(A.ODDS_STALE_HOURS, P.ODDS_STALE_HOURS)
         self.assertEqual(P.EXPECTATIONS["odds_multibook"].stale_hours, P.ODDS_STALE_HOURS)
 
+    def test_the_operator_watch_script_holds_the_same_odds_limit_and_deploy_age(self):
+        from scripts import prod_watch
+        self.assertEqual(prod_watch.ODDS_STALE_HOURS, P.ODDS_STALE_HOURS)
+
     def test_store_freshness_takes_its_day_tolerances_from_the_policy(self):
         from src.pipeline import store_freshness as SF
         for name in ("RESULTS_TOLERANCE_DAYS", "DAILY_TOLERANCE_DAYS", "PITCHER_TOLERANCE_DAYS",
