@@ -45,7 +45,7 @@ from fastapi import APIRouter, HTTPException, Query, Response
 
 from src.hounds import desk_view, digest as digest_mod, stats, user_view
 from src.hounds.contract import (
-    DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, bets_payload, graveyard_payload,
+    DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, bets_payload, filter_by_status, graveyard_payload,
     hound_payload, leaderboard_payload, paginate, series_payload,
     stream_payload, warming_payload)
 
@@ -157,18 +157,20 @@ def hound(hound_id: str, response: Response):
 @router.get("/hounds/{hound_id}/bets")
 def hound_bets(hound_id: str, response: Response, page: int = Query(1, ge=1),
                page_size: int = Query(DEFAULT_PAGE_SIZE, ge=1, le=MAX_PAGE_SIZE),
-               segment: Optional[str] = Query(None, pattern="^(forward|replay)$")):
+               segment: Optional[str] = Query(None, pattern="^(forward|replay)$"),
+               status: Optional[str] = Query(None, pattern="^(open|graded)$")):
     book, warming = _book(response)
     if warming:
         return warming_payload({"hound_id": hound_id, "items": [], "page": page,
                                 "page_size": page_size, "total": 0, "pages": 1})
     data = book.hounds.get(hound_id)
     if data is None:
-        payload = user_view.bets_for(hound_id, page=page, page_size=page_size, segment=segment)
+        payload = user_view.bets_for(hound_id, page=page, page_size=page_size, segment=segment, status=status)
         if payload is None:
             raise HTTPException(status_code=404, detail="no such hound")
         return payload
     rows = data.bets if segment is None else [b for b in data.bets if b.segment == segment]
+    rows = filter_by_status(rows, status)
     return bets_payload(hound_id, paginate(rows, page, page_size), book.as_of)
 
 
