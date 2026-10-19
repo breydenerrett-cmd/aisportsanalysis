@@ -16,6 +16,7 @@
   --lh-soft: rgba(255, 255, 255, .07);
   --lh-accent: #2FD07A;
   --lh-ease: cubic-bezier(.2, .7, .2, 1);
+  --lh-t-fast: 120ms; --lh-t-base: 220ms; --lh-t-slow: 420ms;
 }
 
 .lh-nav {
@@ -36,7 +37,7 @@
 .lh-nav__links a {
   display: inline-flex; align-items: center; height: 34px; padding: 0 12px; border-radius: 8px;
   font-size: 14px; font-weight: 500; color: var(--lh-mute); text-decoration: none;
-  transition: color .15s var(--lh-ease), background-color .15s var(--lh-ease);
+  transition: color var(--lh-t-fast) var(--lh-ease), background-color var(--lh-t-fast) var(--lh-ease);
 }
 .lh-nav__links a:hover { color: var(--lh-ink); background: var(--lh-soft); }
 .lh-nav__links a[aria-current="page"] { color: var(--lh-ink); background: var(--lh-soft); }
@@ -48,7 +49,7 @@
 .lh-btn {
   display: inline-flex; align-items: center; justify-content: center; height: 34px; padding: 0 14px; border-radius: 8px;
   font: 600 14px/1 var(--font-body, 'Instrument Sans', system-ui, sans-serif); text-decoration: none; border: 0; cursor: pointer;
-  transition: background-color .15s var(--lh-ease), transform .15s var(--lh-ease);
+  transition: background-color var(--lh-t-fast) var(--lh-ease), transform var(--lh-t-fast) var(--lh-ease);
 }
 .lh-btn--solid { background: var(--lh-accent); color: #04140B; }
 .lh-btn--solid:hover { background: #4BE08F; }
@@ -60,7 +61,7 @@
   display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px 0 6px; border-radius: 999px;
   background: var(--lh-soft); color: var(--lh-ink); border: 0; cursor: pointer;
   font: 600 13px/1 var(--font-body, 'Instrument Sans', system-ui, sans-serif);
-  transition: background-color .15s var(--lh-ease);
+  transition: background-color var(--lh-t-fast) var(--lh-ease);
 }
 .lh-avatar:hover, .lh-avatar[aria-expanded="true"] { background: rgba(255, 255, 255, .13); }
 .lh-avatar__dot { width: 22px; height: 22px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #7BF0B2, #1E9E5C); }
@@ -78,7 +79,7 @@
 .lh-menu__item:hover { background: var(--lh-soft); }
 .lh-menu__item--button { width: 100%; color: #FF8A96; font-family: inherit; }
 @media (prefers-reduced-motion: no-preference) {
-  .lh-menu { animation: lh-pop .16s var(--lh-ease) both; transform-origin: 100% 0; }
+  .lh-menu { animation: lh-pop var(--lh-t-fast) var(--lh-ease) both; transform-origin: 100% 0; }
 }
 @keyframes lh-pop { from { opacity: 0; transform: translateY(-4px) scale(.97); } to { opacity: 1; transform: none; } }
 
@@ -100,10 +101,10 @@
   .lh-tab {
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-height: 48px;
     border-radius: 10px; color: var(--lh-mute); text-decoration: none; font: 500 11px/1 var(--font-body, 'Instrument Sans', system-ui, sans-serif);
-    transition: color .15s var(--lh-ease);
+    transition: color var(--lh-t-fast) var(--lh-ease);
   }
   .lh-tab[aria-current="page"] { color: var(--lh-accent); }
-  .lh-tab__icon { transition: transform .2s var(--lh-ease); }
+  .lh-tab__icon { transition: transform var(--lh-t-base) var(--lh-ease); }
   .lh-tab:active .lh-tab__icon { transform: scale(.88); }
 }
 

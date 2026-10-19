@@ -88,7 +88,7 @@ function watchCounts() {
       for (const e of entries) if (e.isIntersecting) { countUp(e.target); seen.unobserve(e.target); }
     }, { threshold: 0.2 }) : null;
   const scan = (root) => {
-    for (const el of root.querySelectorAll ? root.querySelectorAll("[data-count]") : []) {
+    for (const el of root.querySelectorAll ? root.querySelectorAll("[data-count], .hd-kpi__big") : []) {
       if (el.getAttribute("data-counted") === "1" || el.getAttribute("data-watch") === "1") continue;
       el.setAttribute("data-watch", "1");
       if (seen) seen.observe(el); else countUp(el);
@@ -107,7 +107,7 @@ function watchCounts() {
  * a node already on the page never gets it again, and a change a person caused (a click, a key: sorting, opening a
  * drawer, switching a tab) is not animated, so the entrance never replays.
  */
-const RISE = "tr.hd-tr, .hd-ticket, .hd-stream__item, .dk-ticket, .kn-card, .kn-kcard, .hd-grave__item";
+const RISE = "tr.hd-tr, .hd-ticket, .hd-stream__item, .dk-ticket, .kn-card, .kn-kcard, .hd-grave__item, .lbrow, .lbticket, .lbrace__item, .lb-podium__card";
 
 function watchRise() {
   let lastTouch = 0;

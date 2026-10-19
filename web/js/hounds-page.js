@@ -46,7 +46,7 @@ import {
   bankrollNow, returnPctOf, windowPct, totalUnitsOf, isSmallSample, smallSampleTitle, fmtUsd, fmtPct, bankrollRules,
   basisTagText, RECORDED_TITLE,
   statusOf, typeText, sportLabel, sportsOf, marketsText, presentSports, filterBySport, sortHounds, splitRanked,
-  settledOf, onlyTickets, freshness, inQualifyingRound, qualifyingRows, progressText, isMemberDog, isNewDog,
+  settledOf, onlyTickets, freshness, inQualifyingRound, qualifyingRows, progressText, isMemberDog, isNewDog, sortByBankroll,
 } from "./hounds-board.js";
 import {
   ALL_SEASON, seasonOptions, chooseSeason, saveSeason, seasonParam, seasonLine, minRanked,
@@ -444,6 +444,38 @@ function qualifyingSection(warming) {
   ]);
 }
 
+/**
+ * THE LEADERS: up to three models as big dog cards above the table (design system v2). Ranked models first, by bankroll; while fewer
+ * than three are ranked, the best of the qualifying round fill in and the heading says so, with each one's progress to the bar.
+ * Everything on a card is a figure the table below prints: the account, its return, the record and the bet count.
+ */
+function podium(active, warming, min) {
+  const ranked = sortByBankroll(active).slice(0, 3);
+  const filler = ranked.length < 3 ? qualifyingRows(warming).slice(0, 3 - ranked.length) : [];
+  const picks = ranked.concat(filler);
+  if (!picks.length) return null;
+  const title = !filler.length ? "Leading now" : ranked.length ? "Leading, with the best of the qualifying round" : "Leading the qualifying round";
+  const sub = filler.length ? `A model is ranked at ${min} settled bets. These are the closest.` : "Ranked by paper bankroll.";
+  return h("section", { class: "lb-podium", "data-hook": "podium", "aria-label": title }, [
+    h("div", { class: "lb-podium__head" }, [h("h3", { class: "lb-podium__title", text: title }), h("p", { class: "hd-fine", text: sub })]),
+    h("ol", { class: "lb-podium__row" }, picks.map((hound, i) => {
+      const isRanked = i < ranked.length;
+      const ret = returnPctOf(hound);
+      const small = !isRanked || isSmallSample(hound);
+      return h("li", { class: `lb-podium__card${i === 0 ? " lb-podium__card--lead" : ""}`, "data-hound": hound.id, style: `--r:${i}` }, [
+        h("a", { class: "lb-podium__face", href: houndHref(hound.id), "aria-label": `${hound.name || "Model"}'s page` }, [
+          dogFace(hound, { size: i === 0 ? 108 : 88, pose: poseOfHound(hound) })]),
+        h("span", { class: "lb-podium__rank", text: isRanked ? `#${i + 1}` : progressText(hound, min) }),
+        h("a", { class: "lb-podium__name", href: houndHref(hound.id), text: hound.name || NOT_REPORTED }),
+        h("strong", { class: "lb-podium__bank", "data-count": "1", text: fmtUsd(bankrollNow(hound)) }),
+        h("span", { class: `lb-podium__ret lb-podium__ret--${ret === null ? "flat" : ret > 0 ? "up" : ret < 0 ? "down" : "flat"}`,
+          title: small ? smallSampleTitle(hound) : "", text: fmtPct(ret) }),
+        h("span", { class: "lb-podium__rec", text: `${recordText(hound)} · ${betsOf(hound)} ${betsOf(hound) === 1 ? "bet" : "bets"}${small ? " · small sample" : ""}` }),
+      ]);
+    })),
+  ]);
+}
+
 function renderTable() {
   const host = q("hounds-table");
   if (!host) return;
@@ -465,6 +497,8 @@ function renderTable() {
   // Fewer than 3 ranked: the QUALIFYING ROUND leads (expanded, with progress), the ranked table follows. From 3
   // ranked on, the ranked table leads and the models still short of the bar wait in the collapsed "Warming up" group.
   const qualifying = inQualifyingRound(active.length) && warming.length > 0;
+  const lead = podium(active, warming, minRanked(state.seasonMeta));
+  if (lead) host.appendChild(lead);
   if (qualifying) host.appendChild(qualifyingSection(warming));
   const thead = h("thead", {}, [headRow()]);
   const tbody = h("tbody", { "data-hook": "hounds-list" });

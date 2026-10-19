@@ -142,7 +142,7 @@
 .hounds-page .hd-segs { gap: 4px; }
 .hounds-page .hd-seg {
   min-height: 34px; padding: 0 13px; border: 0; border-radius: 999px; background: var(--lh-soft); color: var(--lh-ink2);
-  font-size: 13px; font-weight: 500; transition: background-color .15s var(--lh-ease), color .15s var(--lh-ease);
+  font-size: 13px; font-weight: 500; transition: background-color var(--lh-t-fast) var(--lh-ease), color var(--lh-t-fast) var(--lh-ease);
 }
 .hounds-page .hd-seg:hover { background: rgba(255, 255, 255, .1); }
 .hounds-page .hd-seg[aria-pressed="true"] { background: var(--lh-ink); color: #0B0D10; font-weight: 600; }
@@ -158,7 +158,7 @@
 .lh-tabs::-webkit-scrollbar { display: none; }
 .lh-tabs [role="tab"] {
   position: relative; flex: none; height: 42px; padding: 0 14px; border: 0; background: none; color: var(--lh-mute, #8D96A6);
-  font: 500 14px/1 var(--font-body, 'Instrument Sans', system-ui, sans-serif); cursor: pointer; transition: color .15s;
+  font: 500 14px/1 var(--font-body, 'Instrument Sans', system-ui, sans-serif); cursor: pointer; transition: color var(--lh-t-fast);
 }
 .lh-tabs [role="tab"]:hover { color: var(--lh-ink, #EEF1F5); }
 .lh-tabs [role="tab"][aria-selected="true"] { color: var(--lh-ink, #EEF1F5); }
@@ -178,7 +178,7 @@
   letter-spacing: .04em; text-transform: uppercase;
 }
 .hounds-page .hd-table td { border: 0; box-shadow: inset 0 -1px 0 var(--lh-line); }
-.hounds-page .hd-table tbody tr { transition: background-color .15s var(--lh-ease); }
+.hounds-page .hd-table tbody tr { transition: background-color var(--lh-t-fast) var(--lh-ease); }
 .hounds-page .hd-table tbody tr:hover { background: var(--lh-soft); }
 .hounds-page .hd-qual__title, .hounds-page .hd-qual__ranked { font-size: 14px; font-weight: 600; color: var(--lh-ink2); }
 .hounds-page .hd-pill, .hounds-page .hd-st, .hounds-page .hd-chip, .hounds-page .hd-typechip, .hounds-page .hd-badge, .hounds-page .hd-style, .hounds-page .hd-chip-cat {
@@ -278,11 +278,11 @@
 /* ---- MOTION: everything below is off for prefers-reduced-motion -------------------------------------------- */
 @media (prefers-reduced-motion: no-preference) {
   .lh-skel { animation: lh-shimmer 1.5s linear infinite; }
-  .lh-tabs [role="tab"]::after { transition: transform .25s var(--lh-ease); }
-  .lh-tabpanel:not([hidden]) { animation: lh-fade .28s var(--lh-ease) both; }
+  .lh-tabs [role="tab"]::after { transition: transform var(--lh-t-base) var(--lh-ease); }
+  .lh-tabpanel:not([hidden]) { animation: lh-fade var(--lh-t-base) var(--lh-ease) both; }
 
   /* rows, tickets and cards rise in once, when they first arrive (fx.js marks them data-rise; a click never replays it) */
-  [data-rise] { animation: lh-rise .5s var(--lh-ease) both; animation-delay: calc(var(--r, 0) * 40ms); }
+  [data-rise] { animation: lh-rise var(--lh-t-slow) var(--lh-ease) both; animation-delay: calc(var(--r, 0) * 40ms); }
 
   .lh-live::after, .hounds-page .hd-res--pending::before { animation: lh-ping 1.8s var(--lh-ease) infinite; }
   .lh-live::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: var(--lh-accent); }
@@ -406,3 +406,102 @@
 .hounds-page .dk-preview .dk-badge { border-radius: 22px; }
 .hounds-page .dk-actions .btn, .hounds-page .dk-pick__actions .btn { min-height: 38px; }
 .hounds-page .dk-askrow input { border-radius: 999px; padding: 0 16px; }
+
+/* ======================================================================================================================
+ * MOTION CHOREOGRAPHY (design system v2). One timing/easing set (the --lh-t-* and --lh-ease/--lh-spring tokens above).
+ *   load      the page head, tabs and first panels rise in a short stagger (children 1..6 of the page wrapper)
+ *   numbers   count-ups (js/fx.js, data-count) ; rows and tickets rise as they arrive (data-rise, js/fx.js)
+ *   results   a win lands with a small pop, a loss with a short settle, a pending ticket pulses
+ *   skeletons shimmer where a chart or a list is about to be
+ * All of it is inside prefers-reduced-motion: no-preference; reduced motion gets the finished page and nothing that moves.
+ * ==================================================================================================================== */
+@media (prefers-reduced-motion: no-preference) {
+  .hounds-page .hd-wrap > :nth-child(-n + 6) { animation: lh-rise var(--lh-t-slow) var(--lh-ease) both; }
+  .hounds-page .hd-wrap > :nth-child(2) { animation-delay: calc(var(--lh-stagger) * 1); }
+  .hounds-page .hd-wrap > :nth-child(3) { animation-delay: calc(var(--lh-stagger) * 2); }
+  .hounds-page .hd-wrap > :nth-child(4) { animation-delay: calc(var(--lh-stagger) * 3); }
+  .hounds-page .hd-wrap > :nth-child(5) { animation-delay: calc(var(--lh-stagger) * 4); }
+  .hounds-page .hd-wrap > :nth-child(6) { animation-delay: calc(var(--lh-stagger) * 5); }
+  [data-rise] .hd-res--won, [data-rise] .lbres--won, [data-rise] .kn-card[data-mood="happy"] .kn-card__last { animation: lh-pop var(--lh-t-slow) var(--lh-spring) both; animation-delay: calc(var(--r, 0) * var(--lh-stagger) + 160ms); }
+  [data-rise] .hd-res--lost, [data-rise] .lbres--lost { animation: lh-settle var(--lh-t-slow) var(--lh-ease-io) both; animation-delay: calc(var(--r, 0) * var(--lh-stagger) + 160ms); }
+  .lbrace__chart:empty { min-height: 220px; border-radius: var(--lh-r-md); background: linear-gradient(90deg, rgba(255, 255, 255, .03) 0%, rgba(255, 255, 255, .08) 45%, rgba(255, 255, 255, .03) 90%); background-size: 220% 100%; animation: lh-shimmer 1.5s linear infinite; }
+  .lh-btn, .hounds-page .btn, .kn-act { transition: background-color var(--lh-t-fast) var(--lh-ease), transform var(--lh-t-fast) var(--lh-ease), box-shadow var(--lh-t-base) var(--lh-ease); }
+  .hounds-page .btn--primary:hover, .lh-btn--solid:hover { transform: translateY(-1px); }
+  .hounds-page .btn--primary:active, .lh-btn--solid:active { transform: translateY(0) scale(.97); }
+  .hounds-page .hd-ticket:hover, .hounds-page .dk-ticket:hover { transform: translateX(2px); }
+  .hounds-page .hd-ticket, .hounds-page .dk-ticket { transition: transform var(--lh-t-base) var(--lh-ease), background-color var(--lh-t-fast) var(--lh-ease); }
+}
+@keyframes lh-pop { 0% { transform: scale(.7); opacity: 0; } 60% { transform: scale(1.12); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes lh-settle { 0% { transform: translateY(-4px); opacity: 0; } 55% { transform: translateY(2px); opacity: 1; } 100% { transform: none; opacity: 1; } }
+
+/* focus: one ring, everywhere */
+.hounds-page :focus-visible, .landing :focus-visible, .lh-nav :focus-visible { outline: 2px solid var(--lh-accent); outline-offset: 2px; border-radius: var(--lh-r-sm); }
+
+/* ---- the leaders: big dog cards above the leaderboard table ------------------------------------------------------- */
+.lb-podium { margin: 0 0 var(--lh-s6); }
+.lb-podium__head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px var(--lh-s3); margin-bottom: var(--lh-s3); }
+.hounds-page .lb-podium__title { margin: 0; font-size: var(--lh-fs-md); font-weight: 600; }
+.lb-podium__row { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--lh-s3); align-items: stretch; }
+.lb-podium__card {
+  position: relative; display: grid; justify-items: center; align-content: start; gap: 2px; padding: var(--lh-s4) var(--lh-s3) var(--lh-s3); text-align: center;
+  border-radius: var(--lh-r-lg); background: var(--lh-soft); box-shadow: var(--lh-e1);
+  transition: transform var(--lh-t-base) var(--lh-spring), background-color var(--lh-t-fast) var(--lh-ease);
+}
+.lb-podium__card:hover { background: var(--lh-soft-2); transform: translateY(-3px); }
+.lb-podium__card--lead { background: linear-gradient(180deg, rgba(47, 208, 122, .13), rgba(47, 208, 122, .03) 70%), var(--lh-soft); box-shadow: inset 0 0 0 1px rgba(47, 208, 122, .35), var(--lh-e2); }
+.lb-podium__face { display: block; line-height: 0; margin-bottom: var(--lh-s2); }
+.lb-podium__rank { font-size: var(--lh-fs-xs); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--lh-mute); }
+.lb-podium__card--lead .lb-podium__rank { color: var(--lh-accent); }
+.hounds-page .lb-podium__name { font-weight: 600; color: var(--lh-ink); text-decoration: none; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hounds-page .lb-podium__name:hover { text-decoration: underline; }
+.lb-podium__bank { font-family: var(--lh-font-display); font-size: 34px; font-weight: 700; line-height: 1.05; letter-spacing: -.01em; font-variant-numeric: tabular-nums; margin-top: 2px; }
+.lb-podium__card--lead .lb-podium__bank { font-size: 42px; }
+.lb-podium__ret { font-size: var(--lh-fs-sm); font-weight: 600; font-variant-numeric: tabular-nums; }
+.lb-podium__ret--up { color: var(--lh-win); }
+.lb-podium__ret--down { color: var(--lh-loss); }
+.lb-podium__ret--flat { color: var(--lh-mute); }
+.lb-podium__rec { font-size: var(--lh-fs-xs); color: var(--lh-mute); }
+@media (max-width: 640px) {
+  .lb-podium__row { grid-template-columns: minmax(0, 1fr); }
+  .lb-podium__card { grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "face name bank" "face rank ret" "face rec rec"; justify-items: start; align-items: center; column-gap: var(--lh-s3); padding: var(--lh-s3); text-align: left; }
+  .lb-podium__face { grid-area: face; margin: 0; }
+  .lb-podium__name { grid-area: name; }
+  .lb-podium__rank { grid-area: rank; }
+  .lb-podium__bank, .lb-podium__card--lead .lb-podium__bank { grid-area: bank; font-size: 28px; justify-self: end; margin: 0; }
+  .lb-podium__ret { grid-area: ret; justify-self: end; }
+  .lb-podium__rec { grid-area: rec; }
+}
+
+/* ======================================================================================================================
+ * PAGE TOUCH-UPS on the v2 system: the hub's one accent for every "live" tint, the model page, the training camp.
+ * ==================================================================================================================== */
+.hounds-page { --live: var(--lh-accent-hi); --live-lit: #9CF0C3; --live-label: #9CF0C3; --live-2: var(--lh-accent); --fresh: var(--lh-accent); }
+.hounds-page .hd-chart__tick, .hounds-page .hd-chart__zero-label { font-family: var(--lh-font-text); font-size: 11px; fill: var(--lh-faint); }
+.hounds-page .hd-chart__zero { stroke: rgba(255, 255, 255, .34); stroke-width: 1; stroke-dasharray: 4 5; opacity: 1; }
+.hounds-page .hd-chart-title { color: var(--lh-mute); font-weight: 500; font-size: var(--lh-fs-sm); margin: var(--lh-s1) 0 var(--lh-s2); }
+.hounds-page .hd-chart__empty { font-size: var(--lh-fs-sm); }
+
+/* the model page */
+.hounds-page .dk-top { margin-bottom: var(--lh-s5); }
+.hounds-page .hd-modelhead h1 { font-size: var(--lh-fs-2xl); }
+.hounds-page .hd-catch { margin: 0 0 var(--lh-s2); color: var(--lh-mute); }
+
+/* the training camp: each section is a card with a real heading */
+.hounds-page [data-hook="learning-app"] { max-width: 940px; }
+.hounds-page [data-hook="learning-app"] .hd-hero { padding: var(--lh-s5) 0 var(--lh-s5); }
+.hounds-page [data-hook="learning-app"] .hd-panel, .hounds-page [data-hook="learning-app"] .hd-panel + .hd-panel {
+  background: var(--lh-soft); border-radius: var(--lh-r-lg); padding: var(--lh-s5); margin: 0 0 var(--lh-s4); box-shadow: var(--lh-e1);
+}
+.hounds-page [data-hook="learning-app"] .hd-panel > h2 { font-family: var(--lh-font-display); font-size: var(--lh-fs-xl); font-weight: 700; line-height: 1.05; letter-spacing: var(--lh-track-display); margin: 0 0 var(--lh-s2); }
+.hounds-page [data-hook="learning-app"] .hd-panel > .hd-muted:first-of-type { font-size: var(--lh-fs-base); margin: 0 0 var(--lh-s2); }
+.hounds-page [data-hook="learning-app"] .hd-panel dl, .hounds-page [data-hook="learning-app"] .hd-panel .dk-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--lh-s3) var(--lh-s4); }
+.hounds-page [data-hook="learning-app"] .dk-camp-dog { background: rgba(255, 255, 255, .04); }
+.hounds-page [data-hook="learning-app"] code { font-family: var(--lh-font-text); background: var(--lh-soft); padding: 1px 6px; border-radius: 6px; font-size: .92em; }
+@media (max-width: 760px) { .hounds-page [data-hook="learning-app"] .hd-panel { padding: var(--lh-s4); } .hounds-page [data-hook="learning-app"] .hd-panel > h2 { font-size: 26px; } }
+
+/* the builder's dog: the character, with the identity badge pinned to it like a medal */
+.hounds-page .bd-dog { position: relative; padding-left: 4px; }
+.hounds-page .bd-dog__badge { position: absolute; left: -4px; top: -6px; width: 30px; height: 30px; padding: 5px; border-radius: 50%; box-shadow: 0 0 0 3px var(--lh-bg); z-index: 1; }
+.hounds-page .bd-dog__badge svg { width: 100%; height: 100%; }
+.hounds-page .bd-dog__text { min-width: 0; }
+.hounds-page .bd-dog__name { overflow-wrap: anywhere; }

@@ -578,17 +578,22 @@ class TheChromeIsProfessional(unittest.TestCase):
                 self.assertEqual(found, [], f"{name}: {found}")
                 self.assertEqual(EMOJI.findall(out["title"]), [])
 
-    def test_no_cartoon_avatar_is_drawn_and_every_model_wears_an_initials_badge(self):
+    def test_no_old_cartoon_avatar_and_every_model_is_a_rig_dog_not_an_initials_tile(self):
         for name, out in self.pages():
             with self.subTest(page=name):
                 self.assertNotIn("hd-avatar", json.dumps(out["hooks"]))
-        out = run_page("hounds", routes=routes(), queries=[q("svgs", "svg.hd-avatar", "count"), q("anysvg", "svg", "count"),
-                                                           q("mono", ".hd-mono", "texts"), q("ids", ".hd-tr", "attrs", attr="data-hound")])
+        # Design system v2 (2026-10-19): the initials tile is replaced by the character rig (web/js/dog-rig.js). The old cartoon
+        # class stays gone, no model is drawn twice in a row, and the retired rows wear a (sad) dog too.
+        out = run_page("hounds", routes=routes(), queries=[q("svgs", "svg.hd-avatar", "count"), q("mono", ".hd-mono", "texts"),
+                                                           q("rowdogs", ".hd-modelcell svg.dk-badge", "count"),
+                                                           q("breeds", ".hd-modelcell svg.dk-badge", "attrs", attr="data-breed"),
+                                                           q("podium", "[data-hook='podium'] svg.dk-badge", "count"),
+                                                           q("ids", ".hd-tr", "attrs", attr="data-hound")])
         self.assertEqual(out["final"]["svgs"], 0)
-        self.assertEqual(out["final"]["anysvg"], 0)
-        self.assertEqual(len(out["final"]["mono"]), RANKED_N + 0 + 2)                   # the table rows plus the two retired rows
-        self.assertEqual(out["final"]["mono"][0], "CL" if out["final"]["ids"][0] == "closer" else out["final"]["mono"][0])
-        self.assertTrue(all(re.fullmatch(r"[A-Z0-9?]{1,2}", m) for m in out["final"]["mono"]), out["final"]["mono"])
+        self.assertEqual(out["final"]["mono"], [], "no initials tile is left on the leaderboard page")
+        self.assertEqual(out["final"]["rowdogs"], RANKED_N + 0 + 2)                     # the table rows plus the two retired rows
+        self.assertTrue(set(out["final"]["breeds"]) <= {"retriever", "bulldog", "schnauzer", "husky", "mutt", "hound"})
+        self.assertLessEqual(out["final"]["podium"], 3)
 
     def test_the_voice_that_was_pulled_is_not_on_the_pages(self):
         banned = ["houndmaster", "doghouse", "put down", "tombstone", "r.i.p", "graveyard", "good dog", "roast", "brag",
@@ -613,11 +618,13 @@ class TheModelPage(unittest.TestCase):
 
     def test_the_header_is_the_model_its_status_type_and_one_italic_line_and_nothing_else_from_the_persona(self):
         out = self.page(queries=[
-            q("name", "[data-hook='hound-name']"), q("mono", ".hd-modelhead .hd-mono"), q("status", "[data-hook='hound-status']"),
+            q("name", "[data-hook='hound-name']"), q("mono", ".hd-modelhead .hd-mono"), q("dog", ".hd-modelhead svg.dk-badge", "count"),
+            q("status", "[data-hook='hound-status']"),
             q("chips", ".hd-chips"), q("catch", "[data-hook='catchphrase']"), q("bio", "[data-hook='bio']", "count"),
             q("order", "h2", "texts")])
         f = out["final"]
-        self.assertEqual((f["name"], f["mono"]), ("Closer", "CL"))
+        # the header wears the model's dog (the rig), not an initials tile (design system v2, 2026-10-19)
+        self.assertEqual((f["name"], f["mono"], f["dog"]), ("Closer", None, 1))
         self.assertEqual(f["status"], "Beating the close")
         self.assertIn("Stats", f["chips"])
         self.assertIn("MLB", f["chips"])

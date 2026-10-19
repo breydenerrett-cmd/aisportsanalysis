@@ -1,0 +1,52 @@
+/*
+ * THE MEMBER APP AND THE ADMIN PAGE ON THE DESIGN SYSTEM V2 (2026-10-19). Loaded LAST on web/index.html and web/admin.html, after
+ * css/lh.css (the tokens) and every other sheet. The app already wore the model pages' skin (css/member.css, scoped to
+ * body.member-app); this file finishes the job so the hub reads as one product: the same two faces, the one green accent in place
+ * of red and cyan, the same radii, and the same quiet type, with the shared navigation as the one wordmark on the page.
+ * Nothing here changes what a screen shows or does. Every animation is inside prefers-reduced-motion: no-preference.
+ */
+
+/* ---- the member app ----------------------------------------------------------------------------------------- */
+body.member-app {
+  --mx-bg: var(--lh-bg); --mx-card: #11151B; --mx-card-2: #161B22; --mx-text: var(--lh-ink); --mx-text-2: var(--lh-ink2); --mx-mute: var(--lh-mute);
+  --mx-accent: var(--lh-accent); --mx-radius: var(--lh-r-sm); --mx-radius-lg: var(--lh-r-md);
+  --r-btn: var(--lh-r-sm); --r-panel: var(--lh-r-md); --r-tile: var(--lh-r-md); --r-lg: var(--lh-r-lg); --r-xl: var(--lh-r-lg);
+  --font-wordmark: var(--lh-font-text);
+  --live: var(--lh-accent-hi); --live-lit: #9CF0C3; --live-label: #9CF0C3; --live-badge: #9CF0C3; --fresh: var(--lh-accent);
+  font-family: var(--lh-font-text); -webkit-font-smoothing: antialiased;
+}
+body.member-app .lh-nav__links a { color: var(--lh-mute); }
+body.member-app .lh-nav__links a:hover, body.member-app .lh-nav__links a[aria-current="page"] { color: var(--lh-ink); }
+body.member-app .topstrip__home { display: none; }                    /* the shared bar above carries the wordmark */
+body.member-app .btn, body.member-app .btn--primary, body.member-app .btn--lg {
+  font-family: var(--lh-font-text); text-transform: none; letter-spacing: 0; font-weight: 600; border-radius: var(--lh-r-sm);
+}
+body.member-app .btn--primary { box-shadow: 0 1px 0 rgba(255, 255, 255, .22) inset, 0 8px 22px rgba(47, 208, 122, .18); }
+body.member-app .rail *, body.member-app .tabbar *, body.member-app .rail a, body.member-app .tabbar a, body.member-app .rail button, body.member-app .tabbar button, body.member-app [data-hook="sport-level-host"] a {
+  font-family: var(--lh-font-text); text-transform: none; letter-spacing: 0; font-weight: 600;
+}
+body.member-app h1, body.member-app h2, body.member-app .gate__title { font-family: var(--lh-font-display); font-weight: 700; letter-spacing: var(--lh-track-display); text-transform: none; font-style: normal; }
+body.member-app .gate__title { font-size: var(--lh-fs-lg); }
+body.member-app .gate, body.member-app .field-form, body.member-app .state-loading, body.member-app .state-error { border-radius: var(--lh-r-lg); border: 0; box-shadow: var(--lh-e1), inset 0 0 0 1px var(--lh-line); }
+body.member-app :focus-visible { outline: 2px solid var(--lh-accent); outline-offset: 2px; }
+body.member-app .field-row input:focus-visible, body.member-app .field-row select:focus-visible { outline-color: var(--lh-accent); }
+
+/* ---- the admin page ----------------------------------------------------------------------------------------- */
+.adm-page {
+  --font-display: var(--lh-font-text); --adm-info: var(--lh-accent); --adm-info-text: var(--lh-accent-hi); --fresh: var(--lh-accent); --live: var(--lh-accent-hi);
+  font-family: var(--lh-font-text); background: var(--lh-bg); -webkit-font-smoothing: antialiased;
+}
+.adm-page h1, .adm-page h2, .adm-page h3 { font-family: var(--lh-font-display); font-weight: 700; letter-spacing: var(--lh-track-display); text-transform: none; font-style: normal; }
+.adm-page .btn, .adm-page .btn--primary { clip-path: none; border-radius: var(--lh-r-sm); font-family: var(--lh-font-text); text-transform: none; letter-spacing: 0; font-weight: 600; font-style: normal; }
+.adm-page .btn--primary { background: var(--lh-accent); color: var(--lh-accent-ink); border-color: var(--lh-accent); }
+.adm-page .btn--primary:hover { background: var(--lh-accent-hi); }
+.adm-page .adm-btn { border-radius: var(--lh-r-sm); font-family: var(--lh-font-text); text-transform: none; letter-spacing: 0; font-weight: 600; clip-path: none; }
+.adm-page .adm-btn--primary { background: var(--lh-accent); border-color: var(--lh-accent); color: var(--lh-accent-ink); }
+.adm-page .adm-btn--primary:hover { background: var(--lh-accent-hi); border-color: var(--lh-accent-hi); }
+.adm-page .adm-nav__item { border-radius: var(--lh-r-sm); font-family: var(--lh-font-text); text-transform: none; letter-spacing: 0; font-weight: 500; }
+.adm-page .adm-nav__item[aria-current="page"], .adm-page .adm-nav__item.is-active, .adm-page .adm-nav__item[aria-selected="true"] { background: var(--lh-accent-soft); color: var(--lh-ink); }
+.adm-page .adm-top__status, .adm-page [data-hook="admin-status"] { border-radius: var(--lh-r-pill); }
+.adm-page .adm-top__label { border: 0; border-radius: var(--lh-r-pill); background: var(--lh-soft); letter-spacing: .06em; font-family: var(--lh-font-text); }
+.adm-page .panel, .adm-page .adm-card, .adm-page [class*="adm-"][class*="card"] { border-radius: var(--lh-r-md); }
+.adm-page :focus-visible { outline: 2px solid var(--lh-accent); outline-offset: 2px; }
+.adm-page .wordmark__text { font-style: italic; }

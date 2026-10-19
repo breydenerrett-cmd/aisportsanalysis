@@ -13,7 +13,7 @@
 .kn-grid--quiet { margin-top: 12px; opacity: .8; }
 .kn-card {
   position: relative; display: flex; gap: 16px; padding: 18px; min-width: 0; border: 0; border-radius: 18px; background: rgba(255, 255, 255, .04);
-  text-align: left; color: inherit; font: inherit; transition: transform .2s var(--lh-ease, ease), background-color .2s;
+  text-align: left; color: inherit; font: inherit; transition: transform var(--lh-t-base) var(--lh-ease, ease), background-color var(--lh-t-base);
 }
 .kn-card:hover { background: rgba(255, 255, 255, .065); transform: translateY(-2px); }
 .kn-card__avatar { flex: none; width: 76px; height: 76px; padding: 0; border: 0; border-radius: 18px; background: none; cursor: pointer; align-self: flex-start; }
@@ -43,7 +43,7 @@
 .kn-act {
   display: inline-flex; align-items: center; height: 32px; padding: 0 13px; border: 0; border-radius: 999px; background: rgba(255, 255, 255, .07);
   color: var(--lh-ink, #EEF1F5); font: 600 13px/1 var(--font-body, 'Instrument Sans', system-ui, sans-serif); text-decoration: none; cursor: pointer;
-  transition: background-color .15s, transform .15s;
+  transition: background-color var(--lh-t-fast), transform var(--lh-t-fast);
 }
 .kn-act:hover { background: rgba(255, 255, 255, .13); }
 .kn-act--primary { background: var(--lh-accent, #2FD07A); color: #04140B; }
@@ -73,7 +73,7 @@
 .kn-kgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); gap: 12px; }
 .kn-kcard {
   display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 16px; background: rgba(255, 255, 255, .04);
-  color: inherit; text-decoration: none; transition: transform .2s var(--lh-ease, ease), background-color .2s;
+  color: inherit; text-decoration: none; transition: transform var(--lh-t-base) var(--lh-ease, ease), background-color var(--lh-t-base);
 }
 .kn-kcard:hover { background: rgba(255, 255, 255, .07); transform: translateY(-2px); }
 .kn-stack { display: flex; flex: none; }
@@ -82,7 +82,7 @@
 .kn-kcard__text { display: flex; flex-direction: column; min-width: 0; flex: 1; }
 .kn-kcard__name { font-size: 15px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .kn-kcard__meta { font-size: 13px; color: var(--lh-mute, #8D96A6); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.kn-kcard__go { color: var(--lh-mute, #8D96A6); transition: transform .2s var(--lh-ease, ease), color .2s; }
+.kn-kcard__go { color: var(--lh-mute, #8D96A6); transition: transform var(--lh-t-base) var(--lh-ease, ease), color var(--lh-t-base); }
 .kn-kcard:hover .kn-kcard__go { transform: translateX(3px); color: var(--lh-accent, #2FD07A); }
 .hounds-page .hd-pagehead .btn { align-self: center; }
 
@@ -108,10 +108,10 @@
 .kn-studio .dk-locker { grid-template-columns: 1fr; }
 
 @media (prefers-reduced-motion: no-preference) {
-  .kn-studio[data-open="true"] { animation: kn-slide .32s var(--lh-ease, ease) both; }
-  .kn-scrim:not([hidden]) { animation: kn-scrim .25s ease both; }
+  .kn-studio[data-open="true"] { animation: kn-slide 520ms var(--lh-spring) both; }
+  .kn-scrim:not([hidden]) { animation: kn-scrim var(--lh-t-base) ease both; }
 }
-@keyframes kn-slide { from { transform: translateX(36px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes kn-slide { from { transform: translateX(56px) scale(.985); opacity: 0; } to { transform: none; opacity: 1; } }
 @keyframes kn-scrim { from { opacity: 0; } to { opacity: 1; } }
 
 @media (max-width: 760px) {
@@ -201,3 +201,29 @@
   .kn-studio .dk-posebar { justify-content: center; }
   .kn-studio .dk-stage__dog svg { width: 148px; }
 }
+
+/* ---- creator touch-ups, the builder's dog, and the phone studio ----------------------------------------------------- */
+.hounds-page .dk-swatch { min-height: 0; min-width: 0; position: relative; }
+.hounds-page .dk-swatch::before { content: ""; position: absolute; inset: -4px; border-radius: 50%; }
+.kn-studio__body { --kn-pad: 40px; }
+.dk-actions--sticky { bottom: calc(-1 * var(--kn-pad, 40px)); }
+@media (max-width: 760px) {
+  .kn-studio__body { --kn-pad: 90px; }
+  .dk-dice { padding: 0 10px; }
+  .dk-dice span:last-child { display: none; }
+}
+.hounds-page .bd-dog { display: flex; align-items: center; gap: var(--lh-s4); }
+.bd-dog__dog { flex: none; line-height: 0; filter: drop-shadow(0 10px 14px rgba(0, 0, 0, .4)); }
+.bd-dog__face { flex: none; line-height: 0; }
+.hounds-page .bd-dog__badge { flex: none; }
+.hounds-page .bd-dogrow { display: flex; align-items: flex-start; gap: var(--lh-s3); }
+.hounds-page .bd-dogcard, .hounds-page .bd-dog { min-width: 0; }
+
+/* kennel cards: a bigger character and a calmer stat line */
+.kn-card__avatar { width: 92px; height: 92px; border-radius: 22px; transition: transform var(--lh-t-base) var(--lh-spring); }
+.kn-card:hover .kn-card__avatar { transform: scale(1.04) rotate(-1.5deg); }
+.kn-stat dd { font-family: var(--lh-font-display); font-size: 28px; font-weight: 700; line-height: 1.05; letter-spacing: -.005em; }
+.kn-stat dt { letter-spacing: .02em; }
+.kn-card { border-radius: var(--lh-r-lg); box-shadow: var(--lh-e1); }
+.kn-empty__dog { filter: drop-shadow(0 14px 22px rgba(0, 0, 0, .45)); }
+@media (max-width: 760px) { .kn-card__avatar { width: 72px; height: 72px; } .kn-card__avatar svg { width: 72px; height: 72px; } .kn-stat dd { font-size: 24px; } }

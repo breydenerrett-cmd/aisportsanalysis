@@ -102,11 +102,11 @@ function boardRow(hound, rank, qual, min) {
     h("td", { class: "lbnum", "data-hook": "lb-record", text: recordText(hound) }),
     h("td", { ...(grey || { class: "lbnum" }), "data-hook": "lb-bankroll" }, [fmtUsd(balance),
       basisTagText(hound) ? h("small", { class: "lbbasis", "data-hook": "lb-basis", title: RECORDED_TITLE, text: basisTagText(hound) }) : null]),
-    h("td", { ...(grey || { class: `lbnum lbtone--${tone(ret)}` }), "data-hook": "lb-return", text: fmtPct(ret) }),
+    h("td", { ...(grey || { class: `lbnum lbtone--${tone(ret)}` }), "data-hook": "lb-return", "data-count": "1", text: fmtPct(ret) }),
     qual
       ? h("td", { class: "lbnum" }, [h("span", { class: "lbpill", "data-hook": "lb-progress",
         title: `Needs ${min} settled bets to be ranked`, text: progressText(hound, min) })])
-      : h("td", { class: "lbnum", "data-hook": "lb-bets", text: String(betsOf(hound)) }),
+      : h("td", { class: "lbnum", "data-hook": "lb-bets", "data-count": "1", text: String(betsOf(hound)) }),
   ]);
 }
 

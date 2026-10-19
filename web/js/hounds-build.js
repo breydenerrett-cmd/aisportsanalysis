@@ -27,6 +27,7 @@
 import { apiGet, apiPost, getToken } from "./api.js";
 import { h, s, clearNode, describeError, houndHref, isNum, fmtPrice } from "./hounds-core.js";
 import { celebrate } from "./dog-common.js";
+import { dogBadge, dogFace, DEFAULT_LOOK } from "./dog-avatar.js";
 import { stakeLineText } from "./hounds-board.js";
 
 export const PAPER_NOTICE =
@@ -613,7 +614,12 @@ function updateDogCard() {
   if (!S.spec || !S.menu) return;
   const card = clearNode(q("build-dog-card"));
   const hex = colorHex(S.spec.color);
+  // the dog reacts to what has been said so far: thinking until there is a name or a rule, happy once there are both
+  const pose = S.spec.name && S.sentences.length ? "happy" : S.spec.name || S.sentences.length ? "idle" : "thinking";
   card.appendChild(h("div", { class: "bd-dog", style: `--dog:${hex}` }, [
+    // a dog being edited shows ITS look and breed; a new dog shows the default look until it is saved and dressed in the studio
+    h("span", { class: "bd-dog__dog", "data-hook": "dog-preview-dog", "data-pose": pose }, [
+      S.edit ? dogBadge(S.edit.look || DEFAULT_LOOK, { size: 92, mood: pose, id: S.edit.id }) : dogBadge(DEFAULT_LOOK, { size: 92, mood: pose, breed: "retriever" })]),
     h("span", { class: "bd-dog__badge", "data-hook": "dog-badge", "data-badge": S.spec.badge }, [badgeIcon(S.spec.badge, 34)]),
     h("div", { class: "bd-dog__text" }, [
       h("p", { class: "bd-dog__name", "data-hook": "dog-name", text: S.spec.name || "Your dog" }),
@@ -929,7 +935,7 @@ function dogItem(d) {
   const record = rec.bets ? `${rec.wins}-${rec.losses}${rec.pushes ? `-${rec.pushes}` : ""}, ${rec.bets} bets` : "no bets yet";
   const hex = colorHex(d.color);
   return h("li", { class: "bd-dogrow", "data-hook": "my-dog", "data-id": d.id, style: `--dog:${hex}` }, [
-    h("span", { class: "bd-dog__badge bd-dog__badge--sm" }, [badgeIcon(d.badge || "bone", 20)]),
+    h("span", { class: "bd-dog__face", "aria-hidden": "true" }, [dogFace(d, { size: 44 })]),
     h("div", { class: "bd-dogrow__text" }, [
       h("p", { class: "bd-dogrow__name" }, [h("a", { href: houndHref(d.id), text: d.name }),
         h("span", { class: "hd-fine", text: ` v${d.version_no} · ${d.status}` })]),
@@ -944,7 +950,7 @@ function dogItem(d) {
 function startEdit(d) {
   stopJobPolling();
   S.started = true;
-  S.edit = { id: d.id, version_no: d.version_no, name: d.name };
+  S.edit = { id: d.id, version_no: d.version_no, name: d.name, look: d.look || null };
   S.copiedFrom = "";
   S.diffReady = false;
   S.spec = normaliseSpec(d.spec);
