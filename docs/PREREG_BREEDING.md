@@ -230,3 +230,14 @@ The family tree's eligibility table shows every member's progress toward 25.
 Breeding does not claim that a baby is better than its parents, that the
 parent pool is the best set of rules, or that any hound has an edge. A cycle
 that breeds nothing, for months, is working as designed.
+
+## 12. Clarification, 2026-10-19 (before the first cycle; no cycle has run)
+
+Written after reading the code against sections 3 and 6, before any cycle
+has written a row (the only real-data run so far is one dry run, which found
+no eligible member). Sections 3 and 6 did not say what happens when a member
+is both in the top 4 and culled, which can occur when 4 or 5 members are
+eligible. Rule: the culls are decided first; a member culled in a cycle is
+removed before the parent pool is taken, so the pool is the top 4 of the
+remaining eligible members, and a culled member is never the "best relative"
+a replacement is made from in that cycle. Nothing else changes.

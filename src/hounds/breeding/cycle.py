@@ -330,10 +330,13 @@ def _run(world: World, scope: L.Scope, log: BreedLog, breed: BreedState, now: da
     tun_cfg = world.tunables()
     # ---- culls
     culls, replacements = [], []
+    culled_ids = {m.id for m in select.cull_candidates(ranked)}
+    # prereg section 12: a member culled this cycle is neither a parent nor a "best relative" this cycle
+    survivors = [m for m in ranked if m.id not in culled_ids]
     for m in select.cull_candidates(ranked):
         if m.role == "champion":
             action = "replacement_proposed"
-            replacements.append((m, select.best_relative(ranked, m)))
+            replacements.append((m, select.best_relative(survivors, m)))
         else:
             action = "retired"
             retire_challenger(scope, m, now=now, cycle_date=cycle_date)
@@ -345,7 +348,7 @@ def _run(world: World, scope: L.Scope, log: BreedLog, breed: BreedState, now: da
         from src.hounds.learning import proposals
         propose = proposals.propose_pack
     from src.hounds.learning import proposals as P
-    pool = select.parent_pool(ranked)
+    pool = select.parent_pool(survivors)
     litters = cross.plan(pool, replacements)
     rngs: dict = {}
     births, refused, attempts = [], [], 0

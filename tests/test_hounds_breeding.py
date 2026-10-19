@@ -403,6 +403,23 @@ class TheCycle(Hermetic):
         # litters: the pool's two families first (2 attempts), so the replacement waits for the cap
         self.assertEqual(len(seen), 2)
 
+    def test_a_member_culled_this_cycle_is_not_a_parent_this_cycle(self):
+        """Prereg section 12: with exactly 4 eligible, the culled bottom 2 leave the pool."""
+        for hid, clv in (("professor_paws", 1.0), ("totals_terrier", 0.8), ("steamy_setter", -0.5),
+                         ("relief_retriever", -0.7)):
+            F.write_bets(self.w.champion_ledger, hid, 60, clv=clv, tag=hid)
+        seen = []
+
+        def fake(scope, hid, params, hyp, ev, **kw):
+            seen.append(ev)
+            raise proposals.ProposalError("x", "test")
+        rep = cycle.tick(self.w, now=at(rules.ANCHOR_DATE), propose=fake)
+        self.assertEqual(rep["pool"], ["professor_paws/v1", "totals_terrier/v1"])
+        self.assertEqual(sorted(c["id"] for c in rep["culls"]), ["relief_retriever", "steamy_setter"])
+        parents = [r for ev in seen for r in ev if r.startswith("parent:")]
+        self.assertEqual(parents, ["parent:professor_paws/v1", "parent:totals_terrier/v1"])
+        self.assertIn("## 12. Clarification, 2026-10-19", PREREG)
+
     def test_auto_pause_after_three_birth_cycles_that_all_ended_badly_then_resume(self):
         log = cycle.BreedLog(self.w.breed_ledger)
         endings = [("retired", "harm"), ("undecided", "expired"), ("retired", "harm")]
