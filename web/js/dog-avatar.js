@@ -15,10 +15,10 @@
 
 import { apiGet } from "./api.js";
 import { COATS, EYES, BACKGROUNDS, HEAD, FACE, NECK, BODY, DEFAULT_LOOK, cleanLook, lookFor, randomLook } from "./dog-look.js";
-import { dogSvg, renderDog, setPose, flashPose, breedFor, poseOfPick, POSES, BREEDS } from "./dog-rig.js";
+import { dogSvg, renderDog, setPose, flashPose, breedFor, breedLabel, breedOfName, BREED_LABELS, poseOfPick, POSES, BREEDS } from "./dog-rig.js";
 
 export { COATS, EYES, BACKGROUNDS, HEAD, FACE, NECK, BODY, DEFAULT_LOOK, cleanLook, lookFor, randomLook };
-export { renderDog, setPose, flashPose, breedFor, poseOfPick, POSES, BREEDS };
+export { renderDog, setPose, flashPose, breedFor, breedLabel, breedOfName, BREED_LABELS, poseOfPick, POSES, BREEDS };
 
 /**
  * The badge as an SVG element. `size` is the pixel width and height; `mood` is the pose (idle, happy, sad or the old word

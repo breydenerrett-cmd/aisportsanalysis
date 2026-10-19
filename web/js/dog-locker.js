@@ -13,7 +13,7 @@
 import { h, clearNode } from "./hounds-core.js";
 import { put, errorText, statusLine, builderHref, celebrate } from "./dog-common.js";
 import { COATS, EYES, BACKGROUNDS, HEAD, FACE, NECK, BODY, DEFAULT_LOOK, cleanLook, randomLook, lookFor } from "./dog-look.js";
-import { dogSvg, breedFor, cleanPose, POSES } from "./dog-rig.js";
+import { dogSvg, breedFor, breedLabel, cleanPose, POSES } from "./dog-rig.js";
 
 const title = (key) => key.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase());
 const POSE_LABEL = { idle: "Idle", happy: "Happy", sad: "Sad", thinking: "Thinking", celebrate: "Cheer" };
@@ -61,7 +61,7 @@ export function mountLocker(section, { id, name, kit, vibe, onSaved, onChange })
   const previewBox = h("div", { class: "dk-preview dk-stage", "data-hook": "locker-preview" }, [
     h("div", { class: "dk-stage__spot", "aria-hidden": "true" }), stageDog,
     h("div", { class: "dk-stage__bar" }, [
-      h("p", { class: "dk-stage__breed", "data-hook": "locker-breed" }, [h("strong", { text: title(breed) }), " ", h("span", { class: "hd-fine", text: "breed comes with the dog" })]),
+      h("p", { class: "dk-stage__breed", "data-hook": "locker-breed" }, [h("strong", { text: breedLabel(breed) }), " ", h("span", { class: "hd-fine", text: "breed comes with the dog" })]),
       dirty]),
     poseBar,
     random]);

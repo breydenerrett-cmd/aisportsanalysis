@@ -26,7 +26,7 @@ const q = (hook) => document.querySelector(`[data-hook='${hook}']`);
 export function applyHeaderBadge(look, name, muted = false, dog = {}) {
   const old = document.querySelector(".hd-modelhead .hd-mono") || document.querySelector(".hd-modelhead .dk-badge");
   if (!old || !look) return false;
-  const badge = dogBadge(look, { size: 84, id: dog.id, vibe: dog.vibe, mood: muted ? "sad" : (dog.pose || "idle") });
+  const badge = dogBadge(look, { size: 84, id: dog.id, name: name || dog.name, vibe: dog.vibe, mood: muted ? "sad" : (dog.pose || "idle") });
   badge.setAttribute("data-hook", "header-badge");
   if (muted) badge.setAttribute("style", "opacity:.55");
   const parent = old.parentNode;
