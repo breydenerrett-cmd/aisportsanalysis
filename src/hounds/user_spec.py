@@ -43,6 +43,10 @@ from typing import Any, Iterable, Mapping, Optional
 from src.core import odds as odds_math
 
 SPEC_VERSION = 1
+# The composable rule language (src/hounds/user_rules.py): several rules, each with AND/OR condition
+# groups, player props, a stake and a ranking rule. Version-1 specs stay valid and run exactly as
+# before; `upgrade_v1` turns one into a version-2 draft when its owner edits it.
+SPEC_VERSION_V2 = 2
 
 NOT_ADVICE = ("Paper only. These are simulated picks from a rule, not betting advice and not a "
               "suggestion to place any real bet.")
@@ -275,6 +279,45 @@ def _as_list(value: Any) -> Optional[list]:
     return None
 
 
+def _check_name(raw: Mapping, errors: dict, taken_names: Iterable[str],
+                extra_real_names: Optional[Mapping[str, str]]) -> Optional[str]:
+    name = raw.get("name")
+    if not isinstance(name, str):
+        errors["name"] = "is required"
+        return name
+    name = name.strip()
+    if not (NAME_MIN <= len(name) <= NAME_MAX):
+        errors["name"] = f"must be {NAME_MIN} to {NAME_MAX} characters"
+    elif not _NAME_RE.match(name) or "  " in name or not re.search(r"[A-Za-z]", name):
+        errors["name"] = "may use only letters, digits, spaces and hyphens, with a letter in it"
+    else:
+        problem = text_problem(name) or real_name_problem(name, extra_real_names)
+        if problem:
+            errors["name"] = problem
+        elif _fold(name) in {_fold(t) for t in taken_names}:
+            errors["name"] = "is already taken"
+    return name
+
+
+def _check_tagline(raw: Mapping, errors: dict, key: str = "tagline", maximum: int = TAGLINE_MAX) -> str:
+    tagline = raw.get(key, "")
+    if tagline is None:
+        tagline = ""
+    if not isinstance(tagline, str):
+        errors[key] = "must be text"
+        return ""
+    tagline = " ".join(tagline.split())
+    if len(tagline) > maximum:
+        errors[key] = f"must be {maximum} characters or fewer"
+    elif not _TAGLINE_OK_RE.match(tagline):
+        errors[key] = "uses characters that are not allowed"
+    else:
+        problem = text_problem(tagline)
+        if problem:
+            errors[key] = problem
+    return tagline
+
+
 def validate_spec(raw: Mapping, *, taken_names: Iterable[str] = (),
                   extra_real_names: Optional[Mapping[str, str]] = None) -> dict:
     """The strict gate. Returns a NORMALISED spec (canonical order, canonical types) or raises
@@ -283,44 +326,15 @@ def validate_spec(raw: Mapping, *, taken_names: Iterable[str] = (),
     errors: dict = {}
     if not isinstance(raw, Mapping):
         raise SpecError({"spec": "must be an object"})
+    if raw.get("version") == SPEC_VERSION_V2 or "rules" in raw:
+        return _validate_v2(raw, taken_names=taken_names, extra_real_names=extra_real_names)
     allowed = set(SPEC_FIELDS) | {"version"}
     for key in raw:
         if key not in allowed:
             errors[str(key)] = "is not a field on the menu"
 
-    # name
-    name = raw.get("name")
-    if not isinstance(name, str):
-        errors["name"] = "is required"
-    else:
-        name = name.strip()
-        if not (NAME_MIN <= len(name) <= NAME_MAX):
-            errors["name"] = f"must be {NAME_MIN} to {NAME_MAX} characters"
-        elif not _NAME_RE.match(name) or "  " in name or not re.search(r"[A-Za-z]", name):
-            errors["name"] = "may use only letters, digits, spaces and hyphens, with a letter in it"
-        else:
-            problem = text_problem(name) or real_name_problem(name, extra_real_names)
-            if problem:
-                errors["name"] = problem
-            elif _fold(name) in {_fold(t) for t in taken_names}:
-                errors["name"] = "is already taken"
-
-    # tagline
-    tagline = raw.get("tagline", "")
-    if tagline is None:
-        tagline = ""
-    if not isinstance(tagline, str):
-        errors["tagline"] = "must be text"
-    else:
-        tagline = " ".join(tagline.split())
-        if len(tagline) > TAGLINE_MAX:
-            errors["tagline"] = f"must be {TAGLINE_MAX} characters or fewer"
-        elif not _TAGLINE_OK_RE.match(tagline):
-            errors["tagline"] = "uses characters that are not allowed"
-        else:
-            problem = text_problem(tagline)
-            if problem:
-                errors["tagline"] = problem
+    name = _check_name(raw, errors, taken_names, extra_real_names)
+    tagline = _check_tagline(raw, errors)
 
     # sports / markets
     sports = _as_list(raw.get("sports", raw.get("sport")))
@@ -384,7 +398,13 @@ def validate_spec(raw: Mapping, *, taken_names: Iterable[str] = (),
     }
 
 
+RULE_FIELDS_V2 = ("rules", "lock_minutes", "max_bets_per_day", "stake_units", "rank_by")
+
+
 def rule_fields(spec: Mapping) -> dict:
+    """The fields that make a hound's RULE (everything except its name, tagline, colour and badge)."""
+    if spec.get("version") == SPEC_VERSION_V2:
+        return {"v": SPEC_VERSION_V2, **{k: spec[k] for k in RULE_FIELDS_V2}}
     return {k: spec[k] for k in RULE_FIELDS}
 
 
@@ -433,6 +453,9 @@ _SIDE_PHRASE = {
 
 def rule_text(spec: Mapping) -> str:
     """The plain-English rule, generated from the validated spec and nothing else."""
+    if spec.get("version") == SPEC_VERSION_V2:
+        from src.hounds.english import render
+        return render.rule_text(spec)
     sports = spec["sports"]
     sport_words = " and ".join(sports)
     start_word = {"MLB": "first pitch", "NFL": "kickoff"}
@@ -473,4 +496,273 @@ def menu() -> dict:
         "lock_minutes": {"label": "Lock this long before the start",
                          "choices": list(LOCK_CHOICES)},
         "max_running_per_account": MAX_RUNNING_PER_ACCOUNT,
+    }
+
+
+# ---------------------------------------------------------------------------
+# version 2: the composable rule set (conditions live in src/hounds/user_rules.py)
+# ---------------------------------------------------------------------------
+
+V2_RULE_KEYS = ("label", "sports", "markets", "side", "price_min", "price_max", "line_min", "line_max",
+                "min_books", "when")
+# Keys a version-2 spec carries for readers that predate it (the public definition, the kennel feed):
+# derived from the rules on every validation, accepted on input so a spec can be POSTed back as read,
+# and never part of the rule hash.
+V2_DERIVED_KEYS = ("sports", "markets", "side_rule")
+V2_TOP_KEYS = ("version", "name", "tagline", "color", "badge", "lock_minutes", "max_bets_per_day",
+               "stake_units", "rank_by", "rules") + V2_DERIVED_KEYS
+RULE_LABEL_MAX = 40
+DEFAULT_MIN_BOOKS_GAME, DEFAULT_MIN_BOOKS_PROP = 3, 1
+LINE_RANGE = (-30.0, 60.0)
+# Prop boards are captured twice a game (a baseline 5-24 hours out, a gate capture 0-2 hours out), so a
+# 120 or 180 minute lock often has only the baseline board. Point-in-time either way; this bounds how
+# stale a price may be.
+MAX_PROP_BOARD_AGE_MINUTES = 720
+
+_players_cache: dict = {}
+
+
+def _known_player_fn():
+    """A predicate for 'is this a player in our box scores', or None when no box-score store is
+    present at all (then names cannot be checked and are accepted if well formed)."""
+    if "fn" not in _players_cache:
+        from src.hounds.user_rules import fold_player
+        names = {fold_player(k) for k, kind in known_real_names().items() if kind == "player"}
+        _players_cache["fn"] = (lambda n: fold_player(n) in names) if names else None
+    return _players_cache["fn"]
+
+
+def _price_errors(raw: Mapping, errors: dict, prefix: str) -> tuple:
+    pmin, pmax = raw.get("price_min", SHORTEST_ALLOWED_PRICE), raw.get("price_max", LONGEST_ALLOWED_PRICE)
+    for key, value in (("price_min", pmin), ("price_max", pmax)):
+        if not _is_price(value):
+            errors[f"{prefix}{key}"] = "must be an American price such as -150 or +120"
+        elif value < 0 and value < SHORTEST_ALLOWED_PRICE:
+            errors[f"{prefix}{key}"] = (f"cannot be {MAX_FAVOURITE_PRICE} or worse; this program never "
+                                        f"selects a price that short")
+        elif value > LONGEST_ALLOWED_PRICE:
+            errors[f"{prefix}{key}"] = f"cannot be longer than +{LONGEST_ALLOWED_PRICE}"
+    if f"{prefix}price_min" not in errors and f"{prefix}price_max" not in errors:
+        if price_decimal(pmin) > price_decimal(pmax):
+            errors[f"{prefix}price_max"] = "must be the same as or longer than price_min"
+    return pmin, pmax
+
+
+def _line_value(raw: Mapping, key: str, errors: dict, prefix: str) -> Optional[float]:
+    v = raw.get(key)
+    if v is None:
+        return None
+    if isinstance(v, bool) or not isinstance(v, (int, float)) or v != v or not (LINE_RANGE[0] <= v <= LINE_RANGE[1]):
+        errors[f"{prefix}{key}"] = f"must be a number from {LINE_RANGE[0]:g} to {LINE_RANGE[1]:g}"
+        return None
+    return float(v)
+
+
+def _validate_rule(raw: Any, index: int, errors: dict) -> Optional[dict]:
+    from src.hounds import user_rules as R
+    prefix = f"rules[{index}]."
+    if not isinstance(raw, Mapping):
+        errors[f"rules[{index}]"] = "a rule must be an object"
+        return None
+    for key in raw:
+        if key not in V2_RULE_KEYS:
+            errors[f"{prefix}{str(key)[:30]}"] = "is not a field on the menu"
+    start_errors = len(errors)
+
+    label = raw.get("label", "")
+    if label is None:
+        label = ""
+    if not isinstance(label, str):
+        errors[f"{prefix}label"] = "must be text"
+        label = ""
+    else:
+        label = _check_tagline({"label": label}, errors, key=f"{prefix}label", maximum=RULE_LABEL_MAX)
+
+    sports = _as_list(raw.get("sports", raw.get("sport")))
+    if not sports or any(s not in SPORTS for s in sports) or len(set(sports)) != len(sports):
+        errors[f"{prefix}sports"] = f"choose one or both of {', '.join(SPORTS)}"
+        sports = None
+    else:
+        sports = [s for s in SPORTS if s in sports]
+    markets = _as_list(raw.get("markets", raw.get("market")))
+    if not markets or any(m not in R.ALL_MARKETS for m in markets) or len(set(markets)) != len(markets):
+        errors[f"{prefix}markets"] = f"choose from {', '.join(R.ALL_MARKETS)}"
+        markets = None
+    else:
+        markets = [m for m in R.ALL_MARKETS if m in markets]
+    kinds: list = []
+    if markets:
+        kinds = sorted({R.market_kind(m) for m in markets})
+        if len(kinds) > 1:
+            errors[f"{prefix}markets"] = ("a rule is about game bets (moneyline, spread), game totals, or "
+                                          "player props; put each in its own rule")
+            markets = None
+        elif "prop" in kinds and sports and sports != ["MLB"]:
+            errors[f"{prefix}sports"] = "player props are MLB only: there are no NFL prop prices on file"
+            sports = None
+
+    side = raw.get("side", "either")
+    if side not in R.SIDES:
+        errors[f"{prefix}side"] = f"choose one of {', '.join(R.SIDES)}"
+        side = None
+    elif markets and side not in R.sides_for(kinds):
+        errors[f"{prefix}side"] = (f"'{side}' cannot be applied to {', '.join(markets)}; it works on "
+                                   f"{', '.join(R.sides_for(kinds))}")
+
+    pmin, pmax = _price_errors(raw, errors, prefix)
+    lmin, lmax = _line_value(raw, "line_min", errors, prefix), _line_value(raw, "line_max", errors, prefix)
+    if lmin is not None and lmax is not None and lmin > lmax:
+        errors[f"{prefix}line_max"] = "must be the same as or higher than line_min"
+    if (lmin is not None or lmax is not None) and markets and markets == ["moneyline"]:
+        errors[f"{prefix}line_min"] = "a moneyline has no line; use the price range instead"
+
+    default_books = DEFAULT_MIN_BOOKS_PROP if "prop" in kinds else DEFAULT_MIN_BOOKS_GAME
+    mb = raw.get("min_books", default_books)
+    if isinstance(mb, bool) or not isinstance(mb, int) or not (MIN_BOOKS_RANGE[0] <= mb <= MIN_BOOKS_RANGE[1]):
+        errors[f"{prefix}min_books"] = f"must be a whole number from {MIN_BOOKS_RANGE[0]} to {MIN_BOOKS_RANGE[1]}"
+        mb = None
+
+    when = None
+    if raw.get("when") is not None and sports and markets:
+        when = R.validate_tree(raw["when"], kinds=kinds, markets=markets, sports=sports,
+                               path=f"{prefix}when", errors=errors, known_players=_known_player_fn())
+    if len(errors) > start_errors:
+        return None
+    return {"label": label, "sports": sports, "markets": markets, "side": side, "price_min": pmin,
+            "price_max": pmax, "line_min": lmin, "line_max": lmax, "min_books": mb, "when": when}
+
+
+def _validate_v2(raw: Mapping, *, taken_names: Iterable[str], extra_real_names) -> dict:
+    from src.hounds import user_rules as R
+    errors: dict = {}
+    for key in raw:
+        if key not in V2_TOP_KEYS:
+            errors[str(key)[:30]] = "is not a field on the menu"
+    if raw.get("version", SPEC_VERSION_V2) != SPEC_VERSION_V2:
+        errors["version"] = f"must be {SPEC_VERSION_V2}"
+    name = _check_name(raw, errors, taken_names, extra_real_names)
+    tagline = _check_tagline(raw, errors)
+
+    color = raw.get("color", "ember")
+    if color not in R.COLOR_IDS:
+        errors["color"] = f"choose one of {', '.join(R.COLOR_IDS)}"
+    badge = raw.get("badge", "bone")
+    if badge not in R.BADGE_IDS:
+        errors["badge"] = f"choose one of {', '.join(R.BADGE_IDS)}"
+
+    lock = raw.get("lock_minutes", LOCK_CHOICES[1])
+    if isinstance(lock, bool) or lock not in LOCK_CHOICES:
+        errors["lock_minutes"] = f"must be one of {', '.join(map(str, LOCK_CHOICES))}"
+        lock = None
+    bets = raw.get("max_bets_per_day", 2)
+    if isinstance(bets, bool) or not isinstance(bets, int) or not (MAX_BETS_RANGE[0] <= bets <= MAX_BETS_RANGE[1]):
+        errors["max_bets_per_day"] = f"must be a whole number from {MAX_BETS_RANGE[0]} to {MAX_BETS_RANGE[1]}"
+        bets = None
+    stake = raw.get("stake_units", 1.0)
+    if isinstance(stake, bool) or not isinstance(stake, (int, float)) or float(stake) not in R.STAKE_CHOICES:
+        errors["stake_units"] = f"must be one of {', '.join(f'{s:g}' for s in R.STAKE_CHOICES)} paper units"
+        stake = None
+    rank = raw.get("rank_by", "earliest_lock")
+    if rank not in R.RANK_RULES:
+        errors["rank_by"] = f"choose one of {', '.join(R.RANK_RULES)}"
+
+    rules_raw = raw.get("rules")
+    rules: list = []
+    if not isinstance(rules_raw, (list, tuple)) or not rules_raw:
+        errors["rules"] = "add at least one rule"
+    elif len(rules_raw) > R.MAX_RULES:
+        errors["rules"] = f"a dog has at most {R.MAX_RULES} rules"
+    else:
+        for i, item in enumerate(rules_raw):
+            norm = _validate_rule(item, i, errors)
+            if norm is not None:
+                rules.append(norm)
+    if errors:
+        raise SpecError(errors)
+    sports = [s for s in SPORTS if any(s in r["sports"] for r in rules)]
+    markets = [m for m in R.ALL_MARKETS if any(m in r["markets"] for r in rules)]
+    return {
+        "version": SPEC_VERSION_V2, "name": name, "tagline": tagline, "color": color, "badge": badge,
+        "sports": sports, "markets": markets, "side_rule": "custom", "lock_minutes": lock,
+        "max_bets_per_day": bets, "stake_units": float(stake), "rank_by": rank, "rules": rules,
+    }
+
+
+def is_v2(spec: Mapping) -> bool:
+    return spec.get("version") == SPEC_VERSION_V2
+
+
+def upgrade_v1(spec: Mapping) -> dict:
+    """A version-1 spec as the equivalent version-2 DRAFT (not validated against names): what the
+    builder opens when its owner edits a classic dog. The new version is a different spec (it hashes
+    differently), so the old record and every bet on it stay exactly as they were."""
+    side_rule = spec["side_rule"]
+    base = {"sports": list(spec["sports"]), "price_min": spec["price_min"], "price_max": spec["price_max"],
+            "line_min": None, "line_max": None, "min_books": spec["min_books"]}
+    when_items: list = []
+    side = "either"
+    if side_rule in ("home", "away", "over", "under"):
+        side = side_rule
+    elif side_rule in ("favourite", "underdog"):
+        when_items.append({"id": "role", "value": side_rule})
+    elif side_rule in ("market_moved_toward", "market_moved_away"):
+        when_items.append({"id": "steam", "direction": "toward" if side_rule.endswith("toward") else "against"})
+    rules = []
+    for markets in ([m for m in spec["markets"] if m != "total"], [m for m in spec["markets"] if m == "total"]):
+        if not markets:
+            continue
+        if markets == ["total"] and side in ("home", "away"):
+            continue
+        if markets != ["total"] and side in ("over", "under"):
+            continue
+        rules.append({**base, "label": "", "markets": markets, "side": side,
+                      "when": {"op": "all", "items": list(when_items)} if when_items else None})
+        if markets == ["total"] and when_items and when_items[0]["id"] == "role":
+            rules.pop()                      # a favourite/underdog rule never applied to totals
+    return {"version": SPEC_VERSION_V2, "name": spec["name"], "tagline": spec.get("tagline", ""),
+            "color": "ember", "badge": "bone", "lock_minutes": spec["lock_minutes"],
+            "max_bets_per_day": spec["max_bets_per_day"], "stake_units": 1.0, "rank_by": "earliest_lock",
+            "rules": rules}
+
+
+def builder_menu() -> dict:
+    """GET /hounds/builder/menu: everything a client may put in a version-2 spec, with bounds. The
+    English parser, the AI translator's output check and the web builder are all generated from, and
+    validated against, this one document."""
+    from src.hounds import user_rules as R
+    return {
+        "spec_version": SPEC_VERSION_V2,
+        "paper_only": True, "not_advice": NOT_ADVICE,
+        "price_cap_note": f"No selection at {MAX_FAVOURITE_PRICE} or worse, ever.",
+        "limits": {"max_rules": R.MAX_RULES, "max_depth": R.MAX_DEPTH, "max_conditions_per_rule": R.MAX_CONDITIONS,
+                   "max_running_per_account": MAX_RUNNING_PER_ACCOUNT, "max_list": R.MAX_LIST},
+        "name": {"min": NAME_MIN, "max": NAME_MAX}, "tagline": {"max": TAGLINE_MAX},
+        "rule_label": {"max": RULE_LABEL_MAX},
+        "sports": [{"value": s, "label": SPORT_LABELS[s]} for s in SPORTS],
+        "markets": [{"value": m, "label": R.MARKET_LABELS[m], "kind": R.market_kind(m),
+                     "sports": ["MLB"] if R.market_kind(m) == "prop" else list(SPORTS)} for m in R.ALL_MARKETS],
+        "sides": [{"value": s, "label": R.SIDE_LABELS[s]} for s in R.SIDES],
+        "side_by_kind": {"ml_spread": list(R.sides_for(["ml_spread"])), "total": list(R.sides_for(["total"])),
+                         "prop": list(R.sides_for(["prop"]))},
+        "price": {"lowest": SHORTEST_ALLOWED_PRICE, "highest": LONGEST_ALLOWED_PRICE,
+                  "presets_short": list(PRICE_PRESETS_SHORT), "presets_long": list(PRICE_PRESETS_LONG),
+                  "cap": MAX_FAVOURITE_PRICE},
+        "line": {"min": LINE_RANGE[0], "max": LINE_RANGE[1]},
+        "min_books": {"min": MIN_BOOKS_RANGE[0], "max": MIN_BOOKS_RANGE[1],
+                      "default_game": DEFAULT_MIN_BOOKS_GAME, "default_prop": DEFAULT_MIN_BOOKS_PROP},
+        "max_bets_per_day": {"min": MAX_BETS_RANGE[0], "max": MAX_BETS_RANGE[1], "default": 2},
+        "stake_units": {"choices": list(R.STAKE_CHOICES), "default": 1.0},
+        "lock_minutes": {"choices": list(LOCK_CHOICES), "default": LOCK_CHOICES[1]},
+        "rank_by": [{"value": r, "label": R.RANK_LABELS[r]} for r in R.RANK_RULES],
+        "colors": [{"value": c[0], "label": c[1], "hex": c[2]} for c in R.COLORS],
+        "badges": [{"value": b[0], "label": b[1]} for b in R.BADGES],
+        "teams": R.team_menu(),
+        "conditions": R.menu_conditions(),
+        "prop_board_note": ("Prop boards are captured twice a game, so a prop is priced from the newest "
+                            "capture at or before your lock, up to "
+                            f"{MAX_PROP_BOARD_AGE_MINUTES // 60} hours old."),
+        "ranking_note": ("When more picks qualify than your daily cap, they are ranked by your rule. A pick "
+                         "is made at its own lock, so the ranking decides among the picks that qualify "
+                         "in the same engine pass; a bet already made is never taken back."),
+        "stake_note": "A stake is a paper label. The public record counts every bet as one unit.",
     }

@@ -41,7 +41,7 @@ from typing import Callable, Mapping, Optional, Sequence
 
 from src.appstate import card_ledger
 from src.core import odds as odds_math
-from src.hounds import user_engine
+from src.hounds import user_engine, user_rules
 from src.ledger.chain import HashChainLedger
 
 KIND_GRADED = "hound_user_graded"
@@ -104,6 +104,61 @@ def _pick_for(bet: Mapping, identity) -> dict:
     return pick
 
 
+def load_box_index(pks: set, *, path: Optional[str] = None) -> dict:
+    """{game_pk: {folded player name: {'batter': row, 'pitcher': row}}} for the wanted games only,
+    read from the box-score store one line at a time (the store is not held whole)."""
+    from src.hounds.user_rules import fold_player
+    from src.paths import processed_path
+    target = path or str(processed_path("boxscores_2026.jsonl"))
+    out: dict = {}
+    wanted = {str(p) for p in pks}
+    if not wanted:
+        return out
+    try:
+        fh = open(target, encoding="utf-8")
+    except OSError:
+        return out
+    with fh:
+        for line in fh:
+            if '"type": "batter"' not in line and '"type": "pitcher"' not in line:
+                continue
+            try:
+                row = json.loads(line)
+            except ValueError:
+                continue
+            pk = str(row.get("game_pk"))
+            if pk in wanted and row.get("player_name"):
+                out.setdefault(pk, {}).setdefault(fold_player(row["player_name"]), {})[row["type"]] = row
+    return out
+
+
+def grade_prop(bet: Mapping, game_box: Optional[Mapping]) -> dict:
+    """A player-prop bet against the final box score of its game.
+
+    The stat is the same table the player conditions read (`user_rules.PROP_STATS`). Over wins above
+    the line, under below it, equal is a push. A player with no line in the box score of a finished
+    game did not play: VOID (no action), as the books settle a prop on a player who did not appear.
+    A game whose box score is not on file yet returns result None (pending, never a guess)."""
+    from src.hounds import user_rules as R
+    if game_box is None:
+        return {"result": None}
+    kind, key, noun = R.PROP_STATS[bet["market"]]
+    row = (game_box.get(R.fold_player(bet.get("player") or "")) or {}).get(kind)
+    if row is None:
+        return {"result": card_ledger.RESULT_VOID, "reason": f"{bet.get('player')} did not appear in the box score",
+                "away_score": None, "home_score": None}
+    value = float(row.get(key) or 0)
+    line = float(bet["line"])
+    if value == line:
+        outcome = card_ledger.RESULT_PUSH
+    elif (value > line) == (bet["side"] == "over"):
+        outcome = card_ledger.RESULT_WIN
+    else:
+        outcome = card_ledger.RESULT_LOSS
+    return {"result": outcome, "reason": f"{bet.get('player')} had {value:g} {noun} against a line of {line:g}",
+            "away_score": None, "home_score": None}
+
+
 def grade_bet(bet: Mapping, result: Mapping, identity) -> dict:
     """One bet against one result mapping -> the card ledger's grade dict."""
     pick = _pick_for(bet, identity)
@@ -118,7 +173,8 @@ def settle(*, ledger: Optional[str] = None, now: Optional[datetime] = None,
            nfl_results: Optional[Callable[[str], Mapping]] = None,
            postponed_lookup: Optional[Callable] = None,
            game_pk_index: Optional[Mapping] = None,
-           close_fn: Optional[Callable[[Mapping], Optional[int]]] = None) -> dict:
+           close_fn: Optional[Callable[[Mapping], Optional[int]]] = None,
+           box_index: Optional[Mapping] = None) -> dict:
     """Grade every settled-able ungraded bet from the last `lookback_days`. Returns a report.
 
     mlb_results: {game_pk: results-store row} (default: the repository store, read once).
@@ -147,6 +203,17 @@ def settle(*, ledger: Optional[str] = None, now: Optional[datetime] = None,
         game_pk_index = user_engine._load_game_pk_index()
     nfl_cache: dict = {}
     close_fn = close_fn or make_close_fn()
+
+    # Player props are graded from the box score of the game. Resolve their games first so the box
+    # store is read once, for those games only.
+    prop_bets = [b for b in todo if b["market"] in user_rules.PROP_STATS]
+    if prop_bets and box_index is None:
+        wanted = set()
+        for b in prop_bets:
+            pk, _res = _resolve_mlb_result(b, results or {}, game_pk_index)
+            if pk is not None:
+                wanted.add(pk)
+        box_index = load_box_index(wanted)
 
     for bet in sorted(todo, key=lambda b: (b["slate_date"], b["bet_id"])):
         start = user_engine._utc(bet["commence_time"])
@@ -184,19 +251,26 @@ def settle(*, ledger: Optional[str] = None, now: Optional[datetime] = None,
                          "makeup_date": info.get("makeup_date")})
             report["pending"] += 1
             continue
-        graded = grade_bet(bet, result, identity)
+        is_prop = bet["market"] in user_rules.PROP_STATS
+        if is_prop:
+            graded = grade_prop(bet, (box_index or {}).get(str(identity)))
+        else:
+            graded = grade_bet(bet, result, identity)
         outcome = graded["result"]
         if outcome not in SETTLED:
             report["pending"] += 1
             continue
-        try:
-            close = close_fn(bet)
-        except Exception as exc:  # noqa: BLE001 -- no close price leaves CLV null
-            print(f"hounds settle: close price unavailable for {bet['bet_id']}: {exc!r}",
-                  file=sys.stderr)
-            close = None
+        close = None
+        if not is_prop:         # no closing prop board is read: a prop's CLV stays null, never a guess
+            try:
+                close = close_fn(bet)
+            except Exception as exc:  # noqa: BLE001 -- no close price leaves CLV null
+                print(f"hounds settle: close price unavailable for {bet['bet_id']}: {exc!r}",
+                      file=sys.stderr)
+                close = None
         avg_units = _profit_at(outcome, bet["price"])
         best_units = _profit_at(outcome, bet["best_price"])
+        stake = float(bet.get("stake_units") or 1.0)
         row = {
             "kind": KIND_GRADED, "ledger_version": user_engine.LEDGER_VERSION, "paper_only": True,
             "bet_id": bet["bet_id"], "hound_id": bet["hound_id"], "result": outcome,
@@ -213,6 +287,12 @@ def settle(*, ledger: Optional[str] = None, now: Optional[datetime] = None,
             "clv_pts": clv_points(bet["price"], close), "graded_utc": user_engine._iso(now),
             "slate_date": bet["slate_date"],
         }
+        if stake != 1.0:
+            # The paper stake the owner chose. The public record above stays one flat unit per bet
+            # (owner grading ruling 2026-09-21); these are the same results scaled, for the owner's own view.
+            row.update({"stake_units": stake,
+                        "profit_stake_units": None if avg_units is None else round(avg_units * stake, 4),
+                        "profit_stake_units_best": None if best_units is None else round(best_units * stake, 4)})
         store.append(row)
         report["graded"] += 1
         report["by_result"][outcome] = report["by_result"].get(outcome, 0) + 1
