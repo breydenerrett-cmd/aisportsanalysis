@@ -298,7 +298,7 @@ class TheLeaderboardIsRankedByUnitsWithTheBadgeBesideEachDog(unittest.TestCase):
         self.assertEqual(out["captures"]["house"]["n"], 10)      # 12 house hounds, 2 of them baselines (shown below the race)
         self.assertEqual(out["captures"]["math"]["ids"], ["poisson"])
         self.assertTrue(out["final"]["cats"][0].startswith("All kinds"))
-        self.assertEqual(out["final"]["filters"], ["All (13)", "House (12)", "Builders' (1)"])
+        self.assertEqual(out["final"]["filters"], ["All (13)", "My dogs ⭐ (0)", "House (12)", "Builders' (1)"])
 
     def test_esoteric_and_random_hounds_are_tagged_for_fun_or_control_and_never_hidden(self):
         out = run_page("hounds", routes=routes(), queries=[
@@ -635,7 +635,8 @@ class TheHoundPage(unittest.TestCase):
         self.assertIn("Worst beat 💔 Astros to win at -140 Mariners at Astros. -1.00u, Oct 22. The market had it 58% to win.",
                       f["worst"])
         self.assertIsNone(f["details_open"], "the details are collapsed")
-        self.assertEqual(f["order"][:4], ["The scoreboard", "What the Houndmaster said", "Sharp or lucky?", "The rules"])
+        self.assertEqual(f["order"][:5], ["🔴 Today's action", "The scoreboard", "What the Houndmaster said", "Sharp or lucky?",
+                                         "The rulebook"])
 
     def test_the_houndmasters_line_follows_the_last_settled_day_and_is_the_same_all_day(self):
         roast_pool = ["Closer roast 1.", "Closer roast 2.", "Closer roast 3.", "Closer roast 4.", "Closer roast 5."]

@@ -5,6 +5,11 @@
 // script finds), fakes fetch from scenario.routes ({path: [status, body]}), fakes interval timers so a
 // test can fire them by hand, and then runs scenario.actions (click / set / check / fire_timers /
 // visibility / wait) before reporting what is on the page.
+//
+// Dog-page scenario keys (2026-10-18): `share` (navigator.share exists; `shareFails` names the error it throws),
+// `storageThrows` ("methods": getItem/setItem throw; "accessor": touching window.localStorage throws), `tz`
+// (the process time zone, set by the runner), and a fake canvas / Image / URL.createObjectURL so the card
+// download runs. The report carries `shares`, `downloads` and `canvases` (every fillText string, the size).
 import fs from "node:fs";
 
 // The scenario comes in a file (SCENARIO_FILE): Linux refuses an environment variable over
@@ -15,6 +20,9 @@ const scenario = JSON.parse(process.env.SCENARIO_FILE
   : process.env.SCENARIO);
 
 // ---- fake DOM -------------------------------------------------------------------------------------
+const downloads = [];
+const canvases = [];
+const shares = [];
 const VOID = new Set(["meta", "link", "br", "img", "input", "hr", "area", "base", "col", "source", "wbr"]);
 const ENT = { "&middot;": "·", "&rarr;": "→", "&larr;": "←", "&amp;": "&", "&lt;": "<", "&gt;": ">",
   "&quot;": '"', "&#39;": "'", "&mdash;": "—", "&ndash;": "–", "&nbsp;": " " };
@@ -68,6 +76,20 @@ class Elem {
     return !evt.defaultPrevented;
   }
   closest() { return null; }
+  click() { this.dispatchEvent({ type: "click", target: this }); if (this.localName === "a" && "download" in this.attrs) downloads.push({ href: this.attrs.href, download: this.attrs.download }); }
+  getContext() {
+    if (this.localName !== "canvas") return undefined;
+    const rec = { w: 0, h: 0, texts: [], images: 0, rects: 0, fonts: [] };
+    canvases.push(rec);
+    this._rec = rec;
+    const ctx = {
+      set font(v) { rec.fonts.push(v); }, set fillStyle(v) {}, set textBaseline(v) {},
+      fillRect: () => { rec.rects += 1; }, drawImage: () => { rec.images += 1; },
+      fillText: (t) => { rec.texts.push(String(t)); }, measureText: (t) => ({ width: String(t).length * 14 }),
+    };
+    return ctx;
+  }
+  toBlob(cb) { if (this._rec) { this._rec.w = this.width; this._rec.h = this.height; } cb({ size: 1234, type: "image/png" }); }
   _all(out) { for (const c of this.children) { out.push(c); c._all(out); } return out; }
   matches(step) {
     if (step.tag && this.localName !== step.tag) return false;
@@ -155,9 +177,12 @@ const storage = {
   setItem: (k, v) => { store.set(k, String(v)); },
   removeItem: (k) => { store.delete(k); },
 };
+const throwing = scenario.storageThrows === "methods" ? () => { throw new Error("storage blocked"); } : null;
+if (throwing) { storage.getItem = throwing; storage.setItem = throwing; storage.removeItem = throwing; }
 const navigations = [];
 const winListeners = {};
-const loc = { search: scenario.search || "", host: "linehound.test", pathname: "/web/x.html", hash: "" };
+const loc = { search: scenario.search || "", host: "linehound.test", protocol: "https:", origin: "https://linehound.test",
+  pathname: "/web/x.html", hash: "" };
 Object.defineProperty(loc, "href", { get: () => "", set: (v) => navigations.push(String(v)) });
 globalThis.window = {
   localStorage: storage, sessionStorage: storage, location: loc, history: { replaceState() {} },
@@ -165,15 +190,30 @@ globalThis.window = {
   dispatchEvent() { return true; }, scrollTo() {}, crypto: globalThis.crypto,
 };
 globalThis.location = loc;
-globalThis.localStorage = storage;
-globalThis.sessionStorage = storage;
+if (scenario.storageThrows === "accessor") {
+  for (const target of [globalThis.window, globalThis]) {
+    for (const key of ["localStorage", "sessionStorage"]) {
+      Object.defineProperty(target, key, { configurable: true, get() { throw new Error("storage denied"); } });
+    }
+  }
+} else {
+  globalThis.localStorage = storage;
+  globalThis.sessionStorage = storage;
+}
 
 const clipboard = [];
 Object.defineProperty(globalThis, "navigator", { configurable: true, value: {
+  share: scenario.share ? async (d) => {
+    if (scenario.shareFails) throw Object.assign(new Error("share failed"), { name: scenario.shareFails });
+    shares.push(d);
+  } : undefined,
   clipboard: scenario.noClipboard ? undefined : { writeText: async (t) => {
     if (scenario.clipboardFails) throw new Error("denied");
     clipboard.push(t);
   } } } });
+globalThis.Image = class { set src(v) { this._src = v; setTimeout(() => this.onload && this.onload(), 0); } get src() { return this._src; } };
+URL.createObjectURL = () => "blob:fake";
+URL.revokeObjectURL = () => {};
 globalThis.URLSearchParams = URLSearchParams;
 
 // ---- fake interval timers (setTimeout stays real: api.js clears its own) --------------------------
@@ -280,6 +320,10 @@ out.captures = captures;
 out.gets = gets;
 out.posts = posts;
 out.navigations = navigations;
+out.shares = shares;
+out.downloads = downloads;
+out.canvases = canvases;
+out.storedAfter = Object.fromEntries(store);
 out.clipboard = clipboard;
 out.intervals = [...intervals.values()].map((v) => v.ms);
 console.log("@@" + JSON.stringify(out));
