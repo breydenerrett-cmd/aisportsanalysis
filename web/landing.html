@@ -105,12 +105,13 @@
   <div class="lbhero__panels">
     <section class="lbpanel" aria-label="top models" data-hook="lb-board-panel">
       <div class="lbpanel__head">
-        <h2 class="lbpanel__title">Top models by units<span class="lbpanel__season" data-hook="lb-season"></span></h2>
+        <h2 class="lbpanel__title">Top models by bankroll<span class="lbpanel__season" data-hook="lb-season"></span></h2>
         <span class="lbpanel__asof" data-hook="lb-asof"></span>
       </div>
+      <p class="lbpanel__note" data-hook="lb-bankroll-note">Every model starts with the same $1,000 paper bankroll. 1 unit = $10.</p>
       <table class="lbtable" data-hook="lb-board-table">
-        <caption class="lbsr">Top five models by units, one unit a bet</caption>
-        <thead><tr><th scope="col" class="lbnum">#</th><th scope="col">Model</th><th scope="col" class="lbnum">Record</th><th scope="col" class="lbnum">Units</th><th scope="col" class="lbnum">ROI</th><th scope="col" class="lbnum">Bets</th></tr></thead>
+        <caption class="lbsr">Top five models by paper bankroll, every model starting from $1,000</caption>
+        <thead><tr><th scope="col" class="lbnum">#</th><th scope="col">Model</th><th scope="col" class="lbnum">Record</th><th scope="col" class="lbnum">Bankroll</th><th scope="col" class="lbnum">Return</th><th scope="col" class="lbnum">Bets</th></tr></thead>
         <tbody data-hook="lb-board"><tr><td colspan="6" class="lbempty">Checking the leaderboard...</td></tr></tbody>
       </table>
       <p class="lbpanel__note" data-hook="lb-season-note" hidden></p>

@@ -1,17 +1,18 @@
 /**
- * The landing page's first screen: a live mini leaderboard (the top five models by units, with record, ROI and
- * bets) and the latest five tickets.
+ * The landing page's first screen: a live mini leaderboard (the top five models by paper bankroll, with record,
+ * the account balance, its return and bets) and the latest five tickets. Every model is a $1,000 paper account
+ * and one unit is $10 (docs/BANKROLL.md); the panel says so in the server's own words.
  *
  * Reads the PUBLIC GET /hounds and GET /hounds/stream (the same payloads the leaderboard page reads) and fills
  * [data-hook='lb-board'], [data-hook='lb-tickets'] and [data-hook='lb-asof'] in web/landing.html. Nothing is
  * typed into the markup: with no answer a panel says so and names no figure, and a server still working the
- * numbers out says that and tries once more. The ranking is by units at the average price, graded bets only
- * (the same order as the leaderboard page), baselines left to the leaderboard, and every row carries its bet
+ * numbers out says that and tries once more. The ranking is by the account balance (priced at the average price),
+ * graded bets only (the same order as the leaderboard page), baselines left to the leaderboard, and every row carries its bet
  * count, so a hot start on a handful of bets never reads as more than it is. The voice guide is docs/VOICE.md.
  *
  * SEASONS. The board is the newest season's (the server's default, Season 2 since Oct 18) and only RANKED models
  * count: 10 settled bets in the season. A season a few days old has few of them, so the board shows whoever has
- * qualified, topped up to five with the best of the QUALIFYING ROUND (not numbered, ROI greyed, each with an
+ * qualified, topped up to five with the best of the QUALIFYING ROUND (not numbered, return greyed, each with an
  * "x/10 bets" pill), and one line saying how old the season is and that more models qualify at 10 bets; the
  * latest tickets beside it are every model's, newest first.
  */
@@ -20,10 +21,11 @@ import { apiGet } from "./api.js";
 import {
   h, clearNode, monogram, categoryOf, houndHref, isWarming, NOT_REPORTED, fmtPrice,
 } from "./hounds-core.js";
-import { sortByUnits, unitsOf } from "./hounds-voice.js";
+import { unitsOf } from "./hounds-voice.js";
 import {
-  recordText, roiOf, fmtRoi, fmtUnitsPlain, betsOf, onlyTickets, ticketState, ticketStatus, RESULT_WORDS, ticketPrice, pickOf,
+  recordText, betsOf, onlyTickets, ticketState, ticketStatus, RESULT_WORDS, ticketPrice, pickOf,
   marketLabel, recordedText, freshness, isRanked, qualifyingRows, progressText, NA,
+  sortByBankroll, bankrollNow, returnPctOf, fmtUsd, fmtPct, bankrollRules, isSmallSample, smallSampleTitle,
 } from "./hounds-board.js";
 import { minRanked, seasonAgeText } from "./hounds-season.js";
 
@@ -38,7 +40,7 @@ export function topModels(hounds, n = TOP_MODELS, min) {
   const eligible = (Array.isArray(hounds) ? hounds : []).filter((x) => x
     && x.status !== "retired" && x.status !== "not_started" && categoryOf(x) !== "baseline" && unitsOf(x) !== null
     && isRanked(x, min));
-  return sortByUnits(eligible).slice(0, n);
+  return sortByBankroll(eligible).slice(0, n);
 }
 
 function tone(n) {
@@ -53,20 +55,24 @@ export function qualifyingModels(hounds, n = TOP_MODELS, min) {
   return qualifyingRows(eligible).slice(0, n);
 }
 
-/** `qual`: not ranked yet, so no rank number, a greyed ROI ("small sample") and a "3/10 bets" pill in the Bets column. */
+/**
+ * `qual`: not ranked yet, so no rank number, a greyed return ("small sample") and a "3/10 bets" pill in the Bets
+ * column. A ranked model with under 20 settled bets is greyed the same way, with the reason as its tooltip. The
+ * balance is the paper account from the shared start; the return is the % that balance moved.
+ */
 function boardRow(hound, rank, qual, min) {
-  const units = unitsOf(hound);
-  const roi = roiOf(hound);
+  const balance = bankrollNow(hound);
+  const ret = returnPctOf(hound);
+  const small = qual || isSmallSample(hound);
+  const grey = small ? { class: "lbnum lbtone--small", title: smallSampleTitle(hound) } : null;
   return h("tr", { class: qual ? "lbrow lbrow--qual" : "lbrow", "data-hound": hound.id }, [
     h("td", { class: "lbnum lbrank", text: qual ? "-" : String(rank) }),
     h("td", { class: "lbmodel" }, [
       monogram(hound.name, { size: 26, category: categoryOf(hound) }),
       h("a", { class: "lbname", href: houndHref(hound.id), text: hound.name || NOT_REPORTED })]),
     h("td", { class: "lbnum", "data-hook": "lb-record", text: recordText(hound) }),
-    h("td", { class: `lbnum lbtone--${tone(units)}`, "data-hook": "lb-units", text: fmtUnitsPlain(units) }),
-    qual
-      ? h("td", { class: "lbnum lbtone--small", "data-hook": "lb-roi", title: "small sample", text: fmtRoi(roi) })
-      : h("td", { class: `lbnum lbtone--${tone(roi)}`, "data-hook": "lb-roi", text: fmtRoi(roi) }),
+    h("td", { ...(grey || { class: "lbnum" }), "data-hook": "lb-bankroll", text: fmtUsd(balance) }),
+    h("td", { ...(grey || { class: `lbnum lbtone--${tone(ret)}` }), "data-hook": "lb-return", text: fmtPct(ret) }),
     qual
       ? h("td", { class: "lbnum" }, [h("span", { class: "lbpill", "data-hook": "lb-progress",
         title: `Needs ${min} settled bets to be ranked`, text: progressText(hound, min) })])
@@ -156,6 +162,8 @@ export async function fillBoard() {
   }
   const seasonMeta = data.season && typeof data.season === "object" ? data.season : null;
   renderBoard(body, data.hounds, seasonMeta, q("lb-season-note"));
+  const rulesNote = q("lb-bankroll-note");
+  if (rulesNote) rulesNote.textContent = bankrollRules(data).label;          // the server's sentence, never typed here
   const seasonTag = q("lb-season");
   if (seasonTag) seasonTag.textContent = seasonMeta && seasonMeta.label ? ` · ${seasonMeta.label}` : "";
   const asOf = q("lb-asof");

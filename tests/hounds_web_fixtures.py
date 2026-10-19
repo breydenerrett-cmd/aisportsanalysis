@@ -25,7 +25,9 @@ import sys
 from datetime import date, timedelta
 from pathlib import Path
 
-from src.hounds import contract, seasons, user_spec, verdict as vd
+from datetime import datetime, timezone
+
+from src.hounds import bankroll as bk, contract, seasons, user_spec, verdict as vd
 from src.hounds.contract import (
     BetRow, ClvBlock, HoundSummary, Record, ReplayBlock, RetiredBlock, SeriesPoint, StreamItem,
     VerdictBlock, paginate)
@@ -129,7 +131,7 @@ def _series_objs(hid: str, forward: bool) -> list:
     per_day = [fb // days] * days
     per_day[-1] += fb - sum(per_day)
     out = [SeriesPoint(date=(start - timedelta(days=1)).isoformat(), cum_units_average_price=0.0,
-                       cum_units_recorded_price=0.0, bets_settled=0, cum_clv_mean_pts=None)]
+                       cum_units_recorded_price=0.0, bets_settled=0, cum_clv_mean_pts=None, bankroll_usd=1000.0)]
     avg = rec = clv_sum = 0.0
     total = 0
     for i, count in enumerate(per_day):
@@ -141,8 +143,36 @@ def _series_objs(hid: str, forward: bool) -> list:
         out.append(SeriesPoint(date=(start + timedelta(days=i)).isoformat(),
                                cum_units_average_price=round(avg, 2), cum_units_recorded_price=round(rec, 2),
                                bets_settled=count,
-                               cum_clv_mean_pts=round(clv_sum / (i + 1), 2) if total >= vd.CLV_SERIES_MIN_BETS else None))
+                               cum_clv_mean_pts=round(clv_sum / (i + 1), 2) if total >= vd.CLV_SERIES_MIN_BETS else None,
+                               bankroll_usd=round(1000.0 + avg * 10.0, 2)))
     return out
+
+
+#: the instant the fixture bankroll windows are worked out at: the day after the fixture's last settled day, so
+#: the 24h / 7d windows are fixed numbers and never move with the real clock (the summaries carry no events)
+BANKROLL_NOW = datetime(2026, 10, 25, 12, 0, tzinfo=timezone.utc)
+
+
+def _bankroll_block(hid: str, rec: Record, forward: bool) -> dict:
+    """The ``bankroll`` block for a fixture dog, worked out by the REAL ``bankroll.block`` from events that add up to the
+    dog's own record: one event per graded bet, spread over the same seven fixture days the series uses, the record's
+    average-price units split evenly, results in the record's win / loss / push counts."""
+    fb = _FWD.get(hid, 1) if forward else 0
+    if fb <= 0:
+        return bk.block([], BANKROLL_NOW, "average_price")
+    days = min(7, fb)
+    per_day = [fb // days] * days
+    per_day[-1] += fb - sum(per_day)
+    results = ["win"] * rec.wins + ["loss"] * rec.losses + ["push"] * rec.pushes
+    each = (rec.units_average_price or 0.0) / fb
+    evts, k = [], 0
+    for i, count in enumerate(per_day):
+        settled = datetime(2026, 10, 18 + i, 18, 0, tzinfo=timezone.utc)
+        for _ in range(count):
+            evts.append(bk.Event(settle=settled, units=each, flat=each, stake=1.0, result=results[k % len(results)],
+                                 order=(settled.date().isoformat(), f"{k:04d}")))
+            k += 1
+    return bk.block(evts, BANKROLL_NOW, "average_price")
 
 
 def _record(bets: int, hid: str) -> Record:
@@ -187,11 +217,12 @@ def summaries(forward: bool = True) -> list:
         shown = label if fb else vd.TOO_EARLY
         series = _series_objs(hid, forward)
         replay = _record(rbets, hid + "r")
+        record = _record(fb, hid) if fb else Record()
         out.append(HoundSummary(
             id=hid, name=name, tagline=tagline, kind=kind, category=cat, style=style,
             owner_display="Handler 3F2A" if kind == "user" else None, sports=["mlb"], markets=["moneyline"],
             rule_text=_rule_text(style), status=status, retired=None,
-            record=_record(fb, hid) if fb else Record(),
+            record=record, bankroll=_bankroll_block(hid, record, forward),
             clv=_clv(fb, hid, shown) if fb else None,
             verdict=VerdictBlock(label=shown, sentence=VERDICT_SENTENCES[shown],
                                  units_note=vd.units_note(fb)),

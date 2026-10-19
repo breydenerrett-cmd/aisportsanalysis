@@ -6,8 +6,13 @@
  * file orders them, formats them and words them the way a bettor reads a betting table. Where the server did
  * not send a figure the answer is `null` and the page prints "n/a", never a zero and never a guess.
  *
- *   - ROI is units divided by bets, as a percent. Every ticket is one unit, so it is the units won per unit
- *     staked, from the same two numbers printed beside it.
+ *   - THE BANKROLL (owner ruling 2026-10-19, docs/BANKROLL.md). Every model is a $1,000 paper account and one
+ *     unit is $10. The headline figures are the account balance and the % it moved (season, 7 days, 24 hours),
+ *     all read from the payload's `bankroll` block; units are the stake-weighted total. "ROI" (units per bet) is
+ *     gone from the board: `roiOf` stays only as the fallback for a payload from before the bankroll view, and
+ *     the model page's "profit per $ bet" is the server's `yield_pct`.
+ *   - ROI (legacy) is units divided by bets, as a percent. Every ticket is one unit, so it is the units won per
+ *     unit staked, from the same two numbers printed beside it.
  *   - "Beat the close" is the share of bets with a measurable closing line whose price was better than the
  *     close; the average is the verdict block's mean, in points. Both say how many bets they rest on.
  *   - The status is the referee's label in plain words ("Beating the close", "Market", "Paying the vig"),
@@ -115,6 +120,139 @@ export function recordText(hound) {
   return `${rec.wins ?? 0}-${rec.losses ?? 0}${rec.pushes ? `-${rec.pushes}` : ""}`;
 }
 
+// ---- the bankroll ------------------------------------------------------------------------------------
+
+/** Only used when a payload carries no `bankroll_rules` (a saved copy from before the bankroll view). */
+export const START_USD = 1000;
+export const UNIT_USD = 10;
+export const SMALL_SAMPLE_SETTLED = 20;      // src/hounds/bankroll.py small_sample_min_settled (the server's flag wins)
+export const WINDOW_LABELS = { h24: "24h", d7: "7d", d30: "30d", season: "Season" };
+export const WINDOW_WORDS = { h24: "the last 24 hours", d7: "the last 7 days", d30: "the last 30 days", season: "the season shown" };
+
+/** The `bankroll` block a model carries, or null (an old payload, or a model the server could not work out). */
+export function bankrollOf(hound) {
+  const b = hound && hound.bankroll;
+  return b && isNum(b.current) && isNum(b.start) ? b : null;
+}
+
+/** "$1,021" (or "$1,021.41" with `cents`); "-$5" below zero; "n/a" for a missing figure. */
+export function fmtUsd(n, cents = false) {
+  if (!isNum(n)) return NA;
+  const digits = cents ? 2 : 0;
+  const shown = Number(Math.abs(n).toFixed(digits));
+  const body = shown.toLocaleString("en-US", { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  return `${n < 0 && shown !== 0 ? "-" : ""}$${body}`;
+}
+
+/** "+$14" / "-$7" / "+$0": paper dollars with the sign. */
+export function fmtSignedUsd(n, cents = false) {
+  if (!isNum(n)) return NA;
+  const shown = Number(Math.abs(n).toFixed(cents ? 2 : 0));
+  return `${n < 0 && shown !== 0 ? "-" : "+"}${fmtUsd(shown, cents)}`;
+}
+
+/** "+2.1%" / "-0.4%" / "n/a". */
+export function fmtPct(pct, digits = 1) {
+  return isNum(pct) ? `${signed(pct, digits)}%` : NA;
+}
+
+/** { start, unit, label } from a payload's `bankroll_rules` (or the fallbacks). `label` is the server's sentence. */
+export function bankrollRules(payload) {
+  const r = (payload && payload.bankroll_rules) || {};
+  const start = isNum(r.start_usd) ? r.start_usd : START_USD;
+  const unit = isNum(r.unit_usd) ? r.unit_usd : UNIT_USD;
+  const label = typeof r.label === "string" && r.label
+    ? r.label : `Every model starts with the same ${fmtUsd(start)} paper bankroll. 1 unit = ${fmtUsd(unit)}.`;
+  return { start, unit, label };
+}
+
+/** The balance now, or null. */
+export function bankrollNow(hound) {
+  const b = bankrollOf(hound);
+  return b ? b.current : null;
+}
+
+/** The view's return on the starting bankroll, in percent, or null. */
+export function returnPctOf(hound) {
+  const b = bankrollOf(hound);
+  return b && isNum(b.return_pct) ? b.return_pct : null;
+}
+
+/** One window of the account: { pnl, pct, units, bets, settled } for "h24" | "d7" | "d30" | "season", or null. */
+export function windowOf(hound, key) {
+  const b = bankrollOf(hound);
+  const w = b && b.windows && b.windows[key];
+  if (!w || !isNum(w.return_pct)) return null;
+  return { pnl: isNum(w.pnl_usd) ? w.pnl_usd : null, pct: w.return_pct, units: isNum(w.units) ? w.units : null,
+    bets: isNum(w.bets) ? w.bets : 0, settled: isNum(w.settled) ? w.settled : 0 };
+}
+
+/** The % return for a window, or null when no bet settled in it (a window with nothing in it is not "0.0%"). */
+export function windowPct(hound, key) {
+  const w = windowOf(hound, key);
+  return w && w.bets > 0 ? w.pct : null;
+}
+
+/** Stake-weighted units won or lost. A payload without the bankroll block falls back to the flat units. */
+export function totalUnitsOf(hound) {
+  const b = bankrollOf(hound);
+  return b && isNum(b.units_total) ? b.units_total : unitsOf(hound);
+}
+
+/** Fewer than 20 settled bets in the view (the server's `small_sample`), so the row is greyed. */
+export function isSmallSample(hound) {
+  const b = bankrollOf(hound);
+  return b && typeof b.small_sample === "boolean" ? b.small_sample : settledOf(hound) < SMALL_SAMPLE_SETTLED;
+}
+
+export function smallSampleTitle(hound) {
+  const b = bankrollOf(hound);
+  const min = b && isNum(b.small_sample_min) ? b.small_sample_min : SMALL_SAMPLE_SETTLED;
+  return `Small sample: ${settledOf(hound)} settled bets so far (under ${min}). A few results can move this a lot.`;
+}
+
+/** Profit per dollar bet, in percent (the old "ROI"), or null. Model page only. */
+export function yieldOf(hound) {
+  const b = bankrollOf(hound);
+  return b && isNum(b.yield_pct) ? b.yield_pct : null;
+}
+
+/** { usd, pct, peak } for the worst fall of the balance from a high, or null. */
+export function drawdownOf(hound) {
+  const b = bankrollOf(hound);
+  if (!b || !isNum(b.max_drawdown_usd)) return null;
+  return { usd: b.max_drawdown_usd, pct: isNum(b.max_drawdown_pct) ? b.max_drawdown_pct : null, peak: isNum(b.peak) ? b.peak : null };
+}
+
+/** The sort value for the balance: the account now, else (an old payload) the start plus flat units at a unit. */
+function balanceKey(hound) {
+  const now = bankrollNow(hound);
+  if (now !== null) return now;
+  const u = unitsOf(hound);
+  return u === null ? null : START_USD + u * UNIT_USD;
+}
+
+/** Most dollars first; a model with no graded bet last; ties by more bets, then name. */
+export function sortByBankroll(hounds) {
+  return (hounds || []).slice().sort((a, b) => {
+    const ka = balanceKey(a), kb = balanceKey(b);
+    if (ka === null && kb !== null) return 1;
+    if (kb === null && ka !== null) return -1;
+    return (kb ?? 0) - (ka ?? 0) || betsOf(b) - betsOf(a) || String(a.name || "").localeCompare(String(b.name || ""));
+  });
+}
+
+/**
+ * The builder's stake line: "1 unit = $10 of your $1,000; this dog bets 2 units ($20 a bet)." `rules` is the
+ * menu's `bankroll` block (start_usd, unit_usd); the fallbacks above stand in for an older server.
+ */
+export function stakeLineText(units, rules) {
+  const start = rules && isNum(rules.start_usd) ? rules.start_usd : START_USD;
+  const unit = rules && isNum(rules.unit_usd) ? rules.unit_usd : UNIT_USD;
+  const n = isNum(units) ? units : 1;
+  return `1 unit = ${fmtUsd(unit)} of your ${fmtUsd(start)}; this dog bets ${n} ${n === 1 ? "unit" : "units"} (${fmtUsd(n * unit)} a bet).`;
+}
+
 // ---- status words ----------------------------------------------------------------------------------
 
 /**
@@ -198,6 +336,27 @@ export const COLUMNS = [
   { key: "status", label: "Status", numeric: false, first: "desc", hint: "The referee's verdict, in plain words. All-time, not limited to the season shown." },
 ];
 
+/**
+ * The leaderboard's columns since the bankroll ruling (2026-10-19). Return is the view's % on the starting
+ * bankroll; 7d and 24h are the windows by settle time inside that view. The default sort is the balance.
+ */
+export const BANKROLL_COLUMNS = [
+  { key: "model", label: "Model", numeric: false, first: "asc" },
+  { key: "type", label: "Type", numeric: false, first: "asc" },
+  { key: "record", label: "Record", numeric: true, first: "desc", hint: "Wins-losses-pushes" },
+  { key: "bankroll", label: "Bankroll", numeric: true, first: "desc", hint: "The paper account now, from the shared $1,000 start" },
+  { key: "return", label: "Return", numeric: true, first: "desc", hint: "Profit as a percent of the $1,000 start, for the season shown" },
+  { key: "d7", label: "7d", numeric: true, first: "desc", hint: "Return on the $1,000 start from bets settled in the last 7 days" },
+  { key: "h24", label: "24h", numeric: true, first: "desc", hint: "Return on the $1,000 start from bets settled in the last 24 hours" },
+  { key: "units", label: "Units", numeric: true, first: "desc", hint: "Total units won or lost (1 unit = $10; member dogs bet the units they chose)" },
+  { key: "bets", label: "Bets", numeric: true, first: "desc", hint: "Graded bets" },
+  { key: "price", label: "Avg price", numeric: true, first: "desc", hint: "The typical price taken" },
+  { key: "clv", label: "CLV", numeric: true, first: "desc", hint: "Share of bets that beat the close, and the average points" },
+  { key: "last10", label: "Last 10", numeric: true, first: "desc", hint: "Wins in the last ten decided bets" },
+  { key: "status", label: "Status", numeric: false, first: "desc", hint: "The referee's verdict, in plain words. All-time, not limited to the season shown." },
+];
+export const DEFAULT_SORT = "bankroll";
+
 const STATUS_RANK = { beating: 0, market: 1, early: 2, notstarted: 3, unrated: 4, vig: 5, retired: 6 };
 
 /** The value a column sorts on; `null` means "no value" and always sorts last. */
@@ -209,7 +368,11 @@ export function sortValue(hound, key) {
       const rec = hound && hound.record;
       return betsOf(hound) > 0 ? ((rec.wins ?? 0) / Math.max(1, (rec.wins ?? 0) + (rec.losses ?? 0))) : null;
     }
-    case "units": return unitsOf(hound);
+    case "units": return totalUnitsOf(hound);
+    case "bankroll": return balanceKey(hound);
+    case "return": return returnPctOf(hound);
+    case "d7": return windowPct(hound, "d7");
+    case "h24": return windowPct(hound, "h24");
     case "roi": return roiOf(hound);
     case "bets": return betsOf(hound) > 0 ? betsOf(hound) : null;
     case "price": { const p = avgPriceOf(hound); return p === null ? null : americanDecimal(p); }
@@ -267,7 +430,7 @@ export function progressText(hound, min = MIN_RANKED_BETS) {
 
 /**
  * The qualifying round's rows from the models that are not ranked: those with a settled bet or an open ticket,
- * most units first, then the better record (wins over wins + losses), then the more settled bets, then by name.
+ * most dollars first, then the better record (wins over wins + losses), then the more settled bets, then by name.
  * A model with nothing yet is left out (the page counts them in one line).
  */
 export function qualifyingRows(hounds) {
@@ -277,7 +440,7 @@ export function qualifyingRows(hounds) {
     return w + l > 0 ? w / (w + l) : -1;
   };
   return (hounds || []).filter((x) => settledOf(x) > 0 || openBetsOf(x) > 0).sort((a, b) => {
-    const ua = unitsOf(a), ub = unitsOf(b);
+    const ua = balanceKey(a), ub = balanceKey(b);
     if (ua === null && ub !== null) return 1;
     if (ub === null && ua !== null) return -1;
     return (ub ?? 0) - (ua ?? 0) || share(b) - share(a) || settledOf(b) - settledOf(a)
