@@ -21,7 +21,7 @@ import { apiGet } from "./api.js";
 import { TOKEN_CHANGED_EVENT } from "./api.js";
 import { h, clearNode, isNum, houndHref, kennelName, describeError } from "./hounds-core.js";
 import { signedIn, get, SIGNIN_HREF } from "./dog-common.js";
-import { dogBadge, DEFAULT_LOOK } from "./dog-avatar.js";
+import { dogBadge, DEFAULT_LOOK, lookFor } from "./dog-avatar.js";
 import { mountTabs } from "./tabs.js";
 import { mountLocker } from "./dog-locker.js";
 import { mountFire } from "./dog-fire.js";
@@ -94,7 +94,7 @@ function lastPickText(dog) {
   return `Last pick: ${last.selection || "a pick"} (${word})`;
 }
 
-const avatarOf = (dog, size, mood) => dogBadge(dog.look || DEFAULT_LOOK, { size, mood: mood || moodOf(dog), id: dog.id, vibe: dog.persona && dog.persona.vibe });
+const avatarOf = (dog, size, mood) => dogBadge(dog.look || lookFor(dog.id), { size, mood: mood || moodOf(dog), id: dog.id, vibe: dog.persona && dog.persona.vibe });
 
 // ---- cards ------------------------------------------------------------------------------------------------
 
@@ -269,7 +269,7 @@ function paintStudioHead(look) {
     q("studio-open").hidden = true;
     return;
   }
-  av.appendChild(dogBadge(look || dog.look || DEFAULT_LOOK, { size: 64, mood: moodOf(dog), id: dog.id, vibe: dog.persona && dog.persona.vibe }));
+  av.appendChild(dogBadge(look || dog.look || lookFor(dog.id), { size: 64, mood: moodOf(dog), id: dog.id, vibe: dog.persona && dog.persona.vibe }));
   q("studio-title").textContent = dog.name;
   sub.textContent = `${recordText(dog.record)}, ${accountText(dog)}${dog.tagline ? ` · ${dog.tagline}` : ""}`;
   const link = q("studio-open");

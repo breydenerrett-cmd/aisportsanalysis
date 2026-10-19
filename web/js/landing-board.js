@@ -22,7 +22,7 @@ import {
   h, clearNode, monogram, categoryOf, houndHref, isWarming, NOT_REPORTED, fmtPrice,
 } from "./hounds-core.js";
 import { unitsOf } from "./hounds-voice.js";
-import { dogFace, poseOfHound } from "./dog-avatar.js";
+import { dogFace, poseOfHound, flashPose } from "./dog-avatar.js";
 import { renderRace } from "./landing-race.js";
 import {
   recordText, betsOf, onlyTickets, ticketState, ticketStatus, RESULT_WORDS, ticketPrice, pickOf,
@@ -59,7 +59,10 @@ function drawFaces(models) {
   if (!box) return;
   clearNode(box);
   for (const m of (models || []).slice(0, 5)) {
-    box.appendChild(h("span", { class: "kncard__face" }, [dogFace(m, { size: 56, pose: poseOfHound(m) })]));
+    const face = dogFace(m, { size: 56, pose: poseOfHound(m) });
+    const holder = h("span", { class: "kncard__face" }, [face]);
+    holder.addEventListener("pointerenter", () => { flashPose(face, "happy", 1400, poseOfHound(m)); });
+    box.appendChild(holder);
   }
 }
 

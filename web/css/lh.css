@@ -494,7 +494,7 @@
 }
 .hounds-page [data-hook="learning-app"] .hd-panel > h2 { font-family: var(--lh-font-display); font-size: var(--lh-fs-xl); font-weight: 700; line-height: 1.05; letter-spacing: var(--lh-track-display); margin: 0 0 var(--lh-s2); }
 .hounds-page [data-hook="learning-app"] .hd-panel > .hd-muted:first-of-type { font-size: var(--lh-fs-base); margin: 0 0 var(--lh-s2); }
-.hounds-page [data-hook="learning-app"] .hd-panel dl, .hounds-page [data-hook="learning-app"] .hd-panel .dk-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--lh-s3) var(--lh-s4); }
+.hounds-page [data-hook="learning-app"] [data-hook="coach-body"] dl, .hounds-page [data-hook="learning-app"] [data-hook="learning-activity"] dl { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--lh-s3) var(--lh-s4); }
 .hounds-page [data-hook="learning-app"] .dk-camp-dog { background: rgba(255, 255, 255, .04); }
 .hounds-page [data-hook="learning-app"] code { font-family: var(--lh-font-text); background: var(--lh-soft); padding: 1px 6px; border-radius: 6px; font-size: .92em; }
 @media (max-width: 760px) { .hounds-page [data-hook="learning-app"] .hd-panel { padding: var(--lh-s4); } .hounds-page [data-hook="learning-app"] .hd-panel > h2 { font-size: 26px; } }

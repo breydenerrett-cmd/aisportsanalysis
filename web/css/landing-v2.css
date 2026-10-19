@@ -199,3 +199,25 @@ body.landing .hero {
 .landing [data-hook="sport-record-tiles"] .hero__proof-grid { gap: var(--lh-s2); }
 .landing [data-hook="sport-record-tiles"] .hero__stat { padding: var(--lh-s3) 10px; min-width: 0; }
 .landing [data-hook="sport-record-tiles"] .hero__stat-value { font-size: clamp(24px, 2.1vw, 30px); }
+
+/* the free sample: each pick or fill is one tidy row, the result on the right */
+.landing .lc-group { padding: var(--lh-s5); }
+.landing .lc-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: var(--lh-s5); row-gap: 2px; align-items: center; padding: var(--lh-s3) 0; }
+.landing .lc-row > * { grid-column: 1; min-width: 0; }
+.landing .lc-row__bet { font-size: var(--lh-fs-md); font-weight: 600; }
+.landing .lc-row__tag, .landing .lc-row__meta { font-size: var(--lh-fs-xs); letter-spacing: 0; text-transform: none; color: var(--lh-mute); }
+.landing .lc-row__result { grid-column: 2; grid-row: 1 / span 4; align-self: center; justify-self: end; text-align: right; font-size: var(--lh-fs-sm); font-weight: 600; white-space: nowrap; }
+.landing .lc-row__result--win { color: var(--lh-win); }
+.landing .lc-row__result--loss { color: var(--lh-loss); }
+@media (max-width: 560px) { .landing .lc-row { grid-template-columns: minmax(0, 1fr); } .landing .lc-row__result { grid-column: 1; grid-row: auto; justify-self: start; text-align: left; margin-top: 4px; } }
+
+/* what you get: two equal cards, the subscriber list in a quieter weight */
+.landing [data-hook="what-you-get"] .lc-group, .landing [data-hook="what-you-get"] .panel { background: var(--lh-soft); }
+.landing .wyg-name { color: var(--lh-ink); }
+.landing .wyg-link, .landing .section a:not([class]) { color: var(--lh-accent-hi); text-decoration-color: rgba(75, 224, 143, .4); text-underline-offset: 3px; }
+
+/* the price note is one sentence in a one-column grid: let it wrap (it was clipped at the card edge) */
+.landing .pricing-grid { max-width: 560px !important; }
+.landing .pricing-tier { display: block; }
+.landing .pricing-tier [data-hook="pricing-tier-note"] { display: block; font-family: var(--lh-font-text); font-size: var(--lh-fs-md); line-height: 1.45; font-weight: 600; color: var(--lh-ink); overflow-wrap: anywhere; }
+.landing .pricing-card { padding: var(--lh-s5); }

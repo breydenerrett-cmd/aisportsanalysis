@@ -50,3 +50,7 @@ body.member-app .field-row input:focus-visible, body.member-app .field-row selec
 .adm-page .panel, .adm-page .adm-card, .adm-page [class*="adm-"][class*="card"] { border-radius: var(--lh-r-md); }
 .adm-page :focus-visible { outline: 2px solid var(--lh-accent); outline-offset: 2px; }
 .adm-page .wordmark__text { font-style: italic; }
+
+/* the dog on the sign-in wall and the other gates */
+body.member-app .gate__dog { line-height: 0; margin-bottom: var(--lh-s2); filter: drop-shadow(0 10px 16px rgba(0, 0, 0, .4)); }
+body.member-app .gate { gap: var(--lh-s3); }

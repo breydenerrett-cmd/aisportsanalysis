@@ -288,7 +288,10 @@ class TheKitOnADogPage(unittest.TestCase):
 class TheLockerRoom(unittest.TestCase):
     def test_picking_redraws_the_badge_and_saving_puts_the_whitelisted_look(self):
         out = page(dog_routes(), actions=[
+            # an undressed dog starts from the look its id picks (dog-look.js lookFor), so the test chooses every colour it asserts on
             dict(do="click", sel=hook("locker-opt") + "[data-value='red']", wait=20),
+            dict(do="click", sel="[data-group='eyes'] " + hook("locker-opt") + "[data-value='brown']", wait=20),
+            dict(do="click", sel="[data-group='bg'] " + hook("locker-opt") + "[data-value='navy']", wait=20),
             dict(do="click", sel=hook("locker-opt") + "[data-value='cap']", wait=20),
             dict(do="click", sel=hook("locker-opt") + "[data-value='jersey']", wait=20),
             dict(do="set", sel=hook("locker-number"), value="23", wait=20),
@@ -300,7 +303,7 @@ class TheLockerRoom(unittest.TestCase):
         self.assertEqual(put["url"], f"/hounds/{HID}/look")
         self.assertEqual(put["body"]["look"], {"coat": "red", "eyes": "brown", "bg": "navy", "head": "cap", "face": "none",
                                                "neck": "none", "body": "jersey", "number": 23})
-        c = out["captures"]["4"]
+        c = out["captures"]["6"]
         self.assertEqual((c["preview"], c["head"], c["num"]), ("red", "cap", "23"))
         self.assertIn("Saved.", c["status"])
 
@@ -320,6 +323,44 @@ class TheLockerRoom(unittest.TestCase):
     def test_the_name_and_catchphrase_are_edited_in_the_builder(self):
         out = page(dog_routes(), queries=[q("href", hook("locker-builder"), "attr", attr="href")])
         self.assertEqual(out["final"]["href"], f"build-a-hound.html?from={HID}")
+
+    # ---- the character creator (design system v2, 2026-10-19) ---------------------------------------------------
+
+    def test_the_stage_shows_the_dog_in_a_pose_you_can_preview_and_each_accessory_option_is_a_small_dog(self):
+        out = page(dog_routes(), queries=[
+            q("poses", hook("locker-pose"), "texts"), q("dog", hook("locker-preview") + " svg.dk-badge", "attr", attr="data-pose"),
+            q("thumbs", hook("locker-opt") + " svg.dk-badge", "count"), q("breed", hook("locker-preview") + " svg.dk-badge", "attr", attr="data-breed")],
+            actions=[dict(do="click", sel=hook("locker-pose") + "[data-pose='sad']", wait=20, capture=[
+                q("dog", hook("locker-preview") + " svg.dk-badge", "attr", attr="data-pose"),
+                q("pressed", hook("locker-pose") + "[data-pose='sad']", "attr", attr="aria-pressed")])])
+        f = out["final"]
+        self.assertEqual(f["poses"], ["Idle", "Happy", "Sad", "Thinking", "Cheer"])
+        self.assertEqual(out["captures"]["0"]["dog"], "sad")
+        self.assertEqual(out["captures"]["0"]["pressed"], "true")
+        self.assertEqual(f["thumbs"], 4 + 2 + 2 + 3, "one small dog on every head, face, neck and body option")
+        self.assertIn(f["breed"], ["retriever", "bulldog", "schnauzer", "husky", "mutt", "hound"])
+        self.assertNotIn("PUT", [p["method"] for p in out["posts"]], "previewing a pose saves nothing")
+
+    def test_randomize_rolls_a_whitelisted_look_and_saves_nothing_until_you_save(self):
+        out = page(dog_routes(), actions=[dict(do="click", sel=hook("locker-random"), wait=30, capture=[
+            q("coat", hook("locker-preview") + " svg.dk-badge", "attr", attr="data-coat"),
+            q("head", hook("locker-preview") + " svg.dk-badge", "attr", attr="data-head"),
+            q("dirty", hook("locker-dirty"), "exists")])])
+        c = out["captures"]["0"]
+        self.assertIn(c["coat"], list(look.COATS))
+        self.assertIn(c["head"], list(look.HEAD))
+        self.assertEqual([p for p in out["posts"] if p["method"] == "PUT"], [], "randomize is a preview until Save")
+
+    def test_saving_a_look_celebrates_and_a_refusal_is_sad(self):
+        ok = page(dog_routes(), actions=[dict(do="click", sel=hook("locker-save"), wait=60, capture=[
+            q("pose", hook("locker-preview") + " svg.dk-badge", "attr", attr="data-pose"), q("status", hook("locker-status"))])])
+        self.assertEqual(ok["captures"]["0"]["pose"], "celebrate")
+        self.assertIn("Saved.", ok["captures"]["0"]["status"])
+        routes = dog_routes()
+        routes[f"PUT /hounds/{HID}/look"] = [422, {"detail": {"error": "look_invalid", "message": "not on the menu", "fields": {}}}]
+        bad = page(routes, actions=[dict(do="click", sel=hook("locker-save"), wait=60, capture=[
+            q("pose", hook("locker-preview") + " svg.dk-badge", "attr", attr="data-pose")])])
+        self.assertEqual(bad["captures"]["0"]["pose"], "sad")
 
 
 @unittest.skipUnless(HAS_NODE, "node not installed")

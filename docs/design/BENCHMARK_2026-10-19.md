@@ -83,3 +83,49 @@ sit next to the reference without embarrassment".
 6. The studio as a character creator: big live preview, springy selection, randomize, celebrate on save, rules editing inline.
 7. Honesty unchanged: paper only, 21+, not advice, 1-800-GAMBLER, no profit or edge claim, no Bet Check promotion; small samples
    say so on the page, including the new hero.
+
+---
+
+# After: what was built, and an honest score
+
+Screens: `docs/design/after/<page>-1440.png` and `-390.png` (same pages, same data, same capture method as `before/`). Gated screens
+(the signed-in member app and the admin dashboard) are captured at their sign-in wall only; the studio and My kennel use the local
+mock owner described at the top.
+
+## Against each reference, axis by axis
+
+| Axis | Reference does | LINEHOUND now |
+|---|---|---|
+| Type scale | Linear: one big display step, one grey. Stripe: ink-then-grey headline. | Barlow Condensed display (hero up to 84px, section titles 26-48px, scoreboard numbers 32-42px) over Instrument Sans text on one scale (12/13/15/17/22/30/48/84). Landing sections no longer mix three faces; no uppercase italic headings anywhere on the hounds pages or the landing. |
+| Spacing rhythm | 8px grid, same gutters every section. | One 4/8 ladder in `css/lh.css` tokens (`--lh-s1..s9`); landing sections share a 1180 wrapper and 96/64px rhythm; cards 24px padding, 16px gaps. |
+| Colour restraint | Linear: near-black plus one tint. Duolingo: one green owns every CTA. | One hero accent (green) on every page including landing, app and admin (the red and cyan calls to action are gone). Win/loss/pending are the only other colours and still ride on numbers and result words. |
+| Hierarchy | One thing above the fold. | Landing: headline, one primary action, the live race. Model page: the dog, name and status, then the scoreboard cards, then each section as a card. Leaderboard: the leaders as three big dog cards above the table. |
+| Motion | Linear: slow fades. Duolingo: the character reacts and buttons press. | One easing/duration token set (`--lh-ease`, `--lh-spring`, `--lh-t-fast/base/slow/hero`), page-load stagger, number count-ups, the race drawing itself, wins popping and losses settling, a spring on the studio drawer and on every studio choice. All of it inside `prefers-reduced-motion: no-preference`. |
+| Delight | Duolingo: mascot at every state change. | A real dog rig (6 breeds by vibe, 5 poses, accessory layers, blink/breathe, tear, thought dots, sparkles and raised paws), used on the leaderboard rows, podium, model header, kennel cards, studio, builder, camp, landing race and sign-in wall. Dogs react to their own results (win streak is happy, loss streak is sad); tap a dog in the race and it cheers. |
+| Empty states | Character plus one action. | Kennels list: "Start your own kennel" card and a breeds legend. Builder: the dog thinks until there is a name and a rule, then is happy. Sign-in wall: a thinking dog. Empty CLV chart: one calm line in a soft box. Race with no model: says so and draws nothing. |
+
+## Self-score, same 1-10 scale (8 = could sit next to the reference)
+
+| Page | Reference | Before | After | What is still short |
+|---|---|---|---|---|
+| Landing | Stripe + Linear | 4 | 8 | Below the fold the AI desk record and the sports tiles are still dense figure blocks (honesty content kept as is); the race has only two points per line because Season 2 is two days old. |
+| Leaderboard | Linear | 6 | 8 | The table is still 12 columns (it scrolls inside its own wrapper on a phone). |
+| Model page | Linear + Duolingo | 5.5 | 8 | Long explanatory sentences under Status; a one-point bankroll line says little. |
+| Kennels index | Duolingo | 5 | 8 | Only one public kennel exists, so the page leans on the breeds legend. |
+| Public kennel | Duolingo | 5 | 8 | |
+| My kennel | Duolingo | 6.5 | 8.5 | Mock-owner capture. |
+| Studio | Duolingo character creator | 6 | 9 | Breed is not choosable (it is the dog's vibe; the server does not store one). |
+| Builder | Linear | 6 | 8 | The colour/badge pickers are the chart identity, a different palette from the dog's look; kept because they are saved data. |
+| Training camp | Linear | 4 | 7.5 | Each section is now a card with a real heading, but the copy is long by design (it is the honest explanation of the learning loop). Stopped here: shortening it would change claims, not presentation. |
+| Member app | Linear | 4 | 7 | Only the sign-in wall is capturable without an invite token. The app bar still stacks under the shared nav; its section labels are written in capitals by script. |
+| Admin | Linear | 4.5 | 6.5 | Only the sign-in screen is capturable; the dashboard tables are untouched beyond tokens, faces, buttons and radii. |
+
+Iterated and re-captured after the first scoring pass: model page (scoreboard cards, section cards, empty chart), builder (step cards,
+the dog preview), kennels (new-kennel card, breeds legend), landing (pricing note was clipped, sample rows), camp (heading cards).
+Pages that stay under 8 are the ones whose remaining gap is content or gated, not styling; that is said above, not hidden.
+
+## Files
+
+`web/css/lh.css` (tokens, components, dog rig CSS, choreography), `web/css/studio.css` (character creator, page touch-ups),
+`web/css/landing-v2.css`, `web/css/lh-app.css`; `web/js/dog-look.js`, `dog-rig.js` (`renderDog`), `dog-avatar.js`, `dog-locker.js`,
+`landing-race.js`, `lh-gate-dog.js`; tests `test_dog_rig.py`, `test_landing_race.py`, `test_no_horizontal_overflow.py` (+ `overflow_390.mjs`).

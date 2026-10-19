@@ -227,3 +227,63 @@
 .kn-card { border-radius: var(--lh-r-lg); box-shadow: var(--lh-e1); }
 .kn-empty__dog { filter: drop-shadow(0 14px 22px rgba(0, 0, 0, .45)); }
 @media (max-width: 760px) { .kn-card__avatar { width: 72px; height: 72px; } .kn-card__avatar svg { width: 72px; height: 72px; } .kn-stat dd { font-size: 24px; } }
+
+/* ======================================================================================================================
+ * ITERATION 1 (after the first self-score): the scoreboard KPIs, section heads with a real size, the builder's steps as cards,
+ * the kennels index's way in.
+ * ==================================================================================================================== */
+.hounds-page .hd-panel > h2, .hounds-page .hd-panel__head > h2, .hounds-page .dk-panel > h2 {
+  font-family: var(--lh-font-display); font-size: 26px; font-weight: 700; line-height: 1.05; letter-spacing: var(--lh-track-display);
+}
+.hounds-page .hd-panel__head h2 .hd-count { font-family: var(--lh-font-text); font-size: var(--lh-fs-sm); font-weight: 500; color: var(--lh-mute); letter-spacing: 0; }
+
+/* the scoreboard: each figure is a card, the number in the display face */
+.hounds-page .hd-kpis { grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: var(--lh-s3); }
+.hounds-page .hd-kpi { background: var(--lh-soft); border-radius: var(--lh-r-md); padding: var(--lh-s3) var(--lh-s4); box-shadow: var(--lh-e1); transition: background-color var(--lh-t-fast) var(--lh-ease); }
+.hounds-page .hd-kpi:hover { background: var(--lh-soft-2); }
+.hounds-page .hd-kpi__label { margin-bottom: 2px; }
+.hounds-page .hd-kpi__small { color: var(--lh-mute); }
+
+/* the builder: one card per step, with the step in a pill */
+.hounds-page .bd-step { background: var(--lh-soft); border-radius: var(--lh-r-lg); padding: var(--lh-s5); margin: 0 0 var(--lh-s4); box-shadow: var(--lh-e1); }
+.hounds-page .bd-step + .bd-step { box-shadow: var(--lh-e1); }
+.hounds-page .bd-step__no { display: inline-flex; align-items: center; height: 24px; padding: 0 var(--lh-s3); border-radius: var(--lh-r-pill); background: var(--lh-accent-soft); color: var(--lh-win); letter-spacing: .04em; }
+.hounds-page .bd-step h2 { font-family: var(--lh-font-display); font-size: 26px; font-weight: 700; line-height: 1.05; margin: var(--lh-s2) 0 var(--lh-s3); }
+.hounds-page .bd-english { background: rgba(0, 0, 0, .25); border-radius: var(--lh-r-md); font-size: var(--lh-fs-md); }
+.hounds-page .bd-preview, .hounds-page .bd-mine { box-shadow: var(--lh-e1); }
+.kn-studio .bd-step { background: none; box-shadow: none; padding: 0; margin: 0 0 var(--lh-s6); }
+
+/* the kennels index: the card that starts your own */
+.kn-newkennel {
+  display: flex; align-items: center; gap: var(--lh-s4); padding: var(--lh-s3) var(--lh-s4); border-radius: var(--lh-r-lg); color: inherit; text-decoration: none;
+  box-shadow: inset 0 0 0 1.5px var(--lh-line-2); transition: background-color var(--lh-t-fast) var(--lh-ease), box-shadow var(--lh-t-fast) var(--lh-ease), transform var(--lh-t-base) var(--lh-spring);
+}
+.kn-newkennel:hover { background: var(--lh-accent-soft); box-shadow: inset 0 0 0 1.5px var(--lh-accent); transform: translateY(-2px); }
+.kn-newkennel__dog { flex: none; line-height: 0; }
+.kn-newkennel__text { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.kn-newkennel__title { font-size: var(--lh-fs-base); font-weight: 600; }
+.kn-newkennel__sub { font-size: var(--lh-fs-sm); color: var(--lh-mute); }
+.kn-newkennel__go { color: var(--lh-accent); font-size: var(--lh-fs-md); }
+
+/* an empty chart is one calm line in a soft box, not a tiny caption inside a dashed frame */
+.hounds-page .hd-chart[data-empty="true"] .hd-chart__svg { display: none; }
+.hounds-page .hd-chart[data-empty="true"] .hd-chart__empty-note { display: block; margin: var(--lh-s2) 0 0; padding: var(--lh-s4); border-radius: var(--lh-r-md); background: var(--lh-soft); text-align: center; color: var(--lh-mute); font-size: var(--lh-fs-sm); }
+
+/* the model page: every section under the tabs is a card, so the page reads as parts, not one long scroll of text */
+.hounds-page [data-hook="hound-app"] [data-tabpanel] .hd-panel:not(.hd-scoreboard), .hounds-page [data-hook="hound-app"] [data-tabpanel] .hd-panel:not(.hd-scoreboard) + .hd-panel {
+  background: var(--lh-soft); border-radius: var(--lh-r-lg); padding: var(--lh-s5); margin: 0 0 var(--lh-s4); box-shadow: var(--lh-e1);
+}
+.hounds-page [data-hook="hound-app"] .hd-scoreboard { margin-bottom: var(--lh-s5); }
+@media (max-width: 760px) {
+  .hounds-page [data-hook="hound-app"] [data-tabpanel] .hd-panel:not(.hd-scoreboard), .hounds-page [data-hook="hound-app"] [data-tabpanel] .hd-panel:not(.hd-scoreboard) + .hd-panel { padding: var(--lh-s4); }
+}
+
+/* the breeds legend under the kennels list */
+.kn-breeds { margin: var(--lh-s7) 0 var(--lh-s5); }
+.hounds-page .kn-breeds__title { font-family: var(--lh-font-display); font-size: 26px; font-weight: 700; line-height: 1.05; margin: 0 0 var(--lh-s1); }
+.kn-breeds__row { list-style: none; margin: var(--lh-s4) 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: var(--lh-s3); }
+.kn-breeds__item { display: grid; justify-items: center; gap: 2px; padding: var(--lh-s4) var(--lh-s2) var(--lh-s3); border-radius: var(--lh-r-lg); background: var(--lh-soft); text-align: center; transition: transform var(--lh-t-base) var(--lh-spring), background-color var(--lh-t-fast) var(--lh-ease); }
+.kn-breeds__item:hover { background: var(--lh-soft-2); transform: translateY(-3px); }
+.kn-breeds__dog { line-height: 0; margin-bottom: var(--lh-s2); }
+.kn-breeds__name { font-size: var(--lh-fs-base); }
+@media (max-width: 560px) { .kn-breeds__row { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

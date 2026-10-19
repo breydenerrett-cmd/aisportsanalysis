@@ -27,7 +27,7 @@
 import { apiGet, apiPost, getToken } from "./api.js";
 import { h, s, clearNode, describeError, houndHref, isNum, fmtPrice } from "./hounds-core.js";
 import { celebrate } from "./dog-common.js";
-import { dogBadge, dogFace, DEFAULT_LOOK } from "./dog-avatar.js";
+import { dogBadge, dogFace, DEFAULT_LOOK, lookFor } from "./dog-avatar.js";
 import { stakeLineText } from "./hounds-board.js";
 
 export const PAPER_NOTICE =
@@ -619,7 +619,7 @@ function updateDogCard() {
   card.appendChild(h("div", { class: "bd-dog", style: `--dog:${hex}` }, [
     // a dog being edited shows ITS look and breed; a new dog shows the default look until it is saved and dressed in the studio
     h("span", { class: "bd-dog__dog", "data-hook": "dog-preview-dog", "data-pose": pose }, [
-      S.edit ? dogBadge(S.edit.look || DEFAULT_LOOK, { size: 92, mood: pose, id: S.edit.id }) : dogBadge(DEFAULT_LOOK, { size: 92, mood: pose, breed: "retriever" })]),
+      S.edit ? dogBadge(S.edit.look || lookFor(S.edit.id), { size: 92, mood: pose, id: S.edit.id }) : dogBadge(DEFAULT_LOOK, { size: 92, mood: pose, breed: "retriever" })]),
     h("span", { class: "bd-dog__badge", "data-hook": "dog-badge", "data-badge": S.spec.badge }, [badgeIcon(S.spec.badge, 34)]),
     h("div", { class: "bd-dog__text" }, [
       h("p", { class: "bd-dog__name", "data-hook": "dog-name", text: S.spec.name || "Your dog" }),

@@ -12,7 +12,7 @@
 
 import { h, clearNode } from "./hounds-core.js";
 import { put, errorText, statusLine, builderHref, celebrate } from "./dog-common.js";
-import { COATS, EYES, BACKGROUNDS, HEAD, FACE, NECK, BODY, DEFAULT_LOOK, cleanLook, randomLook } from "./dog-look.js";
+import { COATS, EYES, BACKGROUNDS, HEAD, FACE, NECK, BODY, DEFAULT_LOOK, cleanLook, randomLook, lookFor } from "./dog-look.js";
 import { dogSvg, breedFor, cleanPose, POSES } from "./dog-rig.js";
 
 const title = (key) => key.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase());
@@ -42,7 +42,7 @@ export function mountLocker(section, { id, name, kit, vibe, onSaved, onChange })
   if (!body) return;
   clearNode(body);
   const breed = breedFor({ id, name, vibe });
-  let look = cleanLook(kit.look || DEFAULT_LOOK);
+  let look = cleanLook(kit.look || lookFor(id));            // an undressed dog starts from the look every page already shows it in
   let saved = JSON.stringify(look);
   let pose = "idle";
   let poseTimer = null;

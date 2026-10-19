@@ -17,7 +17,7 @@
  */
 
 import { s, h, clearNode, isNum } from "./hounds-core.js";
-import { dogFace, poseOfHound } from "./dog-avatar.js";
+import { dogFace, poseOfHound, flashPose } from "./dog-avatar.js";
 import { bankrollNow, returnPctOf, fmtUsd, fmtPct, betsOf } from "./hounds-board.js";
 import { seasonAgeText } from "./hounds-season.js";
 
@@ -174,6 +174,8 @@ export function renderRace(host, models, meta, today, opts = {}) {
     const dog = dogFace(r.hound, { size: face, pose: "idle" });
     dog.setAttribute("x", 0); dog.setAttribute("y", 0);
     const dogG = s("g", { class: "lbrace__dog", "data-id": line.id }, [ring, dog]);
+    // a dog is a character: tap it and it celebrates for a moment (a pose, nothing about the model changes)
+    dogG.addEventListener("click", () => { flashPose(dog, "celebrate", 1500, poseOfHound(r.hound)); });
     const last = line.points[line.points.length - 1];
     const label = geo.wide ? s("g", { class: "lbrace__label", opacity: 0 }, [
       s("text", { x: 0, y: -3, class: "lbrace__name", text: r.name.length > 20 ? `${r.name.slice(0, 19)}.` : r.name }),
