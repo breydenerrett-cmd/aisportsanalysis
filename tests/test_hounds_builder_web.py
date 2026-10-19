@@ -15,6 +15,12 @@ from src.hounds.english import parser, render
 from tests import _hounds_rules_fixtures as F
 from tests.hounds_web_runner import HAS_NODE, WEB, run_page
 
+try:
+    import fastapi  # noqa: F401
+    HAS_FASTAPI = True
+except ImportError:  # CI's no-FastAPI run
+    HAS_FASTAPI = False
+
 HTML = (WEB / "build-a-hound.html").read_text(encoding="utf-8")
 JS = (WEB / "js" / "hounds-build.js").read_text(encoding="utf-8")
 TOKEN_KEY = "aisportsanalysis.invite_token"
@@ -452,6 +458,7 @@ class StepThreeAndSaving(unittest.TestCase):
         self.assertEqual(out["final"]["btn"], "Send my dog in")
         self.assertNotIn("/hounds/mine", out["gets"])         # no token, no account read
 
+    @unittest.skipUnless(HAS_FASTAPI, "fastapi not installed")
     def test_signed_in_the_post_is_what_the_real_create_route_accepts(self):
         from api.hounds_create import CreateHoundRequest
         text = "bet home underdogs between +120 and +200 when they're on 2+ days rest. max 2 bets a day"
@@ -580,6 +587,7 @@ class MyDogsAndEditing(unittest.TestCase):
         out = build(self.routes(), **SIGNED, search="?edit=u-2", queries=[q("title", "[data-hook='build-title']"), q("cards", "[data-hook='rule-card']", "count")])
         self.assertEqual((out["final"]["title"], out["final"]["cards"]), ("Edit Dog Two", 1))
 
+    @unittest.skipUnless(HAS_FASTAPI, "fastapi not installed")
     def test_a_copy_opens_the_other_dogs_rules_as_a_new_dog_posted_with_copied_from(self):
         from api.hounds_create import CreateHoundRequest
         source = dog("alpha", "Alpha")
