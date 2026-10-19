@@ -471,6 +471,10 @@ class PreviewRequest(BaseModel):
     spec: Dict[str, Any]
 
 
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
 def _eastern_today(now: datetime) -> str:
     from src.pipeline import snapshots
     return snapshots.official_date(now.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
@@ -499,7 +503,7 @@ def builder_preview(body: PreviewRequest, _rl: None = Depends(_rate_limit_previe
         spec = user_spec.validate_spec({**user_spec.upgrade_v1(spec), "name": "Draft Dog"})
     from src.hounds import user_rules
     with_props = any(user_rules.market_kind(m) == "prop" for r in spec["rules"] for m in r["markets"])
-    now = datetime.now(timezone.utc)
+    now = _now()
     date = _eastern_today(now)
     try:
         slate = _slate_for(date, with_props)

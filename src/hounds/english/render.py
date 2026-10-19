@@ -101,7 +101,9 @@ def rule_sentence(rule: Mapping) -> str:
 
 def global_sentences(spec: Mapping) -> list:
     bets = spec["max_bets_per_day"]
-    start = ("first pitch" if spec["sports"] == ["MLB"] else "kickoff" if spec["sports"] == ["NFL"]
+    # A draft (an upgraded classic spec, a parser draft) has no derived `sports`; read them off the rules.
+    sports = spec.get("sports") or [s for s in user_spec.SPORTS if any(s in r["sports"] for r in spec["rules"])]
+    start = ("first pitch" if sports == ["MLB"] else "kickoff" if sports == ["NFL"]
              else "first pitch or kickoff")
     return [
         f"{spec['lock_minutes']} minutes before {start} it checks each rule against the board as it stood then "
