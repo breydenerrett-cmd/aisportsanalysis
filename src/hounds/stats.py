@@ -954,8 +954,7 @@ def saved_payload(kind: str, ids: Optional[list] = None, page: int = 1,
 
 def _order_key(data: HoundData):
     s = data.summary
-    return (not s.ranked,           # a model that has not earned a place in the view never sits above one that has
-            s.kind == KIND_BASELINE,
+    return (s.kind == KIND_BASELINE,
             {"running": 0, "benched": 1, "not_started": 2, "retired": 3}.get(s.status, 4),
             vd.LABEL_RANK.get(s.verdict.label, 9),
             -(s.clv.n if s.clv else 0), s.name)

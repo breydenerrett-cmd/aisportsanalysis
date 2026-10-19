@@ -17,7 +17,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from unittest import mock
 
-from src.hounds import contract, ledgers, stats, user_defs, user_engine as eng
+from src.hounds import contract, ledgers, seasons, stats, user_defs, user_engine as eng
 from src.hounds import user_settle as st
 from src.hounds.ledgers import Sources
 from tests._hounds_user_fixtures import (DATE, EVENT, T_LATE, T_LOCK, board_rows, hound,
@@ -709,6 +709,10 @@ class PagesReadTheRealApi(unittest.TestCase):
         cls.src = F.make_world(Path(cls._tmp.name))
         cls._patch = mock.patch.object(Sources, "default", staticmethod(lambda: cls.src))
         cls._patch.start()
+        # The world has at most three settled bets a model, so with the real bar (10 settled bets to be ranked)
+        # nobody would be a row; these tests are about the pages reading the real API, so the bar is 1.
+        cls._bar = mock.patch.object(seasons, "MIN_RANKED_BETS", 1)
+        cls._bar.start()
         stats.clear_cache()
         stats.get_book(cls.src)
         client = TestClient(app)
@@ -718,11 +722,14 @@ class PagesReadTheRealApi(unittest.TestCase):
                      "/hounds/alpha/bets?status=open&segment=forward&page=1&page_size=50",
                      "/hounds/alpha/bets?status=graded&segment=forward&page=1&page_size=20",
                      "/hounds/alpha/bets?status=graded&segment=replay&page=1&page_size=20"):
-            r = client.get(path)
-            assert r.status_code == 200, (path, r.text)
+            # The world's bets are early October, so Season 2 (the default view) holds none of them: the pages
+            # are opened on ?season=all and the payloads they get are the all-time ones.
+            ask = path + "?season=all" if path in ("/hounds", "/hounds/alpha", "/hounds/charlie", "/hounds/delta") else path
+            r = client.get(ask)
+            assert r.status_code == 200, (ask, r.text)
             cls.routes[path.split("?")[0] if "?" not in path else path] = [200, r.json()]
         ids = ",".join(h["id"] for h in cls.routes["/hounds"][1]["hounds"])
-        cls.routes["/hounds/series"] = [200, client.get(f"/hounds/series?ids={ids}").json()]
+        cls.routes["/hounds/series"] = [200, client.get(f"/hounds/series?ids={ids}&season=all").json()]
         cls.routes["/hounds/mine"] = [200, {"hounds": [], "limit_running": 3}]
         cls.routes["/hounds/alpha/spec"] = [200, {"spec": dict(
             name="Alpha II", tagline="", sports=["MLB"], markets=["moneyline"], side_rule="underdog",
@@ -731,20 +738,22 @@ class PagesReadTheRealApi(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        cls._bar.stop()
         cls._patch.stop()
         stats.clear_cache()
         cls._tmp.cleanup()
 
     def test_the_leaderboard_lists_every_model_with_its_real_numbers_and_the_tickets_feed_leaves_refusals_out(self):
-        out = run_page("hounds", routes=self.routes, queries=[
+        out = run_page("hounds", routes=self.routes, search="?season=all", queries=[
             q("ids", "[data-hook='hounds-list'] .hd-tr", "attrs", attr="data-hound"),
             q("bets", "[data-hook='hounds-list'] .hd-tr [data-hook='row-bets']", "texts"),
             q("tickets", "[data-hook='stream-list'] .hd-ticket", "count"),
             q("text", "[data-hook='hounds-stream']"), q("asof", "[data-hook='data-as-of']")])
         final = out["final"]
         hounds = {h["id"]: h for h in self.routes["/hounds"][1]["hounds"]}
-        graded = {i for i, h in hounds.items() if h["record"]["bets"] > 0}
-        self.assertEqual(set(final["ids"]), graded)                           # every model with a graded bet is a row
+        graded = {i for i, h in hounds.items() if h["ranked"]}                # a void is graded but not settled
+        self.assertEqual(set(final["ids"]), graded)                           # every ranked model is a row
+        self.assertGreaterEqual(len(graded), 3)
         self.assertEqual(set(hounds), {"alpha", "bravo", "charlie", "delta", "u-1"})
         for hid, bets in zip(final["ids"], final["bets"]):
             self.assertEqual(bets, str(hounds[hid]["record"]["bets"]), hid)    # the table says what the server counted
@@ -752,10 +761,10 @@ class PagesReadTheRealApi(unittest.TestCase):
         self.assertEqual(final["tickets"], len([i for i in stream if not i["refused"]]))
         self.assertNotIn("sat this one out", final["text"])                    # a refusal is not a ticket
         self.assertTrue(final["asof"].startswith("Data as of"))
-        self.assertNotIn("warming", out["text"].lower())
+        self.assertNotIn("the race is warming up", out["text"].lower())      # the server's first-build message, not the "Warming up (N)" group
 
     def test_the_model_page_shows_the_tickets_the_server_sent_and_pages_with_the_servers_numbers(self):
-        out = run_page("hound", routes=self.routes, search="?id=alpha", queries=[
+        out = run_page("hound", routes=self.routes, search="?id=alpha&season=all", queries=[
             q("rows", "[data-hook='bets-table'] tbody tr", "count"), q("page", "[data-hook='bets-page']"),
             q("name", "[data-hook='hound-name']"), q("rule", "[data-hook='rule-text']"),
             q("verdict", "[data-hook='hound-verdict'] [data-hook='badge']"),
@@ -775,7 +784,7 @@ class PagesReadTheRealApi(unittest.TestCase):
         self.assertIn("rehearsal", out["final"]["rep"].lower())
 
     def test_a_replay_only_pack_hound_has_no_forward_numbers_and_its_replay_result_is_shown_apart(self):
-        out = run_page("hound", routes=self.routes, search="?id=charlie", queries=[
+        out = run_page("hound", routes=self.routes, search="?id=charlie&season=all", queries=[
             q("fwd", "[data-hook='forward-facts']"), q("rep", "[data-hook='replay-line']"),
             q("chart", "[data-hook='hound-chart-title']")])
         charlie = self.routes["/hounds/charlie"][1]

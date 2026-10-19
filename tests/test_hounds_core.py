@@ -159,7 +159,8 @@ class ContractShapes(unittest.TestCase):
         "id", "name", "tagline", "kind", "category", "style", "owner_display",
         "sports", "markets", "rule_text", "status", "retired", "record", "clv",
         "verdict", "first_bet_utc", "last_bet_utc", "verified", "verified_share",
-        "checkable_share", "replay", "spark", "spark_basis", "source", "persona", "form", "open_bets"}
+        "checkable_share", "replay", "spark", "spark_basis", "source", "persona", "form", "open_bets",
+        "settled", "ranked"}
 
     def test_summary_keys_and_nested_record(self):
         s = contract.to_json(contract.HoundSummary(id="x", name="X"))
@@ -168,7 +169,7 @@ class ContractShapes(unittest.TestCase):
             "bets", "wins", "losses", "pushes", "voids",
             "units_recorded_price", "units_average_price"})
         self.assertIsNone(s["record"]["units_average_price"])
-        self.assertEqual(set(s["verdict"]), {"label", "sentence", "units_note"})
+        self.assertEqual(set(s["verdict"]), {"label", "sentence", "units_note", "n"})
         json.dumps(s)
 
     def test_series_point_and_bet_row_keys(self):

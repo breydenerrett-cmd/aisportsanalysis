@@ -278,15 +278,14 @@ class TheBookPerSeason(WorldBase):
         self.assertEqual(al["delta"].record.bets, 1)
         self.assertEqual(s2["delta"].verdict.label, al["delta"].verdict.label)
 
-    def test_ranked_models_come_first_in_the_servers_order(self):
+    def test_the_servers_order_keeps_baselines_last_in_every_view_ranking_is_the_pages_job(self):
+        for view in ("s1", "s2", "all"):
+            kinds = [s.kind for s in stats.leaderboard(self.book, view)]
+            self.assertEqual(kinds, sorted(kinds, key=lambda k: k == "baseline"), view)
         with mock.patch.object(seasons, "MIN_RANKED_BETS", 2):
             stats.clear_cache()
             book = stats.get_book(self.src)
-        order = stats.leaderboard(book, "s2")
-        flags = [s.ranked for s in order]
-        self.assertIn(True, flags)
-        self.assertEqual(flags, sorted(flags, reverse=True), "a model that is not ranked sits above one that is")
-        self.assertEqual([s.id for s in order if s.ranked], ["alpha"])
+        self.assertEqual([s.id for s in stats.leaderboard(book, "s2") if s.ranked], ["alpha"])
 
 
 class TheSavedCopyIsKeyedBySeason(WorldBase):
