@@ -85,7 +85,8 @@ def dog_routes(*, owner=True, signed_in=True, kind="user", kit=None, fire_payloa
     r[f"POST /hounds/{HID}/manual"] = [200, {"ticket": {"price_average": 120, "selection": "Boston Red Sox to win"},
                                              "record": {}, "remaining_today": 4, "note": "n"}]
     r[f"POST /hounds/{HID}/suggest"] = [200, {"saved": {}, "note": "Your suggestion goes to the owner. It changes nothing on its own."}]
-    r[f"PUT /hounds/{HID}/look"] = [200, {"dog_id": HID, "look": look.validate_look({"coat": "red", "head": "cap"})}]
+    # the server answers with the look it validated and stored, which is what the studio now redraws: the same choices the test makes
+    r[f"PUT /hounds/{HID}/look"] = [200, {"dog_id": HID, "look": look.validate_look({"coat": "red", "head": "cap", "body": "jersey", "number": 23})}]
     return r
 
 
@@ -227,7 +228,7 @@ class TheKitOnADogPage(unittest.TestCase):
         self.assertRegex(vote["body"]["target_id"], r"^\d{4}-\d{2}-\d{2}\|.+")
         self.assertEqual(vote["body"]["verdict"], "bad")
 
-    def test_a_house_model_gets_the_read_only_parts_and_keeps_its_initials_badge(self):
+    def test_a_house_model_gets_the_read_only_parts_and_a_dog_face_in_the_header(self):
         kit = Payloads.kit(owner=False, kind="house", can_fire=True, can_record_manual=False, can_customize=False,
                            can_suggest=False, builder_href=None)
         out = page(dog_routes(kind="house", kit=kit, owner=False), queries=[
@@ -237,7 +238,9 @@ class TheKitOnADogPage(unittest.TestCase):
         f = out["final"]
         self.assertFalse(f["fire"])
         self.assertTrue(f["manual"] and f["locker"])
-        self.assertEqual((f["svg"], f["mono"]), (0, 1))
+        # design system v2 (2026-10-19): every model, house or member's, is a dog (the rig in web/js/dog-rig.js); a house model
+        # simply has no saved look, so it wears the default look its id picks. The initials tile is gone from the header.
+        self.assertEqual((f["svg"], f["mono"]), (1, 0))
         self.assertIn("Coach this model", f["train"])
 
     def test_a_server_without_the_kit_leaves_the_page_exactly_as_it_was(self):

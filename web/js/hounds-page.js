@@ -53,6 +53,7 @@ import {
 } from "./hounds-season.js";
 import { ticketList } from "./hounds-tickets.js";
 import { followedIds } from "./hounds-follow.js";
+import { dogFace, poseOfHound } from "./dog-avatar.js";
 
 export const STREAM_POLL_MS = 60000;
 export const TICKET_PAGE_SIZE = 15;
@@ -254,7 +255,7 @@ function modelCell(hound, rank, open) {
     h("button", { type: "button", class: "hd-expand", "data-hook": "expand", "aria-expanded": open ? "true" : "false",
       "aria-label": `${open ? "Hide" : "Show"} ${hound.name || "this model"}'s latest tickets`,
       on: { click: () => toggleDrawer(hound.id) } }, [h("span", { class: "hd-chev", "aria-hidden": "true" })]),
-    monogram(hound.name, { size: 32, category: categoryOf(hound) }),
+    h("span", { class: "hd-dogface", "data-hook": "row-dog" }, [dogFace(hound, { size: 36, pose: poseOfHound(hound) })]),
     h("span", { class: "hd-modelid" }, [
       h("a", { class: "hd-modelname", href: houndHref(hound.id), text: hound.name || NOT_REPORTED }),
       mine ? h("span", { class: "hd-tag hd-tag--follow", "data-hook": "row-follow", text: "Following" }) : null,
@@ -400,7 +401,7 @@ function warmingBody(warming) {
       tbody.appendChild(h("tr", { class: "hd-tr hd-tr--warm", "data-hound": hound.id }, [
         h("td", { class: "hd-col-rank hd-num", text: "-" }),
         h("td", { class: "hd-col-model" }, [h("div", { class: "hd-modelcell" }, [
-          monogram(hound.name, { size: 28, category: categoryOf(hound) }),
+          h("span", { class: "hd-dogface", "data-hook": "row-dog" }, [dogFace(hound, { size: 32 })]),
           h("span", { class: "hd-modelid" }, [
             h("a", { class: "hd-modelname", href: houndHref(hound.id), text: hound.name || NOT_REPORTED }),
             h("small", { class: "hd-aux", text: [sports, marketsText(hound)].filter(Boolean).join(" · ") || NA })])])]),
@@ -602,7 +603,7 @@ function renderRetired() {
     const ret = returnPctOf(hound);
     return h("tr", { "data-hound": hound.id }, [
       h("td", { class: "hd-col-model" }, [h("div", { class: "hd-modelcell" }, [
-        monogram(hound.name, { size: 28, category: categoryOf(hound), muted: true }),
+        h("span", { class: "hd-dogface hd-dogface--retired", "data-hook": "row-dog" }, [dogFace(hound, { size: 32, pose: "sad" })]),
         h("a", { class: "hd-modelname", href: houndHref(hound.id), text: hound.name || NOT_REPORTED })])]),
       h("td", { class: "hd-num", text: rec.bets > 0 ? `${wlText(rec)} (${rec.bets} bets)` : "no graded bets" }),
       h("td", { class: `hd-num hd-tone--${ret === null ? "none" : ret > 0 ? "up" : ret < 0 ? "down" : "flat"}`,

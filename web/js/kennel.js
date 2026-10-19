@@ -94,7 +94,7 @@ function lastPickText(dog) {
   return `Last pick: ${last.selection || "a pick"} (${word})`;
 }
 
-const avatarOf = (dog, size, mood) => dogBadge(dog.look || DEFAULT_LOOK, { size, mood: mood || moodOf(dog) });
+const avatarOf = (dog, size, mood) => dogBadge(dog.look || DEFAULT_LOOK, { size, mood: mood || moodOf(dog), id: dog.id, vibe: dog.persona && dog.persona.vibe });
 
 // ---- cards ------------------------------------------------------------------------------------------------
 
@@ -125,7 +125,7 @@ function dogCard(dog, { mine }, index) {
   const card = h("article", { class: "kn-card", "data-hook": "kennel-dog", "data-id": dog.id, "data-status": status.key, "data-mood": mood,
     style: `--i:${Math.min(index, 12)}` }, [
     h("button", { type: "button", class: "kn-card__avatar", "data-hook": "dog-avatar", "aria-label": mine ? `Open ${dog.name}'s studio` : `${dog.name}`,
-      on: { click: mine ? open : () => { window.location.href = houndHref(dog.id); } } }, [avatarOf(dog, 76, mood)]),
+      on: { click: mine ? open : () => { window.location.href = houndHref(dog.id); } } }, [avatarOf(dog, 92, mood)]),
     h("div", { class: "kn-card__main" }, [
       h("div", { class: "kn-card__top" }, [
         h("h3", { class: "kn-card__name" }, [h("a", { href: houndHref(dog.id), "data-hook": "dog-name", text: dog.name })]),
@@ -263,13 +263,13 @@ function paintStudioHead(look) {
   const av = clearNode(q("studio-avatar"));
   const sub = q("studio-sub");
   if (!dog) {
-    av.appendChild(dogBadge(look || DEFAULT_LOOK, { size: 56 }));
+    av.appendChild(dogBadge(look || DEFAULT_LOOK, { size: 64, id: "new-dog", mood: "thinking" }));
     q("studio-title").textContent = "New dog";
     sub.textContent = "Say a strategy and it becomes a dog.";
     q("studio-open").hidden = true;
     return;
   }
-  av.appendChild(dogBadge(look || dog.look || DEFAULT_LOOK, { size: 56, mood: moodOf(dog) }));
+  av.appendChild(dogBadge(look || dog.look || DEFAULT_LOOK, { size: 64, mood: moodOf(dog), id: dog.id, vibe: dog.persona && dog.persona.vibe }));
   q("studio-title").textContent = dog.name;
   sub.textContent = `${recordText(dog.record)}, ${accountText(dog)}${dog.tagline ? ` · ${dog.tagline}` : ""}`;
   const link = q("studio-open");
@@ -303,7 +303,7 @@ async function buildTab(tab) {
   if (tab === "look") {
     const sec = section("dog-locker");
     host.appendChild(sec);
-    mountLocker(sec, { id: dog.id, name: dog.name, kit, onChange: (look) => paintStudioHead(look),
+    mountLocker(sec, { id: dog.id, name: dog.name, kit, vibe: dog.persona && dog.persona.vibe, onChange: (look) => paintStudioHead(look),
       onSaved: (look) => { dog.look = look; refreshCards(); } });
   } else if (tab === "fire") {
     const sec = section("dog-fire");

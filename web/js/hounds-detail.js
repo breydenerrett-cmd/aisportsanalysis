@@ -53,6 +53,7 @@ import { copyText, shareDog, downloadCard } from "./hounds-share.js";
 import { isFollowed, toggleFollow } from "./hounds-follow.js";
 import { loadRulebook, renderDials, renderCoach } from "./hounds-rulebook.js";
 import { bootDogKit } from "./dog-kit.js";
+import { dogFace, poseOfHound } from "./dog-avatar.js";
 
 export const PAGE_SIZE = 20;
 export const OPEN_POLL_MS = 60000;
@@ -89,7 +90,10 @@ function renderHeader(hound) {
     ? h("span", { class: "hd-verified", "data-hook": "verified", text: "Verified" })
     : hound.verified === false && isNum(hound.verified_share) ? h("span", { class: "hd-unverified", text: "Not verified" }) : null;
   const line = persona && persona.catchphrase ? persona.catchphrase : "";
-  box.appendChild(monogram(hound.name, { size: 56, category: cat, muted: dead }));
+  const face = dogFace(hound, { size: 84, pose: dead ? "sad" : poseOfHound(hound) });
+  face.setAttribute("data-hook", "header-badge");
+  if (dead) face.setAttribute("style", "opacity:.6");
+  box.appendChild(face);
   box.appendChild(h("div", { class: "hd-modelhead__text" }, [
     h("h1", { "data-hook": "hound-name", text: hound.name || NOT_REPORTED }),
     line ? h("p", { class: "hd-catch", "data-hook": "catchphrase", text: line }) : null,

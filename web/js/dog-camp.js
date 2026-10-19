@@ -16,7 +16,7 @@
 
 import { h, clearNode, fmtPrice, isNum, signed, monogram, fmtWhen } from "./hounds-core.js";
 import { friendlyLesson } from "./hounds-voice.js";
-import { dogBadge } from "./dog-avatar.js";
+import { dogFace } from "./dog-avatar.js";
 import { get, post, errorText, signedIn, signInPrompt, builderHref, changeText, SLOW_MS, statusLine } from "./dog-common.js";
 import { renderFireResult } from "./dog-fire.js";
 import { mountAsk } from "./dog-ask.js";
@@ -30,7 +30,7 @@ const record = (r) => `${r.wins || 0}-${r.losses || 0}${r.pushes ? `-${r.pushes}
 // ---- your dogs in training ---------------------------------------------------------------------------------
 
 function avatar(d) {
-  return d.look ? dogBadge(d.look, { size: 48 }) : monogram(d.name, { size: 48, category: "mixed" });
+  return dogFace(d, { size: 52 });
 }
 
 function ticketsTable(items) {

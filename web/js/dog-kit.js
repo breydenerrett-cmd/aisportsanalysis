@@ -13,6 +13,7 @@
 
 import { get } from "./dog-common.js";
 import { dogBadge, DEFAULT_LOOK } from "./dog-avatar.js";
+import { poseOfHound } from "./dog-avatar.js";
 import { mountFire } from "./dog-fire.js";
 import { bootAsk } from "./dog-ask.js";
 import { mountFans } from "./dog-feedback.js";
@@ -22,10 +23,10 @@ import { mountLocker } from "./dog-locker.js";
 const q = (hook) => document.querySelector(`[data-hook='${hook}']`);
 
 /** Put the dog's badge in the header where the monogram is. Returns true when it swapped. */
-export function applyHeaderBadge(look, name, muted = false) {
+export function applyHeaderBadge(look, name, muted = false, dog = {}) {
   const old = document.querySelector(".hd-modelhead .hd-mono") || document.querySelector(".hd-modelhead .dk-badge");
   if (!old || !look) return false;
-  const badge = dogBadge(look, { size: 56 });
+  const badge = dogBadge(look, { size: 84, id: dog.id, vibe: dog.vibe, mood: muted ? "sad" : (dog.pose || "idle") });
   badge.setAttribute("data-hook", "header-badge");
   if (muted) badge.setAttribute("style", "opacity:.55");
   const parent = old.parentNode;
@@ -51,7 +52,8 @@ export async function bootDogKit(hound) {
   if (!kit || typeof kit !== "object") return null;
   const name = hound.name || kit.name || "this model";
   // a builder dog always wears a dog (its saved look, else the default one); the house models keep their initials
-  if (kit.look || hound.kind === "user") applyHeaderBadge(kit.look || DEFAULT_LOOK, name, hound.status === "retired");
+  const vibe = hound.persona && hound.persona.vibe;
+  if (kit.look || hound.kind === "user") applyHeaderBadge(kit.look || DEFAULT_LOOK, name, hound.status === "retired", { id, vibe, pose: poseOfHound(hound) });
   let manual = null;
   const jobs = [];
   if (hound.kind === "user" && sections.manual) {
@@ -63,7 +65,7 @@ export async function bootDogKit(hound) {
   jobs.push(bootAsk(sections.ask, { id, name }));
   jobs.push(mountFans(sections.fans, { id, name, kit, hound }));
   if (kit.can_customize && sections.locker) {
-    mountLocker(sections.locker, { id, name, kit, onSaved: (look) => applyHeaderBadge(look, name) });
+    mountLocker(sections.locker, { id, name, kit, vibe, onSaved: (look) => applyHeaderBadge(look, name, false, { id, vibe, pose: poseOfHound(hound) }) });
   }
   await Promise.all(jobs.map((p) => Promise.resolve(p).catch(() => null)));
   return kit;

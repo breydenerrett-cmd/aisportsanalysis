@@ -1,65 +1,137 @@
 /*
- * THE MINIMAL SKIN for the model pages (leaderboard, kennels, dog page, builder, training camp). Loaded LAST, after
- * hounds.css / dog-kit.css / builder.css, and written as overrides so nothing those files promise (every data-hook, every
- * state) changes: this file only calms the look.
+ * LINEHOUND DESIGN SYSTEM V2 (2026-10-19): the tokens and the shared components for every page of the hub (landing, leaderboard,
+ * kennels, model page, builder, training camp, member app, admin). Loaded LAST, after hounds.css / dog-kit.css / builder.css, and
+ * written as overrides so nothing those files promise (every data-hook, every state) changes: this file only calms and unifies the look.
  *
- * Owner, 2026-10-19: "less AI slop everywhere and more minimalism feel and more fun animated UI".
- *   - one accent colour (green); red and green stay only on numbers and results, with their words and signs
- *   - fewer boxes: sections are separated by space and one hairline, not by bordered cards
- *   - a calm type scale (12 / 13 / 15 / 17 / 24 / 34), one family, no uppercase display headings
- *   - motion that means something: rows rise in once, numbers count up when they enter view, a pulse dot marks a pending
- *     game, cards lift on hover, the dog avatars bob and blink, tabs fade, a small burst of confetti marks a new dog
- *     or a recorded pick. ALL of it is inside prefers-reduced-motion: no-preference, so reduced motion gets none.
+ * Owner, 2026-10-19: "less AI slop everywhere", then "super engaging, super fun, super customizable ... like a billion-dollar design
+ * team designed this page and the entire hub". The benchmark that set these numbers is docs/design/BENCHMARK_2026-10-19.md.
+ *
+ *   TYPE      two faces, both already shipped in css/fonts.css (nothing from a CDN): Barlow Condensed for display (the hero, big
+ *             numbers, section titles from 28px up, never uppercase, never italic) and Instrument Sans for everything you read.
+ *             One scale (12 / 13 / 15 / 17 / 22 / 30 / 48 / 76) with a real jump at the top, because a page with only small and
+ *             medium type has no hierarchy. Instrument Sans ships at 400 / 500 / 600 only, so 600 is the heaviest text weight.
+ *   COLOUR    near-black ground, three greys, ONE hero accent (green) and the two semantic colours (win green is the accent's
+ *             lighter sibling, loss is a soft red, pending amber). Colour appears on numbers, results and the one primary action.
+ *   SPACE     a 4/8 ladder: 4 8 12 16 24 32 48 64 96. Nothing else is a margin.
+ *   SHAPE     three radii (8 controls, 12 cards, 18 panels) and a pill. Elevation is one hairline plus one soft shadow, in three steps.
+ *   MOTION    one easing set and four durations; page-load stagger, count-ups, the studio spring, tab fades, live arrival and the dogs'
+ *             own movement all read from these tokens. EVERY animation is inside prefers-reduced-motion: no-preference.
+ *
+ * What the old skin said still holds: fewer boxes, space and one hairline instead of bordered cards, red and green only on numbers
+ * and results, with their words and signs.
  */
 
-.hounds-page {
+:root {
+  /* ---- colour ----------------------------------------------------------------------------------------------- */
   --lh-bg: #0B0D10;
-  --lh-ink: #EEF1F5;
+  --lh-bg-2: #10141A;                              /* raised: drawers, menus, popovers */
+  --lh-ink: #F2F4F8;
   --lh-ink2: #C9D0DB;
   --lh-mute: #8D96A6;
+  --lh-faint: #6B7482;
   --lh-line: rgba(255, 255, 255, .07);
-  --lh-soft: rgba(255, 255, 255, .05);
-  --lh-accent: #2FD07A;
-  --lh-ease: cubic-bezier(.2, .7, .2, 1);
+  --lh-line-2: rgba(255, 255, 255, .13);
+  --lh-soft: rgba(255, 255, 255, .05);             /* a card or chip fill */
+  --lh-soft-2: rgba(255, 255, 255, .09);           /* its hover */
+  --lh-accent: #2FD07A;                            /* the ONE hero accent */
+  --lh-accent-hi: #4BE08F;
+  --lh-accent-ink: #04140B;                        /* text on the accent */
+  --lh-accent-soft: rgba(47, 208, 122, .14);
+  --lh-win: #5BE39A;      --lh-win-soft: rgba(61, 220, 132, .12);
+  --lh-loss: #FF8A96;     --lh-loss-soft: rgba(255, 107, 122, .12);
+  --lh-pending: #F2B84B;  --lh-pending-soft: rgba(242, 184, 75, .12);
+
+  /* ---- type ------------------------------------------------------------------------------------------------- */
+  --lh-font-display: 'Barlow Condensed', 'Arial Narrow', 'Instrument Sans', system-ui, sans-serif;
+  --lh-font-text: 'Instrument Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --lh-fs-xs: 12px;
+  --lh-fs-sm: 13px;
+  --lh-fs-base: 15px;
+  --lh-fs-md: 17px;
+  --lh-fs-lg: 22px;
+  --lh-fs-xl: 30px;
+  --lh-fs-2xl: clamp(34px, 4.6vw, 48px);
+  --lh-fs-hero: clamp(46px, 8.2vw, 84px);
+  --lh-track-tight: -.02em;
+  --lh-track-display: -.012em;
+
+  /* ---- space: a 4/8 ladder ---------------------------------------------------------------------------------- */
+  --lh-s1: 4px;  --lh-s2: 8px;  --lh-s3: 12px;  --lh-s4: 16px;  --lh-s5: 24px;
+  --lh-s6: 32px;  --lh-s7: 48px;  --lh-s8: 64px;  --lh-s9: 96px;
+
+  /* ---- shape and elevation ---------------------------------------------------------------------------------- */
+  --lh-r-sm: 8px;  --lh-r-md: 12px;  --lh-r-lg: 18px;  --lh-r-pill: 999px;
+  --lh-e1: 0 1px 0 rgba(255, 255, 255, .04) inset, 0 1px 2px rgba(0, 0, 0, .35);
+  --lh-e2: 0 1px 0 rgba(255, 255, 255, .05) inset, 0 10px 28px rgba(0, 0, 0, .38);
+  --lh-e3: 0 1px 0 rgba(255, 255, 255, .06) inset, 0 28px 70px rgba(0, 0, 0, .55);
+  --lh-focus: 0 0 0 2px var(--lh-bg), 0 0 0 4px var(--lh-accent);
+
+  /* ---- motion: ONE easing set and four durations ------------------------------------------------------------- */
+  --lh-ease: cubic-bezier(.2, .7, .2, 1);          /* arrivals: decelerate */
+  --lh-spring: cubic-bezier(.34, 1.56, .64, 1);    /* selections, the drawer, the dog: a small overshoot */
+  --lh-ease-io: cubic-bezier(.4, 0, .2, 1);        /* things that move and come back */
+  --lh-t-fast: 120ms;  --lh-t-base: 220ms;  --lh-t-slow: 420ms;  --lh-t-hero: 900ms;
+  --lh-stagger: 45ms;
+}
+
+.hounds-page {
   --hd-bg: var(--lh-bg); --hd-card: transparent; --hd-card-2: var(--lh-soft); --hd-line: var(--lh-line);
   --hd-text: var(--lh-ink); --hd-text-2: var(--lh-ink2); --hd-mute: var(--lh-mute); --hd-accent: var(--lh-accent);
   background: var(--lh-bg); color: var(--lh-ink);
-  font-family: var(--font-body, 'Instrument Sans', system-ui, sans-serif); font-size: 15px; line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
+  font-family: var(--lh-font-text); font-size: var(--lh-fs-base); line-height: 1.5;
+  -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
 }
+.hounds-page ::selection { background: var(--lh-accent-soft); }
 
 /* ---- type ------------------------------------------------------------------------------------------------- */
 .hounds-page h1, .hounds-page h2, .hounds-page h3, .hounds-page .hd-h3 {
-  font-family: var(--font-body, 'Instrument Sans', system-ui, sans-serif); text-transform: none; font-style: normal; letter-spacing: -.012em;
-  color: var(--lh-ink);
+  font-family: var(--lh-font-text); text-transform: none; font-style: normal; letter-spacing: -.012em; color: var(--lh-ink);
 }
-.hounds-page .hd-wrap h1 { font-size: clamp(26px, 4.4vw, 34px); font-weight: 650; line-height: 1.1; margin: 4px 0 8px; }
-.hounds-page .hd-wrap h2 { font-size: 17px; font-weight: 600; line-height: 1.3; margin: 0 0 12px; }
-.hounds-page .hd-h3 { font-size: 15px; font-weight: 600; margin: 18px 0 6px; }
-.hounds-page .hd-lede { font-size: 16px; color: var(--lh-mute); margin: 0 0 8px; max-width: 46em; }
+.hounds-page .hd-wrap h1 {
+  font-family: var(--lh-font-display); font-size: var(--lh-fs-2xl); font-weight: 700; line-height: 1; letter-spacing: var(--lh-track-display);
+  margin: var(--lh-s1) 0 var(--lh-s2);
+}
+.hounds-page .hd-wrap h2 { font-size: var(--lh-fs-md); font-weight: 600; line-height: 1.3; margin: 0 0 var(--lh-s3); }
+.hounds-page .hd-h3 { font-size: var(--lh-fs-base); font-weight: 600; margin: var(--lh-s4) 0 6px; }
+.hounds-page .hd-lede { font-size: var(--lh-fs-md); color: var(--lh-mute); margin: 0 0 var(--lh-s2); max-width: 46em; }
 .hounds-page .hd-muted, .hounds-page .hd-fine { color: var(--lh-mute); }
 .hounds-page .hd-muted { font-size: 14px; }
-.hounds-page .hd-fine { font-size: 12.5px; }
+.hounds-page .hd-fine { font-size: var(--lh-fs-xs); }
 .hounds-page a { text-underline-offset: 3px; }
+.lh-eyebrow { margin: 0 0 var(--lh-s1); font-size: var(--lh-fs-xs); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--lh-accent); }
+.lh-display { font-family: var(--lh-font-display); font-weight: 700; letter-spacing: var(--lh-track-display); line-height: 1; }
 
 /* ---- layout: space, not boxes ------------------------------------------------------------------------------ */
-.hounds-page .hd-wrap { max-width: 1080px; padding: 28px 20px 96px; }
-.hounds-page .hd-panel { background: none; border: 0; padding: 0; margin: 0 0 44px; }
-.hounds-page .hd-panel + .hd-panel { padding-top: 32px; box-shadow: 0 -1px 0 var(--lh-line); }
-.hounds-page .hd-panel__head { margin-bottom: 12px; }
-.hounds-page .hd-pagehead { align-items: flex-end; margin-bottom: 8px; }
-.hounds-page .hd-back { font-size: 13px; }
+.hounds-page .hd-wrap { max-width: 1080px; padding: var(--lh-s5) var(--lh-s4) 96px; }
+.hounds-page .hd-panel { background: none; border: 0; padding: 0; margin: 0 0 var(--lh-s7); }
+.hounds-page .hd-panel + .hd-panel { padding-top: var(--lh-s6); box-shadow: 0 -1px 0 var(--lh-line); }
+.hounds-page .hd-panel__head { margin-bottom: var(--lh-s3); }
+.hounds-page .hd-pagehead { align-items: flex-end; margin-bottom: var(--lh-s2); }
+.hounds-page .hd-back { font-size: var(--lh-fs-sm); }
 .hounds-page .hd-back a { color: var(--lh-mute); text-decoration: none; }
 .hounds-page .hd-back a:hover { color: var(--lh-ink); }
 
 /* the one disclosure line: small, quiet, no box */
 .hounds-page .hd-disclosure, .hounds-page .hd-notice, .hounds-page .hd-paper {
-  margin: 4px 0 22px; padding: 0; border: 0; background: none; font-size: 12.5px; color: var(--lh-mute);
+  margin: var(--lh-s1) 0 var(--lh-s5); padding: 0; border: 0; background: none; font-size: var(--lh-fs-xs); color: var(--lh-mute);
 }
 .hounds-page .hd-disclosure strong, .hounds-page .hd-notice strong, .hounds-page .hd-paper strong { font-weight: 500; color: var(--lh-mute); }
-.hounds-page .hd-foot { max-width: 1080px; margin: 0 auto; padding: 24px 20px 40px; box-shadow: 0 -1px 0 var(--lh-line); color: var(--lh-mute); font-size: 12.5px; }
+.hounds-page .hd-foot { max-width: 1080px; margin: 0 auto; padding: var(--lh-s5) var(--lh-s4) var(--lh-s6); box-shadow: 0 -1px 0 var(--lh-line); color: var(--lh-mute); font-size: var(--lh-fs-xs); }
 .hounds-page .hd-foot p { margin: 0 0 6px; }
 .hounds-page .hd-foot a { color: var(--lh-ink2); }
+
+/* ---- components: one button, one chip, one card ------------------------------------------------------------ */
+.lh-btn, .hounds-page .btn {
+  border-radius: var(--lh-r-sm); clip-path: none; text-transform: none; letter-spacing: 0; font-weight: 600; font-family: var(--lh-font-text); font-style: normal;
+}
+.lh-card { background: var(--lh-soft); border-radius: var(--lh-r-lg); padding: var(--lh-s4); box-shadow: var(--lh-e1); }
+.lh-chip {
+  display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 var(--lh-s3); border-radius: var(--lh-r-pill);
+  background: var(--lh-soft); color: var(--lh-ink2); font-size: var(--lh-fs-sm); font-weight: 500;
+}
+.lh-chip--win { background: var(--lh-win-soft); color: var(--lh-win); }
+.lh-chip--loss { background: var(--lh-loss-soft); color: var(--lh-loss); }
+.lh-chip--pending { background: var(--lh-pending-soft); color: var(--lh-pending); }
 
 /* ---- controls --------------------------------------------------------------------------------------------- */
 .hounds-page .btn, .lh-btn { border-radius: 8px; clip-path: none; text-transform: none; letter-spacing: 0; font-weight: 600; font-family: var(--font-body, 'Instrument Sans', system-ui, sans-serif); font-style: normal; }
@@ -123,7 +195,7 @@
 .hounds-page .hd-kpi { background: none; border: 0; padding: 0; }
 .hounds-page .hd-kpis { gap: 28px 40px; }
 .hounds-page .hd-kpi__label { font-size: 12px; font-weight: 500; letter-spacing: .02em; text-transform: none; color: var(--lh-mute); }
-.hounds-page .hd-kpi__big { font-size: 30px; font-weight: 650; letter-spacing: -.02em; font-family: var(--font-body, 'Instrument Sans', system-ui, sans-serif); }
+.hounds-page .hd-kpi__big { font-family: var(--lh-font-display); font-size: 36px; font-weight: 700; line-height: 1; letter-spacing: -.01em; font-variant-numeric: tabular-nums; white-space: nowrap; overflow-wrap: normal; }
 .hounds-page .hd-state { border: 0; border-radius: 12px; background: var(--lh-soft); font-size: 14px; }
 .hounds-page .hd-legend-box { background: none; border: 0; }
 .hounds-page details > summary { cursor: pointer; color: var(--lh-ink2); font-size: 13.5px; }
@@ -169,8 +241,39 @@
 .lh-confetti { position: fixed; inset: 0; z-index: 200; pointer-events: none; overflow: hidden; }
 .lh-confetti i { position: absolute; border-radius: 2px; will-change: transform, opacity; }
 
-/* ---- the avatars: SVG groups moved by CSS ------------------------------------------------------------------ */
-.dk-badge { overflow: visible; }
+/* ---- the dog rig (web/js/dog-rig.js): poses are attributes, shown by CSS; no pose needs motion to be understood ---- */
+.dk-badge { display: block; overflow: visible; flex: none; }
+.dk-badge .dk-p { display: none; }
+.dk-badge .dk-head, .dk-badge .dk-body, .dk-badge .dk-clip, .dk-badge .dk-paws, .dk-badge .dk-paw, .dk-badge .dk-eyes, .dk-badge .dk-ear, .dk-badge .dk-dot, .dk-badge .dk-spark {
+  transform-box: view-box; transform-origin: 60px 92px;
+}
+.dk-badge .dk-eyes, .dk-badge .dk-ear, .dk-badge .dk-dot, .dk-badge .dk-spark { transform-box: fill-box; transform-origin: 50% 50%; }
+.dk-badge .dk-ear--l { transform-origin: 85% 12%; }
+.dk-badge .dk-ear--r { transform-origin: 15% 12%; }
+.dk-badge .dk-paws { display: none; }
+.dk-badge .dk-p--tear { fill: #8FD0FF; }
+
+.dk-badge[data-pose="idle"] .dk-p--mouth.dk-p--idle, .dk-badge[data-pose="happy"] .dk-p--mouth.dk-p--happy,
+.dk-badge[data-pose="sad"] .dk-p--mouth.dk-p--sad, .dk-badge[data-pose="thinking"] .dk-p--mouth.dk-p--thinking,
+.dk-badge[data-pose="celebrate"] .dk-p--mouth.dk-p--celebrate { display: inline; }
+.dk-badge[data-pose="idle"] .dk-p--eyes.dk-p--open, .dk-badge[data-pose="happy"] .dk-p--eyes.dk-p--happy,
+.dk-badge[data-pose="celebrate"] .dk-p--eyes.dk-p--happy, .dk-badge[data-pose="sad"] .dk-p--eyes.dk-p--sad,
+.dk-badge[data-pose="thinking"] .dk-p--eyes.dk-p--thinking { display: inline; }
+.dk-badge[data-pose="happy"] .dk-p--brows.dk-p--happy, .dk-badge[data-pose="sad"] .dk-p--brows.dk-p--sad,
+.dk-badge[data-pose="thinking"] .dk-p--brows.dk-p--thinking, .dk-badge[data-pose="celebrate"] .dk-p--brows.dk-p--celebrate { display: inline; }
+.dk-badge[data-pose="happy"] .dk-p--cheeks, .dk-badge[data-pose="celebrate"] .dk-p--cheeks { display: inline; }
+.dk-badge[data-pose="sad"] .dk-p--tear, .dk-badge[data-pose="thinking"] .dk-p--thought, .dk-badge[data-pose="celebrate"] .dk-p--sparkles { display: inline; }
+.dk-badge[data-pose="celebrate"] .dk-paws { display: inline; }
+
+/* a pose still reads with every animation off: the head sits differently, the ears hang, the paws are up */
+.dk-badge[data-pose="sad"] .dk-head { transform: translateY(3px) rotate(2.5deg); }
+.dk-badge[data-pose="sad"] .dk-ear--l { transform: rotate(8deg); }
+.dk-badge[data-pose="sad"] .dk-ear--r { transform: rotate(-8deg); }
+.dk-badge[data-pose="thinking"] .dk-head { transform: rotate(-4deg); }
+.dk-badge[data-pose="happy"] .dk-head { transform: translateY(-1px) rotate(2deg); }
+.dk-badge[data-pose="celebrate"] .dk-head { transform: translateY(-2px); }
+.dk-badge[data-pose="celebrate"] .dk-paw--l { transform: translateY(-9px) rotate(-12deg); }
+.dk-badge[data-pose="celebrate"] .dk-paw--r { transform: translateY(-9px) rotate(12deg); }
 
 /* ---- MOTION: everything below is off for prefers-reduced-motion -------------------------------------------- */
 @media (prefers-reduced-motion: no-preference) {
@@ -186,32 +289,54 @@
 
   .lh-btn:active, .hounds-page .btn:active, .kn-act:active { transform: scale(.97); }
 
-  /* the dog: a slow bob, an occasional blink and ear flick; happy after a win, slumped after a loss */
-  .dk-badge .dk-head { transform-box: view-box; transform-origin: 40px 62px; animation: dk-bob 4.2s ease-in-out infinite; }
-  .dk-badge .dk-eyes { transform-box: fill-box; transform-origin: 50% 50%; animation: dk-blink 5.6s infinite; }
-  .dk-badge .dk-ear--l { transform-box: fill-box; transform-origin: 85% 10%; animation: dk-ear 7s ease-in-out infinite; }
-  .dk-badge .dk-ear--r { transform-box: fill-box; transform-origin: 15% 10%; animation: dk-ear 7s ease-in-out 1.3s infinite reverse; }
-  .dk-badge[data-mood="happy"] .dk-head { animation: dk-wiggle 1.5s ease-in-out infinite; }
-  .dk-badge[data-mood="slump"] .dk-head { animation: dk-slump 5.5s ease-in-out infinite; }
-  .kn-card:hover .dk-badge .dk-head, .kn-kcard:hover .dk-badge .dk-head { animation: dk-perk .6s var(--lh-ease) 1, dk-bob 4.2s ease-in-out .6s infinite; }
+  /* the dog: it breathes, blinks and flicks an ear; each pose adds its own movement */
+  .dk-badge .dk-body { animation: dk-breathe 4.4s ease-in-out infinite; }
+  .dk-badge .dk-head { animation: dk-bob 4.2s ease-in-out infinite; }
+  .dk-badge .dk-eyes { animation: dk-blink 5.6s infinite; }
+  .dk-badge .dk-ear--l { animation: dk-ear 7s ease-in-out infinite; }
+  .dk-badge .dk-ear--r { animation: dk-ear 7s ease-in-out 1.3s infinite reverse; }
+  .dk-badge[data-pose="happy"] .dk-head { animation: dk-wiggle 1.5s ease-in-out infinite; }
+  .dk-badge[data-pose="sad"] .dk-head { animation: dk-slump 5.5s ease-in-out infinite; }
+  .dk-badge[data-pose="sad"] .dk-p--tear { animation: dk-tear 2.6s ease-in infinite; }
+  .dk-badge[data-pose="thinking"] .dk-head { animation: dk-ponder 3.2s ease-in-out infinite; }
+  .dk-badge[data-pose="thinking"] .dk-dot { animation: dk-dot 1.5s ease-in-out infinite; }
+  .dk-badge[data-pose="thinking"] .dk-dot--2 { animation-delay: .2s; }
+  .dk-badge[data-pose="thinking"] .dk-dot--3 { animation-delay: .4s; }
+  .dk-badge[data-pose="celebrate"] .dk-clip { animation: dk-jump .62s var(--lh-spring, cubic-bezier(.34, 1.56, .64, 1)) infinite alternate; }
+  .dk-badge[data-pose="celebrate"] .dk-head { animation: dk-wiggle .9s ease-in-out infinite; }
+  .dk-badge[data-pose="celebrate"] .dk-paw--l { animation: dk-wave-l .5s ease-in-out infinite alternate; }
+  .dk-badge[data-pose="celebrate"] .dk-paw--r { animation: dk-wave-r .5s ease-in-out .12s infinite alternate; }
+  .dk-badge[data-pose="celebrate"] .dk-spark { animation: dk-twinkle 1.1s ease-in-out infinite; }
+  .dk-badge[data-pose="celebrate"] .dk-spark--2 { animation-delay: .25s; }
+  .dk-badge[data-pose="celebrate"] .dk-spark--3 { animation-delay: .5s; }
+  .dk-badge[data-pose="celebrate"] .dk-spark--4 { animation-delay: .75s; }
+  .kn-card:hover .dk-badge[data-pose="idle"] .dk-head, .kn-kcard:hover .dk-badge[data-pose="idle"] .dk-head { animation: dk-perk .6s var(--lh-ease) 1, dk-bob 4.2s ease-in-out .6s infinite; }
 }
 
 @keyframes lh-shimmer { from { background-position: 120% 0; } to { background-position: -100% 0; } }
 @keyframes lh-fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 @keyframes lh-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @keyframes lh-ping { 0% { box-shadow: 0 0 0 0 rgba(47, 208, 122, .55); transform: scale(1); } 70%, 100% { box-shadow: 0 0 0 7px rgba(47, 208, 122, 0); } }
-@keyframes dk-bob { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-1.4px) rotate(-1.2deg); } }
+@keyframes dk-bob { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-1.6px) rotate(-1deg); } }
+@keyframes dk-breathe { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(1.018); } }
 @keyframes dk-blink { 0%, 93%, 100% { transform: scaleY(1); } 96% { transform: scaleY(.08); } }
 @keyframes dk-ear { 0%, 88%, 100% { transform: rotate(0deg); } 92% { transform: rotate(-9deg); } 96% { transform: rotate(3deg); } }
 @keyframes dk-wiggle { 0%, 100% { transform: rotate(0deg) translateY(0); } 20% { transform: rotate(-5deg) translateY(-2px); } 50% { transform: rotate(5deg) translateY(-3px); } 80% { transform: rotate(-3deg) translateY(-1px); } }
-@keyframes dk-slump { 0%, 100% { transform: translateY(2.4px) rotate(3deg); } 50% { transform: translateY(3px) rotate(3.8deg); } }
+@keyframes dk-slump { 0%, 100% { transform: translateY(3px) rotate(2.5deg); } 50% { transform: translateY(4px) rotate(3.4deg); } }
+@keyframes dk-ponder { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(-6deg) translateY(-1px); } }
+@keyframes dk-dot { 0%, 100% { transform: scale(.6); opacity: .45; } 50% { transform: scale(1.15); opacity: 1; } }
+@keyframes dk-tear { 0% { transform: translateY(0); opacity: 0; } 15% { opacity: .95; } 80% { transform: translateY(16px); opacity: .9; } 100% { transform: translateY(20px); opacity: 0; } }
+@keyframes dk-jump { from { transform: translateY(2px); } to { transform: translateY(-6px); } }
+@keyframes dk-wave-l { from { transform: translateY(-9px) rotate(-12deg); } to { transform: translateY(-13px) rotate(-4deg); } }
+@keyframes dk-wave-r { from { transform: translateY(-9px) rotate(12deg); } to { transform: translateY(-13px) rotate(4deg); } }
+@keyframes dk-twinkle { 0%, 100% { transform: scale(.2) rotate(0deg); opacity: 0; } 50% { transform: scale(1.1) rotate(45deg); opacity: 1; } }
 @keyframes dk-perk { 0% { transform: translateY(0) rotate(0); } 35% { transform: translateY(-3px) rotate(-6deg); } 70% { transform: translateY(-1px) rotate(3deg); } 100% { transform: translateY(0) rotate(0); } }
 
 /* ---- phones ----------------------------------------------------------------------------------------------- */
 @media (max-width: 760px) {
   .hounds-page .hd-wrap { padding: 20px 16px 40px; }
   .hounds-page .hd-panel { margin-bottom: 32px; }
-  .hounds-page .hd-kpi__big { font-size: 26px; }
+  .hounds-page .hd-kpi__big { font-size: 32px; }
 }
 
 /* the type-of-model chips sit behind one quiet disclosure */

@@ -96,7 +96,8 @@
 
 /* ---- the badge and the locker room -------------------------------------------------------------------------- */
 .dk-badge { flex: none; display: block; border-radius: 14px; }
-.hd-modelhead .dk-badge { width: 56px; height: 56px; }
+.hd-modelhead .dk-badge { width: 84px; height: 84px; }
+@media (max-width: 560px) { .hd-modelhead .dk-badge { width: 68px; height: 68px; } }
 .dk-locker { display: grid; gap: 18px; grid-template-columns: minmax(0, 1fr); margin: 8px 0; }
 @media (min-width: 760px) { .dk-locker { grid-template-columns: 170px minmax(0, 1fr); align-items: start; } }
 .dk-preview { display: flex; align-items: center; justify-content: center; padding: 16px; background: var(--hd-card-2); border: 1px solid var(--hd-line); border-radius: 6px; }

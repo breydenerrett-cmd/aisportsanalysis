@@ -22,6 +22,7 @@ import {
   h, clearNode, monogram, categoryOf, houndHref, isWarming, NOT_REPORTED, fmtPrice,
 } from "./hounds-core.js";
 import { unitsOf } from "./hounds-voice.js";
+import { dogFace, poseOfHound } from "./dog-avatar.js";
 import {
   recordText, betsOf, onlyTickets, ticketState, ticketStatus, RESULT_WORDS, ticketPrice, pickOf,
   marketLabel, recordedText, freshness, isRanked, qualifyingRows, progressText, NA,
@@ -69,7 +70,7 @@ function boardRow(hound, rank, qual, min) {
   return h("tr", { class: qual ? "lbrow lbrow--qual" : "lbrow", "data-hound": hound.id }, [
     h("td", { class: "lbnum lbrank", text: qual ? "-" : String(rank) }),
     h("td", { class: "lbmodel" }, [
-      monogram(hound.name, { size: 26, category: categoryOf(hound) }),
+      h("span", { class: "lbdog", "data-hook": "lb-dog" }, [dogFace(hound, { size: 30, pose: poseOfHound(hound) })]),
       h("a", { class: "lbname", href: houndHref(hound.id), text: hound.name || NOT_REPORTED })]),
     h("td", { class: "lbnum", "data-hook": "lb-record", text: recordText(hound) }),
     h("td", { ...(grey || { class: "lbnum" }), "data-hook": "lb-bankroll" }, [fmtUsd(balance),

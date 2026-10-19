@@ -8,7 +8,7 @@
 
 import { apiGet } from "./api.js";
 import { h, clearNode, describeError, kennelName } from "./hounds-core.js";
-import { dogBadge, DEFAULT_LOOK } from "./dog-avatar.js";
+import { dogFace } from "./dog-avatar.js";
 import { bankrollNow, returnPctOf, fmtUsd, fmtPct } from "./hounds-board.js";
 
 const q = (hook) => document.querySelector(`[data-hook='${hook}']`);
@@ -23,7 +23,7 @@ export function bestLine(kennel) {
 
 export function kennelCard(kennel, index = 0) {
   const stack = h("span", { class: "kn-stack", "aria-hidden": "true" },
-    (kennel.dogs || []).slice(0, 4).map((d, i) => h("span", { class: "kn-stack__dog", style: `--n:${i}` }, [dogBadge(d.look || DEFAULT_LOOK, { size: 44 })])));
+    (kennel.dogs || []).slice(0, 4).map((d, i) => h("span", { class: "kn-stack__dog", style: `--n:${i}` }, [dogFace(d, { size: 48 })])));
   return h("a", { class: "kn-kcard", href: kennel.href || `kennel.html?u=${encodeURIComponent(kennel.handle)}`, "data-hook": "kennel-card",
     "data-handle": kennel.handle, style: `--i:${Math.min(index, 12)}` }, [
     stack,

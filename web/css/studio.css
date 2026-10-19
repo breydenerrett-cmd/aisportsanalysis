@@ -32,7 +32,7 @@
 
 .kn-stats { display: flex; gap: 22px; margin: 12px 0 8px; }
 .kn-stat dt { font-size: 11.5px; font-weight: 500; color: var(--lh-mute, #8D96A6); }
-.kn-stat dd { margin: 1px 0 0; font-size: 19px; font-weight: 650; letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
+.kn-stat dd { margin: 1px 0 0; font-size: 19px; font-weight: 600; letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
 .kn-stats--wide { gap: 34px; }
 .kn-stats--wide .kn-stat dd { font-size: 26px; }
 .kn-card__last { margin: 0 0 12px; font-size: 13px; color: var(--lh-mute, #8D96A6); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -96,7 +96,7 @@
 .kn-studio__head { display: flex; align-items: center; gap: 14px; padding: 18px 20px 12px; }
 .kn-studio__avatar { flex: none; line-height: 0; }
 .kn-studio__who { flex: 1; min-width: 0; }
-.kn-studio__who h2 { margin: 0; font-size: 20px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kn-studio__who h2 { margin: 0; font-size: 20px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .kn-studio__who .hd-fine { margin: 2px 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .kn-studio__close { flex: none; width: 36px; height: 36px; border: 0; border-radius: 50%; background: rgba(255, 255, 255, .07); color: var(--lh-ink, #EEF1F5); font-size: 22px; line-height: 1; cursor: pointer; }
 .kn-studio__close:hover { background: rgba(255, 255, 255, .14); }
@@ -125,4 +125,79 @@
   .kn-studio__head .lh-btn { display: none; }
   .kn-studio__body { padding-bottom: 90px; }
   .kn-head__actions { width: 100%; }
+}
+
+/* ======================================================================================================================
+ * THE CHARACTER CREATOR (web/js/dog-locker.js) and the dog faces in lists. Design system v2 tokens (css/lh.css).
+ * ==================================================================================================================== */
+.hounds-page .hd-dogface, .hounds-page .lbdog { display: inline-flex; flex: none; line-height: 0; }
+.hounds-page .hd-modelcell { gap: var(--lh-s3); }
+.hounds-page .hd-modelhead { align-items: center; gap: var(--lh-s4); }
+.hounds-page .hd-modelhead .dk-badge { flex: none; }
+
+.dk-stage {
+  position: relative; display: grid; justify-items: center; gap: var(--lh-s3); padding: var(--lh-s5) var(--lh-s4) var(--lh-s4);
+  border-radius: var(--lh-r-lg); overflow: hidden; box-shadow: var(--lh-e1);
+  background: radial-gradient(110% 80% at 50% 0%, rgba(47, 208, 122, .12), transparent 62%), var(--lh-soft);
+}
+.dk-stage__spot { position: absolute; left: 0; right: 0; bottom: 0; height: 46%; pointer-events: none; background: radial-gradient(60% 100% at 50% 100%, rgba(255, 255, 255, .07), transparent); }
+.dk-stage__dog { position: relative; line-height: 0; filter: drop-shadow(0 16px 22px rgba(0, 0, 0, .42)); will-change: transform; }
+.dk-stage__dog svg { width: min(200px, 56vw); height: auto; }
+.dk-stage__bar { position: relative; display: flex; align-items: center; justify-content: space-between; gap: var(--lh-s3); width: 100%; font-size: var(--lh-fs-sm); color: var(--lh-ink2); }
+.dk-stage__breed { margin: 0; }
+.dk-dirty { color: var(--lh-pending); font-size: var(--lh-fs-xs); font-weight: 600; }
+.dk-dirty[hidden] { display: none; }
+.dk-posebar { position: relative; display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; }
+.dk-posebtn {
+  height: 28px; padding: 0 var(--lh-s3); border: 0; border-radius: var(--lh-r-pill); background: rgba(255, 255, 255, .06); color: var(--lh-mute);
+  font: 500 var(--lh-fs-xs)/1 var(--lh-font-text); cursor: pointer; transition: background-color var(--lh-t-fast) var(--lh-ease), color var(--lh-t-fast) var(--lh-ease);
+}
+.dk-posebtn:hover { color: var(--lh-ink); background: rgba(255, 255, 255, .11); }
+.dk-posebtn[aria-pressed="true"] { background: var(--lh-ink); color: var(--lh-bg); font-weight: 600; }
+.dk-dice {
+  position: absolute; top: var(--lh-s3); right: var(--lh-s3); display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 var(--lh-s3) 0 10px;
+  border: 0; border-radius: var(--lh-r-pill); background: var(--lh-accent-soft); color: var(--lh-win); font: 600 var(--lh-fs-sm)/1 var(--lh-font-text); cursor: pointer;
+  transition: background-color var(--lh-t-fast) var(--lh-ease), transform var(--lh-t-fast) var(--lh-ease);
+}
+.dk-dice:hover { background: rgba(47, 208, 122, .24); }
+.dk-dice:active { transform: scale(.95); }
+.dk-dice__icon { font-size: 17px; line-height: 1; }
+
+.hounds-page .dk-fieldset { padding: 0; margin: 0 0 var(--lh-s4); }
+.hounds-page .dk-fieldset legend { margin-bottom: var(--lh-s2); }
+.hounds-page .dk-swatch { width: 36px; height: 36px; transition: transform var(--lh-t-base) var(--lh-spring), box-shadow var(--lh-t-fast) var(--lh-ease); }
+.hounds-page .dk-swatch:hover { transform: scale(1.12); }
+.hounds-page .dk-swatch[aria-pressed="true"] { transform: scale(1.08); }
+.dk-optrow--swatch { gap: var(--lh-s2); }
+.dk-optrow--thumb { display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: var(--lh-s2); }
+.hounds-page .dk-opt.dk-opt--thumb {
+  display: grid; justify-items: center; gap: 2px; min-height: 0; padding: var(--lh-s2) 4px 6px; border-radius: var(--lh-r-md); background: var(--lh-soft);
+  box-shadow: inset 0 0 0 1.5px transparent; color: var(--lh-ink2);
+  transition: transform var(--lh-t-base) var(--lh-spring), background-color var(--lh-t-fast) var(--lh-ease), box-shadow var(--lh-t-fast) var(--lh-ease);
+}
+.hounds-page .dk-opt.dk-opt--thumb:hover { background: var(--lh-soft-2); transform: translateY(-2px); }
+.hounds-page .dk-opt.dk-opt--thumb[aria-pressed="true"] { background: var(--lh-accent-soft); box-shadow: inset 0 0 0 1.5px var(--lh-accent); color: var(--lh-ink); transform: translateY(-2px); }
+.dk-opt__dog { display: block; line-height: 0; }
+.dk-opt__label { font-size: var(--lh-fs-xs); font-weight: 500; }
+.dk-actions--sticky { position: sticky; bottom: -40px; z-index: 3; margin: var(--lh-s3) 0 0; padding: var(--lh-s3) 0 var(--lh-s4); background: #0F1317; box-shadow: 0 -1px 0 var(--lh-line), 0 -14px 18px #0F1317; }
+.dk-save[disabled] { opacity: .7; }
+
+.kn-studio .dk-stage {
+  position: sticky; top: 0; z-index: 4; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "dog bar" "dog pose"; align-items: center; justify-items: start;
+  column-gap: var(--lh-s5); padding: var(--lh-s4) var(--lh-s5);
+}
+.kn-studio .dk-stage__dog { grid-area: dog; }
+.kn-studio .dk-stage__bar { grid-area: bar; align-self: end; flex-direction: column; align-items: flex-start; gap: 4px; padding-top: 34px; }
+.kn-studio .dk-posebar { grid-area: pose; align-self: start; justify-content: flex-start; }
+.kn-studio .dk-stage__dog svg { width: 148px; }
+.kn-studio .dk-locker { gap: var(--lh-s4); }
+@media (min-width: 760px) {
+  .hounds-page:not(.kn-page) .dk-locker { grid-template-columns: 280px minmax(0, 1fr); }
+  .hounds-page:not(.kn-page) .dk-stage { position: sticky; top: 76px; }
+}
+@media (max-width: 760px) {
+  .kn-studio .dk-stage { position: relative; grid-template-columns: 1fr; grid-template-areas: "dog" "bar" "pose"; justify-items: center; }
+  .kn-studio .dk-stage__bar { padding-top: 0; align-items: center; }
+  .kn-studio .dk-posebar { justify-content: center; }
+  .kn-studio .dk-stage__dog svg { width: 148px; }
 }
