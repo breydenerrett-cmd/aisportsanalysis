@@ -165,7 +165,8 @@ def fold(rows) -> Card:
     card = Card()
     for r in rows:
         kind, issue = r.get("kind"), r.get("issue")
-        if kind not in (K_SUGGESTION, K_REFUSED, K_HINDSIGHT, K_FORWARD, K_FAN_TIP, K_FAN_COUNT)                 or not isinstance(issue, int) or isinstance(issue, bool):
+        if kind not in (K_SUGGESTION, K_REFUSED, K_HINDSIGHT, K_FORWARD, K_FAN_TIP, K_FAN_COUNT) \
+                or not isinstance(issue, int) or isinstance(issue, bool):
             continue
         if kind in (K_FAN_TIP, K_FAN_COUNT):
             _fold_fan(card, kind, issue, r)
@@ -179,7 +180,10 @@ def fold(rows) -> Card:
             card.forward[issue] = r
             if r.get("label") == "HELPED" and issue not in card.first_helped:
                 card.first_helped[issue] = r
-        if isinstance(r.get("utc"), str) and (card.last_utc is None or r["utc"] > card.last_utc):
+        # last_utc is the COACH's last change (it dates the daily "report card" kennel item); a fan's row, and
+        # the grades of a fan's tip, must not make the coach's card look changed
+        if issue < FAN_KEY_BASE and isinstance(r.get("utc"), str) \
+                and (card.last_utc is None or r["utc"] > card.last_utc):
             card.last_utc = r["utc"]
     return card
 
@@ -249,7 +253,8 @@ def fan_duplicate_of(card: Card, hound_id: str, values: Mapping, day: str) -> Op
     """The key of today's first row for the same hound and values, else None."""
     sig = values_signature(values)
     for key, row in card.fans.items():
-        if row.get("hound") == hound_id and fan_day(row) == day                 and values_signature(row.get("suggested_values") or {}) == sig:
+        if row.get("hound") == hound_id and fan_day(row) == day \
+                and values_signature(row.get("suggested_values") or {}) == sig:
             return key
     return None
 

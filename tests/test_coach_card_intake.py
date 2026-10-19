@@ -426,7 +426,7 @@ class TheWiring(unittest.TestCase):
         lines = [ln for ln in self.slot().splitlines() if "src.hounds.coach_intake" in ln and not ln.lstrip().startswith("#")]
         self.assertEqual(len(lines), 1, lines)
         line = lines[0]
-        self.assertIn("--source api --grade", line)
+        self.assertIn("--source api,tips --grade", line)      # the coach's issues and the fans' tips, one call
         self.assertIn("timeout 120", line)
         self.assertTrue(line.rstrip().endswith("|| true"))
         self.assertIn("python3 -m src.hounds.coach_intake", line)

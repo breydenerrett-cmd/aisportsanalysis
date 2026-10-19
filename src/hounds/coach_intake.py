@@ -548,7 +548,9 @@ def record_fan_tips(rows: Sequence, *, scope: L.Scope, card_paths: coach_card.Pa
         champ = tunables.full_values(tun, state.champion_params(tip["hound"]))
         try:
             values = tunables.validate(tun, champ, tip["values"])
-        except tunables.TunableError as exc:
+        except (tunables.TunableError, ValueError, OverflowError, TypeError) as exc:
+            # ValueError/OverflowError: a NaN or Infinity in the export (json.loads accepts both) breaks the grid
+            # check inside tunables.validate; it is an invalid tip like any other, not a crash of the run
             counts["invalid"] += 1
             say(f"  tip {tip['id']} refused: {_echo(exc)}")
             continue
