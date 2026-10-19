@@ -46,6 +46,7 @@ const SOURCES = {
   funnel: "/admin/funnel",
   support: "/admin/support",
   revenue: "/admin/revenue",
+  digest: "/admin/health-digest",
 };
 
 const hook = (name) => document.querySelector(`[data-hook='${name}']`);

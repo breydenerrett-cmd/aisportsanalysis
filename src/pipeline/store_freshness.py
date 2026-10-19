@@ -103,17 +103,19 @@ def baseball_date(now=None) -> str:
 # yesterday (Eastern). Yesterday, because a day's games are final only after
 # midnight Eastern; the tolerance is on top of that, so a refresh that runs at
 # the top of the hour around midnight never reads as an outage.
-RESULTS_TOLERANCE_DAYS = 1
-DAILY_TOLERANCE_DAYS = 1
-PITCHER_TOLERANCE_DAYS = 2
-SEASON_AGGREGATE_TOLERANCE_DAYS = 3
+#
+# THE NUMBERS LIVE IN src/pipeline/freshness_policy.py (2026-10-19): the admin
+# Health tab, the alerts feed and this report must never hold separate copies.
+from src.pipeline.freshness_policy import (  # noqa: E402,F401 -- re-exported
+    DAILY_TOLERANCE_DAYS, PITCHER_TOLERANCE_DAYS, RESULTS_TOLERANCE_DAYS,
+    SEASON_AGGREGATE_TOLERANCE_DAYS, STANDINGS_SEASON_ACTIVE_DAYS,
+)
 
 # A standings snapshot exists only while regular-season games are being
 # played: the Stats API answers a postseason (or off-season) date with an empty
 # table. Once the newest regular-season game in the results store is more than
 # this many days old, the season is over and the newest snapshot is the last
 # one there will ever be -- not a stale one.
-STANDINGS_SEASON_ACTIVE_DAYS = 4
 
 
 def standings_horizon(newest_regular: Optional[str], today: str) -> str:

@@ -82,10 +82,19 @@ class Alerts(unittest.TestCase):
         alerts = A.collect(healthy(odds=odds, reasons=["odds_multibook: bad json"]), [], now=NOW)
         self.assertEqual([a["kind"] for a in alerts], ["health_odds_multibook"])
 
-    def test_stale_core_stores_alert_by_name(self):
-        fresh = {"core_stale": ["mlb_results", "bullpen_log"], "stale": ["mlb_results", "bullpen_log", "x"]}
-        alerts = A.collect(healthy(data_freshness=fresh), [], now=NOW)
-        self.assertEqual(alerts[0]["title"], "Core data is behind: mlb_results, bullpen_log")
+    def test_a_stale_store_behind_the_pages_alerts_by_name_one_item_each(self):
+        stores = {"mlb_results": {"through": "2026-10-14", "lag_days": 4, "stale": True, "reason": "4 days behind",
+                                  "tolerance_days": 1},
+                  "bullpen_log": {"through": "2026-10-13", "lag_days": 5, "stale": True, "reason": "5 days behind",
+                                  "tolerance_days": 1},
+                  "transactions": {"through": "2026-10-15", "lag_days": 3, "stale": False, "reason": None,
+                                  "tolerance_days": 3}}
+        alerts = A.collect(healthy(data_freshness={"core_stale": ["mlb_results", "bullpen_log"], "stores": stores}),
+                           [], now=NOW)
+        self.assertEqual(sorted(a["kind"] for a in alerts), ["data_stale_bullpen_log", "data_stale_mlb_results"])
+        titles = {a["kind"]: a["title"] for a in alerts}
+        self.assertEqual(titles["data_stale_mlb_results"], "Match results are 4 days behind")
+        self.assertTrue(all("Fix:" in a["description"] for a in alerts))
 
     def test_a_learning_loop_that_paused_itself_is_an_alert_dated_when_it_paused(self):
         pauses = [{"scope": "house", "reason": "trailing the random controls for 60 days",

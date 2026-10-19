@@ -63,10 +63,47 @@ FORWARD_STORES = {
     "odds_snapshots": ("processed", "odds_snapshots.jsonl", "observed_utc"),
     "f5_close": ("processed", "f5_close.jsonl", "observed_utc"),
     "prop_listing": ("processed", "prop_listing.jsonl", "observed_utc"),
+    # The LIVE prop price stores (2026-10-19). prop_listing above is a bounded audit that finished on its own
+    # credit cap; these two are what the prop dogs and the card read, and nothing timed them.
+    "prop_prices": ("processed", "prop_prices.jsonl", "observed_utc"),
+    "batter_props": ("processed", "batter_props.jsonl", "observed_utc"),
     "probables_watch": ("watch", "probables_watch.jsonl", "fetched_utc"),
     "transactions_watch": ("watch", "transactions_watch.jsonl", "fetched_utc"),
     "lineups_watch": ("watch", "lineups_watch.jsonl", "fetched_utc"),
 }
+
+
+# Stores too large to parse end to end on a health poll. They are append-only and chronological, so the newest row
+# is in the last chunk; `rows` is then unknown (None), never a guess. batter_props.jsonl is ~80 MB.
+TAIL_ONLY_STORES = frozenset({"batter_props.jsonl"})
+TAIL_BYTES = 512 * 1024
+
+
+def _newest_in_tail(path: Path, field_name: str) -> tuple:
+    """(None, newest_datetime_or_None) from the last TAIL_BYTES of an append-only store. Memoised like
+    `_newest_timestamp`; a zero-byte file reports rows 0."""
+    stat = path.stat()
+    fingerprint = (str(path), stat.st_size, stat.st_mtime_ns, field_name, "tail")
+    cached = _SCAN_CACHE.get(fingerprint)
+    if cached is not None:
+        return cached
+    if stat.st_size == 0:
+        return 0, None
+    with path.open("rb") as handle:
+        handle.seek(max(0, stat.st_size - TAIL_BYTES))
+        chunk = handle.read().decode("utf-8", errors="replace")
+    newest = None
+    for line in chunk.splitlines():
+        try:
+            stamp = _parse_timestamp(json.loads(line).get(field_name))
+        except (ValueError, AttributeError):
+            continue
+        if stamp is not None and (newest is None or stamp > newest):
+            newest = stamp
+    for stale in [k for k in _SCAN_CACHE if k[0] == str(path) and k[3] == field_name]:
+        del _SCAN_CACHE[stale]
+    _SCAN_CACHE[fingerprint] = (None, newest)
+    return None, newest
 
 
 @dataclass(frozen=True)
@@ -251,7 +288,10 @@ def check_store(path: Path, timestamp_field: str, *,
                                  "nothing has been captured since the last "
                                  "rotation")
     try:
-        rows, newest = _newest_timestamp(path, timestamp_field)
+        if path.name in TAIL_ONLY_STORES:
+            rows, newest = _newest_in_tail(path, timestamp_field)
+        else:
+            rows, newest = _newest_timestamp(path, timestamp_field)
     except OSError as exc:
         return StoreCheck(present=True, rows=None, newest_row_age_seconds=None,
                           newest_row_utc=None, status="unreadable",
@@ -282,7 +322,7 @@ def check_store(path: Path, timestamp_field: str, *,
     if newest is None:
         return StoreCheck(present=True, rows=rows, newest_row_age_seconds=None,
                           newest_row_utc=None, status="unreadable",
-                          reason=f"{path.name} holds {rows} row(s) but none carry "
+                          reason=f"{path.name} holds {rows if rows is not None else 'some'} row(s) but none carry "
                                  f"a parseable {timestamp_field}")
     age = (now - newest).total_seconds()
     return StoreCheck(present=True, rows=rows, newest_row_age_seconds=age,
@@ -337,8 +377,12 @@ def check_data_freshness(root: Path, now: datetime) -> dict:
             "core_stale": data["core_stale"],
             "stale": data["stale"],
             "oldest_core_through": data["oldest_through"],
+            # tolerance_days and expected_through ride along so the shared policy
+            # (src/pipeline/freshness_policy.py) can say "within tolerance" and "season over".
             "stores": {name: {"through": entry["through"], "lag_days": entry["lag_days"],
-                              "stale": entry["stale"], "reason": entry["reason"]}
+                              "stale": entry["stale"], "reason": entry["reason"],
+                              "tolerance_days": entry.get("tolerance_days"),
+                              "expected_through": entry.get("expected_through")}
                        for name, entry in data["stores"].items()},
             "guard": display_refresh.guard_status(),
         }
@@ -428,7 +472,7 @@ def report(*, data_dir: Optional[Path] = None, db_path: Optional[Path] = None,
     if checkout["status"] == "broken":
         reasons.append(f"checkout: {checkout['reason']}")
 
-    return {
+    payload = {
         "status": "ok" if healthy else "degraded",
         "generated_at": now.isoformat(),
         "process": {"status": "ok"},
@@ -439,3 +483,17 @@ def report(*, data_dir: Optional[Path] = None, db_path: Optional[Path] = None,
         "checkout": checkout,
         "reasons": reasons,
     }
+    payload["freshness"] = check_freshness(payload, root, now)
+    return payload
+
+
+def check_freshness(payload: dict, root: Path, now: datetime) -> dict:
+    """The per-store verdicts (src/pipeline/freshness_policy.py): the ONE judgement the admin Health tab, the
+    alerts feed and the admin digest all read. INFORMATIONAL like `data_freshness`: it never changes `status`,
+    because a 503 here takes the whole site out of rotation over an input the pages already label."""
+    try:
+        from src.pipeline import freshness_policy
+        return freshness_policy.summarize(payload, freshness_policy.situation(root, now))
+    except Exception as exc:  # noqa: BLE001 -- a health check must never be the thing that 500s
+        return {"error": f"could not evaluate freshness: {type(exc).__name__}: {exc}",
+                "situation": {}, "stores": [], "attention": []}

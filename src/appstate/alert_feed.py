@@ -10,18 +10,28 @@ is wrong the Zap fires once per incident, not once per poll:
   * ``pubDate`` is a fact about the incident (when the odds crossed the limit, when the loop paused),
     else the start of the UTC day. Never "now", so two polls are byte-identical.
 
-WHAT RAISES AN ALERT (thresholds named here, in one place)
+WHAT RAISES AN ALERT. THE LIMITS ARE NOT HERE: every store's limit lives in
+``src/pipeline/freshness_policy.py`` and ``apphealth.report()["freshness"]`` carries the verdicts; this module
+only turns a verdict into an item. (Before 2026-10-19 this file held its own odds limit and the admin page
+another; a finished audit read red on one and nothing on the other.)
 
   health_<what>     a reason in ``apphealth.report()["reasons"]`` (database unreachable, a store that
                     cannot be read, checkout broken). The same words ``GET /health`` already shows.
-  odds_stale        the newest odds row is older than ``ODDS_STALE_HOURS`` (3.0; the same limit
-                    ``scripts/prod_watch.py`` holds, for the same reason: quiet-hours capture slots
-                    are 60 minutes apart, so three hours is missing at least two).
-  odds_missing      the odds store is absent or has no rows. An absent store is not a healthy store.
-  data_stale        a core store the computed pages read is past its own tolerance
-                    (``data_freshness.core_stale``, src/pipeline/store_freshness.py).
+  odds_stale / odds_missing      the multi-book odds store past its limit, or absent / empty.
+  store_stale_<store> / store_missing_<store>     any other forward-capture store the policy EXPECTS to be
+                    moving today and finds past its limit (prop prices, lineups, ...). A store that is out of
+                    season, has no game today, or is a finished audit is "not expected" and never alerts.
+  data_stale_<store>  a store the computed pages read is past its own tolerance. One item per store.
+  deploy_stale      the running process is older than ``freshness_policy.DEPLOY_STALE_HOURS`` (3): production
+                    redeploys hourly when CI is green, so an old process means redeploys stopped.
   learning_paused   the learning loop paused itself (src/hounds/learning/pause.py): it stopped because
                     it could not show it was helping, and only the owner can resume it.
+
+Every item says what happened AND what to do: its description is "<what>. Fix: <one line>".
+
+NOT KNOWABLE FROM THE SERVER, SO NOT HERE: whether CI on the working branch is red. That is a GitHub API call
+with a token the app does not hold (and a network call in a feed that must answer from memory). A red CI shows
+up indirectly as ``deploy_stale``. The admin digest says so in its "not checked" list.
 
 NOT HERE, ON PURPOSE: "the house pack recorded zero bets for today's slate by 21:00 UTC". Whether a day
 HAS games is not known without loading the hounds' stores (``pack.base.load_stores``: the whole multi-book
@@ -42,15 +52,19 @@ from typing import Iterable, Mapping, Optional
 
 from src.hounds import rss
 from src.hounds.kennel_feed import site_base_url
+from src.pipeline import freshness_policy
 
-ODDS_STALE_HOURS = 3.0
+ODDS_STALE_HOURS = freshness_policy.ODDS_STALE_HOURS      # re-exported; the number lives in the policy
 REASON_MAX_CHARS = 200
 
 KIND_ODDS_STALE = "odds_stale"
 KIND_ODDS_MISSING = "odds_missing"
 KIND_DATA_STALE = "data_stale"
+KIND_DEPLOY_STALE = "deploy_stale"
 KIND_LEARNING_PAUSED = "learning_paused"
 KIND_HEALTH_CHECK_FAILED = "health_check_failed"
+
+ADMIN_HEALTH_URL = "https://linehound.app/admin.html#/health"
 
 
 # What a health reason may carry that a public feed must not: a file path (it names the host's layout), an email
@@ -73,8 +87,12 @@ def _slug(text: str) -> str:
     return re.sub(r"[^a-z0-9]+", "_", text.lower()).strip("_") or "unknown"
 
 
-def _alert(kind: str, title: str, description: str, pub: datetime) -> dict:
-    return {"kind": kind, "title": title, "description": rss.clean(description), "pub": pub}
+def _alert(kind: str, title: str, what: str, fix: str, pub: datetime) -> dict:
+    what = rss.clean(what).rstrip()
+    fix = rss.clean(fix).strip().rstrip(".")
+    sentence = what if what.endswith((".", "!", "?")) else what + "."
+    return {"kind": kind, "title": title, "what": what, "fix": fix, "pub": pub,
+            "description": f"{sentence} Fix: {fix}."}
 
 
 def _health_reason_alert(reason: str, day_start: datetime) -> dict:
@@ -83,45 +101,58 @@ def _health_reason_alert(reason: str, day_start: datetime) -> dict:
     head_slug = _slug(head)
     if head_slug.startswith("app_db"):
         title = "The app database is unreachable"
+        fix = "check the volume and the machine on Fly, then redeploy; GET /health shows the reason"
     elif head_slug == "checkout":
         title = "Checkout is broken"
+        fix = "set the billing setting named in the reason on Fly (PUBLIC_BASE_URL or a Stripe key) and redeploy"
     else:
         title = f"A data store cannot be read: {head}"
-    return _alert(f"health_{head_slug}", title,
-                  f"Look at GET /health, field 'reasons'. It says: {text}", day_start)
+        fix = f"open {ADMIN_HEALTH_URL} to see which file, restore it from git and redeploy"
+    return _alert(f"health_{head_slug}", title, f"GET /health says: {text}", fix, day_start)
 
 
-def _odds_alerts(health: Mapping, day_start: datetime) -> list:
-    store = ((health.get("odds") or {}).get("odds_multibook")) or {}
-    status = store.get("status")
-    if status == "unreadable":
-        return []                                   # already a health_ reason; one alert per problem
-    if status in ("missing", "empty") or store.get("present") is False:
-        return [_alert(KIND_ODDS_MISSING, f"Odds store is {status or 'missing'}",
-                       "Look at GET /health, odds.odds_multibook, and at the last forward-capture run.",
-                       day_start)]
-    age = store.get("newest_row_age_seconds")
-    if not isinstance(age, (int, float)) or age <= ODDS_STALE_HOURS * 3600:
-        return []
-    hours = int(age // 3600)
-    crossed = rss.parse_utc(store.get("newest_row_utc"))
-    pub = (crossed + timedelta(hours=ODDS_STALE_HOURS)) if crossed else day_start
-    return [_alert(KIND_ODDS_STALE, f"Odds are {hours} hours old",
-                   "Look at the latest forward-capture run (Actions) and at GET /health, "
-                   "odds.odds_multibook.newest_row_age_seconds.", pub)]
+_STORE_KIND = {"odds_multibook": (KIND_ODDS_STALE, KIND_ODDS_MISSING)}
 
 
-def _freshness_alerts(health: Mapping, day_start: datetime) -> list:
+def _freshness_alerts(health: Mapping, day_start: datetime, now: datetime) -> list:
     data = health.get("data_freshness") or {}
+    out = []
     if data.get("error"):
-        return [_alert(KIND_DATA_STALE, "Data freshness could not be checked",
-                       "Look at GET /health, data_freshness.error.", day_start)]
-    core = [str(n) for n in (data.get("core_stale") or [])]
-    if not core:
+        out.append(_alert(KIND_DATA_STALE, "Data freshness could not be checked",
+                          f"GET /health could not evaluate the stores behind the pages: {scrub(data['error'])}",
+                          "open GET /health, data_freshness.error, and read the app log for the traceback",
+                          day_start))
+    fresh = health.get("freshness")
+    if not isinstance(fresh, Mapping) or "stores" not in fresh:
+        # A health payload that carries no verdicts (an older caller): judge it by the same policy.
+        fresh = freshness_policy.summarize(health)
+    for verdict in fresh.get("stores") or []:
+        if verdict.get("state") not in ("stale", "problem") or not verdict.get("alert"):
+            continue
+        key = verdict["key"]
+        stale_kind, missing_kind = _STORE_KIND.get(key, (f"store_stale_{key}", f"store_missing_{key}"))
+        if key.startswith("fresh_"):
+            kind = f"{KIND_DATA_STALE}_{key[len('fresh_'):]}"
+        else:
+            kind = stale_kind if verdict["state"] == "stale" else missing_kind
+        pub = rss.parse_utc(verdict.get("since_utc")) or day_start
+        out.append(_alert(kind, verdict["headline"], verdict["what"], verdict["fix"], min(pub, now)))
+    return out
+
+
+def _deploy_alerts(started_utc, now: datetime) -> list:
+    started = rss.parse_utc(started_utc) if started_utc else None
+    if started is None:
+        return []                      # the app cannot tell when it was deployed: say nothing, invent nothing
+    hours = (now - started).total_seconds() / 3600.0
+    if hours <= freshness_policy.DEPLOY_STALE_HOURS:
         return []
-    return [_alert(KIND_DATA_STALE, f"Core data is behind: {', '.join(core)}",
-                   "These stores are past their tolerance. Look at GET /health, data_freshness.stores, "
-                   "and at the daily loop run.", day_start)]
+    return [_alert(KIND_DEPLOY_STALE, f"Production has not redeployed in {freshness_policy.human_age(hours)}",
+                   f"The running app started {started.strftime('%b %d %H:%M')} UTC. Production redeploys the "
+                   "working branch about hourly when the tests are green, so redeploys have stopped",
+                   f"open {freshness_policy.ACTIONS_URL}/workflows/tests.yml; if the latest run is red fix or "
+                   f"re-run it, then run deploy-prod ({freshness_policy.ACTIONS_URL}/workflows/deploy-prod.yml)",
+                   started + timedelta(hours=freshness_policy.DEPLOY_STALE_HOURS))]
 
 
 def _pause_alerts(pauses: Iterable[Mapping], day_start: datetime) -> list:
@@ -132,29 +163,32 @@ def _pause_alerts(pauses: Iterable[Mapping], day_start: datetime) -> list:
         reason = scrub(p.get("reason") or "")
         out.append(_alert(f"{KIND_LEARNING_PAUSED}_{_slug(scope)}",
                           f"The learning loop paused itself ({scope})",
-                          "It stopped because it could not show it was helping; only the owner resumes it "
-                          "(python -m src.hounds.learning resume --reason ...). "
-                          + (f"Its reason: {reason}" if reason else "Look at GET /hounds/learning."), since))
+                          "It stopped because it could not show it was helping; only the owner resumes it. "
+                          + (f"Its reason: {reason}" if reason else "GET /hounds/learning has the detail"),
+                          "read the reason, then run python -m src.hounds.learning resume --reason ... "
+                          "if you accept it", since))
     return out
 
 
 def collect(health: Optional[Mapping], pauses: Iterable[Mapping], *, now: datetime,
-            health_error: Optional[str] = None) -> list:
-    """Every alert standing right now, as ``{kind, guid, title, description, pub}``, newest first."""
+            health_error: Optional[str] = None, started_utc=None) -> list:
+    """Every alert standing right now, as ``{kind, guid, title, what, fix, description, pub}``, newest first.
+
+    ``started_utc`` is when the running process started (a deploy or restart); None skips the deploy check."""
     now = now.astimezone(timezone.utc)
     day = now.strftime("%Y-%m-%d")
     day_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
     alerts: list = []
     if health is None:
         alerts.append(_alert(KIND_HEALTH_CHECK_FAILED, "The health check itself failed",
-                             "Look at GET /health and the app logs. "
-                             + (f"It said: {scrub(health_error)}" if health_error else ""),
-                             day_start))
+                             "The app could not evaluate its own health"
+                             + (f" and said: {scrub(health_error)}" if health_error else ""),
+                             "open GET /health and the app logs on Fly to see the exception", day_start))
     else:
         for reason in health.get("reasons") or []:
             alerts.append(_health_reason_alert(str(reason), day_start))
-        alerts += _odds_alerts(health, day_start)
-        alerts += _freshness_alerts(health, day_start)
+        alerts += _freshness_alerts(health, day_start, now)
+    alerts += _deploy_alerts(started_utc, now)
     alerts += _pause_alerts(pauses, day_start)
 
     seen, unique = set(), []
@@ -177,6 +211,53 @@ def render_feed(alerts: Iterable[Mapping], *, base_url: Optional[str] = None,
     return rss.render(title="LINEHOUND operator alerts", link=f"{base}/health",
                       description="Empty while the site is healthy. One item per problem per UTC day.",
                       items=items, self_url=self_url)
+
+
+# What the server cannot check, said out loud so an empty digest is not read as "CI is green".
+NOT_CHECKED = ("CI on the working branch (a GitHub call the app cannot make; a red build shows up here as "
+               "'Production has not redeployed')",
+               "Whether the house pack placed bets today (needs the schedule and the ledger, not a health check)")
+
+
+def digest(health: Optional[Mapping], pauses: Iterable[Mapping], *, now: datetime,
+           health_error: Optional[str] = None, started_utc=None) -> dict:
+    """The owner's "what needs doing today": the same alerts the feed raises, as plain sentences, plus what is
+    only worth watching and what is deliberately quiet. The admin Overview reads this.
+
+    ``items`` are the alerts (title, what happened, the one-line fix, since when); ``watch`` are stores past
+    their fresh limit but not yet stale; ``not_expected`` are the grey ones with their reasons."""
+    now = now.astimezone(timezone.utc)
+    alerts = collect(health, pauses, now=now, health_error=health_error, started_utc=started_utc)
+    fresh = (health or {}).get("freshness")
+    if health is not None and (not isinstance(fresh, Mapping) or "stores" not in fresh):
+        fresh = freshness_policy.summarize(health)
+    verdicts = (fresh or {}).get("stores") or []
+    n = len(alerts)
+    return {
+        "generated_at": now.isoformat(),
+        "all_clear": n == 0,
+        "headline": ("Nothing needs doing today." if n == 0
+                     else f"{n} thing{'' if n == 1 else 's'} need{'s' if n == 1 else ''} doing today."),
+        "items": [{"kind": a["kind"], "title": a["title"], "what": a["what"], "fix": a["fix"],
+                   "since": a["pub"].isoformat(), "line": f"{a['title']}. Fix: {a['fix']}."} for a in alerts],
+        "watch": [{"key": v["key"], "title": v["title"], "reason": v["reason"]}
+                  for v in verdicts if v.get("state") == "aging"],
+        "not_expected": [{"key": v["key"], "title": v["title"], "reason": v["reason"]}
+                         for v in verdicts if v.get("state") == "not_expected"],
+        "not_checked": list(NOT_CHECKED),
+    }
+
+
+def gather(now: datetime):
+    """``(health, health_error, pauses, started_utc)`` for the feed and the digest, so both judge the same facts.
+    Never raises: a failing health check becomes ``health=None`` plus the exception type."""
+    from src.appstate import apphealth
+    health, error = None, None
+    try:
+        health = apphealth.report(now=now)
+    except Exception as exc:  # noqa: BLE001 -- the alert feed must say the check failed, not 500
+        error = f"{type(exc).__name__}"
+    return health, error, pause_facts()
 
 
 def pause_facts() -> list:
