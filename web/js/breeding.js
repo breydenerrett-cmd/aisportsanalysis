@@ -31,10 +31,10 @@ export const BREEDING_NOTE =
   "Paper only. No real bet is ever placed. Not advice.";
 
 const STYLE = `
-.brd{--brd-bg:var(--tile-base,#0E1013);--brd-edge:var(--edge-1,rgba(255,255,255,.07));--brd-text:var(--text,#F2F4F8);
+.brd{--brd-bg:var(--tile-base,#0E1013);--brd-line:rgba(255,255,255,.07);--brd-text:var(--text,#F2F4F8);
 --brd-mute:var(--text-mute,#8A919E);--brd-good:#2ED47A;--brd-bad:#FF3D57;--brd-warn:#FFB020;--brd-flat:#B9C0CC;
 --brd-live:var(--live,#00E0FF);color:var(--brd-text);font-family:var(--font-body,system-ui,sans-serif);
-background:var(--brd-bg);border:1px solid var(--brd-edge);padding:16px;margin:16px 0}
+background:var(--brd-bg);border:1px solid var(--brd-line);padding:16px;margin:16px 0}
 .brd h2{font-family:var(--font-display,'Arial Narrow',sans-serif);text-transform:uppercase;letter-spacing:.04em;
 font-size:22px;margin:0 0 6px}
 .brd h3{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--brd-mute);margin:18px 0 8px}
@@ -42,12 +42,12 @@ font-size:22px;margin:0 0 6px}
 .brd .brd-note{color:var(--brd-mute);font-size:13px}
 .brd .brd-top{display:flex;flex-wrap:wrap;gap:12px;align-items:baseline;justify-content:space-between}
 .brd .brd-count{font-family:var(--font-mono,monospace);font-size:15px;color:var(--brd-live)}
-.brd .brd-gen{display:flex;gap:10px;align-items:flex-start;border-top:1px solid var(--brd-edge);padding:10px 0;
+.brd .brd-gen{display:flex;gap:10px;align-items:flex-start;border-top:1px solid var(--brd-line);padding:10px 0;
 overflow-x:auto}
 .brd .brd-gen-label{flex:0 0 92px;font-family:var(--font-mono,monospace);font-size:12px;color:var(--brd-mute);
 text-transform:uppercase;padding-top:4px}
 .brd .brd-row{display:flex;flex-wrap:wrap;gap:8px}
-.brd .brd-node{border:1px solid var(--brd-edge);padding:6px 10px;font-size:13px;background:rgba(255,255,255,.02);
+.brd .brd-node{border:1px solid var(--brd-line);padding:6px 10px;font-size:13px;background:rgba(255,255,255,.02);
 min-width:0;max-width:100%}
 .brd .brd-node b{display:block;font-size:13px;word-break:break-all}
 .brd .brd-parents{color:var(--brd-mute);font-size:12px;word-break:break-all}
@@ -58,7 +58,7 @@ margin-top:4px}
 .brd .brd-chip--early{color:var(--brd-warn);border-color:var(--brd-warn);background:rgba(255,176,32,.09)}
 .brd .brd-chip--flat{color:var(--brd-flat);border-color:var(--brd-flat)}
 .brd table{width:100%;border-collapse:collapse;font-size:13px}
-.brd th,.brd td{text-align:left;padding:6px 8px;border-top:1px solid var(--brd-edge);vertical-align:middle}
+.brd th,.brd td{text-align:left;padding:6px 8px;border-top:1px solid var(--brd-line);vertical-align:middle}
 .brd th{color:var(--brd-mute);font-weight:600;font-size:12px;text-transform:uppercase}
 .brd .brd-bar{position:relative;height:8px;background:rgba(255,255,255,.07);min-width:80px}
 .brd .brd-bar span{position:absolute;left:0;top:0;bottom:0;background:var(--brd-live)}
