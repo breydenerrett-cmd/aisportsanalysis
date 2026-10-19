@@ -719,7 +719,12 @@ class RealLedgerReconciliationTests(unittest.TestCase):
             sid, window = row.get("system_id"), row.get("window")
             if not sid or window is None:
                 continue
-            if sid not in latest_windows_rows or str(window) > str(
+            # `>=`: a window re-published after a late settle (run_settle's
+            # refresh of the newest window) must win its own tie -- the
+            # ledger's documented rule is the LAST-appended row of the
+            # greatest window (scripts/research_readiness.py's
+            # latest_battery_verdicts), never the first.
+            if sid not in latest_windows_rows or str(window) >= str(
                     latest_windows_rows[sid]["window"]):
                 latest_windows_rows[sid] = row
 

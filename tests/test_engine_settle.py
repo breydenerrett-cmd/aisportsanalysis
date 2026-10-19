@@ -400,8 +400,13 @@ class TestScorecardBankrollAgreesWithEod(SettleTestBase):
         self.run_settle("2026-08-31")
 
         scorecard_rows = HashChainLedger(str(self.scorecard_path)).read()
-        by_window = {row["window"]: row for row in scorecard_rows
-                    if row.get("kind") != "genesis"}
+        # FIRST row per window: the as-of snapshot each settle published.
+        # (A later settle of an earlier day also appends a refreshed row for
+        # the newest window -- asserted at the end of this test.)
+        by_window = {}
+        for row in scorecard_rows:
+            if row.get("kind") != "genesis":
+                by_window.setdefault(row["window"], row)
         sc_early = by_window["2026-08-31"]
         sc_late = by_window["2026-09-02"]
 
@@ -432,6 +437,12 @@ class TestScorecardBankrollAgreesWithEod(SettleTestBase):
         self.assertAlmostEqual(
             sc_late["account"]["bankroll"] - sc_early["account"]["bankroll"],
             -1.0 - 1.5)
+
+        # The late settle of 08-31 also re-published the newest window (09-02)
+        # so it reflects the early win: 1000 + 1.5 - 1.0.
+        newest = [r for r in scorecard_rows
+                  if r.get("window") == "2026-09-02"][-1]
+        self.assertAlmostEqual(newest["account"]["bankroll"], 1000.5)
 
 
 class TestBatteryWiredAboveFloor(SettleTestBase):
@@ -596,6 +607,117 @@ class TestScorecardRowShapeUnchanged(SettleTestBase):
         self.assertEqual(rows[SYSTEM]["battery_verdict"], "PASS")
         self.assertEqual(rows[OTHER_SYSTEM]["battery_verdict"], "NOT_RUN")
         self.assertEqual(set(rows[SYSTEM]), set(rows[OTHER_SYSTEM]))
+
+
+class TestLateSettledDayRefreshesNewestScorecard(SettleTestBase):
+    """2026-10-19: a postponed 10-16 game settled after the 10-17 and 10-18
+    scorecards were written. The ledger gained a day-16 row, the new day-16
+    scorecard was right, but the newest window (18) was one bet stale -- and
+    CI's units_net-vs-latest-scorecard reconciliation went red for 14
+    systems. A late settle must also refresh the newest window."""
+
+    GAME_D1, GAME_D2, GAME_D3 = 900011, 900012, 900013
+
+    def _scorecard_rows(self):
+        return HashChainLedger(self.scorecard_path).read()
+
+    def _latest_row(self):
+        rows = [r for r in self._scorecard_rows() if r["system_id"] == SYSTEM]
+        top = max(r["window"] for r in rows)
+        return [r for r in rows if r["window"] == top][-1]
+
+    def _ledger_profit(self):
+        return sum(r["profit_units"] for r in
+                   HashChainLedger(self.account_ledger_path_fn(SYSTEM)).read())
+
+    def test_late_settled_earlier_day_refreshes_latest_window(self):
+        _write_jsonl(self.wagers_path, [
+            _wager_row("bet-d1", self.GAME_D1, 150, date_str="2026-09-01"),
+            _wager_row("bet-d2", self.GAME_D2, 150, date_str="2026-09-02"),
+            _wager_row("bet-d3", self.GAME_D3, -150, date_str="2026-09-03"),
+        ])
+        # Day 1's game is not final yet (postponed): only days 2 and 3 settle.
+        _write_results_csv(self.results_path, [
+            {"game_pk": self.GAME_D2, "date": "2026-09-02",
+             "home_score": 5, "away_score": 2},
+            {"game_pk": self.GAME_D3, "date": "2026-09-03",
+             "home_score": 2, "away_score": 5},
+        ])
+        self.run_settle("2026-09-02")
+        self.run_settle("2026-09-03")
+        before = self._latest_row()
+        self.assertEqual(before["window"], "2026-09-03")
+        self.assertAlmostEqual(before["account"]["profit_units"],
+                               self._ledger_profit())
+
+        # The makeup lands: day 1 settles late, after windows 02 and 03.
+        _write_results_csv(self.results_path, [
+            {"game_pk": self.GAME_D1, "date": "2026-09-03",
+             "home_score": 5, "away_score": 2},
+            {"game_pk": self.GAME_D2, "date": "2026-09-02",
+             "home_score": 5, "away_score": 2},
+            {"game_pk": self.GAME_D3, "date": "2026-09-03",
+             "home_score": 2, "away_score": 5},
+        ])
+        report = self.run_settle("2026-09-01")
+        self.assertEqual(len(report.systems[0].settled), 1)
+
+        latest = self._latest_row()
+        self.assertEqual(latest["window"], "2026-09-03")
+        self.assertAlmostEqual(latest["account"]["profit_units"],
+                               self._ledger_profit())
+        self.assertNotAlmostEqual(latest["account"]["profit_units"],
+                                  before["account"]["profit_units"])
+        # The day-1 scorecard is still a day-1 snapshot, not the total.
+        day1 = [r for r in self._scorecard_rows()
+                if r["system_id"] == SYSTEM and r["window"] == "2026-09-01"][-1]
+        self.assertAlmostEqual(day1["account"]["profit_units"], 1.5)
+        verify = HashChainLedger(self.scorecard_path).verify()
+        self.assertTrue(verify.ok, verify.reason)
+
+        # Idempotent: a re-run settles nothing new and writes nothing.
+        n_rows = len(self._scorecard_rows())
+        again = self.run_settle("2026-09-01")
+        self.assertEqual(len(again.systems[0].settled), 0)
+        self.assertEqual(len(self._scorecard_rows()), n_rows)
+
+    def test_backfill_helper_repairs_stale_window_once(self):
+        _write_jsonl(self.wagers_path, [
+            _wager_row("bet-d1", self.GAME_D1, 150, date_str="2026-09-01"),
+            _wager_row("bet-d2", self.GAME_D2, 150, date_str="2026-09-02"),
+        ])
+        _write_results_csv(self.results_path, [
+            {"game_pk": self.GAME_D2, "date": "2026-09-02",
+             "home_score": 5, "away_score": 2},
+        ])
+        self.run_settle("2026-09-02")
+        # Simulate the pre-fix world: the day-1 bet lands in the account
+        # ledger and scorecard with no refresh of window 02.
+        _write_results_csv(self.results_path, [
+            {"game_pk": self.GAME_D1, "date": "2026-09-02",
+             "home_score": 5, "away_score": 2},
+            {"game_pk": self.GAME_D2, "date": "2026-09-02",
+             "home_score": 5, "away_score": 2},
+        ])
+        original = settle_slate._refresh_latest_window_scorecard
+        settle_slate._refresh_latest_window_scorecard = lambda *a, **k: False
+        try:
+            self.run_settle("2026-09-01")
+        finally:
+            settle_slate._refresh_latest_window_scorecard = original
+        self.assertNotAlmostEqual(self._latest_row()["account"]["profit_units"],
+                                  self._ledger_profit())
+
+        kwargs = dict(
+            decisions_path=self.decisions_path, review_path=self.review_path,
+            scorecard_path=self.scorecard_path,
+            account_ledger_path_fn=self.account_ledger_path_fn)
+        fixed = settle_slate.refresh_stale_latest_scorecards([SYSTEM], **kwargs)
+        self.assertEqual(fixed, [(SYSTEM, "2026-09-02")])
+        self.assertAlmostEqual(self._latest_row()["account"]["profit_units"],
+                               self._ledger_profit())
+        self.assertEqual(
+            settle_slate.refresh_stale_latest_scorecards([SYSTEM], **kwargs), [])
 
 
 if __name__ == "__main__":
