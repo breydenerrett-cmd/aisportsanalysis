@@ -189,6 +189,9 @@ function renderVerdict(hound) {
   ]));
   box.appendChild(h("p", { class: "hd-verdict__meaning", "data-hook": "verdict-meaning",
     text: VERDICT_MEANING[verdictLabel(hound)] || "This model has no verdict. Treat the result as unproven." }));
+  const graded = betsOf(hound);
+  box.appendChild(h("p", { class: "hd-fine", "data-hook": "verdict-sample",
+    text: `Based on ${graded} graded live ${graded === 1 ? "bet" : "bets"}.${graded < 100 ? " That is a small sample." : ""}` }));
   if (hound.verdict && hound.verdict.sentence) {
     box.appendChild(h("p", { class: "hd-verdict__sentence", "data-hook": "verdict-sentence", text: hound.verdict.sentence }));
   }
@@ -293,7 +296,7 @@ export function renderCharts() {
     h("li", {}, [h("span", { class: "hd-tip__swatch", style: `background:${BEST_COLOR}` }),
       " Best price: the single best quote recorded when the bet was placed"]),
   ]));
-  clv.appendChild(h("h3", { class: "hd-h3", text: "Closing-line value, running average" }));
+  clv.appendChild(h("h3", { class: "hd-h3", text: "CLV, running average" }));
   clv.appendChild(renderLineChart({
     hook: "clv-chart",
     series: [{ id: "clv", name: "Running average vs the close", color: houndColor(state.hound || {}), points: toChartPoints(pts, "cum_clv_mean_pts") }],

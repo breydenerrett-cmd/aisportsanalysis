@@ -152,7 +152,7 @@ class TheLandingPageLinksToIt(unittest.TestCase):
     def test_one_short_human_line_on_the_kennel_screen_links_to_it(self):
         # owner voice pass, 2026-10-18: the honesty essays on the landing page are one human line and this link
         landing = re.sub(r"<!--.*?-->", "", LANDING.read_text(encoding="utf-8"), flags=re.S)
-        line = re.search(r'<p class="kennel__straight" data-hook="kennel-straight">(.*?)</p>', landing, re.S).group(1)
+        line = re.search(r'<p class="lbhero__straight" data-hook="kennel-straight">(.*?)</p>', landing, re.S).group(1)
         self.assertEqual(landing.count('data-hook="hero-why-paused-link"'), 1)
         self.assertIn('href="why-we-paused.html"', line)
         self.assertIn("Why we stopped publishing MLB picks", line)

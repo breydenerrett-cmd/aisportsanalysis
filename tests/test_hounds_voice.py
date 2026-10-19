@@ -1,20 +1,19 @@
-"""The kennel's voice (docs/VOICE.md): every dog has a persona, the badges are the old verdicts in a bettor's
-clothes, the Houndmaster's daily line is a deterministic pick, and the public pages say it like a person says
-it. Owner, 2026-10-18: "Scientists aren't buying this ... Degenerate gamblers dude."
+"""The voice data and the hard lines (docs/VOICE.md).
 
-What this file pins, and what it does not:
+Owner, 2026-10-18: "Scientists aren't buying this ... Degenerate gamblers dude." Owner, 2026-10-19: the result
+"looks like a kids playground, not a professional gambling AI website". The pages are now a professional
+sports-betting product (tests/test_hounds_board_pages.py); the persona fields (bio, catchphrase, roasts, brags,
+epitaph) stay in the config files as voice data that the pages do not render, and src/hounds/voice.py still
+carries them for a future Discord or X post. What this file pins:
 
   * PRESENCE. Every hound in config/house_pack.json, config/desk_hounds.json and config/house_hounds.json
-    carries a persona (bio, catchphrase, vibe, five roasts, five brags, an epitaph, a verb), the Houndmaster
-    has his block, and the bios are true to what each dog actually does.
-  * THE BADGES are a pure function of the referee's label, and the Python table (src/hounds/voice.py) and the
-    JavaScript table (web/js/hounds-voice.js) say the same thing. The referee is untouched.
-  * THE DAILY LINE is the same for the same dog on the same day, in Python and in JavaScript, a roast after a
-    losing day and a brag after a winning day.
+    carries a persona, the owner's boss block exists, and the bios are true to what each model actually does.
+  * THE PYTHON TABLES (badges, the daily line) are deterministic and a function of the referee's label only.
   * THE HARD LINES stay on every public page (21+, paper only, not advice, "Gamble responsibly. 1-800-GAMBLER",
     none of the words that make a claim) and the ACADEMIC WORDS stay off them.
   * THE FORM BLOCK (streak, last seven days, last settled day, best bet, worst beat) is derived from the same
     graded bets the record counts.
+  * THE SHARED JAVASCRIPT HELPERS the pages still use (units, order, W-L, a retirement reason).
 
 Browser-less: the JavaScript half runs under node and is skipped without it.
 """
@@ -169,12 +168,14 @@ class TheBadgesAreTheOldVerdictsInNewClothes(unittest.TestCase):
     }
 
     def test_the_mapping_is_the_one_in_the_voice_guide(self):
+        guide = (ROOT / "docs" / "VOICE.md").read_text(encoding="utf-8")
+        # the pages say it in plain words; the guide's status table is what the model page and the leaderboard print
+        for label, words in (("BEATING THE CLOSE", "Beating the close"), ("NO DIFFERENT FROM THE MARKET", "Market"),
+                             ("PAYING THE VIG", "Paying the vig"), ("TOO EARLY", "Not enough bets (n/150)")):
+            self.assertIn(label, guide)
+            self.assertIn(f"**{words}**", guide)
         for label, text in self.EXPECTED.items():
             self.assertEqual(voice.badge_for(label)["text"], text, label)
-        guide = (ROOT / "docs" / "VOICE.md").read_text(encoding="utf-8")
-        for label, text in self.EXPECTED.items():
-            self.assertIn(label, guide)
-            self.assertIn(f"**{text}**", guide)
 
     def test_every_label_the_referee_can_send_wears_a_badge(self):
         for label in vd.LABELS:
@@ -197,23 +198,6 @@ class TheBadgesAreTheOldVerdictsInNewClothes(unittest.TestCase):
         a = voice.badge_for("PAYING THE VIG")
         self.assertEqual(a, voice.badge_for("PAYING THE VIG"))
         self.assertEqual(set(inspect_args(voice.badge_for)), {"label"})
-
-    @unittest.skipUnless(HAS_NODE, "node not installed")
-    def test_javascript_and_python_agree_on_every_badge(self):
-        labels = list(vd.LABELS) + ["", "something new", "too early"]
-        out = js(f"console.log(JSON.stringify({json.dumps(labels)}.map(l => V.badgeForLabel(l))));")
-        for label, got in zip(labels, out):
-            want = voice.badge_for(label)
-            self.assertEqual({k: got[k] for k in ("key", "word", "emoji", "text", "explain")},
-                             {k: want[k] for k in ("key", "word", "emoji", "text", "explain")}, label)
-
-    @unittest.skipUnless(HAS_NODE, "node not installed")
-    def test_badge_for_a_hound_reads_its_verdict_label_only(self):
-        out = js("console.log(JSON.stringify(["
-                 "V.badgeFor({verdict:{label:'BEATING THE CLOSE'},record:{units_average_price:-30,bets:9}}).text,"
-                 "V.badgeFor({verdict:{label:'PAYING THE VIG'},record:{units_average_price:+30,bets:9}}).text,"
-                 "V.badgeFor({}).text]));")
-        self.assertEqual(out, ["SHARP 🔥", "FEEDING THE BOOK 💸", "UNRATED 🐾"])
 
 
 def inspect_args(fn):
@@ -257,38 +241,6 @@ class TheHoundmastersDailyLine(unittest.TestCase):
         boss = {"roasts": ["boss roast"], "brags": ["boss brag"]}
         got = voice.houndmaster_line("builder", None, {"result": "loss", "date": "2026-10-17"}, boss)
         self.assertEqual(got["line"], "boss roast")
-
-    @unittest.skipUnless(HAS_NODE, "node not installed")
-    def test_javascript_picks_the_same_line_as_python(self):
-        ids = [h["id"] for h in every_hound()]
-        days = [f"2026-10-{d:02d}" for d in range(1, 29)]
-        pairs = [(i, d) for i in ids for d in days]
-        out = js("const pairs = " + json.dumps(pairs) + ";"
-                 "const lines = " + json.dumps(self.LINES) + ";"
-                 "console.log(JSON.stringify(pairs.map(([i, d]) => V.pickLine(lines, i, d))));")
-        self.assertEqual(out, [voice.pick_line(self.LINES, i, d) for i, d in pairs])
-        self.assertEqual(voice.fnv1a("coin_flip_collie|2026-10-17"),
-                         js("console.log(C.hashName('coin_flip_collie|2026-10-17'));"))
-
-    @unittest.skipUnless(HAS_NODE, "node not installed")
-    def test_javascript_and_python_agree_on_the_houndmasters_line_for_every_dog(self):
-        cases = []
-        for hound in every_hound():
-            for result in ("win", "loss", "flat"):
-                cases.append({"id": hound["id"], "persona": hound["persona"],
-                              "form": {"last_day": {"date": "2026-10-17", "result": result}}})
-        cases.append({"id": "builder-dog", "form": {"last_day": {"date": "2026-10-17", "result": "loss"}}})
-        cases.append({"id": "nothing-yet"})
-        out = js("const cases = " + json.dumps(cases) + ";"
-                 "const boss = " + json.dumps(PACK["houndmaster"]) + ";"
-                 "console.log(JSON.stringify(cases.map(h => V.houndmasterLine(h, boss))));")
-        for case, got in zip(cases, out):
-            last = (case.get("form") or {}).get("last_day")
-            want = voice.houndmaster_line(case["id"], case.get("persona"), last, PACK["houndmaster"])
-            if want is None:
-                self.assertIsNone(got, case["id"])
-            else:
-                self.assertEqual((got["kind"], got["line"], got["day"]), (want["kind"], want["line"], want["day"]), case["id"])
 
 
 def mkbet(day, result, price=-110, fair=None, avg=None, **kw):
@@ -351,85 +303,41 @@ class TheFormBlock(unittest.TestCase):
 
 
 @unittest.skipUnless(HAS_NODE, "node not installed")
-class TheStripTheBoardAndTheGraveyard(unittest.TestCase):
+@unittest.skipUnless(HAS_NODE, "node not installed")
+class TheSharedHelpersThePagesStillUse(unittest.TestCase):
 
-    def hound(self, hid, units, bets=20, week=None, streak=None, status="running", **kw):
+    def hound(self, hid, units, bets=20, status="running", **kw):
         h = {"id": hid, "name": hid.title(), "kind": "house", "category": "stats", "status": status,
              "verdict": {"label": "TOO EARLY"},
-             "record": {"bets": bets, "wins": 1, "losses": 1, "units_average_price": units, "units_recorded_price": units},
-             "form": {"streak": streak, "last7": week}}
+             "record": {"bets": bets, "wins": 1, "losses": 1, "units_average_price": units, "units_recorded_price": units}}
         h.update(kw)
         return h
 
-    def test_the_leaderboard_is_sorted_by_units_with_dogs_without_bets_last(self):
+    def test_the_board_is_sorted_by_units_with_models_without_bets_last(self):
         hs = [self.hound("low", -3.0), self.hound("none", None, bets=0), self.hound("high", 9.5), self.hound("mid", 1.0)]
         hs[1]["record"] = {"bets": 0}
         out = js(f"console.log(JSON.stringify(V.sortByUnits({json.dumps(hs)}).map(h => h.id)));")
         self.assertEqual(out, ["high", "mid", "low", "none"])
 
-    def test_a_dog_can_lead_the_board_and_still_wear_feeding_the_book(self):
-        h = self.hound("rich", 40.0, verdict={"label": "PAYING THE VIG"})
-        out = js(f"console.log(JSON.stringify([V.unitsOf({json.dumps(h)}), V.badgeFor({json.dumps(h)}).text]));")
-        self.assertEqual(out, [40.0, "FEEDING THE BOOK 💸"])
+    def test_units_prefer_the_average_price_and_wl_carries_pushes(self):
+        out = js("console.log(JSON.stringify([V.unitsOf({record:{bets:3,units_average_price:1.5,units_recorded_price:2}}),"
+                 "V.unitsOf({record:{bets:3,units_average_price:null,units_recorded_price:2}}), V.unitsOf({record:{bets:0}}),"
+                 "V.wlText({bets:5,wins:3,losses:1,pushes:1}), V.wlText({bets:0}), V.wlText({bets:4,wins:2,losses:2})]));")
+        self.assertEqual(out, [1.5, 2, None, "3-1-1", "0-0", "2-2"])
 
-    def test_hot_cold_and_tilt_need_three_bets_that_week_and_never_name_one_dog_twice(self):
-        hs = [
-            self.hound("hot", 5, week={"bets": 6, "wins": 4, "losses": 2, "units": 3.2}, streak={"kind": "W", "length": 3}),
-            self.hound("cold", 1, week={"bets": 5, "wins": 1, "losses": 4, "units": -2.5}, streak={"kind": "L", "length": 2}),
-            self.hound("tilt", 1, week={"bets": 4, "wins": 1, "losses": 3, "units": -1.0}, streak={"kind": "L", "length": 4}),
-            self.hound("few", 1, week={"bets": 2, "wins": 0, "losses": 2, "units": -9.0}, streak={"kind": "L", "length": 2}),
-        ]
-        out = js(f"const s = V.formStrip({json.dumps(hs)});"
-                 "console.log(JSON.stringify([s.hot && s.hot.id, s.cold && s.cold.id, s.tilt && s.tilt.id]));")
-        self.assertEqual(out[0], "hot")
-        self.assertEqual(out[1], "cold", "'few' had 2 bets that week, so it is not named even at -9")
-        self.assertEqual(out[2], "tilt", "the longest losing run, a different dog")
-
-    def test_nobody_hot_when_nobody_is_above_water(self):
-        hs = [self.hound("a", 1, week={"bets": 5, "wins": 1, "losses": 4, "units": -2.0})]
-        out = js(f"const s = V.formStrip({json.dumps(hs)}); console.log(JSON.stringify([s.hot, s.cold && s.cold.id]));")
-        self.assertEqual(out, [None, "a"])
-
-    def test_the_three_closest_to_the_doghouse_are_the_three_lowest_in_the_race(self):
-        hs = [self.hound("a", 12.0), self.hound("b", -20.0), self.hound("c", -3.5), self.hound("d", -24.0),
-              self.hound("gone", -40.0, status="retired"), self.hound("fresh", None, bets=0, status="not_started")]
-        out = js(f"console.log(JSON.stringify(V.closestToRetirement({json.dumps(hs)}, 3).map(e => [e.hound.id, e.cushion, e.danger])));")
-        self.assertEqual([o[0] for o in out], ["d", "b", "c"])
-        self.assertEqual(out[0][1], 1.0)                    # -24 is 1 unit above the -25 line
-        self.assertAlmostEqual(out[0][2], 24 / 25)           # 24 of the 25 units of the walk already done
-        self.assertEqual(js("console.log(V.RETIRE_UNITS);"), -25)
-
-    def test_streak_flames(self):
-        out = js("console.log(JSON.stringify([V.streakView({streak:{kind:'W',length:3}}).text,"
-                 "V.streakView({streak:{kind:'W',length:1}}).text, V.streakView({streak:{kind:'L',length:4}}).text,"
-                 "V.streakView({}), V.streakView({streak:{kind:'W',length:9}}).text]));")
-        self.assertEqual(out[0], "🔥🔥🔥 W3")
-        self.assertEqual(out[1], "W1")
-        self.assertEqual(out[2], "🥶 L4")
-        self.assertIsNone(out[3])
-        self.assertEqual(out[4], "🔥🔥🔥🔥🔥 W9", "five flames is the cap")
-
-    def test_the_cause_of_death_and_the_epitaph_in_a_bettors_words(self):
+    def test_a_retirement_reason_in_plain_words(self):
         out = js("console.log(JSON.stringify([V.causeText('retired: down more than 25 units'),"
                  "V.causeText('retired by the owner'), V.causeText('retired: closing price verdict PAYING THE VIG at 300+ bets'),"
-                 "V.causeText(''), V.epitaphFor({persona:{epitaph:'Went under one last time.'}}), V.epitaphFor({})]));")
-        self.assertEqual(out[0], "Went more than 25 units under.")
-        self.assertEqual(out[1], "Cut by the kennel boss.")
-        self.assertEqual(out[2], "300 bets of feeding the book.")
-        self.assertEqual(out[3], "the kennel did not say")
-        self.assertEqual(out[4], "Went under one last time.")
-        self.assertEqual(out[5], "Gone, but still on the record.")
+                 "V.causeText(''), V.causeText('paused 2026-10-16: x')]));")
+        self.assertEqual(out, ["Went more than 25 units under.", "Retired by the owner.", "300 bets paying the vig.",
+                               "No reason was given.", "Paused 2026-10-16: x"])
 
-    def test_a_bet_in_the_chat_feed_reads_like_a_chat(self):
-        item = {"hound_name": "Steamy Setter", "selection": "NYY -1.5", "price_average": -110, "price": -105,
-                "game": "Yankees at Red Sox"}
-        hound = {"persona": {"verb": "tailed the steam on"}}
-        out = js(f"console.log(JSON.stringify(V.chatLine({json.dumps(item)}, {json.dumps(hound)})));")
-        self.assertEqual((out["lead"], out["rest"]), ("Steamy Setter", "just tailed the steam on NYY -1.5 at -110"))
-        self.assertEqual(out["kind"], "bet")
+    def test_the_toy_voice_is_gone_from_the_module(self):
+        out = js("console.log(JSON.stringify(['badgeFor','streakView','formStrip','houndmasterLine','chatLine','closestToRetirement',"
+                 "'epitaphFor','weekText','BADGES'].map(k => typeof V[k])));")
+        self.assertEqual(set(out), {"undefined"})
 
 
-@unittest.skipUnless(HAS_NODE, "node not installed")
 class TheBuildPageSaysItLikeBettorsDo(unittest.TestCase):
 
     def test_every_side_rule_has_a_playful_label_and_keeps_the_plain_one_as_a_hint(self):
@@ -455,13 +363,14 @@ class TheHardLinesStayAndTheAcademicWordsGo(unittest.TestCase):
         for name in ("hounds.html", "hound.html", "build-a-hound.html", "learning.html"):
             text = visible((WEB / name).read_text(encoding="utf-8")).lower()
             self.assertIn("paper bets only", text, name)
-            self.assertIn("not advice", text, name)
+            self.assertRegex(text, r"not (betting )?advice", name)
             self.assertIn("21+", text, name)
-        landing = visible((WEB / "landing.html").read_text(encoding="utf-8")).lower()
-        self.assertIn("paper bets only. not advice.", landing)
-        self.assertIn("21+", landing)
+        # the landing page says it once, in the shared footer the script mounts (not in the body copy)
+        landing = (WEB / "landing.html").read_text(encoding="utf-8")
+        self.assertIn('data-hook="disclaimer-host"', landing)
+        self.assertNotRegex(visible(re.search(r"<main>.*?</main>", landing, re.S).group(0)).lower(), r"paper bets only|21\+")
 
-    def test_the_kennel_pages_carry_the_gamble_responsibly_line_in_their_own_footer(self):
+    def test_the_model_pages_carry_the_gamble_responsibly_line_in_their_own_footer(self):
         for name in ("hounds.html", "hound.html", "build-a-hound.html", "learning.html"):
             html = (WEB / name).read_text(encoding="utf-8")
             footer = html.split("<footer", 1)[1].split("</footer>", 1)[0]
@@ -491,7 +400,7 @@ class TheHardLinesStayAndTheAcademicWordsGo(unittest.TestCase):
 
     @unittest.skipUnless(HAS_NODE, "node not installed")
     def test_and_off_what_the_pages_write_into_themselves(self):
-        # the text the scripts add (rows, tiles, tooltips, the stream, the graveyard, the Houndmaster) too
+        # the text the scripts add (rows, tiles, tooltips, the ticket feed, the retired table) too
         routes = F.routes()
         pages = [
             ("hounds", {"routes": routes}),

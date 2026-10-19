@@ -185,7 +185,7 @@ class TheChartsRenderEmptyAndOnePointSeriesHonestly(unittest.TestCase):
     def test_empty_series_draws_a_frame_and_says_nothing_to_draw_not_a_flat_zero_line(self):
         out = self.detail_with_series([])
         self.assertEqual(out["final"]["empty_n"], 1)
-        self.assertIn("No live bets yet", out["final"]["empty"])
+        self.assertIn("No graded live bets yet", out["final"]["empty"])
         self.assertEqual(out["final"]["zero"], 0)      # no baseline drawn for a chart with nothing on it
         self.assertEqual(out["final"]["paths"], 0)
         self.assertIn("Nothing measured against the close yet", out["final"]["clv_empty"])
@@ -233,7 +233,7 @@ class TheDeskSections(unittest.TestCase):
             q("label", "[data-hook='desk-label']"), q("line", "[data-hook='desk-game-line']"),
             q("hash", "[data-hook='desk-hash-ok']"),
             q("dis_hidden", "[data-hook='hound-disagree-section']", "hidden"),
-            q("cat", ".hd-chip-cat")])
+            q("cat", ".hd-modelhead .hd-typechip")])
         f = out["final"]
         self.assertFalse(f["shown"])
         self.assertEqual(f["title"], "How the desk argued")
@@ -275,7 +275,7 @@ class TheDeskSections(unittest.TestCase):
         self.assertIn("Price beats the books' number.", f["persona"])
         self.assertEqual((f["analysts"], f["head"]), (0, 0))        # a persona has no analysts, bull, bear or head
         self.assertFalse(f["dis_hidden"])
-        self.assertEqual(f["dis_title"], "Where they disagree")
+        self.assertEqual(f["dis_title"], "Where the desk models disagree")
         self.assertEqual(f["heads"], ["Market", "Status", "Desk", "Sharp", "Square", "Fader"])
         self.assertEqual(f["rows"], ["split", "none"])
         self.assertIn("Split: opposite sides taken", f["ml"])
@@ -300,7 +300,7 @@ class TheDeskSections(unittest.TestCase):
         self.assertIn("No game has been published yet", f["dis"])
         self.assertIn("One model reading, unproven", f["rule"])      # the rule text is there before any game
         self.assertEqual((f["picker"], f["table"]), (0, 0))
-        self.assertIn("Based on 0 live bets.", f["sample"])
+        self.assertIn("Based on 0 graded live bets. That is a small sample.", f["sample"])
 
     def test_a_stage_missing_or_unreadable_in_the_transcript_is_said_not_filled_in(self):
         t = F.desk_transcript()
@@ -390,7 +390,7 @@ class TheFirstVisitWhileTheServerWarmsUp(unittest.TestCase):
     def warming(self, **extra):
         return [200, contract.warming_payload(extra)]
 
-    def test_the_race_says_it_is_warming_up_then_fills_in_when_the_server_is_ready(self):
+    def test_the_leaderboard_says_it_is_warming_up_then_fills_in_when_the_server_is_ready(self):
         r = routes()
         r["/hounds"] = self.warming(hounds=[])
         r["/hounds/stream"] = self.warming(items=[])
@@ -398,23 +398,20 @@ class TheFirstVisitWhileTheServerWarmsUp(unittest.TestCase):
         switch = {"/hounds": [1, [200, F.leaderboard()]], "/hounds/stream": [1, [200, F.stream()]],
                   "/hounds/graveyard": [1, [200, F.graveyard()]]}
         out = run_page("hounds", routes=r, switchAfter=switch, captureInitial=[
-            q("kinds", "[data-kind='warming']", "count"), q("board", "[data-hook='hounds-list']"),
-            q("empty", "[data-hook='board-empty']", "count"), q("chart", "[data-hook='hounds-chart-panel']"),
-            q("rows", "[data-hook='hounds-list'] .hd-row", "count")],
+            q("kinds", "[data-kind='warming']", "count"), q("board", "[data-hook='hounds-table']"),
+            q("empty", "[data-hook='board-empty']", "count"), q("rows", "[data-hook='hounds-list'] .hd-tr", "count")],
             actions=[dict(do="fire_timers", wait=120)], queries=[
-                q("kinds", "[data-kind='warming']", "count"), q("rows", "[data-hook='hounds-list'] .hd-row", "count"),
-                q("stream", "[data-hook='stream-list'] li", "count"), q("grave", "[data-hook='grave-cause']", "texts")])
+                q("kinds", "[data-kind='warming']", "count"), q("rows", "[data-hook='hounds-list'] .hd-tr", "count"),
+                q("stream", "[data-hook='stream-list'] .hd-ticket", "count"), q("grave", "[data-hook='grave-cause']", "texts")])
         first = out["captures"]["initial"]
         self.assertEqual(first["kinds"], 3)                        # board, stream, graveyard each say so
         self.assertIn("warming up", first["board"])
-        self.assertEqual(first["empty"], 0)                        # NOT "No hounds are racing yet"
+        self.assertEqual(first["empty"], 0)                        # NOT "No models are running yet"
         self.assertEqual(first["rows"], 0)
-        self.assertIn("appears as soon as the race has been worked out", first["chart"])
         self.assertEqual(out["final"]["kinds"], 0)
-        self.assertEqual(out["final"]["rows"], 11)
-        self.assertEqual(out["final"]["stream"], 3)
-        self.assertEqual(out["final"]["grave"], ["Cause of death: Cut by the kennel boss. (Oct 20)",
-                                                 "Cause of death: Went more than 25 units under. (Oct 14)"])
+        self.assertEqual(out["final"]["rows"], 12)
+        self.assertEqual(out["final"]["stream"], 2)
+        self.assertEqual(out["final"]["grave"], ["Retired by the owner.", "Went more than 25 units under."])
         self.assertEqual(out["intervals"], [60000])               # the warming retries stopped themselves
 
     def test_the_retry_follows_the_servers_own_cadence(self):
@@ -558,7 +555,7 @@ class TheBuildPage(unittest.TestCase):
                 dict(do="check", sel="[data-field='market'] input", index=0),
                 dict(do="check", sel="[data-field='side'] input", index=7, label="fade",
                      capture=[q("style", "[data-hook='dog-style']"), q("bio", "[data-hook='dog-bio']"),
-                              q("vibe", "[data-hook='build-dog-card'] .hd-avatar", "attr", attr="data-vibe")]),
+                              q("mono", "[data-hook='build-dog-card'] .hd-mono")]),
                 dict(do="set", sel="[data-hook='f-name']", value="Spite Pup", label="named",
                      capture=[q("name", "[data-hook='dog-name']")]),
                 dict(do="set", sel="[data-hook='f-tagline']", value="Does the opposite", label="bio",
@@ -570,7 +567,7 @@ class TheBuildPage(unittest.TestCase):
         self.assertEqual(out["captures"]["initial"]["card_bio"], "Still deciding what it's about.")
         self.assertEqual(out["captures"]["fade"]["style"], "Fade the steam")
         self.assertEqual(out["captures"]["fade"]["bio"], "Fade the steam. MLB moneyline.")
-        self.assertEqual(out["captures"]["fade"]["vibe"], "chaos")
+        self.assertEqual(out["captures"]["fade"]["mono"], "YD")          # an initials badge, no cartoon
         self.assertEqual(out["captures"]["named"]["name"], "Spite Pup")
         self.assertEqual(out["captures"]["bio"]["bio"], "Does the opposite")
 

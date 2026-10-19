@@ -40,8 +40,8 @@ def _workdir() -> Path:
             shutil.copy(path, _tmp.name)
         shutil.copy(Path(__file__).parent / "hounds_web_harness.mjs", _tmp.name)
         Path(_tmp.name, "package.json").write_text('{"type": "module"}', encoding="utf-8")
-        Path(_tmp.name, "kennel_boot.js").write_text(
-            'import { fillKennel } from "./landing-kennel.js";\nawait fillKennel();\n', encoding="utf-8")
+        Path(_tmp.name, "board_boot.js").write_text(
+            'import { fillBoard } from "./landing-board.js";\nawait fillBoard();\n', encoding="utf-8")
     return Path(_tmp.name)
 
 

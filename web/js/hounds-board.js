@@ -101,6 +101,9 @@ export function statusOf(hound) {
   if (hound && hound.status === "retired") {
     return { key: "retired", text: "Retired", tone: "bad", title: "Stopped by its own retirement rule. Its record stays." };
   }
+  if (hound && hound.status === "not_started") {
+    return { key: "notstarted", text: "Not started", tone: "early", title: "This model has not made its first bet yet." };
+  }
   const label = verdictLabel(hound);
   const tone = verdictTone(label);
   const n = hound && hound.clv && isNum(hound.clv.n) ? hound.clv.n : 0;
@@ -168,7 +171,7 @@ export const COLUMNS = [
   { key: "status", label: "Status", numeric: false, first: "desc", hint: "The referee's verdict, in plain words" },
 ];
 
-const STATUS_RANK = { beating: 0, market: 1, early: 2, unrated: 3, vig: 4, retired: 5 };
+const STATUS_RANK = { beating: 0, market: 1, early: 2, notstarted: 3, unrated: 4, vig: 5, retired: 6 };
 
 /** The value a column sorts on; `null` means "no value" and always sorts last. */
 export function sortValue(hound, key) {

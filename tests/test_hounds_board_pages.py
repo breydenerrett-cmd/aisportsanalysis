@@ -745,6 +745,7 @@ class TheModelPage(unittest.TestCase):
         self.assertIn("not a tip", out["final"]["meaning"])
         self.assertIn("beat the closing market", out["final"]["sentence"])
         self.assertIn("Units, two ways", out["final"]["facts"])
+        self.assertIn("Based on 41 graded live bets. That is a small sample.", out["text"])
 
     def test_a_retired_model_shows_its_reason_and_an_idle_one_says_why(self):
         d = F.detail("closer")
