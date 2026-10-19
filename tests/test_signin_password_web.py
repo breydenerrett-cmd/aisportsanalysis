@@ -358,11 +358,15 @@ out.boxHidden = hook("signin-account").hidden;
 out.change = say("change-password-open");
 out.signOut = say("sign-out");
 out.slotHidden = hook("change-password-slot").hidden;
+out.loginFormHidden = hook("login-form").hidden;
+out.codeFormHidden = hook("signin-form").hidden;
 await click("change-password-open");
 out.currentField = hook("change-password-current") !== null;
 out.slotHiddenAfter = hook("change-password-slot").hidden;
 """, storage=self.SIGNED_IN, routes={"GET /auth/password": {"code": 200, "body": {"has_password": True}}})
         self.assertFalse(out["boxHidden"])
+        self.assertTrue(out["loginFormHidden"], "someone already signed in is not asked to sign in")
+        self.assertTrue(out["codeFormHidden"])
         self.assertEqual((out["change"], out["signOut"]), ("Change password", "Sign out"))
         self.assertTrue(out["slotHidden"])
         self.assertFalse(out["slotHiddenAfter"])
@@ -401,6 +405,7 @@ out.msg = say("change-password-status");
         out = self.run_page("""
 await click("sign-out"); await settle();
 out.boxHidden = hook("signin-account").hidden;
+out.loginFormHidden = hook("login-form").hidden;
 out.status = say("login-status");
 """, storage=self.SIGNED_IN, routes={
             "GET /auth/password": {"code": 200, "body": {"has_password": True}},
@@ -410,6 +415,7 @@ out.status = say("login-status");
         self.assertEqual(logout[0]["auth"], "Bearer good-session", "revokes the token it held")
         self.assertNotIn(TOKEN_KEY, out["storage"])
         self.assertTrue(out["boxHidden"])
+        self.assertFalse(out["loginFormHidden"], "the email form is back after signing out")
         self.assertEqual(out["status"], "Signed out.")
 
     def test_sign_out_still_signs_out_here_if_the_server_cannot_be_reached(self):

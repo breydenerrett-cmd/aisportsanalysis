@@ -360,9 +360,14 @@ export async function renderSignin(container, query = {}) {
     clear(account);
     if (has === null || !getToken()) {
       account.hidden = true;
+      loginForm.hidden = false;
       return null;
     }
+    // Signed in: the account box replaces the email form (nothing to sign in
+    // to), and the access-code form folds away unless it has something to say.
     account.hidden = false;
+    loginForm.hidden = true;
+    if (!status.textContent) showCodeForm(false);
     account.appendChild(el("h2", { class: "signin__section-title", text: "You are signed in" }));
     account.appendChild(el("p", { class: "signin__body", "data-hook": "account-line",
       text: has ? "You can sign in with your email and password on any device."
@@ -395,6 +400,8 @@ export async function renderSignin(container, query = {}) {
     clear(ended);
     clear(account);
     account.hidden = true;
+    loginForm.hidden = false;
+    showCodeForm(false);
     passwordCard.hidden = true;
     status.textContent = "";
     loginStatus.textContent = "Signed out.";
@@ -495,6 +502,7 @@ export async function renderSignin(container, query = {}) {
     clear(ended);
     clear(account);
     account.hidden = true;
+    loginForm.hidden = false;
     status.textContent = "Access code cleared.";
   });
 
