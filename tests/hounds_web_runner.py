@@ -25,6 +25,8 @@ PAGES = {
     "learning": ("learning.html", "hounds-learning.js"),
     # the landing page's leaderboard panel: landing-board.js has no auto-run, so a two-line boot file runs it
     "landing_board": ("landing.html", "board_boot.js"),
+    # the admin dashboard (tests/test_admin_dashboard.py); its fixtures are tests/admin_dashboard_fixtures.py
+    "admin": ("admin.html", "admin-app.js"),
 }
 
 _tmp = None

@@ -285,7 +285,8 @@ export function attentionItems(data, now) {
       items.push({ key: `health-${card.key}`, tone: "bad", kind: "go", route: "health", cta: "Open Health",
         title: `${card.title}: ${card.word}`, detail: card.reason || `${card.group}, newest row ${card.big} old` });
     }
-    const aging = flat.filter((c) => c.tone === "warn" && c.word !== "Running");
+    // The App group (database, checkout, version) is not "a data store"; its red cards are listed above.
+    const aging = flat.filter((c) => c.tone === "warn" && c.group !== "App");
     if (aging.length) {
       items.push({ key: "health-aging", tone: "warn", kind: "go", route: "health", cta: "Open Health",
         title: `${aging.length} data store${aging.length === 1 ? " is" : "s are"} aging, empty or behind`,
