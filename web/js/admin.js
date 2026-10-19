@@ -1,7 +1,16 @@
 /**
- * ADMIN view -- web/admin.html. A structural (zero-aesthetic) ops page
- * over the admin surface: GET /admin/overview, GET /admin/funnel,
- * GET /admin/support, GET /admin/users, POST /admin/support/{id}/status,
+ * ADMIN data layer -- web/admin.html is drawn by web/js/admin-app.js (the dashboard) with
+ * web/js/admin-views.js and web/js/admin-ui.js. THIS file keeps what they share: the admin
+ * token store (sessionStorage), the one fetch wrapper that sends `X-Admin-Token`, the error
+ * class, and the wording helpers (sign-in address, the message the owner sends).
+ *
+ * It also still carries the CLASSIC section renderers (mountTesters, mountComps, renderUsers,
+ * renderFunnel, renderActivity, ...) from before the 2026-10-19 redesign. The dashboard no longer
+ * calls them; the tests in tests/test_admin_testers_page.py, test_admin_free_members_page.py and
+ * test_admin_funnel_by_source.py still run them, and they can be deleted together with those tests.
+ *
+ * The admin surface is: GET /admin/overview, GET /admin/funnel, GET /admin/support,
+ * GET /admin/users, GET /admin/revenue, POST /admin/support/{id}/status,
  * GET/POST /admin/testers, POST /admin/testers/extend, GET /admin/activation,
  * GET/POST /admin/comps, POST /admin/comps/revoke and POST /admin/users/reissue
  * (api/admin.py, api/funnel.py, api/support.py), all gated by
@@ -132,7 +141,7 @@ export class AdminApiError extends Error {
 
 /** GET/POST against the admin surface with `X-Admin-Token` attached --
  * never `Authorization`, never a querystring. See module docstring. */
-async function adminFetch(path, options = {}) {
+export async function adminFetch(path, options = {}) {
   const headers = Object.assign({}, options.headers || {});
   headers["X-Admin-Token"] = getAdminToken();
   if (options.body !== undefined && headers["Content-Type"] === undefined) {
@@ -160,11 +169,11 @@ async function adminFetch(path, options = {}) {
   return payload;
 }
 
-function adminGet(path) {
+export function adminGet(path) {
   return adminFetch(path, { method: "GET" });
 }
 
-function adminPost(path, body) {
+export function adminPost(path, body) {
   return adminFetch(path, { method: "POST", body: JSON.stringify(body) });
 }
 
@@ -595,14 +604,14 @@ export function renderUsers(host, users) {
 
 /** "2026-10-08 14:03 UTC" from an ISO string the server wrote (always UTC);
  * an em dash for anything missing, never a guess. */
-function utcLabel(iso) {
+export function utcLabel(iso) {
   if (typeof iso !== "string" || !iso) return "—";
   return iso.replace("T", " ").slice(0, 16) + " UTC";
 }
 
 /** The server's own words for a refusal ({error, message} on a 409/400), else
  * whatever the error carries. A 401 is the admin token, not the tester. */
-function testerErrorText(err) {
+export function testerErrorText(err) {
   if (err && err.status === 401) return "The admin token was rejected. Save the current one and try again.";
   const detail = err && err.detail;
   if (detail && typeof detail === "object" && typeof detail.message === "string") return detail.message;
@@ -909,7 +918,7 @@ export function signinUrl() {
 /** The message the owner sends. It carries the raw token, so it is only ever
  * built to be copied to the clipboard on a click: never rendered, stored or
  * logged. */
-function welcomeMessage(issued) {
+export function welcomeMessage(issued) {
   return "You're in. This is free LINEHOUND access with no card and no end date.\n"
     + "1. Open " + signinUrl() + "\n"
     + "2. Paste this access code where it asks for the token, then press Save token:\n"
@@ -1152,102 +1161,3 @@ export async function mountComps(host, onChange) {
     await give({ user_id: user.id, reason: why }, statusEl, "Approved as a free member");
   };
 }
-
-async function loadAdmin(hosts) {
-  clear(hosts.authState);
-  for (const section of [hosts.overviewSection, hosts.funnelSection,
-                         hosts.supportSection, hosts.testersSection, hosts.compsSection,
-                         hosts.usersSection]) {
-    section.hidden = true;
-  }
-  // Emptied, not just hidden: a token left on screen from a previous grant must
-  // not survive clearing or changing the admin token.
-  clear(hosts.testersHost);
-  clear(hosts.compsHost);
-  fillTesterForm = null;
-  approveFreeMember = null;
-
-  let overview;
-  try {
-    overview = await adminGet("/admin/overview");
-  } catch (err) {
-    renderAuthState(hosts.authState, err);
-    return;
-  }
-  renderOverview(hosts.overviewHost, overview);
-  hosts.overviewSection.hidden = false;
-
-  try {
-    const funnel = await adminGet("/admin/funnel");
-    renderFunnel(hosts.funnelHost, funnel);
-    hosts.funnelSection.hidden = false;
-  } catch (err) {
-    renderAuthState(hosts.funnelHost, err);
-    hosts.funnelSection.hidden = false;
-  }
-
-  try {
-    await renderSupportInbox(hosts.supportHost);
-    hosts.supportSection.hidden = false;
-  } catch (err) {
-    renderAuthState(hosts.supportHost, err);
-    hosts.supportSection.hidden = false;
-  }
-
-  try {
-    await mountTesters(hosts.testersHost);
-    hosts.testersSection.hidden = false;
-  } catch (err) {
-    renderAuthState(hosts.testersHost, err);
-    hosts.testersSection.hidden = false;
-  }
-
-  // The Users list is re-read after a free-member grant or revoke, so a waitlisted
-  // row stops offering "Approve" the moment it has been approved.
-  async function refreshUsers() {
-    try {
-      const usersResult = await adminGet("/admin/users");
-      renderUsers(hosts.usersHost, usersResult.users || []);
-      hosts.usersSection.hidden = false;
-    } catch (err) {
-      renderAuthState(hosts.usersHost, err);
-      hosts.usersSection.hidden = false;
-    }
-  }
-
-  try {
-    await mountComps(hosts.compsHost, refreshUsers);
-    hosts.compsSection.hidden = false;
-  } catch (err) {
-    renderAuthState(hosts.compsHost, err);
-    hosts.compsSection.hidden = false;
-  }
-
-  await refreshUsers();
-}
-
-function boot() {
-  const hosts = {
-    authState: document.querySelector("[data-hook='admin-auth-state-host']"),
-    overviewSection: document.querySelector("[data-hook='admin-overview-section']"),
-    overviewHost: document.querySelector("[data-hook='admin-overview-host']"),
-    funnelSection: document.querySelector("[data-hook='admin-funnel-section']"),
-    funnelHost: document.querySelector("[data-hook='admin-funnel-host']"),
-    supportSection: document.querySelector("[data-hook='admin-support-section']"),
-    supportHost: document.querySelector("[data-hook='admin-support-host']"),
-    testersSection: document.querySelector("[data-hook='admin-testers-section']"),
-    testersHost: document.querySelector("[data-hook='admin-testers-host']"),
-    compsSection: document.querySelector("[data-hook='admin-comps-section']"),
-    compsHost: document.querySelector("[data-hook='admin-comps-host']"),
-    usersSection: document.querySelector("[data-hook='admin-users-section']"),
-    usersHost: document.querySelector("[data-hook='admin-users-host']"),
-  };
-  const tokenFormHost = document.querySelector("[data-hook='admin-token-form-host']");
-
-  mountTokenForm(tokenFormHost, () => loadAdmin(hosts));
-  if (getAdminToken()) {
-    loadAdmin(hosts);
-  }
-}
-
-document.addEventListener("DOMContentLoaded", boot);

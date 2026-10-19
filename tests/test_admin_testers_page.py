@@ -551,21 +551,25 @@ class AdminTestersSection(unittest.TestCase):
 
     # ---- structure ---------------------------------------------------------------
 
-    def test_the_html_has_a_hidden_testers_section_with_a_host(self):
+    def test_the_dashboard_offers_the_tester_actions_from_its_people_tab(self):
+        # The page was redrawn 2026-10-19 (web/js/admin-app.js); the classic Testers section this
+        # file runs above is no longer on it. What must survive is that the owner can still grant
+        # and extend from the People tab, through the same two routes.
         html = (ROOT / "web" / "admin.html").read_text(encoding="utf-8")
-        section = re.search(r'<section[^>]*data-hook="admin-testers-section"[^>]*>(.*?)</section>',
-                            html, re.S)
-        self.assertIsNotNone(section)
-        self.assertRegex(section.group(0).split(">")[0], r"\bhidden\b")
-        self.assertIn('data-hook="admin-testers-host"', section.group(1))
-        self.assertIn("<h2>Testers</h2>", section.group(1))
+        self.assertRegex(html, r'<section[^>]*data-hook="admin-view-people"[^>]*\shidden')
+        app = (JS / "admin-app.js").read_text(encoding="utf-8")
+        self.assertIn('adminPost("/admin/testers", { user_id: row.id })', app)
+        self.assertIn('adminPost("/admin/testers/extend", { user_id: row.id, reason: v.reason })', app)
+        self.assertIn('label: "Grant 7-day tester"', app)
 
     def test_admin_js_keeps_its_token_rules(self):
-        js = (JS / "admin.js").read_text(encoding="utf-8")
-        self.assertNotIn("window.localStorage", js)
-        self.assertNotIn("console.", js)
-        self.assertNotRegex(js, r"\$\{[^}]*[Tt]oken[^}]*\}")
-        self.assertNotRegex(js, r"[?&]token=")
+        for name in ("admin.js", "admin-app.js", "admin-views.js", "admin-ui.js"):
+            js = (JS / name).read_text(encoding="utf-8")
+            with self.subTest(file=name):
+                self.assertNotIn("window.localStorage", js)
+                self.assertNotIn("console.", js)
+                self.assertNotRegex(js, r"\$\{[^}]*[Tt]oken[^}]*\}")
+                self.assertNotRegex(js, r"[?&]token=")
 
 
 if __name__ == "__main__":

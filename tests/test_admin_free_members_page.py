@@ -479,21 +479,21 @@ class TheSectionIsOnThePage(unittest.TestCase):
         self.html = (ROOT / "web" / "admin.html").read_text(encoding="utf-8")
         self.js = (JS / "admin.js").read_text(encoding="utf-8")
 
-    def test_the_html_has_a_hidden_free_members_section_between_testers_and_users(self):
-        tester = self.html.index('data-hook="admin-testers-section"')
-        comps = self.html.index('data-hook="admin-comps-section"')
-        users = self.html.index('data-hook="admin-users-section"')
-        self.assertLess(tester, comps)
-        self.assertLess(comps, users)
-        section = self.html[comps - 80:self.html.index("</section>", comps)]
-        self.assertIn("hidden", section)
-        self.assertIn("<h2>Free members</h2>", section)
-        self.assertIn('data-hook="admin-comps-host"', section)
+    def test_the_dashboard_offers_free_member_actions_from_its_people_tab(self):
+        # Redrawn 2026-10-19: the classic Free members section this file runs above is no longer
+        # on the page; the owner gives, re-issues and revokes from the People tab and Add person.
+        html = (ROOT / "web" / "admin.html").read_text(encoding="utf-8")
+        self.assertRegex(html, r'<section[^>]*data-hook="admin-view-people"[^>]*\shidden')
+        app = (JS / "admin-app.js").read_text(encoding="utf-8")
+        for needle in ('adminPost("/admin/comps", { user_id: row.id, reason: v.reason })',
+                       'adminPost("/admin/comps/revoke", { user_id: row.id, reason: v.reason })',
+                       'adminPost("/admin/users/reissue", { user_id: row.id, reason: v.reason })',
+                       'adminPost("/admin/comps", { email: v.email, reason: v.reason })'):
+            self.assertIn(needle, app)
 
-    def test_boot_wires_the_section_and_clears_it_with_the_admin_token(self):
-        self.assertIn("compsHost: document.querySelector(\"[data-hook='admin-comps-host']\")", self.js)
-        self.assertIn("clear(hosts.compsHost);", self.js)
-        self.assertIn("mountComps(hosts.compsHost, refreshUsers)", self.js)
+    def test_the_classic_section_is_still_wired_for_the_tests_above(self):
+        self.assertIn("export async function mountComps", self.js)
+        self.assertIn("approveFreeMember", self.js)
 
     def test_the_owners_button_label_is_the_pages_label(self):
         self.assertIn('text: "Give free access forever"', self.js)
