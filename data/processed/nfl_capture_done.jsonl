@@ -320,3 +320,4 @@
 {"game_id": "_gameday_refresh", "observed_utc": "2026-10-18T23:29:56.302195Z", "phase": "refresh"}
 {"game_id": "2026_06_DAL_GB", "observed_utc": "2026-10-18T23:53:51.924954Z", "phase": "t30m"}
 {"game_id": "2026_06_WAS_SF", "observed_utc": "2026-10-19T00:21:17.979143Z", "phase": "t24h"}
+{"game_id": "2026_06_WAS_SF", "observed_utc": "2026-10-19T18:25:29.620635Z", "phase": "t6h"}
