@@ -344,12 +344,10 @@ class ThePeopleTab(unittest.TestCase):
         self.assertEqual(items(6), ["password"])                                                # suspended
         self.assertEqual(items(7), ["reissue", "password"])                                     # paying: nothing to give
 
-    def test_reset_password_is_a_disabled_placeholder_until_the_route_exists(self):
+    def test_reset_password_is_enabled_now_that_the_route_exists(self):
         out = run(actions=[go("people"), dict(do="click", sel=row_sel(12, "admin-row-menu"))], queries=[
-            q("disabled", "[data-hook='admin-menu-item'][data-action='password']", "disabled"),
-            q("note", "[data-hook='admin-menu-item'][data-action='password']")])
-        self.assertTrue(out["final"]["disabled"])
-        self.assertIn("Not available yet", out["final"]["note"])
+            q("disabled", "[data-hook='admin-menu-item'][data-action='password']", "disabled")])
+        self.assertFalse(out["final"]["disabled"])
         self.assertEqual(out["posts"], [])
 
     def test_rows_are_labelled_cells_so_the_table_becomes_cards_on_a_phone(self):
@@ -373,10 +371,11 @@ class RowActionsSendTheRightRequest(unittest.TestCase):
         ("extend", 12, "extend", True, "POST /admin/testers/extend", {"user_id": 12, "reason": "because"}),
         ("reissue", 11, "reissue", True, "POST /admin/users/reissue", {"user_id": 11, "reason": "because"}),
         ("revoke", 9, "revoke", True, "POST /admin/comps/revoke", {"user_id": 9, "reason": "because"}),
+        ("password", 12, "password", True, "POST /admin/users/password-reset", {"user_id": 12, "reason": "because"}),
     ]
 
     def answer(self, key, user_id):
-        if key.endswith("/revoke"):
+        if key.endswith("/revoke") or key.endswith("/password-reset"):
             return [200, {"ok": True}]
         kind = "comp" if key.endswith("/comps") else "tester"
         return [200, F.issued(f"user{user_id}@example.test", kind=kind)]
@@ -419,7 +418,7 @@ class RowActionsSendTheRightRequest(unittest.TestCase):
         for name, user_id, action, needs_reason, key, body in self.CASES:
             with self.subTest(action=name):
                 out = self.run_case(user_id, action, "because" if needs_reason else None, key)
-                self.assertEqual(out["final"]["token"], name != "revoke")
+                self.assertEqual(out["final"]["token"], name not in ("revoke", "password"))
 
     def test_the_data_is_re_read_after_an_action_so_the_table_is_current(self):
         out = self.run_case(14, "approve", "because", "POST /admin/comps")

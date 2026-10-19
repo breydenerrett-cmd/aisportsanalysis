@@ -200,7 +200,7 @@ function boot() {
     get errors() { return state.errors; },
     filter: state.filter,
     supportFilter: state.supportFilter,
-    passwordReset: false,      // flips on when POST /admin/users/password-reset exists on this server
+    passwordReset: true,       // POST /admin/users/password-reset (api/passwords.py, merged 2026-10-19)
     go, runAction, openMenu,
     addPerson,
     rerenderPeople: () => renderPeople(hosts.hosts.people, state.data, ctx),
@@ -387,6 +387,17 @@ function boot() {
         label: "Revoke free member", variant: "danger",
         run: (v) => adminPost("/admin/comps/revoke", { user_id: row.id, reason: v.reason }),
         done: () => `Free access revoked for ${who}.`,
+      });
+    } else if (key === "password") {
+      confirmAction({
+        title: "Reset password",
+        intro: [`Clears the password of ${who}. They sign in once with a login code (use Re-issue login if they lost it) and set a new password.`,
+                "Only do this after a reply came from that mailbox confirming the request."],
+        fields: [{ key: "reason", label: "What did you verify, and why reset?", type: "textarea", required: true,
+                   requiredMessage: "say what was verified", hint: REASON_NOTE }],
+        label: "Reset password", variant: "danger",
+        run: (v) => adminPost("/admin/users/password-reset", { user_id: row.id, reason: v.reason }),
+        done: () => `Password cleared for ${who}. Re-issue a login code if they need one.`,
       });
     }
   }
