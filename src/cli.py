@@ -2694,7 +2694,8 @@ def _cmd_engine_settle(args) -> int:
         # history.postponed_makeup. The lookup only runs for a game with no
         # result at all.
         report = settle_slate.run_settle(
-            args.date, makeup_lookup=history.postponed_makeup)
+            args.date, makeup_lookup=history.postponed_makeup,
+            cancelled_lookup=history.cancelled_game)
     except settle_slate.NoWagersError as exc:
         # An off day is not a missed slate: with no game scheduled there was
         # nothing to stake, so nothing is owed. Only the results manifest's
@@ -2733,6 +2734,9 @@ def _cmd_engine_settle(args) -> int:
         if s.scorecard_absent:
             print(f"    scorecard absent    : "
                   f"{[a.field for a in s.scorecard_absent]}")
+    for voided in report.voided_cancelled:
+        print(f"  voided (game cancelled, never played): {voided['bet_id']} "
+              f"[{voided['system_id']}] game_pk {voided['game_pk']}")
     for pending in report.pending_makeup:
         when = pending["makeup_date"] or "a date not yet set"
         print(f"  pending makeup on {when}: game_pk {pending['game_pk']} "
@@ -2743,15 +2747,20 @@ def _cmd_engine_settle(args) -> int:
     return EXIT_OK
 
 
-# How far back `engine settle --recent` looks for a date still owed a
-# settlement. Matches card_ledger.CARD_SETTLE_WINDOW_DAYS so the paper-wager
-# and card records retry the same week.
-ENGINE_SETTLE_CARRY_DAYS = 7
+# `engine settle --recent` retries EVERY date from this day to two days before
+# the anchor that still holds an unsettled paper wager. It used to look back a
+# fixed seven days, and that window is how 505 wagers on 2026-09-17, 09-22 and
+# 09-27 stayed ungraded for a month (the retry was added on 10-17, when those
+# dates were already 20-30 days old, so nothing ever looked at them again).
+# 2026-09-02 is the day the paper ledgers begin; nothing earlier is owed. A date
+# that settles opens no ledger, so the long look-back costs one wager-file read
+# per day (about 25 ms), not one settle per day.
+ENGINE_SETTLE_FLOOR_DAY = "2026-09-02"
 
 
 def _cmd_engine_settle_carried(args) -> int:
-    """`engine settle --date D --recent`: settle every date from 2 to
-    ENGINE_SETTLE_CARRY_DAYS days before `--date` (the loop's "today")
+    """`engine settle --date D --recent`: settle every date from
+    ENGINE_SETTLE_FLOOR_DAY to 2 days before `--date` (the loop's "today")
     that still holds unsettled paper wagers.
 
     WHY (2026-10-17). `engine settle --date <yesterday>` is a single shot: a
@@ -2769,8 +2778,10 @@ def _cmd_engine_settle_carried(args) -> int:
     settled_ids: dict = {}
     worst = EXIT_OK
     checked = 0
-    for offset in range(2, ENGINE_SETTLE_CARRY_DAYS + 1):
-        day = (anchor - timedelta(days=offset)).isoformat()
+    first = date.fromisoformat(ENGINE_SETTLE_FLOOR_DAY)
+    last = anchor - timedelta(days=2)
+    for n in range(max((last - first).days + 1, 0)):      # oldest date first
+        day = (first + timedelta(days=n)).isoformat()
         wagers = settle_slate.wagers_for_date(day)
         owed = False
         for w in wagers:

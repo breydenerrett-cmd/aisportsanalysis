@@ -275,6 +275,48 @@ def postponed_makeup(game_pk, game_date, *, fetch_instances=None):
                        + (f"on {day}" if day else "date not yet set"))}
 
 
+CANCELLED_NEVER_PLAYED = "cancelled_never_played"
+
+
+def cancelled_game(game_pk, game_date, *, fetch_instances=None):
+    """Positive evidence that a game was CANCELLED and never played, or None.
+
+    WHY THIS EXISTS (2026-10-19). BAL at NYY (game_pk 823490, 2026-09-27) was
+    Cancelled outright: one schedule entry, no makeup, no result, ever. The paper
+    ledger holds 11 wagers on it, and `engine settle` refuses a whole date while
+    any wagered game lacks a result, so all 108 wagers dated 2026-09-27 stayed
+    ungraded for three weeks (a month on the site) behind one game that will never
+    be played. A sportsbook voids a bet on a game that is not played; this is the
+    positive evidence the settle step needs to do the same, by name, instead of
+    refusing forever.
+
+    Returns {"game_pk", "pick_date", "status": CANCELLED_NEVER_PLAYED, "detail"}
+    ONLY when every schedule entry for the pk reads exactly "Cancelled" and none
+    sits on a later day than the pick date. A Postponed or Suspended entry (those
+    resume under the same pk: `postponed_makeup`), any entry that is final or in
+    progress, an empty answer and a failed call all return None: an unanswered
+    question is never a void, so a broken schedule call cannot erase a real gap.
+    """
+    pick_day = _iso_day(game_date)
+    if pick_day is None:
+        return None
+    if fetch_instances is None:
+        fetch_instances = mlb.fetch_game_instances
+    try:
+        instances = list(fetch_instances(game_pk) or [])
+    except Exception:  # noqa: BLE001 -- any provider failure means "ask again"
+        return None
+    if not instances:
+        return None
+    if any(g.get("detailed_state") != "Cancelled" for g in instances):
+        return None
+    if any((_iso_day(g.get("date")) or "") > pick_day for g in instances):
+        return None
+    return {"game_pk": str(game_pk), "pick_date": pick_day,
+            "status": CANCELLED_NEVER_PLAYED,
+            "detail": f"cancelled on {pick_day}, never played, no makeup"}
+
+
 def makeup_results_for_date(game_date, store=None, *, manifest_path=None,
                             fetch_games=None, fetch_instances=None) -> dict:
     """`{str(game_pk): results-store row}` for games Postponed on `game_date`
