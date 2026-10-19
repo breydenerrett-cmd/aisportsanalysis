@@ -107,6 +107,7 @@ import { renderCardRecord } from "./cardrecord.js";
 import { renderLive } from "./live.js";
 import { renderPostseason } from "./postseason.js";
 import { maybeGotcha } from "./gotcha.js";
+import { watchTables } from "./tablelabels.js";
 import { publicPageName, trackPublicPageView, rememberFirstTouch } from "./pageview.js";
 
 // MLB's sub menu (docs/DESIGN_SYSTEM.md section 3, D7): 01 GAMEDAY, 02
@@ -503,6 +504,9 @@ function boot() {
       main.focus();
     });
   }
+
+  // Wide tables stack into cards under 640px (member-screens.css); this labels their cells for that.
+  watchTables(main);
 
   window.addEventListener(TOKEN_CHANGED_EVENT, mountAccount);
 
