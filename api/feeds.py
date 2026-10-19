@@ -24,7 +24,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Response
 
-from src.appstate import alert_feed, apphealth, ratelimit
+from src.appstate import alert_feed, ratelimit
 from src.hounds import kennel_feed, stats
 from src.hounds.learning import coach_brief
 from src.hounds import rss
@@ -63,13 +63,11 @@ def kennel_rss(_rl=Depends(_rate_limit)):
 @router.get("/feeds/alerts.rss")
 def alerts_rss(_rl=Depends(_rate_limit)):
     from datetime import datetime, timezone
+    from api import health as api_health
     now = datetime.now(timezone.utc)
-    health, error = None, None
-    try:
-        health = apphealth.report(now=now)
-    except Exception as exc:  # noqa: BLE001 -- the alert feed must say the check failed, not 500
-        error = f"{type(exc).__name__}"
-    alerts = alert_feed.collect(health, alert_feed.pause_facts(), now=now, health_error=error)
+    health, error, pauses = alert_feed.gather(now)
+    alerts = alert_feed.collect(health, pauses, now=now, health_error=error,
+                                started_utc=api_health.process_started_utc())
     return _xml(alert_feed.render_feed(alerts))
 
 

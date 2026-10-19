@@ -158,6 +158,39 @@ export function storeCards(overview) {
     reason: null });
   groups.push({ key: "app", title: "App", cards: appCards });
 
+  // The server judges every store (src/pipeline/freshness_policy.py: one set of limits for this page, the alerts
+  // feed and the digest). When it sent verdicts, draw THEM; the age thresholds below are the fallback for an
+  // older server only.
+  const verdicts = health.freshness && Array.isArray(health.freshness.stores) ? health.freshness.stores : null;
+  if (verdicts) {
+    const raw = { ...(health.odds || {}), ...(health.forward_captures || {}) };
+    const pageRaw = ((health.data_freshness || {}).stores) || {};
+    const cardOf = (v) => {
+      const check = raw[v.key];
+      const page = v.group === "pages" ? pageRaw[v.key.replace(/^fresh_/, "")] : null;
+      const lines = [];
+      if (check) {
+        if (typeof check.rows === "number") lines.push(`${fmtInt(check.rows)} rows`);
+        if (check.newest_row_utc) lines.push(`Newest ${momentLabel(check.newest_row_utc)}`);
+      } else if (page && typeof page.lag_days === "number") {
+        lines.push(`${page.lag_days} day${page.lag_days === 1 ? "" : "s"} behind`);
+      }
+      const big = v.state === "not_expected" ? "—"
+        : (check ? ageLabel(check.newest_row_age_seconds) : ((page && page.through) || v.through || "—"));
+      const needsAction = v.state === "stale" || v.state === "problem";
+      return { key: v.key, title: v.title, tone: v.tone, word: v.word, big, lines,
+        reason: v.reason || null, fix: needsAction && v.fix ? v.fix : null, state: v.state };
+    };
+    const by = (group) => verdicts.filter((v) => v.group === group).map(cardOf);
+    groups.push({ key: "odds", title: "Odds store", cards: by("odds") });
+    groups.push({ key: "forward", title: "Forward captures", cards: by("forward") });
+    const fresh = health.data_freshness;
+    if (fresh && fresh.error) groups.push({ key: "pages", title: "Data behind the pages", cards: [], error: fresh.error });
+    else groups.push({ key: "pages", title: "Data behind the pages", cards: by("pages") });
+    return { status: health.status, reasons: health.reasons || [], generatedAt: health.generated_at, groups,
+      freshness: health.freshness };
+  }
+
   const fromStores = (entries) => Object.entries(entries || {}).map(([name, check]) => ({
     key: name, title: titleOf(name), tone: storeTone(check), word: storeWord(check),
     big: ageLabel(check.newest_row_age_seconds),
@@ -277,8 +310,21 @@ export function attentionItems(data, now) {
     items.push({ key: `expiring-${row.id}`, tone: "warn", kind: "extend", row,
       title: row.email, detail: `Tester access ends ${untilLabel(row.testerExpiresAt, now)}` });
   }
+  const digest = data.digest && Array.isArray(data.digest.items) ? data.digest : null;
   const cards = storeCards(data.overview);
-  if (cards) {
+  if (digest) {
+    // The server's own "what needs doing today" (GET /admin/health-digest): the same checks as the alert emails.
+    for (const it of digest.items) {
+      items.push({ key: `health-${it.kind}`, tone: "bad", kind: "go", route: "health", cta: "Open Health",
+        title: it.title, detail: it.fix ? `Fix: ${it.fix}` : (it.what || "") });
+    }
+    const watch = digest.watch || [];
+    if (watch.length) {
+      items.push({ key: "health-aging", tone: "warn", kind: "go", route: "health", cta: "Open Health",
+        title: `${watch.length} data store${watch.length === 1 ? " is" : "s are"} getting old`,
+        detail: watch.slice(0, 3).map((w) => w.title).join(", ") + (watch.length > 3 ? ", ..." : "") });
+    }
+  } else if (cards) {
     const flat = cards.groups.flatMap((g) => g.cards.map((c) => ({ ...c, group: g.title })));
     const bad = flat.filter((c) => c.tone === "bad");
     for (const card of bad) {
@@ -665,6 +711,7 @@ function healthCard(card) {
   for (const line of card.lines) node.appendChild(el("div", { class: "adm-health__line", text: line }));
   // The server's own words, verbatim.
   if (card.reason) node.appendChild(el("div", { class: "adm-health__reason", "data-hook": "admin-health-reason", text: card.reason }));
+  if (card.fix) node.appendChild(el("div", { class: "adm-health__reason", "data-hook": "admin-health-fix", text: `What to do: ${card.fix}` }));
   return node;
 }
 
@@ -694,6 +741,13 @@ export function renderHealth(host, overview, ctx) {
     for (const card of group.cards) grid.appendChild(healthCard(card));
     section.appendChild(grid);
     host.appendChild(section);
+  }
+  if (cards.freshness) {
+    host.appendChild(el("p", { class: "adm-note", "data-hook": "admin-health-legend", text:
+      "Colours come from the server's per-store limits, the same ones the alert emails use: green is inside the limit, "
+      + "amber is close to it, red is past it. Grey (Not expected now) means the store is not supposed to move today "
+      + "(no games, off-season, or a finished audit); the reason is on the card." }));
+    return;
   }
   host.appendChild(el("p", { class: "adm-note", text:
     `Colours for stores: green when the newest row is under ${HEALTH_GREEN_HOURS} hours old, amber under ${HEALTH_AMBER_HOURS} hours or when there are no rows yet, red when older or unreadable. `

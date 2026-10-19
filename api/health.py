@@ -27,6 +27,12 @@ router = APIRouter()
 _PROCESS_STARTED = __import__("datetime").datetime.now(__import__("datetime").timezone.utc)
 
 
+def process_started_utc() -> str:
+    """When this process started, ISO UTC. The alerts feed and the admin digest read it as "when production last
+    deployed or restarted": the image is immutable, so a new deploy is a new process."""
+    return _PROCESS_STARTED.isoformat()
+
+
 def _memory_mb() -> dict:
     """Resident memory now and its high-water mark, in MB, from
     /proc/self/status (Linux). None on a platform without it. Reading one

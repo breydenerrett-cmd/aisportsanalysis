@@ -120,6 +120,24 @@ def get_overview(_admin: None = Depends(_require_admin)) -> dict:
     }
 
 
+@router.get("/admin/health-digest")
+def get_health_digest(_admin: None = Depends(_require_admin)) -> dict:
+    """"What needs doing today", in plain English, from the SAME checks the public alerts feed raises
+    (src/appstate/alert_feed.py: the shared per-store limits in src/pipeline/freshness_policy.py, the deploy age,
+    the learning pause). Admin-token gated like the rest of /admin (404 when APP_ADMIN_TOKEN is unset, 401 on a
+    wrong token). The Overview's "Needs your attention" list reads this, so the page, the email and the digest
+    can never disagree about whether a store is late.
+
+    {headline, all_clear, items: [{kind, title, what, fix, since, line}], watch: [...], not_expected: [...],
+     not_checked: [...]}"""
+    from api import health as api_health
+    from src.appstate import alert_feed
+    now = datetime.now(timezone.utc)
+    health, error, pauses = alert_feed.gather(now)
+    return alert_feed.digest(health, pauses, now=now, health_error=error,
+                             started_utc=api_health.process_started_utc())
+
+
 DIRECT_SOURCE = "(direct)"
 
 

@@ -120,7 +120,9 @@ class TheTokenGate(unittest.TestCase):
         self.assertEqual(f["chip"], "Signed in")
         self.assertEqual(f["field"], "")
         self.assertEqual(out["storedAfter"].get(TOKEN_KEY), ADMIN_TOKEN)
-        self.assertEqual(sorted(out["gets"]), sorted(F.build(NOW)))
+        # The health digest is asked for too; this fixture set has none (a 404), which is the old-server
+        # fallback the attention list handles (tests/test_admin_health_page.py covers a server that sends it).
+        self.assertEqual(sorted(out["gets"]), sorted([*F.build(NOW), "/admin/health-digest"]))
         for call in out["getCalls"]:
             self.assertEqual(call["headers"].get("X-Admin-Token"), ADMIN_TOKEN)
             self.assertNotIn(ADMIN_TOKEN, call["url"])
