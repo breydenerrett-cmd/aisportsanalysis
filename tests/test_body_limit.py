@@ -143,6 +143,7 @@ class ScopeAndPathTests(unittest.TestCase):
                              declared=bodylimit.PATH_LIMITS["/billing/webhook"] + 1)
         self.assertEqual(status, 413)
 
+    @unittest.skipUnless(HAS_FASTAPI, "api.hounds_create imports fastapi")
     def test_the_zapier_callback_ceiling_fits_under_the_global_limit(self):
         """The menu-size spec comes back through POST /hounds/create/translate/callback,
         which caps itself at 64 KB; the global cap must never be below that."""
