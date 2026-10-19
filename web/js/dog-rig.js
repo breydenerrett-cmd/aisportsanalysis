@@ -388,7 +388,7 @@ export function dogSvg(rawLook, opts = {}) {
     g("dk-scene", [
       n("rect", { x: 0, y: 0, width: 120, height: 120, rx: 26, fill: `url(#${gid}-glow)` }),
       g("dk-clip", [
-        n("ellipse", { class: "dk-shadow", cx: 60, cy: 118, rx: 46, ry: 6, fill: "#000", opacity: ".22" }),
+        n("ellipse", { class: "dk-shadow", cx: 60, cy: 118, rx: 46, ry: 6, fill: "#000000", opacity: ".22" }),
         g("dk-body", bodyShapes(look, coat)),
         pawShapes(coat),
         g("dk-head", [...built.back, ...built.head, ...face]),
