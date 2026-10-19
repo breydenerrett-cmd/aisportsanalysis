@@ -811,9 +811,9 @@ class ThePagesUnderNode(unittest.TestCase):
         out = run_page("hound", routes=r, search="?id=closer", tz="UTC", stored={}, queries=[
             self.q("list", "[data-hook='tips-list'] li", "texts"),
             self.q("count", "[data-hook='tips-count']")])["final"]
-        self.assertEqual(out["list"], ["Ann: Steam needed 4 points. Live: HELPED ✅ (+3.2u over 25 bets)",
-                                       "A fan: Steam needed 2.5 points. Live: TOO EARLY 🐣 (1 bet)",
-                                       "Cy: Steam needed 5 points. Live: HURT ❌ (-1.3u over 22 bets)",
+        self.assertEqual(out["list"], ["Ann: Steam needed 4 points. Live: HELPED (+3.2u over 25 bets)",
+                                       "A fan: Steam needed 2.5 points. Live: TOO EARLY (1 bet)",
+                                       "Cy: Steam needed 5 points. Live: HURT (-1.3u over 22 bets)",
                                        "Di: Steam needed 2 points"])
         self.assertEqual(out["count"], "Fan tips: 3. Grades coming from the coach report card.")
 

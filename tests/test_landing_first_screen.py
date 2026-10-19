@@ -1,5 +1,8 @@
 """The landing page's AI-desk section (the old first screen), per docs/CONVERSION_REVIEW_2026-10-02.md.
 
+PROFESSIONAL PASS, 2026-10-19: the first screen is now a live leaderboard hero ("AI betting models, tracked in
+public."), and the AI desk below it is unchanged.
+
 OWNER VOICE PASS, 2026-10-18 (docs/VOICE.md): the first screen is now the kennel ("Paper betting bots
 fighting it out every day ..."), and everything this file pins about the old first screen is the SECOND
 section, "Our AI desk reads every game", unchanged in order and in its funnel hooks. The long honesty essays
@@ -85,7 +88,7 @@ class TheFirstScreenReadsInOrder(unittest.TestCase):
         title = re.search(r'<h2 class="hero__claim-title">(.*?)</h2>', MARKUP, re.S).group(1)
         self.assertEqual(title.strip(), 'Our AI desk reads every game.')
         self.assertNotRegex(title.lower(), r"tonight|picks|bets|posted before")
-        self.assertEqual(MARKUP.count("<h1"), 1, "one h1 on the page: the kennel's")
+        self.assertEqual(MARKUP.count("<h1"), 1, "one h1 on the page: the leaderboard hero's")
 
     def test_the_lede_is_one_short_paragraph_with_no_schedule_and_no_figure(self):
         lede = re.search(r'<p class="hero__claim-body">(.*?)</p>', MARKUP, re.S).group(1).strip()
@@ -193,49 +196,70 @@ class TheRecordPanelUsesPlainWords(unittest.TestCase):
         self.assertEqual(panel.count("hero__stat-value"), 6)
 
 
-class TheKennelIsTheFirstScreen(unittest.TestCase):
-    TITLE = ("Paper betting bots fighting it out every day. "
-             "Build your own dog. Watch them win, lose, and get put down.")
+class TheLeaderboardIsTheFirstScreen(unittest.TestCase):
+    """Owner, 2026-10-19: the site "looks like a kids playground, not a professional gambling AI website". The first
+    screen is a plain headline, one sentence on how it works, a live mini leaderboard and the latest tickets."""
 
-    def test_the_one_h1_is_the_kennel_headline_verbatim(self):
-        h1 = re.search(r'<h1 class="kennel__title" data-hook="kennel-title">(.*?)</h1>', MARKUP, re.S)
+    TITLE = "AI betting models, tracked in public."
+    SUB = ("Dozens of models make paper bets every day. Every ticket is recorded before the game and graded after. "
+           "Follow the ones that are winning.")
+
+    def test_the_one_h1_is_the_headline_verbatim_and_the_subline_follows_it(self):
+        h1 = re.search(r'<h1 class="lbhero__title" data-hook="lb-title">(.*?)</h1>', MARKUP, re.S)
         self.assertIsNotNone(h1)
         self.assertEqual(_visible(h1.group(1)), self.TITLE)
         self.assertEqual(MARKUP.count("<h1"), 1)
+        sub = re.search(r'<p class="lbhero__sub" data-hook="lb-sub">(.*?)</p>', MARKUP, re.S)
+        self.assertEqual(_visible(sub.group(1)), self.SUB)
 
-    def test_the_kennel_comes_first_then_buttons_then_the_leaderboard_then_the_ai_desk(self):
-        order = [("kennel", 'data-hook="kennel-hero"'), ("headline", 'data-hook="kennel-title"'),
+    def test_the_hero_comes_first_then_buttons_then_the_leaderboard_then_the_ai_desk(self):
+        order = [("hero", 'data-hook="lb-hero"'), ("headline", 'data-hook="lb-title"'), ("subline", 'data-hook="lb-sub"'),
                  ("enter", 'data-hook="cta-kennel-enter"'), ("build", 'data-hook="cta-kennel-build"'),
-                 ("legal", 'data-hook="kennel-legal"'), ("straight", 'data-hook="kennel-straight"'),
-                 ("board", 'data-hook="kennel-board"'), ("putdown", 'data-hook="kennel-putdown"'),
-                 ("ai desk", 'data-hook="hero"')]
+                 ("straight", 'data-hook="kennel-straight"'), ("board", 'data-hook="lb-board"'),
+                 ("tickets", 'data-hook="lb-tickets"'), ("ai desk", 'data-hook="hero"')]
         positions = [_at(needle) for _label, needle in order]
         self.assertEqual(positions, sorted(positions), [label for label, _ in order])
-        self.assertLess(_at('data-hook="landing-header"'), _at('data-hook="kennel-hero"'))
+        self.assertLess(_at('data-hook="landing-header"'), _at('data-hook="lb-hero"'))
 
-    def test_the_two_calls_to_action_are_enter_the_kennel_and_build_your_dog(self):
+    def test_the_two_calls_to_action_are_view_the_leaderboard_and_build_a_model(self):
         enter = re.search(r'<a\b[^>]*data-hook="cta-kennel-enter"[^>]*>(.*?)</a>', MARKUP, re.S)
         build = re.search(r'<a\b[^>]*data-hook="cta-kennel-build"[^>]*>(.*?)</a>', MARKUP, re.S)
-        self.assertEqual(enter.group(1).strip(), "Enter the kennel")
+        self.assertEqual(enter.group(1).strip(), "View the leaderboard")
         self.assertIn('href="hounds.html"', enter.group(0))
-        self.assertEqual(build.group(1).strip(), "Build your dog")
+        self.assertEqual(build.group(1).strip(), "Build a model")
         self.assertIn('href="build-a-hound.html"', build.group(0))
         # data-hook starts with "cta", so landing.js's delegated listener counts both clicks
         self.assertIn("closest(\"[data-hook^='cta']\")", LANDING_JS)
 
-    def test_the_hard_lines_are_on_the_first_screen_in_plain_words(self):
-        legal = _visible(re.search(r'<p class="kennel__legal" data-hook="kennel-legal">(.*?)</p>', MARKUP, re.S).group(1))
-        self.assertEqual(legal, "Paper bets only. Not advice. Nobody here bets real money. 21+.")
+    def test_the_disclosure_is_said_once_on_the_page_in_the_shared_footer_and_not_in_the_body_copy(self):
+        main = re.search(r"<main>.*?</main>", MARKUP, re.S).group(0)
+        text = _visible(main)
+        self.assertNotRegex(text, r"(?i)paper bets only")
+        self.assertNotRegex(text, r"(?i)nobody here bets real money")
+        self.assertEqual(len(re.findall(r"21\+", text)), 0, "21+ is the footer's line, not the body's")
+        self.assertNotIn('data-hook="kennel-legal"', MARKUP)
+        # the footer mounts the shared legal block: 21+, the helpline, the not-advice summary
+        self.assertIn('data-hook="disclaimer-host"', MARKUP)
 
     def test_the_mini_leaderboard_is_filled_by_a_script_and_names_no_figure_when_it_has_none(self):
-        panel = re.search(r'<aside class="kennel__panel".*?</aside>', MARKUP, re.S).group(0)
+        panel = re.search(r'<section class="lbpanel" aria-label="top models".*?</section>', MARKUP, re.S).group(0)
         text = _visible(panel)
-        self.assertIn("Top dogs right now", text)
+        self.assertIn("Top models by units", text)
         self.assertIn("Checking the leaderboard", text)
         self.assertNotRegex(text, r"[+-]\d")
         self.assertIn('href="hounds.html"', panel)
-        self.assertIn("fillKennel", LANDING_JS)
-        self.assertIn('from "./landing-kennel.js"', LANDING_JS)
+        self.assertIn("fillBoard", LANDING_JS)
+        self.assertIn('from "./landing-board.js"', LANDING_JS)
+        self.assertNotIn("landing-kennel", LANDING_JS)
+
+    def test_the_first_screen_has_no_toy_voice_no_emoji_and_no_cartoon(self):
+        hero = re.search(r'<section class="lbhero".*?</section>\s*(?=<section class="hero")', MARKUP, re.S).group(0)
+        text = _visible(hero).lower()
+        for word in ("kennel", "dog", "bark", "put down", "doghouse", "houndmaster", "fighting it out"):
+            self.assertNotIn(word, text, word)
+        self.assertNotRegex(hero, "[\U0001F300-\U0001FAFF\u2600-\u27BF]")
+        self.assertNotIn("<svg", hero)
+        self.assertNotIn("kennel__", MARKUP)
 
     def test_the_honesty_essays_are_gone_and_one_human_line_links_to_the_full_story(self):
         for hook in ("proven-block", "honesty-story", "losing-pick-demo", "hero-proven-line", "hero-pause-note",
@@ -245,9 +269,15 @@ class TheKennelIsTheFirstScreen(unittest.TestCase):
         for gone in ("hash-chained", "pre-registered", "bullpen workload", "A pick we got wrong",
                      "What is proven and what is not", "falsification"):
             self.assertNotIn(gone, text, gone)
-        line = re.search(r'<p class="kennel__straight" data-hook="kennel-straight">(.*?)</p>', MARKUP, re.S).group(1)
+        line = re.search(r'<p class="lbhero__straight" data-hook="kennel-straight">(.*?)</p>', MARKUP, re.S).group(1)
         self.assertIn('href="why-we-paused.html"', line)
         self.assertEqual(MARKUP.count("why-we-paused.html"), 1)
+
+    def test_the_faq_does_not_repeat_the_disclaimer(self):
+        faq = re.search(r'<section[^>]*data-hook="faq".*?</section>', MARKUP, re.S).group(0)
+        self.assertNotIn('data-hook="faq-gambling-advice"', faq)
+        self.assertIn('data-hook="faq-kennel"', faq)             # the hook is kept; the copy now says "models"
+        self.assertIn("What are the models?", faq)
 
 
 class PricingFollowsTheSampleAndTheTrustSectionsAreMerged(unittest.TestCase):
@@ -291,7 +321,7 @@ class OneFooter(unittest.TestCase):
             self.assertIn(href, footer, href)
         text = _visible(footer)
         self.assertIn("About the data on this page", text)
-        self.assertIn("live paper results from our public ledger", text)
+        self.assertIn("live results from our public ledger", text)
         self.assertIn('data-hook="disclaimer-host"', footer)
         self.assertEqual(MARKUP.count('data-hook="disclaimer-host"'), 1)
 

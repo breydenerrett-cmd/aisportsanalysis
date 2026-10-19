@@ -3,17 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>A dog — LINEHOUND</title>
-<meta name="description" content="One paper betting dog: its bio, its record, its streak, its best bet and worst beat, and the rules it follows. Paper bets only, not advice, 21+.">
-<meta property="og:title" content="A dog — LINEHOUND">
-<meta property="og:description" content="A paper betting dog: its record, its streak and its rules. Paper only, not advice.">
+<title>Model — LINEHOUND</title>
+<meta name="description" content="One AI betting model: record, units, ROI, CLV, its rule and every ticket it recorded. Paper bets only, not advice, 21+.">
+<meta property="og:title" content="Model — LINEHOUND">
+<meta property="og:description" content="An AI betting model tracked in public: its record, its rule and every ticket. Paper only, not advice.">
 <meta property="og:type" content="website">
-<meta name="theme-color" content="#0A0A0B">
+<meta name="theme-color" content="#0E1116">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230B0C0E'/%3E%3Cpath d='M6 6l8 0 0 9-8 4z' fill='%23FF3D57'/%3E%3Cpath d='M18 6l8 0 0 13-8-4z' fill='%23FF7A45'/%3E%3C/svg%3E">
-<!-- ONE DOG, chosen by ?id=. Page script: web/js/hounds-detail.js. Static paper-only / not-advice
-     lines so they are present with scripts off. VOICE (owner, 2026-10-18): the top of the page is the
-     dog: portrait, bio, catchphrase, record, streak, best bet, worst beat, what the Houndmaster said
-     today, the badge. The long details (verdict sentence, charts, every bet) are collapsed below.
+<!-- ONE MODEL, chosen by ?id=. Page script: web/js/hounds-detail.js. The single disclosure bar (paper
+     results, not advice, 21+) is static markup so it is present with scripts off; the footer carries the
+     responsible-gambling line. Top of the page: the model (initials badge, name, type, sports, status), a KPI
+     strip, then its open and graded tickets, its rule, its bankroll chart and its versions. A model's
+     catchphrase may sit under its name as one small italic line; nothing else from its persona is shown.
      docs/VOICE.md is the guide for the copy. -->
 <link rel="stylesheet" href="css/fonts.css">
 <link rel="stylesheet" href="css/tokens.css">
@@ -23,7 +24,7 @@
 <link rel="stylesheet" href="css/hounds.css">
 </head>
 <body class="hounds-page">
-<a class="hd-skip" href="#main-content">Skip to the dog</a>
+<a class="hd-skip" href="#main-content">Skip to the model</a>
 <nav class="site-nav hd-nav" aria-label="primary" data-hook="hound-nav">
   <a class="ps-page__home" href="landing.html" aria-label="LINEHOUND home">
     <span class="wordmark" data-hook="brand-mark">
@@ -32,104 +33,86 @@
     </span>
   </a>
   <div class="site-nav__links hd-nav__links">
-    <a href="hounds.html">Kennel</a>
-    <a href="learning.html">Training camp</a>
-    <a href="build-a-hound.html">Build your dog</a>
+    <a href="hounds.html">Leaderboard</a>
+    <a href="learning.html">Learning</a>
+    <a href="build-a-hound.html">Build a model</a>
   </div>
 </nav>
 
-<main class="hd-wrap" id="main-content" aria-label="One dog" data-hook="hound-app">
+<main class="hd-wrap hd-wrap--wide" id="main-content" aria-label="One model" data-hook="hound-app">
 
-<p class="hd-back"><a href="hounds.html" data-hook="back-to-race">&larr; Back to the kennel</a></p>
+<p class="hd-back"><a href="hounds.html" data-hook="back-to-race">&larr; Leaderboard</a></p>
 
-<header class="hd-hound-head" data-hook="hound-header"></header>
+<header class="hd-modelhead" data-hook="hound-header"></header>
 <div class="hd-state hd-state--retired" data-hook="hound-cause" role="status" hidden></div>
-<p class="hd-paper" data-hook="paper-only-notice" role="note"><strong>Paper bets only. Not advice.</strong> Nobody bets real money here and a dog's results don't tell you what happens next. 21+. <span data-hook="hound-notice"></span></p>
+<p class="hd-disclosure" data-hook="paper-only-notice" role="note"><strong>Paper bets only. Not betting advice. 21+.</strong> No real money is staked, and past results do not predict future results.</p>
 
-<div class="hd-actions" role="group" aria-label="Follow, share and download this dog" data-hook="hound-actions"></div>
-
-<section class="hd-panel hd-today" aria-labelledby="today-h" data-hook="hound-today-section">
-  <h2 id="today-h">🔴 Today's action</h2>
-  <div data-hook="hound-today" aria-live="polite"><p class="hd-muted">Checking today's board...</p></div>
-  <p class="hd-fine" data-hook="today-note"></p>
-</section>
+<div class="hd-actions" role="group" aria-label="Follow, share and download this model" data-hook="hound-actions"></div>
 
 <section class="hd-panel hd-scoreboard" aria-labelledby="score-h" data-hook="hound-scoreboard-section">
-  <h2 id="score-h">The scoreboard</h2>
+  <h2 id="score-h" class="hd-sr-only">Key numbers</h2>
   <div data-hook="hound-scoreboard"><p class="hd-muted">Loading the numbers...</p></div>
 </section>
 
-<section class="hd-panel hd-master-panel" aria-labelledby="master-h" data-hook="hound-master-section">
-  <h2 id="master-h">What the Houndmaster said</h2>
-  <div data-hook="hound-master"></div>
+<section class="hd-panel" aria-labelledby="open-h" data-hook="hound-today-section">
+  <h2 id="open-h">Open tickets</h2>
+  <div data-hook="hound-today" aria-live="polite"><p class="hd-muted">Checking open tickets...</p></div>
+  <p class="hd-fine" data-hook="today-note"></p>
 </section>
 
-<section class="hd-panel" aria-labelledby="verdict-h" data-hook="hound-verdict-section">
-  <h2 id="verdict-h">Sharp or lucky?</h2>
-  <div class="hd-verdict" data-hook="hound-verdict"></div>
+<section class="hd-panel" aria-labelledby="bets-h" data-hook="hound-bets-section">
+  <div class="hd-panel__head">
+    <h2 id="bets-h">Graded tickets</h2>
+    <div class="hd-segs" role="group" aria-label="Which graded tickets to list" data-hook="bets-segment"></div>
+  </div>
+  <div data-hook="hound-bets"><p class="hd-muted">Loading the tickets...</p></div>
 </section>
 
 <section class="hd-panel" aria-labelledby="rule-h" data-hook="hound-rule-section">
-  <h2 id="rule-h">The rulebook</h2>
-  <p class="hd-muted">This is the whole playbook. The dog does nothing that isn't written here.</p>
+  <h2 id="rule-h">Rule</h2>
   <div data-hook="hound-rule"></div>
   <div class="hd-dialsbox" data-hook="hound-dials"></div>
 </section>
 
-<section class="hd-panel hd-coach" aria-labelledby="coach-h" data-hook="hound-coach-section" hidden></section>
-
-<section class="hd-panel" aria-labelledby="bets-h" data-hook="hound-bets-section">
-  <h2 id="bets-h">Every bet</h2>
-  <p class="hd-muted">Losses at the same size as wins. Each bet says why the dog took it and when it went on the record. "Decided by" says whether the rule, the code or the model made the call.</p>
-  <div class="hd-segs" role="group" aria-label="Which bets to list" data-hook="bets-segment"></div>
-  <div data-hook="hound-bets"><p class="hd-muted">Loading the bets...</p></div>
-</section>
-
-<details class="hd-panel hd-receipts" data-hook="hound-details">
-<summary><span class="hd-receipts__title">The receipts</span> <span class="hd-fine">verdict, charts, versions</span></summary>
-
-<section class="hd-sub" aria-labelledby="results-h" data-hook="hound-results-section">
-  <h2 id="results-h">The numbers</h2>
-  <div data-hook="hound-results"></div>
-</section>
-
-<section class="hd-sub" aria-labelledby="lineage-h" data-hook="hound-lineage-section" hidden>
-  <h2 id="lineage-h">Versions and rookies</h2>
-  <p class="hd-muted">Dogs never get edited. A change is a new version with its own record, and a rookie only takes the starting job if it beats the starter on the same games at the same prices, by a bar set in advance. Older versions stay here with the record they made.</p>
-  <div data-hook="hound-lineage"></div>
-</section>
-
-<section class="hd-sub" aria-labelledby="desk-h" data-hook="hound-desk-section" hidden>
-  <h2 id="desk-h">How the desk argued</h2>
-  <p class="hd-muted">One AI model reads the same frozen data under different instructions. Everything below was written by a model, is unproven, and is shown as it was written. Paper only, not advice.</p>
-  <div class="hd-field" data-hook="desk-games"></div>
-  <div data-hook="hound-desk"><p class="hd-muted">Loading how the desk argued...</p></div>
-</section>
-
-<section class="hd-sub" aria-labelledby="disagree-h" data-hook="hound-disagree-section" hidden>
-  <h2 id="disagree-h">Where they disagree</h2>
-  <p class="hd-muted">The Desk and the six personas read the same data. This table shows, game by game and market by market, where they split. When they agree it's still one model talking to itself.</p>
-  <div data-hook="hound-disagree"></div>
-</section>
-
-<section class="hd-sub" aria-labelledby="chart-h" data-hook="hound-chart-section">
-  <div class="hd-panel__head">
-    <h2 id="chart-h">Bankroll over time (paper units)</h2>
-  </div>
+<section class="hd-panel" aria-labelledby="chart-h" data-hook="hound-chart-section">
+  <h2 id="chart-h">Bankroll</h2>
   <p class="hd-chart-title" data-hook="hound-chart-title" aria-live="polite"></p>
-  <p class="hd-muted">Average price (the headline) and best price (the best single quote when the bet was placed). Live bets only.</p>
   <div data-hook="hound-units-chart"><p class="hd-muted">Loading the charts...</p></div>
   <div data-hook="hound-clv-chart"></div>
 </section>
 
-</details>
+<section class="hd-panel" aria-labelledby="verdict-h" data-hook="hound-verdict-section">
+  <h2 id="verdict-h">Status</h2>
+  <div class="hd-verdict" data-hook="hound-verdict"></div>
+  <div data-hook="hound-results"></div>
+</section>
+
+<section class="hd-panel" aria-labelledby="lineage-h" data-hook="hound-lineage-section" hidden>
+  <h2 id="lineage-h">Versions</h2>
+  <p class="hd-muted">A model is never edited. A change is a new version with its own record, and a challenger version only takes over if it beats the current one on the same games at the same prices, by a bar set in advance. Older versions stay here with the record they made.</p>
+  <div data-hook="hound-lineage"></div>
+</section>
+
+<section class="hd-panel" aria-labelledby="desk-h" data-hook="hound-desk-section" hidden>
+  <h2 id="desk-h">How the desk argued</h2>
+  <p class="hd-muted">One AI model reads the same frozen data under different instructions. Everything below was written by a model, is unproven, and is shown as it was written.</p>
+  <div class="hd-field" data-hook="desk-games"></div>
+  <div data-hook="hound-desk"><p class="hd-muted">Loading how the desk argued...</p></div>
+</section>
+
+<section class="hd-panel" aria-labelledby="disagree-h" data-hook="hound-disagree-section" hidden>
+  <h2 id="disagree-h">Where the desk models disagree</h2>
+  <p class="hd-muted">The Desk and its six personas read the same data. This table shows, game by game and market by market, where they split. When they agree it is still one model talking to itself.</p>
+  <div data-hook="hound-disagree"></div>
+</section>
+
+<section class="hd-panel hd-coach" aria-labelledby="coach-h" data-hook="hound-coach-section" hidden></section>
 
 </main>
 
-<footer class="hd-foot" data-hook="hound-footer" aria-label="disclaimer">
-  <p data-hook="not-advice"><strong>Paper bets only, not advice.</strong> LINEHOUND runs betting dogs on pretend money. Nothing here is a tip. Past results, even paper ones, don't tell you what happens next.</p>
-  <p>21+ &middot; Gamble responsibly. <a href="tel:1-800-426-2537" data-hook="responsible-gambling-help">1-800-GAMBLER</a></p>
-  <p><a href="landing.html">About LINEHOUND</a> &middot; <a href="hounds.html">The kennel</a></p>
+<footer class="hd-foot" data-hook="hound-footer" aria-label="responsible gambling">
+  <p>Gamble responsibly. <a href="tel:1-800-426-2537" data-hook="responsible-gambling-help">1-800-GAMBLER</a></p>
+  <p><a href="landing.html">About LINEHOUND</a> &middot; <a href="hounds.html">Leaderboard</a></p>
 </footer>
 
 <script type="module" src="js/hounds-detail.js"></script>

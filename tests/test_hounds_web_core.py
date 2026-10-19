@@ -72,16 +72,25 @@ class TheOrderIsTheVerdictNeverTheUnits(unittest.TestCase):
 
 
 @unittest.skipUnless(HAS_NODE, "node not installed")
-class TheAvatarsFollowTheCategory(unittest.TestCase):
+class TheBadgesFollowTheCategory(unittest.TestCase):
     def test_colour_by_category_with_a_name_hash_fallback_and_eight_fallback_colours(self):
-        out = js("console.log(JSON.stringify({a:C.avatarSpec('Closer','stats').color,b:C.avatarSpec('Other','stats').color,"
-                 "c:C.avatarSpec('Closer','esoteric').color,fallback:C.avatarSpec('Closer','').color,"
-                 "same:C.avatarSpec('Closer','').color===C.avatarSpec('Closer','').color,n:C.AVATAR_COLORS.length}));")
+        out = js("console.log(JSON.stringify({a:C.categoryColor('Closer','stats'),b:C.categoryColor('Other','stats'),"
+                 "c:C.categoryColor('Closer','esoteric'),fallback:C.categoryColor('Closer',''),"
+                 "same:C.categoryColor('Closer','')===C.categoryColor('Closer',''),n:C.AVATAR_COLORS.length,"
+                 "hound:C.houndColor({name:'Closer',category:'stats'})}));")
         self.assertEqual(out["a"], out["b"])
+        self.assertEqual(out["hound"], out["a"])
         self.assertNotEqual(out["a"], out["c"])
-        self.assertIn(out["fallback"], ["#FF7A7A", "#FFB020", "#F2E34B", "#2ED47A", "#00E0FF", "#6E9BFF", "#B58CFF", "#FF8AD8"])
+        self.assertIn(out["fallback"], ["#6E9BFF", "#E0A458", "#5CC8B5", "#B58CFF", "#78B8D8", "#C9A66B", "#8FA3C0", "#D68FB3"])
         self.assertTrue(out["same"])
         self.assertEqual(out["n"], 8)
+
+    def test_initials_are_two_letters_and_the_cartoon_dog_is_gone_from_the_module(self):
+        out = js("console.log(JSON.stringify({i:['Steamy Setter','Pointer','Coin-Flip Collie','The Desk','',null].map(C.initialsOf),"
+                 "avatar: typeof C.avatarSvg, vibe: typeof C.vibeOf, mono: typeof C.monogram, svg: typeof C.monogramSvg}));")
+        self.assertEqual(out["i"], ["SS", "PO", "CF", "TD", "?", "?"])
+        self.assertEqual((out["avatar"], out["vibe"]), ("undefined", "undefined"))
+        self.assertEqual((out["mono"], out["svg"]), ("function", "function"))
 
 
 @unittest.skipUnless(HAS_NODE, "node not installed")

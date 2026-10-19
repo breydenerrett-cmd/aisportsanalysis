@@ -714,7 +714,10 @@ class PagesReadTheRealApi(unittest.TestCase):
         client = TestClient(app)
         cls.routes = {}
         for path in ("/hounds", "/hounds/stream", "/hounds/graveyard", "/hounds/menu", "/hounds/alpha",
-                     "/hounds/charlie", "/hounds/delta", "/hounds/alpha/bets?page=2&page_size=2"):
+                     "/hounds/charlie", "/hounds/delta", "/hounds/alpha/bets?page=2&page_size=2",
+                     "/hounds/alpha/bets?status=open&segment=forward&page=1&page_size=50",
+                     "/hounds/alpha/bets?status=graded&segment=forward&page=1&page_size=20",
+                     "/hounds/alpha/bets?status=graded&segment=replay&page=1&page_size=20"):
             r = client.get(path)
             assert r.status_code == 200, (path, r.text)
             cls.routes[path.split("?")[0] if "?" not in path else path] = [200, r.json()]
@@ -732,47 +735,44 @@ class PagesReadTheRealApi(unittest.TestCase):
         stats.clear_cache()
         cls._tmp.cleanup()
 
-    def test_the_race_page_lists_every_hound_with_its_real_numbers_and_the_replay_apart(self):
+    def test_the_leaderboard_lists_every_model_with_its_real_numbers_and_the_tickets_feed_leaves_refusals_out(self):
         out = run_page("hounds", routes=self.routes, queries=[
-            q("ids", ".hd-row", "attrs", attr="data-hound"),
-            q("alpha", ".hd-row[data-hound='alpha']"),
-            q("alpha_replay", ".hd-row[data-hound='alpha'] [data-hook='replay-line']"),
-            q("charlie", ".hd-row[data-hound='charlie']"),
-            q("units", ".hd-row[data-hound='alpha'] [data-hook='units-pair']"),
-            q("lines", "[data-hook='hounds-chart-panel'] .hd-line", "count"),
-            q("user", ".hd-row[data-hound='u-1']"),
-            q("stream", "[data-hook='stream-list'] .hd-chat__text", "texts"),
-            q("refused", "[data-hook='stream-list'] li", "attrs", attr="data-refused"),
-            q("basis", "[data-hook='hounds-basis']")])
+            q("ids", "[data-hook='hounds-list'] .hd-tr", "attrs", attr="data-hound"),
+            q("bets", "[data-hook='hounds-list'] .hd-tr [data-hook='row-bets']", "texts"),
+            q("tickets", "[data-hook='stream-list'] .hd-ticket", "count"),
+            q("text", "[data-hook='hounds-stream']"), q("asof", "[data-hook='data-as-of']")])
         final = out["final"]
-        self.assertEqual(set(final["ids"]), {"alpha", "bravo", "charlie", "delta", "u-1"})
-        # alpha: 3 forward bets, its replay bet in a separate line (never in the forward record)
-        self.assertIn("3 bets", final["alpha"])
-        self.assertIn("rehearsal", final["alpha_replay"].lower())      # the replay block, said as an old-board rehearsal
-        self.assertIn("average price", final["units"])
-        self.assertIn("best price", final["units"])
-        self.assertGreater(final["lines"], 0)
-        self.assertIn("Paper only", final["basis"])
-        self.assertTrue(any("sat this one out" in t for t in final["stream"]), final["stream"])
-        self.assertIn("true", final["refused"])
+        hounds = {h["id"]: h for h in self.routes["/hounds"][1]["hounds"]}
+        graded = {i for i, h in hounds.items() if h["record"]["bets"] > 0}
+        self.assertEqual(set(final["ids"]), graded)                           # every model with a graded bet is a row
+        self.assertEqual(set(hounds), {"alpha", "bravo", "charlie", "delta", "u-1"})
+        for hid, bets in zip(final["ids"], final["bets"]):
+            self.assertEqual(bets, str(hounds[hid]["record"]["bets"]), hid)    # the table says what the server counted
+        stream = self.routes["/hounds/stream"][1]["items"]
+        self.assertEqual(final["tickets"], len([i for i in stream if not i["refused"]]))
+        self.assertNotIn("sat this one out", final["text"])                    # a refusal is not a ticket
+        self.assertTrue(final["asof"].startswith("Data as of"))
         self.assertNotIn("warming", out["text"].lower())
 
-    def test_the_hound_page_shows_the_bets_the_server_sent_and_pages_with_the_servers_numbers(self):
+    def test_the_model_page_shows_the_tickets_the_server_sent_and_pages_with_the_servers_numbers(self):
         out = run_page("hound", routes=self.routes, search="?id=alpha", queries=[
             q("rows", "[data-hook='bets-table'] tbody tr", "count"), q("page", "[data-hook='bets-page']"),
             q("name", "[data-hook='hound-name']"), q("rule", "[data-hook='rule-text']"),
             q("verdict", "[data-hook='hound-verdict'] [data-hook='badge']"),
             q("heads", "[data-hook='bets-table'] thead th", "texts"),
+            q("rep", "[data-hook='replay-line']"),
             q("next_off", "[data-hook='bets-next']", "disabled")])
         self.assertEqual(out["final"]["name"], "Alpha")
         self.assertEqual(out["final"]["rule"], "Alpha rule.")
-        self.assertIn("ROOKIE", out["final"]["verdict"])             # TOO EARLY wears the rookie badge
-        total = self.routes["/hounds/alpha"][1]["bets"]["total"]
-        self.assertGreater(total, 0)
+        self.assertRegex(out["final"]["verdict"], r"Not enough bets \(\d+/150\)")     # TOO EARLY, with its sample size
+        graded = self.routes["/hounds/alpha/bets?status=graded&segment=forward&page=1&page_size=20"][1]["total"]
+        self.assertGreater(graded, 0)
         self.assertGreater(out["final"]["rows"], 0)
-        self.assertIn("Average price", out["final"]["heads"])
-        self.assertIn(f"({total} bets)", out["final"]["page"])
-        self.assertTrue(out["final"]["next_off"])               # one page of 5 bets: nothing older to fetch
+        self.assertIn("Price", out["final"]["heads"])
+        self.assertIn(f"({graded} tickets)", out["final"]["page"])
+        self.assertTrue(out["final"]["next_off"])               # one page: nothing older to fetch
+        # the replay block is its own line, said as an old-board rehearsal (never in the forward numbers)
+        self.assertIn("rehearsal", out["final"]["rep"].lower())
 
     def test_a_replay_only_pack_hound_has_no_forward_numbers_and_its_replay_result_is_shown_apart(self):
         out = run_page("hound", routes=self.routes, search="?id=charlie", queries=[

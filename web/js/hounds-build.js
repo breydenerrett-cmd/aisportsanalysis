@@ -28,7 +28,7 @@
 import { apiGet, apiPost, getToken } from "./api.js";
 import {
   h, clearNode, optionOf, buildSpec, specToForm, previewRuleSentence, describeError, houndHref, isNum,
-  americanDecimal, avatarSvg, NAME_MAX, TAGLINE_MAX, HOUND_LIMIT,
+  americanDecimal, monogram, NAME_MAX, TAGLINE_MAX, HOUND_LIMIT,
 } from "./hounds-core.js";
 
 export const PAPER_NOTICE =
@@ -316,7 +316,7 @@ export function renderDogCard(values, menu) {
   const where = [labelsOf(values.sports, menu && menu.sports).join(", "),
     labelsOf(values.markets, menu && menu.markets).join(", ").toLowerCase()].filter(Boolean).join(" ");
   const bio = values.tagline || (style ? `${style}${where ? `. ${where}` : ""}.` : "Still deciding what it's about.");
-  box.appendChild(avatarSvg(name, { size: 96, vibe: play ? play.vibe : "grinder", category: "mixed" }));
+  box.appendChild(monogram(name, { size: 64, category: "mixed" }));
   box.appendChild(h("div", { class: "hd-dogcard__text" }, [
     h("p", { class: "hd-dogcard__name", "data-hook": "dog-name", text: name }),
     h("p", { class: "hd-dogcard__bio", "data-hook": "dog-bio", text: bio }),

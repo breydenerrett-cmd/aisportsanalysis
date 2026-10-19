@@ -235,7 +235,8 @@ def bet_row(bet: Bet, teams: Optional[tuple]) -> BetRow:
         consensus_fair=_round(bet.consensus_fair), result=bet.result,
         units=_round(recorded_units(bet)) if bet.graded else None,
         clv_pts=bet.clv_pts, who_decided=bet.who_decided, reason=bet.reason,
-        segment=bet.segment, verified=bet.verified, start_utc=bet.start_utc, recorded_utc=bet.recorded_utc)
+        segment=bet.segment, verified=bet.verified, start_utc=bet.start_utc, recorded_utc=bet.recorded_utc,
+        book_count=bet.book_count)
 
 
 FORM_DAYS = 7           # "last 7 days" on the race page, counted back from the book's as-of day
@@ -251,6 +252,46 @@ def _bet_brief(bet: Bet, teams: Optional[tuple], units: Optional[float]) -> dict
     return {"date": bet.date, "game": game_text(bet, teams), "selection": selection_text(bet, teams),
             "price": avg if avg is not None else bet.price, "units": _round(units),
             "market_fair": _round(_fair_of(bet))}
+
+
+def last10_results(fgraded: list) -> list:
+    """The last ten decided results, oldest first, as "W" / "L" / "P" (a push). Void bets are skipped. The
+    same graded bets ``record`` counts; a list shorter than ten is simply a young model."""
+    mark = {"win": "W", "loss": "L", "push": "P"}
+    return [mark[b.result] for b in fgraded if b.result in mark][-10:]
+
+
+def _decimal_of(american) -> Optional[float]:
+    if not isinstance(american, (int, float)) or isinstance(american, bool) or american == 0:
+        return None
+    return 1.0 + american / 100.0 if american > 0 else 1.0 + 100.0 / abs(american)
+
+
+def average_price_taken(fgraded: list) -> Optional[int]:
+    """The typical price a model took, as an American price: the mean of the decimal prices, converted back.
+    The price used is the board-average price when the bet has one, else the price taken. None with no priced bet."""
+    decimals = []
+    for b in fgraded:
+        avg = b.price_average if b.price_average is not None else b.avg_price
+        dec = _decimal_of(avg if avg is not None else b.price)
+        if dec is not None and dec > 1.0:
+            decimals.append(dec)
+    if not decimals:
+        return None
+    mean = sum(decimals) / len(decimals)
+    if mean <= 1.0:
+        return None
+    return int(round((mean - 1.0) * 100)) if mean >= 2.0 else int(round(-100.0 / (mean - 1.0)))
+
+
+def clv_beat_share(points: list) -> Optional[dict]:
+    """Of the bets with a measurable closing-line value, how many beat the close: {"n", "beat", "pct"}.
+    ``pct`` is a share in 0..1. None when nothing is measurable. A bet at exactly the close counts as not beating it."""
+    values = [v for _, v in points if isinstance(v, (int, float))]
+    if not values:
+        return None
+    beat = sum(1 for v in values if v > 0)
+    return {"n": len(values), "beat": beat, "pct": _round(beat / len(values), 4)}
 
 
 def compute_form(fgraded: list, avg_available: bool, as_of: Optional[str], teams_of: dict) -> Optional[dict]:
@@ -317,7 +358,8 @@ def compute_form(fgraded: list, avg_available: bool, as_of: Optional[str], teams
         worst_beat = _bet_brief(worst, teams_of.get(worst.event_id), units_of(worst))
     return {"streak": streak, "last7": last7, "last_day": last_day, "best_bet": best_bet,
             "worst_beat": worst_beat,
-            "units_basis": "average_price" if avg_available else "recorded_price"}
+            "units_basis": "average_price" if avg_available else "recorded_price",
+            "last10": last10_results(fgraded), "avg_price": average_price_taken(fgraded)}
 
 
 def summarize(defn: dict, bets: list, teams_of: dict, as_of: Optional[str]) -> HoundData:
@@ -413,7 +455,10 @@ def summarize(defn: dict, bets: list, teams_of: dict, as_of: Optional[str]) -> H
         spark_basis="average_price" if avg_available else "recorded_price",
         source=defn.get("source", ""),
         persona=defn.get("persona") if isinstance(defn.get("persona"), dict) else None,
-        form=compute_form(fgraded, avg_available, as_of, teams_of))
+        form=compute_form(fgraded, avg_available, as_of, teams_of),
+        open_bets=sum(1 for b in forward if not b.graded))
+    if summary.form is not None:
+        summary.form["clv_beat"] = clv_beat_share(points)
     rows = sorted(bets, key=lambda b: (b.decision_utc or b.date or "", b.date),
                   reverse=True)
     return HoundData(

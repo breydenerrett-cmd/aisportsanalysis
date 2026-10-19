@@ -28,7 +28,7 @@ import {
 import { renderWordmark } from "./brand.js";
 import { armEntrances, armParallax, armCharts } from "./motion.js";
 import { mountLiveHero } from "./landing-live.js";
-import { fillKennel } from "./landing-kennel.js";
+import { fillBoard } from "./landing-board.js";
 import { captureFirstTouch } from "./attribution.js";
 
 function renderPricing(host, state) {
@@ -924,8 +924,8 @@ function boot() {
   if (pricingHost) renderPricing(pricingHost, NOT_ON);
   fillCheckoutCopy();
   fillLiveSports();
-  // The kennel panel (top three dogs, the latest put down), fire-and-forget like every fill here.
-  fillKennel();
+  // The leaderboard panel (top five models, the latest five tickets), fire-and-forget like every fill here.
+  fillBoard();
   revealPublicDemoEntry();
   fillResearchCounts();
   fillCardRecord();

@@ -6,15 +6,16 @@
  *   unfurl as the dog; it then sends a person on to the dog page. A cancelled share sheet is not an error
  *   and shows nothing.
  *
- *   DOWNLOAD CARD: a 1200x630 PNG drawn on a canvas in the browser, nothing uploaded: the dog's avatar (the
- *   same inline SVG the page shows, drawn from its own markup), name, catchphrase, season W-L, paper units,
- *   streak, badge, and "Paper bets only · 21+ · linehound.app". The words come from the numbers the page
+ *   DOWNLOAD CARD: a 1200x630 PNG drawn on a canvas in the browser, nothing uploaded: the model's initials
+ *   badge (an inline SVG drawn from its own markup), name, catchphrase, season W-L, paper units,
+ *   streak, status, and "Paper bets only · 21+ · linehound.app". The words come from the numbers the page
  *   already has (`cardLines`, pure); the drawing is `drawCard`, which takes any 2D context so a test can
  *   hand it a recorder. The hard lines are ON the card: it leaves the site.
  */
 
-import { h, avatarSvg, vibeOf, categoryOf, isNum } from "./hounds-core.js";
-import { badgeFor, unitsOf, wlText, streakView, personaOf } from "./hounds-voice.js";
+import { h, monogramSvg, categoryOf, isNum } from "./hounds-core.js";
+import { unitsOf, wlText, personaOf } from "./hounds-voice.js";
+import { statusOf, streakText } from "./hounds-board.js";
 
 export const CARD_W = 1200;
 export const CARD_H = 630;
@@ -39,7 +40,7 @@ export function shareUrl(id) {
 }
 
 export function shareTitle(hound) {
-  return `${hound.name || "A dog"} | LineHound Kennel`;
+  return `${hound.name || "A model"} | LineHound`;
 }
 
 function unitsWord(hound) {
@@ -50,7 +51,7 @@ function unitsWord(hound) {
 }
 
 export function shareMessage(hound) {
-  return `${hound.name || "A dog"}: ${wlText(hound.record)} · ${unitsWord(hound)}. Paper bets only, not advice, 21+.`;
+  return `${hound.name || "A model"}: ${wlText(hound.record)} · ${unitsWord(hound)}. Paper bets only, not advice, 21+.`;
 }
 
 // ---- copy and toast -------------------------------------------------------------------------------------
@@ -121,16 +122,16 @@ export function cardLines(hound) {
   const persona = personaOf(hound);
   const rec = hound.record || {};
   const bets = isNum(rec.bets) ? rec.bets : 0;
-  const streak = streakView(hound.form);
-  const badge = badgeFor(hound);
+  const streak = streakText(hound);
+  const status = statusOf(hound);
   return {
-    name: hound.name || "A dog",
+    name: hound.name || "A model",
     catchphrase: persona && persona.catchphrase ? `“${persona.catchphrase}”` : (hound.tagline || ""),
     record: bets > 0 ? `${wlText(rec)}` : "0-0",
     recordNote: bets > 0 ? `season record, ${bets} ${bets === 1 ? "bet" : "bets"}` : "no bets yet",
     units: unitsWord(hound),
-    streak: streak ? streak.text : "no streak",
-    badge: badge.text,
+    streak: streak || "no streak",
+    badge: status.text,
     footer: CARD_FOOTER,
   };
 }
@@ -149,10 +150,10 @@ export function svgToString(node) {
   return out;
 }
 
-/** The avatar as an SVG string at `size` px, wearing the dog's vibe. */
+/** The initials badge as an SVG string at `size` px. */
 export function avatarMarkup(hound, size = 360) {
   const dead = hound.status === "retired";
-  const svg = avatarSvg(hound.name, { size, category: categoryOf(hound), vibe: vibeOf(hound), gray: dead, dead });
+  const svg = monogramSvg(hound.name, { size, category: categoryOf(hound), muted: dead });
   // a real browser serializes its own SVG (with the namespace); the walker above is for a fake DOM
   return typeof XMLSerializer === "function" ? new XMLSerializer().serializeToString(svg) : svgToString(svg);
 }
@@ -175,7 +176,7 @@ export function drawCard(ctx, hound, avatar) {
   const t = cardLines(hound);
   ctx.fillStyle = "#0A0B0E";
   ctx.fillRect(0, 0, CARD_W, CARD_H);
-  ctx.fillStyle = "#FF3D57";
+  ctx.fillStyle = "#2FD07A";
   ctx.fillRect(0, 0, 14, CARD_H);
   ctx.fillStyle = "#111317";
   ctx.fillRect(60, 60, CARD_W - 120, CARD_H - 150);
@@ -184,7 +185,7 @@ export function drawCard(ctx, hound, avatar) {
   ctx.textBaseline = "alphabetic";
   ctx.fillStyle = "#8FE9FA";
   ctx.font = "700 26px sans-serif";
-  ctx.fillText("LINEHOUND KENNEL", x, 112);
+  ctx.fillText("LINEHOUND", x, 112);
   ctx.fillStyle = "#F6F7FA";
   ctx.font = "800 72px sans-serif";
   ctx.fillText(t.name, x, 196, CARD_W - x - 90);
@@ -202,7 +203,7 @@ export function drawCard(ctx, hound, avatar) {
   ctx.font = "700 40px sans-serif";
   ctx.fillText(t.units, x, 470);
   ctx.fillText(t.streak, x + 420, 470);
-  ctx.fillStyle = "#FFD98A";
+  ctx.fillStyle = "#D6DBE4";
   ctx.font = "800 36px sans-serif";
   ctx.fillText(t.badge, x, 530);
   ctx.fillStyle = "#A3A9B5";

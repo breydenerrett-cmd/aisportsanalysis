@@ -1,6 +1,9 @@
-"""The dog page, made watchable, transparent, showable and coachable (owner, 2026-10-18), run for real under
-node against the page's own HTML: web/hound.html with web/js/hounds-detail.js and its helper modules, and the
-kennel page's "My dogs" filter. Same harness as tests/test_hounds_web_pages.py (tests/hounds_web_harness.mjs).
+"""The model page's rule, coach panel, follow / share / card, run for real under node against the page's own
+HTML: web/hound.html with web/js/hounds-detail.js and its helper modules. Same harness as
+tests/test_hounds_web_pages.py (tests/hounds_web_harness.mjs).
+
+(The old "Today's action", proof-of-timing and kennel "My dogs" tests moved to tests/test_hounds_board_pages.py when
+the pages became the model leaderboard and the model page, 2026-10-19.)
 
 Skipped when node is not installed. Times are made relative to the real clock (the page asks the browser for
 "now"), and the time zone is pinned to UTC so a "7:05 PM" in a test is the same on every machine.
@@ -82,154 +85,19 @@ class DogPageCase(unittest.TestCase):
         return datetime.now(timezone.utc)
 
 
-class TodaysAction(DogPageCase):
-    def test_every_status_has_its_chip_and_a_pick_a_price_and_a_local_time(self):
-        now = self.now()
-        rows = [
-            bet(now, minutes=180, n=1),                                   # not started
-            bet(now, minutes=-60, n=2),                                   # started, not graded
-            bet(now, minutes=-400, n=3),                                  # started long ago, still not graded
-            bet(now, minutes=-300, result="win", n=4),
-            bet(now, minutes=-300, result="loss", n=5),
-            bet(now, minutes=-300, result="push", n=6),
-            bet(now, minutes=120, refused=True, n=7),
-            bet(now, minutes=120, segment="replay", n=8),                 # a rehearsal row never shows
-            dict(bet(now, minutes=120, n=9), date=(now - timedelta(days=3)).date().isoformat(),
-                 start_utc=iso(now - timedelta(days=3))),                 # an old slate
-        ]
-        out = self.page(rows, rulebook(dials_fixture(1)), queries=[
-            q("chips", "[data-hook='today-chip']", "texts"), q("picks", "[data-hook='today-pick-text']", "texts"),
-            q("times", "[data-hook='today-time']", "texts"), q("whys", "[data-hook='today-why']", "texts"),
-            q("empty", "[data-hook='today-empty']", "count"), q("title", "#today-h")])
-        f = out["final"]
-        self.assertEqual(f["title"], "🔴 Today's action")
-        # soonest game first: the long-over one, the older start, the started one, then the future ones
-        self.assertEqual(sorted(f["chips"]), sorted(["PENDING", "LIVE", "GRADING", "WON", "LOST", "PUSH", "PASSED"]))
-        self.assertEqual(len(f["picks"]), 7)
-        self.assertNotIn("Pick 8 at -115", f["picks"])
-        self.assertNotIn("Pick 9 at -115", f["picks"])
-        self.assertIn("Pick 1 at -115", f["picks"])                       # the average price is the headline price
-        by = dict(zip(f["picks"], f["chips"]))
-        self.assertEqual((by["Pick 1 at -115"], by["Pick 2 at -115"], by["Pick 3 at -115"], by["Pick 7 at -115"]),
-                         ("PENDING", "LIVE", "GRADING", "PASSED"))
-        self.assertEqual((by["Pick 4 at -115"], by["Pick 5 at -115"], by["Pick 6 at -115"]), ("WON", "LOST", "PUSH"))
-        self.assertEqual(f["empty"], 0)
-        self.assertIn("Why: Because of reason 1.", f["whys"])
-        start = now + timedelta(minutes=180)
-        hr = start.hour % 12 or 12
-        self.assertIn(f"· {hr}:{start.minute:02d} {'AM' if start.hour < 12 else 'PM'}", f["times"])
-
-    def test_no_start_time_means_pending_never_live(self):
-        now = self.now()
-        out = self.page([bet(now, minutes=-60, start_utc=None, recorded_utc=None)], rulebook(),
-                        queries=[q("chips", "[data-hook='today-chip']", "texts")])
-        self.assertEqual(out["final"]["chips"], ["PENDING"])
-
-    def test_the_empty_state_says_when_this_dog_bets(self):
-        out = self.page([], rulebook(dials_fixture(1)), queries=[q("empty", "[data-hook='today-empty']")])
-        self.assertEqual(out["final"]["empty"],
-                         f"No pick yet today. This dog bets when {TRIGGER}; boards refresh through the day.")
-
-    def test_the_empty_state_still_reads_if_the_rulebook_is_down(self):
-        out = self.page([], None, queries=[q("empty", "[data-hook='today-empty']")])
-        self.assertEqual(out["final"]["empty"],
-                         "No pick yet today. This dog bets when its rule fires on a game; boards refresh through the day.")
-
-    def test_a_put_down_dog_has_no_picks_and_no_timer(self):
-        dead = dict(F.detail("closer", True, 45), status="retired",
-                    retired={"date": "2026-10-20", "cause": "retired: down more than 25 units"})
-        out = self.page(None, rulebook(), routes={"/hounds/closer": [200, dead]},
-                        queries=[q("empty", "[data-hook='today-empty']")])
-        self.assertIn("put down", out["final"]["empty"])
-        self.assertEqual(out["intervals"], [])
-
-    def test_it_refreshes_every_sixty_seconds_while_visible_and_picks_up_new_picks(self):
-        now = self.now()
-        first = [bet(now, minutes=30, n=1)]
-        later = [bet(now, minutes=-5, n=1), bet(now, minutes=200, n=2)]
-        out = self.page(first, rulebook(), routes={"/hounds/closer/bets": [200, bets_page(later)]}, actions=[
-            dict(do="fire_timers", label="tick", capture=[q("chips", "[data-hook='today-chip']", "texts")])],
-            captureInitial=[q("chips", "[data-hook='today-chip']", "texts")])
-        self.assertEqual(out["intervals"][:1], [60000])
-        self.assertEqual(out["captures"]["initial"]["chips"], ["PENDING"])
-        self.assertEqual(out["captures"]["tick"]["chips"], ["LIVE", "PENDING"])
-        self.assertTrue(any(g.startswith("/hounds/closer/bets?page=1") for g in out["gets"]))
-
-    def test_a_hidden_tab_does_not_poll_and_coming_back_refreshes_once(self):
-        now = self.now()
-        out = self.page([bet(now, minutes=30)], rulebook(), actions=[
-            dict(do="visibility", state="hidden"), dict(do="fire_timers"), dict(do="fire_timers")])
-        polls = [g for g in out["gets"] if g.startswith("/hounds/closer/bets")]
-        self.assertEqual(polls, [])
-        back = self.page([bet(now, minutes=30)], rulebook(), actions=[
-            dict(do="visibility", state="hidden"), dict(do="visibility", state="visible")])
-        self.assertEqual(len([g for g in back["gets"] if g.startswith("/hounds/closer/bets")]), 1)
-
-    def test_a_failed_refresh_keeps_the_picks_and_says_so(self):
-        now = self.now()
-        out = self.page([bet(now, minutes=30)], rulebook(), failAfter={"/hounds/closer/bets": 0},
-                        actions=[dict(do="fire_timers")],
-                        queries=[q("chips", "[data-hook='today-chip']", "texts"), q("note", "[data-hook='today-note']")])
-        self.assertEqual(out["final"]["chips"], ["PENDING"])
-        self.assertIn("Couldn't refresh just now", out["final"]["note"])
-
-
-class ProofOfTiming(DogPageCase):
-    def test_a_bet_recorded_before_first_pitch_wears_the_on_the_record_stamp(self):
-        now = self.now()
-        out = self.page([bet(now, minutes=60, recorded_before=90)], rulebook(), queries=[
-            q("stamp", "[data-hook='today-stamp']"), q("kind", "[data-hook='today-stamp']", "attr", attr="class"),
-            q("table_stamp", "[data-hook='bet-stamp']", "texts"), q("table_why", "[data-hook='bet-why']", "texts")])
-        f = out["final"]
-        self.assertRegex(f["stamp"], r"^🔒 On the record before the game \(recorded [A-Z][a-z]{2} \d{1,2}, \d{1,2}:\d{2} [AP]M\)$")
-        self.assertIn("hd-pick__stamp--before", f["kind"])
-        self.assertEqual(f["table_stamp"][0], f["stamp"])
-        self.assertEqual(f["table_why"], ["Because of reason 1."])
-
-    def test_a_bet_written_after_the_start_never_claims_it_was_early(self):
-        now = self.now()
-        out = self.page([bet(now, minutes=-30, recorded_before=-10)], rulebook(),
-                        queries=[q("stamp", "[data-hook='today-stamp']")])
-        self.assertNotIn("before the game", out["final"]["stamp"])
-        self.assertIn("after the game started", out["final"]["stamp"])
-
-    def test_no_write_stamp_means_no_stamp(self):
-        now = self.now()
-        out = self.page([bet(now, minutes=60, recorded_utc=None)], rulebook(),
-                        queries=[q("stamp", "[data-hook='today-stamp']", "count"), q("cell", "[data-hook='bet-stamp']", "texts")])
-        self.assertEqual(out["final"]["stamp"], 0)
-        self.assertEqual(out["final"]["cell"], [""])
-
-    def test_a_rehearsal_row_says_it_was_written_after_the_games(self):
-        now = self.now()
-        out = self.page([bet(now, minutes=60, segment="replay")], rulebook(),
-                        queries=[q("cell", "[data-hook='bet-stamp']", "texts")])
-        self.assertIn("written after the games were played", out["final"]["cell"][0])
-
-    def test_every_bet_is_open_on_the_page_not_hidden_in_the_receipts(self):
-        out = self.page(None, rulebook(), queries=[
-            q("inside", "[data-hook='hound-details'] [data-hook='hound-bets']", "count"),
-            q("outside", "[data-hook='hound-bets-section'] [data-hook='bets-table']", "count"),
-            q("rows", "[data-hook='bets-table'] tbody tr", "count"), q("summary", "[data-hook='hound-details'] summary")])
-        self.assertEqual(out["final"]["inside"], 0)
-        self.assertEqual(out["final"]["outside"], 1)
-        self.assertGreater(out["final"]["rows"], 0)
-        self.assertNotIn("every bet", out["final"]["summary"])
-
-
 class TheRulebook(DogPageCase):
     def test_the_rulebook_is_open_with_the_rule_then_the_dials_in_plain_words(self):
         rb = rulebook(dials_fixture(2))
         out = self.page([], rb, queries=[
             q("title", "#rule-h"), q("rule", "[data-hook='rule-text']"), q("trigger", "[data-hook='rule-trigger']"),
             q("dials", "[data-hook='dials-list'] li", "texts"), q("last", "[data-hook='dials-last-changed']"),
-            q("in_details", "[data-hook='hound-details'] [data-hook='rule-text']", "count")])
+            q("rules", "[data-hook='rule-text']", "count")])
         f = out["final"]
-        self.assertEqual(f["title"], "The rulebook")
-        self.assertEqual(f["in_details"], 0)
-        self.assertEqual(f["trigger"], f"This dog bets when {TRIGGER}.")
+        self.assertEqual(f["title"], "Rule")
+        self.assertEqual(f["rules"], 1)
+        self.assertEqual(f["trigger"], f"This model bets when {TRIGGER}.")
         self.assertEqual(f["dials"], ["Steam needed: 3 points", "Gap over the market needed: 2 points"])
-        self.assertEqual(f["last"], "Last changed: never. It's still on its starting numbers.")
+        self.assertEqual(f["last"], "Last changed: never. It is still on its starting numbers.")
 
     def test_after_a_promotion_it_names_the_version_the_day_and_the_referee(self):
         rb = rulebook(dials_fixture(1), last={"version": 2, "utc": "2026-10-12T15:00:00Z", "by": "the referee"})
@@ -243,7 +111,7 @@ class TheRulebook(DogPageCase):
         out = self.page([], rulebook(None, tunable=False), queries=[
             q("none", "[data-hook='no-dials']"), q("coach_hidden", "[data-hook='hound-coach-section']", "hidden"),
             q("sliders", "[data-hook='coach-range']", "count")])
-        self.assertIn("No dials on this one", out["final"]["none"])
+        self.assertIn("No dials on this model", out["final"]["none"])
         self.assertTrue(out["final"]["coach_hidden"])
         self.assertEqual(out["final"]["sliders"], 0)
 
@@ -251,7 +119,7 @@ class TheRulebook(DogPageCase):
         out = self.page([], None, queries=[q("rule", "[data-hook='rule-text']"),
                                            q("down", "[data-hook='dials-unavailable']")])
         self.assertTrue(out["final"]["rule"])
-        self.assertIn("dials didn't load", out["final"]["down"])
+        self.assertIn("dials did not load", out["final"]["down"])
 
 
 class CoachThisDog(DogPageCase):
@@ -270,14 +138,14 @@ class CoachThisDog(DogPageCase):
             q("tips", "[data-hook='tips-count']")])
         f = out["final"]
         self.assertFalse(f["shown"])
-        self.assertEqual(f["title"], "🧠 Coach this dog")
+        self.assertEqual(f["title"], "Coach this model")
         self.assertEqual(f["steps"], ["0.005", "0.005", "1"])
         self.assertEqual(f["mins"], ["0.02", "0.015", "3"])
         self.assertEqual(f["maxes"], ["0.05", "0.04", "8"])
         self.assertEqual(f["values"], ["0.03", "0.02", "5"])
         self.assertEqual(f["now"], ["this is where it is now"] * 3)
         self.assertEqual(f["shown_values"], ["3 points", "2 points", "5 books"])
-        self.assertEqual(f["promise"], "Tips are graded like the AI coach's. Only the referee can change a dog.")
+        self.assertEqual(f["promise"], "Tips are graded like the AI coach's. Only the referee can change a model.")
         self.assertEqual(f["tips"], "Fan tips: 0. Grades coming from the coach report card.")
 
     def test_steppers_walk_the_grid_and_stop_at_the_bounds(self):
@@ -355,13 +223,13 @@ class FollowShareAndCard(DogPageCase):
             dict(do="click", sel="[data-hook='follow-btn']", label="on", capture=[q("btn", "[data-hook='follow-btn']"),
                                                                                   q("status", "[data-hook='action-status']")])])
         self.assertEqual(json.loads(out["storedAfter"][FOLLOW_KEY]), ["closer"])
-        self.assertEqual(out["captures"]["on"]["btn"], "⭐ Following")
-        self.assertIn("My dogs", out["captures"]["on"]["status"])
+        self.assertEqual(out["captures"]["on"]["btn"], "Following")
+        self.assertIn("My models", out["captures"]["on"]["status"])
         again = self.page([], rulebook(), stored={FOLLOW_KEY: json.dumps(["closer", "rusty"])},
                           queries=[q("btn", "[data-hook='follow-btn']"),
                                    q("pressed", "[data-hook='follow-btn']", "attr", attr="aria-pressed")],
                           actions=[dict(do="click", sel="[data-hook='follow-btn']", label="off")])
-        self.assertEqual(again["final"]["btn"], "⭐ Follow")                # the click unfollowed it
+        self.assertEqual(again["final"]["btn"], "Follow")                # the click unfollowed it
         self.assertEqual(json.loads(again["storedAfter"][FOLLOW_KEY]), ["rusty"])
 
     def test_storage_that_throws_never_breaks_the_page_and_the_star_still_works_for_the_visit(self):
@@ -371,19 +239,19 @@ class FollowShareAndCard(DogPageCase):
                      capture=[q("btn", "[data-hook='follow-btn']"), q("status", "[data-hook='action-status']")])],
                 queries=[q("name", "[data-hook='hound-name']")])
             self.assertEqual(out["final"]["name"], "Closer", mode)
-            self.assertEqual(out["captures"]["on"]["btn"], "⭐ Following", mode)
-            self.assertIn("won't remember", out["captures"]["on"]["status"], mode)
+            self.assertEqual(out["captures"]["on"]["btn"], "Following", mode)
+            self.assertIn("will not remember", out["captures"]["on"]["status"], mode)
 
     def test_junk_in_storage_is_ignored(self):
         for junk in ("{not json", json.dumps({"a": 1}), json.dumps([1, None, "closer"])):
             out = self.page([], rulebook(), stored={FOLLOW_KEY: junk}, queries=[q("btn", "[data-hook='follow-btn']")])
-            self.assertEqual(out["final"]["btn"], "⭐ Following" if "closer" in junk else "⭐ Follow", junk)
+            self.assertEqual(out["final"]["btn"], "Following" if "closer" in junk else "Follow", junk)
 
     def test_share_uses_the_native_sheet_with_the_slash_d_link(self):
         out = self.page([], rulebook(), share=True, actions=[dict(do="click", sel="[data-hook='share-btn']")])
         (shared,) = out["shares"]
         self.assertEqual(shared["url"], "https://linehound.test/d/closer")
-        self.assertEqual(shared["title"], "Closer | LineHound Kennel")
+        self.assertEqual(shared["title"], "Closer | LineHound")
         self.assertIn("Paper bets only, not advice, 21+", shared["text"])
         self.assertEqual(out["clipboard"], [])
 
@@ -407,7 +275,7 @@ class FollowShareAndCard(DogPageCase):
                         queries=[q("toast", "[data-hook='toast']")])
         self.assertIn("Couldn't copy. The link is https://linehound.test/d/closer", out["final"]["toast"])
 
-    def test_download_card_draws_a_1200_by_630_png_with_the_dog_and_the_hard_lines(self):
+    def test_download_card_draws_a_1200_by_630_png_with_the_model_and_the_hard_lines(self):
         out = self.page([], rulebook(), actions=[dict(do="click", sel="[data-hook='card-btn']", wait=200)])
         (canvas,) = out["canvases"]
         self.assertEqual((canvas["w"], canvas["h"]), (1200, 630))
@@ -418,61 +286,15 @@ class FollowShareAndCard(DogPageCase):
         self.assertRegex(text, r"\d+-\d+")                                 # the season W-L
         self.assertRegex(text, r"[+-]\d+\.\d\du paper")                    # paper units
         self.assertRegex(text, r"[WL]\d")                                  # the streak
-        self.assertRegex(text, r"(SHARP|COIN FLIP|FEEDING THE BOOK|ROOKIE|UNRATED)")   # the badge
-        self.assertEqual(canvas["images"], 1)                              # the avatar
+        self.assertRegex(text, r"(Beating the close|Market|Paying the vig|Not enough bets|Not graded vs close)")   # the status
+        self.assertEqual(canvas["images"], 1)                              # the initials badge
         self.assertEqual(out["downloads"], [{"href": "blob:fake", "download": "closer-linehound.png"}])
 
     def test_the_words_these_modules_put_on_the_page_use_no_claim_words(self):
-        for name in ("hounds-watch.js", "hounds-rulebook.js", "hounds-share.js", "hounds-follow.js"):
+        for name in ("hounds-board.js", "hounds-tickets.js", "hounds-rulebook.js", "hounds-share.js", "hounds-follow.js"):
             text = (WEB / "js" / name).read_text(encoding="utf-8")
             pairs = re.findall(r'"([^"\n]{3,})"|`([^`\n]{3,})`', text)
             literals = " ".join(x or y for x, y in pairs)
             self.assertGreater(len(pairs), 5, name)
             self.assertIsNone(re.search(r"(?i)\block\b|guarantee|can'?t lose|sure thing|free money|\bedge\b|\bprofit",
                                         literals), name)
-
-
-class TheKennelPage(unittest.TestCase):
-    def kennel(self, stored=None, **kw):
-        r = {k: list(v) for k, v in F.routes(True, 45).items()}
-        r["/hounds/series"] = [200, F.series([h["id"] for h in F.hounds(True)], True)]
-        return run_page("hounds", routes=r, stored=stored or {}, tz="UTC", **kw)
-
-    def test_my_dogs_chip_counts_followed_dogs_and_filters_to_them(self):
-        stored = {FOLLOW_KEY: json.dumps(["rusty", "moon-dog", "ghost"])}
-        out = self.kennel(stored, actions=[
-            dict(do="click", sel="[data-hook='hounds-filter'] [data-filter='mine']", label="mine",
-                 capture=[q("ids", "[data-hook='hounds-list'] .hd-row", "attrs", attr="data-hound"),
-                          q("pressed", "[data-hook='hounds-filter'] [data-filter='mine']", "attr", attr="aria-pressed")])],
-            queries=[q("filters", "[data-hook='hounds-filter'] button", "texts")])
-        self.assertEqual(out["final"]["filters"][:2], ["All (13)", "My dogs ⭐ (2)"])      # "ghost" is not a dog
-        self.assertEqual(sorted(out["captures"]["mine"]["ids"]), ["moon-dog", "rusty"])
-        self.assertEqual(out["captures"]["mine"]["pressed"], "true")
-
-    def test_followed_dogs_are_pinned_on_top_and_keep_their_true_rank(self):
-        plain = self.kennel(queries=[q("ids", "[data-hook='hounds-list'] .hd-row", "attrs", attr="data-hound"),
-                                     q("ranks", "[data-hook='hounds-list'] .hd-row [data-hook='rank']", "texts")])
-        order = plain["final"]["ids"]
-        pick = order[-1]
-        out = self.kennel({FOLLOW_KEY: json.dumps([pick])}, queries=[
-            q("ids", "[data-hook='hounds-list'] .hd-row", "attrs", attr="data-hound"),
-            q("ranks", "[data-hook='hounds-list'] .hd-row [data-hook='rank']", "texts"),
-            q("star", "[data-hook='hounds-list'] .hd-row [data-hook='row-star']", "count")])
-        self.assertEqual(out["final"]["ids"][0], pick)
-        self.assertEqual(out["final"]["ids"][1:], order[:-1])
-        self.assertEqual(out["final"]["ranks"][0], plain["final"]["ranks"][-1])    # it keeps the rank it earned
-        self.assertEqual(out["final"]["star"], 1)
-
-    def test_nobody_followed_says_how_to_follow(self):
-        out = self.kennel(actions=[dict(do="click", sel="[data-hook='hounds-filter'] [data-filter='mine']")],
-                          queries=[q("empty", "[data-hook='board-empty']")])
-        self.assertIn("You aren't following any dogs yet", out["final"]["empty"])
-
-    def test_storage_that_throws_leaves_the_kennel_working(self):
-        for mode in ("methods", "accessor"):
-            out = self.kennel(storageThrows=mode, queries=[q("n", "[data-hook='hounds-list'] .hd-row", "count")])
-            self.assertGreater(out["final"]["n"], 5, mode)
-
-
-if __name__ == "__main__":
-    unittest.main()

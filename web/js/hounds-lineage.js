@@ -1,5 +1,5 @@
 /**
- * The "Versions and challengers" section of web/hound.html.
+ * The "Versions" section of web/hound.html.
  *
  * Reads GET /hounds/{id}/lineage (src/hounds/learning/views.py: lineage_view):
  *   {versions: [{id, name, version_no, current, status, retired, record, clv, verdict, rule_text}],
@@ -13,16 +13,17 @@
  * page shows what it changed, the reason the coach gave (quoted, never acted on), and how its paired
  * difference against the champion stands so far. Nothing here can promote anything: the referee does,
  * by a rule fixed in advance, and the page says so. A hound with one version and no challengers says
- * exactly that. The section loads on its own and never takes the hound page down.
+ * exactly that. The section loads on its own and never takes the model page down.
  */
 
 import { apiGet } from "./api.js";
-import { h, clearNode, signed, isNum, fmtRecord, fmtWhen, houndHref, verdictLabel, verdictTone, verdictGlyph,
+import { h, clearNode, signed, isNum, fmtRecord, fmtWhen, houndHref,
   describeError, isWarming, NOT_REPORTED } from "./hounds-core.js";
-import { badgeForLabel, friendlyLesson } from "./hounds-voice.js";
+import { statusOf } from "./hounds-board.js";
+import { friendlyLesson } from "./hounds-voice.js";
 
-export const NO_LINEAGE_TEXT = "This dog has one version and no rookies trying out.";
-export const REFEREE_NOTE = "A rookie is only a suggestion. It makes the team only if its prices beat the starter's against the closing line by a margin fixed in advance, after at least 100 paired games, and never because of what anyone wrote about it.";
+export const NO_LINEAGE_TEXT = "This model has one version and no challengers testing.";
+export const REFEREE_NOTE = "A challenger is only a suggestion. It replaces the current version only if its prices beat the current version's against the closing line by a margin fixed in advance, after at least 100 paired games, and never because of what anyone wrote about it.";
 
 const q = (hook) => document.querySelector(`[data-hook='${hook}']`);
 
@@ -40,21 +41,27 @@ export function lookText(c) {
   }
   const bounds = isNum(lk.lower) && isNum(lk.upper) ? ` (somewhere between ${signed(lk.lower, 2)} and ${signed(lk.upper, 2)})` : "";
   const mean = isNum(lk.mean) ? `${signed(lk.mean, 2)} points` : NOT_REPORTED;
-  const flag = lk.harm ? " It is doing worse than the starter." : lk.eligible ? " It has cleared the first bar; the monthly fluke check comes next." : "";
-  return `Look ${lk.look_no}, after ${lk.n} paired games: its prices beat the starter's by ${mean} on average${bounds}.${flag}`;
+  const flag = lk.harm ? " It is doing worse than the current version." : lk.eligible ? " It has cleared the first bar; the monthly fluke check comes next." : "";
+  return `Look ${lk.look_no}, after ${lk.n} paired games: its prices beat the current version's by ${mean} on average${bounds}.${flag}`;
+}
+
+/** The code-written lesson, in plain words and this page's vocabulary (current version, challenger, promoted). */
+export function proLesson(text) {
+  return friendlyLesson(text)
+    .replace(/made the team/g, "was promoted").replace(/was cut:/g, "was retired:")
+    .replace(/the starter's/g, "the current version's").replace(/the starter\b/g, "the current version")
+    .replace(/its tryout/g, "its test").replace(/camp's fluke check/g, "the false-positive check");
 }
 
 function versionItem(v, currentId) {
-  const label = verdictLabel(v);
-  const tone = verdictTone(label);
-  const status = v.current ? "Current starter" : (v.retired && v.retired.cause) ? `Cut: ${v.retired.cause}` : (v.status || "");
+  const st = statusOf(v);
+  const status = v.current ? "Current version" : (v.retired && v.retired.cause) ? `Retired: ${v.retired.cause}` : (v.status || "");
   const rec = v.record && isNum(v.record.bets) && v.record.bets > 0 ? fmtRecord(v.record) : "no live bets yet";
   return h("li", { class: "hd-version", "data-version": String(v.version_no), "data-current": v.current ? "true" : "false" }, [
     h("p", { class: "hd-version__head" }, [
       h("strong", { text: `Version ${v.version_no}` }), " ",
       h("span", { class: "hd-fine", text: status }), " ",
-      label ? h("span", { class: `hd-chip hd-chip--${tone}`, "data-badge": badgeForLabel(label).key },
-        [h("span", { "aria-hidden": "true", text: verdictGlyph(tone) + " " }), badgeForLabel(label).text]) : null,
+      v.verdict ? h("span", { class: `hd-st hd-st--${st.tone}`, "data-status": st.key, title: st.title, text: st.text }) : null,
     ]),
     h("p", { class: "hd-fine", text: `Its own record: ${rec}.` }),
     v.id && v.id !== currentId ? h("a", { href: houndHref(v.id), "data-hook": "version-link", text: "Open this version" }) : null,
@@ -63,8 +70,8 @@ function versionItem(v, currentId) {
 
 function challengerItem(c) {
   return h("li", { class: "hd-challenger", "data-challenger": c.id, "data-status": c.status || "" }, [
-    h("p", { class: "hd-challenger__head" }, [h("strong", { text: `Rookie ${c.id}` }), " ",
-      h("span", { class: "hd-fine", text: `sent to tryouts ${fmtWhen(c.created_utc) || ""}` })]),
+    h("p", { class: "hd-challenger__head" }, [h("strong", { text: `Challenger ${c.id}` }), " ",
+      h("span", { class: "hd-fine", text: `started ${fmtWhen(c.created_utc) || ""}` })]),
     h("p", { class: "hd-challenger__diff", text: `What it changes: ${diffText(c.spec_diff)}` }),
     c.rule_text ? h("p", { class: "hd-fine", text: `Its rule: ${c.rule_text}` }) : null,
     h("p", { class: "hd-fine", text: `The coach's pitch (quoted): "${c.hypothesis || NOT_REPORTED}"` }),
@@ -75,10 +82,10 @@ function challengerItem(c) {
 function failedItem(c, lessons) {
   const lesson = (lessons || []).find((l) => l.lesson_id === `l-${c.id}`);
   return h("li", { class: "hd-challenger hd-challenger--failed", "data-challenger": c.id, "data-status": c.status || "" }, [
-    h("p", { class: "hd-challenger__head" }, [h("strong", { text: `Rookie ${c.id}` }), " ",
+    h("p", { class: "hd-challenger__head" }, [h("strong", { text: `Challenger ${c.id}` }), " ",
       h("span", { class: "hd-fine", text: `${c.status || ""}${c.outcome_reason ? `: ${c.outcome_reason}` : ""}` })]),
     h("p", { class: "hd-challenger__diff", text: `It changed: ${diffText(c.spec_diff)}` }),
-    h("p", { class: "hd-challenger__look", text: lesson ? friendlyLesson(lesson.lesson) : lookText(c) }),
+    h("p", { class: "hd-challenger__look", text: lesson ? proLesson(lesson.lesson) : lookText(c) }),
   ]);
 }
 
@@ -92,7 +99,7 @@ export function renderLineage(payload, currentId) {
   const promoted = payload.promoted || [];
   if (payload.paused) {
     box.appendChild(h("p", { class: "hd-state hd-state--down", "data-hook": "lineage-paused",
-      text: "Training camp has shut itself down, so no rookie is being accepted or promoted. See Training camp." }));
+      text: "The learning loop has shut itself down, so no challenger is being accepted or promoted. See Learning." }));
   }
   if (versions.length <= 1 && !live.length && !failed.length && !undecided.length && !promoted.length) {
     box.appendChild(h("p", { class: "hd-muted", "data-hook": "lineage-empty", text: NO_LINEAGE_TEXT }));
@@ -102,17 +109,17 @@ export function renderLineage(payload, currentId) {
       box.appendChild(h("ol", { class: "hd-versions", "data-hook": "versions-list" }, versions.map((v) => versionItem(v, currentId))));
     }
     if (live.length) {
-      box.appendChild(h("h3", { class: "hd-h3", text: "Trying out now" }));
+      box.appendChild(h("h3", { class: "hd-h3", text: "Testing now" }));
       box.appendChild(h("ul", { class: "hd-challengers", "data-hook": "live-challengers" }, live.map(challengerItem)));
     }
     if (failed.length || undecided.length) {
-      box.appendChild(h("h3", { class: "hd-h3", text: "Tried out and got cut" }));
+      box.appendChild(h("h3", { class: "hd-h3", text: "Tested and not promoted" }));
       box.appendChild(h("ul", { class: "hd-challengers", "data-hook": "failed-challengers" },
         [...failed, ...undecided].map((c) => failedItem(c, payload.lessons))));
     }
   }
   box.appendChild(h("p", { class: "hd-fine", "data-hook": "referee-note", text: REFEREE_NOTE }));
-  box.appendChild(h("p", { class: "hd-fine" }, [h("a", { href: "learning.html", text: "Training camp: do the rookies actually help?" })]));
+  box.appendChild(h("p", { class: "hd-fine" }, [h("a", { href: "learning.html", text: "Learning: do challengers actually help?" })]));
 }
 
 export async function bootLineage(hound) {

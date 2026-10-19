@@ -111,7 +111,7 @@ class StaticFacts(unittest.TestCase):
     def test_the_race_and_the_hound_page_link_to_it(self):
         for name in ("hounds.html", "hound.html"):
             html = (WEB / name).read_text(encoding="utf-8")
-            self.assertRegex(html, r'<a href="learning.html">Training camp</a>', name)
+            self.assertRegex(html, r'<a href="learning.html">Learning</a>', name)
 
     def test_the_coach_report_card_section_is_the_first_panel_and_wears_the_voice(self):
         html = self.HTML
@@ -125,8 +125,8 @@ class StaticFacts(unittest.TestCase):
     def test_the_hound_page_has_the_versions_and_challengers_section(self):
         html = (WEB / "hound.html").read_text(encoding="utf-8")
         self.assertIn('data-hook="hound-lineage-section"', html)
-        self.assertIn("Versions and rookies", html)
-        self.assertIn("Dogs never get edited", html)
+        self.assertIn("Versions", html)
+        self.assertIn("A model is never edited", html)
 
 
 @unittest.skipUnless(HAS_NODE, "node not installed")
@@ -411,10 +411,10 @@ class ThePureText(unittest.TestCase):
                       f"V.lookText({json.dumps({'latest_look': {'look_no': 2, 'n': 150, 'mean': -1.0, 'harm': True}})})]));")
         self.assertEqual(out[0], "GAP: 0.02 -> 0.03; markets: [moneyline, spread] -> [moneyline]")
         self.assertEqual(out[1], "no change recorded")
-        self.assertIn("Look 1, after 100 paired games: its prices beat the starter's by +1.20 points on average (somewhere between +0.30 and +2.10)", out[2])
+        self.assertIn("Look 1, after 100 paired games: its prices beat the current version's by +1.20 points on average (somewhere between +0.30 and +2.10)", out[2])
         self.assertIn("cleared the first bar", out[2])
         self.assertIn("Waiting for its first look, at 100 paired games", out[3])
-        self.assertIn("doing worse than the starter", out[4])
+        self.assertIn("doing worse than the current version", out[4])
 
 
 @unittest.skipUnless(HAS_NODE, "node not installed")
@@ -447,7 +447,7 @@ class TheHoundPagesVersionsSection(unittest.TestCase):
             q("hidden", "[data-hook='hound-lineage-section']", "hidden"), q("empty", "[data-hook='lineage-empty']"),
             q("note", "[data-hook='referee-note']")])
         self.assertFalse(out["final"]["hidden"])
-        self.assertEqual(out["final"]["empty"], "This dog has one version and no rookies trying out.")
+        self.assertEqual(out["final"]["empty"], "This model has one version and no challengers testing.")
         self.assertIn("never because of what anyone wrote about it", out["final"]["note"])
         self.assertIn("/hounds/closer/lineage", out["gets"])
 
@@ -460,7 +460,7 @@ class TheHoundPagesVersionsSection(unittest.TestCase):
             q("nolink", "[data-version='2'] [data-hook='version-link']", "count")])
         self.assertEqual(out["final"]["n"], 2)
         self.assertEqual(out["final"]["cur"], "true")
-        self.assertIn("Cut: superseded by version 2", out["final"]["old"])
+        self.assertIn("Retired: superseded by version 2", out["final"]["old"])
         self.assertIn("Its own record: 12 bets (6-6)", out["final"]["old"])
         self.assertIn("closer%40v1", out["final"]["link"])
         self.assertEqual(out["final"]["nolink"], 0)
@@ -471,7 +471,7 @@ class TheHoundPagesVersionsSection(unittest.TestCase):
                  "latest_look": {"look_no": 1, "n": 100, "mean": 0.8, "lower": -0.2, "upper": 1.8, "eligible": False}}]
         out = self.page(self.lineage([self.version(1, True)], live=live), queries=[
             q("c", "[data-hook='live-challengers'] li"), q("diff", ".hd-challenger__diff"), q("look", ".hd-challenger__look")])
-        self.assertIn("Rookie c-abc", out["final"]["c"])
+        self.assertIn("Challenger c-abc", out["final"]["c"])
         self.assertEqual(out["final"]["diff"], "What it changes: GAP: 0.02 -> 0.03")
         self.assertIn("The coach's pitch (quoted): \"A wider bar keeps only the clearest disagreements.\"", out["final"]["c"])
         self.assertIn("Look 1, after 100 paired games", out["final"]["look"])
@@ -483,14 +483,14 @@ class TheHoundPagesVersionsSection(unittest.TestCase):
         rows = [{"lesson_id": "l-c-old", "lesson": "On professor_paws, GAP 0.02 -> 0.04 was retired: it did worse than the champion (100 paired slots, mean CLV difference -1.20 pts)."}]
         out = self.page(self.lineage([self.version(1, True)], failed=failed, lesson_rows=rows), queries=[
             q("f", "[data-hook='failed-challengers'] li")])
-        self.assertIn("Rookie c-old retired: harm", out["final"]["f"])
+        self.assertIn("Challenger c-old retired: harm", out["final"]["f"])
         # the code-written lesson, said in camp's words: cut, the starter, plain numbers
-        self.assertIn("was cut: it did worse than the starter", out["final"]["f"])
-        self.assertIn("100 paired games, its prices beat the starter's by -1.20 pts on average", out["final"]["f"])
+        self.assertIn("was retired: it did worse than the current version", out["final"]["f"])
+        self.assertIn("100 paired games, its prices beat the current version's by -1.20 pts on average", out["final"]["f"])
 
     def test_a_paused_loop_is_said_on_the_hound_page(self):
         out = self.page(self.lineage([self.version(1, True)], paused=True), queries=[q("p", "[data-hook='lineage-paused']")])
-        self.assertIn("Training camp has shut itself down", out["final"]["p"])
+        self.assertIn("The learning loop has shut itself down", out["final"]["p"])
 
     def test_a_missing_lineage_endpoint_does_not_take_the_hound_page_down(self):
         out = self.page(None, queries=[q("s", "[data-hook='hound-lineage'] [data-hook='section-state']", "attr", attr="data-kind"),

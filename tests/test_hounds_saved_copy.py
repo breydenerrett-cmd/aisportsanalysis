@@ -340,22 +340,19 @@ class ThePageSaysWhenItShowsASavedCopy(unittest.TestCase):
         r["/hounds"] = self.stale(WF.leaderboard())
         r["/hounds/stream"] = self.stale(WF.stream())
         r["/hounds/graveyard"] = self.stale(WF.graveyard())
-        queries = [dict(name="basis", sel="[data-hook='hounds-basis']", mode="text"),
-                   dict(name="notes", sel="[data-hook='stale-note']", mode="count"),
-                   dict(name="rows", sel="[data-hook='hounds-list'] .hd-row", mode="count"),
+        queries = [dict(name="note", sel="[data-hook='updating-note']", mode="count"),
+                   dict(name="asof", sel="[data-hook='data-as-of']", mode="text"),
+                   dict(name="rows", sel="[data-hook='hounds-list'] .hd-tr", mode="count"),
                    dict(name="warming", sel="[data-kind='warming']", mode="count")]
         out = run_page("hounds", routes=r, switchAfter=fresh, captureInitial=queries,
                        actions=[dict(do="fire_timers", wait=120)], queries=queries)
         first = out["captures"]["initial"]
-        self.assertIn("Updated Oct 18 05:07 UTC", first["basis"])
-        self.assertNotIn("As of", first["basis"])
-        self.assertEqual(first["notes"], 2)                       # the stream and the graveyard say so too
-        self.assertGreater(first["rows"], 0)                      # the saved race is shown, not a spinner
+        self.assertEqual(first["note"], 1)                        # a quiet amber "Updating" note while it is a saved copy
+        self.assertTrue(first["asof"].startswith("Data as of"))
+        self.assertGreater(first["rows"], 0)                      # the saved leaderboard is shown, not a spinner
         self.assertEqual(first["warming"], 0)
         final = out["final"]
-        self.assertNotIn("Updated", final["basis"])               # the real answer replaced it
-        self.assertIn("As of", final["basis"])
-        self.assertEqual(final["notes"], 0)
+        self.assertEqual(final["note"], 0)                        # the real answer replaced it
         self.assertEqual(final["rows"], first["rows"])
 
 

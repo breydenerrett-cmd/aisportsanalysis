@@ -174,7 +174,7 @@ class TheProvenEssayIsCutToOneLine(unittest.TestCase):
         self.assertNotIn("What is proven and what is not", _visible(HTML))
 
     def test_what_replaces_it_is_one_human_line_and_one_link(self):
-        line = re.search(r'<p class="kennel__straight" data-hook="kennel-straight">(.*?)</p>', HTML, re.S).group(1)
+        line = re.search(r'<p class="lbhero__straight" data-hook="kennel-straight">(.*?)</p>', HTML, re.S).group(1)
         self.assertIn("didn't beat the market", line)
         self.assertEqual(len(re.findall(r"<a\b", line)), 1)
         self.assertIn('href="why-we-paused.html"', line)
@@ -209,18 +209,22 @@ class TheSampleBlockIsHiddenUntilItHasSomethingToShow(unittest.TestCase):
 
 
 class TheCopyIsPlainAndCautious(unittest.TestCase):
-    NEW_HTML_BLOCKS = ("what-you-get", "last-card", "kennel-hero")
+    NEW_HTML_BLOCKS = ("what-you-get", "last-card", "lb-hero")
 
     def test_no_banned_word_in_the_new_html_blocks(self):
         for hook in self.NEW_HTML_BLOCKS:
             text = _visible(_section(hook))
+            # the owner's own subline (2026-10-19) says "Follow the ones that are winning." It describes the current
+            # standing of models on a public board, and it is the one use of the word the owner specified; every other
+            # banned word, and "winning" anywhere else, still fails.
+            text = text.replace("Follow the ones that are winning.", "")
             for pattern, label in BANNED:
                 self.assertIsNone(re.search(pattern, text, re.I), f"{label!r} in {hook}: {text[:80]!r}")
 
     def test_no_banned_word_in_the_hero_sub_line_or_the_pricing_list(self):
         claim = re.search(r'<p class="hero__claim-body">(.*?)</p>', HTML, re.S).group(1)
         includes = re.search(r'<li data-hook="pricing-includes">(.*?)</li>', HTML, re.S).group(1)
-        title = re.search(r'<h1 class="kennel__title"[^>]*>(.*?)</h1>', HTML, re.S).group(1)
+        title = re.search(r'<h1 class="lbhero__title"[^>]*>(.*?)</h1>', HTML, re.S).group(1)
         for text in (claim, includes, title):
             for pattern, label in BANNED:
                 self.assertIsNone(re.search(pattern, text, re.I), f"{label!r} in {text!r}")

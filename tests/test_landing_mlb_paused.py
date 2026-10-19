@@ -58,9 +58,9 @@ class TheStaticPageNoLongerSellsPicks(unittest.TestCase):
             self.assertNotRegex(text.lower(), r"tonight|frozen before|posted before the game|"
                                 r"every pick published", label)
             self.assertNotRegex(text.lower(), r"bet[\s-]*check", label)
-        # owner voice pass, 2026-10-18: the page sells the kennel first; the brief is the second section
-        self.assertIn("paper betting", title.lower())
-        self.assertIn("paper betting", og_title.lower())
+        # professional pass, 2026-10-19: the page sells the models first; the brief is the second section
+        self.assertIn("ai betting models", title.lower())
+        self.assertIn("ai betting models", og_title.lower())
         self.assertIn("AI desk", desc)
         self.assertIn("paused", desc)
         self.assertIn("paused", og_desc)
@@ -77,7 +77,7 @@ class TheStaticPageNoLongerSellsPicks(unittest.TestCase):
 
     def test_the_first_screen_says_what_is_live(self):
         text = _visible(_first_screen())
-        self.assertIn("Paper betting bots fighting it out every day.", text)
+        self.assertIn("AI betting models, tracked in public.", text)
         self.assertIn("Our AI desk reads every game.", text)           # the brief, now the second section
         self.assertIn("take or pass", text)
         self.assertIn("strongest case against any bet it takes", text)
@@ -92,7 +92,7 @@ class TheStaticPageNoLongerSellsPicks(unittest.TestCase):
 
     def test_the_pause_is_one_human_line_with_the_reason_and_a_link_on_the_first_screen(self):
         # owner voice pass, 2026-10-18: the long pause paragraph is one line and a link to the full story
-        note = re.search(r'<p class="kennel__straight" data-hook="kennel-straight">(.*?)</p>', MARKUP, re.S)
+        note = re.search(r'<p class="lbhero__straight" data-hook="kennel-straight">(.*?)</p>', MARKUP, re.S)
         self.assertIsNotNone(note, "no pause line on the first screen")
         text = _visible(note.group(1))
         self.assertIn("We stopped publishing MLB value picks on Oct 16, 2026 because they didn't beat the market.", text)
