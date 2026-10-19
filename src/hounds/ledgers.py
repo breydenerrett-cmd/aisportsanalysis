@@ -73,6 +73,10 @@ class Bet:
     date: str = ""                  # the slate / decision day (UTC)
     decision_utc: Optional[str] = None
     start_utc: Optional[str] = None
+    # When the row was written (a pack row's ``written_utc``, a user row's ``recorded_utc``, an engine
+    # decision's ``decision_utc``, a card entry's ``locked_at``). NOT ``lock_utc``, which is the deadline a
+    # row must beat, not proof that it did. None when the source carried no write stamp.
+    recorded_utc: Optional[str] = None
     bet_id: str = ""
     event_id: Optional[str] = None
     sport: str = "mlb"
@@ -378,6 +382,7 @@ def engine_bets(src: Sources, system_to_hound: dict) -> tuple:
         bet = Bet(
             hound_id=system_to_hound[sid], segment="forward",
             date=_day(w.get("date")), decision_utc=w.get("decision_utc"),
+            recorded_utc=w.get("decision_utc"),
             bet_id=str(bet_id), event_id=w.get("event_id"), sport="mlb",
             market_key=w.get("market_key") or "", side=w.get("side"),
             line=w.get("line"), price=_int_or_none(w.get("price_american")),
@@ -452,7 +457,7 @@ def card_bets(src: Sources, hound_id: str) -> list:
                                                entry.get("home_team")) if x)
             out.append(Bet(
                 hound_id=hound_id, segment="forward", date=date,
-                decision_utc=entry.get("locked_at"),
+                decision_utc=entry.get("locked_at"), recorded_utc=entry.get("locked_at"),
                 start_utc=entry.get("first_pitch_utc"),
                 bet_id=f"card:{date}:{len(out)}", sport="mlb",
                 market_key=str(market), side=str(side) if side else None,
@@ -569,6 +574,10 @@ def pack_rows(rows: Iterable) -> tuple:
             bet.book_count = _int_or_none(count)
         if row.get("lock_utc"):
             bet.decision_utc = row["lock_utc"]
+        # the write stamp, under its two ledger names (pack: ``written_utc``; user engine: ``recorded_utc``)
+        # FIRST WRITE WINS: the graded row for the same bet is written days later and carries its own stamp.
+        if bet.recorded_utc is None and (row.get("written_utc") or row.get("recorded_utc")):
+            bet.recorded_utc = row.get("written_utc") or row.get("recorded_utc")
         if row.get("start_utc") or row.get("commence_time"):
             bet.start_utc = row.get("start_utc") or row.get("commence_time")
         if row.get("reason"):
