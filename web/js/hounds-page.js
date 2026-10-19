@@ -41,7 +41,7 @@ import { wlText, unitsOf, causeText } from "./hounds-voice.js";
 import {
   COLUMNS, NA, betsOf, roiOf, fmtRoi, fmtUnitsPlain, avgPriceOf, clvOf, last10Of, openBetsOf, recordText, streakText,
   statusOf, typeText, sportLabel, sportsOf, marketsText, presentSports, filterBySport, sortHounds, splitRanked,
-  settledOf, onlyTickets, freshness,
+  settledOf, onlyTickets, freshness, inQualifyingRound, qualifyingRows, progressText,
 } from "./hounds-board.js";
 import {
   ALL_SEASON, seasonOptions, chooseSeason, saveSeason, seasonParam, seasonLine, minRanked,
@@ -232,6 +232,14 @@ function statusCell(hound) {
   ]);
 }
 
+function progressPill(hound) {
+  const min = minRanked(state.seasonMeta);
+  const st = statusOf(hound);
+  return h("span", { class: "hd-statuswrap" }, [
+    h("span", { class: "hd-pill", "data-hook": "progress", "data-settled": String(settledOf(hound)),
+      title: `Needs ${min} settled bets to be ranked. Referee status, all-time: ${st.text}.`, text: progressText(hound, min) })]);
+}
+
 function modelCell(hound, rank, open) {
   const mine = followedIds().has(String(hound.id));
   const sports = sportsOf(hound).map(sportLabel).join(", ");
@@ -249,7 +257,11 @@ function modelCell(hound, rank, open) {
   ])]);
 }
 
-function tableRow(hound, rank) {
+/**
+ * One table row. `qual` (the qualifying round) numbers nothing, greys the ROI with a "small sample" tooltip and
+ * puts a progress pill ("3/10 bets") in the Status column in place of the referee's chip.
+ */
+function tableRow(hound, rank, qual) {
   const units = unitsOf(hound);
   const roi = roiOf(hound);
   const bets = betsOf(hound);
@@ -259,19 +271,21 @@ function tableRow(hound, rank) {
   const streak = streakText(hound);
   const tr = h("tr", { class: "hd-tr", "data-hound": hound.id, "data-kind": hound.kind || "", "data-category": categoryOf(hound),
     "data-open": open ? "true" : "false" }, [
-    h("td", { class: "hd-col-rank hd-num", text: String(rank) }),
+    h("td", { class: "hd-col-rank hd-num", text: qual ? "-" : String(rank) }),
     modelCell(hound, rank, open),
     h("td", { class: "hd-col-type" }, [h("span", { class: "hd-typechip", "data-category": categoryOf(hound), text: typeText(hound) })]),
     h("td", { class: "hd-col-record hd-num", "data-hook": "row-record" }, [
       h("strong", { text: recordText(hound) }),
       streak ? h("small", { class: "hd-aux", text: streak }) : null]),
     h("td", { class: `hd-col-units hd-num hd-tone--${tone(units)}`, "data-hook": "row-units", text: fmtUnitsPlain(units) }),
-    h("td", { class: `hd-col-roi hd-num hd-tone--${tone(roi)}`, "data-hook": "row-roi", text: fmtRoi(roi) }),
+    qual
+      ? h("td", { class: "hd-col-roi hd-num hd-roi--small", "data-hook": "row-roi", title: "small sample", text: fmtRoi(roi) })
+      : h("td", { class: `hd-col-roi hd-num hd-tone--${tone(roi)}`, "data-hook": "row-roi", text: fmtRoi(roi) }),
     h("td", { class: "hd-col-bets hd-num", "data-hook": "row-bets", text: String(bets) }),
     h("td", { class: "hd-col-price hd-num", "data-hook": "row-price", text: price === null ? NA : fmtPrice(price) }),
     h("td", { class: "hd-col-clv" }, [clvCell(hound)]),
     h("td", { class: "hd-col-last10" }, [dots(hound)]),
-    h("td", { class: "hd-col-status" }, [statusCell(hound)]),
+    h("td", { class: "hd-col-status" }, [qual ? progressPill(hound) : statusCell(hound)]),
   ]);
   tr.addEventListener("click", (ev) => {
     const target = ev.target;
@@ -374,6 +388,36 @@ function warmingBody(warming) {
   return tbody;
 }
 
+/**
+ * The qualifying round: every model short of the ranking bar that has a settled bet or an open ticket, as the same
+ * table columns (most units, then the better record), each with its progress pill. A model with nothing yet is
+ * counted in one line below. Not sortable: it is a progress list, and the ranked table below keeps the sorting.
+ */
+function qualifyingSection(warming) {
+  const min = minRanked(state.seasonMeta);
+  const label = (state.seasonMeta && state.seasonMeta.label) || "This season";
+  const shown = qualifyingRows(warming);
+  const rest = warming.length - shown.length;
+  const tbody = h("tbody", { "data-hook": "qualifying-list" });
+  for (const hound of shown) {
+    tbody.appendChild(tableRow(hound, 0, true));
+    if (state.expanded.has(String(hound.id))) tbody.appendChild(drawerRow(hound));
+  }
+  const table = h("table", { class: "hd-table hd-table--board", "data-hook": "qualifying-table" }, [
+    h("caption", { class: "hd-sr-only", text: "Qualifying round: models short of the ranking bar, with their progress." }),
+    h("thead", {}, [h("tr", {}, [h("th", { scope: "col", class: "hd-col-rank", text: "#" }),
+      ...COLUMNS.map((col) => h("th", { scope: "col", class: `hd-col-${col.key}${col.numeric ? " hd-th--num" : ""}`,
+        title: col.hint || undefined, text: col.label }))])]),
+    tbody]);
+  return h("div", { class: "hd-qual", "data-hook": "qualifying" }, [
+    h("h3", { class: "hd-qual__title", "data-hook": "qualifying-title",
+      text: `${label} qualifying: a model needs ${min} settled bets to be ranked` }),
+    shown.length ? h("div", { class: "hd-tablewrap", tabindex: "0", role: "region", "aria-label": "Qualifying round. Scrolls sideways on a phone." }, [table]) : null,
+    rest > 0 ? h("p", { class: "hd-fine", "data-hook": "qualifying-rest",
+      text: `${rest} more ${rest === 1 ? "model has" : "models have"} no settled bet yet.` }) : null,
+  ]);
+}
+
 function renderTable() {
   const host = q("hounds-table");
   if (!host) return;
@@ -392,6 +436,10 @@ function renderTable() {
       h("a", { class: "btn btn--primary", href: "build-a-hound.html", text: "Build a model" })]));
     return;
   }
+  // Fewer than 3 ranked: the QUALIFYING ROUND leads (expanded, with progress), the ranked table follows. From 3
+  // ranked on, the ranked table leads and the models still short of the bar wait in the collapsed "Warming up" group.
+  const qualifying = inQualifyingRound(active.length) && warming.length > 0;
+  if (qualifying) host.appendChild(qualifyingSection(warming));
   const thead = h("thead", {}, [headRow()]);
   const tbody = h("tbody", { "data-hook": "hounds-list" });
   rows.forEach((hound, i) => {
@@ -403,9 +451,11 @@ function renderTable() {
     thead,
     rows.length ? tbody : h("tbody", {}, [h("tr", {}, [h("td", { colspan: COLUMNS.length + 1, class: "hd-muted",
       "data-hook": "no-graded", text: `No model has ${minRanked(state.seasonMeta)} settled bets in this view yet, so none is ranked.${
-        warming.length ? ` ${warming.length} ${warming.length === 1 ? "model is" : "models are"} warming up below.` : ""}` })])]),
+        qualifying ? " The qualifying round above shows who is closest."
+          : warming.length ? ` ${warming.length} ${warming.length === 1 ? "model is" : "models are"} warming up below.` : ""}` })])]),
   ]);
-  if (warming.length) table.appendChild(warmingBody(warming));
+  if (warming.length && !qualifying) table.appendChild(warmingBody(warming));
+  if (qualifying) host.appendChild(h("h3", { class: "hd-qual__ranked", "data-hook": "ranked-title", text: `Ranked (${active.length})` }));
   host.appendChild(h("div", { class: "hd-tablewrap", tabindex: "0", role: "region",
     "aria-label": "Model leaderboard. Scrolls sideways on a phone." }, [table]));
 }

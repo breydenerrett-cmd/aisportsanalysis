@@ -2,7 +2,8 @@
 that started on Aug 31.
 
 ``config/seasons.json`` is a list of ``{id, label, start, end}`` (dates are the slate dates every bet already
-carries, ``Bet.date``; ``end: null`` is the open season). A season is a VIEW: nothing is deleted, no ledger is
+carries, ``Bet.date``, which is MLB's official date of the game: the EASTERN calendar date of first pitch,
+``snapshots.official_date`` / ``pack.base.eastern_date``; not UTC, not Pacific; ``end: null`` is the open season). A season is a VIEW: nothing is deleted, no ledger is
 touched, every bet stays in the all-time view (``ALL``). Both ends are inclusive.
 
   * ``DEFAULT_SEASON`` ("s2") is what every route answers when ``?season=`` is absent.

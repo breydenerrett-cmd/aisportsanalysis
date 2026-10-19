@@ -247,6 +247,38 @@ export function splitRanked(hounds, min = MIN_RANKED_BETS) {
   return { active, warming };
 }
 
+/** Fewer ranked models than this and the page shows the QUALIFYING ROUND (everyone with a bet, with progress) above the ranked table. */
+export const QUALIFYING_UNDER = 3;
+
+export function inQualifyingRound(rankedCount) {
+  return rankedCount < QUALIFYING_UNDER;
+}
+
+/** "3/10 bets": settled bets so far over the bar (never shown above the bar). */
+export function progressText(hound, min = MIN_RANKED_BETS) {
+  return `${Math.min(settledOf(hound), min)}/${min} bets`;
+}
+
+/**
+ * The qualifying round's rows from the models that are not ranked: those with a settled bet or an open ticket,
+ * most units first, then the better record (wins over wins + losses), then the more settled bets, then by name.
+ * A model with nothing yet is left out (the page counts them in one line).
+ */
+export function qualifyingRows(hounds) {
+  const share = (x) => {
+    const rec = (x && x.record) || {};
+    const w = isNum(rec.wins) ? rec.wins : 0, l = isNum(rec.losses) ? rec.losses : 0;
+    return w + l > 0 ? w / (w + l) : -1;
+  };
+  return (hounds || []).filter((x) => settledOf(x) > 0 || openBetsOf(x) > 0).sort((a, b) => {
+    const ua = unitsOf(a), ub = unitsOf(b);
+    if (ua === null && ub !== null) return 1;
+    if (ub === null && ua !== null) return -1;
+    return (ub ?? 0) - (ua ?? 0) || share(b) - share(a) || settledOf(b) - settledOf(a)
+      || String(a.name || "").localeCompare(String(b.name || ""));
+  });
+}
+
 // ---- tickets ---------------------------------------------------------------------------------------
 
 export const RESULT_WORDS = { pending: "PENDING", won: "WON", lost: "LOST", push: "PUSH", void: "VOID" };

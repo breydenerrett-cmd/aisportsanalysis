@@ -70,7 +70,7 @@ WHO_ALIASES = {"random": "code", "seeded": "code", "coin": "code"}
 class Bet:
     hound_id: str
     segment: str = "forward"
-    date: str = ""                  # the slate / decision day (UTC)
+    date: str = ""                  # the slate day: MLB's official (Eastern) date of first pitch, not UTC and not Pacific
     decision_utc: Optional[str] = None
     start_utc: Optional[str] = None
     # When the row was written (a pack row's ``written_utc``, a user row's ``recorded_utc``, an engine

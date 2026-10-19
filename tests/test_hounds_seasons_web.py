@@ -86,6 +86,21 @@ class ThePureHelpers(unittest.TestCase):
         out = self.js(f"const r = B.splitRanked({json.dumps(hs)}); console.log(JSON.stringify([r.active.map(h => h.id), r.warming.map(h => h.id)]));")
         self.assertEqual(out, [["a"], ["w3", "w2", "w1"]])        # 9 settled twice: by name (Three before Two)
 
+    def test_the_qualifying_round_orders_by_units_then_record_and_leaves_out_empty_models(self):
+        hs = [mk("b", "B", bets=4, units=1.0, wins=3), mk("a", "A", bets=2, units=1.0, wins=2), mk("t", "T", bets=6, units=2.5, wins=4),
+              mk("n", "N", bets=0, units=0.0, wins=0), mk("o", "O", bets=0, units=0.0, wins=0, open_bets=2)]
+        out = self.js(f"console.log(JSON.stringify(B.qualifyingRows({json.dumps(hs)}).map(h => h.id)));")
+        self.assertEqual(out, ["t", "a", "b", "o"])
+
+    def test_progress_text_is_settled_over_the_bar_and_never_past_it(self):
+        out = self.js("const m = (w, l) => ({record: {bets: w + l, wins: w, losses: l}});"
+                      "console.log(JSON.stringify([B.progressText(m(2, 1)), B.progressText(m(0, 0)), B.progressText(m(8, 4)), B.progressText(m(2, 1), 5)]));")
+        self.assertEqual(out, ["3/10 bets", "0/10 bets", "10/10 bets", "3/5 bets"])
+
+    def test_the_round_starts_below_three_ranked(self):
+        out = self.js("console.log(JSON.stringify([0, 1, 2, 3, 4].map(n => B.inQualifyingRound(n))));")
+        self.assertEqual(out, [True, True, True, False, False])
+
     def test_the_switcher_labels(self):
         out = self.js("console.log(JSON.stringify([S.seasonOptions(null).map(o => o.text), S.seasonOptions(null).map(o => o.id)]));")
         self.assertEqual(out, [["Season 2 (since Oct 18)", "Season 1", "All-time"], ["s2", "s1", "all"]])
@@ -204,25 +219,29 @@ class TheSwitcherOnTheLeaderboard(unittest.TestCase):
 
 @unittest.skipUnless(HAS_NODE, "node not installed")
 class TheRankedTableAndTheWarmingGroup(unittest.TestCase):
+    """From three ranked models on: the ranked table leads and the rest wait in the collapsed "Warming up (N)" group."""
     ROW = "[data-hook='hounds-list'] .hd-tr"
 
     def hot_start_world(self):
-        """A 1-0 model with +94% ROI, a perfect last ten and the most units per bet, beside two real samples."""
+        """A 1-0 model with +94% ROI, a perfect last ten and the most units per bet, beside three real samples."""
         return routes(**{"/hounds": board([
             mk("steady", "Steady", bets=40, units=3.0, wins=22),
             mk("slump", "Slump", bets=25, units=-4.0, wins=10),
+            mk("middle", "Middle", bets=15, units=0.5, wins=8),
             mk("hotstart", "Hot Start", bets=1, units=0.94, wins=1, open_bets=2),
             mk("nine", "Nine Bets", bets=9, units=6.0, wins=7)])})
 
     def test_a_one_and_oh_model_is_not_ranked_however_good_it_looks(self):
         out = run_page("hounds", routes=self.hot_start_world(), captureInitial=[
             q("ids", self.ROW, "attrs", attr="data-hound"), q("ranks", f"{self.ROW} .hd-col-rank", "texts"),
-            q("warm", "[data-hook='warming-toggle']"), q("count", "[data-hook='hounds-count']")])
+            q("warm", "[data-hook='warming-toggle']"), q("count", "[data-hook='hounds-count']"),
+            q("qual", "[data-hook='qualifying']", "count")])
         f = out["captures"]["initial"]
-        self.assertEqual(f["ids"], ["steady", "slump"])
-        self.assertEqual(f["ranks"], ["1", "2"])
+        self.assertEqual(f["ids"], ["steady", "middle", "slump"])
+        self.assertEqual(f["ranks"], ["1", "2", "3"])
         self.assertTrue(f["warm"].startswith("Warming up (2)"), f["warm"])
-        self.assertEqual(f["count"], "4 models, 2 ranked")
+        self.assertEqual(f["count"], "5 models, 3 ranked")
+        self.assertEqual(f["qual"], 0)                                    # three ranked: no qualifying round
 
     def test_the_warming_group_shows_the_record_so_far_how_far_from_a_rank_and_open_tickets_but_no_roi(self):
         out = run_page("hounds", routes=self.hot_start_world(), actions=[
@@ -230,8 +249,8 @@ class TheRankedTableAndTheWarmingGroup(unittest.TestCase):
                 q("names", ".hd-tr--warm .hd-modelname", "texts"), q("notes", ".hd-warm__note", "texts"), q("rows", ".hd-tr--warm", "text")])])
         cap = out["captures"]["open"]
         self.assertEqual(cap["names"], ["Nine Bets", "Hot Start"])
-        self.assertEqual(cap["notes"][0], "7-2 so far · 9 of 10 settled bets")
-        self.assertEqual(cap["notes"][1], "1-0 so far · 1 of 10 settled bets · 2 open tickets")
+        self.assertEqual(cap["notes"][0], "7-2 so far \u00b7 9 of 10 settled bets")
+        self.assertEqual(cap["notes"][1], "1-0 so far \u00b7 1 of 10 settled bets \u00b7 2 open tickets")
         self.assertNotIn("%", cap["rows"])                                # no ROI for a model that has not earned a rank
         self.assertNotIn("+94", cap["rows"])
 
@@ -245,8 +264,17 @@ class TheRankedTableAndTheWarmingGroup(unittest.TestCase):
         self.assertEqual(len(out["captures"]), 20)
         for label, cap in out["captures"].items():
             with self.subTest(sort=label):
-                self.assertEqual(sorted(cap["ids"]), ["slump", "steady"])        # only the ranked pair is ever a row
-                self.assertEqual(cap["ranks"], ["1", "2"])
+                self.assertEqual(sorted(cap["ids"]), ["middle", "slump", "steady"])   # only the ranked three are ever a row
+                self.assertEqual(cap["ranks"], ["1", "2", "3"])
+
+    def test_no_sort_key_lifts_a_qualifying_model_either(self):
+        keys = ["model", "record", "units", "roi", "bets", "last10"]
+        actions = [dict(do="click", sel=f"[data-sort='{k}']", label=f"{k}{i}", capture=[q("ids", self.ROW, "attrs", attr="data-hound")])
+                   for i, k in enumerate(keys + keys)]
+        out = run_page("hounds", routes=QualifyingBase.two_ranked_world(), actions=actions)
+        for label, cap in out["captures"].items():
+            with self.subTest(sort=label):
+                self.assertEqual(sorted(cap["ids"]), ["r1", "r2"])
 
     def test_the_default_order_is_units_high_to_low_among_the_ranked(self):
         out = run_page("hounds", routes=routes(**{"/hounds": board([
@@ -254,18 +282,130 @@ class TheRankedTableAndTheWarmingGroup(unittest.TestCase):
             mk("z", "Z", bets=2, units=9.0)])}), queries=[q("ids", self.ROW, "attrs", attr="data-hound")])
         self.assertEqual(out["final"]["ids"], ["a", "b", "c"])
 
-    def test_with_nobody_ranked_the_table_says_so_and_the_group_holds_everyone(self):
-        out = run_page("hounds", routes=routes(**{"/hounds": board([mk("a", "A", bets=3), mk("b", "B", bets=1)])}), queries=[
-            q("none", "[data-hook='no-graded']"), q("warm", "[data-hook='warming-toggle']"), q("rows", self.ROW, "count")])
-        self.assertEqual(out["final"]["rows"], 0)
-        self.assertEqual(out["final"]["none"], "No model has 10 settled bets in this view yet, so none is ranked. 2 models are warming up below.")
-        self.assertTrue(out["final"]["warm"].startswith("Warming up (2)"))
 
-    def test_a_season_of_old_bets_empties_the_table_it_does_not_borrow_all_time_numbers(self):
-        r = routes(**{KEY("s2"): board([mk("a", "A", bets=0, units=0.0, wins=0)], "s2")})
-        out = run_page("hounds", routes=r, queries=[q("rows", self.ROW, "count"), q("warm", "[data-hook='warming-toggle']")])
+class QualifyingBase:
+    """Worlds for the qualifying round (fewer than three ranked models)."""
+
+    @staticmethod
+    def world(hounds):
+        return routes(**{"/hounds": board(hounds)})
+
+    @staticmethod
+    def zero_ranked_world():
+        return QualifyingBase.world([
+            mk("tie_b", "Tie B", bets=4, units=1.0, wins=3),                  # same units as Tie A, worse record
+            mk("tie_a", "Tie A", bets=2, units=1.0, wins=2),                  # ... better record: first of the two
+            mk("top", "Top Dog", bets=6, units=2.5, wins=4),
+            mk("down", "Down", bets=9, units=-3.0, wins=3),
+            mk("open_only", "Open Only", bets=0, units=0.0, wins=0, open_bets=3),
+            mk("quiet1", "Quiet One", bets=0, units=0.0, wins=0),
+            mk("quiet2", "Quiet Two", bets=0, units=0.0, wins=0)])
+
+    @staticmethod
+    def two_ranked_world():
+        return QualifyingBase.world([
+            mk("r1", "Ranked One", bets=30, units=4.0, wins=17), mk("r2", "Ranked Two", bets=12, units=-1.0, wins=5),
+            mk("q1", "Qual One", bets=8, units=5.0, wins=6), mk("q2", "Qual Two", bets=1, units=0.94, wins=1)])
+
+
+@unittest.skipUnless(HAS_NODE, "node not installed")
+class TheQualifyingRound(unittest.TestCase):
+    """Fewer than three ranked models in the season: the models short of the bar are NOT hidden in a collapsed group
+    (a day-two board would look dead). They lead, expanded, as the qualifying round, with progress pills."""
+    QROW = "[data-hook='qualifying-list'] .hd-tr"
+    ROW = "[data-hook='hounds-list'] .hd-tr"
+
+    def page(self, r, **kw):
+        return run_page("hounds", routes=r, **kw)
+
+    def test_with_nobody_ranked_the_qualifying_round_leads_expanded_with_its_heading(self):
+        out = self.page(QualifyingBase.zero_ranked_world(), queries=[
+            q("title", "[data-hook='qualifying-title']"), q("qrows", self.QROW, "count"), q("ranked_rows", self.ROW, "count"),
+            q("toggle", "[data-hook='warming-toggle']", "count"), q("warm_rows", ".hd-tr--warm", "count"),
+            q("ranked_title", "[data-hook='ranked-title']"), q("none", "[data-hook='no-graded']"),
+            q("count", "[data-hook='hounds-count']")])
+        f = out["final"]
+        self.assertEqual(f["title"], "Season 2 qualifying: a model needs 10 settled bets to be ranked")
+        self.assertEqual(f["qrows"], 5)                                   # everyone with a settled bet or an open ticket
+        self.assertEqual((f["ranked_rows"], f["toggle"], f["warm_rows"]), (0, 0, 0))    # no collapsed group in this state
+        self.assertEqual(f["ranked_title"], "Ranked (0)")
+        self.assertEqual(f["none"], "No model has 10 settled bets in this view yet, so none is ranked. The qualifying round above shows who is closest.")
+        self.assertEqual(f["count"], "7 models, 0 ranked")
+        hooks = out["hooks"]
+        self.assertLess(hooks.index("qualifying"), hooks.index("leaderboard-table"))      # the round is ABOVE the ranked table
+
+    def test_the_round_has_the_same_columns_sorted_by_units_then_record(self):
+        out = self.page(QualifyingBase.zero_ranked_world(), queries=[
+            q("ids", self.QROW, "attrs", attr="data-hound"), q("units", f"{self.QROW} [data-hook='row-units']", "texts"),
+            q("ranks", f"{self.QROW} .hd-col-rank", "texts"),
+            q("heads", "[data-hook='qualifying-table'] thead th", "texts"),
+            q("ranked_heads", "[data-hook='leaderboard-table'] thead th", "texts")])
+        f = out["final"]
+        self.assertEqual(f["ids"][:3], ["top", "tie_a", "tie_b"])        # 2.5 units, then the 1.0-unit tie broken by record
+        self.assertEqual(f["ids"][3:], ["down", "open_only"])            # a loss-making model before one with no settled bet
+        self.assertEqual(f["units"][:3], ["+2.50", "+1.00", "+1.00"])
+        self.assertEqual(set(f["ranks"]), {"-"})                         # nothing here is numbered
+        strip = lambda ts: [t.replace(" ▼", "").replace(" ▲", "") for t in ts]  # noqa: E731
+        self.assertEqual(strip(f["heads"]), strip(f["ranked_heads"]))    # the same columns as the ranked table
+
+    def test_each_row_has_a_progress_pill_in_the_status_column_and_a_greyed_roi(self):
+        out = self.page(QualifyingBase.zero_ranked_world(), queries=[
+            q("pills", f"{self.QROW} [data-hook='progress']", "texts"),
+            q("in_status", f"{self.QROW} td.hd-col-status [data-hook='progress']", "count"),
+            q("roi_titles", f"{self.QROW} [data-hook='row-roi']", "attrs", attr="title"),
+            q("roi_class", f"{self.QROW} [data-hook='row-roi']", "attrs", attr="class"),
+            q("pill_title", f"{self.QROW} [data-hook='progress']", "attrs", attr="title")])
+        f = out["final"]
+        self.assertEqual(f["pills"], ["6/10 bets", "2/10 bets", "4/10 bets", "9/10 bets", "0/10 bets"])
+        self.assertEqual(f["in_status"], 5)
+        self.assertEqual(set(f["roi_titles"]), {"small sample"})
+        self.assertTrue(all("hd-roi--small" in c for c in f["roi_class"]), f["roi_class"])
+        self.assertTrue(all(t.startswith("Needs 10 settled bets to be ranked") for t in f["pill_title"]))
+
+    def test_models_with_nothing_yet_are_one_line_not_rows(self):
+        out = self.page(QualifyingBase.zero_ranked_world(), queries=[q("rest", "[data-hook='qualifying-rest']")])
+        self.assertEqual(out["final"]["rest"], "2 more models have no settled bet yet.")
+
+    def test_two_ranked_is_still_the_round_with_the_two_in_the_ranked_table_below(self):
+        out = self.page(QualifyingBase.two_ranked_world(), queries=[
+            q("qids", self.QROW, "attrs", attr="data-hound"), q("rids", self.ROW, "attrs", attr="data-hound"),
+            q("ranks", f"{self.ROW} .hd-col-rank", "texts"), q("toggle", "[data-hook='warming-toggle']", "count"),
+            q("ranked_title", "[data-hook='ranked-title']")])
+        f = out["final"]
+        self.assertEqual(f["qids"], ["q1", "q2"])
+        self.assertEqual(f["rids"], ["r1", "r2"])
+        self.assertEqual(f["ranks"], ["1", "2"])
+        self.assertEqual((f["toggle"], f["ranked_title"]), (0, "Ranked (2)"))
+
+    def test_three_ranked_reverts_to_the_ranked_table_first_and_a_collapsed_group(self):
+        world = QualifyingBase.world([mk("r1", "R1", bets=30, units=4.0, wins=17), mk("r2", "R2", bets=12, units=-1.0, wins=5),
+                                      mk("r3", "R3", bets=10, units=0.5, wins=5), mk("q1", "Q1", bets=8, units=5.0, wins=6)])
+        out = self.page(world, queries=[
+            q("qual", "[data-hook='qualifying']", "count"), q("rids", self.ROW, "attrs", attr="data-hound"),
+            q("toggle", "[data-hook='warming-toggle']"), q("expanded", "[data-hook='warming-toggle']", "attr", attr="aria-expanded"),
+            q("warm_rows", ".hd-tr--warm", "count"), q("pills", "[data-hook='progress']", "count")])
+        f = out["final"]
+        self.assertEqual(f["qual"], 0)
+        self.assertEqual(f["rids"], ["r1", "r3", "r2"])
+        self.assertTrue(f["toggle"].startswith("Warming up (1)"), f["toggle"])
+        self.assertEqual((f["expanded"], f["warm_rows"], f["pills"]), ("false", 0, 0))
+
+    def test_a_model_that_reaches_ten_leaves_the_round_for_the_table(self):
+        nine = QualifyingBase.world([mk("a", "A", bets=9, units=2.0, wins=6)])
+        ten = QualifyingBase.world([mk("a", "A", bets=10, units=2.0, wins=6)])
+        self.assertEqual(self.page(nine, queries=[q("n", self.QROW, "count"), q("r", self.ROW, "count")])["final"], {"n": 1, "r": 0})
+        self.assertEqual(self.page(ten, queries=[q("n", self.QROW, "count"), q("r", self.ROW, "count")])["final"], {"n": 0, "r": 1})
+
+    def test_the_round_names_the_season_it_is_showing(self):
+        r = routes(**{KEY("s1"): board([mk("a", "A", bets=4, units=1.0, wins=3)], "s1")})
+        out = self.page(r, search="?season=s1", queries=[q("title", "[data-hook='qualifying-title']")])
+        self.assertEqual(out["final"]["title"], "Season 1 qualifying: a model needs 10 settled bets to be ranked")
+
+    def test_no_model_has_anything_at_all_says_so_without_an_empty_round(self):
+        out = self.page(QualifyingBase.world([mk("a", "A", bets=0, units=0.0, wins=0)]), queries=[
+            q("rows", self.QROW, "count"), q("rest", "[data-hook='qualifying-rest']"), q("none", "[data-hook='no-graded']")])
         self.assertEqual(out["final"]["rows"], 0)
-        self.assertTrue(out["final"]["warm"].startswith("Warming up (1)"))
+        self.assertEqual(out["final"]["rest"], "1 more model has no settled bet yet.")
 
 
 # ---------------------------------------------------------------------------------------------------
@@ -348,31 +488,58 @@ class TheLandingBoardSeasons(unittest.TestCase):
         r["/hounds"] = board(hounds, season)
         return run_page("landing_board", routes=r, queries=[
             q("ids", "[data-hook='lb-board'] .lbrow", "attrs", attr="data-hound"), q("empty", "[data-hook='lb-empty']"),
+            q("ranks", "[data-hook='lb-board'] .lbrank", "texts"), q("bets", "[data-hook='lb-bets']", "texts"),
+            q("pills", "[data-hook='lb-progress']", "texts"), q("roi_titles", ".lbtone--small", "attrs", attr="title"),
             q("note", "[data-hook='lb-season-note']"), q("hidden", "[data-hook='lb-season-note']", "hidden"),
             q("tag", "[data-hook='lb-season']"), q("tickets", "[data-hook='lb-ticket']", "count")], **kw)
 
     def ranked(self, n):
         return [mk(f"m{i}", f"Model {i}", bets=12 + i, units=float(10 - i)) for i in range(n)]
 
-    def test_fewer_than_five_ranked_shows_those_plus_how_young_the_season_is(self):
-        hs = self.ranked(2) + [mk("hot", "Hot Start", bets=1, units=0.94, wins=1), mk("nine", "Nine", bets=9, units=7.0)]
+    def test_fewer_than_five_ranked_shows_those_then_the_best_of_the_qualifying_round_with_progress(self):
+        hs = self.ranked(2) + [mk("hot", "Hot Start", bets=1, units=0.94, wins=1), mk("nine", "Nine", bets=9, units=7.0, wins=6)]
         f = self.page(hs)["final"]
-        self.assertEqual(f["ids"], ["m0", "m1"])                                     # the 1-0 and the 9-bet models are not on it
+        self.assertEqual(f["ids"], ["m0", "m1", "nine", "hot"])                      # ranked first, then the round by units
+        self.assertEqual(f["ranks"], ["1", "2", "-", "-"])
+        self.assertEqual(len(f["bets"]), 2)                                          # a ranked row shows its bets
+        self.assertEqual(f["pills"], ["9/10 bets", "1/10 bets"])                     # a round row shows its progress
+        self.assertEqual(f["roi_titles"], ["small sample", "small sample"])
         self.assertRegex(f["note"], r"^Season 2 is \d+ days? old: more models qualify at 10 bets\.$")
         self.assertIs(f["hidden"], False)
-        self.assertEqual(f["tag"], "· Season 2")
+        self.assertEqual(f["tag"], "\u00b7 Season 2")
         self.assertEqual(f["tickets"], 2)                                            # the latest tickets still show beside it
 
-    def test_nobody_ranked_yet_says_so_and_still_shows_the_season_line_and_the_tickets(self):
-        f = self.page([mk("hot", "Hot Start", bets=1, units=0.94, wins=1), mk("two", "Two", bets=2, units=-1.0)])["final"]
-        self.assertEqual(f["ids"], [])
-        self.assertEqual(f["empty"], "No model has 10 settled bets in Season 2 yet. Come back after the next slate.")
+    def test_nobody_ranked_shows_the_top_five_of_the_round_not_an_empty_board(self):
+        hs = [mk(f"q{i}", f"Qual {i}", bets=i + 1, units=float(i), wins=i + 1) for i in range(7)]
+        f = self.page(hs)["final"]
+        self.assertEqual(f["ids"], ["q6", "q5", "q4", "q3", "q2"])                   # top five by units
+        self.assertEqual(f["pills"], ["7/10 bets", "6/10 bets", "5/10 bets", "4/10 bets", "3/10 bets"])
+        self.assertEqual(set(f["ranks"]), {"-"})
+        self.assertEqual(f["empty"], None)
         self.assertRegex(f["note"], r"Season 2 is \d+ days? old: more models qualify at 10 bets\.")
         self.assertEqual(f["tickets"], 2)
 
-    def test_five_ranked_fill_the_board_and_the_young_season_line_goes_away(self):
+    def test_the_round_tops_the_board_up_to_five_and_no_more(self):
+        hs = self.ranked(1) + [mk(f"q{i}", f"Qual {i}", bets=i + 1, units=float(i), wins=i + 1) for i in range(6)]
+        f = self.page(hs)["final"]
+        self.assertEqual(len(f["ids"]), 5)
+        self.assertEqual(f["ids"][0], "m0")
+        self.assertEqual(len(f["pills"]), 4)
+
+    def test_baselines_models_with_no_settled_bet_and_retired_ones_are_not_in_the_round(self):
+        hs = [mk("base", "Base", bets=6, units=9.0, wins=5, category="baseline"), mk("none", "None", bets=0, units=0.0, wins=0),
+              mk("gone", "Gone", bets=6, units=8.0, wins=5, status="retired"), mk("ok", "Okay", bets=3, units=1.0, wins=2)]
+        self.assertEqual(self.page(hs)["final"]["ids"], ["ok"])
+
+    def test_with_no_model_holding_a_settled_bet_the_board_says_so(self):
+        f = self.page([mk("none", "None", bets=0, units=0.0, wins=0)])["final"]
+        self.assertEqual(f["ids"], [])
+        self.assertEqual(f["empty"], "No model has 10 settled bets in Season 2 yet. Come back after the next slate.")
+
+    def test_five_ranked_fill_the_board_with_no_pills_and_the_young_season_line_goes_away(self):
         f = self.page(self.ranked(7))["final"]
         self.assertEqual(f["ids"], ["m0", "m1", "m2", "m3", "m4"])
+        self.assertEqual(f["pills"], [])
         self.assertIs(f["hidden"], True)
         self.assertEqual(f["note"], "")
 

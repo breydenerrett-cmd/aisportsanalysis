@@ -292,12 +292,13 @@ class TheLeaderboardFilters(unittest.TestCase):
     def test_the_scope_filter_counts_and_narrows(self):
         out = run_page("hounds", routes=routes(), captureInitial=[q("scope", "[data-hook='hounds-filter'] .hd-seg", "texts")],
                        actions=[dict(do="click", sel="[data-filter='user']", label="user", capture=[
-                           q("rows", self.ROW, "count"), q("warm", "[data-hook='warming-toggle']"),
+                           q("rows", self.ROW, "count"), q("qual", "[data-hook='qualifying-list'] .hd-tr", "attrs", attr="data-hound"),
                            q("empty", "[data-hook='board-empty']", "count")])])
         self.assertEqual(out["captures"]["initial"]["scope"], ["All models (15)", "My models (0)", "House (14)", "Builders' (1)"])
         user = out["captures"]["user"]
         self.assertEqual(user["rows"], 0)
-        self.assertIn("Warming up (1)", user["warm"])                           # the only builder model has nothing graded
+        # fewer than three ranked, so the qualifying round (not the collapsed group) holds the only builder model:
+        self.assertEqual(user["qual"], ["rusty"])                                        # it has 3 open tickets and nothing graded
 
     def test_the_sport_and_type_filters_come_from_the_models_present(self):
         hs = [mk("a", "A", bets=15, units=1), mk("b", "B", bets=16, units=2, sports=["nfl"], category="market")]
@@ -316,11 +317,12 @@ class TheLeaderboardFilters(unittest.TestCase):
                        captureInitial=[q("scope", "[data-hook='hounds-filter'] .hd-seg", "texts"),
                                 q("tag", f"{self.ROW}[data-hound='closer'] [data-hook='row-follow']")],
                        actions=[dict(do="click", sel="[data-filter='mine']", label="mine", capture=[
-                           q("ids", self.ROW, "attrs", attr="data-hound"), q("warm", "[data-hook='warming-toggle']")])])
+                           q("ids", self.ROW, "attrs", attr="data-hound"),
+                           q("qual", "[data-hook='qualifying-list'] .hd-tr", "attrs", attr="data-hound")])])
         self.assertEqual(out["captures"]["initial"]["scope"][1], "My models (2)")
         self.assertEqual(out["captures"]["initial"]["tag"], "Following")
         self.assertEqual(out["captures"]["mine"]["ids"], ["closer"])
-        self.assertIn("Warming up (1)", out["captures"]["mine"]["warm"])
+        self.assertEqual(out["captures"]["mine"]["qual"], ["rusty"])           # one ranked: the round lists the other, by its open tickets
 
     def test_nobody_followed_says_how_to_follow(self):
         out = run_page("hounds", routes=routes(), actions=[dict(do="click", sel="[data-filter='mine']", label="mine", capture=[
