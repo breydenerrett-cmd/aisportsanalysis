@@ -63,6 +63,15 @@ signup_activation_tokens(stripe_session_id PK, user_id, raw_token, created_at)
     webhook call and the browser's own follow-up GET, since there is no
     email sender yet to hand it to the user directly.
 
+comps(user_id PK, granted_at, reason, granted_by, revoked_at, revoked_reason)
+    Complimentary ("comp") members: people the owner gave free access, forever.
+    The table is created here, beside the subscription tables, because
+    has_paid_access below is the ONE entitlement question every protected route
+    asks and a comp is one of its two ways to answer yes; the policy (who may be
+    comped, the far-future token, the audit) lives in src/appstate/comps.py. A
+    row is never deleted: revoking stamps `revoked_at`, so the owner can see who
+    ever had it and why, and a later re-grant overwrites the same row.
+
 Uses the same db file as src/appstate/users.py (APP_DB_PATH env override,
 default data/app/app.db) -- separate `CREATE TABLE IF NOT EXISTS` calls
 against one sqlite file, the same pattern users.py itself uses for `users`
@@ -276,6 +285,19 @@ def _ensure_schema(conn: sqlite3.Connection) -> None:
             created_at TEXT NOT NULL
         )
     """)
+    # Free ("comp") members -- see the module docstring and src/appstate/comps.py.
+    # CREATE TABLE IF NOT EXISTS, so an app.db that predates it just gains the
+    # (empty) table on its next connection; nothing existing is altered.
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS comps (
+            user_id INTEGER PRIMARY KEY,
+            granted_at TEXT NOT NULL,
+            reason TEXT NOT NULL,
+            granted_by TEXT NOT NULL,
+            revoked_at TEXT,
+            revoked_reason TEXT
+        )
+    """)
 
 
 def upsert_customer(user_id: int, stripe_customer_id: str, *, db: Optional[Path] = None) -> None:
@@ -487,9 +509,62 @@ def entitled_through(status: Optional[str], cancel_at: Optional[str],
     return end
 
 
+def get_active_comp(user_id: int, *, db: Optional[Path] = None) -> Optional[dict]:
+    """The user's comp row (granted_at, reason, granted_by) while it is in force,
+    else None: no row, a revoked row, or an account that is suspended. A
+    suspended account is not served whatever it holds, the same rule
+    api/auth.py's get_current_user already applies to every token."""
+    with _connect(db) as conn:
+        row = conn.execute(
+            "SELECT granted_at, reason, granted_by FROM comps "
+            " WHERE user_id = ? AND revoked_at IS NULL", (user_id,)).fetchone()
+        if row is None:
+            return None
+        # The comps table is made by THIS module's connection, the users table by
+        # users.py's: a database only this module has opened has no `users` yet,
+        # and then there is no comp to find, so the status lookup is only reached
+        # for a database that has both.
+        user = conn.execute("SELECT status FROM users WHERE id = ?",
+                            (user_id,)).fetchone()
+        if user is None or user["status"] == "suspended":
+            return None
+        return dict(row)
+
+
+def has_active_comp(user_id: int, *, db: Optional[Path] = None) -> bool:
+    """Whether user_id is a free member right now (see get_active_comp)."""
+    return get_active_comp(user_id, db=db) is not None
+
+
 def has_paid_access(user_id: int, now: Optional[datetime] = None, *,
                      db: Optional[Path] = None) -> bool:
-    """Whether user_id is entitled to the PAID surface right now.
+    """Whether user_id is entitled to the PAID surface right now: a free (comp)
+    member, or a subscriber paid through a future instant.
+
+    THIS IS THE ONE ENTITLEMENT CHECK. api/auth.py's require_paid_access (the
+    only gate on the paid routes: /today, /games, /odds, /betcheck, /ufc, the
+    data service, hound creation) calls it for anyone with a subscription
+    record, and tester_upgrade, the support re-issue and billing read it too, so
+    a comp is honoured by every door at once -- including a former subscriber
+    whose lapsed record would otherwise be a 402. tests/test_comp_access.py walks
+    the real routes to keep that true.
+
+    A comp is checked first and costs one local read. It does not look at the
+    subscription at all: someone the owner made a free member is not asked to pay
+    because an old record says the period ended. The grant refuses anyone with a
+    LIVE subscription (src/appstate/comps.py), so the two never overlap in
+    practice. `has_subscription_access` is the subscription half alone, for the
+    callers that must mean "pays", not "is let in".
+    """
+    if has_active_comp(user_id, db=db):
+        return True
+    return has_subscription_access(user_id, now, db=db)
+
+
+def has_subscription_access(user_id: int, now: Optional[datetime] = None, *,
+                            db: Optional[Path] = None) -> bool:
+    """Whether user_id's SUBSCRIPTION entitles them right now (a comp is not a
+    subscription and does not count here).
 
     THE POLICY, IN ONE FUNCTION: access runs to the PAID-THROUGH instant and
     to nothing else. `paid_through` is moved only by evidence -- a paid
@@ -542,6 +617,24 @@ def has_paid_access(user_id: int, now: Optional[datetime] = None, *,
                            record.get("paid_through"), record.get("grace_blocked"))
     if end is None:
         return False
+    return (now or datetime.now(timezone.utc)) <= end
+
+
+def subscription_is_live(record: Optional[dict], now: Optional[datetime] = None) -> bool:
+    """Whether a subscription row (from _read_record / get_subscription_record)
+    is one a free grant must not be stacked on: it entitles the customer right
+    now, OR it is an active/trialing row with nothing paid through yet -- a
+    checkout that completed whose paid invoice has not arrived, so the person is
+    paying this minute. A lapsed, cancelled or unpaid row is not live: that
+    person is no longer a customer and may be made a free member. Pure (takes the
+    row), so src/appstate/comps.py can ask it on the connection that holds the
+    write lock instead of racing a second lookup."""
+    if not record:
+        return False
+    end = entitled_through(record["status"], record.get("cancel_at"),
+                           record.get("paid_through"), record.get("grace_blocked"))
+    if end is None:
+        return record["status"] in PAID_STATUSES
     return (now or datetime.now(timezone.utc)) <= end
 
 

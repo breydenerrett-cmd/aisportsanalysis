@@ -477,6 +477,25 @@ def revoke_all_tokens(user_id: int, *, db: Optional[Path] = None) -> int:
         return cur.rowcount
 
 
+def revoke_tokens_on(conn: sqlite3.Connection, user_id: int, *,
+                     when: Optional[datetime] = None) -> int:
+    """Revoke every not-yet-revoked token of user_id ON AN OPEN CONNECTION and
+    return how many; the caller owns the transaction. The raw activation token
+    the checkout bridge may hold is wiped on the same connection
+    (`_wipe_activation_tokens`).
+
+    The connection-level twin of `revoke_all_tokens`, for the one caller that
+    must revoke and mint in a single transaction together with its own writes:
+    src/appstate/comps.py (a free member's grant and revoke). Same statement,
+    same wipe, so there is still exactly one definition of "revoke a user's
+    tokens"."""
+    cur = conn.execute(
+        "UPDATE tokens SET revoked_at = ? WHERE user_id = ? AND revoked_at IS NULL",
+        ((when or datetime.now(timezone.utc)).isoformat(), user_id))
+    _wipe_activation_tokens(conn, user_id=user_id)
+    return cur.rowcount
+
+
 def count_unrevoked_tokens(user_id: int, *, db: Optional[Path] = None) -> int:
     """How many of user_id's tokens `revoke_all_tokens` / `reissue_token` would
     revoke right now (expired ones count: they are not revoked). Read first by

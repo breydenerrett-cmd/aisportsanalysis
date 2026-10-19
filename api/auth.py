@@ -196,6 +196,14 @@ def require_paid_access(
     deliberately do NOT carry this dependency: an expired customer must
     still be able to reach POST /billing/reactivate or start a new
     checkout, which a fully-locked account could not.
+
+    A FREE (COMP) MEMBER is let in by the same call: customers.has_paid_access
+    answers True for one (src/appstate/comps.py), which matters only for a
+    former subscriber whose lapsed record would otherwise be a 402 -- a free
+    member with no record passes on the first line like every invite-token user.
+    This is the only entitlement gate; a route that wants paid access depends on
+    this function, and tests/test_comp_access.py fails if a route reaches the
+    subscription table some other way.
     """
     record = customers.get_subscription_record(current_user.id)
     if record is None:
