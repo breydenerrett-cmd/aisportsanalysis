@@ -241,3 +241,34 @@ eligible. Rule: the culls are decided first; a member culled in a cycle is
 removed before the parent pool is taken, so the pool is the top 4 of the
 remaining eligible members, and a culled member is never the "best relative"
 a replacement is made from in that cycle. Nothing else changes.
+
+## 13. Amendment, 2026-10-19 (before the first cycle; no cycle has run)
+
+Written before the first cycle date (2026-10-21T12:00Z); no cycle has written
+a row and no real-data run has found an eligible member. **Reason:** section 4
+stated that the learning loop's near-duplicate guard (rule 3.8: every knob
+within one step) would refuse EVERY single-parent baby and every cull
+replacement, because a one-step mutation of a parent is by definition within
+one step of that parent. The owner asked for babies, so those two kinds now
+mutate further:
+
+* **Single-parent babies and cull replacements** move **one knob by two steps**
+  (one knob chosen uniformly, by a draw, among the knobs that can move two
+  steps inside `[min, max]` in at least one direction; then a direction draw;
+  a direction that would leave the bounds goes the other way). The new value
+  is on the grid and inside the bounds. Two steps on one knob is more than
+  one step, so the baby is not a near-duplicate of its parent under 3.8.
+* **Why not two knobs by one step each** (the variant first proposed): rule
+  3.8 calls two knob sets near-duplicates when EVERY knob is within one step,
+  so moving two knobs one step each is still a near-duplicate of the parent and
+  would still be refused. A test holds this with the real guard.
+* **No knob can move two steps** (a knob whose whole range is one step wide,
+  or whose value sits one step from both ends; today `pack_leader` (2 to 3)
+  and `hot_streak_husky` at its default 7 (6 to 8)): the knob moves to the
+  bound farther from its value (one step). That baby is still a near-duplicate
+  and will be refused; the refusal is recorded, as before.
+* **Crossovers are unchanged** (section 4: each knob from either parent, then
+  the 0.5 one-step mutation, forced on a clone).
+* Every other guard still applies (the 50-bet record, the 7-day allowance,
+  the caps, at most 2 knobs different from the champion, no repeat of a
+  retired idea), and the refusals are recorded.
