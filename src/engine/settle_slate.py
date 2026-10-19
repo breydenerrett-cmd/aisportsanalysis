@@ -681,43 +681,38 @@ def run_settle(date_str: str, *, wagers_path=None, results_path=MLB_RESULTS_CSV,
         # actually settled something new -- idempotency covers the
         # Scorecard chain too, not only decisions/wagers: a re-run that
         # settled nothing new writes no new (system_id, window) row.
-        all_bets = _reconstruct_settled_bets(
-            system_id, account_ledger_path_fn, as_of_day=date_str)
-        system_decisions = tuple(d for d in decisions if d.system_id == system_id)
-        # B4 fix: `load_reviews` returns the WHOLE shared review chain --
-        # every system's reviews, not just this one's. `decision_key_for`
-        # now embeds `system_id` at index 1 (see scorecard.py), so filter
-        # here too rather than relying on the join alone: a review whose
-        # `decision_key` does not name THIS system can never belong to it.
-        # (A review written before this fix carries a 4-tuple key --
-        # `decision_key[1]` is that key's `market_key`, e.g. "h2h", which
-        # cannot equal a system_id, so it is excluded here too, never
-        # mismatched to this system by accident.)
-        system_reviews = tuple(
-            r for r in load_reviews(review_path)
-            if len(r.decision_key) > 1 and r.decision_key[1] == system_id
-        )
-        # docs/ROADMAP.md Stage 13 item 1 -- the falsification battery, wired
-        # in honestly: run only once this system has >= battery.MIN_N
-        # point-in-time graded selections (below that, NOT_RUN stays the
-        # honest verdict -- see `_battery_research_for`'s own docstring),
-        # and a battery that raises never aborts this system's settlement,
-        # let alone every other system's.
-        research = _battery_research_for(
-            system_decisions, system_reviews, date_str, battery_run)
-        scorecard, absent = build_scorecard(
-            system_id=system_id, world="real", window=date_str,
-            point_class="LATE_BOARD", market_key="h2h",
-            bets=all_bets, decisions=system_decisions, reviews=system_reviews,
-            research=research,
-        )
-        fitness = _fitness_for(system_id, all_bets, system_decisions, system_reviews)
+        scorecard, absent, fitness, system_decisions, system_reviews = (
+            _build_system_scorecard(
+                system_id, date_str, decisions=decisions,
+                review_path=review_path,
+                account_ledger_path_fn=account_ledger_path_fn,
+                battery_run=battery_run))
         verdict = promotion_verdict(fitness)
+        # Appended only when this run actually settled something new --
+        # idempotency covers the Scorecard chain too, not only
+        # decisions/wagers: a re-run that settled nothing new writes no new
+        # (system_id, window) row.
+        #
+        # Scorecard window order is chronological (N5/N6), but SETTLEMENT
+        # order is not: a postponed game settles late, on the day its
+        # makeup lands, and the account ledger gains a row dated BEFORE rows
+        # an already-written later window never saw (2026-10-16 settled on
+        # 10-19 after the 10-17 and 10-18 scorecards existed). Both records
+        # are individually correct, but the system's NEWEST window is then
+        # one bet stale, and every reader that takes "latest scorecard" as
+        # the current state (the CI reconciliation test, the standings) is
+        # off by that bet. So a run that settles something new also
+        # re-publishes the newest window, built exactly like a normal one.
         if newly_settled:
             if scorecard_path is not None:
                 append_scorecard(scorecard, path=scorecard_path)
             else:
                 append_scorecard(scorecard)
+            _refresh_latest_window_scorecard(
+                system_id, after_window=date_str, decisions=decisions,
+                review_path=review_path, scorecard_path=scorecard_path,
+                account_ledger_path_fn=account_ledger_path_fn,
+                battery_run=battery_run)
 
         system_settlements.append(SystemSettlement(
             system_id=system_id, settled=tuple(newly_settled),
@@ -746,6 +741,127 @@ def run_settle(date_str: str, *, wagers_path=None, results_path=MLB_RESULTS_CSV,
                              "detail": info.get("detail"),
                              "n_wagers": deferred_counts.get(pk, 0)}
                             for pk, info in sorted(deferred.items())))
+
+
+def _build_system_scorecard(system_id: str, window: str, *, decisions,
+                            review_path=None, account_ledger_path_fn=None,
+                            battery_run=battery.run) -> tuple:
+    """The one place a settlement Scorecard is assembled, so the normal
+    per-run scorecard and a refreshed later-window one are built by the same
+    code. Real Fitness from THIS system's whole history (bets from its own
+    ledger replayed end to end, cut point-in-time at `window`; decisions from
+    decisions_v2.jsonl; reviews from the review chain), never just today's
+    slice -- a Scorecard reports a system's forward track record.
+
+    Returns `(scorecard, absent, fitness, system_decisions, system_reviews)`.
+    """
+    all_bets = _reconstruct_settled_bets(
+        system_id, account_ledger_path_fn, as_of_day=window)
+    system_decisions = tuple(d for d in decisions if d.system_id == system_id)
+    # B4 fix: `load_reviews` returns the WHOLE shared review chain --
+    # every system's reviews, not just this one's. `decision_key_for`
+    # now embeds `system_id` at index 1 (see scorecard.py), so filter
+    # here too rather than relying on the join alone: a review whose
+    # `decision_key` does not name THIS system can never belong to it.
+    # (A review written before this fix carries a 4-tuple key --
+    # `decision_key[1]` is that key's `market_key`, e.g. "h2h", which
+    # cannot equal a system_id, so it is excluded here too, never
+    # mismatched to this system by accident.)
+    system_reviews = tuple(
+        r for r in load_reviews(review_path)
+        if len(r.decision_key) > 1 and r.decision_key[1] == system_id
+    )
+    # docs/ROADMAP.md Stage 13 item 1 -- the falsification battery, wired
+    # in honestly: run only once this system has >= battery.MIN_N
+    # point-in-time graded selections (below that, NOT_RUN stays the
+    # honest verdict -- see `_battery_research_for`'s own docstring),
+    # and a battery that raises never aborts this system's settlement,
+    # let alone every other system's.
+    research = _battery_research_for(
+        system_decisions, system_reviews, window, battery_run)
+    scorecard, absent = build_scorecard(
+        system_id=system_id, world="real", window=window,
+        point_class="LATE_BOARD", market_key="h2h",
+        bets=all_bets, decisions=system_decisions, reviews=system_reviews,
+        research=research,
+    )
+    fitness = _fitness_for(system_id, all_bets, system_decisions, system_reviews)
+    return scorecard, absent, fitness, system_decisions, system_reviews
+
+
+def _latest_scorecard_row(system_id: str, scorecard_path=None) -> dict | None:
+    """The system's real-world scorecard row with the greatest `window`
+    (ISO dates compare as strings); the last-appended one on a tie."""
+    from src.ledger.writer import SCORECARD_LEDGER_PATH
+    path = scorecard_path if scorecard_path is not None else SCORECARD_LEDGER_PATH
+    latest = None
+    for row in HashChainLedger(path).read():
+        if row.get("system_id") != system_id or row.get("world") != "real":
+            continue
+        if row.get("window") is None:
+            continue
+        if latest is None or str(row["window"]) >= str(latest["window"]):
+            latest = row
+    return latest
+
+
+_ACCOUNT_TOLERANCE = 1e-9
+
+
+def _refresh_latest_window_scorecard(system_id: str, *, after_window: str,
+                                     decisions, review_path=None,
+                                     scorecard_path=None,
+                                     account_ledger_path_fn=None,
+                                     battery_run=battery.run) -> bool:
+    """Append a refreshed scorecard for the system's newest existing window
+    when that window is LATER than `after_window` (the day just settled) and
+    its recorded account no longer matches the ledger as of that window.
+    Returns whether a row was appended.
+
+    Append-only: the stale row stays on the chain and the refreshed row, same
+    `(system_id, window)`, supersedes it as the last one for that window. The
+    account comparison is what makes this idempotent -- once the newest window
+    agrees with the ledger a repeat call writes nothing, and a late settle
+    that does not move the account (a void) has nothing to correct."""
+    latest = _latest_scorecard_row(system_id, scorecard_path)
+    if latest is None or str(latest["window"]) <= after_window:
+        return False
+    window = str(latest["window"])
+    scorecard, _absent, _fitness, _d, _r = _build_system_scorecard(
+        system_id, window, decisions=decisions, review_path=review_path,
+        account_ledger_path_fn=account_ledger_path_fn,
+        battery_run=battery_run)
+    fresh, old = scorecard.to_dict()["account"], latest.get("account") or {}
+    if all(abs(float(fresh[k]) - float(old.get(k, float("nan")))) <= _ACCOUNT_TOLERANCE
+           for k in fresh):
+        return False
+    if scorecard_path is not None:
+        append_scorecard(scorecard, path=scorecard_path)
+    else:
+        append_scorecard(scorecard)
+    return True
+
+
+def refresh_stale_latest_scorecards(system_ids, *, after_window: str = "",
+                                    decisions_path=None, review_path=None,
+                                    scorecard_path=None,
+                                    account_ledger_path_fn=None,
+                                    battery_run=battery.run) -> list:
+    """Backfill for ledgers that went stale before `run_settle` learned to
+    refresh: for each system, re-publish its newest window if the ledger
+    moved since it was written. Same code path and same idempotency as the
+    in-run refresh; returns `[(system_id, window), ...]` appended."""
+    decisions = load_decisions(decisions_path)
+    out = []
+    for system_id in system_ids:
+        if _refresh_latest_window_scorecard(
+                system_id, after_window=after_window, decisions=decisions,
+                review_path=review_path, scorecard_path=scorecard_path,
+                account_ledger_path_fn=account_ledger_path_fn,
+                battery_run=battery_run):
+            row = _latest_scorecard_row(system_id, scorecard_path)
+            out.append((system_id, row["window"]))
+    return out
 
 
 def _replay_prior_settlements(account: PaperAccount) -> None:
