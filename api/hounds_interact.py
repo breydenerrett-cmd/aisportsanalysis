@@ -67,7 +67,10 @@ _read_limiter = ratelimit.FixedWindowLimiter(limit=120, window_s=60.0)
 _rl_read = ratelimit.limiter_dependency(_read_limiter)
 _write_limiter = ratelimit.FixedWindowLimiter(limit=60, window_s=3600.0)
 _rl_write = ratelimit.limiter_dependency(_write_limiter, user_dependency=get_current_user)
-_drill_limiter = ratelimit.FixedWindowLimiter(limit=10, window_s=3600.0)
+# 5 an hour per person: a 30-day house drill peaks near 700 MB (red team 2026-10-19), so this is a deliberately
+# scarce tool; the half-hour result cache in drill.py makes a repeat of the same drill free of the engine.
+DRILL_PER_USER_PER_HOUR = 5
+_drill_limiter = ratelimit.FixedWindowLimiter(limit=DRILL_PER_USER_PER_HOUR, window_s=3600.0)
 _rl_drill = ratelimit.limiter_dependency(_drill_limiter, user_dependency=get_current_user)
 _manual_limiter = ratelimit.FixedWindowLimiter(limit=30, window_s=3600.0)
 _rl_manual = ratelimit.limiter_dependency(_manual_limiter, user_dependency=get_current_user)
@@ -175,7 +178,11 @@ def run_drill(body: DrillRequest, response: Response,
     try:
         return envelope(drill.drill(days=body.days, dog=target, spec=body.spec if target is None else None))
     except drill.DrillError as exc:
-        raise _err(exc.status, exc.code, str(exc), fields=exc.fields)
+        error = _err(exc.status, exc.code, str(exc), fields=exc.fields)
+        if exc.retry_after:
+            error.headers = {"Retry-After": str(exc.retry_after)}
+            error.detail["retry_after"] = exc.retry_after
+        raise error
 
 
 @router.get("/hounds/{hound_id}/kit")

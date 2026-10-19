@@ -22,6 +22,7 @@ SMALL SAMPLES ARE SAID. Under 30 graded bets the result says so, and a drill nev
 
 from __future__ import annotations
 
+import gc
 import hashlib
 import json
 import os
@@ -48,12 +49,20 @@ CACHE_MAX = 64
 _cache: dict = {}
 _cache_lock = threading.Lock()
 
+# ONE DRILL AT A TIME, PROCESS-WIDE (red team 2026-10-19). A single 30-day house drill peaked at 686 MB and ran
+# 55 s on a 1 GB machine, so two at once (or one beside a page-cache build) is an out-of-memory kill. A second
+# request does not queue behind it, because queued requests pile up in threads: it is told to come back.
+_drill_slot = threading.Lock()
+BUSY_RETRY_AFTER_S = 30
+
 
 class DrillError(ValueError):
-    def __init__(self, code: str, message: str, status: int = 400, fields: Optional[dict] = None):
+    def __init__(self, code: str, message: str, status: int = 400, fields: Optional[dict] = None,
+                 retry_after: Optional[int] = None):
         self.code = code
         self.status = status
         self.fields = fields or {}
+        self.retry_after = retry_after
         super().__init__(message)
 
 
@@ -215,17 +224,21 @@ def run_house(dog: common.Dog, days: int, *, now: Optional[datetime] = None, sto
     dates = [d for d in dates_between(first, last) if d >= base.SEAL_FLOOR and not base.in_seal(d)]
     if not dates:
         raise DrillError("sealed", "that window is inside the sealed period", 422)
-    if stores is None:
-        since = max(base.SEAL_FLOOR, base.day_before(min(dates), 8))
-        until = (datetime.fromisoformat(common.eastern_date(now)) + timedelta(days=2)).date().isoformat()
-        with fire._heavy():
-            stores = base.load_stores(since=since, until=until)
     hound = champions.champion_versions((dog.house,), champions.events_path_beside(pack_run.ledger_path()))[0]
-    with tempfile.TemporaryDirectory() as tmp:
-        path = os.path.join(tmp, "drill.jsonl")
-        pack_run.run(stores, dates, replay=True, now=now, path=path, hounds=[hound], out=lambda *_a, **_k: None)
-        pack_settle.settle(stores, now=now, path=path)
-        rows = HashChainLedger(path).read()
+    # The WHOLE replay (load, run, settle) holds the process-wide build gate, not just the load: the stores are the
+    # biggest thing in memory while the replay walks them, so no page-cache rebuild may run beside it.
+    with fire._heavy():
+        if stores is None:
+            since = max(base.SEAL_FLOOR, base.day_before(min(dates), 8))
+            until = (datetime.fromisoformat(common.eastern_date(now)) + timedelta(days=2)).date().isoformat()
+            stores = base.load_stores(since=since, until=until)
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "drill.jsonl")
+            pack_run.run(stores, dates, replay=True, now=now, path=path, hounds=[hound],
+                         out=lambda *_a, **_k: None)
+            pack_settle.settle(stores, now=now, path=path)
+            rows = HashChainLedger(path).read()
+        stores = None                                  # let go of the store before the gate is released
     return summarize_house(rows)
 
 
@@ -325,10 +338,17 @@ def drill(*, days: int, dog: Optional[common.Dog] = None, spec: Optional[dict] =
             hit = _cache.get(cache_key)
             if hit and time.monotonic() - hit[0] < CACHE_TTL_S:
                 return hit[1]
-    if ident["kind"] == "house":
-        body = run_house(dog, days, now=now, **inject)
-    else:
-        body = run_user(hound, days, now=now, **inject)
+    if not _drill_slot.acquire(blocking=False):
+        raise DrillError("drill_busy", "another drill is running; try again in a moment", 429,
+                         retry_after=BUSY_RETRY_AFTER_S)
+    try:
+        if ident["kind"] == "house":
+            body = run_house(dog, days, now=now, **inject)
+        else:
+            body = run_user(hound, days, now=now, **inject)
+    finally:
+        _drill_slot.release()
+        gc.collect()          # hand the replay's rows back now, not at the next collection, on a 1 GB machine
     out = _wrap(body, dog=ident, rule=rule, days=days, now=now)
     if not inject:
         with _cache_lock:
