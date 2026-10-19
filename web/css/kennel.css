@@ -36,6 +36,8 @@
 .lbpanel__title { margin: 0; font-family: var(--font-body, sans-serif); font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--lb-mute); }
 .lbpanel__asof { font-size: 12px; color: var(--lb-mute); }
 .lbpanel__asof[data-stale="true"] { color: var(--lb-amber); }
+.lbpanel__season { font-weight: 500; color: var(--lb-mute); font-size: .85em; margin-left: 8px; }
+.lbpanel__note { margin: 8px 2px 0; font-size: 13px; color: var(--lb-mute); }
 .lbpanel__more { display: inline-block; margin-top: 8px; min-height: 36px; line-height: 36px; font-size: 14px; font-weight: 600; color: var(--lb-accent); }
 
 .lbtable { width: 100%; border-collapse: collapse; font-size: 14px; }

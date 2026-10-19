@@ -51,6 +51,10 @@
 
 <section class="hd-panel hd-scoreboard" aria-labelledby="score-h" data-hook="hound-scoreboard-section">
   <h2 id="score-h" class="hd-sr-only">Key numbers</h2>
+  <div class="hd-seasonchips" data-hook="hound-season-bar">
+    <div class="hd-segs hd-segs--season" role="group" aria-label="Season for the numbers below" data-hook="hound-season"></div>
+    <p class="hd-fine" data-hook="hound-season-line" aria-live="polite"></p>
+  </div>
   <div data-hook="hound-scoreboard"><p class="hd-muted">Loading the numbers...</p></div>
 </section>
 
@@ -64,6 +68,7 @@
   <div class="hd-panel__head">
     <h2 id="bets-h">Graded tickets</h2>
     <div class="hd-segs" role="group" aria-label="Which graded tickets to list" data-hook="bets-segment"></div>
+    <div class="hd-segs" role="group" aria-label="Which season's tickets to list" data-hook="bets-season"></div>
   </div>
   <div data-hook="hound-bets"><p class="hd-muted">Loading the tickets...</p></div>
 </section>

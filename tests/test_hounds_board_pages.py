@@ -27,6 +27,8 @@ from tests import hounds_web_fixtures as F
 from tests.hounds_web_runner import HAS_NODE, run_js, run_page
 
 FOLLOW_KEY = "linehound.followed_dogs"
+RANK_MIN = 10                      # settled bets a model needs to be ranked in a view (src/hounds/seasons.py)
+RANKED_N = len([h for h in F.hounds() if h["record"]["bets"] >= RANK_MIN and h["status"] != "retired"])
 # every pictograph / emoji block a UI string could use (the text glyphs the tables use, like an arrow, are not in here)
 EMOJI = re.compile("[\U0001F300-\U0001FAFF☀-⛿✀-➿⭐✅❌]")
 
@@ -63,7 +65,7 @@ def ticket_routes(hid="closer", n=45):
         f"{base}?status=graded&segment=forward&page=2&page_size=20": [200, F.bets_payload(hid, n, 2, 20, "forward", "graded")],
         f"{base}?status=graded&segment=forward&page=3&page_size=20": [200, F.bets_payload(hid, n, 3, 20, "forward", "graded")],
         f"{base}?status=graded&segment=replay&page=1&page_size=20": [200, F.bets_payload(hid, n, 1, 20, "replay", "graded")],
-        f"{base}?page=1&page_size=10&segment=forward": [200, F.bets_payload(hid, n, 1, 10, "forward")],
+        f"{base}?page=1&page_size=10&segment=forward&season=s2": [200, F.bets_payload(hid, n, 1, 10, "forward")],
     }
 
 
@@ -171,7 +173,8 @@ class TheLeaderboardTable(unittest.TestCase):
         return run_page("hounds", routes=routes() if r is None else r, **kw)
 
     def graded(self):
-        return [h for h in F.hounds() if h["record"]["bets"] > 0 and h["status"] != "retired"]
+        """The ranked models: at least 10 settled bets in the view (the others wait in "Warming up")."""
+        return [h for h in F.hounds() if h["record"]["bets"] >= RANK_MIN and h["status"] != "retired"]
 
     def test_the_columns_are_the_ones_a_bettor_reads(self):
         out = self.page(queries=[q("sorts", "[data-hook='leaderboard-table'] thead [data-sort]", "attrs", attr="data-sort"),
@@ -219,7 +222,7 @@ class TheLeaderboardTable(unittest.TestCase):
         self.assertEqual(names, sorted(names))                                   # a name sorts A to Z first
         self.assertEqual(out["captures"]["model"]["aria"][1], "ascending")
 
-    def test_zero_bet_models_are_one_collapsed_group_not_rows_of_0_0(self):
+    def test_models_below_the_rank_bar_are_one_collapsed_group_not_rows_of_0_0(self):
         out = self.page(captureInitial=[
             q("rows", self.ROW, "count"), q("toggle", "[data-hook='warming-toggle']"),
             q("expanded", "[data-hook='warming-toggle']", "attr", attr="aria-expanded"),
@@ -229,15 +232,19 @@ class TheLeaderboardTable(unittest.TestCase):
                 q("notes", ".hd-warm__note", "texts"), q("names", ".hd-tr--warm .hd-modelname", "texts")])])
         f = out["captures"]["initial"]
         self.assertEqual(f["rows"], len(self.graded()))
-        self.assertEqual(f["toggle"], "Warming up (3) 5 open tickets, nothing graded yet")
+        self.assertEqual(f["toggle"], "Warming up (7) ranked at 10 settled bets · 5 open tickets")
         self.assertEqual((f["expanded"], f["warm_rows"]), ("false", 0))
         self.assertNotIn("0-0", f["table"])                                     # never 28 rows of 0-0
         opened = out["captures"]["open"]
-        self.assertEqual((opened["expanded"], opened["warm_rows"]), ("true", 3))
-        self.assertEqual(sorted(opened["names"]), ["Night Owl", "Quiet One", "Rusty's Revenge"])
-        self.assertIn("3 open tickets, waiting to be graded", opened["notes"])
-        self.assertIn("2 open tickets, waiting to be graded", opened["notes"])
-        self.assertIn("Not started", opened["notes"])
+        self.assertEqual((opened["expanded"], opened["warm_rows"]), ("true", 7))
+        # the most-settled first, then the most open tickets, then by name
+        self.assertEqual(opened["names"], ["Home Field", "Blend", "Almanac", "Vibes", "Rusty's Revenge", "Night Owl", "Quiet One"])
+        self.assertIn("0 of 10 settled bets · 3 open tickets", opened["notes"])
+        self.assertIn("0 of 10 settled bets · 2 open tickets", opened["notes"])
+        self.assertIn("0 of 10 settled bets · not started", opened["notes"])
+        self.assertTrue(opened["notes"][0].endswith("9 of 10 settled bets"), opened["notes"][0])
+        self.assertIn(" so far · 9 of 10", opened["notes"][0])                  # the record so far, not units or ROI
+        self.assertNotRegex(" ".join(opened["notes"]), r"%|u")
 
     def test_every_graded_model_shows_its_last_ten_as_dots_with_a_spoken_label(self):
         out = self.page(queries=[q("dots", f"{self.ROW}[data-hound='closer'] .hd-dot", "count"),
@@ -293,7 +300,7 @@ class TheLeaderboardFilters(unittest.TestCase):
         self.assertIn("Warming up (1)", user["warm"])                           # the only builder model has nothing graded
 
     def test_the_sport_and_type_filters_come_from_the_models_present(self):
-        hs = [mk("a", "A", bets=5, units=1), mk("b", "B", bets=6, units=2, sports=["nfl"], category="market")]
+        hs = [mk("a", "A", bets=15, units=1), mk("b", "B", bets=16, units=2, sports=["nfl"], category="market")]
         out = run_page("hounds", routes=routes(**{"/hounds": [200, {"hounds": hs, "as_of": "2026-10-24"}]}),
                        captureInitial=[q("sports", "[data-hook='hounds-sports'] .hd-seg", "texts"),
                                 q("types", "[data-hook='hounds-categories'] .hd-seg", "texts")],
@@ -324,7 +331,7 @@ class TheLeaderboardFilters(unittest.TestCase):
         for mode in ("methods", "accessor"):
             with self.subTest(mode=mode):
                 out = run_page("hounds", routes=routes(), storageThrows=mode, queries=[q("rows", self.ROW, "count")])
-                self.assertEqual(out["final"]["rows"], 12)
+                self.assertEqual(out["final"]["rows"], RANKED_N)
 
 
 @unittest.skipUnless(HAS_NODE, "node not installed")
@@ -342,14 +349,14 @@ class TheDrawer(unittest.TestCase):
         self.assertEqual(opened["link"], "hound.html?id=closer")
         self.assertEqual(opened["title"], "Last 10 tickets")
         self.assertIn("PENDING", opened["status"])                      # the model's newest tickets are still open
-        self.assertIn("/hounds/closer/bets?page=1&page_size=10&segment=forward", out["gets"])
+        self.assertIn("/hounds/closer/bets?page=1&page_size=10&segment=forward&season=s2", out["gets"])
         self.assertEqual(out["captures"]["close"]["rows"], 0)
 
     def test_a_failed_drawer_says_so_and_offers_a_retry_and_the_table_stays(self):
         out = run_page("hounds", routes=routes(**{"/hounds/closer/bets": [500, {}]}), actions=[dict(do="click", sel=".hd-tr[data-hound='closer'] [data-hook='expand']", label="open", wait=250, capture=[
             q("state", ".hd-drawer [data-hook='section-state']"), q("rows", "[data-hook='hounds-list'] .hd-tr", "count")])])
         self.assertIn("this model's tickets", out["captures"]["open"]["state"].lower())
-        self.assertEqual(out["captures"]["open"]["rows"], 12)
+        self.assertEqual(out["captures"]["open"]["rows"], RANKED_N)
 
     def test_clicking_a_row_anywhere_toggles_it_too(self):
         r = routes(**ticket_routes("steamer"))
@@ -412,7 +419,7 @@ class TheLatestTicketsFeed(unittest.TestCase):
         down = self.page(down=["/hounds/stream"], queries=[q("s", "[data-hook='hounds-stream'] [data-hook='section-state']", "attrs", attr="data-kind"),
                                                           q("rows", "[data-hook='hounds-list'] .hd-tr", "count")])
         self.assertEqual(down["final"]["s"], ["down"])
-        self.assertEqual(down["final"]["rows"], 12)                              # the table does not depend on the feed
+        self.assertEqual(down["final"]["rows"], RANKED_N)                              # the table does not depend on the feed
 
     def test_one_sixty_second_timer_refreshes_page_one_only(self):
         out = self.page(actions=[dict(do="fire_timers"), dict(do="fire_timers")])
@@ -469,7 +476,7 @@ class TheDataFreshnessLine(unittest.TestCase):
             q("rows", "[data-hook='hounds-list'] .hd-tr", "count")])
         self.assertIn("Updating", out["final"]["note"])
         self.assertEqual(out["final"]["asof"], "Data as of Oct 1")
-        self.assertEqual(out["final"]["rows"], 12)
+        self.assertEqual(out["final"]["rows"], RANKED_N)
 
     def test_a_saved_copy_says_updating_and_asks_again(self):
         saved = dict(F.leaderboard(), stale=True, as_of="2026-10-24T20:00:00Z", data_as_of="2026-10-24")
@@ -520,7 +527,7 @@ class TheLeaderboardIsHonestWhenThereIsNothingOrNothingAnswers(unittest.TestCase
                        actions=[dict(do="fire_timers", label="again", capture=[
                            q("rows", "[data-hook='hounds-list'] .hd-tr", "count"), q("w", "[data-hook='hounds-table'] [data-kind='warming']", "count")])])
         self.assertIn("warming", out["final"]["w"])
-        self.assertEqual(out["captures"]["again"]["rows"], 12)
+        self.assertEqual(out["captures"]["again"]["rows"], RANKED_N)
         self.assertEqual(out["captures"]["again"]["w"], 0)
 
 
@@ -567,7 +574,7 @@ class TheChromeIsProfessional(unittest.TestCase):
                                                            q("mono", ".hd-mono", "texts"), q("ids", ".hd-tr", "attrs", attr="data-hound")])
         self.assertEqual(out["final"]["svgs"], 0)
         self.assertEqual(out["final"]["anysvg"], 0)
-        self.assertEqual(len(out["final"]["mono"]), 12 + 0 + 2)                   # the table rows plus the two retired rows
+        self.assertEqual(len(out["final"]["mono"]), RANKED_N + 0 + 2)                   # the table rows plus the two retired rows
         self.assertEqual(out["final"]["mono"][0], "CL" if out["final"]["ids"][0] == "closer" else out["final"]["mono"][0])
         self.assertTrue(all(re.fullmatch(r"[A-Z0-9?]{1,2}", m) for m in out["final"]["mono"]), out["final"]["mono"])
 
@@ -745,7 +752,7 @@ class TheModelPage(unittest.TestCase):
         self.assertIn("not a tip", out["final"]["meaning"])
         self.assertIn("beat the closing market", out["final"]["sentence"])
         self.assertIn("Units, two ways", out["final"]["facts"])
-        self.assertIn("Based on 41 graded live bets. That is a small sample.", out["text"])
+        self.assertIn("This is the referee's all-time verdict. Season 2: 41 graded live bets. That is a small sample.", out["text"])
 
     def test_a_retired_model_shows_its_reason_and_an_idle_one_says_why(self):
         d = F.detail("closer")

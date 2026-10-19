@@ -11,10 +11,13 @@
  *   - the header: initials badge, name, status in plain words, type, sports and markets. Its catchphrase, if it
  *     has one, is a single small italic line; nothing else from a persona is shown;
  *   - Follow, Share and Download card (a star kept in this browser; a link; a PNG);
- *   - the KPI strip: Units, ROI, Record, Bets, CLV, Streak. Every figure is one the server sent, and a figure it
+ *   - the season toggle (Season 2 | Season 1 | All-time; the URL's ?season=, then localStorage, then Season 2) for
+ *     the numbers below it, and the KPI strip: Units, ROI, Record, Bets, CLV, Streak, all for that season. The
+ *     referee's status stays all-time and says so. Every figure is one the server sent, and a figure it
  *     did not send reads "n/a";
  *   - OPEN TICKETS (recorded, not yet graded; refreshed every minute while the tab is open) and GRADED TICKETS
- *     (paged by the server; Live, or Rehearsal which is never counted). Each row: date, game, pick, price, CLV
+ *     (paged by the server; Live, or Rehearsal which is never counted; its own season chip, which defaults to
+ *     every season). Each row: date, game, pick, price, CLV
  *     points, status, units, the rule's reason line, and when it went on the record against the start;
  *   - the Rule: its exact text and, where it has any, its dials with their current values;
  *   - the bankroll chart (live bets only) and the status (the referee's verdict in plain words);
@@ -37,6 +40,7 @@ import {
   streakText,
 } from "./hounds-board.js";
 import { ticketTable } from "./hounds-tickets.js";
+import { ALL_SEASON, seasonOptions, chooseSeason, saveSeason, seasonParam } from "./hounds-season.js";
 import { renderLineChart } from "./hounds-chart.js";
 import { bootDesk } from "./hounds-desk.js";
 import { bootLineage } from "./hounds-lineage.js";
@@ -52,7 +56,7 @@ const BEST_COLOR = "#8A93A3";
 const SECTIONS = ["hound-actions", "hound-scoreboard-section", "hound-today-section", "hound-bets-section",
   "hound-rule-section", "hound-chart-section", "hound-verdict-section"];
 
-const state = { id: "", hound: null, open: null, openError: null, graded: null, gradedError: null, segment: "forward",
+const state = { id: "", season: "", seasonMeta: null, betsSeason: ALL_SEASON, hound: null, open: null, openError: null, graded: null, gradedError: null, segment: "forward",
   series: null, seriesError: null, rulebook: null, rulebookFailed: false, poller: null };
 
 const q = (hook) => document.querySelector(`[data-hook='${hook}']`);
@@ -142,6 +146,50 @@ export function renderActions(hound) {
   paintFollow("");
 }
 
+// ---- the season the numbers cover ------------------------------------------------------------------
+
+/** The toggle above the KPI strip (Season 2 | Season 1 | All-time) and one line saying what the figures cover. */
+export function renderSeasonBar() {
+  const bar = q("hound-season");
+  if (bar) {
+    clearNode(bar);
+    for (const o of seasonOptions(state.seasonMeta)) {
+      bar.appendChild(h("button", { type: "button", class: "hd-seg", "data-season": o.id,
+        "aria-pressed": state.season === o.id ? "true" : "false", on: { click: () => { switchSeason(o.id); } } }, o.text));
+    }
+  }
+  const line = q("hound-season-line");
+  if (line) {
+    const meta = state.hound && state.hound.season;
+    line.textContent = state.season === ALL_SEASON
+      ? "The numbers below cover every forward bet. The status is the referee's all-time verdict."
+      : `The numbers below cover ${meta && meta.label ? meta.label : "this season"} only. The status is the referee's all-time verdict.`;
+  }
+}
+
+/** Show another season's figures: the model's summary and series again from the server; the ticket lists stay as they are. */
+async function switchSeason(id) {
+  if (id === state.season) return;
+  state.season = id;
+  saveSeason(id);
+  renderSeasonBar();
+  try {
+    const data = await apiGet(`/hounds/${encodeURIComponent(state.id)}?${seasonParam(id)}`);
+    if (id !== state.season || !data || typeof data !== "object" || isWarming(data)) return;
+    state.hound = data;
+    if (data.season && typeof data.season === "object") state.seasonMeta = data.season;
+    state.series = Array.isArray(data.series) ? normalizeSeries({ series: { [state.id]: data.series } }) : state.series;
+    state.seriesError = null;
+  } catch (err) {
+    return;           // keep what is on screen; the toggle stays where the reader put it
+  }
+  renderSeasonBar();
+  renderScoreboard(state.hound);
+  resultLines(state.hound);
+  renderVerdict(state.hound);
+  renderCharts();
+}
+
 // ---- KPI strip -------------------------------------------------------------------------------------
 
 function kpi(slot, label, big, small, tone) {
@@ -190,8 +238,11 @@ function renderVerdict(hound) {
   box.appendChild(h("p", { class: "hd-verdict__meaning", "data-hook": "verdict-meaning",
     text: VERDICT_MEANING[verdictLabel(hound)] || "This model has no verdict. Treat the result as unproven." }));
   const graded = betsOf(hound);
+  const windowed = hound.season && typeof hound.season === "object" && !hound.season.all_time;
   box.appendChild(h("p", { class: "hd-fine", "data-hook": "verdict-sample",
-    text: `Based on ${graded} graded live ${graded === 1 ? "bet" : "bets"}.${graded < 100 ? " That is a small sample." : ""}` }));
+    text: windowed
+      ? `This is the referee's all-time verdict. ${hound.season.label || "This season"}: ${graded} graded live ${graded === 1 ? "bet" : "bets"}.${graded < 100 ? " That is a small sample." : ""}`
+      : `Based on ${graded} graded live ${graded === 1 ? "bet" : "bets"}.${graded < 100 ? " That is a small sample." : ""}` }));
   if (hound.verdict && hound.verdict.sentence) {
     box.appendChild(h("p", { class: "hd-verdict__sentence", "data-hook": "verdict-sentence", text: hound.verdict.sentence }));
   }
@@ -206,7 +257,8 @@ function resultLines(hound) {
   const fwd = segmentView(hound, "forward");
   const fRec = fwd && fwd.record;
   box.appendChild(h("dl", { class: "hd-defs hd-defs--row", "data-hook": "forward-facts" }, [
-    h("div", {}, [h("dt", { text: "Live record" }), h("dd", { text: fRec && fRec.bets > 0 ? fmtRecord(fRec) : "no graded bets" })]),
+    h("div", {}, [h("dt", { text: hound.season && !hound.season.all_time && hound.season.label ? `Live record, ${hound.season.label}` : "Live record" }),
+      h("dd", { text: fRec && fRec.bets > 0 ? fmtRecord(fRec) : "no graded bets" })]),
     h("div", {}, [h("dt", { text: "First / last ticket" }), h("dd", { text:
       `${fmtWhen(hound.first_bet_utc) || NA} / ${fmtWhen(hound.last_bet_utc) || NA}` })]),
     fRec && fRec.bets > 0 ? h("div", {}, [h("dt", { text: "Units, two ways" }), h("dd", { "data-hook": "units-pair", text: unitsPairText(fRec) })]) : null,
@@ -367,10 +419,24 @@ function renderSegmentBar() {
   }
 }
 
+/** "All seasons | Season 2 | Season 1": narrows the graded ticket list. Tickets default to every season. */
+function renderBetsSeasonBar() {
+  const bar = q("bets-season");
+  if (!bar) return;
+  clearNode(bar);
+  const options = [{ id: ALL_SEASON, label: "All seasons" }].concat(seasonOptions(state.seasonMeta).filter((o) => o.id !== ALL_SEASON));
+  for (const o of options) {
+    bar.appendChild(h("button", { type: "button", class: "hd-seg", "data-bets-season": o.id,
+      "aria-pressed": state.betsSeason === o.id ? "true" : "false",
+      on: { click: () => { state.betsSeason = o.id; loadGraded(1); } } }, o.label));
+  }
+}
+
 function renderGraded() {
   const box = q("hound-bets");
   clearNode(box);
   renderSegmentBar();
+  renderBetsSeasonBar();
   if (state.gradedError) {
     const e = describeError(state.gradedError, "the graded tickets");
     box.appendChild(stateBox(e.kind, e.text, () => { loadGraded(state.graded ? state.graded.page : 1); }));
@@ -400,7 +466,8 @@ async function loadGraded(pageNo = 1) {
   renderGraded();
   const size = state.graded ? state.graded.page_size : PAGE_SIZE;
   try {
-    const data = await apiGet(`/hounds/${encodeURIComponent(state.id)}/bets?status=graded&segment=${state.segment}&page=${pageNo}&page_size=${size}`);
+    const within = state.betsSeason && state.betsSeason !== ALL_SEASON ? `&${seasonParam(state.betsSeason)}` : "";
+    const data = await apiGet(`/hounds/${encodeURIComponent(state.id)}/bets?status=graded&segment=${state.segment}&page=${pageNo}&page_size=${size}${within}`);
     state.graded = betsPageOf(data);
   } catch (err) {
     state.gradedError = err;
@@ -429,7 +496,8 @@ export async function boot() {
   }
   let hound;
   try {
-    hound = await apiGet(`/hounds/${encodeURIComponent(state.id)}`);
+    if (!state.season) state.season = chooseSeason(state.seasonMeta);
+    hound = await apiGet(`/hounds/${encodeURIComponent(state.id)}?${seasonParam(state.season)}`);
     if (!hound || typeof hound !== "object") throw Object.assign(new Error("empty"), { status: 404 });
   } catch (err) {
     clearNode(hero);
@@ -453,7 +521,9 @@ export async function boot() {
     return;
   }
   state.hound = hound;
+  if (hound.season && typeof hound.season === "object") state.seasonMeta = hound.season;
   renderHeader(hound);
+  renderSeasonBar();
   renderScoreboard(hound);
   resultLines(hound);
   renderVerdict(hound);
