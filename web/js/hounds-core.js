@@ -647,6 +647,22 @@ export function houndHref(id) {
   return `hound.html?id=${encodeURIComponent(String(id))}`;
 }
 
+/** "Handler 3F2A" -> "handler-3f2a": the public name of a member's kennel (src/hounds/kennels.py `slug`, same rule). */
+export function kennelHandle(label) {
+  return String(label || "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+}
+
+/** The page of one member's public dogs, from the owner label a member's dog carries ("" when it has none). */
+export function kennelHref(ownerDisplay) {
+  const handle = kennelHandle(ownerDisplay);
+  return handle ? `kennel.html?u=${encodeURIComponent(handle)}` : "";
+}
+
+/** "Handler 3F2A's kennel" */
+export function kennelName(ownerDisplay) {
+  return `${String(ownerDisplay || "").trim() || "A member"}'s kennel`;
+}
+
 /**
  * One sentence for a stream item (contract StreamItem: a BetRow plus hound_name, verdict, refused,
  * decided_utc). A refusal is said to be a refusal ("Passed: ..."); a play names the pick, the game and
