@@ -85,6 +85,9 @@ body.member-app .tile__half, body.member-app .tile__sheen, body.member-app .tile
 body.member-app .tile__corner, body.member-app .tile__ring { display: none; }
 body.member-app .tile__abbr { font-size: 26px; font-weight: 700; font-style: normal; line-height: 1.1; letter-spacing: 0; }
 
+/* a gutter inside a gutter doubled the side padding (the card panel and the record strip sat 32px in on a phone) */
+body.member-app .gutter .gutter, body.member-app .gutter .rec-strip { padding-left: 0; padding-right: 0; }
+
 /* big figures stay figures, not posters */
 body.member-app .card2__bet { font-size: clamp(22px, 3vw, 28px); line-height: 1.2; font-weight: 700; }
 body.member-app .ov2-summary__headline { font-size: clamp(22px, 3vw, 28px); line-height: 1.2; font-weight: 700; }
