@@ -86,35 +86,12 @@ def _viewer_id(authorization: Optional[str]) -> Optional[int]:
 
 
 def _fire_payload(dog: common.Dog, viewer_id: Optional[int] = None) -> dict:
-    """The fire preview, without the internal ledger row, with what THIS viewer may do about each pick."""
+    """The fire preview as the page gets it (src/hounds/interact/camp.py ``decorate_fire``)."""
     try:
         out = fire.fire(dog)
     except fire.NotFirable as exc:
         raise _err(422, "not_firable", str(exc))
-    owner = dog.kind == common.KIND_USER and viewer_id is not None and dog.owner_user_id == viewer_id
-    already = set()
-    remaining = 0
-    if dog.kind == common.KIND_USER:
-        now = common.now_utc()
-        remaining = manual.remaining_today(dog.id, now)
-        already = {t["bet_id"] for t in manual.tickets(dog.id, now=now)}
-    for pick in out["picks"]:
-        pick.pop("row", None)
-        blocked = None
-        if not owner:
-            blocked = "only the owner can record a manual pick" if dog.kind == common.KIND_USER else "house dogs are read only"
-        elif dog.status != "running":
-            blocked = f"this dog is {dog.status}"
-        elif pick["stale"]:
-            blocked = f"the newest board is more than {fire.user_engine.MAX_BOARD_AGE_MINUTES} minutes old"
-        elif manual.manual_bet_id(dog.id, pick["event_id"], pick["market"]) in already:
-            blocked = "already recorded as a manual pick"
-        elif remaining <= 0:
-            blocked = f"{manual.PER_DAY_LIMIT} manual picks a day is the limit"
-        pick["manual"] = {"can_record": blocked is None, "blocked": blocked}
-    out["viewer_is_owner"] = owner
-    out["manual_remaining_today"] = remaining if owner else None
-    return out
+    return camp.decorate_fire(dog, out, viewer_id)
 
 
 def _graded_tips(dog: common.Dog) -> list:
