@@ -41,7 +41,9 @@ from datetime import date as date_cls, timedelta
 from typing import Optional
 
 from src.core import odds as odds_math
-from src.hounds import boards, house, ledgers, verdict as vd
+import copy
+
+from src.hounds import boards, house, ledgers, seasons, verdict as vd
 from src.hounds.contract import (
     BetRow, ClvBlock, DEFAULT_PAGE_SIZE, HoundSummary, KIND_BASELINE, Record, ReplayBlock,
     RetiredBlock, SeriesPoint, SPARK_POINTS, STATUS_NOT_STARTED, StreamItem, TICKET_OPEN,
@@ -60,7 +62,14 @@ class HoundData:
     series: list
     bets: list                      # BetRow, newest first (forward + replay)
     clv_points: list = field(default_factory=list)   # [(day, pts)] measurable forward
+    # The same hound worked out for each configured season (``summarize_window``): season id -> HoundData.
+    # THIS object is the all-time view (``view("all")``); a season id not in the dict is not configured.
+    # (Named ``by_season``: a field called ``seasons`` would hide the module inside this class body.)
+    by_season: dict = field(default_factory=dict)
 
+    def view(self, season: str = "all") -> "HoundData":
+        """The hound as seen in ``season`` ("all" is this object). An unknown id falls back to all-time."""
+        return self if season == "all" else self.by_season.get(season, self)
 
 @dataclass
 class HoundBook:
@@ -451,7 +460,7 @@ def summarize(defn: dict, bets: list, teams_of: dict, as_of: Optional[str], now=
         markets=defn["markets"], rule_text=defn["rule_text"], status=status,
         retired=retired, record=record, clv=clv_block,
         verdict=VerdictBlock(label=verdict.label, sentence=verdict.sentence,
-                             units_note=vd.units_note(record.bets)),
+                             units_note=vd.units_note(record.bets), n=verdict.n),
         first_bet_utc=min(stamps, default=None), last_bet_utc=max(stamps, default=None),
         verified=verified, verified_share=_round(verified_share),
         checkable_share=_round(checkable_share),
@@ -463,7 +472,9 @@ def summarize(defn: dict, bets: list, teams_of: dict, as_of: Optional[str], now=
         persona=defn.get("persona") if isinstance(defn.get("persona"), dict) else None,
         form=compute_form(fgraded, avg_available, as_of, teams_of),
         open_bets=sum(1 for b in forward if _ticket_status(b, now) == TICKET_OPEN),
-        ungraded_bets=sum(1 for b in forward if _ticket_status(b, now) == TICKET_UNGRADED))
+        ungraded_bets=sum(1 for b in forward if _ticket_status(b, now) == TICKET_UNGRADED),
+        settled=record.wins + record.losses + record.pushes)
+    summary.ranked = summary.settled >= seasons.MIN_RANKED_BETS
     if summary.form is not None:
         summary.form["clv_beat"] = clv_beat_share(points)
     rows = sorted(bets, key=lambda b: (b.decision_utc or b.date or "", b.date),
@@ -472,6 +483,35 @@ def summarize(defn: dict, bets: list, teams_of: dict, as_of: Optional[str], now=
         summary=summary, series=series,
         bets=[bet_row(b, teams_of.get(b.event_id)) for b in rows],
         clv_points=points)
+
+
+def with_seasons(data: HoundData, defn: dict, bets: list, teams_of: dict, as_of: Optional[str]) -> HoundData:
+    """Attach each configured season's view to an all-time ``HoundData`` (the book's build and a user hound
+    worked out from its own ledger both use it). Returns ``data``."""
+    data.by_season = {sid: summarize_window(defn, bets, teams_of, as_of, sid, full=data) for sid in seasons.ids()}
+    return data
+
+
+def summarize_window(defn: dict, bets: list, teams_of: dict, as_of: Optional[str], season: str,
+                     full: Optional[HoundData] = None) -> HoundData:
+    """The hound as seen in one season: the SAME ``summarize`` run over only the bets whose slate date is in
+    the window, with the referee's own fields put back from the all-time run.
+
+    From the window (what the season measured): record, units, settled / ranked, CLV, typical price, last ten,
+    streak, last seven days, spark, the series and the bet list, and the open-ticket count.
+    From all-time (what is the referee's or the model's, never a season's): the verdict badge (label and
+    sentence; its ``n`` is the all-time measurable count), status, retirement, verified, first / last ticket
+    stamps and the rehearsal ``replay`` block. Replay bets are not in a window's forward figures, as in
+    all-time (they are separate), and the date filter applies to them too."""
+    full = full if full is not None else summarize(defn, bets, teams_of, as_of)
+    part = summarize(defn, [b for b in bets if seasons.in_window(b.date, season)], teams_of, as_of)
+    s, p = copy.copy(full.summary), part.summary
+    s.record, s.clv, s.form = p.record, p.clv, p.form
+    s.spark, s.spark_basis = p.spark, p.spark_basis
+    s.open_bets, s.settled, s.ranked = p.open_bets, p.settled, p.ranked
+    s.verdict = VerdictBlock(label=full.summary.verdict.label, sentence=full.summary.verdict.sentence,
+                             units_note=p.verdict.units_note, n=full.summary.verdict.n)
+    return HoundData(summary=s, series=part.series, bets=part.bets, clv_points=part.clv_points)
 
 
 # ---- the whole book -----------------------------------------------------------------------------
@@ -570,7 +610,9 @@ def build(src: Sources) -> HoundBook:
 
     hounds = {}
     for hid, defn in defs_by_id.items():
-        hounds[hid] = summarize(defn, all_bets.get(hid, []), teams_of, as_of)
+        # Each configured season too: the same numbers over that window (a view; no bet leaves all-time).
+        hounds[hid] = with_seasons(summarize(defn, all_bets.get(hid, []), teams_of, as_of),
+                                   defn, all_bets.get(hid, []), teams_of, as_of)
     clv_bets = [(hid, b.event_id, b.market_key, b.date, b.clv_pts)
                 for hid, rows in all_bets.items() if not defs_by_id[hid].get("card")
                 for b in rows if b.segment == "forward" and b.clv_measurable
@@ -750,14 +792,17 @@ def get_book_nowait(src: Optional[Sources] = None) -> tuple:
 # name, ``owner_display``, rule text), and ``HoundSummary`` has no field that holds anything private.
 
 SNAPSHOT_FILENAME = "hounds_public_cache.json"
-SNAPSHOT_VERSION = 1
+SNAPSHOT_VERSION = 2
 SNAPSHOT_MAX_AGE_S = 24 * 3600
 SNAPSHOT_MAX_BYTES = 2 * 1024 * 1024
 #: A saved copy stamped further in the future than this is a bad clock, not a fresh build.
 SNAPSHOT_CLOCK_SKEW_S = 300
 SNAPSHOT_SERIES_IDS = 12            # the series route's own cap (api.hounds.MAX_SERIES_IDS)
 ENV_SNAPSHOT_PATH = "HOUNDS_SNAPSHOT_PATH"
-_SNAP_KINDS = ("leaderboard", "graveyard", "stream", "series")
+_SNAP_KINDS = ("graveyard", "stream", "views")
+#: the season-keyed parts of the saved copy: ``snap["views"][season_id][kind]`` (the leaderboard and the series
+#: change with the season; the graveyard and the stream do not)
+_SEASON_KINDS = ("leaderboard", "series")
 
 _SNAP: dict = {"written_built": None, "refused_logged": False}
 _SERIES_REQUESTS: dict = {}          # hound id -> times asked for, this process only
@@ -792,13 +837,19 @@ def _snapshot_series_ids(book: HoundBook) -> list:
 
 def build_snapshot(book: HoundBook) -> dict:
     ids = _snapshot_series_ids(book)
+    views = {}
+    for sid in seasons.ids() + [seasons.ALL]:
+        meta = seasons.meta(sid)
+        views[sid] = {
+            "leaderboard": leaderboard_payload(leaderboard(book, sid), book.as_of, meta),
+            "series": series_payload({i: book.hounds[i].view(sid).series for i in ids}, book.as_of, meta),
+        }
     return {
         "version": SNAPSHOT_VERSION,
         "built_utc": book.built_utc,
-        "leaderboard": leaderboard_payload(leaderboard(book), book.as_of),
         "graveyard": graveyard_payload(graveyard(book), book.as_of),
         "stream": stream_payload(paginate(book.stream, 1, DEFAULT_PAGE_SIZE), book.as_of),
-        "series": series_payload({i: book.hounds[i].series for i in ids}, book.as_of),
+        "views": views,
     }
 
 
@@ -873,16 +924,26 @@ def load_snapshot(now: Optional[float] = None) -> Optional[dict]:
 
 
 def saved_payload(kind: str, ids: Optional[list] = None, page: int = 1,
-                  page_size: int = DEFAULT_PAGE_SIZE) -> Optional[dict]:
+                  page_size: int = DEFAULT_PAGE_SIZE, season: Optional[str] = None) -> Optional[dict]:
     """The saved copy of one public route's answer, marked ``stale: true``, or None when there is no
     usable copy or it cannot answer THIS request (a stream page past 1, a series id it did not keep:
-    a partial answer would read as a complete one, so those fall back to ``warming_up``)."""
+    a partial answer would read as a complete one, so those fall back to ``warming_up``).
+
+    The leaderboard and the series are saved PER SEASON (``season``: a configured id or "all"; None means
+    all-time, which is what a caller that never heard of seasons, like the share page, has always had). A
+    season the copy does not hold answers None."""
     if kind == "stream" and (page != 1 or page_size != DEFAULT_PAGE_SIZE):
         return None
     snap = load_snapshot()
     if snap is None:
         return None
-    payload = snap[kind]
+    if kind in _SEASON_KINDS:
+        view = snap["views"].get(season or seasons.ALL)
+        if not isinstance(view, dict) or not isinstance(view.get(kind), dict):
+            return None
+        payload = view[kind]
+    else:
+        payload = snap[kind]
     if kind == "series":
         have = payload.get("series")
         if not isinstance(have, dict) or any(i not in have for i in (ids or [])):
@@ -906,8 +967,9 @@ def _order_key(data: HoundData):
             -(s.clv.n if s.clv else 0), s.name)
 
 
-def leaderboard(book: HoundBook) -> list:
-    rows = [d for d in book.hounds.values() if d.summary.status != "retired"]
+def leaderboard(book: HoundBook, season: str = seasons.ALL) -> list:
+    """The running and benched hounds as seen in ``season`` (a configured id, or "all" for all-time)."""
+    rows = [d.view(season) for d in book.hounds.values() if d.summary.status != "retired"]
     rows.sort(key=_order_key)
     return [d.summary for d in rows]
 

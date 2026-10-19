@@ -4,13 +4,18 @@
  * WHAT IT SHOWS, TOP TO BOTTOM
  *   - the title, one disclosure bar (paper results, not advice, 21+: static markup, so it is there with
  *     scripts off) and a "Build a model" link;
+ *   - the SEASON switcher (Season 2 since Oct 18 | Season 1 | All-time) and one line saying what the window is.
+ *     Season 2 is the default; the choice is kept in the URL (?season=) and localStorage. Every figure in the
+ *     table is worked out by the server over that window only (GET /hounds?season=); the status column is the
+ *     referee's verdict and stays all-time. A model is RANKED with 10 settled bets in the view; below that it
+ *     waits in the collapsed "Warming up" group with its record so far, whatever column is sorted;
  *   - filters: whose models (All / My models / House / Builders'), sport, type;
- *   - THE TABLE. One row per model that has a graded bet: rank, model, type, record (W-L-P), units, ROI, bets,
+ *   - THE TABLE. One row per RANKED model (10 settled bets in the view): rank, model, type, record (W-L-P), units, ROI, bets,
  *     typical price, CLV (the share of bets that beat the close, and the average points), the last ten results
  *     as dots, and a plain-words status. Every column sorts. Units and ROI are one unit a bet at the average
- *     price. A model's drawer (click its row) lists its last ten tickets and links to its page. Models with no
- *     graded bet are one collapsed group, "Warming up (N)", at the bottom with their open-ticket count; they
- *     are never 28 rows of 0-0;
+ *     price. A model's drawer (click its row) lists its last ten tickets and links to its page. Every other model
+ *     is one collapsed group, "Warming up (N)", at the bottom: its record so far, how many of the 10 settled bets it
+ *     has, and its open tickets, never units or ROI; they are never 28 rows of 0-0;
  *   - LATEST TICKETS: the newest bets any model recorded, as ticket rows (model, game, pick, market, price,
  *     books, when it went on the record against the start, PENDING / WON / LOST / PUSH), paged by the server.
  *     Every number in the table adds up from tickets like these;
@@ -35,9 +40,12 @@ import {
 import { wlText, unitsOf, causeText } from "./hounds-voice.js";
 import {
   COLUMNS, NA, betsOf, roiOf, fmtRoi, fmtUnitsPlain, avgPriceOf, clvOf, last10Of, openBetsOf, recordText, streakText,
-  statusOf, typeText, sportLabel, sportsOf, marketsText, presentSports, filterBySport, sortHounds, splitWarming,
-  onlyTickets, freshness,
+  statusOf, typeText, sportLabel, sportsOf, marketsText, presentSports, filterBySport, sortHounds, splitRanked,
+  settledOf, onlyTickets, freshness, inQualifyingRound, qualifyingRows, progressText,
 } from "./hounds-board.js";
+import {
+  ALL_SEASON, seasonOptions, chooseSeason, saveSeason, seasonParam, seasonLine, minRanked,
+} from "./hounds-season.js";
 import { ticketList } from "./hounds-tickets.js";
 import { followedIds } from "./hounds-follow.js";
 
@@ -48,6 +56,8 @@ export const DRAWER_TICKETS = 10;
 const state = {
   hounds: [],
   payload: null,
+  season: "",              // the season shown: "s2" | "s1" | "all" (URL, then localStorage, then the default)
+  seasonMeta: null,        // the payload's `season` block (labels, dates, min_ranked_bets)
   scope: "all",            // all | mine | house | user
   sport: "all",
   category: "all",
@@ -110,6 +120,27 @@ function segButtons(bar, entries, current, onPick, dataKey) {
     bar.appendChild(h("button", { type: "button", class: "hd-seg", "aria-pressed": current === key ? "true" : "false",
       [dataKey]: key, on: { click: () => onPick(key) } }, text));
   }
+}
+
+/** The season switcher and the line under it. Picking a season is remembered (URL and localStorage) and reloads the board. */
+function renderSeasonBar() {
+  const bar = q("hounds-season");
+  if (bar) {
+    segButtons(bar, seasonOptions(state.seasonMeta).map((o) => [o.id, o.text]), state.season,
+      (k) => { pickSeason(k); }, "data-season");
+  }
+  const line = q("season-line");
+  if (line) line.textContent = seasonLine(state.seasonMeta, state.season);
+}
+
+function pickSeason(id) {
+  if (id === state.season) return;
+  state.season = id;
+  saveSeason(id);
+  state.expanded = new Set();     // a drawer's tickets belong to the season they were opened in
+  state.drawers = {};
+  renderSeasonBar();
+  loadBoard();
 }
 
 function renderFilters() {
@@ -195,9 +226,18 @@ function clvCell(hound) {
 function statusCell(hound) {
   const st = statusOf(hound);
   return h("span", { class: "hd-statuswrap" }, [
-    h("span", { class: `hd-st hd-st--${st.tone}`, "data-hook": "status", "data-status": st.key, title: st.title, text: st.text }),
+    h("span", { class: `hd-st hd-st--${st.tone}`, "data-hook": "status", "data-status": st.key,
+      title: `${st.title} This is the referee's all-time verdict, not limited to the season shown.`, text: st.text }),
     hound.status === "benched" ? h("small", { class: "hd-aux", text: "Idle 7+ days" }) : null,
   ]);
+}
+
+function progressPill(hound) {
+  const min = minRanked(state.seasonMeta);
+  const st = statusOf(hound);
+  return h("span", { class: "hd-statuswrap" }, [
+    h("span", { class: "hd-pill", "data-hook": "progress", "data-settled": String(settledOf(hound)),
+      title: `Needs ${min} settled bets to be ranked. Referee status, all-time: ${st.text}.`, text: progressText(hound, min) })]);
 }
 
 function modelCell(hound, rank, open) {
@@ -217,7 +257,11 @@ function modelCell(hound, rank, open) {
   ])]);
 }
 
-function tableRow(hound, rank) {
+/**
+ * One table row. `qual` (the qualifying round) numbers nothing, greys the ROI with a "small sample" tooltip and
+ * puts a progress pill ("3/10 bets") in the Status column in place of the referee's chip.
+ */
+function tableRow(hound, rank, qual) {
   const units = unitsOf(hound);
   const roi = roiOf(hound);
   const bets = betsOf(hound);
@@ -227,19 +271,21 @@ function tableRow(hound, rank) {
   const streak = streakText(hound);
   const tr = h("tr", { class: "hd-tr", "data-hound": hound.id, "data-kind": hound.kind || "", "data-category": categoryOf(hound),
     "data-open": open ? "true" : "false" }, [
-    h("td", { class: "hd-col-rank hd-num", text: String(rank) }),
+    h("td", { class: "hd-col-rank hd-num", text: qual ? "-" : String(rank) }),
     modelCell(hound, rank, open),
     h("td", { class: "hd-col-type" }, [h("span", { class: "hd-typechip", "data-category": categoryOf(hound), text: typeText(hound) })]),
     h("td", { class: "hd-col-record hd-num", "data-hook": "row-record" }, [
       h("strong", { text: recordText(hound) }),
       streak ? h("small", { class: "hd-aux", text: streak }) : null]),
     h("td", { class: `hd-col-units hd-num hd-tone--${tone(units)}`, "data-hook": "row-units", text: fmtUnitsPlain(units) }),
-    h("td", { class: `hd-col-roi hd-num hd-tone--${tone(roi)}`, "data-hook": "row-roi", text: fmtRoi(roi) }),
+    qual
+      ? h("td", { class: "hd-col-roi hd-num hd-roi--small", "data-hook": "row-roi", title: "small sample", text: fmtRoi(roi) })
+      : h("td", { class: `hd-col-roi hd-num hd-tone--${tone(roi)}`, "data-hook": "row-roi", text: fmtRoi(roi) }),
     h("td", { class: "hd-col-bets hd-num", "data-hook": "row-bets", text: String(bets) }),
     h("td", { class: "hd-col-price hd-num", "data-hook": "row-price", text: price === null ? NA : fmtPrice(price) }),
     h("td", { class: "hd-col-clv" }, [clvCell(hound)]),
     h("td", { class: "hd-col-last10" }, [dots(hound)]),
-    h("td", { class: "hd-col-status" }, [statusCell(hound)]),
+    h("td", { class: "hd-col-status" }, [qual ? progressPill(hound) : statusCell(hound)]),
   ]);
   tr.addEventListener("click", (ev) => {
     const target = ev.target;
@@ -286,7 +332,8 @@ async function loadDrawer(id, force) {
   state.drawers[id] = { status: "loading", items: [] };
   renderTable();
   try {
-    const data = await apiGet(`/hounds/${encodeURIComponent(id)}/bets?page=1&page_size=${DRAWER_TICKETS}&segment=forward`);
+    const within = state.season && state.season !== ALL_SEASON ? `&${seasonParam(state.season)}` : "";
+    const data = await apiGet(`/hounds/${encodeURIComponent(id)}/bets?page=1&page_size=${DRAWER_TICKETS}&segment=forward${within}`);
     const items = Array.isArray(data && data.items) ? data.items : (Array.isArray(data) ? data : []);
     state.drawers[id] = { status: "ok", items: items.slice(0, DRAWER_TICKETS) };
   } catch (err) {
@@ -295,10 +342,23 @@ async function loadDrawer(id, force) {
   renderTable();
 }
 
+/** What a warming model shows instead of units and ROI: its record so far, how far it is from a rank, its open tickets. */
+export function warmingNote(hound, min) {
+  const settled = settledOf(hound);
+  const open = openBetsOf(hound);
+  const parts = [];
+  if (settled > 0) parts.push(`${recordText(hound)} so far`);
+  parts.push(`${settled} of ${min} settled bets`);
+  if (open > 0) parts.push(`${open} open ${open === 1 ? "ticket" : "tickets"}`);
+  else if (settled === 0) parts.push(hound.status === "not_started" ? "not started" : hound.status === "benched" ? "idle, no ticket in 7+ days" : "no ticket yet");
+  return parts.join(" · ");
+}
+
 function warmingBody(warming) {
+  const min = minRanked(state.seasonMeta);
   const openTotal = warming.reduce((n, x) => n + openBetsOf(x), 0);
   const label = `Warming up (${warming.length})`;
-  const summary = `${openTotal} open ${openTotal === 1 ? "ticket" : "tickets"}, nothing graded yet`;
+  const summary = `ranked at ${min} settled bets · ${openTotal} open ${openTotal === 1 ? "ticket" : "tickets"}`;
   const tbody = h("tbody", { class: "hd-warm", "data-hook": "warming-group", "data-open": state.warmOpen ? "true" : "false" }, [
     h("tr", { class: "hd-warm__head" }, [h("td", { colspan: COLUMNS.length + 1 }, [
       h("button", { type: "button", class: "hd-warm__toggle", "data-hook": "warming-toggle",
@@ -310,8 +370,7 @@ function warmingBody(warming) {
       ])])]),
   ]);
   if (state.warmOpen) {
-    for (const hound of sortHounds(warming, "model", "asc")) {
-      const open = openBetsOf(hound);
+    for (const hound of warming) {
       const sports = sportsOf(hound).map(sportLabel).join(", ");
       tbody.appendChild(h("tr", { class: "hd-tr hd-tr--warm", "data-hound": hound.id }, [
         h("td", { class: "hd-col-rank hd-num", text: "-" }),
@@ -321,9 +380,7 @@ function warmingBody(warming) {
             h("a", { class: "hd-modelname", href: houndHref(hound.id), text: hound.name || NOT_REPORTED }),
             h("small", { class: "hd-aux", text: [sports, marketsText(hound)].filter(Boolean).join(" · ") || NA })])])]),
         h("td", { class: "hd-col-type" }, [h("span", { class: "hd-typechip", "data-category": categoryOf(hound), text: typeText(hound) })]),
-        h("td", { colspan: 7, class: "hd-warm__note", text: open > 0
-          ? `${open} open ${open === 1 ? "ticket" : "tickets"}, waiting to be graded`
-          : (hound.status === "not_started" ? "Not started" : hound.status === "benched" ? "Idle, no ticket in 7+ days" : "No ticket yet") }),
+        h("td", { colspan: 7, class: "hd-warm__note", "data-hook": "warming-note", text: warmingNote(hound, min) }),
         h("td", { class: "hd-col-status" }, [statusCell(hound)]),
       ]));
     }
@@ -331,15 +388,46 @@ function warmingBody(warming) {
   return tbody;
 }
 
+/**
+ * The qualifying round: every model short of the ranking bar that has a settled bet or an open ticket, as the same
+ * table columns (most units, then the better record), each with its progress pill. A model with nothing yet is
+ * counted in one line below. Not sortable: it is a progress list, and the ranked table below keeps the sorting.
+ */
+function qualifyingSection(warming) {
+  const min = minRanked(state.seasonMeta);
+  const label = (state.seasonMeta && state.seasonMeta.label) || "This season";
+  const shown = qualifyingRows(warming);
+  const rest = warming.length - shown.length;
+  const tbody = h("tbody", { "data-hook": "qualifying-list" });
+  for (const hound of shown) {
+    tbody.appendChild(tableRow(hound, 0, true));
+    if (state.expanded.has(String(hound.id))) tbody.appendChild(drawerRow(hound));
+  }
+  const table = h("table", { class: "hd-table hd-table--board", "data-hook": "qualifying-table" }, [
+    h("caption", { class: "hd-sr-only", text: "Qualifying round: models short of the ranking bar, with their progress." }),
+    h("thead", {}, [h("tr", {}, [h("th", { scope: "col", class: "hd-col-rank", text: "#" }),
+      ...COLUMNS.map((col) => h("th", { scope: "col", class: `hd-col-${col.key}${col.numeric ? " hd-th--num" : ""}`,
+        title: col.hint || undefined, text: col.label }))])]),
+    tbody]);
+  return h("div", { class: "hd-qual", "data-hook": "qualifying" }, [
+    h("h3", { class: "hd-qual__title", "data-hook": "qualifying-title",
+      text: `${label} qualifying: a model needs ${min} settled bets to be ranked` }),
+    shown.length ? h("div", { class: "hd-tablewrap", tabindex: "0", role: "region", "aria-label": "Qualifying round. Scrolls sideways on a phone." }, [table]) : null,
+    rest > 0 ? h("p", { class: "hd-fine", "data-hook": "qualifying-rest",
+      text: `${rest} more ${rest === 1 ? "model has" : "models have"} no settled bet yet.` }) : null,
+  ]);
+}
+
 function renderTable() {
   const host = q("hounds-table");
   if (!host) return;
   clearNode(host);
   const all = scoped();
-  const { active, warming } = splitWarming(all);
+  // Ranked models only are sorted and numbered; the rest wait in "Warming up" whatever column is sorted.
+  const { active, warming } = splitRanked(all, minRanked(state.seasonMeta));
   const rows = sortHounds(active, state.sortKey, state.sortDir);
   const count = q("hounds-count");
-  if (count) count.textContent = `${all.length} ${all.length === 1 ? "model" : "models"}`;
+  if (count) count.textContent = `${all.length} ${all.length === 1 ? "model" : "models"}, ${active.length} ranked`;
   if (all.length === 0) {
     host.appendChild(h("div", { class: "hd-empty", "data-hook": "board-empty" }, [
       h("p", { text: state.hounds.length === 0 ? "No models are running yet. The first graded bet puts a model on this table."
@@ -348,6 +436,10 @@ function renderTable() {
       h("a", { class: "btn btn--primary", href: "build-a-hound.html", text: "Build a model" })]));
     return;
   }
+  // Fewer than 3 ranked: the QUALIFYING ROUND leads (expanded, with progress), the ranked table follows. From 3
+  // ranked on, the ranked table leads and the models still short of the bar wait in the collapsed "Warming up" group.
+  const qualifying = inQualifyingRound(active.length) && warming.length > 0;
+  if (qualifying) host.appendChild(qualifyingSection(warming));
   const thead = h("thead", {}, [headRow()]);
   const tbody = h("tbody", { "data-hook": "hounds-list" });
   rows.forEach((hound, i) => {
@@ -358,9 +450,12 @@ function renderTable() {
     h("caption", { class: "hd-sr-only", text: "Model leaderboard. One unit a bet, at the average price. Click a column to sort." }),
     thead,
     rows.length ? tbody : h("tbody", {}, [h("tr", {}, [h("td", { colspan: COLUMNS.length + 1, class: "hd-muted",
-      "data-hook": "no-graded", text: "No model in this view has a graded bet yet." })])]),
+      "data-hook": "no-graded", text: `No model has ${minRanked(state.seasonMeta)} settled bets in this view yet, so none is ranked.${
+        qualifying ? " The qualifying round above shows who is closest."
+          : warming.length ? ` ${warming.length} ${warming.length === 1 ? "model is" : "models are"} warming up below.` : ""}` })])]),
   ]);
-  if (warming.length) table.appendChild(warmingBody(warming));
+  if (warming.length && !qualifying) table.appendChild(warmingBody(warming));
+  if (qualifying) host.appendChild(h("h3", { class: "hd-qual__ranked", "data-hook": "ranked-title", text: `Ranked (${active.length})` }));
   host.appendChild(h("div", { class: "hd-tablewrap", tabindex: "0", role: "region",
     "aria-label": "Model leaderboard. Scrolls sideways on a phone." }, [table]));
 }
@@ -380,6 +475,7 @@ function renderMeta() {
 }
 
 function renderAll() {
+  renderSeasonBar();
   renderFilters();
   renderTable();
   renderMeta();
@@ -519,12 +615,18 @@ export async function loadBoard() {
     clearNode(host);
     host.appendChild(h("p", { class: "hd-muted", text: "Loading the leaderboard..." }));
   }
+  if (!state.season) state.season = chooseSeason(state.seasonMeta);
+  const asked = state.season;
+  renderSeasonBar();
   try {
-    const data = await apiGet("/hounds");
+    const data = await apiGet(`/hounds?${seasonParam(asked)}`);
+    if (asked !== state.season) return false;        // the reader picked another season while this one loaded
+    if (data && typeof data === "object" && data.season && typeof data.season === "object") state.seasonMeta = data.season;
     if (isWarming(data)) {
       state.hounds = [];
       state.payload = null;
       if (host) { clearNode(host); host.appendChild(warmingBox(data)); }
+      renderSeasonBar();
       renderFilters();
       retryWhileWarming("board", loadBoard, data);
       return false;
@@ -533,6 +635,7 @@ export async function loadBoard() {
     state.payload = data || {};
     state.hounds = Array.isArray(data && data.hounds) ? data.hounds : [];
   } catch (err) {
+    if (asked !== state.season) return false;
     state.hounds = [];
     state.payload = null;
     if (host) {

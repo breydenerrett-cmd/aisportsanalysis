@@ -21,6 +21,7 @@ import {
   americanDecimal, dayKey, NOT_REPORTED,
 } from "./hounds-core.js";
 import { unitsOf } from "./hounds-voice.js";
+import { MIN_RANKED_BETS } from "./hounds-season.js";
 
 export const MIN_CLV_BETS = 150;           // src/hounds/verdict.py: bets with a measurable close before a verdict
 export const STALE_HOURS = 6;              // older than this and the page says it is updating
@@ -31,6 +32,24 @@ export const NA = "n/a";
 export function betsOf(hound) {
   const rec = hound && hound.record;
   return rec && isNum(rec.bets) && rec.bets > 0 ? rec.bets : 0;
+}
+
+/**
+ * Settled bets in the view the payload describes (win, loss or push): the record's own wins + losses + pushes,
+ * so the rank can never disagree with the record printed beside it. (The server also sends `settled` and
+ * `ranked`, from the same numbers; the digest reads those.)
+ */
+export function settledOf(hound) {
+  const rec = (hound && hound.record) || {};
+  return (isNum(rec.wins) ? rec.wins : 0) + (isNum(rec.losses) ? rec.losses : 0) + (isNum(rec.pushes) ? rec.pushes : 0);
+}
+
+/**
+ * Is the model ranked in this view? It needs `min` settled bets there (10 unless the payload's season block says
+ * otherwise). A 1-0 start is a record, never a rank.
+ */
+export function isRanked(hound, min = MIN_RANKED_BETS) {
+  return settledOf(hound) >= min;
 }
 
 /** Units per bet as a percent (one unit a bet). Null with no graded bet. */
@@ -112,7 +131,9 @@ export function statusOf(hound) {
   }
   const label = verdictLabel(hound);
   const tone = verdictTone(label);
-  const n = hound && hound.clv && isNum(hound.clv.n) ? hound.clv.n : 0;
+  // The badge is the referee's and is all-time, so the count under it is too (`verdict.n`); `clv.n` follows the season.
+  const n = hound && hound.verdict && isNum(hound.verdict.n) ? hound.verdict.n
+    : (hound && hound.clv && isNum(hound.clv.n) ? hound.clv.n : 0);
   switch (label) {
     case "BEATING THE CLOSE":
       return { key: "beating", text: "Beating the close", tone, title: "Its prices keep beating where the market closes. That is good shopping, not a promise of wins." };
@@ -174,7 +195,7 @@ export const COLUMNS = [
   { key: "price", label: "Avg price", numeric: true, first: "desc", hint: "The typical price taken" },
   { key: "clv", label: "CLV", numeric: true, first: "desc", hint: "Share of bets that beat the close, and the average points" },
   { key: "last10", label: "Last 10", numeric: true, first: "desc", hint: "Wins in the last ten decided bets" },
-  { key: "status", label: "Status", numeric: false, first: "desc", hint: "The referee's verdict, in plain words" },
+  { key: "status", label: "Status", numeric: false, first: "desc", hint: "The referee's verdict, in plain words. All-time, not limited to the season shown." },
 ];
 
 const STATUS_RANK = { beating: 0, market: 1, early: 2, notstarted: 3, unrated: 4, vig: 5, retired: 6 };
@@ -216,6 +237,52 @@ export function splitWarming(hounds) {
   const active = [], warming = [];
   for (const hound of hounds || []) (betsOf(hound) > 0 ? active : warming).push(hound);
   return { active, warming };
+}
+
+/**
+ * The table and the "Warming up" group. A model with `min` settled bets in the view is RANKED and sits in the
+ * table; every other model is warming up, however good its few bets look. Sorting happens inside the ranked
+ * list only (`sortHounds` on `active`), so no sort key can lift a warming model above a ranked one. The warming
+ * group lists the most-settled first, then by name.
+ */
+export function splitRanked(hounds, min = MIN_RANKED_BETS) {
+  const active = [], warming = [];
+  for (const hound of hounds || []) (isRanked(hound, min) ? active : warming).push(hound);
+  warming.sort((a, b) => settledOf(b) - settledOf(a) || openBetsOf(b) - openBetsOf(a)
+    || String(a.name || "").localeCompare(String(b.name || "")));
+  return { active, warming };
+}
+
+/** Fewer ranked models than this and the page shows the QUALIFYING ROUND (everyone with a bet, with progress) above the ranked table. */
+export const QUALIFYING_UNDER = 3;
+
+export function inQualifyingRound(rankedCount) {
+  return rankedCount < QUALIFYING_UNDER;
+}
+
+/** "3/10 bets": settled bets so far over the bar (never shown above the bar). */
+export function progressText(hound, min = MIN_RANKED_BETS) {
+  return `${Math.min(settledOf(hound), min)}/${min} bets`;
+}
+
+/**
+ * The qualifying round's rows from the models that are not ranked: those with a settled bet or an open ticket,
+ * most units first, then the better record (wins over wins + losses), then the more settled bets, then by name.
+ * A model with nothing yet is left out (the page counts them in one line).
+ */
+export function qualifyingRows(hounds) {
+  const share = (x) => {
+    const rec = (x && x.record) || {};
+    const w = isNum(rec.wins) ? rec.wins : 0, l = isNum(rec.losses) ? rec.losses : 0;
+    return w + l > 0 ? w / (w + l) : -1;
+  };
+  return (hounds || []).filter((x) => settledOf(x) > 0 || openBetsOf(x) > 0).sort((a, b) => {
+    const ua = unitsOf(a), ub = unitsOf(b);
+    if (ua === null && ub !== null) return 1;
+    if (ub === null && ua !== null) return -1;
+    return (ub ?? 0) - (ua ?? 0) || share(b) - share(a) || settledOf(b) - settledOf(a)
+      || String(a.name || "").localeCompare(String(b.name || ""));
+  });
 }
 
 // ---- tickets ---------------------------------------------------------------------------------------

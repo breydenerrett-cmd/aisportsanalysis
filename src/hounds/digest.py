@@ -179,11 +179,21 @@ def _span(window: Optional[dict]) -> str:
     return "season" if window is None else "last 7 days"
 
 
+def _pool(hounds: list) -> list:
+    """Who can be named hottest or coldest: the models RANKED in the payload's season (``ranked: true``, at least
+    ``seasons.MIN_RANKED_BETS`` settled bets there) when any are, else the whole race. A one-bet model is not a
+    hot streak, and a young season should not be named from a handful of its tickets while seasoned models
+    exist. A payload with no ``ranked`` flag (an old saved copy) has no ranked model, so it is the whole race."""
+    race = _race(hounds)
+    ranked = [h for h in race if h.get("ranked") is True]
+    return ranked or race
+
+
 def _pick(hounds: list, window: Optional[dict], hot: bool):
     """The hottest (or coldest) race hound by units: at least MIN_SETTLED_FOR_HIGHLIGHT settled bets in the
     span, units strictly above (below) zero. Ties: more wins (losses) first, then name."""
     best = None
-    for h in _race(hounds):
+    for h in _pool(hounds):
         s, name = _stats_for(h, window), _name(h)
         if not s or not name or s["wins"] + s["losses"] < MIN_SETTLED_FOR_HIGHLIGHT:
             continue

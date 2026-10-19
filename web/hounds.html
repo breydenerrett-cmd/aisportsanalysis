@@ -60,6 +60,10 @@
     <h2 id="board-h">Leaderboard <span class="hd-count" data-hook="hounds-count"></span></h2>
     <p class="hd-asofline" data-hook="hounds-asof" aria-live="polite"></p>
   </div>
+  <div class="hd-seasonbar" data-hook="hounds-season-bar">
+    <div class="hd-segs hd-segs--season" role="group" aria-label="Season" data-hook="hounds-season"></div>
+    <p class="hd-seasonline" data-hook="season-line" aria-live="polite">Season 2 started Oct 18. Every model starts at zero.</p>
+  </div>
   <div class="hd-filters" data-hook="hounds-filters">
     <div class="hd-segs" role="group" aria-label="Whose models to show" data-hook="hounds-filter"></div>
     <div class="hd-segs" role="group" aria-label="Sport" data-hook="hounds-sports"></div>
@@ -69,6 +73,8 @@
   <details class="hd-legend-box" data-hook="how-to-read">
     <summary>How to read this table</summary>
     <dl class="hd-defs">
+      <div><dt>Seasons</dt><dd>A season is a window of dates. Season 2 started on Oct 18 and every model starts it at zero. Records from earlier are in Season 1 and All-time; nothing is deleted. The figures in this table cover the season you pick. The status column is the referee's verdict and stays all-time.</dd></div>
+      <div><dt>Ranked, warming up</dt><dd>A model is ranked once it has 10 settled bets in the season shown. Until then it sits in the Warming up group with its record so far, because a 1-0 start tells you nothing.</dd></div>
       <div><dt>Units, ROI</dt><dd>One unit a bet, settled at the average price across books when the bet was placed. ROI is units divided by bets.</dd></div>
       <div><dt>CLV</dt><dd>How often the price taken beat the price the market closed at, and by how many points on average, over the bets that have a measurable close. n is the number of bets it rests on.</dd></div>
       <div><dt>Status</dt><dd>Whether the prices a model takes beat the closing line, judged only once it has 150 measurable bets. It is not a ranking by units, and a model can lead on units while paying the vig.</dd></div>

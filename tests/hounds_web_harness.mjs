@@ -185,12 +185,13 @@ const storage = {
 const throwing = scenario.storageThrows === "methods" ? () => { throw new Error("storage blocked"); } : null;
 if (throwing) { storage.getItem = throwing; storage.setItem = throwing; storage.removeItem = throwing; }
 const navigations = [];
+const replaced = [];           // every URL the page wrote with history.replaceState (the season choice, ?season=)
 const winListeners = {};
 const loc = { search: scenario.search || "", host: "linehound.test", protocol: "https:", origin: "https://linehound.test",
   pathname: "/web/x.html", hash: "" };
 Object.defineProperty(loc, "href", { get: () => "", set: (v) => navigations.push(String(v)) });
 globalThis.window = {
-  localStorage: storage, sessionStorage: storage, location: loc, history: { replaceState() {} },
+  localStorage: storage, sessionStorage: storage, location: loc, history: { replaceState(state, title, url) { replaced.push(String(url)); } },
   addEventListener: (t, f) => { (winListeners[t] ||= []).push(f); }, removeEventListener() {},
   dispatchEvent() { return true; }, scrollTo() {}, crypto: globalThis.crypto,
 };
@@ -325,6 +326,7 @@ out.captures = captures;
 out.gets = gets;
 out.posts = posts;
 out.navigations = navigations;
+out.replaced = replaced;
 out.shares = shares;
 out.downloads = downloads;
 out.canvases = canvases;

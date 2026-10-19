@@ -307,6 +307,20 @@
 .hd-asofline { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; font-size: 13px; color: var(--hd-mute); }
 .hd-updating { color: var(--hd-warn); font-weight: 600; border: 1px solid rgba(242, 184, 75, .45); background: rgba(242, 184, 75, .08); padding: 1px 8px; border-radius: 4px; font-size: 12px; }
 
+/* the season switcher (added 2026-10-19) */
+.hd-seasonbar { margin: 6px 0 10px; display: grid; gap: 4px; }
+.hd-segs--season .hd-seg { min-height: 36px; padding: 0 14px; font-size: 14px; font-weight: 600; }
+.hd-seasonline { margin: 0; font-size: 13px; color: var(--hd-text-2); }
+.hd-seasonchips { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin: 0 0 10px; }
+.hd-seasonchips .hd-fine { margin: 0; }
+
+/* the qualifying round: models short of the ranking bar, with their progress (added 2026-10-19) */
+.hd-qual { margin: 8px 0 14px; }
+.hd-qual__title { margin: 0 0 8px; font-size: 15px; font-weight: 600; color: var(--hd-text); }
+.hd-qual__ranked { margin: 14px 0 8px; font-size: 14px; font-weight: 600; color: var(--hd-text-2); }
+.hd-pill { display: inline-block; padding: 2px 9px; border: 1px solid var(--hd-line); border-radius: 999px; font-size: 12px; font-weight: 600; color: var(--hd-text-2); background: var(--hd-card-2); white-space: nowrap; }
+.hd-roi--small { color: var(--hd-mute); opacity: .7; cursor: help; }
+
 /* segmented filters */
 .hd-filters { display: grid; gap: 6px; margin: 6px 0 10px; }
 .hd-segs { gap: 4px; margin: 0; }

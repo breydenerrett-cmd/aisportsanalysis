@@ -8,6 +8,12 @@
  * numbers out says that and tries once more. The ranking is by units at the average price, graded bets only
  * (the same order as the leaderboard page), baselines left to the leaderboard, and every row carries its bet
  * count, so a hot start on a handful of bets never reads as more than it is. The voice guide is docs/VOICE.md.
+ *
+ * SEASONS. The board is the newest season's (the server's default, Season 2 since Oct 18) and only RANKED models
+ * count: 10 settled bets in the season. A season a few days old has few of them, so the board shows whoever has
+ * qualified, topped up to five with the best of the QUALIFYING ROUND (not numbered, ROI greyed, each with an
+ * "x/10 bets" pill), and one line saying how old the season is and that more models qualify at 10 bets; the
+ * latest tickets beside it are every model's, newest first.
  */
 
 import { apiGet } from "./api.js";
@@ -16,9 +22,10 @@ import {
 } from "./hounds-core.js";
 import { sortByUnits, unitsOf } from "./hounds-voice.js";
 import {
-  recordText, roiOf, fmtRoi, fmtUnitsPlain, betsOf, onlyTickets, ticketState, RESULT_WORDS, ticketPrice, pickOf,
-  marketLabel, recordedText, freshness, NA,
+  recordText, roiOf, fmtRoi, fmtUnitsPlain, betsOf, onlyTickets, ticketState, ticketStatus, RESULT_WORDS, ticketPrice, pickOf,
+  marketLabel, recordedText, freshness, isRanked, qualifyingRows, progressText, NA,
 } from "./hounds-board.js";
+import { minRanked, seasonAgeText } from "./hounds-season.js";
 
 export const TOP_MODELS = 5;
 export const LATEST_TICKETS = 5;
@@ -26,10 +33,11 @@ export const WARMING_RETRY_MS = 6000;
 
 const q = (hook) => document.querySelector(`[data-hook='${hook}']`);
 
-/** The models that earn a place on the landing board: running, not a baseline, with a graded bet. */
-export function topModels(hounds, n = TOP_MODELS) {
+/** The models that earn a place on the landing board: running, not a baseline, and RANKED (`min` settled bets in the season). */
+export function topModels(hounds, n = TOP_MODELS, min) {
   const eligible = (Array.isArray(hounds) ? hounds : []).filter((x) => x
-    && x.status !== "retired" && x.status !== "not_started" && categoryOf(x) !== "baseline" && unitsOf(x) !== null);
+    && x.status !== "retired" && x.status !== "not_started" && categoryOf(x) !== "baseline" && unitsOf(x) !== null
+    && isRanked(x, min));
   return sortByUnits(eligible).slice(0, n);
 }
 
@@ -37,30 +45,59 @@ function tone(n) {
   return n === null || n === undefined ? "flat" : n > 0 ? "up" : n < 0 ? "down" : "flat";
 }
 
-function boardRow(hound, rank) {
+/** Models that count for the landing board but are short of the ranking bar: the QUALIFYING ROUND, best first. */
+export function qualifyingModels(hounds, n = TOP_MODELS, min) {
+  const eligible = (Array.isArray(hounds) ? hounds : []).filter((x) => x
+    && x.status !== "retired" && x.status !== "not_started" && categoryOf(x) !== "baseline" && unitsOf(x) !== null
+    && !isRanked(x, min));
+  return qualifyingRows(eligible).slice(0, n);
+}
+
+/** `qual`: not ranked yet, so no rank number, a greyed ROI ("small sample") and a "3/10 bets" pill in the Bets column. */
+function boardRow(hound, rank, qual, min) {
   const units = unitsOf(hound);
   const roi = roiOf(hound);
-  return h("tr", { class: "lbrow", "data-hound": hound.id }, [
-    h("td", { class: "lbnum lbrank", text: String(rank) }),
+  return h("tr", { class: qual ? "lbrow lbrow--qual" : "lbrow", "data-hound": hound.id }, [
+    h("td", { class: "lbnum lbrank", text: qual ? "-" : String(rank) }),
     h("td", { class: "lbmodel" }, [
       monogram(hound.name, { size: 26, category: categoryOf(hound) }),
       h("a", { class: "lbname", href: houndHref(hound.id), text: hound.name || NOT_REPORTED })]),
     h("td", { class: "lbnum", "data-hook": "lb-record", text: recordText(hound) }),
     h("td", { class: `lbnum lbtone--${tone(units)}`, "data-hook": "lb-units", text: fmtUnitsPlain(units) }),
-    h("td", { class: `lbnum lbtone--${tone(roi)}`, "data-hook": "lb-roi", text: fmtRoi(roi) }),
-    h("td", { class: "lbnum", "data-hook": "lb-bets", text: String(betsOf(hound)) }),
+    qual
+      ? h("td", { class: "lbnum lbtone--small", "data-hook": "lb-roi", title: "small sample", text: fmtRoi(roi) })
+      : h("td", { class: `lbnum lbtone--${tone(roi)}`, "data-hook": "lb-roi", text: fmtRoi(roi) }),
+    qual
+      ? h("td", { class: "lbnum" }, [h("span", { class: "lbpill", "data-hook": "lb-progress",
+        title: `Needs ${min} settled bets to be ranked`, text: progressText(hound, min) })])
+      : h("td", { class: "lbnum", "data-hook": "lb-bets", text: String(betsOf(hound)) }),
   ]);
 }
 
-export function renderBoard(body, hounds) {
+/**
+ * Fill the board. `meta` is the payload's `season` block. Fewer than five ranked models: show those, then the best
+ * of the qualifying round with "x/10 bets" pills to make five, and, in `note` (when given), the season's age and
+ * the bar for qualifying. `today` is a YYYY-MM-DD for the age line.
+ */
+export function renderBoard(body, hounds, meta, note, today) {
   clearNode(body);
-  const top = topModels(hounds);
-  if (top.length === 0) {
+  const min = minRanked(meta);
+  const top = topModels(hounds, TOP_MODELS, min);
+  const label = (meta && meta.label) || "this season";
+  // Fewer than five ranked: the best of the qualifying round fill the board, each with its progress pill.
+  const filler = top.length < TOP_MODELS ? qualifyingModels(hounds, TOP_MODELS - top.length, min) : [];
+  if (top.length === 0 && filler.length === 0) {
     body.appendChild(h("tr", {}, [h("td", { colspan: 6, class: "lbempty", "data-hook": "lb-empty",
-      text: "No model has a graded bet yet. Come back after the next slate." })]));
-    return;
+      text: `No model has ${min} settled bets in ${label} yet. Come back after the next slate.` })]));
+  } else {
+    top.forEach((hound, i) => body.appendChild(boardRow(hound, i + 1, false, min)));
+    filler.forEach((hound) => body.appendChild(boardRow(hound, 0, true, min)));
   }
-  top.forEach((hound, i) => body.appendChild(boardRow(hound, i + 1)));
+  if (note) {
+    const age = top.length < TOP_MODELS && meta && !meta.all_time ? seasonAgeText(meta, today) : "";
+    note.textContent = age ? `${age}: more models qualify at ${min} bets.` : "";
+    if (age) note.removeAttribute("hidden"); else note.setAttribute("hidden", "");
+  }
 }
 
 function ticketRow(t) {
@@ -117,7 +154,10 @@ export async function fillBoard() {
     }
     return;
   }
-  renderBoard(body, data.hounds);
+  const seasonMeta = data.season && typeof data.season === "object" ? data.season : null;
+  renderBoard(body, data.hounds, seasonMeta, q("lb-season-note"));
+  const seasonTag = q("lb-season");
+  if (seasonTag) seasonTag.textContent = seasonMeta && seasonMeta.label ? ` · ${seasonMeta.label}` : "";
   const asOf = q("lb-asof");
   if (asOf) {
     const fresh = freshness(data);

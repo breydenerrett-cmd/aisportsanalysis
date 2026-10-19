@@ -126,7 +126,7 @@ class ThePanelsOnThePage(unittest.TestCase):
     def test_an_empty_board_and_an_empty_feed_are_honest_about_it(self):
         r = self.routes(**{"/hounds": [200, {"hounds": []}], "/hounds/stream": [200, {"items": []}]})
         out = self.page(routes=r, queries=[q("empty", "[data-hook='lb-empty']"), q("t", "[data-hook='lb-tickets-empty']")])
-        self.assertIn("No model has a graded bet yet", out["final"]["empty"])
+        self.assertIn("settled bets in this season yet", out["final"]["empty"])
         self.assertIn("No tickets recorded yet", out["final"]["t"])
 
     def test_a_missing_feed_keeps_the_board(self):

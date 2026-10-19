@@ -28,9 +28,12 @@ HoundSummary
   status ("running" | "benched" | "retired" | "not_started"), retired {date, cause} | null,
   record {bets, wins, losses, pushes, voids, units_recorded_price,
   units_average_price | null}, clv {n, mean_pts, ci_low, ci_high} | null,
-  verdict {label, sentence, units_note}, first_bet_utc, last_bet_utc,
+  verdict {label, sentence, units_note, n} (ALL-TIME: the referee's badge is never windowed by a season; ``n`` is
+  the measurable closing-line bets it rests on), first_bet_utc, last_bet_utc,
   open_bets (forward tickets not yet graded and not stale; added 2026-10-19), ungraded_bets (forward tickets more
-  than 36 hours past their start with no grade; added 2026-10-19, see ``ticket_status``), verified (bool), verified_share | null, checkable_share | null,
+  than 36 hours past their start with no grade; added 2026-10-19, see ``ticket_status``), settled / ranked (settled
+  forward bets in the payload's season view and whether that reaches ``seasons.MIN_RANKED_BETS``; added
+  2026-10-19), verified (bool), verified_share | null, checkable_share | null,
   replay {bets, wins, losses, pushes, voids, units_recorded_price} | null,
   spark [..] (last 30 points of cum_units_average_price; when the average
   price is unavailable for the hound it is the recorded-price series and
@@ -149,6 +152,9 @@ class VerdictBlock:
     label: str = "TOO EARLY"
     sentence: str = ""
     units_note: str = ""
+    # Measurable closing-line bets behind the label, ALL-TIME (added 2026-10-19). The badge is the referee's
+    # and is never windowed by a season, while ``clv`` follows the season; this is the count the badge rests on.
+    n: Optional[int] = None
 
 
 @dataclass
@@ -187,6 +193,10 @@ class HoundSummary:
     form: Optional[dict] = None           # streak, last 7 days, last settled day, best bet, worst beat
     open_bets: int = 0                    # forward tickets recorded, not graded, and not yet stale (added 2026-10-19)
     ungraded_bets: int = 0                # forward tickets more than UNGRADED_AFTER_HOURS past their start, no grade
+    # Settled forward bets (win, loss, push) in THIS payload's view (a season or all-time), and whether that is
+    # enough to be ranked there (src.hounds.seasons.MIN_RANKED_BETS). Added 2026-10-19, additive.
+    settled: int = 0
+    ranked: bool = False
 
 
 @dataclass
@@ -377,19 +387,24 @@ def warming_payload(empty: dict) -> dict:
 
 # ---- payload builders --------------------------------------------------------------
 
-def leaderboard_payload(summaries: list, as_of: Optional[str]) -> dict:
-    return envelope({"as_of": as_of, "basis": BASIS, "houndmaster": houndmaster_block(),
-                     "hounds": to_json(summaries)})
+def leaderboard_payload(summaries: list, as_of: Optional[str], season: Optional[dict] = None) -> dict:
+    """``season`` is ``seasons.meta(...)`` for the view the summaries were worked out for (absent: no key)."""
+    out = {"as_of": as_of, "basis": BASIS, "houndmaster": houndmaster_block(), "hounds": to_json(summaries)}
+    if season is not None:
+        out["season"] = season
+    return envelope(out)
 
 
 def hound_payload(summary: HoundSummary, series: list, bets_page: dict,
-                  as_of: Optional[str]) -> dict:
+                  as_of: Optional[str], season: Optional[dict] = None) -> dict:
     out = to_json(summary)
     out["series"] = to_json(series)
     out["bets"] = {**bets_page, "items": to_json(with_status(bets_page["items"]))}
     out["as_of"] = as_of
     out["basis"] = BASIS
     out["houndmaster"] = houndmaster_block()
+    if season is not None:
+        out["season"] = season
     return envelope(out)
 
 
@@ -406,9 +421,11 @@ def filter_by_status(rows: list, status: Optional[str], now: Optional[datetime] 
     return rows
 
 
-def bets_payload(hound_id: str, bets_page: dict, as_of: Optional[str]) -> dict:
-    return envelope({"hound_id": hound_id, "as_of": as_of,
-                     **{**bets_page, "items": to_json(with_status(bets_page["items"]))}})
+def bets_payload(hound_id: str, bets_page: dict, as_of: Optional[str], season: Optional[dict] = None) -> dict:
+    out = {"hound_id": hound_id, "as_of": as_of, **{**bets_page, "items": to_json(with_status(bets_page["items"]))}}
+    if season is not None:
+        out["season"] = season
+    return envelope(out)
 
 
 def stream_payload(page: dict, as_of: Optional[str]) -> dict:
@@ -421,6 +438,8 @@ def graveyard_payload(entries: list, as_of: Optional[str]) -> dict:
                      "hounds": to_json(entries)})
 
 
-def series_payload(series_by_id: dict, as_of: Optional[str]) -> dict:
-    return envelope({"as_of": as_of,
-                     "series": {k: to_json(v) for k, v in series_by_id.items()}})
+def series_payload(series_by_id: dict, as_of: Optional[str], season: Optional[dict] = None) -> dict:
+    out = {"as_of": as_of, "series": {k: to_json(v) for k, v in series_by_id.items()}}
+    if season is not None:
+        out["season"] = season
+    return envelope(out)

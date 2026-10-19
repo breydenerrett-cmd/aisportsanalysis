@@ -70,7 +70,7 @@ WHO_ALIASES = {"random": "code", "seeded": "code", "coin": "code"}
 class Bet:
     hound_id: str
     segment: str = "forward"
-    date: str = ""                  # the slate / decision day (UTC)
+    date: str = ""                  # the slate day: MLB's official (Eastern) date of first pitch, not UTC and not Pacific
     decision_utc: Optional[str] = None
     start_utc: Optional[str] = None
     # When the row was written (a pack row's ``written_utc``, a user row's ``recorded_utc``, an engine
@@ -181,6 +181,9 @@ class Sources:
                  self.house_hounds_cfg, self.house_pack_cfg]
         if self.house_desk_cfg is not None:
             paths.append(self.house_desk_cfg)
+        # the seasons file: moving a season's dates must rebuild the per-season figures
+        from src.hounds import seasons
+        paths.append(seasons.config_path())
         paths += [p for _, p in self.pack_ledgers]
         if self.card_v2 is not None:
             paths.append(self.card_v2)

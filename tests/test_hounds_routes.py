@@ -57,7 +57,7 @@ class RouteTests(unittest.TestCase):
         self.assertEqual(body["not_advice"], NOT_ADVICE)
 
     def test_leaderboard(self):
-        body = self.get("/hounds")
+        body = self.get("/hounds?season=all")     # the fixture's bets are September: all-time (s2 is tested in test_hounds_seasons)
         self.assertStamped(body)
         self.assertEqual(body["as_of"], "2026-10-02")
         self.assertIn("Paper only", body["basis"])
@@ -71,7 +71,7 @@ class RouteTests(unittest.TestCase):
         self.assertIn("say nothing", alpha["verdict"]["units_note"])
 
     def test_detail_has_series_and_first_page_of_bets_newest_first(self):
-        body = self.get("/hounds/alpha")
+        body = self.get("/hounds/alpha?season=all")
         self.assertStamped(body)
         self.assertEqual(body["id"], "alpha")
         self.assertEqual([p["date"] for p in body["series"]], ["2026-09-30", "2026-10-01"])
@@ -106,7 +106,7 @@ class RouteTests(unittest.TestCase):
         self.assertEqual(body["hounds"], [])
 
     def test_series_route(self):
-        body = self.get("/hounds/series?ids=alpha,charlie,nope")
+        body = self.get("/hounds/series?ids=alpha,charlie,nope&season=all")
         self.assertStamped(body)
         self.assertEqual(set(body["series"]), {"alpha", "charlie"})
         self.assertEqual(set(body["series"]["alpha"][0]), {
@@ -136,7 +136,7 @@ class RouteTests(unittest.TestCase):
         self.assertTrue(all(r["status"] == "GRADED" for r in by["graded"]))
         self.assertEqual(by["open"], [])
         self.assertGreater(len(by["ungraded"]), 0)
-        self.assertIn(self.get("/hounds/alpha")["bets"]["items"][0]["status"], ("OPEN", "GRADED", "UNGRADED"))
+        self.assertIn(self.get("/hounds/alpha?season=all")["bets"]["items"][0]["status"], ("OPEN", "GRADED", "UNGRADED"))
         self.get("/hounds/alpha/bets?status=nonsense", status=422)
 
     def test_only_get_routes_exist(self):

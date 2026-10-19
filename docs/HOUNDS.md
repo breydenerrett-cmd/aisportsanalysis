@@ -120,6 +120,24 @@ when either is missing.
 **A fan tip never changes a dog.** It is a row in a table (`src/hounds/fan_tips.py`); only the referee
 changes a dog. Tips are graded later like the AI coach's proposals.
 
+**Seasons** (owner decision 2026-10-19; `config/seasons.json`, `src/hounds/seasons.py`). The leaderboard mixed
+models that began on Aug 31, on Sep 9 and on Oct 18, so a 1-0 model could top it. A season is a date window over
+the forward bets (slate dates, both ends inclusive; Season 1 is Aug 31 to Oct 17, Season 2 starts Oct 18). It is a
+VIEW: no bet leaves the all-time view and no ledger is touched.
+
+- `GET /hounds`, `/hounds/{id}` and `/hounds/series` take `?season=s2|s1|all` (default `s2`; anything else is a 422).
+  `/hounds/{id}/bets` takes the same filter but, with no `season`, lists every bet. Each payload carries a `season`
+  block (id, label, dates, `min_ranked_bets`, the available seasons).
+- A summary's record, units, CLV, typical price, last ten, streak, spark, series and open-ticket count are the SAME
+  `stats.summarize` run over only the bets in the window (`stats.summarize_window`); replay bets are in no forward
+  figure. The referee's verdict (label, sentence, `verdict.n`), the status, retirement, `verified` and the first and
+  last ticket stamps stay all-time, and the pages say so.
+- `settled` (wins + losses + pushes in the view) and `ranked` (`settled >= 10`) ride on every summary. A model that
+  is not ranked sits in the page's collapsed "Warming up (N)" group with its record so far; sorting never lifts it.
+- The saved copy (`hounds_public_cache.json`, version 2) holds `views[season]` with a leaderboard and a series per
+  season and all-time; a cold start answers the season asked for. Moving a date in `seasons.json` rebuilds the book.
+- The digest names hottest and coldest only among ranked models when any are ranked.
+
 Shapes are in `src/hounds/contract.py` (dataclasses + `to_json`). Every payload
 has `paper_only: true`, `not_advice`, `as_of` (the newest decision day in the
 data, never the wall clock) and, for list routes, a `basis` paragraph.

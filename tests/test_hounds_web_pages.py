@@ -409,7 +409,7 @@ class TheFirstVisitWhileTheServerWarmsUp(unittest.TestCase):
         self.assertEqual(first["empty"], 0)                        # NOT "No models are running yet"
         self.assertEqual(first["rows"], 0)
         self.assertEqual(out["final"]["kinds"], 0)
-        self.assertEqual(out["final"]["rows"], 12)
+        self.assertEqual(out["final"]["rows"], 8)         # the models with at least 10 settled bets are ranked
         self.assertEqual(out["final"]["stream"], 2)
         self.assertEqual(out["final"]["grave"], ["Retired by the owner.", "Went more than 25 units under."])
         self.assertEqual(out["intervals"], [60000])               # the warming retries stopped themselves

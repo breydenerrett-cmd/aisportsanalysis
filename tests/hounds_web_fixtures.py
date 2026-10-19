@@ -25,7 +25,7 @@ import sys
 from datetime import date, timedelta
 from pathlib import Path
 
-from src.hounds import contract, user_spec, verdict as vd
+from src.hounds import contract, seasons, user_spec, verdict as vd
 from src.hounds.contract import (
     BetRow, ClvBlock, HoundSummary, Record, ReplayBlock, RetiredBlock, SeriesPoint, StreamItem,
     VerdictBlock, paginate)
@@ -211,7 +211,7 @@ def hounds(forward: bool = True) -> list:
 
 
 def leaderboard(forward: bool = True) -> dict:
-    return contract.leaderboard_payload(summaries(forward), AS_OF)
+    return contract.leaderboard_payload(summaries(forward), AS_OF, seasons.meta("s2"))
 
 
 def series(ids, forward: bool = True) -> dict:
@@ -315,7 +315,8 @@ def bets_payload(hid="closer", n=45, page=1, page_size=25, segment=None, status=
 
 def detail(hid="closer", forward=True, n=45) -> dict:
     s = next(x for x in summaries(forward) if x.id == hid)
-    return contract.hound_payload(s, _series_objs(hid, forward), paginate(bet_rows(hid, n), 1, 25), AS_OF)
+    return contract.hound_payload(s, _series_objs(hid, forward), paginate(bet_rows(hid, n), 1, 25), AS_OF,
+                                  seasons.meta("s2"))
 
 
 def routes(forward: bool = True, bets_n: int = 45) -> dict:

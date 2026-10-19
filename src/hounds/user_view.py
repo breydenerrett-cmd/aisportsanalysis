@@ -25,7 +25,7 @@ from __future__ import annotations
 
 from typing import Optional, Sequence
 
-from src.hounds import ledgers, stats, user_defs, user_engine, verdict as vd
+from src.hounds import ledgers, seasons, stats, user_defs, user_engine, verdict as vd
 from src.hounds.contract import VerdictBlock, paginate, to_json
 
 
@@ -42,7 +42,7 @@ def _from_ledger(defn: dict, rows: Optional[Sequence] = None) -> stats.HoundData
     bets = _ledger_bets(defn["id"], rows)
     stamps = [str(b.decision_utc or b.date)[:10] for b in bets if (b.decision_utc or b.date)]
     as_of = max(stamps, default=None)
-    return stats.summarize(defn, bets, {}, as_of)
+    return stats.with_seasons(stats.summarize(defn, bets, {}, as_of), defn, bets, {}, as_of)
 
 
 def hound_data(hound_id: str, *, kick_build: bool = True,
@@ -80,24 +80,29 @@ def verdict_block(hound_id: str, rows: Optional[Sequence] = None) -> dict:
     return to_json(VerdictBlock(label=v.label, sentence=v.sentence, units_note=vd.units_note(0)))
 
 
-def detail(hound_id: str, *, page: int = 1, page_size: Optional[int] = None) -> Optional[dict]:
+def detail(hound_id: str, *, page: int = 1, page_size: Optional[int] = None,
+           season: str = seasons.ALL) -> Optional[dict]:
     """A ``hound_payload``-shaped dict for a user hound the public book does not list yet, else None."""
     data = hound_data(hound_id)
     if data is None:
         return None
     from src.hounds.contract import hound_payload
     book = stats.peek_book()
-    return hound_payload(data.summary, data.series, paginate(data.bets, page, page_size),
-                         book.as_of if book else None)
+    view = data.view(season)
+    return hound_payload(view.summary, view.series, paginate(view.bets, page, page_size),
+                         book.as_of if book else None, seasons.meta(season))
 
 
 def bets_for(hound_id: str, *, page: int = 1, page_size: Optional[int] = None,
-             segment: Optional[str] = None, status: Optional[str] = None) -> Optional[dict]:
+             segment: Optional[str] = None, status: Optional[str] = None,
+             season: str = seasons.ALL) -> Optional[dict]:
     data = hound_data(hound_id)
     if data is None:
         return None
-    rows = data.bets if segment is None else [b for b in data.bets if b.segment == segment]
+    view = data.view(season)
+    rows = view.bets if segment is None else [b for b in view.bets if b.segment == segment]
     from src.hounds.contract import bets_payload, filter_by_status
     rows = filter_by_status(rows, status)
     book = stats.peek_book()
-    return bets_payload(hound_id, paginate(rows, page, page_size), book.as_of if book else None)
+    return bets_payload(hound_id, paginate(rows, page, page_size), book.as_of if book else None,
+                        seasons.meta(season))
