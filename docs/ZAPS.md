@@ -62,11 +62,25 @@ is a new item, which is the reminder you want. Kinds:
 | Kind | Title looks like | Raised when |
 |---|---|---|
 | `health_*` | "Checkout is broken", "The app database is unreachable" | a reason in `GET /health` |
-| `odds_stale` | "Odds are 4 hours old" | newest odds row older than 3 hours (the limit `scripts/prod_watch.py` uses) |
+| `odds_stale` | "Odds are 4 hours old" | newest odds row older than 3 hours |
 | `odds_missing` | "Odds store is missing" | the odds store is absent or empty |
-| `data_stale` | "Core data is behind: mlb_results" | a core store past its tolerance (`/health` `data_freshness.core_stale`) |
+| `store_stale_<store>` | "Pitcher prop prices are 12 days old" | a forward-capture store the policy EXPECTS to be moving today is past its limit |
+| `store_missing_<store>` | "Lineup polls store is missing" | such a store is absent or empty |
+| `data_stale_<store>` | "Match results are 4 days behind" | a store the pages read is past its own tolerance (one item per store) |
+| `deploy_stale` | "Production has not redeployed in 7 hours" | the running app started more than 3 hours ago (production redeploys hourly when CI is green) |
 | `learning_paused_*` | "The learning loop paused itself (house)" | the loop paused itself; only you resume it |
 | `health_check_failed` | "The health check itself failed" | the health check raised |
+
+Every item reads "<what happened>. Fix: <one line>." **The limits are in one file, `src/pipeline/freshness_policy.py`**
+(odds 3h, lineup/probable polls 6h on game days, transactions 3 days, prop prices 24h fresh / 30h stale on game
+days, page stores by their own day tolerance). The admin Health tab, this feed and `GET /admin/health-digest` all
+read the verdicts `GET /health` now carries as `freshness`, so they cannot disagree. A store that is not supposed
+to move today (off-season, no MLB game today, the regular season is over for standings, or a bounded audit that
+finished) is grey "Not expected now" with the reason and never alerts. The prop-listing audit spent its 400-credit
+cap on 2026-10-07 by design; live prop prices are the `prop_prices` and `batter_props` stores.
+
+**Cannot be known from the server, so not in the feed:** whether CI on the working branch is red (a GitHub API call
+with a token the app does not hold). A red build shows up as `deploy_stale`; the digest lists it under "not checked".
 
 **Not built, on purpose:** "the house pack recorded zero bets for today's slate by 21:00 UTC". Whether a day has
 games is not known without loading the hounds' stores (the whole multi-book odds file), and a hound that passes
@@ -292,3 +306,10 @@ exists for tests only.
    Filter, and any issue that does arrive waits. (It is the same switch the signed user-hound coach door reads;
    that door still needs its own opt-in and a signed round.)
 4. **Check `gh` is signed in as you** on the machine that runs the intake: `gh auth status`.
+
+### 4. Daily "what needs doing" digest
+
+`GET /admin/health-digest` (header `X-Admin-Token`) answers `{headline, all_clear, items[{title, what, fix, line}],
+watch[], not_expected[], not_checked[]}`: the same checks as the alert feed, as plain sentences. The admin Overview's
+"Needs your attention" list is this digest. A Zap that wants it by email needs the admin token in a header, so it is
+not wired; open the Overview instead.
