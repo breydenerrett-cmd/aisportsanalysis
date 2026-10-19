@@ -43,7 +43,11 @@ def dog(did="u-1", name="Underdog Gus", wins=0, losses=0, bets=0, units=None, la
     out = {"id": did, "name": name, "tagline": "Barks at the books", "status": "running", "version_no": 1, "look": None,
            "sports": ["mlb"], "record": {"bets": bets, "wins": wins, "losses": losses, "pushes": 0, "units_average_price": units},
            "settled": wins + losses, "open_bets": 0, "new": bets == 0, "last_pick": last, "page_href": f"hound.html?id={did}",
-           "retired": False, "builder_href": f"build-a-hound.html?from={did}"}
+           "retired": False, "builder_href": f"build-a-hound.html?from={did}",
+           # the dog's paper account (src/hounds/bankroll.py): 1 unit is $10 of the shared $1,000, so units and % agree
+           "bankroll": {"start": 1000.0, "current": 1000.0 + (units or 0.0) * 10, "pnl_usd": (units or 0.0) * 10,
+                        "return_pct": units or 0.0, "units_total": units or 0.0, "bets": bets, "settled": wins + losses,
+                        "small_sample": True, "small_sample_min": 20, "basis": "average_price"}}
     out.update(over)
     return out
 
@@ -213,17 +217,21 @@ class MyKennel(unittest.TestCase):
                 dog("u-2", "Totals Tina"), dog("u-3", "Slumpy", wins=0, losses=2, bets=2, units=-2.0, last={"selection": "Over 8", "result": "lost"})]
         out = self.page({"/hounds/kennels/mine": mine(dogs)}, **SIGNED, queries=[
             q("names", f"{self.CARDS} [data-hook='dog-name']", "texts"), q("records", "[data-hook='dog-record']", "texts"),
-            q("units", "[data-hook='dog-units']", "texts"), q("status", "[data-hook='dog-status']", "texts"),
+            q("bank", "[data-hook='dog-bankroll']", "texts"), q("ret", "[data-hook='dog-return']", "texts"),
+            q("status", "[data-hook='dog-status']", "texts"),
             q("last", "[data-hook='dog-last']", "texts"), q("moods", self.CARDS, "attrs", attr="data-mood"),
             q("avatars", f"{self.CARDS} svg.dk-badge", "count"), q("avatar_moods", f"{self.CARDS} svg.dk-badge", "attrs", attr="data-mood"),
             q("fire", "[data-hook='dog-action-fire']", "count"), q("ask", "[data-hook='dog-action-ask']", "count"),
             q("edit", "[data-hook='dog-action-edit']", "count"), q("open", "[data-hook='dog-action-open']", "attrs", attr="href"),
             q("build_card", "[data-hook='kennel-build-card']", "count"), q("title", "[data-hook='kennel-title']"),
-            q("count_attr", "[data-hook='dog-units']", "attrs", attr="data-count")])
+            q("count_attr", "[data-hook='dog-bankroll']", "attrs", attr="data-count"),
+            q("small", "[data-hook='dog-bankroll']", "attrs", attr="title")])
         f = out["final"]
         self.assertEqual(f["names"], ["Underdog Gus", "Totals Tina", "Slumpy"])
         self.assertEqual(f["records"], ["3-1", "0-0", "0-2"])
-        self.assertEqual(f["units"], ["+1.80u", "0.00u", "-2.00u"])
+        self.assertEqual(f["bank"], ["$1,018", "$1,000", "$980"])                  # every dog starts with the same $1,000
+        self.assertEqual(f["ret"], ["+1.8%", "0.0%", "-2.0%"])
+        self.assertTrue(all(s.startswith("Small sample:") for s in f["small"]), f["small"])
         self.assertEqual(f["status"], ["Running", "New", "Running"])
         self.assertEqual(f["last"][0], "Last pick: Red Sox ML (won)")
         self.assertIn("No picks yet", f["last"][1])
@@ -407,7 +415,7 @@ class TheStudio(unittest.TestCase):
             dict(do="click", sel="[role='tab'][data-tab='record']", label="record", wait=300, capture=[
                 q("stats", "[data-hook='studio-record-stats'] dd", "texts"), q("tickets", "[data-hook='studio-tickets']")])])
         cap = out["captures"]["record"]
-        self.assertEqual(cap["stats"], ["3-1", "+1.80u", "4", "0"])
+        self.assertEqual(cap["stats"], ["3-1", "$1,018", "+1.8%", "4", "0"])
         self.assertIn("No tickets recorded yet", cap["tickets"])
 
     def test_closing_the_studio_hides_it_and_gives_the_page_back(self):

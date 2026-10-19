@@ -160,7 +160,7 @@ class ContractShapes(unittest.TestCase):
         "sports", "markets", "rule_text", "status", "retired", "record", "clv",
         "verdict", "first_bet_utc", "last_bet_utc", "verified", "verified_share",
         "checkable_share", "replay", "spark", "spark_basis", "source", "persona", "form", "open_bets",
-        "ungraded_bets", "settled", "ranked", "bankroll"}
+        "ungraded_bets", "settled", "ranked", "bankroll", "old_rule_bets"}
 
     def test_summary_keys_and_nested_record(self):
         s = contract.to_json(contract.HoundSummary(id="x", name="X"))

@@ -22,7 +22,9 @@ import re
 import unittest
 from pathlib import Path
 
-from src.hounds import seasons
+from datetime import datetime, timezone
+
+from src.hounds import bankroll as bk, seasons
 from tests import hounds_web_fixtures as F
 from tests.hounds_web_runner import HAS_NODE, run_js, run_page
 
@@ -33,6 +35,16 @@ def q(name, sel, mode="text", **kw):
     return dict(name=name, sel=sel, mode=mode, **kw)
 
 
+def money(bets, units, wins):
+    """The bankroll block the real code would work out for these figures: ``units`` spread evenly over ``bets`` settled
+    bets (all long ago, so no 24h / 7d window holds any), results in the win / loss counts."""
+    when = datetime(2026, 10, 1, 18, 0, tzinfo=timezone.utc)
+    each = units / bets if bets else 0.0
+    evts = [bk.Event(settle=when, units=each, flat=each, stake=1.0, result="win" if k < wins else "loss",
+                     order=("2026-10-01", f"{k:04d}")) for k in range(bets)]
+    return bk.block(evts, datetime(2026, 10, 24, 12, 0, tzinfo=timezone.utc), "average_price")
+
+
 def mk(hid, name, bets=12, units=0.0, wins=None, **extra):
     wins = bets // 2 if wins is None else wins
     h = {"id": hid, "name": name, "kind": "house", "category": "stats", "style": "x", "status": "running", "tagline": "t",
@@ -40,6 +52,7 @@ def mk(hid, name, bets=12, units=0.0, wins=None, **extra):
          "verdict": {"label": "TOO EARLY", "sentence": "s", "n": 3},
          "record": {"bets": bets, "wins": wins, "losses": bets - wins, "pushes": 0, "voids": 0,
                     "units_recorded_price": units, "units_average_price": units},
+         "bankroll": money(bets, units, wins),
          "clv": None, "spark": [0, units], "verified": True, "open_bets": 0,
          "form": {"last10": ["W" if i < wins else "L" for i in range(min(bets, 10))], "avg_price": 105,
                   "streak": {"kind": "W", "length": 1}}}
@@ -251,24 +264,24 @@ class TheRankedTableAndTheWarmingGroup(unittest.TestCase):
         self.assertEqual(cap["names"], ["Nine Bets", "Hot Start"])
         self.assertEqual(cap["notes"][0], "7-2 so far \u00b7 9 of 10 settled bets")
         self.assertEqual(cap["notes"][1], "1-0 so far \u00b7 1 of 10 settled bets \u00b7 2 open tickets")
-        self.assertNotIn("%", cap["rows"])                                # no ROI for a model that has not earned a rank
+        self.assertNotIn("%", cap["rows"])                                # no return for a model that has not earned a rank
         self.assertNotIn("+94", cap["rows"])
 
     def test_no_sort_key_lifts_a_warming_model_above_a_ranked_one(self):
-        keys = ["model", "type", "record", "units", "roi", "bets", "price", "clv", "last10", "status"]
+        keys = ["model", "type", "record", "bankroll", "return", "d7", "h24", "units", "bets", "price", "clv", "last10", "status"]
         actions = []
         for key in keys + keys:                                           # twice: descending, then ascending
             actions.append(dict(do="click", sel=f"[data-sort='{key}']", label=f"{key}{len(actions)}",
                                 capture=[q("ids", self.ROW, "attrs", attr="data-hound"), q("ranks", f"{self.ROW} .hd-col-rank", "texts")]))
         out = run_page("hounds", routes=self.hot_start_world(), actions=actions)
-        self.assertEqual(len(out["captures"]), 20)
+        self.assertEqual(len(out["captures"]), 26)
         for label, cap in out["captures"].items():
             with self.subTest(sort=label):
                 self.assertEqual(sorted(cap["ids"]), ["middle", "slump", "steady"])   # only the ranked three are ever a row
                 self.assertEqual(cap["ranks"], ["1", "2", "3"])
 
     def test_no_sort_key_lifts_a_qualifying_model_either(self):
-        keys = ["model", "record", "units", "roi", "bets", "last10"]
+        keys = ["model", "record", "bankroll", "return", "units", "bets", "last10"]
         actions = [dict(do="click", sel=f"[data-sort='{k}']", label=f"{k}{i}", capture=[q("ids", self.ROW, "attrs", attr="data-hound")])
                    for i, k in enumerate(keys + keys)]
         out = run_page("hounds", routes=QualifyingBase.two_ranked_world(), actions=actions)
@@ -348,17 +361,17 @@ class TheQualifyingRound(unittest.TestCase):
         strip = lambda ts: [t.replace(" ▼", "").replace(" ▲", "") for t in ts]  # noqa: E731
         self.assertEqual(strip(f["heads"]), strip(f["ranked_heads"]))    # the same columns as the ranked table
 
-    def test_each_row_has_a_progress_pill_in_the_status_column_and_a_greyed_roi(self):
+    def test_each_row_has_a_progress_pill_in_the_status_column_and_greyed_money(self):
         out = self.page(QualifyingBase.zero_ranked_world(), queries=[
             q("pills", f"{self.QROW} [data-hook='progress']", "texts"),
             q("in_status", f"{self.QROW} td.hd-col-status [data-hook='progress']", "count"),
-            q("roi_titles", f"{self.QROW} [data-hook='row-roi']", "attrs", attr="title"),
-            q("roi_class", f"{self.QROW} [data-hook='row-roi']", "attrs", attr="class"),
+            q("roi_titles", f"{self.QROW} [data-hook='row-return']", "attrs", attr="title"),
+            q("roi_class", f"{self.QROW} [data-hook='row-return']", "attrs", attr="class"),
             q("pill_title", f"{self.QROW} [data-hook='progress']", "attrs", attr="title")])
         f = out["final"]
         self.assertEqual(f["pills"], ["6/10 bets", "2/10 bets", "4/10 bets", "9/10 bets", "0/10 bets"])
         self.assertEqual(f["in_status"], 5)
-        self.assertEqual(set(f["roi_titles"]), {"small sample"})
+        self.assertTrue(all(t.startswith("Small sample:") for t in f["roi_titles"]), f["roi_titles"])
         self.assertTrue(all("hd-roi--small" in c for c in f["roi_class"]), f["roi_class"])
         self.assertTrue(all(t.startswith("Needs 10 settled bets to be ranked") for t in f["pill_title"]))
 
@@ -477,6 +490,8 @@ class TheModelPageSeasons(unittest.TestCase):
         d = F.detail("closer")
         d = json.loads(json.dumps(d))
         d["record"].update(bets=bets, wins=bets // 2, losses=bets - bets // 2, pushes=0, units_average_price=1.5, units_recorded_price=1.0)
+        d["bankroll"] = dict(d["bankroll"], bets=bets, settled=bets, units_total=1.5, pnl_usd=15.0, current=1015.0,
+                             return_pct=1.5, yield_pct=round(1.5 / bets * 100, 2))
         d["season"] = seasons.meta(season)
         return [200, d]
 
@@ -496,13 +511,15 @@ class TheModelPageSeasons(unittest.TestCase):
     def test_toggling_re_asks_the_server_for_that_seasons_numbers_and_keeps_the_choice(self):
         extra = {"/hounds/closer?season=s1": self.season_detail("s1", 7)}
         out = self.page(extra, actions=[dict(do="click", sel="[data-hook='hound-season'] [data-season='s1']", label="s1", wait=150, capture=[
-            q("bets", ".hd-kpi[data-slot='bets']"), q("roi", ".hd-kpi[data-slot='roi'] .hd-kpi__big"),
+            q("bets", ".hd-kpi[data-slot='bets']"), q("roi", ".hd-kpi[data-slot='yield'] .hd-kpi__big"),
+            q("bank", ".hd-kpi[data-slot='bankroll']"),
             q("pressed", "[data-hook='hound-season'] .hd-seg", "attrs", attr="aria-pressed"), q("line", "[data-hook='hound-season-line']"),
             q("live", "[data-hook='forward-facts']")])])
         self.assertIn("/hounds/closer?season=s1", out["gets"])
         cap = out["captures"]["s1"]
         self.assertIn("Bets 7", cap["bets"])
-        self.assertEqual(cap["roi"], f"{1.5 / 7 * 100:+.1f}%")
+        self.assertEqual(cap["roi"], f"{1.5 / 7 * 100:+.1f}%")                       # the yield tile, "profit per $ bet"
+        self.assertIn("$1,015.00", cap["bank"])                                      # the season's own account
         self.assertEqual(cap["pressed"], ["false", "true", "false"])
         self.assertIn("Season 1 only", cap["line"])
         self.assertIn("Live record, Season 1", cap["live"])
@@ -548,7 +565,7 @@ class TheLandingBoardSeasons(unittest.TestCase):
         return run_page("landing_board", routes=r, queries=[
             q("ids", "[data-hook='lb-board'] .lbrow", "attrs", attr="data-hound"), q("empty", "[data-hook='lb-empty']"),
             q("ranks", "[data-hook='lb-board'] .lbrank", "texts"), q("bets", "[data-hook='lb-bets']", "texts"),
-            q("pills", "[data-hook='lb-progress']", "texts"), q("roi_titles", ".lbtone--small", "attrs", attr="title"),
+            q("pills", "[data-hook='lb-progress']", "texts"), q("roi_titles", ".lbrow--qual .lbtone--small", "attrs", attr="title"),
             q("note", "[data-hook='lb-season-note']"), q("hidden", "[data-hook='lb-season-note']", "hidden"),
             q("tag", "[data-hook='lb-season']"), q("tickets", "[data-hook='lb-ticket']", "count")], **kw)
 
@@ -562,7 +579,8 @@ class TheLandingBoardSeasons(unittest.TestCase):
         self.assertEqual(f["ranks"], ["1", "2", "-", "-"])
         self.assertEqual(len(f["bets"]), 2)                                          # a ranked row shows its bets
         self.assertEqual(f["pills"], ["9/10 bets", "1/10 bets"])                     # a round row shows its progress
-        self.assertEqual(f["roi_titles"], ["small sample", "small sample"])
+        self.assertEqual(len(f["roi_titles"]), 4)                                    # a round row greys its balance and its return
+        self.assertTrue(all(t.startswith("Small sample:") for t in f["roi_titles"]), f["roi_titles"])
         self.assertRegex(f["note"], r"^Season 2 is \d+ days? old: more models qualify at 10 bets\.$")
         self.assertIs(f["hidden"], False)
         self.assertEqual(f["tag"], "\u00b7 Season 2")

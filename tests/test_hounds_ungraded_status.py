@@ -51,9 +51,14 @@ class TheBoundary(unittest.TestCase):
 
 
 class UnknownStartUsesTheSlateDate(unittest.TestCase):
-    """The slate date stands in for the start, counted as the END of that UTC day."""
+    """The slate date stands in for the start, counted as the END of that day in America/New_York.
 
-    END_OF_DAY = datetime(2026, 9, 23, 0, 0, tzinfo=timezone.utc)
+    A slate date is MLB's official (Eastern) date of the game, so its end is midnight Eastern: 04:00 UTC the next
+    morning in daylight time (September, October), 05:00 UTC after the clocks go back. The first version counted
+    it as 00:00 UTC, four hours early, and called a late west-coast game's ticket stale too soon (audit 2026-10-19).
+    """
+
+    END_OF_DAY = datetime(2026, 9, 23, 4, 0, tzinfo=timezone.utc)
 
     def test_exactly_36_hours_after_the_slate_day_closed_is_open(self):
         self.assertEqual(ticket_status(None, None, "2026-09-22", self.END_OF_DAY + timedelta(hours=36)), TICKET_OPEN)
@@ -61,6 +66,16 @@ class UnknownStartUsesTheSlateDate(unittest.TestCase):
     def test_past_it_is_ungraded(self):
         now = self.END_OF_DAY + timedelta(hours=36, seconds=1)
         self.assertEqual(ticket_status(None, None, "2026-09-22", now), TICKET_UNGRADED)
+
+    def test_the_old_utc_midnight_reading_is_gone_four_hours_in_daylight_time(self):
+        # 36h after UTC midnight is 4h before 36h after Eastern midnight: the ticket is still open there.
+        utc_midnight = datetime(2026, 9, 23, 0, 0, tzinfo=timezone.utc)
+        self.assertEqual(ticket_status(None, None, "2026-09-22", utc_midnight + timedelta(hours=36, minutes=30)), TICKET_OPEN)
+
+    def test_after_the_clocks_go_back_the_day_ends_at_05_utc(self):
+        end = datetime(2026, 11, 2, 5, 0, tzinfo=timezone.utc)          # Nov 1 2026 is the first Sunday: EST from 02:00 that day
+        self.assertEqual(ticket_status(None, None, "2026-11-01", end + timedelta(hours=36)), TICKET_OPEN)
+        self.assertEqual(ticket_status(None, None, "2026-11-01", end + timedelta(hours=36, seconds=1)), TICKET_UNGRADED)
 
     def test_the_slate_day_itself_is_open(self):
         self.assertEqual(ticket_status(None, None, "2026-09-22", datetime(2026, 9, 22, 18, 0, tzinfo=timezone.utc)),

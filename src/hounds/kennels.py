@@ -22,7 +22,7 @@ from __future__ import annotations
 import re
 from typing import Optional
 
-from src.hounds import seasons, stats, user_defs, user_store, user_view
+from src.hounds import bankroll, seasons, stats, user_defs, user_store, user_view
 from src.hounds.contract import to_json
 
 PUBLIC_STATUSES = ("running", "benched")
@@ -76,7 +76,7 @@ def _stats_for(row: dict, book, sid: str):
 def dog_entry(row: dict, view, look: Optional[dict]) -> dict:
     """One dog as a kennel shows it. ``view`` is the stats view for the season (None when the stats cannot be
     read, which shows as a zero record: never a guess)."""
-    summary = to_json(view.summary) if view is not None else {}
+    summary = to_json(bankroll.refreshed(view.summary)) if view is not None else {}
     rec = summary.get("record") or {}
     wins, losses, pushes = int(rec.get("wins") or 0), int(rec.get("losses") or 0), int(rec.get("pushes") or 0)
     settled = wins + losses + pushes
@@ -93,23 +93,32 @@ def dog_entry(row: dict, view, look: Optional[dict]) -> dict:
         "sports": [str(s).lower() for s in (row["spec"].get("sports") or [])],
         "record": {"bets": int(rec.get("bets") or 0), "wins": wins, "losses": losses, "pushes": pushes,
                    "units_average_price": rec.get("units_average_price")},
+        # the dog's paper account (src/hounds/bankroll.py, docs/BANKROLL.md): the shared starting bankroll, what it is
+        # now, its return and the 24h / 7d / 30d windows. A member's dog counts the units its owner chose.
+        "bankroll": summary.get("bankroll"),
         "settled": settled, "open_bets": open_bets, "new": settled == 0 and open_bets == 0,
         "last_pick": last, "page_href": f"hound.html?id={row['id']}",
     }
 
 
 def _units(dog: dict) -> float:
+    """What a dog is ranked by inside a kennel: the dollars it is up (its bankroll), else its flat units at the
+    shared unit for a dog the stats could not give a bankroll for."""
+    block = dog.get("bankroll") or {}
+    if isinstance(block.get("pnl_usd"), (int, float)):
+        return float(block["pnl_usd"])
     value = dog["record"].get("units_average_price")
-    return float(value) if isinstance(value, (int, float)) else float("-inf")
+    return float(value) * bankroll.params().unit_usd if isinstance(value, (int, float)) else float("-inf")
 
 
 def _best(dogs: list) -> Optional[dict]:
-    """The dog with the most units among those with a settled bet; None when none has settled."""
+    """The dog with the most paper dollars among those with a settled bet; None when none has settled."""
     played = [d for d in dogs if d["settled"] > 0]
     if not played:
         return None
     top = max(played, key=lambda d: (_units(d), d["settled"]))
-    return {"id": top["id"], "name": top["name"], "record": top["record"], "settled": top["settled"]}
+    return {"id": top["id"], "name": top["name"], "record": top["record"], "settled": top["settled"],
+            "bankroll": top.get("bankroll")}
 
 
 def _grouped(sid: str) -> dict:
@@ -138,8 +147,7 @@ def kennel_list(season: Optional[str] = None) -> dict:
             "dogs": [{"id": d["id"], "name": d["name"], "look": d["look"]} for d in dogs[:4]],
             "href": f"kennel.html?u={handle}",
         })
-    kennels.sort(key=lambda k: (-k["dog_count"], -(k["best"]["record"].get("units_average_price") or 0) if k["best"] else 0,
-                                k["handle"]))
+    kennels.sort(key=lambda k: (-k["dog_count"], -_units(k["best"]) if k["best"] else 0, k["handle"]))
     return {"kennels": kennels, "count": len(kennels), "season": seasons.meta(sid)}
 
 

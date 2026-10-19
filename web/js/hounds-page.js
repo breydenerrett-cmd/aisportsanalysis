@@ -10,12 +10,15 @@
  *     referee's verdict and stays all-time. A model is RANKED with 10 settled bets in the view; below that it
  *     waits in the collapsed "Warming up" group with its record so far, whatever column is sorted;
  *   - filters: whose models (All / My models / House / Builders'), sport, type;
- *   - THE TABLE. One row per RANKED model (10 settled bets in the view): rank, model, type, record (W-L-P), units, ROI, bets,
- *     typical price, CLV (the share of bets that beat the close, and the average points), the last ten results
- *     as dots, and a plain-words status. Every column sorts. Units and ROI are one unit a bet at the average
- *     price. A model's drawer (click its row) lists its last ten tickets and links to its page. Every other model
- *     is one collapsed group, "Warming up (N)", at the bottom: its record so far, how many of the 10 settled bets it
- *     has, and its open tickets, never units or ROI; they are never 28 rows of 0-0;
+ *   - THE TABLE. One row per RANKED model (10 settled bets in the view): rank, model, type, record (W-L-P), BANKROLL
+ *     (the paper account now, from the same $1,000 every model starts with), RETURN (that account's % for the view),
+ *     7d and 24h (the same %, from bets settled in those windows), total units (1 unit = $10), bets, typical
+ *     price, CLV (the share of bets that beat the close, and the average points), the last ten results as dots,
+ *     and a plain-words status. Every column sorts, the balance first. A model with under 20 settled bets is
+ *     greyed with a tooltip. A model's drawer (click its row) lists its last ten tickets and links to its page.
+ *     Every other model is one collapsed group, "Warming up (N)", at the bottom: its record so far, how many of
+ *     the 10 settled bets it has, and its open tickets, never dollars or a return; they are never 28 rows of 0-0
+ *     (docs/BANKROLL.md for the definitions);
  *   - LATEST TICKETS: the newest bets any model recorded, as ticket rows (model, game, pick, market, price,
  *     books, when it went on the record against the start, PENDING / WON / LOST / PUSH), paged by the server.
  *     Every number in the table adds up from tickets like these;
@@ -39,7 +42,9 @@ import {
 } from "./hounds-core.js";
 import { wlText, unitsOf, causeText } from "./hounds-voice.js";
 import {
-  COLUMNS, NA, betsOf, roiOf, fmtRoi, fmtUnitsPlain, avgPriceOf, clvOf, last10Of, openBetsOf, recordText, streakText,
+  COLUMNS, DEFAULT_SORT, NA, betsOf, fmtUnitsPlain, avgPriceOf, clvOf, last10Of, openBetsOf, recordText, streakText,
+  bankrollNow, returnPctOf, windowPct, totalUnitsOf, isSmallSample, smallSampleTitle, fmtUsd, fmtPct, bankrollRules,
+  basisTagText, RECORDED_TITLE,
   statusOf, typeText, sportLabel, sportsOf, marketsText, presentSports, filterBySport, sortHounds, splitRanked,
   settledOf, onlyTickets, freshness, inQualifyingRound, qualifyingRows, progressText, isMemberDog, isNewDog,
 } from "./hounds-board.js";
@@ -61,7 +66,7 @@ const state = {
   scope: "all",            // all | mine | house | user
   sport: "all",
   category: "all",
-  sortKey: "units",
+  sortKey: DEFAULT_SORT,   // the account balance (the bankroll ruling, docs/BANKROLL.md)
   sortDir: "desc",
   expanded: new Set(),     // model ids whose drawer is open
   drawers: {},             // id -> { status: "loading" | "ok" | "error", items, error }
@@ -260,12 +265,26 @@ function modelCell(hound, rank, open) {
 }
 
 /**
- * One table row. `qual` (the qualifying round) numbers nothing, greys the ROI with a "small sample" tooltip and
- * puts a progress pill ("3/10 bets") in the Status column in place of the referee's chip.
+ * One table row. `qual` (the qualifying round) numbers nothing, greys the money columns with a "small sample"
+ * tooltip and puts a progress pill ("3/10 bets") in the Status column in place of the referee's chip. A ranked
+ * model with under 20 settled bets is greyed the same way. A window with no settled bet reads "n/a", not "0.0%".
  */
+function moneyCell(hound, cls, hook, text, ret, small, tagged = false) {
+  const tone = ret === null ? "none" : ret > 0 ? "up" : ret < 0 ? "down" : "flat";
+  // A model settled at its recorded price (its average-price board is incomplete) says so right under the figure.
+  const tag = tagged && basisTagText(hound)
+    ? h("small", { class: "hd-basis", "data-hook": "basis-tag", title: RECORDED_TITLE, text: basisTagText(hound) }) : null;
+  return small
+    ? h("td", { class: `${cls} hd-num hd-roi--small`, "data-hook": hook, "data-small": "true", title: smallSampleTitle(hound) }, [text, tag])
+    : h("td", { class: `${cls} hd-num hd-tone--${tone}`, "data-hook": hook }, [text, tag]);
+}
+
 function tableRow(hound, rank, qual) {
-  const units = unitsOf(hound);
-  const roi = roiOf(hound);
+  const units = totalUnitsOf(hound);
+  const small = qual || isSmallSample(hound);
+  const ret = returnPctOf(hound);
+  const d7 = windowPct(hound, "d7");
+  const h24 = windowPct(hound, "h24");
   const bets = betsOf(hound);
   const price = avgPriceOf(hound);
   const open = state.expanded.has(String(hound.id));
@@ -279,10 +298,11 @@ function tableRow(hound, rank, qual) {
     h("td", { class: "hd-col-record hd-num", "data-hook": "row-record" }, [
       h("strong", { text: recordText(hound) }),
       streak ? h("small", { class: "hd-aux", text: streak }) : null]),
-    h("td", { class: `hd-col-units hd-num hd-tone--${tone(units)}`, "data-hook": "row-units", "data-count": "1", text: fmtUnitsPlain(units) }),
-    qual
-      ? h("td", { class: "hd-col-roi hd-num hd-roi--small", "data-hook": "row-roi", title: "small sample", text: fmtRoi(roi) })
-      : h("td", { class: `hd-col-roi hd-num hd-tone--${tone(roi)}`, "data-hook": "row-roi", text: fmtRoi(roi) }),
+    moneyCell(hound, "hd-col-bankroll", "row-bankroll", fmtUsd(bankrollNow(hound)), ret, small, true),
+    moneyCell(hound, "hd-col-return", "row-return", fmtPct(ret), ret, small),
+    moneyCell(hound, "hd-col-d7", "row-d7", fmtPct(d7), d7, small),
+    moneyCell(hound, "hd-col-h24", "row-h24", fmtPct(h24), h24, small),
+    moneyCell(hound, "hd-col-units", "row-units", fmtUnitsPlain(units), units, small),
     h("td", { class: "hd-col-bets hd-num", "data-hook": "row-bets", text: String(bets) }),
     h("td", { class: "hd-col-price hd-num", "data-hook": "row-price", text: price === null ? NA : fmtPrice(price) }),
     h("td", { class: "hd-col-clv" }, [clvCell(hound)]),
@@ -385,7 +405,7 @@ function warmingBody(warming) {
             h("a", { class: "hd-modelname", href: houndHref(hound.id), text: hound.name || NOT_REPORTED }),
             h("small", { class: "hd-aux", text: [sports, marketsText(hound)].filter(Boolean).join(" · ") || NA })])])]),
         h("td", { class: "hd-col-type" }, [h("span", { class: "hd-typechip", "data-category": categoryOf(hound), text: typeText(hound) })]),
-        h("td", { colspan: 7, class: "hd-warm__note", "data-hook": "warming-note", text: warmingNote(hound, min) }),
+        h("td", { colspan: 10, class: "hd-warm__note", "data-hook": "warming-note", text: warmingNote(hound, min) }),
         h("td", { class: "hd-col-status" }, [statusCell(hound)]),
       ]));
     }
@@ -452,7 +472,7 @@ function renderTable() {
     if (state.expanded.has(String(hound.id))) tbody.appendChild(drawerRow(hound));
   });
   const table = h("table", { class: "hd-table hd-table--board", "data-hook": "leaderboard-table" }, [
-    h("caption", { class: "hd-sr-only", text: "Model leaderboard. One unit a bet, at the average price. Click a column to sort." }),
+    h("caption", { class: "hd-sr-only", text: "Model leaderboard. Every model is a paper account that starts with the same $1,000; one unit is $10. Click a column to sort." }),
     thead,
     rows.length ? tbody : h("tbody", {}, [h("tr", {}, [h("td", { colspan: COLUMNS.length + 1, class: "hd-muted",
       "data-hook": "no-graded", text: `No model has ${minRanked(state.seasonMeta)} settled bets in this view yet, so none is ranked.${
@@ -467,7 +487,14 @@ function renderTable() {
 
 // ---- data freshness --------------------------------------------------------------------------------
 
+/** The one line that says every model starts from the same money, in the server's own words (`bankroll_rules.label`). */
+function renderBankrollLine() {
+  const line = q("bankroll-line");
+  if (line && state.payload) line.textContent = bankrollRules(state.payload).label;
+}
+
 function renderMeta() {
+  renderBankrollLine();
   const box = q("hounds-asof");
   if (!box) return;
   clearNode(box);
@@ -571,14 +598,15 @@ function renderRetired() {
   const rows = list.map((hound) => {
     const rec = hound.record || {};
     const retired = hound.retired || {};
-    const units = unitsOf(hound);
+    const now = bankrollNow(hound);
+    const ret = returnPctOf(hound);
     return h("tr", { "data-hound": hound.id }, [
       h("td", { class: "hd-col-model" }, [h("div", { class: "hd-modelcell" }, [
         monogram(hound.name, { size: 28, category: categoryOf(hound), muted: true }),
         h("a", { class: "hd-modelname", href: houndHref(hound.id), text: hound.name || NOT_REPORTED })])]),
       h("td", { class: "hd-num", text: rec.bets > 0 ? `${wlText(rec)} (${rec.bets} bets)` : "no graded bets" }),
-      h("td", { class: `hd-num hd-tone--${units === null ? "none" : units > 0 ? "up" : units < 0 ? "down" : "flat"}`,
-        text: units === null ? NA : fmtUnitsPlain(units) }),
+      h("td", { class: `hd-num hd-tone--${ret === null ? "none" : ret > 0 ? "up" : ret < 0 ? "down" : "flat"}`,
+        "data-hook": "grave-bankroll", text: now === null ? NA : `${fmtUsd(now)} (${fmtPct(ret)})` }),
       h("td", { "data-hook": "grave-cause", text: causeText(retired.cause) }),
       h("td", { class: "hd-num", text: retired.date ? (shortDate(retired.date) || fmtWhen(retired.date)) : NA }),
     ]);
@@ -586,7 +614,7 @@ function renderRetired() {
   box.appendChild(h("div", { class: "hd-tablewrap", tabindex: "0", role: "region", "aria-label": "Retired models" }, [
     h("table", { class: "hd-table", "data-hook": "grave-list" }, [
       h("caption", { class: "hd-sr-only", text: "Retired models and their final records" }),
-      h("thead", {}, [h("tr", {}, ["Model", "Final record", "Units", "Reason", "Date"].map((t) => h("th", { scope: "col", text: t })))]),
+      h("thead", {}, [h("tr", {}, ["Model", "Final record", "Final bankroll", "Reason", "Date"].map((t) => h("th", { scope: "col", text: t })))]),
       h("tbody", {}, rows)])]));
 }
 

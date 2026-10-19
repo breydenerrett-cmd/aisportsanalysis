@@ -24,6 +24,20 @@ export function unitsOf(hound) {
   return isNum(rec.units_recorded_price) ? rec.units_recorded_price : null;
 }
 
+/**
+ * Which price `unitsOf` is at: "average_price", or "recorded_price" when the average is missing (the model's
+ * average-price board is incomplete) and the units fall back to the price it took. A caller that prints `unitsOf`
+ * must say which, and never rank a recorded-price figure as if it were an average-price one without the mark
+ * (audit 2026-10-19; the leaderboard and model page read `bankroll.basis` and tag the recorded-price models).
+ * Null when there is nothing graded.
+ */
+export function unitsBasis(hound) {
+  const rec = hound && hound.record;
+  if (!rec || !isNum(rec.bets) || rec.bets <= 0) return null;
+  if (isNum(rec.units_average_price)) return "average_price";
+  return isNum(rec.units_recorded_price) ? "recorded_price" : null;
+}
+
 /** Board order: most units first; a model with no graded bet goes last; ties by more bets, then name. */
 export function sortByUnits(hounds) {
   const betsOf = (x) => (x && x.record && isNum(x.record.bets) ? x.record.bets : 0);

@@ -107,13 +107,33 @@ def recorded_units(bet: Bet) -> Optional[float]:
     return settle_units(bet.result, bet.price)
 
 
+def average_price_of(bet: Bet) -> Optional[int]:
+    """The board-average price a bet carries (its own, else the one the board scan found), or None."""
+    return bet.price_average if bet.price_average is not None else bet.avg_price
+
+
 def average_units(bet: Bet) -> Optional[float]:
-    avg = bet.price_average if bet.price_average is not None else bet.avg_price
+    """Flat one-unit profit at the board-average price. A LOSS is -1 unit at ANY price, so it never needs the
+    average price; a win needs it, and without one the figure is None (never a guess). Found 2026-10-19: a loss with
+    no stored board used to count 0, which made a model with a missing board look better than one without."""
     if bet.result in ("push", "void"):
         return 0.0
+    if bet.result == "loss":
+        return -1.0
+    avg = average_price_of(bet)
     if avg is None:
         return None
     return settle_units(bet.result, avg)
+
+
+def beyond_cap(bet: Bet) -> bool:
+    """Did this ticket take, or sit at, a price of -200 or worse? Owner ruling 2026-10-19 / the builder's cap
+    (``user_spec.beyond_cap``, the one definition): such tickets stay in the honest record but are never featured
+    (best bet, worst beat, streaks, the digest) and carry an "old rule" tag. True if EITHER the price the hound
+    took or the board-average price is at the cap, so a ticket is never featured on the strength of the other."""
+    from src.hounds import user_spec
+    return any(isinstance(p, (int, float)) and not isinstance(p, bool) and user_spec.beyond_cap(p)
+               for p in (bet.price, average_price_of(bet)))
 
 
 # ---- text -----------------------------------------------------------------------------
@@ -248,7 +268,7 @@ def bet_row(bet: Bet, teams: Optional[tuple]) -> BetRow:
         hound_id=bet.hound_id, date=bet.date, game=game_text(bet, teams),
         market=bet.market_key, selection=selection_text(bet, teams),
         line=bet.line, price=bet.price, price_average=avg, book=bet.book,
-        consensus_fair=_round(bet.consensus_fair), result=bet.result,
+        consensus_fair=_round(bet.consensus_fair), result=bet.result, beyond_cap=beyond_cap(bet),
         units=_round(recorded_units(bet)) if bet.graded else None,
         clv_pts=bet.clv_pts, who_decided=bet.who_decided, reason=bet.reason,
         segment=bet.segment, verified=bet.verified, start_utc=bet.start_utc, recorded_utc=bet.recorded_utc,
@@ -362,8 +382,10 @@ def compute_form(fgraded: list, avg_available: bool, as_of: Optional[str], teams
                  "losses": sum(1 for b in recent if b.result == "loss"),
                  "units": round(sum(units_of(b) for b in recent), 4)}
 
-    wins = [b for b in decided if b.result == "win"]
-    losses = [b for b in decided if b.result == "loss"]
+    # Tickets at -200 or worse stay in every count above and are never FEATURED (owner ruling: no -200-or-worse
+    # pick on any public card): not the best bet, not the worst beat.
+    wins = [b for b in decided if b.result == "win" and not beyond_cap(b)]
+    losses = [b for b in decided if b.result == "loss" and not beyond_cap(b)]
     best_bet = worst_beat = None
     if wins:
         best = max(wins, key=lambda b: (units_of(b), b.date, b.decision_utc or ""))
@@ -408,7 +430,7 @@ def summarize(defn: dict, bets: list, teams_of: dict, as_of: Optional[str], now=
 
     record = tally(fgraded, Record)
     priced = [b for b in fgraded if b.result not in ("push", "void")]
-    with_avg = [b for b in priced if average_units(b) is not None]
+    with_avg = [b for b in priced if average_price_of(b) is not None]      # a real stored price, not a loss's -1
     avg_available = bool(priced) and len(with_avg) / len(priced) >= vd.AVERAGE_PRICE_COVERAGE
     if avg_available:
         record.units_average_price = round(sum(average_units(b) or 0.0 for b in fgraded), 4)
@@ -480,7 +502,8 @@ def summarize(defn: dict, bets: list, teams_of: dict, as_of: Optional[str], now=
         form=compute_form(fgraded, avg_available, as_of, teams_of),
         open_bets=sum(1 for b in forward if _ticket_status(b, now) == TICKET_OPEN),
         ungraded_bets=sum(1 for b in forward if _ticket_status(b, now) == TICKET_UNGRADED),
-        settled=record.wins + record.losses + record.pushes)
+        settled=record.wins + record.losses + record.pushes,
+        old_rule_bets=sum(1 for b in fgraded if beyond_cap(b)))
     summary.ranked = summary.settled >= seasons.MIN_RANKED_BETS
     bk.attach(summary, bk.events(fgraded, average_units if avg_available else recorded_units, defn.get("kind")),
               "average_price" if avg_available else "recorded_price")
@@ -518,6 +541,7 @@ def summarize_window(defn: dict, bets: list, teams_of: dict, as_of: Optional[str
     s.record, s.clv, s.form = p.record, p.clv, p.form
     s.spark, s.spark_basis = p.spark, p.spark_basis
     s.open_bets, s.settled, s.ranked = p.open_bets, p.settled, p.ranked
+    s.ungraded_bets, s.old_rule_bets = p.ungraded_bets, p.old_rule_bets     # the window's own tickets, like open_bets
     s.bankroll, s._bankroll_events = p.bankroll, p._bankroll_events      # the season's own account, from $1,000
     s.verdict = VerdictBlock(label=full.summary.verdict.label, sentence=full.summary.verdict.sentence,
                              units_note=p.verdict.units_note, n=full.summary.verdict.n)

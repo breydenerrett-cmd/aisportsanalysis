@@ -10,7 +10,7 @@
  *     unit is $10. The headline figures are the account balance and the % it moved (season, 7 days, 24 hours),
  *     all read from the payload's `bankroll` block; units are the stake-weighted total. "ROI" (units per bet) is
  *     gone from the board: `roiOf` stays only as the fallback for a payload from before the bankroll view, and
- *     the model page's "profit per $ bet" is the server's `yield_pct`.
+ *     the model page's yield tile is the server's `yield_pct`.
  *   - ROI (legacy) is units divided by bets, as a percent. Every ticket is one unit, so it is the units won per
  *     unit staked, from the same two numbers printed beside it.
  *   - "Beat the close" is the share of bets with a measurable closing line whose price was better than the
@@ -193,9 +193,42 @@ export function windowPct(hound, key) {
   return w && w.bets > 0 ? w.pct : null;
 }
 
+/**
+ * Which price the dollars and units are settled at: "average_price" (the board average when the bet was placed, the
+ * headline) or "recorded_price" (the price the model took, used for a model whose average-price board is missing for
+ * more than 10% of its bets). One basis per model, chosen by the server (`bankroll.basis`), never mixed within a
+ * model. Null when the payload carries no bankroll block.
+ */
+export function basisOf(hound) {
+  const b = bankrollOf(hound);
+  return b && (b.basis === "average_price" || b.basis === "recorded_price") ? b.basis : null;
+}
+
+export const RECORDED_TAG = "best price";
+export const RECORDED_TITLE = "This model's bets are settled at the price it took (its best recorded quote), because the average-price board is missing for more than 10% of its bets. Other models are settled at the average price, so compare with care.";
+
+/** "best price" when this model is settled at its recorded price instead of the average, else "". */
+export function basisTagText(hound) {
+  return basisOf(hound) === "recorded_price" ? RECORDED_TAG : "";
+}
+
+/** Words for the price basis, for a tile or a footnote. */
+export function basisWords(hound) {
+  const b = basisOf(hound);
+  return b === "recorded_price" ? "at the price it took (best price)" : b === "average_price" ? "at the average price across books" : "";
+}
+
+/** The tag a ticket at -200 or worse carries in every ticket list (the server's `beyond_cap`). */
+export const OLD_RULE_TAG = "-200 or worse (old rule)";
+export const OLD_RULE_TITLE = "Taken before the -200 price cap. It stays in the record and the money, and is never featured.";
+export function isOldRule(ticket) {
+  return !!ticket && ticket.beyond_cap === true;
+}
+
 /** Stake-weighted units won or lost. A payload without the bankroll block falls back to the flat units. */
 export function totalUnitsOf(hound) {
   const b = bankrollOf(hound);
+  if (b && isNum(b.bets) && b.bets <= 0) return null;        // nothing graded: n/a, not a zero
   return b && isNum(b.units_total) ? b.units_total : unitsOf(hound);
 }
 
@@ -211,7 +244,7 @@ export function smallSampleTitle(hound) {
   return `Small sample: ${settledOf(hound)} settled bets so far (under ${min}). A few results can move this a lot.`;
 }
 
-/** Profit per dollar bet, in percent (the old "ROI"), or null. Model page only. */
+/** Yield: result per dollar staked on decided bets, in percent (the old ROI), or null. Model page only. */
 export function yieldOf(hound) {
   const b = bankrollOf(hound);
   return b && isNum(b.yield_pct) ? b.yield_pct : null;
@@ -220,12 +253,14 @@ export function yieldOf(hound) {
 /** { usd, pct, peak } for the worst fall of the balance from a high, or null. */
 export function drawdownOf(hound) {
   const b = bankrollOf(hound);
-  if (!b || !isNum(b.max_drawdown_usd)) return null;
+  if (!b || !isNum(b.max_drawdown_usd) || (isNum(b.bets) && b.bets <= 0)) return null;
   return { usd: b.max_drawdown_usd, pct: isNum(b.max_drawdown_pct) ? b.max_drawdown_pct : null, peak: isNum(b.peak) ? b.peak : null };
 }
 
 /** The sort value for the balance: the account now, else (an old payload) the start plus flat units at a unit. */
 function balanceKey(hound) {
+  const b = bankrollOf(hound);
+  if (b && isNum(b.bets) && b.bets <= 0) return null;       // nothing graded: no sort value, always last (never a tie at $1,000)
   const now = bankrollNow(hound);
   if (now !== null) return now;
   const u = unitsOf(hound);
@@ -323,29 +358,17 @@ export function filterBySport(hounds, sport) {
 
 // ---- sorting ---------------------------------------------------------------------------------------
 
-export const COLUMNS = [
-  { key: "model", label: "Model", numeric: false, first: "asc" },
-  { key: "type", label: "Type", numeric: false, first: "asc" },
-  { key: "record", label: "Record", numeric: true, first: "desc", hint: "Wins-losses-pushes" },
-  { key: "units", label: "Units", numeric: true, first: "desc", hint: "One unit a bet, at the average price" },
-  { key: "roi", label: "ROI", numeric: true, first: "desc", hint: "Units per bet, as a percent" },
-  { key: "bets", label: "Bets", numeric: true, first: "desc", hint: "Graded bets" },
-  { key: "price", label: "Avg price", numeric: true, first: "desc", hint: "The typical price taken" },
-  { key: "clv", label: "CLV", numeric: true, first: "desc", hint: "Share of bets that beat the close, and the average points" },
-  { key: "last10", label: "Last 10", numeric: true, first: "desc", hint: "Wins in the last ten decided bets" },
-  { key: "status", label: "Status", numeric: false, first: "desc", hint: "The referee's verdict, in plain words. All-time, not limited to the season shown." },
-];
 
 /**
  * The leaderboard's columns since the bankroll ruling (2026-10-19). Return is the view's % on the starting
  * bankroll; 7d and 24h are the windows by settle time inside that view. The default sort is the balance.
  */
-export const BANKROLL_COLUMNS = [
+export const COLUMNS = [
   { key: "model", label: "Model", numeric: false, first: "asc" },
   { key: "type", label: "Type", numeric: false, first: "asc" },
   { key: "record", label: "Record", numeric: true, first: "desc", hint: "Wins-losses-pushes" },
   { key: "bankroll", label: "Bankroll", numeric: true, first: "desc", hint: "The paper account now, from the shared $1,000 start" },
-  { key: "return", label: "Return", numeric: true, first: "desc", hint: "Profit as a percent of the $1,000 start, for the season shown" },
+  { key: "return", label: "Return", numeric: true, first: "desc", hint: "Gain or loss as a percent of the $1,000 start, for the season shown" },
   { key: "d7", label: "7d", numeric: true, first: "desc", hint: "Return on the $1,000 start from bets settled in the last 7 days" },
   { key: "h24", label: "24h", numeric: true, first: "desc", hint: "Return on the $1,000 start from bets settled in the last 24 hours" },
   { key: "units", label: "Units", numeric: true, first: "desc", hint: "Total units won or lost (1 unit = $10; member dogs bet the units they chose)" },

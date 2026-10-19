@@ -392,6 +392,8 @@ class TheHardLinesStayAndTheAcademicWordsGo(unittest.TestCase):
         for page, kw in pages:
             out = run_page(page, **kw)
             text = out["text"].lower()
+            # the owner's own label for the yield tile (docs/BANKROLL.md): what a yield IS, not a claim of any profit
+            text = text.replace("profit per $ bet", "")
             for word in ACADEMIC_WORDS:
                 self.assertNotIn(word, text, f"{page} {kw.get('search', '')} writes {word!r}")
             for pattern in (r"\block\b", r"can'?t lose", r"sure thing", r"free money", r"\bedge\b", r"\bprofit"):

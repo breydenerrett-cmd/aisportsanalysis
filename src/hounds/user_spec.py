@@ -726,7 +726,7 @@ def builder_menu() -> dict:
     """GET /hounds/builder/menu: everything a client may put in a version-2 spec, with bounds. The
     English parser, the AI translator's output check and the web builder are all generated from, and
     validated against, this one document."""
-    from src.hounds import user_rules as R
+    from src.hounds import bankroll, user_rules as R
     return {
         "spec_version": SPEC_VERSION_V2,
         "paper_only": True, "not_advice": NOT_ADVICE,
@@ -761,6 +761,7 @@ def builder_menu() -> dict:
         "ranking_note": ("When more picks qualify than your daily cap, they are ranked by your rule. A pick "
                          "is made at its own decision time, so the ranking decides among the picks that qualify "
                          "in the same engine pass; a bet already made is never taken back."),
-        "stake_note": ("Paper stake in units: 1 unit = $10 of a $1,000 paper bankroll. Your dog's bankroll, "
-                       "return and units use this stake; its win-loss record counts every bet once."),
+        "stake_note": ("Your dog's bankroll, return and units use this stake; its win-loss record counts every "
+                       "bet once."),
+        "bankroll": bankroll.public_block(),
     }

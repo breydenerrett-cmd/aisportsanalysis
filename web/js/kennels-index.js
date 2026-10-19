@@ -9,6 +9,7 @@
 import { apiGet } from "./api.js";
 import { h, clearNode, describeError, kennelName } from "./hounds-core.js";
 import { dogBadge, DEFAULT_LOOK } from "./dog-avatar.js";
+import { bankrollNow, returnPctOf, fmtUsd, fmtPct } from "./hounds-board.js";
 
 const q = (hook) => document.querySelector(`[data-hook='${hook}']`);
 
@@ -16,7 +17,8 @@ export function bestLine(kennel) {
   const best = kennel.best;
   if (!best) return kennel.new_dogs >= kennel.dog_count ? "New: no bets yet" : "No settled bets yet";
   const r = best.record || {};
-  return `Best: ${best.name}, ${r.wins || 0}-${r.losses || 0}${r.pushes ? `-${r.pushes}` : ""}`;
+  const money = bankrollNow(best) === null ? "" : `, ${fmtUsd(bankrollNow(best))} (${fmtPct(returnPctOf(best))})`;
+  return `Best: ${best.name}, ${r.wins || 0}-${r.losses || 0}${r.pushes ? `-${r.pushes}` : ""}${money}`;
 }
 
 export function kennelCard(kennel, index = 0) {

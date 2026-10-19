@@ -143,6 +143,8 @@ def _settled_run(book_rows) -> Optional[tuple]:
     for r in reversed(chronological):
         if r.result != last.result:
             break
+        if getattr(r, "beyond_cap", False):
+            return None            # a run that includes a -200-or-worse ticket (old rule) is never featured
         run += 1
     wins = sum(1 for r in chronological if r.result == "win")
     return last.result, run, last.date, wins, len(chronological) - wins

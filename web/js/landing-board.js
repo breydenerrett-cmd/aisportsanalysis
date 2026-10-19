@@ -26,6 +26,7 @@ import {
   recordText, betsOf, onlyTickets, ticketState, ticketStatus, RESULT_WORDS, ticketPrice, pickOf,
   marketLabel, recordedText, freshness, isRanked, qualifyingRows, progressText, NA,
   sortByBankroll, bankrollNow, returnPctOf, fmtUsd, fmtPct, bankrollRules, isSmallSample, smallSampleTitle,
+  basisTagText, RECORDED_TITLE, isOldRule, OLD_RULE_TAG, OLD_RULE_TITLE,
 } from "./hounds-board.js";
 import { minRanked, seasonAgeText } from "./hounds-season.js";
 
@@ -71,7 +72,8 @@ function boardRow(hound, rank, qual, min) {
       monogram(hound.name, { size: 26, category: categoryOf(hound) }),
       h("a", { class: "lbname", href: houndHref(hound.id), text: hound.name || NOT_REPORTED })]),
     h("td", { class: "lbnum", "data-hook": "lb-record", text: recordText(hound) }),
-    h("td", { ...(grey || { class: "lbnum" }), "data-hook": "lb-bankroll", text: fmtUsd(balance) }),
+    h("td", { ...(grey || { class: "lbnum" }), "data-hook": "lb-bankroll" }, [fmtUsd(balance),
+      basisTagText(hound) ? h("small", { class: "lbbasis", "data-hook": "lb-basis", title: RECORDED_TITLE, text: basisTagText(hound) }) : null]),
     h("td", { ...(grey || { class: `lbnum lbtone--${tone(ret)}` }), "data-hook": "lb-return", text: fmtPct(ret) }),
     qual
       ? h("td", { class: "lbnum" }, [h("span", { class: "lbpill", "data-hook": "lb-progress",
@@ -116,7 +118,8 @@ function ticketRow(t) {
         ? h("a", { class: "lbticket__model", href: houndHref(t.hound_id), text: t.hound_name || NOT_REPORTED })
         : h("span", { class: "lbticket__model", text: t.hound_name || NOT_REPORTED }),
       h("span", { class: "lbticket__pick" }, [h("strong", { text: pickOf(t) }),
-        ` ${marketLabel(t.market)}${price === null ? "" : ` ${fmtPrice(price)}`}`]),
+        ` ${marketLabel(t.market)}${price === null ? "" : ` ${fmtPrice(price)}`}`,
+        isOldRule(t) ? h("small", { class: "lbold", "data-hook": "lb-old-rule", title: OLD_RULE_TITLE, text: OLD_RULE_TAG }) : null]),
       h("span", { class: "lbticket__game", text: [t.game || "", rec.kind === "before" ? rec.text.replace(/^.*?, /, "recorded ") : ""]
         .filter(Boolean).join(" · ") }),
     ]),

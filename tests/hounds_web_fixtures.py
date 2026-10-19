@@ -268,6 +268,16 @@ def stream() -> dict:
     return contract.stream_payload(paginate(items, 1, 25), AS_OF)
 
 
+def _retired_block(rec: Record, day: str) -> dict:
+    """A retired fixture dog's bankroll: its record's average-price units spread evenly over its bets, all settled on ``day``."""
+    when = datetime.fromisoformat(day).replace(hour=18, tzinfo=timezone.utc)
+    results = ["win"] * rec.wins + ["loss"] * rec.losses + ["push"] * rec.pushes
+    each = (rec.units_average_price or 0.0) / rec.bets
+    evts = [bk.Event(settle=when, units=each, flat=each, stake=1.0, result=results[k], order=(day, f"{k:04d}"))
+            for k in range(rec.bets)]
+    return bk.block(evts, BANKROLL_NOW, "average_price")
+
+
 def graveyard() -> dict:
     s = HoundSummary(
         id="old-faithful", name="Old Faithful", tagline="Retired after a long run.", kind="user", category="mixed",
@@ -277,6 +287,7 @@ def graveyard() -> dict:
         record=Record(bets=60, wins=28, losses=31, pushes=1, voids=0, units_recorded_price=-3.1, units_average_price=-4.0),
         clv=None, verdict=VerdictBlock(label="TOO EARLY", sentence=VERDICT_SENTENCES["TOO EARLY"], units_note=vd.units_note(60)),
         last_bet_utc="2026-10-20T20:00:00Z", spark=[], spark_basis="average_price", source="fixture")
+    s.bankroll = _retired_block(s.record, "2026-10-20")
     # a house dog with a persona, put down by the 25-unit rule: its tombstone carries its own epitaph
     t = HoundSummary(
         id="slowpoke", name="Slowpoke", tagline="Took the under, every night.", kind="house", category="baseline",
@@ -288,6 +299,7 @@ def graveyard() -> dict:
         last_bet_utc="2026-10-14T20:00:00Z", spark=[], spark_basis="average_price", source="fixture",
         persona={"bio": "Always under.", "catchphrase": "Under. Always under.", "vibe": "grinder", "verb": "took",
                  "roasts": ["a"] * 5, "brags": ["b"] * 5, "epitaph": "Went under one last time."})
+    t.bankroll = _retired_block(t.record, "2026-10-14")
     return contract.graveyard_payload([s, t], AS_OF)
 
 

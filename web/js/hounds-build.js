@@ -27,6 +27,7 @@
 import { apiGet, apiPost, getToken } from "./api.js";
 import { h, s, clearNode, describeError, houndHref, isNum, fmtPrice } from "./hounds-core.js";
 import { celebrate } from "./dog-common.js";
+import { stakeLineText } from "./hounds-board.js";
 
 export const PAPER_NOTICE =
   "Paper bets only. Your dog never places a real bet, and it never takes a price of -200 or worse.";
@@ -407,8 +408,18 @@ function globalsGrid(onChange) {
     String(S.spec.lock_minutes), (v) => { S.spec.lock_minutes = Number(v); onChange(); }, { "data-hook": "g-lock" })));
   grid.appendChild(field("Most bets a day", numberField({ min: m.max_bets_per_day.min, max: m.max_bets_per_day.max, step: 1 }, S.spec.max_bets_per_day,
     (v) => { S.spec.max_bets_per_day = v; onChange(); }, { "data-hook": "g-bets" })));
-  grid.appendChild(field("Stake per bet (paper units)", selectOf(m.stake_units.choices.map((v) => ({ value: String(v), label: `${v} unit${v === 1 ? "" : "s"}` })),
-    String(S.spec.stake_units), (v) => { S.spec.stake_units = Number(v); onChange(); }, { "data-hook": "g-stake" }), m.stake_note));
+  // The stake in dollars, live: "1 unit = $10 of your $1,000; this dog bets 2 units ($20 a bet)." The numbers come
+  // from the menu's `bankroll` block (src/hounds/bankroll.py); a stake change rewrites the line at once.
+  const stakeLine = h("p", { class: "hd-fine bd-stakeline", "data-hook": "g-stake-line", "aria-live": "polite",
+    text: stakeLineText(S.spec.stake_units, m.bankroll) });
+  const stakeField = field("Stake per bet (paper units)", selectOf(m.stake_units.choices.map((v) => ({ value: String(v), label: `${v} unit${v === 1 ? "" : "s"}` })),
+    String(S.spec.stake_units), (v) => {
+      S.spec.stake_units = Number(v);
+      stakeLine.textContent = stakeLineText(S.spec.stake_units, m.bankroll);
+      onChange();
+    }, { "data-hook": "g-stake" }), m.stake_note);
+  stakeField.appendChild(stakeLine);
+  grid.appendChild(stakeField);
   grid.appendChild(field("If more picks qualify than the cap, take", selectOf(m.rank_by.map((r) => ({ value: r.value, label: r.label })),
     S.spec.rank_by, (v) => { S.spec.rank_by = v; onChange(); }, { "data-hook": "g-rank" }), m.ranking_note));
 }

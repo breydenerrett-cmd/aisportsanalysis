@@ -224,7 +224,8 @@ def week_stats(hounds: dict, as_of: Optional[str]) -> dict:
         usd, pct = _money_of(units, block)
         out[hid] = {"wins": sum(1 for b in rows if b.result == "win"),
                     "losses": sum(1 for b in rows if b.result == "loss"), "units": round(units, 4),
-                    "usd": round(usd, 2), "pct": round(pct, 3)}
+                    "usd": round(usd, 2), "pct": round(pct, 3),
+                    "old_rule": sum(1 for b in rows if getattr(b, "beyond_cap", False))}
     return out
 
 
@@ -258,6 +259,13 @@ def _pool(hounds: list) -> list:
     return ranked or race
 
 
+def _old_rule(hound: dict, stats_row: Optional[dict] = None) -> bool:
+    """Does this dog's span include a ticket at -200 or worse (the old rule)? Owner ruling: no -200-or-worse pick is
+    featured anywhere public, so a dog whose figures include one is not named in a highlight. Its numbers stay on
+    the leaderboard. The season view says it on the summary (``old_rule_bets``), the 7-day window on its own row."""
+    return bool(_count(hound, "old_rule_bets") or (stats_row or {}).get("old_rule"))
+
+
 def _pick(hounds: list, window: Optional[dict], hot: bool):
     """The hottest (or coldest) race hound by paper dollars: at least MIN_SETTLED_FOR_HIGHLIGHT settled bets in
     the span, dollars strictly above (below) zero at the whole dollar the post prints. Ties: more wins (losses)
@@ -266,6 +274,8 @@ def _pick(hounds: list, window: Optional[dict], hot: bool):
     for h in _pool(hounds):
         s, name = _stats_for(h, window), _name(h)
         if not s or not name or s["wins"] + s["losses"] < MIN_SETTLED_FOR_HIGHLIGHT:
+            continue
+        if _old_rule(h, s):
             continue
         shown = round(s["usd"])
         if (shown <= 0) if hot else (shown >= 0):
@@ -302,7 +312,7 @@ def coin_flip_line(hounds: list) -> Optional[str]:
         return None
     a, b = season_stats(collie), season_stats(prof)
     na, nb = _name(collie), _name(prof)
-    if not (a and b and na and nb):
+    if not (a and b and na and nb) or _old_rule(collie) or _old_rule(prof):
         return None
     ua, ub = round(a["pct"], 1), round(b["pct"], 1)
     both = f"({pct_text(a['pct'])} vs {pct_text(b['pct'])}, season)"

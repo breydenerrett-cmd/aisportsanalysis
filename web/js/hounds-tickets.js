@@ -9,7 +9,14 @@
 import { h, isNum, signed, fmtPrice, shortDate, houndHref, NOT_REPORTED } from "./hounds-core.js";
 import {
   ticketStatus, ticketState, RESULT_WORDS, recordedText, ticketPrice, pickOf, marketLabel, booksText, NA,
+  isOldRule, OLD_RULE_TAG, OLD_RULE_TITLE,
 } from "./hounds-board.js";
+
+/** The small tag on a ticket at -200 or worse (a price the rule no longer allows): null for every other ticket. */
+export function oldRuleTag(ticket) {
+  return isOldRule(ticket)
+    ? h("small", { class: "hd-oldrule", "data-hook": "old-rule", title: OLD_RULE_TITLE, text: OLD_RULE_TAG }) : null;
+}
 
 const UNGRADED_TITLE = "No grade yet, and the game started more than 36 hours ago. Not counted in the record.";
 
@@ -63,6 +70,7 @@ export function ticketCard(ticket, { showModel = false, name = "" } = {}) {
       h("span", { class: "hd-card__pick" }, [
         h("strong", { class: "hd-card__pickname", "data-hook": "card-pick", text: pickOf(t) }),
         h("strong", { class: "hd-num hd-card__price", "data-hook": "card-price", text: price === null ? NA : fmtPrice(price) }),
+        oldRuleTag(t),
       ]),
       resultChip(t, "card-status"),
     ]),
@@ -99,6 +107,7 @@ export function priceCell(ticket) {
   return h("span", { class: "hd-price" }, [
     h("strong", { class: "hd-num", text: price === null ? NA : fmtPrice(price) }),
     sub ? h("small", { class: "hd-aux", text: sub }) : null,
+    oldRuleTag(ticket),
   ]);
 }
 

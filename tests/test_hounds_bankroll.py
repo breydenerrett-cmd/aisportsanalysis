@@ -23,6 +23,7 @@ except ImportError:  # pragma: no cover
     HAS_FASTAPI = False
 
 from src.hounds import bankroll as bk, contract, ledgers, stats, user_rules
+from src.hounds.contract import BetRow
 from src.hounds.ledgers import Sources
 from tests import _hounds_fixtures as F
 
@@ -360,7 +361,7 @@ class OverTheWorld(unittest.TestCase):
                "rule_text", "status", "retired", "record", "clv", "verdict", "first_bet_utc", "last_bet_utc",
                "verified", "verified_share", "checkable_share", "replay", "spark", "spark_basis", "source",
                "persona", "form", "open_bets", "ungraded_bets", "settled", "ranked"}
-        self.assertEqual(set(s) - old, {"bankroll"})
+        self.assertEqual(set(s) - old, {"bankroll", "old_rule_bets"})
         self.assertEqual(set(s["record"]), {"bets", "wins", "losses", "pushes", "voids",
                                             "units_recorded_price", "units_average_price"})
         json.dumps(s, allow_nan=False)
@@ -385,6 +386,121 @@ class OverTheWorld(unittest.TestCase):
         row = next(h for h in snap["views"]["all"]["leaderboard"]["hounds"] if h["id"] == "u-2")
         self.assertEqual(row["bankroll"]["current"], 1008.0)
         json.dumps(snap, allow_nan=False)
+
+
+def _defn(kind="house", hid="d"):
+    return {"id": hid, "name": hid.title(), "tagline": "", "kind": kind, "category": "stats", "style": "t",
+            "sports": ["mlb"], "markets": ["h2h"], "rule_text": "r"}
+
+
+def _bet(i, result, price=-110, avg=None, date="2026-10-01", **kw):
+    return ledgers.Bet(hound_id="d", bet_id=f"b{i}", date=date, event_id=f"E{i}", market_key="h2h", side="home",
+                       price=price, price_average=avg, result=result, units=None, **kw)
+
+
+class AuditOfOctober19(unittest.TestCase):
+    """The coordinator's audit (2026-10-19): defects in files this work already touches, each pinned."""
+
+    # (a) never mix price bases, and say which one a model is on
+    def test_a_loss_is_minus_one_unit_at_any_price_so_it_never_needs_the_average_price(self):
+        self.assertEqual(stats.average_units(_bet(1, "loss", avg=None)), -1.0)       # was None, summed as 0
+        self.assertIsNone(stats.average_units(_bet(2, "win", avg=None)))             # a win without a price is unknowable
+        self.assertAlmostEqual(stats.average_units(_bet(3, "win", avg=110)), 1.10)
+        self.assertEqual(stats.average_units(_bet(4, "push")), 0.0)
+
+    def test_coverage_counts_stored_average_prices_not_losses_that_need_none(self):
+        # 5 wins with a board, 5 losses with none: only 5 of 10 priced bets have an average price (50% < 90%), so the
+        # model is on the RECORDED price. The losses' automatic -1 must not make it look 100% covered.
+        bets = [_bet(i, "win", price=105, avg=105) for i in range(5)] + [_bet(10 + i, "loss") for i in range(5)]
+        s = stats.summarize(_defn(), bets, {}, "2026-10-01").summary
+        self.assertEqual(s.bankroll["basis"], "recorded_price")
+        self.assertIsNone(s.record.units_average_price)
+        self.assertEqual(s.spark_basis, "recorded_price")
+
+    def test_a_dog_with_full_coverage_is_on_the_average_price_and_its_losses_count_fully(self):
+        bets = [_bet(i, "win", price=105, avg=100) for i in range(9)] + [_bet(20, "loss", avg=-110)]
+        s = stats.summarize(_defn(), bets, {}, "2026-10-01").summary
+        self.assertEqual(s.bankroll["basis"], "average_price")
+        self.assertAlmostEqual(s.record.units_average_price, 9 * 1.0 - 1.0)
+        self.assertAlmostEqual(s.bankroll["units_total"], 8.0)
+
+    def test_the_basis_is_one_per_dog_never_mixed_inside_a_dog(self):
+        bets = [_bet(i, "win", price=120, avg=100) for i in range(6)] + [_bet(10 + i, "win", price=120) for i in range(4)]
+        s = stats.summarize(_defn(), bets, {}, "2026-10-01").summary         # 60% covered
+        self.assertEqual(s.bankroll["basis"], "recorded_price")
+        self.assertAlmostEqual(s.bankroll["units_total"], 10 * 1.20)          # every bet at the price it took
+
+    def test_the_pages_say_which_basis_a_dog_is_on(self):
+        from tests.hounds_web_runner import HAS_NODE, run_js
+        if not HAS_NODE:
+            self.skipTest("node not installed")
+        out = run_js('import * as B from "./hounds-board.js";\nimport * as V from "./hounds-voice.js";\n'
+                     'const a = {bankroll: {current: 1010, start: 1000, basis: "average_price"}, record: {bets: 3, units_average_price: 1, units_recorded_price: 2}};\n'
+                     'const r = {bankroll: {current: 1010, start: 1000, basis: "recorded_price"}, record: {bets: 3, units_average_price: null, units_recorded_price: 2}};\n'
+                     'console.log(JSON.stringify([B.basisTagText(a), B.basisTagText(r), B.basisOf({}), V.unitsBasis(a), V.unitsBasis(r), V.unitsBasis({record: {bets: 0}})]));')
+        self.assertEqual(out, ["", "best price", None, "average_price", "recorded_price", None])
+
+    # (c) season views carry their own ungraded count
+    def test_a_season_view_carries_its_own_ungraded_tickets(self):
+        old = _bet(1, None, date="2026-09-10", start_utc="2026-09-10T23:00:00Z")        # never graded, long stale
+        new = _bet(2, "win", price=110, avg=110, date="2026-10-20")
+        data = stats.with_seasons(stats.summarize(_defn(), [old, new], {}, "2026-10-20"), _defn(), [old, new], {}, "2026-10-20")
+        self.assertEqual(data.view("all").summary.ungraded_bets, 1)
+        self.assertEqual(data.view("s1").summary.ungraded_bets, 1)
+        self.assertEqual(data.view("s2").summary.ungraded_bets, 0)       # was the all-time 1 copied into the season
+
+    # (e) the -200 rule
+    def test_a_ticket_at_minus_200_or_worse_is_flagged_by_either_price(self):
+        self.assertTrue(stats.beyond_cap(_bet(1, "win", price=-200)))
+        self.assertTrue(stats.beyond_cap(_bet(2, "win", price=-150, avg=-230)))
+        self.assertTrue(stats.beyond_cap(_bet(3, "loss", price=-310)))
+        self.assertFalse(stats.beyond_cap(_bet(4, "win", price=-199, avg=-150)))
+        self.assertFalse(stats.beyond_cap(_bet(5, "win", price=250)))
+        self.assertFalse(stats.beyond_cap(_bet(6, "win", price=None)))
+        self.assertTrue(stats.bet_row(_bet(1, "win", price=-200), None).beyond_cap)
+        self.assertFalse(stats.bet_row(_bet(4, "win", price=-110), None).beyond_cap)
+
+    def test_the_cap_is_the_builders_cap(self):
+        from src.hounds import user_spec
+        for p in (-100, -199, -200, -201, 150):
+            self.assertEqual(stats.beyond_cap(_bet(1, "win", price=p)), user_spec.beyond_cap(p))
+
+    def test_best_bet_and_worst_beat_never_feature_a_minus_200_ticket_but_the_record_keeps_it(self):
+        big_win = _bet(1, "win", price=-250, avg=-250, date="2026-10-01")           # the biggest win by price is not a big one...
+        small_win = _bet(2, "win", price=105, avg=105, date="2026-10-02")
+        heavy_loss = _bet(3, "loss", price=-300, avg=-300, date="2026-10-03", consensus_fair=0.75)
+        plain_loss = _bet(4, "loss", price=-110, avg=-110, date="2026-10-04", consensus_fair=0.5)
+        s = stats.summarize(_defn(), [big_win, small_win, heavy_loss, plain_loss], {}, "2026-10-04").summary
+        self.assertEqual(s.record.bets, 4)                                          # all four stay in the honest record
+        self.assertEqual(s.old_rule_bets, 2)
+        self.assertEqual(s.form["best_bet"]["price"], 105)
+        self.assertEqual(s.form["worst_beat"]["price"], -110)
+
+    def test_a_dog_with_only_old_rule_tickets_has_no_best_bet_or_worst_beat(self):
+        s = stats.summarize(_defn(), [_bet(1, "win", price=-250, avg=-250), _bet(2, "loss", price=-400, avg=-400)],
+                            {}, "2026-10-01").summary
+        self.assertIsNone(s.form["best_bet"])
+        self.assertIsNone(s.form["worst_beat"])
+        self.assertEqual(s.record.bets, 2)
+
+    def test_the_digest_does_not_name_a_dog_whose_figures_include_an_old_rule_ticket(self):
+        from src.hounds import digest as D
+        def hound(hid, old):
+            return {"id": hid, "name": hid.title(), "category": "stats", "kind": "house", "ranked": True,
+                    "verdict": {"label": "TOO EARLY"}, "old_rule_bets": old,
+                    "record": {"bets": 8, "wins": 6, "losses": 2, "pushes": 0, "units_average_price": 3.0}}
+        post = D.digest({"as_of": "2026-10-18", "hounds": [hound("clean", 0), hound("dirty", 3)]})["post"]
+        self.assertIn("Clean 6-2", post)
+        self.assertNotIn("Dirty", post)
+        post = D.digest({"as_of": "2026-10-18", "hounds": [hound("dirty", 3)]})["post"]
+        self.assertNotIn("Hottest", post)
+
+    def test_the_kennel_feed_never_posts_a_streak_that_includes_an_old_rule_ticket(self):
+        from src.hounds import kennel_feed as K
+        rows = [BetRow(hound_id="x", date=f"2026-10-0{i}", result="win", beyond_cap=(i == 3)) for i in range(7, 0, -1)]
+        self.assertIsNone(K._settled_run(rows))
+        clean = [BetRow(hound_id="x", date=f"2026-10-0{i}", result="win") for i in range(7, 0, -1)]
+        self.assertEqual(K._settled_run(clean)[:2], ("win", 7))
 
 
 @unittest.skipUnless(HAS_FASTAPI, "fastapi not installed")

@@ -73,6 +73,29 @@ units` = **+$8.00**, balance **$1,008.00**, return **+0.80%**. The same three be
 | Landing board | the top five by bankroll, with return %. |
 | Builder | "1 unit = $10 of your $1,000; this dog bets N units" beside the stake picker. |
 
+## One price basis per model, and it is marked
+
+A model's dollars and units are settled at the **board-average price** when at least 90% of its priced bets have
+one (`bankroll.basis: "average_price"`). Below that the model is settled at **the price it took**
+(`"recorded_price"`, the best quote) and the pages mark it "best price" with a tooltip: never a quiet mix. A
+**loss is -1 unit at any price** and needs no board; coverage counts only real stored average prices (audit
+2026-10-19: a loss with no stored board used to count 0, and `unitsOf` quietly fell back to the recorded price
+while the column said "average price").
+
+## The -200 rule
+
+Owner ruling: no pick at -200 or worse is featured on any public card. Season 1 engine dogs have such bets, so they
+stay in the record and in the money, and are **never featured**: not as a model's best bet or worst beat
+(`form`), not in a streak item of the kennel feed, not in the digest's hottest / coldest / coin-flip lines (a dog
+whose figures include one is not named; `old_rule_bets` on the summary, `old_rule` on a 7-day row). Every ticket
+list carries a small "-200 or worse (old rule)" tag from the server's `beyond_cap` flag (the price taken OR the
+average at `user_spec.beyond_cap`, the one definition).
+
+## Slate day and "ungraded"
+
+A ticket with no start time counts its slate day as ending at **midnight Eastern** (the game's official date), not
+midnight UTC, before the 36-hour rule calls it ungraded (`contract._slate_end`).
+
 ## What this does not change
 
 The record, the CLV, the verdict badge, the retirement rules, the rankings by CLV and every recorded ledger row.
