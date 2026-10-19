@@ -70,7 +70,7 @@
  * leaves only the page's static pause sentence, never an empty card.
  */
 
-import { apiGet } from "./api.js";
+import { apiGet, getToken } from "./api.js";
 import { formatEasternTime, formatAmerican } from "./dom.js";
 import { teamName } from "./labels.js";
 import { teamColors } from "./teamcolors.js";
@@ -319,6 +319,13 @@ function applyLiveHero(root, { gamesCount, featured }) {
  * rest of the page.
  */
 export async function mountLiveHero(root = document) {
+  // /card and /today are members-only routes: for a signed-out visitor they can only answer 401, which
+  // showed as red console errors on every landing load (UX review 2026-10-19) and led to this same sample
+  // fallback anyway. No token, no request.
+  if (!getToken()) {
+    showSampleFallback(root);
+    return;
+  }
   // The card first: a paused answer decides the whole module, whatever
   // /today says.
   let card = null;

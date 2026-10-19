@@ -179,6 +179,10 @@ globalThis.document = {
   querySelector: (s) => body.querySelector(s), querySelectorAll: (s) => body.querySelectorAll(s),
 };
 const store = new Map();
+// /card and /today are members-only: the hero asks for them only with a token stored (a signed-out visitor
+// got two 401s per load). Scenarios are signed in unless they say otherwise.
+const scenarioEarly = JSON.parse(process.env.SCENARIO);
+if (scenarioEarly.signedIn !== false) store.set("aisportsanalysis.invite_token", "t");
 globalThis.window = {
   localStorage: {
     getItem: (k) => (store.has(k) ? store.get(k) : null),
@@ -258,8 +262,9 @@ class TheHeroModuleWhenThePicksArePaused(unittest.TestCase):
     def tearDownClass(cls):
         cls._tmp.cleanup()
 
-    def run_scenario(self, routes, default_reason="DEFAULT"):
-        env = dict(os.environ, SCENARIO=json.dumps({"routes": routes, "defaultReason": default_reason}))
+    def run_scenario(self, routes, default_reason="DEFAULT", signed_in=True):
+        env = dict(os.environ, SCENARIO=json.dumps({"routes": routes, "defaultReason": default_reason,
+                                                    "signedIn": signed_in}))
         proc = subprocess.run(["node", "harness.mjs"], cwd=self._tmp.name, env=env,
                               capture_output=True, text=True, encoding="utf-8", timeout=60)
         self.assertEqual(proc.returncode, 0, proc.stderr[-2000:])
@@ -303,6 +308,20 @@ class TheHeroModuleWhenThePicksArePaused(unittest.TestCase):
                 self.assertTrue(out["pausedHidden"], "the panel appeared with no paused answer")
                 self.assertTrue(out["featureHidden"])
                 self.assertEqual(out["figure"], "")
+
+    def test_a_signed_out_visitor_makes_no_member_only_request(self):
+        """UX review 2026-10-19: /card and /today are 401s for a stranger, and the landing page asked for
+        them (and /card twice) on every load, three red console errors. Without a token nothing is asked."""
+        out = self.run_scenario({"/card": {"status": 401, "body": {"detail": "no"}},
+                                 "/today": {"status": 401, "body": {"detail": "no"}}}, signed_in=False)
+        self.assertEqual(out["requested"], [])
+        self.assertEqual(out["figure"], "", "no price may be invented for a visitor with no card")
+        self.assertTrue(out["pausedHidden"])
+
+    def test_a_signed_in_member_still_gets_the_live_hero(self):
+        out = self.run_scenario({"/card": {"status": 200, "body": CARD_WITH_PICK},
+                                 "/today": {"status": 200, "body": TODAY}}, signed_in=True)
+        self.assertEqual(out["requested"], ["/card", "/today"])
 
     def test_a_live_card_still_features_its_pick_and_leaves_the_panel_hidden(self):
         out = self.run_scenario({"/card": {"status": 200, "body": CARD_WITH_PICK},
