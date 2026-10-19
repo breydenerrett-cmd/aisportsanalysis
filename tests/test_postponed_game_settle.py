@@ -220,6 +220,7 @@ class EngineSettleCommand(SettleTestBase):
             return real_run(date_str, **kw)
 
         self._real_pm = history.postponed_makeup
+        self._real_cg = history.cancelled_game
         patches = (
             mock.patch.object(settle_slate, "run_settle", side_effect=run),
             mock.patch.object(settle_slate, "wagers_for_date",
@@ -230,6 +231,10 @@ class EngineSettleCommand(SettleTestBase):
                                   s, fn or self.account_ledger_path_fn)),
             mock.patch.object(history, "postponed_makeup",
                               side_effect=lambda pk, day: self._real_pm(
+                                  pk, day, fetch_instances=lambda _: self.instances)),
+            # the cancelled-game lookup must never reach the network from a test
+            mock.patch.object(history, "cancelled_game",
+                              side_effect=lambda pk, day: self._real_cg(
                                   pk, day, fetch_instances=lambda _: self.instances)),
         )
         for patch in patches:
@@ -285,7 +290,7 @@ class EngineSettleCommand(SettleTestBase):
     def test_a_true_gap_in_the_sweep_still_fails_so_the_loop_escalates(self):
         _write_jsonl(self.wagers_path, [
             _wager_row("bet-lost", 900009, 150, date_str=PICK_DAY, selection_id="sel-lost")])
-        self.instances = [_inst("cancelled", "Cancelled", PICK_DAY, pk=900009)]   # never played: not a makeup
+        self.instances = []     # the schedule gives no answer: not a makeup, not a cancellation
         code, _, err = self._settle("2026-10-19", "--recent")
         self.assertEqual(code, cli.EXIT_ERROR)
         self.assertIn("900009", err)

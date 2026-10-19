@@ -100,7 +100,7 @@ unless that board exists for 90% of priced bets.
 |---|---|
 | `GET /hounds` | leaderboard: running and benched hounds, each with `spark` |
 | `GET /hounds/{id}` | one hound: summary, `series`, first page of bets |
-| `GET /hounds/{id}/bets?page=&page_size=&segment=` | bets, newest first |
+| `GET /hounds/{id}/bets?page=&page_size=&segment=&status=` | bets, newest first. `status=open\|ungraded\|graded` splits them. Every row carries `status`: `OPEN`, `GRADED`, or `UNGRADED` (no grade and more than 36 hours past the start; the slate date, counted as the end of that day, stands in when the start is unknown). A month-old bet is never open; the summary's `open_bets` and `ungraded_bets` count them apart |
 | `GET /hounds/stream?page=` | newest decisions across all hounds, refusals marked |
 | `GET /hounds/graveyard` | retired hounds with their cause |
 | `GET /hounds/series?ids=a,b,c` | cumulative-units series for line charts |

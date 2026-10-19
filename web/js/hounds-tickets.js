@@ -8,20 +8,86 @@
 
 import { h, isNum, signed, fmtPrice, shortDate, houndHref, NOT_REPORTED } from "./hounds-core.js";
 import {
-  ticketStatus, RESULT_WORDS, recordedText, ticketPrice, pickOf, marketLabel, booksText, NA,
+  ticketStatus, ticketState, RESULT_WORDS, recordedText, ticketPrice, pickOf, marketLabel, booksText, NA,
 } from "./hounds-board.js";
 
-/** The status chip: the word is the signal, the colour only agrees with it. */
-export function resultChip(result) {
-  const key = ticketStatus(result);
-  return h("span", { class: `hd-res hd-res--${key}`, "data-result": key, "data-hook": "ticket-status",
-    text: RESULT_WORDS[key] });
+const UNGRADED_TITLE = "No grade yet, and the game started more than 36 hours ago. Not counted in the record.";
+
+/** The status chip: the word is the signal, the colour only agrees with it. Takes the whole ticket so the
+ * server's UNGRADED status can show; a bare result string still works. */
+export function resultChip(ticket, hook = "ticket-status") {
+  const key = ticket !== null && typeof ticket === "object" ? ticketState(ticket) : ticketStatus(ticket);
+  const attrs = { class: `hd-res hd-res--${key}`, "data-result": key, "data-hook": hook, text: RESULT_WORDS[key] };
+  if (key === "ungraded") attrs.title = UNGRADED_TITLE;
+  return h("span", attrs);
 }
 
 /** "+0.91u" / "-1.00u" for a graded ticket, "" while it is open. */
 export function ticketUnits(ticket) {
   return ticketStatus(ticket && ticket.result) !== "pending" && isNum(ticket && ticket.units)
     ? `${signed(ticket.units, 2)}u` : "";
+}
+
+/** "+2.3" / "-0.4" / "n/a": closing-line value in points, as the graded table prints it. */
+function clvText(ticket) {
+  const v = ticket && ticket.clv_pts;
+  return isNum(v) ? `${v > 0 ? "+" : v < 0 ? "-" : ""}${Math.abs(v).toFixed(1)}` : NA;
+}
+
+/**
+ * One ticket as a stacked card, for a phone (CSS shows it under 640px and hides the table or the row grid).
+ * Line 1: the pick and its price, bold, with the status chip on the right. Line 2: the game and the market.
+ * Line 3: the date and when it went on the record against the start. A graded ticket adds line 4: its result,
+ * units and closing-line value. The closing PRICE is not in the payload and is not invented; CLV points are.
+ * `showModel` puts the model's name on line 2 (the cross-model feed).
+ */
+export function ticketCard(ticket, { showModel = false, name = "" } = {}) {
+  const t = ticket || {};
+  const state = ticketState(t);
+  const price = ticketPrice(t);
+  const rehearsal = t.segment === "replay";
+  const model = name || t.hound_name || t.name || "";
+  const units = ticketUnits(t);
+  const graded = state !== "pending" && state !== "ungraded";
+  const line2 = [h("span", { class: "hd-card__game", text: t.game || NOT_REPORTED }),
+    h("span", { class: "hd-card__mkt", text: marketLabel(t.market) })];
+  if (showModel && model) {
+    line2.push(t.hound_id !== undefined
+      ? h("a", { class: "hd-card__model", href: houndHref(t.hound_id), text: model })
+      : h("span", { class: "hd-card__model", text: model }));
+  }
+  const rec = recordedText(t);
+  const books = booksText(t);
+  const lines = [
+    h("div", { class: "hd-card__l1" }, [
+      h("span", { class: "hd-card__pick" }, [
+        h("strong", { class: "hd-card__pickname", "data-hook": "card-pick", text: pickOf(t) }),
+        h("strong", { class: "hd-num hd-card__price", "data-hook": "card-price", text: price === null ? NA : fmtPrice(price) }),
+      ]),
+      resultChip(t, "card-status"),
+    ]),
+    h("div", { class: "hd-card__l2", "data-hook": "card-game" }, line2),
+    h("div", { class: "hd-card__l3", "data-hook": "card-when" }, [
+      h("span", { class: "hd-num", text: shortDate(t.date) || NA }),
+      rehearsal ? h("span", { class: "hd-rec hd-rec--rehearsal", text: "Written after the games; never counted" })
+        : h("span", { class: `hd-rec hd-rec--${rec.kind}`, text: rec.text }),
+      books ? h("span", { class: "hd-aux", text: books }) : null,
+    ]),
+  ];
+  if (graded) {
+    const tone = !units ? "none" : t.units > 0 ? "up" : t.units < 0 ? "down" : "flat";
+    lines.push(h("div", { class: "hd-card__l4", "data-hook": "card-result" }, [
+      h("span", { class: "hd-card__res", text: RESULT_WORDS[state] }),
+      h("span", { class: `hd-num hd-tone--${tone}`, "data-hook": "card-units", text: units || NA }),
+      h("span", { class: "hd-num", "data-hook": "card-clv", text: `CLV ${clvText(t)}${isNum(t.clv_pts) ? " pts" : ""}` }),
+    ]));
+  }
+  if (t.reason) {
+    lines.push(h("details", { class: "hd-card__why", "data-hook": "card-why" }, [
+      h("summary", { text: "Why this bet" }), h("p", { text: t.reason })]));
+  }
+  return h("div", { class: "hd-card", "data-hook": "ticket-card", "data-status": state,
+    "data-segment": String(t.segment || "") }, lines);
 }
 
 /** The price, with the best quote and its book as small print when they differ from the headline price. */
@@ -48,7 +114,7 @@ export function recordedCell(ticket) {
  */
 export function ticketItem(ticket, { showModel = true, name = "" } = {}) {
   const t = ticket || {};
-  const status = ticketStatus(t.result);
+  const status = ticketState(t);
   const model = name || t.hound_name || t.name || "";
   const units = ticketUnits(t);
   return h("li", { class: "hd-ticket", "data-status": status, "data-hound": t.hound_id === undefined ? "" : String(t.hound_id),
@@ -69,10 +135,12 @@ export function ticketItem(ticket, { showModel = true, name = "" } = {}) {
     h("div", { class: "hd-ticket__price" }, [priceCell(t)]),
     h("div", { class: "hd-ticket__rec" }, [recordedCell(t)]),
     h("div", { class: "hd-ticket__res" }, [
-      resultChip(t.result),
+      resultChip(t),
       units ? h("span", { class: `hd-num hd-units-text hd-units-text--${t.units > 0 ? "up" : t.units < 0 ? "down" : "flat"}`,
         text: units }) : null,
     ]),
+    // under 640px CSS shows this card in place of the grid above (the same facts, stacked)
+    ticketCard(t, { showModel, name }),
   ]);
 }
 
@@ -90,14 +158,15 @@ export function ticketList(tickets, opts = {}) {
 /**
  * A model's tickets as a real table: date, game, pick, price, (graded only: CLV points), status,
  * (graded only: units), the rule's reason line and when it went on the record against the start. The wide
- * table scrolls inside its own box on a phone. A rehearsal row (a rule applied to old boards, written after
+ * table scrolls inside its own box between 640px and a desktop width; under 640px CSS swaps it for the same
+ * tickets as stacked cards (``ticketCard``), so nothing is cut off on a phone. A rehearsal row (a rule applied to old boards, written after
  * the games) says so instead of showing a recorded-before time, and is never counted anywhere.
  */
 export function ticketTable(tickets, { graded = false, hook = "tickets-table", caption = "Tickets" } = {}) {
   const head = ["Date", "Game", "Pick", "Price"].concat(graded ? ["CLV pts"] : [])
     .concat(["Status"]).concat(graded ? ["Units"] : []).concat(["Rule reason", "Recorded"]);
   const rows = tickets.map((t) => {
-    const status = ticketStatus(t.result);
+    const status = ticketState(t);
     const rehearsal = t.segment === "replay";
     const clv = isNum(t.clv_pts) ? `${t.clv_pts > 0 ? "+" : t.clv_pts < 0 ? "-" : ""}${Math.abs(t.clv_pts).toFixed(1)}` : NA;
     const units = ticketUnits(t);
@@ -108,7 +177,7 @@ export function ticketTable(tickets, { graded = false, hook = "tickets-table", c
       h("td", { class: "hd-num" }, [priceCell(t)]),
     ];
     if (graded) cells.push(h("td", { class: "hd-num", "data-hook": "ticket-clv", text: clv }));
-    cells.push(h("td", {}, [resultChip(t.result), rehearsal ? h("small", { class: "hd-aux", text: "Rehearsal" }) : null]));
+    cells.push(h("td", {}, [resultChip(t), rehearsal ? h("small", { class: "hd-aux", text: "Rehearsal" }) : null]));
     if (graded) {
       cells.push(h("td", { class: `hd-num hd-tone--${!units ? "none" : t.units > 0 ? "up" : t.units < 0 ? "down" : "flat"}`,
         "data-hook": "ticket-units", text: units || NA }));
@@ -127,9 +196,13 @@ export function ticketTable(tickets, { graded = false, hook = "tickets-table", c
       rehearsal ? h("span", { class: "hd-rec hd-rec--rehearsal", text: "Written after the games; never counted" }) : recordedCell(t)]));
     return h("tr", { class: "hd-trow", "data-status": status, "data-segment": String(t.segment || "") }, cells);
   });
-  return h("div", { class: "hd-tablewrap", tabindex: "0", role: "region", "aria-label": `${caption}. Scrolls sideways on a phone.` }, [
-    h("table", { class: "hd-table hd-table--tickets", "data-hook": hook }, [
-      h("caption", { class: "hd-sr-only", text: caption }),
-      h("thead", {}, [h("tr", {}, head.map((t) => h("th", { scope: "col", text: t })))]),
-      h("tbody", {}, rows)])]);
+  const cards = h("ol", { class: "hd-cards", "data-hook": `${hook}-cards`, "aria-label": caption },
+    tickets.map((t) => h("li", { class: "hd-cardrow" }, [ticketCard(t)])));
+  return h("div", { class: "hd-ticketview", "data-hook": `${hook}-view` }, [
+    h("div", { class: "hd-tablewrap hd-tablewrap--tickets", tabindex: "0", role: "region", "aria-label": `${caption}. Scrolls sideways on a narrow screen.` }, [
+      h("table", { class: "hd-table hd-table--tickets", "data-hook": hook }, [
+        h("caption", { class: "hd-sr-only", text: caption }),
+        h("thead", {}, [h("tr", {}, head.map((t) => h("th", { scope: "col", text: t })))]),
+        h("tbody", {}, rows)])]),
+    cards]);
 }

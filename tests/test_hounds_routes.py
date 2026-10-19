@@ -123,6 +123,22 @@ class RouteTests(unittest.TestCase):
         self.get("/hounds/nope", status=404)
         self.get("/hounds/nope/bets", status=404)
 
+    def test_the_bets_route_splits_open_ungraded_and_graded_and_stamps_each_row(self):
+        # 2026-10-19: a month-old ungraded bet must never be listed as open. The synthetic world's ungraded bets are
+        # dated 2026-10-02, so against the real clock every one of them is more than 36 hours past.
+        every = self.get("/hounds/alpha/bets?page_size=100")["items"]
+        by = {s: self.get(f"/hounds/alpha/bets?page_size=100&status={s}")["items"]
+              for s in ("open", "ungraded", "graded")}
+        self.assertTrue(all(r["status"] in ("OPEN", "GRADED", "UNGRADED") for r in every))
+        self.assertEqual(len(by["open"]) + len(by["ungraded"]) + len(by["graded"]), len(every))
+        self.assertTrue(all(r["status"] == "UNGRADED" and r["result"] is None for r in by["ungraded"]))
+        self.assertTrue(all(r["status"] == "OPEN" for r in by["open"]))
+        self.assertTrue(all(r["status"] == "GRADED" for r in by["graded"]))
+        self.assertEqual(by["open"], [])
+        self.assertGreater(len(by["ungraded"]), 0)
+        self.assertIn(self.get("/hounds/alpha")["bets"]["items"][0]["status"], ("OPEN", "GRADED", "UNGRADED"))
+        self.get("/hounds/alpha/bets?status=nonsense", status=422)
+
     def test_only_get_routes_exist(self):
         r = self.client.post("/hounds", json={})
         self.assertEqual(r.status_code, 405)

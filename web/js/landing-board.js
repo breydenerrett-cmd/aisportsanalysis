@@ -16,7 +16,7 @@ import {
 } from "./hounds-core.js";
 import { sortByUnits, unitsOf } from "./hounds-voice.js";
 import {
-  recordText, roiOf, fmtRoi, fmtUnitsPlain, betsOf, onlyTickets, ticketStatus, RESULT_WORDS, ticketPrice, pickOf,
+  recordText, roiOf, fmtRoi, fmtUnitsPlain, betsOf, onlyTickets, ticketState, RESULT_WORDS, ticketPrice, pickOf,
   marketLabel, recordedText, freshness, NA,
 } from "./hounds-board.js";
 
@@ -64,7 +64,7 @@ export function renderBoard(body, hounds) {
 }
 
 function ticketRow(t) {
-  const status = ticketStatus(t.result);
+  const status = ticketState(t);
   const price = ticketPrice(t);
   const rec = recordedText(t);
   return h("li", { class: "lbticket", "data-status": status, "data-hook": "lb-ticket" }, [

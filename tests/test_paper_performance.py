@@ -734,6 +734,12 @@ class RealLedgerReconciliationTests(unittest.TestCase):
             row = latest_windows_rows.get(system_id)
             if row is None or row["window"] != standing["last_day"]:
                 continue
+            # A bet settled after the scorecard (a postponed game's makeup,
+            # 2026-10-19: day 2026-10-16 rows appended after the 10-18
+            # scorecard) means the two no longer describe the same point in
+            # time; the staked units tell them apart.
+            if abs(row["account"].get("units", -1) - standing["units_staked"]) > 1e-6:
+                continue
             checked += 1
             expected = row["account"]["profit_units"]
             actual = standing["units_net"]
