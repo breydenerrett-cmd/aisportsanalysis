@@ -114,7 +114,7 @@ class EveryPageHasTheOneNavigation(unittest.TestCase):
     def test_the_landing_page_has_a_big_kennels_card(self):
         html = read("landing.html")
         # round 2 (2026-10-19): the band is "build your dog" with a primary build button; the kennels are one ghost button away
-        self.assertRegex(html, r'<a class="btn btn--primary" href="build-a-hound.html" data-hook="kennels-card-build">Build a dog</a>')
+        self.assertRegex(html, r'<a class="btn btn--primary" href="build-a-hound.html" data-hook="kennels-card-build">Build a hound</a>')   # owner ruling 2026-10-20, complete-product positioning
         self.assertRegex(html, r'<a class="btn btn--ghost" href="kennels.html" data-hook="kennels-card-browse">Browse the kennels</a>')
         self.assertRegex(html, r'href="kennel.html" data-hook="kennels-card-mine">Your kennel</a>')
 
@@ -234,7 +234,7 @@ class MyKennel(unittest.TestCase):
         self.assertEqual(f["records"], ["3-1", "0-0", "0-2"])
         self.assertEqual(f["bank"], ["$1,018", "$1,000", "$980"])                  # every dog starts with the same $1,000
         self.assertEqual(f["ret"], ["+1.8%", "0.0%", "-2.0%"])
-        self.assertTrue(all(s.startswith("Small sample:") for s in f["small"]), f["small"])
+        self.assertTrue(all(s.startswith("Ranked in full at") for s in f["small"]), f["small"])   # owner ruling 2026-10-20, complete-product positioning
         self.assertEqual(f["status"], ["Running", "New", "Running"])
         self.assertEqual(f["last"][0], "Last pick: Red Sox ML (won)")
         self.assertIn("No picks yet", f["last"][1])

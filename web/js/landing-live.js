@@ -220,15 +220,11 @@ function showSampleFallback(root) {
   setHidden(root, "hero-feature", true);
 }
 
-/** The paused state. The reason is the server's own sentences, rendered
- * verbatim (a substitute written here would be this page describing the
- * decision); the markup already carries the same words as its default.
- * Everything that could read as a pick is hidden. */
+/** The desk-only state (`GET /card` answers `paused: true`). Owner ruling 2026-10-20, complete-product
+ * positioning: the page no longer prints the server's reason; the markup's own confident line about the AI desk
+ * stays as it is. Everything that could read as a pick is hidden. */
 function showPausedHero(root, card) {
   setHidden(root, "hero-feature", true);
-  if (typeof card.reason === "string" && card.reason.trim()) {
-    setText(root, "hero-paused-reason", card.reason.trim());
-  }
   setHidden(root, "hero-paused", false);
 }
 

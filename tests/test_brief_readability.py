@@ -290,7 +290,8 @@ class TheBriefReadsLikeAPersonWroteIt(unittest.TestCase):
     def test_the_sample_page_names_no_season_and_takes_live_sports_from_the_one_constant(self):
         out = self.render([_call()])
         self.assertEqual(out["live"], [out["liveConstant"]])
-        self.assertIn("MLB postseason", out["liveConstant"])
+        for sport in ("tennis", "cricket", "soccer", "NBA", "NHL", "college", "MLB", "NFL", "MMA"):
+            self.assertIn(sport, out["liveConstant"])   # owner ruling 2026-10-20, complete-product positioning
         self.assertNotIn("postseason", out["offer"][0].lower())
         self.assertNotIn("(MLB postseason)", out["pageText"])
         self.assertIn("A brief for every game we cover, posted before it starts.", out["offer"][0])

@@ -123,18 +123,19 @@ class TheRaceOnThePage(unittest.TestCase):
             q("bets", ".lbrace__itembets", "texts"), q("label", "svg.lbrace__svg", "attr", attr="aria-label")])
         f = out["final"]
         self.assertIn("$1,000", f["sub"])
-        self.assertIn("a few bets say little", f["note"])
+        self.assertIn("Past results do not promise future ones", f["note"])   # owner ruling 2026-10-20, complete-product positioning
         self.assertEqual(len(f["bets"]), 5)
         self.assertTrue(all(re.fullmatch(r"\d+ bets?", b) for b in f["bets"]), f["bets"])
         self.assertIn("each starting at $1,000", f["label"])
 
-    def test_with_thirty_bets_the_thin_sample_sentence_is_dropped_but_the_plain_one_stays(self):
+    def test_with_thirty_bets_the_note_is_the_same_plain_sentence(self):
+        # owner ruling 2026-10-20, complete-product positioning
         board = json.loads(json.dumps(F.leaderboard()))
         for h in board["hounds"]:
             h["record"] = dict(h["record"], bets=60)
         out = self.page(routes=self.routes(**{"/hounds": [200, board]}), queries=[q("note", "[data-hook='lb-race-note']")])
         self.assertNotIn("few bets", out["final"]["note"])
-        self.assertIn("nothing more", out["final"]["note"])
+        self.assertIn("right now", out["final"]["note"])
 
     def test_the_picture_claims_nothing_and_has_no_emoji(self):
         out = self.page(queries=[q("race", "[data-hook='lb-race']")])
@@ -149,7 +150,7 @@ class TheRaceOnThePage(unittest.TestCase):
         f = out["final"]
         self.assertEqual(f["lines"], 0)
         self.assertEqual(f["state"], "empty")
-        self.assertIn("No model has a settled bet", f["sub"])
+        self.assertIn("No hound has a settled bet", f["sub"])   # owner ruling 2026-10-20, complete-product positioning
         self.assertNotRegex(f["sub"], r"[+-]\$?\d")
 
     def test_no_answer_leaves_the_static_line_and_names_no_figure(self):

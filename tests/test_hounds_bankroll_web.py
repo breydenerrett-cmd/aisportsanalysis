@@ -106,7 +106,7 @@ class TheLeaderboard(unittest.TestCase):
             q("title", "[data-hound='closer'] [data-hook='row-bankroll']", "attr", attr="title"),
             q("others", "[data-hound='steamer'] [data-small='true']", "count")])
         self.assertEqual(out["final"]["grey"], 5)          # balance, return, 7d, 24h, units
-        self.assertTrue(out["final"]["title"].startswith("Small sample:"), out["final"]["title"])
+        self.assertTrue(out["final"]["title"].startswith("Ranked in full at"), out["final"]["title"])   # owner ruling 2026-10-20, complete-product positioning
         self.assertEqual(out["final"]["others"], 0)
 
     def test_a_model_settled_at_its_recorded_price_is_marked_and_the_others_are_not(self):

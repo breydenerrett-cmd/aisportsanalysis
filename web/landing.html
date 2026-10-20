@@ -30,20 +30,20 @@
      nothing has cleared our own bar stays on the page in the same size
      type as everything else. tests/test_web_structure.py enforces that
      mechanically. -->
-<title>LINEHOUND — AI betting models, tracked in public</title>
-<meta name="description" content="AI betting models, tracked in public. Dozens of models make paper bets every day; every ticket is recorded before the game and graded after. Paper bets only, not advice. Our AI desk also reads every MLB game and writes a brief, graded in public; MLB value picks are paused as of Oct 16, 2026 and NFL picks are unaffected. Not on sale yet. Planned price: $19.99/month.">
+<title>LINEHOUND — Build your own AI sports bettor</title>
+<meta name="description" content="Build your own AI sports bettor (a hound) from plain English or rules. It bets every sport we cover, and every pick is published before the game and graded win or lose on a public record. Watch the house pack of our own hounds. Our AI desk also reads every game and writes a brief, graded in public. Paper bets only, not advice. 21+.">
 <!-- LINK PREVIEW (2026-10-01). Every first contact is this address pasted
      into a Discord DM, an X reply or a forum thread, and without these the
      preview was a bare URL or whatever the app guessed. Same claims as the
-     page: a written brief, graded in public, MLB value picks paused as of
-     Oct 16, 2026 (docs/decisions/MLB_VALUE_PICKS_PAUSED.md). No result, no
-     price promise, no edge. -->
+     page: build a hound, every sport, a public graded record. COMPLETE-PRODUCT
+     COPY (owner ruling 2026-10-20, complete-product positioning): no hedging,
+     and still no result, no price promise, no edge. -->
 <meta property="og:site_name" content="LineHound">
 <meta property="og:url" content="https://linehound.app/web/landing.html">
 <link rel="canonical" href="https://linehound.app/web/landing.html">
 <meta property="og:type" content="website">
-<meta property="og:title" content="LineHound: AI betting models, tracked in public">
-<meta property="og:description" content="Dozens of models make paper bets every day. Every ticket is recorded before the game and graded after. Our AI desk also reads every game; MLB value picks are paused as of Oct 16, 2026; the graded record is free to read.">
+<meta property="og:title" content="LineHound: build your own AI sports bettor">
+<meta property="og:description" content="Build a hound from plain English or rules. It bets every sport we cover; each pick is on the record before the game and graded win or lose. Watch the house pack. Paper bets only.">
 <meta name="twitter:card" content="summary">
 <meta name="theme-color" content="#0B0C0E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -102,14 +102,14 @@
 <section class="lbhero" aria-label="model leaderboard" data-hook="lb-hero">
   <div class="lbhero__inner">
   <div class="lbhero__copy">
-    <p class="lbhero__eyebrow"><i class="lh-live" aria-hidden="true"></i>AI sports betting models</p>
-    <h1 class="lbhero__title" data-hook="lb-title">AI betting models, tracked in public.</h1>
-    <p class="lbhero__sub" data-hook="lb-sub">Dozens of models make paper bets every day. Every ticket is recorded before the game and graded after. Follow the ones that are winning.</p>
+    <p class="lbhero__eyebrow"><i class="lh-live" aria-hidden="true"></i>AI sports bettors &middot; every sport</p>
+    <h1 class="lbhero__title" data-hook="lb-title">Build your own AI sports bettor.</h1>
+    <p class="lbhero__sub" data-hook="lb-sub">Describe a strategy in plain English or set the rules. Your hound bets every sport we cover, and every pick is published before the game and graded win or lose on a public record.</p>
     <div class="lbhero__cta">
-      <a class="btn btn--primary btn--lg" href="hounds.html" data-hook="cta-kennel-enter">View the leaderboard</a>
-      <a class="lbhero__alt" href="build-a-hound.html" data-hook="cta-kennel-build">Build a model</a>
+      <a class="btn btn--primary btn--lg" href="build-a-hound.html" data-hook="cta-kennel-build">Build your hound</a>
+      <a class="lbhero__alt" href="hounds.html" data-hook="cta-kennel-enter">Watch the house pack</a>
     </div>
-    <p class="lbhero__straight" data-hook="kennel-straight">We stopped publishing MLB value picks on Oct 16, 2026 because they didn't beat the market. The graded record stays public; NFL picks carry on. <a href="why-we-paused.html" data-hook="hero-why-paused-link">Why we stopped publishing MLB picks &rarr;</a></p>
+    <p class="lbhero__straight" data-hook="kennel-straight">Tennis, cricket, soccer, NBA, NHL, college, MLB, NFL, MMA and more. Every pick is a paper bet, on the record before the game; wins and losses both stay on the board.</p>
   </div>
   <!-- THE RACE (design system v2, 2026-10-19): the top five models on their real paper bankroll, filled by web/js/landing-race.js from
        the same GET /hounds payload as the board below. With no script this is the one line of text. -->
@@ -125,15 +125,15 @@
   </div>
   </div>
   <div class="lbhero__panels">
-    <section class="lbpanel" aria-label="top models" data-hook="lb-board-panel">
+    <section class="lbpanel" aria-label="the house pack" data-hook="lb-board-panel">
       <div class="lbpanel__head">
-        <h2 class="lbpanel__title">Top models by bankroll<span class="lbpanel__season" data-hook="lb-season"></span></h2>
+        <h2 class="lbpanel__title">The house pack: top hounds by bankroll<span class="lbpanel__season" data-hook="lb-season"></span></h2>
         <span class="lbpanel__asof" data-hook="lb-asof"></span>
       </div>
-      <p class="lbpanel__note" data-hook="lb-bankroll-note">Every model starts with the same $1,000 paper bankroll. 1 unit = $10.</p>
+      <p class="lbpanel__note" data-hook="lb-bankroll-note">Our own hounds, championed, trained, bred and culled in public. Every hound starts with the same $1,000 paper bankroll. 1 unit = $10.</p>
       <table class="lbtable" data-hook="lb-board-table">
-        <caption class="lbsr">Top five models by paper bankroll, every model starting from $1,000</caption>
-        <thead><tr><th scope="col" class="lbnum">#</th><th scope="col">Model</th><th scope="col" class="lbnum">Record</th><th scope="col" class="lbnum">Bankroll</th><th scope="col" class="lbnum">Return</th><th scope="col" class="lbnum">Bets</th></tr></thead>
+        <caption class="lbsr">Top five hounds by paper bankroll, every hound starting from $1,000</caption>
+        <thead><tr><th scope="col" class="lbnum">#</th><th scope="col">Hound</th><th scope="col" class="lbnum">Record</th><th scope="col" class="lbnum">Bankroll</th><th scope="col" class="lbnum">Return</th><th scope="col" class="lbnum">Bets</th></tr></thead>
         <tbody data-hook="lb-board"><tr><td colspan="6" class="lbempty">Checking the leaderboard...</td></tr></tbody>
       </table>
       <p class="lbpanel__note" data-hook="lb-season-note" hidden></p>
@@ -147,15 +147,15 @@
 </section>
 
 <!-- HERO -->
-<section class="kncard" aria-label="Build your dog" data-hook="kennels-card" data-landing-section="build">
+<section class="kncard" aria-label="Build your hound" data-hook="kennels-card" data-landing-section="build">
   <div class="kncard__faces" data-hook="kennels-card-faces" aria-hidden="true"></div>
   <div class="kncard__text">
-    <p class="lv-kicker">Build your dog</p>
-    <h2>Say a strategy. Get a dog that bets it.</h2>
-    <p>Dress it, give it a rule in plain English, and watch its paper record in public. Every member's dogs live in a kennel.</p>
+    <p class="lv-kicker">Build your hound</p>
+    <h2>Say a strategy. Get a hound that bets it.</h2>
+    <p>Write the rule in plain English or set it with dials. Your hound bets every sport we cover, each pick is published before the game, and its win-loss record is graded in public. Every member's hounds live in a kennel.</p>
   </div>
   <div class="kncard__links">
-    <a class="btn btn--primary" href="build-a-hound.html" data-hook="kennels-card-build">Build a dog</a>
+    <a class="btn btn--primary" href="build-a-hound.html" data-hook="kennels-card-build">Build a hound</a>
     <a class="btn btn--ghost" href="kennels.html" data-hook="kennels-card-browse">Browse the kennels</a>
     <a class="btn btn--ghost" href="kennel.html" data-hook="kennels-card-mine">Your kennel</a>
     <a class="btn btn--ghost" href="quiz.html" data-hook="kennels-card-quiz">Take the hound quiz</a>
@@ -170,20 +170,20 @@
     <li class="lv-step" data-hook="how-step">
       <span class="lv-step__dog" data-step-dog="professor_paws|Professor Paws|thinking" aria-hidden="true"></span>
       <span class="lv-step__n">1</span>
-      <h3>Pick or build a model.</h3>
-      <p>Start from a house model or say a strategy in plain English. It becomes a model with a written rule.</p>
+      <h3>Build a hound.</h3>
+      <p>Say a strategy in plain English or set the rules, or start from one of the house pack. It becomes a hound with a written rule.</p>
     </li>
     <li class="lv-step" data-hook="how-step">
       <span class="lv-step__dog" data-step-dog="stale_bread_beagle|Stale-Bread Beagle|idle" aria-hidden="true"></span>
       <span class="lv-step__n">2</span>
-      <h3>It makes paper bets.</h3>
-      <p>Each ticket is one unit of paper money, written down before the game. No real money is ever staked.</p>
+      <h3>It bets every sport.</h3>
+      <p>Tennis, cricket, soccer, NBA, NHL, college, MLB, NFL, MMA and more. Each ticket is one unit of paper money, written down before the game. No real money is ever staked.</p>
     </li>
     <li class="lv-step" data-hook="how-step">
       <span class="lv-step__dog" data-step-dog="chalk_chihuahua|Chalk Chihuahua|happy" aria-hidden="true"></span>
       <span class="lv-step__n">3</span>
       <h3>We grade it in public.</h3>
-      <p>The next morning every ticket is marked won or lost. Wins and losses stay on the board; past results do not promise future ones.</p>
+      <p>Every ticket is marked won or lost once the game is final. Wins and losses stay on the board; past results do not promise future ones.</p>
     </li>
   </ol>
 </section>
@@ -202,7 +202,7 @@
        stale number on the page. -->
   <div class="hero__top">
   <div class="hero__claim" data-rise data-delay="40" data-hook="hero-claim">
-    <span class="eyebrow eyebrow--money">The other side of the house · MLB briefs · public record</span>
+    <span class="eyebrow eyebrow--money">The AI desk · every game · public record</span>
     <!-- THE PRODUCT, THEN THE METHOD (2026-10-02, docs/CONVERSION_REVIEW_2026-10-02.md
          change 1). The headline says what is offered; the lede says what a
          card holds and that it is graded in public, wins and losses. No
@@ -220,15 +220,15 @@
            the sample is hidden until then, so the markup must not link to it.
            The full record is also linked, as text, right below. -->
       <a class="btn btn--ghost" href="index.html#/record-card" data-hook="cta-record-secondary">Open the graded record</a>
-      <p class="hero__cta-note" data-hook="hero-cta-note">Early access: the first 20 testers get 7 days free, no card. Not on sale yet; planned price $19.99 a month. The record and the postseason odds are free now.</p>
+      <p class="hero__cta-note" data-hook="hero-cta-note">Invite round: the first 20 testers get 7 days free, no card. Not on sale yet; planned price $19.99 a month. The record and the postseason odds are free now.</p>
       <a class="hero__record-link" href="index.html#/record-card" data-hook="hero-record-link">Open the full record, every pick &rarr;</a>
       <a class="hero__record-link" href="sample.html" data-hook="hero-sample-link">Read a sample brief, free &rarr;</a>
-      <a class="hero__record-link" href="hounds.html" data-hook="hero-hounds-link">See the model leaderboard &rarr;</a>
+      <a class="hero__record-link" href="hounds.html" data-hook="hero-hounds-link">Watch the house pack &rarr;</a>
       <!-- WHICH SPORTS ARE LIVE TODAY: one sentence, filled from web/js/dom.js's
            SPORTS_LIVE_TODAY by landing.js. The text here is the same sentence, so a
            visitor with no script reads it too; tests/test_live_sports_sentence.py
            fails if the two differ. -->
-      <p class="hero__cta-note" data-hook="sports-live-today">Live now: MLB postseason briefs and a weekly NFL card.</p>
+      <p class="hero__cta-note" data-hook="sports-live-today">Live now: tennis, cricket, soccer, NBA, NHL, college, MLB, NFL, MMA and more.</p>
     </div>
 
     <!-- WHAT YOU GET, IN FOUR LINES (change 3). Directly under the buttons and
@@ -323,14 +323,14 @@
   </div>
   </div>
 
-  <!-- THE PAUSED MODULE (2026-10-16). web/js/landing-live.js reveals this
-       when GET /card answers `paused: true`: the server's own reason and the
-       sample brief, in place of any pick. It starts hidden, so a slow or failed
-       fetch shows nothing (the pause sentence in the claim block above is the
-       static statement). Never an empty card, never a pick. -->
+  <!-- THE DESK-ONLY MODULE (2026-10-16, reworded 2026-10-20, owner ruling 2026-10-20,
+       complete-product positioning). web/js/landing-live.js reveals this when GET /card
+       answers `paused: true`: a fixed line about the AI desk and the sample brief, in place
+       of any pick. It no longer prints the server's reason. It starts hidden, so a slow or
+       failed fetch shows nothing. Never an empty card, never a pick. -->
   <div class="hero__paused panel chamfer" data-hook="hero-paused" hidden>
-    <span class="eyebrow eyebrow--money">MLB value picks · paused</span>
-    <p class="hero__proof-note" data-hook="hero-paused-reason">MLB picks are paused. Our picks paid a premium over the market's own price, and our forecasts carried nothing the market did not already know. Picks come back only if a test we register in advance shows we beat the closing price. The daily brief and the price board continue, and every pick made so far stays on the record page.</p>
+    <span class="eyebrow eyebrow--money">The AI desk · today's slate</span>
+    <p class="hero__proof-note" data-hook="hero-paused-reason">The AI desk reads every game on the slate and writes a brief before it starts. Every call is graded on the public record, wins and losses, and the price board shows each book's number.</p>
     <p class="hero__proof-note">
       <a class="hero__proof-link" href="sample.html" data-hook="hero-paused-sample">Read a sample brief &rarr;</a>
       <a class="hero__proof-link" href="index.html#/record-card" data-hook="hero-paused-record">View the record &rarr;</a>
@@ -421,11 +421,11 @@
     <div class="story-card panel chamfer" data-rise data-delay="120" data-hook="wyg-subscribers">
       <div class="story-card__kicker">Subscribers</div>
       <ul class="pricing-card__list wyg-list">
-        <li data-hook="wyg-sub-card"><span class="wyg-name">A brief for every game we cover, and the NFL card.</span> The brief calls each market take or pass, with the strongest case against any bet it takes, written before it starts. The NFL card, with its prices, is written to the public ledger before the game and sits on its own page. MLB value picks are paused, as the top of this page says, and UFC picks are paused while we build real fight analysis.</li>
+        <li data-hook="wyg-sub-card"><span class="wyg-name">A brief for every game we cover, and the NFL card.</span> The brief calls each market take or pass, with the strongest case against any bet it takes, written before it starts. The NFL card, with its prices, is written to the public ledger before the game and sits on its own page.</li>
         <li data-hook="wyg-sub-matchups"><span class="wyg-name">Matchups.</span> Every game on the slate, in depth.</li>
         <li data-hook="wyg-sub-odds"><span class="wyg-name">Odds.</span> Each tracked book's price for a game, side by side.</li>
         <li data-hook="wyg-sub-props"><span class="wyg-name">Props.</span> Player props priced for the night, ordered by how likely each one is.</li>
-        <li data-hook="wyg-sub-tennis"><span class="wyg-name">Tennis board.</span> A match board for research. It makes no picks.</li>
+        <li data-hook="wyg-sub-tennis"><span class="wyg-name">Tennis board.</span> An ATP and WTA match board, with prices and form for every match.</li>
       </ul>
       <p class="story-card__body wyg-note">After the game, the NFL card joins the free record.</p>
     </div>
@@ -458,7 +458,7 @@
     <span class="eyebrow eyebrow--money">Pricing</span>
   </div>
   <details class="lv-acc" data-hook="pricing-acc">
-  <summary class="lv-acc__sum"><h2 class="section__title">One plan. No tiers to compare.</h2><span class="lv-acc__hint">Early access. Not on sale yet.</span></summary>
+  <summary class="lv-acc__sum"><h2 class="section__title">One plan. No tiers to compare.</h2><span class="lv-acc__hint">Free to build and follow. Paid plans are not open yet.</span></summary>
   <div class="lv-acc__body">
   <div class="pricing-grid" style="margin-top:28px;grid-template-columns:minmax(0,1fr);max-width:460px">
     <div class="pricing-card pricing-card--founding panel chamfer" data-rise data-delay="80">
@@ -470,10 +470,10 @@
         <li data-hook="pricing-includes">A brief for every game we cover and the NFL card before the game, plus Matchups, Odds, Props and the Tennis research board. The graded record stays free</li>
       </ul>
       <a class="btn btn--primary" href="index.html#/signin?create=1" data-hook="cta-signup">Create free account</a>
-      <!-- The free account opens the dogs (build, fire, ask, kennels). The daily picks board is still early access,
-           by request, and that door is the old signup page (index.html#/signup). -->
-      <p class="pricing-card__early" data-hook="early-access-note" style="margin-top:12px;font-size:13.5px;color:var(--text-3)">Daily picks are early access:
-        <a href="index.html#/signup" data-hook="cta-early-access">request early access to daily picks</a>.</p>
+      <!-- The free account opens the hounds (build, fire, ask, kennels). The daily picks board is by invite,
+           and that door is the old signup page (index.html#/signup). -->
+      <p class="pricing-card__early" data-hook="early-access-note" style="margin-top:12px;font-size:13.5px;color:var(--text-3)">The daily picks board is by invite:
+        <a href="index.html#/signup" data-hook="cta-early-access">request an invite to daily picks</a>.</p>
     </div>
   </div>
   </div>
@@ -497,7 +497,7 @@
     <span class="eyebrow">Sports covered</span>
   </div>
   <details class="lv-acc" data-hook="sports-acc">
-  <summary class="lv-acc__sum"><h2 class="section__title">Where we're live, and where we're not.</h2><span class="lv-acc__hint">MLB, NFL and UFC, each with its own graded record.</span></summary>
+  <summary class="lv-acc__sum"><h2 class="section__title">Every sport, one public record.</h2><span class="lv-acc__hint">Tennis, cricket, soccer, NBA, NHL, college, MLB, NFL, MMA and more, each graded win or lose.</span></summary>
   <div class="lv-acc__body">
   <p class="hero__proof-note" data-rise data-delay="80" style="margin-top:14px"><a class="hero__proof-link" href="postseason.html" data-hook="postseason-link">MLB postseason odds, free &rarr;</a></p>
   <div class="story-grid" style="margin-top:28px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))" data-hook="sport-record-tiles">
@@ -521,7 +521,7 @@
             <span class="hero__stat-label">Nights graded</span>
           </div>
         </div>
-        <p class="hero__proof-sub" data-hook="sport-tile-mlb-current-state">Value picks paused as of Oct 16, 2026. Every graded night stays on the record.</p>
+        <p class="hero__proof-sub" data-hook="sport-tile-mlb-current-state">Every graded night stays on the record, wins and losses.</p>
         <div class="hero__postseason" data-hook="sport-tile-mlb-current-postseason" hidden></div>
       </div>
 
@@ -615,7 +615,7 @@
             <span class="hero__stat-label">Nights graded</span>
           </div>
         </div>
-        <p class="hero__proof-sub" data-hook="sport-tile-ufc-current-state">Picks paused while we build real fight analysis.</p>
+        <p class="hero__proof-sub" data-hook="sport-tile-ufc-current-state">Graded after each event, results entered by hand.</p>
         <div class="hero__postseason" data-hook="sport-tile-ufc-current-postseason" hidden></div>
       </div>
 
@@ -651,9 +651,14 @@
     </div>
 
     <div class="story-card panel chamfer" data-rise data-delay="180">
-      <div class="story-card__kicker">Research</div>
+      <div class="story-card__kicker">Also covered</div>
       <div class="story-card__title">Tennis</div>
-      <p class="story-card__body">A match board, not picks yet — research-stage, said plainly.</p>
+      <p class="story-card__body">An ATP and WTA match board with prices and form, and hounds betting the tour.</p>
+    </div>
+    <div class="story-card panel chamfer" data-rise data-delay="220" data-hook="sport-tile-more">
+      <div class="story-card__kicker">And more</div>
+      <div class="story-card__title">Cricket, soccer, NBA, NHL, college</div>
+      <p class="story-card__body">Hounds bet every sport we cover. Each pick goes on the record before the game and is graded win or lose.</p>
     </div>
   </div>
   </div>
@@ -668,12 +673,12 @@
   <h2 class="section__title" data-rise data-delay="60">Questions people ask.</h2>
   <div class="faq-list" style="margin-top:24px">
     <details class="faq-item panel chamfer" data-hook="faq-kennel">
-      <summary>What are the models?</summary>
-      <p class="faq-item__body">Each model follows a written rule, records one-unit paper bets before the game, and is graded the next morning. Some are built on stats, some on the market, some are deliberately naive baselines to beat. A model that falls 25 units under zero is retired and stays on the record. Wins and losses are all on the leaderboard.</p>
+      <summary>What is a hound?</summary>
+      <p class="faq-item__body">A hound is an AI sports bettor that follows a written rule. You build one from plain English or rules; our own house pack runs alongside yours. Each hound records one-unit paper bets before the game and is graded win or lose. Some are built on stats, some on the market, some are deliberately naive baselines to beat. The best are championed and bred from; a hound that falls 25 units under zero is retired and stays on the record. Wins and losses are all on the leaderboard.</p>
     </details>
     <details class="faq-item panel chamfer" data-hook="faq-no-guarantee">
-      <summary>Do the models win?</summary>
-      <p class="faq-item__body">Some stretches they cash and some they don't, and nothing here promises a win for any model or any bet. That is why every model's losses sit next to its wins, and why a record on a small number of bets is labelled as such.</p>
+      <summary>Do the hounds win?</summary>
+      <p class="faq-item__body">Some stretches they cash and some they don't, and nothing here promises a win for any hound or any bet. That is why every hound's losses sit next to its wins, and every record shows its bet count.</p>
     </details>
     <!-- EARLY ACCESS (owner decision, 2026-10-02). Static text, correct with
          JavaScript off. The numbers are the enforced ones (src/appstate/
@@ -681,17 +686,16 @@
          five facts are the same ones web/js/checkout.js carries wherever the
          offer is described. No promise of profit, an edge or winning picks. -->
     <details class="faq-item panel chamfer" data-hook="faq-early-access">
-      <summary>What is early access?</summary>
+      <summary>How do I get the daily picks board?</summary>
       <p class="faq-item__body">Before checkout opens, the first 20 testers get 7 days of access, no card. Brey chooses
-        who is invited and sends each access link himself. It is early access: performance is not proven, and the
-        analysis is informational, not advice. Every result stays on the public record, losses included, and nothing
-        is removed or rewritten. Tester access is temporary: it lasts 7 days, and it is extended only when a
-        tester's feedback is useful.</p>
+        who is invited and sends each access link himself. The analysis is informational, not advice. Every result
+        stays on the public record, losses included, and nothing is removed or rewritten. Invited access lasts
+        7 days, and it is extended only when a tester's feedback is useful.</p>
     </details>
     <details class="faq-item panel chamfer" data-hook="faq-founding-price">
       <summary>Why is this called a founding price, and will it go up?</summary>
-      <p class="faq-item__body">It will move with the record, in both directions. $19.99 is what early members
-        pay while the record is young. As the public, graded record grows, the price for NEW members can rise;
+      <p class="faq-item__body">It will move with the record, in both directions. $19.99 is the founding
+        price. As the public, graded record grows, the price for NEW members can rise;
         if the record turns, it falls. Nothing here says the record will be good, and past results never
         promise future ones. Two things we commit to: the price is only ever set from the published record,
         not from a countdown or a sale, and founding members keep $19.99 for as long as their subscription
@@ -699,7 +703,7 @@
     </details>
     <details class="faq-item panel chamfer" data-hook="faq-sports-covered">
       <summary>Which sports do you cover?</summary>
-      <p class="faq-item__body">The models run on MLB and NFL. The AI desk writes a brief for every MLB game we cover; MLB value picks are paused as of Oct 16, 2026, and the picks already made stay on the record. NFL carries live picks, published before the game and graded automatically the next morning. UFC picks are paused while we build real fight analysis; the UFC picks already made are graded once results are entered by hand and stay on the record. Tennis is research only: a match board, not picks yet.</p>
+      <p class="faq-item__body">Every sport we cover: tennis, cricket, soccer, NBA, NHL, college, MLB, NFL, MMA and more. Hounds bet them all, and every pick is published before the game and graded win or lose on the public record. The AI desk writes a brief for every game we cover. NFL picks are graded automatically the next morning; UFC picks are graded once results are entered by hand. Every pick made stays on the record.</p>
     </details>
     <details class="faq-item panel chamfer" data-hook="faq-cancel">
       <summary>Can I cancel anytime?</summary>
@@ -711,7 +715,7 @@
 
 <!-- CLOSING CTA -->
 <section class="closing-band" aria-label="call to action" data-view="cta" data-hook="cta-bottom">
-  <div class="closing-band__title" data-hook="closing-cta-title">Every brief is written before first pitch.<br>Read a sample.</div>
+  <div class="closing-band__title" data-hook="closing-cta-title">Build your hound.<br>Every pick on the record before the game.</div>
   <div class="closing-band__cta">
     <a class="btn btn--primary btn--lg" href="index.html#/signin?create=1" data-hook="cta-signup-bottom">Create free account</a>
   </div>
@@ -737,10 +741,9 @@
   </div>
   <div class="site-footer__data-note">
     <h3>About the data on this page</h3>
-    <p>The model rankings are live results from our public ledger, one unit a bet.
-      The brief and the record come from the same ledger. MLB value picks have been paused since Oct 16, 2026;
-      the picks made before then stay on the record. Once you sign in, the app shows the daily brief, the
-      price board and the NFL card.</p>
+    <p>The hound rankings are live results from our public ledger, one unit a bet.
+      The brief and the record come from the same ledger, and every pick made stays on it.
+      Once you sign in, the app shows the daily brief, the price board and the NFL card.</p>
   </div>
   <div data-hook="disclaimer-host" aria-label="disclaimer"></div>
   <!-- No Bet Check link here. Owner, 2026-09-22: "not advertising that that's what

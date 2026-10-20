@@ -210,7 +210,7 @@ TRIAL_RE = re.compile(r"trial|cancel anytime|cancel before|7-day|7 day", re.I)
 # Owner decision 2026-10-02: the one sentence allowed to say "7 days" while
 # checkout is off. Early access by invitation, not a trial anyone can start:
 # see web/js/checkout.js, "THE ONE EXCEPTION WHILE CHECKOUT IS NOT ON".
-EARLY_ACCESS_SENTENCE = "Early access: the first 20 testers get 7 days free, no card."
+EARLY_ACCESS_SENTENCE = "Invite round: the first 20 testers get 7 days free, no card."
 
 
 # Owner brief 2026-10-17: while checkout is not on, the landing pricing block and
@@ -251,10 +251,10 @@ class CheckoutCopyInEveryState(unittest.TestCase):
             with self.subTest(state=name):
                 out = self.run_scenario(kind="helpers", meta=meta)
                 self.assertFalse(out["state"]["on"])
-                self.assertEqual(out["cta"], "Request early access")
-                self.assertEqual(out["gate"], "Request early access")
-                self.assertEqual(out["record"], "Request early access")
-                self.assertEqual(out["hero"], "Early access: the first 20 testers get 7 days free, no card. Not on sale yet; planned price $19.99 a month. The record and the postseason odds are free now.")
+                self.assertEqual(out["cta"], "Request an invite")
+                self.assertEqual(out["gate"], "Request an invite")
+                self.assertEqual(out["record"], "Request an invite")
+                self.assertEqual(out["hero"], "Invite round: the first 20 testers get 7 days free, no card. Not on sale yet; planned price $19.99 a month. The record and the postseason odds are free now.")
                 self.assertEqual(out["pricing"], "Planned price: $19.99/month")
                 self.assertIsNone(out["card"])
                 self.assertIsNone(out["started"])
@@ -300,8 +300,8 @@ class CheckoutCopyInEveryState(unittest.TestCase):
         for name, meta in NOT_ON_CASES:
             with self.subTest(state=name):
                 out = self.run_scenario(kind="signup", meta=meta)
-                self.assertEqual(out["title"], "Request early access")
-                self.assertEqual(out["button"], "Request early access")
+                self.assertEqual(out["title"], "Request an invite")
+                self.assertEqual(out["button"], "Request an invite")
                 self.assertIn(SIGNUP_OFF_OFFER, out["text"])
                 self.assertNotIn("Tonight's bets", out["text"])
                 self.assertNotIn("Every pick on the card", out["text"])
@@ -383,7 +383,7 @@ class CheckoutCopyInEveryState(unittest.TestCase):
         for name, meta in NOT_ON_CASES:
             with self.subTest(state=name):
                 out = self.run_scenario(kind="signin", meta=meta)
-                self.assertEqual(out["link"], "REQUEST EARLY ACCESS")
+                self.assertEqual(out["link"], "REQUEST AN INVITE")
                 self.assertIsNone(TRIAL_RE.search(out["note"]), out["note"])
         out = self.run_scenario(kind="signin", meta=ON14)
         self.assertEqual(out["link"], "START YOUR 14-DAY FREE TRIAL")
@@ -395,7 +395,7 @@ class CheckoutCopyInEveryState(unittest.TestCase):
         for name, meta in NOT_ON_CASES:
             with self.subTest(state=name):
                 self.assertEqual(self.run_scenario(kind="gate", meta=meta)["link"],
-                                 "Request early access")
+                                 "Request an invite")
         self.assertEqual(self.run_scenario(kind="gate", meta=ON7)["link"], "Start free trial")
         self.assertEqual(self.run_scenario(kind="gate", meta=ON0)["link"], "Subscribe")
 
@@ -403,10 +403,10 @@ class CheckoutCopyInEveryState(unittest.TestCase):
         for name, meta in NOT_ON_CASES:
             with self.subTest(state=name):
                 out = self.run_scenario(kind="record", meta=meta)
-                self.assertEqual(out["before"], "Request early access")
-                self.assertEqual(out["link"], "Request early access")
+                self.assertEqual(out["before"], "Request an invite")
+                self.assertEqual(out["link"], "Request an invite")
         out = self.run_scenario(kind="record", meta=ON14)
-        self.assertEqual(out["before"], "Request early access",
+        self.assertEqual(out["before"], "Request an invite",
                          "the first paint must be the cautious wording")
         self.assertEqual(out["link"], "Start your 14-day free trial to see tonight's card")
         out = self.run_scenario(kind="record", meta=ON0)
@@ -441,7 +441,7 @@ class CheckoutCopyInEveryState(unittest.TestCase):
         # does, so it is driven here with four of them standing where the old buttons were.
         self.assertEqual([n for n in nodes if "data-checkout-cta" in n["attrs"]], [])
         for hook in ("cta-primary", "cta-signup-hero", "cta-signup", "cta-signup-bottom"):
-            nodes.append({"tag": "a", "text": "Request early access",
+            nodes.append({"tag": "a", "text": "Request an invite",
                           "attrs": {"data-hook": hook, "data-checkout-cta": "", "href": "index.html#/signup"}})
         ctas = [n for n in nodes if "data-checkout-cta" in n["attrs"]]
         self.assertEqual(len(ctas), 4, "primary, hero, pricing card, closing band")
@@ -450,9 +450,9 @@ class CheckoutCopyInEveryState(unittest.TestCase):
                 out = self.run_scenario(kind="landing", meta=meta, nodes=nodes)
                 by = {n["hook"]: n for n in out["nodes"]}
                 for hook in ("cta-primary", "cta-signup-hero", "cta-signup", "cta-signup-bottom"):
-                    self.assertEqual(by[hook]["text"], "Request early access", hook)
+                    self.assertEqual(by[hook]["text"], "Request an invite", hook)
                 self.assertEqual(by["hero-cta-note"]["text"],
-                                 "Early access: the first 20 testers get 7 days free, no card. Not on sale yet; planned price $19.99 a month. The record and the postseason odds are free now.")
+                                 "Invite round: the first 20 testers get 7 days free, no card. Not on sale yet; planned price $19.99 a month. The record and the postseason odds are free now.")
                 self.assertTrue(by["pricing-trial-badge"]["hidden"])
                 self.assertTrue(by["pricing-cancel-line"]["hidden"])
                 self.assertEqual(by["pricing-host"]["text"].strip(), PRICING_OFF_BLOCK)
@@ -494,7 +494,9 @@ class CheckoutCopyInEveryState(unittest.TestCase):
         html = (WEB / "landing.html").read_text(encoding="utf-8")
         desc = re.search(r'<meta name="description" content="([^"]*)"', html).group(1)
         self.assertIsNone(re.search(r"trial", desc, re.I))
-        self.assertIn("Planned price: $19.99/month", desc)
+        # owner ruling 2026-10-20, complete-product positioning: the link preview sells the product and states
+        # no price and no "not on sale" hedge; the on-page pricing block still carries the planned price
+        self.assertNotRegex(desc, r"(?i)not on sale|planned price")
 
 
 class NoPageHardCodesTheTrialAnyMore(unittest.TestCase):

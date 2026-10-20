@@ -136,7 +136,7 @@ export function renderUnreachable(card, retry, { saved = true } = {}) {
  * (the sign-in page reads the stored token and offers checkout when it is on). */
 export async function renderTesterEnded(card, endedAt) {
   const { knownNotOpen } = await loadTesterBilling();
-  card.appendChild(el("h1", { class: "signup-card__title", text: "Your early access has ended." }));
+  card.appendChild(el("h1", { class: "signup-card__title", text: "Your invited access has ended." }));
   card.appendChild(el("p", { class: "signup-card__subhead", "data-hook": "tester-ended-line",
     text: testerEndedLine(endedAt) }));
   card.appendChild(el("p", { class: "signup-card__subhead", "data-hook": "tester-not-open",

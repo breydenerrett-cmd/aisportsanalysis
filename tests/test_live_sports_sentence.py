@@ -24,9 +24,10 @@ def _constant() -> str:
 
 class TheLiveSportsSentenceHasOneSource(unittest.TestCase):
     def test_the_constant_names_what_is_live_today(self):
+        # owner ruling 2026-10-20, complete-product positioning: all sports, not "MLB postseason and NFL"
         text = _constant()
-        self.assertIn("MLB postseason", text)
-        self.assertIn("NFL", text)
+        for sport in ("tennis", "cricket", "soccer", "NBA", "NHL", "college", "MLB", "NFL", "MMA"):
+            self.assertIn(sport, text)
 
     def test_the_landing_markup_fallback_equals_the_constant(self):
         html = (WEB / "landing.html").read_text(encoding="utf-8")
@@ -40,7 +41,7 @@ class TheLiveSportsSentenceHasOneSource(unittest.TestCase):
         sample = (JS / "sample.js").read_text(encoding="utf-8")
         self.assertIn("SPORTS_LIVE_TODAY", sample)
         for name in ("landing.js", "sample.js"):
-            self.assertNotIn("MLB postseason", (JS / name).read_text(encoding="utf-8"), name)
+            self.assertNotIn("tennis, cricket, soccer", (JS / name).read_text(encoding="utf-8"), name)
 
     def test_no_page_still_says_the_daily_brief_or_names_the_postseason_in_a_promise(self):
         for path in (WEB / "landing.html", WEB / "sample.html", JS / "sample.js", JS / "landing.js"):

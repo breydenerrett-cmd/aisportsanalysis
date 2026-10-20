@@ -108,7 +108,7 @@ function tipLine(tip, dials) {
 }
 
 /** The live verdicts of the coach report card (src/hounds/coach_grade.py) as a fan reads them on a tip. */
-const GRADE_WORDS = { "HELPED": "HELPED", "HURT": "HURT", "NO DIFFERENCE": "NO DIFFERENCE", "TOO EARLY": "TOO EARLY" };
+const GRADE_WORDS = { "HELPED": "HELPED", "HURT": "HURT", "NO DIFFERENCE": "NO DIFFERENCE", "TOO EARLY": "IN PROGRESS" };
 
 /** " Live: HELPED ✅ (+1.2u over 24 bets)" for a graded tip, "" for one the report card has not recorded yet. */
 export function gradeText(grade) {

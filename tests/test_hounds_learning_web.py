@@ -162,7 +162,7 @@ class TheScorecardPage(unittest.TestCase):
 
     def test_too_few_bets_says_so_with_the_counts_instead_of_a_number(self):
         out = self.page(learning_payload(self.root, enough=False), queries=[q("w30", "[data-hook='chance-30']")])
-        self.assertIn("Not enough bets yet", out["final"]["w30"])
+        self.assertIn("The comparison builds as bets settle", out["final"]["w30"])   # owner ruling 2026-10-20, complete-product positioning
         self.assertIn("10 starter bets and 10 control bets", out["final"]["w30"])
         self.assertIn("50 measurable bets on each side", out["final"]["w30"])
         self.assertNotRegex(out["final"]["w30"], r"averaged [-+]\d")
@@ -286,13 +286,15 @@ class TheCoachReportCard(unittest.TestCase):
         f = out["final"]
         self.assertIn("5 tips so far.", f["summary"])
         self.assertIn("3 graded live: 1 helped, 1 hurt, 1 no difference.", f["summary"])
-        self.assertIn("2 still too early to call", f["summary"])
+        self.assertIn("2 awaiting a verdict", f["summary"])   # owner ruling 2026-10-20, complete-product positioning
+        # the grade word on screen is IN PROGRESS; the data label stays TOO EARLY (owner ruling 2026-10-20,
+        # complete-product positioning)
         self.assertEqual(f["facts"], ["Tips made", "Tips refused", "HELPED", "HURT", "NO DIFFERENCE",
-                                      "TOO EARLY"])
-        self.assertEqual(sorted(f["badges"]), sorted(["HELPED", "HURT", "NO DIFFERENCE", "TOO EARLY",
-                                                      "TOO EARLY"]))
+                                      "IN PROGRESS"])
+        self.assertEqual(sorted(f["badges"]), sorted(["HELPED", "HURT", "NO DIFFERENCE", "IN PROGRESS",
+                                                      "IN PROGRESS"]))
         self.assertEqual(f["n"], 5)
-        self.assertEqual(f["labels"][0], "TOO EARLY")                       # newest tip first (issue 5, no grade yet)
+        self.assertEqual(f["labels"][0], "IN PROGRESS")                       # newest tip first (issue 5, no grade yet)
         self.assertTrue(any("Hindsight: +2.1u better. Live: helped (+3.2u over 25 bets)." in ln for ln in f["lines"]))
         self.assertTrue(any("Live: too early (0 bets)." in ln for ln in f["lines"]))
         self.assertIn("Coach told Fake Dog to change", f["lines"][0])
@@ -345,7 +347,7 @@ class TheCoachPureText(unittest.TestCase):
     def test_badges_always_carry_the_word_beside_the_emoji(self):
         out = self.js('console.log(JSON.stringify(["HELPED", "hurt", "NO DIFFERENCE", "TOO EARLY", "weird", null]'
                       '.map(C.coachBadge).map(b => b.text)));')
-        self.assertEqual(out, ["HELPED", "HURT", "NO DIFFERENCE", "TOO EARLY", "NOT GRADED",
+        self.assertEqual(out, ["HELPED", "HURT", "NO DIFFERENCE", "IN PROGRESS", "NOT GRADED",
                                "NOT GRADED"])
 
     def test_the_summary_sentence(self):
@@ -354,7 +356,7 @@ class TheCoachPureText(unittest.TestCase):
                       f"C.coachSummaryText({json.dumps(dict(s, suggestions=0, too_early=0, refused=2))})]));")
         self.assertIn("1 tip so far.", out[0])
         self.assertIn("None has been graded live yet.", out[0])
-        self.assertIn("a verdict needs 20 settled bets", out[0])
+        self.assertIn("it needs 20 settled bets", out[0])   # owner ruling 2026-10-20, complete-product positioning
         self.assertIn("No tips yet", out[1])
         self.assertIn("2 suggestions were refused", out[2])
 
@@ -383,7 +385,7 @@ class ThePureText(unittest.TestCase):
         self.assertIn("1.00 points above the controls", out[0])
         self.assertIn("0.25 points below the controls", out[1])
         self.assertIn("level with the controls", out[2])
-        self.assertIn("Not enough bets yet (90 starter bets and 80 control bets on 60 shared games)", out[3])
+        self.assertIn("The comparison builds as bets settle (90 starter bets and 80 control bets on 60 shared games)", out[3])   # owner ruling 2026-10-20, complete-product positioning
         self.assertEqual(out[4], "Not reported.")
 
     def test_hold_text_covers_no_promotions_none_matured_and_a_rate(self):

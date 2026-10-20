@@ -9,7 +9,7 @@
  * ends, change this line; tests/test_live_sports_sentence.py fails if any page
  * carries a second copy that differs.
  */
-export const SPORTS_LIVE_TODAY = "Live now: MLB postseason briefs and a weekly NFL card.";
+export const SPORTS_LIVE_TODAY = "Live now: tennis, cricket, soccer, NBA, NHL, college, MLB, NFL, MMA and more.";
 
 /**
  * Minimal DOM-construction and generic-JSON-rendering helpers shared by
@@ -410,7 +410,7 @@ function renderTesterExpired(container, err) {
   const section = el("section", {
     class: "gate chamfer", role: "alert", "data-hook": "tester-access-ended",
   });
-  section.appendChild(el("p", { class: "gate__eyebrow", text: "Early access ended" }));
+  section.appendChild(el("p", { class: "gate__eyebrow", text: "Invited access ended" }));
   section.appendChild(el("p", { class: "gate__title", "data-hook": "tester-ended-line",
     text: testerEndedLine(detail.expires_at) }));
   const next = el("p", { class: "gate__body", "data-hook": "tester-not-open", text: TESTER_REPLY });
@@ -445,7 +445,7 @@ function renderAuthRequired(container, err) {
   // to say "view tonight's board" on #/billing, which is not a board.
   section.appendChild(el("p", { class: "gate__title", text: "Sign in to continue." }));
   section.appendChild(el("p", { class: "gate__body",
-    text: "This part of the private beta needs your invite token. "
+    text: "This part of LINEHOUND needs your invite token. "
         + "Add it once and it stays on this device." }));
   const actions = el("div", { class: "gate__actions" });
   actions.appendChild(el("a", { href: "#/signin", class: "btn btn--primary chamfer chamfer--btn",
@@ -479,23 +479,23 @@ function renderAuthRequired(container, err) {
 const PAID_ACCESS_REQUIRED = "paid_access_required";
 
 /** A free account on a page of the daily picks board (403 {"error":"paid_access_required"}). Not a failed request and not
- * a sign-in problem: the account is fine, this board is early access. Say what the free account does include, and give
- * the two true next steps: back to the kennel, or ask for early access (the old signup page, which waitlists while
+ * a sign-in problem: the account is fine, this board is by invite. Say what the free account does include, and give
+ * the two true next steps: back to the kennel, or ask for an invite (the old signup page, which takes the request while
  * billing is off). */
 function renderPaidBoardOnly(container) {
   const section = el("section", {
     class: "gate chamfer", role: "alert", "data-hook": "paid-board-only",
   });
-  section.appendChild(el("p", { class: "gate__eyebrow", text: "Early access" }));
-  section.appendChild(el("p", { class: "gate__title", text: "The daily picks board is early access." }));
+  section.appendChild(el("p", { class: "gate__eyebrow", text: "By invite" }));
+  section.appendChild(el("p", { class: "gate__title", text: "The daily picks board is by invite." }));
   section.appendChild(el("p", { class: "gate__body",
-    text: "Your free account includes your kennel: build dogs, fire them, ask them and follow them. "
+    text: "Your free account includes your kennel: build hounds, fire them, ask them and follow them. "
         + "The daily picks board is by request." }));
   const actions = el("div", { class: "gate__actions" });
   actions.appendChild(el("a", { href: "kennel.html", class: "btn btn--primary chamfer chamfer--btn",
     "data-hook": "paid-board-kennel", text: "Go to My kennel" }));
   actions.appendChild(el("a", { href: "#/signup", class: "btn btn--ghost chamfer chamfer--btn",
-    "data-hook": "early-access-link", text: "Ask for early access to daily picks" }));
+    "data-hook": "early-access-link", text: "Ask for an invite to daily picks" }));
   section.appendChild(actions);
   container.appendChild(section);
 }

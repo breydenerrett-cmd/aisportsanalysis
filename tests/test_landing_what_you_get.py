@@ -173,11 +173,12 @@ class TheProvenEssayIsCutToOneLine(unittest.TestCase):
             self.assertNotIn(f'data-hook="{hook}', HTML, hook)
         self.assertNotIn("What is proven and what is not", _visible(HTML))
 
-    def test_what_replaces_it_is_one_human_line_and_one_link(self):
+    def test_what_replaces_it_is_one_coverage_line_and_no_link(self):
+        # owner ruling 2026-10-20, complete-product positioning: the pause explainer is unlinked
         line = re.search(r'<p class="lbhero__straight" data-hook="kennel-straight">(.*?)</p>', HTML, re.S).group(1)
-        self.assertIn("didn't beat the market", line)
-        self.assertEqual(len(re.findall(r"<a\b", line)), 1)
-        self.assertIn('href="why-we-paused.html"', line)
+        self.assertIn("on the record before the game", line)
+        self.assertEqual(len(re.findall(r"<a\b", line)), 0)
+        self.assertNotIn("why-we-paused", line)
         self.assertNotRegex(_visible(line), r"(?i)profit|win rate|guarantee|\bedge\b")
 
     def test_the_fill_for_the_cut_section_is_a_harmless_no_op_without_its_nodes(self):
@@ -260,7 +261,7 @@ class TheCopyIsPlainAndCautious(unittest.TestCase):
         # The checkout-state behaviour is untouched: every CTA still carries
         # the hook applyCheckoutCopy reads, with the cautious wording.
         for cta in re.findall(r"<a[^>]*data-checkout-cta[^>]*>(.*?)</a>", HTML, re.S):
-            self.assertEqual(cta.strip(), "Request early access")
+            self.assertEqual(cta.strip(), "Request an invite")
 
     def test_the_hero_lede_says_what_a_card_is_and_the_grading_schedule_lives_lower(self):
         # 2026-10-02 (docs/CONVERSION_REVIEW_2026-10-02.md change 1): the lede
@@ -273,15 +274,13 @@ class TheCopyIsPlainAndCautious(unittest.TestCase):
             "Analysis, not advice."))
         self.assertNotIn("entered by hand", claim)
         faq = re.sub(r"\s+", " ", _section("faq"))
-        # 2026-10-03: UFC picks paused (config/ufc_public_card.json). The FAQ still
-        # carries both grading facts, and now the pause too.
-        # 2026-10-16: MLB value picks paused; the FAQ says so and keeps NFL's schedule.
-        self.assertIn("MLB value picks are paused as of Oct 16, 2026", faq)
+        # owner ruling 2026-10-20, complete-product positioning: the FAQ lists every sport and no longer
+        # says anything is paused; it still carries both grading facts.
+        self.assertNotIn("paused", faq)
         self.assertNotIn("MLB and NFL carry live picks", faq)
-        self.assertIn("NFL carries live picks, published before the game and graded "
-                      "automatically the next morning.", faq)
-        self.assertIn("UFC picks are paused while we build real fight analysis; the UFC picks "
-                      "already made are graded once results are entered by hand", faq)
+        self.assertIn("Every sport we cover: tennis, cricket, soccer, NBA, NHL, college, MLB, NFL, MMA and more.", faq)
+        self.assertIn("NFL picks are graded automatically the next morning; UFC picks are graded once "
+                      "results are entered by hand.", faq)
 
 
 class TheCssAddsOnlyWhatTheBlocksNeed(unittest.TestCase):

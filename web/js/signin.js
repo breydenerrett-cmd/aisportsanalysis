@@ -238,7 +238,7 @@ export async function renderSignin(container, query = {}) {
   const wrap = el("section", { class: "signin", "data-view": "signin" });
   const card = el("div", { class: "signin__card", "data-hook": "signin-card" });
 
-  const eyebrow = el("p", { class: "gate__eyebrow", "data-hook": "signin-eyebrow", text: "PRIVATE BETA" });
+  const eyebrow = el("p", { class: "gate__eyebrow", "data-hook": "signin-eyebrow", text: "SIGN IN" });
   const title = el("h1", { class: "signin__title", "data-hook": "signin-title",
     text: "Sign in to view tonight's board." });
   card.appendChild(eyebrow);
@@ -369,7 +369,7 @@ export async function renderSignin(container, query = {}) {
     tabs.hidden = signedInMode;
     tabCreate.setAttribute("aria-selected", create ? "true" : "false");
     tabSignin.setAttribute("aria-selected", create ? "false" : "true");
-    eyebrow.textContent = create ? "FREE ACCOUNT" : "PRIVATE BETA";
+    eyebrow.textContent = create ? "FREE ACCOUNT" : "SIGN IN";
     title.textContent = create ? "Create a free account." : "Sign in to view tonight's board.";
   }
   function showTab(next) {
@@ -567,7 +567,7 @@ export async function renderSignin(container, query = {}) {
   // checkout is on, with its own trial length (checkout.js, one decision for
   // every page).
   const earlyHead = el("p", { class: "signin__note", "data-hook": "signin-early-head",
-    text: "EARLY ACCESS TO DAILY PICKS" });
+    text: "DAILY PICKS BY INVITE" });
   card.appendChild(earlyHead);
   const signupNote = el("p", { class: "signin__note", "data-hook": "signin-note",
     text: signinNote(NOT_ON) });

@@ -40,7 +40,7 @@ const MAX_BODY_LENGTH = 5000;
  */
 export const LOCKED_OUT_STEPS = [
   "Write to us with the form below and type the email address your account uses. We answer only that address.",
-  "Put \"Locked out\" in the subject. Say whether you bought a plan or were given early access.",
+  "Put \"Locked out\" in the subject. Say whether you bought a plan or were given an invite.",
   "We write to the address on the account first, to confirm the request. Reply to that email from the email address your account uses. Until your reply arrives nothing changes, and your current token keeps working.",
   "After your reply we send a new access token to that address. The old one stops working the moment we do.",
   "Do not send a card number or an old token. An email address or a checkout number on its own is not enough, and we never send a token to a chat or a message.",

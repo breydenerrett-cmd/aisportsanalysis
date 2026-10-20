@@ -69,7 +69,7 @@ class TheCardIsWiredUnderThePausedNotice(unittest.TestCase):
 
     def test_the_paused_notice_is_kept_exactly_and_the_card_module_does_not_know_about_the_analysis(self):
         self.assertIn("function pausedCard(payload)", CARD_JS)
-        self.assertIn('text: "PICKS PAUSED"', CARD_JS)
+        self.assertIn('text: "NO PICKS FOR THIS DATE"', CARD_JS)   # owner ruling 2026-10-20, complete-product positioning
         self.assertIn("wrap.appendChild(pausedCard(payload));", CARD_JS)
         self.assertNotIn("ufcfights", CARD_JS)
         self.assertNotIn("fight-night", CARD_JS)

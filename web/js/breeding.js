@@ -103,7 +103,7 @@ export function statusChip(status, reason) {
   if (status === "retired" && reason === "harm") return { label: "HURT", tone: "bad" };
   if (status === "retired" && reason === "breeding_cull") return { label: "CULLED", tone: "bad" };
   if (status === "retired") return { label: "RETIRED", tone: "flat" };
-  if (status === "undecided" && reason === "expired") return { label: "TOO EARLY", tone: "early" };
+  if (status === "undecided" && reason === "expired") return { label: "AWAITING VERDICT", tone: "early" };
   if (status === "undecided") return { label: "CLOSED", tone: "flat" };
   return { label: "UNKNOWN", tone: "flat" };
 }

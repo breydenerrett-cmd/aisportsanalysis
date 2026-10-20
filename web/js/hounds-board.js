@@ -16,7 +16,7 @@
  *   - "Beat the close" is the share of bets with a measurable closing line whose price was better than the
  *     close; the average is the verdict block's mean, in points. Both say how many bets they rest on.
  *   - The status is the referee's label in plain words ("Beating the close", "Market", "Paying the vig"),
- *     and a model with too few measurable bets says how far it is from enough ("Not enough bets (93/150)").
+ *     and a model with too few measurable bets says how far it is from a verdict ("Verdict at 150 bets (93/150)").
  *     It is keyed on the label alone and never on units.
  *   - A ticket is a bet row. Its status is PENDING until it is graded, then WON, LOST, PUSH or VOID.
  */
@@ -241,7 +241,7 @@ export function isSmallSample(hound) {
 export function smallSampleTitle(hound) {
   const b = bankrollOf(hound);
   const min = b && isNum(b.small_sample_min) ? b.small_sample_min : SMALL_SAMPLE_SETTLED;
-  return `Small sample: ${settledOf(hound)} settled bets so far (under ${min}). A few results can move this a lot.`;
+  return `Ranked in full at ${min} settled bets: ${settledOf(hound)} so far.`;
 }
 
 /** Yield: result per dollar staked on decided bets, in percent (the old ROI), or null. Model page only. */
@@ -292,7 +292,7 @@ export function stakeLineText(units, rules) {
 
 /**
  * The model's status in plain words, from the referee's label. { key, text, tone, title }. A retired model
- * reads "Retired". Too few measurable bets reads "Not enough bets (n/150)" with n the bets that have a
+ * reads "Retired". Too few measurable bets reads "Verdict at 150 bets (n/150)" with n the bets that have a
  * measurable closing price.
  */
 export function statusOf(hound) {
@@ -315,8 +315,8 @@ export function statusOf(hound) {
     case "PAYING THE VIG":
       return { key: "vig", text: "Paying the vig", tone, title: "Its prices keep landing worse than the close, so every bet costs a little extra." };
     case "TOO EARLY":
-      return { key: "early", text: `Not enough bets (${n}/${MIN_CLV_BETS})`, tone,
-        title: `A model needs ${MIN_CLV_BETS} bets with a measurable closing price before a verdict. Results this early are mostly luck.` };
+      return { key: "early", text: `Verdict at ${MIN_CLV_BETS} bets (${n}/${MIN_CLV_BETS})`, tone,
+        title: `A verdict needs ${MIN_CLV_BETS} bets with a measurable closing price. ${n} so far.` };
     default:
       return { key: "unrated", text: "Not graded vs close", tone: "unknown", title: "This model was never graded against the closing line." };
   }

@@ -268,7 +268,7 @@ class SampleSignedOut(_Journey):
 
 
 # ===========================================================================
-# 2 and 3. The utm source, and "Request early access"
+# 2 and 3. The utm source, and "Request an invite"
 # ===========================================================================
 
 LEAD = {"utm_source": "l009-tommy-lorenzo", "utm_medium": "x_account",
@@ -315,8 +315,8 @@ class RequestEarlyAccess(_Journey):
     def test_the_confirmation_states_the_terms(self):
         text = _read(JS / "checkout.js").split("WAITLIST_CONFIRMATION =", 1)[1].split("export const NOT_ON", 1)[0]
         text = re.sub(r'"\s*\+\s*"', "", text).replace("\n", " ")
-        for fact in ("no card needed", "performance is not proven", "not advice",
-                     "losses included", "temporary"):
+        # owner ruling 2026-10-20, complete-product positioning: four facts, no "performance is not proven"
+        for fact in ("no card needed", "not advice", "losses included", "invited access lasts 7 days"):
             self.assertIn(fact, text)
 
     def test_the_confirmation_does_not_promise_a_timing_the_guide_does_not_keep(self):
@@ -457,13 +457,13 @@ class DayEight(_Journey):
     def test_the_sign_in_page_words_for_the_ended_week_with_checkout_off(self):
         src = _read(JS / "checkout.js")
         self.assertIn('TESTER_NOT_OPEN = "Paid plans are not open yet. Reply to Brey if you want to keep going."', src)
-        self.assertIn("Your early access ended on ${day}.", src)
+        self.assertIn("Your invited access ended on ${day}.", src)
         self.assertIn("upgradeLabel", _read(JS / "signin.js"))
 
     def test_a_game_page_for_an_ended_tester_says_the_access_ended(self):
         # The sign-in page does. A game page draws the generic gate for every 401: "This part of
         # the private beta needs your invite token. Add it once and it stays on this device",
-        # to a person who has a token, with a "Request early access" button.
+        # to a person who has a token, with a "Request an invite" button.
         self.assertIn("tester_access_expired", _read(JS / "dom.js"))
 
 

@@ -85,12 +85,13 @@ class HeavyBlocksAreAccordions(unittest.TestCase):
         self.assertNotRegex(faq, r'<details class="faq-item[^>]*\sopen')
 
     def test_the_facts_and_the_hard_lines_are_still_on_the_page(self):
-        self.assertRegex(MAIN, r'data-hook="kennel-straight">We stopped publishing MLB value picks on Oct 16, 2026')
+        # owner ruling 2026-10-20, complete-product positioning: the pause line is a coverage line now
+        self.assertRegex(MAIN, r'data-hook="kennel-straight">Tennis, cricket, soccer, NBA, NHL, college, MLB, NFL, MMA and more\.')
         self.assertIn("Analysis, not advice.", MAIN)
-        self.assertIn("Early access: the first 20 testers get 7 days free, no card. Not on sale yet; planned price $19.99 a month.", MAIN)
+        self.assertIn("Invite round: the first 20 testers get 7 days free, no card. Not on sale yet; planned price $19.99 a month.", MAIN)
         self.assertIn('data-hook="disclaimer-host"', HTML)          # 21+, the helpline and the not-advice summary: the shared footer, said once
         self.assertIn("paper bets", MAIN.lower())
-        self.assertEqual(MAIN.count('data-hook="hero-paused"'), 1)   # the paused module the live script reveals
+        self.assertEqual(MAIN.count('data-hook="hero-paused"'), 1)   # the desk-only module the live script reveals
 
 
 @unittest.skipUnless(HAS_NODE, "node not installed")

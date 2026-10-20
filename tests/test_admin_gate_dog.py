@@ -6,6 +6,7 @@ The admin page keeps exactly ONE script (tests/test_admin_dashboard.py), so its 
 Small labels in tables, chips and tags stay in capitals by CSS; what is not allowed is a label that is capitals in the source.
 """
 
+# Copy updated per owner ruling 2026-10-20, complete-product positioning (no beta / early-access / paused hedging; invite wording).
 from __future__ import annotations
 
 import re
@@ -60,7 +61,7 @@ class TheMemberSignInWall(unittest.TestCase):
 
     def test_the_gate_eyebrows_are_sentences_in_the_source_and_not_shouted_by_css(self):
         dom = read("js/dom.js")
-        for text in ("Early access ended", "Sign in required", "Subscription ended", "Request failed"):
+        for text in ("Invited access ended", "Sign in required", "Subscription ended", "Request failed"):
             self.assertIn(f'class: "gate__eyebrow", text: "{text}"', dom)
         self.assertNotRegex(dom, r'gate__eyebrow", text: "[A-Z ]{6,}"')
         self.assertRegex(read("css/lh-app.css"), r"body\.member-app \.gate__eyebrow \{ text-transform: none;")

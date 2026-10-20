@@ -67,7 +67,7 @@ export const VERDICT_MEANING = {
   "NO DIFFERENT FROM THE MARKET":
     "This model's prices cannot be told apart from the closing line: not better, not worse.",
   "TOO EARLY":
-    "Not enough bets with a measurable closing price to say anything yet. At this size, a hot or cold run is mostly luck.",
+    "A verdict comes once a model has enough bets with a measurable closing price. Until then the record is shown as it stands.",
   "PAYING THE VIG":
     "This model's prices have landed worse than the closing line, the way betting into the bookmaker's cut does. "
     + "Wins and losses so far, good or bad, are mostly luck.",

@@ -131,8 +131,9 @@ class EveryPageSaysPaperOnlyNotAdviceAndIs21Plus(unittest.TestCase):
     def test_the_landing_page_links_to_the_leaderboard_in_its_first_screen(self):
         landing = (WEB / "landing.html").read_text(encoding="utf-8")
         first = landing[landing.index('data-hook="lb-hero"'):landing.index('data-hook="hero"')]
-        self.assertRegex(first, r'<a [^>]*href="hounds.html"[^>]*>View the leaderboard')
-        self.assertRegex(first, r'<a [^>]*href="build-a-hound.html"[^>]*>Build a model')
+        # owner ruling 2026-10-20, complete-product positioning: build first, the house pack second
+        self.assertRegex(first, r'<a [^>]*href="hounds.html"[^>]*>Watch the house pack')
+        self.assertRegex(first, r'<a [^>]*href="build-a-hound.html"[^>]*>Build your hound')
 
 
 class ThePagesAreServed(unittest.TestCase):
@@ -303,7 +304,8 @@ class TheDeskSections(unittest.TestCase):
         self.assertIn("No game has been published yet", f["dis"])
         self.assertIn("One model reading, unproven", f["rule"])      # the rule text is there before any game
         self.assertEqual((f["picker"], f["table"]), (0, 0))
-        self.assertIn("Based on 0 graded live bets. That is a small sample.", f["sample"])
+        self.assertIn("Based on 0 graded live bets.", f["sample"])
+        self.assertNotIn("small sample", f["sample"])   # owner ruling 2026-10-20, complete-product positioning
 
     def test_a_stage_missing_or_unreadable_in_the_transcript_is_said_not_filled_in(self):
         t = F.desk_transcript()

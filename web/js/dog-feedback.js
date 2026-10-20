@@ -167,7 +167,7 @@ function suggestionsList(id, items) {
 function countsLine(c) {
   const total = (c.good || 0) + (c.bad || 0);
   if (!total) return "Nobody has rated this dog yet. A Good call or Bad call under any ticket counts.";
-  return `${total} ${total === 1 ? "rating" : "ratings"}: ${c.good || 0} Good call, ${c.bad || 0} Bad call.${total < SMALL ? " That is a small sample, so read it lightly." : ""}`;
+  return `${total} ${total === 1 ? "rating" : "ratings"}: ${c.good || 0} Good call, ${c.bad || 0} Bad call.`;
 }
 
 async function recentTickets(id) {

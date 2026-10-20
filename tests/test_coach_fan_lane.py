@@ -776,7 +776,7 @@ class ThePagesUnderNode(unittest.TestCase):
         self.assertEqual(f["n"], 3)
         self.assertEqual(f["coach_n"], 1)                                       # the coach's list is the coach's only
         self.assertEqual(f["coach_facts"][0], "1")                              # tips made: the coach's one, not four
-        self.assertEqual(sorted(f["badges"]), sorted(["HELPED", "HURT", "TOO EARLY"]))
+        self.assertEqual(sorted(f["badges"]), sorted(["HELPED", "HURT", "IN PROGRESS"]))  # owner ruling 2026-10-20, complete-product positioning
         self.assertTrue(any(ln.startswith("Ann told Fake Dog to change") and "Live: helped (+3.2u over 25 bets)" in ln
                             for ln in f["lines"]), f["lines"])
         self.assertTrue(any(ln.startswith("A fan told Fake Dog") for ln in f["lines"]))
@@ -812,7 +812,7 @@ class ThePagesUnderNode(unittest.TestCase):
             self.q("list", "[data-hook='tips-list'] li", "texts"),
             self.q("count", "[data-hook='tips-count']")])["final"]
         self.assertEqual(out["list"], ["Ann: Steam needed 4 points. Live: HELPED (+3.2u over 25 bets)",
-                                       "A fan: Steam needed 2.5 points. Live: TOO EARLY (1 bet)",
+                                       "A fan: Steam needed 2.5 points. Live: IN PROGRESS (1 bet)",  # owner ruling 2026-10-20, complete-product positioning
                                        "Cy: Steam needed 5 points. Live: HURT (-1.3u over 22 bets)",
                                        "Di: Steam needed 2 points"])
         self.assertEqual(out["count"], "Fan tips: 3. Grades coming from the coach report card.")

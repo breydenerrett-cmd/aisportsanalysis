@@ -16,6 +16,16 @@ fields written for that pass stay in `config/` as data and in `src/hounds/voice.
 X post, but the site does not render them, with one exception: a model's catchphrase may appear as one small
 italic line under its name.)
 
+**Amendment, owner ruling 2026-10-20 (complete-product positioning).** The site advertises a complete product:
+build your own AI sports bettor (a hound) from plain English or rules; it bets every sport we cover; every pick is
+published before the game and graded win or lose on a public record; the house pack is our own hounds, championed,
+trained, bred and culled in public. The product's words are **hound** and **house pack** again, in the same sober
+register as above (no cartoons, no jokes, no emoji). Copy no longer says beta, early access, waitlist, "we're new",
+"not enough data", "too early", "small sample", "unproven" or "paused". A functional rule stays, said confidently
+("Ranked in full at 20 settled bets", "Verdict at 150 bets"). Hard limits unchanged: no claim of profit, an edge,
+guaranteed wins, ROI or "beat the books"; "complete" means the product works, not that it wins; 21+, 1-800-GAMBLER
+and "bet at your own risk" stay; Bet Check is never linked or advertised.
+
 ## How it sounds
 
 - **Short and plain.** One idea per line. No jokes, no slang for effect, no exclamation marks.

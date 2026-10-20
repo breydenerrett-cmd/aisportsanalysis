@@ -209,7 +209,7 @@ function consensusPanel(consensus, spreadCents, awayAbbr, homeAbbr) {
     const col = el("div", { class: "ov2-consensus-col" });
     col.appendChild(el("div", { class: "ov2-consensus-col__side", text: abbr }));
     if (!detail || hasOwn(detail, "skipped") || typeof detail.implied_price !== "number") {
-      col.appendChild(el("p", { class: "ov2-panel__empty", text: "Not enough books on this side." }));
+      col.appendChild(el("p", { class: "ov2-panel__empty", text: "A fair price needs more books quoting this side." }));
     } else {
       col.appendChild(el("div", { class: "ov2-consensus-col__price", "data-hook": "odds-consensus-price",
         text: formatAmerican(detail.implied_price) }));

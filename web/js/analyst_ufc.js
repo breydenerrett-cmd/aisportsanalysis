@@ -184,7 +184,7 @@ function familyRow(name, f) {
   const units = unitsText(f.units);
   if (rate === null || units === null) {
     tr.appendChild(el("td", { class: "an-rec__withheld", colspan: "2", "data-hook": "analyst-record-withheld",
-      text: f.withheld_reason || "Not enough graded calls yet" }));
+      text: f.withheld_reason || "Rated once more calls are graded" }));
   } else {
     tr.appendChild(cell("td", rate, "analyst-record-rate"));
     tr.appendChild(cell("td", units, "analyst-record-units"));
@@ -195,7 +195,7 @@ function familyRow(name, f) {
 /** @param record  GET /analyst/ufc/record */
 export function renderUfcAnalystRecord(record) {
   const host = el("section", { class: "an-section an-rec", "data-hook": "analyst-ufc-record" });
-  host.appendChild(head("UFC AI ANALYST RECORD", "UNPROVEN"));
+  host.appendChild(head("UFC AI ANALYST RECORD", "GRADED IN PUBLIC"));
   host.appendChild(el("p", { class: "an-label", "data-hook": "analyst-label",
     text: (record && record.label) || ANALYST_LABEL }));
   if (!record) return host;

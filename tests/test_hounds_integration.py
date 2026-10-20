@@ -773,7 +773,7 @@ class PagesReadTheRealApi(unittest.TestCase):
             q("next_off", "[data-hook='bets-next']", "disabled")])
         self.assertEqual(out["final"]["name"], "Alpha")
         self.assertEqual(out["final"]["rule"], "Alpha rule.")
-        self.assertRegex(out["final"]["verdict"], r"Not enough bets \(\d+/150\)")     # TOO EARLY, with its sample size
+        self.assertRegex(out["final"]["verdict"], r"Verdict at 150 bets \(\d+/150\)")  # owner ruling 2026-10-20, complete-product positioning     # TOO EARLY, with its sample size
         graded = self.routes["/hounds/alpha/bets?status=graded&segment=forward&page=1&page_size=20"][1]["total"]
         self.assertGreater(graded, 0)
         self.assertGreater(out["final"]["rows"], 0)

@@ -80,11 +80,11 @@ class ThePanelsOnThePage(unittest.TestCase):
         self.assertTrue(all(re.fullmatch(r"\d+-\d+(-\d+)?", r) for r in f["rec"]), f["rec"])
         self.assertTrue(all(b.isdigit() for b in f["bets"]))
         self.assertTrue(all(h.startswith("hound.html?id=") for h in f["links"]))
-        self.assertEqual(f["heads"], ["#", "Model", "Record", "Bankroll", "Return", "Bets"])
+        self.assertEqual(f["heads"], ["#", "Hound", "Record", "Bankroll", "Return", "Bets"])   # owner ruling 2026-10-20, complete-product positioning
         self.assertFalse({"always-fave", "always-dog"} & set(f["ids"]))           # baselines are the leaderboard page's business
         self.assertEqual(f["asof"], "Data as of Oct 24")
         self.assertEqual(f["note"], "Every model starts with the same $1,000 paper bankroll. 1 unit = $10.")
-        self.assertIn("Top models by bankroll", f["title"][0])
+        self.assertIn("The house pack: top hounds by bankroll", f["title"][0])   # owner ruling 2026-10-20, complete-product positioning
 
     def test_the_return_is_the_balance_over_the_shared_thousand_dollar_start(self):
         # Never a per-bet yield: a model up $14 on a $1,000 account shows +1.4%, whatever its bet count.
@@ -103,7 +103,7 @@ class ThePanelsOnThePage(unittest.TestCase):
             q("grey", "[data-hook='lb-bankroll'].lbtone--small", "count"),
             q("title", "[data-hook='lb-return'].lbtone--small", "attrs", attr="title")])
         self.assertEqual(out["final"]["grey"], 1)
-        self.assertTrue(out["final"]["title"][0].startswith("Small sample:"), out["final"]["title"])
+        self.assertTrue(out["final"]["title"][0].startswith("Ranked in full at"), out["final"]["title"])   # owner ruling 2026-10-20, complete-product positioning
 
     def test_the_latest_tickets_are_real_bets_with_a_status_word_and_a_refusal_is_not_one(self):
         out = self.page(queries=[q("n", "[data-hook='lb-ticket']", "count"), q("models", ".lbticket__model", "texts"),

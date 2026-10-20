@@ -11,10 +11,11 @@ What this file holds the pages to:
   MODEL PAGE   the KPI strip's season toggle (re-asks the server, keeps the choice) and the ticket tables' own
                season chip, which defaults to every season;
   LANDING      Season 2's top five RANKED models; with fewer than five, the ones that qualified plus a line saying
-               how young the season is and that more models qualify at 10 bets;
+               how young the season is and that more hounds qualify at 10 bets;
   PURE HELPERS the ranking bar, the labels, the age line.
 """
 
+# Copy updated per owner ruling 2026-10-20, complete-product positioning (no beta / early-access / paused hedging; invite wording).
 from __future__ import annotations
 
 import json
@@ -219,7 +220,7 @@ class TheSwitcherOnTheLeaderboard(unittest.TestCase):
     def test_the_status_count_under_too_early_is_the_all_time_one_not_the_seasons(self):
         hs = [mk("a", "A", bets=12, clv={"n": 2, "mean_pts": 0.3}, verdict={"label": "TOO EARLY", "sentence": "s", "n": 93})]
         out = self.page(routes=routes(**{"/hounds": board(hs)}), queries=[q("st", "[data-hook='status']")])
-        self.assertEqual(out["final"]["st"], "Not enough bets (93/150)")
+        self.assertEqual(out["final"]["st"], "Verdict at 150 bets (93/150)")
 
     def test_the_drawer_asks_for_the_tickets_of_the_season_on_screen(self):
         r = routes(**{"/hounds": board([mk("a", "A")])})
@@ -375,7 +376,7 @@ class TheQualifyingRound(unittest.TestCase):
         f = out["final"]
         self.assertEqual(f["pills"], ["6/10 bets", "2/10 bets", "4/10 bets", "9/10 bets", "0/10 bets"])
         self.assertEqual(f["in_status"], 5)
-        self.assertTrue(all(t.startswith("Small sample:") for t in f["roi_titles"]), f["roi_titles"])
+        self.assertTrue(all(t.startswith("Ranked in full at") for t in f["roi_titles"]), f["roi_titles"])
         self.assertTrue(all("hd-roi--small" in c for c in f["roi_class"]), f["roi_class"])
         self.assertTrue(all(t.startswith("Needs 10 settled bets to be ranked") for t in f["pill_title"]))
 
@@ -554,7 +555,7 @@ class TheModelPageSeasons(unittest.TestCase):
 
     def test_the_status_says_it_is_all_time_and_the_sample_is_the_seasons(self):
         out = self.page(queries=[q("sample", "[data-hook='verdict-sample']")])
-        self.assertEqual(out["final"]["sample"], "This is the referee's all-time verdict. Season 2: 41 graded live bets. That is a small sample.")
+        self.assertEqual(out["final"]["sample"], "This is the referee's all-time verdict. Season 2: 41 graded live bets.")
 
 
 # ---------------------------------------------------------------------------------------------------
@@ -584,8 +585,8 @@ class TheLandingBoardSeasons(unittest.TestCase):
         self.assertEqual(len(f["bets"]), 2)                                          # a ranked row shows its bets
         self.assertEqual(f["pills"], ["9/10 bets", "1/10 bets"])                     # a round row shows its progress
         self.assertEqual(len(f["roi_titles"]), 4)                                    # a round row greys its balance and its return
-        self.assertTrue(all(t.startswith("Small sample:") for t in f["roi_titles"]), f["roi_titles"])
-        self.assertRegex(f["note"], r"^Season 2 is \d+ days? old: more models qualify at 10 bets\.$")
+        self.assertTrue(all(t.startswith("Ranked in full at") for t in f["roi_titles"]), f["roi_titles"])
+        self.assertRegex(f["note"], r"^Season 2 is \d+ days? old: more hounds qualify at 10 bets\.$")
         self.assertIs(f["hidden"], False)
         self.assertEqual(f["tag"], "\u00b7 Season 2")
         self.assertEqual(f["tickets"], 2)                                            # the latest tickets still show beside it
@@ -597,7 +598,7 @@ class TheLandingBoardSeasons(unittest.TestCase):
         self.assertEqual(f["pills"], ["7/10 bets", "6/10 bets", "5/10 bets", "4/10 bets", "3/10 bets"])
         self.assertEqual(set(f["ranks"]), {"-"})
         self.assertEqual(f["empty"], None)
-        self.assertRegex(f["note"], r"Season 2 is \d+ days? old: more models qualify at 10 bets\.")
+        self.assertRegex(f["note"], r"Season 2 is \d+ days? old: more hounds qualify at 10 bets\.")
         self.assertEqual(f["tickets"], 2)
 
     def test_the_round_tops_the_board_up_to_five_and_no_more(self):
@@ -615,7 +616,7 @@ class TheLandingBoardSeasons(unittest.TestCase):
     def test_with_no_model_holding_a_settled_bet_the_board_says_so(self):
         f = self.page([mk("none", "None", bets=0, units=0.0, wins=0)])["final"]
         self.assertEqual(f["ids"], [])
-        self.assertEqual(f["empty"], "No model has 10 settled bets in Season 2 yet. Come back after the next slate.")
+        self.assertEqual(f["empty"], "No hound has 10 settled bets in Season 2 yet. The board fills as the slate settles.")
 
     def test_five_ranked_fill_the_board_with_no_pills_and_the_young_season_line_goes_away(self):
         f = self.page(self.ranked(7))["final"]

@@ -6,7 +6,7 @@
  *
  * FOOTER TREATMENT (canvas: wordmark, hairline, legal meta on one row)
  * -------------------------------------------------------------------
- * The artboards' footer is one compact row. The beta disclaimer is long,
+ * The artboards' footer is one compact row. The disclaimer is long,
  * and it is NOT optional -- so the row carries a one-line summary that is
  * always visible, and the FULL disclaimer text stays reachable, verbatim
  * and unabridged, inside an expandable disclosure directly beneath it.
@@ -38,12 +38,13 @@ import { BRAND_NAME } from "./brand.js";
 // exactly, and drops the specific "three to five" count and "frozen"
 // verb, neither of which the record wording repeats.
 //
-// EXTENDED 2026-09-20 (owner: NFL and tennis go live beside MLB). With
-// three sports on the page, one of them with a single graded pick and one
-// with no graded picks at all, the footer now says outright that every
-// pick is part of a test and that any bet is the reader's own decision.
+// EXTENDED 2026-09-20 (owner: NFL and tennis go live beside MLB): the footer says outright that
+// any bet is the reader's own decision.
+//
+// REWRITTEN 2026-10-20 (owner ruling 2026-10-20, complete-product positioning): the "Beta ... ongoing
+// test" opening is gone. Every pick is a paper bet, published before the game and graded win or lose.
 const SUMMARY =
-  "Beta. Every pick here is part of an ongoing test — published before each game and graded as it stood at its lock, win or lose. This is analysis, not advice. Nothing here is a guarantee; bet at your own risk.";
+  "Every pick is a paper bet, published before the game and graded win or lose. This is analysis, not advice. Nothing here is a guarantee; bet at your own risk.";
 
 /**
  * THE RESEARCH COUNTS, FROM THE REGISTRY, ONCE.
@@ -255,7 +256,7 @@ export async function renderDisclaimerFooter(container, { linkPrefix = "" } = {}
         : payload.disclaimer;
 
     const disclosure = el("details", { class: "sitefoot__disclosure" });
-    disclosure.appendChild(el("summary", { text: "Full beta disclaimer" }));
+    disclosure.appendChild(el("summary", { text: "Full disclaimer" }));
     const body = el("div", { class: "sitefoot__full chamfer" });
     body.appendChild(el("p", { class: "sitefoot__product", "data-hook": "product-one-liner",
       text: payload.product }));

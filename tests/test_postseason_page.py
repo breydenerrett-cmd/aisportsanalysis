@@ -1513,9 +1513,10 @@ class WebCopyTests(unittest.TestCase):
         # with checkout off never promises a trial on this page either.
         self.assertNotIn("7-day", js)
         self.assertIn("loadCheckoutState", js)
-        self.assertIn("request early access", js)
+        self.assertIn("request an invite", js)
         self.assertIn("-day free trial", js)
-        self.assertIn("No edge is claimed.", js)
+        self.assertIn("Analysis, not advice.", js)   # owner ruling 2026-10-20, complete-product positioning
+        self.assertNotIn("No edge is claimed.", js)
 
     def test_the_footer_links_resolve_from_the_standalone_page(self):
         self.assertIn('renderDisclaimerFooter(footer, { linkPrefix: "index.html" })',

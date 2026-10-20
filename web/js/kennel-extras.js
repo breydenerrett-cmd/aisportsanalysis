@@ -4,7 +4,7 @@
  *
  *   featuredDog(dogs)    the one dog to put in front of a visitor: the highest paper bankroll among dogs with a settled bet; with none
  *                        settled, the dog with the most open tickets, else the first. `featuredCard` draws it big, says WHY it is featured
- *                        in words ("Highest paper bankroll", "Most open tickets", "No bets settled yet") and says "small sample" under 20 settled bets.
+ *                        in words ("Highest paper bankroll", "Most open tickets", "No bets settled yet") and shows the ranking bar under 20 settled bets.
  *   activityStrip(items) the latest tickets from member dogs, from GET /hounds/stream filtered to the dog ids on the page.
  *   quietKennel(...)     the empty state: a dog that is thinking and one sentence, instead of a blank page.
  *
@@ -54,7 +54,7 @@ export function featuredCard(pick, kennelLabel = "") {
         stat("Record", bets > 0 ? recordText(dog) : "no graded bets"),
         stat("Open", String(open))]),
       h("p", { class: "kn-feat__note hd-fine", "data-hook": "featured-note",
-        text: bets === 0 ? "Nothing has settled yet, so there is no record to read." : bets < SMALL_SAMPLE ? `${bets} settled ${bets === 1 ? "bet" : "bets"}: a small sample, not a verdict.` : `${bets} settled bets.` }),
+        text: bets === 0 ? "Nothing has settled yet, so there is no record to read." : bets < SMALL_SAMPLE ? `${bets} settled ${bets === 1 ? "bet" : "bets"}. Ranked in full at ${SMALL_SAMPLE}.` : `${bets} settled bets.` }),
       h("div", { class: "kn-feat__actions" }, [
         h("a", { class: "lh-btn lh-btn--solid", href: houndHref(dog.id), "data-hook": "featured-open", text: "Open this dog" }),
         h("a", { class: "lh-btn lh-btn--soft", href: `${houndHref(dog.id)}&tab=ask`, text: "Ask it why" })]),

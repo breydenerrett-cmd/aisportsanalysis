@@ -15,7 +15,7 @@ supporting the offer rather than being the headline. This file pins the seven
 changes of that review (written 2026-10-02):
 
   1. the headline names the product; the method is the second sentence;
-  2. the button says "Request early access" in every billing-off state, and the
+  2. the button says "Request an invite" in every billing-off state, and the
      on-state wording is untouched (checkout.js is the one place that decides);
   3. a compact "what you get" block sits under the buttons and above the
      record panel, in DOM order;
@@ -120,7 +120,7 @@ class TheFirstScreenReadsInOrder(unittest.TestCase):
                          MARKUP, re.S).group(1).strip()
         self.assertEqual(
             note,
-            "Early access: the first 20 testers get 7 days free, no card. "
+            "Invite round: the first 20 testers get 7 days free, no card. "
             "Not on sale yet; planned price $19.99 a month. "
             "The record and the postseason odds are free now.")
 
@@ -160,7 +160,7 @@ class TheEarlyAccessLabelIsOneDecision(unittest.TestCase):
     def test_every_static_call_to_action_says_create_free_account(self):
         # Open signups (2026-10-19): the four buttons are the FREE account, which exists whatever billing is
         # doing, so none of them is a data-checkout-cta (landing.js rewrites those from /meta) and none says
-        # "Request early access" any more. That wording lives on in checkout.js for the paid board's own door.
+        # "Request an invite" any more. That wording lives on in checkout.js for the paid board's own door.
         self.assertEqual(re.findall(r"<a[^>]*data-checkout-cta[^>]*>", MARKUP), [])
         labels = {}
         for hook in ("cta-primary", "cta-signup-hero", "cta-signup", "cta-signup-bottom"):
@@ -173,7 +173,7 @@ class TheEarlyAccessLabelIsOneDecision(unittest.TestCase):
     def test_the_paid_boards_door_is_a_small_early_access_note_where_it_is_described(self):
         m = re.search(r'<p[^>]*data-hook="early-access-note"[^>]*>(.*?)</p>', MARKUP, re.S)
         self.assertIsNotNone(m)
-        self.assertIn("Daily picks are early access", m.group(1))
+        self.assertIn("The daily picks board is by invite", m.group(1))   # owner ruling 2026-10-20, complete-product positioning
         self.assertRegex(m.group(1), r'<a href="index.html#/signup" data-hook="cta-early-access">')
         # inside the pricing card, which is where Matchups, Odds and Props are described
         card = MARKUP[MARKUP.index('class="pricing-card'):]
@@ -182,10 +182,10 @@ class TheEarlyAccessLabelIsOneDecision(unittest.TestCase):
 
     def test_the_label_is_decided_in_checkout_js_alone(self):
         checkout = (JS / "checkout.js").read_text(encoding="utf-8")
-        self.assertIn('export const CAUTIOUS_CTA = "Request early access";', checkout)
+        self.assertIn('export const CAUTIOUS_CTA = "Request an invite";', checkout)
         for name in ("landing.js", "signup.js", "signin.js", "cardrecord.js", "dom.js"):
             source = (JS / name).read_text(encoding="utf-8")
-            self.assertNotIn("Request early access", source, name)
+            self.assertNotIn("Request an invite", source, name)
             self.assertNotIn("Join the waitlist", source, name)
 
 
@@ -217,9 +217,11 @@ class TheLeaderboardIsTheFirstScreen(unittest.TestCase):
     """Owner, 2026-10-19: the site "looks like a kids playground, not a professional gambling AI website". The first
     screen is a plain headline, one sentence on how it works, a live mini leaderboard and the latest tickets."""
 
-    TITLE = "AI betting models, tracked in public."
-    SUB = ("Dozens of models make paper bets every day. Every ticket is recorded before the game and graded after. "
-           "Follow the ones that are winning.")
+    # Owner ruling 2026-10-20, complete-product positioning: the hero sells building your own hound, not a
+    # "tracked in public" leaderboard with hedging around it.
+    TITLE = "Build your own AI sports bettor."
+    SUB = ("Describe a strategy in plain English or set the rules. Your hound bets every sport we cover, and every "
+           "pick is published before the game and graded win or lose on a public record.")
 
     def test_the_one_h1_is_the_headline_verbatim_and_the_subline_follows_it(self):
         h1 = re.search(r'<h1 class="lbhero__title" data-hook="lb-title">(.*?)</h1>', MARKUP, re.S)
@@ -231,19 +233,20 @@ class TheLeaderboardIsTheFirstScreen(unittest.TestCase):
 
     def test_the_hero_comes_first_then_buttons_then_the_leaderboard_then_the_ai_desk(self):
         order = [("hero", 'data-hook="lb-hero"'), ("headline", 'data-hook="lb-title"'), ("subline", 'data-hook="lb-sub"'),
-                 ("enter", 'data-hook="cta-kennel-enter"'), ("build", 'data-hook="cta-kennel-build"'),
+                 ("build", 'data-hook="cta-kennel-build"'), ("enter", 'data-hook="cta-kennel-enter"'),
                  ("straight", 'data-hook="kennel-straight"'), ("board", 'data-hook="lb-board"'),
                  ("tickets", 'data-hook="lb-tickets"'), ("ai desk", 'data-hook="hero"')]
         positions = [_at(needle) for _label, needle in order]
         self.assertEqual(positions, sorted(positions), [label for label, _ in order])
         self.assertLess(_at('data-hook="landing-header"'), _at('data-hook="lb-hero"'))
 
-    def test_the_two_calls_to_action_are_view_the_leaderboard_and_build_a_model(self):
+    def test_the_two_calls_to_action_are_build_your_hound_and_watch_the_house_pack(self):
+        # owner ruling 2026-10-20, complete-product positioning: build first, the house pack second
         enter = re.search(r'<a\b[^>]*data-hook="cta-kennel-enter"[^>]*>(.*?)</a>', MARKUP, re.S)
         build = re.search(r'<a\b[^>]*data-hook="cta-kennel-build"[^>]*>(.*?)</a>', MARKUP, re.S)
-        self.assertEqual(enter.group(1).strip(), "View the leaderboard")
+        self.assertEqual(enter.group(1).strip(), "Watch the house pack")
         self.assertIn('href="hounds.html"', enter.group(0))
-        self.assertEqual(build.group(1).strip(), "Build a model")
+        self.assertEqual(build.group(1).strip(), "Build your hound")
         self.assertIn('href="build-a-hound.html"', build.group(0))
         # data-hook starts with "cta", so landing.js's delegated listener counts both clicks
         self.assertIn("closest(\"[data-hook^='cta']\")", LANDING_JS)
@@ -259,10 +262,12 @@ class TheLeaderboardIsTheFirstScreen(unittest.TestCase):
         self.assertIn('data-hook="disclaimer-host"', MARKUP)
 
     def test_the_mini_leaderboard_is_filled_by_a_script_and_names_no_figure_when_it_has_none(self):
-        panel = re.search(r'<section class="lbpanel" aria-label="top models".*?</section>', MARKUP, re.S).group(0)
+        panel = re.search(r'<section class="lbpanel" aria-label="the house pack".*?</section>', MARKUP, re.S).group(0)
         text = _visible(panel)
-        self.assertIn("Top models by bankroll", text)
-        self.assertIn("Every model starts with the same $1,000 paper bankroll. 1 unit = $10.", text)   # the shared start, static
+        # owner ruling 2026-10-20, complete-product positioning: the panel is the house pack
+        self.assertIn("The house pack: top hounds by bankroll", text)
+        self.assertIn("championed, trained, bred and culled in public", text)
+        self.assertIn("Every hound starts with the same $1,000 paper bankroll. 1 unit = $10.", text)   # the shared start, static
         self.assertIn("Checking the leaderboard", text)
         self.assertNotRegex(text, r"[+-]\d")
         self.assertIn('href="hounds.html"', panel)
@@ -288,14 +293,16 @@ class TheLeaderboardIsTheFirstScreen(unittest.TestCase):
                      "What is proven and what is not", "falsification"):
             self.assertNotIn(gone, text, gone)
         line = re.search(r'<p class="lbhero__straight" data-hook="kennel-straight">(.*?)</p>', MARKUP, re.S).group(1)
-        self.assertIn('href="why-we-paused.html"', line)
-        self.assertEqual(MARKUP.count("why-we-paused.html"), 1)
+        # owner ruling 2026-10-20, complete-product positioning: the line states the coverage and the record rule;
+        # nothing on the page links to the old pause explainer any more
+        self.assertIn("Tennis, cricket, soccer, NBA, NHL, college, MLB, NFL, MMA and more", line)
+        self.assertEqual(MARKUP.count("why-we-paused.html"), 0)
 
     def test_the_faq_does_not_repeat_the_disclaimer(self):
         faq = re.search(r'<section[^>]*data-hook="faq".*?</section>', MARKUP, re.S).group(0)
         self.assertNotIn('data-hook="faq-gambling-advice"', faq)
         self.assertIn('data-hook="faq-kennel"', faq)             # the hook is kept; the copy now says "models"
-        self.assertIn("What are the models?", faq)
+        self.assertIn("What is a hound?", faq)             # owner ruling 2026-10-20, complete-product positioning
 
 
 class PricingFollowsTheSampleAndTheTrustSectionsAreMerged(unittest.TestCase):
@@ -475,7 +482,7 @@ ON7 = {"billing": {"checkout": "on", "trial_days": 7, "price_cents": 1999}}
 ON14 = {"billing": {"checkout": "on", "trial_days": 14, "price_cents": 1999}}
 ON0 = {"billing": {"checkout": "on", "trial_days": 0, "price_cents": 1999}}
 
-HERO_OFF = ("Early access: the first 20 testers get 7 days free, no card. "
+HERO_OFF = ("Invite round: the first 20 testers get 7 days free, no card. "
             "Not on sale yet; planned price $19.99 a month. "
             "The record and the postseason odds are free now.")
 
@@ -510,8 +517,8 @@ class UnderNode(unittest.TestCase):
                 out = self.run_scenario(kind="labels", meta=meta)
                 self.assertFalse(out["on"])
                 for key in ("cta", "gate", "record"):
-                    self.assertEqual(out[key], "Request early access", key)
-                self.assertEqual(out["signin"], "REQUEST EARLY ACCESS")
+                    self.assertEqual(out[key], "Request an invite", key)
+                self.assertEqual(out["signin"], "REQUEST AN INVITE")
                 self.assertEqual(out["hero"], HERO_OFF)
                 for key in ("cta", "gate", "record", "hero"):
                     self.assertIsNone(re.search(r"trial|cancel anytime|checkout", out[key], re.I),

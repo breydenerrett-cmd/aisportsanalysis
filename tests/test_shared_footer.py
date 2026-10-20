@@ -106,13 +106,15 @@ class FooterMatchesTheRedesign(unittest.TestCase):
         # replace (section 5's record wording) -- this exact sentence
         # replaces it. Extended 2026-09-20 (NFL and tennis live): every pick
         # is part of a test, analysis not advice, bet at your own risk.
+        # REWRITTEN 2026-10-20 (owner ruling 2026-10-20, complete-product positioning): the "Beta ... ongoing
+        # test" opening is gone; every pick is a paper bet, published before the game and graded win or lose.
         self.assertIn(
-            "Beta. Every pick here is part of an ongoing test — published "
-            "before each game and graded as it stood at its lock, win or "
-            "lose. This is analysis, not advice. Nothing here is a "
-            "guarantee; bet at your own risk.",
+            "Every pick is a paper bet, published before the game and "
+            "graded win or lose. This is analysis, not advice. Nothing "
+            "here is a guarantee; bet at your own risk.",
             self.code,
         )
+        self.assertNotIn("Beta.", self.code.split("const SUMMARY =")[1].split(";")[0])
 
     def test_renderDisclaimerFooter_takes_an_optional_linkPrefix(self):
         # Matches sport.js's renderSportLevel(host, activeSport,

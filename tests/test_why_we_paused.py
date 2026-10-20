@@ -10,6 +10,7 @@ in docs/sales/POSTS_2026-10-17.md respect the same rules and X's 280-character l
 No network. Serving is checked through api/web.py's own route functions (skipped without FastAPI).
 """
 
+# Copy updated per owner ruling 2026-10-20, complete-product positioning (no beta / early-access / paused hedging; invite wording).
 from __future__ import annotations
 
 import re
@@ -148,19 +149,29 @@ class TheCopyIsTheAgreedAccount(unittest.TestCase):
         self.assertNotRegex(text, r"\bev\b|expected value|\bclv\b|\broi\b|\byield\b")
 
 
-class TheLandingPageLinksToIt(unittest.TestCase):
+class NothingLinksToIt(unittest.TestCase):
+    """Owner ruling 2026-10-20, complete-product positioning: the page stays in place (old posts and bookmarks
+    still resolve) but no nav, landing section, footer or other page links to it any more."""
 
-    def test_one_short_human_line_on_the_kennel_screen_links_to_it(self):
-        # owner voice pass, 2026-10-18: the honesty essays on the landing page are one human line and this link
+    def test_no_page_or_script_links_to_it(self):
+        offenders = []
+        for path in sorted((ROOT / "web").rglob("*")):
+            if path.suffix not in (".html", ".js") or path == PAGE:
+                continue
+            text = path.read_text(encoding="utf-8")
+            # a code comment may name the file; a link, href or string may not
+            for line in text.splitlines():
+                stripped = line.strip()
+                if stripped.startswith(("//", "*", "/*", "<!--")):
+                    continue
+                if "why-we-paused" in line:
+                    offenders.append(f"{path.name}: {stripped[:100]}")
+        self.assertEqual(offenders, [])
+
+    def test_the_landing_page_has_no_pause_link_or_hook(self):
         landing = re.sub(r"<!--.*?-->", "", LANDING.read_text(encoding="utf-8"), flags=re.S)
-        line = re.search(r'<p class="lbhero__straight" data-hook="kennel-straight">(.*?)</p>', landing, re.S).group(1)
-        self.assertEqual(landing.count('data-hook="hero-why-paused-link"'), 1)
-        self.assertIn('href="why-we-paused.html"', line)
-        self.assertIn("Why we stopped publishing MLB picks", line)
-        self.assertLess(len(_visible(line)), 220, "one line, not an essay")
-        self.assertEqual(landing.count("why-we-paused.html"), 1)
-        # it sits inside the first screen, before the AI desk section
-        self.assertLess(landing.index("kennel-straight"), landing.index('data-hook="hero"'))
+        self.assertNotIn("why-we-paused", landing)
+        self.assertNotIn('data-hook="hero-why-paused-link"', landing)
 
 
 class ThePostsRespectTheSameRules(unittest.TestCase):

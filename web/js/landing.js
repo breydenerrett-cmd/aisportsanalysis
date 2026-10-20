@@ -445,10 +445,9 @@ function fillRuleBlock(root, prefix, cohort, roleLabel) {
       // UFC has no results feed: a person enters each result after the
       // event (src/pipeline/ufc_results.py), so "nightly" was untrue on
       // that one tile the first time it had a graded record to show.
-      // UFC PICKS PAUSED 2026-10-03 (config/ufc_public_card.json): the tile says so
-      // before it describes how the existing record was graded.
+      // UFC has no results feed, so its tile says results are entered after each event.
       const cadence = /(^|-)ufc-/.test(prefix)
-        ? "Picks paused while we build real fight analysis. Graded after each event" : "Graded nightly";
+        ? "Graded after each event" : "Graded nightly";
       const graded_line = `${named}${cadence}${span ? `, ${span}` : ""}.`;
       const caveat = PREVIOUS_RULE_CAVEAT[prefix];
       stateNode.textContent = caveat ? `${caveat} ${graded_line}` : graded_line;
@@ -693,8 +692,9 @@ export function researchSentence(research) {
   return `${research.surviving} of ${research.read} research ideas tested have survived our checks.`;
 }
 
-// OWNER VOICE PASS, 2026-10-18: the "what is proven and what is not" section this fills was cut to one human
-// line and a link to /web/why-we-paused.html. With no node to fill, this returns before it fetches anything;
+// OWNER VOICE PASS, 2026-10-18: the "what is proven and what is not" section this fills was cut. Nothing on the
+// landing page links to the old pause explainer any more (owner ruling 2026-10-20, complete-product positioning).
+// With no node to fill, this returns before it fetches anything;
 // the sentence builders above stay because the record page's wording tests still pin them.
 async function fillProvenBlock() {
   const recordNode = document.querySelector("[data-hook='proven-record-text']");

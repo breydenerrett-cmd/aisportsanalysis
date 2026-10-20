@@ -79,7 +79,7 @@ class TheKennelsIndex(unittest.TestCase):
         f = self.page()["final"]
         self.assertEqual((f["feat"], f["name"]), (1, "Rex"))
         self.assertEqual(f["kicker"], "Featured dog · Highest paper bankroll")
-        self.assertEqual(f["note"], "7 settled bets: a small sample, not a verdict.")
+        self.assertEqual(f["note"], "7 settled bets. Ranked in full at 20.")   # owner ruling 2026-10-20, complete-product positioning
         self.assertEqual(f["bigdog"], ["132"])
 
     def test_the_activity_strip_has_member_dog_tickets_only_and_not_the_house_dogs(self):
