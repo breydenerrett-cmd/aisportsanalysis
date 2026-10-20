@@ -278,15 +278,6 @@
   .hounds-page [data-hook="hound-app"] [data-tabpanel] .hd-panel:not(.hd-scoreboard), .hounds-page [data-hook="hound-app"] [data-tabpanel] .hd-panel:not(.hd-scoreboard) + .hd-panel { padding: var(--lh-s4); }
 }
 
-/* the breeds legend under the kennels list */
-.kn-breeds { margin: var(--lh-s7) 0 var(--lh-s5); }
-.hounds-page .kn-breeds__title { font-family: var(--lh-font-display); font-size: 26px; font-weight: 700; line-height: 1.05; margin: 0 0 var(--lh-s1); }
-.kn-breeds__row { list-style: none; margin: var(--lh-s4) 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: var(--lh-s3); }
-.kn-breeds__item { display: grid; justify-items: center; gap: 2px; padding: var(--lh-s4) var(--lh-s2) var(--lh-s3); border-radius: var(--lh-r-lg); background: var(--lh-soft); text-align: center; transition: transform var(--lh-t-base) var(--lh-spring), background-color var(--lh-t-fast) var(--lh-ease); }
-.kn-breeds__item:hover { background: var(--lh-soft-2); transform: translateY(-3px); }
-.kn-breeds__dog { line-height: 0; margin-bottom: var(--lh-s2); }
-.kn-breeds__name { font-size: var(--lh-fs-base); }
-@media (max-width: 560px) { .kn-breeds__row { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
 /* ===== ROUND 2: the training camp at a glance, every section collapsed to a headline and one number ===== */
 .cp-strip { list-style: none; margin: 0 0 var(--lh-s5); padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--lh-s3); }
@@ -376,3 +367,45 @@
 /* a model's meta line ("MLB, NFL . moneyline, spread, total . by Handler 21E8's kennel") may wrap: it was nowrap and held the model column at 430px */
 .hounds-page .hd-table--board td.hd-col-model, .hounds-page .hd-table--board th.hd-col-model { white-space: normal; min-width: 0; max-width: 300px; }
 .hounds-page .hd-table--board .hd-col-model { width: 300px; }
+
+/* ===== ROUND 2: a quiet kennel is filled with a featured dog, the latest tickets from member dogs, and a thinking dog when there is nothing ===== */
+.kn-feat { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--lh-s6); align-items: center; margin: 0 0 var(--lh-s5); padding: var(--lh-s6); border-radius: 22px; box-shadow: inset 0 0 0 1px var(--lh-line), var(--lh-e1);
+  background: radial-gradient(60% 140% at 0% 0%, rgba(47, 208, 122, .12), transparent 65%), var(--lh-soft); }
+.kn-feat__dog { line-height: 0; border-radius: 28px; box-shadow: 0 18px 40px rgba(0, 0, 0, .35); }
+.kn-feat__kicker { margin: 0 0 var(--lh-s1); font: 600 var(--lh-fs-xs)/1 var(--lh-font-text); letter-spacing: .08em; text-transform: uppercase; color: var(--lh-accent); }
+.hounds-page .hd-wrap .kn-feat__name { margin: 0; font-family: var(--lh-font-display); font-size: var(--lh-fs-2xl); font-weight: 700; line-height: 1; letter-spacing: var(--lh-track-display); }
+.hounds-page .hd-wrap .kn-feat__name a { color: var(--lh-ink); text-decoration: none; }
+.kn-feat__sub { margin: var(--lh-s2) 0 0; }
+.kn-feat__stats { display: flex; flex-wrap: wrap; gap: var(--lh-s2) var(--lh-s6); margin: var(--lh-s4) 0 var(--lh-s2); }
+.kn-feat__stat dt { font-size: 13px; font-weight: 500; color: var(--lh-ink2); }
+.kn-feat__stat dd { margin: 2px 0 0; font: 700 28px/1 var(--lh-font-display); font-variant-numeric: tabular-nums; color: var(--lh-ink); }
+.kn-feat__note { margin: 0 0 var(--lh-s4); }
+.kn-feat__actions { display: flex; flex-wrap: wrap; gap: var(--lh-s2); }
+@media (max-width: 760px) { .kn-feat { grid-template-columns: minmax(0, 1fr); justify-items: start; padding: var(--lh-s5); gap: var(--lh-s4); } .kn-feat__dog svg { width: 104px; height: 104px; } }
+
+.kn-activity { margin: var(--lh-s6) 0 var(--lh-s4); }
+.hounds-page .hd-wrap .kn-activity__title { margin: 0 0 var(--lh-s3); font-size: var(--lh-fs-md); font-weight: 600; }
+.kn-activity__list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--lh-s2); }
+.kn-act-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--lh-s3); align-items: center; padding: var(--lh-s3) var(--lh-s4); border-radius: var(--lh-r-md); background: var(--lh-soft); }
+.kn-act-row__dog { line-height: 0; }
+.kn-act-row__main { display: grid; gap: 2px; min-width: 0; }
+.kn-act-row__who { font-weight: 600; color: var(--lh-ink); text-decoration: none; }
+.kn-act-row__pick { font-size: var(--lh-fs-sm); color: var(--lh-ink2); overflow-wrap: anywhere; }
+.kn-act-row__game { overflow-wrap: anywhere; }
+.kn-act-row__res { white-space: nowrap; }
+
+.kn-quiet { display: grid; justify-items: center; gap: var(--lh-s3); padding: var(--lh-s7) var(--lh-s4); margin: var(--lh-s5) 0; border-radius: var(--lh-r-lg); background: var(--lh-soft); text-align: center; }
+.kn-quiet__dog { line-height: 0; border-radius: 26px; }
+.kn-quiet__text { margin: 0; max-width: 32em; color: var(--lh-mute); font-size: var(--lh-fs-base); line-height: 1.5; }
+.kn-empty .kn-quiet { background: none; padding: var(--lh-s4); }
+
+/* my kennel: the four actions are a 2x2 grid on a phone (the fourth, Open, was an orphan on a line of its own); stat labels are bigger and brighter */
+.kn-stat dt { font-size: 13px; color: var(--lh-ink2, #C3C9D3); }
+@media (max-width: 760px) {
+  .kn-card__actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--lh-s2); width: 100%; }
+  .kn-card__actions .kn-act { width: 100%; justify-content: center; text-align: center; min-height: 44px; }
+}
+.kn-act-row__res { justify-self: end; padding: 3px 10px; border-radius: var(--lh-r-pill); background: var(--lh-soft-2); color: var(--lh-ink2); font: 600 11px/1.4 var(--lh-font-text); letter-spacing: .06em; text-transform: uppercase; }
+.kn-act-row[data-status="pending"] .kn-act-row__res { color: #F2B84B; background: rgba(242, 184, 75, .12); }
+.kn-act-row[data-status="won"] .kn-act-row__res, .kn-act-row[data-status="win"] .kn-act-row__res { color: var(--lh-win); background: rgba(47, 208, 122, .12); }
+.kn-act-row[data-status="lost"] .kn-act-row__res, .kn-act-row[data-status="loss"] .kn-act-row__res { color: var(--lh-loss); background: rgba(255, 107, 122, .12); }

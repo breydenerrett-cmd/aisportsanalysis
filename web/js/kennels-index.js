@@ -8,8 +8,8 @@
 
 import { apiGet } from "./api.js";
 import { h, clearNode, describeError, kennelName } from "./hounds-core.js";
-import { dogFace, dogBadge, DEFAULT_LOOK, lookFor } from "./dog-avatar.js";
-import { VIBE_BREED } from "./dog-rig.js";
+import { dogFace, dogBadge, DEFAULT_LOOK } from "./dog-avatar.js";
+import { featuredDog, featuredCard, activityStrip, quietKennel, fetchStream } from "./kennel-extras.js";
 import { bankrollNow, returnPctOf, fmtUsd, fmtPct } from "./hounds-board.js";
 
 const q = (hook) => document.querySelector(`[data-hook='${hook}']`);
@@ -34,17 +34,6 @@ export function kennelCard(kennel, index = 0) {
     h("span", { class: "kn-kcard__go", "aria-hidden": "true", text: "→" })]);
 }
 
-/** The five breeds and the vibe each one stands for: a legend for the dogs on every page, and something to look at in a quiet kennel list. */
-export function breedStrip() {
-  const word = (s) => s.charAt(0).toUpperCase() + s.slice(1);
-  return h("section", { class: "kn-breeds", "data-hook": "kennels-breeds", "aria-label": "The breeds" }, [
-    h("h3", { class: "kn-breeds__title", text: "The breeds" }),
-    h("p", { class: "hd-fine", text: "A dog's breed follows its vibe. A look (coat, eyes, gear) is the owner's to choose." }),
-    h("ul", { class: "kn-breeds__row" }, Object.entries(VIBE_BREED).map(([vibe, breed]) => h("li", { class: "kn-breeds__item", "data-breed": breed }, [
-      h("span", { class: "kn-breeds__dog", "aria-hidden": "true" }, [dogBadge(lookFor(breed), { size: 64, breed, mood: "idle" })]),
-      h("strong", { class: "kn-breeds__name", text: word(breed) }), h("span", { class: "hd-fine", text: `${word(vibe)} vibe` })])))]);
-}
-
 export async function renderKennels() {
   const host = q("kennels-index");
   if (!host) return null;
@@ -63,11 +52,13 @@ export async function renderKennels() {
   if (!list.length) {
     host.appendChild(h("div", { class: "kn-empty", "data-hook": "kennels-empty" }, [
       h("h3", { text: "No kennels yet" }),
-      h("p", { class: "hd-muted", text: "The first member to build a dog starts one." }),
-      h("a", { class: "lh-btn lh-btn--solid", href: "build-a-hound.html", text: "Build a dog" })]));
-    host.appendChild(breedStrip());
+      quietKennel("The first member to build a dog starts one. Say a strategy in plain English and it becomes a dog with a paper bankroll.")]));
     return list;
   }
+  // ROUND 2 (2026-10-19): a quiet list is filled with a featured dog and the latest tickets from member dogs, not a legend of breeds.
+  const allDogs = list.flatMap((k) => (k.dogs || []).map((d) => Object.assign({ _kennel: kennelName(k.display) }, d)));
+  const pick = featuredDog(allDogs);
+  if (pick) host.appendChild(featuredCard(pick, pick.dog._kennel));
   const grid = h("div", { class: "kn-kgrid", "data-hook": "kennels-grid" }, list.map((k, i) => kennelCard(k, i)));
   // the way in: a kennel is a member's dogs, so the last card starts yours
   grid.appendChild(h("a", { class: "kn-newkennel", href: "build-a-hound.html", "data-hook": "kennels-new" }, [
@@ -76,7 +67,8 @@ export async function renderKennels() {
       h("span", { class: "kn-newkennel__sub", text: "Say a strategy in plain English." })]),
     h("span", { class: "kn-newkennel__go", "aria-hidden": "true", text: "→" })]));
   host.appendChild(grid);
-  host.appendChild(breedStrip());
+  const strip = activityStrip(await fetchStream(), allDogs);
+  if (strip) host.appendChild(strip);
   return list;
 }
 
