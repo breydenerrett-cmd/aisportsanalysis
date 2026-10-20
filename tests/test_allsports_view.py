@@ -98,8 +98,10 @@ class TheCatalog(unittest.TestCase):
         body = {f["code"]: f for f in catalog.public_catalog()}
         self.assertEqual(body["NBA"]["markets"], ["h2h", "spreads", "totals"])
         self.assertTrue(body["NBA"]["dog_menu"])
-        self.assertFalse(body["TENNIS"]["dog_menu"])
-        self.assertIn("scores", body["TENNIS"]["note"].lower())
+        self.assertTrue(body["TENNIS"]["dog_menu"])
+        self.assertEqual(body["TENNIS"]["settles"], "free_results")
+        self.assertIn("espn", body["TENNIS"]["note"].lower())
+        self.assertFalse(body["BOXING"]["dog_menu"])
         self.assertEqual(body["SOCCER"]["label"], "Soccer")
 
     def test_the_catalog_file_is_valid_json_with_the_documented_keys(self):
@@ -109,7 +111,7 @@ class TheCatalog(unittest.TestCase):
             for key in ("label", "prefixes", "markets", "since_margin_days", "live_window_hours", "capture", "settles"):
                 self.assertIn(key, fam, (code, key))
             self.assertIn(fam["capture"], ("allsports", "dedicated"))
-            self.assertIn(fam["settles"], ("existing", "odds_api_scores", "none"))
+            self.assertIn(fam["settles"], ("existing", "odds_api_scores", "free_results", "none"))
 
     def test_a_missing_catalog_falls_back_to_mlb_and_nfl(self):
         data = catalog.load("/no/such/file.json")

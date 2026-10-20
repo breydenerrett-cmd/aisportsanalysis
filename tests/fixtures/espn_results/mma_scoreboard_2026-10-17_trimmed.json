@@ -1,0 +1,406 @@
+{
+ "leagues": [
+  {
+   "id": "3321",
+   "name": "Ultimate Fighting Championship"
+  }
+ ],
+ "events": [
+  {
+   "id": "600060773",
+   "name": "UFC Fight Night: Buckley vs. Malott",
+   "date": "2026-10-17T21:00Z",
+   "status": {
+    "type": {
+     "id": "3",
+     "name": "STATUS_FINAL",
+     "state": "post",
+     "completed": true,
+     "description": "Final",
+     "detail": "Final",
+     "shortDetail": "Final"
+    }
+   },
+   "competitions": [
+    {
+     "id": "401919643",
+     "uid": "s:3301~l:3321~e:600060773~c:401919643",
+     "date": "2026-10-17T21:00Z",
+     "endDate": "2026-10-17T21:00Z",
+     "type": {
+      "id": "970",
+      "abbreviation": "Bantamweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": true,
+     "recent": false,
+     "competitors": [
+      {
+       "id": "5044361",
+       "uid": "s:3301~a:5044361",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "SuYoung You",
+        "displayName": "SuYoung You",
+        "shortName": "S. You"
+       }
+      },
+      {
+       "id": "5282412",
+       "uid": "s:3301~a:5282412",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Cody Chovancek",
+        "displayName": "Cody Chovancek",
+        "shortName": "C. Chovancek"
+       }
+      }
+     ],
+     "status": {
+      "clock": 259.0,
+      "displayClock": "4:19",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2026-10-17T21:00Z",
+     "broadcast": "Paramount+",
+     "highlights": []
+    },
+    {
+     "id": "401929675",
+     "uid": "s:3301~l:3321~e:600060773~c:401929675",
+     "date": "2026-10-17T21:00Z",
+     "endDate": "2026-10-17T21:00Z",
+     "type": {
+      "id": "1007",
+      "abbreviation": "W Flyweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": true,
+     "recent": false,
+     "competitors": [
+      {
+       "id": "4026490",
+       "uid": "s:3301~a:4026490",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Katlyn Cerminara",
+        "displayName": "Katlyn Cerminara",
+        "shortName": "K. Cerminara"
+       }
+      },
+      {
+       "id": "5130806",
+       "uid": "s:3301~a:5130806",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Mackenzie Stiller",
+        "displayName": "Mackenzie Stiller",
+        "shortName": "M. Stiller"
+       }
+      }
+     ],
+     "status": {
+      "clock": 286.0,
+      "displayClock": "4:46",
+      "period": 1,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2026-10-17T21:00Z",
+     "broadcast": "Paramount+",
+     "highlights": []
+    },
+    {
+     "id": "401909783",
+     "uid": "s:3301~l:3321~e:600060773~c:401909783",
+     "date": "2026-10-18T00:00Z",
+     "endDate": "2026-10-18T00:00Z",
+     "type": {
+      "id": "970",
+      "abbreviation": "Bantamweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": true,
+     "recent": false,
+     "competitors": [
+      {
+       "id": "4877916",
+       "uid": "s:3301~a:4877916",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Louis Jourdain",
+        "displayName": "Louis Jourdain",
+        "shortName": "L. Jourdain"
+       }
+      },
+      {
+       "id": "5123311",
+       "uid": "s:3301~a:5123311",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Timmy Cuamba",
+        "displayName": "Timmy Cuamba",
+        "shortName": "T. Cuamba"
+       }
+      }
+     ],
+     "status": {
+      "clock": 168.0,
+      "displayClock": "2:48",
+      "period": 2,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2026-10-18T00:00Z",
+     "broadcast": "Paramount+",
+     "highlights": []
+    },
+    {
+     "id": "401908372",
+     "uid": "s:3301~l:3321~e:600060773~c:401908372",
+     "date": "2026-10-18T00:00Z",
+     "endDate": "2026-10-18T00:00Z",
+     "type": {
+      "id": "972",
+      "abbreviation": "Middleweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": true,
+     "recent": false,
+     "competitors": [
+      {
+       "id": "4329444",
+       "uid": "s:3301~a:4329444",
+       "type": "athlete",
+       "order": 2,
+       "winner": false,
+       "athlete": {
+        "fullName": "Kyle Daukaus",
+        "displayName": "Kyle Daukaus",
+        "shortName": "K. Daukaus"
+       }
+      },
+      {
+       "id": "4415883",
+       "uid": "s:3301~a:4415883",
+       "type": "athlete",
+       "order": 1,
+       "winner": true,
+       "athlete": {
+        "fullName": "Marc-Andre Barriault",
+        "displayName": "Marc-Andre Barriault",
+        "shortName": "M. Barriault"
+       }
+      }
+     ],
+     "status": {
+      "clock": 268.0,
+      "displayClock": "4:28",
+      "period": 1,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2026-10-18T00:00Z",
+     "broadcast": "Paramount+",
+     "highlights": []
+    },
+    {
+     "id": "401897729",
+     "uid": "s:3301~l:3321~e:600060773~c:401897729",
+     "date": "2026-10-18T00:00Z",
+     "endDate": "2026-10-18T00:00Z",
+     "type": {
+      "id": "1007",
+      "abbreviation": "W Flyweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": true,
+     "recent": false,
+     "competitors": [
+      {
+       "id": "4350796",
+       "uid": "s:3301~a:4350796",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Erin Blanchfield",
+        "displayName": "Erin Blanchfield",
+        "shortName": "E. Blanchfield"
+       }
+      },
+      {
+       "id": "4835135",
+       "uid": "s:3301~a:4835135",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Jasmine Jasudavicius",
+        "displayName": "Jasmine Jasudavicius",
+        "shortName": "J. Jasudavicius"
+       }
+      }
+     ],
+     "status": {
+      "clock": 300.0,
+      "displayClock": "5:00",
+      "period": 3,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 3
+      }
+     },
+     "startDate": "2026-10-18T00:00Z",
+     "broadcast": "Paramount+",
+     "highlights": []
+    },
+    {
+     "id": "401897388",
+     "uid": "s:3301~l:3321~e:600060773~c:401897388",
+     "date": "2026-10-18T00:00Z",
+     "endDate": "2026-10-18T00:00Z",
+     "type": {
+      "id": "969",
+      "abbreviation": "Welterweight"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "playByPlayAvailable": true,
+     "recent": false,
+     "competitors": [
+      {
+       "id": "3165120",
+       "uid": "s:3301~a:3165120",
+       "type": "athlete",
+       "order": 2,
+       "winner": true,
+       "athlete": {
+        "fullName": "Mike Malott",
+        "displayName": "Mike Malott",
+        "shortName": "M. Malott"
+       }
+      },
+      {
+       "id": "4024714",
+       "uid": "s:3301~a:4024714",
+       "type": "athlete",
+       "order": 1,
+       "winner": false,
+       "athlete": {
+        "fullName": "Joaquin Buckley",
+        "displayName": "Joaquin Buckley",
+        "shortName": "J. Buckley"
+       }
+      }
+     ],
+     "status": {
+      "clock": 152.0,
+      "displayClock": "2:32",
+      "period": 2,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "featured": false
+     },
+     "format": {
+      "regulation": {
+       "periods": 5
+      }
+     },
+     "startDate": "2026-10-18T00:00Z",
+     "broadcast": "Paramount+",
+     "highlights": []
+    }
+   ]
+  }
+ ]
+}

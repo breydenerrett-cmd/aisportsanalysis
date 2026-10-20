@@ -127,6 +127,30 @@ CONFIRMED_ALIASES: Dict[str, ConfirmedAlias] = {
             "'Mick' and Wikipedia states no legal first name, so this rests on bout "
             "identity, not on a biography. Remove the entry if you disagree."),
     ),
+    # Added 2026-10-20 with the member-dog MMA results path (src/pipeline/allsports_free_results.py), from the
+    # UFC Fight Night of 2026-10-17 (ESPN event 600060773), where the odds feed and ESPN spelled three
+    # fighters differently and the grader (rightly) refused to guess. Each rests on bout identity: the same
+    # opponent, the same card, and no other fighter on the card who fits.
+    names.normalise("Su Young You"): ConfirmedAlias(
+        espn_athlete_id="5044361",
+        espn_name="SuYoung You",
+        evidence=("2026-10-17, ESPN event 600060773, bout 401919643: the odds feed published 'Cody "
+                  "Chovancek vs Su Young You', ESPN lists 'Cody Chovancek vs SuYoung You' (one word)."),
+    ),
+    names.normalise("Timothy Cuamba"): ConfirmedAlias(
+        espn_athlete_id="5123311",
+        espn_name="Timmy Cuamba",
+        evidence=("2026-10-17, ESPN event 600060773, bout 401909783: the odds feed published 'Louis "
+                  "Jourdain vs Timothy Cuamba', ESPN lists 'Louis Jourdain vs Timmy Cuamba'."),
+    ),
+    names.normalise("Katlyn Chookagian"): ConfirmedAlias(
+        espn_athlete_id="4026490",
+        espn_name="Katlyn Cerminara",
+        evidence=("2026-10-17, ESPN event 600060773, bout 401929675: the odds feed published 'Mackenzie "
+                  "Stiller vs Katlyn Chookagian', ESPN lists 'Mackenzie Stiller vs Katlyn Cerminara' "
+                  "(her married name; she is the UFC flyweight long billed as Chookagian). Without this "
+                  "entry the grader reads Stiller's opponent as a replacement for a missing 'Chookagian'."),
+    ),
 }
 
 

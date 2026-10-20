@@ -4184,6 +4184,16 @@ def cmd_allsports(args) -> int:
             print(f"    halt: {result['halt']}")
         for key, why in sorted(result["skipped"].items()):
             print(f"    skipped {key}: {why}")
+        # Tennis and MMA are not on /scores: their results come from ESPN, free (allsports_free_results.py).
+        try:
+            from src.pipeline import allsports_free_results
+
+            free = allsports_free_results.run(plan_only=plan)
+        except Exception as exc:  # noqa: BLE001
+            print(f"ERROR: allsports free results failed: {exc}", file=sys.stderr)
+            return EXIT_ERROR
+        for line in allsports_free_results.summary_lines(free):
+            print(line)
         return EXIT_OK
 
     print(f"unknown allsports subcommand: {sub}")
@@ -4883,7 +4893,8 @@ def build_parser() -> argparse.ArgumentParser:
     allsports_capture_cmd.add_argument(
         "--plan", action="store_true", help="free discovery and event listing only; print the plan, spend nothing")
     allsports_scores_cmd = allsports_sub.add_parser(
-        "scores", help="poll The Odds API scores for keys whose captured games finished (settlement input)")
+        "scores", help="poll The Odds API scores for keys whose captured games finished, and the free ESPN "
+        "results for tennis and MMA (settlement input)")
     allsports_scores_cmd.add_argument(
         "--plan", action="store_true", help="print the keys that would be polled; spend nothing")
 

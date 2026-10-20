@@ -1,0 +1,755 @@
+{
+ "leagues": [
+  {
+   "name": "ATP",
+   "abbreviation": "ATP"
+  }
+ ],
+ "events": [
+  {
+   "id": "440-2026",
+   "name": "BNP Paribas Fortis European Open",
+   "date": "2026-10-17T04:00Z",
+   "endDate": "2026-10-26T03:59Z",
+   "groupings": [
+    {
+     "grouping": {
+      "displayName": "Men's Singles"
+     },
+     "competitions": [
+      {
+       "id": "185037",
+       "date": "2026-10-19T10:05Z",
+       "startDate": "2026-10-19T10:05Z",
+       "status": {
+        "period": 2,
+        "type": {
+         "id": "3",
+         "name": "STATUS_FINAL",
+         "state": "post",
+         "completed": true,
+         "description": "Final",
+         "detail": "Final",
+         "shortDetail": "Final"
+        }
+       },
+       "notes": [
+        {
+         "text": "Jaume Munar (ESP) bt Federico Cina (ITA) 6-4 6-3",
+         "type": "event"
+        }
+       ],
+       "competitors": [
+        {
+         "id": "2709",
+         "type": "athlete",
+         "order": 2,
+         "homeAway": "away",
+         "winner": true,
+         "linescores": [
+          {
+           "value": 6.0,
+           "winner": true
+          },
+          {
+           "value": 6.0,
+           "winner": true
+          }
+         ],
+         "athlete": {
+          "displayName": "Jaume Munar",
+          "shortName": "J. Munar",
+          "fullName": "Jaume Munar"
+         }
+        },
+        {
+         "id": "14601",
+         "type": "athlete",
+         "order": 1,
+         "homeAway": "home",
+         "winner": false,
+         "linescores": [
+          {
+           "value": 4.0,
+           "winner": false
+          },
+          {
+           "value": 3.0,
+           "winner": false
+          }
+         ],
+         "athlete": {
+          "displayName": "Federico Cina",
+          "shortName": "F. Cina",
+          "fullName": "Federico Cina"
+         }
+        }
+       ],
+       "tournamentId": 440,
+       "type": {
+        "id": "1",
+        "text": "Men's Singles",
+        "slug": "mens-singles"
+       },
+       "round": {
+        "id": "1",
+        "displayName": "Round 1"
+       }
+      },
+      {
+       "id": "185038",
+       "date": "2026-10-20T09:30Z",
+       "startDate": "2026-10-20T09:30Z",
+       "status": {
+        "period": 1,
+        "type": {
+         "id": "1",
+         "name": "STATUS_SCHEDULED",
+         "state": "pre",
+         "completed": false,
+         "description": "Scheduled",
+         "detail": "Tue, October 20th at 5:30 AM EDT",
+         "shortDetail": "10/20 - 5:30 AM EDT"
+        }
+       },
+       "notes": [],
+       "competitors": [
+        {
+         "id": "4008",
+         "type": "athlete",
+         "order": 2,
+         "homeAway": "away",
+         "athlete": {
+          "displayName": "Juan Manuel Cerundolo",
+          "shortName": "J. Cerundolo",
+          "fullName": "Juan Manuel Cerundolo"
+         }
+        },
+        {
+         "id": "9992",
+         "type": "athlete",
+         "order": 1,
+         "homeAway": "home",
+         "curatedRank": {
+          "current": 8
+         },
+         "athlete": {
+          "displayName": "Mariano Navone",
+          "shortName": "M. Navone",
+          "fullName": "Mariano Navone"
+         }
+        }
+       ],
+       "tournamentId": 440,
+       "type": {
+        "id": "1",
+        "text": "Men's Singles",
+        "slug": "mens-singles"
+       },
+       "round": {
+        "id": "1",
+        "displayName": "Round 1"
+       }
+      }
+     ]
+    },
+    {
+     "grouping": {
+      "displayName": "Men's Doubles"
+     },
+     "competitions": [
+      {
+       "id": "185078",
+       "date": "2026-10-19T10:00Z",
+       "startDate": "2026-10-19T10:00Z",
+       "status": {
+        "period": 2,
+        "type": {
+         "id": "3",
+         "name": "STATUS_FINAL",
+         "state": "post",
+         "completed": true,
+         "description": "Final",
+         "detail": "Final",
+         "shortDetail": "Final"
+        }
+       },
+       "notes": [
+        {
+         "text": "Constantin Frantzén (GER) & Robert Galloway (USA) bt Petr Nouza (CZE) & Michael Venus (NZL) 6-4 6-2",
+         "type": "event"
+        }
+       ],
+       "competitors": [
+        {
+         "id": "11568-3627",
+         "type": "team",
+         "order": 2,
+         "homeAway": "away",
+         "winner": true,
+         "linescores": [
+          {
+           "value": 6.0,
+           "winner": true
+          },
+          {
+           "value": 6.0,
+           "winner": true
+          }
+         ],
+         "roster": {
+          "displayName": "Constantin Frantzén / Robert Galloway",
+          "shortDisplayName": "C. Frantzén / R. Galloway"
+         }
+        },
+        {
+         "id": "3925-1919",
+         "type": "team",
+         "order": 1,
+         "homeAway": "home",
+         "winner": false,
+         "linescores": [
+          {
+           "value": 4.0,
+           "winner": false
+          },
+          {
+           "value": 2.0,
+           "winner": false
+          }
+         ],
+         "roster": {
+          "displayName": "Petr Nouza / Michael Venus",
+          "shortDisplayName": "P. Nouza / M. Venus"
+         }
+        }
+       ],
+       "tournamentId": 440,
+       "type": {
+        "id": "3",
+        "text": "Men's Doubles",
+        "slug": "mens-doubles"
+       },
+       "round": {
+        "id": "1",
+        "displayName": "Round 1"
+       }
+      },
+      {
+       "id": "185080",
+       "date": "2026-10-23T04:00Z",
+       "startDate": "2026-10-23T04:00Z",
+       "status": {
+        "period": 1,
+        "type": {
+         "id": "5",
+         "name": "STATUS_CANCELED",
+         "state": "post",
+         "completed": false,
+         "description": "Canceled",
+         "detail": "Canceled",
+         "shortDetail": "Canceled"
+        }
+       },
+       "notes": [],
+       "competitors": [
+        {
+         "id": "-4",
+         "type": "athlete",
+         "order": 2,
+         "homeAway": "away",
+         "athlete": {
+          "displayName": "TBD",
+          "shortName": "TBD",
+          "fullName": "TBD"
+         }
+        },
+        {
+         "id": "-3",
+         "type": "athlete",
+         "order": 1,
+         "homeAway": "home",
+         "athlete": {
+          "displayName": "TBD",
+          "shortName": "TBD",
+          "fullName": "TBD"
+         }
+        }
+       ],
+       "tournamentId": 440,
+       "type": {
+        "id": "3",
+        "text": "Men's Doubles",
+        "slug": "mens-doubles"
+       },
+       "round": {
+        "id": "6",
+        "displayName": "Semifinal"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "708-2026",
+   "name": "Almaty Open",
+   "date": "2026-10-17T04:00Z",
+   "endDate": "2026-10-26T03:59Z",
+   "groupings": [
+    {
+     "grouping": {
+      "displayName": "Men's Singles"
+     },
+     "competitions": [
+      {
+       "id": "185003",
+       "date": "2026-10-19T06:35Z",
+       "startDate": "2026-10-19T06:35Z",
+       "status": {
+        "period": 3,
+        "type": {
+         "id": "3",
+         "name": "STATUS_FINAL",
+         "state": "post",
+         "completed": true,
+         "description": "Final",
+         "detail": "Final",
+         "shortDetail": "Final"
+        }
+       },
+       "notes": [
+        {
+         "text": "Facundo Diaz Acosta (ARG) bt (8) Thiago Agustin Tirante (ARG) 6-7 (3-7) 6-1 6-4",
+         "type": "event"
+        }
+       ],
+       "competitors": [
+        {
+         "id": "3694",
+         "type": "athlete",
+         "order": 2,
+         "homeAway": "away",
+         "winner": true,
+         "linescores": [
+          {
+           "value": 6.0,
+           "tiebreak": 3,
+           "winner": false
+          },
+          {
+           "value": 6.0,
+           "winner": true
+          },
+          {
+           "value": 6.0,
+           "winner": true
+          }
+         ],
+         "athlete": {
+          "displayName": "Facundo Diaz Acosta",
+          "shortName": "F. Diaz Acosta",
+          "fullName": "Facundo Diaz Acosta"
+         }
+        },
+        {
+         "id": "4010",
+         "type": "athlete",
+         "order": 1,
+         "homeAway": "home",
+         "winner": false,
+         "curatedRank": {
+          "current": 8
+         },
+         "linescores": [
+          {
+           "value": 7.0,
+           "tiebreak": 7,
+           "winner": true
+          },
+          {
+           "value": 1.0,
+           "winner": false
+          },
+          {
+           "value": 4.0,
+           "winner": false
+          }
+         ],
+         "athlete": {
+          "displayName": "Thiago Agustin Tirante",
+          "shortName": "T. Tirante",
+          "fullName": "Thiago Agustin Tirante"
+         }
+        }
+       ],
+       "tournamentId": 708,
+       "type": {
+        "id": "1",
+        "text": "Men's Singles",
+        "slug": "mens-singles"
+       },
+       "round": {
+        "id": "1",
+        "displayName": "Round 1"
+       }
+      },
+      {
+       "id": "184992",
+       "date": "2026-10-19T08:05Z",
+       "startDate": "2026-10-19T08:05Z",
+       "status": {
+        "period": 3,
+        "type": {
+         "id": "3",
+         "name": "STATUS_FINAL",
+         "state": "post",
+         "completed": true,
+         "description": "Final",
+         "detail": "Final",
+         "shortDetail": "Final"
+        }
+       },
+       "notes": [
+        {
+         "text": "Adrian Mannarino (FRA) bt Aleksandar Vukic (AUS) 7-6 (7-4) 4-6 6-3",
+         "type": "event"
+        }
+       ],
+       "competitors": [
+        {
+         "id": "3471",
+         "type": "athlete",
+         "order": 2,
+         "homeAway": "away",
+         "winner": false,
+         "linescores": [
+          {
+           "value": 6.0,
+           "tiebreak": 4,
+           "winner": false
+          },
+          {
+           "value": 6.0,
+           "winner": true
+          },
+          {
+           "value": 3.0,
+           "winner": false
+          }
+         ],
+         "athlete": {
+          "displayName": "Aleksandar Vukic",
+          "shortName": "A. Vukic",
+          "fullName": "Aleksandar Vukic"
+         }
+        },
+        {
+         "id": "1266",
+         "type": "athlete",
+         "order": 1,
+         "homeAway": "home",
+         "winner": true,
+         "linescores": [
+          {
+           "value": 7.0,
+           "tiebreak": 7,
+           "winner": true
+          },
+          {
+           "value": 4.0,
+           "winner": false
+          },
+          {
+           "value": 6.0,
+           "winner": true
+          }
+         ],
+         "athlete": {
+          "displayName": "Adrian Mannarino",
+          "shortName": "A. Mannarino",
+          "fullName": "Adrian Mannarino"
+         }
+        }
+       ],
+       "tournamentId": 708,
+       "type": {
+        "id": "1",
+        "text": "Men's Singles",
+        "slug": "mens-singles"
+       },
+       "round": {
+        "id": "1",
+        "displayName": "Round 1"
+       }
+      },
+      {
+       "id": "185008",
+       "date": "2026-10-19T14:40Z",
+       "startDate": "2026-10-19T14:40Z",
+       "status": {
+        "period": 2,
+        "type": {
+         "id": "3",
+         "name": "STATUS_FINAL",
+         "state": "post",
+         "completed": true,
+         "description": "Final",
+         "detail": "Final",
+         "shortDetail": "Final"
+        }
+       },
+       "notes": [
+        {
+         "text": "Mikhail Kukushkin (KAZ) bt Stefanos Sakellaridis (GRE) 7-6 (7-4) 7-6 (7-3)",
+         "type": "event"
+        }
+       ],
+       "competitors": [
+        {
+         "id": "12284",
+         "type": "athlete",
+         "order": 2,
+         "homeAway": "away",
+         "winner": false,
+         "linescores": [
+          {
+           "value": 6.0,
+           "tiebreak": 4,
+           "winner": false
+          },
+          {
+           "value": 6.0,
+           "tiebreak": 3,
+           "winner": false
+          }
+         ],
+         "athlete": {
+          "displayName": "Stefanos Sakellaridis",
+          "shortName": "S. Sakellaridis",
+          "fullName": "Stefanos Sakellaridis"
+         }
+        },
+        {
+         "id": "1141",
+         "type": "athlete",
+         "order": 1,
+         "homeAway": "home",
+         "winner": true,
+         "linescores": [
+          {
+           "value": 7.0,
+           "tiebreak": 7,
+           "winner": true
+          },
+          {
+           "value": 7.0,
+           "tiebreak": 7,
+           "winner": true
+          }
+         ],
+         "athlete": {
+          "displayName": "Mikhail Kukushkin",
+          "shortName": "M. Kukushkin",
+          "fullName": "Mikhail Kukushkin"
+         }
+        }
+       ],
+       "tournamentId": 708,
+       "type": {
+        "id": "1",
+        "text": "Men's Singles",
+        "slug": "mens-singles"
+       },
+       "round": {
+        "id": "1",
+        "displayName": "Round 1"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "110-2026",
+   "name": "Grand Prix Auvergne-Rhône-Alpes",
+   "date": "2026-10-18T04:00Z",
+   "endDate": "2026-10-26T03:59Z",
+   "groupings": [
+    {
+     "grouping": {
+      "displayName": "Men's Singles"
+     },
+     "competitions": [
+      {
+       "id": "186999",
+       "date": "2026-10-19T09:00Z",
+       "startDate": "2026-10-19T09:00Z",
+       "status": {
+        "period": 3,
+        "type": {
+         "id": "3",
+         "name": "STATUS_FINAL",
+         "state": "post",
+         "completed": true,
+         "description": "Final",
+         "detail": "Final",
+         "shortDetail": "Final"
+        }
+       },
+       "notes": [
+        {
+         "text": "Pierre-Hugues Herbert (FRA) bt Maxim Mrva (CZE) 4-6 6-3 6-1",
+         "type": "event"
+        }
+       ],
+       "competitors": [
+        {
+         "id": "13747",
+         "type": "athlete",
+         "order": 2,
+         "homeAway": "away",
+         "winner": false,
+         "linescores": [
+          {
+           "value": 6.0,
+           "winner": true
+          },
+          {
+           "value": 3.0,
+           "winner": false
+          },
+          {
+           "value": 1.0,
+           "winner": false
+          }
+         ],
+         "athlete": {
+          "displayName": "Maxim Mrva",
+          "shortName": "M. Mrva",
+          "fullName": "Maxim Mrva"
+         }
+        },
+        {
+         "id": "1613",
+         "type": "athlete",
+         "order": 1,
+         "homeAway": "home",
+         "winner": true,
+         "linescores": [
+          {
+           "value": 4.0,
+           "winner": false
+          },
+          {
+           "value": 6.0,
+           "winner": true
+          },
+          {
+           "value": 6.0,
+           "winner": true
+          }
+         ],
+         "athlete": {
+          "displayName": "Pierre-Hugues Herbert",
+          "shortName": "P. Herbert",
+          "fullName": "Pierre-Hugues Herbert"
+         }
+        }
+       ],
+       "tournamentId": 110,
+       "type": {
+        "id": "1",
+        "text": "Men's Singles",
+        "slug": "mens-singles"
+       },
+       "round": {
+        "id": "14",
+        "displayName": "Qualifying Final"
+       }
+      },
+      {
+       "id": "187001",
+       "date": "2026-10-19T10:30Z",
+       "startDate": "2026-10-19T10:30Z",
+       "status": {
+        "period": 1,
+        "type": {
+         "id": "38",
+         "name": "STATUS_RETIRED",
+         "state": "post",
+         "completed": true,
+         "description": "Retired",
+         "detail": "Retired",
+         "shortDetail": "Retired"
+        }
+       },
+       "notes": [
+        {
+         "text": "Kyrian Jacquet (FRA) bt Michael Mmoh (USA) 7-6 (7-1) ret",
+         "type": "event"
+        }
+       ],
+       "competitors": [
+        {
+         "id": "2625",
+         "type": "athlete",
+         "order": 2,
+         "homeAway": "away",
+         "winner": false,
+         "linescores": [
+          {
+           "value": 6.0,
+           "tiebreak": 1,
+           "winner": false
+          }
+         ],
+         "athlete": {
+          "displayName": "Michael Mmoh",
+          "shortName": "M. Mmoh",
+          "fullName": "Michael Mmoh"
+         }
+        },
+        {
+         "id": "7509",
+         "type": "athlete",
+         "order": 1,
+         "homeAway": "home",
+         "winner": true,
+         "linescores": [
+          {
+           "value": 7.0,
+           "tiebreak": 7,
+           "winner": false
+          }
+         ],
+         "athlete": {
+          "displayName": "Kyrian Jacquet",
+          "shortName": "K. Jacquet",
+          "fullName": "Kyrian Jacquet"
+         }
+        }
+       ],
+       "tournamentId": 110,
+       "type": {
+        "id": "1",
+        "text": "Men's Singles",
+        "slug": "mens-singles"
+       },
+       "round": {
+        "id": "14",
+        "displayName": "Qualifying Final"
+       }
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "provider": {
+  "id": "100",
+  "name": "Draft Kings",
+  "displayName": "Draft Kings",
+  "priority": 1
+ }
+}

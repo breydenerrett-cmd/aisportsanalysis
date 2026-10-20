@@ -343,22 +343,13 @@ class TestMatchWinner(unittest.TestCase):
         self.assertIsNone(result)
 
     def test_match_winner_missing_field(self):
-        """match_winner returns None if the winner field is not in the row."""
+        """A row with no winner (a void row, or a malformed one) is never read as side b."""
         row = {
             "player_a": "Alice",
             "player_b": "Bob",
         }
-        result = match_winner(row, "Alice", "Bob")
-        # When "winner" is missing, it defaults to player_b lookup.
-        # Since row["winner"] doesn't exist, it returns None via player_b.
-        # Actually, let's check the logic: if row.get("winner") == "a" is False,
-        # so winner_key becomes "player_b". If player_b is "Bob", and away_name is "Bob",
-        # then match_winner should return "away".
-        # Let me re-check the implementation...
-        # Actually, row.get("winner") returns None when key is missing.
-        # None == "a" is False, so winner_key = "player_b".
-        # This should work.
-        self.assertEqual(result, "away")
+        self.assertIsNone(match_winner(row, "Alice", "Bob"))
+        self.assertIsNone(match_winner(dict(row, winner=None), "Alice", "Bob"))
 
 
 class TestResultsFeedInterface(unittest.TestCase):

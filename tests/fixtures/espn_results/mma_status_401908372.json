@@ -1,0 +1,30 @@
+{
+ "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600060773/competitions/401908372/status?lang=en&region=us",
+ "clock": 268.0,
+ "displayClock": "4:28",
+ "period": 1,
+ "type": {
+  "id": "3",
+  "name": "STATUS_FINAL",
+  "state": "post",
+  "completed": true,
+  "description": "Final",
+  "detail": "Final",
+  "shortDetail": "Final"
+ },
+ "result": {
+  "id": 356,
+  "name": "kotko",
+  "displayName": "KO/TKO",
+  "description": "Elbows",
+  "displayDescription": "Elbows",
+  "shortDisplayName": "KO/TKO",
+  "target": {
+   "id": 122,
+   "name": "head",
+   "description": "Head",
+   "displayDescription": "Head"
+  }
+ },
+ "featured": false
+}

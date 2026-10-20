@@ -149,9 +149,20 @@ class Grading(unittest.TestCase):
         self.assertEqual(self.grade(bet(), res)["result"], "VOID")
 
     def test_a_family_with_no_result_source_voids_by_name(self):
-        g = self.grade(bet(sport="TENNIS"), None, now=LATE)
+        g = self.grade(bet(sport="BOXING"), None, now=LATE)
         self.assertEqual(g["result"], "VOID")
         self.assertIn("no result source", g["reason"])
+
+    def test_a_free_results_family_with_no_matching_result_voids_by_name(self):
+        for code in ("TENNIS", "MMA"):
+            g = self.grade(bet(sport=code), None, now=LATE)
+            self.assertEqual(g["result"], "VOID", code)
+            self.assertIn("results feed", g["reason"], code)
+
+    def test_a_row_that_carries_its_own_void_reason_voids_with_it(self):
+        row = {"completed": True, "home_score": None, "away_score": None, "void_reason": "walkover: not played"}
+        g = self.grade(bet(sport="TENNIS"), row, now=FINAL)
+        self.assertEqual((g["result"], g["reason"]), ("VOID", "walkover: not played"))
 
     def test_a_late_result_still_grades_normally(self):
         self.assertEqual(self.grade(bet(), result(101, 99), now=LATE)["result"], "WIN")

@@ -77,3 +77,66 @@ def match(query: str, people: Dict[str, Iterable[str]], *, limit: int = 5,
     if len(top) > 1 and top[1][2] == top[0][2]:
         return MatchResult(best=None, ambiguous=True, candidates=top)
     return MatchResult(best=top[0][0], ambiguous=False, candidates=top)
+
+
+# ---------------------------------------------------------------------------
+# Two spellings of ONE person (tennis players, any sport with named competitors)
+# ---------------------------------------------------------------------------
+#
+# `match` above finds a person from a typed query among many; `person_score` answers a narrower question that
+# result-matching needs: "are these two strings the same human?". It is deliberately strict -- a wrong "yes"
+# grades a bet on the wrong player, a wrong "no" only leaves the bet to void after 72 hours.
+
+PERSON_EXACT = 1.0          # same words in the same order (after accents, case, punctuation are folded)
+PERSON_REVERSED = 0.97      # same words, other order: "Sinner Jannik"
+PERSON_INITIALS = 0.90      # "J. Sinner" for "Jannik Sinner": initials only where the first names should be
+PERSON_DROPPED = 0.88       # a middle name or particle dropped: "Alex Minaur" for "Alex de Minaur"
+PERSON_MIN = PERSON_DROPPED  # the lowest score a caller may treat as "the same person"
+
+
+def person_score(a: Optional[str], b: Optional[str]) -> float:
+    """How surely two names are one person: PERSON_EXACT, PERSON_REVERSED, PERSON_INITIALS, PERSON_DROPPED or 0.0.
+
+    Never fuzzy: a nickname ("Alex" for "Alexander"), a different first name or a different surname scores 0.
+    A lone token (a surname by itself) scores 0 unless both names are that same single token."""
+    ta, tb = tokens(a), tokens(b)
+    if not ta or not tb:
+        return 0.0
+    if ta == tb:
+        return PERSON_EXACT if len(ta) > 1 else PERSON_REVERSED
+    if len(ta) < 2 or len(tb) < 2:
+        return 0.0
+    if sorted(ta) == sorted(tb):
+        return PERSON_REVERSED
+    # reversed-order forms with initials ("Sinner J.") are read in the usual order first
+    for first, second in ((ta, tb), (tb, ta)):
+        if _initials_of(first, second):
+            return PERSON_INITIALS
+    short, long_ = (ta, tb) if len(ta) <= len(tb) else (tb, ta)
+    if (len(short) < len(long_) and set(short) <= set(long_) and short[0] == long_[0]
+            and short[-1] == long_[-1] and len(short[0]) > 1):
+        return PERSON_DROPPED
+    return 0.0
+
+
+def _initials_of(initialled: List[str], full: List[str]) -> bool:
+    """True when `initialled` is `full` with some given names cut to one letter ("j sinner" / "jannik sinner").
+
+    Every word of `initialled` must be a word of `full`; each one-letter token must be the first letter of a
+    DIFFERENT remaining word of `full`; and `full`'s last word (the surname) must be among the words given, so
+    a name is never decided by initials alone."""
+    letters = [t for t in initialled if len(t) == 1]
+    words = [t for t in initialled if len(t) > 1]
+    if not letters or not words or full[-1] not in words:
+        return False
+    remaining = list(full)
+    for word in words:
+        if word not in remaining:
+            return False
+        remaining.remove(word)
+    for letter in letters:
+        pick = next((t for t in remaining if len(t) > 1 and t[0] == letter), None)
+        if pick is None:
+            return False
+        remaining.remove(pick)
+    return True

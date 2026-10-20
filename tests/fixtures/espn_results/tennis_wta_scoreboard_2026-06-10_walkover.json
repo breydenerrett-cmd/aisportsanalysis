@@ -1,0 +1,175 @@
+{
+ "leagues": [
+  {
+   "name": "WTA",
+   "abbreviation": "WTA"
+  }
+ ],
+ "events": [
+  {
+   "id": "415-2026",
+   "name": "Libéma Open",
+   "date": "2026-06-06T04:00Z",
+   "endDate": "2026-06-15T03:59Z",
+   "groupings": [
+    {
+     "grouping": {
+      "displayName": "Women's Singles"
+     },
+     "competitions": [
+      {
+       "id": "177819",
+       "date": "2026-06-11T09:05Z",
+       "startDate": "2026-06-11T09:05Z",
+       "status": {
+        "period": 2,
+        "type": {
+         "id": "38",
+         "name": "STATUS_RETIRED",
+         "state": "post",
+         "completed": true,
+         "description": "Retired",
+         "detail": "Retired",
+         "shortDetail": "Retired"
+        }
+       },
+       "notes": [
+        {
+         "text": "Zeynep Sonmez (TUR) bt (5) Anastasia Potapova (AUT) 6-1 2-0 ret",
+         "type": "event"
+        }
+       ],
+       "competitors": [
+        {
+         "id": "5604",
+         "type": "athlete",
+         "order": 2,
+         "homeAway": "away",
+         "winner": true,
+         "linescores": [
+          {
+           "value": 6.0,
+           "winner": true
+          },
+          {
+           "value": 2.0,
+           "winner": false
+          }
+         ],
+         "athlete": {
+          "displayName": "Zeynep Sonmez",
+          "shortName": "Z. Sonmez",
+          "fullName": "Zeynep Sonmez"
+         }
+        },
+        {
+         "id": "2971",
+         "type": "athlete",
+         "order": 1,
+         "homeAway": "home",
+         "winner": false,
+         "curatedRank": {
+          "current": 5
+         },
+         "linescores": [
+          {
+           "value": 1.0,
+           "winner": false
+          },
+          {
+           "value": 0.0,
+           "winner": false
+          }
+         ],
+         "athlete": {
+          "displayName": "Anastasia Potapova",
+          "shortName": "A. Potapova",
+          "fullName": "Anastasia Potapova"
+         }
+        }
+       ],
+       "tournamentId": 415,
+       "type": {
+        "id": "2",
+        "text": "Women's Singles",
+        "slug": "womens-singles"
+       },
+       "round": {
+        "id": "2",
+        "displayName": "Round 2"
+       }
+      },
+      {
+       "id": "177840",
+       "date": "2026-06-14T10:05Z",
+       "startDate": "2026-06-14T10:05Z",
+       "status": {
+        "period": 1,
+        "type": {
+         "id": "40",
+         "name": "STATUS_WALKOVER",
+         "state": "post",
+         "completed": true,
+         "description": "Walkover",
+         "detail": "Walkover",
+         "shortDetail": "Walkover"
+        }
+       },
+       "notes": [
+        {
+         "text": "Robin Montgomery (USA) bt (8) Barbora Krejcikova (CZE) w/o",
+         "type": "event"
+        }
+       ],
+       "competitors": [
+        {
+         "id": "2042",
+         "type": "athlete",
+         "order": 2,
+         "homeAway": "away",
+         "winner": false,
+         "curatedRank": {
+          "current": 8
+         },
+         "athlete": {
+          "displayName": "Barbora Krejcikova",
+          "shortName": "B. Krejcikova",
+          "fullName": "Barbora Krejcikova"
+         }
+        },
+        {
+         "id": "6723",
+         "type": "athlete",
+         "order": 1,
+         "homeAway": "home",
+         "winner": true,
+         "athlete": {
+          "displayName": "Robin Montgomery",
+          "shortName": "R. Montgomery",
+          "fullName": "Robin Montgomery"
+         }
+        }
+       ],
+       "tournamentId": 415,
+       "type": {
+        "id": "2",
+        "text": "Women's Singles",
+        "slug": "womens-singles"
+       },
+       "round": {
+        "id": "7",
+        "displayName": "Final"
+       }
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "provider": {
+  "id": "100",
+  "name": "Draft Kings",
+  "displayName": "Draft Kings",
+  "priority": 1
+ }
+}
