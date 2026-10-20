@@ -37,6 +37,8 @@ PAGES = {
     "kennels_index": ("hounds.html", "kennels-index.js"),
     "nav": ("hounds.html", "nav.js"),
     "tabs": ("hound.html", "tabs.js"),
+    # the live board, "What's on" (tests/test_live_board.py); its fixtures are tests/fixtures/sports_now.json
+    "live": ("live.html", "live-board.js"),
 }
 
 _tmp = None

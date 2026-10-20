@@ -1,0 +1,81 @@
+{
+ "generated_utc": "2026-10-19T23:30:00Z",
+ "families": [
+  {
+   "code": "soccer",
+   "label": "Soccer",
+   "live": [
+    {"event_id": "soc-1", "league_title": "English Premier League", "home": "Brighton and Hove Albion", "away": "Fulham", "start_utc": "2026-10-19T22:45:00Z", "in_play": true, "best_price_home": -135, "best_price_away": 310, "score": {"home": 1, "away": 0, "detail": "62'"}},
+    {"event_id": "soc-2", "league_title": "Liga MX", "home": "Club America", "away": "Tigres UANL", "start_utc": "2026-10-19T23:00:00Z", "in_play": true, "best_price_home": 120, "best_price_away": 230, "score": "0-0, 31'"},
+    {"event_id": "soc-3", "league_title": "A-League Men", "home": "Sydney FC", "away": "Melbourne City", "start_utc": "2026-10-19T23:15:00Z", "in_play": true, "best_price_home": 165, "best_price_away": 150, "score": {"home": 0, "away": 0, "detail": "15'"}}
+   ],
+   "upcoming_24h": [
+    {"event_id": "soc-4", "league_title": "MLS", "home": "Seattle Sounders FC", "away": "Portland Timbers", "start_utc": "2026-10-20T01:30:00Z", "in_play": false, "best_price_home": -110, "best_price_away": 285},
+    {"event_id": "soc-5", "league_title": "J1 League", "home": "Vissel Kobe", "away": "Kashima Antlers", "start_utc": "2026-10-20T05:00:00Z", "in_play": false, "best_price_home": 105, "best_price_away": 245},
+    {"event_id": "soc-6", "league_title": "La Liga", "home": "Sevilla FC", "away": "Real Betis", "start_utc": "2026-10-20T19:00:00Z", "in_play": false, "best_price_home": 150, "best_price_away": 175}
+   ],
+   "next_start_utc": "2026-10-19T22:45:00Z"
+  },
+  {
+   "code": "tennis",
+   "label": "Tennis",
+   "live": [
+    {"event_id": "ten-1", "league_title": "ATP Basel", "home": "Ben Shelton", "away": "Alexei Popyrin", "start_utc": "2026-10-19T21:30:00Z", "in_play": true, "best_price_home": -180, "best_price_away": 150, "score": {"home": 1, "away": 0, "detail": "set 2"}},
+    {"event_id": "ten-2", "league_title": "WTA Tokyo", "home": "Naomi Osaka", "away": "Elina Svitolina", "start_utc": "2026-10-19T22:30:00Z", "in_play": true, "best_price_home": 125, "best_price_away": -145},
+    {"event_id": "ten-3", "league_title": "ATP Vienna", "home": "Jannik Sinner", "away": "Sebastian Korda", "start_utc": "2026-10-19T23:10:00Z", "in_play": true, "best_price_home": -420, "best_price_away": 330},
+    {"event_id": "ten-4", "league_title": "ATP Challenger Tampere", "home": "Otto Virtanen", "away": "Elmer Moller", "start_utc": "2026-10-19T23:00:00Z", "in_play": true, "best_price_home": -115, "best_price_away": -105}
+   ],
+   "upcoming_24h": [
+    {"event_id": "ten-5", "league_title": "ATP Basel", "home": "Casper Ruud", "away": "Holger Rune", "start_utc": "2026-10-20T10:00:00Z", "in_play": false, "best_price_home": -150, "best_price_away": 125},
+    {"event_id": "ten-6", "league_title": "WTA Tokyo", "home": "Coco Gauff", "away": "Madison Keys", "start_utc": "2026-10-20T04:00:00Z", "in_play": false, "best_price_home": -200, "best_price_away": 170},
+    {"event_id": "ten-7", "league_title": "ATP Vienna", "home": "Alexander Zverev", "away": "Tommy Paul", "start_utc": "2026-10-20T13:30:00Z", "in_play": false, "best_price_home": -165, "best_price_away": 140}
+   ],
+   "next_start_utc": "2026-10-19T21:30:00Z"
+  },
+  {
+   "code": "baseball",
+   "label": "Baseball",
+   "live": [],
+   "upcoming_24h": [
+    {"event_id": "bas-1", "league_title": "MLB", "home": "Seattle Mariners", "away": "Houston Astros", "start_utc": "2026-10-20T00:08:00Z", "in_play": false, "best_price_home": -118, "best_price_away": 100},
+    {"event_id": "bas-2", "league_title": "NPB", "home": "Hanshin Tigers", "away": "Yomiuri Giants", "start_utc": "2026-10-20T09:00:00Z", "in_play": false, "best_price_home": -125, "best_price_away": 105}
+   ],
+   "next_start_utc": "2026-10-20T00:08:00Z"
+  },
+  {
+   "code": "basketball",
+   "label": "Basketball",
+   "live": [
+    {"event_id": "bkb-1", "league_title": "NBL Australia", "home": "Perth Wildcats", "away": "Sydney Kings", "start_utc": "2026-10-19T23:30:00Z", "in_play": true, "best_price_home": -155, "best_price_away": 130, "score": {"home": 18, "away": 14, "detail": "Q1 4:12"}}
+   ],
+   "upcoming_24h": [
+    {"event_id": "bkb-2", "league_title": "NBA", "home": "Boston Celtics", "away": "New York Knicks", "start_utc": "2026-10-20T00:00:00Z", "in_play": false, "best_price_home": -190, "best_price_away": 160},
+    {"event_id": "bkb-3", "league_title": "NBA", "home": "Denver Nuggets", "away": "Los Angeles Lakers", "start_utc": "2026-10-20T02:30:00Z", "in_play": false, "best_price_home": -135, "best_price_away": 115}
+   ],
+   "next_start_utc": "2026-10-19T23:30:00Z"
+  },
+  {
+   "code": "hockey",
+   "label": "Hockey",
+   "live": [],
+   "upcoming_24h": [
+    {"event_id": "hoc-1", "league_title": "NHL", "home": "Toronto Maple Leafs", "away": "Boston Bruins", "start_utc": "2026-10-20T23:00:00Z", "in_play": false, "best_price_home": -125, "best_price_away": 105}
+   ],
+   "next_start_utc": "2026-10-20T23:00:00Z"
+  },
+  {
+   "code": "football",
+   "label": "Football",
+   "live": [],
+   "upcoming_24h": [],
+   "next_start_utc": "2026-10-22T00:15:00Z"
+  },
+  {
+   "code": "cricket",
+   "label": "Cricket",
+   "live": [],
+   "upcoming_24h": [],
+   "next_start_utc": null
+  }
+ ]
+}

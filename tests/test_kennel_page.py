@@ -25,9 +25,9 @@ from tests.hounds_web_runner import HAS_NODE, WEB, run_js, run_page
 
 TOKEN_KEY = "aisportsanalysis.invite_token"
 SIGNED = dict(stored={TOKEN_KEY: "tok"})
-PAGES = ("kennels.html", "hounds.html", "hound.html", "build-a-hound.html", "learning.html", "kennel.html", "landing.html", "why-we-paused.html",
+PAGES = ("kennels.html", "live.html", "hounds.html", "hound.html", "build-a-hound.html", "learning.html", "kennel.html", "landing.html", "why-we-paused.html",
          "postseason.html", "sample.html", "index.html")
-LINKS = [("hounds.html", "Leaderboard"), ("kennels.html", "Kennels"), ("quiz.html", "Build"),
+LINKS = [("hounds.html", "Leaderboard"), ("kennels.html", "Kennels"), ("live.html", "Live"), ("quiz.html", "Build"),
          ("learning.html", "Training camp")]
 
 
@@ -85,7 +85,7 @@ class EveryPageHasTheOneNavigation(unittest.TestCase):
                 self.assertIn('<script type="module" src="js/nav.js"></script>', html)
                 self.assertNotIn('class="site-nav', html.split("<main")[0].split("<body")[1], "the old per-page nav is gone")
 
-    def test_each_page_names_the_same_four_places_in_the_same_order(self):
+    def test_each_page_names_the_same_five_places_in_the_same_order(self):
         for name in PAGES:
             html = read(name)
             bar = re.search(r'<nav class="lh-nav__links".*?</nav>', html, re.S)
@@ -146,7 +146,7 @@ class TheNavigationRuns(unittest.TestCase):
         self.assertEqual(f["links"], [t for _, t in LINKS])
         self.assertEqual(f["hrefs"], [h for h, _ in LINKS])
         self.assertEqual((f["signin"], f["mykennel"], f["account"], f["bars"], f["area"]), (1, 0, 0, 1, "false"))
-        self.assertEqual(f["tabs"], ["Board", "Kennels", "Build", "Camp", "Sign in"])
+        self.assertEqual(f["tabs"], ["Board", "Kennels", "Live", "Build", "Camp", "Sign in"])
         self.assertEqual(f["tabhrefs"][-1], "index.html#/signin")
 
     def test_signed_in_shows_my_kennel_and_the_account_menu(self):
@@ -158,7 +158,7 @@ class TheNavigationRuns(unittest.TestCase):
         self.assertEqual(f["menu"], ["My kennel", "Change password", "Sign out"])
         self.assertEqual(f["menu_hrefs"], ["kennel.html", "index.html#/signin?password=1"])
         self.assertEqual((f["menu_hidden"], f["expanded"]), (True, "false"))
-        self.assertEqual(f["tabs"], ["Board", "Kennels", "Build", "Camp", "Mine"])
+        self.assertEqual(f["tabs"], ["Board", "Kennels", "Live", "Build", "Camp", "Mine"])
         self.assertEqual(f["tabhrefs"][-1], "kennel.html")
 
     def test_the_account_button_opens_the_menu_and_sign_out_posts_and_forgets_the_token(self):
@@ -173,7 +173,7 @@ class TheNavigationRuns(unittest.TestCase):
     def test_the_current_place_follows_the_page_and_the_kennel_page_follows_its_query(self):
         cases = [("hounds.html", "/web/hounds.html", "", ["Leaderboard"]), ("kennels.html", "/web/kennels.html", "", ["Kennels"]),
                  ("hound.html", "/web/hound.html", "?id=closer", ["Leaderboard"]), ("build-a-hound.html", "/web/build-a-hound.html", "", ["Build"]),
-                 ("learning.html", "/web/learning.html", "", ["Training camp"]), ("kennel.html", "/web/kennel.html", "?u=handler-1", ["Kennels"])]
+                 ("learning.html", "/web/learning.html", "", ["Training camp"]), ("live.html", "/web/live.html", "", ["Live"]), ("kennel.html", "/web/kennel.html", "?u=handler-1", ["Kennels"])]
         for page, path, search, want in cases:
             with self.subTest(path=path, search=search):
                 got = self.run_nav(page_html=page, pathname=path, search=search)["final"]["current"]

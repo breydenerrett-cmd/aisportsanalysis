@@ -109,6 +109,24 @@ function slateLine(slate) {
   return line;
 }
 
+/** A sentence out of a field the server may send as a string or as {line}. */
+function sentenceOf(v) {
+  if (typeof v === "string") return v.trim();
+  return v && typeof v.line === "string" ? v.line.trim() : "";
+}
+
+/**
+ * When the dog has no pick: the server's own words about the dog's NEXT game (`next_game`) and about what is live in OTHER sports
+ * right now (`live_elsewhere`), each a string or {line}, and always a link to the live board (web/live.html). The page writes none
+ * of this itself; a server that sends neither still gets the link.
+ */
+function elsewhereBlock(data) {
+  const lines = [sentenceOf(data.next_game), sentenceOf(data.live_elsewhere)].filter(Boolean);
+  return h("div", { class: "dk-block dk-elsewhere", "data-hook": "fire-elsewhere" }, [
+    ...lines.map((line, i) => h("p", { class: "dk-headline dk-elsewhere__line", "data-hook": i === 0 && sentenceOf(data.next_game) ? "fire-next-game" : "fire-live-elsewhere", text: line })),
+    h("p", { class: "hd-fine" }, [lines.length ? "" : "Other sports may have games on right now. ", h("a", { href: "live.html", "data-hook": "fire-live-link", text: "See what's on in every sport" }), "."])]);
+}
+
 /** Draw a fire payload into `box`. `canRecord` shows the owner's manual-pick buttons. `name` heads it "<name>'s picks right now". */
 export function renderFireResult(box, data, { id, name, canRecord = false, onRecord } = {}) {
   clearNode(box);
@@ -134,6 +152,7 @@ export function renderFireResult(box, data, { id, name, canRecord = false, onRec
     }
     box.appendChild(h("ul", { class: "dk-picks", "data-hook": "fire-picks" }, items));
   }
+  if (!picks.length) box.appendChild(elsewhereBlock(data));
   const recorded = Array.isArray(data.recorded) ? data.recorded : [];
   if (recorded.length) {
     box.appendChild(h("div", { class: "dk-block" }, [h("h3", { class: "hd-h3", text: "Already on the record" }),

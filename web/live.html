@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>What's on — LINEHOUND</title>
+<meta name="description" content="What is on right now in every sport LINEHOUND prices, and the next 24 hours. Pick a game and send one of your dogs at it. Paper bets only, not advice, 21+.">
+<meta property="og:title" content="What's on — LINEHOUND">
+<meta property="og:description" content="Live and upcoming games across every sport, with the best price quoted. Send a dog at one. Paper only, not advice.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#0B0D10">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230B0C0E'/%3E%3Cpath d='M6 6l8 0 0 9-8 4z' fill='%23FF3D57'/%3E%3Cpath d='M18 6l8 0 0 13-8-4z' fill='%23FF7A45'/%3E%3C/svg%3E">
+<!-- THE LIVE BOARD ("What's on"): every sport the server prices, a chip per sport family, LIVE first, then the next 24 hours, each
+     row with the teams or players, the league, the start time in the viewer's own zone and the best price quoted for each side.
+     "Send a dog" on a row opens the signed-in member's dogs and runs the existing out-back route (POST /hounds/{id}/fire); a
+     visitor is asked to sign in. Script: web/js/live-board.js, reading GET /sports/now. It refreshes itself every 60 seconds.
+     The paper-only notice and the helpline are STATIC so they are on the page with scripts off. -->
+<link rel="stylesheet" href="css/fonts.css">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/nav.css">
+<link rel="stylesheet" href="css/lhnav.css">
+<link rel="stylesheet" href="css/hounds.css">
+<link rel="stylesheet" href="css/dog-kit.css">
+<link rel="stylesheet" href="css/lh.css">
+<link rel="stylesheet" href="css/live.css">
+</head>
+<body class="hounds-page lv-page">
+<a class="hd-skip" href="#main-content">Skip to the live board</a>
+<header class="lh-nav" aria-label="primary" data-hook="live-nav" data-current="live">
+  <div class="lh-nav__bar">
+    <a class="lh-nav__brand ps-page__home" href="landing.html" aria-label="LINEHOUND home">
+      <span class="wordmark" data-hook="brand-mark">
+        <span class="wordmark__mark"><span></span></span>
+        <span class="wordmark__text" data-hook="product-name">LINEHOUND</span>
+      </span>
+    </a>
+    <nav class="lh-nav__links" aria-label="Sections" data-hook="nav-links">
+      <a href="hounds.html" data-nav="leaderboard">Leaderboard</a>
+      <a href="kennels.html" data-nav="kennels">Kennels</a>
+      <a href="live.html" data-nav="live" aria-current="page">Live</a>
+      <a href="quiz.html" data-nav="build">Build</a>
+      <a href="learning.html" data-nav="camp">Training camp</a>
+    </nav>
+    <div class="lh-nav__account" data-hook="nav-account-area" data-signed-in="false">
+      <a class="lh-btn lh-btn--solid" href="index.html#/signin" data-hook="nav-signin">Sign in</a>
+    </div>
+  </div>
+</header>
+
+<main class="hd-wrap hd-wrap--wide" id="main-content" aria-label="What's on" data-hook="live-app">
+<header class="lv-head">
+  <div>
+    <p class="lv-eyebrow">Every sport we price</p>
+    <h1 data-hook="live-title">What's on</h1>
+    <p class="hd-lede">Live now, then the next 24 hours. Pick a game and send one of your dogs at it.</p>
+  </div>
+  <button type="button" class="btn btn--ghost lv-refresh" data-hook="live-refresh">Refresh</button>
+</header>
+<p class="hd-disclosure" data-hook="paper-only-notice" role="note">Paper bets only. Not betting advice. 21+. Bet at your own risk. Prices are the best number any book is quoting when the board was read, and in-play prices move fast.</p>
+
+<div class="lv-bar">
+  <div class="lv-chips" data-hook="live-chips" role="group" aria-label="Sport"></div>
+</div>
+<p class="hd-fine lv-status" data-hook="live-status" role="status" aria-live="polite">Loading the board...</p>
+<p class="hd-state hd-state--missing lv-note" data-hook="live-refresh-note" role="status" hidden></p>
+
+<div data-hook="live-board" aria-live="off"><div class="lh-skel lh-skel--cards" aria-hidden="true"></div><p class="hd-sr-only">Loading what is on...</p></div>
+</main>
+
+<footer class="hd-foot" data-hook="live-footer" aria-label="responsible gambling">
+  <p data-hook="not-advice">Paper bets only, not advice. 21+ &middot; Bet at your own risk. Gamble responsibly. <a href="tel:1-800-426-2537" data-hook="responsible-gambling-help">1-800-GAMBLER</a></p>
+  <p><a href="landing.html">About LINEHOUND</a> &middot; <a href="hounds.html">Leaderboard</a> &middot; <a href="kennels.html">Kennels</a></p>
+</footer>
+
+<script type="module" src="js/live-board.js"></script>
+<script type="module" src="js/fx.js"></script>
+<script type="module" src="js/nav.js"></script>
+</body>
+</html>

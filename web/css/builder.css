@@ -45,6 +45,27 @@
 .bd-chip[aria-pressed="true"] { background: rgba(47, 208, 122, .14); border-color: var(--hd-accent); color: #fff; font-weight: 600; }
 .bd-chip[disabled] { opacity: .45; cursor: not-allowed; }
 .bd-chip--example { font-size: 13px; color: var(--hd-mute); }
+
+/* the sport chooser: a search box over a chip grid that scrolls inside its own box when there are many sports */
+.bd-sportgrid { display: grid; gap: 6px; }
+.bd-sportsearch {
+  width: 100%; max-width: 360px; min-height: 44px; padding: 0 12px; font: inherit; font-size: 16px; color: var(--hd-text);
+  background: var(--hd-card-2); border: 1px solid var(--hd-line); border-radius: 4px;
+}
+.bd-sportsearch:focus-visible { outline: 2px solid var(--hd-accent); outline-offset: 1px; }
+.bd-sportchips { max-height: 232px; overflow-y: auto; margin: 2px 0; padding-right: 2px; }
+/* css/lh.css repaints every chip flat and hides which ones are picked; a picked chip (a sport, a market) is green again, a disabled one is dim */
+.hounds-page .bd-chip[aria-pressed="true"] { background: rgba(47, 208, 122, .16); color: #fff; font-weight: 600; box-shadow: inset 0 0 0 1px var(--hd-accent); }
+.hounds-page .bd-chip[disabled] { opacity: .4; cursor: not-allowed; }
+/* css/lh.css turns every chip row in a step into a sideways-scrolling strip; a sport grid wraps instead, so all of it is visible and searchable */
+.hounds-page .bd-step .bd-chips.bd-sportchips { flex-wrap: wrap; overflow-x: hidden; overflow-y: auto; }
+.bd-sportgrid { min-width: 0; }
+/* a rule card never grows past the phone: its chip strips scroll inside the card, they do not widen it */
+.bd-cards { grid-template-columns: minmax(0, 1fr); }
+.bd-card { grid-template-columns: minmax(0, 1fr); min-width: 0; }
+.bd-card .bd-field, .bd-card .bd-marketgroups, .bd-card .bd-marketgroup { min-width: 0; }
+.bd-sportchips .bd-chip { min-height: 40px; }
+.bd-note { margin: 4px 0 6px; }
 .bd-chip:focus-visible, .bd-swatch:focus-visible, .bd-badge:focus-visible { outline: 2px solid var(--hd-accent); outline-offset: 1px; }
 
 /* the character count under the English box, and the second reader's progress line */

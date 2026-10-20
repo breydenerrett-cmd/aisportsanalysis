@@ -75,12 +75,13 @@ def make_handler(api):
 
 @unittest.skipUnless(HAS_NODE and CHROME, "node and a Chrome/Chromium binary are needed")
 class EveryPageFitsAPhone(unittest.TestCase):
-    PAGES = ["landing.html", "hounds.html", "hounds.html?tab=kennels", "kennels.html", "kennel.html", "kennel.html?u=handler-21e8",
+    PAGES = ["landing.html", "hounds.html", "hounds.html?tab=kennels", "kennels.html", "live.html", "kennel.html", "kennel.html?u=handler-21e8",
              "build-a-hound.html", "learning.html", "index.html", "admin.html", "postseason.html", "sample.html", "why-we-paused.html"]
 
     @classmethod
     def setUpClass(cls):
         api = {k: (s, b) for k, (s, b) in F.routes().items()}
+        api["/sports/now"] = (200, json.loads((HERE / "fixtures" / "sports_now.json").read_text(encoding="utf-8")))
         cls.hid = F.summaries()[0].id
         cls.pages = cls.PAGES + [f"hound.html?id={cls.hid}", f"hound.html?id={cls.hid}&tab=tickets", f"hound.html?id={cls.hid}&tab=locker"]
         cls.server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), make_handler(api))
