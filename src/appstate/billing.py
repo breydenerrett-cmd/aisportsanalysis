@@ -102,6 +102,7 @@ from typing import Callable, Dict, List, Mapping, Optional, Protocol
 
 from src.appstate import customers
 from src.appstate import events
+from src.appstate import founding
 from src.appstate import reqlog
 from src.appstate import tester_upgrade
 from src.appstate import users as users_store
@@ -176,6 +177,118 @@ def beta_plan_stripe_price_id() -> Optional[str]:
     return (os.environ.get(ENV_STRIPE_BETA_PRICE_ID) or "").strip() or None
 
 
+# ---------------------------------------------------------------------------
+# The founding price (owner decision 2026-10-20): $14.99/mo, locked for as long as the member stays
+# subscribed, for the first FOUNDING_SEAT_CAP members only. The standard price above ($19.99) is what
+# everyone else pays. Stripe holds the real amounts on two Price objects under one Product; these
+# constants are what the pages state, so they must match the Prices (docs/owner/STRIPE_GO_LIVE.html).
+# Seat bookkeeping, the reservation window and the "continuously subscribed" rule are all in
+# src/appstate/founding.py. With STRIPE_FOUNDING_PRICE_ID unset there is NO founding offer at all:
+# every checkout is at the standard price and GET /billing/offer reports `founding: null`.
+# ---------------------------------------------------------------------------
+FOUNDING_PLAN_PRICE_CENTS = 1499
+FOUNDING_SEAT_CAP = founding.FOUNDING_SEAT_CAP
+ENV_STRIPE_FOUNDING_PRICE_ID = "STRIPE_FOUNDING_PRICE_ID"
+# Stamped on the Checkout Session and the subscription it creates, so a founding subscription is
+# recognisable from the webhook even if the env var is later changed.
+PLAN_TIER_FOUNDING = "founding"
+PLAN_TIER_STANDARD = "standard"
+
+
+def founding_plan_stripe_price_id() -> Optional[str]:
+    """The Stripe Price id of the founding price, or None when STRIPE_FOUNDING_PRICE_ID is unset
+    (then there is no founding offer)."""
+    return (os.environ.get(ENV_STRIPE_FOUNDING_PRICE_ID) or "").strip() or None
+
+
+@dataclass(frozen=True)
+class CheckoutChoice:
+    """Which price a checkout is opened at, and the extra arguments that price needs.
+
+    `tier` is "founding" or "standard". `kwargs` goes straight into provider.create_checkout and is
+    EMPTY for the standard price, so a provider written before the founding offer existed (or a test
+    double) keeps working unchanged."""
+    tier: str
+    price_id: str
+    kwargs: Dict[str, object] = field(default_factory=dict)
+
+
+def choose_checkout_price(user_id: int, *, now: Optional[int] = None,
+                          db: Optional[Path] = None) -> Optional[CheckoutChoice]:
+    """The price this user's checkout is opened at, or None when billing has no standard price yet
+    (STRIPE_BETA_PRICE_ID unset: the same honest "not configured" as before).
+
+    The founding price is chosen only when STRIPE_FOUNDING_PRICE_ID is set AND a seat can be
+    RESERVED for this user right now (founding.try_reserve: fewer than the cap taken or held, decided
+    under one write lock). A reservation is made here, so the CALLER owns releasing it
+    (release_founding_reservation) if the checkout then fails to open.
+
+    The founding session carries `expires_at` = the end of the reservation, an Idempotency-Key that
+    includes the reservation (Stripe refuses a reused key with different parameters, and `expires_at`
+    differs per reservation), and `plan_tier=founding` metadata."""
+    standard = beta_plan_stripe_price_id()
+    if not standard:
+        return None
+    founding_id = founding_plan_stripe_price_id()
+    if founding_id:
+        reservation = founding.try_reserve(user_id, now=now, db=db)
+        if reservation is not None:
+            kwargs: Dict[str, object] = {"metadata": {"plan_tier": PLAN_TIER_FOUNDING}}
+            if not reservation.already_member:
+                kwargs["expires_at"] = reservation.session_expires_at
+                kwargs["idempotency_key"] = (
+                    f"checkout:{user_id}:{founding_id}:{reservation.reserved_at}")
+            return CheckoutChoice(PLAN_TIER_FOUNDING, founding_id, kwargs)
+    return CheckoutChoice(PLAN_TIER_STANDARD, standard)
+
+
+def release_founding_reservation(user_id: int, *, db: Optional[Path] = None) -> None:
+    """Give back the seat `choose_checkout_price` reserved when the checkout did not open."""
+    try:
+        founding.release_reservation(user_id, db=db)
+    except Exception as exc:  # noqa: BLE001 -- the hold times out by itself within the window
+        print(f"billing: could not release founding reservation: {exc!r}", file=sys.stderr, flush=True)
+
+
+def founding_offer(*, now: Optional[int] = None, db: Optional[Path] = None) -> dict:
+    """The public offer, GET /billing/offer's body.
+
+    `founding` is None when there is no founding price configured. Otherwise `taken` is the TRUE
+    number of seats held by live founding subscriptions (never padded with checkouts in progress),
+    `left` is the cap minus that, and `available` is whether a new checkout would actually be given
+    the founding price right now: a seat held by someone mid-checkout makes it False while `left`
+    still counts it, and `reserved` says how many are held, so the page never claims a seat the
+    checkout would refuse. `standard.price_cents` is always present."""
+    standard = {"price_cents": BETA_PLAN_PRICE_CENTS}
+    if not founding_plan_stripe_price_id():
+        return {"founding": None, "standard": standard}
+    counts = founding.seat_counts(now=now, db=db)
+    taken = counts["taken"]
+    return {"founding": {"price_cents": FOUNDING_PLAN_PRICE_CENTS, "cap": FOUNDING_SEAT_CAP,
+                         "taken": taken, "left": max(0, FOUNDING_SEAT_CAP - taken),
+                         "reserved": counts["reserved"],
+                         "available": taken + counts["reserved"] < FOUNDING_SEAT_CAP},
+            "standard": standard}
+
+
+def is_founding_subscription(obj: object) -> bool:
+    """True when a Stripe subscription (or checkout session) object is for the founding price: our own
+    `plan_tier=founding` metadata, or a line item at the configured founding Price id."""
+    if not isinstance(obj, dict):
+        return False
+    meta = obj.get("metadata")
+    if isinstance(meta, dict) and meta.get("plan_tier") == PLAN_TIER_FOUNDING:
+        return True
+    price_id = founding_plan_stripe_price_id()
+    if not price_id:
+        return False
+    items = _dig(obj, "items", "data")
+    for item in (items if isinstance(items, list) else []):
+        if isinstance(item, dict) and _dig(item, "price", "id") == price_id:
+            return True
+    return False
+
+
 # Free-trial length for the beta plan's Checkout Session
 # (subscription_data[trial_period_days] -- Stripe's own documented field
 # for starting a subscription trialing rather than charging immediately).
@@ -215,7 +328,9 @@ class BillingProvider(Protocol):
 
     def create_checkout(self, user_id: int, plan_id: str, *,
                          idempotency_key: Optional[str] = None,
-                         attribution: Optional[Mapping[str, str]] = None) -> str:
+                         attribution: Optional[Mapping[str, str]] = None,
+                         expires_at: Optional[int] = None,
+                         metadata: Optional[Mapping[str, str]] = None) -> str:
         """Return a URL (or opaque reference) the user is sent to in order
         to start paying for plan_id. Real implementations call out to the
         provider; NullBillingProvider never does. `idempotency_key` lets a
@@ -225,7 +340,10 @@ class BillingProvider(Protocol):
         to dedupe against. `attribution` is the user's first-touch UTM tags
         and referrer host (src.appstate.attribution); a provider that can
         carry them (Stripe Checkout metadata) does, so a payment in the
-        provider's dashboard names the channel that produced it."""
+        provider's dashboard names the channel that produced it. `expires_at`
+        (unix seconds) is when the session stops being payable; `metadata`
+        is extra tags for the session and its subscription (the founding
+        offer's `plan_tier`). Both are passed only by the founding checkout."""
         ...
 
     def subscription_status(self, user_id: int) -> Subscription:
@@ -287,7 +405,9 @@ class NullBillingProvider:
 
     def create_checkout(self, user_id: int, plan_id: str, *,
                          idempotency_key: Optional[str] = None,
-                         attribution: Optional[Mapping[str, str]] = None) -> str:
+                         attribution: Optional[Mapping[str, str]] = None,
+                         expires_at: Optional[int] = None,
+                         metadata: Optional[Mapping[str, str]] = None) -> str:
         self._record("create_checkout", user_id, plan_id)
         # No real checkout exists. The empty string (not a URL) is the
         # honest answer -- a caller that treats this as a redirect target
@@ -750,7 +870,9 @@ class StripeBillingProvider:
 
     def create_checkout(self, user_id: int, plan_id: str, *,
                          idempotency_key: Optional[str] = None,
-                         attribution: Optional[Mapping[str, str]] = None) -> str:
+                         attribution: Optional[Mapping[str, str]] = None,
+                         expires_at: Optional[int] = None,
+                         metadata: Optional[Mapping[str, str]] = None) -> str:
         """POST /v1/checkout/sessions for a subscription to plan_id,
         return its hosted URL.
 
@@ -824,10 +946,14 @@ class StripeBillingProvider:
         # this request. A loop variable of the same name replaced it with the
         # last attribution field ("anon_id"), so every buyer from the web
         # signup shared one key and Stripe would have refused the second.
-        for field, value in (attribution or {}).items():
+        for field, value in {**(attribution or {}), **(metadata or {})}.items():
             if value:
                 form[f"metadata[{field}]"] = str(value)
                 form[f"subscription_data[metadata][{field}]"] = str(value)
+        if expires_at is not None:
+            # The founding offer's reservation window (src/appstate/founding.py): the session cannot be
+            # paid after the seat it holds is released.
+            form["expires_at"] = str(int(expires_at))
         # trial_period_days lives under subscription_data, not top-level --
         # Stripe's own Checkout Session shape for "start this subscription
         # trialing instead of charging today." Omitted entirely (not sent
@@ -1438,6 +1564,17 @@ def _apply_event(event: dict, *, db: Optional[Path] = None) -> None:
                     status="canceled" if obj.get("payment_status") == "unpaid" else "active"),
                 db=db)
         _activate_signup(user_id, _str_or_none(obj.get("id")), db=db)
+        # A founding checkout that settled (paid, or a trial that needs no payment) takes its seat now;
+        # an unpaid (delayed method) session takes none, the subscription event decides that.
+        if subscription_id and is_founding_subscription(obj) and obj.get("payment_status") in (
+                "paid", "no_payment_required"):
+            founding.record_checkout_paid(user_id, subscription_id, at, db=db)
+    elif event_type == "checkout.session.expired":
+        # The founding session ran out unpaid: give its reserved seat back now rather than at the
+        # end of the window. A paid or active seat is never touched by this.
+        user_id = _int_or_none(obj.get("client_reference_id"))
+        if user_id is not None and 0 <= user_id <= MAX_DB_ID and is_founding_subscription(obj):
+            founding.release_reservation(user_id, db=db)
     elif event_type in ("customer.subscription.created", "customer.subscription.updated",
                          "customer.subscription.deleted"):
         customer_id = _str_or_none(obj.get("customer"))
@@ -1457,6 +1594,11 @@ def _apply_event(event: dict, *, db: Optional[Path] = None) -> None:
                 announced_end=_epoch_to_iso(subscription_period_end(obj)),
                 trial_end=_epoch_to_iso(obj.get("trial_end"))),
             db=db)
+        if is_founding_subscription(obj):
+            # A deleted subscription is over whatever status the body carries.
+            seat_status = ("canceled" if event_type == "customer.subscription.deleted"
+                           else _normalize_subscription_status(_str_or_none(obj.get("status"))))
+            founding.record_subscription(user_id, subscription_id, seat_status, at, db=db)
     elif event_type in ("invoice.paid", "invoice.payment_succeeded"):
         customer_ref = _str_or_none(obj.get("customer"))
         subscription_id = _invoice_subscription_id(obj)

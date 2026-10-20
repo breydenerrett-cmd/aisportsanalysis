@@ -38,20 +38,21 @@ class Creation(StoreCase):
         self.assertEqual(h["spec"]["name"], "Dog Days")
         self.assertFalse(h["coach_opt_in"])
 
-    def test_the_fourth_running_hound_is_refused(self):
-        for i in range(3):
+    def test_the_sixth_running_hound_is_refused(self):
+        for i in range(5):
             self.make(name=f"Pack {i}")
         with self.assertRaises(user_store.StoreError) as ctx:
-            self.make(name="Pack 4")
+            self.make(name="Pack 6")
         self.assertEqual(ctx.exception.code, "limit")
 
     def test_the_limit_is_per_account_and_a_retirement_frees_a_slot(self):
-        hounds = [self.make(name=f"Pack {i}") for i in range(3)]
+        words = ("Alpha", "Bravo", "Cedar", "Delta", "Ember")
+        hounds = [self.make(name=f"{w} Pack") for w in words]
         self.make(self.other, name="Other One")                    # a different account is unaffected
         user_store.retire_hound(hounds[0]["id"], by="owner", reason="done")
-        self.make(name="Pack 4")                                  # the freed slot
+        self.make(name="Fargo Pack")                              # the freed slot
         self.assertEqual(len([h for h in user_store.list_for_owner(self.user.id)
-                              if h["status"] == "running"]), 3)
+                              if h["status"] == "running"]), 5)
 
     def test_only_an_existing_unsuspended_account_may_create(self):
         with self.assertRaises(user_store.StoreError) as ctx:

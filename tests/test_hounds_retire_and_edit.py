@@ -127,7 +127,7 @@ class TheKennelAfterARemoval(StoreCase):
         self.assertEqual([d["name"] for d in detail["dogs"]], ["Public Keeper"])
 
     def test_it_stops_betting_and_frees_its_slot(self):
-        dogs = [self.hound(f"Pack {i}") for i in range(3)]
+        dogs = [self.hound(f"{w} Pack") for w in ("Alpha", "Bravo", "Cedar", "Delta", "Ember")]
         with self.assertRaises(user_store.StoreError):
             self.hound("Fourth")
         user_store.retire_hound(dogs[0]["id"], by=f"owner:{self.owner.id}", reason=user_store.OWNER_REMOVED_REASON)

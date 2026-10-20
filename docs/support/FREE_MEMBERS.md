@@ -91,10 +91,11 @@ including the daily picks board. A **free account** is what a visitor makes them
 free account": email, password, optional kennel name). It is active at once, with a 30-day session that every sign-in
 renews. Admin People shows it as **Free account**, plan **Free**.
 
-- A free account opens the dogs: kennels, building, editing and backtesting their own dogs, Ask, the locker room,
-  fire, fan tips, following. It does **not** open the daily picks board (Today, Games, Odds, Props, the digest and the
-  rest): those answer 403 until you approve the person. To upgrade one, use **Approve as free member** or **Grant
-  7-day tester** on that row; nothing else changes.
+- A free account opens the dogs: kennels, building and editing their own dog, the locker room, the plain "Take them
+  out back" preview, fan tips, following. It does **not** open the daily picks board (Today, Games, Odds, Props, the
+  digest and the rest): those answer 403 until you approve the person. To upgrade one, use **Approve as free member**
+  or **Grant 7-day tester** on that row; nothing else changes. The member-only dog tools are listed under "Free vs
+  member" below.
 - **A comp grant or revoke clears the person's password** (any token revoke does, by design), so after either they
   sign in with the access code you send and set a new password.
 - A signup for an email that already has any account creates nothing and says the same words as a new one; the
@@ -102,6 +103,42 @@ renews. Admin People shows it as **Free account**, plan **Free**.
 - Abuse limits: 5 signups an hour per address, 30 an hour and 100 a day overall, a hidden honeypot field, all counted
   in the database. If real people are refused on a busy day, the ceilings are `IP_LIMITS` and `GLOBAL_LIMITS` in
   `src/appstate/free_members.py`. The event `signup_free_created` carries no email.
+
+## Free vs member (owner decision 2026-10-20)
+
+| | Free account | Member (paid, comped, tester window, invited beta) |
+|---|---|---|
+| Active dogs | 1 | up to 5 |
+| Sports | all | all |
+| Live "send a dog" (`POST /hounds/{id}/fire` with `event_id`) | no | yes |
+| Backtest (`POST /hounds/drill` on a member dog) | no | yes |
+| Ask (`POST /hounds/{id}/ask` on a member dog) | no | yes |
+
+- A refusal is HTTP **402** `{"error": "upgrade_required", "feature": ...}` with a plain sentence. `feature` is
+  `more_dogs`, `live_send`, `backtest` or `ask`. The pages (`web/js/upgrade.js`) turn it into an upgrade prompt that
+  links to the billing page. A signed-out caller gets 401, not 402.
+- **A comp counts as paid.** So does a subscriber inside their paid period, a tester inside the window and an invited
+  beta user. Nothing here changes what the house pack's public pages show anyone: house dogs stay open to read, drill
+  and ask about.
+- The free count is every dog that is not retired, running **or benched**, so benching is not a second slot. Remove
+  (retire) the dog to build a different one.
+- **Grandfathering.** Before this rule a free account could keep up to three dogs. Anyone who already has more than one
+  keeps every one of them, running, untouched: nothing is retired, benched or hidden. What they cannot do is add
+  another until they are down to fewer than one (in practice: until they become a member). Their Live, Backtest and Ask
+  access is the same as any free account's. This is the least surprising reading: no one loses a dog or its record,
+  and the new limit only governs new dogs.
+- A member who lapses is held to the subscription gate (402 `subscription_expired`), as the board is. Their dogs stay.
+
+## The founding-member price
+
+The first 50 members pay **$14.99/mo**, the standard price is **$19.99/mo**. A person who has the founding price keeps
+it **for as long as they stay continuously subscribed**: renewals, a card fixed in time and cancelling then reactivating
+before the period ends all keep it. Once the subscription has actually ended, the seat is released and coming back is a
+new purchase at whatever price is on offer then. Seats come from verified Stripe webhooks (active or trialing founding
+subscriptions) and a checkout in progress holds a seat for 30 minutes so seat 50 cannot be sold twice. If a person
+asks why the count shows fewer than 50 taken while the offer is unavailable, the last seats are held by checkouts in
+progress and free themselves within half an hour. `GET /billing/offer` is the public number. With
+`STRIPE_FOUNDING_PRICE_ID` unset there is no founding offer and every checkout is $19.99.
 
 ## Kennel names (a member's public name)
 

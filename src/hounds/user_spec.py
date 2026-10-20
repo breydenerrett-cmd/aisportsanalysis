@@ -64,7 +64,12 @@ TAGLINE_MAX = 80
 MIN_BOOKS_RANGE = (1, 10)
 MAX_BETS_RANGE = (1, 5)
 LOCK_CHOICES = (60, 120, 180)
-MAX_RUNNING_PER_ACCOUNT = 3
+# Owner decision 2026-10-20: a PAID account runs up to five dogs; a FREE account (access.py, TWO LEVELS,
+# "member") keeps one. The free count is every dog that has not been retired (running or benched), so a
+# benched dog cannot be used to hold a second slot. Nothing is ever taken from a free account that
+# already has more: see docs/support/FREE_MEMBERS.md (GRANDFATHERING).
+MAX_RUNNING_PER_ACCOUNT = 5
+FREE_MAX_ACTIVE_PER_ACCOUNT = 1
 
 # The sports a dog may bet. Until 2026-10-19 this was the hard-coded pair ("MLB", "NFL"); it is now the
 # catalog's dog-menu families (config/sports_catalog.json): MLB and NFL first, then every other family a

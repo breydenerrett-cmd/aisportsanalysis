@@ -377,7 +377,7 @@ class RemoveFromMyKennelInTheBuilder(unittest.TestCase):
         self.assertEqual(cap["names"], ["Dog Two"])
         self.assertIn("Dog One was removed from your kennel", cap["msg"])
         self.assertIn("tickets and record stay on the ledger", cap["msg"])
-        self.assertEqual(cap["limit"], "1 of 3 dogs running.")
+        self.assertEqual(cap["limit"], "1 of 5 dogs running.")
 
     def test_saying_no_removes_nothing(self):
         routes, _ = self.routes()

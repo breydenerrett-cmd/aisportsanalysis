@@ -326,7 +326,7 @@ class Locker(ApiCase):
 class Ask(ApiCase):
     def say(self, text, token=None):
         return self.api.ask_dog(self.id, self.api.AskRequest(question=text), Response(),
-                                authorization=self.bearer(token) if token else None, _rl=None)
+                                authorization=self.bearer(token or self.owner_token), _rl=None)
 
     def test_a_question_gets_an_answer_built_from_the_dog(self):
         self.put_ticket()
@@ -366,7 +366,7 @@ class Ask(ApiCase):
         with mock.patch.object(ask_eval, "default_slate", self.fixture_slate()):
             fired = self.api.fire_now(made["id"], Response(), authorization=None, _rl=None)
             asked = self.api.ask_dog(made["id"], self.api.AskRequest(question="any plays rn"), Response(),
-                                     authorization=None, _rl=None)
+                                     authorization=self.bearer(self.owner_token), _rl=None)
         self.assertEqual([p["selection"] for p in fired["picks"]], ["Boston Red Sox to win"])
         self.assertIn("slate", fired)
         self.assertEqual(asked["intent"], "picks_now")
@@ -377,14 +377,15 @@ class Ask(ApiCase):
         refuse = Http(status_code=429, detail={"error": "rate_limited", "retry_after": 7})
         with mock.patch.object(self.api, "_rl_fire_route", side_effect=refuse):
             out = self.api.ask_dog(self.id, self.api.AskRequest(question="what would you bet right now"), Response(),
-                                   authorization=None, _rl=None, request=object())
+                                   authorization=self.bearer(self.owner_token), _rl=None, request=object())
         self.assertIn("Try me again in 7 seconds.", out["answer"])
         self.assertEqual(out["busy"], {"kind": "rate", "retry_after": 7})
 
     def test_a_replay_in_chat_spends_the_drill_allowance_and_a_signed_out_visitor_is_asked_to_sign_in(self):
         from fastapi import HTTPException as Http
-        out = self.api.ask_dog(self.id, self.api.AskRequest(question="what would you have done this week"), Response(),
-                               authorization=None, _rl=None, request=object())
+        # a house dog's Ask stays open to a signed-out visitor; a member dog's Ask is a paid tool (api/entitlements.py)
+        out = self.api.ask_dog("chalk_chihuahua", self.api.AskRequest(question="what would you have done this week"),
+                               Response(), authorization=None, _rl=None, request=object())
         self.assertIn("for signed-in visitors", out["answer"])
         refuse = Http(status_code=429, detail={"error": "rate_limited", "retry_after": 41})
         with mock.patch.object(self.api, "_rl_drill", side_effect=refuse):

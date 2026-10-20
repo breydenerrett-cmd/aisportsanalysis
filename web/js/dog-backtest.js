@@ -15,6 +15,7 @@
  */
 
 import { h, clearNode, fmtPrice, isNum } from "./hounds-core.js";
+import { showUpgrade } from "./upgrade.js";
 import { post, errorText, errorCode, signedIn, signInPrompt, statusLine, SLOW_MS } from "./dog-common.js";
 
 export const TITLE = "Backtest (hindsight, not counted in the record)";
@@ -119,6 +120,7 @@ export async function runBacktest({ dogId, win, status, out, busy }) {
     renderBacktest(out, data);
     return data;
   } catch (err) {
+    if (showUpgrade(out, err)) { status.textContent = ""; return null; }
     status.textContent = backtestError(err);
     return null;
   } finally {

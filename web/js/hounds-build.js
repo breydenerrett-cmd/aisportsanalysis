@@ -27,6 +27,7 @@
 
 import { apiGet, apiPost, getToken } from "./api.js";
 import { h, s, clearNode, describeError, houndHref, isNum, fmtPrice } from "./hounds-core.js";
+import { showUpgrade } from "./upgrade.js";
 import { celebrate, put, removeDog, removedText } from "./dog-common.js";
 import { dogBadge, dogFace, DEFAULT_LOOK, lookFor, BACKGROUNDS, cleanLook, breedOfName, breedLabel } from "./dog-avatar.js";
 import { stakeLineText } from "./hounds-board.js";
@@ -1225,6 +1226,8 @@ function handleSaveError(err) {
   if (status === 401 || status === 403) {
     S.signedIn = false;
     gate("Your sign-in has lapsed or this account cannot build yet.");
+  } else if (status === 402 && showUpgrade(q("build-server-error"), err)) {
+    q("build-server-error").hidden = false;
   } else if (status === 422 && detail && detail.fields) {
     S.saveProblems = problemsFrom(detail);
     renderSentences();

@@ -161,7 +161,7 @@ class RuleText(unittest.TestCase):
         self.assertEqual([s["value"] for s in menu["side_rules"]], list(user_spec.SIDE_RULES))
         self.assertEqual(menu["lock_minutes"]["choices"], [60, 120, 180])
         self.assertIn("-200", menu["price_cap_note"])
-        self.assertEqual(menu["max_running_per_account"], 3)
+        self.assertEqual(menu["max_running_per_account"], 5)
 
 
 if __name__ == "__main__":
