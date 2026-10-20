@@ -1538,7 +1538,9 @@ class _LeagueView:
 
     def __getattr__(self, name: str):
         if name.startswith("_") or name not in ("teams", "players", "schedule", "game", "team_history",
-                                                "player_history", "standings", "injuries"):
+                                                "player_history", "standings", "injuries", "team_averages",
+                                                "team_splits", "player_averages", "player_splits",
+                                                "play_by_play"):
             raise AttributeError(name)
         fn = getattr(self._svc, name)
         return lambda *a, **kw: fn(self.code, *a, **kw)

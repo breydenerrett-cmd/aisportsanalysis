@@ -137,6 +137,8 @@ class EspnStore:
         directory = self.league_dir(league)
         datasets = {}
         for p in sorted(directory.glob("*.jsonl")):
+            if p.name.startswith("pbp_"):     # the play-by-play cache is local and untracked (pbp.py): not in the manifest
+                continue
             rows = jsonl.read_jsonl(p)
             newest = max((r.get("observed_utc") or "" for r in rows), default="") or None
             datasets[p.name] = {"records": len(rows), "newest": newest}

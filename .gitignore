@@ -303,3 +303,8 @@ data/private/
 # never fetches it twice. Large and reproducible; the normalised files under data/datasvc/<sport>/
 # are what is tracked.
 data/datasvc/raw/
+
+# PLAY-BY-PLAY CACHE (src/datasvc/espn/pbp.py). ~40-50 MB per season for NBA + NHL + NCAAF, fully rebuildable
+# (ESPN and the NHL keep the plays: `datasvc <league> pbp-fill`), so it is a local cache, not tracked and not
+# in the web image. To track it, delete this line (and the matching one in .dockerignore if it should ship).
+data/datasvc/espn/*/pbp_*

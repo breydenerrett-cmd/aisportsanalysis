@@ -98,6 +98,9 @@ data/datasvc/*
 !data/datasvc/nfl/
 # The ESPN-fed leagues (2026-10-20): DataClient.league(code) reads these.
 !data/datasvc/espn/
+# ...but not their play-by-play cache (pbp_<season>.jsonl.gz + index, ~40-50 MB a season, local and
+# rebuildable): no served route reads it, and a later line wins over the admission above.
+data/datasvc/espn/*/pbp_*
 
 design/
 docs/

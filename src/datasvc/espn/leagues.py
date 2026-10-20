@@ -5,6 +5,8 @@
 `limit` the scoreboard page size. `players` says whether per-player box scores are stored for
 the league by default: off for college, where one season of player rows is ~100 MB.
 `injuries` says whether ESPN publishes a league-wide injuries report for it.
+`pbp` says whether the scheduled refresh stores play-by-play for its completed games (read from the box-score
+page it already fetches, so it costs no request); `nhle` adds the NHL's own play-by-play feed.
 """
 
 from __future__ import annotations
@@ -22,14 +24,16 @@ class League(NamedTuple):
     players: bool = True
     injuries: bool = True
     teams_limit: int = 1000
+    pbp: bool = False
+    nhle: bool = False
 
 
 LEAGUES: Dict[str, League] = {l.code: l for l in (
-    League("nba", "basketball/nba", "NBA", "basketball"),
-    League("wnba", "basketball/wnba", "WNBA", "basketball"),
-    League("nhl", "hockey/nhl", "NHL", "hockey"),
+    League("nba", "basketball/nba", "NBA", "basketball", pbp=True),
+    League("wnba", "basketball/wnba", "WNBA", "basketball", pbp=True),
+    League("nhl", "hockey/nhl", "NHL", "hockey", pbp=True, nhle=True),
     League("ncaaf", "football/college-football", "NCAA football (FBS)", "football", groups="80",
-           players=False),
+           players=False, pbp=True),
     League("ncaab", "basketball/mens-college-basketball", "NCAA men's basketball (D1)", "basketball",
            groups="50", players=False, injuries=False),
     League("ncaaw", "basketball/womens-college-basketball", "NCAA women's basketball (D1)", "basketball",
