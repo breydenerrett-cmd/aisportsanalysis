@@ -125,7 +125,7 @@ def decorate_fire(dog: common.Dog, out: dict, viewer_id: Optional[int], *, now: 
 
 
 def ask_context(dog: common.Dog, viewer_id: Optional[int], *, now: Optional[datetime] = None,
-                fire_fn=None, tips: Optional[list] = None) -> ask.AskContext:
+                fire_fn=None, tips: Optional[list] = None, earlier_fn=None, backtest_fn=None) -> ask.AskContext:
     """The facts an answer is built from, gathered once."""
     now = now or common.now_utc()
     summary = common.summary_json(dog)
@@ -146,4 +146,5 @@ def ask_context(dog: common.Dog, viewer_id: Optional[int], *, now: Optional[date
         rule_text=common.rule_text(dog, summary), rule_english=common.rule_english(dog, summary), trigger=trigger,
         spec=dog.spec, summary=summary, tickets=common.forward_tickets(dog, limit=60), manual=mt,
         feedback=_counts(dog), tips=tips or [], is_owner=owner, status=dog.status,
-        today=common.eastern_date(now), warming=summary is None, fire_fn=fire_fn)
+        today=common.eastern_date(now), warming=summary is None, fire_fn=fire_fn,
+        earlier_fn=earlier_fn, backtest_fn=backtest_fn, now=now)

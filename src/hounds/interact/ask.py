@@ -21,13 +21,14 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Callable, Optional
 
 from src.hounds import stats
+from src.hounds.interact import ask_intents, fire
 
-INTENTS = ("hello", "record", "today", "why_bet", "best_worst", "bet_now", "why_not", "rules", "improve",
-           "fans", "coach")
+INTENTS = ("hello", "record", "today", "why_bet", "best_worst", "picks_now", "picks_earlier_today",
+           "backtest_window", "why_not", "rules", "improve", "explain_market", "fans", "coach", "help")
 FALLBACK = "fallback"
 ANSWER_KINDS = INTENTS + (FALLBACK,)
 
@@ -54,7 +55,10 @@ class AskContext:
     status: str = "running"
     today: str = ""                          # Eastern date, YYYY-MM-DD
     warming: bool = False
-    fire_fn: Optional[Callable[[], dict]] = None
+    fire_fn: Optional[Callable[[], dict]] = None            # the Fire now payload (the boards as they stand)
+    earlier_fn: Optional[Callable[[], dict]] = None         # today's slate, each game at its decision time (hindsight)
+    backtest_fn: Optional[Callable[[int], dict]] = None     # the drill for 7, 14 or 30 days
+    now: Optional[datetime] = None                          # the clock the answer speaks in (tests inject it)
 
 
 # ---------------------------------------------------------------------------
@@ -78,62 +82,33 @@ def _rx(text: str, pattern: str) -> bool:
     return re.search(pattern, text) is not None
 
 
-BET_WORDS = r"(bet|bets|betting|pick|picks|take|took|back|backed|play|played|choose|chose|ticket|tickets|like)"
-PAST_MARKERS = r"\b(did you|have you|had you|placed|made|yesterday|last night|latest|last bet|last pick|most recent|recent|open bets|pending|so far|already|this week|lately)\b"
-FUTURE_MARKERS = r"\b(would you|will you|should you|right now|currently|at the moment|fire|any picks|anything|whats your pick|whats your play|what do you like|what are you thinking|thinking|what do you see|what do you want)\b"
+def _protect(ctx: Optional["AskContext"]) -> set:
+    """Words of the dog's own teams, so a team name is never "corrected" into a betting word."""
+    if ctx is None:
+        return set()
+    words: set = set()
+    for name, _keys in _team_names(ctx, None):
+        words.update(w for w in norm(name).split() if len(w) >= 4)
+    return words
 
 
-def classify(question: str) -> str:
-    """The intent a question asks for, or ``fallback``."""
-    t = norm(question)
-    if not t:
-        return FALLBACK
-    asks_why = _rx(t, r"(^|\b)why\b") or _rx(t, r"\b(how come|what made you|whats the reason|reason for|explain (?:that|this|your|the) (?:bet|pick|ticket|play))\b")
-    negation = _rx(t, r"\b(didnt|dont|wont|wouldnt|havent|cant|not|no bet|skip|skipped|pass|passed|ignore|ignored|avoid|avoided|miss|missed|sit out|sat out|leave out|left out)\b")
-    # 1. why did you NOT bet something
-    if (asks_why and negation) or _rx(t, r"\bdidnt you (bet|take|pick|back|play)\b") or _rx(t, r"\bwhy no (bet|pick)\b"):
-        return "why_not"
-    # 2. best / worst
-    if _rx(t, r"\b(best|worst|biggest|top|greatest|baddest)\b") and _rx(t, r"\b(bet|bets|pick|picks|win|wins|loss|losses|beat|call|ticket|play|winner|loser)\b"):
-        return "best_worst"
-    if _rx(t, r"\bworst beat\b"):
-        return "best_worst"
-    # 3. why did you bet X
-    if asks_why and (_rx(t, BET_WORDS) or _rx(t, r"\b(go with|went with|favou?r|side|team|that one|this one)\b")):
-        return "why_bet"
-    if _rx(t, r"\bexplain (that|this|your|the) (bet|pick|ticket|play)\b"):
-        return "why_bet"
-    # 4. what would you bet now, against what did you bet
-    past = _rx(t, PAST_MARKERS)
-    future = _rx(t, FUTURE_MARKERS) or _rx(t, r"\bfire\b")
-    if future and not past and (_rx(t, BET_WORDS) or _rx(t, r"\b(now|tonight|today|fire|slate|games|anything|picks)\b")):
-        return "bet_now"
-    if _rx(t, r"\b(whats|what is) your (pick|play|take|lean)\b") or _rx(t, r"\bwhat do you like (tonight|today)\b"):
-        return "bet_now"
-    if past and _rx(t, BET_WORDS + r"|\b(wager|wagers|action)\b"):
-        return "today"
-    if _rx(t, r"\b(bets|picks|tickets|plays)\b") and _rx(t, r"\b(today|tonight|yesterday|open|pending|latest|recent|last)\b"):
-        return "today"
-    if _rx(t, r"\bwhat (are|r) you (betting|backing|taking|playing)\b") or _rx(t, r"\bwhat did you (bet|pick|take|back|play)\b"):
-        return "today"
-    # 5. how to make it better
-    if _rx(t, r"\b(make you better|improve|get better|train you|teach you|tweak|tune you|change your|suggest|coach you|upgrade|fix you|how do i help)\b"):
-        return "improve"
-    # 6. the rule
-    if _rx(t, r"\b(rule|rules|strategy|system|logic|method|criteria|how do you (pick|choose|decide|work|bet|select)|what do you bet on|explain yourself|how do you do it|your approach)\b"):
-        return "rules"
-    # 7. fans and the coach
-    if _rx(t, r"\b(fans|people think|feedback|reviews?|ratings?|what do people|good call|bad call)\b"):
-        return "fans"
-    if _rx(t, r"\b(coach|tips|tipped|tip box)\b"):
-        return "coach"
-    # 8. the record
-    if _rx(t, r"\b(how are you|hows it going|how is it going|how you doing|record|units|roi|clv|closing line|winning|losing|perform|performance|streak|how many (bets|wins|losses)|any good|results|form|standing|rank|verdict|status)\b"):
-        return "record"
-    # 9. who are you
-    if _rx(t, r"\b(who are you|hello|hi|hey|your name|who made you|who built you|introduce|about you|about yourself|what are you|yo|sup)\b"):
-        return "hello"
-    return FALLBACK
+def classify(question: str, ctx: Optional["AskContext"] = None) -> str:
+    """The intent a question asks for, or ``fallback``. Scored, typo-tolerant: see ``ask_intents``."""
+    intent, _score, _all = classify_scored(question, ctx)
+    return intent
+
+
+def classify_scored(question: str, ctx: Optional["AskContext"] = None) -> tuple:
+    """(intent or ``fallback``, the winning score, every score). ``scores`` below the bar come back as ``fallback``
+    with the closest intent named in the third item so the answer can offer it."""
+    if not norm(question):
+        return FALLBACK, 0.0, {}
+    team = find_team(question, ctx) if ctx is not None else None
+    scored = ask_intents.scores(question, _protect(ctx), team_named=team is not None)
+    intent, top = ask_intents.best_intent(scored)
+    if intent is None or top < ask_intents.MIN_SCORE:
+        return FALLBACK, top, scored
+    return intent, top, scored
 
 
 # ---------------------------------------------------------------------------
@@ -355,7 +330,8 @@ def _record(ctx: AskContext) -> dict:
     if n <= 0:
         open_n = s.get("open_bets") or 0
         lines.append(f"I have no graded bets yet" + (f", and {open_n} open {'ticket' if open_n == 1 else 'tickets'}." if open_n else "."))
-        lines.append("A record needs graded games, so there is nothing to judge yet.")
+        lines.append("A record needs graded games, so there is nothing to judge yet. My rules can still be replayed: ask "
+                     "what I would have done this week, or what I would have taken today.")
     else:
         w, l, p = rec.get("wins") or 0, rec.get("losses") or 0, rec.get("pushes") or 0
         wl = f"{w}-{l}" + (f"-{p}" if p else "")
@@ -454,38 +430,280 @@ def _best_worst(ctx: AskContext, question: str) -> dict:
     return {"lines": lines, "tickets": refs}
 
 
-def _fire_lines(ctx: AskContext, fire: dict) -> list:
-    picks = fire.get("picks") or []
+# ---------------------------------------------------------------------------
+# picks: the boards now, today's games at their decision times, and a window of past days
+# ---------------------------------------------------------------------------
+
+MAX_CARDS = 5
+MAX_MISSES_SAID = 3
+PAPER_TAIL = "Paper only. These are simulated picks, not advice."
+
+
+def _now(ctx: AskContext) -> datetime:
+    return ctx.now or datetime.now(timezone.utc)
+
+
+def _et_when(ctx: AskContext, stamp) -> str:
+    """'Today 8:10 pm ET', 'Thursday 8:15 pm ET': the viewer's day words, Eastern clock, zone named."""
+    moment = _parse(stamp)
+    if moment is None:
+        return ""
+    return f"{fire.day_label(fire.day_of(moment), _now(ctx))} {fire.clock_et(moment)}"
+
+
+def _clock(ctx: AskContext, stamp) -> str:
+    moment = _parse(stamp)
+    return fire.clock_et(moment) if moment is not None else ""
+
+
+def _card(ctx: AskContext, p: dict) -> dict:
+    best = ""
+    if p.get("price_best") is not None and p.get("price_best") != p.get("price_average") and p.get("best_book"):
+        best = f"best {_price(p['price_best'])} at {p['best_book']}"
+    return {"selection": p.get("selection"), "price": p.get("price_average"), "price_text": _price(p.get("price_average")),
+            "best": best, "game": p.get("game"), "market": p.get("market_label") or p.get("market"),
+            "when": _et_when(ctx, p.get("start_utc")), "day": p.get("day_label"), "reason": p.get("reason") or "",
+            "state": "started" if p.get("started") else "ahead", "over_limit": bool(p.get("over_daily_limit")),
+            "decided": _clock(ctx, p.get("decided_utc")) if p.get("decided_utc") else ""}
+
+
+def _pick_line(c: dict, *, hindsight: bool) -> str:
+    bits = f"{c['selection']} at {c['price_text']}" + (f" ({c['best']})" if c["best"] else "")
+    line = f"{bits}: {c['game']}, {c['when']}."
+    if hindsight and c["state"] == "started":
+        line += " That game has started."
+    if c["over_limit"]:
+        line += " That is past my daily limit, so I would stop before it."
+    if c["reason"]:
+        line += f" {c['reason']}"
+    return line
+
+
+def _picks_block(ctx: AskContext, picks: list, *, hindsight: bool) -> tuple:
+    """(cards, lines): the picks I would stand behind first (within the daily limit), grouped by day when they
+    span more than one. Every price is the board average the rule used; none is -200 or worse (the engine's cap)."""
+    shown = sorted(picks, key=lambda p: (bool(p.get("over_daily_limit")), p.get("start_utc") or "", p.get("event_id") or ""))
+    shown = sorted(shown[:MAX_CARDS], key=lambda p: (p.get("start_utc") or "", p.get("event_id") or ""))
+    cards = [_card(ctx, p) for p in shown]
+    days = []
+    for c in cards:
+        if c["day"] not in days:
+            days.append(c["day"])
     lines = []
+    last = None
+    for c in cards:
+        if len(days) > 1 and c["day"] != last:
+            lines.append(f"{c['day']}:")
+            last = c["day"]
+        lines.append(_pick_line(c, hindsight=hindsight))
+    if len(picks) > len(shown):
+        lines.append(f"Plus {len(picks) - len(shown)} more that qualified; ask me again later and I will rank them fresh.")
+    return cards, lines
+
+
+def first_person(text: str) -> str:
+    """The Fire now sentences speak to the owner ("your band"); a dog answering says "my"."""
+    out = re.sub(r"\b[Yy]our (band|rule|rules|limit)\b", lambda m: "my " + m.group(1), str(text or ""))
+    return re.sub(r"\b[Yy]ou are\b", "I am", out)
+
+
+def _miss_lines(payload: dict, *, limit: int = MAX_MISSES_SAID) -> list:
+    out = []
+    for m in (payload.get("closest_misses") or [])[:limit]:
+        where = f"{m['game']}" + (f" ({m['market_label']})" if m.get("market_label") else "")
+        out.append(f"Closest: {where}. {first_person(m['why'])}")
+    return out
+
+
+def _busy_line(busy: dict) -> str:
+    n = busy.get("retry_after")
+    kind = busy.get("kind")
+    if kind == "drill":
+        return f"Another replay is running, so I cannot start mine yet. Try again in {n or 30} seconds."
+    if kind == "signin":
+        return ("Replaying past days is the heaviest thing I do, so it is for signed-in visitors. "
+                "Sign in and ask again, or ask me what I would take right now.")
+    return f"I am being asked to read the boards a lot right now. Try me again in {n or 30} seconds."
+
+
+def _unavailable(payload: Optional[dict], fallback: str) -> Optional[dict]:
+    """A body when an evaluation could not run (busy, an error sentence, or no answer at all), else None."""
+    if payload is None:
+        return {"lines": [fallback]}
+    if payload.get("busy"):
+        return {"lines": [_busy_line(payload["busy"])], "busy": payload["busy"]}
+    if payload.get("error"):
+        return {"lines": [payload["error"]]}
+    return None
+
+
+def _picks_now(ctx: AskContext, payload: Optional[dict]) -> dict:
+    """"What would you bet right now": the Fire now payload, said in the dog's voice with pick cards."""
+    stop = _unavailable(payload, "I cannot read the boards just now. Try the Take them out back button in a minute.")
+    if stop is not None:
+        return stop
+    head = []
+    slate = payload.get("slate") or {}
+    if slate.get("line"):
+        head.append(slate["line"])
+    picks = payload.get("picks") or []
+    tail = []
+    cards: list = []
+    pick_lines: list = []
     if picks:
-        lines.append("On the boards stored right now I would take:")
-        for p in picks[:3]:
-            best = f", best {_price(p['price_best'])} at {p['best_book']}" if p.get("price_best") is not None and p["price_best"] != p["price_average"] else ""
-            lines.append(f"{p['selection']} ({p['game']}) at {_price(p['price_average'])}{best}. {p['reason']}")
-        if len(picks) > 3:
-            lines.append(f"Plus {len(picks) - 3} more on the Out back panel.")
+        cards, pick_lines = _picks_block(ctx, picks, hindsight=False)
+        head.append("On the boards as they stand I would take this:" if len(picks) == 1
+                    else "On the boards as they stand I would take these:")
         if any(p.get("before_lock") for p in picks):
-            lines.append("My real ticket is written at my usual time before the start, on the board then, so it can differ.")
+            tail.append("My real ticket is written at my usual time before the start, on the board then, so it can differ.")
     else:
-        lines.append("Nothing qualifies right now.")
-        misses = fire.get("closest_misses") or []
-        for m in misses[:2]:
-            lines.append(f"Closest: {m['game']}. {m['why']}")
-        if not misses and fire.get("headline"):
-            lines.append(fire["headline"])
-    return lines
+        head.append("Nothing qualifies on the boards stored right now.")
+        tail += _miss_lines(payload)
+        n = payload.get("games_considered") or 0
+        if n:
+            tail.append(f"I looked at {n} {'game' if n == 1 else 'games'}.")
+        elif not slate.get("line") and payload.get("headline"):
+            tail.append(payload["headline"])
+    for t in (payload.get("recorded") or [])[:MAX_TICKETS]:
+        tail.append(f"Already on my record: {t['selection']} ({t['game']}) at {_price(t.get('price_average'))}.")
+    tail.append(PAPER_TAIL)
+    return {"lines": head + pick_lines + tail, "ui_lines": head + tail, "cards": cards, "cards_at": len(head), "fire": True}
 
 
-def _bet_now(ctx: AskContext, fire: Optional[dict]) -> dict:
-    if fire is None:
-        return {"lines": ["I cannot read the boards just now. Try the Take them out back button in a minute."]}
-    if fire.get("error"):
-        return {"lines": [fire["error"]]}
-    return {"lines": _fire_lines(ctx, fire), "fire": True}
+MAX_TICKETS = 3
+
+
+def _picks_earlier(ctx: AskContext, payload: Optional[dict], *, intro: bool = True) -> dict:
+    """"What would you have taken today, pre market": every game on today's slate at its own decision time."""
+    stop = _unavailable(payload, "I cannot read today's boards just now. Try me again in a minute.")
+    if stop is not None:
+        return stop
+    head = ["Hindsight, not counted: here is what my rules would have taken on today's games, each game judged "
+            "on the board as it stood at its own decision time."] if intro else []
+    picks = payload.get("picks") or []
+    tail = []
+    cards: list = []
+    pick_lines: list = []
+    in_limit = [p for p in picks if not p.get("over_daily_limit")]
+    n_games = payload.get("games_considered") or 0
+    if in_limit:
+        cards, pick_lines = _picks_block(ctx, in_limit, hindsight=True)
+        if any(not p.get("started") and p.get("before_lock") for p in in_limit):
+            tail.append("A game whose placing time has not come yet is judged on the newest board, so it can still change.")
+        cut = len(picks) - len(in_limit)
+        if cut:
+            tail.append(f"{cut} more would have qualified, but my daily limit stops me before {'it' if cut == 1 else 'them'}.")
+    else:
+        if n_games == 0 and not (payload.get("closest_misses") or payload.get("passes")):
+            if payload.get("trigger") is not None:
+                tail.append("None of today's games have started yet, and I can replay a game only once its placing time "
+                            "has passed. Ask me what I would bet right now to run my rule on the boards as they stand.")
+            else:
+                tail.append("There are no games on today's board for my rule to look at. Ask me what I would bet right "
+                            "now to see the next slate.")
+        else:
+            tail.append("Nothing would have qualified.")
+            tail += _miss_lines(payload)
+            if payload.get("trigger") and payload.get("passes"):
+                tail.append(f"I bet when {payload['trigger']}; none of the {payload['passes']} games I looked at fit.")
+            if n_games:
+                tail.append(f"I looked at {n_games} {'game' if n_games == 1 else 'games'}.")
+    tail.append(PAPER_TAIL)
+    return {"lines": head + pick_lines + tail, "ui_lines": head + tail, "cards": cards, "cards_at": len(head),
+            "hindsight": True}
+
+
+# -- the replay over past days ---------------------------------------------------------------------------------
+
+def _money(units: Optional[float], unit_usd: float) -> str:
+    if units is None:
+        return "n/a"
+    usd = round(units * unit_usd, 2)
+    if usd == 0:
+        return "even, $0.00"
+    return f"{'up' if usd > 0 else 'down'} ${abs(usd):,.2f}"
+
+
+def _window_dates(kind: str, today: str) -> Optional[tuple]:
+    """(first, last) dates a named window covers inside the drill's span, or None for the whole span."""
+    try:
+        d = datetime.fromisoformat(today)
+    except ValueError:
+        return None
+    if kind == "yesterday":
+        y = (d - timedelta(days=1)).date().isoformat()
+        return y, y
+    if kind == "weekend":
+        sunday = d - timedelta(days=1)
+        while sunday.weekday() != 6:
+            sunday -= timedelta(days=1)
+        return (sunday - timedelta(days=1)).date().isoformat(), sunday.date().isoformat()
+    if kind == "thisweek":
+        monday = d - timedelta(days=d.weekday())
+        if monday >= d:
+            return None
+        return monday.date().isoformat(), (d - timedelta(days=1)).date().isoformat()
+    return None
+
+
+def _backtest(ctx: AskContext, question: str, result: Optional[dict], win: dict) -> dict:
+    from src.hounds import bankroll
+    from src.hounds.interact import drill
+    stop = _unavailable(result, "I cannot replay my rules just now. Try me again in a minute.")
+    if stop is not None:
+        return stop
+    params = bankroll.params()
+    span = _window_dates(win["kind"], ctx.today)
+    label = win["label"]
+    notes = []
+    body = result
+    if span is not None:
+        picks = result.get("picks") or []
+        if result.get("picks_total", len(picks)) > len(picks):
+            notes.append(f"That window held more bets than I can list, so here is the last {result.get('days', 7)} days instead.")
+            label = f"the last {result.get('days', 7)} days"
+        else:
+            kept = [p for p in picks if span[0] <= str(p.get("date")) <= span[1]]
+            body = dict(drill._summary(list(kept)))
+    if win.get("clipped"):
+        notes.append("I can look back at most 30 days, so that is the window I used.")
+    if win["kind"] == "thisweek" and span is None:
+        notes.append("This week has no finished day yet, so I used the last 7 days.")
+        label = "the last 7 days"
+    rec = body.get("record") or {}
+    graded, bets = rec.get("graded", 0), rec.get("bets", 0)
+    lines = [f"Replaying my rules over {label}, in hindsight (not counted, a rehearsal on boards already captured):"]
+    if not bets:
+        lines.append("My rules would not have placed a bet in that window.")
+    else:
+        wl = f"{rec.get('wins', 0)}-{rec.get('losses', 0)}" + (f"-{rec['pushes']}" if rec.get("pushes") else "")
+        units = body.get("units_average_price")
+        pct = None if units is None else units * params.unit_usd / params.start * 100.0
+        lines.append(f"{graded} graded {'bet' if graded == 1 else 'bets'}: {wl}, {_money(units, params.unit_usd)} "
+                     f"on a ${params.start:,.0f} paper bankroll"
+                     + (f", a {pct:+.1f}% return" if pct is not None else "")
+                     + f" (one unit is ${params.unit_usd:,.0f} a bet, flat).")
+        unsettled = bets - graded
+        if unsettled:
+            lines.append(f"{unsettled} more {'bet is' if unsettled == 1 else 'bets are'} not graded yet.")
+        for tag, items in (("Best", body.get("best") or []), ("Worst", body.get("worst") or [])):
+            if items:
+                p = items[0]
+                lines.append(f"{tag} pick: {p['selection']} ({p['game']}, {_day(p['date'])}) at {_price(p['price_average'])}, "
+                             f"{_money(p.get('units_average_price'), params.unit_usd)}.")
+        lines.append("That is a small sample, so wins and losses this few are mostly luck." if body.get("small_sample", True)
+                     else "Even so, a rehearsal is not a forward result.")
+    lines += notes
+    lines.append(PAPER_TAIL)
+    return {"lines": [x for x in lines if x], "hindsight": True, "window": {"label": label, "days": result.get("days")}}
 
 
 def _why_not(ctx: AskContext, question: str, fire: Optional[dict]) -> dict:
     team = find_team(question, ctx, fire)
+    early = None
+    if team is None and ctx.earlier_fn is not None:
+        early = _get_earlier(ctx)                       # today's started games are teams a person can name too
+        team = find_team(question, ctx, early) if not early.get("error") and not early.get("busy") else None
     if team is None:
         return {"lines": ["Tell me which game or team and I will tell you what my rule saw. For example: why did you not bet the Mariners."]}
     had = _tickets_for(ctx, team)
@@ -504,10 +722,25 @@ def _why_not(ctx: AskContext, question: str, fire: Optional[dict]) -> dict:
                     elif m["status"] == "recorded":
                         lines.append(f"On {label} I already have a ticket: {m['selection']} at {_price(m['price_average'])}.")
                     else:
-                        lines.append(f"On {label} I pass. {m['why']}")
+                        lines.append(f"On {label} I pass. {first_person(m['why'])}")
                 return {"lines": lines}
-    return {"lines": [f"I cannot see {team} among the games still ahead of me on the stored boards, and I have no ticket on it.",
-                      "I only keep the reason for games that have not started. To see what my rule does over past days, run a backtest in the Training camp. It replays my rule on old boards and is never counted."]}
+    if ctx.earlier_fn is not None:
+        early = early if early is not None else _get_earlier(ctx)
+        if not early.get("error") and not early.get("busy"):
+            for g in early.get("games", []):
+                if needle in norm(g.get("game") or ""):
+                    lines = [f"{g['game']} is on today's slate, so I judged it on the board at its own decision time "
+                             "(hindsight, not counted)."]
+                    for m in g["markets"]:
+                        label = m["market"] if m.get("market") else "the game"
+                        if m["status"] == "pick":
+                            lines.append(f"On {label} my rule would have taken {m['selection']} at {_price(m['price_average'])}.")
+                        else:
+                            lines.append(f"On {label} I would have passed. {first_person(m['why'])}")
+                    return {"lines": lines, "hindsight": True}
+    return {"lines": [f"I cannot see {team} on today's slate or among the games still ahead of me, and I have no ticket on it.",
+                      "To see what my rule does over past days, ask me what I would have done this week. It replays my "
+                      "rule on old boards and is never counted."]}
 
 
 def _rules(ctx: AskContext) -> dict:
@@ -565,15 +798,93 @@ def _coach(ctx: AskContext) -> dict:
     return {"lines": lines}
 
 
-def _fallback(ctx: AskContext) -> dict:
-    return {"lines": ["I did not catch that. Here is what I can answer:",
-                      "Why I made a bet, what I bet today, how I am doing, my best and worst bet, what I would bet right now, "
-                      "why I skipped a game, my rules, and how to make me better."]}
+# ---------------------------------------------------------------------------
+# a betting term, the menu, and a question nobody recognised
+# ---------------------------------------------------------------------------
+
+def _glossary() -> dict:
+    from src.hounds import bankroll
+    p = bankroll.params()
+    start, unit = f"${p.start:,.0f}", f"${p.unit_usd:,.0f}"
+    return {
+        "spread": ["A spread bet is on the margin of a game, not just who wins. A team at -1.5 has to win by two or more; "
+                   "a team at +1.5 can lose by one and still count as a win. In baseball the spread is the run line."],
+        "runline": ["The run line is baseball's spread, almost always 1.5 runs. The favourite at -1.5 has to win by two or "
+                    "more; the underdog at +1.5 wins the bet if it wins or loses by one."],
+        "moneyline": ["A moneyline is a bet on who wins, with no margin. A price of -150 means staking 150 to win 100; "
+                      "+130 means a stake of 100 wins 130."],
+        "total": ["A total (the over/under) is a bet on the combined score of both teams against a number, say 8.5 runs. "
+                  "The over wins on 9 or more; the under wins on 8 or fewer. A whole-number total can push."],
+        "prop": ["A prop is a bet on one player's line rather than the game's result, such as a pitcher's strikeouts or "
+                 "a batter's hits. Props are MLB only here, and dogs built with rules can use them."],
+        "unit": [f"A unit is one standard stake. On my paper bankroll one unit is {unit}, 1% of the {start} start, "
+                 "and it never grows or shrinks with the balance."],
+        "bankroll": [f"My paper bankroll starts at {start}, and every bet is a flat unit of {unit}. Nothing real is "
+                     "ever staked: it is how the site keeps score."],
+        "vig": ["The vig (or juice) is the book's cut built into the price. Both sides of a -110 market pay less than even "
+                "money, which is why a coin-flip bet loses a little every time."],
+        "parlay": ["A parlay ties several bets into one that pays only if every leg wins. I do not bet parlays; every pick "
+                   "of mine is a single bet."],
+        "push": ["A push is a tie with the line: the stake comes back and the bet counts as neither a win nor a loss."],
+        "odds": ["American odds: a minus price (-150) is what you stake to win 100; a plus price (+130) is what a stake of "
+                 "100 wins. A plus price is an underdog and a minus price a favourite."],
+        "impliedprob": ["Implied probability is the win chance a price states: -150 says 60%, +150 says 40%. Add both sides "
+                        "of a market and you get over 100%; the extra is the vig."],
+        "favourite": ["The favourite is the side the market thinks more likely to win (the minus price); the underdog is "
+                      "the plus price. I never take a price of -200 or worse."],
+        "clv": ["Closing line value compares the price a bet got with the price when the game started. It measures the "
+                "price only; it says nothing about whether any one bet wins."],
+        "steam": ["Steam, or line movement, is the price or number shifting as bets come in. Some of my rules follow a move "
+                  "and some fade it."],
+        "roi": [f"Return here is how much a bankroll moved as a share of its start: on {start}, a gain of $50 is a 5% return. "
+                "Yield is the gain per dollar actually staked, a different denominator."],
+    }
+
+
+def _explain_market(ctx: AskContext, question: str) -> dict:
+    term = ask_intents.glossary_term(ask_intents.normalize(question, _protect(ctx)))
+    lines = list(_glossary().get(term or "", []))
+    if not lines:
+        return _help(ctx)
+    lines.append("Ask about another term, or what I would take right now.")
+    return {"lines": lines}
+
+
+MENU = ("Why I made a bet, what I bet today, how I am doing, my best and worst bet, what I would bet right now, "
+        "what I would have taken earlier today, what I would have done over the last 7, 14 or 30 days, "
+        "why I skipped a game, my rules, a betting term like a spread, and how to make me better.")
+
+
+def _help(ctx: AskContext) -> dict:
+    return {"lines": ["Here is what I can answer:", MENU,
+                      "Try: what would you bet right now, what would you have taken today pre market, "
+                      "or what would you have done this week."]}
+
+
+def _unknown(ctx: AskContext, scored: dict) -> dict:
+    """A question nobody recognised is never a dead end: the closest thing I know, then the menu."""
+    best, top = ask_intents.best_intent(scored or {})
+    lines = ["I did not quite catch that, so here is the closest thing I have."]
+    heavy = {"picks_now": "what would you bet right now", "picks_earlier_today": "what would you have taken today pre market",
+             "backtest_window": "what would you have done this week", "why_bet": "why did you bet the (team)",
+             "why_not": "why did you not bet the (team)"}
+    if best in heavy and top >= 1.0:
+        lines.append(f"It sounds like you want me to run my rules. Ask it like this: \"{heavy[best]}\" and I will.")
+        lines += _record(ctx)["lines"][:2]
+    elif best in ("rules", "improve", "fans", "coach", "explain_market", "best_worst", "hello", "help") and top >= 1.0:
+        builder = {"rules": lambda: _rules(ctx), "improve": lambda: _improve(ctx), "fans": lambda: _fans(ctx),
+                   "coach": lambda: _coach(ctx), "best_worst": lambda: _best_worst(ctx, ""),
+                   "explain_market": lambda: _help(ctx), "hello": lambda: _intro(ctx), "help": lambda: _help(ctx)}[best]
+        lines += builder()["lines"][:3]
+    else:
+        lines += _record(ctx)["lines"][:2]
+    lines += ["Here is what I can answer:", MENU]
+    return {"lines": lines}
 
 
 def suggestions(ctx: AskContext) -> list:
     """Questions worth asking this dog right now, in the order a person reads them."""
-    out = ["What did you bet today?"]
+    out = ["What would you bet right now?", "What would you have taken earlier today?"]
     if ctx.tickets:
         t = ctx.tickets[0]
         team = None
@@ -585,8 +896,9 @@ def suggestions(ctx: AskContext) -> list:
             out.append(f"Why did you bet the {team.split()[-1]}?")
         elif game:
             out.append("Why did you make your last bet?")
-    out += ["How are you doing?", "What is your best and worst bet?", "What would you bet right now?",
-            "What are your rules?", "How do I make you better?"]
+        out.append("What did you bet today?")
+    out += ["What would you have done this week?", "How are you doing?", "What are your rules?",
+            "What is your best and worst bet?", "How do I make you better?"]
     return out[:7]
 
 
@@ -594,52 +906,98 @@ def suggestions(ctx: AskContext) -> list:
 # the entry point
 # ---------------------------------------------------------------------------
 
-def _get_fire(ctx: AskContext) -> dict:
-    """The read-only preview, or an ``{"error": sentence}`` the answer can say out loud."""
-    if ctx.fire_fn is None:
-        return {"error": "I cannot be taken out back from here: only the house dogs and the dogs people built run a rule on demand."}
+def _guarded(fn: Optional[Callable], *args, missing: str = "") -> dict:
+    """An evaluation's payload, or ``{"busy": ...}`` / ``{"error": sentence}`` the answer can say out loud."""
+    if fn is None:
+        return {"error": missing}
     try:
-        return ctx.fire_fn()
+        return fn(*args)
     except Exception as exc:  # noqa: BLE001 -- a board that cannot be read is said, not hidden
+        kind = getattr(exc, "kind", None)
+        if kind in ("rate", "drill", "signin"):
+            return {"busy": {"kind": kind, "retry_after": getattr(exc, "retry_after", None)}}
         return {"error": str(exc) if getattr(exc, "public", False) else "I cannot read the boards just now."}
 
 
+NOT_FIRABLE = "I cannot run a rule on demand: only the house dogs and the dogs people built can do that."
+
+
+def _get_fire(ctx: AskContext) -> dict:
+    """The read-only preview, or an ``{"error": sentence}`` the answer can say out loud."""
+    return _guarded(ctx.fire_fn, missing=NOT_FIRABLE)
+
+
+def _get_earlier(ctx: AskContext) -> dict:
+    return _guarded(ctx.earlier_fn, missing=NOT_FIRABLE)
+
+
+def _answer_body(intent: str, q: str, ctx: AskContext, scored: dict) -> dict:
+    if intent == "hello":
+        return _intro(ctx)
+    if intent == "help":
+        return _help(ctx)
+    if intent == "record":
+        return _record(ctx)
+    if intent == "today":
+        body = _today(ctx, q)
+        if not ctx.tickets and ctx.earlier_fn is not None:
+            # A dog with no ticket still has a rule: say so, then run it over today's games (owner, 2026-10-19).
+            more = _picks_earlier(ctx, _get_earlier(ctx), intro=False)
+            lead = ["I have not recorded a ticket yet, so there is nothing on my record to list. My rules can still "
+                    "answer that: here is what they would have taken today, in hindsight."]
+            body = dict(more, lines=lead + more["lines"], ui_lines=lead + more.get("ui_lines", more["lines"]),
+                        cards_at=(more.get("cards_at") or 0) + 1)
+        return body
+    if intent == "why_bet":
+        return _why_bet(ctx, q)
+    if intent == "best_worst":
+        return _best_worst(ctx, q)
+    if intent == "picks_now":
+        if ctx.fire_fn is None:
+            body = _today(ctx, "my open tickets")
+            body["lines"] = ["I cannot run a rule on demand, so I cannot say what I would take right now. "
+                             "Here is what I have on the record:"] + body["lines"]
+            return body
+        return _picks_now(ctx, _get_fire(ctx))
+    if intent == "picks_earlier_today":
+        if ctx.earlier_fn is None:
+            return {"lines": [NOT_FIRABLE + " Ask me about my record instead."]}
+        return _picks_earlier(ctx, _get_earlier(ctx))
+    if intent == "backtest_window":
+        win = ask_intents.parse_window(q, _protect(ctx))
+        if ctx.backtest_fn is None:
+            return {"lines": [NOT_FIRABLE + " Ask me about my record instead."]}
+        return _backtest(ctx, q, _guarded(ctx.backtest_fn, win["days"], missing=NOT_FIRABLE), win)
+    if intent == "why_not":
+        return _why_not(ctx, q, _get_fire(ctx))
+    if intent == "rules":
+        return _rules(ctx)
+    if intent == "improve":
+        return _improve(ctx)
+    if intent == "explain_market":
+        return _explain_market(ctx, q)
+    if intent == "fans":
+        return _fans(ctx)
+    if intent == "coach":
+        return _coach(ctx)
+    return _unknown(ctx, scored)
+
+
 def answer(question: str, ctx: AskContext) -> dict:
-    """``{intent, answer, lines, tickets, followups, matched, question}``. Never raises on an odd question."""
+    """``{intent, answer, lines, cards, tickets, followups, matched, question}``. Never raises on an odd question."""
     q = str(question or "").strip()[:300]
-    intent = classify(q)
+    intent, _top, scored = classify_scored(q, ctx)
     if intent == "why_bet":
         team = find_team(q, ctx, None)
         if team and not _tickets_for(ctx, team):
             intent = "why_not"                     # a team the dog never bet: that is a question about a skip
-    fire = _get_fire(ctx) if intent in ("bet_now", "why_not") else None
-    if intent == "hello":
-        body = _intro(ctx)
-    elif intent == "record":
-        body = _record(ctx)
-    elif intent == "today":
-        body = _today(ctx, q)
-    elif intent == "why_bet":
-        body = _why_bet(ctx, q)
-    elif intent == "best_worst":
-        body = _best_worst(ctx, q)
-    elif intent == "bet_now":
-        body = _bet_now(ctx, fire)
-    elif intent == "why_not":
-        body = _why_not(ctx, q, fire)
-    elif intent == "rules":
-        body = _rules(ctx)
-    elif intent == "improve":
-        body = _improve(ctx)
-    elif intent == "fans":
-        body = _fans(ctx)
-    elif intent == "coach":
-        body = _coach(ctx)
-    else:
+    body = _answer_body(intent, q, ctx, scored)
+    if intent == FALLBACK:
         intent = FALLBACK
-        body = _fallback(ctx)
     lines = body["lines"]
     followups = [s for s in suggestions(ctx) if norm(s) != norm(q)][:4]
     return {"intent": intent, "question": q, "answer": " ".join(lines), "lines": lines,
+            "ui_lines": body.get("ui_lines") or lines, "cards": body.get("cards", []), "cards_at": body.get("cards_at"),
+            "hindsight": bool(body.get("hindsight")), "busy": body.get("busy"),
             "tickets": body.get("tickets", []), "followups": followups, "matched": intent != FALLBACK,
             "dog_id": ctx.dog_id, "dog_name": ctx.name, "paper_only": True}

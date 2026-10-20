@@ -442,6 +442,21 @@ def drill(*, days: int = 14, dog: Optional[common.Dog] = None, spec: Optional[di
     return out
 
 
+def peek(dog: common.Dog, days: int, now: Optional[datetime] = None) -> Optional[dict]:
+    """The remembered drill for this dog and window, or None. Free: it never touches the engine or the one-drill
+    slot, so Ask can answer a repeat of a replay for anyone, signed in or not."""
+    now = now or common.now_utc()
+    if dog.kind == common.KIND_USER and dog.spec is not None:
+        key = ("user", dog.id, user_spec.spec_hash(dog.spec))
+    elif dog.kind == common.KIND_HOUSE:
+        key = ("house", dog.id)
+    else:
+        return None
+    with _cache_lock:
+        hit = _cache.get(key + (days, common.eastern_date(now)))
+        return hit[1] if hit and time.monotonic() - hit[0] < CACHE_TTL_S else None
+
+
 def clear_cache() -> None:
     with _cache_lock:
         _cache.clear()
