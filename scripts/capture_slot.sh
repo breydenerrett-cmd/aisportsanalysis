@@ -623,6 +623,16 @@ timeout 300 python3 -m src.cli allsports capture 2>&1 | sed 's/^/  /' || true
 echo "== allsports scores =="
 timeout 300 python3 -m src.cli allsports scores 2>&1 | sed 's/^/  /' || true
 
+# FREE DATA SERVICE REFRESH (2026-10-20; src/datasvc/espn, docs/datasvc/ESPN_SCHEMA.md): teams, schedules,
+# scores, box scores, standings and injuries for NBA, NHL, NCAAF, NCAAB and the EPL from ESPN's public JSON.
+# No credits, no key. Self-gated: the command skips a league refreshed in the last 180 minutes (its manifest
+# says when), so the 15-minute slots do network work about every third hour, at most 400 requests. The rows
+# are append-only and carry observed_utc; data/datasvc/espn is staged below. A hard 240 s cap and `|| true`:
+# it can never cost the slot.
+echo "== datasvc espn refresh =="
+timeout 240 python3 -m src.cli datasvc all refresh --min-age-minutes 180 --max-requests 400 2>&1 \
+    | grep -E '"(league|requests|skipped|stopped|games|box_scores)"|error' | sed 's/^/  /' || true
+
 echo "== nfl card publish ($SLATE_DATE) =="
 NFL_DATE="$SLATE_DATE"
 NFL_CARD_OUT=$(python3 -m src.cli card publish --sport nfl --date "$NFL_DATE" 2>&1) || true
@@ -770,7 +780,7 @@ python3 -m src.cli store rotate --all --if-over-mb 60 --keep-days 1 \
 # own error is no longer discarded: a failed add prints ESCALATE.
 STAGE_PATHS=""
 for p in data/watch data/processed data/raw/oddsapi data/live docs/OVERNIGHT_RUN.md \
-         evidence data/paper_accounts; do
+         evidence data/paper_accounts data/datasvc/espn; do
     [ -e "$p" ] && STAGE_PATHS="$STAGE_PATHS $p"
 done
 if [ -n "$STAGE_PATHS" ] && ! git add $STAGE_PATHS; then

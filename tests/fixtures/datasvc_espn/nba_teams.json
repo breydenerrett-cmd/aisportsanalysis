@@ -1,0 +1,73 @@
+{
+"sports": [
+{
+"id": "40",
+"leagues": [
+{
+"abbreviation": "NBA",
+"id": "46",
+"name": "National Basketball Association",
+"season": {
+"displayName": "2026-27",
+"year": 2027
+},
+"shortName": "NBA",
+"slug": "nba",
+"teams": [
+{
+"team": {
+"abbreviation": "ATL",
+"alternateColor": "fdb927",
+"color": "c8102e",
+"displayName": "Atlanta Hawks",
+"id": "1",
+"isActive": true,
+"isAllStar": false,
+"location": "Atlanta",
+"name": "Hawks",
+"nickname": "Atlanta",
+"shortDisplayName": "Hawks",
+"slug": "atlanta-hawks"
+}
+},
+{
+"team": {
+"abbreviation": "BOS",
+"alternateColor": "ffffff",
+"color": "008348",
+"displayName": "Boston Celtics",
+"id": "2",
+"isActive": true,
+"isAllStar": false,
+"location": "Boston",
+"name": "Celtics",
+"nickname": "Boston",
+"shortDisplayName": "Celtics",
+"slug": "boston-celtics"
+}
+},
+{
+"team": {
+"abbreviation": "BKN",
+"alternateColor": "ffffff",
+"color": "000000",
+"displayName": "Brooklyn Nets",
+"id": "17",
+"isActive": true,
+"isAllStar": false,
+"location": "Brooklyn",
+"name": "Nets",
+"nickname": "Brooklyn",
+"shortDisplayName": "Nets",
+"slug": "brooklyn-nets"
+}
+}
+],
+"year": 2027
+}
+],
+"name": "Basketball",
+"slug": "basketball"
+}
+]
+}

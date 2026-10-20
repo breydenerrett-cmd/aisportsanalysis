@@ -1,0 +1,232 @@
+{
+"events": [
+{
+"competitions": [
+{
+"attendance": 104168,
+"broadcast": "NBC",
+"competitors": [
+{
+"curatedRank": {
+"current": 1
+},
+"homeAway": "home",
+"id": "194",
+"linescores": [
+{
+"displayValue": "10",
+"period": 1,
+"value": 10.0
+},
+{
+"displayValue": "17",
+"period": 2,
+"value": 17.0
+},
+{
+"displayValue": "14",
+"period": 3,
+"value": 14.0
+},
+{
+"displayValue": "7",
+"period": 4,
+"value": 7.0
+}
+],
+"order": 0,
+"records": [
+{
+"abbreviation": "Game",
+"name": "overall",
+"summary": "10-0",
+"type": "total"
+},
+{
+"name": "Home",
+"summary": "6-0",
+"type": "home"
+},
+{
+"name": "Road",
+"summary": "4-0",
+"type": "road"
+},
+{
+"name": "vs. Conf.",
+"summary": "7-0",
+"type": "vsconf"
+}
+],
+"score": "48",
+"statistics": [],
+"team": {
+"abbreviation": "OSU",
+"alternateColor": "a8adb4",
+"color": "ba0c2f",
+"conferenceId": "5",
+"displayName": "Ohio State Buckeyes",
+"id": "194",
+"isActive": true,
+"location": "Ohio State",
+"logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/194.png",
+"logoDark": "https://a.espncdn.com/i/teamlogos/ncaa/500-dark/194.png",
+"name": "Buckeyes",
+"shortDisplayName": "Ohio State",
+"venue": {
+"id": "3861"
+}
+},
+"type": "team",
+"winner": true
+},
+{
+"curatedRank": {
+"current": 99
+},
+"homeAway": "away",
+"id": "26",
+"linescores": [
+{
+"displayValue": "0",
+"period": 1,
+"value": 0.0
+},
+{
+"displayValue": "0",
+"period": 2,
+"value": 0.0
+},
+{
+"displayValue": "7",
+"period": 3,
+"value": 7.0
+},
+{
+"displayValue": "3",
+"period": 4,
+"value": 3.0
+}
+],
+"order": 1,
+"records": [
+{
+"abbreviation": "Game",
+"name": "overall",
+"summary": "3-7",
+"type": "total"
+},
+{
+"name": "Home",
+"summary": "2-3",
+"type": "home"
+},
+{
+"name": "Road",
+"summary": "1-4",
+"type": "road"
+},
+{
+"name": "vs. Conf.",
+"summary": "3-4",
+"type": "vsconf"
+}
+],
+"score": "10",
+"statistics": [],
+"team": {
+"abbreviation": "UCLA",
+"alternateColor": "f2a900",
+"color": "2774ae",
+"conferenceId": "5",
+"displayName": "UCLA Bruins",
+"id": "26",
+"isActive": true,
+"location": "UCLA",
+"logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/26.png",
+"logoDark": "https://a.espncdn.com/i/teamlogos/ncaa/500-dark/26.png",
+"name": "Bruins",
+"shortDisplayName": "UCLA",
+"venue": {
+"id": "1056"
+}
+},
+"type": "team",
+"winner": false
+}
+],
+"conferenceCompetition": true,
+"date": "2025-11-16T00:30Z",
+"dateValid": true,
+"groups": {
+"id": "5",
+"isConference": true,
+"name": "Big Ten Conference",
+"shortName": "Big Ten"
+},
+"id": "401752900",
+"neutralSite": false,
+"notes": [],
+"playByPlayAvailable": true,
+"recent": false,
+"startDate": "2025-11-16T00:30Z",
+"status": {
+"clock": 0.0,
+"displayClock": "0:00",
+"period": 4,
+"type": {
+"completed": true,
+"description": "Final",
+"detail": "Final",
+"id": "3",
+"name": "STATUS_FINAL",
+"shortDetail": "Final",
+"state": "post"
+}
+},
+"timeValid": true,
+"type": {
+"abbreviation": "STD",
+"id": "1"
+},
+"venue": {
+"address": {
+"city": "Columbus",
+"country": "USA",
+"state": "OH"
+},
+"fullName": "Ohio Stadium",
+"id": "3861",
+"indoor": false
+}
+}
+],
+"date": "2025-11-16T00:30Z",
+"id": "401752900",
+"name": "UCLA Bruins at Ohio State Buckeyes",
+"season": {
+"slug": "regular-season",
+"type": 2,
+"year": 2025
+},
+"shortName": "UCLA @ OSU",
+"status": {
+"clock": 0.0,
+"displayClock": "0:00",
+"period": 4,
+"type": {
+"completed": true,
+"description": "Final",
+"detail": "Final",
+"id": "3",
+"name": "STATUS_FINAL",
+"shortDetail": "Final",
+"state": "post"
+}
+},
+"week": {
+"number": 12
+}
+}
+]
+}

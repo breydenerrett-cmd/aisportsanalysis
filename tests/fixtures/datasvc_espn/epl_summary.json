@@ -1,0 +1,436 @@
+{
+"boxscore": {
+"teams": [
+{
+"displayOrder": 1,
+"homeAway": "home",
+"statistics": [
+{
+"displayValue": "13",
+"label": "Fouls",
+"name": "foulsCommitted"
+},
+{
+"displayValue": "2",
+"label": "Yellow Cards",
+"name": "yellowCards"
+},
+{
+"displayValue": "0",
+"label": "Red Cards",
+"name": "redCards"
+}
+],
+"team": {
+"abbreviation": "MAN",
+"alternateColor": "4169E1",
+"color": "da020e",
+"displayName": "Manchester United",
+"id": "360",
+"location": "Manchester United",
+"logo": "https://a.espncdn.com/i/teamlogos/soccer/500/360.png",
+"name": "Manchester United",
+"shortDisplayName": "Man United",
+"slug": "eng.man_utd",
+"uniform": {
+"alternateColor": "FFFFFF",
+"color": "FF0000",
+"type": "home"
+}
+}
+},
+{
+"displayOrder": 2,
+"homeAway": "away",
+"statistics": [
+{
+"displayValue": "8",
+"label": "Fouls",
+"name": "foulsCommitted"
+},
+{
+"displayValue": "3",
+"label": "Yellow Cards",
+"name": "yellowCards"
+},
+{
+"displayValue": "0",
+"label": "Red Cards",
+"name": "redCards"
+}
+],
+"team": {
+"abbreviation": "MNC",
+"alternateColor": "000000",
+"color": "99c5ea",
+"displayName": "Manchester City",
+"id": "382",
+"location": "Manchester City",
+"logo": "https://a.espncdn.com/i/teamlogos/soccer/500/382.png",
+"name": "Manchester City",
+"shortDisplayName": "Man City",
+"slug": "eng.man_city",
+"uniform": {
+"alternateColor": "FFFFFF",
+"color": "66CCFF",
+"type": "home"
+}
+}
+}
+]
+},
+"rosters": [
+{
+"formation": "4-2-3-1",
+"homeAway": "home",
+"roster": [
+{
+"active": true,
+"athlete": {
+"displayName": "Senne Lammens",
+"fullName": "Senne Lammens",
+"id": "301425",
+"lastName": "Lammens",
+"shortName": "S. Lammens"
+},
+"formationPlace": "1",
+"jersey": "31",
+"position": {
+"abbreviation": "G",
+"displayName": "Goalkeeper",
+"name": "Goalkeeper"
+},
+"starter": true,
+"stats": [
+{
+"abbreviation": "APP",
+"description": "The number of times a player has made an appearance in a match.",
+"displayName": "Appearances",
+"displayValue": "1",
+"name": "appearances",
+"shortDisplayName": "APP",
+"value": 1.0
+},
+{
+"abbreviation": "FC",
+"description": "The number of fouls comitted by a player or team.",
+"displayName": "Fouls Committed",
+"displayValue": "0",
+"name": "foulsCommitted",
+"shortDisplayName": "FC",
+"value": 0.0
+},
+{
+"abbreviation": "FA",
+"description": "The number of fouls suffered by a player or team.",
+"displayName": "Fouls Suffered",
+"displayValue": "0",
+"name": "foulsSuffered",
+"shortDisplayName": "FA",
+"value": 0.0
+}
+],
+"subbedIn": false,
+"subbedOut": false
+},
+{
+"active": true,
+"athlete": {
+"displayName": "Lisandro Martínez",
+"fullName": "Lisandro Martínez",
+"id": "233937",
+"lastName": "Martínez",
+"shortName": "L. Martínez"
+},
+"formationPlace": "6",
+"jersey": "6",
+"position": {
+"abbreviation": "CD-L",
+"displayName": "Center Left Defender",
+"name": "Center Left Defender"
+},
+"starter": true,
+"stats": [
+{
+"abbreviation": "APP",
+"description": "The number of times a player has made an appearance in a match.",
+"displayName": "Appearances",
+"displayValue": "1",
+"name": "appearances",
+"shortDisplayName": "APP",
+"value": 1.0
+},
+{
+"abbreviation": "FC",
+"description": "The number of fouls comitted by a player or team.",
+"displayName": "Fouls Committed",
+"displayValue": "0",
+"name": "foulsCommitted",
+"shortDisplayName": "FC",
+"value": 0.0
+},
+{
+"abbreviation": "FA",
+"description": "The number of fouls suffered by a player or team.",
+"displayName": "Fouls Suffered",
+"displayValue": "0",
+"name": "foulsSuffered",
+"shortDisplayName": "FA",
+"value": 0.0
+}
+],
+"subbedIn": false,
+"subbedOut": false
+},
+{
+"active": true,
+"athlete": {
+"displayName": "Harry Maguire",
+"fullName": "Harry Maguire",
+"id": "157073",
+"lastName": "Maguire",
+"shortName": "H. Maguire"
+},
+"formationPlace": "5",
+"jersey": "5",
+"position": {
+"abbreviation": "CD-R",
+"displayName": "Center Right Defender",
+"name": "Center Right Defender"
+},
+"starter": true,
+"stats": [
+{
+"abbreviation": "APP",
+"description": "The number of times a player has made an appearance in a match.",
+"displayName": "Appearances",
+"displayValue": "1",
+"name": "appearances",
+"shortDisplayName": "APP",
+"value": 1.0
+},
+{
+"abbreviation": "FC",
+"description": "The number of fouls comitted by a player or team.",
+"displayName": "Fouls Committed",
+"displayValue": "1",
+"name": "foulsCommitted",
+"shortDisplayName": "FC",
+"value": 1.0
+},
+{
+"abbreviation": "FA",
+"description": "The number of fouls suffered by a player or team.",
+"displayName": "Fouls Suffered",
+"displayValue": "1",
+"name": "foulsSuffered",
+"shortDisplayName": "FA",
+"value": 1.0
+}
+],
+"subbedIn": false,
+"subbedOut": false
+}
+],
+"team": {
+"abbreviation": "MAN",
+"alternateColor": "4169E1",
+"color": "da020e",
+"displayName": "Manchester United",
+"id": "360"
+},
+"uniform": {
+"alternateColor": "FFFFFF",
+"color": "FF0000",
+"type": "home"
+},
+"winner": true
+},
+{
+"formation": "4-1-4-1",
+"homeAway": "away",
+"roster": [
+{
+"active": true,
+"athlete": {
+"displayName": "Gianluigi Donnarumma",
+"fullName": "Gianluigi Donnarumma",
+"id": "217092",
+"lastName": "Donnarumma",
+"shortName": "G. Donnarumma"
+},
+"formationPlace": "1",
+"jersey": "25",
+"position": {
+"abbreviation": "G",
+"displayName": "Goalkeeper",
+"name": "Goalkeeper"
+},
+"starter": true,
+"stats": [
+{
+"abbreviation": "APP",
+"description": "The number of times a player has made an appearance in a match.",
+"displayName": "Appearances",
+"displayValue": "1",
+"name": "appearances",
+"shortDisplayName": "APP",
+"value": 1.0
+},
+{
+"abbreviation": "FC",
+"description": "The number of fouls comitted by a player or team.",
+"displayName": "Fouls Committed",
+"displayValue": "0",
+"name": "foulsCommitted",
+"shortDisplayName": "FC",
+"value": 0.0
+},
+{
+"abbreviation": "FA",
+"description": "The number of fouls suffered by a player or team.",
+"displayName": "Fouls Suffered",
+"displayValue": "0",
+"name": "foulsSuffered",
+"shortDisplayName": "FA",
+"value": 0.0
+}
+],
+"subbedIn": false,
+"subbedOut": false
+},
+{
+"active": true,
+"athlete": {
+"displayName": "Max Alleyne",
+"fullName": "Max Alleyne",
+"id": "347046",
+"lastName": "Alleyne",
+"shortName": "M. Alleyne"
+},
+"formationPlace": "6",
+"jersey": "68",
+"plays": [
+{
+"clock": {
+"displayValue": "45'"
+},
+"ownGoal": false,
+"penaltyKick": false,
+"redCard": false,
+"scoringPlay": false,
+"substitution": true,
+"yellowCard": false
+}
+],
+"position": {
+"abbreviation": "CD-L",
+"displayName": "Center Left Defender",
+"name": "Center Left Defender"
+},
+"starter": true,
+"stats": [
+{
+"abbreviation": "APP",
+"description": "The number of times a player has made an appearance in a match.",
+"displayName": "Appearances",
+"displayValue": "1",
+"name": "appearances",
+"shortDisplayName": "APP",
+"value": 1.0
+},
+{
+"abbreviation": "FC",
+"description": "The number of fouls comitted by a player or team.",
+"displayName": "Fouls Committed",
+"displayValue": "0",
+"name": "foulsCommitted",
+"shortDisplayName": "FC",
+"value": 0.0
+},
+{
+"abbreviation": "FA",
+"description": "The number of fouls suffered by a player or team.",
+"displayName": "Fouls Suffered",
+"displayValue": "0",
+"name": "foulsSuffered",
+"shortDisplayName": "FA",
+"value": 0.0
+}
+],
+"subbedIn": false,
+"subbedOut": true,
+"subbedOutFor": {
+"athlete": {
+"displayName": "Nico O'Reilly",
+"id": "328464"
+},
+"jersey": "33"
+}
+},
+{
+"active": true,
+"athlete": {
+"displayName": "Abdukodir Khusanov",
+"fullName": "Abdukodir Khusanov",
+"id": "362211",
+"lastName": "Khusanov",
+"shortName": "A. Khusanov"
+},
+"formationPlace": "5",
+"jersey": "45",
+"position": {
+"abbreviation": "CD-R",
+"displayName": "Center Right Defender",
+"name": "Center Right Defender"
+},
+"starter": true,
+"stats": [
+{
+"abbreviation": "APP",
+"description": "The number of times a player has made an appearance in a match.",
+"displayName": "Appearances",
+"displayValue": "1",
+"name": "appearances",
+"shortDisplayName": "APP",
+"value": 1.0
+},
+{
+"abbreviation": "FC",
+"description": "The number of fouls comitted by a player or team.",
+"displayName": "Fouls Committed",
+"displayValue": "0",
+"name": "foulsCommitted",
+"shortDisplayName": "FC",
+"value": 0.0
+},
+{
+"abbreviation": "FA",
+"description": "The number of fouls suffered by a player or team.",
+"displayName": "Fouls Suffered",
+"displayValue": "0",
+"name": "foulsSuffered",
+"shortDisplayName": "FA",
+"value": 0.0
+}
+],
+"subbedIn": false,
+"subbedOut": false
+}
+],
+"team": {
+"abbreviation": "MNC",
+"alternateColor": "000000",
+"color": "99c5ea",
+"displayName": "Manchester City",
+"id": "382"
+},
+"uniform": {
+"alternateColor": "FFFFFF",
+"color": "66CCFF",
+"type": "home"
+},
+"winner": false
+}
+]
+}

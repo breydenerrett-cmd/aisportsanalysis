@@ -106,6 +106,11 @@ COPY data/datasvc/ufc/ data/datasvc/ufc/
 # daily loop (`python -m src.datasvc.cli nfl update`). Loaded only when an NFL
 # data route is first asked for.
 COPY data/datasvc/nfl/ data/datasvc/nfl/
+# THE ESPN-FED LEAGUES (2026-10-20): NBA, NHL, NCAAF, NCAAB, soccer teams, games, box
+# scores, standings and injuries (src/datasvc/espn/store.py), read by
+# DataClient.league(code). Append-only, git-tracked, kept current by the capture
+# slot (`python3 -m src.cli datasvc all refresh`). Read lazily; absent = "unavailable".
+COPY data/datasvc/espn/ data/datasvc/espn/
 
 # BRING THE REQUEST-TIME STORES CURRENT (2026-10-03). The COPY above is the
 # repo's committed copy of results, pitcher logs, bullpen log, standings,

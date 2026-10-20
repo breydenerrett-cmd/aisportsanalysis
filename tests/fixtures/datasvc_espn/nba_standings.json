@@ -1,0 +1,300 @@
+{
+"children": [
+{
+"abbreviation": "East",
+"id": "5",
+"isConference": true,
+"name": "Eastern Conference",
+"standings": {
+"displayName": "Standings",
+"entries": [
+{
+"stats": [
+{
+"abbreviation": "OPP PPG",
+"description": "Opponent Points Per Game",
+"displayName": "Opponent Points Per Game",
+"displayValue": "0.0",
+"name": "avgPointsAgainst",
+"shortDisplayName": "OPP PPG",
+"type": "avgpointsagainst",
+"value": 0.0
+},
+{
+"abbreviation": "PPG",
+"description": "Points Per Game",
+"displayName": "Points Per Game",
+"displayValue": "0.0",
+"name": "avgPointsFor",
+"shortDisplayName": "PPG",
+"type": "avgpointsfor",
+"value": 0.0
+},
+{
+"abbreviation": "DIFF",
+"description": "Average Point Differential",
+"displayName": "Average Point Differential",
+"displayValue": "0.0",
+"name": "differential",
+"shortDisplayName": "DIFF",
+"type": "differential",
+"value": 0.0
+}
+],
+"team": {
+"abbreviation": "ATL",
+"displayName": "Atlanta Hawks",
+"id": "1",
+"isActive": true,
+"location": "Atlanta",
+"name": "Hawks",
+"shortDisplayName": "Hawks"
+}
+},
+{
+"stats": [
+{
+"abbreviation": "OPP PPG",
+"description": "Opponent Points Per Game",
+"displayName": "Opponent Points Per Game",
+"displayValue": "0.0",
+"name": "avgPointsAgainst",
+"shortDisplayName": "OPP PPG",
+"type": "avgpointsagainst",
+"value": 0.0
+},
+{
+"abbreviation": "PPG",
+"description": "Points Per Game",
+"displayName": "Points Per Game",
+"displayValue": "0.0",
+"name": "avgPointsFor",
+"shortDisplayName": "PPG",
+"type": "avgpointsfor",
+"value": 0.0
+},
+{
+"abbreviation": "DIFF",
+"description": "Average Point Differential",
+"displayName": "Average Point Differential",
+"displayValue": "0.0",
+"name": "differential",
+"shortDisplayName": "DIFF",
+"type": "differential",
+"value": 0.0
+}
+],
+"team": {
+"abbreviation": "BOS",
+"displayName": "Boston Celtics",
+"id": "2",
+"isActive": true,
+"location": "Boston",
+"name": "Celtics",
+"shortDisplayName": "Celtics"
+}
+},
+{
+"stats": [
+{
+"abbreviation": "OPP PPG",
+"description": "Opponent Points Per Game",
+"displayName": "Opponent Points Per Game",
+"displayValue": "0.0",
+"name": "avgPointsAgainst",
+"shortDisplayName": "OPP PPG",
+"type": "avgpointsagainst",
+"value": 0.0
+},
+{
+"abbreviation": "PPG",
+"description": "Points Per Game",
+"displayName": "Points Per Game",
+"displayValue": "0.0",
+"name": "avgPointsFor",
+"shortDisplayName": "PPG",
+"type": "avgpointsfor",
+"value": 0.0
+},
+{
+"abbreviation": "DIFF",
+"description": "Average Point Differential",
+"displayName": "Average Point Differential",
+"displayValue": "0.0",
+"name": "differential",
+"shortDisplayName": "DIFF",
+"type": "differential",
+"value": 0.0
+}
+],
+"team": {
+"abbreviation": "CHI",
+"displayName": "Chicago Bulls",
+"id": "4",
+"isActive": true,
+"location": "Chicago",
+"name": "Bulls",
+"shortDisplayName": "Bulls"
+}
+}
+],
+"id": "0",
+"name": "overall",
+"season": 2027,
+"seasonDisplayName": "2026-27",
+"seasonType": 2
+}
+},
+{
+"abbreviation": "West",
+"id": "6",
+"isConference": true,
+"name": "Western Conference",
+"standings": {
+"displayName": "Standings",
+"entries": [
+{
+"stats": [
+{
+"abbreviation": "OPP PPG",
+"description": "Opponent Points Per Game",
+"displayName": "Opponent Points Per Game",
+"displayValue": "0.0",
+"name": "avgPointsAgainst",
+"shortDisplayName": "OPP PPG",
+"type": "avgpointsagainst",
+"value": 0.0
+},
+{
+"abbreviation": "PPG",
+"description": "Points Per Game",
+"displayName": "Points Per Game",
+"displayValue": "0.0",
+"name": "avgPointsFor",
+"shortDisplayName": "PPG",
+"type": "avgpointsfor",
+"value": 0.0
+},
+{
+"abbreviation": "DIFF",
+"description": "Average Point Differential",
+"displayName": "Average Point Differential",
+"displayValue": "0.0",
+"name": "differential",
+"shortDisplayName": "DIFF",
+"type": "differential",
+"value": 0.0
+}
+],
+"team": {
+"abbreviation": "NO",
+"displayName": "New Orleans Pelicans",
+"id": "3",
+"isActive": true,
+"location": "New Orleans",
+"name": "Pelicans",
+"shortDisplayName": "Pelicans"
+}
+},
+{
+"stats": [
+{
+"abbreviation": "OPP PPG",
+"description": "Opponent Points Per Game",
+"displayName": "Opponent Points Per Game",
+"displayValue": "0.0",
+"name": "avgPointsAgainst",
+"shortDisplayName": "OPP PPG",
+"type": "avgpointsagainst",
+"value": 0.0
+},
+{
+"abbreviation": "PPG",
+"description": "Points Per Game",
+"displayName": "Points Per Game",
+"displayValue": "0.0",
+"name": "avgPointsFor",
+"shortDisplayName": "PPG",
+"type": "avgpointsfor",
+"value": 0.0
+},
+{
+"abbreviation": "DIFF",
+"description": "Average Point Differential",
+"displayName": "Average Point Differential",
+"displayValue": "0.0",
+"name": "differential",
+"shortDisplayName": "DIFF",
+"type": "differential",
+"value": 0.0
+}
+],
+"team": {
+"abbreviation": "DAL",
+"displayName": "Dallas Mavericks",
+"id": "6",
+"isActive": true,
+"location": "Dallas",
+"name": "Mavericks",
+"shortDisplayName": "Mavericks"
+}
+},
+{
+"stats": [
+{
+"abbreviation": "OPP PPG",
+"description": "Opponent Points Per Game",
+"displayName": "Opponent Points Per Game",
+"displayValue": "0.0",
+"name": "avgPointsAgainst",
+"shortDisplayName": "OPP PPG",
+"type": "avgpointsagainst",
+"value": 0.0
+},
+{
+"abbreviation": "PPG",
+"description": "Points Per Game",
+"displayName": "Points Per Game",
+"displayValue": "0.0",
+"name": "avgPointsFor",
+"shortDisplayName": "PPG",
+"type": "avgpointsfor",
+"value": 0.0
+},
+{
+"abbreviation": "DIFF",
+"description": "Average Point Differential",
+"displayName": "Average Point Differential",
+"displayValue": "0.0",
+"name": "differential",
+"shortDisplayName": "DIFF",
+"type": "differential",
+"value": 0.0
+}
+],
+"team": {
+"abbreviation": "DEN",
+"displayName": "Denver Nuggets",
+"id": "7",
+"isActive": true,
+"location": "Denver",
+"name": "Nuggets",
+"shortDisplayName": "Nuggets"
+}
+}
+],
+"id": "0",
+"name": "overall",
+"season": 2027,
+"seasonDisplayName": "2026-27",
+"seasonType": 2
+}
+}
+],
+"season": {
+"displayName": "2026-27",
+"endDate": "2027-06-26T06:59Z",
+"startDate": "2026-09-30T07:00Z",
+"year": 2027
+}
+}
