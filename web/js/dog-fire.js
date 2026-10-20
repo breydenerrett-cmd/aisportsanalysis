@@ -1,5 +1,6 @@
 /**
- * Fire now: "What would you bet right now?" (POST /hounds/{id}/fire, src/hounds/interact/fire.py).
+ * Take them out back (was "Fire now"; the route, the module and the data-hooks keep the old word, only what a person
+ * reads changed): "What would you bet right now?" (POST /hounds/{id}/fire, src/hounds/interact/fire.py).
  *
  * The server runs the dog's CURRENT rule over the newest stored boards, read only, and answers with the picks it
  * would make (exact prices, books, the checks each pick passed, how old the board is, when its real ticket would be
@@ -17,6 +18,9 @@ import { h, clearNode, fmtPrice, isNum } from "./hounds-core.js";
 import { post, errorText, errorCode, whenText, spanText, statusLine, celebrate, PAPER_NOTE } from "./dog-common.js";
 
 const SLOW = 90000;
+
+/** The call behind the button, shared with the studio and the camp. */
+export const takeOutBack = (id) => post(`/hounds/${encodeURIComponent(id)}/fire`, {}, SLOW);
 
 function priceLine(p) {
   const bits = [`Average price ${fmtPrice(p.price_average)}`];
@@ -85,9 +89,10 @@ function pickCard(p, { id, canRecord, onRecord }) {
   return li;
 }
 
-/** Draw a fire payload into `box`. `canRecord` shows the owner's manual-pick buttons. */
-export function renderFireResult(box, data, { id, canRecord = false, onRecord } = {}) {
+/** Draw a fire payload into `box`. `canRecord` shows the owner's manual-pick buttons. `name` heads it "<name>'s picks right now". */
+export function renderFireResult(box, data, { id, name, canRecord = false, onRecord } = {}) {
   clearNode(box);
+  if (name) box.appendChild(h("h3", { class: "hd-h3", "data-hook": "fire-title", text: `${name}'s picks right now` }));
   box.appendChild(h("p", { class: "dk-headline", "data-hook": "fire-headline", role: "status", text: data.headline || "" }));
   const asOf = [];
   if (data.as_of) asOf.push(`Run ${whenText(data.as_of)}`);
@@ -116,7 +121,7 @@ export function renderFireResult(box, data, { id, canRecord = false, onRecord } 
   box.appendChild(h("p", { class: "hd-fine", "data-hook": "fire-preview-note", text: data.preview_note || PAPER_NOTE }));
 }
 
-/** The Fire now panel on a dog's page: a button, a status line and the result. */
+/** The "Take them out back" panel on a dog's page: a button, a status line and the result. */
 export function mountFire(section, { id, name, kit, onRecord }) {
   const body = section.querySelector("[data-hook='dog-fire']");
   if (!body) return;
@@ -124,21 +129,21 @@ export function mountFire(section, { id, name, kit, onRecord }) {
   const canRecord = !!(kit && kit.can_record_manual);
   body.appendChild(h("p", { class: "hd-muted" }, `Run ${name || "this model"}'s current rule on the latest stored boards and see what it would pick. Nothing is recorded${canRecord ? " unless you choose to" : ""}.`));
   const result = h("div", { class: "dk-result", "data-hook": "fire-result", "aria-live": "polite" });
-  const btn = h("button", { type: "button", class: "btn btn--primary", "data-hook": "fire-btn", text: "What would you bet right now?" });
+  const btn = h("button", { type: "button", class: "btn btn--primary", "data-hook": "fire-btn", text: "Take them out back" });
   const status = statusLine("fire-status");
   btn.addEventListener("click", async () => {
     btn.setAttribute("disabled", "");
-    status.textContent = "Reading the latest boards...";
+    status.textContent = `Taking ${name || "this dog"} out back...`;
     try {
-      const data = await post(`/hounds/${encodeURIComponent(id)}/fire`, {}, SLOW);
+      const data = await takeOutBack(id);
       status.textContent = "";
-      renderFireResult(result, data, { id, canRecord: canRecord && data.viewer_is_owner !== false, onRecord });
+      renderFireResult(result, data, { id, name: name || "This dog", canRecord: canRecord && data.viewer_is_owner !== false, onRecord });
     } catch (err) {
       clearNode(result);
       status.textContent = errorText(err, "The boards could not be read just now. Try again in a minute.");
     } finally {
       btn.removeAttribute("disabled");
-      btn.textContent = "Fire again";
+      btn.textContent = "Take them out back again";
     }
   });
   body.appendChild(h("div", { class: "dk-actions" }, [btn, status]));

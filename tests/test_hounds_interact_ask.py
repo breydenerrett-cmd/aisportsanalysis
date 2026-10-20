@@ -231,7 +231,7 @@ class TheAnswers(unittest.TestCase):
 
     def test_a_dog_that_cannot_be_fired_says_so(self):
         out = self.say("What would you bet right now?", fire_fn=None)
-        self.assertIn("cannot fire from here", out["answer"])
+        self.assertIn("cannot be taken out back from here", out["answer"])
 
     def test_a_board_that_cannot_be_read_is_said_not_hidden(self):
         def broken():

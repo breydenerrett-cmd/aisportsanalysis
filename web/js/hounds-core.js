@@ -648,9 +648,12 @@ export function houndHref(id) {
   return `hound.html?id=${encodeURIComponent(String(id))}`;
 }
 
-/** "Handler 3F2A" -> "handler-3f2a": the public name of a member's kennel (src/hounds/kennels.py `slug`, same rule). */
+/**
+ * "Handler 3F2A" -> "handler-3f2a", "Bob's Dogs" -> "bobs-dogs": the public handle of a member's kennel
+ * (src/hounds/kennels.py `slug` and member_profile.py `slug`, the same rule: an apostrophe is dropped, not a separator).
+ */
 export function kennelHandle(label) {
-  return String(label || "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  return String(label || "").trim().toLowerCase().replace(/['\u2019]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 }
 
 /** The page of one member's public dogs, from the owner label a member's dog carries ("" when it has none). */
@@ -659,9 +662,14 @@ export function kennelHref(ownerDisplay) {
   return handle ? `kennel.html?u=${encodeURIComponent(handle)}` : "";
 }
 
-/** "Handler 3F2A's kennel" */
+/**
+ * What a kennel is called: the member's own kennel name ("Bob's Dogs") once they set one, else "Handler 3F2A's kennel"
+ * (the anonymous handle is the default; a kennel name can never look like one, member_profile.validate_name).
+ */
 export function kennelName(ownerDisplay) {
-  return `${String(ownerDisplay || "").trim() || "A member"}'s kennel`;
+  const label = String(ownerDisplay || "").trim();
+  if (!label) return "A member's kennel";
+  return /^Handler [0-9A-F]{4}$/i.test(label) ? `${label}'s kennel` : label;
 }
 
 /**

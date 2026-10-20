@@ -597,7 +597,7 @@ def suggestions(ctx: AskContext) -> list:
 def _get_fire(ctx: AskContext) -> dict:
     """The read-only preview, or an ``{"error": sentence}`` the answer can say out loud."""
     if ctx.fire_fn is None:
-        return {"error": "I cannot fire from here: only the house dogs and the dogs people built run a rule on demand."}
+        return {"error": "I cannot be taken out back from here: only the house dogs and the dogs people built run a rule on demand."}
     try:
         return ctx.fire_fn()
     except Exception as exc:  # noqa: BLE001 -- a board that cannot be read is said, not hidden

@@ -3,16 +3,23 @@
  *
  * MY KENNEL is the hub. Each dog is a card with its locker-room avatar (an idle bob and blink; a happy wiggle when its
  * last pick won, a slump when it lost: all CSS, see css/lh.css), its season record and units, its last pick and a
- * status. One tap each: Fire now, Ask, Edit, Open. "Build a dog" is the last card. Clicking a dog opens the STUDIO, an
- * in-place drawer with five tabs that REUSE the dog page's and the builder's own modules, never a copy of their logic:
+ * status. One tap each: Take them out back, Ask, Edit, Open. "Build a dog" is the last card. Clicking a dog opens the STUDIO, an
+ * in-place drawer with six tabs that REUSE the dog page's and the builder's own modules, never a copy of their logic:
  *
  *   Look     dog-locker.js          the locker room, previewed live on the animated avatar
  *   Rules    hounds-build.js        the English box and the rule cards (builder-skeleton.js), saved as a new version
- *   Fire now dog-fire.js            what the rule would bet right now, read only
+ *   Out back dog-fire.js            "Take them out back": what the rule would bet right now, read only
+ *   Backtest dog-backtest.js        the rule over 7 / 14 / 30 days or Season 2 of stored boards, in paper dollars (hindsight)
  *   Ask      dog-ask.js             the dog's answers, worked out from its own data
  *   Record   dog-manual.js + tickets  the season record, the manual picks and the last tickets
  *
- * A PUBLIC KENNEL is the same cards, read only (Open and Ask are links to the dog's page), for any visitor. The data is
+ * KENNEL NAMES. Until a member names their kennel it is "Handler 21E8"; the first visit to My kennel asks once ("Name your
+ * kennel", PUT /me/kennel; "Not now" is remembered by the server) and a "Rename kennel" button stays on the page. The
+ * server checks the name (2-30 characters, unique, no language the dog names refuse) and its own words are shown.
+ *
+ * A PUBLIC KENNEL is also the member's PROFILE: kennel name, member since, dog count, the combined paper record and
+ * dollars across their dogs, their best dog and their recent tickets (all from GET /hounds/kennels/{handle}), above
+ * the same cards, read only (Open and Ask are links to the dog's page), for any visitor. The data is
  * GET /hounds/kennels/mine (signed in) and GET /hounds/kennels/{handle}; a dog with no bet yet is listed and says "New".
  * The studio's deep link is ?dog=<id>&tab=<tab>. Nothing here measures anything: every number is the server's.
  */
@@ -20,11 +27,12 @@
 import { apiGet } from "./api.js";
 import { TOKEN_CHANGED_EVENT } from "./api.js";
 import { h, clearNode, isNum, houndHref, kennelName, describeError } from "./hounds-core.js";
-import { signedIn, get, SIGNIN_HREF } from "./dog-common.js";
+import { signedIn, get, put, errorText, SIGNIN_HREF } from "./dog-common.js";
 import { dogBadge, DEFAULT_LOOK, lookFor } from "./dog-avatar.js";
 import { mountTabs } from "./tabs.js";
 import { mountLocker } from "./dog-locker.js";
 import { mountFire } from "./dog-fire.js";
+import { mountBacktest, money } from "./dog-backtest.js";
 import { bootAsk } from "./dog-ask.js";
 import { mountManual } from "./dog-manual.js";
 import { ticketList } from "./hounds-tickets.js";
@@ -41,6 +49,8 @@ const state = {
   loaded: {},               // tab -> the dog id it was built for
   kit: null,
 };
+
+const STUDIO_TABS = ["look", "fire", "backtest", "ask", "record"];   // the tabs that are cleared between dogs (rules is the builder's)
 
 const stop = (e) => { if (e && e.stopPropagation) e.stopPropagation(); };
 
@@ -109,7 +119,7 @@ function dogCard(dog, { mine }, index) {
   const open = () => openStudio(dog.id, "look", card);
   const actions = mine && !dog.retired
     ? [
-      h("button", { type: "button", class: "kn-act kn-act--primary", "data-hook": "dog-action-fire", text: "Fire now",
+      h("button", { type: "button", class: "kn-act kn-act--primary", "data-hook": "dog-action-fire", text: "Take them out back",
         on: { click: (e) => { stop(e); openStudio(dog.id, "fire", card, { autofire: true }); } } }),
       h("button", { type: "button", class: "kn-act", "data-hook": "dog-action-ask", text: "Ask",
         on: { click: (e) => { stop(e); openStudio(dog.id, "ask", card); } } }),
@@ -182,7 +192,7 @@ function gate(kind) {
     box.appendChild(h("div", { class: "kn-empty", "data-hook": "kennel-signin" }, [
       h("div", { class: "kn-empty__dog", "aria-hidden": "true" }, [dogBadge(DEFAULT_LOOK, { size: 96 })]),
       h("h2", { text: "Sign in to see your dogs" }),
-      h("p", { class: "hd-lede", text: "Your kennel is where you build, dress and fire your dogs." }),
+      h("p", { class: "hd-lede", text: "Your kennel is where you build, dress and take your dogs out back." }),
       h("div", { class: "kn-empty__row" }, [
         h("a", { class: "lh-btn lh-btn--solid", href: SIGNIN_HREF, "data-hook": "kennel-signin-link", text: "Sign in" }),
         h("a", { class: "lh-btn lh-btn--soft", href: "kennels.html", "data-hook": "kennel-browse", text: "Browse kennels" })])]));
@@ -195,6 +205,93 @@ function gate(kind) {
   }
 }
 
+// ---- the kennel name -------------------------------------------------------------------------------------
+
+/** A div just before the grid that one feature owns (so a re-render replaces it, never stacks a second). */
+function slot(hook) {
+  let el = q(hook);
+  if (!el) {
+    el = h("div", { "data-hook": hook });
+    const grid = q("kennel-grid");
+    grid.parentNode.insertBefore(el, grid);
+  }
+  return clearNode(el);
+}
+
+/** "Name your kennel": one text box, Save and (for the first-visit prompt) Not now. */
+function nameForm(data, { first }) {
+  const limits = data.name_limits || { min: 2, max: 30 };
+  const input = h("input", { type: "text", class: "lh-input", name: "kennel_name", maxlength: String(limits.max), minlength: String(limits.min),
+    autocomplete: "off", "data-hook": "kennel-name-input", "aria-label": "Kennel name", placeholder: "Bob's Dogs", value: data.kennel_name || "" });
+  const status = h("p", { class: "hd-fine", role: "status", "aria-live": "polite", "data-hook": "kennel-name-status" });
+  const save = h("button", { type: "submit", class: "lh-btn lh-btn--solid", "data-hook": "kennel-name-save", text: "Save name" });
+  const close = async (dismiss) => {
+    if (dismiss) { try { await put("/me/kennel", { dismiss_prompt: true }); } catch (err) { /* it asks again next visit: harmless */ } }
+    clearNode(q("kennel-name-slot"));
+  };
+  const form = h("form", { class: "kn-nameform", "data-hook": "kennel-name-form", novalidate: "" }, [
+    h("h2", { class: "hd-h3", text: first ? "Name your kennel" : "Rename your kennel" }),
+    h("p", { class: "hd-muted", text: `${data.kennel_name ? `Your kennel is called ${data.kennel_name}.` : `Until you name it, your kennel shows as ${data.display}.`} Everyone sees the name on your dogs, the leaderboard and your public page. ${limits.min} to ${limits.max} characters: letters, numbers, spaces, hyphens and apostrophes.` }),
+    h("div", { class: "kn-nameform__row" }, [input, save,
+      first ? h("button", { type: "button", class: "lh-btn lh-btn--soft", "data-hook": "kennel-name-skip", text: "Not now", on: { click: () => close(true) } })
+        : h("button", { type: "button", class: "lh-btn lh-btn--soft", "data-hook": "kennel-name-cancel", text: "Cancel", on: { click: () => close(false) } })]),
+    status]);
+  form.addEventListener("submit", async (evt) => {
+    evt.preventDefault();
+    const name = String(input.value || "").trim();
+    if (!name) { status.textContent = "Type a name first."; return; }
+    save.setAttribute("disabled", "");
+    status.textContent = "Saving...";
+    try {
+      await put("/me/kennel", { kennel_name: name });
+      await load({ quiet: true });
+      clearNode(q("kennel-name-slot"));
+    } catch (err) {
+      status.textContent = errorText(err, "The name could not be saved just now. Try again in a minute.");
+      save.removeAttribute("disabled");
+    }
+  });
+  return form;
+}
+
+function openNameForm(first) {
+  const box = slot("kennel-name-slot");
+  box.appendChild(h("section", { class: "kn-name hd-panel", "data-hook": first ? "kennel-name-prompt" : "kennel-name-editor" }, [nameForm(state.data, { first })]));
+  const input = box.querySelector("[data-hook='kennel-name-input']");
+  if (input && input.focus && !first) input.focus();
+}
+
+// ---- the public profile ----------------------------------------------------------------------------------
+
+function profileStat(label, value, hook) {
+  return h("div", { class: "kn-stat" }, [h("dt", { text: label }), h("dd", Object.assign({ text: value }, hook ? { "data-hook": hook } : {}))]);
+}
+
+/** The member's profile block: the numbers the server added up, and what their dogs did lately. */
+export function profileCard(data) {
+  const c = data.combined || {};
+  const rec = c.record || {};
+  const settled = c.settled || 0;
+  const best = data.best;
+  const stats = h("dl", { class: "kn-stats kn-stats--wide", "data-hook": "kennel-profile-stats" }, [
+    profileStat("Member since", data.member_since || "n/a", "profile-since"),
+    profileStat("Dogs", String(data.dog_count || 0), "profile-dogs"),
+    profileStat("Paper record", settled ? recordText(rec) : "no settled bets", "profile-record"),
+    profileStat("Paper dollars", settled && isNum(c.pnl_usd) ? money(c.pnl_usd) : "n/a", "profile-usd"),
+    profileStat("Return", settled && isNum(c.return_pct) ? `${c.return_pct > 0 ? "+" : ""}${c.return_pct.toFixed(2)}%` : "n/a", "profile-return"),
+    profileStat("Best dog", best ? `${best.name}, ${recordText(best.record)}` : "none yet", "profile-best")]);
+  const tickets = Array.isArray(data.recent_tickets) ? data.recent_tickets : [];
+  const list = tickets.length
+    ? h("ul", { class: "dk-misses", "data-hook": "profile-tickets" }, tickets.map((t) => h("li", { class: "dk-miss", "data-hook": "profile-ticket" }, [
+      h("strong", { text: t.selection || "A pick" }), ` in ${t.game || "a game"}, ${String(t.date || "").slice(0, 10)}: ${t.result}. `,
+      h("a", { href: (t.dog && t.dog.href) || "#", text: (t.dog && t.dog.name) || "its dog" })])))
+    : h("p", { class: "hd-muted", "data-hook": "profile-no-tickets", text: "No tickets yet across these dogs." });
+  return h("section", { class: "hd-panel kn-profile", "data-hook": "kennel-profile" }, [
+    h("h2", { class: "hd-h3", text: "Profile" }), stats,
+    h("p", { class: "hd-fine", text: `Combined across ${data.dog_count === 1 ? "its dog" : "its dogs"}: each dog starts with its own $1,000 paper bankroll (1 unit = $10). Paper only.` }),
+    h("h3", { class: "hd-h3", text: "Recent tickets" }), list]);
+}
+
 function render() {
   const data = state.data;
   const mine = state.mode === "mine";
@@ -205,15 +302,21 @@ function render() {
   const actions = clearNode(q("kennel-actions"));
   if (mine) {
     setHead({ eyebrow: "Your dogs", title: "My kennel",
-      sub: active.length ? `${active.length} ${active.length === 1 ? "dog" : "dogs"}. Tap one to dress it, edit it or fire it.` : "" });
+      sub: `${data.kennel_name ? `${data.kennel_name}. ` : ""}${active.length ? `${active.length} ${active.length === 1 ? "dog" : "dogs"}. Tap one to dress it, edit it or take it out back.` : ""}` });
     actions.appendChild(h("a", { class: "lh-btn lh-btn--soft", href: `kennel.html?u=${encodeURIComponent(data.handle)}`, "data-hook": "kennel-public-link", text: "Public page" }));
+    actions.appendChild(h("button", { type: "button", class: "lh-btn lh-btn--soft", "data-hook": "kennel-rename", text: data.kennel_name ? "Rename kennel" : "Name your kennel",
+      on: { click: () => openNameForm(false) } }));
     actions.appendChild(h("button", { type: "button", class: "lh-btn lh-btn--solid", "data-hook": "kennel-build", text: "Build a dog",
       on: { click: (e) => openStudio("new", "rules", e.currentTarget) } }));
   } else {
     const best = data.best;
-    setHead({ eyebrow: "Kennel", title: kennelName(data.display),
+    setHead({ eyebrow: "Kennel", title: kennelName(data.title || data.display),
       sub: `${data.dog_count} ${data.dog_count === 1 ? "dog" : "dogs"}${best ? `. Best: ${best.name}, ${recordText(best.record)}` : ". No bets settled yet"}.` });
   }
+  if (!mine && data.combined) slot("kennel-profile-slot").appendChild(profileCard(data));
+  else if (q("kennel-profile-slot")) clearNode(q("kennel-profile-slot"));
+  if (mine && data.needs_name_prompt && !q("kennel-name-prompt")) openNameForm(true);
+  else if (mine && !data.needs_name_prompt && q("kennel-name-prompt")) clearNode(q("kennel-name-slot"));
   if (!data.dogs.length && mine) {
     grid.appendChild(emptyMine());
   } else {
@@ -309,6 +412,10 @@ async function buildTab(tab) {
     const sec = section("dog-fire");
     host.appendChild(sec);
     mountFire(sec, { id: dog.id, name: dog.name, kit, onRecord: () => { state.loaded.record = null; } });
+  } else if (tab === "backtest") {
+    const sec = section("dog-backtest");
+    host.appendChild(sec);
+    mountBacktest(sec, { id: dog.id, name: dog.name });
   } else if (tab === "ask") {
     const sec = section("dog-ask");
     host.appendChild(sec);
@@ -374,7 +481,7 @@ export function openStudio(id, tab = "look", opener = null, { autofire = false }
   state.opener = opener;
   state.kit = null;
   state.loaded = {};
-  for (const k of ["look", "fire", "ask", "record"]) clearNode(q(`studio-${k}`));
+  for (const k of STUDIO_TABS) clearNode(q(`studio-${k}`));
   if (id === "new" || !dogById(id)) {
     state.open = "new";
     clearNode(q("studio-rules"));
@@ -432,14 +539,14 @@ function bindStudio() {
       state.open = detail.id;
       state.loaded = {};
       for (const t of document.querySelectorAll("[data-hook='studio-tabs'] [role='tab']")) t.removeAttribute("hidden");
-      for (const k of ["look", "fire", "ask", "record"]) clearNode(q(`studio-${k}`));
+      for (const k of STUDIO_TABS) clearNode(q(`studio-${k}`));
       paintStudioHead();
       if (state.tabs) state.tabs.select("look");
       writeUrl(detail.id, "look");
     } else if (detail.type === "version" && dogById(detail.id)) {
       state.open = detail.id;
       state.loaded = { rules: detail.id };
-      for (const k of ["look", "fire", "ask", "record"]) clearNode(q(`studio-${k}`));
+      for (const k of STUDIO_TABS) clearNode(q(`studio-${k}`));
       paintStudioHead();
       writeUrl(detail.id, "rules");
     }

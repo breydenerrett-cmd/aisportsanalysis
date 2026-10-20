@@ -1,7 +1,7 @@
 /**
  * Manual picks: the owner's own tickets on a builder dog (GET /hounds/{id}/manual, src/hounds/interact/manual.py).
  *
- * A manual pick is a paper ticket the owner chose to record from a Fire now preview. It lives in its own ledger and
+ * A manual pick is a paper ticket the owner chose to record from a "Take them out back" preview. It lives in its own ledger and
  * is graded by the same grader as the rule's tickets, but it is NEVER counted in the dog's rule record, its status
  * or the leaderboard: this panel shows it apart, with its own small record, and says so in words.
  */
@@ -30,7 +30,7 @@ export async function mountManual(section, { id, kit }) {
       text: "Tickets the owner chose to record by hand, kept apart. They are never counted in this dog's rule record, its status or the leaderboard." }));
     if (!items.length) {
       body.appendChild(h("p", { class: "hd-muted", "data-hook": "manual-empty",
-        text: `None yet. Run Fire now and use Record as a manual pick on a pick you like. Up to ${data.limit_per_day || 5} a day.` }));
+        text: `None yet. Take them out back and use Record as a manual pick on a pick you like. Up to ${data.limit_per_day || 5} a day.` }));
     } else {
       body.appendChild(h("p", { "data-hook": "manual-record", class: "hd-num",
         text: `${rec.graded || 0} graded (${rec.wins || 0}-${rec.losses || 0}${rec.pushes ? `-${rec.pushes}` : ""}), ${unitsText(rec.units_average_price) || "0.00u"} at the average price, ${rec.open || 0} open.${(rec.graded || 0) < 30 ? " A small sample." : ""}` }));

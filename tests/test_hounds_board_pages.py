@@ -633,8 +633,8 @@ class TheModelPage(unittest.TestCase):
         self.assertEqual(f["bio"], 0)
         for line in ("Grabs the price before it moves", "Closer roast", "Closer brag", "grabbed the early number"):
             self.assertNotIn(line, out["text"])
-        # Fire now sits above the tabs (hidden until the server's kit says so); then Overview: numbers, bankroll, status
-        self.assertEqual(f["order"][:4], ["Fire now", "Key numbers", "Bankroll", "Status"])
+        # "Out back" (Take them out back) sits above the tabs (hidden until the server's kit says so); then Overview: numbers, bankroll, status
+        self.assertEqual(f["order"][:4], ["Out back", "Key numbers", "Bankroll", "Status"])
         self.assertIn("Open tickets", f["order"])
         self.assertIn("Rule", f["order"])
         self.assertEqual(out["title"], "Closer — LINEHOUND")

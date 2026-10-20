@@ -59,19 +59,20 @@
 
 <div class="hd-actions" role="group" aria-label="Follow, share and download this model" data-hook="hound-actions"></div>
 
-<!-- THE DOG KIT (web/js/dog-kit.js): Fire now stays at the top, above the tabs. Every kit panel starts hidden and
+<!-- THE DOG KIT (web/js/dog-kit.js): "Take them out back" stays at the top, above the tabs. Every kit panel starts hidden and
      the script shows it only when the server's kit says it is real for this visitor. -->
 <div class="dk-top" data-hook="dog-kit-top">
   <section class="hd-panel dk-panel" aria-labelledby="fire-h" data-hook="dog-fire-section" hidden>
-    <h2 id="fire-h">Fire now</h2>
+    <h2 id="fire-h">Out back</h2>
     <div data-hook="dog-fire"></div>
   </section>
 </div>
 
-<!-- TABS (web/js/tabs.js): Overview, Tickets, Ask, Locker room (the owner's), Rules. With scripts off every panel shows. -->
+<!-- TABS (web/js/tabs.js): Overview, Tickets, Backtest, Ask, Locker room (the owner's), Rules. With scripts off every panel shows. -->
 <div class="lh-tabs" role="tablist" aria-label="This model" data-autotabs data-hook="hound-tabs">
   <button type="button" role="tab" data-tab="overview" aria-selected="true">Overview</button>
   <button type="button" role="tab" data-tab="tickets" aria-selected="false">Tickets</button>
+  <button type="button" role="tab" data-tab="backtest" aria-selected="false" data-optional>Backtest</button>
   <button type="button" role="tab" data-tab="ask" aria-selected="false" data-optional>Ask</button>
   <button type="button" role="tab" data-tab="locker" aria-selected="false" data-optional>Locker room</button>
   <button type="button" role="tab" data-tab="rules" aria-selected="false">Rules</button>
@@ -131,6 +132,13 @@
 <section class="hd-panel dk-panel" aria-labelledby="manual-h" data-hook="dog-manual-section" hidden>
   <h2 id="manual-h">Manual picks</h2>
   <div data-hook="dog-manual"></div>
+</section>
+</div>
+
+<div class="lh-tabpanel" data-tabpanel="backtest" role="tabpanel" aria-label="Backtest" hidden>
+<section class="hd-panel dk-panel" aria-labelledby="backtest-h" data-hook="dog-backtest-section" hidden>
+  <h2 id="backtest-h">Backtest</h2>
+  <div data-hook="dog-backtest"></div>
 </section>
 </div>
 
