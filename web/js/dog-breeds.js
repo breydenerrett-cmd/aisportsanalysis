@@ -49,7 +49,7 @@ const pointsOf = (c) => (lum(c.base) < 0.4 ? TAN : mix(c.shade, "#8A4A22", 0.55)
 const darkOf = (c) => mix(c.shade, INK, 0.5);
 const inside = (c) => mix(c.shade, PINK, 0.45);
 
-/** A pointed ear for the LEFT side from its inner base A, outer base B and tip T, with a little outward bulge on the edges. */
+/** A pointed ear for the LEFT side from its inner base A, outer base B and tip T, with a little outward bulge on the sides. */
 function tri(A, B, T, bulge = 0.08, innerK = 0.56) {
   const cx = (A[0] + B[0] + T[0]) / 3, cy = (A[1] + B[1] + T[1]) / 3;
   const side = (p, q, b) => {
@@ -82,7 +82,7 @@ function compose(c, K, o) {
     K.fine(rimLine(K, cranHalfPts)),
     ...live(o.under),
     ...K.solid(arc.closed, muzFill, { ol: false }),
-    K.edge(arc.open, 0.45),
+    K.contour(arc.open, 0.45),
     ...live(o.marks),
   ];
   let back = live(o.ears), front = live(o.front), geo = g;
@@ -102,7 +102,7 @@ function compose(c, K, o) {
   return { geo, back, head, front, coat: o.coat || null };
 }
 
-/** The rim light: a thin bright line just inside the upper-right edge of the skull (the key light is the upper left). */
+/** The rim light: a thin bright line just inside the upper-right rim of the skull (the key light is the upper left). */
 function rimLine(K, half) {
   const take = half.slice(0, Math.min(5, half.length - 2));
   const pts = take.map(([dx, y]) => [60 + dx - 2.3, y + 2.4]);
@@ -142,7 +142,7 @@ function jowls(K, c, g, w, drop = 14) {
 function spots(fill, list) {
   return list.map(([x, y, rx, ry]) => ell(x, y, rx, ry || rx * 0.9, fill));
 }
-/** A jagged tuft edge along a list of points, for beards and ruffs. */
+/** A jagged tuft outline along a list of points, for beards and ruffs. */
 function tuft(pts) { return spline(pts, pts.map((_p, i) => i)); }
 
 const BREED = {

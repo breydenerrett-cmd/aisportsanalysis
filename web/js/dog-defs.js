@@ -6,7 +6,7 @@
  * copy of the defs, not forty. Where there is no document body to hold them (the node test harness, a script in the head) the
  * badge carries the same defs inline: `defsNode()` returns them for that, so a badge always draws.
  *
- * The shading is alpha overlays on flat coat colours, so one set of defs serves every coat: a cel shadow (hard edge) or a soft
+ * The shading is alpha overlays on flat coat colours, so one set of defs serves every coat: a cel shadow (a hard step) or a soft
  * one, a hard or soft rim light from the upper right (the key light is the upper left), the backgrounds' gradients, metallic gold
  * and silver, the street grain, and the symbols for the mascot sunburst, a spray splat and the howl's sound arcs.
  * Nothing here is fetched and nothing depends on a look value, but the eight background keys.

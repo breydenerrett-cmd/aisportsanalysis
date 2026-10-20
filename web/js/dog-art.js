@@ -143,8 +143,8 @@ export function makeKit({ style, coat, lod }) {
     flat(d, fill, extra) { return path(d, Object.assign({ fill }, extra || {})); },
     /** A stroked line. */
     line(d, stroke, w, extra) { return path(d, Object.assign({ fill: "none", stroke, "stroke-width": w, "stroke-linecap": "round", "stroke-linejoin": "round" }, extra || {})); },
-    /** The outline alone, for an open edge (the muzzle without its top). */
-    edge(d, w = 1) { return path(d, { fill: "none", stroke: oc, "stroke-width": f(ow * w), "stroke-linecap": "round", "stroke-linejoin": "round" }); },
+    /** The outline alone, for an open contour (the muzzle without its top). */
+    contour(d, w = 1) { return path(d, { fill: "none", stroke: oc, "stroke-width": f(ow * w), "stroke-linecap": "round", "stroke-linejoin": "round" }); },
     /** A fine detail that a small badge leaves out. */
     fine(node) { return small ? null : node; },
   };

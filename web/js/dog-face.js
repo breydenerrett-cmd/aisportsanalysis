@@ -67,14 +67,14 @@ export function mouthShapes(g, K) {
   // the snarl: the upper lip hitched up over a row of teeth
   const snarlTeeth = [
     tooth(60 - mw * 0.7, my - 3.5, 4.4, 7.2), tooth(60 + mw * 0.7, my - 3.5, 4.4, 7.2),
-    tooth(60 - mw * 0.3, my - 3.8, 2.8, 3.8), tooth(60, my - 3.9, 2.8, 3.6), tooth(60 + mw * 0.3, my - 3.8, 2.8, 3.8),
+    ...(small ? [] : [tooth(60 - mw * 0.3, my - 3.8, 2.8, 3.8), tooth(60, my - 3.9, 2.8, 3.6), tooth(60 + mw * 0.3, my - 3.8, 2.8, 3.8)]),
   ];
   const snarl = [
     phil,
     wide(1.12, 9.5, 1.6),
     path(`M${f(60 - mw * 1.12)} ${f(my - 1.6)} Q60 ${f(my - 7)} ${f(60 + mw * 1.12)} ${f(my - 1.6)}`, { fill: "none", stroke: GUM, "stroke-width": 1.3, "stroke-linecap": "round" }),
     ...snarlTeeth,
-    tooth(60 - mw * 0.55, my + 5.5, 3, 3.8, true), tooth(60 + mw * 0.55, my + 5.5, 3, 3.8, true),
+    ...(small ? [] : [tooth(60 - mw * 0.55, my + 5.5, 3, 3.8, true), tooth(60 + mw * 0.55, my + 5.5, 3, 3.8, true)]),
     line(`M${f(60 - mw * 1.12)} ${f(my - 1.6)} Q${f(60 - mw * 1.25)} ${f(my - 4.4)} ${f(60 - mw * 1.34)} ${f(my - 5)} M${f(60 + mw * 1.12)} ${f(my - 1.6)} Q${f(60 + mw * 1.25)} ${f(my - 4.4)} ${f(60 + mw * 1.34)} ${f(my - 5)}`, 1.6),
     // the nose crease
     K.fine(line(`M${f(60 - 5)} ${f(ny - nry * 1.9)} L${f(60 - 1.5)} ${f(ny - nry * 1.4)} M${f(60 + 5)} ${f(ny - nry * 1.9)} L${f(60 + 1.5)} ${f(ny - nry * 1.4)} M${f(60 - 3.5)} ${f(ny - nry * 2.7)} L${f(60 - 0.6)} ${f(ny - nry * 2.2)} M${f(60 + 3.5)} ${f(ny - nry * 2.7)} L${f(60 + 0.6)} ${f(ny - nry * 2.2)}`, 1.2)),
@@ -84,7 +84,7 @@ export function mouthShapes(g, K) {
     phil,
     path(`M${f(60 - mw * 1.18)} ${f(my - 3.2)} Q60 ${f(my + 12)} ${f(60 + mw * 1.18)} ${f(my - 3.2)} Q60 ${f(my - 1)} ${f(60 - mw * 1.18)} ${f(my - 3.2)} Z`, { fill: MOUTH, stroke: INK, "stroke-width": 1.5, "stroke-linejoin": "round" }),
     tooth(60 - mw * 0.75, my - 2.4, 4, 6), tooth(60 + mw * 0.75, my - 2.4, 4, 6),
-    tooth(60 - mw * 0.28, my - 2, 2.6, 3), tooth(60 + mw * 0.28, my - 2, 2.6, 3),
+    ...(small ? [] : [tooth(60 - mw * 0.28, my - 2, 2.6, 3), tooth(60 + mw * 0.28, my - 2, 2.6, 3)]),
     path(`M${f(60 - mw * 0.5)} ${f(my + 4)} Q60 ${f(my + 3)} ${f(60 + mw * 0.5)} ${f(my + 4)} Q${f(60 + mw * 0.45)} ${f(my + 10.5)} 60 ${f(my + 10.8)} Q${f(60 - mw * 0.45)} ${f(my + 10.5)} ${f(60 - mw * 0.5)} ${f(my + 4)} Z`, { fill: TONGUE, stroke: "#B8404F", "stroke-width": 0.7 }),
     line(`M60 ${f(my + 4.2)} V${f(my + 9)}`, 0.9),
     line(`M${f(60 - mw * 1.18)} ${f(my - 3.2)} Q${f(60 - mw * 1.3)} ${f(my - 5.4)} ${f(60 - mw * 1.4)} ${f(my - 5.2)} M${f(60 + mw * 1.18)} ${f(my - 3.2)} Q${f(60 + mw * 1.3)} ${f(my - 5.4)} ${f(60 + mw * 1.4)} ${f(my - 5.2)}`, 1.6),
@@ -100,8 +100,8 @@ export function mouthShapes(g, K) {
     phil,
     path(`M${f(60 - mw * 1.0)} ${f(my - 4)} Q${f(60 - mw * 1.15)} ${f(my + 14)} 60 ${f(my + 17)} Q${f(60 + mw * 1.15)} ${f(my + 14)} ${f(60 + mw * 1.0)} ${f(my - 4)} Q60 ${f(my - 7)} ${f(60 - mw * 1.0)} ${f(my - 4)} Z`, { fill: MOUTH, stroke: INK, "stroke-width": 1.6, "stroke-linejoin": "round" }),
     tooth(60 - mw * 0.66, my - 4.6, 4.2, 7.4), tooth(60 + mw * 0.66, my - 4.6, 4.2, 7.4),
-    tooth(60 - mw * 0.26, my - 5, 2.6, 3.2), tooth(60 + mw * 0.26, my - 5, 2.6, 3.2),
-    tooth(60 - mw * 0.5, my + 13.6, 3.2, 5, true), tooth(60 + mw * 0.5, my + 13.6, 3.2, 5, true),
+    ...(small ? [] : [tooth(60 - mw * 0.26, my - 5, 2.6, 3.2), tooth(60 + mw * 0.26, my - 5, 2.6, 3.2),
+      tooth(60 - mw * 0.5, my + 13.6, 3.2, 5, true), tooth(60 + mw * 0.5, my + 13.6, 3.2, 5, true)]),
     path(`M${f(60 - mw * 0.55)} ${f(my + 11)} Q60 ${f(my + 5)} ${f(60 + mw * 0.55)} ${f(my + 11)} Q60 ${f(my + 17)} ${f(60 - mw * 0.55)} ${f(my + 11)} Z`, { fill: TONGUE }),
     line(`M60 ${f(my + 7.4)} V${f(my + 13)}`, 0.9),
   ];

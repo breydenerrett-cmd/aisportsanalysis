@@ -158,7 +158,7 @@ export function headPiece(look, a, K, st) {
       ...K.solid(crownD, base, { rim: true, key: true }),
       K.fine(path(`M60 ${f(ty + 1)} Q${f(60 - 5)} ${f((ty + by) / 2)} ${f(60 - 4)} ${f(by + 4)} M60 ${f(ty + 1)} Q${f(60 + 5)} ${f((ty + by) / 2)} ${f(60 + 4)} ${f(by + 4)}`, { fill: "none", stroke: mix(base, "#FFFFFF", 0.22), "stroke-width": 1, opacity: ".7" })),
       K.fine(ell(60, by + 8, (R - L) * 0.4, 2.6, INK, { opacity: ".28" })),
-      ...K.solid(`M${f(L - 1)} ${f(by + 1)} Q60 ${f(by + 17)} ${f(R + 1)} ${f(by + 1)} Q60 ${f(by + 3.4)} ${f(L - 1)} ${f(by + 1)} Z`, mix(base, "#FFFFFF", 0.14), { sh: false }),
+      ...K.solid(`M${f(L - 1)} ${f(by + 1)} Q60 ${f(by + 13)} ${f(R + 1)} ${f(by + 1)} Q60 ${f(by + 3.4)} ${f(L - 1)} ${f(by + 1)} Z`, mix(base, "#FFFFFF", 0.14), { sh: false }),
       path(`M${f(L + 3)} ${f(by - 1)} Q60 ${f(by + 6)} ${f(R - 3)} ${f(by - 1)}`, { fill: "none", stroke: trim, "stroke-width": 2.2, "stroke-linecap": "round" }),
       path(`M60 ${f(by - 15)} l5 5 l-5 5 l-5 -5 Z`, { fill: trim, stroke: K.oc, "stroke-width": f(K.ow * 0.35), "stroke-linejoin": "round" }),
       n("circle", { cx: 60, cy: f(ty + 0.6), r: 2.2, fill: trim }),
