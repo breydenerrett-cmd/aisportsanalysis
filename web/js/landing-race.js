@@ -114,7 +114,7 @@ const ease = (t) => 1 - Math.pow(1 - Math.min(1, Math.max(0, t)), 3);
 
 /** The text a screen reader gets for the whole picture. */
 export function raceLabel(racers) {
-  return `Paper bankroll by model, each starting at $${START_USD.toLocaleString("en-US")}: ${racers.map((r) => `${r.name} ${fmtUsd(r.now)} on ${r.bets} ${r.bets === 1 ? "bet" : "bets"}`).join("; ")}.`;
+  return `Paper bankroll by hound, each starting at $${START_USD.toLocaleString("en-US")}: ${racers.map((r) => `${r.name} ${fmtUsd(r.now)} on ${r.bets} ${r.bets === 1 ? "bet" : "bets"}`).join("; ")}.`;
 }
 
 /**
@@ -135,19 +135,16 @@ export function renderRace(host, models, meta, today, opts = {}) {
   if (legend) clearNode(legend);
   if (!racers.length) {
     host.setAttribute("data-state", "empty");
-    if (sub) sub.textContent = "No model has a settled bet in this season yet. The race starts after the next slate.";
+    if (sub) sub.textContent = "No hound has a settled bet in this season yet. The race starts as the slate settles.";
     if (note) note.textContent = "";
     if (replay) replay.setAttribute("hidden", "");
     return null;
   }
   host.setAttribute("data-state", "ready");
   const age = seasonAgeText(meta, today);
-  const thin = Math.max(...racers.map((r) => r.bets)) < THIN_SAMPLE_BETS;
-  if (sub) sub.textContent = `Paper bankroll, every model starts at $${START_USD.toLocaleString("en-US")}.${age ? ` ${age}.` : ""}`;
+  if (sub) sub.textContent = `Paper bankroll, every hound starts at $${START_USD.toLocaleString("en-US")}.${age ? ` ${age}.` : ""}`;
   if (note) {
-    note.textContent = thin
-      ? "A handful of games: a few bets say little about what comes next. Lines show where each paper account is, nothing more."
-      : "Lines show where each paper account is, nothing more.";
+    note.textContent = "Lines show where each paper account is right now. Past results do not promise future ones.";
   }
   const width = (chart.getBoundingClientRect && chart.getBoundingClientRect().width) || (host.getBoundingClientRect && host.getBoundingClientRect().width) || 640;
   const geo = layoutRace(racers, width);

@@ -484,7 +484,7 @@ async function buildRecord(host, dog, kit) {
     stat("Record", recordText(rec)), stat("Bankroll", bankrollText(dog)), stat("Return", returnText(dog)),
     stat("Bets", String(rec.bets || 0)),
     stat("Open", String(dog.open_bets || 0))]));
-  host.appendChild(h("p", { class: "hd-fine", text: `${state.data.season && state.data.season.label ? state.data.season.label : "This season"}, a paper account that started with $1,000 (1 unit = $10), bets settled at the average price.${(rec.bets || 0) < 30 ? " A small sample: it says little about what comes next." : ""}` }));
+  host.appendChild(h("p", { class: "hd-fine", text: `${state.data.season && state.data.season.label ? state.data.season.label : "This season"}, a paper account that started with $1,000 (1 unit = $10), bets settled at the average price.` }));
   const tickets = h("div", { "data-hook": "studio-tickets" });
   host.appendChild(h("h3", { class: "hd-h3", text: "Last tickets" }));
   host.appendChild(tickets);

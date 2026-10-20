@@ -16,6 +16,7 @@ and graded ticket tables. This file holds them to:
 Skipped when node is not installed. Fixtures: tests/hounds_web_fixtures.py (built by the real contract code).
 """
 
+# Copy updated per owner ruling 2026-10-20, complete-product positioning (no beta / early-access / paused hedging; invite wording).
 from __future__ import annotations
 
 import copy
@@ -86,7 +87,7 @@ class ThePureHelpers(unittest.TestCase):
 
     def test_status_is_the_referees_label_in_plain_words_and_never_a_function_of_units(self):
         cases = [("BEATING THE CLOSE", 10, "Beating the close"), ("NO DIFFERENT FROM THE MARKET", 200, "Market"),
-                 ("PAYING THE VIG", 300, "Paying the vig"), ("TOO EARLY", 93, "Not enough bets (93/150)"),
+                 ("PAYING THE VIG", 300, "Paying the vig"), ("TOO EARLY", 93, "Verdict at 150 bets (93/150)"),
                  ("", 0, "Not graded vs close")]
         for label, n, want in cases:
             with self.subTest(label=label):
@@ -278,7 +279,7 @@ class TheLeaderboardTable(unittest.TestCase):
               mk("d", "D", "TOO EARLY", bets=40, units=1, clv={"n": 37, "mean_pts": 0.3})]
         out = self.page(routes(**{"/hounds": [200, {"hounds": hs, "as_of": "2026-10-24"}]}),
                         queries=[q("st", "[data-hook='status']", "texts"), q("keys", "[data-hook='status']", "attrs", attr="data-status")])
-        self.assertEqual(out["final"]["st"], ["Beating the close", "Paying the vig", "Market", "Not enough bets (37/150)"])
+        self.assertEqual(out["final"]["st"], ["Beating the close", "Paying the vig", "Market", "Verdict at 150 bets (37/150)"])
         self.assertEqual(out["final"]["keys"], ["beating", "vig", "market", "early"])
 
     def test_clv_shows_the_share_that_beat_the_close_the_average_and_the_sample(self):
@@ -786,7 +787,7 @@ class TheModelPage(unittest.TestCase):
         self.assertIn("not a tip", out["final"]["meaning"])
         self.assertIn("beat the closing market", out["final"]["sentence"])
         self.assertIn("Units, two ways", out["final"]["facts"])
-        self.assertIn("This is the referee's all-time verdict. Season 2: 41 graded live bets. That is a small sample.", out["text"])
+        self.assertIn("This is the referee's all-time verdict. Season 2: 41 graded live bets.", out["text"])
 
     def test_a_retired_model_shows_its_reason_and_an_idle_one_says_why(self):
         d = F.detail("closer")

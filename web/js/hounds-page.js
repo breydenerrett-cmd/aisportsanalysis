@@ -266,7 +266,7 @@ function modelCell(hound, rank, open) {
 }
 
 /**
- * One table row. `qual` (the qualifying round) numbers nothing, greys the money columns with a "small sample"
+ * One table row. `qual` (the qualifying round) numbers nothing, greys the money columns until the ranking bar
  * tooltip and puts a progress pill ("3/10 bets") in the Status column in place of the referee's chip. A ranked
  * model with under 20 settled bets is greyed the same way. A window with no settled bet reads "n/a", not "0.0%".
  */
@@ -470,7 +470,7 @@ function podium(active, warming, min) {
         h("strong", { class: "lb-podium__bank", "data-count": "1", text: fmtUsd(bankrollNow(hound)) }),
         h("span", { class: `lb-podium__ret lb-podium__ret--${ret === null ? "flat" : ret > 0 ? "up" : ret < 0 ? "down" : "flat"}`,
           title: small ? smallSampleTitle(hound) : "", text: fmtPct(ret) }),
-        h("span", { class: "lb-podium__rec", text: `${recordText(hound)} · ${betsOf(hound)} ${betsOf(hound) === 1 ? "bet" : "bets"}${small ? " · small sample" : ""}` }),
+        h("span", { class: "lb-podium__rec", text: `${recordText(hound)} · ${betsOf(hound)} ${betsOf(hound) === 1 ? "bet" : "bets"}` }),
       ]);
     })),
   ]);

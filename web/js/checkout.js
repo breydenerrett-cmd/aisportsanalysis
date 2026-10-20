@@ -37,6 +37,11 @@
  * results are preserved, losses included; tester access is temporary -- and it
  * never promises profit, an edge or winning picks.
  *
+ * REWORDED 2026-10-20 (owner ruling 2026-10-20, complete-product positioning): the offer is an invite round, not
+ * "early access", and the pages no longer say "performance is not proven". Four facts remain on every description of
+ * it: the analysis is informational, not advice; public results are preserved, losses included; invited access
+ * is temporary; and it never promises profit, an edge or winning picks.
+ *
  * The static HTML on the landing page carries the CAUTIOUS wording, so a
  * crawler and the first paint before this runs never over-promise; the script
  * upgrades it only when /meta says "on".
@@ -56,12 +61,12 @@ import { BETA_TIER, foundingNote } from "./pricing.js";
  * "Join the waitlist" (docs/CONVERSION_REVIEW_2026-10-02.md), and the same day
  * to "Request early access" when the owner decided who the first 20 testers
  * are and how they get in: a request is what the form now is. */
-export const CAUTIOUS_CTA = "Request early access";
+export const CAUTIOUS_CTA = "Request an invite";
 
 /** Static-HTML default and off-state hero note: the early-access offer, then
  * the not-on-sale sentence with the planned price (only when there is one to
  * state), then what is free now. */
-export const EARLY_ACCESS_NOTE = "Early access: the first 20 testers get 7 days free, no card.";
+export const EARLY_ACCESS_NOTE = "Invite round: the first 20 testers get 7 days free, no card.";
 export const NOT_OPEN_NOTE = "Not on sale yet.";
 export const FREE_NOW_NOTE = "The record and the postseason odds are free now.";
 
@@ -69,12 +74,11 @@ export const FREE_NOW_NOTE = "The record and the postseason odds are free now.";
  * the five facts of the early-access offer, and no promise beyond what the
  * owner does by hand: he picks the first 20 himself and sends the link himself. */
 export const WAITLIST_CONFIRMATION =
-  "You're on the list. The first 20 testers get 7 days of early access, no card needed. "
+  "Your request is in. The first 20 testers get 7 days of access, no card needed. "
   + "Brey picks the first 20 by hand, so not everyone is picked. "
   + "If you're picked, he sends you the access link himself. "
-  + "What you should know: this is early access; performance is not proven; "
-  + "the analysis is informational, not advice; every result stays on the public record, "
-  + "losses included; tester access is temporary.";
+  + "What you should know: the analysis is informational, not advice; every result stays on the public record, "
+  + "losses included; invited access lasts 7 days.";
 
 /** What every page says before /meta has answered, and whenever it cannot be
  * read: not on, no trial, only the planned price. */
@@ -196,10 +200,10 @@ export function endDateLabel(iso) {
   return `${when.getUTCDate()} ${MONTHS[when.getUTCMonth()]} ${when.getUTCFullYear()}`;
 }
 
-/** "Your early access ended on 3 October 2026." */
+/** "Your invited access ended on 3 October 2026." */
 export function testerEndedLine(iso) {
   const day = endDateLabel(iso);
-  return day ? `Your early access ended on ${day}.` : "Your early access has ended.";
+  return day ? `Your invited access ended on ${day}.` : "Your invited access has ended.";
 }
 
 /** The signup form's answer to `tester_expired` / `tester_active`. No date (the
@@ -210,9 +214,9 @@ export function testerEndedLine(iso) {
 export function testerSignupNotice(status) {
   const lost = "If you lost the token, reply to Brey.";
   if (status === "tester_active") {
-    return `That email already has early access. Sign in with the access token Brey sent you. ${lost}`;
+    return `That email already has an invite. Sign in with the access token Brey sent you. ${lost}`;
   }
-  return "That email already has early access, and it has ended. "
+  return "That email already has an invite, and it has ended. "
     + `The sign-in page is where to continue: use your access token there. ${lost}`;
 }
 

@@ -369,7 +369,7 @@ class StaticChecks(unittest.TestCase):
         shown = visible_html(SAMPLE_HTML) + " ".join(re.findall(r'content="([^"]*)"', SAMPLE_HTML))
         for pattern, name in BANNED:
             self.assertIsNone(re.search(pattern, shown), name)
-        self.assertIn("Unproven. Analysis, not advice.", SAMPLE_HTML)
+        self.assertIn("Analysis, not advice.", SAMPLE_HTML)   # owner ruling 2026-10-20, complete-product positioning
 
     def test_the_page_is_signed_out_it_mounts_only_the_sample_module_and_the_analyst_styles(self):
         self.assertIn('<script type="module" src="js/sample.js"></script>', SAMPLE_HTML)

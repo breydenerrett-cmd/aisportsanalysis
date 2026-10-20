@@ -10,7 +10,7 @@ route calls, not typed out by hand.
 WHAT A READER MUST SEE, AND MUST NOT
 ------------------------------------
   * the reason sentence, word for word, as the page's empty state, labelled
-    "PICKS PAUSED" and not "NO CARD TODAY";
+    "NO PICKS FOR THIS DATE" and not "NO CARD TODAY";
   * a link to the UFC record (#/ufc/record), and one to tonight's MLB card;
   * no card, no walk-back to last night's picks (that fallback tells the reader
     "Tomorrow's card posts in the morning", which is false while the pause
@@ -26,6 +26,7 @@ paused state.
 The node tests skip when node is not installed (the GitHub runner has it).
 """
 
+# Copy updated per owner ruling 2026-10-20, complete-product positioning (no beta / early-access / paused hedging; invite wording).
 from __future__ import annotations
 
 import json
@@ -124,7 +125,7 @@ class ThePausedPage(_PausedPageHarness):
         self.assertIs(self.out["rendered"], False)
 
     def test_it_is_labelled_paused_and_is_not_the_no_card_today_state(self):
-        self.assertIn("PICKS PAUSED", self.out["text"])
+        self.assertIn("NO PICKS FOR THIS DATE", self.out["text"])
         self.assertNotIn("NO CARD TODAY", self.out["text"])
         self.assertNotIn("card-empty", self.out["hooks"])
 
@@ -179,7 +180,7 @@ class TheOtherStatesAreNotMoved(_PausedPageHarness):
         self.assertIn("LAST PUBLISHED CARD", out["text"])
         self.assertIn("card-older", out["hooks"])
         self.assertNotIn("card-paused", out["hooks"])
-        self.assertNotIn("PICKS PAUSED", out["text"])
+        self.assertNotIn("NO PICKS FOR THIS DATE", out["text"])
         self.assertEqual(len(out["cards"]), 1)
 
     def test_an_empty_card_with_nothing_behind_it_is_still_no_card_today(self):

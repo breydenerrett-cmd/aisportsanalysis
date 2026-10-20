@@ -143,7 +143,7 @@ export function mountNav(host = document.querySelector(".lh-nav")) {
   if (!host) return null;
   const state = { menu: null, button: null };
   const current = host.getAttribute("data-current") || placeFromAddress();
-  // an extra a page keeps in the bar for a visitor (the landing page's "Request early access"): the SAME node goes back in,
+  // an extra a page keeps in the bar for a visitor (the landing page's "Request an invite"): the SAME node goes back in,
   // so a listener another script put on it survives a re-mount
   if (extras === null) extras = Array.from(host.querySelectorAll ? host.querySelectorAll("[data-nav-extra]") : []);
   clearNode(host);

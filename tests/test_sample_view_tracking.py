@@ -26,6 +26,7 @@ Server half (the real route functions, fed what node produced; skipped without F
   * a source tag never changes access: tagged requests to gated routes are still refused.
 """
 
+# Copy updated per owner ruling 2026-10-20, complete-product positioning (no beta / early-access / paused hedging; invite wording).
 from __future__ import annotations
 
 import asyncio
@@ -273,7 +274,7 @@ class SampleViewsInTheAdminReport(_DbCase):
 
 @unittest.skipUnless(shutil.which("node") and HAS_FASTAPI, "node or fastapi not installed")
 class SampleToSignupKeepsTheSource(_DbCase, NodeCase):
-    """The lead opens the sample link, reads, and later uses 'Request early access' in the same
+    """The lead opens the sample link, reads, and later uses 'Request an invite' in the same
     browser: the account is credited to the sample's source, and the report shows view -> signup."""
 
     @classmethod

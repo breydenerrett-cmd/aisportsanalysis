@@ -49,7 +49,7 @@ class SignedOutVisitorCanReadTheProof(unittest.TestCase):
     def test_the_record_page_offers_the_trial_to_a_signed_out_visitor(self):
         # CHANGED 2026-10-01: the wording is no longer a static 7-day string. It is
         # checkout.js's recordCtaLabel(): the trial length comes from /meta and the
-        # button says "Request early access" unless checkout is on
+        # button says "Request an invite" unless checkout is on
         # (behaviour pinned in tests/test_checkout_copy_states.py).
         self.assertIn("recordCtaLabel(", self.record)
         self.assertIn("-day free trial to see tonight's card", _read("checkout.js"))
@@ -74,7 +74,7 @@ class SignedOutVisitorCanReadTheProof(unittest.TestCase):
         self.assertIn('href: "#/signin"', gate)
         self.assertIn('href: "#/signup"', gate)
         # CHANGED 2026-10-01: "Start free trial" is gateLabel()'s trial-on wording;
-        # the gate says "Request early access" unless /meta says on.
+        # the gate says "Request an invite" unless /meta says on.
         self.assertIn("gateLabel(", gate)
         self.assertIn('"Start free trial"', _read("checkout.js"))
 
@@ -110,7 +110,7 @@ class SignInAndSignUpCopyIsTrue(unittest.TestCase):
         # exists to forbid are still forbidden, in both files.
         checkout = _read("checkout.js")
         self.assertIn("export const WAITLIST_CONFIRMATION =", checkout)
-        self.assertIn("You're on the list.", checkout)
+        self.assertIn("Your request is in.", checkout)   # owner ruling 2026-10-20, complete-product positioning
         self.assertNotIn("Checkout is not open yet. Your email is saved", self.signup)
         for source in (self.signup, checkout):
             self.assertNotIn("we'll email you", source.lower())

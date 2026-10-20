@@ -125,7 +125,7 @@ export async function renderSignup(main) {
   const billing = await readBilling();
   const ctaText = ctaLabel(billing);
 
-  card.appendChild(el("p", { class: "eyebrow eyebrow--money signup-card__eyebrow", text: "FOUNDING BETA ACCESS" }));
+  card.appendChild(el("p", { class: "eyebrow eyebrow--money signup-card__eyebrow", text: "FOUNDING ACCESS" }));
   // The heading and the button say the same thing the landing page's button
   // says (checkout.js ctaLabel) -- but ONLY when a checkout exists.
   // With billing off the same words would be a promise nothing can keep, so
@@ -185,12 +185,12 @@ export async function renderSignup(main) {
     card.appendChild(renderBenefits());
   }
 
-  // Reuses the disclaimer language already established for this beta
+  // Reuses the disclaimer language already established for LINEHOUND
   // (src/analysis/disclaimers.py's BETA_DISCLAIMER, surfaced app-wide by
   // meta.js's shared footer, which is mounted on every route including
   // this one) rather than writing new legal-ish copy here.
   card.appendChild(el("p", { class: "signup-card__trust", "data-hook": "signup-trust", text:
-    "Paper results only, not betting advice — 21+. Full beta disclaimer below." }));
+    "Paper results only, not betting advice — 21+. Full disclaimer below." }));
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -388,7 +388,7 @@ function scrubAddress() {
 
 function freshCard(card) {
   clear(card);
-  card.appendChild(el("p", { class: "eyebrow eyebrow--money signup-card__eyebrow", text: "FOUNDING BETA ACCESS" }));
+  card.appendChild(el("p", { class: "eyebrow eyebrow--money signup-card__eyebrow", text: "FOUNDING ACCESS" }));
 }
 
 /**
@@ -422,7 +422,7 @@ export async function renderSignupComplete(main, query) {
   clear(main);
   const wrap = el("section", { class: "signup", "data-view": "signup-complete", "aria-label": "signup complete" });
   const card = el("div", { class: "signup-card panel chamfer chamfer--lg" });
-  card.appendChild(el("p", { class: "eyebrow eyebrow--money signup-card__eyebrow", text: "FOUNDING BETA ACCESS" }));
+  card.appendChild(el("p", { class: "eyebrow eyebrow--money signup-card__eyebrow", text: "FOUNDING ACCESS" }));
   wrap.appendChild(card);
   main.appendChild(wrap);
 
@@ -526,7 +526,7 @@ export async function renderSignupComplete(main, query) {
       scrubAddress();
     }
     clear(card);
-    card.appendChild(el("p", { class: "eyebrow eyebrow--money signup-card__eyebrow", text: "FOUNDING BETA ACCESS" }));
+    card.appendChild(el("p", { class: "eyebrow eyebrow--money signup-card__eyebrow", text: "FOUNDING ACCESS" }));
     // The trial wording is only for a buyer who came through checkout (a
     // session id); a token pasted on the URL (an admin-issued link) says nothing
     // about a trial.

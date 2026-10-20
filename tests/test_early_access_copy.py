@@ -8,6 +8,11 @@ analysis is informational, not advice; public results are preserved (losses
 stay on the record); tester access is temporary -- and it must never promise
 profit, an edge or winning picks, and never advertise Bet Check.
 
+REWORDED 2026-10-20 (owner ruling 2026-10-20, complete-product positioning): the offer is an invite round, not
+"early access", and no page says "performance is not proven". FOUR facts remain in every description of it: the
+analysis is informational, not advice; public results are preserved (losses stay on the record); invited access
+lasts 7 days; and it never promises profit, an edge or winning picks.
+
 web/js/checkout.js is the one place billing-off copy is decided; web/landing.html
 mirrors it as static text and must be correct with JavaScript off. The server
 enforces the numbers (src/appstate/testers.py), so a test here pins that the
@@ -38,15 +43,15 @@ HTML = (WEB / "landing.html").read_text(encoding="utf-8")
 
 # Said by the owner, verbatim (2026-10-02). Any change here is a change to what
 # the public is told and belongs to him.
-HERO_NOTE = ("Early access: the first 20 testers get 7 days free, no card. "
+HERO_NOTE = ("Invite round: the first 20 testers get 7 days free, no card. "
              "Not on sale yet; planned price $19.99 a month. "
              "The record and the postseason odds are free now.")
-CONFIRMATION = ("You're on the list. The first 20 testers get 7 days of early access, no card needed. "
+# owner ruling 2026-10-20, complete-product positioning: no "early access", no "performance is not proven"
+CONFIRMATION = ("Your request is in. The first 20 testers get 7 days of access, no card needed. "
                 "Brey picks the first 20 by hand, so not everyone is picked. "
                 "If you're picked, he sends you the access link himself. "
-                "What you should know: this is early access; performance is not proven; "
-                "the analysis is informational, not advice; every result stays on the public record, "
-                "losses included; tester access is temporary.")
+                "What you should know: the analysis is informational, not advice; every result stays on the public record, "
+                "losses included; invited access lasts 7 days.")
 
 # What the owner will never let a page say about this offer.
 FORBIDDEN = (
@@ -68,14 +73,12 @@ def _faq_entry() -> str:
 
 
 class TheFiveFacts(unittest.TestCase):
-    """The same five facts in every place the offer is described."""
+    """The same facts in every place the offer is described (four since 2026-10-20; see the module docstring)."""
 
     FACTS = (
-        ("early access", r"early access"),
-        ("performance is not proven", r"performance is not proven"),
         ("informational, not advice", r"informational, not advice"),
         ("public results preserved, losses included", r"public record, losses included"),
-        ("tester access is temporary", r"tester access is temporary"),
+        ("invited access is temporary", r"invited access lasts 7 days"),
     )
 
     def _check(self, text, where, facts=FACTS):
@@ -91,17 +94,16 @@ class TheFiveFacts(unittest.TestCase):
     def test_the_faq_entry_says_all_five_in_the_static_page(self):
         entry = _faq_entry()
         self.assertEqual(re.search(r"<summary>(.*?)</summary>", entry, re.S).group(1).strip(),
-                         "What is early access?")
+                         "How do I get the daily picks board?")
         body = _flat(re.search(r'<p class="faq-item__body">(.*?)</p>', entry, re.S).group(1))
         facts = list(self.FACTS)
-        facts[3] = ("public results preserved, losses included",
-                    r"public record, losses included")
         self._check(body, "the FAQ entry", facts)
         self.assertNotIn("hidden", entry.split(">")[0], "the entry must not start hidden")
 
     def test_the_hero_note_names_the_offer_without_overclaiming(self):
         lowered = HERO_NOTE.lower()
-        self.assertIn("early access", lowered)
+        self.assertIn("invite round", lowered)
+        self.assertNotIn("early access", lowered)
         self.assertIn("not on sale yet", lowered)
         for pattern, label in FORBIDDEN:
             self.assertIsNone(re.search(pattern, lowered), label)
@@ -133,8 +135,8 @@ class TheWordsAgreeWithWhatIsEnforced(unittest.TestCase):
 
     def test_the_static_hero_note_and_buttons_are_the_ones_checkout_js_decides(self):
         source = (JS / "checkout.js").read_text(encoding="utf-8")
-        self.assertIn('export const CAUTIOUS_CTA = "Request early access";', source)
-        self.assertIn('"Early access: the first 20 testers get 7 days free, no card."', source)
+        self.assertIn('export const CAUTIOUS_CTA = "Request an invite";', source)
+        self.assertIn('"Invite round: the first 20 testers get 7 days free, no card."', source)
         note = re.search(r'<p class="hero__cta-note" data-hook="hero-cta-note">(.*?)</p>', HTML, re.S)
         self.assertEqual(note.group(1).strip(), HERO_NOTE)
         # The four landing buttons are the free account now (2026-10-19), not checkout buttons; the paid
@@ -375,22 +377,22 @@ class UnderNode(unittest.TestCase):
         for name in ("OFF", "UNAVAILABLE", "UNREACHABLE"):
             with self.subTest(state=name):
                 got = helpers[name]
-                self.assertEqual(got["cta"], "Request early access")
-                self.assertEqual(got["gate"], "Request early access")
-                self.assertEqual(got["record"], "Request early access")
-                self.assertEqual(got["signinLink"], "REQUEST EARLY ACCESS")
+                self.assertEqual(got["cta"], "Request an invite")
+                self.assertEqual(got["gate"], "Request an invite")
+                self.assertEqual(got["record"], "Request an invite")
+                self.assertEqual(got["signinLink"], "REQUEST AN INVITE")
                 self.assertEqual(got["hero"], HERO_NOTE)
 
     def test_the_hero_note_without_a_price_drops_only_the_price(self):
         # Not reachable from /meta (a not-on state always carries the plan's own
         # planned price), but the function must not invent one if it is handed none.
         hero = self._helpers()["noPriceHero"]
-        self.assertEqual(hero, "Early access: the first 20 testers get 7 days free, no card. "
+        self.assertEqual(hero, "Invite round: the first 20 testers get 7 days free, no card. "
                                "Not on sale yet. The record and the postseason odds are free now.")
 
     def test_the_constants_the_pages_share(self):
         constants = self._helpers()["constants"]
-        self.assertEqual(constants["cta"], "Request early access")
+        self.assertEqual(constants["cta"], "Request an invite")
         self.assertEqual(constants["note"], HERO_NOTE.split(" Not on sale")[0])
         self.assertEqual(constants["confirmation"], CONFIRMATION)
 
@@ -406,7 +408,7 @@ class UnderNode(unittest.TestCase):
         helpers = self._helpers()
         for name in ON_STATE_BEFORE:
             blob = json.dumps(helpers[name]).lower()
-            for needle in ("early access", "testers", "request early"):
+            for needle in ("invite round", "testers", "request an invite"):
                 self.assertNotIn(needle, blob, (name, needle))
 
     # ---- the waitlist confirmation, rendered by the real signup page --------
@@ -419,7 +421,7 @@ class UnderNode(unittest.TestCase):
     def test_the_confirmation_replaces_the_old_not_open_message(self):
         out = self._signup(OFF, {"user_id": 1, "status": "waitlisted"})
         self.assertNotIn("Your email is saved", out["page"])
-        self.assertEqual(out["page"].count("You're on the list."), 1)
+        self.assertEqual(out["page"].count("Your request is in."), 1)
 
     def test_no_other_signup_outcome_shows_the_confirmation(self):
         for result in ({"user_id": 1, "status": "invited"},
@@ -428,7 +430,7 @@ class UnderNode(unittest.TestCase):
             with self.subTest(result=result["status"]):
                 out = self._signup(OFF, result)
                 self.assertIsNone(out["waitlisted"])
-                self.assertNotIn("You're on the list.", out["page"])
+                self.assertNotIn("Your request is in.", out["page"])
 
     def test_the_signup_form_still_promises_no_trial_while_off(self):
         out = self._signup(OFF, {"user_id": 1, "status": "waitlisted"})

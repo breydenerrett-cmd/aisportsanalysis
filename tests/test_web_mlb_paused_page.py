@@ -10,6 +10,7 @@ route calls, not typed out by hand.
 The node tests skip when node is not installed (the GitHub runner has it).
 """
 
+# Copy updated per owner ruling 2026-10-20, complete-product positioning (no beta / early-access / paused hedging; invite wording).
 from __future__ import annotations
 
 import json
@@ -80,7 +81,7 @@ class TheMlbPausedPage(_MlbPausedHarness):
         self.assertIs(self.out["rendered"], False)
 
     def test_it_is_labelled_paused_and_is_not_the_no_card_today_state(self):
-        self.assertIn("PICKS PAUSED", self.out["text"])
+        self.assertIn("NO PICKS FOR THIS DATE", self.out["text"])
         self.assertNotIn("NO CARD TODAY", self.out["text"])
         self.assertNotIn("card-empty", self.out["hooks"])
 

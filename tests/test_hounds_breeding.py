@@ -642,7 +642,7 @@ class TheRender(Hermetic):
         self.assertIn("Next cycle in 2d 22h 0m", html)
         self.assertEqual(out["cd"], "2d 22h 0m")
         self.assertEqual(out["past"], "due at the next capture slot")
-        self.assertEqual(out["chips"], ["IN SHADOW", "HURT", "TOO EARLY", "CULLED", "PROMOTED"])
+        self.assertEqual(out["chips"], ["IN SHADOW", "HURT", "AWAITING VERDICT", "CULLED", "PROMOTED"])   # owner ruling 2026-10-20, complete-product positioning
         self.assertNotIn("<script>alert", html)
         self.assertIn("&lt;script&gt;", html)
         self.assertIn("Not advice", html)

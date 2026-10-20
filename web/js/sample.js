@@ -50,7 +50,7 @@ export const NONE_TEXT = "There is no sample brief to show right now.";
 export const LINKS = {
   record: { href: "index.html#/record-card", text: "See the public record" },
   landing: { href: "landing.html", text: "About LINEHOUND" },
-  signup: { href: "index.html#/signup", text: "Request early access" },
+  signup: { href: "index.html#/signup", text: "Request an invite" },
 };
 
 function facts(data) {

@@ -148,7 +148,7 @@ function renderMatch(match) {
     const pct = Math.round(match.probability * 100);
     probabilityStr = `market leans ${side} (${pct}%), ${books} books`;
   } else if (books > 0) {
-    probabilityStr = `not enough books yet (${books})`;
+    probabilityStr = `${books} books quoting`;
   } else {
     probabilityStr = "no quotes available";
   }

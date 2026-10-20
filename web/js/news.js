@@ -84,7 +84,7 @@ export const NEWS_ITEMS = [
   },
   {
     tag: "NEW",
-    text: "Tennis: an ATP and WTA research board. Price capture is paused, so it may be empty. No picks until results can be graded.",
+    text: "Tennis: an ATP and WTA match board, and tennis hounds betting the tour on the public record.",
     href: "#/tennis",
   },
   {

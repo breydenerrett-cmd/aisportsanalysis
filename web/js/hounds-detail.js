@@ -263,8 +263,8 @@ function bankrollTiles(hound) {
   const ret = b ? b.return_pct : null;
   return {
     bankroll: kpi("bankroll", "Bankroll", fmtUsd(now, true),
-      now === null || b.bets <= 0 ? "nothing graded yet" : `from ${fmtUsd(rules.start)}${b.peak > now ? `, peak ${fmtUsd(b.peak, true)}` : ""}${small ? ". Small sample" : ""}`
-        + (basisOf(hound) ? `. Settled ${basisWords(hound)}.` : (small ? "." : "")),
+      now === null || b.bets <= 0 ? "nothing graded yet" : `from ${fmtUsd(rules.start)}${b.peak > now ? `, peak ${fmtUsd(b.peak, true)}` : ""}`
+        + (basisOf(hound) ? `. Settled ${basisWords(hound)}.` : ""),
       toneOf(ret)),
     units: kpi("units", "Units", units === null ? NA : fmtUnitsPlain(units),
       units === null ? "nothing graded yet"
@@ -300,7 +300,7 @@ export function renderScoreboard(hound) {
       money.drawdown,
       money.yield,
       kpi("bets", "Bets", String(bets), [open > 0 ? `${open} open` : "", ungraded > 0 ? `${ungraded} ungraded` : ""].filter(Boolean).join(", ")
-        || (bets < 100 && bets > 0 ? "small sample" : "")),
+        || ""),
       kpi("clv", "CLV", clvBig, clvSmall),
       kpi("streak", "Streak", streak || NA, streak ? (streak.startsWith("W") ? "wins in a row" : "losses in a row") : "no graded bets"),
     ]),
@@ -318,13 +318,13 @@ function renderVerdict(hound) {
     h("p", { class: "hd-badgeline__explain", "data-hook": "badge-explain", text: st.title }),
   ]));
   box.appendChild(h("p", { class: "hd-verdict__meaning", "data-hook": "verdict-meaning",
-    text: VERDICT_MEANING[verdictLabel(hound)] || "This model has no verdict. Treat the result as unproven." }));
+    text: VERDICT_MEANING[verdictLabel(hound)] || "This model has no verdict yet. Its record is shown as it stands." }));
   const graded = betsOf(hound);
   const windowed = hound.season && typeof hound.season === "object" && !hound.season.all_time;
   box.appendChild(h("p", { class: "hd-fine", "data-hook": "verdict-sample",
     text: windowed
-      ? `This is the referee's all-time verdict. ${hound.season.label || "This season"}: ${graded} graded live ${graded === 1 ? "bet" : "bets"}.${graded < 100 ? " That is a small sample." : ""}`
-      : `Based on ${graded} graded live ${graded === 1 ? "bet" : "bets"}.${graded < 100 ? " That is a small sample." : ""}` }));
+      ? `This is the referee's all-time verdict. ${hound.season.label || "This season"}: ${graded} graded live ${graded === 1 ? "bet" : "bets"}.`
+      : `Based on ${graded} graded live ${graded === 1 ? "bet" : "bets"}.` }));
   if (hound.verdict && hound.verdict.sentence) {
     box.appendChild(h("p", { class: "hd-verdict__sentence", "data-hook": "verdict-sentence", text: hound.verdict.sentence }));
   }

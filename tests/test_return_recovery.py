@@ -5,6 +5,7 @@ THE STORY (2026-10-05, W02 / W03). Stripe sends the buyer to
 access token, stores it, and scrubs the session id from the address (kept, on
 purpose: the owner rejected leaving it in history, docs/decisions/
 closed-tab-token-recovery.md). The buyer who then reopens `#/signup/complete`
+# Copy updated per owner ruling 2026-10-20, complete-product positioning (no beta / early-access / paused hedging; invite wording).
 from history met "Check your link. No token was included in this link." on a
 browser that held a perfectly good token; a reload after the re-read window
 closed trusted whatever was stored without asking the server; and a real
@@ -327,9 +328,9 @@ class TheReturnPageUnderNode(unittest.TestCase):
     def test_an_expired_tester_token_shows_the_real_state_and_keeps_the_token(self):
         out = self.run_scenario(token="tok_tester_old", query={}, status=[EXPIRED_401],
                                 meta=OFF_META)
-        self.assertIn("Your early access ended on 3 October 2026.", out["page"])
+        self.assertIn("Your invited access ended on 3 October 2026.", out["page"])
         self.assertNotIn("You're signed in.", out["page"])
-        self.assertNotIn("not lost", out["page"].split("Your early access ended")[0])
+        self.assertNotIn("not lost", out["page"].split("Your invited access ended")[0])
         self.assertEqual(out["stored"], "tok_tester_old", "the expired token is how they convert")
         # the existing upgrade path (the sign-in page reads the stored token)
         self.assertTrue(self.link_to(out, "#/signin"))
@@ -831,7 +832,7 @@ class SupportPageTellsALockedOutBuyerWhatToSend(unittest.TestCase):
 
     def test_it_says_which_mailbox_what_subject_and_what_not_to_send(self):
         for fact in ("from the email address your account uses", "We answer only that address",
-                     "\\\"Locked out\\\" in the subject", "bought a plan or were given early access",
+                     "\\\"Locked out\\\" in the subject", "bought a plan or were given an invite",
                      "old one stops working", "Do not send a card number or an old token",
                      "is not enough"):
             self.assertIn(fact, self.steps)

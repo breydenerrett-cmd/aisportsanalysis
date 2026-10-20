@@ -613,12 +613,15 @@ class TennisNewsItemIsTrue(unittest.TestCase):
     it is running.
     """
 
-    def test_tennis_item_says_capture_is_paused_not_silently_running(self):
+    def test_tennis_item_names_the_board_and_the_hounds_and_never_says_capture_is_running(self):
+        # REWRITTEN 2026-10-20 (owner ruling 2026-10-20, complete-product positioning): tennis is a covered sport
+        # now, so the item no longer says capture is paused or that there are no picks.
         news = (WEB_JS / "news.js").read_text(encoding="utf-8")
         start = news.index('href: "#/tennis"')
         item = news[news.rindex("{", 0, start):start]
-        self.assertIn("paused", item)
-        self.assertIn("No picks", item)
+        self.assertIn("match board", item)
+        self.assertIn("tennis hounds", item)
+        self.assertNotIn("paused", item)
         # The exact false claim this fix replaced -- regression guard, not
         # just a positive check, so a future edit cannot quietly bring back
         # a present-tense "capture is happening" claim under new wording.

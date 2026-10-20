@@ -103,7 +103,7 @@ out.role = hook("signin-tabs").attrs.role;
         out = self.run_page(self.SHOWN, storage={HAD_KEY: "1"})
         self.assertEqual((out["createHidden"], out["loginHidden"]), (True, False))
         self.assertEqual(out["title"], "Sign in to view tonight's board.")
-        self.assertEqual(out["eyebrow"], "PRIVATE BETA")
+        self.assertEqual(out["eyebrow"], "SIGN IN")
         self.assertFalse(out["codeToggleHidden"])
 
     def test_a_stored_token_or_a_next_page_means_sign_in_first(self):
@@ -311,7 +311,7 @@ out.head = say("signin-early-head");
 out.href = hook("signin-start-trial").attrs.href;
 out.note = say("signin-note");
 """)
-        self.assertEqual(out["head"], "EARLY ACCESS TO DAILY PICKS")
+        self.assertEqual(out["head"], "DAILY PICKS BY INVITE")
         self.assertEqual(out["href"], "#/signup")
         self.assertIn("NO ACCOUNT YET", out["note"])
 
@@ -331,8 +331,9 @@ out.otherIsGeneric = main.querySelector("[data-hook='view-error']") !== null;
 """)
         self.assertTrue(out["card"])
         self.assertFalse(out["generic"], "an account that is fine is not 'request failed'")
-        self.assertIn("The daily picks board is early access.", out["cardText"])
-        self.assertIn("build dogs", out["cardText"])
+        # owner ruling 2026-10-20, complete-product positioning: "by invite", and hounds not dogs
+        self.assertIn("The daily picks board is by invite.", out["cardText"])
+        self.assertIn("build hounds", out["cardText"])
         self.assertEqual((out["kennel"], out["door"]), ("kennel.html", "#/signup"))
         self.assertTrue(out["otherIsGeneric"], "any other 403 is still an ordinary failure")
 

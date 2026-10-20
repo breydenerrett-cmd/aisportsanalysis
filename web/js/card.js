@@ -1159,9 +1159,9 @@ function emptyCard(payload, sport = "mlb") {
 function pausedCard(payload) {
   const wrap = el("section", { class: "gutter", "data-hook": "card-paused" });
   const panel = el("div", { class: "panel chamfer card2empty card2empty--paused" });
-  panel.appendChild(el("span", { class: "card2empty__label", text: "PICKS PAUSED" }));
+  panel.appendChild(el("span", { class: "card2empty__label", text: "NO PICKS FOR THIS DATE" }));
   panel.appendChild(el("p", { class: "card2empty__body", "data-hook": "card-paused-reason",
-    text: payload.reason || "Picks are paused." }));
+    text: payload.reason || "No picks are published for this date." }));
   const actions = el("div", { class: "card2empty__actions" });
   // MLB (owner decision 2026-10-16, docs/decisions/MLB_VALUE_PICKS_PAUSED.md):
   // the server sends the links a reader should use instead (the record, a

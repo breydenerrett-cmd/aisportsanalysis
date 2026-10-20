@@ -33,7 +33,7 @@ export async function mountManual(section, { id, kit }) {
         text: `None yet. Take them out back and use Record as a manual pick on a pick you like. Up to ${data.limit_per_day || 5} a day.` }));
     } else {
       body.appendChild(h("p", { "data-hook": "manual-record", class: "hd-num",
-        text: `${rec.graded || 0} graded (${rec.wins || 0}-${rec.losses || 0}${rec.pushes ? `-${rec.pushes}` : ""}), ${unitsText(rec.units_average_price) || "0.00u"} at the average price, ${rec.open || 0} open.${(rec.graded || 0) < 30 ? " A small sample." : ""}` }));
+        text: `${rec.graded || 0} graded (${rec.wins || 0}-${rec.losses || 0}${rec.pushes ? `-${rec.pushes}` : ""}), ${unitsText(rec.units_average_price) || "0.00u"} at the average price, ${rec.open || 0} open.` }));
       body.appendChild(h("ul", { class: "dk-tickets", "data-hook": "manual-list" }, items.map((t) => h("li", { class: "dk-ticket", "data-status": t.status }, [
         h("p", {}, [h("strong", { text: t.selection }), ` in ${t.game} at ${fmtPrice(t.price_average)}`,
           isNum(t.price_best) && t.price_best !== t.price_average ? `, best ${fmtPrice(t.price_best)}${t.book ? ` at ${t.book}` : ""}` : ""]),

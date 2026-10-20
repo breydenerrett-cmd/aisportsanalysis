@@ -12,7 +12,7 @@
  *                          picks, and the tickets (web/js/dog-backtest.js draws it). A month can take a minute.
  *   PROMOTIONS AND CUTS    the learning loop's lessons that ended in a promotion (made the team) or a retirement (cut).
  *
- * Nothing here computes a number: it draws what the server sent and says "small sample" where the server did.
+ * Nothing here computes a number: it draws what the server sent and draws the bet count beside every record.
  */
 
 import { h, clearNode, fmtPrice, isNum, signed, monogram, fmtWhen } from "./hounds-core.js";
@@ -56,7 +56,7 @@ function dogCard(d, { onDrill }) {
   ]));
   const avg = isNum(rec.units_average_price) ? rec.units_average_price : rec.units_recorded_price;
   li.appendChild(h("dl", { class: "dk-camp-dog__facts" }, [
-    h("div", {}, [h("dt", { text: "Season record" }), h("dd", { text: bets ? `${record(rec)} over ${bets} ${bets === 1 ? "bet" : "bets"}${bets < 100 ? ", small sample" : ""}` : "no graded bets yet" })]),
+    h("div", {}, [h("dt", { text: "Season record" }), h("dd", { text: bets ? `${record(rec)} over ${bets} ${bets === 1 ? "bet" : "bets"}` : "no graded bets yet" })]),
     h("div", {}, [h("dt", { text: "Units (average price)" }), h("dd", { text: bets ? units(avg) : "n/a" })]),
     h("div", {}, [h("dt", { text: "Open tickets" }), h("dd", { text: String(d.open_bets || 0) })]),
     h("div", {}, [h("dt", { text: "Feedback" }), h("dd", { text: `${d.feedback.good} good, ${d.feedback.bad} bad${d.feedback.notes ? `, ${d.feedback.notes} notes` : ""}` })]),

@@ -270,7 +270,7 @@ out.ended = say("tester-ended-line");
         }, meta={"billing": {"checkout": "off", "trial_days": 7, "price_cents": 1999}})
         self.assertEqual(out["hash"], "", "no navigation to a board that would refuse them")
         self.assertEqual(out["storage"][TOKEN_KEY], "SESSION-TOKEN")
-        self.assertIn("early access ended", out["ended"].lower())
+        self.assertIn("invited access ended", out["ended"].lower())   # owner ruling 2026-10-20, complete-product positioning
 
     # ---- the one-time "set a password" card ------------------------------------
 

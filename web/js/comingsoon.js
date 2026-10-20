@@ -39,20 +39,22 @@
 import { el, clear } from "./dom.js";
 import { pageHeader, chip } from "./layout.js";
 
+// COMPLETE-PRODUCT COPY (owner ruling 2026-10-20, complete-product positioning): NBA and NHL are covered
+// sports. Hounds bet them, and the page says so in the same words as every other sport. No figure, no pick.
 const COPY = {
   nba: {
     label: "NBA",
-    title: "NBA is coming soon.",
-    purpose: "NBA picks are not published yet.",
-    coming: "Daily picks published before each game and graded in public, win or lose.",
-    testing: "Nothing is being tested yet. NBA capture and testing are planned for later this year.",
+    title: "NBA is on the hound board.",
+    purpose: "Hounds bet the NBA, and every pick is published before the game.",
+    coming: "Every pick goes on the record before the game and is graded win or lose in public.",
+    testing: "Build a hound that bets the NBA, or watch the house pack. Each hound's bets and record are on its page.",
   },
   nhl: {
     label: "NHL",
-    title: "NHL is coming soon.",
-    purpose: "NHL picks are not published yet.",
-    coming: "Daily picks published before each game and graded in public, win or lose.",
-    testing: "Nothing is being tested yet. NHL capture and testing are planned for later this year.",
+    title: "NHL is on the hound board.",
+    purpose: "Hounds bet the NHL, and every pick is published before the game.",
+    coming: "Every pick goes on the record before the game and is graded win or lose in public.",
+    testing: "Build a hound that bets the NHL, or watch the house pack. Each hound's bets and record are on its page.",
   },
 };
 
@@ -64,10 +66,10 @@ function copyFor(sport) {
   const label = key ? key.toUpperCase() : "THIS SPORT";
   return {
     label,
-    title: `${label} is coming soon.`,
-    purpose: `${label} picks are not published yet.`,
-    coming: "Daily picks published before each game and graded in public, win or lose.",
-    testing: "Nothing is being tested yet.",
+    title: `${label} is on the hound board.`,
+    purpose: `Hounds bet ${label}, and every pick is published before the game.`,
+    coming: "Every pick goes on the record before the game and is graded win or lose in public.",
+    testing: "Build a hound that bets it, or watch the house pack.",
   };
 }
 
@@ -100,24 +102,24 @@ export function renderComingSoon(container, sport) {
   const header = pageHeader({ title: copy.title, purpose: copy.purpose });
   const eyebrowRow = el("p", { class: "pagehead__eyebrow comingsoon__eyebrow" });
   eyebrowRow.appendChild(el("span", { text: copy.label }));
-  const tag = chip("COMING SOON", "coming-soon");
+  const tag = chip("COVERED", "coming-soon");
   tag.style.marginLeft = "10px";
   eyebrowRow.appendChild(tag);
   header.node.insertBefore(eyebrowRow, header.node.firstChild);
   // No status line (DESIGN_SYSTEM.md section 4: "no status line").
 
   const page = el("div", { class: "comingsoon", "data-hook": "comingsoon-page" });
-  page.appendChild(section("What is coming", copy.coming));
-  page.appendChild(section("What is being tested now", copy.testing));
+  page.appendChild(section("How it is graded", copy.coming));
+  page.appendChild(section("Bet it yourself", copy.testing));
 
   const actions = el("div", { class: "comingsoon__actions" });
   actions.appendChild(el("a", {
-    href: "#/today", class: "btn btn--primary",
-    "data-hook": "comingsoon-primary", text: "See today's MLB picks",
+    href: "build-a-hound.html", class: "btn btn--primary",
+    "data-hook": "comingsoon-primary", text: "Build your hound",
   }));
   actions.appendChild(el("a", {
-    href: "#/record-card", class: "btn btn--ghost",
-    "data-hook": "comingsoon-secondary", text: "View MLB results",
+    href: "hounds.html", class: "btn btn--ghost",
+    "data-hook": "comingsoon-secondary", text: "Watch the house pack",
   }));
   page.appendChild(actions);
 

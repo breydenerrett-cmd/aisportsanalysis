@@ -100,7 +100,7 @@ export function qualifyingModels(hounds, n = TOP_MODELS, min) {
 }
 
 /**
- * `qual`: not ranked yet, so no rank number, a greyed return ("small sample") and a "3/10 bets" pill in the Bets
+ * `qual`: not ranked yet, so no rank number, a greyed return (under the ranking bar) and a "3/10 bets" pill in the Bets
  * column. A ranked model with under 20 settled bets is greyed the same way, with the reason as its tooltip. The
  * balance is the paper account from the shared start; the return is the % that balance moved.
  */
@@ -139,14 +139,14 @@ export function renderBoard(body, hounds, meta, note, today) {
   const filler = top.length < TOP_MODELS ? qualifyingModels(hounds, TOP_MODELS - top.length, min) : [];
   if (top.length === 0 && filler.length === 0) {
     body.appendChild(h("tr", {}, [h("td", { colspan: 6, class: "lbempty", "data-hook": "lb-empty",
-      text: `No model has ${min} settled bets in ${label} yet. Come back after the next slate.` })]));
+      text: `No hound has ${min} settled bets in ${label} yet. The board fills as the slate settles.` })]));
   } else {
     top.forEach((hound, i) => body.appendChild(boardRow(hound, i + 1, false, min)));
     filler.forEach((hound) => body.appendChild(boardRow(hound, 0, true, min)));
   }
   if (note) {
     const age = top.length < TOP_MODELS && meta && !meta.all_time ? seasonAgeText(meta, today) : "";
-    note.textContent = age ? `${age}: more models qualify at ${min} bets.` : "";
+    note.textContent = age ? `${age}: more hounds qualify at ${min} bets.` : "";
     if (age) note.removeAttribute("hidden"); else note.setAttribute("hidden", "");
   }
 }

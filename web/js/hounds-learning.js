@@ -40,7 +40,7 @@ export const COACH_BADGES = {
   "HELPED": { word: "HELPED", tone: "good" },
   "HURT": { word: "HURT", tone: "bad" },
   "NO DIFFERENCE": { word: "NO DIFFERENCE", tone: "flat" },
-  "TOO EARLY": { word: "TOO EARLY", tone: "early" },
+  "TOO EARLY": { word: "IN PROGRESS", tone: "early" },
 };
 
 const q = (hook) => document.querySelector(`[data-hook='${hook}']`);
@@ -60,7 +60,7 @@ export function chanceLine(w) {
   if (!w) return "Not reported.";
   const counts = `${w.champion_bets || 0} starter bets and ${w.control_bets || 0} control bets on ${w.games || 0} shared games`;
   if (!w.enough || !isNum(w.difference)) {
-    return `Not enough bets yet (${counts}). ${MIN_BETS_TEXT}`;
+    return `The comparison builds as bets settle (${counts}). ${MIN_BETS_TEXT}`;
   }
   const where = w.difference > 0 ? "above" : w.difference < 0 ? "below" : "level with";
   const gap = w.difference === 0 ? "" : `${Math.abs(w.difference).toFixed(2)} points `;
@@ -121,7 +121,7 @@ export function coachSummaryText(s) {
   bits.push(decided
     ? `${decided} graded live: ${s.helped || 0} helped, ${s.hurt || 0} hurt, ${s.no_difference || 0} no difference.`
     : "None has been graded live yet.");
-  if (s.too_early > 0) bits.push(`${s.too_early} still too early to call (a verdict needs 20 settled bets).`);
+  if (s.too_early > 0) bits.push(`${s.too_early} awaiting a verdict (it needs 20 settled bets).`);
   if (s.refused > 0) bits.push(`${plural(s.refused, "suggestion was", "suggestions were")} refused for breaking the rules.`);
   return bits.join(" ");
 }
@@ -173,7 +173,7 @@ export function fanSummaryText(s) {
   bits.push(decided
     ? `${decided} with a live verdict: ${s.helped || 0} helped, ${s.hurt || 0} hurt, ${s.no_difference || 0} no difference.`
     : "None has a live verdict yet.");
-  if (s.too_early > 0) bits.push(`${s.too_early} still too early to call.`);
+  if (s.too_early > 0) bits.push(`${s.too_early} awaiting a verdict.`);
   return bits.join(" ");
 }
 
@@ -224,7 +224,7 @@ function renderCoach(result) {
   const s = report.summary || {};
   box.appendChild(h("p", { "data-hook": "coach-summary", text: coachSummaryText(s) }));
   const facts = [["Tips made", s.suggestions], ["Tips refused", s.refused], ["HELPED", s.helped],
-    ["HURT", s.hurt], ["NO DIFFERENCE", s.no_difference], ["TOO EARLY", s.too_early]];
+    ["HURT", s.hurt], ["NO DIFFERENCE", s.no_difference], ["IN PROGRESS", s.too_early]];
   box.appendChild(h("dl", { class: "hd-row__facts", "data-hook": "coach-facts" },
     facts.map(([k, v]) => h("div", {}, [h("dt", { text: k }), h("dd", { text: isNum(v) ? String(v) : NOT_REPORTED })]))));
   const totals = coachTotalsText(s);

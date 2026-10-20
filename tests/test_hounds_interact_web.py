@@ -401,7 +401,8 @@ class SuggestionsAndTraining(unittest.TestCase):
         routes = dog_routes()
         routes[f"/hounds/{HID}/feedback"] = [200, {"dog_id": HID, "counts": {"good": 6, "bad": 2, "notes": 0, "by_kind": {"dog": {"good": 6, "bad": 2}}, "by_target": {}, "suggestions": 0}}]
         out = page(routes, queries=[q("counts", hook("fans-counts"))])
-        self.assertIn("8 ratings: 6 Good call, 2 Bad call. That is a small sample", out["final"]["counts"])
+        self.assertIn("8 ratings: 6 Good call, 2 Bad call.", out["final"]["counts"])
+        self.assertNotIn("small sample", out["final"]["counts"])   # owner ruling 2026-10-20, complete-product positioning
 
 
 @unittest.skipUnless(HAS_NODE, "node not installed")
@@ -443,7 +444,8 @@ class TheTrainingCamp(unittest.TestCase):
         f = out["final"]
         self.assertEqual(f["n"], 1)
         self.assertEqual(f["name"], "Plus Money Pete")
-        self.assertIn("11-10 over 21 bets, small sample", f["facts"])
+        self.assertIn("11-10 over 21 bets", f["facts"])
+        self.assertNotIn("small sample", f["facts"])   # owner ruling 2026-10-20, complete-product positioning
         self.assertIn("+3.58u", f["facts"])
         self.assertIn("3 good, 1 bad, 1 notes", f["facts"])
         self.assertIn("1-0 of 1 graded, 1 open", f["facts"])

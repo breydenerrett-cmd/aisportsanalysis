@@ -201,11 +201,11 @@ class FooterSummaryMatchesTheRedesign(unittest.TestCase):
         self.text = _read("meta.js")
 
     def test_summary_constant_exists_with_the_new_wording(self):
+        # owner ruling 2026-10-20, complete-product positioning: no "Beta" opening
         self.assertIn(
-            "Beta. Every pick here is part of an ongoing test — published "
-            "before each game and graded as it stood at its lock, win or "
-            "lose. This is analysis, not advice. Nothing here is a "
-            "guarantee; bet at your own risk.",
+            "Every pick is a paper bet, published before the game and "
+            "graded win or lose. This is analysis, not advice. Nothing "
+            "here is a guarantee; bet at your own risk.",
             self.text,
         )
 

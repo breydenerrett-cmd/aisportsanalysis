@@ -35,6 +35,7 @@ it, so that run against the pre-change tree each one fails on its own rather
 than the whole module failing to import.
 """
 
+# Copy updated per owner ruling 2026-10-20, complete-product positioning (no beta / early-access / paused hedging; invite wording).
 from __future__ import annotations
 
 import contextlib
@@ -809,7 +810,7 @@ class PayingAsAFormerTester(_BillingOn):
         self.assertEqual(lifetime, billing.SUBSCRIBER_TOKEN_TTL)
 
     def test_the_expired_week_token_still_opens_nothing_and_says_plain_unauthorized(self):
-        # Paid, so "your early access ended, subscribe" would be the wrong thing
+        # Paid, so "your invited access ended, subscribe" would be the wrong thing
         # to tell them: the generic refusal is right.
         detail = self.refused_detail(self.grant.token)
         self.assertEqual(detail["error"], "unauthorized")
@@ -1311,15 +1312,15 @@ UNAVAILABLE = {"billing": {"checkout": "unavailable", "trial_days": 7, "price_ce
 ON7 = {"billing": {"checkout": "on", "trial_days": 7, "price_cents": 1999}}
 ON0 = {"billing": {"checkout": "on", "trial_days": 0, "price_cents": 1999}}
 
-ENDED = "Your early access ended on 3 October 2026."
+ENDED = "Your invited access ended on 3 October 2026."
 NOT_OPEN = "Paid plans are not open yet. Reply to Brey if you want to keep going."
 REPLY_ONLY = "Reply to Brey if you want to keep going."
 # What the signup form says for a tester's email (no date, no offer wording), and
 # the link that follows it.
-NOTICE_EXPIRED = ("That email already has early access, and it has ended. The sign-in page "
+NOTICE_EXPIRED = ("That email already has an invite, and it has ended. The sign-in page "
                   "is where to continue: use your access token there. If you lost the token, "
                   "reply to Brey.")
-NOTICE_ACTIVE = ("That email already has early access. Sign in with the access token Brey "
+NOTICE_ACTIVE = ("That email already has an invite. Sign in with the access token Brey "
                  "sent you. If you lost the token, reply to Brey.")
 SIGNIN_LINK_TEXT = "Open the sign-in page"
 
@@ -1492,7 +1493,7 @@ class ThePagesUnderNode(unittest.TestCase):
     def test_a_missing_date_still_reads_truthfully(self):
         no_date = {"code": 401, "body": {"detail": {"error": "tester_access_expired"}}}
         out = self.run_scenario(kind="signin", meta=OFF, token="old", status=no_date)
-        self.assertEqual(out["ended"], "Your early access has ended.")
+        self.assertEqual(out["ended"], "Your invited access has ended.")
 
     # ---- signup ------------------------------------------------------------
 
@@ -1566,8 +1567,8 @@ class ThePagesUnderNode(unittest.TestCase):
         self.assertIn('export const TESTER_REPLY = "' + REPLY_ONLY + '";', checkout)
         for name in ("signin.js", "signup.js", "dom.js", "landing.js", "cardrecord.js"):
             source = (JS / name).read_text(encoding="utf-8")
-            for literal in ("Paid plans are not open yet", "Your early access ended",
-                            "Your early access runs until", "already has early access",
+            for literal in ("Paid plans are not open yet", "Your invited access ended",
+                            "Your early access runs until", "already has an invite",
                             "if you want to keep going", "Start your"):
                 self.assertNotIn(literal, source, f"{name}: {literal!r}")
         signin = (JS / "signin.js").read_text(encoding="utf-8")

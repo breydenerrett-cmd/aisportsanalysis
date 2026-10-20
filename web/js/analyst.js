@@ -388,7 +388,7 @@ function familyRow(name, f) {
   const units = unitsText(f.units);
   if (rate === null || units === null) {
     const held = el("td", { class: "an-rec__withheld", colspan: "2", "data-hook": "analyst-record-withheld",
-      text: f.withheld_reason || "Not enough graded calls yet" });
+      text: f.withheld_reason || "Rated once more calls are graded" });
     tr.appendChild(held);
   } else {
     tr.appendChild(cell("td", rate, "analyst-record-rate"));
@@ -432,7 +432,7 @@ function appendRecordBody(host, record) {
 /** @param record  GET /analyst/record */
 export function renderAnalystRecord(record) {
   const host = el("section", { class: "an-section an-rec", "data-hook": "analyst-record" });
-  host.appendChild(head("AI ANALYST RECORD", "UNPROVEN"));
+  host.appendChild(head("AI ANALYST RECORD", "GRADED IN PUBLIC"));
   host.appendChild(el("p", { class: "an-label", "data-hook": "analyst-label",
     text: (record && record.label) || ANALYST_LABEL }));
   if (!record) return host;
