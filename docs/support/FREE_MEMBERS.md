@@ -84,6 +84,19 @@ forever** again with the same email.
 - The access token lasts 10 years. That is "forever" for this product; New token
   gives another 10.
 
+## Kennel names (a member's public name)
+
+A member names their own kennel on **My kennel** ("Name your kennel", 2 to 30 characters, letters, numbers,
+spaces, hyphens and apostrophes). Until they do, the kennel shows as its anonymous handle ("Handler 21E8").
+The name appears on the kennels list, their public profile, the leaderboard ("by <name>") and each dog's
+page. Two members cannot share a name (capitals, spaces and apostrophes do not make a different one).
+
+Support can set or clear one: **People**, the row's menu, **Set kennel name (reason)**
+(`POST /admin/users/kennel-name {user_id, kennel_name, reason}`). The same checks apply (language, protected
+brand names, "Handler 1234"-style names, a name already taken); an empty name clears it and the kennel goes
+back to its handle. The reason is kept beside the name and is never public. The response and every public
+page carry the name only, never the member's email.
+
 ## If something looks wrong
 
 - Section missing or empty after saving the admin token: the token was rejected, or
