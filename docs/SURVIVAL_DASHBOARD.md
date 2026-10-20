@@ -1,10 +1,10 @@
 # LineHound survival dashboard
 
-Generated 2026-10-19 21:06Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-10-20 16:19Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
-| Days until 2026-10-31 | **12** |
+| Days until 2026-10-31 | **11** |
 | Current monthly burn (known + estimated infrastructure) | $78.00 |
 | Current monthly burn incl. Claude at the planning assumption | $278.00 (unknown: Claude subscription that operates the business, BALLDONTLIE) |
 | Identified monthly savings (not yet realised) | $29.00: The Odds API (100K tier): $29.00 (downgrade to the $30 20K tier; NOT confirmed, owner decision) |
@@ -151,9 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-10-19 (1:30 pm PT run): ALCS Game 6 Guardians at Rays brief published (19 markets, all passes; one checker rejection, second answer clean).
-- Monday night Commanders at 49ers brief published (3 markets, all passes).
-- Public sample stays on the graded ALCS Game 5 brief until tonight's games are graded.
-- A production deploy has hung 2h45m: dispatches on the working branch use that branch's workflow file, which lacks the owner's timeout patch.
-- Public MLB value picks remain paused. Sends 0, replies 0, testers 0, paid 0.
+- 2026-10-20 (8:30 am PT run): ALCS Game 6 (Rays 4, Guardians 2; Rays win the series) and Monday night Commanders at 49ers briefs graded; both were all passes.
+- Public sample now points at the graded ALCS Game 6 brief.
+- No MLB game until World Series Game 1, Rays at Brewers, Fri Oct 23 5:00 pm PT; no NFL game until Thursday night.
+- A production deploy has been unfinished about two hours; later deploys wait behind it.
+- Public MLB value picks remain paused. Sends 0, replies 0, testers 0.
 
