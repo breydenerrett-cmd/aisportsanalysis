@@ -27,9 +27,10 @@
 
 import { s, clearNode } from "./hounds-core.js";
 import { COATS, EYES, BACKGROUNDS, cleanLook, hashStr, DEFAULT_LOOK } from "./dog-look.js";
+import { BREEDS, BREED_LABELS, buildBreed, mix } from "./dog-breeds.js";
 
 export const POSES = ["idle", "happy", "sad", "thinking", "celebrate"];
-export const BREEDS = ["retriever", "bulldog", "schnauzer", "husky", "mutt", "hound"];
+export { BREEDS, BREED_LABELS };
 export const ACCESSORY_LAYERS = ["sunglasses", "cap", "headband", "visor", "chain", "hoodie", "jersey"];
 export const VIBE_BREED = { grinder: "bulldog", nerd: "schnauzer", degen: "husky", chaos: "mutt", psychic: "hound" };
 
@@ -46,14 +47,49 @@ export function cleanPose(pose) {
   return POSES.includes(pose) ? pose : "idle";
 }
 
-/** The breed for a dog: its persona vibe, else a stable pick from its id. `dog` may be an id string. */
+/**
+ * A word in a dog's id or name that names its breed. "Chalk Chihuahua" is a chihuahua and "Jet-Lag Jack" a Jack Russell, whatever
+ * its persona vibe; a label can never say "Bulldog" over a drawing of something else, because the label is read from the same
+ * mapping. Words that are not breeds fall through to the vibe, then to a hash of the id.
+ */
+export const NAME_BREED = {
+  chihuahua: "chihuahua", collie: "collie", corgi: "corgi", dalmatian: "dalmatian", greyhound: "greyhound", bulldog: "bulldog",
+  husky: "husky", schnauzer: "schnauzer", basset: "basset", bloodhound: "bloodhound", beagle: "beagle", setter: "setter",
+  spaniel: "spaniel", terrier: "terrier", pointer: "pointer", whippet: "whippet", kelpie: "kelpie", lab: "labrador", labrador: "labrador",
+  newfie: "newfoundland", newfoundland: "newfoundland", retriever: "retriever", poodle: "poodle", professor: "poodle",
+  shepherd: "shepherd", leader: "shepherd", jack: "jackrussell", hank: "hound", hound: "hound", mutt: "mutt",
+};
+
+/** The breed a dog's id or name spells out, or "". */
+export function breedOfName(dog) {
+  const d = dog && typeof dog === "object" ? dog : { id: dog };
+  const words = `${d.id || ""} ${d.name || ""}`.toLowerCase().split(/[^a-z0-9]+/);
+  for (const w of words) if (NAME_BREED[w]) return NAME_BREED[w];
+  return "";
+}
+
+/** The breed for a dog: an explicit breed, else the one its name spells, else its persona vibe, else a stable pick from its id. `dog` may be an id string. */
 export function breedFor(dog) {
   const d = dog && typeof dog === "object" ? dog : { id: dog };
+  if (BREEDS.includes(d.breed)) return d.breed;
+  const named = breedOfName(d);
+  if (named) return named;
   const vibe = d.vibe || (d.persona && d.persona.vibe) || "";
   if (VIBE_BREED[vibe]) return VIBE_BREED[vibe];
-  if (BREEDS.includes(d.breed)) return d.breed;
   const key = d.id || d.name;
   return key ? BREEDS[hashStr(key) % BREEDS.length] : "retriever";
+}
+
+/** The label shown for a breed: always the name of the drawing. */
+export function breedLabel(breed) {
+  return BREED_LABELS[breed] || BREED_LABELS[breedFor(breed)] || "Dog";
+}
+
+/** Traits that belong to one dog, not its breed: the Professor wears glasses. */
+export function traitsFor(dog) {
+  const d = dog && typeof dog === "object" ? dog : { id: dog };
+  const words = `${d.id || ""} ${d.name || ""}`.toLowerCase().split(/[^a-z0-9]+/);
+  return { glasses: words.includes("professor") };
 }
 
 /** The pose a dog's last pick earns: a win is happy, a loss is sad, anything else (or nothing) is idle. */
@@ -61,121 +97,9 @@ export function poseOfPick(result) {
   return result === "won" ? "happy" : result === "lost" ? "sad" : "idle";
 }
 
-// ---- colour helpers --------------------------------------------------------------------------------------------
-
-function mix(a, b, t) {
-  const pa = [1, 3, 5].map((i) => parseInt(a.slice(i, i + 2), 16));
-  const pb = [1, 3, 5].map((i) => parseInt(b.slice(i, i + 2), 16));
-  return `#${pa.map((v, i) => Math.round(v + (pb[i] - v) * t).toString(16).padStart(2, "0")).join("")}`;
-}
-
 const n = (tag, attrs, kids) => s(tag, attrs || {}, kids || []);
 const g = (cls, kids, attrs) => n("g", Object.assign({ class: cls }, attrs || {}), kids);
 const path = (d, attrs) => n("path", Object.assign({ d }, attrs || {}));
-const mirror = (build) => [build(1), build(-1)];
-
-// ---- breed geometry --------------------------------------------------------------------------------------------
-// Every breed gives: `back` (behind the head: ears), `head` (the head shape, muzzle, markings), `front` (over the face: brows,
-// beard), and `geo`, the landmarks the face and the accessories hang from. The face is centred on x=60 in a 120 box.
-
-function earPair(cls, left, right, fill) {
-  return [path(left, { class: `dk-ear dk-ear--l`, fill }), path(right, { class: `dk-ear dk-ear--r`, fill })].map((el) => { void cls; return el; });
-}
-
-const BREED = {
-  retriever(c) {
-    return {
-      geo: { ey: 56, edx: 14, er: 5.4, ny: 66, nrx: 6.2, nry: 4.4, my: 77, topY: 24, browY: 49, hw: 34, lid: [c.base, c.base] },
-      back: earPair("", "M35 33 C20 34 13 56 19 77 C28 83 38 68 40 48 Z", "M85 33 C100 34 107 56 101 77 C92 83 82 68 80 48 Z", c.shade),
-      head: [
-        path("M60 24 C80 24 94 38 94 57 C94 76 80 90 60 90 C40 90 26 76 26 57 C26 38 40 24 60 24 Z", { fill: c.base }),
-        path("M30 50 C32 34 44 27 60 27 C50 33 42 44 40 58 C36 62 31 60 30 50 Z", { fill: c.light, opacity: ".22" }),
-        n("ellipse", { cx: 60, cy: 74, rx: 17, ry: 13, fill: c.light }),
-      ],
-      front: [],
-    };
-  },
-  bulldog(c) {
-    return {
-      geo: { ey: 57, edx: 17, er: 5, ny: 67, nrx: 8, nry: 5.2, my: 78, topY: 26, browY: 50, hw: 38, lid: [c.base, c.base] },
-      back: earPair("", "M37 34 C26 24 17 30 19 44 C26 50 36 46 41 40 Z", "M83 34 C94 24 103 30 101 44 C94 50 84 46 79 40 Z", c.shade),
-      head: [
-        path("M60 26 C84 26 99 38 99 58 C99 80 85 92 60 92 C35 92 21 80 21 58 C21 38 36 26 60 26 Z", { fill: c.base }),
-        path("M26 52 C28 36 42 29 60 29 C48 35 40 46 38 60 C33 64 27 62 26 52 Z", { fill: c.light, opacity: ".18" }),
-        n("ellipse", { cx: 60, cy: 76, rx: 22, ry: 13.5, fill: c.light }),
-        path("M40 40 Q60 34 80 40", { stroke: c.shade, "stroke-width": 2, fill: "none", "stroke-linecap": "round", opacity: ".55" }),
-        path("M44 86 Q60 92 76 86", { stroke: c.shade, "stroke-width": 1.6, fill: "none", "stroke-linecap": "round", opacity: ".5" }),
-      ],
-      front: [],
-    };
-  },
-  schnauzer(c) {
-    const beard = mix(c.light, "#FFFFFF", 0.25);
-    return {
-      geo: { ey: 55, edx: 15, er: 4.9, ny: 65, nrx: 6.6, nry: 4.6, my: 78, topY: 25, browY: 49, hw: 32, lid: [c.base, c.base] },
-      back: earPair("", "M36 29 L19 42 C25 54 40 50 45 36 Z", "M84 29 L101 42 C95 54 80 50 75 36 Z", c.shade),
-      head: [
-        path("M60 25 C82 25 93 35 93 52 L93 72 C93 85 79 93 60 93 C41 93 27 85 27 72 L27 52 C27 35 38 25 60 25 Z", { fill: c.base }),
-        path("M31 48 C32 36 42 28 60 28 C50 34 43 44 41 56 C36 58 31 56 31 48 Z", { fill: c.light, opacity: ".2" }),
-        path("M34 68 C36 96 84 96 86 68 C76 80 44 80 34 68 Z", { fill: beard }),
-        n("ellipse", { cx: 60, cy: 72, rx: 15, ry: 11, fill: beard }),
-      ],
-      front: [
-        path("M32 45 C37 38 47 38 54 44 C48 44 40 46 32 45 Z", { fill: beard }),
-        path("M88 45 C83 38 73 38 66 44 C72 44 80 46 88 45 Z", { fill: beard }),
-      ],
-    };
-  },
-  husky(c) {
-    const mask = mix(c.shade, c.base, 0.25);
-    return {
-      geo: { ey: 56, edx: 14, er: 5.2, ny: 68, nrx: 5.6, nry: 4.2, my: 78, topY: 28, browY: 50, hw: 32, lid: [mask, mask] },
-      back: [
-        path("M30 46 L25 12 L55 30 Z", { class: "dk-ear dk-ear--l", fill: c.shade }),
-        path("M90 46 L95 12 L65 30 Z", { class: "dk-ear dk-ear--r", fill: c.shade }),
-      ],
-      head: [
-        path("M60 28 C80 28 92 40 92 58 C92 77 79 91 60 91 C41 91 28 77 28 58 C28 40 40 28 60 28 Z", { fill: c.light }),
-        path("M60 28 C80 28 92 40 92 55 C82 53 72 58 60 72 C48 58 38 53 28 55 C28 40 40 28 60 28 Z", { fill: mask }),
-        path("M52 29 L60 52 L68 29 Z", { fill: c.light, opacity: ".9" }),
-        path("M31 36 L30 22 L45 31 Z", { fill: c.light, opacity: ".85" }),
-        path("M89 36 L90 22 L75 31 Z", { fill: c.light, opacity: ".85" }),
-        n("ellipse", { cx: 60, cy: 75, rx: 15, ry: 12, fill: mix(c.light, "#FFFFFF", 0.4) }),
-      ],
-      front: [],
-    };
-  },
-  mutt(c) {
-    const patch = mix(c.shade, "#0B0C0E", 0.15);
-    return {
-      geo: { ey: 56, edx: 14, er: 5.4, ny: 67, nrx: 6.2, nry: 4.4, my: 77, topY: 25, browY: 50, hw: 34, lid: [c.base, patch] },
-      back: [
-        path("M35 40 L28 11 L56 29 Z", { class: "dk-ear dk-ear--l", fill: c.shade }),
-        path("M84 33 C99 38 103 60 96 76 C87 78 80 64 79 46 Z", { class: "dk-ear dk-ear--r", fill: c.shade }),
-      ],
-      head: [
-        path("M60 25 C82 24 95 38 94 58 C93 78 80 90 60 90 C40 90 27 78 26 58 C25 38 38 26 60 25 Z", { fill: c.base }),
-        n("ellipse", { cx: 75, cy: 54, rx: 12.5, ry: 12, fill: patch }),
-        path("M33 48 C35 36 44 29 58 28 C48 34 44 44 43 56 C38 58 33 56 33 48 Z", { fill: c.light, opacity: ".2" }),
-        n("ellipse", { cx: 60, cy: 74, rx: 16.5, ry: 12.5, fill: c.light }),
-      ],
-      front: [],
-    };
-  },
-  hound(c) {
-    return {
-      geo: { ey: 55, edx: 14, er: 5, ny: 71, nrx: 6.4, nry: 4.6, my: 83, topY: 24, browY: 49, hw: 30, lid: [c.base, c.base] },
-      back: earPair("", "M37 30 C18 38 13 72 18 99 C28 102 40 76 42 46 Z", "M83 30 C102 38 107 72 102 99 C92 102 80 76 78 46 Z", c.shade),
-      head: [
-        path("M60 24 C78 24 91 36 91 54 C91 66 85 73 82 88 C77 98 43 98 38 88 C35 73 29 66 29 54 C29 36 42 24 60 24 Z", { fill: c.base }),
-        path("M33 48 C34 36 44 28 58 27 C49 34 45 44 44 56 C39 58 33 56 33 48 Z", { fill: c.light, opacity: ".2" }),
-        n("ellipse", { cx: 60, cy: 79, rx: 15.5, ry: 15, fill: c.light }),
-        path("M60 27 L63 33 L60 39 L57 33 Z", { fill: c.light, opacity: ".5" }),
-      ],
-      front: [],
-    };
-  },
-};
 
 // ---- the face: nose, mouth, eyes, brows, cheeks (one drawing per pose) ------------------------------------------
 
@@ -309,6 +233,16 @@ function sunglasses(geo) {
   ]);
 }
 
+function roundGlasses(geo) {
+  const { ey, edx, er } = geo, r = er + 4.6, gold = GOLD;
+  const rim = (x) => n("circle", { cx: x, cy: ey, r, fill: "rgba(255,255,255,0.14)", stroke: gold, "stroke-width": 1.9 });
+  return g("dk-acc dk-acc--glasses", [
+    rim(60 - edx), rim(60 + edx),
+    path(`M${60 - edx + r} ${ey - 1} Q60 ${ey - 4.5} ${60 + edx - r} ${ey - 1}`, { stroke: gold, "stroke-width": 1.9, fill: "none", "stroke-linecap": "round" }),
+    path(`M${60 - edx - r} ${ey} L${60 - edx - r - 5} ${ey - 2} M${60 + edx + r} ${ey} L${60 + edx + r + 5} ${ey - 2}`, { stroke: gold, "stroke-width": 1.6, fill: "none", "stroke-linecap": "round" }),
+  ]);
+}
+
 function chain() {
   return g("dk-acc dk-acc--chain", [
     path("M36 92 Q60 118 84 92", { stroke: GOLD, "stroke-width": 3, fill: "none", "stroke-dasharray": "4.2 1.8", "stroke-linecap": "round" }),
@@ -354,12 +288,14 @@ export function dogSvg(rawLook, opts = {}) {
   const look = cleanLook(rawLook);
   const pose = cleanPose(opts.pose || opts.mood);
   const breedName = BREEDS.includes(opts.breed) ? opts.breed : breedFor(opts);
-  const coat = COATS[look.coat];
+  const coat0 = COATS[look.coat];
   const [bgA, bgB] = BACKGROUNDS[look.bg];
   const size = opts.size || 56;
   const gid = `dk-bg-${++uid}`;
-  const built = BREED[breedName](coat);
+  const built = buildBreed(breedName, coat0);
+  const coat = built.coat || coat0;
   const geo = built.geo;
+  if (!geo.lid) geo.lid = [coat.base, coat.base];
   const mouths = mouthShapes(geo), eyes = eyeShapes(geo, EYES[look.eyes]), brows = browShapes(geo, coat);
 
   const face = [
@@ -374,6 +310,7 @@ export function dogSvg(rawLook, opts = {}) {
     ...Object.entries(brows).map(([name, shapes]) => g(`dk-p dk-p--brows dk-p--${name}`, shapes)),
   ];
   if (look.face === "sunglasses") face.push(sunglasses(geo));
+  else if (traitsFor(opts).glasses) face.push(roundGlasses(geo));
   const acc = headAccessory(look, geo);
   if (acc) face.push(acc);
 

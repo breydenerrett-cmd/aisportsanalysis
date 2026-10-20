@@ -14,7 +14,8 @@
     PUT  /hounds/{id}/look            the owner: {"look": {...}} validated against the locker-room whitelist
     GET  /hounds/looks?ids=a,b        looks for several dogs at once (the lists draw their badges from this)
     GET  /hounds/camp/mine            signed in: the caller's dogs for the Training camp
-    POST /hounds/drill                signed in: {"dog_id" | "spec", "days": 7|14|30}: a hindsight drill, never counted
+    POST /hounds/drill                signed in: {"dog_id" | "spec", "days": 7|14|30 | "season": "s2"}: a hindsight drill
+                                      (the Backtest tab calls it), never counted
 
 NOTHING HERE WRITES TO A DOG'S RULE RECORD. The fire route writes nothing. The manual pick goes to its own
 ledger (src/hounds/interact/manual.py). Feedback and looks are rows in two small tables. A drill replays in a
@@ -164,6 +165,7 @@ class DrillRequest(BaseModel):
     dog_id: Optional[str] = None
     spec: Optional[Dict[str, Any]] = None
     days: int = 14
+    season: Optional[str] = None           # a season id ("s2"): that season's completed days so far (Backtest tab)
 
 
 @router.post("/hounds/drill")
@@ -176,7 +178,8 @@ def run_drill(body: DrillRequest, response: Response,
     if body.dog_id:
         target = _dog(body.dog_id)
     try:
-        return envelope(drill.drill(days=body.days, dog=target, spec=body.spec if target is None else None))
+        return envelope(drill.drill(days=body.days, dog=target, spec=body.spec if target is None else None,
+                                     season=body.season))
     except drill.DrillError as exc:
         error = _err(exc.status, exc.code, str(exc), fields=exc.fields)
         if exc.retry_after:

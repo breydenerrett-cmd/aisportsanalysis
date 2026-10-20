@@ -3,11 +3,11 @@
 Owner: "It's not clearly accessible to find a user's dogs in their kennel ... more minimalism and more fun animated UI."
 
   KENNEL PAGE   web/kennel.html + web/js/kennel.js, run for real under node: My kennel (signed in: a card per dog with its
-                avatar, record, units, last pick, status and one-tap Fire now / Ask / Edit / Open; a "Build a dog" card; the
+                avatar, record, units, last pick, status and one-tap Take them out back / Ask / Edit / Open; a "Build a dog" card; the
                 empty state; the signed-out gate), a member's PUBLIC kennel (?u=, read only, a 0-bet dog included), and the
                 studio drawer that reuses the builder's and the dog kit's modules.
   NAVIGATION    one component (web/js/nav.js + css/lhnav.css) on every page, right for signed in and signed out.
-  TABS          the dog page's Overview / Tickets / Ask / Locker room / Rules, and the leaderboard's Models / Kennels.
+  TABS          the dog page's Overview / Tickets / Backtest / Ask / Locker room / Rules, and the leaderboard's Models / Kennels.
   MOTION        every animation sits inside prefers-reduced-motion: no-preference; a count-up ends on the exact text and
                 does nothing at all when motion is reduced.
 
@@ -113,7 +113,9 @@ class EveryPageHasTheOneNavigation(unittest.TestCase):
 
     def test_the_landing_page_has_a_big_kennels_card(self):
         html = read("landing.html")
-        self.assertRegex(html, r'<a class="btn btn--primary" href="kennels.html" data-hook="kennels-card-browse">Browse the kennels</a>')
+        # round 2 (2026-10-19): the band is "build your dog" with a primary build button; the kennels are one ghost button away
+        self.assertRegex(html, r'<a class="btn btn--primary" href="build-a-hound.html" data-hook="kennels-card-build">Build a dog</a>')
+        self.assertRegex(html, r'<a class="btn btn--ghost" href="kennels.html" data-hook="kennels-card-browse">Browse the kennels</a>')
         self.assertRegex(html, r'href="kennel.html" data-hook="kennels-card-mine">Your kennel</a>')
 
     def test_the_landing_page_keeps_its_early_access_button_in_the_bar(self):
@@ -270,8 +272,8 @@ class MyKennel(unittest.TestCase):
                 q("hidden_tabs", "[data-hook='studio-tabs'] [role='tab']", "attrs", attr="hidden")])])
         cap = out["captures"]["open"]
         self.assertEqual((cap["hidden"], cap["title"]), (False, "New dog"))
-        # Look, Rules, Fire now, Ask, Record: a new dog has only the Rules tab, so the other four hide
-        self.assertEqual(cap["hidden_tabs"], ["", None, "", "", ""])
+        # Look, Rules, Out back, Backtest, Ask, Record: a new dog has only the Rules tab, so the other five hide
+        self.assertEqual(cap["hidden_tabs"], ["", None, "", "", "", ""])
 
     def test_a_retired_dog_is_set_apart_and_offers_a_copy_not_an_edit(self):
         dogs = [dog("u-1", "Live"), dog("u-2", "Old Timer", status="retired", retired=True)]
@@ -361,7 +363,7 @@ class TheStudio(unittest.TestCase):
                 q("rules_panel", "[data-tabpanel='rules']", "hidden")])])
         cap = out["captures"]["open"]
         self.assertEqual((cap["hidden"], cap["title"]), (False, "Underdog Gus"))
-        self.assertEqual(cap["tabs"], ["Look", "Rules", "Fire now", "Ask", "Record"])
+        self.assertEqual(cap["tabs"], ["Look", "Rules", "Out back", "Backtest", "Ask", "Record"])
         self.assertEqual(cap["selected"], ["Look"])
         self.assertEqual((cap["preview"], cap["head_avatar"]), (1, 1))
         self.assertEqual(cap["open_link"], "hound.html?id=u-1")
@@ -395,7 +397,7 @@ class TheStudio(unittest.TestCase):
         out = run_page("kennel", routes=self.routes([dog("u-1")]), **SIGNED, actions=[
             dict(do="click", sel="[data-hook='dog-action-fire']", label="fire", wait=300, capture=[
                 q("selected", "[role='tab'][aria-selected='true']", "texts"), q("headline", "[data-hook='fire-headline']")])])
-        self.assertEqual(out["captures"]["fire"]["selected"], ["Fire now"])
+        self.assertEqual(out["captures"]["fire"]["selected"], ["Out back"])
         self.assertEqual(out["captures"]["fire"]["headline"], "Nothing qualifies right now.")
         self.assertEqual([p["url"].split("/")[-2:] for p in out["posts"]], [["u-1", "fire"]])
 
@@ -461,11 +463,12 @@ class TheKennelsIndex(unittest.TestCase):
 class TheDogPageTabs(unittest.TestCase):
     HTML = read("hound.html")
 
-    def test_five_tabs_in_order_with_fire_now_above_them(self):
+    def test_six_tabs_in_order_with_out_back_above_them(self):
         tabs = re.findall(r'role="tab" data-tab="([a-z]+)"', self.HTML)
-        self.assertEqual(tabs, ["overview", "tickets", "ask", "locker", "rules"])
+        self.assertEqual(tabs, ["overview", "tickets", "backtest", "ask", "locker", "rules"])
         self.assertLess(self.HTML.index('data-hook="dog-fire-section"'), self.HTML.index('data-hook="hound-tabs"'))
-        self.assertIn(">Fire now<", self.HTML)
+        self.assertIn(">Out back<", self.HTML)
+        self.assertNotIn("Fire now", self.HTML)
 
     def test_every_section_sits_in_the_panel_it_belongs_to(self):
         def panel(name):
@@ -477,13 +480,15 @@ class TheDogPageTabs(unittest.TestCase):
         self.assertIn('data-hook="hound-today-section"', panel("tickets"))
         self.assertIn('data-hook="hound-bets-section"', panel("tickets"))
         self.assertIn('data-hook="dog-manual-section"', panel("tickets"))
+        self.assertIn('data-hook="dog-backtest-section"', panel("backtest"))
         self.assertIn('data-hook="dog-ask-section"', panel("ask"))
         self.assertIn('data-hook="dog-locker-section"', panel("locker"))
         self.assertIn('data-hook="hound-rule-section"', panel("rules"))
         self.assertIn('data-hook="hound-lineage-section"', panel("rules"))
 
     def test_only_overview_is_visible_in_the_markup_and_the_owner_tabs_are_optional(self):
-        self.assertEqual(len(re.findall(r'data-tabpanel="[a-z]+"[^>]* hidden>', self.HTML)), 4)
+        self.assertEqual(len(re.findall(r'data-tabpanel="[a-z]+"[^>]* hidden>', self.HTML)), 5)
+        self.assertRegex(self.HTML, r'data-tab="backtest" aria-selected="false" data-optional')
         self.assertRegex(self.HTML, r'data-tab="ask" aria-selected="false" data-optional')
         self.assertRegex(self.HTML, r'data-tab="locker" aria-selected="false" data-optional')
 
@@ -493,7 +498,7 @@ class TheDogPageTabs(unittest.TestCase):
 
 @unittest.skipUnless(HAS_NODE, "node not installed")
 class TabsRun(unittest.TestCase):
-    PANELS = ["overview", "tickets", "ask", "locker", "rules"]
+    PANELS = ["overview", "tickets", "backtest", "ask", "locker", "rules"]
 
     def panels_hidden(self):
         return [q(f"{p}", f"[data-tabpanel='{p}']", "hidden") for p in self.PANELS]
@@ -502,15 +507,15 @@ class TabsRun(unittest.TestCase):
         out = run_page("tabs", captureInitial=self.panels_hidden() + [q("selected", "[role='tab'][aria-selected='true']", "texts")], actions=[
             dict(do="click", sel="[data-tab='tickets']", label="tickets", capture=self.panels_hidden() + [q("selected", "[role='tab'][aria-selected='true']", "texts")])])
         first = out["captures"]["initial"]
-        self.assertEqual([first[p] for p in self.PANELS], [False, True, True, True, True])
+        self.assertEqual([first[p] for p in self.PANELS], [False, True, True, True, True, True])
         self.assertEqual(first["selected"], ["Overview"])
         cap = out["captures"]["tickets"]
-        self.assertEqual([cap[p] for p in self.PANELS], [True, False, True, True, True])
+        self.assertEqual([cap[p] for p in self.PANELS], [True, False, True, True, True, True])
         self.assertEqual(cap["selected"], ["Tickets"])
 
     def test_a_tab_query_opens_that_tab(self):
         out = run_page("tabs", search="?id=closer&tab=rules", queries=self.panels_hidden())
-        self.assertEqual([out["final"][p] for p in self.PANELS], [True, True, True, True, False])
+        self.assertEqual([out["final"][p] for p in self.PANELS], [True, True, True, True, True, False])
 
     def test_arrow_keys_move_between_the_shown_tabs(self):
         out = run_page("tabs", actions=[dict(do="key", sel="[data-tab='overview']", key="ArrowRight", label="right", capture=[

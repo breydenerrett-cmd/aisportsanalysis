@@ -169,7 +169,7 @@ export function withLoadingTimeout(promise, { slowMs = 15000, failMs = 30000, on
  * geometry-only skeleton bars, styled to suggest a generic list row
  * (label + two figures) without claiming to be any specific screen's
  * actual column layout. */
-export function renderLoadingSkeleton({ eyebrow = "LOADING", headline, subline, rows = 4 } = {}) {
+export function renderLoadingSkeleton({ eyebrow = "Loading", headline, subline, rows = 4 } = {}) {
   const panel = el("div", { class: "vst-panel vst-panel--loading panel chamfer",
     "data-hook": "state-loading-skeleton" });
   panel.appendChild(eyebrowRow("vst-dot--live", eyebrow));
@@ -212,7 +212,7 @@ export function renderLoadingSkeleton({ eyebrow = "LOADING", headline, subline, 
  * its own -- the artboard's own next-slate-date tile, reading simply
  * "tomorrow", is exactly the kind of value nothing in the API states, so
  * it is omitted here unless a caller has a real field for it). */
-export function renderEmptySlate({ eyebrow = "NOTHING SCHEDULED", headline, body,
+export function renderEmptySlate({ eyebrow = "Nothing scheduled", headline, body,
   count, countField, stats = [], actions, actionsNote } = {}) {
   const panel = el("div", { class: "vst-panel vst-panel--empty panel chamfer",
     "data-hook": "state-empty" });
@@ -259,7 +259,7 @@ export function renderEmptySlate({ eyebrow = "NOTHING SCHEDULED", headline, body
  * unavailable all read amber, never red (tokens.css's --v-warn-* family;
  * red stays reserved for a genuinely better price or the one primary
  * action). */
-export function renderCaptureUnavailable({ eyebrow = "CAPTURE UNREACHABLE", headline, body,
+export function renderCaptureUnavailable({ eyebrow = "Capture unreachable", headline, body,
   reason, lastGood, actions, actionsNote } = {}) {
   const panel = el("div", { class: "vst-panel vst-panel--unavailable panel chamfer",
     "data-hook": "state-unavailable" });
@@ -269,7 +269,7 @@ export function renderCaptureUnavailable({ eyebrow = "CAPTURE UNREACHABLE", head
 
   if (reason || lastGood) {
     const box = el("div", { class: "vst-reasonbox" });
-    box.appendChild(el("div", { class: "vst-reasonbox__label", text: "LAST GOOD CAPTURE" }));
+    box.appendChild(el("div", { class: "vst-reasonbox__label", text: "Last good capture" }));
     const parts = [];
     if (lastGood && lastGood.observedUtc) {
       // Local-time rewrite, 2026-09-14: `clock` already carries the
@@ -309,13 +309,13 @@ export function renderWriteFailed({ headline = "THAT DIDN’T SAVE.",
   refCode, actions, actionsNote = "NOTHING WAS WRITTEN — NO PARTIAL SAVE" } = {}) {
   const panel = el("div", { class: "vst-panel vst-panel--error panel chamfer",
     "data-hook": "state-write-error", role: "alert" });
-  panel.appendChild(eyebrowRow("vst-dot--warn", "SOMETHING BROKE ON OUR SIDE"));
+  panel.appendChild(eyebrowRow("vst-dot--warn", "Something broke on our side"));
   panel.appendChild(el("div", { class: "vst-headline vst-headline--warn", text: headline }));
   panel.appendChild(el("p", { class: "vst-body vst-body--warn", text: body }));
 
   if (refCode) {
     const box = el("div", { class: "vst-refbox" });
-    box.appendChild(el("span", { class: "vst-refbox__label", text: "FOR SUPPORT, QUOTE" }));
+    box.appendChild(el("span", { class: "vst-refbox__label", text: "For support, quote" }));
     box.appendChild(el("span", { class: "vst-refbox__value", "data-hook": "state-write-error-ref", text: refCode }));
     panel.appendChild(box);
   }

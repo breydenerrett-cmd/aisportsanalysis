@@ -357,11 +357,11 @@ class Ask(ApiCase):
 
 class DrillRoute(ApiCase):
     def test_a_drill_wraps_the_result_and_maps_its_refusals(self):
-        canned = {"label": "Hindsight drill: not counted", "counted": False}
+        canned = {"label": "Backtest (hindsight, not counted in the record)", "counted": False}
         with mock.patch.object(drill, "drill", lambda **kw: dict(canned, kw=sorted(kw))):
             out = self.api.run_drill(self.api.DrillRequest(dog_id=self.id, days=14), Response(),
                                      current_user=self.other, _rl=None)
-        self.assertEqual(out["label"], "Hindsight drill: not counted")
+        self.assertEqual(out["label"], "Backtest (hindsight, not counted in the record)")
         self.assertTrue(out["paper_only"])
         with mock.patch.object(drill, "drill", side_effect=drill.DrillError("days_invalid", "choose 7", 422)):
             exc = self.err(self.api.run_drill, self.api.DrillRequest(dog_id=self.id, days=3), Response(),
@@ -369,6 +369,39 @@ class DrillRoute(ApiCase):
         self.assertEqual((exc.status_code, self.code(exc)), (422, "days_invalid"))
         self.assertEqual(self.err(self.api.run_drill, self.api.DrillRequest(dog_id="nope", days=7), Response(),
                                   current_user=self.other, _rl=None).status_code, 404)
+
+
+    def test_the_backtest_tab_sends_a_season_and_it_reaches_the_drill(self):
+        seen = {}
+        with mock.patch.object(drill, "drill", lambda **kw: seen.update(kw) or {"label": "x"}):
+            self.api.run_drill(self.api.DrillRequest(dog_id=self.id, season="s2"), Response(),
+                               current_user=self.other, _rl=None)
+        self.assertEqual((seen["season"], seen["dog"].id), ("s2", self.id))
+        with mock.patch.object(drill, "drill", lambda **kw: seen.update(kw) or {"label": "x"}):
+            self.api.run_drill(self.api.DrillRequest(dog_id=self.id, days=30), Response(), current_user=self.other, _rl=None)
+        self.assertIsNone(seen["season"])
+
+    def test_any_signed_in_member_may_backtest_any_dog_house_or_member(self):
+        for dog_id in (self.id, "chalk_chihuahua"):
+            with mock.patch.object(drill, "drill", lambda **kw: {"label": "x"}):
+                out = self.api.run_drill(self.api.DrillRequest(dog_id=dog_id, days=7), Response(),
+                                         current_user=self.other, _rl=None)
+            self.assertEqual(out["label"], "x")
+
+    def test_the_route_needs_a_sign_in_and_is_rate_limited_to_five_an_hour(self):
+        names = [(getattr(d, "call", None) or d.dependency).__name__
+                 for r in self.api.router.routes if getattr(r, "path", "") == "/hounds/drill"
+                 for d in r.dependant.dependencies]
+        self.assertIn("get_current_user", names)
+        self.assertEqual(self.api.DRILL_PER_USER_PER_HOUR, 5)
+
+    def test_a_busy_replay_is_a_429_with_the_seconds_to_wait_in_the_body_and_header(self):
+        busy = drill.DrillError("drill_busy", "another drill is running", 429, retry_after=30)
+        with mock.patch.object(drill, "drill", side_effect=busy):
+            exc = self.err(self.api.run_drill, self.api.DrillRequest(dog_id=self.id, days=7), Response(),
+                           current_user=self.other, _rl=None)
+        self.assertEqual((exc.status_code, exc.detail["error"], exc.detail["retry_after"]), (429, "drill_busy", 30))
+        self.assertEqual(exc.headers["Retry-After"], "30")
 
 
 class Camp(ApiCase):

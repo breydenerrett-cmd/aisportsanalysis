@@ -108,7 +108,7 @@ class TheKitOnADogPage(unittest.TestCase):
         f = out["final"]
         for key in ("fire", "ask", "fans", "locker", "manual"):
             self.assertFalse(f[key], key)
-        self.assertEqual(f["firebtn"], "What would you bet right now?")
+        self.assertEqual(f["firebtn"], "Take them out back")
         self.assertIn("What did you bet today?", f["chips"])
         self.assertIn("I am Closer.", f["greet"])
         self.assertIn("not written by an AI model", f["note"])
@@ -130,7 +130,7 @@ class TheKitOnADogPage(unittest.TestCase):
         self.assertEqual(c["checks"], 5)
         self.assertEqual(c["record"], 1)
         self.assertIn("preview", c["note"].lower())
-        self.assertEqual(c["btn"], "Fire again")
+        self.assertEqual(c["btn"], "Take them out back again")
         self.assertEqual([p["url"] for p in out["posts"]], [f"/hounds/{HID}/fire"])
 
     def test_recording_a_manual_pick_posts_only_which_pick_and_never_a_price(self):
@@ -450,7 +450,7 @@ class TheTrainingCamp(unittest.TestCase):
         self.assertEqual(f["rows"], 5)
         self.assertIn("Longest price: +200", f["sug"])
         self.assertEqual(f["badge"], 1)
-        self.assertEqual(f["buttons"][:3], ["Fire now", "Ask", "Drill this dog"])
+        self.assertEqual(f["buttons"][:3], ["Take them out back", "Ask", "Backtest this dog"])
 
     def test_signed_out_it_asks_you_to_sign_in_and_still_shows_the_rest_of_camp(self):
         out = self.go(stored={}, queries=[q("prompt", hook("camp-dogs")), q("href", hook("camp-dogs") + " a", "attr", attr="href"),
@@ -500,7 +500,7 @@ class TheTrainingCamp(unittest.TestCase):
         post = [p for p in out["posts"] if p["url"] == "/hounds/drill"][0]
         self.assertEqual(post["body"], {"dog_id": "u-1", "days": 14})
         c = out["captures"]["1"]
-        self.assertIn("Hindsight drill: not counted", c["label"])
+        self.assertIn("Backtest (hindsight, not counted in the record)", c["label"])
         self.assertIn("never added to a record", c["label"])
         self.assertEqual(c["record"], "1-0")
         self.assertEqual(c["units"], "+1.20u")
@@ -511,7 +511,7 @@ class TheTrainingCamp(unittest.TestCase):
     def test_a_drill_needs_a_sign_in_and_says_so(self):
         out = self.go(stored={}, actions=[dict(do="click", sel=hook("drill-run"), wait=60, capture=[q("status", hook("drill-status"))])])
         # signed out there are no 'your dogs'; the house models are still listed, so the button exists and asks to sign in
-        self.assertIn("Sign in to run a drill", out["captures"]["0"]["status"])
+        self.assertIn("Sign in to run a backtest", out["captures"]["0"]["status"])
         self.assertEqual([p for p in out["posts"] if p["url"] == "/hounds/drill"], [])
 
     def test_the_drill_dog_list_has_your_dogs_and_the_house_models(self):

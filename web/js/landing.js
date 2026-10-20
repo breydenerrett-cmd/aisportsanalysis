@@ -917,6 +917,22 @@ export async function fillLastCard() {
   pointSampleButton(!section.hidden);
 }
 
+/**
+ * THE ACCORDIONS OPEN FOR A LINK TO THEM. The pricing, sports, free-versus-subscribers and last-card blocks sit inside closed
+ * <details class="lv-acc">; a link to `#pricing` (the footer, "See the latest graded card") opens the one it points at, then the
+ * browser scrolls to it. With no script the details still open and close natively.
+ */
+export function openAccordionForHash(hash = typeof location !== "undefined" ? location.hash : "") {
+  const id = String(hash || "").replace(/^#/, "");
+  if (!id) return false;
+  const target = document.getElementById(id);
+  const acc = target && target.querySelector("details.lv-acc");
+  if (!acc) return false;
+  acc.open = true;
+  if (target.scrollIntoView) target.scrollIntoView();
+  return true;
+}
+
 function boot() {
   const disclaimerHost = document.querySelector("[data-hook='disclaimer-host']");
   const pricingHost = document.querySelector("[data-hook='pricing-host']");
@@ -959,6 +975,8 @@ function boot() {
   // Design-system motion (handoff section 08) -- content renders complete
   // and static if this never runs; see motion.js's fail-safe-reveal note.
   armEntrances(document);
+  openAccordionForHash();
+  window.addEventListener("hashchange", () => { openAccordionForHash(); });
   armParallax(document);
   armCharts(document);
 }

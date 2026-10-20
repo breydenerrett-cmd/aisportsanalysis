@@ -278,12 +278,166 @@
   .hounds-page [data-hook="hound-app"] [data-tabpanel] .hd-panel:not(.hd-scoreboard), .hounds-page [data-hook="hound-app"] [data-tabpanel] .hd-panel:not(.hd-scoreboard) + .hd-panel { padding: var(--lh-s4); }
 }
 
-/* the breeds legend under the kennels list */
-.kn-breeds { margin: var(--lh-s7) 0 var(--lh-s5); }
-.hounds-page .kn-breeds__title { font-family: var(--lh-font-display); font-size: 26px; font-weight: 700; line-height: 1.05; margin: 0 0 var(--lh-s1); }
-.kn-breeds__row { list-style: none; margin: var(--lh-s4) 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: var(--lh-s3); }
-.kn-breeds__item { display: grid; justify-items: center; gap: 2px; padding: var(--lh-s4) var(--lh-s2) var(--lh-s3); border-radius: var(--lh-r-lg); background: var(--lh-soft); text-align: center; transition: transform var(--lh-t-base) var(--lh-spring), background-color var(--lh-t-fast) var(--lh-ease); }
-.kn-breeds__item:hover { background: var(--lh-soft-2); transform: translateY(-3px); }
-.kn-breeds__dog { line-height: 0; margin-bottom: var(--lh-s2); }
-.kn-breeds__name { font-size: var(--lh-fs-base); }
-@media (max-width: 560px) { .kn-breeds__row { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* ===== ROUND 2: the training camp at a glance, every section collapsed to a headline and one number ===== */
+.cp-strip { list-style: none; margin: 0 0 var(--lh-s5); padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--lh-s3); }
+.cp-stat { display: grid; gap: var(--lh-s1); padding: var(--lh-s4) var(--lh-s5); border-radius: var(--lh-r-lg); background: var(--lh-soft); box-shadow: inset 0 0 0 1px var(--lh-line); }
+.cp-stat__n { font-family: var(--lh-font-display); font-size: clamp(30px, 3.4vw, 44px); font-weight: 700; line-height: 1; letter-spacing: -.01em; color: var(--lh-ink); font-variant-numeric: tabular-nums; }
+.cp-stat__l { font-size: var(--lh-fs-xs); font-weight: 500; letter-spacing: .02em; color: var(--lh-mute); }
+@media (max-width: 760px) { .cp-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); } .cp-stat { padding: var(--lh-s3) var(--lh-s4); } }
+
+.hounds-page .hd-panel:has(> .cp-sec) { padding: 0; margin-bottom: var(--lh-s3); }
+.cp-sec__sum { display: flex; align-items: center; gap: var(--lh-s4); padding: var(--lh-s4) var(--lh-s5); cursor: pointer; list-style: none; border-radius: var(--lh-r-lg); }
+.cp-sec__sum::-webkit-details-marker { display: none; }
+.cp-sec__sum::after { content: "+"; flex: none; margin-left: var(--lh-s1); font: 600 22px/1 var(--lh-font-text); color: var(--lh-accent); }
+.cp-sec[open] > .cp-sec__sum::after { content: "\2013"; }
+.cp-sec__sum:hover { background: var(--lh-soft-2); }
+.hounds-page .cp-sec__sum h2 { margin: 0; flex: 1 1 auto; font-size: var(--lh-fs-lg); line-height: 1.15; min-width: 0; }
+.cp-sec__num { flex: none; font-family: var(--lh-font-display); font-size: var(--lh-fs-lg); font-weight: 700; color: var(--lh-ink); font-variant-numeric: tabular-nums; text-align: right; }
+.cp-sec__body { padding: 0 var(--lh-s5) var(--lh-s5); }
+@media (max-width: 560px) { .cp-sec__sum { padding: var(--lh-s4); gap: var(--lh-s3); flex-wrap: wrap; } .cp-sec__num { order: 3; flex: 1 1 100%; text-align: left; font-size: var(--lh-fs-md); } .cp-sec__sum::after { margin-left: auto; } .cp-sec__body { padding: 0 var(--lh-s4) var(--lh-s4); } }
+.hounds-page [data-hook="learning-app"] .hd-panel:has(> .cp-sec), .hounds-page [data-hook="learning-app"] .hd-panel + .hd-panel:has(> .cp-sec) { padding: 0; margin: 0 0 var(--lh-s3); box-shadow: inset 0 0 0 1px var(--lh-line); }
+@media (max-width: 760px) { .hounds-page [data-hook="learning-app"] .hd-panel:has(> .cp-sec) { padding: 0; } }
+.hounds-page [data-hook="learning-app"] .cp-sec__sum h2 { font-size: var(--lh-fs-lg); margin: 0; }
+
+/* ===== ROUND 2: the model page. Fire now is a full-width action bar; the bankroll is the one hero tile; the rest is one tidy row ===== */
+.hounds-page .dk-top { grid-template-columns: minmax(0, 1fr); }
+.hounds-page .dk-top [data-hook="dog-fire-section"] {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--lh-s2) var(--lh-s5);
+  padding: var(--lh-s4) var(--lh-s5); margin-bottom: var(--lh-s5); border-radius: var(--lh-r-lg);
+  background: linear-gradient(100deg, rgba(47, 208, 122, .13), var(--lh-soft) 62%); box-shadow: inset 0 0 0 1px var(--lh-line);
+}
+.hounds-page .dk-top [data-hook="dog-fire-section"][hidden] { display: none; }
+.hounds-page .dk-top [data-hook="dog-fire-section"] h2 { margin: 0; font-size: var(--lh-fs-lg); }
+.hounds-page .dk-top [data-hook="dog-fire"] { display: contents; }
+.hounds-page .dk-top [data-hook="dog-fire"] > p { margin: 0; font-size: var(--lh-fs-sm); }
+.hounds-page .dk-top [data-hook="dog-fire"] > .dk-actions { margin: 0; justify-content: flex-end; }
+.hounds-page .dk-top [data-hook="dog-fire"] > .dk-result { grid-column: 1 / -1; }
+@media (max-width: 760px) {
+  .hounds-page .dk-top [data-hook="dog-fire-section"] { grid-template-columns: minmax(0, 1fr); padding: var(--lh-s4); }
+  .hounds-page .dk-top [data-hook="dog-fire"] > .dk-actions { justify-content: flex-start; }
+}
+
+.hounds-page .hd-kpis--v2 { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--lh-s3); }
+.hd-bankhero {
+  display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: var(--lh-s3) var(--lh-s7); align-items: center;
+  padding: var(--lh-s5) var(--lh-s6); border-radius: var(--lh-r-lg); box-shadow: inset 0 0 0 1px var(--lh-line), var(--lh-e1);
+  background: radial-gradient(70% 140% at 0% 0%, rgba(47, 208, 122, .10), transparent 65%), var(--lh-soft);
+}
+.hounds-page .hd-bankhero .hd-kpi { background: none; box-shadow: none; padding: 0; }
+.hounds-page .hd-bankhero .hd-kpi:hover { background: none; }
+.hounds-page .hd-bankhero .hd-kpi[data-slot="bankroll"] .hd-kpi__big { font-size: clamp(44px, 6vw, 68px); }
+.hounds-page .hd-bankhero .hd-kpi[data-slot="bankroll"] .hd-kpi__label { font-size: var(--lh-fs-sm); }
+.hounds-page .hd-bankhero .hd-kpi[data-slot="return"] { justify-self: end; text-align: right; align-items: flex-end; min-width: 0; }
+.hounds-page .hd-bankhero .hd-kpi[data-slot="return"] .hd-kpi__big { font-size: clamp(30px, 3.6vw, 44px); }
+.hounds-page .hd-bankhero .hd-kpitabs { order: 3; margin: var(--lh-s2) 0 0; gap: 2px; }
+.hounds-page .hd-bankhero .hd-kpitab { height: 26px; padding: 0 10px; border: 0; border-radius: var(--lh-r-pill); background: var(--lh-soft-2); color: var(--lh-mute); font: 600 12px/1 var(--lh-font-text); cursor: pointer; }
+.hounds-page .hd-bankhero .hd-kpitab[aria-selected="true"] { background: var(--lh-ink); color: var(--lh-bg); }
+.hounds-page .hd-bankhero .hd-kpi[data-slot="return"] .hd-kpi__label { order: 0; }
+.hounds-page .hd-bankhero .hd-kpi[data-slot="return"] .hd-kpi__big { order: 1; }
+.hounds-page .hd-bankhero .hd-kpi[data-slot="return"] .hd-kpi__small { order: 2; max-width: 22em; }
+
+.hd-kpirow { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: var(--lh-s2); }
+.hounds-page .hd-kpirow .hd-kpi { padding: var(--lh-s3); }
+.hounds-page .hd-kpirow .hd-kpi__big { font-size: clamp(20px, 2.1vw, 26px); }
+.hounds-page .hd-kpirow .hd-kpi__small { font-size: 11px; line-height: 1.3; }
+@media (max-width: 1080px) { .hd-kpirow { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 760px) {
+  .hd-bankhero { grid-template-columns: minmax(0, 1fr); padding: var(--lh-s4); gap: var(--lh-s4); }
+  .hounds-page .hd-bankhero .hd-kpi[data-slot="return"] { justify-self: start; text-align: left; align-items: flex-start; }
+  .hd-kpirow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* ===== ROUND 2: the leaderboard table fits. Under 1500px the low-value columns (7d, 24h, average price, last 10) are hidden; the page widens
+   to 1360px to show all 13 from 1500px; and a table that is still too wide (a phone) scrolls INSIDE its card with the rank and model columns pinned ===== */
+.hounds-page .hd-table--board { min-width: 0; }
+.hounds-page .hd-tablewrap { border-radius: var(--lh-r-lg); }
+@media (max-width: 1499px) {
+  .hounds-page .hd-table--board .hd-col-d7, .hounds-page .hd-table--board .hd-col-h24,
+  .hounds-page .hd-table--board .hd-col-price, .hounds-page .hd-table--board .hd-col-last10 { display: none; }
+}
+@media (min-width: 1500px) {
+  .hounds-page .hd-wrap:has([data-hook="hounds-table"]) { max-width: 1360px; }
+}
+@media (max-width: 1079px) { .hounds-page .hd-table--board { min-width: 760px; } }
+.hounds-page .hd-table--board th.hd-col-rank, .hounds-page .hd-table--board td.hd-col-rank { position: sticky; left: 0; z-index: 2; width: 44px; min-width: 44px; max-width: 44px; background: var(--lh-bg); }
+.hounds-page .hd-table--board th.hd-col-model, .hounds-page .hd-table--board td.hd-col-model { position: sticky; left: 44px; z-index: 2; background: var(--lh-bg); }
+.hounds-page .hd-table--board tbody tr:hover td.hd-col-rank, .hounds-page .hd-table--board tbody tr:hover td.hd-col-model { background: var(--lh-bg-2, #14181d); }
+.hd-qual__none { margin: var(--lh-s3) 0 0; }
+/* a model's meta line ("MLB, NFL . moneyline, spread, total . by Handler 21E8's kennel") may wrap: it was nowrap and held the model column at 430px */
+.hounds-page .hd-table--board td.hd-col-model, .hounds-page .hd-table--board th.hd-col-model { white-space: normal; min-width: 0; max-width: 300px; }
+.hounds-page .hd-table--board .hd-col-model { width: 300px; }
+
+/* ===== ROUND 2: a quiet kennel is filled with a featured dog, the latest tickets from member dogs, and a thinking dog when there is nothing ===== */
+.kn-feat { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--lh-s6); align-items: center; margin: 0 0 var(--lh-s5); padding: var(--lh-s6); border-radius: 22px; box-shadow: inset 0 0 0 1px var(--lh-line), var(--lh-e1);
+  background: radial-gradient(60% 140% at 0% 0%, rgba(47, 208, 122, .12), transparent 65%), var(--lh-soft); }
+.kn-feat__dog { line-height: 0; border-radius: 28px; box-shadow: 0 18px 40px rgba(0, 0, 0, .35); }
+.kn-feat__kicker { margin: 0 0 var(--lh-s1); font: 600 var(--lh-fs-xs)/1 var(--lh-font-text); letter-spacing: .08em; text-transform: uppercase; color: var(--lh-accent); }
+.hounds-page .hd-wrap .kn-feat__name { margin: 0; font-family: var(--lh-font-display); font-size: var(--lh-fs-2xl); font-weight: 700; line-height: 1; letter-spacing: var(--lh-track-display); }
+.hounds-page .hd-wrap .kn-feat__name a { color: var(--lh-ink); text-decoration: none; }
+.kn-feat__sub { margin: var(--lh-s2) 0 0; }
+.kn-feat__stats { display: flex; flex-wrap: wrap; gap: var(--lh-s2) var(--lh-s6); margin: var(--lh-s4) 0 var(--lh-s2); }
+.kn-feat__stat dt { font-size: 13px; font-weight: 500; color: var(--lh-ink2); }
+.kn-feat__stat dd { margin: 2px 0 0; font: 700 28px/1 var(--lh-font-display); font-variant-numeric: tabular-nums; color: var(--lh-ink); }
+.kn-feat__note { margin: 0 0 var(--lh-s4); }
+.kn-feat__actions { display: flex; flex-wrap: wrap; gap: var(--lh-s2); }
+@media (max-width: 760px) { .kn-feat { grid-template-columns: minmax(0, 1fr); justify-items: start; padding: var(--lh-s5); gap: var(--lh-s4); } .kn-feat__dog svg { width: 104px; height: 104px; } }
+
+.kn-activity { margin: var(--lh-s6) 0 var(--lh-s4); }
+.hounds-page .hd-wrap .kn-activity__title { margin: 0 0 var(--lh-s3); font-size: var(--lh-fs-md); font-weight: 600; }
+.kn-activity__list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--lh-s2); }
+.kn-act-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--lh-s3); align-items: center; padding: var(--lh-s3) var(--lh-s4); border-radius: var(--lh-r-md); background: var(--lh-soft); }
+.kn-act-row__dog { line-height: 0; }
+.kn-act-row__main { display: grid; gap: 2px; min-width: 0; }
+.kn-act-row__who { font-weight: 600; color: var(--lh-ink); text-decoration: none; }
+.kn-act-row__pick { font-size: var(--lh-fs-sm); color: var(--lh-ink2); overflow-wrap: anywhere; }
+.kn-act-row__game { overflow-wrap: anywhere; }
+.kn-act-row__res { white-space: nowrap; }
+
+.kn-quiet { display: grid; justify-items: center; gap: var(--lh-s3); padding: var(--lh-s7) var(--lh-s4); margin: var(--lh-s5) 0; border-radius: var(--lh-r-lg); background: var(--lh-soft); text-align: center; }
+.kn-quiet__dog { line-height: 0; border-radius: 26px; }
+.kn-quiet__text { margin: 0; max-width: 32em; color: var(--lh-mute); font-size: var(--lh-fs-base); line-height: 1.5; }
+.kn-empty .kn-quiet { background: none; padding: var(--lh-s4); }
+
+/* my kennel: the four actions are a 2x2 grid on a phone (the fourth, Open, was an orphan on a line of its own); stat labels are bigger and brighter */
+.kn-stat dt { font-size: 13px; color: var(--lh-ink2, #C3C9D3); }
+@media (max-width: 760px) {
+  .kn-card__actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--lh-s2); width: 100%; }
+  .kn-card__actions .kn-act { width: 100%; justify-content: center; text-align: center; min-height: 44px; }
+}
+.kn-act-row__res { justify-self: end; padding: 3px 10px; border-radius: var(--lh-r-pill); background: var(--lh-soft-2); color: var(--lh-ink2); font: 600 11px/1.4 var(--lh-font-text); letter-spacing: .06em; text-transform: uppercase; }
+.kn-act-row[data-status="pending"] .kn-act-row__res { color: #F2B84B; background: rgba(242, 184, 75, .12); }
+.kn-act-row[data-status="won"] .kn-act-row__res, .kn-act-row[data-status="win"] .kn-act-row__res { color: var(--lh-win); background: rgba(47, 208, 122, .12); }
+.kn-act-row[data-status="lost"] .kn-act-row__res, .kn-act-row[data-status="loss"] .kn-act-row__res { color: var(--lh-loss); background: rgba(255, 107, 122, .12); }
+
+/* ===== ROUND 2: the builder. A big live dog, pickers drawn in the dog's own palette, sidebar cards with a dog each ===== */
+@media (min-width: 700px) { .hounds-page .bd-identity { grid-template-columns: minmax(0, 1fr) 300px; gap: var(--lh-s6); } }
+.hounds-page .bd-dogcard { position: sticky; top: var(--lh-s5); padding: var(--lh-s5); border: 0; border-radius: 22px; box-shadow: inset 0 0 0 1px var(--lh-line), var(--lh-e1);
+  background: radial-gradient(80% 70% at 50% 0%, color-mix(in srgb, var(--dog, #2FD07A) 22%, transparent), transparent 70%), var(--lh-soft); }
+.hounds-page .bd-dog--stage { flex-direction: column; align-items: center; text-align: center; gap: var(--lh-s3); padding-left: 0; }
+.hounds-page .bd-dog--stage .bd-dog__dog { filter: drop-shadow(0 18px 24px rgba(0, 0, 0, .45)); }
+.hounds-page .bd-dog--stage .bd-dog__dog svg { width: 176px; height: 176px; border-radius: 28px; }
+.hounds-page .bd-dog--stage .bd-dog__badge { left: calc(50% + 52px); top: var(--lh-s2); width: 40px; height: 40px; padding: 7px; background: var(--dog, #FF7A45); }
+.hounds-page .bd-dog--stage .bd-dog__name { font-family: var(--lh-font-display); font-size: var(--lh-fs-xl); line-height: 1.05; letter-spacing: var(--lh-track-display); }
+.hounds-page .bd-dog--stage .bd-dog__tag { font-size: var(--lh-fs-base); color: var(--lh-mute); }
+.hounds-page .bd-dog__breed { margin: var(--lh-s2) 0 0; }
+@media (max-width: 699px) { .hounds-page .bd-dogcard { position: static; } }
+
+/* the pickers are the dog's backdrop tiles: same rounded-square shape and gradients as the dog, the chart colour as the ring */
+.hounds-page .bd-swatches, .hounds-page .bd-badges { gap: var(--lh-s2); }
+.hounds-page .bd-swatch { width: 44px; height: 44px; border: 0; border-radius: 14px; background: linear-gradient(180deg, var(--bg1, #1B3157), var(--bg2, #0C1730));
+  box-shadow: inset 0 0 0 3px var(--sw), inset 0 0 0 4px rgba(0, 0, 0, .25); transition: transform var(--lh-t-base) var(--lh-spring), box-shadow var(--lh-t-fast) var(--lh-ease); }
+.hounds-page .bd-swatch:hover { transform: translateY(-2px); }
+.hounds-page .bd-swatch[aria-checked="true"] { transform: scale(1.08); box-shadow: inset 0 0 0 3px var(--sw), 0 0 0 3px var(--lh-bg), 0 0 0 5px var(--lh-ink); }
+.hounds-page .bd-badge { width: 44px; height: 44px; border: 0; border-radius: 14px; background: var(--lh-soft-2); color: var(--lh-ink2); transition: transform var(--lh-t-base) var(--lh-spring), background-color var(--lh-t-fast) var(--lh-ease); }
+.hounds-page .bd-badge:hover { transform: translateY(-2px); }
+.hounds-page .bd-badge[aria-checked="true"] { background: var(--lh-accent); color: var(--lh-accent-ink); box-shadow: 0 0 0 3px var(--lh-bg), 0 0 0 5px var(--lh-accent); transform: scale(1.06); }
+
+/* the sidebar cards are not flat: each has a dog, a heading, and room */
+.hounds-page .bd-side .hd-panel { position: relative; padding: var(--lh-s5); border-radius: 22px; box-shadow: inset 0 0 0 1px var(--lh-line), var(--lh-e1); min-height: 148px; }
+.bd-side__dog { position: absolute; top: var(--lh-s4); right: var(--lh-s4); line-height: 0; border-radius: 18px; }
+.bd-side__dog svg { width: 60px; height: 60px; }
+.hounds-page .bd-side .hd-panel h2 { padding-right: 72px; }
+
+/* the seventh tile of the secondary row spans the line on a phone instead of sitting alone */
+@media (max-width: 760px) { .hd-kpirow .hd-kpi:last-child:nth-child(odd) { grid-column: 1 / -1; } }

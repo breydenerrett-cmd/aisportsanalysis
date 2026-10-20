@@ -1,14 +1,15 @@
 /**
- * The Training camp's working sections (web/learning.html): "Your dogs in training", "Drills" and "Promotions and
+ * The Training camp's working sections (web/learning.html): "Your dogs in training", "Backtest" and "Promotions and
  * cuts". The scorecard, the coach report card and the lessons are web/js/hounds-learning.js's; this file is the part
  * of camp where a person improves a dog.
  *
  *   YOUR DOGS IN TRAINING  GET /hounds/camp/mine (signed in): each of your dogs with its season record, its last five
  *                          tickets, the feedback it has had, suggestions waiting, your manual picks (kept apart), and
- *                          one-click Fire now, Ask and Drill.
- *   DRILLS                 POST /hounds/drill {dog_id, days: 7|14|30}: the dog's current rule replayed over the last
- *                          7, 14 or 30 days of stored boards. LABELLED "Hindsight drill: not counted", read only, with
- *                          W-L, units, the best and worst picks, and every pick. A month can take a minute.
+ *                          one-click "Take them out back", Ask and Backtest.
+ *   BACKTEST               POST /hounds/drill {dog_id, days: 7|14|30 | season: "s2"}: the dog's current rule replayed over
+ *                          stored boards (the route and the data-hooks keep the old word "drill"). LABELLED "Backtest
+ *                          (hindsight, not counted in the record)", read only, with W-L, paper dollars, the best and worst
+ *                          picks, and the tickets (web/js/dog-backtest.js draws it). A month can take a minute.
  *   PROMOTIONS AND CUTS    the learning loop's lessons that ended in a promotion (made the team) or a retirement (cut).
  *
  * Nothing here computes a number: it draws what the server sent and says "small sample" where the server did.
@@ -17,12 +18,12 @@
 import { h, clearNode, fmtPrice, isNum, signed, monogram, fmtWhen } from "./hounds-core.js";
 import { friendlyLesson } from "./hounds-voice.js";
 import { dogFace } from "./dog-avatar.js";
-import { get, post, errorText, signedIn, signInPrompt, builderHref, changeText, SLOW_MS, statusLine } from "./dog-common.js";
-import { renderFireResult } from "./dog-fire.js";
+import { get, errorText, signedIn, signInPrompt, builderHref, changeText, statusLine } from "./dog-common.js";
+import { renderBacktest, runBacktest, WINDOWS } from "./dog-backtest.js";
+import { renderFireResult, takeOutBack } from "./dog-fire.js";
 import { mountAsk } from "./dog-ask.js";
 
 const q = (hook) => document.querySelector(`[data-hook='${hook}']`);
-const DAYS = [7, 14, 30];
 
 const units = (u) => (isNum(u) ? `${u > 0 ? "+" : ""}${u.toFixed(2)}u` : "n/a");
 const record = (r) => `${r.wins || 0}-${r.losses || 0}${r.pushes ? `-${r.pushes}` : ""}`;
@@ -78,17 +79,17 @@ function dogCard(d, { onDrill }) {
     inline.removeAttribute("hidden");
     make(inline);
   };
-  const fireBtn = h("button", { type: "button", class: "btn btn--primary", "data-hook": "camp-dog-fire", text: "Fire now" });
+  const fireBtn = h("button", { type: "button", class: "btn btn--primary", "data-hook": "camp-dog-fire", text: "Take them out back" });
   fireBtn.addEventListener("click", () => toggle("fire", async (box) => {
     const status = statusLine("camp-fire-status");
-    status.textContent = "Reading the latest boards...";
+    status.textContent = `Taking ${d.name} out back...`;
     box.appendChild(status);
     const out = h("div", { class: "dk-result" });
     box.appendChild(out);
     try {
-      const data = await post(`/hounds/${encodeURIComponent(d.id)}/fire`, {}, 90000);
+      const data = await takeOutBack(d.id);
       status.textContent = "";
-      renderFireResult(out, data, { id: d.id, canRecord: d.status === "running" && data.viewer_is_owner });
+      renderFireResult(out, data, { id: d.id, name: d.name, canRecord: d.status === "running" && data.viewer_is_owner });
     } catch (err) {
       status.textContent = errorText(err, "The boards could not be read just now.");
     }
@@ -102,7 +103,7 @@ function dogCard(d, { onDrill }) {
       box.querySelector("[data-hook='ask-suggestions']").appendChild(b);
     }
   }));
-  const drillBtn = h("button", { type: "button", class: "btn btn--ghost", "data-hook": "camp-dog-drill", text: "Drill this dog" });
+  const drillBtn = h("button", { type: "button", class: "btn btn--ghost", "data-hook": "camp-dog-drill", text: "Backtest this dog" });
   drillBtn.addEventListener("click", () => onDrill(d.id));
   li.appendChild(h("div", { class: "dk-camp-dog__tools" }, [fireBtn, askBtn, drillBtn,
     h("a", { class: "btn btn--ghost", href: d.page_href, text: "Open its page" }),
@@ -116,7 +117,7 @@ async function bootDogs(onDrill) {
   if (!box) return [];
   clearNode(box);
   if (!signedIn()) {
-    box.appendChild(signInPrompt("Sign in to see the dogs you built, fire them, ask them and drill them."));
+    box.appendChild(signInPrompt("Sign in to see the dogs you built, take them out back, ask them and backtest them."));
     box.appendChild(h("p", { class: "hd-fine" }, ["No dog yet? ", h("a", { href: "build-a-hound.html", text: "Build one" }), "."]));
     return [];
   }
@@ -137,46 +138,11 @@ async function bootDogs(onDrill) {
   return dogs;
 }
 
-// ---- drills ------------------------------------------------------------------------------------------------
+// ---- backtest ----------------------------------------------------------------------------------------------
+// The result is drawn by dog-backtest.js (the same for the dog page's tab, the studio's tab and here). The hooks keep
+// the old "drill" word on purpose: they are the page's contract with its tests, not copy.
 
-function pickRow(p) {
-  return h("tr", {}, [h("td", { text: String(p.date || "").slice(0, 10) }), h("td", { text: p.selection || "" }), h("td", { text: p.game || "" }),
-    h("td", { class: "hd-num", text: fmtPrice(p.price_average) }),
-    h("td", { text: p.result || "Pending" }), h("td", { class: "hd-num", text: p.result ? units(p.units_average_price) : "" })]);
-}
-
-export function renderDrill(box, data) {
-  clearNode(box);
-  const rec = data.record || {};
-  box.appendChild(h("div", { class: "dk-hindsight", "data-hook": "drill-label", role: "status" }, [
-    h("span", { class: "dk-chip dk-chip--hind", text: data.label || "Hindsight drill: not counted" }),
-    h("span", { class: "hd-fine", text: data.disclosure || "" })]));
-  box.appendChild(h("dl", { class: "dk-camp-dog__facts", "data-hook": "drill-facts" }, [
-    h("div", {}, [h("dt", { text: "Dog" }), h("dd", { text: (data.dog && data.dog.name) || "" })]),
-    h("div", {}, [h("dt", { text: "Window" }), h("dd", { text: data.window ? `${data.window.first} to ${data.window.last} (${data.days} days)` : "" })]),
-    h("div", {}, [h("dt", { text: "Bets" }), h("dd", { "data-hook": "drill-bets", text: `${rec.bets || 0} (${rec.graded || 0} graded${rec.pending ? `, ${rec.pending} pending` : ""})` })]),
-    h("div", {}, [h("dt", { text: "Record" }), h("dd", { "data-hook": "drill-record", text: (rec.graded || 0) ? record(rec) : "no graded bets" })]),
-    h("div", {}, [h("dt", { text: "Units, average price" }), h("dd", { "data-hook": "drill-units", text: (rec.graded || 0) ? units(data.units_average_price) : "n/a" })]),
-    h("div", {}, [h("dt", { text: "Units, best price" }), h("dd", { text: (rec.graded || 0) ? units(data.units_best_price) : "n/a" })]),
-  ]));
-  box.appendChild(h("p", { class: "hd-fine", "data-hook": "drill-sample", text: data.sample_note || "" }));
-  if (data.rule_text) box.appendChild(h("p", { class: "hd-fine", "data-hook": "drill-rule", text: `Rule replayed: ${data.rule_text.replace(/\s*Paper only\. These are simulated picks.*$/s, "")}` }));
-  for (const [title, list, hook] of [["Best picks", data.best, "drill-best"], ["Worst picks", data.worst, "drill-worst"]]) {
-    if (!list || !list.length) continue;
-    box.appendChild(h("div", { class: "dk-block" }, [h("h3", { class: "hd-h3", text: title }),
-      h("ul", { class: "dk-misses", "data-hook": hook }, list.map((p) => h("li", { class: "dk-miss" }, [
-        h("strong", { text: p.selection }), ` ${String(p.date).slice(0, 10)} at ${fmtPrice(p.price_average)}: ${units(p.units_average_price)}`])))]));
-  }
-  if (data.picks && data.picks.length) {
-    box.appendChild(h("div", { class: "dk-block" }, [
-      h("h3", { class: "hd-h3", text: `Every pick, newest first${data.picks_total > data.picks.length ? ` (${data.picks.length} of ${data.picks_total})` : ""}` }),
-      h("div", { class: "dk-tablewrap" }, [h("table", { class: "dk-mini", "data-hook": "drill-picks" }, [
-        h("thead", {}, [h("tr", {}, ["Date", "Pick", "Game", "Price", "Result", "Units"].map((t, i) => h("th", { class: i === 3 || i === 5 ? "hd-num" : "", text: t })))]),
-        h("tbody", {}, data.picks.map(pickRow))])])]));
-  } else {
-    box.appendChild(h("p", { class: "hd-muted", "data-hook": "drill-empty", text: "The rule made no pick in this window." }));
-  }
-}
+export const renderDrill = renderBacktest;
 
 async function bootDrills(dogs) {
   const box = q("camp-drill");
@@ -187,49 +153,38 @@ async function bootDrills(dogs) {
     const lb = await get("/hounds");
     house = (lb.hounds || []).filter((x) => x.kind === "house" && x.status !== "retired");
   } catch (err) { house = []; }
-  const select = h("select", { class: "dk-select", id: "dk-drill-dog", "data-hook": "drill-dog", "aria-label": "Which dog to drill" });
+  const select = h("select", { class: "dk-select", id: "dk-drill-dog", "data-hook": "drill-dog", "aria-label": "Which dog to backtest" });
   const mine = h("optgroup", { label: "Your dogs" }, dogs.filter((d) => d.status !== "retired").map((d) => h("option", { value: d.id, text: d.name })));
   const pack = h("optgroup", { label: "House models" }, house.map((x) => h("option", { value: x.id, text: x.name })));
   if (dogs.length) select.appendChild(mine);
   if (house.length) select.appendChild(pack);
-  let days = 14;
-  const segs = h("div", { class: "hd-segs", role: "group", "aria-label": "How many days to replay" });
-  const paintSegs = () => { for (const b of segs.querySelectorAll("button")) b.setAttribute("aria-pressed", b.getAttribute("data-days") === String(days) ? "true" : "false"); };
-  for (const n of DAYS) {
-    const b = h("button", { type: "button", class: "hd-seg", "data-days": String(n), "data-hook": "drill-days", "aria-pressed": "false", text: `${n} days` });
-    b.addEventListener("click", () => { days = n; paintSegs(); });
+  let win = WINDOWS[1];
+  const segs = h("div", { class: "hd-segs", role: "group", "aria-label": "How much history to backtest" });
+  const paintSegs = () => { for (const b of segs.querySelectorAll("button")) b.setAttribute("aria-pressed", b.getAttribute("data-days") === win.key ? "true" : "false"); };
+  for (const w of WINDOWS) {
+    const b = h("button", { type: "button", class: "hd-seg", "data-days": w.key, "data-hook": "drill-days", "aria-pressed": "false", text: w.label });
+    b.addEventListener("click", () => { win = w; paintSegs(); });
     segs.appendChild(b);
   }
   paintSegs();
-  const run = h("button", { type: "button", class: "btn btn--primary", "data-hook": "drill-run", text: "Run drill" });
+  const run = h("button", { type: "button", class: "btn btn--primary", "data-hook": "drill-run", text: "Run backtest" });
   const status = statusLine("drill-status");
   const out = h("div", { class: "dk-result", "data-hook": "drill-result", "aria-live": "polite" });
-  run.addEventListener("click", async () => {
-    if (!select.value) { status.textContent = "Pick a dog first."; return; }
-    if (!signedIn()) { clearNode(status); status.appendChild(signInPrompt("Sign in to run a drill.")); return; }
-    run.setAttribute("disabled", "");
-    clearNode(out);
-    status.textContent = `Replaying ${days} days of boards. ${days === 30 ? "A month can take up to a minute." : "This takes a few seconds."}`;
-    try {
-      const data = await post("/hounds/drill", { dog_id: select.value, days }, SLOW_MS);
-      status.textContent = "";
-      renderDrill(out, data);
-    } catch (err) {
-      status.textContent = errorText(err, "The drill could not run just now. Try again in a minute.");
-    } finally {
-      run.removeAttribute("disabled");
-    }
-  });
+  run.addEventListener("click", () => runBacktest({ dogId: select.value, win, status, out,
+    busy: (on) => { if (on) run.setAttribute("disabled", ""); else run.removeAttribute("disabled"); } }));
   box.appendChild(h("div", { class: "dk-drill-controls" }, [
     h("label", { for: "dk-drill-dog", text: "Dog" }), select, segs, h("div", { class: "dk-actions" }, [run, status])]));
   box.appendChild(out);
   const params = new URLSearchParams(window.location.search || "");
   const want = params.get("drill");
   if (want && [...select.querySelectorAll("option")].some((o) => o.getAttribute("value") === want)) select.value = want;
-  if (DAYS.includes(Number(params.get("days")))) { days = Number(params.get("days")); paintSegs(); }
+  const asked = WINDOWS.find((w) => w.key === String(params.get("days") || params.get("season") || ""));
+  if (asked) { win = asked; paintSegs(); }
   return (id) => {
     if ([...select.querySelectorAll("option")].some((o) => o.getAttribute("value") === id)) select.value = id;
     const section = q("camp-drills-section");
+    const collapsed = section && section.querySelector("details.cp-sec");
+    if (collapsed) collapsed.open = true;   // the camp sections are collapsed: a drill opens its own
     if (section && section.scrollIntoView) section.scrollIntoView({ behavior: "smooth", block: "start" });
     run.focus();
   };

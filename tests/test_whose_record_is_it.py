@@ -88,8 +88,8 @@ class TheResultsTabAnswersTheQuestionItAsks(unittest.TestCase):
     def test_results_points_at_the_cards_record(self):
         main = _code("main.js")
         match = re.search(
-            r"\{\s*hash:\s*\"([^\"]+)\"\s*,\s*label:\s*\"RESULTS\"", main)
-        self.assertIsNotNone(match, "no RESULTS item in the nav table")
+            r"\{\s*hash:\s*\"([^\"]+)\"\s*,\s*label:\s*\"Results\"", main)
+        self.assertIsNotNone(match, "no Results item in the nav table")
         self.assertEqual(
             match.group(1), "#/record-card",
             "RESULTS points somewhere other than the card's record. A reader "

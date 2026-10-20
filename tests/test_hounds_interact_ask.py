@@ -231,7 +231,7 @@ class TheAnswers(unittest.TestCase):
 
     def test_a_dog_that_cannot_be_fired_says_so(self):
         out = self.say("What would you bet right now?", fire_fn=None)
-        self.assertIn("cannot fire from here", out["answer"])
+        self.assertIn("cannot be taken out back from here", out["answer"])
 
     def test_a_board_that_cannot_be_read_is_said_not_hidden(self):
         def broken():
@@ -270,7 +270,7 @@ class TheAnswers(unittest.TestCase):
         owner = self.say("how do I make you better", is_owner=True)["answer"]
         stranger = self.say("how do I make you better")["answer"]
         self.assertIn("you can change my rule", owner)
-        self.assertIn("drill", owner.lower())
+        self.assertIn("backtest", owner.lower())
         self.assertIn("Suggest a change", stranger)
         for text in (owner, stranger):
             self.assertIn("changes me by itself", text) if "by itself" in text else None

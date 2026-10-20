@@ -221,3 +221,76 @@ body.landing .hero {
 .landing .pricing-tier { display: block; }
 .landing .pricing-tier [data-hook="pricing-tier-note"] { display: block; font-family: var(--lh-font-text); font-size: var(--lh-fs-md); line-height: 1.45; font-weight: 600; color: var(--lh-ink); overflow-wrap: anywhere; }
 .landing .pricing-card { padding: var(--lh-s5); }
+
+/* ===== ROUND 2 (critic, 2026-10-19): the landing is three sections with one visual each, and everything else is an accordion ===== */
+.lv-kicker { margin: 0 0 var(--lh-s2); font: 600 var(--lh-fs-xs)/1 var(--lh-font-text); letter-spacing: .08em; text-transform: uppercase; color: var(--lh-accent); }
+
+/* 1. build your dog: the dogs, big, with one way in */
+body.landing .kncard { margin-bottom: var(--lh-s9); padding: var(--lh-s6); }
+body.landing .kncard h2 { font-size: var(--lh-fs-2xl); line-height: 1; max-width: 14em; text-wrap: balance; }
+body.landing .kncard .kncard__faces .kncard__face svg { width: 64px; height: 64px; }
+body.landing .kncard__links { display: flex; flex-wrap: wrap; gap: var(--lh-s2); }
+
+/* 2. how it works, in three steps */
+.lv-how { max-width: 1180px; margin: 0 auto var(--lh-s9); padding: 0 var(--lh-s4); }
+.lv-title { margin: 0 0 var(--lh-s5); font-family: var(--lh-font-display); font-size: var(--lh-fs-2xl); font-weight: 700; line-height: 1; letter-spacing: var(--lh-track-display); color: var(--lh-ink); text-wrap: balance; }
+.lv-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--lh-s4); }
+.lv-step { position: relative; display: grid; justify-items: start; align-content: start; gap: var(--lh-s2); padding: var(--lh-s5); border-radius: var(--lh-r-lg); background: var(--lh-soft); box-shadow: inset 0 0 0 1px var(--lh-line); }
+.lv-step__dog { line-height: 0; }
+.lv-step__n { position: absolute; top: var(--lh-s4); right: var(--lh-s5); font: 700 56px/1 var(--lh-font-display); color: rgba(255, 255, 255, .08); }
+.lv-step h3 { margin: var(--lh-s2) 0 0; font: 700 var(--lh-fs-lg)/1.1 var(--lh-font-display); letter-spacing: -.005em; color: var(--lh-ink); }
+.lv-step p { margin: 0; font-size: var(--lh-fs-base); line-height: 1.5; color: var(--lh-mute); }
+@media (max-width: 760px) {
+  .lv-steps { grid-template-columns: minmax(0, 1fr); gap: var(--lh-s3); }
+  .lv-step { grid-template-columns: 72px minmax(0, 1fr); column-gap: var(--lh-s4); row-gap: 2px; padding: var(--lh-s4); align-items: start; }
+  .lv-step__dog { grid-row: 1 / span 2; }
+  .lv-step__dog svg { width: 72px; height: 72px; }
+  .lv-step h3 { margin: 0; }
+  .lv-step__n { font-size: 40px; top: var(--lh-s3); right: var(--lh-s4); }
+}
+
+/* 3. the AI desk: one compact card (the claim, the record, two links) */
+.landing .lv-desk { padding: var(--lh-s6) var(--lh-s6) var(--lh-s5); margin-bottom: var(--lh-s7); }
+.landing .lv-desk .hero__top { display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); gap: var(--lh-s6); align-items: start; padding: 0; }
+.landing .lv-desk .hero__claim-title { font-size: var(--lh-fs-xl); }
+.landing .lv-desk .hero__claim-body { font-size: var(--lh-fs-base); margin: var(--lh-s2) 0 var(--lh-s4); }
+.landing .lv-desk .hero__cta-group { display: flex; flex-wrap: wrap; gap: var(--lh-s2) var(--lh-s3); align-items: center; }
+.landing .lv-desk .hero__cta-note { flex: 1 1 100%; margin: var(--lh-s2) 0 0; font-size: var(--lh-fs-xs); }
+.landing .lv-desk .hero__record-link { font-size: var(--lh-fs-xs); }
+.landing .lv-desk .hero__proof { padding: var(--lh-s4); }
+.landing .lv-desk .hero__stat { padding: var(--lh-s3); }
+.landing .lv-desk .hero__stat-value { font-size: clamp(24px, 2.4vw, 32px); }
+.landing .lv-desk .hero__proof-note { font-size: var(--lh-fs-xs); }
+@media (max-width: 900px) { .landing .lv-desk .hero__top { grid-template-columns: minmax(0, 1fr); gap: var(--lh-s4); } .landing .lv-desk { padding: var(--lh-s5) var(--lh-s4); } }
+
+/* everything else: accordions (native <details>, so they work with no script) */
+.landing .lv-acc-section { max-width: 1180px; padding: var(--lh-s2) var(--lh-s4) 0; }
+.landing .lv-acc-section .section__head { display: none; }
+.landing .lv-desk + .lv-acc-section { margin-top: var(--lh-s8); }
+.lv-acc { border-radius: var(--lh-r-lg); background: var(--lh-soft); box-shadow: inset 0 0 0 1px var(--lh-line); }
+.lv-acc__sum { display: flex; align-items: center; gap: var(--lh-s4); padding: var(--lh-s4) var(--lh-s5); cursor: pointer; list-style: none; border-radius: var(--lh-r-lg); }
+.lv-acc__sum::-webkit-details-marker { display: none; }
+.lv-acc__sum::after { content: "+"; flex: none; margin-left: var(--lh-s2); font: 600 22px/1 var(--lh-font-text); color: var(--lh-accent); }
+.lv-acc[open] > .lv-acc__sum::after { content: "\2013"; }
+.lv-acc__sum:hover { background: var(--lh-soft-2); }
+.landing .lv-acc__sum .section__title { margin: 0; max-width: none; font-size: var(--lh-fs-lg); line-height: 1.15; }
+.lv-acc__hint { margin-left: auto; font-size: var(--lh-fs-sm); color: var(--lh-mute); text-align: right; }
+.lv-acc__body { padding: 0 var(--lh-s5) var(--lh-s5); }
+.lv-acc--inline { margin-top: var(--lh-s3); background: none; box-shadow: none; }
+.lv-acc--inline .lv-acc__sum { padding: var(--lh-s2) 0; gap: var(--lh-s2); }
+.lv-acc--inline .lv-acc__sum:hover { background: none; }
+.lv-acc--inline .lv-acc__title { font-size: var(--lh-fs-sm); font-weight: 600; color: var(--lh-ink2); }
+.lv-acc--inline .lv-acc__sum::after { margin-left: 0; font-size: 18px; }
+@media (max-width: 760px) {
+  .landing .lv-acc-section { padding-left: var(--lh-s4); padding-right: var(--lh-s4); }
+  .lv-acc__sum { padding: var(--lh-s4); flex-wrap: wrap; row-gap: 2px; }
+  .lv-acc__hint { order: 3; flex: 1 1 100%; margin-left: 0; text-align: left; }
+  .lv-acc__sum::after { margin-left: auto; }
+  .lv-acc__body { padding: 0 var(--lh-s4) var(--lh-s4); }
+}
+/* the FAQ keeps its own accordions, under one calm heading */
+.landing #faq .section__title { font-size: var(--lh-fs-xl); margin-bottom: var(--lh-s3); }
+.landing #faq .faq-list { margin-top: var(--lh-s3) !important; }
+
+/* a little air before the questions */
+.landing #faq { margin-top: var(--lh-s6); }

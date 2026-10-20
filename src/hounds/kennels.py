@@ -5,6 +5,15 @@ A KENNEL IS A MEMBER'S DOGS. The public handle is the anonymous owner label ever
 has the same handle and nothing about the account is exposed: no email, no user id, no token, no billing
 state. ``resolve_handle`` accepts either spelling.
 
+KENNEL NAMES (owner ask 2026-10-19). A member can name their kennel (``member_profile``); ``owner_display`` then
+returns the name, so the handle (its slug, unique by construction) and every title and "by <name>" follow it. The
+old anonymous slug is kept as an ALIAS of the renamed kennel, so a link shared before the rename still lands.
+
+THE PROFILE. ``kennel_detail`` is also the member's public profile: kennel name, member since (month and year),
+dog count, the combined paper record and dollars across their public dogs, the best dog and the recent tickets
+across all of them. Only fields already public on a dog page are summed; no email, no account id, no stake the
+member did not publish.
+
 EVERY PUBLIC DOG IS LISTED, WHETHER OR NOT IT HAS A BET. A dog a member made a minute ago has no settled bet
 and no open ticket, and the leaderboard's qualifying round used to hide it (2026-10-19: two members' dogs
 could not be found). A kennel reads the app database's dog list, never the ranked table, so a dog with 0 bets
@@ -22,21 +31,28 @@ from __future__ import annotations
 import re
 from typing import Optional
 
-from src.hounds import bankroll, seasons, stats, user_defs, user_store, user_view
+from src.hounds import bankroll, member_profile, seasons, stats, user_defs, user_store, user_view
 from src.hounds.contract import to_json
 
 PUBLIC_STATUSES = ("running", "benched")
+RECENT_TICKETS = 12
 
 _SLUG_RE = re.compile(r"[^a-z0-9]+")
+_APOS_RE = re.compile(r"['’]")      # "Bob's Dogs" -> "bobs-dogs", the same rule as member_profile.slug and kennelHandle
 
 
 def slug(label: str) -> str:
     """"Handler 3F2A" -> "handler-3f2a" (also the identity of "handler-3f2a")."""
-    return _SLUG_RE.sub("-", str(label or "").strip().lower()).strip("-")
+    return _SLUG_RE.sub("-", _APOS_RE.sub("", str(label or "").strip().lower())).strip("-")
 
 
 def handle_for(owner_user_id: int) -> str:
     return slug(user_defs.owner_display(owner_user_id))
+
+
+def anonymous_handle_for(owner_user_id: int) -> str:
+    """The pre-rename slug ("handler-3f2a"): kept as an alias of the kennel after the member names it."""
+    return slug(user_defs.anonymous_handle(owner_user_id))
 
 
 def _public_rows() -> list:
@@ -128,9 +144,13 @@ def _grouped(sid: str) -> dict:
     looks = _looks(rows)
     out: dict = {}
     for row in rows:
-        display = user_defs.owner_display(row["owner_user_id"])
-        box = out.setdefault(slug(display), {"display": display, "dogs": []})
+        owner = row["owner_user_id"]
+        display = user_defs.owner_display(owner)
+        box = out.setdefault(slug(display), {"display": display, "dogs": [], "owner_user_id": owner,
+                                              "named": display != user_defs.anonymous_handle(owner),
+                                              "aliases": [anonymous_handle_for(owner)], "rows": []})
         box["dogs"].append(dog_entry(row, _stats_for(row, book, sid), looks.get(row["id"])))
+        box["rows"].append(row)
     return out
 
 
@@ -142,7 +162,7 @@ def kennel_list(season: Optional[str] = None) -> dict:
     for handle, box in _grouped(sid).items():
         dogs = box["dogs"]
         kennels.append({
-            "handle": handle, "display": box["display"], "dog_count": len(dogs),
+            "handle": handle, "display": box["display"], "named": box["named"], "dog_count": len(dogs),
             "new_dogs": sum(1 for d in dogs if d["new"]), "best": _best(dogs),
             "dogs": [{"id": d["id"], "name": d["name"], "look": d["look"]} for d in dogs[:4]],
             "href": f"kennel.html?u={handle}",
@@ -155,15 +175,67 @@ def resolve_handle(value: str) -> str:
     return slug(value)
 
 
+def _find(groups: dict, handle: str) -> Optional[dict]:
+    """The kennel a handle means: its current handle, else the anonymous one it had before it was named."""
+    key = resolve_handle(handle)
+    box = groups.get(key)
+    if box is not None:
+        return box
+    return next((b for b in groups.values() if key in b["aliases"]), None)
+
+
+def _sum(values) -> Optional[float]:
+    nums = [v for v in values if isinstance(v, (int, float))]
+    return round(sum(nums), 2) if nums else None
+
+
+def _recent_tickets(box: dict, sid: str, limit: int = RECENT_TICKETS) -> list:
+    """The newest forward tickets across the kennel's dogs, each with the dog that made it. The same rows a dog's
+    own page lists (no refused pass), newest slate date first."""
+    book = stats.peek_book()
+    out = []
+    for row in box["rows"]:
+        view = _stats_for(row, book, sid)
+        for bet in (to_json(b) for b in (view.bets if view is not None else [])):
+            if bet.get("segment", "forward") != "forward" or bet.get("refused"):
+                continue
+            out.append({"date": bet.get("date"), "game": bet.get("game"), "selection": bet.get("selection"),
+                        "price": bet.get("price_average"), "result": _result_word(bet.get("result")),
+                        "dog": {"id": row["id"], "name": row["name"], "href": f"hound.html?id={row['id']}"}})
+    out.sort(key=lambda t: (str(t["date"] or ""), str(t["game"] or ""), t["dog"]["name"]), reverse=True)
+    return out[:limit]
+
+
+def _combined(dogs: list) -> dict:
+    """The kennel's paper account: the record and dollars of its dogs added up. Each dog starts with its own
+    $1,000, so the figure is "dollars up or down across the kennel" and ``return_pct`` is that over the kennel's
+    dogs' combined starting bankrolls: an average, never a compounded total."""
+    rec = {"bets": 0, "wins": 0, "losses": 0, "pushes": 0}
+    for d in dogs:
+        for k in rec:
+            rec[k] += int(d["record"].get(k) or 0)
+    blocks = [d.get("bankroll") for d in dogs if isinstance(d.get("bankroll"), dict)]
+    pnl = _sum(b.get("pnl_usd") for b in blocks)
+    start = _sum(b.get("start") for b in blocks)
+    return {"record": rec, "settled": rec["wins"] + rec["losses"] + rec["pushes"],
+            "pnl_usd": pnl, "start_usd": start,
+            "return_pct": round(pnl / start * 100.0, 2) if pnl is not None and start else None,
+            "open_bets": sum(d["open_bets"] for d in dogs), "currency": bankroll.params().currency,
+            "unit_usd": bankroll.params().unit_usd}
+
+
 def kennel_detail(handle: str, season: Optional[str] = None) -> Optional[dict]:
-    """One member's public dogs, or None when no member has that handle (or has no public dog)."""
+    """One member's public profile and dogs, or None when no member has that handle (or has no public dog)."""
     sid = season or seasons.default_id()
-    box = _grouped(sid).get(resolve_handle(handle))
+    box = _find(_grouped(sid), handle)
     if box is None:
         return None
     dogs = box["dogs"]
-    return {"handle": resolve_handle(handle), "display": box["display"], "dog_count": len(dogs),
-            "best": _best(dogs), "dogs": dogs, "season": seasons.meta(sid)}
+    return {"handle": slug(box["display"]), "display": box["display"], "title": box["display"],
+            "named": box["named"], "dog_count": len(dogs),
+            "member_since": member_profile.member_since(box["owner_user_id"]),
+            "combined": _combined(dogs), "best": _best(dogs), "recent_tickets": _recent_tickets(box, sid),
+            "dogs": dogs, "season": seasons.meta(sid), "bankroll": bankroll.public_block()}
 
 
 def my_kennel(owner_user_id: int, season: Optional[str] = None) -> dict:
@@ -181,5 +253,9 @@ def my_kennel(owner_user_id: int, season: Optional[str] = None) -> dict:
         entry["retired"] = row["status"] == "retired"
         entry["builder_href"] = f"build-a-hound.html?from={row['id']}"
         dogs.append(entry)
+    profile = member_profile.get(owner_user_id) if user_defs.db_exists() else {
+        "kennel_name": None, "needs_name_prompt": False, "limits": member_profile.limits()}
     return {"handle": handle_for(owner_user_id), "display": user_defs.owner_display(owner_user_id),
+            "kennel_name": profile["kennel_name"], "needs_name_prompt": profile["needs_name_prompt"],
+            "name_limits": profile["limits"],
             "dog_count": sum(1 for d in dogs if not d["retired"]), "dogs": dogs, "season": seasons.meta(sid)}

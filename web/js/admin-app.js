@@ -389,6 +389,18 @@ function boot() {
         run: (v) => adminPost("/admin/comps/revoke", { user_id: row.id, reason: v.reason }),
         done: () => `Free access revoked for ${who}.`,
       });
+    } else if (key === "kennel") {
+      confirmAction({
+        title: "Set kennel name",
+        intro: [`The public name of the kennel of ${who}: it shows on their dogs, the leaderboard and their profile page. The same checks as the member's own (2 to 30 characters, no language the dog names refuse, nobody else's name).`,
+                "Leave the name empty to clear it: the kennel goes back to its anonymous handle."],
+        fields: [{ key: "kennel_name", label: "Kennel name (empty clears it)", type: "text", placeholder: "Bob's Dogs" },
+                 { key: "reason", label: "Why are you setting it?", type: "textarea", required: true,
+                   requiredMessage: "say why (it is kept in the log)", hint: REASON_NOTE }],
+        label: "Set kennel name",
+        run: (v) => adminPost("/admin/users/kennel-name", { user_id: row.id, kennel_name: String(v.kennel_name || "").trim(), reason: v.reason }),
+        done: (result) => (result && result.kennel_name ? `Kennel name for ${who} is now ${result.kennel_name}.` : `Kennel name cleared for ${who}.`),
+      });
     } else if (key === "password") {
       confirmAction({
         title: "Reset password",

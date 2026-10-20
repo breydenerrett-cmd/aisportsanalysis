@@ -145,20 +145,20 @@ export function setShellStatus(text, options = {}) {
 const STALE_GAME_HOURS_SECONDS = 30 * 60;
 const STALE_QUIET_HOURS_SECONDS = 90 * 60;
 
-export function setShellStatusFromStaleness(staleness, label = "BOARD UPDATED", options = {}) {
+export function setShellStatusFromStaleness(staleness, label = "Board updated", options = {}) {
   if (!staleness || typeof staleness !== "object") {
     setShellStatus(null);
     return;
   }
   const age = staleness.age_seconds;
   if (age === null || age === undefined) {
-    setShellStatus("NO BOARD YET", { stale: true });
+    setShellStatus("No board yet", { stale: true });
     return;
   }
   const threshold = options.gameHoursSoon === false ? STALE_QUIET_HOURS_SECONDS : STALE_GAME_HOURS_SECONDS;
   const stale = Number(age) > threshold;
   const readable = formatAge(age);
-  setShellStatus(`${stale ? "LAST UPDATED" : label} ${readable || ""}`.trim(), { stale });
+  setShellStatus(`${stale ? "Last updated" : label} ${readable || ""}`.trim(), { stale });
 }
 
 /**

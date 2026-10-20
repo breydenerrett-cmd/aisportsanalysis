@@ -5,7 +5,7 @@ bet X, what did you bet today, how are you doing, best and worst bet, what would
 that game, what are your rules, how do I make you better, what do fans think, what did the coach say). A
 builder per intent then writes the answer from facts the page already shows: the dog's tickets and their
 reasons, its rule (in plain English when the builder's renderer exists, else the rule text), its record and
-form, the fan feedback counts, the graded tips, and, for "right now", the same read-only preview the Fire now
+form, the fan feedback counts, the graded tips, and, for "right now", the same read-only preview the "Take them out back"
 button runs. A question the rules do not recognise gets an honest fallback that lists what the dog CAN answer.
 
 VOICE. First person, short, plain. The dog's name and its one-line catchphrase (a house dog's catchphrase, a
@@ -463,7 +463,7 @@ def _fire_lines(ctx: AskContext, fire: dict) -> list:
             best = f", best {_price(p['price_best'])} at {p['best_book']}" if p.get("price_best") is not None and p["price_best"] != p["price_average"] else ""
             lines.append(f"{p['selection']} ({p['game']}) at {_price(p['price_average'])}{best}. {p['reason']}")
         if len(picks) > 3:
-            lines.append(f"Plus {len(picks) - 3} more on the Fire now panel.")
+            lines.append(f"Plus {len(picks) - 3} more on the Out back panel.")
         if any(p.get("before_lock") for p in picks):
             lines.append("My real ticket is written at my usual time before the start, on the board then, so it can differ.")
     else:
@@ -478,7 +478,7 @@ def _fire_lines(ctx: AskContext, fire: dict) -> list:
 
 def _bet_now(ctx: AskContext, fire: Optional[dict]) -> dict:
     if fire is None:
-        return {"lines": ["I cannot read the boards just now. Try the Fire now button in a minute."]}
+        return {"lines": ["I cannot read the boards just now. Try the Take them out back button in a minute."]}
     if fire.get("error"):
         return {"lines": [fire["error"]]}
     return {"lines": _fire_lines(ctx, fire), "fire": True}
@@ -507,7 +507,7 @@ def _why_not(ctx: AskContext, question: str, fire: Optional[dict]) -> dict:
                         lines.append(f"On {label} I pass. {m['why']}")
                 return {"lines": lines}
     return {"lines": [f"I cannot see {team} among the games still ahead of me on the stored boards, and I have no ticket on it.",
-                      "I only keep the reason for games that have not started. To see what my rule does over past days, run a drill in the Training camp. It replays my rule on old boards and is never counted."]}
+                      "I only keep the reason for games that have not started. To see what my rule does over past days, run a backtest in the Training camp. It replays my rule on old boards and is never counted."]}
 
 
 def _rules(ctx: AskContext) -> dict:
@@ -529,7 +529,7 @@ def _improve(ctx: AskContext) -> dict:
     lines = []
     if ctx.kind == "user" and ctx.is_owner:
         lines += ["You are my owner, so you can change my rule: open the builder from my page, change one thing, and it becomes a new version with its own record.",
-                  "Before you do, run a drill in the Training camp. It replays my rule over the last 7, 14 or 30 days so you can see what a change would have done. It is never counted.",
+                  "Before you do, run a backtest in the Training camp. It replays my rule over the last 7, 14 or 30 days so you can see what a change would have done. It is never counted.",
                   "Rate my tickets Good call or Bad call. I keep the notes where you can read them."]
     elif ctx.kind == "user":
         lines += ["Rate my tickets Good call or Bad call, and use Suggest a change to send my owner an idea. It reaches them as a suggestion and changes nothing on its own."]
@@ -597,7 +597,7 @@ def suggestions(ctx: AskContext) -> list:
 def _get_fire(ctx: AskContext) -> dict:
     """The read-only preview, or an ``{"error": sentence}`` the answer can say out loud."""
     if ctx.fire_fn is None:
-        return {"error": "I cannot fire from here: only the house dogs and the dogs people built run a rule on demand."}
+        return {"error": "I cannot be taken out back from here: only the house dogs and the dogs people built run a rule on demand."}
     try:
         return ctx.fire_fn()
     except Exception as exc:  # noqa: BLE001 -- a board that cannot be read is said, not hidden

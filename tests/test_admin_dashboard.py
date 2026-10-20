@@ -340,11 +340,12 @@ class ThePeopleTab(unittest.TestCase):
             out = run(actions=[go("people"), dict(do="click", sel=row_sel(user_id, "admin-row-menu"))], queries=[
                 q("actions", "[data-hook='admin-menu-item']", "attrs", attr="data-action")])
             return out["final"]["actions"]
-        self.assertEqual(items(14), ["approve", "grant", "password"])                           # waitlisted
-        self.assertEqual(items(12), ["approve", "extend", "reissue", "password"])               # running tester
-        self.assertEqual(items(9), ["reissue", "password", "revoke"])                           # free member
-        self.assertEqual(items(6), ["password"])                                                # suspended
-        self.assertEqual(items(7), ["reissue", "password"])                                     # paying: nothing to give
+        # "kennel" (Set kennel name) is offered for everyone: any member can have a public kennel name
+        self.assertEqual(items(14), ["approve", "grant", "password", "kennel"])                 # waitlisted
+        self.assertEqual(items(12), ["approve", "extend", "reissue", "password", "kennel"])     # running tester
+        self.assertEqual(items(9), ["reissue", "password", "kennel", "revoke"])                 # free member
+        self.assertEqual(items(6), ["password", "kennel"])                                      # suspended
+        self.assertEqual(items(7), ["reissue", "password", "kennel"])                           # paying: nothing to give
 
     def test_reset_password_is_enabled_now_that_the_route_exists(self):
         out = run(actions=[go("people"), dict(do="click", sel=row_sel(12, "admin-row-menu"))], queries=[
@@ -360,6 +361,57 @@ class ThePeopleTab(unittest.TestCase):
         css = (WEB / "css" / "admin.css").read_text(encoding="utf-8")
         self.assertIn("@media (max-width: 899px)", css)
         self.assertIn("attr(data-label)", css)
+
+
+@unittest.skipUnless(HAS_NODE, "node not installed")
+class SetKennelNameFromThePeopleMenu(unittest.TestCase):
+    """POST /admin/users/kennel-name from the row menu (owner ask 2026-10-19). The name may be empty (it clears), the
+    reason may not, and the admin's own words for a refusal are shown."""
+
+    KEY = "POST /admin/users/kennel-name"
+
+    def go_set(self, name, reason, answer=None):
+        steps = menu_steps(12, "kennel")
+        if name is not None:
+            steps.append(dict(do="set", sel="[data-hook='admin-field-kennel_name']", value=name))
+        if reason is not None:
+            steps.append(dict(do="set", sel="[data-hook='admin-field-reason']", value=reason))
+        steps.append(dict(do="click", sel="[data-hook='admin-confirm-submit']"))
+        table = routes(**{self.KEY: answer or [200, {"ok": True, "user_id": 12, "kennel_name": name or None}]})
+        return run(routes=table, actions=nav_to_people(*steps), queries=[
+            q("dialog", "[data-hook='admin-confirm']", "exists"), q("fieldError", "[data-hook='admin-field-error-reason']"),
+            q("status", "[data-hook='admin-dialog-status']"), q("token", "[data-hook='admin-token-dialog']", "exists"),
+            q("label", "[data-hook='admin-field-kennel_name']", "count")])
+
+    def test_the_menu_item_opens_a_dialog_with_a_name_box_and_a_reason(self):
+        out = self.go_set(None, None)
+        self.assertEqual(out["final"]["label"], 1)
+
+    def test_it_posts_the_user_the_name_and_the_reason_with_the_admin_token(self):
+        out = self.go_set("Bob's Dogs", "asked in ticket 12")
+        self.assertEqual(len(out["posts"]), 1)
+        post = out["posts"][0]
+        self.assertEqual("POST " + post["url"], self.KEY)
+        self.assertEqual(post["body"], {"user_id": 12, "kennel_name": "Bob's Dogs", "reason": "asked in ticket 12"})
+        self.assertEqual(post["headers"].get("X-Admin-Token"), ADMIN_TOKEN)
+        self.assertFalse(out["final"]["dialog"])
+        self.assertFalse(out["final"]["token"], "no login code comes out of a name")
+
+    def test_an_empty_name_is_a_clear(self):
+        out = self.go_set("", "owner asked for the handle back")
+        self.assertEqual(out["posts"][0]["body"], {"user_id": 12, "kennel_name": "", "reason": "owner asked for the handle back"})
+
+    def test_without_a_reason_nothing_is_sent(self):
+        out = self.go_set("Bob's Dogs", None)
+        self.assertEqual(out["posts"], [])
+        self.assertTrue(out["final"]["dialog"])
+        self.assertIn("Required", out["final"]["fieldError"])
+
+    def test_a_refusal_from_the_server_is_shown_in_its_own_words(self):
+        taken = {"detail": {"error": "kennel_name_taken", "message": "another kennel already has that name"}}
+        out = self.go_set("Taken", "ticket 3", answer=[409, taken])
+        self.assertEqual(out["final"]["status"], "another kennel already has that name")
+        self.assertTrue(out["final"]["dialog"])
 
 
 @unittest.skipUnless(HAS_NODE, "node not installed")

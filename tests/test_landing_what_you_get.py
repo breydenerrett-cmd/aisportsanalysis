@@ -158,7 +158,7 @@ class EachYouGetLineIsTiedToARealRoute(unittest.TestCase):
     def test_the_paid_views_are_in_the_app_navigation(self):
         sport_js = (JS / "sport.js").read_text(encoding="utf-8")
         main_js = (JS / "main.js").read_text(encoding="utf-8")
-        for label in ('label: "GAMEDAY"', 'label: "MATCHUPS"', 'label: "PROPS"', 'label: "BOARD"'):
+        for label in ('label: "Gameday"', 'label: "Matchups"', 'label: "Props"', 'label: "Board"'):
             self.assertIn(label, sport_js)
         self.assertIn('route === "odds"', main_js)
         self.assertIn('"#/postseason"', main_js)

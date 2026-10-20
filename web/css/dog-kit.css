@@ -1,5 +1,5 @@
 /*
- * The dog kit and the training camp (web/js/dog-*.js): Fire now, Ask, manual picks, ratings, the locker room, your
+ * The dog kit and the training camp (web/js/dog-*.js): Take them out back, Backtest, Ask, manual picks, ratings, the locker room, your
  * dogs in training, drills. Built on the model pages' own dark slate (hounds.css custom properties), the same
  * panels, the same type. Phone first: one column, 16px gutters, every tap target at least 44px, nothing makes the
  * page scroll sideways. Colour never carries meaning alone: a chip, a result or a check always says it in words.
@@ -28,7 +28,7 @@
 .dk-chip--bad { color: var(--hd-bad); border-color: rgba(255, 107, 122, .5); background: rgba(255, 107, 122, .08); }
 .dk-chip--hind { color: var(--hd-warn); border-color: var(--hd-warn); background: rgba(242, 184, 75, .1); font-size: 13px; padding: 3px 10px; }
 
-/* ---- fire now ---------------------------------------------------------------------------------------------- */
+/* ---- take them out back (was fire now) ---------------------------------------------------------------------------------------------- */
 .dk-headline { font-size: 17px; font-weight: 650; margin: 12px 0 2px; }
 .dk-picks, .dk-misses, .dk-tickets { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 8px; }
 .dk-pick, .dk-miss, .dk-ticket {
@@ -153,3 +153,9 @@
 @media (prefers-reduced-motion: no-preference) {
   .dk-chipbtn, .dk-swatch, .dk-opt, .dk-vote__btn { transition: border-color .12s ease, background-color .12s ease; }
 }
+
+/* ---- kennel name prompt and profile (web/js/kennel.js) ---------------------------------------------------- */
+.kn-name, .kn-profile { margin: 12px 0; }
+.kn-nameform__row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0; }
+.kn-nameform__row input { flex: 1 1 220px; min-width: 0; max-width: 360px; }
+.dk-hindsight-title { margin: 0 0 8px; }

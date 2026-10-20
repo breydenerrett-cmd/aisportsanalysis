@@ -12,8 +12,8 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230B0C0E'/%3E%3Cpath d='M6 6l8 0 0 9-8 4z' fill='%23FF3D57'/%3E%3Cpath d='M18 6l8 0 0 13-8-4z' fill='%23FF7A45'/%3E%3C/svg%3E">
 <!-- KENNEL (web/js/kennel.js). Two views of one page:
        kennel.html           MY KENNEL, for a signed-in member: each dog as a card with its animated avatar and one-tap
-                             Fire now / Ask / Edit / Open, and "Build a dog". Clicking a dog opens the STUDIO, an
-                             in-place drawer with tabs (Look, Rules, Fire now, Ask, Record) that reuses the dog kit's and
+                             Take them out back / Ask / Edit / Open, and "Build a dog". Clicking a dog opens the STUDIO, an
+                             in-place drawer with tabs (Look, Rules, Out back, Backtest, Ask, Record) that reuses the dog kit's and
                              the builder's own modules. A signed-out visitor is asked to sign in or to browse kennels.
        kennel.html?u=<handle>  a member's PUBLIC kennel: their non-retired dogs (a dog with no bet yet included), read
                              only. The handle is the anonymous owner label as a slug ("handler-3f2a"); never an email.
@@ -66,8 +66,11 @@
 <p class="hd-disclosure" data-hook="paper-only-notice" role="note">Paper bets only. Not betting advice. 21+.</p>
 
 <div data-hook="kennel-gate" hidden></div>
+<div data-hook="kennel-name-slot"></div>
+<div data-hook="kennel-profile-slot"></div>
 <div class="kn-grid" data-hook="kennel-grid" aria-live="polite"><div class="lh-skel lh-skel--cards" aria-hidden="true"></div><p class="hd-sr-only">Loading the kennel...</p></div>
 <div data-hook="kennel-retired"></div>
+<div data-hook="kennel-extras"></div>
 
 <!-- THE STUDIO: an in-place drawer for one dog (or a new one). Filled by web/js/kennel.js; hidden until a dog is opened. -->
 <div class="kn-scrim" data-hook="studio-scrim" hidden></div>
@@ -84,14 +87,16 @@
   <div class="lh-tabs lh-tabs--studio" role="tablist" aria-label="Studio" data-hook="studio-tabs">
     <button type="button" role="tab" data-tab="look" aria-selected="true">Look</button>
     <button type="button" role="tab" data-tab="rules" aria-selected="false">Rules</button>
-    <button type="button" role="tab" data-tab="fire" aria-selected="false">Fire now</button>
+    <button type="button" role="tab" data-tab="fire" aria-selected="false">Out back</button>
+    <button type="button" role="tab" data-tab="backtest" aria-selected="false">Backtest</button>
     <button type="button" role="tab" data-tab="ask" aria-selected="false">Ask</button>
     <button type="button" role="tab" data-tab="record" aria-selected="false">Record</button>
   </div>
   <div class="kn-studio__body">
     <div class="lh-tabpanel" data-tabpanel="look" role="tabpanel" aria-label="Look" data-hook="studio-look"></div>
     <div class="lh-tabpanel" data-tabpanel="rules" role="tabpanel" aria-label="Rules" data-hook="studio-rules" hidden></div>
-    <div class="lh-tabpanel" data-tabpanel="fire" role="tabpanel" aria-label="Fire now" data-hook="studio-fire" hidden></div>
+    <div class="lh-tabpanel" data-tabpanel="fire" role="tabpanel" aria-label="Out back" data-hook="studio-fire" hidden></div>
+    <div class="lh-tabpanel" data-tabpanel="backtest" role="tabpanel" aria-label="Backtest" data-hook="studio-backtest" hidden></div>
     <div class="lh-tabpanel" data-tabpanel="ask" role="tabpanel" aria-label="Ask" data-hook="studio-ask" hidden></div>
     <div class="lh-tabpanel" data-tabpanel="record" role="tabpanel" aria-label="Record" data-hook="studio-record" hidden></div>
   </div>

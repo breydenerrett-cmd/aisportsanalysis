@@ -500,6 +500,13 @@ function renderTable() {
   const lead = podium(active, warming, minRanked(state.seasonMeta));
   if (lead) host.appendChild(lead);
   if (qualifying) host.appendChild(qualifyingSection(warming));
+  // ROUND 2 (critic, 2026-10-19): with nobody ranked yet the qualifying round IS the leaderboard. An empty "Ranked (0)" table under
+  // it said nothing twice, so it is not drawn; one line says why nobody is numbered and the table appears the moment one model is.
+  if (qualifying && rows.length === 0) {
+    host.appendChild(h("p", { class: "hd-fine hd-qual__none", "data-hook": "no-graded",
+      text: `No model has ${minRanked(state.seasonMeta)} settled bets in this view yet, so none is ranked. The qualifying round above shows who is closest.` }));
+    return;
+  }
   const thead = h("thead", {}, [headRow()]);
   const tbody = h("tbody", { "data-hook": "hounds-list" });
   rows.forEach((hound, i) => {

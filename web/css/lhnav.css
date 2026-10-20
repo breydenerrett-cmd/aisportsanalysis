@@ -84,6 +84,7 @@
 @keyframes lh-pop { from { opacity: 0; transform: translateY(-4px) scale(.97); } to { opacity: 1; transform: none; } }
 
 /* the phone tab bar: the same places, bottom of the screen */
+:root { --lh-tabbar-h: 60px; }
 .lh-tabbar { display: none; }
 @media (max-width: 760px) {
   .lh-nav__bar { height: 52px; padding: 0 16px; gap: 12px; justify-content: space-between; }
@@ -91,9 +92,11 @@
   .lh-avatar__text { display: none; }
   .lh-avatar { padding: 0 6px; }
   .lh-nav__account .lh-btn--soft { display: none; }   /* My kennel lives in the tab bar and the menu */
-  body:not(.member-app) { padding-bottom: calc(62px + env(safe-area-inset-bottom, 0px)); }
+  /* ROUND 2 (critic, 2026-10-19): the page ends ABOVE the bar with air to spare: the bar's own height, 24px, and the phone's home-indicator inset.
+     Every page that loads this file and draws .lh-tabbar gets it; the member app keeps its own (css/app.css, same sum). */
+  body:not(.member-app) { padding-bottom: calc(var(--lh-tabbar-h) + 24px + env(safe-area-inset-bottom, 0px)); }
   .lh-tabbar {
-    position: fixed; left: 0; right: 0; bottom: 0; z-index: 70; display: grid; grid-template-columns: repeat(5, 1fr);
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 70; display: grid; grid-template-columns: repeat(5, 1fr); min-height: var(--lh-tabbar-h);
     padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px));
     background: rgba(11, 13, 16, .9); -webkit-backdrop-filter: saturate(160%) blur(14px); backdrop-filter: saturate(160%) blur(14px);
     box-shadow: 0 -1px 0 var(--lh-line);

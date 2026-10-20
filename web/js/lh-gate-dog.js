@@ -14,7 +14,7 @@ export function decorateGates(root = document) {
     const holder = document.createElement("div");
     holder.setAttribute("class", "gate__dog");
     holder.setAttribute("aria-hidden", "true");
-    holder.appendChild(dogBadge(DEFAULT_LOOK, { size: 72, mood: "thinking", id: "gate" }));
+    holder.appendChild(dogBadge(DEFAULT_LOOK, { size: 88, mood: "thinking", id: "gate" }));
     gate.insertBefore(holder, gate.firstChild);
     added += 1;
   }

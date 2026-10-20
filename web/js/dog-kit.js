@@ -1,5 +1,5 @@
 /**
- * The dog kit on web/hound.html: Fire now, Ask, the manual picks, what fans think and training, and (for a builder
+ * The dog kit on web/hound.html: Take them out back, Backtest, Ask, the manual picks, what fans think and training, and (for a builder
  * dog's owner) the locker room. `bootDogKit(hound)` is called by hounds-detail.js once the model has loaded.
  *
  * ONE REQUEST DECIDES WHAT THIS VISITOR SEES: GET /hounds/{id}/kit says whether they own the dog, whether it can be
@@ -15,6 +15,7 @@ import { get } from "./dog-common.js";
 import { dogBadge, DEFAULT_LOOK, lookFor } from "./dog-avatar.js";
 import { poseOfHound } from "./dog-avatar.js";
 import { mountFire } from "./dog-fire.js";
+import { mountBacktest } from "./dog-backtest.js";
 import { bootAsk } from "./dog-ask.js";
 import { mountFans } from "./dog-feedback.js";
 import { mountManual } from "./dog-manual.js";
@@ -26,7 +27,7 @@ const q = (hook) => document.querySelector(`[data-hook='${hook}']`);
 export function applyHeaderBadge(look, name, muted = false, dog = {}) {
   const old = document.querySelector(".hd-modelhead .hd-mono") || document.querySelector(".hd-modelhead .dk-badge");
   if (!old || !look) return false;
-  const badge = dogBadge(look, { size: 84, id: dog.id, vibe: dog.vibe, mood: muted ? "sad" : (dog.pose || "idle") });
+  const badge = dogBadge(look, { size: 84, id: dog.id, name: name || dog.name, vibe: dog.vibe, mood: muted ? "sad" : (dog.pose || "idle") });
   badge.setAttribute("data-hook", "header-badge");
   if (muted) badge.setAttribute("style", "opacity:.55");
   const parent = old.parentNode;
@@ -40,7 +41,7 @@ export async function bootDogKit(hound) {
   if (!id) return null;
   const sections = {
     fire: q("dog-fire-section"), ask: q("dog-ask-section"), manual: q("dog-manual-section"),
-    fans: q("dog-fans-section"), locker: q("dog-locker-section"),
+    fans: q("dog-fans-section"), locker: q("dog-locker-section"), backtest: q("dog-backtest-section"),
   };
   if (!sections.fire) return null;
   let kit = null;
@@ -61,6 +62,8 @@ export async function bootDogKit(hound) {
   }
   if (kit.can_fire) {
     mountFire(sections.fire, { id, name, kit, onRecord: () => { if (manual) manual.refresh(); } });
+    // the same dogs that can be taken out back can be backtested (house dogs and builder dogs: the rule runs on demand)
+    if (sections.backtest) mountBacktest(sections.backtest, { id, name });
   }
   jobs.push(bootAsk(sections.ask, { id, name }));
   jobs.push(mountFans(sections.fans, { id, name, kit, hound }));
