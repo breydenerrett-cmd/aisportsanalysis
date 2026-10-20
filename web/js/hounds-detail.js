@@ -113,7 +113,8 @@ function renderHeader(hound) {
   if (hound.status === "retired") {
     causeBox.hidden = false;
     causeBox.removeAttribute("hidden");
-    causeBox.appendChild(h("p", {}, [h("strong", { text: "Retired. " }),
+    const buried = !!(retired && /^buried/i.test(String(retired.cause || "")));
+    causeBox.appendChild(h("p", {}, [h("strong", { text: buried ? "Buried. " : "Retired. " }),
       (retired && retired.cause) ? causeText(retired.cause) : "No reason was given.",
       retired && retired.date ? h("span", { class: "hd-fine", text: ` (${fmtWhen(retired.date)})` }) : null,
       // an owner's removal keeps the whole record; say so, since the dog is gone from the lists but not from the ledger

@@ -5,7 +5,7 @@
  *
  *   YOUR DOGS IN TRAINING  GET /hounds/camp/mine (signed in): each of your dogs with its season record, its last five
  *                          tickets, the feedback it has had, suggestions waiting, your manual picks (kept apart), and
- *                          one-click "Take them out back", Ask and Backtest.
+ *                          one-click "Unleash", Send to training, Ask and Backtest.
  *   BACKTEST               POST /hounds/drill {dog_id, days: 7|14|30 | season: "s2"}: the dog's current rule replayed over
  *                          stored boards (the route and the data-hooks keep the old word "drill"). LABELLED "Backtest
  *                          (hindsight, not counted in the record)", read only, with W-L, paper dollars, the best and worst
@@ -20,7 +20,7 @@ import { friendlyLesson } from "./hounds-voice.js";
 import { dogFace } from "./dog-avatar.js";
 import { get, errorText, signedIn, signInPrompt, builderHref, changeText, statusLine } from "./dog-common.js";
 import { renderBacktest, runBacktest, WINDOWS } from "./dog-backtest.js";
-import { renderFireResult, takeOutBack } from "./dog-fire.js";
+import { renderFireResult, unleash } from "./dog-fire.js";
 import { mountAsk } from "./dog-ask.js";
 
 const q = (hook) => document.querySelector(`[data-hook='${hook}']`);
@@ -79,15 +79,15 @@ function dogCard(d, { onDrill }) {
     inline.removeAttribute("hidden");
     make(inline);
   };
-  const fireBtn = h("button", { type: "button", class: "btn btn--primary", "data-hook": "camp-dog-fire", text: "Take them out back" });
+  const fireBtn = h("button", { type: "button", class: "btn btn--primary", "data-hook": "camp-dog-fire", text: "Unleash" });
   fireBtn.addEventListener("click", () => toggle("fire", async (box) => {
     const status = statusLine("camp-fire-status");
-    status.textContent = `Taking ${d.name} out back...`;
+    status.textContent = `Unleashing ${d.name}...`;
     box.appendChild(status);
     const out = h("div", { class: "dk-result" });
     box.appendChild(out);
     try {
-      const data = await takeOutBack(d.id);
+      const data = await unleash(d.id);
       status.textContent = "";
       renderFireResult(out, data, { id: d.id, name: d.name, canRecord: d.status === "running" && data.viewer_is_owner });
     } catch (err) {
@@ -117,7 +117,7 @@ async function bootDogs(onDrill) {
   if (!box) return [];
   clearNode(box);
   if (!signedIn()) {
-    box.appendChild(signInPrompt("Sign in to see the dogs you built, take them out back, ask them and backtest them."));
+    box.appendChild(signInPrompt("Sign in to see the dogs you built, unleash them, ask them and backtest them."));
     box.appendChild(h("p", { class: "hd-fine" }, ["No dog yet? ", h("a", { href: "build-a-hound.html", text: "Build one" }), "."]));
     return [];
   }

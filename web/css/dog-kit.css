@@ -1,5 +1,5 @@
 /*
- * The dog kit and the training camp (web/js/dog-*.js): Take them out back, Backtest, Ask, manual picks, ratings, the locker room, your
+ * The dog kit and the training camp (web/js/dog-*.js): Unleash, the hound menu and its two rites, Backtest, Ask, manual picks, ratings, the locker room, your
  * dogs in training, drills. Built on the model pages' own dark slate (hounds.css custom properties), the same
  * panels, the same type. Phone first: one column, 16px gutters, every tap target at least 44px, nothing makes the
  * page scroll sideways. Colour never carries meaning alone: a chip, a result or a check always says it in words.
@@ -28,7 +28,7 @@
 .dk-chip--bad { color: var(--hd-bad); border-color: rgba(255, 107, 122, .5); background: rgba(255, 107, 122, .08); }
 .dk-chip--hind { color: var(--hd-warn); border-color: var(--hd-warn); background: rgba(242, 184, 75, .1); font-size: 13px; padding: 3px 10px; }
 
-/* ---- take them out back (was fire now) ---------------------------------------------------------------------------------------------- */
+/* ---- unleash (was fire now) ---------------------------------------------------------------------------------------------- */
 .dk-headline { font-size: 17px; font-weight: 650; margin: 12px 0 2px; }
 .dk-picks, .dk-misses, .dk-tickets { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 8px; }
 .dk-pick, .dk-miss, .dk-ticket {
@@ -159,3 +159,89 @@
 .kn-nameform__row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0; }
 .kn-nameform__row input { flex: 1 1 220px; min-width: 0; max-width: 360px; }
 .dk-hindsight-title { margin: 0 0 8px; }
+
+/* ---- the owner's hound menu and its two rites (web/js/dog-rites.js) ------------------------------------------------ */
+.dk-menu { display: flex; flex-wrap: wrap; gap: 8px 10px; margin: 4px 0 8px; }
+.dk-menu .btn { flex: 1 1 150px; }
+/* Take them out back is the one action that cannot be undone: outlined in the bad colour, filled only when it is the final step. */
+.hounds-page .btn--danger { color: var(--hd-bad); background: transparent; border: 1px solid var(--hd-bad); }
+.hounds-page .btn--danger:hover { background: rgba(255, 107, 122, .14); color: #fff; }
+.hounds-page .rt-sheet .btn--danger[data-hook="outback-bury"] { background: #C93447; border-color: #C93447; color: #fff; }
+.hounds-page .rt-sheet .btn--danger[data-hook="outback-bury"]:hover { background: #DD4558; border-color: #DD4558; }
+.dk-chip--trained { color: var(--hd-accent); border-color: rgba(47, 208, 122, .5); background: rgba(47, 208, 122, .08); }
+
+/* the confirm sheet, the training montage and the two reveals: a bottom sheet on a phone, a centred card from 640px */
+/* z-index above the phone tab bar (70): the sheet is the only thing the person should reach while it is open */
+.rt-layer { position: fixed; inset: 0; z-index: 200; display: flex; align-items: flex-end; justify-content: center; }
+.rt-scrim { position: absolute; inset: 0; background: rgba(5, 7, 10, .78); }
+.rt-sheet {
+  position: relative; width: 100%; max-width: 560px; max-height: 92vh; overflow-y: auto; box-sizing: border-box;
+  padding: 20px 16px calc(20px + env(safe-area-inset-bottom, 0px)); background: #14181E;      /* opaque on purpose: --hd-card is transparent on the dog pages */
+  border: 1px solid rgba(255, 255, 255, .14); border-bottom: 0; border-radius: 14px 14px 0 0; color: var(--hd-text);
+}
+@media (min-width: 640px) { .rt-layer { align-items: center; } .rt-sheet { border-bottom: 1px solid rgba(255, 255, 255, .14); border-radius: 14px; padding-bottom: 20px; } }
+.rt-sheet__title { margin: 0 0 10px; font-size: 20px; line-height: 1.25; color: #fff; overflow-wrap: anywhere; }
+.rt-sheet__body > * { margin-top: 0; }
+.rt-warn { margin: 0 0 8px; font-size: 17px; line-height: 1.45; color: #fff; padding-left: 12px; border-left: 3px solid var(--hd-bad); }
+.rt-note { margin: 0 0 8px; font-size: 16px; line-height: 1.45; color: var(--hd-text-2); }
+.rt-refused { margin: 0 0 12px; padding: 10px 12px; border: 1px solid var(--hd-bad); border-left-width: 4px; border-radius: 4px; background: rgba(255, 107, 122, .07); color: #fff; }
+.rt-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; margin-top: 16px; }
+.rt-actions .btn { flex: 1 1 140px; white-space: normal; text-align: center; }
+.rt-status { min-height: 1.2em; margin: 8px 0 0; }
+
+.rt-montage { list-style: none; margin: 4px 0 6px; padding: 0; display: grid; gap: 8px; }
+.rt-montage__step { padding: 10px 12px; border: 1px solid var(--hd-line); border-radius: 4px; background: var(--hd-card-2); color: var(--hd-text); font-size: 15px; }
+.rt-montage__step::before { content: counter(rt-step) ". "; counter-increment: rt-step; color: var(--hd-mute); }
+.rt-montage { counter-reset: rt-step; }
+
+.rt-card { display: grid; gap: 10px; }
+.rt-card__kicker { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.rt-card__headline { margin: 0; font-size: 18px; font-weight: 650; color: #fff; }
+.rt-card .hd-h3 { margin: 6px 0 0; font-size: 14px; text-transform: uppercase; letter-spacing: .06em; color: var(--hd-mute); font-weight: 600; }
+.rt-changes { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.rt-change { padding: 10px 12px; background: var(--hd-card-2); border: 1px solid var(--hd-line); border-left: 3px solid var(--hd-accent); border-radius: 4px; }
+.rt-change p { margin: 2px 0; overflow-wrap: anywhere; }
+.rt-change__from { color: var(--hd-mute); text-decoration: line-through; text-decoration-thickness: 1px; }
+.rt-change__to { color: #fff; font-weight: 600; }
+.rt-guidance { margin: 0; font-size: 15px; line-height: 1.5; color: var(--hd-text-2); }
+.rt-records { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 0; }
+.rt-records dt { color: var(--hd-mute); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
+.rt-records dd { margin: 2px 0 0; font-size: 22px; font-weight: 650; font-variant-numeric: tabular-nums; }
+
+.rt-reveal { display: grid; gap: 12px; }
+.rt-reveal__line { margin: 0; font-size: 17px; color: var(--hd-text-2); }
+.rt-reveal__stone { min-width: 0; }
+
+/* the headstone: the burial reveal, the dog page, the graveyard and the kennel page share it */
+.hs-list { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 760px) { .hs-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.hs { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px; padding: 16px; background: var(--hd-card-2); border: 1px solid var(--hd-line); border-top: 4px solid var(--hd-mute); border-radius: 10px 10px 4px 4px; }
+.hs__badge { line-height: 0; filter: grayscale(.85) brightness(.9); opacity: .9; }
+.hs__body { min-width: 0; }
+.hs__name { margin: 0; font-size: 20px; line-height: 1.2; }
+.hs__name a { color: #fff; text-decoration: none; overflow-wrap: anywhere; }
+.hs__name a:hover { text-decoration: underline; }
+.hs__dates { margin: 2px 0 8px; color: var(--hd-mute); font-size: 13px; letter-spacing: .03em; }
+.hs__epitaph { margin: 0 0 8px; font-size: 17px; line-height: 1.4; color: var(--hd-text); padding-left: 10px; border-left: 2px solid var(--hd-line); }
+.hs__chips { margin: 0 0 8px; display: flex; flex-wrap: wrap; gap: 6px; }
+.hs__facts { margin: 8px 0 0; display: grid; gap: 6px 14px; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
+.hs__fact dt { color: var(--hd-mute); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+.hs__fact dd { margin: 1px 0 0; font-size: 15px; color: var(--hd-text); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.kn-graveyard { margin: 18px 0; }
+@media (max-width: 420px) { .hs { grid-template-columns: minmax(0, 1fr); } .hs__badge { justify-self: start; } }
+
+/* motion: every animation below is for people who have not asked for less (the page works the same without it) */
+@media (prefers-reduced-motion: no-preference) {
+  .rt-scrim { animation: rt-fade .18s ease both; }
+  .rt-sheet { animation: rt-rise .24s cubic-bezier(.2, .8, .2, 1) both; }
+  .rt-montage__step { opacity: .35; animation: rt-step .35s ease both; animation-delay: calc(var(--i, 0) * 650ms); }
+  .rt-reveal--burial .rt-reveal__line:first-child { animation: rt-fade .9s ease both; }
+  .rt-reveal--burial .rt-reveal__stone { animation: rt-lower 1.1s cubic-bezier(.2, .8, .2, 1) .5s both; }
+  .rt-reveal--burial .rt-reveal__line:last-child { animation: rt-fade .9s ease 1.4s both; }
+  .rt-card { animation: rt-fade .4s ease both; }
+  .rt-change { animation: rt-rise .3s ease both; animation-delay: calc(var(--i, 0) * 120ms); }
+  @keyframes rt-fade { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes rt-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  @keyframes rt-lower { from { opacity: 0; transform: translateY(-18px); } to { opacity: 1; transform: none; } }
+  @keyframes rt-step { from { opacity: .35; transform: translateX(-6px); } to { opacity: 1; transform: none; } }
+}

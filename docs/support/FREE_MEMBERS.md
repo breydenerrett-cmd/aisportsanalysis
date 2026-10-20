@@ -91,8 +91,8 @@ including the daily picks board. A **free account** is what a visitor makes them
 free account": email, password, optional kennel name). It is active at once, with a 30-day session that every sign-in
 renews. Admin People shows it as **Free account**, plan **Free**.
 
-- A free account opens the dogs: kennels, building and editing their own dog, the locker room, the plain "Take them
-  out back" preview, fan tips, following. It does **not** open the daily picks board (Today, Games, Odds, Props, the
+- A free account opens the dogs: kennels, building and editing their own dog, the locker room, the plain "Unleash"
+  preview, sending their dog to training, taking it out back (which frees its slot), fan tips, following. It does **not** open the daily picks board (Today, Games, Odds, Props, the
   digest and the rest): those answer 403 until you approve the person. To upgrade one, use **Approve as free member**
   or **Grant 7-day tester** on that row; nothing else changes. The member-only dog tools are listed under "Free vs
   member" below.

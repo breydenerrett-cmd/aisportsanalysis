@@ -6,6 +6,7 @@
 // test can fire them by hand, and then runs scenario.actions (click / set / check / fire_timers /
 // visibility / wait) before reporting what is on the page.
 //
+// `reducedMotion` (true/false, 2026-10-20): the fake window gets a matchMedia that answers (prefers-reduced-motion: reduce).
 // Dog-page scenario keys (2026-10-18): `share` (navigator.share exists; `shareFails` names the error it throws),
 // `confirm` (false = the person cancels every window.confirm; the report carries `confirms`, what was asked),
 // `storageThrows` ("methods": getItem/setItem throw; "accessor": touching window.localStorage throws), `tz`
@@ -204,6 +205,12 @@ globalThis.window = {
   confirm: (message) => { confirms.push(String(message)); return scenario.confirm !== false; },
 };
 globalThis.location = loc;
+// `reducedMotion` (true/false) gives the window a matchMedia that answers prefers-reduced-motion; without the key there is none,
+// as before, so no page that never asked sees a difference.
+if (scenario.reducedMotion !== undefined) {
+  globalThis.window.matchMedia = (query) => ({ matches: scenario.reducedMotion === true && /prefers-reduced-motion:\s*reduce/.test(String(query)),
+    media: String(query), addEventListener() {}, removeEventListener() {} });
+}
 if (scenario.storageThrows === "accessor") {
   for (const target of [globalThis.window, globalThis]) {
     for (const key of ["localStorage", "sessionStorage"]) {

@@ -166,6 +166,16 @@ trigger rather than a feed.
 | Changes | One row in the app database's `english_jobs` table per job. The site checks the answer and shows it to the person as sentences and rule cards to confirm and edit; **nothing is saved as a dog until they save it**. Nothing on the site changes without a person. |
 | Tasks | **2 per translation** (the AI step and the POST). The site allows each person 8 translations an hour, and only calls the Zap for a sentence the free parser could not fully read, so most sentences cost nothing. Estimate **0 to 60 a month**; unmeasured, read Zapier's task history after two weeks. |
 
+**Send to training reuses this same Catch Hook (2026-10-20).** When a member sends a dog to training
+(`POST /hounds/{id}/train`, `src/hounds/interact/training.py`) and `ZAPIER_TRANSLATE_HOOK_URL` is set, the site also
+POSTs the coach's brief to it from a background thread (4 second timeout, never waited for, every failure ignored):
+`{job_id: "training-<hound id>", kind: "training_brief", text: <the brief as JSON text>}`. It has no `menu` and no
+`callback_url`, and the site reads no reply: the paragraph the member sees is always written by code from the dog's own
+settled bets. **Add a Filter step after the trigger that continues only when `kind` does not exist** (translation requests
+have no `kind`), or the translator's AI step will spend two tasks on a brief it cannot turn into a rule; a training is rare
+(a dog needs 5 new settled bets between trainings), so a Zap that wants the briefs (for a Discord post, say) costs a task or
+two per training. Nothing in the brief is an account id, an email or a token.
+
 **What the menu offers (nothing to change in the Zap).** The `menu` the site sends is generated from the live
 rule table, so the conditions added on 2026-10-19 reach the translator with no change to the Zap or its prompt:
 `head_to_head`, `venue_record`, `scoring_rate`, `league_rank` and `matchup_edge` (head-to-head record in the last N

@@ -3,7 +3,7 @@
 Owner: "It's not clearly accessible to find a user's dogs in their kennel ... more minimalism and more fun animated UI."
 
   KENNEL PAGE   web/kennel.html + web/js/kennel.js, run for real under node: My kennel (signed in: a card per dog with its
-                avatar, record, units, last pick, status and one-tap Take them out back / Ask / Edit / Open; a "Build a dog" card; the
+                avatar, record, units, last pick, status and one-tap Unleash / Send to training / Take them out back (the burial) / Ask / Edit / Open; a "Build a dog" card; the
                 empty state; the signed-out gate), a member's PUBLIC kennel (?u=, read only, a 0-bet dog included), and the
                 studio drawer that reuses the builder's and the dog kit's modules.
   NAVIGATION    one component (web/js/nav.js + css/lhnav.css) on every page, right for signed in and signed out.
@@ -26,7 +26,7 @@ from tests.hounds_web_runner import HAS_NODE, WEB, run_js, run_page
 TOKEN_KEY = "aisportsanalysis.invite_token"
 SIGNED = dict(stored={TOKEN_KEY: "tok"})
 PAGES = ("kennels.html", "live.html", "hounds.html", "hound.html", "build-a-hound.html", "learning.html", "kennel.html", "landing.html", "why-we-paused.html",
-         "postseason.html", "sample.html", "index.html")
+         "postseason.html", "sample.html", "index.html", "graveyard.html")
 LINKS = [("hounds.html", "Leaderboard"), ("kennels.html", "Kennels"), ("live.html", "Live"), ("quiz.html", "Build"),
          ("learning.html", "Training camp")]
 
@@ -273,7 +273,7 @@ class MyKennel(unittest.TestCase):
                 q("hidden_tabs", "[data-hook='studio-tabs'] [role='tab']", "attrs", attr="hidden")])])
         cap = out["captures"]["open"]
         self.assertEqual((cap["hidden"], cap["title"]), (False, "New dog"))
-        # Look, Rules, Out back, Backtest, Ask, Record: a new dog has only the Rules tab, so the other five hide
+        # Look, Rules, Unleash, Backtest, Ask, Record: a new dog has only the Rules tab, so the other five hide
         self.assertEqual(cap["hidden_tabs"], ["", None, "", "", "", ""])
 
     def test_a_retired_dog_is_set_apart_and_offers_a_copy_not_an_edit(self):
@@ -364,7 +364,7 @@ class TheStudio(unittest.TestCase):
                 q("rules_panel", "[data-tabpanel='rules']", "hidden")])])
         cap = out["captures"]["open"]
         self.assertEqual((cap["hidden"], cap["title"]), (False, "Underdog Gus"))
-        self.assertEqual(cap["tabs"], ["Look", "Rules", "Out back", "Backtest", "Ask", "Record"])
+        self.assertEqual(cap["tabs"], ["Look", "Rules", "Unleash", "Backtest", "Ask", "Record"])
         self.assertEqual(cap["selected"], ["Look"])
         self.assertEqual((cap["preview"], cap["head_avatar"]), (1, 1))
         self.assertEqual(cap["open_link"], "hound.html?id=u-1")
@@ -424,7 +424,7 @@ class TheStudio(unittest.TestCase):
         out = run_page("kennel", routes=self.routes([dog("u-1")]), **SIGNED, actions=[
             dict(do="click", sel="[data-hook='dog-action-fire']", label="fire", wait=300, capture=[
                 q("selected", "[role='tab'][aria-selected='true']", "texts"), q("headline", "[data-hook='fire-headline']")])])
-        self.assertEqual(out["captures"]["fire"]["selected"], ["Out back"])
+        self.assertEqual(out["captures"]["fire"]["selected"], ["Unleash"])
         self.assertEqual(out["captures"]["fire"]["headline"], "Nothing qualifies right now.")
         self.assertEqual([p["url"].split("/")[-2:] for p in out["posts"]], [["u-1", "fire"]])
 
@@ -490,11 +490,12 @@ class TheKennelsIndex(unittest.TestCase):
 class TheDogPageTabs(unittest.TestCase):
     HTML = read("hound.html")
 
-    def test_six_tabs_in_order_with_out_back_above_them(self):
+    def test_six_tabs_in_order_with_unleash_above_them(self):
         tabs = re.findall(r'role="tab" data-tab="([a-z]+)"', self.HTML)
         self.assertEqual(tabs, ["overview", "tickets", "backtest", "ask", "locker", "rules"])
         self.assertLess(self.HTML.index('data-hook="dog-fire-section"'), self.HTML.index('data-hook="hound-tabs"'))
-        self.assertIn(">Out back<", self.HTML)
+        self.assertIn(">Unleash<", self.HTML)
+        self.assertNotIn(">Out back<", self.HTML)
         self.assertNotIn("Fire now", self.HTML)
 
     def test_every_section_sits_in_the_panel_it_belongs_to(self):
@@ -602,7 +603,7 @@ class TheBuilderHasOneHookSet(unittest.TestCase):
 # ---------------------------------------------------------------------------------------------------
 
 class EveryAnimationIsInsideNoPreference(unittest.TestCase):
-    FILES = ("css/lh.css", "css/lhnav.css", "css/studio.css")
+    FILES = ("css/lh.css", "css/lhnav.css", "css/studio.css", "css/dog-kit.css")
 
     @staticmethod
     def outside_motion_blocks(css):

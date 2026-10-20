@@ -39,6 +39,8 @@ PAGES = {
     "tabs": ("hound.html", "tabs.js"),
     # the live board, "What's on" (tests/test_live_board.py); its fixtures are tests/fixtures/sports_now.json
     "live": ("live.html", "live-board.js"),
+    # the graveyard (tests/test_hounds_rites_web.py): every dog a member took out back
+    "graveyard": ("graveyard.html", "graveyard.js"),
 }
 
 _tmp = None

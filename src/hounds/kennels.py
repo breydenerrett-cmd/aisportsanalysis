@@ -14,11 +14,16 @@ dog count, the combined paper record and dollars across their public dogs, the b
 across all of them. Only fields already public on a dog page are summed; no email, no account id, no stake the
 member did not publish.
 
+THE GRAVEYARD (owner ruling 2026-10-20). A dog its owner took out back (``outback.bury``) is not a public dog: it is out
+of the kennel's list, its dog count and the leaderboard's ranking, and it frees a plan slot. It is on the kennel's
+page in a "Graveyard" section instead, as the frozen headstone the burial wrote (``outback.headstones``), and a kennel
+whose dogs are all buried still has a page. A dog that has been sent to training carries ``trained_times`` ("Trained
+xN") on its card.
+
 EVERY PUBLIC DOG IS LISTED, WHETHER OR NOT IT HAS A BET. A dog a member made a minute ago has no settled bet
 and no open ticket, and the leaderboard's qualifying round used to hide it (2026-10-19: two members' dogs
 could not be found). A kennel reads the app database's dog list, never the ranked table, so a dog with 0 bets
-shows with a zero record and a "new" flag. Retired dogs are not public here (they are in the graveyard, with
-their record).
+shows with a zero record and a "new" flag. Retired dogs are not public here.
 
 The numbers are the leaderboard's own: the same cached stats book (a ledger-only read for a dog the book does
 not know yet), the default season's view. Nothing is computed here but the grouping.
@@ -33,6 +38,7 @@ from typing import Optional
 
 from src.hounds import bankroll, member_profile, seasons, stats, user_defs, user_store, user_view
 from src.hounds.contract import to_json
+from src.hounds.interact import outback
 
 PUBLIC_STATUSES = ("running", "benched")
 RECENT_TICKETS = 12
@@ -89,7 +95,7 @@ def _stats_for(row: dict, book, sid: str):
     return data.view(sid) if data is not None else None
 
 
-def dog_entry(row: dict, view, look: Optional[dict]) -> dict:
+def dog_entry(row: dict, view, look: Optional[dict], trained: int = 0) -> dict:
     """One dog as a kennel shows it. ``view`` is the stats view for the season (None when the stats cannot be
     read, which shows as a zero record: never a guess)."""
     summary = to_json(bankroll.refreshed(view.summary)) if view is not None else {}
@@ -105,7 +111,8 @@ def dog_entry(row: dict, view, look: Optional[dict]) -> dict:
             break
     return {
         "id": row["id"], "name": row["name"], "tagline": row.get("tagline") or "", "status": row["status"],
-        "version_no": row["version_no"], "look": look,
+        "version_no": row["version_no"], "look": look, "trained_times": trained,
+        "coached_from": row.get("coached_from"),
         "sports": [str(s).lower() for s in (row["spec"].get("sports") or [])],
         "record": {"bets": int(rec.get("bets") or 0), "wins": wins, "losses": losses, "pushes": pushes,
                    "units_average_price": rec.get("units_average_price")},
@@ -137,20 +144,35 @@ def _best(dogs: list) -> Optional[dict]:
             "bankroll": top.get("bankroll")}
 
 
-def _grouped(sid: str) -> dict:
-    """{handle: {"display": ..., "dogs": [dog entries]}} for every owner with a public dog."""
+def _box(out: dict, owner: int) -> dict:
+    display = user_defs.owner_display(owner)
+    return out.setdefault(slug(display), {"display": display, "dogs": [], "owner_user_id": owner,
+                                           "named": display != user_defs.anonymous_handle(owner),
+                                           "aliases": [anonymous_handle_for(owner)], "rows": []})
+
+
+def _trained() -> dict:
+    try:
+        return user_store.trained_counts() if user_defs.db_exists() else {}
+    except Exception:  # noqa: BLE001 -- a badge never takes a page down
+        return {}
+
+
+def _grouped(sid: str, *, with_graveyards: bool = False) -> dict:
+    """{handle: {"display": ..., "dogs": [dog entries]}} for every owner with a public dog. With ``with_graveyards`` an
+    owner whose dogs are all buried is there too, with no dogs, so their page still opens."""
     rows = _public_rows()
     book = stats.peek_book()
     looks = _looks(rows)
+    trained = _trained()
     out: dict = {}
     for row in rows:
-        owner = row["owner_user_id"]
-        display = user_defs.owner_display(owner)
-        box = out.setdefault(slug(display), {"display": display, "dogs": [], "owner_user_id": owner,
-                                              "named": display != user_defs.anonymous_handle(owner),
-                                              "aliases": [anonymous_handle_for(owner)], "rows": []})
-        box["dogs"].append(dog_entry(row, _stats_for(row, book, sid), looks.get(row["id"])))
+        box = _box(out, row["owner_user_id"])
+        box["dogs"].append(dog_entry(row, _stats_for(row, book, sid), looks.get(row["id"]), trained.get(row["root_id"], 0)))
         box["rows"].append(row)
+    if with_graveyards and user_defs.db_exists():
+        for owner in sorted({e["owner_user_id"] for e in user_store.list_events(user_store.EVENT_BURIED)}):
+            _box(out, owner)
     return out
 
 
@@ -227,7 +249,7 @@ def _combined(dogs: list) -> dict:
 def kennel_detail(handle: str, season: Optional[str] = None) -> Optional[dict]:
     """One member's public profile and dogs, or None when no member has that handle (or has no public dog)."""
     sid = season or seasons.default_id()
-    box = _find(_grouped(sid), handle)
+    box = _find(_grouped(sid, with_graveyards=True), handle)
     if box is None:
         return None
     dogs = box["dogs"]
@@ -235,7 +257,8 @@ def kennel_detail(handle: str, season: Optional[str] = None) -> Optional[dict]:
             "named": box["named"], "dog_count": len(dogs),
             "member_since": member_profile.member_since(box["owner_user_id"]),
             "combined": _combined(dogs), "best": _best(dogs), "recent_tickets": _recent_tickets(box, sid),
-            "dogs": dogs, "season": seasons.meta(sid), "bankroll": bankroll.public_block()}
+            "dogs": dogs, "graveyard": outback.headstones(owner_user_id=box["owner_user_id"]),
+            "season": seasons.meta(sid), "bankroll": bankroll.public_block()}
 
 
 def my_kennel(owner_user_id: int, season: Optional[str] = None) -> dict:
@@ -247,14 +270,17 @@ def my_kennel(owner_user_id: int, season: Optional[str] = None) -> dict:
     # record is not: it stays on the ledger and its address still opens, saying "Retired by the owner".
     gone = user_store.removed_roots(rows)
     removed = sum(1 for r in rows if r["root_id"] in gone and r["version_of"] is None)
-    rows = [r for r in rows if r["root_id"] not in gone]
+    # A buried dog is gone from this list too, with every earlier version of it: it is on the graveyard list below.
+    buried = {r["root_id"] for r in rows if r["status"] == user_store.STATUS_BURIED}
+    rows = [r for r in rows if r["root_id"] not in gone and r["root_id"] not in buried]
     order = {"running": 0, "benched": 1, "retired": 2}
     rows.sort(key=lambda h: (order.get(h["status"], 3), h["created_at"]))
     book = stats.peek_book()
     looks = _looks(rows)
+    trained = _trained()
     dogs = []
     for row in rows:
-        entry = dog_entry(row, _stats_for(row, book, sid), looks.get(row["id"]))
+        entry = dog_entry(row, _stats_for(row, book, sid), looks.get(row["id"]), trained.get(row["root_id"], 0))
         entry["retired"] = row["status"] == "retired"
         entry["builder_href"] = f"build-a-hound.html?from={row['id']}"
         dogs.append(entry)
@@ -264,4 +290,5 @@ def my_kennel(owner_user_id: int, season: Optional[str] = None) -> dict:
             "kennel_name": profile["kennel_name"], "needs_name_prompt": profile["needs_name_prompt"],
             "name_limits": profile["limits"],
             "dog_count": sum(1 for d in dogs if not d["retired"]), "dogs": dogs, "removed_count": removed,
+            "graveyard": outback.headstones(owner_user_id=owner_user_id) if user_defs.db_exists() else [],
             "season": seasons.meta(sid)}
