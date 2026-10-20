@@ -90,12 +90,12 @@ PHRASINGS = [
     ("show me your latest bet", "today"),
     ("what was your last bet", "today"),
     ("What did you bet yesterday?", "today"),
-    ("What would you bet right now?", "bet_now"),
-    ("any picks right now?", "bet_now"),
-    ("what do you like tonight", "bet_now"),
-    ("fire", "bet_now"),
-    ("what's your pick", "bet_now"),
-    ("What are you thinking tonight?", "bet_now"),
+    ("What would you bet right now?", "picks_now"),
+    ("any picks right now?", "picks_now"),
+    ("what do you like tonight", "picks_now"),
+    ("fire", "picks_now"),
+    ("what's your pick", "picks_now"),
+    ("What are you thinking tonight?", "picks_now"),
     ("How are you doing?", "record"),
     ("what's your record", "record"),
     ("are you any good", "record"),
@@ -114,6 +114,10 @@ PHRASINGS = [
     ("what do fans think?", "fans"),
     ("any feedback on you", "fans"),
     ("what has the coach said about you", "coach"),
+    ("what would you have taken today pre market", "picks_earlier_today"),
+    ("what would you have done this week", "backtest_window"),
+    ("what is a spread", "explain_market"),
+    ("help", "help"),
     ("who are you", "hello"),
     ("hi", "hello"),
     ("banana smoothie recipe", "fallback"),
@@ -222,16 +226,18 @@ class TheAnswers(unittest.TestCase):
         self.assertIn("+131", out["answer"])
         self.assertIn("best +136 at betonlineag", out["answer"])
         self.assertIn("usual time before the start", out["answer"])
+        self.assertEqual(out["cards"][0]["selection"], "Cleveland Guardians to win")
 
     def test_nothing_qualifying_names_the_closest_miss(self):
         out = self.say("What would you bet right now?", fire_fn=lambda: FIRE_NOTHING)
-        self.assertIn("Nothing qualifies right now.", out["answer"])
+        self.assertIn("Nothing qualifies on the boards stored right now.", out["answer"])
         self.assertIn("Closest: Washington Commanders @ San Francisco 49ers", out["answer"])
         self.assertIn("2.6 points", out["answer"])
 
     def test_a_dog_that_cannot_be_fired_says_so(self):
         out = self.say("What would you bet right now?", fire_fn=None)
-        self.assertIn("cannot fire from here", out["answer"])
+        self.assertIn("cannot run a rule on demand", out["answer"])
+        self.assertIn("Cleveland Guardians to win", out["answer"])          # what it does have: its open ticket
 
     def test_a_board_that_cannot_be_read_is_said_not_hidden(self):
         def broken():
@@ -244,7 +250,7 @@ class TheAnswers(unittest.TestCase):
         out = self.say("why didn't you bet the Commanders", fire_fn=lambda: FIRE_NOTHING)
         self.assertIn("still ahead of me", out["answer"])
         self.assertIn("I pass.", out["answer"])
-        self.assertIn("shorter than your band", out["answer"])
+        self.assertIn("shorter than my band", out["answer"])
 
     def test_why_not_for_a_game_the_rule_does_take_says_a_ticket_is_coming(self):
         out = self.say("why didn't you bet the Patriots", fire_fn=lambda: FIRE_NOTHING)

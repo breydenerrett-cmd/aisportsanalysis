@@ -26,6 +26,7 @@ MOUNT ORDER. ``/hounds/looks``, ``/hounds/camp/mine`` and ``POST /hounds/drill``
 
 from __future__ import annotations
 
+import types
 from datetime import datetime
 from typing import Any, Dict, Optional
 
@@ -36,7 +37,7 @@ from src.appstate import ratelimit
 from src.appstate import users as users_store
 from src.hounds import user_spec
 from src.hounds.contract import envelope
-from src.hounds.interact import ask, camp, common, drill, fire, look, manual, store
+from src.hounds.interact import ask, ask_eval, camp, common, drill, fire, look, manual, store
 
 from api import auth as auth_mod
 from api.auth import get_current_user
@@ -246,10 +247,47 @@ class AskRequest(BaseModel):
     question: str
 
 
-def _context(dog: common.Dog, viewer_id: Optional[int]) -> ask.AskContext:
+def _retry_of(exc: HTTPException) -> Optional[int]:
+    detail = exc.detail if isinstance(exc.detail, dict) else {}
+    value = detail.get("retry_after")
+    return int(value) if isinstance(value, (int, float)) and not isinstance(value, bool) else None
+
+
+def _context(dog: common.Dog, viewer_id: Optional[int], request: Optional[Request] = None,
+             authorization: Optional[str] = None) -> ask.AskContext:
+    """The facts and the three evaluations an answer may run. Each evaluation passes through the SAME per-address
+    allowance the Fire now route has (20 a minute, 8 for an unsigned address), and a replay through the drill's
+    five-an-hour allowance, so asking in chat is never a way around those limits (red team 2026-10-19). A refusal
+    is a ``Busy`` the dog says out loud, with the seconds to wait."""
     firable = dog.kind in (common.KIND_USER, common.KIND_HOUSE)
-    return camp.ask_context(dog, viewer_id, fire_fn=(lambda: _fire_payload(dog, viewer_id)) if firable else None,
-                            tips=_graded_tips(dog))
+
+    def gate_fire() -> None:
+        if request is None:
+            return
+        try:
+            _rl_fire_route(request, authorization)
+        except HTTPException as exc:
+            raise ask_eval.Busy("rate", _retry_of(exc))
+
+    def fire_fn() -> dict:
+        gate_fire()
+        return _fire_payload(dog, viewer_id)
+
+    def earlier_fn() -> dict:
+        gate_fire()
+        return ask_eval.earlier_today(dog)
+
+    def backtest_fn(days: int) -> dict:
+        if drill.peek(dog, days) is None and viewer_id is not None and request is not None:
+            try:
+                _rl_drill(request, types.SimpleNamespace(id=viewer_id))
+            except HTTPException as exc:
+                raise ask_eval.Busy("rate", _retry_of(exc))
+        return ask_eval.backtest(dog, days, signed_in=viewer_id is not None)
+
+    return camp.ask_context(dog, viewer_id, fire_fn=fire_fn if firable else None, tips=_graded_tips(dog),
+                            earlier_fn=earlier_fn if firable else None,
+                            backtest_fn=backtest_fn if firable else None)
 
 
 @router.get("/hounds/{hound_id}/ask")
@@ -265,7 +303,8 @@ def ask_open(hound_id: str, response: Response, authorization: Optional[str] = H
 
 @router.post("/hounds/{hound_id}/ask")
 def ask_dog(hound_id: str, body: AskRequest, response: Response,
-            authorization: Optional[str] = Header(default=None), _rl: None = Depends(_rl_ask)) -> dict:
+            authorization: Optional[str] = Header(default=None), _rl: None = Depends(_rl_ask),
+            request: Request = None) -> dict:
     response.headers["Cache-Control"] = _NO_STORE
     dog = _dog(hound_id)
     question = (body.question or "").strip()
@@ -273,7 +312,7 @@ def ask_dog(hound_id: str, body: AskRequest, response: Response,
         raise _err(422, "question_required", "ask something")
     if len(question) > 300:
         raise _err(422, "question_too_long", "keep the question under 300 characters")
-    return envelope(ask.answer(question, _context(dog, _viewer_id(authorization))))
+    return envelope(ask.answer(question, _context(dog, _viewer_id(authorization), request, authorization)))
 
 
 # ---------------------------------------------------------------------------

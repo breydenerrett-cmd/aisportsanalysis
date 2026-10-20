@@ -15,9 +15,36 @@ import { voteRow } from "./dog-feedback.js";
 
 export const NOTE = "Answers are worked out from this dog's own data, not written by an AI model.";
 
-function dogMessage(lines, intent) {
+/** The pick cards an answer carries (what the dog would take), drawn with the Fire now panel's own card classes. */
+function pickCards(cards) {
+  const list = h("ul", { class: "dk-picks", "data-hook": "ask-cards" });
+  for (const c of cards) {
+    const li = h("li", { class: "dk-pick", "data-hook": "ask-card", "data-state": c.state || "" });
+    li.appendChild(h("div", { class: "dk-pick__head" }, [
+      h("strong", { class: "dk-pick__sel", text: c.selection }),
+      h("span", { class: "dk-chip", text: c.price_text }),
+      c.market ? h("span", { class: "dk-chip", text: c.market }) : null,
+      c.over_limit ? h("span", { class: "dk-chip dk-chip--warn", text: "Past the daily limit" }) : null,
+    ]));
+    li.appendChild(h("p", { class: "dk-pick__game", text: `${c.game}${c.when ? `, ${c.when}` : ""}` }));
+    if (c.best) li.appendChild(h("p", { class: "hd-fine", text: c.best }));
+    if (c.reason) li.appendChild(h("p", { class: "dk-pick__reason", text: c.reason }));
+    list.appendChild(li);
+  }
+  return list;
+}
+
+/** `lines` are drawn as paragraphs; `cards` (optional) go in at index `cardsAt` (default: the end). */
+function dogMessage(lines, intent, cards, cardsAt) {
   const msg = h("div", { class: "dk-msg dk-msg--dog", "data-hook": "ask-answer", "data-intent": intent || "" });
-  for (const line of (lines || [])) msg.appendChild(h("p", { text: line }));
+  const rows = lines || [];
+  const withCards = Array.isArray(cards) && cards.length > 0;
+  const at = withCards ? (Number.isInteger(cardsAt) ? Math.min(cardsAt, rows.length) : rows.length) : -1;
+  rows.forEach((line, i) => {
+    if (i === at) msg.appendChild(pickCards(cards));
+    msg.appendChild(h("p", { text: line }));
+  });
+  if (at === rows.length) msg.appendChild(pickCards(cards));
   return msg;
 }
 
@@ -51,7 +78,10 @@ export function mountAsk(box, { id, name, compact = false }) {
     send.setAttribute("disabled", "");
     try {
       const out = await post(`/hounds/${encodeURIComponent(id)}/ask`, { question: text });
-      const msg = dogMessage(out.lines && out.lines.length ? out.lines : [out.answer], out.intent);
+      const hasCards = Array.isArray(out.cards) && out.cards.length > 0;
+      const rows = hasCards && Array.isArray(out.ui_lines) && out.ui_lines.length ? out.ui_lines
+        : (out.lines && out.lines.length ? out.lines : [out.answer]);
+      const msg = dogMessage(rows, out.intent, hasCards ? out.cards : null, out.cards_at);
       msg.appendChild(voteRow({ id, kind: "answer", targetId: out.intent || "fallback", label: "this answer" }));
       thread.appendChild(msg);
       thread.scrollTop = msg.offsetTop ? Math.max(0, msg.offsetTop - 8) : thread.scrollHeight;     // the top of the new answer

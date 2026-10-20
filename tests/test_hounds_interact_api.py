@@ -22,7 +22,9 @@ except ImportError:  # pragma: no cover
 
 from src.appstate import users as users_store
 from src.hounds import stats, user_engine, user_store, user_view
-from src.hounds.interact import common, drill, fire, manual
+from src.hounds import user_engine_v2, user_spec
+from src.hounds.interact import ask_eval, common, drill, fire, manual
+from src.hounds.user_facts import FactBook
 from tests._hounds_user_fixtures import DATE, EVENT, spec_dict, standard_rows, utc
 
 REPO = Path(__file__).resolve().parent.parent
@@ -340,6 +342,56 @@ class Ask(ApiCase):
         out = self.say("what would you bet right now?")
         self.assertIn("Boston Red Sox to win", out["answer"])
 
+
+    def fixture_slate(self):
+        return lambda date, with_props: user_engine_v2.build_slate(
+            date, ["MLB", "NFL"], with_props=with_props, rows=standard_rows(), prop_rows=[], facts=FactBook(),
+            game_pk_index={})
+
+    def test_the_owners_question_with_no_tickets_runs_the_rules_over_todays_boards(self):
+        """2026-10-19: this exact question got 'I have not recorded a ticket yet' from a dog with a rule."""
+        ask_eval.clear_cache()
+        with mock.patch.object(ask_eval, "default_slate", self.fixture_slate()):
+            out = self.say("What bets would yopu have taken today pre market")
+        self.assertEqual(out["intent"], "picks_earlier_today")
+        self.assertNotIn("I have not recorded a ticket yet, so there is nothing to say about my bets", out["answer"])
+        self.assertIn("Boston Red Sox to win at +120", out["answer"])
+        self.assertIn("Hindsight", out["answer"])
+        self.assertEqual(out["cards"][0]["game"], "Boston Red Sox @ Seattle Mariners")
+
+    def test_a_dog_built_from_english_rules_can_be_fired_by_the_button_and_asked(self):
+        spec = user_spec.validate_spec({**user_spec.upgrade_v1(spec_dict(name="Rule Dog")), "name": "Rule Dog"})
+        made = user_store.create_hound(self.owner.id, spec)
+        ask_eval.clear_cache()
+        with mock.patch.object(ask_eval, "default_slate", self.fixture_slate()):
+            fired = self.api.fire_now(made["id"], Response(), authorization=None, _rl=None)
+            asked = self.api.ask_dog(made["id"], self.api.AskRequest(question="any plays rn"), Response(),
+                                     authorization=None, _rl=None)
+        self.assertEqual([p["selection"] for p in fired["picks"]], ["Boston Red Sox to win"])
+        self.assertIn("slate", fired)
+        self.assertEqual(asked["intent"], "picks_now")
+        self.assertIn("Boston Red Sox to win at +120", asked["answer"])
+
+    def test_asking_in_chat_is_not_a_way_around_the_fire_allowance(self):
+        from fastapi import HTTPException as Http
+        refuse = Http(status_code=429, detail={"error": "rate_limited", "retry_after": 7})
+        with mock.patch.object(self.api, "_rl_fire_route", side_effect=refuse):
+            out = self.api.ask_dog(self.id, self.api.AskRequest(question="what would you bet right now"), Response(),
+                                   authorization=None, _rl=None, request=object())
+        self.assertIn("Try me again in 7 seconds.", out["answer"])
+        self.assertEqual(out["busy"], {"kind": "rate", "retry_after": 7})
+
+    def test_a_replay_in_chat_spends_the_drill_allowance_and_a_signed_out_visitor_is_asked_to_sign_in(self):
+        from fastapi import HTTPException as Http
+        out = self.api.ask_dog(self.id, self.api.AskRequest(question="what would you have done this week"), Response(),
+                               authorization=None, _rl=None, request=object())
+        self.assertIn("for signed-in visitors", out["answer"])
+        refuse = Http(status_code=429, detail={"error": "rate_limited", "retry_after": 41})
+        with mock.patch.object(self.api, "_rl_drill", side_effect=refuse):
+            out = self.api.ask_dog(self.id, self.api.AskRequest(question="what would you have done this week"),
+                                   Response(), authorization=self.bearer(self.owner_token), _rl=None, request=object())
+        self.assertIn("Try me again in 41 seconds.", out["answer"])
+
     def test_the_greeting_has_the_dogs_name_and_questions_to_try(self):
         out = self.api.ask_open(self.id, Response(), authorization=None, _rl=None)
         self.assertIn("I am Dog Days.", out["greeting"][0])
@@ -408,6 +460,7 @@ class TheSeams(unittest.TestCase):
                 "import src.hounds.interact.common, src.hounds.interact.store, src.hounds.interact.look\n"
                 "import src.hounds.interact.fire, src.hounds.interact.manual, src.hounds.interact.ask\n"
                 "import src.hounds.interact.drill, src.hounds.interact.camp\n"
+                "import src.hounds.interact.ask_eval, src.hounds.interact.ask_intents\n"
                 "print('ok')\n")
         done = subprocess.run([sys.executable, "-c", code], cwd=str(REPO), capture_output=True, text=True)
         self.assertEqual(done.stdout.strip(), "ok", done.stderr)

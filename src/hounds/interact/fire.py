@@ -721,6 +721,11 @@ def _house_miss(ctx, game_text: str, market: str, code: str, why: str, gap) -> d
 def fire(dog: common.Dog, *, now: Optional[datetime] = None, **kw) -> dict:
     """Fire any dog that can be fired; ``None``-free: an unsupported kind raises ``NotFirable``."""
     if dog.kind == common.KIND_USER:
+        if user_spec.is_v2(dog.spec):
+            # A dog built from English rules has no ``side_rule``/``price_min``: ``fire_user`` read them and raised
+            # ``KeyError`` (a 500 from the Fire now button and a dead end in Ask). Same payload, the rule-set engine.
+            from src.hounds.interact import ask_eval
+            return ask_eval.fire_v2(dog, now=now, **kw)
         return fire_user(dog, now=now, **kw)
     if dog.kind == common.KIND_HOUSE:
         return fire_house(dog, now=now, **kw)
