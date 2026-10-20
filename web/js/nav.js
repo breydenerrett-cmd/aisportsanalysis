@@ -1,9 +1,9 @@
 /**
  * THE ONE NAVIGATION (web/js/nav.js + web/css/lhnav.css), the same component on every page.
  *
- *   top bar     wordmark, Leaderboard, Kennels, Build, Training camp; on the right "Sign in" for a visitor, or
+ *   top bar     wordmark, Leaderboard, Kennels, Live, Build, Training camp; on the right "Sign in" for a visitor, or
  *               "My kennel" and an account menu (My kennel, Change password, Sign out) for a member
- *   phone       a compact top bar (wordmark and the account button) and a bottom tab bar with the same five places
+ *   phone       a compact top bar (wordmark and the account button) and a bottom tab bar with the same six places
  *
  * SIGNED IN means a token is stored (api.js getToken), the same test every other page uses; the server still checks
  * every request, so this is a convenience, never the gate. The menu follows a sign-in or sign-out without a reload
@@ -11,7 +11,7 @@
  *
  * THE PAGE OWNS ONLY A HOST: `<header class="lh-nav" data-hook="site-nav">` with the signed-out links already in it,
  * so the links are on the page with scripts off. `mountNav` rebuilds the host's children, so running it twice is the
- * same as running it once. `data-current="leaderboard|kennels|mykennel|build|camp"` on the host names the page;
+ * same as running it once. `data-current="leaderboard|kennels|live|mykennel|build|camp"` on the host names the page;
  * without it the place is read from the address. `data-bottom="off"` leaves the phone tab bar out (the member app has
  * its own).
  *
@@ -24,10 +24,11 @@ import { h, clearNode } from "./hounds-core.js";
 export const SIGNIN_HREF = "index.html#/signin";
 export const PASSWORD_HREF = "index.html#/signin?password=1";
 
-/** The five places, in order. `key` is what `data-current` names; the tab bar shows `tab` when it has one. */
+/** The places, in order. `key` is what `data-current` names; the tab bar shows `tab` when it has one. */
 export const PLACES = [
   { key: "leaderboard", label: "Leaderboard", tab: "Board", href: "hounds.html" },
   { key: "kennels", label: "Kennels", tab: "Kennels", href: "kennels.html" },
+  { key: "live", label: "Live", tab: "Live", href: "live.html" },
   { key: "build", label: "Build", tab: "Build", href: "quiz.html" },
   { key: "camp", label: "Training camp", tab: "Camp", href: "learning.html" },
 ];
@@ -37,6 +38,7 @@ const MY_KENNEL = { key: "mykennel", label: "My kennel", tab: "Mine", href: "ken
 const ICONS = {
   leaderboard: "M4 19V9m6 10V5m6 14v-7m6 7H2",
   kennels: "M3 11l9-7 9 7v9H3zM9 20v-6h6v6",
+  live: "M12 12m-2 0a2 2 0 1 0 4 0a2 2 0 1 0-4 0M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M4.9 4.9a10 10 0 0 0 0 14.2M19.1 4.9a10 10 0 0 1 0 14.2",
   build: "M12 5v14M5 12h14",
   camp: "M4 6h16M4 12h16M4 18h10",
   mykennel: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c0-4 3.6-6 8-6s8 2 8 6",
@@ -68,6 +70,7 @@ export function placeFromAddress(loc = (typeof window !== "undefined" ? window.l
   const path = String((loc && loc.pathname) || "").split("/").pop() || "";
   const params = new URLSearchParams((loc && loc.search) || "");
   if (path === "kennels.html") return "kennels";
+  if (path === "live.html") return "live";
   if (path === "hounds.html" || path === "hound.html" || path === "") return params.get("tab") === "kennels" ? "kennels" : "leaderboard";
   if (path === "kennel.html") return params.get("u") ? "kennels" : "mykennel";
   if (path === "build-a-hound.html" || path === "quiz.html") return "build";

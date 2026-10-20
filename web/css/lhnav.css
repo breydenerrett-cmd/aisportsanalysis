@@ -3,7 +3,7 @@
  * the dog page, the builder, the training camp, the landing page and the member app.
  *
  * Calm and flat: a hairline under the bar, one accent (green), no boxes around links, the current place a soft
- * pill. Phone: a compact top bar (wordmark and the account button) plus a bottom tab bar with the same five places.
+ * pill. Phone: a compact top bar (wordmark and the account button) plus a bottom tab bar with the same six places.
  * Motion is a small fade/rise on the account menu and a colour change on hover; none of it runs for
  * prefers-reduced-motion.
  */
@@ -96,7 +96,7 @@
      Every page that loads this file and draws .lh-tabbar gets it; the member app keeps its own (css/app.css, same sum). */
   body:not(.member-app) { padding-bottom: calc(var(--lh-tabbar-h) + 24px + env(safe-area-inset-bottom, 0px)); }
   .lh-tabbar {
-    position: fixed; left: 0; right: 0; bottom: 0; z-index: 70; display: grid; grid-template-columns: repeat(5, 1fr); min-height: var(--lh-tabbar-h);
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 70; display: grid; grid-template-columns: repeat(6, 1fr); min-height: var(--lh-tabbar-h);
     padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px));
     background: rgba(11, 13, 16, .9); -webkit-backdrop-filter: saturate(160%) blur(14px); backdrop-filter: saturate(160%) blur(14px);
     box-shadow: 0 -1px 0 var(--lh-line);

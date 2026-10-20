@@ -632,5 +632,110 @@ class TheBadgeIcons(unittest.TestCase):
             self.assertRegex(JS, rf"\b{badge}: \[\[", badge)
 
 
+def many_sports_menu():
+    """The menu as the all-sports backend is meant to send it: many families and an ANY entry, with the stat conditions still marked
+    for the sports that have the data (the old two) and the player props for one."""
+    menu = copy.deepcopy(MENU)
+    families = [("ANY", "Any sport"), ("MLB", "MLB"), ("NFL", "NFL"), ("tennis", "Tennis"), ("soccer", "Soccer"), ("cricket", "Cricket"),
+                ("nba", "NBA"), ("nhl", "NHL"), ("ncaaf", "NCAAF"), ("ncaab", "NCAAB"), ("mma", "MMA"), ("boxing", "Boxing"), ("rugby", "Rugby")]
+    menu["sports"] = [{"value": v, "label": label} for v, label in families]
+    every = [v for v, _ in families]
+    for m in menu["markets"]:
+        m["sports"] = ["MLB"] if m["kind"] == "prop" else list(every)
+    return menu
+
+
+def strip_for_names(js):
+    code = re.sub(r"export const EXAMPLES = \[.*?\];", "", js, flags=re.S)
+    code = re.sub(r"/\*.*?\*/", "", code, flags=re.S)
+    return re.sub(r"(?m)^\s*//.*$", "", code)
+
+
+@unittest.skipUnless(HAS_NODE, "node not installed")
+class TheSportChoiceIsASearchableChipGrid(unittest.TestCase):
+    MANY = many_sports_menu()
+
+    def go(self, extra_actions=(), queries=(), menu=None):
+        routes = base_routes(**{"/hounds/builder/menu": [200, menu or self.MANY]})
+        return build(routes, actions=[CLICK_BLANK, *extra_actions], queries=[
+            q("chips", "[data-hook='rule-sports'] button", "texts"), q("pressed", "[data-hook='rule-sports'] button[aria-pressed='true']", "texts"),
+            q("search", "[data-hook='sport-search']", "count"), *queries])
+
+    def test_every_family_is_a_chip_with_any_sport_first_and_the_first_real_sport_picked(self):
+        f = self.go()["final"]
+        self.assertEqual(f["chips"][0], "Any sport")
+        self.assertEqual(f["chips"][1:], [s["label"] for s in self.MANY["sports"] if s["value"] != "ANY"])
+        self.assertEqual(f["pressed"], ["MLB"])
+        self.assertEqual(f["search"], 1)
+
+    def test_a_short_menu_has_no_search_box(self):
+        self.assertEqual(build(actions=[CLICK_BLANK], queries=[q("search", "[data-hook='sport-search']", "count")])["final"]["search"], 0)
+
+    def test_the_search_box_narrows_the_chips_and_keeps_a_picked_sport_and_any_sport(self):
+        f = self.go([dict(do="set", sel="[data-hook='sport-search']", value="ten", wait=60)])["final"]
+        self.assertEqual(f["chips"], ["Any sport", "MLB", "Tennis"])                  # MLB stays: it is picked
+        out = self.go([dict(do="set", sel="[data-hook='sport-search']", value="zzz", wait=60)], [q("none", "[data-hook='sport-none']", "hidden")])
+        self.assertFalse(out["final"]["none"])
+        out = self.go([dict(do="set", sel="[data-hook='sport-search']", value="zzz", wait=40), dict(do="set", sel="[data-hook='sport-search']", value="", wait=60)])
+        self.assertEqual(len(out["final"]["chips"]), len(self.MANY["sports"]))
+
+    def test_picking_a_sport_adds_it_and_any_sport_clears_the_rest(self):
+        out = self.go([dict(do="click", sel="[data-sport='tennis']", wait=500)])
+        self.assertEqual(out["final"]["pressed"], ["MLB", "Tennis"])
+        self.assertEqual(preview_posts(out)[-1]["rules"][0]["sports"], ["MLB", "tennis"])
+        out = self.go([dict(do="click", sel="[data-sport='tennis']", wait=80), dict(do="click", sel="[data-sport='ANY']", wait=500)])
+        self.assertEqual(out["final"]["pressed"], ["Any sport"])
+        self.assertEqual(preview_posts(out)[-1]["rules"][0]["sports"], ["ANY"])
+        out = self.go([dict(do="click", sel="[data-sport='ANY']", wait=80), dict(do="click", sel="[data-sport='soccer']", wait=80)])
+        self.assertEqual(out["final"]["pressed"], ["Soccer"])                          # a real sport replaces Any sport
+
+    def test_player_props_are_greyed_for_sports_the_menu_does_not_list_them_for(self):
+        prop = next(m["value"] for m in self.MANY["markets"] if m["kind"] == "prop")
+        out = self.go([dict(do="click", sel=f"[data-market='{prop}']", wait=80)], [q("dis", "[data-hook='rule-sports'] button", "attrs", attr="disabled")])
+        # a prop rule can only be MLB, so every other chip (Any sport included) is disabled
+        labels, disabled = out["final"]["chips"], out["final"]["dis"]
+        self.assertEqual([lab for lab, d in zip(labels, disabled) if d is None], ["MLB"])
+
+    def test_stat_conditions_grey_out_with_one_line_when_a_non_mlb_nfl_sport_is_picked(self):
+        mlb_only = [c for c in self.MANY["conditions"] if c["sports"] == ["MLB"] and "ml_spread" in c["kinds"]][0]
+        both = [c for c in self.MANY["conditions"] if c["sports"] == ["MLB", "NFL"] and "ml_spread" in c["kinds"]][0]
+        qs = [q("opts", "[data-hook='add-condition'] option", "texts"), q("greyed", "[data-hook='add-condition'] option[data-greyed='sport']", "count"),
+              q("note", "[data-hook='conditions-greyed']"), q("note_n", "[data-hook='conditions-greyed']", "count")]
+        # MLB (the default): the MLB-and-NFL-only ones are fine; nothing is greyed for the sport, and there is no note
+        base = self.go(queries=qs)["final"]
+        self.assertEqual((base["greyed"], base["note_n"]), (0, 0))
+        # Tennis alone: every stat condition is greyed and says which sports have it, in the menu's own words
+        out = self.go([dict(do="click", sel="[data-sport='tennis']", wait=80), dict(do="click", sel="[data-sport='MLB']", wait=80)], qs)
+        f = out["final"]
+        self.assertGreater(f["greyed"], 20)
+        self.assertIn(f"{both['label']} (MLB and NFL only)", f["opts"])
+        self.assertIn(f"{mlb_only['label']} (MLB only)", f["opts"])
+        self.assertEqual(f["note_n"], 1)                                              # one line, not one per condition
+        self.assertRegex(f["note"], r"^\d+ stat conditions are greyed out \(MLB and NFL only; MLB only\)\.")
+
+    def test_a_greyed_condition_cannot_be_added(self):
+        both = [c for c in self.MANY["conditions"] if c["sports"] == ["MLB", "NFL"] and "ml_spread" in c["kinds"]][0]
+        out = self.go([dict(do="click", sel="[data-sport='soccer']", wait=60), dict(do="click", sel="[data-sport='MLB']", wait=60),
+                       dict(do="set", sel="[data-hook='add-condition']", value=both["id"], wait=200)], [q("conds", "[data-hook='condition']", "count")])
+        self.assertEqual(out["final"]["conds"], 0)
+
+    def test_any_sport_greys_the_stat_conditions_too(self):
+        out = self.go([dict(do="click", sel="[data-sport='ANY']", wait=80)], [q("greyed", "[data-hook='add-condition'] option[data-greyed='sport']", "count")])
+        self.assertGreater(out["final"]["greyed"], 20)
+
+    def test_moving_to_a_sport_without_the_data_removes_a_stat_condition_and_says_so(self):
+        cond = [c for c in self.MANY["conditions"] if c["sports"] == ["MLB", "NFL"] and "ml_spread" in c["kinds"] and c["available"]][0]
+        out = self.go([dict(do="set", sel="[data-hook='add-condition']", value=cond["id"], wait=250),
+                       dict(do="click", sel="[data-sport='soccer']", wait=100)],
+                      [q("conds", "[data-hook='condition']", "count"), q("dropped", "[data-hook='sport-dropped']")])
+        self.assertEqual(out["final"]["conds"], 0)
+        self.assertIn("1 stat condition was removed", out["final"]["dropped"])
+
+    def test_the_script_still_names_no_sport(self):
+        code = strip_for_names(JS)
+        for word in ('"MLB"', '"NFL"', '"tennis"', '"soccer"', '"cricket"'):
+            self.assertNotIn(word, code, word)
+
+
 if __name__ == "__main__":
     unittest.main()

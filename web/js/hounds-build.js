@@ -75,16 +75,28 @@ function kindOf(rule) {
   return m ? m.kind : "ml_spread";
 }
 
+/** The menu's "any sport" entry (value "ANY"): a rule that covers every sport the menu lists. */
+const ANY_VALUE = "ANY";
+const isAny = (sp) => !!sp && (sp.any === true || sp.value === ANY_VALUE);
+const concreteSports = (menu) => (menu.sports || []).filter((x) => !isAny(x)).map((x) => x.value);
+
+/** Does a list of sports (a market's, a condition's) cover `value`? "Any sport" is covered by a list that names ANY or every sport. */
+function covers(list, value) {
+  if (!list) return true;
+  if (list.includes(value)) return true;
+  return value === ANY_VALUE && (list.includes(ANY_VALUE) || concreteSports(S.menu).every((sp) => list.includes(sp)));
+}
+
 /** The sports every chosen market is offered in. Read from the menu; nothing here names a sport. */
 function allowedSports(rule) {
   const picked = (rule.markets || []).map((v) => market(S.menu, v)).filter(Boolean);
-  return S.menu.sports.map((x) => x.value).filter((sp) => picked.every((m) => !m.sports || m.sports.includes(sp)));
+  return S.menu.sports.map((x) => x.value).filter((sp) => picked.every((m) => covers(m.sports, sp)));
 }
 
 function blankRule() {
   const m = S.menu;
   const first = m.markets[0];
-  return { label: "", sports: [m.sports[0].value], markets: [first.value],
+  return { label: "", sports: [(m.sports.find((x) => !isAny(x)) || m.sports[0]).value], markets: [first.value],
     side: (m.sides.find((x) => x.value === "either") || m.sides[0]).value, price_min: m.price.lowest,
     price_max: m.price.highest, line_min: null, line_max: null,
     min_books: first.kind === "prop" ? m.min_books.default_prop : m.min_books.default_game, when: null };
@@ -239,29 +251,54 @@ function paramControl(cond, param, item, rule, onChange) {
   return null;
 }
 
-function conditionOptionsFor(rule) {
+/** Does the condition run for every sport the rule picked? A stat the menu marks for some sports only does not run for the rest. */
+function condSupports(c, rule) {
+  return (rule.sports || []).every((sp) => covers(c.sports, sp));
+}
+
+/** The conditions the rule's kind and markets can use. `all` keeps the ones its sports cannot run (shown greyed out). */
+function conditionOptionsFor(rule, { all = false } = {}) {
   const kind = kindOf(rule);
   const markets = rule.markets || [];
   return (S.menu.conditions || []).filter((c) => c.kinds.includes(kind)
-    && (rule.sports || []).every((sp) => c.sports.includes(sp))
+    && (all || condSupports(c, rule))
     && (!c.only_markets.length || markets.every((m) => c.only_markets.includes(m))));
 }
 
+/** "MLB and NFL only": the sports the menu names for a condition, in the menu's own words. */
+function onlyNote(c) {
+  const names = (c.sports || []).map((v) => (S.menu.sports.find((x) => x.value === v) || {}).label || v);
+  if (!names.length) return "not available";
+  const list = names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}` : names[0];
+  return `${list} only`;
+}
+
+/** One line for the rule card: how many stat conditions are greyed out for the chosen sports and why; "" when none are. */
+function greyedNote(rule) {
+  const greyed = conditionOptionsFor(rule, { all: true }).filter((c) => !condSupports(c, rule));
+  if (!greyed.length) return "";
+  const sets = [...new Set(greyed.map((c) => onlyNote(c)))];
+  return `${greyed.length} stat ${greyed.length === 1 ? "condition is" : "conditions are"} greyed out (${sets.join("; ")}). Pick ${sets.length === 1 ? "that sport" : "one of those sports"} to use ${greyed.length === 1 ? "it" : "them"}.`;
+}
+
 function addConditionControl(rule, group, onChange) {
-  const options = conditionOptionsFor(rule);
+  const options = conditionOptionsFor(rule, { all: true });
   const sel = h("select", { "data-hook": "add-condition", "aria-label": "Add a condition" });
   sel.appendChild(h("option", { value: "", text: "Add a condition..." }));
   const groups = {};
   for (const c of options) (groups[c.group] ||= []).push(c);
   for (const [name, items] of Object.entries(groups)) {
-    sel.appendChild(h("optgroup", { label: name }, items.map((c) => h("option", Object.assign({ value: c.id,
-      text: c.available ? c.label : `${c.label} (not available yet)` }, c.available ? {} : { disabled: true })))));
+    sel.appendChild(h("optgroup", { label: name }, items.map((c) => {
+      const fits = condSupports(c, rule);
+      const text = !fits ? `${c.label} (${onlyNote(c)})` : c.available ? c.label : `${c.label} (not available yet)`;
+      return h("option", Object.assign({ value: c.id, text }, fits && c.available ? {} : { disabled: true, "data-greyed": fits ? "unavailable" : "sport" }));
+    })));
   }
   sel.value = "";
   const fire = () => {
     const id = sel.value;
     const cond = condMenu(id);
-    if (!id || !cond || !cond.available) return;
+    if (!id || !cond || !cond.available || !condSupports(cond, rule)) return;
     const item = { id };
     for (const p of cond.params) item[p.name] = Array.isArray(p.default) ? p.default.slice() : p.default;
     group.items.push(item);
@@ -305,6 +342,75 @@ function renderGroup(rule, group, depth, parent, onChange) {
   return node;
 }
 
+// ---- the sport chooser: a searchable chip grid -------------------------------------------------------
+
+/** More sports than this and the grid gets a search box. */
+const SEARCH_FROM = 8;
+
+/** What dropped out of a rule when its sports changed, for one line under the grid (not part of the spec). */
+const droppedNotes = new WeakMap();
+
+/** A sport was picked or put down: the rule keeps the menu's order, "any sport" stands alone, and the stat conditions the new
+ *  sports cannot run leave with the change (the line under the grid says which and why). */
+function chooseSport(rule, value, onChange) {
+  const menu = S.menu;
+  const any = menu.sports.find(isAny);
+  const set = new Set(rule.sports);
+  if (any && value === any.value) { set.clear(); set.add(value); }
+  else {
+    if (any) set.delete(any.value);
+    if (set.has(value)) set.delete(value); else set.add(value);
+  }
+  if (!set.size) return;
+  rule.sports = menu.sports.map((x) => x.value).filter((v) => set.has(v));
+  const before = rule.when ? countConditions(rule.when) : 0;
+  rule.when = pruneConditions(rule, rule.when);
+  const dropped = before - (rule.when ? countConditions(rule.when) : 0);
+  if (dropped > 0) droppedNotes.set(rule, `${dropped} stat ${dropped === 1 ? "condition was" : "conditions were"} removed because the sport you picked does not have that data.`);
+  else droppedNotes.delete(rule);
+  onChange(true);
+}
+
+function countConditions(tree) { return tree.items.reduce((n, i) => n + (i.items ? countConditions(i) : 1), 0); }
+
+/**
+ * Every sport the menu lists as a chip, "Any sport" first, with a search box once there are many. The chips are drawn again
+ * on each keystroke without redrawing the card, so the box keeps its focus. A sport the chosen markets are not offered in
+ * is greyed out; a picked sport is never hidden by the search.
+ */
+function sportGrid(rule, onChange) {
+  const menu = S.menu;
+  const wrap = h("div", { class: "bd-sportgrid", "data-hook": "rule-sport-grid" });
+  const list = menu.sports.slice().sort((a, b) => (isAny(b) ? 1 : 0) - (isAny(a) ? 1 : 0));
+  const grid = h("div", { class: "bd-chips bd-sportchips", role: "group", "aria-label": "Sports", "data-hook": "rule-sports" });
+  const none = h("p", { class: "hd-fine", "data-hook": "sport-none", role: "status", hidden: true, text: "No sport matches that." });
+  let needle = "";
+  const draw = () => {
+    clearNode(grid);
+    const allowed = allowedSports(rule);
+    const shown = list.filter((sp) => !needle || rule.sports.includes(sp.value) || isAny(sp) || String(sp.label).toLowerCase().includes(needle));
+    for (const sp of shown) {
+      const blocked = !allowed.includes(sp.value);
+      grid.appendChild(chipButton(sp.label, rule.sports.includes(sp.value), () => chooseSport(rule, sp.value, onChange),
+        Object.assign({ "data-sport": sp.value }, blocked ? { disabled: true, title: "Not offered for the markets chosen" } : {})));
+    }
+    if (needle && shown.every((sp) => isAny(sp) || rule.sports.includes(sp.value))) none.removeAttribute("hidden"); else none.setAttribute("hidden", "");
+  };
+  if (list.length > SEARCH_FROM) {
+    const search = h("input", { type: "search", class: "bd-sportsearch", placeholder: "Search sports", autocomplete: "off", "data-hook": "sport-search", "aria-label": "Search sports" });
+    const fire = () => { needle = String(search.value).trim().toLowerCase(); draw(); };
+    search.addEventListener("input", fire);
+    search.addEventListener("change", fire);
+    wrap.appendChild(search);
+  }
+  draw();
+  wrap.appendChild(grid);
+  wrap.appendChild(none);
+  const dropped = droppedNotes.get(rule);
+  if (dropped) wrap.appendChild(h("p", { class: "hd-fine bd-note", "data-hook": "sport-dropped", role: "status", text: dropped }));
+  return wrap;
+}
+
 // ---- the rule cards ---------------------------------------------------------------------------------
 
 function ruleCard(rule, index, onChange) {
@@ -317,19 +423,7 @@ function ruleCard(rule, index, onChange) {
       on: { click: () => { S.spec.rules.splice(index, 1); onChange(true); } } }) : null]));
 
   // sports
-  const sports = h("div", { class: "bd-chips", role: "group", "aria-label": "Sports", "data-hook": "rule-sports" });
-  for (const sp of menu.sports) {
-    const on = rule.sports.includes(sp.value);
-    const blocked = !allowedSports(rule).includes(sp.value);
-    sports.appendChild(chipButton(sp.label, on, () => {
-      const set = new Set(rule.sports);
-      if (set.has(sp.value)) set.delete(sp.value); else set.add(sp.value);
-      if (!set.size) return;
-      rule.sports = menu.sports.map((x) => x.value).filter((v) => set.has(v));
-      onChange(true);
-    }, Object.assign({ "data-sport": sp.value }, blocked ? { disabled: true, title: "Not offered for the markets chosen" } : {})));
-  }
-  card.appendChild(h("div", { class: "hd-field bd-field" }, [h("span", { class: "bd-label", text: "Sport" }), sports]));
+  card.appendChild(h("div", { class: "hd-field bd-field" }, [h("span", { class: "bd-label", text: "Sport" }), sportGrid(rule, onChange)]));
 
   // markets, grouped by kind; a rule is one kind
   const markets = h("div", { class: "bd-marketgroups", "data-hook": "rule-markets" });
@@ -391,6 +485,8 @@ function ruleCard(rule, index, onChange) {
   const condBox = h("div", { class: "bd-conds", "data-hook": "conditions" });
   if (!rule.when) rule.when = { op: "all", items: [] };
   condBox.appendChild(h("h4", { class: "bd-subhead", text: "Only when" }));
+  const greyed = greyedNote(rule);
+  if (greyed) condBox.appendChild(h("p", { class: "hd-fine bd-note", "data-hook": "conditions-greyed", text: greyed }));
   condBox.appendChild(renderGroup(rule, rule.when, 1, null, onChange));
   card.appendChild(condBox);
   return card;

@@ -1,0 +1,111 @@
+/*
+ * The live board (web/live.html, web/js/live-board.js): "What's on". A sportsbook's live tab in the site's own dark slate (the
+ * hounds.css custom properties): a sticky row of sport chips, a LIVE section with a pulsing dot, the next 24 hours, and
+ * one dense row per game with the two sides and the best price quoted for each. Phone first: one column, 16px gutters, every tap
+ * target at least 44px, the chip row scrolls inside its own box and the document never scrolls sideways.
+ *
+ * Colour never carries meaning alone: a live game says "Live", a missing price says "no price". The pulse is off for
+ * prefers-reduced-motion.
+ */
+
+.lv-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; margin-bottom: 6px; }
+.lv-eyebrow { margin: 0 0 4px; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--hd-accent); }
+.lv-refresh { min-height: 40px; padding: 0 16px; }
+.lv-status { margin: 4px 0 6px; }
+.lv-note { margin: 4px 0 8px; font-size: 14px; }
+
+/* ---- the sport chips: sticky under the bar, scrolls sideways inside its own box on a phone ------------------ */
+.lv-bar {
+  position: sticky; top: 52px; z-index: 20; margin: 0 -16px; padding: 8px 16px; background: rgba(14, 17, 22, .94);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: 0 1px 0 var(--hd-line);
+}
+@media (min-width: 761px) { .lv-bar { top: 56px; } }
+.lv-chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.lv-chips::-webkit-scrollbar { display: none; }
+@media (min-width: 761px) { .lv-chips { flex-wrap: wrap; overflow: visible; } }
+.lv-chip {
+  flex: none; display: inline-flex; align-items: center; gap: 7px; min-height: 44px; padding: 0 14px; border: 1px solid var(--hd-line);
+  border-radius: 999px; background: transparent; color: var(--hd-text-2); font: 600 14px/1 var(--font-body, 'Instrument Sans', system-ui, sans-serif);
+  cursor: pointer; transition: background-color .12s ease, border-color .12s ease;
+}
+.lv-chip:hover { border-color: rgba(255, 255, 255, .3); color: #fff; }
+.lv-chip[aria-pressed="true"] { background: rgba(47, 208, 122, .14); border-color: var(--hd-accent); color: #fff; }
+.lv-chip:focus-visible, .lv-send:focus-visible, .lv-dog:focus-visible { outline: 2px solid var(--hd-accent); outline-offset: 2px; }
+.lv-chip__n { font-weight: 500; font-size: 12.5px; color: var(--hd-mute); font-variant-numeric: tabular-nums; }
+.lv-chip[aria-pressed="true"] .lv-chip__n { color: var(--hd-text-2); }
+
+/* ---- the live dot ------------------------------------------------------------------------------------------- */
+.lv-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--hd-accent); box-shadow: 0 0 0 0 rgba(47, 208, 122, .55); }
+@media (prefers-reduced-motion: no-preference) {
+  .lv-dot { animation: lv-pulse 1.8s ease-out infinite; }
+}
+@keyframes lv-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(47, 208, 122, .55); }
+  70% { box-shadow: 0 0 0 8px rgba(47, 208, 122, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(47, 208, 122, 0); }
+}
+
+/* ---- sections and rows -------------------------------------------------------------------------------------- */
+.lv-section { margin: 20px 0 8px; }
+.lv-section__head { display: flex; align-items: center; gap: 10px; margin: 0 0 8px; }
+.lv-section__title { margin: 0; font-size: 18px; letter-spacing: .01em; }
+.lv-section__n { margin: 0; }
+.lv-quiet { margin: 4px 0 8px; }
+.lv-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 900px) { .lv-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.lv-row {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px 14px; padding: 12px 14px;
+  background: var(--hd-card); border: 1px solid var(--hd-line); border-radius: 6px; min-width: 0;
+}
+.lv-row[data-live="true"] { border-left: 3px solid var(--hd-accent); }
+.lv-row__body { min-width: 0; }
+.lv-row__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 0 0 6px; font-size: 12.5px; color: var(--hd-mute); }
+.lv-pill {
+  display: inline-flex; align-items: center; gap: 6px; padding: 1px 8px; border: 1px solid var(--hd-line); border-radius: 4px;
+  font-size: 11.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--hd-text-2); background: var(--hd-card-2);
+}
+.lv-pill--live { color: #5BE39A; border-color: rgba(47, 208, 122, .5); background: rgba(47, 208, 122, .08); }
+.lv-league { color: var(--hd-text-2); font-weight: 600; }
+.lv-family { color: var(--hd-mute); }
+.lv-when, .lv-detail { font-variant-numeric: tabular-nums; }
+.lv-teams { display: grid; gap: 3px; }
+.lv-team { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+.lv-team__name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 16px; font-weight: 600; color: var(--hd-text); }
+.lv-team__score { flex: none; font-size: 16px; font-weight: 700; color: #fff; min-width: 1.4em; text-align: right; }
+.lv-price { flex: none; min-width: 4.2em; text-align: right; font-size: 15px; font-weight: 600; color: var(--hd-text-2); }
+.lv-price--none { font-weight: 400; font-size: 12.5px; color: var(--hd-mute); }
+.lv-row__act { align-self: center; }
+.lv-send { min-height: 44px; padding: 0 16px; font-size: 14px; }
+.lv-send[aria-expanded="true"] { border-color: var(--hd-accent); color: #fff; }
+.lv-more { margin: 10px 0 0; min-height: 44px; }
+
+/* narrow phones: the button drops under the teams, full width, so the names keep their room */
+@media (max-width: 480px) {
+  .lv-row { grid-template-columns: minmax(0, 1fr); }
+  .lv-row__act .btn { width: 100%; }
+}
+
+/* ---- the tray under a row (sign in, pick a dog, the answer) -------------------------------------------------- */
+.lv-tray { grid-column: 1 / -1; padding: 10px 0 2px; border-top: 1px solid var(--hd-line); }
+.lv-tray__ask { margin: 0 0 8px; font-size: 15px; font-weight: 600; color: var(--hd-text); }
+.lv-dogs { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 8px; }
+.lv-dog {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 48px; padding: 4px 14px 4px 6px; border: 1px solid var(--hd-line); border-radius: 8px;
+  background: var(--hd-card-2); color: var(--hd-text); font: 600 15px/1.1 var(--font-body, 'Instrument Sans', system-ui, sans-serif); cursor: pointer;
+}
+.lv-dog:hover { border-color: var(--hd-accent); }
+.lv-dog__face { display: inline-flex; width: 36px; height: 36px; align-items: center; justify-content: center; flex: none; }
+.lv-dog__state { margin: 0 0 0 2px; font-weight: 400; }
+.lv-result { display: grid; gap: 8px; margin: 0 0 8px; }
+.lv-result__line { padding: 8px 12px; background: var(--hd-card-2); border: 1px solid var(--hd-line); border-left: 3px solid var(--hd-flat); border-radius: 4px; }
+.lv-result__line--pick { border-left-color: var(--hd-accent); }
+.lv-result__line p { margin: 2px 0 0; font-size: 14px; }
+.lv-full { margin: 6px 0 8px; font-size: 14px; }
+.lv-full > summary { cursor: pointer; min-height: 36px; display: flex; align-items: center; color: var(--hd-mute); }
+.lv-tray__actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0; }
+.lv-tray__actions .btn { min-height: 44px; }
+.lv-empty { margin-top: 18px; }
+
+@media (max-width: 760px) {
+  .lv-page .hd-wrap h1 { margin-top: 4px; }
+}
