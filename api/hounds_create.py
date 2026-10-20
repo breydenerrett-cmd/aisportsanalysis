@@ -135,6 +135,7 @@ def hound_summary(hound: dict, *, verified: Optional[bool] = None) -> dict:
         "version_no": hound["version_no"], "version_of": hound["version_of"],
         "copied_from": hound["copied_from"], "coach_opt_in": hound["coach_opt_in"],
         "retire_reason": hound["retire_reason"], "created_at": hound["created_at"],
+        "removed_by_owner": user_store.removed_by_owner(hound),
         "paper_only": True, "not_advice": user_spec.NOT_ADVICE,
         # How the dog looks, and its rules in sentences, wherever a dog is listed.
         "color": spec.get("color", "ember"), "badge": spec.get("badge", "bone"),
@@ -155,6 +156,27 @@ def owner_summary(hound: dict, *, verified: Optional[bool] = None) -> dict:
     except (KeyError, TypeError):
         out["rule_sentences"] = []
     return out
+
+
+def bare_owner_summary(hound: dict) -> dict:
+    """The least a dog's owner needs to see and edit it, built from the store row alone. Used when the full summary
+    (record, verdict, ledger) cannot be built for one dog: one dog whose numbers fail must never take the whole
+    list down, because the list is what the builder's Edit and Remove buttons are made from."""
+    try:
+        spec = hound["spec"] if user_spec.is_v2(hound["spec"]) else user_spec.upgrade_v1(hound["spec"])
+    except (KeyError, TypeError, ValueError):
+        spec = None
+    try:
+        sentences = (english_render.rule_sentences(spec) + english_render.global_sentences(spec)) if spec and spec.get("rules") else []
+    except (KeyError, TypeError):
+        sentences = []
+    base = hound["spec"] if isinstance(hound.get("spec"), dict) else {}
+    return {"id": hound["id"], "name": hound["name"], "tagline": hound.get("tagline") or "", "status": hound["status"],
+            "version_no": hound["version_no"], "version_of": hound["version_of"], "root_id": hound["root_id"],
+            "retire_reason": hound["retire_reason"], "removed_by_owner": user_store.removed_by_owner(hound),
+            "created_at": hound["created_at"], "color": base.get("color", "ember"), "badge": base.get("badge", "bone"),
+            "custom_rules": user_spec.is_v2(base), "record": {}, "spec": spec, "rule_sentences": sentences,
+            "summary_unavailable": True, "paper_only": True, "not_advice": user_spec.NOT_ADVICE}
 
 
 def _spec_error(exc: user_spec.SpecError) -> HTTPException:
@@ -220,9 +242,13 @@ def create_hound(body: CreateHoundRequest,
 def my_hounds(current_user: users_store.User = Depends(get_current_user),
               _rl: None = Depends(_rate_limit_read)) -> dict:
     verified = user_engine.ledger_verified()
-    return _wrap({"hounds": [owner_summary(h, verified=verified)
-                             for h in user_store.list_for_owner(current_user.id)],
-                  "limit_running": user_spec.MAX_RUNNING_PER_ACCOUNT})
+    out = []
+    for h in user_store.list_for_owner(current_user.id):
+        try:
+            out.append(owner_summary(h, verified=verified))
+        except Exception:  # noqa: BLE001 -- one dog's broken summary must not hide the rest (or their Edit / Remove)
+            out.append(bare_owner_summary(h))
+    return _wrap({"hounds": out, "limit_running": user_spec.MAX_RUNNING_PER_ACCOUNT})
 
 
 @router.get("/hounds/{hound_id}/spec")
@@ -243,7 +269,9 @@ def hound_spec(hound_id: str, _rl: None = Depends(_rate_limit_read)) -> dict:
 
 
 class RetireRequest(BaseModel):
-    reason: str
+    # An owner's removal needs no words (the button says what it does); an admin's moderation retirement must
+    # carry one, and the store refuses an empty reason.
+    reason: Optional[str] = None
 
 
 @router.post("/hounds/{hound_id}/retire")
@@ -261,8 +289,9 @@ def retire_hound(hound_id: str, body: RetireRequest,
         _manage_check(user)
         hound = _owned(hound_id, user)
         actor = f"owner:{user.id}"
+    reason = body.reason if (body.reason or "").strip() else (user_store.OWNER_REMOVED_REASON if actor.startswith("owner:") else "")
     try:
-        retired = user_store.retire_hound(hound["id"], by=actor, reason=body.reason)
+        retired = user_store.retire_hound(hound["id"], by=actor, reason=reason)
     except user_store.StoreError as exc:
         raise _store_error(exc)
     return _wrap({"hound": hound_summary(retired)})
@@ -389,12 +418,21 @@ def english_to_spec(body: EnglishRequest, authorization: Optional[str] = Header(
     read everything and the owner has switched the Zapier translator on, a signed-in caller also gets a
     translation job (poll GET /hounds/english/{job_id}); a signed-out caller is told to sign in for it.
     With the translator off, the answer says plainly which words were not understood. The result is
-    always a DRAFT: the page shows it as sentences and rule cards to confirm and edit."""
+    always a DRAFT: the page shows it as sentences and rule cards to confirm and edit.
+
+    THE DRAFT NEVER DEPENDS ON THE TRANSLATOR (2026-10-19, a member's long strategy left the builder looking
+    dead). Every outcome of the translation side (no hook, signed out, rate limited, job started) is a 200
+    that still carries the parser's draft, what it understood and did not, what it assumed and its
+    suggestions, with `translation.status` saying what the second reader is doing. The only refusals are an
+    empty text and a text over the limit, and each says so in words."""
     text = (body.text or "").strip()
     if not text:
-        raise HTTPException(status_code=422, detail={"error": "text_required"})
+        raise HTTPException(status_code=422, detail={"error": "text_required", "message": "Type a strategy first."})
     if len(text) > english_parser.MAX_TEXT:
-        raise HTTPException(status_code=422, detail={"error": "text_too_long", "max": english_parser.MAX_TEXT})
+        raise HTTPException(status_code=422, detail={
+            "error": "text_too_long", "max": english_parser.MAX_TEXT, "length": len(text),
+            "message": (f"That is {len(text)} characters and the limit is {english_parser.MAX_TEXT}. Shorten it, or "
+                        "send it as a few shorter sentences.")})
     parsed = english_parser.parse(text)
     out = {"status": "parsed" if parsed["complete"] else "partial", "text": text, **parsed}
     out["unread"] = [c["text"] for c in parsed["not_understood"] if c.get("text")]
@@ -413,7 +451,12 @@ def english_to_spec(body: EnglishRequest, authorization: Optional[str] = Header(
         return _wrap(out)
     check = _translate_limiter.check(ratelimit.key_for(f"user:{user_id}"))
     if not check.allowed:
-        raise HTTPException(status_code=429, detail={"error": "rate_limited", "retry_after": check.retry_after})
+        wait = max(1, int(round((check.retry_after or 0) / 60.0)))
+        out["translation"] = {"status": "rate_limited", "retry_after": check.retry_after, "per_hour": TRANSLATE_PER_USER_PER_HOUR}
+        out["message"] = (f"You have used all {TRANSLATE_PER_USER_PER_HOUR} second-reader tries for this hour (more in about "
+                          f"{wait} minute{'' if wait == 1 else 's'}). Here is what I could read; finish the rest with the "
+                          "rule cards or rephrase.")
+        return _wrap(out)
     job = english_jobs.create_job(user_id, text, partial={
         "understood": parsed["understood"], "not_understood": parsed["not_understood"]})
     english_translate.start(job["id"], text)

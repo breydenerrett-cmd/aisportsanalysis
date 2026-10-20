@@ -19,20 +19,25 @@ export function builderSkeleton() {
     h("section", hook("step-describe", { class: "bd-step", "aria-label": "Describe your strategy" }), [
       h("p", { class: "bd-step__no", text: "1. Say it" }),
       h("label", { class: "bd-sr", for: "english-input", text: "Your strategy in plain English" }),
-      h("textarea", hook("english-input", { id: "english-input", class: "bd-english", rows: "3", maxlength: "600",
+      h("textarea", hook("english-input", { id: "english-input", class: "bd-english", rows: "3", "aria-describedby": "english-count-note",
         placeholder: "e.g. Bet home underdogs between +120 and +200 on 2+ days rest. Max 2 bets a day." })),
+      h("p", { class: "bd-countrow" }, [h("span", hook("english-count", { class: "hd-fine bd-count", id: "english-count-note", "aria-live": "polite", text: "0 / 600" }))]),
+      h("p", hook("english-limit", { class: "bd-msg bd-msg--warn", role: "status", hidden: true })),
       h("div", hook("example-chips", { class: "bd-chips", role: "group", "aria-label": "Examples to start from" })),
       h("div", { class: "bd-actions" }, [
         h("button", hook("english-go", { type: "button", class: "btn btn--primary", text: "Read my strategy" })),
         h("button", hook("blank-rule", { type: "button", class: "btn btn--ghost", text: "Start from a blank rule" })),
-        h("span", hook("english-status", { class: "hd-fine", "aria-live": "polite" }))]),
+        h("span", hook("english-status", { class: "hd-fine", role: "status", "aria-live": "polite" }))]),
       h("div", hook("english-read", { class: "bd-read", hidden: true }), [
         h("h4", { class: "hd-h3", text: "How I read it" }),
         h("ul", hook("english-understood", { class: "bd-list" })),
         h("div", hook("english-unread", { class: "bd-unread", hidden: true }), [
           h("h4", { class: "hd-h3", text: "What I could not read" }),
           h("ul", hook("english-notread", { class: "bd-list bd-list--warn" })),
-          h("p", hook("english-translator", { class: "hd-fine" }))]),
+          h("p", hook("english-translator", { class: "hd-fine bd-translator", role: "status", "aria-live": "polite" }))]),
+        h("div", hook("english-suggestions", { class: "bd-suggest", hidden: true }), [
+          h("h4", { class: "hd-h3", text: "Try saying it this way" }),
+          h("ul", hook("english-suggest-list", { class: "bd-list" }))]),
         h("p", hook("english-assumed", { class: "hd-fine", hidden: true }))])]),
 
     h("section", hook("step-rules", { class: "bd-step", "aria-label": "What your dog will do" }), [
@@ -75,7 +80,8 @@ export function builderSkeleton() {
       h("p", { class: "bd-save" }, [
         h("button", hook("build-submit", { type: "button", class: "btn btn--primary btn--lg", text: "Send my dog in" })),
         h("button", hook("edit-cancel", { type: "button", class: "btn btn--ghost", hidden: true, text: "Stop editing" })),
-        h("span", hook("limit-text", { class: "hd-fine" }))])]),
+        h("span", hook("limit-text", { class: "hd-fine" })),
+        h("span", hook("save-hint", { class: "hd-fine" }))])]),
 
     h("details", { class: "bd-advanced bd-advanced--preview" }, [
       h("summary", { text: "Would have bet today" }),

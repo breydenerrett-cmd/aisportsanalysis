@@ -47,6 +47,32 @@ export function errorText(err, fallback = "That did not work. Try again in a min
 
 export const errorCode = (err) => (err && err.detail && typeof err.detail === "object" ? err.detail.error : "");
 
+/**
+ * THE QUESTION BEFORE A REMOVAL. "Remove from my kennel" RETIRES a dog (POST /hounds/{id}/retire): it stops betting and leaves
+ * the kennel and the leaderboard, while its tickets and record stay on the append-only ledger and its page still opens by its
+ * address, marked "Retired by the owner". The words say all of that, because nothing here can be undone.
+ */
+export const removeConfirmText = (name) => `Remove ${name} from your kennel?\n\nIt stops betting and leaves your kennel and the leaderboard. `
+  + "Its tickets and record stay on the ledger, and its page still opens by its address, marked \"Retired by the owner\". This cannot be undone.";
+
+export const removedText = (name) => `${name} was removed from your kennel. It stops betting; its tickets and record stay on the ledger.`;
+
+/**
+ * Ask, then retire. Resolves { ok: true, dog } | { ok: false, cancelled: true } | { ok: false, message }. With no way to ask
+ * (a browser that has blocked dialogs) nothing is removed: a removal never goes ahead without the person saying yes.
+ */
+export async function removeDog(dog) {
+  const ask = typeof window !== "undefined" && typeof window.confirm === "function" ? window.confirm : null;
+  if (!ask) return { ok: false, message: "This browser would not show the confirmation, so nothing was removed. Try another browser." };
+  if (!ask.call(window, removeConfirmText(dog.name))) return { ok: false, cancelled: true };
+  try {
+    const res = await post(`/hounds/${encodeURIComponent(dog.id)}/retire`, {});
+    return { ok: true, dog: (res && res.hound) || {} };
+  } catch (err) {
+    return { ok: false, message: errorText(err, "That dog could not be removed. Try again in a minute.") };
+  }
+}
+
 /** A sentence with a link for a signed-out visitor. */
 export function signInPrompt(text) {
   return h("p", { class: "hd-muted", "data-hook": "signin-prompt" }, [`${text} `,

@@ -73,13 +73,15 @@
   <p class="bd-step__no">Step 1</p>
   <h2 id="s1-h">Say it</h2>
   <label class="bd-sr" for="english-input">Your strategy in plain English</label>
-  <textarea id="english-input" class="bd-english" rows="4" maxlength="600" data-hook="english-input"
+  <textarea id="english-input" class="bd-english" rows="4" data-hook="english-input" aria-describedby="english-count-note"
     placeholder="e.g. Bet home underdogs between +120 and +200 when they're on 2+ days rest. Max 2 bets a day."></textarea>
+  <p class="bd-countrow"><span class="hd-fine bd-count" id="english-count-note" data-hook="english-count" aria-live="polite">0 / 600</span></p>
+  <p class="bd-msg bd-msg--warn" data-hook="english-limit" role="status" hidden></p>
   <div class="bd-chips" data-hook="example-chips" role="group" aria-label="Examples to start from"></div>
   <div class="bd-actions">
     <button type="button" class="btn btn--primary" data-hook="english-go">Read my strategy</button>
     <button type="button" class="btn btn--ghost" data-hook="blank-rule">Start from a blank rule</button>
-    <span class="hd-fine" data-hook="english-status" aria-live="polite"></span>
+    <span class="hd-fine" data-hook="english-status" role="status" aria-live="polite"></span>
   </div>
   <div class="bd-read" data-hook="english-read" hidden>
     <h3 class="hd-h3">How I read it</h3>
@@ -87,7 +89,11 @@
     <div class="bd-unread" data-hook="english-unread" hidden>
       <h3 class="hd-h3">What I could not read</h3>
       <ul class="bd-list bd-list--warn" data-hook="english-notread"></ul>
-      <p class="hd-fine" data-hook="english-translator"></p>
+      <p class="hd-fine bd-translator" data-hook="english-translator" role="status" aria-live="polite"></p>
+    </div>
+    <div class="bd-suggest" data-hook="english-suggestions" hidden>
+      <h3 class="hd-h3">Try saying it this way</h3>
+      <ul class="bd-list" data-hook="english-suggest-list"></ul>
     </div>
     <p class="hd-fine" data-hook="english-assumed" hidden></p>
   </div>
@@ -144,6 +150,7 @@
     <button type="button" class="btn btn--primary btn--lg" data-hook="build-submit">Send my dog in</button>
     <button type="button" class="btn btn--ghost" data-hook="edit-cancel" hidden>Stop editing</button>
     <span class="hd-fine" data-hook="limit-text"></span>
+    <span class="hd-fine" data-hook="save-hint"></span>
   </p>
 </section>
 

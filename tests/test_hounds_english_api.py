@@ -307,15 +307,42 @@ class Routes(_Db):
         with self.env(**{translate.ENV_HOOK: HOOK}), mock.patch.object(translate, "start", lambda *a, **k: None):
             self.english("sharks one", token=self.token)
             self.english("sharks two", token=self.token)
-            with self.assertRaises(HTTPException) as ctx:
-                self.english("sharks three", token=self.token)
-        self.assertEqual(ctx.exception.status_code, 429)
+            out = self.english("home underdogs with a sharks theme", token=self.token)
+        # THE DRAFT SURVIVES THE LIMIT (2026-10-19): a bare 429 left the page with nothing to show. The answer is a
+        # 200 with the parser's draft and the reason the second reader is not coming.
+        self.assertEqual(out["translation"]["status"], "rate_limited")
+        self.assertEqual(out["translation"]["per_hour"], 8)
+        self.assertIn("8 second-reader tries", out["message"])
+        self.assertIn("rule cards", out["message"])
+        self.assertEqual(out["spec"]["rules"][0]["side"], "home")       # what WAS read is still there
+        self.assertNotIn("job_id", out)
+        self.assertEqual(self.job_count(), 2)                          # and no third job was made
 
-    def test_empty_and_too_long_text_are_422(self):
+    def test_empty_and_too_long_text_are_422_and_say_so_in_words(self):
         for text in ("", "   ", "x" * 601):
             with self.assertRaises(HTTPException) as ctx:
                 self.english(text)
             self.assertEqual(ctx.exception.status_code, 422)
+            self.assertTrue(ctx.exception.detail["message"], text)
+        with self.assertRaises(HTTPException) as ctx:
+            self.english("x" * 650)
+        detail = ctx.exception.detail
+        self.assertEqual((detail["error"], detail["max"], detail["length"]), ("text_too_long", 600, 650))
+        self.assertIn("650 characters", detail["message"])
+
+    def test_every_outcome_of_the_translator_side_still_carries_the_parsers_draft_and_suggestions(self):
+        text = ("use statistics, previous head-to-head matchups, previous matchups as in last five games, use home "
+                "advantage and away games data matched with offensive and defensive stats to pick the best teams")
+        for env, token in (({translate.ENV_HOOK: ""}, None), ({translate.ENV_HOOK: HOOK}, None),
+                           ({translate.ENV_HOOK: HOOK}, "signed-in")):
+            with self.env(**env), mock.patch.object(translate, "start", lambda *a, **k: None):
+                out = self.english(text, token=self.token if token else None)
+            ids = {c["id"] for c in out["spec"]["rules"][0]["when"]["items"]}
+            self.assertEqual(ids, {"head_to_head", "last_n_wins", "venue_record", "matchup_edge"}, env)
+            self.assertEqual(out["unread"], ["best"])
+            self.assertTrue(out["suggestions"])
+            self.assertTrue(out["assumed"])
+            self.assertIn(out["translation"]["status"], ("unavailable", "sign_in_required", "translating"))
 
     # ---- the callback ----------------------------------------------------------------------------
     def test_the_callback_does_not_exist_when_no_secret_is_configured(self):

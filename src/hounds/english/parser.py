@@ -205,7 +205,13 @@ class Reader:
 
     # -- bookkeeping --------------------------------------------------------------------------
     def ok(self, text: str, meaning: str) -> None:
-        self.understood.append({"text": " ".join(text.split()), "meaning": meaning})
+        text = " ".join(text.split())
+        for item in self.understood:
+            if item["meaning"] == meaning:           # the same idea said twice reads as one line, both phrases shown
+                if text not in item["text"].split(" + "):
+                    item["text"] += " + " + text
+                return
+        self.understood.append({"text": text, "meaning": meaning})
 
     def no(self, text: str, reason: str) -> None:
         self.not_understood.append({"text": " ".join(text.split()), "reason": reason})
@@ -1120,7 +1126,7 @@ _SUGGEST = (
      "its offense ranks better than the opponent's defense",
      "Offense and defense are on the menu as league ranks and as runs or points per game, for example 'a top 10 defense' or "
      "'scores at least 4.5 runs per game'."),
-    (r"\bbest\b|\bbetter\b|good teams?|strong teams?|top teams?|hot teams?|momentum|\btrends?\b|\bform\b",
+    (r"\bbest\b|good teams?|strong teams?|top teams?|hot teams?|momentum|\btrends?\b|\bform\b",
      "won at least 4 of the last 5 games",
      "'Best' needs a measure the rules have: recent wins, a win streak, or a league rank in offense or defense."),
     (r"injur|lineups?|starters?|starting pitchers?|bullpens?|\bera\b|\bwhip\b|\bpitcher",

@@ -7,6 +7,7 @@
 // visibility / wait) before reporting what is on the page.
 //
 // Dog-page scenario keys (2026-10-18): `share` (navigator.share exists; `shareFails` names the error it throws),
+// `confirm` (false = the person cancels every window.confirm; the report carries `confirms`, what was asked),
 // `storageThrows` ("methods": getItem/setItem throw; "accessor": touching window.localStorage throws), `tz`
 // (the process time zone, set by the runner), and a fake canvas / Image / URL.createObjectURL so the card
 // download runs. The report carries `shares`, `downloads` and `canvases` (every fillText string, the size).
@@ -24,6 +25,7 @@ if (scenario.now) { const frozen = Date.parse(scenario.now); Date.now = () => fr
 
 // ---- fake DOM -------------------------------------------------------------------------------------
 const downloads = [];
+const confirms = [];           // every window.confirm(message) the page asked; scenario.confirm === false answers "Cancel"
 const canvases = [];
 const shares = [];
 const VOID = new Set(["meta", "link", "br", "img", "input", "hr", "area", "base", "col", "source", "wbr"]);
@@ -197,6 +199,7 @@ globalThis.window = {
   localStorage: storage, sessionStorage: storage, location: loc, history: { replaceState(state, title, url) { replaced.push(String(url)); } },
   addEventListener: (t, f) => { (winListeners[t] ||= []).push(f); }, removeEventListener() {},
   dispatchEvent() { return true; }, scrollTo() {}, crypto: globalThis.crypto,
+  confirm: (message) => { confirms.push(String(message)); return scenario.confirm !== false; },
 };
 globalThis.location = loc;
 if (scenario.storageThrows === "accessor") {
@@ -308,7 +311,11 @@ try {
       const el = find(a.sel, a.index || 0);
       el.dispatchEvent({ type: "submit", target: el, preventDefault() {} });
     } else if (a.do === "fire_timers") {
-      for (const { fn } of [...intervals.values()]) fn();
+      // `times` fires the timers that many times in a row (a 90 second poll is 90 ticks), pausing `gap` ms between
+      for (let i = 0; i < (a.times || 1); i += 1) {
+        for (const { fn } of [...intervals.values()]) fn();
+        if ((a.times || 1) > 1) await settle(a.gap ?? 4);
+      }
     } else if (a.do === "visibility") {
       document.visibilityState = a.state;
       document.dispatchEvent({ type: "visibilitychange" });
@@ -341,6 +348,7 @@ out.downloads = downloads;
 out.canvases = canvases;
 out.storedAfter = Object.fromEntries(store);
 out.clipboard = clipboard;
+out.confirms = confirms;
 out.intervals = [...intervals.values()].map((v) => v.ms);
 console.log("@@" + JSON.stringify(out));
 process.exit(0);

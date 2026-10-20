@@ -19,14 +19,15 @@
  * record stays). Signed-out visitors can draft everything; saving asks them to sign in.
  *
  * TRANSLATOR. When the free parser cannot read everything and the owner has switched the Zapier translator
- * on, the response carries a job id; this page polls `GET /hounds/english/{job_id}` and offers the result
- * as a replacement draft. If the translator is off the page says which words were not understood and the
+ * on, the response carries a job id; this page polls `GET /hounds/english/{job_id}` (backing off, and giving up at
+ * 90 seconds) and offers the result as a replacement draft. The parser's own draft is on the page the whole time:
+ * the translator never gates it. If the translator is off the page says which words were not understood and the
  * rule cards finish the job by hand.
  */
 
 import { apiGet, apiPost, getToken } from "./api.js";
 import { h, s, clearNode, describeError, houndHref, isNum, fmtPrice } from "./hounds-core.js";
-import { celebrate, put } from "./dog-common.js";
+import { celebrate, put, removeDog, removedText } from "./dog-common.js";
 import { dogBadge, dogFace, DEFAULT_LOOK, lookFor, BACKGROUNDS, cleanLook, breedOfName, breedLabel } from "./dog-avatar.js";
 import { stakeLineText } from "./hounds-board.js";
 
@@ -43,8 +44,6 @@ export const EXAMPLES = [
 ];
 
 const PREVIEW_DEBOUNCE_MS = 250;
-const JOB_POLL_MS = 2000;
-const JOB_POLL_MAX = 30;
 
 const q = (hook) => document.querySelector(`[data-hook='${hook}']`);
 
@@ -64,6 +63,7 @@ const S = {
   menu: null, spec: null, signedIn: false, mine: [], edit: null, diffReady: false, busy: false,
   understood: [], notRead: [], assumed: [], sentences: [], problems: [], saveProblems: [], previewSeq: 0, previewTimer: null,
   jobTimer: null, jobPolls: 0, jobId: null, copiedFrom: "", pendingTranslation: null,
+  jobBusy: false, jobElapsed: 0, jobStart: 0, jobNextPoll: 0, jobErrors: 0,
 };
 
 // ---- the menu ---------------------------------------------------------------------------------------
@@ -709,11 +709,108 @@ function fillIdentity() {
 
 // ---- step 1: English ------------------------------------------------------------------------------------
 
-function showRead(res) {
-  const wrap = q("english-read");
-  wrap.hidden = false;
+/**
+ * WHY THIS SECTION IS SHAPED THE WAY IT IS (2026-10-19). A member pasted a long free-form strategy, pressed "Read my
+ * strategy", and the page looked dead: Step 2 never filled in and nothing said why. Four rules came out of it:
+ *
+ *   1. THE PARSER'S DRAFT IS SHOWN THE MOMENT IT ARRIVES, whatever the second reader is doing. Understood lines, the
+ *      words that were not understood (marked), what was assumed, suggested rewordings and the rule cards all draw from the
+ *      first response. The second reader (the Zapier translator) only ever offers a replacement afterwards.
+ *   2. NOTHING STAYS DISABLED OR SPINNING. The Read button is never disabled; every failure (a 422 for a long text, the
+ *      per-minute limit, a dead connection, a render error) ends in a sentence under the box and leaves the text where it
+ *      was. The translation poll backs off, gives up at 90 seconds and says so.
+ *   3. THE LIMIT IS VISIBLE. A live "x / 600" count, no silent cut-off (the box has no maxlength, because a browser cuts a
+ *      paste without a word): over the limit the first whole sentences that fit are read and what was left out is listed.
+ *   4. EVERY OUTCOME HAS WORDS: signed out (a sign-in link that keeps the draft), rate limited, timed out, refused.
+ */
+export const ENGLISH_MAX = 600;
+const JOB_TICK_MS = 1000;
+const JOB_TIMEOUT_MS = 90000;
+const JOB_POLL_STEPS_MS = [1000, 2000, 3000, 5000, 8000];      // after each answer of "still translating"; the last repeats
+export const TRANSLATING_TEXT = "A second reader is translating the rest (about 30 seconds)...";
+export const TIMEOUT_TEXT = "The second reader didn't answer. Here's what I could read; finish the rest with the rule cards or rephrase.";
+const DRAFT_KEY = "linehound.builder.draft.v1";
+const DRAFT_MAX_AGE_MS = 24 * 3600 * 1000;
+
+const setStatus = (text, kind) => {
+  const box = q("english-status");
+  if (!box) return;
+  box.textContent = text || "";
+  if (kind) box.setAttribute("data-kind", kind); else box.removeAttribute("data-kind");
+};
+
+/**
+ * The first whole sentences of `text` that fit in `max` characters, and the rest. One giant sentence is cut at the last
+ * space that fits. Pure, so it can be reasoned about on its own.
+ */
+export function fitToLimit(text, max = ENGLISH_MAX) {
+  const t = String(text || "").trim();
+  if (t.length <= max) return { read: t, rest: "" };
+  const pieces = t.match(/[^.!?;\n]+[.!?;]*\s*/g) || [t];
+  let read = "";
+  for (const piece of pieces) {
+    if ((read + piece).length > max) break;
+    read += piece;
+  }
+  if (!read.trim()) {
+    const cut = t.lastIndexOf(" ", max);
+    read = t.slice(0, cut > 0 ? cut : max);
+  }
+  read = read.trim();
+  return { read, rest: t.slice(read.length).trim() };
+}
+
+function updateCount() {
+  const box = q("english-input"), count = q("english-count"), note = q("english-limit");
+  if (!box || !count) return;
+  const n = String(box.value || "").length;
+  count.textContent = `${n} / ${ENGLISH_MAX}`;
+  const state = n > ENGLISH_MAX ? "over" : n === ENGLISH_MAX ? "limit" : n >= ENGLISH_MAX * 0.9 ? "near" : "";
+  if (state) count.setAttribute("data-state", state); else count.removeAttribute("data-state");
+  if (!note) return;
+  note.hidden = !(state === "over" || state === "limit");
+  note.textContent = state === "over"
+    ? `That is ${n} characters and the limit is ${ENGLISH_MAX}. I will read the first whole sentences that fit and show you what was left out. Shorter sentences work best.`
+    : state === "limit" ? `That is the ${ENGLISH_MAX} character limit. Anything longer is read in whole sentences, up to the limit.` : "";
+}
+
+function setTranslator(kind, parts) {
+  const line = q("english-translator");
+  if (!line) return;
+  clearNode(line);
+  if (kind) line.setAttribute("data-state", kind); else line.removeAttribute("data-state");
+  for (const p of parts || []) line.appendChild(typeof p === "string" ? h("span", { text: p }) : p);
+}
+
+function renderSuggestions(list) {
+  const box = q("english-suggestions");
+  const ul = clearNode(q("english-suggest-list"));
+  box.hidden = !list.length;
+  for (const sug of list) {
+    const parts = [];
+    if (sug.phrase) parts.push(h("strong", { text: `"${sug.phrase}"` }), h("span", { text: " " }));
+    if (sug.try) {
+      parts.push(h("span", { text: `Try: "${sug.try}".` }),
+        h("button", { type: "button", class: "btn btn--ghost", "data-hook": "suggest-add", text: "Add this wording", on: { click: () => addWording(sug.try) } }));
+    }
+    parts.push(h("span", { class: "hd-fine", text: sug.why || "" }));
+    ul.appendChild(h("li", { "data-hook": "suggestion" }, parts));
+  }
+}
+
+function addWording(wording) {
+  const box = q("english-input");
+  const base = String(box.value || "").trim().replace(/[.;,\s]+$/, "");
+  box.value = `${base}${base ? ". " : ""}${wording}.`;
+  updateCount();
+  if (box.focus) box.focus();
+  setStatus("Added. Press Read my strategy to read it again.");
+}
+
+function showRead(res, extraNotRead = []) {
+  q("english-read").hidden = false;
   S.understood = res.understood || [];
-  S.notRead = res.not_understood || [];
+  S.notRead = (res.not_understood || []).concat(extraNotRead);
   S.assumed = res.assumed || [];
   const ul = clearNode(q("english-understood"));
   for (const u of S.understood) {
@@ -724,21 +821,41 @@ function showRead(res) {
   const nr = clearNode(q("english-notread"));
   unread.hidden = !S.notRead.length;
   for (const n of S.notRead) {
-    nr.appendChild(h("li", {}, [h("strong", { text: n.text ? `"${n.text}"` : "Something" }), h("span", { text: ` was not understood: ${n.reason}` })]));
+    nr.appendChild(h("li", { "data-hook": "not-understood" }, [
+      h("strong", { class: "bd-unread__phrase", text: n.text ? `"${n.text}"` : "Something" }), h("span", { text: ` was not understood: ${n.reason}` })]));
   }
   const assumed = q("english-assumed");
   assumed.hidden = !S.assumed.length;
   assumed.textContent = S.assumed.length ? `Assumed, so check the cards: ${S.assumed.join("; ")}.` : "";
-  q("english-translator").textContent = "";
+  renderSuggestions(res.suggestions || []);
+  setTranslator("", []);
+}
+
+/** Remember the draft across a sign-in (the link leaves the page): the English, and the cards as they stand. */
+function saveDraft() {
+  try {
+    window.localStorage.setItem(DRAFT_KEY, JSON.stringify({ at: Date.now(), text: String(q("english-input").value || ""),
+      spec: S.spec && S.started ? cleanSpec(clone(S.spec)) : null }));
+  } catch (err) { /* storage blocked: the sign-in still works, the draft is simply not kept */ }
+}
+
+function signInLink(text) {
+  return h("a", { href: "index.html#/signin", "data-hook": "translator-signin", text, on: { click: saveDraft } });
 }
 
 function translatorLine(res) {
-  const line = q("english-translator");
-  if (!S.notRead.length) { line.textContent = ""; return; }
+  if (!S.notRead.length) { setTranslator("", []); return; }
   const t = res.translation || {};
-  if (t.status === "translating") line.textContent = "A second reader is taking a look at the part I could not read. The rest is already in the cards below.";
-  else if (t.status === "sign_in_required") line.textContent = res.message || "Sign in and a second reader can try the part I could not read. Meanwhile the cards below let you finish by hand.";
-  else line.textContent = res.message || "The cards below let you finish it by hand.";
+  if (t.status === "translating") {
+    setTranslator("translating", [h("span", { class: "bd-spinner", "data-hook": "translator-spinner", "aria-hidden": "true" }), TRANSLATING_TEXT]);
+  } else if (t.status === "sign_in_required") {
+    setTranslator("signin", ["A second reader can try the part I could not read once you are signed in. ", signInLink("Sign in"),
+      " (your draft is kept). Meanwhile the cards below let you finish by hand."]);
+  } else if (t.status === "rate_limited") {
+    setTranslator("limit", [res.message || "You have used this hour's second-reader tries. Here is what I could read; finish the rest with the rule cards or rephrase."]);
+  } else {
+    setTranslator("", [res.message || "The cards below let you finish it by hand."]);
+  }
 }
 
 function startFromDraft(res) {
@@ -760,30 +877,62 @@ function startFromDraft(res) {
   updateSave();
 }
 
+/** One sentence for each way the reading call can fail. The text in the box is never touched. */
+function englishErrorText(err) {
+  const status = err && err.status;
+  const detail = err && err.detail && typeof err.detail === "object" ? err.detail : {};
+  const hand = " You can also start from a blank rule and use the cards.";
+  if (status === 422 && detail.message) return detail.message;
+  if (status === 422) return "I could not use that text. Shorten it or send it as a few shorter sentences." + hand;
+  if (status === 429) return "That is a lot of reads in a short time. Wait a few seconds and press Read my strategy again; your text is still here.";
+  if (status === null || status === undefined) return "I could not reach the strategy reader (a bad connection or a short outage). Your text is still here: press Read my strategy to try again." + hand;
+  return describeError(err, "the strategy reader").text + hand;
+}
+
+let readSeq = 0;
+
 async function readEnglish() {
-  const text = String(q("english-input").value || "").trim();
-  const status = q("english-status");
-  if (!text) { status.textContent = "Type a strategy first, or pick an example."; return; }
-  status.textContent = "Reading...";
+  const raw = String(q("english-input").value || "").trim();
+  const go = q("english-go");
+  setStatus("");
+  if (!raw) { setStatus("Type a strategy first, or pick an example."); return; }
+  const { read, rest } = fitToLimit(raw, ENGLISH_MAX);
   stopJobPolling();
+  const seq = ++readSeq;
+  setStatus("Reading...");
+  go.setAttribute("aria-busy", "true");
+  const idle = () => { if (seq === readSeq) go.removeAttribute("aria-busy"); };
   let res;
   try {
-    res = await apiPost("/hounds/english", { text });
+    res = await apiPost("/hounds/english", { text: read });
   } catch (err) {
-    status.textContent = err && err.status === 429 ? "Slow down a little; try again in a minute." : describeError(err, "the strategy reader").text;
+    idle();
+    if (seq === readSeq) setStatus(englishErrorText(err), "error");
     return;
   }
-  status.textContent = "";
-  showRead(res);
-  translatorLine(res);
-  startFromDraft(res);
-  if (res.job_id && res.status === "translating") startJobPolling(res.job_id);
+  idle();
+  if (seq !== readSeq) return;
+  try {
+    const left = rest ? [{ text: rest.length > 70 ? `${rest.slice(0, 70)}...` : rest,
+      reason: `it is past the ${ENGLISH_MAX} character limit, so it was not read. Shorten the text, or read it again in a second pass.` }] : [];
+    showRead(res, left);
+    translatorLine(res);
+    startFromDraft(res);
+  } catch (err) {
+    setStatus("I read it but could not draw the result. Your text is still here; press Read my strategy to try again, or start from a blank rule.", "error");
+    return;
+  }
+  setStatus(res.spec || (res.draft && res.draft.rules && res.draft.rules.length) ? "Read. Your draft is in step 2 below." : "I could not make a rule from that. Step 2 has a blank rule to fill in.");
+  const step = q("step-rules");
+  if (!embedded() && step && typeof step.scrollIntoView === "function") step.scrollIntoView();
+  if (res.job_id && res.status === "translating" && S.notRead.length) startJobPolling(res.job_id);
 }
 
 function stopJobPolling() {
   if (S.jobTimer) clearInterval(S.jobTimer);
   S.jobTimer = null;
   S.jobId = null;
+  S.jobBusy = false;
   S.pendingTranslation = null;
   const slot = q("english-translator");
   if (slot) slot.removeAttribute("data-job");
@@ -792,48 +941,87 @@ function stopJobPolling() {
 function startJobPolling(jobId) {
   S.jobId = jobId;
   S.jobPolls = 0;
-  S.jobTimer = setInterval(pollJob, JOB_POLL_MS);
+  S.jobErrors = 0;
+  S.jobElapsed = 0;
+  S.jobStart = Date.now();
+  S.jobNextPoll = JOB_POLL_STEPS_MS[0];
+  S.jobBusy = false;
+  S.jobTimer = setInterval(jobTick, JOB_TICK_MS);
 }
 
-async function pollJob() {
-  if (!S.jobId) return;
-  S.jobPolls += 1;
-  const line = q("english-translator");
+const nextPollIn = (count) => JOB_POLL_STEPS_MS[Math.min(count, JOB_POLL_STEPS_MS.length - 1)];
+
+/** One second of waiting. It polls the job on a backoff (1, 2, 3, 5, 8, 8... seconds apart) and gives up at 90 seconds. */
+async function jobTick() {
+  if (!S.jobId || S.jobBusy) return;
+  S.jobElapsed = Math.max(S.jobElapsed + JOB_TICK_MS, Date.now() - S.jobStart);
+  if (S.jobElapsed >= JOB_TIMEOUT_MS) { stopJobPolling(); setTranslator("timeout", [TIMEOUT_TEXT]); return; }
+  if (S.jobElapsed < S.jobNextPoll) return;
+  const id = S.jobId;
+  S.jobBusy = true;
   try {
-    const job = await apiGet(`/hounds/english/${encodeURIComponent(S.jobId)}`);
-    if (job.status === "translating") {
-      if (S.jobPolls >= JOB_POLL_MAX) { stopJobPolling(); line.textContent = "The second reader took too long. The cards below let you finish by hand."; }
-      return;
-    }
-    const id = S.jobId;
+    const job = await apiGet(`/hounds/english/${encodeURIComponent(id)}`);
+    if (S.jobId !== id) return;
+    S.jobPolls += 1;
+    if (job.status === "translating") { S.jobNextPoll = S.jobElapsed + nextPollIn(S.jobPolls); return; }
     stopJobPolling();
-    if (job.status === "done" && job.spec) {
-      S.pendingTranslation = job;
-      clearNode(line);
-      line.appendChild(h("span", { text: "The second reader has a version of your whole strategy. " }));
-      line.appendChild(h("button", { type: "button", class: "btn btn--ghost", "data-hook": "use-translation", text: "Use its version",
-        on: { click: () => { useTranslation(job); } } }));
-      line.setAttribute("data-job", id);
-    } else if (job.status === "refused") {
-      line.textContent = "The second reader's answer did not fit the rules: " + Object.entries(job.reasons || {}).map(([k, v]) => `${friendlyField(k)}: ${v}`).join("; ") + ". The cards below let you finish by hand.";
-    } else {
-      line.textContent = (job.error || "The second reader could not help.") + " The cards below let you finish by hand.";
-    }
+    finishJob(job, id);
   } catch (err) {
-    if (S.jobPolls >= 3) { stopJobPolling(); line.textContent = describeError(err, "the second reader").text; }
+    if (S.jobId !== id) return;
+    S.jobErrors += 1;
+    if (err && (err.status === 401 || err.status === 403)) {
+      stopJobPolling();
+      setTranslator("signin", ["Your sign-in lapsed, so the second reader's answer cannot be shown. ", signInLink("Sign in"), " (your draft is kept)."]);
+    } else if (S.jobErrors >= 3) {
+      stopJobPolling();
+      setTranslator("error", [`${describeError(err, "the second reader").text} Here is what I could read; finish the rest with the rule cards or rephrase.`]);
+    } else {
+      S.jobNextPoll = S.jobElapsed + nextPollIn(S.jobPolls + S.jobErrors);
+    }
+  } finally {
+    if (S.jobId === id || !S.jobId) S.jobBusy = false;
+  }
+}
+
+function finishJob(job, id) {
+  if (job.status === "done" && job.spec) {
+    S.pendingTranslation = job;
+    setTranslator("done", [h("span", { text: "The second reader has a version of your whole strategy. " }),
+      h("button", { type: "button", class: "btn btn--ghost", "data-hook": "use-translation", text: "Use its version", on: { click: () => { useTranslation(job); } } })]);
+    q("english-translator").setAttribute("data-job", id);
+  } else if (job.status === "refused") {
+    setTranslator("error", ["The second reader's answer did not fit the rules: " + Object.entries(job.reasons || {}).map(([k, v]) => `${friendlyField(k)}: ${v}`).join("; ") + ". The cards below let you finish by hand."]);
+  } else {
+    setTranslator("error", [(job.error || "The second reader could not help.") + " The cards below let you finish by hand."]);
   }
 }
 
 function useTranslation(job) {
   showRead({ understood: [{ text: "your whole strategy", meaning: "the second reader's version, shown in the cards below" }], not_understood: [], assumed: [] });
-  q("english-translator").textContent = "Showing the second reader's version. Check every card.";
+  setTranslator("done", ["Showing the second reader's version. Check every card."]);
   startFromDraft({ spec: job.spec, sentences: job.sentences });
+}
+
+/** After a sign-in the builder gets its draft back (saved by the sign-in link above). Returns true when it did. */
+function restoreDraft() {
+  let saved = null;
+  try {
+    saved = JSON.parse(window.localStorage.getItem(DRAFT_KEY) || "null");
+    window.localStorage.removeItem(DRAFT_KEY);
+  } catch (err) { saved = null; }
+  if (!saved || typeof saved !== "object" || !saved.at || Date.now() - saved.at > DRAFT_MAX_AGE_MS) return false;
+  if (typeof saved.text === "string") { q("english-input").value = saved.text; updateCount(); }
+  if (saved.spec && Array.isArray(saved.spec.rules) && saved.spec.rules.length) startFromDraft({ spec: saved.spec, sentences: [] });
+  const note = q("build-from-note");
+  note.hidden = false;
+  note.textContent = "Welcome back. Your draft from before you signed in is below.";
+  return true;
 }
 
 function exampleChips() {
   const box = clearNode(q("example-chips"));
   EXAMPLES.forEach((text) => box.appendChild(h("button", { type: "button", class: "bd-chip bd-chip--example", "data-hook": "example-chip", text,
-    on: { click: () => { q("english-input").value = text; readEnglish(); } } })));
+    on: { click: () => { q("english-input").value = text; updateCount(); readEnglish(); } } })));
 }
 
 // ---- saving ---------------------------------------------------------------------------------------------------
@@ -847,6 +1035,8 @@ function updateSave() {
   if (editing) label = S.diffReady ? `Save as version ${S.edit.version_no + 1}` : "Review the changes";
   btn.textContent = label;
   btn.disabled = S.busy || !S.started;
+  const hint = q("save-hint");
+  if (hint) hint.textContent = S.started ? "" : "Send my dog in wakes up once your strategy is read (step 1) or you start a blank rule.";
   const limit = q("limit-text");
   if (S.signedIn && !editing) {
     const running = S.mine.filter((d) => d.status === "running").length;
@@ -1000,7 +1190,25 @@ function dogItem(d) {
         h("ol", { class: "bd-sentence-list" }, (d.rule_sentences || []).map((t) => h("li", { text: t })))]),
       h("div", { class: "bd-dogrow__actions" }, [
         h("button", { type: "button", class: "btn btn--ghost", "data-hook": "edit-dog", text: "Edit",
-          on: { click: () => startEdit(d) } })])])]);
+          on: { click: () => startEdit(d) } }),
+        h("button", { type: "button", class: "btn btn--ghost", "data-hook": "remove-dog", text: "Remove from my kennel",
+          "aria-label": `Remove ${d.name} from my kennel`, on: { click: () => removeMine(d) } })])])]);
+}
+
+/** "Remove from my kennel": ask, retire (the record stays on the ledger), and say so. The kennel page hears the event too. */
+async function removeMine(d) {
+  serverError("");
+  const res = await removeDog(d);
+  if (res.cancelled) return;
+  if (!res.ok) { serverError(res.message); return; }
+  if (S.edit && S.edit.id === d.id) openBlank();
+  setMessage(removedText(d.name), "ok");
+  await loadMine();
+  try {
+    const evt = new Event("linehound:dog-saved");
+    evt.detail = { type: "retired", id: d.id };
+    window.dispatchEvent(evt);
+  } catch (err) { /* no window or no Event */ }
 }
 
 function startEdit(d) {
@@ -1042,17 +1250,31 @@ export function openBlank() {
   serverError("");
   q("english-read").hidden = true;
   q("english-input").value = "";
+  updateCount();
+  setStatus("");
   q("build-title").textContent = "Build your dog";
   q("build-from-note").hidden = true;
   renderRules(); renderPickers(); fillIdentity(); updateDogCard(); updateSave();
   return true;
 }
 
-export function openEdit(id) {
-  const dog = S.mine.find((d) => d.id === id);
-  if (!dog) return false;
+/**
+ * Open one of the member's dogs for editing. Resolves { ok: true } or { ok: false, reason } with reason "not_ready" (the rules
+ * menu never loaded), "signed_out" or "not_found". A dog missing from the list is looked for once more before giving up (the
+ * list may simply not have loaded yet), so the studio can say which of those it was instead of a catch-all "sign in again".
+ */
+export async function openEdit(id) {
+  if (!S.menu) return { ok: false, reason: "not_ready" };
+  let dog = S.mine.find((d) => d.id === id);
+  if (!dog) { await loadMine(); dog = S.mine.find((d) => d.id === id); }
+  if (!dog) return { ok: false, reason: S.signedIn ? "not_found" : "signed_out" };
   startEdit(dog);
-  return true;
+  return { ok: true };
+}
+
+/** Re-read the member's dogs (the kennel page calls this after a removal so the limit line and the list are current). */
+export async function refreshMine() {
+  if (S.menu) await loadMine();
 }
 
 export const builderReady = () => !!S.menu;
@@ -1086,6 +1308,8 @@ async function boot() {
   });
   q("build-submit").addEventListener("click", submit);
   q("edit-cancel").addEventListener("click", stopEdit);
+  q("english-input").addEventListener("input", updateCount);
+  updateCount();
   q("build-submit").disabled = true;
 
   try {
@@ -1117,6 +1341,8 @@ async function boot() {
     if (dog) startEdit(dog);
   } else if (params.get("quiz")) {
     loadQuizHandoff();
+  } else if (!fromId && restoreDraft()) {
+    // the draft the person had before they signed in is back
   } else if (fromId) {
     const note = q("build-from-note");
     try {

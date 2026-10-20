@@ -243,6 +243,11 @@ def my_kennel(owner_user_id: int, season: Optional[str] = None) -> dict:
     with the same numbers a public kennel shows, plus their own handle so the page can link to the public view."""
     sid = season or seasons.default_id()
     rows = list(user_store.list_for_owner(owner_user_id)) if user_defs.db_exists() else []
+    # A dog the owner removed ("Remove from my kennel") is gone from this page, with every earlier version of it. Its
+    # record is not: it stays on the ledger and its address still opens, saying "Retired by the owner".
+    gone = user_store.removed_roots(rows)
+    removed = sum(1 for r in rows if r["root_id"] in gone and r["version_of"] is None)
+    rows = [r for r in rows if r["root_id"] not in gone]
     order = {"running": 0, "benched": 1, "retired": 2}
     rows.sort(key=lambda h: (order.get(h["status"], 3), h["created_at"]))
     book = stats.peek_book()
@@ -258,4 +263,5 @@ def my_kennel(owner_user_id: int, season: Optional[str] = None) -> dict:
     return {"handle": handle_for(owner_user_id), "display": user_defs.owner_display(owner_user_id),
             "kennel_name": profile["kennel_name"], "needs_name_prompt": profile["needs_name_prompt"],
             "name_limits": profile["limits"],
-            "dog_count": sum(1 for d in dogs if not d["retired"]), "dogs": dogs, "season": seasons.meta(sid)}
+            "dog_count": sum(1 for d in dogs if not d["retired"]), "dogs": dogs, "removed_count": removed,
+            "season": seasons.meta(sid)}

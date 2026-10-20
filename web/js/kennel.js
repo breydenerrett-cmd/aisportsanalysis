@@ -30,7 +30,7 @@
 import { apiGet } from "./api.js";
 import { TOKEN_CHANGED_EVENT } from "./api.js";
 import { h, clearNode, isNum, houndHref, kennelName, describeError } from "./hounds-core.js";
-import { signedIn, get, put, errorText, SIGNIN_HREF } from "./dog-common.js";
+import { signedIn, get, put, errorText, SIGNIN_HREF, removeDog, removedText } from "./dog-common.js";
 import { dogBadge, DEFAULT_LOOK, lookFor } from "./dog-avatar.js";
 import { activityStrip, quietKennel, fetchStream } from "./kennel-extras.js";
 import { mountTabs } from "./tabs.js";
@@ -130,7 +130,9 @@ function dogCard(dog, { mine }, index) {
       h("button", { type: "button", class: "kn-act", "data-hook": "dog-action-edit", text: "Edit",
         on: { click: (e) => { stop(e); openStudio(dog.id, "rules", card); } } }),
       h("a", { class: "kn-act", href: houndHref(dog.id), "data-hook": "dog-action-open", text: "Open",
-        on: { click: (e) => stop(e) } })]
+        on: { click: (e) => stop(e) } }),
+      h("button", { type: "button", class: "kn-act kn-act--quiet", "data-hook": "dog-action-remove", text: "Remove",
+        "aria-label": `Remove ${dog.name} from my kennel`, on: { click: (e) => { stop(e); removeFromKennel(dog); } } })]
     : mine
       ? [h("a", { class: "kn-act", href: houndHref(dog.id), "data-hook": "dog-action-open", text: "Open" }),
         h("a", { class: "kn-act", href: dog.builder_href || "build-a-hound.html", "data-hook": "dog-action-copy", text: "Build a copy" })]
@@ -157,6 +159,27 @@ function dogCard(dog, { mine }, index) {
       h("div", { class: "kn-card__actions" }, actions)]),
   ]);
   return card;
+}
+
+/** "Remove from my kennel": ask, retire, say so, and redraw. The dog's record stays on the ledger (see dog-common.js removeDog). */
+async function removeFromKennel(dog) {
+  const res = await removeDog(dog);
+  if (res.cancelled) return;
+  if (!res.ok) { say(res.message, "error"); return; }
+  closeStudio();
+  await load({ quiet: true });
+  say(removedText(dog.name));
+  try {
+    const builder = await import("./hounds-build.js");
+    if (builder.builderReady()) await builder.refreshMine();
+  } catch (err) { /* the builder is not on this page yet: it reads the list when it loads */ }
+}
+
+function say(text, kind) {
+  const box = q("kennel-status");
+  if (!box) return;
+  box.textContent = text || "";
+  if (kind) box.setAttribute("data-kind", kind); else box.removeAttribute("data-kind");
 }
 
 function buildCard(index) {
@@ -393,6 +416,8 @@ function paintStudioHead(look) {
   const dog = studioDog();
   const av = clearNode(q("studio-avatar"));
   const sub = q("studio-sub");
+  const remove = q("studio-remove");
+  if (remove) remove.hidden = !(dog && !dog.retired);
   if (!dog) {
     av.appendChild(dogBadge(look || DEFAULT_LOOK, { size: 64, id: "new-dog", mood: "thinking" }));
     q("studio-title").textContent = "New dog";
@@ -488,9 +513,22 @@ async function buildRules(host, dog) {
       "A retired dog cannot be edited. ", h("a", { href: dog.builder_href || "build-a-hound.html", text: "Build a copy" }), "."]));
     return;
   }
-  if (!builder.openEdit(dog.id)) {
-    host.appendChild(h("p", { class: "hd-muted", text: "Sign in again to edit this dog." }));
+  if (!builder.builderReady()) {
+    host.appendChild(editProblem("The rule builder did not load (a bad connection, or it is busy for a moment).", dog));
+    return;
   }
+  const opened = await builder.openEdit(dog.id);
+  if (!opened.ok) {
+    host.appendChild(editProblem(opened.reason === "signed_out" ? "Your sign-in has lapsed, so this dog cannot be opened for editing. "
+      : "That dog could not be found in your list just now.", dog, opened.reason === "signed_out"));
+  }
+}
+
+/** Why Edit did not open, in words, with a way forward: sign in, or try again. Never a dead end. */
+function editProblem(text, dog, signIn) {
+  return h("p", { class: "hd-muted", "data-hook": "studio-edit-problem" }, [`${text} `,
+    signIn ? h("a", { href: SIGNIN_HREF, text: "Sign in" }) : h("button", { type: "button", class: "lh-btn lh-btn--soft", "data-hook": "studio-edit-retry", text: "Try again",
+      on: { click: () => { state.loaded.rules = null; openStudio(dog.id, "rules"); } } })]);
 }
 
 function refreshCards() {
@@ -557,6 +595,7 @@ export function closeStudio() {
 
 function bindStudio() {
   q("studio-close").addEventListener("click", closeStudio);
+  if (q("studio-remove")) q("studio-remove").addEventListener("click", () => { const dog = studioDog(); if (dog) removeFromKennel(dog); });
   q("studio-scrim").addEventListener("click", closeStudio);
   document.addEventListener("keydown", (evt) => { if (evt.key === "Escape") closeStudio(); });
   window.addEventListener("linehound:dog-saved", async (evt) => {
@@ -571,6 +610,8 @@ function bindStudio() {
       paintStudioHead();
       if (state.tabs) state.tabs.select("look");
       writeUrl(detail.id, "look");
+    } else if (detail.type === "retired") {
+      closeStudio();
     } else if (detail.type === "version" && dogById(detail.id)) {
       state.open = detail.id;
       state.loaded = { rules: detail.id };

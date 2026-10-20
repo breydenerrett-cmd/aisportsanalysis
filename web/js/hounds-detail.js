@@ -115,7 +115,10 @@ function renderHeader(hound) {
     causeBox.removeAttribute("hidden");
     causeBox.appendChild(h("p", {}, [h("strong", { text: "Retired. " }),
       (retired && retired.cause) ? causeText(retired.cause) : "No reason was given.",
-      retired && retired.date ? h("span", { class: "hd-fine", text: ` (${fmtWhen(retired.date)})` }) : null]));
+      retired && retired.date ? h("span", { class: "hd-fine", text: ` (${fmtWhen(retired.date)})` }) : null,
+      // an owner's removal keeps the whole record; say so, since the dog is gone from the lists but not from the ledger
+      retired && /retired by the owner/i.test(String(retired.cause || "")) ? h("span", { class: "hd-fine", "data-hook": "retired-record-stays",
+        text: " Its tickets and record stay on the ledger." }) : null]));
   } else if (hound.status === "benched" && hound.last_bet_utc) {
     causeBox.hidden = false;
     causeBox.removeAttribute("hidden");

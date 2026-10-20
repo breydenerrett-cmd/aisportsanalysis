@@ -47,6 +47,18 @@
 .bd-chip--example { font-size: 13px; color: var(--hd-mute); }
 .bd-chip:focus-visible, .bd-swatch:focus-visible, .bd-badge:focus-visible { outline: 2px solid var(--hd-accent); outline-offset: 1px; }
 
+/* the character count under the English box, and the second reader's progress line */
+.bd-countrow { margin: 4px 0 0; text-align: right; }
+.bd-count[data-state="near"] { color: var(--hd-warn); }
+.bd-count[data-state="limit"], .bd-count[data-state="over"] { color: var(--hd-bad); font-weight: 700; }
+[data-hook="english-status"][data-kind="error"] { color: #FFD7DB; font-size: 14px; }
+.bd-translator { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.bd-translator[data-state="timeout"], .bd-translator[data-state="error"], .bd-translator[data-state="limit"] { color: var(--hd-warn); }
+.bd-spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--hd-line); border-top-color: var(--hd-accent); border-radius: 50%; flex: none; }
+.bd-suggest { margin-top: 10px; }
+.bd-suggest .btn { min-height: 36px; font-size: 14px; margin: 0 6px; }
+.bd-unread__phrase { background: rgba(242, 184, 75, .18); border-radius: 3px; padding: 0 3px; color: #fff; }
+
 .bd-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 10px 0 0; }
 .bd-actions .btn, .bd-save .btn { min-height: 44px; }
 
@@ -166,6 +178,8 @@
 @media (max-width: 999px) { .bd-wrap { padding-bottom: 80px; } }
 @media (prefers-reduced-motion: no-preference) {
   .bd-chip, .bd-swatch, .bd-badge { transition: background-color .12s ease, border-color .12s ease; }
+  .bd-spinner { animation: bd-spin .9s linear infinite; }
+  @keyframes bd-spin { to { transform: rotate(360deg); } }
 }
 
 /* the quiz doorway at the top of the builder (web/quiz.html) */

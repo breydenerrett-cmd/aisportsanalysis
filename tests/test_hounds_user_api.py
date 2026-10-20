@@ -203,12 +203,17 @@ class RetireAndCopy(ApiCase):
         self.assertEqual(out["hound"]["status"], "retired")
         self.assertEqual(user_store.get_hound(h["id"])["retired_by"], "admin")
 
-    def test_a_reason_is_required(self):
+    def test_a_reason_is_required_of_a_moderator_but_an_owners_removal_needs_no_words(self):
+        # (2026-10-19: the kennel's "Remove from my kennel" button posts no reason; tests/test_hounds_retire_and_edit.py)
         h = self.create(name="Mine One")["hound"]
         with self.assertRaises(HTTPException) as ctx:
             self.api.retire_hound(h["id"], self.api.RetireRequest(reason=" "),
-                                  authorization=f"Bearer {self.token}", x_admin_token=None)
+                                  authorization=None, x_admin_token=ADMIN)
         self.assertEqual(ctx.exception.status_code, 422)
+        out = self.api.retire_hound(h["id"], self.api.RetireRequest(reason=" "),
+                                    authorization=f"Bearer {self.token}", x_admin_token=None)
+        self.assertEqual(out["hound"]["status"], "retired")
+        self.assertTrue(out["hound"]["retire_reason"])
 
     def test_copy_flow_spec_endpoint_then_post_back_as_your_own(self):
         src = self.create(name="Dog Days", tagline="Dogs bark", side_rule="underdog")["hound"]

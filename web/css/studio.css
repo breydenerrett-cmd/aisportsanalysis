@@ -48,6 +48,11 @@
 .kn-act:hover { background: rgba(255, 255, 255, .13); }
 .kn-act--primary { background: var(--lh-accent, #2FD07A); color: #04140B; }
 .kn-act--primary:hover { background: #4BE08F; }
+/* "Remove": always there, never the loudest thing on the card (a removal asks first and cannot be undone) */
+.kn-act--quiet { background: transparent; color: var(--lh-mute, #9AA3B2); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .14); }
+.kn-act--quiet:hover { background: rgba(255, 107, 122, .12); color: #FFD7DB; }
+.kn-status { min-height: 1.2em; margin: 4px 0 8px; }
+.kn-status[data-kind="error"] { color: #FFD7DB; }
 
 .kn-card--build {
   flex-direction: column; align-items: center; justify-content: center; min-height: 190px; gap: 4px; cursor: pointer;
@@ -93,7 +98,8 @@
   position: fixed; top: 0; right: 0; bottom: 0; z-index: 100; width: min(620px, 100vw); display: flex; flex-direction: column;
   background: #0F1317; box-shadow: -1px 0 0 rgba(255, 255, 255, .07), -30px 0 60px rgba(0, 0, 0, .45);
 }
-.kn-studio__head { display: flex; align-items: center; gap: 14px; padding: 18px 20px 12px; }
+.kn-studio__head { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 18px 20px 12px; }
+.kn-studio__remove { order: 5; margin-left: auto; }
 .kn-studio__avatar { flex: none; line-height: 0; }
 .kn-studio__who { flex: 1; min-width: 0; }
 .kn-studio__who h2 { margin: 0; font-size: 20px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

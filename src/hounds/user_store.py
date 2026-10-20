@@ -49,6 +49,11 @@ STATUS_BENCHED = "benched"
 STATUS_RETIRED = "retired"
 STATUSES = (STATUS_RUNNING, STATUS_BENCHED, STATUS_RETIRED)
 
+# What the kennel's "Remove from my kennel" button records. A removal is a RETIREMENT, never a delete: the
+# ledger is append-only, so the dog's tickets and record stay exactly where they were and its page still opens by
+# its address ("Retired by the owner"). The row stops betting, leaves the kennel and the leaderboard, and frees a slot.
+OWNER_REMOVED_REASON = "removed from the kennel by its owner"
+
 ROUND_TTL = timedelta(minutes=15)
 COACH_COOLDOWN = timedelta(days=7)
 
@@ -161,6 +166,25 @@ def _row_to_hound(row: sqlite3.Row) -> dict:
 # ---------------------------------------------------------------------------
 # reads
 # ---------------------------------------------------------------------------
+
+def removed_by_owner(hound: Mapping) -> bool:
+    """True for a hound its owner retired by hand. A version retired because a newer one replaced it (an edit, a
+    promotion, an undo) is not a removal: its reason starts 'superseded by'."""
+    return (hound.get("status") == STATUS_RETIRED
+            and str(hound.get("retired_by") or "").startswith("owner:")
+            and not str(hound.get("retire_reason") or "").startswith("superseded by"))
+
+
+def removed_roots(hounds: List[Mapping]) -> set:
+    """Lineages (root ids) whose NEWEST version the owner removed: the whole lineage is gone from the owner's
+    kennel, older superseded versions included, so removing a dog does not leave its past selves behind."""
+    newest: dict = {}
+    for h in hounds:
+        cur = newest.get(h["root_id"])
+        if cur is None or h["version_no"] > cur["version_no"]:
+            newest[h["root_id"]] = h
+    return {root for root, h in newest.items() if removed_by_owner(h)}
+
 
 def get_hound(hound_id: str, *, db: Optional[Path] = None) -> Optional[dict]:
     with _connect(db) as conn:
