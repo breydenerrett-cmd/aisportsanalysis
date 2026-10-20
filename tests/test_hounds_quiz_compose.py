@@ -331,7 +331,7 @@ class NamesAndLooks(unittest.TestCase):
     def test_the_look_follows_the_picks_and_stays_on_the_whitelist(self):
         out = C.compose({"look": {"coat": "golden", "accessory": "sunglasses"}, "personality": "mystic"})
         self.assertEqual((out["look"]["coat"], out["look"]["face"]), ("golden", "sunglasses"))
-        self.assertEqual(out["look"]["bg"], "maroon")                      # rose dog, maroon tile
+        self.assertEqual(out["look"]["bg"], "violet")                      # the mystic's own tile
         other = C.compose({"look": {"coat": "red", "accessory": "hoodie"}})
         self.assertEqual((other["look"]["coat"], other["look"]["body"]), ("red", "hoodie"))
 

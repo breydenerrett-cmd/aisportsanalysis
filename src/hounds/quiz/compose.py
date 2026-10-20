@@ -61,8 +61,6 @@ NEUTRAL = {
     "total": {"side": "either", "price_min": -199, "price_max": 1000, "when": []},
     "prop": {"side": "either", "price_min": -199, "price_max": 1000, "when": []},
 }
-COLOR_BG = {"ember": "maroon", "crimson": "maroon", "gold": "sand", "lime": "forest", "mint": "forest", "sky": "navy",
-            "violet": "violet", "rose": "maroon"}
 ORDER = ("sports", "markets", "personality", "bets_per_day", "stake", "price_comfort", "timing", "archetypes", "quirks",
          "letter", "look", "name", "tagline")
 GLOBAL_KEYS = ("max_bets_per_day", "stake_units", "lock_minutes", "rank_by")
@@ -315,14 +313,14 @@ def name_suggestions(lib: Mapping, personality: Optional[str], archetype_ids: li
 # the look
 # ---------------------------------------------------------------------------
 
-def suggest_look(lib: Mapping, answers: Mapping, color: str, seed_parts: Any) -> dict:
-    """A whitelisted look for the hound (src/hounds/interact/look.py keys): the person's coat and accessory when
-    they picked them, otherwise a stable pick from the seed. Cosmetic only."""
-    coats = lib["looks"]["coats"]
+def suggest_look(lib: Mapping, answers: Mapping, personality: Optional[Mapping]) -> dict:
+    """A whitelisted look for the hound (src/hounds/interact/look.py keys): the person's coat and accessory when they
+    picked them, else the personality's own coat and tile, else the plain default. Cosmetic only, and the same table the
+    page reads (`coat`, `bg` on each personality), so the preview on the look question is the dog on the reveal."""
     asked = answers.get("look") or {}
-    coat = asked.get("coat") or coats[_hash(["coat", seed_parts]) % len(coats)]
-    look = {"coat": coat, "eyes": "brown", "bg": COLOR_BG.get(color, "navy"), "head": "none", "face": "none",
-            "neck": "none", "body": "none"}
+    p = personality or {}
+    look = {"coat": asked.get("coat") or p.get("coat") or "tan", "eyes": "brown", "bg": p.get("bg") or "navy",
+            "head": "none", "face": "none", "neck": "none", "body": "none"}
     if asked.get("accessory"):
         look.update(lib_mod.by_id(lib["looks"]["accessories"])[asked["accessory"]]["look"])
     return look
@@ -497,7 +495,7 @@ def compose(answers: Any, *, taken_names: Iterable[str] = (), english_draft: Any
     final_rules = spec["rules"]
     cards = _cards(spec, sources)
     sentences = render.rule_sentences(spec)
-    look = suggest_look(lib, ans, spec["color"], seed_parts)
+    look = suggest_look(lib, ans, pers)
     return {
         "spec": spec, "english": render.rule_text(spec), "sentences": sentences,
         "global_sentences": render.global_sentences(spec), "rule_cards": cards, "warnings": warnings,
@@ -566,7 +564,8 @@ def _cards(spec: Mapping, sources: list) -> list:
     for i, rule in enumerate(spec["rules"]):
         src = sources[i] if i < len(sources) else {"kind": "english", "id": None, "name": ""}
         cards.append({"index": i, "label": rule.get("label") or src["name"], "source": src["kind"], "source_id": src["id"],
-                      "source_name": src["name"], "sentence": render.rule_sentence(rule), "sports": rule["sports"],
+                      "source_name": src["name"], "sentence": render.rule_sentence(rule),
+                      "body": render.rule_sentence({**rule, "label": ""}), "sports": rule["sports"],
                       "markets": rule["markets"], "side": rule["side"], "price_min": rule["price_min"],
                       "price_max": rule["price_max"], "conditions": len(list(R.walk(rule.get("when"))))})
     return cards
