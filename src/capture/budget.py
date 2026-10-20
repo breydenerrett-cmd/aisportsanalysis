@@ -175,7 +175,14 @@ HISTORICAL_BACKFILL = "historical_backfill"
 PROBE = "probe"
 TEST = "test"
 LIVE_ODDS = "live_odds"
-VALID_BANDS = frozenset({LIVE_CAPTURE, HISTORICAL_BACKFILL, PROBE, TEST, LIVE_ODDS})
+# The all-sports capture (owner decision 2026-10-19: member dogs may bet any sport The Odds API prices).
+# Its own band and its own daily cap (config/sports_catalog.json "capture.daily_cap_credits", 1,500 a day),
+# so it can neither starve nor be starved by the pre-game envelope. Like LIVE_ODDS it is a DIRECT-SUM band:
+# every call logs its own cost (`credits_used_last`, the vendor's x-requests-last), and the day's total is
+# the sum of those, never a balance delta that another runner's spend could be mis-billed into.
+ALLSPORTS = "allsports_capture"
+VALID_BANDS = frozenset({LIVE_CAPTURE, HISTORICAL_BACKFILL, PROBE, TEST, LIVE_ODDS, ALLSPORTS})
+DIRECT_SUM_BANDS = frozenset({LIVE_ODDS, ALLSPORTS})
 
 # Every `caller` string the five paid-capture `run()` entry points log via
 # `pipeline.creditlog` (dense.py's own close-capture pass included -- it is
@@ -393,12 +400,14 @@ def spent_today(now=None, store=None, band=None) -> int:
     today = _row_date({"utc": _utc_iso(_now(now))})
     todays_rows = [r for r in _rows(store) if _row_date(r) == today]
 
-    live_odds_total = sum(
-        (r.get("credits_used_last") or 0)
-        for r in todays_rows if row_band(r) == LIVE_ODDS
-    )
-    if band == LIVE_ODDS:
-        return live_odds_total
+    # The DIRECT-SUM bands (live_odds, allsports_capture): each call logged its
+    # own cost, so the band's total is that sum, exactly as described above.
+    direct_totals = {
+        b: sum((r.get("credits_used_last") or 0) for r in todays_rows if row_band(r) == b)
+        for b in DIRECT_SUM_BANDS
+    }
+    if band in DIRECT_SUM_BANDS:
+        return direct_totals[band]
 
     known = [r for r in todays_rows if r.get("credits_remaining") is not None]
     other_total = 0
@@ -410,24 +419,72 @@ def spent_today(now=None, store=None, band=None) -> int:
             continue
         delta = prev_remaining - cur_remaining
         cur_band = _delta_band(cur, delta)
-        if cur_band == LIVE_ODDS:
-            # This delta IS a live_odds checkpoint's own drop -- already
-            # counted once in live_odds_total above via its own
+        if cur_band in DIRECT_SUM_BANDS:
+            # This delta IS a direct-sum checkpoint's own drop -- already
+            # counted once in direct_totals above via its own
             # credits_used_last; counting it again here would double it.
             continue
         prev_utc, cur_utc = prev.get("utc") or "", cur.get("utc") or ""
-        live_odds_inside = sum(
+        direct_inside = sum(
             (r.get("credits_used_last") or 0)
             for r in todays_rows
-            if row_band(r) == LIVE_ODDS
+            if row_band(r) in DIRECT_SUM_BANDS
             and prev_utc < (r.get("utc") or "") < cur_utc
         )
-        delta = max(delta - live_odds_inside, 0)
+        delta = max(delta - direct_inside, 0)
         if band is None or cur_band == band:
             other_total += delta
     if band is None:
-        return other_total + live_odds_total
+        return other_total + sum(direct_totals.values())
     return other_total
+
+
+def allsports_spent_today(now=None, store=None, caller_prefix=None) -> int:
+    """Credits the all-sports capture has spent today (UTC): the sum of each call's own logged cost.
+
+    `caller_prefix`, when given (e.g. "allsports_capture.inplay"), restricts the sum to rows whose `caller`
+    starts with it, which is how the in-play and scores sub-caps are read out of the one band."""
+    today = _row_date({"utc": _utc_iso(_now(now))})
+    return sum(
+        (r.get("credits_used_last") or 0) for r in _rows(store)
+        if _row_date(r) == today and row_band(r) == ALLSPORTS
+        and (caller_prefix is None or str(r.get("caller") or "").startswith(caller_prefix)))
+
+
+def allsports_daily_cap(config=None) -> int:
+    """The all-sports daily cap, a config value (config/sports_catalog.json capture.daily_cap_credits)."""
+    from src.sports import catalog
+    return catalog.daily_cap_credits(config)
+
+
+def can_spend_allsports(est_credits: int, now=None, store=None, remaining=None, config=None,
+                        sub_cap=None, caller_prefix=None) -> Decision:
+    """May the all-sports capture spend `est_credits` right now?
+
+    Checked in order: (1) a non-positive request is allowed; (2) the absolute credit floor, failing
+    CLOSED when the quota is unreadable; (3) the band's daily cap; (4) when given, a sub-cap read from
+    the rows whose caller starts with `caller_prefix` (in-play and scores). Never reads the pre-game
+    DAILY_ENVELOPE: this band has its own cap. "skipped: credit floor" means stop; nothing here works
+    around it."""
+    if est_credits <= 0:
+        return Decision(True, "ok: all-sports non-positive request")
+    if remaining is None:
+        remaining = remaining_today(now=now, store=store)
+    if remaining is None:
+        return Decision(False, "skipped: quota unreadable (no credit_log row for today)")
+    if remaining - est_credits <= CREDIT_FLOOR:
+        return Decision(False, f"skipped: credit floor (remaining={remaining}, "
+                               f"floor={CREDIT_FLOOR}, requested={est_credits})")
+    cap = allsports_daily_cap(config)
+    spent = allsports_spent_today(now=now, store=store)
+    if spent + est_credits > cap:
+        return Decision(False, f"refused: all-sports daily cap (spent={spent}, requested={est_credits}, cap={cap})")
+    if sub_cap is not None and caller_prefix is not None:
+        sub_spent = allsports_spent_today(now=now, store=store, caller_prefix=caller_prefix)
+        if sub_spent + est_credits > sub_cap:
+            return Decision(False, f"refused: all-sports sub-cap {caller_prefix} (spent={sub_spent}, "
+                                   f"requested={est_credits}, cap={sub_cap})")
+    return Decision(True, f"ok: all-sports {spent}+{est_credits} of {cap} today")
 
 
 def capture_spent_today(now=None, store=None) -> int:
@@ -843,6 +900,10 @@ def status(now=None, store=None, families_path=None) -> dict:
             "spent_today": live_odds_spent,
             "cap": LIVE_ODDS_DAILY_CAP,
             "remaining_in_cap": live_odds_remaining,
+        },
+        "allsports": {
+            "spent_today": allsports_spent_today(now=now, store=store),
+            "cap": allsports_daily_cap(),
         },
         "drop_order_version": DROP_ORDER_VERSION,
         "drop_order": [d["family"] for d in DROP_ORDER],

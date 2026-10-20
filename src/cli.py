@@ -4142,6 +4142,54 @@ def cmd_nfl(args) -> int:
     return EXIT_ERROR
 
 
+def cmd_allsports(args) -> int:
+    """All-sports capture and scores (src/pipeline/allsports_capture.py, allsports_scores.py).
+
+    `capture` is the scheduled step (capture_slot.sh): free discovery and event listing, then paid
+    pre-game and in-play calls under the all-sports daily cap in config/sports_catalog.json, every call
+    logged in the `allsports_capture` credit band. `scores` polls the keys whose captured games have
+    finished and appends the results the member-dog settlement reads. `--plan` on either spends nothing."""
+    sub = getattr(args, "allsports_command", None)
+    plan = bool(getattr(args, "plan", False))
+
+    if sub == "capture":
+        from src.pipeline import allsports_capture
+
+        try:
+            result = allsports_capture.run(plan_only=plan)
+        except Exception as exc:  # noqa: BLE001 -- the chain step is tolerant
+            print(f"ERROR: allsports capture failed: {exc}", file=sys.stderr)
+            return EXIT_ERROR
+        for line in allsports_capture.summary_lines(result):
+            print(line)
+        if plan:
+            for call in result.get("plan") or []:
+                print(f"    plan {call['kind']:8s} {call['sport_key']} {call['markets']} {call['regions']} "
+                      f"~{call['est_credits']} credit(s), {call['pairs']} phase(s)")
+        if result.get("halt") and "credit floor" in str(result["halt"]):
+            print("ESCALATE: credit floor reached -- stop spending, tell Brey")
+        return EXIT_OK
+
+    if sub == "scores":
+        from src.pipeline import allsports_scores
+
+        try:
+            result = allsports_scores.run(plan_only=plan)
+        except Exception as exc:  # noqa: BLE001
+            print(f"ERROR: allsports scores failed: {exc}", file=sys.stderr)
+            return EXIT_ERROR
+        print(f"  allsports scores: {len(result['keys'])} key(s) due, {len(result['polled'])} polled, "
+              f"{result['credits']} credit(s), {result['rows']} result row(s)")
+        if result.get("halt"):
+            print(f"    halt: {result['halt']}")
+        for key, why in sorted(result["skipped"].items()):
+            print(f"    skipped {key}: {why}")
+        return EXIT_OK
+
+    print(f"unknown allsports subcommand: {sub}")
+    return EXIT_ERROR
+
+
 def cmd_tennis(args) -> int:
     """Tennis commands: discover and capture tournament data."""
     sub = getattr(args, "tennis_command", None)
@@ -4827,6 +4875,18 @@ def build_parser() -> argparse.ArgumentParser:
     nfl_capture_cmd = nfl_sub.add_parser(
         "capture", help="fetch and store NFL schedule, odds, and injury data")
 
+    allsports_cmd = sub.add_parser(
+        "allsports", help="all-sports capture and scores (every sport The Odds API prices)")
+    allsports_sub = allsports_cmd.add_subparsers(dest="allsports_command", required=True)
+    allsports_capture_cmd = allsports_sub.add_parser(
+        "capture", help="discover, then buy pre-game and in-play prices under the all-sports daily cap")
+    allsports_capture_cmd.add_argument(
+        "--plan", action="store_true", help="free discovery and event listing only; print the plan, spend nothing")
+    allsports_scores_cmd = allsports_sub.add_parser(
+        "scores", help="poll The Odds API scores for keys whose captured games finished (settlement input)")
+    allsports_scores_cmd.add_argument(
+        "--plan", action="store_true", help="print the keys that would be polled; spend nothing")
+
     tennis_cmd = sub.add_parser("tennis", help="tennis commands")
     tennis_sub = tennis_cmd.add_subparsers(dest="tennis_command", required=True)
     tennis_discover_cmd = tennis_sub.add_parser(
@@ -4973,6 +5033,7 @@ COMMANDS = {
     "situation": cmd_situation,
     "nfl": cmd_nfl,
     "tennis": cmd_tennis,
+    "allsports": cmd_allsports,
     "ufc": cmd_ufc,
 }
 

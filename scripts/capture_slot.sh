@@ -611,6 +611,18 @@ python3 -m src.cli tennis capture 2>&1 | sed 's/^/  /' || true
 echo "== ufc capture =="
 python3 -m src.cli ufc capture 2>&1 | sed 's/^/  /' || true
 
+# ALL SPORTS (2026-10-19): member dogs may bet any sport The Odds API prices. Free discovery and event
+# listing, then pre-game (t24h/t6h/t2h/t30m) and in-play h2h snapshots for every active non-outright key
+# that no pipeline above already buys, under the all-sports daily cap (config/sports_catalog.json
+# capture.daily_cap_credits, 1,500) in its own `allsports_capture` credit band. Rows land in the same
+# multibook store (data/processed, staged below); its done store and the scores store are append-only.
+# Kill switch: ALLSPORTS_CAPTURE=0 (or capture.enabled=false in the config). A 300 s cap and `|| true`:
+# it can never cost the slot.
+echo "== allsports capture =="
+timeout 300 python3 -m src.cli allsports capture 2>&1 | sed 's/^/  /' || true
+echo "== allsports scores =="
+timeout 300 python3 -m src.cli allsports scores 2>&1 | sed 's/^/  /' || true
+
 echo "== nfl card publish ($SLATE_DATE) =="
 NFL_DATE="$SLATE_DATE"
 NFL_CARD_OUT=$(python3 -m src.cli card publish --sport nfl --date "$NFL_DATE" 2>&1) || true

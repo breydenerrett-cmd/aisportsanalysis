@@ -123,7 +123,9 @@ class NothingOnTheBoardToday(Tmp):
     def test_no_games_today_names_the_next_slate_day(self):
         out = self.fire("2026-10-20T14:00:00Z", nfl_rows(), sports=["MLB", "NFL"])      # Tuesday 10 am
         self.assertEqual(out["slate"]["today_state"], "none")
-        self.assertEqual(out["slate"]["line"], "No games today. Next slate: Thursday.")
+        self.assertEqual(out["slate"]["line"], "No games today. Next slate: Thursday. "
+                                               "Next game: New England Patriots @ Chicago Bears (8:15 pm ET).")
+        self.assertEqual(out["slate"]["next_game"]["game"], "New England Patriots @ Chicago Bears")
 
     def test_no_games_at_all_says_that_too(self):
         out = self.fire(self.NOW, [])
@@ -133,7 +135,8 @@ class NothingOnTheBoardToday(Tmp):
 
     def test_tomorrow_is_called_tomorrow(self):
         out = self.fire("2026-10-20T14:00:00Z", wednesday_rows())     # Tuesday 10 am; the game is Wednesday evening
-        self.assertEqual(out["slate"]["line"], "No games today. Next slate: Tomorrow.")
+        self.assertEqual(out["slate"]["line"], "No games today. Next slate: Tomorrow. "
+                                               "Next game: Tampa Bay Rays @ Cleveland Guardians (7:10 pm ET).")
         self.assertEqual([d["label"] for d in out["slate"]["days"]], ["Tomorrow"])
 
 

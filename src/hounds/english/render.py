@@ -42,7 +42,8 @@ def _markets_phrase(rule: Mapping) -> str:
             names.append("moneylines")
         elif m == "spread":
             names.append("run lines" if sports == ["MLB"] else "point spreads" if sports == ["NFL"]
-                         else "run lines and point spreads")
+                         else "run lines and point spreads" if set(sports) <= set(user_spec.LEGACY_SPORTS)
+                         else "spreads")
         elif m == "total":
             names.append("game totals")
         else:
@@ -87,7 +88,7 @@ def _price_phrase(rule: Mapping) -> str:
 def rule_sentence(rule: Mapping) -> str:
     """One rule as a sentence (no disclaimer)."""
     kind = R.market_kind(rule["markets"][0])
-    head = f"{' and '.join(rule['sports'])} {_markets_phrase(rule)}: it backs {_side_phrase(rule)}"
+    head = f"{user_spec.sports_phrase(rule['sports'])} {_markets_phrase(rule)}: it backs {_side_phrase(rule)}"
     when = R.tree_text(rule.get("when"), kind)
     out = head
     if when:
@@ -103,8 +104,10 @@ def global_sentences(spec: Mapping) -> list:
     bets = spec["max_bets_per_day"]
     # A draft (an upgraded classic spec, a parser draft) has no derived `sports`; read them off the rules.
     sports = spec.get("sports") or [s for s in user_spec.SPORTS if any(s in r["sports"] for r in spec["rules"])]
+    words = {user_spec.sports_catalog.start_word(c) for c in sports}
     start = ("first pitch" if sports == ["MLB"] else "kickoff" if sports == ["NFL"]
-             else "first pitch or kickoff")
+             else "first pitch or kickoff" if set(sports) <= set(user_spec.LEGACY_SPORTS)
+             else words.pop() if len(words) == 1 else "the start")
     return [
         f"{spec['lock_minutes']} minutes before {start} it checks each rule against the board as it stood then "
         f"(nothing newer).",

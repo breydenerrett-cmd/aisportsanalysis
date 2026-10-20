@@ -369,7 +369,17 @@ def _since_margin_days(sport) -> int:
         return _DEFAULT_SINCE_MARGIN_DAYS
     if sport.startswith("tennis"):
         return _SINCE_MARGIN_DAYS_BY_SPORT["tennis"]
-    return _SINCE_MARGIN_DAYS_BY_SPORT.get(sport, _DEFAULT_SINCE_MARGIN_DAYS)
+    if sport in _SINCE_MARGIN_DAYS_BY_SPORT:
+        return _SINCE_MARGIN_DAYS_BY_SPORT[sport]
+    # The all-sports families (2026-10-19, config/sports_catalog.json): a pre-game capture phase leads by at
+    # most ~1.1 days, so a family carries its own small margin; a sport the catalog does not name keeps the
+    # widest measured default. mlb/nfl/mma are unchanged above and by the catalog's own values.
+    try:
+        from src.sports import catalog
+        margin = catalog.since_margin_days(sport)
+    except Exception:  # noqa: BLE001 -- a window may only ever over-include, never fail
+        margin = None
+    return margin if margin is not None else _DEFAULT_SINCE_MARGIN_DAYS
 
 
 def window_for_date(date_str, sport=DEFAULT_SPORT) -> tuple[str, str]:
@@ -718,6 +728,54 @@ def iter_multibook(path=DEFAULT_MULTIBOOK_PATH, skip_corrupt: bool = True,
         if not _is_sport(row, sport):
             continue
         if keep is not None and not keep(row):
+            continue
+        yield row
+
+
+def _text_sport(line):
+    """The sport a raw store line names, read from the text alone: the `"sport":"..."` value, or the default
+    (mlb) when the field is absent, or None when it cannot be told (unterminated value)."""
+    idx = line.find(_SPORT_MARKER)
+    if idx == -1:
+        return DEFAULT_SPORT
+    start = idx + len(_SPORT_MARKER)
+    end = line.find('"', start)
+    return None if end == -1 else line[start:end]
+
+
+def iter_multibook_multi(path=DEFAULT_MULTIBOOK_PATH, skip_corrupt: bool = True, *,
+                         since_by_sport, until=None):
+    """Rows of SEVERAL sports in ONE pass over the store, each sport windowed by its own `since`.
+
+    WHY. With the all-sports families a dog may ask for twenty sports; `iter_multibook(sport=...)` once per
+    sport scans the whole hot file twenty times. This reads each line once, drops lines whose text names
+    another sport before any JSON is parsed (the same over-match-never-under-match rule as
+    `_line_probably_wrong_sport`), and applies each wanted sport's own `since` (`since_by_sport` is
+    {sport: YYYY-MM-DD}; its keys are the wanted sports). Whole archive segments older than the EARLIEST
+    `since` are never opened."""
+    wanted = set(since_by_sport)
+    if not wanted or not store_archive.exists(path):
+        return
+    since_min = min(since_by_sport.values())
+    for number, line in enumerate(store_archive.iter_lines(path, since=since_min), start=1):
+        line = line.strip()
+        if not line:
+            continue
+        text_sport = _text_sport(line)
+        if text_sport is not None and text_sport not in wanted:
+            continue
+        if _line_probably_out_of_window(line, since_min, until):
+            continue
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError:
+            if skip_corrupt:
+                continue
+            raise SnapshotError(f"corrupt snapshot on line {number} of {path}")
+        sport = row_sport(row)
+        if sport not in wanted:
+            continue
+        if not _observed_in_window(row, since_by_sport[sport], until):
             continue
         yield row
 

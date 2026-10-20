@@ -228,7 +228,7 @@ def public_library(lib: Optional[Mapping] = None) -> dict:
         "price_cap_note": f"No selection at {user_spec.MAX_FAVOURITE_PRICE} or worse, ever.",
         "limits": {"archetype_picks": PICK_LIMIT, "max_rules": R.MAX_RULES,
                    "bets_per_day": list(user_spec.MAX_BETS_RANGE), "stake_units": list(R.STAKE_CHOICES)},
-        "sports": [{"value": s, "label": user_spec.SPORT_LABELS[s]} for s in user_spec.SPORTS],
+        "sports": [{"value": s, "label": user_spec.SPORT_LABELS[s]} for s in user_spec.LEGACY_SPORTS],
         "archetypes": archetypes(lib),
         "personalities": [_plain(p, "recipes") for p in lib["personalities"]],
         "markets": [_plain(m, "markets") | {"markets": list(m["markets"])} for m in lib["markets"]],

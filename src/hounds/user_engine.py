@@ -285,6 +285,8 @@ class GameBoards:
         self.sport = sport
         self.home_team: Optional[str] = None
         self.away_team: Optional[str] = None
+        self.league: Optional[str] = None          # the Odds API sport key (all-sports families only)
+        self.league_title: Optional[str] = None
         self.commence: Optional[datetime] = None
         self.captures: dict = defaultdict(lambda: defaultdict(list))   # market -> observed -> rows
         self.props: dict = defaultdict(lambda: defaultdict(list))      # prop market -> observed -> rows
@@ -302,6 +304,8 @@ class GameBoards:
         self.captures[market][observed].append(row)
         self.home_team = row.get("home_team") or self.home_team
         self.away_team = row.get("away_team") or self.away_team
+        self.league = row.get("league") or self.league
+        self.league_title = row.get("league_title") or self.league_title
         c = _utc(row.get("commence_time"))
         if c is not None:
             self._commence_by_obs[observed] = c
@@ -337,11 +341,17 @@ def sport_of_row(row: Mapping) -> str:
     return (row.get("sport") or "mlb").upper()
 
 
+# Up to this many sports, `iter_rows` scans the store once per sport (the long-standing behaviour); more
+# than this (a dog set to ANY sport) it makes ONE pass with a window per sport.
+ONE_PASS_SPORTS = 2
+
 # The only fields of a board row the engine reads. Kept rows are trimmed to these: a slate's boards
 # held whole were most of the engine's memory (the server has 1 GB, and a past incident was
-# whole-store reads).
+# whole-store reads). ``league``/``league_title`` (the Odds API sport key and its title) are written by
+# the all-sports capture only; MLB and NFL rows carry neither.
 _KEEP_FIELDS = ("book", "home_price", "away_price", "home_line", "away_line", "total",
-                "over_price", "under_price", "home_team", "away_team", "commence_time")
+                "over_price", "under_price", "home_team", "away_team", "commence_time",
+                "league", "league_title")
 
 
 def _slim(row: Mapping) -> dict:
@@ -388,6 +398,29 @@ def build_games(rows: Iterable[Mapping], near_date: Optional[str] = None) -> dic
     return games
 
 
+def build_event_game(rows: Iterable[Mapping], event_id: str) -> Optional["GameBoards"]:
+    """The boards of ONE event from raw multibook rows, pre-game AND in-play captures together (``build_games``
+    drops everything observed at or after the start, because the engine never bets then). Used by the per-event
+    Fire now answer to read a live price; nothing here is ever written. None when no row names the event."""
+    game = None
+    for row in rows:
+        if row.get("event_id") != event_id:
+            continue
+        market = _ROW_MARKET.get(row.get("market"))
+        observed, start = _utc(row.get("observed_utc")), _utc(row.get("commence_time"))
+        if market is None or observed is None or start is None:
+            continue
+        sport = sport_of_row(row)
+        if sport not in user_spec.SPORTS:
+            continue
+        if game is None:
+            game = GameBoards(event_id, sport)
+        game.add(market, observed, _slim(row))
+    if game is not None:
+        game.commence = game.commence_at(datetime.max.replace(tzinfo=timezone.utc))
+    return game
+
+
 def slate_date_of(commence: datetime) -> str:
     from src.pipeline import snapshots
     return snapshots.official_date(_iso(commence))
@@ -398,7 +431,16 @@ def iter_rows(date: str, sports: Iterable[str], *, multibook_path: Optional[str]
     reader: one row at a time, never a list. This is what the in-process scheduler uses."""
     from src.pipeline import snapshots
     path = multibook_path or snapshots.DEFAULT_MULTIBOOK_PATH
-    for sport in sorted({s.lower() for s in sports}):
+    wanted = sorted({s.lower() for s in sports})
+    if len(wanted) > ONE_PASS_SPORTS:
+        # Several families (a dog set to ANY sport): ONE pass over the store with each sport's own window,
+        # never one full scan per family.
+        windows = {s: snapshots.window_for_date(date, s) for s in wanted}
+        until = max(w[1] for w in windows.values())
+        yield from snapshots.iter_multibook_multi(
+            path, since_by_sport={s: w[0] for s, w in windows.items()}, until=until)
+        return
+    for sport in wanted:
         since, until = snapshots.window_for_date(date, sport)
         yield from snapshots.iter_multibook(path, sport=sport, since=since, until=until)
 
@@ -648,6 +690,11 @@ def run(date: str, hounds: Sequence[Mapping], rows: Iterable[Mapping], *,
                 "board_age_minutes": cand["board_age_minutes"], "units": 1,
                 "recorded_utc": _iso(t), "provenance": mode,
             }
+            if game.league:
+                # An all-sports game: the Odds API sport key (so settlement knows which scores feed to read)
+                # and its title. MLB and NFL rows carry neither and stay byte-identical.
+                row["league"] = game.league
+                row["league_title"] = game.league_title
             if user_spec.is_v2(spec):
                 # A version-2 bet also names its player (props), the rule that made it and its paper stake.
                 row.update({"player": cand.get("player"), "rule_index": cand["rule_index"],

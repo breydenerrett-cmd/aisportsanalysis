@@ -41,6 +41,7 @@ from pathlib import Path
 from typing import Any, Iterable, Mapping, Optional
 
 from src.core import odds as odds_math
+from src.sports import catalog as sports_catalog
 
 SPEC_VERSION = 1
 # The composable rule language (src/hounds/user_rules.py): several rules, each with AND/OR condition
@@ -65,7 +66,13 @@ MAX_BETS_RANGE = (1, 5)
 LOCK_CHOICES = (60, 120, 180)
 MAX_RUNNING_PER_ACCOUNT = 3
 
-SPORTS = ("MLB", "NFL")
+# The sports a dog may bet. Until 2026-10-19 this was the hard-coded pair ("MLB", "NFL"); it is now the
+# catalog's dog-menu families (config/sports_catalog.json): MLB and NFL first, then every other family a
+# member dog can be graded on. LEGACY_SPORTS is the old pair, still the DEFAULT wherever a rule is built
+# without an explicit choice (the quiz): a dog never starts betting a sport nobody picked for it.
+LEGACY_SPORTS = ("MLB", "NFL")
+SPORTS = sports_catalog.dog_families()
+ANY = sports_catalog.ANY           # "every sport on the menu"; validate_spec writes the explicit list
 MARKETS = ("moneyline", "spread", "total")
 
 SIDE_RULES = (
@@ -73,7 +80,7 @@ SIDE_RULES = (
     "market_moved_toward", "market_moved_away",
 )
 
-SPORT_LABELS = {"MLB": "MLB", "NFL": "NFL"}
+SPORT_LABELS = {code: sports_catalog.label(code) for code in sports_catalog.family_codes()}
 MARKET_LABELS = {"moneyline": "Moneyline", "spread": "Spread / run line", "total": "Game total"}
 SIDE_LABELS = {
     "favourite": "The favourite",
@@ -318,6 +325,27 @@ def _check_tagline(raw: Mapping, errors: dict, key: str = "tagline", maximum: in
     return tagline
 
 
+def normalize_sports(value: Any) -> Optional[list]:
+    """The explicit, canonically ordered sport list for a raw `sports` choice, or None when it is not valid.
+
+    "ANY" (alone or among others) means every sport on the dog menu. It is written out as that explicit list
+    at validation, on purpose: a spec is immutable and hashed, and the published rule must be exactly what
+    ran, so a dog built as ANY keeps the families that existed when it was built rather than silently
+    betting a sport added later."""
+    items = _as_list(value)
+    if not items or any(not isinstance(s, str) for s in items):
+        return None
+    if ANY in items:
+        return list(SPORTS)
+    if any(s not in SPORTS for s in items) or len(set(items)) != len(items):
+        return None
+    return [s for s in SPORTS if s in items]
+
+
+def sports_error_text() -> str:
+    return f"choose from {', '.join(SPORTS)}, or {ANY} for every sport"
+
+
 def validate_spec(raw: Mapping, *, taken_names: Iterable[str] = (),
                   extra_real_names: Optional[Mapping[str, str]] = None) -> dict:
     """The strict gate. Returns a NORMALISED spec (canonical order, canonical types) or raises
@@ -337,12 +365,9 @@ def validate_spec(raw: Mapping, *, taken_names: Iterable[str] = (),
     tagline = _check_tagline(raw, errors)
 
     # sports / markets
-    sports = _as_list(raw.get("sports", raw.get("sport")))
-    if not sports or any(s not in SPORTS for s in sports) or len(set(sports)) != len(sports):
-        errors["sports"] = f"choose one or both of {', '.join(SPORTS)}"
-        sports = None
-    else:
-        sports = [s for s in SPORTS if s in sports]
+    sports = normalize_sports(raw.get("sports", raw.get("sport")))
+    if sports is None:
+        errors["sports"] = sports_error_text()
     markets = _as_list(raw.get("markets", raw.get("market")))
     if not markets or any(m not in MARKETS for m in markets) or len(set(markets)) != len(markets):
         errors["markets"] = f"choose from {', '.join(MARKETS)}"
@@ -431,7 +456,8 @@ def _market_words(spec: Mapping) -> str:
             names.append("moneylines")
         elif m == "spread":
             names.append("run lines" if sports == ["MLB"] else
-                         "point spreads" if sports == ["NFL"] else "run lines and point spreads")
+                         "point spreads" if sports == ["NFL"] else
+                         "run lines and point spreads" if set(sports) <= set(LEGACY_SPORTS) else "spreads")
         else:
             names.append("game totals")
     if len(names) == 1:
@@ -451,15 +477,26 @@ _SIDE_PHRASE = {
 }
 
 
+def sports_phrase(sports: Iterable[str]) -> str:
+    """'MLB and NFL', 'NBA', 'any sport' (every dog-menu family), or 'MLB, NFL, NBA and 4 more sports'."""
+    sports = list(sports)
+    if set(sports) >= set(SPORTS) and len(SPORTS) > 2:
+        return "any sport"
+    if len(sports) <= 3:
+        return " and ".join(sports) if len(sports) <= 2 else ", ".join(sports[:-1]) + " and " + sports[-1]
+    return ", ".join(sports[:3]) + f" and {len(sports) - 3} more sports"
+
+
 def rule_text(spec: Mapping) -> str:
     """The plain-English rule, generated from the validated spec and nothing else."""
     if spec.get("version") == SPEC_VERSION_V2:
         from src.hounds.english import render
         return render.rule_text(spec)
     sports = spec["sports"]
-    sport_words = " and ".join(sports)
-    start_word = {"MLB": "first pitch", "NFL": "kickoff"}
-    starts = start_word[sports[0]] if len(sports) == 1 else "first pitch or kickoff"
+    sport_words = sports_phrase(sports)
+    words = {sports_catalog.start_word(c) for c in sports}
+    starts = words.pop() if len(words) == 1 else ("first pitch or kickoff" if set(sports) == set(LEGACY_SPORTS)
+                                                   else "the start")
     books = spec["min_books"]
     bets = spec["max_bets_per_day"]
     return (
@@ -473,6 +510,12 @@ def rule_text(spec: Mapping) -> str:
     )
 
 
+def sports_menu() -> list:
+    """The sport choices for the builder: every dog-menu family, then ANY (every family at once)."""
+    return ([{"value": s, "label": SPORT_LABELS[s]} for s in SPORTS]
+            + [{"value": ANY, "label": "Any sport", "any": True}])
+
+
 def menu() -> dict:
     """The fixed menu, with labels, for the web form. Nothing outside it validates."""
     return {
@@ -480,8 +523,8 @@ def menu() -> dict:
         "not_advice": NOT_ADVICE,
         "name": {"min": NAME_MIN, "max": NAME_MAX, "pattern": "letters, digits, spaces, hyphens"},
         "tagline": {"max": TAGLINE_MAX},
-        "sports": [{"value": s, "label": SPORT_LABELS[s]} for s in SPORTS],
-        "markets": [{"value": m, "label": MARKET_LABELS[m]} for m in MARKETS],
+        "sports": sports_menu(),
+        "markets": [{"value": m, "label": MARKET_LABELS[m], "sports": list(SPORTS)} for m in MARKETS],
         "side_rules": [{"value": s, "label": SIDE_LABELS[s], "markets": list(SIDE_MARKETS[s])}
                        for s in SIDE_RULES],
         "price_min": {"label": "Shortest price", "presets": list(PRICE_PRESETS_SHORT),
@@ -575,12 +618,9 @@ def _validate_rule(raw: Any, index: int, errors: dict) -> Optional[dict]:
     else:
         label = _check_tagline({f"{prefix}label": label}, errors, key=f"{prefix}label", maximum=RULE_LABEL_MAX)
 
-    sports = _as_list(raw.get("sports", raw.get("sport")))
-    if not sports or any(s not in SPORTS for s in sports) or len(set(sports)) != len(sports):
-        errors[f"{prefix}sports"] = f"choose one or both of {', '.join(SPORTS)}"
-        sports = None
-    else:
-        sports = [s for s in SPORTS if s in sports]
+    sports = normalize_sports(raw.get("sports", raw.get("sport")))
+    if sports is None:
+        errors[f"{prefix}sports"] = sports_error_text()
     markets = _as_list(raw.get("markets", raw.get("market")))
     if not markets or any(m not in R.ALL_MARKETS for m in markets) or len(set(markets)) != len(markets):
         errors[f"{prefix}markets"] = f"choose from {', '.join(R.ALL_MARKETS)}"
@@ -595,7 +635,7 @@ def _validate_rule(raw: Any, index: int, errors: dict) -> Optional[dict]:
                                           "player props; put each in its own rule")
             markets = None
         elif "prop" in kinds and sports and sports != ["MLB"]:
-            errors[f"{prefix}sports"] = "player props are MLB only: there are no NFL prop prices on file"
+            errors[f"{prefix}sports"] = "player props are MLB only: there are no prop prices on file for any other sport"
             sports = None
 
     side = raw.get("side", "either")
@@ -735,7 +775,7 @@ def builder_menu() -> dict:
                    "max_running_per_account": MAX_RUNNING_PER_ACCOUNT, "max_list": R.MAX_LIST},
         "name": {"min": NAME_MIN, "max": NAME_MAX}, "tagline": {"max": TAGLINE_MAX},
         "rule_label": {"max": RULE_LABEL_MAX},
-        "sports": [{"value": s, "label": SPORT_LABELS[s]} for s in SPORTS],
+        "sports": sports_menu(),
         "markets": [{"value": m, "label": R.MARKET_LABELS[m], "kind": R.market_kind(m), "has_line": m != "moneyline",
                      "sports": ["MLB"] if R.market_kind(m) == "prop" else list(SPORTS)} for m in R.ALL_MARKETS],
         "sides": [{"value": s, "label": R.SIDE_LABELS[s]} for s in R.SIDES],

@@ -38,7 +38,7 @@ from src.appstate import ratelimit
 from src.appstate import users as users_store
 from src.hounds import user_spec
 from src.hounds.contract import envelope
-from src.hounds.interact import ask, ask_eval, camp, common, drill, fire, look, manual, store
+from src.hounds.interact import ask, ask_eval, camp, common, drill, fire, fire_event, look, manual, store
 
 from api import auth as auth_mod
 from api.auth import get_current_user
@@ -102,6 +102,26 @@ def _owned(hound_id: str, user: users_store.User) -> common.Dog:
 
 def _viewer_id(authorization: Optional[str]) -> Optional[int]:
     return auth_mod.optional_user_id(authorization)
+
+
+class FireRequest(BaseModel):
+    """POST /hounds/{id}/fire body, all optional: ``event_id`` asks about ONE game (src/hounds/interact/fire_event.py)."""
+    event_id: Optional[str] = None
+
+
+def _event_payload(dog: common.Dog, event_id: str) -> dict:
+    """Would this dog back THIS game: picked (with the pick) or not (with the reason). Read only."""
+    event_id = event_id.strip()
+    if not event_id or len(event_id) > 120:
+        raise _err(422, "bad_event_id", "event_id must be a short non-empty string")
+    try:
+        out = fire_event.answer(dog, event_id)
+    except fire.NotFirable as exc:
+        raise _err(422, "not_firable", str(exc))
+    for pick in [out.get("pick")] + list(out.get("picks") or []):
+        if isinstance(pick, dict):
+            pick.pop("row", None)
+    return out
 
 
 def _fire_payload(dog: common.Dog, viewer_id: Optional[int] = None) -> dict:
@@ -202,10 +222,12 @@ def kit(hound_id: str, response: Response, authorization: Optional[str] = Header
 # ---------------------------------------------------------------------------
 
 @router.post("/hounds/{hound_id}/fire")
-def fire_now(hound_id: str, response: Response, authorization: Optional[str] = Header(default=None),
-             _rl: None = Depends(_rl_fire_route)) -> dict:
+def fire_now(hound_id: str, response: Response, body: Optional[FireRequest] = None,
+             authorization: Optional[str] = Header(default=None), _rl: None = Depends(_rl_fire_route)) -> dict:
     response.headers["Cache-Control"] = _NO_STORE
     dog = _dog(hound_id)
+    if body is not None and body.event_id is not None:
+        return envelope(_event_payload(dog, body.event_id))
     return envelope(_fire_payload(dog, _viewer_id(authorization)))
 
 

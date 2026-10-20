@@ -106,8 +106,9 @@ def clean_answers(raw: Any, lib: Mapping, warnings: list) -> dict:
     sports = a.get("sports")
     if sports not in (None, "", []):
         items = [sports] if isinstance(sports, str) else sports
-        good = [s for s in user_spec.SPORTS if isinstance(items, (list, tuple)) and s in items]
-        bad = [i for i in (items if isinstance(items, (list, tuple)) else [items]) if i not in user_spec.SPORTS]
+        # The quiz stays on MLB and NFL: its cards use stat conditions that exist only for those two sports.
+        good = [s for s in user_spec.LEGACY_SPORTS if isinstance(items, (list, tuple)) and s in items]
+        bad = [i for i in (items if isinstance(items, (list, tuple)) else [items]) if i not in user_spec.LEGACY_SPORTS]
         for item in bad:
             _warn(warnings, "answer_ignored", f"'{str(item)[:20]}' is not a sport this program covers.")
         if good:
@@ -380,7 +381,7 @@ def compose(answers: Any, *, taken_names: Iterable[str] = (), english_draft: Any
         _warn(warnings, "markets_assumed", "No market was picked, so the base rule is on moneylines.", "note")
 
     built: list = []          # [(rule, source)] in priority order; source = {"kind", "id", "name"}
-    sports_for_base = chosen_sports or list(user_spec.SPORTS)
+    sports_for_base = chosen_sports or list(user_spec.LEGACY_SPORTS)
     base_src = {"kind": "personality" if pers else "markets", "id": (pers or {}).get("id"),
                 "name": (pers or {}).get("name") or "Your markets"}
     if wants_base:
@@ -556,7 +557,7 @@ def _validate_with_repairs(raw: dict, sources: list, warnings: list, taken: list
 
 def _starter_rule(lib: Mapping) -> dict:
     p = lib_mod.by_id(lib["personalities"])[STARTER_PERSONALITY]
-    return _base_rule("ml", ["moneyline"], p, None, list(user_spec.SPORTS), [])
+    return _base_rule("ml", ["moneyline"], p, None, list(user_spec.LEGACY_SPORTS), [])
 
 
 def _cards(spec: Mapping, sources: list) -> list:

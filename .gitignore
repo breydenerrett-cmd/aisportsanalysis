@@ -204,6 +204,14 @@ evidence/tmp*.tmp
 # on almost every slot (about 240 credits a day, 34% of live spend).
 !data/processed/nfl_capture_done.jsonl
 !data/processed/mma_capture_done.jsonl
+# The all-sports capture (2026-10-19, src/pipeline/allsports_capture.py and allsports_scores.py). The done
+# store is the capture's whole memory (phases bought, calls made, quiet-key rechecks): left ignored, every
+# fresh runner would start empty and re-buy every phase, exactly the nfl_capture_done mistake above. The
+# discovery record and the scores store are append-only evidence (a result is what member-dog bets are graded
+# from), and a runner's disk is reclaimed.
+!data/processed/allsports_capture_done.jsonl
+!data/processed/allsports_sports.jsonl
+!data/processed/allsports_scores.jsonl
 # Added with packet W6 (InformationEvent free-environment layer,
 # src/board/events.py): a projected event is a deterministic re-derivation
 # of rows already tracked above, but the ids/dedup state it accumulates are

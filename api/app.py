@@ -56,6 +56,7 @@ from api.performance import router as performance_router
 from api.live import router as live_router
 from api.live_state import router as live_state_router
 from api.tennis import router as tennis_router
+from api.sports import router as sports_router, public_router as sports_public_router
 from api.props import router as props_router
 from api.datasvc import router as datasvc_router
 from api.ufc_fights import router as ufc_fights_router
@@ -183,6 +184,11 @@ app.include_router(live_state_router, dependencies=_authed_paid)
 # /tennis/board -- Tennis research board, same paid-demo gate as the rest of
 # the read-only game surface.
 app.include_router(tennis_router, dependencies=_authed_paid)
+# /sports/catalog -- the sport families the program covers (public, like /hounds/builder/menu);
+# /sports/now -- what is live and what starts in the next 24 hours in every sport, from STORED rows only
+# (api/sports.py, src/sports/allsports_view.py), same paid-demo gate as the rest of the read-only game surface.
+app.include_router(sports_public_router)
+app.include_router(sports_router, dependencies=_authed_paid)
 # /props/{date}, /props -- the player-prop board. Paid, like every other
 # read-only game surface. It is a BOARD and not a card: ranked by how likely
 # each outcome is, never by the gap against its price, because selecting on
