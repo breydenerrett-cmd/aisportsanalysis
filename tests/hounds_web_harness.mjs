@@ -37,6 +37,7 @@ class TextNode {
   constructor(t) { this.nodeType = 3; this.textContent = String(t); this.parentNode = null; }
 }
 
+const scrolls = [];
 class Elem {
   constructor(tag, ns) {
     this.nodeType = 1; this.tagName = String(tag).toUpperCase(); this.localName = String(tag).toLowerCase();
@@ -69,6 +70,7 @@ class Elem {
   select() {}
   focus() {}
   blur() {}
+  scrollIntoView() { scrolls.push(this.attrs["data-hook"] || this.localName); }
   getBoundingClientRect() { return { left: 0, top: 0, width: scenario.width || 640, height: 300 }; }
   addEventListener(t, f) { (this.listeners[t] ||= []).push(f); }
   removeEventListener(t, f) { this.listeners[t] = (this.listeners[t] || []).filter((x) => x !== f); }
@@ -338,6 +340,7 @@ try {
   out.crashed = String((err && err.stack) || err);
 }
 out.captures = captures;
+out.scrolls = scrolls;
 out.gets = gets;
 out.getCalls = getCalls;
 out.posts = posts;
