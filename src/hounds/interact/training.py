@@ -48,6 +48,7 @@ from __future__ import annotations
 
 import copy
 import json
+import os
 import threading
 from datetime import datetime
 from typing import Callable, Mapping, Optional, Sequence
@@ -543,6 +544,10 @@ def send_brief(brief: Mapping, job_key: str, *, env: Optional[Mapping] = None,
     when it succeeded). NEVER raises and never waits for the answer: the post runs on a daemon thread with a short
     timeout, and every failure is swallowed, because a coach's second opinion must not hold up a training."""
     try:
+        # Opt-in: the only hook today is the live strategy-translator Zap, whose AI step would spend tasks on briefs
+        # it cannot use. Off unless TRAINING_BRIEF_ZAP=on (set it once a Zap filters on kind=training_brief).
+        if str((env if env is not None else os.environ).get("TRAINING_BRIEF_ZAP", "")).strip().lower() != "on":
+            return False
         from src.hounds.english import translate
         url = translate.hook_url(env)
         if url is None:

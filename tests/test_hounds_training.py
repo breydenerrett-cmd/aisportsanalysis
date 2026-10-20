@@ -380,7 +380,15 @@ class NeverClaimsItIsBetter(Train):
 
 
 class TheOptionalAiParagraph(Train):
-    HOOK = {"ZAPIER_TRANSLATE_HOOK_URL": "https://hooks.zapier.com/hooks/catch/1/abc/"}
+    HOOK = {"ZAPIER_TRANSLATE_HOOK_URL": "https://hooks.zapier.com/hooks/catch/1/abc/", "TRAINING_BRIEF_ZAP": "on"}
+
+    def test_the_brief_is_opt_in_even_with_a_hook(self):
+        """The only hook today is the live translator Zap; without TRAINING_BRIEF_ZAP=on nothing is sent to it."""
+        from src.hounds.interact import training
+        sent = []
+        env = {"ZAPIER_TRANSLATE_HOOK_URL": self.HOOK["ZAPIER_TRANSLATE_HOOK_URL"]}
+        self.assertFalse(training.send_brief({"x": 1}, "training-t", env=env, poster=lambda u, p: sent.append(p), background=False))
+        self.assertEqual(sent, [])
 
     def test_without_a_hook_the_paragraph_is_deterministic_text_and_nothing_is_sent(self):
         hound = self.two_sport_dog()
