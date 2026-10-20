@@ -27,7 +27,7 @@ TOKEN_KEY = "aisportsanalysis.invite_token"
 SIGNED = dict(stored={TOKEN_KEY: "tok"})
 PAGES = ("kennels.html", "hounds.html", "hound.html", "build-a-hound.html", "learning.html", "kennel.html", "landing.html", "why-we-paused.html",
          "postseason.html", "sample.html", "index.html")
-LINKS = [("hounds.html", "Leaderboard"), ("kennels.html", "Kennels"), ("build-a-hound.html", "Build"),
+LINKS = [("hounds.html", "Leaderboard"), ("kennels.html", "Kennels"), ("quiz.html", "Build"),
          ("learning.html", "Training camp")]
 
 

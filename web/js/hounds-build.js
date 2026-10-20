@@ -1115,6 +1115,8 @@ async function boot() {
   if (editId) {
     const dog = S.mine.find((d) => d.id === editId);
     if (dog) startEdit(dog);
+  } else if (params.get("quiz")) {
+    loadQuizHandoff();
   } else if (fromId) {
     const note = q("build-from-note");
     try {
@@ -1133,6 +1135,24 @@ async function boot() {
     }
   }
   updateSave();
+}
+
+/** "Edit rules" on the quiz's reveal (web/js/hound-quiz.js): the quiz leaves its composed spec in localStorage and opens
+ * the builder with ?quiz=1. It is a DRAFT like any other: it is checked by the same preview and saved by the same door. */
+function loadQuizHandoff() {
+  const note = q("build-from-note");
+  let data = null;
+  try { data = JSON.parse(window.localStorage.getItem("linehound.quiz.handoff.v1") || "null"); } catch (err) { data = null; }
+  note.hidden = false;
+  if (!data || !data.spec || !Array.isArray(data.spec.rules) || !data.spec.rules.length) {
+    note.textContent = "Your quiz draft could not be found, so this is a blank builder.";
+    return;
+  }
+  startFromDraft({ spec: data.spec, sentences: data.sentences || [] });
+  S.spec.name = data.spec.name || S.spec.name;
+  fillIdentity();
+  updateDogCard();
+  note.textContent = "Built from your quiz. Change anything you like; nothing is saved until you send it in.";
 }
 
 /** Resolves when the builder has loaded its menu and the member's dogs (the kennel studio waits for it). */

@@ -167,3 +167,7 @@
 @media (prefers-reduced-motion: no-preference) {
   .bd-chip, .bd-swatch, .bd-badge { transition: background-color .12s ease, border-color .12s ease; }
 }
+
+/* the quiz doorway at the top of the builder (web/quiz.html) */
+.bd-quizcta { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 6px 0 4px; font-size: 14px; color: var(--hd-mute); }
+.bd-quizcta .btn { min-height: 40px; }
