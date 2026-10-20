@@ -5006,7 +5006,7 @@ def cmd_situation(args) -> int:
 
 def cmd_datasvc(args) -> int:
     rest = list(args.rest)
-    if rest and rest[0] in ("ufc", "nfl"):
+    if rest and rest[0] in ("ufc", "nfl", "soccer", "mlbbox"):
         from src.datasvc import cli as datasvc_cli
         return datasvc_cli.main(rest)
     from src.datasvc.espn import cli as espn_cli
