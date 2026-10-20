@@ -561,10 +561,19 @@ function friendlyField(key) {
   return key.replace(/_/g, " ");
 }
 
+/** A refusal as a list of sentences. Every shape the server can send gives at least one: the validator's per-field reasons, a
+ *  request-shape error (a list of {msg}), a message, a bare string, or, failing all of those, a plain "no reason given". A refusal
+ *  that rendered as an empty list would read as "nothing happened". */
 function problemsFrom(detail) {
-  const fields = detail && detail.fields ? detail.fields : null;
-  if (!fields) return [typeof detail === "string" ? detail : "The server did not accept that."];
-  return Object.entries(fields).map(([k, v]) => `${friendlyField(k)}: ${v}`);
+  const fields = detail && detail.fields && typeof detail.fields === "object" ? Object.entries(detail.fields) : [];
+  if (fields.length) return fields.map(([k, v]) => `${friendlyField(k)}: ${v}`);
+  if (Array.isArray(detail)) {
+    const lines = detail.map((d) => (d && typeof d.msg === "string" ? d.msg : "")).filter(Boolean);
+    if (lines.length) return lines;
+  }
+  if (typeof detail === "string" && detail.trim()) return [detail.trim()];
+  if (detail && typeof detail.message === "string" && detail.message.trim()) return [detail.message.trim()];
+  return ["The server did not accept that and gave no reason."];
 }
 
 function setCount(text) {
@@ -607,20 +616,30 @@ function previewBody() {
   return { spec: cleanSpec(spec) };
 }
 
-/** Send only what the server's menu knows: empty optionals become absent, empty condition groups vanish. */
+/**
+ * The fields the server's validator accepts at the top of a version-2 spec and on a rule (src/hounds/user_spec.py `V2_TOP_KEYS`
+ * without its derived keys, and `V2_RULE_KEYS`; tests/test_hounds_edit_save_visible.py fails if they drift apart). The validator
+ * REFUSES an unknown key, so a saved dog that carries one the editor never shows would be refused on every save, forever.
+ */
+const SPEC_KEYS = ["version", "name", "tagline", "color", "badge", "lock_minutes", "max_bets_per_day", "stake_units", "rank_by", "rules"];
+const RULE_KEYS = ["label", "sports", "markets", "side", "price_min", "price_max", "line_min", "line_max", "min_books", "when"];
+
+/** Send only what the server's menu knows: empty optionals become absent, empty condition groups vanish, and a field the
+ *  server has no place for is left out rather than sent to be refused. */
 function cleanSpec(spec) {
   const tree = (g) => {
     const items = (g.items || []).map((i) => (i.items ? tree(i) : i)).filter((i) => i && (!i.items || i.items.length));
     return items.length ? { op: g.op || "all", items } : null;
   };
   spec.rules = spec.rules.map((r) => {
-    const out = Object.assign({}, r);
+    const out = {};
+    for (const key of RULE_KEYS) if (r[key] !== undefined) out[key] = r[key];
     out.when = r.when ? tree(r.when) : null;
     if (out.line_min === null || out.line_min === undefined) delete out.line_min;
     if (out.line_max === null || out.line_max === undefined) delete out.line_max;
     return out;
   });
-  delete spec.sports; delete spec.markets; delete spec.side_rule;
+  for (const key of Object.keys(spec)) if (!SPEC_KEYS.includes(key)) delete spec[key];
   return spec;
 }
 
@@ -657,6 +676,7 @@ function schedulePreview() {
 function changed(structural) {
   S.diffReady = false;
   q("diff").hidden = true;
+  showSaveProblems([]);                  // the reasons a save was refused are about the draft as it WAS
   if (structural) renderRules();
   else if (S.saveProblems.length) { S.saveProblems = []; renderSentences(); }
   schedulePreview();
@@ -1150,10 +1170,44 @@ function setMessage(text, kind) {
   if (text) box.appendChild(h("p", { class: `bd-msg bd-msg--${kind || "ok"}`, text }));
 }
 
-function serverError(text) {
+/**
+ * Bring a message into view. On a phone the Save button sits far below the rule cards, and a message drawn anywhere else on the
+ * page (the rules panel, the sign-in banner at the top) reads as "I tapped it and nothing happened" (a real member, 2026-10-20).
+ */
+function reveal(node) {
+  if (!node) return;
+  try {
+    if (typeof node.scrollIntoView === "function") node.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    if (typeof node.focus === "function") node.focus({ preventScroll: true });
+  } catch (err) { /* scrolling is a courtesy; the message is already on the page */ }
+}
+
+function serverError(text, link) {
   const box = q("build-server-error");
   box.hidden = !text;
   box.textContent = text || "";
+  if (text && link) { box.appendChild(h("span", { text: " " })); box.appendChild(link); }
+  if (text) reveal(box);
+}
+
+/** The reasons a save was refused, in a box right above the Save button (the same list also marks the rules panel). */
+function showSaveProblems(list) {
+  const box = clearNode(q("build-save-problems"));
+  box.hidden = !list.length;
+  if (!list.length) return;
+  box.appendChild(h("p", { class: "bd-problems__lead", text: "Not saved. Fix these, then tap again:" }));
+  box.appendChild(h("ul", {}, list.map((p) => h("li", { text: p }))));
+  reveal(box);
+}
+
+/** Why a save did not happen, in words, for the box above the Save button. Nothing in here claims the dog was saved. */
+function saveFailureText(err) {
+  const status = err && err.status;
+  if (status === 429) return "That is too many saves in a short while. Wait a minute and tap again. Nothing was saved.";
+  if (status === null) return "Could not reach the server, so nothing was saved. It could be your connection; tap again in a moment.";
+  if (typeof status === "number") return `The server answered ${status}, so nothing was saved. Tap again in a minute.`;
+  const why = err && err.message ? ` (${String(err.message).slice(0, 120)})` : "";
+  return `Something went wrong on this page${why}, so nothing was saved. Reload the page and try again.`;
 }
 
 function gate(text) {
@@ -1170,16 +1224,27 @@ function saveSpec() {
   return spec;
 }
 
+/**
+ * THE RULE FOR EVERY TAP ON THE SAVE BUTTON: it ends in something the person can SEE next to the button: the diff, the saved
+ * message, or a box saying why not (a list of reasons, a sign-in prompt, or a plain failure). It never returns quietly.
+ */
 async function submit() {
-  if (S.busy || !S.started) return;
+  if (S.busy) { serverError("Still working on your last tap. Give it a few seconds."); return; }
+  if (!S.started) { serverError("There is no rule yet. Describe a strategy in step 1 or start a blank rule, then tap again."); return; }
   setMessage("");
   serverError("");
+  showSaveProblems([]);
   S.saveProblems = [];
-  if (!S.signedIn) { gate("Sign in to save your dog. Your draft stays on this page."); return; }
+  if (!S.signedIn) {
+    gate("Sign in to save your dog. Your draft stays on this page.");
+    serverError("Sign in to save your dog. Your draft stays on this page.", h("a", { href: "index.html#/signin", text: "Sign in" }));
+    return;
+  }
   if (!String(S.spec.name || "").trim()) {
     S.saveProblems = ["Name: give your dog a name (3 to 24 letters, digits, spaces or hyphens)."];
     renderSentences();
     q("f-name").focus();
+    showSaveProblems(S.saveProblems);
     return;
   }
   S.busy = true;
@@ -1188,7 +1253,7 @@ async function submit() {
     if (S.edit) {
       if (!S.diffReady) {
         const res = await apiPost(`/hounds/${encodeURIComponent(S.edit.id)}/diff`, { spec: saveSpec() });
-        showDiff(res.changes || []);
+        showDiff((res && res.changes) || []);
       } else {
         const res = await apiPost(`/hounds/${encodeURIComponent(S.edit.id)}/version`, { spec: saveSpec(), reason: "edited in the builder" });
         const dog = res.hound || {};
@@ -1196,6 +1261,7 @@ async function submit() {
         if (dog.id) q("build-message").appendChild(h("p", {}, [h("a", { href: houndHref(dog.id), "data-hook": "new-dog-link", text: "See your dog" })]));
         S.edit = null; S.diffReady = false;
         q("diff").hidden = true;
+        reveal(q("build-message"));
         await loadMine();
         announce("version", dog);
       }
@@ -1208,6 +1274,7 @@ async function submit() {
       if (dog.id && !S.copiedFrom) { try { await put(`/hounds/${encodeURIComponent(dog.id)}/look`, { look: previewLook(S.spec, S.menu.colors) }); } catch (err) { /* default look */ } }
       setMessage(`${dog.name || "Your dog"} is in the kennel.`, "ok");
       if (dog.id) q("build-message").appendChild(h("p", {}, [h("a", { href: houndHref(dog.id), "data-hook": "new-dog-link", text: "See your dog" })]));
+      reveal(q("build-message"));
       await loadMine();
       announce("created", dog);
     }
@@ -1225,13 +1292,18 @@ function handleSaveError(err) {
   if (status === 401 || status === 403) {
     S.signedIn = false;
     gate("Your sign-in has lapsed or this account cannot build yet.");
-  } else if (status === 422 && detail && detail.fields) {
+    serverError("Your sign-in has lapsed or this account cannot build yet, so nothing was saved. Your draft stays on this page.",
+      h("a", { href: "index.html#/signin", text: "Sign in" }));
+  } else if (status === 422) {
+    // a refusal always lists its reasons: in the rules panel (where the rule they are about is) and above the Save button
+    // (where the person's thumb is)
     S.saveProblems = problemsFrom(detail);
     renderSentences();
+    showSaveProblems(S.saveProblems);
   } else if (status === 409) {
     serverError(detail && detail.message ? detail.message : "You already have the most dogs running. Retire one first.");
   } else {
-    serverError(describeError(err, "your dog").text);
+    serverError(saveFailureText(err));
   }
 }
 
@@ -1242,6 +1314,7 @@ function showDiff(changes) {
   if (!changes.length) {
     list.appendChild(h("li", { text: "Nothing has changed from the saved version." }));
     S.diffReady = false;
+    reveal(box);
     return;
   }
   for (const c of changes) {
@@ -1251,6 +1324,7 @@ function showDiff(changes) {
     list.appendChild(h("li", { "data-hook": "diff-item" }, parts));
   }
   S.diffReady = true;
+  reveal(box);
 }
 
 // ---- my dogs ----------------------------------------------------------------------------------------------------
