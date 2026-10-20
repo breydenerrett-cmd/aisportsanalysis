@@ -1192,7 +1192,9 @@ function serverError(text, link) {
 
 /** The reasons a save was refused, in a box right above the Save button (the same list also marks the rules panel). */
 function showSaveProblems(list) {
-  const box = clearNode(q("build-save-problems"));
+  const host = q("build-save-problems");
+  if (!host) return;                     // a page without the box (an older skeleton) must never break every edit
+  const box = clearNode(host);
   box.hidden = !list.length;
   if (!list.length) return;
   box.appendChild(h("p", { class: "bd-problems__lead", text: "Not saved. Fix these, then tap again:" }));

@@ -76,7 +76,8 @@ export function builderSkeleton() {
         h("ul", hook("diff-list", { class: "bd-list" })),
         h("p", hook("diff-note", { class: "hd-fine", text: "The old version keeps its record and stops betting. The new version starts fresh." }))]),
       h("div", hook("build-message", { "aria-live": "polite" })),
-      h("div", hook("build-server-error", { class: "hd-state hd-state--down", role: "alert", hidden: true })),
+      h("div", hook("build-save-problems", { class: "bd-problems", role: "alert", tabindex: "-1", hidden: true })),
+      h("div", hook("build-server-error", { class: "hd-state hd-state--down", role: "alert", tabindex: "-1", hidden: true })),
       h("p", { class: "bd-save" }, [
         h("button", hook("build-submit", { type: "button", class: "btn btn--primary btn--lg", text: "Send my dog in" })),
         h("button", hook("edit-cancel", { type: "button", class: "btn btn--ghost", hidden: true, text: "Stop editing" })),
