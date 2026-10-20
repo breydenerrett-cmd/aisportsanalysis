@@ -42,7 +42,19 @@ for (const p of paths) {
     const iw = window.innerWidth, sw = document.documentElement.scrollWidth;
     const wide = [];
     if (sw > iw + 1) for (const el of document.querySelectorAll("body *")) { const r = el.getBoundingClientRect(); if (r.width && r.right > iw + 1 && getComputedStyle(el).position !== "fixed") { wide.push((el.tagName + "." + String(el.className).slice(0, 40))); if (wide.length > 5) break; } }
-    return { iw, sw, wide, h: document.documentElement.scrollHeight };
+    // the phone tab bar and the room the page leaves above it (round 2, 2026-10-19): the last piece of content must end above the bar
+    const bar = document.querySelector(".lh-tabbar");
+    const barH = bar && getComputedStyle(bar).display !== "none" ? bar.getBoundingClientRect().height : 0;
+    let lastBottom = 0;
+    for (const el of document.body.querySelectorAll("*")) {
+      if (bar && bar.contains(el)) continue;
+      const cs = getComputedStyle(el);
+      if (cs.position === "fixed" || cs.display === "none" || cs.visibility === "hidden") continue;
+      const r = el.getBoundingClientRect();
+      if (r.width > 0 && r.height > 0) lastBottom = Math.max(lastBottom, r.bottom + window.scrollY);
+    }
+    const docH = document.documentElement.scrollHeight;
+    return { iw, sw, wide, h: docH, bar: Math.round(barH), pad: parseFloat(getComputedStyle(document.body).paddingBottom), clear: Math.round(docH - lastBottom) };
   })()`)));
 }
 console.log(JSON.stringify(out));

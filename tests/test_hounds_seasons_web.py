@@ -335,17 +335,18 @@ class TheQualifyingRound(unittest.TestCase):
         out = self.page(QualifyingBase.zero_ranked_world(), queries=[
             q("title", "[data-hook='qualifying-title']"), q("qrows", self.QROW, "count"), q("ranked_rows", self.ROW, "count"),
             q("toggle", "[data-hook='warming-toggle']", "count"), q("warm_rows", ".hd-tr--warm", "count"),
-            q("ranked_title", "[data-hook='ranked-title']"), q("none", "[data-hook='no-graded']"),
-            q("count", "[data-hook='hounds-count']")])
+            q("ranked_title", "[data-hook='ranked-title']", "count"), q("none", "[data-hook='no-graded']"),
+            q("ranked_table", "[data-hook='leaderboard-table']", "count"), q("count", "[data-hook='hounds-count']")])
         f = out["final"]
         self.assertEqual(f["title"], "Season 2 qualifying: a model needs 10 settled bets to be ranked")
         self.assertEqual(f["qrows"], 5)                                   # everyone with a settled bet or an open ticket
         self.assertEqual((f["ranked_rows"], f["toggle"], f["warm_rows"]), (0, 0, 0))    # no collapsed group in this state
-        self.assertEqual(f["ranked_title"], "Ranked (0)")
+        # round 2 (2026-10-19): an empty "Ranked (0)" table under the round said nothing twice, so it is not drawn; the one line stays
+        self.assertEqual((f["ranked_title"], f["ranked_table"]), (0, 0))
         self.assertEqual(f["none"], "No model has 10 settled bets in this view yet, so none is ranked. The qualifying round above shows who is closest.")
         self.assertEqual(f["count"], "7 models, 0 ranked")
         hooks = out["hooks"]
-        self.assertLess(hooks.index("qualifying"), hooks.index("leaderboard-table"))      # the round is ABOVE the ranked table
+        self.assertNotIn("leaderboard-table", hooks)                                      # and there is no ranked table below it
 
     def test_the_round_has_the_same_columns_sorted_by_units_then_record(self):
         out = self.page(QualifyingBase.zero_ranked_world(), queries=[
@@ -359,7 +360,10 @@ class TheQualifyingRound(unittest.TestCase):
         self.assertEqual(f["units"][:3], ["+2.50", "+1.00", "+1.00"])
         self.assertEqual(set(f["ranks"]), {"-"})                         # nothing here is numbered
         strip = lambda ts: [t.replace(" ▼", "").replace(" ▲", "") for t in ts]  # noqa: E731
-        self.assertEqual(strip(f["heads"]), strip(f["ranked_heads"]))    # the same columns as the ranked table
+        # round 2 (2026-10-19): with nobody ranked there is no empty "Ranked (0)" table to compare with; the round has every column
+        self.assertEqual(f["ranked_heads"], [])
+        self.assertEqual(strip(f["heads"])[:5], ["#", "Model", "Type", "Record", "Bankroll"])
+        self.assertEqual(len(f["heads"]), 14)
 
     def test_each_row_has_a_progress_pill_in_the_status_column_and_greyed_money(self):
         out = self.page(QualifyingBase.zero_ranked_world(), queries=[

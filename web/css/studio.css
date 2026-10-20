@@ -356,3 +356,23 @@
   .hounds-page .hd-bankhero .hd-kpi[data-slot="return"] { justify-self: start; text-align: left; align-items: flex-start; }
   .hd-kpirow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* ===== ROUND 2: the leaderboard table fits. Under 1500px the low-value columns (7d, 24h, average price, last 10) are hidden; the page widens
+   to 1360px to show all 13 from 1500px; and a table that is still too wide (a phone) scrolls INSIDE its card with the rank and model columns pinned ===== */
+.hounds-page .hd-table--board { min-width: 0; }
+.hounds-page .hd-tablewrap { border-radius: var(--lh-r-lg); }
+@media (max-width: 1499px) {
+  .hounds-page .hd-table--board .hd-col-d7, .hounds-page .hd-table--board .hd-col-h24,
+  .hounds-page .hd-table--board .hd-col-price, .hounds-page .hd-table--board .hd-col-last10 { display: none; }
+}
+@media (min-width: 1500px) {
+  .hounds-page .hd-wrap:has([data-hook="hounds-table"]) { max-width: 1360px; }
+}
+@media (max-width: 1079px) { .hounds-page .hd-table--board { min-width: 760px; } }
+.hounds-page .hd-table--board th.hd-col-rank, .hounds-page .hd-table--board td.hd-col-rank { position: sticky; left: 0; z-index: 2; width: 44px; min-width: 44px; max-width: 44px; background: var(--lh-bg); }
+.hounds-page .hd-table--board th.hd-col-model, .hounds-page .hd-table--board td.hd-col-model { position: sticky; left: 44px; z-index: 2; background: var(--lh-bg); }
+.hounds-page .hd-table--board tbody tr:hover td.hd-col-rank, .hounds-page .hd-table--board tbody tr:hover td.hd-col-model { background: var(--lh-bg-2, #14181d); }
+.hd-qual__none { margin: var(--lh-s3) 0 0; }
+/* a model's meta line ("MLB, NFL . moneyline, spread, total . by Handler 21E8's kennel") may wrap: it was nowrap and held the model column at 430px */
+.hounds-page .hd-table--board td.hd-col-model, .hounds-page .hd-table--board th.hd-col-model { white-space: normal; min-width: 0; max-width: 300px; }
+.hounds-page .hd-table--board .hd-col-model { width: 300px; }
