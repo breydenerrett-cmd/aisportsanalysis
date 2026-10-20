@@ -125,6 +125,8 @@ def _with_score(event: dict, scores_index: Optional[Mapping], now: datetime) -> 
     row = (scores_index or {}).get(event["event_id"])
     if row is None or row.get("home_score") is None or row.get("away_score") is None:
         return event
+    if row.get("source"):
+        return event        # a free-feed result (tennis, MMA) holds a 1-0 match-win marker, not a live score
     stamp = _parse(row.get("observed_utc"))
     if stamp is None or now - stamp > timedelta(hours=catalog.live_window_hours(event["family"]) + 1):
         return event

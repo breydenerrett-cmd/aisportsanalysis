@@ -131,7 +131,7 @@ def score_row(event: Mapping, observed: str, sport_key: str) -> dict:
 
 def _signature(row: Mapping) -> tuple:
     return (bool(row.get("completed")), row.get("home_score"), row.get("away_score"),
-            json.dumps(row.get("scores"), sort_keys=True), row.get("commence_time"))
+            json.dumps(row.get("scores"), sort_keys=True), row.get("commence_time"), row.get("void_reason"))
 
 
 # ---------------------------------------------------------------------------
@@ -197,6 +197,23 @@ def append_scores(events: list, observed: str, sport_key: str, path=DEFAULT_STOR
     return _append(path, rows)
 
 
+def append_result_rows(rows: list, path=DEFAULT_STORE) -> int:
+    """Append `score` rows built by another results source (src/pipeline/allsports_free_results.py: ESPN tennis
+    and MMA), under the same rule as `append_scores`: a row is written only when the event's state differs from
+    its last stored row, and nothing already written is touched."""
+    index = load_index(path)
+    fresh = []
+    for row in rows or []:
+        if row.get("kind") != "score" or not row.get("event_id"):
+            continue
+        prior = index.get(row["event_id"])
+        if prior is not None and _signature(prior) == _signature(row):
+            continue
+        fresh.append(row)
+        index[row["event_id"]] = row
+    return _append(path, fresh)
+
+
 # ---------------------------------------------------------------------------
 # grading
 # ---------------------------------------------------------------------------
@@ -218,11 +235,19 @@ def grade_bet(bet: Mapping, result: Optional[Mapping], now: datetime, *, void_af
     if result is None or not result.get("completed"):
         if expired and fam is not None and fam.get("settles") == "none":
             return _void(f"no result source for {fam['label']}; voided {void_after_hours:g} hours after the start")
+        if expired and fam is not None and fam.get("settles") == "free_results":
+            return _void(f"no matching result in the free {fam['label']} results feed {void_after_hours:g} hours "
+                         f"after the start (an event the feed does not cover, a name it could not match "
+                         f"with certainty, or a match never played)")
         if expired:
             return _void(f"no final score within {void_after_hours:g} hours of the start (cancelled, "
                          f"abandoned or never scored)")
         return {"result": None}
     home, away = result.get("home_score"), result.get("away_score")
+    if result.get("void_reason"):
+        # A result source that knows the bet is void (a tennis walkover or early retirement, an MMA draw or
+        # no contest): the reason it recorded is the reason the bet shows.
+        return _void(str(result["void_reason"]), home, away)
     if home is None or away is None:
         return _void("the game completed without a readable final score")
     market, side = bet.get("market"), bet.get("side")
@@ -268,10 +293,13 @@ def grade_bet(bet: Mapping, result: Optional[Mapping], now: datetime, *, void_af
 # which keys to poll, and the run
 # ---------------------------------------------------------------------------
 
-def keys_to_poll(done_rows: list, scores_rows: list, now: datetime, cap: Mapping) -> list:
+def keys_to_poll(done_rows: list, scores_rows: list, now: datetime, cap: Mapping,
+                 config: Optional[Mapping] = None) -> list:
     """[(sport_key, unresolved_events)] most-unresolved first: keys with captured events that started at
     least an hour ago, inside the `daysFrom` window, with no completed result stored, and not polled within
-    `scores_poll_interval_hours`."""
+    `scores_poll_interval_hours`. A key whose family is settled from a free feed (`settles` =
+    `free_results`: tennis, MMA) is never polled here: /scores does not list those sports and each call
+    would cost credits to learn nothing."""
     days = int(cap["scores_days_from"] or 3)
     oldest = now - timedelta(days=days)
     newest = now - timedelta(hours=1)
@@ -293,6 +321,9 @@ def keys_to_poll(done_rows: list, scores_rows: list, now: datetime, cap: Mapping
     interval = timedelta(hours=float(cap["scores_poll_interval_hours"]))
     out = []
     for key, events in pending.items():
+        fam = catalog.family(catalog.family_for_key(key, config), config)
+        if fam is not None and fam.get("settles") == "free_results":
+            continue
         last = last_poll.get(key)
         if last is not None and now - last < interval:
             continue
@@ -317,7 +348,7 @@ def run(*, now=None, env=None, config: Optional[Mapping] = None, fetch_scores: O
         result["halt"] = "odds provider not configured"
         return result
     done_rows = cap_mod._read_rows(done_path or cap_mod.DEFAULT_DONE_PATH)
-    keys = keys_to_poll(done_rows, _read(store_path), clock, cap)
+    keys = keys_to_poll(done_rows, _read(store_path), clock, cap, config)
     result["keys"] = [k for k, _n in keys]
     if plan_only or not keys:
         return result
@@ -388,6 +419,9 @@ def main(argv=None) -> int:
         print(f"    halt: {result['halt']}")
     for key, why in sorted(result["skipped"].items()):
         print(f"    skipped {key}: {why}")
+    from src.pipeline import allsports_free_results
+    for line in allsports_free_results.summary_lines(allsports_free_results.run(plan_only=args.plan)):
+        print(line)
     return 0
 
 

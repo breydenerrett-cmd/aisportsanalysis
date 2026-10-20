@@ -1,0 +1,30 @@
+{
+ "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600060773/competitions/401919643/status?lang=en&region=us",
+ "clock": 259.0,
+ "displayClock": "4:19",
+ "period": 3,
+ "type": {
+  "id": "3",
+  "name": "STATUS_FINAL",
+  "state": "post",
+  "completed": true,
+  "description": "Final",
+  "detail": "Final",
+  "shortDetail": "Final"
+ },
+ "result": {
+  "id": 284,
+  "name": "submission",
+  "displayName": "Submission",
+  "description": "Kimura",
+  "displayDescription": "Kimura",
+  "shortDisplayName": "Sub",
+  "target": {
+   "id": 123,
+   "name": "body",
+   "description": "Body",
+   "displayDescription": "Body"
+  }
+ },
+ "featured": false
+}

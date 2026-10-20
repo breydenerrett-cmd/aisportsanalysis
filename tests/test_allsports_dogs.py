@@ -40,9 +40,14 @@ class TheMenu(unittest.TestCase):
         self.assertEqual(user_spec.SPORTS, catalog.dog_families())
 
     def test_families_with_no_result_source_stay_off_the_dog_menu(self):
-        for code in ("TENNIS", "MMA", "BOXING", "OTHER"):
+        for code in ("BOXING", "OTHER"):
             self.assertNotIn(code, user_spec.SPORTS, code)
             self.assertIn("sports", self._v1_errors(sports=[code]))
+
+    def test_tennis_and_mma_are_on_the_menu_now_that_they_have_a_free_result_source(self):
+        for code in ("TENNIS", "MMA"):
+            self.assertIn(code, user_spec.SPORTS, code)
+            self.assertEqual(self._v1_errors(sports=[code]), {}, code)
 
     def _v1_errors(self, **over):
         try:
@@ -219,9 +224,14 @@ class TheEngineOnAllSportsRows(unittest.TestCase):
         self.assertEqual(report["bets_written"], 3)
 
     def test_a_row_of_a_sport_off_the_menu_is_never_a_game(self):
-        rows = family_rows("tennis", "tennis_wta_wuhan", home="Coco Gauff", away="Iga Swiatek")
+        rows = family_rows("boxing", "boxing_boxing", home="Boxer One", away="Boxer Two")
         games = eng.build_games(rows, near_date=DATE)
         self.assertEqual(games, {})
+
+    def test_a_tennis_row_is_a_game_now_that_tennis_has_a_result_source(self):
+        rows = family_rows("tennis", "tennis_wta_wuhan", home="Coco Gauff", away="Iga Swiatek")
+        games = eng.build_games(rows, near_date=DATE)
+        self.assertEqual(len(games), 1)
 
     def test_legacy_per_tournament_tennis_rows_are_ignored_too(self):
         rows = family_rows("tennis_wta_wuhan", "tennis_wta_wuhan", home="Coco Gauff", away="Iga Swiatek")

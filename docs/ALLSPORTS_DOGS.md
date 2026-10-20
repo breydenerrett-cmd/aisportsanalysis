@@ -11,6 +11,7 @@ menus below.
 | Sport-key prefix -> family, markets, window margins, switches and caps | `config/sports_catalog.json`, read by `src/sports/catalog.py` |
 | Capture (free discovery and event listing, pre-game phases, in-play snapshots) | `src/pipeline/allsports_capture.py`, `python3 -m src.cli allsports capture [--plan]`, step "allsports capture" in `scripts/capture_slot.sh` |
 | Results and the grader | `src/pipeline/allsports_scores.py`, `python3 -m src.cli allsports scores [--plan]` |
+| Free results for tennis and MMA (ESPN) | `src/pipeline/allsports_free_results.py`, `src/providers/espn_tennis_results.py`, `src/providers/espn_mma_results.py`; runs inside `python3 -m src.cli allsports scores` |
 | Settlement | the non-MLB/NFL branch of `src/hounds/user_settle.py` |
 | Dog menu, ANY, sport-restricted conditions | `src/hounds/user_spec.py`, `src/hounds/user_rules.py` (`any_sport`) |
 | `/sports/now`, `/sports/catalog`, "live elsewhere" | `src/sports/allsports_view.py`, `api/sports.py`, `src/hounds/interact/fire.py` |
@@ -69,14 +70,71 @@ rugby, AFL, boxing) a draw LOSES a team moneyline; elsewhere it is a PUSH. sprea
 total: both scores against the line. VOID: a cancelled game, or no completed score 72 hours after the start,
 named in the graded row's reason. All outcomes (home, away, draw) are stored in `allsports_scores.jsonl`.
 
+## Tennis and MMA: free results from ESPN (2026-10-20)
+
+The Odds API `/scores` lists neither sport, so each has a free source and `settles` = `free_results` in the
+catalog. Both end in the same `allsports_scores.jsonl` and the same `score` row the settlement already reads
+(keyed by the Odds API event id), so `user_settle` has no special case. `python3 -m src.cli allsports scores`
+runs them after the credit-spending poll; they cost nothing and are rate-limited by `free_results_poll_interval_hours`
+(default 1). A kill switch is the same as the capture's (`ALLSPORTS_CAPTURE=0`).
+
+**Which events:** the family's events in `odds_multibook.jsonl` that started between 20 minutes and
+`scores_days_from` + 1 days ago with no completed row. **Row:** `completed: true`, `home_score`/`away_score`
+1.0 and 0.0 (a match-win marker, not sets or rounds), `outcome` home/away; or, for a void,
+scores `null` and a named `void_reason`. Also `source` (`espn_tennis`, `espn_mma`), `evidence` (ESPN ids,
+status, the names matched and how) and `completed_utc`.
+
+**Point in time.** ESPN publishes a scheduled start and no finish time. `completed_utc` is the moment OUR run
+first saw the match settled (`completed_utc_basis: observed`), an upper bound on the real finish. A back-fill run
+stamps its own fetch time; nothing claims to have been known before it was seen.
+
+**Tennis** (`espn_tennis_results.py`, `https://site.api.espn.com/apis/site/v2/sports/tennis/{atp,wta}/scoreboard?dates=YYYYMMDD`):
+`?dates=` returns every active tournament's whole draw. Singles only. Covered: Grand Slams, Masters/1000, 500s,
+250s, qualifying, the WTA 125s ESPN lists. NOT covered: Challenger and ITF (the slugs `challenger`, `itf`,
+`atp-challenger`, `wta-125` answer 400). Rules, the common book rules for a match-winner bet:
+
+| ESPN status | Bet |
+| --- | --- |
+| `STATUS_FINAL`, one winner flagged | the winner wins |
+| `STATUS_RETIRED` (also default, disqualification), at least one COMPLETED set | the player who advanced wins |
+| `STATUS_RETIRED`, no set completed | VOID |
+| `STATUS_WALKOVER` | VOID |
+| `STATUS_CANCELED` | VOID |
+| scheduled, in progress, postponed, suspended, delayed | pending |
+| final or retired with no single winner flagged, an unknown status | unresolved, never graded |
+
+A set is completed by its games (6-0 to 6-4, 7-5, 7-6, any lead of two from six games on, a 10-x super-tiebreak),
+not by ESPN's per-set winner flag, which is not set on the last set (checked against real retirements).
+
+**MMA** (`espn_mma_results.py`, unchanged except three confirmed aliases): each Odds API bout is asked of the
+existing ESPN UFC grader as a `BoutIdentity`. A decision is a win for the matched side; a draw, a no contest or
+a bout ESPN calls cancelled is a VOID for the moneyline. An INFERRED replacement (a published fighter fought
+someone else) is NOT written: on 2026-10-17 it mistook Katlyn Chookagian's ESPN name (Katlyn Cerminara) for a
+replacement and would have voided a bout that happened, so it is held; the bet then voids at 72 hours like any
+unmatched one. ESPN has UFC and Contender Series only: a bout of KSW, Oktagon, PFL, Cage Warriors and the rest
+never matches and voids after 72 hours.
+
+**Matching.** Tennis uses `names.person_score` (accents, case, punctuation, reversed order, initials, a dropped
+middle name or particle; never a nickname such as Alex for Alexander) on BOTH players, an ESPN start within 48
+hours of the odds start, and exactly one candidate. MMA uses the grader's `names.match` plus
+`CONFIRMED_ALIASES`. **An unmatched, ambiguous or not-yet-final result writes nothing**; the bet stays pending
+and `grade_bet` voids it 72 hours after the start with a reason that names the feed.
+
+**Measured 2026-10-19/20 (real fetches).** Tennis, yesterday's scoreboards: ATP 117 singles in the active draws,
+47 settled, 15 of them scheduled 2026-10-19; WTA 94 singles, 51 settled, 11 scheduled that day (its draws held 9
+retirements: 7 graded, 2 void). The 8 Odds API tennis events on file (WTA Singapore, 2026-09-21/22) all matched one ESPN
+match each (7 exact names, 1 reversed order: "Xinyu Wang"). MMA, the UFC Fight Night of 2026-10-17: 46 captured
+bouts in the window, all 13 UFC bouts matched and graded (3 of them only through the new confirmed aliases), the
+other 33 are other promotions and correctly unmatched.
+
 ## What is NOT on the dog menu, and why
 
-`settles` in the catalog says how a family is graded; `dog_menu` says whether builders may pick it. TENNIS, MMA,
-BOXING and OTHER are off the menu: The Odds API `/scores` does not list tennis (docs/LIVE_BETTING_SYSTEM.md), MMA
-results are entered by hand, and nothing grades boxing or the catch-all, so a dog bet there could only void after 72
+`settles` in the catalog says how a family is graded; `dog_menu` says whether builders may pick it. BOXING and
+OTHER are off the menu: nothing grades boxing or the catch-all, so a dog bet there could only void after 72
 hours. Their prices ARE captured and shown by `/sports/now`. Turn a family on with `dog_menu: true` once a result
-source exists. `scores_verified` is false for every family except MLB and NFL until someone spends the one credit to
-confirm `/scores` returns results for it.
+source exists. `scores_verified` is false for every Odds-API-scored family except MLB and NFL until someone spends
+the one credit to confirm `/scores` returns results for it; it is true for TENNIS and MMA, whose free feeds were
+fetched for real and matched against the odds feed's own names.
 
 ## Owner rulings kept
 
@@ -92,4 +150,6 @@ are validation errors for any other sport.
 * An NHL shootout may be counted in the vendor's final score, which can move a total.
 * Cricket scores are read as runs (`152/6` -> 152); a score in another form (two innings) is unreadable and the bet
   voids at 72 hours rather than guessing.
-* The scores poll is driven by the capture done store, because the CI runner cannot see the hounds ledger.
+* The scores poll is driven by the capture done store, because the CI runner cannot see the hounds ledger. The
+  free tennis and MMA results are driven by the multibook store for the same reason.
+* Tennis Challenger/ITF matches and non-UFC MMA bouts have no free result source and void at 72 hours.

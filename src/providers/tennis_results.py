@@ -395,9 +395,15 @@ def feed(env: Optional[dict] = None) -> ResultsFeed:
             raise TennisResultsError(f"{ENV_BALLDONTLIE_KEY} is not set")
         return BallDontLieFeed(balldontlie_key)
 
+    if provider == "espn":
+        # Free and keyless (src/providers/espn_tennis_results.py). Imported here because that module
+        # imports this one for ResultsFeed.
+        from src.providers.espn_tennis_results import EspnTennisFeed
+        return EspnTennisFeed()
+
     # Reject unknown provider without echoing the value beyond the prefix.
     raise TennisResultsError(
-        "unknown tennis results provider; known: fixture:<path>, balldontlie")
+        "unknown tennis results provider; known: fixture:<path>, balldontlie, espn")
 
 
 def results_for(date: str, env: Optional[dict] = None) -> dict:
@@ -488,6 +494,8 @@ def match_winner(
     Returns:
         "home", "away", or None.
     """
+    if row.get("winner") not in ("a", "b"):
+        return None     # a void row (walkover, early retirement) has no winner: never read it as side b
     winner_key = "player_a" if row.get("winner") == "a" else "player_b"
     winner_full_name = row.get(winner_key, "")
 

@@ -1,0 +1,30 @@
+{
+ "$ref": "http://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/events/600060773/competitions/401909783/status?lang=en&region=us",
+ "clock": 168.0,
+ "displayClock": "2:48",
+ "period": 2,
+ "type": {
+  "id": "3",
+  "name": "STATUS_FINAL",
+  "state": "post",
+  "completed": true,
+  "description": "Final",
+  "detail": "Final",
+  "shortDetail": "Final"
+ },
+ "result": {
+  "id": 284,
+  "name": "submission",
+  "displayName": "Submission",
+  "description": "Neck Crank",
+  "displayDescription": "Neck Crank",
+  "shortDisplayName": "Sub",
+  "target": {
+   "id": 122,
+   "name": "head",
+   "description": "Head",
+   "displayDescription": "Head"
+  }
+ },
+ "featured": false
+}
