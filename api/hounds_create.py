@@ -137,6 +137,9 @@ def hound_summary(hound: dict, *, verified: Optional[bool] = None) -> dict:
         "copied_from": hound["copied_from"], "coach_opt_in": hound["coach_opt_in"],
         "retire_reason": hound["retire_reason"], "created_at": hound["created_at"],
         "removed_by_owner": user_store.removed_by_owner(hound),
+        # Send to training / Take them out back (owner ruling 2026-10-20): the "Trained xN" badge and the burial flag.
+        "buried": hound["status"] == user_store.STATUS_BURIED, "coached_from": hound.get("coached_from"),
+        "trained_times": user_store.trained_count(hound["root_id"]),
         "paper_only": True, "not_advice": user_spec.NOT_ADVICE,
         # How the dog looks, and its rules in sentences, wherever a dog is listed.
         "color": spec.get("color", "ember"), "badge": spec.get("badge", "bone"),
@@ -175,6 +178,7 @@ def bare_owner_summary(hound: dict) -> dict:
     return {"id": hound["id"], "name": hound["name"], "tagline": hound.get("tagline") or "", "status": hound["status"],
             "version_no": hound["version_no"], "version_of": hound["version_of"], "root_id": hound["root_id"],
             "retire_reason": hound["retire_reason"], "removed_by_owner": user_store.removed_by_owner(hound),
+            "buried": hound["status"] == user_store.STATUS_BURIED, "coached_from": hound.get("coached_from"),
             "created_at": hound["created_at"], "color": base.get("color", "ember"), "badge": base.get("badge", "bone"),
             "custom_rules": user_spec.is_v2(base), "record": {}, "spec": spec, "rule_sentences": sentences,
             "summary_unavailable": True, "paper_only": True, "not_advice": user_spec.NOT_ADVICE}

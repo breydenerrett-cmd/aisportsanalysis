@@ -67,10 +67,17 @@ def db_exists() -> bool:
         return False
 
 
+# The stats cause for a buried dog. It starts with "buried", which is how the kennel news knows to announce a burial
+# from the dog's own event (src/hounds/kennel_feed.py) and not a second "put down" from the stats book.
+BURIED_CAUSE = "buried by the owner"
+
+
 def retired_cause(hound: dict) -> str:
     """The graveyard cause for a retired user hound (contract: 'retired by the owner')."""
     reason = (hound.get("retire_reason") or "").strip()
     by = str(hound.get("retired_by") or "")
+    if hound.get("status") == "buried":
+        return BURIED_CAUSE
     if reason.startswith("superseded by"):
         return reason
     if by.startswith("owner"):
@@ -84,7 +91,9 @@ def definition(hound: dict) -> dict:
     """One hound version (a ``user_store`` row dict) as a stats definition."""
     spec = hound["spec"]
     retired = None
-    if hound.get("status") == "retired":
+    if hound.get("status") in ("retired", "buried"):
+        # A buried dog reads as retired to the stats: it leaves the leaderboard's ranking, its record is frozen, and
+        # its cause says it was buried. (The headstone itself is outback.py's, from the burial event.)
         retired = {"date": (hound.get("retired_at") or "")[:10] or None,
                    "cause": retired_cause(hound)}
     return {
@@ -119,7 +128,7 @@ def get_definition(hound_id: str) -> Optional[dict]:
 
 
 def stamp() -> tuple:
-    """A cache-key part that changes whenever a hound is created, retired or superseded."""
+    """A cache-key part that changes whenever a hound is created, retired, buried or superseded."""
     if not db_exists():
         return ("user_hounds", None)
     import sqlite3
@@ -127,7 +136,7 @@ def stamp() -> tuple:
     try:
         with user_store._connect() as conn:
             row = conn.execute(
-                "SELECT COUNT(*), MAX(created_at), MAX(retired_at), SUM(status = 'retired') "
+                "SELECT COUNT(*), MAX(created_at), MAX(retired_at), SUM(status = 'retired'), SUM(status = 'buried') "
                 "FROM hounds").fetchone()
     except sqlite3.Error:
         return ("user_hounds", "unreadable")

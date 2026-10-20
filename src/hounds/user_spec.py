@@ -65,8 +65,8 @@ MIN_BOOKS_RANGE = (1, 10)
 MAX_BETS_RANGE = (1, 5)
 LOCK_CHOICES = (60, 120, 180)
 # Owner decision 2026-10-20: a PAID account runs up to five dogs; a FREE account (access.py, TWO LEVELS,
-# "member") keeps one. The free count is every dog that has not been retired (running or benched), so a
-# benched dog cannot be used to hold a second slot. Nothing is ever taken from a free account that
+# "member") keeps one. The free count is every dog that has not been retired or buried (running or benched), so a
+# benched dog cannot be used to hold a second slot; taking a dog out back frees its slot. Nothing is ever taken from a free account that
 # already has more: see docs/support/FREE_MEMBERS.md (GRANDFATHERING).
 MAX_RUNNING_PER_ACCOUNT = 5
 FREE_MAX_ACTIVE_PER_ACCOUNT = 1

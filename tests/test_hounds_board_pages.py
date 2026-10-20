@@ -598,7 +598,9 @@ class TheChromeIsProfessional(unittest.TestCase):
         self.assertLessEqual(out["final"]["podium"], 3)
 
     def test_the_voice_that_was_pulled_is_not_on_the_pages(self):
-        banned = ["houndmaster", "doghouse", "put down", "tombstone", "r.i.p", "graveyard", "good dog", "roast", "brag",
+        # "graveyard" came back with the owner's 2026-10-20 ruling (a dog taken out back is buried, with a headstone, in a public
+        # Graveyard); "put down", "tombstone" and "r.i.p" stay out
+        banned = ["houndmaster", "doghouse", "put down", "tombstone", "r.i.p", "good dog", "roast", "brag",
                   "hot dog", "ice cold", "on tilt", "tail it", "fade it", "bark", "woof"]
         for name, out in self.pages():
             lowered = out["text"].lower()
@@ -635,8 +637,9 @@ class TheModelPage(unittest.TestCase):
         self.assertEqual(f["bio"], 0)
         for line in ("Grabs the price before it moves", "Closer roast", "Closer brag", "grabbed the early number"):
             self.assertNotIn(line, out["text"])
-        # "Out back" (Take them out back) sits above the tabs (hidden until the server's kit says so); then Overview: numbers, bankroll, status
-        self.assertEqual(f["order"][:4], ["Out back", "Key numbers", "Bankroll", "Status"])
+        # the kit's panels sit above the tabs (hidden until the server's kit says so): a buried dog's headstone, the owner's
+        # hound menu ("Your hound") and "Unleash"; then Overview: numbers, bankroll, status
+        self.assertEqual(f["order"][:6], ["Headstone", "Your hound", "Unleash", "Key numbers", "Bankroll", "Status"])
         self.assertIn("Open tickets", f["order"])
         self.assertIn("Rule", f["order"])
         self.assertEqual(out["title"], "Closer — LINEHOUND")

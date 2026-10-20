@@ -1344,7 +1344,7 @@ async function loadMine() {
   try {
     const res = await apiGet("/hounds/mine");
     S.signedIn = true;
-    S.mine = (res.hounds || []).filter((d) => d.status !== "retired");
+    S.mine = (res.hounds || []).filter((d) => d.status !== "retired" && d.status !== "buried");     // a buried dog is in the graveyard, not the builder
     if (signInLink()) signInLink().hidden = true;
     state.textContent = S.mine.length ? "" : "You have not built a dog yet.";
     for (const d of S.mine) list.appendChild(dogItem(d));

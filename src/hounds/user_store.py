@@ -18,6 +18,11 @@ coach_rounds    the one-use keys the server issues for a Houndmaster round (see 
 coach_diary     one row per round: when, hound, verdict at the time, decision, old and new spec,
                 reason, quip, and who decided.
 
+hound_events    the append-only life events of a hound: ``buried`` (the owner took it out back) and ``trained`` (the
+                owner sent it to training). One row each, never updated or deleted. A burial also changes the row's
+                ``status`` to ``buried`` and a training also makes the next version, both INSIDE the same
+                transaction as the event row, so the event and the state it describes cannot disagree.
+
 RECORDS ARE NEVER REWRITTEN
 ---------------------------
 There is no UPDATE that touches `spec_json`. An edit, a coach change and an undo all INSERT a new
@@ -26,8 +31,8 @@ stays attached to the exact rule that made it.
 
 LIMITS AND WHO MAY CREATE
 -------------------------
-At most MAX_RUNNING_PER_ACCOUNT running hounds per account (FREE_MAX_ACTIVE_PER_ACCOUNT non-retired ones
-for a free account, when the caller says so); only an existing, non-suspended account
+At most MAX_RUNNING_PER_ACCOUNT running hounds per account (FREE_MAX_ACTIVE_PER_ACCOUNT dogs that are neither
+retired nor buried for a free account, when the caller says so); only an existing, non-suspended account
 may create (the API additionally requires a signed-in member or paid account). Counting and inserting happen
 inside one BEGIN IMMEDIATE transaction so two simultaneous requests cannot both take the last slot.
 """
@@ -48,7 +53,17 @@ from src.hounds import user_spec
 STATUS_RUNNING = "running"
 STATUS_BENCHED = "benched"
 STATUS_RETIRED = "retired"
-STATUSES = (STATUS_RUNNING, STATUS_BENCHED, STATUS_RETIRED)
+# What "Take them out back" records (owner ruling 2026-10-20): the dog stops betting, its record is frozen and public,
+# and it is listed in the graveyard with a headstone. A buried dog is NOT a removed one (``removed_by_owner`` is a
+# retirement): it leaves the kennel and the leaderboard like a retired dog does, but its page, its record and its
+# headstone are the point of it, and nothing can be done to it afterwards (``create_version`` refuses it too).
+STATUS_BURIED = "buried"
+STATUSES = (STATUS_RUNNING, STATUS_BENCHED, STATUS_RETIRED, STATUS_BURIED)
+
+EVENT_BURIED = "buried"
+EVENT_TRAINED = "trained"
+EVENT_KINDS = (EVENT_BURIED, EVENT_TRAINED)
+BURIED_REASON = "buried by its owner"
 
 # What the kennel's "Remove from my kennel" button records. A removal is a RETIREMENT, never a delete: the
 # ledger is append-only, so the dog's tickets and record stay exactly where they were and its page still opens by
@@ -109,6 +124,24 @@ def _ensure_schema(conn: sqlite3.Connection) -> None:
     """)
     conn.execute("CREATE INDEX IF NOT EXISTS hounds_owner ON hounds(owner_user_id, status)")
     conn.execute("CREATE INDEX IF NOT EXISTS hounds_root ON hounds(root_id)")
+    # Additive migration (Send to training): the version a trained version was made from. NULL for a first version,
+    # a copy, an owner's edit and a promoted challenger; only a training sets it, so "Trained xN" is a count of these.
+    hound_cols = {r[1] for r in conn.execute("PRAGMA table_info(hounds)").fetchall()}
+    if "coached_from" not in hound_cols:
+        conn.execute("ALTER TABLE hounds ADD COLUMN coached_from TEXT")
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS hound_events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            kind TEXT NOT NULL,
+            hound_id TEXT NOT NULL,
+            root_id TEXT NOT NULL,
+            owner_user_id INTEGER NOT NULL,
+            created_at TEXT NOT NULL,
+            payload_json TEXT NOT NULL
+        )
+    """)
+    conn.execute("CREATE INDEX IF NOT EXISTS hound_events_root ON hound_events(root_id, kind)")
+    conn.execute("CREATE INDEX IF NOT EXISTS hound_events_kind ON hound_events(kind, created_at)")
     conn.execute("""
         CREATE TABLE IF NOT EXISTS coach_rounds (
             round_id TEXT PRIMARY KEY,
@@ -165,6 +198,7 @@ def _row_to_hound(row: sqlite3.Row) -> dict:
         "created_at": row["created_at"], "version_of": row["version_of"],
         "root_id": row["root_id"], "version_no": row["version_no"],
         "copied_from": row["copied_from"], "coach_opt_in": bool(row["coach_opt_in"]),
+        "coached_from": row["coached_from"],
     }
 
 
@@ -248,9 +282,10 @@ def _running_count(conn, user_id: int) -> int:
 
 
 def _active_count(conn, user_id: int) -> int:
-    """Dogs that have not been retired: running AND benched (the free tier's count)."""
-    return conn.execute("SELECT COUNT(*) FROM hounds WHERE owner_user_id = ? AND status != ?",
-                        (user_id, STATUS_RETIRED)).fetchone()[0]
+    """Dogs that have not been retired or buried: running AND benched (the free tier's count). Taking a dog out back
+    frees its slot, the same way removing it does (owner ruling 2026-10-20)."""
+    return conn.execute("SELECT COUNT(*) FROM hounds WHERE owner_user_id = ? AND status NOT IN (?, ?)",
+                        (user_id, STATUS_RETIRED, STATUS_BURIED)).fetchone()[0]
 
 
 def suggest_copy_name(source_name: str, *, db: Optional[Path] = None) -> str:
@@ -269,7 +304,7 @@ def suggest_copy_name(source_name: str, *, db: Optional[Path] = None) -> str:
 # ---------------------------------------------------------------------------
 
 def _insert(conn, *, hound_id, owner, spec, status, created_at, version_of, root_id, version_no,
-            copied_from, coach_opt_in) -> None:
+            copied_from, coach_opt_in, coached_from=None) -> None:
     # The Houndmaster coach proposes version-1 specs and diffs their fixed fields; it has no way to
     # read or narrow a rule set. A version-2 hound therefore cannot be opted in (the one place that
     # enforces it, so a copy, an edit or a direct call all land the same way).
@@ -277,11 +312,11 @@ def _insert(conn, *, hound_id, owner, spec, status, created_at, version_of, root
         coach_opt_in = False
     conn.execute(
         "INSERT INTO hounds (id, owner_user_id, name, name_key, tagline, spec_json, spec_hash, "
-        "status, created_at, version_of, root_id, version_no, copied_from, coach_opt_in) "
-        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        "status, created_at, version_of, root_id, version_no, copied_from, coach_opt_in, coached_from) "
+        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
         (hound_id, owner, spec["name"], user_spec._fold(spec["name"]), spec["tagline"],
          json.dumps(spec, sort_keys=True), user_spec.spec_hash(spec), status, created_at,
-         version_of, root_id, version_no, copied_from, 1 if coach_opt_in else 0))
+         version_of, root_id, version_no, copied_from, 1 if coach_opt_in else 0, coached_from))
 
 
 def _require_account(conn, user_id: int) -> None:
@@ -331,11 +366,17 @@ def create_hound(user_id: int, raw_spec: Mapping, *, copied_from: Optional[str] 
 
 def create_version(old_id: str, raw_spec: Mapping, *, actor: str, reason: str,
                    now: Optional[datetime] = None, db: Optional[Path] = None,
-                   extra_real_names: Optional[Mapping[str, str]] = None) -> dict:
+                   extra_real_names: Optional[Mapping[str, str]] = None,
+                   coached_from: Optional[str] = None,
+                   event: Optional[Mapping] = None) -> dict:
     """A changed rule is a NEW hound: insert version n+1 (`version_of` = old id) and retire the old
     one. The old row's spec and every bet recorded against it stay exactly as they were. The new
     version inherits the owner and the coach opt-in; it keeps the lineage's name (the name is not
-    'taken' by its own earlier versions)."""
+    'taken' by its own earlier versions).
+
+    ``coached_from`` (Send to training) stamps the new version with the version it was trained from.
+    ``event`` ({"kind", "payload"}) is written to ``hound_events`` in the SAME transaction, with the new
+    version's id added to the payload, so a training that is recorded is a training that happened."""
     created = _iso(_now(now))
     with _connect(db) as conn:
         conn.execute("BEGIN IMMEDIATE")
@@ -344,6 +385,8 @@ def create_version(old_id: str, raw_spec: Mapping, *, actor: str, reason: str,
             raise StoreError("not_found", "no such hound")
         if old["status"] == STATUS_RETIRED:
             raise StoreError("retired", "a retired hound cannot be changed")
+        if old["status"] == STATUS_BURIED:
+            raise StoreError("buried", "a buried hound cannot be changed")
         owner = old["owner_user_id"]
         _require_account(conn, owner)
         spec = user_spec.validate_spec(
@@ -360,7 +403,10 @@ def create_version(old_id: str, raw_spec: Mapping, *, actor: str, reason: str,
         _insert(conn, hound_id=hound_id, owner=owner, spec=spec,
                 status=STATUS_RUNNING if was_running else STATUS_BENCHED, created_at=created,
                 version_of=old_id, root_id=old["root_id"], version_no=(newest or 1) + 1,
-                copied_from=None, coach_opt_in=bool(old["coach_opt_in"]))
+                copied_from=None, coach_opt_in=bool(old["coach_opt_in"]), coached_from=coached_from)
+        if event is not None:
+            _insert_event(conn, kind=event["kind"], hound_id=old_id, root_id=old["root_id"], owner=owner,
+                          created_at=created, payload={**dict(event.get("payload") or {}), "new_hound_id": hound_id})
     return get_hound(hound_id, db=db)
 
 
@@ -377,11 +423,90 @@ def retire_hound(hound_id: str, *, by: str, reason: str, now: Optional[datetime]
         row = conn.execute("SELECT status FROM hounds WHERE id = ?", (hound_id,)).fetchone()
         if row is None:
             raise StoreError("not_found", "no such hound")
-        if row["status"] != STATUS_RETIRED:
+        if row["status"] not in (STATUS_RETIRED, STATUS_BURIED):      # a buried dog keeps its burial
             conn.execute("UPDATE hounds SET status = ?, retire_reason = ?, retired_at = ?, "
                          "retired_by = ? WHERE id = ?",
                          (STATUS_RETIRED, reason, stamp, by, hound_id))
     return get_hound(hound_id, db=db)
+
+
+# ---------------------------------------------------------------------------
+# life events: burial and training (logic lives in src/hounds/interact/outback.py and training.py)
+# ---------------------------------------------------------------------------
+
+def _insert_event(conn, *, kind: str, hound_id: str, root_id: str, owner: int, created_at: str,
+                  payload: Mapping) -> int:
+    if kind not in EVENT_KINDS:
+        raise StoreError("bad_event", f"unknown life event {kind!r}")
+    cur = conn.execute(
+        "INSERT INTO hound_events (kind, hound_id, root_id, owner_user_id, created_at, payload_json) "
+        "VALUES (?,?,?,?,?,?)",
+        (kind, hound_id, root_id, owner, created_at, json.dumps(dict(payload), sort_keys=True)))
+    return cur.lastrowid
+
+
+def bury_hound(hound_id: str, *, owner_user_id: int, payload: Mapping, now: Optional[datetime] = None,
+               db: Optional[Path] = None) -> dict:
+    """Take a hound out back: status becomes ``buried`` and one ``buried`` event row is appended, in ONE transaction.
+
+    The caller (outback.bury) has already checked the things only it can see (the ledger has no open ticket) and has
+    built ``payload``, the frozen headstone. What this refuses itself, inside the transaction so two taps cannot both
+    win: an unknown hound (``not_found``), one that is not the caller's (``not_found``: not-yours reads as not-there),
+    one already buried (``already_buried``) and one already retired (``retired``). A burial never touches the spec or
+    a ledger row, so the record stays exactly where it was."""
+    stamp = _iso(_now(now))
+    with _connect(db) as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute("SELECT * FROM hounds WHERE id = ?", (hound_id,)).fetchone()
+        if row is None or row["owner_user_id"] != owner_user_id:
+            raise StoreError("not_found", "no such hound")
+        if row["status"] == STATUS_BURIED:
+            raise StoreError("already_buried", "this hound is already buried")
+        if row["status"] == STATUS_RETIRED:
+            raise StoreError("retired", "a retired hound cannot be taken out back")
+        conn.execute("UPDATE hounds SET status = ?, retire_reason = ?, retired_at = ?, retired_by = ? WHERE id = ?",
+                     (STATUS_BURIED, BURIED_REASON, stamp, f"owner:{owner_user_id}", hound_id))
+        _insert_event(conn, kind=EVENT_BURIED, hound_id=hound_id, root_id=row["root_id"], owner=owner_user_id,
+                      created_at=stamp, payload=payload)
+    return get_hound(hound_id, db=db)
+
+
+def _event_row(row: sqlite3.Row) -> dict:
+    try:
+        payload = json.loads(row["payload_json"])
+    except ValueError:
+        payload = {}
+    return {"id": row["id"], "kind": row["kind"], "hound_id": row["hound_id"], "root_id": row["root_id"],
+            "owner_user_id": row["owner_user_id"], "created_at": row["created_at"], "payload": payload}
+
+
+def list_events(kind: Optional[str] = None, *, root_id: Optional[str] = None, owner_user_id: Optional[int] = None,
+                db: Optional[Path] = None) -> List[dict]:
+    """Life events, newest first (ties by id), optionally one kind, one lineage or one owner."""
+    where, args = [], []
+    for column, value in (("kind", kind), ("root_id", root_id), ("owner_user_id", owner_user_id)):
+        if value is not None:
+            where.append(f"{column} = ?")
+            args.append(value)
+    sql = "SELECT * FROM hound_events" + (" WHERE " + " AND ".join(where) if where else "") +           " ORDER BY created_at DESC, id DESC"
+    with _connect(db) as conn:
+        rows = conn.execute(sql, args).fetchall()
+    return [_event_row(r) for r in rows]
+
+
+def trained_count(root_id: str, *, db: Optional[Path] = None) -> int:
+    """How many times this lineage has been sent to training: the "Trained xN" on its badge."""
+    with _connect(db) as conn:
+        return conn.execute("SELECT COUNT(*) FROM hounds WHERE root_id = ? AND coached_from IS NOT NULL",
+                            (root_id,)).fetchone()[0]
+
+
+def trained_counts(*, db: Optional[Path] = None) -> dict:
+    """{root_id: times trained} for every lineage that has been trained (one query, for the lists)."""
+    with _connect(db) as conn:
+        rows = conn.execute("SELECT root_id, COUNT(*) AS n FROM hounds WHERE coached_from IS NOT NULL "
+                            "GROUP BY root_id").fetchall()
+    return {r["root_id"]: r["n"] for r in rows}
 
 
 def set_coach_opt_in(hound_id: str, enabled: bool, *, db: Optional[Path] = None) -> dict:

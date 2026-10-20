@@ -46,10 +46,11 @@ def apply_promotion(c: L.Challenger, promo: Mapping, *, db=None, now: Optional[d
 
 
 def champion_current(c: L.Challenger, state: L.State, *, db=None) -> bool:
-    """Is the hound the challenger was born under still the running champion? A retired or replaced
-    (or deleted) parent means the pairing partner is gone."""
+    """Is the hound the challenger was born under still the running champion? A retired, buried or replaced
+    (or deleted) parent means the pairing partner is gone: a buried dog's record is frozen, and
+    ``create_version`` would refuse to promote anything over it."""
     parent = user_store.get_hound(c.parent_ref, db=db)
-    return parent is not None and parent["status"] != user_store.STATUS_RETIRED
+    return parent is not None and parent["status"] not in (user_store.STATUS_RETIRED, user_store.STATUS_BURIED)
 
 
 def champion_ledger() -> str:
