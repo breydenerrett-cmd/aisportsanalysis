@@ -1,0 +1,3010 @@
+{
+ "version": 1,
+ "note": "The hound quiz: every archetype is a spec fragment the real builder menu accepts (tests/test_hounds_quiz_library.py validates each one). The English shown beside each is generated from the fragment by src/hounds/english/render.py, never written here. Paper only: a hound is a rule graded in public, not a prediction, and no archetype is known to win.",
+ "archetypes": [
+  {
+   "id": "revenge_tour",
+   "name": "Revenge Tour",
+   "pitch": "Backs the team facing a hot streak. Maybe the cold side bites back; the record will say.",
+   "icon": "flame",
+   "stance": "neutral",
+   "tags": [
+    "streak",
+    "contrarian"
+   ],
+   "works_in": [
+    "MLB",
+    "NFL"
+   ],
+   "kinds": [
+    "ml"
+   ],
+   "fragment": {
+    "rules": [
+     {
+      "label": "Revenge Tour",
+      "sports": [
+       "MLB",
+       "NFL"
+      ],
+      "markets": [
+       "moneyline",
+       "spread"
+      ],
+      "side": "either",
+      "price_min": -150,
+      "price_max": 300,
+      "line_min": null,
+      "line_max": null,
+      "min_books": 3,
+      "when": {
+       "op": "all",
+       "items": [
+        {
+         "id": "streak",
+         "who": "opponent",
+         "kind": "winning",
+         "value": 4
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "primetime_underdog",
+   "name": "Primetime Underdog",
+   "pitch": "Night games, plus money, underdogs only. The lights are on and so is the dog.",
+   "icon": "moon",
+   "stance": "dog",
+   "tags": [
+    "night",
+    "underdog"
+   ],
+   "works_in": [
+    "MLB",
+    "NFL"
+   ],
+   "kinds": [
+    "ml"
+   ],
+   "fragment": {
+    "rules": [
+     {
+      "label": "Primetime Underdog",
+      "sports": [
+       "MLB",
+       "NFL"
+      ],
+      "markets": [
+       "moneyline"
+      ],
+      "side": "either",
+      "price_min": 110,
+      "price_max": 300,
+      "line_min": null,
+      "line_max": null,
+      "min_books": 3,
+      "when": {
+       "op": "all",
+       "items": [
+        {
+         "id": "role",
+         "value": "underdog"
+        },
+        {
+         "id": "time_of_day",
+         "value": "night"
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "steam_chaser",
+   "name": "Steam Chaser",
+   "pitch": "Follows the line. Only bets the side the market has been moving toward since the first capture.",
+   "icon": "wave",
+   "stance": "neutral",
+   "tags": [
+    "steam",
+    "market"
+   ],
+   "works_in": [
+    "MLB",
+    "NFL"
+   ],
+   "kinds": [
+    "ml"
+   ],
+   "fragment": {
+    "rules": [
+     {
+      "label": "Steam Chaser",
+      "sports": [
+       "MLB",
+       "NFL"
+      ],
+      "markets": [
+       "moneyline",
+       "spread"
+      ],
+      "side": "either",
+      "price_min": -150,
+      "price_max": 250,
+      "line_min": null,
+      "line_max": null,
+      "min_books": 4,
+      "when": {
+       "op": "all",
+       "items": [
+        {
+         "id": "steam",
+         "direction": "toward"
+        }
+       ]
+      }
+     }
+    ],
+    "rank_by": "biggest_steam"
+   }
+  },
+  {
+   "id": "public_darling_fade",
+   "name": "Fade the Public Darling",
+   "pitch": "Takes the underdog after the market piles onto the favourite. We read line moves, not crowd tickets.",
+   "icon": "target",
+   "stance": "dog",
+   "tags": [
+    "steam",
+    "contrarian",
+    "underdog"
+   ],
+   "works_in": [
+    "MLB",
+    "NFL"
+   ],
+   "kinds": [
+    "ml"
+   ],
+   "fragment": {
+    "rules": [
+     {
+      "label": "Fade the Darling",
+      "sports": [
+       "MLB",
+       "NFL"
+      ],
+      "markets": [
+       "moneyline",
+       "spread"
+      ],
+      "side": "either",
+      "price_min": 105,
+      "price_max": 350,
+      "line_min": null,
+      "line_max": null,
+      "min_books": 4,
+      "when": {
+       "op": "all",
+       "items": [
+        {
+         "id": "role",
+         "value": "underdog"
+        },
+        {
+         "id": "steam",
+         "direction": "against"
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "tired_legs",
+   "name": "Tired Legs",
+   "pitch": "Backs a rested team against one that played yesterday. Short rest, short fuse.",
+   "icon": "hourglass",
+   "stance": "neutral",
+   "tags": [
+    "rest",
+    "schedule"
+   ],
+   "works_in": [
+    "MLB"
+   ],
+   "kinds": [
+    "ml"
+   ],
+   "fragment": {
+    "rules": [
+     {
+      "label": "Tired Legs",
+      "sports": [
+       "MLB"
+      ],
+      "markets": [
+       "moneyline",
+       "spread"
+      ],
+      "side": "either",
+      "price_min": -150,
+      "price_max": 250,
+      "line_min": null,
+      "line_max": null,
+      "min_books": 3,
+      "when": {
+       "op": "all",
+       "items": [
+        {
+         "id": "rest_days",
+         "who": "opponent",
+         "cmp": "lte",
+         "value": 0
+        },
+        {
+         "id": "rest_days",
+         "who": "pick",
+         "cmp": "gte",
+         "value": 1
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "road_warriors",
+   "name": "Road Warriors",
+   "pitch": "Road teams that win away from home. Packs the bags, takes the points.",
+   "icon": "road",
+   "stance": "neutral",
+   "tags": [
+    "road",
+    "form"
+   ],
+   "works_in": [
+    "MLB",
+    "NFL"
+   ],
+   "kinds": [
+    "ml"
+   ],
+   "fragment": {
+    "rules": [
+     {
+      "label": "Road Warriors",
+      "sports": [
+       "MLB",
+       "NFL"
+      ],
+      "markets": [
+       "moneyline",
+       "spread"
+      ],
+      "side": "away",
+      "price_min": -150,
+      "price_max": 300,
+      "line_min": null,
+      "line_max": null,
+      "min_books": 3,
+      "when": {
+       "op": "all",
+       "items": [
+        {
+         "id": "split_pct",
+         "who": "pick",
+         "cmp": "gte",
+         "pct": 55
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "home_cooking",
+   "name": "Home Cooking",
+   "pitch": "Home sides with a strong record at home. Sleeps in its own bed, bites in its own yard.",
+   "icon": "house",
+   "stance": "neutral",
+   "tags": [
+    "home",
+    "form"
+   ],
+   "works_in": [
+    "MLB",
+    "NFL"
+   ],
+   "kinds": [
+    "ml"
+   ],
+   "fragment": {
+    "rules": [
+     {
+      "label": "Home Cooking",
+      "sports": [
+       "MLB",
+       "NFL"
+      ],
+      "markets": [
+       "moneyline",
+       "spread"
+      ],
+      "side": "home",
+      "price_min": -150,
+      "price_max": 200,
+      "line_min": null,
+      "line_max": null,
+      "min_books": 3,
+      "when": {
+       "op": "all",
+       "items": [
+        {
+         "id": "split_pct",
+         "who": "pick",
+         "cmp": "gte",
+         "pct": 60
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "hot_bat_props",
+   "name": "Hot Bat Props",
+   "pitch": "Hitters with a hit in each of their last 3 games, over their hits or total bases.",
+   "icon": "bolt",
+   "stance": "neutral",
+   "tags": [
+    "props",
+    "hot hand"
+   ],
+   "works_in": [
+    "MLB"
+   ],
+   "kinds": [
+    "prop"
+   ],
+   "fragment": {
+    "rules": [
+     {
+      "label": "Hot Bat Props",
+      "sports": [
+       "MLB"
+      ],
+      "markets": [
+       "batter_hits",
+       "batter_total_bases"
+      ],
+      "side": "over",
+      "price_min": -150,
+      "price_max": 300,
+      "line_min": null,
+      "line_max": null,
+      "min_books": 1,
+      "when": {
+       "op": "all",
+       "items": [
+        {
+         "id": "player_streak",
+         "stat": "hits",
+         "games": 3,
+         "min": 1
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "strikeout_king",
+   "name": "Strikeout King",
+   "pitch": "Pitcher strikeout overs when his last 5 starts average above the line.",
+   "icon": "crown",
+   "stance": "neutral",
+   "tags": [
+    "props",
+    "pitching"
+   ],
+   "works_in": [
+    "MLB"
+   ],
+   "kinds": [
+    "prop"
+   ],
+   "fragment": {
+    "rules": [
+     {
+      "label": "Strikeout King",
+      "sports": [
+       "MLB"
+      ],
+      "markets": [
+       "pitcher_strikeouts"
+      ],
+      "side": "over",
+      "price_min": -150,
+      "price_max": 250,
+      "line_min": null,
+      "line_max": null,
+      "min_books": 1,
+      "when": {
+       "op": "all",
+       "items": [
+        {
+         "id": "player_form",
+         "n": 5,
+         "rel": "above",
+         "margin": 0.5
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "windy_overs",
+   "name": "Windy Overs",
+   "pitch": "Game totals over, in open-air parks, when the forecast wind is 12 mph or more.",
+   "icon": "wind",
+   "stance": "neutral",
+   "tags": [
+    "weather",
+    "totals"
+   ],
+   "works_in": [
+    "MLB"
+   ],
+   "kinds": [
+    "total"
+   ],
+   "fragment": {
+    "rules": [
+     {
+      "label": "Windy Overs",
+      "sports": [
+       "MLB"
+      ],
+      "markets": [
+       "total"
+      ],
+      "side": "over",
+      "price_min": -150,
+      "price_max": 150,
+      "line_min": null,
+      "line_max": null,
+      "min_books": 3,
+      "when": {
+       "op": "all",
+       "items": [
+        {
+         "id": "wind_speed",
+         "cmp": "gte",
+         "value": 12
+        },
+        {
+         "id": "roof",
+         "value": "open"
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "full_moon_chaos",
+   "name": "Full Moon Chaos",
+   "pitch": "Underdogs, plus money, only under a full moon. Science has not been consulted.",
+   "icon": "moon",
+   "stance": "dog",
+   "tags": [
+    "moon",
+    "underdog",
+    "mystic"
+   ],
+   "works_in": [
+    "MLB",
+    "NFL"
+   ],
+   "kinds": [
+    "ml"
+   ],
+   "fragment": {
+    "rules": [
+     {
+      "label": "Full Moon Chaos",
+      "sports": [
+       "MLB",
+       "NFL"
+      ],
+      "markets": [
+       "moneyline",
+       "spread"
+      ],
+      "side": "either",
+      "price_min": 105,
+      "price_max": 350,
+      "line_min": null,
+      "line_max": null,
+      "min_books": 3,
+      "when": {
+       "op": "all",
+       "items": [
+        {
+         "id": "role",
+         "value": "underdog"
+        },
+        {
+         "id": "moon_phase",
+         "value": "full"
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "coin_flip_gremlin",
+   "name": "Coin Flip Gremlin",
+   "pitch": "Plus-money underdogs, but only when a seeded coin lands its way. Pure chaos, fully logged.",
+   "icon": "coin",
+   "stance": "dog",
+   "tags": [
+    "chaos",
+    "coin"
+   ],
+   "works_in": [
+    "MLB",
+    "NFL"
+   ],
+   "kinds": [
+    "ml"
+   ],
+   "fragment": {
+    "rules": [
+     {
+      "label": "Coin Flip Gremlin",
+      "sports": [
+       "MLB",
+       "NFL"
+      ],
+      "markets": [
+       "moneyline",
+       "spread"
+      ],
+      "side": "either",
+      "price_min": 100,
+      "price_max": 300,
+      "line_min": null,
+      "line_max": null,
+      "min_books": 3,
+      "when": {
+       "op": "all",
+       "items": [
+        {
+         "id": "role",
+         "value": "underdog"
+        },
+        {
+         "id": "coin_flip",
+         "pct": 40
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "lucky_letters",
+   "name": "Lucky Letters",
+   "pitch": "Bets the team whose name starts with its lucky letter. S by default; pick your own.",
+   "icon": "letters",
+   "stance": "neutral",
+   "tags": [
+    "letters",
+    "mystic",
+    "silly"
+   ],
+   "works_in": [
+    "MLB",
+    "NFL"
+   ],
+   "kinds": [
+    "ml"
+   ],
+   "fragment": {
+    "rules": [
+     {
+      "label": "Lucky Letters",
+      "sports": [
+       "MLB",
+       "NFL"
+      ],
+      "markets": [
+       "moneyline",
+       "spread"
+      ],
+      "side": "either",
+      "price_min": -150,
+      "price_max": 300,
+      "line_min": null,
+      "line_max": null,
+      "min_books": 3,
+      "when": {
+       "op": "all",
+       "items": [
+        {
+         "id": "name_letter",
+         "of": "pick",
+         "test": "starts_with",
+         "letter": "S"
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "numerology_oracle",
+   "name": "Numerology Oracle",
+   "pitch": "Backs the team whose name adds up closest to the date's number. Gematria, no apologies.",
+   "icon": "stars",
+   "stance": "neutral",
+   "tags": [
+    "numerology",
+    "mystic",
+    "silly"
+   ],
+   "works_in": [
+    "MLB",
+    "NFL"
+   ],
+   "kinds": [
+    "ml"
+   ],
+   "fragment": {
+    "rules": [
+     {
+      "label": "Numerology Oracle",
+      "sports": [
+       "MLB",
+       "NFL"
+      ],
+      "markets": [
+       "moneyline",
+       "spread"
+      ],
+      "side": "either",
+      "price_min": -150,
+      "price_max": 300,
+      "line_min": null,
+      "line_max": null,
+      "min_books": 3,
+      "when": {
+       "op": "all",
+       "items": [
+        {
+         "id": "numerology",
+         "value": "closer"
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "sunday_funday",
+   "name": "Sunday Funday",
+   "pitch": "NFL underdogs on Sundays. Plus money, snacks optional.",
+   "icon": "football",
+   "stance": "dog",
+   "tags": [
+    "nfl",
+    "weekend",
+    "underdog"
+   ],
+   "works_in": [
+    "NFL"
+   ],
+   "kinds": [
+    "ml"
+   ],
+   "fragment": {
+    "rules": [
+     {
+      "label": "Sunday Funday",
+      "sports": [
+       "NFL"
+      ],
+      "markets": [
+       "moneyline",
+       "spread"
+      ],
+      "side": "either",
+      "price_min": 110,
+      "price_max": 350,
+      "line_min": null,
+      "line_max": null,
+      "min_books": 3,
+      "when": {
+       "op": "all",
+       "items": [
+        {
+         "id": "role",
+         "value": "underdog"
+        },
+        {
+         "id": "day_of_week",
+         "days": [
+          "sun"
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "plus_money_only",
+   "name": "Plus Money Only",
+   "pitch": "Moneylines at plus money, either side. If it pays more than even, the dog will look at it.",
+   "icon": "plus",
+   "stance": "dog",
+   "tags": [
+    "plus money",
+    "price"
+   ],
+   "works_in": [
+    "MLB",
+    "NFL"
+   ],
+   "kinds": [
+    "ml"
+   ],
+   "fragment": {
+    "rules": [
+     {
+      "label": "Plus Money Only",
+      "sports": [
+       "MLB",
+       "NFL"
+      ],
+      "markets": [
+       "moneyline"
+      ],
+      "side": "either",
+      "price_min": 100,
+      "price_max": 400,
+      "line_min": null,
+      "line_max": null,
+      "min_books": 3,
+      "when": null
+     }
+    ],
+    "rank_by": "longest_price"
+   }
+  },
+  {
+   "id": "chalk_eater",
+   "name": "Chalk Eater",
+   "pitch": "Favourites only, at short prices, and the hard cap stays at -199. Never -200 or worse.",
+   "icon": "bone",
+   "stance": "chalk",
+   "tags": [
+    "chalk",
+    "favourite",
+    "price"
+   ],
+   "works_in": [
+    "MLB",
+    "NFL"
+   ],
+   "kinds": [
+    "ml"
+   ],
+   "fragment": {
+    "rules": [
+     {
+      "label": "Chalk Eater",
+      "sports": [
+       "MLB",
+       "NFL"
+      ],
+      "markets": [
+       "moneyline"
+      ],
+      "side": "either",
+      "price_min": -199,
+      "price_max": -120,
+      "line_min": null,
+      "line_max": null,
+      "min_books": 3,
+      "when": {
+       "op": "all",
+       "items": [
+        {
+         "id": "role",
+         "value": "favourite"
+        }
+       ]
+      }
+     }
+    ],
+    "rank_by": "shortest_price"
+   }
+  },
+  {
+   "id": "thursday_night_gremlins",
+   "name": "Thursday Night Gremlins",
+   "pitch": "NFL Thursday games, underdogs on the spread. Short weeks make strange games.",
+   "icon": "gremlin",
+   "stance": "dog",
+   "tags": [
+    "nfl",
+    "weeknight",
+    "underdog"
+   ],
+   "works_in": [
+    "NFL"
+   ],
+   "kinds": [
+    "ml"
+   ],
+   "fragment": {
+    "rules": [
+     {
+      "label": "Thursday Gremlins",
+      "sports": [
+       "NFL"
+      ],
+      "markets": [
+       "spread"
+      ],
+      "side": "either",
+      "price_min": -150,
+      "price_max": 200,
+      "line_min": null,
+      "line_max": null,
+      "min_books": 3,
+      "when": {
+       "op": "all",
+       "items": [
+        {
+         "id": "role",
+         "value": "underdog"
+        },
+        {
+         "id": "day_of_week",
+         "days": [
+          "thu"
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "monday_night_mischief",
+   "name": "Monday Night Mischief",
+   "pitch": "NFL Monday nights, underdogs, any market that pays. The last game of the weekend.",
+   "icon": "tv",
+   "stance": "dog",
+   "tags": [
+    "nfl",
+    "weeknight",
+    "underdog"
+   ],
+   "works_in": [
+    "NFL"
+   ],
+   "kinds": [
+    "ml"
+   ],
+   "fragment": {
+    "rules": [
+     {
+      "label": "Monday Mischief",
+      "sports": [
+       "NFL"
+      ],
+      "markets": [
+       "moneyline",
+       "spread"
+      ],
+      "side": "either",
+      "price_min": 105,
+      "price_max": 350,
+      "line_min": null,
+      "line_max": null,
+      "min_books": 3,
+      "when": {
+       "op": "all",
+       "items": [
+        {
+         "id": "role",
+         "value": "underdog"
+        },
+        {
+         "id": "day_of_week",
+         "days": [
+          "mon"
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "cold_front_unders",
+   "name": "Cold Front Unders",
+   "pitch": "Game totals under in open-air parks when the forecast is 50 degrees or colder.",
+   "icon": "snow",
+   "stance": "neutral",
+   "tags": [
+    "weather",
+    "totals"
+   ],
+   "works_in": [
+    "MLB"
+   ],
+   "kinds": [
+    "total"
+   ],
+   "fragment": {
+    "rules": [
+     {
+      "label": "Cold Front Unders",
+      "sports": [
+       "MLB"
+      ],
+      "markets": [
+       "total"
+      ],
+      "side": "under",
+      "price_min": -150,
+      "price_max": 150,
+      "line_min": null,
+      "line_max": null,
+      "min_books": 3,
+      "when": {
+       "op": "all",
+       "items": [
+        {
+         "id": "temperature",
+         "cmp": "lte",
+         "value": 50
+        },
+        {
+         "id": "roof",
+         "value": "open"
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "heat_wave_overs",
+   "name": "Heat Wave Overs",
+   "pitch": "Game totals over in open-air parks when it is 85 degrees or hotter at first pitch.",
+   "icon": "sun",
+   "stance": "neutral",
+   "tags": [
+    "weather",
+    "totals"
+   ],
+   "works_in": [
+    "MLB"
+   ],
+   "kinds": [
+    "total"
+   ],
+   "fragment": {
+    "rules": [
+     {
+      "label": "Heat Wave Overs",
+      "sports": [
+       "MLB"
+      ],
+      "markets": [
+       "total"
+      ],
+      "side": "over",
+      "price_min": -150,
+      "price_max": 150,
+      "line_min": null,
+      "line_max": null,
+      "min_books": 3,
+      "when": {
+       "op": "all",
+       "items": [
+        {
+         "id": "temperature",
+         "cmp": "gte",
+         "value": 85
+        },
+        {
+         "id": "roof",
+         "value": "open"
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "rainy_day_unders",
+   "name": "Rainy Day Unders",
+   "pitch": "Game totals under when the forecast chance of rain is 40 percent or more.",
+   "icon": "rain",
+   "stance": "neutral",
+   "tags": [
+    "weather",
+    "totals"
+   ],
+   "works_in": [
+    "MLB"
+   ],
+   "kinds": [
+    "total"
+   ],
+   "fragment": {
+    "rules": [
+     {
+      "label": "Rainy Day Unders",
+      "sports": [
+       "MLB"
+      ],
+      "markets": [
+       "total"
+      ],
+      "side": "under",
+      "price_min": -150,
+      "price_max": 150,
+      "line_min": null,
+      "line_max": null,
+      "min_books": 3,
+      "when": {
+       "op": "all",
+       "items": [
+        {
+         "id": "rain_chance",
+         "cmp": "gte",
+         "value": 40
+        },
+        {
+         "id": "roof",
+         "value": "open"
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "matinee_mutt",
+   "name": "Matinee Mutt",
+   "pitch": "Day-game underdogs. Gets up early, takes the price.",
+   "icon": "sun",
+   "stance": "dog",
+   "tags": [
+    "day game",
+    "underdog"
+   ],
+   "works_in": [
+    "MLB",
+    "NFL"
+   ],
+   "kinds": [
+    "ml"
+   ],
+   "fragment": {
+    "rules": [
+     {
+      "label": "Matinee Mutt",
+      "sports": [
+       "MLB",
+       "NFL"
+      ],
+      "markets": [
+       "moneyline"
+      ],
+      "side": "either",
+      "price_min": 110,
+      "price_max": 300,
+      "line_min": null,
+      "line_max": null,
+      "min_books": 3,
+      "when": {
+       "op": "all",
+       "items": [
+        {
+         "id": "role",
+         "value": "underdog"
+        },
+        {
+         "id": "time_of_day",
+         "value": "day"
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "hot_hand_hound",
+   "name": "Hot Hand Hound",
+   "pitch": "Rides a team that has won 3 or more in a row. The streak is the whole idea.",
+   "icon": "flame",
+   "stance": "neutral",
+   "tags": [
+    "streak",
+    "form"
+   ],
+   "works_in": [
+    "MLB",
+    "NFL"
+   ],
+   "kinds": [
+    "ml"
+   ],
+   "fragment": {
+    "rules": [
+     {
+      "label": "Hot Hand Hound",
+      "sports": [
+       "MLB",
+       "NFL"
+      ],
+      "markets": [
+       "moneyline",
+       "spread"
+      ],
+      "side": "either",
+      "price_min": -150,
+      "price_max": 200,
+      "line_min": null,
+      "line_max": null,
+      "min_books": 3,
+      "when": {
+       "op": "all",
+       "items": [
+        {
+         "id": "streak",
+         "who": "pick",
+         "kind": "winning",
+         "value": 3
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "bounce_back_biscuit",
+   "name": "Bounce-Back Biscuit",
+   "pitch": "Underdogs coming off 3 or more losses in a row. Rock bottom is a price.",
+   "icon": "paw",
+   "stance": "dog",
+   "tags": [
+    "streak",
+    "underdog",
+    "contrarian"
+   ],
+   "works_in": [
+    "MLB",
+    "NFL"
+   ],
+   "kinds": [
+    "ml"
+   ],
+   "fragment": {
+    "rules": [
+     {
+      "label": "Bounce-Back Biscuit",
+      "sports": [
+       "MLB",
+       "NFL"
+      ],
+      "markets": [
+       "moneyline",
+       "spread"
+      ],
+      "side": "either",
+      "price_min": 105,
+      "price_max": 350,
+      "line_min": null,
+      "line_max": null,
+      "min_books": 3,
+      "when": {
+       "op": "all",
+       "items": [
+        {
+         "id": "role",
+         "value": "underdog"
+        },
+        {
+         "id": "streak",
+         "who": "pick",
+         "kind": "losing",
+         "value": 3
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "red_eye_special",
+   "name": "Red-Eye Special",
+   "pitch": "Backs the team facing an opponent that has travelled 1,500 miles or more since its last game.",
+   "icon": "plane",
+   "stance": "neutral",
+   "tags": [
+    "travel",
+    "schedule"
+   ],
+   "works_in": [
+    "MLB"
+   ],
+   "kinds": [
+    "ml"
+   ],
+   "fragment": {
+    "rules": [
+     {
+      "label": "Red-Eye Special",
+      "sports": [
+       "MLB"
+      ],
+      "markets": [
+       "moneyline",
+       "spread"
+      ],
+      "side": "either",
+      "price_min": -150,
+      "price_max": 250,
+      "line_min": null,
+      "line_max": null,
+      "min_books": 3,
+      "when": {
+       "op": "all",
+       "items": [
+        {
+         "id": "travel_miles",
+         "who": "opponent",
+         "cmp": "gte",
+         "miles": 1500
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "short_week_slayer",
+   "name": "Short Week Slayer",
+   "pitch": "NFL teams facing an opponent playing on 5 days of rest or fewer.",
+   "icon": "calendar",
+   "stance": "neutral",
+   "tags": [
+    "nfl",
+    "rest",
+    "schedule"
+   ],
+   "works_in": [
+    "NFL"
+   ],
+   "kinds": [
+    "ml"
+   ],
+   "fragment": {
+    "rules": [
+     {
+      "label": "Short Week Slayer",
+      "sports": [
+       "NFL"
+      ],
+      "markets": [
+       "moneyline",
+       "spread"
+      ],
+      "side": "either",
+      "price_min": -150,
+      "price_max": 250,
+      "line_min": null,
+      "line_max": null,
+      "min_books": 3,
+      "when": {
+       "op": "all",
+       "items": [
+        {
+         "id": "rest_days",
+         "who": "opponent",
+         "cmp": "lte",
+         "value": 5
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "bye_week_believer",
+   "name": "Bye Week Believer",
+   "pitch": "NFL teams coming off a bye, 10 or more days of rest. Fresh legs, fresh hope.",
+   "icon": "key",
+   "stance": "neutral",
+   "tags": [
+    "nfl",
+    "rest",
+    "schedule"
+   ],
+   "works_in": [
+    "NFL"
+   ],
+   "kinds": [
+    "ml"
+   ],
+   "fragment": {
+    "rules": [
+     {
+      "label": "Bye Week Believer",
+      "sports": [
+       "NFL"
+      ],
+      "markets": [
+       "moneyline",
+       "spread"
+      ],
+      "side": "either",
+      "price_min": -150,
+      "price_max": 250,
+      "line_min": null,
+      "line_max": null,
+      "min_books": 3,
+      "when": {
+       "op": "all",
+       "items": [
+        {
+         "id": "rest_days",
+         "who": "pick",
+         "cmp": "gte",
+         "value": 10
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "field_goal_fiend",
+   "name": "Field Goal Fiend",
+   "pitch": "NFL spreads of 3 points or less. Close games, one kick from either result.",
+   "icon": "kick",
+   "stance": "neutral",
+   "tags": [
+    "nfl",
+    "spread"
+   ],
+   "works_in": [
+    "NFL"
+   ],
+   "kinds": [
+    "ml"
+   ],
+   "fragment": {
+    "rules": [
+     {
+      "label": "Field Goal Fiend",
+      "sports": [
+       "NFL"
+      ],
+      "markets": [
+       "spread"
+      ],
+      "side": "either",
+      "price_min": -150,
+      "price_max": 200,
+      "line_min": null,
+      "line_max": null,
+      "min_books": 3,
+      "when": {
+       "op": "all",
+       "items": [
+        {
+         "id": "spread_size",
+         "cmp": "lte",
+         "value": 3
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "touchdown_dog",
+   "name": "Touchdown Dog",
+   "pitch": "NFL underdogs getting 7 or more points. A big number is a big cushion.",
+   "icon": "football",
+   "stance": "dog",
+   "tags": [
+    "nfl",
+    "spread",
+    "underdog"
+   ],
+   "works_in": [
+    "NFL"
+   ],
+   "kinds": [
+    "ml"
+   ],
+   "fragment": {
+    "rules": [
+     {
+      "label": "Touchdown Dog",
+      "sports": [
+       "NFL"
+      ],
+      "markets": [
+       "spread"
+      ],
+      "side": "either",
+      "price_min": -150,
+      "price_max": 200,
+      "line_min": null,
+      "line_max": null,
+      "min_books": 3,
+      "when": {
+       "op": "all",
+       "items": [
+        {
+         "id": "role",
+         "value": "underdog"
+        },
+        {
+         "id": "spread_size",
+         "cmp": "gte",
+         "value": 7
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "under_the_lights",
+   "name": "Under the Lights",
+   "pitch": "Night game totals, under. The bats go quiet when the sun goes down; allegedly.",
+   "icon": "moon",
+   "stance": "neutral",
+   "tags": [
+    "night",
+    "totals"
+   ],
+   "works_in": [
+    "MLB",
+    "NFL"
+   ],
+   "kinds": [
+    "total"
+   ],
+   "fragment": {
+    "rules": [
+     {
+      "label": "Under the Lights",
+      "sports": [
+       "MLB",
+       "NFL"
+      ],
+      "markets": [
+       "total"
+      ],
+      "side": "under",
+      "price_min": -150,
+      "price_max": 150,
+      "line_min": null,
+      "line_max": null,
+      "min_books": 3,
+      "when": {
+       "op": "all",
+       "items": [
+        {
+         "id": "time_of_day",
+         "value": "night"
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "total_steam_chaser",
+   "name": "Total Steam Chaser",
+   "pitch": "Game totals, but only the side the market has been moving toward.",
+   "icon": "wave",
+   "stance": "neutral",
+   "tags": [
+    "steam",
+    "totals",
+    "market"
+   ],
+   "works_in": [
+    "MLB",
+    "NFL"
+   ],
+   "kinds": [
+    "total"
+   ],
+   "fragment": {
+    "rules": [
+     {
+      "label": "Total Steam Chaser",
+      "sports": [
+       "MLB",
+       "NFL"
+      ],
+      "markets": [
+       "total"
+      ],
+      "side": "either",
+      "price_min": -150,
+      "price_max": 150,
+      "line_min": null,
+      "line_max": null,
+      "min_books": 4,
+      "when": {
+       "op": "all",
+       "items": [
+        {
+         "id": "steam",
+         "direction": "toward"
+        }
+       ]
+      }
+     }
+    ],
+    "rank_by": "biggest_steam"
+   }
+  },
+  {
+   "id": "weekend_warrior",
+   "name": "Weekend Warrior",
+   "pitch": "Plus-money underdogs on Saturdays and Sundays. Weekdays are for resting.",
+   "icon": "calendar",
+   "stance": "dog",
+   "tags": [
+    "weekend",
+    "underdog"
+   ],
+   "works_in": [
+    "MLB",
+    "NFL"
+   ],
+   "kinds": [
+    "ml"
+   ],
+   "fragment": {
+    "rules": [
+     {
+      "label": "Weekend Warrior",
+      "sports": [
+       "MLB",
+       "NFL"
+      ],
+      "markets": [
+       "moneyline"
+      ],
+      "side": "either",
+      "price_min": 105,
+      "price_max": 300,
+      "line_min": null,
+      "line_max": null,
+      "min_books": 3,
+      "when": {
+       "op": "all",
+       "items": [
+        {
+         "id": "role",
+         "value": "underdog"
+        },
+        {
+         "id": "day_of_week",
+         "days": [
+          "sat",
+          "sun"
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "fresh_legs_favourite",
+   "name": "Fresh Legs Favourite",
+   "pitch": "Favourites at short prices with 2 or more days of rest. Cap stays at -199.",
+   "icon": "feather",
+   "stance": "chalk",
+   "tags": [
+    "favourite",
+    "rest",
+    "chalk"
+   ],
+   "works_in": [
+    "MLB",
+    "NFL"
+   ],
+   "kinds": [
+    "ml"
+   ],
+   "fragment": {
+    "rules": [
+     {
+      "label": "Fresh Legs Favourite",
+      "sports": [
+       "MLB",
+       "NFL"
+      ],
+      "markets": [
+       "moneyline"
+      ],
+      "side": "either",
+      "price_min": -199,
+      "price_max": -110,
+      "line_min": null,
+      "line_max": null,
+      "min_books": 3,
+      "when": {
+       "op": "all",
+       "items": [
+        {
+         "id": "role",
+         "value": "favourite"
+        },
+        {
+         "id": "rest_days",
+         "who": "pick",
+         "cmp": "gte",
+         "value": 2
+        }
+       ]
+      }
+     }
+    ],
+    "rank_by": "shortest_price"
+   }
+  },
+  {
+   "id": "home_dog_howl",
+   "name": "Home Dog Howl",
+   "pitch": "Home underdogs only, plus money. The crowd noise is a rumour, the price is a number.",
+   "icon": "house",
+   "stance": "dog",
+   "tags": [
+    "home",
+    "underdog"
+   ],
+   "works_in": [
+    "MLB",
+    "NFL"
+   ],
+   "kinds": [
+    "ml"
+   ],
+   "fragment": {
+    "rules": [
+     {
+      "label": "Home Dog Howl",
+      "sports": [
+       "MLB",
+       "NFL"
+      ],
+      "markets": [
+       "moneyline"
+      ],
+      "side": "home",
+      "price_min": 110,
+      "price_max": 300,
+      "line_min": null,
+      "line_max": null,
+      "min_books": 3,
+      "when": {
+       "op": "all",
+       "items": [
+        {
+         "id": "role",
+         "value": "underdog"
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "long_name_louie",
+   "name": "Long Name Louie",
+   "pitch": "Bets teams whose name has 12 or more letters. Silly on purpose, graded like everything else.",
+   "icon": "letters",
+   "stance": "neutral",
+   "tags": [
+    "letters",
+    "silly"
+   ],
+   "works_in": [
+    "MLB",
+    "NFL"
+   ],
+   "kinds": [
+    "ml"
+   ],
+   "fragment": {
+    "rules": [
+     {
+      "label": "Long Name Louie",
+      "sports": [
+       "MLB",
+       "NFL"
+      ],
+      "markets": [
+       "moneyline",
+       "spread"
+      ],
+      "side": "either",
+      "price_min": -150,
+      "price_max": 300,
+      "line_min": null,
+      "line_max": null,
+      "min_books": 3,
+      "when": {
+       "op": "all",
+       "items": [
+        {
+         "id": "name_length",
+         "of": "pick",
+         "cmp": "gte",
+         "value": 12
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "run_producer",
+   "name": "Run Producer",
+   "pitch": "Over on hits + runs + RBIs for hitters who average 2 or more per game on the box scores we have.",
+   "icon": "rocket",
+   "stance": "neutral",
+   "tags": [
+    "props",
+    "form"
+   ],
+   "works_in": [
+    "MLB"
+   ],
+   "kinds": [
+    "prop"
+   ],
+   "fragment": {
+    "rules": [
+     {
+      "label": "Run Producer",
+      "sports": [
+       "MLB"
+      ],
+      "markets": [
+       "batter_hits_runs_rbis"
+      ],
+      "side": "over",
+      "price_min": -150,
+      "price_max": 300,
+      "line_min": null,
+      "line_max": null,
+      "min_books": 1,
+      "when": {
+       "op": "all",
+       "items": [
+        {
+         "id": "player_rate",
+         "cmp": "gte",
+         "value": 2.0
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "long_ball_dreamer",
+   "name": "Long Ball Dreamer",
+   "pitch": "Home run overs at big prices, for hitters who average a quarter of a homer a game or more.",
+   "icon": "rocket",
+   "stance": "dog",
+   "tags": [
+    "props",
+    "long shot"
+   ],
+   "works_in": [
+    "MLB"
+   ],
+   "kinds": [
+    "prop"
+   ],
+   "fragment": {
+    "rules": [
+     {
+      "label": "Long Ball Dreamer",
+      "sports": [
+       "MLB"
+      ],
+      "markets": [
+       "batter_home_runs"
+      ],
+      "side": "over",
+      "price_min": 250,
+      "price_max": 1000,
+      "line_min": null,
+      "line_max": null,
+      "min_books": 1,
+      "when": {
+       "op": "all",
+       "items": [
+        {
+         "id": "player_rate",
+         "cmp": "gte",
+         "value": 0.25
+        }
+       ]
+      }
+     }
+    ],
+    "rank_by": "longest_price"
+   }
+  },
+  {
+   "id": "new_moon_unders",
+   "name": "New Moon Unders",
+   "pitch": "Game totals under, only on a new moon. Dark sky, quiet bats, no evidence.",
+   "icon": "moon",
+   "stance": "neutral",
+   "tags": [
+    "moon",
+    "totals",
+    "mystic"
+   ],
+   "works_in": [
+    "MLB",
+    "NFL"
+   ],
+   "kinds": [
+    "total"
+   ],
+   "fragment": {
+    "rules": [
+     {
+      "label": "New Moon Unders",
+      "sports": [
+       "MLB",
+       "NFL"
+      ],
+      "markets": [
+       "total"
+      ],
+      "side": "under",
+      "price_min": -150,
+      "price_max": 150,
+      "line_min": null,
+      "line_max": null,
+      "min_books": 3,
+      "when": {
+       "op": "all",
+       "items": [
+        {
+         "id": "moon_phase",
+         "value": "new"
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "contrarian_corgi",
+   "name": "Contrarian Corgi",
+   "pitch": "Takes the underdog when the market moved toward the favourite and the dog is rested. Small legs, big opinions.",
+   "icon": "target",
+   "stance": "dog",
+   "tags": [
+    "contrarian",
+    "steam",
+    "rest"
+   ],
+   "works_in": [
+    "MLB",
+    "NFL"
+   ],
+   "kinds": [
+    "ml"
+   ],
+   "fragment": {
+    "rules": [
+     {
+      "label": "Contrarian Corgi",
+      "sports": [
+       "MLB",
+       "NFL"
+      ],
+      "markets": [
+       "moneyline",
+       "spread"
+      ],
+      "side": "either",
+      "price_min": 105,
+      "price_max": 300,
+      "line_min": null,
+      "line_max": null,
+      "min_books": 4,
+      "when": {
+       "op": "all",
+       "items": [
+        {
+         "id": "role",
+         "value": "underdog"
+        },
+        {
+         "id": "steam",
+         "direction": "against"
+        },
+        {
+         "id": "rest_days",
+         "who": "pick",
+         "cmp": "gte",
+         "value": 1
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "form_filter",
+   "name": "Form Filter",
+   "pitch": "Backs the team that won at least 7 of its last 10 against one that won 5 or fewer.",
+   "icon": "chart",
+   "stance": "neutral",
+   "tags": [
+    "form",
+    "nerd"
+   ],
+   "works_in": [
+    "MLB",
+    "NFL"
+   ],
+   "kinds": [
+    "ml"
+   ],
+   "fragment": {
+    "rules": [
+     {
+      "label": "Form Filter",
+      "sports": [
+       "MLB",
+       "NFL"
+      ],
+      "markets": [
+       "moneyline",
+       "spread"
+      ],
+      "side": "either",
+      "price_min": -150,
+      "price_max": 200,
+      "line_min": null,
+      "line_max": null,
+      "min_books": 4,
+      "when": {
+       "op": "all",
+       "items": [
+        {
+         "id": "last_n_wins",
+         "who": "pick",
+         "n": 10,
+         "cmp": "gte",
+         "wins": 7
+        },
+        {
+         "id": "last_n_wins",
+         "who": "opponent",
+         "n": 10,
+         "cmp": "lte",
+         "wins": 5
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "two_rule_twin",
+   "name": "Two-Rule Twin",
+   "pitch": "Two rules in one dog: road underdogs on the moneyline, and unders on cold days. Shows how a dog can mix.",
+   "icon": "twins",
+   "stance": "dog",
+   "tags": [
+    "mix",
+    "road",
+    "weather"
+   ],
+   "works_in": [
+    "MLB"
+   ],
+   "kinds": [
+    "ml",
+    "total"
+   ],
+   "fragment": {
+    "rules": [
+     {
+      "label": "Road dogs",
+      "sports": [
+       "MLB"
+      ],
+      "markets": [
+       "moneyline"
+      ],
+      "side": "away",
+      "price_min": 110,
+      "price_max": 300,
+      "line_min": null,
+      "line_max": null,
+      "min_books": 3,
+      "when": {
+       "op": "all",
+       "items": [
+        {
+         "id": "role",
+         "value": "underdog"
+        }
+       ]
+      }
+     },
+     {
+      "label": "Cold unders",
+      "sports": [
+       "MLB"
+      ],
+      "markets": [
+       "total"
+      ],
+      "side": "under",
+      "price_min": -150,
+      "price_max": 150,
+      "line_min": null,
+      "line_max": null,
+      "min_books": 3,
+      "when": {
+       "op": "all",
+       "items": [
+        {
+         "id": "temperature",
+         "cmp": "lte",
+         "value": 55
+        },
+        {
+         "id": "roof",
+         "value": "open"
+        }
+       ]
+      }
+     }
+    ]
+   }
+  }
+ ],
+ "personalities": [
+  {
+   "id": "underdog_hunter",
+   "name": "Underdog Hunter",
+   "pitch": "Plus money or nothing. Sniffs out the dog everyone else walked past.",
+   "icon": "paw",
+   "vibe": "degen",
+   "breed": "husky",
+   "color": "ember",
+   "badge": "paw",
+   "stance": "dog",
+   "tagline": "Hunts plus-money underdogs.",
+   "rank_by": "longest_price",
+   "bets_hint": 2,
+   "recipes": {
+    "ml": {
+     "side": "either",
+     "price_min": 100,
+     "price_max": 300,
+     "when": [
+      {
+       "id": "role",
+       "value": "underdog"
+      }
+     ]
+    },
+    "total": {
+     "side": "under",
+     "price_min": -150,
+     "price_max": 150,
+     "when": []
+    },
+    "prop": {
+     "side": "over",
+     "price_min": 150,
+     "price_max": 1000,
+     "when": []
+    }
+   }
+  },
+  {
+   "id": "chalk_eater",
+   "name": "Chalk Eater",
+   "pitch": "Short prices, favourites, steady. Never -200 or worse, ever.",
+   "icon": "bone",
+   "vibe": "grinder",
+   "breed": "bulldog",
+   "color": "sky",
+   "badge": "anchor",
+   "stance": "chalk",
+   "tagline": "Eats the chalk. Never -200 or worse.",
+   "rank_by": "shortest_price",
+   "bets_hint": 3,
+   "recipes": {
+    "ml": {
+     "side": "either",
+     "price_min": -199,
+     "price_max": -120,
+     "when": [
+      {
+       "id": "role",
+       "value": "favourite"
+      }
+     ]
+    },
+    "total": {
+     "side": "either",
+     "price_min": -199,
+     "price_max": -105,
+     "when": []
+    },
+    "prop": {
+     "side": "either",
+     "price_min": -199,
+     "price_max": -110,
+     "when": []
+    }
+   }
+  },
+  {
+   "id": "chaos_agent",
+   "name": "Chaos Agent",
+   "pitch": "Lets a seeded coin decide. Every pick is logged, nothing is explained.",
+   "icon": "coin",
+   "vibe": "chaos",
+   "breed": "mutt",
+   "color": "violet",
+   "badge": "skull",
+   "stance": "neutral",
+   "tagline": "Pure chaos, fully logged.",
+   "rank_by": "earliest_lock",
+   "bets_hint": 3,
+   "recipes": {
+    "ml": {
+     "side": "either",
+     "price_min": -150,
+     "price_max": 300,
+     "when": [
+      {
+       "id": "coin_flip",
+       "pct": 50
+      }
+     ]
+    },
+    "total": {
+     "side": "either",
+     "price_min": -150,
+     "price_max": 150,
+     "when": [
+      {
+       "id": "coin_flip",
+       "pct": 50
+      }
+     ]
+    },
+    "prop": {
+     "side": "either",
+     "price_min": -150,
+     "price_max": 500,
+     "when": [
+      {
+       "id": "coin_flip",
+       "pct": 50
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "stats_nerd",
+   "name": "Stats Nerd",
+   "pitch": "Wants recent form, rest and numbers before it commits to anything.",
+   "icon": "chart",
+   "vibe": "nerd",
+   "breed": "schnauzer",
+   "color": "mint",
+   "badge": "diamond",
+   "stance": "neutral",
+   "tagline": "Reads the form guide twice.",
+   "rank_by": "most_books",
+   "bets_hint": 2,
+   "recipes": {
+    "ml": {
+     "side": "either",
+     "price_min": -150,
+     "price_max": 200,
+     "when": [
+      {
+       "id": "last_n_wins",
+       "who": "pick",
+       "n": 10,
+       "cmp": "gte",
+       "wins": 7
+      },
+      {
+       "id": "last_n_wins",
+       "who": "opponent",
+       "n": 10,
+       "cmp": "lte",
+       "wins": 5
+      }
+     ],
+     "min_books": 4
+    },
+    "total": {
+     "side": "either",
+     "price_min": -150,
+     "price_max": 150,
+     "when": [
+      {
+       "id": "rest_days",
+       "who": "both",
+       "cmp": "gte",
+       "value": 1
+      }
+     ]
+    },
+    "prop": {
+     "side": "over",
+     "price_min": -150,
+     "price_max": 300,
+     "when": [
+      {
+       "id": "player_form",
+       "n": 7,
+       "rel": "above",
+       "margin": 0.25
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "steam_chaser",
+   "name": "Steam Chaser",
+   "pitch": "Follows the line. Backs whatever way the market has been moving.",
+   "icon": "wave",
+   "vibe": "",
+   "breed": "retriever",
+   "color": "gold",
+   "badge": "bolt",
+   "stance": "neutral",
+   "tagline": "Follows the line movement.",
+   "rank_by": "biggest_steam",
+   "bets_hint": 2,
+   "recipes": {
+    "ml": {
+     "side": "either",
+     "price_min": -150,
+     "price_max": 250,
+     "when": [
+      {
+       "id": "steam",
+       "direction": "toward"
+      }
+     ],
+     "min_books": 4
+    },
+    "total": {
+     "side": "either",
+     "price_min": -150,
+     "price_max": 150,
+     "when": [
+      {
+       "id": "steam",
+       "direction": "toward"
+      }
+     ],
+     "min_books": 4
+    },
+    "prop": {
+     "side": "either",
+     "price_min": -150,
+     "price_max": 300,
+     "when": [
+      {
+       "id": "steam",
+       "direction": "toward"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "mystic",
+   "name": "Mystic",
+   "pitch": "Numerology, moons and hunches. Not a prediction, a vibe, graded in public.",
+   "icon": "stars",
+   "vibe": "psychic",
+   "breed": "hound",
+   "color": "rose",
+   "badge": "moon",
+   "stance": "neutral",
+   "tagline": "Reads the stars, then the odds.",
+   "rank_by": "earliest_lock",
+   "bets_hint": 2,
+   "recipes": {
+    "ml": {
+     "side": "either",
+     "price_min": -150,
+     "price_max": 300,
+     "when": [
+      {
+       "id": "numerology",
+       "value": "closer"
+      }
+     ]
+    },
+    "total": {
+     "side": "over",
+     "price_min": -150,
+     "price_max": 150,
+     "when": [
+      {
+       "id": "moon_phase",
+       "value": "full"
+      }
+     ]
+    },
+    "prop": {
+     "side": "over",
+     "price_min": -150,
+     "price_max": 500,
+     "when": [
+      {
+       "id": "moon_phase",
+       "value": "full"
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "markets": [
+  {
+   "id": "moneyline",
+   "name": "Moneylines",
+   "pitch": "Who wins, plain and simple.",
+   "icon": "trophy",
+   "markets": [
+    "moneyline"
+   ],
+   "kind": "ml"
+  },
+  {
+   "id": "spread",
+   "name": "Spreads and run lines",
+   "pitch": "Win by enough, or lose by less.",
+   "icon": "ruler",
+   "markets": [
+    "spread"
+   ],
+   "kind": "ml"
+  },
+  {
+   "id": "total",
+   "name": "Game totals",
+   "pitch": "Over or under, never mind who wins.",
+   "icon": "updown",
+   "markets": [
+    "total"
+   ],
+   "kind": "total"
+  },
+  {
+   "id": "props",
+   "name": "Player props",
+   "pitch": "A hitter or a pitcher, one stat. MLB only.",
+   "icon": "bat",
+   "markets": [
+    "batter_hits",
+    "batter_total_bases",
+    "batter_home_runs",
+    "pitcher_strikeouts"
+   ],
+   "kind": "prop"
+  },
+  {
+   "id": "mix",
+   "name": "A bit of everything",
+   "pitch": "Moneylines, spreads and totals in one dog.",
+   "icon": "dice",
+   "markets": [
+    "moneyline",
+    "spread",
+    "total"
+   ],
+   "kind": "mix"
+  }
+ ],
+ "price_comforts": [
+  {
+   "id": "short",
+   "name": "Short prices",
+   "pitch": "Favourite territory, -199 to -110. Never -200 or worse.",
+   "icon": "anchor",
+   "price_min": -199,
+   "price_max": -110,
+   "stance": "chalk"
+  },
+  {
+   "id": "even",
+   "name": "Around even",
+   "pitch": "Close to a coin flip: -130 to +130.",
+   "icon": "scale",
+   "price_min": -130,
+   "price_max": 130,
+   "stance": "neutral"
+  },
+  {
+   "id": "plus",
+   "name": "Plus money",
+   "pitch": "Pays more than it risks: +100 to +250.",
+   "icon": "plus",
+   "price_min": 100,
+   "price_max": 250,
+   "stance": "dog"
+  },
+  {
+   "id": "long",
+   "name": "Long shots",
+   "pitch": "+250 and up. Loses a lot, pays when it lands.",
+   "icon": "rocket",
+   "price_min": 250,
+   "price_max": 1000,
+   "stance": "dog"
+  }
+ ],
+ "quirks": [
+  {
+   "id": "warm_nights",
+   "name": "Warm weather",
+   "pitch": "Only when the forecast is 75 degrees or more at first pitch. MLB.",
+   "icon": "sun",
+   "group": "Weather",
+   "condition": {
+    "id": "temperature",
+    "cmp": "gte",
+    "value": 75
+   },
+   "sports": [
+    "MLB"
+   ],
+   "kinds": [
+    "ml",
+    "total",
+    "prop"
+   ]
+  },
+  {
+   "id": "chilly",
+   "name": "Chilly games",
+   "pitch": "Only when the forecast is 55 degrees or colder. MLB.",
+   "icon": "snow",
+   "group": "Weather",
+   "condition": {
+    "id": "temperature",
+    "cmp": "lte",
+    "value": 55
+   },
+   "sports": [
+    "MLB"
+   ],
+   "kinds": [
+    "ml",
+    "total",
+    "prop"
+   ]
+  },
+  {
+   "id": "windy",
+   "name": "Windy days",
+   "pitch": "Only when the forecast wind is 12 mph or more. MLB.",
+   "icon": "wind",
+   "group": "Weather",
+   "condition": {
+    "id": "wind_speed",
+    "cmp": "gte",
+    "value": 12
+   },
+   "sports": [
+    "MLB"
+   ],
+   "kinds": [
+    "ml",
+    "total",
+    "prop"
+   ]
+  },
+  {
+   "id": "dry_day",
+   "name": "Dry days",
+   "pitch": "Only when the chance of rain is 20 percent or less. MLB.",
+   "icon": "cloud",
+   "group": "Weather",
+   "condition": {
+    "id": "rain_chance",
+    "cmp": "lte",
+    "value": 20
+   },
+   "sports": [
+    "MLB"
+   ],
+   "kinds": [
+    "ml",
+    "total",
+    "prop"
+   ]
+  },
+  {
+   "id": "full_moon",
+   "name": "Full moon",
+   "pitch": "Only when the moon is full. Yes, really.",
+   "icon": "moon",
+   "group": "Mystic",
+   "condition": {
+    "id": "moon_phase",
+    "value": "full"
+   },
+   "sports": [
+    "MLB",
+    "NFL"
+   ],
+   "kinds": [
+    "ml",
+    "total",
+    "prop"
+   ]
+  },
+  {
+   "id": "new_moon",
+   "name": "New moon",
+   "pitch": "Only when the moon is new.",
+   "icon": "moon",
+   "group": "Mystic",
+   "condition": {
+    "id": "moon_phase",
+    "value": "new"
+   },
+   "sports": [
+    "MLB",
+    "NFL"
+   ],
+   "kinds": [
+    "ml",
+    "total",
+    "prop"
+   ]
+  },
+  {
+   "id": "lucky_letter",
+   "name": "Lucky letter",
+   "pitch": "Only teams whose name starts with your letter. Pick it below.",
+   "icon": "letters",
+   "group": "Mystic",
+   "condition": {
+    "id": "name_letter",
+    "of": "pick",
+    "test": "starts_with",
+    "letter": "S"
+   },
+   "sports": [
+    "MLB",
+    "NFL"
+   ],
+   "kinds": [
+    "ml"
+   ]
+  },
+  {
+   "id": "numerology",
+   "name": "Numerology",
+   "pitch": "Only the team whose name adds up closest to the date's number.",
+   "icon": "stars",
+   "group": "Mystic",
+   "condition": {
+    "id": "numerology",
+    "value": "closer"
+   },
+   "sports": [
+    "MLB",
+    "NFL"
+   ],
+   "kinds": [
+    "ml"
+   ]
+  },
+  {
+   "id": "coin_flip",
+   "name": "Coin flip",
+   "pitch": "A seeded coin has to say yes first, 50 percent of the time.",
+   "icon": "coin",
+   "group": "Chaos",
+   "condition": {
+    "id": "coin_flip",
+    "pct": 50
+   },
+   "sports": [
+    "MLB",
+    "NFL"
+   ],
+   "kinds": [
+    "ml",
+    "total",
+    "prop"
+   ]
+  },
+  {
+   "id": "weekend",
+   "name": "Weekends only",
+   "pitch": "Saturdays and Sundays.",
+   "icon": "calendar",
+   "group": "Calendar",
+   "condition": {
+    "id": "day_of_week",
+    "days": [
+     "sat",
+     "sun"
+    ]
+   },
+   "sports": [
+    "MLB",
+    "NFL"
+   ],
+   "kinds": [
+    "ml",
+    "total",
+    "prop"
+   ]
+  },
+  {
+   "id": "weekdays",
+   "name": "Weekdays only",
+   "pitch": "Monday to Friday.",
+   "icon": "calendar",
+   "group": "Calendar",
+   "condition": {
+    "id": "day_of_week",
+    "days": [
+     "mon",
+     "tue",
+     "wed",
+     "thu",
+     "fri"
+    ]
+   },
+   "sports": [
+    "MLB",
+    "NFL"
+   ],
+   "kinds": [
+    "ml",
+    "total",
+    "prop"
+   ]
+  },
+  {
+   "id": "primetime",
+   "name": "Night games",
+   "pitch": "Games that start at 5pm Eastern or later.",
+   "icon": "moon",
+   "group": "Calendar",
+   "condition": {
+    "id": "time_of_day",
+    "value": "night"
+   },
+   "sports": [
+    "MLB",
+    "NFL"
+   ],
+   "kinds": [
+    "ml",
+    "total",
+    "prop"
+   ]
+  },
+  {
+   "id": "matinee",
+   "name": "Day games",
+   "pitch": "Games that start before 5pm Eastern.",
+   "icon": "sun",
+   "group": "Calendar",
+   "condition": {
+    "id": "time_of_day",
+    "value": "day"
+   },
+   "sports": [
+    "MLB",
+    "NFL"
+   ],
+   "kinds": [
+    "ml",
+    "total",
+    "prop"
+   ]
+  },
+  {
+   "id": "fresh_legs",
+   "name": "Well rested",
+   "pitch": "Only when the team it backs has 2 or more days of rest.",
+   "icon": "feather",
+   "group": "Rest",
+   "condition": {
+    "id": "rest_days",
+    "who": "pick",
+    "cmp": "gte",
+    "value": 2
+   },
+   "sports": [
+    "MLB",
+    "NFL"
+   ],
+   "kinds": [
+    "ml"
+   ]
+  },
+  {
+   "id": "tired_opponent",
+   "name": "Tired opponent",
+   "pitch": "Only when the opponent played yesterday (MLB: 0 days off).",
+   "icon": "hourglass",
+   "group": "Rest",
+   "condition": {
+    "id": "rest_days",
+    "who": "opponent",
+    "cmp": "lte",
+    "value": 0
+   },
+   "sports": [
+    "MLB"
+   ],
+   "kinds": [
+    "ml"
+   ]
+  },
+  {
+   "id": "steam_only",
+   "name": "Line moving my way",
+   "pitch": "Only when the market has moved toward the pick since the first capture.",
+   "icon": "wave",
+   "group": "Market",
+   "condition": {
+    "id": "steam",
+    "direction": "toward"
+   },
+   "sports": [
+    "MLB",
+    "NFL"
+   ],
+   "kinds": [
+    "ml",
+    "total",
+    "prop"
+   ]
+  }
+ ],
+ "timings": [
+  {
+   "id": "early",
+   "name": "Early bird",
+   "pitch": "Checks the board 3 hours before the start.",
+   "icon": "sunrise",
+   "lock_minutes": 180
+  },
+  {
+   "id": "late",
+   "name": "Right before the game",
+   "pitch": "Checks the board 1 hour before the start.",
+   "icon": "clock",
+   "lock_minutes": 60
+  }
+ ],
+ "looks": {
+  "coats": [
+   "tan",
+   "black",
+   "white",
+   "grey",
+   "brown",
+   "golden",
+   "red",
+   "merle"
+  ],
+  "accessories": [
+   {
+    "id": "none",
+    "name": "Plain",
+    "look": {}
+   },
+   {
+    "id": "sunglasses",
+    "name": "Sunglasses",
+    "look": {
+     "face": "sunglasses"
+    }
+   },
+   {
+    "id": "cap",
+    "name": "Ball cap",
+    "look": {
+     "head": "cap"
+    }
+   },
+   {
+    "id": "headband",
+    "name": "Headband",
+    "look": {
+     "head": "headband"
+    }
+   },
+   {
+    "id": "visor",
+    "name": "Visor",
+    "look": {
+     "head": "visor"
+    }
+   },
+   {
+    "id": "chain",
+    "name": "Gold chain",
+    "look": {
+     "neck": "chain"
+    }
+   },
+   {
+    "id": "hoodie",
+    "name": "Hoodie",
+    "look": {
+     "body": "hoodie"
+    }
+   },
+   {
+    "id": "jersey",
+    "name": "Jersey",
+    "look": {
+     "body": "jersey"
+    }
+   }
+  ]
+ },
+ "name_pools": {
+  "underdog_hunter": [
+   "Long Shot Larry",
+   "Bone Hunter",
+   "Pocket Rocket",
+   "Underbite",
+   "Scrappy Pup",
+   "Plus Money Pete"
+  ],
+  "chalk_eater": [
+   "Chalk Chomper",
+   "Steady Eddie",
+   "Gravy Train",
+   "Short Price Sam",
+   "Biscuit the Safe",
+   "Sir Favors-a-Lot"
+  ],
+  "chaos_agent": [
+   "Captain Chaos",
+   "Gremlin Gus",
+   "Wildcard Wally",
+   "Dice Roll Rosie",
+   "Mayhem Max",
+   "Chaos Cookie"
+  ],
+  "stats_nerd": [
+   "Professor Pawsworth",
+   "Spreadsheet Sam",
+   "Doctor Data Dog",
+   "Pocket Protector",
+   "Slide Rule Sally",
+   "Regression Rex"
+  ],
+  "steam_chaser": [
+   "Tailwind Ted",
+   "Vapor Trail",
+   "Line Mover Larry",
+   "Sharp Nose",
+   "Weathervane",
+   "Draft Chaser"
+  ],
+  "mystic": [
+   "Madame Moonpaw",
+   "Tarot Terrier",
+   "Oracle Otis",
+   "Crystal Ball Cooper",
+   "Lunar Lucy",
+   "Stargazer Stu"
+  ],
+  "default": [
+   "Rookie Rufus",
+   "Fetch",
+   "Good Boy Gary",
+   "Biscuit",
+   "Scout",
+   "Pup Pup"
+  ]
+ },
+ "defaults": {
+  "max_bets_per_day": 2,
+  "stake_units": 1.0,
+  "lock_minutes": 120,
+  "color": "ember",
+  "badge": "bone"
+ }
+}
