@@ -316,6 +316,8 @@ class Cond:
     only_markets: tuple = ()     # restrict to these markets (e.g. spread_size -> spread)
     fun: bool = False
     unavailable: Optional[Callable[[], Optional[str]]] = None   # -> reason, or None when available
+    note: str = ""               # what data it reads and how much of it exists, shown beside the condition
+    check: Optional[Callable[[Mapping], Optional[str]]] = None   # cross-parameter rule -> error text | None
 
 
 def _who_param(kinds_hint: str = "all") -> Param:
@@ -395,6 +397,51 @@ def _t_pform(p, k):
     m = "" if not p["margin"] else f" by at least {p['margin']:g}"
     return f"the player's average over his last {p['n']} games is {base} the line{m}"
 def _t_prate(p, k): return f"the player averages {CMP_TEXT[p['cmp']]} {p['value']:g} per game over the box scores on file (at least 5 games)"
+
+def _games_window(n: int) -> str:
+    return "so far this season" if not n else f"over the last {n} games"
+
+
+_UNITS = (("offense", "offense (scored per game)"), ("defense", "defense (allowed per game)"))
+_UNIT_NOUN = {"offense": "offense", "defense": "defense"}
+_UNIT_OTHER = {"offense": "defense", "defense": "offense"}
+_H2H_WINDOWS = (("all", "all meetings on file"), ("season", "this season only"))
+_GROUNDS = (("today", "the same kind of ground as today's game"), ("home", "at home"), ("road", "on the road"))
+_END = (("top", "in the top"), ("bottom", "in the bottom"))
+
+
+def _t_h2h(p, k):
+    window = "this season only" if p["window"] == "season" else "all meetings on file"
+    return (f"{_subject(p['who'], k)} {_have(p['who'])} won {CMP_TEXT[p['cmp']]} {p['wins']} of the last "
+            f"{p['n']} meetings between these two clubs ({window})")
+
+
+def _t_venue_record(p, k):
+    ground = {"today": "in games at the same kind of ground as today's (home or away)", "home": "at home",
+              "road": "on the road"}[p["ground"]]
+    return (f"{_subject(p['who'], k)} {_have(p['who'])} a win rate {CMP_TEXT[p['cmp']]} {p['pct']:g}% {ground} "
+            f"this season (at least {MIN_VENUE_GAMES} games)")
+
+
+def _t_scoring(p, k):
+    plural = p["who"] == "both"
+    verb = (("score" if plural else "scores") if p["unit"] == "offense" else ("allow" if plural else "allows"))
+    return (f"{_subject(p['who'], k)} {verb} {CMP_TEXT[p['cmp']]} {p['value']:g} runs or points per game "
+            f"{_games_window(p['n'])}")
+
+
+def _t_league_rank(p, k):
+    which = "best" if p["end"] == "top" else "worst"
+    return (f"the {_UNIT_NOUN[p['unit']]} of {_subject(p['who'], k)} ranks in the {p['end']} {p['places']} of the "
+            f"league (the {which} {p['places']} clubs for runs or points {'scored' if p['unit'] == 'offense' else 'allowed'} "
+            f"per game, {_games_window(p['n'])})")
+
+
+def _t_edge(p, k):
+    return (f"the {_UNIT_NOUN[p['unit']]} of {_subject(p['who'], k)} ranks at least {p['gap']} "
+            f"{'place' if p['gap'] == 1 else 'places'} better than the {_UNIT_OTHER[p['unit']]} of the other team in the "
+            f"league (runs or points per game, {_games_window(p['n'])})")
+
 
 _LETTER_TESTS = (("starts_with", "starts with"), ("ends_with", "ends with"), ("contains", "contains"))
 _OF = (("pick", "pick's team"), ("opponent", "opponent's team"), ("home", "home team"), ("away", "away team"),
@@ -571,6 +618,76 @@ def _opt(value, fn):
     return None if value is None else fn(value)
 
 
+MIN_VENUE_GAMES = 5            # a home or road record needs at least this many games on that ground
+
+
+def _other_club(c: Ctx, team: str) -> Optional[str]:
+    """The club on the other side of today's game from `team`."""
+    if team == c.home_code:
+        return c.away_code
+    if team == c.away_code:
+        return c.home_code
+    return None
+
+
+def _f_h2h(p, c):
+    def test(t):
+        opp = _other_club(c, t)
+        got = c.facts.head_to_head(c.sport, t, opp, p["n"], p["window"], c.date, c.lock) if opp else None
+        return _opt(got, lambda g: _cmp(p["cmp"], g[0], p["wins"]))
+    return _over_who(c, p["who"], test)
+
+
+def _f_venue_record(p, c):
+    def test(t):
+        if p["ground"] == "today":
+            if t not in (c.home_code, c.away_code):
+                return None
+            at_home = t == c.home_code
+        else:
+            at_home = p["ground"] == "home"
+        got = c.facts.season_split(c.sport, t, at_home, c.date, c.lock)
+        if got is None or got[1] < MIN_VENUE_GAMES:
+            return None
+        return _cmp(p["cmp"], 100.0 * got[0] / got[1], p["pct"])
+    return _over_who(c, p["who"], test)
+
+
+def _f_scoring(p, c):
+    key = "pf" if p["unit"] == "offense" else "pa"
+    return _over_who(c, p["who"], lambda t: _opt(c.facts.scoring(c.sport, t, p["n"], c.date, c.lock),
+                                                  lambda s: _cmp(p["cmp"], s[key], p["value"])))
+
+
+def _f_league_rank(p, c):
+    def test(t):
+        got = c.facts.scoring_rank(c.sport, t, p["unit"], p["n"], c.date, c.lock)
+        if got is None:
+            return None
+        rank, clubs = got
+        return rank <= p["places"] if p["end"] == "top" else rank > clubs - p["places"]
+    return _over_who(c, p["who"], test)
+
+
+def _f_edge(p, c):
+    def test(t):
+        other = _other_club(c, t)
+        if not other:
+            return None
+        mine = c.facts.scoring_rank(c.sport, t, p["unit"], p["n"], c.date, c.lock)
+        theirs = c.facts.scoring_rank(c.sport, other, _UNIT_OTHER[p["unit"]], p["n"], c.date, c.lock)
+        if mine is None or theirs is None:
+            return None
+        return theirs[0] - mine[0] >= p["gap"]
+    return _over_who(c, p["who"], test)
+
+
+def _check_h2h(item: Mapping) -> Optional[str]:
+    if item["wins"] > item["n"]:
+        return "wins cannot be more than the number of meetings counted"
+    return None
+
+
 def _wind_direction_unavailable() -> Optional[str]:
     try:
         from src.data import parks
@@ -628,6 +745,46 @@ CONDITIONS: tuple = (
     Cond("time_of_day", "Day or night game", "Form and schedule", ("ml_spread", "total", "prop"),
          (_P("value", "choice", "It is a", choices=(("day", "day game"), ("night", "night game")), default="night"),),
          _t_tod, _f_tod),
+    # --- matchups and team strength ------------------------------------------------------------------
+    Cond("head_to_head", "Head-to-head record", "Matchups and team strength", ("ml_spread", "total", "prop"),
+         (_WHO, _P("n", "int", "Last N meetings with this opponent", low=1, high=10, default=5), _cmp_param(),
+          _P("wins", "int", "Wins", low=0, high=10, default=3),
+          _P("window", "choice", "Meetings counted", choices=_H2H_WINDOWS, default="all")),
+         _t_h2h, _f_h2h, check=_check_h2h,
+         note=("The last N meetings between the two clubs on file; it needs N meetings or it does not apply. NFL: games "
+               "since 2021. MLB: 2023 to 2025 and games since August 28, 2026 (January to August 2026 results are held "
+               "back, so a recent meeting from that stretch is not seen). 'This season only' is shorter still.")),
+    Cond("venue_record", "Home or road record this season", "Matchups and team strength", ("ml_spread", "total", "prop"),
+         (_WHO, _P("ground", "choice", "Record", choices=_GROUNDS, default="today"), _cmp_param(),
+          _P("pct", "number", "Win rate (%)", low=0, high=100, step=5, default=60)),
+         _t_venue_record, _f_venue_record,
+         note=(f"This season's win rate at home or on the road; it needs {MIN_VENUE_GAMES} games on that ground. "
+               "MLB games on file start August 28, 2026.")),
+    Cond("scoring_rate", "Runs or points per game", "Matchups and team strength", ("ml_spread", "total", "prop"),
+         (_WHO, _P("unit", "choice", "Which side of the ball", choices=_UNITS, default="offense"),
+          _P("n", "int", "Last N games (0 = the whole season so far)", low=0, high=20, default=10), _cmp_param(),
+          _P("value", "number", "Runs (MLB) or points (NFL) per game", low=0, high=60, step=0.1, default=4.5)),
+         _t_scoring, _f_scoring,
+         note=("Runs (MLB) or points (NFL) per game from final scores on file; it needs N games, or "
+               "5 games for the whole season. MLB games on file start August 28, 2026.")),
+    Cond("league_rank", "League rank in scoring or defence", "Matchups and team strength", ("ml_spread", "total", "prop"),
+         (_WHO, _P("unit", "choice", "Which side of the ball", choices=_UNITS, default="offense"),
+          _P("end", "choice", "Ranks", choices=_END, default="top"),
+          _P("places", "int", "Places in the league", low=1, high=15, default=10),
+          _P("n", "int", "Last N games (0 = the whole season so far)", low=0, high=20, default=10)),
+         _t_league_rank, _f_league_rank,
+         note=("Ranks every club with enough games on file by runs or points scored (offense) or allowed (defense) per "
+               "game; clubs level on the figure share a rank. MLB games on file start August 28, 2026.")),
+    Cond("matchup_edge", "Offense against the other team's defense", "Matchups and team strength",
+         ("ml_spread", "total", "prop"),
+         (_WHO, _P("unit", "choice", "Compare its", choices=(("offense", "offense against the other team's defense"),
+                                                             ("defense", "defense against the other team's offense")),
+                   default="offense"),
+          _P("gap", "int", "Ranks at least this many places better", low=1, high=15, default=1),
+          _P("n", "int", "Last N games (0 = the whole season so far)", low=0, high=20, default=10)),
+         _t_edge, _f_edge,
+         note=("Compares league ranks: one club's offense (most runs or points scored) against the other club's defense "
+               "(fewest allowed), or the reverse. MLB games on file start August 28, 2026.")),
     # --- weather ------------------------------------------------------------------------------------
     Cond("temperature", "Temperature", "Weather", ("ml_spread", "total", "prop"),
          (_cmp_param(), _P("value", "number", "Degrees F", low=20, high=115, step=1, default=80)),
@@ -763,6 +920,11 @@ def validate_condition(raw: Any, *, kinds: Sequence[str], markets: Sequence[str]
             ok = False
         else:
             out[p.name] = clean
+    if ok and cond.check is not None:
+        problem = cond.check(out)
+        if problem:
+            errors[where] = problem
+            ok = False
     return out if ok else None
 
 
@@ -907,5 +1069,6 @@ def menu_conditions() -> list:
             params.append(item)
         out.append({"id": cond.id, "label": cond.label, "group": cond.group, "kinds": list(cond.kinds),
                     "sports": list(cond.sports), "only_markets": list(cond.only_markets), "fun": cond.fun,
-                    "params": params, "available": reason is None, "unavailable_reason": reason})
+                    "params": params, "available": reason is None, "unavailable_reason": reason,
+                    "note": cond.note})
     return out

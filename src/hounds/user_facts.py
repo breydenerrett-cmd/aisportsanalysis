@@ -32,6 +32,16 @@ from typing import Any, Callable, Iterable, Mapping, Optional
 
 FINISH_LAG = {"MLB": timedelta(hours=5), "NFL": timedelta(hours=6)}   # the pack's own lags
 MIN_STARTER_OUTS = 9            # a pitcher line of 3+ innings counts as a start
+MIN_SEASON_GAMES = 5            # a "this season" average or record needs at least this many games on file
+MIN_RANK_TEAMS = 8              # a league rank over fewer clubs than this is not a rank
+HISTORY_FLOOR = "2023-01-01"    # the first date of the MLB results store (head-to-head "all meetings on file")
+
+
+def season_of(sport: str, date: str) -> str:
+    """The season a date belongs to: the calendar year for MLB; for the NFL the year the season began
+    (January and February games belong to the season that started the September before)."""
+    year, month = int(date[:4]), int(date[5:7])
+    return str(year if sport == "MLB" or month >= 7 else year - 1)
 
 
 def _utc(value: Any) -> Optional[datetime]:
@@ -56,10 +66,15 @@ class FactBook:
 
     def __init__(self, *, mlb_games: Optional[Iterable] = None, nfl_games: Optional[Iterable] = None,
                  box_rows: Optional[Iterable] = None, weather_rows: Optional[Iterable] = None,
+                 mlb_history: Optional[Iterable] = None,
                  loaders: Optional[Mapping[str, Callable[[], Iterable]]] = None):
-        self._raw = {"mlb": mlb_games, "nfl": nfl_games, "box": box_rows, "weather": weather_rows}
+        # `mlb_history` is the deeper MLB list (2023 on, the sealed 2026 stretch absent) that only the
+        # head-to-head "all meetings" window reads; every other fact uses `mlb_games`.
+        self._raw = {"mlb": mlb_games, "nfl": nfl_games, "box": box_rows, "weather": weather_rows,
+                     "mlb_history": mlb_history}
         self._loaders = dict(loaders or {})
-        self._team: dict = {}           # sport -> {code -> [entry]}
+        self._team: dict = {}           # (sport, deep) -> {code -> [entry]}
+        self._tables: dict = {}         # league scoring tables, by (sport, n, date, lock minute)
         self._players: Optional[dict] = None
         self._wx: Optional[dict] = None
         self._teams_of_player: dict = {}
@@ -72,11 +87,16 @@ class FactBook:
             self._raw[key] = list(loader()) if loader else []
         return self._raw[key]
 
-    def _team_index(self, sport: str) -> dict:
-        if sport in self._team:
-            return self._team[sport]
+    def _has_history(self) -> bool:
+        return self._raw.get("mlb_history") is not None or "mlb_history" in self._loaders
+
+    def _team_index(self, sport: str, deep: bool = False) -> dict:
+        deep = bool(deep and sport == "MLB" and self._has_history())
+        if (sport, deep) in self._team:
+            return self._team[(sport, deep)]
         index: dict = defaultdict(list)
-        for g in self._rows("mlb" if sport == "MLB" else "nfl"):
+        key = "mlb_history" if deep else ("mlb" if sport == "MLB" else "nfl")
+        for g in self._rows(key):
             hs, as_ = g.get("home_score"), g.get("away_score")
             home, away = g.get("home"), g.get("away")
             if hs is None or as_ is None or not home or not away:
@@ -84,19 +104,20 @@ class FactBook:
             start = _utc(g.get("start_utc"))
             for code, mine, theirs, at_home, opp in ((home, hs, as_, True, away), (away, as_, hs, False, home)):
                 index[code].append({"date": g["date"], "start": start, "won": mine > theirs,
-                                    "tied": mine == theirs, "home": at_home, "park": home, "opp": opp})
+                                    "tied": mine == theirs, "home": at_home, "park": home, "opp": opp,
+                                    "pf": mine, "pa": theirs})
         for entries in index.values():
             entries.sort(key=lambda e: (e["date"], e["start"] or datetime.min.replace(tzinfo=timezone.utc)))
-        self._team[sport] = index
+        self._team[(sport, deep)] = index
         return index
 
-    def _prior(self, sport: str, code: Optional[str], date: str, lock: Any) -> list:
+    def _prior(self, sport: str, code: Optional[str], date: str, lock: Any, deep: bool = False) -> list:
         """The club's games that were over and dated before `date`, oldest first."""
         if not code or not date:
             return []
         cutoff = (_utc(lock) - FINISH_LAG[sport]) if _utc(lock) else None
         out = []
-        for e in self._team_index(sport).get(code, ()):
+        for e in self._team_index(sport, deep).get(code, ()):
             if e["date"] >= date:
                 continue
             if cutoff is not None and e["start"] is not None and e["start"] > cutoff:
@@ -144,6 +165,80 @@ class FactBook:
         if not prior:
             return None
         return sum(1 for e in prior if e["won"]), len(prior)
+
+    def head_to_head(self, sport: str, code: str, opp: str, n: int, window: str, date: str,
+                     lock: Any) -> Optional[tuple]:
+        """(wins, n) in the club's last `n` meetings with `opp` before `date`. `window` 'season' counts only
+        this season's meetings; 'all' reaches back through every meeting on file (MLB: 2023 on, the sealed
+        2026 stretch absent; NFL: 2021 on). None unless at least `n` meetings are on file: a record is
+        never extrapolated from fewer games than were asked for. A tie is not a win."""
+        if not code or not opp:
+            return None
+        meetings = [e for e in self._prior(sport, code, date, lock, deep=(window == "all")) if e["opp"] == opp]
+        if window == "season":
+            season = season_of(sport, date)
+            meetings = [e for e in meetings if season_of(sport, e["date"]) == season]
+        if len(meetings) < n:
+            return None
+        return sum(1 for e in meetings[-n:] if e["won"]), n
+
+    def season_split(self, sport: str, code: str, at_home: bool, date: str, lock: Any) -> Optional[tuple]:
+        """(wins, games) in THIS season's earlier games at home (or on the road); None with no such game."""
+        season = season_of(sport, date)
+        games = [e for e in self._prior(sport, code, date, lock)
+                 if e["home"] == at_home and season_of(sport, e["date"]) == season]
+        if not games:
+            return None
+        return sum(1 for e in games if e["won"]), len(games)
+
+    def scoring(self, sport: str, code: str, n: int, date: str, lock: Any) -> Optional[dict]:
+        """{games, pf, pa}: runs (MLB) or points (NFL) scored and allowed per game over the club's last `n`
+        games, or over this season so far when n == 0. None unless `n` games (or MIN_SEASON_GAMES this
+        season) are on file."""
+        prior = self._prior(sport, code, date, lock)
+        if n:
+            window = prior[-n:] if len(prior) >= n else []
+        else:
+            season = season_of(sport, date)
+            window = [e for e in prior if season_of(sport, e["date"]) == season]
+            if len(window) < MIN_SEASON_GAMES:
+                window = []
+        if not window:
+            return None
+        return {"games": len(window), "pf": sum(e["pf"] for e in window) / len(window),
+                "pa": sum(e["pa"] for e in window) / len(window)}
+
+    def league_scoring(self, sport: str, n: int, date: str, lock: Any) -> dict:
+        """{club code: scoring(...)} for every club with enough games on file. One build per slate date,
+        sport and window (the lock only matters to a late game from the night before, so it is keyed to
+        the minute)."""
+        stamp = _utc(lock)
+        key = (sport, n, date, stamp.strftime("%Y%m%d%H%M") if stamp else "")
+        table = self._tables.get(key)
+        if table is None:
+            table = {}
+            for code in self._team_index(sport):
+                got = self.scoring(sport, code, n, date, lock)
+                if got is not None:
+                    table[code] = got
+            if len(self._tables) > 256:
+                self._tables.clear()
+            self._tables[key] = table
+        return table
+
+    def scoring_rank(self, sport: str, code: str, unit: str, n: int, date: str, lock: Any) -> Optional[tuple]:
+        """(rank, clubs) for the club's offense (most scored per game = 1) or defense (fewest allowed = 1).
+        Clubs level on the figure share a rank. None when the club, or too few clubs, have no figure."""
+        table = self.league_scoring(sport, n, date, lock)
+        if code not in table or len(table) < MIN_RANK_TEAMS:
+            return None
+        if unit == "offense":
+            mine = table[code]["pf"]
+            better = sum(1 for t in table.values() if t["pf"] > mine + 1e-9)
+        else:
+            mine = table[code]["pa"]
+            better = sum(1 for t in table.values() if t["pa"] < mine - 1e-9)
+        return better + 1, len(table)
 
     def travel_miles(self, sport: str, code: str, today_park: Optional[str], date: str,
                      lock: Any) -> Optional[float]:
@@ -269,6 +364,14 @@ class FactBook:
                                                start_by_pk={})
             return games
 
+        memo: dict = {}
+
+        def mlb_rows():
+            """`mlb` once: the history loader and the plain one share one read of the box-score store."""
+            if "v" not in memo:
+                memo["v"] = mlb()
+            return memo["v"]
+
         def nfl():
             from src.hounds.pack import base as pack
             out = []
@@ -318,7 +421,16 @@ class FactBook:
                     out.append({k: r.get(k) for k in keep})
             return out
 
-        return cls(loaders={"mlb": mlb, "nfl": nfl, "box": box, "weather": weather})
+        def mlb_history():
+            # The earlier seasons from the results store (never a row inside the sealed 2026 stretch: the
+            # reader drops it on its date alone) plus everything `mlb` already holds. The box-score store is
+            # read once, by `mlb`; this adds only the CSV's pre-2026 rows, which are a few thousand dicts.
+            from src.hounds.pack import base as pack
+            older = [g for g in pack.read_mlb_results(os.path.join(base, "data", "historical", "mlb_results.csv"),
+                                                      since=HISTORY_FLOOR) if g["date"] < pack.SEAL_FIRST]
+            return older + list(mlb_rows())
+
+        return cls(loaders={"mlb": mlb_rows, "nfl": nfl, "box": box, "weather": weather, "mlb_history": mlb_history})
 
 
 # ---------------------------------------------------------------------------
