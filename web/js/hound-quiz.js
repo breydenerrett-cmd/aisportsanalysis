@@ -31,6 +31,7 @@ import { h, clearNode, describeError, houndHref } from "./hounds-core.js";
 import { renderDog, DEFAULT_LOOK, cleanLook } from "./dog-avatar.js";
 import { celebrate, post, put, SLOW_MS, errorText } from "./dog-common.js";
 import { icon, tile, toneFor } from "./hound-quiz-art.js";
+import { showUpgrade } from "./upgrade.js";
 
 export const DRAFT_KEY = "linehound.quiz.draft.v1";
 export const HANDOFF_KEY = "linehound.quiz.handoff.v1";
@@ -783,6 +784,9 @@ async function backtest() {
   } catch (err) {
     clearNode(out);
     if (err && (err.status === 401 || err.status === 403)) { stashForSignIn(); showSignin("Sign in to run a backtest. Your quiz is saved on this device."); }
+    // A FREE account is refused with 402 upgrade_required: Backtest is a member tool. The same prompt as the builder,
+    // Ask and Live (upgrade.js), not a plain error line, so the person is told what the plan is and where it is.
+    else if (showUpgrade(out, err)) { /* the member prompt replaced the contents of `out` */ }
     else out.appendChild(h("p", { class: "qz-fine qz-fine--bad", "data-hook": "reveal-backtest-error",
       text: err && err.status === 429 ? "Another backtest is running. Try again in a moment." : errorText(err, "The backtest did not run.") }));
   } finally {
