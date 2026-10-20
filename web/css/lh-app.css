@@ -54,3 +54,14 @@ body.member-app .field-row input:focus-visible, body.member-app .field-row selec
 /* the dog on the sign-in wall and the other gates */
 body.member-app .gate__dog { line-height: 0; margin-bottom: var(--lh-s2); filter: drop-shadow(0 10px 16px rgba(0, 0, 0, .4)); }
 body.member-app .gate { gap: var(--lh-s3); }
+
+/* ===== ROUND 2: the sign-in walls get a dog and a short headline; the app's labels are sentences, not shouted capitals ===== */
+body.member-app .gate__eyebrow { text-transform: none; letter-spacing: .01em; font-family: var(--lh-font-text); font-size: var(--lh-fs-sm); font-weight: 600; color: var(--lh-accent); }
+body.member-app .gate__dog svg { width: 88px; height: 88px; }
+body.member-app .tabbar__item-label, body.member-app .rail__item-label, body.member-app .rail__item-sub { text-transform: none; letter-spacing: 0; }
+body.member-app .topstrip__status, body.member-app [data-hook="shell-status"] { text-transform: none; letter-spacing: 0; }
+
+.adm-gate__card { text-align: left; }
+.adm-gate__dog { line-height: 0; margin: 0 0 var(--lh-s3); filter: drop-shadow(0 10px 16px rgba(0, 0, 0, .4)); }
+.adm-gate__dog svg { width: 88px; height: 88px; }
+.adm-gate__kicker { margin: 0 0 var(--lh-s1); font: 600 var(--lh-fs-sm)/1.2 var(--lh-font-text); color: var(--lh-accent); }

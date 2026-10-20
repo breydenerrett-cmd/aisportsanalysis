@@ -588,12 +588,12 @@ function heroActions(date) {
   const row = el("div", { class: "gv2-hero__actions" });
   row.appendChild(el("a", { class: "btn btn--primary chamfer chamfer--btn",
     href: `#/betcheck?date=${encodeURIComponent(date || "")}`,
-    "data-hook": "gameday-check-own-bet", text: "CHECK A BET OF YOUR OWN" }));
+    "data-hook": "gameday-check-own-bet", text: "Check a bet of your own" }));
   row.appendChild(el("a", { class: "btn btn--ghost chamfer chamfer--btn",
     href: `#/odds/${encodeURIComponent(date || "")}`,
-    "data-hook": "gameday-open-board", text: "OPEN THE FULL BOARD" }));
+    "data-hook": "gameday-open-board", text: "Open the full board" }));
   row.appendChild(el("a", { class: "btn btn--ghost chamfer chamfer--btn",
-    href: "#/mybets", "data-hook": "gameday-saved-bets", text: "SAVED BETS" }));
+    href: "#/mybets", "data-hook": "gameday-saved-bets", text: "Saved bets" }));
   return row;
 }
 

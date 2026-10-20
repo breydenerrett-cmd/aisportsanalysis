@@ -108,8 +108,8 @@ class SportsRegistryReflectsTheLiveState(unittest.TestCase):
         self.assertIn('home: "#/nfl"', entry)
 
     def test_nfl_submenu_has_gameday_and_results_hash_before_label(self):
-        self.assertIn('{ hash: "#/nfl", label: "GAMEDAY"', self.sport)
-        self.assertIn('{ hash: "#/nfl/record", label: "RESULTS"', self.sport)
+        self.assertIn('{ hash: "#/nfl", label: "Gameday"', self.sport)
+        self.assertIn('{ hash: "#/nfl/record", label: "Results"', self.sport)
 
     def test_tennis_entry_is_live(self):
         self.assertIn('key: "tennis"', self.sport)

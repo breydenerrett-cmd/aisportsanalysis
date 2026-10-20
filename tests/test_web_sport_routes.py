@@ -101,11 +101,11 @@ class SportsRegistryShape(unittest.TestCase):
         # immediately before `label` on the RESULTS entry -- this is the
         # exact field order sport.js's SPORTS registry must use.
         for pair in (
-            '{ hash: "#/today", label: "GAMEDAY"',
-            '{ hash: "#/games", label: "MATCHUPS"',
-            '{ hash: "#/props", label: "PROPS"',
-            '{ hash: "#/record-card", label: "RESULTS"',
-            '{ hash: "#/mybets", label: "BETS"',
+            '{ hash: "#/today", label: "Gameday"',
+            '{ hash: "#/games", label: "Matchups"',
+            '{ hash: "#/props", label: "Props"',
+            '{ hash: "#/record-card", label: "Results"',
+            '{ hash: "#/mybets", label: "Bets"',
         ):
             self.assertIn(pair, self.text, f"MLB submenu is missing {pair!r}")
 
@@ -115,8 +115,8 @@ class SportsRegistryShape(unittest.TestCase):
         self.assertIn('key: "nfl"', self.text)
         self.assertIn('status: "live"', self.text)
         self.assertIn('home: "#/nfl"', self.text)
-        self.assertIn('{ hash: "#/nfl", label: "GAMEDAY"', self.text)
-        self.assertIn('{ hash: "#/nfl/record", label: "RESULTS"', self.text)
+        self.assertIn('{ hash: "#/nfl", label: "Gameday"', self.text)
+        self.assertIn('{ hash: "#/nfl/record", label: "Results"', self.text)
 
     def test_tennis_is_live_with_its_own_home(self):
         # AMENDED 2026-09-19: Tennis went live as a research-only board --
@@ -124,7 +124,7 @@ class SportsRegistryShape(unittest.TestCase):
         # single BOARD entry rather than mirroring MLB's five items.
         self.assertIn('key: "tennis"', self.text)
         self.assertIn('home: "#/tennis"', self.text)
-        self.assertIn('{ hash: "#/tennis", label: "BOARD"', self.text)
+        self.assertIn('{ hash: "#/tennis", label: "Board"', self.text)
 
     def test_nba_and_nhl_are_registered_coming_soon(self):
         # Owner addition beyond DESIGN_BUILD_PLAN.json's CHR-1 task text

@@ -410,7 +410,7 @@ function renderTesterExpired(container, err) {
   const section = el("section", {
     class: "gate chamfer", role: "alert", "data-hook": "tester-access-ended",
   });
-  section.appendChild(el("p", { class: "gate__eyebrow", text: "EARLY ACCESS ENDED" }));
+  section.appendChild(el("p", { class: "gate__eyebrow", text: "Early access ended" }));
   section.appendChild(el("p", { class: "gate__title", "data-hook": "tester-ended-line",
     text: testerEndedLine(detail.expires_at) }));
   const next = el("p", { class: "gate__body", "data-hook": "tester-not-open", text: TESTER_REPLY });
@@ -440,7 +440,7 @@ function renderAuthRequired(container, err) {
   const section = el("section", {
     class: "gate chamfer", role: "alert", "data-hook": "auth-required",
   });
-  section.appendChild(el("p", { class: "gate__eyebrow", text: "SIGN IN REQUIRED" }));
+  section.appendChild(el("p", { class: "gate__eyebrow", text: "Sign in required" }));
   // One gate for every signed-in route, so it names none of them: it used
   // to say "view tonight's board" on #/billing, which is not a board.
   section.appendChild(el("p", { class: "gate__title", text: "Sign in to continue." }));
@@ -477,7 +477,7 @@ function renderSubscriptionExpired(container) {
   const section = el("section", {
     class: "gate chamfer", role: "alert", "data-hook": "subscription-expired",
   });
-  section.appendChild(el("p", { class: "gate__eyebrow", text: "SUBSCRIPTION ENDED" }));
+  section.appendChild(el("p", { class: "gate__eyebrow", text: "Subscription ended" }));
   section.appendChild(el("p", { class: "gate__title", text: "Your subscription has ended." }));
   section.appendChild(el("p", { class: "gate__body",
     text: "This page is not available right now. Billing has the details and the way back in." }));
@@ -520,7 +520,7 @@ export function renderError(container, err) {
     class: "gate view-error chamfer state-error", role: "alert", "data-hook": "view-error",
     "data-status": status,
   });
-  section.appendChild(el("p", { class: "gate__eyebrow", text: "REQUEST FAILED" }));
+  section.appendChild(el("p", { class: "gate__eyebrow", text: "Request failed" }));
   // NETWORK VS. SERVER ERROR, KEPT DISTINCT (DESIGN_SYSTEM.md section 4).
   // A `status` of null means the request never reached the server at all
   // (no response) -- that is a different failure for the reader than the

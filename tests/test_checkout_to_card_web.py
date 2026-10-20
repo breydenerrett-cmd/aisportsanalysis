@@ -81,7 +81,7 @@ class SignedOutVisitorCanReadTheProof(unittest.TestCase):
     def test_there_is_exactly_one_sign_in_gate(self):
         """A second gate elsewhere would not carry the button."""
         hits = [p.name for p in JS.glob("*.js")
-                if "SIGN IN REQUIRED" in p.read_text(encoding="utf-8")]
+                if "Sign in required" in p.read_text(encoding="utf-8")]
         self.assertEqual(hits, ["dom.js"])
 
 
