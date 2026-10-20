@@ -34,7 +34,7 @@
 
 import { apiGet, apiPost } from "./api.js";
 import { el, clear, renderError } from "./dom.js";
-import { BETA_TIER } from "./pricing.js";
+import { BETA_TIER, foundingNote, loadFoundingOffer } from "./pricing.js";
 
 const STATUS_NOT_CONFIGURED = "not_configured";
 // A free member (src/appstate/comps.py): GET /billing/status answers
@@ -125,6 +125,13 @@ function renderSubscribe(section, container) {
     "data-price": String(BETA_TIER.price_cents),
     text: BETA_TIER.price_display }));
   body.appendChild(note(BETA_TIER.billing_note));
+  // Founding offer (GET /billing/offer): filled in only when a founding seat is really available, so a
+  // sold-out or unreachable offer leaves the standard price above and nothing else.
+  const offerSlot = el("p", { class: "billing__offer", "data-hook": "billing-founding-offer" });
+  body.appendChild(offerSlot);
+  loadFoundingOffer().then((founding) => {
+    if (founding) offerSlot.textContent = foundingNote(founding);
+  });
 
   const button = el("button", { type: "button", class: "btn btn--primary",
     "data-hook": "billing-subscribe", text: "Subscribe" });

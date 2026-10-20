@@ -35,14 +35,16 @@ from __future__ import annotations
 import json
 import os
 import sys
+import time
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from src.appstate import billing
 from src.appstate import customers
 from src.appstate import events
+from src.appstate import founding
 from src.appstate import ratelimit
 from src.appstate.users import User
 
@@ -119,21 +121,32 @@ def create_checkout(body: CheckoutRequest,
             "error": "unknown_plan",
             "message": f"{body.plan_id!r} is not a recognized plan id; "
                        f"expected {billing.BETA_PLAN_ID!r}"})
-    price_id = billing.beta_plan_stripe_price_id()
-    if not price_id:
+    choice = billing.choose_checkout_price(current_user.id)
+    if choice is None:
         # Same honest "not configured" shape as every other billing gap --
         # the plan itself is real, Brey just hasn't created its Stripe
         # Price yet (see billing.ENV_STRIPE_BETA_PRICE_ID's own comment).
         return {"status": "not_configured",
                 "message": "billing is not configured yet"}
+    # FOUNDING OFFER: a founding seat may have been RESERVED for this user just now
+    # (billing.choose_checkout_price, src/appstate/founding.py). Every path below that does not end in a
+    # real checkout URL gives the seat back; a URL keeps it for the reservation window.
+    body = _open_checkout(current_user, choice)
+    if body.get("status") != "redirect" and choice.tier == billing.PLAN_TIER_FOUNDING:
+        billing.release_founding_reservation(current_user.id)
+    return body
+
+
+def _open_checkout(current_user: User, choice: "billing.CheckoutChoice") -> dict:
     provider = billing.get_billing_provider()
     # First-touch attribution stored at signup, so the Stripe session and the
     # checkout_started event name the channel. Passed only when there is one,
     # which keeps a provider written before this argument existed working.
     stored_attribution = customers.get_signup_attribution(current_user.id)
     kwargs = {"attribution": stored_attribution} if stored_attribution else {}
+    kwargs.update(choice.kwargs)
     try:
-        url = provider.create_checkout(current_user.id, price_id, **kwargs)
+        url = provider.create_checkout(current_user.id, choice.price_id, **kwargs)
     except billing.BillingProviderNotConfigured as exc:
         return {"status": "not_configured", "message": str(exc)}
     except RuntimeError as exc:
@@ -159,7 +172,49 @@ def create_checkout(body: CheckoutRequest,
     # never started a checkout.
     events.record_event_safe(current_user.id, events.CHECKOUT_STARTED,
                              *([stored_attribution] if stored_attribution else []))
-    return {"status": "redirect", "checkout_url": url}
+    return {"status": "redirect", "checkout_url": url, "tier": choice.tier}
+
+
+# GET /billing/offer is public and cheap, but every pricing page asks for it. A short cache keeps the
+# page-load path off the database; the number is then at most OFFER_CACHE_SECONDS old. That staleness is
+# harmless because it is only a DISPLAY: checkout re-decides the price under the seat lock
+# (billing.choose_checkout_price), so a stale "3 left" can never sell a 51st founding seat.
+OFFER_CACHE_SECONDS = 30
+OFFER_RATE_LIMIT_PER_MIN = 60
+_offer_limiter = ratelimit.FixedWindowLimiter(limit=OFFER_RATE_LIMIT_PER_MIN, window_s=60.0)
+_rate_limited_offer = ratelimit.limiter_dependency(_offer_limiter)
+_offer_cache: dict = {"at": None, "body": None}
+_offer_clock = time.monotonic
+
+
+def _cached_offer() -> dict:
+    """The offer body, rebuilt at most once per OFFER_CACHE_SECONDS per process. Never raises: an
+    unreadable seat table reads as no founding offer rather than a 500 or a guessed number."""
+    now = _offer_clock()
+    at = _offer_cache["at"]
+    if at is not None and 0 <= now - at < OFFER_CACHE_SECONDS and _offer_cache["body"] is not None:
+        return _offer_cache["body"]
+    try:
+        body = billing.founding_offer()
+    except Exception as exc:  # noqa: BLE001
+        print(f"billing: offer could not be read: {exc!r}", file=sys.stderr, flush=True)
+        body = {"founding": None, "standard": {"price_cents": billing.BETA_PLAN_PRICE_CENTS}}
+    _offer_cache["at"], _offer_cache["body"] = now, body
+    return body
+
+
+@router.get("/billing/offer")
+def billing_offer(response: Response, _rate_limit: None = Depends(_rate_limited_offer)) -> dict:
+    """PUBLIC. What a visitor would pay: `{"founding": {price_cents, cap, taken, left, reserved,
+    available} | null, "standard": {price_cents}}`.
+
+    `taken` is the true count of seats held by live founding subscriptions, from webhook-maintained state
+    (src/appstate/founding.py), never padded; `left` is `cap - taken`; `available` is whether a checkout
+    started now would get the founding price (False when sold out, and also while the last seats are
+    held by checkouts in progress). `founding` is null when no founding price is configured. Pages show
+    the founding line only when `available`, and otherwise only the standard price."""
+    response.headers["Cache-Control"] = f"public, max-age={OFFER_CACHE_SECONDS}"
+    return _cached_offer()
 
 
 @router.get("/billing/status")
@@ -187,7 +242,7 @@ def billing_status(current_user: User = Depends(get_current_user)) -> dict:
         # same "not_configured" shape create_checkout uses, so a caller
         # checks one field regardless of which endpoint answered it.
         return {"status": "not_configured"}
-    return {"status": record["status"],
+    body = {"status": record["status"],
             "stripe_subscription_id": record["stripe_subscription_id"],
             # Stripe's "scheduled to cancel at period end" timestamp, when
             # the last webhook carried one (src.appstate.billing's
@@ -206,6 +261,10 @@ def billing_status(current_user: User = Depends(get_current_user)) -> dict:
             # never a guessed date.
             "current_period_end": record.get("paid_through"),
             "updated_at": record["updated_at"]}
+    if founding.is_member(current_user.id):
+        # Only said when true: a founding member's price is locked while the subscription lasts.
+        body["founding"] = True
+    return body
 
 
 @router.post("/billing/cancel")

@@ -27,6 +27,7 @@
 
 import { apiGet, apiPost, getToken } from "./api.js";
 import { h, s, clearNode, describeError, houndHref, isNum, fmtPrice } from "./hounds-core.js";
+import { showUpgrade } from "./upgrade.js";
 import { celebrate, put, removeDog, removedText } from "./dog-common.js";
 import { dogBadge, dogFace, DEFAULT_LOOK, lookFor, BACKGROUNDS, cleanLook, breedOfName, breedLabel } from "./dog-avatar.js";
 import { stakeLineText } from "./hounds-board.js";
@@ -1294,6 +1295,10 @@ function handleSaveError(err) {
     gate("Your sign-in has lapsed or this account cannot build yet.");
     serverError("Your sign-in has lapsed or this account cannot build yet, so nothing was saved. Your draft stays on this page.",
       h("a", { href: "index.html#/signin", text: "Sign in" }));
+  } else if (status === 402 && showUpgrade(q("build-server-error"), err)) {
+    const box = q("build-server-error");
+    box.hidden = false;
+    if (box.scrollIntoView) box.scrollIntoView({ block: "center", behavior: "smooth" });
   } else if (status === 422) {
     // a refusal always lists its reasons: in the rules panel (where the rule they are about is) and above the Save button
     // (where the person's thumb is)

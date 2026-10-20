@@ -20,6 +20,11 @@
  *     `billing.price_cents` -- the numbers Checkout itself is built from --
  *     never from static text. `trial_days` 0 means there is NO trial sentence
  *     anywhere; 14 says 14.
+ *   - FOUNDING OFFER (owner decision 2026-10-20): while checkout is on, `state.founding` is
+ *     `{priceCents, cap, left}` when GET /billing/offer says a founding seat is available, else null.
+ *     With a seat, the price a visitor would pay is the founding price and the pages say "Founding member:
+ *     $14.99/mo for life · N of 50 left"; sold out (or unreadable), only the standard price is shown, with no
+ *     scarcity wording. The price is never tied to the record or to results.
  *   - Unknown or malformed values are treated as "not on" / "no trial". Saying
  *     too little is the recoverable mistake; promising a trial the server
  *     cannot start is not.
@@ -52,7 +57,7 @@
  * a static import cycle.
  */
 
-import { BETA_TIER, foundingNote } from "./pricing.js";
+import { BETA_TIER, foundingNote, foundingFromOffer, loadFoundingOffer } from "./pricing.js";
 
 /** The button text everywhere checkout is not open. The link is unchanged:
  * the signup page saves the email and nothing else (no sender exists to send
@@ -82,7 +87,7 @@ export const WAITLIST_CONFIRMATION =
 
 /** What every page says before /meta has answered, and whenever it cannot be
  * read: not on, no trial, only the planned price. */
-export const NOT_ON = Object.freeze({ on: false, trialDays: 0, priceCents: BETA_TIER.price_cents });
+export const NOT_ON = Object.freeze({ on: false, trialDays: 0, priceCents: BETA_TIER.price_cents, founding: null });
 
 function positiveInt(value) {
   return typeof value === "number" && Number.isInteger(value) && value > 0 ? value : 0;
@@ -99,14 +104,29 @@ export function checkoutState(payload) {
   const on = !!billing && billing.checkout === "on";
   if (!on) return NOT_ON;
   const price = positiveInt(billing.price_cents);
-  return { on: true, trialDays: positiveInt(billing.trial_days), priceCents: price || null };
+  return { on: true, trialDays: positiveInt(billing.trial_days), priceCents: price || null, founding: null };
+}
+
+/** `state` with the founding offer from a GET /billing/offer payload attached (only meaningful when on). */
+export function withOffer(state, offerPayload) {
+  if (!state || !state.on) return state;
+  const founding = foundingFromOffer(offerPayload);
+  return founding ? { ...state, founding } : state;
+}
+
+/** The monthly price in cents a visitor would be charged: the founding price when a seat is available. */
+function effectiveCents(state) {
+  return state && state.founding ? state.founding.priceCents : state && state.priceCents;
 }
 
 /** /meta -> state, via the shared per-page promise. Never rejects. */
 export async function loadCheckoutState() {
   try {
     const { meta } = await import("./meta.js");
-    return checkoutState(await meta());
+    const state = checkoutState(await meta());
+    if (!state.on) return state;
+    const founding = await loadFoundingOffer();     // null on any failure: standard price only
+    return founding ? { ...state, founding } : state;
   } catch (err) {
     return checkoutState(null);
   }
@@ -262,7 +282,7 @@ export function heroNote(state) {
     const sale = amount ? `Not on sale yet; planned price ${amount} a month.` : NOT_OPEN_NOTE;
     return [EARLY_ACCESS_NOTE, sale, FREE_NOW_NOTE].join(" ");
   }
-  const price = monthlyPrice(state.priceCents);
+  const price = monthlyPrice(effectiveCents(state));
   const trial = trialPhrase(state);
   const lead = trial ? (price ? `${trial}, then ${price}.` : `${trial}.`) : (price ? `${price}.` : "");
   return [lead, "Cancel anytime."].filter(Boolean).join(" ");
@@ -289,11 +309,11 @@ export function signupOffOffer(state) {
 /**
  * The pricing note on the signup form and the landing pricing card. Off:
  * "Planned price: $19.99/month" and nothing more. On: the hero note plus the
- * founding-price explanation that only means anything when you can buy.
+ * founding-offer line, only while a founding seat is available (nothing about the record).
  */
 export function pricingNote(state) {
   if (!state || !state.on) return plannedPrice(state) || "";
-  return [heroNote(state), foundingNote(dollars(state.priceCents))].join(" ");
+  return [heroNote(state), foundingNote(state.founding)].filter(Boolean).join(" ");
 }
 
 /** Shown on the signup form right above the button, before the redirect to

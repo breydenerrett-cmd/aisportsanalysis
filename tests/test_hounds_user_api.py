@@ -146,11 +146,11 @@ class CreateAndList(ApiCase):
         self.assertEqual(ctx.exception.status_code, 422)
         self.assertIn("price_min", ctx.exception.detail["fields"])
 
-    def test_the_fourth_hound_is_a_409(self):
-        for i in range(3):
+    def test_the_sixth_hound_is_a_409(self):
+        for i in range(5):
             self.create(name=f"Pack {i}")
         with self.assertRaises(HTTPException) as ctx:
-            self.create(name="Pack 4")
+            self.create(name="Pack 6")
         self.assertEqual((ctx.exception.status_code, ctx.exception.detail["error"]), (409, "limit"))
 
     def test_mine_lists_only_the_callers_hounds_with_their_records(self):
@@ -234,8 +234,8 @@ class RetireAndCopy(ApiCase):
     def test_the_copy_counts_against_the_copiers_own_limit(self):
         src = self.create(name="Dog Days")["hound"]
         spec = self.api.hound_spec(src["id"], _rl=None)["spec"]
-        for i in range(3):
-            self.create(self.other, name=f"Theirs {i}")
+        for w in ("Alpha", "Bravo", "Cedar", "Delta", "Ember"):
+            self.create(self.other, name=f"Theirs {w}")
         with self.assertRaises(HTTPException) as ctx:
             self.api.create_hound(self.api.CreateHoundRequest(spec=spec, copied_from=src["id"]),
                                   current_user=self.other, _rl=None)

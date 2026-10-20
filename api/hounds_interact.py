@@ -17,6 +17,13 @@
     POST /hounds/drill                signed in: {"dog_id" | "spec", "days": 7|14|30 | "season": "s2"}: a hindsight drill
                                       (the Backtest tab calls it), never counted
 
+PAID TOOLS ON MEMBER DOGS (owner decision 2026-10-20, api/entitlements.py). A free account keeps one dog, and
+three tools on a member (builder) dog are for paid accounts only: a LIVE SEND (``POST /hounds/{id}/fire`` with an
+``event_id``), BACKTEST (``POST /hounds/drill``, except a drill of a house dog) and ASK (``POST /hounds/{id}/ask``).
+A free account gets a 402 ``upgrade_required`` naming the tool; a signed-out caller gets a 401. The house pack's
+public pages keep everything they had, and so does the plain "Take them out back" preview (``fire`` with no
+``event_id``) on any dog, and the Ask greeting (``GET /hounds/{id}/ask``).
+
 NOTHING HERE WRITES TO A DOG'S RULE RECORD. The fire route writes nothing. The manual pick goes to its own
 ledger (src/hounds/interact/manual.py). Feedback and looks are rows in two small tables. A drill replays in a
 temporary ledger. Every payload carries ``paper_only: true`` and the not-advice line.
@@ -41,6 +48,7 @@ from src.hounds.contract import envelope
 from src.hounds.interact import ask, ask_eval, camp, common, drill, fire, fire_event, look, manual, store
 
 from api import auth as auth_mod
+from api import entitlements
 from api.auth import get_current_user
 
 router = APIRouter()
@@ -198,6 +206,8 @@ def run_drill(body: DrillRequest, response: Response,
     target = None
     if body.dog_id:
         target = _dog(body.dog_id)
+    if target is None or target.kind == common.KIND_USER:    # a drill of a rule or a member dog: paid only
+        entitlements.require_paid_dog_tool(current_user, entitlements.FEATURE_BACKTEST)
     try:
         return envelope(drill.drill(days=body.days, dog=target, spec=body.spec if target is None else None,
                                      season=body.season))
@@ -223,10 +233,13 @@ def kit(hound_id: str, response: Response, authorization: Optional[str] = Header
 
 @router.post("/hounds/{hound_id}/fire")
 def fire_now(hound_id: str, response: Response, body: Optional[FireRequest] = None,
-             authorization: Optional[str] = Header(default=None), _rl: None = Depends(_rl_fire_route)) -> dict:
+             authorization: Optional[str] = Header(default=None), _rl: None = Depends(_rl_fire_route),
+             request: Request = None) -> dict:
     response.headers["Cache-Control"] = _NO_STORE
     dog = _dog(hound_id)
     if body is not None and body.event_id is not None:
+        if dog.kind == common.KIND_USER:                     # a live send: paid accounts only
+            entitlements.paid_dog_tool_for(authorization, request, entitlements.FEATURE_LIVE_SEND)
         return envelope(_event_payload(dog, body.event_id))
     return envelope(_fire_payload(dog, _viewer_id(authorization)))
 
@@ -332,6 +345,8 @@ def ask_dog(hound_id: str, body: AskRequest, response: Response,
             request: Request = None) -> dict:
     response.headers["Cache-Control"] = _NO_STORE
     dog = _dog(hound_id)
+    if dog.kind == common.KIND_USER:                         # Ask on a member dog: paid accounts only
+        entitlements.paid_dog_tool_for(authorization, request, entitlements.FEATURE_ASK)
     question = (body.question or "").strip()
     if not question:
         raise _err(422, "question_required", "ask something")

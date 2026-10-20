@@ -26,8 +26,9 @@ stays attached to the exact rule that made it.
 
 LIMITS AND WHO MAY CREATE
 -------------------------
-At most MAX_RUNNING_PER_ACCOUNT running hounds per account; only an existing, non-suspended account
-may create (the API additionally requires a paid or tester sign-in). Counting and inserting happen
+At most MAX_RUNNING_PER_ACCOUNT running hounds per account (FREE_MAX_ACTIVE_PER_ACCOUNT non-retired ones
+for a free account, when the caller says so); only an existing, non-suspended account
+may create (the API additionally requires a signed-in member or paid account). Counting and inserting happen
 inside one BEGIN IMMEDIATE transaction so two simultaneous requests cannot both take the last slot.
 """
 
@@ -53,6 +54,10 @@ STATUSES = (STATUS_RUNNING, STATUS_BENCHED, STATUS_RETIRED)
 # ledger is append-only, so the dog's tickets and record stay exactly where they were and its page still opens by
 # its address ("Retired by the owner"). The row stops betting, leaves the kennel and the leaderboard, and frees a slot.
 OWNER_REMOVED_REASON = "removed from the kennel by its owner"
+
+# Shown to a free account that tries to add a second dog; the API carries it in a 402 `upgrade_required`.
+FREE_LIMIT_MESSAGE = ("A free account keeps one dog. Become a member to run up to "
+                      f"{user_spec.MAX_RUNNING_PER_ACCOUNT} dogs, or remove your current dog to build a new one.")
 
 ROUND_TTL = timedelta(minutes=15)
 COACH_COOLDOWN = timedelta(days=7)
@@ -242,6 +247,12 @@ def _running_count(conn, user_id: int) -> int:
                         (user_id, STATUS_RUNNING)).fetchone()[0]
 
 
+def _active_count(conn, user_id: int) -> int:
+    """Dogs that have not been retired: running AND benched (the free tier's count)."""
+    return conn.execute("SELECT COUNT(*) FROM hounds WHERE owner_user_id = ? AND status != ?",
+                        (user_id, STATUS_RETIRED)).fetchone()[0]
+
+
 def suggest_copy_name(source_name: str, *, db: Optional[Path] = None) -> str:
     """A free name for a copy of `source_name`: '<name> II', '<name> III', ... within 24 chars."""
     taken = {user_spec._fold(n) for n in taken_names(db=db)}
@@ -284,16 +295,24 @@ def _require_account(conn, user_id: int) -> None:
 def create_hound(user_id: int, raw_spec: Mapping, *, copied_from: Optional[str] = None,
                  coach_opt_in: bool = False, now: Optional[datetime] = None,
                  db: Optional[Path] = None,
-                 extra_real_names: Optional[Mapping[str, str]] = None) -> dict:
+                 extra_real_names: Optional[Mapping[str, str]] = None,
+                 free_tier: bool = False) -> dict:
     """Validate `raw_spec` and create version 1 of a new hound, or raise.
 
-    SpecError for a spec the menu refuses; StoreError('limit', ...) for the fourth running hound;
-    StoreError('no_account', ...) for a user id with no account. The whole check-and-insert runs in
-    one BEGIN IMMEDIATE transaction."""
+    SpecError for a spec the menu refuses; StoreError('limit', ...) when the account already runs
+    MAX_RUNNING_PER_ACCOUNT hounds; StoreError('upgrade_required', ...) when `free_tier` and the account
+    already has FREE_MAX_ACTIVE_PER_ACCOUNT non-retired dogs; StoreError('no_account', ...) for a user id
+    with no account. The whole check-and-insert runs in one BEGIN IMMEDIATE transaction, so the free
+    limit cannot be beaten by two simultaneous requests either.
+
+    `free_tier` is the CALLER's statement that this account is a free member (api/hounds_create.py reads
+    it from src.appstate.access); the store does not decide who is free."""
     created = _iso(_now(now))
     with _connect(db) as conn:
         conn.execute("BEGIN IMMEDIATE")
         _require_account(conn, user_id)
+        if free_tier and _active_count(conn, user_id) >= user_spec.FREE_MAX_ACTIVE_PER_ACCOUNT:
+            raise StoreError("upgrade_required", FREE_LIMIT_MESSAGE)
         if _running_count(conn, user_id) >= user_spec.MAX_RUNNING_PER_ACCOUNT:
             raise StoreError("limit", f"an account can run at most "
                              f"{user_spec.MAX_RUNNING_PER_ACCOUNT} hounds; retire one first")

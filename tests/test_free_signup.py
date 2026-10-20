@@ -726,10 +726,20 @@ class TheAccessSplit(_App):
     def test_a_free_member_gets_past_the_gate_on_every_dog_route(self):
         token = self.free_token()
         for method, path in self.MEMBER_ROUTES + self.OPEN_DOG_ROUTES:
+            if path == self.PAID_TOOL_ROUTE:
+                continue          # Backtest is a member tool since 2026-10-20: asserted just below
             with self.subTest(route=f"{method} {path}"):
                 status, body = self.call(method, path, token=token,
                                          body={} if method in ("POST", "PUT") else None)
                 self.assertNotIn(status, (401, 402, 403), (method, path, body))
+
+    PAID_TOOL_ROUTE = "/hounds/drill"
+
+    def test_backtest_is_the_one_dog_route_a_free_account_is_refused_with_a_402(self):
+        status, body = self.call("POST", self.PAID_TOOL_ROUTE, token=self.free_token(), body={})
+        self.assertEqual(status, 402, body)
+        self.assertEqual(body["detail"]["error"], "upgrade_required")
+        self.assertEqual(body["detail"]["feature"], "backtest")
 
     def test_the_dog_routes_that_need_a_member_are_not_behind_the_paid_gate(self):
         guarded = {path for (_, path) in self.paid_routes()}

@@ -20,7 +20,7 @@ import { post, errorText, errorCode, whenText, spanText, statusLine, celebrate, 
 const SLOW = 90000;
 
 /** The call behind the button, shared with the studio and the camp. */
-export const takeOutBack = (id) => post(`/hounds/${encodeURIComponent(id)}/fire`, {}, SLOW);
+export const takeOutBack = (id, eventId) => post(`/hounds/${encodeURIComponent(id)}/fire`, eventId ? { event_id: eventId } : {}, SLOW);
 
 function priceLine(p) {
   const bits = [`Average price ${fmtPrice(p.price_average)}`];

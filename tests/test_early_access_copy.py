@@ -279,9 +279,9 @@ out.constants = { cta: c.CAUTIOUS_CTA, note: c.EARLY_ACCESS_NOTE, confirmation: 
 console.log("@@" + JSON.stringify(out));
 """
 
-FOUNDING = ("This is the founding price: it rises as the public record grows, and it can fall "
-            "if the record does. Founding members keep $19.99 for as long as their subscription "
-            "stays active.")
+# 2026-10-20: the founding-price paragraph that tied the price to the public record is GONE (owner decision:
+# $14.99 for the first 50, $19.99 after, nothing to do with results). With no founding seat in the state, the
+# pricing note is the hero note and nothing more; the founding line is covered by tests/test_founding_offer_web.py.
 # Captured by running the PRE-CHANGE web/js/checkout.js (git HEAD fe9ddaf5) under
 # node on these same inputs; the owner's rule is that when checkout IS on, every
 # string stays byte-identical.
@@ -290,7 +290,7 @@ ON_STATE_BEFORE = {
         "cta": "Start your 7-day free trial", "gate": "Start free trial",
         "record": "Start your 7-day free trial to see tonight's card",
         "hero": "7-day free trial, then $19.99/month. Cancel anytime.",
-        "pricing": "7-day free trial, then $19.99/month. Cancel anytime. " + FOUNDING,
+        "pricing": "7-day free trial, then $19.99/month. Cancel anytime.",
         "card": "A card is required to start the trial. Nothing is charged for 7 days, and you can cancel before then.",
         "started": "Your free trial has started; nothing has been charged yet.",
         "signinNote": "NO ACCOUNT YET? START YOUR FREE TRIAL.",
@@ -301,7 +301,7 @@ ON_STATE_BEFORE = {
         "cta": "Start your 14-day free trial", "gate": "Start free trial",
         "record": "Start your 14-day free trial to see tonight's card",
         "hero": "14-day free trial, then $19.99/month. Cancel anytime.",
-        "pricing": "14-day free trial, then $19.99/month. Cancel anytime. " + FOUNDING,
+        "pricing": "14-day free trial, then $19.99/month. Cancel anytime.",
         "card": "A card is required to start the trial. Nothing is charged for 14 days, and you can cancel before then.",
         "started": "Your free trial has started; nothing has been charged yet.",
         "signinNote": "NO ACCOUNT YET? START YOUR FREE TRIAL.",
@@ -312,7 +312,7 @@ ON_STATE_BEFORE = {
         "cta": "Start your subscription", "gate": "Subscribe",
         "record": "Subscribe to see tonight's card",
         "hero": "$19.99/month. Cancel anytime.",
-        "pricing": "$19.99/month. Cancel anytime. " + FOUNDING,
+        "pricing": "$19.99/month. Cancel anytime.",
         "card": None, "started": None,
         "signinNote": "NO ACCOUNT YET? SUBSCRIBE.", "signinLink": "START YOUR SUBSCRIPTION",
         "trialPhrase": None, "plannedPrice": "Planned price: $19.99/month",
@@ -321,8 +321,7 @@ ON_STATE_BEFORE = {
         "cta": "Start your 7-day free trial", "gate": "Start free trial",
         "record": "Start your 7-day free trial to see tonight's card",
         "hero": "7-day free trial. Cancel anytime.",
-        "pricing": ("7-day free trial. Cancel anytime. This is the founding price: it rises as the "
-                    "public record grows, and it can fall if the record does."),
+        "pricing": "7-day free trial. Cancel anytime.",
         "card": "A card is required to start the trial. Nothing is charged for 7 days, and you can cancel before then.",
         "started": "Your free trial has started; nothing has been charged yet.",
         "signinNote": "NO ACCOUNT YET? START YOUR FREE TRIAL.",
@@ -398,7 +397,7 @@ class UnderNode(unittest.TestCase):
 
     # ---- checkout on: byte-identical ---------------------------------------
 
-    def test_every_on_state_string_is_byte_identical_to_what_it_was(self):
+    def test_every_on_state_string_is_what_it_was_minus_the_record_linked_price_story(self):
         helpers = self._helpers()
         for name, expected in ON_STATE_BEFORE.items():
             with self.subTest(state=name):

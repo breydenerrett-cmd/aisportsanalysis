@@ -265,6 +265,16 @@ def require_member_access(
     return require_paid_access(current_user=current_user)
 
 
+def is_free_member(user: users_store.User) -> bool:
+    """True for a self-serve FREE account that nothing entitles to the paid surface right now (the
+    "member" level of src/appstate/access.py). The one place the dog tools ask it: api/entitlements.py
+    (Live send, Backtest, Ask) and api/hounds_create.py (the free account's one dog). A comp, a
+    subscriber paid through, an open tester window and an invited beta user are all NOT free members,
+    so no tier limit ever applies to them. It lives here, beside the two gates, because this module is
+    the only place allowed to read the level (tests/test_free_signup.py pins that)."""
+    return access.access_level(user) == access.LEVEL_MEMBER
+
+
 def require_board_member(
         current_user: users_store.User = Depends(get_current_user)) -> users_store.User:
     """FastAPI dependency for a PERSONAL route that is built from the member board
