@@ -34,10 +34,14 @@ class TheAdminSignInWall(unittest.TestCase):
             self.assertIn(needle, self.CARD)
         self.assertEqual(len(re.findall(r"<script\b", self.HTML)), 1, "the admin page keeps exactly one script")
 
-    def test_the_snapshot_draws_only_hex_colours_and_its_own_gradient(self):
+    def test_the_snapshot_draws_only_hex_colours_and_its_own_defs(self):
         svg = self.CARD[self.CARD.index("<svg"):self.CARD.index("</svg>")]
         for attr in re.findall(r'(?:fill|stroke|stop-color)="([^"]+)"', svg):
-            self.assertRegex(attr, r"^(#[0-9a-fA-F]{6}|none|rgba\([\d., ]+\)|url\(#dk-bg-\d+(-glow)?\))$")
+            self.assertRegex(attr, r"^(#[0-9a-fA-F]{6}|none|currentColor|rgba\([\d., ]+\)|url\(#lh-[a-z-]+\))$")
+        self.assertIn('data-style="mascot"', svg)
+        self.assertIn('<defs>', svg, "no script on this page, so the snapshot carries the defs it uses")
+        for ref in set(re.findall(r'url\(#([\w-]+)\)', svg)):
+            self.assertIn(f'id="{ref}"', svg, f"{ref} is defined inside the snapshot")
         self.assertNotIn("<script", svg)
         self.assertNotRegex(svg, r"\son[a-z]+=")
 

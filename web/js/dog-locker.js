@@ -79,7 +79,9 @@ export function mountLocker(section, { id, name, kit, vibe, onSaved, onChange })
   const numberRow = h("div", { class: "dk-field dk-field--number", hidden: "" }, [h("label", { text: "Jersey number" }), numberInput]);
   const groupBoxes = {};
   const thumbs = [];                                  // the little dogs on the options, redrawn in the current look
-  const sampleOf = (key, opt) => cleanLook(Object.assign({}, look, { [key]: opt, number: key === "body" && opt === "jersey" ? 7 : look.number }));
+  const sampleOf = (key, opt) => cleanLook(Object.assign({}, look, { [key]: opt, number: key === "body" && opt === "jersey" ? 7 : look.number },
+    // a breed reads best bare: the thumbnails in the breed grid wear the dog's coat, eyes and style but none of its accessories
+    key === "breed" ? { head: "none", face: "none", neck: "none", body: "none", number: null } : {}));
   const thumbSize = { style: 72, breed: 46, thumb: 52 };
   const refreshThumbs = () => {
     for (const t of thumbs) { clearNode(t.el); t.el.appendChild(dogSvg(sampleOf(t.key, t.opt), { size: t.size, breed: nameBreed, pose: "idle" })); }

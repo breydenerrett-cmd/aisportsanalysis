@@ -64,7 +64,7 @@ function tri(A, B, T, bulge = 0.08, innerK = 0.56) {
 
 /** A pair of ears from `tri`'s result or a plain outline. */
 function earsOf(K, spec, fill, innerFill, extra = {}) {
-  return earPair(spec.pts, Object.assign({ sharp: spec.sharp || [], fill, inner: spec.inner || null, innerFill, kit: K }, extra));
+  return earPair(spec.pts, Object.assign({ sharp: spec.sharp || [], fill, inner: innerFill ? spec.inner || null : null, innerFill, kit: K }, extra));
 }
 
 /** Assemble one breed from its parts (see the header). */
@@ -301,10 +301,10 @@ const BREED = {
   wolfhound(c, K) {
     const wire = mix(c.base, c.light, 0.15);
     const beard = mix(c.base, c.shade, 0.25);
-    const spec = { pts: [[40, 28], [31, 22], [22, 27], [19, 37], [27, 44], [36, 40]], sharp: [3], inner: [[36, 30], [31, 27], [25, 31], [23, 37], [28, 40], [34, 37]] };
+    const spec = tri([40, 29], [33, 44], [17, 33], 0.04, 0.5);
     return compose(c, K, {
       geo: { ey: 54, edx: 13.8, ew: 5.7, eh: 3.1, tilt: 1.6, ny: 79, nrx: 6.4, nry: 4.3, my: 90, mw: 11.4, topY: 20, browY: 44, hw: 32, neck: 24 },
-      cran: [[0, 20], [20, 20], [29, 28], [32, 41], [30, 50], [33, 58], [28, 68], [30, 76], [21, 86], [0, 94]], cranSharp: [4, 5, 7],
+      cran: [[0, 20], [19, 19], [24, 24], [30, 27], [29, 34], [34, 41], [30, 47], [35, 55], [30, 61], [34, 69], [28, 75], [31, 82], [21, 88], [0, 94]], cranSharp: [3, 5, 7, 9, 11],
       muz: { top: 45, w0: 8, w1: 12.8, mid: 84, chin: 104 },
       muzFill: wire,
       ears: earsOf(K, spec, mix(c.base, c.shade, 0.3), inside(c)),
@@ -465,7 +465,7 @@ const BREED = {
   jackrussell(c, K) {
     const white = { base: WHITE, shade: "#CFCBC2", light: "#FFFFFF" };
     const patch = mix(c.base, "#000000", 0.12);
-    const spec = { pts: [[40, 28], [26, 29], [19, 42], [22, 55], [32, 55], [41, 44]], sharp: [], inner: null };
+    const spec = tri([41, 31], [31, 52], [17, 38], 0.14, 0.5);
     const r = compose(white, K, {
       geo: { ey: 56, edx: 14.4, ew: 5.9, eh: 3.2, tilt: 1.5, ny: 72, nrx: 5.6, nry: 4, my: 82, mw: 11, topY: 26, browY: 48, hw: 32, neck: 24 },
       cran: { top: 26, crown: 22, hw: 32, cheek: 58, jaw: 21, end: 92 },
@@ -561,7 +561,7 @@ const BREED = {
   terrier(c, K) {
     const brow = mix(c.light, WHITE, 0.3);
     const dark = mix(c.base, "#3B2A1C", 0.5);
-    const spec = { pts: [[46, 32], [20, 36], [17, 46], [27, 60], [40, 52], [47, 40]], sharp: [2], inner: null };
+    const spec = tri([46, 31], [34, 52], [15, 38], 0.1, 0.5);
     return compose(c, K, {
       geo: { ey: 56, edx: 14.4, ew: 5.8, eh: 3.2, tilt: 1.6, ny: 71, nrx: 6.2, nry: 4.4, my: 82, mw: 12, topY: 26, browY: 49, hw: 33, neck: 25 },
       cran: { top: 26, crown: 25, hw: 33, cheek: 56, jaw: 28, end: 92 },
