@@ -45,6 +45,9 @@ import {
   basisOf, basisWords,
 } from "./hounds-board.js";
 import { ticketTable } from "./hounds-tickets.js";
+import { settleGrades } from "./first-grade.js";
+import { playReveal, MAX_FLIPS } from "./reveal-fx.js";
+import { celebrate } from "./dog-common.js";
 import { ALL_SEASON, seasonOptions, chooseSeason, saveSeason, seasonParam } from "./hounds-season.js";
 import { renderLineChart } from "./hounds-chart.js";
 import { bootDesk } from "./hounds-desk.js";
@@ -572,7 +575,16 @@ function renderGraded() {
       text: state.segment === "replay" ? "No rehearsal tickets for this model." : "No graded tickets yet." }));
     return;
   }
-  box.appendChild(ticketTable(page.items, { graded: true, hook: "bets-table", caption: "Graded tickets, newest first" }));
+  // R6: tickets graded since this browser last looked at its own hound flip from PENDING to their grade, once, and the hound's FIRST
+  // grade gets the one celebration burst. `state.fresh` was set by loadGraded and is spent here, so a re-render never replays it.
+  const fresh = state.fresh;
+  state.fresh = null;
+  const flip = fresh ? Math.min(fresh.fresh, MAX_FLIPS, page.items.length) : 0;
+  box.appendChild(ticketTable(page.items, { graded: true, hook: "bets-table", caption: "Graded tickets, newest first", flip }));
+  if (flip) {
+    playReveal(box);
+    if (fresh.burst) celebrate(box, "first-grade");
+  }
   box.appendChild(h("div", { class: "hd-pager", "data-hook": "bets-pager" }, [
     h("button", { type: "button", class: "btn btn--ghost", "data-hook": "bets-prev", text: "Newer",
       disabled: page.page <= 1 ? "" : undefined, on: { click: () => { loadGraded(page.page - 1); } } }),
@@ -592,6 +604,10 @@ async function loadGraded(pageNo = 1) {
     const within = state.betsSeason && state.betsSeason !== ALL_SEASON ? `&${seasonParam(state.betsSeason)}` : "";
     const data = await apiGet(`/hounds/${encodeURIComponent(state.id)}/bets?status=graded&segment=${state.segment}&page=${pageNo}&page_size=${size}${within}`);
     state.graded = betsPageOf(data);
+    // the live tickets, newest page, every season: the only view where "graded since I last looked" means anything
+    if (pageNo === 1 && state.segment === "forward" && (!state.betsSeason || state.betsSeason === ALL_SEASON)) {
+      state.fresh = settleGrades(state.id, state.graded.total);
+    }
   } catch (err) {
     state.gradedError = err;
   }

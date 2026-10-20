@@ -17,11 +17,18 @@
  * THE REVEAL shows the hound with a celebrate pose, a name (three suggestions, editable), the rules as cards, any warnings,
  * "Would have bet today" (POST /hounds/builder/preview, read-only), "Backtest this" (POST /hounds/drill, signed in, labelled
  * hindsight and never counted), a box for anything in the person's own words (POST /hounds/english, then composed in as extra
- * rules), "Edit rules" (hands the spec to the builder) and "Send my hound in" (the builder's own save door, POST /hounds).
+ * rules), "Edit rules" (hands the spec to the builder) and "Keep {Name}" (the builder's own save door, POST /hounds).
  *
- * SIGNED OUT. Everything up to the last button works without an account. Saving asks the person to sign in or create one and
- * keeps the whole quiz in localStorage first (every access wrapped in try/catch: a blocked store only means no resume), so
- * coming back, even after signing in on another page, lands on the reveal with the hound waiting.
+ * SIGNED OUT. Everything up to the last button works without an account. Once the hound has been built, named and has met today's
+ * board, a "Keep {Name}" form appears under the picks (web/js/keep.js): an email, a password and the "I am 21 or older" box. One
+ * submit makes a free account (POST /auth/signup), signs the person in and saves this hound, on this page, with no redirect.
+ * The record starts at the keep; nothing is backfilled. The whole quiz also stays in localStorage (every access wrapped in
+ * try/catch: a blocked store only means no resume), so a person who would rather sign in to an existing account comes back to the
+ * reveal with the hound waiting.
+ *
+ * THE REVEAL IS CHOREOGRAPHED (web/js/reveal-fx.js, css/quiz.css): silhouette, the hound, its name, its rules (R2, under 2.4 s),
+ * then the ticket flip of "Would have bet today" with its "{n} of {m} games fit" count (R4). Content is in the page from the
+ * first frame; the motion is `data-reveal` attributes. A tap skips it, reduced motion gets the final state.
  *
  * Written against attributes only (no classList, no dataset, no innerHTML): it must run in the node test harness's small DOM.
  */
@@ -31,6 +38,9 @@ import { h, clearNode, describeError, houndHref } from "./hounds-core.js";
 import { renderDog, DEFAULT_LOOK, cleanLook } from "./dog-avatar.js";
 import { celebrate, post, put, SLOW_MS, errorText } from "./dog-common.js";
 import { icon, tile, toneFor } from "./hound-quiz-art.js";
+import { mountKeep, keepLabel } from "./keep.js";
+import { playReveal, skipReveal, countTo, previewState, priceText } from "./reveal-fx.js";
+import { watchFirstGrade } from "./first-grade.js";
 
 export const DRAFT_KEY = "linehound.quiz.draft.v1";
 export const HANDOFF_KEY = "linehound.quiz.handoff.v1";
@@ -86,6 +96,7 @@ const S = {
   name: "", nameTouched: false, tagline: "", shownName: "", english: { text: "", draft: null, understood: [], notRead: [], assumed: [] },
   result: null, composing: false, composeError: "", seq: 0, preview: null, previewSeq: 0, drill: null, drillBusy: false,
   saving: false, saved: null, problems: [], pendingSave: false, resumed: false, notice: "", celebrated: false, bound: false,
+  keep: null, previewSettled: false,
 };
 
 // ---- the draft (localStorage, every touch guarded) ------------------------------------------------------------------
@@ -550,6 +561,7 @@ function resetAll() {
   S.name = ""; S.nameTouched = false; S.tagline = ""; S.shownName = "";
   S.english = { text: "", draft: null, understood: [], notRead: [], assumed: [] };
   S.result = null; S.preview = null; S.drill = null; S.saved = null; S.pendingSave = false; S.problems = []; S.opened = {}; S.filter = "all";
+  S.previewSettled = false;
   clearDraft();
 }
 
@@ -592,9 +604,10 @@ async function compose() {
 
 function buildReveal() {
   const root = clearNode(q("quiz-reveal"));
-  root.appendChild(h("div", { class: "qz-rv" }, [
+  root.appendChild(h("div", { class: "qz-rv", "data-hook": "reveal-root" }, [
     h("aside", { class: "qz-rv__hero", "aria-label": "Your hound" }, [
       h("div", { class: "qz-rv__dog", "data-hook": "reveal-dog" }),
+      h("p", { class: "qz-rv__reading", "aria-hidden": "true", "data-hook": "reveal-reading", text: "Reading your answers" }),
       h("p", { class: "qz-eyebrow", text: "Your hound" }),
       h("div", { class: "qz-field" }, [
         h("label", { for: "qz-name", text: "Name" }),
@@ -606,13 +619,13 @@ function buildReveal() {
       h("p", { class: "qz-fine", "data-hook": "reveal-honesty" })]),
     h("div", { class: "qz-rv__main" }, [
       h("p", { class: "qz-eyebrow", text: "The reveal" }),
-      h("h1", { class: "qz-q", id: "qz-q", tabindex: "-1", "data-hook": "reveal-title", text: "Meet your hound." }),
-      h("p", { class: "qz-sub", text: "Check its rules, add your own words, kick the tires, then send it in. Nothing is saved until you do." }),
+      h("h1", { class: "qz-q qz-meet", id: "qz-q", tabindex: "-1", "data-hook": "reveal-title", text: "Meet your hound." }),
+      h("p", { class: "qz-sub", text: "Check its rules, add your own words, kick the tires, then keep it. Nothing is saved until you do." }),
       h("div", { class: "qz-state", role: "status", "data-hook": "reveal-state", hidden: true }),
       h("div", { "data-hook": "reveal-body" }, [
         h("section", { class: "qz-block", "aria-labelledby": "qz-rules-h" }, [
           h("h2", { id: "qz-rules-h", class: "qz-h2", text: "Its rules, in plain English" }),
-          h("p", { class: "qz-fine", text: "A rule is a recipe. Your hound bets when any one of them says go." }),
+          h("p", { class: "qz-fine", "data-hook": "reveal-rules-note", text: "These are its whole rules. It bets only what fits one of them." }),
           h("ol", { class: "qz-rules", "data-hook": "reveal-rules" }),
           h("ul", { class: "qz-globals", "data-hook": "reveal-globals" }),
           h("div", { class: "qz-warnings", "data-hook": "reveal-warnings" })]),
@@ -631,11 +644,15 @@ function buildReveal() {
           h("p", { class: "qz-fine", text: "Anything you add becomes an extra rule, and a number you name (bets a day, stake, how early) replaces the quiz's." })]),
         h("section", { class: "qz-block qz-checks", "aria-labelledby": "qz-check-h" }, [
           h("h2", { id: "qz-check-h", class: "qz-h2", text: "Kick the tires" }),
-          h("div", { class: "qz-check", "data-hook": "reveal-preview" }, [
+          h("div", { class: "qz-check qz-preview", "data-hook": "reveal-preview", "data-state": "loading" }, [
             h("h3", { class: "qz-h3", text: "Would have bet today" }),
             h("p", { class: "qz-bignum", "data-hook": "reveal-preview-count", "aria-live": "polite", text: "Checking today's board..." }),
+            h("p", { class: "qz-fine", "data-hook": "reveal-preview-sub" }),
+            h("p", { class: "qz-actions", "data-hook": "reveal-preview-retry-row", hidden: true }, [
+              h("button", { type: "button", class: "qz-btn qz-btn--ghost", "data-hook": "reveal-preview-retry", text: "Check again",
+                on: { click: () => { loadPreview(); } } })]),
             h("ul", { class: "qz-picks", "data-hook": "reveal-preview-list" }),
-            h("p", { class: "qz-fine", text: "A read-only look at today's board. It places nothing." })]),
+            h("p", { class: "qz-fine", "data-hook": "reveal-preview-note", text: "A read-only look at today's board. It places nothing, and it is never counted." })]),
           h("div", { class: "qz-check", "data-hook": "reveal-backtest" }, [
             h("h3", { class: "qz-h3", text: "Backtest this" }),
             h("p", { class: "qz-fine", text: `Replays the rules over the last ${BACKTEST_DAYS} days of stored boards. Hindsight, so it is a rehearsal and never counted.` }),
@@ -643,9 +660,10 @@ function buildReveal() {
             h("div", { class: "qz-drill", "data-hook": "reveal-backtest-result", "aria-live": "polite" })])]),
         h("section", { class: "qz-block qz-finish" }, [
           h("div", { class: "qz-signin", "data-hook": "reveal-signin", role: "status", hidden: true }),
+          h("div", { class: "qz-keep-host", "data-hook": "reveal-keep-host" }),
           h("div", { class: "qz-message", "data-hook": "reveal-message", "aria-live": "polite" }),
           h("div", { class: "qz-actions qz-actions--final" }, [
-            h("button", { type: "button", class: "qz-btn qz-btn--primary qz-btn--lg", "data-hook": "reveal-save", text: "Send my hound in", disabled: true }),
+            h("button", { type: "button", class: "qz-btn qz-btn--primary qz-btn--lg", "data-hook": "reveal-save", text: "Keep your hound", disabled: true }),
             h("button", { type: "button", class: "qz-btn qz-btn--ghost qz-btn--lg", "data-hook": "reveal-edit", text: "Edit rules", disabled: true }),
             h("button", { type: "button", class: "qz-btn qz-btn--text", "data-hook": "reveal-back", text: "Back to the questions" }),
             h("button", { type: "button", class: "qz-btn qz-btn--text", "data-hook": "reveal-retake", text: "Retake the quiz" })]),
@@ -662,6 +680,29 @@ function buildReveal() {
   q("reveal-retake").addEventListener("click", () => { S.seq += 1; resetAll(); S.step = 0; showIntro(); });
   q("reveal-english-input").value = S.english.text || "";
   q("reveal-english-input").addEventListener("input", () => { S.english.text = String(q("reveal-english-input").value); persist(); });
+  // "Keep {Name}": the in-page save for a signed-out visitor (web/js/keep.js). It stays hidden until the hound has been built,
+  // named and has met today's board (syncKeep), and it is not drawn at all for a signed-in member, who has the plain button.
+  S.keep = mountKeep(q("reveal-keep-host"), { name: currentName, save: () => sendIn(), onSignIn: stashForSignIn, prefix: "reveal-keep",
+    buttonClass: "qz-btn qz-btn--primary qz-btn--lg", ghostClass: "qz-btn qz-btn--ghost" });
+  syncKeep();
+}
+
+/** The name the hound will be kept under: what the person typed, else the name the quiz suggested. */
+function currentName() {
+  const field = q("reveal-name");
+  const typed = field ? String(field.value || "").trim() : "";
+  return typed || (S.nameTouched && S.name.trim()) || S.shownName || (S.result && S.result.spec && S.result.spec.name) || "";
+}
+
+/** Who sees which save control. A signed-out visitor gets the Keep form once the reveal and the preview have both rendered; a signed-in
+ *  member (or a person whose account was just made and whose save needs another try) gets the plain button. */
+function syncKeep() {
+  const keep = S.keep, save = q("reveal-save");
+  if (!keep || !save) return;
+  const signedIn = !!getToken();
+  const ready = !signedIn && !!S.result && !S.composing && !S.saved && S.previewSettled;
+  if (ready) keep.show(); else if (!keep.state.accountMade) keep.hide();
+  save.hidden = !signedIn ? true : keep.visible();
 }
 
 function renderResult() {
@@ -678,7 +719,7 @@ function renderResult() {
     if (!res) { body.hidden = true; return; }
   } else if (S.composing && !res) {
     state.hidden = false;
-    state.textContent = "Sniffing out your rules...";
+    state.textContent = "Reading your answers";
     body.hidden = true;
     return;
   } else state.hidden = true;
@@ -700,6 +741,14 @@ function renderResult() {
     persist();
   }
   if (S.nameTouched) name.value = S.name; else name.value = S.shownName || spec.name;
+  // R2: "Meet {Name}." The title is the name card; the silhouette, the hound, the name and the rules arrive in that order (css/quiz.css).
+  const shown = String(name.value || "").trim();
+  const title = q("reveal-title");
+  title.textContent = shown ? `Meet ${shown}.` : "Meet your hound.";
+  title.setAttribute("style", `--len:${Math.max(1, Math.min(40, title.textContent.length))}`);
+  if (!S.saved) save.textContent = keepLabel(shown);
+  if (S.keep) S.keep.setName();
+  playReveal(q("reveal-root"));
   const tag = q("reveal-tagline");
   if (!S.tagline) tag.value = spec.tagline || ""; else tag.value = S.tagline;
   const chips = clearNode(q("reveal-name-chips"));
@@ -712,7 +761,8 @@ function renderResult() {
   const rules = clearNode(q("reveal-rules"));
   for (const c of res.rule_cards || []) {
     const src = c.source === "archetype" ? "A card you picked" : c.source === "english" ? "Your words" : c.source === "personality" ? "Its personality" : "Your picks";
-    rules.appendChild(h("li", { class: "qz-rule", "data-hook": "reveal-rule", "data-source": c.source, "data-index": String(c.index) }, [
+    rules.appendChild(h("li", { class: "qz-rule", "data-hook": "reveal-rule", "data-source": c.source, "data-index": String(c.index),
+      style: `--i:${Math.min(rules.children.length, 2)}` }, [
       h("div", { class: "qz-rule__head" }, [h("strong", { class: "qz-rule__label", text: c.label }), h("span", { class: "qz-tag", text: src })]),
       h("p", { class: "qz-rule__text", "data-hook": "reveal-rule-text", text: c.body || c.sentence })]));
   }
@@ -727,29 +777,62 @@ function renderResult() {
       heads.concat(notes).map((w) => h("li", { "data-hook": "reveal-warning", "data-code": w.code, text: w.message }))));
   }
   if (S.saved) renderSaved();
+  syncKeep();
 }
 
 // ---- Would have bet today, and the backtest ---------------------------------------------------------------------------
 
 async function loadPreview() {
   const seq = ++S.previewSeq;
-  const count = q("reveal-preview-count"), list = clearNode(q("reveal-preview-list"));
+  const panel = q("reveal-preview"), count = q("reveal-preview-count");
   if (!count || !S.result) return;
+  clearNode(q("reveal-preview-list"));
   count.textContent = "Checking today's board...";
+  q("reveal-preview-sub").textContent = "";
+  q("reveal-preview-retry-row").hidden = true;
+  panel.setAttribute("data-state", "loading");
+  let res = null, failure = null;
   try {
-    const res = await apiPost("/hounds/builder/preview", { spec: previewSpec() });
-    if (seq !== S.previewSeq) return;
-    S.preview = res;
-    if (!res.games_on_board) count.textContent = "No games on today's board yet.";
-    else if (!res.qualifying) count.textContent = "Nothing on today's board fits these rules.";
-    else count.textContent = `${res.would_bet} of ${res.qualifying} qualifying ${res.qualifying === 1 ? "pick" : "picks"}, with a cap of ${res.max_bets_per_day} a day.`;
-    for (const p of (res.picks || []).filter((x) => x.would_bet).slice(0, 4)) {
-      list.appendChild(h("li", { "data-hook": "reveal-pick", text: `${p.selection}${p.price ? ` at ${p.price > 0 ? "+" : ""}${p.price}` : ""}` }));
-    }
+    res = await apiPost("/hounds/builder/preview", { spec: previewSpec() });
   } catch (err) {
-    if (seq !== S.previewSeq) return;
-    count.textContent = err && err.status === 503 ? "Today's board is not loaded right now." : "The preview is not available right now.";
+    failure = err || new Error("preview failed");
   }
+  if (seq !== S.previewSeq) return;
+  S.preview = res;
+  renderPreviewState(previewState(res, previewName(), failure));
+  S.previewSettled = true;
+  syncKeep();
+}
+
+/** The name the preview speaks in: the one the hound will be kept under. */
+function previewName() {
+  return currentName() || "Your hound";
+}
+
+/** R4. The panel has three honest states (the count and the tickets, a pass, a board that did not load) and a fourth for an empty board.
+ *  The count and every ticket are in the page at once; the count-up and the ticket flip are `data-reveal` motion on top (css/quiz.css). */
+function renderPreviewState(st) {
+  const panel = q("reveal-preview"), count = q("reveal-preview-count"), list = clearNode(q("reveal-preview-list"));
+  panel.setAttribute("data-state", st.kind);
+  q("reveal-preview-sub").textContent = st.sub || "";
+  q("reveal-preview-retry-row").hidden = !st.retry;
+  if (st.kind !== "picks") {
+    count.textContent = st.line;
+    if (st.kind === "zero") playReveal(panel);
+    return;
+  }
+  clearNode(count);
+  const n = h("span", { class: "qz-count", "data-hook": "reveal-preview-n", text: st.parts.n });
+  count.appendChild(n);
+  count.appendChild(document.createTextNode(st.parts.rest));
+  const shown = st.picks.filter((p) => p.would_bet).slice(0, 4);
+  shown.forEach((p, i) => {
+    const game = p.away_team && p.home_team ? `${p.away_team} at ${p.home_team} \u00b7 ` : "";
+    const price = priceText(p.price);
+    list.appendChild(h("li", { class: "qz-pick", "data-hook": "reveal-pick", style: `--i:${i}` }, [
+      h("span", { class: "qz-pick__face", text: `${game}${p.selection}${price ? ` \u00b7 ${price}` : ""}` })]));
+  });
+  if (playReveal(panel) === "play") countTo(n, st.fit, panel);
 }
 
 function previewSpec() {
@@ -844,14 +927,16 @@ function saveSpec() {
   return spec;
 }
 
+/** Save the hound under the signed-in account (POST /hounds, then its look). Resolves true when it is kept, false when it is not. */
 async function sendIn() {
-  if (S.saving || !S.result || S.saved) return;
+  if (S.saved) return true;
+  if (S.saving || !S.result) return false;
   setMessage("");
   S.problems = [];
   if (!getToken()) {
     stashForSignIn();
-    showSignin("Sign in or create an account to send your hound in. Your quiz is saved on this device, so nothing is lost.");
-    return;
+    showSignin("Sign in to keep your hound. Your quiz is saved on this device, so nothing is lost.");
+    return false;
   }
   S.saving = true;
   q("reveal-save").disabled = true;
@@ -865,8 +950,13 @@ async function sendIn() {
     clearDraft();
     renderSaved();
     celebrate(q("reveal-dog"), "created");
+    // R6 starts here: this browser now watches this hound for its first graded ticket (web/js/first-grade.js)
+    if (hound.id) watchFirstGrade(hound.id);
+    syncKeep();
+    return true;
   } catch (err) {
     handleSaveError(err);
+    return false;
   } finally {
     S.saving = false;
     q("reveal-save").disabled = !!S.saved;
@@ -877,6 +967,7 @@ function renderSaved() {
   const box = clearNode(q("reveal-message"));
   box.appendChild(h("div", { class: "qz-saved", "data-hook": "reveal-saved" }, [
     h("p", { class: "qz-bignum", text: `${S.saved.name} is in the kennel.` }),
+    h("p", { class: "qz-fine", "data-hook": "reveal-saved-note", text: "Your record starts now. Every pick goes on the public record before the game." }),
     h("p", { class: "qz-actions" }, [
       S.saved.id ? h("a", { class: "qz-btn qz-btn--primary", href: houndHref(S.saved.id), "data-hook": "reveal-saved-link", text: "See your hound" }) : null,
       h("a", { class: "qz-btn qz-btn--ghost", href: "kennel.html", "data-hook": "reveal-kennel-link", text: "Open my kennel" })])]));

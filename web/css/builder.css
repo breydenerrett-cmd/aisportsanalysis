@@ -206,3 +206,21 @@
 /* the quiz doorway at the top of the builder (web/quiz.html) */
 .bd-quizcta { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 6px 0 4px; font-size: 14px; color: var(--hd-mute); }
 .bd-quizcta .btn { min-height: 40px; }
+
+/* ---- R4 in the builder: "{n} of {m} games fit" and the ticket flip (web/js/reveal-fx.js; the quiz has the same moment in quiz.css) ------
+   The count and every ticket are in the page at once. data-reveal="play" lasts 2.4 s at most (a tap on the panel sets "done"), and
+   reduced motion never gets it: a 150 ms fade. */
+.bd-count { font-variant-numeric: tabular-nums; }
+.bd-keep-host { margin: 4px 0 12px; }
+.bd-preview__retry { margin: 0 0 8px; }
+.bd-preview__retry[hidden] { display: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .bd-preview[data-reveal="play"] .bd-preview__count { animation: bd-fade .3s ease both; }
+  .bd-preview[data-reveal="play"] .bd-pick { transform-origin: 50% 0; animation: bd-flip .45s cubic-bezier(.2, .7, .2, 1) calc(.5s + var(--i, 0) * 120ms) both; }
+  .bd-preview[data-reveal="done"] .bd-pick { animation: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bd-preview .bd-preview__count, .bd-preview .bd-pick { animation: bd-fade .15s ease both; }
+}
+@keyframes bd-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes bd-flip { from { opacity: 0; transform: perspective(600px) rotateX(-90deg); } to { opacity: 1; transform: none; } }

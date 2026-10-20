@@ -12,7 +12,7 @@ import { h } from "./hounds-core.js";
 export function builderSkeleton() {
   const hook = (name, extra = {}) => Object.assign({ "data-hook": name }, extra);
   return h("div", { class: "bd-embedded", "data-hook": "build-app", "data-embedded": "" }, [
-    h("h3", { class: "bd-embedded__title", "data-hook": "build-title", text: "Build your dog" }),
+    h("h3", { class: "bd-embedded__title", "data-hook": "build-title", text: "Build your hound" }),
     h("p", { class: "hd-fine", "data-hook": "build-from-note", hidden: true }),
     h("div", hook("build-gate", { class: "hd-state hd-state--missing", role: "status", hidden: true })),
 
@@ -40,7 +40,7 @@ export function builderSkeleton() {
           h("ul", hook("english-suggest-list", { class: "bd-list" }))]),
         h("p", hook("english-assumed", { class: "hd-fine", hidden: true }))])]),
 
-    h("section", hook("step-rules", { class: "bd-step", "aria-label": "What your dog will do" }), [
+    h("section", hook("step-rules", { class: "bd-step", "aria-label": "What your hound will do" }), [
       h("p", { class: "bd-step__no", text: "2. Check it" }),
       h("div", hook("rules-empty", { class: "bd-empty" }), [h("p", { text: "Describe a strategy above, or start from a blank rule." })]),
       h("div", hook("rules-body", { hidden: true }), [
@@ -52,7 +52,7 @@ export function builderSkeleton() {
           h("p", {}, [h("button", hook("add-rule", { type: "button", class: "btn btn--ghost", text: "Add another rule" })),
             h("span", hook("rule-limit", { class: "hd-fine" }))]),
           h("fieldset", hook("globals", { class: "hd-fieldset bd-globals" }), [
-            h("legend", { text: "For the whole dog" }),
+            h("legend", { text: "For the whole hound" }),
             h("div", hook("globals-grid", { class: "bd-globals__grid" }))])])])]),
 
     h("section", hook("step-identity", { class: "bd-step", "aria-label": "Make it yours" }), [
@@ -69,16 +69,17 @@ export function builderSkeleton() {
             h("div", hook("color-picker", { class: "bd-swatches", role: "radiogroup", "aria-label": "Colour" }))]),
           h("fieldset", { class: "hd-fieldset" }, [h("legend", { text: "Badge" }),
             h("div", hook("badge-picker", { class: "bd-badges", role: "radiogroup", "aria-label": "Badge" }))])]),
-        h("div", hook("build-dog-preview", { class: "bd-dogcard", "aria-label": "Your dog, so far" }), [
+        h("div", hook("build-dog-preview", { class: "bd-dogcard", "aria-label": "Your hound, so far" }), [
           h("div", hook("build-dog-card", { class: "bd-dogcard__body" }))])]),
       h("div", hook("diff", { class: "bd-diff", hidden: true }), [
         h("h4", { class: "hd-h3", text: "What changes if you save" }),
         h("ul", hook("diff-list", { class: "bd-list" })),
         h("p", hook("diff-note", { class: "hd-fine", text: "The old version keeps its record and stops betting. The new version starts fresh." }))]),
+      h("div", hook("build-keep-host", { class: "bd-keep-host" })),
       h("div", hook("build-message", { "aria-live": "polite" })),
       h("div", hook("build-server-error", { class: "hd-state hd-state--down", role: "alert", hidden: true })),
       h("p", { class: "bd-save" }, [
-        h("button", hook("build-submit", { type: "button", class: "btn btn--primary btn--lg", text: "Send my dog in" })),
+        h("button", hook("build-submit", { type: "button", class: "btn btn--primary btn--lg", text: "Keep your hound" })),
         h("button", hook("edit-cancel", { type: "button", class: "btn btn--ghost", hidden: true, text: "Stop editing" })),
         h("span", hook("limit-text", { class: "hd-fine" })),
         h("span", hook("save-hint", { class: "hd-fine" }))])]),
@@ -87,10 +88,13 @@ export function builderSkeleton() {
       h("summary", { text: "Would have bet today" }),
       h("section", hook("preview-panel", { class: "bd-preview" }), [
         h("p", hook("preview-count", { class: "bd-preview__count", "aria-live": "polite", text: "Nothing to preview yet." })),
+        h("p", hook("preview-sub", { class: "hd-fine" })),
+        h("p", hook("preview-retry-row", { class: "bd-preview__retry", hidden: true }), [
+          h("button", hook("preview-retry", { type: "button", class: "btn btn--ghost", text: "Check again" }))]),
         h("ul", hook("preview-list", { class: "bd-picks" })),
-        h("p", hook("preview-note", { class: "hd-fine", text: "A read-only look at today's board. It places nothing." }))])]),
+        h("p", hook("preview-note", { class: "hd-fine", text: "A read-only look at today's board. It places nothing, and it is never counted." }))])]),
 
-    // the builder keeps its own "my dogs" list; the studio shows the dogs itself, so these stay out of sight
+    // the builder keeps its own "my hounds" list; the studio shows the dogs itself, so these stay out of sight
     h("div", { hidden: true }, [h("p", hook("my-dogs-state")), h("ul", hook("my-dogs"))]),
     h("div", hook("preview-pill", { class: "bd-pill", role: "status", "aria-live": "off", hidden: true })),
   ]);

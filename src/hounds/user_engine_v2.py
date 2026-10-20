@@ -464,7 +464,11 @@ def preview(spec: Mapping, games: Mapping, facts, date: str, now: datetime, *,
             "line": cand["line"], "player": cand["player"], "price": cand["price"],
             "best_price": cand["best_price"], "n_books": cand["n_books"], "rule_index": cand["rule_index"],
             "would_bet": position < spec["max_bets_per_day"], "rank": position + 1})
+    # "{n} of {m} games fit" (the reveal): n is the number of DIFFERENT games with at least one qualifying
+    # pick, so a game that fits on a moneyline and on a total counts once. `qualifying` stays the number of
+    # picks; the route adds the board size `m`.
     return {"date": date, "games_considered": len(considered.get("preview", ())),
+            "games_fit": len({p["event_id"] for p in picks}),
             "qualifying": len(picks), "would_bet": min(len(picks), spec["max_bets_per_day"]),
             "max_bets_per_day": spec["max_bets_per_day"], "picks": picks,
             "skipped": dict(skipped)}

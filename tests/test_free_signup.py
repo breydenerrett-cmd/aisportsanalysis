@@ -373,7 +373,8 @@ class _App(_Base):
         return _asgi(self.app, method, path, headers=headers, body=body)
 
     def signup(self, email="new@example.com", password=GOOD_PASSWORD, **extra):
-        return self.call("POST", "/auth/signup", body=dict({"email": email, "password": password}, **extra))
+        return self.call("POST", "/auth/signup",
+                         body=dict({"email": email, "password": password, "age_confirmed": True}, **extra))
 
 
 class TheSignupRoute(_App):
@@ -517,6 +518,28 @@ class TheSignupRoute(_App):
                 status, out = self.signup("x@example.com")
         self.assertEqual((status, out["detail"]["error"]), (503, "signup_unavailable"))
         self.assertIsNone(users_store.get_user_by_email("x@example.com", db=self.db))
+
+    def test_the_21_plus_box_is_required_and_a_refusal_creates_and_spends_nothing(self):
+        body = {"email": "kid@example.com", "password": GOOD_PASSWORD}
+        for label, extra in (("missing", {}), ("false", {"age_confirmed": False}), ("string", {"age_confirmed": "true"}),
+                             ("one", {"age_confirmed": 1})):
+            with self.subTest(label):
+                status, out = self.call("POST", "/auth/signup", body=dict(body, **extra))
+                self.assertEqual((status, out["detail"]["error"]), (400, "age_required"))
+        self.assertIsNone(users_store.get_user_by_email("kid@example.com", db=self.db))
+        # five refusals above did not burn the visitor's five-an-hour allowance
+        for i in range(5):
+            self.assertEqual(self.signup(f"ok{i}@example.com")[0], 200)
+
+    def test_the_attestation_is_stored_with_a_timestamp_on_the_new_account_only(self):
+        before = datetime.now(timezone.utc)
+        self.assertEqual(self.signup("kept@example.com")[0], 200)
+        user = users_store.get_user_by_email("kept@example.com", db=self.db)
+        stamp = users_store.get_age_attested_at(user.id, db=self.db)
+        self.assertIsNotNone(stamp)
+        self.assertGreaterEqual(datetime.fromisoformat(stamp), before - timedelta(seconds=1))
+        other = users_store.create_user("old@example.com", status="active", plan="beta", db=self.db)
+        self.assertIsNone(users_store.get_age_attested_at(other.id, db=self.db))
 
     def test_a_failed_create_is_a_503_and_leaves_nothing(self):
         with mock.patch.object(free_members, "create_free_member", side_effect=sqlite3.Error("disk")):

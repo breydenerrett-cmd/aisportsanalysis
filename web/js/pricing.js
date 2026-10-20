@@ -32,10 +32,14 @@
  * the trial length and price from the server. `founding_note` is the
  * founding-price explanation on its own so checkout.js can append it only when
  * there is something to buy.
+ *
+ * THE PRICE IS NEVER TIED TO RESULTS (2026-10-20). An earlier version of the note made the founding price move up and down with
+ * the public record. That connects what a person pays to how the hounds perform, which makes the record a reason to buy and a promise
+ * about what it will show. It is gone. The note says what is true and enforceable: who keeps
+ * the founding price, and for how long.
  */
 const FOUNDING_NOTE =
-  "This is the founding price: it rises as the public record grows, and it can fall "
-  + "if the record does. Founding members keep $19.99 for as long as their "
+  "This is the founding price. Founding members keep $19.99 for as long as their "
   + "subscription stays active.";
 
 /**
@@ -45,8 +49,7 @@ const FOUNDING_NOTE =
  * guessed.
  */
 export function foundingNote(price) {
-  const head = "This is the founding price: it rises as the public record grows, and it can fall "
-    + "if the record does.";
+  const head = "This is the founding price.";
   return price
     ? `${head} Founding members keep ${price} for as long as their subscription stays active.`
     : head;

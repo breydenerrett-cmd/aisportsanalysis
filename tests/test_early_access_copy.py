@@ -124,7 +124,7 @@ class TheFiveFacts(unittest.TestCase):
 class TheWordsAgreeWithWhatIsEnforced(unittest.TestCase):
     def test_every_place_says_the_enforced_cap_and_window(self):
         entry = _flat(_faq_entry())
-        for where, text in (("hero note", HERO_NOTE), ("confirmation", CONFIRMATION),
+        for where, text in (("early-access sentence", HERO_NOTE), ("confirmation", CONFIRMATION),
                             ("FAQ", entry)):
             with self.subTest(where=where):
                 m = re.search(r"first (\d+) testers get (\d+) days", text)
@@ -137,8 +137,9 @@ class TheWordsAgreeWithWhatIsEnforced(unittest.TestCase):
         source = (JS / "checkout.js").read_text(encoding="utf-8")
         self.assertIn('export const CAUTIOUS_CTA = "Request an invite";', source)
         self.assertIn('"Invite round: the first 20 testers get 7 days free, no card."', source)
-        note = re.search(r'<p class="hero__cta-note" data-hook="hero-cta-note">(.*?)</p>', HTML, re.S)
-        self.assertEqual(note.group(1).strip(), HERO_NOTE)
+        note = re.search(r'<p class="hero__cta-note" data-hook="hero-cta-note"[^>]*>(.*?)</p>', HTML, re.S)
+        self.assertEqual(note.group(1).strip(), "")      # 2026-10-20: the landing page carries no invite-round sentence
+        self.assertIn("hidden", note.group(0))
         # The four landing buttons are the free account now (2026-10-19), not checkout buttons; the paid
         # board's early-access door is the small note in the pricing card.
         self.assertEqual(re.findall(r"<a[^>]*data-checkout-cta[^>]*>", HTML), [])
@@ -279,8 +280,8 @@ out.constants = { cta: c.CAUTIOUS_CTA, note: c.EARLY_ACCESS_NOTE, confirmation: 
 console.log("@@" + JSON.stringify(out));
 """
 
-FOUNDING = ("This is the founding price: it rises as the public record grows, and it can fall "
-            "if the record does. Founding members keep $19.99 for as long as their subscription "
+# 2026-10-20: the price is no longer described as moving with the record (web/js/pricing.js)
+FOUNDING = ("This is the founding price. Founding members keep $19.99 for as long as their subscription "
             "stays active.")
 # Captured by running the PRE-CHANGE web/js/checkout.js (git HEAD fe9ddaf5) under
 # node on these same inputs; the owner's rule is that when checkout IS on, every
@@ -321,8 +322,7 @@ ON_STATE_BEFORE = {
         "cta": "Start your 7-day free trial", "gate": "Start free trial",
         "record": "Start your 7-day free trial to see tonight's card",
         "hero": "7-day free trial. Cancel anytime.",
-        "pricing": ("7-day free trial. Cancel anytime. This is the founding price: it rises as the "
-                    "public record grows, and it can fall if the record does."),
+        "pricing": ("7-day free trial. Cancel anytime. This is the founding price."),
         "card": "A card is required to start the trial. Nothing is charged for 7 days, and you can cancel before then.",
         "started": "Your free trial has started; nothing has been charged yet.",
         "signinNote": "NO ACCOUNT YET? START YOUR FREE TRIAL.",
@@ -381,14 +381,13 @@ class UnderNode(unittest.TestCase):
                 self.assertEqual(got["gate"], "Request an invite")
                 self.assertEqual(got["record"], "Request an invite")
                 self.assertEqual(got["signinLink"], "REQUEST AN INVITE")
-                self.assertEqual(got["hero"], HERO_NOTE)
+                self.assertEqual(got["hero"], "")
 
     def test_the_hero_note_without_a_price_drops_only_the_price(self):
         # Not reachable from /meta (a not-on state always carries the plan's own
         # planned price), but the function must not invent one if it is handed none.
         hero = self._helpers()["noPriceHero"]
-        self.assertEqual(hero, "Invite round: the first 20 testers get 7 days free, no card. "
-                               "Not on sale yet. The record and the postseason odds are free now.")
+        self.assertEqual(hero, "")
 
     def test_the_constants_the_pages_share(self):
         constants = self._helpers()["constants"]

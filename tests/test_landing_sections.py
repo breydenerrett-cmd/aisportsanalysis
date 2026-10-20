@@ -88,7 +88,8 @@ class HeavyBlocksAreAccordions(unittest.TestCase):
         # owner ruling 2026-10-20, complete-product positioning: the pause line is a coverage line now
         self.assertRegex(MAIN, r'data-hook="kennel-straight">Tennis, cricket, soccer, NBA, NHL, college, MLB, NFL, MMA and more\.')
         self.assertIn("Analysis, not advice.", MAIN)
-        self.assertIn("Invite round: the first 20 testers get 7 days free, no card. Not on sale yet; planned price $19.99 a month.", MAIN)
+        self.assertNotIn("Invite round", MAIN)                       # 2026-10-20: off the first screen; the FAQ still states the offer
+        self.assertIn("the first 20 testers get 7 days", MAIN)
         self.assertIn('data-hook="disclaimer-host"', HTML)          # 21+, the helpline and the not-advice summary: the shared footer, said once
         self.assertIn("paper bets", MAIN.lower())
         self.assertEqual(MAIN.count('data-hook="hero-paused"'), 1)   # the desk-only module the live script reveals

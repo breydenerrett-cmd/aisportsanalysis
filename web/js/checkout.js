@@ -257,11 +257,9 @@ export async function loadTesterBilling() {
  * cancellation promise the billing view backs.
  */
 export function heroNote(state) {
-  if (!state || !state.on) {
-    const amount = dollars(state && state.priceCents);
-    const sale = amount ? `Not on sale yet; planned price ${amount} a month.` : NOT_OPEN_NOTE;
-    return [EARLY_ACCESS_NOTE, sale, FREE_NOW_NOTE].join(" ");
-  }
+  // Off: nothing. The landing page no longer carries the invite-round sentence (2026-10-20): the first screen sells the product that
+  // is open, not an offer that is not on sale. The signup page keeps the offer it describes (signupOffOffer, WAITLIST_CONFIRMATION).
+  if (!state || !state.on) return "";
   const price = monthlyPrice(state.priceCents);
   const trial = trialPhrase(state);
   const lead = trial ? (price ? `${trial}, then ${price}.` : `${trial}.`) : (price ? `${price}.` : "");

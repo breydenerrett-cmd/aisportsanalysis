@@ -32,9 +32,12 @@ the second place.
 
 SCHEMA
 ------
-users(id, email, created_at, status, plan)
+users(id, email, created_at, status, plan, age_attested_at)
     status: invited | active | suspended
     plan:   none | beta
+    age_attested_at: NULL, or the ISO-8601 UTC moment the person ticked "I am 21 or older"
+        when they made a free account (api/free_signup.py). Nothing else writes it, and a NULL
+        is not an attestation: every account made before 2026-10-20 has none.
 tokens(token_hash, user_id, created_at, expires_at, revoked_at, first_used_at)
     opaque secrets.token_urlsafe() value, sha256-hashed before storage.
     expires_at is a required ISO-8601 UTC string (invite tokens are not
@@ -240,6 +243,16 @@ def _ensure_schema(conn: sqlite3.Connection) -> None:
         except sqlite3.OperationalError as exc:
             if "duplicate column name" not in str(exc):
                 raise
+    # The 21+ attestation (2026-10-20): the same migration-safe ALTER, on users, so an
+    # existing app.db keeps every row and gains a NULL.
+    existing_user_cols = {row["name"] for row in
+                          conn.execute("PRAGMA table_info(users)")}
+    if "age_attested_at" not in existing_user_cols:
+        try:
+            conn.execute("ALTER TABLE users ADD COLUMN age_attested_at TEXT")
+        except sqlite3.OperationalError as exc:
+            if "duplicate column name" not in str(exc):
+                raise
 
 
 @dataclass(frozen=True)
@@ -279,6 +292,15 @@ def create_user(email: str, *, status: str = "invited", plan: str = "none",
             raise ValueError(f"user already exists: {email!r}") from exc
         return User(id=cur.lastrowid, email=email, created_at=created_at,
                     status=status, plan=plan)
+
+
+def get_age_attested_at(user_id: int, *, db: Optional[Path] = None) -> Optional[str]:
+    """When this user attested they are 21 or older (ISO-8601 UTC), or None if they never
+    did (accounts made before the free-signup checkbox, invited users, comps)."""
+    with _connect(db) as conn:
+        row = conn.execute(
+            "SELECT age_attested_at FROM users WHERE id = ?", (user_id,)).fetchone()
+    return row["age_attested_at"] if row and row["age_attested_at"] else None
 
 
 def get_user(user_id: int, *, db: Optional[Path] = None) -> Optional[User]:

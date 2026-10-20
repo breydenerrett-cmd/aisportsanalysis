@@ -87,7 +87,7 @@ class EveryPageSaysPaperOnlyNotAdviceAndIs21Plus(unittest.TestCase):
 
     def test_the_minus_200_cap_notice_is_static_on_the_build_page(self):
         text = visible(HTML["build-a-hound.html"])
-        self.assertIn("Paper bets only. Your dog never takes a price of -200 or worse. Not advice. 21+.", text)
+        self.assertIn("Paper bets only. Your hound never takes a price of -200 or worse. Not advice. 21+.", text)
 
     def test_the_pages_never_name_the_product_they_do_not_advertise_or_claim_an_edge(self):
         for path in [WEB / n for n in HTML] + [WEB / "css" / "hounds.css"] + sorted((WEB / "js").glob("hounds-*.js")):
@@ -133,7 +133,8 @@ class EveryPageSaysPaperOnlyNotAdviceAndIs21Plus(unittest.TestCase):
         first = landing[landing.index('data-hook="lb-hero"'):landing.index('data-hook="hero"')]
         # owner ruling 2026-10-20, complete-product positioning: build first, the house pack second
         self.assertRegex(first, r'<a [^>]*href="hounds.html"[^>]*>Watch the house pack')
-        self.assertRegex(first, r'<a [^>]*href="build-a-hound.html"[^>]*>Build your hound')
+        self.assertRegex(first, r'<a [^>]*href="quiz.html"[^>]*>Find your hound')
+        self.assertRegex(first, r'<a [^>]*href="build-a-hound.html"[^>]*>Build from a sentence')
 
 
 class ThePagesAreServed(unittest.TestCase):

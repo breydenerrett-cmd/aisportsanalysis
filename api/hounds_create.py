@@ -555,7 +555,7 @@ def builder_preview(body: PreviewRequest, _rl: None = Depends(_rate_limit_previe
     result = user_engine_v2.preview(spec, slate.games, slate.facts, date, now, game_pk_index=slate.game_pk_index)
     result.update({"sentences": english_render.rule_sentences(spec) + english_render.global_sentences(spec),
                    "spec": {k: v for k, v in spec.items() if k != "name" or raw["name"] != "Draft Dog"},
-                   "games_on_board": len(slate.games), "board_observed_utc": slate.newest_observed(),
+                   "games_on_board": len(slate.games), "board_size": len(slate.games), "board_observed_utc": slate.newest_observed(),
                    "as_of": now.strftime("%Y-%m-%dT%H:%M:%SZ"), "read_only": True,
                    "note": "A preview from the board as it stands now. A game's bet is decided at its own decision time."})
     return _wrap(result)
