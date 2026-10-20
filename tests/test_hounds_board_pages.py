@@ -592,7 +592,8 @@ class TheChromeIsProfessional(unittest.TestCase):
         self.assertEqual(out["final"]["svgs"], 0)
         self.assertEqual(out["final"]["mono"], [], "no initials tile is left on the leaderboard page")
         self.assertEqual(out["final"]["rowdogs"], RANKED_N + 0 + 2)                     # the table rows plus the two retired rows
-        self.assertTrue(set(out["final"]["breeds"]) <= {"retriever", "bulldog", "schnauzer", "husky", "mutt", "hound"})
+        from tests.test_dog_rig import ALL_BREEDS     # the 25 breed drawings of round 2 (2026-10-19)
+        self.assertTrue(set(out["final"]["breeds"]) <= set(ALL_BREEDS))
         self.assertLessEqual(out["final"]["podium"], 3)
 
     def test_the_voice_that_was_pulled_is_not_on_the_pages(self):
