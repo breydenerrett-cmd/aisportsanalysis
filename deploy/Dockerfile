@@ -43,6 +43,11 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY api/ api/
+# src/ carries the share-card fonts too (src/hounds/share_assets/*.ttf, read from disk by
+# src/hounds/share_render.py for GET /d/<id>/card.png, 2026-10-20). They live under src/ on purpose:
+# api/web.py serves web/ through an extension allowlist, and a font is not something to serve; a
+# COPY of src/ is the only line that has to be right for them to ship. Pillow (api/requirements.txt)
+# installs from a manylinux wheel that bundles FreeType, so the slim base needs no extra apt package.
 COPY src/ src/
 # WHY config/ IS COPIED (2026-10-03). Request-time code reads settings from it
 # (config/example_accounts.json for the "If you had followed every pick"
