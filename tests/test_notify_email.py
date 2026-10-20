@@ -598,6 +598,20 @@ class TheSchedule(Base):
         self.assertEqual(jobs.tick(self.ctx())["nightly"]["sent"], 1)
         self.assertEqual(jobs.tick(self.ctx()), {"nightly": "done"})
 
+    def test_the_sunday_pack_is_off_by_default_even_with_a_key(self):
+        # Owner 2026-10-20: transactional only until there is a postal address. A Sunday tick with the key set
+        # must not send the pack unless EMAIL_SUNDAY=on AND a postal address exists.
+        u = self.user()
+        self.dog(u)
+        sunday = lambda **kw: jobs.tick(self.ctx(now=SUNDAY, **kw)).get("sunday")
+        self.assertEqual(sunday(), "off")
+        self.assertEqual(sunday(env={**ENV, jobs.ENV_SUNDAY: "on"}), "off")                  # no postal address
+        self.assertEqual(sunday(address="1 Main St, Town"), "off")                            # not opted in
+        self.assertFalse([c for c in self.http.calls if "week" in c["body"]["subject"].lower()
+                          or "sunday" in c["body"]["subject"].lower()])
+        report = sunday(env={**ENV, jobs.ENV_SUNDAY: "on"}, address="1 Main St, Town")
+        self.assertEqual(report["sent"], 1)
+
     def test_nothing_runs_outside_the_window(self):
         u = self.user()
         self.settled(self.dog(u), "WIN")

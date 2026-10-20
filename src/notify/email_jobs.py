@@ -21,7 +21,8 @@ on the 1 GB machine and holds only per-hound counters plus the handful of graded
 HTTP sends happen after the gate is released.
 
 OFF UNLESS ``RESEND_API_KEY`` IS SET (``start_loop`` returns None otherwise), and ``EMAIL_JOBS=off`` turns it off
-even then.
+even then. The Sunday pack is off on top of that unless ``EMAIL_SUNDAY=on`` and config/business.json has a
+``postal_address`` (owner 2026-10-20: transactional only until there is one; ``sunday_enabled``).
 
 Nothing here places a bet or suggests one; every figure is a paper figure.
 """
@@ -45,6 +46,7 @@ from src.notify import email_render as render
 logger = logging.getLogger("linehound.notify.jobs")
 
 ENV_JOBS = "EMAIL_JOBS"
+ENV_SUNDAY = "EMAIL_SUNDAY"      # opt-in for the Sunday pack; see sunday_enabled
 TICK_SECONDS = 300.0
 WAIT_FOR_WARMUP_SECONDS = 600.0
 
@@ -552,8 +554,20 @@ def tick(ctx: Optional[Ctx] = None) -> dict:
         if job == JOB_NIGHTLY and not (ctx.settle_gate or default_settle_gate)(now):
             out[job] = "waiting for settlement"
             continue
+        if job == JOB_SUNDAY and not sunday_enabled(ctx):
+            out[job] = "off"
+            continue
         out[job] = run_nightly(ctx) if job == JOB_NIGHTLY else run_sunday(ctx)
     return out
+
+
+def sunday_enabled(ctx: Ctx) -> bool:
+    """The Sunday pack is OFF by default (owner 2026-10-20: transactional email only until there is a postal
+    address). It runs only when ``EMAIL_SUNDAY=on`` AND config/business.json has a ``postal_address``."""
+    source = ctx.env if ctx.env is not None else os.environ
+    if str(source.get(ENV_SUNDAY) or "").strip().lower() not in ("on", "1", "true", "yes"):
+        return False
+    return bool(ctx.postal())
 
 
 def tick_safely(ctx: Optional[Ctx] = None) -> dict:
@@ -643,4 +657,5 @@ def status_report(ctx: Optional[Ctx] = None) -> dict:
             "windows_et": {"nightly": f"{NIGHTLY_HOUR:02d}:00-{WINDOW_END_HOUR:02d}:00",
                            "sunday": f"{SUNDAY_HOUR:02d}:00-{WINDOW_END_HOUR:02d}:00"},
             "last_runs": runs[-10:], "sent_last_7_days": sent, "failed_last_7_days": failed,
-            "paused_users": paused, "postal_address_set": ctx.postal() is not None, "paper_only": True}
+            "paused_users": paused, "postal_address_set": ctx.postal() is not None,
+            "sunday_enabled": sunday_enabled(ctx), "paper_only": True}
