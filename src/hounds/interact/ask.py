@@ -691,7 +691,8 @@ def _backtest(ctx: AskContext, question: str, result: Optional[dict], win: dict)
                 p = items[0]
                 lines.append(f"{tag} pick: {p['selection']} ({p['game']}, {_day(p['date'])}) at {_price(p['price_average'])}, "
                              f"{_money(p.get('units_average_price'), params.unit_usd)}.")
-        lines.append(body.get("sample_note") or "")
+        lines.append("That is a small sample, so wins and losses this few are mostly luck." if body.get("small_sample", True)
+                     else "Even so, a rehearsal is not a forward result.")
     lines += notes
     lines.append(PAPER_TAIL)
     return {"lines": [x for x in lines if x], "hindsight": True, "window": {"label": label, "days": result.get("days")}}
@@ -877,7 +878,7 @@ def _unknown(ctx: AskContext, scored: dict) -> dict:
         lines += builder()["lines"][:3]
     else:
         lines += _record(ctx)["lines"][:2]
-    lines += ["I did not catch that. Here is what I can answer:", MENU]
+    lines += ["Here is what I can answer:", MENU]
     return {"lines": lines}
 
 
