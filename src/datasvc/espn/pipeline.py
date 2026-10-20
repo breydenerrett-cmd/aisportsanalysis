@@ -254,9 +254,13 @@ class Runner:
         if not day:
             return None
         prev = (datetime.strptime(day, "%Y-%m-%d") - timedelta(days=1)).strftime("%Y-%m-%d")
-        self._nhle_week(prev, summary)
         key = (names.normalise(g.get("home_name")), names.normalise(g.get("away_name")), day)
-        return (self._nhle_days.get(prev) or {}).get(key)
+        for start in (prev, day):       # an afternoon game is dated `day` locally and may sit in the next week
+            self._nhle_week(start, summary)
+            hit = (self._nhle_days.get(start) or {}).get(key)
+            if hit:
+                return hit
+        return None
 
     def _nhle_game(self, g: dict, settled_at: Optional[datetime], summary: dict) -> bool:
         nhle_id = self._nhle_id(g, summary)

@@ -554,6 +554,14 @@ class PbpPipelineTests(unittest.TestCase):
         self.assertTrue(any("2026-01-15" in u for u in net.urls if "schedule" in u))     # the week starts the day BEFORE the UTC date
         self.assertTrue(pipeline.check(self.store, ["nhl"])["ok"])
 
+    def test_nhl_game_listed_in_the_following_week_is_still_found(self):
+        routes = [(n, p) for n, p in nhl_routes() if "schedule" not in n]
+        routes += [("schedule/2026-01-15", {"gameWeek": []}), ("schedule/2026-01-16", fxp("nhle_schedule.json"))]
+        net = FakeNet(routes)
+        s = self.refresh("nhl", net, pbp=True)
+        self.assertEqual(s["nhle_games"], 1)
+        self.assertEqual(len([u for u in net.urls if "api-web" in u and "schedule" in u]), 2)
+
     def test_nhl_game_the_feed_cannot_match_is_recorded_missing(self):
         routes = [(n, p) for n, p in nhl_routes() if "schedule" not in n]
         s = self.refresh("nhl", FakeNet(routes), pbp=True)
@@ -642,6 +650,16 @@ class RegistryTests(unittest.TestCase):
         self.assertTrue(all(leagues.get(c).pbp for c in ("nba", "nhl", "ncaaf", "wnba")))
         self.assertFalse(any(leagues.get(c).pbp for c in ("epl", "ncaab", "ncaaw")))
         self.assertEqual([c for c, l in leagues.LEAGUES.items() if l.nhle], ["nhl"])
+
+    def test_scheduled_set_grew_in_round_two_and_player_lines_stay_off_for_the_new_soccer_leagues(self):
+        self.assertEqual(leagues.DEFAULT_REFRESH[:5], ("nba", "nhl", "ncaaf", "ncaab", "epl"))
+        for code in ("wnba", "ncaaw", "laliga", "bundesliga", "seriea", "ligue1", "mls", "ucl"):
+            self.assertIn(code, leagues.DEFAULT_REFRESH)
+        self.assertEqual(len(leagues.DEFAULT_REFRESH), len(set(leagues.DEFAULT_REFRESH)))
+        self.assertTrue(leagues.get("epl").players and leagues.get("wnba").players)
+        for code in ("laliga", "bundesliga", "seriea", "ligue1", "mls", "ucl", "ncaaw"):
+            self.assertFalse(leagues.get(code).players, code)
+        self.assertEqual(espn_cli._codes("all"), list(leagues.DEFAULT_REFRESH))
 
 
 if __name__ == "__main__":

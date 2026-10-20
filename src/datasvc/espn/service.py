@@ -65,7 +65,8 @@ class EspnService:
         if not L.players:
             for k in ("players", "player_history"):
                 caps[k] = {"available": False, "reason": f"player lines are not stored for {L.title} "
-                                                         "(a season of them is ~100 MB); team totals are"}
+                                                         "(they are left out of the scheduled set to keep the repository and "
+                                                         "web image small); team totals are"}
         if not L.injuries:
             caps["injuries"] = {"available": False, "reason": f"ESPN publishes no injury report for {L.title}"}
         if not L.players:
@@ -330,9 +331,10 @@ class EspnService:
         rows = []
         teams = {k[0]: v for k, v in self.store.latest(league, "teams").items()}
         ids = sorted({g.home_id for g in games.values()} | {g.away_id for g in games.values()})
+        grouped = agg.group_team_games(self.store, league, pick)
         for t in ids:
             items, _ = agg.team_items(self.store, league, family, t, season=pick, as_of=as_of, strict=strict,
-                                      games=games, counts=counts)
+                                      games=games, counts=counts, grouped=grouped)
             if items:
                 info = teams.get(t) or {}
                 rows.append(dict(agg.summarize_team(items, split), team_id=t,
@@ -443,10 +445,9 @@ class EspnService:
         L = self._league(league)
         if not L.pbp:
             return unavailable(("play_by_play", self.capabilities(league)["play_by_play"]["reason"]))
-        versions = [r for k, r in self.store.latest(league, "games", None, None).items() if k[0] == str(game_id)]
-        if not versions:
-            return unavailable(("game", f"no {league} game {game_id} observed"))
         all_versions = [v for v in self.store.versions(league, "games") if str(v["game_id"]) == str(game_id)]
+        if not all_versions:
+            return unavailable(("game", f"no {league} game {game_id} observed"))
         all_versions.sort(key=lambda r: r.get("observed_utc") or "")
         row, basis = agg.classify_game(all_versions, as_of, agg.FINAL_AFTER.get(L.family, agg.DEFAULT_FINAL_AFTER), strict)
         if row is None:

@@ -290,14 +290,21 @@ def _chosen(versions: Dict[tuple, List[dict]], key: tuple, as_of: Optional[str],
 
 # -- team summaries -----------------------------------------------------------------------------------------------
 
+def group_team_games(store, league: str, season=None) -> Dict[tuple, List[dict]]:
+    """Every stored version of every box-score row, by (game_id, team_id), oldest first. Group once and pass it
+    to `team_items` as `grouped` when summarising many teams (a college season has ~12,000 rows)."""
+    return _group_versions(store.versions(league, "team_games", season), ("game_id", "team_id"))
+
+
 def team_items(store, league: str, family: str, team_id: str, *, season=None, as_of=None,
                season_type="regular", strict=False, games: Optional[Dict[str, Game]] = None,
-               counts: Optional[dict] = None) -> Tuple[List[dict], dict]:
+               counts: Optional[dict] = None, grouped: Optional[Dict[tuple, List[dict]]] = None
+               ) -> Tuple[List[dict], dict]:
     """One dict per final game of `team_id`: its box-score totals, the opponent's (what it allowed), result."""
     if games is None:
         games, counts = eligible_games(store, league, family, season=season, as_of=as_of,
                                        season_type=season_type, strict=strict)
-    tg = _group_versions(store.versions(league, "team_games", season), ("game_id", "team_id"))
+    tg = grouped if grouped is not None else group_team_games(store, league, season)
     items = []
     for gid, g in games.items():
         if team_id not in (g.home_id, g.away_id):

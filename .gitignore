@@ -312,3 +312,9 @@ data/datasvc/espn/*/pbp_*
 # FOOTBALL-DATA.CO.UK STORE (src/datasvc/soccer). The site's terms limit its data to private individuals and
 # forbid commercial/automated use; this repository is public, so the store stays on the machine that built it.
 data/datasvc/footballdata/
+
+# MLB STATSAPI BOX-SCORE CACHE (src/datasvc/mlb/statsapi.py). ~40 KB a game (~100 MB a season, player lines are
+# most of it), rebuildable from statsapi for any open date, and MLBAM's notice limits statsapi to individual,
+# non-commercial use; local cache, not tracked and not in the web image (data/datasvc/* is excluded there).
+# To track the small tables only, ignore data/datasvc/mlb/player_games_* instead.
+data/datasvc/mlb/
