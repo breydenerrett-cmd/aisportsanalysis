@@ -186,9 +186,10 @@ app.include_router(live_state_router, dependencies=_authed_paid)
 app.include_router(tennis_router, dependencies=_authed_paid)
 # /sports/catalog -- the sport families the program covers (public, like /hounds/builder/menu);
 # /sports/now -- what is live and what starts in the next 24 hours in every sport, from STORED rows only
-# (api/sports.py, src/sports/allsports_view.py), same paid-demo gate as the rest of the read-only game surface.
+# (api/sports.py, src/sports/allsports_view.py). Any signed-in account, free members included: the Live page
+# is where a member sends their own dog, and free members build dogs.
 app.include_router(sports_public_router)
-app.include_router(sports_router, dependencies=_authed_paid)
+app.include_router(sports_router, dependencies=_authed)
 # /props/{date}, /props -- the player-prop board. Paid, like every other
 # read-only game surface. It is a BOARD and not a card: ranked by how likely
 # each outcome is, never by the gap against its price, because selecting on

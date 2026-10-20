@@ -6,8 +6,8 @@
                           labels, the markets captured for each and whether a dog may bet it (PUBLIC)
 
 All the logic is in src/sports/allsports_view.py and src/sports/catalog.py, which import without FastAPI
-(Linux CI has none); this file only mounts them. /sports/now is mounted behind the same paid-demo gate as the
-rest of the read-only game surface (api/app.py); the catalog is public, like /hounds/builder/menu.
+(Linux CI has none); this file only mounts them. /sports/now needs any signed-in account,
+free members included (api/app.py); the catalog is public, like /hounds/builder/menu.
 """
 
 from __future__ import annotations

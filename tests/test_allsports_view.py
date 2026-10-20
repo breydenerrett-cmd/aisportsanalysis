@@ -487,7 +487,8 @@ class TheRoutes(unittest.TestCase):
         import api.app as app_mod
         src = (REPO / "api" / "app.py").read_text(encoding="utf-8")
         self.assertIn("app.include_router(sports_public_router)", src)
-        self.assertIn("app.include_router(sports_router, dependencies=_authed_paid)", src)
+        # any signed-in account, free members included (they build and send dogs from the Live page)
+        self.assertIn("app.include_router(sports_router, dependencies=_authed)", src)
         self.assertTrue(hasattr(app_mod, "sports_router") and hasattr(app_mod, "sports_public_router"))
         self.assertEqual({r.path for r in app_mod.sports_router.routes}, {"/sports/now"})
         self.assertEqual({r.path for r in app_mod.sports_public_router.routes}, {"/sports/catalog"})
