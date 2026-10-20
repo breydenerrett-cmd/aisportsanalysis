@@ -144,7 +144,9 @@ class TheMenuDrivesThePage(unittest.TestCase):
             q("name_max", "[data-hook='f-name']", "attr", attr="maxlength"),
             q("tag_max", "[data-hook='f-tagline']", "attr", attr="maxlength")])
         f = out["final"]
-        self.assertEqual(f["sports"], [s["label"] for s in MENU["sports"]])
+        # the page always puts "Any sport" first, wherever the menu lists it
+        anys = [s["label"] for s in MENU["sports"] if s["value"] == "ANY"]
+        self.assertEqual(f["sports"], anys + [s["label"] for s in MENU["sports"] if s["value"] != "ANY"])
         self.assertEqual(f["markets"], [m["label"] for m in MENU["markets"]])
         self.assertEqual(f["sides"], [s["label"] for s in MENU["sides"] if s["value"] in MENU["side_by_kind"]["ml_spread"]])
         self.assertEqual(f["lock"], [f"{v} minutes" for v in MENU["lock_minutes"]["choices"]])
@@ -640,8 +642,19 @@ def many_sports_menu():
                 ("nba", "NBA"), ("nhl", "NHL"), ("ncaaf", "NCAAF"), ("ncaab", "NCAAB"), ("mma", "MMA"), ("boxing", "Boxing"), ("rugby", "Rugby")]
     menu["sports"] = [{"value": v, "label": label} for v, label in families]
     every = [v for v, _ in families]
+    real = {s["value"] for s in MENU["sports"] if s["value"] != "ANY"}
     for m in menu["markets"]:
         m["sports"] = ["MLB"] if m["kind"] == "prop" else list(every)
+    for c in menu["conditions"]:
+        # a generic condition (every family the real menu has) covers the fixture's families too
+        if real and real <= set(c.get("sports") or ()):
+            c["sports"] = list(every)
+    return menu
+
+
+def short_sports_menu():
+    menu = copy.deepcopy(MENU)
+    menu["sports"] = [{"value": "MLB", "label": "MLB"}, {"value": "NFL", "label": "NFL"}]
     return menu
 
 
@@ -668,8 +681,13 @@ class TheSportChoiceIsASearchableChipGrid(unittest.TestCase):
         self.assertEqual(f["pressed"], ["MLB"])
         self.assertEqual(f["search"], 1)
 
+    def _stat_only_count(self, sport):
+        # game-line conditions the menu does not list for this sport (prop conditions are not offered on a game-line rule)
+        return sum(1 for c in self.MANY["conditions"]
+                   if sport not in (c.get("sports") or ()) and "ml_spread" in c.get("kinds", ()))
+
     def test_a_short_menu_has_no_search_box(self):
-        self.assertEqual(build(actions=[CLICK_BLANK], queries=[q("search", "[data-hook='sport-search']", "count")])["final"]["search"], 0)
+        self.assertEqual(self.go(menu=short_sports_menu())["final"]["search"], 0)
 
     def test_the_search_box_narrows_the_chips_and_keeps_a_picked_sport_and_any_sport(self):
         f = self.go([dict(do="set", sel="[data-hook='sport-search']", value="ten", wait=60)])["final"]
@@ -707,7 +725,7 @@ class TheSportChoiceIsASearchableChipGrid(unittest.TestCase):
         # Tennis alone: every stat condition is greyed and says which sports have it, in the menu's own words
         out = self.go([dict(do="click", sel="[data-sport='tennis']", wait=80), dict(do="click", sel="[data-sport='MLB']", wait=80)], qs)
         f = out["final"]
-        self.assertGreater(f["greyed"], 20)
+        self.assertEqual(f["greyed"], self._stat_only_count("tennis"))
         self.assertIn(f"{both['label']} (MLB and NFL only)", f["opts"])
         self.assertIn(f"{mlb_only['label']} (MLB only)", f["opts"])
         self.assertEqual(f["note_n"], 1)                                              # one line, not one per condition
@@ -721,7 +739,7 @@ class TheSportChoiceIsASearchableChipGrid(unittest.TestCase):
 
     def test_any_sport_greys_the_stat_conditions_too(self):
         out = self.go([dict(do="click", sel="[data-sport='ANY']", wait=80)], [q("greyed", "[data-hook='add-condition'] option[data-greyed='sport']", "count")])
-        self.assertGreater(out["final"]["greyed"], 20)
+        self.assertEqual(out["final"]["greyed"], self._stat_only_count("tennis"))
 
     def test_moving_to_a_sport_without_the_data_removes_a_stat_condition_and_says_so(self):
         cond = [c for c in self.MANY["conditions"] if c["sports"] == ["MLB", "NFL"] and "ml_spread" in c["kinds"] and c["available"]][0]
