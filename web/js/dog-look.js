@@ -2,8 +2,9 @@
  * The dog look: the whitelisted choices a dog wears, and nothing else.
  *
  * THE LOOK IS A SET OF CHOICES, NEVER MARKUP. `look` is the JSON the server validated (src/hounds/interact/look.py): coat,
- * eyes, bg, head, face, neck, body, number. This file holds those key tables and the colours they stand for. A key it does
- * not know falls back to the default, so nothing a server sends can inject a colour string or a node.
+ * eyes, bg, head, face, neck, body, number, style (mascot, street or elite) and breed ("auto" is the breed the dog's name
+ * picks; any of the breeds the rig draws overrides it). This file holds those key tables and the colours they stand for. A key
+ * it does not know falls back to the default, so nothing a server sends can inject a colour string or a node.
  * tests/test_hounds_interact_web.py holds the key lists here to the server's.
  *
  * It is split out of dog-avatar.js so the drawing code (dog-rig.js) and the old `dogBadge` entry point can both read the
@@ -32,9 +33,32 @@ export const BACKGROUNDS = {
 };
 export const HEAD = ["none", "cap", "headband", "visor"];
 export const FACE = ["none", "sunglasses"];
-export const NECK = ["none", "chain"];
+export const NECK = ["none", "chain", "collar", "bandana"];
 export const BODY = ["none", "hoodie", "jersey"];
-export const DEFAULT_LOOK = { coat: "tan", eyes: "brown", bg: "navy", head: "none", face: "none", neck: "none", body: "none", number: null };
+export const STYLES = ["mascot", "street", "elite"];
+export const DEFAULT_STYLE = "mascot";
+
+/**
+ * Every breed the rig draws, in a fixed order. The first 25 are the original drawings in their original order: a dog that
+ * names no breed and has no persona vibe is given one of THESE by a hash of its id (LEGACY_BREEDS), so it keeps the breed it
+ * always had. The last 8 are the working and guard breeds added with the hound illustrations; a dog gets one by name or by
+ * the owner's choice in the locker room. dog-breeds.js draws exactly these (a test holds the two together) and the server
+ * (src/hounds/interact/look.py) holds the same list.
+ */
+export const BREED_IDS = [
+  "retriever", "labrador", "bulldog", "newfoundland", "chihuahua", "corgi", "collie", "shepherd", "kelpie", "husky",
+  "jackrussell", "dalmatian", "pointer", "beagle", "basset", "bloodhound", "hound", "greyhound", "whippet", "setter",
+  "spaniel", "poodle", "terrier", "schnauzer", "mutt",
+  "doberman", "rottweiler", "pitbull", "wolfhound", "boxer", "mastiff", "shiba", "malinois",
+];
+export const LEGACY_BREEDS = BREED_IDS.slice(0, 25);
+/** The breed choices on a look: "auto" (the name's breed) or any breed. */
+export const BREED_CHOICES = ["auto", ...BREED_IDS];
+
+export const DEFAULT_LOOK = {
+  coat: "tan", eyes: "brown", bg: "navy", head: "none", face: "none", neck: "none", body: "none", number: null,
+  style: DEFAULT_STYLE, breed: "auto",
+};
 
 /** A look with every key checked against the tables above; anything unknown becomes the default. */
 export function cleanLook(look) {
@@ -46,6 +70,7 @@ export function cleanLook(look) {
     coat: pick(src.coat, Object.keys(COATS), DEFAULT_LOOK.coat), eyes: pick(src.eyes, Object.keys(EYES), DEFAULT_LOOK.eyes),
     bg: pick(src.bg, Object.keys(BACKGROUNDS), DEFAULT_LOOK.bg), head: pick(src.head, HEAD, "none"),
     face: pick(src.face, FACE, "none"), neck: pick(src.neck, NECK, "none"), body, number: body === "jersey" ? number : null,
+    style: pick(src.style, STYLES, DEFAULT_STYLE), breed: pick(src.breed, BREED_CHOICES, "auto"),
   };
 }
 
@@ -64,13 +89,16 @@ export function lookFor(seed) {
   return cleanLook({ coat: coats[x % coats.length], eyes: eyes[(x >>> 5) % eyes.length], bg: bgs[(x >>> 9) % bgs.length] });
 }
 
-/** A random complete look, for the studio's Randomize button. Presentation only: the owner still has to save it. */
+/**
+ * A random complete outfit, for the studio's Randomize button: the colours, the pieces and the style. The breed stays "auto"
+ * here; the studio keeps the dog's own breed choice. Presentation only: the owner still has to save it.
+ */
 export function randomLook(rand = Math.random) {
   const one = (list) => list[Math.min(list.length - 1, Math.floor(rand() * list.length))];
   const body = one(BODY);
   return cleanLook({
     coat: one(Object.keys(COATS)), eyes: one(Object.keys(EYES)), bg: one(Object.keys(BACKGROUNDS)),
-    head: one(HEAD), face: rand() < 0.3 ? "sunglasses" : "none", neck: rand() < 0.3 ? "chain" : "none",
-    body, number: body === "jersey" ? Math.floor(rand() * 100) : null,
+    head: one(HEAD), face: rand() < 0.3 ? "sunglasses" : "none", neck: rand() < 0.45 ? one(NECK) : "none",
+    body, number: body === "jersey" ? Math.floor(rand() * 100) : null, style: one(STYLES),
   });
 }

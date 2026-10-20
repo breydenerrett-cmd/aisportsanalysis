@@ -179,6 +179,13 @@
 .hounds-page .dk-opt.dk-opt--thumb[aria-pressed="true"] { background: var(--lh-accent-soft); box-shadow: inset 0 0 0 1.5px var(--lh-accent); color: var(--lh-ink); transform: translateY(-2px); }
 .dk-opt__dog { display: block; line-height: 0; }
 .dk-opt__label { font-size: var(--lh-fs-xs); font-weight: 500; }
+/* the art style (three big cards) and the breed (a scrolling grid of small hounds) */
+.dk-optrow--style { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--lh-s2); }
+.dk-opt--style .dk-opt__label { font-weight: 600; color: var(--lh-ink); }
+.dk-opt__blurb { font-size: 10.5px; line-height: 1.25; color: var(--lh-mute); text-align: center; }
+.dk-optrow--breed { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 6px; max-height: 236px; overflow-y: auto; padding: 2px; overscroll-behavior: contain; }
+.hounds-page .dk-opt.dk-opt--breed { padding: 4px 2px 5px; gap: 1px; }
+.dk-opt--breed .dk-opt__label { font-size: 10.5px; line-height: 1.15; text-align: center; }
 .dk-actions--sticky { position: sticky; bottom: -40px; z-index: 3; margin: var(--lh-s3) 0 0; padding: var(--lh-s3) 0 var(--lh-s4); background: #0F1317; box-shadow: 0 -1px 0 var(--lh-line), 0 -14px 18px #0F1317; }
 .dk-save[disabled] { opacity: .7; }
 

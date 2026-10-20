@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Hounds v3 breed sheet</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../../../web/css/tokens.css"><link rel="stylesheet" href="../../../web/css/lh.css">
+<style>body{margin:0;background:#0F1317;color:#E9ECF1;font:12px/1.3 system-ui,sans-serif}
+.row{display:grid;grid-template-columns:repeat(var(--cols,11),1fr);gap:6px;padding:8px}
+.cell{text-align:center}.cell svg{width:100%;height:auto}.fixed .cell svg{width:auto;height:auto;display:inline-block}
+.cell b{display:block;font-size:11px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+h2{margin:8px 10px 0;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#9AA3B2}</style></head>
+<body><div id="out"></div>
+<script type="module">
+// The Hounds v3 breed sheet, from the real rig. Served from the repo root by any static server:
+//   /docs/design/hounds-v3/breed-sheet.html                      every breed in the three styles, idle
+//   ?style=elite&pose=all&size=220&cols=5&breeds=doberman,husky  one style, every pose (rows) for chosen breeds
+//   ?mode=acc                                                    every accessory layer on six breeds, in the three styles
+//   ?mode=lod&size=32&fixed=1                                    every breed at a small size (the small level of detail)
+try {
+const { dogSvg, BREEDS, breedLabel } = await import("../../../web/js/dog-rig.js");
+const q = new URLSearchParams(location.search);
+const style = q.get("style"), pose = q.get("pose") || "idle", coat = q.get("coat") || "", size = Number(q.get("size")) || 160, mode = q.get("mode") || "";
+const out = document.getElementById("out");
+const coats = ["tan", "black", "white", "grey", "brown", "golden", "red", "merle"];
+const eyes5 = ["brown", "amber", "blue", "green", "hazel"], bgs8 = ["navy", "slate", "charcoal", "forest", "maroon", "teal", "violet", "sand"];
+// the sixteen the owner named come first, then the rest of the pack
+const FIRST = ["doberman", "rottweiler", "pitbull", "shepherd", "greyhound", "bloodhound", "husky", "wolfhound", "boxer", "bulldog", "dalmatian", "basset", "beagle", "mastiff", "shiba", "malinois"];
+const ordered = FIRST.concat(BREEDS.filter((b) => !FIRST.includes(b)));
+const only = q.get("breeds") ? q.get("breeds").split(",") : ordered;
+const styles = style ? [style] : ["mascot", "street", "elite"];
+const extra = {};
+for (const k of ["head", "face", "neck", "body"]) if (q.get(k)) extra[k] = q.get(k);
+if (q.get("number")) extra.number = Number(q.get("number"));
+document.documentElement.style.setProperty("--cols", q.get("cols") || 11);
+if (q.get("fixed")) out.classList.add("fixed");
+const heading = (text) => { const h = document.createElement("h2"); h.textContent = text; out.appendChild(h); };
+const rowOf = () => { const row = document.createElement("div"); row.className = "row"; out.appendChild(row); return row; };
+const cell = (row, label, look, opts) => {
+  const c = document.createElement("div"); c.className = "cell"; c.appendChild(dogSvg(look, opts));
+  const b = document.createElement("b"); b.textContent = label; c.appendChild(b); row.appendChild(c);
+};
+if (mode === "acc") {
+  const six = ["doberman", "bulldog", "husky", "greyhound", "mastiff", "beagle"];
+  const combos = [
+    ["mascot", "cap + chain", { head: "cap", neck: "chain" }], ["mascot", "sunglasses + spiked collar", { face: "sunglasses", neck: "collar" }],
+    ["street", "headband + bandana + hoodie", { head: "headband", neck: "bandana", body: "hoodie" }], ["street", "cap + sunglasses + chain + hoodie", { head: "cap", face: "sunglasses", neck: "chain", body: "hoodie" }],
+    ["elite", "visor + spiked collar + jersey 23", { head: "visor", neck: "collar", body: "jersey", number: 23 }], ["elite", "cap + sunglasses + chain + jersey 7", { head: "cap", face: "sunglasses", neck: "chain", body: "jersey", number: 7 }],
+    ["mascot", "headband + bandana", { head: "headband", neck: "bandana" }], ["street", "visor + spiked collar", { head: "visor", neck: "collar" }],
+  ];
+  document.documentElement.style.setProperty("--cols", 6);
+  combos.forEach(([st, label, look], r) => {
+    heading(`${st} / ${label}`);
+    const row = rowOf();
+    six.forEach((breed, i) => cell(row, breedLabel(breed), Object.assign({ coat: coats[(i + r) % 8], style: st, eyes: eyes5[i % 5], bg: bgs8[(i + r) % 8] }, look), { breed, pose: "idle", size }));
+  });
+} else if (mode === "lod") {
+  for (const st of styles) {
+    heading(`${st} / ${size}px`);
+    const row = rowOf();
+    ordered.forEach((breed, i) => cell(row, "", { coat: coats[i % 8], style: st, eyes: eyes5[i % 5], bg: bgs8[i % 8] }, { breed, pose: "idle", size }));
+  }
+} else {
+  const poses = pose === "all" ? ["idle", "happy", "sad", "thinking", "celebrate"] : [pose];
+  for (const st of styles) for (const ps of poses) {
+    heading(`${st} / ${ps}`);
+    const row = rowOf();
+    only.forEach((breed, i) => cell(row, breedLabel(breed), Object.assign({ coat: coat || coats[i % 8], style: st, eyes: eyes5[i % 5], bg: bgs8[i % 8] }, extra), { breed, pose: ps, size }));
+  }
+}
+document.title = "ready";
+} catch (err) { const pre = document.createElement("pre"); pre.style.color = "#ff6b6b"; pre.textContent = String(err && err.stack || err); document.body.prepend(pre); document.title = "error"; }
+</script></body></html>

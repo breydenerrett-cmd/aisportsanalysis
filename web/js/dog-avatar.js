@@ -4,7 +4,7 @@
  * every existing caller works, and the two helpers that fetch saved looks for a list of dogs.
  *
  * THE LOOK IS A SET OF CHOICES, NEVER MARKUP. `look` is the whitelisted JSON the server validated
- * (src/hounds/interact/look.py): coat, eyes, bg, head, face, neck, body, number. A key the tables do not know falls back to
+ * (src/hounds/interact/look.py): coat, eyes, bg, head, face, neck, body, number, style, breed. A key the tables do not know falls back to
  * the default, so nothing a server sends can inject a colour string or a node. tests/test_hounds_interact_web.py holds the
  * key lists to the server's.
  *
@@ -14,11 +14,11 @@
  */
 
 import { apiGet } from "./api.js";
-import { COATS, EYES, BACKGROUNDS, HEAD, FACE, NECK, BODY, DEFAULT_LOOK, cleanLook, lookFor, randomLook } from "./dog-look.js";
-import { dogSvg, renderDog, setPose, flashPose, breedFor, breedLabel, breedOfName, BREED_LABELS, poseOfPick, POSES, BREEDS } from "./dog-rig.js";
+import { COATS, EYES, BACKGROUNDS, HEAD, FACE, NECK, BODY, DEFAULT_LOOK, cleanLook, lookFor, randomLook, STYLES, BREED_CHOICES } from "./dog-look.js";
+import { dogSvg, renderDog, setPose, flashPose, breedFor, breedLabel, breedOfName, BREED_LABELS, poseOfPick, POSES, BREEDS, STYLE_LABELS, EXPRESSIONS, expressionOf, anchorsFor } from "./dog-rig.js";
 
-export { COATS, EYES, BACKGROUNDS, HEAD, FACE, NECK, BODY, DEFAULT_LOOK, cleanLook, lookFor, randomLook };
-export { renderDog, setPose, flashPose, breedFor, breedLabel, breedOfName, BREED_LABELS, poseOfPick, POSES, BREEDS };
+export { COATS, EYES, BACKGROUNDS, HEAD, FACE, NECK, BODY, DEFAULT_LOOK, cleanLook, lookFor, randomLook, STYLES, BREED_CHOICES };
+export { renderDog, setPose, flashPose, breedFor, breedLabel, breedOfName, BREED_LABELS, poseOfPick, POSES, BREEDS, STYLE_LABELS, EXPRESSIONS, expressionOf, anchorsFor };
 
 /**
  * The badge as an SVG element. `size` is the pixel width and height; `mood` is the pose (idle, happy, sad or the old word

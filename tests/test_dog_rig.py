@@ -5,7 +5,7 @@ Design system v2, 2026-10-19. The rig is layered SVG built with createElementNS 
   * accessories are layers: a cap, headband, visor, sunglasses, chain, hoodie and jersey (with its number) each add their own
     group, and a look with none adds none;
   * the look is a set of whitelisted choices: junk never reaches a colour or a node;
-  * a dog's breed is its vibe's, else a stable pick from its id, and the 25 breeds are really different drawings, each named after what it draws;
+  * a dog's breed is its vibe's, else a stable pick from its id, and the 33 breeds are really different drawings, each named after what it draws;
   * reduced motion: every animation in the stylesheets sits inside prefers-reduced-motion: no-preference, and the rig itself
     schedules nothing and calls no animation API (an expression is a pose, which still shows).
 """
@@ -23,6 +23,7 @@ ALL_BREEDS = [
     "retriever", "labrador", "bulldog", "schnauzer", "husky", "mutt", "hound", "chihuahua", "collie", "corgi", "dalmatian", "basset",
     "greyhound", "jackrussell", "kelpie", "newfoundland", "shepherd", "poodle", "beagle", "setter", "terrier", "bloodhound", "pointer",
     "whippet", "spaniel",
+    "doberman", "rottweiler", "pitbull", "wolfhound", "boxer", "mastiff", "shiba", "malinois",
 ]
 CSS = ROOT / "web" / "css"
 
@@ -59,7 +60,7 @@ for (const breed of Rig.BREEDS) for (const pose of Rig.POSES) {
     hasClass(svg, "dk-head"), hasClass(svg, "dk-body"), hasClass(svg, "dk-eyes"), hasClass(svg, "dk-ear--l"), hasClass(svg, "dk-ear--r")]);
 }
 console.log(JSON.stringify(out));''')
-        self.assertEqual(len(got), 25 * 5)
+        self.assertEqual(len(got), 33 * 5)
         for breed, pose, tag, dpose, dbreed, width, view, many, *parts in got:
             self.assertEqual((tag, dpose, dbreed, width, view), ("svg", pose, breed, "64", "0 0 120 120"), (breed, pose))
             self.assertTrue(many and all(parts), (breed, pose, parts))
@@ -125,7 +126,7 @@ let n = 0;
 for (const breed of Rig.BREEDS) for (const head of Av.HEAD) for (const face of Av.FACE) for (const neck of Av.NECK) for (const body of Av.BODY) {
   const svg = Rig.dogSvg({ head, face, neck, body, number: 9 }, { breed }); if (svg.tag === "svg") n += 1; }
 console.log(JSON.stringify(n));''')
-        self.assertEqual(got, 25 * 4 * 2 * 2 * 3)
+        self.assertEqual(got, 33 * 4 * 2 * 4 * 3)
 
 
 @unittest.skipUnless(HAS_NODE, "node not installed")
@@ -142,7 +143,7 @@ console.log(JSON.stringify([bad, svg.attrs["data-coat"], svg.attrs["data-bg"], s
         got = js('''
 const bad = []; const svg = Rig.dogSvg({ coat: "merle", eyes: "blue", bg: "violet", head: "cap", face: "sunglasses", neck: "chain", body: "jersey", number: 3 }, { breed: "mutt", pose: "celebrate" });
 walk(svg, (n) => { for (const k of ["fill", "stroke", "stop-color"]) { const v = n.attrs[k]; if (v === undefined) continue;
-  if (!/^(#[0-9a-fA-F]{6}|none|rgba\\([\\d., ]+\\)|url\\(#dk-bg-\\d+(-glow)?\\))$/.test(v)) bad.push([n.tag, k, v]); } });
+  if (!/^(#[0-9a-fA-F]{6}|none|currentColor|rgba\\([\\d., ]+\\)|url\\(#lh-[a-z-]+\\))$/.test(v)) bad.push([n.tag, k, v]); } });
 console.log(JSON.stringify(bad));''')
         self.assertEqual(got, [])
 
@@ -170,14 +171,14 @@ console.log(JSON.stringify([
         self.assertIn(got[2], ALL_BREEDS)
         self.assertEqual((got[4], got[5]), ("retriever", "retriever"))
         self.assertTrue(got[6])
-        self.assertEqual(got[7], 25)
+        self.assertEqual(got[7], 33)
         self.assertTrue(got[8], "ids spread over the breeds")
 
     def test_every_breed_is_a_different_drawing(self):
         got = js('''
-const sig = (breed) => { const ds = []; walk(Rig.dogSvg({ coat: "tan" }, { breed }), (n) => { if (n.tag === "path" && n.attrs.d) ds.push(n.attrs.d); }); return ds.slice(0, 12).join("|"); };
+const sig = (breed) => { const ds = []; walk(Rig.dogSvg({ coat: "tan" }, { breed }), (n) => { if ((n.tag === "path" || n.tag === "ellipse") && (n.attrs.d || n.attrs.rx)) ds.push(n.attrs.d || `${n.attrs.cx},${n.attrs.cy},${n.attrs.rx}`); }); return ds.join("|"); };
 console.log(JSON.stringify(new Set(Rig.BREEDS.map(sig)).size));''')
-        self.assertEqual(got, 25)
+        self.assertEqual(got, 33)
 
     def test_the_pose_of_a_pick_restates_only_a_result(self):
         got = js('console.log(JSON.stringify([Rig.poseOfPick("won"), Rig.poseOfPick("lost"), Rig.poseOfPick("pending"), Rig.poseOfPick(undefined), Av.poseOfHound({ last_pick: { result: "won" } }), Av.poseOfHound({ form: { streak: { kind: "L", length: 3 } } }), Av.poseOfHound({ form: { streak: { kind: "W", length: 1 } } }), Av.poseOfHound({})]));')
@@ -238,7 +239,7 @@ console.log(JSON.stringify(out));""")
         for breed, label, drawn in got:
             self.assertEqual(breed, drawn)
             self.assertTrue(label and label != "Dog", breed)
-        self.assertEqual(len({label for _b, label, _d in got}), 25, "no two breeds share a label")
+        self.assertEqual(len({label for _b, label, _d in got}), 33, "no two breeds share a label")
 
     def test_a_name_that_is_not_a_breed_falls_back_to_the_vibe_then_a_stable_hash(self):
         got = js("""console.log(JSON.stringify([Rig.breedFor({ id: "desk_fader", name: "The Fader", vibe: "chaos" }), Rig.breedFor({ id: "desk_sharp", name: "The Sharp", vibe: "grinder" }),
@@ -302,7 +303,7 @@ console.log(JSON.stringify([globalThis.timers, globalThis.frames, box.kids.lengt
 
     def test_no_dog_animation_names_are_declared_anywhere_but_the_no_preference_block(self):
         css = (CSS / "lh.css").read_text(encoding="utf-8")
-        for name in ("dk-breathe", "dk-jump", "dk-tear", "dk-twinkle", "dk-wave-l", "dk-wave-r", "dk-ponder", "dk-dot"):
+        for name in ("dk-breathe", "dk-jump", "dk-glint", "dk-rage", "dk-pulse", "dk-twinkle", "dk-wave-l", "dk-wave-r", "dk-ponder", "dk-dot"):
             self.assertIn(f"@keyframes {name}", css)
 
 
