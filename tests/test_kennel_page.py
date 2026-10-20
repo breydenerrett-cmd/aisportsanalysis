@@ -394,6 +394,32 @@ class TheStudio(unittest.TestCase):
         self.assertEqual(cap["cards"], 1)                       # the cards exist (inside the closed details)
         self.assertEqual(cap["name"], "Underdog Gus")
 
+    def test_a_second_rules_panel_in_one_visit_is_still_alive(self):
+        """2026-10-20, a real member: the kennel studio built a fresh builder skeleton every time the Rules panel opened,
+        but hounds-build.js binds its listeners once, to the first skeleton. So the second Rules panel of a visit (another
+        dog, or New dog) was dead: typing left the counter at 0 / 600 and Read my strategy did nothing."""
+        from tests import _hounds_rules_fixtures as F
+        mine = []
+        for i, name in ((1, "Underdog Gus"), (2, "Totals Tina")):
+            d = {"id": f"u-{i}", "name": name, "tagline": "", "status": "running", "version_no": 1, "color": "mint", "badge": "crown",
+                 "record": {"bets": 0, "wins": 0, "losses": 0, "pushes": 0}, "rule_sentences": ["MLB moneylines: it backs the underdog."]}
+            d["spec"] = json.loads(json.dumps(user_spec.validate_spec(F.v2(name=name, rules=[F.rule(side="away", price_min=100)]))))
+            mine.append(d)
+        routes = self.routes([dog("u-1"), dog("u-2")], **{"/hounds/mine": [200, {"hounds": mine, "limit_running": 5}],
+                                                         "POST /hounds/builder/preview": [200, {"qualifying": 0, "would_bet": 0, "picks": [],
+                                                                                                 "sentences": [], "max_bets_per_day": 2,
+                                                                                                 "paper_only": True}]})
+        out = run_page("kennel", routes=routes, **SIGNED, settleMs=200, actions=[
+            dict(do="click", sel="[data-hook='dog-action-edit']", index=0, label="first", wait=500),
+            dict(do="click", sel="[data-hook='studio-close']", label="close", wait=200),
+            dict(do="click", sel="[data-hook='dog-action-edit']", index=1, label="second", wait=500, capture=[
+                q("builders", "[data-hook='build-app']", "count"), q("title", "[data-hook='build-title']")]),
+            dict(do="set", sel="[data-hook='english-input']", value="bet road underdogs", label="typed", wait=100, capture=[
+                q("count", "[data-hook='english-count']")])])
+        self.assertEqual(out["captures"]["second"]["builders"], 1, "one builder on the page, moved, never a second copy")
+        self.assertEqual(out["captures"]["second"]["title"], "Edit Totals Tina")
+        self.assertEqual(out["captures"]["typed"]["count"], "18 / 600", "the second panel's builder answers typing")
+
     def test_fire_now_opens_the_fire_tab_and_fires_at_once(self):
         out = run_page("kennel", routes=self.routes([dog("u-1")]), **SIGNED, actions=[
             dict(do="click", sel="[data-hook='dog-action-fire']", label="fire", wait=300, capture=[

@@ -501,9 +501,16 @@ async function buildRecord(host, dog, kit) {
   await mountManual(manual, { id: dog.id, kit });
 }
 
+// ONE builder per page. hounds-build.js binds its listeners once, to the first skeleton it boots on (module state).
+// buildTab clears the Rules panel each time it opens, so a fresh skeleton per open was dead on arrival: the second
+// Rules panel of a visit (another dog, or New dog) had no listeners at all. The same element is moved back in
+// instead, listeners and all.
+let rulesSkeleton = null;
+
 async function buildRules(host, dog) {
   const { builderSkeleton } = await import("./builder-skeleton.js");
-  if (!host.querySelector("[data-hook='build-app']")) host.appendChild(builderSkeleton());
+  if (!rulesSkeleton) rulesSkeleton = builderSkeleton();
+  if (rulesSkeleton.parentNode !== host) host.appendChild(rulesSkeleton);
   const builder = await import("./hounds-build.js");
   await builder.booted;
   if (state.open !== (dog ? dog.id : "new")) return;
