@@ -224,14 +224,17 @@ export function dogSvg(rawLook, opts = {}) {
     n("rect", { class: "dk-tile", x: 0.6, y: 0.6, width: 118.8, height: 118.8, rx: 26, fill: `url(#lh-bg-${look.bg})`, stroke: "#FFFFFF", "stroke-opacity": 0.14 }),
     grp("dk-scene", [
       n("rect", { x: 0, y: 0, width: 120, height: 120, rx: 26, fill: "url(#lh-glow)" }),
-      grp("dk-clip", [
+      // the tile's clip holds still; the dog inside it (dk-clip) is what bounces in the howl, and the sunburst and the grain stay put
+      grp("", [
         ...decorShapes(st, K),
-        ell(60, 119, 46, 6, "#000000", { class: "dk-shadow", opacity: ".25" }),
-        grp("dk-body", [...bodyBits.body, ...neck.behind]),
-        pawShapes(coat, K),
-        grp("dk-head", [...built.back, ...built.head, ...face]),
-        ...neck.front,
-        bodyBits.number,
+        grp("dk-clip", [
+          ell(60, 119, 46, 6, "#000000", { class: "dk-shadow", opacity: ".25" }),
+          grp("dk-body", [...bodyBits.body, ...neck.behind]),
+          pawShapes(coat, K),
+          grp("dk-head", [...built.back, ...built.head, ...face]),
+          ...neck.front,
+          bodyBits.number,
+        ]),
       ], { "clip-path": "url(#lh-tile-clip)" }),
       st.ring ? n("rect", { class: "dk-ring", x: 1.6, y: 1.6, width: 116.8, height: 116.8, rx: 24.6, fill: "none", stroke: "url(#lh-ring)", "stroke-width": 1.8 }) : null,
       ...propShapes(geo),

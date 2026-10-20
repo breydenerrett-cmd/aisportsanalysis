@@ -170,8 +170,9 @@ export function eyeShapes(g, K, c, eyeColor) {
         K.small ? null : ell(cx - sd * 1.3 - 0.6, ey - eh * 0.42, 0.9, 0.9, "#FFFFFF", { class: "dk-glint" }),
       ]));
       kids.push(plate(cx, sd, ey - eh * 0.3, ey - eh * 0.8, EYE_POSE.happy.thick, false));
-      kids.push(path(`M${f(cx - ew - 1.6)} ${f(ey + eh * 0.5)} Q${f(cx)} ${f(ey - eh * 0.55)} ${f(cx + ew + 1.6)} ${f(ey + eh * 0.5)} L${f(cx + ew + 1.6)} ${f(ey + eh * 3)} L${f(cx - ew - 1.6)} ${f(ey + eh * 3)} Z`, { fill: c.base }));
-      kids.push(path(`M${f(cx - ew - 1.2)} ${f(ey + eh * 0.5)} Q${f(cx)} ${f(ey - eh * 0.55)} ${f(cx + ew + 1.2)} ${f(ey + eh * 0.5)}`, { fill: "none", stroke: K.oc, "stroke-width": f(K.ow * 0.4), "stroke-linecap": "round" }));
+      // the lower lid pushed up: a curved band under the eye that leaves a slit
+      kids.push(path(`M${f(cx - ew - 1.4)} ${f(ey + eh * 0.5)} Q${f(cx)} ${f(ey - eh * 0.35)} ${f(cx + ew + 1.4)} ${f(ey + eh * 0.5)} L${f(cx + ew + 1.4)} ${f(ey + eh * 1.35)} Q${f(cx)} ${f(ey + eh * 0.5)} ${f(cx - ew - 1.4)} ${f(ey + eh * 1.35)} Z`,
+        { fill: plateFill, stroke: K.oc, "stroke-width": f(K.ow * 0.3), "stroke-linejoin": "round" }));
     });
     return grp("dk-p dk-p--eyes dk-p--happy", kids);
   })();

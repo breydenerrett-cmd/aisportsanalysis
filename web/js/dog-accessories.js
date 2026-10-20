@@ -129,7 +129,7 @@ export function neckPieces(look, a, K, st, coat) {
     behind.push(grp("dk-collar", [...band(a, K, ACCENT, 4.2), ell(60, y + 11.5, 3.5, 3.5, metalGold(st), { stroke: GOLD_DARK, "stroke-width": 0.9 })]));
   }
   if (look.neck === "chain") {
-    const nk = a.neck.half + 1, depth = Math.max(10, Math.min(21, 116 - y));
+    const nk = a.neck.half + 1, depth = Math.max(8, Math.min(16, 109 - y));
     const d = `M${f(60 - nk)} ${f(y - 12)} Q60 ${f(y + 2 * depth + 12)} ${f(60 + nk)} ${f(y - 12)}`;
     const py = y + depth + 2;
     front.push(grp("dk-acc dk-acc--chain", [
@@ -145,11 +145,12 @@ export function neckPieces(look, a, K, st, coat) {
 
 // ---- head pieces ------------------------------------------------------------------------------------------------
 
-const CAP = { mascot: "#1F2A44", street: "#14161B", elite: "#16233B" };
+const CAP = { mascot: "#2B5FD9", street: "#2A2E37", elite: "#1B2D52" };
 
 /** Cap, headband or visor, placed on the crown and brow anchors. Returns a node or null. */
 export function headPiece(look, a, K, st) {
-  const by = a.brow.y, L = a.brow.left, R = a.brow.right, ty = a.crown.y - 15;
+  // the pieces sit a little above the brow line so the eyes under them stay visible (a cap pulled over the eyes would hide the menace)
+  const by = a.brow.y - 6, L = a.brow.left, R = a.brow.right, ty = a.crown.y - 12;
   if (look.head === "cap") {
     const base = CAP[st.id] || CAP.mascot;
     const trim = st.metal ? "#E0B24A" : ACCENT;
@@ -176,7 +177,7 @@ export function headPiece(look, a, K, st) {
     return grp("dk-acc dk-acc--visor", [
       path(`M${f(L)} ${f(by - 4)} Q60 ${f(by + 3)} ${f(R)} ${f(by - 4)}`, { fill: "none", stroke: K.oc, "stroke-width": f(4 + K.ow * 0.8), "stroke-linecap": "round" }),
       path(`M${f(L)} ${f(by - 4)} Q60 ${f(by + 3)} ${f(R)} ${f(by - 4)}`, { fill: "none", stroke: strap, "stroke-width": 4, "stroke-linecap": "round" }),
-      ...K.solid(`M${f(L + 5)} ${f(by - 1)} Q60 ${f(by + 15)} ${f(R - 5)} ${f(by - 1)} Q60 ${f(by + 4)} ${f(L + 5)} ${f(by - 1)} Z`, "#DCE3EC", { rim: true, sh: true }),
+      ...K.solid(`M${f(L + 5)} ${f(by - 1)} Q60 ${f(by + 15)} ${f(R - 5)} ${f(by - 1)} Q60 ${f(by + 4)} ${f(L + 5)} ${f(by - 1)} Z`, st.metal ? "#CDE4F5" : "#6FC3F0", { rim: true, sh: true }),
       K.fine(path(`M${f(L + 12)} ${f(by + 3)} Q60 ${f(by + 11)} ${f(R - 12)} ${f(by + 3)}`, { fill: "none", stroke: "#FFFFFF", "stroke-width": 1, opacity: ".7" })),
     ]);
   }
