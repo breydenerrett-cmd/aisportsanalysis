@@ -25,6 +25,18 @@ a named player, and no number is invented.
 away, over <-> under, favourite <-> underdog, "the team" <-> "the opponent", steam toward <-> against.
 That keeps "fade teams after 3 straight wins" one honest rule: the opponent has won 3 straight.
 
+MATCHUPS AND TEAM STRENGTH (2026-10-19)
+---------------------------------------
+A member typed "use statistics, previous head-to-head matchups, previous matchups as in last five games,
+use home advantage and away games data matched with offensive and defensive stats" and the parser read one
+stray word. Those ideas are conditions now (head-to-head record, home or road record, runs or points per
+game, league rank, offense against the other team's defense) and the parser reads them. A phrase that names
+the idea but no number ("head-to-head", "home advantage", "last five games") is read with a stated default and
+the default is listed under `assumed`, so the person sees it and changes it on the card; a number is never
+invented silently. What it still cannot read comes back with `suggestions`: a wording the parser DOES read, for
+the common ideas (head-to-head, home advantage, offense vs defense, "best teams"), or the plain fact that the
+rules have no such stat yet (starting pitchers, injuries, lineups).
+
 Stdlib only; no network; no clock.
 """
 
@@ -52,6 +64,7 @@ bet bets betting back backing take takes taking play plays playing pick picks ma
 side sides club clubs dog dogs please want like would should will can get gets going lets let's let do does
 always never ever really very some more most up out off over under about around when's whats what's
 day days night both either one i'd ill i'll go goes pitcher pitchers batter batters hitter hitters player players
+use uses using statistics statistic stats data matched matching based consider considering factor factors
 """.split()) - {"over", "under", "out", "off", "day", "days", "night", "both", "either", "more", "most", "up"}
 
 _CMP_WORDS = {
@@ -171,6 +184,7 @@ class Seg:
         self.team_ambiguous = False
         self.prop_generic = False
         self.stat_for_player = False
+        self.venue: list = []          # [(text, ground)] from phrases like "home advantage", merged into one condition
 
     @property
     def content(self) -> bool:
@@ -372,6 +386,9 @@ def read_segment(rd: Reader, seg: Seg) -> None:
     take(r"\b(?:" + _SUBJ + r"\s+)?(?:has|have|had|'ve)?\s*(?P<k>won|lost)\s+(?:their\s+last\s+)?(?P<n>\d+)\s+(?:games?\s+)?(?:straight|in a row|consecutive)(?:\s+games?)?", t_streak)
     take(r"\b(?P<n>\d+)\s+(?:straight|consecutive)\s+(?P<k>wins|losses|defeats)\b", t_streak)
 
+    # --- matchups and team strength -------------------------------------------------------------------------
+    _read_matchups(rd, seg, take, cond)
+
     # --- last N -------------------------------------------------------------------------------------------
     def last_n(m):
         w, n = int(m.group("w")), int(m.group("n"))
@@ -428,6 +445,20 @@ def read_segment(rd: Reader, seg: Seg) -> None:
         seg.stat_for_player = True
         cond(m.group(0), {"id": "player_rate", "cmp": cmp_, "value": v})
     take(r"\b(?:season\s+)?(?:average|avg|averages|averaging)\s+(?:of\s+)?(?:(?P<cmp>" + _CMP_RE + r")\s+)?(?P<v>\d+(?:\.\d+)?)\s*(?:per game|a game)?", p_rate)
+
+    # --- "last five games" with no win count: recent form ------------------------------------------------------------
+    def form(m):
+        gd = m.groupdict()
+        n = int(gd.get("n") or gd.get("n2") or 5)
+        who = _who(gd.get("subj"))
+        if not 3 <= n <= 20:
+            no(m.group(0), "last-N form is 3 to 20 games")
+            return
+        wins = n // 2 + 1
+        cond(m.group(0), {"id": "last_n_wins", "who": who, "n": n, "cmp": "gte", "wins": wins})
+        rd.assumed.append(f"'last {n} games' with no win count is read as at least {wins} wins in the last {n} games")
+    take(r"\b(?:" + _POSS + r"\s+)?(?:(?:last|past|previous|recent)\s+(?P<n>\d+)\s+(?:games?|results?|contests?|outings?)"
+         r"(?:\s+(?:record|form|results?))?|(?:recent|current|good|strong|winning)\s+form(?:\s+(?:in|over)\s+the\s+(?:last|past)\s+(?P<n2>\d+)\s+games?)?)", form)
 
     # --- weather -------------------------------------------------------------------------------------------------
     def winddir(m):
@@ -686,6 +717,192 @@ def _fmt(p: int) -> str:
     return f"+{p}" if p > 0 else str(p)
 
 
+# who a team phrase is about ("its offense", "the opponent's defense")
+_POSS = (r"(?P<subj>(?:the\s+)?(?:opponents?|opposing\s+team|other\s+team|home\s+team|away\s+team|road\s+team|visitors?|team)'?s?"
+         r"|its|their)")
+_UNIT_WORD = {"offense": "offense", "offence": "offense", "defense": "defense", "defence": "defense",
+              "offensive": "offense", "defensive": "defense"}
+_OFF = r"offen[sc]e"
+_DEF = r"defen[sc]e"
+_MEET = (r"(?:head[- ]to[- ]head(?:\s+(?:meetings?|matchups?|games?|matches))?|h2h|meetings?|matchups?|matches|encounters?"
+         r"|games?\s+(?:with|against|vs\.?|versus)\s+(?:the\s+|this\s+|that\s+)?(?:opponent|other team|same team|opposition))")
+_VS_OPP = r"(?:\s+(?:with|against|vs\.?|versus)\s+(?:the\s+|this\s+|that\s+)?(?:opponent|other team|same team|opposition|each other))?"
+_THIS_SEASON = r"(?:\s+(?:this|the current)\s+(?:season|year))?"
+DEFAULT_WINDOW = 10            # games, for the offense / defense phrases that name no window
+H2H_DEFAULT_N = 5
+VENUE_DEFAULT_PCT = 60.0       # the menu's own default for a home or road win rate
+
+
+def _read_matchups(rd: "Reader", seg: "Seg", take, cond) -> None:
+    """Head-to-head, home or road record, runs or points per game, league rank and offense against the other
+    team's defense. Called from `read_segment` BEFORE the last-N and side patterns, so that "won 3 of the
+    last 5 meetings" is a head-to-head and "away games data" is a record, not the away side."""
+    no = rd.no
+    cmps = _CMP_RE
+
+    def window_of(text: str, n: Optional[int]) -> int:
+        if n is not None:
+            return n
+        if re.search(r"\bthis\s+(?:season|year)\b|\bso far\b|\bwhole season\b|\bseason\b", text):
+            return 0
+        rd.assumed.append(f"no window was named for the scoring figures, so the last {DEFAULT_WINDOW} games are used")
+        return DEFAULT_WINDOW
+
+    def sport_hint(text: str) -> None:
+        if re.search(r"\bruns?\b", text) and "MLB" not in seg.sports and "NFL" not in seg.sports:
+            seg.sports.append("MLB")
+        elif re.search(r"\bpoints?\b|\bpts\b", text) and "MLB" not in seg.sports and "NFL" not in seg.sports:
+            seg.sports.append("NFL")
+
+    # ---- head to head ------------------------------------------------------------------------------------
+    def h2h(m, *, all_wins: bool = False):
+        gd = m.groupdict()
+        whole = m.group(0)
+        n = int(gd["n"]) if gd.get("n") else None
+        w = int(gd["w"]) if gd.get("w") else None
+        window = "season" if re.search(r"\b(?:this|the current)\s+(?:season|year)\b|\bseason series\b", whole) else "all"
+        if n is not None and not 1 <= n <= 10:
+            no(whole, "head-to-head looks back 1 to 10 meetings")
+            return
+        if n is None:
+            n = H2H_DEFAULT_N
+            rd.assumed.append(f"'head-to-head' with no number of meetings is read as the last {n} meetings")
+        if all_wins:
+            w = n
+        elif w is None:
+            w = n // 2 + 1
+            rd.assumed.append(f"a 'winning' head-to-head record is read as at least {w} wins in the last {n} meetings")
+        if w > n:
+            no(whole, "wins cannot be more than the number of meetings counted")
+            return
+        cond(whole, {"id": "head_to_head", "who": _who(gd.get("subj")), "n": n, "cmp": "gte", "wins": w, "window": window})
+
+    subj = r"(?:" + _SUBJ + r"(?:'s)?\s+)?"
+    take(r"\b" + subj + r"(?:has\s+|have\s+|had\s+)?(?:won|beaten|beat|defeated|swept)\s+(?:at least\s+)?(?P<w>\d+)\s+(?:of|out of)\s+"
+         r"(?:their\s+|its\s+|the\s+)?(?:last|past|previous|recent)\s+(?P<n>\d+)\s+" + _MEET + _VS_OPP + _THIS_SEASON, h2h)
+    take(r"\b" + subj + r"(?:has\s+|have\s+|had\s+)?(?:won|beaten|beat|defeated|swept)\s+(?:all\s+(?:of\s+)?)?(?:the\s+|their\s+|its\s+)?"
+         r"(?:last|past|previous|recent)\s+(?P<n>\d+)\s+" + _MEET + _VS_OPP + _THIS_SEASON,
+         lambda m: h2h(m, all_wins=True))
+    take(r"\b" + subj + r"(?:(?:a|the|their|its|good|strong|winning|better|best|previous|past|prior|recent|historical)\s+)*"
+         r"(?:head[- ]to[- ]head|h2h)(?:\s+(?:record|history|results?|stats|statistics|data|numbers|matchups?|meetings?))?" + _VS_OPP +
+         r"(?:\s+(?:in|over|across)\s+(?:the\s+)?(?:last|past|previous)\s+(?P<n>\d+)\s+(?:meetings?|matchups?|games?|encounters?))?" + _THIS_SEASON,
+         h2h)
+    take(r"\b" + subj + r"(?:(?:the|their|its|good|strong|winning)\s+)*(?:previous|past|prior|earlier|historical|recent|last\s+(?P<n>\d+))\s+"
+         r"(?:matchups?|meetings?|encounters?|games?\s+(?:with|against|vs\.?|versus)\s+(?:the\s+|this\s+|that\s+)?(?:opponent|other team|same team))"
+         + _VS_OPP + _THIS_SEASON, h2h)
+    take(r"\bagainst each other\b|\bseason series\b", h2h)
+
+    # ---- offense against the other team's defense --------------------------------------------------------
+    def edge(unit: str, m, n: Optional[int] = None):
+        who = _who(m.groupdict().get("subj"))
+        n = window_of(m.group(0), n if n is not None else (int(m.groupdict()["n"]) if m.groupdict().get("n") else None))
+        cond(m.group(0), {"id": "matchup_edge", "who": who, "unit": unit, "gap": 1, "n": n})
+        rd.assumed.append("'better' offense or defense is read as ranking at least 1 place better in the league")
+
+    take(r"\b(?:" + _POSS + r"\s+)?(?P<u>" + _OFF + "|" + _DEF + r")\s+(?:is\s+|ranks?\s+|are\s+|rated\s+)?(?:much\s+|far\s+|clearly\s+)?"
+         r"(?:better|stronger|higher|ahead of|above|superior)\s+(?:than\s+)?(?:the\s+)?"
+         r"(?:opponents?'?s?'?|other\s+team'?s?|opposing(?:\s+team'?s?)?|opposition'?s?|their)\s+(?:" + _OFF + "|" + _DEF + r")"
+         r"(?:\s+(?:over|in|across)\s+the\s+(?:last|past)\s+(?P<n>\d+)\s+games?|\s+this\s+(?:season|year))?",
+         lambda m: edge(_UNIT_WORD[m.group("u")], m))
+    take(r"\b(?P<u>" + _OFF + "|" + _DEF + r")\s+(?:vs\.?|versus|against|facing|matched\s+(?:up\s+)?(?:with|against)|matches\s+up\s+(?:with|against))\s+"
+         r"(?:the\s+|an?\s+)?(?:(?:opponents?'?s?'?|opposing|other\s+team'?s?|bad|weak|poor|worse|terrible)\s+)*(?:" + _OFF + "|" + _DEF + r")"
+         r"(?:\s+(?:over|in|across)\s+the\s+(?:last|past)\s+(?P<n>\d+)\s+games?|\s+this\s+(?:season|year))?",
+         lambda m: edge(_UNIT_WORD[m.group("u")], m))
+
+    def both_edges(m):
+        n = window_of(m.group(0), None)
+        for unit in ("offense", "defense"):
+            cond(m.group(0), {"id": "matchup_edge", "who": "pick", "unit": unit, "gap": 1, "n": n})
+        rd.assumed.append("'offensive and defensive' stats are read as: its offense AND its defense each rank at least 1 place "
+                          "better in the league than the other team's defense and offense")
+    take(r"\boffen[sc](?:e|ive)\s*(?:and|&|/|,)\s*defen[sc](?:e|ive)\s*(?:stats?|statistics|numbers|rankings?|ratings?|matchups?|"
+         r"data|metrics|efficiency|comparisons?)?", both_edges)
+
+    def one_edge(m):
+        edge(_UNIT_WORD[m.group("u").lower()], m)
+    take(r"\b(?P<u>offen[sc]ive|defen[sc]ive)\s+(?:stats?|statistics|numbers?|rankings?|ratings?|matchups?|data|metrics|efficiency|comparisons?)\b",
+         one_edge)
+
+    # ---- league rank ("a top 10 offense", "against a bottom 5 defense") --------------------------------------
+    def rank(m):
+        gd = m.groupdict()
+        places = int(gd["p"])
+        if not 1 <= places <= 15:
+            no(m.group(0), "a league rank is the top or bottom 1 to 15")
+            return
+        word = gd["u"].lower()
+        unit = "defense" if "def" in word else "offense"
+        who = "opponent" if gd.get("ag") else _who(gd.get("subj"))
+        n = window_of(m.group(0), int(gd["n"]) if gd.get("n") else None)
+        cond(m.group(0), {"id": "league_rank", "who": who, "unit": unit, "end": gd["e"].lower(), "places": places, "n": n})
+    take(r"\b(?P<ag>(?:against|facing|vs\.?|versus)\s+)?(?:(?:a|an|the)\s+)?(?:" + _POSS + r"\s+(?:has\s+|have\s+|is\s+|with\s+)?(?:a\s+|an\s+)?)?"
+         r"(?P<e>top|bottom)[\s-]*(?P<p>\d+)\s+(?P<u>offen[sc]es?|defen[sc]es?|scoring\s+(?:teams?|offen[sc]es?)|offen[sc]ive\s+teams?|defensive\s+teams?)"
+         r"(?:\s+in\s+the\s+(?:league|mlb|nfl|majors))?(?:\s+(?:over|in|across)\s+the\s+(?:last|past)\s+(?P<n>\d+)\s+games?|\s+this\s+(?:season|year))?",
+         rank)
+
+    # ---- runs or points per game --------------------------------------------------------------------------------
+    def per_game(unit: str):
+        def h(m):
+            gd = m.groupdict()
+            value = float(gd["x"])
+            if not 0 <= value <= 60:
+                no(m.group(0), "runs or points per game is 0 to 60")
+                return
+            if round(value, 1) != value:
+                no(m.group(0), "runs or points per game is in steps of 0.1")
+                return
+            default_cmp = "at least" if unit == "offense" else "at most"
+            cmp_ = _CMP_WORDS[(gd.get("cmp") or default_cmp).lower()]
+            n = window_of(m.group(0), int(gd["n"]) if gd.get("n") else None)
+            sport_hint(m.group(0))
+            cond(m.group(0), {"id": "scoring_rate", "who": _who(gd.get("subj")), "unit": unit, "n": n, "cmp": cmp_, "value": value})
+        return h
+    tail = (r"(?:\s+(?:per game|a game|each game|every game|/game))?"
+            r"(?:\s+(?:over|in|across)\s+(?:the\s+|its\s+|their\s+)?(?:last|past)\s+(?P<n>\d+)\s+games?|\s+this\s+(?:season|year))?")
+    take(r"\b" + subj + r"(?:scores?|scored|scoring|averages?|averaging|puts?\s+up|gets?)\s+(?:(?P<cmp>" + cmps + r")\s+)?(?P<x>\d+(?:\.\d+)?)\+?\s*"
+         r"(?:runs?|points?|pts)" + tail, per_game("offense"))
+    take(r"\b" + subj + r"(?:allows?|allowed|gives?\s+up|conced(?:es|ed)|surrenders?)\s+(?:(?P<cmp>" + cmps + r")\s+)?(?P<x>\d+(?:\.\d+)?)\+?\s*"
+         r"(?:runs?|points?|pts)" + tail, per_game("defense"))
+
+    # ---- home or road record ------------------------------------------------------------------------------------
+    def venue_numbered(m):
+        gd = m.groupdict()
+        value = float(gd["v"])
+        if not 0 <= value <= 100 or value % 5:
+            no(m.group(0), "a win rate is 0 to 100 percent in steps of 5")
+            return
+        word = (gd.get("g") or gd.get("where") or "").lower()
+        ground = "home" if "home" in word and "road" not in word else "road" if any(k in word for k in ("road", "away")) else "today"
+        cmp_ = _CMP_WORDS[(gd.get("cmp") or "at least").lower()]
+        cond(m.group(0), {"id": "venue_record", "who": _who(gd.get("subj")), "ground": ground, "cmp": cmp_, "pct": value})
+    take(r"\b" + subj + r"(?:has\s+|have\s+|with\s+)?(?:a\s+)?(?P<g>home|road|away)\s+(?:win\s+|winning\s+)?(?:record|rate|percentage|pct|form)\s+"
+         r"(?:of\s+|is\s+|at\s+)?(?:(?P<cmp>" + cmps + r")\s+)?(?P<v>\d+(?:\.\d+)?)\s*(?:%|percent|pct)", venue_numbered)
+    take(r"\b" + subj + r"win(?:ning)?\s+(?:rate|percentage|pct)\s+(?:of\s+|is\s+)?(?:(?P<cmp>" + cmps + r")\s+)?(?P<v>\d+(?:\.\d+)?)\s*(?:%|percent)\s*"
+         r"(?P<where>(?:in\s+games\s+)?(?:at home|on the road|on road|away|in home games|in road games|in away games|at the same (?:kind of )?(?:ground|venue)(?:\s+as\s+today'?s?)?))?", venue_numbered)
+    take(r"\b" + subj + r"(?:wins?|won)\s+(?:at least\s+)?(?P<v>\d+(?:\.\d+)?)\s*(?:%|percent)\s+of\s+(?:its\s+|their\s+|the\s+)?"
+         r"(?P<g>home|road|away)\s+games", venue_numbered)
+
+    def venue_words(ground: str):
+        def h(m):
+            seg.venue.append((m.group(0), ground))
+        return h
+    nouns = r"(?:record|records|splits?|form|data|stats|statistics|results|numbers|performance|numbers)"
+    take(r"\bhome[- ]?(?:field|court)?\s+advantage\b|\bhome\s*(?:and|&|/)\s*(?:away|road)\s+(?:" + nouns + r"|games(?:\s+" + nouns + r")?)\b"
+         r"|\b(?:away|road)\s*(?:and|&|/)\s*home\s+(?:" + nouns + r"|games(?:\s+" + nouns + r")?)\b", venue_words("today"))
+    take(r"\bhome\s+(?:" + nouns + r"|games\s+" + nouns + r")\b", venue_words("home"))
+    take(r"\b(?:away|road)\s+(?:" + nouns + r"|games\s+" + nouns + r")\b", venue_words("road"))
+
+    # a descriptive phrase has no number: ONE record condition for all of them in the segment
+    if seg.venue:
+        grounds = {g for _t, g in seg.venue}
+        ground = "today" if ("today" in grounds or {"home", "road"} <= grounds) else next(iter(grounds))
+        text = " + ".join(t for t, _g in seg.venue)
+        cond(text, {"id": "venue_record", "who": "pick", "ground": ground, "cmp": "gte", "pct": VENUE_DEFAULT_PCT})
+        rd.assumed.append(f"a home or road record with no percentage is read as a win rate of at least {VENUE_DEFAULT_PCT:g}% "
+                          "this season" + (" on today's kind of ground" if ground == "today" else ""))
+        seg.venue = []
+
+
 class _Fake:
     """A match-like object carrying fixed extra groups (for patterns that reuse another handler)."""
 
@@ -841,7 +1058,11 @@ def build_rule(rd: Reader, seg: Seg) -> Optional[dict]:
             conds.append((", ".join(c for _s, c in group), {"id": cid, "teams": sorted({f"{s}:{c}" for s, c in group})[:R.MAX_LIST]}))
 
     items = []
+    seen_conds: list = []
     for text, c in conds:
+        if c in seen_conds:                  # the same idea said twice ("head-to-head ... previous matchups")
+            continue
+        seen_conds.append(c)
         errors: dict = {}
         norm = R.validate_condition(c, kinds=[kind], markets=markets, sports=sports, path="c", errors=errors,
                                     known_players=user_spec._known_player_fn())
@@ -886,12 +1107,51 @@ def _known_players() -> set:
         return set()
 
 
+# What to say instead. Each row: (words that signal the idea, a wording the parser reads | None, why / what is
+# not on the menu). Matched against the words that were NOT understood, never against what was.
+_SUGGEST = (
+    (r"head[- ]to[- ]head|\bh2h\b|matchups?|meetings?|encounters?|history (?:against|with|vs)|\bseries\b",
+     "won at least 3 of the last 5 meetings",
+     "Head-to-head is on the menu: say how many of the last meetings (1 to 10) it must have won."),
+    (r"home[- ]?(?:field|court)? advantage|home form|home record|home games|away games|away record|road record|road form|road games|\bsplits?\b",
+     "win rate at least 60% in games at the same kind of ground as today's",
+     "A home or road record is on the menu as a win rate this season; say the percentage."),
+    (r"offen[sc]|defen[sc]|scoring|runs allowed|points allowed|runs scored|points scored|\bpitching\b",
+     "its offense ranks better than the opponent's defense",
+     "Offense and defense are on the menu as league ranks and as runs or points per game, for example 'a top 10 defense' or "
+     "'scores at least 4.5 runs per game'."),
+    (r"\bbest\b|\bbetter\b|good teams?|strong teams?|top teams?|hot teams?|momentum|\btrends?\b|\bform\b",
+     "won at least 4 of the last 5 games",
+     "'Best' needs a measure the rules have: recent wins, a win streak, or a league rank in offense or defense."),
+    (r"injur|lineups?|starters?|starting pitchers?|bullpens?|\bera\b|\bwhip\b|\bpitcher",
+     None,
+     "Starting pitchers, bullpens, lineups and injuries are not available to the rules yet, so they cannot be used."),
+    (r"\bvalue\b|\bedge\b|expected value|\bev\b|kelly|\bmodel\b",
+     None,
+     "A dog does not compute value or edge. Describe the bet with a price range and conditions instead."),
+)
+
+
+def suggest(not_understood: Iterable[Mapping]) -> list:
+    """[{phrase, try, why}] for the words the parser could not read: a wording it does read (or None, with the
+    plain reason the idea is not on the menu), one entry per idea."""
+    words = " ".join(str(item.get("text") or "") for item in not_understood).lower()
+    out = []
+    for rx, wording, why in _SUGGEST:
+        m = re.search(rx, words)
+        if m:
+            out.append({"phrase": m.group(0), "try": wording, "why": why})
+    return out
+
+
 def parse(text: Any, *, players: Optional[Iterable[str]] = None) -> dict:
     """Read `text` into a version-2 spec draft. See the module docstring for the result."""
     if not isinstance(text, str) or not text.strip():
         return _result(None, {}, [], [{"text": "", "reason": "type a strategy to start"}], [], [])
     if len(text) > MAX_TEXT:
-        return _result(None, {}, [], [{"text": text[:40] + "...", "reason": f"keep it under {MAX_TEXT} characters"}], [], [])
+        out = _result(None, {}, [], [{"text": text[:40] + "...", "reason": f"keep it to {MAX_TEXT} characters or fewer"}], [], [])
+        out["too_long"] = True
+        return out
     text = "".join(ch for ch in text if ch >= " " or ch in "\n\t")
     names = {R.fold_player(p) for p in players} if players is not None else _known_players()
     names = {n for n in names if len(n.split()) >= 2}
@@ -931,7 +1191,8 @@ def parse(text: Any, *, players: Optional[Iterable[str]] = None) -> dict:
 
 def _result(spec, draft, understood, not_understood, assumed, rules) -> dict:
     out = {"spec": spec, "draft": draft, "understood": understood, "not_understood": not_understood,
-           "assumed": list(dict.fromkeys(assumed)), "complete": bool(spec) and not not_understood}
+           "assumed": list(dict.fromkeys(assumed)), "complete": bool(spec) and not not_understood,
+           "suggestions": suggest(not_understood), "max_text": MAX_TEXT}
     if spec:
         from src.hounds.english import render
         out["sentences"] = render.rule_sentences(spec) + render.global_sentences(spec)
