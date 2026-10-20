@@ -59,8 +59,12 @@ from src.appstate import card_ledger
 from src.core import odds as odds_math
 from src.hounds import user_engine, user_rules
 from src.ledger.chain import HashChainLedger
+from src.pipeline import allsports_scores
 
 KIND_GRADED = "hound_user_graded"
+# The families whose results come from their own stores (MLB: the results store; NFL: the NFL scores). Every
+# other family is graded from the all-sports scores store.
+RESULT_STORE_SPORTS = ("MLB", "NFL")
 DEFAULT_LOOKBACK_DAYS: Optional[int] = None     # None = every owed date since the first unsettled bet
 # A game still without a final this long after its scheduled start is either postponed or very
 # late; only then is the schedule asked (one lookup per pending bet, so not on every settle pass
@@ -202,7 +206,9 @@ def settle(*, ledger: Optional[str] = None, now: Optional[datetime] = None,
            cancelled_lookup: Optional[Callable] = None,
            game_pk_index: Optional[Mapping] = None,
            close_fn: Optional[Callable[[Mapping], Optional[int]]] = None,
-           box_index: Optional[Mapping] = None) -> dict:
+           box_index: Optional[Mapping] = None,
+           allsports_results: Optional[Callable] = None,
+           void_after_hours: float = 72.0) -> dict:
     """Grade every settled-able ungraded bet (every owed date, or the last `lookback_days` when a
     number is given). Returns a report.
 
@@ -213,7 +219,10 @@ def settle(*, ledger: Optional[str] = None, now: Optional[datetime] = None,
     cancelled_lookup: (game_pk, slate_date) -> history.cancelled_game-shaped dict or None; positive
     evidence of a Cancelled-never-played game voids the bet with the named reason.
     close_fn: bet -> the board's AVERAGE closing price for the bet's side and line, or None
-    (default: read from the captured board; None leaves CLV null, never a guess)."""
+    (default: read from the captured board; None leaves CLV null, never a guess).
+    allsports_results: {event_id: score row} (or a callable returning it) for every family other than MLB and
+    NFL (default: the all-sports scores store, read once, lazily). A cancelled game, or one with no completed
+    score `void_after_hours` after its start, is a VOID with the reason named."""
     now = now or datetime.now(timezone.utc)
     store = HashChainLedger(user_engine.ledger_path(ledger))
     rows = store.read()
@@ -244,6 +253,7 @@ def settle(*, ledger: Optional[str] = None, now: Optional[datetime] = None,
     if game_pk_index is None and any(b["sport"] == "MLB" and b.get("game_pk") is None for b in todo):
         game_pk_index = user_engine._load_game_pk_index()
     nfl_cache: dict = {}
+    allsports_index = None          # read lazily, only when a bet on another family is owed
     close_fn = close_fn or make_close_fn()
 
     # Player props are graded from the box score of the game. Resolve their games first so the box
@@ -264,48 +274,63 @@ def settle(*, ledger: Optional[str] = None, now: Optional[datetime] = None,
         if start is not None and start > now:
             report["pending"] += 1
             continue
-        result = None
-        identity = None
-        if bet["sport"] == "MLB":
-            identity, result = _resolve_mlb_result(bet, results or {}, game_pk_index)
-        else:
-            from src.sports import nfl_teams
-            date = bet["slate_date"]
-            if date not in nfl_cache:
-                try:
-                    fetch = nfl_results or default_nfl_results
-                    nfl_cache[date] = fetch(date) or {}
-                except Exception as exc:  # noqa: BLE001 -- no scores yet is pending, not an error
-                    print(f"hounds settle: NFL scores for {date} unavailable: {exc!r}",
-                          file=sys.stderr)
-                    nfl_cache[date] = {}
-            key = (nfl_teams.abbrev(bet.get("away_team")), nfl_teams.abbrev(bet.get("home_team")))
-            result = nfl_cache[date].get(key)
-            identity = bet["event_id"]
-        is_prop = bet["market"] in user_rules.PROP_STATS
-        if result is None:
-            late = (bet["sport"] == "MLB" and identity is not None and start is not None
-                    and now - start > POSTPONE_CHECK_AFTER)
-            cancelled = (ask("cancelled", cancelled_lookup, identity, bet["slate_date"])
-                         if late and cancelled_lookup is not None else None)
-            if cancelled and cancelled.get("status") == _cancelled_status():
-                graded = {"result": card_ledger.RESULT_VOID, "reason": _cancelled_reason(),
-                          "away_score": None, "home_score": None}
-                report["voided_cancelled"].append({"bet_id": bet["bet_id"], "game_pk": identity,
-                                                   "reason": graded["reason"]})
-            else:
-                if late and postponed_lookup is not None:
-                    info = ask("postponed", postponed_lookup, identity, bet["slate_date"])
-                    if info and info.get("status") == "pending_makeup":
-                        report["pending_makeup"].append(
-                            {"bet_id": bet["bet_id"], "game_pk": identity,
-                             "makeup_date": info.get("makeup_date")})
+        if bet["sport"] not in RESULT_STORE_SPORTS:
+            # Every other family (NBA, soccer, cricket, ...): graded from the all-sports scores store
+            # (src/pipeline/allsports_scores.py). Cancelled or no score 72 hours after the start is a named VOID.
+            if allsports_index is None:
+                allsports_index = (allsports_results() if callable(allsports_results)
+                                   else dict(allsports_results) if allsports_results is not None
+                                   else allsports_scores.load_index())
+            graded = allsports_scores.grade_bet(bet, allsports_index.get(bet.get("event_id")), now,
+                                                void_after_hours=void_after_hours)
+            identity = bet.get("event_id")
+            is_prop = False
+            if graded["result"] is None:
                 report["pending"] += 1
                 continue
-        elif is_prop:
-            graded = grade_prop(bet, (box_index or {}).get(str(identity)))
         else:
-            graded = grade_bet(bet, result, identity)
+            result = None
+            identity = None
+            if bet["sport"] == "MLB":
+                identity, result = _resolve_mlb_result(bet, results or {}, game_pk_index)
+            else:
+                from src.sports import nfl_teams
+                date = bet["slate_date"]
+                if date not in nfl_cache:
+                    try:
+                        fetch = nfl_results or default_nfl_results
+                        nfl_cache[date] = fetch(date) or {}
+                    except Exception as exc:  # noqa: BLE001 -- no scores yet is pending, not an error
+                        print(f"hounds settle: NFL scores for {date} unavailable: {exc!r}",
+                              file=sys.stderr)
+                        nfl_cache[date] = {}
+                key = (nfl_teams.abbrev(bet.get("away_team")), nfl_teams.abbrev(bet.get("home_team")))
+                result = nfl_cache[date].get(key)
+                identity = bet["event_id"]
+            is_prop = bet["market"] in user_rules.PROP_STATS
+            if result is None:
+                late = (bet["sport"] == "MLB" and identity is not None and start is not None
+                        and now - start > POSTPONE_CHECK_AFTER)
+                cancelled = (ask("cancelled", cancelled_lookup, identity, bet["slate_date"])
+                             if late and cancelled_lookup is not None else None)
+                if cancelled and cancelled.get("status") == _cancelled_status():
+                    graded = {"result": card_ledger.RESULT_VOID, "reason": _cancelled_reason(),
+                              "away_score": None, "home_score": None}
+                    report["voided_cancelled"].append({"bet_id": bet["bet_id"], "game_pk": identity,
+                                                       "reason": graded["reason"]})
+                else:
+                    if late and postponed_lookup is not None:
+                        info = ask("postponed", postponed_lookup, identity, bet["slate_date"])
+                        if info and info.get("status") == "pending_makeup":
+                            report["pending_makeup"].append(
+                                {"bet_id": bet["bet_id"], "game_pk": identity,
+                                 "makeup_date": info.get("makeup_date")})
+                    report["pending"] += 1
+                    continue
+            elif is_prop:
+                graded = grade_prop(bet, (box_index or {}).get(str(identity)))
+            else:
+                graded = grade_bet(bet, result, identity)
         outcome = graded["result"]
         if outcome not in SETTLED:
             report["pending"] += 1

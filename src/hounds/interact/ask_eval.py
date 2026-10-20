@@ -247,12 +247,14 @@ def _dates(spec: dict, now: datetime) -> list:
 # ---------------------------------------------------------------------------
 
 def fire_v2(dog: common.Dog, *, now: Optional[datetime] = None, ledger: Optional[str] = None,
-            slate_for: Optional[Callable] = None, **_ignored) -> dict:
+            slate_for: Optional[Callable] = None, other_live: Optional[Callable] = None, **_ignored) -> dict:
     """``fire.fire_user`` for a dog built from English rules: the engine's own rule-set candidates over the newest
     stored boards of every upcoming game, in the Fire now payload shape. The daily limit counts the tickets the dog
     has already recorded for the slate date, in the engine's own order (earliest placing time first)."""
     now = now or common.now_utc()
     spec = dog.spec
+    if other_live is None and slate_for is None:
+        other_live = fire.default_other_live()          # the production path only; a test injects its own
     slate_for = slate_for or default_slate
     rows = _ledger_rows(dog.id, ledger)
     seen = {r["bet_id"] for r in rows}
@@ -305,7 +307,9 @@ def fire_v2(dog: common.Dog, *, now: Optional[datetime] = None, ledger: Optional
     if any(p["over_daily_limit"] for p in picks):
         notes.append(f"The daily limit is {spec['max_bets_per_day']} ticket(s) a day, so the engine would stop "
                      "before the ones marked over the limit.")
-    return fire._payload(dog, now, picks, misses, tickets, miss_counts, looked, newest, notes, started, upcoming)
+    elsewhere = fire.other_sports_live(other_live, sorted(wanted), now, started, upcoming, bool(picks))
+    return fire._payload(dog, now, picks, misses, tickets, miss_counts, looked, newest, notes, started, upcoming,
+                         elsewhere)
 
 
 # ---------------------------------------------------------------------------

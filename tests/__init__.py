@@ -76,6 +76,11 @@ PROTECTED_STORES = frozenset({
     _REAL_DATA / "processed" / "weather_forecast.jsonl",
     _REAL_DATA / "processed" / "prop_prices.jsonl",
     _REAL_DATA / "processed" / "credit_log.jsonl",
+    # The all-sports capture's own append-only stores (2026-10-19): its done/state store, the discovery
+    # record and the results the member-dog settlement grades from.
+    _REAL_DATA / "processed" / "allsports_capture_done.jsonl",
+    _REAL_DATA / "processed" / "allsports_sports.jsonl",
+    _REAL_DATA / "processed" / "allsports_scores.jsonl",
     _REAL_DATA / "watch" / "probables_watch.jsonl",
     _REAL_DATA / "watch" / "lineups_watch.jsonl",
     _REAL_DATA / "watch" / "transactions_watch.jsonl",

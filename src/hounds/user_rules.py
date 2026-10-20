@@ -314,6 +314,10 @@ class Cond:
     fn: Callable[[Mapping, Ctx], Optional[bool]]
     sports: tuple = ("MLB", "NFL")
     only_markets: tuple = ()     # restrict to these markets (e.g. spread_size -> spread)
+    # True for a condition that reads only the board, the clock or the team NAMES, so it works for every
+    # sport family (2026-10-19). Every other condition reads MLB/NFL-only data (box scores, standings, team
+    # codes, weather) and stays on `sports`: choosing it for another sport is a validation error.
+    any_sport: bool = False
     fun: bool = False
     unavailable: Optional[Callable[[], Optional[str]]] = None   # -> reason, or None when available
     note: str = ""               # what data it reads and how much of it exists, shown beside the condition
@@ -711,17 +715,17 @@ CONDITIONS: tuple = (
     # --- the pick ---------------------------------------------------------------------------
     Cond("role", "Favourite or underdog", "The pick", ("ml_spread",),
          (_P("value", "choice", "The pick is", choices=(("favourite", "the favourite"), ("underdog", "the underdog")), default="underdog"),),
-         _t_role, _f_role),
+         _t_role, _f_role, any_sport=True),
     Cond("team_is", "A specific team", "The pick", ("ml_spread", "total", "prop"),
          (_P("teams", "teams", "Teams", default=[]),), _t_team_is, _f_team_is),
     Cond("opponent_is", "Against a specific team", "The pick", ("ml_spread", "prop"),
          (_P("teams", "teams", "Teams", default=[]),), _t_opponent_is, _f_opponent_is),
     Cond("steam", "Line movement since open", "The pick", ("ml_spread", "total", "prop"),
          (_P("direction", "choice", "The market has moved", choices=(("toward", "toward the pick"), ("against", "against the pick")), default="toward"),),
-         _t_steam, _f_steam),
+         _t_steam, _f_steam, any_sport=True),
     Cond("spread_size", "Size of the spread", "The pick", ("ml_spread",),
          (_cmp_param("lte"), _P("value", "number", "Points", low=0, high=30, step=0.5, default=7)),
-         _t_spread_size, _f_spread_size, only_markets=("spread",)),
+         _t_spread_size, _f_spread_size, only_markets=("spread",), any_sport=True),
     # --- form and schedule --------------------------------------------------------------------
     Cond("rest_days", "Days of rest", "Form and schedule", ("ml_spread", "total", "prop"),
          (_WHO, _cmp_param(), _P("value", "int", "Days (MLB: days off since the last game; NFL: days between games)", low=0, high=14, default=2)),
@@ -741,10 +745,10 @@ CONDITIONS: tuple = (
          (_WHO, _cmp_param(), _P("miles", "int", "Miles", low=0, high=3000, default=1000)),
          _t_travel, _f_travel, sports=("MLB",)),
     Cond("day_of_week", "Day of the week", "Form and schedule", ("ml_spread", "total", "prop"),
-         (_P("days", "multi", "Days", choices=WEEKDAYS, default=["sat", "sun"]),), _t_dow, _f_dow),
+         (_P("days", "multi", "Days", choices=WEEKDAYS, default=["sat", "sun"]),), _t_dow, _f_dow, any_sport=True),
     Cond("time_of_day", "Day or night game", "Form and schedule", ("ml_spread", "total", "prop"),
          (_P("value", "choice", "It is a", choices=(("day", "day game"), ("night", "night game")), default="night"),),
-         _t_tod, _f_tod),
+         _t_tod, _f_tod, any_sport=True),
     # --- matchups and team strength ------------------------------------------------------------------
     Cond("head_to_head", "Head-to-head record", "Matchups and team strength", ("ml_spread", "total", "prop"),
          (_WHO, _P("n", "int", "Last N meetings with this opponent", low=1, high=10, default=5), _cmp_param(),
@@ -823,19 +827,20 @@ CONDITIONS: tuple = (
     # --- for fun -----------------------------------------------------------------------------------
     Cond("numerology", "Numerology", "For fun", ("ml_spread",),
          (_P("value", "choice", "The team it backs is", choices=(("closer", "closer to the date's number"), ("further", "further from the date's number")), default="closer"),),
-         _t_numer, _f_numer, fun=True),
+         _t_numer, _f_numer, fun=True, any_sport=True),
     Cond("moon_phase", "Moon phase", "For fun", ("ml_spread", "total", "prop"),
          (_P("value", "choice", "The moon is", choices=(("full", "full"), ("new", "new"), ("other", "neither")), default="full"),),
-         _t_moon, _f_moon, fun=True),
+         _t_moon, _f_moon, fun=True, any_sport=True),
     Cond("coin_flip", "Coin flip", "For fun", ("ml_spread", "total", "prop"),
-         (_P("pct", "int", "Chance it comes up (%)", low=5, high=95, default=50),), _t_coin, _f_coin, fun=True),
+         (_P("pct", "int", "Chance it comes up (%)", low=5, high=95, default=50),), _t_coin, _f_coin, fun=True,
+         any_sport=True),
     Cond("name_letter", "Letters in a name", "For fun", ("ml_spread", "total", "prop"),
          (_P("of", "choice", "Whose name", choices=_OF, default="pick"),
           _P("test", "choice", "The name", choices=_LETTER_TESTS, default="starts_with"),
-          _P("letter", "letter", "Letter", default="S")), _t_letter, _f_letter, fun=True),
+          _P("letter", "letter", "Letter", default="S")), _t_letter, _f_letter, fun=True, any_sport=True),
     Cond("name_length", "Length of a name", "For fun", ("ml_spread", "total", "prop"),
          (_P("of", "choice", "Whose name", choices=_OF, default="pick"), _cmp_param(),
-          _P("value", "int", "Letters", low=3, high=30, default=10)), _t_len, _f_len, fun=True),
+          _P("value", "int", "Letters", low=3, high=30, default=10)), _t_len, _f_len, fun=True, any_sport=True),
 )
 BY_ID = {c.id: c for c in CONDITIONS}
 
@@ -886,12 +891,15 @@ def validate_condition(raw: Any, *, kinds: Sequence[str], markets: Sequence[str]
     if cond.only_markets and any(m not in cond.only_markets for m in markets):
         errors[where] = f"{cond.label} only applies to {', '.join(cond.only_markets)} rules"
         return None
-    if not any(s in cond.sports for s in sports):
-        errors[where] = f"{cond.label} is not available for {' / '.join(sports)}"
-        return None
-    if any(s not in cond.sports for s in sports):
-        errors[where] = f"{cond.label} works for {' / '.join(cond.sports)} only; give the other sport its own rule"
-        return None
+    if not cond.any_sport:
+        if not any(s in cond.sports for s in sports):
+            errors[where] = (f"{cond.label} is not available for {' / '.join(sports)}: it works for "
+                             f"{' / '.join(cond.sports)} only")
+            return None
+        if any(s not in cond.sports for s in sports):
+            errors[where] = (f"{cond.label} works for {' / '.join(cond.sports)} only; give the other sport "
+                             f"its own rule")
+            return None
     if cond.unavailable is not None:
         reason = cond.unavailable()
         if reason:
@@ -1050,6 +1058,12 @@ def tree_text(tree: Optional[Mapping], kind: str, *, top: bool = True) -> str:
 # the menu
 # ---------------------------------------------------------------------------
 
+def dog_sports() -> tuple:
+    """Every sport family a dog may bet (the catalog's dog menu): what an any-sport condition works for."""
+    from src.sports import catalog
+    return catalog.dog_families()
+
+
 def menu_conditions() -> list:
     out = []
     for cond in CONDITIONS:
@@ -1068,7 +1082,7 @@ def menu_conditions() -> list:
             item["default"] = list(p.default) if isinstance(p.default, list) else p.default
             params.append(item)
         out.append({"id": cond.id, "label": cond.label, "group": cond.group, "kinds": list(cond.kinds),
-                    "sports": list(cond.sports), "only_markets": list(cond.only_markets), "fun": cond.fun,
+                    "sports": (list(dog_sports()) if cond.any_sport else list(cond.sports)), "only_markets": list(cond.only_markets), "fun": cond.fun,
                     "params": params, "available": reason is None, "unavailable_reason": reason,
                     "note": cond.note})
     return out

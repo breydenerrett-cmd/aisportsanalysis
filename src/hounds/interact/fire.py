@@ -148,7 +148,7 @@ def _games_text(items: list) -> str:
     return ", ".join(f"{game} ({clock_et(start)})" for game, start in items)
 
 
-def slate_view(now: datetime, started: list, upcoming: list) -> dict:
+def slate_view(now: datetime, started: list, upcoming: list, other_live: Optional[dict] = None) -> dict:
     """What is on the board TODAY in the viewer's terms, so a list that starts on Thursday is never read as
     "not looking at tonight's games" (owner, 2026-10-20).
 
@@ -157,7 +157,13 @@ def slate_view(now: datetime, started: list, upcoming: list) -> dict:
       started, nothing left today  "Tonight's games already started: A @ B (8:10 pm ET). Next games I can bet: Thursday."
       nothing on the board today   "No games today. Next slate: Thursday."
       some started, some ahead     "Already started today: ... Still ahead today: 2 games."
-    and a game inside the dog's placing window (its lock has passed, the game has not started) is named too."""
+    and a game inside the dog's placing window (its lock has passed, the game has not started) is named too.
+
+    NEXT GAME AND OTHER SPORTS (2026-10-19): when nothing is on today, the line also names the NEXT game in
+    the dog's sports ("Next game: A @ B (Thursday, 7:10 pm ET)"), and, when ``other_live`` (a
+    ``src.sports.allsports_view.live_elsewhere`` answer) shows games live in OTHER sports, adds "Live now in
+    other sports: 5 games (tennis, cricket)." so an empty board for the dog's own sports is never a dead end.
+    ``next_game`` and ``other_live`` are also returned as fields for every state."""
     today = day_of(now)
     today_started = sorted([(g, s) for g, s in started if day_of(s) == today], key=lambda t: t[1])
     today_ahead = [(g, s, k) for g, s, k in upcoming if day_of(s) == today]
@@ -165,6 +171,11 @@ def slate_view(now: datetime, started: list, upcoming: list) -> dict:
     in_window = sorted([(g, s) for g, s, k in upcoming if k is not None and k <= now and s > now], key=lambda t: t[1])
     next_date = day_of(later[0][1]) if later else None
     next_label = day_label(next_date, now) if next_date else None
+    next_game = None
+    if later:
+        n_game, n_start = later[0]
+        next_game = {"game": n_game, "start_utc": common.iso(n_start), "start_et": clock_et(n_start),
+                     "day_label": next_label, "text": f"{n_game} ({clock_et(n_start)})"}
     nxt = (f"Next games I can bet: {next_label}." if next_label else "No later games are on the stored boards yet.")
     if today_started and not today_ahead:
         state = "started"
@@ -178,8 +189,10 @@ def slate_view(now: datetime, started: list, upcoming: list) -> dict:
         state, line = "open", ""
     else:
         state = "none"
-        line = (f"No games today. Next slate: {next_label}." if next_label
+        line = (f"No games today. Next slate: {next_label}. Next game: {next_game['text']}." if next_label
                 else "No games today, and none are on the stored boards yet.")
+        if other_live and other_live.get("games"):
+            line += " " + other_live["text"]
     if in_window:
         line = (line + " " if line else "") + f"Inside my placing window now: {_games_text(in_window)}."
     day_counts: dict = {}
@@ -190,9 +203,42 @@ def slate_view(now: datetime, started: list, upcoming: list) -> dict:
         "today": today, "today_state": state, "line": line,
         "started": [{"game": g, "start_utc": common.iso(s), "start_et": clock_et(s)} for g, s in today_started],
         "in_window": [{"game": g, "start_utc": common.iso(s), "start_et": clock_et(s)} for g, s in in_window],
-        "next_day": next_date, "next_day_label": next_label,
+        "next_day": next_date, "next_day_label": next_label, "next_game": next_game,
+        "other_live": other_live if other_live and other_live.get("games") and state == "none" else None,
         "days": [{"date": d, "label": day_label(d, now), "games": n} for d, n in sorted(day_counts.items())],
     }
+
+
+def default_other_live():
+    """The production answer to "what is live in other sports": the stored rows, through the cached board."""
+    from src.sports import allsports_view
+    return lambda own, at: allsports_view.live_elsewhere(own, at)
+
+
+def other_sports_live(other_live: Optional[Callable], own_sports, now: datetime, started: list,
+                      upcoming: list, have_picks: bool = False) -> Optional[dict]:
+    """``other_live(own_sports, now)`` whenever the dog has NO pick, else None. (The slate sentence names other
+    sports only when nothing at all is on today for the dog; ``slate_view`` decides that. The separate
+    ``live_elsewhere`` field is given on any empty result.) Never fatal: a board that cannot be read is simply
+    not mentioned."""
+    if other_live is None or have_picks:
+        return None
+    try:
+        return other_live(own_sports, now)
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def next_game_line(now: datetime, upcoming: list) -> Optional[str]:
+    """'Next game: Thu 5:15 PM — Yankees at Red Sox' for the earliest game still ahead (Eastern time), or None."""
+    ahead = sorted([(s, g) for g, s, _k in upcoming if s > now], key=lambda t: t[0])
+    if not ahead:
+        return None
+    start, game = ahead[0]
+    local = start.astimezone(_eastern())
+    hour = local.hour % 12 or 12
+    clock = f"{hour}:{local.minute:02d} {'AM' if local.hour < 12 else 'PM'}"
+    return f"Next game: {WEEKDAYS[local.weekday()][:3]} {clock} \u2014 {game.replace(' @ ', ' at ')}"
 
 
 def _heavy():
@@ -406,11 +452,18 @@ def pick_row(hound: dict, game, market: str, cand: dict, observed: datetime, now
 # ---------------------------------------------------------------------------
 
 def fire_user(dog: common.Dog, *, now: Optional[datetime] = None, games: Optional[dict] = None,
-              ledger: Optional[str] = None, rows_for: Optional[Callable] = None) -> dict:
-    """The dog's current rule over the newest stored boards. See the module docstring."""
+              ledger: Optional[str] = None, rows_for: Optional[Callable] = None,
+              other_live: Optional[Callable] = None) -> dict:
+    """The dog's current rule over the newest stored boards. See the module docstring.
+
+    ``other_live(own_sports, now)`` answers "what is live in other sports" (default on the production path:
+    ``src.sports.allsports_view.live_elsewhere`` over the stored rows; with injected ``games`` or
+    ``rows_for`` no default is used, so a test never reads the real store)."""
     now = now or common.now_utc()
     hound = dog.hound
     spec = hound["spec"]
+    if other_live is None and games is None and rows_for is None:
+        other_live = default_other_live()
     if games is None:
         games = cached_games(spec["sports"], now, rows_for)
     recorded, per_date = _recorded_index(hound["id"], ledger)
@@ -491,7 +544,9 @@ def fire_user(dog: common.Dog, *, now: Optional[datetime] = None, games: Optiona
                      "before the ones marked over the limit.")
     misses.sort(key=lambda m: (MISS_TIER.get(m["code"], 9), m["gap"] if m["gap"] is not None else 1e9,
                                m["start_utc"], m["event_id"]))
-    return _payload(dog, now, picks, misses, tickets, miss_counts, looked, newest, notes, started, upcoming)
+    elsewhere = other_sports_live(other_live, spec["sports"], now, started, upcoming, bool(picks))
+    return _payload(dog, now, picks, misses, tickets, miss_counts, looked, newest, notes, started, upcoming,
+                    elsewhere)
 
 
 def _miss(game, market: str, code: str, info: dict) -> dict:
@@ -504,9 +559,15 @@ def _miss(game, market: str, code: str, info: dict) -> dict:
 
 def _payload(dog: common.Dog, now: datetime, picks: list, misses: list, tickets: list, miss_counts: dict,
              looked: int, newest, notes: list, started: Optional[list] = None,
-             upcoming: Optional[list] = None) -> dict:
+             upcoming: Optional[list] = None, other_live: Optional[dict] = None) -> dict:
     nothing = not picks
-    slate = slate_view(now, started or [], upcoming or [])
+    slate = slate_view(now, started or [], upcoming or [], other_live)
+    # The two lines the page reads on an empty result (2026-10-19 contract): the next game in the dog's sports
+    # and what is live in other sports, as plain strings; None when the dog has a pick or there is nothing to say.
+    next_game_text = None if picks else next_game_line(now, upcoming or [])
+    elsewhere_text = None
+    if not picks and other_live and other_live.get("games"):
+        elsewhere_text = str(other_live.get("text") or "").rstrip(".") or None
     if picks:
         headline = (f"{len(picks)} {'pick qualifies' if len(picks) == 1 else 'picks qualify'} on the latest stored boards.")
     elif looked == 0 and not tickets:
@@ -521,6 +582,7 @@ def _payload(dog: common.Dog, now: datetime, picks: list, misses: list, tickets:
         "games_considered": looked, "picks": picks, "recorded": tickets,
         "closest_misses": misses[:MAX_MISSES], "miss_counts": miss_counts, "nothing_qualifies": nothing,
         "games": _by_game(picks, tickets, misses),
+        "next_game": next_game_text, "live_elsewhere": elsewhere_text,
         "headline": headline, "notes": notes, "preview_note": PREVIEW_NOTE, "slate": slate,
         "paper_only": True, "not_advice": user_spec.NOT_ADVICE,
     }

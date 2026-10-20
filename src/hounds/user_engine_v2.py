@@ -58,6 +58,11 @@ PITCHER_STORE = os.path.join("data", "processed", "prop_prices.jsonl")
 def team_code(name: Optional[str], sport: str) -> Optional[str]:
     if not name:
         return None
+    if sport not in ("MLB", "NFL"):
+        # An all-sports family (2026-10-19) has no club-code table: the team's own name is its identity,
+        # which is all the any-sport conditions (role, steam, names, coin flip) read. The MLB/NFL-only
+        # conditions that look a code up in a stats table cannot be chosen for these sports (user_rules).
+        return str(name).strip() or None
     try:
         if sport == "NFL":
             from src.sports import nfl_teams

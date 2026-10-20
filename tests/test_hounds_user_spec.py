@@ -34,7 +34,9 @@ class MenuBounds(unittest.TestCase):
         self.assertIn("min_books", errors_for(min_books=True))   # bool is not a count
 
     def test_menu_choices_are_closed(self):
-        self.assertIn("sports", errors_for(sports=["MLB", "NBA"]))
+        # NBA is on the menu since the all-sports catalog (2026-10-19); a sport nobody prices is not.
+        self.assertIn("sports", errors_for(sports=["MLB", "CURLING"]))
+        self.assertEqual(errors_for(sports=["MLB", "NBA"]), {})
         self.assertIn("markets", errors_for(markets=["moneyline", "prop"]))
         self.assertIn("side_rule", errors_for(side_rule="coin_flip"))
 

@@ -34,6 +34,7 @@ import hashlib
 import http.client
 import json
 import os
+import re
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -598,6 +599,74 @@ def fetch_scores(*, sport=None, days_from=None, env=None, timeout: int = DEFAULT
         params["daysFrom"] = int(days_from)
 
     return _get_json(f"sports/{sport_key(sport)}/scores", params, timeout=timeout)
+
+
+# ---------------------------------------------------------------------------
+# Any sport key (the all-sports capture, 2026-10-19)
+# ---------------------------------------------------------------------------
+#
+# `sport_key()` above deliberately knows only MLB, NFL, MMA and tennis_*; every other key raised. The
+# all-sports capture buys any key The Odds API lists as active, so these three functions take a key that
+# was DISCOVERED from the free /sports list. They validate its SHAPE (so a malformed key can never be
+# spliced into a URL path) instead of whitelisting it, and each returns the vendor's own credit counters
+# (`x-requests-last` / `x-requests-remaining`) beside the payload, which is what the credit log records.
+
+_SPORT_KEY_RE = re.compile(r"^[a-z0-9_]{3,90}$")
+ALLSPORTS_MARKETS = ("h2h", "spreads", "totals")
+ALLSPORTS_REGIONS = ("us", "us2", "eu", "uk", "au")
+
+
+def valid_sport_key(key) -> bool:
+    return isinstance(key, str) and bool(_SPORT_KEY_RE.match(key))
+
+
+def _discovered_key(key) -> str:
+    if not valid_sport_key(key):
+        raise OddsProviderError(f"not a valid sport key: {str(key)[:40]!r}")
+    return key
+
+
+def fetch_sport_events(sport_key_value, *, env=None, timeout: int = DEFAULT_TIMEOUT) -> list:
+    """FREE (0 credits): the events of any discovered sport key, live ones included."""
+    source = os.environ if env is None else env
+    key = api_key(source)
+    if key is None:
+        raise NotConfigured(SETUP_MESSAGE)
+    return _get_json(f"sports/{_discovered_key(sport_key_value)}/events", {"apiKey": key}, timeout=timeout)
+
+
+def fetch_sport_odds_with_usage(sport_key_value, markets=("h2h",), regions=("us",), *, env=None,
+                                timeout: int = DEFAULT_TIMEOUT) -> tuple:
+    """Odds for every event of any discovered sport key: (events, usage). Costs
+    len(markets) x len(regions) credits; `usage["last"]` is what the vendor says it billed."""
+    source = os.environ if env is None else env
+    key = api_key(source)
+    if key is None:
+        raise NotConfigured(SETUP_MESSAGE)
+    markets = tuple(markets)
+    regions = tuple(regions)
+    if not markets or any(m not in ALLSPORTS_MARKETS for m in markets):
+        raise OddsProviderError(f"markets must be some of {ALLSPORTS_MARKETS}")
+    if not regions or any(r not in ALLSPORTS_REGIONS for r in regions):
+        raise OddsProviderError(f"regions must be some of {ALLSPORTS_REGIONS}")
+    params = {"apiKey": key, "regions": ",".join(regions), "markets": ",".join(markets),
+              "oddsFormat": configured_odds_format(source)}
+    return _get_json_with_usage(f"sports/{_discovered_key(sport_key_value)}/odds", params, timeout=timeout)
+
+
+def fetch_sport_scores_with_usage(sport_key_value, days_from=None, *, env=None,
+                                  timeout: int = DEFAULT_TIMEOUT) -> tuple:
+    """Scores of any discovered sport key: (events, usage). 1 credit, or 2 with `days_from` (1-3)."""
+    source = os.environ if env is None else env
+    key = api_key(source)
+    if key is None:
+        raise NotConfigured(SETUP_MESSAGE)
+    params = {"apiKey": key}
+    if days_from is not None:
+        if not isinstance(days_from, int) or isinstance(days_from, bool) or not (1 <= days_from <= 3):
+            raise OddsProviderError(f"days_from must be between 1 and 3, got {days_from!r}")
+        params["daysFrom"] = days_from
+    return _get_json_with_usage(f"sports/{_discovered_key(sport_key_value)}/scores", params, timeout=timeout)
 
 
 def normalize_score(event: dict, *, sport=None) -> dict:

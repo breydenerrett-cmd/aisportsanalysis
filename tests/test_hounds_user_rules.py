@@ -291,7 +291,7 @@ class SpecValidation(unittest.TestCase):
             (F.v2(rules=[F.rule(markets=["total"], side="over", line_min=9, line_max=8)]), "rules[0].line_max"),
             (F.v2(rules=[F.rule(side="over")]), "rules[0].side"),
             (F.v2(rules=[F.rule(markets=["total"], side="home")]), "rules[0].side"),
-            (F.v2(rules=[F.rule(sports=["NHL"])]), "rules[0].sports"),
+            (F.v2(rules=[F.rule(sports=["CURLING"])]), "rules[0].sports"),
             (F.v2(rules=[F.rule(markets=["horse_racing"])]), "rules[0].markets"),
         ]
         for spec, field in cases:
