@@ -18,6 +18,14 @@
  * (detail.message): the page does not guess why a sign-in failed, which is also
  * what keeps it from telling a stranger whether an address has an account.
  *
+ * CREATE A FREE ACCOUNT IS THE FIRST TAB FOR A NEW VISITOR (owner decision "yes open signups", 2026-10-19). The card has two
+ * tabs: "Create a free account" (email, password, optional kennel name; POST /auth/signup, which signs the visitor in at
+ * once) and "Sign in". A visitor with no stored token and no memory of ever having had an account sees Create first; anyone
+ * else sees Sign in first; `?create=1` (every "Create free account" button) forces Create and `?tab=signin` forces Sign in.
+ * A created account lands on My kennel with a welcome card (kennel.html?welcome=1). A repeat email gets the server's own
+ * sentence and a "Sign in instead" button: the page never says whether an address has an account, only the server does, and
+ * only in words that read the same for both. The honeypot input (`website`) is hidden from people and left empty.
+ *
  * Styled by web/css/signin.css (the model pages' slate look). The data-hook names
  * the older token form used (invite-token-input, signin-form, clear-token,
  * signin-status) are kept on the access-code form.
@@ -86,6 +94,29 @@ export async function accessCodeVerdict() {
 /** localStorage key remembering that the "set a password" card was shown on this
  * device. Per-viewer convenience only: nothing depends on it being readable. */
 export const PASSWORD_CARD_SEEN_KEY = "linehound.password_card_seen";
+
+/** localStorage key remembering that this device has signed in or created an account, so a returning member lands on the
+ * Sign in tab and a new visitor on Create. A convenience only, never an authority. */
+export const HAD_ACCOUNT_KEY = "linehound.had_account";
+
+function hadAccount() {
+  try {
+    return window.localStorage.getItem(HAD_ACCOUNT_KEY) === "1";
+  } catch (err) {
+    return false;
+  }
+}
+
+function markHadAccount() {
+  try {
+    window.localStorage.setItem(HAD_ACCOUNT_KEY, "1");
+  } catch (err) { /* nothing to remember it in */ }
+}
+
+/** Where a new member lands: My kennel, with the welcome card. */
+export const WELCOME_HREF = "kennel.html?welcome=1";
+
+const CREATE_FALLBACK = "Could not create the account. Check your connection and try again.";
 
 function passwordCardSeen() {
   try {
@@ -207,13 +238,63 @@ export async function renderSignin(container, query = {}) {
   const wrap = el("section", { class: "signin", "data-view": "signin" });
   const card = el("div", { class: "signin__card", "data-hook": "signin-card" });
 
-  card.appendChild(el("p", { class: "gate__eyebrow", text: "PRIVATE BETA" }));
-  card.appendChild(el("h1", { class: "signin__title", text: "Sign in to view tonight's board." }));
+  const eyebrow = el("p", { class: "gate__eyebrow", "data-hook": "signin-eyebrow", text: "PRIVATE BETA" });
+  const title = el("h1", { class: "signin__title", "data-hook": "signin-title",
+    text: "Sign in to view tonight's board." });
+  card.appendChild(eyebrow);
+  card.appendChild(title);
 
   // ---- the account box: only for someone whose stored code is good ----------
   const account = el("div", { class: "signin__section", "data-hook": "signin-account" });
   account.hidden = true;
   card.appendChild(account);
+
+  // ---- the two ways in: create a free account, or sign in ---------------------
+  const tabs = el("div", { class: "signin__tabs", role: "tablist", "data-hook": "signin-tabs" });
+  const tabCreate = el("button", { type: "button", class: "signin__tab", role: "tab",
+    "data-hook": "tab-create", text: "Create a free account" });
+  const tabSignin = el("button", { type: "button", class: "signin__tab", role: "tab",
+    "data-hook": "tab-signin", text: "Sign in" });
+  tabs.appendChild(tabCreate);
+  tabs.appendChild(tabSignin);
+  card.appendChild(tabs);
+
+  const createForm = el("form", { class: "signin__form", "data-hook": "create-form" });
+  createForm.appendChild(el("p", { class: "signin__body", "data-hook": "create-lede",
+    text: "Free: build your own dogs, race them on paper money and see how they do. "
+        + "No card, nothing to approve." }));
+  const createEmail = field("Email", "create-email", {
+    type: "email", name: "email", autocomplete: "email", inputmode: "email",
+    autocapitalize: "none", spellcheck: "false", required: "required",
+    "data-hook": "create-email" });
+  const createPassword = field("Password", "create-password", {
+    type: "password", name: "new_password", autocomplete: "new-password", minlength: "10",
+    required: "required", "data-hook": "create-password" });
+  const createKennel = field("Kennel name (optional)", "create-kennel", {
+    type: "text", name: "kennel_name", autocomplete: "off", maxlength: "40",
+    "data-hook": "create-kennel" });
+  createForm.appendChild(createEmail.wrap);
+  createForm.appendChild(createPassword.wrap);
+  createForm.appendChild(el("p", { class: "signin__hint",
+    text: "At least 10 characters. Not your email, and nothing common." }));
+  createForm.appendChild(createKennel.wrap);
+  // The honeypot: a real person never sees or fills it; a bot that fills every input does.
+  const trap = field("Website", "create-website", {
+    type: "text", name: "website", autocomplete: "off", tabindex: "-1",
+    "data-hook": "create-website" }, "signin__field signin__hp");
+  trap.wrap.setAttribute("aria-hidden", "true");
+  createForm.appendChild(trap.wrap);
+  const createStatus = el("p", { class: "signin__status", role: "status", "data-hook": "create-status" });
+  const createButton = el("button", { type: "submit", class: "btn btn--primary",
+    "data-hook": "create-submit", text: "Create free account" });
+  const createActions = el("div", { class: "signin__actions" });
+  createActions.appendChild(createButton);
+  createForm.appendChild(createActions);
+  createForm.appendChild(createStatus);
+  const createRepeat = el("div", { class: "signin__section", "data-hook": "create-repeat" });
+  createRepeat.hidden = true;
+  createForm.appendChild(createRepeat);
+  card.appendChild(createForm);
 
   // ---- email + password (the primary way in) --------------------------------
   const loginForm = el("form", { class: "signin__form", "data-hook": "login-form" });
@@ -266,14 +347,47 @@ export async function renderSignin(container, query = {}) {
   panel.appendChild(status);
   card.appendChild(panel);
 
+  let codeOpen = false;
   function showCodeForm(open) {
-    panel.hidden = !open;
+    codeOpen = open;
+    panel.hidden = !open || tab !== "signin";
     codeToggle.setAttribute("aria-expanded", open ? "true" : "false");
   }
+  // Which tab shows, and whether the signed-in account box has taken the forms' place.
+  const wantsCreate = query && (query.create === "1" || query.create === "true");
+  const wantsSignin = query && (query.tab === "signin" || typeof query.next === "string");
+  let tab = wantsCreate ? "create"
+    : wantsSignin || getToken() || hadAccount() ? "signin" : "create";
+  let signedInMode = false;
+
+  function applyTab() {
+    const create = tab === "create";
+    createForm.hidden = signedInMode || !create;
+    loginForm.hidden = signedInMode || create;
+    codeToggle.hidden = signedInMode || create;
+    panel.hidden = signedInMode || create || !codeOpen;
+    tabs.hidden = signedInMode;
+    tabCreate.setAttribute("aria-selected", create ? "true" : "false");
+    tabSignin.setAttribute("aria-selected", create ? "false" : "true");
+    eyebrow.textContent = create ? "FREE ACCOUNT" : "PRIVATE BETA";
+    title.textContent = create ? "Create a free account." : "Sign in to view tonight's board.";
+  }
+  function showTab(next) {
+    tab = next;
+    applyTab();
+  }
+  function setSignedInMode(on) {
+    signedInMode = on;
+    applyTab();
+  }
+  tabCreate.addEventListener("click", () => showTab("create"));
+  tabSignin.addEventListener("click", () => showTab("signin"));
+
   codeToggle.addEventListener("click", () => showCodeForm(panel.hidden));
   // A visitor who already has a saved code (older sign-in, checkout hand-off)
   // gets the form open: it is the thing they came to look at.
   if (getToken()) showCodeForm(true);
+  applyTab();
 
   // ---- the one-time "set a password" card ------------------------------------
   const passwordCard = el("div", { class: "signin__section", "data-hook": "password-card" });
@@ -376,13 +490,13 @@ export async function renderSignin(container, query = {}) {
     clear(account);
     if (has === null || !getToken()) {
       account.hidden = true;
-      loginForm.hidden = false;
+      setSignedInMode(false);
       return null;
     }
     // Signed in: the account box replaces the email form (nothing to sign in
     // to), and the access-code form folds away unless it has something to say.
     account.hidden = false;
-    loginForm.hidden = true;
+    setSignedInMode(true);
     if (!status.textContent) showCodeForm(false);
     account.appendChild(el("h2", { class: "signin__section-title", text: "You are signed in" }));
     account.appendChild(el("p", { class: "signin__body", "data-hook": "account-line",
@@ -416,7 +530,8 @@ export async function renderSignin(container, query = {}) {
     clear(ended);
     clear(account);
     account.hidden = true;
-    loginForm.hidden = false;
+    setSignedInMode(false);
+    showTab("signin");
     showCodeForm(false);
     passwordCard.hidden = true;
     status.textContent = "";
@@ -451,6 +566,9 @@ export async function renderSignin(container, query = {}) {
   // The cautious wording first; the trial wording only when /meta says
   // checkout is on, with its own trial length (checkout.js, one decision for
   // every page).
+  const earlyHead = el("p", { class: "signin__note", "data-hook": "signin-early-head",
+    text: "EARLY ACCESS TO DAILY PICKS" });
+  card.appendChild(earlyHead);
   const signupNote = el("p", { class: "signin__note", "data-hook": "signin-note",
     text: signinNote(NOT_ON) });
   const startTrial = el("a", { class: "gate__eyebrow", href: "#/signup",
@@ -466,6 +584,49 @@ export async function renderSignin(container, query = {}) {
   card.appendChild(back);
 
   // ---- behaviour --------------------------------------------------------------
+  let createBusy = false;
+  createForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (createBusy) return;
+    createBusy = true;
+    createButton.disabled = true;
+    createStatus.textContent = "Creating your account...";
+    clear(createRepeat);
+    createRepeat.hidden = true;
+    try {
+      const body = { email: createEmail.input.value.trim(), password: createPassword.input.value,
+        website: trap.input.value };
+      const kennel = createKennel.input.value.trim();
+      if (kennel) body.kennel_name = kennel;
+      const out = await apiPost("/auth/signup", body);
+      createPassword.input.value = "";
+      if (out && out.token) {
+        setToken(out.token);
+        markHadAccount();
+        generation++;
+        createStatus.textContent = "You're in. Opening your kennel...";
+        window.location.assign(WELCOME_HREF);
+        return;
+      }
+      // An address that already has an account (or a bot): the server's own sentence, then the way on. Nothing
+      // here says which it was.
+      createStatus.textContent = out && out.message ? String(out.message) : "";
+      const again = el("button", { type: "button", class: "btn btn--ghost", "data-hook": "create-signin-instead",
+        text: "Sign in instead" });
+      again.addEventListener("click", () => {
+        emailField.input.value = createEmail.input.value.trim();
+        showTab("signin");
+      });
+      createRepeat.appendChild(again);
+      createRepeat.hidden = false;
+    } catch (err) {
+      createStatus.textContent = authErrorText(err, CREATE_FALLBACK);
+    } finally {
+      createBusy = false;
+      createButton.disabled = false;
+    }
+  });
+
   let loginBusy = false;
   loginForm.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -478,6 +639,7 @@ export async function renderSignin(container, query = {}) {
         email: emailField.input.value.trim(), password: passwordField.input.value });
       passwordField.input.value = "";
       setToken(out.token);
+      markHadAccount();
       generation++;                // a new session supersedes any check about the old one
       refreshAccount();
       if (out.access_active === false) {
@@ -485,6 +647,10 @@ export async function renderSignin(container, query = {}) {
         // identifies them to the upgrade door, so show the ended state.
         loginStatus.textContent = "Signed in.";
         await showExpiredTester();
+      } else if (out.kind === "free" && !(typeof query.next === "string" && query.next)) {
+        // A free account has no daily board to open: its home is My kennel.
+        loginStatus.textContent = "Signed in. Opening your kennel...";
+        window.location.assign("kennel.html");
       } else {
         loginStatus.textContent = "Signed in. Opening the board...";
         window.location.hash = safeNext(query.next);
@@ -524,6 +690,7 @@ export async function renderSignin(container, query = {}) {
       status.textContent = "Couldn't reach LineHound to check the code. It's saved on this device; try the board in a minute.";
       return;
     }
+    markHadAccount();
     status.textContent = "";
     status.appendChild(el("span", { text: "You're signed in. " }));
     status.appendChild(el("a", { href: safeNext(query.next), "data-hook": "signin-go-board",
@@ -539,7 +706,7 @@ export async function renderSignin(container, query = {}) {
     clear(ended);
     clear(account);
     account.hidden = true;
-    loginForm.hidden = false;
+    setSignedInMode(false);
     status.textContent = "Access code cleared.";
   });
 

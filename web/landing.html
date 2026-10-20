@@ -83,7 +83,7 @@
     </nav>
     <div class="lh-nav__account" data-hook="nav-account-area" data-signed-in="false">
       <a class="lh-btn lh-btn--soft" href="index.html#/signin" data-hook="nav-signin">Sign in</a>
-      <a class="btn btn--primary" href="index.html#/signup" data-hook="cta-primary" data-checkout-cta data-nav-extra>Request early access</a>
+      <a class="btn btn--primary" href="index.html#/signin?create=1" data-hook="cta-primary" data-nav-extra>Create free account</a>
     </div>
   </div>
 </header>
@@ -210,7 +210,7 @@
     <h2 class="hero__claim-title">Our AI desk reads every game.</h2>
     <p class="hero__claim-body">An AI analyst reads each matchup, calls every market take or pass, gives the strongest case against any bet it takes, and says what it could not know. Every call is graded in public. Analysis, not advice.</p>
     <div class="hero__cta-group" data-rise data-delay="160">
-      <a class="btn btn--primary" href="index.html#/signup" data-hook="cta-signup-hero" data-checkout-cta>Request early access</a>
+      <a class="btn btn--primary" href="index.html#/signin?create=1" data-hook="cta-signup-hero">Create free account</a>
       <!-- As written here the second button is the plain record link, which
            works with no script and before anything has loaded. Once the free
            sample below has rendered, landing.js (pointSampleButton) turns it
@@ -467,7 +467,11 @@
         <li>One monthly plan today, no countdown, no percent-off badge</li>
         <li data-hook="pricing-includes">A brief for every game we cover and the NFL card before the game, plus Matchups, Odds, Props and the Tennis research board. The graded record stays free</li>
       </ul>
-      <a class="btn btn--primary" href="index.html#/signup" data-hook="cta-signup" data-checkout-cta>Request early access</a>
+      <a class="btn btn--primary" href="index.html#/signin?create=1" data-hook="cta-signup">Create free account</a>
+      <!-- The free account opens the dogs (build, fire, ask, kennels). The daily picks board is still early access,
+           by request, and that door is the old signup page (index.html#/signup). -->
+      <p class="pricing-card__early" data-hook="early-access-note" style="margin-top:12px;font-size:13.5px;color:var(--text-3)">Daily picks are early access:
+        <a href="index.html#/signup" data-hook="cta-early-access">request early access to daily picks</a>.</p>
     </div>
   </div>
   </div>
@@ -707,7 +711,7 @@
 <section class="closing-band" aria-label="call to action" data-view="cta" data-hook="cta-bottom">
   <div class="closing-band__title" data-hook="closing-cta-title">Every brief is written before first pitch.<br>Read a sample.</div>
   <div class="closing-band__cta">
-    <a class="btn btn--primary btn--lg" href="index.html#/signup" data-hook="cta-signup-bottom" data-checkout-cta>Request early access</a>
+    <a class="btn btn--primary btn--lg" href="index.html#/signin?create=1" data-hook="cta-signup-bottom">Create free account</a>
   </div>
 </section>
 

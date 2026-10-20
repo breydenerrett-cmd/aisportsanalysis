@@ -93,7 +93,9 @@ class Auth(ApiCase):
         deps = {r.path: [(getattr(d, "call", None) or d.dependency).__name__
                          for d in r.dependant.dependencies]
                 for r in self.api.router.routes if hasattr(r, "dependant")}
-        self.assertIn("require_paid_access", deps["/hounds"])
+        # creating a dog is MEMBER-level since open signups (2026-10-19): a free account may build,
+        # and require_member_access holds everyone else to the paid gate exactly as before
+        self.assertIn("require_member_access", deps["/hounds"])
         self.assertIn("get_current_user", deps["/hounds/mine"])
         self.assertIn("get_current_user", deps["/hounds/{hound_id}/coach/undo"])
 

@@ -455,6 +455,10 @@ function renderAuthRequired(container, err) {
   // with only "Sign in" is a dead end for exactly the person who would buy.
   // Cautious wording first; "Start free trial" only when /meta says checkout is
   // on and a trial exists (checkout.js).
+  // A free account (POST /auth/signup) is the way in for anyone: it opens the dogs. The link after it is the paid
+  // board's door (checkout.js words it).
+  actions.appendChild(el("a", { href: "#/signin?create=1", class: "btn btn--ghost chamfer chamfer--btn",
+    "data-hook": "create-account-link", text: "Create free account" }));
   const signupLink = el("a", { href: "#/signup", class: "btn btn--ghost chamfer chamfer--btn",
     "data-hook": "signup-link", text: gateLabel(NOT_ON) });
   loadCheckoutState().then((state) => { signupLink.textContent = gateLabel(state); });
@@ -467,6 +471,32 @@ function renderAuthRequired(container, err) {
       [typeof detail === "string" ? document.createTextNode(detail) : renderUnknown(detail)]));
     section.appendChild(disclosure);
   }
+  container.appendChild(section);
+}
+
+/** The `detail.error` api/auth.py puts on the 403 a self-serve FREE account gets from the paid board
+ * (require_paid_access, src/appstate/access.py TWO LEVELS). */
+const PAID_ACCESS_REQUIRED = "paid_access_required";
+
+/** A free account on a page of the daily picks board (403 {"error":"paid_access_required"}). Not a failed request and not
+ * a sign-in problem: the account is fine, this board is early access. Say what the free account does include, and give
+ * the two true next steps: back to the kennel, or ask for early access (the old signup page, which waitlists while
+ * billing is off). */
+function renderPaidBoardOnly(container) {
+  const section = el("section", {
+    class: "gate chamfer", role: "alert", "data-hook": "paid-board-only",
+  });
+  section.appendChild(el("p", { class: "gate__eyebrow", text: "Early access" }));
+  section.appendChild(el("p", { class: "gate__title", text: "The daily picks board is early access." }));
+  section.appendChild(el("p", { class: "gate__body",
+    text: "Your free account includes your kennel: build dogs, fire them, ask them and follow them. "
+        + "The daily picks board is by request." }));
+  const actions = el("div", { class: "gate__actions" });
+  actions.appendChild(el("a", { href: "kennel.html", class: "btn btn--primary chamfer chamfer--btn",
+    "data-hook": "paid-board-kennel", text: "Go to My kennel" }));
+  actions.appendChild(el("a", { href: "#/signup", class: "btn btn--ghost chamfer chamfer--btn",
+    "data-hook": "early-access-link", text: "Ask for early access to daily picks" }));
+  section.appendChild(actions);
   container.appendChild(section);
 }
 
@@ -512,6 +542,11 @@ export function renderError(container, err) {
   if (status === "402" && err && err.detail && typeof err.detail === "object"
       && err.detail.error === "subscription_expired") {
     renderSubscriptionExpired(container);
+    return;
+  }
+  if (status === "403" && err && err.detail && typeof err.detail === "object"
+      && err.detail.error === PAID_ACCESS_REQUIRED) {
+    renderPaidBoardOnly(container);
     return;
   }
   const detail = err && err.detail !== undefined ? err.detail

@@ -44,7 +44,7 @@ from src.appstate.users import User
 from src.pipeline import briefing, history
 from src.providers import mlb
 
-from api.auth import get_current_user
+from api.auth import require_board_member
 
 router = APIRouter()
 
@@ -67,7 +67,7 @@ def _build_tonight(date: str) -> tuple:
 
 
 @router.get("/digest")
-def get_digest(current_user: User = Depends(get_current_user)) -> dict:
+def get_digest(current_user: User = Depends(require_board_member)) -> dict:
     """Today's digest for the authed user. Always today's date -- a digest
     is inherently "as of now", the same way GET /today is; there is no
     historical-digest replay endpoint."""

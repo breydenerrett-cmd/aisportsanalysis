@@ -275,8 +275,14 @@ LOGIN_FAILED = "login_failed"
 PASSWORD_SET = "password_set"
 SUPPORT_PASSWORD_RESET = "support_password_reset"
 LOGIN_ANONYMOUS_USER_ID = "login-attempt"
+# Self-serve free account (api/free_signup.py), added 2026-10-19. Recorded
+# server-side only, under the new member's hashed id, in the same transaction that
+# created the account. properties {"has_kennel_name": bool}: no email, no password,
+# no token, and not the kennel name itself.
+SIGNUP_FREE_CREATED = "signup_free_created"
 EVENT_KINDS = frozenset(EVENT_KINDS | {
     LOGIN_SUCCEEDED, LOGIN_FAILED, PASSWORD_SET, SUPPORT_PASSWORD_RESET,
+    SIGNUP_FREE_CREATED,
 })
 
 

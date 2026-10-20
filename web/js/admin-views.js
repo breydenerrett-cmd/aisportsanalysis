@@ -239,6 +239,9 @@ export function peopleRows(data, now) {
     else if (u.status === "pending_payment") state = { word: "Pending payment", tone: "warn", group: "other" };
     else if (u.status === "invited") state = { word: "Invited", tone: "mute", group: "other" };
     else if (u.comp_revoked) state = { word: "Free access ended", tone: "mute", group: "other" };
+    // A self-serve free account (POST /auth/signup): a member, not a customer. It is a different thing from the
+    // hand-approved "Free member" above (that one has the paid board), so it has its own word.
+    else if (u.plan === "free" && u.status === "active") state = { word: "Free account", tone: "info", group: "other" };
     else state = { word: u.status === "active" ? "Active" : String(u.status), tone: "mute", group: "other" };
     rows.push({
       id: u.id, email: String(u.email || ""), status: u.status, plan: u.plan, createdAt: u.created_at,
@@ -586,7 +589,7 @@ export function renderPeople(host, data, ctx) {
       const tr = el("tr", { "data-hook": "admin-person-row", "data-user-id": String(row.id) });
       tr.appendChild(td("Email", el("span", { class: "adm-email", "data-hook": "admin-person-email", text: row.email })));
       tr.appendChild(td("Status", chip(row.state.word, row.state.tone, "admin-person-status")));
-      tr.appendChild(td("Plan", row.plan === "beta" ? "Beta" : "None"));
+      tr.appendChild(td("Plan", row.plan === "beta" ? "Beta" : row.plan === "free" ? "Free" : "None"));
       tr.appendChild(td("Joined", dateLabel(row.createdAt)));
       tr.appendChild(td("Last seen", row.lastSeen ? agoLabel(row.lastSeen, ctx.now()) : "—"));
       tr.appendChild(td("Tester ends", row.tester ? untilLabel(row.testerExpiresAt, ctx.now()) : "—",

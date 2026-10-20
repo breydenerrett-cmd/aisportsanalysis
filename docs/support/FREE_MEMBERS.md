@@ -84,6 +84,25 @@ forever** again with the same email.
 - The access token lasts 10 years. That is "forever" for this product; New token
   gives another 10.
 
+## Free accounts: anyone can sign up (2026-10-19, "yes open signups")
+
+Two different things are called "free" here. A **free member** (above) is someone you approve by hand: full access,
+including the daily picks board. A **free account** is what a visitor makes themselves on the sign-in page ("Create a
+free account": email, password, optional kennel name). It is active at once, with a 30-day session that every sign-in
+renews. Admin People shows it as **Free account**, plan **Free**.
+
+- A free account opens the dogs: kennels, building, editing and backtesting their own dogs, Ask, the locker room,
+  fire, fan tips, following. It does **not** open the daily picks board (Today, Games, Odds, Props, the digest and the
+  rest): those answer 403 until you approve the person. To upgrade one, use **Approve as free member** or **Grant
+  7-day tester** on that row; nothing else changes.
+- **A comp grant or revoke clears the person's password** (any token revoke does, by design), so after either they
+  sign in with the access code you send and set a new password.
+- A signup for an email that already has any account creates nothing and says the same words as a new one; the
+  person is told to sign in, or to use Get help if they lost the password.
+- Abuse limits: 5 signups an hour per address, 30 an hour and 100 a day overall, a hidden honeypot field, all counted
+  in the database. If real people are refused on a busy day, the ceilings are `IP_LIMITS` and `GLOBAL_LIMITS` in
+  `src/appstate/free_members.py`. The event `signup_free_created` carries no email.
+
 ## Kennel names (a member's public name)
 
 A member names their own kennel on **My kennel** ("Name your kennel", 2 to 30 characters, letters, numbers,

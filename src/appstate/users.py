@@ -83,7 +83,9 @@ VALID_STATUSES = ("invited", "active", "suspended",
                   # STRIPE_API_KEY / no beta price id yet) -- honest
                   # non-answer, not a silently-dropped signup.
                   "pending_payment", "waitlisted")
-VALID_PLANS = ("none", "beta")
+# "free": a self-serve account (api/free_signup.py). A MEMBER, not a paying customer: it
+# opens the dog surface and not the paid board (src/appstate/access.py, TWO LEVELS).
+VALID_PLANS = ("none", "beta", "free")
 
 
 def db_path() -> Path:

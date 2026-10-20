@@ -22,6 +22,9 @@
  * the same cards, read only (Open and Ask are links to the dog's page), for any visitor. The data is
  * GET /hounds/kennels/mine (signed in) and GET /hounds/kennels/{handle}; a dog with no bet yet is listed and says "New".
  * The studio's deep link is ?dog=<id>&tab=<tab>. Nothing here measures anything: every number is the server's.
+ *
+ * A NEW MEMBER lands here with ?welcome=1 (web/js/signin.js, right after "Create free account"). While they have no
+ * dog the empty state is a welcome card instead ("Build your first dog"); once they have one the flag does nothing.
  */
 
 import { apiGet } from "./api.js";
@@ -162,6 +165,22 @@ function buildCard(index) {
     h("span", { class: "kn-build__plus", "aria-hidden": "true", text: "+" }),
     h("span", { class: "kn-build__title", text: "Build a dog" }),
     h("span", { class: "kn-build__sub", text: "Say a strategy in plain English." })]);
+}
+
+/** True when the page was opened right after a free signup (?welcome=1). */
+export function isWelcome() {
+  return new URLSearchParams(window.location.search).get("welcome") === "1";
+}
+
+/** The first thing a new free member sees: a welcome and the one next step. It replaces the plain empty state, with the
+ * same build button (the studio opens on the Rules tab). The paid board is not mentioned: this is about their dogs. */
+function welcomeCard() {
+  return h("div", { class: "kn-empty kn-welcome", "data-hook": "kennel-welcome" }, [
+    h("div", { class: "kn-empty__dog", "aria-hidden": "true" }, [dogBadge(DEFAULT_LOOK, { size: 96 })]),
+    h("h2", { text: "Welcome to your kennel" }),
+    h("p", { class: "hd-lede", text: "Your account is free. Build your first dog: say a strategy in plain English and it races on paper money. No real money moves." }),
+    h("button", { type: "button", class: "lh-btn lh-btn--solid kn-empty__cta", "data-hook": "kennel-welcome-build", text: "Build your first dog",
+      on: { click: (e) => openStudio("new", "rules", e.currentTarget) } })]);
 }
 
 function emptyMine() {
@@ -313,7 +332,7 @@ function render() {
   if (mine && data.needs_name_prompt && !q("kennel-name-prompt")) openNameForm(true);
   else if (mine && !data.needs_name_prompt && q("kennel-name-prompt")) clearNode(q("kennel-name-slot"));
   if (!data.dogs.length && mine) {
-    grid.appendChild(emptyMine());
+    grid.appendChild(isWelcome() ? welcomeCard() : emptyMine());
   } else {
     active.forEach((dog, i) => grid.appendChild(dogCard(dog, { mine }, i)));
     if (mine) grid.appendChild(buildCard(active.length));

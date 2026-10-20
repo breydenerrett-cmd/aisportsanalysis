@@ -29,6 +29,7 @@ from api.auth import get_current_user, require_paid_access, router as auth_route
 from fastapi import Depends
 from api.billing import router as billing_router
 from api.passwords import router as passwords_router
+from api.free_signup import router as free_signup_router
 from api.onboarding import router as onboarding_router
 from api.signup import router as signup_router
 from api.hounds_create import router as hounds_create_router
@@ -212,6 +213,8 @@ app.include_router(odds_router, dependencies=_authed_paid)
 app.include_router(auth_router)
 # Email + password sign-in: exchanges a password for a token (api/passwords.py).
 app.include_router(passwords_router)
+# Self-serve FREE account: POST /auth/signup, public and rate limited (api/free_signup.py).
+app.include_router(free_signup_router)
 app.include_router(admin_router)
 app.include_router(billing_router)
 # support mounts WITHOUT the authed dependency: POST /support accepts

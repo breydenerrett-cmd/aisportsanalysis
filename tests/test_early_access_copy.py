@@ -137,8 +137,12 @@ class TheWordsAgreeWithWhatIsEnforced(unittest.TestCase):
         self.assertIn('"Early access: the first 20 testers get 7 days free, no card."', source)
         note = re.search(r'<p class="hero__cta-note" data-hook="hero-cta-note">(.*?)</p>', HTML, re.S)
         self.assertEqual(note.group(1).strip(), HERO_NOTE)
-        labels = [m.strip() for m in re.findall(r"<a[^>]*data-checkout-cta[^>]*>(.*?)</a>", HTML, re.S)]
-        self.assertEqual(labels, ["Request early access"] * 4)
+        # The four landing buttons are the free account now (2026-10-19), not checkout buttons; the paid
+        # board's early-access door is the small note in the pricing card.
+        self.assertEqual(re.findall(r"<a[^>]*data-checkout-cta[^>]*>", HTML), [])
+        labels = [m.strip() for m in re.findall(
+            r'<a[^>]*data-hook="cta-(?:primary|signup-hero|signup|signup-bottom)"[^>]*>(.*?)</a>', HTML, re.S)]
+        self.assertEqual(labels, ["Create free account"] * 4)
 
 
 class TheLandingPageStaysHonestWithJavaScriptOff(unittest.TestCase):

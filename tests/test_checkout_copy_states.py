@@ -436,6 +436,13 @@ class CheckoutCopyInEveryState(unittest.TestCase):
 
     def test_landing_html_upgrades_only_when_meta_says_on(self):
         nodes = self._landing_nodes()
+        # Open signups (2026-10-19): the landing page's four buttons are the FREE account and carry no
+        # data-checkout-cta. The rewrite mechanism (landing.js applyCheckoutCopy) still serves any button that
+        # does, so it is driven here with four of them standing where the old buttons were.
+        self.assertEqual([n for n in nodes if "data-checkout-cta" in n["attrs"]], [])
+        for hook in ("cta-primary", "cta-signup-hero", "cta-signup", "cta-signup-bottom"):
+            nodes.append({"tag": "a", "text": "Request early access",
+                          "attrs": {"data-hook": hook, "data-checkout-cta": "", "href": "index.html#/signup"}})
         ctas = [n for n in nodes if "data-checkout-cta" in n["attrs"]]
         self.assertEqual(len(ctas), 4, "primary, hero, pricing card, closing band")
         for name, meta in NOT_ON_CASES:

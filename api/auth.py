@@ -52,6 +52,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 
+from src.appstate import access
 from src.appstate import authproviders
 from src.appstate import customers
 from src.appstate import events
@@ -197,6 +198,13 @@ def require_paid_access(
     still be able to reach POST /billing/reactivate or start a new
     checkout, which a fully-locked account could not.
 
+    A SELF-SERVE FREE ACCOUNT (plan "free", POST /auth/signup) is refused here with
+    a 403 `paid_access_required` unless something entitles it (a comp, a
+    subscription paid through, an open tester window); that is the first check
+    below, and the reason a free account has no subscription record and would
+    otherwise pass as an invite-token beta user. It is a MEMBER, not a customer:
+    see src/appstate/access.py (TWO LEVELS) and require_member_access.
+
     A FREE (COMP) MEMBER is let in by the same call: customers.has_paid_access
     answers True for one (src/appstate/comps.py), which matters only for a
     former subscriber whose lapsed record would otherwise be a 402 -- a free
@@ -205,6 +213,8 @@ def require_paid_access(
     this function, and tests/test_comp_access.py fails if a route reaches the
     subscription table some other way.
     """
+    if access.is_free_only(current_user):
+        raise _free_account_refused()
     record = customers.get_subscription_record(current_user.id)
     if record is None:
         return current_user
@@ -225,6 +235,46 @@ def require_paid_access(
         "error": "subscription_expired",
         "message": "your paid access ended at the end of the period you paid "
                    "for; reactivate or start a new subscription to continue"})
+
+
+def _free_account_refused() -> HTTPException:
+    """403 for a self-serve FREE account on the paid board (src/appstate/access.py,
+    TWO LEVELS). Not 401 (the token is good) and not 402 (nothing lapsed and there
+    is nothing to reactivate): the account is a member and this surface is not part
+    of that. Same {"error", "message"} shape as every other refusal here, and the
+    page reads `error` to show "daily picks are for early-access members" instead
+    of a failed request."""
+    return HTTPException(status_code=403, detail={
+        "error": "paid_access_required",
+        "message": "the daily picks board is part of early access; a free account "
+                   "includes your kennel and dogs"})
+
+
+def require_member_access(
+        current_user: users_store.User = Depends(get_current_user)) -> users_store.User:
+    """FastAPI dependency for the MEMBER surface that used to share the paid gate:
+    a free account passes, and anyone else is held to exactly what
+    require_paid_access holds them to (a lapsed subscriber is still a 402). Today
+    that is POST /hounds, creating a dog; every other dog route needs only a valid
+    token (get_current_user), which a free account holds.
+
+    Reading the level in only these two places is deliberate (access.py, TWO
+    LEVELS): a new route chooses "member" or "paid" by choosing a dependency."""
+    if access.is_free_only(current_user):
+        return current_user
+    return require_paid_access(current_user=current_user)
+
+
+def require_board_member(
+        current_user: users_store.User = Depends(get_current_user)) -> users_store.User:
+    """FastAPI dependency for a PERSONAL route that is built from the member board
+    (today only GET /digest: tonight's slate summary and What Changed band) but has
+    never carried the subscription check. It changes nothing for anyone who passed
+    get_current_user before, except that a self-serve free account gets the same 403
+    the board gives it: the digest is the daily picks board in another shape."""
+    if access.is_free_only(current_user):
+        raise _free_account_refused()
+    return current_user
 
 
 def request_user_id(request) -> Optional[int]:

@@ -120,7 +120,8 @@ class EveryPageHasTheOneNavigation(unittest.TestCase):
 
     def test_the_landing_page_keeps_its_early_access_button_in_the_bar(self):
         html = read("landing.html")
-        self.assertRegex(html, r'<a class="btn btn--primary"[^>]*data-hook="cta-primary"[^>]*data-nav-extra[^>]*>Request early access</a>')
+        self.assertRegex(html, r'<a class="btn btn--primary"[^>]*data-hook="cta-primary"[^>]*data-nav-extra[^>]*>Create free account</a>')
+        self.assertIn('href="index.html#/signin?create=1" data-hook="cta-primary"', html)
 
 
 # ---------------------------------------------------------------------------------------------------

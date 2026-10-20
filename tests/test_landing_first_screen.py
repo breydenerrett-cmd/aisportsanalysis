@@ -157,11 +157,28 @@ class TheSecondButtonAndTheFullRecordLink(unittest.TestCase):
 
 
 class TheEarlyAccessLabelIsOneDecision(unittest.TestCase):
-    def test_every_static_checkout_button_says_request_early_access(self):
-        labels = [m.strip() for m in re.findall(r"<a[^>]*data-checkout-cta[^>]*>(.*?)</a>", MARKUP, re.S)]
-        self.assertEqual(len(labels), 4, "nav, hero, pricing card, closing band")
-        self.assertEqual(set(labels), {"Request early access"})
+    def test_every_static_call_to_action_says_create_free_account(self):
+        # Open signups (2026-10-19): the four buttons are the FREE account, which exists whatever billing is
+        # doing, so none of them is a data-checkout-cta (landing.js rewrites those from /meta) and none says
+        # "Request early access" any more. That wording lives on in checkout.js for the paid board's own door.
+        self.assertEqual(re.findall(r"<a[^>]*data-checkout-cta[^>]*>", MARKUP), [])
+        labels = {}
+        for hook in ("cta-primary", "cta-signup-hero", "cta-signup", "cta-signup-bottom"):
+            m = re.search(r'<a[^>]*href="([^"]+)"[^>]*data-hook="%s"[^>]*>(.*?)</a>' % hook, MARKUP, re.S)
+            self.assertIsNotNone(m, hook)
+            labels[hook] = (m.group(1), m.group(2).strip())
+        self.assertEqual(set(labels.values()), {("index.html#/signin?create=1", "Create free account")})
         self.assertNotIn("Get notified when checkout opens", MARKUP)
+
+    def test_the_paid_boards_door_is_a_small_early_access_note_where_it_is_described(self):
+        m = re.search(r'<p[^>]*data-hook="early-access-note"[^>]*>(.*?)</p>', MARKUP, re.S)
+        self.assertIsNotNone(m)
+        self.assertIn("Daily picks are early access", m.group(1))
+        self.assertRegex(m.group(1), r'<a href="index.html#/signup" data-hook="cta-early-access">')
+        # inside the pricing card, which is where Matchups, Odds and Props are described
+        card = MARKUP[MARKUP.index('class="pricing-card'):]
+        self.assertLess(card.index('data-hook="cta-signup"'), card.index('data-hook="early-access-note"'))
+        self.assertLess(card.index('data-hook="early-access-note"'), card.index('data-hook="cta-bottom"'))
 
     def test_the_label_is_decided_in_checkout_js_alone(self):
         checkout = (JS / "checkout.js").read_text(encoding="utf-8")

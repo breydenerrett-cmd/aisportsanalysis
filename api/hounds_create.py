@@ -62,7 +62,7 @@ from src.hounds.english import render as english_render
 from src.hounds.english import translate as english_translate
 
 from api import auth as auth_mod
-from api.auth import get_current_user, require_paid_access
+from api.auth import get_current_user, require_member_access
 
 router = APIRouter()
 
@@ -204,7 +204,7 @@ class CreateHoundRequest(BaseModel):
 
 @router.post("/hounds")
 def create_hound(body: CreateHoundRequest,
-                 current_user: users_store.User = Depends(require_paid_access),
+                 current_user: users_store.User = Depends(require_member_access),
                  _rl: None = Depends(_rate_limit_create)) -> dict:
     try:
         hound = user_store.create_hound(current_user.id, body.spec, copied_from=body.copied_from,

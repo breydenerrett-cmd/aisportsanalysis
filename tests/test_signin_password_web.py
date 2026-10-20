@@ -177,7 +177,7 @@ out.submitLabel = say("login-submit");
 await click("show-access-code");
 out.codeHiddenAfter = hook("signin-form").hidden;
 out.expanded = hook("show-access-code").attrs["aria-expanded"];
-""")
+""", storage={"linehound.had_account": "1"})     # a returning device opens on the Sign in tab
         self.assertLess(out["hooks"].index("login-form"), out["hooks"].index("signin-form"))
         self.assertTrue(out["codeHiddenAtFirst"])
         self.assertFalse(out["codeHiddenAfter"])
