@@ -77,6 +77,9 @@ TEAM_NAMES = {
 # Caesars Sportsbook feed key; betonlineag/mybookieag/betus/lowvig strip
 # the odds-API suffixing convention down to the book's real name).
 BOOK_LABELS = {
+    "betclic_fr": "Betclic (FR)",
+    "betfair_ex_au": "Betfair Exchange (AU)",
+    "betfair_ex_eu": "Betfair Exchange (EU)",
     "betmgm": "BetMGM",
     "betonlineag": "BetOnline",
     "betrivers": "BetRivers",
@@ -85,9 +88,24 @@ BOOK_LABELS = {
     "draftkings": "DraftKings",
     "fanatics": "Fanatics",
     "fanduel": "FanDuel",
+    "leovegas_se": "LeoVegas (SE)",
     "lowvig": "LowVig",
     "mybookieag": "MyBookie",
+    "onexbet": "1xBet",
+    "pinnacle": "Pinnacle",
+    "pmu_fr": "PMU (FR)",
+    "sport888": "888sport",
+    "tab": "TAB",
+    "tabtouch": "TABtouch",
+    "tipico_de": "Tipico (DE)",
+    "unibet": "Unibet",
+    "unibet_fr": "Unibet (FR)",
+    "unibet_nl": "Unibet (NL)",
+    "unibet_se": "Unibet (SE)",
+    "williamhill": "William Hill",
     "williamhill_us": "Caesars",
+    "winamax_de": "Winamax (DE)",
+    "winamax_fr": "Winamax (FR)",
 }
 
 
