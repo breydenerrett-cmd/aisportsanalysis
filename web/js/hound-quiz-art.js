@@ -100,5 +100,10 @@ export function toneFor(row) {
   if (has("nfl")) return "lime";
   if (row && row.stance === "dog") return "ember";
   if (row && row.stance === "chalk") return "sky";
-  return "rose";
+  // the rest take a stable colour from the card's id, so the wall reads as a palette
+  const palette = ["rose", "sky", "mint", "gold", "violet", "lime"];
+  const key = String((row && row.id) || "");
+  let sum = 0;
+  for (let i = 0; i < key.length; i++) sum += key.charCodeAt(i);
+  return palette[sum % palette.length];
 }

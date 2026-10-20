@@ -605,6 +605,9 @@ function buildReveal() {
         h("input", { id: "qz-tagline", type: "text", maxlength: "80", autocomplete: "off", "data-hook": "reveal-tagline" })]),
       h("p", { class: "qz-fine", "data-hook": "reveal-honesty" })]),
     h("div", { class: "qz-rv__main" }, [
+      h("p", { class: "qz-eyebrow", text: "The reveal" }),
+      h("h1", { class: "qz-q", id: "qz-q", tabindex: "-1", "data-hook": "reveal-title", text: "Meet your hound." }),
+      h("p", { class: "qz-sub", text: "Check its rules, add your own words, kick the tires, then send it in. Nothing is saved until you do." }),
       h("div", { class: "qz-state", role: "status", "data-hook": "reveal-state", hidden: true }),
       h("div", { "data-hook": "reveal-body" }, [
         h("section", { class: "qz-block", "aria-labelledby": "qz-rules-h" }, [
