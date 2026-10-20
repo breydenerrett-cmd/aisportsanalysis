@@ -213,6 +213,18 @@ class EveryWayAReadCanFailEndsInWordsAndAUsableBuilder(unittest.TestCase):
         self.assertIn("could not reach", out["final"]["status"])
         self.assertIn("blank rule", out["final"]["status"])
 
+    def test_a_builder_whose_menu_never_loaded_offers_to_try_again_and_then_works(self):
+        out = build(base_routes(**{"/hounds/builder/menu": [500, {"detail": "down"}]}), switchAfter={"/hounds/builder/menu": [1, [200, MENU]]},
+                    captureInitial=[q("go", GO, "disabled"), q("retry", "[data-hook='menu-retry']", "count")],
+                    actions=[dict(do="click", sel="[data-hook='menu-retry']", wait=300, label="retry", capture=[
+                        q("go", GO, "disabled"), q("blank", "[data-hook='blank-rule']", "disabled"), q("retry", "[data-hook='menu-retry']", "count"),
+                        q("empty", "[data-hook='rules-empty']")]),
+                        dict(do="click", sel="[data-hook='blank-rule']", wait=150)], queries=[q("cards", "[data-hook='rule-card']", "count")])
+        self.assertEqual(out["captures"]["initial"], {"go": True, "retry": 1})
+        self.assertEqual(out["captures"]["retry"], {"go": False, "blank": False, "retry": 0,
+                                                    "empty": "Describe a strategy above, or start from a blank rule."})
+        self.assertEqual(out["final"]["cards"], 1)
+
     def test_a_server_error_says_so(self):
         out = self.failing(500, {"detail": "boom"})
         self.check(out["final"])
@@ -320,6 +332,13 @@ class SuggestionsAndWhySendIsGreyedOut(unittest.TestCase):
         text = "Bet home underdogs between +120 and +200"
         out = build(routes_for(text), actions=read_actions(text), queries=[q("box_hidden", "[data-hook='english-suggestions']", "hidden")])
         self.assertTrue(out["final"]["box_hidden"])
+
+    def test_a_matchup_condition_added_by_hand_shows_the_menus_note_about_its_data(self):
+        out = build(actions=[dict(do="click", sel="[data-hook='blank-rule']", wait=100),
+                             dict(do="set", sel="[data-hook='add-condition']", value="head_to_head", wait=100)],
+                    queries=[q("conds", "[data-hook='condition']", "attrs", attr="data-cond"), q("note", "[data-hook='cond-note']", "texts")])
+        self.assertEqual(out["final"]["conds"], ["head_to_head"])
+        self.assertIn("held back", out["final"]["note"][0])
 
     def test_the_greyed_out_send_button_says_why(self):
         both = [q("hint", "[data-hook='save-hint']"), q("btn", "[data-hook='build-submit']", "disabled")]
@@ -520,6 +539,21 @@ class TheKennelRemoveAndEdit(unittest.TestCase):
         self.assertIn("The rule builder did not load", cap["problem"])
         self.assertNotIn("Sign in again", cap["problem"])
         self.assertEqual(cap["retry"], 1)
+
+    def test_try_again_fetches_the_menu_again_and_opens_the_dog(self):
+        from tests.test_hounds_builder_web import dog as builder_dog
+        mine = {"hounds": [builder_dog("u-1", "Underdog Gus")], "limit_running": 3}
+        routes = self.routes(**{"/hounds/builder/menu": [500, {"detail": "down"}], "/hounds/mine": [200, mine],
+                                "POST /hounds/builder/preview": [200, preview_answer()]})
+        out = run_page("kennel", routes=routes, **SIGNED, settleMs=200, switchAfter={"/hounds/builder/menu": [1, [200, MENU]]}, actions=[
+            dict(do="click", sel="[data-hook='dog-action-edit']", index=0, wait=500, label="edit", capture=[
+                q("retry", "[data-hook='studio-edit-retry']", "count")]),
+            dict(do="click", sel="[data-hook='studio-edit-retry']", wait=700, label="again", capture=[
+                q("title", "[data-hook='build-title']"), q("problem", "[data-hook='studio-edit-problem']", "count"),
+                q("go", "[data-hook='english-go']", "disabled")])])
+        self.assertEqual(out["captures"]["edit"]["retry"], 1)
+        self.assertEqual(out["captures"]["again"], {"title": "Edit Underdog Gus", "problem": 0, "go": False})
+        self.assertEqual(len([g for g in out["gets"] if g.endswith("/hounds/builder/menu")]), 2)
 
     def test_a_lapsed_token_in_edit_says_sign_in_with_a_link(self):
         routes = self.routes(**{"/hounds/mine": [401, {"detail": "no"}]})

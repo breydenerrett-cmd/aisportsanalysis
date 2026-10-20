@@ -35,6 +35,40 @@ old row retired, old record kept).
 Limits: 3 running hounds per account; creating needs a signed-in paid or early-access account; an admin
 can retire any hound with a reason (`X-Admin-Token`).
 
+## Matchup and team-strength conditions (2026-10-19)
+
+A member asked for "head-to-head, home advantage, offense against defense" and the menu had none of it. Five
+conditions read the stores already in the repo, point in time (nothing dated on or after the slate day, nothing
+still being played at the lock), and say "does not apply" rather than guess when the games they name are not on file.
+
+| Condition | What it checks | Data |
+|---|---|---|
+| `head_to_head` | the team's record in the last N (1 to 10) meetings with this opponent, all meetings on file or this season only | NFL: `data/datasvc/nfl/games.jsonl`, 2021 on. MLB: `data/historical/mlb_results.csv` 2023 to 2025 plus games since 2026-08-28; January to August 2026 is the sealed research stretch and is never read, so a recent meeting from it is not seen (the menu says so) |
+| `venue_record` | this season's win rate at home, on the road, or on today's kind of ground, at least 5 games on that ground | same stores, this season only |
+| `scoring_rate` | runs (MLB) or points (NFL) scored or allowed per game over the last N games (0 = whole season so far) | final scores in the same stores |
+| `league_rank` | top or bottom N (1 to 15) of the league for scoring or defence, same window | computed over every club with enough games on file; ties share a rank; fewer than 8 clubs is no rank |
+| `matchup_edge` | the team's offense (or defense) ranks at least G places better than the other team's defense (or offense) | the same ranks |
+
+All five are in `user_rules.CONDITIONS`, so the web builder, the English parser, the Zapier translator's menu and
+the output check, the renderer and the engine pick them up from the one table. Each carries a `note` in
+`GET /hounds/builder/menu` that says what data is behind it.
+
+The English parser reads them ("won 3 of the last 5 meetings", "head-to-head", "home advantage", "a top 10
+defense", "scores at least 4.5 runs per game", "its offense ranks better than the opponent's defense", and
+"last five games" as recent form). A phrase that names the idea with no number is read with a stated default
+(5 meetings, a majority of wins, a 60% win rate, the last 10 games, 1 place better) and the default is listed
+under `assumed`. Words it cannot read come back with `suggestions`: a wording it does read, or the plain fact
+that the rules have no such stat (starting pitchers, bullpens, lineups, injuries).
+
+## Removing and editing a dog
+
+"Remove from my kennel" is `POST /hounds/{id}/retire` with no reason. It is a retirement, never a delete: the
+ledger is append-only, so the dog's tickets and record stay, its address still opens ("Retired by the owner"),
+and it stops betting, leaves My kennel (every earlier version of it too, `user_store.removed_roots`) and the
+leaderboard, and frees a running slot. A version retired by an edit is not a removal (its reason starts
+`superseded by`). A classic (version 1) dog opens in the builder as the equivalent rule set (`upgrade_v1`) and
+saves as the next version through the same diff and version routes; the old row and every bet on it are untouched.
+
 ## What the engine does
 
 `python -m src.hounds.user_engine run --date YYYY-MM-DD|auto [--replay] [--ledger P] [--hounds-file F]`
@@ -78,7 +112,7 @@ visitor sees is `src/hounds/verdict.py`'s (150 measurable bets, a date-clustered
 | `GET /hounds/menu` | public |
 | `POST /hounds` `{spec, copied_from?, coach_opt_in?}` | signed-in paid/tester; 10/hour |
 | `GET /hounds/mine` | signed in |
-| `POST /hounds/{id}/retire` `{reason}` | owner, or admin token |
+| `POST /hounds/{id}/retire` `{reason?}` | owner (no reason needed: the kennel's "Remove from my kennel"), or admin token (reason required) |
 | `GET /hounds/{id}/spec` | public: a spec to POST back as your own (fresh suggested name); the copy carries `copied_from` |
 | `GET /hounds/{id}/scorecard[?format=text]` | public |
 | `GET /hounds/{id}/coach/diary` | public |

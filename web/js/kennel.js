@@ -528,7 +528,11 @@ async function buildRules(host, dog) {
 function editProblem(text, dog, signIn) {
   return h("p", { class: "hd-muted", "data-hook": "studio-edit-problem" }, [`${text} `,
     signIn ? h("a", { href: SIGNIN_HREF, text: "Sign in" }) : h("button", { type: "button", class: "lh-btn lh-btn--soft", "data-hook": "studio-edit-retry", text: "Try again",
-      on: { click: () => { state.loaded.rules = null; openStudio(dog.id, "rules"); } } })]);
+      on: { click: async () => {
+        try { const builder = await import("./hounds-build.js"); await builder.reboot(); } catch (err) { /* openStudio says what is still wrong */ }
+        state.loaded.rules = null;
+        openStudio(dog.id, "rules");
+      } } })]);
 }
 
 function refreshCards() {

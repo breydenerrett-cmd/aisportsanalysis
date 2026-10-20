@@ -63,7 +63,7 @@ const S = {
   menu: null, spec: null, signedIn: false, mine: [], edit: null, diffReady: false, busy: false,
   understood: [], notRead: [], assumed: [], sentences: [], problems: [], saveProblems: [], previewSeq: 0, previewTimer: null,
   jobTimer: null, jobPolls: 0, jobId: null, copiedFrom: "", pendingTranslation: null,
-  jobBusy: false, jobElapsed: 0, jobStart: 0, jobNextPoll: 0, jobErrors: 0,
+  jobBusy: false, jobElapsed: 0, jobStart: 0, jobNextPoll: 0, jobErrors: 0, bound: false,
 };
 
 // ---- the menu ---------------------------------------------------------------------------------------
@@ -289,6 +289,8 @@ function renderGroup(rule, group, depth, parent, onChange) {
       h("button", { type: "button", class: "btn btn--ghost bd-x", "data-hook": "remove-condition", text: "Remove",
         "aria-label": `Remove ${cond ? cond.label : item.id}`,
         on: { click: () => { group.items = group.items.filter((x) => x !== item); if (!group.items.length && parent) parent.items = parent.items.filter((x) => x !== group); onChange(true); } } })]));
+    // what data stands behind it and how much of it exists (the menu's own note), so a thin stat is not a surprise
+    if (cond && cond.note) row.appendChild(h("p", { class: "hd-fine bd-cond__note", "data-hook": "cond-note", text: cond.note }));
     const params = h("div", { class: "bd-cond__params" });
     if (cond) for (const p of cond.params) { const c = paramControl(cond, p, item, rule, onChange); if (c) params.appendChild(c); }
     row.appendChild(params);
@@ -1279,6 +1281,12 @@ export async function refreshMine() {
 
 export const builderReady = () => !!S.menu;
 
+/** Fetch the rules menu again after it failed to load (the kennel studio's "Try again"). True when the builder is ready. */
+export async function reboot() {
+  if (!S.menu) await boot();
+  return !!S.menu;
+}
+
 function stopEdit() {
   S.edit = null;
   S.diffReady = false;
@@ -1295,32 +1303,41 @@ function stateBox(kind, text) {
 }
 
 async function boot() {
-  exampleChips();
-  q("english-go").addEventListener("click", readEnglish);
-  q("blank-rule").addEventListener("click", () => {
-    if (!S.menu) return;
-    startFromDraft({ spec: blankSpec(), sentences: [] });
-  });
-  q("add-rule").addEventListener("click", () => {
-    if (!S.spec || S.spec.rules.length >= S.menu.limits.max_rules) return;
-    S.spec.rules.push(blankRule());
-    changed(true);
-  });
-  q("build-submit").addEventListener("click", submit);
-  q("edit-cancel").addEventListener("click", stopEdit);
-  q("english-input").addEventListener("input", updateCount);
+  if (!S.bound) {                       // a retry after a failed menu load runs the rest of this again, but binds once
+    S.bound = true;
+    exampleChips();
+    q("english-go").addEventListener("click", readEnglish);
+    q("blank-rule").addEventListener("click", () => {
+      if (!S.menu) return;
+      startFromDraft({ spec: blankSpec(), sentences: [] });
+    });
+    q("add-rule").addEventListener("click", () => {
+      if (!S.spec || S.spec.rules.length >= S.menu.limits.max_rules) return;
+      S.spec.rules.push(blankRule());
+      changed(true);
+    });
+    q("build-submit").addEventListener("click", submit);
+    q("edit-cancel").addEventListener("click", stopEdit);
+    q("english-input").addEventListener("input", updateCount);
+  }
   updateCount();
   q("build-submit").disabled = true;
+  q("english-go").disabled = false;
+  q("blank-rule").disabled = false;
 
   try {
     S.menu = await apiGet("/hounds/builder/menu");
   } catch (err) {
     const box = clearNode(q("rules-empty"));
     box.appendChild(stateBox(err && err.status === 404 ? "missing" : "down", describeError(err, "the dog builder").text));
+    // not a dead end: the menu is the one thing the page cannot work without, so offer to fetch it again
+    box.appendChild(h("p", {}, [h("button", { type: "button", class: "btn btn--ghost", "data-hook": "menu-retry", text: "Try again",
+      on: { click: () => { boot(); } } })]));
     q("english-go").disabled = true;
     q("blank-rule").disabled = true;
     return;
   }
+  clearNode(q("rules-empty")).appendChild(h("p", { text: "Describe a strategy above, or start from a blank rule." }));
   S.spec = blankSpec();
   S.started = false;
   bindIdentity();

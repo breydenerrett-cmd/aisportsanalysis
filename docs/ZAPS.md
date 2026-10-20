@@ -166,6 +166,14 @@ trigger rather than a feed.
 | Changes | One row in the app database's `english_jobs` table per job. The site checks the answer and shows it to the person as sentences and rule cards to confirm and edit; **nothing is saved as a dog until they save it**. Nothing on the site changes without a person. |
 | Tasks | **2 per translation** (the AI step and the POST). The site allows each person 8 translations an hour, and only calls the Zap for a sentence the free parser could not fully read, so most sentences cost nothing. Estimate **0 to 60 a month**; unmeasured, read Zapier's task history after two weeks. |
 
+**What the menu offers (nothing to change in the Zap).** The `menu` the site sends is generated from the live
+rule table, so the conditions added on 2026-10-19 reach the translator with no change to the Zap or its prompt:
+`head_to_head`, `venue_record`, `scoring_rate`, `league_rank` and `matchup_edge` (head-to-head record in the last N
+meetings, home or road record this season, runs or points per game, league rank in scoring or defence, and offense
+against the other team's defense), each with its own parameters and bounds in the menu JSON. A sentence like
+"use head-to-head and home advantage and offense vs defense" can therefore come back as a rule set that uses them.
+The free parser now reads those phrases itself, so far fewer sentences reach the Zap at all.
+
 #### The AI step instructions (paste exactly)
 
 ```
