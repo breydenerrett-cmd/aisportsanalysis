@@ -83,6 +83,9 @@ point of the column.
 | benched | Idle (no ticket in 7+ days) |
 | closing-line value | CLV, or "beat the close" |
 | Tail it / Fade it | not shown (Copy rule, Build one like this) |
+| Fire now, Fire again, "firing" (2026-10-19, owner) | **Take them out back** (the button, also "Take them out back again"), **Out back** (the tab), "Taking <name> out back..." (while it loads), "<name>'s picks right now" (the result heading). The route (`/fire`) and the `data-hook`s keep the old word; only what a person reads changed. |
+| Drill, Run drill, Hindsight drill (2026-10-19, owner) | **Backtest**, **Run backtest**, **Backtest (hindsight, not counted in the record)**. 7 / 14 / 30 days and Season 2, on every dog page, in the studio and in the Training camp. Hook and route keep `drill`. |
+| the handle "Handler 3F2A" | the member's kennel name once they set one ("Name your kennel", 2 to 30 characters); the handle is the default until then |
 
 ## Banned
 

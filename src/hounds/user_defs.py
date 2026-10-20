@@ -37,11 +37,22 @@ STYLE = {
 }
 
 
-def owner_display(owner_user_id: int) -> str:
-    """An anonymous handle: a user's account id is never public, and the same account always gets
+def anonymous_handle(owner_user_id: int) -> str:
+    """The anonymous handle: a user's account id is never public, and the same account always gets
     the same handle ("Handler 3F2A")."""
     digest = hashlib.sha256(f"hound-owner:{owner_user_id}".encode()).hexdigest()[:4].upper()
     return f"Handler {digest}"
+
+
+def owner_display(owner_user_id: int) -> str:
+    """What every public page calls a dog's owner: the kennel name the member chose (``member_profile``), else the
+    anonymous handle until they set one. Never an email, never the account id."""
+    try:
+        from src.hounds import member_profile
+        name = member_profile.kennel_name_of(owner_user_id)
+    except Exception:  # noqa: BLE001 -- a profile table that cannot be read leaves the anonymous handle, never a 500
+        name = None
+    return name or anonymous_handle(owner_user_id)
 
 
 def _db_file():
@@ -118,6 +129,8 @@ def stamp() -> tuple:
             row = conn.execute(
                 "SELECT COUNT(*), MAX(created_at), MAX(retired_at), SUM(status = 'retired') "
                 "FROM hounds").fetchone()
-        return ("user_hounds", tuple(row))
     except sqlite3.Error:
         return ("user_hounds", "unreadable")
+    from src.hounds import member_profile
+    # a kennel name shows on every dog's "by <name>", so a rename must change the cache key too
+    return ("user_hounds", tuple(row), member_profile.stamp())

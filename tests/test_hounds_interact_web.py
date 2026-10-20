@@ -500,7 +500,7 @@ class TheTrainingCamp(unittest.TestCase):
         post = [p for p in out["posts"] if p["url"] == "/hounds/drill"][0]
         self.assertEqual(post["body"], {"dog_id": "u-1", "days": 14})
         c = out["captures"]["1"]
-        self.assertIn("Hindsight drill: not counted", c["label"])
+        self.assertIn("Backtest (hindsight, not counted in the record)", c["label"])
         self.assertIn("never added to a record", c["label"])
         self.assertEqual(c["record"], "1-0")
         self.assertEqual(c["units"], "+1.20u")

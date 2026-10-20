@@ -270,7 +270,7 @@ class TheAnswers(unittest.TestCase):
         owner = self.say("how do I make you better", is_owner=True)["answer"]
         stranger = self.say("how do I make you better")["answer"]
         self.assertIn("you can change my rule", owner)
-        self.assertIn("drill", owner.lower())
+        self.assertIn("backtest", owner.lower())
         self.assertIn("Suggest a change", stranger)
         for text in (owner, stranger):
             self.assertIn("changes me by itself", text) if "by itself" in text else None

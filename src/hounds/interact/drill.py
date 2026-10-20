@@ -1,10 +1,10 @@
-"""The hindsight drill: a dog's rule replayed over the last 7, 14 or 30 days of stored boards.
+"""The hindsight drill (the owner calls it the BACKTEST: the page says "Backtest"): a dog's rule replayed over the last 7, 14 or 30 days of stored boards.
 
 LABELLED HINDSIGHT, NEVER COUNTED. The boards were captured before the rule was run over them, and the person
 asking could see how those games ended when they chose the rule, so a drill is a rehearsal and not evidence.
 It is written into a TEMPORARY ledger that is thrown away; the real ledgers are never opened for writing, so a
 drill cannot reach a dog's record, the leaderboard, the referee or the learning loop. Every result carries
-``counted: false`` and the words "Hindsight drill: not counted".
+``counted: false`` and the words "Backtest (hindsight, not counted in the record)".
 
 SAME MACHINERY AS THE COACH'S HINDSIGHT (src/hounds/coach_grade.py ``grade_hindsight``):
   house dog  ``pack_run.run(..., replay=True)`` over the stores into a temp ledger, then ``pack_settle.settle``;
@@ -18,6 +18,16 @@ THE WINDOW is the last N completed Eastern days (yesterday back), never today: a
 no result, and replay mode would otherwise evaluate it on a board from after its lock.
 
 SMALL SAMPLES ARE SAID. Under 30 graded bets the result says so, and a drill never states an edge.
+
+THE BACKTEST IS THIS SAME DRILL, SHOWN IN DOLLARS (owner ask 2026-10-19: a "Backtest" tab on every dog page and in
+the studio, 7 / 14 / 30 days and "Season 2"). Every result also carries ``bankroll``: the picks' flat units turned
+into dollars on the $1,000 paper bankroll with the bankroll module's own arithmetic (``bankroll.block``; 1u = $10,
+a member dog's chosen stake, a house dog 1u), a ``usd`` figure on each ticket, and ``backtest_label``. Nothing is
+counted: it is still ``counted: false`` and still written only into the throwaway ledger.
+
+SEASON WINDOWS. ``season="s2"`` means "from the season's first day to yesterday". The replay's memory is the
+constraint (a 30-day house drill peaks near 700 MB), so a window longer than ``MAX_SEASON_DAYS`` is the LAST 30
+days of the season and says so (``season.clipped``); a season with no completed day yet is refused.
 """
 
 from __future__ import annotations
@@ -32,12 +42,14 @@ import time
 from datetime import datetime, timedelta
 from typing import Callable, Iterable, Optional
 
-from src.hounds import user_engine, user_spec
+from src.hounds import bankroll, seasons, user_engine, user_spec
 from src.hounds.interact import common, fire
 from src.ledger.chain import HashChainLedger
 
 DAYS_CHOICES = (7, 14, 30)
-LABEL = "Hindsight drill: not counted"
+LABEL = "Backtest (hindsight, not counted in the record)"
+BACKTEST_LABEL = LABEL
+MAX_SEASON_DAYS = 30
 DISCLOSURE = ("This replays the dog's current rule over boards that were already captured. The rule was not live "
               "then, and you can see how those games ended, so this is a rehearsal and not evidence. It is "
               "never added to a record, a ranking or a verdict.")
@@ -67,13 +79,36 @@ class DrillError(ValueError):
 
 
 def window(days: int, now: datetime) -> tuple:
-    """(first, last) Eastern dates: the last ``days`` completed days."""
+    """(first, last) Eastern dates: the last ``days`` completed days (7, 14 or 30)."""
     if days not in DAYS_CHOICES:
         raise DrillError("days_invalid", f"choose {', '.join(str(d) for d in DAYS_CHOICES)} days", 422)
+    return _span(days, now)
+
+
+def _span(days: int, now: datetime) -> tuple:
+    """The same window for any whole number of days: the engine of ``window`` and of a season's window."""
     today = datetime.fromisoformat(common.eastern_date(now))
     last = (today - timedelta(days=1)).date()
     first = (today - timedelta(days=days)).date()
     return first.isoformat(), last.isoformat()
+
+
+def season_window(season_id: str, now: datetime) -> dict:
+    """``{id, label, start, days, clipped}``: the number of completed days from the season's first day to yesterday,
+    never more than ``MAX_SEASON_DAYS`` (then it is the last that many days: ``clipped``)."""
+    season = seasons.get(str(season_id or "").strip().lower())
+    if season is None:
+        raise DrillError("season_invalid", "that season is not on the calendar", 422)
+    today = datetime.fromisoformat(common.eastern_date(now)).date()
+    yesterday = today - timedelta(days=1)
+    if season["end"] is not None and datetime.fromisoformat(season["end"]).date() < yesterday:
+        raise DrillError("season_over", f"{season['label']} is over: pick 7, 14 or 30 days", 422)
+    total = (yesterday - datetime.fromisoformat(season["start"]).date()).days + 1
+    if total < 1:
+        raise DrillError("season_empty", f"{season['label']} has no finished day to replay yet", 422)
+    days = min(total, MAX_SEASON_DAYS)
+    return {"id": season["id"], "label": season["label"], "start": season["start"], "days": days,
+            "clipped": total > MAX_SEASON_DAYS, "days_in_season": total}
 
 
 def dates_between(first: str, last: str) -> list:
@@ -166,7 +201,7 @@ def run_user(hound: dict, days: int, *, now: Optional[datetime] = None, rows_by_
     """Replay a user rule. ``hound`` is ``{id, spec, ...}``; the injection points are the tests'."""
     from src.hounds import user_settle
     now = now or common.now_utc()
-    first, last = window(days, now)
+    first, last = _span(days, now)
     spec = hound["spec"]
     dates = dates_between(first, last)
     if game_pk_index is None:
@@ -207,7 +242,7 @@ def summarize_user(rows: Iterable[dict]) -> dict:
             "selection": b["selection"], "price_average": b["price"], "price_best": b["best_price"],
             "result": g["result"] if g else None, "units_average_price": g.get("units_average_price") if g else None,
             "units_best_price": g.get("units_best_price") if g else None,
-            "reason": b.get("reason")})
+            "reason": b.get("reason"), "stake_units": b.get("stake_units")})
     return _summary(picks)
 
 
@@ -220,7 +255,7 @@ def run_house(dog: common.Dog, days: int, *, now: Optional[datetime] = None, sto
     from src.hounds.learning import champions
     from src.hounds.pack import base
     now = now or common.now_utc()
-    first, last = window(days, now)
+    first, last = _span(days, now)
     dates = [d for d in dates_between(first, last) if d >= base.SEAL_FLOOR and not base.in_seal(d)]
     if not dates:
         raise DrillError("sealed", "that window is inside the sealed period", 422)
@@ -262,8 +297,48 @@ def summarize_house(rows: Iterable[dict]) -> dict:
 # the result
 # ---------------------------------------------------------------------------
 
+def _stake(pick: dict) -> float:
+    """Units staked on a pick: the member dog's own chosen stake (the bankroll module's rule: a nonsense value is
+    one unit), else 1."""
+    value = pick.get("stake_units")
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or not 0 < float(value) <= bankroll.MAX_STAKE_UNITS:
+        return bankroll.FLAT_STAKE_UNITS
+    return float(value)
+
+
+def _usd(pick: dict) -> Optional[float]:
+    """The pick's profit in paper dollars (units at the board-average price x stake x $ per unit), None when it
+    is not decided or has no unit figure."""
+    units = pick.get("units_average_price")
+    if pick.get("result") not in ("WIN", "LOSS", "PUSH") or not isinstance(units, (int, float)):
+        return None
+    return round(units * _stake(pick) * bankroll.params().unit_usd, 2)
+
+
+def backtest_bankroll(final: list) -> dict:
+    """The graded picks as a $1,000 paper account, by the SAME arithmetic the live bankroll uses
+    (``bankroll.block``): flat units, 1u = $10, a member dog's own stake. Picks are taken in date order, so the
+    drawdown is the account's real worst fall in this window. None-valued units count as 0, as the record does."""
+    events = []
+    for i, p in enumerate(final):
+        flat = p.get("units_average_price")
+        flat = float(flat) if isinstance(flat, (int, float)) else 0.0
+        stake = _stake(p)
+        events.append(bankroll.Event(settle=None, units=flat * stake, flat=flat, stake=stake,
+                                     result=p["result"].lower(), order=(p["date"], f"{i:06d}")))
+    block = bankroll.block(events, basis="average")
+    keep = ("start", "current", "pnl_usd", "return_pct", "units_total", "unit_usd", "unit_pct", "settled",
+            "wagered_usd", "yield_pct", "max_drawdown_usd", "max_drawdown_pct", "currency", "basis")
+    out = {k: block[k] for k in keep}
+    out["label"] = bankroll.public_block()["label"]
+    return out
+
+
 def _summary(picks: list) -> dict:
     picks.sort(key=lambda p: (p["date"], p["game"], p["market"]))
+    for p in picks:
+        p["stake_units"] = _stake(p)
+        p["usd"] = _usd(p)
     final = [p for p in picks if p["result"] in ("WIN", "LOSS", "PUSH")]
     wins = sum(1 for p in final if p["result"] == "WIN")
     losses = sum(1 for p in final if p["result"] == "LOSS")
@@ -275,18 +350,20 @@ def _summary(picks: list) -> dict:
         vals = [p[key] for p in final if isinstance(p.get(key), (int, float))]
         return round(sum(vals), 2) if vals else None
     decided = [p for p in final if isinstance(p.get("units_average_price"), (int, float))]
-    best = sorted([p for p in decided if p["result"] == "WIN"], key=lambda p: -p["units_average_price"])[:3]
-    worst = sorted([p for p in decided if p["result"] == "LOSS"], key=lambda p: p["units_average_price"])[:3]
+    best = sorted([p for p in decided if p["result"] == "WIN"], key=lambda p: -p["usd"])[:3]
+    worst = sorted([p for p in decided if p["result"] == "LOSS"], key=lambda p: p["usd"])[:3]
     by_day: dict = {}
     for p in decided:
-        d = by_day.setdefault(p["date"], {"date": p["date"], "bets": 0, "units": 0.0})
+        d = by_day.setdefault(p["date"], {"date": p["date"], "bets": 0, "units": 0.0, "usd": 0.0})
         d["bets"] += 1
         d["units"] = round(d["units"] + p["units_average_price"], 2)
+        d["usd"] = round(d["usd"] + p["usd"], 2)
     n = len(final)
     return {
         "record": {"bets": len(picks), "graded": n, "wins": wins, "losses": losses, "pushes": pushes,
                    "voids": voids, "pending": pending},
         "units_average_price": total("units_average_price"), "units_best_price": total("units_best_price"),
+        "bankroll": backtest_bankroll(final),
         "best": best, "worst": worst, "by_day": [by_day[d] for d in sorted(by_day)],
         "picks": picks[-PICKS_SHOWN:][::-1], "picks_total": len(picks),
         "small_sample": n < SMALL_N,
@@ -296,21 +373,28 @@ def _summary(picks: list) -> dict:
     }
 
 
-def _wrap(base: dict, *, dog: dict, rule: str, days: int, now: datetime) -> dict:
-    first, last = window(days, now)
+def _wrap(base: dict, *, dog: dict, rule: str, days: int, now: datetime, season: Optional[dict] = None) -> dict:
+    first, last = _span(days, now)
     out = dict(base)
-    out.update({"label": LABEL, "disclosure": DISCLOSURE, "counted": False, "dog": dog, "rule_text": rule,
-                "days": days, "window": {"first": first, "last": last}, "run_at": common.iso(now),
-                "paper_only": True, "not_advice": user_spec.NOT_ADVICE})
+    out.update({"label": LABEL, "backtest_label": BACKTEST_LABEL, "disclosure": DISCLOSURE, "counted": False,
+                "dog": dog, "rule_text": rule, "days": days, "window": {"first": first, "last": last},
+                "season": season, "run_at": common.iso(now), "paper_only": True,
+                "not_advice": user_spec.NOT_ADVICE})
     return out
 
 
-def drill(*, days: int, dog: Optional[common.Dog] = None, spec: Optional[dict] = None,
-          now: Optional[datetime] = None, **inject) -> dict:
+def drill(*, days: int = 14, dog: Optional[common.Dog] = None, spec: Optional[dict] = None,
+          now: Optional[datetime] = None, season: Optional[str] = None, **inject) -> dict:
     """Run a drill for a dog or a typed-in spec. Results are remembered for half an hour (same dog or spec, same
-    days, same Eastern day) so the same button twice costs one pass."""
+    days, same Eastern day) so the same button twice costs one pass. ``season`` (a season id) replaces ``days``
+    with that season's completed days so far (``season_window``)."""
     now = now or common.now_utc()
-    window(days, now)                                         # validates the days before any work
+    season_info = None
+    if season:
+        season_info = season_window(season, now)
+        days = season_info["days"]
+    else:
+        window(days, now)                                     # validates the days before any work
     if (dog is None) == (spec is None):
         raise DrillError("target_required", "drill a dog (dog_id) or a rule (spec), not both and not neither", 422)
     if dog is not None:
@@ -332,7 +416,7 @@ def drill(*, days: int, dog: Optional[common.Dog] = None, spec: Optional[dict] =
         ident = {"id": None, "name": "Your rule", "kind": "spec"}
         rule = user_spec.rule_text(norm)
         key = ("spec", user_spec.spec_hash(norm))
-    cache_key = key + (days, common.eastern_date(now))
+    cache_key = key + (days, season_info and season_info["id"], common.eastern_date(now))
     if not inject:
         with _cache_lock:
             hit = _cache.get(cache_key)
@@ -349,7 +433,7 @@ def drill(*, days: int, dog: Optional[common.Dog] = None, spec: Optional[dict] =
     finally:
         _drill_slot.release()
         gc.collect()          # hand the replay's rows back now, not at the next collection, on a 1 GB machine
-    out = _wrap(body, dog=ident, rule=rule, days=days, now=now)
+    out = _wrap(body, dog=ident, rule=rule, days=days, now=now, season=season_info)
     if not inject:
         with _cache_lock:
             if len(_cache) >= CACHE_MAX:
