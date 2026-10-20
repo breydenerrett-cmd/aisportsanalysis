@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Hounds v3 breed sheet</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../../../web/css/tokens.css"><link rel="stylesheet" href="../../../web/css/lh.css">
+<style>body{margin:0;background:#0F1317;color:#E9ECF1;font:12px/1.3 system-ui,sans-serif}
+.row{display:grid;grid-template-columns:repeat(var(--cols,11),1fr);gap:6px;padding:8px}
+.cell{text-align:center}.cell svg{width:100%;height:auto}.fixed .cell svg{width:auto;height:auto;display:inline-block}.cell b{display:block;font-size:11px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+h2{margin:8px 10px 0;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#9AA3B2}</style></head>
+<body><div id="out"></div>
+<script type="module">
+// The Hounds v3 breed sheet: every breed in every style (or one style), one pose, from the real rig.
+// Served from the repo root by any static server: /docs/design/hounds-v3/breed-sheet.html?style=elite&pose=idle&size=160
+try {
+const { dogSvg, BREEDS, breedLabel } = await import("../../../web/js/dog-rig.js");
+const q = new URLSearchParams(location.search);
+const style = q.get("style"), pose = q.get("pose") || "idle", coat = q.get("coat") || "", size = Number(q.get("size")) || 160;
+const out = document.getElementById("out");
+const coats = ["tan", "black", "white", "grey", "brown", "golden", "red", "merle"];
+const only = q.get("breeds") ? q.get("breeds").split(",") : BREEDS;
+const styles = style ? [style] : ["mascot", "street", "elite"];
+const extra = {};
+for (const k of ["head", "face", "neck", "body"]) if (q.get(k)) extra[k] = q.get(k);
+if (q.get("number")) extra.number = Number(q.get("number"));
+document.documentElement.style.setProperty("--cols", q.get("cols") || 11);
+if (q.get("fixed")) out.classList.add("fixed");
+const poses = pose === "all" ? ["idle", "happy", "sad", "thinking", "celebrate"] : [pose];
+const rows = [];
+for (const st of styles) for (const ps of poses) rows.push([st, ps]);
+for (const [st, ps] of rows) {
+  const h = document.createElement("h2"); h.textContent = `${st} / ${ps}`; out.appendChild(h);
+  const row = document.createElement("div"); row.className = "row"; out.appendChild(row);
+  only.forEach((breed, i) => {
+    const cell = document.createElement("div"); cell.className = "cell";
+    cell.appendChild(dogSvg(Object.assign({ coat: coat || coats[i % coats.length], style: st, eyes: ["brown", "amber", "blue", "green", "hazel"][i % 5],
+      bg: ["navy", "slate", "charcoal", "forest", "maroon", "teal", "violet", "sand"][i % 8] }, extra), { breed, pose: ps, size }));
+    const b = document.createElement("b"); b.textContent = breedLabel(breed); cell.appendChild(b); row.appendChild(cell);
+  });
+}
+document.title = "ready";
+} catch (err) { const pre = document.createElement("pre"); pre.style.color = "#ff6b6b"; pre.textContent = String(err && err.stack || err); document.body.prepend(pre); document.title = "error"; }
+</script></body></html>

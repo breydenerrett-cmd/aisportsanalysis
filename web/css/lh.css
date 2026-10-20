@@ -241,37 +241,35 @@
 .lh-confetti { position: fixed; inset: 0; z-index: 200; pointer-events: none; overflow: hidden; }
 .lh-confetti i { position: absolute; border-radius: 2px; will-change: transform, opacity; }
 
-/* ---- the dog rig (web/js/dog-rig.js): poses are attributes, shown by CSS; no pose needs motion to be understood ---- */
+/* ---- the hound rig (web/js/dog-rig.js): poses are attributes, shown by CSS; no pose needs motion to be understood ----
+   data-pose is idle | happy | sad | thinking | celebrate, which draw the expressions idle | grin | snarl | focus | howl. */
 .dk-badge { display: block; overflow: visible; flex: none; }
 .dk-badge .dk-p { display: none; }
-.dk-badge .dk-head, .dk-badge .dk-body, .dk-badge .dk-clip, .dk-badge .dk-paws, .dk-badge .dk-paw, .dk-badge .dk-eyes, .dk-badge .dk-ear, .dk-badge .dk-dot, .dk-badge .dk-spark {
+.dk-badge .dk-head, .dk-badge .dk-body, .dk-badge .dk-clip, .dk-badge .dk-paws, .dk-badge .dk-paw {
   transform-box: view-box; transform-origin: 60px 92px;
 }
-.dk-badge .dk-eyes, .dk-badge .dk-ear, .dk-badge .dk-dot, .dk-badge .dk-spark { transform-box: fill-box; transform-origin: 50% 50%; }
+.dk-badge .dk-eyes, .dk-badge .dk-ear, .dk-badge .dk-dot, .dk-badge .dk-spark, .dk-badge .dk-glint { transform-box: fill-box; transform-origin: 50% 50%; }
 .dk-badge .dk-ear--l { transform-origin: 85% 12%; }
 .dk-badge .dk-ear--r { transform-origin: 15% 12%; }
 .dk-badge .dk-paws { display: none; }
-.dk-badge .dk-p--tear { fill: #8FD0FF; }
 
 .dk-badge[data-pose="idle"] .dk-p--mouth.dk-p--idle, .dk-badge[data-pose="happy"] .dk-p--mouth.dk-p--happy,
 .dk-badge[data-pose="sad"] .dk-p--mouth.dk-p--sad, .dk-badge[data-pose="thinking"] .dk-p--mouth.dk-p--thinking,
 .dk-badge[data-pose="celebrate"] .dk-p--mouth.dk-p--celebrate { display: inline; }
 .dk-badge[data-pose="idle"] .dk-p--eyes.dk-p--open, .dk-badge[data-pose="happy"] .dk-p--eyes.dk-p--happy,
-.dk-badge[data-pose="celebrate"] .dk-p--eyes.dk-p--happy, .dk-badge[data-pose="sad"] .dk-p--eyes.dk-p--sad,
+.dk-badge[data-pose="celebrate"] .dk-p--eyes.dk-p--celebrate, .dk-badge[data-pose="sad"] .dk-p--eyes.dk-p--sad,
 .dk-badge[data-pose="thinking"] .dk-p--eyes.dk-p--thinking { display: inline; }
-.dk-badge[data-pose="happy"] .dk-p--brows.dk-p--happy, .dk-badge[data-pose="sad"] .dk-p--brows.dk-p--sad,
-.dk-badge[data-pose="thinking"] .dk-p--brows.dk-p--thinking, .dk-badge[data-pose="celebrate"] .dk-p--brows.dk-p--celebrate { display: inline; }
-.dk-badge[data-pose="happy"] .dk-p--cheeks, .dk-badge[data-pose="celebrate"] .dk-p--cheeks { display: inline; }
-.dk-badge[data-pose="sad"] .dk-p--tear, .dk-badge[data-pose="thinking"] .dk-p--thought, .dk-badge[data-pose="celebrate"] .dk-p--sparkles { display: inline; }
+.dk-badge[data-pose="sad"] .dk-p--rage, .dk-badge[data-pose="thinking"] .dk-p--thought, .dk-badge[data-pose="happy"] .dk-p--gleam,
+.dk-badge[data-pose="celebrate"] .dk-p--sparkles, .dk-badge[data-pose="celebrate"] .dk-p--sound { display: inline; }
 .dk-badge[data-pose="celebrate"] .dk-paws { display: inline; }
 
-/* a pose still reads with every animation off: the head sits differently, the ears hang, the paws are up */
-.dk-badge[data-pose="sad"] .dk-head { transform: translateY(3px) rotate(2.5deg); }
-.dk-badge[data-pose="sad"] .dk-ear--l { transform: rotate(8deg); }
-.dk-badge[data-pose="sad"] .dk-ear--r { transform: rotate(-8deg); }
-.dk-badge[data-pose="thinking"] .dk-head { transform: rotate(-4deg); }
+/* a pose still reads with every animation off: the head sits differently (snarl low, focus cocked, howl thrown back), the ears pin, the paws are up */
+.dk-badge[data-pose="sad"] .dk-head { transform: translateY(3px) rotate(2deg); }
+.dk-badge[data-pose="sad"] .dk-ear--l { transform: rotate(10deg); }
+.dk-badge[data-pose="sad"] .dk-ear--r { transform: rotate(-10deg); }
+.dk-badge[data-pose="thinking"] .dk-head { transform: rotate(-5deg); }
 .dk-badge[data-pose="happy"] .dk-head { transform: translateY(-1px) rotate(2deg); }
-.dk-badge[data-pose="celebrate"] .dk-head { transform: translateY(-2px); }
+.dk-badge[data-pose="celebrate"] .dk-head { transform: translateY(-4px) rotate(-6deg); }
 .dk-badge[data-pose="celebrate"] .dk-paw--l { transform: translateY(-9px) rotate(-12deg); }
 .dk-badge[data-pose="celebrate"] .dk-paw--r { transform: translateY(-9px) rotate(12deg); }
 
@@ -295,9 +293,11 @@
   .dk-badge .dk-eyes { animation: dk-blink 5.6s infinite; }
   .dk-badge .dk-ear--l { animation: dk-ear 7s ease-in-out infinite; }
   .dk-badge .dk-ear--r { animation: dk-ear 7s ease-in-out 1.3s infinite reverse; }
+  .dk-badge[data-pose="idle"] .dk-glint { animation: dk-glint 6.4s ease-in-out infinite; }
+  .dk-badge[data-pose="sad"] .dk-p--rage { animation: dk-rage 2.4s ease-in-out infinite; }
+  .dk-badge[data-pose="celebrate"] .dk-p--sound { animation: dk-pulse .8s ease-in-out infinite alternate; }
   .dk-badge[data-pose="happy"] .dk-head { animation: dk-wiggle 1.5s ease-in-out infinite; }
   .dk-badge[data-pose="sad"] .dk-head { animation: dk-slump 5.5s ease-in-out infinite; }
-  .dk-badge[data-pose="sad"] .dk-p--tear { animation: dk-tear 2.6s ease-in infinite; }
   .dk-badge[data-pose="thinking"] .dk-head { animation: dk-ponder 3.2s ease-in-out infinite; }
   .dk-badge[data-pose="thinking"] .dk-dot { animation: dk-dot 1.5s ease-in-out infinite; }
   .dk-badge[data-pose="thinking"] .dk-dot--2 { animation-delay: .2s; }
@@ -325,7 +325,9 @@
 @keyframes dk-slump { 0%, 100% { transform: translateY(3px) rotate(2.5deg); } 50% { transform: translateY(4px) rotate(3.4deg); } }
 @keyframes dk-ponder { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(-6deg) translateY(-1px); } }
 @keyframes dk-dot { 0%, 100% { transform: scale(.6); opacity: .45; } 50% { transform: scale(1.15); opacity: 1; } }
-@keyframes dk-tear { 0% { transform: translateY(0); opacity: 0; } 15% { opacity: .95; } 80% { transform: translateY(16px); opacity: .9; } 100% { transform: translateY(20px); opacity: 0; } }
+@keyframes dk-glint { 0%, 70%, 100% { transform: translateX(0); opacity: 1; } 78% { transform: translateX(2.4px); opacity: .5; } 86% { transform: translateX(-1px); opacity: 1; } }
+@keyframes dk-rage { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+@keyframes dk-pulse { from { opacity: .35; } to { opacity: 1; } }
 @keyframes dk-jump { from { transform: translateY(2px); } to { transform: translateY(-6px); } }
 @keyframes dk-wave-l { from { transform: translateY(-9px) rotate(-12deg); } to { transform: translateY(-13px) rotate(-4deg); } }
 @keyframes dk-wave-r { from { transform: translateY(-9px) rotate(12deg); } to { transform: translateY(-13px) rotate(4deg); } }

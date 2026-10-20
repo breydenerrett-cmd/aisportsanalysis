@@ -302,7 +302,7 @@ class TheLockerRoom(unittest.TestCase):
         put = [p for p in out["posts"] if p["method"] == "PUT"][0]
         self.assertEqual(put["url"], f"/hounds/{HID}/look")
         self.assertEqual(put["body"]["look"], {"coat": "red", "eyes": "brown", "bg": "navy", "head": "cap", "face": "none",
-                                               "neck": "none", "body": "jersey", "number": 23})
+                                               "neck": "none", "body": "jersey", "number": 23, "style": "mascot", "breed": "auto"})
         c = out["captures"]["6"]
         self.assertEqual((c["preview"], c["head"], c["num"]), ("red", "cap", "23"))
         self.assertIn("Saved.", c["status"])
@@ -334,10 +334,10 @@ class TheLockerRoom(unittest.TestCase):
                 q("dog", hook("locker-preview") + " svg.dk-badge", "attr", attr="data-pose"),
                 q("pressed", hook("locker-pose") + "[data-pose='sad']", "attr", attr="aria-pressed")])])
         f = out["final"]
-        self.assertEqual(f["poses"], ["Idle", "Happy", "Sad", "Thinking", "Cheer"])
+        self.assertEqual(f["poses"], ["Idle", "Grin", "Snarl", "Focus", "Howl"], "the labels are the expressions the poses draw")
         self.assertEqual(out["captures"]["0"]["dog"], "sad")
         self.assertEqual(out["captures"]["0"]["pressed"], "true")
-        self.assertEqual(f["thumbs"], 4 + 2 + 2 + 3, "one small dog on every head, face, neck and body option")
+        self.assertEqual(f["thumbs"], 3 + 34 + 4 + 2 + 4 + 3, "one small dog on every style, breed (and the name's own), head, face, neck and body option")
         self.assertIn(f["breed"], ["retriever", "bulldog", "schnauzer", "husky", "mutt", "hound"])
         self.assertNotIn("PUT", [p["method"] for p in out["posts"]], "previewing a pose saves nothing")
 
@@ -559,19 +559,20 @@ class TheAvatarModule(unittest.TestCase):
     def test_the_key_lists_are_the_servers(self):
         got = run_js('import * as A from "./dog-avatar.js";\n'
                      'console.log(JSON.stringify({coat: Object.keys(A.COATS), eyes: Object.keys(A.EYES), bg: Object.keys(A.BACKGROUNDS),'
-                     ' head: A.HEAD, face: A.FACE, neck: A.NECK, body: A.BODY, d: A.DEFAULT_LOOK}));')
+                     ' head: A.HEAD, face: A.FACE, neck: A.NECK, body: A.BODY, style: A.STYLES, breed: A.BREED_CHOICES, d: A.DEFAULT_LOOK}));')
         self.assertEqual(got["coat"], list(look.COATS))
         self.assertEqual(got["eyes"], list(look.EYES))
         self.assertEqual(got["bg"], list(look.BACKGROUNDS))
         self.assertEqual((got["head"], got["face"], got["neck"], got["body"]),
                          (list(look.HEAD), list(look.FACE), list(look.NECK), list(look.BODY)))
+        self.assertEqual((got["style"], got["breed"]), (list(look.STYLES), list(look.BREED_CHOICES)))
         self.assertEqual({k: v for k, v in got["d"].items()}, {k: v for k, v in look.DEFAULT_LOOK.items() if k != "v"})
 
     def test_a_junk_look_becomes_the_default_and_never_reaches_a_colour(self):
         got = run_js('import * as A from "./dog-avatar.js";\n'
                      'console.log(JSON.stringify(A.cleanLook({coat: "#ff0000", eyes: "<script>", bg: "url(x)", head: "crown", body: "hoodie", number: 7, extra: 1})));')
         self.assertEqual(got, {"coat": "tan", "eyes": "brown", "bg": "navy", "head": "none", "face": "none", "neck": "none",
-                               "body": "hoodie", "number": None})
+                               "body": "hoodie", "number": None, "style": "mascot", "breed": "auto"})
 
 
 if __name__ == "__main__":

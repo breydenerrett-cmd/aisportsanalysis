@@ -1,12 +1,16 @@
 """The locker room: a dog's look, validated against a fixed whitelist.
 
 A look is a small JSON of CHOICES, never colours or markup: ``{"coat": "tan", "eyes": "brown", "bg": "navy",
-"head": "cap", "face": "sunglasses", "neck": "chain", "body": "jersey", "number": 23}``. Every value must be a
-key of a table in this file, so nothing a user sends can reach a page as a colour string, a URL or SVG. The
-page turns the keys into colours (web/js/dog-avatar.js keeps the same tables; a test holds the two together).
+"head": "cap", "face": "sunglasses", "neck": "chain", "body": "jersey", "number": 23, "style": "mascot",
+"breed": "auto"}``. Every value must be a key of a table in this file, so nothing a user sends can reach a page
+as a colour string, a URL or SVG. The page turns the keys into colours (web/js/dog-look.js keeps the same
+tables; a test holds the two together).
 
-The accessories are the owner's list: cap, headband, visor (one head piece), sunglasses, chain, jersey with a
-number, hoodie (one body piece). The look is cosmetic. It changes no rule, no ticket, no record.
+The accessories are the owner's list: cap, headband, visor (one head piece), sunglasses, chain, spiked collar,
+bandana (one neck piece), jersey with a number, hoodie (one body piece). ``style`` is the art style of the
+illustrated hound (mascot, street or elite). ``breed`` is "auto" (the breed the dog's name picks) or one of the
+breeds the illustrations draw. A look saved before ``style`` and ``breed`` existed keeps working: both take
+their default. The look is cosmetic. It changes no rule, no ticket, no record.
 """
 
 from __future__ import annotations
@@ -20,15 +24,24 @@ EYES = ("brown", "amber", "blue", "green", "hazel")
 BACKGROUNDS = ("navy", "slate", "charcoal", "forest", "maroon", "teal", "violet", "sand")
 HEAD = ("none", "cap", "headband", "visor")
 FACE = ("none", "sunglasses")
-NECK = ("none", "chain")
+NECK = ("none", "chain", "collar", "bandana")
 BODY = ("none", "hoodie", "jersey")
+STYLES = ("mascot", "street", "elite")
+# The breeds the illustrations draw, in the order of web/js/dog-look.js BREED_IDS. "auto" is the dog's own (its name picks one).
+BREEDS = (
+    "retriever", "labrador", "bulldog", "newfoundland", "chihuahua", "corgi", "collie", "shepherd", "kelpie", "husky",
+    "jackrussell", "dalmatian", "pointer", "beagle", "basset", "bloodhound", "hound", "greyhound", "whippet", "setter",
+    "spaniel", "poodle", "terrier", "schnauzer", "mutt",
+    "doberman", "rottweiler", "pitbull", "wolfhound", "boxer", "mastiff", "shiba", "malinois",
+)
+BREED_CHOICES = ("auto",) + BREEDS
 NUMBER_MAX = 99
 
 DEFAULT_LOOK = {"v": LOOK_VERSION, "coat": "tan", "eyes": "brown", "bg": "navy", "head": "none",
-                "face": "none", "neck": "none", "body": "none", "number": None}
+                "face": "none", "neck": "none", "body": "none", "number": None, "style": "mascot", "breed": "auto"}
 
 CHOICES = {"coat": COATS, "eyes": EYES, "bg": BACKGROUNDS, "head": HEAD, "face": FACE, "neck": NECK,
-           "body": BODY}
+           "body": BODY, "style": STYLES, "breed": BREED_CHOICES}
 FIELDS = tuple(CHOICES) + ("number",)
 
 
@@ -75,5 +88,5 @@ def validate_look(raw: Any) -> dict:
 def menu() -> dict:
     """What the locker room offers, for the page and for the tests."""
     return {"coat": list(COATS), "eyes": list(EYES), "bg": list(BACKGROUNDS), "head": list(HEAD),
-            "face": list(FACE), "neck": list(NECK), "body": list(BODY), "number_max": NUMBER_MAX,
-            "default": dict(DEFAULT_LOOK)}
+            "face": list(FACE), "neck": list(NECK), "body": list(BODY), "style": list(STYLES),
+            "breed": list(BREED_CHOICES), "number_max": NUMBER_MAX, "default": dict(DEFAULT_LOOK)}
