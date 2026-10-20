@@ -291,3 +291,6 @@ body.landing .kncard__links { display: flex; flex-wrap: wrap; gap: var(--lh-s2);
 /* the FAQ keeps its own accordions, under one calm heading */
 .landing #faq .section__title { font-size: var(--lh-fs-xl); margin-bottom: var(--lh-s3); }
 .landing #faq .faq-list { margin-top: var(--lh-s3) !important; }
+
+/* a little air before the questions */
+.landing #faq { margin-top: var(--lh-s6); }

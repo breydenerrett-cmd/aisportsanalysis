@@ -438,3 +438,6 @@
 .bd-side__dog { position: absolute; top: var(--lh-s4); right: var(--lh-s4); line-height: 0; border-radius: 18px; }
 .bd-side__dog svg { width: 60px; height: 60px; }
 .hounds-page .bd-side .hd-panel h2 { padding-right: 72px; }
+
+/* the seventh tile of the secondary row spans the line on a phone instead of sitting alone */
+@media (max-width: 760px) { .hd-kpirow .hd-kpi:last-child:nth-child(odd) { grid-column: 1 / -1; } }

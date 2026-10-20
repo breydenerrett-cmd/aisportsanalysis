@@ -341,7 +341,7 @@ const BREED = {
   greyhound(c) {
     return {
       geo: G({ ey: 53, edx: 11.5, er: 4.4, ny: 80, nrx: 5.2, nry: 3.8, my: 90, topY: 22, browY: 46, hw: 25 }),
-      back: ears("M44 34 L14 30 C14 40 26 48 44 44 Z", c.shade, "M40 36 L22 34 C23 40 30 43 40 42 Z", inside(c)),
+      back: ears("M43 33 C35 26 27 30 27 40 C29 47 37 47 44 42 Z", c.shade, "M40 35 C35 31 31 33 31 39 C33 43 37 43 41 40 Z", inside(c)),
       head: [
         path(skull({ top: 22, hw: 26, cheek: 52, chin: 100, jaw: 7, a: 18 }), { fill: c.base }),
         sheen(c, 26, 22),
@@ -354,7 +354,7 @@ const BREED = {
   whippet(c) {
     return {
       geo: G({ ey: 54, edx: 12.5, er: 5.2, ny: 77, nrx: 5.4, nry: 3.8, my: 87, topY: 22, browY: 47, hw: 27 }),
-      back: ears("M44 32 L16 20 C10 30 20 44 44 42 Z", c.shade, "M40 33 L22 25 C20 32 27 38 40 39 Z", inside(c)),
+      back: ears("M43 30 C34 24 24 22 17 29 C22 41 34 47 44 41 Z", c.shade, "M40 32 C34 28 27 27 22 31 C27 38 34 41 40 39 Z", inside(c)),
       head: [
         path(skull({ top: 22, hw: 28, cheek: 54, chin: 96, jaw: 11, a: 20 }), { fill: c.base }),
         sheen(c, 28, 22),
