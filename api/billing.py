@@ -69,6 +69,12 @@ class CheckoutRequest(BaseModel):
     plan_id: str
 
 
+# Where a subscriber manages the subscription they already have (cancel, resume renewal, see the status).
+# The same page web/js/upgrade.js sends a free account to, as the server-side absolute path
+# (billing.py builds its Stripe redirect targets under /web/ the same way).
+BILLING_MANAGE_URL = "/web/index.html#/billing"
+
+
 def _free_member_body(user_id: int) -> Optional[dict]:
     """The one answer a free (comp) member gets from every billing route, or None
     for anyone else.
@@ -112,6 +118,13 @@ def create_checkout(body: CheckoutRequest,
 
     A free member never reaches a checkout: they get the free-member answer
     (see _free_member_body) before the plan is even looked at.
+
+    SOMEONE WHO ALREADY PAYS NEVER GETS A SECOND SESSION. A subscriber whose subscription entitles them
+    right now (or whose first payment is on its way) is refused with 409 `already_subscribed` and a
+    link to the billing page, where they cancel or resume renewal. Without this a double-click, a stale
+    tab or a founding member pressing Subscribe again opened a second Stripe session and, paid, a second
+    subscription: two charges a month. The check comes BEFORE the price is chosen because choosing a
+    founding price reserves a seat.
     """
     free = _free_member_body(current_user.id)
     if free is not None:
@@ -121,6 +134,11 @@ def create_checkout(body: CheckoutRequest,
             "error": "unknown_plan",
             "message": f"{body.plan_id!r} is not a recognized plan id; "
                        f"expected {billing.BETA_PLAN_ID!r}"})
+    if customers.subscription_is_live(customers.get_subscription_record(current_user.id)):
+        raise HTTPException(status_code=409, detail={
+            "error": "already_subscribed",
+            "message": "You already have a subscription. Manage it on the billing page.",
+            "manage_url": BILLING_MANAGE_URL})
     choice = billing.choose_checkout_price(current_user.id)
     if choice is None:
         # Same honest "not configured" shape as every other billing gap --
@@ -130,10 +148,15 @@ def create_checkout(body: CheckoutRequest,
                 "message": "billing is not configured yet"}
     # FOUNDING OFFER: a founding seat may have been RESERVED for this user just now
     # (billing.choose_checkout_price, src/appstate/founding.py). Every path below that does not end in a
-    # real checkout URL gives the seat back; a URL keeps it for the reservation window.
-    body = _open_checkout(current_user, choice)
-    if body.get("status") != "redirect" and choice.tier == billing.PLAN_TIER_FOUNDING:
-        billing.release_founding_reservation(current_user.id)
+    # real checkout URL gives that seat back (only a hold THIS call created: a double click that was
+    # handed the first click's hold owns nothing and releases nothing); a URL keeps it for the window.
+    try:
+        body = _open_checkout(current_user, choice)
+    except BaseException:
+        billing.release_founding_reservation(current_user.id, choice)
+        raise
+    if body.get("status") != "redirect":
+        billing.release_founding_reservation(current_user.id, choice)
     return body
 
 

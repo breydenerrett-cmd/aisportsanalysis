@@ -257,12 +257,12 @@ def _attempt_checkout(user_id: int) -> Optional[str]:
     try:
         url = _open_signup_checkout(user_id, choice)
     except BaseException:
-        # A founding seat reserved for this checkout is given back when no checkout opened.
-        if choice.tier == billing.PLAN_TIER_FOUNDING:
-            billing.release_founding_reservation(user_id)
+        # A founding seat reserved BY THIS CALL is given back when no checkout opened; a hold this call
+        # was merely handed (a double submit) is not its to give back (billing.release_founding_reservation).
+        billing.release_founding_reservation(user_id, choice)
         raise
-    if not url and choice.tier == billing.PLAN_TIER_FOUNDING:
-        billing.release_founding_reservation(user_id)
+    if not url:
+        billing.release_founding_reservation(user_id, choice)
     return url or None
 
 

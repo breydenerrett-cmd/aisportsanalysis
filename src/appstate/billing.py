@@ -193,6 +193,10 @@ ENV_STRIPE_FOUNDING_PRICE_ID = "STRIPE_FOUNDING_PRICE_ID"
 # recognisable from the webhook even if the env var is later changed.
 PLAN_TIER_FOUNDING = "founding"
 PLAN_TIER_STANDARD = "standard"
+# Stamped on a founding Checkout Session (and its subscription) as the reference of the seat reservation
+# that session backs (founding.Reservation.reserved_at). `checkout.session.expired` hands it back, so a
+# late expiry of an OLD session can only ever release the reservation that session was opened for.
+METADATA_FOUNDING_RESERVATION = "founding_reservation"
 
 
 def founding_plan_stripe_price_id() -> Optional[str]:
@@ -207,10 +211,16 @@ class CheckoutChoice:
 
     `tier` is "founding" or "standard". `kwargs` goes straight into provider.create_checkout and is
     EMPTY for the standard price, so a provider written before the founding offer existed (or a test
-    double) keeps working unchanged."""
+    double) keeps working unchanged.
+
+    `created_reservation` is the reference of a seat reservation THIS call wrote, and None when the
+    price is standard, when the user already holds the seat, or when the call was handed a hold that
+    another request had already made (a double click). Only a call that created a hold may give it
+    back if its checkout then fails to open (release_founding_reservation)."""
     tier: str
     price_id: str
     kwargs: Dict[str, object] = field(default_factory=dict)
+    created_reservation: Optional[int] = None
 
 
 def choose_checkout_price(user_id: int, *, now: Optional[int] = None,
@@ -220,12 +230,14 @@ def choose_checkout_price(user_id: int, *, now: Optional[int] = None,
 
     The founding price is chosen only when STRIPE_FOUNDING_PRICE_ID is set AND a seat can be
     RESERVED for this user right now (founding.try_reserve: fewer than the cap taken or held, decided
-    under one write lock). A reservation is made here, so the CALLER owns releasing it
-    (release_founding_reservation) if the checkout then fails to open.
+    under one write lock). A reservation may be made here, so the CALLER owns releasing it
+    (release_founding_reservation, which acts only on a hold this call created) if the checkout then
+    fails to open.
 
     The founding session carries `expires_at` = the end of the reservation, an Idempotency-Key that
     includes the reservation (Stripe refuses a reused key with different parameters, and `expires_at`
-    differs per reservation), and `plan_tier=founding` metadata."""
+    differs per reservation), and `plan_tier=founding` metadata plus the reservation's own reference
+    (METADATA_FOUNDING_RESERVATION), which is how an expiry event is matched back to its session."""
     standard = beta_plan_stripe_price_id()
     if not standard:
         return None
@@ -233,19 +245,30 @@ def choose_checkout_price(user_id: int, *, now: Optional[int] = None,
     if founding_id:
         reservation = founding.try_reserve(user_id, now=now, db=db)
         if reservation is not None:
-            kwargs: Dict[str, object] = {"metadata": {"plan_tier": PLAN_TIER_FOUNDING}}
+            metadata = {"plan_tier": PLAN_TIER_FOUNDING}
+            kwargs: Dict[str, object] = {"metadata": metadata}
             if not reservation.already_member:
+                metadata[METADATA_FOUNDING_RESERVATION] = str(reservation.reserved_at)
                 kwargs["expires_at"] = reservation.session_expires_at
                 kwargs["idempotency_key"] = (
                     f"checkout:{user_id}:{founding_id}:{reservation.reserved_at}")
-            return CheckoutChoice(PLAN_TIER_FOUNDING, founding_id, kwargs)
+            return CheckoutChoice(
+                PLAN_TIER_FOUNDING, founding_id, kwargs,
+                created_reservation=(reservation.reserved_at if reservation.created else None))
     return CheckoutChoice(PLAN_TIER_STANDARD, standard)
 
 
-def release_founding_reservation(user_id: int, *, db: Optional[Path] = None) -> None:
-    """Give back the seat `choose_checkout_price` reserved when the checkout did not open."""
+def release_founding_reservation(user_id: int, choice: "CheckoutChoice", *,
+                                 db: Optional[Path] = None) -> None:
+    """Give back the seat `choose_checkout_price` reserved when the checkout did not open.
+
+    Acts only on a reservation that `choice` itself created. A request that was handed a hold another
+    request had made (a double click, an idempotent retry that Stripe answered 409) owns nothing, so its
+    failure must not free a seat the other request is still opening a session for."""
+    if choice.created_reservation is None:
+        return
     try:
-        founding.release_reservation(user_id, db=db)
+        founding.release_reservation(user_id, reserved_at=choice.created_reservation, db=db)
     except Exception as exc:  # noqa: BLE001 -- the hold times out by itself within the window
         print(f"billing: could not release founding reservation: {exc!r}", file=sys.stderr, flush=True)
 
@@ -1113,6 +1136,11 @@ def _normalize_subscription_status(raw_status: Optional[str]) -> str:
     anything that is not actively active or trialing (see
     apply_stripe_webhook_event's own past-due test:
     test_subscription_updated_past_due_maps_to_canceled).
+
+    This is the ACCESS vocabulary and it is wrong for one question: whether a founding SEAT is over.
+    past_due is folded into `canceled` here, and a seat freed on it was sold to someone else while its
+    member's card was merely failing. The seat counter is fed the raw status instead
+    (src/appstate/founding.py, WHAT ENDS A SEAT).
     """
     return raw_status if raw_status in ("active", "trialing") else "canceled"
 
@@ -1572,9 +1600,14 @@ def _apply_event(event: dict, *, db: Optional[Path] = None) -> None:
     elif event_type == "checkout.session.expired":
         # The founding session ran out unpaid: give its reserved seat back now rather than at the
         # end of the window. A paid or active seat is never touched by this.
+        # ONLY the reservation this session was opened for (its own reference, stamped in metadata): a
+        # late expiry of an old session must not free the seat a newer session holds, and a session with
+        # no reference (opened before this was stamped) frees nothing, its hold simply times out.
         user_id = _int_or_none(obj.get("client_reference_id"))
-        if user_id is not None and 0 <= user_id <= MAX_DB_ID and is_founding_subscription(obj):
-            founding.release_reservation(user_id, db=db)
+        reservation = _epoch_in_range(_dig(obj, "metadata", METADATA_FOUNDING_RESERVATION))
+        if (user_id is not None and 0 <= user_id <= MAX_DB_ID and reservation is not None
+                and is_founding_subscription(obj)):
+            founding.release_reservation(user_id, reserved_at=reservation, db=db)
     elif event_type in ("customer.subscription.created", "customer.subscription.updated",
                          "customer.subscription.deleted"):
         customer_id = _str_or_none(obj.get("customer"))
@@ -1595,9 +1628,12 @@ def _apply_event(event: dict, *, db: Optional[Path] = None) -> None:
                 trial_end=_epoch_to_iso(obj.get("trial_end"))),
             db=db)
         if is_founding_subscription(obj):
-            # A deleted subscription is over whatever status the body carries.
+            # A deleted subscription is over whatever status the body carries. Every other status goes
+            # in RAW: _normalize_subscription_status folds past_due into `canceled` (right for access,
+            # which runs to paid-through), and that freed the seat of a member whose card had merely
+            # failed (founding.py, WHAT ENDS A SEAT).
             seat_status = ("canceled" if event_type == "customer.subscription.deleted"
-                           else _normalize_subscription_status(_str_or_none(obj.get("status"))))
+                           else _str_or_none(obj.get("status")))
             founding.record_subscription(user_id, subscription_id, seat_status, at, db=db)
     elif event_type in ("invoice.paid", "invoice.payment_succeeded"):
         customer_ref = _str_or_none(obj.get("customer"))
