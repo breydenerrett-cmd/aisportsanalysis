@@ -96,6 +96,8 @@ data/datasvc/*
 !data/datasvc/ufc/
 # The NFL data layer (2026-10-03): the normalised files /data/v1/nfl reads.
 !data/datasvc/nfl/
+# The ESPN-fed leagues (2026-10-20): DataClient.league(code) reads these.
+!data/datasvc/espn/
 
 design/
 docs/

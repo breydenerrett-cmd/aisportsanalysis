@@ -1,0 +1,609 @@
+{
+"events": [
+{
+"competitions": [
+{
+"attendance": 19070,
+"broadcast": "ESPN+",
+"competitors": [
+{
+"curatedRank": {
+"current": 99
+},
+"homeAway": "home",
+"id": "2",
+"linescores": [
+{
+"displayValue": "2",
+"period": 1,
+"value": 2.0
+},
+{
+"displayValue": "1",
+"period": 2,
+"value": 1.0
+},
+{
+"displayValue": "2",
+"period": 3,
+"value": 2.0
+}
+],
+"order": 0,
+"probables": [
+{
+"abbreviation": "SG",
+"athlete": {
+"displayName": "Colten Ellis",
+"fullName": "Colten Ellis",
+"id": "4736758",
+"jersey": "92",
+"position": "G",
+"shortName": "C. Ellis",
+"team": {
+"id": "2"
+}
+},
+"displayName": "Probable Starting Goalie",
+"name": "probableStartingGoalie",
+"playerId": 4736758,
+"record": "",
+"shortDisplayName": "Starter",
+"statistics": [],
+"status": {
+"abbreviation": "Confirmed",
+"id": "102",
+"name": "Confirmed",
+"type": "confirmed"
+}
+}
+],
+"records": [
+{
+"abbreviation": "Game",
+"name": "YTD",
+"summary": "26-16-4",
+"type": "ytd"
+},
+{
+"abbreviation": "HOME",
+"name": "Home",
+"summary": "16-6-2",
+"type": "home"
+},
+{
+"abbreviation": "AWAY",
+"name": "Road",
+"summary": "10-10-2",
+"type": "road"
+}
+],
+"score": "5",
+"statistics": [
+{
+"abbreviation": "SV",
+"displayValue": "20",
+"name": "saves"
+},
+{
+"abbreviation": "SV%",
+"displayValue": ".870",
+"name": "savePct"
+},
+{
+"abbreviation": "G",
+"displayValue": "5",
+"name": "goals"
+},
+{
+"abbreviation": "YTDG",
+"displayValue": "293",
+"name": "ytdGoals"
+},
+{
+"abbreviation": "A",
+"displayValue": "8",
+"name": "assists"
+},
+{
+"abbreviation": "PTS",
+"displayValue": "13",
+"name": "points"
+}
+],
+"team": {
+"abbreviation": "BUF",
+"alternateColor": "fdb71a",
+"color": "00468b",
+"displayName": "Buffalo Sabres",
+"id": "2",
+"isActive": true,
+"location": "Buffalo",
+"logo": "https://a.espncdn.com/i/teamlogos/nhl/500/scoreboard/buf.png",
+"logoDark": "https://a.espncdn.com/i/teamlogos/nhl/500-dark/scoreboard/buf.png",
+"name": "Sabres",
+"shortDisplayName": "Sabres",
+"venue": {
+"id": "1848"
+}
+},
+"type": "team",
+"winner": true
+},
+{
+"curatedRank": {
+"current": 99
+},
+"homeAway": "away",
+"id": "10",
+"linescores": [
+{
+"displayValue": "2",
+"period": 1,
+"value": 2.0
+},
+{
+"displayValue": "1",
+"period": 2,
+"value": 1.0
+},
+{
+"displayValue": "0",
+"period": 3,
+"value": 0.0
+}
+],
+"order": 1,
+"probables": [
+{
+"abbreviation": "SG",
+"athlete": {
+"displayName": "Jacob Fowler",
+"fullName": "Jacob Fowler",
+"id": "5188437",
+"jersey": "32",
+"position": "G",
+"shortName": "J. Fowler",
+"team": {
+"id": "10"
+}
+},
+"displayName": "Probable Starting Goalie",
+"name": "probableStartingGoalie",
+"playerId": 5188437,
+"record": "",
+"shortDisplayName": "Starter",
+"statistics": [],
+"status": {
+"abbreviation": "Confirmed",
+"id": "102",
+"name": "Confirmed",
+"type": "confirmed"
+}
+}
+],
+"records": [
+{
+"abbreviation": "Game",
+"name": "YTD",
+"summary": "26-15-7",
+"type": "ytd"
+},
+{
+"abbreviation": "HOME",
+"name": "Home",
+"summary": "13-10-1",
+"type": "home"
+},
+{
+"abbreviation": "AWAY",
+"name": "Road",
+"summary": "13-5-6",
+"type": "road"
+}
+],
+"score": "3",
+"statistics": [
+{
+"abbreviation": "SV",
+"displayValue": "22",
+"name": "saves"
+},
+{
+"abbreviation": "SV%",
+"displayValue": ".846",
+"name": "savePct"
+},
+{
+"abbreviation": "G",
+"displayValue": "3",
+"name": "goals"
+},
+{
+"abbreviation": "YTDG",
+"displayValue": "316",
+"name": "ytdGoals"
+},
+{
+"abbreviation": "A",
+"displayValue": "5",
+"name": "assists"
+},
+{
+"abbreviation": "PTS",
+"displayValue": "8",
+"name": "points"
+}
+],
+"team": {
+"abbreviation": "MTL",
+"alternateColor": "013a81",
+"color": "c41230",
+"displayName": "Montreal Canadiens",
+"id": "10",
+"isActive": true,
+"location": "Montreal",
+"logo": "https://a.espncdn.com/i/teamlogos/nhl/500/scoreboard/mtl.png",
+"logoDark": "https://a.espncdn.com/i/teamlogos/nhl/500-dark/scoreboard/mtl.png",
+"name": "Canadiens",
+"shortDisplayName": "Canadiens",
+"venue": {
+"id": "1831"
+}
+},
+"type": "team",
+"winner": false
+}
+],
+"date": "2026-01-16T00:00Z",
+"id": "401803091",
+"neutralSite": false,
+"notes": [],
+"playByPlayAvailable": true,
+"recent": false,
+"series": {
+"competitors": [
+{
+"href": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/seasons/2026/teams/2?lang=en&region=us",
+"id": "2",
+"ties": 0,
+"wins": 0
+},
+{
+"href": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/seasons/2026/teams/10?lang=en&region=us",
+"id": "10",
+"ties": 0,
+"wins": 0
+}
+],
+"completed": false,
+"summary": "",
+"title": "Playoff Series",
+"totalCompetitions": 7,
+"type": "playoff"
+},
+"startDate": "2026-01-16T00:00Z",
+"status": {
+"clock": 0.0,
+"displayClock": "0:00",
+"featuredAthletes": [
+{
+"abbreviation": "W",
+"athlete": {
+"displayName": "Colten Ellis",
+"fullName": "Colten Ellis",
+"id": "4736758",
+"jersey": "92",
+"position": "G",
+"shortName": "C. Ellis",
+"team": {
+"id": "2"
+}
+},
+"displayName": "Winning Goalie",
+"name": "winningGoalie",
+"playerId": 4736758,
+"shortDisplayName": "Winning Goalie",
+"statistics": [
+{
+"abbreviation": "SV",
+"displayValue": "20",
+"name": "saves"
+},
+{
+"abbreviation": "SV%",
+"displayValue": ".870",
+"name": "savePct"
+},
+{
+"abbreviation": "+/-",
+"displayValue": "0",
+"name": "plusMinus"
+},
+{
+"abbreviation": "G",
+"displayValue": "0",
+"name": "goals"
+},
+{
+"abbreviation": "YTDG",
+"displayValue": "0",
+"name": "ytdGoals"
+},
+{
+"abbreviation": "A",
+"displayValue": "0",
+"name": "assists"
+}
+],
+"team": {
+"id": "2"
+}
+},
+{
+"abbreviation": "L",
+"athlete": {
+"displayName": "Jacob Fowler",
+"fullName": "Jacob Fowler",
+"id": "5188437",
+"jersey": "32",
+"position": "G",
+"shortName": "J. Fowler",
+"team": {
+"id": "10"
+}
+},
+"displayName": "Losing Goalie",
+"name": "losingGoalie",
+"playerId": 5188437,
+"shortDisplayName": "Losing Goalie",
+"statistics": [
+{
+"abbreviation": "SV",
+"displayValue": "22",
+"name": "saves"
+},
+{
+"abbreviation": "SV%",
+"displayValue": ".846",
+"name": "savePct"
+},
+{
+"abbreviation": "+/-",
+"displayValue": "0",
+"name": "plusMinus"
+},
+{
+"abbreviation": "G",
+"displayValue": "0",
+"name": "goals"
+},
+{
+"abbreviation": "YTDG",
+"displayValue": "0",
+"name": "ytdGoals"
+},
+{
+"abbreviation": "A",
+"displayValue": "0",
+"name": "assists"
+}
+],
+"team": {
+"id": "10"
+}
+},
+{
+"abbreviation": "FS",
+"athlete": {
+"displayName": "Tage Thompson",
+"fullName": "Tage Thompson",
+"id": "4024988",
+"jersey": "72",
+"position": "C",
+"shortName": "T. Thompson",
+"team": {
+"id": "2"
+}
+},
+"displayName": "First Star",
+"name": "firstStar",
+"playerId": 4024988,
+"shortDisplayName": "First Star",
+"statistics": [
+{
+"abbreviation": "SV",
+"displayValue": "0",
+"name": "saves"
+},
+{
+"abbreviation": "SV%",
+"displayValue": ".000",
+"name": "savePct"
+},
+{
+"abbreviation": "+/-",
+"displayValue": "2",
+"name": "plusMinus"
+},
+{
+"abbreviation": "G",
+"displayValue": "3",
+"name": "goals"
+},
+{
+"abbreviation": "YTDG",
+"displayValue": "25",
+"name": "ytdGoals"
+},
+{
+"abbreviation": "A",
+"displayValue": "2",
+"name": "assists"
+}
+],
+"team": {
+"id": "2"
+}
+},
+{
+"abbreviation": "SS",
+"athlete": {
+"displayName": "Josh Doan",
+"fullName": "Josh Doan",
+"id": "4874870",
+"jersey": "91",
+"position": "RW",
+"shortName": "J. Doan",
+"team": {
+"id": "2"
+}
+},
+"displayName": "Second Star",
+"name": "secondStar",
+"playerId": 4874870,
+"shortDisplayName": "Second Star",
+"statistics": [
+{
+"abbreviation": "SV",
+"displayValue": "0",
+"name": "saves"
+},
+{
+"abbreviation": "SV%",
+"displayValue": ".000",
+"name": "savePct"
+},
+{
+"abbreviation": "+/-",
+"displayValue": "1",
+"name": "plusMinus"
+},
+{
+"abbreviation": "G",
+"displayValue": "1",
+"name": "goals"
+},
+{
+"abbreviation": "YTDG",
+"displayValue": "15",
+"name": "ytdGoals"
+},
+{
+"abbreviation": "A",
+"displayValue": "1",
+"name": "assists"
+}
+],
+"team": {
+"id": "2"
+}
+},
+{
+"abbreviation": "TS",
+"athlete": {
+"displayName": "Alex Tuch",
+"fullName": "Alex Tuch",
+"id": "3114766",
+"jersey": "89",
+"position": "RW",
+"shortName": "A. Tuch",
+"team": {
+"id": "2"
+}
+},
+"displayName": "Third Star",
+"name": "thirdStar",
+"playerId": 3114766,
+"shortDisplayName": "Third Star",
+"statistics": [
+{
+"abbreviation": "SV",
+"displayValue": "0",
+"name": "saves"
+},
+{
+"abbreviation": "SV%",
+"displayValue": ".000",
+"name": "savePct"
+},
+{
+"abbreviation": "+/-",
+"displayValue": "1",
+"name": "plusMinus"
+},
+{
+"abbreviation": "G",
+"displayValue": "1",
+"name": "goals"
+},
+{
+"abbreviation": "YTDG",
+"displayValue": "16",
+"name": "ytdGoals"
+},
+{
+"abbreviation": "A",
+"displayValue": "0",
+"name": "assists"
+}
+],
+"team": {
+"id": "2"
+}
+}
+],
+"period": 3,
+"type": {
+"completed": true,
+"description": "Final",
+"detail": "Final",
+"id": "3",
+"name": "STATUS_FINAL",
+"shortDetail": "Final",
+"state": "post"
+}
+},
+"timeValid": true,
+"type": {
+"abbreviation": "STD",
+"id": "1"
+},
+"venue": {
+"address": {
+"city": "Buffalo",
+"country": "USA",
+"state": "NY"
+},
+"fullName": "KeyBank Center",
+"id": "1848",
+"indoor": true
+}
+}
+],
+"date": "2026-01-16T00:00Z",
+"id": "401803091",
+"name": "Montreal Canadiens at Buffalo Sabres",
+"season": {
+"slug": "regular-season",
+"type": 2,
+"year": 2026
+},
+"shortName": "MTL @ BUF",
+"status": {
+"clock": 0.0,
+"displayClock": "0:00",
+"period": 3,
+"type": {
+"completed": true,
+"description": "Final",
+"detail": "Final",
+"id": "3",
+"name": "STATUS_FINAL",
+"shortDetail": "Final",
+"state": "post"
+}
+}
+}
+]
+}

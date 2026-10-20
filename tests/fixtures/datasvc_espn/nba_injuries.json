@@ -1,0 +1,466 @@
+{
+"injuries": [
+{
+"displayName": "Atlanta Hawks",
+"id": "1",
+"injuries": [
+{
+"athlete": {
+"displayName": "Mouhamed Gueye",
+"firstName": "Mouhamed",
+"headshot": {
+"alt": "Mouhamed Gueye",
+"href": "https://a.espncdn.com/i/headshots/nba/players/full/4712863.png"
+},
+"lastName": "Gueye",
+"links": [
+{
+"href": "https://www.espn.com/nba/player/_/id/4712863/mouhamed-gueye",
+"isExternal": false,
+"isPremium": false,
+"language": "en-US",
+"rel": [
+"playercard",
+"desktop"
+],
+"shortText": "Player Card",
+"text": "Player Card"
+},
+{
+"href": "https://www.espn.com/nba/player/stats/_/id/4712863/mouhamed-gueye",
+"isExternal": false,
+"isPremium": false,
+"language": "en-US",
+"rel": [
+"stats",
+"desktop"
+],
+"shortText": "Stats",
+"text": "Stats"
+}
+],
+"notes": {
+"items": [
+{
+"date": "2026-10-19T19:38Z",
+"headline": "Gueye underwent surgery Tuesday to repair a fractured left foot that he suffered during a workout last week, Brad Rowland of the Locked On Podcast Network reports.",
+"id": "-58751",
+"injury": {
+"$ref": "http://sports.core.api.espn.pvt/v2/sports/basketball/leagues/nba/seasons/2027/athletes/4712863/injuries/-58751?lang=en&region=us"
+},
+"source": "RotoWire",
+"text": "Gueye will be re-evaluated by medical staff in 3-to-4 months, which means he'll miss all of training camp and preseason and likely the start of the 2026-27 regular season. It's a brutal blow for the fourth-year big man, given that the Hawks used the No. 23 overall pick of the 2026 NBA Draft to select St. John's product Zuby Ejiofor. Gueye's absence means Ejiofor will have more opportunities in the preseason, and the rookie could establish a key role off the bench behind Onyeka Okongwu and projected backup center Jock Landale (ankle).",
+"type": "news"
+}
+]
+},
+"position": {
+"abbreviation": "F",
+"displayName": "Forward",
+"id": "7",
+"leaf": false,
+"name": "Forward"
+},
+"shortName": "M. Gueye",
+"status": {
+"abbreviation": "Active",
+"id": "1",
+"name": "Active",
+"type": "active"
+},
+"team": {
+"abbreviation": "ATL",
+"displayName": "Atlanta Hawks",
+"id": "1",
+"links": [
+{
+"href": "https://www.espn.com/nba/team/_/name/atl/atlanta-hawks",
+"isExternal": false,
+"isPremium": false,
+"language": "en-US",
+"rel": [
+"clubhouse",
+"desktop"
+],
+"shortText": "Clubhouse",
+"text": "Clubhouse"
+},
+{
+"href": "https://www.espn.com/nba/team/roster/_/name/atl/atlanta-hawks",
+"isExternal": false,
+"isPremium": false,
+"language": "en-US",
+"rel": [
+"roster",
+"desktop"
+],
+"shortText": "Roster",
+"text": "Roster"
+}
+],
+"logos": [
+{
+"alt": "",
+"height": 500,
+"href": "https://a.espncdn.com/i/teamlogos/nba/500/atl.png",
+"lastUpdated": "2024-06-25T21:17Z",
+"rel": [
+"full",
+"default"
+],
+"width": 500
+},
+{
+"alt": "",
+"height": 500,
+"href": "https://a.espncdn.com/i/teamlogos/nba/500-dark/atl.png",
+"lastUpdated": "2024-06-25T21:13Z",
+"rel": [
+"full",
+"dark"
+],
+"width": 500
+}
+],
+"name": "Hawks",
+"slug": "atlanta-hawks",
+"uid": "s:40~l:46~t:1"
+}
+},
+"date": "2026-10-19T19:38Z",
+"details": {
+"detail": "Fracture",
+"fantasyStatus": {
+"abbreviation": "OUT",
+"description": "OUT"
+},
+"location": "Leg",
+"returnDate": "2026-11-20",
+"side": "Left",
+"type": "Foot"
+},
+"id": "-58751",
+"longComment": "Gueye will be re-evaluated by medical staff in 3-to-4 months, which means he'll miss all of training camp and preseason and likely the start of the 2026-27 regular season. It's a brutal blow for the fourth-year big man, given that the Hawks used the No. 23 overall pick of the 2026 NBA Draft to select St. John's product Zuby Ejiofor. Gueye's absence means Ejiofor will have more opportunities in the preseason, and the rookie could establish a key role off the bench behind Onyeka Okongwu and projected backup center Jock Landale (ankle).",
+"shortComment": "Gueye underwent surgery Tuesday to repair a fractured left foot that he suffered during a workout last week, Brad Rowland of the Locked On Podcast Network reports.",
+"source": {
+"description": "basic/manual",
+"id": "1",
+"state": "basic"
+},
+"status": "Out",
+"type": {
+"abbreviation": "O",
+"description": "out",
+"id": "4",
+"name": "INJURY_STATUS_OUT"
+}
+},
+{
+"athlete": {
+"displayName": "Henri Veesaar",
+"firstName": "Henri",
+"headshot": {
+"alt": "Henri Veesaar",
+"href": "https://a.espncdn.com/i/headshots/nba/players/full/5105571.png"
+},
+"lastName": "Veesaar",
+"links": [
+{
+"href": "https://www.espn.com/nba/player/_/id/5105571/henri-veesaar",
+"isExternal": false,
+"isPremium": false,
+"language": "en-US",
+"rel": [
+"playercard",
+"desktop"
+],
+"shortText": "Player Card",
+"text": "Player Card"
+},
+{
+"href": "https://www.espn.com/nba/player/stats/_/id/5105571/henri-veesaar",
+"isExternal": false,
+"isPremium": false,
+"language": "en-US",
+"rel": [
+"stats",
+"desktop"
+],
+"shortText": "Stats",
+"text": "Stats"
+}
+],
+"notes": {
+"items": [
+{
+"date": "2026-09-21T19:50Z",
+"headline": "Veesaar was diagnosed with a torn right ACL and is expected to miss the 2026-27 season, the Hawks announced Monday.",
+"id": "-57577",
+"injury": {
+"$ref": "http://sports.core.api.espn.pvt/v2/sports/basketball/leagues/nba/seasons/2027/athletes/5105571/injuries/-57577?lang=en&region=us"
+},
+"source": "RotoWire",
+"text": "Veesaar suffered the injury during a workout on Sept. 15, and an MRI confirmed the diagnosis. The No. 52 overall pick in the 2026 NBA Draft, Veesaar was expected to spend a lot of time with Atlanta's G League affiliate this season.",
+"type": "news"
+}
+]
+},
+"position": {
+"abbreviation": "C",
+"displayName": "Center",
+"id": "9",
+"leaf": false,
+"name": "Center"
+},
+"shortName": "H. Veesaar",
+"status": {
+"abbreviation": "Active",
+"id": "1",
+"name": "Active",
+"type": "active"
+},
+"team": {
+"abbreviation": "ATL",
+"displayName": "Atlanta Hawks",
+"id": "1",
+"links": [
+{
+"href": "https://www.espn.com/nba/team/_/name/atl/atlanta-hawks",
+"isExternal": false,
+"isPremium": false,
+"language": "en-US",
+"rel": [
+"clubhouse",
+"desktop"
+],
+"shortText": "Clubhouse",
+"text": "Clubhouse"
+},
+{
+"href": "https://www.espn.com/nba/team/roster/_/name/atl/atlanta-hawks",
+"isExternal": false,
+"isPremium": false,
+"language": "en-US",
+"rel": [
+"roster",
+"desktop"
+],
+"shortText": "Roster",
+"text": "Roster"
+}
+],
+"logos": [
+{
+"alt": "",
+"height": 500,
+"href": "https://a.espncdn.com/i/teamlogos/nba/500/atl.png",
+"lastUpdated": "2024-06-25T21:17Z",
+"rel": [
+"full",
+"default"
+],
+"width": 500
+},
+{
+"alt": "",
+"height": 500,
+"href": "https://a.espncdn.com/i/teamlogos/nba/500-dark/atl.png",
+"lastUpdated": "2024-06-25T21:13Z",
+"rel": [
+"full",
+"dark"
+],
+"width": 500
+}
+],
+"name": "Hawks",
+"slug": "atlanta-hawks",
+"uid": "s:40~l:46~t:1"
+}
+},
+"date": "2026-09-21T19:50Z",
+"details": {
+"fantasyStatus": {
+"abbreviation": "OFS",
+"description": "OFS"
+},
+"location": "Leg",
+"returnDate": "2027-07-01",
+"side": "Right",
+"type": "Knee"
+},
+"id": "-57577",
+"longComment": "Veesaar suffered the injury during a workout on Sept. 15, and an MRI confirmed the diagnosis. The No. 52 overall pick in the 2026 NBA Draft, Veesaar was expected to spend a lot of time with Atlanta's G League affiliate this season.",
+"shortComment": "Veesaar was diagnosed with a torn right ACL and is expected to miss the 2026-27 season, the Hawks announced Monday.",
+"source": {
+"description": "basic/manual",
+"id": "1",
+"state": "basic"
+},
+"status": "Out",
+"type": {
+"abbreviation": "O",
+"description": "out",
+"id": "4",
+"name": "INJURY_STATUS_OUT"
+}
+}
+]
+},
+{
+"displayName": "Boston Celtics",
+"id": "2",
+"injuries": [
+{
+"athlete": {
+"displayName": "Devin Carter",
+"firstName": "Devin",
+"headshot": {
+"alt": "Devin Carter",
+"href": "https://a.espncdn.com/i/headshots/nba/players/full/4433188.png"
+},
+"lastName": "Carter",
+"links": [
+{
+"href": "https://www.espn.com/nba/player/_/id/4433188/devin-carter",
+"isExternal": false,
+"isPremium": false,
+"language": "en-US",
+"rel": [
+"playercard",
+"desktop"
+],
+"shortText": "Player Card",
+"text": "Player Card"
+},
+{
+"href": "https://www.espn.com/nba/player/stats/_/id/4433188/devin-carter",
+"isExternal": false,
+"isPremium": false,
+"language": "en-US",
+"rel": [
+"stats",
+"desktop"
+],
+"shortText": "Stats",
+"text": "Stats"
+}
+],
+"notes": {
+"items": [
+{
+"date": "2026-10-18T14:49Z",
+"headline": "Carter has been diagnosed with mononucleosis and is without a timetable for a return, Gary Washburn of The Boston Globe reports.",
+"id": "535118",
+"injury": {
+"$ref": "http://sports.core.api.espn.pvt/v2/sports/basketball/leagues/nba/seasons/2027/athletes/4433188/injuries/535118?lang=en&region=us"
+},
+"source": "RotoWire",
+"text": "Carter missed Boston's final three preseason games with the illness and is now expected to miss time to begin the regular season. He can be considered week-to-week until Boston provides an update on his progress. The 2024 first-rounder signed a two-way pact with the Celtics on Saturday and will provide backcourt depth for the club.",
+"type": "news"
+}
+]
+},
+"position": {
+"abbreviation": "G",
+"displayName": "Guard",
+"id": "3",
+"leaf": false,
+"name": "Guard"
+},
+"shortName": "D. Carter",
+"status": {
+"abbreviation": "Active",
+"id": "1",
+"name": "Active",
+"type": "active"
+},
+"team": {
+"abbreviation": "BOS",
+"displayName": "Boston Celtics",
+"id": "2",
+"links": [
+{
+"href": "https://www.espn.com/nba/team/_/name/bos/boston-celtics",
+"isExternal": false,
+"isPremium": false,
+"language": "en-US",
+"rel": [
+"clubhouse",
+"desktop"
+],
+"shortText": "Clubhouse",
+"text": "Clubhouse"
+},
+{
+"href": "https://www.espn.com/nba/team/roster/_/name/bos/boston-celtics",
+"isExternal": false,
+"isPremium": false,
+"language": "en-US",
+"rel": [
+"roster",
+"desktop"
+],
+"shortText": "Roster",
+"text": "Roster"
+}
+],
+"logos": [
+{
+"alt": "",
+"height": 500,
+"href": "https://a.espncdn.com/i/teamlogos/nba/500/bos.png",
+"lastUpdated": "2024-06-25T21:17Z",
+"rel": [
+"full",
+"default"
+],
+"width": 500
+},
+{
+"alt": "",
+"height": 500,
+"href": "https://a.espncdn.com/i/teamlogos/nba/500-dark/bos.png",
+"lastUpdated": "2024-06-25T21:13Z",
+"rel": [
+"full",
+"dark"
+],
+"width": 500
+}
+],
+"name": "Celtics",
+"slug": "boston-celtics",
+"uid": "s:40~l:46~t:2"
+}
+},
+"date": "2026-10-18T14:49Z",
+"details": {
+"fantasyStatus": {
+"abbreviation": "OUT",
+"description": "OUT"
+},
+"location": "Other",
+"returnDate": "2026-11-08",
+"type": "Illness"
+},
+"id": "535118",
+"longComment": "Carter missed Boston's final three preseason games with the illness and is now expected to miss time to begin the regular season. He can be considered week-to-week until Boston provides an update on his progress. The 2024 first-rounder signed a two-way pact with the Celtics on Saturday and will provide backcourt depth for the club.",
+"shortComment": "Carter has been diagnosed with mononucleosis and is without a timetable for a return, Gary Washburn of The Boston Globe reports.",
+"source": {
+"description": "basic/manual",
+"id": "1",
+"state": "basic"
+},
+"status": "Out",
+"type": {
+"abbreviation": "O",
+"description": "out",
+"id": "4",
+"name": "INJURY_STATUS_OUT"
+}
+}
+]
+}
+]
+}

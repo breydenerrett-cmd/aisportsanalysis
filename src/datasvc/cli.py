@@ -12,6 +12,9 @@
     python -m src.datasvc.cli nfl matchup KC BUF [--season 2026 --week 5] [--as-of YYYY-MM-DD]
     (the NFL handlers live in src/datasvc/nfl/cli.py)
 
+    python -m src.datasvc.cli espn nba refresh | nhl schedule --date D | ncaab box --game-id ID | ...
+    (ESPN-fed NBA/NHL/college/soccer: src/datasvc/espn/cli.py; also `python -m src.cli datasvc <league> <thing>`)
+
 Kept apart from src/cli.py so the data service can grow without touching
 LineHound's own command line.
 """
@@ -24,6 +27,7 @@ import sys
 from datetime import date, datetime, timezone
 
 from src.datasvc.http import PoliteFetcher
+from src.datasvc.espn import cli as espn_cli
 from src.datasvc.nfl import cli as nfl_cli
 from src.datasvc.ufc import pipeline
 from src.datasvc.ufc.store import UfcStore
@@ -116,6 +120,7 @@ def build_parser() -> argparse.ArgumentParser:
     m.add_argument("--as-of", default=None)
     m.set_defaults(func=cmd_matchup)
     nfl_cli.register(sport)
+    espn_cli.register(sport)
     return parser
 
 

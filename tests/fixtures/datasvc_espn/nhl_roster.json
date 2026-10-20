@@ -1,0 +1,252 @@
+{
+"athletes": [
+{
+"items": [
+{
+"age": 21,
+"alternateId": "5149153",
+"birthCountry": {
+"abbreviation": "SWE"
+},
+"birthPlace": {
+"city": "Karlstad",
+"country": "SWE",
+"displayText": "Karlstad, SWE"
+},
+"contracts": [],
+"dateOfBirth": "2004-12-26T08:00Z",
+"displayHeight": "6' 3\"",
+"displayName": "Leo Carlsson",
+"displayWeight": "208 lbs",
+"experience": {
+"years": 4
+},
+"firstName": "Leo",
+"fullName": "Leo Carlsson",
+"hand": {
+"abbreviation": "L",
+"displayValue": "Left",
+"type": "LEFT"
+},
+"height": 75.0,
+"id": "5149153",
+"injuries": [],
+"jersey": "91",
+"lastName": "Carlsson",
+"position": {
+"abbreviation": "C",
+"displayName": "Center",
+"id": "1",
+"leaf": true,
+"name": "Center",
+"parent": {
+"abbreviation": "F",
+"displayName": "Forward",
+"id": "20",
+"leaf": true,
+"name": "Forward"
+}
+},
+"shortName": "L. Carlsson",
+"slug": "leo-carlsson",
+"status": {
+"abbreviation": "Active",
+"id": "1",
+"name": "Active",
+"type": "active"
+},
+"weight": 208.0
+},
+{
+"age": 34,
+"alternateId": "2529250",
+"birthCountry": {
+"abbreviation": "FIN"
+},
+"birthPlace": {
+"city": "Oulu",
+"country": "FIN",
+"displayText": "Oulu, FIN"
+},
+"contracts": [],
+"dateOfBirth": "1992-02-26T08:00Z",
+"debutYear": 2013,
+"displayHeight": "5' 10\"",
+"displayName": "Mikael Granlund",
+"displayWeight": "193 lbs",
+"experience": {
+"years": 15
+},
+"firstName": "Mikael",
+"fullName": "Mikael Granlund",
+"hand": {
+"abbreviation": "L",
+"displayValue": "Left",
+"type": "LEFT"
+},
+"height": 70.0,
+"id": "5831",
+"injuries": [],
+"jersey": "64",
+"lastName": "Granlund",
+"position": {
+"abbreviation": "C",
+"displayName": "Center",
+"id": "1",
+"leaf": true,
+"name": "Center",
+"parent": {
+"abbreviation": "F",
+"displayName": "Forward",
+"id": "20",
+"leaf": true,
+"name": "Forward"
+}
+},
+"shortName": "M. Granlund",
+"slug": "mikael-granlund",
+"status": {
+"abbreviation": "Active",
+"id": "1",
+"name": "Active",
+"type": "active"
+},
+"weight": 193.0
+}
+],
+"position": "Centers"
+},
+{
+"items": [
+{
+"age": 22,
+"alternateId": "5080145",
+"birthCountry": {
+"abbreviation": "USA"
+},
+"birthPlace": {
+"city": "Scottsdale",
+"country": "USA",
+"displayText": "Scottsdale, AZ",
+"state": "AZ"
+},
+"college": {
+"abbrev": "BC",
+"id": "103",
+"mascot": "Eagles",
+"name": "Boston College",
+"shortName": "Boston College"
+},
+"contracts": [],
+"dateOfBirth": "2004-01-19T08:00Z",
+"displayHeight": "6' 2\"",
+"displayName": "Cutter Gauthier",
+"displayWeight": "201 lbs",
+"experience": {
+"years": 3
+},
+"firstName": "Cutter",
+"fullName": "Cutter Gauthier",
+"hand": {
+"abbreviation": "L",
+"displayValue": "Left",
+"type": "LEFT"
+},
+"height": 74.0,
+"id": "5080145",
+"injuries": [],
+"jersey": "61",
+"lastName": "Gauthier",
+"position": {
+"abbreviation": "LW",
+"displayName": "Left Wing",
+"id": "2",
+"leaf": true,
+"name": "Left Wing",
+"parent": {
+"abbreviation": "F",
+"displayName": "Forward",
+"id": "20",
+"leaf": true,
+"name": "Forward"
+}
+},
+"shortName": "C. Gauthier",
+"slug": "cutter-gauthier",
+"status": {
+"abbreviation": "Active",
+"id": "1",
+"name": "Active",
+"type": "active"
+},
+"weight": 201.0
+},
+{
+"age": 29,
+"alternateId": "3648015",
+"birthCountry": {
+"abbreviation": "CAN"
+},
+"birthPlace": {
+"city": "Joliette",
+"country": "CAN",
+"displayText": "Joliette, CAN",
+"state": "QC"
+},
+"college": {
+"abbrev": "BU",
+"id": "104",
+"mascot": "Terriers",
+"name": "Boston University",
+"shortName": "Boston U"
+},
+"contracts": [],
+"dateOfBirth": "1996-12-14T08:00Z",
+"debutYear": 2016,
+"displayHeight": "6' 3\"",
+"displayName": "A.J. Greer",
+"displayWeight": "224 lbs",
+"experience": {
+"years": 7
+},
+"firstName": "A.J.",
+"fullName": "A.J. Greer",
+"hand": {
+"abbreviation": "L",
+"displayValue": "Left",
+"type": "LEFT"
+},
+"height": 75.0,
+"id": "3648015",
+"injuries": [],
+"jersey": "18",
+"lastName": "Greer",
+"position": {
+"abbreviation": "LW",
+"displayName": "Left Wing",
+"id": "2",
+"leaf": true,
+"name": "Left Wing",
+"parent": {
+"abbreviation": "F",
+"displayName": "Forward",
+"id": "20",
+"leaf": true,
+"name": "Forward"
+}
+},
+"shortName": "A.J. Greer",
+"slug": "aj-greer",
+"status": {
+"abbreviation": "Active",
+"id": "1",
+"name": "Active",
+"type": "active"
+},
+"weight": 224.0
+}
+],
+"position": "Left Wings"
+}
+]
+}

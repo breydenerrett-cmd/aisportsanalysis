@@ -1,0 +1,178 @@
+{
+"children": [
+{
+"abbreviation": "American",
+"id": "151",
+"isConference": true,
+"name": "American Conference",
+"shortName": "American",
+"standings": {
+"displayName": "Standings",
+"entries": [
+{
+"stats": [
+{
+"abbreviation": "GB",
+"description": "Games Back",
+"displayName": "Games Back",
+"displayValue": "-",
+"name": "gamesBehind",
+"shortDisplayName": "GB",
+"type": "gamesbehind",
+"value": 0.0
+},
+{
+"abbreviation": "LPCT",
+"description": "League Winning Percentage",
+"displayName": "League Win Percentage",
+"displayValue": "1.000",
+"name": "leagueWinPercent",
+"shortDisplayName": "LPCT",
+"type": "leaguewinpercent",
+"value": 1.0
+}
+],
+"team": {
+"abbreviation": "UTSA",
+"displayName": "UTSA Roadrunners",
+"id": "2636",
+"isActive": true,
+"location": "UTSA",
+"name": "Roadrunners",
+"shortDisplayName": "UTSA"
+}
+},
+{
+"stats": [
+{
+"abbreviation": "GB",
+"description": "Games Back",
+"displayName": "Games Back",
+"displayValue": "1",
+"name": "gamesBehind",
+"shortDisplayName": "GB",
+"type": "gamesbehind",
+"value": 1.0
+},
+{
+"abbreviation": "LPCT",
+"description": "League Winning Percentage",
+"displayName": "League Win Percentage",
+"displayValue": "0.667",
+"name": "leagueWinPercent",
+"shortDisplayName": "LPCT",
+"type": "leaguewinpercent",
+"value": 0.6666667
+}
+],
+"team": {
+"abbreviation": "MEM",
+"displayName": "Memphis Tigers",
+"id": "235",
+"isActive": true,
+"location": "Memphis",
+"name": "Tigers",
+"shortDisplayName": "Memphis"
+}
+}
+],
+"id": "0",
+"name": "overall",
+"season": 2026,
+"seasonDisplayName": "2026",
+"seasonType": 2
+}
+},
+{
+"abbreviation": "acc",
+"id": "1",
+"isConference": true,
+"name": "Atlantic Coast Conference",
+"shortName": "ACC",
+"standings": {
+"displayName": "Standings",
+"entries": [
+{
+"stats": [
+{
+"abbreviation": "GB",
+"description": "Games Back",
+"displayName": "Games Back",
+"displayValue": "-",
+"name": "gamesBehind",
+"shortDisplayName": "GB",
+"type": "gamesbehind",
+"value": 0.0
+},
+{
+"abbreviation": "LPCT",
+"description": "League Winning Percentage",
+"displayName": "League Win Percentage",
+"displayValue": "1.000",
+"name": "leagueWinPercent",
+"shortDisplayName": "LPCT",
+"type": "leaguewinpercent",
+"value": 1.0
+}
+],
+"team": {
+"abbreviation": "MIA",
+"displayName": "Miami Hurricanes",
+"id": "2390",
+"isActive": true,
+"location": "Miami",
+"name": "Hurricanes",
+"rank": 1,
+"shortDisplayName": "Miami"
+}
+},
+{
+"stats": [
+{
+"abbreviation": "GB",
+"description": "Games Back",
+"displayName": "Games Back",
+"displayValue": "0.5",
+"name": "gamesBehind",
+"shortDisplayName": "GB",
+"type": "gamesbehind",
+"value": 0.5
+},
+{
+"abbreviation": "LPCT",
+"description": "League Winning Percentage",
+"displayName": "League Win Percentage",
+"displayValue": "0.800",
+"name": "leagueWinPercent",
+"shortDisplayName": "LPCT",
+"type": "leaguewinpercent",
+"value": 0.8
+}
+],
+"team": {
+"abbreviation": "WAKE",
+"displayName": "Wake Forest Demon Deacons",
+"id": "154",
+"isActive": true,
+"location": "Wake Forest",
+"name": "Demon Deacons",
+"rank": 17,
+"shortDisplayName": "Wake Forest"
+}
+}
+],
+"id": "0",
+"name": "overall",
+"season": 2026,
+"seasonDisplayName": "2026",
+"seasonType": 2
+}
+}
+],
+"season": {
+"displayName": "2026",
+"endDate": "2027-01-28T07:59Z",
+"startDate": "2026-02-01T08:00Z",
+"year": 2026
+}
+}

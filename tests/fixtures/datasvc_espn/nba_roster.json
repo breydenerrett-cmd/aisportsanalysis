@@ -1,0 +1,263 @@
+{
+"athletes": [
+{
+"age": 28,
+"birthPlace": {
+"city": "Toronto",
+"country": "Canada",
+"state": "ON"
+},
+"college": {
+"abbrev": "VT",
+"id": "259",
+"mascot": "Hokies",
+"name": "Virginia Tech",
+"shortName": "Virginia Tech"
+},
+"contract": {
+"active": true,
+"baseYearCompensation": {
+"active": false
+},
+"birdStatus": 0,
+"incomingTradeValue": 14403710,
+"minimumSalaryException": false,
+"optionType": 0,
+"outgoingTradeValue": 14403710,
+"poisonPillProvision": {
+"active": false
+},
+"salary": 14403710,
+"salaryRemaining": 0,
+"season": {
+"endDate": "2027-06-26T06:59Z",
+"startDate": "2026-09-30T07:00Z",
+"year": 2027
+},
+"tradeKicker": {
+"active": false,
+"percentage": 0.0,
+"tradeValue": 0,
+"value": 0
+},
+"tradeRestriction": false,
+"unsignedForeignPick": false,
+"yearsRemaining": 3
+},
+"contracts": [
+{
+"salary": 14403710,
+"season": {
+"endDate": "2027-06-26T06:59Z",
+"startDate": "2026-09-30T07:00Z",
+"year": 2027
+}
+},
+{
+"salary": 15161800,
+"season": {
+"endDate": "2026-06-27T06:59Z",
+"startDate": "2025-10-01T07:00Z",
+"year": 2026
+}
+},
+{
+"salary": 4312500,
+"season": {
+"endDate": "2025-06-27T06:59Z",
+"startDate": "2024-09-24T07:00Z",
+"year": 2025
+}
+}
+],
+"dateOfBirth": "1998-09-02T07:00Z",
+"debutYear": 2019,
+"displayHeight": "6' 5\"",
+"displayName": "Nickeil Alexander-Walker",
+"displayWeight": "205 lbs",
+"experience": {
+"years": 8
+},
+"firstName": "Nickeil",
+"fullName": "Nickeil Alexander-Walker",
+"height": 77.0,
+"id": "4278039",
+"injuries": [],
+"jersey": "7",
+"lastName": "Alexander-Walker",
+"position": {
+"abbreviation": "G",
+"displayName": "Guard",
+"id": "3",
+"leaf": false,
+"name": "Guard"
+},
+"shortName": "N. Alexander-Walker",
+"slug": "nickeil-alexander-walker",
+"status": {
+"abbreviation": "Active",
+"id": "1",
+"name": "Active",
+"type": "active"
+},
+"weight": 205.0
+},
+{
+"age": 23,
+"birthPlace": {
+"city": "Bendigo",
+"country": "Australia",
+"state": "VIC"
+},
+"contract": {
+"active": true,
+"baseYearCompensation": {
+"active": false
+},
+"birdStatus": 0,
+"incomingTradeValue": 25000000,
+"minimumSalaryException": false,
+"optionType": 0,
+"outgoingTradeValue": 25000000,
+"poisonPillProvision": {
+"active": false
+},
+"salary": 25000000,
+"salaryRemaining": 0,
+"season": {
+"endDate": "2027-06-26T06:59Z",
+"startDate": "2026-09-30T07:00Z",
+"year": 2027
+},
+"tradeKicker": {
+"active": false,
+"percentage": 0.0,
+"tradeValue": 0,
+"value": 0
+},
+"tradeRestriction": false,
+"unsignedForeignPick": false,
+"yearsRemaining": 4
+},
+"contracts": [
+{
+"salary": 25000000,
+"season": {
+"endDate": "2027-06-26T06:59Z",
+"startDate": "2026-09-30T07:00Z",
+"year": 2027
+}
+},
+{
+"salary": 7707709,
+"season": {
+"endDate": "2026-06-27T06:59Z",
+"startDate": "2025-10-01T07:00Z",
+"year": 2026
+}
+},
+{
+"salary": 6059520,
+"season": {
+"endDate": "2025-06-27T06:59Z",
+"startDate": "2024-09-24T07:00Z",
+"year": 2025
+}
+}
+],
+"dateOfBirth": "2003-03-17T08:00Z",
+"displayHeight": "6' 7\"",
+"displayName": "Dyson Daniels",
+"displayWeight": "199 lbs",
+"experience": {
+"years": 5
+},
+"firstName": "Dyson",
+"fullName": "Dyson Daniels",
+"height": 79.0,
+"id": "4869342",
+"injuries": [],
+"jersey": "5",
+"lastName": "Daniels",
+"position": {
+"abbreviation": "G",
+"displayName": "Guard",
+"id": "3",
+"leaf": false,
+"name": "Guard"
+},
+"shortName": "D. Daniels",
+"slug": "dyson-daniels",
+"status": {
+"abbreviation": "Active",
+"id": "1",
+"name": "Active",
+"type": "active"
+},
+"weight": 199.0
+},
+{
+"age": 25,
+"birthPlace": {
+"city": "Plainfield",
+"country": "USA",
+"state": "IL"
+},
+"college": {
+"abbrev": "BAY",
+"id": "239",
+"mascot": "Bears",
+"name": "Baylor",
+"shortName": "Baylor"
+},
+"contracts": [
+{
+"salary": 0,
+"season": {
+"endDate": "2026-06-27T06:59Z",
+"startDate": "2025-10-01T07:00Z",
+"year": 2026
+}
+},
+{
+"salary": 0,
+"season": {
+"endDate": "2025-06-27T06:59Z",
+"startDate": "2024-09-24T07:00Z",
+"year": 2025
+}
+}
+],
+"dateOfBirth": "2001-03-30T08:00Z",
+"displayHeight": "6' 2\"",
+"displayName": "RayJ Dennis",
+"displayWeight": "180 lbs",
+"experience": {
+"years": 3
+},
+"firstName": "RayJ",
+"fullName": "RayJ Dennis",
+"height": 74.0,
+"id": "4431941",
+"injuries": [],
+"jersey": "10",
+"lastName": "Dennis",
+"position": {
+"abbreviation": "G",
+"displayName": "Guard",
+"id": "3",
+"leaf": false,
+"name": "Guard"
+},
+"shortName": "R. Dennis",
+"slug": "rayj-dennis",
+"status": {
+"abbreviation": "Active",
+"id": "1",
+"name": "Active",
+"type": "active"
+},
+"weight": 180.0
+}
+]
+}

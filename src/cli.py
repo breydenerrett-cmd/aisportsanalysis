@@ -4908,6 +4908,11 @@ def build_parser() -> argparse.ArgumentParser:
         "results", help="read-only: fetch tennis results for one date")
     tennis_results_cmd.add_argument("--date", required=True, help="YYYY-MM-DD")
 
+    datasvc_cmd = sub.add_parser(
+        "datasvc", help="free data service: datasvc <league> <thing> [--date D] "
+        "(nba, nhl, ncaaf, ncaab, epl ... ; ufc and nfl forward to their own commands)")
+    datasvc_cmd.add_argument("rest", nargs=argparse.REMAINDER)
+
     ufc_cmd = sub.add_parser("ufc", help="UFC commands")
     ufc_sub = ufc_cmd.add_subparsers(dest="ufc_command", required=True)
     ufc_capture_cmd = ufc_sub.add_parser(
@@ -4999,6 +5004,15 @@ def cmd_situation(args) -> int:
     return situation_cli.main(args)
 
 
+def cmd_datasvc(args) -> int:
+    rest = list(args.rest)
+    if rest and rest[0] in ("ufc", "nfl"):
+        from src.datasvc import cli as datasvc_cli
+        return datasvc_cli.main(rest)
+    from src.datasvc.espn import cli as espn_cli
+    return espn_cli.run(rest, prog="python -m src.cli datasvc")
+
+
 COMMANDS = {
     "status": cmd_status,
     "credits": cmd_credits,
@@ -5046,6 +5060,7 @@ COMMANDS = {
     "tennis": cmd_tennis,
     "allsports": cmd_allsports,
     "ufc": cmd_ufc,
+    "datasvc": cmd_datasvc,
 }
 
 
