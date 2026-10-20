@@ -183,6 +183,8 @@ async function bootDrills(dogs) {
   return (id) => {
     if ([...select.querySelectorAll("option")].some((o) => o.getAttribute("value") === id)) select.value = id;
     const section = q("camp-drills-section");
+    const collapsed = section && section.querySelector("details.cp-sec");
+    if (collapsed) collapsed.open = true;   // the camp sections are collapsed: a drill opens its own
     if (section && section.scrollIntoView) section.scrollIntoView({ behavior: "smooth", block: "start" });
     run.focus();
   };

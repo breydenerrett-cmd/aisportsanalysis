@@ -118,12 +118,12 @@ import { publicPageName, trackPublicPageView, rememberFirstTouch } from "./pagev
 // server is not the public demo (D7) -- never shown as a route that only
 // ever answers 401.
 const NAV_ITEMS = [
-  { hash: "#/today", label: "GAMEDAY", sub: "Today's picks" },
-  { hash: "#/games", label: "MATCHUPS", sub: "Every game, in depth" },
-  { hash: "#/props", label: "PROPS", sub: "Priced player props" },
-  { hash: "#/postseason", label: "PLAYOFFS", sub: "Postseason odds, free" },
-  { hash: "#/record-card", label: "RESULTS", sub: "Every pick, graded" },
-  { hash: "#/mybets", label: "BETS", sub: "Your saved bets" },
+  { hash: "#/today", label: "Gameday", sub: "Today's picks" },
+  { hash: "#/games", label: "Matchups", sub: "Every game, in depth" },
+  { hash: "#/props", label: "Props", sub: "Priced player props" },
+  { hash: "#/postseason", label: "Playoffs", sub: "Postseason odds, free" },
+  { hash: "#/record-card", label: "Results", sub: "Every pick, graded" },
+  { hash: "#/mybets", label: "Bets", sub: "Your saved bets" },
 ];
 
 // Word aliases for MLB's own routes (docs/DESIGN_SYSTEM.md section 3):

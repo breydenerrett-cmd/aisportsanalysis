@@ -237,7 +237,7 @@ class PropsHaveTheTab(unittest.TestCase):
     def test_props_replaced_odds_in_the_bottom_nav(self):
         text = (JS / "main.js").read_text(encoding="utf-8")
         nav = text.split("const NAV_ITEMS = [")[1].split("];")[0]
-        self.assertIn('hash: "#/props", label: "PROPS"', nav)
+        self.assertIn('hash: "#/props", label: "Props"', nav)
         self.assertNotIn('label: "ODDS"', nav)
 
     def test_the_odds_board_is_still_reachable(self):

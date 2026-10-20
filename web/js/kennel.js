@@ -29,6 +29,7 @@ import { TOKEN_CHANGED_EVENT } from "./api.js";
 import { h, clearNode, isNum, houndHref, kennelName, describeError } from "./hounds-core.js";
 import { signedIn, get, put, errorText, SIGNIN_HREF } from "./dog-common.js";
 import { dogBadge, DEFAULT_LOOK, lookFor } from "./dog-avatar.js";
+import { activityStrip, quietKennel, fetchStream } from "./kennel-extras.js";
 import { mountTabs } from "./tabs.js";
 import { mountLocker } from "./dog-locker.js";
 import { mountFire } from "./dog-fire.js";
@@ -104,7 +105,7 @@ function lastPickText(dog) {
   return `Last pick: ${last.selection || "a pick"} (${word})`;
 }
 
-const avatarOf = (dog, size, mood) => dogBadge(dog.look || lookFor(dog.id), { size, mood: mood || moodOf(dog), id: dog.id, vibe: dog.persona && dog.persona.vibe });
+const avatarOf = (dog, size, mood) => dogBadge(dog.look || lookFor(dog.id), { size, mood: mood || moodOf(dog), id: dog.id, name: dog.name, vibe: dog.persona && dog.persona.vibe });
 
 // ---- cards ------------------------------------------------------------------------------------------------
 
@@ -325,6 +326,19 @@ function render() {
   }
 }
 
+/** The latest tickets from this kennel's dogs, or a quiet state with a thinking dog when there are none yet. Never throws. */
+async function fillExtras() {
+  const host = q("kennel-extras");
+  if (!host || !state.data) return;
+  const dogs = (state.data.dogs || []).filter((d) => !d.retired);
+  if (!dogs.length) { clearNode(host); return; }
+  const mine = state.mode === "mine";
+  const strip = activityStrip(await fetchStream(), dogs, 5, mine ? "Latest tickets from your dogs" : "Latest tickets from this kennel");
+  clearNode(host);
+  host.appendChild(strip || quietKennel(mine ? "No tickets yet. A dog bets when a game fits its rule; they will show up here."
+    : "No tickets from this kennel yet. Its dogs bet when a game fits their rule.", mine ? {} : { href: "kennels.html", cta: "Browse the kennels" }));
+}
+
 async function load({ quiet = false } = {}) {
   const params = new URLSearchParams(window.location.search);
   const handle = params.get("u");
@@ -344,6 +358,7 @@ async function load({ quiet = false } = {}) {
     return null;
   }
   render();
+  fillExtras();
   return state.data;
 }
 
@@ -366,7 +381,7 @@ function paintStudioHead(look) {
     q("studio-open").hidden = true;
     return;
   }
-  av.appendChild(dogBadge(look || dog.look || lookFor(dog.id), { size: 64, mood: moodOf(dog), id: dog.id, vibe: dog.persona && dog.persona.vibe }));
+  av.appendChild(dogBadge(look || dog.look || lookFor(dog.id), { size: 64, mood: moodOf(dog), id: dog.id, name: dog.name, vibe: dog.persona && dog.persona.vibe }));
   q("studio-title").textContent = dog.name;
   sub.textContent = `${recordText(dog.record)}, ${accountText(dog)}${dog.tagline ? ` · ${dog.tagline}` : ""}`;
   const link = q("studio-open");

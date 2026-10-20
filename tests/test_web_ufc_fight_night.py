@@ -82,7 +82,7 @@ class TheCardIsWiredUnderThePausedNotice(unittest.TestCase):
 
     def test_the_nav_no_longer_says_picks_for_the_page_that_shows_fights(self):
         sport_js = (JS / "sport.js").read_text(encoding="utf-8")
-        self.assertIn('{ hash: "#/ufc", label: "GAMEDAY", sub: "This card, fight by fight" }', sport_js)
+        self.assertIn('{ hash: "#/ufc", label: "Gameday", sub: "This card, fight by fight" }', sport_js)
         self.assertNotIn("This card's picks", sport_js)
 
 

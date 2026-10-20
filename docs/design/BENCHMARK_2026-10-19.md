@@ -129,3 +129,61 @@ Pages that stay under 8 are the ones whose remaining gap is content or gated, no
 `web/css/lh.css` (tokens, components, dog rig CSS, choreography), `web/css/studio.css` (character creator, page touch-ups),
 `web/css/landing-v2.css`, `web/css/lh-app.css`; `web/js/dog-look.js`, `dog-rig.js` (`renderDog`), `dog-avatar.js`, `dog-locker.js`,
 `landing-race.js`, `lh-gate-dog.js`; tests `test_dog_rig.py`, `test_landing_race.py`, `test_no_horizontal_overflow.py` (+ `overflow_390.mjs`).
+
+---
+
+# Round 2: the independent critic's ten asks, and an honest before/after
+
+An independent critic scored the round-1 rebuild (`docs/design/after/`) and asked for ten changes, ranked. All ten were done; the
+re-captures are in `docs/design/after-r2/` (same pages, same local read-only proxy of the public API, same headless browser, same
+mock owner for My kennel and the studio). Presentation only: no rule, record, price, API meaning or claim changed.
+
+Capture note. A full-page screenshot draws a `position: fixed` bar once, over mid-page content, so the round-1 phone shots showed the
+tab bar sitting on the podium and on the model page's bankroll tile. That part was a capture artefact, not a layout bug (the page already
+padded 62px). The r2 capture pins the bar to the end of the document, which is where a visitor sees it, and the page now leaves the bar's
+height plus 24px plus the home-indicator inset (a real-browser test measures it on every page).
+
+## What changed, per ask
+
+| # | Ask | What was done | Measured |
+|---|---|---|---|
+| 1 | Landing: three sections, accordions | Below the hero: build-your-dog band, "How it works" in three steps (a house dog on each), the AI desk as one compact card. Free-versus-subscribers, the last graded card (the fills table), pricing and the per-sport record tiles are closed native `<details>`; a link to `#pricing` opens its accordion. Every data-hook the fills write into is still there. | 1440: 4,732px. 390: 7,095px (the original audit measured about 10,000px; the round-1 phone shot was capped at 6,000px so it cannot be compared directly). The hero, the board and the ticket list are most of what is left on a phone. |
+| 2 | Camp: stat strip, collapsed sections | Four figures on top (coach tips graded, helped / hurt, next breeding cycle, your dogs in training); ten sections each a closed card with its headline and one number; the long copy stays behind each section's own "How this works". A figure the server did not send is a dash, never a zero. | 1440: 4,757px to 1,397px. 390: 1,929px (round-1 shot capped at 6,000px). |
+| 3 | Dog art | 25 breed silhouettes (ears pointed, floppy, folded, rose, puffs; snout length; head shape; markings: blaze, mask, spots, patch, tan points, ruff, beard, topknot). The breed now comes from the dog's name first (a Chihuahua is a Chihuahua whatever its vibe), then its vibe, then a hash of its id; the label is read from the same mapping, so the two cannot disagree. Professor Paws wears glasses. | 27 house dogs checked in a test; `dog-breeds-gallery.png` and `dog-house-roster.png`. |
+| 4 | Model page | The bankroll is one wide hero tile (big dollar figure, the return beside it, small 24h / 7d / 30d / Season tabs); the other seven are one secondary row; Fire now is a full-width bar. | Same numbers, hooks and document order. |
+| 5 | Leaderboard | Under 1500px the 7d, 24h, average-price and last-10 columns are hidden; from 1500px the page widens and all 13 show; a still-too-wide table scrolls inside its card with rank and model pinned. The empty "Ranked (0)" table is not drawn while the qualifying round leads. A long model meta line wraps (it held the model column at 434px and was the real cause of the clip with live data). | A headless-Chrome test measures the table at 1440 and 1600: no sideways scroll. |
+| 6 | Phone tab bar | `--lh-tabbar-h` plus 24px plus `env(safe-area-inset-bottom)` as body padding on every page that draws the bar. | Measured at 390 on every page (clearance at least the bar's height). |
+| 7 | Kennels | A featured-dog card (says why it is featured, says "small sample" under 20 settled bets), the latest tickets from member dogs, a thinking dog for the empty states; the breeds legend is gone. | Kennels 1440: 900px to 1,412px of real content; public kennel 889px to 1,621px at 390. |
+| 8 | Builder | A 176px live dog: a breed word in the name picks that breed, the coat follows the name, the backdrop follows the colour, the pose follows how much has been said. Each swatch is drawn as the dog backdrop nearest in hue (the colour itself stays the ring). A new dog is saved with the look that was in the preview (a best-effort cosmetic PUT). Each sidebar card has a dog. | `builder-typed-1440.png` shows "Husky Harry" as a husky on a blue backdrop. |
+| 9 | Sign-in walls, labels | The admin sign-in has Professor Paws and a "Back office" line (a snapshot of the rig in the markup, because that page keeps exactly one script); the member gate dog is bigger. Tab bar labels, gate eyebrows, the shell status line, the state-card eyebrows and three Gameday links are sentence case in the source. | |
+| 10 | My kennel | The four actions are a 2x2 grid on a phone (Open was an orphan); stat labels are 13px and brighter. | `kennel-mine-390.png`. |
+
+Also fixed on the way: a count-up started every number at zero, so a screenshot caught "$73.14" on a $1,000 account. A bankroll now counts
+from $1,000 toward its value (or does not move when equal), and a hidden tab or reduced motion shows the final number at once.
+"Small sample.. Settled" on the bankroll tile had a double full stop.
+
+## Scores, same 1-10 scale (8 = could sit next to the reference)
+
+| Page | Round 1 | Round 2 | What is still short |
+|---|---|---|---|
+| Landing | 8 | 8.5 | The first screen and the board still carry a lot on a phone; the dog faces are stylised vector art, not the hand-drawn character a studio would commission. |
+| Leaderboard | 8 | 8.5 | 13 columns only fit at 1500px and up; under that, four are hidden by design. |
+| Model page | 8 | 8.5 | Long explanatory sentences under Status; a one-point bankroll line says little. |
+| Kennels index | 8 | 8 | One public kennel exists, so the featured dog and the strip carry a page whose real content is two dogs. |
+| Public kennel | 8 | 8 | Same. |
+| My kennel | 8.5 | 8.5 | Mock-owner capture. |
+| Studio | 9 | 9 | Unchanged apart from the breed label now matching the dog. |
+| Builder | 8 | 8.5 | The saved chart colour is still its own palette; the preview and swatches speak the dog's, but they are two things. |
+| Training camp | 7.5 | 8 | The sections hold the same long honest copy; it is behind a click now, not shorter. |
+| Member app | 7 | 7.5 | Only the sign-in wall is capturable without an invite token. Hundreds of capitals-in-source labels in the Gameday, Matchups and Props views were not touched; only the tab bar, gates, status line, state cards and three Gameday links were. |
+| Admin | 6.5 | 7 | Only the sign-in card is capturable; the dashboard tables are unchanged. |
+
+Not done, on purpose: the landing keeps no "paper only, 21+" line in its body, because the owner's 2026-10-18 voice pass has the shared
+footer say it once and a test holds that; the critic's "keep the hard lines" is met by the MLB pause note in the hero and the footer.
+Tests that pinned capitals as the visual form of a label (`label: "GAMEDAY"` and the like) and the empty "Ranked (0)" table were updated
+to the new form, not removed. A few breeds still read close to each other at 32px (greyhound and whippet in particular).
+
+Round 2 files: `web/js/dog-breeds.js`, `camp-overview.js`, `kennel-extras.js`; `web/css/studio.css`, `landing-v2.css`, `lhnav.css`,
+`lh-app.css`; tests `test_dog_rig.py`, `test_landing_sections.py`, `test_hounds_camp_overview.py`, `test_hounds_model_hero.py`,
+`test_web_leaderboard_fit.py` (+ `table_fit.mjs`), `test_no_horizontal_overflow.py` (tab-bar clearance), `test_kennel_extras.py`,
+`test_hounds_builder_preview.py`, `test_admin_gate_dog.py`, `test_web_count_up.py`.

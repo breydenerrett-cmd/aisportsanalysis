@@ -260,8 +260,8 @@ function bankrollTiles(hound) {
   const ret = b ? b.return_pct : null;
   return {
     bankroll: kpi("bankroll", "Bankroll", fmtUsd(now, true),
-      now === null || b.bets <= 0 ? "nothing graded yet" : `from ${fmtUsd(rules.start)}${b.peak > now ? `, peak ${fmtUsd(b.peak, true)}` : ""}${small ? ". Small sample." : ""}`
-        + (basisOf(hound) ? `. Settled ${basisWords(hound)}.` : ""),
+      now === null || b.bets <= 0 ? "nothing graded yet" : `from ${fmtUsd(rules.start)}${b.peak > now ? `, peak ${fmtUsd(b.peak, true)}` : ""}${small ? ". Small sample" : ""}`
+        + (basisOf(hound) ? `. Settled ${basisWords(hound)}.` : (small ? "." : "")),
       toneOf(ret)),
     units: kpi("units", "Units", units === null ? NA : fmtUnitsPlain(units),
       units === null ? "nothing graded yet"
@@ -286,17 +286,21 @@ export function renderScoreboard(hound) {
   const clvSmall = clv ? [clv.mean !== null ? `${signed(clv.mean, 1)} pts average` : "", clv.n ? `${clv.n} measurable bets` : ""].filter(Boolean).join(", ")
     : "no bet has a measurable closing price yet";
   const streak = streakText(hound);
-  box.appendChild(h("div", { class: "hd-kpis", "data-hook": "scoreboard-tiles" }, [
-    money.bankroll,
-    returnTile(hound),
-    money.units,
-    kpi("record", "Record", recordText(hound), bets > 0 ? "wins-losses" + (rec.pushes ? "-pushes" : "") : "no graded bets"),
-    money.drawdown,
-    money.yield,
-    kpi("bets", "Bets", String(bets), [open > 0 ? `${open} open` : "", ungraded > 0 ? `${ungraded} ungraded` : ""].filter(Boolean).join(", ")
-      || (bets < 100 && bets > 0 ? "small sample" : "")),
-    kpi("clv", "CLV", clvBig, clvSmall),
-    kpi("streak", "Streak", streak || NA, streak ? (streak.startsWith("W") ? "wins in a row" : "losses in a row") : "no graded bets"),
+  // ONE HERO, THEN A TIDY ROW (critic round 2, 2026-10-19). The bankroll is the hero tile: the big dollar figure, the return beside
+  // it with its small 24h / 7d / 30d / Season tabs. Everything else is one secondary row of equal compact tiles. Document order is
+  // unchanged (bankroll, return, units, record, drawdown, yield, bets, clv, streak).
+  box.appendChild(h("div", { class: "hd-kpis hd-kpis--v2", "data-hook": "scoreboard-tiles" }, [
+    h("div", { class: "hd-bankhero", "data-hook": "bank-hero" }, [money.bankroll, returnTile(hound)]),
+    h("div", { class: "hd-kpirow", "data-hook": "kpi-row" }, [
+      money.units,
+      kpi("record", "Record", recordText(hound), bets > 0 ? "wins-losses" + (rec.pushes ? "-pushes" : "") : "no graded bets"),
+      money.drawdown,
+      money.yield,
+      kpi("bets", "Bets", String(bets), [open > 0 ? `${open} open` : "", ungraded > 0 ? `${ungraded} ungraded` : ""].filter(Boolean).join(", ")
+        || (bets < 100 && bets > 0 ? "small sample" : "")),
+      kpi("clv", "CLV", clvBig, clvSmall),
+      kpi("streak", "Streak", streak || NA, streak ? (streak.startsWith("W") ? "wins in a row" : "losses in a row") : "no graded bets"),
+    ]),
   ]));
 }
 

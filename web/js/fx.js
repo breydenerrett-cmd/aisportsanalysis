@@ -3,7 +3,9 @@
  * without it. EVERYTHING here is skipped for `prefers-reduced-motion: reduce`, and nothing changes what a number says:
  * a count-up ends on the exact text it started with.
  *
- *   count-up     an element marked `data-count` counts up to the number already in its text when it scrolls into view
+ *   count-up     an element marked `data-count` counts up to the number already in its text when it scrolls into view.
+ *                A DOLLAR figure (a paper bankroll) counts from the $1,000 start, never from $0: a model that has not moved shows
+ *                $1,000 throughout and does not animate at all. A tab that is hidden, or reduced motion, gets the final text at once.
  *   celebrate    window event "linehound:celebrate" (a dog was created, a manual pick was recorded) bursts a few
  *                small pieces of confetti from the element in `detail.el` (or the middle of the screen)
  *
@@ -36,20 +38,52 @@ function format(parts, v) {
   return `${parts.prefix}${v < 0 || (parts.neg && v === 0) ? "-" : ""}${body}${parts.suffix}`;
 }
 
+/** Every paper account starts here (docs/BANKROLL.md); a bankroll figure counts from this, not from zero. */
+export const BANKROLL_START = 1000;
+
+/** True while the tab is not on screen: nothing animates then, and a screenshot or a background tab must see the final number. */
+export function tabHidden() {
+  try {
+    return typeof document !== "undefined" && document.visibilityState === "hidden";
+  } catch (err) {
+    return false;
+  }
+}
+
+/** Where a count starts: `data-count-from` if the element says, else $1,000 for a dollar figure, else zero. */
+export function countFrom(el, parts) {
+  const given = el && el.getAttribute ? Number(el.getAttribute("data-count-from")) : NaN;
+  if (el && el.getAttribute && el.getAttribute("data-count-from") !== null && Number.isFinite(given)) return given;
+  return parts.prefix === "$" && !parts.neg ? BANKROLL_START : 0;
+}
+
 export function countUp(el, ms = 700) {
   if (!el || el.getAttribute("data-counted") === "1") return;
   el.setAttribute("data-counted", "1");
   const original = el.textContent;
   const parts = parseCount(original);
-  if (!parts || parts.value === 0 || reducedMotion() || typeof requestAnimationFrame !== "function") return;
+  if (!parts || parts.value === 0 || reducedMotion() || tabHidden() || typeof requestAnimationFrame !== "function") return;
+  const from = countFrom(el, parts);
+  if (from === parts.value) return;
   const start = performance.now();
+  let onVisible = null;
+  const finish = () => {
+    el.textContent = original;
+    if (onVisible && typeof document !== "undefined" && document.removeEventListener) document.removeEventListener("visibilitychange", onVisible);
+  };
   const step = (now) => {
+    if (tabHidden()) { finish(); return; }
     const t = Math.min(1, (now - start) / ms);
     const eased = 1 - Math.pow(1 - t, 3);
-    el.textContent = t >= 1 ? original : format(parts, parts.value * eased);
-    if (t < 1) requestAnimationFrame(step);
+    if (t >= 1) { finish(); return; }
+    el.textContent = format(parts, from + (parts.value - from) * eased);
+    requestAnimationFrame(step);
   };
-  el.textContent = format(parts, 0);
+  if (typeof document !== "undefined" && document.addEventListener) {
+    onVisible = () => { if (tabHidden()) finish(); };
+    document.addEventListener("visibilitychange", onVisible);
+  }
+  el.textContent = format(parts, from);
   requestAnimationFrame(step);
 }
 

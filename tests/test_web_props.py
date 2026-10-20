@@ -61,7 +61,7 @@ class TheRouteIsWired(unittest.TestCase):
         # 2026-09-15) removed the strip's SECTION_LABELS table; PROPS is now a
         # labelled item in MLB's sub menu instead.
         self.assertNotIn("SECTION_LABELS", self.main)
-        self.assertIn('label: "PROPS"', self.main)
+        self.assertIn('label: "Props"', self.main)
 
     def test_the_route_has_an_entry_point(self):
         """Something a visitor can click must lead here.

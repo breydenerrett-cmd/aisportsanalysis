@@ -127,7 +127,7 @@ class MainJsRegistersPerformanceRoute(unittest.TestCase):
         self.assertIn('route === "performance"', self.text)
 
     def test_nav_item_present(self):
-        self.assertIn('label: "RESULTS"', self.text)
+        self.assertIn('label: "Results"', self.text)
 
 
 class ValueMeterLabelsHonestlyMarketImplied(unittest.TestCase):

@@ -108,6 +108,14 @@ class EveryPageFitsAPhone(unittest.TestCase):
         bad = [r for r in self.results if r["sw"] > r["iw"] + 1]
         self.assertEqual(bad, [], "pages wider than the phone: " + json.dumps(bad, indent=1))
 
+    def test_every_page_with_the_tab_bar_ends_above_it_with_air_to_spare(self):
+        """Round 2 (2026-10-19): the phone tab bar is 60px and fixed to the bottom; the page must leave the bar's height plus 24px below its
+        last element, on every page that draws the bar (the member app, index.html, pads its own main column in css/app.css)."""
+        barred = [r for r in self.results if r["bar"] > 0]
+        self.assertGreaterEqual(len(barred), 10, "the shared tab bar is on the hub's pages")
+        short = [(r["path"], r["bar"], r["pad"], r["clear"]) for r in barred if r["path"] != "/web/index.html" and (r["pad"] < r["bar"] + 24 or r["clear"] < r["bar"])]
+        self.assertEqual(short, [], "pages whose last content sits under the tab bar: (path, bar, body padding, clearance) " + json.dumps(short))
+
 
 if __name__ == "__main__":
     unittest.main()
