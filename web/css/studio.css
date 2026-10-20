@@ -409,3 +409,32 @@
 .kn-act-row[data-status="pending"] .kn-act-row__res { color: #F2B84B; background: rgba(242, 184, 75, .12); }
 .kn-act-row[data-status="won"] .kn-act-row__res, .kn-act-row[data-status="win"] .kn-act-row__res { color: var(--lh-win); background: rgba(47, 208, 122, .12); }
 .kn-act-row[data-status="lost"] .kn-act-row__res, .kn-act-row[data-status="loss"] .kn-act-row__res { color: var(--lh-loss); background: rgba(255, 107, 122, .12); }
+
+/* ===== ROUND 2: the builder. A big live dog, pickers drawn in the dog's own palette, sidebar cards with a dog each ===== */
+@media (min-width: 700px) { .hounds-page .bd-identity { grid-template-columns: minmax(0, 1fr) 300px; gap: var(--lh-s6); } }
+.hounds-page .bd-dogcard { position: sticky; top: var(--lh-s5); padding: var(--lh-s5); border: 0; border-radius: 22px; box-shadow: inset 0 0 0 1px var(--lh-line), var(--lh-e1);
+  background: radial-gradient(80% 70% at 50% 0%, color-mix(in srgb, var(--dog, #2FD07A) 22%, transparent), transparent 70%), var(--lh-soft); }
+.hounds-page .bd-dog--stage { flex-direction: column; align-items: center; text-align: center; gap: var(--lh-s3); padding-left: 0; }
+.hounds-page .bd-dog--stage .bd-dog__dog { filter: drop-shadow(0 18px 24px rgba(0, 0, 0, .45)); }
+.hounds-page .bd-dog--stage .bd-dog__dog svg { width: 176px; height: 176px; border-radius: 28px; }
+.hounds-page .bd-dog--stage .bd-dog__badge { left: calc(50% + 52px); top: var(--lh-s2); width: 40px; height: 40px; padding: 7px; background: var(--dog, #FF7A45); }
+.hounds-page .bd-dog--stage .bd-dog__name { font-family: var(--lh-font-display); font-size: var(--lh-fs-xl); line-height: 1.05; letter-spacing: var(--lh-track-display); }
+.hounds-page .bd-dog--stage .bd-dog__tag { font-size: var(--lh-fs-base); color: var(--lh-mute); }
+.hounds-page .bd-dog__breed { margin: var(--lh-s2) 0 0; }
+@media (max-width: 699px) { .hounds-page .bd-dogcard { position: static; } }
+
+/* the pickers are the dog's backdrop tiles: same rounded-square shape and gradients as the dog, the chart colour as the ring */
+.hounds-page .bd-swatches, .hounds-page .bd-badges { gap: var(--lh-s2); }
+.hounds-page .bd-swatch { width: 44px; height: 44px; border: 0; border-radius: 14px; background: linear-gradient(180deg, var(--bg1, #1B3157), var(--bg2, #0C1730));
+  box-shadow: inset 0 0 0 3px var(--sw), inset 0 0 0 4px rgba(0, 0, 0, .25); transition: transform var(--lh-t-base) var(--lh-spring), box-shadow var(--lh-t-fast) var(--lh-ease); }
+.hounds-page .bd-swatch:hover { transform: translateY(-2px); }
+.hounds-page .bd-swatch[aria-checked="true"] { transform: scale(1.08); box-shadow: inset 0 0 0 3px var(--sw), 0 0 0 3px var(--lh-bg), 0 0 0 5px var(--lh-ink); }
+.hounds-page .bd-badge { width: 44px; height: 44px; border: 0; border-radius: 14px; background: var(--lh-soft-2); color: var(--lh-ink2); transition: transform var(--lh-t-base) var(--lh-spring), background-color var(--lh-t-fast) var(--lh-ease); }
+.hounds-page .bd-badge:hover { transform: translateY(-2px); }
+.hounds-page .bd-badge[aria-checked="true"] { background: var(--lh-accent); color: var(--lh-accent-ink); box-shadow: 0 0 0 3px var(--lh-bg), 0 0 0 5px var(--lh-accent); transform: scale(1.06); }
+
+/* the sidebar cards are not flat: each has a dog, a heading, and room */
+.hounds-page .bd-side .hd-panel { position: relative; padding: var(--lh-s5); border-radius: 22px; box-shadow: inset 0 0 0 1px var(--lh-line), var(--lh-e1); min-height: 148px; }
+.bd-side__dog { position: absolute; top: var(--lh-s4); right: var(--lh-s4); line-height: 0; border-radius: 18px; }
+.bd-side__dog svg { width: 60px; height: 60px; }
+.hounds-page .bd-side .hd-panel h2 { padding-right: 72px; }

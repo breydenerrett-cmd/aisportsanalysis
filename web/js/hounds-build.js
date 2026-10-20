@@ -26,8 +26,8 @@
 
 import { apiGet, apiPost, getToken } from "./api.js";
 import { h, s, clearNode, describeError, houndHref, isNum, fmtPrice } from "./hounds-core.js";
-import { celebrate } from "./dog-common.js";
-import { dogBadge, dogFace, DEFAULT_LOOK, lookFor } from "./dog-avatar.js";
+import { celebrate, put } from "./dog-common.js";
+import { dogBadge, dogFace, DEFAULT_LOOK, lookFor, BACKGROUNDS, cleanLook, breedOfName, breedLabel } from "./dog-avatar.js";
 import { stakeLineText } from "./hounds-board.js";
 
 export const PAPER_NOTICE =
@@ -595,11 +595,47 @@ export function badgeIcon(id, size = 22) {
 
 function colorHex(id) { const c = (S.menu.colors || []).find((x) => x.value === id); return c ? c.hex : "#FF7A45"; }
 
+/**
+ * THE PICKERS SPEAK THE DOG'S PALETTE (critic round 2, 2026-10-19). The chart colour a member picks is saved data with its own hex, so it
+ * cannot become one of the dog's eight backdrops; but each swatch is DRAWN as the dog's backdrop nearest to it (a rounded tile with that
+ * backdrop's gradient and the chart colour as its ring), and the live preview uses that same backdrop. After the dog is created that look
+ * is saved to it (a best-effort PUT /hounds/{id}/look), so the dog is the one that was in the preview.
+ */
+export function nearestBackground(hex) {
+  const hue = (x) => {
+    const [r, g, b] = [1, 3, 5].map((i) => parseInt(String(x).slice(i, i + 2), 16) / 255);
+    const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+    if (d < 0.12) return null;                       // a grey has no hue
+    const hh = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+    return ((hh * 60) + 360) % 360;
+  };
+  const want = /^#[0-9a-fA-F]{6}$/.test(String(hex)) ? hue(hex) : 20;
+  if (want === null) return "slate";
+  let best = "navy", bestD = Infinity;
+  for (const [key, [top]] of Object.entries(BACKGROUNDS)) {
+    const hh = hue(top);
+    if (hh === null || key === "slate" || key === "charcoal") continue;   // the greys are for a grey colour; every menu colour has a hue
+    const d = Math.min(Math.abs(hh - want), 360 - Math.abs(hh - want));
+    if (d < bestD) { bestD = d; best = key; }
+  }
+  if (best === "sand" && want >= 75 && want < 170) return "forest";   // a green is a green, not a brown
+  return best;
+}
+
+/** The look the preview shows, and the look a new dog is saved with: coat and eyes from its name, the backdrop from its colour, no gear. */
+export function previewLook(spec, menuColors) {
+  const name = String((spec && spec.name) || "").trim();
+  const c = (menuColors || []).find((x) => x.value === (spec && spec.color));
+  const base = lookFor(name || "new dog");
+  return cleanLook(Object.assign({}, base, { bg: nearestBackground(c ? c.hex : "#FF7A45") }));
+}
+
 function renderPickers() {
   const colors = clearNode(q("color-picker"));
   for (const c of S.menu.colors) {
+    const bg = BACKGROUNDS[nearestBackground(c.hex)];
     colors.appendChild(h("button", { type: "button", class: "bd-swatch", role: "radio", "aria-checked": S.spec.color === c.value ? "true" : "false",
-      "aria-label": c.label, title: c.label, "data-color": c.value, style: `--sw:${c.hex}`,
+      "aria-label": c.label, title: c.label, "data-color": c.value, "data-bg": nearestBackground(c.hex), style: `--sw:${c.hex}; --bg1:${bg[0]}; --bg2:${bg[1]}`,
       on: { click: () => { S.spec.color = c.value; changed(false); renderPickers(); updateDogCard(); } } }));
   }
   const badges = clearNode(q("badge-picker"));
@@ -610,21 +646,39 @@ function renderPickers() {
   }
 }
 
+/** The two sidebar cards each get a dog (a sniffing beagle for "would have bet today", a retriever for "my dogs"): drawn once, never redrawn. */
+function drawSideDogs() {
+  const spec = { preview: { breed: "beagle", mood: "thinking" }, mine: { breed: "retriever", mood: "idle" } };
+  for (const holder of document.querySelectorAll("[data-side-dog]")) {
+    if (holder.firstChild) continue;
+    const cfg = spec[holder.getAttribute("data-side-dog")] || spec.mine;
+    holder.appendChild(dogBadge(lookFor(cfg.breed), { size: 60, mood: cfg.mood, breed: cfg.breed }));
+  }
+}
+
 function updateDogCard() {
   if (!S.spec || !S.menu) return;
+  drawSideDogs();
   const card = clearNode(q("build-dog-card"));
   const hex = colorHex(S.spec.color);
   // the dog reacts to what has been said so far: thinking until there is a name or a rule, happy once there are both
   const pose = S.spec.name && S.sentences.length ? "happy" : S.spec.name || S.sentences.length ? "idle" : "thinking";
-  card.appendChild(h("div", { class: "bd-dog", style: `--dog:${hex}` }, [
-    // a dog being edited shows ITS look and breed; a new dog shows the default look until it is saved and dressed in the studio
-    h("span", { class: "bd-dog__dog", "data-hook": "dog-preview-dog", "data-pose": pose }, [
-      S.edit ? dogBadge(S.edit.look || lookFor(S.edit.id), { size: 92, mood: pose, id: S.edit.id, name: S.edit.name }) : dogBadge(DEFAULT_LOOK, { size: 92, mood: pose, breed: "retriever" })]),
+  // A dog being edited shows ITS saved look and breed. A new dog is drawn live: the coat and eyes follow the name, the backdrop follows the colour,
+  // a breed word in the name (Husky, Corgi, Poodle...) picks that breed, and the pose follows how much has been said. The breed of a name with no
+  // breed in it is picked when the dog is created, so until then the preview draws a retriever and says so.
+  const named = !S.edit && S.spec.name ? breedOfName({ name: S.spec.name }) : "";
+  const look = S.edit ? (S.edit.look || lookFor(S.edit.id)) : previewLook(S.spec, S.menu.colors);
+  const dogSvgEl = S.edit ? dogBadge(look, { size: 176, mood: pose, id: S.edit.id, name: S.edit.name })
+    : dogBadge(look, { size: 176, mood: pose, breed: named || "retriever" });
+  card.appendChild(h("div", { class: "bd-dog bd-dog--stage", style: `--dog:${hex}`, "data-bg": look.bg, "data-coat": look.coat }, [
+    h("span", { class: "bd-dog__dog", "data-hook": "dog-preview-dog", "data-pose": pose }, [dogSvgEl]),
     h("span", { class: "bd-dog__badge", "data-hook": "dog-badge", "data-badge": S.spec.badge }, [badgeIcon(S.spec.badge, 34)]),
     h("div", { class: "bd-dog__text" }, [
       h("p", { class: "bd-dog__name", "data-hook": "dog-name", text: S.spec.name || "Your dog" }),
       h("p", { class: "bd-dog__tag", "data-hook": "dog-tagline", text: S.spec.tagline || "Add a catchphrase" }),
-      S.sentences.length ? h("p", { class: "bd-dog__rule hd-fine", text: S.sentences[0] }) : null])]));
+      S.sentences.length ? h("p", { class: "bd-dog__rule hd-fine", text: S.sentences[0] }) : null,
+      S.edit ? null : h("p", { class: "bd-dog__breed hd-fine", "data-hook": "dog-preview-breed",
+        text: named ? `${breedLabel(named)}, from the name. Coat and gear are yours to change in the studio.` : "The breed comes with the dog. Coat and gear are yours to change in the studio." })])]));
 }
 
 function bindIdentity() {
@@ -862,6 +916,8 @@ async function submit() {
       if (S.copiedFrom) body.copied_from = S.copiedFrom;
       const res = await apiPost("/hounds", body);
       const dog = res.hound || {};
+      // the dog is the one that was in the preview: save its look (best effort, cosmetic; without it the dog wears the default look for its id)
+      if (dog.id && !S.copiedFrom) { try { await put(`/hounds/${encodeURIComponent(dog.id)}/look`, { look: previewLook(S.spec, S.menu.colors) }); } catch (err) { /* default look */ } }
       setMessage(`${dog.name || "Your dog"} is in the kennel.`, "ok");
       if (dog.id) q("build-message").appendChild(h("p", {}, [h("a", { href: houndHref(dog.id), "data-hook": "new-dog-link", text: "See your dog" })]));
       await loadMine();
