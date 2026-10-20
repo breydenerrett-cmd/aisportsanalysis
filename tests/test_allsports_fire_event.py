@@ -252,6 +252,20 @@ class ThePostBody(unittest.TestCase):
         patcher = mock.patch.object(common, "resolve", lambda i: dog_of(hid=i))
         patcher.start()
         self.addCleanup(patcher.stop)
+        # A per-game ("Live") fire on a MEMBER dog is a paid tool (api/entitlements.py, tests/test_free_tier_limits.py);
+        # these tests are about the body's shape, so the gate is let through here.
+        self.real_gate = api.entitlements.paid_dog_tool_for
+        gate = mock.patch.object(api.entitlements, "paid_dog_tool_for", lambda *a, **k: None)
+        gate.start()
+        self.addCleanup(gate.stop)
+
+    def test_the_live_send_is_a_401_for_a_signed_out_caller(self):
+        from fastapi import HTTPException
+        with mock.patch.object(self.api.entitlements, "paid_dog_tool_for", self.real_gate):
+            with self.assertRaises(HTTPException) as ctx:
+                self.api.fire_now("u-test1", self.response, body=self.api.FireRequest(event_id="evt1"),
+                                  authorization=None, _rl=None)
+        self.assertEqual(ctx.exception.status_code, 401)
 
     @staticmethod
     def data(out):

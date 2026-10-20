@@ -66,6 +66,7 @@ from src.appstate import billing
 from src.appstate import comps
 from src.appstate import customers
 from src.appstate import events
+from src.appstate import founding
 from src.appstate import tester_upgrade
 from src.appstate import testers
 from src.appstate import users as users_store
@@ -179,6 +180,12 @@ def get_revenue(_admin: None = Depends(_require_admin)) -> dict:
     """
     price = billing.BETA_PLAN_PRICE_CENTS
     attribution = customers.all_signup_attribution()
+    # A founding member pays the founding price while their seat lasts (src/appstate/founding.py), so
+    # MRR is summed per subscription rather than assuming everyone pays `price`.
+    founding_ids = set(founding.active_user_ids())
+
+    def unit_price(user_id: int) -> int:
+        return billing.FOUNDING_PLAN_PRICE_CENTS if user_id in founding_ids else price
 
     def source_of(user_id: int) -> str:
         return (attribution.get(user_id) or {}).get("utm_source") or DIRECT_SOURCE
@@ -188,6 +195,8 @@ def get_revenue(_admin: None = Depends(_require_admin)) -> dict:
     trialing_by_source: Counter = Counter()
     cancel_scheduled = 0
     active_not_canceling = 0
+    mrr_cents = 0
+    mrr_gross_cents = 0
     now = datetime.now(timezone.utc)
     unpaid = 0
     for row in customers.list_subscription_rows():
@@ -209,10 +218,12 @@ def get_revenue(_admin: None = Depends(_require_admin)) -> dict:
         if status == "active":
             counts["paying"] += 1
             paying_by_source[source_of(row["user_id"])] += 1
+            mrr_gross_cents += unit_price(row["user_id"])
             if scheduled:
                 cancel_scheduled += 1
             else:
                 active_not_canceling += 1
+                mrr_cents += unit_price(row["user_id"])
         elif status == "trialing":
             counts["trialing"] += 1
             trialing_by_source[source_of(row["user_id"])] += 1
@@ -230,9 +241,9 @@ def get_revenue(_admin: None = Depends(_require_admin)) -> dict:
         "cancel_scheduled": cancel_scheduled,
         "canceled": counts["canceled"],
         "unpaid": unpaid,
-        "mrr_cents": active_not_canceling * price,
-        "mrr_gross_cents": counts["paying"] * price,
-        "mrr_usd": round(active_not_canceling * price / 100.0, 2),
+        "mrr_cents": mrr_cents,
+        "mrr_gross_cents": mrr_gross_cents,
+        "mrr_usd": round(mrr_cents / 100.0, 2),
         "signups_total": len(all_users),
         "signups_by_source": dict(signups_by_source.most_common()),
         "paying_by_source": dict(paying_by_source.most_common()),

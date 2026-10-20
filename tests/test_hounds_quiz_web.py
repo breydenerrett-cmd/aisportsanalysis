@@ -524,6 +524,31 @@ class SavingAndSigningIn(unittest.TestCase):
                     actions=skip_all() + [click(hook("reveal-backtest-go"), "bt", wait=100)], queries=[q("err", hook("reveal-backtest-error"))])
         self.assertIn("Another backtest is running", busy["final"]["err"])
 
+    def test_backtest_for_a_free_account_shows_the_member_prompt_not_a_plain_error(self):
+        """Backtest is a member tool: a free account's POST /hounds/drill is a 402 `upgrade_required`, and the quiz
+        shows the same prompt the builder, Ask and Live show (web/js/upgrade.js) instead of an error line."""
+        refusal = {"detail": {"error": "upgrade_required", "feature": "backtest",
+                              "message": "Backtest is for members. A free account keeps one dog."}}
+        out = quiz(routes=base_routes({}, **{"POST /hounds/drill": [402, refusal]}), **SIGNED,
+                   actions=skip_all() + [click(hook("reveal-backtest-go"), "bt", wait=100)], queries=[
+            q("prompt", hook("upgrade-prompt"), "count"), q("title", ".upgrade-prompt__title"),
+            q("body", ".upgrade-prompt__body"), q("link", hook("upgrade-link"), "attr", attr="href"),
+            q("plain_error", hook("reveal-backtest-error"), "count"), q("inside", "[data-hook='reveal-backtest-result'] [data-hook='upgrade-prompt']", "count"),
+            q("signin_hidden", hook("reveal-signin"), "hidden"), q("go_disabled", hook("reveal-backtest-go"), "attr", attr="disabled")])
+        f = out["final"]
+        self.assertEqual((f["prompt"], f["inside"], f["plain_error"]), (1, 1, 0))
+        self.assertEqual(f["title"], "Backtest is a member tool")
+        self.assertIn("A free account keeps one dog", f["body"])
+        self.assertEqual(f["link"], "index.html#/billing")
+        self.assertTrue(f["signin_hidden"], "a 402 is not a sign-in problem")
+        self.assertFalse(f["go_disabled"], "the button must work again after the refusal")
+        # A 402 that is NOT the upgrade refusal still gets the ordinary error line.
+        other = quiz(routes=base_routes({}, **{"POST /hounds/drill": [402, {"detail": {"error": "subscription_expired", "message": "Your plan ended."}}]}),
+                     **SIGNED, actions=skip_all() + [click(hook("reveal-backtest-go"), "bt", wait=100)], queries=[
+            q("prompt", hook("upgrade-prompt"), "count"), q("err", hook("reveal-backtest-error"))])
+        self.assertEqual(other["final"]["prompt"], 0)
+        self.assertIn("Your plan ended", other["final"]["err"])
+
     def test_reveal_text_has_no_claims_and_no_price_at_minus_200(self):
         out = quiz(routes=base_routes(COMBO_ANSWERS), actions=COMBO_ACTIONS)
         text = out["text"].lower()

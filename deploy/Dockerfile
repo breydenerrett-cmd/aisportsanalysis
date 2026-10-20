@@ -43,6 +43,11 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY api/ api/
+# src/ carries the share-card fonts too (src/hounds/share_assets/*.ttf, read from disk by
+# src/hounds/share_render.py for GET /d/<id>/card.png, 2026-10-20). They live under src/ on purpose:
+# api/web.py serves web/ through an extension allowlist, and a font is not something to serve; a
+# COPY of src/ is the only line that has to be right for them to ship. Pillow (api/requirements.txt)
+# installs from a manylinux wheel that bundles FreeType, so the slim base needs no extra apt package.
 COPY src/ src/
 # WHY config/ IS COPIED (2026-10-03). Request-time code reads settings from it
 # (config/example_accounts.json for the "If you had followed every pick"
@@ -101,6 +106,11 @@ COPY data/datasvc/ufc/ data/datasvc/ufc/
 # daily loop (`python -m src.datasvc.cli nfl update`). Loaded only when an NFL
 # data route is first asked for.
 COPY data/datasvc/nfl/ data/datasvc/nfl/
+# THE ESPN-FED LEAGUES (2026-10-20): NBA, NHL, NCAAF, NCAAB, soccer teams, games, box
+# scores, standings and injuries (src/datasvc/espn/store.py), read by
+# DataClient.league(code). Append-only, git-tracked, kept current by the capture
+# slot (`python3 -m src.cli datasvc all refresh`). Read lazily; absent = "unavailable".
+COPY data/datasvc/espn/ data/datasvc/espn/
 
 # BRING THE REQUEST-TIME STORES CURRENT (2026-10-03). The COPY above is the
 # repo's committed copy of results, pitcher logs, bullpen log, standings,

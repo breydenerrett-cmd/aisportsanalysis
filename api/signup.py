@@ -245,8 +245,8 @@ def _attempt_checkout(user_id: int) -> Optional[str]:
     Stripe's raw response body) surfaced all the way up as this route's
     unhandled 500, body and all.
     """
-    price_id = billing.beta_plan_stripe_price_id()
-    if not price_id:
+    choice = billing.choose_checkout_price(user_id)
+    if choice is None:
         if _billing_is_switched_on():
             print(f"ESCALATE: signup: {billing.ENV_BILLING_PROVIDER} is set "
                   f"but no beta plan price id is configured -- every paying "
@@ -254,6 +254,19 @@ def _attempt_checkout(user_id: int) -> Optional[str]:
                   file=sys.stderr, flush=True)
             raise _CheckoutMisconfigured()
         return None
+    try:
+        url = _open_signup_checkout(user_id, choice)
+    except BaseException:
+        # A founding seat reserved BY THIS CALL is given back when no checkout opened; a hold this call
+        # was merely handed (a double submit) is not its to give back (billing.release_founding_reservation).
+        billing.release_founding_reservation(user_id, choice)
+        raise
+    if not url:
+        billing.release_founding_reservation(user_id, choice)
+    return url or None
+
+
+def _open_signup_checkout(user_id: int, choice: "billing.CheckoutChoice") -> Optional[str]:
     provider = billing.get_billing_provider()
     # The user's FIRST-touch attribution (stored at signup), so a retried
     # checkout carries the same metadata as the first attempt -- Stripe
@@ -262,8 +275,11 @@ def _attempt_checkout(user_id: int) -> Optional[str]:
     stored = customers.get_signup_attribution(user_id)
     if stored:
         kwargs["attribution"] = stored
+    # Empty for the standard price; the founding price adds its session expiry, idempotency key and
+    # plan_tier tag (billing.choose_checkout_price).
+    kwargs.update(choice.kwargs)
     try:
-        url = provider.create_checkout(user_id, price_id, **kwargs)
+        url = provider.create_checkout(user_id, choice.price_id, **kwargs)
     except billing.BillingProviderNotConfigured as exc:
         if _billing_is_switched_on():
             # Names the variable, never a secret's value.

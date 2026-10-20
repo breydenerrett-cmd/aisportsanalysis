@@ -1172,6 +1172,20 @@ class DataClient:
             self._mlb = mlb_service.default_service()
         return self._mlb
 
+    def league(self, code: str, root=None):
+        """The read API for an ESPN-fed league (nba, nhl, ncaaf, ncaab, epl, ...): teams, players,
+        schedule, game (box score), team_history, player_history, standings, injuries, each with an
+        `as_of` for point-in-time reads. See src/datasvc/espn/service.py."""
+        from src.datasvc.espn import leagues as espn_leagues, service as espn_service
+        espn_leagues.get(code)
+        svc = getattr(self, "_espn", None)
+        if svc is None or root is not None:
+            from src.datasvc.espn.store import EspnStore
+            svc = espn_service.EspnService(EspnStore(root) if root is not None else None)
+            if root is None:
+                self._espn = svc
+        return _LeagueView(svc, code.lower())
+
     def _sport(self, sport: str) -> str:
         if sport not in SPORTS:
             raise _bad_param("sport", f"must be one of {', '.join(SPORTS)}")
@@ -1511,6 +1525,23 @@ def _nfl_ids_of_sheet(sheet: dict, store) -> dict:
             "starting_quarterbacks": {"home": record.get("home_qb_id"), "away": record.get("away_qb_id")},
             "provider_ids": {"nflverse": {"game_id": game["game_id"]},
                              "espn": record.get("espn_id"), "pfr": record.get("pfr_id"), "gsis": record.get("gsis_id")}}
+
+
+class _LeagueView:
+    """`DataClient.league(code)`: an EspnService with the league code already bound."""
+
+    def __init__(self, service, code: str):
+        self._svc, self.code = service, code
+
+    def capabilities(self) -> dict:
+        return self._svc.capabilities(self.code)
+
+    def __getattr__(self, name: str):
+        if name.startswith("_") or name not in ("teams", "players", "schedule", "game", "team_history",
+                                                "player_history", "standings", "injuries"):
+            raise AttributeError(name)
+        fn = getattr(self._svc, name)
+        return lambda *a, **kw: fn(self.code, *a, **kw)
 
 
 def default_client() -> DataClient:

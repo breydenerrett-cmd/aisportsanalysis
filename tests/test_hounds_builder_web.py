@@ -532,7 +532,7 @@ class MyDogsAndEditing(unittest.TestCase):
         f = out["final"]
         self.assertEqual(f["names"], ["Dog One", "Dog Two"])
         self.assertEqual(f["rules"], 2)
-        self.assertEqual(f["limit"], "2 of 3 dogs running.")
+        self.assertEqual(f["limit"], "2 of 5 dogs running.")
         self.assertTrue(f["signin_hidden"])
 
     def test_a_stale_token_returns_to_the_signed_out_state(self):

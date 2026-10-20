@@ -30,6 +30,7 @@ from fastapi import Depends
 from api.billing import router as billing_router
 from api.passwords import router as passwords_router
 from api.free_signup import router as free_signup_router
+from api.email_routes import router as email_router
 from api.onboarding import router as onboarding_router
 from api.signup import router as signup_router
 from api.hounds_create import router as hounds_create_router
@@ -226,6 +227,8 @@ app.include_router(passwords_router)
 # Self-serve FREE account: POST /auth/signup, public and rate limited (api/free_signup.py).
 app.include_router(free_signup_router)
 app.include_router(admin_router)
+# GET/POST /email/unsubscribe (public, signed link) and /admin/email/status|test (admin token): api/email_routes.py.
+app.include_router(email_router)
 app.include_router(billing_router)
 # support mounts WITHOUT the authed dependency: POST /support accepts
 # anonymous-with-email by design; its /admin routes carry their own guard.
@@ -327,6 +330,24 @@ def _start_hounds_engine() -> None:
         return (not status.get("enabled")) or int(status.get("passes_completed") or 0) >= 1
 
     user_runner.start_loop(ready=_warm_up_done)
+
+
+# -- transactional email (src/notify/email_jobs.py) ----------------------------------------------------------
+#
+# The nightly result (about 09:00 Eastern, once the overnight settlement has run) and the Sunday pack (10:00
+# Eastern) go out from ONE daemon thread in this process, the same single-writer pattern as the engine above:
+# production is one machine on sqlite, so there is no second scheduler to race. OFF unless RESEND_API_KEY is set
+# (the owner sets it on the Fly app, docs/owner/RESEND_ATTACH.md) and EMAIL_JOBS is not "off", so a laptop, a
+# test client and staging never start it. Waits for the first cache warm-up pass like the engine does.
+@app.on_event("startup")
+def _start_email_jobs() -> None:
+    from src.notify import email_jobs
+
+    def _warm_up_done() -> bool:
+        status = warmup.status()
+        return (not status.get("enabled")) or int(status.get("passes_completed") or 0) >= 1
+
+    email_jobs.start_loop(ready=_warm_up_done)
 
 
 # -- request logging + structured 500s -------------------------------------

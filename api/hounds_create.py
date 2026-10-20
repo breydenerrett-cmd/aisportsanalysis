@@ -6,7 +6,8 @@ WHO CAN DO WHAT
   GET  /hounds/{id}/spec            public    a spec any signed-in user can POST back as their own
   GET  /hounds/{id}/scorecard       public    data for a reader or a coach (JSON, or ?format=text)
   GET  /hounds/{id}/coach/diary     public    the Houndmaster's rounds and the coach metrics
-  POST /hounds                      signed in (paid or early-access tester): create or copy
+  POST /hounds                      signed in (free members too): create or copy. A free account keeps ONE dog
+                                    (402 upgrade_required for a second); paid accounts run up to five
   GET  /hounds/mine                 signed in: the caller's hounds
   GET  /hounds/builder/menu         public    everything a custom-rules spec may contain, with bounds
   POST /hounds/english              public    plain English -> spec draft (the free parser); a signed-in caller
@@ -186,8 +187,13 @@ def _spec_error(exc: user_spec.SpecError) -> HTTPException:
 def _store_error(exc: user_store.StoreError) -> HTTPException:
     status = {"limit": 409, "no_account": 403, "account_suspended": 403, "not_found": 404,
               "unknown_source": 404, "reason_required": 422, "retired": 409,
-              "coach_unsupported": 409}.get(exc.code, 400)
-    return HTTPException(status_code=status, detail={"error": exc.code, "message": str(exc)})
+              "coach_unsupported": 409,
+              # a free account adding a second dog: payment, not permission (api/entitlements.py)
+              "upgrade_required": 402}.get(exc.code, 400)
+    detail = {"error": exc.code, "message": str(exc)}
+    if exc.code == "upgrade_required":
+        detail["feature"] = "more_dogs"
+    return HTTPException(status_code=status, detail=detail)
 
 
 def _coach_error(exc: user_coach.CoachError) -> HTTPException:
@@ -228,9 +234,13 @@ class CreateHoundRequest(BaseModel):
 def create_hound(body: CreateHoundRequest,
                  current_user: users_store.User = Depends(require_member_access),
                  _rl: None = Depends(_rate_limit_create)) -> dict:
+    # A FREE account keeps one dog (owner decision 2026-10-20). The store applies the limit inside its creating
+    # transaction; this only says which kind of account is asking. Comps, subscribers inside their period,
+    # testers and invited beta users are "paid" (src/appstate/access.py), so they are never held to it.
+    free = auth_mod.is_free_member(current_user)
     try:
         hound = user_store.create_hound(current_user.id, body.spec, copied_from=body.copied_from,
-                                        coach_opt_in=body.coach_opt_in)
+                                        coach_opt_in=body.coach_opt_in, free_tier=free)
     except user_spec.SpecError as exc:
         raise _spec_error(exc)
     except user_store.StoreError as exc:
@@ -248,7 +258,12 @@ def my_hounds(current_user: users_store.User = Depends(get_current_user),
             out.append(owner_summary(h, verified=verified))
         except Exception:  # noqa: BLE001 -- one dog's broken summary must not hide the rest (or their Edit / Remove)
             out.append(bare_owner_summary(h))
-    return _wrap({"hounds": out, "limit_running": user_spec.MAX_RUNNING_PER_ACCOUNT})
+    # `limit_running` is THIS account's limit (1 for a free account, 5 for a paid one) so the builder
+    # never shows a free member "0 of 5"; `plan` says which it is.
+    free = auth_mod.is_free_member(current_user)
+    return _wrap({"hounds": out, "plan": "free" if free else "paid",
+                  "limit_running": (user_spec.FREE_MAX_ACTIVE_PER_ACCOUNT if free
+                                    else user_spec.MAX_RUNNING_PER_ACCOUNT)})
 
 
 @router.get("/hounds/{hound_id}/spec")

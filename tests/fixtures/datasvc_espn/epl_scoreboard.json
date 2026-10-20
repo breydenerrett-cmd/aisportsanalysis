@@ -1,0 +1,403 @@
+{
+"events": [
+{
+"competitions": [
+{
+"altGameNote": "English Premier League",
+"attendance": 74004,
+"broadcast": "",
+"competitors": [
+{
+"form": "DLDDL",
+"homeAway": "home",
+"id": "360",
+"order": 0,
+"records": [
+{
+"abbreviation": "Total",
+"name": "All Splits",
+"summary": "9-8-5",
+"type": "total"
+}
+],
+"score": "2",
+"statistics": [
+{
+"abbreviation": "APP",
+"displayValue": "0",
+"name": "appearances"
+},
+{
+"abbreviation": "FC",
+"displayValue": "13",
+"name": "foulsCommitted"
+},
+{
+"abbreviation": "CW",
+"displayValue": "1",
+"name": "wonCorners"
+},
+{
+"abbreviation": "A",
+"displayValue": "2",
+"name": "goalAssists"
+},
+{
+"abbreviation": "PP",
+"displayValue": "31.8",
+"name": "possessionPct"
+},
+{
+"abbreviation": "SHAST",
+"displayValue": "8",
+"name": "shotAssists"
+}
+],
+"team": {
+"abbreviation": "MAN",
+"alternateColor": "4169E1",
+"color": "da020e",
+"displayName": "Manchester United",
+"id": "360",
+"isActive": true,
+"location": "Manchester United",
+"logo": "https://a.espncdn.com/i/teamlogos/soccer/500/360.png",
+"name": "Manchester United",
+"shortDisplayName": "Man United",
+"venue": {
+"id": "250"
+}
+},
+"type": "team",
+"winner": true
+},
+{
+"form": "DLWWW",
+"homeAway": "away",
+"id": "382",
+"order": 1,
+"records": [
+{
+"abbreviation": "Total",
+"name": "All Splits",
+"summary": "13-4-5",
+"type": "total"
+}
+],
+"score": "0",
+"statistics": [
+{
+"abbreviation": "APP",
+"displayValue": "0",
+"name": "appearances"
+},
+{
+"abbreviation": "FC",
+"displayValue": "8",
+"name": "foulsCommitted"
+},
+{
+"abbreviation": "CW",
+"displayValue": "6",
+"name": "wonCorners"
+},
+{
+"abbreviation": "A",
+"displayValue": "0",
+"name": "goalAssists"
+},
+{
+"abbreviation": "PP",
+"displayValue": "68.2",
+"name": "possessionPct"
+},
+{
+"abbreviation": "SHAST",
+"displayValue": "7",
+"name": "shotAssists"
+}
+],
+"team": {
+"abbreviation": "MNC",
+"alternateColor": "000000",
+"color": "99c5ea",
+"displayName": "Manchester City",
+"id": "382",
+"isActive": true,
+"location": "Manchester City",
+"logo": "https://a.espncdn.com/i/teamlogos/soccer/500/382.png",
+"name": "Manchester City",
+"shortDisplayName": "Man City",
+"venue": {
+"id": "4036"
+}
+},
+"type": "team",
+"winner": false
+}
+],
+"date": "2026-01-17T12:30Z",
+"details": [
+{
+"athletesInvolved": [
+{
+"displayName": "Diogo Dalot",
+"fullName": "Diogo Dalot",
+"id": "238902",
+"jersey": "2",
+"position": "RB",
+"shortName": "D. Dalot",
+"team": {
+"id": "360"
+}
+}
+],
+"clock": {
+"displayValue": "11'",
+"value": 607.0
+},
+"ownGoal": false,
+"penaltyKick": false,
+"redCard": false,
+"scoreValue": 0,
+"scoringPlay": false,
+"shootout": false,
+"team": {
+"id": "360"
+},
+"type": {
+"id": "94",
+"text": "Yellow Card"
+},
+"yellowCard": true
+},
+{
+"athletesInvolved": [
+{
+"displayName": "Luke Shaw",
+"fullName": "Luke Shaw",
+"id": "167127",
+"jersey": "23",
+"position": "LB",
+"shortName": "L. Shaw",
+"team": {
+"id": "360"
+}
+}
+],
+"clock": {
+"displayValue": "17'",
+"value": 970.0
+},
+"ownGoal": false,
+"penaltyKick": false,
+"redCard": false,
+"scoreValue": 0,
+"scoringPlay": false,
+"shootout": false,
+"team": {
+"id": "360"
+},
+"type": {
+"id": "94",
+"text": "Yellow Card"
+},
+"yellowCard": true
+},
+{
+"athletesInvolved": [
+{
+"displayName": "Rodri",
+"fullName": "Rodri",
+"id": "231828",
+"jersey": "16",
+"position": "DM",
+"shortName": "Rodri",
+"team": {
+"id": "382"
+}
+}
+],
+"clock": {
+"displayValue": "45'+2'",
+"value": 2700.0
+},
+"ownGoal": false,
+"penaltyKick": false,
+"redCard": false,
+"scoreValue": 0,
+"scoringPlay": false,
+"shootout": false,
+"team": {
+"id": "382"
+},
+"type": {
+"id": "94",
+"text": "Yellow Card"
+},
+"yellowCard": true
+},
+{
+"athletesInvolved": [
+{
+"displayName": "Nico O'Reilly",
+"fullName": "Nico O'Reilly",
+"id": "328464",
+"jersey": "33",
+"position": "SUB",
+"shortName": "N. O'Reilly",
+"team": {
+"id": "382"
+}
+}
+],
+"clock": {
+"displayValue": "48'",
+"value": 2859.0
+},
+"ownGoal": false,
+"penaltyKick": false,
+"redCard": false,
+"scoreValue": 0,
+"scoringPlay": false,
+"shootout": false,
+"team": {
+"id": "382"
+},
+"type": {
+"id": "94",
+"text": "Yellow Card"
+},
+"yellowCard": true
+},
+{
+"athletesInvolved": [
+{
+"displayName": "Bryan Mbeumo",
+"fullName": "Bryan Mbeumo",
+"id": "271170",
+"jersey": "19",
+"position": "F",
+"shortName": "B. Mbeumo",
+"team": {
+"id": "360"
+}
+}
+],
+"clock": {
+"displayValue": "65'",
+"value": 3867.0
+},
+"ownGoal": false,
+"penaltyKick": false,
+"redCard": false,
+"scoreValue": 1,
+"scoringPlay": true,
+"shootout": false,
+"team": {
+"id": "360"
+},
+"type": {
+"id": "70",
+"text": "Goal"
+},
+"yellowCard": false
+},
+{
+"athletesInvolved": [
+{
+"displayName": "Rico Lewis",
+"fullName": "Rico Lewis",
+"id": "325564",
+"jersey": "82",
+"position": "RB",
+"shortName": "R. Lewis",
+"team": {
+"id": "382"
+}
+}
+],
+"clock": {
+"displayValue": "75'",
+"value": 4466.0
+},
+"ownGoal": false,
+"penaltyKick": false,
+"redCard": false,
+"scoreValue": 0,
+"scoringPlay": false,
+"shootout": false,
+"team": {
+"id": "382"
+},
+"type": {
+"id": "94",
+"text": "Yellow Card"
+},
+"yellowCard": true
+}
+],
+"id": "740811",
+"notes": [],
+"odds": [
+null
+],
+"playByPlayAthletes": true,
+"playByPlayAvailable": true,
+"recent": false,
+"startDate": "2026-01-17T12:30Z",
+"status": {
+"clock": 5400.0,
+"displayClock": "90'+7'",
+"period": 2,
+"type": {
+"completed": true,
+"description": "Full Time",
+"detail": "FT",
+"id": "28",
+"name": "STATUS_FULL_TIME",
+"shortDetail": "FT",
+"state": "post"
+}
+},
+"timeValid": true,
+"venue": {
+"address": {
+"city": "Manchester",
+"country": "England"
+},
+"fullName": "Old Trafford",
+"id": "250"
+},
+"wasSuspended": false
+}
+],
+"date": "2026-01-17T12:30Z",
+"id": "740811",
+"name": "Manchester City at Manchester United",
+"season": {
+"slug": "2025-26-english-premier-league",
+"type": 13481,
+"year": 2025
+},
+"shortName": "MNC @ MAN",
+"status": {
+"clock": 5400.0,
+"displayClock": "90'+7'",
+"period": 2,
+"type": {
+"completed": true,
+"description": "Full Time",
+"detail": "FT",
+"id": "28",
+"name": "STATUS_FULL_TIME",
+"shortDetail": "FT",
+"state": "post"
+}
+},
+"venue": {
+"displayName": "Old Trafford"
+}
+}
+]
+}

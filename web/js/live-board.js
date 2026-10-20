@@ -23,6 +23,7 @@ import { h, clearNode, fmtPrice, isNum, createPoller, describeError } from "./ho
 import { dogFace } from "./dog-avatar.js";
 import { get, errorText, errorCode, signInPrompt, spanText, PAPER_NOTE } from "./dog-common.js";
 import { renderFireResult, takeOutBack } from "./dog-fire.js";
+import { showUpgrade } from "./upgrade.js";
 
 export const REFRESH_MS = 60000;
 const ROW_CAP = 20;
@@ -280,6 +281,17 @@ const gameName = (ev) => `${ev.away || "TBD"} at ${ev.home || "TBD"}`;
 /** What `dog`'s fire answer says about THIS game: its pick, why it passed, or that the game was not among its answers. */
 export function eventSummary(data, ev, dogName) {
   const lines = [];
+  if (data && data.event_id === ev.event_id && typeof data.picked === "boolean") {       // the per-game answer (fire_event.py)
+    const p = data.pick || (Array.isArray(data.picks) ? data.picks[0] : null);
+    if (data.picked && p) {
+      const bits = [`Average price ${fmtPrice(p.price_average)}`];
+      if (isNum(p.n_books)) bits.push(`${p.n_books} books quoting`);
+      lines.push({ kind: "pick", head: `${dogName} would back ${p.selection}${p.market_label ? ` (${p.market_label})` : ""}.`, detail: `${bits.join(", ")}. ${p.reason || data.reason || ""}`.trim() });
+    } else {
+      lines.push({ kind: "miss", head: `${dogName} passes on this one.`, detail: data.reason || "" });
+    }
+    return lines;
+  }
   const picks = (Array.isArray(data && data.picks) ? data.picks : []).filter((p) => p.event_id === ev.event_id);
   const sameGame = (m) => m.event_id === ev.event_id || (m.game && ev.home && ev.away && String(m.game).includes(ev.home) && String(m.game).includes(ev.away));
   const misses = (Array.isArray(data && data.closest_misses) ? data.closest_misses : []).filter(sameGame);
@@ -355,9 +367,10 @@ async function sendDog(tray, ev, dog) {
   tray.appendChild(h("p", { class: "hd-fine", role: "status", "data-hook": "live-send-status", text: `Sending ${dog.name} at ${gameName(ev)}...` }));
   let data;
   try {
-    data = await takeOutBack(dog.id);
+    data = await takeOutBack(dog.id, ev.event_id);       // a LIVE send is the per-game call: member accounts only
   } catch (err) {
     clearNode(tray);
+    if (showUpgrade(tray, err)) return;
     tray.appendChild(h("p", { class: "hd-muted", "data-hook": "live-send-error", "data-code": errorCode(err),
       text: errorText(err, "The boards could not be read just now. Try again in a minute.") }));
     tray.appendChild(h("button", { type: "button", class: "btn btn--ghost", text: "Pick a dog again", on: { click: () => showPicker(tray, ev) } }));

@@ -28,7 +28,7 @@ class TheDescriptionIsTheOwnersFormat(unittest.TestCase):
         self.assertEqual(meta(page, "og:description"), "63-46 · +4.20u paper · Follow the money. Ask questions never.")
         self.assertEqual(meta(page, "twitter:description"), meta(page, "og:description"))
         self.assertEqual(meta(page, "og:url"), "https://linehound.app/d/steamy_setter")
-        self.assertEqual(meta(page, "twitter:card"), "summary")
+        self.assertEqual(meta(page, "twitter:card"), "summary_large_image")   # the card image (share_card.py) makes it a large one
 
     def test_units_use_the_average_price_else_the_recorded_price(self):
         rec = dict(INFO["record"], units_average_price=None)

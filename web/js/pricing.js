@@ -11,9 +11,8 @@
  * Must match src/appstate/billing.py's BETA_PLAN_PRICE_CENTS -- the number
  * Stripe checkout actually charges. Showing "Free" beside a paid checkout
  * would be exactly the billing dishonesty this product exists to reject.
- * $19.99/mo is the founding-beta recommendation from
- * docs/PRICING_OFFER_VALIDATION.md, pending Brey's final sign-off; if he
- * changes it, billing.py and this file change together (test-checked
+ * $19.99/mo is the standard price (owner decision 2026-10-20; the $14.99 founding price is FOUNDING_CENTS
+ * below); if it changes, billing.py and this file change together (test-checked
  * against the API in test_web_structure where feasible).
  *
  * billing_note states the trial length (src/appstate/billing.py's
@@ -29,27 +28,67 @@
  * checkout worked. Every PUBLIC page (landing, signup, sign-in, record page)
  * builds its trial/price wording from GET /meta through web/js/checkout.js,
  * which says no trial and no "cancel anytime" unless checkout is on, and takes
- * the trial length and price from the server. `founding_note` is the
- * founding-price explanation on its own so checkout.js can append it only when
- * there is something to buy.
+ * the trial length and price from the server. `foundingNote` is the
+ * founding-offer line on its own so checkout.js can append it only when
+ * there is a founding seat to sell.
  */
-const FOUNDING_NOTE =
-  "This is the founding price: it rises as the public record grows, and it can fall "
-  + "if the record does. Founding members keep $19.99 for as long as their "
-  + "subscription stays active.";
+/**
+ * THE FOUNDING OFFER (owner decision 2026-10-20). The first FOUNDING_CAP members pay $14.99/mo and keep it
+ * while they stay continuously subscribed; everyone after pays the standard $19.99/mo. The price depends on
+ * nothing but seats: it is not tied to results, a record or a clock, and no page may say otherwise.
+ *
+ * The seat count is the server's (GET /billing/offer, src/appstate/founding.py: the true number of live
+ * founding subscriptions, never padded). Pages show the founding line only while `available`; sold out, or
+ * with no founding price configured, they show the standard price alone and no scarcity wording at all.
+ */
+export const FOUNDING_CAP = 50;
+export const STANDARD_CENTS = 1999;
+export const FOUNDING_CENTS = 1499;
+
+/** What "for life" means, said once and shown beside every founding line. */
+export const FOUNDING_FINE_PRINT =
+  "Your price stays $14.99 for as long as you stay subscribed; if you cancel and come back later, "
+  + "the price then on offer applies.";
 
 /**
- * The same explanation with the price the server reports (GET /meta
- * `billing.price_cents`) instead of the typed $19.99. `price` is a figure like
- * "$19.99"; with none, the sentence about keeping it is dropped rather than
- * guessed.
+ * GET /billing/offer -> `{priceCents, cap, left}` for a founding offer a checkout started now would be given,
+ * or null (sold out, not configured, malformed). Anything unreadable is "no founding offer": saying too little is
+ * the recoverable mistake, promising a seat that is not there is not.
  */
-export function foundingNote(price) {
-  const head = "This is the founding price: it rises as the public record grows, and it can fall "
-    + "if the record does.";
-  return price
-    ? `${head} Founding members keep ${price} for as long as their subscription stays active.`
-    : head;
+export function foundingFromOffer(payload) {
+  const f = payload && typeof payload === "object" ? payload.founding : null;
+  if (!f || typeof f !== "object" || f.available !== true) return null;
+  const ok = (n) => typeof n === "number" && Number.isInteger(n);
+  if (!ok(f.price_cents) || f.price_cents <= 0 || !ok(f.left) || f.left <= 0 || !ok(f.cap) || f.cap <= 0) {
+    return null;
+  }
+  return { priceCents: f.price_cents, cap: f.cap, left: f.left };
+}
+
+/** "$14.99" from cents. */
+function money(cents) {
+  return "$" + (cents / 100).toFixed(2);
+}
+
+/** "Founding member: $14.99/mo for life · 12 of 50 left", or "" when no founding seat can be had. */
+export function foundingOfferLine(founding) {
+  if (!founding) return "";
+  return `Founding member: ${money(founding.priceCents)}/mo for life · ${founding.left} of ${founding.cap} left`;
+}
+
+/** The offer line plus the fine print, or "" (then pages state the standard price only). */
+export function foundingNote(founding) {
+  return founding ? `${foundingOfferLine(founding)}. ${FOUNDING_FINE_PRINT}` : "";
+}
+
+/** GET /billing/offer, never rejecting: null on any failure. */
+export async function loadFoundingOffer() {
+  try {
+    const { apiGet } = await import("./api.js");
+    return foundingFromOffer(await apiGet("/billing/offer"));
+  } catch (err) {
+    return null;
+  }
 }
 
 export const BETA_TIER = Object.freeze({
@@ -57,6 +96,5 @@ export const BETA_TIER = Object.freeze({
   name: "Founding access",
   price_cents: 1999,
   price_display: "$19.99/mo",
-  founding_note: FOUNDING_NOTE,
-  billing_note: "7-day free trial, then $19.99/month. Cancel anytime. " + FOUNDING_NOTE,
+  billing_note: "7-day free trial, then $19.99/month. Cancel anytime.",
 });

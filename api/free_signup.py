@@ -73,6 +73,10 @@ class FreeSignupRequest(BaseModel):
     kennel_name: Optional[Any] = None
     # The honeypot. Named like a field a bot wants to fill; the page hides it.
     website: Optional[Any] = None
+    # The dog this signup is keeping, when the caller already has one saved under the new account. Optional and
+    # only ever used to send the Keep confirmation (see _send_keep_email); a missing, unknown or someone else's
+    # id changes nothing and says nothing.
+    hound_id: Optional[Any] = None
 
 
 def _answer(token: Optional[str] = None, ends_at: Optional[datetime] = None) -> dict:
@@ -83,6 +87,25 @@ def _answer(token: Optional[str] = None, ends_at: Optional[datetime] = None) -> 
             "kind": "free" if token else None,
             "access_active": bool(token) and ends_at is not None and ends_at > now,
             "has_password": bool(token)}
+
+
+def _send_keep_email(user, hound_id: Any) -> None:
+    """THE KEEP HOOK on the signup path (growth playbook backlog 2). When the request names a hound that exists
+    and belongs to the account just created, send the Keep confirmation on a background thread: the signup
+    answer never waits for Resend and never changes because of it. A new account owns no hound yet unless the
+    keep flow created one first, so for the usual order (account, then dog) the keep flow calls
+    ``src.notify.email.send_keep_confirmation(user, dog)`` itself once the dog is saved. No-op while
+    RESEND_API_KEY is unset."""
+    if not isinstance(hound_id, str) or not hound_id.strip():
+        return
+    try:
+        from src.hounds import user_store
+        from src.notify import email_jobs
+        dog = user_store.get_hound(hound_id.strip()[:64])
+        if dog is not None and dog["owner_user_id"] == user.id:
+            email_jobs.send_keep_confirmation_async(user, dog)
+    except Exception as exc:  # noqa: BLE001 -- an email problem must never fail a signup
+        print(f"auth: keep email hook failed: {exc!r}", file=sys.stderr, flush=True)
 
 
 @router.post("/auth/signup")
@@ -125,4 +148,5 @@ def free_signup(body: FreeSignupRequest, request: Request) -> dict:
     if member is None:
         return _answer()
     free_members.keep_kennel_name(member.user.id, kennel_name)
+    _send_keep_email(member.user, body.hound_id)
     return _answer(member.token, member.expires_at)

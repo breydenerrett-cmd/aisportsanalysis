@@ -12,6 +12,7 @@
 import { h, clearNode } from "./hounds-core.js";
 import { get, post, errorText, statusLine } from "./dog-common.js";
 import { voteRow } from "./dog-feedback.js";
+import { isUpgradeRefusal, upgradePrompt } from "./upgrade.js";
 
 export const NOTE = "Answers are worked out from this dog's own data, not written by an AI model.";
 
@@ -87,6 +88,7 @@ export function mountAsk(box, { id, name, compact = false }) {
       thread.scrollTop = msg.offsetTop ? Math.max(0, msg.offsetTop - 8) : thread.scrollHeight;     // the top of the new answer
       paint(out.followups);
     } catch (err) {
+      if (isUpgradeRefusal(err)) { thread.appendChild(upgradePrompt(err)); thread.scrollTop = thread.scrollHeight; return; }
       thread.appendChild(dogMessage([errorText(err, "I could not answer just now. Try again in a minute.")], "error"));
       thread.scrollTop = thread.scrollHeight;
     } finally {

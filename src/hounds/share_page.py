@@ -26,6 +26,8 @@ import re
 from typing import Mapping, Optional
 from urllib.parse import quote
 
+from src.hounds import share_card
+
 ID_RE = re.compile(r"^[A-Za-z0-9_@.\-]{1,80}$")
 ORIGIN_ENV = "LINEHOUND_PUBLIC_ORIGIN"
 DEFAULT_ORIGIN = "https://linehound.app"
@@ -86,15 +88,29 @@ def description_for(info: Mapping) -> str:
 
 
 def info_from_summary(summary: Mapping) -> dict:
+    """The few fields the page and the card read from a dog's summary. The extras (kind, status, kennel, sports,
+    bankroll, settled, vibe) feed ``share_card.spec_from_info``; the card, not this page, decides what to show."""
     persona = summary.get("persona") if isinstance(summary.get("persona"), Mapping) else {}
     return {"id": summary.get("id"), "name": summary.get("name") or summary.get("id"),
             "record": summary.get("record") or {}, "tagline": summary.get("tagline") or "",
-            "catchphrase": (persona or {}).get("catchphrase") or ""}
+            "catchphrase": (persona or {}).get("catchphrase") or "",
+            "kind": summary.get("kind"), "status": summary.get("status"), "retired": summary.get("retired"),
+            "owner_display": summary.get("owner_display"), "sports": summary.get("sports") or [],
+            "bankroll": summary.get("bankroll"), "settled": summary.get("settled"),
+            "vibe": (persona or {}).get("vibe") or ""}
 
 
 def lookup(hound_id: str) -> tuple:
-    """``(state, info)``. ok: the dog and its numbers. unknown: a 404 (the book or the app db does not
-    have it). warming: nothing to tell yet (no book, no saved copy, not a house dog we can name)."""
+    """``(state, info)``. ok: the dog and its numbers (and its saved look, for the card). unknown: a 404 (the book
+    or the app db does not have it). warming: nothing to tell yet (no book, no saved copy, not a house dog we can
+    name)."""
+    state, info = _lookup(hound_id)
+    if state == STATE_OK and info is not None and "look" not in info:
+        info["look"] = share_card.look_for(hound_id)
+    return state, info
+
+
+def _lookup(hound_id: str) -> tuple:
     if not ID_RE.match(hound_id or ""):
         return STATE_UNKNOWN, None
     from src.hounds import stats, user_view
@@ -142,7 +158,10 @@ _STYLE = ("body{margin:0;background:#0A0A0B;color:#F2F2F3;font:16px/1.5 system-u
           "a{color:#FF7A45}.fine{color:#9AA0A6;font-size:.85rem}")
 
 
-def _page(title: str, description: str, canonical: str, body: str, *, extra_head: str = "") -> str:
+def _page(title: str, description: str, canonical: str, body: str, *, extra_head: str = "",
+          image: Optional[str] = None, image_alt: str = "") -> str:
+    """``image`` (an absolute URL) turns the unfurl into a large picture card: og:image plus
+    twitter:card=summary_large_image. Without one the page keeps the plain ``summary`` card."""
     t = html.escape(title, quote=True)
     d = html.escape(description, quote=True)
     u = html.escape(canonical, quote=True)
@@ -156,12 +175,26 @@ def _page(title: str, description: str, canonical: str, body: str, *, extra_head
         "<meta property=\"og:type\" content=\"website\">\n"
         f"<meta property=\"og:site_name\" content=\"LINEHOUND\">\n"
         f"<meta property=\"og:url\" content=\"{u}\">\n"
-        "<meta name=\"twitter:card\" content=\"summary\">\n"
+        f"<meta name=\"twitter:card\" content=\"{'summary_large_image' if image else 'summary'}\">\n"
         f"<meta name=\"twitter:title\" content=\"{t}\">\n"
         f"<meta name=\"twitter:description\" content=\"{d}\">\n"
+        f"{_image_meta(image, image_alt)}"
         f"{extra_head}"
         "<meta name=\"theme-color\" content=\"#0A0A0B\">\n"
         f"<style>{_STYLE}</style>\n</head>\n<body>\n<main>\n{body}\n{_FOOTER}\n</main>\n</body>\n</html>\n")
+
+
+def _image_meta(image: Optional[str], alt: str) -> str:
+    if not image:
+        return ""
+    u = html.escape(image, quote=True)
+    a = html.escape(alt, quote=True)
+    tags = (
+        ("property", "og:image", u), ("property", "og:image:type", "image/png"),
+        ("property", "og:image:width", str(share_card.CARD_W)), ("property", "og:image:height", str(share_card.CARD_H)),
+        ("property", "og:image:alt", a), ("name", "twitter:image", u), ("name", "twitter:image:alt", a),
+    )
+    return "".join(f'<meta {kind}="{key}" content="{value}">\n' for kind, key, value in tags)
 
 
 def render_dog(hound_id: str, info: Mapping, *, base: Optional[str] = None) -> str:
@@ -175,7 +208,10 @@ def render_dog(hound_id: str, info: Mapping, *, base: Optional[str] = None) -> s
     refresh = f'<meta http-equiv="refresh" content="0; url={esc(target, quote=True)}">\n'
     body = (f"<h1>{esc(name)}</h1>\n<p>{esc(description)}</p>\n"
             f'<p><a href="{esc(target, quote=True)}">Open {esc(name)} on LINEHOUND</a></p>')
-    return _page(f"{name} | {SITE_TITLE}", description, canonical, body, extra_head=refresh)
+    spec = share_card.spec_from_info(hound_id, info)
+    image = f"{base}{share_card.card_path(hound_id, spec.digest())}"
+    alt = "A LINEHOUND hound" if spec.generic else f"{spec.name}, a LINEHOUND hound: record, paper bankroll and kennel"
+    return _page(f"{name} | {SITE_TITLE}", description, canonical, body, extra_head=refresh, image=image, image_alt=alt)
 
 
 def render_not_found(hound_id: str = "") -> str:

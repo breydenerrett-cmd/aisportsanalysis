@@ -13,6 +13,8 @@ Layout:
   nfl/       NFL, from nflverse's release files
              (contract: docs/datasvc/NFL_SCHEMA.md)
   client.py  the in-process door (`DataClient`) and the fastapi-free core the /data/v1 routes call
+  espn/      NBA, WNBA, NHL, NCAAF, NCAAB, soccer: teams, games, box scores, standings, injuries from ESPN's
+             public JSON; append-only with observed_utc (contract: docs/datasvc/ESPN_SCHEMA.md)
   mlb/       MLB, wrapping the existing stores and the analyst's packet (no ingest of its own)
              (reference: docs/datasvc/CLIENT.md)
 
