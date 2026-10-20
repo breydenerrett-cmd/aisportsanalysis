@@ -287,6 +287,8 @@ export function rowActions(row, { passwordReset = false } = {}) {
   if (passwordReset) items.push({ key: "password", label: "Reset password (reason)" });
   else items.push({ key: "password", label: "Reset password", disabled: true,
     note: "Not available yet: needs the password-login release." });
+  // a member's public kennel name (POST /admin/users/kennel-name): any member, whatever their access
+  items.push({ key: "kennel", label: "Set kennel name (reason)" });
   if (row.comp) items.push({ key: "revoke", label: "Revoke free member (reason)", danger: true });
   return items;
 }

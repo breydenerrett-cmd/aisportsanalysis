@@ -59,7 +59,7 @@ function pickRow(p) {
   return h("tr", {}, [h("td", { text: String(p.date || "").slice(0, 10) }), h("td", { text: p.selection || "" }), h("td", { text: p.game || "" }),
     h("td", { class: "hd-num", text: fmtPrice(p.price_average) }),
     h("td", { text: p.result || "Pending" }),
-    h("td", { class: "hd-num", text: p.result && isNum(p.usd) ? money(p.usd) : "" })]);
+    h("td", { class: "hd-num", "data-hook": "backtest-pick-usd", text: p.result && isNum(p.usd) ? money(p.usd) : "" })]);
 }
 
 /** Draw one backtest result into `box`. */

@@ -207,15 +207,9 @@ function gate(kind) {
 
 // ---- the kennel name -------------------------------------------------------------------------------------
 
-/** A div just before the grid that one feature owns (so a re-render replaces it, never stacks a second). */
+/** The div above the grid that one feature owns (kennel.html), emptied: a re-render replaces it, never stacks a second. */
 function slot(hook) {
-  let el = q(hook);
-  if (!el) {
-    el = h("div", { "data-hook": hook });
-    const grid = q("kennel-grid");
-    grid.parentNode.insertBefore(el, grid);
-  }
-  return clearNode(el);
+  return clearNode(q(hook) || h("div"));
 }
 
 /** "Name your kennel": one text box, Save and (for the first-visit prompt) Not now. */
