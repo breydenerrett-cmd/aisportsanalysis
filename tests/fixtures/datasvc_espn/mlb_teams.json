@@ -1,0 +1,70 @@
+{
+ "teams": [
+  {
+   "abbreviation": "TB",
+   "active": true,
+   "clubName": "Rays",
+   "division": {
+    "name": "American League East"
+   },
+   "id": 139,
+   "league": {
+    "id": 103
+   },
+   "locationName": "St. Petersburg",
+   "name": "Tampa Bay Rays",
+   "shortName": "Tampa Bay",
+   "sport": {
+    "id": 1
+   },
+   "teamName": "Rays"
+  },
+  {
+   "abbreviation": "CLE",
+   "active": true,
+   "clubName": "Guardians",
+   "division": {
+    "name": "American League Central"
+   },
+   "id": 114,
+   "league": {
+    "id": 103
+   },
+   "locationName": "Cleveland",
+   "name": "Cleveland Guardians",
+   "shortName": "Cleveland",
+   "sport": {
+    "id": 1
+   },
+   "teamName": "Guardians"
+  },
+  {
+   "abbreviation": "NYY",
+   "active": true,
+   "clubName": "Yankees",
+   "division": {
+    "name": "American League East"
+   },
+   "id": 147,
+   "league": {
+    "id": 103
+   },
+   "locationName": "Bronx",
+   "name": "New York Yankees",
+   "shortName": "NY Yankees",
+   "sport": {
+    "id": 1
+   },
+   "teamName": "Yankees"
+  },
+  {
+   "abbreviation": "XXX",
+   "active": true,
+   "id": 999,
+   "name": "Some Minor League Club",
+   "sport": {
+    "id": 11
+   }
+  }
+ ]
+}
