@@ -34,6 +34,7 @@ from src.hounds.interact import common
 MAX_MISSES = 6
 HORIZON_HOURS = {"MLB": 36, "NFL": 24 * 5}
 STORES_TTL_S = 300.0
+STARTED_KEEP = timedelta(hours=12)       # how long after first pitch a started game is still NAMED
 
 MARKET_LABEL = {"moneyline": "Moneyline", "spread": "Spread", "total": "Total"}
 MISS_TITLE = {
@@ -102,6 +103,98 @@ def _game_text(game) -> str:
     return f"{game.away_team} @ {game.home_team}"
 
 
+# ---------------------------------------------------------------------------
+# days in the viewer's terms (Eastern time: the sport's own clock)
+# ---------------------------------------------------------------------------
+
+WEEKDAYS = ("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
+
+
+def _eastern():
+    from src.data.eastern import eastern
+    return eastern()
+
+
+def day_of(moment: datetime) -> str:
+    """The Eastern calendar date (YYYY-MM-DD) of a start time."""
+    return moment.astimezone(_eastern()).date().isoformat()
+
+
+def clock_et(moment: datetime) -> str:
+    """'8:10 pm ET'."""
+    local = moment.astimezone(_eastern())
+    hour = local.hour % 12 or 12
+    return f"{hour}:{local.minute:02d} {'am' if local.hour < 12 else 'pm'} ET"
+
+
+def day_label(date: str, now: datetime) -> str:
+    """'Today', 'Tomorrow', a weekday name inside the next six days, else 'Oct 29' (Eastern dates)."""
+    today = datetime.fromisoformat(day_of(now))
+    target = datetime.fromisoformat(date)
+    gap = (target - today).days
+    if gap == 0:
+        return "Today"
+    if gap == 1:
+        return "Tomorrow"
+    if gap == -1:
+        return "Yesterday"
+    if 1 < gap < 7:
+        return WEEKDAYS[target.weekday()]
+    months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    return f"{months[target.month - 1]} {target.day}"
+
+
+def _games_text(items: list) -> str:
+    return ", ".join(f"{game} ({clock_et(start)})" for game, start in items)
+
+
+def slate_view(now: datetime, started: list, upcoming: list) -> dict:
+    """What is on the board TODAY in the viewer's terms, so a list that starts on Thursday is never read as
+    "not looking at tonight's games" (owner, 2026-10-20).
+
+    ``started`` is [(game, start)] for games already under way; ``upcoming`` is [(game, start, lock)] for games
+    ahead. Only games whose EASTERN date is today count as today's. ``line`` is the sentence to say first:
+      started, nothing left today  "Tonight's games already started: A @ B (8:10 pm ET). Next games I can bet: Thursday."
+      nothing on the board today   "No games today. Next slate: Thursday."
+      some started, some ahead     "Already started today: ... Still ahead today: 2 games."
+    and a game inside the dog's placing window (its lock has passed, the game has not started) is named too."""
+    today = day_of(now)
+    today_started = sorted([(g, s) for g, s in started if day_of(s) == today], key=lambda t: t[1])
+    today_ahead = [(g, s, k) for g, s, k in upcoming if day_of(s) == today]
+    later = sorted([(g, s) for g, s, _k in upcoming if day_of(s) > today], key=lambda t: t[1])
+    in_window = sorted([(g, s) for g, s, k in upcoming if k is not None and k <= now and s > now], key=lambda t: t[1])
+    next_date = day_of(later[0][1]) if later else None
+    next_label = day_label(next_date, now) if next_date else None
+    nxt = (f"Next games I can bet: {next_label}." if next_label else "No later games are on the stored boards yet.")
+    if today_started and not today_ahead:
+        state = "started"
+        word = "Tonight's" if now.astimezone(_eastern()).hour >= 17 else "Today's"
+        line = f"{word} games already started: {_games_text(today_started)}. {nxt}"
+    elif today_started:
+        state = "open"
+        line = (f"Already started today: {_games_text(today_started)}. Still ahead today: "
+                f"{len(today_ahead)} {'game' if len(today_ahead) == 1 else 'games'}.")
+    elif today_ahead:
+        state, line = "open", ""
+    else:
+        state = "none"
+        line = (f"No games today. Next slate: {next_label}." if next_label
+                else "No games today, and none are on the stored boards yet.")
+    if in_window:
+        line = (line + " " if line else "") + f"Inside my placing window now: {_games_text(in_window)}."
+    day_counts: dict = {}
+    for _g, s, _k in upcoming:
+        d = day_of(s)
+        day_counts[d] = day_counts.get(d, 0) + 1
+    return {
+        "today": today, "today_state": state, "line": line,
+        "started": [{"game": g, "start_utc": common.iso(s), "start_et": clock_et(s)} for g, s in today_started],
+        "in_window": [{"game": g, "start_utc": common.iso(s), "start_et": clock_et(s)} for g, s in in_window],
+        "next_day": next_date, "next_day_label": next_label,
+        "days": [{"date": d, "label": day_label(d, now), "games": n} for d, n in sorted(day_counts.items())],
+    }
+
+
 def _heavy():
     """The process-wide one-heavy-build-at-a-time gate the engine and the stats build use."""
     try:
@@ -130,7 +223,8 @@ def horizon_dates(sports, now: datetime) -> list:
 
 
 def load_games(sports, now: datetime, rows_for: Optional[Callable] = None) -> dict:
-    """{event_id: GameBoards} for games that have not started, from the stored multibook captures.
+    """{event_id: GameBoards} for games that have not started (plus those that started in the last 12 hours,
+    which callers only NAME), from the stored multibook captures.
 
     ``rows_for(date, sports)`` is the injection point (tests pass fixture rows); production streams the store
     one slate at a time through ``user_engine.iter_rows`` and keeps only the engine's slim fields."""
@@ -138,10 +232,14 @@ def load_games(sports, now: datetime, rows_for: Optional[Callable] = None) -> di
     for date in horizon_dates(sports, now):
         source = rows_for(date, sports) if rows_for else user_engine.iter_rows(date, sports)
         for event_id, game in user_engine.build_games(source, near_date=date).items():
-            if game.commence is None or game.commence <= now:
+            if game.commence is None:
                 continue
-            horizon = timedelta(hours=HORIZON_HOURS.get(game.sport, 36))
-            if game.commence - now > horizon:
+            if game.commence <= now:
+                # A game that has STARTED is never bet, but the payload names it (the owner read a list that
+                # began on Thursday as "not looking at tonight's games", 2026-10-20), so a recent one is kept.
+                if now - game.commence > STARTED_KEEP:
+                    continue
+            elif game.commence - now > timedelta(hours=HORIZON_HOURS.get(game.sport, 36)):
                 continue
             games.setdefault(event_id, game)
     return games
@@ -320,10 +418,16 @@ def fire_user(dog: common.Dog, *, now: Optional[datetime] = None, games: Optiona
     miss_counts: dict = {}
     looked = 0
     newest = None
+    started: list = []
+    upcoming: list = []
     for event_id, game in sorted(games.items(), key=lambda kv: (kv[1].commence, kv[0])):
-        if game.sport not in spec["sports"] or game.commence is None or game.commence <= now:
+        if game.sport not in spec["sports"] or game.commence is None:
+            continue
+        if game.commence <= now:
+            started.append((_game_text(game), game.commence))
             continue
         lock_utc = game.commence - timedelta(minutes=spec["lock_minutes"])
+        upcoming.append((_game_text(game), game.commence, lock_utc))
         game_looked = False
         for market in spec["markets"]:
             if (event_id, market) in recorded:
@@ -363,6 +467,7 @@ def fire_user(dog: common.Dog, *, now: Optional[datetime] = None, games: Optiona
                 "placed_in_minutes": max(0, _minutes(lock_utc - now)),
                 "before_lock": now < lock_utc, "board_observed_utc": cand["board_observed_utc"],
                 "board_age_minutes": age, "stale": stale, "slate_date": row["slate_date"],
+                "day": day_of(game.commence), "day_label": day_label(day_of(game.commence), now),
                 "reason": row["reason"], "rule": user_spec.SIDE_LABELS[spec["side_rule"]],
                 "checks": _checks(spec, cand, game, market), "row": row,
             })
@@ -386,7 +491,7 @@ def fire_user(dog: common.Dog, *, now: Optional[datetime] = None, games: Optiona
                      "before the ones marked over the limit.")
     misses.sort(key=lambda m: (MISS_TIER.get(m["code"], 9), m["gap"] if m["gap"] is not None else 1e9,
                                m["start_utc"], m["event_id"]))
-    return _payload(dog, now, picks, misses, tickets, miss_counts, looked, newest, notes)
+    return _payload(dog, now, picks, misses, tickets, miss_counts, looked, newest, notes, started, upcoming)
 
 
 def _miss(game, market: str, code: str, info: dict) -> dict:
@@ -398,8 +503,10 @@ def _miss(game, market: str, code: str, info: dict) -> dict:
 
 
 def _payload(dog: common.Dog, now: datetime, picks: list, misses: list, tickets: list, miss_counts: dict,
-             looked: int, newest, notes: list) -> dict:
+             looked: int, newest, notes: list, started: Optional[list] = None,
+             upcoming: Optional[list] = None) -> dict:
     nothing = not picks
+    slate = slate_view(now, started or [], upcoming or [])
     if picks:
         headline = (f"{len(picks)} {'pick qualifies' if len(picks) == 1 else 'picks qualify'} on the latest stored boards.")
     elif looked == 0 and not tickets:
@@ -414,7 +521,7 @@ def _payload(dog: common.Dog, now: datetime, picks: list, misses: list, tickets:
         "games_considered": looked, "picks": picks, "recorded": tickets,
         "closest_misses": misses[:MAX_MISSES], "miss_counts": miss_counts, "nothing_qualifies": nothing,
         "games": _by_game(picks, tickets, misses),
-        "headline": headline, "notes": notes, "preview_note": PREVIEW_NOTE,
+        "headline": headline, "notes": notes, "preview_note": PREVIEW_NOTE, "slate": slate,
         "paper_only": True, "not_advice": user_spec.NOT_ADVICE,
     }
 
@@ -499,9 +606,15 @@ def fire_house(dog: common.Dog, *, now: Optional[datetime] = None, stores=None,
     looked = 0
     newest = None
     events = []
+    started: list = []
     for eid, ev in stores.events.items():
         start = base.resolve_start(ev)           # cheap: skip a finished or far-off game before building its context
-        if start is None or start <= now:
+        if start is None:
+            continue
+        if start <= now:
+            if now - start <= STARTED_KEEP and str(ev.get("sport")).upper() in HORIZON_HOURS \
+                    and pack_hound.applies_to(str(ev.get("sport"))):
+                started.append((f"{ev.get('away_name')} @ {ev.get('home_name')}", start))
             continue
         if start - now > timedelta(hours=HORIZON_HOURS.get(str(ev.get("sport")).upper(), 36)):
             continue
@@ -510,6 +623,9 @@ def fire_house(dog: common.Dog, *, now: Optional[datetime] = None, stores=None,
             continue
         events.append((ctx.start, eid, ctx))
     events.sort(key=lambda t: (t[0], t[1]))
+    upcoming = [(f"{c.away_name} @ {c.home_name}", st, c.lock) for st, _eid, c in events
+                if pack_hound.applies_to(c.sport)]
+    started.sort(key=lambda t: t[1])
     for start, eid, ctx in events:
         if not pack_hound.applies_to(ctx.sport):
             continue
@@ -555,6 +671,7 @@ def fire_house(dog: common.Dog, *, now: Optional[datetime] = None, stores=None,
                 "placed_in_minutes": max(0, _minutes(ctx.lock - now)), "before_lock": now < ctx.lock,
                 "board_observed_utc": common.iso(observed) if observed else None,
                 "board_age_minutes": age, "stale": age is not None and age > user_engine.MAX_BOARD_AGE_MINUTES,
+                "day": day_of(ctx.start), "day_label": day_label(day_of(ctx.start), now),
                 "slate_date": row["date"], "reason": row["reason"], "rule": trigger,
                 "over_daily_limit": False, "row": None,
                 "checks": [
@@ -589,7 +706,7 @@ def fire_house(dog: common.Dog, *, now: Optional[datetime] = None, stores=None,
         notes.append("A board older than 75 minutes is flagged: its prices may have moved.")
     misses.sort(key=lambda m: (MISS_TIER.get(m["code"], 9), m["gap"] if m["gap"] is not None else 1e9,
                                m["start_utc"], m["event_id"]))
-    return _payload(dog, now, picks, misses, tickets, miss_counts, looked, newest, notes)
+    return _payload(dog, now, picks, misses, tickets, miss_counts, looked, newest, notes, started, upcoming)
 
 
 def _house_miss(ctx, game_text: str, market: str, code: str, why: str, gap) -> dict:

@@ -85,9 +85,31 @@ function pickCard(p, { id, canRecord, onRecord }) {
   return li;
 }
 
+/** "5:10 PM EDT" in the visitor's own clock, "" when the stamp is unreadable. */
+function localClock(stamp) {
+  const d = new Date(stamp);
+  if (!stamp || Number.isNaN(d.getTime())) return "";
+  try { return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit", timeZoneName: "short" }); } catch (err) { return ""; }
+}
+
+/** The server's slate sentence ("Tonight's games already started: ... Next games I can bet: Thursday."), with each
+ *  game's Eastern time swapped for the visitor's local time. Said first, so a list that begins on Thursday is not
+ *  read as "not looking at tonight's games". */
+function slateLine(slate) {
+  if (!slate || !slate.line) return "";
+  let line = String(slate.line);
+  for (const g of [...(slate.started || []), ...(slate.in_window || [])]) {
+    const t = localClock(g.start_utc);
+    if (t && g.start_et) line = line.split(`(${g.start_et})`).join(`(${t})`);
+  }
+  return line;
+}
+
 /** Draw a fire payload into `box`. `canRecord` shows the owner's manual-pick buttons. */
 export function renderFireResult(box, data, { id, canRecord = false, onRecord } = {}) {
   clearNode(box);
+  const slate = slateLine(data.slate);
+  if (slate) box.appendChild(h("p", { class: "dk-headline dk-slate", "data-hook": "fire-slate", text: slate }));
   box.appendChild(h("p", { class: "dk-headline", "data-hook": "fire-headline", role: "status", text: data.headline || "" }));
   const asOf = [];
   if (data.as_of) asOf.push(`Run ${whenText(data.as_of)}`);
@@ -96,7 +118,16 @@ export function renderFireResult(box, data, { id, canRecord = false, onRecord } 
   if (asOf.length) box.appendChild(h("p", { class: "hd-fine", "data-hook": "fire-asof", text: asOf.join(", ") + "." }));
   const picks = Array.isArray(data.picks) ? data.picks : [];
   if (picks.length) {
-    box.appendChild(h("ul", { class: "dk-picks", "data-hook": "fire-picks" }, picks.map((p) => pickCard(p, { id, canRecord, onRecord }))));
+    const items = [];
+    let day = null;
+    for (const p of picks) {
+      if (p.day_label && p.day_label !== day) {
+        day = p.day_label;
+        items.push(h("li", { class: "hd-h3 dk-dayhead", role: "presentation", "data-hook": "fire-day", text: day }));
+      }
+      items.push(pickCard(p, { id, canRecord, onRecord }));
+    }
+    box.appendChild(h("ul", { class: "dk-picks", "data-hook": "fire-picks" }, items));
   }
   const recorded = Array.isArray(data.recorded) ? data.recorded : [];
   if (recorded.length) {
