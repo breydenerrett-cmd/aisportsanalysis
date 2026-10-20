@@ -536,5 +536,67 @@ class SavingAndSigningIn(unittest.TestCase):
         self.assertIn("21+", text)
 
 
+@unittest.skipUnless(HAS_NODE, "node not installed")
+class TheEntryPoints(unittest.TestCase):
+    """Four small hooks into other pages: the builder's top CTA and its ?quiz=1 hand-off, the kennel's Build a dog card, the landing
+    Kennels card, and the navigation's Build link (quiz first, with Skip to builder on the quiz itself)."""
+
+    def test_the_builder_page_opens_with_a_take_the_quiz_button(self):
+        html = (WEB / "build-a-hound.html").read_text(encoding="utf-8")
+        self.assertRegex(html, r'<a [^>]*href="quiz.html"[^>]*data-hook="build-quiz-cta"[^>]*>Take the quiz</a>')
+        self.assertLess(html.index('data-hook="build-quiz-cta"'), html.index('data-hook="step-describe"'))
+
+    def test_the_quiz_hands_its_spec_to_the_builder_which_shows_it_as_a_draft(self):
+        from tests import test_hounds_builder_web as B
+        fixture = composed({"personality": "mystic", "markets": ["moneyline"], "name": "Biscuit Boss"})
+        handoff = json.dumps({"spec": fixture["spec"], "sentences": fixture["sentences"], "at": 1})
+        out = run_page("build", routes=B.base_routes(), search="?quiz=1", stored={HANDOFF_KEY: handoff}, settleMs=600, queries=[
+            q("note", hook("build-from-note")), q("name", hook("f-name"), "value"), q("cards", "[data-hook='rule-card']", "count"),
+            q("sentences", "[data-hook='rule-sentences'] li", "texts")])
+        self.assertIn("Built from your quiz", out["final"]["note"])
+        self.assertEqual(out["final"]["name"], "Biscuit Boss")
+        posted = B.preview_posts(out)
+        self.assertTrue(posted)
+        self.assertEqual(posted[-1]["rules"][0]["markets"], ["moneyline"])
+        self.assertNotIn("sports", posted[-1])                          # the builder strips the derived keys, as for any draft
+        user_spec.validate_spec({**posted[-1], "name": "Biscuit Boss"})
+
+    def test_the_builder_without_a_hand_off_says_so_and_stays_blank(self):
+        from tests import test_hounds_builder_web as B
+        out = run_page("build", routes=B.base_routes(), search="?quiz=1", queries=[q("note", hook("build-from-note")), q("cards", "[data-hook='rule-card']", "count")])
+        self.assertIn("could not be found", out["final"]["note"])
+        self.assertEqual(out["final"]["cards"], 0)
+        broken = run_page("build", routes=B.base_routes(), search="?quiz=1", stored={HANDOFF_KEY: "{not json"}, queries=[q("note", hook("build-from-note"))])
+        self.assertIn("could not be found", broken["final"]["note"])
+
+    def test_the_kennels_build_a_dog_card_opens_the_quiz(self):
+        from tests import test_kennel_page as K
+        out = run_page("kennel", routes={"/hounds/kennels/mine": K.mine([K.dog()])}, **SIGNED,
+                       actions=[click(hook("kennel-build-card"), "build")], queries=[q("sub", ".kn-build__sub")])
+        self.assertEqual(out["navigations"], ["quiz.html"])
+        self.assertIn("Take the quiz", out["final"]["sub"])
+
+    def test_the_landing_kennels_card_links_the_quiz(self):
+        html = (WEB / "landing.html").read_text(encoding="utf-8")
+        self.assertRegex(html, r'<a [^>]*href="quiz.html"[^>]*data-hook="kennels-card-quiz"[^>]*>Take the hound quiz</a>')
+        card = html.split('data-hook="kennels-card"')[1].split("</section>")[0]
+        self.assertIn('data-hook="kennels-card-quiz"', card)
+
+    def test_the_build_link_in_the_navigation_goes_to_the_quiz_everywhere(self):
+        for name in ("hound.html", "hounds.html", "index.html", "kennel.html", "kennels.html", "landing.html", "learning.html",
+                     "postseason.html", "sample.html", "why-we-paused.html", "build-a-hound.html", "quiz.html"):
+            html = (WEB / name).read_text(encoding="utf-8")
+            self.assertRegex(html, r'<a href="quiz.html" data-nav="build"', name)
+        out = run_page("nav", page_html="hounds.html", queries=[q("hrefs", ".lh-nav__links a", "attrs", attr="href"), q("tabs", "[data-hook='site-tabbar'] .lh-tab", "attrs", attr="href")])
+        self.assertIn("quiz.html", out["final"]["hrefs"])
+        self.assertIn("quiz.html", out["final"]["tabs"])
+        on_quiz = run_page("nav", page_html="quiz.html", pathname="/web/quiz.html", queries=[q("current", ".lh-nav__links a[aria-current='page']", "texts")])
+        self.assertEqual(on_quiz["final"]["current"], ["Build"])
+
+    def test_the_quiz_page_itself_offers_skip_to_builder_twice(self):
+        out = quiz(queries=[q("top", hook("quiz-skip-builder"), "attr", attr="href"), q("intro", hook("quiz-intro-builder"), "attr", attr="href")])
+        self.assertEqual(out["final"], {"top": "build-a-hound.html", "intro": "build-a-hound.html"})
+
+
 if __name__ == "__main__":
     unittest.main()

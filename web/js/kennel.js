@@ -147,10 +147,10 @@ function dogCard(dog, { mine }, index) {
 
 function buildCard(index) {
   return h("button", { type: "button", class: "kn-card kn-card--build", "data-hook": "kennel-build-card", style: `--i:${Math.min(index, 12)}`,
-    on: { click: (e) => openStudio("new", "rules", e.currentTarget) } }, [
+    on: { click: () => { window.location.href = "quiz.html"; } } }, [
     h("span", { class: "kn-build__plus", "aria-hidden": "true", text: "+" }),
     h("span", { class: "kn-build__title", text: "Build a dog" }),
-    h("span", { class: "kn-build__sub", text: "Say a strategy in plain English." })]);
+    h("span", { class: "kn-build__sub", text: "Take the quiz, or say it in plain English." })]);
 }
 
 function emptyMine() {

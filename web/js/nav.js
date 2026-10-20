@@ -28,7 +28,7 @@ export const PASSWORD_HREF = "index.html#/signin?password=1";
 export const PLACES = [
   { key: "leaderboard", label: "Leaderboard", tab: "Board", href: "hounds.html" },
   { key: "kennels", label: "Kennels", tab: "Kennels", href: "kennels.html" },
-  { key: "build", label: "Build", tab: "Build", href: "build-a-hound.html" },
+  { key: "build", label: "Build", tab: "Build", href: "quiz.html" },
   { key: "camp", label: "Training camp", tab: "Camp", href: "learning.html" },
 ];
 
@@ -70,7 +70,7 @@ export function placeFromAddress(loc = (typeof window !== "undefined" ? window.l
   if (path === "kennels.html") return "kennels";
   if (path === "hounds.html" || path === "hound.html" || path === "") return params.get("tab") === "kennels" ? "kennels" : "leaderboard";
   if (path === "kennel.html") return params.get("u") ? "kennels" : "mykennel";
-  if (path === "build-a-hound.html") return "build";
+  if (path === "build-a-hound.html" || path === "quiz.html") return "build";
   if (path === "learning.html") return "camp";
   return "";
 }
