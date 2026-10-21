@@ -915,6 +915,18 @@ class TheEntryPoints(unittest.TestCase):
         on_quiz = run_page("nav", page_html="quiz.html", pathname="/web/quiz.html", **SIGNED, queries=[q("current", ".lh-nav__links a[aria-current='page']", "texts")])
         self.assertEqual(on_quiz["final"]["current"], ["Create"])
 
+    def test_the_phone_tab_bar_drops_find_your_hound_on_the_quiz_itself(self):
+        # rebuild QA 2026-10-20: the desktop bar hid the button on the quiz, the phone tab bar still drew a second green
+        # "Find your hound" under the quiz's own Next (two primaries on one screen)
+        on_quiz = run_page("nav", page_html="quiz.html", pathname="/web/quiz.html",
+                           queries=[q("tab", "[data-hook='tab-cta']", "texts"), q("count", "[data-hook='site-tabbar']", "attr", attr="data-count"),
+                                    q("tabs", "[data-hook='site-tabbar'] .lh-tab", "attrs", attr="href")])
+        self.assertEqual(on_quiz["final"]["tab"], [])
+        self.assertEqual(on_quiz["final"]["count"], "3")
+        self.assertEqual(len(on_quiz["final"]["tabs"]), 3)
+        elsewhere = run_page("nav", page_html="hounds.html", queries=[q("tab", "[data-hook='tab-cta']", "texts")])
+        self.assertEqual(elsewhere["final"]["tab"], ["Find your hound"])
+
     def test_the_quiz_page_itself_offers_skip_to_builder_twice(self):
         out = quiz(queries=[q("top", hook("quiz-skip-builder"), "attr", attr="href"), q("intro", hook("quiz-intro-builder"), "attr", attr="href")])
         self.assertEqual(out["final"], {"top": "build-a-hound.html", "intro": "build-a-hound.html"})

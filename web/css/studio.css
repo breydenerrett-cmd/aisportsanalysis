@@ -450,7 +450,7 @@
 .hounds-page .bd-side .hd-panel { position: relative; padding: var(--lh-s5); border-radius: 22px; box-shadow: inset 0 0 0 1px var(--lh-line), var(--lh-e1); min-height: 148px; }
 .bd-side__dog { position: absolute; top: var(--lh-s4); right: var(--lh-s4); line-height: 0; border-radius: 18px; }
 .bd-side__dog svg { width: 60px; height: 60px; }
-.hounds-page .bd-side .hd-panel h2 { padding-right: 72px; }
+.hounds-page .bd-side .hd-panel h2 { padding-right: 72px; min-height: 56px; }  /* the 60px badge sits beside the heading only: the line under it wrapped beneath the badge at 390px */
 
 /* the seventh tile of the secondary row spans the line on a phone instead of sitting alone */
 @media (max-width: 760px) { .hd-kpirow .hd-kpi:last-child:nth-child(odd) { grid-column: 1 / -1; } }
@@ -557,5 +557,12 @@
 .kn-legal { margin: 0; font-size: var(--lh-fs-sm); color: var(--lh-mute); }
 .kn-activity { margin: var(--lh-s5) 0 var(--lh-s4); }
 .kn-name.hd-panel, .kn-profile.hd-panel { border: 0; border-radius: var(--lh-r-lg); background: var(--lh-soft); }
+/* The name prompt is a filled card: lh.css zeroes .hd-panel padding for the flat panels, so this one sets its own, and its
+   field gets the same height and inset as every other input (it was 20px tall and flush against the card edge). */
+.hounds-page .kn-name.hd-panel, .hounds-page .kn-profile.hd-panel { padding: var(--lh-s5); }
+.hounds-page .kn-nameform input.lh-input { min-height: 44px; padding: 0 var(--lh-s3); background: var(--lh-bg); border: 1px solid var(--lh-line); font: inherit; }
 
 .kn-main[data-empty="true"] .kn-money-line, .kn-main[data-empty="true"] .kn-more { display: none; }
+/* A member with no hound is asked to create one, not to name an empty kennel first: the name prompt (two buttons, one of
+   them solid green) sat above "Create your first hound" (rebuild QA 2026-10-21). It comes back with the first hound. */
+.kn-main[data-empty="true"] [data-hook="kennel-name-slot"] { display: none; }

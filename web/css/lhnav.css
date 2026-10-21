@@ -88,6 +88,7 @@
     box-shadow: 0 -1px 0 var(--lh-line);
   }
   .lh-tabbar[data-count="4"] { grid-template-columns: repeat(4, 1fr); }
+  .lh-tabbar[data-count="3"] { grid-template-columns: repeat(3, 1fr); }
   .lh-tab {
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-height: 48px; min-width: 0;
     border-radius: 10px; color: var(--lh-mute); text-decoration: none; font: 500 11px/1 var(--font-body, 'Instrument Sans', system-ui, sans-serif);
@@ -112,3 +113,14 @@
   .lh-tabbar { animation: lh-tab-in var(--lh-t-slow) var(--lh-ease) both; }
 }
 @keyframes lh-tab-in { from { transform: translateY(10px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* The helpline is one unit: "1-800-" on one line and "GAMBLER" on the next is hard to read and to tap. */
+a[href^="tel:"] { white-space: nowrap; }
+
+/* The member app's top bar on a phone carries Sign in and the primary button beside the wordmark (no tab bar there): at 390px
+   the three were 5px wider than the screen. Tighter buttons keep the bar inside the viewport down to 320px. */
+@media (max-width: 420px) {
+  .lh-nav[data-bottom="off"] .lh-nav__bar { gap: 8px; }
+  .lh-nav[data-bottom="off"] .lh-nav__account { gap: 6px; min-width: 0; }
+  .lh-nav[data-bottom="off"] .lh-nav__account .lh-btn { padding-left: 10px; padding-right: 10px; font-size: 13px; white-space: nowrap; }
+}

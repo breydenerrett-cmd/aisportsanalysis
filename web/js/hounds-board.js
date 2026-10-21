@@ -324,7 +324,11 @@ export function statusOf(hound) {
 
 // ---- type and sport --------------------------------------------------------------------------------
 
-export const SPORT_LABELS = { mlb: "MLB", nfl: "NFL", ufc: "UFC", tennis: "Tennis", nba: "NBA", nhl: "NHL" };
+// every sport key a hound can carry (the quiz and builder offer all of them): the bare uppercased key read "GRIDIRON" and
+// "BASKETBALL" on the hound page (rebuild QA 2026-10-21, the Gematria Hound plays all seventeen)
+export const SPORT_LABELS = { mlb: "MLB", nfl: "NFL", ufc: "UFC", tennis: "Tennis", nba: "NBA", nhl: "NHL", ncaaf: "College football",
+  gridiron: "CFL and UFL", wnba: "WNBA", ncaab: "College basketball", basketball: "Other basketball", hockey: "Other hockey",
+  baseball: "Other baseball", soccer: "Soccer", cricket: "Cricket", mma: "MMA", rugby: "Rugby", afl: "Aussie rules" };
 
 export function sportLabel(sport) {
   const key = String(sport || "").toLowerCase();

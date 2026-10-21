@@ -50,7 +50,7 @@ DAYS_CHOICES = (7, 14, 30)
 LABEL = "Backtest (hindsight, not counted in the record)"
 BACKTEST_LABEL = LABEL
 MAX_SEASON_DAYS = 30
-DISCLOSURE = ("This replays the dog's current rule over boards that were already captured. The rule was not live "
+DISCLOSURE = ("This replays the hound's current rule over boards that were already captured. The rule was not live "
               "then, and you can see how those games ended, so this is a rehearsal and not evidence. It is "
               "never added to a record, a ranking or a verdict.")
 SMALL_N = 30

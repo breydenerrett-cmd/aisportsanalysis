@@ -198,6 +198,9 @@
 }
 .bd-pill[hidden] { display: none; }
 @media (min-width: 1000px) { .bd-pill { display: none; } }
+/* On a phone the site tab bar (lhnav.css, 760px and narrower) owns the bottom edge and sits above the pill (z-index 70 vs 20):
+   the pill rode under it with only its top border showing (rebuild QA 2026-10-21). It rides above the bar instead. */
+@media (max-width: 760px) { body:has(> .lh-tabbar) .bd-pill { bottom: calc(var(--lh-tabbar-h, 60px) + 12px + env(safe-area-inset-bottom, 0px)); } }
 @media (max-width: 999px) { .bd-wrap { padding-bottom: 80px; } }
 @media (prefers-reduced-motion: no-preference) {
   .bd-chip, .bd-swatch, .bd-badge { transition: background-color .12s ease, border-color .12s ease; }

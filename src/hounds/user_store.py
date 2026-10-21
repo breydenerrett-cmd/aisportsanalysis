@@ -71,8 +71,8 @@ BURIED_REASON = "buried by its owner"
 OWNER_REMOVED_REASON = "removed from the kennel by its owner"
 
 # Shown to a free account that tries to add a second dog; the API carries it in a 402 `upgrade_required`.
-FREE_LIMIT_MESSAGE = ("A free account keeps one dog. Become a member to run up to "
-                      f"{user_spec.MAX_RUNNING_PER_ACCOUNT} dogs, or remove your current dog to build a new one.")
+FREE_LIMIT_MESSAGE = ("A free account keeps one hound. Become a member to run up to "
+                      f"{user_spec.MAX_RUNNING_PER_ACCOUNT} hounds, or take your current hound out back to build a new one.")
 
 ROUND_TTL = timedelta(minutes=15)
 COACH_COOLDOWN = timedelta(days=7)

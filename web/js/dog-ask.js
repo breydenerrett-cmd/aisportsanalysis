@@ -14,7 +14,7 @@ import { get, post, errorText, statusLine } from "./dog-common.js";
 import { voteRow } from "./dog-feedback.js";
 import { isUpgradeRefusal, upgradePrompt } from "./upgrade.js";
 
-export const NOTE = "Answers are worked out from this dog's own data, not written by an AI model.";
+export const NOTE = "Answers are worked out from this hound's own data, not written by an AI model.";
 
 /** The pick cards an answer carries (what the dog would take), drawn with the Fire now panel's own card classes. */
 function pickCards(cards) {

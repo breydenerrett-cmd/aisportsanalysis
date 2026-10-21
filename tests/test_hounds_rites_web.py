@@ -348,6 +348,16 @@ class SendToTrainingShowsTheMontageThenTheCard(unittest.TestCase):
         self.assertEqual(cap["trefused"], "Underdog Gus needs 5 new settled bets on version 2 before it can train again. It has 2.")
         self.assertEqual((cap["card"], cap["buttons"]), (0, ["Close"]))
 
+    def test_a_refused_training_does_not_say_the_hound_is_in_training(self):
+        # rebuild QA 2026-10-20: the refusal sheet kept the montage's title, "<name> is in training", above "needs 5 new settled bets"
+        refusal = [409, {"detail": {"error": "training_too_soon", "message": "Underdog Gus needs 5 new settled bets on version 2 before it can train again. It has 2."}}]
+        out = self.run_flow(kennel_routes([dog("u-1")], **{"POST /hounds/u-1/train": refusal}), [
+            click(self.OPEN, "a"), click(hook("training-go"), "b", wait=400, capture=sheet_caps())])
+        cap = out["captures"]["b"]
+        self.assertNotIn("is in training", cap["title"])
+        self.assertTrue(cap["title"].endswith("stays as it is"), cap["title"])
+        self.assertEqual(cap["kind"], "training-refused-sheet")
+
     def test_with_reduced_motion_the_card_is_there_at_once_and_the_sheet_says_so(self):
         out = self.run_flow(kennel_routes([dog("u-1")]), [click(self.OPEN, "a", capture=[q("motion", ".rt-sheet", "attr", attr="data-motion")]),
                                                            click(hook("training-go"), "b", wait=120, capture=[q("card", hook("training-card"), "count"),

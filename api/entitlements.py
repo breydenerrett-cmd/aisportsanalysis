@@ -43,7 +43,7 @@ FEATURE_ASK = "ask"
 FEATURE_MORE_DOGS = "more_dogs"
 
 _FEATURE_WORDS = {
-    FEATURE_LIVE_SEND: "Sending a dog at a live game",
+    FEATURE_LIVE_SEND: "Sending a hound at a live game",
     FEATURE_BACKTEST: "Backtest",
     FEATURE_ASK: "Ask",
 }
@@ -54,7 +54,7 @@ def upgrade_refusal(feature: str, message: Optional[str] = None) -> HTTPExceptio
     words = _FEATURE_WORDS.get(feature, "That")
     return HTTPException(status_code=402, detail={
         "error": UPGRADE_ERROR, "feature": feature,
-        "message": message or f"{words} is part of the member plan. A free account keeps one dog; "
+        "message": message or f"{words} is part of the member plan. A free account keeps one hound; "
                               "members run up to five, in every sport, with Live, Backtest and Ask."})
 
 
