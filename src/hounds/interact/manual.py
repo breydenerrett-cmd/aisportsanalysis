@@ -17,6 +17,8 @@ THE RULES (each is a refusal with a stable code, and each has a test):
   * the game must not have started, and the board the price comes from must be fresh (75 minutes, the
     engine's own limit): no recording a price off a stale capture;
   * one manual ticket per dog per game and market, and none on a game the rule ticket already covers;
+  * one side per game (src/hounds/one_side.py): never the other side of a game the dog already holds, in the
+    dog's rule ledger OR in the manual ledger, and never a second ticket on the same side;
   * 5 a day per dog, counted from the ledger itself (the Eastern date it was recorded);
   * paper only: the row says so and nothing is placed anywhere.
 
@@ -34,13 +36,13 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Callable, Optional
 
-from src.hounds import user_engine, user_spec
+from src.hounds import one_side, user_engine, user_spec
 from src.hounds.contract import ticket_status
 from src.hounds.interact import common, fire
 from src.ledger.chain import HashChainLedger
 
-LEDGER_NAME = "hounds_manual_v1.jsonl"
-ENV_LEDGER = "HOUNDS_MANUAL_LEDGER"
+LEDGER_NAME = user_engine.MANUAL_LEDGER_NAME      # one name, read by the engine's one-side guard too
+ENV_LEDGER = user_engine.MANUAL_LEDGER_ENV
 PER_DAY_LIMIT = 5
 SETTLE_EVERY_S = 600.0
 
@@ -150,6 +152,12 @@ def record(dog: common.Dog, user_id: int, event_id: str, market: str, *, now: Op
         bets, _ = _split(existing, dog.id)
         if any(b["bet_id"] == row["bet_id"] for b in bets):
             raise ManualError("already_on_record", "you already recorded a manual pick on that game and market", 409)
+        # One side per game, against everything the dog holds on that game: the rule ledger (the engine's own
+        # tickets) and the manual ledger. Re-read under the lock, like the checks above.
+        held = one_side.Book.from_rows(list(user_engine.read_ledger(rule_ledger)) + list(existing))
+        clash = held.refusal_for_row(row)
+        if clash is not None:
+            raise ManualError(clash, one_side.reason_text(clash), 409)
         today = common.eastern_date(now)
         used = sum(1 for b in bets if (user_engine._utc(b.get("recorded_utc")) is not None
                                        and common.eastern_date(user_engine._utc(b["recorded_utc"])) == today))

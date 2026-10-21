@@ -25,6 +25,7 @@ from collections import Counter
 from datetime import datetime, timedelta
 from typing import Callable, Optional
 
+from src.hounds import one_side
 from src.hounds import user_engine as E
 from src.hounds import user_spec
 from src.hounds.interact import common, fire
@@ -156,6 +157,9 @@ def _evaluate_live(dog: common.Dog, game, now: datetime, out: dict, slate_for: O
                     found.append((V2._sort_key(spec["rank_by"], cand, fresh[market], game.event_id, market, i),
                                   market, cand))
         found.sort(key=lambda item: item[0])
+        # One side per game (src/hounds/one_side.py): the live answer shows what the engine would do.
+        found = one_side.keep_first(found, lambda it: (game.event_id, it[1], it[2]["side"], it[2].get("player"),
+                                                           it[2].get("line")))
         from src.hounds.interact import ask_eval
         for _k, market, cand in found:
             picks.append(_live_pick(game, market, cand, ask_eval._reason(spec, cand, market, date, E._iso(commence)),
@@ -181,6 +185,7 @@ def _evaluate_live(dog: common.Dog, game, now: datetime, out: dict, slate_for: O
                 continue
             row = fire.pick_row(hound, game, market, cand, fresh[market], now, fresh[market], commence)
             picks.append(_live_pick(game, market, cand, row["reason"], commence, now))
+    picks = one_side.keep_first(picks, lambda p: (p["event_id"], p["market"], p["side"], None, p.get("line")))
     if picks:
         out.update({"picked": True, "pick": picks[0], "picks": picks, "code": "pick", "reason": picks[0]["reason"]})
     else:

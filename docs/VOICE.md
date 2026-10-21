@@ -80,6 +80,11 @@ either take it out back or send in for training, like Pokémon games."* What a p
 - **Every number is traceable to a ticket.** A ticket row has the date, game, pick, market, price taken, how
   many books quoted it, when it went on the record against the first pitch, its status (PENDING, WON, LOST,
   PUSH) and, once graded, its units and its closing-line value.
+- **One side per game.** A hound takes one side per game. Its moneyline and spread (run line, puck line) are one
+  slot, its total is another (never both the over and the under), and a side plus a total are allowed only when
+  the rule asks for both. When two tickets collide the one the model's own ranking puts first stays, and the
+  other is passed with the words *already on the other side of this game* (or, for the worst pair, one that can
+  never both win and can both lose: *these two bets could both lose and can never both win*). Builder: `src/hounds/one_side.py`.
 
 ## Status words (the referee's labels, said plainly)
 
