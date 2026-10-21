@@ -111,3 +111,7 @@
 .signin__tab:focus-visible { outline: 2px solid var(--si-focus); outline-offset: 2px; }
 /* The honeypot: off-screen, not display:none (a bot that skips hidden inputs would skip the trap). */
 .signin__hp { position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden; }
+/* "I am 21 or older": a checkbox beside its label, on one line. */
+.signin__age { display: flex; align-items: center; gap: 10px; min-height: 44px; }
+.signin__age input { flex: none; width: 22px; height: 22px; margin: 0; }
+.signin__age label { font-weight: 600; }

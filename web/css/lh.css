@@ -507,3 +507,24 @@
 .hounds-page .bd-dog__badge svg { width: 100%; height: 100%; }
 .hounds-page .bd-dog__text { min-width: 0; }
 .hounds-page .bd-dog__name { overflow-wrap: anywhere; }
+
+/* ---- R6: a hound's first graded ticket (web/js/first-grade.js, web/js/hounds-detail.js) ---------------------------------------
+   The newest tickets graded since this browser last looked at its own hound carry data-flip, and the ticket list carries
+   data-reveal="play" for 2.4 s at most (a tap sets "done"). The chip flips from PENDING to its grade in 400 ms and the units count up
+   in 500 ms (fx.js, data-count-ms). NOTHING HERE READS THE RESULT: a win, a loss and a push use the same selector, the same keyframes
+   and the same timing. The one burst for a hound's first grade is fired by the page, not by this file. */
+@media (prefers-reduced-motion: no-preference) {
+  [data-reveal="play"] [data-flip] .hd-res { position: relative; animation: lh-grade-flip .4s cubic-bezier(.2, .7, .2, 1) calc(var(--i, 0) * 120ms) both; }
+  [data-reveal="play"] [data-flip] .hd-res::before {
+    content: "PENDING"; position: absolute; inset: 0; display: grid; place-items: center; border-radius: inherit;
+    background: var(--hd-warn, #F2B84B); color: #1B1405; animation: lh-grade-face .4s steps(1, end) calc(var(--i, 0) * 120ms) both;
+  }
+}
+/* reduced motion: no animation at all; the chip simply shows its grade */
+@keyframes lh-grade-flip {
+  0% { transform: perspective(300px) rotateX(0); }
+  50% { transform: perspective(300px) rotateX(90deg); }
+  50.01% { transform: perspective(300px) rotateX(-90deg); }
+  100% { transform: perspective(300px) rotateX(0); }
+}
+@keyframes lh-grade-face { 0% { opacity: 1; } 50% { opacity: 0; } 100% { opacity: 0; } }

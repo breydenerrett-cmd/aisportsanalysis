@@ -257,12 +257,12 @@ class EveryTapEndsInSomethingYouCanSee(unittest.TestCase):
         out = build(actions=[dict(do="click", sel="[data-hook='blank-rule']", wait=60),
                              dict(do="set", sel="[data-hook='f-name']", value="Pup Test", wait=30),
                              dict(do="click", sel="[data-hook='build-submit']", wait=100, label="tap", capture=SEEN)])
-        self.assertIn("Sign in to save", visible_near_button(out["captures"]["tap"]))
+        self.assertIn("Sign in to keep your hound", visible_near_button(out["captures"]["tap"]))
 
     def test_a_missing_name_is_listed_above_the_button(self):
         out = build(**SIGNED, actions=[dict(do="click", sel="[data-hook='blank-rule']", wait=60),
                                        dict(do="click", sel="[data-hook='build-submit']", wait=100, label="tap", capture=SEEN)])
-        self.assertIn("give your dog a name", visible_near_button(out["captures"]["tap"]).lower())
+        self.assertIn("give your hound a name", visible_near_button(out["captures"]["tap"]).lower())
 
     def test_the_page_has_a_box_for_it_above_the_save_button(self):
         self.assertLess(HTML.index('data-hook="build-save-problems"'), HTML.index('data-hook="build-submit"'))

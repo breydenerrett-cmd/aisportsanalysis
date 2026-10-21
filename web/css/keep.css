@@ -1,0 +1,26 @@
+/*
+ * "Keep {Name}": the in-page save form that web/js/keep.js draws under a hound's reveal, on the quiz and on the builder. Written on the
+ * --lh-* tokens with fallbacks so it looks the same on both pages. Mobile first: one column, 48px fields, a 24px checkbox.
+ */
+/* ---- Keep {Name}: the in-page save for a signed-out visitor (web/js/keep.js; loaded by web/quiz.html and web/build-a-hound.html) ------------------ */
+.kp { margin: 0 0 16px; padding: 18px; border-radius: 20px; background: var(--lh-accent-soft, rgba(47, 208, 122, .14)); border: 1px solid rgba(47, 208, 122, .4); }
+.kp[hidden] { display: none; }
+.kp-title { margin: 0 0 4px; }
+.kp-promise { margin: 0 0 14px; max-width: 56ch; font-size: 15px; line-height: 1.45; color: var(--qz-ink2, #C9D0DB); }
+.kp-form { display: grid; gap: 12px; max-width: 460px; }
+.kp-field { display: grid; gap: 4px; }
+.kp-field label { font-size: 13px; font-weight: 600; color: var(--qz-ink2, #C9D0DB); }
+.kp-field input { width: 100%; min-height: 48px; padding: 0 14px; font: 500 16px/1 var(--font-body, 'Instrument Sans', system-ui, sans-serif); box-sizing: border-box; }
+.kp-hint { font-size: 12px; color: var(--qz-mute, #8D96A6); }
+.kp-age { display: flex; align-items: center; gap: 12px; min-height: 44px; }
+.kp-age input { flex: none; width: 24px; height: 24px; margin: 0; accent-color: var(--qz-accent, #2FD07A); }
+.kp-age label { font-size: 15px; font-weight: 600; color: var(--qz-ink, #F2F4F8); }
+.kp-trap { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.kp-go { justify-self: start; }
+.kp-status { margin: 0; min-height: 20px; font-size: 14px; line-height: 1.4; color: var(--qz-ink2, #C9D0DB); }
+.kp-status[data-kind="bad"] { color: var(--lh-loss, #FF8A96); }
+.kp-repeat { margin: 0; }
+.kp-repeat[hidden] { display: none; }
+.kp-fine { margin: 10px 0 0; }
+.qz-keep-signin { margin: 0 0 14px; }
+.qz-keep-signin a { color: var(--qz-ink, #F2F4F8); text-decoration: underline; text-underline-offset: 3px; }

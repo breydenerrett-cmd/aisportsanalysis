@@ -91,7 +91,7 @@ class StaticFacts(unittest.TestCase):
     def test_the_paper_notice_and_the_minus_200_line_are_static_text(self):
         text = re.sub(r"<[^>]+>", " ", re.sub(r"<!--.*?-->", "", HTML, flags=re.S))
         # one short line (2026-10-19 minimalism pass): paper only, the -200 cap, not advice, 21+
-        self.assertIn("Paper bets only. Your dog never takes a price of -200 or worse. Not advice. 21+.", " ".join(text.split()))
+        self.assertIn("Paper bets only. Your hound never takes a price of -200 or worse. Not advice. 21+.", " ".join(text.split()))
         self.assertIn("21+", text)
         self.assertIn("Gamble responsibly.", text)
 
@@ -421,13 +421,13 @@ class StepTwoCards(unittest.TestCase):
                     queries=[q("count", "[data-hook='preview-count']"), q("picks", "[data-hook='preview-pick']", "texts"),
                              q("pill", "[data-hook='preview-pill']"), q("over", "[data-hook='preview-pick']", "attrs", attr="class")])
         f = out["final"]
-        self.assertEqual(f["count"], "2 bets today: 3 qualify and your cap is 2.")
+        self.assertEqual(f["count"], "3 of 3 games fit Your hound's rule today.")
         self.assertEqual(f["pill"], f["count"])
         self.assertEqual(len(f["picks"]), 3)
         self.assertIn("over your daily cap", f["picks"][2])
         self.assertIn("+120", f["picks"][0])
         self.assertIn("bd-pick--over", f["over"][2])
-        for empty, text in ((preview_answer(qualifying=0), "0 bets today"), (preview_answer(qualifying=0, games_on_board=0), "No games on today's board")):
+        for empty, text in ((preview_answer(qualifying=0), "passes today"), (preview_answer(qualifying=0, games_on_board=0), "No games on today's board")):
             o = build(base_routes(**{"POST /hounds/builder/preview": [200, empty]}), actions=[CLICK_BLANK, dict(do="fire_timers", wait=450)],
                       queries=[q("count", "[data-hook='preview-count']")])
             self.assertIn(text, o["final"]["count"])
@@ -467,10 +467,10 @@ class StepThreeAndSaving(unittest.TestCase):
                              q("limit", "[data-hook='limit-text']"), q("mine", "[data-hook='my-dogs-state']"),
                              q("btn", "[data-hook='build-submit']")])
         self.assertFalse(out["final"]["hidden"])
-        self.assertIn("Sign in to save your dog", out["final"]["gate"])
+        self.assertIn("Sign in to keep your hound", out["final"]["gate"])
         self.assertEqual(posts_to(out, "/hounds"), [])
-        self.assertIn("Sign in to see the dogs", out["final"]["mine"])
-        self.assertEqual(out["final"]["btn"], "Send my dog in")
+        self.assertIn("Sign in to see the hounds", out["final"]["mine"])
+        self.assertTrue(out["final"]["btn"].startswith("Keep "))
         self.assertNotIn("/hounds/mine", out["gets"])         # no token, no account read
 
     @unittest.skipUnless(HAS_FASTAPI, "fastapi not installed")
@@ -497,7 +497,7 @@ class StepThreeAndSaving(unittest.TestCase):
     def test_a_missing_name_is_asked_for_before_anything_is_posted(self):
         out = build(**SIGNED, actions=[CLICK_BLANK, dict(do="click", sel="[data-hook='build-submit']", wait=100)],
                     queries=[q("p", "[data-hook='build-problems']")])
-        self.assertIn("give your dog a name", out["final"]["p"].lower())
+        self.assertIn("give your hound a name", out["final"]["p"].lower())
         self.assertEqual(posts_to(out, "/hounds"), [])
 
     def test_server_refusals_are_said_in_words(self):
@@ -532,14 +532,14 @@ class MyDogsAndEditing(unittest.TestCase):
         f = out["final"]
         self.assertEqual(f["names"], ["Dog One", "Dog Two"])
         self.assertEqual(f["rules"], 2)
-        self.assertEqual(f["limit"], "2 of 5 dogs running.")
+        self.assertEqual(f["limit"], "2 of 5 hounds running.")
         self.assertTrue(f["signin_hidden"])
 
     def test_a_stale_token_returns_to_the_signed_out_state(self):
         out = build(self.routes(**{"/hounds/mine": [401, {"detail": "no"}]}), **SIGNED, queries=[
             q("state", "[data-hook='my-dogs-state']"), q("limit", "[data-hook='limit-text']")])
         self.assertIn("Sign in", out["final"]["state"])
-        self.assertIn("Sign in to save", out["final"]["limit"])
+        self.assertEqual(out["final"]["limit"], "")    # the keep form, not a sentence, is the signed-out save
 
     def test_editing_loads_the_dog_and_saving_shows_the_diff_first_then_makes_a_new_version(self):
         diff = {"changes": [{"what": "Rule 1 changed", "before": "old sentence", "after": "new sentence"},
@@ -596,7 +596,7 @@ class MyDogsAndEditing(unittest.TestCase):
         out = build(self.routes(), **SIGNED, actions=[dict(do="click", sel="[data-hook='edit-dog']", index=1, wait=200),
                                                       dict(do="click", sel="[data-hook='edit-cancel']", wait=60)],
                     queries=[q("title", "[data-hook='build-title']"), q("btn", "[data-hook='build-submit']"), q("note", "[data-hook='build-from-note']", "hidden")])
-        self.assertEqual(out["final"], {"title": "Build your dog", "btn": "Send my dog in", "note": True})
+        self.assertEqual(out["final"], {"title": "Build your hound", "btn": "Keep Dog Two", "note": True})
 
     def test_edit_in_the_address_opens_that_dog(self):
         out = build(self.routes(), **SIGNED, search="?edit=u-2", queries=[q("title", "[data-hook='build-title']"), q("cards", "[data-hook='rule-card']", "count")])
@@ -613,7 +613,7 @@ class MyDogsAndEditing(unittest.TestCase):
         out = build(routes, **SIGNED, search="?from=alpha", actions=[dict(do="click", sel="[data-hook='build-submit']", wait=200)],
                     queries=[q("note", "[data-hook='build-from-note']"), q("name", "[data-hook='f-name']", "value")])
         self.assertEqual(out["final"]["name"], "Alpha II")
-        self.assertIn("copy of another dog", out["final"]["note"])
+        self.assertIn("copy of another hound", out["final"]["note"])
         body = posts_to(out, "/hounds")[0]["body"]
         model = CreateHoundRequest(**body)
         self.assertEqual(model.copied_from, "alpha")

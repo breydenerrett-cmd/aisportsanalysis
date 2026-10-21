@@ -32,6 +32,7 @@
  */
 
 import { getToken, setToken, clearToken, apiGet, apiPost, ApiError } from "./api.js";
+import { attributionPayload } from "./attribution.js";
 import { el, clear } from "./dom.js";
 import {
   loadCheckoutState, loadTesterBilling, NOT_ON, signinNote, signinLinkLabel,
@@ -278,6 +279,14 @@ export async function renderSignin(container, query = {}) {
   createForm.appendChild(el("p", { class: "signin__hint",
     text: "At least 10 characters. Not your email, and nothing common." }));
   createForm.appendChild(createKennel.wrap);
+  // "I am 21 or older" (2026-10-20): the server refuses an account without it (api/free_signup.py, 400 age_required) and stores the
+  // moment it was ticked on the user row. A checkbox, not age verification.
+  const ageWrap = el("div", { class: "signin__field signin__age" });
+  const createAge = el("input", { type: "checkbox", id: "create-age", name: "age_confirmed", required: "required",
+    "data-hook": "create-age" });
+  ageWrap.appendChild(createAge);
+  ageWrap.appendChild(el("label", { for: "create-age", text: "I am 21 or older" }));
+  createForm.appendChild(ageWrap);
   // The honeypot: a real person never sees or fills it; a bot that fills every input does.
   const trap = field("Website", "create-website", {
     type: "text", name: "website", autocomplete: "off", tabindex: "-1",
@@ -594,8 +603,12 @@ export async function renderSignin(container, query = {}) {
     clear(createRepeat);
     createRepeat.hidden = true;
     try {
+      if (!createAge.checked) {
+        createStatus.textContent = "Confirm that you are 21 or older to make an account.";
+        return;
+      }
       const body = { email: createEmail.input.value.trim(), password: createPassword.input.value,
-        website: trap.input.value };
+        age_confirmed: true, attribution: attributionPayload(), website: trap.input.value };
       const kennel = createKennel.input.value.trim();
       if (kennel) body.kennel_name = kennel;
       const out = await apiPost("/auth/signup", body);
