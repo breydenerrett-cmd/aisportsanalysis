@@ -20,7 +20,7 @@
  *   POST /hounds/interview/{id}/answer         {topic, fields, texts, data, skip}
  *   POST /hounds/interview/{id}/resolve        {clarification, option}
  *   POST /hounds/interview/{id}/review         {name} -> the confirmation screen (saves nothing)
- *   POST /hounds/interview/{id}/confirm        {name, freeze_hash} -> creates the hound
+ *   POST /hounds/interview/{id}/confirm        {name, freeze_hash, acknowledge_unsupported} -> creates the hound
  */
 
 import { apiGet, apiPost, getToken } from "./api.js";
@@ -416,6 +416,17 @@ function renderReview() {
     cant.appendChild(ul);
     box.appendChild(cant);
   }
+  const warning = shown.warning || {};
+  let tick = null;
+  if (warning.blocked_text || warning.text) {
+    const block = h("div", { class: "iv-warn", role: "alert", "data-hook": "iv-warning" }, [
+      h("p", { class: "iv-warn__text", "data-hook": "iv-warning-text", text: warning.blocked_text || warning.text })]);
+    if (!warning.blocked_text && warning.needs_ack) {
+      tick = h("input", { type: "checkbox", class: "iv-warn__tick", "data-hook": "iv-ack", id: "iv-ack" });
+      block.appendChild(h("label", { class: "iv-warn__ack", for: "iv-ack" }, [tick, " ", warning.ack_label || "I understand it bets without these"]));
+    }
+    box.appendChild(block);
+  }
   if (shown.claimed_history) {
     const c = shown.claimed_history;
     box.appendChild(h("div", { class: "iv-claimed", "data-hook": "iv-claimed" }, [
@@ -432,17 +443,20 @@ function renderReview() {
   const back = h("button", { type: "button", class: "btn btn--ghost", "data-hook": "iv-review-back", text: "Change something",
     on: { click: () => { HOOK("iv-review").hidden = true; HOOK("iv-shell").hidden = false; } } });
   const confirm = h("button", { type: "button", class: "btn btn--primary iv-go", "data-hook": "iv-confirm", text: `Create ${shown.name}` });
-  confirm.addEventListener("click", () => confirmIt(confirm, error));
+  // a hound that checks nothing cannot be created; one that cannot check part of the strategy needs the tick
+  confirm.disabled = Boolean(warning.blocked_text) || Boolean(tick);
+  if (tick) tick.addEventListener("change", () => { confirm.disabled = !tick.checked; });
+  confirm.addEventListener("click", () => confirmIt(confirm, error, Boolean(tick && tick.checked)));
   box.appendChild(h("div", { class: "iv-actions" }, [back, confirm]));
 }
 
-async function confirmIt(button, error) {
+async function confirmIt(button, error, acknowledged) {
   if (busy) return;
   busy = true;
   button.disabled = true;
   error.hidden = true;
   try {
-    const out = await apiPost(`/hounds/interview/${encodeURIComponent(sid)}/confirm`, { name: named.trim(), freeze_hash: shown.freeze_hash });
+    const out = await apiPost(`/hounds/interview/${encodeURIComponent(sid)}/confirm`, { name: named.trim(), freeze_hash: shown.freeze_hash, acknowledge_unsupported: Boolean(acknowledged) });
     busy = false;
     renderDone(out);
   } catch (err) {

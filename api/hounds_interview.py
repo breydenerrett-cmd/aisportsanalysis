@@ -6,7 +6,9 @@
     POST /hounds/interview/{id}/answer           {topic, fields, texts, data, skip} -> the next step
     POST /hounds/interview/{id}/resolve          {clarification, option} -> the next step
     POST /hounds/interview/{id}/review           {name, tagline} -> the confirmation screen; SAVES NOTHING
-    POST /hounds/interview/{id}/confirm          {name, tagline, freeze_hash} -> creates the hound and the strategy record
+    POST /hounds/interview/{id}/confirm          {name, tagline, freeze_hash, acknowledge_unsupported} -> creates the hound and the strategy record.
+                                                 409 acknowledge_required while the can't-automate list is not empty and the tick is absent;
+                                                 409 nothing_checkable when the spec would bet every game in its sports
     GET  /hounds/interview/records/{record_id}   the owner's strategy record, with any claimed history under its own label
 
 Everything needs a signed-in member (a free account too); an interview belongs to its owner and another account's id
@@ -57,7 +59,7 @@ _rl_answer = ratelimit.limiter_dependency(_answer_limiter, user_dependency=get_c
 _read_limiter = ratelimit.FixedWindowLimiter(limit=READ_PER_MIN, window_s=60.0)
 _rl_read = ratelimit.limiter_dependency(_read_limiter, user_dependency=get_current_user)
 
-STATUS = {"not_found": 404, "conflict": 409, "closed": 409, "changed": 409, "not_ready": 409, "not_open": 409,
+STATUS = {"not_found": 404, "conflict": 409, "closed": 409, "changed": 409, "not_ready": 409, "acknowledge_required": 409, "nothing_checkable": 409, "not_open": 409,
           "unknown_topic": 422, "not_skippable": 422, "bad_option": 422, "bad_effect": 500}
 
 
@@ -103,6 +105,7 @@ class ConfirmRequest(BaseModel):
     name: str
     tagline: str = ""
     freeze_hash: Optional[str] = None
+    acknowledge_unsupported: bool = False
 
 
 @router.post("/hounds/interview")
@@ -178,6 +181,7 @@ def interview_confirm(interview_id: str, body: ConfirmRequest, response: Respons
     response.headers["Cache-Control"] = "no-store"
     try:
         out = service.confirm(current_user.id, interview_id, body.name, tagline=body.tagline, freeze_hash=body.freeze_hash,
+                              acknowledge_unsupported=body.acknowledge_unsupported,
                               free=auth_mod.is_free_member(current_user))
     except InterviewError as exc:
         raise _interview_error(exc)

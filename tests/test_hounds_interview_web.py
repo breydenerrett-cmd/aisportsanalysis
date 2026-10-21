@@ -300,7 +300,9 @@ class InterviewPage(Db):
                      dict(do="click", sel=hook("iv-review-go"), capture=[
                          q("lines", hook("iv-summary-line"), "texts"), q("cant", hook("iv-review-cant-item"), "texts"), q("claimed", hook("iv-claimed")),
                          q("effective", hook("iv-effective")), q("hash", hook("iv-hash")), q("confirm", hook("iv-confirm")),
-                         q("shell_hidden", hook("iv-shell"), "hidden")], label="review"),
+                         q("shell_hidden", hook("iv-shell"), "hidden"), q("warning", hook("iv-warning-text")),
+                         q("locked", hook("iv-confirm"), "disabled")], label="review"),
+                     dict(do="check", sel=hook("iv-ack"), label="ticked", capture=[q("locked", hook("iv-confirm"), "disabled")]),
                      dict(do="click", sel=hook("iv-confirm"))],
             queries=[q("done_title", hook("iv-done-title")), q("open", hook("iv-open-hound"), "attr", attr="href"), q("kennel", hook("iv-open-kennel"), "attr", attr="href"),
                      q("line", hook("iv-done-line"))])
@@ -317,12 +319,48 @@ class InterviewPage(Db):
         self.assertTrue(review["shell_hidden"])
         self.assertEqual([p["url"].split("/")[-1] for p in out["posts"]], ["review", "confirm"])
         self.assertEqual(out["posts"][0]["body"], {"name": "Rested Home Dogs"})
-        self.assertEqual(out["posts"][1]["body"], {"name": "Rested Home Dogs", "freeze_hash": shown["freeze_hash"]})
+        self.assertEqual(out["posts"][1]["body"], {"name": "Rested Home Dogs", "freeze_hash": shown["freeze_hash"],
+                                                   "acknowledge_unsupported": True})
+        # the warning says plainly that the hound bets without these, and Confirm stays locked until the tick
+        self.assertIn("can't check", review["warning"])
+        self.assertIn("drawdown", review["warning"])
+        self.assertIn("every home game", review["warning"])
+        self.assertTrue(review["locked"])
+        self.assertFalse(out["captures"]["ticked"]["locked"])
         f = out["final"]
         self.assertEqual(f["done_title"], "Rested Home Dogs is in your kennel")
         self.assertEqual(f["open"], "hound.html?id=u-abc123")
         self.assertEqual(f["kennel"], "kennel.html")
         self.assertNotRegex(f["line"].lower(), r"profit|win|edge|guarantee")
+
+    def _review_page(self, overrides, name="Rested Home Dogs"):
+        sid = SV.start(self.user.id, free=False, now=NOW, db=self.db)["id"]
+        view = None
+        for topic, payload in standard_answers(overrides):
+            view = SV.answer(self.user.id, sid, topic, payload, now=NOW, db=self.db)
+        shown = wire(SV.review(self.user.id, sid, name, now=NOW, db=self.db))
+        return run_page("interview", **SIGNED, search=f"?id={sid}", routes={
+            f"/hounds/interview/{sid}": [200, wire(view)], f"POST /hounds/interview/{sid}/review": [200, shown]},
+            actions=[dict(do="set", sel=hook("iv-name"), value=name), dict(do="click", sel=hook("iv-review-go"))],
+            queries=[q("warn", hook("iv-warning")), q("ack", hook("iv-ack"), "count"), q("locked", hook("iv-confirm"), "disabled")])
+
+    def test_a_review_with_nothing_to_warn_about_has_no_tick_and_confirm_is_open(self):
+        f = self._review_page(None)["final"]
+        self.assertEqual(f["ack"], 0)
+        self.assertFalse(f["locked"])
+
+    def test_a_review_where_nothing_is_checkable_says_so_and_confirm_never_unlocks(self):
+        none = {"side": {"fields": {"side": "either"}, "texts": {"text": "Only when it's raining."}}}
+        f = self._review_page(none)["final"]
+        self.assertIn("Nothing you described can be checked yet. Add at least one rule from the menu.", f["warn"])
+        self.assertEqual(f["ack"], 0)
+        self.assertTrue(f["locked"])
+
+    def test_a_review_with_unsupported_ideas_locks_confirm_behind_the_tick(self):
+        f = self._review_page({"stake": {"fields": {"stake_units": 1.0}, "texts": {"text": "stop after a 10 unit drawdown"}}})["final"]
+        self.assertEqual(f["ack"], 1)
+        self.assertTrue(f["locked"])
+        self.assertIn("I understand it bets without these", f["warn"])
 
     def test_a_name_the_menu_refuses_is_shown_under_the_name_box_and_nothing_is_confirmed(self):
         sid = SV.start(self.user.id, free=False, now=NOW, db=self.db)["id"]

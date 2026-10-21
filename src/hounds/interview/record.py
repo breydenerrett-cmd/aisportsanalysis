@@ -201,6 +201,42 @@ def summary_lines(record: Mapping) -> List[str]:
     return lines
 
 
+NOTHING_CHECKABLE = "Nothing you described can be checked yet. Add at least one rule from the menu."
+ACK_LABEL = "I understand it bets without these"
+ACK_REQUIRED = ("Your hound cannot check some of what you described and will bet without it. "
+                "Tick \"" + ACK_LABEL + "\" to confirm.")
+
+
+def has_condition(derived: Mapping) -> bool:
+    """Does the spec check ANYTHING beyond its sports and markets: a condition, a side or a price range? A spec with none of
+    these would bet every game in its sports."""
+    fields = derived.get("fields") or {}
+    if derived.get("items"):
+        return True
+    if fields.get("side") not in (None, "either"):
+        return True
+    return (not fields.get("price_any")) and (fields.get("price_min") is not None or fields.get("price_max") is not None)
+
+
+def unsupported_warning(derived: Mapping, cant: List[Mapping]) -> dict:
+    """What the review must say plainly when the can't-automate list is not empty, and when nothing at all is checkable."""
+    blocked = not has_condition(derived)
+    out = {"needs_ack": bool(cant), "blocked": blocked, "ack_label": ACK_LABEL, "text": "",
+           "blocked_text": NOTHING_CHECKABLE if blocked else ""}
+    if cant:
+        seen: List[str] = []
+        for c in cant:
+            text = str(c["text"]).strip()
+            if text and text not in seen:
+                seen.append(text)
+        shown = seen[:5]
+        more = f" and {len(seen) - len(shown)} more" if len(seen) > len(shown) else ""
+        side = (derived.get("fields") or {}).get("side")
+        games = {"home": "every home game", "away": "every away game"}.get(side, "every game")
+        out["text"] = f"Your hound can't check: {'; '.join(shown)}{more}. It will bet {games} that fits the rest."
+    return out
+
+
 def review(state: Mapping, derived: Mapping, spec: Mapping, *, record_id: str, interview_id: str, owner_display: str,
            today: date) -> dict:
     record = build_record(state, derived, spec, record_id=record_id, interview_id=interview_id, owner_display=owner_display,
@@ -209,4 +245,5 @@ def review(state: Mapping, derived: Mapping, spec: Mapping, *, record_id: str, i
     return {"record": record, "freeze_hash": record["freeze_hash"], "summary": summary_lines(record),
             "cant_automate": record["cant_automate"], "skips": [e["text"] for e in record["exclusion_conditions"]],
             "claimed_history": hist["summary"] if hist else None, "name": spec["name"], "tagline": spec["tagline"],
-            "effective_date": record["effective_date"], "paper_only": True, "not_advice": user_spec.NOT_ADVICE}
+            "effective_date": record["effective_date"], "warning": unsupported_warning(derived, record["cant_automate"]),
+            "paper_only": True, "not_advice": user_spec.NOT_ADVICE}
