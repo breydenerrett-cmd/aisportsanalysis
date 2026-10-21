@@ -309,6 +309,80 @@ def inputs_for(home_games, away_games, rules, *, day="2026-10-20", facts=NBA_FAC
     return sig_mod.GameInputs(day, home, away, history.head_to_head(list(series_games), "newyorkknicks", "bostonceltics"), True)
 
 
+#: the count units whose window is "the season so far"; an MLB game must produce none of them (the store starts 2026-08-28)
+SEASON_COUNT_QIDS = ("game_number", "coach_game_number", "meeting_number", "wins", "venue_wins", "losses", "venue_losses", "series_wins")
+
+
+class MlbHasNoSeasonCountsTests(unittest.TestCase):
+    """MLB results are read only from 2026-08-28 (the seal), months into the season, so a win total over them is a count SINCE
+    08-28 passed off as "the Nth win of the season": a wrong number. Absent is better than wrong. Spans, ciphers, statehood and the
+    gaps since a last win/loss are exact whatever the window and stay."""
+
+    def setUp(self):
+        self.rules = rules_mod.load()
+        self.book = facts_mod.load()
+
+    def game_inputs(self, season_counts):
+        games = [G(f"2026-09-{d:02d}", "Boston Red Sox", "New York Yankees", 5 if d % 3 else 2, 3, regular=True) for d in range(1, 20)]
+        games += [G(f"2026-09-{d:02d}", "New York Yankees", "Boston Red Sox", 4, 6 if d % 2 else 1, regular=True) for d in range(2, 21, 3)]
+        home = sig_mod.TeamInputs(self.book.team("mlb", "Boston Red Sox"), history.team_state(games, "bostonredsox"))
+        away = sig_mod.TeamInputs(self.book.team("mlb", "New York Yankees"), history.team_state(games, "newyorkyankees"))
+        return sig_mod.GameInputs("2026-10-04", home, away, history.head_to_head(games, "bostonredsox", "newyorkyankees"), True,
+                                  season_counts=season_counts)
+
+    def qids(self, gi):
+        out = {q.qid for q in sig_mod.static_quantities(gi, self.rules)}
+        for winner in ("home", "away"):
+            out |= {q.qid for q in sig_mod.milestones(gi, winner)}
+        return out
+
+    def test_an_mlb_game_produces_no_season_count_quantities_or_evidence(self):
+        gi = self.game_inputs(season_counts=False)
+        ids = self.qids(gi)
+        for unit in SEASON_COUNT_QIDS:
+            self.assertFalse([q for q in ids if q.endswith("." + unit)], unit)
+        sig = sig_mod.generate(gi, self.rules)
+        for side in (sig.home, sig.away):
+            for e in side.evidence:
+                for q in (e.a, e.b):
+                    if q is not None:
+                        self.assertFalse(q.qid.endswith(tuple("." + u for u in SEASON_COUNT_QIDS)), q.qid)
+                        self.assertNotIn("of the season", q.label)
+                        self.assertNotIn("in our store", q.label)
+        # what is exact in any window stays
+        self.assertTrue([q for q in ids if q.endswith(".since_win.days")])
+        self.assertTrue([q for q in ids if ".span." in q])
+        self.assertTrue([q for q in ids if ".name." in q])
+
+    def test_the_same_inputs_with_a_full_season_do_have_those_counts(self):
+        """The control: switching the flag back on is what brings them, so the test above is testing the flag and not an empty fixture."""
+        ids = self.qids(self.game_inputs(season_counts=True))
+        for unit in ("game_number", "wins", "venue_wins", "losses", "venue_losses", "meeting_number", "series_wins"):
+            self.assertTrue([q for q in ids if q.endswith("." + unit)], unit)
+
+    def test_the_real_mlb_source_marks_its_counts_incomplete_and_the_weighed_game_has_none(self):
+        games = [mlb_game(800000 + i, f"2026-09-{i + 1:02d}", "NYY", "BOS" if i % 3 else "TB", 6 - i % 4, 2 + i % 5) for i in range(14)]
+        stores = basic_stores(mlb_games=games)
+        ctx = base.build_context(stores, "evA")
+        past = history.Disk(canonical=lambda s, n: n).past(ctx)
+        self.assertFalse(past.season_counts)
+        self.assertIn("no season-to-date counts", past.scope)
+        run = rt.GematriaRuntime(rules=rules_mod.load(), facts=self.book, source=history.Disk(canonical=lambda s, n: n), ledger=None)
+        w = run.weigh(ctx, base.lock_board(stores, ctx))
+        self.assertIsNotNone(w.signals)
+        for side in (w.signals.home, w.signals.away):
+            for e in side.evidence:
+                for q in (e.a, e.b):
+                    if q is not None:
+                        self.assertNotIn("of the season", q.label)
+                        self.assertFalse(q.qid.endswith(tuple("." + u for u in SEASON_COUNT_QIDS)), q.qid)
+
+    def test_the_other_sports_keep_their_season_counts(self):
+        ctx = base.build_context(allsports_stores(nba_rows()), "nba1")
+        self.assertTrue(history.Disk(espn=history.EspnStore(Path(tempfile.gettempdir()) / "nope-gematria")).past(ctx).season_counts)
+        self.assertTrue(sig_mod.GameInputs("2026-10-20", sig_mod.TeamInputs(facts_mod.Team()), sig_mod.TeamInputs(facts_mod.Team())).season_counts)
+
+
 class SignalTests(unittest.TestCase):
     def setUp(self):
         self.rules = rules_mod.load()

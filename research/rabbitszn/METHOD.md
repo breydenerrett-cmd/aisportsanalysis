@@ -92,18 +92,20 @@ The engine was run point-in-time over the 36 documented moneyline/lean rows (`re
 first replay and were not touched for this one: what changed between the two runs is the DATA, not the rules. The first run placed 26 of the
 36 (MLB and WNBA had no team facts, so they passed as `no_facts` and were reported as not placed); the facts layer now covers MLB (30 clubs)
 and WNBA (15 teams), so all 36 are placed. MLB history is the results store from 2026-08-28 only (the sealed window 2026-01-01..2026-08-27
-is never read, and nothing before it is read either). WNBA has no point-in-time results store in this tree, so its two rows are
+is never read, and nothing before it is read either). Because that window starts months into the season, MLB gets NO season-to-date counts:
+no win or loss totals, home/road counts, game numbers or head-to-head totals, since a total since 08-28 is not "the Nth win of the season"
+and absent is better than wrong. Spans, ciphers, statehood, days since a last win or loss and streaks that end inside the window remain. WNBA has no point-in-time results store in this tree, so its two rows are
 `no_history` passes, not scores.
 
-Of the 36: 16 engine picks and 20 passes (10 uneven search size, 6 small margin, 2 thin data, 2 no history). On those 16 the engine took the SAME
-SIDE as him 6 times (37.5%), which is no better than a coin: the engine reproduces his structure, not his choices. Its in-sample record on the
-16 was 5-11, against his 22-14 on the 36 placed games. Neither number says anything about the future. The median absolute margin on the 34 games that
+Of the 36: 14 engine picks and 22 passes (10 uneven search size, 6 small margin, 4 thin data, 2 no history). On those 14 the engine took the SAME
+SIDE as him 5 times (35.7%), which is no better than a coin: the engine reproduces his structure, not his choices. Its in-sample record on the
+14 was 6-8, against his 22-14 on the 36 placed games. Neither number says anything about the future. The median absolute margin on the 34 games that
 had scores was 10 points against a minimum of 3 (26 of them cleared it), so the v1 margin threshold barely filters; a noise-aware margin (scaled by the size of the
 search) is still the obvious first candidate for rules v2, to be proposed, versioned and judged on forward games, not on this sample.
 
-The MLB rows added by this extension (8 placed): 4 engine picks and 4 passes (all small margin). The engine took his side on 1 of the 4 picks;
-its in-sample record on them is 1-3. Four picks is not a sample. One caution on the label: the MLB counts run from 2026-08-28, so "Nth win of
-the season" for an MLB club is the Nth win since that date, and the evidence panel's history line says so.
+The MLB rows added by this extension (8 placed): 2 engine picks and 6 passes (4 small margin, 2 thin data). The engine took the other side from him
+on both picks; its in-sample record on them is 2-0. Two picks is not a sample, and a first version of this replay that counted wins since
+2026-08-28 as season wins (4 picks, 1-3) was withdrawn for exactly that reason.
 
 ## The forward test (`forward.csv`, `forward_claims.csv`): the only out-of-sample record
 

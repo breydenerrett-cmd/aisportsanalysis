@@ -26,6 +26,13 @@ WHERE THE RESULTS COME FROM
 WHAT "THE SEASON" IS. The run of regular-season games with no gap over ``SEASON_GAP_DAYS`` ending at the cutoff. That
 needs no per-sport calendar and cannot reach back into a previous season, because every sport rests longer than that.
 
+MLB HAS NO SEASON COUNTS. The sealed window (2026-01-01..2026-08-27) is never read, so the MLB games we hold start on
+2026-08-28, months into the season. A win total, a home/road count, a loss count, a game number or a head-to-head count taken
+from them would be a count SINCE 08-28 dressed as a season count, which is a wrong number. ``Past.season_counts`` is False for
+MLB and ``signals`` drops those units. What survives is exact whatever the window: days and weeks since a team's last win or
+loss (the newest such event is inside the window or there is none), a streak that ends inside the window, spans from dates,
+cipher values and statehood order.
+
 COACHES. Only the NFL store names the coach of each game (nflverse); the count of a coach's wins with a club is
 therefore available for the NFL only, labelled "in our store" (2021 onward) because it is not the coach's career.
 For other sports the head coach is a NAME in the facts layer and nothing is counted from it.
@@ -89,6 +96,10 @@ class Past:
     away_id: Optional[str] = None
     scope: str = ""                  # words for the evidence panel: where the counts come from
     available: bool = False
+    #: False when the stored games begin AFTER the start of the season (MLB: the seal makes 2026-08-28 the floor), so a
+    #: season-to-date count taken from them is a count since the floor, not "the Nth win of the season". Such a count is wrong, and
+    #: absent is better than wrong: the signal generator drops every count unit whose window starts before the floor.
+    season_counts: bool = True
 
 
 def _int(v) -> Optional[int]:
@@ -223,7 +234,8 @@ class Disk:
         cutoff = ctx.lock - FINISH_LAG
         if ctx.sport == "mlb":
             return Past(_mlb_games(ctx, cutoff), ctx.home, ctx.away,
-                        "our MLB results store, from 2026-08-28", available=bool(ctx.home and ctx.away))
+                        "our MLB results store, from 2026-08-28 (no season-to-date counts: the season began earlier)",
+                        available=bool(ctx.home and ctx.away), season_counts=False)
         if ctx.sport == "nfl":
             return Past(_nfl_games(ctx, cutoff), ctx.home, ctx.away, "our NFL store, 2021 onward",
                         available=bool(ctx.home and ctx.away))
