@@ -27,6 +27,7 @@ def q(name, sel, mode="text", **kw):
 
 
 LABEL = "Every model starts with the same $1,000 paper bankroll. 1 unit = $10."
+HOUND_LINE = "Every hound starts with the same $1,000 paper bankroll. Paper money, not advice."   # owner ruling 2026-10-20 kennel-first: one short line next to the money
 
 
 @unittest.skipUnless(HAS_NODE, "node not installed")
@@ -90,12 +91,12 @@ class TheLeaderboard(unittest.TestCase):
 
     def test_it_says_every_model_starts_with_the_same_thousand_dollars(self):
         out = run_page("hounds", routes=routes(), queries=[q("line", "[data-hook='bankroll-line']"), q("cap", "[data-hook='leaderboard-table'] caption")])
-        self.assertEqual(out["final"]["line"], LABEL)
+        self.assertEqual(out["final"]["line"], HOUND_LINE)  # owner ruling 2026-10-20 kennel-first
         self.assertIn("$1,000", out["final"]["cap"])
 
     def test_the_static_page_already_carries_the_line_for_a_visitor_with_scripts_off(self):
         html = (F.Path(__file__).resolve().parent.parent / "web" / "hounds.html").read_text(encoding="utf-8")
-        self.assertIn(LABEL, html)
+        self.assertIn(HOUND_LINE, html)
 
     def test_a_thin_sample_is_greyed_with_the_reason_in_its_tooltip(self):
         def edit(data):

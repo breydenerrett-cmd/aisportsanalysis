@@ -187,7 +187,7 @@ function rowFor(ev, live) {
     h("div", { class: "lv-teams" }, [teamLine(ev.away, ev.best_price_away, sc.away), teamLine(ev.home, ev.best_price_home, sc.home)])]));
   const open = state.trays.has(ev.event_id);
   const btn = h("button", { type: "button", class: "btn btn--ghost lv-send", "data-hook": "live-send", "data-event": ev.event_id,
-    "aria-expanded": open ? "true" : "false", "aria-label": `Send a dog at ${ev.away || "TBD"} versus ${ev.home || "TBD"}`, text: "Send a dog",
+    "aria-expanded": open ? "true" : "false", "aria-label": `Send a hound at ${ev.away || "TBD"} versus ${ev.home || "TBD"}`, text: "Send a hound",
     on: { click: () => toggleTray(ev, li, btn) } });
   li.appendChild(h("div", { class: "lv-row__act" }, [btn]));
   if (open) li.appendChild(state.trays.get(ev.event_id));
@@ -333,33 +333,33 @@ function toggleTray(ev, li, btn) {
 async function showPicker(tray, ev) {
   clearNode(tray);
   if (!getToken()) {
-    tray.appendChild(signInPrompt(`Sign in to send one of your dogs at ${gameName(ev)}.`));
-    tray.appendChild(h("p", { class: "hd-fine" }, ["No dog yet? ", h("a", { href: "build-a-hound.html", text: "Build one" }), "."]));
+    tray.appendChild(signInPrompt(`Sign in to send one of your hounds at ${gameName(ev)}.`));
+    tray.appendChild(h("p", { class: "hd-fine" }, ["No hound yet? ", h("a", { href: "quiz.html", text: "Create one" }), "."]));
     return;
   }
-  tray.appendChild(h("p", { class: "hd-fine", role: "status", "data-hook": "live-dogs-loading", text: "Loading your dogs..." }));
+  tray.appendChild(h("p", { class: "hd-fine", role: "status", "data-hook": "live-dogs-loading", text: "Loading your hounds..." }));
   let dogs;
   try {
     dogs = await myDogs();
   } catch (err) {
     clearNode(tray);
     tray.appendChild(err && err.status === 401 ? signInPrompt("Your sign-in has expired.")
-      : h("p", { class: "hd-muted", "data-hook": "live-dogs-error", text: errorText(err, "Your dogs could not be loaded just now. Try again in a minute.") }));
+      : h("p", { class: "hd-muted", "data-hook": "live-dogs-error", text: errorText(err, "Your hounds could not be loaded just now. Try again in a minute.") }));
     return;
   }
   clearNode(tray);
   const usable = dogs.filter((d) => d.status !== "retired");
   if (!usable.length) {
-    tray.appendChild(h("p", { class: "hd-muted", "data-hook": "live-no-dogs" }, ["You have no running dog to send. ", h("a", { href: "build-a-hound.html", text: "Build one" }), "."]));
+    tray.appendChild(h("p", { class: "hd-muted", "data-hook": "live-no-dogs" }, ["You have no running hound to send. ", h("a", { href: "quiz.html", text: "Create one" }), "."]));
     return;
   }
-  tray.appendChild(h("p", { class: "lv-tray__ask", text: `Send which dog at ${gameName(ev)}?` }));
-  tray.appendChild(h("div", { class: "lv-dogs", role: "group", "aria-label": "Your dogs", "data-hook": "live-dog-list" }, usable.map((d) =>
+  tray.appendChild(h("p", { class: "lv-tray__ask", text: `Send which hound at ${gameName(ev)}?` }));
+  tray.appendChild(h("div", { class: "lv-dogs", role: "group", "aria-label": "Your hounds", "data-hook": "live-dog-list" }, usable.map((d) =>
     h("button", { type: "button", class: "lv-dog", "data-hook": "live-dog", "data-dog": d.id, on: { click: () => sendDog(tray, ev, d) } }, [
       h("span", { class: "lv-dog__face", "aria-hidden": "true" }, [dogFace(d, { size: 28 })]),
       h("span", { class: "lv-dog__name", text: d.name }),
       h("span", { class: "lv-dog__state hd-fine", text: d.status === "running" ? "Running" : "Idle" })]))));
-  tray.appendChild(h("p", { class: "hd-fine", text: "This runs the dog's rule on the stored boards and shows what it would pick. Nothing is placed." }));
+  tray.appendChild(h("p", { class: "hd-fine", text: "This runs the hound's rule on the stored boards and shows what it would pick. Nothing is placed." }));
 }
 
 async function sendDog(tray, ev, dog) {
@@ -373,7 +373,7 @@ async function sendDog(tray, ev, dog) {
     if (showUpgrade(tray, err)) return;
     tray.appendChild(h("p", { class: "hd-muted", "data-hook": "live-send-error", "data-code": errorCode(err),
       text: errorText(err, "The boards could not be read just now. Try again in a minute.") }));
-    tray.appendChild(h("button", { type: "button", class: "btn btn--ghost", text: "Pick a dog again", on: { click: () => showPicker(tray, ev) } }));
+    tray.appendChild(h("button", { type: "button", class: "btn btn--ghost", text: "Pick a hound again", on: { click: () => showPicker(tray, ev) } }));
     return;
   }
   clearNode(tray);
@@ -384,7 +384,7 @@ async function sendDog(tray, ev, dog) {
   renderFireResult(full, data, { id: dog.id, name: dog.name });
   tray.appendChild(h("details", { class: "lv-full" }, [h("summary", { text: `Everything ${dog.name} returned` }), full]));
   tray.appendChild(h("div", { class: "lv-tray__actions" }, [
-    h("button", { type: "button", class: "btn btn--ghost", "data-hook": "live-another", text: "Send a different dog", on: { click: () => showPicker(tray, ev) } }),
+    h("button", { type: "button", class: "btn btn--ghost", "data-hook": "live-another", text: "Send a different hound", on: { click: () => showPicker(tray, ev) } }),
     dog.page_href ? h("a", { class: "btn btn--ghost", href: dog.page_href, text: `Open ${dog.name}` }) : null]));
   tray.appendChild(h("p", { class: "hd-fine", text: data.preview_note || PAPER_NOTE }));
 }

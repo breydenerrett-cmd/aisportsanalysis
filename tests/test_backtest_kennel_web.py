@@ -56,12 +56,12 @@ class TheBacktestTabOnADogPage(unittest.TestCase):
     def go(self, routes=None, **kw):
         return page(routes or self.routes(), **kw)
 
-    def test_the_tab_is_there_with_four_windows_and_the_label(self):
-        out = self.go(queries=[q("tab", "[role='tab'][data-tab='backtest']", "texts"),
+    def test_the_backtest_is_under_ask_with_four_windows_and_the_label(self):
+        out = self.go(queries=[q("in_ask", "[data-tabpanel='ask'] " + hook("dog-backtest-section"), "exists"),
                                 q("windows", hook("backtest-window"), "texts"), q("title", hook("backtest-title")),
                                 q("section_hidden", hook("dog-backtest-section"), "hidden")])
         f = out["final"]
-        self.assertEqual(f["tab"], ["Backtest"])
+        self.assertTrue(f["in_ask"])         # owner ruling 2026-10-20 kennel-first: four tabs, Backtest lives under Ask
         self.assertEqual(f["windows"], ["7 days", "14 days", "30 days", "Season 2"])
         self.assertEqual(f["title"], LABEL)
         self.assertFalse(f["section_hidden"])

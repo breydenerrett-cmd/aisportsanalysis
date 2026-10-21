@@ -34,7 +34,7 @@ PAGES = {
     # the kennel page (My kennel and a public kennel), the leaderboard's Kennels view, the shared navigation and the tabs.
     # The navigation and the tabs run on whichever page the scenario names with `page_html`.
     "kennel": ("kennel.html", "kennel.js"),
-    "kennels_index": ("hounds.html", "kennels-index.js"),
+    "kennels_index": ("kennels.html", "kennels-index.js"),     # owner ruling 2026-10-20 kennel-first: Kennels is its own page, not a leaderboard tab
     "nav": ("hounds.html", "nav.js"),
     "tabs": ("hound.html", "tabs.js"),
     # the live board, "What's on" (tests/test_live_board.py); its fixtures are tests/fixtures/sports_now.json

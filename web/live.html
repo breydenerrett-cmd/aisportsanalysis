@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>What's on — LINEHOUND</title>
-<meta name="description" content="What is on right now in every sport LINEHOUND prices, and the next 24 hours. Pick a game and send one of your dogs at it. Paper bets only, not advice, 21+.">
-<meta property="og:title" content="What's on — LINEHOUND">
-<meta property="og:description" content="Live and upcoming games across every sport, with the best price quoted. Send a dog at one. Paper only, not advice.">
+<title>Live — LINEHOUND</title>
+<meta name="description" content="What is on right now in every sport LINEHOUND prices, and the next 24 hours. Pick a game and send one of your hounds at it. Paper bets, not advice, 21+.">
+<meta property="og:title" content="Live — LINEHOUND">
+<meta property="og:description" content="Live and upcoming games across every sport, with the best price quoted. Send a hound at one. Paper bets, not advice.">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#0B0D10">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230B0C0E'/%3E%3Cpath d='M6 6l8 0 0 9-8 4z' fill='%23FF3D57'/%3E%3Cpath d='M18 6l8 0 0 13-8-4z' fill='%23FF7A45'/%3E%3C/svg%3E">
 <!-- THE LIVE BOARD ("What's on"): every sport the server prices, a chip per sport family, LIVE first, then the next 24 hours, each
      row with the teams or players, the league, the start time in the viewer's own zone and the best price quoted for each side.
-     "Send a dog" on a row opens the signed-in member's dogs and runs the existing preview route (POST /hounds/{id}/fire); a
+     "Send a hound" on a row opens the signed-in member's hounds and runs the existing preview route (POST /hounds/{id}/fire); a
      visitor is asked to sign in. Script: web/js/live-board.js, reading GET /sports/now. It refreshes itself every 60 seconds.
-     The paper-only notice and the helpline are STATIC so they are on the page with scripts off. -->
+     Kennel-first (owner ruling 2026-10-20): a title, one line, the sport chips, and "Send a hound" as the one action on a row. Compliance is said once in the footer, plus one short line next to the prices. -->
 <link rel="stylesheet" href="css/fonts.css">
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/base.css">
@@ -49,16 +49,15 @@
   </div>
 </header>
 
-<main class="hd-wrap hd-wrap--wide" id="main-content" aria-label="What's on" data-hook="live-app">
+<main class="hd-wrap hd-wrap--wide" id="main-content" aria-label="Live" data-hook="live-app">
 <header class="lv-head">
   <div>
-    <p class="lv-eyebrow">Every sport we price</p>
-    <h1 data-hook="live-title">What's on</h1>
-    <p class="hd-lede">Live now, then the next 24 hours. Pick a game and send one of your dogs at it.</p>
+    <h1 data-hook="live-title">Live</h1>
+    <p class="hd-lede">What is on now, and the next 24 hours.</p>
   </div>
   <button type="button" class="btn btn--ghost lv-refresh" data-hook="live-refresh">Refresh</button>
 </header>
-<p class="hd-disclosure" data-hook="paper-only-notice" role="note">Paper bets only. Not betting advice. 21+. Bet at your own risk. Prices are the best number any book is quoting when the board was read, and in-play prices move fast.</p>
+<p class="hd-fine lv-paper" data-hook="paper-only-notice" role="note">Best price any book quoted when the board was read. In-play prices move fast. Paper picks only.</p>
 
 <div class="lv-bar">
   <div class="lv-chips" data-hook="live-chips" role="group" aria-label="Sport"></div>
@@ -70,7 +69,7 @@
 </main>
 
 <footer class="hd-foot" data-hook="live-footer" aria-label="responsible gambling">
-  <p data-hook="not-advice">Paper bets only, not advice. 21+ &middot; Bet at your own risk. Gamble responsibly. <a href="tel:1-800-426-2537" data-hook="responsible-gambling-help">1-800-GAMBLER</a></p>
+  <p data-hook="not-advice">21+ &middot; Paper bets only, not advice &middot; Bet at your own risk &middot; Gamble responsibly. <a href="tel:1-800-426-2537" data-hook="responsible-gambling-help">1-800-GAMBLER</a></p>
   <p><a href="landing.html">About LINEHOUND</a> &middot; <a href="hounds.html">Leaderboard</a> &middot; <a href="kennels.html">Kennels</a></p>
 </footer>
 

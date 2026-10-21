@@ -10,6 +10,7 @@ measurement of the real table at 1440 and 1600 against the page's fixtures.
 from __future__ import annotations
 
 import json
+import os
 import re
 import subprocess
 import threading
@@ -81,12 +82,17 @@ class TheRealTableFits(unittest.TestCase):
         cls.server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), make_handler(api))
         threading.Thread(target=cls.server.serve_forever, daemon=True).start()
         base = f"http://127.0.0.1:{cls.server.server_address[1]}"
-        proc = subprocess.run(["node", str(HERE / "table_fit.mjs"), CHROME, base, "/web/hounds.html", "1440", "1600"],
-                              capture_output=True, text=True, encoding="utf-8", timeout=120)
-        lines = [ln for ln in proc.stdout.splitlines() if ln.startswith("[")]
-        if proc.returncode != 0 or not lines:
-            raise AssertionError(f"table_fit failed ({proc.returncode}): {proc.stderr[-1200:]}")
-        cls.results = {r["width"]: r for r in json.loads(lines[-1])}
+        # owner ruling 2026-10-20 kennel-first: the board opens COMPACT (rank, hound, record, bankroll, return); "All stats" shows every column
+        def measure(click=None):
+            env = dict(os.environ, **({"CLICK": click} if click else {}))
+            proc = subprocess.run(["node", str(HERE / "table_fit.mjs"), CHROME, base, "/web/hounds.html", "1440", "1600"],
+                                  capture_output=True, text=True, encoding="utf-8", timeout=120, env=env)
+            lines = [ln for ln in proc.stdout.splitlines() if ln.startswith("[")]
+            if proc.returncode != 0 or not lines:
+                raise AssertionError(f"table_fit failed ({proc.returncode}): {proc.stderr[-1200:]}")
+            return {r["width"]: r for r in json.loads(lines[-1])}
+        cls.results = measure()
+        cls.full = measure("[data-hook='view-toggle']")
 
     @classmethod
     def tearDownClass(cls):
@@ -100,11 +106,16 @@ class TheRealTableFits(unittest.TestCase):
                     self.assertLessEqual(wrap["scroll"], wrap["client"] + 1, f"clipped: {wrap}")
             self.assertLessEqual(r["docScroll"], width + 1)
 
-    def test_1440_hides_the_four_low_value_columns_and_1600_shows_them(self):
+    def test_the_board_opens_compact_at_every_width(self):
         board = lambda w: next(x for x in self.results[w]["wraps"] if x["heads"])  # noqa: E731
-        self.assertTrue(LOW_VALUE.isdisjoint(set(board(1440)["heads"])), board(1440)["heads"])
-        self.assertTrue(LOW_VALUE <= set(board(1600)["heads"]), board(1600)["heads"])
+        for width in (1440, 1600):
+            self.assertEqual(board(width)["heads"], ["rank", "model", "record", "bankroll", "return"], width)
 
+    def test_all_stats_shows_every_column_at_1600_without_clipping_and_scrolls_inside_its_card_at_1440(self):
+        board = lambda w: next(x for x in self.full[w]["wraps"] if x["heads"])  # noqa: E731
+        self.assertTrue(LOW_VALUE <= set(board(1600)["heads"]), board(1600)["heads"])
+        self.assertLessEqual(board(1600)["scroll"], board(1600)["client"] + 1, board(1600))
+        self.assertLessEqual(self.full[1440]["docScroll"], 1441)           # the card scrolls, never the document
 
 if __name__ == "__main__":
     unittest.main()

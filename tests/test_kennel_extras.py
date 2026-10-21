@@ -98,7 +98,7 @@ class TheKennelsIndex(unittest.TestCase):
         f = self.page(stream=False)["final"]
         self.assertEqual((f["feat"], f["acts"], f["cards"]), (1, 0, 2))
 
-    def test_no_kennels_is_a_thinking_dog_and_a_build_link_not_a_blank_page(self):
+    def test_no_kennels_is_a_thinking_dog_and_no_second_button_not_a_blank_page(self):   # owner ruling 2026-10-20 kennel-first: one primary button per page
         out = run_page("kennels_index", routes={"/hounds/kennels": [200, {"kennels": [], "count": 0}]}, queries=[
             q("empty", "[data-hook='kennels-empty']"), q("quiet", "[data-hook='kennel-quiet'] svg.dk-badge", "attrs", attr="data-pose"), q("feat", "[data-hook='kennels-featured']", "count")])
         self.assertIn("No kennels yet", out["final"]["empty"])

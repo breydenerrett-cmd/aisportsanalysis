@@ -1,0 +1,160 @@
+/*
+ * THE LEADERBOARD (web/hounds.html), kennel-first layout. Owner ruling 2026-10-20.
+ *
+ * Loaded LAST on that page, after lh.css and studio.css, and only there. One ranked list of hounds across every kennel, the LINEHOUND
+ * house kennel included; season chips on top; one primary button. The list is COMPACT by default (rank, hound with its kennel, record
+ * with its bet count, paper bankroll, return) and shows every column (type, 7d, 24h, units, bets, price, CLV, last 10, status) behind the
+ * "All stats" button. A phone draws each compact row as a two-line list row, so nothing scrolls sideways; the full view scrolls inside
+ * its own wrapper. The table's markup and every data-hook are unchanged: this file only decides what is drawn.
+ */
+
+.hounds-page .lb-wrap { max-width: 960px; }
+.hounds-page .lb-wrap .hd-panel, .hounds-page .lb-wrap .lb-house { margin-bottom: var(--lh-s7); }
+.hounds-page .lb-wrap .hd-panel + .hd-panel { box-shadow: none; padding-top: 0; }
+
+/* ---- the head: a title, one line, one button ------------------------------------------------------------- */
+.hounds-page .lb-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--lh-s3) var(--lh-s5); margin: var(--lh-s3) 0 var(--lh-s2); }
+.hounds-page .lb-head__text { min-width: 0; }
+.hounds-page .lb-wrap .lb-head h1 { font-size: clamp(40px, 7vw, 64px); margin: 0 0 var(--lh-s1); }
+.hounds-page .lb-head .hd-lede { margin: 0; }
+.hounds-page .lb-head__cta { min-height: 48px; padding: 0 var(--lh-s5); font-size: var(--lh-fs-base); }
+.hounds-page .lb-links { margin: 0 0 var(--lh-s5); font-size: var(--lh-fs-sm); color: var(--lh-faint); }
+.hounds-page .lb-links a { color: var(--lh-ink2); text-decoration: none; }
+.hounds-page .lb-links a:hover { color: var(--lh-ink); text-decoration: underline; }
+
+/* ---- season chips, filters, the view button ------------------------------------------------------------- */
+.hounds-page .lb-seasons { margin: 0 0 var(--lh-s3); }
+.hounds-page .lb-seasons .hd-seg { min-height: 40px; padding: 0 var(--lh-s4); font-size: var(--lh-fs-sm); }
+.hounds-page .lb-seasons .hd-seasonline { color: var(--lh-mute); font-size: var(--lh-fs-xs); margin-top: var(--lh-s2); }
+.hounds-page .lb-tools { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: var(--lh-s2); margin: 0 0 var(--lh-s2); }
+.hounds-page .lb-filters { flex: 1 1 60%; min-width: 0; margin: 0; }
+.hounds-page .lb-filters > summary {
+  display: inline-flex; align-items: center; height: 36px; padding: 0 var(--lh-s4); border-radius: var(--lh-r-pill); background: var(--lh-soft);
+  color: var(--lh-ink2); font-size: var(--lh-fs-sm); font-weight: 500; cursor: pointer; list-style: none;
+}
+.hounds-page .lb-filters > summary::-webkit-details-marker { display: none; }
+.hounds-page .lb-filters > summary::after { content: "+"; margin-left: var(--lh-s2); color: var(--lh-accent); font-weight: 600; }
+.hounds-page .lb-filters[open] > summary::after { content: "\2013"; }
+.hounds-page .lb-filters > summary:hover { background: var(--lh-soft-2); }
+.hounds-page .lb-filters[open] .hd-segs { margin-top: var(--lh-s2); }
+.hounds-page .lb-viewtoggle {
+  flex: none; height: 36px; padding: 0 var(--lh-s4); border: 0; border-radius: var(--lh-r-pill); background: var(--lh-soft); color: var(--lh-ink2);
+  font: 500 var(--lh-fs-sm)/1 var(--lh-font-text); cursor: pointer;
+}
+.hounds-page .lb-viewtoggle:hover { background: var(--lh-soft-2); }
+.hounds-page .lb-viewtoggle[aria-pressed="true"] { background: var(--lh-ink); color: var(--lh-bg); font-weight: 600; }
+.hounds-page .lb-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px var(--lh-s3); margin: 0 0 var(--lh-s3); font-size: var(--lh-fs-xs); color: var(--lh-mute); }
+.hounds-page .lb-meta .hd-count { margin: 0; font-size: var(--lh-fs-xs); }
+.hounds-page .lb-bankroll { margin: var(--lh-s3) 0 var(--lh-s2); font-size: var(--lh-fs-xs); color: var(--lh-mute); }
+.hounds-page .lb-legend { margin: 0; }
+.hounds-page .lb-legend > summary { font-size: var(--lh-fs-sm); color: var(--lh-mute); cursor: pointer; padding: var(--lh-s2) 0; }
+.hounds-page .lb-legend > summary:hover { color: var(--lh-ink); }
+
+/* ---- the list: the compact view ---------------------------------------------------------------------------- */
+.hounds-page .lb-board .hd-tablewrap { background: none; }
+.hounds-page .lb-board[data-view="compact"] .hd-table--board { min-width: 0; }
+.hounds-page .lb-board[data-view="compact"] .hd-table--board .hd-col-type,
+.hounds-page .lb-board[data-view="compact"] .hd-table--board .hd-col-d7,
+.hounds-page .lb-board[data-view="compact"] .hd-table--board .hd-col-h24,
+.hounds-page .lb-board[data-view="compact"] .hd-table--board .hd-col-units,
+.hounds-page .lb-board[data-view="compact"] .hd-table--board .hd-col-bets,
+.hounds-page .lb-board[data-view="compact"] .hd-table--board .hd-col-price,
+.hounds-page .lb-board[data-view="compact"] .hd-table--board .hd-col-clv,
+.hounds-page .lb-board[data-view="compact"] .hd-table--board .hd-col-last10,
+.hounds-page .lb-board[data-view="compact"] .hd-table--board .hd-col-status { display: none; }
+.hounds-page .lb-board[data-view="compact"] .hd-table--board .hd-tr--qual .hd-col-status { display: table-cell; }
+.hounds-page .lb-board[data-view="compact"] .hd-table--board th.hd-col-status:not(:only-child) { display: none; }
+.hounds-page .lb-board[data-view="compact"] .hd-table--board .hd-aux.lb-streak { display: none; }
+.hounds-page .lb-board[data-view="full"] .hd-table--board .hd-aux.lb-bets { display: none; }
+/* the full view shows every column, including the four the old rule hid below 1500px; it scrolls inside its own wrapper */
+.hounds-page .lb-board[data-view="full"] .hd-table--board { min-width: 1180px; }
+.hounds-page .lb-board[data-view="full"] .hd-table--board .hd-col-d7, .hounds-page .lb-board[data-view="full"] .hd-table--board .hd-col-h24,
+.hounds-page .lb-board[data-view="full"] .hd-table--board .hd-col-price, .hounds-page .lb-board[data-view="full"] .hd-table--board .hd-col-last10 { display: table-cell; }
+
+.hounds-page .lb-board .hd-table--board td { padding-top: var(--lh-s3); padding-bottom: var(--lh-s3); }
+.hounds-page .lb-board .hd-table--board td.hd-col-bankroll { font-family: var(--lh-font-display); font-size: 22px; font-weight: 700; letter-spacing: -.01em; white-space: nowrap; }
+.hounds-page .lb-board .hd-table--board td.hd-col-return { font-weight: 600; white-space: nowrap; }
+.hounds-page .lb-board .hd-table--board td.hd-col-record strong { font-weight: 600; font-size: var(--lh-fs-md); }
+.hounds-page .lb-board .hd-table--board .hd-aux { display: block; font-size: var(--lh-fs-xs); color: var(--lh-mute); font-weight: 400; }
+.hounds-page .lb-board .hd-modelid { min-width: 0; }
+.hounds-page .lb-board .hd-modelname { font-size: var(--lh-fs-md); font-weight: 600; color: var(--lh-ink); text-decoration: none; }
+.hounds-page .lb-board .hd-modelname:hover { text-decoration: underline; }
+.hounds-page .lb-board .hd-dogface svg { width: 44px; height: 44px; border-radius: 12px; }
+.hounds-page .lb-board a.hd-kennellink { color: var(--lh-ink2); }
+.hounds-page .lb-board a.hd-kennellink--house { color: var(--lh-accent); }
+
+/* the house kennel's label wherever it stands: a small green square, then the words */
+.hounds-page .lb-board a.hd-kennellink--house::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 2px; background: var(--lh-accent); vertical-align: 1px; }
+
+/* ---- the podium: desktop only; the list already says it on a phone ------------------------------------------ */
+@media (max-width: 719px) { .hounds-page .lb-board .lb-podium { display: none; } }
+
+/* ---- a phone: each compact row is a two-line list row ------------------------------------------------------- */
+@media (max-width: 719px) {
+  .hounds-page .lb-board[data-view="compact"] .hd-tablewrap { overflow: visible; border-radius: 0; }
+  .hounds-page .lb-board[data-view="compact"] .hd-table--board, .hounds-page .lb-board[data-view="compact"] .hd-table--board tbody,
+  .hounds-page .lb-board[data-view="compact"] .hd-table--board tr.hd-drawer, .hounds-page .lb-board[data-view="compact"] .hd-table--board tr.hd-drawer > td { display: block; width: 100%; }
+  .hounds-page .lb-board[data-view="compact"] .hd-table--board thead {
+    position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+  }
+  .hounds-page .lb-board[data-view="compact"] .hd-table--board tr.hd-tr {
+    display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; grid-template-areas: "rank model bank" "rank rec ret";
+    align-items: center; column-gap: var(--lh-s3); row-gap: 2px; padding: var(--lh-s3) 0; box-shadow: inset 0 -1px 0 var(--lh-line);
+  }
+  .hounds-page .lb-board[data-view="compact"] .hd-table--board tr.hd-tr > td { display: block; padding: 0; box-shadow: none; border: 0; background: none; }
+  .hounds-page .lb-board[data-view="compact"] .hd-table--board tr.hd-tr > td.hd-col-type, .hounds-page .lb-board[data-view="compact"] .hd-table--board tr.hd-tr > td.hd-col-d7,
+  .hounds-page .lb-board[data-view="compact"] .hd-table--board tr.hd-tr > td.hd-col-h24, .hounds-page .lb-board[data-view="compact"] .hd-table--board tr.hd-tr > td.hd-col-units,
+  .hounds-page .lb-board[data-view="compact"] .hd-table--board tr.hd-tr > td.hd-col-bets, .hounds-page .lb-board[data-view="compact"] .hd-table--board tr.hd-tr > td.hd-col-price,
+  .hounds-page .lb-board[data-view="compact"] .hd-table--board tr.hd-tr > td.hd-col-clv, .hounds-page .lb-board[data-view="compact"] .hd-table--board tr.hd-tr > td.hd-col-last10,
+  .hounds-page .lb-board[data-view="compact"] .hd-table--board tr.hd-tr > td.hd-col-status { display: none; }
+  .hounds-page .lb-board[data-view="compact"] .hd-table--board td.hd-col-rank { grid-area: rank; position: static; width: auto; min-width: 0; max-width: none; text-align: left; align-self: start; padding-top: 14px; }
+  .hounds-page .lb-board[data-view="compact"] .hd-table--board td.hd-col-model { grid-area: model; position: static; width: auto; min-width: 0; max-width: none; }
+  .hounds-page .lb-board[data-view="compact"] .hd-table--board td.hd-col-bankroll { grid-area: bank; text-align: right; font-size: 22px; }
+  .hounds-page .lb-board[data-view="compact"] .hd-table--board td.hd-col-return { grid-area: ret; text-align: right; font-size: var(--lh-fs-sm); }
+  .hounds-page .lb-board[data-view="compact"] .hd-table--board td.hd-col-record { grid-area: rec; padding-left: 0; }
+  .hounds-page .lb-board[data-view="compact"] .hd-table--board td.hd-col-record strong { font-size: var(--lh-fs-sm); }
+  .hounds-page .lb-board[data-view="compact"] .hd-table--board td.hd-col-record .lb-bets { display: inline; margin-left: var(--lh-s1); }
+  .hounds-page .lb-board[data-view="compact"] .hd-table--board td.hd-col-record { text-align: left; white-space: normal; }
+  .hounds-page .lb-board[data-view="compact"] .hd-modelcell { align-items: flex-start; gap: var(--lh-s2); }
+  .hounds-page .lb-board[data-view="compact"] .hd-expand { width: 18px; margin-top: 12px; }
+  .hounds-page .lb-board[data-view="compact"] .hd-dogface svg { width: 40px; height: 40px; }
+  /* the qualifying round: its progress pill takes the money's place (the money is greyed there anyway) */
+  .hounds-page .lb-board[data-view="compact"] .hd-table--board tr.hd-tr--qual { grid-template-areas: "rank model stat" "rank rec rec"; }
+  .hounds-page .lb-board[data-view="compact"] .hd-table--board tr.hd-tr--qual > td.hd-col-bankroll,
+  .hounds-page .lb-board[data-view="compact"] .hd-table--board tr.hd-tr--qual > td.hd-col-return { display: none; }
+  .hounds-page .lb-board[data-view="compact"] .hd-table--board tr.hd-tr--qual > td.hd-col-status { grid-area: stat; display: block; }
+  /* a warming row: the hound, then its note */
+  .hounds-page .lb-board[data-view="compact"] .hd-table--board tr.hd-tr--warm { grid-template-areas: "rank model" "rank note"; grid-template-columns: 24px minmax(0, 1fr); }
+  .hounds-page .lb-board[data-view="compact"] .hd-table--board tr.hd-tr--warm > td.hd-warm__note { grid-area: note; font-size: var(--lh-fs-xs); }
+  .hounds-page .lb-board[data-view="compact"] .hd-table--board tr.hd-warm__head, .hounds-page .lb-board[data-view="compact"] .hd-table--board tr.hd-warm__head > td { display: block; width: 100%; }
+  .hounds-page .lb-board[data-view="compact"] .hd-drawer__body { padding: var(--lh-s2) 0 var(--lh-s3); }
+}
+
+/* ---- a desktop: a calmer row ---------------------------------------------------------------------------------- */
+@media (min-width: 720px) {
+  .hounds-page .lb-board[data-view="compact"] .hd-table--board td.hd-col-bankroll, .hounds-page .lb-board[data-view="compact"] .hd-table--board td.hd-col-return,
+  .hounds-page .lb-board[data-view="compact"] .hd-table--board td.hd-col-record { width: 18%; }
+  .hounds-page .lb-board[data-view="compact"] .hd-table--board .hd-col-model { width: auto; max-width: none; }
+}
+
+/* ---- the house kennel -------------------------------------------------------------------------------------------- */
+.hounds-page .lb-house h2 { font-size: var(--lh-fs-lg); margin: 0 0 var(--lh-s1); }
+.hounds-page .lb-house .hd-lede { font-size: var(--lh-fs-base); margin: 0 0 var(--lh-s4); }
+.hounds-page .lb-house__links { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--lh-s2); }
+.hounds-page .lb-house__links a {
+  display: flex; flex-direction: column; gap: 2px; min-height: 64px; padding: var(--lh-s3) var(--lh-s4); border-radius: var(--lh-r-md); background: var(--lh-soft);
+  text-decoration: none; color: var(--lh-ink); transition: background-color var(--lh-t-fast) var(--lh-ease);
+}
+.hounds-page .lb-house__links a:hover { background: var(--lh-soft-2); }
+.hounds-page .lb-house__links strong { font-size: var(--lh-fs-base); font-weight: 600; }
+.hounds-page .lb-house__links span { font-size: var(--lh-fs-xs); color: var(--lh-mute); }
+@media (max-width: 559px) { .hounds-page .lb-house__links { grid-template-columns: minmax(0, 1fr); } }
+
+/* a phone: the one button runs full width under the title */
+@media (max-width: 559px) {
+  .hounds-page .lb-head { align-items: stretch; }
+  .hounds-page .lb-head__cta { flex: 1 1 100%; }
+  .hounds-page .lb-filters { flex-basis: 100%; }
+}
+
+.hounds-page .lb-board { margin: 0 0 var(--lh-s7); }

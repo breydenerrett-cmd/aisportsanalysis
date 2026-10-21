@@ -7,12 +7,15 @@
  * src/hounds/contract.py's. Each part loads on its own and says honestly what happened when its endpoint is
  * missing.
  *
- * TOP TO BOTTOM
- *   - the header: initials badge, name, status in plain words, type, sports and markets. Its catchphrase, if it
- *     has one, is a single small italic line; nothing else from a persona is shown;
- *   - Follow, Share and Download card (a star kept in this browser; a link; a PNG);
- *   - the season toggle (Season 2 | Season 1 | All-time; the URL's ?season=, then localStorage, then Season 2) for
- *     the numbers below it, and the KPI strip: Bankroll (the $1,000 paper account now), Return (24h / 7d / 30d / Season tabs), Units, Record,
+ * TOP TO BOTTOM (kennel-first layout, owner ruling 2026-10-20)
+ *   - the HERO: big art, the name, whose kennel it lives in (a member's, or the "LINEHOUND kennel"), the record with its bet
+ *     count, the paper bankroll and today's status. Its catchphrase, if it has one, is a single small italic line; nothing
+ *     else from a persona is shown;
+ *   - one button for a visitor (Create your own hound) with Follow and Share as quiet text buttons; for the owner the three
+ *     actions instead (Unleash, Send to training, Take them out back), drawn by dog-kit.js once the kit says who is looking;
+ *   - four tabs: Overview, Tickets, Ask, Locker. Overview is the bankroll chart, the rule and, behind "How it's graded", the
+ *     numbers a bettor calls jargon: the season toggle (Season 2 | Season 1 | All-time; the URL's ?season=, then
+ *     localStorage, then Season 2) for the numbers below it, and the KPI strip: Bankroll (the $1,000 paper account now), Return (24h / 7d / 30d / Season tabs), Units, Record,
  *     Max drawdown, Yield ("profit per $ bet", the old ROI), Bets, CLV, Streak, all for that season. The
  *     referee's status stays all-time and says so. Every figure is one the server sent, and a figure it
  *     did not send reads "n/a";
@@ -54,6 +57,7 @@ import { isFollowed, toggleFollow } from "./hounds-follow.js";
 import { loadRulebook, renderDials, renderCoach } from "./hounds-rulebook.js";
 import { bootDogKit } from "./dog-kit.js";
 import { dogFace, poseOfHound } from "./dog-avatar.js";
+import { kennelLabel } from "./kennel-label.js";
 
 export const PAGE_SIZE = 20;
 export const OPEN_POLL_MS = 60000;
@@ -78,35 +82,78 @@ function stateBox(kind, text, retry) {
 
 // ---- header ----------------------------------------------------------------------------------------
 
+/** The hero art's pixel size: big on a desktop, still generous on a phone (CSS scales it down to fit). */
+export const HERO_ART = 168;
+
+/**
+ * Today's status in plain words, from what the server already sent: a retired hound says so, a hound that has not started waits
+ * for its first board, an idle one says how long, otherwise the number of picks it has open. Never a guess about a game.
+ */
+export function todayStatus(hound) {
+  const d = hound || {};
+  const open = isNum(d.open_bets) ? d.open_bets : 0;
+  const retired = d.retired && typeof d.retired === "object" ? d.retired : null;
+  if (d.status === "retired") return { key: "retired", tone: "off", text: retired && /^buried/i.test(String(retired.cause || "")) ? "Buried" : "Retired" };
+  if (d.status === "not_started") return { key: "waiting", tone: "wait", text: "Waiting for its first pick" };
+  if (d.status === "benched") return { key: "idle", tone: "wait", text: "Idle, no pick in 7+ days" };
+  if (open > 0) return { key: "open", tone: "live", text: `${open} ${open === 1 ? "pick" : "picks"} open` };
+  return { key: "none", tone: "wait", text: "No pick yet today" };
+}
+
+/**
+ * The hero's facts: the record and the paper bankroll, with the bet count beside the record (a record never stands without its
+ * sample) and today's status. It re-draws when the season switches, so the hero always agrees with the numbers under "How it's graded".
+ */
+export function renderHeroFacts(hound) {
+  const box = q("hound-facts");
+  if (!box) return;
+  clearNode(box);
+  const bets = betsOf(hound);
+  const now = bankrollNow(hound);
+  const meta = hound.season && typeof hound.season === "object" && !hound.season.all_time ? hound.season : null;
+  const today = todayStatus(hound);
+  box.appendChild(h("p", { class: "hh-facts", "data-hook": "hound-record-line" }, [
+    h("span", { class: "hh-fact" }, [h("strong", { class: "hh-fact__big hd-num", "data-hook": "hero-record", text: bets > 0 ? recordText(hound) : "0-0" }),
+      h("span", { class: "hh-fact__label", text: bets > 0 ? `record, ${bets} ${bets === 1 ? "bet" : "bets"}` : "record, no graded bets yet" })]),
+    h("span", { class: "hh-fact" }, [h("strong", { class: "hh-fact__big hd-num", "data-hook": "hero-bankroll", text: now === null ? fmtUsd(bankrollRules(hound).start) : fmtUsd(now, true) }),
+      h("span", { class: "hh-fact__label", text: `paper bankroll${now === null ? ", nothing graded yet" : ""}${meta && meta.label ? `, ${meta.label}` : ""}` })]),
+  ]));
+  box.appendChild(h("p", { class: `hh-today hh-today--${today.tone}`, "data-hook": "hound-today-status", "data-today": today.key }, [
+    h("span", { class: "hh-today__dot", "aria-hidden": "true" }), h("span", { class: "hh-today__label", text: "Today" }), h("span", { text: today.text })]));
+}
+
 function renderHeader(hound) {
   const box = q("hound-header");
   clearNode(box);
-  const cat = categoryOf(hound);
   const dead = hound.status === "retired";
   const persona = personaOf(hound);
-  const st = statusOf(hound);
-  document.title = `${hound.name || "Model"} — LINEHOUND`;
+  const kennel = kennelLabel(hound);
+  document.title = `${hound.name || "Hound"} — LINEHOUND`;
   const verified = hound.verified === true
     ? h("span", { class: "hd-verified", "data-hook": "verified", text: "Verified" })
     : hound.verified === false && isNum(hound.verified_share) ? h("span", { class: "hd-unverified", text: "Not verified" }) : null;
   const line = persona && persona.catchphrase ? persona.catchphrase : "";
-  const face = dogFace(hound, { size: 84, pose: dead ? "sad" : poseOfHound(hound) });
+  const face = dogFace(hound, { size: HERO_ART, pose: dead ? "sad" : poseOfHound(hound) });
   face.setAttribute("data-hook", "header-badge");
   if (dead) face.setAttribute("style", "opacity:.6");
+  const where = [sportsOf(hound).map(sportLabel).join(", "), marketsText(hound)].filter(Boolean).join(" · ");
   box.appendChild(face);
-  box.appendChild(h("div", { class: "hd-modelhead__text" }, [
+  box.appendChild(h("div", { class: "hd-modelhead__text hh-hero__text" }, [
+    h("p", { class: "hh-kennel" }, [kennel.href
+      ? h("a", { href: kennel.href, "data-hook": "hound-kennel", "data-house": kennel.house ? "1" : "0", text: kennel.text })
+      : h("span", { "data-hook": "hound-kennel", "data-house": "0", text: kennel.text })]),
     h("h1", { "data-hook": "hound-name", text: hound.name || NOT_REPORTED }),
     line ? h("p", { class: "hd-catch", "data-hook": "catchphrase", text: line }) : null,
-    h("p", { class: "hd-chips" }, [
-      h("span", { class: `hd-st hd-st--${st.tone}`, "data-hook": "hound-status", "data-status": st.key, title: st.title, text: st.text }),
-      h("span", { class: "hd-typechip", "data-category": cat, text: typeText(hound) }),
-      sportsOf(hound).length || marketsText(hound) ? h("span", { class: "hd-chip-plain", "data-hook": "where",
-        text: [sportsOf(hound).map(sportLabel).join(", "), marketsText(hound)].filter(Boolean).join(" · ") }) : null,
-      h("span", { class: "hd-chip-plain", text: hound.kind === "user"
-        ? (hound.owner_display ? `Built by ${hound.owner_display}` : "Builder model") : hound.kind === "baseline" ? "Baseline" : "House model" }),
+    h("div", { "data-hook": "hound-facts" }),
+    h("p", { class: "hh-paper", "data-hook": "paper-only-notice", role: "note", text: "Paper money, not advice." }),
+    h("p", { class: "hd-chips hh-meta" }, [
+      h("span", { class: "hd-typechip", "data-category": categoryOf(hound), text: typeText(hound) }),
+      where ? h("span", { class: "hd-chip-plain", "data-hook": "where", text: where }) : null,
+      hound.kind === "baseline" ? h("span", { class: "hd-chip-plain", text: "Baseline" }) : null,
       verified,
     ]),
   ]));
+  renderHeroFacts(hound);
   const retired = hound.retired && typeof hound.retired === "object" ? hound.retired : null;
   const causeBox = q("hound-cause");
   clearNode(causeBox);
@@ -124,7 +171,7 @@ function renderHeader(hound) {
     causeBox.hidden = false;
     causeBox.removeAttribute("hidden");
     causeBox.appendChild(h("p", {}, [h("strong", { text: "Idle. " }),
-      `Its last ticket was ${fmtWhen(hound.last_bet_utc)}; a model with no ticket for more than 7 days is marked idle.`]));
+      `Its last ticket was ${fmtWhen(hound.last_bet_utc)}; a hound with no ticket for more than 7 days is marked idle.`]));
   }
 }
 
@@ -140,13 +187,13 @@ export function renderActions(hound) {
     const on = isFollowed(state.id);
     follow.textContent = on ? "Following" : "Follow";
     follow.setAttribute("aria-pressed", on ? "true" : "false");
-    follow.setAttribute("aria-label", on ? `Stop following ${hound.name || "this model"}` : `Follow ${hound.name || "this model"} in My models`);
+    follow.setAttribute("aria-label", on ? `Stop following ${hound.name || "this hound"}` : `Follow ${hound.name || "this hound"} on the leaderboard`);
     if (note) status.textContent = note;
   };
   follow.addEventListener("click", () => {
     const res = toggleFollow(state.id);
     paintFollow(res.followed
-      ? (res.saved ? "Followed. It shows under My models on the leaderboard." : "Followed for this visit. This browser will not remember it.")
+      ? (res.saved ? "Followed. It shows under Following on the leaderboard." : "Followed for this visit. This browser will not remember it.")
       : "Unfollowed.");
   });
   const share = h("button", { type: "button", class: "btn btn--ghost", "data-hook": "share-btn", text: "Share",
@@ -198,6 +245,7 @@ async function switchSeason(id) {
     return;           // keep what is on screen; the toggle stays where the reader put it
   }
   renderSeasonBar();
+  renderHeroFacts(state.hound);
   renderScoreboard(state.hound);
   resultLines(state.hound);
   renderVerdict(state.hound);
@@ -269,7 +317,7 @@ function bankrollTiles(hound) {
       toneOf(ret)),
     units: kpi("units", "Units", units === null ? NA : fmtUnitsPlain(units),
       units === null ? "nothing graded yet"
-        : `1 unit = ${fmtUsd(rules.unit)}${stake !== 1 ? `; this model bets ${stake} units a bet` : ""}`, toneOf(units)),
+        : `1 unit = ${fmtUsd(rules.unit)}${stake !== 1 ? `; this hound bets ${stake} units a bet` : ""}`, toneOf(units)),
     drawdown: kpi("drawdown", "Max drawdown", dd ? fmtUsd(dd.usd, true) : NA,
       dd ? (dd.usd === 0 ? "never below a previous high" : `${dd.pct === null ? "" : `${dd.pct.toFixed(1)}% `}below the peak at its worst`) : "nothing graded yet"),
     yield: kpi("yield", "Yield", fmtPct(yld), yld === null ? "" : "profit per $ bet", toneOf(yld)),
@@ -314,12 +362,18 @@ function renderVerdict(hound) {
   const box = q("hound-verdict");
   clearNode(box);
   const st = statusOf(hound);
+  // the referee's status as a teaser on the shut "How it's graded" line: plain words, and the one place the status chip lives
+  const teaser = q("hound-graded-teaser");
+  if (teaser) {
+    clearNode(teaser);
+    teaser.appendChild(h("span", { "data-hook": "hound-status", "data-status": st.key, title: st.title, text: st.text }));
+  }
   box.appendChild(h("div", { class: "hd-badgeline" }, [
     h("span", { class: `hd-st hd-st--${st.tone} hd-st--lg`, "data-hook": "badge", "data-badge": st.key, text: st.text }),
     h("p", { class: "hd-badgeline__explain", "data-hook": "badge-explain", text: st.title }),
   ]));
   box.appendChild(h("p", { class: "hd-verdict__meaning", "data-hook": "verdict-meaning",
-    text: VERDICT_MEANING[verdictLabel(hound)] || "This model has no verdict yet. Its record is shown as it stands." }));
+    text: VERDICT_MEANING[verdictLabel(hound)] || "This hound has no verdict yet. Its record is shown as it stands." }));
   const graded = betsOf(hound);
   const windowed = hound.season && typeof hound.season === "object" && !hound.season.all_time;
   box.appendChild(h("p", { class: "hd-fine", "data-hook": "verdict-sample",
@@ -359,10 +413,10 @@ function renderRule(hound, specHref) {
   clearNode(box);
   const text = hound.rule_text || "";
   box.appendChild(h("pre", { class: "hd-rule", "data-hook": "rule-text", tabindex: "0",
-    text: text || "The rule text was not sent for this model." }));
+    text: text || "The rule text was not sent for this hound." }));
   const status = h("span", { class: "hd-fine", role: "status", "data-hook": "copy-status" });
   const btn = h("button", { type: "button", class: "btn btn--ghost", "data-hook": "copy-rule", text: "Copy rule",
-    "aria-label": "Copy this model's rule to the clipboard",
+    "aria-label": "Copy this hound's rule to the clipboard",
     on: { click: async () => { status.textContent = (await copyText(text)) ? "Copied the rule." : "Could not copy. Select the text and copy it by hand."; } } });
   if (!text) btn.setAttribute("disabled", "");
   box.appendChild(h("div", { class: "hd-rule__actions" }, [btn,
@@ -412,7 +466,7 @@ export function renderCharts() {
   const hasPoints = pts.length > 0 || hasForwardData(state.series);
   const rules = bankrollRules(state.hound);
   title.textContent = hasPoints
-    ? `Live bets only: placed after the rule was written. The paper account in dollars, from the shared ${fmtUsd(rules.start)} start (1 unit = ${fmtUsd(rules.unit)}).`
+    ? `Its paper account in dollars, from a ${fmtUsd(rules.start)} start. Live bets only: placed after the rule was written.`
     : "No graded live bets yet, so there is nothing to draw. A rehearsal result is never drawn here.";
   const width = chartWidth(units);
   // The server's balance after each slate day. The chart draws dollars ABOVE the start, so its zero line is the
@@ -428,8 +482,11 @@ export function renderCharts() {
   }));
   units.appendChild(h("p", { class: "hd-fine", "data-hook": "chart-basis",
     text: `Bets are settled ${basisWords(state.hound) || "at the average price across books"}.${
-      basisOf(state.hound) === "recorded_price" ? " This model's average-price board is missing for more than 10% of its bets, so it is settled at the price it took; other models are settled at the average price." : ""
-    } A member's model counts the units its owner chose.` }));
+      basisOf(state.hound) === "recorded_price" ? " This hound's average-price board is missing for more than 10% of its bets, so it is settled at the price it took; other hounds are settled at the average price." : ""
+    } A member's hound counts the units its owner chose.` }));
+  // the CLV chart lives behind "How it's graded": a shut <details> is not drawn into (it would measure nothing); opening it draws it
+  const fold = q("hound-graded");
+  if (fold && fold.open === false) return;
   clv.appendChild(h("h3", { class: "hd-h3", text: "CLV, running average" }));
   clv.appendChild(renderLineChart({
     hook: "clv-chart",
@@ -469,8 +526,8 @@ function renderOpen() {
   if (state.open.items.length === 0) {
     const trigger = state.rulebook && state.rulebook.trigger;
     box.appendChild(h("p", { class: "hd-muted", "data-hook": "open-empty",
-      text: state.hound && state.hound.status === "retired" ? "This model is retired. It has no open tickets."
-        : `No open tickets. This model bets when ${trigger || "its rule fires"}; boards refresh through the day.` }));
+      text: state.hound && state.hound.status === "retired" ? "This hound is retired. It has no open tickets."
+        : `No open tickets. This hound bets when ${trigger || "its rule fires"}; boards refresh through the day.` }));
     return;
   }
   box.appendChild(ticketTable(state.open.items, { graded: false, hook: "open-table", caption: "Open tickets, recorded and waiting to be graded" }));
@@ -570,7 +627,7 @@ function renderGraded() {
   const page = state.graded;
   if (page.total === 0) {
     box.appendChild(h("p", { class: "hd-muted", "data-hook": "bets-empty",
-      text: state.segment === "replay" ? "No rehearsal tickets for this model." : "No graded tickets yet." }));
+      text: state.segment === "replay" ? "No rehearsal tickets for this hound." : "No graded tickets yet." }));
     return;
   }
   box.appendChild(ticketTable(page.items, { graded: true, hook: "bets-table", caption: "Graded tickets, newest first" }));
@@ -584,7 +641,7 @@ function renderGraded() {
   ]));
 }
 
-/** One page of graded tickets from the server (a model can have hundreds). */
+/** One page of graded tickets from the server (a hound can have hundreds). */
 async function loadGraded(pageNo = 1) {
   state.gradedError = null;
   renderGraded();
@@ -597,6 +654,32 @@ async function loadGraded(pageNo = 1) {
     state.gradedError = err;
   }
   renderGraded();
+}
+
+// ---- the owner's view ------------------------------------------------------------------------------
+
+/**
+ * Once the kit has answered: the owner of this hound sees the three actions under the hero and no "Create your own hound" button;
+ * everyone else sees that one button. A server with no kit (null) leaves the visitor's view, which is always safe.
+ */
+export function settleOwnerView(kit) {
+  const owner = !!(kit && kit.is_owner);
+  const cta = q("hound-cta");
+  const main = q("create-cta");
+  if (main) { if (owner) main.setAttribute("hidden", ""); else main.removeAttribute("hidden"); }
+  if (cta) cta.setAttribute("data-owner", owner ? "1" : "0");
+  const page = q("hound-app");
+  if (page) page.setAttribute("data-viewer", owner ? "owner" : "visitor");
+  // the owner's menu has its own Unleash; the preview panel's second button would say the same thing twice
+  const rites = q("dog-rites-section");
+  if (page) page.setAttribute("data-menu", rites && !rites.hasAttribute("hidden") ? "1" : "0");
+  return kit;
+}
+
+/** A chart drawn while its <details> was shut measured nothing; draw it again the moment the tap opens it. */
+function redrawOnOpen() {
+  const fold = q("hound-graded");
+  if (fold && fold.addEventListener) fold.addEventListener("toggle", () => { if (fold.open) renderCharts(); });
 }
 
 // ---- boot ------------------------------------------------------------------------------------------
@@ -614,7 +697,7 @@ export async function boot() {
   state.id = params.get("id") || "";
   const hero = q("hound-header");
   if (!state.id) {
-    hero.appendChild(stateBox("missing", "No model was chosen. Pick one from the leaderboard."));
+    hero.appendChild(stateBox("missing", "No hound was chosen. Pick one from the leaderboard."));
     setSections(true);
     return;
   }
@@ -625,9 +708,9 @@ export async function boot() {
     if (!hound || typeof hound !== "object") throw Object.assign(new Error("empty"), { status: 404 });
   } catch (err) {
     clearNode(hero);
-    const e = describeError(err, "this model");
+    const e = describeError(err, "this hound");
     hero.appendChild(stateBox(err && err.status === 404 ? "missing" : e.kind,
-      err && err.status === 404 ? "There is no model with this id. It may have been removed, or the link is wrong." : e.text,
+      err && err.status === 404 ? "There is no hound with this id. It may have been removed, or the link is wrong." : e.text,
       err && err.status === 404 ? null : () => { boot(); }));
     setSections(true);
     return;
@@ -647,6 +730,7 @@ export async function boot() {
   state.hound = hound;
   if (hound.season && typeof hound.season === "object") state.seasonMeta = hound.season;
   renderHeader(hound);
+  redrawOnOpen();
   renderSeasonBar();
   renderScoreboard(hound);
   resultLines(hound);
@@ -655,7 +739,7 @@ export async function boot() {
   renderActions(hound);
   startRulebook(hound);           // loads on its own: the dials and the coach never hold the page up
   // fire now, ask, manual picks, ratings and (owner) the locker room: its own request, hidden until real
-  bootDogKit(hound).catch(() => null);
+  bootDogKit(hound).then(settleOwnerView).catch(() => null);
 
   // the AI desk's models also show how they argued their newest game (every other model never sees this)
   bootDesk(hound);

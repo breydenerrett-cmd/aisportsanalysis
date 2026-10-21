@@ -1,0 +1,38 @@
+/*
+ * KENNELS and GRAVEYARD (web/kennels.html, web/graveyard.html), kennel-first layout. Owner ruling 2026-10-20.
+ *
+ * The same minimal treatment as the leaderboard: a title, one line, ONE primary button (Create your own hound), a quiet row of text links,
+ * then the content. Loaded last on those two pages and only there; every selector sits under `.kp-wrap`.
+ */
+
+.hounds-page .kp-wrap { max-width: 960px; }
+.hounds-page .kp-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--lh-s3) var(--lh-s5); margin: var(--lh-s3) 0 var(--lh-s2); }
+.hounds-page .kp-head__text { min-width: 0; }
+.hounds-page .kp-wrap .kp-head h1 { font-size: clamp(40px, 7vw, 64px); margin: 0 0 var(--lh-s1); }
+.hounds-page .kp-head .hd-lede { margin: 0; }
+.hounds-page .kp-head__cta { min-height: 48px; padding: 0 var(--lh-s5); font-size: var(--lh-fs-base); }
+.hounds-page .kp-links { margin: 0 0 var(--lh-s5); font-size: var(--lh-fs-sm); color: var(--lh-faint); }
+.hounds-page .kp-links a { color: var(--lh-ink2); text-decoration: none; }
+.hounds-page .kp-links a:hover { color: var(--lh-ink); text-decoration: underline; }
+
+/* the house kennel: one quiet row above the members' kennels */
+.hounds-page .kp-house {
+  display: flex; align-items: center; gap: var(--lh-s4); min-height: 64px; margin: 0 0 var(--lh-s5); padding: var(--lh-s3) var(--lh-s4); border-radius: var(--lh-r-lg);
+  background: var(--lh-soft); color: var(--lh-ink); text-decoration: none; transition: background-color var(--lh-t-fast) var(--lh-ease);
+}
+.hounds-page .kp-house:hover { background: var(--lh-soft-2); }
+.hounds-page .kp-house__mark { flex: none; width: 12px; height: 12px; border-radius: 3px; background: var(--lh-accent); }
+.hounds-page .kp-house__text { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.hounds-page .kp-house__text strong { font-size: var(--lh-fs-md); font-weight: 600; }
+.hounds-page .kp-house__text span { font-size: var(--lh-fs-sm); color: var(--lh-mute); }
+.hounds-page .kp-house__go { color: var(--lh-mute); transition: transform var(--lh-t-base) var(--lh-ease), color var(--lh-t-base); }
+.hounds-page .kp-house:hover .kp-house__go { transform: translateX(3px); color: var(--lh-accent); }
+
+/* the kennels' grid and the headstones: more air, quieter cards */
+.hounds-page .kp-wrap .kn-kgrid { gap: var(--lh-s3); }
+.hounds-page .kp-wrap .hs-list { gap: var(--lh-s4); }
+
+@media (max-width: 559px) {
+  .hounds-page .kp-head { align-items: stretch; }
+  .hounds-page .kp-head__cta { flex: 1 1 100%; }
+}

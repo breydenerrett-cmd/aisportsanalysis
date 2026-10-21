@@ -33,7 +33,7 @@ export async function renderGraveyard() {
   if (!stones.length) {
     host.appendChild(h("div", { class: "kn-empty", "data-hook": "graveyard-empty" }, [
       h("h2", { text: "Nothing buried yet" }),
-      h("p", { class: "hd-lede", text: "A dog its owner takes out back lands here with a headstone and its final record." })]));
+      h("p", { class: "hd-lede", text: "A hound its owner takes out back lands here with a headstone and its final record." })]));
     return stones;
   }
   host.appendChild(h("div", { class: "hs-list", "data-hook": "graveyard-stones" }, stones.map((s) => headstoneCard(s, { heading: "h2" }))));

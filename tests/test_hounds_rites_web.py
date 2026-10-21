@@ -514,8 +514,8 @@ class TheGraveyardPage(unittest.TestCase):
         out = run_page("graveyard", routes={}, down=["/hounds/graveyard"], queries=[q("state", hook("section-state"))])
         self.assertTrue(out["final"]["state"])
 
-    def test_the_paper_notice_and_the_helpline_are_on_the_page(self):
-        out = self.go([], queries=[q("notice", hook("paper-only-notice")), q("help", hook("responsible-gambling-help"), "attr", attr="href")])
+    def test_the_paper_notice_and_the_helpline_are_on_the_page(self):          # in the footer, said once (owner ruling 2026-10-20 kennel-first)
+        out = self.go([], queries=[q("notice", hook("footer-legal")), q("help", hook("responsible-gambling-help"), "attr", attr="href")])
         self.assertIn("21+", out["final"]["notice"])
         self.assertEqual(out["final"]["help"], "tel:1-800-426-2537")
 

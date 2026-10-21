@@ -75,7 +75,8 @@ def make_handler(api):
 
 @unittest.skipUnless(HAS_NODE and CHROME, "node and a Chrome/Chromium binary are needed")
 class EveryPageFitsAPhone(unittest.TestCase):
-    PAGES = ["landing.html", "hounds.html", "hounds.html?tab=kennels", "kennels.html", "live.html", "kennel.html", "kennel.html?u=handler-21e8",
+    # owner ruling 2026-10-20 kennel-first: the leaderboard has no Kennels tab any more; its house-kennel filter and the graveyard are measured too
+    PAGES = ["landing.html", "hounds.html", "hounds.html?scope=house", "kennels.html", "graveyard.html", "live.html", "kennel.html", "kennel.html?u=handler-21e8",
              "build-a-hound.html", "learning.html", "index.html", "admin.html", "postseason.html", "sample.html", "why-we-paused.html"]
 
     @classmethod
