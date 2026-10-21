@@ -589,7 +589,14 @@ def builder_preview(body: PreviewRequest, _rl: None = Depends(_rate_limit_previe
         slate = _slate_for(date, with_props)
     except Exception as exc:  # noqa: BLE001 -- a board that cannot be read is a plain "not available"
         raise HTTPException(status_code=503, detail={"error": "board_unavailable", "message": type(exc).__name__})
-    result = user_engine_v2.preview(spec, slate.games, slate.facts, date, now, game_pk_index=slate.game_pk_index)
+    if user_spec.is_gematria(spec):
+        # the Gematria style is weighed by the house engine (src/hounds/user_gematria.py); the weigher is kept with the slate
+        # so a keystroke-driven preview does not re-read the results stores each time
+        from src.hounds import user_gematria
+        weigher, _m = _slate_cache.get(("gematria-weigher", date, id(slate)), lambda: user_gematria.Weigher(slate.games))
+        result = user_gematria.preview(spec, slate.games, date, now, weigher=weigher)
+    else:
+        result = user_engine_v2.preview(spec, slate.games, slate.facts, date, now, game_pk_index=slate.game_pk_index)
     result.update({"sentences": english_render.rule_sentences(spec) + english_render.global_sentences(spec),
                    "spec": {k: v for k, v in spec.items() if k != "name" or raw["name"] != "Draft Dog"},
                    "games_on_board": len(slate.games), "board_size": len(slate.games), "board_observed_utc": slate.newest_observed(),

@@ -39,6 +39,12 @@ ALWAYS THROUGH THE REAL VALIDATOR. The finished spec goes through `user_spec.val
 rule (a stale fragment, an English rule off the menu) that rule is dropped and the reason is a warning; a refused global
 returns to its default. The -200 cap is the validator's: this module never builds a band that reaches it.
 
+THE GEMATRIA PERSONALITY IS A STYLE, NOT A RECIPE. Picking "Gematria" (config/hounds_archetypes.json, `style: "gematria"`) makes
+the member Gematria hound (src/hounds/user_gematria.py): the house Gematria Hound's engine and active rules on the sports,
+bets a day, stake and name the person gave. Its one rule is fixed, so the answers that would add or change rules (markets
+other than the moneyline, a price comfort, a timing, move cards, quirks, the English box's rules) are LEFT OUT and each one
+is named in a warning. Typing "gematria" in the English box asks for the same style when no personality was picked.
+
 Pure and offline: no network, no clock, no randomness. The only outside read is `taken_names`, which the caller passes in.
 """
 
@@ -357,8 +363,12 @@ def suggest_look(lib: Mapping, answers: Mapping, personality: Optional[Mapping])
     p = personality or {}
     look = {"coat": asked.get("coat") or p.get("coat") or "tan", "eyes": "brown", "bg": p.get("bg") or "navy",
             "head": "none", "face": "none", "neck": "none", "body": "none"}
+    if p.get("art"):
+        look.update(p["art"])              # a personality with its own art (Gematria: breed, jersey number, style) wears it
     if asked.get("accessory"):
         look.update(lib_mod.by_id(lib["looks"]["accessories"])[asked["accessory"]]["look"])
+    if look.get("number") is not None and look.get("body") != "jersey":
+        look.pop("number")                 # a number goes on the jersey only; a chosen hoodie takes it off
     return look
 
 
@@ -367,7 +377,8 @@ def suggest_look(lib: Mapping, answers: Mapping, personality: Optional[Mapping])
 # ---------------------------------------------------------------------------
 
 def _english_parts(english_draft: Any, english_text: Any, warnings: list) -> tuple:
-    """(rules, globals) from the English box: a draft already parsed by POST /hounds/english, else the text parsed here."""
+    """(rules, globals, style) from the English box: a draft already parsed by POST /hounds/english, else the text parsed here.
+    ``style`` is ``{"style": "gematria", "sports": [...]}`` when the words asked for the Gematria style, else None."""
     draft = english_draft
     if draft is None and isinstance(english_text, str) and english_text.strip():
         from src.hounds.english import parser
@@ -378,11 +389,15 @@ def _english_parts(english_draft: Any, english_text: Any, warnings: list) -> tup
                 _warn(warnings, "english_not_understood",
                       f"\"{str(chunk['text'])[:60]}\" was not understood ({chunk.get('reason', 'not on the menu')}).")
     if not isinstance(draft, Mapping):
-        return [], {}
+        return [], {}, None
     raw_rules = draft.get("rules") if isinstance(draft.get("rules"), list) else []
     rules = [r for r in raw_rules if isinstance(r, Mapping)][:R.MAX_RULES]
     globs = {k: draft[k] for k in GLOBAL_KEYS if k in draft}
-    return copy.deepcopy(rules), globs
+    style = None
+    if draft.get("style") == user_spec.STYLE_GEMATRIA:
+        sports = user_spec.normalize_sports(draft.get("sports")) if draft.get("sports") is not None else None
+        style = {"style": user_spec.STYLE_GEMATRIA, "sports": sports or []}
+    return copy.deepcopy(rules), globs, style
 
 
 def compose(answers: Any, *, taken_names: Iterable[str] = (), english_draft: Any = None, english_text: Any = None,
@@ -394,13 +409,37 @@ def compose(answers: Any, *, taken_names: Iterable[str] = (), english_draft: Any
     ans = clean_answers(answers, lib, warnings)
     pers_rows, arch_rows, quirk_rows = (lib_mod.by_id(lib[t]) for t in ("personalities", "archetypes", "quirks"))
     comfort_rows, market_rows = lib_mod.by_id(lib["price_comforts"]), lib_mod.by_id(lib["markets"])
-    eng_rules, eng_globals = _english_parts(english_draft, english_text, warnings)
+    eng_rules, eng_globals, eng_style = _english_parts(english_draft, english_text, warnings)
 
     pers = pers_rows.get(ans.get("personality"))
     comfort = comfort_rows.get(ans.get("price_comfort"))
     chosen_sports = list(ans.get("sports") or [])
     arch_ids = list(ans.get("archetypes") or [])
     quirk_list = [quirk_rows[q] for q in ans.get("quirks") or []]
+    if eng_style:
+        gem_row = next((p for p in lib["personalities"] if p.get("style") == user_spec.STYLE_GEMATRIA), None)
+        if pers is None and gem_row is not None:
+            pers = gem_row                                 # the words asked for the style and no personality was picked
+            ans["personality"] = gem_row["id"]
+            if not chosen_sports and eng_style["sports"]:
+                chosen_sports = list(eng_style["sports"])
+                ans["sports"] = chosen_sports
+        elif pers is not None and pers.get("style") != user_spec.STYLE_GEMATRIA:
+            _warn(warnings, "style_conflict", f"Your words asked for the Gematria style, which has its own fixed rule and cannot "
+                  f"be mixed with {pers['name']}. Your personality pick stays.")
+    gem = bool(pers and pers.get("style") == user_spec.STYLE_GEMATRIA)
+    if gem:
+        # one fixed rule: nothing that would add to it or change it is used, and each answer left out is named
+        for label, given in (("move cards", arch_ids), ("quirks", quirk_list), ("a price comfort", comfort),
+                             ("a timing", ans.get("timing")), ("rules from your own words", eng_rules)):
+            if given:
+                _warn(warnings, "gematria_fixed", f"Gematria weighs each game by its own fixed rule, so {label} "
+                      f"{'were' if label.endswith('s') and label != 'a price comfort' else 'was'} left out.", "note")
+        picked_markets = [m for mid in ans.get("markets") or [] for m in market_rows[mid]["markets"]]
+        if any(m != "moneyline" for m in picked_markets):
+            _warn(warnings, "gematria_moneyline", "Gematria bets moneylines only, so the other bets you picked were left out.", "note")
+        arch_ids, quirk_list, comfort, eng_rules = [], [], None, []
+        ans.pop("timing", None)
 
     # which markets
     market_ids = list(ans.get("markets") or [])
@@ -410,7 +449,7 @@ def compose(answers: Any, *, taken_names: Iterable[str] = (), english_draft: Any
             if m not in chosen_markets:
                 chosen_markets.append(m)
     # quirks alone (no card, no words of the person's own) narrow a plain base rule rather than nothing
-    wants_base = bool(market_ids or pers or comfort or (quirk_list and not arch_ids and not eng_rules))
+    wants_base = bool(market_ids or pers or comfort or (quirk_list and not arch_ids and not eng_rules)) and not gem
     if wants_base and not chosen_markets:
         chosen_markets = ["moneyline"]
         _warn(warnings, "markets_assumed", "No market was picked, so the base rule is on moneylines.", "note")
@@ -480,7 +519,7 @@ def compose(answers: Any, *, taken_names: Iterable[str] = (), english_draft: Any
         built.append((rule, {"kind": "english", "id": None, "name": ENGLISH_LABEL}))
 
     starter = False
-    if not built:
+    if not built and not gem:
         # nothing asked for, or everything asked for was refused: the starter pup, on the sports picked
         starter, pers = True, pers_rows.get(STARTER_PERSONALITY)
         base_src = {"kind": "personality", "id": STARTER_PERSONALITY, "name": pers["name"]}
@@ -553,6 +592,13 @@ def compose(answers: Any, *, taken_names: Iterable[str] = (), english_draft: Any
            "stake_units": settings["stake_units"], "rank_by": settings["rank_by"],
            "rules": [copy.deepcopy(r) for r, _s in built]}
     sources = [s for _r, s in built]
+    if gem:
+        # the member Gematria style: sports, bets a day, stake and name are the person's; the lock, ranking and the one rule
+        # are the house engine's and are derived by the validator
+        raw = {"version": user_spec.SPEC_VERSION_V2, "style": user_spec.STYLE_GEMATRIA, "name": name, "tagline": tagline,
+               "color": color, "badge": badge, "sports": list(sports_for_base),
+               "max_bets_per_day": settings["max_bets_per_day"], "stake_units": settings["stake_units"]}
+        sources = [{"kind": "personality", "id": pers["id"], "name": pers["name"]}]
     spec, sources = _validate_with_repairs(raw, sources, warnings, taken, lib, quiz_settings)
     final_rules = spec["rules"]
     cards = _cards(spec, sources)
@@ -575,7 +621,7 @@ def _validate_with_repairs(raw: dict, sources: list, warnings: list, taken: list
     back to its default, a refused name or tagline is replaced. Returns (spec, the source of each surviving rule), in
     order. Never loops past a dozen tries."""
     sources = list(sources)
-    kept = list(range(len(raw["rules"])))
+    kept = list(range(len(raw.get("rules") or [0])))          # a Gematria raw has no typed rules: its one source stands for its derived rule
     defaults = {"max_bets_per_day": lib["defaults"]["max_bets_per_day"], "stake_units": lib["defaults"]["stake_units"],
                 "lock_minutes": lib["defaults"]["lock_minutes"], "rank_by": "earliest_lock"}
     defaults.update({k: v for k, v in fallbacks.items() if k in defaults})
@@ -587,6 +633,8 @@ def _validate_with_repairs(raw: dict, sources: list, warnings: list, taken: list
             errors = exc.errors
             progressed = False
             bad_rules = sorted({int(k.split("]")[0].split("[")[1]) for k in errors if k.startswith("rules[")}, reverse=True)
+            if raw.get("style") == user_spec.STYLE_GEMATRIA:
+                bad_rules = []                 # the fixed rule is derived, never typed; nothing to drop
             for i in bad_rules:
                 first = next(v for k, v in errors.items() if k.startswith(f"rules[{i}]"))
                 _warn(warnings, "rule_refused", f"{sources[kept[i]]['name']} was left out: the builder refused it ({first}).")
@@ -604,7 +652,7 @@ def _validate_with_repairs(raw: dict, sources: list, warnings: list, taken: list
             if "name" in errors:
                 raw["name"] = "Starter Pup" if raw["name"] != "Starter Pup" else "Quiz Pup Two"
                 progressed = True
-            if "rules" in errors and not raw["rules"]:
+            if "rules" in errors and not raw.get("rules") and raw.get("style") != user_spec.STYLE_GEMATRIA:
                 starter = _starter_rule(lib)
                 _warn(warnings, "starter", "Nothing usable was left, so this is the starter pup: underdog moneylines at plus money.", "note")
                 raw["rules"] = [starter]
@@ -622,6 +670,15 @@ def _starter_rule(lib: Mapping) -> dict:
 
 
 def _cards(spec: Mapping, sources: list) -> list:
+    if user_spec.is_gematria(spec):
+        from src.hounds import user_gematria
+        rule = spec["rules"][0]
+        src = sources[0] if sources else {"kind": "personality", "id": "gematria", "name": user_gematria.STYLE_LABEL}
+        sentence = user_gematria.rule_sentence(spec)
+        return [{"index": 0, "label": user_gematria.STYLE_LABEL, "source": src["kind"], "source_id": src["id"],
+                 "source_name": src["name"], "sentence": sentence, "body": sentence, "sports": rule["sports"],
+                 "markets": rule["markets"], "side": rule["side"], "price_min": rule["price_min"],
+                 "price_max": rule["price_max"], "conditions": 0}]
     cards = []
     for i, rule in enumerate(spec["rules"]):
         src = sources[i] if i < len(sources) else {"kind": "english", "id": None, "name": ""}

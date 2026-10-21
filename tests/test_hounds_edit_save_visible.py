@@ -169,7 +169,7 @@ class TheRealEditPathForBothDogs(unittest.TestCase):
         top = re.search(r"const SPEC_KEYS = \[(.*?)\];", JS).group(1)
         rule = re.search(r"const RULE_KEYS = \[(.*?)\];", JS).group(1)
         names = lambda text: re.findall(r'"([a-z_]+)"', text)                # noqa: E731
-        self.assertEqual(set(names(top)), set(user_spec.V2_TOP_KEYS) - set(user_spec.V2_DERIVED_KEYS))
+        self.assertEqual(set(names(top)), (set(user_spec.V2_TOP_KEYS) - set(user_spec.V2_DERIVED_KEYS)) | set(user_spec.V2_STYLE_KEYS))
         self.assertEqual(set(names(rule)), set(user_spec.V2_RULE_KEYS))
 
 

@@ -68,6 +68,12 @@ _drill_slot = threading.Lock()
 BUSY_RETRY_AFTER_S = 30
 
 
+# A member's Gematria-style hound weighs a game once, at the lock, like the house Gematria Hound, and the house hound refuses a
+# replay (ai_defs.GEMATRIA_FORWARD_ONLY_MESSAGE); so does it.
+GEMATRIA_FORWARD_ONLY_MESSAGE = ("A Gematria hound is forward-only. It weighs each game once, at the lock, from the board and the "
+                                 "results stored by then, so a past day cannot be replayed honestly.")
+
+
 class DrillError(ValueError):
     def __init__(self, code: str, message: str, status: int = 400, fields: Optional[dict] = None,
                  retry_after: Optional[int] = None):
@@ -402,6 +408,8 @@ def drill(*, days: int = 14, dog: Optional[common.Dog] = None, spec: Optional[di
             from src.hounds import ai_defs
             raise DrillError("ai_forward_only", ai_defs.forward_only_message(dog.id), 422)
         if dog.kind == common.KIND_USER:
+            if user_spec.is_gematria(dog.spec):
+                raise DrillError("gematria_forward_only", GEMATRIA_FORWARD_ONLY_MESSAGE, 422)
             hound = {"id": dog.id, "spec": dog.spec}
             ident = {"id": dog.id, "name": dog.name, "kind": "user"}
             rule = common.rule_english(dog)
@@ -415,6 +423,8 @@ def drill(*, days: int = 14, dog: Optional[common.Dog] = None, spec: Optional[di
             raise DrillError("not_drillable", f"{dog.name} cannot be drilled: only house dogs and builder dogs run a rule on demand", 422)
     else:
         norm = spec_from_request(spec)
+        if user_spec.is_gematria(norm):
+            raise DrillError("gematria_forward_only", GEMATRIA_FORWARD_ONLY_MESSAGE, 422)
         hound = {"id": "drill-" + user_spec.spec_hash(norm)[:10], "spec": norm}
         ident = {"id": None, "name": "Your rule", "kind": "spec"}
         rule = user_spec.rule_text(norm)

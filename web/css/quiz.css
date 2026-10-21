@@ -137,6 +137,16 @@
 .qz-art--dog .qz-dog { display: grid; place-items: center; width: 100%; }
 .qz-pin--small .qz-dog--pin .dk-badge { width: auto; height: 82%; }
 .qz-grid--dogs .qz-pin__title { font-size: 24px; }
+/* Question 3 on a phone: one page of four personalities at a time, and "Show me others" turns the page (like question 6's moves).
+   A wide screen shows every card and has no use for the button. */
+.qz-actions--personality { margin-top: 18px; }
+.qz-actions--personality .qz-fine { margin: 0; }
+@media (max-width: 719px) {
+  .qz-grid--dogs[data-page="0"] > [data-page]:not([data-page="0"]),
+  .qz-grid--dogs[data-page="1"] > [data-page]:not([data-page="1"]),
+  .qz-grid--dogs[data-page="2"] > [data-page]:not([data-page="2"]) { display: none; }
+}
+@media (min-width: 720px) { .qz-actions--personality { display: none; } }
 
 /* risk */
 .qz-field { margin: 0 0 4px; }

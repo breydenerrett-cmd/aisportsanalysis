@@ -98,7 +98,9 @@ def definition(hound: dict) -> dict:
                    "cause": retired_cause(hound)}
     return {
         "id": hound["id"], "name": hound["name"], "tagline": hound.get("tagline") or "",
-        "kind": "user", "category": "mixed", "style": STYLE.get(spec["side_rule"], ""),
+        "kind": "user", "category": "numerology" if user_spec.is_gematria(spec) else "mixed",
+        "style": ("counts numerical coincidences for each side" if user_spec.is_gematria(spec)
+                  else STYLE.get(spec["side_rule"], "")),
         "owner_display": owner_display(hound["owner_user_id"]),
         "sports": [s.lower() for s in spec["sports"]], "markets": list(spec["markets"]),
         "rule_text": user_spec.rule_text(spec), "system_id": None, "card": False,

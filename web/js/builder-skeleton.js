@@ -26,6 +26,8 @@ export function builderSkeleton() {
       h("p", { class: "bd-countrow" }, [h("span", hook("english-count", { class: "hd-fine bd-count", id: "english-count-note", "aria-live": "polite", text: "0 / 600" }))]),
       h("p", hook("english-limit", { class: "bd-msg bd-msg--warn", role: "status", hidden: true })),
       h("div", hook("example-chips", { class: "bd-chips", role: "group", "aria-label": "Examples to start from" })),
+      h("fieldset", { class: "hd-fieldset bd-style" }, [h("legend", { text: "Or start from a base style" }),
+        h("div", hook("style-picker", { class: "bd-chips", role: "group", "aria-label": "Base style" }))]),
       h("div", { class: "bd-actions" }, [
         h("button", hook("english-go", { type: "button", class: "btn btn--primary", text: "Read my strategy" })),
         h("button", hook("blank-rule", { type: "button", class: "btn btn--ghost", text: "Start from a blank rule" })),
@@ -45,6 +47,13 @@ export function builderSkeleton() {
     h("section", hook("step-rules", { class: "bd-step", "aria-label": "What your hound will do" }), [
       h("p", { class: "bd-step__no", text: "2. Check it" }),
       h("div", hook("rules-empty", { class: "bd-empty" }), [h("p", { text: "Describe a strategy above, or start from a blank rule." })]),
+      h("div", hook("style-gematria", { class: "bd-gematria", hidden: true }), [
+        h("h4", { class: "hd-h3", text: "Gematria" }),
+        h("p", hook("style-explain")),
+        h("p", {}, [h("a", hook("style-house-link", { class: "bd-textlink", href: "hound.html?id=gematria", text: "See the house Gematria Hound" }))]),
+        h("div", hook("style-sports")),
+        h("div", hook("style-globals", { class: "bd-globals__grid" })),
+        h("p", hook("style-fixed", { class: "hd-fine" }))]),
       h("div", hook("rules-body", { hidden: true }), [
         h("div", hook("rule-sentences", { class: "bd-sentences", "aria-live": "polite" })),
         h("div", hook("build-problems", { class: "bd-problems", role: "alert", hidden: true })),

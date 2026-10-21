@@ -118,10 +118,23 @@ function blankSpec() {
     stake_units: m.stake_units.default, rank_by: m.rank_by[0].value, rules: [blankRule()] };
 }
 
+/** The base style that is the member Gematria hound (src/hounds/user_gematria.py); the menu's `styles` describes it. */
+const GEMATRIA = "gematria";
+const isGem = (spec = S.spec) => !!spec && spec.style === GEMATRIA;
+function styleMenu(value) { return ((S.menu && S.menu.styles) || []).find((x) => x.value === value) || null; }
+function gematriaFixed() { const st = styleMenu(GEMATRIA); return (st && st.fixed) || {}; }
+
 /** Fill the defaults a parser draft leaves out, so every card has a value in every control. */
 function normaliseSpec(raw) {
   const base = blankSpec();
   const out = Object.assign(base, clone(raw || {}));
+  if (out.style === GEMATRIA && !(out.rules && out.rules.length)) {
+    // a Gematria draft names its sports and nothing else: the one fixed rule is the style's
+    out.rules = [Object.assign(blankRule(), out.sports && out.sports.length ? { sports: out.sports.slice() } : {})];
+    const fixed = gematriaFixed();
+    if (fixed.lock_minutes) out.lock_minutes = fixed.lock_minutes;
+    out.rank_by = "earliest_lock";
+  }
   out.rules = (out.rules || []).map((r) => {
     const rule = Object.assign(blankRule(), r);
     const kind = kindOf(rule);
@@ -509,10 +522,9 @@ function pruneConditions(rule, tree) {
   return walk(tree);
 }
 
-function globalsGrid(onChange) {
+function globalsGrid(onChange, grid = clearNode(q("globals-grid")), gem = false) {
   const m = S.menu;
-  const grid = clearNode(q("globals-grid"));
-  grid.appendChild(field("Decide this long before the start", selectOf(m.lock_minutes.choices.map((v) => ({ value: String(v), label: `${v} minutes` })),
+  if (!gem) grid.appendChild(field("Decide this long before the start", selectOf(m.lock_minutes.choices.map((v) => ({ value: String(v), label: `${v} minutes` })),
     String(S.spec.lock_minutes), (v) => { S.spec.lock_minutes = Number(v); onChange(); }, { "data-hook": "g-lock" })));
   grid.appendChild(field("Most bets a day", numberField({ min: m.max_bets_per_day.min, max: m.max_bets_per_day.max, step: 1 }, S.spec.max_bets_per_day,
     (v) => { S.spec.max_bets_per_day = v; onChange(); }, { "data-hook": "g-bets" })));
@@ -528,22 +540,81 @@ function globalsGrid(onChange) {
     }, { "data-hook": "g-stake" }), m.stake_note);
   stakeField.appendChild(stakeLine);
   grid.appendChild(stakeField);
-  grid.appendChild(field("If more picks qualify than the cap, take", selectOf(m.rank_by.map((r) => ({ value: r.value, label: r.label })),
+  if (!gem) grid.appendChild(field("If more picks qualify than the cap, take", selectOf(m.rank_by.map((r) => ({ value: r.value, label: r.label })),
     S.spec.rank_by, (v) => { S.spec.rank_by = v; onChange(); }, { "data-hook": "g-rank" }), m.ranking_note));
+}
+
+// ---- the base style: your own rules, or Gematria ------------------------------------------------------
+
+/**
+ * BASE STYLE. "Your own rules" is the builder as it always was. "Gematria" hands the picking to the house Gematria Hound's engine
+ * and active rules (src/hounds/user_gematria.py): the member keeps the sports, the most bets a day, the stake and the name, and the
+ * rest is the style's own, said in a paragraph and a link to the house hound's page. Everything shown here is read from the menu's
+ * `styles`; the page holds no rule of its own. Switching back keeps the rules you had.
+ */
+function setStyle(value) {
+  if (!S.menu || !S.spec) return;
+  if (value === GEMATRIA && !isGem()) {
+    S.rulesAside = clone(S.spec.rules);
+    const first = S.spec.rules[0] || blankRule();
+    S.spec.rules = [Object.assign(blankRule(), { label: "Gematria", sports: first.sports.slice() })];
+    S.spec.style = GEMATRIA;
+    const fixed = gematriaFixed();
+    if (fixed.lock_minutes) S.spec.lock_minutes = fixed.lock_minutes;
+    S.spec.rank_by = "earliest_lock";
+    S.started = true;
+  } else if (value !== GEMATRIA && isGem()) {
+    delete S.spec.style;
+    delete S.spec.gematria;
+    S.spec.rules = S.rulesAside && S.rulesAside.length ? S.rulesAside : [Object.assign(blankRule(), { sports: S.spec.rules[0].sports.slice() })];
+    S.rulesAside = null;
+  } else {
+    return;
+  }
+  changed(true);
+}
+
+function renderStyle() {
+  const picker = q("style-picker");
+  const panel = q("style-gematria");
+  if (!picker || !panel || !S.menu) return;
+  const styles = S.menu.styles || [];
+  clearNode(picker);
+  for (const st of styles) {
+    picker.appendChild(chipButton(st.label, (isGem() ? GEMATRIA : "rules") === st.value, () => setStyle(st.value), { "data-hook": "style-choice", "data-style": st.value, title: st.summary }));
+  }
+  const gem = isGem() && S.started;
+  panel.hidden = !gem;
+  if (!gem) return;
+  const def = styleMenu(GEMATRIA) || {};
+  q("style-explain").textContent = def.summary || "";
+  const link = q("style-house-link");
+  const house = def.house_hound || {};
+  if (house.href) link.setAttribute("href", house.href);
+  link.textContent = `See the house ${house.name || "Gematria Hound"}`;
+  q("style-fixed").textContent = gematriaFixed().text || "";
+  const sportsBox = clearNode(q("style-sports"));
+  sportsBox.appendChild(h("p", { class: "bd-style__label", text: "Sports" }));
+  sportsBox.appendChild(sportGrid(S.spec.rules[0], changed));
+  globalsGrid(changed, clearNode(q("style-globals")), true);
 }
 
 // ---- rendering --------------------------------------------------------------------------------------
 
 function renderRules() {
+  renderStyle();
   const has = !!S.spec && S.spec.rules.length > 0 && S.started;
   q("rules-empty").hidden = has;
   q("rules-body").hidden = !has;
   if (!has) return;
-  const cards = clearNode(q("rule-cards"));
-  S.spec.rules.forEach((rule, i) => cards.appendChild(ruleCard(rule, i, changed)));
-  q("add-rule").disabled = S.spec.rules.length >= S.menu.limits.max_rules;
-  q("rule-limit").textContent = `${S.spec.rules.length} of ${S.menu.limits.max_rules} rules`;
-  globalsGrid(changed);
+  q("rules-advanced").hidden = isGem();            // a Gematria hound has one fixed rule: no cards to edit
+  if (!isGem()) {
+    const cards = clearNode(q("rule-cards"));
+    S.spec.rules.forEach((rule, i) => cards.appendChild(ruleCard(rule, i, changed)));
+    q("add-rule").disabled = S.spec.rules.length >= S.menu.limits.max_rules;
+    q("rule-limit").textContent = `${S.spec.rules.length} of ${S.menu.limits.max_rules} rules`;
+    globalsGrid(changed);
+  }
   renderSentences();
 }
 
@@ -657,7 +728,7 @@ function previewBody() {
  * without its derived keys, and `V2_RULE_KEYS`; tests/test_hounds_edit_save_visible.py fails if they drift apart). The validator
  * REFUSES an unknown key, so a saved dog that carries one the editor never shows would be refused on every save, forever.
  */
-const SPEC_KEYS = ["version", "name", "tagline", "color", "badge", "lock_minutes", "max_bets_per_day", "stake_units", "rank_by", "rules"];
+const SPEC_KEYS = ["version", "name", "tagline", "color", "badge", "lock_minutes", "max_bets_per_day", "stake_units", "rank_by", "rules", "style", "gematria"];
 const RULE_KEYS = ["label", "sports", "markets", "side", "price_min", "price_max", "line_min", "line_max", "min_books", "when"];
 
 /** Send only what the server's menu knows: empty optionals become absent, empty condition groups vanish, and a field the
@@ -676,6 +747,8 @@ function cleanSpec(spec) {
     return out;
   });
   for (const key of Object.keys(spec)) if (!SPEC_KEYS.includes(key)) delete spec[key];
+  if (spec.style !== GEMATRIA) { delete spec.style; delete spec.gematria; }
+  else if (spec.rules.length) spec.sports = spec.rules[0].sports;      // the style's one fixed rule covers the hound's sports
   return spec;
 }
 
@@ -1023,7 +1096,7 @@ function startFromDraft(res) {
   const raw = res.spec || res.draft;
   S.started = true;
   const keepIdentity = { name: S.spec ? S.spec.name : "", tagline: S.spec ? S.spec.tagline : "", color: S.spec ? S.spec.color : null, badge: S.spec ? S.spec.badge : null };
-  S.spec = normaliseSpec(raw && raw.rules && raw.rules.length ? raw : null);
+  S.spec = normaliseSpec(raw && ((raw.rules && raw.rules.length) || raw.style === GEMATRIA) ? raw : null);
   if (keepIdentity.name) S.spec.name = keepIdentity.name;
   if (keepIdentity.tagline) S.spec.tagline = keepIdentity.tagline;
   if (keepIdentity.color) S.spec.color = keepIdentity.color;
@@ -1593,6 +1666,7 @@ async function boot() {
   S.spec = blankSpec();
   S.started = false;
   bindIdentity();
+  renderStyle();
   renderPickers();
   fillIdentity();
   updateDogCard();

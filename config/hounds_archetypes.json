@@ -2510,6 +2510,34 @@
     "numerology",
     "letters"
    ]
+  },
+  {
+   "id": "gematria",
+   "name": "Gematria",
+   "style": "gematria",
+   "pitch": "Reads the numbers in names, dates and streaks. Bets when they line up.",
+   "icon": "hash",
+   "vibe": "nerd",
+   "breed": "bloodhound",
+   "color": "lime",
+   "coat": "tan",
+   "bg": "teal",
+   "badge": "target",
+   "art": {
+    "breed": "bloodhound",
+    "style": "elite",
+    "body": "jersey",
+    "number": 33
+   },
+   "stance": "neutral",
+   "tagline": "Counts the numbers. Passes when they do not line up.",
+   "rank_by": "earliest_lock",
+   "bets_hint": 2,
+   "likes": [
+    "numerology",
+    "letters",
+    "mystic"
+   ]
   }
  ],
  "markets": [
@@ -3057,6 +3085,14 @@
    "Crystal Ball Cooper",
    "Lunar Lucy",
    "Stargazer Stu"
+  ],
+  "gematria": [
+   "Cipher",
+   "Digit",
+   "Tally",
+   "Abacus",
+   "Prime Pup",
+   "Count Biscuit"
   ],
   "default": [
    "Rookie Rufus",

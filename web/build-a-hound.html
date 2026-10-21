@@ -78,6 +78,9 @@
   <p class="bd-countrow"><span class="hd-fine bd-count" id="english-count-note" data-hook="english-count" aria-live="polite">0 / 600</span></p>
   <p class="bd-msg bd-msg--warn" data-hook="english-limit" role="status" hidden></p>
   <div class="bd-chips" data-hook="example-chips" role="group" aria-label="Examples to start from"></div>
+  <fieldset class="hd-fieldset bd-style"><legend>Or start from a base style</legend>
+    <div class="bd-chips" data-hook="style-picker" role="group" aria-label="Base style"></div>
+  </fieldset>
   <div class="bd-actions">
     <button type="button" class="btn btn--primary" data-hook="english-go">Read my strategy</button>
     <button type="button" class="bd-textbtn" data-hook="blank-rule">Start from a blank rule</button>
@@ -104,6 +107,14 @@
   <h2 id="s2-h">Check it</h2>
   <div class="bd-empty" data-hook="rules-empty">
     <p>Describe a strategy above, or start from a blank rule.</p>
+  </div>
+  <div class="bd-gematria" data-hook="style-gematria" hidden>
+    <h3 class="hd-h3">Gematria</h3>
+    <p data-hook="style-explain"></p>
+    <p><a class="bd-textlink" data-hook="style-house-link" href="hound.html?id=gematria">See the house Gematria Hound</a></p>
+    <div data-hook="style-sports"></div>
+    <div class="bd-globals__grid" data-hook="style-globals"></div>
+    <p class="hd-fine" data-hook="style-fixed"></p>
   </div>
   <div data-hook="rules-body" hidden>
     <div class="bd-sentences" data-hook="rule-sentences" aria-live="polite"></div>

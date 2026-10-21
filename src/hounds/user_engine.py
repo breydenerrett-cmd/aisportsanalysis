@@ -606,7 +606,8 @@ def run(date: str, hounds: Sequence[Mapping], rows: Iterable[Mapping], *,
     per_day: Counter = Counter((r["hound_id"], r["slate_date"]) for r in existing
                                if r.get("kind") == KIND_BET)
     all_games = build_games(rows, near_date=date)
-    v2_hounds = [h for h in hounds if user_spec.is_v2(h["spec"])]
+    v2_hounds = [h for h in hounds if user_spec.is_v2(h["spec"]) and not user_spec.is_gematria(h["spec"])]
+    gem_weigher = None            # the Gematria style's per-pass view of the games (src/hounds/user_gematria.py), built on first use
     if v2_hounds:
         from src.hounds import user_engine_v2 as v2
         if any(user_rules.market_kind(m) == "prop" for h in v2_hounds
@@ -628,7 +629,12 @@ def run(date: str, hounds: Sequence[Mapping], rows: Iterable[Mapping], *,
         spec = hound["spec"]
         created = _utc(hound.get("created_at"))
         candidates = []
-        if user_spec.is_v2(spec):
+        if user_spec.is_gematria(spec):
+            from src.hounds import user_gematria
+            gem_weigher = gem_weigher or user_gematria.Weigher(games)
+            candidates = user_gematria.hound_candidates(hound, spec, games, date, mode=mode, clock=clock, seen_ids=seen_ids,
+                                                        skipped=skipped, considered=considered, weigher=gem_weigher)
+        elif user_spec.is_v2(spec):
             candidates = v2.hound_candidates(hound, spec, games, facts, date, mode=mode, clock=clock,
                                              seen_ids=seen_ids, game_pk_index=game_pk_index,
                                              skipped=skipped, considered=considered)
@@ -701,6 +707,8 @@ def run(date: str, hounds: Sequence[Mapping], rows: Iterable[Mapping], *,
                             "stake_units": spec["stake_units"], "units": spec["stake_units"],
                             "spec_version": user_spec.SPEC_VERSION_V2})
             row.update(contract_fields(row, spec, mode))
+            if cand.get("row_extra"):               # the Gematria style's evidence block, rules stamp and own reason
+                row.update(cand["row_extra"])
             # The learning loop's shadow challengers stamp ``role``, ``challenger_id`` and the parent
             # (src/hounds/learning); a plain hound has no ``row_extra`` and its row is unchanged.
             for key, value in (hound.get("row_extra") or {}).items():

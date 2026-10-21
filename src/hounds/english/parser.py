@@ -200,6 +200,8 @@ class Reader:
         self.not_understood: list = []
         self.assumed: list = []
         self.globals: dict = {}
+        self.style: Optional[str] = None       # "gematria" when the words ask for the member Gematria style (read_style)
+        self.style_sports: list = []           # the dog-menu sports the words named, once a style is asked for
         self.players = set(players or ())
         self._player_rx = None
 
@@ -249,6 +251,45 @@ def _valid_price(p: int) -> bool:
 # ---------------------------------------------------------------------------
 # global patterns (whole text)
 # ---------------------------------------------------------------------------
+
+GEMATRIA_WORDS = (r"\b(?:(?:the|a|an|my|your)\s+)?(?:gematria|numerology|numerological|numerologist)"
+                  r"(?:\s+(?:style|hound|dog|system|approach|picks?|bets?|strategy|method)){0,2}\b")
+
+
+def read_style(rd: Reader, box: list) -> None:
+    """"Gematria" / "numerology" (with or without "style", "hound", "picks") asks for the member Gematria BASE STYLE: the
+    house Gematria Hound's engine on the sports named, not a rule. It used to read as the date-number condition; that
+    condition is still on the menu for a rule (and "lucky numbers" still reads as it)."""
+    def hit(m):
+        rd.style = user_spec.STYLE_GEMATRIA
+        rd.ok(m.group(0), "the Gematria style: it counts numerical coincidences for each side, with the house Gematria Hound's rules")
+
+    rd.take(box, GEMATRIA_WORDS, hit)
+    if rd.style:
+        read_style_sports(rd, box)
+
+
+# The ordinary rule reader knows MLB and NFL only; the Gematria style runs on every dog-menu sport, so when the style is asked
+# for the sport words are read here, from the dog menu's own names. Longer names first, each consumed so the rule reader does
+# not report it as an unknown word.
+_STYLE_SPORT_WORDS = (
+    (r"college football|ncaa football|ncaaf", "NCAAF"), (r"college basketball|ncaa basketball|ncaab|march madness", "NCAAB"),
+    (r"aussie rules|afl", "AFL"), (r"premier league|epl|soccer", "SOCCER"), (r"wnba", "WNBA"), (r"nba", "NBA"),
+    (r"nhl", "NHL"), (r"mlb", "MLB"), (r"nfl", "NFL"), (r"tennis", "TENNIS"), (r"cricket", "CRICKET"),
+    (r"mma|ufc", "MMA"), (r"rugby", "RUGBY"), (r"cfl|ufl", "GRIDIRON"),
+    (r"any sports?|every sports?|all sports|all the sports|any and all sports", user_spec.ANY),
+)
+
+
+def read_style_sports(rd: Reader, box: list) -> None:
+    for words, code in _STYLE_SPORT_WORDS:
+        def hit(m, code=code):
+            if code not in rd.style_sports:
+                rd.style_sports.append(code)
+            label = "every sport on the menu" if code == user_spec.ANY else user_spec.SPORT_LABELS.get(code, code)
+            rd.ok(m.group(0), label)
+        rd.take(box, r"\b(?:" + words + r")\b", hit)
+
 
 def read_globals(rd: Reader, box: list) -> None:
     g = rd.globals
@@ -568,7 +609,7 @@ def read_segment(rd: Reader, seg: Seg) -> None:
     take(r"\b(?:the\s+)?moon\s+(?:is\s+)?full\b|\bfull moon\b", lambda m: cond(m.group(0), {"id": "moon_phase", "value": "full"}))
     take(r"\b(?:the\s+)?moon\s+(?:is\s+)?new\b|\bnew moon\b", lambda m: cond(m.group(0), {"id": "moon_phase", "value": "new"}))
     take(r"\b(?:coin ?flips?|flip(?:s|ping)? a coin|heads or tails)\b", lambda m: cond(m.group(0), {"id": "coin_flip", "pct": 50}))
-    take(r"\b(?:numerology|gematria|lucky numbers?)\b", lambda m: cond(m.group(0), {"id": "numerology", "value": "closer"}))
+    take(r"\blucky numbers?\b", lambda m: cond(m.group(0), {"id": "numerology", "value": "closer"}))
 
     def letter(m):
         test = {"starts": "starts_with", "begins": "starts_with", "ends": "ends_with", "contains": "contains",
@@ -1165,6 +1206,7 @@ def parse(text: Any, *, players: Optional[Iterable[str]] = None) -> dict:
     norm = normalise(text)
 
     box = [norm]
+    read_style(rd, box)
     read_globals(rd, box)
     whole = box[0]
 
@@ -1180,6 +1222,8 @@ def parse(text: Any, *, players: Optional[Iterable[str]] = None) -> dict:
         rd.no("", f"a dog has at most {R.MAX_RULES} rules; the rest were left out")
         rules = rules[:R.MAX_RULES]
 
+    if rd.style == user_spec.STYLE_GEMATRIA:
+        return _gematria_result(rd, rules)
     draft: dict = {"version": user_spec.SPEC_VERSION_V2, "rules": rules}
     draft.update(rd.globals)
     spec = None
@@ -1191,6 +1235,41 @@ def parse(text: Any, *, players: Optional[Iterable[str]] = None) -> dict:
             for field, msg in exc.errors.items():
                 if field == "name":
                     continue
+                rd.no(field, msg)
+    return _result(spec, draft, rd.understood, rd.not_understood, rd.assumed, rules)
+
+
+_NO_MARKET_NOTE = "no market was named"
+
+
+def _gematria_result(rd: Reader, rules: list) -> dict:
+    """The Gematria style's draft: the sports the words named, the bets a day and the stake, and nothing else. A rule the words
+    also described (a side, a price, a condition) is reported as not used, because the style has one fixed rule."""
+    sports: list = list(rd.style_sports)           # a rule's own sports are not read: the sport words were read for the style
+    for rule in rules:
+        extras = [name for name, used in (
+            ("conditions", bool(rule.get("when"))), ("a side", rule.get("side") not in (None, "either")),
+            ("a price range", (rule.get("price_min", user_spec.SHORTEST_ALLOWED_PRICE), rule.get("price_max", user_spec.LONGEST_ALLOWED_PRICE))
+             != (user_spec.SHORTEST_ALLOWED_PRICE, user_spec.LONGEST_ALLOWED_PRICE)),
+            ("a line", rule.get("line_min") is not None or rule.get("line_max") is not None),
+            ("a market other than the moneyline", list(rule.get("markets") or ["moneyline"]) != ["moneyline"]),
+        ) if used]
+        if extras:
+            rd.no(" and ".join(extras), "the Gematria style has one fixed rule, so these were not used; leave the style to pick, or "
+                                         "build your own rules instead")
+    if not sports:
+        sports = list(user_spec.LEGACY_SPORTS)
+        rd.assumed.append("no sport was named, so your Gematria hound covers " + " and ".join(sports))
+    rd.assumed = [a for a in rd.assumed if _NO_MARKET_NOTE not in a and "no sport was named, so this rule" not in a]
+    draft: dict = {"version": user_spec.SPEC_VERSION_V2, "style": user_spec.STYLE_GEMATRIA, "sports": sports}
+    draft.update(rd.globals)
+    spec = None
+    try:
+        spec = user_spec.validate_spec({**draft, "name": "Draft Dog"})
+        spec["name"] = ""
+    except user_spec.SpecError as exc:
+        for field, msg in exc.errors.items():
+            if field != "name":
                 rd.no(field, msg)
     return _result(spec, draft, rd.understood, rd.not_understood, rd.assumed, rules)
 
