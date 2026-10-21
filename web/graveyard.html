@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Graveyard — LINEHOUND</title>
-<meta name="description" content="The dogs their owners took out back, newest first: a headstone, a final record and an epitaph for each. Paper bets only, not advice, 21+.">
+<meta name="description" content="The hounds their owners took out back, newest first: a headstone, a final record and an epitaph for each. Paper bets, not advice, 21+.">
 <meta property="og:title" content="Graveyard — LINEHOUND">
-<meta property="og:description" content="Dogs taken out back, with their final records. Paper only, not advice.">
+<meta property="og:description" content="Hounds taken out back, with their final records. Paper bets, not advice.">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#0B0D10">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230B0C0E'/%3E%3Cpath d='M6 6l8 0 0 9-8 4z' fill='%23FF3D57'/%3E%3Cpath d='M18 6l8 0 0 13-8-4z' fill='%23FF7A45'/%3E%3C/svg%3E">
@@ -24,6 +24,7 @@
 <link rel="stylesheet" href="css/dog-kit.css">
 <link rel="stylesheet" href="css/lh.css">
 <link rel="stylesheet" href="css/studio.css">
+<link rel="stylesheet" href="css/kennels-page.css">
 </head>
 <body class="hounds-page kn-page">
 <a class="hd-skip" href="#main-content">Skip to the graveyard</a>
@@ -46,18 +47,15 @@
   </div>
 </header>
 
-<main class="hd-wrap hd-wrap--wide" id="main-content" aria-label="Graveyard" data-hook="graveyard-app">
-<header class="kn-head">
-  <div>
-    <p class="kn-eyebrow">Kennels</p>
+<main class="hd-wrap hd-wrap--wide kp-wrap" id="main-content" aria-label="Graveyard" data-hook="graveyard-app">
+<header class="kp-head">
+  <div class="kp-head__text">
     <h1 data-hook="graveyard-title">Graveyard</h1>
-    <p class="hd-lede">Dogs their owners took out back. Each record is frozen: it stays here exactly as it ended.</p>
+    <p class="hd-lede">Hounds their owners took out back. Each record is frozen.</p>
   </div>
-  <div class="kn-head__actions">
-    <a class="lh-btn lh-btn--soft" href="kennels.html" data-hook="graveyard-kennels">All kennels</a>
-  </div>
+  <a class="btn btn--primary kp-head__cta" href="quiz.html" data-hook="graveyard-build">Create your own hound</a>
 </header>
-<p class="hd-disclosure" data-hook="paper-only-notice" role="note">Paper bets only. Not betting advice. 21+.</p>
+<p class="kp-links"><a href="hounds.html" data-hook="graveyard-board">Leaderboard</a> <span aria-hidden="true">&middot;</span> <a href="kennels.html" data-hook="graveyard-kennels">All kennels</a></p>
 
 <section data-hook="graveyard-section" aria-label="Headstones">
   <p class="hd-fine" data-hook="graveyard-count" aria-live="polite"></p>
@@ -66,7 +64,7 @@
 </main>
 
 <footer class="hd-foot" data-hook="graveyard-footer" aria-label="responsible gambling">
-  <p>Gamble responsibly. <a href="tel:1-800-426-2537" data-hook="responsible-gambling-help">1-800-GAMBLER</a></p>
+  <p data-hook="footer-legal">21+ &middot; Paper bets only, not advice &middot; Bet at your own risk &middot; Gamble responsibly. <a href="tel:1-800-426-2537" data-hook="responsible-gambling-help">1-800-GAMBLER</a></p>
   <p><a href="landing.html">About LINEHOUND</a> &middot; <a href="hounds.html">Leaderboard</a> &middot; <a href="kennels.html">All kennels</a></p>
 </footer>
 

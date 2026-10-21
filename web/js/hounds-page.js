@@ -54,6 +54,7 @@ import {
 import { ticketList } from "./hounds-tickets.js";
 import { followedIds } from "./hounds-follow.js";
 import { dogFace, poseOfHound } from "./dog-avatar.js";
+import { kennelLabel } from "./kennel-label.js";
 
 export const STREAM_POLL_MS = 60000;
 export const TICKET_PAGE_SIZE = 15;
@@ -69,9 +70,10 @@ const state = {
   category: "all",
   sortKey: DEFAULT_SORT,   // the account balance (the bankroll ruling, docs/BANKROLL.md)
   sortDir: "desc",
-  expanded: new Set(),     // model ids whose drawer is open
+  expanded: new Set(),     // hound ids whose drawer is open
   drawers: {},             // id -> { status: "loading" | "ok" | "error", items, error }
   warmOpen: false,
+  view: "compact",         // compact (rank, hound, record, bankroll, return) | full (every column), behind the "All stats" button
   stream: { page: 1, pages: 1, total: 0, items: [], payload: null, error: null, loaded: false },
   retired: null,           // null until loaded, then [HoundSummary]
 };
@@ -102,7 +104,7 @@ function warmingBox(payload) {
 
 // ---- filters ---------------------------------------------------------------------------------------
 
-/** The models the filters let through (retired ones live in their own table). */
+/** The hounds the filters let through (retired ones live in their own table). */
 export function visibleHounds(hounds, { scope, sport, category }, followed) {
   let list = (hounds || []).filter((x) => x && x.status !== "retired");
   if (scope === "mine") {
@@ -136,7 +138,12 @@ function renderSeasonBar() {
       (k) => { pickSeason(k); }, "data-season");
   }
   const line = q("season-line");
-  if (line) line.textContent = seasonLine(state.seasonMeta, state.season);
+  if (line) line.textContent = houndWords(seasonLine(state.seasonMeta, state.season));
+}
+
+/** The season line is the shared module's sentence; this page says hound where it says model. */
+function houndWords(text) {
+  return String(text || "").replace(/\bModels\b/g, "Hounds").replace(/\bmodels\b/g, "hounds").replace(/\bmodel\b/g, "hound");
 }
 
 function pickSeason(id) {
@@ -155,8 +162,8 @@ function renderFilters() {
   const live = state.hounds.filter((x) => x.status !== "retired");
   const mine = followedIds();
   const count = (scope) => visibleHounds(live, { scope, sport: "all", category: "all" }, mine).length;
-  segButtons(bar, [["all", `All models (${count("all")})`], ["mine", `My models (${count("mine")})`],
-    ["house", `House (${count("house")})`], ["user", `Builders' (${count("user")})`]],
+  segButtons(bar, [["all", `All hounds (${count("all")})`], ["mine", `Following (${count("mine")})`],
+    ["house", `LINEHOUND kennel (${count("house")})`], ["user", `Members' kennels (${count("user")})`]],
     state.scope, (k) => { state.scope = k; renderAll(); }, "data-filter");
 
   const sportBar = q("hounds-sports");
@@ -205,7 +212,7 @@ function headRow() {
       title: col.hint || undefined }, [
       h("button", { type: "button", class: "hd-sort", "data-sort": col.key,
         "aria-label": `Sort by ${col.label}`, on: { click: () => setSort(col.key) } },
-      `${col.label}${sortArrow(col.key)}`)])),
+      `${col.key === "model" ? "Hound" : col.label}${sortArrow(col.key)}`)])),
   ]);
 }
 
@@ -250,17 +257,21 @@ function modelCell(hound, rank, open) {
   const mine = followedIds().has(String(hound.id));
   const sports = sportsOf(hound).map(sportLabel).join(", ");
   const where = [sports, marketsText(hound)].filter(Boolean).join(" · ");
-  const kennel = isMemberDog(hound) ? kennelHref(hound.owner_display) : "";
+  const kennel = kennelLabel(hound);
   return h("td", { class: "hd-col-model" }, [h("div", { class: "hd-modelcell" }, [
     h("button", { type: "button", class: "hd-expand", "data-hook": "expand", "aria-expanded": open ? "true" : "false",
-      "aria-label": `${open ? "Hide" : "Show"} ${hound.name || "this model"}'s latest tickets`,
+      "aria-label": `${open ? "Hide" : "Show"} ${hound.name || "this hound"}'s latest tickets`,
       on: { click: () => toggleDrawer(hound.id) } }, [h("span", { class: "hd-chev", "aria-hidden": "true" })]),
-    h("span", { class: "hd-dogface", "data-hook": "row-dog" }, [dogFace(hound, { size: 36, pose: poseOfHound(hound) })]),
+    h("span", { class: "hd-dogface", "data-hook": "row-dog" }, [dogFace(hound, { size: 44, pose: poseOfHound(hound) })]),
     h("span", { class: "hd-modelid" }, [
       h("a", { class: "hd-modelname", href: houndHref(hound.id), text: hound.name || NOT_REPORTED }),
       mine ? h("span", { class: "hd-tag hd-tag--follow", "data-hook": "row-follow", text: "Following" }) : null,
-      h("small", { class: "hd-aux" }, [where || NA, kennel ? " · by " : null,
-        kennel ? h("a", { class: "hd-kennellink", href: kennel, "data-hook": "row-kennel", text: kennelName(hound.owner_display) }) : null]),
+      // whose kennel it lives in: a member's own, or the one house kennel (owner ruling 2026-10-20)
+      h("small", { class: "hd-aux" }, [
+        kennel.href ? h("a", { class: `hd-kennellink${kennel.house ? " hd-kennellink--house" : ""}`, href: kennel.href, "data-hook": "row-kennel",
+          "data-house": kennel.house ? "1" : "0", text: kennel.text })
+          : h("span", { "data-hook": "row-kennel", text: kennel.text }),
+        where ? ` · ${where}` : null]),
     ]),
   ])]);
 }
@@ -272,7 +283,7 @@ function modelCell(hound, rank, open) {
  */
 function moneyCell(hound, cls, hook, text, ret, small, tagged = false) {
   const tone = ret === null ? "none" : ret > 0 ? "up" : ret < 0 ? "down" : "flat";
-  // A model settled at its recorded price (its average-price board is incomplete) says so right under the figure.
+  // A hound settled at its recorded price (its average-price board is incomplete) says so right under the figure.
   const tag = tagged && basisTagText(hound)
     ? h("small", { class: "hd-basis", "data-hook": "basis-tag", title: RECORDED_TITLE, text: basisTagText(hound) }) : null;
   return small
@@ -291,14 +302,16 @@ function tableRow(hound, rank, qual) {
   const open = state.expanded.has(String(hound.id));
   const tone = (n) => (n === null ? "none" : n > 0 ? "up" : n < 0 ? "down" : "flat");
   const streak = streakText(hound);
-  const tr = h("tr", { class: "hd-tr", "data-hound": hound.id, "data-kind": hound.kind || "", "data-category": categoryOf(hound),
+  const tr = h("tr", { class: qual ? "hd-tr hd-tr--qual" : "hd-tr", "data-hound": hound.id, "data-kind": hound.kind || "", "data-category": categoryOf(hound),
     "data-open": open ? "true" : "false" }, [
     h("td", { class: "hd-col-rank hd-num", text: qual ? "-" : String(rank) }),
     modelCell(hound, rank, open),
     h("td", { class: "hd-col-type" }, [h("span", { class: "hd-typechip", "data-category": categoryOf(hound), text: typeText(hound) })]),
     h("td", { class: "hd-col-record hd-num", "data-hook": "row-record" }, [
       h("strong", { text: recordText(hound) }),
-      streak ? h("small", { class: "hd-aux", text: streak }) : null]),
+      // the sample beside the record, always (it is the compact view's only count); the streak belongs to "All stats"
+      h("small", { class: "hd-aux lb-bets", "data-hook": "row-bets-inline", text: `${bets} ${bets === 1 ? "bet" : "bets"}` }),
+      streak ? h("small", { class: "hd-aux lb-streak", text: streak }) : null]),
     moneyCell(hound, "hd-col-bankroll", "row-bankroll", fmtUsd(bankrollNow(hound)), ret, small, true),
     moneyCell(hound, "hd-col-return", "row-return", fmtPct(ret), ret, small),
     moneyCell(hound, "hd-col-d7", "row-d7", fmtPct(d7), d7, small),
@@ -325,7 +338,7 @@ function drawerRow(hound) {
   if (!info || info.status === "loading") {
     box.appendChild(h("p", { class: "hd-muted", text: "Loading the last tickets..." }));
   } else if (info.status === "error") {
-    const e = describeError(info.error, "this model's tickets");
+    const e = describeError(info.error, "this hound's tickets");
     box.appendChild(stateBox(e.kind, e.text, () => { loadDrawer(id, true); }));
   } else if (info.items.length === 0) {
     box.appendChild(h("p", { class: "hd-muted", "data-hook": "drawer-empty", text: "No tickets recorded yet." }));
@@ -365,7 +378,7 @@ async function loadDrawer(id, force) {
   renderTable();
 }
 
-/** What a warming model shows instead of units and ROI: its record so far, how far it is from a rank, its open tickets. */
+/** What a warming hound shows instead of units and ROI: its record so far, how far it is from a rank, its open tickets. */
 export function warmingNote(hound, min) {
   const settled = settledOf(hound);
   const open = openBetsOf(hound);
@@ -430,17 +443,17 @@ function qualifyingSection(warming) {
     if (state.expanded.has(String(hound.id))) tbody.appendChild(drawerRow(hound));
   }
   const table = h("table", { class: "hd-table hd-table--board", "data-hook": "qualifying-table" }, [
-    h("caption", { class: "hd-sr-only", text: "Qualifying round: models short of the ranking bar, with their progress." }),
+    h("caption", { class: "hd-sr-only", text: "Qualifying round: hounds short of the ranking bar, with their progress." }),
     h("thead", {}, [h("tr", {}, [h("th", { scope: "col", class: "hd-col-rank", text: "#" }),
       ...COLUMNS.map((col) => h("th", { scope: "col", class: `hd-col-${col.key}${col.numeric ? " hd-th--num" : ""}`,
-        title: col.hint || undefined, text: col.label }))])]),
+        title: col.hint || undefined, text: col.key === "model" ? "Hound" : col.label }))])]),
     tbody]);
   return h("div", { class: "hd-qual", "data-hook": "qualifying" }, [
     h("h3", { class: "hd-qual__title", "data-hook": "qualifying-title",
-      text: `${label} qualifying: a model needs ${min} settled bets to be ranked` }),
+      text: `${label} qualifying: a hound needs ${min} settled bets to be ranked` }),
     shown.length ? h("div", { class: "hd-tablewrap", tabindex: "0", role: "region", "aria-label": "Qualifying round. Scrolls sideways on a phone." }, [table]) : null,
     rest > 0 ? h("p", { class: "hd-fine", "data-hook": "qualifying-rest",
-      text: `${rest} more ${rest === 1 ? "model has" : "models have"} no settled bet yet.` }) : null,
+      text: `${rest} more ${rest === 1 ? "hound has" : "hounds have"} no settled bet yet.` }) : null,
   ]);
 }
 
@@ -455,7 +468,7 @@ function podium(active, warming, min) {
   const picks = ranked.concat(filler);
   if (!picks.length) return null;
   const title = !filler.length ? "Leading now" : ranked.length ? "Leading, with the best of the qualifying round" : "Leading the qualifying round";
-  const sub = filler.length ? `A model is ranked at ${min} settled bets. These are the closest.` : "Ranked by paper bankroll.";
+  const sub = filler.length ? `A hound is ranked at ${min} settled bets. These are the closest.` : "Ranked by paper bankroll.";
   return h("section", { class: "lb-podium", "data-hook": "podium", "aria-label": title }, [
     h("div", { class: "lb-podium__head" }, [h("h3", { class: "lb-podium__title", text: title }), h("p", { class: "hd-fine", text: sub })]),
     h("ol", { class: "lb-podium__row" }, picks.map((hound, i) => {
@@ -463,7 +476,7 @@ function podium(active, warming, min) {
       const ret = returnPctOf(hound);
       const small = !isRanked || isSmallSample(hound);
       return h("li", { class: `lb-podium__card${i === 0 ? " lb-podium__card--lead" : ""}`, "data-hound": hound.id, style: `--r:${i}` }, [
-        h("a", { class: "lb-podium__face", href: houndHref(hound.id), "aria-label": `${hound.name || "Model"}'s page` }, [
+        h("a", { class: "lb-podium__face", href: houndHref(hound.id), "aria-label": `${hound.name || "Hound"}'s page` }, [
           dogFace(hound, { size: i === 0 ? 108 : 88, pose: poseOfHound(hound) })]),
         h("span", { class: "lb-podium__rank", text: isRanked ? `#${i + 1}` : progressText(hound, min) }),
         h("a", { class: "lb-podium__name", href: houndHref(hound.id), text: hound.name || NOT_REPORTED }),
@@ -481,17 +494,17 @@ function renderTable() {
   if (!host) return;
   clearNode(host);
   const all = scoped();
-  // Ranked models only are sorted and numbered; the rest wait in "Warming up" whatever column is sorted.
+  // Ranked hounds only are sorted and numbered; the rest wait in "Warming up" whatever column is sorted.
   const { active, warming } = splitRanked(all, minRanked(state.seasonMeta));
   const rows = sortHounds(active, state.sortKey, state.sortDir);
   const count = q("hounds-count");
-  if (count) count.textContent = `${all.length} ${all.length === 1 ? "model" : "models"}, ${active.length} ranked`;
+  if (count) count.textContent = `${all.length} ${all.length === 1 ? "hound" : "hounds"}, ${active.length} ranked`;
   if (all.length === 0) {
     host.appendChild(h("div", { class: "hd-empty", "data-hook": "board-empty" }, [
-      h("p", { text: state.hounds.length === 0 ? "No models are running yet. The first graded bet puts a model on this table."
-        : state.scope === "mine" ? "You are not following any models yet. Open a model and press Follow."
-        : "No models match these filters." }),
-      h("a", { class: "btn btn--primary", href: "build-a-hound.html", text: "Build a model" })]));
+      h("p", { text: state.hounds.length === 0 ? "No hounds are running yet. The first graded bet puts a hound on this board."
+        : state.scope === "mine" ? "You are not following any hounds yet. Open a hound and press Follow."
+        : "No hounds match these filters." }),
+      h("a", { class: "btn btn--primary", href: "quiz.html", text: "Create your own hound" })]));
     return;
   }
   // Fewer than 3 ranked: the QUALIFYING ROUND leads (expanded, with progress), the ranked table follows. From 3
@@ -504,7 +517,7 @@ function renderTable() {
   // it said nothing twice, so it is not drawn; one line says why nobody is numbered and the table appears the moment one model is.
   if (qualifying && rows.length === 0) {
     host.appendChild(h("p", { class: "hd-fine hd-qual__none", "data-hook": "no-graded",
-      text: `No model has ${minRanked(state.seasonMeta)} settled bets in this view yet, so none is ranked. The qualifying round above shows who is closest.` }));
+      text: `No hound has ${minRanked(state.seasonMeta)} settled bets in this view yet, so none is ranked. The qualifying round above shows who is closest.` }));
     return;
   }
   const thead = h("thead", {}, [headRow()]);
@@ -514,25 +527,45 @@ function renderTable() {
     if (state.expanded.has(String(hound.id))) tbody.appendChild(drawerRow(hound));
   });
   const table = h("table", { class: "hd-table hd-table--board", "data-hook": "leaderboard-table" }, [
-    h("caption", { class: "hd-sr-only", text: "Model leaderboard. Every model is a paper account that starts with the same $1,000; one unit is $10. Click a column to sort." }),
+    h("caption", { class: "hd-sr-only", text: "Leaderboard. Every hound is a paper account that starts with the same $1,000. Click a column to sort." }),
     thead,
     rows.length ? tbody : h("tbody", {}, [h("tr", {}, [h("td", { colspan: COLUMNS.length + 1, class: "hd-muted",
-      "data-hook": "no-graded", text: `No model has ${minRanked(state.seasonMeta)} settled bets in this view yet, so none is ranked.${
+      "data-hook": "no-graded", text: `No hound has ${minRanked(state.seasonMeta)} settled bets in this view yet, so none is ranked.${
         qualifying ? " The qualifying round above shows who is closest."
-          : warming.length ? ` ${warming.length} ${warming.length === 1 ? "model is" : "models are"} warming up below.` : ""}` })])]),
+          : warming.length ? ` ${warming.length} ${warming.length === 1 ? "hound is" : "hounds are"} warming up below.` : ""}` })])]),
   ]);
   if (warming.length && !qualifying) table.appendChild(warmingBody(warming));
   if (qualifying) host.appendChild(h("h3", { class: "hd-qual__ranked", "data-hook": "ranked-title", text: `Ranked (${active.length})` }));
   host.appendChild(h("div", { class: "hd-tablewrap", tabindex: "0", role: "region",
-    "aria-label": "Model leaderboard. Scrolls sideways on a phone." }, [table]));
+    "aria-label": "Leaderboard. All stats scroll sideways on a phone." }, [table]));
 }
 
 // ---- data freshness --------------------------------------------------------------------------------
 
-/** The one line that says every model starts from the same money, in the server's own words (`bankroll_rules.label`). */
+/** The one short line next to the money: every hound starts from the same paper bankroll (from the server's `bankroll_rules`), and it is paper. */
 function renderBankrollLine() {
   const line = q("bankroll-line");
-  if (line && state.payload) line.textContent = bankrollRules(state.payload).label;
+  if (line && state.payload) line.textContent = `Every hound starts with the same ${fmtUsd(bankrollRules(state.payload).start)} paper bankroll. Paper money, not advice.`;
+}
+
+/** The compact list (rank, hound, record, bankroll, return) or every column. The choice lives on the panel so CSS draws it. */
+function renderViewToggle() {
+  const panel = q("hounds-race");
+  const btn = q("view-toggle");
+  if (panel) panel.setAttribute("data-view", state.view);
+  if (btn) {
+    btn.setAttribute("aria-pressed", state.view === "full" ? "true" : "false");
+    btn.textContent = state.view === "full" ? "Fewer stats" : "All stats";
+  }
+}
+
+function bindViewToggle() {
+  const btn = q("view-toggle");
+  if (btn && !btn.getAttribute("data-bound")) {
+    btn.setAttribute("data-bound", "1");
+    btn.addEventListener("click", () => { state.view = state.view === "full" ? "compact" : "full"; renderViewToggle(); });
+  }
+  renderViewToggle();
 }
 
 function renderMeta() {
@@ -549,6 +582,7 @@ function renderMeta() {
 }
 
 function renderAll() {
+  bindViewToggle();
   renderSeasonBar();
   renderFilters();
   renderTable();
@@ -578,7 +612,7 @@ function renderStream() {
   const tickets = onlyTickets(s.items);
   if (tickets.length === 0) {
     box.appendChild(h("p", { class: "hd-muted", "data-hook": "stream-empty",
-      text: "No tickets recorded yet. When a model places a paper bet it appears here, before the game." }));
+      text: "No tickets recorded yet. When a hound places a paper bet it appears here, before the game." }));
     return;
   }
   box.appendChild(ticketList(tickets, { showModel: true, hook: "stream-list" }));
@@ -625,7 +659,7 @@ export async function loadStream(page = state.stream.page) {
   renderStream();
 }
 
-// ---- retired models --------------------------------------------------------------------------------
+// ---- retired hounds --------------------------------------------------------------------------------
 
 function renderRetired() {
   const box = q("hounds-graveyard");
@@ -634,7 +668,7 @@ function renderRetired() {
   const list = state.retired;
   if (list === null) return;
   if (list.length === 0) {
-    box.appendChild(h("p", { class: "hd-muted", "data-hook": "grave-empty", text: "No model has been retired." }));
+    box.appendChild(h("p", { class: "hd-muted", "data-hook": "grave-empty", text: "No hound has been retired." }));
     return;
   }
   const rows = list.map((hound) => {
@@ -653,10 +687,10 @@ function renderRetired() {
       h("td", { class: "hd-num", text: retired.date ? (shortDate(retired.date) || fmtWhen(retired.date)) : NA }),
     ]);
   });
-  box.appendChild(h("div", { class: "hd-tablewrap", tabindex: "0", role: "region", "aria-label": "Retired models" }, [
+  box.appendChild(h("div", { class: "hd-tablewrap", tabindex: "0", role: "region", "aria-label": "Retired hounds" }, [
     h("table", { class: "hd-table", "data-hook": "grave-list" }, [
-      h("caption", { class: "hd-sr-only", text: "Retired models and their final records" }),
-      h("thead", {}, [h("tr", {}, ["Model", "Final record", "Final bankroll", "Reason", "Date"].map((t) => h("th", { scope: "col", text: t })))]),
+      h("caption", { class: "hd-sr-only", text: "Retired hounds and their final records" }),
+      h("thead", {}, [h("tr", {}, ["Hound", "Final record", "Final bankroll", "Reason", "Date"].map((t) => h("th", { scope: "col", text: t })))]),
       h("tbody", {}, rows)])]));
 }
 
@@ -675,7 +709,7 @@ export async function loadGraveyard() {
     state.retired = Array.isArray(data && data.hounds) ? data.hounds : [];
   } catch (err) {
     clearNode(box);
-    const e = describeError(err, "the retired models");
+    const e = describeError(err, "the retired hounds");
     box.appendChild(stateBox(e.kind, e.text, () => { loadGraveyard(); }));
     return;
   }
@@ -729,7 +763,22 @@ export async function boot() {
   await Promise.all([loadBoard(), loadStream(1), loadGraveyard()]);
 }
 
+/** `?tab=kennels` (the old Kennels view of this page) goes to the Kennels page; `?scope=house|user|mine` opens a filter. */
+function readAddress() {
+  try {
+    const params = new URLSearchParams(window.location.search || "");
+    if (params.get("tab") === "kennels" && window.location && typeof window.location.replace === "function") {
+      window.location.replace("kennels.html");
+      return false;
+    }
+    const scope = params.get("scope");
+    if (["all", "mine", "house", "user"].includes(scope)) state.scope = scope;
+  } catch (err) { /* a fake window: the board opens on everything */ }
+  return true;
+}
+
 function main() {
+  if (!readAddress()) return;
   boot();
   const poller = createPoller({ run: () => { if (state.stream.page === 1) loadStream(1); }, intervalMs: STREAM_POLL_MS });
   poller.start();

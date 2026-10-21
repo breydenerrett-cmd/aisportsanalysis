@@ -93,7 +93,7 @@ class TheRulebook(DogPageCase):
             q("dials", "[data-hook='dials-list'] li", "texts"), q("last", "[data-hook='dials-last-changed']"),
             q("rules", "[data-hook='rule-text']", "count")])
         f = out["final"]
-        self.assertEqual(f["title"], "Rule")
+        self.assertEqual(f["title"], "Its rule")  # owner ruling 2026-10-20 kennel-first
         self.assertEqual(f["rules"], 1)
         self.assertEqual(f["trigger"], f"This model bets when {TRIGGER}.")
         self.assertEqual(f["dials"], ["Steam needed: 3 points", "Gap over the market needed: 2 points"])
@@ -224,7 +224,7 @@ class FollowShareAndCard(DogPageCase):
                                                                                   q("status", "[data-hook='action-status']")])])
         self.assertEqual(json.loads(out["storedAfter"][FOLLOW_KEY]), ["closer"])
         self.assertEqual(out["captures"]["on"]["btn"], "Following")
-        self.assertIn("My models", out["captures"]["on"]["status"])
+        self.assertIn("Following", out["captures"]["on"]["status"])  # owner ruling 2026-10-20 kennel-first
         again = self.page([], rulebook(), stored={FOLLOW_KEY: json.dumps(["closer", "rusty"])},
                           queries=[q("btn", "[data-hook='follow-btn']"),
                                    q("pressed", "[data-hook='follow-btn']", "attr", attr="aria-pressed")],

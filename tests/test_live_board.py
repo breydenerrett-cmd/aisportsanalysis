@@ -6,7 +6,7 @@ the 1-800-GAMBLER link and "paper only / bet at your own risk" and is styled by 
 node against the fake DOM of tests/hounds_web_harness.mjs, with the fixture tests/fixtures/sports_now.json standing in for
 GET /sports/now (the contract the backend is building): the fixture renders, LIVE comes before the next 24 hours, times are in the
 viewer's zone, an empty sport says when the next game is, the board refreshes every 60 seconds and keeps its last board when a
-refresh fails, and "Send a dog" asks a signed-out visitor to sign in and runs the existing out-back route for a member.
+refresh fails, and "Send a hound" asks a signed-out visitor to sign in and runs the existing out-back route for a member.
 """
 from __future__ import annotations
 
@@ -110,8 +110,9 @@ class TheLivePageIsPartOfTheSite(unittest.TestCase):
         self.assertRegex(foot.group(1), r'<a href="tel:1-800-426-2537"[^>]*>1-800-GAMBLER</a>')
 
     def test_the_paper_only_line_is_static_text_near_the_top(self):
+        # compliance is said once, in the footer (above); next to the prices there is one short line (owner ruling 2026-10-20 kennel-first)
         main = HTML.split("<main")[1]
-        self.assertRegex(main.split("</header>")[1][:600], r"Paper bets only\. Not betting advice\. 21\+\. Bet at your own risk\.")
+        self.assertRegex(main.split("</header>")[1][:600], r"Best price any book quoted when the board was read\. In-play prices move fast\. Paper picks only\.")
 
     def test_the_footer_is_styled_by_a_stylesheet_the_page_loads(self):
         links = re.findall(r'<link[^>]+rel="stylesheet"[^>]+href="([^"]+)"', HTML)
@@ -182,7 +183,7 @@ class TheBoardRenders(unittest.TestCase):
         self.assertIn("Started 3:45 PM", f["row"])                                       # 22:45Z in Los Angeles
         self.assertEqual(f["when"], "6:30 PM · in 2 h")                                  # 01:30Z the next day is 6:30 PM PDT today
         self.assertEqual(f["strwhen"], "0-0, 31'")                                       # a string score is shown as the server wrote it
-        self.assertIn("Send a dog", f["row"])
+        self.assertIn("Send a hound", f["row"])  # owner ruling 2026-10-20 kennel-first
 
     def test_the_same_board_in_another_zone_shows_that_zones_clock(self):
         out = board(tz="Europe/London", queries=[q("when", "[data-event='soc-4'] [data-hook='live-when']")])
@@ -310,7 +311,7 @@ class SendADog(unittest.TestCase):
             q("tray", "[data-event='soc-4'] [data-hook='live-tray']"), q("href", "[data-event='soc-4'] [data-hook='signin-prompt'] a", "attr", attr="href"),
             q("expanded", self.SEND.format("soc-4"), "attr", attr="aria-expanded")])
         f = out["final"]
-        self.assertIn("Sign in to send one of your dogs at Portland Timbers at Seattle Sounders FC", f["tray"])
+        self.assertIn("Sign in to send one of your hounds at Portland Timbers at Seattle Sounders FC", f["tray"])
         self.assertEqual(f["href"], "index.html#/signin")
         self.assertEqual(f["expanded"], "true")
         self.assertFalse([g for g in out["gets"] if "/hounds/" in g])
@@ -326,15 +327,15 @@ class SendADog(unittest.TestCase):
         out = board(routes, stored={TOKEN_KEY: "tok"}, actions=[dict(do="click", sel=self.SEND.format("soc-4"), wait=100)], queries=[
             q("dogs", hook("live-dog"), "texts"), q("ask", ".lv-tray__ask")])
         self.assertEqual(out["final"]["dogs"], ["Plus Money Pete Running"])
-        self.assertEqual(out["final"]["ask"], "Send which dog at Portland Timbers at Seattle Sounders FC?")
+        self.assertEqual(out["final"]["ask"], "Send which hound at Portland Timbers at Seattle Sounders FC?")
         self.assertEqual(out["posts"], [])                                                # choosing is not firing
 
     def test_a_member_with_no_dog_is_pointed_at_the_builder(self):
         routes = {"/hounds/camp/mine": [200, {"dogs": [], "count": 0}]}
         out = board(routes, stored={TOKEN_KEY: "tok"}, actions=[dict(do="click", sel=self.SEND.format("soc-4"), wait=100)], queries=[
             q("none", hook("live-no-dogs")), q("href", "[data-hook='live-no-dogs'] a", "attr", attr="href")])
-        self.assertIn("no running dog", out["final"]["none"])
-        self.assertEqual(out["final"]["href"], "build-a-hound.html")
+        self.assertIn("no running hound", out["final"]["none"])
+        self.assertEqual(out["final"]["href"], "quiz.html")
 
     def test_sending_a_dog_calls_the_existing_out_back_route_and_reports_its_pick_on_that_game(self):
         routes = {"/hounds/camp/mine": [200, {"dogs": [DOG], "count": 1}], "POST /hounds/u-1/fire": [200, fire_answer()]}

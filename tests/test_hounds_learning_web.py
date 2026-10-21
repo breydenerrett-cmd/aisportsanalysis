@@ -129,7 +129,7 @@ class StaticFacts(unittest.TestCase):
         html = (WEB / "hound.html").read_text(encoding="utf-8")
         self.assertIn('data-hook="hound-lineage-section"', html)
         self.assertIn("Versions", html)
-        self.assertIn("A model is never edited", html)
+        self.assertIn("A hound is never edited", html)        # owner ruling 2026-10-20 kennel-first: hound, not model
 
 
 @unittest.skipUnless(HAS_NODE, "node not installed")

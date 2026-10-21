@@ -48,6 +48,9 @@ for (const p of paths) {
     let lastBottom = 0;
     for (const el of document.body.querySelectorAll("*")) {
       if (bar && bar.contains(el)) continue;
+      // what a shut <details> holds is not on the page (kennel-first pages fold their detail behind a tap): only its summary counts
+      const shut = el.closest("details:not([open])");
+      if (shut && shut !== el && !el.closest("summary")) continue;
       const cs = getComputedStyle(el);
       if (cs.position === "fixed" || cs.display === "none" || cs.visibility === "hidden") continue;
       // content inside a CLOSED <details> is laid out but never painted (a hidden box can hang below the footer): it is not "the last thing on the page"

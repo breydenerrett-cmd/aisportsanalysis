@@ -184,7 +184,7 @@ class TheLeaderboardTable(unittest.TestCase):
         self.assertEqual(out["final"]["sorts"], ["model", "type", "record", "bankroll", "return", "d7", "h24", "units", "bets",
                                                  "price", "clv", "last10", "status"])
         heads = [re.sub(r"\s*[▲▼]", "", t) for t in out["final"]["heads"]]
-        self.assertEqual(heads, ["#", "Model", "Type", "Record", "Bankroll", "Return", "7d", "24h", "Units", "Bets", "Avg price",
+        self.assertEqual(heads, ["#", "Hound", "Type", "Record", "Bankroll", "Return", "7d", "24h", "Units", "Bets", "Avg price",
                                  "CLV", "Last 10", "Status"])
         # the default sort is the bankroll, high to low, and the header says so; there is no ROI column any more
         self.assertNotIn("ROI", heads)
@@ -305,7 +305,7 @@ class TheLeaderboardFilters(unittest.TestCase):
                        actions=[dict(do="click", sel="[data-filter='user']", label="user", capture=[
                            q("rows", self.ROW, "count"), q("qual", "[data-hook='qualifying-list'] .hd-tr", "attrs", attr="data-hound"),
                            q("empty", "[data-hook='board-empty']", "count")])])
-        self.assertEqual(out["captures"]["initial"]["scope"], ["All models (15)", "My models (0)", "House (14)", "Builders' (1)"])
+        self.assertEqual(out["captures"]["initial"]["scope"], ["All hounds (15)", "Following (0)", "LINEHOUND kennel (14)", "Members' kennels (1)"])  # owner ruling 2026-10-20 kennel-first
         user = out["captures"]["user"]
         self.assertEqual(user["rows"], 0)
         # fewer than three ranked, so the qualifying round (not the collapsed group) holds the only builder model:
@@ -330,7 +330,7 @@ class TheLeaderboardFilters(unittest.TestCase):
                        actions=[dict(do="click", sel="[data-filter='mine']", label="mine", capture=[
                            q("ids", self.ROW, "attrs", attr="data-hound"),
                            q("qual", "[data-hook='qualifying-list'] .hd-tr", "attrs", attr="data-hound")])])
-        self.assertEqual(out["captures"]["initial"]["scope"][1], "My models (2)")
+        self.assertEqual(out["captures"]["initial"]["scope"][1], "Following (2)")  # owner ruling 2026-10-20 kennel-first
         self.assertEqual(out["captures"]["initial"]["tag"], "Following")
         self.assertEqual(out["captures"]["mine"]["ids"], ["closer"])
         self.assertEqual(out["captures"]["mine"]["qual"], ["rusty"])           # one ranked: the round lists the other, by its open tickets
@@ -338,7 +338,7 @@ class TheLeaderboardFilters(unittest.TestCase):
     def test_nobody_followed_says_how_to_follow(self):
         out = run_page("hounds", routes=routes(), actions=[dict(do="click", sel="[data-filter='mine']", label="mine", capture=[
             q("empty", "[data-hook='board-empty']"), q("cta", "[data-hook='board-empty'] a", "attr", attr="href")])])
-        self.assertIn("You are not following any models yet. Open a model and press Follow.", out["captures"]["mine"]["empty"])
+        self.assertIn("You are not following any hounds yet. Open a hound and press Follow.", out["captures"]["mine"]["empty"])  # owner ruling 2026-10-20 kennel-first
 
     def test_storage_that_throws_leaves_the_leaderboard_working(self):
         for mode in ("methods", "accessor"):
@@ -368,7 +368,7 @@ class TheDrawer(unittest.TestCase):
     def test_a_failed_drawer_says_so_and_offers_a_retry_and_the_table_stays(self):
         out = run_page("hounds", routes=routes(**{"/hounds/closer/bets": [500, {}]}), actions=[dict(do="click", sel=".hd-tr[data-hound='closer'] [data-hook='expand']", label="open", wait=250, capture=[
             q("state", ".hd-drawer [data-hook='section-state']"), q("rows", "[data-hook='hounds-list'] .hd-tr", "count")])])
-        self.assertIn("this model's tickets", out["captures"]["open"]["state"].lower())
+        self.assertIn("this hound's tickets", out["captures"]["open"]["state"].lower())  # owner ruling 2026-10-20 kennel-first
         self.assertEqual(out["captures"]["open"]["rows"], RANKED_N)
 
     def test_clicking_a_row_anywhere_toggles_it_too(self):
@@ -461,7 +461,7 @@ class TheRetiredTable(unittest.TestCase):
             q("names", "[data-hook='grave-list'] .hd-modelname", "texts"),
             q("rec", "[data-hook='grave-list'] tbody tr", "texts"), q("cause", "[data-hook='grave-cause']", "texts"),
             q("heads", "[data-hook='grave-list'] thead th", "texts")])
-        self.assertEqual(out["final"]["heads"], ["Model", "Final record", "Final bankroll", "Reason", "Date"])
+        self.assertEqual(out["final"]["heads"], ["Hound", "Final record", "Final bankroll", "Reason", "Date"])  # owner ruling 2026-10-20 kennel-first
         self.assertEqual(out["final"]["names"], ["Old Faithful", "Slowpoke"])
         self.assertEqual(out["final"]["cause"], ["Retired by the owner.", "Went more than 25 units under."])
         self.assertIn("205-263 (468 bets)", out["final"]["rec"][1])
@@ -473,7 +473,7 @@ class TheRetiredTable(unittest.TestCase):
 
     def test_nobody_retired_says_so(self):
         out = run_page("hounds", routes=routes(**{"/hounds/graveyard": [200, {"hounds": []}]}), queries=[q("e", "[data-hook='grave-empty']")])
-        self.assertEqual(out["final"]["e"], "No model has been retired.")
+        self.assertEqual(out["final"]["e"], "No hound has been retired.")  # owner ruling 2026-10-20 kennel-first
 
 
 @unittest.skipUnless(HAS_NODE, "node not installed")
@@ -509,19 +509,19 @@ class TheLeaderboardIsHonestWhenThereIsNothingOrNothingAnswers(unittest.TestCase
              "/hounds/graveyard": [200, {"hounds": []}]}
         out = run_page("hounds", routes=r, queries=[q("empty", "[data-hook='board-empty']"),
                                                     q("cta", "[data-hook='board-empty'] a", "attr", attr="href")])
-        self.assertIn("No models are running yet", out["final"]["empty"])
-        self.assertEqual(out["final"]["cta"], "build-a-hound.html")
+        self.assertIn("No hounds are running yet", out["final"]["empty"])
+        self.assertEqual(out["final"]["cta"], "quiz.html")  # owner ruling 2026-10-20 kennel-first
 
     def test_missing_endpoints_say_not_switched_on_in_each_section_and_the_page_still_stands(self):
         out = run_page("hounds", routes={}, queries=[
             q("kinds", "[data-hook='section-state']", "attrs", attr="data-kind"), q("board", "[data-hook='hounds-table']"),
             q("stream", "[data-hook='hounds-stream']"), q("grave", "[data-hook='hounds-graveyard']"),
-            q("paper", "[data-hook='paper-only-notice']"), q("cta", "[data-hook='build-cta']", "attr", attr="href")])
+            q("paper", "[data-hook='footer-legal']"), q("cta", "[data-hook='build-cta']", "attr", attr="href")])
         self.assertEqual(out["final"]["kinds"], ["missing", "missing", "missing"])
         for key in ("board", "stream", "grave"):
             self.assertIn("not switched on yet", out["final"][key], key)
-        self.assertIn("Paper bets only. Not betting advice. 21+.", out["final"]["paper"])
-        self.assertEqual(out["final"]["cta"], "build-a-hound.html")
+        self.assertIn("Paper bets only, not advice", out["final"]["paper"])      # compliance once, in the footer (owner ruling 2026-10-20 kennel-first)
+        self.assertEqual(out["final"]["cta"], "quiz.html")
         self.assertNotIn("0.00", out["text"])                                      # nothing was drawn from nothing
 
     def test_a_down_server_is_not_reported_as_an_empty_leaderboard_and_offers_a_retry(self):
@@ -625,23 +625,23 @@ class TheModelPage(unittest.TestCase):
             q("name", "[data-hook='hound-name']"), q("mono", ".hd-modelhead .hd-mono"), q("dog", ".hd-modelhead svg.dk-badge", "count"),
             q("status", "[data-hook='hound-status']"),
             q("chips", ".hd-chips"), q("catch", "[data-hook='catchphrase']"), q("bio", "[data-hook='bio']", "count"),
-            q("order", "h2", "texts")])
+            q("order", "h2", "texts"), q("kennel", "[data-hook='hound-kennel']")])
         f = out["final"]
         # the header wears the model's dog (the rig), not an initials tile (design system v2, 2026-10-19)
         self.assertEqual((f["name"], f["mono"], f["dog"]), ("Closer", None, 1))
         self.assertEqual(f["status"], "Beating the close")
         self.assertIn("Stats", f["chips"])
         self.assertIn("MLB", f["chips"])
-        self.assertIn("House model", f["chips"])
+        self.assertEqual(f["kennel"], "LINEHOUND kennel")                       # whose kennel it lives in (the "House model" chip is gone)
         self.assertEqual(f["catch"], "I was here first.")                       # no quotation marks, no bio, no vibe tag
         self.assertEqual(f["bio"], 0)
         for line in ("Grabs the price before it moves", "Closer roast", "Closer brag", "grabbed the early number"):
             self.assertNotIn(line, out["text"])
         # the kit's panels sit above the tabs (hidden until the server's kit says so): a buried dog's headstone, the owner's
         # hound menu ("Your hound") and "Unleash"; then Overview: numbers, bankroll, status
-        self.assertEqual(f["order"][:6], ["Headstone", "Your hound", "Unleash", "Key numbers", "Bankroll", "Status"])
+        self.assertEqual(f["order"][:7], ["Headstone", "Your hound", "Unleash", "Paper bankroll", "Its rule", "Key numbers", "Status"])
         self.assertIn("Open tickets", f["order"])
-        self.assertIn("Rule", f["order"])
+        self.assertIn("Its rule", f["order"])
         self.assertEqual(out["title"], "Closer — LINEHOUND")
 
     def test_a_model_with_no_persona_has_no_catchphrase_line(self):
@@ -815,12 +815,12 @@ class TheModelPage(unittest.TestCase):
     def test_unknown_model_missing_id_and_down_server(self):
         gone = run_page("hound", routes=routes(), search="?id=nope", queries=[q("t", "[data-hook='hound-header']"),
                                                                               q("v", "[data-hook='hound-verdict-section']", "hidden")])
-        self.assertIn("There is no model with this id", gone["final"]["t"])
+        self.assertIn("There is no hound with this id", gone["final"]["t"])  # owner ruling 2026-10-20 kennel-first
         self.assertTrue(gone["final"]["v"])
         noid = run_page("hound", routes=routes(), search="", queries=[q("t", "[data-hook='hound-header']")])
-        self.assertIn("No model was chosen", noid["final"]["t"])
+        self.assertIn("No hound was chosen", noid["final"]["t"])
         down = run_page("hound", routes=routes(), search="?id=closer", down=["/hounds/closer"], queries=[q("t", "[data-hook='hound-header']")])
-        self.assertIn("Could not reach this model", down["final"]["t"])
+        self.assertIn("Could not reach this hound", down["final"]["t"])
 
     def test_a_failed_ticket_call_says_why_and_the_rest_of_the_page_stays(self):
         r = ticket_routes("closer")

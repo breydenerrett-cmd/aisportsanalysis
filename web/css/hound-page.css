@@ -1,0 +1,160 @@
+/*
+ * THE HOUND PAGE (web/hound.html), kennel-first layout. Owner ruling 2026-10-20.
+ *
+ * Loaded LAST on that page, after lh.css and studio.css, and only there. It owns the hero (big art, name, kennel, record, paper bankroll,
+ * today's status), the owner's three actions, the one visitor button, the four tabs' spacing and the "How it's graded" tap. It reads
+ * the --lh-* tokens and the existing class names; it defines no colour of its own. Every selector is under `.hh-wrap` so nothing here
+ * can reach another page.
+ *
+ *   ABOVE THE FOLD  art, name, kennel, record and bankroll, then ONE button (visitor) or the three actions (owner).
+ *   BEHIND A TAP    units, yield, CLV, the referee's status: "How it's graded". Nothing a bettor would call jargon sits above the fold.
+ *   MOTION          the hero art settles in once; all of it inside prefers-reduced-motion: no-preference.
+ */
+
+.hounds-page .hh-wrap { max-width: 920px; }
+
+/* ---- the hero ------------------------------------------------------------------------------------------------- */
+.hounds-page .hh-wrap .hh-hero {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: var(--lh-s6);
+  margin: var(--lh-s3) 0 var(--lh-s5); padding: 0;
+}
+.hounds-page .hh-wrap .hh-hero > svg { display: block; width: 168px; height: 168px; border-radius: 28px; box-shadow: var(--lh-e2); }
+.hounds-page .hh-wrap .hh-hero__text { min-width: 0; }
+.hounds-page .hh-wrap .hh-kennel { margin: 0 0 var(--lh-s1); font-size: var(--lh-fs-sm); font-weight: 500; color: var(--lh-mute); }
+.hounds-page .hh-wrap .hh-kennel a, .hounds-page .hh-wrap .hh-kennel span { color: var(--lh-ink2); text-decoration: none; }
+.hounds-page .hh-wrap .hh-kennel a:hover { color: var(--lh-ink); text-decoration: underline; }
+.hounds-page .hh-wrap .hh-kennel [data-house="1"]::before {
+  content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 8px; border-radius: 2px; background: var(--lh-accent); vertical-align: 1px;
+}
+.hounds-page .hh-wrap .hh-hero h1 { font-size: clamp(40px, 7vw, 64px); line-height: .96; margin: 0 0 var(--lh-s2); overflow-wrap: anywhere; }
+.hounds-page .hh-wrap .hh-hero .hd-catch { margin: 0 0 var(--lh-s3); font-size: var(--lh-fs-base); }
+
+.hounds-page .hh-wrap .hh-facts { display: flex; flex-wrap: wrap; gap: var(--lh-s2) var(--lh-s6); margin: var(--lh-s3) 0 var(--lh-s3); }
+.hounds-page .hh-wrap .hh-fact { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.hounds-page .hh-wrap .hh-fact__big {
+  font-family: var(--lh-font-display); font-size: clamp(30px, 5vw, 42px); font-weight: 700; line-height: 1; letter-spacing: var(--lh-track-display);
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.hounds-page .hh-wrap .hh-fact__label { font-size: var(--lh-fs-xs); color: var(--lh-mute); }
+
+.hounds-page .hh-wrap .hh-today {
+  display: inline-flex; align-items: center; gap: var(--lh-s2); margin: 0; padding: 5px 12px 5px 10px; border-radius: var(--lh-r-pill);
+  background: var(--lh-soft); font-size: var(--lh-fs-sm); font-weight: 500; color: var(--lh-ink2);
+}
+.hounds-page .hh-wrap .hh-today__label { color: var(--lh-mute); }
+.hounds-page .hh-wrap .hh-today__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--lh-faint); }
+.hounds-page .hh-wrap .hh-today--live .hh-today__dot { background: var(--lh-accent); }
+.hounds-page .hh-wrap .hh-today--live { background: var(--lh-accent-soft); color: var(--lh-ink); }
+.hounds-page .hh-wrap .hh-today--wait .hh-today__dot { background: var(--lh-pending); }
+.hounds-page .hh-wrap .hh-today--off .hh-today__dot { background: var(--lh-loss); }
+
+.hounds-page .hh-wrap .hh-paper { margin: var(--lh-s3) 0 0; font-size: var(--lh-fs-xs); color: var(--lh-mute); }
+.hounds-page .hh-wrap .hh-meta { margin: var(--lh-s2) 0 0; gap: var(--lh-s1) var(--lh-s3); font-size: var(--lh-fs-sm); }
+.hounds-page .hh-wrap .hh-meta .hd-chip-plain { color: var(--lh-mute); background: none; padding: 0; }
+.hounds-page .hh-wrap .hh-meta .hd-typechip { background: var(--lh-soft); }
+
+/* ---- the one visitor button, and the quiet text actions ---------------------------------------------------- */
+.hounds-page .hh-wrap .hh-cta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--lh-s2) var(--lh-s5); margin: 0 0 var(--lh-s5); }
+.hounds-page .hh-wrap .hh-cta__main { min-height: 52px; padding: 0 var(--lh-s6); font-size: var(--lh-fs-md); }
+.hounds-page .hh-wrap .hh-cta__main[hidden] { display: none; }
+.hounds-page .hh-wrap .hh-cta[data-owner="1"] { margin-bottom: var(--lh-s2); }
+.hounds-page .hh-wrap .hh-quiet { display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--lh-s1); margin: 0; }
+.hounds-page .hh-wrap .hh-quiet .btn {
+  min-height: 40px; padding: 0 var(--lh-s3); background: none; border: 0; box-shadow: none; color: var(--lh-ink2); font-size: var(--lh-fs-sm); font-weight: 500;
+}
+.hounds-page .hh-wrap .hh-quiet .btn:hover { background: var(--lh-soft); color: var(--lh-ink); }
+.hounds-page .hh-wrap .hh-quiet .hd-fine { flex: 1 1 100%; }
+
+/* ---- the owner's three actions ---------------------------------------------------------------------------- */
+.hounds-page .hh-wrap .hh-owner { display: block; margin: 0; }
+.hounds-page .hh-wrap .hh-owner > .hd-panel { margin: 0 0 var(--lh-s4); padding: 0; background: none; box-shadow: none; border-radius: 0; }
+.hounds-page .hh-wrap .hh-actions[hidden], .hounds-page .hh-wrap .hh-unleash[hidden] { display: none; }
+.hounds-page .hh-wrap .hh-actions .dk-menu {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--lh-s2); margin: 0;
+}
+.hounds-page .hh-wrap .hh-actions .dk-menu .btn { min-height: 52px; font-size: var(--lh-fs-base); flex: none; }
+.hounds-page .hh-wrap .hh-actions .dk-menu [data-hook="menu-unleash"] { grid-column: 1 / -1; min-height: 56px; font-size: var(--lh-fs-md); }
+.hounds-page .hh-wrap .hh-actions .dk-menu [data-hook="menu-train"] { background: var(--lh-soft-2); color: var(--lh-ink); }
+.hounds-page .hh-wrap .hh-actions .dk-menu [data-hook="menu-outback"] { background: transparent; color: var(--lh-loss); box-shadow: inset 0 0 0 1px rgba(255, 138, 150, .45); border: 0; }
+.hounds-page .hh-wrap .hh-actions .dk-menu [data-hook="menu-outback"]:hover { background: var(--lh-loss-soft); color: var(--lh-ink); }
+.hounds-page .hh-wrap .hh-actions [data-hook="dog-rites"] > .hd-fine { margin: var(--lh-s2) 0 0; }
+@media (min-width: 720px) {
+  .hounds-page .hh-wrap .hh-actions .dk-menu { grid-template-columns: 1.4fr 1fr 1fr; }
+  .hounds-page .hh-wrap .hh-actions .dk-menu [data-hook="menu-unleash"] { grid-column: auto; min-height: 52px; font-size: var(--lh-fs-base); }
+}
+
+/* the Unleash preview: for the owner it is only the result (the menu's Unleash runs it); for a visitor it is one quiet line */
+.hounds-page .hh-wrap .hh-owner [data-hook="dog-fire-section"] {
+  display: block; padding: 0; margin: 0 0 var(--lh-s5); background: none; box-shadow: none; border-radius: 0;
+}
+.hounds-page .hh-wrap .hh-owner [data-hook="dog-fire-section"] h2 { margin: 0 0 var(--lh-s1); font-size: var(--lh-fs-md); }
+.hounds-page .hh-wrap .hh-owner [data-hook="dog-fire"] { display: block; }
+.hounds-page .hh-wrap .hh-owner [data-hook="dog-fire"] > p { margin: 0 0 var(--lh-s2); font-size: var(--lh-fs-sm); }
+.hounds-page .hh-wrap .hh-owner [data-hook="dog-fire"] > .dk-actions { margin: 0 0 var(--lh-s2); justify-content: flex-start; }
+.hounds-page .hh-wrap .hh-owner [data-hook="dog-fire"] .btn { background: var(--lh-soft); color: var(--lh-ink); border: 0; min-height: 40px; }
+.hounds-page .hh-wrap[data-menu="1"] .hh-unleash h2,
+.hounds-page .hh-wrap[data-menu="1"] .hh-unleash [data-hook="dog-fire"] > p,
+.hounds-page .hh-wrap[data-menu="1"] .hh-unleash [data-hook="dog-fire"] > .dk-actions { display: none; }
+.hounds-page .hh-wrap[data-menu="1"] .hh-unleash:not(:has([data-hook="fire-result"] > *)) { margin: 0; }
+.hounds-page .hh-wrap .hh-owner .dk-result:empty { display: none; }
+
+/* ---- tabs and panels: air, no boxes ------------------------------------------------------------------------ */
+.hounds-page .hh-wrap .lh-tabs { margin: var(--lh-s4) 0 var(--lh-s5); }
+.hounds-page .hh-wrap .lh-tabs [role="tab"] { height: 46px; padding: 0 var(--lh-s4); font-size: var(--lh-fs-base); }
+.hounds-page .hh-wrap .lh-tabpanel > .hd-panel { margin-bottom: var(--lh-s6); }
+.hounds-page .hh-wrap .lh-tabpanel > .hd-panel + .hd-panel { padding-top: var(--lh-s5); }
+.hounds-page .hh-wrap .hd-chart-title { margin: 0 0 var(--lh-s3); font-size: var(--lh-fs-sm); color: var(--lh-mute); }
+
+/* ---- a fold: "How it's graded", "Versions and history", "Its settings" ------------------------------------- */
+.hounds-page .hh-wrap .hh-fold > summary { cursor: pointer; list-style: none; }
+.hounds-page .hh-wrap .hh-fold > summary::-webkit-details-marker { display: none; }
+.hounds-page .hh-wrap details.hh-fold.hd-panel { padding: 0; }
+.hounds-page .hh-wrap .hh-graded > summary, .hounds-page .hh-wrap .hh-history > summary {
+  display: flex; align-items: center; gap: var(--lh-s3); min-height: 56px; padding: var(--lh-s3) var(--lh-s4); border-radius: var(--lh-r-lg);
+  background: var(--lh-soft); transition: background-color var(--lh-t-fast) var(--lh-ease);
+}
+.hounds-page .hh-wrap .hh-graded > summary:hover, .hounds-page .hh-wrap .hh-history > summary:hover { background: var(--lh-soft-2); }
+.hounds-page .hh-wrap .hh-graded > summary > span, .hounds-page .hh-wrap .hh-history > summary > span { font-size: var(--lh-fs-md); font-weight: 600; flex: none; }
+.hounds-page .hh-wrap .hh-graded > summary > small, .hounds-page .hh-wrap .hh-history > summary > small {
+  flex: 1 1 auto; min-width: 0; font-size: var(--lh-fs-xs); color: var(--lh-mute); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.hounds-page .hh-wrap .hh-graded > summary::after, .hounds-page .hh-wrap .hh-history > summary::after {
+  content: "+"; flex: none; margin-left: auto; font: 600 22px/1 var(--lh-font-text); color: var(--lh-accent);
+}
+.hounds-page .hh-wrap .hh-graded[open] > summary::after, .hounds-page .hh-wrap .hh-history[open] > summary::after { content: "\2013"; }
+.hounds-page .hh-wrap .hh-graded > section, .hounds-page .hh-wrap .hh-graded > [data-hook="hound-clv-chart"],
+.hounds-page .hh-wrap .hh-history > section { padding: var(--lh-s5) var(--lh-s4) 0; }
+.hounds-page .hh-wrap .hh-graded .hd-panel + .hd-panel { box-shadow: none; padding-top: 0; }
+.hounds-page .hh-wrap .hh-graded > section + section { margin-top: var(--lh-s5); box-shadow: 0 -1px 0 var(--lh-line); }
+.hounds-page .hh-wrap .hh-graded[open] { padding-bottom: var(--lh-s5); }
+.hounds-page .hh-wrap .hh-history[open] { padding-bottom: var(--lh-s5); }
+
+.hounds-page .hh-wrap details.hh-fold:not(.hd-panel) { margin: var(--lh-s3) 0 0; }
+.hounds-page .hh-wrap details.hh-fold:not(.hd-panel) > summary { font-size: var(--lh-fs-sm); color: var(--lh-mute); padding: var(--lh-s2) 0; }
+.hounds-page .hh-wrap details.hh-fold:not(.hd-panel) > summary:hover { color: var(--lh-ink); }
+.hounds-page .hh-wrap details.hh-fold:not(.hd-panel) > summary::before { content: "+ "; color: var(--lh-accent); font-weight: 600; }
+.hounds-page .hh-wrap details.hh-fold[open]:not(.hd-panel) > summary::before { content: "\2013 "; }
+
+/* the tiles inside the fold: one hero tile and a tidy row, on a plain surface */
+.hounds-page .hh-wrap .hh-graded .hd-bankhero { padding: 0; }
+
+/* ---- a phone: the art sits beside the name, the facts run full width ------------------------------------ */
+@media (max-width: 639px) {
+  .hounds-page .hh-wrap .hh-hero { grid-template-columns: 112px minmax(0, 1fr); column-gap: var(--lh-s4); row-gap: 0; align-items: start; margin-top: var(--lh-s2); }
+  .hounds-page .hh-wrap .hh-hero > svg { grid-row: 1 / span 3; width: 112px; height: 112px; border-radius: 22px; }
+  .hounds-page .hh-wrap .hh-hero__text { display: contents; }
+  .hounds-page .hh-wrap .hh-kennel, .hounds-page .hh-wrap .hh-hero h1, .hounds-page .hh-wrap .hh-hero .hd-catch { grid-column: 2; min-width: 0; }
+  .hounds-page .hh-wrap .hh-hero h1 { font-size: 38px; margin-bottom: var(--lh-s1); }
+  .hounds-page .hh-wrap .hh-hero__text > [data-hook="hound-facts"], .hounds-page .hh-wrap .hh-paper, .hounds-page .hh-wrap .hh-meta { grid-column: 1 / -1; }
+  .hounds-page .hh-wrap .hh-hero__text > [data-hook="hound-facts"] { margin-top: var(--lh-s4); }
+  .hounds-page .hh-wrap .hh-facts { gap: var(--lh-s2) var(--lh-s5); margin: 0 0 var(--lh-s3); }
+  .hounds-page .hh-wrap .hh-cta__main { flex: 1 1 100%; }
+  .hounds-page .hh-wrap .hh-quiet { margin-left: calc(-1 * var(--lh-s3)); }
+  .hounds-page .hh-wrap .hh-graded > summary > small, .hounds-page .hh-wrap .hh-history > summary > small { display: none; }
+  .hounds-page .hh-wrap .hh-actions [data-hook="dog-rites"] > .hd-fine { display: none; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hounds-page .hh-wrap .hh-hero > svg { animation: hh-settle var(--lh-t-hero) var(--lh-spring) both; }
+  @keyframes hh-settle { from { opacity: 0; transform: translateY(8px) scale(.96); } to { opacity: 1; transform: none; } }
+}

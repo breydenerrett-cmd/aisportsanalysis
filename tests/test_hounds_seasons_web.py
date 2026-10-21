@@ -157,7 +157,7 @@ class TheSwitcherOnTheLeaderboard(unittest.TestCase):
         self.assertEqual(out["gets"][0], "/hounds?season=s2")
         self.assertEqual(out["final"]["texts"], ["Season 2 (since Oct 18)", "Season 1", "All-time"])
         self.assertEqual(out["final"]["pressed"], ["true", "false", "false"])
-        self.assertEqual(out["final"]["line"], "Season 2 started Oct 18. Every model starts at zero.")
+        self.assertEqual(out["final"]["line"], "Season 2 started Oct 18. Every hound starts at zero.")
         self.assertEqual(out["replaced"], [])                     # opening the page writes nothing: only a pick is remembered
         self.assertEqual(out["storedAfter"], {})
 
@@ -180,7 +180,7 @@ class TheSwitcherOnTheLeaderboard(unittest.TestCase):
         cap = out["captures"]["s1"]
         self.assertEqual(cap["ids"], ["old"])
         self.assertEqual(cap["pressed"], ["false", "true", "false"])
-        self.assertEqual(cap["line"], "Season 1 ran Aug 31 to Oct 17. Models are measured on that window only.")
+        self.assertEqual(cap["line"], "Season 1 ran Aug 31 to Oct 17. Hounds are measured on that window only.")
         self.assertEqual(out["storedAfter"][STORE_KEY], "s1")
         self.assertEqual(out["replaced"], ["/web/x.html?utm=x&season=s1"])        # the rest of the query is kept
 
@@ -254,7 +254,7 @@ class TheRankedTableAndTheWarmingGroup(unittest.TestCase):
         self.assertEqual(f["ids"], ["steady", "middle", "slump"])
         self.assertEqual(f["ranks"], ["1", "2", "3"])
         self.assertTrue(f["warm"].startswith("Warming up (2)"), f["warm"])
-        self.assertEqual(f["count"], "5 models, 3 ranked")
+        self.assertEqual(f["count"], "5 hounds, 3 ranked")  # owner ruling 2026-10-20 kennel-first
         self.assertEqual(f["qual"], 0)                                    # three ranked: no qualifying round
 
     def test_the_warming_group_shows_the_record_so_far_how_far_from_a_rank_and_open_tickets_but_no_roi(self):
@@ -339,13 +339,13 @@ class TheQualifyingRound(unittest.TestCase):
             q("ranked_title", "[data-hook='ranked-title']", "count"), q("none", "[data-hook='no-graded']"),
             q("ranked_table", "[data-hook='leaderboard-table']", "count"), q("count", "[data-hook='hounds-count']")])
         f = out["final"]
-        self.assertEqual(f["title"], "Season 2 qualifying: a model needs 10 settled bets to be ranked")
+        self.assertEqual(f["title"], "Season 2 qualifying: a hound needs 10 settled bets to be ranked")
         self.assertEqual(f["qrows"], 5)                                   # everyone with a settled bet or an open ticket
         self.assertEqual((f["ranked_rows"], f["toggle"], f["warm_rows"]), (0, 0, 0))    # no collapsed group in this state
         # round 2 (2026-10-19): an empty "Ranked (0)" table under the round said nothing twice, so it is not drawn; the one line stays
         self.assertEqual((f["ranked_title"], f["ranked_table"]), (0, 0))
-        self.assertEqual(f["none"], "No model has 10 settled bets in this view yet, so none is ranked. The qualifying round above shows who is closest.")
-        self.assertEqual(f["count"], "7 models, 0 ranked")
+        self.assertEqual(f["none"], "No hound has 10 settled bets in this view yet, so none is ranked. The qualifying round above shows who is closest.")
+        self.assertEqual(f["count"], "7 hounds, 0 ranked")
         hooks = out["hooks"]
         self.assertNotIn("leaderboard-table", hooks)                                      # and there is no ranked table below it
 
@@ -363,7 +363,7 @@ class TheQualifyingRound(unittest.TestCase):
         strip = lambda ts: [t.replace(" ▼", "").replace(" ▲", "") for t in ts]  # noqa: E731
         # round 2 (2026-10-19): with nobody ranked there is no empty "Ranked (0)" table to compare with; the round has every column
         self.assertEqual(f["ranked_heads"], [])
-        self.assertEqual(strip(f["heads"])[:5], ["#", "Model", "Type", "Record", "Bankroll"])
+        self.assertEqual(strip(f["heads"])[:5], ["#", "Hound", "Type", "Record", "Bankroll"])
         self.assertEqual(len(f["heads"]), 14)
 
     def test_each_row_has_a_progress_pill_in_the_status_column_and_greyed_money(self):
@@ -382,7 +382,7 @@ class TheQualifyingRound(unittest.TestCase):
 
     def test_models_with_nothing_yet_are_one_line_not_rows(self):
         out = self.page(QualifyingBase.zero_ranked_world(), queries=[q("rest", "[data-hook='qualifying-rest']")])
-        self.assertEqual(out["final"]["rest"], "2 more models have no settled bet yet.")
+        self.assertEqual(out["final"]["rest"], "2 more hounds have no settled bet yet.")
 
     def test_two_ranked_is_still_the_round_with_the_two_in_the_ranked_table_below(self):
         out = self.page(QualifyingBase.two_ranked_world(), queries=[
@@ -417,13 +417,13 @@ class TheQualifyingRound(unittest.TestCase):
     def test_the_round_names_the_season_it_is_showing(self):
         r = routes(**{KEY("s1"): board([mk("a", "A", bets=4, units=1.0, wins=3)], "s1")})
         out = self.page(r, search="?season=s1", queries=[q("title", "[data-hook='qualifying-title']")])
-        self.assertEqual(out["final"]["title"], "Season 1 qualifying: a model needs 10 settled bets to be ranked")
+        self.assertEqual(out["final"]["title"], "Season 1 qualifying: a hound needs 10 settled bets to be ranked")
 
     def test_no_model_has_anything_at_all_says_so_without_an_empty_round(self):
         out = self.page(QualifyingBase.world([mk("a", "A", bets=0, units=0.0, wins=0)]), queries=[
             q("rows", self.QROW, "count"), q("rest", "[data-hook='qualifying-rest']"), q("none", "[data-hook='no-graded']")])
         self.assertEqual(out["final"]["rows"], 0)
-        self.assertEqual(out["final"]["rest"], "1 more model has no settled bet yet.")
+        self.assertEqual(out["final"]["rest"], "1 more hound has no settled bet yet.")
 
 
 @unittest.skipUnless(HAS_NODE, "node not installed")
@@ -449,24 +449,25 @@ class MemberDogsAreAlwaysListed(unittest.TestCase):
         f = out["final"]
         self.assertEqual(f["ids"], ["top", "u-d151fe52c7", "u-fcc8e8c168"])      # the two member dogs are rows, after the one with a bet
         self.assertEqual(f["pills"], ["6/10 bets", "New: no bets yet", "New: no bets yet"])
-        self.assertEqual(f["rest"], "1 more model has no settled bet yet.")           # only the HOUSE model is counted in the line
+        self.assertEqual(f["rest"], "1 more hound has no settled bet yet.")           # only the HOUSE model is counted in the line
 
     def test_the_builders_count_is_the_number_of_member_dogs_the_page_shows(self):
         out = run_page("hounds", routes=self.world(), actions=[
             dict(do="click", sel="[data-filter='user']", label="builders", capture=[
                 q("ids", f"{self.QROW}", "attrs", attr="data-hound"), q("count", "[data-hook='hounds-count']")])],
             queries=[q("filters", "[data-hook='hounds-filter'] .hd-seg", "texts")])
-        self.assertIn("Builders' (2)", out["final"]["filters"])
+        self.assertIn("Members' kennels (2)", out["final"]["filters"])  # owner ruling 2026-10-20 kennel-first
         cap = out["captures"]["builders"]
         self.assertEqual(cap["ids"], ["u-d151fe52c7", "u-fcc8e8c168"])
-        self.assertEqual(cap["count"], "2 models, 0 ranked")
+        self.assertEqual(cap["count"], "2 hounds, 0 ranked")
 
     def test_a_member_dog_links_to_its_owners_kennel(self):
         out = run_page("hounds", routes=self.world(), queries=[
             q("hrefs", f"{self.QROW} [data-hook='row-kennel']", "attrs", attr="href"),
             q("texts", f"{self.QROW} [data-hook='row-kennel']", "texts")])
-        self.assertEqual(out["final"]["hrefs"], ["kennel.html?u=handler-21e8"] * 2)
-        self.assertEqual(out["final"]["texts"], ["Handler 21E8's kennel"] * 2)
+        # every row names its kennel now: the house hound's is the LINEHOUND kennel (owner ruling 2026-10-20 kennel-first)
+        self.assertEqual(out["final"]["hrefs"], ["hounds.html?scope=house"] + ["kennel.html?u=handler-21e8"] * 2)
+        self.assertEqual(out["final"]["texts"], ["LINEHOUND kennel"] + ["Handler 21E8's kennel"] * 2)
 
     def test_with_three_ranked_the_builders_tab_still_shows_them_expanded(self):
         ranked = [mk(f"r{i}", f"R{i}", bets=12, units=1.0 + i, wins=6, kind="user", owner_display="Handler 0001") for i in range(3)]
@@ -640,7 +641,7 @@ class TheMarkupIsStatic(unittest.TestCase):
     def test_the_leaderboard_page_has_the_switcher_and_the_season_line_with_scripts_off(self):
         html = (Path(__file__).resolve().parent.parent / "web" / "hounds.html").read_text(encoding="utf-8")
         self.assertIn('data-hook="hounds-season"', html)
-        self.assertRegex(html, r'data-hook="season-line"[^>]*>Season 2 started Oct 18\. Every model starts at zero\.</p>')
+        self.assertRegex(html, r'data-hook="season-line"[^>]*>Season 2 started Oct 18\. Every hound starts at zero\.</p>')
 
     def test_the_model_and_landing_pages_have_their_slots(self):
         root = Path(__file__).resolve().parent.parent / "web"
@@ -657,7 +658,7 @@ class TheMarkupIsStatic(unittest.TestCase):
         self.assertNotRegex(src, r"https?://")
         html = (root / "hounds.html").read_text(encoding="utf-8")
         # only external module scripts (the page, the kennels view, tabs, motion, the shared nav): never an inline script or a CDN
-        for name in ("hounds-page", "kennels-index", "tabs", "fx", "nav"):
+        for name in ("hounds-page", "fx", "nav"):
             html = html.replace(f'<script type="module" src="js/{name}.js"></script>', "")
         self.assertIsNone(re.search(r"<script", html))
 
