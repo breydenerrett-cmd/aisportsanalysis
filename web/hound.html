@@ -60,11 +60,20 @@
 
 <div class="hd-actions" role="group" aria-label="Follow, share and download this model" data-hook="hound-actions"></div>
 
-<!-- THE DOG KIT (web/js/dog-kit.js): "Take them out back" stays at the top, above the tabs. Every kit panel starts hidden and
-     the script shows it only when the server's kit says it is real for this visitor. -->
+<!-- THE DOG KIT (web/js/dog-kit.js): "Unleash" stays at the top, above the tabs, with the owner's hound menu (Unleash, Send to
+     training, Take them out back) and, for a dog its owner buried, its headstone. Every kit panel starts hidden and the script
+     shows it only when the server's kit says it is real for this visitor. -->
 <div class="dk-top" data-hook="dog-kit-top">
+  <section class="hd-panel dk-panel" aria-labelledby="headstone-h" data-hook="dog-headstone-section" hidden>
+    <h2 id="headstone-h">Headstone</h2>
+    <div data-hook="dog-headstone"></div>
+  </section>
+  <section class="hd-panel dk-panel" aria-labelledby="rites-h" data-hook="dog-rites-section" hidden>
+    <h2 id="rites-h">Your hound</h2>
+    <div data-hook="dog-rites"></div>
+  </section>
   <section class="hd-panel dk-panel" aria-labelledby="fire-h" data-hook="dog-fire-section" hidden>
-    <h2 id="fire-h">Out back</h2>
+    <h2 id="fire-h">Unleash</h2>
     <div data-hook="dog-fire"></div>
   </section>
 </div>
@@ -188,7 +197,7 @@
 
 <footer class="hd-foot" data-hook="hound-footer" aria-label="responsible gambling">
   <p>Gamble responsibly. <a href="tel:1-800-426-2537" data-hook="responsible-gambling-help">1-800-GAMBLER</a></p>
-  <p><a href="landing.html">About LINEHOUND</a> &middot; <a href="hounds.html">Leaderboard</a></p>
+  <p><a href="landing.html">About LINEHOUND</a> &middot; <a href="hounds.html">Leaderboard</a> &middot; <a href="graveyard.html">Graveyard</a></p>
 </footer>
 
 <script type="module" src="js/hounds-detail.js"></script>

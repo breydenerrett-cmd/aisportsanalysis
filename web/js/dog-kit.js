@@ -1,5 +1,5 @@
 /**
- * The dog kit on web/hound.html: Take them out back, Backtest, Ask, the manual picks, what fans think and training, and (for a builder
+ * The dog kit on web/hound.html: Unleash, the owner's hound menu (Send to training, Take them out back), Backtest, Ask, the manual picks, what fans think and training, and (for a builder
  * dog's owner) the locker room. `bootDogKit(hound)` is called by hounds-detail.js once the model has loaded.
  *
  * ONE REQUEST DECIDES WHAT THIS VISITOR SEES: GET /hounds/{id}/kit says whether they own the dog, whether it can be
@@ -9,6 +9,10 @@
  *
  * The header's monogram is swapped for the dog's badge when its owner has dressed it (builder dogs only); every
  * other model keeps its initials badge.
+ *
+ * THE OWNER'S HOUND MENU (dog-rites.js): for the owner of a live member dog, a "Your hound" panel with Unleash (runs the preview
+ * panel below it), Send to training and Take them out back. A dog that has been sent to training wears "Trained xN" in its
+ * header; a dog its owner buried shows its headstone (GET /hounds/{id}/headstone) instead of any of the above.
  */
 
 import { get } from "./dog-common.js";
@@ -20,6 +24,9 @@ import { bootAsk } from "./dog-ask.js";
 import { mountFans } from "./dog-feedback.js";
 import { mountManual } from "./dog-manual.js";
 import { mountLocker } from "./dog-locker.js";
+import { mountRites } from "./dog-rites.js";
+import { headstoneCard, trainedBadge } from "./dog-headstone.js";
+import { clearNode } from "./hounds-core.js";
 
 const q = (hook) => document.querySelector(`[data-hook='${hook}']`);
 
@@ -36,12 +43,34 @@ export function applyHeaderBadge(look, name, muted = false, dog = {}) {
   return true;
 }
 
+/** "Trained xN" in the header's chip row, once. */
+export function applyTrainedBadge(times) {
+  const chips = document.querySelector(".hd-modelhead .hd-chips");
+  const badge = trainedBadge(times);
+  if (!chips || !badge || document.querySelector("[data-hook='trained-badge']")) return false;
+  chips.appendChild(badge);
+  return true;
+}
+
+/** A buried dog's headstone, in its own panel. Resolves false when the server has none (the page is what it was). */
+async function mountHeadstone(section, id) {
+  if (!section) return false;
+  let data = null;
+  try { data = await get(`/hounds/${encodeURIComponent(id)}/headstone`); } catch (err) { return false; }
+  const body = section.querySelector("[data-hook='dog-headstone']");
+  if (!data || !data.headstone || !body) return false;
+  clearNode(body).appendChild(headstoneCard(data.headstone, { heading: "h3", showKennel: true }));
+  section.removeAttribute("hidden");
+  return true;
+}
+
 export async function bootDogKit(hound) {
   const id = hound && hound.id;
   if (!id) return null;
   const sections = {
     fire: q("dog-fire-section"), ask: q("dog-ask-section"), manual: q("dog-manual-section"),
     fans: q("dog-fans-section"), locker: q("dog-locker-section"), backtest: q("dog-backtest-section"),
+    rites: q("dog-rites-section"), headstone: q("dog-headstone-section"),
   };
   if (!sections.fire) return null;
   let kit = null;
@@ -55,14 +84,24 @@ export async function bootDogKit(hound) {
   // a builder dog always wears a dog (its saved look, else the default one); the house models keep their initials
   const vibe = hound.persona && hound.persona.vibe;
   if (kit.look || hound.kind === "user") applyHeaderBadge(kit.look || lookFor(id), name, hound.status === "retired", { id, vibe, pose: poseOfHound(hound) });
+  if (kit.trained_times) applyTrainedBadge(kit.trained_times);
   let manual = null;
   const jobs = [];
+  if (kit.buried) jobs.push(mountHeadstone(sections.headstone, id));
   if (hound.kind === "user" && sections.manual) {
     jobs.push(mountManual(sections.manual, { id, kit }).then((m) => { manual = m; }));
   }
   if (kit.can_fire) {
     mountFire(sections.fire, { id, name, kit, onRecord: () => { if (manual) manual.refresh(); } });
-    // the same dogs that can be taken out back can be backtested (house dogs and builder dogs: the rule runs on demand)
+    // the owner's hound menu: Unleash runs the preview panel just below it; the two rites are dog-rites.js
+    if (sections.rites) {
+      mountRites(sections.rites, { id, name, kit, unleash: () => {
+        const btn = q("fire-btn");
+        if (sections.fire.scrollIntoView) sections.fire.scrollIntoView({ behavior: "smooth", block: "start" });
+        if (btn && !btn.hasAttribute("disabled")) btn.click();
+      } });
+    }
+    // the same dogs that can be unleashed can be backtested (house dogs and builder dogs: the rule runs on demand)
     if (sections.backtest) mountBacktest(sections.backtest, { id, name });
   }
   jobs.push(bootAsk(sections.ask, { id, name }));

@@ -48,7 +48,7 @@ PHRASINGS = [
     ("what do you like today", "picks_now"),
     ("what are you thinking", "picks_now"),
     ("fire", "picks_now"),
-    ("take them out back", "picks_now"),
+    ("unleash", "picks_now"),
     ("anything tonight", "picks_now"),
     ("what's your best bet tonight", "picks_now"),
     ("what you got today", "picks_now"),

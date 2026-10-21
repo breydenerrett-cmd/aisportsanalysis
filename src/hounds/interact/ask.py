@@ -5,7 +5,7 @@ bet X, what did you bet today, how are you doing, best and worst bet, what would
 that game, what are your rules, how do I make you better, what do fans think, what did the coach say). A
 builder per intent then writes the answer from facts the page already shows: the dog's tickets and their
 reasons, its rule (in plain English when the builder's renderer exists, else the rule text), its record and
-form, the fan feedback counts, the graded tips, and, for "right now", the same read-only preview the "Take them out back"
+form, the fan feedback counts, the graded tips, and, for "right now", the same read-only preview the "Unleash"
 button runs. A question the rules do not recognise gets an honest fallback that lists what the dog CAN answer.
 
 VOICE. First person, short, plain. The dog's name and its one-line catchphrase (a house dog's catchphrase, a
@@ -539,7 +539,7 @@ def _unavailable(payload: Optional[dict], fallback: str) -> Optional[dict]:
 
 def _picks_now(ctx: AskContext, payload: Optional[dict]) -> dict:
     """"What would you bet right now": the Fire now payload, said in the dog's voice with pick cards."""
-    stop = _unavailable(payload, "I cannot read the boards just now. Try the Take them out back button in a minute.")
+    stop = _unavailable(payload, "I cannot read the boards just now. Try the Unleash button in a minute.")
     if stop is not None:
         return stop
     head = []
