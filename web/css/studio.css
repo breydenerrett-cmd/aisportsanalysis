@@ -563,3 +563,6 @@
 .hounds-page .kn-nameform input.lh-input { min-height: 44px; padding: 0 var(--lh-s3); background: var(--lh-bg); border: 1px solid var(--lh-line); font: inherit; }
 
 .kn-main[data-empty="true"] .kn-money-line, .kn-main[data-empty="true"] .kn-more { display: none; }
+/* A member with no hound is asked to create one, not to name an empty kennel first: the name prompt (two buttons, one of
+   them solid green) sat above "Create your first hound" (rebuild QA 2026-10-21). It comes back with the first hound. */
+.kn-main[data-empty="true"] [data-hook="kennel-name-slot"] { display: none; }

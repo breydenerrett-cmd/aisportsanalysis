@@ -410,9 +410,16 @@ export async function load() {
       const host = q("live-board");
       if (host) {
         clearNode(host);
-        host.appendChild(h("div", { class: `hd-state hd-state--${err && err.status === 404 ? "missing" : "down"}`, role: "status", "data-hook": "live-error" }, [
-          h("p", { text: describeError(err, "the live board").text })]));
+        // a visitor (Live is one of the signed-out places) gets a way in, not a dead end (rebuild QA 2026-10-21)
+        const auth = describeError(err, "the live board").kind === "auth";
+        host.appendChild(h("div", { class: `hd-state hd-state--${err && err.status === 404 ? "missing" : "down"}`, role: "status", "data-hook": "live-error",
+          "data-kind": auth ? "auth" : "error" }, [
+          auth ? signInPrompt("The live board is for signed-in members: see what is on in every sport and send your hounds at it.")
+            : h("p", { text: describeError(err, "the live board").text })]));
       }
+      // "Loading the board..." is not true once the load has failed with nothing to show
+      const status = q("live-status");
+      if (status) status.textContent = "";
       const chips = q("live-chips");
       if (chips) clearNode(chips);
     } else {

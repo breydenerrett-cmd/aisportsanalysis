@@ -36,5 +36,14 @@ class TheBuilderOnAPhone(unittest.TestCase):
         self.assertGreaterEqual(int(h2.group(1)) + 24, badge + 16)
 
 
+class TheEmptyKennel(unittest.TestCase):
+    def test_an_empty_kennel_shows_one_primary_create_not_the_name_prompt(self):
+        # kennel.js marks .kn-main data-empty="true" when the member has no hound; the name prompt lives in kennel-name-slot
+        self.assertIn('.kn-main[data-empty="true"] [data-hook="kennel-name-slot"] { display: none; }', css("studio.css"))
+        js = (ROOT / "web" / "js" / "kennel.js").read_text(encoding="utf-8")
+        self.assertIn('"data-empty"', js)
+        self.assertIn('slot("kennel-name-slot")', js)
+
+
 if __name__ == "__main__":
     unittest.main()

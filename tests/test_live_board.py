@@ -253,6 +253,16 @@ class TheBoardRenders(unittest.TestCase):
         out = board({"/sports/now": [404, {"detail": "Not Found"}]}, queries=[q("err", hook("live-error"))])
         self.assertIn("not switched on yet", out["final"]["err"])
 
+    def test_a_visitor_gets_a_way_to_sign_in_not_a_dead_end(self):
+        # rebuild QA 2026-10-21: signed out, Live (a visitor nav place) said "Loading the board..." above "The live board
+        # needs you to be signed in." with no link anywhere on the page
+        out = board({"/sports/now": [401, {"detail": "Not signed in"}]},
+                    queries=[q("err", hook("live-error")), q("link", f"{hook('live-error')} a", "attr", attr="href"),
+                             q("status", hook("live-status"))])
+        self.assertIn("signed-in members", out["final"]["err"])
+        self.assertEqual(out["final"]["link"], "index.html#/signin")
+        self.assertNotIn("Loading", out["final"]["status"] or "")
+
     def test_an_old_board_says_how_old_and_that_prices_may_have_moved(self):
         out = board(now="2026-10-19T23:52:00Z", queries=[q("status", hook("live-status"))])
         self.assertIn("22 min old, so prices may have moved", out["final"]["status"])
