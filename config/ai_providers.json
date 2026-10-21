@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "note": "Owner decision 2026-10-20: Claude Haiku 5.5 is the one enabled model, under a hard monthly dollar cap (env AI_PAID_CAP_USD, default 5, enforced in src/ai/router.py from the usage store). To add a model: add a provider entry with a kind that has an adapter in src/ai/router.py (ADAPTER_KINDS), put its id in `order`, and set `enabled` to true. A provider is also off when its env key is missing, so a flag set early does nothing until the key exists. Free-tier (Gemini, Groq, OpenRouter) and local (Ollama) adapters are parked: not written, not listed.",
+  "order": ["anthropic"],
+  "defaults": {
+    "timeout_s": 20,
+    "max_attempts": 3,
+    "quota_cooldown_minutes": 30,
+    "spend_limit_cooldown_minutes": 360,
+    "auth_cooldown_minutes": 120,
+    "error_cooldown_minutes": 3
+  },
+  "paid_cap": {
+    "env": "AI_PAID_CAP_USD",
+    "default_usd": 5.0
+  },
+  "providers": {
+    "anthropic": {
+      "kind": "anthropic",
+      "enabled": true,
+      "env_key": "ANTHROPIC_API_KEY",
+      "model": "claude-haiku-5-5",
+      "paid": true,
+      "effort": "low",
+      "max_tokens": 1024,
+      "price_in_per_m": 0.10,
+      "price_out_per_m": 0.50,
+      "daily_cap": 400,
+      "cache_min_tokens": 1024,
+      "timeout_s": 20
+    }
+  }
+}

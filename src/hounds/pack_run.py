@@ -17,6 +17,7 @@ RULES THE RUNNER ENFORCES (whatever a hound returns)
 * The -200 rule: no selection whose board-average price is -200 or worse, ever. Every hound's own
   price band is applied too. A selection outside the band is a pass, not a reason to pick another.
 * The selection's market must be on the board at lock.
+* A hound marked ``forward_only`` (the AI hounds) is refused in a replay, with ``ai_defs.FORWARD_ONLY_MESSAGE``.
 
 Paper only. No row is a recommendation.
 """
@@ -29,6 +30,7 @@ import sys
 from datetime import date, datetime, timedelta, timezone
 from typing import Callable, Iterable, List, Mapping, Optional, Sequence
 
+from src.hounds import ai_defs
 from src.hounds import pack as pack_mod
 from src.hounds.pack import base
 from src.ledger.chain import HashChainLedger
@@ -95,6 +97,10 @@ def bet_row(hound, ctx: base.Context, board: Mapping, sel: base.Selection, *, se
     # ``challenger_id`` and its parent. A plain hound has no ``row_extra``, so its rows are unchanged.
     for key, value in (getattr(hound, "row_extra", None) or {}).items():
         row.setdefault(key, value)
+    # An AI hound's selection carries the provider, the model and the decision row's hash for THIS bet
+    # (src/hounds/pack/ai_hounds.py); a rule hound's Selection has no ``row_extra``, so its rows are unchanged.
+    for key, value in (getattr(sel, "row_extra", None) or {}).items():
+        row.setdefault(key, value)
     return row
 
 
@@ -133,6 +139,12 @@ def run(stores: base.Stores, dates: Sequence[str], *, replay: bool, now: datetim
         # promotion on record this is exactly pack_mod.PACK.
         from src.hounds.learning import champions
         hounds = champions.champion_versions(pack_mod.PACK, champions.events_path_beside(ledger_path(path)))
+    if replay:
+        # FORWARD ONLY (docs/PREREG_AI_HOUNDS.md): a language model knows how past games ended, so replaying
+        # an AI hound over old boards would measure its memory. Refused here, for every caller, by name.
+        blocked = [h.id for h in hounds if getattr(h, "forward_only", False)]
+        if blocked:
+            raise ai_defs.ForwardOnlyError(f"{ai_defs.FORWARD_ONLY_MESSAGE} (asked to replay: {', '.join(blocked)})")
     counts = {"games": 0, "written": 0, "skipped_not_locked": 0, "skipped_started": 0, "passes": 0}
     for lock, eid, ctx in events_for_dates(stores, dates):
         if now < lock:

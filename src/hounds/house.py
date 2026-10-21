@@ -131,21 +131,26 @@ def _norm_category(value, kind) -> str:
     return "baseline" if kind == KIND_BASELINE else "mixed"
 
 
-def definitions(house_cfg_path, pack_cfg_path, desk_cfg_path=None) -> list:
+def definitions(house_cfg_path, pack_cfg_path, desk_cfg_path=None, ai_cfg_path=None) -> list:
     """Hound definitions from the config files, in file order.
 
     A later entry with an id already seen is ignored (the house file wins), so
     the pack file can never silently shadow a house hound. The desk's file
     (config/desk_hounds.json) is the third; its hounds are forward-only (a
     model has no replay), so one with no bet at all reads "not started" with
-    its rule text, rather than "benched".
+    its rule text, rather than "benched". The AI hounds' file (config/ai_hounds.json) is the fourth and works
+    the same way; an entry in it with ``"enabled": false`` is parked and is not listed at all.
     """
     out, seen = [], set()
     sources = [("house_cfg", house_cfg_path), ("pack_cfg", pack_cfg_path)]
     if desk_cfg_path is not None:
         sources.append(("desk_cfg", desk_cfg_path))
+    if ai_cfg_path is not None:
+        sources.append(("ai_cfg", ai_cfg_path))
     for source, path in sources:
         for entry in _entries(load_json(path)):
+            if source == "ai_cfg" and entry.get("enabled") is False:
+                continue
             hid = str(entry["id"])
             if hid in seen:
                 continue
@@ -170,7 +175,7 @@ def definitions(house_cfg_path, pack_cfg_path, desk_cfg_path=None) -> list:
                 "verdict_sentence": entry.get("verdict_sentence"),
                 "persona": entry.get("persona") if isinstance(entry.get("persona"), dict) else None,
                 "source": source,
-                "not_started_when_empty": source == "desk_cfg",
+                "not_started_when_empty": source in ("desk_cfg", "ai_cfg"),
             })
     return out
 

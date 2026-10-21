@@ -1,0 +1,94 @@
+{
+  "version": 1,
+  "pack": "ai_v1",
+  "title": "LineHound Hounds: the AI hounds",
+  "prereg": "docs/PREREG_AI_HOUNDS.md",
+  "ledger": "ai_hounds_v1.jsonl, beside the app database",
+  "registered": "2026-10-20",
+  "paper_only": true,
+  "forward_only": true,
+  "prompt_version": "ai_hound_prompt_v1",
+  "disclaimer": "Paper-only. A language model reads the board an hour before each game and bets or passes. No edge or profit is claimed.",
+  "council": {
+    "min_members": 3,
+    "note": "Parked until a second model is enabled in config/ai_providers.json. Set the Council Hound's enabled flag below to true to run it; it needs at least min_members members that returned a valid answer for a game."
+  },
+  "hounds": [
+    {
+      "id": "ai_claude",
+      "name": "Claude Hound",
+      "tagline": "A language model reads the board an hour before the game.",
+      "category": "ai",
+      "style": "language model reads the board at lock",
+      "kind": "house",
+      "enabled": true,
+      "family": "claude",
+      "providers": ["anthropic"],
+      "sports": ["mlb", "nfl"],
+      "markets": ["moneyline", "spread", "total"],
+      "price_band": [-199, 400],
+      "who_decided": "model",
+      "forward_only": true,
+      "rule_text": "MLB and NFL, moneyline, spread or total. An hour before the game, Claude Haiku 5.5 is shown only the board as it stood then (teams, each book's prices, the average and best price, the books' de-vigged number, how the moneyline moved since it opened) and the clubs' recent results from our stores, and answers bet or pass with a side, a confidence from 1 to 5 and a reason of 25 words or fewer. Code bets one unit on its answer only if the market is on the board and the average price is better than -200 (never -200 or worse), at most 3 bets a day. If the model is down, over its monthly cap or gives an answer that is not valid, the hound passes. Forward only: it is never replayed over old games. One model reading, unproven; paper only.",
+      "persona": {
+        "bio": "A very well-read hound who has never once been right about a game he was not shown. Gets the board an hour out, a 25-word allowance, and no memory of how any of it ends.",
+        "catchphrase": "The board says what it says.",
+        "vibe": "nerd",
+        "roasts": [
+          "Twenty-five words of reasoning and the game used none of them.",
+          "Read the whole board, confident at four out of five, wrong at five out of five.",
+          "A hound that has read everything and still cannot beat the closing line. Interesting.",
+          "The model was sure. The scoreboard was not consulted.",
+          "Passing was an option. It is always an option."
+        ],
+        "brags": [
+          "The board was clear for once. Do not frame this.",
+          "Read it, said it, cashed it. Do not ask it to do that twice.",
+          "A confident four, and the game agreed. It will not last.",
+          "Twenty-five words well spent. One night's worth.",
+          "Fine. The reading hound read it right."
+        ],
+        "epitaph": "Read every board and never saw a result coming.",
+        "verb": "read the board and took"
+      }
+    },
+    {
+      "id": "ai_council",
+      "name": "Council Hound",
+      "tagline": "Only bets when most of the models agree.",
+      "category": "ai",
+      "style": "majority of the model hounds",
+      "kind": "house",
+      "enabled": false,
+      "family": "council",
+      "providers": [],
+      "sports": ["mlb", "nfl"],
+      "markets": ["moneyline", "spread", "total"],
+      "price_band": [-199, 400],
+      "who_decided": "model",
+      "forward_only": true,
+      "rule_text": "MLB and NFL. Asks no model itself. For each game it reads the answers the model hounds gave at the lock and bets only when at least 3 of them returned a valid answer and a strict majority of those backed the same side (home or away, over or under), in the market most of them chose. Same price rules as the model hounds: never -200 or worse, at most 3 bets a day. Forward only. Paper only.",
+      "persona": {
+        "bio": "Chairs a committee of language models and only acts when the room agrees. Has never been alone in a decision and has never claimed to be right.",
+        "catchphrase": "The motion carries.",
+        "vibe": "nerd",
+        "roasts": [
+          "A majority of models agreed and the game did not attend the meeting.",
+          "Agreement is not evidence, Chair.",
+          "Three models, one opinion, zero units.",
+          "The committee voted. The scoreboard overruled.",
+          "Unanimous and wrong. Minutes taken."
+        ],
+        "brags": [
+          "The room agreed and the game agreed with the room. Adjourned.",
+          "Motion carried and it cashed. Record that.",
+          "Consensus paid tonight. Do not make it a policy.",
+          "The committee got one right. Note the date.",
+          "Majority rules. Occasionally correctly."
+        ],
+        "epitaph": "Adjourned for lack of a majority.",
+        "verb": "put it to a vote and took"
+      }
+    }
+  ]
+}

@@ -399,6 +399,9 @@ def earlier_house(dog: common.Dog, *, now: Optional[datetime] = None, stores=Non
 
 
 def earlier_today(dog: common.Dog, *, now: Optional[datetime] = None, **inject) -> dict:
+    if getattr(dog, "forward_only", False):
+        from src.hounds import ai_defs
+        raise fire.NotFirable(ai_defs.FORWARD_ONLY_MESSAGE)        # an AI hound is never replayed, not even over today
     if dog.kind == common.KIND_USER:
         return earlier_user(dog, now=now, **inject)
     if dog.kind == common.KIND_HOUSE:

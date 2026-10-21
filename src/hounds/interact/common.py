@@ -36,6 +36,7 @@ class Dog:
     owner_user_id: Optional[int] = None
     status: str = "running"
     root_id: str = ""
+    forward_only: bool = False            # an AI hound: never replayed, so no backtest or drill (src/hounds/ai_defs.py)
 
     @property
     def spec(self) -> Optional[dict]:
@@ -69,6 +70,13 @@ def resolve(hound_id: str) -> Optional[Dog]:
     if house is not None:
         return Dog(id=house.id, kind=KIND_HOUSE, name=house.name, tagline=house.tagline, house=house,
                    root_id=house.id)
+    # An AI hound is a dog of another kind, known by its config alone (so the Backtest button can refuse it by
+    # name even before the public book is built): forward only, never replayed.
+    from src.hounds import ai_defs
+    if ai_defs.is_ai_hound(hound_id):
+        entry = ai_defs.entry_for(hound_id) or {}
+        return Dog(id=hound_id, kind=KIND_OTHER, name=str(entry.get("name") or hound_id),
+                   tagline=str(entry.get("tagline") or ""), status="running", root_id=hound_id, forward_only=True)
     # a listed dog of another kind (desk model, baseline): known by the cached book only
     book = stats.peek_book()
     data = book.hounds.get(hound_id) if book is not None else None

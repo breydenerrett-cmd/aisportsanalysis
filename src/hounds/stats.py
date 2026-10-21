@@ -580,7 +580,7 @@ def _stream(defs_by_id: dict, all_bets: dict, teams_of: dict, refusals: list) ->
 
 def build(src: Sources) -> HoundBook:
     started = time.time()
-    defs = house.definitions(src.house_hounds_cfg, src.house_pack_cfg, src.house_desk_cfg)
+    defs = house.definitions(src.house_hounds_cfg, src.house_pack_cfg, src.house_desk_cfg, src.house_ai_cfg)
     defs_by_id = {d["id"]: d for d in defs}
 
     engine_map = house.engine_system_map(defs)

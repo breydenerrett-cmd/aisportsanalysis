@@ -144,6 +144,7 @@ class Sources:
     house_pack_cfg: Path
     pack_ledgers: tuple = ()
     house_desk_cfg: Optional[Path] = None      # config/desk_hounds.json (the AI desk and the personas)       # (("house", path), ("user", path)) -- kind, path
+    house_ai_cfg: Optional[Path] = None        # config/ai_hounds.json (the AI hounds: one model reads each board at its lock)
     # User hounds' names, rules and owners live in the app database, not in a ledger.
     # ``user_hounds()`` -> definitions (src.hounds.user_defs.definitions); ``user_stamp()`` ->
     # a cheap tuple folded into the cache key. Both None for a world with no app database.
@@ -153,7 +154,7 @@ class Sources:
     @staticmethod
     def default() -> "Sources":
         root = repo_root()
-        from src.hounds import user_defs, user_engine
+        from src.hounds import ai_defs, user_defs, user_engine
         from src.pipeline import snapshots
         return Sources(
             decisions=evidence_path("decisions_v2.jsonl"),
@@ -164,11 +165,15 @@ class Sources:
             house_hounds_cfg=root / "config" / "house_hounds.json",
             house_pack_cfg=root / "config" / "house_pack.json",
             house_desk_cfg=root / "config" / "desk_hounds.json",
+            house_ai_cfg=root / "config" / "ai_hounds.json",
             pack_ledgers=(
                 ("house", evidence_path("hounds_house_v1.jsonl")),
                 # The AI desk's ledger. It does not exist until the first publish; a missing file is
                 # an empty ledger (jsonl_rows), and the desk hounds read "not started".
                 ("house", evidence_path("hounds_desk_v1.jsonl")),
+                # The AI hounds' bets and grades (src/hounds/ai_runner.py). Written by the API process on the
+                # Fly volume beside the app database, like the user ledger below; a missing file is empty.
+                ("house", Path(ai_defs.ledger_path())),
                 # The user ledger sits beside the app database (user_engine.ledger_path),
                 # outside the repository: the engine that writes it runs in the API process.
                 ("user", Path(user_engine.ledger_path())),
@@ -187,6 +192,8 @@ class Sources:
                  self.house_hounds_cfg, self.house_pack_cfg]
         if self.house_desk_cfg is not None:
             paths.append(self.house_desk_cfg)
+        if self.house_ai_cfg is not None:
+            paths.append(self.house_ai_cfg)
         # the seasons file: moving a season's dates must rebuild the per-season figures
         from src.hounds import seasons
         paths.append(seasons.config_path())

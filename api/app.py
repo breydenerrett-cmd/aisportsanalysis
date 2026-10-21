@@ -25,6 +25,7 @@ from src.providers import mlb
 
 from api.bodylimit import BodyLimitMiddleware
 from api.admin import router as admin_router
+from api.ai import router as ai_admin_router
 from api.auth import get_current_user, require_paid_access, router as auth_router
 from fastapi import Depends
 from api.billing import router as billing_router
@@ -227,6 +228,8 @@ app.include_router(passwords_router)
 # Self-serve FREE account: POST /auth/signup, public and rate limited (api/free_signup.py).
 app.include_router(free_signup_router)
 app.include_router(admin_router)
+# GET /admin/ai/status (admin token): the AI hounds' switch, providers, usage, paid spend vs cap, last errors (api/ai.py).
+app.include_router(ai_admin_router)
 # GET/POST /email/unsubscribe (public, signed link) and /admin/email/status|test (admin token): api/email_routes.py.
 app.include_router(email_router)
 app.include_router(billing_router)
@@ -330,6 +333,24 @@ def _start_hounds_engine() -> None:
         return (not status.get("enabled")) or int(status.get("passes_completed") or 0) >= 1
 
     user_runner.start_loop(ready=_warm_up_done)
+
+
+# -- the AI hounds (src/hounds/ai_runner.py) ----------------------------------------------------------
+#
+# A language model reads each game's board at its lock and bets or passes, on paper. They run HERE, not in the
+# capture slot, because the API key lives on this Fly app. One daemon thread, every 15 minutes, under the same
+# one-build-at-a-time gate and cache warm-up wait as the user hounds' engine above. OFF unless AI_HOUNDS=on, and
+# fly.production.toml does not turn it on: the owner does, after setting ANTHROPIC_API_KEY (docs/owner/AI_KEYS.md).
+# Forward only (never replayed), paper only, a hard monthly dollar cap in src/ai/router.py.
+@app.on_event("startup")
+def _start_ai_hounds() -> None:
+    from src.hounds import ai_runner
+
+    def _warm_up_done() -> bool:
+        status = warmup.status()
+        return (not status.get("enabled")) or int(status.get("passes_completed") or 0) >= 1
+
+    ai_runner.start_loop(ready=_warm_up_done)
 
 
 # -- transactional email (src/notify/email_jobs.py) ----------------------------------------------------------

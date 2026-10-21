@@ -82,8 +82,11 @@ KINDS = (KIND_HOUSE, KIND_USER, KIND_BASELINE)
 # "ai-desk" and "persona" are the AI desk's (config/desk_hounds.json, docs/PREREG_DESK_HOUNDS.md): the
 # desk hound argued by analysts, a bull, a bear and a head, and the personas that read the same data
 # under one instruction each.
+#
+# "ai" is the AI hounds' (config/ai_hounds.json, docs/PREREG_AI_HOUNDS.md): one language model reads the board
+# at each game's lock and bets or passes. Forward only; they have no replay and no backtest.
 CATEGORIES = ("stats", "history", "market", "math", "intangibles", "esoteric", "random",
-              "simple", "mixed", "baseline", "ai-desk", "persona")
+              "simple", "mixed", "baseline", "ai-desk", "persona", "ai")
 
 # A hound that has never made a bet of any kind (the desk before its first publish) is "not_started":
 # not benched (nothing has stopped), not running (nothing has run). Only a definition that says it is

@@ -398,6 +398,9 @@ def drill(*, days: int = 14, dog: Optional[common.Dog] = None, spec: Optional[di
     if (dog is None) == (spec is None):
         raise DrillError("target_required", "drill a dog (dog_id) or a rule (spec), not both and not neither", 422)
     if dog is not None:
+        if getattr(dog, "forward_only", False):
+            from src.hounds import ai_defs
+            raise DrillError("ai_forward_only", ai_defs.FORWARD_ONLY_MESSAGE, 422)
         if dog.kind == common.KIND_USER:
             hound = {"id": dog.id, "spec": dog.spec}
             ident = {"id": dog.id, "name": dog.name, "kind": "user"}
