@@ -56,8 +56,9 @@ def check_one(name: str, value: Any) -> Tuple[Any, str]:
         return (clean, "") if clean else (None, user_spec.sports_error_text())
     if name == "markets":
         items = [value] if isinstance(value, str) else value
-        if (not isinstance(items, (list, tuple)) or not items or len(set(items)) != len(items)
-                or any(m not in R.ALL_MARKETS for m in items)):
+        # every item must be a string BEFORE it is hashed: an untrusted body can carry a list or a dict in the list
+        if (not isinstance(items, (list, tuple)) or not items or not all(isinstance(m, str) for m in items)
+                or len(set(items)) != len(items) or any(m not in R.ALL_MARKETS for m in items)):
             return None, f"choose from {', '.join(R.ALL_MARKETS)}"
         return [m for m in R.ALL_MARKETS if m in items], ""
     if name == "timing":

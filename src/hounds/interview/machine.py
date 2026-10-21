@@ -101,13 +101,29 @@ def _supported(field: str, value: Any, text: str) -> bool:
     return False
 
 
+# words that say "skip" or "bet" without saying what: a clause that shares only these with the person's text shares nothing
+_FILLER = frozenset("skip pass when then that this with from have has are the and not never only bet bets betting game games "
+                    "team teams ignore avoid any every all your their they them its for but also".split())
+
+
+def _content(phrase: str) -> List[str]:
+    return [w for w in re.findall(r"[a-z]{3,}", phrase.lower()) if w not in _FILLER]
+
+
 def _mentioned(phrase: str, text: str) -> bool:
     """Did the person's words contain what a model says they asked for? A model that lists an unsupported idea nobody
-    mentioned would put a request on the can't-automate list that was never made, so at least one word of at least
-    four letters from its phrase has to be in what the person typed."""
+    mentioned would put a request on the can't-automate list that was never made, so at least one content word (not
+    "skip", "bets", "game"...) from its phrase has to be in what the person typed."""
     low = text.lower()
-    words = [w for w in re.findall(r"[a-z]{4,}", phrase.lower())]
-    return any(w in low for w in words)
+    return any(w in low for w in _content(phrase))
+
+
+def _grounded(clause: str, text: str) -> bool:
+    """A model's skip clause becomes a RULE, so every content word of it must be in the person's own words. A clause the
+    person never said ("Skip day games", from a model, when they typed nothing about the time of day) is never added."""
+    words = _content(clause)
+    low = text.lower()
+    return bool(words) and all(w in low for w in words)
 
 
 def _numbers(text: str) -> set:
@@ -227,7 +243,7 @@ def _apply_reading(topic: dict, ans: dict, reading: X.Reading) -> None:
         known = _numbers(all_text)
         for c in reading.exclude_clauses:
             key = " ".join(c.lower().split())
-            if key not in seen and _numbers(c) <= known:
+            if key not in seen and _numbers(c) <= known and _grounded(c, all_text):
                 seen.add(key)
                 all_clauses.append(c)
     for c in all_clauses[:8]:

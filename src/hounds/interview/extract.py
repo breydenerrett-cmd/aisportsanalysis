@@ -135,6 +135,27 @@ def safe_follow_up(text: Any) -> Optional[str]:
     return line
 
 
+GENERIC_REASON = "The rules cannot run this yet."
+
+
+def _as_list(value: Any) -> list:
+    return list(value) if isinstance(value, (list, tuple)) else []
+
+
+def safe_line(text: Any, limit: int, *, claims: bool = True) -> Optional[str]:
+    """One line of model-written text we are willing to show AND store (a record's can't-automate list is frozen into its
+    hash), or None. Markup, links and emoji never pass; with `claims` a promise of results does not either, because a model
+    that writes "this guarantees profit" must not put that sentence on the person's record."""
+    if not isinstance(text, str):
+        return None
+    line = " ".join(text.split())
+    if not line or len(line) > limit or _EMOJI.search(line) or "http" in line.lower() or "<" in line or ">" in line:
+        return None
+    if claims and _BANNED.search(line):
+        return None
+    return line
+
+
 class FormReader:
     """The deterministic reader: the person's own words go to the parser untouched."""
 
@@ -191,10 +212,16 @@ class HaikuReader:
             fallback.why = str(getattr(answer, "reason", "") or "the assistant did not answer")[:200]
             fallback.cost_usd = float(getattr(answer, "cost_usd", 0.0) or 0.0)
             return fallback
-        exclude = [c.strip() for c in output.get("exclude_clauses", []) if isinstance(c, str) and c.strip()]
-        unsupported = [{"text": str(u.get("text", ""))[:200], "reason": str(u.get("reason", ""))[:240]}
-                       for u in output.get("unsupported", []) if isinstance(u, dict) and u.get("text")]
-        return Reading(fields=dict(output.get("fields") or {}), include_text=str(output.get("include_text") or "").strip(),
+        exclude = [c for c in (safe_line(c, 200, claims=False) for c in _as_list(output.get("exclude_clauses"))[:8]) if c]
+        unsupported = []
+        for u in _as_list(output.get("unsupported"))[:10]:
+            if not isinstance(u, dict):
+                continue
+            said = safe_line(u.get("text"), 200)
+            if said:
+                # the model's own reason is shown only when it is clean; otherwise the plain fixed one
+                unsupported.append({"text": said, "reason": safe_line(u.get("reason"), 240) or GENERIC_REASON})
+        return Reading(fields=dict(output["fields"]) if isinstance(output.get("fields"), dict) else {}, include_text=str(output.get("include_text") or "").strip(),
                        exclude_clauses=exclude, unsupported=unsupported, follow_up=safe_follow_up(output.get("follow_up")),
                        source=SOURCE_AI, fell_back=False, cost_usd=float(getattr(answer, "cost_usd", 0.0) or 0.0),
                        model=getattr(answer, "model", None))
