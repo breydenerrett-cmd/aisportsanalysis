@@ -51,6 +51,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import logging
 import os
 import sys
 from collections import Counter, defaultdict
@@ -60,8 +61,10 @@ from typing import Any, Callable, Iterable, Mapping, Optional, Sequence
 
 from src import paths
 from src.core import odds as odds_math
-from src.hounds import user_rules, user_spec
+from src.hounds import one_side, user_rules, user_spec
 from src.ledger.chain import HashChainLedger
+
+logger = logging.getLogger("linehound.hounds.one_side")
 
 LEDGER = os.path.join("evidence", "hounds_user_v1.jsonl")
 KIND_BET = "hound_user_bet"
@@ -605,6 +608,9 @@ def run(date: str, hounds: Sequence[Mapping], rows: Iterable[Mapping], *,
     seen_ids = {r["bet_id"] for r in existing if r.get("kind") == KIND_BET}
     per_day: Counter = Counter((r["hound_id"], r["slate_date"]) for r in existing
                                if r.get("kind") == KIND_BET)
+    # What each hound already holds on each game, from the ledger itself (src/hounds/one_side.py): a later
+    # run, or a different engine, cannot add the other side of a game an earlier ticket already took.
+    positions = one_side.Book.from_rows(existing)
     all_games = build_games(rows, near_date=date)
     v2_hounds = [h for h in hounds if user_spec.is_v2(h["spec"])]
     if v2_hounds:
@@ -661,9 +667,22 @@ def run(date: str, hounds: Sequence[Mapping], rows: Iterable[Mapping], *,
                     candidates.append(((lock_utc, event_id, MARKET_ORDER[market]), lock_utc, event_id,
                                        market, game, commence, cand, bet_id))
         candidates.sort(key=lambda c: c[0])
+        # One side per game, decided in the hound's own rank order (the classic engine's order is lock time,
+        # event, market; the rule-set engine already applied its rank_by in ``hound_candidates``).
+        candidates = one_side.keep_first(
+            candidates, lambda c: (c[2], c[3], c[6]["side"], c[6].get("player"), c[6].get("line")),
+            skipped=skipped, hound_id=hound["id"])
         for _key, lock_utc, event_id, market, game, commence, cand, bet_id in candidates:
             if per_day[(hound["id"], date)] >= spec["max_bets_per_day"]:
                 skipped["daily_limit"] += 1
+                continue
+            # The guard at the point of the append, against the rows already in the ledger.
+            refused = positions.refusal(hound["id"], event_id, market, cand["side"], cand.get("player"),
+                                        cand.get("line"))
+            if refused is not None:
+                skipped[refused] += 1
+                logger.info("hound %s refused %s %s on %s: %s", hound["id"], market, cand["side"], event_id,
+                            one_side.reason_text(refused))
                 continue
             t = clock()
             if mode == "live" and t >= commence:        # the last guard: never at or after the start
@@ -706,6 +725,7 @@ def run(date: str, hounds: Sequence[Mapping], rows: Iterable[Mapping], *,
             for key, value in (hound.get("row_extra") or {}).items():
                 row.setdefault(key, value)
             store.append(row)
+            positions.take(row)
             seen_ids.add(bet_id)
             per_day[(hound["id"], date)] += 1
             written_by[hound["id"]] += 1

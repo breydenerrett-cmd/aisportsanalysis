@@ -38,6 +38,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Callable, Iterable, Mapping, Optional
 
 from src.core import odds as odds_math
+from src.hounds import one_side
 from src.hounds import user_engine as E
 from src.hounds import user_rules as R
 from src.hounds import user_spec
@@ -393,7 +394,9 @@ def hound_candidates(hound: Mapping, spec: Mapping, games: Mapping, facts, date:
                      clock: Callable[[], datetime], seen_ids: set, game_pk_index: Optional[Mapping],
                      skipped, considered: dict, preview_now: Optional[datetime] = None) -> list:
     """The ranked candidates of one version-2 hound on one slate date:
-    [(sortkey, lock_utc, event_id, market, game, commence, cand, bet_id)], de-duplicated per bet."""
+    [(sortkey, lock_utc, event_id, market, game, commence, cand, bet_id)], de-duplicated per bet and held to
+    one side per game (the first in the hound's own rank order keeps the game's side slot, its total slot,
+    and each player's stat slot)."""
     created = E._utc(hound.get("created_at"))
     seed = hound.get("spec_hash") or user_spec.spec_hash(spec)
     best: dict = {}
@@ -437,7 +440,12 @@ def hound_candidates(hound: Mapping, spec: Mapping, games: Mapping, facts, date:
                     kept = best.get(bet_id)
                     if kept is None or item[0] < kept[0]:
                         best[bet_id] = item
-    return list(best.values())
+    # One side per game (src/hounds/one_side.py): in the hound's own rank order, the first candidate on a
+    # game keeps its slot (side / total / one player's stat) and a later one that contradicts or repeats it
+    # is dropped and counted. The ranking is the owner's ``rank_by``, never the better price afterwards.
+    ranked = sorted(best.values(), key=lambda item: item[0])
+    return one_side.keep_first(ranked, lambda it: (it[2], it[3], it[6]["side"], it[6].get("player"), it[6].get("line")),
+                               skipped=skipped, hound_id=hound["id"])
 
 
 # ---------------------------------------------------------------------------
