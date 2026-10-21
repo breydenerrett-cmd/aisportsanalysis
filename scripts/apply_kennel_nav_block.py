@@ -6,7 +6,7 @@ web/js/nav.js rebuilds the `<header class="lh-nav">` block when it runs, so the 
 scripts off and what tests/test_kennel_page.py pins. It is the SIGNED-OUT shape: Leaderboard, Live, Sign in and one primary
 "Find your hound" button (docs/design/KENNEL_FIRST_BRIEF.md). Idempotent: running it twice changes nothing. A page keeps its
 own `data-hook`, `data-bottom` and (renamed) `data-current`; the landing page keeps its `data-nav-extra` button and funnel hook;
-the quiz and the builder carry no button (that is where it leads). Re-run it after merging a branch that added or edited a
+the quiz, the builder and the strategy interview carry no button (that is where it leads, or the page has its own one action). Re-run it after merging a branch that added or edited a
 page's nav block. `--check` prints the pages that are not canonical and exits 1.
 """
 
@@ -18,7 +18,7 @@ from pathlib import Path
 
 WEB = Path(__file__).resolve().parent.parent / "web"
 OLD_KEYS = {"build": "create", "camp": "mykennel", "kennels": "leaderboard"}
-NO_CTA_PAGES = {"quiz.html", "build-a-hound.html"}
+NO_CTA_PAGES = {"quiz.html", "build-a-hound.html", "interview.html"}
 BLOCK = re.compile(r'<header class="lh-nav"([^>]*)>.*?</header>', re.S)
 
 

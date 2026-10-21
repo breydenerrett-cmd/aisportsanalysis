@@ -77,7 +77,7 @@ def make_handler(api):
 class EveryPageFitsAPhone(unittest.TestCase):
     # owner ruling 2026-10-20 kennel-first: the leaderboard has no Kennels tab any more; its house-kennel filter and the graveyard are measured too
     PAGES = ["landing.html", "desk.html", "hounds.html", "hounds.html?scope=house", "kennels.html", "graveyard.html", "live.html", "kennel.html", "kennel.html?u=handler-21e8",
-             "build-a-hound.html", "learning.html", "index.html", "admin.html", "postseason.html", "sample.html", "why-we-paused.html", "room.html"]
+             "build-a-hound.html", "interview.html", "learning.html", "index.html", "admin.html", "postseason.html", "sample.html", "why-we-paused.html", "room.html"]
 
     @classmethod
     def setUpClass(cls):

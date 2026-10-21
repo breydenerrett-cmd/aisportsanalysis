@@ -24,6 +24,8 @@ PAGES = {
     "build": ("build-a-hound.html", "hounds-build.js"),
     # the hound quiz (tests/test_hounds_quiz_web.py)
     "quiz": ("quiz.html", "hound-quiz.js"),
+    # "Turn your strategy into a hound" (tests/test_hounds_interview_web.py)
+    "interview": ("interview.html", "interview.js"),
     "learning": ("learning.html", "hounds-learning.js"),
     # the training camp as a visitor gets it: the scorecard script and the camp's own (web/js/dog-camp.js) together
     "camp": ("learning.html", "camp_boot.js"),

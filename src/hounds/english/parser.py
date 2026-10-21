@@ -998,7 +998,7 @@ def _leftovers(rd: Reader, seg: Seg) -> None:
         tokens = re.findall(r"[a-z0-9'+\-.%/]+", chunk)
         words = [t for t in tokens if t.strip("'.-") and t not in _FILLER and not re.fullmatch(r"[.,;:!?'-]+", t)]
         if words:
-            rd.no(" ".join(words), "not something the dog language can read yet")
+            rd.no(" ".join(words), "not something a hound can check yet")
 
 
 def build_rule(rd: Reader, seg: Seg) -> Optional[dict]:
