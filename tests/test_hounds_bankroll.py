@@ -544,6 +544,19 @@ class Routes(unittest.TestCase):
         mine = next(h for h in body["hounds"] if h["id"] == "u-2")
         self.assertEqual((mine["bankroll"]["current"], mine["bankroll"]["return_pct"]), (1008.0, 0.8))
 
+    def test_leaderboard_list_leaves_the_bet_events_out_unless_asked(self):
+        """The units-only ``events`` list (what a percent-of-bankroll viewer compounds over) grows with the store, so the list
+        routes carry it only on ``?events=1``; nothing else in the payload, and no hound's place, changes."""
+        lean, full = self.get("/hounds?season=all"), self.get("/hounds?season=all&events=1")
+        self.assertTrue(all("events" not in h["bankroll"] for h in lean["hounds"]))
+        mine = next(h for h in full["hounds"] if h["id"] == "u-2")
+        self.assertEqual(len(mine["bankroll"]["events"]), mine["bankroll"]["bets"])
+        self.assertEqual([h["id"] for h in lean["hounds"]], [h["id"] for h in full["hounds"]])
+        strip = lambda hs: [{**h, "bankroll": {k: v for k, v in h["bankroll"].items() if k != "events"}} for h in hs]
+        self.assertEqual(lean["hounds"], strip(full["hounds"]))
+        self.assertIn("events", self.get("/hounds/u-2?season=all")["bankroll"])      # the one-hound route keeps them
+        self.assertTrue(all("events" not in h["bankroll"] for h in self.get("/hounds/graveyard")["hounds"]))
+
     def test_detail_and_series_routes(self):
         d = self.get("/hounds/u-2?season=all")
         # balance 1033.00 (peak) -> 1028.00 -> 1008.00: the worst fall is $25

@@ -18,6 +18,7 @@
  */
 
 import { apiGet } from "./api.js";
+import { withEvents } from "./unitsize.js";
 import {
   h, clearNode, monogram, categoryOf, houndHref, isWarming, NOT_REPORTED, fmtPrice,
 } from "./hounds-core.js";
@@ -188,7 +189,7 @@ export async function fillBoard() {
   const list = q("lb-tickets");
   if (!body) return;
   const [boardResult, streamResult] = await Promise.allSettled([
-    apiGet("/hounds"), apiGet(`/hounds/stream?page=1&page_size=${LATEST_TICKETS * 3}`)]);
+    apiGet(withEvents("/hounds")), apiGet(`/hounds/stream?page=1&page_size=${LATEST_TICKETS * 3}`)]);
   const data = boardResult.status === "fulfilled" ? boardResult.value : null;
   if (!data || typeof data !== "object") {
     clearNode(body);

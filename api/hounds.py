@@ -95,14 +95,31 @@ def _book(response: Response):
     return book, False
 
 
+def _lean(payload: dict, events: bool) -> dict:
+    """``payload`` with each hound's ``bankroll.events`` (the units-only bet list a browser prices at a percent-of-bankroll
+    sizing, ~45 bytes a bet) kept only when the caller asked for them (``?events=1``). A list of every hound must not carry every
+    bet of every hound by default: fixed-dollar sizing scales the block and needs none of it, and the list grows with the store.
+    Never mutates ``payload`` (a saved copy may be shared)."""
+    if events or not isinstance(payload, dict) or not isinstance(payload.get("hounds"), list):
+        return payload
+    hounds = []
+    for h in payload["hounds"]:
+        b = h.get("bankroll") if isinstance(h, dict) else None
+        if isinstance(b, dict) and "events" in b:
+            h = {**h, "bankroll": {k: v for k, v in b.items() if k != "events"}}
+        hounds.append(h)
+    return {**payload, "hounds": hounds}
+
+
 @router.get("/hounds")
-def leaderboard(response: Response, season: Optional[str] = Query(None, max_length=16)):
+def leaderboard(response: Response, season: Optional[str] = Query(None, max_length=16),
+                events: bool = Query(False)):
     sid = _season(season)
     book, warming = _book(response)
     if warming:
-        return stats.saved_payload("leaderboard", season=sid) or warming_payload(
-            {"hounds": [], "season": seasons.meta(sid)})
-    return leaderboard_payload(stats.leaderboard(book, sid), book.as_of, seasons.meta(sid))
+        return _lean(stats.saved_payload("leaderboard", season=sid) or warming_payload(
+            {"hounds": [], "season": seasons.meta(sid)}), events)
+    return _lean(leaderboard_payload(stats.leaderboard(book, sid), book.as_of, seasons.meta(sid)), events)
 
 
 def _with_headstones(payload: dict) -> dict:
@@ -117,11 +134,11 @@ def _with_headstones(payload: dict) -> dict:
 
 
 @router.get("/hounds/graveyard")
-def graveyard(response: Response):
+def graveyard(response: Response, events: bool = Query(False)):
     book, warming = _book(response)
     if warming:
-        return _with_headstones(stats.saved_payload("graveyard") or warming_payload({"hounds": []}))
-    return _with_headstones(graveyard_payload(stats.graveyard(book), book.as_of))
+        return _with_headstones(_lean(stats.saved_payload("graveyard") or warming_payload({"hounds": []}), events))
+    return _with_headstones(_lean(graveyard_payload(stats.graveyard(book), book.as_of), events))
 
 
 @router.get("/hounds/digest")

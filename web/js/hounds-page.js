@@ -48,7 +48,7 @@ import {
   statusOf, typeText, sportLabel, sportsOf, marketsText, presentSports, filterBySport, sortHounds, splitRanked,
   settledOf, onlyTickets, freshness, inQualifyingRound, qualifyingRows, progressText, isMemberDog, isNewDog, sortByBankroll,
 } from "./hounds-board.js";
-import { startText } from "./unitsize.js";
+import { startText, withEvents } from "./unitsize.js";
 import { unitChip } from "./unitchip.js";
 import {
   ALL_SEASON, seasonOptions, chooseSeason, saveSeason, seasonParam, seasonLine, minRanked,
@@ -703,7 +703,7 @@ export async function loadGraveyard() {
   const box = q("hounds-graveyard");
   if (!box) return;
   try {
-    const data = await apiGet("/hounds/graveyard");
+    const data = await apiGet(withEvents("/hounds/graveyard"));
     if (isWarming(data)) {
       clearNode(box);
       box.appendChild(warmingBox(data));
@@ -733,7 +733,7 @@ export async function loadBoard() {
   const asked = state.season;
   renderSeasonBar();
   try {
-    const data = await apiGet(`/hounds?${seasonParam(asked)}`);
+    const data = await apiGet(withEvents(`/hounds?${seasonParam(asked)}`));
     if (asked !== state.season) return false;        // the reader picked another season while this one loaded
     if (data && typeof data === "object" && data.season && typeof data.season === "object") state.seasonMeta = data.season;
     if (isWarming(data)) {

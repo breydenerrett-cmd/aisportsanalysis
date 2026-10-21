@@ -41,7 +41,8 @@ export const CHANGED_EVENT = "linehound:unit-size";
 
 const WINDOW_SECONDS = { h24: 24 * 3600, d7: 7 * 24 * 3600, d30: 30 * 24 * 3600 };
 const isNum = (n) => typeof n === "number" && Number.isFinite(n);
-const round = (x, nd = 2) => { const f = 10 ** nd; return Math.round((x + 0) * f) / f; };
+// toFixed rounds the exact binary value, as Python's round() does, so a half-cent lands on the same side in both ports
+const round = (x, nd = 2) => Number((x + 0).toFixed(nd));
 
 export const fixedSizing = (unit) => ({ mode: "fixed", unit_usd: unit, pct: null, start_usd: unit * UNITS_IN_START });
 export const percentSizing = (pct, start) => ({ mode: "percent", unit_usd: null, pct, start_usd: start });
@@ -108,6 +109,17 @@ export function getSizing() {
   const raw = readRaw();
   if (raw !== cache.raw || cache.sizing === null) cache = { raw, sizing: parseStored(raw) || defaultSizing() };
   return cache.sizing;
+}
+
+/**
+ * `url` with `events=1` added when this viewer sizes by a percent of bankroll. The list endpoints (/hounds, /hounds/graveyard) leave
+ * each hound's units-only bet list out by default (it grows with the store and a fixed unit does not need it); a percent-of-bankroll
+ * lens compounds bet by bet, so it asks for them.
+ */
+export function withEvents(url) {
+  let wants = false;
+  try { wants = getSizing().mode === "percent"; } catch (err) { wants = false; }
+  return wants ? `${url}${url.includes("?") ? "&" : "?"}events=1` : url;
 }
 
 /** Test seam: forget this page view's choice so the next read goes to storage again. */

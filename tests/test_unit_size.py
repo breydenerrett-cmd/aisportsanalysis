@@ -90,6 +90,17 @@ class TheChoices(unittest.TestCase):
                 us.validate({"mode": "percent", "pct": 1, "start_usd": bad})
             self.assertEqual(ctx.exception.code, "start_usd")
 
+    def test_infinity_and_numbers_too_big_for_a_float_are_refused_not_a_500(self):
+        """A JSON ``1e999`` is +Infinity and ``1`` followed by 400 zeros is an int no float can hold: both once raised
+        OverflowError out of the validator (an HTTP 500 on PUT /me/unit-size). They are refusals like any other bad number."""
+        huge = 10 ** 400
+        for field, extra in (("unit_usd", {"mode": "fixed"}), ("start_usd", {"mode": "percent", "pct": 2}),
+                             ("pct", {"mode": "percent", "start_usd": 5000})):
+            for bad in (float("inf"), float("-inf"), huge, -huge):
+                with self.subTest(field=field, value=bad), self.assertRaises(us.SizingError) as ctx:
+                    us.validate({**extra, field: bad})
+                self.assertEqual(ctx.exception.code, field)
+
     def test_a_bad_mode_or_shape_is_refused(self):
         for bad in (None, "fixed", [], {"mode": "kelly"}, {}):
             with self.subTest(raw=bad), self.assertRaises(us.SizingError):
@@ -220,6 +231,37 @@ class TheBrowserPortAgreesWithPython(unittest.TestCase):
     def test_fixed_sizes(self):
         for unit in (10, 25, 50, 100, 3):
             self.check({"mode": "fixed", "unit_usd": unit})
+
+    def test_a_six_bet_fixture_with_a_push_a_void_and_two_bets_on_one_day_is_exact_in_both_ports(self):
+        """Hand-computed (2% of $2,500; sized off the pre-day balance): day 1 balance 2500 -> A +90.00 (2u win at +0.9) and B -50.00
+        -> 2540; day 2 base 2540 -> push 0, D +228.60 (3u at +1.5) -> 2768.60; day 3 base 2768.60 -> void 0, F -110.744 -> 2657.856.
+        Wagered is the decided bets only (100 + 50 + 152.40 + 110.744). Drawdown 110.744 off the 2768.60 peak is exactly 4%."""
+        def e(day, flat, stake, result, hours):
+            return bk.Event(settle=NOW - timedelta(hours=hours), units=flat * stake, flat=flat, stake=stake, result=result,
+                            order=(day, f"b{hours}"))
+        bets = [e("2026-10-01", 0.9, 2, "win", 100), e("2026-10-01", -1, 1, "loss", 99), e("2026-10-02", 0, 1, "push", 75),
+                e("2026-10-02", 1.5, 3, "win", 74), e("2026-10-03", 0, 1, "void", 50), e("2026-10-03", -1, 2, "loss", 49)]
+        sizing = us.validate({"mode": "percent", "pct": 2, "start_usd": 2500})
+        hand = {"start": 2500.0, "current": 2657.86, "pnl_usd": 157.86, "return_pct": 6.31, "wagered_usd": 413.14, "yield_pct": 38.21,
+                "peak": 2768.6, "max_drawdown_usd": 110.74, "max_drawdown_pct": 4.0, "bets": 6, "settled": 5}
+        py = bk.block(bets, NOW, sizing=sizing)
+        self.assertEqual({k: py[k] for k in hand}, hand)
+        got = run_js('import * as U from "./unitsize.js";\n'
+                     f"const b = {json.dumps({**bk.block(bets, NOW), 'bets': 6, 'settled': 5})};\n"
+                     f"console.log(JSON.stringify(U.lensBlock(b, {json.dumps(sizing.as_dict())}, {int(NOW.timestamp())})));")
+        self.assertEqual({k: got[k] for k in hand}, hand)
+
+    def test_units_that_never_terminate_still_price_to_the_cent(self):
+        """-110 style prices give units like 0.909090...; the wire keeps six places so 40 such bets at $1,000 a unit match Python."""
+        bets = [bk.Event(settle=NOW - timedelta(hours=i + 1), units=(100 / 110) * 1.5 if i % 3 else -1.5, flat=(100 / 110),
+                         stake=1.5, result="win" if i % 3 else "loss", order=(f"2026-09-{i // 2 + 1:02d}", f"b{i:03d}")) for i in range(40)]
+        sizing = us.validate({"mode": "fixed", "unit_usd": 1000})
+        want = bk.block(bets, NOW, sizing=sizing)
+        got = run_js('import * as U from "./unitsize.js";\n'
+                     f"const b = {json.dumps({**bk.block(bets, NOW), 'bets': 40, 'settled': 40})};\n"
+                     f"console.log(JSON.stringify(U.lensBlock(b, {json.dumps({**sizing.as_dict(), 'unit_usd': 1000})}, {int(NOW.timestamp())})));")
+        for key in ("current", "pnl_usd", "wagered_usd", "peak", "max_drawdown_usd"):
+            self.assertAlmostEqual(got[key], want[key], delta=0.0051, msg=key)
 
     def test_percent_sizes(self):
         self.check({"mode": "percent", "pct": 2, "start_usd": 5000})

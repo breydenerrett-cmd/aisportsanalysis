@@ -29,6 +29,7 @@ Standard library only (no FastAPI), so it loads where the app does not.
 
 from __future__ import annotations
 
+import math
 import sqlite3
 import threading
 from contextlib import contextmanager
@@ -82,11 +83,13 @@ def default_sizing() -> Sizing:
 
 
 def _whole(value, lo: float, hi: float, code: str, what: str) -> int:
-    if isinstance(value, bool) or not isinstance(value, (int, float)) or value != value:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise SizingError(code, f"{what} must be a whole number of dollars")
-    if float(value) != int(value):
-        raise SizingError(code, f"{what} must be a whole number of dollars")
-    n = int(value)
+    if isinstance(value, float):
+        # NaN, +-Infinity (a JSON 1e999) and fractions are all "not a whole number"; int() of the first two would raise
+        if not math.isfinite(value) or value != int(value):
+            raise SizingError(code, f"{what} must be a whole number of dollars")
+    n = int(value)                                         # a Python int of any size compares fine below
     if not lo <= n <= hi:
         raise SizingError(code, f"{what} must be between ${int(lo):,} and ${int(hi):,}")
     return n
@@ -105,7 +108,7 @@ def validate(raw) -> Sizing:
         unit = _whole(raw.get("unit_usd"), FIXED_MIN, FIXED_MAX, "unit_usd", "a unit")
         return fixed(unit)
     pct = raw.get("pct")
-    if isinstance(pct, bool) or not isinstance(pct, (int, float)) or float(pct) not in PCT_CHOICES:
+    if isinstance(pct, bool) or not isinstance(pct, (int, float)) or not -1000 < pct < 1000 or float(pct) not in PCT_CHOICES:   # (NaN/inf/huge fail the range)
         raise SizingError("pct", "the percent must be 0.5 to 5 in steps of 0.5")
     start = _whole(raw.get("start_usd"), START_MIN, START_MAX, "start_usd", "the starting bankroll")
     return Sizing("percent", None, float(pct), float(start))
@@ -150,7 +153,7 @@ def wire_events(evts: Iterable) -> list:
     for e in evts:
         settle = e.settle.astimezone(timezone.utc) if isinstance(e.settle, datetime) else None
         out.append([str(e.order[0]) if e.order else "", int(settle.timestamp()) if settle else None,
-                    round(e.units + 0.0, 4), round(e.stake + 0.0, 4), RESULT_LETTER.get(e.result, "")])
+                    round(e.units + 0.0, 9), round(e.stake + 0.0, 6), RESULT_LETTER.get(e.result, "")])
     return out
 
 
