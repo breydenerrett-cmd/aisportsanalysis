@@ -4,19 +4,19 @@
    "bytes": 1440782,
    "newest": "2026-10-18T00:00Z",
    "records": 1705,
-   "sha256": "b7923cf20c239ad4164339926bb972f16c41d8a00204acaf65e0bcc5d681a8b8"
+   "sha256": "02c512aa2909d8477259e4460d7d556c5062df09255feaf02b3a26e125d83246"
   },
   "events.jsonl": {
    "bytes": 80300,
    "newest": "2026-10-17T21:00Z",
    "records": 156,
-   "sha256": "d7ce8bca86b4b20e614339ec43a8280018e0816a48a5021245731e8274865887"
+   "sha256": "b6473085c4d96cbf3840378e099286f5048a28aba9ef2f450f89b99cec479456"
   },
   "fight_stats.jsonl": {
    "bytes": 5650468,
    "newest": "2026-10-18T00:00Z",
    "records": 3280,
-   "sha256": "51395a432fe50dd882f706235fc7aa5dc9967a4a3992d4e08eb12f7983ab5bcf"
+   "sha256": "8cf230a220b96172008d96fff529224c4b6701af264ae732ab42aeef06f60838"
   },
   "fighters.jsonl": {
    "bytes": 609912,
@@ -25,10 +25,10 @@
    "sha256": "f58cf30bd906b88b6ca06550a933f7afb9adce97fa39129720f2010f601639e1"
   },
   "odds.jsonl": {
-   "bytes": 6149584,
-   "newest": "2026-10-20T14:43:56Z",
+   "bytes": 6154052,
+   "newest": "2026-10-21T10:21:11Z",
    "records": 4060,
-   "sha256": "225043efa563d147320b6fc1a742469249e7d2fbf10e36e9d5c0d610a999127f"
+   "sha256": "042134d514368bacadf5ae85354761eb251f8a61fc40e468683579e900fe43e7"
   },
   "ufccom_profiles.jsonl": {
    "bytes": 1263862,
@@ -37,17 +37,17 @@
    "sha256": "f9d7f7ec8aa1bf8e6c6f556c4a324c4546537888cfff4654f15de97323098267"
   }
  },
- "generated_utc": "2026-10-20T14:44:07Z",
+ "generated_utc": "2026-10-21T10:21:21Z",
  "last_run": {
-  "bouts": 84,
-  "events": 7,
-  "fight_stats": 60,
+  "bouts": 57,
+  "events": 5,
+  "fight_stats": 36,
   "fighters": 0,
-  "finished_utc": "2026-10-20T14:44:06Z",
+  "finished_utc": "2026-10-21T10:21:21Z",
   "kind": "update",
-  "odds": 40,
+  "odds": 27,
   "profiles": 0,
-  "started_utc": "2026-10-20T14:42:11Z",
+  "started_utc": "2026-10-21T10:19:54Z",
   "stopped": null
  },
  "last_run_errors": 0
