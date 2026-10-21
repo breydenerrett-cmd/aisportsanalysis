@@ -52,7 +52,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[1]
 CSS = (REPO / "web" / "css" / "landing.css").read_text(encoding="utf-8")
 JS = (REPO / "web" / "js" / "landing.js").read_text(encoding="utf-8")
-HTML = (REPO / "web" / "landing.html").read_text(encoding="utf-8")
+HTML = (REPO / "web" / "desk.html").read_text(encoding="utf-8")
 
 # The base rule stack, before any `@media` override. is-up/is-down are only
 # ever asserted colour-only in the BASE stylesheet -- a media query is free

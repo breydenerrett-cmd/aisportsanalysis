@@ -163,11 +163,25 @@
   .qz-duel__vs { margin: 0; }
 }
 
+/* the sport question: a grid of chips, the popular sports and Any sport first, the rest behind More */
+.qz-chipgrid { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 14px; }
+.qz-chipgrid--more { padding-top: 2px; }
+.qz-chip--sport { min-height: 48px; padding: 0 22px; font-size: 16px; font-weight: 600; color: var(--qz-ink); }
+.qz-chip--more { border-style: dashed; color: var(--qz-ink2); }
+.qz .qz-chip--sport[aria-pressed="true"] { background: var(--qz-accent); border-color: var(--qz-accent); color: var(--qz-accent-ink); }
+.qz-pin:disabled { opacity: .42; cursor: not-allowed; }
+.qz-pin:disabled:hover { border-color: var(--qz-line); background: var(--qz-soft); }
+
+/* question 6: four move cards, a second row of two quiet buttons */
+.qz-grid--moves { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+.qz-grid--moves .qz-cardwrap .qz-pin { flex: none; }
+@media (min-width: 960px) { .qz-grid--moves { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.qz-grid--moves[aria-busy="true"] { opacity: .6; }
+.qz-actions--moves { margin-top: 18px; }
+.qz-actions--moves .qz-fine { flex-basis: 100%; margin: 0; }
+
 /* the library */
-.qz-filters, .qz-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 14px; }
-.qz-filters { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; scrollbar-width: none; margin-inline: -16px; padding-inline: 16px; }
-.qz-filters::-webkit-scrollbar { display: none; }
-@media (min-width: 900px) { .qz-filters { flex-wrap: wrap; overflow: visible; margin-inline: 0; padding-inline: 0; } }
+.qz-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 14px; }
 .qz-chip {
   flex: none; min-height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--qz-line2); background: var(--qz-soft); color: var(--qz-ink2);
   font: 500 14px/1 var(--font-body, 'Instrument Sans', system-ui, sans-serif); cursor: pointer; transition: background-color .15s, color .15s;
@@ -308,3 +322,12 @@
 @keyframes qz-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes qz-rule-in { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }
 @keyframes qz-flip { from { opacity: 0; transform: perspective(600px) rotateX(-90deg); } to { opacity: 1; transform: none; } }
+
+/* the reveal's "add anything in your own words" is one quiet line until it is opened (kennel-first rebuild: rules, would have bet today, then keep) */
+.qz-own { margin: 0 0 var(--lh-s5, 24px); }
+.qz-own__sum { min-height: 44px; display: flex; align-items: center; cursor: pointer; color: var(--qz-ink2); font-size: 15px; font-weight: 600; list-style-position: inside; }
+.qz-own__sum:hover { color: var(--qz-ink); }
+.qz-own[open] .qz-own__sum { margin-bottom: 8px; }
+.qz-own__sum::marker { content: ""; }
+.qz-own__sum::before { content: "+"; display: inline-grid; place-items: center; width: 22px; height: 22px; margin-right: 10px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--qz-line2); font-weight: 600; }
+.qz-own[open] .qz-own__sum::before { content: "\2212"; }

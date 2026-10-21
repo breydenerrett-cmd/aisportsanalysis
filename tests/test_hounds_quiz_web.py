@@ -11,7 +11,7 @@ import unittest
 
 from src.hounds import user_spec
 from src.hounds.english import parser
-from src.hounds.quiz import compose as C, library as L
+from src.hounds.quiz import compose as C, library as L, moves as M
 from tests.hounds_web_runner import HAS_NODE, WEB, run_js, run_page
 
 HTML = (WEB / "quiz.html").read_text(encoding="utf-8")
@@ -60,9 +60,28 @@ def preview_answer(qualifying=2, cap=2, board=3):
             "games_on_board": board, "read_only": True, "paper_only": True, "not_advice": user_spec.NOT_ADVICE}
 
 
+# what the first five questions have set when question 6 opens in COMBO_ACTIONS
+BEFORE_Q6 = {"sports": ["MLB"], "markets": ["moneyline", "total"], "personality": "chalk_eater", "bets_per_day": 3, "stake": 1.0,
+             "price_comfort": "even", "timing": "late"}
+PAGE_IDS = ["windy_overs", "steam_chaser", "tired_legs", "hot_bat_props"]
+OTHER_IDS = ["revenge_tour", "road_warriors", "home_cooking", "chalk_eater"]
+
+
+def moves_page(answers, ids=None, page=0):
+    """POST /hounds/quiz/moves's answer: the REAL suggestion for these answers (src/hounds/quiz/moves.py). `ids` picks which of the
+    real cards sit on the page, so a test can name the moves it clicks."""
+    out = json.loads(json.dumps(M.suggest(answers, page=page)))
+    if ids:
+        every = {c["id"]: c for p in range(out["pages"]) for c in M.suggest(answers, page=p)["moves"]}
+        out["moves"] = [json.loads(json.dumps(every[i])) for i in ids]
+        out["recommended"], out["recommended_card"] = ids[0], out["moves"][0]
+    return out
+
+
 def base_routes(answers=None, **over):
     fixture = composed(answers or {})
     r = {"/hounds/quiz/library": [200, LIB], "POST /hounds/quiz/compose": [200, fixture],
+         "POST /hounds/quiz/moves": [200, moves_page(BEFORE_Q6, PAGE_IDS)],
          "POST /hounds/builder/preview": [200, preview_answer()]}
     r.update(over)
     return r
@@ -182,7 +201,7 @@ class TheQuestions(unittest.TestCase):
         caps = out["captures"]
         self.assertEqual(caps[START["label"]]["step"], "sports")
         self.assertEqual(caps[START["label"]]["q"], "Where does your hound hunt?")
-        self.assertEqual(caps[START["label"]]["cards"], 2)
+        self.assertEqual(caps[START["label"]]["cards"], len(LIB["sports"]) + 1)              # every sport, plus Any sport
         steps = [caps[f"after{i}"]["step"] for i in range(7)]
         self.assertEqual(steps, ["markets", "personality", "risk", "timing", "archetypes", "quirks", "look"])
         self.assertEqual([caps[f"after{i}"]["valuenow"] for i in range(7)], ["1", "2", "3", "4", "5", "6", "7"])
@@ -190,11 +209,11 @@ class TheQuestions(unittest.TestCase):
         self.assertEqual(caps["after1"]["cards"], 6)
         self.assertEqual((caps["after2"]["segs"], caps["after2"]["cards"]), (11, 4))
         self.assertEqual(caps["after3"]["cards"], 2)
-        self.assertEqual(caps["after4"]["cards"], len(LIB["archetypes"]))
+        self.assertEqual(caps["after4"]["cards"], 4)                                          # four moves at a time, not the library
         self.assertEqual(caps["after5"]["cards"], len(LIB["quirks"]))
         self.assertEqual((caps["after6"]["coats"], caps["after6"]["cards"]), (8, 8))
         self.assertEqual(caps["after0"]["q"], "What does it bet on?")
-        self.assertEqual(caps["after4"]["q"], "Pick up to 3 favorite moves.")
+        self.assertEqual(caps["after4"]["q"], "Pick a move.")
 
     def test_next_waits_for_a_pick_skip_never_does_and_back_keeps_the_answer(self):
         out = quiz(actions=[
@@ -241,30 +260,217 @@ class TheQuestions(unittest.TestCase):
         out = quiz(actions=[START, SKIP, SKIP], queries=[q("dogs", "[data-hook='quiz-card'][data-group='personality'] svg.dk-badge", "attrs", attr="data-breed")])
         self.assertEqual(out["final"]["dogs"], [p["breed"] for p in LIB["personalities"]])
 
-    def test_the_card_picker_limits_to_the_pick_limit_filters_and_reads_the_generated_rule(self):
-        pick = [START, SKIP, SKIP, SKIP, SKIP, SKIP]
-        ids = [a["id"] for a in LIB["archetypes"]]
-        limit = LIB["limits"]["archetype_picks"]
-        out = quiz(actions=pick + [click(card("archetypes", ids[i])) for i in range(limit)] + [
-            dict(do="click", sel=card("archetypes", ids[limit]), label="over", capture=[
-                q("count", hook("quiz-tray-count")), q("notice", hook("quiz-notice")), q("over", card("archetypes", ids[limit]), "attr", attr="aria-pressed"),
-                q("next", hook("quiz-next"))]),
-            dict(do="click", sel=f"[data-hook='quiz-tray-chip'][data-id='{ids[0]}']", label="remove", capture=[q("count", hook("quiz-tray-count"))]),
-            dict(do="click", sel=f"[data-hook='quiz-read'][data-id='{ids[5]}']", label="read", capture=[
-                q("english", f".qz-cardwrap[data-id='{ids[5]}'] [data-hook='quiz-english']"), q("hidden", f".qz-cardwrap[data-id='{ids[5]}'] [data-hook='quiz-english']", "hidden")]),
-            dict(do="click", sel="[data-hook='quiz-filter'][data-id='nfl']", label="nfl", capture=[q("cards", "[data-hook='quiz-card']", "count")]),
-            dict(do="click", sel="[data-hook='quiz-filter'][data-id='props']", label="props", capture=[q("cards", "[data-hook='quiz-card']", "count")]),
-        ])
+    def test_the_sport_question_is_a_chip_grid_with_every_sport_most_popular_first(self):
+        out = quiz(actions=[START], queries=[
+            q("chips", "[data-hook='quiz-sports-grid'] [data-hook='quiz-card']", "texts"),
+            q("more", hook("quiz-sports-more")), q("more_open", hook("quiz-sports-more"), "attr", attr="aria-expanded"),
+            q("extra_hidden", hook("quiz-sports-extra"), "hidden"), q("extra", "[data-hook='quiz-sports-extra'] [data-hook='quiz-card']", "texts"),
+            q("all", "[data-hook='quiz-card']", "count"), q("pins", ".qz-pin", "count")])
+        f = out["final"]
+        self.assertEqual(f["chips"], ["NBA", "NFL", "NHL", "College football", "Soccer", "Tennis", "MLB", "MMA", "Any sport"])
+        self.assertEqual(f["more"], f"More ({len(LIB['sports']) - 8})")
+        self.assertEqual((f["more_open"], f["extra_hidden"]), ("false", True))
+        self.assertEqual(f["pins"], 0)                                                                  # chips, not the old two big cards
+        self.assertEqual(sorted(f["chips"][:8] + f["extra"]), sorted(r["label"] for r in LIB["sports"]))
+        self.assertEqual(f["all"], len(LIB["sports"]) + 1)
+
+    def test_more_opens_the_rest_and_a_pick_in_it_keeps_it_open(self):
+        out = quiz(actions=[START,
+                            click(hook("quiz-sports-more"), "open", capture=[q("hidden", hook("quiz-sports-extra"), "hidden"), q("label", hook("quiz-sports-more")),
+                                                                          q("expanded", hook("quiz-sports-more"), "attr", attr="aria-expanded")]),
+                            click(card("sports", "WNBA"), "wnba", capture=[q("on", card("sports", "WNBA"), "attr", attr="aria-pressed")]),
+                            click(hook("quiz-sports-more"), "close", capture=[q("hidden", hook("quiz-sports-extra"), "hidden")])])
         c = out["captures"]
+        self.assertEqual(c["open"], {"hidden": False, "label": "Fewer", "expanded": "true"})
+        self.assertEqual(c["wnba"]["on"], "true")
+        self.assertFalse(c["close"]["hidden"])                      # WNBA is picked, so its row stays showing even after Fewer
+
+    def test_sports_take_many_and_any_sport_is_a_different_answer_from_a_list(self):
+        pressed = lambda ident: q(ident, card("sports", ident), "attr", attr="aria-pressed")           # noqa: E731
+        caps = [pressed("NBA"), pressed("NHL"), pressed("ANY")]
+        out = quiz(actions=[START, click(card("sports", "NBA")), click(card("sports", "NHL"), "two", capture=caps),
+                            click(card("sports", "ANY"), "any", capture=caps),
+                            click(card("sports", "NBA"), "list_again", capture=caps),
+                            click(card("sports", "ANY"), "any2"), click(card("sports", "ANY"), "off", capture=caps)])
+        c = out["captures"]
+        self.assertEqual(c["two"], {"NBA": "true", "NHL": "true", "ANY": "false"})
+        self.assertEqual(c["any"], {"NBA": "false", "NHL": "false", "ANY": "true"})
+        self.assertEqual(c["list_again"], {"NBA": "true", "NHL": "false", "ANY": "false"})
+        self.assertEqual(c["off"], {"NBA": "false", "NHL": "false", "ANY": "false"})
+
+    def test_the_sports_go_to_compose_as_the_composer_expects_them(self):
+        pick = [START, click(card("sports", "TENNIS")), click(card("sports", "NCAAF")), NEXT] + [SKIP] * 7
+        out = quiz(routes=base_routes({"sports": ["NCAAF", "TENNIS"]}), actions=pick)
+        body = posts_to(out, "/hounds/quiz/compose")[0]["body"]
+        self.assertEqual(body, {"answers": {"sports": ["TENNIS", "NCAAF"]}})
+        anything = quiz(routes=base_routes({"sports": [user_spec.ANY]}), actions=[START, click(card("sports", "ANY")), NEXT] + [SKIP] * 7)
+        self.assertEqual(posts_to(anything, "/hounds/quiz/compose")[0]["body"], {"answers": {"sports": ["ANY"]}})
+
+    def test_a_market_the_picked_sports_do_not_post_is_greyed_out_and_cannot_be_picked(self):
+        attr = lambda ident: q(ident, card("markets", ident), "attr", attr="disabled")                  # noqa: E731
+        pitch = lambda ident: q(ident + "_pitch", card("markets", ident) + " .qz-pin__pitch")           # noqa: E731
+        out = quiz(actions=[START, click(card("sports", "TENNIS")), NEXT,
+                            click(card("markets", "total"), "click_total", capture=[q("on", card("markets", "total"), "attr", attr="aria-pressed")])],
+                   queries=[attr("moneyline"), attr("spread"), attr("total"), attr("props"), attr("mix"), pitch("total")])
+        f = out["final"]
+        self.assertIsNone(f["moneyline"])
+        self.assertIsNone(f["mix"])
+        for ident in ("spread", "total", "props"):
+            self.assertIsNotNone(f[ident], ident)
+        self.assertEqual(f["total_pitch"], "Not posted for the sports you picked.")
+        mlb = quiz(actions=[START, click(card("sports", "MLB")), NEXT], queries=[attr("props"), attr("spread")])
+        self.assertEqual((mlb["final"]["props"], mlb["final"]["spread"]), (None, None))
+        every = quiz(actions=[START, click(card("sports", "ANY")), NEXT], queries=[attr("props"), attr("total")])
+        self.assertEqual((every["final"]["props"], every["final"]["total"]), (None, None))
+
+    def test_changing_the_sports_drops_a_market_they_do_not_post(self):
+        out = quiz(actions=[START, click(card("sports", "NBA")), NEXT, click(card("markets", "total")), BACK.copy() | {"label": "b"},
+                            click(card("sports", "NBA"), "unpick"), click(card("sports", "TENNIS")), NEXT],
+                   queries=[q("total", card("markets", "total"), "attr", attr="aria-pressed")])
+        self.assertEqual(out["final"]["total"], "false")
+
+
+@unittest.skipUnless(HAS_NODE, "node not installed")
+class TheMoveQuestion(unittest.TestCase):
+    """Question 6: four move cards from POST /hounds/quiz/moves, pick one (a second is optional), Show me 4 others, Pick for me."""
+
+    TO_Q6 = [START, click(card("sports", "MLB")), NEXT, click(card("markets", "moneyline")), click(card("markets", "total")), NEXT,
+             click(card("personality", "chalk_eater")), NEXT,
+             click("[data-hook='quiz-seg'][data-group='bets_per_day'][data-id='3']"), click("[data-hook='quiz-seg'][data-group='stake'][data-id='1']"),
+             click(card("price_comfort", "even")), NEXT, click(card("timing", "late")), NEXT]
+
+    def at_q6(self, routes=None, actions=(), **kw):
+        return quiz(routes=routes or base_routes(), actions=self.TO_Q6 + list(actions), **kw)
+
+    def test_it_asks_the_server_with_the_answers_so_far_and_shows_exactly_four_cards(self):
+        out = self.at_q6(queries=[
+            q("cards", "[data-hook='quiz-archetype-grid'] [data-hook='quiz-card']", "count"),
+            q("names", "[data-hook='quiz-archetype-grid'] .qz-pin__title", "texts"), q("shorts", "[data-hook='quiz-archetype-grid'] .qz-pin__pitch", "texts"),
+            q("badges", hook("quiz-move-badge"), "texts"), q("reads", hook("quiz-read"), "texts"),
+            q("english_hidden", "[data-hook='quiz-english']", "attrs", attr="hidden"), q("title", hook("quiz-question")),
+            q("count", hook("quiz-moves-count"))])
+        f = out["final"]
+        self.assertEqual(posts_to(out, "/hounds/quiz/moves")[0]["body"], {"answers": BEFORE_Q6, "page": 0})
+        self.assertEqual(f["cards"], 4)
+        page = moves_page(BEFORE_Q6, PAGE_IDS)["moves"]
+        self.assertEqual(f["names"], [m["name"] for m in page])
+        self.assertEqual(f["shorts"], [m["short"] for m in page])
+        for short in f["shorts"]:
+            self.assertLessEqual(len(short.split()), 10, short)
+        self.assertEqual(len(f["badges"]), 4)
+        self.assertTrue(all(b.strip() for b in f["badges"]))
+        self.assertEqual(f["reads"], ["How it works"] * 4)
+        self.assertEqual(f["english_hidden"], ["", "", "", ""])                      # the full rule is behind "How it works"
+        self.assertEqual(f["title"], "Pick a move.")
+        self.assertIn("moves fit MLB", f["count"])
+
+    def test_how_it_works_opens_the_full_rule_the_server_wrote(self):
+        out = self.at_q6(actions=[click(f"[data-hook='quiz-read'][data-id='{PAGE_IDS[1]}']", "open", capture=[
+            q("english", f".qz-cardwrap[data-id='{PAGE_IDS[1]}'] [data-hook='quiz-english']"),
+            q("hidden", f".qz-cardwrap[data-id='{PAGE_IDS[1]}'] [data-hook='quiz-english']", "hidden"),
+            q("label", f"[data-hook='quiz-read'][data-id='{PAGE_IDS[1]}']")]),
+            click(f"[data-hook='quiz-read'][data-id='{PAGE_IDS[1]}']", "close", capture=[
+                q("hidden", f".qz-cardwrap[data-id='{PAGE_IDS[1]}'] [data-hook='quiz-english']", "hidden")])])
+        c = out["captures"]
+        wanted = next(m for m in moves_page(BEFORE_Q6, PAGE_IDS)["moves"] if m["id"] == PAGE_IDS[1])["english"]
+        self.assertEqual(c["open"]["english"], wanted)
+        self.assertFalse(c["open"]["hidden"])
+        self.assertEqual(c["open"]["label"], "Hide the rule")
+        self.assertTrue(c["close"]["hidden"])
+
+    def test_pick_one_a_second_is_optional_and_a_third_is_refused(self):
+        limit = LIB["limits"]["archetype_picks"]
         self.assertEqual(limit, 2)
-        self.assertEqual((c["over"]["count"], c["over"]["over"]), (f"{limit} of {limit} picked", "false"))
-        self.assertIn(f"{limit} cards", c["over"]["notice"])
-        self.assertEqual(c["over"]["next"], f"Next ({limit} of {limit})")
-        self.assertEqual(c["remove"]["count"], f"{limit - 1} of {limit} picked")
-        self.assertEqual(c["read"]["english"], LIB["archetypes"][5]["english"])
-        self.assertFalse(c["read"]["hidden"])
-        self.assertEqual(c["nfl"]["cards"], sum(1 for a in LIB["archetypes"] if a["works_in"] == ["NFL"]))
-        self.assertEqual(c["props"]["cards"], sum(1 for a in LIB["archetypes"] if "prop" in a["kinds"]))
+        out = self.at_q6(actions=[
+            dict(do="click", sel=card("archetypes", PAGE_IDS[0]), label="one", capture=[q("count", hook("quiz-tray-count")), q("next", hook("quiz-next")),
+                                                                                  q("disabled", hook("quiz-next"), "disabled")]),
+            click(card("archetypes", PAGE_IDS[1]), "two", capture=[q("count", hook("quiz-tray-count")), q("next", hook("quiz-next"))]),
+            click(card("archetypes", PAGE_IDS[2]), "three", capture=[q("count", hook("quiz-tray-count")), q("notice", hook("quiz-notice")),
+                                                               q("on", card("archetypes", PAGE_IDS[2]), "attr", attr="aria-pressed")]),
+            click(f"[data-hook='quiz-tray-chip'][data-id='{PAGE_IDS[0]}']", "remove", capture=[q("count", hook("quiz-tray-count"))])])
+        c = out["captures"]
+        self.assertEqual(c["one"], {"count": "1 of 2 picked", "next": "Next (1 of 2)", "disabled": False})
+        self.assertEqual(c["two"], {"count": "2 of 2 picked", "next": "Next (2 of 2)"})
+        self.assertEqual((c["three"]["count"], c["three"]["on"]), ("2 of 2 picked", "false"))
+        self.assertIn("2 moves", c["three"]["notice"])
+        self.assertEqual(c["remove"]["count"], "1 of 2 picked")
+
+    def test_show_me_4_others_asks_for_the_next_page_and_keeps_what_was_picked(self):
+        first = moves_page(BEFORE_Q6, PAGE_IDS)
+        second = moves_page(BEFORE_Q6, OTHER_IDS)
+        second["page"] = first["next_page"]
+        out = self.at_q6(routes=base_routes(), actions=[click(card("archetypes", PAGE_IDS[0]), "pick"),
+                                                        click(hook("quiz-moves-more"), "others", capture=[
+                                                            q("names", "[data-hook='quiz-archetype-grid'] .qz-pin__title", "texts"),
+                                                            q("count", hook("quiz-tray-count")), q("cards", "[data-hook='quiz-archetype-grid'] [data-hook='quiz-card']", "count")])],
+                         switchAfter={"/hounds/quiz/moves": [1, [200, second]]})
+        bodies = [p["body"] for p in posts_to(out, "/hounds/quiz/moves")]
+        self.assertEqual([b["page"] for b in bodies], [0, first["next_page"]])
+        self.assertEqual(bodies[1]["answers"], {**BEFORE_Q6, "archetypes": [PAGE_IDS[0]]})
+        c = out["captures"]["others"]
+        self.assertEqual(c["cards"], 4)
+        self.assertEqual(c["names"], [m["name"] for m in second["moves"]])
+        self.assertEqual(c["count"], "1 of 2 picked")                           # the pick from the first four is still counted
+
+    def test_pick_for_me_takes_the_servers_top_move_in_place_of_the_picks(self):
+        page = moves_page(BEFORE_Q6, PAGE_IDS)
+        out = self.at_q6(actions=[click(card("archetypes", PAGE_IDS[2]), "first"),
+                          click(hook("quiz-moves-pick"), "pick", capture=[q("count", hook("quiz-tray-count")), q("chips", hook("quiz-tray-chip"), "texts"),
+                                                                       q("top", card("archetypes", page["recommended"]), "attr", attr="aria-pressed"),
+                                                                       q("old", card("archetypes", PAGE_IDS[2]), "attr", attr="aria-pressed"),
+                                                                       q("notice", hook("quiz-notice"))])])
+        c = out["captures"]["pick"]
+        name = next(a["name"] for a in LIB["archetypes"] if a["id"] == page["recommended"])
+        self.assertEqual((c["count"], c["top"], c["old"]), ("1 of 2 picked", "true", "false"))
+        self.assertEqual(c["chips"], [f"{name} (remove)"])
+        self.assertIn(name, c["notice"])
+        self.assertEqual(len(posts_to(out, "/hounds/quiz/moves")), 1)           # the top move came with the page: no second request
+
+    def test_the_filter_chips_are_gone(self):
+        out = self.at_q6(queries=[q("filters", hook("quiz-filter"), "count"), q("bar", hook("quiz-filters"), "count")])
+        self.assertEqual((out["final"]["filters"], out["final"]["bar"]), (0, 0))
+        self.assertNotIn("quiz-filter", JS)
+        self.assertNotIn("FILTERS", JS)
+
+    def test_a_move_that_no_longer_runs_is_dropped_from_the_picks(self):
+        page = moves_page(BEFORE_Q6, PAGE_IDS)
+        page["dropped"] = [PAGE_IDS[0]]
+        draft = {"v": 1, "answers": {**{k: None for k in ("personality", "bets_per_day", "stake", "price_comfort", "timing", "letter")},
+                                    "sports": ["MLB"], "markets": [], "archetypes": [PAGE_IDS[0]], "quirks": [],
+                                    "look": {"coat": None, "accessory": None}},
+                 "step": 5, "stage": "quiz", "name": "", "tagline": "", "english": {"text": "", "draft": None}, "pendingSave": False}
+        out = quiz(routes=base_routes(**{"POST /hounds/quiz/moves": [200, page]}), stored={DRAFT_KEY: json.dumps(draft)},
+                   actions=[click(hook("quiz-resume"), "resume")], queries=[q("count", hook("quiz-tray-count"))])
+        self.assertEqual(out["final"]["count"], "0 of 2 picked")
+
+    def test_a_failed_moves_call_says_so_offers_a_retry_and_skip_still_works(self):
+        out = self.at_q6(routes=base_routes(**{"POST /hounds/quiz/moves": [500, {"detail": "boom"}]}), queries=[
+            q("err", hook("quiz-moves-error")), q("retry", hook("quiz-moves-retry"), "count"), q("cards", hook("quiz-card"), "count"),
+            q("skip_disabled", hook("quiz-skip"), "disabled")])
+        f = out["final"]
+        self.assertIn("skip this question", f["err"].lower())
+        self.assertEqual((f["retry"], f["cards"], f["skip_disabled"]), (1, 0, False))
+        skipped = self.at_q6(routes=base_routes(**{"POST /hounds/quiz/moves": [500, {}]}), actions=[SKIP], queries=[
+            q("step", "[data-hook='quiz-step-body']", "attr", attr="data-step")])
+        self.assertEqual(skipped["final"]["step"], "quirks")
+
+    def test_going_back_to_question_6_asks_again_so_the_cards_follow_new_answers(self):
+        out = self.at_q6(actions=[click(hook("quiz-skip"), "skip6"), BACK.copy() | {"label": "back7"}])
+        self.assertEqual(len(posts_to(out, "/hounds/quiz/moves")), 2)
+
+    def test_no_move_card_text_makes_a_claim(self):
+        out = self.at_q6(actions=[click(f"[data-hook='quiz-read'][data-id='{i}']") for i in PAGE_IDS])
+        text = out["text"].lower()
+        for pattern in CLAIMS:
+            self.assertIsNone(re.search(pattern, text), pattern)
+
+    def test_the_composed_hound_carries_the_picked_moves(self):
+        out = quiz(routes=base_routes(COMBO_ANSWERS), actions=COMBO_ACTIONS)
+        self.assertEqual(posts_to(out, "/hounds/quiz/compose")[0]["body"], {"answers": COMBO_ANSWERS})
+
+
+@unittest.skipUnless(HAS_NODE, "node not installed")
+class TheRestOfTheQuestions(unittest.TestCase):
 
     def test_the_lucky_letter_row_shows_only_with_the_quirk(self):
         out = quiz(actions=[START] + [SKIP] * 6 + [
@@ -689,11 +895,11 @@ class TheEntryPoints(unittest.TestCase):
         self.assertEqual(out["navigations"], ["quiz.html"])
         self.assertIn("Take the quiz", out["final"]["sub"])
 
-    def test_the_landing_kennels_card_links_the_quiz(self):
+    def test_the_landing_pages_one_button_opens_the_quiz_at_its_first_question(self):
         html = (WEB / "landing.html").read_text(encoding="utf-8")
-        self.assertRegex(html, r'<a [^>]*href="quiz.html"[^>]*data-hook="kennels-card-quiz"[^>]*>Take the hound quiz</a>')
-        card = html.split('data-hook="kennels-card"')[1].split("</section>")[0]
-        self.assertIn('data-hook="kennels-card-quiz"', card)
+        self.assertRegex(html, r'<a class="btn btn--primary btn--lg" href="quiz.html\?start=1" data-hook="cta-kennel-quiz">Find your hound</a>')
+        # ?start=1 skips the intro card when nothing is saved; a saved quiz still gets "pick up where I left off"
+        self.assertIn('params.get("start")', JS)
 
     def test_the_build_link_in_the_navigation_goes_to_the_quiz_everywhere(self):
         for name in ("hound.html", "hounds.html", "index.html", "kennel.html", "kennels.html", "landing.html", "learning.html",

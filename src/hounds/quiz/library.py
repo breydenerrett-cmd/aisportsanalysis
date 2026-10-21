@@ -252,6 +252,27 @@ def no_home_side(lib: Optional[Mapping] = None) -> tuple:
     return tuple(_sports_table(lib).get("no_home_side") or ())
 
 
+def markets_available(sports, lib: Optional[Mapping] = None) -> list:
+    """The ids of the markets question's options that exist for at least one of `sports` (tennis has moneylines only, soccer
+    has no spreads, player props are MLB only). "A bit of everything" is always there. The page greys out the rest, so a
+    person is not asked for a market the sports they picked do not post."""
+    lib = lib if lib is not None else load()
+    sports = list(sports)
+    posted: set = set()
+    for sport in sports:
+        posted |= fit.family_markets(sport)
+    out: list = []
+    for row in lib["markets"]:
+        if row["kind"] == "mix":
+            out.append(row["id"])
+        elif row["kind"] == "prop":
+            if "MLB" in sports:
+                out.append(row["id"])
+        elif posted & set(row["markets"]):
+            out.append(row["id"])
+    return out
+
+
 def sport_choices(lib: Optional[Mapping] = None) -> list:
     """GET /hounds/quiz/library `sports`: EVERY dog-menu family in the catalog, the popular ones first in the table's order,
     then the rest ("More") in catalog order. A family the table does not know still appears, under More."""
@@ -259,7 +280,7 @@ def sport_choices(lib: Optional[Mapping] = None) -> list:
     popular = [c for c in (table.get("popular") or []) if c in user_spec.SPORTS]
     rest = [c for c in user_spec.SPORTS if c not in popular]
     return [{"value": c, "label": sport_label(c, lib), "badge": sport_badge(c, lib), "popular": c in popular,
-             "more": c not in popular} for c in popular + rest]
+             "more": c not in popular, "markets": markets_available([c], lib)} for c in popular + rest]
 
 
 def any_sport_choice(lib: Optional[Mapping] = None) -> dict:

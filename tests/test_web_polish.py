@@ -27,7 +27,7 @@ WEB_DIR = ROOT / "web"
 WEB_JS = WEB_DIR / "js"
 
 LANDING_JS = WEB_JS / "landing.js"
-LANDING_HTML = WEB_DIR / "landing.html"
+LANDING_HTML = WEB_DIR / "desk.html"      # the old landing page, moved whole on 2026-10-20 (web/landing.html is the kennel-first page)
 GAMES_JS = WEB_JS / "games.js"
 TODAY_JS = WEB_JS / "today.js"
 

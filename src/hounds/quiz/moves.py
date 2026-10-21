@@ -36,7 +36,7 @@ STANCE_MATCH, STANCE_CLASH = 3.0, -4.0
 COMFORT_MATCH, COMFORT_CLASH = 2.0, -2.0
 KIND_MATCH, KIND_MISS = 2.5, -1.5
 LIKE_EACH, LIKE_CAP = 1.0, 2.0
-MADE_FOR_THEM = 1.5          # a move written for the picked sports beats one that runs anywhere
+MADE_FOR_THEM = 1.5          # a move written for every sport picked beats one that runs anywhere
 GENERIC_ONLY = -1.0          # a move that runs only on its generic variant is a step down
 EXTRA_RULE = -0.75           # each rule past the first uses a slot of the hound's four and is more to read
 
@@ -82,8 +82,8 @@ def score(arch: Mapping, fitted: Mapping, ctx: Mapping) -> float:
     eff = ctx["sports"]
     works = set(fit.resolve_sports(arch["works_in"]))
     s = 2.0 * len([c for c in fitted["covers"] if c in eff]) / max(len(eff), 1)
-    if ctx["picked"] and works & set(eff) and not works >= set(user_spec.SPORTS):
-        s += MADE_FOR_THEM
+    if ctx["picked"] and set(eff) <= works and not works >= set(user_spec.SPORTS):
+        s += MADE_FOR_THEM                   # written for ALL the sports picked (a move for one of three is not "made for them")
     if fitted["generic"] and not works & set(eff):
         s += GENERIC_ONLY
     s += EXTRA_RULE * (len(fitted["rules"]) - 1)
@@ -217,20 +217,5 @@ def pick_for_me(answers: Any, lib: Optional[Mapping] = None) -> dict:
 
 
 def markets_available(sports: list, lib: Optional[Mapping] = None) -> list:
-    """The ids of the markets question's options that exist for at least one of the sports picked (tennis has moneylines
-    only, soccer has no spreads, player props are MLB only). "A bit of everything" is always there. The page greys out the
-    rest, so a person is not asked for a market the sports do not post."""
-    lib = lib if lib is not None else lib_mod.load()
-    posted: set = set()
-    for sport in sports:
-        posted |= fit.family_markets(sport)
-    out: list = []
-    for row in lib["markets"]:
-        if row["kind"] == "mix":
-            out.append(row["id"])
-        elif row["kind"] == "prop":
-            if "MLB" in sports:
-                out.append(row["id"])
-        elif posted & set(row["markets"]):
-            out.append(row["id"])
-    return out
+    """See library.markets_available: the market options the sports picked post."""
+    return lib_mod.markets_available(sports, lib)

@@ -39,7 +39,7 @@ from src.appstate import testers
 ROOT = Path(__file__).resolve().parent.parent
 WEB = ROOT / "web"
 JS = WEB / "js"
-HTML = (WEB / "landing.html").read_text(encoding="utf-8")
+HTML = (WEB / "desk.html").read_text(encoding="utf-8")
 
 # Said by the owner, verbatim (2026-10-02). Any change here is a change to what
 # the public is told and belongs to him.

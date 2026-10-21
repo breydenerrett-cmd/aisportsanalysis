@@ -233,7 +233,7 @@ class LandingIntegrityTests(unittest.TestCase):
     integrity that survives any redesign."""
 
     def setUp(self):
-        self.html = (WEB_DIR / "landing.html").read_text(encoding="utf-8")
+        self.html = (WEB_DIR / "desk.html").read_text(encoding="utf-8")      # the old landing page, moved whole on 2026-10-20
         self.landing_js = (WEB_DIR / "js" / "landing.js").read_text(encoding="utf-8")
         self.signup_js = (WEB_DIR / "js" / "signup.js").read_text(encoding="utf-8")
         self.pricing_js = (WEB_DIR / "js" / "pricing.js").read_text(encoding="utf-8")
@@ -395,20 +395,21 @@ class LandingVocabularyScan(unittest.TestCase):
     (edge/guaranteed/win-probability/etc.) that class does not check."""
 
     def test_no_banned_language_in_landing_html(self):
-        text = (WEB_DIR / "landing.html").read_text(encoding="utf-8")
-        paragraphs = re.split(r"\n\s*\n", text)
         violations = []
-        for idx, para in enumerate(paragraphs, start=1):
-            for pattern, label in HARD_BANNED:
-                if re.search(pattern, para, re.IGNORECASE):
-                    violations.append(f"landing.html block {idx}: hard-banned {label!r}")
-            for pattern, label in NEGATION_ONLY:
-                for m in re.finditer(pattern, para, re.IGNORECASE):
-                    window = para[max(0, m.start() - 90):m.start()]
-                    if not NEGATORS.search(window):
-                        violations.append(
-                            f"landing.html block {idx}: {label!r} affirmed "
-                            f"(no negation nearby) in {para[:120]!r}")
+        for name in ("landing.html", "desk.html"):
+            text = (WEB_DIR / name).read_text(encoding="utf-8")
+            paragraphs = re.split(r"\n\s*\n", text)
+            for idx, para in enumerate(paragraphs, start=1):
+                for pattern, label in HARD_BANNED:
+                    if re.search(pattern, para, re.IGNORECASE):
+                        violations.append(f"{name} block {idx}: hard-banned {label!r}")
+                for pattern, label in NEGATION_ONLY:
+                    for m in re.finditer(pattern, para, re.IGNORECASE):
+                        window = para[max(0, m.start() - 90):m.start()]
+                        if not NEGATORS.search(window):
+                            violations.append(
+                                f"{name} block {idx}: {label!r} affirmed "
+                                f"(no negation nearby) in {para[:120]!r}")
         self.assertEqual(violations, [], "\n".join(violations))
 
 

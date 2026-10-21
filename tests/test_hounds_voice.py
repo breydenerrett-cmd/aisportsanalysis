@@ -45,7 +45,7 @@ CLAIM_WORDS = (r"\block\b", r"\blocks\b", r"guarantee", r"can'?t lose", r"sure t
 ACADEMIC_WORDS = ("pre-registered", "preregistered", "pre-register", "date-clustered", "bootstrap", "confidence interval",
                   "closing-line value", "hypothesis", "hypotheses", "population", "falsification", "registry",
                   "benjamini", "false-discovery")
-PUBLIC_PAGES = ("landing.html", "hounds.html", "hound.html", "build-a-hound.html", "learning.html", "why-we-paused.html")
+PUBLIC_PAGES = ("landing.html", "desk.html", "hounds.html", "hound.html", "build-a-hound.html", "learning.html", "why-we-paused.html")
 
 
 def visible(html: str) -> str:
@@ -363,7 +363,7 @@ class TheHardLinesStayAndTheAcademicWordsGo(unittest.TestCase):
         meta = (WEB / "js" / "meta.js").read_text(encoding="utf-8")
         self.assertIn('"21+ · Gamble responsibly."', meta)
         self.assertIn('text: "1-800-GAMBLER"', meta)
-        for name in ("landing.html", "why-we-paused.html", "sample.html"):
+        for name in ("landing.html", "desk.html", "why-we-paused.html", "sample.html"):
             self.assertIn('data-hook="disclaimer-host"', (WEB / name).read_text(encoding="utf-8"), name)
 
     def test_no_public_page_makes_a_claim_in_its_static_text(self):

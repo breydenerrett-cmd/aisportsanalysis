@@ -293,6 +293,11 @@ def _fit_base_rules(kind: str, markets: list, pers: Optional[Mapping], comfort: 
     return [r for r, _k in fitted]
 
 
+def _same_rule(a: Mapping, b: Mapping) -> bool:
+    """Two rules that say the same thing, whatever they are called."""
+    return {k: v for k, v in a.items() if k != "label"} == {k: v for k, v in b.items() if k != "label"}
+
+
 def _market_text(markets: list) -> str:
     names = {"moneyline": "Moneylines", "spread": "Spreads", "total": "Game totals"}
     words = [names[m] for m in markets if m in names]
@@ -451,6 +456,9 @@ def compose(answers: Any, *, taken_names: Iterable[str] = (), english_draft: Any
             rule.setdefault("label", arch["name"])
             if not rule["label"]:
                 rule["label"] = arch["name"]
+            if any(_same_rule(r, rule) for r, _src in built):             # the same rule twice would only use up one of the hound's four slots
+                _warn(warnings, "rule_repeated", f"{arch['name']} matches a rule this hound already has, so it was counted once.", "note")
+                continue
             built.append((rule, {"kind": "archetype", "id": aid, "name": arch["name"]}))
     arch_ids = used_ids
     stances = {arch_rows[a]["stance"] for a in arch_ids} | ({pers["stance"]} if pers else set())

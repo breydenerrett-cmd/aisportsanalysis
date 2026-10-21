@@ -160,7 +160,7 @@ class TheRaceOnThePage(unittest.TestCase):
         self.assertNotRegex(out["final"]["sub"], r"\d")
 
     def test_the_static_markup_has_the_race_container_and_no_dog_word(self):
-        with open("web/landing.html", encoding="utf-8") as fh:
+        with open("web/desk.html", encoding="utf-8") as fh:
             html = re.sub(r"<!--.*?-->", "", fh.read(), flags=re.S)
         block = re.search(r'<div class="lbhero__race".*?</ol>', html, re.S).group(0)
         self.assertNotRegex(re.sub(r"<[^>]+>", " ", block).lower(), r"kennel|\bdog|bark|houndmaster")

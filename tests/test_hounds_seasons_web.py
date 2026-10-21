@@ -647,7 +647,7 @@ class TheMarkupIsStatic(unittest.TestCase):
         hound = (root / "hound.html").read_text(encoding="utf-8")
         for hook in ("hound-season", "hound-season-line", "bets-season"):
             self.assertIn(f'data-hook="{hook}"', hound)
-        landing = (root / "landing.html").read_text(encoding="utf-8")
+        landing = (root / "desk.html").read_text(encoding="utf-8")
         for hook in ("lb-season", "lb-season-note"):
             self.assertIn(f'data-hook="{hook}"', landing)
 

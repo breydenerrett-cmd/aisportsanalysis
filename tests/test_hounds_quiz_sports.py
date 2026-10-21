@@ -174,6 +174,16 @@ class EveryArchetypeComposesForEverySportSet(unittest.TestCase):
         self.assertIn("split_pct", [c for r in mlb["spec"]["rules"] for c in condition_ids(r)])
         self.assertNotIn("move_generic", codes(mlb))
 
+    def test_a_move_that_repeats_the_personalitys_own_rule_is_counted_once(self):
+        out = C.compose({"sports": ["NBA", "NFL", "TENNIS"], "markets": ["moneyline"], "personality": "chalk_eater",
+                         "archetypes": ["chalk_eater"]})
+        self.assertEqual(out["rule_count"], 1)
+        self.assertIn("rule_repeated", codes(out))
+        self.assertIn("chalk_eater", out["archetypes"])                       # still picked, still named
+        other = C.compose({"sports": ["NBA"], "markets": ["moneyline"], "personality": "chalk_eater", "archetypes": ["steam_chaser"]})
+        self.assertEqual(other["rule_count"], 2)
+        self.assertNotIn("rule_repeated", codes(other))
+
     def test_personality_base_rules_go_generic_for_a_sport_without_form_data(self):
         out = C.compose({"sports": ["NBA"], "markets": ["moneyline"], "personality": "stats_nerd"})
         self.assertIn("base_generic", codes(out))

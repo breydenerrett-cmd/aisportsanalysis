@@ -28,7 +28,9 @@ PAGES = {
     # the training camp as a visitor gets it: the scorecard script and the camp's own (web/js/dog-camp.js) together
     "camp": ("learning.html", "camp_boot.js"),
     # the landing page's leaderboard panel: landing-board.js has no auto-run, so a two-line boot file runs it
-    "landing_board": ("landing.html", "board_boot.js"),
+    "landing_board": ("desk.html", "board_boot.js"),
+    # the kennel-first landing page (web/landing.html): its strip of real hounds and the founding line; landing-home.js has no auto-run
+    "landing_home": ("landing.html", "home_boot.js"),
     # the admin dashboard (tests/test_admin_dashboard.py); its fixtures are tests/admin_dashboard_fixtures.py
     "admin": ("admin.html", "admin-app.js"),
     # the kennel page (My kennel and a public kennel), the leaderboard's Kennels view, the shared navigation and the tabs.
@@ -58,6 +60,8 @@ def _workdir() -> Path:
         Path(_tmp.name, "package.json").write_text('{"type": "module"}', encoding="utf-8")
         Path(_tmp.name, "camp_boot.js").write_text(
             'import "./hounds-learning.js";\nimport "./dog-camp.js";\n', encoding="utf-8")
+        Path(_tmp.name, "home_boot.js").write_text(
+            'import { mountHome } from "./landing-home.js";\nmountHome();\n', encoding="utf-8")
         Path(_tmp.name, "board_boot.js").write_text(
             'import { fillBoard } from "./landing-board.js";\nawait fillBoard();\n', encoding="utf-8")
     return Path(_tmp.name)

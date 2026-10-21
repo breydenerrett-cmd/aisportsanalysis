@@ -226,3 +226,64 @@
 }
 @keyframes bd-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes bd-flip { from { opacity: 0; transform: perspective(600px) rotateX(-90deg); } to { opacity: 1; transform: none; } }
+
+/* ---- VISUAL PASS, 2026-10-20 (kennel-first rebuild): a plain 1-2-3 -----------------------------------------------------------------
+   Scoped to the page (.bd-wrap), so the studio's embedded builder (web/js/builder-skeleton.js) keeps its own look. Class names and hooks
+   are unchanged; this block only calms and orders the page: a big headline, one quiet line, three numbered steps (a ring with the number,
+   a display heading, the work under it), one primary button per step, the preview and "My hounds" as soft tiles beside the steps. */
+.hounds-page .bd-wrap { padding-top: var(--lh-s5, 24px); }
+.hounds-page .bd-wrap .bd-head { margin: 0 0 var(--lh-s5, 24px); }
+.hounds-page .bd-wrap .bd-head h1 {
+  margin: 0 0 var(--lh-s2, 8px); font-family: var(--lh-font-display, 'Barlow Condensed', sans-serif); font-weight: 700; font-style: normal; text-transform: none;
+  font-size: clamp(38px, 7.4vw, 60px); line-height: 1; letter-spacing: -.012em; color: var(--lh-ink, #F2F4F8);
+}
+.hounds-page .bd-wrap .bd-head .hd-lede { margin: 0 0 var(--lh-s2, 8px); font-size: 17px; line-height: 1.45; color: var(--lh-ink2, #C9D0DB); }
+.bd-quizcta { margin: 0; gap: 8px; font-size: 14px; color: var(--hd-mute); }
+.bd-textlink { color: var(--lh-ink, #F2F4F8); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--lh-line-2, rgba(255, 255, 255, .13)); }
+.bd-textlink:hover { text-decoration-color: currentColor; }
+.bd-textbtn {
+  min-height: 44px; padding: 0 var(--lh-s2, 8px); background: none; border: 0; cursor: pointer; font: inherit; font-weight: 500; color: var(--lh-ink2, #C9D0DB);
+  text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--lh-line-2, rgba(255, 255, 255, .13));
+}
+.bd-textbtn:hover { color: var(--lh-ink, #F2F4F8); text-decoration-color: currentColor; }
+.bd-textbtn[disabled] { opacity: .4; cursor: not-allowed; }
+.hounds-page .bd-wrap > .hd-notice { margin: 0 0 var(--lh-s5, 24px); font-size: 12px; }
+
+.hounds-page .bd-wrap .bd-step {
+  display: grid; grid-template-columns: 36px minmax(0, 1fr); column-gap: 14px; align-items: center; margin: 0 0 var(--lh-s6, 32px); padding: var(--lh-s5, 24px) 0 0;
+  background: none; box-shadow: none; border-radius: 0; border-top: 1px solid var(--lh-line, rgba(255, 255, 255, .07));
+}
+.hounds-page .bd-wrap .bd-step:first-of-type { border-top: 0; padding-top: 0; }
+.hounds-page .bd-wrap .bd-step > * { grid-column: 1 / -1; }
+.hounds-page .bd-wrap .bd-step > .bd-step__no {
+  grid-column: 1; grid-row: 1; display: grid; place-items: center; width: 36px; height: 36px; margin: 0; padding: 0; border-radius: 50%; background: none; height: 36px;
+  font-size: 15px; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--lh-accent, #2FD07A); box-shadow: inset 0 0 0 1.5px var(--lh-accent, #2FD07A);
+}
+.hounds-page .bd-wrap .bd-step > h2 {
+  grid-column: 2; grid-row: 1; margin: 0; font-family: var(--lh-font-display, 'Barlow Condensed', sans-serif); font-weight: 700; font-size: 30px; line-height: 1.05;
+  letter-spacing: -.012em; color: var(--lh-ink, #F2F4F8);
+}
+.hounds-page .bd-wrap .bd-step > h2 + * { margin-top: var(--lh-s4, 16px); }
+.hounds-page .bd-wrap .bd-step > .bd-step__no + h2 ~ .bd-empty { margin-top: var(--lh-s4, 16px); }
+@media (min-width: 700px) {
+  .hounds-page .bd-wrap .bd-step > :not(.bd-step__no):not(h2) { grid-column: 2; }
+}
+.hounds-page .bd-english {
+  background: var(--lh-soft, rgba(255, 255, 255, .05)); border: 1px solid var(--lh-line-2, rgba(255, 255, 255, .13)); border-radius: var(--lh-r-md, 12px);
+  font-size: 19px; padding: 14px 16px;
+}
+.hounds-page .bd-english:focus-visible { border-color: var(--lh-accent, #2FD07A); outline: 0; box-shadow: var(--lh-focus, 0 0 0 2px var(--lh-accent)); }
+.hounds-page .bd-chip { border-radius: var(--lh-r-pill, 999px); border-color: var(--lh-line, rgba(255, 255, 255, .07)); background: var(--lh-soft, rgba(255, 255, 255, .05)); }
+.hounds-page .bd-wrap .bd-step .bd-actions { margin-top: var(--lh-s4, 16px); }
+.hounds-page .bd-wrap .bd-sentences { border-radius: var(--lh-r-md, 12px); border: 0; border-left: 3px solid var(--lh-accent, #2FD07A); background: var(--lh-soft, rgba(255, 255, 255, .05)); font-size: 16px; }
+.hounds-page .bd-wrap .bd-empty { border-radius: var(--lh-r-md, 12px); border-color: var(--lh-line-2, rgba(255, 255, 255, .13)); }
+.hounds-page .bd-wrap .bd-dogcard { border: 0; border-radius: var(--lh-r-lg, 18px); background: var(--lh-soft, rgba(255, 255, 255, .05)); padding: var(--lh-s4, 16px); }
+.hounds-page .bd-wrap .bd-save { margin-top: var(--lh-s4, 16px); }
+
+.hounds-page .bd-side .hd-panel, .hounds-page .bd-side .hd-panel + .hd-panel {
+  margin: 0; padding: var(--lh-s4, 16px); border: 0; box-shadow: none; border-radius: var(--lh-r-lg, 18px); background: var(--lh-soft, rgba(255, 255, 255, .05));
+}
+.hounds-page .bd-side .hd-panel h2 { font-family: var(--lh-font-display, 'Barlow Condensed', sans-serif); font-size: 24px; font-weight: 700; line-height: 1.05; margin: 0 0 var(--lh-s2, 8px); }
+@media (max-width: 699px) {
+  .hounds-page .bd-wrap .bd-step > h2 { font-size: 26px; }
+}

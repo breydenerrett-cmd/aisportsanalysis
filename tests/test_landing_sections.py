@@ -1,10 +1,11 @@
-"""The landing page after the round-2 critic (2026-10-19): three sections with one visual each, the heavy blocks behind accordions.
+"""The desk page (web/desk.html: the house pack, the AI desk, pricing, the questions), the old landing page moved whole on 2026-10-20.
 
-The critic: "hero is strong, then ~3,500px of dense legacy blocks". So below the hero the page is exactly three sections (build your
-dog, how it works in three steps, the AI desk in one compact card); the free-versus-subscribers lists, the last graded card (the fills
-table), pricing and the per-sport record tiles are native <details> accordions, closed by default and opened by a link to them. The
-facts and the hard lines stay: the MLB pause sentence, the paper-only / 21+ / not-advice lines (the shared footer, said once, as the
-owner's 2026-10-18 voice pass requires), every data-hook the fills write into.
+Round-2 critic (2026-10-19): "hero is strong, then ~3,500px of dense legacy blocks". So below the hero the free-versus-subscribers lists,
+the last graded card (the fills table), pricing and the per-sport record tiles are native <details> accordions, closed by default and
+opened by a link to them. The facts and the hard lines stay: the coverage sentence, the paper-only / 21+ / not-advice lines (the shared
+footer, said once, as the owner's 2026-10-18 voice pass requires), every data-hook the fills write into.
+
+The kennel-first landing page that replaced it at web/landing.html is pinned in tests/test_landing_kennel_first.py.
 """
 
 from __future__ import annotations
@@ -16,36 +17,20 @@ from pathlib import Path
 from tests.hounds_web_runner import HAS_NODE, run_js
 
 ROOT = Path(__file__).resolve().parent.parent
-HTML = (ROOT / "web" / "landing.html").read_text(encoding="utf-8")
+HTML = (ROOT / "web" / "desk.html").read_text(encoding="utf-8")
 MAIN = re.search(r"<main>.*?</main>", HTML, re.S).group(0)
 
 
-class ThreeSections(unittest.TestCase):
-    def test_below_the_hero_there_are_exactly_three_feature_sections_in_order(self):
-        marks = re.findall(r'<section[^>]*data-landing-section="([a-z]+)"', MAIN)
-        self.assertEqual(marks, ["build", "how", "desk"])
-
-    def test_the_three_sections_come_right_after_the_hero_and_before_every_accordion(self):
-        at = lambda s: MAIN.index(s)  # noqa: E731
-        self.assertLess(at('data-hook="lb-hero"'), at('data-landing-section="build"'))
-        self.assertLess(at('data-landing-section="build"'), at('data-landing-section="how"'))
-        self.assertLess(at('data-landing-section="how"'), at('data-landing-section="desk"'))
+class TheDeskPageKeepsItsOrder(unittest.TestCase):
+    def test_the_hero_comes_first_then_the_ai_desk_then_every_accordion(self):
+        at = lambda x: MAIN.index(x)  # noqa: E731
+        self.assertLess(at('data-hook="lb-hero"'), at('data-landing-section="desk"'))
         for hook in ("what-you-get", "last-card", "pricing", "sports-covered"):
             self.assertLess(at('data-landing-section="desk"'), at(f'data-hook="{hook}"'), hook)
 
-    def test_how_it_works_is_three_steps_each_with_a_dog(self):
-        how = re.search(r'<section[^>]*data-hook="landing-steps".*?</section>', MAIN, re.S).group(0)
-        self.assertEqual(how.count('class="lv-step"'), 3)
-        self.assertEqual(how.count("data-step-dog="), 3)
-        self.assertEqual(how.count("<h3>"), 3)
-        self.assertIn("No real money is ever staked", how)
-        self.assertIn("past results do not promise future ones", how)
-
-    def test_the_build_band_has_one_primary_action_and_keeps_the_kennel_links(self):
-        band = re.search(r'<section class="kncard".*?</section>', MAIN, re.S).group(0)
-        self.assertEqual(band.count("btn--primary"), 1)
-        for hook in ("kennels-card-build", "kennels-card-browse", "kennels-card-mine", "kennels-card-faces"):
-            self.assertIn(f'data-hook="{hook}"', band)
+    def test_the_build_band_and_the_three_steps_moved_to_the_landing_page(self):
+        for gone in ('data-hook="kennels-card"', 'data-hook="landing-steps"', "data-step-dog="):
+            self.assertNotIn(gone, HTML)
 
 
 class HeavyBlocksAreAccordions(unittest.TestCase):
@@ -109,15 +94,6 @@ const { openAccordionForHash } = await import("./landing.js");
 const r = [openAccordionForHash("#pricing"), openAccordionForHash("#faq"), openAccordionForHash("#nowhere"), openAccordionForHash("")];
 console.log(JSON.stringify([r, pAcc.open, sAcc.open, pricing.scrolled]));''')
         self.assertEqual(got, [[True, False, False, False], True, False, True])
-
-
-@unittest.skipUnless(HAS_NODE, "node not installed")
-class StepDogsAreTheRealDogs(unittest.TestCase):
-    def test_each_step_dog_is_the_breed_its_name_spells(self):
-        steps = re.findall(r'data-step-dog="([^"|]+)\|([^"|]+)\|([a-z]+)"', HTML)
-        self.assertEqual(len(steps), 3)
-        got = run_js('const Rig = await import("./dog-rig.js");\nconsole.log(JSON.stringify(%s.map(([id, name]) => Rig.breedFor({ id, name }))));' % str([list(s[:2]) for s in steps]).replace("'", '"'))
-        self.assertEqual(got, ["poodle", "beagle", "chihuahua"])
 
 
 if __name__ == "__main__":

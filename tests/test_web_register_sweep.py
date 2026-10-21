@@ -130,7 +130,7 @@ class TheLandingPageAgreesWithTheProduct(unittest.TestCase):
     winner". Both were live at once on 2026-09-11."""
 
     def setUp(self):
-        self.text = _visible_html(WEB / "landing.html")
+        self.text = _visible_html(WEB / "desk.html")       # the old landing page, moved whole on 2026-10-20
 
     def test_it_no_longer_denies_what_the_card_says(self):
         for phrase in ("nothing here states a win probability",
@@ -185,7 +185,7 @@ class TheLandingHeroLeadsWithTheCard(unittest.TestCase):
     def test_it_says_what_the_price_needs(self):
         self.assertIn("to break even", self.text)
         self.assertIn("the market makes it", self.text)
-        html = (WEB / "landing.html").read_text(encoding="utf-8")
+        html = (WEB / "desk.html").read_text(encoding="utf-8")
         self.assertIn('data-hook="hero-price-needs"', html)
 
 
