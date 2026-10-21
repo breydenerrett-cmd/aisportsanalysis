@@ -122,6 +122,107 @@ class TheStandardPlanIsNotFounding(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------------------------------
+# 2b. the billing card says which price Subscribe charges (owner follow-up 2026-10-21)
+# ---------------------------------------------------------------------------------------------------
+
+BILLING_HARNESS = r"""
+class TextNode { constructor(t) { this.nodeType = 3; this.textContent = String(t); this.parentNode = null; } }
+class Elem {
+  constructor(tag) { this.nodeType = 1; this.tagName = String(tag).toUpperCase(); this.attrs = {}; this.childNodes = []; this.parentNode = null; this.listeners = {}; }
+  get children() { return this.childNodes.filter((c) => c.nodeType === 1); }
+  appendChild(c) { if (c.parentNode) c.parentNode.removeChild(c); c.parentNode = this; this.childNodes.push(c); return c; }
+  removeChild(c) { const i = this.childNodes.indexOf(c); if (i >= 0) this.childNodes.splice(i, 1); c.parentNode = null; return c; }
+  remove() { if (this.parentNode) this.parentNode.removeChild(this); }
+  setAttribute(k, v) { this.attrs[k] = String(v); }
+  getAttribute(k) { return k in this.attrs ? this.attrs[k] : null; }
+  set textContent(v) { const t = new TextNode(v); t.parentNode = this; this.childNodes = [t]; }
+  get textContent() { return this.childNodes.map((c) => c.textContent).join(""); }
+  set hidden(v) { if (v) this.attrs.hidden = ""; else delete this.attrs.hidden; }
+  get hidden() { return "hidden" in this.attrs; }
+  addEventListener(t, f) { (this.listeners[t] ||= []).push(f); }
+  _all(out) { for (const c of this.children) { out.push(c); c._all(out); } return out; }
+  byHook(name) { return this._all([]).filter((n) => n.attrs["data-hook"] === name); }
+  byClass(name) { return this._all([]).filter((n) => String(n.attrs.class || "").split(" ").includes(name)); }
+}
+globalThis.document = { createElement: (t) => new Elem(t), createTextNode: (t) => new TextNode(t), addEventListener() {}, querySelector: () => null };
+globalThis.window = { sessionStorage: { getItem: () => null, setItem() {}, removeItem() {} }, localStorage: { getItem: () => "tok", setItem() {}, removeItem() {} },
+  location: { search: "", hash: "", pathname: "/web/index.html", href: "" } };
+globalThis.sessionStorage = globalThis.window.sessionStorage;
+globalThis.localStorage = globalThis.window.localStorage;
+const scenario = JSON.parse(process.env.SCENARIO);
+globalThis.fetch = async (url) => {
+  const body = String(url).includes("/billing/offer") ? scenario.offer : { status: "not_configured" };
+  return { ok: true, status: 200, text: async () => JSON.stringify(body) };
+};
+const billing = await import("./billing.js");
+const host = new Elem("div");
+await billing.renderBilling(host);
+const one = (name) => (host.byHook(name)[0] ? host.byHook(name)[0].textContent : null);
+const price = host.byClass("billing__price")[0];
+console.log("@@" + JSON.stringify({ h2: host.byClass("panel").length ? host._all([]).filter((n) => n.tagName === "H2").map((n) => n.textContent) : [],
+  headline: price ? price.textContent : null, dataPrice: price ? price.attrs["data-price"] : null,
+  seats: one("billing-seats"), offer: one("billing-founding-offer"), button: one("billing-subscribe"),
+  notes: host.byClass("billing__note").map((n) => n.textContent) }));
+"""
+
+
+def run_billing(offer):
+    import json as _json, os, shutil, subprocess, tempfile
+    from pathlib import Path
+    with tempfile.TemporaryDirectory() as tmp:
+        for path in (WEB / "js").glob("*.js"):
+            shutil.copy(path, tmp)
+        Path(tmp, "package.json").write_text('{"type": "module"}', encoding="utf-8")
+        Path(tmp, "harness.mjs").write_text(BILLING_HARNESS, encoding="utf-8")
+        done = subprocess.run(["node", "harness.mjs"], cwd=tmp, capture_output=True, text=True, encoding="utf-8", timeout=60,
+                              env=dict(os.environ, SCENARIO=_json.dumps({"offer": offer})))
+    lines = [ln for ln in done.stdout.splitlines() if ln.startswith("@@")]
+    assert lines, done.stderr[-1500:] + done.stdout[-500:]
+    return _json.loads(lines[-1][2:])
+
+
+SEAT = {"founding": {"price_cents": 1499, "cap": 50, "taken": 31, "left": 19, "reserved": 0, "available": True}, "standard": {"price_cents": 1999}}
+NO_SEAT = {"founding": None, "standard": {"price_cents": 1999}}
+
+
+@unittest.skipUnless(HAS_NODE, "node not installed")
+class TheBillingCardNamesTheChargedPrice(unittest.TestCase):
+    def test_with_a_founding_seat_the_card_headlines_the_founding_price_and_the_button_names_it(self):
+        f = run_billing(SEAT)
+        self.assertEqual(f["headline"], "$14.99/mo · Founding member")
+        self.assertEqual(f["seats"], "19 of 50 founding seats left. After that, $19.99/mo.")
+        self.assertIn("7-day free trial, then $14.99/month. Cancel anytime.", f["notes"])
+        self.assertNotIn("$19.99/month", " ".join(f["notes"]))                 # the trial sentence no longer quotes the other price
+        self.assertIn("Your price stays $14.99 for as long as you stay subscribed", f["offer"])      # the fine print stays
+        self.assertEqual(f["button"], "Subscribe at $14.99")
+        self.assertEqual(f["h2"], ["LINEHOUND membership"])
+
+    def test_with_no_seat_it_is_the_standard_only_card_it_always_was(self):
+        for offer in (NO_SEAT, {"founding": {"price_cents": 1499, "cap": 50, "left": 0, "available": False}}):
+            f = run_billing(offer)
+            self.assertEqual(f["headline"], "$19.99/mo")
+            self.assertIsNone(f["seats"])
+            self.assertEqual(f["notes"], ["7-day free trial, then $19.99/month. Cancel anytime."])
+            self.assertEqual(f["offer"], "")
+            self.assertEqual(f["button"], "Subscribe")
+            self.assertNotIn("ounding", " ".join(filter(None, [f["headline"], f["button"], f["offer"]] + f["notes"])))
+
+    def test_the_card_is_drawn_once_with_the_price_it_charges_never_filled_in_afterwards(self):
+        js = strip_comments(read("js", "billing.js"))
+        self.assertIn("subscribeCopy(await loadFoundingOffer())", js)
+        self.assertNotIn(".then((founding)", js)
+
+    @unittest.skipUnless(HAS_NODE, "node not installed")
+    def test_the_copy_helper_is_pure_and_the_standard_note_is_the_plan_note(self):
+        out = run_js('import { subscribeCopy, trialNote, BETA_TIER } from "./pricing.js";\n'
+                     'console.log(JSON.stringify({ std: trialNote(1999) === BETA_TIER.billing_note, none: subscribeCopy(null), '
+                     'one: subscribeCopy({ priceCents: 1499, cap: 50, left: 1 }) }));')
+        self.assertTrue(out["std"])
+        self.assertEqual(out["none"]["button"], "Subscribe")
+        self.assertEqual(out["one"]["subline"], "1 of 50 founding seats left. After that, $19.99/mo.")
+
+
+# ---------------------------------------------------------------------------------------------------
 # 3. Keep in the builder
 # ---------------------------------------------------------------------------------------------------
 
