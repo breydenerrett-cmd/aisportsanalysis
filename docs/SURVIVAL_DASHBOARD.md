@@ -1,6 +1,6 @@
 # LineHound survival dashboard
 
-Generated 2026-10-21 15:51Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-10-21 20:43Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
@@ -151,9 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-10-21 (8:30 am PT run): no game to brief; next NFL game is Thursday night, next MLB game is World Series Game 1, Rays at Brewers, Fri Oct 23 5:00 pm PT.
+- 2026-10-21 (1:30 pm PT run): no game to brief; next NFL game is Thursday night, next MLB game is World Series Game 1, Rays at Brewers, Fri Oct 23 5:00 pm PT.
 - ALCS Game 6 and Monday night Commanders at 49ers briefs are graded; the public sample shows ALCS Game 6.
-- Production is up; deploys at 14:13Z and 15:10Z succeeded (13:10Z failed).
+- Production is up; hourly deploys through 20:12Z succeeded; CI tests green.
 - Billing is live in production (founding $14.99, standard $19.99).
 - Public MLB value picks remain paused. Sends 0, replies 0, testers 0.
 
