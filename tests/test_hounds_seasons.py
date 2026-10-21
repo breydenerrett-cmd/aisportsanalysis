@@ -55,14 +55,20 @@ def bet(day, result, *, price=100, segment="forward", stamp=None, hid="h"):
                result=result, price=price, bet_id=f"{hid}-{day}-{result}-{segment}-{stamp or ''}")
 
 
-# The clock these figures are read at. Open tickets turn "ungraded" once they are stale, so an unpinned clock
-# made the open-ticket counts here change by calendar day (both failed from 2026-10-21).
-NOW = datetime(2026, 10, 19, 20, 0, tzinfo=timezone.utc)
+NOW = datetime(2026, 10, 19, 20, 0, tzinfo=timezone.utc)   # for the all-time summaries read below
+# Open versus stale depends on the clock (a ticket goes UNGRADED 36 hours after its slate day); these fixtures
+# are dated 2026-10-19, so the windowed figures are read at a fixed moment, not the real clock.
+PINNED_NOW = datetime(2026, 10, 20, 12, 0, tzinfo=timezone.utc)
+
+
+def pinned_clock():
+    real = stats.ticket_status
+    return mock.patch.object(stats, "ticket_status", lambda result, start, day, now=None: real(result, start, day, now or PINNED_NOW))
 
 
 def seasoned(bets, season):
-    return stats.summarize_window(DEFN, bets, {}, "2026-10-19", season, full=stats.summarize(DEFN, bets, {}, "2026-10-19", now=NOW),
-                                  now=NOW)
+    with pinned_clock():
+        return stats.summarize_window(DEFN, bets, {}, "2026-10-19", season, full=stats.summarize(DEFN, bets, {}, "2026-10-19"))
 
 
 # ---------------------------------------------------------------------------------------------------
@@ -132,7 +138,8 @@ class TheWindowedFigures(unittest.TestCase):
             bet("2026-10-18", "win", segment="replay"),                                        # a rehearsal inside the window
             bet("2026-10-10", "loss", segment="replay"),
         ]
-        self.all = stats.summarize(DEFN, self.bets, {}, "2026-10-19", now=NOW)
+        with pinned_clock():
+            self.all = stats.summarize(DEFN, self.bets, {}, "2026-10-19")
         self.s1 = seasoned(self.bets, "s1")
         self.s2 = seasoned(self.bets, "s2")
 
