@@ -66,6 +66,22 @@ def enabled(env: Optional[Mapping] = None) -> bool:
     return str(source.get(ENV_FLAG) or "").strip().lower() in ON_VALUES
 
 
+def gematria_on(env: Optional[Mapping] = None) -> bool:
+    """The Gematria Hound is in the pass unless ``GEMATRIA_HOUND=off`` (default ON in code)."""
+    from src.hounds.gematria import runtime as gem_rt
+
+    return gem_rt.enabled(env)
+
+
+def loop_enabled(env: Optional[Mapping] = None) -> bool:
+    """Whether the API process starts the loop: ``AI_HOUNDS=on`` (the AI hounds) or ``GEMATRIA_HOUND=on`` set explicitly.
+    The Gematria Hound is on by default INSIDE a pass, but production only runs passes when the owner has switched one of
+    the two on, so a laptop, a test client and staging start nothing."""
+    from src.hounds.gematria import runtime as gem_rt
+
+    return enabled(env) or gem_rt.explicitly_on(env)
+
+
 def interval_seconds(env: Optional[Mapping] = None) -> float:
     source = env if env is not None else os.environ
     raw = str(source.get(ENV_INTERVAL) or "").strip()
@@ -84,7 +100,8 @@ def _utcnow() -> datetime:
 
 def run_pass(*, now: Optional[datetime] = None, router=None, stores=None, ledger: Optional[str] = None,
              decisions: Optional[str] = None, news_fn=None, hounds_config: Optional[Path] = None,
-             refresh_stats: Optional[Callable[[], object]] = None, settle: bool = True) -> dict:
+             refresh_stats: Optional[Callable[[], object]] = None, settle: bool = True,
+             gem_enabled: Optional[bool] = None) -> dict:
     """One pass. Returns a small report; raises nothing a caller must handle except a bug (the loop catches it).
 
     ``now``, ``router``, ``stores``, ``ledger``, ``decisions`` and ``news_fn`` are the injection points tests use;
@@ -92,7 +109,8 @@ def run_pass(*, now: Optional[datetime] = None, router=None, stores=None, ledger
     from src.ai.router import default_router
     from src.appstate import freshness
     from src.hounds import pack_run, pack_settle, user_runner
-    from src.hounds.pack import ai_hounds, base
+    from src.hounds.gematria import runtime as gem_rt
+    from src.hounds.pack import ai_hounds, base, gematria_hound
     from src.ledger.chain import HashChainLedger
 
     moment = now or _utcnow()
@@ -100,9 +118,12 @@ def run_pass(*, now: Optional[datetime] = None, router=None, stores=None, ledger
     ledger_file = ai_defs.ledger_path(ledger)
     report: dict = {"at": moment.strftime("%Y-%m-%dT%H:%M:%SZ"), "paper_only": True, "forward_only": True,
                     "dates": [], "run": None, "settle": None, "wrote": 0}
-    if not router.enabled_providers():
+    ai_on = bool(router.enabled_providers())
+    gem_entry = ai_defs.entry_for(gematria_hound.HOUND_ID, hounds_config)
+    gem_on = bool(gem_entry) and gem_entry.get("enabled") is not False and (gematria_on() if gem_enabled is None else gem_enabled)
+    if not ai_on:
         report["skipped"] = "no AI provider is enabled (no key, or switched off in config/ai_providers.json)"
-    if "skipped" in report and not Path(ledger_file).exists():
+    if not ai_on and not gem_on and not Path(ledger_file).exists():
         return report
     with freshness._gated_build():
         dates = user_runner.pass_dates(moment)
@@ -113,17 +134,25 @@ def run_pass(*, now: Optional[datetime] = None, router=None, stores=None, ledger
             # Every family any enabled AI hound covers (the catalog's dog menu), not just MLB and NFL. The rule
             # hounds' own runs (capture slot) call load_stores with no list and still see MLB/NFL only.
             stores = base.load_stores(since=since, until=until, sports=ai_defs.all_sports(hounds_config) or None)
-        if "skipped" not in report:
+        hounds: list = []
+        if ai_on:
             runtime = ai_hounds.AIRuntime(router, HashChainLedger(ai_defs.decisions_path(decisions)),
                                           now_fn=lambda: moment, news_fn=news_fn).bind(stores)
-            hounds = ai_hounds.build_hounds(runtime, hounds_config)
-            if not hounds:
-                report["skipped"] = "no AI hound is enabled in config/ai_hounds.json"
-            else:
-                counts = pack_run.run(stores, dates, replay=False, now=moment, path=ledger_file, hounds=hounds,
-                                      out=lambda *_a, **_k: None)
-                report["run"] = counts
-                report["wrote"] += int(counts.get("written", 0))
+            hounds.extend(ai_hounds.build_hounds(runtime, hounds_config))
+        if gem_on:
+            # No model, no key, no cost: a fixed rule over the lock board and the stored results.
+            gem_runtime = gem_rt.GematriaRuntime(ledger=HashChainLedger(gem_rt.decisions_path(ledger_file)),
+                                                 now_fn=lambda: moment)
+            hounds.append(gematria_hound.GematriaHound(gem_entry, gem_runtime))
+        if not hounds:
+            report["skipped"] = "no AI hound is enabled in config/ai_hounds.json"
+        else:
+            if gem_on:
+                report["gematria"] = True
+            counts = pack_run.run(stores, dates, replay=False, now=moment, path=ledger_file, hounds=hounds,
+                                  out=lambda *_a, **_k: None)
+            report["run"] = counts
+            report["wrote"] += int(counts.get("written", 0))
         if settle and Path(ledger_file).exists():
             settled = pack_settle.settle(stores, now=moment, path=ledger_file)
             report["settle"] = settled
@@ -160,7 +189,7 @@ def start_loop(*, interval_s: Optional[float] = None, ready: Optional[Callable[[
                stop_event: Optional[threading.Event] = None, env: Optional[Mapping] = None,
                do_pass: Callable[[], object] = pass_safely) -> Optional[threading.Thread]:
     """Start the ONE daemon thread, or return None (starting nothing) unless ``AI_HOUNDS=on``."""
-    if not enabled(env):
+    if not loop_enabled(env):
         return None
     interval = interval_s if interval_s is not None else interval_seconds(env)
     event = stop_event if stop_event is not None else threading.Event()
