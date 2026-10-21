@@ -78,7 +78,18 @@ for (const width of [390, 1440]) {
       const sheet = document.querySelector("[data-hook='room-sheet']");
       const sheetText = sheet && !sheet.hidden ? sheet.innerText : "";
       const sheetRect = sheet && !sheet.hidden ? sheet.getBoundingClientRect() : null;
-      const dims = { iw: window.innerWidth, sw: document.documentElement.scrollWidth };
+      // the labels over the hounds (a pick bubble, the settled units): one line, never touching each other, never cut by the edge of the frame
+      const rect = (e) => e.getBoundingClientRect();
+      const labels = [...document.querySelectorAll("[data-hook='room-bubble'], [data-hook='room-burst']")].filter((e) => !e.hidden && e.textContent && rect(e).width && getComputedStyle(e).visibility !== "hidden");
+      const touch = (a, b) => a.left < b.right - 1 && b.left < a.right - 1 && a.top < b.bottom - 1 && b.top < a.bottom - 1;
+      let labelPairs = 0;
+      for (let i = 0; i < labels.length; i++) for (let j = i + 1; j < labels.length; j++) if (touch(rect(labels[i]), rect(labels[j]))) labelPairs += 1;
+      const fr = frame ? rect(frame) : null;
+      const labelCut = fr ? labels.filter((e) => { const r = rect(e); return (r.left < fr.left - 1 && r.right > fr.left + 1) || (r.right > fr.right + 1 && r.left < fr.right - 1); }).length : 0;
+      const labelLines = [...document.querySelectorAll(".rm-bubble")].filter((e) => !e.hidden && rect(e).width).filter((e) => rect(e).height > parseFloat(getComputedStyle(e).lineHeight) + 12).length;
+      const tvRect = document.querySelector("[data-hook='room-tv']");
+      const labelOnTv = tvRect ? labels.filter((e) => touch(rect(e), rect(tvRect))).length : 0;
+      const dims = { iw: window.innerWidth, sw: document.documentElement.scrollWidth, labels: labels.length, labelPairs, labelCut, labelLines, labelOnTv };
       return { ...dims, foldOpen, hounds: hounds.length, states, outside, frameScrolls: frame ? frame.scrollWidth > frame.clientWidth + 1 : null, stageW: sr ? Math.round(sr.width) : null,
         visibleBad: (visible.match(BAD) || [])[0] || null, svgBad: (svgText.match(BAD) || [])[0] || null, attrBad, svgText: svgText.slice(0, 300),
         sheetText: sheetText.slice(0, 400), sheetBad: (sheetText.match(BAD) || [])[0] || null,

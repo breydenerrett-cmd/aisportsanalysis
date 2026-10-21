@@ -71,8 +71,8 @@
 .rm-desk__top { fill: #232936; stroke: rgba(255, 255, 255, .06); }
 .rm-desk__phone { fill: #07090C; stroke: rgba(255, 255, 255, .22); }
 .rm-desk__screen { fill: rgba(0, 224, 255, .42); }
-.rm-bed__rim { fill: #1A1F29; stroke: rgba(255, 255, 255, .07); }
-.rm-bed__fill { fill: #232A38; }
+.rm-bed__rim { fill: #212838; stroke: rgba(255, 255, 255, .13); }
+.rm-bed__fill { fill: #2E384D; }
 .rm-bowl__rim { fill: #272D3A; stroke: rgba(255, 255, 255, .12); }
 .rm-bowl__water { fill: rgba(0, 224, 255, .28); }
 .rm-gym__mat { fill: rgba(255, 255, 255, .035); stroke: rgba(255, 255, 255, .09); stroke-dasharray: 5 5; }
@@ -124,24 +124,38 @@
 .rm-crown svg { width: 100%; height: 100%; display: block; }
 .rm-crown__body { fill: var(--rm-gold); stroke: #7A5A12; stroke-width: 1; } .rm-crown__band { fill: #C48F25; }
 
+/* A bubble is ONE line: the pick truncates with an ellipsis (the card has it whole), "+N more" never does. --rm-shift / --rm-tail are set by
+   room-scene.js keepInView(): on a phone a bubble slides sideways until it is whole inside the visible slice of the room. */
 .rm-bubble {
-  position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); z-index: 4; pointer-events: none;
-  width: max-content; max-width: clamp(96px, 17cqw, 190px); padding: 4px 9px; border-radius: 9px; text-align: center;
-  background: var(--rm-panel); border: 1px solid var(--rm-line-2); color: var(--rm-ink);
+  position: absolute; bottom: calc(100% + 6px); left: 50%; margin-left: var(--rm-shift, 0px); transform: translateX(-50%); z-index: 4; pointer-events: none;
+  display: flex; align-items: baseline; box-sizing: border-box; width: max-content; max-width: min(23cqw, 210px); padding: 4px 9px; border-radius: 9px;
+  white-space: nowrap; background: var(--rm-panel); border: 1px solid var(--rm-line-2); color: var(--rm-ink);
   font: 600 clamp(10px, 1.3cqw, 12.5px)/1.3 var(--rm-font); font-variant-numeric: tabular-nums;
 }
-.rm-bubble::after { content: ""; position: absolute; left: 50%; top: 100%; width: 8px; height: 8px; margin: -4px 0 0 -4px; transform: rotate(45deg); background: var(--rm-panel); border-right: 1px solid var(--rm-line-2); border-bottom: 1px solid var(--rm-line-2); }
+.rm-bubble__t { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.rm-bubble__x { flex: none; }
+.rm-bubble::after { content: ""; position: absolute; left: calc(50% + var(--rm-tail, 0px)); top: 100%; width: 8px; height: 8px; margin: -4px 0 0 -4px; transform: rotate(45deg); background: var(--rm-panel); border-right: 1px solid var(--rm-line-2); border-bottom: 1px solid var(--rm-line-2); }
+/* labelled neighbours take turns on two heights (assignTiers); a raised bubble gets a short stem down to its hound */
+.rm-hound[data-tier="1"][data-dir="up"] .rm-bubble { bottom: calc(100% + 38px); }
+.rm-hound[data-tier="1"][data-dir="up"] .rm-bubble::before { content: ""; position: absolute; left: calc(50% + var(--rm-tail, 0px)); top: 100%; width: 2px; height: 32px; margin-left: -1px; background: rgba(242, 184, 75, .5); }
+/* at the front desk row the second height is a note on the desk's lip, under the hound's name: its tail points up */
+.rm-hound[data-tier="1"][data-dir="down"] .rm-bubble { bottom: auto; top: calc(100% + 5px); }
+.rm-hound[data-tier="1"][data-dir="down"] .rm-bubble::after { top: auto; bottom: 100%; margin: 0 0 -4px -4px; border: 0; border-left: 1px solid var(--rm-line-2); border-top: 1px solid var(--rm-line-2); }
 .rm-bubble[data-tone="pending"] { border-color: rgba(242, 184, 75, .5); }
 .rm-bubble[data-tone="win"] { border-color: rgba(91, 227, 154, .55); color: var(--rm-win); }
 .rm-bubble[data-tone="loss"] { border-color: rgba(255, 138, 150, .5); color: var(--rm-loss); }
-.rm-burst { position: absolute; left: 50%; bottom: calc(100% + 4px); transform: translateX(-50%); z-index: 5; pointer-events: none; font: 700 clamp(13px, 1.9cqw, 18px)/1 var(--rm-display); letter-spacing: .02em; font-variant-numeric: tabular-nums; }
-.rm-hound[data-state="lost"] .rm-burst { bottom: calc(100% + 30px); }
+.rm-burst { position: absolute; left: 50%; bottom: calc(100% + 5px); margin-left: var(--rm-shift, 0px); transform: translateX(-50%); z-index: 5; pointer-events: none; font: 700 clamp(13px, 1.9cqw, 18px)/1 var(--rm-display); letter-spacing: .02em; font-variant-numeric: tabular-nums; }
+.rm-hound[data-tier="1"][data-dir="up"] .rm-burst { bottom: calc(100% + 36px); }
+.rm-hound[data-tier="1"][data-dir="down"] .rm-burst { bottom: auto; top: calc(100% + 4px); }
+/* a loss does not float: the units are written on its rain cloud, so they can never drift up the wall over the TV */
+.rm-hound[data-state="lost"] .rm-burst { bottom: calc(100% - 1px); font-size: clamp(10px, 1.35cqw, 13px); }
+.rm-hound[data-state="lost"] .rm-burst { transform: translateX(-50%); z-index: 5; }
 .rm-burst[data-tone="win"] { color: var(--rm-win); } .rm-burst[data-tone="loss"] { color: var(--rm-loss); }
 .rm-hound[data-state="won"] .rm-bubble, .rm-hound[data-state="lost"] .rm-bubble { display: none; }   /* the burst says the units; the card says the rest */
 
 /* effects: each belongs to one state and is shown only by it */
 .rm-fx { position: absolute; display: none; pointer-events: none; left: 50%; line-height: 0; }
-.rm-fx--cloud { top: -22px; width: clamp(34px, 4.6cqw, 54px); margin-left: calc(clamp(34px, 4.6cqw, 54px) / -2); z-index: 3; }
+.rm-fx--cloud { top: -22px; width: clamp(42px, 5.6cqw, 64px); margin-left: calc(clamp(42px, 5.6cqw, 64px) / -2); z-index: 3; }
 .rm-fx--cloud svg { width: 100%; height: auto; }
 .rm-cloud__body { fill: #3A4150; stroke: rgba(255, 255, 255, .18); } .rm-cloud__rain { fill: none; stroke: var(--rm-live); stroke-width: 2.4; stroke-linecap: round; opacity: .8; }
 .rm-hound[data-state="lost"] .rm-fx--cloud { display: block; }
@@ -164,6 +178,7 @@
 .rm-hound[data-state="training"] .rm-fx--whistle { display: block; }
 
 /* static poses (the same with motion reduced) */
+.rm-hound[data-state="nap"] .rm-walk, .rm-hound[data-state="asleep"] .rm-walk { transform: translateY(7px); }      /* settled down into the bed */
 .rm-hound[data-state="nap"] .rm-dog { transform: rotate(-5deg) scale(.95); }
 .rm-hound[data-state="nap"] .rm-dog svg { filter: brightness(.82) saturate(.85) drop-shadow(0 6px 10px rgba(0, 0, 0, .55)); }
 .rm-hound[data-state="asleep"] .rm-dog { transform: rotate(-7deg) scale(.93); }
@@ -249,7 +264,7 @@
   .rm-hound[data-state="won"] .rm-fx--confetti i { animation: rm-fall 2.2s ease-in infinite; }
   .rm-hound[data-state="won"] .rm-fx--confetti i:nth-child(2n) { animation-delay: -.7s; }
   .rm-hound[data-state="won"] .rm-fx--confetti i:nth-child(3n) { animation-delay: -1.3s; }
-  .rm-hound[data-state="won"] .rm-burst, .rm-hound[data-state="lost"] .rm-burst { animation: rm-float 3.6s ease-out infinite; }
+  .rm-hound[data-state="won"] .rm-burst { animation: rm-float 3.6s ease-out infinite; }
   .rm-hound[data-state="lost"] .rm-fx--cloud { animation: rm-drift 3.4s ease-in-out infinite alternate; }
   .rm-hound[data-state="lost"] .rm-cloud__rain { animation: rm-rain .9s linear infinite; stroke-dasharray: 5 4; }
   .rm-hound[data-state="nap"] .rm-dog { animation: rm-breathe 5s ease-in-out infinite; }
@@ -266,7 +281,8 @@
 @keyframes rm-sniff { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(3px) rotate(3deg); } }
 @keyframes rm-jump { 0%, 100% { transform: translateY(0) scale(1, 1); } 18% { transform: translateY(0) scale(1.06, .93); } 50% { transform: translateY(-1.8cqw) scale(.97, 1.04); } 80% { transform: translateY(0) scale(1.04, .95); } }
 @keyframes rm-fall { 0% { transform: translateY(-4px) rotate(0); opacity: 0; } 15% { opacity: 1; } 100% { transform: translateY(34px) rotate(260deg); opacity: 0; } }
-@keyframes rm-float { 0% { transform: translate(-50%, 8px); opacity: 0; } 15% { opacity: 1; } 80% { opacity: 1; } 100% { transform: translate(-50%, -26px); opacity: 0; } }
+/* a pop and a fade, with almost no travel: the units stay where they were put (on the floor, never up on the wall over the TV) */
+@keyframes rm-float { 0% { transform: translate(-50%, 5px); opacity: 0; } 15% { transform: translate(-50%, 0); opacity: 1; } 80% { opacity: 1; } 100% { transform: translate(-50%, -2px); opacity: 0; } }
 @keyframes rm-drift { from { transform: translateX(-3px); } to { transform: translateX(3px); } }
 @keyframes rm-rain { to { stroke-dashoffset: -18; } }
 @keyframes rm-breathe { 0%, 100% { transform: rotate(-5deg) scale(.95); } 50% { transform: rotate(-5deg) scale(.975); } }

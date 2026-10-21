@@ -13,6 +13,8 @@ scouting without a board that was read, never celebrating without a graded win. 
 - **Code.**
   - `web/js/room-adapter.js`: input rows -> character states. Pure (no DOM, no fetch, no clock of its own); also runs under node.
   - `web/js/room-data.js`: the requests only. It assembles the adapter's input and decides no state.
+  - `web/js/room-layout.js`: where a hound's label (pick bubble, settled units) sits: one line, two heights for neighbours, slid whole into
+    the slice a phone shows. Pure (runs under node).
   - `web/js/room-scene.js`: draws the room and the hounds (pure SVG / CSS / DOM, no image file, no `innerHTML`), the card, the roster, polling,
     sound. `mountRoom` (the public room) and `mountKennelRoom` (the fold).
   - `web/css/room.css`, `web/js/room-page.js` (the 3-line boot of `room.html`).
@@ -65,7 +67,7 @@ The adapter evaluates these rules top to bottom for every hound. The first match
 | 1 | `status` is `training`, or its newest version came from a training (`trained_times > 0` and `coached_from`) and it has no settled bet and no open ticket | `training` | gym | "At the gym": a whistle, the dog doing reps. "Fresh from training. Its new record starts now." |
 | 2 | An open forward ticket (`status` OPEN, not a refusal, not a replay), or the hound's own `open_bets` is above 0 | `pending` | its desk | At its desk on the phone, bubble `Celtics ML +130 · 1u` (the soonest-starting open ticket, `+N more` for the rest). Label **Game live** when any open ticket's first pitch has passed, else **At its desk** |
 | 3 | Graded forward tickets inside the recent window (`graded_utc`, else first pitch + 3 h) with a net above 0 | `won` | its desk | Jumps, confetti, `+1.3u` floats up (the net units of the window), pose `celebrate` |
-| 4 | The same, net below 0 | `lost` | water bowl | A rain cloud, `-1u`, walks to the bowl, pose `sad` |
+| 4 | The same, net below 0 | `lost` | water bowl | A rain cloud with `-1u` written on it (it does not float, so it never drifts up over the TV), walks to the bowl, pose `sad` |
 | 5 | Status `running`, a board that was read, at least one game on it in the hound's sports, no open ticket, and not the viewer's night | `scouting` | open floor | Paces and sniffs. "N games left on today's board in its sports. No pick yet." |
 | 6 | Otherwise, and the viewer's local hour is 23:00 to 05:59 | `asleep` | bed | Dimmed, curled, floating z's |
 | 7 | Otherwise | `nap` | bed | In the dog bed, one of: **Idle** (`benched`: no ticket in 7+ days), **Not started**, **Resting** (any other non-running status), **No open pick** (the board was not read), **Done for today** (it bet today and the board is empty), **No games left** |
@@ -98,6 +100,13 @@ Notes on the rules:
 
 - **Movement.** A state change walks the hound to its new zone (a 2.4 s `left` / `top` transition). Hounds keep their seat while they stay in a
   zone; a full zone spills onto the spare floor. The hound elements are kept between reads, so a move is a transition and not a redraw.
+- **Labels.** A pick bubble is one line: the pick truncates with an ellipsis (the card has it whole), `+N more` never does. Labelled neighbours in
+  a row take turns on two heights (the second sits just under the front desk row's edge, or raised when there is a second desk row), so two labels at
+  one height are two seats apart. On a phone a label of a hound in view slides sideways until it is whole inside the visible slice (and clear of the
+  label beside it); a label whose hound is out of view and would be cut by the edge is not drawn. The settled-units float on a win moves a few px, not up the wall.
+- **Zones read at a glance.** The GYM sign sits on the gym mat; the BEDS sign sits over the first row of beds (the second row appears only when it is
+  used). Napping hounds settle into a bed. `data-zone` and `data-label` on each hound and on each list entry come from the same adapter state, and
+  `tests/test_kennel_room.py` (`ZoneAndListSayTheSame`) pins it.
 - **Phone first.** The stage keeps a minimum width (860 px) inside its frame and pans there (the frame, not the page, scrolls sideways); it
   opens centred on where the hounds are. Under it, a list of every hound with its state (a tap opens the card) is the phone's main way in
   and the screen reader's. The page never scrolls sideways (`tests/test_no_horizontal_overflow.py`, 390 px).

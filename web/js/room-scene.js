@@ -20,6 +20,7 @@
 import { h, s, clearNode, isNum, houndHref } from "./hounds-core.js";
 import { dogFace, setPose } from "./dog-avatar.js";
 import { build, fmtUnits, inText } from "./room-adapter.js";
+import { bubbleParts, assignTiers, placeLabels } from "./room-layout.js";
 import { loadHouse, loadKennel, POLL_MS } from "./room-data.js";
 import { trainedBadge } from "./dog-headstone.js";
 
@@ -29,7 +30,7 @@ export const VIEW = { w: 1000, h: 600 };
 export const SLOTS = {
   desk: [[110, 478], [216, 478], [322, 478], [428, 478], [534, 478], [640, 478], [110, 562], [216, 562], [322, 562], [428, 562], [534, 562], [640, 562]],
   floor: [[130, 322], [240, 322], [350, 322], [460, 322]],
-  bowl: [[540, 340], [610, 340], [680, 340]],
+  bowl: [[540, 352], [610, 352], [680, 352]],
   bed: [[775, 478], [860, 478], [945, 478], [775, 562], [860, 562], [945, 562]],
   gym: [[790, 338], [890, 338]],
 };
@@ -52,7 +53,7 @@ function defs() {
   ]);
 }
 
-function backdrop(usedDesks) {
+function backdrop(usedDesks, usedBeds) {
   const seams = [];
   for (let i = 0; i < 15; i++) seams.push(s("line", { class: "rm-seam", x1: 70 * i + (i % 2 ? 20 : 45), y1: 256, x2: 70 * i + (i % 2 ? 20 : 45) - 24, y2: 600 }));
   [310, 372, 440, 518].forEach((y) => seams.push(s("line", { class: "rm-seam rm-seam--h", x1: 0, y1: y, x2: 1000, y2: y })));
@@ -61,9 +62,10 @@ function backdrop(usedDesks) {
     s("rect", { class: "rm-desk__top", x: x - 51, y: y - 4, width: 102, height: 11, rx: 4 }),
     s("rect", { class: "rm-desk__phone", x: x + 33, y: y - 17, width: 11, height: 15, rx: 2 }),
     s("rect", { class: "rm-desk__screen", x: x + 35, y: y - 15, width: 7, height: 10, rx: 1 })]));
-  const beds = SLOTS.bed.map(([x, y]) => s("g", { class: "rm-bed" }, [
-    s("ellipse", { class: "rm-bed__rim", cx: x, cy: y + 4, rx: 56, ry: 18 }),
-    s("ellipse", { class: "rm-bed__fill", cx: x, cy: y + 2, rx: 44, ry: 12 })]));
+  // the first row of beds is always there (an honest empty room shows empty beds); the second row only when a hound is in it
+  const beds = SLOTS.bed.filter((_, i) => i < 3 || usedBeds.has(i)).map(([x, y]) => s("g", { class: "rm-bed" }, [
+    s("ellipse", { class: "rm-bed__rim", cx: x, cy: y + 9, rx: 52, ry: 20 }),
+    s("ellipse", { class: "rm-bed__fill", cx: x, cy: y + 6, rx: 41, ry: 13 })]));
   return s("svg", { class: "rm-bg", viewBox: `0 0 ${VIEW.w} ${VIEW.h}`, preserveAspectRatio: "xMidYMid slice", "aria-hidden": "true", focusable: "false" }, [
     defs(),
     s("rect", { class: "rm-wall", x: 0, y: 0, width: 1000, height: 256, fill: "url(#rm-g-wall)" }),
@@ -75,14 +77,14 @@ function backdrop(usedDesks) {
     ...desks,
     ...beds,
     // the water bowl
-    s("g", { class: "rm-bowl" }, [s("ellipse", { class: "rm-bowl__rim", cx: 610, cy: 360, rx: 34, ry: 11 }), s("ellipse", { class: "rm-bowl__water", cx: 610, cy: 358, rx: 26, ry: 7 })]),
+    s("g", { class: "rm-bowl" }, [s("ellipse", { class: "rm-bowl__rim", cx: 610, cy: 372, rx: 34, ry: 11 }), s("ellipse", { class: "rm-bowl__water", cx: 610, cy: 370, rx: 26, ry: 7 })]),
     // the gym mat, the dumbbell and the sign
     s("g", { class: "rm-gym" }, [
       s("rect", { class: "rm-gym__mat", x: 730, y: 310, width: 220, height: 50, rx: 10 }),
       s("rect", { class: "rm-gym__bar", x: 822, y: 332, width: 56, height: 4, rx: 2 }),
       s("rect", { class: "rm-gym__plate", x: 814, y: 323, width: 8, height: 22, rx: 2 }), s("rect", { class: "rm-gym__plate", x: 878, y: 323, width: 8, height: 22, rx: 2 }),
-      s("text", { class: "rm-label", x: 840, y: 378, "text-anchor": "middle", text: "GYM" })]),
-    s("text", { class: "rm-label", x: 860, y: 600 - 6, "text-anchor": "middle", text: "BEDS" }),
+      s("text", { class: "rm-label", x: 740, y: 302, "text-anchor": "start", text: "GYM" })]),
+    s("text", { class: "rm-label", x: 775, y: 384, "text-anchor": "start", text: "BEDS" }),
   ]);
 }
 
@@ -182,7 +184,8 @@ const ICON = {
 function houndNode(c, onOpen) {
   const dog = dogFace(c.hound, { size: 72, pose: c.pose, label: "", decorative: true });
   const nodes = {
-    bubble: h("span", { class: "rm-bubble", "data-hook": "room-bubble", hidden: true }),
+    // one line: the pick truncates with an ellipsis, the "+N more" never does (two spans, one string for a reader)
+    bubble: h("span", { class: "rm-bubble", "data-hook": "room-bubble", hidden: true }, [h("span", { class: "rm-bubble__t" }), h("span", { class: "rm-bubble__x" })]),
     burst: h("span", { class: "rm-burst", "data-hook": "room-burst", hidden: true, "aria-hidden": "true" }),
     name: h("span", { class: "rm-name", "data-hook": "room-name" }),
     trained: h("span", { class: "rm-trained", "data-hook": "room-trained", hidden: true }),
@@ -216,12 +219,16 @@ function paintHound(view, c, slot) {
   root.setAttribute("data-zone", c.zone);
   root.setAttribute("style", `${place(slot[0], slot[1])};z-index:${Math.round(slot[1])}`);
   root.setAttribute("data-live", c.live ? "true" : "false");
+  root.setAttribute("data-label", c.label);                 // the same words the list under the room says: both come from the adapter's state
+  root.setAttribute("data-slot", `${Math.round(slot[0])},${Math.round(slot[1])}`);
   btn.setAttribute("aria-label", ariaFor(c));
   setPose(n.dog, c.pose);
   n.name.textContent = clip(c.name, 14);
   const showBubble = !!c.bubble && (c.state === "pending" || c.state === "won" || c.state === "lost");
   n.bubble.hidden = !showBubble;
-  n.bubble.textContent = showBubble ? c.bubble.text : "";
+  const [main, more] = bubbleParts(showBubble ? c.bubble : null);
+  n.bubble.childNodes[0].textContent = main;
+  n.bubble.childNodes[1].textContent = more;
   n.bubble.setAttribute("data-tone", showBubble ? c.bubble.tone : "");
   n.burst.hidden = !c.burst;
   n.burst.textContent = c.burst || "";
@@ -427,20 +434,26 @@ export function mountRoom(host, opts = {}) {
     view.slots = assignSlots(model.characters, view.slots);
     // the set and the list are redrawn only when what they show changed, so a keyboard user's focus is not pulled out from under them every poll
     const desks = [...view.slots.values()].filter((v) => v.zone === "desk" && !v.spare).map((v) => v.i);
-    const setSig = JSON.stringify([model.whiteboard, model.ticker, model.headstones, model.minRanked, desks.filter((i) => i >= 6).sort()]);
+    const beds = [...view.slots.values()].filter((v) => v.zone === "bed" && !v.spare).map((v) => v.i);
+    const setSig = JSON.stringify([model.whiteboard, model.ticker, model.headstones, model.minRanked, desks.filter((i) => i >= 6).sort(), beds.filter((i) => i >= 3).sort()]);
     if (setSig !== view.setSig) {
       view.setSig = setSig;
       clearNode(setLayer);
-      setLayer.appendChild(backdrop(new Set(desks)));
+      setLayer.appendChild(backdrop(new Set(desks), new Set(beds)));
       for (const p of props(model)) setLayer.appendChild(p);
       const bull = setLayer.querySelector("[data-hook='room-bulletin']");
       if (bull) bull.addEventListener("click", () => openSheet("bulletin", bull));
     }
+    const tiers = assignTiers(model.characters, view.slots);
+    const row2 = [...view.slots.values()].some((v) => v.zone === "desk" && v.xy[1] !== SLOTS.desk[0][1]);
     for (const c of model.characters) {
       if (!view.nodes.has(c.id)) view.nodes.set(c.id, houndNode(c, (id) => openSheet(id, view.nodes.get(id).btn)));
       const slot = view.slots.get(c.id);
       paintHound(view, c, slot.xy);
       const node = view.nodes.get(c.id).root;
+      node.setAttribute("data-tier", String(tiers.get(c.id) || 0));
+      // the front desk row's second height sits just under the desk's lip (nothing there but the desk); a second desk row is in the way, so it goes up
+      node.setAttribute("data-dir", slot.zone === "desk" && slot.xy[1] === SLOTS.desk[0][1] && !row2 ? "down" : "up");
       if (node.parentNode !== crowd) crowd.appendChild(node);
     }
     // the roster: everyone, by name, for a phone and a screen reader
@@ -450,7 +463,7 @@ export function mountRoom(host, opts = {}) {
       clearNode(roster);
       for (const c of model.characters) {
         roster.appendChild(h("li", {}, [h("button", { type: "button", class: "rm-roster__btn", "data-state": c.state, "data-hook": "room-roster-btn",
-          "aria-label": `${c.name}, ${c.label}. Open card.`, on: { click: (e) => openSheet(c.id, e.currentTarget) } }, [
+          "data-zone": c.zone, "data-label": c.label, "aria-label": `${c.name}, ${c.label}. Open card.`, on: { click: (e) => openSheet(c.id, e.currentTarget) } }, [
           h("i", { class: "rm-dot", "aria-hidden": "true" }), h("span", { class: "rm-roster__name", text: c.name }), h("span", { class: "rm-roster__state", text: c.label })])]));
       }
     }
@@ -465,6 +478,7 @@ export function mountRoom(host, opts = {}) {
     }
     view.prev = new Map(model.characters.map((c) => [c.id, c.state]));
     if (view.firstPaint) { view.firstPaint = false; centre(model); }
+    keepInView();
     root.setAttribute("data-empty", model.characters.length ? "false" : "true");
     if (!model.characters.length) say(scope === "kennel" ? "No hounds in your kennel yet." : "No hounds are in the room right now.", false);
     else say("", false);
@@ -481,6 +495,51 @@ export function mountRoom(host, opts = {}) {
       frame.scrollLeft = Math.max(0, (mid / VIEW.w) * frame.scrollWidth - frame.clientWidth / 2);
     } catch (err) { /* a fake DOM has no layout */ }
   }
+
+  /**
+   * On a phone the frame shows a slice of the room. A pick bubble or a settled-units float that straddles the slice's border would be cut in half, so
+   * each one slides sideways until it is whole (placeLabels, room-layout.js); one whose hound is out of view and would be cut is not drawn. Worked
+   * out from where the hound WILL stand, so it holds mid-walk too. Runs after each read and while the frame pans.
+   */
+  const shifts = new WeakMap();
+  function keepInView() {
+    try {
+      const cw = frame.clientWidth, sw = stage.offsetWidth;
+      if (!cw || !sw) return;
+      const pad = 4, lo = frame.scrollLeft + pad, hi = frame.scrollLeft + cw - pad;
+      const items = [], els = [];
+      for (const [id, v] of view.nodes) {
+        const slot = view.slots.get(id);
+        if (!slot) continue;
+        const owner = (slot.xy[0] / VIEW.w) * sw;
+        for (const el of [v.nodes.bubble, v.nodes.burst]) {
+          if (el.hidden) { el.setAttribute("style", ""); shifts.set(el, 0); continue; }
+          const w = el.offsetWidth;
+          if (!w) continue;
+          const dx = el.offsetLeft - (shifts.get(el) || 0);              // where the label's centre sits from its hound, before any slide
+          items.push({ group: `${slot.zone}|${slot.xy[1]}|${v.root.getAttribute("data-tier")}`, c: owner + dx, w, owner });
+          els.push(el);
+        }
+      }
+      placeLabels(items, lo, hi).forEach((r, k) => {
+        const el = els[k], w = items[k].w;
+        const shift = Math.round(r.shift);
+        const reach = Math.max(0, w / 2 - 12);
+        const tail = Math.max(-reach, Math.min(reach, -shift));
+        shifts.set(el, shift);
+        el.setAttribute("style", r.hidden ? "visibility:hidden" : shift ? `--rm-shift:${shift}px;--rm-tail:${Math.round(tail)}px` : "");
+      });
+    } catch (err) { /* a fake DOM has no layout */ }
+  }
+  let panQueued = false;
+  const onPan = () => {
+    if (panQueued) return;
+    panQueued = true;
+    const run = () => { panQueued = false; keepInView(); };
+    if (typeof requestAnimationFrame === "function") requestAnimationFrame(run); else run();
+  };
+  frame.addEventListener("scroll", onPan);
+  if (typeof window !== "undefined" && window.addEventListener) window.addEventListener("resize", onPan);
 
   async function refresh() {
     if (view.busy || !view.active) return view.model;
@@ -536,6 +595,7 @@ export function mountRoom(host, opts = {}) {
     destroy() {
       view.active = false; disarm();
       if (typeof document !== "undefined" && document.removeEventListener) document.removeEventListener("visibilitychange", onVisibility);
+      if (typeof window !== "undefined" && window.removeEventListener) window.removeEventListener("resize", onPan);
       if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
       clearNode(host);
     },

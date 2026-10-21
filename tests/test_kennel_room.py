@@ -654,6 +654,15 @@ class RenderedInChrome(unittest.TestCase):
             if r["path"].startswith("/web/kennel.html"):
                 self.assertEqual(r["hounds"], 2)
 
+    def test_the_labels_over_the_hounds_are_one_line_apart_from_each_other_whole_and_off_the_tv(self):
+        for r in self.drawn():
+            with self.subTest(path=r["path"], width=r["width"]):
+                self.assertGreater(r["labels"], 0, "the fixture has an open pick and a settled result in view")
+                self.assertEqual(r["labelLines"], 0, "a bubble is one line")
+                self.assertEqual(r["labelPairs"], 0, "no two labels touch")
+                self.assertEqual(r["labelCut"], 0, "no label is cut by the edge of the frame")
+                self.assertEqual(r["labelOnTv"], 0, "no label drifts over the TV")
+
     def test_the_card_opens_inside_the_screen(self):
         for r in self.drawn():
             self.assertTrue(r["sheetInView"], r)
@@ -735,6 +744,140 @@ class StaticChecks(unittest.TestCase):
         self.assertIn("dogFace(", scene)
         self.assertNotIn("innerHTML", re.sub(r"/\*.*?\*/", "", scene, flags=re.S))
         self.assertNotRegex(read("room.html"), r"\.(png|jpe?g|gif|webp)\b")
+
+
+# ---------------------------------------------------------------------------------------------------
+# where a hound stands and what the list under the room says come from the same adapter state
+# ---------------------------------------------------------------------------------------------------
+
+# the zone each plain label belongs to (docs/design/KENNEL_ROOM.md: the state table). A label that is in no zone here is a label the table does not know.
+ZONE_OF_LABEL = {"At its desk": "desk", "Game live": "desk", "Just won": "desk", "Just lost": "bowl", "Scanning the board": "floor", "At the gym": "gym",
+                 "Idle": "bed", "Not started": "bed", "No games left": "bed", "Resting": "bed", "No open pick": "bed", "Done for today": "bed", "Asleep": "bed"}
+
+
+@unittest.skipUnless(HAS_NODE, "node not installed")
+class ZoneAndListSayTheSame(unittest.TestCase):
+    """The Coin Flip / Blend / Home Field report: three hounds the list called "No games left", "Idle" and "Not started" stood next to the GYM sign.
+    They were in the beds (the first row of beds sits right under the gym mat, and the sign sat over their heads); the room was ambiguous, not wrong.
+    This pins the contract: the hound's place, its zone, its label and the list's words all come from one adapter state."""
+
+    def fixture(self):
+        hounds = [hound("desk", "At Desk", wins=3, losses=1, units=1, open_bets=1),
+                  hound("won", "Winner", wins=4, losses=1, units=2), hound("lost", "Loser", wins=1, losses=4, units=-2),
+                  hound("scout", "Scout", wins=2, losses=2, units=0), hound("nba", "Coin Flip", wins=2, losses=3, units=-1, sports=["nba"]),
+                  hound("bench", "Blend", wins=1, losses=1, units=0, status="benched"), hound("fresh", "Home Field", status="not_started"),
+                  hound("rest", "Pauser", status="paused")]
+        stream = [dict(open_bet("desk", "Yankees to win", price=135, start=90), hound_name="At Desk"),
+                  dict(graded_bet("won", "win", 1.3, ago=25), hound_name="Winner"), dict(graded_bet("lost", "loss", -1, ago=50), hound_name="Loser")]
+        return routes_house({"/hounds": [200, {"as_of": "2026-10-20", "hounds": hounds, "season": {"id": "s2", "min_ranked_bets": 10}}],
+                             "/hounds/stream": [200, {"items": stream, "page": 1, "total": len(stream)}]})
+
+    def test_every_hounds_place_zone_label_and_list_entry_agree(self):
+        qs = [q("ids", "[data-hook='room-hound']", "attrs", attr="data-id"), q("states", "[data-hook='room-hound']", "attrs", attr="data-state"),
+              q("zones", "[data-hook='room-hound']", "attrs", attr="data-zone"), q("labels", "[data-hook='room-hound']", "attrs", attr="data-label"),
+              q("slots", "[data-hook='room-hound']", "attrs", attr="data-slot"),
+              q("rzones", "[data-hook='room-roster-btn']", "attrs", attr="data-zone"), q("rlabels", "[data-hook='room-roster-btn']", "attrs", attr="data-label"),
+              q("rwords", ".rm-roster__state", "texts"), q("rnames", ".rm-roster__name", "texts"), q("names", "[data-hook='room-name']", "texts")]
+        f = run_page("room", routes=self.fixture(), tz="UTC", settleMs=250, now=NOW, queries=qs, **SIGNED)["final"]
+        slots = run_js('import { SLOTS, SPARE } from "./room-scene.js";\nconsole.log(JSON.stringify({ SLOTS, SPARE }));')
+        self.assertEqual(len(f["ids"]), 8)
+        seen = {}
+        for i, hid in enumerate(f["ids"]):
+            who = f["names"][i]
+            self.assertEqual(f["rnames"][i], who, "the list and the room name the same hound in the same order")
+            self.assertEqual(f["rwords"][i], f["labels"][i], f"{who}: the list's words are the room's label")
+            self.assertEqual(f["rlabels"][i], f["labels"][i])
+            self.assertEqual(f["rzones"][i], f["zones"][i], f"{who}: the list and the room put it in the same zone")
+            self.assertEqual(ZONE_OF_LABEL[f["labels"][i]], f["zones"][i], f"{who}: {f['labels'][i]} belongs in the {ZONE_OF_LABEL[f['labels'][i]]}, not the {f['zones'][i]}")
+            x, y = (int(v) for v in f["slots"][i].split(","))
+            self.assertIn([x, y], slots["SLOTS"][f["zones"][i]], f"{who} stands on a {f['zones'][i]} seat")
+            seen[f["labels"][i]] = f["zones"][i]
+        self.assertEqual({k: seen[k] for k in ("No games left", "Idle", "Not started", "Resting")}, {"No games left": "bed", "Idle": "bed", "Not started": "bed", "Resting": "bed"},
+                         "no games / done / idle hounds nap in the beds, never at the gym")
+        self.assertNotIn("gym", f["zones"], "nobody is at the gym unless a training put them there")
+
+    def test_the_adapter_alone_maps_every_state_to_one_zone_and_one_pose(self):
+        out = run_js('import { ZONE_OF, POSE_OF, STATE_LABEL } from "./room-adapter.js";\nconsole.log(JSON.stringify({ ZONE_OF, POSE_OF, STATE_LABEL }));')
+        self.assertEqual(set(out["ZONE_OF"]), set(out["POSE_OF"]))
+        self.assertEqual(out["ZONE_OF"]["nap"], "bed")
+        self.assertEqual(out["ZONE_OF"]["asleep"], "bed")
+        self.assertEqual(out["ZONE_OF"]["training"], "gym")
+
+    def test_the_gym_sign_is_on_the_gym_mat_and_the_beds_sign_is_over_the_beds(self):
+        src = read("js/room-scene.js")
+        gy = int(re.search(r'y: (\d+), "text-anchor": "start", text: "GYM"', src).group(1))
+        by = int(re.search(r'y: (\d+), "text-anchor": "start", text: "BEDS"', src).group(1))
+        out = run_js('import { SLOTS } from "./room-scene.js";\nconsole.log(JSON.stringify(SLOTS));')
+        self.assertLess(gy, 340, "the GYM sign sits on the gym mat, above the gym seats' feet")
+        self.assertGreater(by, 360, "the BEDS sign is under the gym mat")
+        self.assertLess(by, out["bed"][0][1] - 70, "and just above the first row of beds (the hounds' heads)")
+
+
+# ---------------------------------------------------------------------------------------------------
+# the labels over the hounds: one line, no collisions, whole inside the slice a phone shows
+# ---------------------------------------------------------------------------------------------------
+
+@unittest.skipUnless(HAS_NODE, "node not installed")
+class LabelLayout(unittest.TestCase):
+    def js(self, body):
+        return run_js('import { bubbleParts, assignTiers, placeLabels } from "./room-layout.js";\n' + body)
+
+    def test_the_bubble_is_split_so_the_more_tail_never_truncates(self):
+        out = self.js('console.log(JSON.stringify([bubbleParts({ text: "Yankees ML +135 · 1u · +1 more", extra: 1 }), bubbleParts({ text: "Celtics ML +130 · 1u", extra: 0 }), bubbleParts(null), bubbleParts({ text: "2 open tickets", extra: 0 })]));')
+        self.assertEqual(out, [["Yankees ML +135 · 1u", " · +1 more"], ["Celtics ML +130 · 1u", ""], ["", ""], ["2 open tickets", ""]])
+
+    def test_labelled_neighbours_that_would_touch_take_two_heights_and_far_ones_stay_low(self):
+        chars = [{"id": f"h{i}", "state": "pending", "zone": "desk", "bubble": {"text": "Yankees ML +135 · 1u · +1 more"}} for i in range(6)]
+        slots = {f"h{i}": {"xy": [110 + 106 * i, 478]} for i in range(6)}
+        src = f"const chars = {json.dumps(chars)}; const slots = new Map(Object.entries({json.dumps(slots)}));\n"
+        t = self.js(src + "console.log(JSON.stringify([...assignTiers(chars, slots)]));")
+        self.assertEqual([v for _, v in t], [0, 1, 0, 1, 0, 1], "six full-width bubbles one seat apart alternate")
+        # two short floats three seats apart need no second height
+        chars = [{"id": "a", "state": "won", "zone": "desk", "burst": "+1.3u"}, {"id": "b", "state": "won", "zone": "desk", "burst": "+2u"}]
+        slots = {"a": {"xy": [110, 478]}, "b": {"xy": [428, 478]}}
+        src = f"const chars = {json.dumps(chars)}; const slots = new Map(Object.entries({json.dumps(slots)}));\n"
+        self.assertEqual([v for _, v in self.js(src + "console.log(JSON.stringify([...assignTiers(chars, slots)]));")], [0, 0])
+        # a hound with no label has no tier
+        chars = [{"id": "n", "state": "nap", "zone": "bed"}]
+        self.assertEqual(self.js(f"console.log(JSON.stringify([...assignTiers({json.dumps(chars)}, new Map([['n', {{ xy: [775, 478] }}]]))]));"), [])
+
+    def test_a_label_in_view_slides_until_it_is_whole_and_clear_of_its_neighbour(self):
+        # a 350 px slice; the outer labels' hounds are a few px inside the slice's edges, so each label would be cut
+        items = [{"group": "g", "c": 40, "w": 120, "owner": 40}, {"group": "g", "c": 130, "w": 120, "owner": 130}, {"group": "g", "c": 340, "w": 80, "owner": 340}]
+        out = self.js(f"console.log(JSON.stringify(placeLabels({json.dumps(items)}, 4, 354)));")
+        boxes = [(it["c"] - it["w"] / 2 + o["shift"], it["c"] + it["w"] / 2 + o["shift"]) for it, o in zip(items, out)]
+        for lo_, hi_ in boxes:
+            self.assertGreaterEqual(lo_, 4 - 0.01)
+            self.assertLessEqual(hi_, 354 + 0.01)
+        for (a0, a1), (b0, b1) in zip(boxes, boxes[1:]):
+            self.assertLessEqual(a1, b0 + 0.01, "no two labels at one height overlap")
+        self.assertFalse(any(o["hidden"] for o in out))
+
+    def test_a_label_whose_hound_is_out_of_view_is_hidden_when_the_edge_would_cut_it_and_left_alone_when_it_is_clear(self):
+        items = [{"group": "g", "c": 60, "w": 170, "owner": 10},        # hound 90 px off the left edge, label reaches into the slice: cut -> hidden
+                 {"group": "g", "c": -300, "w": 170, "owner": -300},    # nowhere near: invisible anyway, left as it is
+                 {"group": "g", "c": 700, "w": 170, "owner": 700}]      # off the right, clear of the slice
+        out = self.js(f"console.log(JSON.stringify(placeLabels({json.dumps(items)}, 100, 458)));")
+        self.assertEqual([o["hidden"] for o in out], [True, False, False])
+        self.assertEqual([o["shift"] for o in out], [0, 0, 0])
+
+    def test_a_wide_room_moves_nothing(self):
+        items = [{"group": "g", "c": 120, "w": 170, "owner": 120}, {"group": "g", "c": 560, "w": 170, "owner": 560}]
+        out = self.js(f"console.log(JSON.stringify(placeLabels({json.dumps(items)}, 4, 1040)));")
+        self.assertEqual([(o["shift"], o["hidden"]) for o in out], [(0, False), (0, False)])
+
+    def test_the_css_keeps_a_bubble_to_one_line_and_a_loss_off_the_wall(self):
+        css = re.sub(r"/\*.*?\*/", "", read("css/room.css"), flags=re.S)
+        bubble = re.search(r"\.rm-bubble \{([^}]*)\}", css).group(1)
+        self.assertIn("white-space: nowrap", bubble)
+        self.assertRegex(css, r"\.rm-bubble__t \{[^}]*overflow: hidden; text-overflow: ellipsis")
+        self.assertRegex(css, r"\.rm-bubble__x \{[^}]*flex: none")
+        self.assertRegex(css, r'\.rm-hound\[data-state="won"\] \.rm-burst \{ animation: rm-float')
+        self.assertNotRegex(css, r'data-state="lost"\] \.rm-burst[^{]*\{[^}]*animation', "a loss's units are written on its cloud and do not float")
+        # the units float with almost no travel: never up the wall over the TV
+        m = re.search(r"@keyframes rm-float \{(.*?)\} \}", css + "} }", re.S)
+        travel = [abs(int(n)) for n in re.findall(r"translate\(-50%, (-?\d+)px\)", m.group(1))]
+        self.assertLessEqual(max(travel), 8)
 
 
 if __name__ == "__main__":
