@@ -14,6 +14,8 @@ export function builderSkeleton() {
   return h("div", { class: "bd-embedded", "data-hook": "build-app", "data-embedded": "" }, [
     h("h3", { class: "bd-embedded__title", "data-hook": "build-title", text: "Build your hound" }),
     h("p", { class: "hd-fine", "data-hook": "build-from-note", hidden: true }),
+    h("p", { class: "bd-quizcta", "data-hook": "build-interview" }, [h("span", { text: "Already have a strategy? " }),
+      h("a", { class: "bd-textlink", href: "interview.html", "data-hook": "build-interview-cta", text: "Turn your strategy into a hound" })]),
     h("div", hook("build-gate", { class: "hd-state hd-state--missing", role: "status", hidden: true })),
 
     h("section", hook("step-describe", { class: "bd-step", "aria-label": "Describe your strategy" }), [

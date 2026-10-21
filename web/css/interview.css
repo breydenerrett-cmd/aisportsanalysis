@@ -1,0 +1,92 @@
+/*
+ * The strategy interview (web/interview.html, web/js/interview.js). Loaded last, on the shared tokens (css/tokens.css, and the
+ * --lh-* aliases css/lh.css defines from them): near-black ground, ONE accent for the ONE primary action, the 4/8 space ladder,
+ * three radii. Phone first: a single column with 16px gutters, chips at least 44px tall, nothing wider than the viewport, the action
+ * bar sticky above the phone tab bar. Status is a word, never colour alone; there are no emoji and nothing that moves unless the
+ * reader has not asked for reduced motion.
+ */
+
+.iv {
+  --iv-ink: var(--lh-ink, var(--text, #F2F4F8)); --iv-ink2: var(--lh-ink2, #C9D0DB); --iv-mute: var(--lh-mute, var(--text-mute, #8A919E));
+  --iv-line: var(--lh-line, rgba(255, 255, 255, .07)); --iv-line2: var(--lh-line-2, rgba(255, 255, 255, .13));
+  --iv-soft: var(--lh-soft, rgba(255, 255, 255, .05)); --iv-accent: var(--accent, #2FD07A); --iv-accent-ink: var(--accent-ink, #04140B);
+  --iv-accent-soft: var(--lh-accent-soft, rgba(47, 208, 122, .14)); --iv-bad: var(--lh-loss, #FF8A96); --iv-warn: var(--lh-pending, #F2B84B);
+  max-width: 720px; margin: 0 auto; padding: 16px 16px 32px; min-height: 70vh; color: var(--iv-ink);
+}
+.iv [hidden] { display: none !important; }
+.iv-head h1 { margin: 8px 0 8px; font-family: var(--lh-font-display, var(--font-display)); font-weight: 700; font-size: clamp(32px, 8vw, 48px); line-height: 1.02; letter-spacing: -.012em; text-transform: none; font-style: normal; }
+.iv-sub { margin: 0 0 16px; font-size: 17px; line-height: 1.4; color: var(--iv-ink2); max-width: 52ch; }
+
+.iv-gate, .iv-noscript { margin: 16px 0; padding: 16px; border: 1px solid var(--iv-line2); border-radius: 12px; background: var(--iv-soft); }
+.iv-gate p, .iv-noscript p { margin: 0 0 12px; }
+
+/* progress */
+.iv-progress { position: relative; height: 6px; border-radius: 999px; background: var(--iv-soft); overflow: hidden; }
+.iv-progress__fill { position: absolute; inset: 0 auto 0 0; width: max(var(--p, 0%), 4px); border-radius: 999px; background: var(--iv-accent); }
+.iv-stepno { margin: 8px 0 12px; min-height: 18px; font-size: 13px; color: var(--iv-mute); }
+.iv-note { margin: 0 0 12px; padding: 8px 12px; border-radius: 8px; font-size: 13px; line-height: 1.4; background: var(--iv-soft); border: 1px solid var(--iv-line2); color: var(--iv-ink2); }
+.iv-note[data-kind="error"] { border-color: var(--iv-bad); color: var(--iv-bad); }
+
+/* the conversation */
+.iv-thread { display: flex; flex-direction: column; gap: 8px; margin: 0 0 16px; }
+.iv-bubble { margin: 0; padding: 12px 16px; max-width: 92%; border-radius: 12px; font-size: 15px; line-height: 1.45; overflow-wrap: anywhere; white-space: pre-wrap; }
+.iv-bubble--assistant { align-self: flex-start; background: var(--iv-soft); border: 1px solid var(--iv-line); color: var(--iv-ink); }
+.iv-bubble--person { align-self: flex-end; background: var(--iv-accent-soft); border: 1px solid var(--iv-line2); color: var(--iv-ink); }
+
+/* the form for the current question */
+.iv-step { margin: 0 0 16px; padding: 16px 0 0; border-top: 1px solid var(--iv-line); }
+.iv-step__title { margin: 0 0 12px; font-family: var(--lh-font-display, var(--font-display)); font-weight: 700; font-size: 28px; line-height: 1.05; letter-spacing: -.01em; }
+.iv-step__title:focus { outline: none; }
+.iv-form { display: grid; gap: 16px; }
+.iv-control { min-width: 0; }
+.iv-label { margin: 0 0 8px; font-size: 13px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--iv-mute); }
+.iv-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.iv-chip, .iv-choice {
+  min-height: 44px; padding: 8px 16px; border: 1px solid var(--iv-line2); border-radius: 999px; background: var(--iv-soft);
+  color: var(--iv-ink); font: inherit; font-size: 15px; line-height: 1.2; cursor: pointer; text-align: left; max-width: 100%;
+}
+.iv-chip:hover, .iv-choice:hover { background: var(--lh-soft-2, rgba(255, 255, 255, .09)); }
+.iv-chip[aria-pressed="true"] { background: var(--iv-accent-soft); border-color: var(--iv-accent); }
+.iv-chip[aria-pressed="true"]::before { content: "Selected: "; font-size: 12px; color: var(--iv-mute); }
+.iv-chip--unsupported { border-style: dashed; }
+.iv-chip--quiet { min-height: 36px; padding: 4px 12px; font-size: 13px; }
+.iv-tag { font-size: 12px; color: var(--iv-warn); }
+.iv-options { display: grid; gap: 8px; }
+.iv-choice { border-radius: 12px; padding: 12px 16px; width: 100%; }
+.iv-clarify { margin: 0 0 12px; font-size: 17px; line-height: 1.45; color: var(--iv-ink2); }
+.iv-select, .iv-input, .iv-text {
+  width: 100%; min-height: 44px; padding: 8px 12px; border: 1px solid var(--iv-line2); border-radius: 8px; background: var(--iv-soft);
+  color: var(--iv-ink); font: inherit; font-size: 16px; box-sizing: border-box;
+}
+.iv-text { resize: vertical; line-height: 1.4; }
+.iv-select:focus-visible, .iv-input:focus-visible, .iv-text:focus-visible, .iv-chip:focus-visible, .iv-choice:focus-visible { outline: 2px solid var(--iv-accent); outline-offset: 2px; }
+.iv-error { margin: 12px 0 0; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--iv-bad); color: var(--iv-bad); font-size: 14px; }
+.iv-file { max-width: 100%; font-size: 13px; }
+
+/* the action bar: sticky, above the phone tab bar, one primary button */
+.iv-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; margin: 16px 0 0; padding: 12px 0; position: sticky; bottom: 0; background: var(--lh-bg, #0B0D10); z-index: 5; }
+.iv-actions .iv-skip { margin-right: auto; }
+@media (max-width: 760px) { .iv-actions { bottom: calc(var(--lh-tabbar-h, 60px) + env(safe-area-inset-bottom, 0px)); } }
+
+/* can't automate, edit chips */
+.iv-cant, .iv-edit { margin: 16px 0 0; padding: 12px 16px; border: 1px solid var(--iv-line); border-radius: 12px; }
+.iv-cant summary { cursor: pointer; font-size: 15px; font-weight: 600; min-height: 24px; }
+.iv-cantlist { margin: 8px 0 0; padding-left: 20px; display: grid; gap: 8px; font-size: 14px; line-height: 1.4; }
+.iv-edit__label { margin: 0 0 8px; font-size: 13px; color: var(--iv-mute); }
+.iv-edit__chips { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* the review and the end */
+.iv-review, .iv-done { margin: 16px 0; }
+.iv-summary { margin: 0 0 16px; padding: 0; list-style: none; display: grid; gap: 8px; }
+.iv-summary li { padding: 12px 16px; border-radius: 12px; background: var(--iv-soft); border: 1px solid var(--iv-line); font-size: 15px; line-height: 1.45; overflow-wrap: anywhere; }
+.iv-cantbox, .iv-claimed { margin: 16px 0; padding: 12px 16px; border: 1px dashed var(--iv-line2); border-radius: 12px; }
+.iv-cantbox h3, .iv-claimed h3 { margin: 0 0 8px; font-size: 15px; }
+.iv-hash { overflow-wrap: anywhere; font-family: var(--font-mono, ui-monospace, monospace); }
+.iv-fingerprint { margin: 8px 0 0; font-size: 13px; color: var(--iv-mute); }
+.iv-notice { margin-top: 24px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .iv-bubble { animation: iv-in .18s var(--lh-ease, ease-out) both; }
+  .iv-progress__fill { transition: width .25s var(--lh-ease, ease-out); }
+}
+@keyframes iv-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }

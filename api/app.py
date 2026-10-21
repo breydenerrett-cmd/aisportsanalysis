@@ -36,6 +36,7 @@ from api.onboarding import router as onboarding_router
 from api.signup import router as signup_router
 from api.hounds_create import router as hounds_create_router
 from api.hounds_quiz import router as hounds_quiz_router
+from api.hounds_interview import router as hounds_interview_router
 from api.hounds_interact import router as hounds_interact_router
 from api.hounds_learning import router as hounds_learning_router
 from api.hounds_breeding import router as hounds_breeding_router
@@ -93,6 +94,9 @@ app.include_router(hounds_share_router)
 app.include_router(hounds_create_router)
 # the hound quiz (api/hounds_quiz.py): /hounds/quiz/... sits next to /hounds/{id}/..., so it is mounted before api.hounds too.
 app.include_router(hounds_quiz_router)
+# "Turn your strategy into a hound" (api/hounds_interview.py): /hounds/interview/... sits next to /hounds/{id}/..., so it is mounted
+# before api.hounds too (tests/test_hounds_interview_api.py pins the order).
+app.include_router(hounds_interview_router)
 # every member's public dogs (api/hounds_kennels.py): /hounds/kennels[/{handle}] is a literal path under /hounds/{id},
 # so it is mounted before api.hounds (tests/test_hounds_kennels_api.py pins the order).
 app.include_router(hounds_kennels_router)

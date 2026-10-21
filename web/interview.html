@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Turn your strategy into a hound — LINEHOUND</title>
+<meta name="description" content="Tell LINEHOUND your betting strategy in a short interview and get a paper hound that follows it. You confirm every rule before anything is saved. Paper bets only, not advice, 21+.">
+<meta property="og:title" content="Turn your strategy into a hound — LINEHOUND">
+<meta property="og:description" content="A short interview turns your strategy into a paper hound with readable rules. Paper only. Not advice.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#0E1116">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230B0C0E'/%3E%3Cpath d='M6 6l8 0 0 9-8 4z' fill='%23FF3D57'/%3E%3Cpath d='M18 6l8 0 0 13-8-4z' fill='%23FF7A45'/%3E%3C/svg%3E">
+<!-- THE STRATEGY INTERVIEW. A chat-style, phone-first page that asks eleven fixed questions (sports and bets, side and triggers,
+     prices, the data it needs, examples, when to pass, daily limit, stake, optional dated history, what would prove it wrong, and
+     whether to show the notes) and ends on a confirmation screen. Page script: web/js/interview.js; look: web/css/interview.css on
+     web/css/tokens.css. Every question, every choice and every sentence of the summary comes from the server
+     (api/hounds_interview.py, src/hounds/interview); this file only draws what it is sent, and everything a person types is
+     written with textContent, never as HTML. NOTHING IS SAVED until the person presses the confirm button. Dated history is kept
+     apart as "claimed, unverified" and never becomes part of the hound's record. The paper-only notice is STATIC so it is on the
+     page with scripts off. -->
+<link rel="stylesheet" href="css/fonts.css">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/nav.css">
+<link rel="stylesheet" href="css/lhnav.css">
+<link rel="stylesheet" href="css/hounds.css">
+<link rel="stylesheet" href="css/lh.css">
+<link rel="stylesheet" href="css/interview.css">
+</head>
+<body class="hounds-page iv-page">
+<a class="hd-skip" href="#main-content">Skip to the interview</a>
+<header class="lh-nav" aria-label="primary" data-hook="interview-nav" data-current="create">
+  <div class="lh-nav__bar">
+    <a class="lh-nav__brand ps-page__home" href="landing.html" aria-label="LINEHOUND home">
+      <span class="wordmark" data-hook="brand-mark">
+        <span class="wordmark__mark"><span></span></span>
+        <span class="wordmark__text" data-hook="product-name">LINEHOUND</span>
+      </span>
+    </a>
+    <nav class="lh-nav__links" aria-label="Sections" data-hook="nav-links">
+      <a href="hounds.html" data-nav="leaderboard">Leaderboard</a>
+      <a href="live.html" data-nav="live">Live</a>
+    </nav>
+    <div class="lh-nav__account" data-hook="nav-account-area" data-signed-in="false">
+      <a class="lh-btn lh-btn--soft" href="index.html#/signin" data-hook="nav-signin">Sign in</a>
+    </div>
+  </div>
+</header>
+
+<main class="iv" id="main-content" aria-label="Turn your strategy into a hound" data-hook="iv-app">
+
+<header class="iv-head">
+  <p class="hd-back"><a href="build-a-hound.html" data-hook="iv-back">&larr; The builder</a></p>
+  <h1 data-hook="iv-title">Turn your strategy into a hound</h1>
+  <p class="hd-lede iv-sub">Answer a few questions. Your hound bets paper picks from the day you confirm.</p>
+</header>
+
+<noscript>
+  <section class="hd-panel iv-noscript" data-hook="iv-noscript">
+    <p>The interview needs JavaScript. The builder works the same way and has a text box: say the strategy in plain English.</p>
+    <p><a class="btn btn--primary" href="build-a-hound.html">Open the builder</a></p>
+  </section>
+</noscript>
+
+<div class="iv-gate" data-hook="iv-gate" role="status" hidden></div>
+
+<section class="iv-shell" data-hook="iv-shell" aria-label="Interview" hidden>
+  <div class="iv-progress" data-hook="iv-progress" role="progressbar" aria-label="Interview progress" aria-valuemin="0" aria-valuemax="11" aria-valuenow="0" style="--p:0%">
+    <span class="iv-progress__fill"></span>
+  </div>
+  <p class="iv-stepno" data-hook="iv-stepno" aria-live="polite"></p>
+  <p class="iv-note" data-hook="iv-assistant-note" role="status" hidden></p>
+
+  <div class="iv-thread" data-hook="iv-thread" role="log" aria-live="polite" aria-label="The conversation"></div>
+
+  <section class="iv-step" data-hook="iv-step" aria-label="Your answer"></section>
+
+  <details class="iv-cant" data-hook="iv-cant" hidden>
+    <summary data-hook="iv-cant-summary">Can't automate yet</summary>
+    <p class="hd-fine">These are kept with your strategy so nothing you said is lost. A hound cannot run them yet.</p>
+    <ul class="iv-cantlist" data-hook="iv-cant-list"></ul>
+  </details>
+
+  <div class="iv-edit" data-hook="iv-edit" hidden>
+    <p class="iv-edit__label">Change an answer</p>
+    <div class="iv-edit__chips" data-hook="iv-edit-chips"></div>
+  </div>
+</section>
+
+<section class="iv-review" data-hook="iv-review" aria-label="Review" hidden></section>
+<section class="iv-done" data-hook="iv-done" aria-label="Your hound" hidden></section>
+
+<p class="hd-notice iv-notice" role="note" data-hook="paper-notice">Paper bets only. Your hound never takes a price of -200 or worse. Not advice. 21+.</p>
+
+</main>
+
+<footer class="hd-foot" data-hook="interview-footer" aria-label="disclaimer">
+  <p data-hook="not-advice">Paper bets only, not advice. 21+ &middot; Gamble responsibly. <a href="tel:1-800-426-2537" data-hook="responsible-gambling-help">1-800-GAMBLER</a></p>
+  <p><a href="landing.html">About LINEHOUND</a> &middot; <a href="hounds.html">Leaderboard</a> &middot; <a href="build-a-hound.html">The builder</a></p>
+</footer>
+
+<script type="module" src="js/interview.js"></script>
+<script type="module" src="js/fx.js"></script>
+<script type="module" src="js/nav.js"></script>
+</body>
+</html>
