@@ -25,6 +25,7 @@ import json
 import os
 import tempfile
 import unittest
+from datetime import datetime, timezone
 from pathlib import Path
 from unittest import mock
 
@@ -54,8 +55,14 @@ def bet(day, result, *, price=100, segment="forward", stamp=None, hid="h"):
                result=result, price=price, bet_id=f"{hid}-{day}-{result}-{segment}-{stamp or ''}")
 
 
+# The clock these figures are read at. Open tickets turn "ungraded" once they are stale, so an unpinned clock
+# made the open-ticket counts here change by calendar day (both failed from 2026-10-21).
+NOW = datetime(2026, 10, 19, 20, 0, tzinfo=timezone.utc)
+
+
 def seasoned(bets, season):
-    return stats.summarize_window(DEFN, bets, {}, "2026-10-19", season, full=stats.summarize(DEFN, bets, {}, "2026-10-19"))
+    return stats.summarize_window(DEFN, bets, {}, "2026-10-19", season, full=stats.summarize(DEFN, bets, {}, "2026-10-19", now=NOW),
+                                  now=NOW)
 
 
 # ---------------------------------------------------------------------------------------------------
@@ -125,7 +132,7 @@ class TheWindowedFigures(unittest.TestCase):
             bet("2026-10-18", "win", segment="replay"),                                        # a rehearsal inside the window
             bet("2026-10-10", "loss", segment="replay"),
         ]
-        self.all = stats.summarize(DEFN, self.bets, {}, "2026-10-19")
+        self.all = stats.summarize(DEFN, self.bets, {}, "2026-10-19", now=NOW)
         self.s1 = seasoned(self.bets, "s1")
         self.s2 = seasoned(self.bets, "s2")
 
@@ -183,7 +190,7 @@ class TheWindowedFigures(unittest.TestCase):
         self.assertEqual((view.summary.record.bets, view.summary.settled, view.summary.ranked, view.summary.open_bets), (0, 0, False, 0))
         self.assertIsNone(view.summary.form)
         self.assertEqual(view.series, [])
-        self.assertEqual(view.summary.verdict.label, stats.summarize(DEFN, only_old, {}, "2026-10-19").summary.verdict.label)
+        self.assertEqual(view.summary.verdict.label, stats.summarize(DEFN, only_old, {}, "2026-10-19", now=NOW).summary.verdict.label)
 
 
 class TheRankingBar(unittest.TestCase):
@@ -215,7 +222,7 @@ class TheRankingBar(unittest.TestCase):
         rows = [bet(f"2026-09-{d:02d}", "win") for d in range(1, 21)] + [bet("2026-10-18", "loss")]
         self.assertTrue(seasoned(rows, "s1").summary.ranked)
         self.assertFalse(seasoned(rows, "s2").summary.ranked)
-        self.assertTrue(stats.summarize(DEFN, rows, {}, "2026-10-19").summary.ranked)
+        self.assertTrue(stats.summarize(DEFN, rows, {}, "2026-10-19", now=NOW).summary.ranked)
 
 
 # ---------------------------------------------------------------------------------------------------

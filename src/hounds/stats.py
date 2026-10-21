@@ -525,7 +525,7 @@ def with_seasons(data: HoundData, defn: dict, bets: list, teams_of: dict, as_of:
 
 
 def summarize_window(defn: dict, bets: list, teams_of: dict, as_of: Optional[str], season: str,
-                     full: Optional[HoundData] = None) -> HoundData:
+                     full: Optional[HoundData] = None, now=None) -> HoundData:
     """The hound as seen in one season: the SAME ``summarize`` run over only the bets whose slate date is in
     the window, with the referee's own fields put back from the all-time run.
 
@@ -535,8 +535,8 @@ def summarize_window(defn: dict, bets: list, teams_of: dict, as_of: Optional[str
     sentence; its ``n`` is the all-time measurable count), status, retirement, verified, first / last ticket
     stamps and the rehearsal ``replay`` block. Replay bets are not in a window's forward figures, as in
     all-time (they are separate), and the date filter applies to them too."""
-    full = full if full is not None else summarize(defn, bets, teams_of, as_of)
-    part = summarize(defn, [b for b in bets if seasons.in_window(b.date, season)], teams_of, as_of)
+    full = full if full is not None else summarize(defn, bets, teams_of, as_of, now=now)
+    part = summarize(defn, [b for b in bets if seasons.in_window(b.date, season)], teams_of, as_of, now=now)
     s, p = copy.copy(full.summary), part.summary
     s.record, s.clv, s.form = p.record, p.clv, p.form
     s.spark, s.spark_basis = p.spark, p.spark_basis
