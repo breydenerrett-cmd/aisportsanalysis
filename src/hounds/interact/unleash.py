@@ -40,15 +40,18 @@ Paper only. Nothing here is advice, and nothing talks to a book.
 
 from __future__ import annotations
 
+import logging
 import os
 import tempfile
 import threading
 from datetime import datetime, timedelta
 from typing import Callable, Iterable, Optional
 
-from src.hounds import bankroll, user_engine, user_settle, user_spec
+from src.hounds import bankroll, one_side, user_engine, user_settle, user_spec
 from src.hounds.interact import common, drill, fire, manual
 from src.ledger.chain import HashChainLedger
+
+logger = logging.getLogger("linehound.hounds.unleash")
 
 BEFORE_LABEL = "Before you unleashed. Not on its record."
 NO_BOARD_TEXT = "no board saved for this game"
@@ -239,7 +242,8 @@ def unleash(dog: common.Dog, owner_user_id: int, *, now: Optional[datetime] = No
             pass
     elif wrote:
         refresh_stats()
-    others = _other_picks(dog, now, slate_rows if rows is not None else None, ledger, manual_ledger)
+    others = _other_picks(dog, now, slate_rows if rows is not None else None, ledger, manual_ledger,
+                          facts=facts, index=index, prop_rows=prop_rows)
     ahead = sum(1 for g in games.values() if g.commence - timedelta(minutes=spec["lock_minutes"]) > now)
     placed = sum(1 for p in picks if p["placed_now"])
     return {
@@ -260,42 +264,66 @@ WHY_NOT_PLACED = {
     "over_limit": "Over today's limit of {n} a day",
     "later_day": "On a later day",
     "at_lock": "Placed when it locks",
+    "past_lock": "Past its placing time; fits the newest board only",
 }
 
 
+def _slate_seam(spec: dict, injected_rows: Optional[list], facts, index, prop_rows) -> Optional[Callable]:
+    """The version-2 boards seam for a test that injects rows (production: ``ask_eval.default_slate``, the cached store read)."""
+    if injected_rows is None:
+        return None
+    from src.hounds import user_engine_v2
+
+    def slate_for(date, with_props):
+        return user_engine_v2.build_slate(date, spec["sports"], with_props=with_props, rows=injected_rows,
+                                          prop_rows=prop_rows if prop_rows is not None else [], facts=facts,
+                                          game_pk_index=index)
+    return slate_for
+
+
 def _other_picks(dog: common.Dog, now: datetime, injected_rows: Optional[list], ledger: Optional[str],
-                 manual_ledger: Optional[str]) -> list:
+                 manual_ledger: Optional[str], *, facts=None, index=None, prop_rows=None) -> list:
     """The picks the rule makes on the newest boards that are NOT on the record and were not placed here: over the day's
     limit, on a later day, or (for a hound that was already running) waiting for the runner at their lock. These are the
     ones the owner can add as MANUAL picks, one at a time or all at once (manual.py; they sit in their own ledger, apart
-    from the record). Never fatal: a preview that cannot be built leaves the list empty, and the day view still shows.
-    Classic rule dogs only: a rules (English) dog has no manual-pick path yet."""
+    from the record). The evaluation is ``manual.rule_picks``: the SAME one the manual pick records from, for a classic
+    dog and for a dog built from English rules alike (until 2026-10-21 this list was empty for English-rules dogs, which is
+    most members' dogs, and their cards offered a manual-pick button that answered 500). A pick the dog could not take
+    because it already holds a position on that game (src/hounds/one_side.py) is listed as blocked, with that reason.
+    Never fatal: a preview that cannot be built leaves the list empty (and is logged), and the day view still shows."""
     spec = dog.spec
-    if user_spec.is_v2(spec):
-        return []
+    v2 = user_spec.is_v2(spec)
     try:
-        rows_for = (lambda _date, _sports: injected_rows) if injected_rows is not None else None
-        games = fire.cached_games(spec["sports"], now, rows_for)
-        preview = fire.fire_user(dog, now=now, games=games, ledger=ledger, other_live=lambda _own, _at: None)
+        rows_for = (lambda _date, _sports: injected_rows) if (injected_rows is not None and not v2) else None
+        games = None if v2 else fire.cached_games(spec["sports"], now, rows_for)
+        preview = manual.rule_picks(dog, now, games=games, rule_ledger=ledger,
+                                    slate_for=_slate_seam(spec, injected_rows, facts, index, prop_rows) if v2 else None)
         tickets = {t["bet_id"] for t in manual.tickets(dog.id, path=manual_ledger, now=now)}
         remaining = manual.remaining_today(dog.id, now, manual_ledger)
+        held = one_side.Book.from_rows(list(user_engine.read_ledger(ledger)) + list(manual.read_all(manual_ledger)))
     except Exception:  # noqa: BLE001
+        logger.exception("unleash: the other picks of %s could not be built", dog.id)
         return []
     today = common.eastern_date(now)
     out = []
     for p in preview.get("picks", []):
         blocked = None
+        refused = held.refusal_for_row(p["row"]) if isinstance(p.get("row"), dict) else None
         if p["stale"]:
             blocked = f"the newest board is more than {user_engine.MAX_BOARD_AGE_MINUTES} minutes old"
-        elif manual.manual_bet_id(dog.id, p["event_id"], p["market"]) in tickets:
+        elif manual.manual_bet_id(dog.id, p["event_id"], p["market"], p.get("player")) in tickets:
             blocked = "already recorded as a manual pick"
         elif remaining <= 0:
             blocked = f"{manual.PER_DAY_LIMIT} manual picks a day is the limit"
-        why = ("over_limit" if p.get("over_daily_limit") else "later_day" if p["day"] != today else "at_lock")
+        elif refused is not None:
+            blocked = "one side per game: " + one_side.reason_text(refused)
+        why = ("over_limit" if p.get("over_daily_limit") else "past_lock" if p.get("before_lock") is False
+               else "later_day" if p["day"] != today else "at_lock")
         units = bankroll.FLAT_STAKE_UNITS
         out.append({
             "event_id": p["event_id"], "game": p["game"], "sport": p["sport"], "market": p["market"],
             "market_label": p["market_label"], "side": p["side"], "selection": p["selection"], "line": p["line"],
+            "player": p.get("player"),
             "price_average": p["price_average"], "stake_units": units,
             "stake_usd": round(units * bankroll.params().unit_usd, 2), "start_utc": p["start_utc"],
             "day_label": p["day_label"], "why_not_placed": why,

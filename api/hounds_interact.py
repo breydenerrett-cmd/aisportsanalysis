@@ -351,6 +351,7 @@ def manual_tickets(hound_id: str, response: Response, _rl: None = Depends(_rl_re
 class ManualRequest(BaseModel):
     event_id: str
     market: str
+    player: Optional[str] = None           # a player prop (a game can carry several): which player's
 
 
 class ManualBatchRequest(BaseModel):
@@ -365,7 +366,8 @@ def record_manual_batch(hound_id: str, body: ManualBatchRequest, response: Respo
     response.headers["Cache-Control"] = _NO_STORE
     dog = _owned(hound_id, current_user)
     try:
-        out = manual.record_batch(dog, current_user.id, [{"event_id": p.event_id, "market": p.market} for p in body.picks])
+        out = manual.record_batch(dog, current_user.id, [{"event_id": p.event_id, "market": p.market, "player": p.player}
+                                                          for p in body.picks])
     except manual.ManualError as exc:
         raise _manual_error(exc)
     out["record"] = manual.record_summary(manual.tickets(dog.id))
@@ -380,7 +382,7 @@ def record_manual(hound_id: str, body: ManualRequest, response: Response,
     response.headers["Cache-Control"] = _NO_STORE
     dog = _owned(hound_id, current_user)
     try:
-        ticket = manual.record(dog, current_user.id, body.event_id, body.market)
+        ticket = manual.record(dog, current_user.id, body.event_id, body.market, player=body.player)
     except manual.ManualError as exc:
         raise _manual_error(exc)
     items = manual.tickets(dog.id)

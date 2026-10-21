@@ -36,9 +36,9 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Callable, Optional
 
-from src.hounds import one_side, user_engine, user_spec
+from src.hounds import one_side, user_engine, user_rules, user_spec
 from src.hounds.contract import ticket_status
-from src.hounds.interact import common, fire
+from src.hounds.interact import ask_eval, common, fire
 from src.ledger.chain import HashChainLedger
 
 LEDGER_NAME = user_engine.MANUAL_LEDGER_NAME      # one name, read by the engine's one-side guard too
@@ -94,8 +94,46 @@ def remaining_today(hound_id: str, now: datetime, path: Optional[str] = None) ->
     return max(0, PER_DAY_LIMIT - recorded_today(hound_id, now, path))
 
 
-def manual_bet_id(hound_id: str, event_id: str, market: str) -> str:
-    return "m-" + hashlib.sha256(f"manual|{hound_id}|{event_id}|{market}".encode()).hexdigest()[:20]
+def manual_bet_id(hound_id: str, event_id: str, market: str, player: Optional[str] = None) -> str:
+    """One manual ticket per dog per game and market; a player prop is one per player too (the same key the rule engine
+    uses for its own bet id, so a game with two players' props can carry both). No player: the id every older ticket has."""
+    who = user_rules.fold_player(str(player)) if player else ""
+    return "m-" + hashlib.sha256(f"manual|{hound_id}|{event_id}|{market}{'|' + who if who else ''}".encode()).hexdigest()[:20]
+
+
+def _same_player(a, b) -> bool:
+    fa = user_rules.fold_player(str(a)) if a else ""
+    fb = user_rules.fold_player(str(b)) if b else ""
+    return fa == fb
+
+
+def rule_picks(dog: common.Dog, now: datetime, *, games: Optional[dict] = None, rule_ledger: Optional[str] = None,
+               rows_for: Optional[Callable] = None, slate_for: Optional[Callable] = None,
+               dropped: Optional[list] = None) -> dict:
+    """The picks the dog's rule makes on the newest stored boards, each with the ledger ``row`` it would be: the SAME
+    evaluation the Unleash button and the Fire panel draw, for either kind of dog.
+
+    A classic dog (side rule + price band) runs ``fire.fire_user``; a dog built from English rules (version 2, the
+    kind most members' dogs are) runs ``ask_eval.fire_v2``, the rule-set engine's own candidates. Until 2026-10-21
+    only the first existed here, so the manual pick on an English-rules dog's card answered with a 500 (``fire_user``
+    reads fields only a classic spec has). ``dropped`` collects what the one-side-per-game guard removed."""
+    if user_spec.is_v2(dog.spec):
+        return ask_eval.fire_v2(dog, now=now, ledger=rule_ledger, slate_for=slate_for,
+                                other_live=lambda _own, _at: None, dropped=dropped, with_rows=True)
+    return fire.fire_user(dog, now=now, games=games, ledger=rule_ledger, rows_for=rows_for,
+                          other_live=lambda _own, _at: None, dropped=dropped)
+
+
+def _dropped_code(dropped: Optional[list], event_id: str, market: str, player: Optional[str]) -> Optional[str]:
+    """The one-side code that removed (event, market[, player]) from the picks, or None."""
+    for item, code in dropped or []:
+        if isinstance(item, dict):
+            e, m, who = item["event_id"], item["market"], item.get("player")
+        else:                                           # a version-2 candidate tuple
+            e, m, who = item[2], item[3], item[6].get("player")
+        if e == event_id and m == market and _same_player(who, player):
+            return code
+    return None
 
 
 def _owner_stamp(user_id: int) -> str:
@@ -108,8 +146,13 @@ def _owner_stamp(user_id: int) -> str:
 
 def record(dog: common.Dog, user_id: int, event_id: str, market: str, *, now: Optional[datetime] = None,
            games: Optional[dict] = None, ledger: Optional[str] = None, rule_ledger: Optional[str] = None,
-           rows_for: Optional[Callable] = None) -> dict:
-    """Record one manual ticket, or raise ``ManualError``. See the module docstring for every refusal."""
+           rows_for: Optional[Callable] = None, player: Optional[str] = None, slate_for: Optional[Callable] = None,
+           preview: Optional[dict] = None, dropped: Optional[list] = None) -> dict:
+    """Record one manual ticket, or raise ``ManualError``. See the module docstring for every refusal.
+
+    ``player`` names the player of a prop pick (a game can carry several). ``preview``/``dropped`` are the picks
+    ``rule_picks`` already worked out (a batch computes them once for all its picks); ``slate_for`` is the version-2
+    boards seam, as in ``ask_eval.fire_v2``."""
     now = now or common.now_utc()
     if dog.kind != common.KIND_USER or dog.hound is None:
         raise ManualError("not_a_builder_dog", "manual picks are for dogs people built", 403)
@@ -122,25 +165,44 @@ def record(dog: common.Dog, user_id: int, event_id: str, market: str, *, now: Op
     path = ledger_path(ledger)
     if recorded_today(dog.id, now, path) >= PER_DAY_LIMIT:
         raise ManualError("rate_limited", f"{PER_DAY_LIMIT} manual picks a day is the limit for one dog", 429)
-    # the dog's own evaluation, on the newest stored boards: the same function the preview shows
-    preview = fire.fire_user(dog, now=now, games=games, ledger=rule_ledger, rows_for=rows_for)
-    if any(t["event_id"] == event_id and t["market"] == market for t in preview["recorded"]):
+    v2 = user_spec.is_v2(dog.spec)
+    if preview is None:
+        # the dog's own evaluation, on the newest stored boards: the same function the preview shows
+        dropped = []
+        preview = rule_picks(dog, now, games=games, rule_ledger=rule_ledger, rows_for=rows_for, slate_for=slate_for,
+                             dropped=dropped)
+    if v2:
+        # a version-2 preview leaves out what the rule ledger already holds, so look there for the plain answer
+        key = market if not player else f"{market}|{user_rules.fold_player(str(player))}"
+        rule_bet = user_engine.bet_id_for(dog.id, event_id, key)
+        on_record = any(r.get("kind") == user_engine.KIND_BET and r.get("bet_id") == rule_bet
+                        for r in user_engine.read_ledger(rule_ledger))
+    else:
+        on_record = any(t["event_id"] == event_id and t["market"] == market for t in preview["recorded"])
+    if on_record:
         raise ManualError("already_on_record", "the dog's own rule already has a ticket on that game and market", 409)
-    pick = next((p for p in preview["picks"] if p["event_id"] == event_id and p["market"] == market), None)
+    pick = next((p for p in preview["picks"] if p["event_id"] == event_id and p["market"] == market
+                 and _same_player(p.get("player"), player)), None)
     if pick is None:
+        code = _dropped_code(dropped, event_id, market, player)
+        if code is not None:                        # the pick exists, but a better-ranked one on this game holds its slot
+            raise ManualError("not_a_pick", "one side per game: " + one_side.reason_text(code), 422)
         raise ManualError("not_a_pick", "the dog's rule would not make that pick on the latest boards", 422)
     commence = user_engine._utc(pick["start_utc"])
     if commence is None or now >= commence:
         raise ManualError("game_started", "that game has started; no manual pick can be recorded on it", 409)
-    if pick["stale"]:
+    observed = user_engine._utc(pick.get("board_observed_utc"))
+    limit = (user_spec.MAX_PROP_BOARD_AGE_MINUTES if user_rules.market_kind(market) == "prop"
+             else user_engine.MAX_BOARD_AGE_MINUTES)
+    if pick["stale"] or (v2 and observed is not None and (now - observed).total_seconds() / 60.0 > limit):
         raise ManualError("board_too_old",
-                          f"the newest board for that game is more than {user_engine.MAX_BOARD_AGE_MINUTES} "
+                          f"the newest board for that game is more than {limit} "
                           "minutes old; wait for the next capture", 409)
     row = dict(pick["row"])
     if user_spec.beyond_cap(row["price"]):          # belt and braces: the cap is not a setting
         raise ManualError("price_cap", "that price is -200 or worse; the cap is always on", 422)
     row.update({
-        "bet_id": manual_bet_id(dog.id, event_id, market), "manual": True, "provenance": "manual",
+        "bet_id": manual_bet_id(dog.id, event_id, market, player), "manual": True, "provenance": "manual",
         "segment": "manual", "who_decided": "owner", "lock_utc": user_engine._iso(now),
         "recorded_utc": user_engine._iso(now), "manual_by": _owner_stamp(user_id),
         "reason": ("Manual pick by the owner. The dog's rule makes the same pick on the latest board: "
@@ -183,22 +245,40 @@ _SKIP_WORDS = {
 
 def _skip_reason(exc: ManualError) -> str:
     """The words for a refusal. Known codes have fixed words; a code this module does not know (a guard added on another
-    branch, such as the one-side-per-game rule) speaks for itself: its own message is the reason."""
+    branch) speaks for itself: its own message is the reason. The one-side-per-game codes are named as that rule."""
     if exc.code == "already_on_record":
         return "already on its record" if "own rule" in str(exc) else "already recorded as a manual pick"
+    if exc.code in one_side.REASONS:
+        return "one side per game: " + str(exc)
+    if str(exc).startswith("one side per game: "):          # a pick the rule's own ranking left out (code stays not_a_pick)
+        return str(exc)
     return _SKIP_WORDS.get(exc.code) or str(exc)
+
+
+def _batch_games(dog: common.Dog, now: datetime, slate_for: Optional[Callable]) -> dict:
+    """{event_id: game} the dog's boards hold, for naming a started game plainly. A classic dog reads the cached
+    multibook boards; a version-2 dog the same slates ``fire_v2`` reads."""
+    if not user_spec.is_v2(dog.spec):
+        return fire.cached_games(dog.spec["sports"], now)
+    slate_for = slate_for or ask_eval.default_slate
+    out: dict = {}
+    for date in ask_eval._dates(dog.spec, now):
+        out.update(slate_for(date, ask_eval._with_props(dog.spec)).games)
+    return out
 
 
 def record_batch(dog: common.Dog, user_id: int, picks: list, *, now: Optional[datetime] = None,
                  games: Optional[dict] = None, ledger: Optional[str] = None, rule_ledger: Optional[str] = None,
-                 rows_for: Optional[Callable] = None) -> dict:
+                 rows_for: Optional[Callable] = None, slate_for: Optional[Callable] = None) -> dict:
     """Record every listed pick that ``record`` accepts, in ONE request, and say what was skipped and why.
 
     Nothing is re-implemented here: each pick goes through ``record`` (the owner, running, fresh board, the rule would
     make it, the game has not started, once per game and market, five a day, and any guard added to ``record``), and a
     ``ManualError`` becomes a counted skip. So a started game is never added, a second tap adds nothing (the first
     tap's tickets are "already recorded"), and the rule that decides one side per game stays in one place.
-    The boards are read once for the whole batch."""
+    The boards are read once for the whole batch, and so is the rule's evaluation (``rule_picks``), for a classic dog
+    and for a dog built from English rules alike. A pick the one-side-per-game guard removed from the list says so
+    ("one side per game: ...") instead of "no longer fits the rule"."""
     now = now or common.now_utc()
     if dog.kind != common.KIND_USER or dog.hound is None:
         raise ManualError("not_a_builder_dog", "manual picks are for dogs people built", 403)
@@ -208,36 +288,44 @@ def record_batch(dog: common.Dog, user_id: int, picks: list, *, now: Optional[da
         raise ManualError("not_running", f"this dog is {dog.status}; manual picks need a running dog", 409)
     seen, wanted = set(), []
     for item in picks or []:
-        key = (str((item or {}).get("event_id") or "").strip(), str((item or {}).get("market") or "").strip())
+        key = (str((item or {}).get("event_id") or "").strip(), str((item or {}).get("market") or "").strip(),
+               user_rules.fold_player(str((item or {}).get("player") or "")))
         if not key[0] or not key[1]:
             raise ManualError("pick_invalid", "each pick needs an event_id and a market", 422)
         if key not in seen:
             seen.add(key)
-            wanted.append(key)
+            wanted.append((key[0], key[1], str((item or {}).get("player") or "").strip() or None))
     if not wanted:
         raise ManualError("no_picks", "send at least one pick", 422)
     if len(wanted) > MAX_BATCH:
         raise ManualError("too_many", f"at most {MAX_BATCH} picks in one request", 422)
     if games is None and rows_for is None:
-        games = fire.cached_games(dog.spec["sports"], now)
+        games = _batch_games(dog, now, slate_for)
+    dropped: list = []
+    preview = rule_picks(dog, now, games=games if not user_spec.is_v2(dog.spec) else None, rule_ledger=rule_ledger,
+                         rows_for=rows_for, slate_for=slate_for, dropped=dropped)
     added, results, reasons = [], [], {}
-    for event_id, market in wanted:
+    for event_id, market, player in wanted:
         game = (games or {}).get(event_id)
         if game is not None and game.commence is not None and now >= game.commence:
             word = _SKIP_WORDS["game_started"]            # said plainly: a started game is not in the preview at all
             reasons.setdefault(word, {"code": "game_started", "reason": word, "count": 0})["count"] += 1
-            results.append({"event_id": event_id, "market": market, "status": "skipped", "code": "game_started", "reason": word})
+            results.append({"event_id": event_id, "market": market, "player": player, "status": "skipped",
+                            "code": "game_started", "reason": word})
             continue
         try:
             ticket = record(dog, user_id, event_id, market, now=now, games=games, ledger=ledger,
-                            rule_ledger=rule_ledger, rows_for=rows_for)
+                            rule_ledger=rule_ledger, rows_for=rows_for, player=player, slate_for=slate_for,
+                            preview=preview, dropped=dropped)
         except ManualError as exc:
             word = _skip_reason(exc)
             reasons.setdefault(word, {"code": exc.code, "reason": word, "count": 0})["count"] += 1
-            results.append({"event_id": event_id, "market": market, "status": "skipped", "code": exc.code, "reason": word})
+            results.append({"event_id": event_id, "market": market, "player": player, "status": "skipped",
+                            "code": exc.code, "reason": word})
             continue
         added.append(ticket)
-        results.append({"event_id": event_id, "market": market, "status": "added", "code": None, "reason": None})
+        results.append({"event_id": event_id, "market": market, "player": player, "status": "added",
+                        "code": None, "reason": None})
     skipped = len(wanted) - len(added)
     line = f"Added {len(added)}"
     if skipped:

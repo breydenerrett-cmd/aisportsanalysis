@@ -80,7 +80,7 @@ function pickCard(p, { id, canRecord, onRecord }) {
         btn.setAttribute("disabled", "");
         status.textContent = "Recording...";
         try {
-          const out = await post(`/hounds/${encodeURIComponent(id)}/manual`, { event_id: p.event_id, market: p.market });
+          const out = await post(`/hounds/${encodeURIComponent(id)}/manual`, p.player ? { event_id: p.event_id, market: p.market, player: p.player } : { event_id: p.event_id, market: p.market });
           celebrate(btn, "manual-pick");
           clearNode(actions);
           actions.appendChild(h("p", { class: "dk-ok", "data-hook": "manual-recorded",
@@ -245,7 +245,7 @@ function otherPicksBlock(others, id, rise) {
   const chips = {};
   const items = others.map((o) => {
     const chip = h("span", { class: `dk-chip ${o.can_record ? "" : "dk-chip--warn"}`, "data-hook": "unleash-other-chip", text: o.can_record ? o.why_text : `Cannot add: ${o.blocked}` });
-    chips[`${o.event_id}|${o.market}`] = chip;
+    chips[`${o.event_id}|${o.market}|${o.player || ""}`] = chip;
     const when = o.start_utc ? whenText(o.start_utc) : "";
     return rise(h("li", { class: "dk-pick ul-card", "data-hook": "unleash-other", "data-event": o.event_id, "data-market": o.market }, [
       h("div", { class: "dk-pick__head" }, [h("strong", { class: "dk-pick__sel", text: o.selection }), h("span", { class: "dk-chip", text: o.market_label || o.market }), chip]),
@@ -258,10 +258,10 @@ function otherPicksBlock(others, id, rise) {
     result.textContent = "Adding...";
     try {
       const out = await post(`/hounds/${encodeURIComponent(id)}/manual/batch`,
-        { picks: eligible.map((o) => ({ event_id: o.event_id, market: o.market })) });
+        { picks: eligible.map((o) => (o.player ? { event_id: o.event_id, market: o.market, player: o.player } : { event_id: o.event_id, market: o.market })) });
       result.textContent = out.line || "";
       for (const r of (out.results || [])) {
-        const chip = chips[`${r.event_id}|${r.market}`];
+        const chip = chips[`${r.event_id}|${r.market}|${r.player || ""}`];
         if (!chip) continue;
         chip.textContent = r.status === "added" ? "Added as a manual pick" : `Skipped: ${r.reason}`;
         chip.setAttribute("class", `dk-chip ${r.status === "added" ? "dk-chip--good" : "dk-chip--warn"}`);

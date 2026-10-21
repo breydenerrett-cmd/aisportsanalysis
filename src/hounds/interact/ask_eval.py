@@ -119,7 +119,7 @@ def _market_label(market: str, sport: str) -> str:
 
 
 def _candidates(dog: common.Dog, spec: dict, games: dict, facts, date: str, now: datetime, seen: set,
-                skipped: Counter, misses: list) -> list:
+                skipped: Counter, misses: list, dropped: Optional[list] = None) -> list:
     """Ranked candidates [(key, lock, event_id, market, game, commence, cand, bet_id)] of the dog's rule over
     ``games`` at each game's decision time ``min(lock, now)``, and (version 1) a plain miss per market that
     produced none. A version-2 dog's misses are worked out per game by ``_v2_misses``."""
@@ -127,7 +127,7 @@ def _candidates(dog: common.Dog, spec: dict, games: dict, facts, date: str, now:
         hound = {"id": dog.id, "spec": spec, "created_at": None}
         ranked = V2.hound_candidates(hound, spec, games, facts, date, mode="replay", clock=lambda: now,
                                      seen_ids=seen, game_pk_index=None, skipped=skipped, considered={},
-                                     preview_now=now)
+                                     preview_now=now, dropped=dropped)
         ranked.sort(key=lambda c: c[0])
         return ranked
     out = []
@@ -202,7 +202,33 @@ def _checks(spec: dict, cand: dict, reason: str) -> list:
     return checks
 
 
-def _pick(dog: common.Dog, spec: dict, item: tuple, now: datetime, date: str, over: bool) -> dict:
+def _row(dog: common.Dog, spec: dict, item: tuple, now: datetime, date: str) -> dict:
+    """The ledger row a version-2 pick would be, in the engine's own shape (``user_engine.run`` builds the same). The
+    manual pick writes this row (plus its manual tags) to its own ledger; nothing else reads it."""
+    _key, lock_utc, event_id, market, game, commence, cand, bet_id = item
+    row = {
+        "kind": E.KIND_BET, "ledger_version": E.LEDGER_VERSION, "paper_only": True,
+        "bet_id": bet_id, "hound_id": dog.id,
+        "spec_hash": (dog.hound or {}).get("spec_hash") or user_spec.spec_hash(spec),
+        "sport": game.sport, "event_id": event_id, "game_pk": None, "slate_date": date,
+        "commence_time": E._iso(commence), "away_team": game.away_team, "home_team": game.home_team,
+        "market": market, "side": cand["side"], "line": cand["line"], "selection": cand["selection"],
+        "price": cand["price"], "best_price": cand["best_price"], "best_book": cand["best_book"],
+        "n_books": cand["n_books"], "lock_minutes": spec["lock_minutes"], "lock_utc": E._iso(lock_utc),
+        "board_observed_utc": cand["board_observed_utc"], "board_age_minutes": cand["board_age_minutes"],
+        "units": spec["stake_units"], "recorded_utc": E._iso(now), "provenance": "live",
+        "player": cand.get("player"), "rule_index": cand["rule_index"], "stake_units": spec["stake_units"],
+        "spec_version": user_spec.SPEC_VERSION_V2,
+    }
+    if game.league:
+        row["league"] = game.league
+        row["league_title"] = game.league_title
+    row.update(E.contract_fields(row, spec, "live"))
+    return row
+
+
+def _pick(dog: common.Dog, spec: dict, item: tuple, now: datetime, date: str, over: bool,
+          with_row: bool = False) -> dict:
     _key, lock_utc, event_id, market, game, commence, cand, _bet = item
     observed = E._utc(cand["board_observed_utc"])
     age = fire._minutes(now - observed) if observed else None
@@ -220,7 +246,8 @@ def _pick(dog: common.Dog, spec: dict, item: tuple, now: datetime, date: str, ov
         "stale": age is not None and age > E.MAX_BOARD_AGE_MINUTES and now < lock_utc,
         "slate_date": date, "day": start_day, "day_label": fire.day_label(start_day, now), "reason": reason,
         "rule": (user_spec.SIDE_LABELS.get(spec.get("side_rule")) or "my rules"), "over_daily_limit": over,
-        "checks": _checks(spec, cand, reason), "row": None,
+        "checks": _checks(spec, cand, reason), "player": cand.get("player"),
+        "row": _row(dog, spec, item, now, date) if with_row and user_spec.is_v2(spec) else None,
     }
 
 
@@ -247,7 +274,8 @@ def _dates(spec: dict, now: datetime) -> list:
 # ---------------------------------------------------------------------------
 
 def fire_v2(dog: common.Dog, *, now: Optional[datetime] = None, ledger: Optional[str] = None,
-            slate_for: Optional[Callable] = None, other_live: Optional[Callable] = None, **_ignored) -> dict:
+            slate_for: Optional[Callable] = None, other_live: Optional[Callable] = None,
+            dropped: Optional[list] = None, with_rows: bool = False, **_ignored) -> dict:
     """``fire.fire_user`` for a dog built from English rules: the engine's own rule-set candidates over the newest
     stored boards of every upcoming game, in the Fire now payload shape. The daily limit counts the tickets the dog
     has already recorded for the slate date, in the engine's own order (earliest placing time first)."""
@@ -282,12 +310,12 @@ def fire_v2(dog: common.Dog, *, now: Optional[datetime] = None, ledger: Optional
                              game.commence - timedelta(minutes=spec["lock_minutes"])))
         looked += len(games)
         skipped: Counter = Counter()
-        ranked = _candidates(dog, spec, games, slate.facts, date, now, seen, skipped, [])
+        ranked = _candidates(dog, spec, games, slate.facts, date, now, seen, skipped, [], dropped)
         position = 0
         for item in ranked:
             over = used[date] + position >= spec["max_bets_per_day"]
             position += 1
-            pick = _pick(dog, spec, item, now, date, over)
+            pick = _pick(dog, spec, item, now, date, over, with_rows)
             picks.append(pick)
             observed = E._utc(pick["board_observed_utc"])
             newest = observed if observed and (newest is None or observed > newest) else newest

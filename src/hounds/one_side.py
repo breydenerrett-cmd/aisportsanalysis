@@ -157,12 +157,15 @@ def check(held: Mapping, market: Any, side: Any, player: Any = None, line: Any =
 
 
 def keep_first(ranked: Iterable, describe: Callable[[Any], tuple], *, skipped: Any = None,
-               hound_id: str = "", event_of: Optional[Callable[[Any], str]] = None) -> list:
+               hound_id: str = "", event_of: Optional[Callable[[Any], str]] = None,
+               dropped: Optional[list] = None) -> list:
     """The items of ``ranked`` (already in the hound's own rank order) that do not collide.
 
     ``describe(item)`` -> (event_id, market, side, player[, line]). Per event the first item to claim a slot
     keeps it; a later one in the same slot is dropped and counted in ``skipped`` under its code. Order is
-    preserved, so the caller's own daily cap still sees the survivors in rank order."""
+    preserved, so the caller's own daily cap still sees the survivors in rank order. ``dropped`` (a list, when
+    given) receives ``(item, code)`` for each one refused, so a caller can say WHY a pick it was asked about is
+    not there (the manual pick's "one side per game" reason)."""
     held: dict = {}
     kept: list = []
     for item in ranked:
@@ -173,6 +176,8 @@ def keep_first(ranked: Iterable, describe: Callable[[Any], tuple], *, skipped: A
         if code is not None:
             if skipped is not None:
                 skipped[code] += 1
+            if dropped is not None:
+                dropped.append((item, code))
             logger.info("hound %s refused %s %s on %s: %s", hound_id or "?", market, side, event_id,
                         REASONS[code])
             continue

@@ -453,8 +453,11 @@ def pick_row(hound: dict, game, market: str, cand: dict, observed: datetime, now
 
 def fire_user(dog: common.Dog, *, now: Optional[datetime] = None, games: Optional[dict] = None,
               ledger: Optional[str] = None, rows_for: Optional[Callable] = None,
-              other_live: Optional[Callable] = None) -> dict:
+              other_live: Optional[Callable] = None, dropped: Optional[list] = None) -> dict:
     """The dog's current rule over the newest stored boards. See the module docstring.
+
+    ``dropped`` (a list) receives ``(pick, code)`` for each pick the one-side-per-game guard removed, so the manual
+    pick can say why a pick it was asked about is not there (src/hounds/one_side.py ``keep_first``).
 
     ``other_live(own_sports, now)`` answers "what is live in other sports" (default on the production path:
     ``src.sports.allsports_view.live_elsewhere`` over the stored rows; with injected ``games`` or
@@ -527,7 +530,8 @@ def fire_user(dog: common.Dog, *, now: Optional[datetime] = None, games: Optiona
         if game_looked:
             looked += 1
     # one side per game (src/hounds/one_side.py): the engine would not write the second, so the preview does not show it
-    picks = one_side.keep_first(picks, lambda p: (p["event_id"], p["market"], p["side"], None, p.get("line")))
+    picks = one_side.keep_first(picks, lambda p: (p["event_id"], p["market"], p["side"], None, p.get("line")),
+                                dropped=dropped)
     # the engine keeps the first ``max_bets_per_day`` of a slate date in lock order: say which would be cut
     seen = dict(per_date)
     for pick in sorted(picks, key=lambda p: (p["lock_utc"], p["event_id"], user_engine.MARKET_ORDER[p["market"]])):
