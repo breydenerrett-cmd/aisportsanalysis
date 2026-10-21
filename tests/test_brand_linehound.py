@@ -28,6 +28,7 @@ PLACEHOLDER = "WORKING TITLE"
 WEB_FILES = [
     REPO_ROOT / "web" / "index.html",
     REPO_ROOT / "web" / "landing.html",
+    REPO_ROOT / "web" / "desk.html",
 ]
 CONTENT_DOCS = [
     REPO_ROOT / "docs" / "CONTENT_LANDING.md",

@@ -35,7 +35,7 @@ WEB = REPO / "web"
 # Files a customer reads. Not the whole tree: design mockups and docs are
 # allowed to carry historical figures.
 CUSTOMER_FACING = [
-    WEB / "landing.html",
+    WEB / "desk.html",
     WEB / "index.html",
     WEB / "js" / "today.js",
     WEB / "js" / "betcheck.js",
@@ -236,7 +236,7 @@ class NoCustomerFileHardcodesIt(unittest.TestCase):
         from src.research import alpha_registry
         # The READ count: the sentences around every hook say "tested".
         expected = str(alpha_registry.public_research_counts()["read"])
-        html = (WEB / "landing.html").read_text(encoding="utf-8")
+        html = (WEB / "desk.html").read_text(encoding="utf-8")
         fallbacks = re.findall(
             r'data-hook="research-count"[^>]*>([^<]*)<', html)
         # Owner voice pass, 2026-10-18: the FAQ essay that carried this count was cut to one human line and a

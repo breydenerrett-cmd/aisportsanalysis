@@ -26,7 +26,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 WEB = ROOT / "web"
 JS = WEB / "js"
-HTML = (WEB / "landing.html").read_text(encoding="utf-8")
+HTML = (WEB / "desk.html").read_text(encoding="utf-8")
 MARKUP = re.sub(r"<!--.*?-->", "", HTML, flags=re.S)
 
 
@@ -60,8 +60,10 @@ class TheStaticPageNoLongerSellsPicks(unittest.TestCase):
             self.assertNotRegex(text.lower(), r"bet[\s-]*check", label)
         # owner ruling 2026-10-20, complete-product positioning: the page sells building a hound first; the brief is
         # the second section; no pause, no "not on sale yet" in the link preview
-        self.assertIn("ai sports bettor", title.lower())
-        self.assertIn("ai sports bettor", og_title.lower())
+        # (web/desk.html, the old landing page: the house pack and the AI desk; the kennel-first landing page is pinned in
+        # tests/test_landing_kennel_first.py)
+        self.assertIn("ai desk", title.lower())
+        self.assertIn("ai desk", og_title.lower())
         self.assertIn("AI desk", desc)
         self.assertNotIn("paused", (desc + og_desc).lower())
         self.assertNotIn("not on sale", (desc + og_desc).lower())
@@ -79,7 +81,7 @@ class TheStaticPageNoLongerSellsPicks(unittest.TestCase):
     def test_the_first_screen_says_what_is_live(self):
         text = _visible(_first_screen())
         # owner ruling 2026-10-20, complete-product positioning
-        self.assertIn("Build your own AI sports bettor.", text)
+        self.assertIn("The house pack and the AI desk.", text)
         self.assertIn("Our AI desk reads every game.", text)           # the brief, now the second section
         self.assertIn("take or pass", text)
         self.assertIn("strongest case against any bet it takes", text)

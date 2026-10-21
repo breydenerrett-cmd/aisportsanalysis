@@ -161,7 +161,7 @@ class EveryCtaGoesWhereItPromises(unittest.TestCase):
     fixed."""
 
     def setUp(self):
-        self.html = (REPO / "web" / "landing.html").read_text(encoding="utf-8")
+        self.html = (REPO / "web" / "desk.html").read_text(encoding="utf-8")
         self.links = re.findall(
             r'<a[^>]*href="([^"]+)"[^>]*data-hook="(cta[^"]*)"[^>]*>([^<]*)<',
             self.html)

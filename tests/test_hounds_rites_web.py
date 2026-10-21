@@ -107,7 +107,8 @@ class NothingLabelsThePreviewTakeThemOutBack(unittest.TestCase):
                 self.assertEqual([t for t in self.scan.literals(path) if self.OUT_BACK.search(t)], [], name)
 
     def test_the_pages_that_hold_the_preview_do_not_say_out_back(self):
-        for name in ("hound.html", "learning.html", "live.html", "hounds.html", "kennels.html", "landing.html", "build-a-hound.html"):
+        # (not landing.html: its "Train it or take it out back" step describes the product, it does not label the preview)
+        for name in ("hound.html", "learning.html", "live.html", "hounds.html", "kennels.html", "desk.html", "build-a-hound.html"):
             with self.subTest(page=name):
                 self.assertEqual(self.OUT_BACK.findall(self.scan.visible_html(name)), [], name)
 

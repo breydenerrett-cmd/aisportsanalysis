@@ -128,13 +128,17 @@ class EveryPageSaysPaperOnlyNotAdviceAndIs21Plus(unittest.TestCase):
         # artifacts/demo_latest.html is owned elsewhere; nothing in this lane writes it
         self.assertFalse(any("demo_latest" in (WEB / n).read_text(encoding="utf-8") for n in HTML))
 
-    def test_the_landing_page_links_to_the_leaderboard_in_its_first_screen(self):
+    def test_the_landing_page_links_to_the_leaderboard_and_the_quiz_in_its_first_screens(self):
+        # kennel-first rebuild 2026-10-20: the landing page is the quiz button, the sentence link and a strip that links the leaderboard
         landing = (WEB / "landing.html").read_text(encoding="utf-8")
-        first = landing[landing.index('data-hook="lb-hero"'):landing.index('data-hook="hero"')]
-        # owner ruling 2026-10-20, complete-product positioning: build first, the house pack second
-        self.assertRegex(first, r'<a [^>]*href="hounds.html"[^>]*>Watch the house pack')
-        self.assertRegex(first, r'<a [^>]*href="quiz.html"[^>]*>Find your hound')
+        first = landing[landing.index('data-hook="kennel-hero"'):landing.index('data-hook="landing-steps"')]
+        self.assertRegex(first, r'<a [^>]*href="quiz.html\?start=1"[^>]*>Find your hound')
         self.assertRegex(first, r'<a [^>]*href="build-a-hound.html"[^>]*>Build from a sentence')
+        self.assertRegex(first, r'<a [^>]*href="hounds.html"[^>]*>The leaderboard')
+        # the house pack's own page keeps the leaderboard as its first button
+        desk = (WEB / "desk.html").read_text(encoding="utf-8")
+        block = desk[desk.index('data-hook="lb-hero"'):desk.index('data-hook="hero"')]
+        self.assertRegex(block, r'<a [^>]*href="hounds.html"[^>]*>Open the leaderboard')
 
 
 class ThePagesAreServed(unittest.TestCase):

@@ -1,0 +1,94 @@
+/*
+ * THE LANDING PAGE, KENNEL FIRST (web/landing.html, web/js/landing-home.js), 2026-10-20. Loaded last, after lh.css and landing-v2.css,
+ * and written on the lh tokens (--lh-*): near-black ground, one accent (green) for the one primary action and for nothing else,
+ * Barlow Condensed for the headline and the step titles, Instrument Sans for everything you read, the 4/8 space ladder, hairlines
+ * instead of boxes. The page is four short blocks (the first screen, a strip of real hounds, three steps, the founding line) and the
+ * footer; there is nothing else to style. Mobile first: one column and a swiping strip on a phone, three steps and five hounds across
+ * from 900px, 16px gutters, nothing scrolls sideways (the strip scrolls inside its own row).
+ *
+ * MOTION: the first screen fades up once (under a second) and the strip's cards follow, all inside prefers-reduced-motion:
+ * no-preference; reduced motion gets the finished page.
+ */
+
+body.landing--home { background: var(--lh-bg); color: var(--lh-ink); }
+body.landing--home main { display: block; max-width: none; padding: 0; }
+
+/* ---- the first screen ------------------------------------------------------------------------------------------ */
+.kh { max-width: 920px; margin: 0 auto; padding: clamp(56px, 13vh, 144px) var(--lh-s4) var(--lh-s7); text-align: center; }
+body.landing .kh__title {
+  margin: 0; font-family: var(--lh-font-display); font-weight: 700; font-style: normal; text-transform: none;
+  font-size: clamp(46px, 9.4vw, 92px); line-height: .98; letter-spacing: var(--lh-track-display); color: var(--lh-ink); text-wrap: balance;
+}
+body.landing .kh__sub { margin: var(--lh-s4) 0 0; font-family: var(--lh-font-text); font-size: var(--lh-fs-md); line-height: 1.4; color: var(--lh-ink2); }
+.kh__cta { display: flex; flex-direction: column; align-items: center; gap: var(--lh-s4); margin-top: var(--lh-s6); }
+.kh__cta .btn { min-width: min(280px, 100%); }
+.kh__link { padding: var(--lh-s2) var(--lh-s3); color: var(--lh-ink2); font-size: var(--lh-fs-md); text-decoration: underline; text-underline-offset: 4px; text-decoration-color: var(--lh-line-2); }
+.kh__link:hover { color: var(--lh-ink); text-decoration-color: currentColor; }
+
+/* ---- the strip of real hounds -------------------------------------------------------------------------------- */
+.kh-strip, .kh-how { max-width: 1040px; margin: 0 auto; padding-left: var(--lh-s4); padding-right: var(--lh-s4); }
+.kh-strip { padding-top: var(--lh-s6); padding-bottom: var(--lh-s6); }
+.kh-strip__head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--lh-s3); margin-bottom: var(--lh-s3); }
+body.landing .kh-strip__title, body.landing .kh-how__title {
+  margin: 0; font-family: var(--lh-font-text); font-size: var(--lh-fs-xs); font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--lh-mute);
+}
+.kh-strip__more { font-size: var(--lh-fs-sm); color: var(--lh-ink2); text-decoration: none; }
+.kh-strip__more:hover { color: var(--lh-ink); }
+.kh-strip__row {
+  list-style: none; margin: 0 calc(var(--lh-s4) * -1); padding: 0 var(--lh-s4) var(--lh-s2); display: flex; gap: var(--lh-s3);
+  overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+}
+.kh-strip__row::-webkit-scrollbar { display: none; }
+.kh-strip__empty { flex: 1; padding: var(--lh-s4) 0; color: var(--lh-mute); font-size: var(--lh-fs-base); }
+.kh-hound { flex: 0 0 184px; scroll-snap-align: start; min-width: 0; }
+.kh-hound__link {
+  display: grid; grid-template-columns: 44px minmax(0, 1fr); grid-template-areas: "face name" "rec rec" "ret ret"; column-gap: var(--lh-s3); row-gap: var(--lh-s2);
+  height: 100%; box-sizing: border-box; padding: var(--lh-s3) var(--lh-s3) var(--lh-s4); border-radius: var(--lh-r-md);
+  background: var(--lh-soft); color: var(--lh-ink); text-decoration: none; transition: background-color var(--lh-t-base) var(--lh-ease);
+}
+.kh-hound__link:hover { background: var(--lh-soft-2); }
+.kh-hound__face { grid-area: face; align-self: center; line-height: 0; }
+.kh-hound__name { grid-area: name; align-self: center; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--lh-fs-base); font-weight: 600; }
+.kh-hound__rec { grid-area: rec; align-self: start; margin-top: var(--lh-s1); white-space: nowrap; font-size: var(--lh-fs-sm); color: var(--lh-mute); font-variant-numeric: tabular-nums; }
+.kh-hound__ret { grid-area: ret; margin-top: 0; font-family: var(--lh-font-display); font-size: 30px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; color: var(--lh-ink2); }
+.kh-hound__ret small { font-family: var(--lh-font-text); font-size: var(--lh-fs-xs); font-weight: 500; color: var(--lh-mute); }
+.kh-hound__ret--up { color: var(--lh-win); }
+.kh-hound__ret--down { color: var(--lh-loss); }
+.kh-hound--small .kh-hound__ret { color: var(--lh-mute); }
+@media (min-width: 900px) {
+  .kh-strip__row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); overflow: visible; margin: 0; padding: 0; }
+  .kh-hound { flex: none; }
+}
+
+/* ---- how it works ---------------------------------------------------------------------------------------------- */
+.kh-how { padding-top: var(--lh-s7); padding-bottom: var(--lh-s8); }
+.kh-steps { list-style: none; margin: var(--lh-s4) 0 0; padding: 0; display: grid; gap: var(--lh-s5); grid-template-columns: minmax(0, 1fr); }
+.kh-step { padding-top: var(--lh-s3); border-top: 1px solid var(--lh-line-2); }
+.kh-step__n { font-family: var(--lh-font-display); font-size: var(--lh-fs-base); font-weight: 600; letter-spacing: .06em; color: var(--lh-accent); }
+body.landing .kh-step h3 {
+  margin: var(--lh-s1) 0 var(--lh-s2); font-family: var(--lh-font-display); font-weight: 700; font-style: normal; text-transform: none;
+  font-size: var(--lh-fs-xl); line-height: 1.05; letter-spacing: var(--lh-track-display); color: var(--lh-ink);
+}
+.kh-step p { margin: 0; max-width: 36ch; font-size: var(--lh-fs-base); line-height: 1.5; color: var(--lh-ink2); }
+@media (min-width: 760px) { .kh-steps { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--lh-s6); } }
+
+/* ---- the founding line ----------------------------------------------------------------------------------------- */
+.kh-offer { max-width: 1040px; margin: calc(var(--lh-s6) * -1) auto 0; padding: 0 var(--lh-s4) var(--lh-s8); text-align: center; font-size: var(--lh-fs-base); color: var(--lh-ink2); }
+.kh-offer[hidden] { display: none; }
+.kh-offer__more { margin-left: var(--lh-s2); color: var(--lh-mute); text-decoration: underline; text-underline-offset: 3px; }
+.kh-offer__more:hover { color: var(--lh-ink); }
+
+body.landing--home :focus-visible { outline: 2px solid var(--lh-accent); outline-offset: 3px; }
+
+/* ---- motion ---------------------------------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: no-preference) {
+  .kh > * { animation: kh-in .6s var(--lh-ease) both; }
+  .kh > :nth-child(2) { animation-delay: 80ms; }
+  .kh > :nth-child(3) { animation-delay: 160ms; }
+  .kh-hound { animation: kh-in .5s var(--lh-ease) both; }
+  .kh-strip__row > :nth-child(2) { animation-delay: 60ms; }
+  .kh-strip__row > :nth-child(3) { animation-delay: 120ms; }
+  .kh-strip__row > :nth-child(4) { animation-delay: 180ms; }
+  .kh-strip__row > :nth-child(5) { animation-delay: 240ms; }
+}
+@keyframes kh-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }

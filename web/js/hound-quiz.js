@@ -2,11 +2,13 @@
  * web/quiz.html: the hound quiz.
  *
  * EIGHT THIS-OR-THAT QUESTIONS, EVERY ONE SKIPPABLE, THEN A REVEAL. The picks are big tappable cards (a stroke illustration from
- * hound-quiz-art.js, or a dog drawn by the character rig for the personalities); a progress bar, Back and Skip sit under them.
- * Nothing is required: skip all eight and the quiz still makes a starter hound and says so.
+ * hound-quiz-art.js, or a dog drawn by the character rig for the personalities), and the sports are a grid of chips; a progress
+ * bar, Back and Skip sit under them. Nothing is required: skip all eight and the quiz still makes a starter hound and says so.
  *
- *   1 sports  2 what it bets on  3 personality  4 risk (bets a day, stake, price comfort)  5 timing  6 favorite moves (up to 3
- *   cards from the library)  7 quirks  8 look
+ *   1 sports (every sport we cover, plus Any sport; the popular ones first, the rest behind More)  2 what it bets on (only the
+ *   markets those sports post)  3 personality  4 risk (bets a day, stake, price comfort)  5 timing  6 a move (four cards at a
+ *   time from POST /hounds/quiz/moves, ranked by the earlier answers; pick one, a second is optional; "Show me 4 others" pages on,
+ *   "Pick for me" takes the top one; the full rule sits behind "How it works")  7 quirks  8 look
  *
  * THE PAGE OWNS NO RULE. Every card comes from `GET /hounds/quiz/library` (config/hounds_archetypes.json), and the answers
  * become a spec through `POST /hounds/quiz/compose` (src/hounds/quiz/compose.py), which resolves conflicts (the later answer
@@ -50,42 +52,27 @@ export const SIGNUP_HREF = "index.html#/signup";
 export const BUILDER_HREF = "build-a-hound.html";
 export const PAPER_NOTICE = "Paper bets only. Your hound never takes a price of -200 or worse. Not advice. 21+.";
 export const BACKTEST_DAYS = 14;
+export const ANY = "ANY";
 
 const q = (hook) => document.querySelector(`[data-hook='${hook}']`);
 const clone = (x) => JSON.parse(JSON.stringify(x));
 
 /** The eight questions, in order. `id` is also the key of the answer group it sets. */
 export const STEPS = [
-  { id: "sports", title: "Where does your hound hunt?", sub: "MLB, NFL or both. Skip it and your hound plays both." },
+  { id: "sports", title: "Where does your hound hunt?", sub: "Pick any sports, or Any sport. Skip it and your hound plays MLB and NFL." },
   { id: "markets", title: "What does it bet on?", sub: "Pick any. Player props are MLB only." },
   { id: "personality", title: "Pick its personality.", sub: "This sets the style of its base rule. Pick one." },
   { id: "risk", title: "How much risk can it stomach?", sub: "Bets a day, stake size and the prices it is comfortable with. All optional." },
   { id: "timing", title: "Early bird or last-minute?", sub: "When does it check the board before the game starts?" },
-  { id: "archetypes", title: "Pick up to 3 favorite moves.", sub: "Each one is a real rule you can read before you keep it." },
+  { id: "archetypes", title: "Pick a move.", sub: "Pick one, and add a second if you like. Each is a real rule you can read before you keep it." },
   { id: "quirks", title: "Any quirks?", sub: "Extra conditions that make your hound pickier. Pick any, or none." },
   { id: "look", title: "Dress your hound.", sub: "Coat and accessory. Purely for looks: it changes no rule." },
 ];
 
-const SPORT_CARDS = [
-  { id: "MLB", title: "MLB", pitch: "Baseball: moneylines, run lines, totals and player props.", icon: "baseball", tone: "mint" },
-  { id: "NFL", title: "NFL", pitch: "Football: moneylines, spreads and totals.", icon: "football", tone: "lime" },
-];
 const BETS = [1, 2, 3, 4, 5];
 const MARKET_TONE = { moneyline: "mint", spread: "sky", total: "gold", props: "ember", mix: "violet" };
 const GROUP_ORDER = ["Weather", "Calendar", "Rest", "Market", "Mystic", "Chaos"];
 const GROUP_TONE = { Weather: "sky", Calendar: "lime", Rest: "mint", Market: "gold", Mystic: "violet", Chaos: "ember" };
-const FILTERS = [
-  { id: "all", label: "All", test: () => true },
-  { id: "dog", label: "Underdogs", test: (a) => a.stance === "dog" },
-  { id: "chalk", label: "Chalk", test: (a) => a.stance === "chalk" },
-  { id: "totals", label: "Totals", test: (a) => a.kinds.includes("total") },
-  { id: "props", label: "Props", test: (a) => a.kinds.includes("prop") },
-  { id: "weather", label: "Weather", test: (a) => a.tags.includes("weather") },
-  { id: "steam", label: "Line moves", test: (a) => a.tags.includes("steam") },
-  { id: "mystic", label: "Mystic", test: (a) => a.tags.includes("mystic") || a.tags.includes("silly") },
-  { id: "nfl", label: "NFL only", test: (a) => a.works_in.length === 1 && a.works_in[0] === "NFL" },
-  { id: "mlb", label: "MLB only", test: (a) => a.works_in.length === 1 && a.works_in[0] === "MLB" },
-];
 
 function blankAnswers() {
   return { sports: [], markets: [], personality: null, bets_per_day: null, stake: null, price_comfort: null, timing: null,
@@ -93,7 +80,8 @@ function blankAnswers() {
 }
 
 const S = {
-  lib: null, stage: "intro", step: 0, dir: "fwd", answers: blankAnswers(), filter: "all", opened: {},
+  lib: null, stage: "intro", step: 0, dir: "fwd", answers: blankAnswers(), opened: {},
+  moves: null, movesBusy: false, movesError: "", movesSeq: 0, moreSports: false,
   name: "", nameTouched: false, tagline: "", shownName: "", english: { text: "", draft: null, understood: [], notRead: [], assumed: [] },
   result: null, composing: false, composeError: "", seq: 0, preview: null, previewSeq: 0, drill: null, drillBusy: false,
   saving: false, saved: null, problems: [], pendingSave: false, resumed: false, notice: "", celebrated: false, bound: false,
@@ -227,10 +215,18 @@ function selected(group, id) {
 
 function toggle(group, id) {
   const a = S.answers;
-  const limit = (S.lib && S.lib.limits && S.lib.limits.archetype_picks) || 3;
+  const limit = (S.lib && S.lib.limits && S.lib.limits.archetype_picks) || 2;
   S.notice = "";
-  if (group === "sports") a.sports = a.sports.includes(id) ? a.sports.filter((x) => x !== id) : a.sports.concat([id]);
-  else if (group === "markets") {
+  if (group === "sports") {
+    // "Any sport" and a list of sports are two different answers: picking one clears the other
+    if (id === ANY) a.sports = a.sports.includes(ANY) ? [] : [ANY];
+    else {
+      const base = a.sports.filter((x) => x !== ANY);
+      a.sports = base.includes(id) ? base.filter((x) => x !== id) : base.concat([id]);
+    }
+    const ok = marketsOk();                  // a market the new sports do not post is taken off the pick list
+    if (ok) a.markets = a.markets.filter((m) => m === "mix" || ok.has(m));
+  } else if (group === "markets") {
     if (id === "mix") a.markets = a.markets.includes("mix") ? [] : ["mix"];
     else {
       const base = a.markets.filter((x) => x !== "mix");
@@ -238,7 +234,7 @@ function toggle(group, id) {
     }
   } else if (group === "archetypes") {
     if (a.archetypes.includes(id)) a.archetypes = a.archetypes.filter((x) => x !== id);
-    else if (a.archetypes.length >= limit) { S.notice = `That is ${limit} cards. Tap one to put it back, then pick another.`; }
+    else if (a.archetypes.length >= limit) { S.notice = `That is ${limit} moves. Tap one to put it back, then pick another.`; }
     else a.archetypes = a.archetypes.concat([id]);
   } else if (group === "quirks") {
     a.quirks = a.quirks.includes(id) ? a.quirks.filter((x) => x !== id) : a.quirks.concat([id]);
@@ -258,11 +254,12 @@ function toggle(group, id) {
 
 // ---- small widgets ---------------------------------------------------------------------------------------------------
 
-function pin({ group, id, title, pitch, art, tone, small, extra }) {
+function pin({ group, id, title, pitch, art, tone, small, extra, unavailable }) {
   const body = [h("span", { class: "qz-pin__title", text: title })];
   if (pitch) body.push(h("span", { class: "qz-pin__pitch", text: pitch }));
   return h("button", { type: "button", class: `qz-pin${small ? " qz-pin--small" : ""}`, "data-hook": "quiz-card", "data-group": group,
     "data-id": id, "data-tone": tone || "mint", "aria-pressed": selected(group, id) ? "true" : "false",
+    disabled: unavailable ? "disabled" : false, "data-unavailable": unavailable ? "true" : false,
     on: { click: () => toggle(group, id) } }, [art, h("span", { class: "qz-pin__body" }, body.concat(extra || [])),
     h("span", { class: "qz-pin__check", "aria-hidden": "true" }, [icon("check", { size: 14, stroke: 2.6 })])]);
 }
@@ -302,14 +299,69 @@ function previewBreed() {
 
 // ---- the question screens --------------------------------------------------------------------------------------------
 
+/** Put `next` where `old` was. The real DOM has replaceChild; the test harness's small DOM does not, and there every swapped
+ * node is the last child of its parent, so appending the new one and dropping the old one is the same thing. */
+function swap(old, next) {
+  const parent = old && old.parentNode;
+  if (!parent) return;
+  if (typeof parent.replaceChild === "function") parent.replaceChild(next, old);
+  else { parent.appendChild(next); parent.removeChild(old); }
+}
+
+/** The sports every card here can run in: the server's list (GET /hounds/quiz/library `sports`), popular ones first. */
+function sportRows() {
+  return (S.lib && S.lib.sports) || [];
+}
+
+function sportChip(row) {
+  return h("button", { type: "button", class: "qz-chip qz-chip--sport", "data-hook": "quiz-card", "data-group": "sports", "data-id": row.value,
+    "aria-pressed": selected("sports", row.value) ? "true" : "false", text: row.label, on: { click: () => toggle("sports", row.value) } });
+}
+
+/** The sport question: a grid of chips. The popular sports and Any sport are always showing; the rest sit behind More. */
 function stepSports() {
-  return h("div", { class: "qz-grid qz-grid--2" }, SPORT_CARDS.map((c) => pin({ group: "sports", id: c.id, title: c.title, pitch: c.pitch,
-    art: tile(c.icon, { tone: c.tone, size: 44 }), tone: c.tone })));
+  const rows = sportRows();
+  const popular = rows.filter((r) => r.popular);
+  const more = rows.filter((r) => !r.popular);
+  const any = S.lib.sports_any || { value: ANY, label: "Any sport" };
+  const open = S.moreSports || more.some((r) => S.answers.sports.includes(r.value));
+  const toggleMore = h("button", { type: "button", class: "qz-chip qz-chip--more", "data-hook": "quiz-sports-more", "aria-expanded": open ? "true" : "false",
+    text: open ? "Fewer" : `More (${more.length})`, on: { click: () => { S.moreSports = !open; refreshSports(); } } });
+  const grid = h("div", { class: "qz-chipgrid", role: "group", "aria-label": "Sports", "data-hook": "quiz-sports-grid" },
+    popular.map(sportChip).concat([sportChip({ value: any.value, label: any.label }), more.length ? toggleMore : null]));
+  const rest = h("div", { class: "qz-chipgrid qz-chipgrid--more", role: "group", "aria-label": "More sports", "data-hook": "quiz-sports-extra" },
+    more.map(sportChip));
+  if (!open) rest.setAttribute("hidden", "");
+  return h("div", { class: "qz-sports", "data-hook": "quiz-sports" }, [grid, rest,
+    h("p", { class: "qz-fine", text: "Tap as many as you like. Any sport covers every one of them." })]);
+}
+
+function refreshSports() {
+  const host = q("quiz-sports");
+  if (host) swap(host, stepSports());
+}
+
+/** The market ids the picked sports post (null = all of them: nothing picked, or Any sport). Read from the server's own table. */
+function marketsOk() {
+  const picked = S.answers.sports;
+  if (!picked.length || picked.includes(ANY)) return null;
+  const rows = sportRows();
+  const ok = new Set();
+  for (const code of picked) {
+    const row = rows.find((r) => r.value === code);
+    if (!row || !Array.isArray(row.markets)) return null;
+    for (const m of row.markets) ok.add(m);
+  }
+  return ok;
 }
 
 function stepMarkets() {
-  return h("div", { class: "qz-grid qz-grid--3" }, S.lib.markets.map((m) => pin({ group: "markets", id: m.id, title: m.name, pitch: m.pitch,
-    art: tile(m.icon, { tone: MARKET_TONE[m.id] || "mint", size: 40 }), tone: MARKET_TONE[m.id] || "mint" })));
+  const ok = marketsOk();
+  return h("div", { class: "qz-grid qz-grid--3" }, S.lib.markets.map((m) => {
+    const unavailable = !!ok && m.id !== "mix" && !ok.has(m.id);
+    return pin({ group: "markets", id: m.id, title: m.name, pitch: unavailable ? "Not posted for the sports you picked." : m.pitch,
+      art: tile(m.icon, { tone: MARKET_TONE[m.id] || "mint", size: 40 }), tone: MARKET_TONE[m.id] || "mint", unavailable });
+  }));
 }
 
 function stepPersonality() {
@@ -342,27 +394,26 @@ function stepTiming() {
   return h("div", { class: "qz-duel" }, [big(a), h("span", { class: "qz-duel__vs", "aria-hidden": "true", text: "or" }), big(b)]);
 }
 
-function filteredArchetypes() {
-  const f = FILTERS.find((x) => x.id === S.filter) || FILTERS[0];
-  return S.lib.archetypes.filter(f.test);
+function tag(text, attrs = {}) {
+  return h("span", Object.assign({ class: "qz-tag", text }, attrs));
 }
 
-function archetypeCard(a) {
-  const open = !!S.opened[a.id];
-  const sports = a.works_in.length === 2 ? "MLB + NFL" : a.works_in[0];
-  const meta = h("span", { class: "qz-pin__meta" }, [h("span", { class: "qz-tag", text: sports }),
-    a.rule_count > 1 ? h("span", { class: "qz-tag", text: `${a.rule_count} rules` }) : null]);
-  const card = pin({ group: "archetypes", id: a.id, title: a.name, pitch: a.pitch, art: tile(a.icon, { tone: toneFor(a), size: 36 }),
-    tone: toneFor(a), small: true, extra: [meta] });
-  const read = h("button", { type: "button", class: "qz-read", "data-hook": "quiz-read", "data-id": a.id, "aria-expanded": open ? "true" : "false",
-    text: open ? "Hide the rule" : "Read the rule", on: { click: () => { S.opened[a.id] = !S.opened[a.id]; refreshArchetypes(); } } });
-  const english = h("p", { class: "qz-english", "data-hook": "quiz-english", text: a.english });
+/** One move card: the name, one short line (10 words or fewer), the sport badge. The whole rule sits behind "How it works". */
+function moveCard(m) {
+  const open = !!S.opened[m.id];
+  const meta = h("span", { class: "qz-pin__meta" }, [tag(m.sport_badge, { "data-hook": "quiz-move-badge" }),
+    m.rule_count > 1 ? tag(`${m.rule_count} rules`) : null]);
+  const card = pin({ group: "archetypes", id: m.id, title: m.name, pitch: m.short, art: tile(m.icon, { tone: toneFor(m), size: 36 }),
+    tone: toneFor(m), small: true, extra: [meta] });
+  const read = h("button", { type: "button", class: "qz-read", "data-hook": "quiz-read", "data-id": m.id, "aria-expanded": open ? "true" : "false",
+    text: open ? "Hide the rule" : "How it works", on: { click: () => { S.opened[m.id] = !S.opened[m.id]; renderMoves(); } } });
+  const english = h("p", { class: "qz-english", "data-hook": "quiz-english", text: m.english });
   if (!open) english.setAttribute("hidden", "");
-  return h("div", { class: "qz-cardwrap", "data-id": a.id }, [card, read, english]);
+  return h("div", { class: "qz-cardwrap", "data-id": m.id }, [card, read, english]);
 }
 
 function trayNode() {
-  const picks = S.answers.archetypes.map((id) => S.lib.archetypes.find((a) => a.id === id)).filter(Boolean);
+  const picks = S.answers.archetypes.map((id) => (S.lib.archetypes || []).find((a) => a.id === id)).filter(Boolean);
   const limit = S.lib.limits.archetype_picks;
   const tray = h("div", { class: "qz-tray", "data-hook": "quiz-tray", "aria-live": "polite" }, [
     h("span", { class: "qz-tray__count", "data-hook": "quiz-tray-count", text: `${picks.length} of ${limit} picked` })]);
@@ -373,30 +424,86 @@ function trayNode() {
   return tray;
 }
 
+/** Question 6. The host is drawn at once ("Finding moves..."); `loadMoves` then fills it from POST /hounds/quiz/moves. */
 function stepArchetypes() {
-  const filters = h("div", { class: "qz-filters", role: "group", "aria-label": "Filter the cards", "data-hook": "quiz-filters" },
-    FILTERS.map((f) => chip(f.label, S.filter === f.id, () => { S.filter = f.id; refreshArchetypes(); }, { "data-hook": "quiz-filter", "data-id": f.id })));
-  const wrap = h("div", { class: "qz-archetypes", "data-hook": "quiz-archetypes" }, [
-    filters, h("div", { class: "qz-grid qz-grid--3 qz-grid--cards", "data-hook": "quiz-archetype-grid" }, filteredArchetypes().map(archetypeCard)),
-    trayNode()]);
-  return wrap;
+  const host = h("div", { class: "qz-archetypes", "data-hook": "quiz-archetypes" });
+  fillMoves(host);
+  return host;
 }
 
-/** Put `next` where `old` was. The real DOM has replaceChild; the test harness's small DOM does not, and there every swapped
- * node is the last child of its parent, so appending the new one and dropping the old one is the same thing. */
-function swap(old, next) {
-  const parent = old && old.parentNode;
-  if (!parent) return;
-  if (typeof parent.replaceChild === "function") parent.replaceChild(next, old);
-  else { parent.appendChild(next); parent.removeChild(old); }
+function fillMoves(host) {
+  clearNode(host);
+  const res = S.moves;
+  if (S.movesError && !res) {
+    host.appendChild(h("div", { class: "qz-state", role: "status", "data-hook": "quiz-moves-error" }, [
+      h("p", { text: S.movesError }),
+      h("p", { class: "qz-actions" }, [h("button", { type: "button", class: "qz-btn qz-btn--ghost", "data-hook": "quiz-moves-retry", text: "Try again",
+        on: { click: () => { loadMoves(0); } } })]),
+      h("p", { class: "qz-fine", text: "You can skip this question. Your hound still gets its personality's rule." })]));
+    host.appendChild(trayNode());
+    return;
+  }
+  if (!res) {
+    host.appendChild(h("p", { class: "qz-state", role: "status", "data-hook": "quiz-moves-loading", text: "Finding moves for your hound..." }));
+    host.appendChild(trayNode());
+    return;
+  }
+  host.appendChild(h("div", { class: "qz-grid qz-grid--cards qz-grid--moves", "data-hook": "quiz-archetype-grid", "aria-busy": S.movesBusy ? "true" : "false" },
+    res.moves.map(moveCard)));
+  host.appendChild(h("div", { class: "qz-actions qz-actions--moves", "data-hook": "quiz-moves-actions" }, [
+    h("button", { type: "button", class: "qz-btn qz-btn--ghost", "data-hook": "quiz-moves-more", disabled: S.movesBusy ? "disabled" : false,
+      text: "Show me 4 others", on: { click: () => { loadMoves(res.next_page); } } }),
+    h("button", { type: "button", class: "qz-btn qz-btn--ghost", "data-hook": "quiz-moves-pick", disabled: S.movesBusy ? "disabled" : false,
+      text: "Pick for me", on: { click: pickForMe } }),
+    h("span", { class: "qz-fine", "data-hook": "quiz-moves-count", text: `${res.total} moves fit ${sportsPhrase(res)}. Page ${res.page + 1} of ${res.pages}.` })]));
+  if (S.movesError) host.appendChild(h("p", { class: "qz-fine qz-fine--bad", role: "status", "data-hook": "quiz-moves-error", text: S.movesError }));
+  host.appendChild(trayNode());
 }
 
-function refreshArchetypes() {
+/** "any sport", "NBA", "your sports": what the count line names. */
+function sportsPhrase(res) {
+  if (res.sports_any) return "any sport";
+  if (!res.sports_picked) return "MLB and NFL";
+  const rows = sportRows();
+  const names = (res.sports || []).map((c) => (rows.find((r) => r.value === c) || { label: c }).label);
+  return names.length <= 2 ? names.join(" and ") : "your sports";
+}
+
+function renderMoves() {
   const host = q("quiz-archetypes");
-  if (!host) return;
-  swap(host, stepArchetypes());
+  if (host) fillMoves(host);
   persist();
   syncBar();
+}
+
+/** Ask the server for the four moves on `page` for the answers so far. A failure keeps the page that was showing. */
+async function loadMoves(page) {
+  const seq = ++S.movesSeq;
+  S.movesBusy = true;
+  S.movesError = "";
+  renderMoves();
+  try {
+    const res = await apiPost("/hounds/quiz/moves", { answers: answersPayload(), page: Number.isInteger(page) ? page : 0 });
+    if (seq !== S.movesSeq) return;
+    S.moves = res;
+    const dropped = res.dropped || [];
+    if (dropped.length) S.answers.archetypes = S.answers.archetypes.filter((id) => !dropped.includes(id));
+  } catch (err) {
+    if (seq !== S.movesSeq) return;
+    S.movesError = err && err.status === 429 ? "Slow down a little and try again in a minute." : describeError(err, "the moves").text;
+  }
+  S.movesBusy = false;
+  renderMoves();
+}
+
+/** Pick for me: the one move the server ranks first for these answers, in place of whatever was picked. */
+function pickForMe() {
+  const rec = S.moves && S.moves.recommended_card;
+  if (!rec) return;
+  S.answers.archetypes = [rec.id];
+  S.notice = `${rec.name} is picked for you.`;
+  persist();
+  renderMoves();
 }
 
 function stepQuirks() {
@@ -458,6 +565,7 @@ function renderStep() {
   stage.appendChild(section);
   syncBar();
   if (typeof window.scrollTo === "function") window.scrollTo(0, 0);
+  if (step.id === "archetypes") { S.moves = null; loadMoves(0); }       // fresh for the answers so far, every time the question opens
   const heading = q("quiz-question");
   if (heading && typeof heading.focus === "function") heading.focus();
 }
@@ -483,7 +591,7 @@ function syncBar() {
   const next = q("quiz-next");
   if (!next) return;
   const picks = S.answers.archetypes.length;
-  next.textContent = last ? "Reveal my hound" : step.id === "archetypes" && picks ? `Next (${picks} of ${(S.lib.limits && S.lib.limits.archetype_picks) || 3})` : "Next";
+  next.textContent = last ? "Reveal my hound" : step.id === "archetypes" && picks ? `Next (${picks} of ${(S.lib.limits && S.lib.limits.archetype_picks) || 2})` : "Next";
   next.disabled = !answered(step.id);
   q("quiz-skip").textContent = last ? "Skip and reveal" : "Skip";
   const done = STEPS.filter((s) => answered(s.id)).length;
@@ -561,7 +669,7 @@ function resetAll() {
   S.answers = blankAnswers();
   S.name = ""; S.nameTouched = false; S.tagline = ""; S.shownName = "";
   S.english = { text: "", draft: null, understood: [], notRead: [], assumed: [] };
-  S.result = null; S.preview = null; S.drill = null; S.saved = null; S.pendingSave = false; S.problems = []; S.opened = {}; S.filter = "all";
+  S.result = null; S.preview = null; S.drill = null; S.saved = null; S.pendingSave = false; S.problems = []; S.opened = {}; S.moves = null; S.moreSports = false;
   S.previewSettled = false;
   clearDraft();
 }
@@ -630,19 +738,6 @@ function buildReveal() {
           h("ol", { class: "qz-rules", "data-hook": "reveal-rules" }),
           h("ul", { class: "qz-globals", "data-hook": "reveal-globals" }),
           h("div", { class: "qz-warnings", "data-hook": "reveal-warnings" })]),
-        h("section", { class: "qz-block", "aria-labelledby": "qz-own-h" }, [
-          h("h2", { id: "qz-own-h", class: "qz-h2", text: "Add anything in your own words" }),
-          h("label", { class: "qz-sr", for: "qz-english", text: "Anything else, in your own words" }),
-          h("textarea", { id: "qz-english", class: "qz-textarea", rows: "3", maxlength: "600", "data-hook": "reveal-english-input",
-            placeholder: "e.g. Also bet home underdogs between +120 and +200 when they're on 2+ days rest. Max 2 bets a day." }),
-          h("div", { class: "qz-actions" }, [
-            h("button", { type: "button", class: "qz-btn qz-btn--ghost", "data-hook": "reveal-english-go", text: "Add it to my hound" }),
-            h("span", { class: "qz-fine", "data-hook": "reveal-english-status", "aria-live": "polite" })]),
-          h("div", { class: "qz-readback", "data-hook": "reveal-english-read", hidden: true }, [
-            h("p", { class: "qz-eyebrow", text: "How I read it" }),
-            h("ul", { class: "qz-list", "data-hook": "reveal-english-understood" }),
-            h("ul", { class: "qz-list qz-list--warn", "data-hook": "reveal-english-notread" })]),
-          h("p", { class: "qz-fine", text: "Anything you add becomes an extra rule, and a number you name (bets a day, stake, how early) replaces the quiz's." })]),
         h("section", { class: "qz-block qz-checks", "aria-labelledby": "qz-check-h" }, [
           h("h2", { id: "qz-check-h", class: "qz-h2", text: "Kick the tires" }),
           h("div", { class: "qz-check qz-preview", "data-hook": "reveal-preview", "data-state": "loading" }, [
@@ -659,6 +754,19 @@ function buildReveal() {
             h("p", { class: "qz-fine", text: `Replays the rules over the last ${BACKTEST_DAYS} days of stored boards. Hindsight, so it is a rehearsal and never counted.` }),
             h("button", { type: "button", class: "qz-btn qz-btn--ghost", "data-hook": "reveal-backtest-go", text: "Backtest this" }),
             h("div", { class: "qz-drill", "data-hook": "reveal-backtest-result", "aria-live": "polite" })])]),
+        h("details", { class: "qz-block qz-own", "data-hook": "reveal-own", open: S.english.text ? "open" : false }, [
+          h("summary", { class: "qz-own__sum", id: "qz-own-h", text: "Add anything in your own words" }),
+          h("label", { class: "qz-sr", for: "qz-english", text: "Anything else, in your own words" }),
+          h("textarea", { id: "qz-english", class: "qz-textarea", rows: "3", maxlength: "600", "data-hook": "reveal-english-input",
+            placeholder: "e.g. Also bet home underdogs between +120 and +200 when they're on 2+ days rest. Max 2 bets a day." }),
+          h("div", { class: "qz-actions" }, [
+            h("button", { type: "button", class: "qz-btn qz-btn--ghost", "data-hook": "reveal-english-go", text: "Add it to my hound" }),
+            h("span", { class: "qz-fine", "data-hook": "reveal-english-status", "aria-live": "polite" })]),
+          h("div", { class: "qz-readback", "data-hook": "reveal-english-read", hidden: true }, [
+            h("p", { class: "qz-eyebrow", text: "How I read it" }),
+            h("ul", { class: "qz-list", "data-hook": "reveal-english-understood" }),
+            h("ul", { class: "qz-list qz-list--warn", "data-hook": "reveal-english-notread" })]),
+          h("p", { class: "qz-fine", text: "Anything you add becomes an extra rule, and a number you name (bets a day, stake, how early) replaces the quiz's." })]),
         h("section", { class: "qz-block qz-finish" }, [
           h("div", { class: "qz-signin", "data-hook": "reveal-signin", role: "status", hidden: true }),
           h("div", { class: "qz-keep-host", "data-hook": "reveal-keep-host" }),
@@ -667,8 +775,7 @@ function buildReveal() {
             h("button", { type: "button", class: "qz-btn qz-btn--primary qz-btn--lg", "data-hook": "reveal-save", text: "Keep your hound", disabled: true }),
             h("button", { type: "button", class: "qz-btn qz-btn--ghost qz-btn--lg", "data-hook": "reveal-edit", text: "Edit rules", disabled: true }),
             h("button", { type: "button", class: "qz-btn qz-btn--text", "data-hook": "reveal-back", text: "Back to the questions" }),
-            h("button", { type: "button", class: "qz-btn qz-btn--text", "data-hook": "reveal-retake", text: "Retake the quiz" })]),
-          h("p", { class: "qz-fine", text: "Paper bets only. Your hound never places a real bet." })])])])]));
+            h("button", { type: "button", class: "qz-btn qz-btn--text", "data-hook": "reveal-retake", text: "Retake the quiz" })])])])])]));
   q("reveal-name").addEventListener("input", () => { S.name = String(q("reveal-name").value); S.nameTouched = true; persist(); });
   q("reveal-name").addEventListener("change", () => { S.name = String(q("reveal-name").value).trim(); S.nameTouched = !!S.name; persist(); compose(); });
   q("reveal-tagline").addEventListener("input", () => { S.tagline = String(q("reveal-tagline").value); persist(); });
@@ -1046,6 +1153,8 @@ async function boot() {
     setMessage("You are signed in. Your hound is ready to send in.", "ok");
     return;
   }
+  // "Find your hound" on the landing page opens the first question at once (?start=1); a saved quiz still gets the choice
+  if (params.get("start") && !hasAnyAnswer() && !S.english.text) { S.dir = "fwd"; S.step = 0; S.stage = "quiz"; startQuiz(); return; }
   showIntro();
 }
 

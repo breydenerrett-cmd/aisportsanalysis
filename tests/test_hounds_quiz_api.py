@@ -40,7 +40,7 @@ class TheQuizDoors(unittest.TestCase):
         first = data["archetypes"][0]
         for key in ("id", "name", "pitch", "icon", "spec_fragment", "english", "sentences", "works_in", "stance"):
             self.assertIn(key, first)
-        self.assertEqual(data["limits"]["archetype_picks"], 3)
+        self.assertEqual(data["limits"]["archetype_picks"], 2)
         self.assertEqual(data["limits"]["max_rules"], 4)
         self.assertEqual({p["id"] for p in data["personalities"]},
                          {"underdog_hunter", "chalk_eater", "chaos_agent", "stats_nerd", "steam_chaser", "mystic"})
@@ -109,6 +109,56 @@ class TheQuizDoors(unittest.TestCase):
         # and the dog routes still answer, with the quiz literal paths beside them
         self.assertEqual(self.client.get("/hounds/menu").status_code, 200)
         self.assertEqual(self.client.get("/hounds/quiz/library").status_code, 200)
+
+    def test_the_library_lists_every_sport_popular_first_and_any_sport(self):
+        data = self.client.get("/hounds/quiz/library").json()
+        values = [s["value"] for s in data["sports"]]
+        self.assertEqual(values[:8], ["NBA", "NFL", "NHL", "NCAAF", "SOCCER", "TENNIS", "MLB", "MMA"])
+        self.assertEqual(sorted(values), sorted(user_spec.SPORTS))
+        self.assertEqual(data["sports_any"]["value"], user_spec.ANY)
+        self.assertEqual(data["sports"][0]["label"], "NBA")
+        self.assertEqual(data["sports"][3]["label"], "College football")
+        for card in data["archetypes"]:
+            self.assertTrue(card["short"])
+
+    def test_moves_returns_four_cards_a_page_and_cycles(self):
+        body = {"answers": {"sports": ["NBA"], "personality": "underdog_hunter"}}
+        first = self.client.post("/hounds/quiz/moves", json=body)
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(first.headers["cache-control"], "no-store")
+        out = first.json()
+        self.assertTrue(out["paper_only"])
+        self.assertEqual(len(out["moves"]), 4)
+        for card in out["moves"]:
+            for key in ("id", "name", "short", "sport_badge", "english", "sentences", "stance"):
+                self.assertIn(key, card)
+            self.assertEqual(card["sports"], ["NBA"])
+        nxt = self.client.post("/hounds/quiz/moves", json={**body, "page": out["next_page"]}).json()
+        self.assertEqual(nxt["page"], 1)
+        self.assertFalse({c["id"] for c in out["moves"]} & {c["id"] for c in nxt["moves"]})
+        wrapped = self.client.post("/hounds/quiz/moves", json={**body, "page": out["pages"]}).json()
+        self.assertEqual(wrapped["moves"], out["moves"])
+        huge = self.client.post("/hounds/quiz/moves", json={**body, "page": 10 ** 9})
+        self.assertEqual(huge.status_code, 200)
+        self.assertEqual(self.client.post("/hounds/quiz/moves", json={**body, "page": -5}).json()["page"], 0)
+
+    def test_moves_survives_nothing_and_hostile_answers(self):
+        for body in ({}, {"answers": {}}, {"answers": {"sports": ["CURLING"]}}, {"answers": {"sports": 7}},
+                     {"answers": {"sports": ["ANY"], "personality": "wizard"}}):
+            r = self.client.post("/hounds/quiz/moves", json=body)
+            self.assertEqual(r.status_code, 200, body)
+            self.assertEqual(len(r.json()["moves"]), 4)
+        self.assertEqual(self.client.post("/hounds/quiz/moves", json={"answers": "nope"}).status_code, 422)
+
+    def test_pick_for_me_is_the_top_move_and_it_composes(self):
+        body = {"answers": {"sports": ["TENNIS"], "price_comfort": "plus"}}
+        pick = self.client.post("/hounds/quiz/pick", json=body).json()
+        top = self.client.post("/hounds/quiz/moves", json=body).json()
+        self.assertEqual(pick["id"], top["recommended"])
+        self.assertEqual(pick["card"]["id"], pick["id"])
+        out = self.client.post("/hounds/quiz/compose", json={"answers": {**body["answers"], "archetypes": [pick["id"]]}})
+        self.assertIn(pick["id"], out.json()["archetypes"])
+        self.assertTrue(pick["paper_only"])
 
     def test_the_whole_response_is_json_safe_and_free_of_a_minus_200_price(self):
         out = self.client.post("/hounds/quiz/compose", json={"answers": {

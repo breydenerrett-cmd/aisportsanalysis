@@ -239,7 +239,7 @@ class SampleSignedOut(_Journey):
     def test_the_offer_line_agrees_with_the_landing_page_on_the_shared_facts(self):
         offer = re.search(r'OFFER_LINE =\s*"(.*?)";', _read(JS / "sample.js"), re.S)
         offer = re.sub(r'"\s*\+\s*"', "", offer.group(1))
-        landing = _read(ROOT / "web" / "landing.html")
+        landing = _read(ROOT / "web" / "desk.html")
         # 2026-10-20: the hero note is gone; the facts live in the pricing card's tier note and the FAQ entry
         hero = re.search(r'data-hook="pricing-tier-note">(.*?)</span>', landing, re.S).group(1)
         for fact in ("7 days", "no card", "$19.99"):

@@ -345,7 +345,7 @@ class TheKennelsIndexAndHandles(unittest.TestCase):
 class NoFireNowLeftInTheWords(unittest.TestCase):
     """The scan the owner asked for: no "Fire now", "Fire again" or "Drill" in anything a person reads. Data-hooks,
     routes, ids and class names (one word, no spaces) are not words a person reads and keep the old name."""
-    FILES = ["hound.html", "kennel.html", "learning.html", "landing.html", "kennels.html", "hounds.html", "build-a-hound.html"]
+    FILES = ["hound.html", "kennel.html", "learning.html", "landing.html", "desk.html", "kennels.html", "hounds.html", "build-a-hound.html"]
     OLD = re.compile(r"fire now|fire again|firing|\bfire (?:it|them|a dog|your)\b|drill|hindsight drill", re.I)
 
     def visible_html(self, name):

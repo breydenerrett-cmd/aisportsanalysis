@@ -25,7 +25,7 @@ from tests.hounds_web_runner import HAS_NODE, WEB, run_js, run_page
 
 TOKEN_KEY = "aisportsanalysis.invite_token"
 SIGNED = dict(stored={TOKEN_KEY: "tok"})
-PAGES = ("kennels.html", "live.html", "hounds.html", "hound.html", "build-a-hound.html", "learning.html", "kennel.html", "landing.html", "why-we-paused.html",
+PAGES = ("kennels.html", "live.html", "hounds.html", "hound.html", "build-a-hound.html", "learning.html", "kennel.html", "landing.html", "desk.html", "why-we-paused.html",
          "postseason.html", "sample.html", "index.html", "graveyard.html", "quiz.html")
 # owner ruling 2026-10-20 kennel-first: the static (signed-out) nav is Leaderboard, Live, Sign in and one primary "Find your hound" button;
 # a member's five places (My Kennel, Create, Live, Leaderboard, Account) are built by nav.js
@@ -113,12 +113,14 @@ class EveryPageHasTheOneNavigation(unittest.TestCase):
         self.assertIn('data-nav="leaderboard" aria-current="page"', html)      # # owner ruling 2026-10-20 kennel-first: Kennels is the Leaderboard's second view
         self.assertIn('href="kennel.html" data-hook="kennels-mine"', html)
 
-    def test_the_landing_page_has_a_big_kennels_card(self):
+    def test_the_landing_page_is_the_quiz_button_and_the_kennel_pages_are_one_footer_link_away(self):
+        # kennel-first rebuild 2026-10-20: the kennels band is gone from the landing page; the footer links the kennel pages
         html = read("landing.html")
-        # round 2 (2026-10-19): the band is "build your dog" with a primary build button; the kennels are one ghost button away
-        self.assertRegex(html, r'<a class="btn btn--primary" href="build-a-hound.html" data-hook="kennels-card-build">Build a hound</a>')   # owner ruling 2026-10-20, complete-product positioning
-        self.assertRegex(html, r'<a class="btn btn--ghost" href="kennels.html" data-hook="kennels-card-browse">Browse the kennels</a>')
-        self.assertRegex(html, r'href="kennel.html" data-hook="kennels-card-mine">Your kennel</a>')
+        self.assertNotIn('data-hook="kennels-card"', html)
+        self.assertRegex(html, r'<a class="btn btn--primary btn--lg" href="quiz.html\?start=1" data-hook="cta-kennel-quiz">Find your hound</a>')
+        footer = html.split('data-hook="landing-footer"')[1]
+        for href in ("kennels.html", "hounds.html", "live.html", "learning.html", "desk.html"):
+            self.assertIn(f'href="{href}"', footer)
 
     def test_the_landing_page_keeps_its_own_find_your_hound_button_in_the_bar(self):
         html = read("landing.html")

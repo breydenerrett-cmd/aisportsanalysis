@@ -31,7 +31,7 @@ def _rendered_text(path: Path) -> str:
 class NoFalsePickCount(unittest.TestCase):
     def test_no_rendered_copy_promises_three_to_five(self):
         offenders = []
-        for path in [WEB / "landing.html", *sorted((WEB / "js").glob("*.js"))]:
+        for path in [WEB / "landing.html", WEB / "desk.html", *sorted((WEB / "js").glob("*.js"))]:
             for match in PATTERN.finditer(_rendered_text(path)):
                 offenders.append(f"{path.name}: {match.group(0)!r}")
         self.assertEqual(offenders, [], "a page promises a pick count the card does not keep")

@@ -3,6 +3,9 @@
     GET  /hounds/quiz/library   every archetype with its exact spec fragment and its GENERATED English, plus the answer
                                 tables (personalities, markets, price comforts, quirks, timings, looks) the quiz is drawn from
     POST /hounds/quiz/compose   {answers, english_draft?, english_text?} -> {spec, english, rule_cards, warnings, ...}
+    POST /hounds/quiz/moves     {answers, page?} -> the four move cards on that page for the sports and answers so far
+                                (name, one short line, sport badge, the full rule behind it); page + 1 is "Show me 4 others"
+    POST /hounds/quiz/pick      {answers} -> the one move "Pick for me" takes
 
 Both are public reads of a config file and pure functions: nothing is saved, no bet is placed, no hound is created. The spec
 that comes back has already been through the real validator (`user_spec.validate_spec`); the page still sends it through
@@ -26,6 +29,7 @@ from src.hounds import user_spec, user_store
 from src.hounds.english import parser as english_parser
 from src.hounds.quiz import compose as quiz_compose
 from src.hounds.quiz import library as quiz_library
+from src.hounds.quiz import moves as quiz_moves
 
 router = APIRouter()
 
@@ -36,6 +40,13 @@ _library_limiter = ratelimit.FixedWindowLimiter(limit=60, window_s=60.0)
 _rl_library = ratelimit.limiter_dependency(_library_limiter)
 _compose_limiter = ratelimit.FixedWindowLimiter(limit=45, window_s=60.0)
 _rl_compose = ratelimit.limiter_dependency(_compose_limiter)
+_moves_limiter = ratelimit.FixedWindowLimiter(limit=60, window_s=60.0)
+_rl_moves = ratelimit.limiter_dependency(_moves_limiter)
+
+
+class MovesRequest(BaseModel):
+    answers: Dict[str, Any] = {}
+    page: int = 0
 
 
 class ComposeRequest(BaseModel):
@@ -76,5 +87,21 @@ def quiz_compose_answers(body: ComposeRequest, response: Response, _rl: None = D
     except user_spec.SpecError as exc:
         raise HTTPException(status_code=422, detail={"error": "spec_invalid", "message": "the quiz could not compose a "
                                                      "valid hound from that", "fields": exc.errors})
+    out.update(PAPER)
+    return out
+
+
+@router.post("/hounds/quiz/moves")
+def quiz_moves_page(body: MovesRequest, response: Response, _rl: None = Depends(_rl_moves)) -> dict:
+    response.headers["Cache-Control"] = "no-store"
+    out = quiz_moves.suggest(body.answers, page=max(0, min(body.page, 1000)))
+    out.update(PAPER)
+    return out
+
+
+@router.post("/hounds/quiz/pick")
+def quiz_pick_for_me(body: MovesRequest, response: Response, _rl: None = Depends(_rl_moves)) -> dict:
+    response.headers["Cache-Control"] = "no-store"
+    out = quiz_moves.pick_for_me(body.answers)
     out.update(PAPER)
     return out

@@ -1,7 +1,11 @@
 /**
- * Boot script for web/landing.html -- the public, standalone marketing
- * page (not part of the SPA's hash router in main.js; this page is served
- * on its own and links INTO the app via index.html#/signup).
+ * Boot script for the two public marketing pages: web/landing.html (the kennel-first
+ * landing page: a headline, one button, a strip of real hounds, three steps and the
+ * founding line; its own fills are landing-home.js) and web/desk.html (the house
+ * pack's board, the AI desk, pricing and the questions: every fill below). Neither is
+ * part of the SPA's hash router in main.js; each is served on its own and links INTO
+ * the app via index.html#/signup. The landing page is the one that carries
+ * [data-hook='kennel-hero']; boot() reads that to tell them apart.
  *
  * Three jobs, all read-only from the visitor's perspective:
  *   1. Mount the shared disclaimer footer (meta.js's renderDisclaimerFooter
@@ -30,6 +34,8 @@ import { armEntrances, armParallax, armCharts } from "./motion.js";
 import { mountLiveHero } from "./landing-live.js";
 import { fillBoard } from "./landing-board.js";
 import { captureFirstTouch } from "./attribution.js";
+import { trackPublicPageView } from "./pageview.js";
+import { mountHome } from "./landing-home.js";
 
 function renderPricing(host, state) {
   clear(host);
@@ -937,11 +943,13 @@ export function openAccordionForHash(hash = typeof location !== "undefined" ? lo
 }
 
 function boot() {
+  const home = !!document.querySelector("[data-hook='kennel-hero']");
   const disclaimerHost = document.querySelector("[data-hook='disclaimer-host']");
   const pricingHost = document.querySelector("[data-hook='pricing-host']");
   // One <footer> on this page: the host sits inside it, so meta.js mounts the
   // shared disclaimer as a group there, not as a second footer.
   if (disclaimerHost) renderDisclaimerFooter(disclaimerHost);
+  if (home) { bootHome(); return; }
   if (pricingHost) renderPricing(pricingHost, NOT_ON);
   fillCheckoutCopy();
   fillLiveSports();
@@ -972,8 +980,9 @@ function boot() {
   // this page's own beacons; stored here (localStorage, first touch wins) they
   // travel with the visitor into the signup request, the account row, the
   // Stripe Checkout metadata and the paid event. See attribution.js.
-  captureFirstTouch();
-  trackFunnelEvent("landing_view", arrivalProperties());
+  // The desk page is not the landing page: `landing_view` is "somebody loaded landing.html", the baseline every conversion
+  // percentage is measured from (api/funnel.py), so this page sends the ordinary public_page_view, labelled "desk".
+  trackPublicPageView("desk");
   trackCtaClicks();
   // Design-system motion (handoff section 08) -- content renders complete
   // and static if this never runs; see motion.js's fail-safe-reveal note.
@@ -982,6 +991,16 @@ function boot() {
   window.addEventListener("hashchange", () => { openAccordionForHash(); });
   armParallax(document);
   armCharts(document);
+}
+
+/** web/landing.html: the strip, the founding line, and the same funnel as ever. */
+function bootHome() {
+  mountHome();
+  document.querySelectorAll("[data-hook='brand-mark']").forEach((host) => renderWordmark(host));
+  // FIRST TOUCH, KEPT, and the one landing_view beacon with where the visitor came from (see arrivalProperties above).
+  captureFirstTouch();
+  trackFunnelEvent("landing_view", arrivalProperties());
+  trackCtaClicks();
 }
 
 document.addEventListener("DOMContentLoaded", boot);

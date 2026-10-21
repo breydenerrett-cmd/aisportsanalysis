@@ -422,7 +422,7 @@ class TheCallsToActionAreOneDecision(unittest.TestCase):
     def test_the_old_paid_signup_page_is_still_routed_and_still_the_paid_boards_door(self):
         main = (JS / "main.js").read_text(encoding="utf-8")
         self.assertIn('route === "signup"', main)
-        landing = (WEB / "landing.html").read_text(encoding="utf-8")
+        landing = (WEB / "desk.html").read_text(encoding="utf-8")                  # the pricing card moved to the desk page
         self.assertIn('<a href="index.html#/signup" data-hook="cta-early-access">', landing)
 
 

@@ -189,10 +189,13 @@ class ConflictsTheLaterAnswerWins(unittest.TestCase):
         self.assertEqual(moons, ["new"])
         self.assertIn("quirk_replaced", codes(out))
 
-    def test_an_nfl_card_still_runs_in_nfl_when_only_mlb_was_picked(self):
-        out = C.compose({"sports": ["MLB"], "archetypes": ["sunday_funday"]})
-        self.assertEqual(rules(out)[0]["sports"], ["NFL"])
-        self.assertIn("sport_override", codes(out))
+    def test_an_nfl_card_is_left_out_when_only_mlb_was_picked(self):
+        # a hound never bets a sport nobody picked (this used to run the card in NFL anyway)
+        out = C.compose({"sports": ["MLB"], "archetypes": ["thursday_night_gremlins"]})
+        self.assertIn("move_unavailable", codes(out))
+        self.assertNotIn("sport_override", codes(out))
+        self.assertEqual(out["archetypes"], [])
+        self.assertTrue(all(r["sports"] == ["MLB"] for r in rules(out)))
 
     def test_an_mlb_only_quirk_narrows_a_both_sports_rule_and_says_so(self):
         out = C.compose({"markets": ["moneyline"], "personality": "mystic", "quirks": ["windy"]})
@@ -213,15 +216,15 @@ class ConflictsTheLaterAnswerWins(unittest.TestCase):
         self.assertEqual(out["spec"]["rules"][0]["sports"], ["NFL"])
 
     def test_more_than_four_rules_drops_the_last_and_names_it(self):
-        out = C.compose({"markets": ["mix"], "personality": "steam_chaser",
-                         "archetypes": ["windy_overs", "sunday_funday", "full_moon_chaos"]})
+        out = C.compose({"markets": ["mix", "props"], "personality": "steam_chaser",
+                         "archetypes": ["windy_overs", "sunday_funday"]})
         self.assertEqual(out["rule_count"], R.MAX_RULES)
         warn = next(w for w in out["warnings"] if w["code"] == "rule_cap")
-        self.assertIn("Full Moon Chaos", warn["message"])
+        self.assertIn("Sunday Funday", warn["message"])
 
-    def test_more_than_three_cards_keep_the_first_three(self):
+    def test_more_than_two_cards_keep_the_first_two(self):
         out = C.compose({"archetypes": ["revenge_tour", "steam_chaser", "tired_legs", "chalk_eater", "windy_overs"]})
-        self.assertEqual(out["archetypes"], ["revenge_tour", "steam_chaser", "tired_legs"])
+        self.assertEqual(out["archetypes"], ["revenge_tour", "steam_chaser"])
         self.assertIn("archetype_limit", codes(out))
 
     def test_bad_answers_are_dropped_with_a_warning_and_never_guessed(self):

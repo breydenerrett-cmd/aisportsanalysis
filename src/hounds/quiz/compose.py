@@ -2,7 +2,8 @@
 
 THE ANSWERS (every one optional; skip anything and the quiz still composes a hound)
 -----------------------------------------------------------------------------------
-  sports          ["MLB", "NFL"], one or both
+  sports          any of the dog menu's families (config/sports_catalog.json: NBA, NFL, NHL, NCAAF, SOCCER, TENNIS, MLB, MMA ...),
+                  or "ANY" for every one. Skipped: MLB and NFL, as before (a hound never bets a sport nobody picked)
   markets         ids from the library: moneyline, spread, total, props, mix ("a bit of everything")
   personality     underdog_hunter | chalk_eater | chaos_agent | stats_nerd | steam_chaser | mystic
   bets_per_day    1 to 5            stake  0.5 to 3 paper units            price_comfort  short | even | plus | long
@@ -15,7 +16,9 @@ HOW THEY BECOME RULES
 ---------------------
   1. The BASE rules come from the personality (a recipe per kind of market: moneyline/spread, total, prop) over the markets
      chosen (moneyline and spread share one rule; totals and props each get their own).
-  2. Each archetype card adds its own rule(s), verbatim from the library.
+  2. Each archetype card adds its own rule(s) from the library, FITTED to the sports picked (src/hounds/quiz/fit.py): narrowed
+     to the picked sports it can run in; a card that runs in none of them is left out with a warning, and a card whose
+     conditions exist only for some of the picked sports says which it covers.
   3. Quirks are extra AND conditions added to every base and card rule they can apply to (a rule is "every condition must
      hold"). Rules from the English box are the person's own words and are left exactly as parsed.
   4. Anything typed in English is parsed and added as further rules, and a number it names (bets a day, stake, lock time,
@@ -29,7 +32,7 @@ Questions run in this order: sports, markets, personality, risk (bets, stake, pr
 When two answers disagree the later one wins, and a warning names both: a price comfort that pulls against the personality
 (chalk eater, then plus money) takes over the price band and drops the personality's favourite-or-underdog condition; a
 quirk replaces a same-kind condition inside an archetype ("new moon" replaces Full Moon Chaos's full moon); an archetype
-that needs a sport the person did not pick still runs in its own sport. Opposite stances (a dog card beside a chalk card) are
+that runs in none of the picked sports is left out (a hound never bets a sport nobody picked). Opposite stances (a dog card beside a chalk card) are
 not an error, only a heads-up that the hound will bet both kinds.
 
 ALWAYS THROUGH THE REAL VALIDATOR. The finished spec goes through `user_spec.validate_spec`. If the validator refuses a
@@ -49,6 +52,7 @@ from typing import Any, Iterable, Mapping, Optional
 from src.hounds import user_rules as R
 from src.hounds import user_spec
 from src.hounds.english import render
+from src.hounds.quiz import fit
 from src.hounds.quiz import library as lib_mod
 
 STARTER_PERSONALITY = "underdog_hunter"
@@ -106,13 +110,20 @@ def clean_answers(raw: Any, lib: Mapping, warnings: list) -> dict:
     sports = a.get("sports")
     if sports not in (None, "", []):
         items = [sports] if isinstance(sports, str) else sports
-        # The quiz stays on MLB and NFL: its cards use stat conditions that exist only for those two sports.
-        good = [s for s in user_spec.LEGACY_SPORTS if isinstance(items, (list, tuple)) and s in items]
-        bad = [i for i in (items if isinstance(items, (list, tuple)) else [items]) if i not in user_spec.LEGACY_SPORTS]
-        for item in bad:
-            _warn(warnings, "answer_ignored", f"'{str(item)[:20]}' is not a sport this program covers.")
+        if not isinstance(items, (list, tuple)):
+            items = [items]
+        menu = set(user_spec.SPORTS) | {user_spec.ANY}
+        good: list = []
+        for item in items:
+            if isinstance(item, str) and item in menu:
+                if item not in good:
+                    good.append(item)
+            else:
+                _warn(warnings, "answer_ignored", f"'{str(item)[:20]}' is not a sport this program covers.")
         if good:
-            out["sports"] = good
+            out["sports"] = user_spec.normalize_sports(good)
+            if user_spec.ANY in good:
+                out["sports_any"] = True
     markets = ids_of("markets", "markets")
     if markets:
         out["markets"] = markets
@@ -211,13 +222,16 @@ def _apply_quirks(rule: dict, quirk_rows: list, letter: Optional[str], warnings:
                   f"{'moneylines and spreads' if q['kinds'] == ['ml'] else 'some bets'}, so it was left off {where}.",
                   "note")
             continue
-        narrowed = [s for s in rule["sports"] if s in q["sports"]]
+        works = fit.resolve_sports(q["sports"])
+        every = len(works) == len(fit.all_sports())
+        narrowed = [s for s in rule["sports"] if s in works]
         if not narrowed:
-            _warn(warnings, "quirk_skipped", f"'{q['name']}' is {'/'.join(q['sports'])} only, so it was left off {where}.")
+            _warn(warnings, "quirk_skipped", f"'{q['name']}' is {lib_mod.sports_text(works)} only, so it was left off "
+                  f"{where}.")
             continue
         if narrowed != rule["sports"]:
-            _warn(warnings, "quirk_narrowed", f"'{q['name']}' is {'/'.join(q['sports'])} only, so {where} now covers "
-                  f"{' and '.join(narrowed)} only.")
+            _warn(warnings, "quirk_narrowed", f"'{q['name']}' is {'for ' if every else ''}{lib_mod.sports_text(works)} only, "
+                  f"so {where} now covers {lib_mod.sports_text(narrowed)} only.")
             rule["sports"] = narrowed
         cond = copy.deepcopy(q["condition"])
         if q["id"] == "lucky_letter" and letter:
@@ -251,22 +265,43 @@ def _base_rule(kind: str, markets: list, pers: Optional[Mapping], comfort: Optio
     return rule
 
 
-def _archetype_rules(arch: Mapping, chosen_sports: list, warnings: list) -> list:
-    rules = copy.deepcopy(arch["fragment"]["rules"])
-    for rule in rules:
-        rule.setdefault("label", arch["name"])
-        if not rule["label"]:
-            rule["label"] = arch["name"]
-        if chosen_sports:
-            keep = [s for s in rule["sports"] if s in chosen_sports]
-            if keep:
-                rule["sports"] = keep
-            else:
-                _warn(warnings, "sport_override",
-                      f"{arch['name']} is {' and '.join(rule['sports'])} only, but you picked "
-                      f"{' and '.join(chosen_sports)}. Your later card pick wins, so this rule still covers "
-                      f"{' and '.join(rule['sports'])}.")
-    return rules
+def _fit_base_rules(kind: str, markets: list, pers: Optional[Mapping], comfort: Optional[Mapping], sports: list,
+                    warnings: list, no_home: tuple = ()) -> list:
+    """The base rule fitted to the sports picked: the personality's recipe where its conditions run, its generic variant (the
+    same rule with the MLB/NFL-only conditions out and the recipe's stated override) for the rest, and a warning for anything
+    that cannot be covered at all. Props are MLB only."""
+    recipe = (pers or {}).get("recipes", {}).get(kind) or NEUTRAL[kind]
+    declared = recipe.get("generic")
+    rule = _base_rule(kind, markets, pers, comfort, sports, warnings)
+    fitted = fit.fit_rule(rule, sports, no_home_side=no_home, drop="unsupported" if declared else None,
+                          set_fields=declared)
+    name = rule["label"]
+    covered = sorted({s for r, _k in fitted for s in r["sports"]}, key=sports.index)
+    if not fitted:
+        _warn(warnings, "market_unavailable", f"{_market_text(markets)} are not posted for {lib_mod.sports_text(sports)}, "
+              "so that rule was left out.")
+    elif covered != list(sports):
+        gone = [s for s in sports if s not in covered]
+        _warn(warnings, "base_narrowed", f"{_market_text(markets)} are not posted for {lib_mod.sports_text(gone)}, so "
+              f"{name} covers {lib_mod.sports_text(covered)} only.", "note")
+    if any(k == "generic" for _r, k in fitted):
+        message = (f"{name} reads form and rest data that exist only for MLB and NFL, so for "
+                   f"{lib_mod.sports_text([s for r, k in fitted if k == 'generic' for s in r['sports']])} it asks for more "
+                   "books quoting the price instead.")
+        if not any(w["message"] == message for w in warnings):
+            _warn(warnings, "base_generic", message, "note")
+    return [r for r, _k in fitted]
+
+
+def _same_rule(a: Mapping, b: Mapping) -> bool:
+    """Two rules that say the same thing, whatever they are called."""
+    return {k: v for k, v in a.items() if k != "label"} == {k: v for k, v in b.items() if k != "label"}
+
+
+def _market_text(markets: list) -> str:
+    names = {"moneyline": "Moneylines", "spread": "Spreads", "total": "Game totals"}
+    words = [names[m] for m in markets if m in names]
+    return " and ".join(w.lower() if i else w for i, w in enumerate(words)) or "Those bets"
 
 
 def _spread_only_markets(markets_chosen: list) -> list:
@@ -382,24 +417,50 @@ def compose(answers: Any, *, taken_names: Iterable[str] = (), english_draft: Any
 
     built: list = []          # [(rule, source)] in priority order; source = {"kind", "id", "name"}
     sports_for_base = chosen_sports or list(user_spec.LEGACY_SPORTS)
+    no_home = lib_mod.no_home_side(lib)
     base_src = {"kind": "personality" if pers else "markets", "id": (pers or {}).get("id"),
                 "name": (pers or {}).get("name") or "Your markets"}
     if wants_base:
         ml_markets = _spread_only_markets(chosen_markets)
         if ml_markets:
-            built.append((_base_rule("ml", ml_markets, pers, comfort, sports_for_base, warnings), dict(base_src)))
+            for rule in _fit_base_rules("ml", ml_markets, pers, comfort, sports_for_base, warnings, no_home):
+                built.append((rule, dict(base_src)))
         if "total" in chosen_markets:
-            built.append((_base_rule("total", ["total"], pers, comfort, sports_for_base, warnings), dict(base_src)))
+            for rule in _fit_base_rules("total", ["total"], pers, comfort, sports_for_base, warnings, no_home):
+                built.append((rule, dict(base_src)))
         props = [m for m in chosen_markets if R.market_kind(m) == "prop"]
         if props:
-            if chosen_sports and "MLB" not in chosen_sports:
-                _warn(warnings, "props_mlb_only", "Player props are MLB only, and you picked NFL alone, so props were left out.")
+            if "MLB" not in sports_for_base:
+                _warn(warnings, "props_mlb_only", "Player props are MLB only, and MLB is not one of the sports you picked, "
+                      "so props were left out.")
             else:
                 built.append((_base_rule("prop", props, pers, comfort, ["MLB"], warnings), dict(base_src)))
+    used_ids: list = []
     for aid in arch_ids:
         arch = arch_rows[aid]
-        for rule in _archetype_rules(arch, chosen_sports, warnings):
+        fitted = fit.archetype_rules(arch, sports_for_base, no_home)
+        if not fitted["rules"]:
+            works = fit.resolve_sports(arch["works_in"])
+            _warn(warnings, "move_unavailable",
+                  f"{arch['name']} runs in {lib_mod.sports_text(works)} only, and you picked "
+                  f"{lib_mod.sports_text(sports_for_base)}, so it was left out.")
+            continue
+        used_ids.append(aid)
+        if fitted["partial"] and chosen_sports:
+            _warn(warnings, "move_partial", f"{arch['name']} covers {lib_mod.sports_text(fitted['covers'])} of the sports you "
+                  "picked.", "note")
+        if fitted["generic"]:
+            _warn(warnings, "move_generic", f"{arch['name']} reads data that exists only for MLB and NFL, so for the other "
+                  "sports it runs without that condition.", "note")
+        for rule in fitted["rules"]:
+            rule.setdefault("label", arch["name"])
+            if not rule["label"]:
+                rule["label"] = arch["name"]
+            if any(_same_rule(r, rule) for r, _src in built):             # the same rule twice would only use up one of the hound's four slots
+                _warn(warnings, "rule_repeated", f"{arch['name']} matches a rule this hound already has, so it was counted once.", "note")
+                continue
             built.append((rule, {"kind": "archetype", "id": aid, "name": arch["name"]}))
+    arch_ids = used_ids
     stances = {arch_rows[a]["stance"] for a in arch_ids} | ({pers["stance"]} if pers else set())
     if {"dog", "chalk"} <= stances:
         _warn(warnings, "stance_mix", "A dog card and a chalk card pull opposite ways, so this hound will bet both "
