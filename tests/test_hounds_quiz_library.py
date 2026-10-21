@@ -16,7 +16,7 @@ from src.hounds import user_rules as R
 from src.hounds import user_spec
 from src.hounds.english import render
 from src.hounds.interact import look as look_mod
-from src.hounds.quiz import compose, library as L
+from src.hounds.quiz import compose, fit, library as L
 
 LIB = L.load()
 
@@ -63,7 +63,7 @@ class EveryArchetypeIsOnTheRealMenu(unittest.TestCase):
                 self.assertTrue(1 <= len(spec["rules"]) <= R.MAX_RULES)
                 # the spec is what the engine reads: every rule keeps its sports inside works_in
                 for rule in spec["rules"]:
-                    self.assertTrue(set(rule["sports"]) <= set(a["works_in"]), a["id"])
+                    self.assertTrue(set(rule["sports"]) <= set(fit.resolve_sports(a["works_in"])), a["id"])
 
     def test_the_library_check_is_clean_and_it_catches_a_bad_fragment(self):
         self.assertEqual(L.validate_library(), [])

@@ -32,9 +32,12 @@ from src import paths
 from src.hounds import user_rules as R
 from src.hounds import user_spec
 from src.hounds.english import render
+from src.hounds.quiz import fit
 
 CONFIG_NAME = "hounds_archetypes.json"
-PICK_LIMIT = 3                    # how many archetype cards a quiz may pick
+PICK_LIMIT = 2                    # how many move cards a quiz may pick (owner, 2026-10-20: pick one, an optional second)
+MOVES_PER_PAGE = 4                # how many move cards question 6 shows at once
+SHORT_MAX_WORDS = 10              # the plain-English line on a move card
 PLACEHOLDER_NAME = "Quiz Pup"     # a fragment is validated under this name; the real name comes from compose
 HONESTY_LINE = ("Fun rules, graded in public on paper. A hound is a rule, not a prediction, and none of these is "
                 "known to win.")
@@ -155,8 +158,20 @@ def validate_library(lib: Optional[Mapping] = None) -> list:
             problems.append(f"{aid}: stance must be one of {STANCES}")
         if not set(a.get("kinds") or []) <= set(KINDS) or not a.get("kinds"):
             problems.append(f"{aid}: kinds must be some of {KINDS}")
-        if not a.get("works_in") or not set(a["works_in"]) <= set(user_spec.SPORTS):
-            problems.append(f"{aid}: works_in must be some of {user_spec.SPORTS}")
+        works = a.get("works_in") or []
+        if not works or not set(works) <= set(user_spec.SPORTS) | {fit.ANY}:
+            problems.append(f"{aid}: works_in must be some of {user_spec.SPORTS}, or ANY")
+        check_copy(f"{aid}.short", a.get("short"), 80)
+        if isinstance(a.get("short"), str) and len(a["short"].split()) > SHORT_MAX_WORDS:
+            problems.append(f"{aid}.short: more than {SHORT_MAX_WORDS} words")
+        generic = a.get("generic")
+        if generic is not None:
+            known = {c.id for c in R.CONDITIONS}
+            if not isinstance(generic, Mapping) or not generic.get("drop") or not set(generic["drop"]) <= known:
+                problems.append(f"{aid}: generic needs a `drop` list of known condition ids")
+            check_copy(f"{aid}.generic.short", (generic or {}).get("short"), 80)
+            if isinstance(generic, Mapping) and isinstance(generic.get("short"), str)                     and len(generic["short"].split()) > SHORT_MAX_WORDS:
+                problems.append(f"{aid}.generic.short: more than {SHORT_MAX_WORDS} words")
         frag = a.get("fragment")
         if not isinstance(frag, Mapping) or not frag.get("rules"):
             problems.append(f"{aid}: needs a fragment with rules")
@@ -169,7 +184,7 @@ def validate_library(lib: Optional[Mapping] = None) -> list:
         for rule in spec["rules"]:
             if rule["price_min"] < user_spec.SHORTEST_ALLOWED_PRICE and rule["price_min"] < 0:
                 problems.append(f"{aid}: price reaches {user_spec.MAX_FAVOURITE_PRICE}")
-            if not set(rule["sports"]) <= set(a["works_in"]):
+            if not set(rule["sports"]) <= set(fit.resolve_sports(a["works_in"])):
                 problems.append(f"{aid}: a rule covers sports outside works_in")
         if set(frag.get("rank_by") and [frag["rank_by"]] or []) - set(R.RANK_RULES):
             problems.append(f"{aid}: unknown rank_by")
@@ -191,10 +206,91 @@ def validate_library(lib: Optional[Mapping] = None) -> list:
             problems.append(f"personality {p.get('id')}: colour or badge off the menu")
         if p.get("rank_by") not in R.RANK_RULES:
             problems.append(f"personality {p.get('id')}: unknown rank_by")
+        if not p.get("likes") or not all(isinstance(t, str) for t in p["likes"]):
+            problems.append(f"personality {p.get('id')}: needs `likes`, the move tags it is drawn to")
     for c in lib.get("price_comforts") or []:
         if c["price_min"] < user_spec.SHORTEST_ALLOWED_PRICE and c["price_min"] < 0:
             problems.append(f"price comfort {c['id']}: reaches {user_spec.MAX_FAVOURITE_PRICE}")
+    for q in lib.get("quirks") or []:
+        if not q.get("sports") or not set(q["sports"]) <= set(user_spec.SPORTS) | {fit.ANY}:
+            problems.append(f"quirk {q.get('id')}: sports must be some of {user_spec.SPORTS}, or ANY")
+    table = lib.get("sports") or {}
+    for code in table.get("popular") or []:
+        if code not in user_spec.SPORTS:
+            problems.append(f"sports.popular: {code} is not on the dog menu")
+    for key in ("labels", "badges"):
+        for code, text in (table.get(key) or {}).items():
+            if code not in user_spec.SPORTS:
+                problems.append(f"sports.{key}: {code} is not on the dog menu")
+            else:
+                check_copy(f"sports.{key}.{code}", text, 24)
+    check_copy("sports.any.label", (table.get("any") or {}).get("label"), 24)
     return problems
+
+
+# ---------------------------------------------------------------------------
+# the sports the quiz offers (the catalog's dog menu, ordered and named here)
+# ---------------------------------------------------------------------------
+
+def _sports_table(lib: Optional[Mapping] = None) -> Mapping:
+    lib = lib if lib is not None else load()
+    return lib.get("sports") or {}
+
+
+def sport_label(code: str, lib: Optional[Mapping] = None) -> str:
+    """The friendly name of a family ("College football"); the catalog's own label when the table has none."""
+    return str(_sports_table(lib).get("labels", {}).get(code) or user_spec.SPORT_LABELS.get(code) or code)
+
+
+def sport_badge(code: str, lib: Optional[Mapping] = None) -> str:
+    """The short name for a small badge ("CFB"); the friendly name when the table has none."""
+    return str(_sports_table(lib).get("badges", {}).get(code) or sport_label(code, lib))
+
+
+def no_home_side(lib: Optional[Mapping] = None) -> tuple:
+    """Families with no home side (tennis, MMA): a home or away rule cannot run there."""
+    return tuple(_sports_table(lib).get("no_home_side") or ())
+
+
+def sport_choices(lib: Optional[Mapping] = None) -> list:
+    """GET /hounds/quiz/library `sports`: EVERY dog-menu family in the catalog, the popular ones first in the table's order,
+    then the rest ("More") in catalog order. A family the table does not know still appears, under More."""
+    table = _sports_table(lib)
+    popular = [c for c in (table.get("popular") or []) if c in user_spec.SPORTS]
+    rest = [c for c in user_spec.SPORTS if c not in popular]
+    return [{"value": c, "label": sport_label(c, lib), "badge": sport_badge(c, lib), "popular": c in popular,
+             "more": c not in popular} for c in popular + rest]
+
+
+def any_sport_choice(lib: Optional[Mapping] = None) -> dict:
+    row = dict(_sports_table(lib).get("any") or {})
+    return {"value": row.get("value", fit.ANY), "label": row.get("label", "Any sport"), "pitch": row.get("pitch", "")}
+
+
+def sports_text(codes, lib: Optional[Mapping] = None) -> str:
+    """'NBA', 'NBA and NHL', 'NBA, NHL and MLB', '5 sports', or 'any sport': for warnings and badges."""
+    codes = [c for c in user_spec.SPORTS if c in set(codes)]
+    if set(codes) >= set(user_spec.SPORTS):
+        return "any sport"
+    names = [sport_label(c, lib) for c in codes]
+    if len(names) <= 1:
+        return "".join(names)
+    if len(names) <= 3:
+        return ", ".join(names[:-1]) + " and " + names[-1]
+    return f"{len(names)} sports"
+
+
+def sport_badge_text(codes, lib: Optional[Mapping] = None, *, any_picked: bool = False) -> str:
+    """The sport badge on a move card: 'Any sport' (the person picked it and the move covers it), 'NBA', 'NBA + NFL',
+    or 'N sports'."""
+    codes = [c for c in user_spec.SPORTS if c in set(codes)]
+    if any_picked and set(codes) >= set(user_spec.SPORTS):
+        return any_sport_choice(lib)["label"]
+    if len(codes) == 1:
+        return sport_label(codes[0], lib)
+    if len(codes) <= 3:
+        return " + ".join(sport_badge(c, lib) for c in codes)
+    return f"{len(codes)} sports"
 
 
 # ---------------------------------------------------------------------------
@@ -204,8 +300,11 @@ def validate_library(lib: Optional[Mapping] = None) -> list:
 def public_archetype(a: Mapping) -> dict:
     spec = validate_fragment(a["fragment"])
     sentences = render.rule_sentences(spec)
-    return {"id": a["id"], "name": a["name"], "pitch": a["pitch"], "icon": a["icon"], "stance": a["stance"],
-            "tags": list(a.get("tags") or []), "works_in": list(a["works_in"]), "kinds": list(a["kinds"]),
+    works = fit.resolve_sports(a["works_in"])
+    return {"id": a["id"], "name": a["name"], "pitch": a["pitch"], "short": a["short"], "icon": a["icon"],
+            "stance": a["stance"], "tags": list(a.get("tags") or []), "works_in": works,
+            "works_any": set(works) == set(user_spec.SPORTS), "kinds": list(a["kinds"]),
+            "has_generic": bool(a.get("generic")),
             "rule_count": len(spec["rules"]), "spec_fragment": copy.deepcopy(a["fragment"]),
             "english": " ".join(sentences), "sentences": sentences}
 
@@ -228,7 +327,9 @@ def public_library(lib: Optional[Mapping] = None) -> dict:
         "price_cap_note": f"No selection at {user_spec.MAX_FAVOURITE_PRICE} or worse, ever.",
         "limits": {"archetype_picks": PICK_LIMIT, "max_rules": R.MAX_RULES,
                    "bets_per_day": list(user_spec.MAX_BETS_RANGE), "stake_units": list(R.STAKE_CHOICES)},
-        "sports": [{"value": s, "label": user_spec.SPORT_LABELS[s]} for s in user_spec.LEGACY_SPORTS],
+        "sports": sport_choices(lib),
+        "sports_any": any_sport_choice(lib),
+        "sports_default": list(user_spec.LEGACY_SPORTS),
         "archetypes": archetypes(lib),
         "personalities": [_plain(p, "recipes") for p in lib["personalities"]],
         "markets": [_plain(m, "markets") | {"markets": list(m["markets"])} for m in lib["markets"]],

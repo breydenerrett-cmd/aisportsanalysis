@@ -239,13 +239,13 @@ class TheQuestions(unittest.TestCase):
         out = quiz(actions=[START, SKIP, SKIP], queries=[q("dogs", "[data-hook='quiz-card'][data-group='personality'] svg.dk-badge", "attrs", attr="data-breed")])
         self.assertEqual(out["final"]["dogs"], [p["breed"] for p in LIB["personalities"]])
 
-    def test_the_card_picker_limits_to_three_filters_and_reads_the_generated_rule(self):
+    def test_the_card_picker_limits_to_the_pick_limit_filters_and_reads_the_generated_rule(self):
         pick = [START, SKIP, SKIP, SKIP, SKIP, SKIP]
         ids = [a["id"] for a in LIB["archetypes"]]
-        out = quiz(actions=pick + [
-            click(card("archetypes", ids[0])), click(card("archetypes", ids[1])), click(card("archetypes", ids[2])),
-            dict(do="click", sel=card("archetypes", ids[3]), label="fourth", capture=[
-                q("count", hook("quiz-tray-count")), q("notice", hook("quiz-notice")), q("fourth", card("archetypes", ids[3]), "attr", attr="aria-pressed"),
+        limit = LIB["limits"]["archetype_picks"]
+        out = quiz(actions=pick + [click(card("archetypes", ids[i])) for i in range(limit)] + [
+            dict(do="click", sel=card("archetypes", ids[limit]), label="over", capture=[
+                q("count", hook("quiz-tray-count")), q("notice", hook("quiz-notice")), q("over", card("archetypes", ids[limit]), "attr", attr="aria-pressed"),
                 q("next", hook("quiz-next"))]),
             dict(do="click", sel=f"[data-hook='quiz-tray-chip'][data-id='{ids[0]}']", label="remove", capture=[q("count", hook("quiz-tray-count"))]),
             dict(do="click", sel=f"[data-hook='quiz-read'][data-id='{ids[5]}']", label="read", capture=[
@@ -254,10 +254,11 @@ class TheQuestions(unittest.TestCase):
             dict(do="click", sel="[data-hook='quiz-filter'][data-id='props']", label="props", capture=[q("cards", "[data-hook='quiz-card']", "count")]),
         ])
         c = out["captures"]
-        self.assertEqual((c["fourth"]["count"], c["fourth"]["fourth"]), ("3 of 3 picked", "false"))
-        self.assertIn("3 cards", c["fourth"]["notice"])
-        self.assertEqual(c["fourth"]["next"], "Next (3 of 3)")
-        self.assertEqual(c["remove"]["count"], "2 of 3 picked")
+        self.assertEqual(limit, 2)
+        self.assertEqual((c["over"]["count"], c["over"]["over"]), (f"{limit} of {limit} picked", "false"))
+        self.assertIn(f"{limit} cards", c["over"]["notice"])
+        self.assertEqual(c["over"]["next"], f"Next ({limit} of {limit})")
+        self.assertEqual(c["remove"]["count"], f"{limit - 1} of {limit} picked")
         self.assertEqual(c["read"]["english"], LIB["archetypes"][5]["english"])
         self.assertFalse(c["read"]["hidden"])
         self.assertEqual(c["nfl"]["cards"], sum(1 for a in LIB["archetypes"] if a["works_in"] == ["NFL"]))

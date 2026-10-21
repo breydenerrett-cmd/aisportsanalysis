@@ -6,6 +6,7 @@
    "id": "revenge_tour",
    "name": "Revenge Tour",
    "pitch": "Backs the team facing a hot streak. Maybe the cold side bites back; the record will say.",
+   "short": "Backs teams facing an opponent on a hot streak",
    "icon": "flame",
    "stance": "neutral",
    "tags": [
@@ -56,6 +57,7 @@
    "id": "primetime_underdog",
    "name": "Primetime Underdog",
    "pitch": "Night games, plus money, underdogs only. The lights are on and so is the dog.",
+   "short": "Bets underdogs in night games",
    "icon": "moon",
    "stance": "dog",
    "tags": [
@@ -63,8 +65,7 @@
     "underdog"
    ],
    "works_in": [
-    "MLB",
-    "NFL"
+    "ANY"
    ],
    "kinds": [
     "ml"
@@ -74,8 +75,7 @@
      {
       "label": "Primetime Underdog",
       "sports": [
-       "MLB",
-       "NFL"
+       "ANY"
       ],
       "markets": [
        "moneyline"
@@ -107,6 +107,7 @@
    "id": "steam_chaser",
    "name": "Steam Chaser",
    "pitch": "Follows the line. Only bets the side the market has been moving toward since the first capture.",
+   "short": "Follows the way the line is moving",
    "icon": "wave",
    "stance": "neutral",
    "tags": [
@@ -114,8 +115,7 @@
     "market"
    ],
    "works_in": [
-    "MLB",
-    "NFL"
+    "ANY"
    ],
    "kinds": [
     "ml"
@@ -125,8 +125,7 @@
      {
       "label": "Steam Chaser",
       "sports": [
-       "MLB",
-       "NFL"
+       "ANY"
       ],
       "markets": [
        "moneyline",
@@ -156,6 +155,7 @@
    "id": "public_darling_fade",
    "name": "Fade the Public Darling",
    "pitch": "Takes the underdog after the market piles onto the favourite. We read line moves, not crowd tickets.",
+   "short": "Backs underdogs when the market leans to the favorite",
    "icon": "target",
    "stance": "dog",
    "tags": [
@@ -164,8 +164,7 @@
     "underdog"
    ],
    "works_in": [
-    "MLB",
-    "NFL"
+    "ANY"
    ],
    "kinds": [
     "ml"
@@ -175,8 +174,7 @@
      {
       "label": "Fade the Darling",
       "sports": [
-       "MLB",
-       "NFL"
+       "ANY"
       ],
       "markets": [
        "moneyline",
@@ -209,6 +207,7 @@
    "id": "tired_legs",
    "name": "Tired Legs",
    "pitch": "Backs a rested team against one that played yesterday. Short rest, short fuse.",
+   "short": "Backs rested teams against opponents who played yesterday",
    "icon": "hourglass",
    "stance": "neutral",
    "tags": [
@@ -263,6 +262,7 @@
    "id": "road_warriors",
    "name": "Road Warriors",
    "pitch": "Road teams that win away from home. Packs the bags, takes the points.",
+   "short": "Backs road teams that win away from home",
    "icon": "road",
    "stance": "neutral",
    "tags": [
@@ -307,12 +307,19 @@
       }
      }
     ]
+   },
+   "generic": {
+    "drop": [
+     "split_pct"
+    ],
+    "short": "Bets road teams at fair prices"
    }
   },
   {
    "id": "home_cooking",
    "name": "Home Cooking",
    "pitch": "Home sides with a strong record at home. Sleeps in its own bed, bites in its own yard.",
+   "short": "Backs home teams with strong home records",
    "icon": "house",
    "stance": "neutral",
    "tags": [
@@ -357,12 +364,19 @@
       }
      }
     ]
+   },
+   "generic": {
+    "drop": [
+     "split_pct"
+    ],
+    "short": "Bets home teams at fair prices"
    }
   },
   {
    "id": "hot_bat_props",
    "name": "Hot Bat Props",
    "pitch": "Hitters with a hit in each of their last 3 games, over their hits or total bases.",
+   "short": "Bets overs on hitters riding a hit streak",
    "icon": "bolt",
    "stance": "neutral",
    "tags": [
@@ -411,6 +425,7 @@
    "id": "strikeout_king",
    "name": "Strikeout King",
    "pitch": "Pitcher strikeout overs when his last 5 starts average above the line.",
+   "short": "Bets pitcher strikeout overs when recent form is strong",
    "icon": "crown",
    "stance": "neutral",
    "tags": [
@@ -458,6 +473,7 @@
    "id": "windy_overs",
    "name": "Windy Overs",
    "pitch": "Game totals over, in open-air parks, when the forecast wind is 12 mph or more.",
+   "short": "Bets overs in open-air parks when it is windy",
    "icon": "wind",
    "stance": "neutral",
    "tags": [
@@ -508,6 +524,7 @@
    "id": "full_moon_chaos",
    "name": "Full Moon Chaos",
    "pitch": "Underdogs, plus money, only under a full moon. Science has not been consulted.",
+   "short": "Bets underdogs only when the moon is full",
    "icon": "moon",
    "stance": "dog",
    "tags": [
@@ -516,8 +533,7 @@
     "mystic"
    ],
    "works_in": [
-    "MLB",
-    "NFL"
+    "ANY"
    ],
    "kinds": [
     "ml"
@@ -527,8 +543,7 @@
      {
       "label": "Full Moon Chaos",
       "sports": [
-       "MLB",
-       "NFL"
+       "ANY"
       ],
       "markets": [
        "moneyline",
@@ -561,6 +576,7 @@
    "id": "coin_flip_gremlin",
    "name": "Coin Flip Gremlin",
    "pitch": "Plus-money underdogs, but only when a seeded coin lands its way. Pure chaos, fully logged.",
+   "short": "Bets underdogs when a seeded coin says yes",
    "icon": "coin",
    "stance": "dog",
    "tags": [
@@ -568,8 +584,7 @@
     "coin"
    ],
    "works_in": [
-    "MLB",
-    "NFL"
+    "ANY"
    ],
    "kinds": [
     "ml"
@@ -579,8 +594,7 @@
      {
       "label": "Coin Flip Gremlin",
       "sports": [
-       "MLB",
-       "NFL"
+       "ANY"
       ],
       "markets": [
        "moneyline",
@@ -613,6 +627,7 @@
    "id": "lucky_letters",
    "name": "Lucky Letters",
    "pitch": "Bets the team whose name starts with its lucky letter. S by default; pick your own.",
+   "short": "Bets teams whose name starts with your letter",
    "icon": "letters",
    "stance": "neutral",
    "tags": [
@@ -621,8 +636,7 @@
     "silly"
    ],
    "works_in": [
-    "MLB",
-    "NFL"
+    "ANY"
    ],
    "kinds": [
     "ml"
@@ -632,8 +646,7 @@
      {
       "label": "Lucky Letters",
       "sports": [
-       "MLB",
-       "NFL"
+       "ANY"
       ],
       "markets": [
        "moneyline",
@@ -664,6 +677,7 @@
    "id": "numerology_oracle",
    "name": "Numerology Oracle",
    "pitch": "Backs the team whose name adds up closest to the date's number. Gematria, no apologies.",
+   "short": "Picks teams by name numerology and the date",
    "icon": "stars",
    "stance": "neutral",
    "tags": [
@@ -672,8 +686,7 @@
     "silly"
    ],
    "works_in": [
-    "MLB",
-    "NFL"
+    "ANY"
    ],
    "kinds": [
     "ml"
@@ -683,8 +696,7 @@
      {
       "label": "Numerology Oracle",
       "sports": [
-       "MLB",
-       "NFL"
+       "ANY"
       ],
       "markets": [
        "moneyline",
@@ -712,16 +724,16 @@
   {
    "id": "sunday_funday",
    "name": "Sunday Funday",
-   "pitch": "NFL underdogs on Sundays. Plus money, snacks optional.",
+   "pitch": "Underdogs on Sundays. Plus money, snacks optional.",
+   "short": "Bets underdogs on Sundays",
    "icon": "football",
    "stance": "dog",
    "tags": [
-    "nfl",
     "weekend",
     "underdog"
    ],
    "works_in": [
-    "NFL"
+    "ANY"
    ],
    "kinds": [
     "ml"
@@ -731,7 +743,7 @@
      {
       "label": "Sunday Funday",
       "sports": [
-       "NFL"
+       "ANY"
       ],
       "markets": [
        "moneyline",
@@ -766,6 +778,7 @@
    "id": "plus_money_only",
    "name": "Plus Money Only",
    "pitch": "Moneylines at plus money, either side. If it pays more than even, the dog will look at it.",
+   "short": "Bets any side that pays plus money",
    "icon": "plus",
    "stance": "dog",
    "tags": [
@@ -773,8 +786,7 @@
     "price"
    ],
    "works_in": [
-    "MLB",
-    "NFL"
+    "ANY"
    ],
    "kinds": [
     "ml"
@@ -784,8 +796,7 @@
      {
       "label": "Plus Money Only",
       "sports": [
-       "MLB",
-       "NFL"
+       "ANY"
       ],
       "markets": [
        "moneyline"
@@ -806,6 +817,7 @@
    "id": "chalk_eater",
    "name": "Chalk Eater",
    "pitch": "Favourites only, at short prices, and the hard cap stays at -199. Never -200 or worse.",
+   "short": "Bets favorites at short prices, never -200 or worse",
    "icon": "bone",
    "stance": "chalk",
    "tags": [
@@ -814,8 +826,7 @@
     "price"
    ],
    "works_in": [
-    "MLB",
-    "NFL"
+    "ANY"
    ],
    "kinds": [
     "ml"
@@ -825,8 +836,7 @@
      {
       "label": "Chalk Eater",
       "sports": [
-       "MLB",
-       "NFL"
+       "ANY"
       ],
       "markets": [
        "moneyline"
@@ -855,6 +865,7 @@
    "id": "thursday_night_gremlins",
    "name": "Thursday Night Gremlins",
    "pitch": "NFL Thursday games, underdogs on the spread. Short weeks make strange games.",
+   "short": "Bets underdog spreads in Thursday games",
    "icon": "gremlin",
    "stance": "dog",
    "tags": [
@@ -907,6 +918,7 @@
    "id": "monday_night_mischief",
    "name": "Monday Night Mischief",
    "pitch": "NFL Monday nights, underdogs, any market that pays. The last game of the weekend.",
+   "short": "Bets underdogs in Monday games",
    "icon": "tv",
    "stance": "dog",
    "tags": [
@@ -960,6 +972,7 @@
    "id": "cold_front_unders",
    "name": "Cold Front Unders",
    "pitch": "Game totals under in open-air parks when the forecast is 50 degrees or colder.",
+   "short": "Bets unders in open-air parks when it is cold",
    "icon": "snow",
    "stance": "neutral",
    "tags": [
@@ -1010,6 +1023,7 @@
    "id": "heat_wave_overs",
    "name": "Heat Wave Overs",
    "pitch": "Game totals over in open-air parks when it is 85 degrees or hotter at first pitch.",
+   "short": "Bets overs in open-air parks when it is hot",
    "icon": "sun",
    "stance": "neutral",
    "tags": [
@@ -1060,6 +1074,7 @@
    "id": "rainy_day_unders",
    "name": "Rainy Day Unders",
    "pitch": "Game totals under when the forecast chance of rain is 40 percent or more.",
+   "short": "Bets unders when rain is likely",
    "icon": "rain",
    "stance": "neutral",
    "tags": [
@@ -1110,6 +1125,7 @@
    "id": "matinee_mutt",
    "name": "Matinee Mutt",
    "pitch": "Day-game underdogs. Gets up early, takes the price.",
+   "short": "Bets underdogs in day games",
    "icon": "sun",
    "stance": "dog",
    "tags": [
@@ -1117,8 +1133,7 @@
     "underdog"
    ],
    "works_in": [
-    "MLB",
-    "NFL"
+    "ANY"
    ],
    "kinds": [
     "ml"
@@ -1128,8 +1143,7 @@
      {
       "label": "Matinee Mutt",
       "sports": [
-       "MLB",
-       "NFL"
+       "ANY"
       ],
       "markets": [
        "moneyline"
@@ -1161,6 +1175,7 @@
    "id": "hot_hand_hound",
    "name": "Hot Hand Hound",
    "pitch": "Rides a team that has won 3 or more in a row. The streak is the whole idea.",
+   "short": "Backs teams on a winning streak",
    "icon": "flame",
    "stance": "neutral",
    "tags": [
@@ -1211,6 +1226,7 @@
    "id": "bounce_back_biscuit",
    "name": "Bounce-Back Biscuit",
    "pitch": "Underdogs coming off 3 or more losses in a row. Rock bottom is a price.",
+   "short": "Backs underdogs coming off a losing streak",
    "icon": "paw",
    "stance": "dog",
    "tags": [
@@ -1266,6 +1282,7 @@
    "id": "red_eye_special",
    "name": "Red-Eye Special",
    "pitch": "Backs the team facing an opponent that has travelled 1,500 miles or more since its last game.",
+   "short": "Backs teams whose opponent just traveled far",
    "icon": "plane",
    "stance": "neutral",
    "tags": [
@@ -1314,6 +1331,7 @@
    "id": "short_week_slayer",
    "name": "Short Week Slayer",
    "pitch": "NFL teams facing an opponent playing on 5 days of rest or fewer.",
+   "short": "Backs teams facing an opponent on short rest",
    "icon": "calendar",
    "stance": "neutral",
    "tags": [
@@ -1363,6 +1381,7 @@
    "id": "bye_week_believer",
    "name": "Bye Week Believer",
    "pitch": "NFL teams coming off a bye, 10 or more days of rest. Fresh legs, fresh hope.",
+   "short": "Backs teams coming off a bye week",
    "icon": "key",
    "stance": "neutral",
    "tags": [
@@ -1411,15 +1430,17 @@
   {
    "id": "field_goal_fiend",
    "name": "Field Goal Fiend",
-   "pitch": "NFL spreads of 3 points or less. Close games, one kick from either result.",
+   "pitch": "Football spreads of 3 points or less. Close games, one kick from either result.",
+   "short": "Bets close spreads, three points or fewer",
    "icon": "kick",
    "stance": "neutral",
    "tags": [
-    "nfl",
-    "spread"
+    "spread",
+    "football"
    ],
    "works_in": [
-    "NFL"
+    "NFL",
+    "NCAAF"
    ],
    "kinds": [
     "ml"
@@ -1429,7 +1450,8 @@
      {
       "label": "Field Goal Fiend",
       "sports": [
-       "NFL"
+       "NFL",
+       "NCAAF"
       ],
       "markets": [
        "spread"
@@ -1457,16 +1479,18 @@
   {
    "id": "touchdown_dog",
    "name": "Touchdown Dog",
-   "pitch": "NFL underdogs getting 7 or more points. A big number is a big cushion.",
+   "pitch": "Football underdogs getting 7 or more points. A big number is a big cushion.",
+   "short": "Bets underdogs getting seven or more points",
    "icon": "football",
    "stance": "dog",
    "tags": [
-    "nfl",
     "spread",
-    "underdog"
+    "underdog",
+    "football"
    ],
    "works_in": [
-    "NFL"
+    "NFL",
+    "NCAAF"
    ],
    "kinds": [
     "ml"
@@ -1476,7 +1500,8 @@
      {
       "label": "Touchdown Dog",
       "sports": [
-       "NFL"
+       "NFL",
+       "NCAAF"
       ],
       "markets": [
        "spread"
@@ -1508,7 +1533,8 @@
   {
    "id": "under_the_lights",
    "name": "Under the Lights",
-   "pitch": "Night game totals, under. The bats go quiet when the sun goes down; allegedly.",
+   "pitch": "Night game totals, under. The sun goes down, the score goes with it; allegedly.",
+   "short": "Bets unders in night games",
    "icon": "moon",
    "stance": "neutral",
    "tags": [
@@ -1516,8 +1542,7 @@
     "totals"
    ],
    "works_in": [
-    "MLB",
-    "NFL"
+    "ANY"
    ],
    "kinds": [
     "total"
@@ -1527,8 +1552,7 @@
      {
       "label": "Under the Lights",
       "sports": [
-       "MLB",
-       "NFL"
+       "ANY"
       ],
       "markets": [
        "total"
@@ -1556,6 +1580,7 @@
    "id": "total_steam_chaser",
    "name": "Total Steam Chaser",
    "pitch": "Game totals, but only the side the market has been moving toward.",
+   "short": "Follows the line on game totals",
    "icon": "wave",
    "stance": "neutral",
    "tags": [
@@ -1564,8 +1589,7 @@
     "market"
    ],
    "works_in": [
-    "MLB",
-    "NFL"
+    "ANY"
    ],
    "kinds": [
     "total"
@@ -1575,8 +1599,7 @@
      {
       "label": "Total Steam Chaser",
       "sports": [
-       "MLB",
-       "NFL"
+       "ANY"
       ],
       "markets": [
        "total"
@@ -1605,6 +1628,7 @@
    "id": "weekend_warrior",
    "name": "Weekend Warrior",
    "pitch": "Plus-money underdogs on Saturdays and Sundays. Weekdays are for resting.",
+   "short": "Bets underdogs on Saturday and Sunday",
    "icon": "calendar",
    "stance": "dog",
    "tags": [
@@ -1612,8 +1636,7 @@
     "underdog"
    ],
    "works_in": [
-    "MLB",
-    "NFL"
+    "ANY"
    ],
    "kinds": [
     "ml"
@@ -1623,8 +1646,7 @@
      {
       "label": "Weekend Warrior",
       "sports": [
-       "MLB",
-       "NFL"
+       "ANY"
       ],
       "markets": [
        "moneyline"
@@ -1659,6 +1681,7 @@
    "id": "fresh_legs_favourite",
    "name": "Fresh Legs Favourite",
    "pitch": "Favourites at short prices with 2 or more days of rest. Cap stays at -199.",
+   "short": "Bets rested favorites at short prices",
    "icon": "feather",
    "stance": "chalk",
    "tags": [
@@ -1714,6 +1737,7 @@
    "id": "home_dog_howl",
    "name": "Home Dog Howl",
    "pitch": "Home underdogs only, plus money. The crowd noise is a rumour, the price is a number.",
+   "short": "Bets home underdogs at plus money",
    "icon": "house",
    "stance": "dog",
    "tags": [
@@ -1721,8 +1745,7 @@
     "underdog"
    ],
    "works_in": [
-    "MLB",
-    "NFL"
+    "ANY"
    ],
    "kinds": [
     "ml"
@@ -1732,8 +1755,7 @@
      {
       "label": "Home Dog Howl",
       "sports": [
-       "MLB",
-       "NFL"
+       "ANY"
       ],
       "markets": [
        "moneyline"
@@ -1761,6 +1783,7 @@
    "id": "long_name_louie",
    "name": "Long Name Louie",
    "pitch": "Bets teams whose name has 12 or more letters. Silly on purpose, graded like everything else.",
+   "short": "Bets teams with long names, just for fun",
    "icon": "letters",
    "stance": "neutral",
    "tags": [
@@ -1768,8 +1791,7 @@
     "silly"
    ],
    "works_in": [
-    "MLB",
-    "NFL"
+    "ANY"
    ],
    "kinds": [
     "ml"
@@ -1779,8 +1801,7 @@
      {
       "label": "Long Name Louie",
       "sports": [
-       "MLB",
-       "NFL"
+       "ANY"
       ],
       "markets": [
        "moneyline",
@@ -1811,6 +1832,7 @@
    "id": "run_producer",
    "name": "Run Producer",
    "pitch": "Over on hits + runs + RBIs for hitters who average 2 or more per game on the box scores we have.",
+   "short": "Bets overs on hitters who produce runs",
    "icon": "rocket",
    "stance": "neutral",
    "tags": [
@@ -1857,6 +1879,7 @@
    "id": "long_ball_dreamer",
    "name": "Long Ball Dreamer",
    "pitch": "Home run overs at big prices, for hitters who average a quarter of a homer a game or more.",
+   "short": "Bets home run overs at big prices",
    "icon": "rocket",
    "stance": "dog",
    "tags": [
@@ -1904,6 +1927,7 @@
    "id": "new_moon_unders",
    "name": "New Moon Unders",
    "pitch": "Game totals under, only on a new moon. Dark sky, quiet bats, no evidence.",
+   "short": "Bets unders only on a new moon",
    "icon": "moon",
    "stance": "neutral",
    "tags": [
@@ -1912,8 +1936,7 @@
     "mystic"
    ],
    "works_in": [
-    "MLB",
-    "NFL"
+    "ANY"
    ],
    "kinds": [
     "total"
@@ -1923,8 +1946,7 @@
      {
       "label": "New Moon Unders",
       "sports": [
-       "MLB",
-       "NFL"
+       "ANY"
       ],
       "markets": [
        "total"
@@ -1952,6 +1974,7 @@
    "id": "contrarian_corgi",
    "name": "Contrarian Corgi",
    "pitch": "Takes the underdog when the market moved toward the favourite and the dog is rested. Small legs, big opinions.",
+   "short": "Backs rested underdogs when the line moves against them",
    "icon": "target",
    "stance": "dog",
    "tags": [
@@ -2011,6 +2034,7 @@
    "id": "form_filter",
    "name": "Form Filter",
    "pitch": "Backs the team that won at least 7 of its last 10 against one that won 5 or fewer.",
+   "short": "Backs teams in strong form over cold opponents",
    "icon": "chart",
    "stance": "neutral",
    "tags": [
@@ -2069,6 +2093,7 @@
    "id": "two_rule_twin",
    "name": "Two-Rule Twin",
    "pitch": "Two rules in one dog: road underdogs on the moneyline, and unders on cold days. Shows how a dog can mix.",
+   "short": "Road underdogs plus cold-weather unders in one hound",
    "icon": "twins",
    "stance": "dog",
    "tags": [
@@ -2182,7 +2207,12 @@
      "price_max": 1000,
      "when": []
     }
-   }
+   },
+   "likes": [
+    "underdog",
+    "plus money",
+    "contrarian"
+   ]
   },
   {
    "id": "chalk_eater",
@@ -2223,7 +2253,12 @@
      "price_max": -110,
      "when": []
     }
-   }
+   },
+   "likes": [
+    "chalk",
+    "favourite",
+    "price"
+   ]
   },
   {
    "id": "chaos_agent",
@@ -2274,7 +2309,13 @@
       }
      ]
     }
-   }
+   },
+   "likes": [
+    "chaos",
+    "coin",
+    "silly",
+    "mystic"
+   ]
   },
   {
    "id": "stats_nerd",
@@ -2312,7 +2353,10 @@
        "wins": 5
       }
      ],
-     "min_books": 4
+     "min_books": 4,
+     "generic": {
+      "min_books": 5
+     }
     },
     "total": {
      "side": "either",
@@ -2325,7 +2369,10 @@
        "cmp": "gte",
        "value": 1
       }
-     ]
+     ],
+     "generic": {
+      "min_books": 5
+     }
     },
     "prop": {
      "side": "over",
@@ -2340,7 +2387,14 @@
       }
      ]
     }
-   }
+   },
+   "likes": [
+    "form",
+    "nerd",
+    "rest",
+    "streak",
+    "schedule"
+   ]
   },
   {
    "id": "steam_chaser",
@@ -2393,7 +2447,11 @@
       }
      ]
     }
-   }
+   },
+   "likes": [
+    "steam",
+    "market"
+   ]
   },
   {
    "id": "mystic",
@@ -2444,7 +2502,14 @@
       }
      ]
     }
-   }
+   },
+   "likes": [
+    "mystic",
+    "moon",
+    "silly",
+    "numerology",
+    "letters"
+   ]
   }
  ],
  "markets": [
@@ -2634,8 +2699,7 @@
     "value": "full"
    },
    "sports": [
-    "MLB",
-    "NFL"
+    "ANY"
    ],
    "kinds": [
     "ml",
@@ -2654,8 +2718,7 @@
     "value": "new"
    },
    "sports": [
-    "MLB",
-    "NFL"
+    "ANY"
    ],
    "kinds": [
     "ml",
@@ -2676,8 +2739,7 @@
     "letter": "S"
    },
    "sports": [
-    "MLB",
-    "NFL"
+    "ANY"
    ],
    "kinds": [
     "ml"
@@ -2694,8 +2756,7 @@
     "value": "closer"
    },
    "sports": [
-    "MLB",
-    "NFL"
+    "ANY"
    ],
    "kinds": [
     "ml"
@@ -2712,8 +2773,7 @@
     "pct": 50
    },
    "sports": [
-    "MLB",
-    "NFL"
+    "ANY"
    ],
    "kinds": [
     "ml",
@@ -2735,8 +2795,7 @@
     ]
    },
    "sports": [
-    "MLB",
-    "NFL"
+    "ANY"
    ],
    "kinds": [
     "ml",
@@ -2761,8 +2820,7 @@
     ]
    },
    "sports": [
-    "MLB",
-    "NFL"
+    "ANY"
    ],
    "kinds": [
     "ml",
@@ -2781,8 +2839,7 @@
     "value": "night"
    },
    "sports": [
-    "MLB",
-    "NFL"
+    "ANY"
    ],
    "kinds": [
     "ml",
@@ -2801,8 +2858,7 @@
     "value": "day"
    },
    "sports": [
-    "MLB",
-    "NFL"
+    "ANY"
    ],
    "kinds": [
     "ml",
@@ -2860,8 +2916,7 @@
     "direction": "toward"
    },
    "sports": [
-    "MLB",
-    "NFL"
+    "ANY"
    ],
    "kinds": [
     "ml",
@@ -3018,5 +3073,59 @@
   "lock_minutes": 120,
   "color": "ember",
   "badge": "bone"
+ },
+ "sports": {
+  "_note": "The quiz's sport question. The list of sports is the catalog's dog menu (config/sports_catalog.json); this table only orders it and gives friendly names. A family missing here still appears, under More, with its catalog label.",
+  "popular": [
+   "NBA",
+   "NFL",
+   "NHL",
+   "NCAAF",
+   "SOCCER",
+   "TENNIS",
+   "MLB",
+   "MMA"
+  ],
+  "any": {
+   "value": "ANY",
+   "label": "Any sport",
+   "pitch": "Every sport we cover."
+  },
+  "labels": {
+   "NBA": "NBA",
+   "NFL": "NFL",
+   "NHL": "NHL",
+   "NCAAF": "College football",
+   "SOCCER": "Soccer",
+   "TENNIS": "Tennis",
+   "MLB": "MLB",
+   "MMA": "MMA",
+   "WNBA": "WNBA",
+   "NCAAB": "College basketball",
+   "CRICKET": "Cricket",
+   "RUGBY": "Rugby",
+   "AFL": "Aussie rules",
+   "GRIDIRON": "CFL and UFL",
+   "BASKETBALL": "Other basketball",
+   "HOCKEY": "Other hockey",
+   "BASEBALL": "Other baseball"
+  },
+  "badges": {
+   "NCAAF": "CFB",
+   "NCAAB": "CBB",
+   "SOCCER": "Soccer",
+   "TENNIS": "Tennis",
+   "CRICKET": "Cricket",
+   "RUGBY": "Rugby",
+   "AFL": "AFL",
+   "GRIDIRON": "CFL",
+   "BASKETBALL": "Hoops",
+   "HOCKEY": "Hockey",
+   "BASEBALL": "Baseball"
+  },
+  "no_home_side": [
+   "TENNIS",
+   "MMA"
+  ]
  }
 }
