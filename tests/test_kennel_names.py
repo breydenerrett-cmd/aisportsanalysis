@@ -33,6 +33,10 @@ from src.appstate import users as users_store
 from src.hounds import kennels, member_profile, stats, user_defs, user_engine, user_settle, user_store
 from tests._hounds_user_fixtures import DATE, EVENT, result_row, spec_dict, standard_rows, utc
 
+# The dogs exist well before the 2026-10-20 game locks. Created at the real clock, they were born after the
+# lock once the wall clock passed it (2026-10-20 21:10Z), and the engine rightly refused to back-date a bet.
+CREATED = utc("2026-10-19T12:00:00Z")
+
 REPO = Path(__file__).resolve().parent.parent
 PK = "900001"
 INDEX = {EVENT: {"game_pk": PK}}
@@ -57,9 +61,9 @@ class NameCase(unittest.TestCase):
         self.addCleanup(member_profile.clear_cache)
         self.jacob = users_store.create_user("jacob.private@example.com", status="active", db=self.db)
         self.sam = users_store.create_user("sam.private@example.com", status="active", db=self.db)
-        self.gus = user_store.create_hound(self.jacob.id, spec_dict(name="Underdog Gus"))
-        self.tina = user_store.create_hound(self.jacob.id, spec_dict(name="Totals Tina"))
-        self.rex = user_store.create_hound(self.sam.id, spec_dict(name="Road Rex"))
+        self.gus = user_store.create_hound(self.jacob.id, spec_dict(name="Underdog Gus"), now=CREATED)
+        self.tina = user_store.create_hound(self.jacob.id, spec_dict(name="Totals Tina"), now=CREATED)
+        self.rex = user_store.create_hound(self.sam.id, spec_dict(name="Road Rex"), now=CREATED)
 
     def refuses(self, name, code, user=None):
         with self.assertRaises(member_profile.ProfileError) as ctx:

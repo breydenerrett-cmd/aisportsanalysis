@@ -40,7 +40,7 @@ TWO LEVELS: MEMBER AND PAID (owner decision "yes open signups", 2026-10-19)
 A self-serve free account (POST /auth/signup, api/free_signup.py) is a user whose
 `plan` is "free". It is a MEMBER: it may use everything built around the dogs
 (kennels, building, editing and backtesting its own dogs, Ask, the locker room,
-"out back" and fire, fan tips, following) and nothing on the PAID member board
+unleashing a dog, sending it to training or taking it out back, fan tips, following) and nothing on the PAID member board
 (Gameday, Matchups, Props and the other daily-picks routes).
 
 `access_level(user)` is the one answer: "paid", "member" or None. A user is a

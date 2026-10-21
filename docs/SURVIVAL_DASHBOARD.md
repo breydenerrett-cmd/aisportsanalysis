@@ -1,6 +1,6 @@
 # LineHound survival dashboard
 
-Generated 2026-10-20 16:19Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-10-20 20:44Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
@@ -151,9 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-10-20 (8:30 am PT run): ALCS Game 6 (Rays 4, Guardians 2; Rays win the series) and Monday night Commanders at 49ers briefs graded; both were all passes.
-- Public sample now points at the graded ALCS Game 6 brief.
-- No MLB game until World Series Game 1, Rays at Brewers, Fri Oct 23 5:00 pm PT; no NFL game until Thursday night.
-- A production deploy has been unfinished about two hours; later deploys wait behind it.
+- 2026-10-20 (1:30 pm PT run): no game to brief; next MLB game is World Series Game 1, Rays at Brewers, Fri Oct 23 5:00 pm PT; next NFL game Thursday night.
+- ALCS Game 6 and Monday night Commanders at 49ers briefs are graded; the public sample shows ALCS Game 6.
+- Production is up; the stuck deploy ended (failed after 2 h 38 m), the queued one was cancelled, and a later deploy succeeded about 16:55Z.
+- Billing is live in production (founding $14.99, standard $19.99).
 - Public MLB value picks remain paused. Sends 0, replies 0, testers 0.
 

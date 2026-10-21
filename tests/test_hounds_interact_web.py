@@ -108,7 +108,7 @@ class TheKitOnADogPage(unittest.TestCase):
         f = out["final"]
         for key in ("fire", "ask", "fans", "locker", "manual"):
             self.assertFalse(f[key], key)
-        self.assertEqual(f["firebtn"], "Take them out back")
+        self.assertEqual(f["firebtn"], "Unleash")
         self.assertIn("What did you bet today?", f["chips"])
         self.assertIn("I am Closer.", f["greet"])
         self.assertIn("not written by an AI model", f["note"])
@@ -130,7 +130,7 @@ class TheKitOnADogPage(unittest.TestCase):
         self.assertEqual(c["checks"], 5)
         self.assertEqual(c["record"], 1)
         self.assertIn("preview", c["note"].lower())
-        self.assertEqual(c["btn"], "Take them out back again")
+        self.assertEqual(c["btn"], "Unleash again")
         self.assertEqual([p["url"] for p in out["posts"]], [f"/hounds/{HID}/fire"])
 
     def test_recording_a_manual_pick_posts_only_which_pick_and_never_a_price(self):
@@ -452,7 +452,7 @@ class TheTrainingCamp(unittest.TestCase):
         self.assertEqual(f["rows"], 5)
         self.assertIn("Longest price: +200", f["sug"])
         self.assertEqual(f["badge"], 1)
-        self.assertEqual(f["buttons"][:3], ["Take them out back", "Ask", "Backtest this dog"])
+        self.assertEqual(f["buttons"][:3], ["Unleash", "Ask", "Backtest this dog"])
 
     def test_signed_out_it_asks_you_to_sign_in_and_still_shows_the_rest_of_camp(self):
         out = self.go(stored={}, queries=[q("prompt", hook("camp-dogs")), q("href", hook("camp-dogs") + " a", "attr", attr="href"),

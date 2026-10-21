@@ -316,7 +316,7 @@ def scores(question: str, protect: Iterable[str] = (), *, team_named: bool = Fal
         _add(s, "picks_now", 4.0)
     if has(r"\bwhat do you like\b|\bwhat are you (?:think|see|look|bet|back|take|play|like)\b|\bwhat do you see\b|\bwhat do you want\b|\bwhat you think\b"):
         _add(s, "picks_now", 4.0)
-    if has(r"\bfire\b|\btake them out back\b|\bout back\b"):
+    if has(r"\bfire\b|\bunleash(?:ed)?\b"):       # "out back" is the burial now (outback.py), not a question about picks
         _add(s, "picks_now", 5.0)
     if has(r"\b(?:best|top|strongest|favourite) (?:bet|pick|play|lean|value)\b") and has(r"\b(?:today|tonight|rightnow|now|slate)\b"):
         _add(s, "picks_now", 5.0)

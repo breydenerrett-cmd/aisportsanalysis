@@ -6,7 +6,8 @@ Every payload carries ``paper_only: true`` and the not-advice line
 (``src.hounds.contract.envelope``).
 
     GET /hounds?season=s2|s1|all     the leaderboard (running + benched hounds) for one season (default s2)
-    GET /hounds/graveyard            retired hounds, each with its cause
+    GET /hounds/graveyard            retired hounds, each with its cause, plus ``headstones``: the member dogs their owners
+                                     took out back, newest burial first, each a frozen headstone (the graveyard page)
     GET /hounds/digest               the daily Discord post, built by code from the leaderboard
     GET /hounds/stream?page=         newest decisions across all hounds, with
                                      refusals marked as such
@@ -53,6 +54,7 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException, Query, Response
 
 from src.hounds import desk_view, digest as digest_mod, seasons, stats, user_view
+from src.hounds.interact import outback
 from src.hounds.contract import (
     DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, bets_payload, filter_by_status, graveyard_payload,
     hound_payload, leaderboard_payload, paginate, series_payload,
@@ -101,12 +103,23 @@ def leaderboard(response: Response, season: Optional[str] = Query(None, max_leng
     return leaderboard_payload(stats.leaderboard(book, sid), book.as_of, seasons.meta(sid))
 
 
+def _with_headstones(payload: dict) -> dict:
+    """The graveyard payload plus the headstones. The headstones come from the app database (their own frozen rows), not
+    from the stats book, so they are there while the book is warming and a saved copy is being served."""
+    out = dict(payload)
+    try:
+        out["headstones"] = outback.headstones()
+    except Exception:  # noqa: BLE001 -- an unreadable app database leaves the old payload, never a 500
+        out["headstones"] = []
+    return out
+
+
 @router.get("/hounds/graveyard")
 def graveyard(response: Response):
     book, warming = _book(response)
     if warming:
-        return stats.saved_payload("graveyard") or warming_payload({"hounds": []})
-    return graveyard_payload(stats.graveyard(book), book.as_of)
+        return _with_headstones(stats.saved_payload("graveyard") or warming_payload({"hounds": []}))
+    return _with_headstones(graveyard_payload(stats.graveyard(book), book.as_of))
 
 
 @router.get("/hounds/digest")

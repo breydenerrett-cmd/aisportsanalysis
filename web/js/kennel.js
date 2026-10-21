@@ -3,12 +3,13 @@
  *
  * MY KENNEL is the hub. Each dog is a card with its locker-room avatar (an idle bob and blink; a happy wiggle when its
  * last pick won, a slump when it lost: all CSS, see css/lh.css), its season record and units, its last pick and a
- * status. One tap each: Take them out back, Ask, Edit, Open. "Build a dog" is the last card. Clicking a dog opens the STUDIO, an
+ * status. One tap each: Unleash, Send to training, Take them out back (the burial, styled as the destructive action it is; see
+ * dog-rites.js), Ask, Edit, Open. "Build a dog" is the last card. Clicking a dog opens the STUDIO, an
  * in-place drawer with six tabs that REUSE the dog page's and the builder's own modules, never a copy of their logic:
  *
  *   Look     dog-locker.js          the locker room, previewed live on the animated avatar
  *   Rules    hounds-build.js        the English box and the rule cards (builder-skeleton.js), saved as a new version
- *   Out back dog-fire.js            "Take them out back": what the rule would bet right now, read only
+ *   Unleash  dog-fire.js            "Unleash": what the rule would bet right now, read only
  *   Backtest dog-backtest.js        the rule over 7 / 14 / 30 days or Season 2 of stored boards, in paper dollars (hindsight)
  *   Ask      dog-ask.js             the dog's answers, worked out from its own data
  *   Record   dog-manual.js + tickets  the season record, the manual picks and the last tickets
@@ -23,6 +24,10 @@
  * GET /hounds/kennels/mine (signed in) and GET /hounds/kennels/{handle}; a dog with no bet yet is listed and says "New".
  * The studio's deep link is ?dog=<id>&tab=<tab>. Nothing here measures anything: every number is the server's.
  *
+ * THE GRAVEYARD. Every kennel page ends with a "Graveyard" section: the dogs this kennel took out back, as the frozen
+ * headstones the server wrote when they were buried (dog-headstone.js). A buried dog is not in the grid, the dog count or the
+ * leaderboard; a trained dog carries a "Trained xN" badge.
+ *
  * A NEW MEMBER lands here with ?welcome=1 (web/js/signin.js, right after "Create free account"). While they have no
  * dog the empty state is a welcome card instead ("Build your first dog"); once they have one the flag does nothing.
  */
@@ -33,6 +38,8 @@ import { h, clearNode, isNum, houndHref, kennelName, describeError } from "./hou
 import { signedIn, get, put, errorText, SIGNIN_HREF, removeDog, removedText } from "./dog-common.js";
 import { dogBadge, DEFAULT_LOOK, lookFor } from "./dog-avatar.js";
 import { activityStrip, quietKennel, fetchStream } from "./kennel-extras.js";
+import { startTraining, startOutBack } from "./dog-rites.js";
+import { headstoneCard, trainedBadge } from "./dog-headstone.js";
 import { mountTabs } from "./tabs.js";
 import { mountLocker } from "./dog-locker.js";
 import { mountFire } from "./dog-fire.js";
@@ -123,8 +130,12 @@ function dogCard(dog, { mine }, index) {
   const open = () => openStudio(dog.id, "look", card);
   const actions = mine && !dog.retired
     ? [
-      h("button", { type: "button", class: "kn-act kn-act--primary", "data-hook": "dog-action-fire", text: "Take them out back",
-        on: { click: (e) => { stop(e); openStudio(dog.id, "fire", card, { autofire: true }); } } }),
+      h("button", { type: "button", class: "kn-act kn-act--primary", "data-hook": "dog-action-fire", text: "Unleash",
+        "aria-label": `Unleash ${dog.name}`, on: { click: (e) => { stop(e); openStudio(dog.id, "fire", card, { autofire: true }); } } }),
+      h("button", { type: "button", class: "kn-act", "data-hook": "dog-action-train", text: "Send to training",
+        "aria-label": `Send ${dog.name} to training`, on: { click: (e) => { stop(e); sendToTraining(dog, e.currentTarget); } } }),
+      h("button", { type: "button", class: "kn-act kn-act--danger", "data-hook": "dog-action-outback", text: "Take them out back",
+        "aria-label": `Take ${dog.name} out back`, on: { click: (e) => { stop(e); takeOutBack(dog, e.currentTarget); } } }),
       h("button", { type: "button", class: "kn-act", "data-hook": "dog-action-ask", text: "Ask",
         on: { click: (e) => { stop(e); openStudio(dog.id, "ask", card); } } }),
       h("button", { type: "button", class: "kn-act", "data-hook": "dog-action-edit", text: "Edit",
@@ -146,7 +157,8 @@ function dogCard(dog, { mine }, index) {
       h("div", { class: "kn-card__top" }, [
         h("h3", { class: "kn-card__name" }, [h("a", { href: houndHref(dog.id), "data-hook": "dog-name", text: dog.name })]),
         h("span", { class: "kn-pill", "data-status": status.key, "data-hook": "dog-status" }, [
-          status.key === "live" ? h("i", { class: "lh-live", "aria-hidden": "true" }) : null, status.text])]),
+          status.key === "live" ? h("i", { class: "lh-live", "aria-hidden": "true" }) : null, status.text]),
+        trainedBadge(dog.trained_times)]),
       dog.tagline ? h("p", { class: "kn-card__tag", text: dog.tagline }) : null,
       h("dl", { class: "kn-stats" }, [
         stat("Record", recordText(rec), { "data-hook": "dog-record" }),
@@ -159,6 +171,27 @@ function dogCard(dog, { mine }, index) {
       h("div", { class: "kn-card__actions" }, actions)]),
   ]);
   return card;
+}
+
+/** After a rite: close the studio, redraw the kennel from the server, say what happened and refresh the builder's list. */
+async function afterRite(message) {
+  closeStudio();
+  await load({ quiet: true });
+  say(message);
+  try {
+    const builder = await import("./hounds-build.js");
+    if (builder.builderReady()) await builder.refreshMine();
+  } catch (err) { /* the builder is not on this page yet: it reads the list when it loads */ }
+}
+
+/** Send to training (dog-rites.js): one confirmation, the montage, the "what changed and why" card; then the kennel redraws. */
+function sendToTraining(dog, opener) {
+  return startTraining(dog, { opener, onTrained: (r) => afterRite(`${dog.name} is back as version ${r.new.version_no}. Its new record starts now.`) });
+}
+
+/** Take them out back (dog-rites.js): two confirmations, the burial, the reveal; then the kennel redraws without the dog. */
+function takeOutBack(dog, opener) {
+  return startOutBack(dog, { opener, onBuried: () => afterRite(`${dog.name} was taken out back. Its record is frozen in the graveyard.`) });
 }
 
 /** "Remove from my kennel": ask, retire, say so, and redraw. The dog's record stays on the ledger (see dog-common.js removeDog). */
@@ -235,7 +268,7 @@ function gate(kind) {
     box.appendChild(h("div", { class: "kn-empty", "data-hook": "kennel-signin" }, [
       h("div", { class: "kn-empty__dog", "aria-hidden": "true" }, [dogBadge(DEFAULT_LOOK, { size: 96 })]),
       h("h2", { text: "Sign in to see your dogs" }),
-      h("p", { class: "hd-lede", text: "Your kennel is where you build, dress and take your dogs out back." }),
+      h("p", { class: "hd-lede", text: "Your kennel is where you build, dress, train and unleash your dogs." }),
       h("div", { class: "kn-empty__row" }, [
         h("a", { class: "lh-btn lh-btn--solid", href: SIGNIN_HREF, "data-hook": "kennel-signin-link", text: "Sign in" }),
         h("a", { class: "lh-btn lh-btn--soft", href: "kennels.html", "data-hook": "kennel-browse", text: "Browse kennels" })])]));
@@ -339,7 +372,7 @@ function render() {
   const actions = clearNode(q("kennel-actions"));
   if (mine) {
     setHead({ eyebrow: "Your dogs", title: "My kennel",
-      sub: `${data.kennel_name ? `${data.kennel_name}. ` : ""}${active.length ? `${active.length} ${active.length === 1 ? "dog" : "dogs"}. Tap one to dress it, edit it or take it out back.` : ""}` });
+      sub: `${data.kennel_name ? `${data.kennel_name}. ` : ""}${active.length ? `${active.length} ${active.length === 1 ? "dog" : "dogs"}. Tap one to dress it, edit it, unleash it or send it to training.` : ""}` });
     actions.appendChild(h("a", { class: "lh-btn lh-btn--soft", href: `kennel.html?u=${encodeURIComponent(data.handle)}`, "data-hook": "kennel-public-link", text: "Public page" }));
     actions.appendChild(h("button", { type: "button", class: "lh-btn lh-btn--soft", "data-hook": "kennel-rename", text: data.kennel_name ? "Rename kennel" : "Name your kennel",
       on: { click: () => openNameForm(false) } }));
@@ -360,12 +393,29 @@ function render() {
     active.forEach((dog, i) => grid.appendChild(dogCard(dog, { mine }, i)));
     if (mine) grid.appendChild(buildCard(active.length));
   }
+  paintGraveyard(data);
   const rest = clearNode(q("kennel-retired"));
   if (mine && retired.length) {
     rest.appendChild(h("details", { class: "kn-retired", "data-hook": "kennel-retired-list" }, [
       h("summary", { text: `Retired (${retired.length})` }),
       h("div", { class: "kn-grid kn-grid--quiet" }, retired.map((d, i) => dogCard(d, { mine }, i)))]));
   }
+}
+
+/** The "Graveyard" section: this kennel's buried dogs as headstones, newest first (they come from the server that way). */
+function paintGraveyard(data) {
+  const host = q("kennel-graveyard");
+  if (!host) return;
+  clearNode(host);
+  const stones = Array.isArray(data.graveyard) ? data.graveyard : [];
+  const mine = state.mode === "mine";
+  host.appendChild(h("section", { class: "hd-panel kn-graveyard", "data-hook": "kennel-graveyard-section", "aria-labelledby": "kn-grave-h" }, [
+    h("h2", { id: "kn-grave-h", class: "hd-h3", text: "Graveyard" }),
+    stones.length
+      ? h("p", { class: "hd-muted", text: mine ? "Dogs you took out back. Each record is frozen and public." : "Dogs this kennel took out back. Each record is frozen." })
+      : h("p", { class: "hd-muted", "data-hook": "kennel-graveyard-empty", text: mine ? "Nothing buried. A dog you take out back lands here with a headstone." : "Nothing buried here." }),
+    stones.length ? h("div", { class: "hs-list", "data-hook": "kennel-graveyard-list" }, stones.map((s) => headstoneCard(s, { compact: false, showKennel: false }))) : null,
+    h("p", { class: "hd-fine" }, [h("a", { href: "graveyard.html", "data-hook": "kennel-graveyard-link", text: "See every graveyard headstone" })])]));
 }
 
 /** The latest tickets from this kennel's dogs, or a quiet state with a thinking dog when there are none yet. Never throws. */
@@ -501,9 +551,16 @@ async function buildRecord(host, dog, kit) {
   await mountManual(manual, { id: dog.id, kit });
 }
 
+// ONE builder per page. hounds-build.js binds its listeners once, to the first skeleton it boots on (module state).
+// buildTab clears the Rules panel each time it opens, so a fresh skeleton per open was dead on arrival: the second
+// Rules panel of a visit (another dog, or New dog) had no listeners at all. The same element is moved back in
+// instead, listeners and all.
+let rulesSkeleton = null;
+
 async function buildRules(host, dog) {
   const { builderSkeleton } = await import("./builder-skeleton.js");
-  if (!host.querySelector("[data-hook='build-app']")) host.appendChild(builderSkeleton());
+  if (!rulesSkeleton) rulesSkeleton = builderSkeleton();
+  if (rulesSkeleton.parentNode !== host) host.appendChild(rulesSkeleton);
   const builder = await import("./hounds-build.js");
   await builder.booted;
   if (state.open !== (dog ? dog.id : "new")) return;

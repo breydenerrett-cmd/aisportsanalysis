@@ -8,7 +8,7 @@
  *       `score` is read leniently: a string ("2-1, 62'") or {home, away, detail?}.
  *
  * SEND A DOG. A signed-out visitor is asked to sign in. A member sees their own dogs (GET /hounds/camp/mine, the Training camp's
- * list) and picks one; the page then calls the existing out-back route (POST /hounds/{id}/fire, web/js/dog-fire.js takeOutBack)
+ * list) and picks one; the page then calls the existing preview route (POST /hounds/{id}/fire, web/js/dog-fire.js unleash)
  * and says what that dog did with THIS game: the pick it made, the reason it passed, or that the game was not among its answers.
  * That route runs the dog's rule over the stored boards and writes nothing. Nothing here places a bet and nothing here claims a
  * price is an advantage: a best price is the best number any book is quoting, no more.
@@ -22,7 +22,7 @@ import { apiGet, getToken } from "./api.js";
 import { h, clearNode, fmtPrice, isNum, createPoller, describeError } from "./hounds-core.js";
 import { dogFace } from "./dog-avatar.js";
 import { get, errorText, errorCode, signInPrompt, spanText, PAPER_NOTE } from "./dog-common.js";
-import { renderFireResult, takeOutBack } from "./dog-fire.js";
+import { renderFireResult, unleash } from "./dog-fire.js";
 import { showUpgrade } from "./upgrade.js";
 
 export const REFRESH_MS = 60000;
@@ -367,7 +367,7 @@ async function sendDog(tray, ev, dog) {
   tray.appendChild(h("p", { class: "hd-fine", role: "status", "data-hook": "live-send-status", text: `Sending ${dog.name} at ${gameName(ev)}...` }));
   let data;
   try {
-    data = await takeOutBack(dog.id, ev.event_id);       // a LIVE send is the per-game call: member accounts only
+    data = await unleash(dog.id, ev.event_id);       // a LIVE send is the per-game call: member accounts only
   } catch (err) {
     clearNode(tray);
     if (showUpgrade(tray, err)) return;

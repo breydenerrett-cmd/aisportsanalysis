@@ -454,3 +454,7 @@
 
 /* the seventh tile of the secondary row spans the line on a phone instead of sitting alone */
 @media (max-width: 760px) { .hd-kpirow .hd-kpi:last-child:nth-child(odd) { grid-column: 1 / -1; } }
+
+/* "Take them out back" on a kennel card: the burial. Outlined in the bad colour, never the loudest thing on the card, and the sheet asks twice. */
+.kn-act--danger { background: transparent; color: #FF8A96; box-shadow: inset 0 0 0 1px rgba(255, 107, 122, .55); }
+.kn-act--danger:hover { background: rgba(255, 107, 122, .16); color: #fff; }
