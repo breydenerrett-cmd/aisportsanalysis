@@ -28,7 +28,7 @@ from datetime import datetime, timedelta
 from typing import Callable, Optional
 
 from src.core import odds as odds_math
-from src.hounds import user_engine, user_spec
+from src.hounds import one_side, user_engine, user_spec
 from src.hounds.interact import common
 
 MAX_MISSES = 6
@@ -526,6 +526,8 @@ def fire_user(dog: common.Dog, *, now: Optional[datetime] = None, games: Optiona
             })
         if game_looked:
             looked += 1
+    # one side per game (src/hounds/one_side.py): the engine would not write the second, so the preview does not show it
+    picks = one_side.keep_first(picks, lambda p: (p["event_id"], p["market"], p["side"], None, p.get("line")))
     # the engine keeps the first ``max_bets_per_day`` of a slate date in lock order: say which would be cut
     seen = dict(per_date)
     for pick in sorted(picks, key=lambda p: (p["lock_utc"], p["event_id"], user_engine.MARKET_ORDER[p["market"]])):

@@ -51,6 +51,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import logging
 import os
 import sys
 from collections import Counter, defaultdict
@@ -60,8 +61,10 @@ from typing import Any, Callable, Iterable, Mapping, Optional, Sequence
 
 from src import paths
 from src.core import odds as odds_math
-from src.hounds import user_rules, user_spec
+from src.hounds import one_side, user_rules, user_spec
 from src.ledger.chain import HashChainLedger
+
+logger = logging.getLogger("linehound.hounds.one_side")
 
 LEDGER = os.path.join("evidence", "hounds_user_v1.jsonl")
 KIND_BET = "hound_user_bet"
@@ -582,6 +585,40 @@ def ledger_verified(path: Optional[str] = None) -> bool:
     return ok
 
 
+def _game_pk(game, event_id: str, game_pk_index: Optional[Mapping]) -> Optional[str]:
+    if game.sport == "MLB" and game_pk_index:
+        entry = game_pk_index.get(event_id)
+        return str(entry.get("game_pk")) if entry and entry.get("game_pk") is not None else None
+    return None
+
+
+def _game_ref(game, commence, event_id: str, game_pk_index: Optional[Mapping]) -> dict:
+    """What names this game besides its event id (src/hounds/one_side.py ``game_aliases``): the same keys a
+    ledger row carries, so a re-issued id finds the positions the hound already took."""
+    return {"sport": game.sport, "home_team": game.home_team, "away_team": game.away_team,
+            "commence_time": _iso(commence), "game_pk": _game_pk(game, event_id, game_pk_index)}
+
+
+MANUAL_LEDGER_NAME = "hounds_manual_v1.jsonl"      # the owner's manual tickets (src/hounds/interact/manual.py)
+MANUAL_LEDGER_ENV = "HOUNDS_MANUAL_LEDGER"
+
+
+def manual_ledger_path(rule_ledger: Optional[str] = None) -> str:
+    """The manual ledger that goes with a rule ledger: the environment override when the default ledger is in
+    use, otherwise the file beside the one given (a test or shadow ledger has none, so it reads empty)."""
+    if not rule_ledger:
+        override = (os.environ.get(MANUAL_LEDGER_ENV) or "").strip()
+        if override:
+            return override
+    return str(Path(ledger_path(rule_ledger)).with_name(MANUAL_LEDGER_NAME))
+
+
+def manual_rows(rule_ledger: Optional[str] = None) -> list:
+    """The manual tickets beside a rule ledger, read ONLY so the one-side guard sees them: an owner's tap on one
+    side of a game must stop the engine adding the other side later, as the engine's ticket stops the tap."""
+    return [r for r in HashChainLedger(manual_ledger_path(rule_ledger)).read() if r.get("kind") == KIND_BET]
+
+
 def run(date: str, hounds: Sequence[Mapping], rows: Iterable[Mapping], *,
         ledger: Optional[str] = None, now: Optional[datetime] = None, mode: str = "live",
         game_pk_index: Optional[Mapping] = None,
@@ -605,6 +642,9 @@ def run(date: str, hounds: Sequence[Mapping], rows: Iterable[Mapping], *,
     seen_ids = {r["bet_id"] for r in existing if r.get("kind") == KIND_BET}
     per_day: Counter = Counter((r["hound_id"], r["slate_date"]) for r in existing
                                if r.get("kind") == KIND_BET)
+    # What each hound already holds on each game, from the ledger itself (src/hounds/one_side.py): a later
+    # run, or a different engine, cannot add the other side of a game an earlier ticket already took.
+    positions = one_side.Book.from_rows(list(existing) + manual_rows(ledger))
     all_games = build_games(rows, near_date=date)
     v2_hounds = [h for h in hounds if user_spec.is_v2(h["spec"]) and not user_spec.is_gematria(h["spec"])]
     gem_weigher = None            # the Gematria style's per-pass view of the games (src/hounds/user_gematria.py), built on first use
@@ -667,9 +707,22 @@ def run(date: str, hounds: Sequence[Mapping], rows: Iterable[Mapping], *,
                     candidates.append(((lock_utc, event_id, MARKET_ORDER[market]), lock_utc, event_id,
                                        market, game, commence, cand, bet_id))
         candidates.sort(key=lambda c: c[0])
+        # One side per game, decided in the hound's own rank order (the classic engine's order is lock time,
+        # event, market; the rule-set engine already applied its rank_by in ``hound_candidates``).
+        candidates = one_side.keep_first(
+            candidates, lambda c: (c[2], c[3], c[6]["side"], c[6].get("player"), c[6].get("line")),
+            skipped=skipped, hound_id=hound["id"])
         for _key, lock_utc, event_id, market, game, commence, cand, bet_id in candidates:
             if per_day[(hound["id"], date)] >= spec["max_bets_per_day"]:
                 skipped["daily_limit"] += 1
+                continue
+            # The guard at the point of the append, against the rows already in the ledger.
+            refused = positions.refusal(hound["id"], event_id, market, cand["side"], cand.get("player"),
+                                        cand.get("line"), game=_game_ref(game, commence, event_id, game_pk_index))
+            if refused is not None:
+                skipped[refused] += 1
+                logger.info("hound %s refused %s %s on %s: %s", hound["id"], market, cand["side"], event_id,
+                            one_side.reason_text(refused))
                 continue
             t = clock()
             if mode == "live" and t >= commence:        # the last guard: never at or after the start
@@ -678,10 +731,7 @@ def run(date: str, hounds: Sequence[Mapping], rows: Iterable[Mapping], *,
             if user_spec.beyond_cap(cand["price"]):     # belt and braces: the cap is not a setting
                 skipped["price_cap"] += 1
                 continue
-            pk = None
-            if game.sport == "MLB" and game_pk_index:
-                entry = game_pk_index.get(event_id)
-                pk = str(entry.get("game_pk")) if entry and entry.get("game_pk") is not None else None
+            pk = _game_pk(game, event_id, game_pk_index)
             row = {
                 "kind": KIND_BET, "ledger_version": LEDGER_VERSION, "paper_only": True,
                 "bet_id": bet_id, "hound_id": hound["id"],
@@ -714,6 +764,7 @@ def run(date: str, hounds: Sequence[Mapping], rows: Iterable[Mapping], *,
             for key, value in (hound.get("row_extra") or {}).items():
                 row.setdefault(key, value)
             store.append(row)
+            positions.take(row)
             seen_ids.add(bet_id)
             per_day[(hound["id"], date)] += 1
             written_by[hound["id"]] += 1
