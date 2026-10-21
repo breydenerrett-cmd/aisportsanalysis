@@ -32,6 +32,7 @@ body.landing .kh__sub { margin: var(--lh-s4) 0 0; font-family: var(--lh-font-tex
 body.landing .kh-strip__title, body.landing .kh-how__title {
   margin: 0; font-family: var(--lh-font-text); font-size: var(--lh-fs-xs); font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--lh-mute);
 }
+.kh-strip__links { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--lh-s1) var(--lh-s4); }
 .kh-strip__more { font-size: var(--lh-fs-sm); color: var(--lh-ink2); text-decoration: none; }
 .kh-strip__more:hover { color: var(--lh-ink); }
 .kh-strip__row {

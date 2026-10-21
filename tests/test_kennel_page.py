@@ -26,7 +26,7 @@ from tests.hounds_web_runner import HAS_NODE, WEB, run_js, run_page
 TOKEN_KEY = "aisportsanalysis.invite_token"
 SIGNED = dict(stored={TOKEN_KEY: "tok"})
 PAGES = ("kennels.html", "live.html", "hounds.html", "hound.html", "build-a-hound.html", "learning.html", "kennel.html", "landing.html", "desk.html", "why-we-paused.html",
-         "postseason.html", "sample.html", "index.html", "graveyard.html", "quiz.html")
+         "postseason.html", "sample.html", "index.html", "graveyard.html", "quiz.html", "room.html")
 # owner ruling 2026-10-20 kennel-first: the static (signed-out) nav is Leaderboard, Live, Sign in and one primary "Find your hound" button;
 # a member's five places (My Kennel, Create, Live, Leaderboard, Account) are built by nav.js
 LINKS = [("hounds.html", "Leaderboard"), ("live.html", "Live")]
