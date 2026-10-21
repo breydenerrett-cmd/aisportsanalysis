@@ -9,7 +9,7 @@ delivered to the owner's inbox through the alerts feed his Zap already reads.
 WHAT IT CHECKS (each limit is a named constant below, justified where it is set)
 
   deploy_stuck   a deploy-prod run in progress or queued for more than 25 minutes. The 2026-10-03 failure.
-  tests_stuck / capture_run / slate_stuck   the same for the tests (45), forward-capture (130, in progress or
+  tests_stuck / capture_run / slate_stuck   the same for the tests (75), forward-capture (130, in progress or
                  queued) and afternoon-slate (60) runs; the limits are ``STUCK_MINUTES_BY_WORKFLOW``.
   ci_tests       the newest finished ``tests`` run on the working branch failed (the alert says when it is the
                  second in a row). Names the failing test when GitHub will give the log, else the failing
@@ -104,9 +104,9 @@ WAIT_FOR_WARMUP_SECONDS = 600.0      # like the other loops: never compete with 
 # (22:05 to 23:12 and 23:05 to 00:17 UTC; a 60 minute limit fired a false alarm), and two capture runs can overlap
 # while one waits in its concurrency queue, so a queued capture run is not stuck until the same 130 minutes.
 # The 2026-10-03 hang was a hang (six hours), not slowness; these limits sit well past normal and far short of that.
-STUCK_MINUTES_BY_WORKFLOW = {WF_DEPLOY: 25, WF_TESTS: 45, WF_CAPTURE: 130, WF_SLATE: 60}
+STUCK_MINUTES_BY_WORKFLOW = {WF_DEPLOY: 25, WF_TESTS: 75, WF_CAPTURE: 130, WF_SLATE: 60}   # tests: ~18 min suite + ~17 min no-network rerun = ~37-45 normal (2026-10-21)
 STUCK_MINUTES = STUCK_MINUTES_BY_WORKFLOW[WF_DEPLOY]
-NORMAL_MINUTES_DEFAULT = {WF_DEPLOY: 6, WF_TESTS: 20, WF_CAPTURE: 70, WF_SLATE: None}   # "normal is N" until runs give a median
+NORMAL_MINUTES_DEFAULT = {WF_DEPLOY: 6, WF_TESTS: 40, WF_CAPTURE: 70, WF_SLATE: None}   # "normal is N" until runs give a median
 BEHIND_MINUTES = 90                  # hourly dispatch + ~6 min build leaves ~66 min of normal lag; 90 is the owner's
 CAPTURE_STALL_HOURS = 3              # quiet-hours capture slots are 60 min apart: three hours is two missed slots
 AI_SPEND_WARN = 0.8                  # alert at 80% of the cap, before the analyst stops itself at 100%
