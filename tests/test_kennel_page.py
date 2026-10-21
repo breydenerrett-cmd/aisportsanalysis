@@ -271,7 +271,7 @@ class MyKennel(unittest.TestCase):
         self.assertEqual(f["bank"], ["$1,018", "$1,000", "$980"])                  # every dog starts with the same $1,000
         self.assertEqual(f["ret"], ["+1.8%", "0.0%", "-2.0%"])
         self.assertTrue(all(s.startswith("Ranked in full at") for s in f["small"]), f["small"])   # owner ruling 2026-10-20, complete-product positioning
-        self.assertEqual(f["status"], ["Running", "New", "Running"])
+        self.assertEqual(f["status"], ["Running", "Running", "Running"])      # owner rule 2026-10-21: no "New" badge; a dog with no bet yet is Running
         self.assertEqual(f["last"][0], "Last pick: Red Sox ML (won)")
         self.assertIn("No picks yet", f["last"][1])
         self.assertEqual(f["moods"], ["happy", "idle", "slump"])                    # a win wiggles, a loss slumps
@@ -284,11 +284,25 @@ class MyKennel(unittest.TestCase):
         self.assertEqual(f["count_attr"], ["1", "1", "1"])                            # the figures count up when they enter view
         self.assertEqual(out["gets"][0].split("?")[0], "/hounds/kennels/mine")
 
-    def test_a_zero_bet_dog_is_listed_and_flagged_new_not_hidden(self):
+    def test_a_zero_bet_dog_is_listed_with_its_status_and_no_new_badge(self):
+        """Owner rule 2026-10-21 (docs/VOICE.md, complete-product positioning): no "new" or beta wording. A dog with no bet yet
+        shows its status, Running, and the line under its avatar says it is waiting on its first game."""
         out = self.page({"/hounds/kennels/mine": mine([dog("u-d151fe52c7", "Jsmooth"), dog("u-fcc8e8c168", "Jsmooth27")])}, **SIGNED,
-                        queries=[q("names", f"{self.CARDS} [data-hook='dog-name']", "texts"), q("status", "[data-hook='dog-status']", "texts")])
-        self.assertEqual(out["final"]["names"], ["Jsmooth", "Jsmooth27"])
-        self.assertEqual(out["final"]["status"], ["New", "New"])
+                        queries=[q("names", f"{self.CARDS} [data-hook='dog-name']", "texts"), q("status", "[data-hook='dog-status']", "texts"),
+                                 q("keys", "[data-hook='dog-status']", "attrs", attr="data-status"),
+                                 q("today", "[data-hook='dog-today']", "texts"), q("pills", f"{self.CARDS} .kn-pill", "texts")])
+        f = out["final"]
+        self.assertEqual(f["names"], ["Jsmooth", "Jsmooth27"])
+        self.assertEqual(f["status"], ["Running", "Running"])
+        self.assertEqual(f["keys"], ["running", "running"])
+        self.assertEqual(f["today"], ["Waiting on its first game"] * 2)
+        self.assertNotIn("New", f["pills"])
+        self.assertFalse(re.search(r"new", " ".join(f["status"] + f["today"]), re.I))
+
+    def test_the_new_badge_is_gone_from_the_card_code_and_its_style(self):
+        self.assertNotIn('text: "New"', read("js/kennel.js"))
+        self.assertNotIn('key: "new"', read("js/kennel.js"))
+        self.assertNotIn('data-status="new"', read("css/studio.css"))
 
     def test_an_open_ticket_shows_a_live_pulse_dot_and_the_count(self):
         out = self.page({"/hounds/kennels/mine": mine([dog("u-1", wins=1, bets=2, units=0.5, open_bets=2, new=False)])}, **SIGNED,
@@ -418,7 +432,7 @@ class APublicKennel(unittest.TestCase):
         f = out["final"]
         self.assertEqual(f["title"], "Handler 21E8's kennel")
         self.assertEqual(f["names"], ["Underdog Gus", "Totals Tina"])
-        self.assertEqual(f["status"], ["Running", "New"])
+        self.assertEqual(f["status"], ["Running", "Running"])
         self.assertEqual((f["edit"], f["fire"], f["build_card"], f["build"]), (0, 0, 0, 0))     # nothing to change on someone else's dogs
         self.assertEqual(f["open"], ["hound.html?id=u-1", "hound.html?id=u-2"])
         self.assertEqual(f["ask"], ["hound.html?id=u-1&tab=ask", "hound.html?id=u-2&tab=ask"])
@@ -455,7 +469,12 @@ class TheStudio(unittest.TestCase):
              "/hounds/u-1/manual": [200, {"tickets": [], "record": {}, "limit_per_day": 5}],
              "/hounds/u-1/bets?page=1&page_size=5&segment=forward": [200, {"items": [], "total": 0}],
              "POST /hounds/u-1/fire": [200, {"headline": "Nothing qualifies right now.", "picks": [], "closest_misses": [], "recorded": [],
-                                              "notes": [], "preview_note": "Paper only.", "viewer_is_owner": True}]}
+                                              "notes": [], "preview_note": "Paper only.", "viewer_is_owner": True}],
+             # the owner's Unleash (2026-10-21) STARTS the dog: POST /hounds/{id}/unleash, tests/test_unleash_web.py draws a full day
+             "POST /hounds/u-1/unleash": [200, {"headline": "Underdog Gus is unleashed. Nothing on today's board fits its rule yet; it keeps watching and bets when a game does.",
+                                                "picks": [], "before": [], "no_board": [], "games_on_board": 0, "placed_now": 0,
+                                                "already_running": False, "before_label": "Before you unleashed. Not on its record.",
+                                                "paper_only": True}]}
         r.update(over)
         return r
 
@@ -525,13 +544,16 @@ class TheStudio(unittest.TestCase):
         self.assertEqual(out["captures"]["second"]["title"], "Edit Totals Tina")
         self.assertEqual(out["captures"]["typed"]["count"], "18 / 600", "the second panel's builder answers typing")
 
-    def test_fire_now_opens_the_fire_tab_and_fires_at_once(self):
+    def test_unleash_opens_the_fire_tab_and_starts_the_hound_at_once(self):
+        # owner request 2026-10-21: the owner's Unleash starts the dog (POST .../unleash), it is no longer the read-only preview (.../fire)
         out = run_page("kennel", routes=self.routes([dog("u-1")]), **SIGNED, actions=[
             dict(do="click", sel="[data-hook='dog-action-fire']", label="fire", wait=300, capture=[
-                q("selected", "[role='tab'][aria-selected='true']", "texts"), q("headline", "[data-hook='fire-headline']")])])
+                q("selected", "[role='tab'][aria-selected='true']", "texts"), q("headline", "[data-hook='unleash-headline']"),
+                q("preview", "[data-hook='fire-headline']", "count")])])
         self.assertEqual(out["captures"]["fire"]["selected"], ["Unleash"])
-        self.assertEqual(out["captures"]["fire"]["headline"], "Nothing qualifies right now.")
-        self.assertEqual([p["url"].split("/")[-2:] for p in out["posts"]], [["u-1", "fire"]])
+        self.assertIn("Nothing on today's board fits its rule yet", out["captures"]["fire"]["headline"])
+        self.assertEqual(out["captures"]["fire"]["preview"], 0)
+        self.assertEqual([p["url"].split("/")[-2:] for p in out["posts"]], [["u-1", "unleash"]])
 
     def test_ask_opens_the_ask_tab_with_the_hounds_greeting(self):
         # # owner ruling 2026-10-20 kennel-first: Ask is a studio tab now, not a card button

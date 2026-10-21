@@ -5,6 +5,9 @@ and the Training camp's own data.
     POST /hounds/{id}/fire            "What would you bet right now?" (the pages call it UNLEASH; the route keeps its
                                       name): the rule over the latest stored boards, READ ONLY; public, rate limited
                                       per address
+    POST /hounds/{id}/unleash         the owner of a member dog: START it betting today (paper, forward) and show the day, with
+                                      what it would have taken before it started (not on its record); free accounts included
+                                      (src/hounds/interact/unleash.py)
     POST /hounds/{id}/out-back        the owner of a member dog, {"confirm": true}: the dog is BURIED, its record frozen
                                       and public, a headstone in the graveyard (src/hounds/interact/outback.py)
     POST /hounds/{id}/train           the owner of a member dog, {"confirm": true}: SEND TO TRAINING, the dog comes back
@@ -14,6 +17,8 @@ and the Training camp's own data.
     POST /hounds/{id}/ask             {"question": "..."}: an answer BUILT FROM THE DOG'S DATA (no model is called)
     GET  /hounds/{id}/manual          the owner's manual tickets, kept apart from the rule's record
     POST /hounds/{id}/manual          the owner records a manual pick: {"event_id", "market"} (paper only)
+    POST /hounds/{id}/manual/batch    the owner records many at once: {"picks": [{"event_id", "market"}, ...]} (at most 40),
+                                      each through the same refusals as the single pick; answers added / skipped with reasons
     GET  /hounds/{id}/feedback        Good call / Bad call counts (and, for a signed-in caller, their own votes)
     POST /hounds/{id}/feedback        signed in: {"target_kind", "target_id", "verdict": good|bad, "note"?}
     POST /hounds/{id}/suggest         signed in, not the owner, builder dogs: a suggested change for the owner
@@ -50,7 +55,7 @@ from __future__ import annotations
 
 import types
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, Response
 from pydantic import BaseModel
@@ -59,7 +64,7 @@ from src.appstate import ratelimit
 from src.appstate import users as users_store
 from src.hounds import unit_size, user_spec
 from src.hounds.contract import envelope
-from src.hounds.interact import ask, ask_eval, camp, common, drill, fire, fire_event, look, manual, outback, rites, store, training
+from src.hounds.interact import ask, ask_eval, camp, common, drill, fire, fire_event, look, manual, outback, rites, store, training, unleash
 
 from api import auth as auth_mod
 from api import entitlements
@@ -98,6 +103,13 @@ _drill_limiter = ratelimit.FixedWindowLimiter(limit=DRILL_PER_USER_PER_HOUR, win
 _rl_drill = ratelimit.limiter_dependency(_drill_limiter, user_dependency=get_current_user)
 _manual_limiter = ratelimit.FixedWindowLimiter(limit=30, window_s=3600.0)
 _rl_manual = ratelimit.limiter_dependency(_manual_limiter, user_dependency=get_current_user)
+# a batch is up to 40 picks of work in one request, so it gets a smaller hourly allowance than the single pick
+_manual_batch_limiter = ratelimit.FixedWindowLimiter(limit=10, window_s=3600.0)
+_rl_manual_batch = ratelimit.limiter_dependency(_manual_batch_limiter, user_dependency=get_current_user)
+# An unleash reads one slate of boards under the heavy gate and may write a handful of bets; a person taps it a few
+# times a day at most, and the bet id makes a repeat free of side effects.
+_unleash_limiter = ratelimit.FixedWindowLimiter(limit=30, window_s=3600.0)
+_rl_unleash = ratelimit.limiter_dependency(_unleash_limiter, user_dependency=get_current_user)
 # A burial and a training each read the whole user ledger once; a person does either a handful of times, ever.
 _rites_limiter = ratelimit.FixedWindowLimiter(limit=20, window_s=3600.0)
 _rl_rites = ratelimit.limiter_dependency(_rites_limiter, user_dependency=get_current_user)
@@ -261,6 +273,19 @@ def fire_now(hound_id: str, response: Response, body: Optional[FireRequest] = No
     return envelope(_fire_payload(dog, _viewer_id(authorization)))
 
 
+@router.post("/hounds/{hound_id}/unleash")
+def unleash_today(hound_id: str, response: Response, current_user: users_store.User = Depends(get_current_user),
+                  _rl: None = Depends(_rl_unleash)) -> dict:
+    """The owner's Unleash: start the dog betting today, once, and show the day (src/hounds/interact/unleash.py).
+    Open to a free account on its own dog (one dog is what a free account keeps); somebody else's dog reads as not
+    found. The per-game live send (``fire`` with an ``event_id``) stays a paid tool."""
+    response.headers["Cache-Control"] = _NO_STORE
+    try:
+        return envelope(unleash.unleash(_dog(hound_id), current_user.id))
+    except unleash.UnleashError as exc:
+        raise _err(exc.status, exc.code, str(exc))
+
+
 # ---------------------------------------------------------------------------
 # the two rites: out back (a burial) and training
 # ---------------------------------------------------------------------------
@@ -326,6 +351,28 @@ def manual_tickets(hound_id: str, response: Response, _rl: None = Depends(_rl_re
 class ManualRequest(BaseModel):
     event_id: str
     market: str
+    player: Optional[str] = None           # a player prop (a game can carry several): which player's
+
+
+class ManualBatchRequest(BaseModel):
+    picks: List[ManualRequest]
+
+
+@router.post("/hounds/{hound_id}/manual/batch")
+def record_manual_batch(hound_id: str, body: ManualBatchRequest, response: Response,
+                        current_user: users_store.User = Depends(get_current_user),
+                        _rl: None = Depends(_rl_manual_batch)) -> dict:
+    """Record every listed pick ``manual.record`` accepts; the rest are skipped with a reason (src/hounds/interact/manual.py)."""
+    response.headers["Cache-Control"] = _NO_STORE
+    dog = _owned(hound_id, current_user)
+    try:
+        out = manual.record_batch(dog, current_user.id, [{"event_id": p.event_id, "market": p.market, "player": p.player}
+                                                          for p in body.picks])
+    except manual.ManualError as exc:
+        raise _manual_error(exc)
+    out["record"] = manual.record_summary(manual.tickets(dog.id))
+    out["note"] = manual.NOTE_COUNTED
+    return envelope(out)
 
 
 @router.post("/hounds/{hound_id}/manual")
@@ -335,7 +382,7 @@ def record_manual(hound_id: str, body: ManualRequest, response: Response,
     response.headers["Cache-Control"] = _NO_STORE
     dog = _owned(hound_id, current_user)
     try:
-        ticket = manual.record(dog, current_user.id, body.event_id, body.market)
+        ticket = manual.record(dog, current_user.id, body.event_id, body.market, player=body.player)
     except manual.ManualError as exc:
         raise _manual_error(exc)
     items = manual.tickets(dog.id)

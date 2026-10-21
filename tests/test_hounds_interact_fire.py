@@ -109,12 +109,23 @@ class WhatItPicks(Tmp):
         self.assertTrue(any("older than 75" in n for n in out["notes"]))
 
     def test_the_daily_limit_marks_the_pick_the_engine_would_cut(self):
-        d = dog_of(markets=["moneyline", "spread"], max_bets_per_day=1, price_min=-195)
-        out = self.fire(d)
+        # two games, one ticket a day: the earlier game is kept, the later is marked over the limit. (It used to be
+        # one game's moneyline and spread; the engine now takes one side per game, so that was one ticket anyway.)
+        d = dog_of(markets=["moneyline"], max_bets_per_day=1)
+        second = []
+        for t in ("2026-10-20T19:55:00Z", T_LOCK):
+            second += board_rows(t, event_id="evt0002", home="Home Club", away="Away Club",
+                                 start="2026-10-20T23:40:00Z", moneyline=[(b, -140, 120) for b in BOOKS])
+        out = self.fire(d, rows=standard_rows() + second)
         self.assertEqual(len(out["picks"]), 2)
-        flags = {p["market"]: p["over_daily_limit"] for p in out["picks"]}
-        self.assertEqual(flags, {"moneyline": False, "spread": True})
+        flags = {p["event_id"]: p["over_daily_limit"] for p in out["picks"]}
+        self.assertEqual(flags, {EVENT: False, "evt0002": True})
         self.assertTrue(any("daily limit" in n for n in out["notes"]))
+
+    def test_the_preview_shows_one_side_of_a_game_like_the_engine_writes_it(self):
+        d = dog_of(markets=["moneyline", "spread"], price_min=-195)
+        out = self.fire(d)
+        self.assertEqual([p["market"] for p in out["picks"]], ["moneyline"])
 
     def test_a_dog_that_is_not_running_says_so(self):
         out = self.fire(dog_of(status="benched"))
@@ -257,10 +268,11 @@ class TheManualPick(Tmp):
         self.refused("already_on_record", now=utc("2026-10-20T21:12:00Z"))
 
     def test_five_a_day_per_dog(self):
-        # five different dogs' worth of games: use five events on the same slate, each with the same board
+        # six games on the same slate, each with the same board. Their starts differ by a minute: the one-side
+        # guard names a game by its teams and exact start too, and one pair at one instant is one game.
         rows = []
         for i in range(6):
-            rows += standard_rows(event_id=f"evt{i:04d}")
+            rows += standard_rows(event_id=f"evt{i:04d}", start=f"2026-10-20T23:{10 + i:02d}:00Z")
         for i in range(5):
             manual.record(dog_of(max_bets_per_day=5), OWNER, f"evt{i:04d}", "moneyline", now=NOW,
                           ledger=self.manual_ledger, rule_ledger=self.ledger, rows_for=rows_for(rows))

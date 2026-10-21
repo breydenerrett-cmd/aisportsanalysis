@@ -13,15 +13,27 @@
  * from the dog's record). Every other visitor sees the same preview with no button.
  *
  * `renderFireResult` is shared with the Training camp, which fires each of an owner's dogs inline.
+ *
+ * UNLEASH TODAY (owner request 2026-10-21; the kennel's studio, `mountFire(..., { today: true })`). For the OWNER of a member dog the button
+ * no longer previews: it STARTS the hound betting today (POST /hounds/{id}/unleash, src/hounds/interact/unleash.py, paper and forward),
+ * then reveals the picks it placed (game, side, price, stake) and, below them, what it would have taken before it was unleashed
+ * ("Before you unleashed. Not on its record."), which the server computes point-in-time and never writes anywhere. While the request
+ * runs the dog sniffs a board and a three-step list waits; the moment the answer lands the steps are ticked off with the real counts and
+ * the cards rise in. There is no timer anywhere in it: the animation is the request's own duration plus under a second of reveal,
+ * and under prefers-reduced-motion it is the same list with no movement (all of the motion is in css/dog-kit.css).
  */
 
 import { h, clearNode, fmtPrice, isNum } from "./hounds-core.js";
 import { post, errorText, errorCode, whenText, spanText, statusLine, celebrate, PAPER_NOTE } from "./dog-common.js";
+import { dogBadge, DEFAULT_LOOK } from "./dog-avatar.js";
 
 const SLOW = 90000;
 
 /** The call behind the button, shared with the studio, the camp and the live board. */
 export const unleash = (id, eventId) => post(`/hounds/${encodeURIComponent(id)}/fire`, eventId ? { event_id: eventId } : {}, SLOW);
+
+/** The call behind the owner's Unleash: start the hound betting today and answer with the day (picks, and the "before" list). */
+export const unleashToday = (id) => post(`/hounds/${encodeURIComponent(id)}/unleash`, {}, SLOW);
 
 function priceLine(p) {
   const bits = [`Average price ${fmtPrice(p.price_average)}`];
@@ -68,7 +80,7 @@ function pickCard(p, { id, canRecord, onRecord }) {
         btn.setAttribute("disabled", "");
         status.textContent = "Recording...";
         try {
-          const out = await post(`/hounds/${encodeURIComponent(id)}/manual`, { event_id: p.event_id, market: p.market });
+          const out = await post(`/hounds/${encodeURIComponent(id)}/manual`, p.player ? { event_id: p.event_id, market: p.market, player: p.player } : { event_id: p.event_id, market: p.market });
           celebrate(btn, "manual-pick");
           clearNode(actions);
           actions.appendChild(h("p", { class: "dk-ok", "data-hook": "manual-recorded",
@@ -172,11 +184,169 @@ export function renderFireResult(box, data, { id, name, canRecord = false, onRec
   box.appendChild(h("p", { class: "hd-fine", "data-hook": "fire-preview-note", text: data.preview_note || PAPER_NOTE }));
 }
 
-/** The "Unleash" panel on a dog's page: a button, a status line and the result. */
-export function mountFire(section, { id, name, kit, onRecord }) {
+// ---- Unleash today -------------------------------------------------------------------------------------------
+
+const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+const stakeText = (p) => `${p.stake_units === 1 ? "1 unit" : `${p.stake_units} units`}${isNum(p.stake_usd) ? ` ($${Number.isInteger(p.stake_usd) ? p.stake_usd : p.stake_usd.toFixed(2)})` : ""}`;
+
+/** The working state: the dog sniffing a board and the three steps, the first one live. The server's counts are not known yet, so the
+ *  second and third steps wait with no number; nothing here is timed (see the file header). */
+export function unleashWorking({ name, look = null, id = "", vibe } = {}) {
+  const steps = [["Reading today's board", "active"], ["Checking today's games", "pending"], ["Locking picks", "pending"]];
+  return h("div", { class: "ul-stage", "data-hook": "unleash-working", "data-state": "working", role: "status", "aria-live": "polite" }, [
+    h("div", { class: "ul-stage__art", "aria-hidden": "true" }, [
+      h("div", { class: "ul-board" }, [0, 1, 2, 3, 4].map((i) => h("span", { class: "ul-board__row", style: `--r:${i}` }))),
+      h("div", { class: "ul-dog" }, [dogBadge(look || DEFAULT_LOOK, { size: 84, mood: "thinking", id: id || "unleash", name, vibe })])]),
+    h("ol", { class: "ul-steps", "data-hook": "unleash-steps" }, steps.map(([text, state], i) => h("li", { class: "ul-step", "data-state": state, "data-step": String(i), text })))]);
+}
+
+function stepsDone(data) {
+  const n = isNum(data.games_on_board) ? data.games_on_board : 0;
+  const placed = Array.isArray(data.picks) ? data.picks.length : 0;
+  return h("ol", { class: "ul-steps ul-steps--done", "data-hook": "unleash-steps" }, [
+    h("li", { class: "ul-step", "data-state": "done", "data-step": "0", text: "Read today's board" }),
+    h("li", { class: "ul-step", "data-state": "done", "data-step": "1", text: `Checked ${plural(n, "game", "games")}` }),
+    h("li", { class: "ul-step", "data-state": "done", "data-step": "2", text: placed ? `Locked ${plural(placed, "pick", "picks")}` : "Nothing to lock yet" })]);
+}
+
+function unleashPick(p) {
+  const li = h("li", { class: "dk-pick ul-card", "data-hook": "unleash-pick", "data-event": p.event_id, "data-market": p.market });
+  li.appendChild(h("div", { class: "dk-pick__head" }, [
+    h("strong", { class: "dk-pick__sel", text: p.selection }),
+    h("span", { class: "dk-chip", text: p.market_label || p.market }),
+    h("span", { class: `dk-chip ${p.placed_now ? "dk-chip--good" : ""}`, text: p.placed_now ? "Placed now" : "On its record" })]));
+  li.appendChild(h("p", { class: "dk-pick__game", text: p.game }));
+  li.appendChild(h("p", { class: "dk-pick__price hd-num", "data-hook": "unleash-pick-price", text: `${fmtPrice(p.price_average)} · Stake ${stakeText(p)}` }));
+  const when = p.start_utc ? whenText(p.start_utc) : "";
+  if (when) li.appendChild(h("p", { class: "hd-fine", text: p.started ? `Started ${when}.` : `Starts ${when}.` }));
+  return li;
+}
+
+function beforeItem(b) {
+  const tone = b.result === "won" ? "dk-chip--good" : b.result === "lost" ? "dk-chip--bad" : "";
+  const li = h("li", { class: "dk-miss ul-card ul-card--before", "data-hook": "unleash-before-item", "data-event": b.event_id, "data-state": b.state });
+  li.appendChild(h("p", {}, [h("strong", { text: b.selection }), ` ${fmtPrice(b.price_average)} `, h("span", { class: `dk-chip ${tone}`, "data-hook": "unleash-outcome", text: b.outcome })]));
+  li.appendChild(h("p", { class: "hd-fine", text: `${b.game} · Stake ${stakeText(b)}` }));
+  return li;
+}
+
+/**
+ * The picks the rule makes that were NOT placed (over the day's limit, a later day, waiting for their lock), with ONE button at the top:
+ * "Add the other N as manual picks" (POST /hounds/{id}/manual/batch, src/hounds/interact/manual.py record_batch). The server records each
+ * through the same path as a single manual pick and answers what it added and what it skipped and why; the page only shows that. Manual
+ * picks sit in their own ledger, apart from the record. A second tap adds nothing new.
+ */
+function otherPicksBlock(others, id, rise) {
+  const eligible = others.filter((o) => o.can_record);
+  const result = h("p", { class: "hd-fine dk-status", role: "status", "aria-live": "polite", "data-hook": "unleash-bulk-result" });
+  const btn = h("button", { type: "button", class: "btn btn--primary", "data-hook": "unleash-bulk",
+    text: `Add the other ${eligible.length} as manual picks` });
+  if (!eligible.length) btn.setAttribute("disabled", "");
+  const chips = {};
+  const items = others.map((o) => {
+    const chip = h("span", { class: `dk-chip ${o.can_record ? "" : "dk-chip--warn"}`, "data-hook": "unleash-other-chip", text: o.can_record ? o.why_text : `Cannot add: ${o.blocked}` });
+    chips[`${o.event_id}|${o.market}|${o.player || ""}`] = chip;
+    const when = o.start_utc ? whenText(o.start_utc) : "";
+    return rise(h("li", { class: "dk-pick ul-card", "data-hook": "unleash-other", "data-event": o.event_id, "data-market": o.market }, [
+      h("div", { class: "dk-pick__head" }, [h("strong", { class: "dk-pick__sel", text: o.selection }), h("span", { class: "dk-chip", text: o.market_label || o.market }), chip]),
+      h("p", { class: "dk-pick__game", text: o.game }),
+      h("p", { class: "dk-pick__price hd-num", text: `${fmtPrice(o.price_average)} · Stake ${stakeText(o)}${o.day_label ? ` · ${o.day_label}` : ""}` }),
+      when ? h("p", { class: "hd-fine", text: `Starts ${when}.` }) : null]));
+  });
+  btn.addEventListener("click", async () => {
+    btn.setAttribute("disabled", "");
+    result.textContent = "Adding...";
+    try {
+      const out = await post(`/hounds/${encodeURIComponent(id)}/manual/batch`,
+        { picks: eligible.map((o) => (o.player ? { event_id: o.event_id, market: o.market, player: o.player } : { event_id: o.event_id, market: o.market })) });
+      result.textContent = out.line || "";
+      for (const r of (out.results || [])) {
+        const chip = chips[`${r.event_id}|${r.market}|${r.player || ""}`];
+        if (!chip) continue;
+        chip.textContent = r.status === "added" ? "Added as a manual pick" : `Skipped: ${r.reason}`;
+        chip.setAttribute("class", `dk-chip ${r.status === "added" ? "dk-chip--good" : "dk-chip--warn"}`);
+      }
+      if (out.added) celebrate(btn, "manual-pick");
+    } catch (err) {
+      result.textContent = errorText(err, "Could not add them just now. Try again in a minute.");
+    } finally {
+      btn.removeAttribute("disabled");
+    }
+  });
+  return h("div", { class: "dk-block ul-others", "data-hook": "unleash-others" }, [
+    h("h3", { class: "hd-h3", text: "Other picks on the board" }),
+    h("p", { class: "hd-fine", text: "These fit the rule but were not placed. Manual picks stay apart from its record." }),
+    h("div", { class: "dk-actions" }, [btn]), result,
+    h("ul", { class: "dk-picks", "data-hook": "unleash-others-list" }, items)]);
+}
+
+/** The day, drawn into `box`: ticked-off steps, the picks (or why there are none), then the "before you unleashed" block.
+ *  Every string goes in as text, never as HTML. */
+export function renderUnleashDay(box, data, { name, id } = {}) {
+  clearNode(box);
+  let i = 0;
+  // each node rises in after the one before it: --i is the stagger step, capped so the whole reveal stays under a second
+  const rise = (node) => { node.setAttribute("class", `${node.className} ul-in`); node.setAttribute("style", `--i:${Math.min(i++, 7)}`); return node; };
+  box.appendChild(rise(stepsDone(data)));
+  if (name) box.appendChild(h("h3", { class: "hd-h3", "data-hook": "unleash-title", text: `${name}'s day` }));
+  box.appendChild(rise(h("p", { class: "dk-headline", "data-hook": "unleash-headline", role: "status", text: data.headline || "" })));
+  const picks = Array.isArray(data.picks) ? data.picks : [];
+  if (picks.length) {
+    box.appendChild(h("ul", { class: "dk-picks", "data-hook": "unleash-picks" }, picks.map((p) => rise(unleashPick(p)))));
+  }
+  const others = Array.isArray(data.other_picks) ? data.other_picks : [];
+  if (others.length && id) box.appendChild(rise(otherPicksBlock(others, id, rise)));
+  const before = Array.isArray(data.before) ? data.before : [];
+  const noBoard = Array.isArray(data.no_board) ? data.no_board : [];
+  if (before.length || noBoard.length) {
+    const block = h("div", { class: "dk-block ul-before", "data-hook": "unleash-before" }, [
+      h("h3", { class: "hd-h3", text: "Before you unleashed" }),
+      h("p", {}, [h("span", { class: "dk-chip dk-chip--hind", "data-hook": "unleash-before-label", text: data.before_label || "Before you unleashed. Not on its record." })])]);
+    if (before.length) block.appendChild(h("ul", { class: "dk-misses", "data-hook": "unleash-before-list" }, before.map((b) => rise(beforeItem(b)))));
+    if (noBoard.length) {
+      block.appendChild(h("ul", { class: "dk-misses", "data-hook": "unleash-noboard" }, noBoard.map((g) => rise(h("li", { class: "dk-miss ul-card", "data-event": g.event_id }, [
+        h("p", {}, [h("strong", { text: g.game })]), h("p", { class: "hd-fine", text: data.no_board_note || "no board saved for this game" })])))));
+    }
+    box.appendChild(rise(block));
+  }
+  box.appendChild(h("p", { class: "hd-fine", "data-hook": "unleash-note", text: PAPER_NOTE }));
+}
+
+/** The owner's Unleash panel: one button, the working state while the request runs, then the day. */
+function mountUnleashToday(section, body, { id, name, avatar, onDone }) {
+  body.appendChild(h("p", { class: "hd-muted" }, `Unleash starts ${name || "this hound"} betting today. It checks every game on today's board that has not locked, places the bets that fit its rule, and from then on it keeps going on its own. It also shows what it would have taken earlier today, kept apart from its record. Paper only.`));
+  const result = h("div", { class: "dk-result", "data-hook": "fire-result", "aria-live": "polite" });
+  const btn = h("button", { type: "button", class: "btn btn--primary", "data-hook": "fire-btn", text: "Unleash" });
+  const status = statusLine("fire-status");
+  btn.addEventListener("click", async () => {
+    btn.setAttribute("disabled", "");
+    status.textContent = "";
+    clearNode(result).appendChild(unleashWorking(Object.assign({ name }, avatar || {})));
+    try {
+      const data = await unleashToday(id);
+      renderUnleashDay(result, data, { name: name || "This dog", id });
+      if (onDone) onDone(data);
+    } catch (err) {
+      clearNode(result);
+      status.textContent = errorText(err, "Could not unleash just now. Try again in a minute.");
+      status.setAttribute("data-code", errorCode(err));
+    } finally {
+      btn.removeAttribute("disabled");
+    }
+  });
+  body.appendChild(h("div", { class: "dk-actions" }, [btn, status]));
+  body.appendChild(result);
+  section.removeAttribute("hidden");
+}
+
+/** The "Unleash" panel on a dog's page: a button, a status line and the result. With `today` (the kennel studio, for the owner of a
+ *  member dog) the button starts the hound instead of previewing it; `avatar` is {look, id, vibe} for the sniffing dog and `onDone`
+ *  hears the server's answer (the kennel redraws its cards when bets were placed). */
+export function mountFire(section, { id, name, kit, onRecord, today = false, avatar = null, onDone = null }) {
   const body = section.querySelector("[data-hook='dog-fire']");
   if (!body) return;
   clearNode(body);
+  if (today && kit && kit.is_owner) return mountUnleashToday(section, body, { id, name, avatar, onDone });
   const canRecord = !!(kit && kit.can_record_manual);
   body.appendChild(h("p", { class: "hd-muted" }, `Run ${name || "this model"}'s current rule on the latest stored boards and see what it would pick. Nothing is recorded${canRecord ? " unless you choose to" : ""}.`));
   const result = h("div", { class: "dk-result", "data-hook": "fire-result", "aria-live": "polite" });

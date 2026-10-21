@@ -260,21 +260,22 @@ class OtherWorkflowsStuck(unittest.TestCase):
 
     def test_the_limits_are_the_measured_ones(self):
         self.assertEqual(W.STUCK_MINUTES_BY_WORKFLOW,
-                         {"deploy-prod.yml": 25, "tests.yml": 45, "forward-capture.yml": 130, "afternoon-slate.yml": 60})
+                         {"deploy-prod.yml": 25, "tests.yml": 75, "forward-capture.yml": 130, "afternoon-slate.yml": 60})
 
-    def test_tests_running_44_minutes_are_fine_46_are_stuck(self):
-        rig = self.rig_with("tests_runs", "in_progress", 44)
+    def test_tests_running_74_minutes_are_fine_76_are_stuck(self):
+        # 2026-10-21: a green run takes ~37-45 min (suite + the no-network rerun), so 45 alerted on healthy runs
+        rig = self.rig_with("tests_runs", "in_progress", 74)
         rig.tick()
         self.assertEqual(rig.check("tests_stuck"), "ok")
-        rig = self.rig_with("tests_runs", "in_progress", 46)
+        rig = self.rig_with("tests_runs", "in_progress", 76)
         rig.tick()
         (inc,) = rig.incidents()
         self.assertEqual(inc["kind"], "tests_stuck")
-        self.assertIn("The test run has been running 46 min (normal is 6)", inc["what"], "median of the finished runs seen")
-        rig = self.rig_with("tests_runs", "in_progress", 46)
+        self.assertIn("The test run has been running 76 min (normal is 6)", inc["what"], "median of the finished runs seen")
+        rig = self.rig_with("tests_runs", "in_progress", 76)
         rig.gh.tests_runs = rig.gh.tests_runs[:1]              # nothing finished to take a median of: the measured default
         rig.tick()
-        self.assertIn("(normal is 20)", rig.incidents()[0]["what"])
+        self.assertIn("(normal is 40)", rig.incidents()[0]["what"])
         self.assertIn("click Cancel workflow; Claude will re-run it", inc["fix"])
 
     def test_a_forward_capture_run_of_seventy_minutes_is_normal_and_131_is_stuck(self):
@@ -308,11 +309,11 @@ class OtherWorkflowsStuck(unittest.TestCase):
         self.assertNotIn("normal is", inc["what"], "no measured normal, so none is claimed")
 
     def test_each_workflow_is_its_own_incident_and_clears_on_its_own(self):
-        rig = self.rig_with("tests_runs", "in_progress", 50)
+        rig = self.rig_with("tests_runs", "in_progress", 80)
         rig.gh.deploy_runs.insert(0, run(101, "in_progress", created=ago(minutes=30), started=ago(minutes=30)))
         rig.tick()
         self.assertEqual(sorted(i["kind"] for i in rig.incidents()), ["deploy_stuck", "tests_stuck"])
-        rig.gh.tests_runs[0] = run(300, "completed", "success", created=ago(minutes=50), updated=ago(minutes=1))
+        rig.gh.tests_runs[0] = run(300, "completed", "success", created=ago(minutes=80), updated=ago(minutes=1))
         rig.tick(minutes=10)
         self.assertEqual([i["kind"] for i in rig.incidents()], ["deploy_stuck"])
         self.assertTrue(any(i["title"].startswith("Resolved: The test run is stuck") for i in rig.feed()))

@@ -137,7 +137,7 @@ def decorate_fire(dog: common.Dog, out: dict, viewer_id: Optional[int], *, now: 
             blocked = f"this dog is {dog.status}"
         elif pick["stale"]:
             blocked = f"the newest board is more than {fire.user_engine.MAX_BOARD_AGE_MINUTES} minutes old"
-        elif manual.manual_bet_id(dog.id, pick["event_id"], pick["market"]) in already:
+        elif manual.manual_bet_id(dog.id, pick["event_id"], pick["market"], pick.get("player")) in already:
             blocked = "already recorded as a manual pick"
         elif remaining <= 0:
             blocked = f"{manual.PER_DAY_LIMIT} manual picks a day is the limit"

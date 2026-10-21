@@ -13,7 +13,7 @@
  *
  *   Look     dog-locker.js          the locker room, previewed live on the animated avatar
  *   Rules    hounds-build.js        the English box and the rule cards (builder-skeleton.js), saved as a new version
- *   Unleash  dog-fire.js            "Unleash": what the rule would bet right now, read only
+ *   Unleash  dog-fire.js            "Unleash": starts the hound betting today (paper), then shows the day and what it would have taken before
  *   Backtest dog-backtest.js        the rule over 7 / 14 / 30 days or Season 2 of stored boards, in paper dollars (hindsight)
  *   Ask      dog-ask.js             the dog's answers, worked out from its own data
  *   Record   dog-manual.js + tickets  the season record, the manual picks and the last tickets
@@ -25,7 +25,7 @@
  * A PUBLIC KENNEL is also the member's PROFILE: kennel name, member since, dog count, the combined paper record and
  * dollars across their dogs, their best dog and their recent tickets (all from GET /hounds/kennels/{handle}), above
  * the same cards, read only (Open and Ask are links to the dog's page), for any visitor. The data is
- * GET /hounds/kennels/mine (signed in) and GET /hounds/kennels/{handle}; a dog with no bet yet is listed and says "New".
+ * GET /hounds/kennels/mine (signed in) and GET /hounds/kennels/{handle}; a dog with no bet yet is listed, "Running", and says it is waiting on its first game.
  * The studio's deep link is ?dog=<id>&tab=<tab>. Nothing here measures anything: every number is the server's.
  *
  * THE GRAVEYARD. Every kennel page ends with a "Graveyard" section: the dogs this kennel took out back, as the frozen
@@ -112,9 +112,10 @@ export function moodOf(dog) {
   return last.result === "won" ? "happy" : last.result === "lost" ? "slump" : "idle";
 }
 
+/** The pill on a card: the hound's STATUS (owner rule, docs/VOICE.md: no "new" or beta wording). A hound with no bet yet is "Running"
+ *  like any other; the line under the avatar says it is waiting on its first game. */
 export function statusOf(dog) {
   if (dog.retired || dog.status === "retired") return { key: "retired", text: "Retired" };
-  if (dog.new) return { key: "new", text: "New" };
   if (dog.open_bets > 0) return { key: "live", text: `${dog.open_bets} open` };
   if (dog.status === "benched") return { key: "idle", text: "Idle" };
   return { key: "running", text: "Running" };
@@ -646,7 +647,10 @@ async function buildTab(tab) {
   } else if (tab === "fire") {
     const sec = section("dog-fire");
     host.appendChild(sec);
-    mountFire(sec, { id: dog.id, name: dog.name, kit, onRecord: () => { state.loaded.record = null; } });
+    // the owner's Unleash STARTS the hound today (dog-fire.js `today`); the cards redraw when it placed bets so the counts are true
+    mountFire(sec, { id: dog.id, name: dog.name, kit, onRecord: () => { state.loaded.record = null; }, today: true,
+      avatar: { look: dog.look || lookFor(dog.id), id: dog.id, vibe: dog.persona && dog.persona.vibe },
+      onDone: (out) => { if (out && out.placed_now) { state.loaded.record = null; load({ quiet: true }); } } });
   } else if (tab === "backtest") {
     const sec = section("dog-backtest");
     host.appendChild(sec);
