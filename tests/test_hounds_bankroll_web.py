@@ -205,6 +205,17 @@ class TheModelPage(unittest.TestCase):
         self.assertIn("at the average price across books", out["final"]["bank"])
         self.assertNotIn("missing for more than 10%", out["final"]["note"])
 
+    def test_a_hound_with_no_settled_bet_never_claims_its_average_price_board_is_missing(self):
+        # The server answers "recorded_price" for a brand-new hound (no priced bet, so no average-price coverage); the page
+        # said "missing for more than 10% of its bets" on every new member hound, with 0 bets (rebuild QA, 2026-10-20).
+        d = json.loads(json.dumps(F.detail("closer")))
+        d["bankroll"]["basis"] = "recorded_price"
+        d["record"].update({"bets": 0, "wins": 0, "losses": 0, "pushes": 0, "voids": 0})
+        out = self.page(routes={"/hounds/closer?season=s2": [200, d], "/hounds/closer": [200, d]},
+                        queries=[q("note", "[data-hook='chart-basis']")])
+        self.assertNotIn("missing for more than 10%", out["final"]["note"])
+        self.assertIn("at the average price across books", out["final"]["note"])
+
 
 @unittest.skipUnless(HAS_NODE, "node not installed")
 class TheLandingBoard(unittest.TestCase):

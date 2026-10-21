@@ -318,6 +318,19 @@ out.accountHidden = hook("signin-account").hidden;
         self.assertEqual((out["tabsHidden"], out["createHidden"], out["loginHidden"], out["accountHidden"]),
                          (True, True, True, False))
 
+    def test_the_account_place_never_tells_a_signed_in_member_to_sign_in(self):
+        # rebuild QA 2026-10-20: the nav's Account place (#/account) opened under "Sign in to view tonight's board." with the
+        # visitor's invite note, "Request an invite" and "Continue to the board" beneath the member's own account box
+        out = self.run_page("""
+await settle();
+out.title = say("signin-title");
+out.eyebrow = say("signin-eyebrow");
+out.hidden = ["signin-early-head", "signin-note", "signin-start-trial", "signin-continue"].map((k) => hook(k).hidden);
+""", storage={TOKEN_KEY: "tok"}, routes={"GET /auth/password": {"code": 200, "body": {"has_password": False}},
+                                         "GET /billing/status": {"code": 200, "body": {}}})
+        self.assertEqual((out["title"], out["eyebrow"]), ("Your account.", "ACCOUNT"))
+        self.assertEqual(out["hidden"], [True, True, True, True])
+
     def test_the_early_access_door_for_the_paid_board_is_still_on_the_page(self):
         out = self.run_page("""
 out.head = say("signin-early-head");

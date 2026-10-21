@@ -24,7 +24,7 @@ class CollapsedSections(unittest.TestCase):
         self.assertEqual(strip.count('class="cp-stat"'), 4)
         for hook in ("camp-stat-tips", "camp-stat-helped", "camp-stat-next", "camp-stat-dogs"):
             self.assertIn(f'data-hook="{hook}"', strip)
-        for label in ("Coach tips graded", "Helped / hurt", "Next breeding cycle", "Your dogs in training"):
+        for label in ("Coach tips graded", "Helped / hurt", "Next breeding cycle", "Your hounds in training"):
             self.assertIn(label, strip)
 
     def test_every_section_is_a_closed_details_with_a_headline_and_one_number(self):

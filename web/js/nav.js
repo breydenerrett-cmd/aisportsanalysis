@@ -130,17 +130,17 @@ function accountArea(current, host) {
 }
 
 /** The phone tab bar. A member: the same five places. A visitor: Leaderboard, Live, Sign in and the primary button. */
-function tabBar(current) {
+function tabBar(current, hideCta = false) {
   const tab = (p) => h("a", { class: "lh-tab", href: p.href, "data-nav": p.key, "aria-current": p.key === current ? "page" : undefined }, [
     icon(p.key), h("span", { class: "lh-tab__label", text: p.label })]);
   if (signedIn()) {
     return h("nav", { class: "lh-tabbar", "aria-label": "Sections", "data-hook": "site-tabbar", "data-count": "5" }, PLACES.map(tab));
   }
-  const visitor = PUBLIC_PLACES.map(tab).concat([
-    tab({ key: "signin", label: "Sign in", href: SIGNIN_HREF }),
-    h("a", { class: "lh-tab lh-tab--cta", href: CREATE_HREF, "data-hook": "tab-cta", "data-nav": "create" }, [
-      h("span", { class: "lh-tab__label", text: CTA_LABEL })])]);
-  return h("nav", { class: "lh-tabbar", "aria-label": "Sections", "data-hook": "site-tabbar", "data-count": "4" }, visitor);
+  // On the quiz and the builder (where the button leads) the bar drops it, as the desktop bar does: one primary per screen.
+  const visitor = PUBLIC_PLACES.map(tab).concat([tab({ key: "signin", label: "Sign in", href: SIGNIN_HREF })]);
+  if (!hideCta) visitor.push(h("a", { class: "lh-tab lh-tab--cta", href: CREATE_HREF, "data-hook": "tab-cta", "data-nav": "create" }, [
+    h("span", { class: "lh-tab__label", text: CTA_LABEL })]));
+  return h("nav", { class: "lh-tabbar", "aria-label": "Sections", "data-hook": "site-tabbar", "data-count": String(visitor.length) }, visitor);
 }
 
 let extras = null;
@@ -161,7 +161,7 @@ export function mountNav(host = document.querySelector(".lh-nav")) {
   // the phone tab bar lives on the body, once
   const old = document.querySelector("[data-hook='site-tabbar']");
   if (old && old.parentNode) old.parentNode.removeChild(old);
-  if (host.getAttribute("data-bottom") !== "off") document.body.appendChild(tabBar(current));
+  if (host.getAttribute("data-bottom") !== "off") document.body.appendChild(tabBar(current, host.getAttribute("data-cta") === "off" || current === "create"));
   return { current, signedIn: signedIn() };
 }
 

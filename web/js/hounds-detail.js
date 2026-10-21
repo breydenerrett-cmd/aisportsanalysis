@@ -483,9 +483,12 @@ export function renderCharts() {
     zeroLabel: `${fmtUsd(rules.start)} start`,
     emptyText: hasPoints ? "No graded bets to draw yet." : "No graded live bets yet.",
   }));
+  // The server reports a hound with no settled bet as "recorded_price" (no priced bet means no average-price coverage), so
+  // the best-price sentence ("missing for more than 10% of its bets") is only true once there is a settled bet to measure.
+  const recorded = basisOf(state.hound) === "recorded_price" && settledOf(state.hound) > 0;
   units.appendChild(h("p", { class: "hd-fine", "data-hook": "chart-basis",
-    text: `Bets are settled ${basisWords(state.hound) || "at the average price across books"}.${
-      basisOf(state.hound) === "recorded_price" ? " This hound's average-price board is missing for more than 10% of its bets, so it is settled at the price it took; other hounds are settled at the average price." : ""
+    text: `Bets are settled ${recorded ? basisWords(state.hound) : "at the average price across books"}.${
+      recorded ? " This hound's average-price board is missing for more than 10% of its bets, so it is settled at the price it took; other hounds are settled at the average price." : ""
     } A member's hound counts the units its owner chose.` }));
   // the CLV chart lives behind "How it's graded": a shut <details> is not drawn into (it would measure nothing); opening it draws it
   const fold = q("hound-graded");

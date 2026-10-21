@@ -51,10 +51,10 @@ export function featuredCard(pick, kennelLabel = "") {
   const open = openOf(dog);
   const breed = breedLabel(breedFor({ id: dog.id, name: dog.name, vibe: dog.persona && dog.persona.vibe }));
   const stat = (label, value) => h("div", { class: "kn-feat__stat" }, [h("dt", { text: label }), h("dd", { text: value })]);
-  return h("section", { class: "kn-feat", "data-hook": "kennels-featured", "aria-label": "Featured dog" }, [
+  return h("section", { class: "kn-feat", "data-hook": "kennels-featured", "aria-label": "Featured hound" }, [
     h("span", { class: "kn-feat__dog", "aria-hidden": "true" }, [dogFace(dog, { size: 132, pose: poseOfHound(dog) })]),
     h("div", { class: "kn-feat__body" }, [
-      h("p", { class: "kn-feat__kicker", text: `Featured dog · ${why}` }),
+      h("p", { class: "kn-feat__kicker", text: `Featured hound · ${why}` }),
       h("h2", { class: "kn-feat__name" }, [h("a", { href: houndHref(dog.id), "data-hook": "featured-name", text: dog.name })]),
       h("p", { class: "kn-feat__sub hd-muted", text: [breed, kennelLabel, dog.tagline].filter(Boolean).join(" · ") }),
       h("dl", { class: "kn-feat__stats" }, [
@@ -65,7 +65,7 @@ export function featuredCard(pick, kennelLabel = "") {
       h("p", { class: "kn-feat__note hd-fine", "data-hook": "featured-note",
         text: bets === 0 ? "Nothing has settled yet, so there is no record to read." : bets < SMALL_SAMPLE ? `${bets} settled ${bets === 1 ? "bet" : "bets"}. Ranked in full at ${SMALL_SAMPLE}.` : `${bets} settled bets.` }),
       h("div", { class: "kn-feat__actions" }, [
-        h("a", { class: "lh-btn lh-btn--solid", href: houndHref(dog.id), "data-hook": "featured-open", text: "Open this dog" }),
+        h("a", { class: "lh-btn lh-btn--soft", href: houndHref(dog.id), "data-hook": "featured-open", text: "Open this hound" }),
         h("a", { class: "lh-btn lh-btn--soft", href: `${houndHref(dog.id)}&tab=ask`, text: "Ask it why" })]),
     ])]);
 }

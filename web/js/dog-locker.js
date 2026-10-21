@@ -181,7 +181,7 @@ export function mountLocker(section, { id, name, kit, vibe, onSaved, onChange })
     spring(stageDog, [{ transform: "rotate(-8deg) scale(.9)" }, { transform: "rotate(6deg) scale(1.07)" }, { transform: "rotate(0) scale(1)" }], 460);
   });
 
-  body.appendChild(h("p", { class: "hd-muted", text: "Dress your dog. A look is cosmetic: it changes no rule, no ticket and no record." }));
+  body.appendChild(h("p", { class: "hd-muted", text: "Dress your hound. A look is cosmetic: it changes no rule, no ticket and no record." }));
   body.appendChild(h("div", { class: "dk-locker" }, [previewBox, controls]));
   body.appendChild(h("div", { class: "dk-actions dk-actions--sticky" }, [save, reset, status]));
   body.appendChild(h("p", { class: "hd-fine" }, ["The name and the catchphrase are changed in the builder. ",

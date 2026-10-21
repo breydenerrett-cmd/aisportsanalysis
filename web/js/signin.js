@@ -262,7 +262,7 @@ export async function renderSignin(container, query = {}) {
 
   const createForm = el("form", { class: "signin__form", "data-hook": "create-form" });
   createForm.appendChild(el("p", { class: "signin__body", "data-hook": "create-lede",
-    text: "Free: build your own dogs, race them on paper money and see how they do. "
+    text: "Free: build your own hound, race it on paper money and see how it does. "
         + "No card, nothing to approve." }));
   const createEmail = field("Email", "create-email", {
     type: "email", name: "email", autocomplete: "email", inputmode: "email",
@@ -369,6 +369,9 @@ export async function renderSignin(container, query = {}) {
     : wantsSignin || getToken() || hadAccount() ? "signin" : "create";
   let signedInMode = false;
 
+  // The visitor-only lines under the card (the daily-picks invite note, its link and "Continue to the board"): a signed-in
+  // member reaches this view from the nav's Account place, and none of them is about their account. Filled in below.
+  const visitorOnly = [];
   function applyTab() {
     const create = tab === "create";
     createForm.hidden = signedInMode || !create;
@@ -380,6 +383,12 @@ export async function renderSignin(container, query = {}) {
     tabSignin.setAttribute("aria-selected", create ? "false" : "true");
     eyebrow.textContent = create ? "FREE ACCOUNT" : "SIGN IN";
     title.textContent = create ? "Create a free account." : "Sign in to view tonight's board.";
+    if (signedInMode) {
+      // kennel-first: Account is one of the five places, so a member is never told to sign in to a board here
+      eyebrow.textContent = "ACCOUNT";
+      title.textContent = "Your account.";
+    }
+    for (const node of visitorOnly) node.hidden = signedInMode;
   }
   function showTab(next) {
     tab = next;
@@ -591,6 +600,8 @@ export async function renderSignin(container, query = {}) {
   const back = el("a", { class: "gate__eyebrow", href: query.next || "#/today",
     "data-hook": "signin-continue", text: "CONTINUE TO THE BOARD" });
   card.appendChild(back);
+  visitorOnly.push(earlyHead, signupNote, startTrial, back);
+  applyTab();
 
   // ---- behaviour --------------------------------------------------------------
   let createBusy = false;

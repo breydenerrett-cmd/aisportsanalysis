@@ -256,6 +256,9 @@ export function startTraining(dog, { opener = null, onTrained = null } = {}) {
       const [outcome] = await Promise.all([request, wait(minimum)]);
       sheet.setBusy(false);
       if (!outcome.ok) {
+        // refused (too few new bets, an open ticket): the title stops saying it is in training
+        sheet.el.setAttribute("data-hook", "training-refused-sheet");
+        if (titleEl) titleEl.textContent = `${dog.name} stays as it is`;
         clearNode(sheet.body);
         sheet.body.appendChild(h("p", { class: "rt-refused", role: "alert", "data-hook": "training-refused", "data-code": errorCode(outcome.e),
           text: errorText(outcome.e, `${dog.name} could not be sent to training just now. Nothing was changed.`) }));

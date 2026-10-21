@@ -641,7 +641,7 @@ def train(dog: Optional[common.Dog], user_id: int, *, confirmed: bool = False, n
         "mode": mode, "light_adjustment": light,
         "label": "Light adjustment" if light else "Trained",
         "headline": (f"{dog.name} is back as version {new['version_no']}. Its new record starts now."),
-        "light_note": ("A light adjustment: the dog does not have enough settled bets yet for the coach to find a weak "
+        "light_note": ("A light adjustment: the hound does not have enough settled bets yet for the coach to find a weak "
                        "spot." if light and note == "not_enough_bets" else
                        "A light adjustment: nothing in its record stood out." if light else None),
         "changes": [dict(c) for c in changes],

@@ -362,3 +362,8 @@
   [data-hook="landing-header"] .site-nav__links { display: none; }
   [data-hook="landing-header"] [data-hook="cta-primary"] { padding: 6px 10px; font-size: 13px; }
 }
+
+/* The footer's page links (landing.html, desk.html) are one inline-flex row: on a phone they wrapped word by word and the last
+   links ran off the right edge, where overflow-x: hidden cut them off (Pricing and Questions could not be tapped at 390px). */
+.site-footer .site-nav__links { flex-wrap: wrap; gap: var(--sp-3, 12px) var(--sp-6, 24px); }
+.site-footer .site-nav__links a { white-space: nowrap; }

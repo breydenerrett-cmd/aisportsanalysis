@@ -218,7 +218,7 @@ def bury(dog: Optional[common.Dog], user_id: int, *, confirmed: bool = False, no
     return {"headstone": public_headstone({"hound_id": dog.id, "owner_user_id": user_id, "created_at": common.iso(moment),
                                            "payload": stone}),
             "freed_slot": True,
-            "slot_note": "Its slot is free: you can build another dog.",
+            "slot_note": "Its slot is free: you can build another hound.",
             "paper_only": True}
 
 

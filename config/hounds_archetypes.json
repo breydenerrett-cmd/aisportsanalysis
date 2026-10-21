@@ -2092,7 +2092,7 @@
   {
    "id": "two_rule_twin",
    "name": "Two-Rule Twin",
-   "pitch": "Two rules in one dog: road underdogs on the moneyline, and unders on cold days. Shows how a dog can mix.",
+   "pitch": "Two rules in one hound: road underdogs on the moneyline, and unders on cold days. Shows how a hound can mix.",
    "short": "Road underdogs plus cold-weather unders in one hound",
    "icon": "twins",
    "stance": "dog",
@@ -2559,7 +2559,7 @@
   {
    "id": "mix",
    "name": "A bit of everything",
-   "pitch": "Moneylines, spreads and totals in one dog.",
+   "pitch": "Moneylines, spreads and totals in one hound.",
    "icon": "dice",
    "markets": [
     "moneyline",
