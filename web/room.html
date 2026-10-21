@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Kennel Room — LINEHOUND</title>
+<meta name="description" content="The LINEHOUND house pack at work: who has a pick open, who just settled, who is scouting the board. Read live from the public record. Paper bets only, not advice, 21+.">
+<meta property="og:title" content="The Kennel Room — LINEHOUND">
+<meta property="og:description" content="The house pack at work, read live from the public record. Paper bets, not advice.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#0B0D10">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230B0C0E'/%3E%3Cpath d='M6 6l8 0 0 9-8 4z' fill='%23FF3D57'/%3E%3Cpath d='M18 6l8 0 0 13-8-4z' fill='%23FF7A45'/%3E%3C/svg%3E">
+<!-- THE KENNEL ROOM (public). The LINEHOUND house kennel (the house pack and the Claude Hound) as a small animated room. Every pose is read from the
+     record: web/js/room-adapter.js maps real hound state to a character state (docs/design/KENNEL_ROOM.md is the table), web/js/room-scene.js draws it
+     in pure SVG and CSS with the product's own illustrated hounds, web/js/room-data.js reads GET /hounds, /hounds/stream, /hounds/graveyard (and
+     /sports/now for a signed-in visitor). Tap a hound for its card; the whiteboard is the Leaderboard, the TV is Live, the door is My Kennel.
+     The compliance line is static, once, in the footer. -->
+<link rel="stylesheet" href="css/fonts.css">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/nav.css">
+<link rel="stylesheet" href="css/lhnav.css">
+<link rel="stylesheet" href="css/hounds.css">
+<link rel="stylesheet" href="css/dog-kit.css">
+<link rel="stylesheet" href="css/lh.css">
+<link rel="stylesheet" href="css/studio.css">
+<link rel="stylesheet" href="css/room.css">
+</head>
+<body class="hounds-page kn-page">
+<a class="hd-skip" href="#main-content">Skip to the kennel room</a>
+<header class="lh-nav" aria-label="primary" data-hook="room-nav">
+  <div class="lh-nav__bar">
+    <a class="lh-nav__brand ps-page__home" href="landing.html" aria-label="LINEHOUND home">
+      <span class="wordmark" data-hook="brand-mark">
+        <span class="wordmark__mark"><span></span></span>
+        <span class="wordmark__text" data-hook="product-name">LINEHOUND</span>
+      </span>
+    </a>
+    <nav class="lh-nav__links" aria-label="Sections" data-hook="nav-links">
+      <a href="hounds.html" data-nav="leaderboard">Leaderboard</a>
+      <a href="live.html" data-nav="live">Live</a>
+    </nav>
+    <div class="lh-nav__account" data-hook="nav-account-area" data-signed-in="false">
+      <a class="lh-btn lh-btn--soft" href="index.html#/signin" data-hook="nav-signin">Sign in</a>
+      <a class="lh-btn lh-btn--solid" href="quiz.html" data-hook="nav-cta">Find your hound</a>
+    </div>
+  </div>
+</header>
+
+<main class="hd-wrap hd-wrap--wide rm-main" id="main-content" aria-label="The Kennel Room" data-hook="room-app">
+<header class="rm-head">
+  <h1 data-hook="room-title">The Kennel Room</h1>
+  <p class="hd-lede" data-hook="room-sub">The house pack at work, read live from the record.</p>
+</header>
+
+<div data-hook="room-mount"><p class="hd-fine">Loading the kennel room...</p></div>
+
+<p class="rm-links hd-fine"><a href="hounds.html" data-hook="room-board-link">Leaderboard</a> &middot; <a href="live.html" data-hook="room-live-link">Live</a> &middot; <a href="graveyard.html" data-hook="room-graveyard-link">Graveyard</a> &middot; <a href="quiz.html" data-hook="room-create-link">Create your own hound</a></p>
+</main>
+
+<footer class="hd-foot" data-hook="room-footer" aria-label="responsible gambling">
+  <p class="kn-legal" data-hook="footer-legal">21+ &middot; Paper bets only, not advice &middot; Bet at your own risk &middot; Gamble responsibly. <a href="tel:1-800-426-2537" data-hook="responsible-gambling-help">1-800-GAMBLER</a></p>
+  <p><a href="landing.html">About LINEHOUND</a> &middot; <a href="hounds.html">Leaderboard</a> &middot; <a href="graveyard.html">Graveyard</a></p>
+</footer>
+
+<script type="module" src="js/room-page.js"></script>
+<script type="module" src="js/fx.js"></script>
+<script type="module" src="js/nav.js"></script>
+</body>
+</html>

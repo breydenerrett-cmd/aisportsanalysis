@@ -46,6 +46,7 @@ import { loadFoundingOffer } from "./pricing.js";
 import { startTraining, startOutBack } from "./dog-rites.js";
 import { headstoneCard, trainedBadge } from "./dog-headstone.js";
 import { mountTabs } from "./tabs.js";
+import { mountKennelRoom } from "./room-scene.js";
 import { mountLocker } from "./dog-locker.js";
 import { mountFire } from "./dog-fire.js";
 import { mountBacktest, money } from "./dog-backtest.js";
@@ -550,6 +551,7 @@ async function load({ quiet = false } = {}) {
     return null;
   }
   render();
+  mountKennelRoom(q("kennel-room"), state.mode === "mine" ? state.data : null, { onStudio: (id, tab) => openStudio(id, tab) });   // "Your kennel room" (room-scene.js)
   fillExtras();
   fillTonight();
   return state.data;

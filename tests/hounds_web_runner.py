@@ -43,6 +43,8 @@ PAGES = {
     "live": ("live.html", "live-board.js"),
     # the graveyard (tests/test_hounds_rites_web.py): every dog a member took out back
     "graveyard": ("graveyard.html", "graveyard.js"),
+    # the kennel room (tests/test_kennel_room.py): the public house room; the member's fold runs on the "kennel" page
+    "room": ("room.html", "room-page.js"),
 }
 
 _tmp = None
