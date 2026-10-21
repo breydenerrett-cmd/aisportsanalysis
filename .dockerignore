@@ -2,7 +2,16 @@
 # step) to what deploy/Dockerfile actually COPYs. In particular .env and
 # .git must never be sent to a docker daemon -- see .gitignore's own
 # "Secrets" block for why .env is never committed either.
-.git/
+#
+# .git IS NOT SENT, WITH FOUR EXCEPTIONS THAT ONLY NAME A COMMIT (2026-10-20, deploy/Dockerfile "THE COMMIT THIS
+# IMAGE WAS BUILT FROM"): HEAD, FETCH_HEAD, packed-refs and refs/ hold branch names and commit ids and nothing
+# else. Everything else under .git stays out, above all .git/config: actions/checkout stores the repository
+# token's auth header there. (Same `dir/*` then `!dir/x` shape as data/ below.)
+.git/*
+!.git/HEAD
+!.git/FETCH_HEAD
+!.git/packed-refs
+!.git/refs/
 .env
 .env.*
 !.env.example

@@ -79,8 +79,7 @@ to move today (off-season, no MLB game today, the regular season is over for sta
 finished) is grey "Not expected now" with the reason and never alerts. The prop-listing audit spent its 400-credit
 cap on 2026-10-07 by design; live prop prices are the `prop_prices` and `batter_props` stores.
 
-**Cannot be known from the server, so not in the feed:** whether CI on the working branch is red (a GitHub API call
-with a token the app does not hold). A red build shows up as `deploy_stale`; the digest lists it under "not checked".
+**GitHub-side problems come from the watchdog** (`src/ops/watchdog.py`, `docs/owner/WATCHDOG.md`): a stuck deploy, tests or capture run, red CI on the working branch, production behind the branch, capture stopped, the paid AI near its cap. It runs in production every 10 minutes when `WATCHDOG=on`, and its items share this feed with a guid per **incident** (not per UTC day) plus one `Resolved:` item when it clears. Without it a red build shows up only as `deploy_stale`; the digest lists it under "not checked".
 
 **Not built, on purpose:** "the house pack recorded zero bets for today's slate by 21:00 UTC". Whether a day has
 games is not known without loading the hounds' stores (the whole multi-book odds file), and a hound that passes

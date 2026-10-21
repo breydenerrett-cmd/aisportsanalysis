@@ -350,6 +350,27 @@ def _start_email_jobs() -> None:
     email_jobs.start_loop(ready=_warm_up_done)
 
 
+# -- the watchdog (src/ops/watchdog.py) --------------------------------------------------------------------
+#
+# Every ten minutes, in ONE daemon thread (the same single-writer pattern as the loops above), the app checks
+# the GitHub side of its own deploys and tests and its own freshness, and writes any incident to a state file
+# on the volume that GET /feeds/alerts.rss merges in (the owner's email Zap reads that feed). It exists
+# because a deploy hung for six hours on 2026-10-03 and nobody was looking (docs/audit/2026-10-03/
+# PROD_DEPLOY_HANG.md). OFF unless WATCHDOG=on (deploy/fly.production.toml sets it for production; a laptop,
+# a test client and staging never start one); WATCHDOG=off is the kill switch. Waits for the first cache
+# warm-up pass like the loops above. GET /admin/watchdog shows its last check and open incidents.
+@app.on_event("startup")
+def _start_watchdog() -> None:
+    from api import health as api_health
+    from src.ops import watchdog
+
+    def _warm_up_done() -> bool:
+        status = warmup.status()
+        return (not status.get("enabled")) or int(status.get("passes_completed") or 0) >= 1
+
+    watchdog.start_loop(ready=_warm_up_done, started_utc=api_health.process_started_utc)
+
+
 # -- request logging + structured 500s -------------------------------------
 #
 # One middleware does both jobs (a per-request log line, and turning an

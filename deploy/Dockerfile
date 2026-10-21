@@ -143,6 +143,26 @@ RUN echo "data refresh stamp: ${DATA_REFRESH_STAMP}" \
     && (timeout 330 python -m src.pipeline.display_refresh --max-seconds 270 \
         || echo "display refresh did not complete; image keeps the committed stores")
 
+# THE COMMIT THIS IMAGE WAS BUILT FROM (2026-10-20, src/ops/watchdog.py). The watchdog compares the commit
+# production runs with the branch's newest one, so the image has to say which commit it is. deploy-prod.yml passes
+# no build arguments (and workflow files are the owner's to edit), but its checkout leaves the answer in .git:
+# HEAD, the branch ref it names, FETCH_HEAD. .dockerignore admits exactly those (never .git/config, which holds
+# the checkout's auth header); this reads them into /app/VERSION and deletes the copy.
+#
+# It can never fail the build, and a missing answer is a stated unknown rather than a guess:
+#   * every .git source is a wildcard ("HEAD*"), and a wildcard that matches nothing copies nothing. The first
+#     source, deploy/fly.production.toml, always exists, so the instruction never has zero sources;
+#   * the RUN ends in "|| echo ...", so a Python error or metadata of an unexpected shape still exits 0;
+#   * with no VERSION file the watchdog infers the commit from the deploy run that built this process and labels
+#     it "inferred" (GET /admin/watchdog shows which one it used).
+# It sits after the data-refresh layer on purpose: this layer's cache key is the content of those files, which
+# changes with every commit, so a cached layer can never serve an old VERSION, and the slow refresh layer above is
+# never invalidated by it.
+COPY deploy/fly.production.toml .git/HEAD* .git/FETCH_HEAD* .git/packed-refs* .git/refs* /app/.gitmeta/
+RUN python -m src.ops.watchdog write-version --gitmeta /app/.gitmeta --out /app/VERSION \
+    || echo "VERSION not written; the watchdog will infer the deployed commit from the deploy run"; \
+    rm -rf /app/.gitmeta
+
 # APP_DB_PATH defaults to data/app/app.db (src/appstate/users.py) when the
 # env var is unset -- fine for a quick local run, but on a real host this
 # should point at a mounted volume so the user/token store survives a
