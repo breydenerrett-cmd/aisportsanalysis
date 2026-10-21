@@ -50,8 +50,12 @@ class ThePureHelpers(unittest.TestCase):
 
     def test_rules_come_from_the_payload_with_a_fallback_for_an_old_saved_copy(self):
         out = self.js(f"console.log(JSON.stringify([B.bankrollRules({{bankroll_rules: {{start_usd: 500, unit_usd: 5, label: 'X'}}}}), B.bankrollRules({{}})]));")
-        self.assertEqual(out[0], {"start": 500, "unit": 5, "label": "X"})
-        self.assertEqual(out[1], {"start": 1000, "unit": 10, "label": LABEL})
+        # 2026-10-21 (unit-size lens): the payload's rules are the REFERENCE account; what a page prints is the viewer's
+        # own start, unit and sentence (here a viewer who chose the $10 unit, the runner's pin).
+        self.assertEqual(out[0]["reference"], {"start": 500, "unit": 5, "label": "X"})
+        self.assertEqual((out[0]["start"], out[0]["unit"], out[0]["label"]), (1000, 10, LABEL))
+        self.assertEqual((out[1]["start"], out[1]["unit"], out[1]["label"]), (1000, 10, LABEL))
+        self.assertEqual(out[1]["reference"], {"start": 1000, "unit": 10, "label": LABEL})
 
     def test_windows_are_n_a_when_nothing_settled_in_them_not_a_flat_zero(self):
         out = self.js('const h = {bankroll: {current: 1010, start: 1000, bets: 3, return_pct: 1.0, windows: '
@@ -91,12 +95,15 @@ class TheLeaderboard(unittest.TestCase):
 
     def test_it_says_every_model_starts_with_the_same_thousand_dollars(self):
         out = run_page("hounds", routes=routes(), queries=[q("line", "[data-hook='bankroll-line']"), q("cap", "[data-hook='leaderboard-table'] caption")])
-        self.assertEqual(out["final"]["line"], HOUND_LINE)  # owner ruling 2026-10-20 kennel-first
+        # owner ruling 2026-10-20 kennel-first; 2026-10-21 the unit chip rides on the end of the line
+        self.assertTrue(out["final"]["line"].startswith(HOUND_LINE), out["final"]["line"])
+        self.assertIn("1u = $10", out["final"]["line"])
         self.assertIn("$1,000", out["final"]["cap"])
 
     def test_the_static_page_already_carries_the_line_for_a_visitor_with_scripts_off(self):
         html = (F.Path(__file__).resolve().parent.parent / "web" / "hounds.html").read_text(encoding="utf-8")
-        self.assertIn(HOUND_LINE, html)
+        # the HTML ships the DEFAULT wording ($25 unit, $2,500 start); a viewer's own sizing is filled in by the script
+        self.assertIn(HOUND_LINE.replace("$1,000", "$2,500"), html)
 
     def test_a_thin_sample_is_greyed_with_the_reason_in_its_tooltip(self):
         def edit(data):

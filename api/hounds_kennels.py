@@ -5,6 +5,8 @@
     GET  /me/kennel                 signed in: the caller's kennel name and whether the one-time prompt is still due
     PUT  /me/kennel                 signed in: {"kennel_name"} (2-30 chars, unique) or {"dismiss_prompt": true}
     POST /admin/users/kennel-name   admin: {user_id, kennel_name, reason}: set or clear a member's kennel name
+    GET  /me/unit-size              signed in: how the caller reads dollars (a fixed unit, or a percent of bankroll)
+    PUT  /me/unit-size              signed in: {"mode", "unit_usd" | "pct" + "start_usd"}, validated (src/hounds/unit_size.py)
 
 Public reads, no auth. The handle is the anonymous owner label ("Handler 3F2A" -> "handler-3f2a"); no email, no
 account id and no token is ever in a payload. The logic and the numbers are src/hounds/kennels.py (the
@@ -23,7 +25,7 @@ from pydantic import BaseModel
 
 from src.appstate import ratelimit
 from src.appstate import users as users_store
-from src.hounds import kennels, member_profile, seasons, user_defs
+from src.hounds import kennels, member_profile, seasons, unit_size, user_defs
 from src.hounds.contract import envelope
 
 from api.admin import REISSUE_REASON_MAX, _LOOKS_LIKE_A_TOKEN, _SECRET_HINTS, _account_id
@@ -117,6 +119,41 @@ def put_my_kennel_name(body: KennelNameRequest, response: Response,
     except member_profile.ProfileError as exc:
         raise _profile_error(exc)
     return envelope(_me_payload(current_user.id))
+
+
+def _sizing_payload(user_id: int) -> dict:
+    return {"sizing": unit_size.get(user_id).as_dict(), "choices": unit_size.choices(), "paper_only": True}
+
+
+@router.get("/me/unit-size")
+def my_unit_size(response: Response, current_user: users_store.User = Depends(get_current_user),
+                 _rl: None = Depends(_rl_read)) -> dict:
+    """How the signed-in member reads the money. A VIEWER LENS: stored bets, grades and ranks are in units and never
+    move with it; only the dollars a page prints do (docs/BANKROLL.md). The default is a $25 unit."""
+    response.headers["Cache-Control"] = "no-store"
+    return envelope(_sizing_payload(current_user.id))
+
+
+class UnitSizeRequest(BaseModel):
+    mode: Optional[Any] = None
+    unit_usd: Optional[Any] = None
+    pct: Optional[Any] = None
+    start_usd: Optional[Any] = None
+
+
+@router.put("/me/unit-size")
+def put_my_unit_size(body: UnitSizeRequest, response: Response,
+                     current_user: users_store.User = Depends(get_current_user),
+                     _rl: None = Depends(_rl_write)) -> dict:
+    """Save the member's sizing. ``{"mode": "fixed", "unit_usd": 25}`` (a whole dollar from 1 to 1,000) or
+    ``{"mode": "percent", "pct": 2, "start_usd": 5000}`` (0.5 to 5 in half steps; $100 to $100,000). Anything else is
+    a 422 with a stable ``error`` code; nothing is rounded or guessed."""
+    response.headers["Cache-Control"] = "no-store"
+    try:
+        unit_size.save(current_user.id, body.model_dump())
+    except unit_size.SizingError as exc:
+        raise HTTPException(status_code=exc.status, detail={"error": exc.code, "message": str(exc)})
+    return envelope(_sizing_payload(current_user.id))
 
 
 class AdminKennelNameRequest(BaseModel):

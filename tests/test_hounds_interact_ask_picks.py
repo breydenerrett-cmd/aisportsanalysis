@@ -318,6 +318,30 @@ class TheReplay(Tmp):
         self.assertIn("a small sample", a)
         self.assertNotIn("Worst pick", a)
 
+    def test_the_replay_speaks_in_the_askers_unit_size(self):
+        # 2026-10-21 (unit-size lens): the same bet at a $50 unit is $60.00 on a $5,000 paper bankroll, and the return is the same 1.2%
+        from src.hounds import unit_size
+        ctx = context(backtest_fn=self.backtest_fn(drill_dog()), today="2026-10-22", now=utc(self.NOW),
+                      sizing=unit_size.validate({"mode": "fixed", "unit_usd": 50}))
+        a = ask.answer("what would you have done this week", ctx)["answer"]
+        self.assertIn("1 graded bet: 1-0, up $60.00 on a $5,000 paper bankroll, a +1.2% return (one unit is $50 a bet, flat).", a)
+        self.assertNotIn("$10", a)
+
+    def test_a_percent_of_bankroll_asker_gets_the_compounded_dollars(self):
+        from src.hounds import unit_size
+        ctx = context(backtest_fn=self.backtest_fn(drill_dog()), today="2026-10-22", now=utc(self.NOW),
+                      sizing=unit_size.validate({"mode": "percent", "pct": 2, "start_usd": 5000}))
+        a = ask.answer("what would you have done this week", ctx)["answer"]
+        self.assertIn("up $120.00 on a $5,000 paper bankroll, a +2.4% return at your sizing "
+                      "(one unit is 2% of the balance when the bet is placed, so it compounds).", a)
+
+    def test_the_glossary_names_the_askers_unit(self):
+        from src.hounds import unit_size
+        fixed = ask.answer("what is a unit", context(sizing=unit_size.validate({"mode": "fixed", "unit_usd": 50})))["answer"]
+        self.assertIn("one unit is $50, 1% of the $5,000 start", fixed)
+        pct = ask.answer("what is a unit", context(sizing=unit_size.validate({"mode": "percent", "pct": 1.5, "start_usd": 4000})))["answer"]
+        self.assertIn("one unit is 1.5% of the balance when the bet is placed", pct)
+
     def test_a_loss_is_the_worst_pick_and_the_dollars_go_down(self):
         out = self.replay("what would you have done in the last 7 days",
                           mlb_results={"900001": dict(RESULTS["900001"], away_score="1", home_score="3")})

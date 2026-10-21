@@ -53,7 +53,9 @@ import { mountBacktest, money } from "./dog-backtest.js";
 import { bootAsk } from "./dog-ask.js";
 import { mountManual } from "./dog-manual.js";
 import { ticketList } from "./hounds-tickets.js";
-import { bankrollNow, returnPctOf, fmtUsd, fmtPct, isSmallSample, smallSampleTitle, onlyTickets, ticketState } from "./hounds-board.js";
+import { bankrollNow, bankrollOf, returnPctOf, fmtUsd, fmtPct, isSmallSample, smallSampleTitle, onlyTickets, ticketState } from "./hounds-board.js";
+import { getSizing, startText, unitSentence, sizingTag } from "./unitsize.js";
+import { unitChip } from "./unitchip.js";
 
 const q = (hook) => document.querySelector(`[data-hook='${hook}']`);
 
@@ -340,9 +342,30 @@ function profileStat(label, value, hook) {
   return h("div", { class: "kn-stat" }, [h("dt", { text: label }), h("dd", Object.assign({ text: value }, hook ? { "data-hook": hook } : {}))]);
 }
 
+/**
+ * The kennel's paper dollars at the VIEWER's sizing: each hound's own account (its bankroll block, repriced) added up.
+ * The server's `combined` is the reference account, so it is only the answer for a payload with no hound blocks.
+ */
+export function combinedAt(data) {
+  const dogs = Array.isArray(data && data.dogs) ? data.dogs : [];
+  const blocks = dogs.map((d) => bankrollOf(d)).filter((b) => b && isNum(b.pnl_usd) && isNum(b.start));
+  // every block came back exactly as sent (the viewer's sizing IS the reference account): the server's own sum stands
+  const untouched = blocks.length > 0 && dogs.every((d) => !d.bankroll || bankrollOf(d) === d.bankroll);
+  if (!blocks.length || untouched) {
+    // no hound blocks to reprice: the server's reference figures, scaled to the viewer's unit in fixed mode (linear)
+    const c = (data && data.combined) || {};
+    const sizing = getSizing();
+    const k = sizing.mode === "fixed" && isNum(c.unit_usd) && c.unit_usd > 0 ? sizing.unit_usd / c.unit_usd : 1;
+    return { pnl_usd: isNum(c.pnl_usd) ? Math.round(c.pnl_usd * k * 100) / 100 : c.pnl_usd, return_pct: c.return_pct };
+  }
+  const pnl = blocks.reduce((s, b) => s + b.pnl_usd, 0);
+  const start = blocks.reduce((s, b) => s + b.start, 0);
+  return { pnl_usd: Math.round(pnl * 100) / 100, return_pct: start ? Math.round((pnl / start) * 10000) / 100 : null };
+}
+
 /** The member's profile block: the numbers the server added up, and what their dogs did lately. */
 export function profileCard(data) {
-  const c = data.combined || {};
+  const c = Object.assign({}, data.combined || {}, combinedAt(data));
   const rec = c.record || {};
   const settled = c.settled || 0;
   const best = data.best;
@@ -351,7 +374,7 @@ export function profileCard(data) {
     profileStat("Hounds", String(data.dog_count || 0), "profile-dogs"),
     profileStat("Paper record", settled ? recordText(rec) : "no settled bets", "profile-record"),
     profileStat("Paper dollars", settled && isNum(c.pnl_usd) ? money(c.pnl_usd) : "n/a", "profile-usd"),
-    profileStat("Return", settled && isNum(c.return_pct) ? `${c.return_pct > 0 ? "+" : ""}${c.return_pct.toFixed(2)}%` : "n/a", "profile-return"),
+    profileStat(sizingTag() ? `Return, ${sizingTag()}` : "Return", settled && isNum(c.return_pct) ? `${c.return_pct > 0 ? "+" : ""}${c.return_pct.toFixed(2)}%` : "n/a", "profile-return"),
     profileStat("Best hound", best ? `${best.name}, ${recordText(best.record)}` : "none yet", "profile-best")]);
   const tickets = Array.isArray(data.recent_tickets) ? data.recent_tickets : [];
   const list = tickets.length
@@ -361,7 +384,7 @@ export function profileCard(data) {
     : h("p", { class: "hd-muted", "data-hook": "profile-no-tickets", text: "No tickets yet across these hounds." });
   return h("section", { class: "hd-panel kn-profile", "data-hook": "kennel-profile" }, [
     h("h2", { class: "hd-h3", text: "Profile" }), stats,
-    h("p", { class: "hd-fine", text: `Combined across ${data.dog_count === 1 ? "its hound" : "its hounds"}: each hound starts with its own $1,000 paper bankroll (1 unit = $10). Paper only.` }),
+    h("p", { class: "hd-fine", text: `Combined across ${data.dog_count === 1 ? "its hound" : "its hounds"}: each hound starts with its own ${startText()} paper bankroll (${unitSentence()}). Paper only. ` }, [unitChip()]),
     h("h3", { class: "hd-h3", text: "Recent tickets" }), list]);
 }
 
@@ -416,6 +439,7 @@ function paintMore(data) {
   if (!host) return;
   clearNode(host);
   host.appendChild(h("a", { class: "kn-link", href: `kennel.html?u=${encodeURIComponent(data.handle)}`, "data-hook": "kennel-public-link", text: "Public page" }));
+  host.appendChild(unitChip());              // 1u = $25 ▾ : the unit size, next to the dollars on the cards below
   host.appendChild(h("button", { type: "button", class: "kn-link", "data-hook": "kennel-rename", text: data.kennel_name ? "Rename kennel" : "Name your kennel",
     on: { click: () => openNameForm(false) } }));
 }
@@ -642,7 +666,7 @@ async function buildRecord(host, dog, kit) {
     stat("Record", recordText(rec)), stat("Bankroll", bankrollText(dog)), stat("Return", returnText(dog)),
     stat("Bets", String(rec.bets || 0)),
     stat("Open", String(dog.open_bets || 0))]));
-  host.appendChild(h("p", { class: "hd-fine", text: `${state.data.season && state.data.season.label ? state.data.season.label : "This season"}, a paper account that started with $1,000 (1 unit = $10), bets settled at the average price.` }));
+  host.appendChild(h("p", { class: "hd-fine", text: `${state.data.season && state.data.season.label ? state.data.season.label : "This season"}, a paper account that started with ${startText()} (${unitSentence()}), bets settled at the average price.` }));
   const tickets = h("div", { "data-hook": "studio-tickets" });
   host.appendChild(h("h3", { class: "hd-h3", text: "Last tickets" }));
   host.appendChild(tickets);

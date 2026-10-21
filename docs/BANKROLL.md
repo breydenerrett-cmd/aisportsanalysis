@@ -24,7 +24,7 @@ view of that balance.
 | Starting bankroll | **$1,000**, the same for every model, every season view. `starting_bankroll` |
 | Unit | **1% of the STARTING bankroll = $10.** `unit_pct`. Fixed: it does **not** grow or shrink with the balance (no compounding), so dollar profits are plain sums and a 7-day figure plus the earlier figure equals the season figure to the cent. |
 | Stake, house / baseline / desk dogs | exactly **1 unit ($10)** per bet. |
-| Stake, member dogs | the **units the owner chose** (0.5, 1, 1.5, 2, 2.5 or 3), read from the dog's own bet row. A missing or out-of-range stake is 1 unit. This supersedes the earlier "every bet counts as one unit" ruling **for the bankroll view only**; `record.units_*` is still flat, and `bankroll.units_flat` is the flat figure on the same price basis, for comparison. |
+| Stake, member dogs | the **units the owner chose** (0.5, 1, 1.5, 2, 2.5, 3, 4 or 5), read from the dog's own bet row. A missing or out-of-range stake is 1 unit. This supersedes the earlier "every bet counts as one unit" ruling **for the bankroll view only**; `record.units_*` is still flat, and `bankroll.units_flat` is the flat figure on the same price basis, for comparison. |
 | Bet profit | the profit the page already uses: at the board-average price when 90% of the priced bets have one (`basis: average_price`), else at the recorded price. Dollars = units x stake x $10. A void or push is $0. |
 | `current` | `1000 + pnl_usd`. |
 | `pnl_usd` | the sum of the dollars above over the settled bets in the view. |
@@ -72,6 +72,58 @@ units` = **+$8.00**, balance **$1,008.00**, return **+0.80%**. The same three be
 | Model page | Bankroll, Return (24h / 7d / 30d / season tabs), Units, Record, Max drawdown, Yield ("profit per $ bet"); a bankroll line chart in dollars. |
 | Landing board | the top five by bankroll, with return %. |
 | Builder | "1 unit = $10 of your $1,000; this dog bets N units" beside the stake picker. |
+
+## Your unit size: paper dollars at your sizing (owner ask, 2026-10-21)
+
+**Paper dollars at your unit size; units are the record.** Everything above is the *reference account* (a $1,000
+start, a $10 unit) and it is what is stored, graded and ranked. A viewer chooses how the dollars on the pages are
+sized, and nothing else moves: every bet, grade, rank, leaderboard order and "+2.4u" figure is unit-based and identical
+for everyone. The dollar figures are a **lens** (`src/hounds/unit_size.py`, ported to `web/js/unitsize.js`; the two are
+tested to agree to the cent).
+
+Where the choice lives: a signed-in member's is on the account (`GET` / `PUT /me/unit-size`, validated server-side,
+table `member_unit_size`, never in a public payload); a visitor's is in the browser (`localStorage`, wrapped so a
+blocked or throwing store means the default). Default for everyone: **a fixed $25 unit**. The Account page holds the
+settings; a small "1u = $25 ▾" chip sits beside the bankroll figures (My Kennel, the hound page, the leaderboard).
+The payload carries `bankroll.events`, the units-only bet list (`[slate date, settle epoch, profit units, stake units,
+result letter]`), so the browser can price the same bets at any sizing without another request.
+
+| Mode | Unit | Starting bankroll | Dollars | Return % |
+|---|---|---|---|---|
+| **Fixed dollars** | any whole dollar $1 to $1,000 (chips $10 / $25 / $50 / $100) | **100 units**: $1,000 at $10, $2,500 at $25, $5,000 at $50, $10,000 at $100 | `units x unit` to the cent | `units / 100`, **identical at every unit size**; so are all ranks |
+| **% of bankroll** | 0.5% to 5% of the balance **when the bet is placed** (steps of 0.5, default 1%) | the viewer's own, $100 to $100,000 (default $2,500) | compounds, see below | the compounded figure, labelled **"at your sizing"** |
+
+`config/bankroll.json` still says one unit = 1% of the start (`unit_pct` = 1), which is why a fixed start of 100 units
+makes the percent independent of the unit size.
+
+### % of bankroll: how the compounding works
+
+Bets are taken slate day by slate day. **Every bet of one slate day is sized off the same balance**: the balance after
+every earlier slate day has settled, before any bet of this day settles. So concurrent open bets never size off each
+other. A bet that stakes `s` units risks `s x pct%` of that balance and its profit is `profit_units x pct% x balance`.
+Day end balance = balance + the day's profits. The peak and drawdown walk the balance in settle order; the 24h / 7d /
+30d windows sum each bet's own dollars by settle time, exactly as the fixed view does. P&L is therefore **not** `units
+x a constant` in this mode.
+
+**Worked example.** 2% of a $5,000 start. Five bets on three slate days (`flat` is the one-unit profit):
+
+| Day | Balance before | 1u = | Bet | Stake | Flat | Units | Dollars |
+|---|---|---|---|---|---|---|---|
+| Oct 1 | $5,000.00 | $100.00 | a (win) | 1u | +0.9 | +0.9u | **+$90.00** |
+| Oct 1 | $5,000.00 | $100.00 | b (loss) | 2u | -1.0 | -2.0u | **-$200.00** |
+| Oct 2 | $4,890.00 | $97.80 | c (win) | 1u | +1.5 | +1.5u | **+$146.70** |
+| Oct 3 | $5,036.70 | $100.734 | d (win) | 3u | +0.5 | +1.5u | **+$151.10** |
+| Oct 3 | $5,036.70 | $100.734 | e (push) | 1u | 0 | 0u | $0.00 |
+
+P&L **+$187.80**, balance **$5,187.80**, return **+3.76%** at that sizing (the same bets are +2.9u / +2.9% in the
+record). Wagered on decided bets $700.00, yield 26.83% per $ bet. Worst fall: $200.00 (b), 3.93% off the $5,090 peak.
+Both bets of Oct 1 used $100.00 per unit, and so did both of Oct 3 ($100.734): the 1.5u won on Oct 2 paid $146.70 and
+the 1.5u won on Oct 3 paid $151.10. Held by `tests/test_unit_size.py` (`PercentCompounds`) and cross-checked against
+the browser port.
+
+Not changed by any of this: the leaderboard order (it sorts on the reference account, which is unit-based), the
+units, the record, the CLV and every stored row. Server-composed copy with no viewer (the Discord feed, emails, the
+share card) speaks in the reference account.
 
 ## One price basis per model, and it is marked
 

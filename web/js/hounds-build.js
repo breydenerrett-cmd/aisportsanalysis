@@ -33,6 +33,7 @@ import { showUpgrade } from "./upgrade.js";
 import { celebrate, put, removeDog, removedText } from "./dog-common.js";
 import { dogBadge, dogFace, DEFAULT_LOOK, lookFor, BACKGROUNDS, cleanLook, breedOfName, breedLabel } from "./dog-avatar.js";
 import { stakeLineText } from "./hounds-board.js";
+import { stakeOptionLabel } from "./unitsize.js";
 import { mountKeep, keepLabel } from "./keep.js";
 import { playReveal, countTo, previewState, priceText } from "./reveal-fx.js";
 import { watchFirstGrade } from "./first-grade.js";
@@ -516,14 +517,15 @@ function globalsGrid(onChange) {
     String(S.spec.lock_minutes), (v) => { S.spec.lock_minutes = Number(v); onChange(); }, { "data-hook": "g-lock" })));
   grid.appendChild(field("Most bets a day", numberField({ min: m.max_bets_per_day.min, max: m.max_bets_per_day.max, step: 1 }, S.spec.max_bets_per_day,
     (v) => { S.spec.max_bets_per_day = v; onChange(); }, { "data-hook": "g-bets" })));
-  // The stake in dollars, live: "1 unit = $10 of your $1,000; this dog bets 2 units ($20 a bet)." The numbers come
-  // from the menu's `bankroll` block (src/hounds/bankroll.py); a stake change rewrites the line at once.
+  // The stake in dollars, live, at the VIEWER's unit size (web/js/unitsize.js): the picker reads "2u · $50" (or "2u · 2%
+  // of bankroll" in percent mode) and the line below it says "1 unit = $25 of your $2,500; this dog bets 2 units ($50 a
+  // bet)." The units are the dog's (the spec); only the dollars are the viewer's.
   const stakeLine = h("p", { class: "hd-fine bd-stakeline", "data-hook": "g-stake-line", "aria-live": "polite",
-    text: stakeLineText(S.spec.stake_units, m.bankroll) });
-  const stakeField = field("Stake per bet (paper units)", selectOf(m.stake_units.choices.map((v) => ({ value: String(v), label: `${v} unit${v === 1 ? "" : "s"}` })),
+    text: stakeLineText(S.spec.stake_units) });
+  const stakeField = field("Stake per bet (paper units)", selectOf(m.stake_units.choices.map((v) => ({ value: String(v), label: stakeOptionLabel(v) })),
     String(S.spec.stake_units), (v) => {
       S.spec.stake_units = Number(v);
-      stakeLine.textContent = stakeLineText(S.spec.stake_units, m.bankroll);
+      stakeLine.textContent = stakeLineText(S.spec.stake_units);
       onChange();
     }, { "data-hook": "g-stake" }), m.stake_note);
   stakeField.appendChild(stakeLine);

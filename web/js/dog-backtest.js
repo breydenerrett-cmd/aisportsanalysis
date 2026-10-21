@@ -8,7 +8,8 @@
  * rehearsal, never evidence: it is written to a throwaway ledger and never reaches a record, a ranking or a verdict.
  *
  * ONE CLICK PER WINDOW: 7, 14, 30 days or Season 2 (the season's finished days so far, at most the last 30). The
- * money is the live bankroll's own arithmetic computed by the server (the $1,000 paper bankroll, 1u = $10); this
+ * money is the live bankroll's own arithmetic, computed by the server at the reference unit and repriced here at the
+ * viewer's own unit size (web/js/unitsize.js, tests/test_unit_size.py); this
  * file only draws it. Sign-in is required (any signed-in member may backtest any dog, house or member's), and the
  * server's two refusals are said in their own numbers: another backtest running ("try again in N s") and the
  * five-an-hour allowance.
@@ -16,6 +17,7 @@
 
 import { h, clearNode, fmtPrice, isNum } from "./hounds-core.js";
 import { showUpgrade } from "./upgrade.js";
+import { lensBlock, getSizing, priced, rulesSentence, startText } from "./unitsize.js";
 import { post, errorText, errorCode, signedIn, signInPrompt, statusLine, SLOW_MS } from "./dog-common.js";
 
 export const TITLE = "Backtest (hindsight, not counted in the record)";
@@ -56,18 +58,35 @@ export function backtestError(err) {
   return errorText(err, "The backtest could not run just now. Try again in a minute.");
 }
 
-function pickRow(p) {
+/**
+ * A pick's paper dollars at the viewer's sizing. The server's `usd` is the reference account's; the page reprices from
+ * the pick's units (fixed) or from its place in the replay's bet list (percent mode compounds, so a pick's dollars
+ * depend on the balance before it). Null when it cannot be priced.
+ */
+export function pickUsd(p, bank) {
+  if (!p || !p.result) return null;
+  const sizing = getSizing();
+  if (sizing.mode === "fixed") {
+    return isNum(p.units_average_price) ? Math.round(p.units_average_price * (isNum(p.stake_units) ? p.stake_units : 1) * sizing.unit_usd * 100) / 100 : null;
+  }
+  const events = bank && Array.isArray(bank.events) ? bank.events : null;
+  if (!events || !Number.isInteger(p.ev) || p.ev >= events.length) return null;
+  return Math.round(priced(events, sizing)[p.ev][0] * 100) / 100;
+}
+
+function pickRow(p, ref) {
   return h("tr", {}, [h("td", { text: String(p.date || "").slice(0, 10) }), h("td", { text: p.selection || "" }), h("td", { text: p.game || "" }),
     h("td", { class: "hd-num", text: fmtPrice(p.price_average) }),
     h("td", { text: p.result || "Pending" }),
-    h("td", { class: "hd-num", "data-hook": "backtest-pick-usd", text: p.result && isNum(p.usd) ? money(p.usd) : "" })]);
+    h("td", { class: "hd-num", "data-hook": "backtest-pick-usd", text: p.result && isNum(pickUsd(p, ref)) ? money(pickUsd(p, ref)) : "" })]);
 }
 
 /** Draw one backtest result into `box`. */
 export function renderBacktest(box, data) {
   clearNode(box);
   const rec = data.record || {};
-  const bank = data.bankroll || {};
+  const ref = data.bankroll || {};                       // the reference account the server worked out
+  const bank = lensBlock(ref, getSizing()) || {};       // the same replay in the viewer's dollars
   const graded = rec.graded || 0;
   box.appendChild(h("div", { class: "dk-hindsight", "data-hook": "drill-label", role: "status" }, [
     h("span", { class: "dk-chip dk-chip--hind", text: data.label || TITLE }),
@@ -79,26 +98,26 @@ export function renderBacktest(box, data) {
     h("div", {}, [h("dt", { text: "Window" }), h("dd", { "data-hook": "backtest-window-text", text: data.window ? `${data.window.first} to ${data.window.last}, ${data.days} days${seasonNote}` : "" })]),
     h("div", {}, [h("dt", { text: "Bets" }), h("dd", { "data-hook": "drill-bets", text: `${rec.bets || 0} (${graded} graded${rec.pending ? `, ${rec.pending} pending` : ""})` })]),
     h("div", {}, [h("dt", { text: "Record (W-L)" }), h("dd", { "data-hook": "drill-record", text: graded ? record(rec) : "no graded bets" })]),
-    h("div", {}, [h("dt", { text: "Paper dollars" }), h("dd", { "data-hook": "backtest-usd", text: graded ? `${money(bank.pnl_usd)} on the $${isNum(bank.start) ? bank.start.toLocaleString("en-US") : "1,000"} paper bankroll` : "n/a" })]),
-    h("div", {}, [h("dt", { text: "Return" }), h("dd", { "data-hook": "backtest-return", text: graded ? pct(bank.return_pct) : "n/a" })]),
+    h("div", {}, [h("dt", { text: "Paper dollars" }), h("dd", { "data-hook": "backtest-usd", text: graded && isNum(bank.pnl_usd) ? `${money(bank.pnl_usd)} on the $${isNum(bank.start) ? bank.start.toLocaleString("en-US") : "?"} paper bankroll` : "n/a" })]),
+    h("div", {}, [h("dt", { text: "Return" }), h("dd", { "data-hook": "backtest-return", text: graded && isNum(bank.return_pct) ? pct(bank.return_pct) : "n/a" })]),
     h("div", {}, [h("dt", { text: "Units" }), h("dd", { "data-hook": "drill-units", text: graded ? units(data.units_average_price) : "n/a" })]),
     h("div", {}, [h("dt", { text: "Worst dip" }), h("dd", { "data-hook": "backtest-drawdown", text: graded && isNum(bank.max_drawdown_usd) ? money(-bank.max_drawdown_usd) : "n/a" })]),
   ]));
   box.appendChild(h("p", { class: "hd-fine", "data-hook": "drill-sample", text: data.sample_note || "" }));
-  if (bank.label) box.appendChild(h("p", { class: "hd-fine", "data-hook": "backtest-bankroll-note", text: `${bank.label} Units are at the board-average price.` }));
+  if (ref.label) box.appendChild(h("p", { class: "hd-fine", "data-hook": "backtest-bankroll-note", text: `${rulesSentence()} Units are at the board-average price.` }));
   if (data.rule_text) box.appendChild(h("p", { class: "hd-fine", "data-hook": "drill-rule", text: `Rule replayed: ${data.rule_text.replace(/\s*Paper only\. These are simulated picks.*$/s, "")}` }));
   for (const [title, list, hook] of [["Best picks", data.best, "drill-best"], ["Worst picks", data.worst, "drill-worst"]]) {
     if (!list || !list.length) continue;
     box.appendChild(h("div", { class: "dk-block" }, [h("h3", { class: "hd-h3", text: title }),
       h("ul", { class: "dk-misses", "data-hook": hook }, list.map((p) => h("li", { class: "dk-miss" }, [
-        h("strong", { text: p.selection }), ` ${String(p.date).slice(0, 10)} at ${fmtPrice(p.price_average)}: ${money(p.usd)} (${units(p.units_average_price)})`])))]));
+        h("strong", { text: p.selection }), ` ${String(p.date).slice(0, 10)} at ${fmtPrice(p.price_average)}: ${money(pickUsd(p, ref))} (${units(p.units_average_price)})`])))]));
   }
   if (data.picks && data.picks.length) {
     box.appendChild(h("div", { class: "dk-block" }, [
       h("h3", { class: "hd-h3", text: `Tickets, newest first${data.picks_total > data.picks.length ? ` (${data.picks.length} of ${data.picks_total})` : ""}` }),
       h("div", { class: "dk-tablewrap" }, [h("table", { class: "dk-mini", "data-hook": "drill-picks" }, [
         h("thead", {}, [h("tr", {}, ["Date", "Pick", "Game", "Price", "Result", "Paper $"].map((t, i) => h("th", { class: i === 3 || i === 5 ? "hd-num" : "", text: t })))]),
-        h("tbody", {}, data.picks.map(pickRow))])])]));
+        h("tbody", {}, data.picks.map((p) => pickRow(p, ref)))])])]));
   } else {
     box.appendChild(h("p", { class: "hd-muted", "data-hook": "drill-empty", text: "The rule made no pick in this window." }));
   }
@@ -138,7 +157,7 @@ export function mountBacktest(section, { id, name }) {
   if (!body) return;
   clearNode(body);
   body.appendChild(h("p", { class: "dk-hindsight-title", "data-hook": "backtest-title" }, [h("span", { class: "dk-chip dk-chip--hind", text: TITLE })]));
-  body.appendChild(h("p", { class: "hd-muted", text: `Replay ${name || "this hound"}'s current rule over boards already stored and see what it would have done on the $1,000 paper bankroll. You can see how those games ended, so this is a rehearsal and never counts toward its record.` }));
+  body.appendChild(h("p", { class: "hd-muted", text: `Replay ${name || "this hound"}'s current rule over boards already stored and see what it would have done on the ${startText()} paper bankroll. You can see how those games ended, so this is a rehearsal and never counts toward its record.` }));
   const status = statusLine("backtest-status");
   const out = h("div", { class: "dk-result", "data-hook": "backtest-result", "aria-live": "polite" });
   if (!signedIn()) {

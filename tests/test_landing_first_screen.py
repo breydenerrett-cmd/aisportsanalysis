@@ -268,7 +268,8 @@ class TheLeaderboardIsTheFirstScreen(unittest.TestCase):
         # owner ruling 2026-10-20, complete-product positioning: the panel is the house pack
         self.assertIn("The house pack: top hounds by bankroll", text)
         self.assertIn("championed, trained, bred and culled in public", text)
-        self.assertIn("Every hound starts with the same $1,000 paper bankroll. 1 unit = $10.", text)   # the shared start, static
+        # the HTML ships the default wording ($25 unit, $2,500 start); the script rewrites it to the viewer's own sizing
+        self.assertIn("Every hound starts with the same $2,500 paper bankroll. 1 unit = $25.", text)
         self.assertIn("Checking the leaderboard", text)
         self.assertNotRegex(text, r"[+-]\d")
         self.assertIn('href="hounds.html"', panel)

@@ -57,7 +57,7 @@ from pydantic import BaseModel
 
 from src.appstate import ratelimit
 from src.appstate import users as users_store
-from src.hounds import user_spec
+from src.hounds import unit_size, user_spec
 from src.hounds.contract import envelope
 from src.hounds.interact import ask, ask_eval, camp, common, drill, fire, fire_event, look, manual, outback, rites, store, training
 
@@ -350,6 +350,7 @@ def record_manual(hound_id: str, body: ManualRequest, response: Response,
 
 class AskRequest(BaseModel):
     question: str
+    sizing: Optional[dict] = None             # the asker's unit size (src/hounds/unit_size.py), so the dollars in an answer are theirs
 
 
 def _retry_of(exc: HTTPException) -> Optional[int]:
@@ -419,7 +420,13 @@ def ask_dog(hound_id: str, body: AskRequest, response: Response,
         raise _err(422, "question_required", "ask something")
     if len(question) > 300:
         raise _err(422, "question_too_long", "keep the question under 300 characters")
-    return envelope(ask.answer(question, _context(dog, _viewer_id(authorization), request, authorization)))
+    ctx = _context(dog, _viewer_id(authorization), request, authorization)
+    if body.sizing is not None:
+        try:
+            ctx.sizing = unit_size.validate(body.sizing)
+        except unit_size.SizingError:
+            ctx.sizing = None                 # a sizing that does not validate is no sizing: the reference account, never a guess
+    return envelope(ask.answer(question, ctx))
 
 
 # ---------------------------------------------------------------------------

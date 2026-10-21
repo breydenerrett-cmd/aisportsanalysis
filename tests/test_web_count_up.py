@@ -10,7 +10,9 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 
-from tests.hounds_web_runner import HAS_NODE, run_js
+import json
+
+from tests.hounds_web_runner import HAS_NODE, PIN_REFERENCE, run_js
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -23,9 +25,13 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 '''
 
 
-def js(body: str, reduced: bool = False):
-    head = f'globalThis.window = {{ matchMedia: () => ({{ matches: {str(reduced).lower()} }}) }};\n' + SETUP
-    return run_js(head + 'const Fx = await import("./fx.js");\n' + body)
+def js(body: str, reduced: bool = False, viewer=PIN_REFERENCE):
+    # 2026-10-21: a bankroll counts from the VIEWER's start (web/js/unitsize.js). The tests below are about the count and were
+    # written for the reference $1,000 account, so the viewer here chose the $10 unit; other starts and the default are held
+    # in their own tests at the end of BankrollCountUp.
+    storage = ('{ getItem: (k) => (k === "linehound.unit_size" ? ' + json.dumps(json.dumps(viewer)) + ' : null), setItem() {} }')
+    head = ('globalThis.window = { matchMedia: () => ({ matches: ' + str(reduced).lower() + ' }), localStorage: ' + storage + ' };' + chr(10)) + SETUP
+    return run_js(head + 'const Fx = await import("./fx.js");' + chr(10) + body, viewer=None)
 
 
 @unittest.skipUnless(HAS_NODE, "node not installed")
@@ -49,6 +55,24 @@ console.log(JSON.stringify({ first: el.writes[0], max: Math.max(...nums), last: 
         self.assertEqual(got["first"], "$1000.00")
         self.assertLessEqual(got["max"], 1000)
         self.assertEqual(got["last"], "$928.40")
+
+    def test_a_bankroll_counts_from_the_viewers_own_start(self):
+        for viewer, start in (({"mode": "fixed", "unit_usd": 25, "pct": None, "start_usd": 2500}, 2500),
+                              ({"mode": "fixed", "unit_usd": 100, "pct": None, "start_usd": 10000}, 10000),
+                              ({"mode": "percent", "unit_usd": None, "pct": 2, "start_usd": 5000}, 5000)):
+            with self.subTest(start=start):
+                text = f"${start + 73.14:,.2f}"
+                got = js('const el = mkEl("' + text + '"); Fx.countUp(el, 700); await wait(60); console.log(JSON.stringify({ first: el.writes[0], last: el.text }));',
+                         viewer=viewer)
+                self.assertEqual(got["first"], f"${start:.2f}")
+                self.assertEqual(got["last"], text)
+
+    def test_with_nothing_stored_a_bankroll_counts_from_2500(self):
+        head = 'globalThis.window = { matchMedia: () => ({ matches: false }) };' + chr(10) + SETUP
+        got = run_js(head + 'const Fx = await import("./fx.js");' + chr(10)
+                     + 'const el = mkEl("$2,573.14"); Fx.countUp(el, 700); await wait(60); console.log(JSON.stringify({ first: el.writes[0] }));', viewer=None)
+        self.assertEqual(got["first"], "$2500.00")
+
 
     def test_a_bankroll_that_equals_the_start_does_not_animate(self):
         got = js('const el = mkEl("$1,000.00"); Fx.countUp(el, 700); await wait(40); console.log(JSON.stringify([el.writes.length, el.text]));')

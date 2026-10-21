@@ -59,6 +59,11 @@ either take it out back or send in for training, like Pokémon games."* What a p
   near the top (the leaderboard, the model page) or in the shared footer (the landing page). The
   responsible-gambling line is in the footer. No second and third copy in body copy, and no server notice
   repeated under it.
+- **Dollars are your unit size; units are the record.** A dollar on any page is paper money at the viewer's own unit
+  size (a fixed unit, or a percent of a bankroll they set; default a $25 unit). Say "paper dollars at your unit size",
+  never "you would have made". The units never change with it, a percent-of-bankroll return is labelled "at your
+  sizing", and no copy about the unit size says profit, edge or what a bettor should stake. Paper only, and Bet Check is not
+  advertised from these controls.
 - **No emoji in the interface.** Status is a word. A sign is a sign. Colour only agrees with the word.
 - **No cartoons.** A model's avatar is a monogram: two initials on a tile, coloured by category.
 
