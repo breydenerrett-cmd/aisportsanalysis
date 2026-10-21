@@ -47,7 +47,7 @@ CLAIM_PATTERNS = (r"\block\b", r"\blocks\b", r"guarantee", r"can'?t lose", r"sur
                   r"\bev\b", r"expected value", r"\bprofit", r"\bwinning strategy\b", r"\bbeats? the (book|market)")
 ICON_KEYS = frozenset("""
 flame moon wave target hourglass road house bolt crown wind coin letters stars football plus bone gremlin tv snow sun
-rain plane calendar key kick feather rocket twins chart paw cloud trophy ruler updown bat dice scale anchor sunrise clock
+rain plane calendar key kick feather rocket twins chart paw cloud trophy ruler updown bat dice scale anchor sunrise clock hash
 """.split())
 KINDS = ("ml", "total", "prop")
 STANCES = ("dog", "chalk", "neutral")
@@ -198,10 +198,23 @@ def validate_library(lib: Optional[Mapping] = None) -> list:
             if row.get("icon") not in ICON_KEYS:
                 problems.append(f"{table}.{row.get('id')}: unknown icon {row.get('icon')!r}")
     for p in lib.get("personalities") or []:
-        for kind in KINDS:
-            recipe = (p.get("recipes") or {}).get(kind)
-            if not recipe:
-                problems.append(f"personality {p.get('id')}: no {kind} recipe")
+        if p.get("style") == user_spec.STYLE_GEMATRIA:
+            # The member Gematria style has no recipes: its one rule is the house engine's (src/hounds/user_gematria.py). Its
+            # `art` is the dog's look in the existing dog-art system, so it must pass the same whitelist a saved look does.
+            if p.get("recipes"):
+                problems.append(f"personality {p.get('id')}: the Gematria style takes no recipes")
+            try:
+                from src.hounds.interact import look as look_mod
+                look_mod.validate_look(p.get("art") or {})
+            except Exception as exc:  # noqa: BLE001 -- any refusal is a library problem to list
+                problems.append(f"personality {p.get('id')}: art is not a valid look ({exc})")
+            if (p.get("art") or {}).get("breed") != p.get("breed"):
+                problems.append(f"personality {p.get('id')}: art.breed must be the personality's breed")
+        else:
+            for kind in KINDS:
+                recipe = (p.get("recipes") or {}).get(kind)
+                if not recipe:
+                    problems.append(f"personality {p.get('id')}: no {kind} recipe")
         if p.get("color") not in R.COLOR_IDS or p.get("badge") not in R.BADGE_IDS:
             problems.append(f"personality {p.get('id')}: colour or badge off the menu")
         if p.get("rank_by") not in R.RANK_RULES:

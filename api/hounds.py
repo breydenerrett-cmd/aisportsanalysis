@@ -18,7 +18,8 @@ Every payload carries ``paper_only: true`` and the not-advice line
                                      start with no grade is "ungraded", never "open")
     GET /hounds/{id}/desk            an AI desk hound's published games (empty before the first publish)
     GET /hounds/{id}/desk/{game}     how the desk argued that game: its transcript and disagreement table
-    GET /hounds/{id}/gematria        the Gematria Hound's picks with the evidence for both sides (empty before the first pick)
+    GET /hounds/{id}/gematria        the Gematria Hound's picks with the evidence for both sides (empty before the first pick);
+                                     also a member's Gematria-style hound's, from the members' ledger
 
 SEASONS (config/seasons.json, src/hounds/seasons.py). A season is a date window over the forward bets: the
 record, units, CLV, typical price, last ten and streak a summary carries are worked out from the bets in that
@@ -257,7 +258,12 @@ def desk_game(hound_id: str, game_id: str, response: Response):
 
 @router.get("/hounds/{hound_id}/gematria")
 def gematria_picks(hound_id: str, response: Response):
-    if not gematria_view.is_gematria_hound(hound_id):
-        raise HTTPException(status_code=404, detail="no such numerology hound")
-    response.headers["Cache-Control"] = _CACHE_HEADER
-    return gematria_view.picks_for(hound_id)
+    if gematria_view.is_gematria_hound(hound_id):
+        response.headers["Cache-Control"] = _CACHE_HEADER
+        return gematria_view.picks_for(hound_id)
+    # a member's hound with the Gematria style (src/hounds/user_gematria.py): the same payload, from the members' ledger
+    from src.hounds import user_gematria
+    if user_gematria.is_member_gematria_hound(hound_id):
+        response.headers["Cache-Control"] = _CACHE_HEADER
+        return user_gematria.picks_for(hound_id)
+    raise HTTPException(status_code=404, detail="no such numerology hound")

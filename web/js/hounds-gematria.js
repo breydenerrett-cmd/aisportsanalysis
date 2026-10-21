@@ -1,6 +1,9 @@
 /**
  * The Gematria Hound's part of web/hound.html: "Evidence", behind a tap.
  *
+ * A member's hound in the Gematria style (src/hounds/user_gematria.py) is in the same category and is served by the same route, from
+ * the members' ledger, in the same shape.
+ *
  * WHAT THE HOUND IS. A hound in the category `numerology` (config/ai_hounds.json, family "gematria"; src/hounds/gematria) works out,
  * for each side of a game, the numerical coincidences that side's win would produce (name values, the date, founding-date spans,
  * counts from our stored results), and bets the side with the larger total only when it leads by a set margin and the price is fair.

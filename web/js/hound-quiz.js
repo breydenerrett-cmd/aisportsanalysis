@@ -70,6 +70,12 @@ export const STEPS = [
 ];
 
 const BETS = [1, 2, 3, 4, 5];
+/** Question 3 on a phone shows this many personalities at a time; "Show me others" turns to the next page (never more than four at once). */
+export const PERSONALITY_PAGE = 4;
+/** The personality style that is the member Gematria hound (the house Gematria Hound's engine, one fixed rule). */
+export const GEMATRIA_STYLE = "gematria";
+const GEMATRIA_NOTE = "Gematria weighs each game by its own fixed rule, an hour before the start, on moneylines only. "
+  + "Moves, quirks and a price comfort are left out for it. You can skip this question.";
 const MARKET_TONE = { moneyline: "mint", spread: "sky", total: "gold", props: "ember", mix: "violet" };
 const GROUP_ORDER = ["Weather", "Calendar", "Rest", "Market", "Mystic", "Chaos"];
 const GROUP_TONE = { Weather: "sky", Calendar: "lime", Rest: "mint", Market: "gold", Mystic: "violet", Chaos: "ember" };
@@ -81,7 +87,7 @@ function blankAnswers() {
 
 const S = {
   lib: null, stage: "intro", step: 0, dir: "fwd", answers: blankAnswers(), opened: {},
-  moves: null, movesBusy: false, movesError: "", movesSeq: 0, moreSports: false,
+  moves: null, movesBusy: false, movesError: "", movesSeq: 0, moreSports: false, personalityPage: 0,
   name: "", nameTouched: false, tagline: "", shownName: "", english: { text: "", draft: null, understood: [], notRead: [], assumed: [] },
   result: null, composing: false, composeError: "", seq: 0, preview: null, previewSeq: 0, drill: null, drillBusy: false,
   saving: false, saved: null, problems: [], pendingSave: false, resumed: false, notice: "", celebrated: false, bound: false,
@@ -289,7 +295,10 @@ function persona(id) {
 function previewLook() {
   const p = persona(S.answers.personality) || {};
   const acc = S.answers.look.accessory && (S.lib.looks.accessories || []).find((x) => x.id === S.answers.look.accessory);
-  return Object.assign({}, DEFAULT_LOOK, { coat: S.answers.look.coat || p.coat || "tan", bg: p.bg || "navy" }, acc ? acc.look : {});
+  const look = Object.assign({}, DEFAULT_LOOK, { coat: S.answers.look.coat || p.coat || "tan", bg: p.bg || "navy" },
+    p.art && typeof p.art === "object" ? p.art : {}, acc ? acc.look : {});
+  if (acc && look.body !== "jersey") look.number = null;          // a number goes on the jersey only
+  return look;
 }
 
 function previewBreed() {
@@ -364,13 +373,44 @@ function stepMarkets() {
   }));
 }
 
+/** A personality's dog: its coat and tile, plus the art the library gives it (Gematria: its own breed, an elite-style jersey with a 33). */
+function personaLook(p) {
+  return Object.assign({ coat: p.coat, bg: p.bg }, p.art && typeof p.art === "object" ? p.art : {});
+}
+
+const isGematria = (p) => !!p && p.style === GEMATRIA_STYLE;
+const gematriaPicked = () => isGematria(persona(S.answers.personality));
+
+/** Question 3. Every personality is drawn; on a phone only one page of four shows (css/quiz.css) and "Show me others" turns the
+ * page, the way question 6's move cards do. A wide screen shows them all. The page that holds the picked card opens first. */
 function stepPersonality() {
-  const cards = S.lib.personalities.map((p) => {
+  const rows = S.lib.personalities;
+  const pages = Math.max(1, Math.ceil(rows.length / PERSONALITY_PAGE));
+  const pickedAt = rows.findIndex((p) => p.id === S.answers.personality);
+  const page = S.personalityTouched ? S.personalityPage % pages : (pickedAt >= 0 ? Math.floor(pickedAt / PERSONALITY_PAGE) : S.personalityPage % pages);
+  const cards = rows.map((p, i) => {
     const art = h("span", { class: "qz-art qz-art--dog", "data-tone": "slate", "aria-hidden": "true" }, [
-      dogSpan({ coat: p.coat, bg: p.bg }, "idle", 140, p.breed, "qz-dog qz-dog--pin")]);
-    return pin({ group: "personality", id: p.id, title: p.name, pitch: p.pitch, art, tone: "slate" });
+      dogSpan(personaLook(p), "idle", 140, p.breed, "qz-dog qz-dog--pin")]);
+    const card = pin({ group: "personality", id: p.id, title: p.name, pitch: p.pitch, art, tone: "slate" });
+    card.setAttribute("data-page", String(Math.floor(i / PERSONALITY_PAGE)));
+    return card;
   });
-  return h("div", { class: "qz-grid qz-grid--3 qz-grid--dogs" }, cards);
+  const grid = h("div", { class: "qz-grid qz-grid--3 qz-grid--dogs", "data-hook": "quiz-personality-grid", "data-page": String(page) }, cards);
+  const more = pages > 1 ? h("div", { class: "qz-actions qz-actions--personality", "data-hook": "quiz-personality-actions" }, [
+    h("button", { type: "button", class: "qz-btn qz-btn--ghost", "data-hook": "quiz-personality-more", text: "Show me others",
+      on: { click: () => { S.personalityTouched = true; S.personalityPage = (page + 1) % pages; refreshPersonality(); } } }),
+    h("span", { class: "qz-fine", "data-hook": "quiz-personality-count", text: `Page ${page + 1} of ${pages}.` })]) : null;
+  return h("div", { class: "qz-personality", "data-hook": "quiz-personality" }, [grid, more]);
+}
+
+function refreshPersonality() {
+  const host = q("quiz-personality");
+  if (host) swap(host, stepPersonality());
+}
+
+/** A one-line note under a step the Gematria personality ignores. Nothing is drawn for any other personality. */
+function gematriaNote() {
+  return gematriaPicked() ? h("p", { class: "qz-fine", "data-hook": "quiz-gematria-note", text: GEMATRIA_NOTE }) : null;
 }
 
 function stepRisk() {
@@ -384,14 +424,15 @@ function stepRisk() {
       seg("stake", S.lib.limits.stake_units, "Stake", (v) => `${v}u`)]),
     h("div", { class: "qz-field" }, [h("h3", { class: "qz-h3", text: "Prices it is comfortable with" }),
       h("div", { class: "qz-grid qz-grid--4" }, comforts),
-      h("p", { class: "qz-fine", text: S.lib.price_cap_note })])]);
+      h("p", { class: "qz-fine", text: S.lib.price_cap_note }), gematriaNote()])]);
 }
 
 function stepTiming() {
   const [a, b] = S.lib.timings;
   const big = (t) => pin({ group: "timing", id: t.id, title: t.name, pitch: t.pitch,
     art: tile(t.icon, { tone: t.id === "early" ? "gold" : "violet", size: 64 }), tone: t.id === "early" ? "gold" : "violet" });
-  return h("div", { class: "qz-duel" }, [big(a), h("span", { class: "qz-duel__vs", "aria-hidden": "true", text: "or" }), big(b)]);
+  return h("div", { class: "qz-timing" }, [
+    h("div", { class: "qz-duel" }, [big(a), h("span", { class: "qz-duel__vs", "aria-hidden": "true", text: "or" }), big(b)]), gematriaNote()]);
 }
 
 function tag(text, attrs = {}) {
@@ -433,6 +474,8 @@ function stepArchetypes() {
 
 function fillMoves(host) {
   clearNode(host);
+  const note = gematriaNote();
+  if (note) host.appendChild(note);
   const res = S.moves;
   if (S.movesError && !res) {
     host.appendChild(h("div", { class: "qz-state", role: "status", "data-hook": "quiz-moves-error" }, [
@@ -511,6 +554,8 @@ function stepQuirks() {
   for (const quirk of S.lib.quirks) (groups[quirk.group] = groups[quirk.group] || []).push(quirk);
   const names = GROUP_ORDER.filter((g) => groups[g]).concat(Object.keys(groups).filter((g) => !GROUP_ORDER.includes(g)));
   const box = h("div", { class: "qz-quirks", "data-hook": "quiz-quirks" });
+  const gemNote = gematriaNote();
+  if (gemNote) box.appendChild(gemNote);
   for (const g of names) {
     box.appendChild(h("h3", { class: "qz-h3", text: g }));
     box.appendChild(h("div", { class: "qz-grid qz-grid--4" }, groups[g].map((qk) => pin({ group: "quirks", id: qk.id, title: qk.name,
@@ -952,6 +997,12 @@ function previewSpec() {
 async function backtest() {
   if (S.drillBusy || !S.result) return;
   const out = clearNode(q("reveal-backtest-result"));
+  if (S.result.spec && S.result.spec.style === GEMATRIA_STYLE) {
+    // the house Gematria Hound is forward-only and so is a hound of its style: no replay is offered (the server refuses one too)
+    out.appendChild(h("p", { class: "qz-fine", "data-hook": "reveal-backtest-note", text: "A Gematria hound is forward-only. It weighs each game once, "
+      + "an hour before the start, so a past day cannot be replayed." }));
+    return;
+  }
   if (!getToken()) {
     stashForSignIn();
     showSignin("Sign in to run a backtest. Your quiz is saved on this device.");

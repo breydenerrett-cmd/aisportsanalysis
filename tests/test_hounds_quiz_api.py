@@ -43,7 +43,7 @@ class TheQuizDoors(unittest.TestCase):
         self.assertEqual(data["limits"]["archetype_picks"], 2)
         self.assertEqual(data["limits"]["max_rules"], 4)
         self.assertEqual({p["id"] for p in data["personalities"]},
-                         {"underdog_hunter", "chalk_eater", "chaos_agent", "stats_nerd", "steam_chaser", "mystic"})
+                         {"underdog_hunter", "chalk_eater", "chaos_agent", "stats_nerd", "steam_chaser", "mystic", "gematria"})
         self.assertNotIn("recipes", data["personalities"][0])             # recipes stay server side
 
     def test_compose_returns_a_validated_spec_with_english_and_warnings(self):

@@ -206,7 +206,7 @@ class TheQuestions(unittest.TestCase):
         self.assertEqual(steps, ["markets", "personality", "risk", "timing", "archetypes", "quirks", "look"])
         self.assertEqual([caps[f"after{i}"]["valuenow"] for i in range(7)], ["1", "2", "3", "4", "5", "6", "7"])
         self.assertEqual(caps["after0"]["cards"], 5)
-        self.assertEqual(caps["after1"]["cards"], 6)
+        self.assertEqual(caps["after1"]["cards"], len(LIB["personalities"]))
         self.assertEqual((caps["after2"]["segs"], caps["after2"]["cards"]), (11, 4))
         self.assertEqual(caps["after3"]["cards"], 2)
         self.assertEqual(caps["after4"]["cards"], 4)                                          # four moves at a time, not the library

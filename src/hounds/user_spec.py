@@ -359,7 +359,7 @@ def validate_spec(raw: Mapping, *, taken_names: Iterable[str] = (),
     errors: dict = {}
     if not isinstance(raw, Mapping):
         raise SpecError({"spec": "must be an object"})
-    if raw.get("version") == SPEC_VERSION_V2 or "rules" in raw:
+    if raw.get("version") == SPEC_VERSION_V2 or "rules" in raw or "style" in raw:
         return _validate_v2(raw, taken_names=taken_names, extra_real_names=extra_real_names)
     allowed = set(SPEC_FIELDS) | {"version"}
     for key in raw:
@@ -431,10 +431,19 @@ def validate_spec(raw: Mapping, *, taken_names: Iterable[str] = (),
 RULE_FIELDS_V2 = ("rules", "lock_minutes", "max_bets_per_day", "stake_units", "rank_by")
 
 
+def is_gematria(spec: Mapping) -> bool:
+    """True for a version-2 spec with the member Gematria style (``src/hounds/user_gematria.py``)."""
+    return isinstance(spec, Mapping) and spec.get("style") == STYLE_GEMATRIA
+
+
 def rule_fields(spec: Mapping) -> dict:
     """The fields that make a hound's RULE (everything except its name, tagline, colour and badge)."""
     if spec.get("version") == SPEC_VERSION_V2:
-        return {"v": SPEC_VERSION_V2, **{k: spec[k] for k in RULE_FIELDS_V2}}
+        out = {"v": SPEC_VERSION_V2, **{k: spec[k] for k in RULE_FIELDS_V2}}
+        if is_gematria(spec):
+            # the style and the rules stamp it was made under are part of the rule; an ordinary hound's hash is unchanged
+            out["style"], out["gematria"] = STYLE_GEMATRIA, spec["gematria"]
+        return out
     return {k: spec[k] for k in RULE_FIELDS}
 
 
@@ -559,6 +568,11 @@ V2_RULE_KEYS = ("label", "sports", "markets", "side", "price_min", "price_max", 
 V2_DERIVED_KEYS = ("sports", "markets", "side_rule")
 V2_TOP_KEYS = ("version", "name", "tagline", "color", "badge", "lock_minutes", "max_bets_per_day",
                "stake_units", "rank_by", "rules") + V2_DERIVED_KEYS
+# The base style (src/hounds/user_gematria.py): "rules" is every ordinary hound (the key is simply absent), "gematria" is the
+# member Gematria style, whose pick logic is the house Gematria Hound's. `gematria` is its creation stamp (rules version + hash).
+STYLE_RULES, STYLE_GEMATRIA = "rules", "gematria"
+STYLES = (STYLE_RULES, STYLE_GEMATRIA)
+V2_STYLE_KEYS = ("style", "gematria")
 RULE_LABEL_MAX = 40
 DEFAULT_MIN_BOOKS_GAME, DEFAULT_MIN_BOOKS_PROP = 3, 1
 LINE_RANGE = (-30.0, 60.0)
@@ -678,8 +692,14 @@ def _validate_v2(raw: Mapping, *, taken_names: Iterable[str], extra_real_names) 
     from src.hounds import user_rules as R
     errors: dict = {}
     for key in raw:
-        if key not in V2_TOP_KEYS:
+        if key not in V2_TOP_KEYS and key not in V2_STYLE_KEYS:
             errors[str(key)[:30]] = "is not a field on the menu"
+    style = raw.get("style", STYLE_RULES)
+    if style not in STYLES:
+        errors["style"] = f"choose one of {', '.join(STYLES)}"
+        style = STYLE_RULES
+    if style == STYLE_RULES and raw.get("gematria") is not None:
+        errors["gematria"] = "belongs to the Gematria style only"
     if raw.get("version", SPEC_VERSION_V2) != SPEC_VERSION_V2:
         errors["version"] = f"must be {SPEC_VERSION_V2}"
     name = _check_name(raw, errors, taken_names, extra_real_names)
@@ -692,7 +712,11 @@ def _validate_v2(raw: Mapping, *, taken_names: Iterable[str], extra_real_names) 
     if badge not in R.BADGE_IDS:
         errors["badge"] = f"choose one of {', '.join(R.BADGE_IDS)}"
 
-    lock = raw.get("lock_minutes", LOCK_CHOICES[1])
+    fixed = None
+    if style == STYLE_GEMATRIA:
+        from src.hounds import user_gematria
+        fixed = user_gematria.normalize(raw, errors)
+    lock = raw.get("lock_minutes", LOCK_CHOICES[1]) if fixed is None else fixed["lock_minutes"]
     if isinstance(lock, bool) or lock not in LOCK_CHOICES:
         errors["lock_minutes"] = f"must be one of {', '.join(map(str, LOCK_CHOICES))}"
         lock = None
@@ -708,9 +732,11 @@ def _validate_v2(raw: Mapping, *, taken_names: Iterable[str], extra_real_names) 
     if rank not in R.RANK_RULES:
         errors["rank_by"] = f"choose one of {', '.join(R.RANK_RULES)}"
 
-    rules_raw = raw.get("rules")
+    rules_raw = raw.get("rules") if fixed is None else fixed["rules"]
     rules: list = []
-    if not isinstance(rules_raw, (list, tuple)) or not rules_raw:
+    if style == STYLE_GEMATRIA and fixed is None:
+        pass                                    # `normalize` already said what is wrong
+    elif not isinstance(rules_raw, (list, tuple)) or not rules_raw:
         errors["rules"] = "add at least one rule"
     elif len(rules_raw) > R.MAX_RULES:
         errors["rules"] = f"a dog has at most {R.MAX_RULES} rules"
@@ -723,11 +749,14 @@ def _validate_v2(raw: Mapping, *, taken_names: Iterable[str], extra_real_names) 
         raise SpecError(errors)
     sports = [s for s in SPORTS if any(s in r["sports"] for r in rules)]
     markets = [m for m in R.ALL_MARKETS if any(m in r["markets"] for r in rules)]
-    return {
+    out = {
         "version": SPEC_VERSION_V2, "name": name, "tagline": tagline, "color": color, "badge": badge,
         "sports": sports, "markets": markets, "side_rule": "custom", "lock_minutes": lock,
         "max_bets_per_day": bets, "stake_units": float(stake), "rank_by": rank, "rules": rules,
     }
+    if fixed is not None:
+        out["style"], out["gematria"] = STYLE_GEMATRIA, fixed["stamp"]
+    return out
 
 
 def is_v2(spec: Mapping) -> bool:
@@ -809,4 +838,27 @@ def builder_menu() -> dict:
         "stake_note": ("Your dog's bankroll, return and units use this stake; its win-loss record counts every "
                        "bet once."),
         "bankroll": bankroll.public_block(),
+        "styles": base_styles(),
     }
+
+
+def base_styles() -> list:
+    """The builder's base-style choices. "rules" is the ordinary builder (the rest of the menu applies); "gematria" is the
+    member style whose picks come from the house Gematria Hound's engine and active rules, so it carries only what a member
+    may choose (sports, most bets a day, stake, name) and the fixed facts the page states beside it."""
+    from src.hounds import user_gematria as G
+    fixed = {"markets": [G.MARKET], "lock_minutes": None, "price_band": None, "rules_version": None}
+    try:
+        rules = G.load_rules()
+        fixed.update({"lock_minutes": int(rules.decision.lock_minutes), "rules_version": rules.version,
+                      "price_band": list(rules.decision.price_band)})
+    except Exception:  # noqa: BLE001 -- a menu that cannot read the rules still lists the style, with the facts it has
+        pass
+    fixed["text"] = G.fixed_text(fixed)
+    return [
+        {"value": STYLE_RULES, "label": "Your own rules",
+         "summary": "Describe the bets in plain English or build them from rules: sports, markets, prices and conditions."},
+        {"value": STYLE_GEMATRIA, "label": G.STYLE_LABEL, "summary": G.EXPLAINER, "quiz_line": G.QUIZ_LINE,
+         "house_hound": {"id": G.HOUSE_HOUND_ID, "name": G.HOUSE_HOUND_NAME, "href": G.HOUSE_HOUND_HREF},
+         "chooses": ["sports", "max_bets_per_day", "stake_units"], "fixed": fixed},
+    ]

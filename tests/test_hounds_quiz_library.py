@@ -168,7 +168,7 @@ class TheAnswerTablesAreOnTheMenu(unittest.TestCase):
                         user_spec.validate_spec({"version": 2, "name": "Test Pup", "rules": [rule]})
 
     def test_personality_colours_and_badges_are_on_the_menu_and_breeds_exist(self):
-        breeds = {"retriever", "bulldog", "schnauzer", "husky", "mutt", "hound"}
+        breeds = {"retriever", "bulldog", "schnauzer", "husky", "mutt", "hound", "bloodhound"}
         for p in LIB["personalities"]:
             self.assertIn(p["color"], R.COLOR_IDS)
             self.assertIn(p["badge"], R.BADGE_IDS)
@@ -176,7 +176,7 @@ class TheAnswerTablesAreOnTheMenu(unittest.TestCase):
             self.assertIn(p["rank_by"], R.RANK_RULES)
             self.assertTrue(1 <= p["bets_hint"] <= 5)
         self.assertEqual({p["id"] for p in LIB["personalities"]},
-                         {"underdog_hunter", "chalk_eater", "chaos_agent", "stats_nerd", "steam_chaser", "mystic"})
+                         {"underdog_hunter", "chalk_eater", "chaos_agent", "stats_nerd", "steam_chaser", "mystic", "gematria"})
 
     def test_looks_are_on_the_locker_room_whitelist(self):
         for coat in LIB["looks"]["coats"]:

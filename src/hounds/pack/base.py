@@ -559,18 +559,32 @@ def load_stores(*, since: str, until: Optional[str] = None, root: Optional[str] 
     st = Stores(sports=tuple(sports) if sports else DEFAULT_SPORTS)
     for row in snapshots.iter_multibook(sport=None, since=since, until=until):
         st.add_row(row)
-    st.event_map = read_event_map(os.path.join(base, "data", "processed", "event_game_map.jsonl"))
-    st.mlb_games = read_mlb_results(os.path.join(base, "data", "historical", "mlb_results.csv"))
-    have = {g["game_pk"] for g in st.mlb_games}
-    start_by_pk = {str(r["game_pk"]): r.get("commence_time") for r in st.event_map.values()}
-    box = read_boxscore_finals(os.path.join(base, "data", "processed", "boxscores_2026.jsonl"),
-                               skip_pks=have, start_by_pk=start_by_pk)
-    st.mlb_games.extend(box)
-    st.mlb_covered = read_mlb_manifest_dates(os.path.join(base, "data", "historical", "mlb_results.manifest.json"))
-    st.mlb_covered |= {g["date"] for g in box}
-    st.bullpen = read_bullpen(os.path.join(base, "data", "historical", "bullpen_log.jsonl"))
-    st.nfl_games = read_nfl_games(os.path.join(base, "data", "datasvc", "nfl", "games.jsonl"))
+    load_result_stores(st, root=base)
     st.finalize()
+    return st
+
+
+def load_result_stores(st: Stores, *, root: Optional[str] = None, mlb: bool = True, nfl: bool = True) -> Stores:
+    """Fill ``st`` with the stored RESULTS a point-in-time context reads (MLB results and box scores, the bullpen log, the
+    NFL games). Split out of ``load_stores`` unchanged so a caller that already holds its own boards (the member hounds'
+    Gematria style, ``src/hounds/user_gematria.py``) reads the same files the house runner does and cannot drift from it.
+    ``mlb`` / ``nfl`` skip a sport nobody is weighing, which keeps a small machine from reading a store for nothing."""
+    from src import paths
+
+    base = root or str(paths.repo_root())
+    if mlb:
+        st.event_map = read_event_map(os.path.join(base, "data", "processed", "event_game_map.jsonl"))
+        st.mlb_games = read_mlb_results(os.path.join(base, "data", "historical", "mlb_results.csv"))
+        have = {g["game_pk"] for g in st.mlb_games}
+        start_by_pk = {str(r["game_pk"]): r.get("commence_time") for r in st.event_map.values()}
+        box = read_boxscore_finals(os.path.join(base, "data", "processed", "boxscores_2026.jsonl"),
+                                   skip_pks=have, start_by_pk=start_by_pk)
+        st.mlb_games.extend(box)
+        st.mlb_covered = read_mlb_manifest_dates(os.path.join(base, "data", "historical", "mlb_results.manifest.json"))
+        st.mlb_covered |= {g["date"] for g in box}
+        st.bullpen = read_bullpen(os.path.join(base, "data", "historical", "bullpen_log.jsonl"))
+    if nfl:
+        st.nfl_games = read_nfl_games(os.path.join(base, "data", "datasvc", "nfl", "games.jsonl"))
     return st
 
 

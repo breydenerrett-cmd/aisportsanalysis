@@ -101,6 +101,9 @@ def rule_sentence(rule: Mapping) -> str:
 
 
 def global_sentences(spec: Mapping) -> list:
+    if user_spec.is_gematria(spec):
+        from src.hounds import user_gematria
+        return user_gematria.global_sentences(spec)
     bets = spec["max_bets_per_day"]
     # A draft (an upgraded classic spec, a parser draft) has no derived `sports`; read them off the rules.
     sports = spec.get("sports") or [s for s in user_spec.SPORTS if any(s in r["sports"] for r in spec["rules"])]
@@ -118,6 +121,10 @@ def global_sentences(spec: Mapping) -> list:
 
 
 def rule_sentences(spec: Mapping) -> list:
+    if user_spec.is_gematria(spec):
+        # the one fixed rule, said as what really runs (the house Gematria Hound's engine), not as a generic moneyline rule
+        from src.hounds import user_gematria
+        return [user_gematria.rule_sentence(spec)]
     rules = spec["rules"]
     if len(rules) == 1:
         return [rule_sentence(rules[0])]
@@ -148,6 +155,8 @@ def diff_specs(old: Mapping, new: Mapping) -> list:
         if before != after:
             out.append({"what": what, "before": before, "after": after})
 
+    change("Style", "Gematria" if user_spec.is_gematria(a) else "Your own rules",
+           "Gematria" if user_spec.is_gematria(b) else "Your own rules")
     change("Name", a.get("name"), b.get("name"))
     change("Catchphrase", a.get("tagline") or "", b.get("tagline") or "")
     change("Colour", a.get("color", "ember"), b.get("color", "ember"))
@@ -157,6 +166,12 @@ def diff_specs(old: Mapping, new: Mapping) -> list:
     change("Stake", _STAKE(a.get("stake_units", 1.0)), _STAKE(b.get("stake_units", 1.0)))
     change("If more qualify", _RANK_PHRASE[a.get("rank_by", "earliest_lock")], _RANK_PHRASE[b.get("rank_by", "earliest_lock")])
     ra, rb = a.get("rules") or [], b.get("rules") or []
+    if user_spec.is_gematria(a) or user_spec.is_gematria(b):
+        # a Gematria hound's rule is fixed text, not a card per rule: compare what each version says it does
+        before = rule_sentences(a)[0] if user_spec.is_gematria(a) else " ".join(_safe_sentence(r) or "" for r in ra)
+        after = rule_sentences(b)[0] if user_spec.is_gematria(b) else " ".join(_safe_sentence(r) or "" for r in rb)
+        change("Rules", before, after)
+        return out
     for i in range(max(len(ra), len(rb))):
         before = _safe_sentence(ra[i]) if i < len(ra) else None
         after = _safe_sentence(rb[i]) if i < len(rb) else None

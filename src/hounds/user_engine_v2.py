@@ -263,6 +263,8 @@ def rule_candidates(rule: Mapping, index: int, spec: Mapping, game: "E.GameBoard
                     game_pk, skipped) -> list:
     """Every candidate one rule produces on one market of one game, at the board standing at `as_of`."""
     out: list = []
+    if user_spec.is_gematria(spec):
+        return out         # the Gematria style's fixed rule is not a rule to evaluate here (src/hounds/user_gematria.py)
     kind = R.market_kind(market)
     if kind == "prop":
         found = prop_boards_at(game, market, as_of)
@@ -402,6 +404,9 @@ def hound_candidates(hound: Mapping, spec: Mapping, games: Mapping, facts, date:
     ``ahead`` (live mode, the Unleash button): a game not yet at its lock is evaluated now on the newest
     board instead of being skipped; a started game and a hound born after the lock are still skipped.
     ``dropped`` (a list) receives ``(item, code)`` for each candidate the one-side guard refused."""
+
+    if user_spec.is_gematria(spec):
+        return []          # a Gematria hound's picks come from src/hounds/user_gematria.py; its fixed rule is never read as a rule
     created = E._utc(hound.get("created_at"))
     seed = hound.get("spec_hash") or user_spec.spec_hash(spec)
     best: dict = {}
