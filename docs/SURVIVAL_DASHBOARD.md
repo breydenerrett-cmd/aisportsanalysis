@@ -1,10 +1,10 @@
 # LineHound survival dashboard
 
-Generated 2026-10-20 20:44Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
+Generated 2026-10-21 15:51Z by `scripts/survival_dashboard.py`. Edit `config/business.json` and log outreach with `scripts/outreach_batch.py`, not this file.
 
 | | |
 |---|---|
-| Days until 2026-10-31 | **11** |
+| Days until 2026-10-31 | **10** |
 | Current monthly burn (known + estimated infrastructure) | $78.00 |
 | Current monthly burn incl. Claude at the planning assumption | $278.00 (unknown: Claude subscription that operates the business, BALLDONTLIE) |
 | Identified monthly savings (not yet realised) | $29.00: The Odds API (100K tier): $29.00 (downgrade to the $30 20K tier; NOT confirmed, owner decision) |
@@ -151,9 +151,9 @@ Contribution per paying subscriber: $18.97 a month ($19.99 less Stripe's fees). 
 
 ## Today's execution
 
-- 2026-10-20 (1:30 pm PT run): no game to brief; next MLB game is World Series Game 1, Rays at Brewers, Fri Oct 23 5:00 pm PT; next NFL game Thursday night.
+- 2026-10-21 (8:30 am PT run): no game to brief; next NFL game is Thursday night, next MLB game is World Series Game 1, Rays at Brewers, Fri Oct 23 5:00 pm PT.
 - ALCS Game 6 and Monday night Commanders at 49ers briefs are graded; the public sample shows ALCS Game 6.
-- Production is up; the stuck deploy ended (failed after 2 h 38 m), the queued one was cancelled, and a later deploy succeeded about 16:55Z.
+- Production is up; deploys at 14:13Z and 15:10Z succeeded (13:10Z failed).
 - Billing is live in production (founding $14.99, standard $19.99).
 - Public MLB value picks remain paused. Sends 0, replies 0, testers 0.
 
