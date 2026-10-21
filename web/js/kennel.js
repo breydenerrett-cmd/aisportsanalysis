@@ -297,9 +297,14 @@ function nameForm(data, { first }) {
     if (dismiss) { try { await put("/me/kennel", { dismiss_prompt: true }); } catch (err) { /* it asks again next visit: harmless */ } }
     clearNode(q("kennel-name-slot"));
   };
+  // COMPACT (owner add-on 2026-10-21): the hound is the product, and the old card pushed it below the fold at 375px. One heading line, the
+  // input with Save / Not now beside it, and the helper text behind a small "rules" toggle. The slot now sits BELOW the hounds (kennel.html).
+  const helper = `${data.kennel_name ? `Your kennel is called ${data.kennel_name}.` : `Until you name it, your kennel shows as ${data.display}.`} Everyone sees the name on your hounds, the leaderboard and your public page. ${limits.min} to ${limits.max} characters: letters, numbers, spaces, hyphens and apostrophes.`;
   const form = h("form", { class: "kn-nameform", "data-hook": "kennel-name-form", novalidate: "" }, [
-    h("h2", { class: "hd-h3", text: first ? "Name your kennel" : "Rename your kennel" }),
-    h("p", { class: "hd-muted", text: `${data.kennel_name ? `Your kennel is called ${data.kennel_name}.` : `Until you name it, your kennel shows as ${data.display}.`} Everyone sees the name on your hounds, the leaderboard and your public page. ${limits.min} to ${limits.max} characters: letters, numbers, spaces, hyphens and apostrophes.` }),
+    h("div", { class: "kn-nameform__head" }, [
+      h("h2", { class: "hd-h3", text: first ? "Name your kennel" : "Rename your kennel" }),
+      h("details", { class: "kn-nameform__rules", "data-hook": "kennel-name-rules" }, [
+        h("summary", { text: "rules" }), h("p", { class: "hd-muted", text: helper })])]),
     h("div", { class: "kn-nameform__row" }, [input, save,
       first ? h("button", { type: "button", class: "lh-btn lh-btn--soft", "data-hook": "kennel-name-skip", text: "Not now", on: { click: () => close(true) } })
         : h("button", { type: "button", class: "lh-btn lh-btn--soft", "data-hook": "kennel-name-cancel", text: "Cancel", on: { click: () => close(false) } })]),

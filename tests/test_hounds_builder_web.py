@@ -507,7 +507,8 @@ class StepThreeAndSaving(unittest.TestCase):
                          queries=[q("err", "[data-hook='build-server-error']"), q("problems", "[data-hook='build-problems']"),
                                   q("gate", "[data-hook='build-gate']", "hidden")])
         out = run(422, {"detail": {"error": "spec_invalid", "fields": {"name": "is already taken"}}})
-        self.assertIn("name: is already taken", out["final"]["problems"])
+        self.assertIn("That name is taken. Try another.", out["final"]["problems"])      # QA 2026-10-21: not the raw field error
+        self.assertNotIn("name: is already taken", out["final"]["problems"])
         out = run(409, {"detail": {"error": "limit", "message": "an account can run at most 3 hounds; retire one first"}})
         self.assertIn("at most 3 hounds", out["final"]["err"])
         out = run(401, {"detail": "no"})

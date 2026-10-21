@@ -36,6 +36,7 @@ import { stakeLineText } from "./hounds-board.js";
 import { mountKeep, keepLabel } from "./keep.js";
 import { playReveal, countTo, previewState, priceText } from "./reveal-fx.js";
 import { watchFirstGrade } from "./first-grade.js";
+import { MY_KENNEL_HREF } from "./home-route.js";
 
 export const PAPER_NOTICE =
   "Paper bets only. Your hound never places a real bet, and it never takes a price of -200 or worse.";
@@ -71,6 +72,7 @@ const S = {
   jobTimer: null, jobPolls: 0, jobId: null, copiedFrom: "", pendingTranslation: null,
   jobBusy: false, jobElapsed: 0, jobStart: 0, jobNextPoll: 0, jobErrors: 0, bound: false,
   keep: null, previewSettled: false,
+  kept: null,        // {id, name} once THIS draft is a hound: the Keep button becomes "Open in My Kennel" (a second keep is a duplicate name)
 };
 
 // ---- the menu ---------------------------------------------------------------------------------------
@@ -571,9 +573,12 @@ function friendlyField(key) {
 /** A refusal as a list of sentences. Every shape the server can send gives at least one: the validator's per-field reasons, a
  *  request-shape error (a list of {msg}), a message, a bare string, or, failing all of those, a plain "no reason given". A refusal
  *  that rendered as an empty list would read as "nothing happened". */
+/** The server's "name: is already taken", in the builder's own words (QA 2026-10-21: a second Keep of the same draft showed the raw field error). */
+export const NAME_TAKEN_TEXT = "That name is taken. Try another.";
+
 function problemsFrom(detail) {
   const fields = detail && detail.fields && typeof detail.fields === "object" ? Object.entries(detail.fields) : [];
-  if (fields.length) return fields.map(([k, v]) => `${friendlyField(k)}: ${v}`);
+  if (fields.length) return fields.map(([k, v]) => (k === "name" && /already taken/i.test(String(v)) ? NAME_TAKEN_TEXT : `${friendlyField(k)}: ${v}`));
   if (Array.isArray(detail)) {
     const lines = detail.map((d) => (d && typeof d.msg === "string" ? d.msg : "")).filter(Boolean);
     if (lines.length) return lines;
@@ -845,6 +850,7 @@ function bindIdentity() {
     q("tagline-count").textContent = `${tag.value.length} / ${S.menu.tagline.max}`;
     S.diffReady = false;
     q("diff").hidden = true;
+    if (S.kept && S.spec.name !== S.kept.name) S.kept = null;      // a new name is a new hound: Keep comes back
     if (S.saveProblems.length) { S.saveProblems = []; renderSentences(); }
     updateDogCard();
     updateSave();
@@ -1188,7 +1194,10 @@ function updateSave() {
   q("edit-cancel").hidden = !editing;
   let label = keepLabel(S.spec && S.spec.name);
   if (editing) label = S.diffReady ? `Save as version ${S.edit.version_no + 1}` : "Review the changes";
+  const opensKennel = !editing && !!S.kept && !embedded();
+  if (opensKennel) label = "Open in My Kennel";
   btn.textContent = label;
+  btn.setAttribute("data-kept", opensKennel ? "true" : "false");
   btn.disabled = S.busy || !S.started;
   btn.hidden = !S.signedIn && !editing;               // a signed-out visitor keeps through the form under the identity fields
   syncKeep();
@@ -1274,6 +1283,12 @@ function saveSpec() {
   return spec;
 }
 
+/** The Save button: Keep, until this draft has been kept; then it is the way to the kept hound, never a second POST. */
+function onSubmitTap() {
+  if (S.kept && !S.edit && !embedded()) { window.location.href = MY_KENNEL_HREF; return false; }
+  return submit();
+}
+
 /**
  * THE RULE FOR EVERY TAP ON THE SAVE BUTTON: it ends in something the person can SEE next to the button: the diff, the saved
  * message, or a box saying why not (a list of reasons, a sign-in prompt, or a plain failure). It never returns quietly.
@@ -1329,6 +1344,7 @@ async function submit() {
       reveal(q("build-message"));
       await loadMine();
       announce("created", dog);
+      S.kept = { id: dog.id || "", name: dog.name || S.spec.name };
       // R6 starts here: this browser now watches this hound for its first graded ticket (web/js/first-grade.js)
       if (dog.id) watchFirstGrade(dog.id);
       kept = true;
@@ -1546,7 +1562,7 @@ async function boot() {
       S.spec.rules.push(blankRule());
       changed(true);
     });
-    q("build-submit").addEventListener("click", submit);
+    q("build-submit").addEventListener("click", onSubmitTap);
     if (q("preview-retry")) q("preview-retry").addEventListener("click", retryPreview);
     if (q("build-keep-host")) S.keep = mountKeep(q("build-keep-host"), {
       name: () => String((S.spec && S.spec.name) || "").trim(),

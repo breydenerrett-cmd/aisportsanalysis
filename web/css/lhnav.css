@@ -105,6 +105,10 @@
   .lh-tab--cta .lh-tab__label { white-space: normal; line-height: 1.15; }
 }
 
+/* The Account routes (#/signin, #/account, #/billing: nav.js onKennelRoute) are the kennel-first product's, not the picks app's: no
+   sport tabs, no news strip, no Gameday/Props tab bar. The five-place bar (and on a phone its tab bar) is the only navigation. */
+body[data-kennel-route] .appbar, body[data-kennel-route] .news-host, body[data-kennel-route] .tabbar { display: none; }
+
 /* the member app keeps its own sport tabs and clock; the shared bar above it owns the wordmark and the account */
 .member-app .topstrip__home, .member-app .topstrip__account { display: none; }
 

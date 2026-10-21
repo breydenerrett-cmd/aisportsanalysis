@@ -81,6 +81,32 @@ export function foundingNote(founding) {
   return founding ? `${foundingOfferLine(founding)}. ${FOUNDING_FINE_PRINT}` : "";
 }
 
+/** The trial sentence at a monthly price in cents: "7-day free trial, then $14.99/month. Cancel anytime."
+ * (Same words as BETA_TIER.billing_note at the standard price; the founding card says the price a checkout would charge.) */
+export function trialNote(cents) {
+  return `7-day free trial, then ${money(cents)}/month. Cancel anytime.`;
+}
+
+/**
+ * THE BILLING CARD'S WORDS (owner follow-up 2026-10-21): the card must say which price Subscribe charges. Checkout hands out the founding
+ * price automatically while a seat remains (`founding` is loadFoundingOffer(): null unless a seat can really be had), so then the headline,
+ * the trial sentence and the button all name it, with the standard price said once as what comes after the seats are gone. With no seat the
+ * card is the standard-only card it always was. Copy only: the plan id and the checkout call are not touched.
+ */
+export function subscribeCopy(founding) {
+  if (!founding) {
+    return { founding: false, headline: BETA_TIER.price_display, subline: "", note: BETA_TIER.billing_note, fine: "", button: "Subscribe" };
+  }
+  return {
+    founding: true,
+    headline: `${money(founding.priceCents)}/mo · Founding member`,
+    subline: `${founding.left} of ${founding.cap} founding seats left. After that, ${money(STANDARD_CENTS)}/mo.`,
+    note: trialNote(founding.priceCents),
+    fine: FOUNDING_FINE_PRINT,
+    button: `Subscribe at ${money(founding.priceCents)}`,
+  };
+}
+
 /** GET /billing/offer, never rejecting: null on any failure. */
 export async function loadFoundingOffer() {
   try {
@@ -91,9 +117,13 @@ export async function loadFoundingOffer() {
   }
 }
 
+/** The $19.99 plan is "LINEHOUND membership" (QA 2026-10-21: it was labelled "Founding access" straight above the real $14.99 founding line).
+ * "Founding" belongs to the founding OFFER only: foundingOfferLine, below. */
+export const PLAN_EYEBROW = "MEMBERSHIP";
+
 export const BETA_TIER = Object.freeze({
   id: "beta",
-  name: "Founding access",
+  name: "LINEHOUND membership",
   price_cents: 1999,
   price_display: "$19.99/mo",
   billing_note: "7-day free trial, then $19.99/month. Cancel anytime.",

@@ -196,7 +196,7 @@ const navigations = [];
 const replaced = [];           // every URL the page wrote with history.replaceState (the season choice, ?season=)
 const winListeners = {};
 const loc = { search: scenario.search || "", host: "linehound.test", protocol: "https:", origin: "https://linehound.test",
-  pathname: scenario.pathname || "/web/x.html", hash: "" };
+  pathname: scenario.pathname || "/web/x.html", hash: scenario.hash || "" };
 Object.defineProperty(loc, "href", { get: () => "", set: (v) => navigations.push(String(v)) });
 globalThis.window = {
   localStorage: storage, sessionStorage: storage, location: loc, history: { replaceState(state, title, url) { replaced.push(String(url)); } },
@@ -341,6 +341,7 @@ try {
   out.text = flat(text(body));
   out.hooks = body._all([]).map((n) => n.attrs["data-hook"]).filter(Boolean);
   out.title = document.title;
+  out.bodyAttrs = { ...body.attrs };
   out.final = Object.fromEntries((scenario.queries || []).map((q) => [q.name, evaluate(q)]));
   out.mod = Object.keys(mod);
 } catch (err) {

@@ -483,6 +483,15 @@ class Camp(ApiCase):
         self.assertEqual(self.api.camp_mine(Response(), current_user=self.other, _rl=None)["count"], 0)
 
 
+class CampNamesEachDogsSports(ApiCase):
+    def test_each_dog_lists_the_sports_it_bets_in_lower_case_so_live_can_offer_it_only_for_those(self):
+        # QA 2026-10-21: Live offered MLB hounds for a hockey game; the page needs the dog's sports to filter on
+        d = self.api.camp_mine(Response(), current_user=self.owner, _rl=None)["dogs"][0]
+        want = [str(x).lower() for x in user_store.get_hound(self.id)["spec"]["sports"]]
+        self.assertTrue(want)
+        self.assertEqual(d["sports"], want)
+
+
 class TheSeams(unittest.TestCase):
     def test_the_router_is_mounted_before_the_race_and_after_the_tip_box(self):
         src = (REPO / "api" / "app.py").read_text(encoding="utf-8")

@@ -124,8 +124,10 @@
 .hounds-page.lv-page .lv-row[data-live="true"] { box-shadow: inset 3px 0 0 var(--lh-accent); }
 .hounds-page.lv-page .lv-pill { border: 0; border-radius: var(--lh-r-pill); background: var(--lh-soft-2); }
 .hounds-page.lv-page .lv-pill--live { background: var(--lh-accent-soft); }
-.hounds-page.lv-page .lv-send { border: 0; border-radius: var(--lh-r-sm); background: var(--lh-accent-soft); color: var(--lh-accent); font-weight: 600; }
-.hounds-page.lv-page .lv-send:hover { background: var(--lh-accent); color: var(--lh-accent-ink); }
-.hounds-page.lv-page .lv-send[aria-expanded="true"] { background: var(--lh-accent); color: var(--lh-accent-ink); }
+/* "Send a hound" is the SECONDARY action on a row (QA 2026-10-21: a solid green button on every card made each screen all primary). The
+   page's one accent-filled control is the chip that is pressed; this stays a quiet grey pill, with the accent only as text when its tray is open. */
+.hounds-page.lv-page .lv-send { border: 0; border-radius: var(--lh-r-sm); background: var(--lh-soft-2); color: var(--lh-ink2); font-weight: 500; box-shadow: inset 0 0 0 1px var(--lh-line); }
+.hounds-page.lv-page .lv-send:hover { background: var(--lh-soft); color: var(--lh-ink); }
+.hounds-page.lv-page .lv-send[aria-expanded="true"] { background: var(--lh-soft-2); color: var(--lh-accent); box-shadow: inset 0 0 0 1px var(--lh-accent); }
 .hounds-page.lv-page .lv-tray { border-top: 1px solid var(--lh-line); }
 .hounds-page.lv-page .lv-dog, .hounds-page.lv-page .lv-result__line { border: 0; background: var(--lh-soft-2); }

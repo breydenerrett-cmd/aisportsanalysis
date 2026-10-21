@@ -34,7 +34,7 @@
 
 import { apiGet, apiPost } from "./api.js";
 import { el, clear, renderError } from "./dom.js";
-import { BETA_TIER, foundingNote, loadFoundingOffer } from "./pricing.js";
+import { BETA_TIER, loadFoundingOffer, subscribeCopy } from "./pricing.js";
 
 const STATUS_NOT_CONFIGURED = "not_configured";
 // A free member (src/appstate/comps.py): GET /billing/status answers
@@ -113,28 +113,29 @@ async function whileBusy(button, busyText, fn) {
   }
 }
 
-function renderSubscribe(section, container) {
+async function renderSubscribe(section, container) {
   // NOT "billing-subscribe" -- that hook belongs to the button below, and a
   // panel sharing it wins every querySelector because it comes first in the
   // document. The click then lands on a <section>, which does nothing at all:
   // no request, no navigation, no error. Found by clicking the rendered
   // button, not by reading the code or the passing tests.
+  // The founding offer (GET /billing/offer) is read BEFORE the card is drawn, never filled in after: a card that said "$19.99" and
+  // "Subscribe" for a moment and then changed would let someone tap a price that is about to be replaced. loadFoundingOffer never rejects.
+  const copy = subscribeCopy(await loadFoundingOffer());
   const body = panel("billing-subscribe-panel");
   body.appendChild(el("h2", { text: BETA_TIER.name }));
   body.appendChild(el("p", { class: "billing__price",
     "data-price": String(BETA_TIER.price_cents),
-    text: BETA_TIER.price_display }));
-  body.appendChild(note(BETA_TIER.billing_note));
-  // Founding offer (GET /billing/offer): filled in only when a founding seat is really available, so a
-  // sold-out or unreachable offer leaves the standard price above and nothing else.
-  const offerSlot = el("p", { class: "billing__offer", "data-hook": "billing-founding-offer" });
+    "data-founding": copy.founding ? "true" : "false",
+    text: copy.headline }));
+  if (copy.subline) body.appendChild(el("p", { class: "billing__seats", "data-hook": "billing-seats", text: copy.subline }));
+  body.appendChild(note(copy.note));
+  // The fine print shows only with a real founding seat (no seat, no line, no scarcity wording).
+  const offerSlot = el("p", { class: "billing__offer", "data-hook": "billing-founding-offer", text: copy.fine });
   body.appendChild(offerSlot);
-  loadFoundingOffer().then((founding) => {
-    if (founding) offerSlot.textContent = foundingNote(founding);
-  });
 
   const button = el("button", { type: "button", class: "btn btn--primary",
-    "data-hook": "billing-subscribe", text: "Subscribe" });
+    "data-hook": "billing-subscribe", text: copy.button });
   // Branch-scoped rather than a shared "billing-outcome". renderSubscribe and
   // renderManage never render together today, so a shared hook would work --
   // right up until they do, at which point it fails the same silent way the
@@ -293,7 +294,7 @@ export async function renderBilling(container) {
   if (payload && payload.status === STATUS_COMP) {
     renderFreeMember(section, payload);
   } else if (!payload || payload.status === STATUS_NOT_CONFIGURED) {
-    renderSubscribe(section, container);
+    await renderSubscribe(section, container);
   } else {
     renderManage(section, container, payload);
   }

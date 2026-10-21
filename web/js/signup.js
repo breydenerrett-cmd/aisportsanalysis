@@ -42,7 +42,7 @@
 import { apiGet, apiPost, trackFunnelEvent, ApiError, getToken, setToken, clearToken } from "./api.js";
 import { attributionPayload, firstTouchProperties } from "./attribution.js";
 import { el, clear, renderError } from "./dom.js";
-import { BETA_TIER } from "./pricing.js";
+import { BETA_TIER, PLAN_EYEBROW } from "./pricing.js";
 import {
   loadCheckoutState, ctaLabel, pricingNote, signupOffOffer, plannedPrice, monthlyPrice,
   cardRequiredNotice, trialStartedNote, WAITLIST_CONFIRMATION, testerSignupNotice,
@@ -125,7 +125,7 @@ export async function renderSignup(main) {
   const billing = await readBilling();
   const ctaText = ctaLabel(billing);
 
-  card.appendChild(el("p", { class: "eyebrow eyebrow--money signup-card__eyebrow", text: "FOUNDING ACCESS" }));
+  card.appendChild(el("p", { class: "eyebrow eyebrow--money signup-card__eyebrow", text: PLAN_EYEBROW }));
   // The heading and the button say the same thing the landing page's button
   // says (checkout.js ctaLabel) -- but ONLY when a checkout exists.
   // With billing off the same words would be a promise nothing can keep, so
@@ -388,7 +388,7 @@ function scrubAddress() {
 
 function freshCard(card) {
   clear(card);
-  card.appendChild(el("p", { class: "eyebrow eyebrow--money signup-card__eyebrow", text: "FOUNDING ACCESS" }));
+  card.appendChild(el("p", { class: "eyebrow eyebrow--money signup-card__eyebrow", text: PLAN_EYEBROW }));
 }
 
 /**
@@ -422,7 +422,7 @@ export async function renderSignupComplete(main, query) {
   clear(main);
   const wrap = el("section", { class: "signup", "data-view": "signup-complete", "aria-label": "signup complete" });
   const card = el("div", { class: "signup-card panel chamfer chamfer--lg" });
-  card.appendChild(el("p", { class: "eyebrow eyebrow--money signup-card__eyebrow", text: "FOUNDING ACCESS" }));
+  card.appendChild(el("p", { class: "eyebrow eyebrow--money signup-card__eyebrow", text: PLAN_EYEBROW }));
   wrap.appendChild(card);
   main.appendChild(wrap);
 
@@ -526,7 +526,7 @@ export async function renderSignupComplete(main, query) {
       scrubAddress();
     }
     clear(card);
-    card.appendChild(el("p", { class: "eyebrow eyebrow--money signup-card__eyebrow", text: "FOUNDING ACCESS" }));
+    card.appendChild(el("p", { class: "eyebrow eyebrow--money signup-card__eyebrow", text: PLAN_EYEBROW }));
     // The trial wording is only for a buyer who came through checkout (a
     // session id); a token pasted on the URL (an admin-issued link) says nothing
     // about a trial.
