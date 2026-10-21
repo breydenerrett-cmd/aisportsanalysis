@@ -52,7 +52,7 @@ MIN_BETS_FOR_COMPARISON = 50
 CONTROL_IDS = ("coin_flip_collie", "dartboard_dalmatian")
 # Categories that are not "champions" for the better-than-chance line: the instruments, the seeded
 # controls, and the for-fun hounds.
-NON_CHAMPION_CATEGORIES = ("baseline", "random", "esoteric")
+NON_CHAMPION_CATEGORIES = ("baseline", "random", "esoteric", "numerology")
 
 # ---- the analyst prompt arm (prereg section 12) ------------------------------------------------------
 ANALYST_LOOKS = (150, 225, 300, 375, 450)

@@ -54,6 +54,7 @@ import { celebrate } from "./dog-common.js";
 import { ALL_SEASON, seasonOptions, chooseSeason, saveSeason, seasonParam } from "./hounds-season.js";
 import { renderLineChart } from "./hounds-chart.js";
 import { bootDesk } from "./hounds-desk.js";
+import { bootGematria } from "./hounds-gematria.js";
 import { bootLineage } from "./hounds-lineage.js";
 import { copyText, shareDog, downloadCard } from "./hounds-share.js";
 import { isFollowed, toggleFollow } from "./hounds-follow.js";
@@ -759,6 +760,8 @@ export async function boot() {
 
   // the AI desk's models also show how they argued their newest game (every other model never sees this)
   bootDesk(hound);
+  // the Gematria Hound's "Evidence" fold: both sides' matches for each pick (every other hound never sees it)
+  bootGematria(hound);
   // versions and challengers (the learning loop): loads on its own and never takes this page down
   bootLineage(hound);
 

@@ -11,7 +11,8 @@ RULES THE RUNNER ENFORCES (whatever a hound returns)
 * A row is written only for a game whose lock has passed. A FORWARD row is refused at or after the
   start; a REPLAY row is written only for a game that has started (it is about the past) and is
   labelled `segment: "replay"`.
-* At most one bet per game per hound; at most 3 per hound per Eastern date, taken in lock order
+* At most one bet per game per hound; at most 3 per hound per Eastern date (a hound may set its own lower or higher
+  ``max_per_day``; the Gematria Hound's is configurable in its rules file), taken in lock order
   (ties: event_id). Rows already in the ledger count toward both.
 * Idempotent per (hound_id, event_id, market): a second run appends nothing.
 * The -200 rule: no selection whose board-average price is -200 or worse, ever. Every hound's own
@@ -168,7 +169,7 @@ def run(stores: base.Stores, dates: Sequence[str], *, replay: bool, now: datetim
             accepts = getattr(hound, "accepts", None)
             if accepts is not None and not accepts(ctx):
                 continue
-            if (hound.id, eid) in taken_game or per_day.get((hound.id, ctx.date), 0) >= base.MAX_PER_DAY:
+            if (hound.id, eid) in taken_game or per_day.get((hound.id, ctx.date), 0) >= getattr(hound, "max_per_day", base.MAX_PER_DAY):
                 continue
             sel = choose(hound, board, ctx)
             if sel is None:

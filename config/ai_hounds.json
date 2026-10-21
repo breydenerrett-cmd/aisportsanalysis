@@ -8,7 +8,7 @@
   "paper_only": true,
   "forward_only": true,
   "prompt_version": "ai_hound_prompt_v1",
-  "disclaimer": "Paper-only. A language model reads the board an hour before each game and bets or passes. No edge or profit is claimed.",
+  "disclaimer": "Paper-only. A language model reads the board an hour before each game and bets or passes (the Gematria Hound asks no model: it counts numerological coincidences by a fixed rule). No edge or profit is claimed.",
   "council": {
     "min_members": 3,
     "note": "Parked until a second model is enabled in config/ai_providers.json. Set the Council Hound's enabled flag below to true to run it; it needs at least min_members members that returned a valid answer for a game."
@@ -88,6 +88,51 @@
         ],
         "epitaph": "Adjourned for lack of a majority.",
         "verb": "put it to a vote and took"
+      }
+    },
+    {
+      "id": "gematria",
+      "name": "Gematria Hound",
+      "tagline": "Experimental numerology hound. Paper picks, graded in public like every hound.",
+      "category": "numerology",
+      "style": "counts numerical coincidences for each side",
+      "kind": "house",
+      "enabled": true,
+      "family": "gematria",
+      "providers": [],
+      "sports": [
+        "dog_menu"
+      ],
+      "markets": [
+        "moneyline"
+      ],
+      "price_band": [
+        -199,
+        400
+      ],
+      "who_decided": "rule",
+      "forward_only": true,
+      "rule_text": "Every sport we capture, moneyline only. An hour before the game it works out, for each team, what the numbers would say if that team won: the cipher values of the team's name, city, mascot, state, university and head coach (English Ordinal, Full Reduction and their reverses), the number of the day and date, how far the game is from a founding or statehood date, and the counts a win would produce from our stored results (win and loss totals, streaks, days since the last win or loss, head-to-head, an NFL coach's record with the club). Every time one of those numbers equals another, or is the Nth prime or triangular number of another, or is 33 or 47, that is one piece of evidence, weighted by a fixed table (config/gematria/rules_v1.json). It bets the side with the larger total only if it leads by at least 3.0, both sides had enough stored results to count, and the side's average price is better than -200 (the band is -199 to +400); otherwise it passes and logs why. At most 3 bets a day, one unit, lock-time board and stored results only. The rules are versioned and never edited after a pick is made. Experimental and unproven: nothing here claims that numerology predicts games; the record is the only evidence.",
+      "persona": {
+        "bio": "Counts. Everything. The date, the founding year, the third letter of the coach, the number of the state. Has never been asked how many of the numbers it counted were going to match anyway.",
+        "catchphrase": "The numbers line up. Whether that means anything is the whole experiment.",
+        "vibe": "nerd",
+        "roasts": [
+          "Found eleven matches. Searched four hundred places.",
+          "Every number lined up. The game used different ones.",
+          "It counted the founding date down to the day and the day did not care.",
+          "Nine coincidences for one side, eight for the other, zero for the scoreboard.",
+          "The prime was prime. The pick was not."
+        ],
+        "brags": [
+          "The numbers lined up and so did the score. Do not read anything into it.",
+          "A margin of four and a win. The sample is still one.",
+          "It counted, it picked, it cashed. Ask again in a hundred games.",
+          "That one lined up. The search was big enough that some will.",
+          "Right this time, and the record will say how often."
+        ],
+        "epitaph": "Found a pattern in everything and in nothing.",
+        "verb": "counted it up and took"
       }
     }
   ]
