@@ -86,7 +86,10 @@ table `member_unit_size`, never in a public payload); a visitor's is in the brow
 blocked or throwing store means the default). Default for everyone: **a fixed $25 unit**. The Account page holds the
 settings; a small "1u = $25 ▾" chip sits beside the bankroll figures (My Kennel, the hound page, the leaderboard).
 The payload carries `bankroll.events`, the units-only bet list (`[slate date, settle epoch, profit units, stake units,
-result letter]`), so the browser can price the same bets at any sizing without another request.
+result letter]`), so the browser can price the same bets at a percent-of-bankroll sizing without another request. The one-hound
+route (`/hounds/{id}`) always carries it; the list routes (`/hounds`, `/hounds/graveyard`) carry it only on `?events=1`, which the
+page adds for a percent viewer (a fixed unit scales the block and needs none). Without the flag the list is as large as it was
+before the lens; with it, the list grows by about 45 bytes a bet (measured 2026-10-21: +44% on `season=all`).
 
 | Mode | Unit | Starting bankroll | Dollars | Return % |
 |---|---|---|---|---|
