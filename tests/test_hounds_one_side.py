@@ -341,6 +341,96 @@ class LiveManualSend(_Base):
         self.assertEqual(ticket["market"], "moneyline")
 
 
+class OneGameManyNames(_Base):
+    """The same game can arrive under two event ids (the odds feed re-issued one for the 2026-10-15 Guardians at
+    Rays game, whose start moved; a provider could spell the id another way). The guard names a game by its
+    event id, its MLB game_pk, or its teams and exact start, so a second id cannot hold the other side."""
+
+    def reissued(self, start_shift=None) -> list:
+        rows = []
+        for r in nba_rows():
+            r = dict(r, event_id="nba0001-reissued")
+            if start_shift:
+                r["commence_time"] = start_shift
+            rows.append(r)
+        return rows
+
+    def test_the_other_side_under_a_second_event_id_of_the_same_game_is_refused(self):
+        self.run_day([dog([nba_rule(markets=["moneyline"], side="away")])], nba_rows())
+        report = self.run_day([dog([nba_rule(markets=["spread"], side="home")])], self.reissued())
+        self.assertEqual([(b["event_id"], b["market"]) for b in self.bets()], [("nba0001", "moneyline")])
+        self.assertEqual(report["skipped"].get(one_side.CODE_DEAD), 1)
+
+    def test_one_run_that_sees_both_ids_takes_one_bet_not_two(self):
+        h = dog([nba_rule(markets=["moneyline"], side="away"), nba_rule(markets=["spread"], side="home")])
+        self.run_day([h], nba_rows() + self.reissued())
+        self.assertEqual(len(self.bets()), 1, [(b["event_id"], b["market"]) for b in self.bets()])
+
+    def test_the_same_side_under_the_second_id_is_not_a_second_ticket(self):
+        h = dog([nba_rule(markets=["moneyline"], side="away")])
+        self.run_day([h], nba_rows())
+        report = self.run_day([h], self.reissued())
+        self.assertEqual(len(self.bets()), 1)
+        self.assertEqual(report["skipped"].get(one_side.CODE_SAME), 1)
+
+    def test_a_different_start_with_no_game_pk_is_a_different_game(self):
+        # two real games of one pair (a doubleheader) never start at the same instant; without a pk to say
+        # otherwise the guard does not merge them
+        self.run_day([dog([nba_rule(markets=["moneyline"], side="away")])], nba_rows())
+        moved = self.reissued(start_shift="2026-10-20T23:20:00Z")
+        before = len(self.bets())
+        self.run_day([dog([nba_rule(markets=["spread"], side="home")])], moved)
+        self.assertEqual(len(self.bets()), before + 1)
+
+    def test_one_game_pk_is_one_game_even_when_the_start_moved(self):
+        book = one_side.Book.from_rows([
+            {"kind": "hound_user_bet", "hound_id": "h", "event_id": "id-1", "market": "moneyline", "side": "away",
+             "sport": "MLB", "home_team": "Tampa Bay Rays", "away_team": "Cleveland Guardians",
+             "commence_time": "2026-10-15T22:00:00Z", "game_pk": "849818"}])
+        later = {"sport": "MLB", "home_team": "Tampa Bay Rays", "away_team": "Cleveland Guardians",
+                 "commence_time": "2026-10-15T17:00:00Z", "game_pk": "849818"}
+        self.assertEqual(book.refusal("h", "id-2", "spread", "home", None, -1.5, game=later), one_side.CODE_DEAD)
+        other_game = dict(later, game_pk="849819", commence_time="2026-10-15T21:00:00Z")
+        self.assertIsNone(book.refusal("h", "id-3", "spread", "home", None, -1.5, game=other_game))
+
+    def test_a_spelling_of_the_start_and_the_teams_does_not_split_a_game(self):
+        book = one_side.Book.from_rows([
+            {"kind": "hound_user_bet", "hound_id": "h", "event_id": "a", "market": "total", "side": "over",
+             "sport": "NBA", "home_team": "New York  Knicks", "away_team": "Philadelphia 76ers",
+             "commence_time": "2026-10-21T00:00:00Z"}])
+        again = {"sport": "NBA", "home_team": "new york knicks", "away_team": "PHILADELPHIA 76ERS",
+                 "commence_time": "2026-10-20T20:00:00-04:00"}
+        self.assertEqual(book.refusal("h", "b", "total", "under", game=again), one_side.CODE_OTHER)
+
+
+class EngineAfterManual(_Base):
+    """The tap and the engine hold each other off in both orders: manual.record already reads the rule ledger;
+    the engine now reads the manual ledger beside it."""
+
+    def test_an_owner_ticket_on_one_side_stops_the_engine_adding_the_other(self):
+        manual_ledger = os.path.join(os.path.dirname(self.ledger), user_engine.MANUAL_LEDGER_NAME)
+        HashChainLedger(manual_ledger).append({
+            "kind": user_engine.KIND_BET, "hound_id": "u-jsmooth", "event_id": "nba0001", "bet_id": "m-1",
+            "market": "spread", "side": "home", "line": -4.5, "slate_date": F.DATE, "manual": True,
+            "recorded_utc": "2026-10-20T21:00:00Z"})
+        report = self.run_day([dog([nba_rule(markets=["moneyline"], side="away")])], nba_rows())
+        self.assertEqual(self.bets(), [])
+        self.assertEqual(report["skipped"].get(one_side.CODE_DEAD), 1)
+
+    def test_another_dogs_manual_ticket_does_not_matter(self):
+        manual_ledger = os.path.join(os.path.dirname(self.ledger), user_engine.MANUAL_LEDGER_NAME)
+        HashChainLedger(manual_ledger).append({
+            "kind": user_engine.KIND_BET, "hound_id": "u-someone-else", "event_id": "nba0001", "bet_id": "m-2",
+            "market": "spread", "side": "home", "line": -4.5, "slate_date": F.DATE, "manual": True,
+            "recorded_utc": "2026-10-20T21:00:00Z"})
+        self.run_day([dog([nba_rule(markets=["moneyline"], side="away")])], nba_rows())
+        self.assertEqual(len(self.bets()), 1)
+
+    def test_the_manual_ledger_follows_the_rule_ledger_it_sits_beside(self):
+        self.assertEqual(os.path.basename(user_engine.manual_ledger_path(self.ledger)), "hounds_manual_v1.jsonl")
+        self.assertEqual(os.path.dirname(user_engine.manual_ledger_path(self.ledger)), os.path.dirname(self.ledger))
+
+
 class TheRuleIsWritten(unittest.TestCase):
     def test_the_voice_doc_says_it_in_one_sentence(self):
         text = open(os.path.join(os.path.dirname(__file__), "..", "docs", "VOICE.md"), encoding="utf-8").read()

@@ -148,7 +148,8 @@ class TheDrill(unittest.TestCase):
     def test_it_uses_the_daily_cap_of_the_rule(self):
         rows = []
         for i in range(3):
-            rows += standard_rows(event_id=f"evt{i}")
+            # a minute apart: the one-side guard reads one pair at one instant as one game
+            rows += standard_rows(event_id=f"evt{i}", start=f"2026-10-20T23:{10 + i:02d}:00Z")
         out = run(user_dog(max_bets_per_day=2), rows_by_date={DATE: rows},
                   mlb_results={}, game_pk_index={})
         self.assertEqual(out["record"]["bets"], 2)

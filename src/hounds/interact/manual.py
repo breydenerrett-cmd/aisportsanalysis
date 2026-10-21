@@ -41,8 +41,8 @@ from src.hounds.contract import ticket_status
 from src.hounds.interact import common, fire
 from src.ledger.chain import HashChainLedger
 
-LEDGER_NAME = "hounds_manual_v1.jsonl"
-ENV_LEDGER = "HOUNDS_MANUAL_LEDGER"
+LEDGER_NAME = user_engine.MANUAL_LEDGER_NAME      # one name, read by the engine's one-side guard too
+ENV_LEDGER = user_engine.MANUAL_LEDGER_ENV
 PER_DAY_LIMIT = 5
 SETTLE_EVERY_S = 600.0
 

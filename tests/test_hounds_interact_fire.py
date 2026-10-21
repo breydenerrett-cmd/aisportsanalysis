@@ -268,10 +268,11 @@ class TheManualPick(Tmp):
         self.refused("already_on_record", now=utc("2026-10-20T21:12:00Z"))
 
     def test_five_a_day_per_dog(self):
-        # five different dogs' worth of games: use five events on the same slate, each with the same board
+        # six games on the same slate, each with the same board. Their starts differ by a minute: the one-side
+        # guard names a game by its teams and exact start too, and one pair at one instant is one game.
         rows = []
         for i in range(6):
-            rows += standard_rows(event_id=f"evt{i:04d}")
+            rows += standard_rows(event_id=f"evt{i:04d}", start=f"2026-10-20T23:{10 + i:02d}:00Z")
         for i in range(5):
             manual.record(dog_of(max_bets_per_day=5), OWNER, f"evt{i:04d}", "moneyline", now=NOW,
                           ledger=self.manual_ledger, rule_ledger=self.ledger, rows_for=rows_for(rows))

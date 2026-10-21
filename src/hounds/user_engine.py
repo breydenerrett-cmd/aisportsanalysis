@@ -585,6 +585,40 @@ def ledger_verified(path: Optional[str] = None) -> bool:
     return ok
 
 
+def _game_pk(game, event_id: str, game_pk_index: Optional[Mapping]) -> Optional[str]:
+    if game.sport == "MLB" and game_pk_index:
+        entry = game_pk_index.get(event_id)
+        return str(entry.get("game_pk")) if entry and entry.get("game_pk") is not None else None
+    return None
+
+
+def _game_ref(game, commence, event_id: str, game_pk_index: Optional[Mapping]) -> dict:
+    """What names this game besides its event id (src/hounds/one_side.py ``game_aliases``): the same keys a
+    ledger row carries, so a re-issued id finds the positions the hound already took."""
+    return {"sport": game.sport, "home_team": game.home_team, "away_team": game.away_team,
+            "commence_time": _iso(commence), "game_pk": _game_pk(game, event_id, game_pk_index)}
+
+
+MANUAL_LEDGER_NAME = "hounds_manual_v1.jsonl"      # the owner's manual tickets (src/hounds/interact/manual.py)
+MANUAL_LEDGER_ENV = "HOUNDS_MANUAL_LEDGER"
+
+
+def manual_ledger_path(rule_ledger: Optional[str] = None) -> str:
+    """The manual ledger that goes with a rule ledger: the environment override when the default ledger is in
+    use, otherwise the file beside the one given (a test or shadow ledger has none, so it reads empty)."""
+    if not rule_ledger:
+        override = (os.environ.get(MANUAL_LEDGER_ENV) or "").strip()
+        if override:
+            return override
+    return str(Path(ledger_path(rule_ledger)).with_name(MANUAL_LEDGER_NAME))
+
+
+def manual_rows(rule_ledger: Optional[str] = None) -> list:
+    """The manual tickets beside a rule ledger, read ONLY so the one-side guard sees them: an owner's tap on one
+    side of a game must stop the engine adding the other side later, as the engine's ticket stops the tap."""
+    return [r for r in HashChainLedger(manual_ledger_path(rule_ledger)).read() if r.get("kind") == KIND_BET]
+
+
 def run(date: str, hounds: Sequence[Mapping], rows: Iterable[Mapping], *,
         ledger: Optional[str] = None, now: Optional[datetime] = None, mode: str = "live",
         game_pk_index: Optional[Mapping] = None,
@@ -610,7 +644,7 @@ def run(date: str, hounds: Sequence[Mapping], rows: Iterable[Mapping], *,
                                if r.get("kind") == KIND_BET)
     # What each hound already holds on each game, from the ledger itself (src/hounds/one_side.py): a later
     # run, or a different engine, cannot add the other side of a game an earlier ticket already took.
-    positions = one_side.Book.from_rows(existing)
+    positions = one_side.Book.from_rows(list(existing) + manual_rows(ledger))
     all_games = build_games(rows, near_date=date)
     v2_hounds = [h for h in hounds if user_spec.is_v2(h["spec"])]
     if v2_hounds:
@@ -678,7 +712,7 @@ def run(date: str, hounds: Sequence[Mapping], rows: Iterable[Mapping], *,
                 continue
             # The guard at the point of the append, against the rows already in the ledger.
             refused = positions.refusal(hound["id"], event_id, market, cand["side"], cand.get("player"),
-                                        cand.get("line"))
+                                        cand.get("line"), game=_game_ref(game, commence, event_id, game_pk_index))
             if refused is not None:
                 skipped[refused] += 1
                 logger.info("hound %s refused %s %s on %s: %s", hound["id"], market, cand["side"], event_id,
@@ -691,10 +725,7 @@ def run(date: str, hounds: Sequence[Mapping], rows: Iterable[Mapping], *,
             if user_spec.beyond_cap(cand["price"]):     # belt and braces: the cap is not a setting
                 skipped["price_cap"] += 1
                 continue
-            pk = None
-            if game.sport == "MLB" and game_pk_index:
-                entry = game_pk_index.get(event_id)
-                pk = str(entry.get("game_pk")) if entry and entry.get("game_pk") is not None else None
+            pk = _game_pk(game, event_id, game_pk_index)
             row = {
                 "kind": KIND_BET, "ledger_version": LEDGER_VERSION, "paper_only": True,
                 "bet_id": bet_id, "hound_id": hound["id"],

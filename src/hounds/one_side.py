@@ -41,6 +41,13 @@ TWO LAYERS, ON PURPOSE
      for that hound and game, so a second run, a different engine path, or a manual send from Live cannot
      add the opposite side later. The first layer cannot know about yesterday's run; this one can.
 
+WHICH GAME
+----------
+A game is its event id, its MLB game_pk, or its sport + both teams + exact start instant (``game_aliases``), so
+a re-issued event id (the odds feed did it for the 2026-10-15 Guardians at Rays game) cannot start a second,
+independent slate of positions. The engine's guard also reads the owner's manual tickets beside the rule
+ledger, so a tap on one side stops the engine adding the other, as the engine's ticket stops the tap.
+
 The ledger is append-only. Nothing here edits or deletes a row, so a pair written before this rule existed
 stays exactly as it was; the rule holds going forward.
 """
@@ -48,6 +55,7 @@ stays exactly as it was; the rule holds going forward.
 from __future__ import annotations
 
 import logging
+from datetime import datetime, timezone
 from typing import Any, Callable, Iterable, Mapping, Optional, Sequence
 
 from src.hounds import user_rules
@@ -175,18 +183,67 @@ def keep_first(ranked: Iterable, describe: Callable[[Any], tuple], *, skipped: A
     return kept
 
 
+def _team_text(value: Any) -> str:
+    return " ".join(str(value or "").casefold().split())
+
+
+def _start_text(value: Any) -> str:
+    """The start instant as one UTC minute string, or "" when unreadable (so two spellings of one instant agree)."""
+    if isinstance(value, datetime):
+        moment = value
+    else:
+        text = str(value or "").strip()
+        if not text:
+            return ""
+        try:
+            moment = datetime.fromisoformat(text.replace("Z", "+00:00"))
+        except ValueError:
+            return ""
+    if moment.tzinfo is None:
+        moment = moment.replace(tzinfo=timezone.utc)
+    return moment.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%MZ")
+
+
+def game_aliases(event_id: Any, game: Optional[Mapping] = None) -> list:
+    """Every name one game can go by, so a re-issued event id does not make it two games.
+
+    ``game`` carries ``sport``, ``home_team``, ``away_team``, ``commence_time`` and ``game_pk`` (a ledger row
+    has all five). Three keys, each safe on its own:
+      * the event id the odds feed gave it;
+      * the MLB ``game_pk`` (a doubleheader's two games have two);
+      * the sport, both teams and the exact start instant. Two real games of one pair never start at the same
+        instant, so equal teams and start under two ids is one game. The odds feed has re-issued an id for a
+        game whose start moved (2026-10-15 Guardians at Rays) and a provider could spell the id another way."""
+    keys: list = []
+    if event_id:
+        keys.append(("event", str(event_id)))
+    if game:
+        sport = _team_text(game.get("sport"))
+        pk = game.get("game_pk")
+        if sport == "mlb" and pk not in (None, ""):
+            keys.append(("pk", str(pk)))
+        home, away = _team_text(game.get("home_team")), _team_text(game.get("away_team"))
+        start = _start_text(game.get("commence_time"))
+        if sport and home and away and start:
+            keys.append(("teams", sport, home, away, start))
+    return keys
+
+
 class Book:
-    """The positions every hound already holds, by (hound, event), read from ledger rows.
+    """The positions every hound already holds, by (hound, game), read from ledger rows.
 
     Build it once from the ledger the writer is about to append to (``Book.from_rows``), ask ``refusal``
     before each append and ``take`` after it. Rows that are not bets, or that name no event, are ignored.
     A graded or voided bet still counts: the rule is about what the hound put on the game, not about how
-    it ended."""
+    it ended. A game is known by every alias in ``game_aliases``: two event ids that name one game (same
+    game_pk, or same teams and start) share one set of positions."""
 
     BET_KINDS = ("hound_user_bet",)
 
     def __init__(self) -> None:
-        self._held: dict = {}
+        self._group: dict = {}     # (hound, alias) -> group id
+        self._slots: dict = {}     # group id -> {slot: (value, market, line)}
+        self._next = 0
 
     @classmethod
     def from_rows(cls, rows: Iterable[Mapping], kinds: Optional[Sequence[str]] = None) -> "Book":
@@ -197,24 +254,55 @@ class Book:
                 book.take(row)
         return book
 
-    def take(self, row: Mapping) -> None:
-        key = (row.get("hound_id"), row.get("event_id"))
-        placed = slot_of(row.get("market"), row.get("side"), row.get("player"))
-        if None in key or placed is None:
-            return
-        self._held.setdefault(key, {}).setdefault(placed[0], (placed[1], row.get("market"), row.get("line")))
+    def _groups(self, hound_id: Any, aliases: Sequence) -> list:
+        found: list = []
+        for alias in aliases:
+            gid = self._group.get((hound_id, alias))
+            if gid is not None and gid not in found:
+                found.append(gid)
+        return found
 
-    def held(self, hound_id: str, event_id: str) -> dict:
-        return dict(self._held.get((hound_id, event_id), {}))
+    def take(self, row: Mapping) -> None:
+        hound_id, event_id = row.get("hound_id"), row.get("event_id")
+        if hound_id is None or event_id is None:
+            return
+        placed = slot_of(row.get("market"), row.get("side"), row.get("player"))
+        if placed is None:
+            return
+        aliases = game_aliases(event_id, row)
+        found = self._groups(hound_id, aliases)
+        if found:
+            gid = found[0]
+            for other in found[1:]:                       # two names for one game: join what each held
+                for slot, have in self._slots.pop(other, {}).items():
+                    self._slots[gid].setdefault(slot, have)
+                for key, owner in list(self._group.items()):
+                    if owner == other:
+                        self._group[key] = gid
+        else:
+            gid = self._next
+            self._next += 1
+            self._slots[gid] = {}
+        for alias in aliases:
+            self._group[(hound_id, alias)] = gid
+        self._slots[gid].setdefault(placed[0], (placed[1], row.get("market"), row.get("line")))
+
+    def held(self, hound_id: str, event_id: str, game: Optional[Mapping] = None) -> dict:
+        merged: dict = {}
+        for gid in self._groups(hound_id, game_aliases(event_id, game)):
+            for slot, have in self._slots[gid].items():
+                merged.setdefault(slot, have)
+        return merged
 
     def refusal(self, hound_id: str, event_id: str, market: Any, side: Any, player: Any = None,
-                line: Any = None) -> Optional[str]:
-        """The stable code to refuse with, or None when the position is free to take."""
-        return check(self._held.get((hound_id, event_id), {}), market, side, player, line)
+                line: Any = None, game: Optional[Mapping] = None) -> Optional[str]:
+        """The stable code to refuse with, or None when the position is free to take. ``game`` (sport, teams,
+        start, game_pk) lets a second event id of the same game find the positions held under the first."""
+        return check(self.held(hound_id, event_id, game), market, side, player, line)
 
     def refusal_for_row(self, row: Mapping) -> Optional[str]:
         return self.refusal(row.get("hound_id"), row.get("event_id"), row.get("market"), row.get("side"),
-                            row.get("player"), row.get("line"))
+                            row.get("player"), row.get("line"), game=row)
 
 
 def reason_text(code: str) -> str:
