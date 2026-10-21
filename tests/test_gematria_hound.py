@@ -242,11 +242,145 @@ class FactsTests(unittest.TestCase):
                 if isinstance(node, dict) and "value" in node or isinstance(node, dict) and "date" in node:
                     self.assertTrue(str(node.get("source") or "").startswith("http"), (key, fname))
 
+    def test_mlb_and_wnba_are_seeded_and_what_is_absent_stays_absent(self):
+        """The v1b extension: all 30 MLB clubs and 15 WNBA teams, every fact sourced, nothing guessed."""
+        data = facts_mod.load().data.get("teams") or {}
+        by_sport = {s: {k: v for k, v in data.items() if v.get("sport") == s} for s in ("mlb", "wnba")}
+        self.assertEqual((len(by_sport["mlb"]), len(by_sport["wnba"])), (30, 15))
+        for sport, teams in by_sport.items():
+            for key, entry in teams.items():
+                self.assertTrue(entry.get("mascot", {}).get("value"), key)
+                for fname in ("stadium", "stadium_opened", "founded"):
+                    node = entry.get(fname)
+                    if node is None:
+                        continue                                                    # absent is allowed; a fact without a source is not
+                    self.assertTrue(str(node.get("source") or "").startswith("http"), (key, fname))
+                    if "precision" in node:
+                        self.assertEqual(len(node["date"]), 4 if node["precision"] == "year" else 10, (key, fname, node))
+        # the places the sources do not support stay absent rather than being filled in
+        self.assertNotIn("city", data["mlb:athletics"])                        # ESPN's "location" for them is the name itself
+        for key in ("mlb:torontobluejays", "wnba:torontotempo", "mlb:washingtonnationals"):      # Ontario, Ontario, D.C.: not U.S. states
+            self.assertNotIn("state", data[key], key)
+        self.assertEqual(data["mlb:athletics"]["stadium"]["value"], "Sutter Health Park")     # not ESPN's stale Oakland Coliseum
+        self.assertEqual(data["mlb:bostonredsox"]["stadium_opened"]["date"], "1912-04-20")
+        self.assertEqual(data["mlb:bostonredsox"]["founded"]["precision"], "year")            # the infobox gives a year; no day invented
+        self.assertEqual(data["wnba:atlantadream"]["state"]["value"], "Georgia")             # read from the arena article: ESPN has no WNBA venue
+
+    def test_a_real_mlb_game_is_weighed_not_passed_as_no_facts(self):
+        """MLB used to pass as no_facts (no team was in the facts layer). With the shipped facts and the stored MLB results it
+        builds both worlds and a verdict that is about the numbers."""
+        games = [mlb_game(800000 + i, f"2026-09-{i + 1:02d}", "NYY", "BOS" if i % 3 else "TB", 6 - i % 4, 2 + i % 5) for i in range(14)]
+        stores = basic_stores(mlb_games=games)
+        ctx = base.build_context(stores, "evA")
+        run = rt.GematriaRuntime(rules=rules_mod.load(), facts=facts_mod.load(), source=history.Disk(canonical=lambda s, n: n),
+                                 ledger=None)
+        w = run.weigh(ctx, base.lock_board(stores, ctx))
+        self.assertNotIn(w.verdict.code, ("no_facts", "no_history"))
+        self.assertIsNotNone(w.signals)
+        self.assertGreater(w.block["search_space"], 0)
+
+    def test_the_builder_records_a_stadium_with_its_own_sources_and_never_invents_a_day(self):
+        import scripts.build_gematria_facts as build
+
+        team = ("{{Infobox MLB team\n| established = 1912\n| ballpark = [[Example Park]] ({{mlby|1912}}-present)\n}}")
+        park = "{{Infobox stadium\n| location = [[Boston]], Massachusetts, U.S.\n| opened = April 20, 1912\n}}"
+        yearly = "{{Infobox stadium\n| location = [[Somewhere]], Ohio\n| opened = 1999\n}}"
+        entry: dict = {}
+        with mock.patch.dict(build.PREFETCH, {"Example Park": (park, "https://en.wikipedia.org/wiki/Example_Park")}, clear=False):
+            build.add_stadium(build.Fetcher(None), entry, team, "https://en.wikipedia.org/wiki/Team", want_state=True)
+        self.assertEqual(entry["stadium"], {"value": "Example Park", "source": "https://en.wikipedia.org/wiki/Team"})
+        self.assertEqual(entry["stadium_opened"], {"date": "1912-04-20", "precision": "day",
+                                                   "source": "https://en.wikipedia.org/wiki/Example_Park"})
+        self.assertEqual(entry["state"]["value"], "Massachusetts")
+        entry = {}
+        with mock.patch.dict(build.PREFETCH, {"Example Park": (yearly, "https://en.wikipedia.org/wiki/Example_Park")}, clear=False):
+            build.add_stadium(build.Fetcher(None), entry, team, "https://en.wikipedia.org/wiki/Team", want_state=False)
+        self.assertEqual((entry["stadium_opened"]["date"], entry["stadium_opened"]["precision"]), ("1999", "year"))
+        self.assertNotIn("state", entry)                                       # ESPN's state was already taken
+        entry = {}
+        with mock.patch.dict(build.PREFETCH, {"Example Park": (None, None)}, clear=False):
+            build.add_stadium(build.Fetcher(None), entry, team, "https://en.wikipedia.org/wiki/Team", want_state=True)
+        self.assertEqual(list(entry), ["stadium"])                              # no article, no opening date, no state
+
 
 def inputs_for(home_games, away_games, rules, *, day="2026-10-20", facts=NBA_FACTS, series_games=()):
     home = sig_mod.TeamInputs(facts.team("nba", "New York Knicks"), history.team_state(home_games, "newyorkknicks"))
     away = sig_mod.TeamInputs(facts.team("nba", "Boston Celtics"), history.team_state(away_games, "bostonceltics"))
     return sig_mod.GameInputs(day, home, away, history.head_to_head(list(series_games), "newyorkknicks", "bostonceltics"), True)
+
+
+#: the count units whose window is "the season so far"; an MLB game must produce none of them (the store starts 2026-08-28)
+SEASON_COUNT_QIDS = ("game_number", "coach_game_number", "meeting_number", "wins", "venue_wins", "losses", "venue_losses", "series_wins")
+
+
+class MlbHasNoSeasonCountsTests(unittest.TestCase):
+    """MLB results are read only from 2026-08-28 (the seal), months into the season, so a win total over them is a count SINCE
+    08-28 passed off as "the Nth win of the season": a wrong number. Absent is better than wrong. Spans, ciphers, statehood and the
+    gaps since a last win/loss are exact whatever the window and stay."""
+
+    def setUp(self):
+        self.rules = rules_mod.load()
+        self.book = facts_mod.load()
+
+    def game_inputs(self, season_counts):
+        games = [G(f"2026-09-{d:02d}", "Boston Red Sox", "New York Yankees", 5 if d % 3 else 2, 3, regular=True) for d in range(1, 20)]
+        games += [G(f"2026-09-{d:02d}", "New York Yankees", "Boston Red Sox", 4, 6 if d % 2 else 1, regular=True) for d in range(2, 21, 3)]
+        home = sig_mod.TeamInputs(self.book.team("mlb", "Boston Red Sox"), history.team_state(games, "bostonredsox"))
+        away = sig_mod.TeamInputs(self.book.team("mlb", "New York Yankees"), history.team_state(games, "newyorkyankees"))
+        return sig_mod.GameInputs("2026-10-04", home, away, history.head_to_head(games, "bostonredsox", "newyorkyankees"), True,
+                                  season_counts=season_counts)
+
+    def qids(self, gi):
+        out = {q.qid for q in sig_mod.static_quantities(gi, self.rules)}
+        for winner in ("home", "away"):
+            out |= {q.qid for q in sig_mod.milestones(gi, winner)}
+        return out
+
+    def test_an_mlb_game_produces_no_season_count_quantities_or_evidence(self):
+        gi = self.game_inputs(season_counts=False)
+        ids = self.qids(gi)
+        for unit in SEASON_COUNT_QIDS:
+            self.assertFalse([q for q in ids if q.endswith("." + unit)], unit)
+        sig = sig_mod.generate(gi, self.rules)
+        for side in (sig.home, sig.away):
+            for e in side.evidence:
+                for q in (e.a, e.b):
+                    if q is not None:
+                        self.assertFalse(q.qid.endswith(tuple("." + u for u in SEASON_COUNT_QIDS)), q.qid)
+                        self.assertNotIn("of the season", q.label)
+                        self.assertNotIn("in our store", q.label)
+        # what is exact in any window stays
+        self.assertTrue([q for q in ids if q.endswith(".since_win.days")])
+        self.assertTrue([q for q in ids if ".span." in q])
+        self.assertTrue([q for q in ids if ".name." in q])
+
+    def test_the_same_inputs_with_a_full_season_do_have_those_counts(self):
+        """The control: switching the flag back on is what brings them, so the test above is testing the flag and not an empty fixture."""
+        ids = self.qids(self.game_inputs(season_counts=True))
+        for unit in ("game_number", "wins", "venue_wins", "losses", "venue_losses", "meeting_number", "series_wins"):
+            self.assertTrue([q for q in ids if q.endswith("." + unit)], unit)
+
+    def test_the_real_mlb_source_marks_its_counts_incomplete_and_the_weighed_game_has_none(self):
+        games = [mlb_game(800000 + i, f"2026-09-{i + 1:02d}", "NYY", "BOS" if i % 3 else "TB", 6 - i % 4, 2 + i % 5) for i in range(14)]
+        stores = basic_stores(mlb_games=games)
+        ctx = base.build_context(stores, "evA")
+        past = history.Disk(canonical=lambda s, n: n).past(ctx)
+        self.assertFalse(past.season_counts)
+        self.assertIn("no season-to-date counts", past.scope)
+        run = rt.GematriaRuntime(rules=rules_mod.load(), facts=self.book, source=history.Disk(canonical=lambda s, n: n), ledger=None)
+        w = run.weigh(ctx, base.lock_board(stores, ctx))
+        self.assertIsNotNone(w.signals)
+        for side in (w.signals.home, w.signals.away):
+            for e in side.evidence:
+                for q in (e.a, e.b):
+                    if q is not None:
+                        self.assertNotIn("of the season", q.label)
+                        self.assertFalse(q.qid.endswith(tuple("." + u for u in SEASON_COUNT_QIDS)), q.qid)
+
+    def test_the_other_sports_keep_their_season_counts(self):
+        ctx = base.build_context(allsports_stores(nba_rows()), "nba1")
+        self.assertTrue(history.Disk(espn=history.EspnStore(Path(tempfile.gettempdir()) / "nope-gematria")).past(ctx).season_counts)
+        self.assertTrue(sig_mod.GameInputs("2026-10-20", sig_mod.TeamInputs(facts_mod.Team()), sig_mod.TeamInputs(facts_mod.Team())).season_counts)
 
 
 class SignalTests(unittest.TestCase):
@@ -420,6 +554,44 @@ class HistoryTests(unittest.TestCase):
             (league / "games_2027.jsonl").write_text(json.dumps(new) + "\n" + json.dumps(old), encoding="utf-8")
             past = history.Disk(espn=history.EspnStore(Path(d))).past(ctx)
         self.assertEqual((past.games[0].hs, past.games[0].as_), (100, 90))
+
+    def test_a_final_score_first_seen_after_the_cutoff_does_not_leak(self):
+        """REGRESSION (verifier finding). The reader used to keep the newest-OBSERVED row of each game, so a game that started a
+        minute before the cutoff and whose only final row was captured after the lock counted, final score and all. A result
+        now counts only if it is final in a row observed before the cutoff, or the game started a full FINISH_LAG before the
+        cutoff (a long-finished game backfilled late). Fails on the newest-row reader."""
+        ctx = base.build_context(allsports_stores(nba_rows()), "nba1")
+        cut = ctx.lock - history.FINISH_LAG
+        z = lambda t: t.strftime("%Y-%m-%dT%H:%M:%SZ")
+        late_seen = z(ctx.lock + timedelta(minutes=30))
+
+        def row(gid, start, observed, completed, hs, as_, away="Miami Heat"):
+            return {"game_id": gid, "completed": completed, "date_utc": z(start), "observed_utc": observed,
+                    "home_name": "Boston Celtics", "away_name": away, "home_score": hs, "away_score": as_,
+                    "season_slug": "regular-season"}
+
+        rows = [
+            # started 1 minute before the cutoff; its only final row was captured after the lock: LEAK, must not count
+            row("leak", cut - timedelta(minutes=1), late_seen, True, 120, 80),
+            # same shape, but an earlier row (observed before the cutoff) said it was still on: not final then, still out
+            row("not-yet", cut - timedelta(minutes=1), z(cut - timedelta(hours=1)), False, 0, 0, away="Chicago Bulls"),
+            row("not-yet", cut - timedelta(minutes=1), late_seen, True, 120, 80, away="Chicago Bulls"),
+            # long finished (started 7h before the cutoff) but first stored after the lock: a late backfill, counts
+            row("backfill", cut - timedelta(hours=7), late_seen, True, 101, 99, away="Atlanta Hawks"),
+            # final in a row observed before the cutoff; a later row (a score correction) must NOT replace it
+            row("early-final", cut - timedelta(hours=3), z(cut - timedelta(minutes=30)), True, 100, 90, away="New York Knicks"),
+            row("early-final", cut - timedelta(hours=3), late_seen, True, 7, 7, away="New York Knicks"),
+        ]
+        with tempfile.TemporaryDirectory() as d:
+            league = Path(d) / "nba"
+            league.mkdir()
+            (league / "games_2027.jsonl").write_text("\n".join(json.dumps(r) for r in rows), encoding="utf-8")
+            past = history.Disk(espn=history.EspnStore(Path(d))).past(ctx)
+        by_opp = {x.away: (x.hs, x.as_) for x in past.games}
+        self.assertNotIn("miamiheat", by_opp)                      # the leak
+        self.assertNotIn("chicagobulls", by_opp)                   # final only in a post-lock row, started just before the cutoff
+        self.assertEqual(by_opp["atlantahawks"], (101, 99))        # late backfill of a long-finished game
+        self.assertEqual(by_opp["newyorkknicks"], (100, 90))       # the pre-cutoff observation, not the later one
 
     def test_a_sport_with_no_results_store_is_unavailable_not_empty(self):
         ctx = base.build_context(allsports_stores(allsports_rows("t1", "tennis", "A B", "C D", title="ATP")), "t1")

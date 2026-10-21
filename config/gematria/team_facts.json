@@ -1,7 +1,1337 @@
 {
- "built_utc": "2026-10-21T05:05:10Z",
+ "built_utc": "2026-10-21T14:39:53Z",
  "note": "Every fact carries its source URL. A fact that could not be read is absent, never guessed. Built by scripts/build_gematria_facts.py; the hound never fetches.",
  "teams": {
+  "mlb:arizonadiamondbacks": {
+   "abbr": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/29",
+    "value": "ARI"
+   },
+   "aliases": [],
+   "city": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/29",
+    "value": "Arizona"
+   },
+   "espn_id": "29",
+   "founded": {
+    "date": "1998",
+    "precision": "year",
+    "source": "https://en.wikipedia.org/wiki/Arizona_Diamondbacks"
+   },
+   "head_coach": {
+    "experience_years": 7,
+    "season": 2026,
+    "source": "https://sports.core.api.espn.com/v2/sports/baseball/leagues/mlb/seasons/2026/teams/29/coaches",
+    "value": "Torey Lovullo"
+   },
+   "mascot": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/29",
+    "value": "Diamondbacks"
+   },
+   "name": "Arizona Diamondbacks",
+   "observed_utc": "2026-10-21T14:39:53Z",
+   "sport": "mlb",
+   "stadium": {
+    "source": "https://en.wikipedia.org/wiki/Arizona_Diamondbacks",
+    "value": "Chase Field"
+   },
+   "stadium_opened": {
+    "date": "1998-03-31",
+    "precision": "day",
+    "source": "https://en.wikipedia.org/wiki/Chase_Field"
+   },
+   "state": {
+    "admitted": "1912-02-14",
+    "admitted_order": 48,
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/29",
+    "value": "Arizona"
+   }
+  },
+  "mlb:athletics": {
+   "abbr": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/11",
+    "value": "ATH"
+   },
+   "aliases": [
+    "Oakland Athletics"
+   ],
+   "espn_id": "11",
+   "founded": {
+    "date": "1901",
+    "precision": "year",
+    "source": "https://en.wikipedia.org/wiki/Athletics_%28baseball%29"
+   },
+   "head_coach": {
+    "experience_years": 5,
+    "season": 2026,
+    "source": "https://sports.core.api.espn.com/v2/sports/baseball/leagues/mlb/seasons/2026/teams/11/coaches",
+    "value": "Mark Kotsay"
+   },
+   "mascot": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/11",
+    "value": "Athletics"
+   },
+   "name": "Athletics",
+   "observed_utc": "2026-10-21T14:39:53Z",
+   "sport": "mlb",
+   "stadium": {
+    "source": "https://en.wikipedia.org/wiki/Athletics_%28baseball%29",
+    "value": "Sutter Health Park"
+   },
+   "stadium_opened": {
+    "date": "2000-05-15",
+    "precision": "day",
+    "source": "https://en.wikipedia.org/wiki/Sutter_Health_Park"
+   },
+   "state": {
+    "admitted": "1850-09-09",
+    "admitted_order": 31,
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/11",
+    "value": "California"
+   }
+  },
+  "mlb:atlantabraves": {
+   "abbr": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/15",
+    "value": "ATL"
+   },
+   "aliases": [],
+   "city": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/15",
+    "value": "Atlanta"
+   },
+   "espn_id": "15",
+   "founded": {
+    "date": "1871",
+    "precision": "year",
+    "source": "https://en.wikipedia.org/wiki/Atlanta_Braves"
+   },
+   "head_coach": {
+    "experience_years": 5,
+    "season": 2026,
+    "source": "https://sports.core.api.espn.com/v2/sports/baseball/leagues/mlb/seasons/2026/teams/15/coaches",
+    "value": "Walt Weiss"
+   },
+   "mascot": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/15",
+    "value": "Braves"
+   },
+   "name": "Atlanta Braves",
+   "observed_utc": "2026-10-21T14:39:53Z",
+   "sport": "mlb",
+   "stadium": {
+    "source": "https://en.wikipedia.org/wiki/Atlanta_Braves",
+    "value": "Truist Park"
+   },
+   "stadium_opened": {
+    "date": "2017-03-31",
+    "precision": "day",
+    "source": "https://en.wikipedia.org/wiki/Truist_Park"
+   },
+   "state": {
+    "admitted": "1788-01-02",
+    "admitted_order": 4,
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/15",
+    "value": "Georgia"
+   }
+  },
+  "mlb:baltimoreorioles": {
+   "abbr": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/1",
+    "value": "BAL"
+   },
+   "aliases": [],
+   "city": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/1",
+    "value": "Baltimore"
+   },
+   "espn_id": "1",
+   "founded": {
+    "date": "1894",
+    "precision": "year",
+    "source": "https://en.wikipedia.org/wiki/Baltimore_Orioles"
+   },
+   "head_coach": {
+    "experience_years": 2,
+    "season": 2026,
+    "source": "https://sports.core.api.espn.com/v2/sports/baseball/leagues/mlb/seasons/2026/teams/1/coaches",
+    "value": "Craig Albernaz"
+   },
+   "mascot": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/1",
+    "value": "Orioles"
+   },
+   "name": "Baltimore Orioles",
+   "observed_utc": "2026-10-21T14:39:53Z",
+   "sport": "mlb",
+   "stadium": {
+    "source": "https://en.wikipedia.org/wiki/Baltimore_Orioles",
+    "value": "Oriole Park at Camden Yards"
+   },
+   "stadium_opened": {
+    "date": "1992-04-06",
+    "precision": "day",
+    "source": "https://en.wikipedia.org/wiki/Oriole_Park_at_Camden_Yards"
+   },
+   "state": {
+    "admitted": "1788-04-28",
+    "admitted_order": 7,
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/1",
+    "value": "Maryland"
+   }
+  },
+  "mlb:bostonredsox": {
+   "abbr": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/2",
+    "value": "BOS"
+   },
+   "aliases": [],
+   "city": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/2",
+    "value": "Boston"
+   },
+   "espn_id": "2",
+   "founded": {
+    "date": "1901",
+    "precision": "year",
+    "source": "https://en.wikipedia.org/wiki/Boston_Red_Sox"
+   },
+   "head_coach": {
+    "experience_years": 1,
+    "season": 2026,
+    "source": "https://sports.core.api.espn.com/v2/sports/baseball/leagues/mlb/seasons/2026/teams/2/coaches",
+    "value": "Chad Tracy"
+   },
+   "mascot": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/2",
+    "value": "Red Sox"
+   },
+   "name": "Boston Red Sox",
+   "observed_utc": "2026-10-21T14:39:53Z",
+   "sport": "mlb",
+   "stadium": {
+    "source": "https://en.wikipedia.org/wiki/Boston_Red_Sox",
+    "value": "Fenway Park"
+   },
+   "stadium_opened": {
+    "date": "1912-04-20",
+    "precision": "day",
+    "source": "https://en.wikipedia.org/wiki/Fenway_Park"
+   },
+   "state": {
+    "admitted": "1788-02-06",
+    "admitted_order": 6,
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/2",
+    "value": "Massachusetts"
+   }
+  },
+  "mlb:chicagocubs": {
+   "abbr": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/16",
+    "value": "CHC"
+   },
+   "aliases": [],
+   "city": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/16",
+    "value": "Chicago"
+   },
+   "espn_id": "16",
+   "founded": {
+    "date": "1870",
+    "precision": "year",
+    "source": "https://en.wikipedia.org/wiki/Chicago_Cubs"
+   },
+   "head_coach": {
+    "experience_years": 12,
+    "season": 2026,
+    "source": "https://sports.core.api.espn.com/v2/sports/baseball/leagues/mlb/seasons/2026/teams/16/coaches",
+    "value": "Craig Counsell"
+   },
+   "mascot": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/16",
+    "value": "Cubs"
+   },
+   "name": "Chicago Cubs",
+   "observed_utc": "2026-10-21T14:39:53Z",
+   "sport": "mlb",
+   "stadium": {
+    "source": "https://en.wikipedia.org/wiki/Chicago_Cubs",
+    "value": "Wrigley Field"
+   },
+   "stadium_opened": {
+    "date": "1914-04-23",
+    "precision": "day",
+    "source": "https://en.wikipedia.org/wiki/Wrigley_Field"
+   },
+   "state": {
+    "admitted": "1818-12-03",
+    "admitted_order": 21,
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/16",
+    "value": "Illinois"
+   }
+  },
+  "mlb:chicagowhitesox": {
+   "abbr": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/4",
+    "value": "CHW"
+   },
+   "aliases": [],
+   "city": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/4",
+    "value": "Chicago"
+   },
+   "espn_id": "4",
+   "founded": {
+    "date": "1894",
+    "precision": "year",
+    "source": "https://en.wikipedia.org/wiki/Chicago_White_Sox"
+   },
+   "head_coach": {
+    "experience_years": 2,
+    "season": 2026,
+    "source": "https://sports.core.api.espn.com/v2/sports/baseball/leagues/mlb/seasons/2026/teams/4/coaches",
+    "value": "Will Venable"
+   },
+   "mascot": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/4",
+    "value": "White Sox"
+   },
+   "name": "Chicago White Sox",
+   "observed_utc": "2026-10-21T14:39:53Z",
+   "sport": "mlb",
+   "stadium": {
+    "source": "https://en.wikipedia.org/wiki/Chicago_White_Sox",
+    "value": "Rate Field"
+   },
+   "stadium_opened": {
+    "date": "1991-04-18",
+    "precision": "day",
+    "source": "https://en.wikipedia.org/wiki/Rate_Field"
+   },
+   "state": {
+    "admitted": "1818-12-03",
+    "admitted_order": 21,
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/4",
+    "value": "Illinois"
+   }
+  },
+  "mlb:cincinnatireds": {
+   "abbr": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/17",
+    "value": "CIN"
+   },
+   "aliases": [],
+   "city": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/17",
+    "value": "Cincinnati"
+   },
+   "espn_id": "17",
+   "founded": {
+    "date": "1881",
+    "precision": "year",
+    "source": "https://en.wikipedia.org/wiki/Cincinnati_Reds"
+   },
+   "head_coach": {
+    "experience_years": 28,
+    "season": 2026,
+    "source": "https://sports.core.api.espn.com/v2/sports/baseball/leagues/mlb/seasons/2026/teams/17/coaches",
+    "value": "Terry Francona"
+   },
+   "mascot": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/17",
+    "value": "Reds"
+   },
+   "name": "Cincinnati Reds",
+   "observed_utc": "2026-10-21T14:39:53Z",
+   "sport": "mlb",
+   "stadium": {
+    "source": "https://en.wikipedia.org/wiki/Cincinnati_Reds",
+    "value": "Great American Ball Park"
+   },
+   "stadium_opened": {
+    "date": "2003-03-31",
+    "precision": "day",
+    "source": "https://en.wikipedia.org/wiki/Great_American_Ball_Park"
+   },
+   "state": {
+    "admitted": "1803-03-01",
+    "admitted_order": 17,
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/17",
+    "value": "Ohio"
+   }
+  },
+  "mlb:clevelandguardians": {
+   "abbr": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/5",
+    "value": "CLE"
+   },
+   "aliases": [],
+   "city": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/5",
+    "value": "Cleveland"
+   },
+   "espn_id": "5",
+   "founded": {
+    "date": "1896",
+    "precision": "year",
+    "source": "https://en.wikipedia.org/wiki/Cleveland_Guardians"
+   },
+   "head_coach": {
+    "experience_years": 3,
+    "season": 2026,
+    "source": "https://sports.core.api.espn.com/v2/sports/baseball/leagues/mlb/seasons/2026/teams/5/coaches",
+    "value": "Stephen Vogt"
+   },
+   "mascot": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/5",
+    "value": "Guardians"
+   },
+   "name": "Cleveland Guardians",
+   "observed_utc": "2026-10-21T14:39:53Z",
+   "sport": "mlb",
+   "stadium": {
+    "source": "https://en.wikipedia.org/wiki/Cleveland_Guardians",
+    "value": "Progressive Field"
+   },
+   "stadium_opened": {
+    "date": "1994-04-02",
+    "precision": "day",
+    "source": "https://en.wikipedia.org/wiki/Progressive_Field"
+   },
+   "state": {
+    "admitted": "1803-03-01",
+    "admitted_order": 17,
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/5",
+    "value": "Ohio"
+   }
+  },
+  "mlb:coloradorockies": {
+   "abbr": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/27",
+    "value": "COL"
+   },
+   "aliases": [],
+   "city": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/27",
+    "value": "Colorado"
+   },
+   "espn_id": "27",
+   "founded": {
+    "date": "1993",
+    "precision": "year",
+    "source": "https://en.wikipedia.org/wiki/Colorado_Rockies"
+   },
+   "head_coach": {
+    "experience_years": 2,
+    "season": 2026,
+    "source": "https://sports.core.api.espn.com/v2/sports/baseball/leagues/mlb/seasons/2026/teams/27/coaches",
+    "value": "Warren Schaeffer"
+   },
+   "mascot": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/27",
+    "value": "Rockies"
+   },
+   "name": "Colorado Rockies",
+   "observed_utc": "2026-10-21T14:39:53Z",
+   "sport": "mlb",
+   "stadium": {
+    "source": "https://en.wikipedia.org/wiki/Colorado_Rockies",
+    "value": "Coors Field"
+   },
+   "stadium_opened": {
+    "date": "1995-04-26",
+    "precision": "day",
+    "source": "https://en.wikipedia.org/wiki/Coors_Field"
+   },
+   "state": {
+    "admitted": "1876-08-01",
+    "admitted_order": 38,
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/27",
+    "value": "Colorado"
+   }
+  },
+  "mlb:detroittigers": {
+   "abbr": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/6",
+    "value": "DET"
+   },
+   "aliases": [],
+   "city": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/6",
+    "value": "Detroit"
+   },
+   "espn_id": "6",
+   "founded": {
+    "date": "1894",
+    "precision": "year",
+    "source": "https://en.wikipedia.org/wiki/Detroit_Tigers"
+   },
+   "head_coach": {
+    "experience_years": 15,
+    "season": 2026,
+    "source": "https://sports.core.api.espn.com/v2/sports/baseball/leagues/mlb/seasons/2026/teams/6/coaches",
+    "value": "A.J. Hinch"
+   },
+   "mascot": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/6",
+    "value": "Tigers"
+   },
+   "name": "Detroit Tigers",
+   "observed_utc": "2026-10-21T14:39:53Z",
+   "sport": "mlb",
+   "stadium": {
+    "source": "https://en.wikipedia.org/wiki/Detroit_Tigers",
+    "value": "Comerica Park"
+   },
+   "stadium_opened": {
+    "date": "2000-04-11",
+    "precision": "day",
+    "source": "https://en.wikipedia.org/wiki/Comerica_Park"
+   },
+   "state": {
+    "admitted": "1837-01-26",
+    "admitted_order": 26,
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/6",
+    "value": "Michigan"
+   }
+  },
+  "mlb:houstonastros": {
+   "abbr": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/18",
+    "value": "HOU"
+   },
+   "aliases": [],
+   "city": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/18",
+    "value": "Houston"
+   },
+   "espn_id": "18",
+   "founded": {
+    "date": "1962",
+    "precision": "year",
+    "source": "https://en.wikipedia.org/wiki/Houston_Astros"
+   },
+   "head_coach": {
+    "experience_years": 1,
+    "season": 2026,
+    "source": "https://sports.core.api.espn.com/v2/sports/baseball/leagues/mlb/seasons/2026/teams/18/coaches",
+    "value": "Victor Rodriguez"
+   },
+   "mascot": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/18",
+    "value": "Astros"
+   },
+   "name": "Houston Astros",
+   "observed_utc": "2026-10-21T14:39:53Z",
+   "sport": "mlb",
+   "stadium": {
+    "source": "https://en.wikipedia.org/wiki/Houston_Astros",
+    "value": "Daikin Park"
+   },
+   "stadium_opened": {
+    "date": "2000-03-30",
+    "precision": "day",
+    "source": "https://en.wikipedia.org/wiki/Daikin_Park"
+   },
+   "state": {
+    "admitted": "1845-12-29",
+    "admitted_order": 28,
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/18",
+    "value": "Texas"
+   }
+  },
+  "mlb:kansascityroyals": {
+   "abbr": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/7",
+    "value": "KC"
+   },
+   "aliases": [],
+   "city": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/7",
+    "value": "Kansas City"
+   },
+   "espn_id": "7",
+   "founded": {
+    "date": "1969",
+    "precision": "year",
+    "source": "https://en.wikipedia.org/wiki/Kansas_City_Royals"
+   },
+   "head_coach": {
+    "experience_years": 4,
+    "season": 2026,
+    "source": "https://sports.core.api.espn.com/v2/sports/baseball/leagues/mlb/seasons/2026/teams/7/coaches",
+    "value": "Matt Quatraro"
+   },
+   "mascot": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/7",
+    "value": "Royals"
+   },
+   "name": "Kansas City Royals",
+   "observed_utc": "2026-10-21T14:39:53Z",
+   "sport": "mlb",
+   "stadium": {
+    "source": "https://en.wikipedia.org/wiki/Kansas_City_Royals",
+    "value": "Kauffman Stadium"
+   },
+   "stadium_opened": {
+    "date": "1973-04-10",
+    "precision": "day",
+    "source": "https://en.wikipedia.org/wiki/Kauffman_Stadium"
+   },
+   "state": {
+    "admitted": "1821-08-10",
+    "admitted_order": 24,
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/7",
+    "value": "Missouri"
+   }
+  },
+  "mlb:losangelesangels": {
+   "abbr": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/3",
+    "value": "LAA"
+   },
+   "aliases": [],
+   "city": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/3",
+    "value": "Los Angeles"
+   },
+   "espn_id": "3",
+   "founded": {
+    "date": "1961",
+    "precision": "year",
+    "source": "https://en.wikipedia.org/wiki/Los_Angeles_Angels"
+   },
+   "head_coach": {
+    "experience_years": 1,
+    "season": 2026,
+    "source": "https://sports.core.api.espn.com/v2/sports/baseball/leagues/mlb/seasons/2026/teams/3/coaches",
+    "value": "Kurt Suzuki"
+   },
+   "mascot": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/3",
+    "value": "Angels"
+   },
+   "name": "Los Angeles Angels",
+   "observed_utc": "2026-10-21T14:39:53Z",
+   "sport": "mlb",
+   "stadium": {
+    "source": "https://en.wikipedia.org/wiki/Los_Angeles_Angels",
+    "value": "Angel Stadium"
+   },
+   "stadium_opened": {
+    "date": "1966-04-19",
+    "precision": "day",
+    "source": "https://en.wikipedia.org/wiki/Angel_Stadium"
+   },
+   "state": {
+    "admitted": "1850-09-09",
+    "admitted_order": 31,
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/3",
+    "value": "California"
+   }
+  },
+  "mlb:losangelesdodgers": {
+   "abbr": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/19",
+    "value": "LAD"
+   },
+   "aliases": [],
+   "city": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/19",
+    "value": "Los Angeles"
+   },
+   "espn_id": "19",
+   "founded": {
+    "date": "1883",
+    "precision": "year",
+    "source": "https://en.wikipedia.org/wiki/Los_Angeles_Dodgers"
+   },
+   "head_coach": {
+    "experience_years": 11,
+    "season": 2026,
+    "source": "https://sports.core.api.espn.com/v2/sports/baseball/leagues/mlb/seasons/2026/teams/19/coaches",
+    "value": "Dave Roberts"
+   },
+   "mascot": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/19",
+    "value": "Dodgers"
+   },
+   "name": "Los Angeles Dodgers",
+   "observed_utc": "2026-10-21T14:39:53Z",
+   "sport": "mlb",
+   "stadium": {
+    "source": "https://en.wikipedia.org/wiki/Los_Angeles_Dodgers",
+    "value": "Dodger Stadium"
+   },
+   "stadium_opened": {
+    "date": "1962-04-10",
+    "precision": "day",
+    "source": "https://en.wikipedia.org/wiki/Dodger_Stadium"
+   },
+   "state": {
+    "admitted": "1850-09-09",
+    "admitted_order": 31,
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/19",
+    "value": "California"
+   }
+  },
+  "mlb:miamimarlins": {
+   "abbr": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/28",
+    "value": "MIA"
+   },
+   "aliases": [],
+   "city": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/28",
+    "value": "Miami"
+   },
+   "espn_id": "28",
+   "founded": {
+    "date": "1993",
+    "precision": "year",
+    "source": "https://en.wikipedia.org/wiki/Miami_Marlins"
+   },
+   "head_coach": {
+    "experience_years": 2,
+    "season": 2026,
+    "source": "https://sports.core.api.espn.com/v2/sports/baseball/leagues/mlb/seasons/2026/teams/28/coaches",
+    "value": "Clayton McCullough"
+   },
+   "mascot": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/28",
+    "value": "Marlins"
+   },
+   "name": "Miami Marlins",
+   "observed_utc": "2026-10-21T14:39:53Z",
+   "sport": "mlb",
+   "stadium": {
+    "source": "https://en.wikipedia.org/wiki/Miami_Marlins",
+    "value": "LoanDepot Park"
+   },
+   "stadium_opened": {
+    "date": "2012-03-05",
+    "precision": "day",
+    "source": "https://en.wikipedia.org/wiki/LoanDepot_Park"
+   },
+   "state": {
+    "admitted": "1845-03-03",
+    "admitted_order": 27,
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/28",
+    "value": "Florida"
+   }
+  },
+  "mlb:milwaukeebrewers": {
+   "abbr": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/8",
+    "value": "MIL"
+   },
+   "aliases": [],
+   "city": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/8",
+    "value": "Milwaukee"
+   },
+   "espn_id": "8",
+   "founded": {
+    "date": "1969",
+    "precision": "year",
+    "source": "https://en.wikipedia.org/wiki/Milwaukee_Brewers"
+   },
+   "head_coach": {
+    "experience_years": 15,
+    "season": 2026,
+    "source": "https://sports.core.api.espn.com/v2/sports/baseball/leagues/mlb/seasons/2026/teams/8/coaches",
+    "value": "Pat Murphy"
+   },
+   "mascot": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/8",
+    "value": "Brewers"
+   },
+   "name": "Milwaukee Brewers",
+   "observed_utc": "2026-10-21T14:39:53Z",
+   "sport": "mlb",
+   "stadium": {
+    "source": "https://en.wikipedia.org/wiki/Milwaukee_Brewers",
+    "value": "American Family Field"
+   },
+   "stadium_opened": {
+    "date": "2001-04-06",
+    "precision": "day",
+    "source": "https://en.wikipedia.org/wiki/American_Family_Field"
+   },
+   "state": {
+    "admitted": "1848-05-29",
+    "admitted_order": 30,
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/8",
+    "value": "Wisconsin"
+   }
+  },
+  "mlb:minnesotatwins": {
+   "abbr": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/9",
+    "value": "MIN"
+   },
+   "aliases": [],
+   "city": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/9",
+    "value": "Minnesota"
+   },
+   "espn_id": "9",
+   "founded": {
+    "date": "1894",
+    "precision": "year",
+    "source": "https://en.wikipedia.org/wiki/Minnesota_Twins"
+   },
+   "head_coach": {
+    "experience_years": 6,
+    "season": 2026,
+    "source": "https://sports.core.api.espn.com/v2/sports/baseball/leagues/mlb/seasons/2026/teams/9/coaches",
+    "value": "Derek Shelton"
+   },
+   "mascot": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/9",
+    "value": "Twins"
+   },
+   "name": "Minnesota Twins",
+   "observed_utc": "2026-10-21T14:39:53Z",
+   "sport": "mlb",
+   "stadium": {
+    "source": "https://en.wikipedia.org/wiki/Minnesota_Twins",
+    "value": "Target Field"
+   },
+   "stadium_opened": {
+    "date": "2010-04-12",
+    "precision": "day",
+    "source": "https://en.wikipedia.org/wiki/Target_Field"
+   },
+   "state": {
+    "admitted": "1858-05-11",
+    "admitted_order": 32,
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/9",
+    "value": "Minnesota"
+   }
+  },
+  "mlb:newyorkmets": {
+   "abbr": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/21",
+    "value": "NYM"
+   },
+   "aliases": [],
+   "city": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/21",
+    "value": "New York"
+   },
+   "espn_id": "21",
+   "founded": {
+    "date": "1962",
+    "precision": "year",
+    "source": "https://en.wikipedia.org/wiki/New_York_Mets"
+   },
+   "head_coach": {
+    "experience_years": 10,
+    "season": 2026,
+    "source": "https://sports.core.api.espn.com/v2/sports/baseball/leagues/mlb/seasons/2026/teams/21/coaches",
+    "value": "Andy Green"
+   },
+   "mascot": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/21",
+    "value": "Mets"
+   },
+   "name": "New York Mets",
+   "observed_utc": "2026-10-21T14:39:53Z",
+   "sport": "mlb",
+   "stadium": {
+    "source": "https://en.wikipedia.org/wiki/New_York_Mets",
+    "value": "Citi Field"
+   },
+   "stadium_opened": {
+    "date": "2009-03-29",
+    "precision": "day",
+    "source": "https://en.wikipedia.org/wiki/Citi_Field"
+   },
+   "state": {
+    "admitted": "1788-07-26",
+    "admitted_order": 11,
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/21",
+    "value": "New York"
+   }
+  },
+  "mlb:newyorkyankees": {
+   "abbr": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/10",
+    "value": "NYY"
+   },
+   "aliases": [],
+   "city": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/10",
+    "value": "New York"
+   },
+   "espn_id": "10",
+   "founded": {
+    "date": "1903",
+    "precision": "year",
+    "source": "https://en.wikipedia.org/wiki/New_York_Yankees"
+   },
+   "head_coach": {
+    "experience_years": 9,
+    "season": 2026,
+    "source": "https://sports.core.api.espn.com/v2/sports/baseball/leagues/mlb/seasons/2026/teams/10/coaches",
+    "value": "Aaron Boone"
+   },
+   "mascot": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/10",
+    "value": "Yankees"
+   },
+   "name": "New York Yankees",
+   "observed_utc": "2026-10-21T14:39:53Z",
+   "sport": "mlb",
+   "stadium": {
+    "source": "https://en.wikipedia.org/wiki/New_York_Yankees",
+    "value": "Yankee Stadium"
+   },
+   "stadium_opened": {
+    "date": "2009-04-02",
+    "precision": "day",
+    "source": "https://en.wikipedia.org/wiki/Yankee_Stadium"
+   },
+   "state": {
+    "admitted": "1788-07-26",
+    "admitted_order": 11,
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/10",
+    "value": "New York"
+   }
+  },
+  "mlb:philadelphiaphillies": {
+   "abbr": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/22",
+    "value": "PHI"
+   },
+   "aliases": [],
+   "city": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/22",
+    "value": "Philadelphia"
+   },
+   "espn_id": "22",
+   "founded": {
+    "date": "1883",
+    "precision": "year",
+    "source": "https://en.wikipedia.org/wiki/Philadelphia_Phillies"
+   },
+   "head_coach": {
+    "experience_years": 17,
+    "season": 2026,
+    "source": "https://sports.core.api.espn.com/v2/sports/baseball/leagues/mlb/seasons/2026/teams/22/coaches",
+    "value": "Don Mattingly"
+   },
+   "mascot": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/22",
+    "value": "Phillies"
+   },
+   "name": "Philadelphia Phillies",
+   "observed_utc": "2026-10-21T14:39:53Z",
+   "sport": "mlb",
+   "stadium": {
+    "source": "https://en.wikipedia.org/wiki/Philadelphia_Phillies",
+    "value": "Citizens Bank Park"
+   },
+   "stadium_opened": {
+    "date": "2004-04-03",
+    "precision": "day",
+    "source": "https://en.wikipedia.org/wiki/Citizens_Bank_Park"
+   },
+   "state": {
+    "admitted": "1787-12-12",
+    "admitted_order": 2,
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/22",
+    "value": "Pennsylvania"
+   }
+  },
+  "mlb:pittsburghpirates": {
+   "abbr": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/23",
+    "value": "PIT"
+   },
+   "aliases": [],
+   "city": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/23",
+    "value": "Pittsburgh"
+   },
+   "espn_id": "23",
+   "founded": {
+    "date": "1882",
+    "precision": "year",
+    "source": "https://en.wikipedia.org/wiki/Pittsburgh_Pirates"
+   },
+   "head_coach": {
+    "experience_years": 2,
+    "season": 2026,
+    "source": "https://sports.core.api.espn.com/v2/sports/baseball/leagues/mlb/seasons/2026/teams/23/coaches",
+    "value": "Don Kelly"
+   },
+   "mascot": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/23",
+    "value": "Pirates"
+   },
+   "name": "Pittsburgh Pirates",
+   "observed_utc": "2026-10-21T14:39:53Z",
+   "sport": "mlb",
+   "stadium": {
+    "source": "https://en.wikipedia.org/wiki/Pittsburgh_Pirates",
+    "value": "PNC Park"
+   },
+   "stadium_opened": {
+    "date": "2001-03-31",
+    "precision": "day",
+    "source": "https://en.wikipedia.org/wiki/PNC_Park"
+   },
+   "state": {
+    "admitted": "1787-12-12",
+    "admitted_order": 2,
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/23",
+    "value": "Pennsylvania"
+   }
+  },
+  "mlb:sandiegopadres": {
+   "abbr": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/25",
+    "value": "SD"
+   },
+   "aliases": [],
+   "city": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/25",
+    "value": "San Diego"
+   },
+   "espn_id": "25",
+   "founded": {
+    "date": "1969",
+    "precision": "year",
+    "source": "https://en.wikipedia.org/wiki/San_Diego_Padres"
+   },
+   "head_coach": {
+    "experience_years": 1,
+    "season": 2026,
+    "source": "https://sports.core.api.espn.com/v2/sports/baseball/leagues/mlb/seasons/2026/teams/25/coaches",
+    "value": "Craig Stammen"
+   },
+   "mascot": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/25",
+    "value": "Padres"
+   },
+   "name": "San Diego Padres",
+   "observed_utc": "2026-10-21T14:39:53Z",
+   "sport": "mlb",
+   "stadium": {
+    "source": "https://en.wikipedia.org/wiki/San_Diego_Padres",
+    "value": "Petco Park"
+   },
+   "stadium_opened": {
+    "date": "2004-04-08",
+    "precision": "day",
+    "source": "https://en.wikipedia.org/wiki/Petco_Park"
+   },
+   "state": {
+    "admitted": "1850-09-09",
+    "admitted_order": 31,
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/25",
+    "value": "California"
+   }
+  },
+  "mlb:sanfranciscogiants": {
+   "abbr": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/26",
+    "value": "SF"
+   },
+   "aliases": [],
+   "city": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/26",
+    "value": "San Francisco"
+   },
+   "espn_id": "26",
+   "founded": {
+    "date": "1883",
+    "precision": "year",
+    "source": "https://en.wikipedia.org/wiki/San_Francisco_Giants"
+   },
+   "head_coach": {
+    "experience_years": 1,
+    "season": 2026,
+    "source": "https://sports.core.api.espn.com/v2/sports/baseball/leagues/mlb/seasons/2026/teams/26/coaches",
+    "value": "Tony Vitello"
+   },
+   "mascot": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/26",
+    "value": "Giants"
+   },
+   "name": "San Francisco Giants",
+   "observed_utc": "2026-10-21T14:39:53Z",
+   "sport": "mlb",
+   "stadium": {
+    "source": "https://en.wikipedia.org/wiki/San_Francisco_Giants",
+    "value": "Oracle Park"
+   },
+   "stadium_opened": {
+    "date": "2000-03-31",
+    "precision": "day",
+    "source": "https://en.wikipedia.org/wiki/Oracle_Park"
+   },
+   "state": {
+    "admitted": "1850-09-09",
+    "admitted_order": 31,
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/26",
+    "value": "California"
+   }
+  },
+  "mlb:seattlemariners": {
+   "abbr": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/12",
+    "value": "SEA"
+   },
+   "aliases": [],
+   "city": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/12",
+    "value": "Seattle"
+   },
+   "espn_id": "12",
+   "founded": {
+    "date": "1977",
+    "precision": "year",
+    "source": "https://en.wikipedia.org/wiki/Seattle_Mariners"
+   },
+   "mascot": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/12",
+    "value": "Mariners"
+   },
+   "name": "Seattle Mariners",
+   "observed_utc": "2026-10-21T14:39:53Z",
+   "sport": "mlb",
+   "stadium": {
+    "source": "https://en.wikipedia.org/wiki/Seattle_Mariners",
+    "value": "T-Mobile Park"
+   },
+   "stadium_opened": {
+    "date": "1999-07-15",
+    "precision": "day",
+    "source": "https://en.wikipedia.org/wiki/T-Mobile_Park"
+   },
+   "state": {
+    "admitted": "1889-11-11",
+    "admitted_order": 42,
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/12",
+    "value": "Washington"
+   }
+  },
+  "mlb:stlouiscardinals": {
+   "abbr": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/24",
+    "value": "STL"
+   },
+   "aliases": [],
+   "city": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/24",
+    "value": "St. Louis"
+   },
+   "espn_id": "24",
+   "founded": {
+    "date": "1882",
+    "precision": "year",
+    "source": "https://en.wikipedia.org/wiki/St._Louis_Cardinals"
+   },
+   "head_coach": {
+    "experience_years": 5,
+    "season": 2026,
+    "source": "https://sports.core.api.espn.com/v2/sports/baseball/leagues/mlb/seasons/2026/teams/24/coaches",
+    "value": "Oliver Marmol"
+   },
+   "mascot": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/24",
+    "value": "Cardinals"
+   },
+   "name": "St. Louis Cardinals",
+   "observed_utc": "2026-10-21T14:39:53Z",
+   "sport": "mlb",
+   "stadium": {
+    "source": "https://en.wikipedia.org/wiki/St._Louis_Cardinals",
+    "value": "Busch Stadium"
+   },
+   "stadium_opened": {
+    "date": "2006-04-04",
+    "precision": "day",
+    "source": "https://en.wikipedia.org/wiki/Busch_Stadium"
+   },
+   "state": {
+    "admitted": "1821-08-10",
+    "admitted_order": 24,
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/24",
+    "value": "Missouri"
+   }
+  },
+  "mlb:tampabayrays": {
+   "abbr": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/30",
+    "value": "TB"
+   },
+   "aliases": [],
+   "city": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/30",
+    "value": "Tampa Bay"
+   },
+   "espn_id": "30",
+   "founded": {
+    "date": "1998",
+    "precision": "year",
+    "source": "https://en.wikipedia.org/wiki/Tampa_Bay_Rays"
+   },
+   "head_coach": {
+    "experience_years": 12,
+    "season": 2026,
+    "source": "https://sports.core.api.espn.com/v2/sports/baseball/leagues/mlb/seasons/2026/teams/30/coaches",
+    "value": "Kevin Cash"
+   },
+   "mascot": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/30",
+    "value": "Rays"
+   },
+   "name": "Tampa Bay Rays",
+   "observed_utc": "2026-10-21T14:39:53Z",
+   "sport": "mlb",
+   "stadium": {
+    "source": "https://en.wikipedia.org/wiki/Tampa_Bay_Rays",
+    "value": "Tropicana Field"
+   },
+   "stadium_opened": {
+    "date": "1990-03-03",
+    "precision": "day",
+    "source": "https://en.wikipedia.org/wiki/Tropicana_Field"
+   },
+   "state": {
+    "admitted": "1845-03-03",
+    "admitted_order": 27,
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/30",
+    "value": "Florida"
+   }
+  },
+  "mlb:texasrangers": {
+   "abbr": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/13",
+    "value": "TEX"
+   },
+   "aliases": [],
+   "city": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/13",
+    "value": "Texas"
+   },
+   "espn_id": "13",
+   "founded": {
+    "date": "1961",
+    "precision": "year",
+    "source": "https://en.wikipedia.org/wiki/Texas_Rangers_%28baseball%29"
+   },
+   "head_coach": {
+    "experience_years": 3,
+    "season": 2026,
+    "source": "https://sports.core.api.espn.com/v2/sports/baseball/leagues/mlb/seasons/2026/teams/13/coaches",
+    "value": "Skip Schumaker"
+   },
+   "mascot": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/13",
+    "value": "Rangers"
+   },
+   "name": "Texas Rangers",
+   "observed_utc": "2026-10-21T14:39:53Z",
+   "sport": "mlb",
+   "stadium": {
+    "source": "https://en.wikipedia.org/wiki/Texas_Rangers_%28baseball%29",
+    "value": "Globe Life Field"
+   },
+   "stadium_opened": {
+    "date": "2020-05-29",
+    "precision": "day",
+    "source": "https://en.wikipedia.org/wiki/Globe_Life_Field"
+   },
+   "state": {
+    "admitted": "1845-12-29",
+    "admitted_order": 28,
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/13",
+    "value": "Texas"
+   }
+  },
+  "mlb:torontobluejays": {
+   "abbr": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/14",
+    "value": "TOR"
+   },
+   "aliases": [],
+   "city": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/14",
+    "value": "Toronto"
+   },
+   "espn_id": "14",
+   "founded": {
+    "date": "1977",
+    "precision": "year",
+    "source": "https://en.wikipedia.org/wiki/Toronto_Blue_Jays"
+   },
+   "head_coach": {
+    "experience_years": 4,
+    "season": 2026,
+    "source": "https://sports.core.api.espn.com/v2/sports/baseball/leagues/mlb/seasons/2026/teams/14/coaches",
+    "value": "John Schneider"
+   },
+   "mascot": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/14",
+    "value": "Blue Jays"
+   },
+   "name": "Toronto Blue Jays",
+   "observed_utc": "2026-10-21T14:39:53Z",
+   "sport": "mlb",
+   "stadium": {
+    "source": "https://en.wikipedia.org/wiki/Toronto_Blue_Jays",
+    "value": "Rogers Centre"
+   },
+   "stadium_opened": {
+    "date": "1989-06-03",
+    "precision": "day",
+    "source": "https://en.wikipedia.org/wiki/Rogers_Centre"
+   }
+  },
+  "mlb:washingtonnationals": {
+   "abbr": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/20",
+    "value": "WSH"
+   },
+   "aliases": [],
+   "city": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/20",
+    "value": "Washington"
+   },
+   "espn_id": "20",
+   "founded": {
+    "date": "1969",
+    "precision": "year",
+    "source": "https://en.wikipedia.org/wiki/Washington_Nationals"
+   },
+   "head_coach": {
+    "experience_years": 1,
+    "season": 2026,
+    "source": "https://sports.core.api.espn.com/v2/sports/baseball/leagues/mlb/seasons/2026/teams/20/coaches",
+    "value": "Blake Butera"
+   },
+   "mascot": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/20",
+    "value": "Nationals"
+   },
+   "name": "Washington Nationals",
+   "observed_utc": "2026-10-21T14:39:53Z",
+   "sport": "mlb",
+   "stadium": {
+    "source": "https://en.wikipedia.org/wiki/Washington_Nationals",
+    "value": "Nationals Park"
+   },
+   "stadium_opened": {
+    "date": "2008-03-22",
+    "precision": "day",
+    "source": "https://en.wikipedia.org/wiki/Nationals_Park"
+   }
+  },
   "nba:atlantahawks": {
    "abbr": {
     "source": "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/1",
@@ -11441,6 +12771,663 @@
     "admitted_order": 4,
     "source": "https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/teams/28",
     "value": "Georgia"
+   }
+  },
+  "wnba:atlantadream": {
+   "abbr": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams/20",
+    "value": "ATL"
+   },
+   "aliases": [],
+   "city": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams/20",
+    "value": "Atlanta"
+   },
+   "espn_id": "20",
+   "founded": {
+    "date": "2008",
+    "precision": "year",
+    "source": "https://en.wikipedia.org/wiki/Atlanta_Dream"
+   },
+   "head_coach": {
+    "experience_years": null,
+    "season": 2026,
+    "source": "https://sports.core.api.espn.com/v2/sports/basketball/leagues/wnba/seasons/2026/teams/20/coaches",
+    "value": "Karl Smesko"
+   },
+   "mascot": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams/20",
+    "value": "Dream"
+   },
+   "name": "Atlanta Dream",
+   "observed_utc": "2026-10-21T14:39:53Z",
+   "sport": "wnba",
+   "stadium": {
+    "source": "https://en.wikipedia.org/wiki/Atlanta_Dream",
+    "value": "Gateway Center Arena"
+   },
+   "stadium_opened": {
+    "date": "2019-11-09",
+    "precision": "day",
+    "source": "https://en.wikipedia.org/wiki/Gateway_Center_Arena"
+   },
+   "state": {
+    "admitted": "1788-01-02",
+    "admitted_order": 4,
+    "source": "https://en.wikipedia.org/wiki/Gateway_Center_Arena",
+    "value": "Georgia"
+   }
+  },
+  "wnba:chicagosky": {
+   "abbr": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams/19",
+    "value": "CHI"
+   },
+   "aliases": [],
+   "city": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams/19",
+    "value": "Chicago"
+   },
+   "espn_id": "19",
+   "founded": {
+    "date": "2005",
+    "precision": "year",
+    "source": "https://en.wikipedia.org/wiki/Chicago_Sky"
+   },
+   "head_coach": {
+    "experience_years": null,
+    "season": 2026,
+    "source": "https://sports.core.api.espn.com/v2/sports/basketball/leagues/wnba/seasons/2026/teams/19/coaches",
+    "value": "Tyler Marsh"
+   },
+   "mascot": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams/19",
+    "value": "Sky"
+   },
+   "name": "Chicago Sky",
+   "observed_utc": "2026-10-21T14:39:53Z",
+   "sport": "wnba",
+   "stadium": {
+    "source": "https://en.wikipedia.org/wiki/Chicago_Sky",
+    "value": "Wintrust Arena"
+   },
+   "stadium_opened": {
+    "date": "2017-10-14",
+    "precision": "day",
+    "source": "https://en.wikipedia.org/wiki/Wintrust_Arena"
+   },
+   "state": {
+    "admitted": "1818-12-03",
+    "admitted_order": 21,
+    "source": "https://en.wikipedia.org/wiki/Wintrust_Arena",
+    "value": "Illinois"
+   }
+  },
+  "wnba:connecticutsun": {
+   "abbr": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams/18",
+    "value": "CON"
+   },
+   "aliases": [],
+   "city": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams/18",
+    "value": "Connecticut"
+   },
+   "espn_id": "18",
+   "founded": {
+    "date": "1999",
+    "precision": "year",
+    "source": "https://en.wikipedia.org/wiki/Connecticut_Sun"
+   },
+   "head_coach": {
+    "experience_years": 0,
+    "season": 2026,
+    "source": "https://sports.core.api.espn.com/v2/sports/basketball/leagues/wnba/seasons/2026/teams/18/coaches",
+    "value": "Rachid Meziane"
+   },
+   "mascot": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams/18",
+    "value": "Sun"
+   },
+   "name": "Connecticut Sun",
+   "observed_utc": "2026-10-21T14:39:53Z",
+   "sport": "wnba",
+   "stadium": {
+    "source": "https://en.wikipedia.org/wiki/Connecticut_Sun",
+    "value": "Mohegan Sun Arena"
+   },
+   "stadium_opened": {
+    "date": "2001",
+    "precision": "year",
+    "source": "https://en.wikipedia.org/wiki/Mohegan_Sun_Arena"
+   },
+   "state": {
+    "admitted": "1788-01-09",
+    "admitted_order": 5,
+    "source": "https://en.wikipedia.org/wiki/Mohegan_Sun_Arena",
+    "value": "Connecticut"
+   }
+  },
+  "wnba:dallaswings": {
+   "abbr": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams/3",
+    "value": "DAL"
+   },
+   "aliases": [],
+   "city": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams/3",
+    "value": "Dallas"
+   },
+   "espn_id": "3",
+   "founded": {
+    "date": "1998",
+    "precision": "year",
+    "source": "https://en.wikipedia.org/wiki/Dallas_Wings"
+   },
+   "head_coach": {
+    "experience_years": null,
+    "season": 2026,
+    "source": "https://sports.core.api.espn.com/v2/sports/basketball/leagues/wnba/seasons/2026/teams/3/coaches",
+    "value": "Jose Fernandez"
+   },
+   "mascot": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams/3",
+    "value": "Wings"
+   },
+   "name": "Dallas Wings",
+   "observed_utc": "2026-10-21T14:39:53Z",
+   "sport": "wnba",
+   "stadium": {
+    "source": "https://en.wikipedia.org/wiki/Dallas_Wings",
+    "value": "College Park Center"
+   },
+   "stadium_opened": {
+    "date": "2012-02-01",
+    "precision": "day",
+    "source": "https://en.wikipedia.org/wiki/College_Park_Center"
+   },
+   "state": {
+    "admitted": "1845-12-29",
+    "admitted_order": 28,
+    "source": "https://en.wikipedia.org/wiki/College_Park_Center",
+    "value": "Texas"
+   }
+  },
+  "wnba:goldenstatevalkyries": {
+   "abbr": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams/129689",
+    "value": "GS"
+   },
+   "aliases": [],
+   "city": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams/129689",
+    "value": "Golden State"
+   },
+   "espn_id": "129689",
+   "founded": {
+    "date": "2025",
+    "precision": "year",
+    "source": "https://en.wikipedia.org/wiki/Golden_State_Valkyries"
+   },
+   "head_coach": {
+    "experience_years": null,
+    "season": 2026,
+    "source": "https://sports.core.api.espn.com/v2/sports/basketball/leagues/wnba/seasons/2026/teams/129689/coaches",
+    "value": "Natalie Nakase"
+   },
+   "mascot": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams/129689",
+    "value": "Valkyries"
+   },
+   "name": "Golden State Valkyries",
+   "observed_utc": "2026-10-21T14:39:53Z",
+   "sport": "wnba",
+   "stadium": {
+    "source": "https://en.wikipedia.org/wiki/Golden_State_Valkyries",
+    "value": "Chase Center"
+   },
+   "stadium_opened": {
+    "date": "2019-09-06",
+    "precision": "day",
+    "source": "https://en.wikipedia.org/wiki/Chase_Center"
+   },
+   "state": {
+    "admitted": "1850-09-09",
+    "admitted_order": 31,
+    "source": "https://en.wikipedia.org/wiki/Chase_Center",
+    "value": "California"
+   }
+  },
+  "wnba:indianafever": {
+   "abbr": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams/5",
+    "value": "IND"
+   },
+   "aliases": [],
+   "city": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams/5",
+    "value": "Indiana"
+   },
+   "espn_id": "5",
+   "founded": {
+    "date": "2000",
+    "precision": "year",
+    "source": "https://en.wikipedia.org/wiki/Indiana_Fever"
+   },
+   "head_coach": {
+    "experience_years": 3,
+    "season": 2026,
+    "source": "https://sports.core.api.espn.com/v2/sports/basketball/leagues/wnba/seasons/2026/teams/5/coaches",
+    "value": "Stephanie White"
+   },
+   "mascot": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams/5",
+    "value": "Fever"
+   },
+   "name": "Indiana Fever",
+   "observed_utc": "2026-10-21T14:39:53Z",
+   "sport": "wnba",
+   "stadium": {
+    "source": "https://en.wikipedia.org/wiki/Indiana_Fever",
+    "value": "Gainbridge Fieldhouse"
+   },
+   "stadium_opened": {
+    "date": "1999-11-06",
+    "precision": "day",
+    "source": "https://en.wikipedia.org/wiki/Gainbridge_Fieldhouse"
+   },
+   "state": {
+    "admitted": "1816-12-11",
+    "admitted_order": 19,
+    "source": "https://en.wikipedia.org/wiki/Gainbridge_Fieldhouse",
+    "value": "Indiana"
+   }
+  },
+  "wnba:lasvegasaces": {
+   "abbr": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams/17",
+    "value": "LV"
+   },
+   "aliases": [],
+   "city": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams/17",
+    "value": "Las Vegas"
+   },
+   "espn_id": "17",
+   "founded": {
+    "date": "1997",
+    "precision": "year",
+    "source": "https://en.wikipedia.org/wiki/Las_Vegas_Aces"
+   },
+   "head_coach": {
+    "experience_years": null,
+    "season": 2026,
+    "source": "https://sports.core.api.espn.com/v2/sports/basketball/leagues/wnba/seasons/2026/teams/17/coaches",
+    "value": "Becky Hammon"
+   },
+   "mascot": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams/17",
+    "value": "Aces"
+   },
+   "name": "Las Vegas Aces",
+   "observed_utc": "2026-10-21T14:39:53Z",
+   "sport": "wnba",
+   "stadium": {
+    "source": "https://en.wikipedia.org/wiki/Las_Vegas_Aces",
+    "value": "Michelob Ultra Arena"
+   },
+   "stadium_opened": {
+    "date": "1999-04-10",
+    "precision": "day",
+    "source": "https://en.wikipedia.org/wiki/Michelob_Ultra_Arena"
+   },
+   "state": {
+    "admitted": "1864-10-31",
+    "admitted_order": 36,
+    "source": "https://en.wikipedia.org/wiki/Michelob_Ultra_Arena",
+    "value": "Nevada"
+   }
+  },
+  "wnba:losangelessparks": {
+   "abbr": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams/6",
+    "value": "LA"
+   },
+   "aliases": [],
+   "city": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams/6",
+    "value": "Los Angeles"
+   },
+   "espn_id": "6",
+   "founded": {
+    "date": "1997",
+    "precision": "year",
+    "source": "https://en.wikipedia.org/wiki/Los_Angeles_Sparks"
+   },
+   "mascot": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams/6",
+    "value": "Sparks"
+   },
+   "name": "Los Angeles Sparks",
+   "observed_utc": "2026-10-21T14:39:53Z",
+   "sport": "wnba",
+   "stadium": {
+    "source": "https://en.wikipedia.org/wiki/Los_Angeles_Sparks",
+    "value": "Crypto.com Arena"
+   },
+   "stadium_opened": {
+    "date": "1999-10-17",
+    "precision": "day",
+    "source": "https://en.wikipedia.org/wiki/Crypto.com_Arena"
+   },
+   "state": {
+    "admitted": "1850-09-09",
+    "admitted_order": 31,
+    "source": "https://en.wikipedia.org/wiki/Crypto.com_Arena",
+    "value": "California"
+   }
+  },
+  "wnba:minnesotalynx": {
+   "abbr": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams/8",
+    "value": "MIN"
+   },
+   "aliases": [],
+   "city": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams/8",
+    "value": "Minnesota"
+   },
+   "espn_id": "8",
+   "founded": {
+    "date": "1999",
+    "precision": "year",
+    "source": "https://en.wikipedia.org/wiki/Minnesota_Lynx"
+   },
+   "head_coach": {
+    "experience_years": null,
+    "season": 2026,
+    "source": "https://sports.core.api.espn.com/v2/sports/basketball/leagues/wnba/seasons/2026/teams/8/coaches",
+    "value": "Cheryl Reeve"
+   },
+   "mascot": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams/8",
+    "value": "Lynx"
+   },
+   "name": "Minnesota Lynx",
+   "observed_utc": "2026-10-21T14:39:53Z",
+   "sport": "wnba",
+   "stadium": {
+    "source": "https://en.wikipedia.org/wiki/Minnesota_Lynx",
+    "value": "Target Center"
+   },
+   "stadium_opened": {
+    "date": "1990-10-13",
+    "precision": "day",
+    "source": "https://en.wikipedia.org/wiki/Target_Center"
+   },
+   "state": {
+    "admitted": "1858-05-11",
+    "admitted_order": 32,
+    "source": "https://en.wikipedia.org/wiki/Target_Center",
+    "value": "Minnesota"
+   }
+  },
+  "wnba:newyorkliberty": {
+   "abbr": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams/9",
+    "value": "NY"
+   },
+   "aliases": [],
+   "city": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams/9",
+    "value": "New York"
+   },
+   "espn_id": "9",
+   "founded": {
+    "date": "1997",
+    "precision": "year",
+    "source": "https://en.wikipedia.org/wiki/New_York_Liberty"
+   },
+   "head_coach": {
+    "experience_years": null,
+    "season": 2026,
+    "source": "https://sports.core.api.espn.com/v2/sports/basketball/leagues/wnba/seasons/2026/teams/9/coaches",
+    "value": "Chris DeMarco"
+   },
+   "mascot": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams/9",
+    "value": "Liberty"
+   },
+   "name": "New York Liberty",
+   "observed_utc": "2026-10-21T14:39:53Z",
+   "sport": "wnba",
+   "stadium": {
+    "source": "https://en.wikipedia.org/wiki/New_York_Liberty",
+    "value": "Barclays Center"
+   },
+   "stadium_opened": {
+    "date": "2012-09-21",
+    "precision": "day",
+    "source": "https://en.wikipedia.org/wiki/Barclays_Center"
+   },
+   "state": {
+    "admitted": "1788-07-26",
+    "admitted_order": 11,
+    "source": "https://en.wikipedia.org/wiki/Barclays_Center",
+    "value": "New York"
+   }
+  },
+  "wnba:phoenixmercury": {
+   "abbr": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams/11",
+    "value": "PHX"
+   },
+   "aliases": [],
+   "city": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams/11",
+    "value": "Phoenix"
+   },
+   "espn_id": "11",
+   "founded": {
+    "date": "1997",
+    "precision": "year",
+    "source": "https://en.wikipedia.org/wiki/Phoenix_Mercury"
+   },
+   "head_coach": {
+    "experience_years": null,
+    "season": 2026,
+    "source": "https://sports.core.api.espn.com/v2/sports/basketball/leagues/wnba/seasons/2026/teams/11/coaches",
+    "value": "Nate Tibbetts"
+   },
+   "mascot": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams/11",
+    "value": "Mercury"
+   },
+   "name": "Phoenix Mercury",
+   "observed_utc": "2026-10-21T14:39:53Z",
+   "sport": "wnba",
+   "stadium": {
+    "source": "https://en.wikipedia.org/wiki/Phoenix_Mercury",
+    "value": "Mortgage Matchup Center"
+   },
+   "stadium_opened": {
+    "date": "1992-06-06",
+    "precision": "day",
+    "source": "https://en.wikipedia.org/wiki/Mortgage_Matchup_Center"
+   },
+   "state": {
+    "admitted": "1912-02-14",
+    "admitted_order": 48,
+    "source": "https://en.wikipedia.org/wiki/Mortgage_Matchup_Center",
+    "value": "Arizona"
+   }
+  },
+  "wnba:portlandfire": {
+   "abbr": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams/132052",
+    "value": "POR"
+   },
+   "aliases": [],
+   "city": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams/132052",
+    "value": "Portland"
+   },
+   "espn_id": "132052",
+   "founded": {
+    "date": "2024-09-18",
+    "precision": "day",
+    "source": "https://en.wikipedia.org/wiki/Portland_Fire"
+   },
+   "head_coach": {
+    "experience_years": null,
+    "season": 2026,
+    "source": "https://sports.core.api.espn.com/v2/sports/basketball/leagues/wnba/seasons/2026/teams/132052/coaches",
+    "value": "Alex Sarama"
+   },
+   "mascot": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams/132052",
+    "value": "Fire"
+   },
+   "name": "Portland Fire",
+   "observed_utc": "2026-10-21T14:39:53Z",
+   "sport": "wnba",
+   "stadium": {
+    "source": "https://en.wikipedia.org/wiki/Portland_Fire",
+    "value": "Moda Center"
+   },
+   "stadium_opened": {
+    "date": "1995-10-12",
+    "precision": "day",
+    "source": "https://en.wikipedia.org/wiki/Moda_Center"
+   },
+   "state": {
+    "admitted": "1859-02-14",
+    "admitted_order": 33,
+    "source": "https://en.wikipedia.org/wiki/Moda_Center",
+    "value": "Oregon"
+   }
+  },
+  "wnba:seattlestorm": {
+   "abbr": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams/14",
+    "value": "SEA"
+   },
+   "aliases": [],
+   "city": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams/14",
+    "value": "Seattle"
+   },
+   "espn_id": "14",
+   "founded": {
+    "date": "2000",
+    "precision": "year",
+    "source": "https://en.wikipedia.org/wiki/Seattle_Storm"
+   },
+   "head_coach": {
+    "experience_years": null,
+    "season": 2026,
+    "source": "https://sports.core.api.espn.com/v2/sports/basketball/leagues/wnba/seasons/2026/teams/14/coaches",
+    "value": "Sonia Raman"
+   },
+   "mascot": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams/14",
+    "value": "Storm"
+   },
+   "name": "Seattle Storm",
+   "observed_utc": "2026-10-21T14:39:53Z",
+   "sport": "wnba",
+   "stadium": {
+    "source": "https://en.wikipedia.org/wiki/Seattle_Storm",
+    "value": "Climate Pledge Arena"
+   },
+   "stadium_opened": {
+    "date": "1962-04-21",
+    "precision": "day",
+    "source": "https://en.wikipedia.org/wiki/Climate_Pledge_Arena"
+   },
+   "state": {
+    "admitted": "1889-11-11",
+    "admitted_order": 42,
+    "source": "https://en.wikipedia.org/wiki/Climate_Pledge_Arena",
+    "value": "Washington"
+   }
+  },
+  "wnba:torontotempo": {
+   "abbr": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams/131935",
+    "value": "TOR"
+   },
+   "aliases": [],
+   "city": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams/131935",
+    "value": "Toronto"
+   },
+   "espn_id": "131935",
+   "founded": {
+    "date": "2024-12-05",
+    "precision": "day",
+    "source": "https://en.wikipedia.org/wiki/Toronto_Tempo"
+   },
+   "head_coach": {
+    "experience_years": null,
+    "season": 2026,
+    "source": "https://sports.core.api.espn.com/v2/sports/basketball/leagues/wnba/seasons/2026/teams/131935/coaches",
+    "value": "Sandy Brondello"
+   },
+   "mascot": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams/131935",
+    "value": "Tempo"
+   },
+   "name": "Toronto Tempo",
+   "observed_utc": "2026-10-21T14:39:53Z",
+   "sport": "wnba",
+   "stadium": {
+    "source": "https://en.wikipedia.org/wiki/Toronto_Tempo",
+    "value": "Coca-Cola Coliseum"
+   },
+   "stadium_opened": {
+    "date": "1921-12-16",
+    "precision": "day",
+    "source": "https://en.wikipedia.org/wiki/Coca-Cola_Coliseum"
+   }
+  },
+  "wnba:washingtonmystics": {
+   "abbr": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams/16",
+    "value": "WSH"
+   },
+   "aliases": [],
+   "city": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams/16",
+    "value": "Washington"
+   },
+   "espn_id": "16",
+   "founded": {
+    "date": "1998",
+    "precision": "year",
+    "source": "https://en.wikipedia.org/wiki/Washington_Mystics"
+   },
+   "head_coach": {
+    "experience_years": null,
+    "season": 2026,
+    "source": "https://sports.core.api.espn.com/v2/sports/basketball/leagues/wnba/seasons/2026/teams/16/coaches",
+    "value": "Sydney Johnson"
+   },
+   "mascot": {
+    "source": "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams/16",
+    "value": "Mystics"
+   },
+   "name": "Washington Mystics",
+   "observed_utc": "2026-10-21T14:39:53Z",
+   "sport": "wnba",
+   "stadium": {
+    "source": "https://en.wikipedia.org/wiki/Washington_Mystics",
+    "value": "CareFirst Arena"
+   },
+   "stadium_opened": {
+    "date": "2018-09-22",
+    "precision": "day",
+    "source": "https://en.wikipedia.org/wiki/CareFirst_Arena"
    }
   }
  },

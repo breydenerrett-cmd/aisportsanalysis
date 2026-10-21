@@ -1,6 +1,6 @@
 """Build config/gematria/team_facts.json: the public facts the Gematria Hound reads about each team.
 
-    python scripts/build_gematria_facts.py                 # all of NFL, NBA, NHL and the college teams in our ESPN store
+    python scripts/build_gematria_facts.py                 # all of NFL, NBA, NHL, MLB, WNBA and the college teams in our ESPN store
     python scripts/build_gematria_facts.py --sport nba     # one sport
     python scripts/build_gematria_facts.py --cache DIR     # keep raw fetches here (re-runs cost nothing)
 
@@ -10,11 +10,21 @@ fact", which is the honest outcome). A hand-typed table of 200 founding dates is
 would hide.
 
 SOURCES (free, public)
-  ESPN site API   team name, city, mascot, home venue state (NFL/NBA/NHL), and ESPN's core API for the current head
-                  coach. The same ESPN endpoints the data service already reads (src/datasvc/espn).
+  ESPN site API   team name, city, mascot, home venue state (NFL/NBA/NHL/MLB), and ESPN's core API for the current head
+                  coach (an MLB manager is stored as ``head_coach`` too). The same ESPN endpoints the data service already reads (src/datasvc/espn).
   Wikipedia       the infobox ``founded`` / ``established`` line of the team's article (and, for a college team, of its
                   university's article, which also names the university's state). Read through the MediaWiki API
                   (the same text WebFetch would show), parsed by ``parse_infobox_date``.
+
+MLB AND WNBA (added with the v1b extension). Same fields and sourcing as the NFL/NBA teams, plus the home ``stadium`` (the
+first venue the team's infobox links as its ``ballpark`` / ``arena``) and ``stadium_opened`` (that venue article's
+``opened`` line). ESPN's site API carries no franchise venue for WNBA teams, so a WNBA team's state is read from its
+stadium article's location line when that names exactly one U.S. state. ESPN's MLB venue list is NOT used for the stadium:
+it still lists the Athletics at the Oakland Coliseum, which they left. A club in Canada (Blue Jays, Tempo) has no U.S.
+state, and Washington, D.C. is not a state, so both stay absent. A day the infobox does not give is not invented: MLB
+infoboxes give the founding YEAR, and a year-precision fact feeds only the year-gap span (``signals.static_quantities``).
+The stadium fields are STORED but not yet read by the engine: reading them would widen the search space the frozen v1
+rules were registered against, which is a rules-v2 decision.
 
 A date keeps the precision the infobox gave it: ``"day"`` when it named a day, ``"year"`` when it named a year. The
 hound only builds day- or week-spans from a ``"day"`` fact.
@@ -47,8 +57,16 @@ ESPN_SITE = "https://site.api.espn.com/apis/site/v2/sports"
 ESPN_CORE = "https://sports.core.api.espn.com/v2/sports"
 WIKI_API = "https://en.wikipedia.org/w/api.php"
 LEAGUES = {"nfl": ("football", "nfl"), "nba": ("basketball", "nba"), "nhl": ("hockey", "nhl"),
-           "ncaaf": ("football", "college-football")}
-ESPN_DIRS = {"nfl": None, "nba": "nba", "nhl": "nhl", "ncaaf": "ncaaf"}
+           "ncaaf": ("football", "college-football"), "mlb": ("baseball", "mlb"), "wnba": ("basketball", "wnba")}
+ESPN_DIRS = {"nfl": None, "nba": "nba", "nhl": "nhl", "ncaaf": "ncaaf", "mlb": None, "wnba": None}
+#: leagues whose roster comes from ESPN's live team list (no local team store holds them)
+SITE_ROSTER = ("nfl", "mlb", "wnba")
+#: leagues whose team entry also records the home stadium and its opening date
+STADIUM_SPORTS = ("mlb", "wnba")
+#: leagues whose state comes from ESPN's franchise venue address (WNBA has none; see add_stadium)
+ESPN_VENUE_STATE = ("nfl", "nba", "nhl", "mlb")
+#: (sport, ESPN display name) -> the Wikipedia article for the TEAM, where the plain name is another page ("Athletics" is the sport, "Texas Rangers" a disambiguation page)
+WIKI_TITLES = {("mlb", "Athletics"): "Athletics (MLB)", ("mlb", "Texas Rangers"): "Texas Rangers (baseball)"}
 THROTTLE_S = 0.12
 WIKI_THROTTLE_S = 0.7          # Wikipedia asked for a polite rate; a few hundred pages take a few minutes
 
@@ -59,6 +77,8 @@ FEED_ALIASES = {
             "Montreal Canadiens": "Montréal Canadiens"},
     "ncaaf": {"Sam Houston State Bearkats": "Sam Houston Bearkats", "Appalachian State Mountaineers": "App State Mountaineers"},
     "nfl": {},
+    "mlb": {"Oakland Athletics": "Athletics"},
+    "wnba": {},
 }
 
 
@@ -248,12 +268,16 @@ def espn_teams(sport: str) -> Dict[str, dict]:
     return out
 
 
-def nfl_teams(fetch: Fetcher) -> Dict[str, dict]:
-    data = fetch.get(f"{ESPN_SITE}/football/nfl/teams?limit=50") or {}
+def site_teams(fetch: Fetcher, sport: str) -> Dict[str, dict]:
+    """{team_id: {display_name, location, name, abbr}} from ESPN's live team list, for a league with no local team store."""
+    kind, league = LEAGUES[sport]
+    data = fetch.get(f"{ESPN_SITE}/{kind}/{league}/teams?limit=50") or {}
     out = {}
     try:
         for t in data["sports"][0]["leagues"][0]["teams"]:
             t = t["team"]
+            if t.get("isActive") is False:
+                continue
             out[str(t["id"])] = {"display_name": t["displayName"], "location": t.get("location"), "name": t.get("name"),
                                  "abbr": t.get("abbreviation")}
     except (KeyError, IndexError):
@@ -272,8 +296,39 @@ def head_coach(fetch: Fetcher, sport: str, team_id: str, season: int) -> Optiona
     coach = fetch.get(ref)
     if not coach or not coach.get("lastName"):
         return None
-    return fact(f"{coach.get('firstName', '')} {coach['lastName']}".strip(), list_url,
+    return fact(" ".join(f"{coach.get('firstName', '')} {coach['lastName']}".split()), list_url,
                 season=season, experience_years=coach.get("experience"))
+
+
+def wiki_title(sport: str, display_name: str) -> str:
+    return WIKI_TITLES.get((sport, display_name), display_name)
+
+
+def stadium_title(wiki: Optional[str]) -> Optional[str]:
+    """The article title of the venue a team article's infobox names as its home (the FIRST link: a team that lists a
+    past or future home beside its current one names the current one first)."""
+    return first_link(infobox_field(wiki, "ballpark", "stadium", "arena")) if wiki else None
+
+
+def add_stadium(fetch: Fetcher, entry: dict, wiki: str, wurl: str, *, want_state: bool) -> None:
+    """Record ``stadium`` (sourced to the team article that names it), ``stadium_opened`` (sourced to the venue article's
+    ``opened`` line, at the precision it gives) and, when ``want_state`` and the venue article names exactly one U.S.
+    state, ``state``. Anything the articles do not give stays absent."""
+    title = stadium_title(wiki)
+    if not title:
+        return
+    entry["stadium"] = fact(title, wurl)
+    swiki, surl = wikitext(fetch, title)
+    if not swiki:
+        return
+    parsed = parse_infobox_date(infobox_field(swiki, "opened"))
+    if parsed:
+        entry["stadium_opened"] = dated(parsed, surl)
+    if want_state:
+        sname = facts_mod.state_name(_state_in_text(_clean(infobox_field(swiki, "location") or "")))
+        if sname:
+            entry["state"] = fact(sname, surl, admitted=facts_mod.STATE_ADMITTED[sname][1],
+                                  admitted_order=facts_mod.STATE_ADMITTED[sname][0])
 
 
 def build_team(fetch: Fetcher, sport: str, team_id: str, info: dict, season: int, observed: str) -> dict:
@@ -282,24 +337,28 @@ def build_team(fetch: Fetcher, sport: str, team_id: str, info: dict, season: int
     entry: dict = {"sport": sport, "espn_id": team_id, "name": info["display_name"],
                    "aliases": sorted(a for a, canon in FEED_ALIASES.get(sport, {}).items() if canon == info["display_name"]),
                    "observed_utc": observed}
-    if info.get("location"):
+    if info.get("location") and info["location"] != info.get("name"):      # ESPN's "location" for the Athletics is "Athletics": no city
         entry["city"] = fact(info["location"], team_url)
     if info.get("name"):
         entry["mascot"] = fact(info["name"], team_url)
     if info.get("abbr") and sport != "ncaaf":          # a college abbreviation is ESPN's own shorthand, not a name anyone uses
         entry["abbr"] = fact(info["abbr"], team_url)
-    wiki, wurl = wikitext(fetch, info["display_name"])
-    if sport in ("nfl", "nba", "nhl"):
-        tdata = (fetch.get(team_url) or {}).get("team") or {}
-        st = (((tdata.get("franchise") or {}).get("venue") or {}).get("address") or {}).get("state")
-        name = facts_mod.state_name(st)
-        if name:
-            entry["state"] = fact(name, team_url, admitted=facts_mod.STATE_ADMITTED[name][1],
-                                  admitted_order=facts_mod.STATE_ADMITTED[name][0])
+    wiki, wurl = wikitext(fetch, wiki_title(sport, info["display_name"]))
+    if sport in ESPN_VENUE_STATE or sport in STADIUM_SPORTS:
+        name = None
+        if sport in ESPN_VENUE_STATE:
+            tdata = (fetch.get(team_url) or {}).get("team") or {}
+            st = (((tdata.get("franchise") or {}).get("venue") or {}).get("address") or {}).get("state")
+            name = facts_mod.state_name(st)
+            if name:
+                entry["state"] = fact(name, team_url, admitted=facts_mod.STATE_ADMITTED[name][1],
+                                      admitted_order=facts_mod.STATE_ADMITTED[name][0])
         if wiki:
             parsed = parse_infobox_date(infobox_field(wiki, "founded", "established"))
             if parsed:
                 entry["founded"] = dated(parsed, wurl)
+        if sport in STADIUM_SPORTS and wiki:
+            add_stadium(fetch, entry, wiki, wurl, want_state=not name)
     elif wiki:
         uni_title = first_link(infobox_field(wiki, "university", "school"))
         if uni_title:
@@ -336,10 +395,12 @@ def main(argv=None) -> int:
     teams = dict(existing)
     rosters = {}
     for sport in args.sport or sorted(LEAGUES):
-        roster = nfl_teams(fetch) if sport == "nfl" else espn_teams(sport)
+        roster = site_teams(fetch, sport) if sport in SITE_ROSTER else espn_teams(sport)
         items = sorted(roster.items(), key=lambda kv: kv[1]["display_name"])
         rosters[sport] = items[:args.limit] if args.limit else items
-    prefetch_wikitext(fetch, [info["display_name"] for items in rosters.values() for _tid, info in items])
+    prefetch_wikitext(fetch, [wiki_title(sport, info["display_name"]) for sport, items in rosters.items() for _tid, info in items])
+    prefetch_wikitext(fetch, {stadium_title(PREFETCH.get(wiki_title(sport, info["display_name"]), (None, None))[0])
+                              for sport, items in rosters.items() if sport in STADIUM_SPORTS for _tid, info in items})
     uni = set()
     for _tid, info in rosters.get("ncaaf", []):
         text, _u = PREFETCH.get(info["display_name"], (None, None))

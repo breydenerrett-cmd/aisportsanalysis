@@ -27,6 +27,10 @@ THE SEARCH SPACE IS LOGGED. Every equality tried is counted per world (``compari
 means little without the number of chances it had. With dozens of values in a range of a few hundred, a few matches per
 world arrive by chance alone; the evidence panel prints the count beside the score so nobody reads one without the other.
 
+MLB has no season counts: its stored games begin mid-season (the seal), so ``GameInputs.season_counts`` is False and the win/loss,
+home/road, game-number and head-to-head totals are not generated at all (a total since the floor is not the season's). Days since an
+event, complete streaks, spans, ciphers and statehood are exact in any window and stay.
+
 Missing data is silence: a fact or count that is not there makes no quantity, so it can make no match. Pure functions,
 stdlib only.
 """
@@ -126,6 +130,7 @@ class GameInputs:
     series: Optional[history.Series] = None     # a = home team, b = away team
     history_available: bool = False
     scope: str = ""                  # where the counts came from, in words (the evidence panel prints it)
+    season_counts: bool = True       # False (MLB): the stored games start mid-season, so no season-to-date count is a true count
 
     def team(self, side: str) -> TeamInputs:
         return self.home if side == "home" else self.away
@@ -169,14 +174,14 @@ def static_quantities(g: GameInputs, rules: Rules) -> List[Quantity]:
                                             f"{v} {gematria.span_label(unit, inclusive)}: {_poss(t.name)} {a.what} ({a.date}) and {g.date}",
                                             v, owner=side))
         st = g.team(side).state
-        if st is not None:
+        if st is not None and g.season_counts:
             out.append(Quantity(f"{side}.game_number", "count", f"{_poss(t.name)} {_ordinal(st.n + 1)} game of the season",
                                 st.n + 1, owner=side))
             if st.coach:
                 out.append(Quantity(f"{side}.coach_game_number", "count",
                                     f"{_poss(st.coach)} {_ordinal(st.coach_n + 1)} game with {t.name} (in our store)",
                                     st.coach_n + 1, owner=side))
-    if g.series is not None and g.history_available:
+    if g.series is not None and g.history_available and g.season_counts:
         out.append(Quantity("series.meeting_number", "count", f"their {_ordinal(g.series.meetings + 1)} meeting (in our store)",
                             g.series.meetings + 1))
     for name, v in gematria.date_numbers(g.date).items():
@@ -210,13 +215,22 @@ def milestones(g: GameInputs, winner: str) -> List[Quantity]:
     w_in, l_in = g.team(winner), g.team(loser)
     wn, ln = w_in.team.name, l_in.team.name
     ws, ls = w_in.state, l_in.state
+    full = g.season_counts           # False: the window starts mid-season, so a total over it is not "the season's"
+
+    def streak_is_whole(s) -> bool:
+        """A streak is exact when it ends inside the window (an opposite result sits before it); one that runs back to the
+        first stored game may have started earlier."""
+        return full or s.streak_len < s.n
+
     if ws is not None:
-        out.append(Quantity(f"ms.{winner}.wins", "milestone", f"{_poss(wn)} {_ordinal(ws.w + 1)} win of the season", ws.w + 1, owner=winner))
-        venue_w = (ws.home_w if winner == "home" else ws.road_w) + 1
-        out.append(Quantity(f"ms.{winner}.venue_wins", "milestone",
-                            f"{_poss(wn)} {_ordinal(venue_w)} {'home' if winner == 'home' else 'road'} win", venue_w, owner=winner))
-        streak = ws.streak_len + 1 if ws.streak_kind == "W" else 1
-        out.append(Quantity(f"ms.{winner}.win_streak", "milestone", f"{wn} win streak reaches {streak}", streak, owner=winner))
+        if full:
+            out.append(Quantity(f"ms.{winner}.wins", "milestone", f"{_poss(wn)} {_ordinal(ws.w + 1)} win of the season", ws.w + 1, owner=winner))
+            venue_w = (ws.home_w if winner == "home" else ws.road_w) + 1
+            out.append(Quantity(f"ms.{winner}.venue_wins", "milestone",
+                                f"{_poss(wn)} {_ordinal(venue_w)} {'home' if winner == 'home' else 'road'} win", venue_w, owner=winner))
+        if ws.streak_kind != "W" or streak_is_whole(ws):
+            streak = ws.streak_len + 1 if ws.streak_kind == "W" else 1
+            out.append(Quantity(f"ms.{winner}.win_streak", "milestone", f"{wn} win streak reaches {streak}", streak, owner=winner))
         _gap(f"since {wn} last won", ws.last_win, g.date, f"ms.{winner}.since_win", winner, out)
         _gap(f"since {wn} last won {'at home' if winner == 'home' else 'on the road'}",
              ws.last_home_win if winner == "home" else ws.last_road_win, g.date, f"ms.{winner}.since_venue_win", winner, out,
@@ -225,12 +239,14 @@ def milestones(g: GameInputs, winner: str) -> List[Quantity]:
             out.append(Quantity(f"ms.{winner}.coach_wins", "milestone",
                                 f"{_poss(ws.coach)} {_ordinal(ws.coach_w + 1)} win with {wn} (in our store)", ws.coach_w + 1, owner=winner))
     if ls is not None:
-        out.append(Quantity(f"ms.{loser}.losses", "milestone", f"{_poss(ln)} {_ordinal(ls.l + 1)} loss of the season", ls.l + 1, owner=loser))
-        venue_l = (ls.home_l if loser == "home" else ls.road_l) + 1
-        out.append(Quantity(f"ms.{loser}.venue_losses", "milestone",
-                            f"{_poss(ln)} {_ordinal(venue_l)} {'home' if loser == 'home' else 'road'} loss", venue_l, owner=loser))
-        lstreak = ls.streak_len + 1 if ls.streak_kind == "L" else 1
-        out.append(Quantity(f"ms.{loser}.loss_streak", "milestone", f"{ln} loss streak reaches {lstreak}", lstreak, owner=loser))
+        if full:
+            out.append(Quantity(f"ms.{loser}.losses", "milestone", f"{_poss(ln)} {_ordinal(ls.l + 1)} loss of the season", ls.l + 1, owner=loser))
+            venue_l = (ls.home_l if loser == "home" else ls.road_l) + 1
+            out.append(Quantity(f"ms.{loser}.venue_losses", "milestone",
+                                f"{_poss(ln)} {_ordinal(venue_l)} {'home' if loser == 'home' else 'road'} loss", venue_l, owner=loser))
+        if ls.streak_kind != "L" or streak_is_whole(ls):
+            lstreak = ls.streak_len + 1 if ls.streak_kind == "L" else 1
+            out.append(Quantity(f"ms.{loser}.loss_streak", "milestone", f"{ln} loss streak reaches {lstreak}", lstreak, owner=loser))
         _gap(f"since {ln} last lost", ls.last_loss, g.date, f"ms.{loser}.since_loss", loser, out)
         _gap(f"since {ln} last lost {'at home' if loser == 'home' else 'on the road'}",
              ls.last_home_loss if loser == "home" else ls.last_road_loss, g.date, f"ms.{loser}.since_venue_loss", loser, out,
@@ -240,8 +256,9 @@ def milestones(g: GameInputs, winner: str) -> List[Quantity]:
                                 f"{_poss(ls.coach)} {_ordinal(ls.coach_l + 1)} loss with {ln} (in our store)", ls.coach_l + 1, owner=loser))
     s = g.series
     if s is not None and g.history_available and s.meetings:
-        wins = (s.a_wins if winner == "home" else s.b_wins) + 1
-        out.append(Quantity(f"ms.{winner}.series_wins", "milestone", f"{_poss(wn)} {_ordinal(wins)} win in the series (in our store)", wins, owner=winner))
+        if full:
+            wins = (s.a_wins if winner == "home" else s.b_wins) + 1
+            out.append(Quantity(f"ms.{winner}.series_wins", "milestone", f"{_poss(wn)} {_ordinal(wins)} win in the series (in our store)", wins, owner=winner))
         _gap(f"since {wn} last beat {ln}", s.last_a_win if winner == "home" else s.last_b_win, g.date,
              f"ms.{winner}.since_series_win", winner, out)
     return out

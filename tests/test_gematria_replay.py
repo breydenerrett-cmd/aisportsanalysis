@@ -9,6 +9,7 @@ import unittest
 from pathlib import Path
 
 from src.hounds.gematria import facts as facts_mod
+from src.research import gematria
 
 ROOT = Path(__file__).resolve().parents[1]
 RAB = ROOT / "research" / "rabbitszn"
@@ -84,6 +85,66 @@ class ReplayArithmeticTests(unittest.TestCase):
         text = (RAB / "replay.py").read_text(encoding="utf-8")
         self.assertIn("IN-SAMPLE", text)
         self.assertIn("not a result for the hound", text.lower().replace("Not a result", "not a result"))
+
+
+class ForwardLedgerTests(unittest.TestCase):
+    """research/rabbitszn/forward.csv is the clean out-of-sample record: rows written BEFORE the games, results only ever appended.
+
+    Pick rows must carry a capture time before the game and no result; a result is a separate appended row that points at a pick. Kept
+    apart from ledger.csv/replay_table.csv, which are in-sample."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.rows = list(csv.DictReader((RAB / "forward.csv").open(encoding="utf-8")))
+        cls.picks = [r for r in cls.rows if r["row_type"] == "pick"]
+        cls.results = [r for r in cls.rows if r["row_type"] == "result"]
+
+    def test_pick_rows_were_captured_before_the_game_and_hold_no_result(self):
+        self.assertGreaterEqual(len(self.picks), 6)
+        ids = [r["pick_id"] for r in self.picks]
+        self.assertEqual(len(ids), len(set(ids)))
+        for r in self.picks:
+            self.assertLess(r["captured_utc"], r["event_start_utc"], r["pick_id"])
+            self.assertTrue(r["status"].startswith("forward, pre-game"), r["pick_id"])
+            self.assertTrue(r["source"], r["pick_id"])
+            for col in ("final_score", "result", "graded_utc", "result_source"):
+                self.assertEqual(r[col], "", (r["pick_id"], col))        # a result is appended as its own row, never written into a pick
+
+    def test_a_result_row_points_at_one_existing_pick_and_is_graded_once(self):
+        ids = {r["pick_id"] for r in self.picks}
+        seen = set()
+        for r in self.results:
+            self.assertIn(r["pick_id"], ids)
+            self.assertNotIn(r["pick_id"], seen)
+            seen.add(r["pick_id"])
+            self.assertIn(r["result"], ("WIN", "LOSS", "VOID", "NO_BET"))
+            self.assertTrue(r["final_score"] and r["graded_utc"] and r["result_source"], r["pick_id"])
+
+    def test_the_hound_rows_never_output_minus_200_or_worse_and_pair_with_a_pick(self):
+        ids = {r["pick_id"] for r in self.picks}
+        for r in (x for x in self.picks if x["who"] == "gematria_hound"):
+            self.assertIn(r["note"].split("pairs with ")[1][:4], ids)
+            if r["price"]:
+                self.assertGreater(int(r["price"]), -200, r["pick_id"])
+
+    def test_the_forward_claims_recompute(self):
+        for r in csv.DictReader((RAB / "forward_claims.csv").open(encoding="utf-8")):
+            if r["type"] == "cipher":
+                got = gematria.cipher_value(r["subject"], "RFR" if r["cipher"] == "RR" else r["cipher"])
+                self.assertEqual(str(got), r["our_value"], r)
+                self.assertEqual(r["status"] == "ARITHMETIC_OK", str(got) == r["claimed_value"], r)
+            elif r["type"] == "state_order":
+                self.assertEqual(str(facts_mod.STATE_ADMITTED[r["subject"]][0]), r["our_value"], r)
+            elif r["type"] == "prime_index":
+                self.assertEqual(str(gematria.prime_index(int(r["subject"]))), r["our_value"], r)
+
+
+class MlbReplayTests(unittest.TestCase):
+    def test_mlb_ledger_names_now_resolve_against_the_shipped_facts(self):
+        book = facts_mod.load()
+        self.assertEqual(replay.resolve_team(book, "mlb", "Los Angeles Dodgers"), "Los Angeles Dodgers")
+        self.assertEqual(replay.resolve_team(book, "mlb", "Cleveland Guardians"), "Cleveland Guardians")
+        self.assertEqual(replay.resolve_team(book, "wnba", "Golden State Valkyries"), "Golden State Valkyries")
 
 
 if __name__ == "__main__":

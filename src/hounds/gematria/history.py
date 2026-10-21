@@ -3,19 +3,35 @@
 THE RULE. A number the hound counts ("Seattle's 6th win", "weeks since Atlanta last won at home") is derived only from
 finished games in our own stored results whose start was at least ``FINISH_LAG`` before the lock. That is the same
 discipline ``pack.base.build_context`` applies to the rule hounds' MLB and NFL history (five and six hours), applied
-here to every family. Nothing that happens after the lock can reach a count: ``games_before`` takes the cutoff as an
-argument and a test pins that a result after it changes nothing.
+here to every family. Nothing that happens after the lock can reach a count: every source function takes the cutoff
+(``lock - FINISH_LAG``) as an argument and drops a game that started at or after it, ``Disk.past`` computes the cutoff
+once from the Context's lock, and tests pin that a result after it changes nothing.
+
+THE ESPN STORE IS APPEND-ONLY AND EVERY ROW CARRIES ``observed_utc``, so for an ESPN family the question is also WHEN a
+final score was seen. ``pick_version`` answers it: a game counts only if it is final in a row observed before the cutoff,
+or if it started at least ``FINISH_LAG`` before the cutoff (then it was certainly over, and a later backfill of its
+score tells us nothing we could not have known). A game that started just before the cutoff and is final only in a row
+captured after the lock does NOT count: that row is post-lock information about a game that may have been running at
+the cutoff.
 
 WHERE THE RESULTS COME FROM
   MLB / NFL   the Context the pack runner built (``ctx.mlb_games`` / ``ctx.nfl_games``), which is already filtered
               to the lock and, for MLB, never reads the sealed window (2026-01-01..2026-08-27).
   NBA / NHL / college football / EPL   the ESPN store (``data/datasvc/espn/<league>/games_<season>.jsonl``), read lazily
-              and cached. The newest stored version of each game is used; only a finished game counts.
+              and cached. Only a finished game counts, and which stored version of it counts is the point-in-time
+              rule above (``pick_version``), never simply the newest.
   everything else   no stored results. The hound then has no counts for those teams and PASSES (``no_history``);
               it does not invent a record.
 
 WHAT "THE SEASON" IS. The run of regular-season games with no gap over ``SEASON_GAP_DAYS`` ending at the cutoff. That
 needs no per-sport calendar and cannot reach back into a previous season, because every sport rests longer than that.
+
+MLB HAS NO SEASON COUNTS. The sealed window (2026-01-01..2026-08-27) is never read, so the MLB games we hold start on
+2026-08-28, months into the season. A win total, a home/road count, a loss count, a game number or a head-to-head count taken
+from them would be a count SINCE 08-28 dressed as a season count, which is a wrong number. ``Past.season_counts`` is False for
+MLB and ``signals`` drops those units. What survives is exact whatever the window: days and weeks since a team's last win or
+loss (the newest such event is inside the window or there is none), a streak that ends inside the window, spans from dates,
+cipher values and statehood order.
 
 COACHES. Only the NFL store names the coach of each game (nflverse); the count of a coach's wins with a club is
 therefore available for the NFL only, labelled "in our store" (2021 onward) because it is not the coach's career.
@@ -80,6 +96,10 @@ class Past:
     away_id: Optional[str] = None
     scope: str = ""                  # words for the evidence panel: where the counts come from
     available: bool = False
+    #: False when the stored games begin AFTER the start of the season (MLB: the seal makes 2026-08-28 the floor), so a
+    #: season-to-date count taken from them is a count since the floor, not "the Nth win of the season". Such a count is wrong, and
+    #: absent is better than wrong: the signal generator drops every count unit whose window starts before the floor.
+    season_counts: bool = True
 
 
 def _int(v) -> Optional[int]:
@@ -137,14 +157,15 @@ class EspnStore:
 
         return Path(paths.data_path("datasvc", "espn"))
 
-    def games(self, folder: str) -> List[dict]:
+    def versions(self, folder: str) -> Dict[str, List[dict]]:
+        """{game_id: every stored version of the game, oldest observation first}. Cached by file mtimes."""
         d = self._root() / folder
         files = sorted(d.glob("games_*.jsonl")) if d.is_dir() else []
         stamp = tuple((f.name, f.stat().st_mtime, f.stat().st_size) for f in files)
         hit = self._cache.get(folder)
         if hit and hit[0] == stamp:
             return hit[1]
-        newest: Dict[str, dict] = {}
+        by_game: Dict[str, List[dict]] = {}
         for f in files:
             with f.open(encoding="utf-8") as fh:
                 for line in fh:
@@ -155,12 +176,36 @@ class EspnStore:
                         r = json.loads(line)
                     except ValueError:
                         continue
-                    gid = str(r.get("game_id"))
-                    if gid not in newest or str(r.get("observed_utc") or "") >= str(newest[gid].get("observed_utc") or ""):
-                        newest[gid] = r
-        rows = list(newest.values())
-        self._cache[folder] = (stamp, rows)
-        return rows
+                    by_game.setdefault(str(r.get("game_id")), []).append(r)
+        for rows in by_game.values():
+            rows.sort(key=lambda r: str(r.get("observed_utc") or ""))      # stable: file order breaks ties
+        self._cache[folder] = (stamp, by_game)
+        return by_game
+
+    def games(self, folder: str) -> List[dict]:
+        """The newest stored version of each game, whatever its observation time. NOT point-in-time: ``Disk.past`` uses
+        ``versions`` and ``pick_version`` instead; this exists for a caller that wants the store's latest picture."""
+        return [rows[-1] for rows in self.versions(folder).values()]
+
+
+def pick_version(versions: Sequence[Mapping], cutoff: datetime) -> Optional[Mapping]:
+    """The one stored row of a game that may be counted at ``cutoff``, or None.
+
+    The newest row observed before the cutoff, if that row is final. Failing that, if the game started at least
+    ``FINISH_LAG`` before the cutoff (so it was over by the cutoff even by the longest-game rule), the newest final row
+    whenever it was observed: a late backfill of a long-finished game. Otherwise nothing: a final score first seen after
+    the cutoff, for a game that began just before it, is post-lock information. A row with no ``observed_utc`` is never
+    "seen before the cutoff", so it counts only under the second clause."""
+    seen = [r for r in versions if (obs := base.parse_utc(r.get("observed_utc"))) is not None and obs < cutoff]
+    if seen and seen[-1].get("completed"):
+        return seen[-1]
+    final = [r for r in versions if r.get("completed")]
+    if not final:
+        return None
+    start = base.parse_utc(final[-1].get("date_utc"))
+    if start is not None and start + FINISH_LAG <= cutoff:
+        return final[-1]
+    return None
 
 
 def _espn_game(r: Mapping, tid_of: Callable[[object], str], cutoff: datetime) -> Optional[Game]:
@@ -189,7 +234,8 @@ class Disk:
         cutoff = ctx.lock - FINISH_LAG
         if ctx.sport == "mlb":
             return Past(_mlb_games(ctx, cutoff), ctx.home, ctx.away,
-                        "our MLB results store, from 2026-08-28", available=bool(ctx.home and ctx.away))
+                        "our MLB results store, from 2026-08-28 (no season-to-date counts: the season began earlier)",
+                        available=bool(ctx.home and ctx.away), season_counts=False)
         if ctx.sport == "nfl":
             return Past(_nfl_games(ctx, cutoff), ctx.home, ctx.away, "our NFL store, 2021 onward",
                         available=bool(ctx.home and ctx.away))
@@ -202,11 +248,13 @@ class Disk:
         def tid_of(name):
             return gematria.normalize(self.canonical(ctx.sport, str(name or "")))
 
-        games = [g for g in (_espn_game(r, tid_of, cutoff) for r in self.espn.games(folder)) if g]
+        versions = self.espn.versions(folder)
+        picked = (pick_version(rows, cutoff) for rows in versions.values())
+        games = [g for g in (_espn_game(r, tid_of, cutoff) for r in picked if r is not None) if g]
         games.sort(key=lambda g: g.start)
         home_id, away_id = tid_of(ctx.home_name), tid_of(ctx.away_name)
         return Past(games, home_id, away_id, f"the ESPN {folder.upper()} store",
-                    available=bool(self.espn.games(folder)) and bool(home_id and away_id))
+                    available=bool(versions) and bool(home_id and away_id))
 
 
 # ---------------------------------------------------------------------------

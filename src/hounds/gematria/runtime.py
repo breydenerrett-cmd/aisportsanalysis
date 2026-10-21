@@ -64,6 +64,8 @@ def _inputs_hash(g: sig_mod.GameInputs) -> str:
 
     body = {"date": g.date, "home": team(g.home), "away": team(g.away),
             "series": None if g.series is None else g.series.__dict__, "history": g.history_available}
+    if not g.season_counts:
+        body["season_counts"] = False           # added only when False, so every other sport's fingerprint is unchanged
     return hashlib.sha256(json.dumps(body, sort_keys=True, default=str).encode("utf-8")).hexdigest()[:16]
 
 
@@ -101,7 +103,7 @@ class GematriaRuntime:
             away_in.state = history.team_state(past.games, past.away_id)
             series = history.head_to_head(past.games, past.home_id, past.away_id)
         return sig_mod.GameInputs(date=ctx.date, home=home_in, away=away_in, series=series,
-                                  history_available=past.available, scope=past.scope)
+                                  history_available=past.available, scope=past.scope, season_counts=past.season_counts)
 
     # -- weighing ---------------------------------------------------------------------------------
 

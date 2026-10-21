@@ -65,8 +65,8 @@ There is no stated rule. What the posts show:
 | the opposite result's warning bullets | the other side's world is scored the same way; its matches count for that side |
 | spoken confidence | confidence 1..5 from the margin, less one when the other side's score is within 85% |
 
-Not reproducible from our stores, and so ABSENT rather than guessed: all-time franchise records ("their 33rd home loss"), birthdays,
-founding dates of cities and stadiums, draft positions, seasons since a player's last event outside the stored season, anything about
+Stadium names and opening dates are STORED for MLB and WNBA (sourced to Wikipedia) but the engine does not read them under rules v1; reading them is a v2 decision. Not reproducible from our stores, and so ABSENT rather than guessed: all-time franchise records ("their 33rd home loss"), birthdays,
+founding dates of cities, draft positions, seasons since a player's last event outside the stored season, anything about
 players. An absent fact makes no quantity.
 
 ## The claims, checked
@@ -88,13 +88,39 @@ not a record: the full card, every pass, the deleted posts and the exact post ti
 
 ## What the engine does on the same games (`replay.py`; IN-SAMPLE, diagnostics only)
 
-The engine was run point-in-time over the 36 documented moneyline/lean rows (`replay_table.csv`). 26 could be placed (the rest are MLB or
-WNBA, which the facts layer does not cover, or have no known venue). Rules were frozen BEFORE this replay and were not changed after it.
-Of the 26: 12 engine picks and 14 passes (10 uneven search size, 2 small margin, 2 thin data). On those 12 the engine took the SAME SIDE as
-him 5 times (42%), which is no better than a coin: the engine reproduces his structure, not his choices. Its in-sample record on the 12 was
-4-8, against his 16-10 on the 26 placed games. Neither number says anything about the future. The median margin on these games was 13
-points against a minimum of 3, so the v1 margin threshold barely filters; a noise-aware margin (scaled by the size of the search) is the
-obvious first candidate for rules v2, to be proposed, versioned and judged on forward games, not on this sample.
+The engine was run point-in-time over the 36 documented moneyline/lean rows (`replay_table.csv`). Rules v1 were frozen BEFORE the
+first replay and were not touched for this one: what changed between the two runs is the DATA, not the rules. The first run placed 26 of the
+36 (MLB and WNBA had no team facts, so they passed as `no_facts` and were reported as not placed); the facts layer now covers MLB (30 clubs)
+and WNBA (15 teams), so all 36 are placed. MLB history is the results store from 2026-08-28 only (the sealed window 2026-01-01..2026-08-27
+is never read, and nothing before it is read either). Because that window starts months into the season, MLB gets NO season-to-date counts:
+no win or loss totals, home/road counts, game numbers or head-to-head totals, since a total since 08-28 is not "the Nth win of the season"
+and absent is better than wrong. Spans, ciphers, statehood, days since a last win or loss and streaks that end inside the window remain. WNBA has no point-in-time results store in this tree, so its two rows are
+`no_history` passes, not scores.
+
+Of the 36: 14 engine picks and 22 passes (10 uneven search size, 6 small margin, 4 thin data, 2 no history). On those 14 the engine took the SAME
+SIDE as him 5 times (35.7%), which is no better than a coin: the engine reproduces his structure, not his choices. Its in-sample record on the
+14 was 6-8, against his 22-14 on the 36 placed games. Neither number says anything about the future. The median absolute margin on the 34 games that
+had scores was 10 points against a minimum of 3 (26 of them cleared it), so the v1 margin threshold barely filters; a noise-aware margin (scaled by the size of the
+search) is still the obvious first candidate for rules v2, to be proposed, versioned and judged on forward games, not on this sample.
+
+The MLB rows added by this extension (8 placed): 2 engine picks and 6 passes (4 small margin, 2 thin data). The engine took the other side from him
+on both picks; its in-sample record on them is 2-0. Two picks is not a sample, and a first version of this replay that counted wins since
+2026-08-28 as season wins (4 picks, 1-3) was withdrawn for exactly that reason.
+
+## The forward test (`forward.csv`, `forward_claims.csv`): the only out-of-sample record
+
+Everything above is in-sample. The first genuinely forward picks arrived on 2026-10-21 (three NBA games, forwarded by the owner as screenshots
+BEFORE tip-off). `forward.csv` holds them as rows with a capture time, a source ("owner screenshot, pre-game") and the status "forward,
+pre-game", beside the Gematria Hound's own pre-game output for the same games (computed by the engine from results observed before the cutoff,
+no result of the game used). It is kept apart from `ledger.csv` and `replay_table.csv` on purpose.
+
+Rules for the file: a pick row is never edited after its game. When a game is final, a NEW row is appended (`row_type` = `result`, same
+`pick_id`, with `final_score`, `result` of WIN / LOSS / VOID / NO_BET, `graded_utc` and `result_source`). A hound PASS is graded NO_BET: it is not
+a win. Both sides are graded into the same file, so the comparison is his record on his selections against the hound's record on its own,
+over the same games. `tests/test_gematria_replay.py` holds the shape. Three games is an anecdote; the file is the start of a record, and
+no claim is made from it. `forward_claims.csv` re-checks the ciphers the three posts state: all 11 arithmetic claims recompute (an "RR" is
+read as Reverse Full Reduction, the only reverse reduction the engine has; that reading is an interpretation and is flagged on each row), and
+the record/streak claims are UNVERIFIED_HISTORY because the NBA store holds this season only.
 
 ## What the hound does with this
 
