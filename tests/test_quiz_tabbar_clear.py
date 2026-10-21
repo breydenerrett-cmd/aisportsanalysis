@@ -18,7 +18,7 @@ import threading
 import unittest
 from pathlib import Path
 
-from tests.test_hounds_quiz_web import LIB
+from src.hounds.quiz import library as quiz_library
 from tests.test_no_horizontal_overflow import CHROME, HAS_NODE, make_handler
 
 HERE = Path(__file__).resolve().parent
@@ -28,7 +28,7 @@ HERE = Path(__file__).resolve().parent
 class QuizTabBarClearance(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), make_handler({"/hounds/quiz/library": (200, LIB)}))
+        cls.server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), make_handler({"/hounds/quiz/library": (200, json.loads(json.dumps(quiz_library.public_library())))}))
         threading.Thread(target=cls.server.serve_forever, daemon=True).start()
         url = f"http://127.0.0.1:{cls.server.server_address[1]}/web/quiz.html?start=1"
         proc = subprocess.run(["node", str(HERE / "quiz_tabbar_390.mjs"), CHROME, url], capture_output=True, text=True, encoding="utf-8", timeout=120)
@@ -36,6 +36,8 @@ class QuizTabBarClearance(unittest.TestCase):
         if proc.returncode != 0 or not lines:
             raise AssertionError(f"quiz script failed ({proc.returncode}): {proc.stderr[-1500:]}")
         cls.out = json.loads(lines[-1])
+        if "error" in cls.out:
+            raise AssertionError(f"the quiz script threw: {cls.out['error']}")
 
     @classmethod
     def tearDownClass(cls):

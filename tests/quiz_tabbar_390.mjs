@@ -28,7 +28,7 @@ await send("Page.enable");
 await send("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
 await send("Page.navigate", { url });
 await sleep(2500);
-const out = await ev(`(async () => {
+const out = await ev(`(async () => { try {
   const w = (ms) => new Promise((r) => setTimeout(r, ms));
   const q = (h) => document.querySelector("[data-hook='" + h + "']");
   q("quiz-skip").click(); await w(700); q("quiz-skip").click(); await w(1500);
@@ -47,6 +47,7 @@ const out = await ev(`(async () => {
   scrollTo(0, max); await w(200);
   return { iw: innerWidth, bar: Math.round(barH), pad: parseFloat(getComputedStyle(document.body).paddingBottom), max, clearAt, atEnd: probe(),
            sw: document.documentElement.scrollWidth };
+  } catch (e) { return { error: String(e && e.message || e) }; }
 })()`);
 console.log(JSON.stringify(out));
 ws.close();
