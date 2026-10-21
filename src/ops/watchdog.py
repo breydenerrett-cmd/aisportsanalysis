@@ -19,7 +19,8 @@ WHAT IT CHECKS (each limit is a named constant below, justified where it is set)
                  hourly production redeploy, so when it stops, odds AND deploys stop.
   health         the app's own freshness verdicts (src/appstate/alert_feed.py, src/pipeline/freshness_policy.py).
                  Reused, not re-judged: the numbers live in the policy and only there.
-  ai_spend       the paid AI analyst's spend at ``AI_SPEND_WARN`` of its cap. Skipped while no usage store exists.
+  ai_spend       paid AI spend at ``AI_SPEND_WARN`` of its cap: the AI router's monthly meter (AI_PAID_CAP_USD)
+                 and the analyst's stores. Skipped while neither exists.
   github_reach   the watchdog itself: it cannot see GitHub for ``BLIND_MINUTES`` and is therefore not watching.
 
 HOW AN ALERT REACHES THE OWNER. Open incidents are written to a small state file on the Fly volume and merged into
@@ -833,8 +834,12 @@ class Watchdog:
         if spend["fraction"] < AI_SPEND_WARN:
             return Outcome("ai_spend", OK, summary, detail=spend)
         what = f"AI spend is at {pct}% of its cap: {summary}"
-        fix = ("nothing is overspent, the analyst stops itself at 100%; if you want more games analysed, raise "
-               "spend_cap in config/analyst.json (ask Claude), otherwise let it stop")
+        if str(spend.get("key", "")).startswith("router:"):
+            fix = ("nothing is overspent, the router stops paid calls at 100% and the AI hounds pass; to keep Haiku running, "
+                   "raise AI_PAID_CAP_USD with fly secrets set (ask Claude for the line), otherwise let it stop")
+        else:
+            fix = ("nothing is overspent, the analyst stops itself at 100%; if you want more games analysed, raise "
+                   "spend_cap in config/analyst.json (ask Claude), otherwise let it stop")
         return Outcome("ai_spend", ALERT, summary, [Finding("ai_spend", spend.get("key", "x"),
                        f"AI spend is at {pct}% of its cap", what, fix)], spend)
 
@@ -1072,8 +1077,43 @@ def _read_jsonl(path: Path) -> List[dict]:
     return rows
 
 
+def router_spend_status(*, env: Optional[Mapping] = None, now: Optional[datetime] = None,
+                        usage_path: Optional[os.PathLike] = None) -> Optional[dict]:
+    """This month's paid spend in the AI router's meter (src/ai: the AI hounds, the Claude Hound) against
+    ``AI_PAID_CAP_USD``, or None when that meter has no file yet. The meter lives beside the app database
+    (the Fly volume), so this reads the live number in production, not an image copy."""
+    env = os.environ if env is None else env
+    now = now or _utcnow()
+    from src.ai import router as ai_router
+    from src.ai.usage import UsageStore
+
+    path = Path(usage_path) if usage_path is not None else Path(ai_router.default_usage_path())
+    if not path.is_file():
+        return None
+    cap = ai_router.paid_cap_usd(env)
+    month = now.strftime("%Y-%m")
+    spent = UsageStore(path, clock=lambda: now).total_month_spend(month)
+    frac = (spent / cap) if cap > 0 else (1.0 if spent > 0 else 0.0)
+    return {"fraction": frac, "spent_usd": spent, "cap_usd": cap, "key": f"router:{month}",
+            "label": f"the AI hounds this month ({month}) against AI_PAID_CAP_USD"}
+
+
 def ai_spend_status(*, env: Optional[Mapping] = None, now: Optional[datetime] = None,
-                    root: Optional[Path] = None) -> Optional[dict]:
+                    root: Optional[Path] = None, router_usage_path: Optional[os.PathLike] = None) -> Optional[dict]:
+    """The highest cap fraction across the AI router's monthly meter (``router_spend_status``) and the paid
+    analyst's stores (``analyst_spend_status``), or None when neither has a file."""
+    try:
+        routed = router_spend_status(env=env, now=now, usage_path=router_usage_path)
+    except Exception:  # noqa: BLE001 - a broken meter must not take the watchdog down; the analyst check still runs
+        logger.exception("watchdog: AI router meter unreadable")
+        routed = None
+    analyst = analyst_spend_status(env=env, now=now, root=root)
+    found = [r for r in (routed, analyst) if r]
+    return max(found, key=lambda r: r["fraction"]) if found else None
+
+
+def analyst_spend_status(*, env: Optional[Mapping] = None, now: Optional[datetime] = None,
+                         root: Optional[Path] = None) -> Optional[dict]:
     """The highest cap fraction among the paid analyst's recent runs (and this month, when ``AI_MONTHLY_CAP_USD``
     is set), or None when no usage store exists. A run is the rows sharing a ``run_id`` in one store; its cap is
     ``spend_cap`` in config/analyst.json (dollars and tokens, whichever is closer). Estimates from the API's own

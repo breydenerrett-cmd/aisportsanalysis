@@ -775,7 +775,7 @@ class AiSpend(unittest.TestCase):
 
     def test_the_status_reads_the_paid_store_and_groups_by_run(self):
         root = self.usage_root([self.row(2.5), self.row(2.6), self.row(1.0, run_id="r0", at=ago(hours=30)), "{not json"])
-        out = W.ai_spend_status(env={}, now=NOW, root=root)
+        out = W.ai_spend_status(env={}, now=NOW, root=root, router_usage_path=NO_METER)
         self.assertAlmostEqual(out["spent_usd"], 5.1)
         self.assertEqual(out["cap_usd"], 6.0)
         self.assertAlmostEqual(out["fraction"], 0.85)
@@ -783,25 +783,69 @@ class AiSpend(unittest.TestCase):
     def test_the_cap_comes_from_config_and_tokens_count_when_closer(self):
         root = self.usage_root([self.row(1.0, input_tokens=500000, output_tokens=0)],
                                config={"spend_cap": {"max_usd_per_run": 10.0, "max_tokens_per_run": 600000}})
-        out = W.ai_spend_status(env={}, now=NOW, root=root)
+        out = W.ai_spend_status(env={}, now=NOW, root=root, router_usage_path=NO_METER)
         self.assertEqual(out["cap_usd"], 10.0)
         self.assertAlmostEqual(out["fraction"], 500000 / 600000)
 
     def test_pilot_usage_is_a_claude_session_estimate_not_paid_spend_and_is_ignored(self):
         root = self.usage_root([self.row(50.0)], store="evidence/analyst_pilot_usage_v1.jsonl")
-        self.assertIsNone(W.ai_spend_status(env={}, now=NOW, root=root))
+        self.assertIsNone(W.ai_spend_status(env={}, now=NOW, root=root, router_usage_path=NO_METER))
 
     def test_no_store_at_all_is_none(self):
         with tempfile.TemporaryDirectory() as tmp:
-            self.assertIsNone(W.ai_spend_status(env={}, now=NOW, root=Path(tmp)))
+            self.assertIsNone(W.ai_spend_status(env={}, now=NOW, root=Path(tmp), router_usage_path=NO_METER))
 
     def test_an_optional_monthly_cap_is_judged_over_the_month(self):
         root = self.usage_root([self.row(30.0, run_id=f"r{i}", date="2026-10-%02d" % (i + 1), at=ago(days=i + 3))
                                 for i in range(2)])
-        out = W.ai_spend_status(env={"AI_MONTHLY_CAP_USD": "60"}, now=NOW, root=root)
+        out = W.ai_spend_status(env={"AI_MONTHLY_CAP_USD": "60"}, now=NOW, root=root, router_usage_path=NO_METER)
         self.assertAlmostEqual(out["fraction"], 1.0)
         self.assertIn("AI_MONTHLY_CAP_USD", out["label"])
-        self.assertAlmostEqual(W.ai_spend_status(env={"AI_MONTHLY_CAP_USD": "junk"}, now=NOW, root=root)["fraction"], 0.0)
+        self.assertAlmostEqual(W.ai_spend_status(env={"AI_MONTHLY_CAP_USD": "junk"}, now=NOW, root=root, router_usage_path=NO_METER)["fraction"], 0.0)
+
+
+NO_METER = Path(tempfile.gettempdir()) / "linehound-watchdog-no-such-meter" / "ai_usage_v1.jsonl"
+
+
+class RouterSpendTests(unittest.TestCase):
+    """The AI hounds' paid spend lives in the router's meter beside the app database, not in evidence/."""
+
+    def meter(self, rows):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        path = Path(tmp.name) / "ai_usage_v1.jsonl"
+        path.write_text("".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8")
+        return path
+
+    def call(self, usd, month=None, provider="anthropic"):
+        month = month or NOW.strftime("%Y-%m")
+        return {"kind": "call", "provider": provider, "status": "ok", "cost_usd": usd,
+                "day": month + "-01", "month": month, "ts": month + "-01T00:00:00Z"}
+
+    def empty_root(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        return Path(tmp.name)
+
+    def test_the_router_meter_is_judged_against_the_paid_cap(self):
+        path = self.meter([self.call(2.0), self.call(2.25), self.call(9.0, month="2020-01")])
+        out = W.ai_spend_status(env={"AI_PAID_CAP_USD": "5"}, now=NOW, root=self.empty_root(), router_usage_path=path)
+        self.assertAlmostEqual(out["spent_usd"], 4.25)
+        self.assertEqual(out["cap_usd"], 5.0)
+        self.assertAlmostEqual(out["fraction"], 0.85)
+        self.assertIn("AI_PAID_CAP_USD", out["label"])
+
+    def test_the_check_alerts_from_the_router_meter_alone(self):
+        path = self.meter([self.call(4.5)])
+        out = W.ai_spend_status(env={}, now=NOW, root=self.empty_root(), router_usage_path=path)
+        self.assertGreaterEqual(out["fraction"], W.AI_SPEND_WARN)
+
+    def test_no_meter_and_no_analyst_store_is_none(self):
+        self.assertIsNone(W.ai_spend_status(env={}, now=NOW, root=self.empty_root(), router_usage_path=NO_METER))
+
+    def test_a_broken_meter_does_not_take_the_check_down(self):
+        with mock.patch.object(W, "router_spend_status", side_effect=RuntimeError("boom")):
+            self.assertIsNone(W.ai_spend_status(env={}, now=NOW, root=self.empty_root(), router_usage_path=NO_METER))
 
 
 # ---------------------------------------------------------------------------
