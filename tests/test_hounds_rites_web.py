@@ -149,7 +149,7 @@ class TheNewPagesCarryTheHardLines(unittest.TestCase):
                 self.assertIn("21+", html)
                 self.assertIn("1-800-GAMBLER", html)
                 self.assertIn('href="tel:1-800-426-2537"', html)
-                self.assertIn("Paper bets only", html)
+                self.assertIn("Paper bets", html)      # # owner ruling 2026-10-20 kennel-first: "21+ · Paper bets only, not advice · Bet at your own risk" in the footer
 
     def test_no_bet_check_and_no_banned_word_on_the_new_surface(self):
         banned = re.compile(r"bet ?check|\block\b|guarantee|sure thing|can'?t lose|free money|\bprofit|\bedge\b", re.I)
@@ -164,7 +164,7 @@ class TheNewPagesCarryTheHardLines(unittest.TestCase):
         self.assertEqual(html.count('class="lh-nav"'), 1)
         self.assertIn('<script type="module" src="js/nav.js"></script>', html)
         self.assertIn('<script type="module" src="js/fx.js"></script>', html)
-        self.assertIn('data-nav="kennels" aria-current="page"', html)
+        self.assertIn('data-nav="leaderboard" aria-current="page"', html)      # # owner ruling 2026-10-20 kennel-first: the Graveyard hangs off the Leaderboard
 
     def test_every_new_animation_is_inside_the_no_preference_block(self):
         css = re.sub(r"/\*.*?\*/", "", (WEB / "css" / "dog-kit.css").read_text(encoding="utf-8"), flags=re.S)
@@ -186,8 +186,8 @@ class TheKennelCardOffersTheThreeTogether(unittest.TestCase):
             q("danger", ".kn-act--danger", "texts"), q("danger_hook", ".kn-act--danger", "attr", attr="data-hook"),
             q("primary", ".kn-act--primary", "texts"), q("aria", "[data-hook='dog-action-outback']", "attr", attr="aria-label")])
         f = out["final"]
-        self.assertEqual(f["actions"][:3], ["Unleash", "Send to training", "Take them out back"])
-        self.assertEqual(f["actions"][3:], ["Ask", "Edit", "Open", "Remove"])
+        # # owner ruling 2026-10-20 kennel-first: the card offers the three rites and Edit (Ask, Open and Remove moved into the studio and the name link)
+        self.assertEqual(f["actions"], ["Unleash", "Send to training", "Edit", "Take them out back"])
         self.assertEqual((f["danger"], f["danger_hook"], f["primary"]), (["Take them out back"], "dog-action-outback", ["Unleash"]))
         self.assertEqual(f["aria"], "Take Underdog Gus out back")
 

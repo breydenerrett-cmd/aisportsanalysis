@@ -594,12 +594,12 @@ class TheEntryPoints(unittest.TestCase):
         broken = run_page("build", routes=B.base_routes(), search="?quiz=1", stored={HANDOFF_KEY: "{not json"}, queries=[q("note", hook("build-from-note"))])
         self.assertIn("could not be found", broken["final"]["note"])
 
-    def test_the_kennels_build_a_dog_card_opens_the_quiz(self):
+    def test_my_kennels_create_a_hound_button_opens_the_quiz(self):
+        # # owner ruling 2026-10-20 kennel-first: the "Build a dog" card became one quiet "Create a hound" link in the header
         from tests import test_kennel_page as K
         out = run_page("kennel", routes={"/hounds/kennels/mine": K.mine([K.dog()])}, **SIGNED,
-                       actions=[click(hook("kennel-build-card"), "build")], queries=[q("sub", ".kn-build__sub")])
-        self.assertEqual(out["navigations"], ["quiz.html"])
-        self.assertIn("Take the quiz", out["final"]["sub"])
+                       queries=[q("href", hook("kennel-build"), "attr", attr="href"), q("label", hook("kennel-build"))])
+        self.assertEqual(out["final"], {"href": "quiz.html", "label": "Create a hound"})
 
     def test_the_landing_kennels_card_links_the_quiz(self):
         html = (WEB / "landing.html").read_text(encoding="utf-8")
@@ -607,16 +607,19 @@ class TheEntryPoints(unittest.TestCase):
         card = html.split('data-hook="kennels-card"')[1].split("</section>")[0]
         self.assertIn('data-hook="kennels-card-quiz"', card)
 
-    def test_the_build_link_in_the_navigation_goes_to_the_quiz_everywhere(self):
+    def test_create_in_the_navigation_goes_to_the_quiz_everywhere(self):
+        # # owner ruling 2026-10-20 kennel-first: a member's "Create" place and a visitor's "Find your hound" button both open the quiz
         for name in ("hound.html", "hounds.html", "index.html", "kennel.html", "kennels.html", "landing.html", "learning.html",
-                     "postseason.html", "sample.html", "why-we-paused.html", "build-a-hound.html", "quiz.html"):
+                     "postseason.html", "sample.html", "why-we-paused.html"):
             html = (WEB / name).read_text(encoding="utf-8")
-            self.assertRegex(html, r'<a href="quiz.html" data-nav="build"', name)
-        out = run_page("nav", page_html="hounds.html", queries=[q("hrefs", ".lh-nav__links a", "attrs", attr="href"), q("tabs", "[data-hook='site-tabbar'] .lh-tab", "attrs", attr="href")])
+            self.assertRegex(html, r'<a class="lh-btn lh-btn--solid" href="quiz.html" data-hook="(nav-cta|cta-primary)"', name)
+        out = run_page("nav", page_html="hounds.html", **SIGNED, queries=[q("hrefs", ".lh-nav__links a", "attrs", attr="href"), q("tabs", "[data-hook='site-tabbar'] .lh-tab", "attrs", attr="href")])
         self.assertIn("quiz.html", out["final"]["hrefs"])
         self.assertIn("quiz.html", out["final"]["tabs"])
-        on_quiz = run_page("nav", page_html="quiz.html", pathname="/web/quiz.html", queries=[q("current", ".lh-nav__links a[aria-current='page']", "texts")])
-        self.assertEqual(on_quiz["final"]["current"], ["Build"])
+        visitor = run_page("nav", page_html="hounds.html", queries=[q("cta", "[data-hook='nav-cta']", "attr", attr="href"), q("tab", "[data-hook='tab-cta']", "attr", attr="href")])
+        self.assertEqual(visitor["final"], {"cta": "quiz.html", "tab": "quiz.html"})
+        on_quiz = run_page("nav", page_html="quiz.html", pathname="/web/quiz.html", **SIGNED, queries=[q("current", ".lh-nav__links a[aria-current='page']", "texts")])
+        self.assertEqual(on_quiz["final"]["current"], ["Create"])
 
     def test_the_quiz_page_itself_offers_skip_to_builder_twice(self):
         out = quiz(queries=[q("top", hook("quiz-skip-builder"), "attr", attr="href"), q("intro", hook("quiz-intro-builder"), "attr", attr="href")])

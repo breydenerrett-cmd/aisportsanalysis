@@ -274,14 +274,14 @@ await submit("login-form"); await settle();
 """, routes={"POST /auth/login": free}, query={"next": "#/props"}, storage={HAD_KEY: "1"})
         self.assertEqual((out["assigned"], out["hash"]), ([], "#/props"))
 
-    def test_a_tester_or_subscriber_login_still_opens_the_board(self):
+    def test_a_tester_or_subscriber_login_opens_my_kennel(self):      # owner ruling 2026-10-20 kennel-first: every member's home is My Kennel
         paid = {"code": 200, "body": {"token": "T3", "expires_at": "2026-11-18T00:00:00+00:00", "kind": "tester",
                                       "access_active": True, "has_password": True}}
         out = self.run_page("""
 hook("login-email").value = "a@b.co"; hook("login-password").value = "river-bank-lantern-42";
 await submit("login-form"); await settle();
 """, routes={"POST /auth/login": paid}, storage={HAD_KEY: "1"})
-        self.assertEqual((out["assigned"], out["hash"]), ([], "#/today"))
+        self.assertEqual((out["assigned"], out["hash"]), (["kennel.html"], ""))
 
     def test_a_successful_login_remembers_the_device(self):
         ok = {"code": 200, "body": {"token": "T4", "expires_at": "2026-11-18T00:00:00+00:00", "kind": "subscriber",
@@ -373,16 +373,14 @@ class TheKennelWelcome(unittest.TestCase):
         f = out["final"]
         self.assertIn("Welcome to your kennel", f["welcome"])
         self.assertIn("Your account is free", f["welcome"])
-        self.assertEqual(f["build"], "Build your first dog")
+        self.assertEqual(f["build"], "Create your first hound")      # owner ruling 2026-10-20 kennel-first
         self.assertEqual(f["empty"], 0)
 
-    def test_the_build_button_opens_the_studio_on_the_rules_tab(self):
+    def test_the_welcome_button_opens_the_quiz(self):
+        # # owner ruling 2026-10-20 kennel-first: the one button is a link to the quiz (Find your hound), not the in-place builder
         out = run_hounds_page("kennel", routes={"/hounds/kennels/mine": self.EMPTY}, stored=self.SIGNED, search="?welcome=1",
-                              actions=[dict(do="click", sel="[data-hook='kennel-welcome-build']", label="open", wait=120, capture=[
-                                  dict(name="hidden", sel="[data-hook='studio']", mode="hidden"),
-                                  dict(name="title", sel="[data-hook='studio-title']", mode="text")])])
-        cap = out["captures"]["open"]
-        self.assertEqual((cap["hidden"], cap["title"]), (False, "New dog"))
+                              queries=[dict(name="href", sel="[data-hook='kennel-welcome-build']", mode="attr", attr="href")])
+        self.assertEqual(out["final"]["href"], "quiz.html")
 
     def test_without_the_flag_the_ordinary_empty_state_stays(self):
         out = run_hounds_page("kennel", routes={"/hounds/kennels/mine": self.EMPTY}, stored=self.SIGNED, queries=self.QUERIES)
@@ -398,14 +396,15 @@ class TheKennelWelcome(unittest.TestCase):
     def test_a_signed_out_visitor_with_the_flag_is_still_asked_to_sign_in(self):
         out = run_hounds_page("kennel", routes={}, search="?welcome=1", queries=[
             dict(name="gate", sel="[data-hook='kennel-signin']", mode="text"), self.QUERIES[0]])
-        self.assertIn("Sign in to see your dogs", out["final"]["gate"])
+        self.assertIn("Sign in to see your hounds", out["final"]["gate"])      # owner ruling 2026-10-20 kennel-first
         self.assertIsNone(out["final"]["welcome"])
 
 
 class TheCallsToActionAreOneDecision(unittest.TestCase):
-    def test_the_landing_nav_button_is_the_free_account_and_moves_into_the_bar(self):
+    def test_the_landing_nav_button_is_find_your_hound_and_moves_into_the_bar(self):
+        # # owner ruling 2026-10-20 kennel-first: the bar's one primary button opens the quiz; the free account is made when a hound is kept
         html = (WEB / "landing.html").read_text(encoding="utf-8")
-        self.assertRegex(html, r'<a class="btn btn--primary" href="index.html#/signin\?create=1" data-hook="cta-primary" data-nav-extra>Create free account</a>')
+        self.assertRegex(html, r'<a class="lh-btn lh-btn--solid" href="quiz.html" data-hook="cta-primary" data-nav-extra>Find your hound</a>')
 
     def test_the_old_paid_signup_page_is_still_routed_and_still_the_paid_boards_door(self):
         main = (JS / "main.js").read_text(encoding="utf-8")

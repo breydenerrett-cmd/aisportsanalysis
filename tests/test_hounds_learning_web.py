@@ -108,11 +108,13 @@ class StaticFacts(unittest.TestCase):
             self.assertNotRegex(body.lower(), r"bet[\s_-]*check", path.name)
             self.assertNotRegex(body, r"(?i)\b(profit|guarantee[sd]?|roi|win rate|sure thing|beat the market|edge)\b", path.name)
 
-    def test_the_race_and_the_hound_page_link_to_it(self):
+    def test_my_kennel_links_the_camp_and_the_camp_links_back(self):
+        # # owner ruling 2026-10-20 kennel-first: the Training camp is part of My Kennel, no longer a place in the navigation
+        kennel = (WEB / "js" / "kennel.js").read_text(encoding="utf-8")
+        self.assertIn('href: "learning.html"', kennel)
+        self.assertIn('data-hook="camp-back"', (WEB / "learning.html").read_text(encoding="utf-8"))
         for name in ("hounds.html", "hound.html"):
-            html = (WEB / name).read_text(encoding="utf-8")
-            # the one navigation (web/js/nav.js) names it "Training camp"
-            self.assertRegex(html, r'<a href="learning.html" data-nav="camp"[^>]*>Training camp</a>', name)
+            self.assertNotIn('data-nav="camp"', (WEB / name).read_text(encoding="utf-8"), name)
 
     def test_the_coach_report_card_section_is_the_first_panel_and_wears_the_voice(self):
         html = self.HTML
