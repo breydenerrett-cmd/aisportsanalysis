@@ -102,6 +102,14 @@ export function placeFromAddress(loc = (typeof window !== "undefined" ? window.l
   return "";
 }
 
+/** True on the member app's Account place (index.html#/signin, #/account, #/billing). Those routes belong to the kennel-first
+ * product, not the picks shell: they show the five-place bar and the phone tab bar, and lhnav.css hides the picks shell's sport tabs,
+ * news strip and Gameday/Props tab bar under `body[data-kennel-route]` (QA 2026-10-21: #/account still opened as the old picks app). */
+export function onKennelRoute(loc = (typeof window !== "undefined" ? window.location : null)) {
+  const path = String((loc && loc.pathname) || "").split("/").pop() || "";
+  return path === "index.html" && /^#\/(signin|account|billing)/.test(String((loc && loc.hash) || ""));
+}
+
 function wordmark(home) {
   return h("a", { class: "lh-nav__brand ps-page__home", href: home, "aria-label": "LINEHOUND home" }, [
     h("span", { class: "wordmark", "data-hook": "brand-mark" }, [
@@ -144,6 +152,7 @@ function tabBar(current, hideCta = false) {
 }
 
 let extras = null;
+let staticBottom;   // the page's own data-bottom, read once: the Account routes turn the phone tab bar on, every other route puts it back
 
 export function mountNav(host = document.querySelector(".lh-nav")) {
   if (!host) return null;
@@ -151,6 +160,15 @@ export function mountNav(host = document.querySelector(".lh-nav")) {
   // an extra a page keeps in the bar for a visitor (the landing page's own button): the SAME node goes back in, so a
   // listener another script put on it survives a re-mount
   if (extras === null) extras = Array.from(host.querySelectorAll ? host.querySelectorAll("[data-nav-extra]") : []);
+  const kennelRoute = onKennelRoute();
+  if (staticBottom === undefined) staticBottom = host.getAttribute("data-bottom");
+  if (kennelRoute) host.setAttribute("data-bottom", "on");
+  else if (staticBottom === null || staticBottom === undefined) host.removeAttribute("data-bottom");
+  else host.setAttribute("data-bottom", staticBottom);
+  if (document.body) {
+    if (kennelRoute) document.body.setAttribute("data-kennel-route", "true");
+    else document.body.removeAttribute("data-kennel-route");
+  }
   clearNode(host);
   host.setAttribute("data-signed-in", signedIn() ? "true" : "false");
   const links = signedIn() ? PLACES.slice(0, 4) : PUBLIC_PLACES;
@@ -178,6 +196,7 @@ export function bootNav() {
     const again = () => { mountNav(document.querySelector(".lh-nav")); };
     window.addEventListener(TOKEN_CHANGED_EVENT, again);
     window.addEventListener("storage", again);
+    window.addEventListener("hashchange", again);          // #/today -> #/account swaps the picks shell for the kennel bar
   }
   return out;
 }

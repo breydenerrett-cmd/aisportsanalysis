@@ -105,6 +105,8 @@ def mine(user_id: int, *, now: Optional[datetime] = None) -> dict:
         dogs.append({
             "id": dog.id, "name": dog.name, "tagline": dog.tagline, "status": dog.status,
             "version_no": row["version_no"], "trained_times": _trained_times(dog), "look": look_of(dog),
+            # the sports this dog bets (lower case, as GET /hounds/kennels/mine says them): Live offers a game only the dogs that bet its sport
+            "sports": [str(x).lower() for x in ((row.get("spec") or {}).get("sports") or [])],
             "record": rec, "verdict": (summary or {}).get("verdict"), "open_bets": (summary or {}).get("open_bets"),
             "last_tickets": tickets, "feedback": {k: fb[k] for k in ("good", "bad", "notes", "suggestions")},
             "feedback_notes": notes, "suggestions": suggestions,

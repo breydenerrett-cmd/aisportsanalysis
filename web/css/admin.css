@@ -31,6 +31,11 @@
 
 .adm-app { min-height: 100vh; }
 
+/* the one compliance footer every page carries (docs/design/KENNEL_FIRST_BRIEF.md); admin.css does not load hounds.css, so it styles its own */
+.adm-foot { max-width: 1080px; margin: 0 auto; padding: 20px 16px 28px; box-shadow: 0 -1px 0 rgba(255, 255, 255, .07); color: var(--text-mute); font-size: 13px; }
+.adm-foot p { margin: 0; }
+.adm-foot a { color: inherit; white-space: nowrap; }
+
 .adm-page h1, .adm-page h2, .adm-page h3 { font-family: var(--font-display); }
 
 /* ---- top bar ------------------------------------------------------------------------------- */

@@ -91,9 +91,13 @@ export async function loadFoundingOffer() {
   }
 }
 
+/** The $19.99 plan is "LINEHOUND membership" (QA 2026-10-21: it was labelled "Founding access" straight above the real $14.99 founding line).
+ * "Founding" belongs to the founding OFFER only: foundingOfferLine, below. */
+export const PLAN_EYEBROW = "MEMBERSHIP";
+
 export const BETA_TIER = Object.freeze({
   id: "beta",
-  name: "Founding access",
+  name: "LINEHOUND membership",
   price_cents: 1999,
   price_display: "$19.99/mo",
   billing_note: "7-day free trial, then $19.99/month. Cancel anytime.",

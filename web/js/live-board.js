@@ -276,6 +276,14 @@ function myDogs() {
   return state.dogs;
 }
 
+/** Does `dog` bet the sport family `code` (a game's family, as /sports/now names it)? The server lists a hound's sports in lower case
+ * (GET /hounds/camp/mine `sports`). A hound whose list is missing or empty is not known NOT to bet it, so it stays on offer. */
+export function betsSport(dog, code) {
+  const sports = Array.isArray(dog && dog.sports) ? dog.sports.map((x) => String(x).toLowerCase()) : [];
+  if (!sports.length || !code) return true;
+  return sports.includes(String(code).toLowerCase());
+}
+
 const gameName = (ev) => `${ev.away || "TBD"} at ${ev.home || "TBD"}`;
 
 /** What `dog`'s fire answer says about THIS game: its pick, why it passed, or that the game was not among its answers. */
@@ -348,9 +356,16 @@ async function showPicker(tray, ev) {
     return;
   }
   clearNode(tray);
-  const usable = dogs.filter((d) => d.status !== "retired");
-  if (!usable.length) {
+  const running = dogs.filter((d) => d.status !== "retired");
+  if (!running.length) {
     tray.appendChild(h("p", { class: "hd-muted", "data-hook": "live-no-dogs" }, ["You have no running hound to send. ", h("a", { href: "quiz.html", text: "Create one" }), "."]));
+    return;
+  }
+  // only a hound that bets this game's sport can be sent at it (QA 2026-10-21: MLB hounds were offered for hockey)
+  const usable = running.filter((d) => betsSport(d, ev._family));
+  if (!usable.length) {
+    tray.appendChild(h("p", { class: "hd-muted", "data-hook": "live-no-sport-dogs" }, [
+      `None of your hounds bet ${ev._familyLabel || "this sport"} yet. `, h("a", { href: "quiz.html", text: "Create one" }), "."]));
     return;
   }
   tray.appendChild(h("p", { class: "lv-tray__ask", text: `Send which hound at ${gameName(ev)}?` }));
