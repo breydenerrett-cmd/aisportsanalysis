@@ -586,8 +586,15 @@ def run(date: str, hounds: Sequence[Mapping], rows: Iterable[Mapping], *,
         ledger: Optional[str] = None, now: Optional[datetime] = None, mode: str = "live",
         game_pk_index: Optional[Mapping] = None,
         clock: Optional[Callable[[], datetime]] = None,
-        prop_rows: Optional[Iterable[Mapping]] = None, facts: Any = None) -> dict:
+        prop_rows: Optional[Iterable[Mapping]] = None, facts: Any = None,
+        place_ahead: bool = False) -> dict:
     """Write the paper bets the running `hounds` make on slate `date`. See the module docstring.
+
+    place_ahead: live mode only. The Unleash button (src/hounds/interact/unleash.py) starts a hound
+    betting today: a game that has NOT reached its lock yet is evaluated now, on the newest board at or
+    before now, instead of waiting for the lock. Everything else is the normal pass: a game that has
+    started is never bet, a hound created after a game's lock never bets it, the day's quota, the -200
+    cap and the idempotent bet id all apply. The normal pass later finds the bet already written.
 
     hounds: [{'id', 'spec', 'created_at'}]. rows: raw multibook rows (any superset of the date).
     mode: 'live' enforces lock <= now < start and ignores games a hound did not yet exist for;
@@ -631,7 +638,7 @@ def run(date: str, hounds: Sequence[Mapping], rows: Iterable[Mapping], *,
         if user_spec.is_v2(spec):
             candidates = v2.hound_candidates(hound, spec, games, facts, date, mode=mode, clock=clock,
                                              seen_ids=seen_ids, game_pk_index=game_pk_index,
-                                             skipped=skipped, considered=considered)
+                                             skipped=skipped, considered=considered, ahead=place_ahead)
         else:
             for event_id, game in games.items():
                 if game.sport not in spec["sports"]:
@@ -647,14 +654,15 @@ def run(date: str, hounds: Sequence[Mapping], rows: Iterable[Mapping], *,
                         if t >= commence:
                             skipped["game_started"] += 1
                             continue
-                        if t < lock_utc:
+                        if t < lock_utc and not place_ahead:
                             skipped["not_locked_yet"] += 1
                             continue
                         if created is not None and created > lock_utc:
                             skipped["hound_created_after_lock"] += 1
                             continue
                     considered.setdefault(hound["id"], set()).add(event_id)
-                    cand, reason = evaluate(spec, game, market, lock_utc, commence)
+                    as_of = min(lock_utc, clock()) if (place_ahead and mode == "live") else lock_utc
+                    cand, reason = evaluate(spec, game, market, as_of, commence)
                     if cand is None:
                         skipped[reason] += 1
                         continue

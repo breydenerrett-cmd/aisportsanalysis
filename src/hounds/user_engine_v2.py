@@ -391,9 +391,13 @@ def _prop_move(game, market, player, observed, side, prices) -> tuple:
 
 def hound_candidates(hound: Mapping, spec: Mapping, games: Mapping, facts, date: str, *, mode: str,
                      clock: Callable[[], datetime], seen_ids: set, game_pk_index: Optional[Mapping],
-                     skipped, considered: dict, preview_now: Optional[datetime] = None) -> list:
+                     skipped, considered: dict, preview_now: Optional[datetime] = None,
+                     ahead: bool = False) -> list:
     """The ranked candidates of one version-2 hound on one slate date:
-    [(sortkey, lock_utc, event_id, market, game, commence, cand, bet_id)], de-duplicated per bet."""
+    [(sortkey, lock_utc, event_id, market, game, commence, cand, bet_id)], de-duplicated per bet.
+
+    ``ahead`` (live mode, the Unleash button): a game not yet at its lock is evaluated now on the newest
+    board instead of being skipped; a started game and a hound born after the lock are still skipped."""
     created = E._utc(hound.get("created_at"))
     seed = hound.get("spec_hash") or user_spec.spec_hash(spec)
     best: dict = {}
@@ -412,8 +416,10 @@ def hound_candidates(hound: Mapping, spec: Mapping, games: Mapping, facts, date:
                 skipped["game_started"] += 1
                 continue
             if t < lock_utc:
-                skipped["not_locked_yet"] += 1
-                continue
+                if not ahead:
+                    skipped["not_locked_yet"] += 1
+                    continue
+                as_of = t
             if created is not None and created > lock_utc:
                 skipped["hound_created_after_lock"] += 1
                 continue

@@ -160,6 +160,88 @@ def record(dog: common.Dog, user_id: int, event_id: str, market: str, *, now: Op
 
 
 # ---------------------------------------------------------------------------
+# recording many at once (the Unleash panel's "Add the other N as manual picks")
+# ---------------------------------------------------------------------------
+
+MAX_BATCH = 40
+_SKIP_WORDS = {
+    "game_started": "game already started",
+    "not_a_pick": "no longer fits the rule on the latest board",
+    "board_too_old": "board too old",
+    "rate_limited": f"daily limit of {PER_DAY_LIMIT} manual picks reached",
+    "price_cap": "priced -200 or worse",
+}
+
+
+def _skip_reason(exc: ManualError) -> str:
+    """The words for a refusal. Known codes have fixed words; a code this module does not know (a guard added on another
+    branch, such as the one-side-per-game rule) speaks for itself: its own message is the reason."""
+    if exc.code == "already_on_record":
+        return "already on its record" if "own rule" in str(exc) else "already recorded as a manual pick"
+    return _SKIP_WORDS.get(exc.code) or str(exc)
+
+
+def record_batch(dog: common.Dog, user_id: int, picks: list, *, now: Optional[datetime] = None,
+                 games: Optional[dict] = None, ledger: Optional[str] = None, rule_ledger: Optional[str] = None,
+                 rows_for: Optional[Callable] = None) -> dict:
+    """Record every listed pick that ``record`` accepts, in ONE request, and say what was skipped and why.
+
+    Nothing is re-implemented here: each pick goes through ``record`` (the owner, running, fresh board, the rule would
+    make it, the game has not started, once per game and market, five a day, and any guard added to ``record``), and a
+    ``ManualError`` becomes a counted skip. So a started game is never added, a second tap adds nothing (the first
+    tap's tickets are "already recorded"), and the rule that decides one side per game stays in one place.
+    The boards are read once for the whole batch."""
+    now = now or common.now_utc()
+    if dog.kind != common.KIND_USER or dog.hound is None:
+        raise ManualError("not_a_builder_dog", "manual picks are for dogs people built", 403)
+    if dog.owner_user_id != user_id:
+        raise ManualError("not_owner", "only the owner can record a manual pick", 403)
+    if dog.status != "running":
+        raise ManualError("not_running", f"this dog is {dog.status}; manual picks need a running dog", 409)
+    seen, wanted = set(), []
+    for item in picks or []:
+        key = (str((item or {}).get("event_id") or "").strip(), str((item or {}).get("market") or "").strip())
+        if not key[0] or not key[1]:
+            raise ManualError("pick_invalid", "each pick needs an event_id and a market", 422)
+        if key not in seen:
+            seen.add(key)
+            wanted.append(key)
+    if not wanted:
+        raise ManualError("no_picks", "send at least one pick", 422)
+    if len(wanted) > MAX_BATCH:
+        raise ManualError("too_many", f"at most {MAX_BATCH} picks in one request", 422)
+    if games is None and rows_for is None:
+        games = fire.cached_games(dog.spec["sports"], now)
+    added, results, reasons = [], [], {}
+    for event_id, market in wanted:
+        game = (games or {}).get(event_id)
+        if game is not None and game.commence is not None and now >= game.commence:
+            word = _SKIP_WORDS["game_started"]            # said plainly: a started game is not in the preview at all
+            reasons.setdefault(word, {"code": "game_started", "reason": word, "count": 0})["count"] += 1
+            results.append({"event_id": event_id, "market": market, "status": "skipped", "code": "game_started", "reason": word})
+            continue
+        try:
+            ticket = record(dog, user_id, event_id, market, now=now, games=games, ledger=ledger,
+                            rule_ledger=rule_ledger, rows_for=rows_for)
+        except ManualError as exc:
+            word = _skip_reason(exc)
+            reasons.setdefault(word, {"code": exc.code, "reason": word, "count": 0})["count"] += 1
+            results.append({"event_id": event_id, "market": market, "status": "skipped", "code": exc.code, "reason": word})
+            continue
+        added.append(ticket)
+        results.append({"event_id": event_id, "market": market, "status": "added", "code": None, "reason": None})
+    skipped = len(wanted) - len(added)
+    line = f"Added {len(added)}"
+    if skipped:
+        line += f" · skipped {skipped} (" + ", ".join(
+            f"{r['count']} {r['reason']}" if len(reasons) > 1 or r["count"] != skipped else r["reason"]
+            for r in reasons.values()) + ")"
+    return {"requested": len(wanted), "added": len(added), "skipped": skipped, "reasons": list(reasons.values()),
+            "results": results, "tickets": added, "line": line,
+            "remaining_today": remaining_today(dog.id, now, ledger)}
+
+
+# ---------------------------------------------------------------------------
 # reading and settling
 # ---------------------------------------------------------------------------
 
