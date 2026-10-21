@@ -75,8 +75,8 @@ def decide(sig: Optional[sig_mod.Signals], board: Mapping, rules: Rules, *, hist
         return _pass("small_margin", f"margin {abs(margin):g} is under the {d.min_margin:g} needed", sig)
     side = "home" if margin > 0 else "away"
     info = base.side_info(board, "moneyline", side)
-    if info is None:
-        return _pass("no_board", "the stronger side is not on the lock board", sig)
+    if info is None or not isinstance(info.get("price_average"), (int, float)):
+        return _pass("no_board", "the stronger side is not priced on the lock board", sig)
     price = int(info["price_average"])
     lo_p, hi_p = max(base.PRICE_MIN, d.price_band[0]), min(base.PRICE_MAX, d.price_band[1])
     if not (lo_p <= price <= hi_p) or price <= -200:

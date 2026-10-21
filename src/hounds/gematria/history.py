@@ -102,7 +102,7 @@ def _mlb_games(ctx: base.Context, cutoff: datetime) -> List[Game]:
             continue
         if start is None:                      # a results row with no start time: placed at noon UTC of its date
             start = datetime.fromisoformat(g["date"] + "T12:00:00+00:00")
-        if start > cutoff:
+        if start >= cutoff:                    # at or after lock - FINISH_LAG: not counted
             continue
         out.append(Game(start=start, date=str(g["date"]), home=g["home"], away=g["away"], hs=hs, as_=as_,
                         regular=(g.get("game_type") in (None, "R"))))
@@ -114,7 +114,7 @@ def _nfl_games(ctx: base.Context, cutoff: datetime) -> List[Game]:
     for r in ctx.nfl_games:
         start = base.parse_utc(r.get("kickoff_utc"))
         hs, as_ = _int(r.get("home_score")), _int(r.get("away_score"))
-        if start is None or start > cutoff or hs is None or as_ is None or r.get("status") != "final":
+        if start is None or start >= cutoff or hs is None or as_ is None or r.get("status") != "final":
             continue
         out.append(Game(start=start, date=base.eastern_date(start), home=r["home_team"], away=r["away_team"], hs=hs,
                         as_=as_, regular=(r.get("game_type") == "REG"), neutral=bool(r.get("neutral_site")),
@@ -168,7 +168,7 @@ def _espn_game(r: Mapping, tid_of: Callable[[object], str], cutoff: datetime) ->
         return None
     start = base.parse_utc(r.get("date_utc"))
     hs, as_ = _int(r.get("home_score")), _int(r.get("away_score"))
-    if start is None or start > cutoff or hs is None or as_ is None:
+    if start is None or start >= cutoff or hs is None or as_ is None:
         return None
     slug = str(r.get("season_slug") or "")
     regular = slug == "regular-season" or slug.endswith("english-premier-league")

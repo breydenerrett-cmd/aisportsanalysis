@@ -70,7 +70,7 @@ class StubSource:
     def past(self, ctx):
         cutoff = ctx.lock - history.FINISH_LAG
         self.calls.append(cutoff)
-        return history.Past([x for x in self.games if x.start <= cutoff], g.normalize(ctx.home_name),
+        return history.Past([x for x in self.games if x.start < cutoff], g.normalize(ctx.home_name),
                             g.normalize(ctx.away_name), "a stub store", available=self.available)
 
 
@@ -168,6 +168,18 @@ class ConfigAndRulesTests(unittest.TestCase):
         del missing["kind_weights"]["prime_link"]
         with self.assertRaises(rules_mod.RulesError):
             rules_mod.Rules.from_dict(missing)
+
+    def test_the_rules_hash_does_not_depend_on_line_endings(self):
+        """A Windows checkout (core.autocrlf) has CRLF bytes; the Linux image has the committed LF bytes. Same rules,
+        same hash, and that hash is the committed file's."""
+        import hashlib
+        lf = (ROOT / "config" / "gematria" / "rules_v1.json").read_bytes().replace(b"\r\n", b"\n")
+        crlf = lf.replace(b"\n", b"\r\n")
+        data = json.loads(lf.decode("utf-8"))
+        a = rules_mod.Rules.from_dict(data, raw_bytes=lf).rules_hash
+        b = rules_mod.Rules.from_dict(data, raw_bytes=crlf).rules_hash
+        self.assertEqual(a, b)
+        self.assertEqual(rules_mod.load().rules_hash, hashlib.sha256(lf).hexdigest())
 
     def test_a_price_band_that_reaches_minus_200_is_refused(self):
         with self.assertRaises(rules_mod.RulesError):
@@ -376,6 +388,27 @@ class HistoryTests(unittest.TestCase):
         self.assertEqual(len(reg), 1)
         self.assertEqual(history.team_state(past.games, "bostonceltics").n, 1)           # the preseason game is not the season
 
+    def test_a_result_exactly_at_the_cutoff_is_excluded_in_every_source(self):
+        """At or after lock - FINISH_LAG is out: the ESPN store, the NFL store and the MLB results alike."""
+        ctx = base.build_context(allsports_stores(nba_rows()), "nba1")
+        cut = ctx.lock - history.FINISH_LAG
+        stamp = cut.strftime("%Y-%m-%dT%H:%M:%SZ")
+        espn_rows = [{"game_id": "at", "completed": True, "date_utc": stamp, "home_name": "Boston Celtics",
+                      "away_name": "Miami Heat", "home_score": 100, "away_score": 90, "season_slug": "regular-season"},
+                     {"game_id": "before", "completed": True, "date_utc": (cut - timedelta(seconds=1)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                      "home_name": "Boston Celtics", "away_name": "Miami Heat", "home_score": 100, "away_score": 90,
+                      "season_slug": "regular-season"}]
+        self.assertIsNone(history._espn_game(espn_rows[0], g.normalize, cut))
+        self.assertIsNotNone(history._espn_game(espn_rows[1], g.normalize, cut))
+        nfl_ctx = copy.copy(ctx)
+        nfl_ctx.nfl_games = [{"kickoff_utc": stamp, "home_score": 20, "away_score": 17, "status": "final", "home_team": "BUF",
+                              "away_team": "KC", "game_type": "REG"}]
+        self.assertEqual(history._nfl_games(nfl_ctx, cut), [])
+        mlb_ctx = copy.copy(ctx)
+        mlb_ctx.mlb_games = [{"start_utc": stamp, "date": cut.date().isoformat(), "home": "BOS", "away": "NYY",
+                              "home_score": 3, "away_score": 2, "game_type": "R"}]
+        self.assertEqual(history._mlb_games(mlb_ctx, cut), [])
+
     def test_the_newest_version_of_a_game_wins(self):
         ctx = base.build_context(allsports_stores(nba_rows()), "nba1")
         with tempfile.TemporaryDirectory() as d:
@@ -475,6 +508,15 @@ class DecisionTests(Case):
         heavy = {"home": dict(home_ml=-450, away_ml=350), "away": dict(home_ml=350, away_ml=-450)}[side]
         w2, _ = self.weigh(**heavy)
         self.assertEqual((w2.verdict.status, w2.verdict.code, w2.verdict.side), ("pass", "outside_band", side))
+
+    def test_a_stronger_side_with_no_price_is_no_board_not_a_crash(self):
+        sig = sig_mod.Signals(home=sig_mod.SideSignals("home", score=20, comparisons=100, milestones=5),
+                              away=sig_mod.SideSignals("away", score=5, comparisons=100, milestones=5))
+        for board in ({"markets": {"moneyline": {"sides": {"home": {"price_average": None}, "away": {"price_average": 120}}}}},
+                      {"markets": {"moneyline": {"sides": {"home": {}, "away": {"price_average": 120}}}}},
+                      {"markets": {"moneyline": {"sides": {"away": {"price_average": 120}}}}}):
+            v = decision_mod.decide(sig, board, make_rules(**LENIENT), history_available=True, teams_known=True)
+            self.assertEqual((v.status, v.code, v.side), ("pass", "no_board", None), board)
 
     def test_no_board_is_not_logged_so_a_later_pass_can_decide(self):
         st = allsports_stores(allsports_rows("nba1", "nba", "Boston Celtics", "New York Knicks", title="NBA", books=("betmgm",)))

@@ -101,7 +101,9 @@ class Rules:
                            counter_signal_ratio=float(d.get("counter_signal_ratio", 0.85)))
             if dec.price_band[0] <= -200:
                 raise RulesError("the price band may never include -200 or worse")
-            digest = hashlib.sha256(raw_bytes).hexdigest() if raw_bytes is not None else ""
+            # Hashed with LF line endings: core.autocrlf turns the file CRLF on a Windows checkout, and the same rules
+            # must carry the same hash there as in the Linux image (the committed bytes).
+            digest = hashlib.sha256(raw_bytes.replace(b"\r\n", b"\n")).hexdigest() if raw_bytes is not None else ""
             return cls(version=str(data["version"]), hound_version=str(data["hound_version"]),
                        hound_number=int(data["hound_number"]), ciphers=ciphers,
                        cipher_weights=cw, kind_weights={k: float(v) for k, v in kw.items()},
