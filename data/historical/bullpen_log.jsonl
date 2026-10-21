@@ -62620,3 +62620,4 @@
 {"batters_faced": 3, "date": "2026-10-19", "earned_runs": 0, "game_pk": 849815, "hits": 0, "innings": 0.0, "name": "Ian Seymour", "person_id": 693855, "pitches": 12, "started": false, "strikeouts": 0, "team": "TB", "walks": 2}
 {"batters_faced": 1, "date": "2026-10-19", "earned_runs": 0, "game_pk": 849815, "hits": 0, "innings": 0.333, "name": "Kevin Kelly", "person_id": 687330, "pitches": 3, "started": false, "strikeouts": 1, "team": "TB", "walks": 0}
 {"batters_faced": 3, "date": "2026-10-19", "earned_runs": 0, "game_pk": 849815, "hits": 0, "innings": 1.0, "name": "Bryan Baker", "person_id": 641329, "pitches": 9, "started": false, "strikeouts": 0, "team": "TB", "walks": 0}
+{"date": "2026-10-20", "empty": true}
