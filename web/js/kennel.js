@@ -126,7 +126,7 @@ function lastPickText(dog) {
   return `Last pick: ${last.selection || "a pick"} (${word})`;
 }
 
-const avatarOf = (dog, size, mood) => dogBadge(dog.look || lookFor(dog.id), { size, mood: mood || moodOf(dog), id: dog.id, name: dog.name, vibe: dog.persona && dog.persona.vibe });
+const avatarOf = (dog, size, mood) => dogBadge(dog.look || lookFor(dog.root_id || dog.id), { size, mood: mood || moodOf(dog), id: dog.root_id || dog.id, name: dog.name, vibe: dog.persona && dog.persona.vibe, version: dog.version_no });
 
 // ---- cards ------------------------------------------------------------------------------------------------
 
@@ -584,7 +584,7 @@ function paintStudioHead(look) {
     q("studio-open").hidden = true;
     return;
   }
-  av.appendChild(dogBadge(look || dog.look || lookFor(dog.id), { size: 64, mood: moodOf(dog), id: dog.id, name: dog.name, vibe: dog.persona && dog.persona.vibe }));
+  av.appendChild(dogBadge(look || dog.look || lookFor(dog.root_id || dog.id), { size: 64, mood: moodOf(dog), id: dog.root_id || dog.id, name: dog.name, vibe: dog.persona && dog.persona.vibe, version: dog.version_no }));
   q("studio-title").textContent = dog.name;
   sub.textContent = `${recordText(dog.record)}, ${accountText(dog)}${dog.tagline ? ` · ${dog.tagline}` : ""}`;
   const link = q("studio-open");

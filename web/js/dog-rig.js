@@ -38,8 +38,10 @@ import { makeKit, n, path, grp, ell, f } from "./dog-art.js";
 import { noseShapes, mouthShapes, eyeShapes, EXPRESSIONS, EXPRESSION_OF } from "./dog-face.js";
 import { bodyShapes, neckPieces, headPiece, sunglasses, roundGlasses } from "./dog-accessories.js";
 import { defsNode, ensureSharedDefs, SPARKLE } from "./dog-defs.js";
+import { tierShapes, versionTier, cleanVersion, tierOf, newParts, TIERS, MAX_TIER } from "./dog-tiers.js";
 
 export const POSES = ["idle", "happy", "sad", "thinking", "celebrate"];
+export { versionTier, cleanVersion, tierOf, newParts, TIERS, MAX_TIER };
 export { BREEDS, BREED_LABELS, STYLES, STYLE_LABELS, STYLE_BLURBS, EXPRESSIONS, EXPRESSION_OF, BREED_CHOICES };
 export const ACCESSORY_LAYERS = ["sunglasses", "cap", "headband", "visor", "chain", "collar", "bandana", "hoodie", "jersey"];
 export const VIBE_BREED = { grinder: "bulldog", nerd: "schnauzer", degen: "husky", chaos: "mutt", psychic: "hound" };
@@ -190,6 +192,7 @@ function breedOfBadge(look, opts) {
  */
 export function dogSvg(rawLook, opts = {}) {
   const look = cleanLook(rawLook);
+  const version = cleanVersion(opts.version);
   const pose = cleanPose(opts.pose || opts.mood);
   const breedName = breedOfBadge(look, opts);
   const coat0 = COATS[look.coat];
@@ -203,6 +206,7 @@ export function dogSvg(rawLook, opts = {}) {
   const shared = ensureSharedDefs();
   const eyeColor = EYES[look.eyes];
 
+  const tier = tierShapes(version, a, K, st);
   const mouths = mouthShapes(geo, K), eyes = eyeShapes(geo, K, coat, eyeColor);
   const face = [
     ...noseShapes(geo, K, coat),
@@ -215,18 +219,21 @@ export function dogSvg(rawLook, opts = {}) {
   else if (traitsFor(opts).glasses) face.push(roundGlasses(a, K));
   const hat = headPiece(look, a, K, st);
   if (hat) face.push(hat);
+  // the star a v3 or later hound wears between the eyes sits under the cap and over the markings
+  face.push(...tier.mark);
 
   const bodyBits = bodyShapes(look, coat, a, K, st, geo);
-  const neck = neckPieces(look, a, K, st, coat);
+  const neck = neckPieces(look, a, K, st, coat, version);
 
   const kids = [
     shared ? null : defsNode(),
     n("rect", { class: "dk-tile", x: 0.6, y: 0.6, width: 118.8, height: 118.8, rx: 26, fill: `url(#lh-bg-${look.bg})`, stroke: "#FFFFFF", "stroke-opacity": 0.14 }),
     grp("dk-scene", [
-      n("rect", { x: 0, y: 0, width: 120, height: 120, rx: 26, fill: "url(#lh-glow)" }),
+      n("rect", { class: "dk-glow", x: 0, y: 0, width: 120, height: 120, rx: 26, fill: "url(#lh-glow)" }),
       // the tile's clip holds still; the dog inside it (dk-clip) is what bounces in the howl, and the sunburst and the grain stay put
       grp("", [
         ...decorShapes(st, K),
+        ...tier.back,
         grp("dk-clip", [
           ell(60, 119, 46, 6, "#000000", { class: "dk-shadow", opacity: ".25" }),
           grp("dk-body", [...bodyBits.body, ...neck.behind]),
@@ -235,6 +242,7 @@ export function dogSvg(rawLook, opts = {}) {
           ...neck.front,
           bodyBits.number,
         ]),
+        ...tier.front,
       ], { "clip-path": "url(#lh-tile-clip)" }),
       st.ring ? n("rect", { class: "dk-ring", x: 1.6, y: 1.6, width: 116.8, height: 116.8, rx: 24.6, fill: "none", stroke: "url(#lh-ring)", "stroke-width": 1.8 }) : null,
       ...propShapes(geo),
@@ -243,7 +251,7 @@ export function dogSvg(rawLook, opts = {}) {
   const attrs = {
     class: "dk-badge", viewBox: "0 0 120 120", width: size, height: size, focusable: "false", "data-pose": pose,
     "data-mood": opts.mood || pose, "data-expr": EXPRESSION_OF[pose], "data-breed": breedName, "data-style": look.style, "data-lod": lod,
-    "data-coat": look.coat, "data-bg": look.bg, "data-head": look.head, "data-face": look.face, "data-neck": look.neck, "data-body": look.body,
+    "data-vno": version, "data-tier": tierOf(version), "data-coat": look.coat, "data-bg": look.bg, "data-head": look.head, "data-face": look.face, "data-neck": look.neck, "data-body": look.body,
   };
   if (opts.decorative === false) { attrs.role = "img"; attrs["aria-label"] = opts.label || "Dog"; } else attrs["aria-hidden"] = "true";
   return n("svg", attrs, kids);

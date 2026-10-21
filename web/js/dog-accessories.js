@@ -10,6 +10,7 @@
  */
 
 import { INK, n, path, ell, grp, mix, f } from "./dog-art.js";
+import { collarFor } from "./dog-tiers.js";
 
 const ACCENT = "#2FD07A";
 const GOLD = "#E0B24A";
@@ -105,7 +106,7 @@ function along(a, count) {
 }
 
 /** The pieces on the neck. Returns { behind: nodes drawn before the head, front: nodes drawn after it (the chain) }. */
-export function neckPieces(look, a, K, st, coat) {
+export function neckPieces(look, a, K, st, coat, version) {
   const behind = [], front = [];
   const y = a.chin.y;
   if (look.neck === "collar") {
@@ -126,7 +127,11 @@ export function neckPieces(look, a, K, st, coat) {
     ]));
   } else if (look.body !== "hoodie" && look.body !== "jersey") {
     // the default collar: the brand-green band and a gold tag
-    behind.push(grp("dk-collar", [...band(a, K, ACCENT, 4.2), ell(60, y + 11.5, 3.5, 3.5, metalGold(st), { stroke: GOLD_DARK, "stroke-width": 0.9 })]));
+    // a trained hound's collar wears its version's metal (dog-tiers.js); a v1 hound keeps the brand-green band and the gold tag
+    const tier = collarFor(version, st);
+    behind.push(grp("dk-collar", tier
+      ? [...band(a, K, tier.band, 4.6), ell(60, y + 11.5, 4.3, 4.3, tier.tag, { stroke: tier.tagLine, "stroke-width": 1 })]
+      : [...band(a, K, ACCENT, 4.2), ell(60, y + 11.5, 3.5, 3.5, metalGold(st), { stroke: GOLD_DARK, "stroke-width": 0.9 })]));
   }
   if (look.neck === "chain") {
     const nk = a.neck.half + 1, depth = Math.max(8, Math.min(16, 109 - y));

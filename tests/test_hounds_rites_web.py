@@ -171,8 +171,14 @@ class TheNewPagesCarryTheHardLines(unittest.TestCase):
         css = re.sub(r"/\*.*?\*/", "", (WEB / "css" / "dog-kit.css").read_text(encoding="utf-8"), flags=re.S)
         rest = kennel_tests.EveryAnimationIsInsideNoPreference.outside_motion_blocks(css)
         self.assertNotRegex(rest, r"animation(-name)?\s*:")
-        for name in ("rt-fade", "rt-rise", "rt-lower", "rt-step"):
+        for name in ("rt-fade", "rt-rise", "rt-lower"):
             self.assertIn(f"@keyframes {name}", css)
+        # the evolution's stylesheet (css/evolve.css, imported by dog-kit.css) holds to the same rule
+        evolve = re.sub(r"/\*.*?\*/", "", (WEB / "css" / "evolve.css").read_text(encoding="utf-8"), flags=re.S)
+        self.assertNotRegex(kennel_tests.EveryAnimationIsInsideNoPreference.outside_motion_blocks(evolve), r"(animation(-name)?|transition)\s*:")
+        self.assertIn('@import url("evolve.css")', css)
+        for name in ("ev-streak", "ev-flash", "ev-strike", "ev-land"):
+            self.assertIn(f"@keyframes {name}", evolve)
 
 
 # ---------------------------------------------------------------------------------------------------
@@ -359,22 +365,91 @@ class SendToTrainingShowsTheMontageThenTheCard(unittest.TestCase):
         self.assertEqual(cap["kind"], "training-refused-sheet")
 
     def test_with_reduced_motion_the_card_is_there_at_once_and_the_sheet_says_so(self):
-        out = self.run_flow(kennel_routes([dog("u-1")]), [click(self.OPEN, "a", capture=[q("motion", ".rt-sheet", "attr", attr="data-motion")]),
-                                                           click(hook("training-go"), "b", wait=120, capture=[q("card", hook("training-card"), "count"),
-                                                                                                                q("montage", hook("training-montage"), "count")])])
-        self.assertEqual(out["captures"]["a"]["motion"], "reduced")
-        self.assertEqual((out["captures"]["b"]["card"], out["captures"]["b"]["montage"]), (1, 0))
-
-    def test_with_motion_allowed_the_montage_plays_first_and_the_card_follows(self):
-        out = self.run_flow(kennel_routes([dog("u-1")]), [
+        out = self.run_flow(kennel_routes([dog("u-1", version_no=1)]), [
             click(self.OPEN, "a", capture=[q("motion", ".rt-sheet", "attr", attr="data-motion")]),
-            click(hook("training-go"), "montage", wait=150, capture=[q("steps", hook("training-montage") + " li", "texts"), q("card", hook("training-card"), "count"),
-                                                                       q("status", hook("training-status"))]),
-            dict(do="wait", label="card", wait=2300, capture=[q("card", hook("training-card"), "count"), q("montage", hook("training-montage"), "count")])], reduced=False)
-        self.assertEqual(out["captures"]["a"]["motion"], "full")
-        self.assertEqual(out["captures"]["montage"]["steps"], ["Reading its settled tickets", "Finding where it loses", "Drawing up the changes"])
-        self.assertEqual(out["captures"]["montage"]["card"], 0)
-        self.assertEqual((out["captures"]["card"]["card"], out["captures"]["card"]["montage"]), (1, 0))
+            click(hook("training-go"), "b", wait=120, capture=[q("card", hook("training-card"), "count"), q("phase", hook("evolve"), "attr", attr="data-phase"),
+                                                              q("pair", hook("evolve-pair") + " figcaption", "texts"), q("skip", hook("evolve-skip"), "count"),
+                                                              q("stats", hook("evolve-stat"), "count"), q("title", hook("evolve-title"))])])
+        self.assertEqual(out["captures"]["a"]["motion"], "reduced")
+        cap = out["captures"]["b"]
+        # one static before-and-after card, at once: nothing waits on a timer, nothing is charged or flashed
+        self.assertEqual((cap["card"], cap["phase"], cap["pair"]), (1, "static", ["v1", "v2"]))
+        self.assertEqual(cap["stats"], len(payloads()["trained"]["changes"]))
+        self.assertEqual(cap["title"], "Underdog Gus became Underdog Gus v2!")
+
+    def test_with_motion_allowed_the_evolution_plays_first_and_the_card_follows(self):
+        # before, charge, burst, reveal (about seven seconds), then the upgrade card; the request has long since finished
+        out = self.run_flow(kennel_routes([dog("u-1", version_no=1)]), [
+            click(self.OPEN, "a", capture=[q("motion", ".rt-sheet", "attr", attr="data-motion")]),
+            click(hook("training-go"), "before", wait=300, capture=[q("phase", hook("evolve"), "attr", attr="data-phase"), q("card", hook("evolve-card"), "count"),
+                                                                    q("badge", hook("evolve-version")), q("line", hook("training-status")),
+                                                                    q("flash", hook("evolve-flash"), "count")]),
+            dict(do="wait", label="charge", wait=2400, capture=[q("phase", hook("evolve"), "attr", attr="data-phase"), q("card", hook("evolve-card"), "count"),
+                                                                 q("silhouettes", "[data-sil]", "count")]),
+            dict(do="wait", label="card", wait=6200, capture=[q("phase", hook("evolve"), "attr", attr="data-phase"), q("card", hook("evolve-card"), "count"),
+                                                               q("title", hook("evolve-title")), q("tier", hook("evolve-tier")),
+                                                               q("stats", hook("evolve-stat"), "count")])], reduced=False)
+        caps = out["captures"]
+        self.assertEqual(caps["a"]["motion"], "full")
+        self.assertEqual((caps["before"]["phase"], caps["before"]["card"], caps["before"]["badge"]), ("before", 0, "v1"))
+        # the one line is the server's own change list, never invented
+        data = payloads()["trained"]
+        for change in data["changes"]:
+            self.assertIn(change["new_text"], caps["before"]["line"])
+        self.assertTrue(caps["before"]["line"].startswith("Training changed:"), caps["before"]["line"])
+        self.assertEqual((caps["charge"]["phase"], caps["charge"]["card"]), ("charge", 0))
+        self.assertEqual(caps["charge"]["silhouettes"], 2)
+        self.assertEqual((caps["card"]["phase"], caps["card"]["card"]), ("card", 1))
+        self.assertEqual(caps["card"]["title"], "Underdog Gus became Underdog Gus v2!")
+        self.assertEqual(caps["card"]["tier"], "v2 \u00b7 Bronze")
+        self.assertEqual(caps["card"]["stats"], len(data["changes"]))
+
+    def test_a_tap_after_the_first_second_skips_to_the_card_and_a_tap_before_does_not(self):
+        out = self.run_flow(kennel_routes([dog("u-1", version_no=1)]), [
+            click(self.OPEN, "a"),
+            click(hook("training-go"), "early", wait=200),
+            click(hook("evolve-stage"), "tapped_early", wait=100, capture=[q("phase", hook("evolve"), "attr", attr="data-phase"), q("card", hook("evolve-card"), "count")]),
+            dict(do="wait", label="later", wait=1000),
+            click(hook("evolve-skip"), "skipped", wait=150, capture=[q("phase", hook("evolve"), "attr", attr="data-phase"), q("card", hook("evolve-card"), "count"),
+                                                                     q("skipped", hook("evolve"), "attr", attr="data-skipped")])], reduced=False)
+        caps = out["captures"]
+        self.assertEqual((caps["tapped_early"]["phase"], caps["tapped_early"]["card"]), ("before", 0))
+        self.assertEqual((caps["skipped"]["phase"], caps["skipped"]["card"], caps["skipped"]["skipped"]), ("card", 1, "1"))
+
+    def test_the_old_what_changed_and_why_card_is_folded_under_the_upgrade_card(self):
+        out = self.run_flow(kennel_routes([dog("u-1")]), [click(self.OPEN, "a"), click(hook("training-go"), "b", wait=300,
+                                                                                       capture=[q("fold", hook("evolve-why") + " " + hook("training-card"), "count"),
+                                                                                                q("see", hook("training-open-new"), "texts"), q("back", hook("training-done"), "texts")])])
+        cap = out["captures"]["b"]
+        self.assertEqual(cap["fold"], 1)
+        self.assertEqual((cap["see"], cap["back"]), (["See v2"], ["Back to My Kennel"]))
+
+    def test_a_failed_request_ends_with_the_error_and_no_upgrade_is_ever_drawn(self):
+        refusal = [409, {"detail": {"error": "training_too_soon", "message": "Underdog Gus needs 5 new settled bets on version 1 before it can train again. It has 2."}}]
+        out = self.run_flow(kennel_routes([dog("u-1", version_no=1)], **{"POST /hounds/u-1/train": refusal}), [
+            click(self.OPEN, "a"),
+            click(hook("training-go"), "b", wait=250, capture=[q("evolve", hook("evolve"), "count"), q("card", hook("evolve-card"), "count"),
+                                                              q("new", ".ev-hound--new", "count"), q("refused", hook("training-refused")),
+                                                              q("title", hook("rites-title")), q("kind", ".rt-sheet", "attr", attr="data-hook")]),
+            dict(do="wait", label="later", wait=2600, capture=[q("card", hook("evolve-card"), "count"), q("evolve", hook("evolve"), "count"), q("refused", hook("training-refused"))])],
+            reduced=False)
+        b, later = out["captures"]["b"], out["captures"]["later"]
+        self.assertEqual((b["evolve"], b["card"], b["new"]), (0, 0, 0))
+        self.assertIn("needs 5 new settled bets", b["refused"])
+        self.assertEqual(b["kind"], "training-refused-sheet")
+        self.assertTrue(b["title"].endswith("stays as it is"), b["title"])
+        self.assertEqual((later["card"], later["evolve"]), (0, 0))
+        self.assertEqual(later["refused"], b["refused"])
+
+    def test_the_sequence_waits_for_a_slow_server_and_draws_no_upgrade_before_it_answers(self):
+        out = self.run_flow(kennel_routes([dog("u-1", version_no=1)]), [
+            click(self.OPEN, "a"),
+            click(hook("training-go"), "b", wait=2600, capture=[q("phase", hook("evolve"), "attr", attr="data-phase"), q("card", hook("evolve-card"), "count"),
+                                                                q("new", ".ev-hound--new", "count"), q("badge", hook("evolve-version"))])],
+            reduced=False, delay={"/hounds/u-1/train": 4000})
+        cap = out["captures"]["b"]
+        # past the 1.9 s a free server would have taken, the beat holds on "Training..." with the old hound and no new one
+        self.assertEqual((cap["phase"], cap["card"], cap["new"], cap["badge"]), ("before", 0, 0, "v1"))
 
     def test_done_redraws_the_kennel_with_the_new_version_and_its_badge(self):
         trained_card = dog("u-9", "Underdog Gus", version_no=2, trained_times=1)
@@ -432,9 +507,12 @@ class TheOwnersHoundMenuOnTheDogPage(unittest.TestCase):
     def test_training_from_the_dog_page_goes_to_the_new_version(self):
         routes = dog_routes(kit=owner_kit())
         routes[f"POST /hounds/{HID}/train"] = [200, payloads()["trained"]]
-        out = page(routes, reducedMotion=True, actions=[click(hook("menu-train"), "a"), click(hook("training-go"), "b", wait=300),
+        out = page(routes, reducedMotion=True, actions=[click(hook("menu-train"), "a"), click(hook("training-go"), "b", wait=300,
+                                                                                            capture=[q("see", hook("training-open-new"), "attr", attr="href")]),
                                                          click(hook("training-done"), "c", wait=200)])
-        self.assertEqual(out["navigations"][-1], payloads()["trained"]["new"]["page_href"])
+        # "See v2" is a link to the new version; "Back to My Kennel" leaves the hound page for the kennel
+        self.assertEqual(out["captures"]["b"]["see"], payloads()["trained"]["new"]["page_href"])
+        self.assertEqual(out["navigations"][-1], "kennel.html")
 
     def test_a_dog_that_was_trained_wears_the_badge_in_its_header(self):
         out = page(dog_routes(kit=owner_kit(trained_times=2)), queries=[q("badge", ".hd-modelhead " + hook("trained-badge"), "texts")])

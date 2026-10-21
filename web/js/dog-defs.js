@@ -48,6 +48,9 @@ export function defsNode() {
     // metal
     linear("lh-gold", { x1: 0, y1: 0, x2: 1, y2: 1 }, [stop("0", "#FFF3C2"), stop("0.28", "#F0C65A"), stop("0.55", "#A97A22"), stop("0.78", "#F7D77F"), stop("1", "#C99A33")]),
     linear("lh-silver", { x1: 0, y1: 0, x2: 1, y2: 1 }, [stop("0", "#FFFFFF"), stop("0.3", "#CFD6E0"), stop("0.55", "#7C8696"), stop("0.8", "#E6EBF2"), stop("1", "#9AA3B2")]),
+    // the version tiers (dog-tiers.js): bronze for v2, platinum for v5 and up; v3 is the silver above and v4 the gold
+    linear("lh-bronze", { x1: 0, y1: 0, x2: 1, y2: 1 }, [stop("0", "#F5C99A"), stop("0.3", "#CC8A4E"), stop("0.58", "#7A4720"), stop("0.82", "#E3A66C"), stop("1", "#9A5E2C")]),
+    linear("lh-platinum", { x1: 0, y1: 0, x2: 1, y2: 1 }, [stop("0", "#FFFFFF"), stop("0.3", "#BFE7F2"), stop("0.55", "#5FA3BA"), stop("0.8", "#E6F8FD"), stop("1", "#8CC6D8")]),
     linear("lh-ring", { x1: 0, y1: 0, x2: 1, y2: 1 }, [stop("0", "#FFF3C2"), stop("0.35", "#D9A93C"), stop("0.7", "#7A5A1B"), stop("1", "#F0C65A")]),
     // street grain
     n("pattern", { id: "lh-grit", width: 9, height: 9, patternUnits: "userSpaceOnUse" }, [
