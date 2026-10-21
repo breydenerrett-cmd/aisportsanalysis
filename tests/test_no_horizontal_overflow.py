@@ -84,7 +84,10 @@ class EveryPageFitsAPhone(unittest.TestCase):
         api = {k: (s, b) for k, (s, b) in F.routes().items()}
         api["/sports/now"] = (200, json.loads((HERE / "fixtures" / "sports_now.json").read_text(encoding="utf-8")))
         cls.hid = F.summaries()[0].id
-        cls.pages = cls.PAGES + [f"hound.html?id={cls.hid}", f"hound.html?id={cls.hid}&tab=tickets", f"hound.html?id={cls.hid}&tab=locker"]
+        # the Gematria Hound's page with its Evidence fold OPEN: long labels, two picks, both sides (web/js/hounds-gematria.js)
+        api.update({k: v for k, v in F.gematria_routes(picks=2).items()})
+        cls.pages = cls.PAGES + [f"hound.html?id={cls.hid}", f"hound.html?id={cls.hid}&tab=tickets", f"hound.html?id={cls.hid}&tab=locker",
+                                 f"hound.html?id={F.GEMATRIA_ID}", f"hound.html?id={F.GEMATRIA_ID}&open=evidence"]
         cls.server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), make_handler(api))
         cls.thread = threading.Thread(target=cls.server.serve_forever, daemon=True)
         cls.thread.start()

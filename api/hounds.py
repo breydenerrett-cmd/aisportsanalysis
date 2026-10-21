@@ -18,6 +18,7 @@ Every payload carries ``paper_only: true`` and the not-advice line
                                      start with no grade is "ungraded", never "open")
     GET /hounds/{id}/desk            an AI desk hound's published games (empty before the first publish)
     GET /hounds/{id}/desk/{game}     how the desk argued that game: its transcript and disagreement table
+    GET /hounds/{id}/gematria        the Gematria Hound's picks with the evidence for both sides (empty before the first pick)
 
 SEASONS (config/seasons.json, src/hounds/seasons.py). A season is a date window over the forward bets: the
 record, units, CLV, typical price, last ten and streak a summary carries are worked out from the bets in that
@@ -54,6 +55,7 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException, Query, Response
 
 from src.hounds import desk_view, digest as digest_mod, seasons, stats, user_view
+from src.hounds.gematria import view as gematria_view
 from src.hounds.interact import outback
 from src.hounds.contract import (
     DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, bets_payload, filter_by_status, graveyard_payload,
@@ -246,3 +248,16 @@ def desk_game(hound_id: str, game_id: str, response: Response):
         raise HTTPException(status_code=404, detail="the desk has no such game")
     response.headers["Cache-Control"] = _CACHE_HEADER
     return payload
+
+
+# ---- the Gematria Hound: the evidence behind each pick ------------------------------------------------------
+#
+# Read from the AI bets ledger (src/hounds/gematria/view.py), not from the stats book, so it answers at once and before the
+# hound's first pick. Only the id of a hound whose config family is "gematria" is served.
+
+@router.get("/hounds/{hound_id}/gematria")
+def gematria_picks(hound_id: str, response: Response):
+    if not gematria_view.is_gematria_hound(hound_id):
+        raise HTTPException(status_code=404, detail="no such numerology hound")
+    response.headers["Cache-Control"] = _CACHE_HEADER
+    return gematria_view.picks_for(hound_id)

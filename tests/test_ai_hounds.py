@@ -87,8 +87,9 @@ class RegistryAndConfigTests(unittest.TestCase):
             self.assertNotIn(hid, pack_mod.BY_ID)
 
     def test_shipped_config_runs_one_claude_hound_and_parks_the_council(self):
-        self.assertEqual([e["id"] for e in ai_defs.entries()], ["ai_claude"])
-        self.assertEqual(ai_defs.ids(), frozenset({"ai_claude", "ai_council"}))
+        # the Gematria Hound shares this config (ledger, sports gate, runner) but asks no model: tests/test_gematria_hound.py
+        self.assertEqual([e["id"] for e in ai_defs.entries()], ["ai_claude", "gematria"])
+        self.assertEqual(ai_defs.ids(), frozenset({"ai_claude", "ai_council", "gematria"}))
         entry = ai_defs.entry_for("ai_claude")
         self.assertEqual((entry["name"], entry["category"], entry["who_decided"], entry["providers"]),
                          ("Claude Hound", "ai", "model", ["anthropic"]))
@@ -98,8 +99,9 @@ class RegistryAndConfigTests(unittest.TestCase):
         defs = house.definitions(ROOT / "config" / "house_hounds.json", ROOT / "config" / "house_pack.json",
                                  ROOT / "config" / "desk_hounds.json", ROOT / "config" / "ai_hounds.json")
         ai = [d for d in defs if d["source"] == "ai_cfg"]
-        self.assertEqual([d["id"] for d in ai], ["ai_claude"])
+        self.assertEqual([d["id"] for d in ai], ["ai_claude", "gematria"])
         self.assertEqual((ai[0]["category"], ai[0]["not_started_when_empty"]), ("ai", True))
+        self.assertEqual(ai[1]["category"], "numerology")
         from src.hounds.contract import CATEGORIES
         self.assertIn("ai", CATEGORIES)
 
@@ -630,9 +632,9 @@ class CatalogDrivenSportsTests(unittest.TestCase):
     def test_the_public_definition_lists_the_menu_not_the_sentinel(self):
         defs = house.definitions(ROOT / "config" / "house_hounds.json", ROOT / "config" / "house_pack.json",
                                  ROOT / "config" / "desk_hounds.json", ROOT / "config" / "ai_hounds.json")
-        (ai,) = [d for d in defs if d["source"] == "ai_cfg"]
-        self.assertNotIn("dog_menu", ai["sports"])
-        self.assertIn("soccer", ai["sports"])
+        for ai in [d for d in defs if d["source"] == "ai_cfg"]:
+            self.assertNotIn("dog_menu", ai["sports"])
+            self.assertIn("soccer", ai["sports"])
 
 
 class ThreeWayBoardTests(unittest.TestCase):

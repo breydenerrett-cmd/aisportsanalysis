@@ -79,6 +79,10 @@ TEAM_NAMES = {
 BOOK_LABELS = {
     "betclic_fr": "Betclic (FR)",
     "betfair_ex_au": "Betfair Exchange (AU)",
+    "betr_au": "Betr (AU)",
+    "ladbrokes_au": "Ladbrokes (AU)",
+    "neds": "Neds (AU)",
+    "pointsbetau": "PointsBet (AU)",
     "betfair_ex_eu": "Betfair Exchange (EU)",
     "betmgm": "BetMGM",
     "betonlineag": "BetOnline",

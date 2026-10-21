@@ -567,3 +567,54 @@ if __name__ == "__main__":  # pragma: no cover
     if "--port" in sys.argv:
         port = int(sys.argv[sys.argv.index("--port") + 1])
     _serve(port, forward="--no-forward" not in sys.argv)
+
+
+# ---- the Gematria Hound (web/js/hounds-gematria.js, GET /hounds/{id}/gematria) -----------------------------------
+
+GEMATRIA_ID = "gematria"
+HOSTILE = '<img src=x onerror="window.__pwned=1">'
+
+
+def gematria_summary(started=True):
+    rec = Record(bets=2, wins=1, losses=1, units_recorded_price=0.1, units_average_price=0.0) if started else Record()
+    return HoundSummary(
+        id=GEMATRIA_ID, name="Gematria Hound", tagline="Experimental numerology hound. Paper picks, graded in public like every hound.",
+        kind="house", category="numerology", style="counts numerical coincidences for each side", sports=["nba", "nhl", "ncaaf"],
+        markets=["moneyline"], rule_text="Counts numerical coincidences for each side. Experimental and unproven.",
+        status="running" if started else "not_started", record=rec, clv=None,
+        verdict=VerdictBlock(label="TOO EARLY", sentence=VERDICT_SENTENCES["TOO EARLY"], units_note=vd.units_note(rec.bets)),
+        first_bet_utc="2026-10-24T20:00:00Z" if started else None, last_bet_utc="2026-10-24T20:00:00Z" if started else None,
+        verified=False, replay=None, spark=[], spark_basis="average_price", source="ai_cfg")
+
+
+def _ev(kind, a, av, b=None, bv=None, weight=1.0, note=None):
+    out = {"kind": kind, "value": av, "weight": weight, "a": {"label": a, "value": av}}
+    if b:
+        out["b"] = {"label": b, "value": bv if bv is not None else av}
+    if note:
+        out["note"] = note
+    return out
+
+
+def gematria_payload(picks=1, hostile=False):
+    team = HOSTILE if hostile else "Boston Celtics"
+    item = [_ev("headline_milestone", f"{team}'s 6th win of the season", 6, None, None, 3.0, "3 other numbers equal it"),
+            _ev("milestone_eq_state", "13 days since the Celtics last won at home with a very long label that has to wrap on a phone", 13,
+                "Boston Celtics: Massachusetts is the 6th state", 13),
+            _ev("prime_link", "6 weeks since the last anniversary", 6, "2026-10-24: digits = 13", 13, 1.0, "13 is the 6th prime")]
+    one = {"event_id": "nba1", "date": "2026-10-24", "sport": "nba", "start_utc": "2026-10-24T23:10:00Z", "away": team,
+           "home": "New York Knicks", "selection": f"{team} ML", "side": "away", "price": 105, "result": None, "rules_version": "v1",
+           "hound_version": "gematria-v1", "scores": {"home": 4.5, "away": 9.0}, "margin": -4.5, "threshold": 3.0,
+           "comparisons": {"home": 611, "away": 700}, "search_space": 1311, "matches": {"home": 6, "away": 12},
+           "history": "the ESPN NBA store", "evidence": {"home": item[1:], "away": item}}
+    two = dict(one, event_id="nba2", date="2026-10-23", start_utc="2026-10-23T23:10:00Z", result="WIN")
+    return {"hound_id": GEMATRIA_ID, "started": bool(picks), "picks": [one, two][:picks],
+            "copy": "Experimental numerology hound. Paper picks, graded in public like every hound.",
+            "paper_only": True, "not_advice": user_spec.NOT_ADVICE}
+
+
+def gematria_routes(started=True, picks=1, hostile=False, **over):
+    detail = contract.hound_payload(gematria_summary(started), [], paginate([], 1, 25), AS_OF)
+    r = {f"/hounds/{GEMATRIA_ID}": (200, detail), f"/hounds/{GEMATRIA_ID}/gematria": (200, gematria_payload(picks if started else 0, hostile))}
+    r.update(over)
+    return r

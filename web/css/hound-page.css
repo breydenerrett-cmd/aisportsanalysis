@@ -158,3 +158,19 @@
   .hounds-page .hh-wrap .hh-hero > svg { animation: hh-settle var(--lh-t-hero) var(--lh-spring) both; }
   @keyframes hh-settle { from { opacity: 0; transform: translateY(8px) scale(.96); } to { opacity: 1; transform: none; } }
 }
+
+/* ---- Evidence (the Gematria Hound): per pick, both sides' matches, behind a tap -------------------------------- */
+.hounds-page .hh-wrap .hh-evidence > section { padding: var(--lh-s5) var(--lh-s4) 0; }
+.hounds-page .hh-wrap .hh-evidence[open] { padding-bottom: var(--lh-s5); }
+.hounds-page .hh-wrap .hh-evidence > summary { display: flex; align-items: center; gap: var(--lh-s3); min-height: 56px; padding: var(--lh-s3) var(--lh-s4); border-radius: var(--lh-r-lg); background: var(--lh-soft); }
+.hounds-page .hh-wrap .hd-ev__pick { margin: var(--lh-s3) 0; padding: var(--lh-s3); background: var(--lh-soft); border-radius: var(--lh-r-lg); min-width: 0; }
+.hounds-page .hh-wrap .hd-ev__pick > summary { display: flex; flex-wrap: wrap; gap: var(--lh-s2) var(--lh-s3); align-items: baseline; cursor: pointer; }
+.hounds-page .hh-wrap .hd-ev__game { font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+.hounds-page .hh-wrap .hd-ev__sel { color: var(--lh-mute); min-width: 0; overflow-wrap: anywhere; }
+.hounds-page .hh-wrap .hd-ev__line { margin: var(--lh-s3) 0; font-size: var(--lh-fs-sm); overflow-wrap: anywhere; }
+.hounds-page .hh-wrap .hd-ev__sidehead { margin: var(--lh-s4) 0 var(--lh-s2); font-size: var(--lh-fs-base); overflow-wrap: anywhere; }
+.hounds-page .hh-wrap .hd-ev__side[data-picked="yes"] .hd-ev__sidehead { color: var(--lh-accent); }
+.hounds-page .hh-wrap .hd-ev__list { margin: 0; padding: 0; list-style: none; }
+.hounds-page .hh-wrap .hd-ev__item { display: flex; flex-direction: column; gap: 2px; padding: var(--lh-s2) 0; box-shadow: 0 -1px 0 var(--lh-line); min-width: 0; }
+.hounds-page .hh-wrap .hd-ev__kind { font-size: var(--lh-fs-xs); color: var(--lh-mute); text-transform: uppercase; letter-spacing: .04em; }
+.hounds-page .hh-wrap .hd-ev__what { font-size: var(--lh-fs-sm); overflow-wrap: anywhere; min-width: 0; }

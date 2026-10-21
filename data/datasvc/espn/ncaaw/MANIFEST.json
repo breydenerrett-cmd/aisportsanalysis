@@ -1,0 +1,21 @@
+{
+ "attribution": "Teams, schedules, scores, box scores, standings, injury reports and rosters: ESPN's public site JSON (site.api.espn.com), observed by LineHound. Not redistributed by ESPN; for internal analysis.",
+ "files": {
+  "standings_2026.jsonl": {
+   "bytes": 218899,
+   "newest": "2026-10-21T03:09:51Z",
+   "records": 363,
+   "sha256": "2cda4d2cc1055b8d82bcc940221995477c7669eaf5ddb78853f9585074beee67"
+  },
+  "teams.jsonl": {
+   "bytes": 122134,
+   "newest": "2026-10-21T03:09:48Z",
+   "records": 362,
+   "sha256": "b2dcce115965ba042b2681b801b253e4ab7dac88e7adef6873f0d8345b0c72dc"
+  }
+ },
+ "generated_utc": "2026-10-21T03:09:51Z",
+ "league": "ncaaw",
+ "refreshed_utc": "2026-10-21T03:09:51Z",
+ "title": "NCAA women's basketball (D1)"
+}

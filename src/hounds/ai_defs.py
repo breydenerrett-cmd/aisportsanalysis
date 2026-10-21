@@ -30,6 +30,21 @@ FORWARD_ONLY_MESSAGE = (
 )
 
 
+GEMATRIA_FORWARD_ONLY_MESSAGE = (
+    "The Gematria Hound is forward-only. It weighs a game once, at the lock, from the board and the stored results as they "
+    "stood then; replaying it over old boards would let a rule written after the fact pick its winners. There is no "
+    "backtest or drill for it; its record is built only from games it weighed before they started."
+)
+
+
+def forward_only_message(hound_id: Optional[str] = None) -> str:
+    """The refusal text for a forward-only hound: the Gematria Hound's own words, else the AI hounds' (a language model's memory)."""
+    entry = entry_for(hound_id) if hound_id else None
+    if entry and entry.get("family") == "gematria":
+        return GEMATRIA_FORWARD_ONLY_MESSAGE
+    return FORWARD_ONLY_MESSAGE
+
+
 class ForwardOnlyError(RuntimeError):
     """An AI hound was asked to replay the past."""
 
