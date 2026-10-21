@@ -29,7 +29,7 @@ on:
 
 concurrency:
   group: deploy-prod
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   deploy:
@@ -59,7 +59,7 @@ jobs:
           ref: claude/sports-betting-analysis-review-g1o0co
       - uses: superfly/flyctl-actions/setup-flyctl@master
       - name: Deploy
-        run: flyctl deploy -c deploy/fly.production.toml -a linehound-prod --remote-only --yes
+        run: timeout -k 30 540 flyctl deploy -c deploy/fly.production.toml -a linehound-prod --local-only --yes
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_PROD_API_TOKEN || secrets.FLY_ORG_TOKEN }}
       # Same two-phase shape as deploy-staging.yml's own health check
