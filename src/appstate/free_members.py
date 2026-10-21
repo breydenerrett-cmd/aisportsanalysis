@@ -203,6 +203,7 @@ class FreeMember:
 
 def create_free_member(email: str, record: passwords.PasswordRecord, *,
                        has_kennel_name: bool = False,
+                       age_attested: bool = False,
                        now: Optional[datetime] = None,
                        db: Optional[Path] = None) -> Optional[FreeMember]:
     """Create the account, its password and its session token in one transaction.
@@ -212,6 +213,10 @@ def create_free_member(email: str, record: passwords.PasswordRecord, *,
     to touch an existing account). `email` is already lower-cased by the caller, and
     the UNIQUE index on users.email settles a race: the loser's INSERT fails, the
     transaction rolls back, and it too gets None.
+
+    `age_attested` is True when the visitor ticked "I am 21 or older"; the moment is
+    stored on the user row (users.age_attested_at) in the same transaction, so there is
+    never an account that says it was attested with no time, or the reverse.
 
     `record` is a hash made by passwords.hash_password BEFORE this call, so the
     scrypt (about 50 ms) runs outside the write lock."""
@@ -225,8 +230,10 @@ def create_free_member(email: str, record: passwords.PasswordRecord, *,
                 conn.rollback()
                 return None
             cur = conn.execute(
-                "INSERT INTO users (email, created_at, status, plan) VALUES (?, ?, ?, ?)",
-                (email, when.isoformat(), "active", access.FREE_PLAN))
+                "INSERT INTO users (email, created_at, status, plan, age_attested_at) "
+                "VALUES (?, ?, ?, ?, ?)",
+                (email, when.isoformat(), "active", access.FREE_PLAN,
+                 when.isoformat() if age_attested else None))
             user_id = cur.lastrowid
             conn.execute(
                 "INSERT INTO user_passwords (user_id, hash, salt, params, updated_at) "

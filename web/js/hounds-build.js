@@ -16,7 +16,9 @@
  *
  * WHAT IS POSTED. A new dog: `POST /hounds {spec}`. An edit of a saved dog: `POST /hounds/{id}/diff {spec}`
  * (a plain-English list of what changes) and then `POST /hounds/{id}/version {spec}` (a new version; the old
- * record stays). Signed-out visitors can draft everything; saving asks them to sign in.
+ * record stays). Signed-out visitors can draft everything. Once the hound is read, named and has met today's board, a "Keep {Name}"
+ * form (web/js/keep.js: email, password, "I am 21 or older") makes a free account, signs them in and saves the hound on this page,
+ * with no redirect. The record starts at the keep; nothing is backfilled.
  *
  * TRANSLATOR. When the free parser cannot read everything and the owner has switched the Zapier translator
  * on, the response carries a job id; this page polls `GET /hounds/english/{job_id}` (backing off, and giving up at
@@ -31,9 +33,12 @@ import { showUpgrade } from "./upgrade.js";
 import { celebrate, put, removeDog, removedText } from "./dog-common.js";
 import { dogBadge, dogFace, DEFAULT_LOOK, lookFor, BACKGROUNDS, cleanLook, breedOfName, breedLabel } from "./dog-avatar.js";
 import { stakeLineText } from "./hounds-board.js";
+import { mountKeep, keepLabel } from "./keep.js";
+import { playReveal, countTo, previewState, priceText } from "./reveal-fx.js";
+import { watchFirstGrade } from "./first-grade.js";
 
 export const PAPER_NOTICE =
-  "Paper bets only. Your dog never places a real bet, and it never takes a price of -200 or worse.";
+  "Paper bets only. Your hound never places a real bet, and it never takes a price of -200 or worse.";
 
 export const EXAMPLES = [
   "Bet home underdogs between +120 and +200 when they're on 2+ days rest. Max 2 bets a day.",
@@ -65,6 +70,7 @@ const S = {
   understood: [], notRead: [], assumed: [], sentences: [], problems: [], saveProblems: [], previewSeq: 0, previewTimer: null,
   jobTimer: null, jobPolls: 0, jobId: null, copiedFrom: "", pendingTranslation: null,
   jobBusy: false, jobElapsed: 0, jobStart: 0, jobNextPoll: 0, jobErrors: 0, bound: false,
+  keep: null, previewSettled: false,
 };
 
 // ---- the menu ---------------------------------------------------------------------------------------
@@ -551,7 +557,7 @@ function renderSentences() {
   const all = S.saveProblems.concat(S.problems);
   problems.hidden = !all.length;
   if (all.length) {
-    problems.appendChild(h("p", { class: "bd-problems__lead", text: "These need fixing before the dog can run:" }));
+    problems.appendChild(h("p", { class: "bd-problems__lead", text: "These need fixing before the hound can run:" }));
     problems.appendChild(h("ul", {}, all.map((p) => h("li", { text: p }))));
   }
 }
@@ -584,31 +590,55 @@ function setCount(text) {
   pill.textContent = text;
 }
 
-function renderPreview(res) {
+/** The preview's count line. `parts` ({n, rest}) lets the number count up on its own; the pill under the page gets the plain sentence. */
+function setCountParts(parts) {
+  const count = q("preview-count");
+  clearNode(count);
+  const n = h("span", { class: "bd-count", "data-hook": "preview-n", text: parts.n });
+  count.appendChild(n);
+  count.appendChild(document.createTextNode(parts.rest));
+  const pill = q("preview-pill");
+  pill.hidden = !S.started;
+  pill.textContent = parts.n + parts.rest;
+  return n;
+}
+
+function previewName() {
+  return String((S.spec && S.spec.name) || "").trim() || "Your hound";
+}
+
+/** R4: "{n} of {m} games fit {Name}'s rule today", a pass, or a board that did not load. The words are in the page at once; the count-up
+ *  and the ticket flip are `data-reveal` motion on top, played once (css/builder.css). */
+function renderPreview(res, err = null) {
   const list = clearNode(q("preview-list"));
-  if (!res) {
+  const panel = q("preview-panel");
+  q("preview-sub").textContent = "";
+  q("preview-retry-row").hidden = true;
+  if (!res && !err) {
     setCount(S.problems.length ? "Fix the rules to see a preview." : "Nothing to preview yet.");
     return;
   }
-  const n = res.qualifying;
-  const cap = res.max_bets_per_day;
-  if (!res.games_on_board) {
-    setCount("No games on today's board yet, so there is nothing to count.");
-  } else if (!n) {
-    setCount(`0 bets today: nothing on today's board passes your rules (${res.games_on_board} games checked).`);
-  } else if (n > cap) {
-    setCount(`${res.would_bet} bet${res.would_bet === 1 ? "" : "s"} today: ${n} qualify and your cap is ${cap}.`);
-  } else {
-    setCount(`${n} bet${n === 1 ? "" : "s"} today.`);
+  const st = previewState(res, previewName(), err);
+  panel.setAttribute("data-state", st.kind);
+  S.previewSettled = true;
+  syncKeep();
+  q("preview-sub").textContent = st.sub || "";
+  q("preview-retry-row").hidden = !st.retry;
+  if (st.kind !== "picks") {
+    setCount(st.line);
+    if (st.kind === "zero") playReveal(panel);
+    return;
   }
-  for (const p of res.picks || []) {
+  const nEl = setCountParts(st.parts);
+  for (const [i, p] of st.picks.entries()) {
     const start = p.start_utc ? new Date(p.start_utc) : null;
     const when = start && !Number.isNaN(start.getTime()) ? start.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : "";
-    list.appendChild(h("li", { class: `bd-pick${p.would_bet ? "" : " bd-pick--over"}`, "data-hook": "preview-pick" }, [
+    list.appendChild(h("li", { class: `bd-pick${p.would_bet ? "" : " bd-pick--over"}`, "data-hook": "preview-pick", style: `--i:${Math.min(i, 5)}` }, [
       h("strong", { text: p.selection }),
-      h("span", { class: "bd-pick__price", text: ` ${fmtPrice(p.price)}` }),
+      h("span", { class: "bd-pick__price", text: ` ${priceText(p.price)}` }),
       h("span", { class: "hd-fine", text: ` ${p.away_team} at ${p.home_team}${when ? ", " + when : ""}${p.locked ? "" : ", not decided yet"}${p.would_bet ? "" : ", over your daily cap"}` })]));
   }
+  if (playReveal(panel) === "play") countTo(nEl, st.fit, panel);
 }
 
 function previewBody() {
@@ -663,9 +693,15 @@ async function runPreview() {
       renderPreview(null);
     } else {
       S.problems = [];
-      setCount(describeError(err, "the preview").text);
+      renderPreview(null, err || new Error("preview failed"));
     }
   }
+}
+
+function retryPreview() {
+  q("preview-retry-row").hidden = true;
+  setCount("Checking today's board...");
+  runPreview();
 }
 
 function schedulePreview() {
@@ -793,11 +829,11 @@ function updateDogCard() {
     h("span", { class: "bd-dog__dog", "data-hook": "dog-preview-dog", "data-pose": pose }, [dogSvgEl]),
     h("span", { class: "bd-dog__badge", "data-hook": "dog-badge", "data-badge": S.spec.badge }, [badgeIcon(S.spec.badge, 34)]),
     h("div", { class: "bd-dog__text" }, [
-      h("p", { class: "bd-dog__name", "data-hook": "dog-name", text: S.spec.name || "Your dog" }),
+      h("p", { class: "bd-dog__name", "data-hook": "dog-name", text: S.spec.name || "Your hound" }),
       h("p", { class: "bd-dog__tag", "data-hook": "dog-tagline", text: S.spec.tagline || "Add a catchphrase" }),
       S.sentences.length ? h("p", { class: "bd-dog__rule hd-fine", text: S.sentences[0] }) : null,
       S.edit ? null : h("p", { class: "bd-dog__breed hd-fine", "data-hook": "dog-preview-breed",
-        text: named ? `${breedLabel(named)}, from the name. Coat and gear are yours to change in the studio.` : "The breed comes with the dog. Coat and gear are yours to change in the studio." })])]));
+        text: named ? `${breedLabel(named)}, from the name. Coat and gear are yours to change in the studio.` : "The breed comes with the hound. Coat and gear are yours to change in the studio." })])]));
 }
 
 function bindIdentity() {
@@ -1150,20 +1186,31 @@ function updateSave() {
   if (!btn || !S.menu) return;
   const editing = !!S.edit;
   q("edit-cancel").hidden = !editing;
-  let label = "Send my dog in";
+  let label = keepLabel(S.spec && S.spec.name);
   if (editing) label = S.diffReady ? `Save as version ${S.edit.version_no + 1}` : "Review the changes";
   btn.textContent = label;
   btn.disabled = S.busy || !S.started;
+  btn.hidden = !S.signedIn && !editing;               // a signed-out visitor keeps through the form under the identity fields
+  syncKeep();
   const hint = q("save-hint");
-  if (hint) hint.textContent = S.started ? "" : "Send my dog in wakes up once your strategy is read (step 1) or you start a blank rule.";
+  if (hint) hint.textContent = S.started ? "" : "The save button wakes up once your strategy is read (step 1) or you start a blank rule.";
   const limit = q("limit-text");
   if (S.signedIn && !editing) {
     const running = S.mine.filter((d) => d.status === "running").length;
     const cap = S.menu.limits.max_running_per_account;
-    limit.textContent = `${running} of ${cap} dogs running.`;
+    limit.textContent = `${running} of ${cap} hounds running.`;
   } else {
-    limit.textContent = S.signedIn ? "" : "Sign in to save your dog.";
+    limit.textContent = "";
   }
+}
+
+/** Who sees which save control (see web/js/keep.js): a signed-out visitor gets the form once the hound is read and has met today's board. */
+function syncKeep() {
+  const keep = S.keep;
+  if (!keep) return;
+  const ready = !S.signedIn && !S.edit && S.started && S.previewSettled;
+  if (ready) keep.show(); else if (!keep.state.accountMade) keep.hide();
+  keep.setName();
 }
 
 function setMessage(text, kind) {
@@ -1203,7 +1250,7 @@ function showSaveProblems(list) {
   reveal(box);
 }
 
-/** Why a save did not happen, in words, for the box above the Save button. Nothing in here claims the dog was saved. */
+/** Why a save did not happen, in words, for the box above the Save button. Nothing in here claims the hound was saved. */
 function saveFailureText(err) {
   const status = err && err.status;
   if (status === 429) return "That is too many saves in a short while. Wait a minute and tap again. Nothing was saved.";
@@ -1230,26 +1277,28 @@ function saveSpec() {
 /**
  * THE RULE FOR EVERY TAP ON THE SAVE BUTTON: it ends in something the person can SEE next to the button: the diff, the saved
  * message, or a box saying why not (a list of reasons, a sign-in prompt, or a plain failure). It never returns quietly.
+ * It resolves true when a NEW hound was kept (the Keep form needs to know), false in every other case.
  */
 async function submit() {
-  if (S.busy) { serverError("Still working on your last tap. Give it a few seconds."); return; }
-  if (!S.started) { serverError("There is no rule yet. Describe a strategy in step 1 or start a blank rule, then tap again."); return; }
+  if (S.busy) { serverError("Still working on your last tap. Give it a few seconds."); return false; }
+  if (!S.started) { serverError("There is no rule yet. Describe a strategy in step 1 or start a blank rule, then tap again."); return false; }
   setMessage("");
   serverError("");
   showSaveProblems([]);
   S.saveProblems = [];
   if (!S.signedIn) {
-    gate("Sign in to save your dog. Your draft stays on this page.");
-    serverError("Sign in to save your dog. Your draft stays on this page.", h("a", { href: "index.html#/signin", text: "Sign in" }));
-    return;
+    gate("Sign in to keep your hound. Your draft stays on this page.");
+    serverError("Sign in to keep your hound. Your draft stays on this page.", h("a", { href: "index.html#/signin", text: "Sign in" }));
+    return false;
   }
   if (!String(S.spec.name || "").trim()) {
-    S.saveProblems = ["Name: give your dog a name (3 to 24 letters, digits, spaces or hyphens)."];
+    S.saveProblems = ["Name: give your hound a name (3 to 24 letters, digits, spaces or hyphens)."];
     renderSentences();
     q("f-name").focus();
     showSaveProblems(S.saveProblems);
-    return;
+    return false;
   }
+  let kept = false;
   S.busy = true;
   updateSave();
   try {
@@ -1261,7 +1310,7 @@ async function submit() {
         const res = await apiPost(`/hounds/${encodeURIComponent(S.edit.id)}/version`, { spec: saveSpec(), reason: "edited in the builder" });
         const dog = res.hound || {};
         setMessage(`Saved as version ${dog.version_no}. The old version keeps its record and stops betting.`, "ok");
-        if (dog.id) q("build-message").appendChild(h("p", {}, [h("a", { href: houndHref(dog.id), "data-hook": "new-dog-link", text: "See your dog" })]));
+        if (dog.id) q("build-message").appendChild(h("p", {}, [h("a", { href: houndHref(dog.id), "data-hook": "new-dog-link", text: "See your hound" })]));
         S.edit = null; S.diffReady = false;
         q("diff").hidden = true;
         reveal(q("build-message"));
@@ -1275,11 +1324,14 @@ async function submit() {
       const dog = res.hound || {};
       // the dog is the one that was in the preview: save its look (best effort, cosmetic; without it the dog wears the default look for its id)
       if (dog.id && !S.copiedFrom) { try { await put(`/hounds/${encodeURIComponent(dog.id)}/look`, { look: previewLook(S.spec, S.menu.colors) }); } catch (err) { /* default look */ } }
-      setMessage(`${dog.name || "Your dog"} is in the kennel.`, "ok");
-      if (dog.id) q("build-message").appendChild(h("p", {}, [h("a", { href: houndHref(dog.id), "data-hook": "new-dog-link", text: "See your dog" })]));
+      setMessage(`${dog.name || "Your hound"} is in the kennel. Your record starts now.`, "ok");
+      if (dog.id) q("build-message").appendChild(h("p", {}, [h("a", { href: houndHref(dog.id), "data-hook": "new-dog-link", text: "See your hound" })]));
       reveal(q("build-message"));
       await loadMine();
       announce("created", dog);
+      // R6 starts here: this browser now watches this hound for its first graded ticket (web/js/first-grade.js)
+      if (dog.id) watchFirstGrade(dog.id);
+      kept = true;
     }
   } catch (err) {
     handleSaveError(err);
@@ -1287,6 +1339,7 @@ async function submit() {
     S.busy = false;
     updateSave();
   }
+  return kept;
 }
 
 function handleSaveError(err) {
@@ -1308,7 +1361,7 @@ function handleSaveError(err) {
     renderSentences();
     showSaveProblems(S.saveProblems);
   } else if (status === 409) {
-    serverError(detail && detail.message ? detail.message : "You already have the most dogs running. Retire one first.");
+    serverError(detail && detail.message ? detail.message : "You already have the most hounds running. Retire one first.");
   } else {
     serverError(saveFailureText(err));
   }
@@ -1340,17 +1393,17 @@ async function loadMine() {
   const state = q("my-dogs-state");
   const list = clearNode(q("my-dogs"));
   const signInLink = () => q("nav-signin");
-  if (!getToken()) { S.signedIn = false; S.mine = []; state.textContent = "Sign in to see the dogs you have built."; if (signInLink()) signInLink().hidden = false; updateSave(); return; }
+  if (!getToken()) { S.signedIn = false; S.mine = []; state.textContent = "Sign in to see the hounds you have built."; if (signInLink()) signInLink().hidden = false; updateSave(); return; }
   try {
     const res = await apiGet("/hounds/mine");
     S.signedIn = true;
     S.mine = (res.hounds || []).filter((d) => d.status !== "retired" && d.status !== "buried");     // a buried dog is in the graveyard, not the builder
     if (signInLink()) signInLink().hidden = true;
-    state.textContent = S.mine.length ? "" : "You have not built a dog yet.";
+    state.textContent = S.mine.length ? "" : "You have not built a hound yet.";
     for (const d of S.mine) list.appendChild(dogItem(d));
   } catch (err) {
-    if (err && (err.status === 401 || err.status === 403)) { S.signedIn = false; state.textContent = "Sign in to see the dogs you have built."; }
-    else state.textContent = describeError(err, "your dogs").text;
+    if (err && (err.status === 401 || err.status === 403)) { S.signedIn = false; state.textContent = "Sign in to see the hounds you have built."; }
+    else state.textContent = describeError(err, "your hounds").text;
   }
   updateSave();
 }
@@ -1431,7 +1484,7 @@ export function openBlank() {
   q("english-input").value = "";
   updateCount();
   setStatus("");
-  q("build-title").textContent = "Build your dog";
+  q("build-title").textContent = "Build your hound";
   q("build-from-note").hidden = true;
   renderRules(); renderPickers(); fillIdentity(); updateDogCard(); updateSave();
   return true;
@@ -1467,7 +1520,7 @@ export async function reboot() {
 function stopEdit() {
   S.edit = null;
   S.diffReady = false;
-  q("build-title").textContent = "Build your dog";
+  q("build-title").textContent = "Build your hound";
   q("build-from-note").hidden = true;
   q("diff").hidden = true;
   updateSave();
@@ -1494,6 +1547,12 @@ async function boot() {
       changed(true);
     });
     q("build-submit").addEventListener("click", submit);
+    if (q("preview-retry")) q("preview-retry").addEventListener("click", retryPreview);
+    if (q("build-keep-host")) S.keep = mountKeep(q("build-keep-host"), {
+      name: () => String((S.spec && S.spec.name) || "").trim(),
+      // the account was just made and the token stored: the builder is now a signed-in builder, so its own save door does the rest
+      save: async () => { S.signedIn = true; return submit(); },
+      onSignIn: saveDraft, prefix: "build-keep" });
     q("edit-cancel").addEventListener("click", stopEdit);
     q("english-input").addEventListener("input", updateCount);
   }
@@ -1506,7 +1565,7 @@ async function boot() {
     S.menu = await apiGet("/hounds/builder/menu");
   } catch (err) {
     const box = clearNode(q("rules-empty"));
-    box.appendChild(stateBox(err && err.status === 404 ? "missing" : "down", describeError(err, "the dog builder").text));
+    box.appendChild(stateBox(err && err.status === 404 ? "missing" : "down", describeError(err, "the hound builder").text));
     // not a dead end: the menu is the one thing the page cannot work without, so offer to fetch it again
     box.appendChild(h("p", {}, [h("button", { type: "button", class: "btn btn--ghost", "data-hook": "menu-retry", text: "Try again",
       on: { click: () => { boot(); } } })]));
@@ -1548,10 +1607,10 @@ async function boot() {
       fillIdentity();
       updateDogCard();
       note.hidden = false;
-      note.textContent = "You are building from a copy of another dog's rules. Change anything you like; it will be a new dog of your own.";
+      note.textContent = "You are building from a copy of another hound's rules. Change anything you like; it will be a new hound of your own.";
     } catch (err) {
       note.hidden = false;
-      note.textContent = "That dog's rules could not be loaded, so this is a blank builder.";
+      note.textContent = "That hound's rules could not be loaded, so this is a blank builder.";
     }
   }
   updateSave();
@@ -1572,7 +1631,7 @@ function loadQuizHandoff() {
   S.spec.name = data.spec.name || S.spec.name;
   fillIdentity();
   updateDogCard();
-  note.textContent = "Built from your quiz. Change anything you like; nothing is saved until you send it in.";
+  note.textContent = "Built from your quiz. Change anything you like; nothing is saved until you keep it.";
 }
 
 /** Resolves when the builder has loaded its menu and the member's dogs (the kennel studio waits for it). */

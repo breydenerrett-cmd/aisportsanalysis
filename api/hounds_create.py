@@ -47,6 +47,7 @@ from __future__ import annotations
 import hashlib
 import json
 import secrets
+import sys
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional
 
@@ -228,6 +229,22 @@ def hounds_menu(_rl: None = Depends(_rate_limit_read)) -> dict:
     return _wrap(user_spec.menu())
 
 
+def _send_keep_email(user: users_store.User, hound: dict) -> None:
+    """THE KEEP CONFIRMATION HOOK (docs/owner/RESEND_ATTACH.md). The keep flow on the quiz and the builder makes the account
+    first (POST /auth/signup) and saves the dog second, so at signup time there is no dog to name: the dog is saved HERE, and
+    this is the one place that knows both the account and the dog. It sends the Keep email only for the account's FIRST dog
+    ever (a second, or a copy, is not a "keep"), on a background thread so the save never waits for Resend, and it never
+    changes the save's answer: any failure is logged and dropped. A no-op while RESEND_API_KEY is unset; the mail layer
+    also refuses to send a second Keep email to the same user."""
+    try:
+        if len(user_store.list_for_owner(user.id)) != 1:
+            return
+        from src.notify import email_jobs
+        email_jobs.send_keep_confirmation_async(user, hound)
+    except Exception as exc:  # noqa: BLE001 -- an email problem must never fail a save
+        print(f"hounds: keep email hook failed: {exc!r}", file=sys.stderr, flush=True)
+
+
 class CreateHoundRequest(BaseModel):
     spec: Dict[str, Any]
     copied_from: Optional[str] = None
@@ -249,6 +266,7 @@ def create_hound(body: CreateHoundRequest,
         raise _spec_error(exc)
     except user_store.StoreError as exc:
         raise _store_error(exc)
+    _send_keep_email(current_user, hound)
     return _wrap({"hound": hound_summary(hound)})
 
 
@@ -574,7 +592,7 @@ def builder_preview(body: PreviewRequest, _rl: None = Depends(_rate_limit_previe
     result = user_engine_v2.preview(spec, slate.games, slate.facts, date, now, game_pk_index=slate.game_pk_index)
     result.update({"sentences": english_render.rule_sentences(spec) + english_render.global_sentences(spec),
                    "spec": {k: v for k, v in spec.items() if k != "name" or raw["name"] != "Draft Dog"},
-                   "games_on_board": len(slate.games), "board_observed_utc": slate.newest_observed(),
+                   "games_on_board": len(slate.games), "board_size": len(slate.games), "board_observed_utc": slate.newest_observed(),
                    "as_of": now.strftime("%Y-%m-%dT%H:%M:%SZ"), "read_only": True,
                    "note": "A preview from the board as it stands now. A game's bet is decided at its own decision time."})
     return _wrap(result)

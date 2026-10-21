@@ -240,7 +240,8 @@ class SampleSignedOut(_Journey):
         offer = re.search(r'OFFER_LINE =\s*"(.*?)";', _read(JS / "sample.js"), re.S)
         offer = re.sub(r'"\s*\+\s*"', "", offer.group(1))
         landing = _read(ROOT / "web" / "landing.html")
-        hero = re.search(r'data-hook="hero-cta-note">(.*?)</p>', landing, re.S).group(1)
+        # 2026-10-20: the hero note is gone; the facts live in the pricing card's tier note and the FAQ entry
+        hero = re.search(r'data-hook="pricing-tier-note">(.*?)</span>', landing, re.S).group(1)
         for fact in ("7 days", "no card", "$19.99"):
             self.assertIn(fact, offer)
             self.assertIn(fact, hero)

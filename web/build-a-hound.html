@@ -3,22 +3,22 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Build your dog — LINEHOUND</title>
-<meta name="description" content="Describe a betting strategy in plain English, check the rules it turns into, and send your own paper-betting dog into the kennel. Moneylines, spreads, totals and player props. It never places a real bet. Not advice, 21+.">
-<meta property="og:title" content="Build your dog — LINEHOUND">
+<title>Build your hound — LINEHOUND</title>
+<meta name="description" content="Describe a betting strategy in plain English, check the rules it turns into, and keep your own paper-betting hound in your kennel. Moneylines, spreads, totals and player props. It never places a real bet. Not advice, 21+.">
+<meta property="og:title" content="Build your hound — LINEHOUND">
 <meta property="og:description" content="Type your own strategy in English, edit the rules, and race it in public. Paper bets only. Not advice.">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#0E1116">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230B0C0E'/%3E%3Cpath d='M6 6l8 0 0 9-8 4z' fill='%23FF3D57'/%3E%3Cpath d='M18 6l8 0 0 13-8-4z' fill='%23FF7A45'/%3E%3C/svg%3E">
-<!-- THE DOG BUILDER. Three steps: (1) describe the strategy in English, (2) read it back as sentences and
+<!-- THE HOUND BUILDER. Three steps: (1) describe the strategy in English, (2) read it back as sentences and
      edit it as rule cards while a live preview counts what it would bet on today's board, (3) name it, dress
-     it and save it. Page script: web/js/hounds-build.js. EVERYTHING it offers (sports, markets, sides, the
+     it and keep it. Page script: web/js/hounds-build.js. EVERYTHING it offers (sports, markets, sides, the
      conditions and their bounds, colours, badges, the stake and ranking choices) is read from
      GET /hounds/builder/menu; nothing in this file or the script lists a condition. English becomes rules
      through POST /hounds/english (a free parser, plus the owner's Zapier translator for what it cannot
      read); every change is checked and counted by POST /hounds/builder/preview, which writes nothing. The
      paper-only notice and the -200 cap line are STATIC so they are on the page with scripts off. Saved dogs
-     are listed under "My dogs" and edited here: an edit saves as a new version after a plain-English diff. -->
+     are listed under "My hounds" and edited here: an edit saves as a new version after a plain-English diff. -->
 <link rel="stylesheet" href="css/fonts.css">
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/base.css">
@@ -29,6 +29,7 @@
 <link rel="stylesheet" href="css/builder.css">
 <link rel="stylesheet" href="css/lh.css">
 <link rel="stylesheet" href="css/studio.css">
+<link rel="stylesheet" href="css/keep.css">
 </head>
 <body class="hounds-page bd-page">
 <a class="hd-skip" href="#main-content">Skip to the builder</a>
@@ -53,16 +54,16 @@
   </div>
 </header>
 
-<main class="hd-wrap hd-wrap--wide bd-wrap" id="main-content" aria-label="Build your dog" data-hook="build-app">
+<main class="hd-wrap hd-wrap--wide bd-wrap" id="main-content" aria-label="Build your hound" data-hook="build-app">
 
 <header class="bd-head">
   <p class="hd-back"><a href="kennel.html">&larr; My kennel</a></p>
-  <h1 data-hook="build-title">Build your dog</h1>
-  <p class="hd-lede">Say the strategy the way you would say it. Your dog turns it into rules and races them on paper money.</p>
+  <h1 data-hook="build-title">Build your hound</h1>
+  <p class="hd-lede">Say the strategy the way you would say it. Your hound turns it into rules and races them on paper money.</p>
   <p class="bd-quizcta" data-hook="build-quiz"><span>Not sure where to start?</span> <a class="btn btn--ghost" href="quiz.html" data-hook="build-quiz-cta">Take the quiz</a></p>
 </header>
 
-<p class="hd-notice" role="note" data-hook="paper-notice">Paper bets only. Your dog never takes a price of -200 or worse. Not advice. 21+.</p>
+<p class="hd-notice" role="note" data-hook="paper-notice">Paper bets only. Your hound never takes a price of -200 or worse. Not advice. 21+.</p>
 
 <div class="hd-state hd-state--missing" data-hook="build-gate" role="status" hidden></div>
 <p class="hd-fine" data-hook="build-from-note" hidden></p>
@@ -115,7 +116,7 @@
       <p><button type="button" class="btn btn--ghost" data-hook="add-rule">Add another rule</button>
          <span class="hd-fine" data-hook="rule-limit"></span></p>
       <fieldset class="hd-fieldset bd-globals" data-hook="globals">
-        <legend>For the whole dog</legend>
+        <legend>For the whole hound</legend>
         <div class="bd-globals__grid" data-hook="globals-grid"></div>
       </fieldset>
     </details>
@@ -136,7 +137,7 @@
       <fieldset class="hd-fieldset"><legend>Colour</legend><div class="bd-swatches" data-hook="color-picker" role="radiogroup" aria-label="Colour"></div></fieldset>
       <fieldset class="hd-fieldset"><legend>Badge</legend><div class="bd-badges" data-hook="badge-picker" role="radiogroup" aria-label="Badge"></div></fieldset>
     </div>
-    <div class="bd-dogcard" data-hook="build-dog-preview" aria-label="Your dog, so far">
+    <div class="bd-dogcard" data-hook="build-dog-preview" aria-label="Your hound, so far">
       <div class="bd-dogcard__body" data-hook="build-dog-card"></div>
     </div>
   </div>
@@ -145,11 +146,12 @@
     <ul class="bd-list" data-hook="diff-list"></ul>
     <p class="hd-fine" data-hook="diff-note">The old version keeps its record and stops betting. The new version starts fresh.</p>
   </div>
+  <div class="bd-keep-host" data-hook="build-keep-host"></div>
   <div data-hook="build-message" aria-live="polite"></div>
   <div class="bd-problems" data-hook="build-save-problems" role="alert" tabindex="-1" hidden></div>
   <div class="hd-state hd-state--down" data-hook="build-server-error" role="alert" tabindex="-1" hidden></div>
   <p class="bd-save">
-    <button type="button" class="btn btn--primary btn--lg" data-hook="build-submit">Send my dog in</button>
+    <button type="button" class="btn btn--primary btn--lg" data-hook="build-submit">Keep your hound</button>
     <button type="button" class="btn btn--ghost" data-hook="edit-cancel" hidden>Stop editing</button>
     <span class="hd-fine" data-hook="limit-text"></span>
     <span class="hd-fine" data-hook="save-hint"></span>
@@ -158,19 +160,21 @@
 
 </div>
 
-<aside class="bd-side" aria-label="Preview and my dogs">
+<aside class="bd-side" aria-label="Preview and my hounds">
   <section class="hd-panel bd-preview" aria-labelledby="pv-h" data-hook="preview-panel">
     <span class="bd-side__dog" data-side-dog="preview" aria-hidden="true"></span>
     <h2 id="pv-h">Would have bet today</h2>
     <p class="bd-preview__count" data-hook="preview-count" aria-live="polite">Nothing to preview yet.</p>
+    <p class="hd-fine" data-hook="preview-sub"></p>
+    <p class="bd-preview__retry" data-hook="preview-retry-row" hidden><button type="button" class="btn btn--ghost" data-hook="preview-retry">Check again</button></p>
     <ul class="bd-picks" data-hook="preview-list"></ul>
-    <p class="hd-fine" data-hook="preview-note">A read-only look at today's board. It places nothing.</p>
+    <p class="hd-fine" data-hook="preview-note">A read-only look at today's board. It places nothing, and it is never counted.</p>
   </section>
 
   <section class="hd-panel bd-mine" aria-labelledby="mine-h" data-hook="my-dogs-panel">
     <span class="bd-side__dog" data-side-dog="mine" aria-hidden="true"></span>
-    <h2 id="mine-h">My dogs</h2>
-    <p class="hd-fine" data-hook="my-dogs-state">Sign in to see the dogs you have built.</p>
+    <h2 id="mine-h">My hounds</h2>
+    <p class="hd-fine" data-hook="my-dogs-state">Sign in to see the hounds you have built.</p>
     <ul class="bd-doglist" data-hook="my-dogs"></ul>
     <p class="hd-fine"><a href="kennel.html">Open my kennel</a></p>
   </section>

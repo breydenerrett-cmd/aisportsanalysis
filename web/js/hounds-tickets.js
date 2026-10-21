@@ -48,7 +48,7 @@ function clvText(ticket) {
  * units and closing-line value. The closing PRICE is not in the payload and is not invented; CLV points are.
  * `showModel` puts the model's name on line 2 (the cross-model feed).
  */
-export function ticketCard(ticket, { showModel = false, name = "" } = {}) {
+export function ticketCard(ticket, { showModel = false, name = "", flip = false } = {}) {
   const t = ticket || {};
   const state = ticketState(t);
   const price = ticketPrice(t);
@@ -86,7 +86,8 @@ export function ticketCard(ticket, { showModel = false, name = "" } = {}) {
     const tone = !units ? "none" : t.units > 0 ? "up" : t.units < 0 ? "down" : "flat";
     lines.push(h("div", { class: "hd-card__l4", "data-hook": "card-result" }, [
       h("span", { class: "hd-card__res", text: RESULT_WORDS[state] }),
-      h("span", { class: `hd-num hd-tone--${tone}`, "data-hook": "card-units", text: units || NA }),
+      h("span", Object.assign({ class: `hd-num hd-tone--${tone}`, "data-hook": "card-units", text: units || NA },
+        flip && units ? { "data-count": "1", "data-count-ms": "500" } : {})),
       h("span", { class: "hd-num", "data-hook": "card-clv", text: `CLV ${clvText(t)}${isNum(t.clv_pts) ? " pts" : ""}` }),
     ]));
   }
@@ -171,10 +172,13 @@ export function ticketList(tickets, opts = {}) {
  * tickets as stacked cards (``ticketCard``), so nothing is cut off on a phone. A rehearsal row (a rule applied to old boards, written after
  * the games) says so instead of showing a recorded-before time, and is never counted anywhere.
  */
-export function ticketTable(tickets, { graded = false, hook = "tickets-table", caption = "Tickets" } = {}) {
+export function ticketTable(tickets, { graded = false, hook = "tickets-table", caption = "Tickets", flip: flipCount = 0 } = {}) {
   const head = ["Date", "Game", "Pick", "Price"].concat(graded ? ["CLV pts"] : [])
     .concat(["Status"]).concat(graded ? ["Units"] : []).concat(["Rule reason", "Recorded"]);
-  const rows = tickets.map((t) => {
+  const rows = tickets.map((t, index) => {
+    // R6 (web/js/first-grade.js): the newest `flip` tickets were graded since this person last looked. Marked here, animated by
+    // css/lh.css under data-reveal="play"; the mark never reads the result, so a win, a loss and a push move the same way.
+    const fresh = index < flipCount;
     const status = ticketState(t);
     const rehearsal = t.segment === "replay";
     const clv = isNum(t.clv_pts) ? `${t.clv_pts > 0 ? "+" : t.clv_pts < 0 ? "-" : ""}${Math.abs(t.clv_pts).toFixed(1)}` : NA;
@@ -188,8 +192,8 @@ export function ticketTable(tickets, { graded = false, hook = "tickets-table", c
     if (graded) cells.push(h("td", { class: "hd-num", "data-hook": "ticket-clv", text: clv }));
     cells.push(h("td", {}, [resultChip(t), rehearsal ? h("small", { class: "hd-aux", text: "Rehearsal" }) : null]));
     if (graded) {
-      cells.push(h("td", { class: `hd-num hd-tone--${!units ? "none" : t.units > 0 ? "up" : t.units < 0 ? "down" : "flat"}`,
-        "data-hook": "ticket-units", text: units || NA }));
+      cells.push(h("td", Object.assign({ class: `hd-num hd-tone--${!units ? "none" : t.units > 0 ? "up" : t.units < 0 ? "down" : "flat"}`,
+        "data-hook": "ticket-units", text: units || NA }, fresh && units ? { "data-count": "1", "data-count-ms": "500" } : {})));
     }
     // a reason can run to hundreds of characters: three lines in the table, the whole text on a click
     const why = h("td", { class: "hd-td-reason", "data-hook": "bet-why", tabindex: "0", "aria-expanded": "false",
@@ -203,10 +207,12 @@ export function ticketTable(tickets, { graded = false, hook = "tickets-table", c
     cells.push(why);
     cells.push(h("td", { class: "hd-td-stamp", "data-hook": "bet-stamp" }, [
       rehearsal ? h("span", { class: "hd-rec hd-rec--rehearsal", text: "Written after the games; never counted" }) : recordedCell(t)]));
-    return h("tr", { class: "hd-trow", "data-status": status, "data-segment": String(t.segment || "") }, cells);
+    return h("tr", Object.assign({ class: "hd-trow", "data-status": status, "data-segment": String(t.segment || "") },
+      fresh ? { "data-flip": "1", style: `--i:${Math.min(index, 5)}` } : {}), cells);
   });
   const cards = h("ol", { class: "hd-cards", "data-hook": `${hook}-cards`, "aria-label": caption },
-    tickets.map((t) => h("li", { class: "hd-cardrow" }, [ticketCard(t)])));
+    tickets.map((t, index) => h("li", Object.assign({ class: "hd-cardrow" },
+      index < flipCount ? { "data-flip": "1", style: `--i:${Math.min(index, 5)}` } : {}), [ticketCard(t, { flip: index < flipCount })])));
   return h("div", { class: "hd-ticketview", "data-hook": `${hook}-view` }, [
     h("div", { class: "hd-tablewrap hd-tablewrap--tickets", tabindex: "0", role: "region", "aria-label": `${caption}. Scrolls sideways on a narrow screen.` }, [
       h("table", { class: "hd-table hd-table--tickets", "data-hook": hook }, [

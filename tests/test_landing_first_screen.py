@@ -115,14 +115,12 @@ class TheFirstScreenReadsInOrder(unittest.TestCase):
         self.assertNotRegex(text, r"\d", "a figure typed into the what-you-get block goes stale")
         self.assertNotRegex(text.lower(), r"bet[\s-]*check|trial|cancel anytime")
 
-    def test_the_hero_note_is_the_early_access_offer_then_the_planned_price(self):
-        note = re.search(r'<p class="hero__cta-note" data-hook="hero-cta-note">(.*?)</p>',
-                         MARKUP, re.S).group(1).strip()
-        self.assertEqual(
-            note,
-            "Invite round: the first 20 testers get 7 days free, no card. "
-            "Not on sale yet; planned price $19.99 a month. "
-            "The record and the postseason odds are free now.")
+    def test_the_hero_note_is_empty_and_hidden_until_checkout_is_on(self):
+        # 2026-10-20: the "Invite round ... Not on sale yet" sentence is gone from the landing page
+        tag = re.search(r'<p class="hero__cta-note" data-hook="hero-cta-note"([^>]*)>(.*?)</p>', MARKUP, re.S)
+        self.assertEqual(tag.group(2).strip(), "")
+        self.assertIn("hidden", tag.group(1))
+        self.assertNotIn("Invite round", MARKUP)
 
 
 class TheSecondButtonAndTheFullRecordLink(unittest.TestCase):
@@ -220,7 +218,7 @@ class TheLeaderboardIsTheFirstScreen(unittest.TestCase):
     # Owner ruling 2026-10-20, complete-product positioning: the hero sells building your own hound, not a
     # "tracked in public" leaderboard with hedging around it.
     TITLE = "Build your own AI sports bettor."
-    SUB = ("Describe a strategy in plain English or set the rules. Your hound bets every sport we cover, and every "
+    SUB = ("Answer eight picks, or describe a strategy in one sentence. Your hound bets every sport we cover, and every "
            "pick is published before the game and graded win or lose on a public record.")
 
     def test_the_one_h1_is_the_headline_verbatim_and_the_subline_follows_it(self):
@@ -246,8 +244,14 @@ class TheLeaderboardIsTheFirstScreen(unittest.TestCase):
         build = re.search(r'<a\b[^>]*data-hook="cta-kennel-build"[^>]*>(.*?)</a>', MARKUP, re.S)
         self.assertEqual(enter.group(1).strip(), "Watch the house pack")
         self.assertIn('href="hounds.html"', enter.group(0))
-        self.assertEqual(build.group(1).strip(), "Build your hound")
+        # quiz first (growth playbook item 13): "Find your hound" is the primary, the sentence builder the secondary
+        quiz = re.search(r'<a\b[^>]*data-hook="cta-kennel-quiz"[^>]*>(.*?)</a>', MARKUP, re.S)
+        self.assertEqual(quiz.group(1).strip(), "Find your hound")
+        self.assertIn('href="quiz.html"', quiz.group(0))
+        self.assertIn("btn--primary", quiz.group(0))
+        self.assertEqual(build.group(1).strip(), "Build from a sentence")
         self.assertIn('href="build-a-hound.html"', build.group(0))
+        self.assertNotIn("btn--primary", build.group(0))
         # data-hook starts with "cta", so landing.js's delegated listener counts both clicks
         self.assertIn("closest(\"[data-hook^='cta']\")", LANDING_JS)
 
@@ -482,9 +486,7 @@ ON7 = {"billing": {"checkout": "on", "trial_days": 7, "price_cents": 1999}}
 ON14 = {"billing": {"checkout": "on", "trial_days": 14, "price_cents": 1999}}
 ON0 = {"billing": {"checkout": "on", "trial_days": 0, "price_cents": 1999}}
 
-HERO_OFF = ("Invite round: the first 20 testers get 7 days free, no card. "
-            "Not on sale yet; planned price $19.99 a month. "
-            "The record and the postseason odds are free now.")
+HERO_OFF = ""        # 2026-10-20: no invite-round sentence while checkout is off
 
 
 @unittest.skipUnless(shutil.which("node"), "node not installed")
@@ -526,7 +528,7 @@ class UnderNode(unittest.TestCase):
 
     def test_the_hero_note_takes_the_planned_price_from_meta(self):
         out = self.run_scenario(kind="labels", meta={"billing": {"checkout": "off", "price_cents": 1999}})
-        self.assertIn("planned price $19.99 a month.", out["hero"])
+        self.assertEqual(out["hero"], "")          # the price is on the pricing card, not the hero
 
     def test_the_on_state_wording_is_exactly_what_it_was(self):
         out = self.run_scenario(kind="labels", meta=ON14)
