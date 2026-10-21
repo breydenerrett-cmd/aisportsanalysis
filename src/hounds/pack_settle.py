@@ -10,6 +10,14 @@ dropped unread), falling back to the box-score store summed per side for a game 
 never fetched (accepted only with 24+ outs per side). NFL from `data/datasvc/nfl/games.jsonl` rows
 with status `final`.
 
+EVERY OTHER FAMILY (the AI hounds bet the whole dog menu: NBA, NHL, soccer, tennis ...) is graded by
+``allsports_scores.grade_bet`` against ``data/processed/allsports_scores.jsonl``, the SAME function and store the
+member dogs' ``user_settle`` uses, so a Claude Hound bet and a member dog's bet on one game can never disagree
+about who won: a draw LOSES a team moneyline in a three-way family and is a PUSH elsewhere, a cancelled game or one
+with no completed score 72 hours after the start is a VOID with the reason named, and tennis and MMA read the free
+ESPN results the scores store already holds. The store is read lazily (only when such a bet is owed) and can be
+injected as ``Stores.allsports_results``.
+
 WIN / LOSS / PUSH (landed on the line) / VOID / UNRESOLVED (a result row with no usable score; it
 is replaced when a later run finds the score).
 
@@ -38,6 +46,7 @@ from src.hounds import pack as pack_mod
 from src.hounds.pack import base
 from src.hounds.pack_run import KIND_BET, KIND_GRADED, ledger_path
 from src.ledger.chain import HashChainLedger
+from src.pipeline import allsports_scores
 
 PENDING_DAYS = 4
 MAKEUP_HOURS = 36
@@ -129,11 +138,40 @@ def close_of(stores: base.Stores, bet: Mapping) -> Optional[dict]:
                               line=bet.get("market_line"))
 
 
+def allsports_index(stores: base.Stores) -> dict:
+    """{event_id: score row} for the all-sports families, read once per Stores (or injected on it)."""
+    if stores.allsports_results is None:
+        stores.allsports_results = allsports_scores.load_index()
+    return stores.allsports_results
+
+
+def grade_allsports(bet: Mapping, stores: base.Stores, *, now: datetime) -> Optional[tuple]:
+    """(result, note, res) for a bet on a family outside MLB and NFL, from the member dogs' own grader; None while
+    the bet is still pending. ``res`` is shaped like ``find_result``'s so the graded row's shape is the same."""
+    row = allsports_index(stores).get(bet["event_id"])
+    graded = allsports_scores.grade_bet(bet, row, now)
+    if graded["result"] is None:
+        return None
+    away, home = graded.get("away_score"), graded.get("home_score")
+    res = None
+    if away is not None and home is not None:
+        res = {"away_score": away, "home_score": home, "source": (row or {}).get("source") or "allsports_scores"}
+    return graded["result"], graded.get("reason"), res
+
+
 def grade_bet(bet: Mapping, stores: base.Stores, mlb: Mapping, nfl: Mapping, *, now: datetime) -> Optional[dict]:
     start = base.parse_utc(bet["start_utc"])
-    res, _ = find_result(bet, mlb, nfl, stores)
     result, note = None, None
-    if res is None:
+    if bet["sport"] not in ("mlb", "nfl"):
+        out = grade_allsports(bet, stores, now=now)
+        if out is None:
+            return None                       # no completed score yet, inside the 72-hour wait
+        result, note, res = out
+    else:
+        res, _ = find_result(bet, mlb, nfl, stores)
+    if result is not None:
+        pass                                  # graded above by the member dogs' grader
+    elif res is None:
         if now < start + timedelta(days=PENDING_DAYS):
             return None                       # pending makeup / not yet final
         result, note = "VOID", f"no result {PENDING_DAYS} days after the start"
@@ -316,7 +354,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     last = max(b["date"] for b in bets)
     since = max(base.SEAL_FLOOR, base.day_before(first, 8))
     until = (date.fromisoformat(last) + timedelta(days=2)).isoformat()
-    stores = base.load_stores(since=since, until=until)
+    # A ledger that holds AI bets on other families needs those families' boards for the close and CLV.
+    sports = sorted({b["sport"] for b in bets} | set(base.DEFAULT_SPORTS))
+    stores = base.load_stores(since=since, until=until, sports=sports)
     print(settle(stores, now=datetime.now(timezone.utc), path=args.ledger))
     return 0
 

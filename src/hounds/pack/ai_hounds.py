@@ -26,6 +26,19 @@ bets only when enough of them returned a valid answer (``min_members``) and a st
 the same side. It exists in the code and the config but is PARKED (``enabled: false``) until a second model is
 switched on: with one model there is nothing to take a majority of.
 
+EVERY SPORT WE CAPTURE (2026-10-20)
+-----------------------------------
+A hound's ``sports`` is read from the catalog at runtime (``ai_defs.resolve_sports``: ``"dog_menu"`` = every family
+with ``dog_menu: true`` in ``config/sports_catalog.json``), and its markets for a game are its configured markets
+that the catalog lists for that game's family (``ai_defs.markets_for_sport``): h2h everywhere, spreads and totals
+only where the catalog has them (tennis and MMA are h2h only; soccer is h2h and totals). The model's answer is
+checked against that set in code, not just asked nicely. A soccer moneyline is three-way: the draw is on the board
+for information, the answer schema cannot name it, and a draw grades as a loss for a team moneyline
+(``allsports_scores.grade_bet``). A family outside MLB and NFL has no results store here, so its packet carries
+prices and movement only and says so; a game whose allowed markets have no lock board is a logged ``no_board``
+pass with no model call (a paid call over a thin sport would otherwise buy nothing). MLB and NFL are asked exactly
+as before, with the same packet and the same markets.
+
 Stdlib plus the repo; no network of its own (the router owns that).
 """
 
@@ -185,11 +198,16 @@ class AIRuntime:
 
     def _ask(self, hound: "AIHound", board: Mapping, ctx: base.Context) -> Opinion:
         quotes = (self.stores.quotes_by_event.get(ctx.event_id) if self.stores else None) or []
-        packet = ai_packet.build_packet(ctx, board, quotes, news_fn=self.news_fn)
+        packet = ai_packet.build_packet(ctx, board, quotes, news_fn=self.news_fn, configured_markets=hound.markets)
+        digest = ai_packet.packet_hash(packet)
+        if ctx.sport not in ai_packet.STATS_FAMILIES and not packet["markets"]:
+            # Nothing the model could bet is on the lock board: do not buy a call that can only say "pass".
+            return self.persist(Opinion(hound_id=hound.id, event_id=ctx.event_id, status="pass", code="no_board",
+                                        detail="no market this sport allows has a lock board (three or more books)"),
+                                ctx, packet_hash=digest)
         system, user = ai_packet.render_prompt(packet)
         ans = self.router.ask(system, user, schema=decision_mod.DECISION_SCHEMA, validator=decision_mod.check_decision,
                               providers=hound.providers or None, purpose=f"{hound.id}:{ctx.event_id}")
-        digest = ai_packet.packet_hash(packet)
         op = Opinion(hound_id=hound.id, event_id=ctx.event_id, status="failed", code="no_answer",
                      provider=ans.provider, model=ans.model, latency_ms=ans.latency_ms, cost_usd=ans.cost_usd,
                      detail=ans.reason)
@@ -199,6 +217,9 @@ class AIRuntime:
             op.detail = ""
             if out["decision"] == "pass":
                 op.status, op.code = "pass", "model_pass"
+            elif out["market"] not in hound.markets_for(ctx.sport):
+                op.status, op.code = "pass", "market_not_allowed"
+                op.detail = f"the model chose {out['market']}, which this sport does not offer to the hound"
             else:
                 info = base.side_info(board, out["market"], out["side"])
                 if info is None:
@@ -242,13 +263,19 @@ class AIHound(base.Hound):
         self.name = str(entry.get("name") or self.id)
         self.tagline = str(entry.get("tagline") or "")
         self.style = str(entry.get("style") or "")
-        self.sports = tuple(entry.get("sports") or ("mlb", "nfl"))
+        # "dog_menu" (the shipped config) expands to every dog-menu family in the catalog NOW, so a family added to
+        # the menu is covered with no edit here; an entry that names sports gets exactly those.
+        self.sports = ai_defs.resolve_sports(entry)
         self.markets = tuple(entry.get("markets") or base.MARKETS)
         self.RULE = str(entry.get("rule_text") or "")
         lo, hi = entry.get("price_band") or (base.PRICE_MIN, base.PRICE_MAX)
         self.band = (int(lo), int(hi))
         self.providers = list(entry.get("providers") or [])
         self.family = str(entry.get("family") or "")
+
+    def markets_for(self, sport: str) -> tuple:
+        """The markets this hound may back in ``sport``: configured markets the catalog lists for the family."""
+        return ai_defs.markets_for_sport(sport, self.markets)
 
     def price_ok(self, price: int) -> bool:
         from src.hounds import pack_run
@@ -260,7 +287,15 @@ class AIHound(base.Hound):
 
     def pick(self, board: Mapping, ctx: base.Context) -> List[base.Selection]:
         op = self.runtime.opinion(self, board, ctx)
-        return self._selection(op)
+        return self._with_league(self._selection(op), ctx)
+
+    @staticmethod
+    def _with_league(sels: List[base.Selection], ctx: base.Context) -> List[base.Selection]:
+        """An all-sports bet row names its league (the soccer table, the tennis tour); MLB and NFL rows do not."""
+        if ctx.league and ctx.sport not in ai_packet.STATS_FAMILIES:
+            for sel in sels:
+                sel.row_extra["league_title"] = ctx.league
+        return sels
 
     def _selection(self, op: Opinion) -> List[base.Selection]:
         if op.status != "bet" or not op.eligible:
@@ -277,7 +312,7 @@ class CouncilHound(AIHound):
     def pick(self, board: Mapping, ctx: base.Context) -> List[base.Selection]:
         memo = ctx.cache.setdefault("ai_opinions", {})
         if self.id in memo:
-            return self._selection(memo[self.id])
+            return self._with_league(self._selection(memo[self.id]), ctx)
         op = council_decision(self.runtime.member_opinions(ctx), self.runtime.min_council_members)
         op.hound_id, op.event_id = self.id, ctx.event_id
         if op.status == "bet":
@@ -288,7 +323,7 @@ class CouncilHound(AIHound):
                 op.status, op.code, op.eligible, op.detail = "pass", "outside_band", False, f"average price {info['price_average']} is outside the allowed band"
         self.runtime.persist(op, ctx)
         memo[self.id] = op
-        return self._selection(op)
+        return self._with_league(self._selection(op), ctx)
 
 
 def build_hounds(runtime: AIRuntime, config_path=None) -> tuple:

@@ -20,11 +20,14 @@ every game that locks is a logged PASS, never a guess.
 ONE PASS
 --------
   1. the Eastern slate dates (today, and tomorrow late in the evening: ``user_runner.pass_dates``);
-  2. the stores for those dates, loaded once under the build gate (a few days of odds, never the whole store);
+  2. the stores for those dates, loaded once under the build gate (a few days of odds, never the whole store),
+     for every family the AI hounds cover: the catalog's dog menu, not only MLB and NFL;
   3. ``pack_run.run`` forward over the AI hounds: for every game whose lock has passed and whose start has not,
      each hound is asked once, the decision is logged, and an eligible bet is written with its provider and
      model (rules: ``pack_run`` docstring; -200 never, 3 a day, one per game);
-  4. ``pack_settle.settle`` over the AI bets ledger: grade what is final, with the close and CLV.
+  4. ``pack_settle.settle`` over the AI bets ledger: grade what is final, with the close and CLV. MLB and NFL
+     from their result stores; every other family from the all-sports scores store (the Odds API ``/scores``
+     for most, the free ESPN feeds for tennis and MMA), the same path the member dogs use.
 
 Never replays: ``pack_run.run(replay=True)`` refuses a ``forward_only`` hound, and the CLI refuses ``--replay``.
 Paper only. Nothing here can place a bet anywhere.
@@ -107,7 +110,9 @@ def run_pass(*, now: Optional[datetime] = None, router=None, stores=None, ledger
         if stores is None:
             since = max(base.SEAL_FLOOR, base.day_before(min(dates), STORE_LOOKBACK_DAYS))
             until = (date.fromisoformat(max(dates)) + timedelta(days=2)).isoformat()
-            stores = base.load_stores(since=since, until=until)
+            # Every family any enabled AI hound covers (the catalog's dog menu), not just MLB and NFL. The rule
+            # hounds' own runs (capture slot) call load_stores with no list and still see MLB/NFL only.
+            stores = base.load_stores(since=since, until=until, sports=ai_defs.all_sports(hounds_config) or None)
         if "skipped" not in report:
             runtime = ai_hounds.AIRuntime(router, HashChainLedger(ai_defs.decisions_path(decisions)),
                                           now_fn=lambda: moment, news_fn=news_fn).bind(stores)

@@ -143,3 +143,34 @@ resting, here's what my rules say."
   and that one answer is the record.
 * One model's reading of public information, with no news, is unlikely to see what the market does not. That is the
   hypothesis being tested, not a claim.
+
+## 10. Amendment 2026-10-20: every sport we capture
+
+Dated before any forward bet by the Claude Hound, so it widens the registration rather than changing a result.
+The model, the system prompt (`ai_hound_prompt_v1`), the answer schema, the lock (60 minutes), the -200 cap, the
+3-a-day limit, one unit, forward-only and "a failure is a pass" are all unchanged.
+
+* **Sports.** The Claude Hound covers every family with `dog_menu: true` in `config/sports_catalog.json`, read at
+  runtime (`"sports": ["dog_menu"]` in `config/ai_hounds.json`), not a hard-coded list. Boxing and the catch-all
+  stay off until a result source exists.
+* **Markets.** Moneyline in every family. Spread and total only where the catalog lists them for the family
+  (tennis, MMA and cricket are moneyline only; soccer is moneyline and total). Code, not just the prompt,
+  refuses a market the family does not offer (`market_not_allowed`).
+* **Soccer and the other three-way families.** The moneyline is de-vigged three ways (home, away, draw), the
+  draw is shown for information, the answer schema cannot name it, and the packet says a draw loses a team
+  moneyline. Grading is the member dogs' (`allsports_scores.grade_bet`).
+* **What is shown outside MLB and NFL.** Prices, the books' de-vigged number, how the moneyline moved, the
+  league's title. No team results (we hold none): the packet says "only the prices and how they moved are shown".
+  A game with no allowed market on its lock board is a logged `no_board` pass and no model call.
+* **MLB and NFL are asked exactly as before**: their packets are byte-for-byte the registered ones (pinned in
+  `tests/test_ai_hounds.py`). The 21 rule hounds are not touched: their stores still admit MLB and NFL only.
+* **Grading.** MLB and NFL from their results stores; every other family from `allsports_scores.jsonl` (the Odds
+  API `/scores`, or the free ESPN tennis and MMA results), through the same function the member dogs use, so a draw
+  in a three-way family loses, a level score elsewhere is a push, and no completed score 72 hours after the start
+  is a named VOID.
+* **Staleness.** Outside MLB and NFL a quote counts if it is no older than 6 hours at the lock; the first usable
+  board can be as early as 36 hours before the start (the capture's own horizon). The capture buys four phases
+  (24h, 6h, 2h, 30m before the start), so the lock board is normally the 2-hour phase.
+* **Caveats.** The 3-bets-a-day limit is shared across all sports, in lock order. The Odds API `/scores` feed is
+  unverified for most non-MLB/NFL families (`scores_verified: false` in the catalog): until it is, a bet there can
+  only grade if the feed returns a completed score and otherwise voids at 72 hours.

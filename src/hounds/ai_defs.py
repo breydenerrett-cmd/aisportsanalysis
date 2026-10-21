@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import List, Optional
+from typing import Iterable, List, Mapping, Optional, Tuple
 
 PACK_ID = "ai_v1"
 CONFIG_NAME = "ai_hounds.json"
@@ -78,6 +78,61 @@ def entry_for(hound_id: str, path: Optional[Path] = None) -> Optional[dict]:
         if e["id"] == hound_id:
             return e
     return None
+
+
+# ---------------------------------------------------------------------------
+# which sports and markets an AI hound covers (read from the catalog at runtime, never a hard-coded list)
+# ---------------------------------------------------------------------------
+
+DOG_MENU = "dog_menu"           # the config sentinel: "every family with dog_menu: true in config/sports_catalog.json"
+LEGACY_SPORTS = ("mlb", "nfl")  # what an entry that names no sports covered before the all-sports widening
+# The catalog names a family's markets in the feed's words (h2h, spreads, totals); the packs use these.
+FEED_TO_MARKET = {"h2h": "moneyline", "spreads": "spread", "totals": "total"}
+MARKET_ORDER = ("moneyline", "spread", "total")
+
+
+def dog_menu_sports(catalog_config: Optional[Mapping] = None) -> Tuple[str, ...]:
+    """The row sports (lower-case family codes) of every catalog family a dog may bet, in catalog order.
+    A family is added to the menu by flipping ``dog_menu`` in the catalog, and the Claude Hound follows."""
+    from src.sports import catalog
+
+    return tuple(catalog.row_sport(code) for code in catalog.dog_families(catalog_config))
+
+
+def resolve_sports(entry: Mapping, catalog_config: Optional[Mapping] = None) -> Tuple[str, ...]:
+    """The lower-case row sports an entry covers. ``"dog_menu"`` in ``sports`` (or no ``sports`` at all) expands to
+    the catalog's dog-menu families at the moment of the call; anything else is taken as named. Order is kept and
+    duplicates dropped."""
+    raw = entry.get("sports")
+    if isinstance(raw, str):
+        raw = [raw]
+    out: List[str] = []
+    for item in raw or [DOG_MENU]:
+        for sport in (dog_menu_sports(catalog_config) if str(item).lower() == DOG_MENU else (str(item).lower(),)):
+            if sport not in out:
+                out.append(sport)
+    return tuple(out)
+
+
+def all_sports(path: Optional[Path] = None, catalog_config: Optional[Mapping] = None) -> Tuple[str, ...]:
+    """Every sport any ENABLED AI hound covers: what the runner must load stores for."""
+    out: List[str] = []
+    for entry in entries(path):
+        for sport in resolve_sports(entry, catalog_config):
+            if sport not in out:
+                out.append(sport)
+    return tuple(out)
+
+
+def markets_for_sport(sport: str, configured: Iterable[str], catalog_config: Optional[Mapping] = None) -> Tuple[str, ...]:
+    """The markets a hound may back in ``sport``: its configured markets that the catalog lists for the family
+    (h2h = moneyline, spreads = spread, totals = total). Tennis and MMA list h2h only; soccer lists h2h and totals.
+    A sport the catalog does not know is h2h only. MLB and NFL list all three, so their set is unchanged."""
+    from src.sports import catalog
+
+    listed = {FEED_TO_MARKET[m] for m in catalog.markets_for(str(sport).upper(), catalog_config) if m in FEED_TO_MARKET}
+    allowed = set(configured) & listed
+    return tuple(m for m in MARKET_ORDER if m in allowed)
 
 
 def ledger_path(path: Optional[str] = None) -> str:

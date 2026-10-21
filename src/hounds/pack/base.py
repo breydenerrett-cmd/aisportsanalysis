@@ -47,6 +47,16 @@ SEAL_FLOOR = "2026-08-28"
 LOCK_MINUTES = 60
 MAX_QUOTE_AGE = {"mlb": timedelta(hours=6), "nfl": timedelta(hours=48)}
 OPEN_WINDOW = {"mlb": timedelta(hours=24), "nfl": timedelta(days=7)}
+# The all-sports families (NBA, soccer, tennis ...) are bought in four phases before the start (t24h, t6h, t2h,
+# t30m: config/sports_catalog.json), so the board at the lock (T-60min) is the t2h capture, an hour old, and the
+# t6h capture is 5 hours old at the lock. Six hours is the MLB window and admits t6h but never t24h; 36 hours is
+# the capture's own store horizon, so the "first usable board" can be the t24h phase.
+ALLSPORTS_MAX_QUOTE_AGE = timedelta(hours=6)
+ALLSPORTS_OPEN_WINDOW = timedelta(hours=36)
+# The families the house rule hounds read. A Stores built without an explicit list admits exactly these, so
+# every existing caller (the 21 rule hounds, settlement, drill, coach) sees the same games as before the AI
+# hounds were widened. Only the AI runner asks for more (``load_stores(sports=...)``).
+DEFAULT_SPORTS = ("mlb", "nfl")
 OPEN_MIN_LEAD = timedelta(minutes=60)
 MIN_BOOKS = 3
 PRICE_MIN = -199          # the owner's rule: never -200 or worse
@@ -62,6 +72,15 @@ FEED_MARKET = {None: "moneyline", "h2h": "moneyline", "spreads": "spread", "tota
 
 class PackError(RuntimeError):
     pass
+
+
+def max_quote_age(sport: str) -> timedelta:
+    """How old a quote may be at the lock: the pack's own windows for MLB and NFL, the all-sports window for the rest."""
+    return MAX_QUOTE_AGE.get(sport, ALLSPORTS_MAX_QUOTE_AGE)
+
+
+def open_window(sport: str) -> timedelta:
+    return OPEN_WINDOW.get(sport, ALLSPORTS_OPEN_WINDOW)
 
 
 # ---------------------------------------------------------------------------
@@ -163,8 +182,15 @@ def quote_from_row(row: Mapping) -> Optional[dict]:
         return None
     if market != "moneyline" and line is None:
         return None
-    return {"book": str(row["book"]), "observed": observed, "market": market, "line": line,
-            "prices": prices}
+    out = {"book": str(row["book"]), "observed": observed, "market": market, "line": line,
+           "prices": prices}
+    if market == "moneyline":
+        # A three-way family (soccer, cricket, rugby ...) writes the Draw price beside the two team prices. It is
+        # kept apart from ``prices`` (which holds the BACKABLE sides) so a bad draw price costs the draw, not the quote.
+        draw = _num(row.get("draw_price"))
+        if draw is not None and not -100 < draw < 100:
+            out["draw"] = draw
+    return out
 
 
 def _side_summary(entries: Sequence[tuple]) -> dict:
@@ -182,22 +208,46 @@ def _side_summary(entries: Sequence[tuple]) -> dict:
     }
 
 
+def _three_way_only(qs: Sequence[dict]) -> Sequence[dict]:
+    """If any book on this moneyline quotes a Draw, the market is three-way and only the books that quote all
+    three outcomes are usable: a two-way de-vig of a three-way book would hand the draw's probability to the two
+    teams. A market with no draw price anywhere (MLB, NFL, NBA, tennis ...) is returned untouched."""
+    if any(q.get("draw") is not None for q in qs):
+        return [q for q in qs if q.get("draw") is not None]
+    return qs
+
+
+def _devig_sides(qs: Sequence[dict], market: str) -> dict:
+    """{side: summary} for one line's quotes: two sides, plus ``draw`` when the market is three-way."""
+    a, b = SIDES[market]
+    rows_a, rows_b, rows_d = [], [], []
+    for q in qs:
+        if q.get("draw") is not None:
+            fa, fb, fd = odds_math.devig([q["prices"][a], q["prices"][b], q["draw"]])
+            rows_d.append((q["book"], q["draw"], fd))
+        else:
+            fa, fb = odds_math.devig_two_way(q["prices"][a], q["prices"][b])
+        rows_a.append((q["book"], q["prices"][a], fa))
+        rows_b.append((q["book"], q["prices"][b], fb))
+    sides = {a: _side_summary(rows_a), b: _side_summary(rows_b)}
+    if rows_d:
+        sides["draw"] = _side_summary(rows_d)
+    return sides
+
+
 def _market_board(quotes: Sequence[dict], market: str) -> Optional[dict]:
     by_line: dict = {}
     for q in quotes:
         by_line.setdefault(q["line"], []).append(q)
     candidates = []
     for line, qs in by_line.items():
+        if market == "moneyline":
+            qs = _three_way_only(qs)
         if len(qs) < MIN_BOOKS:
             continue
-        a, b = SIDES[market]
-        rows_a, rows_b = [], []
-        for q in qs:
-            fa, fb = odds_math.devig_two_way(q["prices"][a], q["prices"][b])
-            rows_a.append((q["book"], q["prices"][a], fa))
-            rows_b.append((q["book"], q["prices"][b], fb))
-        sa, sb = _side_summary(rows_a), _side_summary(rows_b)
-        candidates.append((len(qs), -abs(sa["fair"] - 0.5), -abs(line or 0.0), line, {a: sa, b: sb}))
+        a, _b = SIDES[market]
+        sides = _devig_sides(qs, market)
+        candidates.append((len(qs), -abs(sides[a]["fair"] - 0.5), -abs(line or 0.0), line, sides))
     if not candidates:
         return None
     candidates.sort(key=lambda c: (c[0], c[1], c[2]), reverse=True)
@@ -208,7 +258,7 @@ def _market_board(quotes: Sequence[dict], market: str) -> Optional[dict]:
 def build_board(quotes: Iterable[dict], *, at: datetime, start: datetime, sport: str) -> dict:
     """The board at instant `at`: each book's newest quote per market observed at or before `at`,
     strictly before `start`, no older than the sport's staleness window."""
-    max_age = MAX_QUOTE_AGE[sport]
+    max_age = max_quote_age(sport)
     newest: dict = {}
     for q in quotes:
         obs = q["observed"]
@@ -229,7 +279,7 @@ def build_board(quotes: Iterable[dict], *, at: datetime, start: datetime, sport:
 def board_at_line(quotes: Iterable[dict], *, at: datetime, start: datetime, sport: str,
                   market: str, line: Optional[float]) -> Optional[dict]:
     """Like `build_board` for one market but forced to one line (the close for CLV)."""
-    max_age = MAX_QUOTE_AGE[sport]
+    max_age = max_quote_age(sport)
     newest: dict = {}
     for q in quotes:
         if q["market"] != market or q["line"] != line:
@@ -239,21 +289,16 @@ def board_at_line(quotes: Iterable[dict], *, at: datetime, start: datetime, spor
             continue
         if q["book"] not in newest or obs > newest[q["book"]]["observed"]:
             newest[q["book"]] = q
-    if not newest:
+    usable = list(_three_way_only(list(newest.values()))) if market == "moneyline" else list(newest.values())
+    if not usable:
         return None
-    a, b = SIDES[market]
-    rows_a, rows_b = [], []
-    for q in newest.values():
-        fa, fb = odds_math.devig_two_way(q["prices"][a], q["prices"][b])
-        rows_a.append((q["book"], q["prices"][a], fa))
-        rows_b.append((q["book"], q["prices"][b], fb))
-    return {"line": line, "books": len(newest), "sides": {a: _side_summary(rows_a), b: _side_summary(rows_b)}}
+    return {"line": line, "books": len(usable), "sides": _devig_sides(usable, market)}
 
 
 def open_board(quotes: Sequence[dict], *, lock: datetime, start: datetime, sport: str) -> Optional[dict]:
     """The moneyline consensus at the earliest capture instant (within the open window) that has at
     least MIN_BOOKS books, if that instant is at least OPEN_MIN_LEAD before lock."""
-    lo = start - OPEN_WINDOW[sport]
+    lo = start - open_window(sport)
     instants: dict = {}
     for q in quotes:
         if q["market"] != "moneyline":
@@ -473,11 +518,15 @@ class Stores:
     bullpen_dates: set = field(default_factory=set)
     nfl_games: list = field(default_factory=list)
     event_map: dict = field(default_factory=dict)            # MLB event_id -> map row
+    sports: tuple = DEFAULT_SPORTS                           # the row sports this Stores admits (see DEFAULT_SPORTS)
+    allsports_results: Optional[dict] = None                 # {event_id: score row}; None = read the store when settling
 
     def add_row(self, row: Mapping) -> None:
         sport = row.get("sport") or "mlb"
-        if sport not in ("mlb", "nfl"):
+        if sport not in self.sports:
             return
+        if sport not in DEFAULT_SPORTS and row.get("in_play"):
+            return          # in-play snapshots (h2h every 30 minutes) are never a lock board or a close; do not hold them
         q = quote_from_row(row)
         if q is None:
             return
@@ -485,6 +534,8 @@ class Stores:
         self.quotes_by_event.setdefault(eid, []).append(q)
         ev = self.events.setdefault(eid, {"sport": sport, "away_name": row.get("away_team"),
                                           "home_name": row.get("home_team"), "commence": []})
+        if row.get("league_title") and not ev.get("league_title"):
+            ev["league_title"] = str(row["league_title"])        # all-sports rows only; MLB/NFL rows carry none
         c = parse_utc(row.get("commence_time"))
         if c is not None:
             ev["commence"].append((q["observed"], c))
@@ -495,13 +546,17 @@ class Stores:
         self.bullpen_dates = {str(r.get("date")) for r in self.bullpen}
 
 
-def load_stores(*, since: str, until: Optional[str] = None, root: Optional[str] = None) -> Stores:
-    """Read the real stores. `since`/`until` bound the odds read (observed dates)."""
+def load_stores(*, since: str, until: Optional[str] = None, root: Optional[str] = None,
+                sports: Optional[Sequence[str]] = None) -> Stores:
+    """Read the real stores. `since`/`until` bound the odds read (observed dates).
+
+    ``sports`` (lower-case row sports) widens which families' games are admitted; left unset it is MLB and NFL,
+    exactly as before. Only the AI runner passes more (``ai_hounds.sports_to_load``)."""
     from src import paths
     from src.pipeline import snapshots
 
     base = root or str(paths.repo_root())
-    st = Stores()
+    st = Stores(sports=tuple(sports) if sports else DEFAULT_SPORTS)
     for row in snapshots.iter_multibook(sport=None, since=since, until=until):
         st.add_row(row)
     st.event_map = read_event_map(os.path.join(base, "data", "processed", "event_game_map.jsonl"))
@@ -544,6 +599,7 @@ class Context:
     nfl_games: list = field(default_factory=list)       # finals, before lock
     nfl_schedule: list = field(default_factory=list)    # 2026 schedule identity rows (no scores)
     cache: dict = field(default_factory=dict)           # per-context memo shared by hounds
+    league: Optional[str] = None                        # the league's title (all-sports families only: "English Premier League")
 
 
 def start_at(ev: Mapping, before: Optional[datetime] = None) -> Optional[datetime]:
@@ -601,9 +657,15 @@ def build_context(stores: Stores, event_id: str) -> Optional[Context]:
         return None
     lock = start - timedelta(minutes=LOCK_MINUTES)
     sport = ev["sport"]
-    away, home = (mlb_codes(ev) if sport == "mlb" else nfl_codes(ev))
+    if sport == "mlb":
+        away, home = mlb_codes(ev)
+    elif sport == "nfl":
+        away, home = nfl_codes(ev)
+    else:
+        away, home = None, None          # an all-sports family: no club codes, and no stores of results before the game
     ctx = Context(sport=sport, event_id=event_id, date=eastern_date(start), start=start, lock=lock,
-                  away_name=ev.get("away_name"), home_name=ev.get("home_name"), away=away, home=home)
+                  away_name=ev.get("away_name"), home_name=ev.get("home_name"), away=away, home=home,
+                  league=ev.get("league_title"))
     quotes = stores.quotes_by_event.get(event_id) or []
     ctx.open_board = open_board(quotes, lock=lock, start=start, sport=sport)
     if sport == "mlb":
@@ -623,7 +685,7 @@ def build_context(stores: Stores, event_id: str) -> Optional[Context]:
         ctx.mlb_covered = {d for d in stores.mlb_covered if d < ctx.date}
         ctx.bullpen = [r for r in stores.bullpen if str(r.get("date")) < ctx.date]
         ctx.bullpen_dates = {d for d in stores.bullpen_dates if d < ctx.date}
-    else:
+    elif sport == "nfl":
         g = _nfl_game_for(stores, away, home, start) if away and home else None
         ctx.nfl_game_id = g.get("game_id") if g else None
         cutoff = lock - NFL_PRIOR_GAME_LAG

@@ -17,10 +17,10 @@ from pathlib import Path
 from unittest import mock
 
 from src.ai import router as R
-from src.hounds import ai_defs, ai_packet, ai_runner, house, pack as pack_mod, pack_run
+from src.hounds import ai_defs, ai_packet, ai_runner, house, pack as pack_mod, pack_run, pack_settle
 from src.hounds.pack import ai_hounds, base
 from src.ledger.chain import HashChainLedger
-from tests.test_house_pack_hounds import START, T, basic_stores, game_rows, mlb_game
+from tests.test_house_pack_hounds import BOOKS, START, T, all_picks, basic_stores, game_rows, mlb_game
 from tests.test_ai_router import Clock, FakeAdapter, fake_config, reply
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -538,6 +538,411 @@ class RunnerSwitchAndStatusTests(HoundCase):
         self.assertEqual(body["router"]["providers"][0]["model"], "claude-haiku-5-5")
         self.assertEqual(body["router"]["paid"]["cap_usd"], 5.0)
         self.assertNotIn("admin-token-for-test", ok.text)
+
+
+# ---------------------------------------------------------------------------
+# every sport we capture (2026-10-20)
+# ---------------------------------------------------------------------------
+
+NOW_AS = T("2026-10-20T22:30:00")                 # 6:30 pm Eastern: inside the lock window of the games below
+START_AS = T("2026-10-20T23:15:00")
+
+
+def allsports_rows(eid, sport, away, home, *, title, home_ml=-110, away_ml=-110, draw=None, spread=None,
+                   total=None, books=BOOKS, start=START_AS):
+    """Multibook rows as the all-sports capture writes them: the family's lower-case ``sport``, the league's title
+    and, on a three-way h2h row, ``draw_price``."""
+    rows = game_rows(eid, start, away=away, home=home, sport=sport, home_ml=home_ml, away_ml=away_ml,
+                     spread=spread, total=total, books=books)
+    for row in rows:
+        row["league"], row["league_title"] = f"{sport}_test_league", title
+        if draw is not None and "market" not in row:
+            row["draw_price"] = draw
+    return rows
+
+
+def allsports_stores(*row_sets):
+    st = base.Stores(sports=ai_defs.all_sports())
+    for rows in row_sets:
+        for r in rows:
+            st.add_row(r)
+    st.finalize()
+    return st
+
+
+def nba_rows(eid="nba1", **kw):
+    return allsports_rows(eid, "nba", "Boston Celtics", "New York Knicks", title="NBA", home_ml=-120, away_ml=100,
+                          spread=(-1.5, -110, -110), total=(221.5, -110, -110), **kw)
+
+
+def soccer_rows(eid="soc1", **kw):
+    return allsports_rows(eid, "soccer", "Arsenal", "Chelsea", title="English Premier League", home_ml=120,
+                          away_ml=240, draw=230, spread=(-0.5, 150, -180), total=(2.5, -115, -105), **kw)
+
+
+def tennis_rows(eid="ten1", **kw):
+    return allsports_rows(eid, "tennis", "Iga Swiatek", "Aryna Sabalenka", title="WTA Finals", home_ml=-130,
+                          away_ml=110, **kw)
+
+
+def packet_of(client, n=0):
+    return packet_of_text(client.requests[n])
+
+
+def packet_of_text(kw):
+    user = kw["messages"][0]["content"]
+    return json.loads(user[user.index("{"):])
+
+
+class CatalogDrivenSportsTests(unittest.TestCase):
+    def test_the_claude_hound_covers_exactly_the_catalogs_dog_menu_and_reads_it_at_runtime(self):
+        from src.sports import catalog
+
+        entry = ai_defs.entry_for("ai_claude")
+        self.assertEqual(entry["sports"], ["dog_menu"], "the config names the menu, not a hard-coded list")
+        runtime = ai_hounds.AIRuntime(mock.Mock(), mock.Mock(iter_rows=lambda: iter(())))
+        (hound,) = ai_hounds.build_hounds(runtime)
+        self.assertEqual(hound.sports, tuple(c.lower() for c in catalog.dog_families()))
+        for sport in ("mlb", "nfl", "nba", "nhl", "soccer", "tennis", "mma", "ncaaf", "cricket"):
+            self.assertIn(sport, hound.sports)
+        for off_menu in ("boxing", "other"):
+            self.assertNotIn(off_menu, hound.sports)
+
+    def test_a_family_added_to_or_removed_from_the_menu_changes_the_sports_with_no_edit(self):
+        fake = {"families": {"NBA": {"label": "NBA", "markets": ["h2h", "spreads", "totals"], "dog_menu": True},
+                             "CURLING": {"label": "Curling", "markets": ["h2h"], "dog_menu": True},
+                             "BOXING": {"label": "Boxing", "markets": ["h2h"], "dog_menu": False}}}
+        self.assertEqual(ai_defs.resolve_sports({"sports": ["dog_menu"]}, fake), ("nba", "curling"))
+        self.assertEqual(ai_defs.resolve_sports({}, fake), ("nba", "curling"))
+        self.assertEqual(ai_defs.resolve_sports({"sports": ["mlb", "nfl"]}, fake), ("mlb", "nfl"))
+
+    def test_markets_follow_the_catalog_h2h_everywhere_and_the_rest_only_where_listed(self):
+        every = ("moneyline", "spread", "total")
+        self.assertEqual(ai_defs.markets_for_sport("nba", every), every)
+        self.assertEqual(ai_defs.markets_for_sport("mlb", every), every)
+        self.assertEqual(ai_defs.markets_for_sport("nfl", every), every)
+        self.assertEqual(ai_defs.markets_for_sport("soccer", every), ("moneyline", "total"))
+        self.assertEqual(ai_defs.markets_for_sport("tennis", every), ("moneyline",))
+        self.assertEqual(ai_defs.markets_for_sport("mma", every), ("moneyline",))
+        self.assertEqual(ai_defs.markets_for_sport("cricket", every), ("moneyline",))
+        self.assertEqual(ai_defs.markets_for_sport("not_a_family", every), ("moneyline",))
+
+    def test_the_public_definition_lists_the_menu_not_the_sentinel(self):
+        defs = house.definitions(ROOT / "config" / "house_hounds.json", ROOT / "config" / "house_pack.json",
+                                 ROOT / "config" / "desk_hounds.json", ROOT / "config" / "ai_hounds.json")
+        (ai,) = [d for d in defs if d["source"] == "ai_cfg"]
+        self.assertNotIn("dog_menu", ai["sports"])
+        self.assertIn("soccer", ai["sports"])
+
+
+class ThreeWayBoardTests(unittest.TestCase):
+    def board(self, rows):
+        st = allsports_stores(rows)
+        ctx = base.build_context(st, rows[0]["event_id"])
+        return st, ctx, base.lock_board(st, ctx)
+
+    def test_a_soccer_moneyline_is_devigged_three_way_and_carries_the_draw(self):
+        _st, _ctx, board = self.board(soccer_rows())
+        sides = board["markets"]["moneyline"]["sides"]
+        self.assertEqual(set(sides), {"home", "away", "draw"})
+        self.assertAlmostEqual(sum(s["fair"] for s in sides.values()), 1.0, places=4)
+        # +120 / +240 / +230 de-vigged three ways gives home 0.4322; a two-way de-vig of just the two teams would
+        # hand the draw's share to them and read 0.6071
+        self.assertAlmostEqual(sides["home"]["fair"], 0.4322, places=3)
+        self.assertEqual(sides["draw"]["price_average"], 230)
+
+    def test_books_without_a_draw_price_are_left_out_of_a_three_way_board(self):
+        rows = soccer_rows()
+        for row in rows:
+            if "market" not in row and row["book"] in ("betmgm", "draftkings"):
+                del row["draw_price"]
+        _st, _ctx, board = self.board(rows)
+        self.assertEqual(board["markets"]["moneyline"]["books"], 3)
+
+    def test_the_close_is_three_way_too(self):
+        st, ctx, _board = self.board(soccer_rows())
+        close = base.board_at_line(st.quotes_by_event["soc1"], at=ctx.start - timedelta(minutes=1), start=ctx.start,
+                                   sport="soccer", market="moneyline", line=None)
+        self.assertAlmostEqual(sum(s["fair"] for s in close["sides"].values()), 1.0, places=4)
+
+    def test_a_two_way_family_has_no_draw_side(self):
+        _st, _ctx, board = self.board(nba_rows())
+        self.assertEqual(set(board["markets"]["moneyline"]["sides"]), {"home", "away"})
+
+
+class AllSportsAskTests(HoundCase):
+    def run_as(self, rows, respond, **kw):
+        router = self.haiku_router(respond)
+        self.report = self.run_pass(router, stores=allsports_stores(rows), now=NOW_AS, **kw)
+        return router
+
+    def test_an_nba_game_is_asked_with_prices_and_movement_only_and_a_spread_bet_is_written(self):
+        self.run_as(nba_rows(), lambda kw: answer("bet", "spread", "home", 4, "Knicks line looks short of the books."))
+        packet = packet_of(self.client)
+        self.assertEqual(packet["game"]["sport"], "NBA")
+        self.assertEqual(packet["game"]["league"], "NBA")
+        self.assertEqual(sorted(packet["markets"]), ["moneyline", "spread", "total"])
+        self.assertEqual(packet["markets"]["total"]["line_note"], "total points")
+        self.assertIs(packet["form"]["available"], False)
+        self.assertIn("only the prices and how they moved", packet["form"]["basis"])
+        self.assertNotIn("runs_for_per_game", json.dumps(packet))
+        (bet,) = self.bets()
+        self.assertEqual((bet["sport"], bet["market"], bet["side"], bet["line"], bet["league_title"]),
+                         ("nba", "spread", "home", -1.5, "NBA"))
+        self.assertIsNone(bet["game_pk"])
+        self.assertEqual((bet["provider"], bet["model"]), ("anthropic", "claude-haiku-5-5"))
+
+    def test_the_total_is_described_in_the_sports_own_unit(self):
+        self.run_as(allsports_rows("nhl1", "nhl", "Boston Bruins", "Toronto Maple Leafs", title="NHL", home_ml=-125,
+                                   away_ml=105, spread=(-1.5, 180, -220), total=(6.0, -110, -110)), lambda kw: PASS)
+        self.assertEqual(packet_of(self.client)["markets"]["total"]["line_note"], "total goals")
+
+    def test_a_soccer_game_is_three_way_the_prompt_says_a_draw_loses_and_only_home_or_away_can_be_backed(self):
+        self.run_as(soccer_rows(), lambda kw: answer("bet", "moneyline", "away", 3, "Arsenal price beats the books' number."))
+        packet = packet_of(self.client)
+        ml = packet["markets"]["moneyline"]
+        self.assertEqual(set(ml["sides"]), {"home", "away", "draw"})
+        self.assertIn("three-way", ml["line_note"])
+        self.assertIn("draw", ml["by_book"][0])
+        self.assertIn("A draw loses a moneyline bet", packet["rules_note"])
+        self.assertIn("cannot be backed", packet["rules_note"])
+        self.assertEqual(sorted(packet["markets"]), ["moneyline", "total"], "soccer has no spread on the menu")
+        self.assertEqual(packet["markets"]["total"]["line_note"], "total goals")
+        (bet,) = self.bets()
+        self.assertEqual((bet["sport"], bet["market"], bet["side"], bet["price_average"]), ("soccer", "moneyline", "away", 240))
+        self.assertEqual(bet["league_title"], "English Premier League")
+
+    def test_backing_the_draw_is_not_an_answer_the_hound_can_give(self):
+        self.run_as(soccer_rows(), lambda kw: answer("bet", "moneyline", "draw", 3, "Level game."))
+        self.assertEqual(self.bets(), [])
+        self.assertEqual(self.decided()[0]["code"], "no_answer")
+
+    def test_a_market_the_sport_does_not_offer_is_a_pass_even_if_the_model_names_it(self):
+        # the soccer rows carry a spread, but the catalog lists h2h and totals only for soccer
+        self.run_as(soccer_rows(), lambda kw: answer("bet", "spread", "home", 3, "Arsenal handicap looks generous."))
+        self.assertEqual(self.bets(), [])
+        (dec,) = self.decided()
+        self.assertEqual(dec["code"], "market_not_allowed")
+
+    def test_a_soccer_total_is_a_bet_on_the_goals_line(self):
+        self.run_as(soccer_rows(), lambda kw: answer("bet", "total", "over", 3, "Both sides score freely in the data."))
+        (bet,) = self.bets()
+        self.assertEqual((bet["market"], bet["side"], bet["line"]), ("total", "over", 2.5))
+
+    def test_tennis_is_h2h_only_and_a_totals_or_spread_answer_is_refused(self):
+        rows = tennis_rows(spread=(-3.5, -110, -110), total=(21.5, -110, -110))
+        self.run_as(rows, lambda kw: answer("bet", "total", "over", 3, "Long matches between these two."))
+        packet = packet_of(self.client)
+        self.assertEqual(sorted(packet["markets"]), ["moneyline"])
+        self.assertIn("Only the moneyline is available", packet["rules_note"])
+        self.assertIn("no draw", packet["rules_note"])
+        self.assertEqual(self.bets(), [])
+        self.assertEqual(self.decided()[0]["code"], "market_not_allowed")
+
+    def test_a_tennis_moneyline_bet_is_written(self):
+        self.run_as(tennis_rows(), lambda kw: answer("bet", "moneyline", "away", 2, "Sabalenka price is the better number."))
+        (bet,) = self.bets()
+        self.assertEqual((bet["sport"], bet["market"], bet["side"], bet["price_average"]), ("tennis", "moneyline", "away", 110))
+
+    def test_the_minus_200_cap_holds_in_every_sport(self):
+        rows = allsports_rows("nba2", "nba", "Boston Celtics", "New York Knicks", title="NBA", home_ml=-260, away_ml=215)
+        self.run_as(rows, lambda kw: answer("bet", "moneyline", "home", 5, "Knicks are the clear side here."))
+        self.assertEqual(self.bets(), [])
+        self.assertEqual(self.decided()[0]["code"], "outside_band")
+
+    def test_a_game_with_no_allowed_board_costs_no_model_call(self):
+        rows = allsports_rows("nba3", "nba", "Boston Celtics", "New York Knicks", title="NBA", books=("betmgm", "fanduel"))
+        self.run_as(rows, lambda kw: answer())
+        self.assertEqual(self.client.requests, [])
+        self.assertEqual([(d["decided"], d["code"]) for d in self.decided()], [("pass", "no_board")])
+
+    def test_a_provider_failure_in_a_new_sport_is_a_pass(self):
+        def boom(kw):
+            raise RuntimeError("down")
+
+        self.run_as(nba_rows(), boom)
+        self.assertEqual(self.bets(), [])
+        self.assertEqual(self.decided()[0]["code"], "no_answer")
+
+    def test_no_person_is_in_a_new_sports_prompt(self):
+        self.run_as(soccer_rows(), lambda kw: PASS)
+        user = self.client.requests[0]["messages"][0]["content"]
+        self.assertNotIn("@", user)
+        self.assertNotIn("hound", user.lower())
+
+    def test_each_sport_is_asked_once_and_the_runner_still_never_replays(self):
+        router = self.run_as(nba_rows(), lambda kw: PASS)
+        self.run_pass(router, stores=allsports_stores(nba_rows()), now=NOW_AS + timedelta(minutes=10))
+        self.assertEqual(len(self.client.requests), 1)
+        runtime = ai_hounds.AIRuntime(router, HashChainLedger(self.decisions))
+        with self.assertRaises(ai_defs.ForwardOnlyError):
+            pack_run.run(allsports_stores(nba_rows()), ["2026-10-20"], replay=True, now=START_AS + timedelta(hours=5),
+                         path=self.ledger, hounds=ai_hounds.build_hounds(runtime))
+
+
+class AllSportsGradingTests(HoundCase):
+    """A Claude Hound bet on another family settles through the member dogs' grader and store."""
+
+    SCORE = {"kind": "score", "completed": True}
+
+    def bet_everything(self):
+        rows = nba_rows() + soccer_rows() + tennis_rows()
+
+        def respond(kw):
+            sport = packet_of_text(kw)["game"]["sport"]
+            if sport == "NBA":
+                return answer("bet", "spread", "home", 4, "Knicks line looks short.")
+            if sport == "SOCCER":
+                return answer("bet", "moneyline", "home", 3, "Chelsea price is fair.")
+            return answer("bet", "moneyline", "home", 3, "Sabalenka at home price.")
+
+        router = self.haiku_router(respond)
+        self.stores = allsports_stores(rows)
+        self.run_pass(router, stores=self.stores, now=NOW_AS)
+        self.assertEqual(sorted(b["sport"] for b in self.bets()), ["nba", "soccer", "tennis"])
+
+    def settle(self, scores, *, now):
+        self.stores.allsports_results = scores
+        with mock.patch("src.pipeline.allsports_scores.load_index", side_effect=AssertionError("read the real store")):
+            counts = pack_settle.settle(self.stores, now=now, path=self.ledger)
+        graded = {r["sport"]: r for r in HashChainLedger(self.ledger).read() if r.get("kind") == pack_run.KIND_GRADED}
+        return counts, graded
+
+    def test_bets_settle_win_loss_and_a_soccer_draw_is_a_loss(self):
+        self.bet_everything()
+        scores = {
+            "nba1": dict(self.SCORE, home_score=110.0, away_score=104.0, outcome="home"),
+            "soc1": dict(self.SCORE, home_score=1.0, away_score=1.0, outcome="draw"),
+            "ten1": dict(self.SCORE, home_score=1.0, away_score=0.0, outcome="home", source="espn_tennis"),
+        }
+        counts, graded = self.settle(scores, now=START_AS + timedelta(hours=5))
+        self.assertEqual(counts["graded"], 3)
+        self.assertEqual(graded["nba"]["result"], "WIN")                       # home -1.5, won by 6
+        self.assertEqual(graded["soccer"]["result"], "LOSS")                   # a draw loses a team moneyline
+        self.assertIn("draw", graded["soccer"]["note"])
+        self.assertEqual(graded["soccer"]["units_average_price"], -1.0)
+        self.assertEqual(graded["tennis"]["result"], "WIN")
+        self.assertEqual(graded["tennis"]["result_source"], "espn_tennis")
+        self.assertEqual(graded["nba"]["final_score"], {"away": 104.0, "home": 110.0})
+        self.assertTrue(HashChainLedger(self.ledger).verify().ok)
+
+    def test_the_grade_is_exactly_what_the_member_dogs_grader_returns(self):
+        from src.pipeline import allsports_scores
+
+        self.bet_everything()
+        score = dict(self.SCORE, home_score=100.0, away_score=102.0, outcome="away")
+        now = START_AS + timedelta(hours=5)
+        _counts, graded = self.settle({"nba1": score, "soc1": dict(score), "ten1": dict(score)}, now=now)
+        for bet in self.bets():
+            direct = allsports_scores.grade_bet(bet, score, now)
+            self.assertEqual(graded[bet["sport"]]["result"], direct["result"], bet["sport"])
+            self.assertEqual(graded[bet["sport"]]["note"], direct["reason"], bet["sport"])
+
+    def test_a_bet_with_no_score_is_pending_for_72_hours_then_a_named_void(self):
+        self.bet_everything()
+        counts, graded = self.settle({}, now=START_AS + timedelta(hours=10))
+        self.assertEqual((counts["graded"], counts["pending"], graded), (0, 3, {}))
+        counts, graded = self.settle({}, now=START_AS + timedelta(hours=73))
+        self.assertEqual(counts["graded"], 3)
+        for g in graded.values():
+            self.assertEqual(g["result"], "VOID")
+            self.assertEqual(g["units_average_price"], 0.0)
+        self.assertIn("free Tennis", graded["tennis"]["note"])
+        self.assertIn("no final score within 72 hours", graded["nba"]["note"])
+
+    def test_a_walkover_the_result_feed_calls_void_is_void(self):
+        self.bet_everything()
+        scores = {"ten1": dict(self.SCORE, home_score=None, away_score=None, void_reason="walkover", source="espn_tennis")}
+        _counts, graded = self.settle(scores, now=START_AS + timedelta(hours=5))
+        self.assertEqual((graded["tennis"]["result"], graded["tennis"]["note"]), ("VOID", "walkover"))
+
+    def test_the_close_and_clv_are_read_for_a_three_way_market(self):
+        self.bet_everything()
+        _counts, graded = self.settle({"soc1": dict(self.SCORE, home_score=2.0, away_score=0.0, outcome="away")},
+                                      now=START_AS + timedelta(hours=5))
+        self.assertIsNotNone(graded["soccer"]["clv_pts"])
+        self.assertEqual(graded["soccer"]["close_books"], 5)
+
+    def test_mlb_bets_still_settle_from_their_own_store(self):
+        router = self.haiku_router(lambda kw: answer())
+        self.run_pass(router)                                   # the MLB game of the other tests, default stores
+        stores = basic_stores(mlb_games=[mlb_game(900001, "2026-09-20", "NYY", "BOS", 3, 5)])
+        with mock.patch("src.pipeline.allsports_scores.load_index", side_effect=AssertionError("MLB read the all-sports store")):
+            counts = pack_settle.settle(stores, now=START + timedelta(hours=6), path=self.ledger)
+        (g,) = [r for r in HashChainLedger(self.ledger).read() if r.get("kind") == pack_run.KIND_GRADED]
+        self.assertEqual((counts["graded"], g["sport"], g["result"], g["result_source"]), (1, "mlb", "WIN", "results"))
+
+
+class RuleHoundsUnaffectedTests(unittest.TestCase):
+    """The 21 rule hounds see the same games and write the same bets before and after the widening."""
+
+    def rows(self):
+        return game_rows("evA", START, observed=START - timedelta(hours=2)) + nba_rows() + soccer_rows() + tennis_rows()
+
+    def stores(self, wide):
+        st = base.Stores(sports=ai_defs.all_sports()) if wide else base.Stores()
+        for r in self.rows():
+            st.add_row(r)
+        st.event_map = {"evA": {"game_pk": "900001", "event_id": "evA"}}
+        st.mlb_games = [mlb_game(800000 + i, f"2026-09-{i + 1:02d}", "NYY", "TOR", 6, 2) for i in range(12)]
+        st.mlb_covered = {g["date"] for g in st.mlb_games}
+        st.finalize()
+        return st
+
+    def test_a_stores_built_without_a_sports_list_admits_mlb_and_nfl_only(self):
+        st = base.Stores()
+        for r in self.rows():
+            st.add_row(r)
+        self.assertEqual(set(st.events), {"evA"})
+        self.assertEqual(base.DEFAULT_SPORTS, ("mlb", "nfl"))
+
+    def test_load_stores_is_narrow_by_default_and_wide_only_when_asked(self):
+        from src.pipeline import snapshots
+
+        with tempfile.TemporaryDirectory() as tmp, \
+                mock.patch.object(snapshots, "iter_multibook", side_effect=lambda **kw: iter(self.rows())):
+            narrow = base.load_stores(since="2026-09-01", root=tmp)
+            wide = base.load_stores(since="2026-09-01", root=tmp, sports=ai_defs.all_sports())
+        self.assertEqual(set(narrow.events), {"evA"})
+        self.assertEqual(set(wide.events), {"evA", "nba1", "soc1", "ten1"})
+
+    def test_the_rule_pack_is_the_same_21_hounds_all_mlb_nfl_only(self):
+        self.assertEqual(len(pack_mod.PACK), 21)
+        for h in pack_mod.PACK:
+            self.assertTrue(set(h.sports) <= {"mlb", "nfl"}, h.id)
+
+    def test_the_rule_hounds_write_the_same_bets_on_narrow_and_wide_stores(self):
+        def written(wide):
+            with tempfile.TemporaryDirectory() as tmp:
+                path = str(Path(tmp) / "house.jsonl")
+                pack_run.run(self.stores(wide), ["2026-09-20"], replay=True, now=START + timedelta(hours=5), path=path)
+                return [{k: v for k, v in r.items() if k not in ("written_utc", "row_hash", "prev_hash", "seq")}
+                        for r in HashChainLedger(path).read() if r.get("kind") == pack_run.KIND_BET]
+
+        narrow, wide = written(False), written(True)
+        self.assertGreater(len(narrow), 0)
+        self.assertEqual(narrow, wide)
+        self.assertEqual({r["sport"] for r in wide}, {"mlb"})
+
+    def test_a_rule_hound_picks_identically_on_narrow_and_wide_stores(self):
+        self.assertEqual(all_picks(self.stores(False)), all_picks(self.stores(True)))
+
+    def test_the_mlb_and_nfl_packets_are_byte_for_byte_the_pre_widening_ones(self):
+        st = basic_stores()
+        ctx = base.build_context(st, "evA")
+        packet = ai_packet.build_packet(ctx, base.lock_board(st, ctx), st.quotes_by_event["evA"])
+        self.assertEqual(ai_packet.packet_hash(packet), "0fa8d022a71b3202")      # pinned from the pre-widening code
+        self.assertNotIn("rules_note", packet)
+        nfl_start = T("2026-10-18T17:00:00")
+        nst = base.Stores()
+        for r in game_rows("nfl1", nfl_start, away="Kansas City Chiefs", home="Buffalo Bills", sport="nfl",
+                           observed=nfl_start - timedelta(hours=3), home_ml=-110, away_ml=-110, spread=(-1.5, -110, -110)):
+            nst.add_row(r)
+        nst.finalize()
+        nctx = base.build_context(nst, "nfl1")
+        npacket = ai_packet.build_packet(nctx, base.lock_board(nst, nctx), nst.quotes_by_event["nfl1"])
+        self.assertEqual(ai_packet.packet_hash(npacket), "285e9b5524ae0c46")
+        self.assertNotIn("league", npacket["game"])
 
 
 if __name__ == "__main__":

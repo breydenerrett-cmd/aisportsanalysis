@@ -29,6 +29,7 @@ import json
 from pathlib import Path
 from typing import Optional
 
+from src.hounds import ai_defs
 from src.hounds.contract import CATEGORIES, KIND_BASELINE, KIND_HOUSE, KIND_USER
 
 # What each registered signal measures, in the words a person would use. The
@@ -166,7 +167,9 @@ def definitions(house_cfg_path, pack_cfg_path, desk_cfg_path=None, ai_cfg_path=N
                 "category": _norm_category(entry.get("category"), kind),
                 "style": entry.get("style") or "",
                 "owner_display": entry.get("owner_display"),
-                "sports": list(entry.get("sports") or ["mlb"]),
+                # The AI hounds' file says "dog_menu"; the public list shows the families it means today.
+                "sports": (list(ai_defs.resolve_sports(entry)) if source == "ai_cfg"
+                           else list(entry.get("sports") or ["mlb"])),
                 "markets": list(entry.get("markets") or []),
                 "rule_text": entry.get("rule_text") or "",
                 "system_id": entry.get("system_id"),

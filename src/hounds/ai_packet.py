@@ -13,7 +13,9 @@ Everything here is point-in-time at the game's LOCK (60 minutes before the start
              (``base.open_board``), or an honest "no earlier board" when there is none.
   form       the two clubs' recent results from the stores the pack already reads, dated before the game and
              finished at least five (MLB) or six (NFL) hours before the lock, never inside the SEALED window:
-             games played, record, runs or points for and against per game, the last five results.
+             games played, record, runs or points for and against per game, the last five results. This
+             exists for MLB and NFL ONLY. Every other family (NBA, NHL, soccer, tennis ...) has no results
+             store here, so its packet carries prices and movement alone and says so in ``form.basis``.
   news       whatever the injected ``news_fn`` returns for this game, kept only if its ``observed_utc`` is at
              or before the lock. v1 wires no news source (none of the free ones is point-in-time safe), so
              this is an empty list and the packet says so.
@@ -31,8 +33,14 @@ import json
 from typing import Callable, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 
 from src.ai.decision import SYSTEM_PROMPT
+from src.hounds import ai_defs
 from src.hounds.pack import base
 
+# What a game's total is counted in, by catalog family. The wording is the model's only clue to the scale of a
+# line, so it is named per sport; a family not listed here is "points".
+TOTAL_UNIT = {"MLB": "runs", "BASEBALL": "runs", "CRICKET": "runs", "NHL": "goals", "HOCKEY": "goals",
+              "SOCCER": "goals", "TENNIS": "games"}
+STATS_FAMILIES = ("mlb", "nfl")        # the families whose recent results our stores hold (see ``form``)
 FORM_LAST_N = 5
 NEWS_KEEP = 5
 NEWS_TEXT_CHARS = 240
@@ -47,7 +55,7 @@ def _side(info: Mapping) -> dict:
 
 def by_book(quotes: Iterable[Mapping], ctx: "base.Context", market: str, line: Optional[float]) -> List[dict]:
     """Every book's newest quote on the board's main line at the lock (same rule as ``board_at_line``)."""
-    max_age = base.MAX_QUOTE_AGE[ctx.sport]
+    max_age = base.max_quote_age(ctx.sport)
     newest: Dict[str, Mapping] = {}
     for q in quotes:
         if q["market"] != market or q["line"] != line:
@@ -58,8 +66,16 @@ def by_book(quotes: Iterable[Mapping], ctx: "base.Context", market: str, line: O
         if q["book"] not in newest or obs > newest[q["book"]]["observed"]:
             newest[q["book"]] = q
     a, b = base.SIDES[market]
-    return [{"book": name, a: int(round(q["prices"][a])), b: int(round(q["prices"][b]))}
-            for name, q in sorted(newest.items())]
+    usable = dict(newest)
+    if market == "moneyline" and any(q.get("draw") is not None for q in newest.values()):
+        usable = {k: q for k, q in newest.items() if q.get("draw") is not None}     # the same books the board used
+    out = []
+    for name, q in sorted(usable.items()):
+        row = {"book": name, a: int(round(q["prices"][a])), b: int(round(q["prices"][b]))}
+        if q.get("draw") is not None:
+            row["draw"] = int(round(q["draw"]))
+        out.append(row)
+    return out
 
 
 def movement(ctx: "base.Context", board: Mapping) -> dict:
@@ -105,8 +121,45 @@ def form(ctx: "base.Context") -> dict:
     if ctx.sport == "mlb":
         return {"basis": f"MLB results from {base.SEAL_FLOOR} to the day before this game",
                 "away": _form_mlb(ctx, ctx.away), "home": _form_mlb(ctx, ctx.home)}
-    return {"basis": "NFL results this season before this game",
-            "away": _form_nfl(ctx, ctx.away), "home": _form_nfl(ctx, ctx.home)}
+    if ctx.sport == "nfl":
+        return {"basis": "NFL results this season before this game",
+                "away": _form_nfl(ctx, ctx.away), "home": _form_nfl(ctx, ctx.home)}
+    return {"basis": f"no team results are stored for {_label(ctx.sport)}; only the prices and how they moved are shown",
+            "available": False}
+
+
+def _label(sport: str) -> str:
+    from src.sports import catalog
+
+    return catalog.label(str(sport).upper())
+
+
+def is_three_way(ctx: "base.Context", board: Mapping) -> bool:
+    """True when this game's moneyline is a three-way market: the family allows a draw AND the board carries one."""
+    from src.sports import catalog
+
+    ml = (board.get("markets") or {}).get("moneyline") or {}
+    return "draw" in (ml.get("sides") or {}) and catalog.draw_possible(str(ctx.sport).upper())
+
+
+def total_unit(ctx: "base.Context") -> str:
+    return TOTAL_UNIT.get(str(ctx.sport).upper(), "points")
+
+
+def rules_note(ctx: "base.Context", board: Mapping, allowed: Sequence[str]) -> str:
+    """Plain-English rules for a game outside MLB and NFL: what may be backed and what a draw does. Not added to
+    MLB and NFL packets, which stay exactly the pre-registered ones."""
+    allowed = list(allowed)
+    parts = [f"The markets you may bet here are: {', '.join(allowed) or 'none'}. Choose only from the markets listed in the data."]
+    if is_three_way(ctx, board):
+        parts.append("The moneyline is THREE-WAY: home win, away win or a draw. A draw loses a moneyline bet on "
+                     "either team, so the draw is a real risk. You may back only home or away; the draw cannot be "
+                     "backed. fair_prob for home, away and draw sum to 1.")
+    elif "moneyline" in allowed and ctx.sport in ("tennis", "mma"):
+        parts.append("The moneyline is the match winner (two outcomes, no draw).")
+    if allowed == ["moneyline"]:
+        parts.append("Only the moneyline is available for this sport.")
+    return " ".join(parts)
 
 
 def news_items(ctx: "base.Context", news_fn: Optional[NewsFn]) -> List[dict]:
@@ -123,21 +176,34 @@ def news_items(ctx: "base.Context", news_fn: Optional[NewsFn]) -> List[dict]:
     return out[:NEWS_KEEP]
 
 
+def allowed_markets(ctx: "base.Context", configured: Optional[Sequence[str]] = None) -> List[str]:
+    """The markets the model may be shown and may back for this game's family (``ai_defs.markets_for_sport``)."""
+    return list(ai_defs.markets_for_sport(ctx.sport, configured or base.MARKETS))
+
+
 def build_packet(ctx: "base.Context", board: Mapping, quotes: Sequence[Mapping], *,
-                 news_fn: Optional[NewsFn] = None) -> dict:
+                 news_fn: Optional[NewsFn] = None, configured_markets: Optional[Sequence[str]] = None) -> dict:
+    allowed = allowed_markets(ctx, configured_markets)
     markets = {}
     for market, mb in (board.get("markets") or {}).items():
+        if market not in allowed:
+            continue
         entry = {"line": mb["line"], "books": mb["books"],
                  "sides": {side: _side(info) for side, info in mb["sides"].items()},
                  "by_book": by_book(quotes, ctx, market, mb["line"])}
         if market == "spread":
             entry["line_note"] = "the HOME team's line; the away side gets the opposite"
         if market == "total":
-            entry["line_note"] = "total runs" if ctx.sport == "mlb" else "total points"
+            entry["line_note"] = "total runs" if ctx.sport == "mlb" else f"total {total_unit(ctx)}"
+        if market == "moneyline" and "draw" in mb["sides"]:
+            entry["line_note"] = "three-way: home, away or draw; the draw is shown for information and cannot be backed"
         markets[market] = entry
-    return {
-        "game": {"sport": ctx.sport.upper(), "away": ctx.away_name, "home": ctx.home_name, "date_et": ctx.date,
-                 "start_utc": base.iso(ctx.start), "lock_utc": base.iso(ctx.lock), "board_as_of_utc": board.get("as_of")},
+    game = {"sport": ctx.sport.upper(), "away": ctx.away_name, "home": ctx.home_name, "date_et": ctx.date,
+            "start_utc": base.iso(ctx.start), "lock_utc": base.iso(ctx.lock), "board_as_of_utc": board.get("as_of")}
+    if ctx.sport not in STATS_FAMILIES and ctx.league:
+        game["league"] = ctx.league
+    packet = {
+        "game": game,
         "markets": markets,
         "movement": movement(ctx, board),
         "form": form(ctx),
@@ -145,6 +211,9 @@ def build_packet(ctx: "base.Context", board: Mapping, quotes: Sequence[Mapping],
         "news_note": "no news source is wired in this version" if news_fn is None else None,
         "price_rule": "a side whose average price is -200 or worse is never accepted",
     }
+    if ctx.sport not in STATS_FAMILIES:
+        packet["rules_note"] = rules_note(ctx, board, allowed)
+    return packet
 
 
 def render_prompt(packet: Mapping) -> Tuple[str, str]:
