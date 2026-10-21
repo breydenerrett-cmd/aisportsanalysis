@@ -27,7 +27,7 @@ The status route shows enabled/disabled, the scheduler loop, the last runs and s
 | `EMAIL_SIGNING_SECRET` | auto file `email_signing.key` beside the users db | signs unsubscribe links |
 
 ## 4. What sends, and when
-- **Keep confirmation**: `POST /auth/signup` with `hound_id` of a dog the new account owns (hook in `api/free_signup.py`); the keep flow may also call `send_keep_confirmation(user, dog)` once a dog is saved.
+- **Keep confirmation**: sent by `POST /hounds` (`_send_keep_email` in `api/hounds_create.py`) when it saves an account's FIRST hound, which is the order the quiz and builder "Keep {Name}" form uses (account via `POST /auth/signup`, then the hound). `POST /auth/signup` with `hound_id` of a dog the new account already owns sends it too (hook in `api/free_signup.py`). Either way it is once per user, ever.
 - **Nightly "{Dog} went W-L"**: about 9:00 AM ET, only for users whose dogs settled bets that day.
 - **Sunday pack summary**: 10:00 AM ET.
 - Nightly and Sunday respect the per-user unsubscribe flag (signed one-click link in every footer). Idempotent per (user, kind, date); append-only log `email_send_log.jsonl` beside the users db, no bodies.

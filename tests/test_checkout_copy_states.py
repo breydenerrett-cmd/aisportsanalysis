@@ -254,7 +254,7 @@ class CheckoutCopyInEveryState(unittest.TestCase):
                 self.assertEqual(out["cta"], "Request an invite")
                 self.assertEqual(out["gate"], "Request an invite")
                 self.assertEqual(out["record"], "Request an invite")
-                self.assertEqual(out["hero"], "Invite round: the first 20 testers get 7 days free, no card. Not on sale yet; planned price $19.99 a month. The record and the postseason odds are free now.")
+                self.assertEqual(out["hero"], "")          # 2026-10-20: no invite-round sentence on the landing page
                 self.assertEqual(out["pricing"], "Planned price: $19.99/month")
                 self.assertIsNone(out["card"])
                 self.assertIsNone(out["started"])
@@ -451,8 +451,8 @@ class CheckoutCopyInEveryState(unittest.TestCase):
                 by = {n["hook"]: n for n in out["nodes"]}
                 for hook in ("cta-primary", "cta-signup-hero", "cta-signup", "cta-signup-bottom"):
                     self.assertEqual(by[hook]["text"], "Request an invite", hook)
-                self.assertEqual(by["hero-cta-note"]["text"],
-                                 "Invite round: the first 20 testers get 7 days free, no card. Not on sale yet; planned price $19.99 a month. The record and the postseason odds are free now.")
+                self.assertEqual(by["hero-cta-note"]["text"], "")
+                self.assertTrue(by["hero-cta-note"]["hidden"])
                 self.assertTrue(by["pricing-trial-badge"]["hidden"])
                 self.assertTrue(by["pricing-cancel-line"]["hidden"])
                 self.assertEqual(by["pricing-host"]["text"].strip(), PRICING_OFF_BLOCK)

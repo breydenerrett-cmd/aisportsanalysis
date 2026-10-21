@@ -59,6 +59,8 @@ export function countFrom(el, parts) {
 
 export function countUp(el, ms = 700) {
   if (!el || el.getAttribute("data-counted") === "1") return;
+  const own = Number(el.getAttribute("data-count-ms"));       // a moment may set its own length (R6: a graded ticket's units, 500 ms)
+  if (Number.isFinite(own) && own > 0) ms = own;
   el.setAttribute("data-counted", "1");
   const original = el.textContent;
   const parts = parseCount(original);

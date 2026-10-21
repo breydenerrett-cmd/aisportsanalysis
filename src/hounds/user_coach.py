@@ -350,6 +350,8 @@ def undo(hound_id: str, *, now: Optional[datetime] = None, db=None) -> dict:
         raise CoachError("not_found", "no such hound", 404)
     if hound["status"] == user_store.STATUS_RETIRED:
         raise CoachError("not_running", "this version is already retired", 409)
+    if hound["status"] == user_store.STATUS_BURIED:
+        raise CoachError("not_running", "this dog is buried: its record is frozen", 409)
     applied = next((d for d in user_store.diary_for(hound_id, db=db)
                     if d["decision"] == user_store.DECISION_APPLIED
                     and d["new_hound_id"] == hound_id), None)

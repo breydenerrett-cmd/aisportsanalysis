@@ -272,3 +272,39 @@
 @keyframes qz-in-up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 @keyframes qz-pop { from { opacity: 0; transform: translateY(10px) scale(.96); } to { opacity: 1; transform: none; } }
 @keyframes qz-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+
+.qz-preview .qz-count { font-variant-numeric: tabular-nums; }
+.qz-pick { padding: 2px 0; }
+.qz-pick__face { display: inline-block; }
+.qz-rv__reading { display: none; margin: 0; text-align: center; font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--qz-mute, #8D96A6); }
+
+/* ---- R2 and R4: the reveal choreography (web/js/reveal-fx.js). Content is in the page from the first frame; these only move it. ---
+   R2, Meet {Name}, 2.4 s end to end: 0-0.7 the silhouette, 0.7-1.0 the hound resolves, 1.0-1.7 the name types in, 1.7-2.25 the rules slide in
+   150 ms apart. R4, the ticket flip: the count is up by 0.5 s and each ticket flips 120 ms after the last (done by 1.4 s). A tap sets
+   data-reveal="done" and every animation below stops where it is: the finished page. Reduced motion never gets "play": 150 ms fade. */
+@media (prefers-reduced-motion: no-preference) {
+  .qz-rv[data-reveal="play"] .qz-rv__reading { display: block; animation: qz-reading .7s ease both; }
+  .qz-rv[data-reveal="play"] .qz-dog--hero { animation: qz-silhouette 1s cubic-bezier(.2, .7, .2, 1) both; }
+  .qz-rv[data-reveal="play"] .qz-meet { animation: qz-type .7s steps(var(--len, 12), end) 1s both; }
+  .qz-rv[data-reveal="play"] .qz-rv__hero .qz-field { animation: qz-fade .5s ease 1s both; }
+  .qz-rv[data-reveal="play"] .qz-rule { animation: qz-rule-in .25s cubic-bezier(.2, .7, .2, 1) calc(1.7s + var(--i, 0) * 150ms) both; }
+  .qz-rv[data-reveal="done"] .qz-rule { animation: none; }
+  .qz-preview[data-reveal="play"] .qz-bignum { animation: qz-fade .3s ease both; }
+  .qz-preview[data-reveal="play"] .qz-pick { transform-origin: 50% 0; animation: qz-flip .45s cubic-bezier(.2, .7, .2, 1) calc(.5s + var(--i, 0) * 120ms) both; }
+  .qz-preview[data-reveal="done"] .qz-pick { animation: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .qz-rv, .qz-rule, .qz-preview .qz-bignum, .qz-pick { animation: qz-fade .15s ease both; }
+}
+@keyframes qz-reading { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes qz-silhouette {
+  0% { filter: brightness(0) opacity(.4); transform: scale(.94) rotate(0); }
+  25% { filter: brightness(0) opacity(.4); transform: scale(.94) rotate(-1.4deg); }
+  45% { filter: brightness(0) opacity(.4); transform: scale(.94) rotate(1.4deg); }
+  70% { filter: brightness(0) opacity(.4); transform: scale(.94) rotate(0); }
+  100% { filter: none; transform: none; }
+}
+@keyframes qz-type { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+@keyframes qz-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes qz-rule-in { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }
+@keyframes qz-flip { from { opacity: 0; transform: perspective(600px) rotateX(-90deg); } to { opacity: 1; transform: none; } }

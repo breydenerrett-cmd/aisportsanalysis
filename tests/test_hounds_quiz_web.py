@@ -53,8 +53,10 @@ def composed(answers, **kw):
 
 
 def preview_answer(qualifying=2, cap=2, board=3):
-    picks = [{"event_id": f"e{i}", "selection": "Boston Red Sox to win", "price": 120, "would_bet": i < cap} for i in range(qualifying)]
+    picks = [{"event_id": f"e{i}", "selection": "Boston Red Sox to win", "away_team": "Boston Red Sox", "home_team": "New York Yankees",
+              "price": 120, "would_bet": i < cap} for i in range(qualifying)]
     return {"qualifying": qualifying, "would_bet": min(qualifying, cap), "max_bets_per_day": cap, "picks": picks,
+            "games_fit": len({p["event_id"] for p in picks}), "board_size": board,
             "games_on_board": board, "read_only": True, "paper_only": True, "not_advice": user_spec.NOT_ADVICE}
 
 
@@ -343,19 +345,54 @@ class TheReveal(unittest.TestCase):
         self.assertTrue(any("later answer wins" in w for w in out["final"]["warn"]))
         self.assertEqual(out["final"]["eyebrow"], "Heads up")
 
-    def test_the_preview_says_how_many_it_would_have_bet_today(self):
-        out = quiz(routes=base_routes(preview=None, **{"POST /hounds/builder/preview": [200, preview_answer(qualifying=3, cap=2)]}),
-                   actions=skip_all(), queries=[q("count", hook("reveal-preview-count")), q("picks", hook("reveal-pick"), "texts")])
-        self.assertEqual(out["final"]["count"], "2 of 3 qualifying picks, with a cap of 2 a day.")
-        self.assertEqual(out["final"]["picks"], ["Boston Red Sox to win at +120"] * 2)
+    def test_the_preview_says_how_many_games_fit_and_how_many_it_would_have_bet(self):
+        out = quiz(routes=base_routes(preview=None, **{"POST /hounds/builder/preview": [200, preview_answer(qualifying=3, cap=2, board=41)]}),
+                   actions=skip_all(), queries=[q("count", hook("reveal-preview-count")), q("sub", hook("reveal-preview-sub")),
+                                                q("picks", hook("reveal-pick"), "texts"), q("state", hook("reveal-preview"), "attr", attr="data-state")])
+        name = "Good Boy Gary"
+        self.assertEqual(out["final"]["count"], f"3 of 41 games fit {name}'s rule today.")
+        self.assertEqual(out["final"]["sub"], f"{name} would have bet 2, with a cap of 2 a day.")
+        self.assertEqual(out["final"]["picks"], ["Boston Red Sox at New York Yankees · Boston Red Sox to win · +120"] * 2)
+        self.assertEqual(out["final"]["state"], "picks")
         spec = posts_to(out, "/hounds/builder/preview")[0]["body"]["spec"]
         user_spec.validate_spec(spec)
-        empty = quiz(routes=base_routes(**{"POST /hounds/builder/preview": [200, preview_answer(qualifying=0)]}), actions=skip_all(),
-                     queries=[q("count", hook("reveal-preview-count"))])
-        self.assertEqual(empty["final"]["count"], "Nothing on today's board fits these rules.")
+
+    def test_a_board_that_fits_nothing_is_a_pass_and_part_of_the_record(self):
+        out = quiz(routes=base_routes(**{"POST /hounds/builder/preview": [200, preview_answer(qualifying=0, board=12)]}), actions=skip_all(),
+                   queries=[q("count", hook("reveal-preview-count")), q("sub", hook("reveal-preview-sub")),
+                            q("state", hook("reveal-preview"), "attr", attr="data-state"), q("picks", hook("reveal-pick"), "count"),
+                            q("loosen", "[data-hook='reveal-preview'] button", "count"), q("retry_row", hook("reveal-preview-retry-row"), "hidden")])
+        self.assertEqual(out["final"]["count"], "Good Boy Gary passes today. Nothing on the board fits its rule.")
+        self.assertEqual(out["final"]["sub"], "A pass is a valid day for a hound.")
+        self.assertEqual((out["final"]["state"], out["final"]["picks"]), ("zero", 0))
+        # no "loosen your rule" action: the only button in the panel is the retry, and it is hidden
+        self.assertEqual(out["final"]["loosen"], 1)
+        self.assertTrue(out["final"]["retry_row"])
+
+    def test_a_board_that_did_not_load_shows_no_number_and_a_retry(self):
         down = quiz(routes=base_routes(**{"POST /hounds/builder/preview": [503, {"detail": {"error": "board_unavailable"}}]}), actions=skip_all(),
-                    queries=[q("count", hook("reveal-preview-count"))])
+                    queries=[q("count", hook("reveal-preview-count")), q("retry_row", hook("reveal-preview-retry-row"), "hidden"),
+                             q("state", hook("reveal-preview"), "attr", attr="data-state")])
         self.assertEqual(down["final"]["count"], "Today's board is not loaded right now.")
+        self.assertFalse(down["final"]["retry_row"])
+        self.assertEqual(down["final"]["state"], "not_loaded")
+        self.assertNotRegex(down["final"]["count"], r"\d")
+
+    def test_a_game_board_with_no_games_says_so(self):
+        empty = quiz(routes=base_routes(**{"POST /hounds/builder/preview": [200, preview_answer(qualifying=0, board=0)]}), actions=skip_all(),
+                     queries=[q("count", hook("reveal-preview-count"))])
+        self.assertEqual(empty["final"]["count"], "No games on today's board yet.")
+
+    def test_a_price_of_minus_200_or_worse_is_never_shown(self):
+        answer = preview_answer(qualifying=2, cap=2, board=5)
+        answer["picks"][0]["price"] = -200
+        answer["picks"][1]["price"] = -135
+        out = quiz(routes=base_routes(**{"POST /hounds/builder/preview": [200, answer]}), actions=skip_all(),
+                   queries=[q("picks", hook("reveal-pick"), "texts"), q("count", hook("reveal-preview-count"))])
+        self.assertEqual(len(out["final"]["picks"]), 1)
+        self.assertIn("-135", out["final"]["picks"][0])
+        self.assertNotIn("-200", " ".join(out["final"]["picks"]))
+        self.assertTrue(out["final"]["count"].startswith("1 of 5 games fit"))
 
     def test_a_compose_failure_says_so_and_offers_retry_and_the_builder(self):
         out = quiz(routes=base_routes(**{"POST /hounds/quiz/compose": [500, {}]}), actions=skip_all(), queries=[
@@ -418,6 +455,56 @@ class TheReveal(unittest.TestCase):
         sent = posts_to(out, "/hounds")[0]["body"]["spec"]
         self.assertEqual(sent["name"], "Biscuit Boss")
         self.assertEqual(fixture["spec"]["name"], "Biscuit Boss")
+
+
+@unittest.skipUnless(HAS_NODE, "node not installed")
+class KeepTheHound(unittest.TestCase):
+    """"Keep {Name}" on the reveal: one form makes a free account, signs in, saves the hound, with no redirect."""
+    FILL = [dict(do="set", sel=hook("reveal-keep-email"), value="fan@example.com", label="email"),
+            dict(do="set", sel=hook("reveal-keep-password"), value="correct horse battery", label="pw")]
+    SUBMIT = dict(do="submit", sel=hook("reveal-keep-form"), label="keep", wait=150)
+
+    def routes(self, **over):
+        return base_routes(COMBO_ANSWERS, **{"POST /auth/signup": [200, {"token": "newtok", "kind": "free"}],
+                                             "POST /hounds": [201, {"hound": {"id": "u-7", "name": "Chalk Chomper"}}],
+                                             "PUT /hounds/u-7/look": [200, {}], **over})
+
+    def test_a_signed_out_visitor_sees_the_form_and_a_keep_button_with_the_name(self):
+        out = quiz(routes=self.routes(), actions=COMBO_ACTIONS, queries=[
+            q("hidden", hook("reveal-keep"), "hidden"), q("btn", hook("reveal-keep-submit")), q("age", hook("reveal-keep-age"), "exists"),
+            q("title", hook("reveal-keep-title"))])
+        f = out["final"]
+        self.assertFalse(f["hidden"])
+        self.assertTrue(f["btn"].startswith("Keep ") and len(f["btn"]) > 5)
+        self.assertTrue(f["age"])
+
+    def test_without_the_21_plus_box_nothing_is_sent_and_the_sentence_says_why(self):
+        out = quiz(routes=self.routes(), actions=COMBO_ACTIONS + self.FILL + [self.SUBMIT],
+                   queries=[q("status", hook("reveal-keep-status"))])
+        self.assertEqual(posts_to(out, "/auth/signup"), [])
+        self.assertEqual(posts_to(out, "/hounds"), [])
+        self.assertIn("21 or older", out["final"]["status"])
+
+    def test_with_the_box_it_signs_up_signs_in_saves_the_hound_and_does_not_redirect(self):
+        out = quiz(routes=self.routes(), actions=COMBO_ACTIONS + self.FILL + [
+            dict(do="check", sel=hook("reveal-keep-age"), label="age"), self.SUBMIT],
+            queries=[q("saved", hook("reveal-saved"), "exists")])
+        signup = posts_to(out, "/auth/signup")[0]["body"]
+        self.assertIs(signup["age_confirmed"], True)
+        self.assertEqual(signup["email"], "fan@example.com")
+        sent = posts_to(out, "/hounds")[0]["body"]
+        user_spec.validate_spec(sent["spec"])
+        self.assertEqual(out["storedAfter"][TOKEN_KEY], "newtok")
+        self.assertEqual(out["navigations"], [])
+        self.assertTrue(out["final"]["saved"])
+
+    def test_a_refused_signup_saves_nothing(self):
+        out = quiz(routes=self.routes(**{"POST /auth/signup": [400, {"detail": {"error": "age_required", "message": "Confirm that you are 21 or older to make an account."}}]}),
+                   actions=COMBO_ACTIONS + self.FILL + [dict(do="check", sel=hook("reveal-keep-age"), label="age"), self.SUBMIT],
+                   queries=[q("status", hook("reveal-keep-status"))])
+        self.assertEqual(posts_to(out, "/hounds"), [])
+        self.assertNotIn(TOKEN_KEY, out["storedAfter"])
+        self.assertIn("21 or older", out["final"]["status"])
 
 
 @unittest.skipUnless(HAS_NODE, "node not installed")

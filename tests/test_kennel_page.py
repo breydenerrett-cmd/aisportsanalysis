@@ -3,7 +3,7 @@
 Owner: "It's not clearly accessible to find a user's dogs in their kennel ... more minimalism and more fun animated UI."
 
   KENNEL PAGE   web/kennel.html + web/js/kennel.js, run for real under node: My kennel (signed in: a card per dog with its
-                avatar, record, units, last pick, status and one-tap Take them out back / Ask / Edit / Open; a "Build a dog" card; the
+                avatar, record, units, last pick, status and one-tap Unleash / Send to training / Take them out back (the burial) / Ask / Edit / Open; a "Build a dog" card; the
                 empty state; the signed-out gate), a member's PUBLIC kennel (?u=, read only, a 0-bet dog included), and the
                 studio drawer that reuses the builder's and the dog kit's modules.
   NAVIGATION    one component (web/js/nav.js + css/lhnav.css) on every page, right for signed in and signed out.
@@ -26,7 +26,7 @@ from tests.hounds_web_runner import HAS_NODE, WEB, run_js, run_page
 TOKEN_KEY = "aisportsanalysis.invite_token"
 SIGNED = dict(stored={TOKEN_KEY: "tok"})
 PAGES = ("kennels.html", "live.html", "hounds.html", "hound.html", "build-a-hound.html", "learning.html", "kennel.html", "landing.html", "why-we-paused.html",
-         "postseason.html", "sample.html", "index.html")
+         "postseason.html", "sample.html", "index.html", "graveyard.html")
 LINKS = [("hounds.html", "Leaderboard"), ("kennels.html", "Kennels"), ("live.html", "Live"), ("quiz.html", "Build"),
          ("learning.html", "Training camp")]
 
@@ -273,7 +273,7 @@ class MyKennel(unittest.TestCase):
                 q("hidden_tabs", "[data-hook='studio-tabs'] [role='tab']", "attrs", attr="hidden")])])
         cap = out["captures"]["open"]
         self.assertEqual((cap["hidden"], cap["title"]), (False, "New dog"))
-        # Look, Rules, Out back, Backtest, Ask, Record: a new dog has only the Rules tab, so the other five hide
+        # Look, Rules, Unleash, Backtest, Ask, Record: a new dog has only the Rules tab, so the other five hide
         self.assertEqual(cap["hidden_tabs"], ["", None, "", "", "", ""])
 
     def test_a_retired_dog_is_set_apart_and_offers_a_copy_not_an_edit(self):
@@ -364,7 +364,7 @@ class TheStudio(unittest.TestCase):
                 q("rules_panel", "[data-tabpanel='rules']", "hidden")])])
         cap = out["captures"]["open"]
         self.assertEqual((cap["hidden"], cap["title"]), (False, "Underdog Gus"))
-        self.assertEqual(cap["tabs"], ["Look", "Rules", "Out back", "Backtest", "Ask", "Record"])
+        self.assertEqual(cap["tabs"], ["Look", "Rules", "Unleash", "Backtest", "Ask", "Record"])
         self.assertEqual(cap["selected"], ["Look"])
         self.assertEqual((cap["preview"], cap["head_avatar"]), (1, 1))
         self.assertEqual(cap["open_link"], "hound.html?id=u-1")
@@ -394,11 +394,37 @@ class TheStudio(unittest.TestCase):
         self.assertEqual(cap["cards"], 1)                       # the cards exist (inside the closed details)
         self.assertEqual(cap["name"], "Underdog Gus")
 
+    def test_a_second_rules_panel_in_one_visit_is_still_alive(self):
+        """2026-10-20, a real member: the kennel studio built a fresh builder skeleton every time the Rules panel opened,
+        but hounds-build.js binds its listeners once, to the first skeleton. So the second Rules panel of a visit (another
+        dog, or New dog) was dead: typing left the counter at 0 / 600 and Read my strategy did nothing."""
+        from tests import _hounds_rules_fixtures as F
+        mine = []
+        for i, name in ((1, "Underdog Gus"), (2, "Totals Tina")):
+            d = {"id": f"u-{i}", "name": name, "tagline": "", "status": "running", "version_no": 1, "color": "mint", "badge": "crown",
+                 "record": {"bets": 0, "wins": 0, "losses": 0, "pushes": 0}, "rule_sentences": ["MLB moneylines: it backs the underdog."]}
+            d["spec"] = json.loads(json.dumps(user_spec.validate_spec(F.v2(name=name, rules=[F.rule(side="away", price_min=100)]))))
+            mine.append(d)
+        routes = self.routes([dog("u-1"), dog("u-2")], **{"/hounds/mine": [200, {"hounds": mine, "limit_running": 5}],
+                                                         "POST /hounds/builder/preview": [200, {"qualifying": 0, "would_bet": 0, "picks": [],
+                                                                                                 "sentences": [], "max_bets_per_day": 2,
+                                                                                                 "paper_only": True}]})
+        out = run_page("kennel", routes=routes, **SIGNED, settleMs=200, actions=[
+            dict(do="click", sel="[data-hook='dog-action-edit']", index=0, label="first", wait=500),
+            dict(do="click", sel="[data-hook='studio-close']", label="close", wait=200),
+            dict(do="click", sel="[data-hook='dog-action-edit']", index=1, label="second", wait=500, capture=[
+                q("builders", "[data-hook='build-app']", "count"), q("title", "[data-hook='build-title']")]),
+            dict(do="set", sel="[data-hook='english-input']", value="bet road underdogs", label="typed", wait=100, capture=[
+                q("count", "[data-hook='english-count']")])])
+        self.assertEqual(out["captures"]["second"]["builders"], 1, "one builder on the page, moved, never a second copy")
+        self.assertEqual(out["captures"]["second"]["title"], "Edit Totals Tina")
+        self.assertEqual(out["captures"]["typed"]["count"], "18 / 600", "the second panel's builder answers typing")
+
     def test_fire_now_opens_the_fire_tab_and_fires_at_once(self):
         out = run_page("kennel", routes=self.routes([dog("u-1")]), **SIGNED, actions=[
             dict(do="click", sel="[data-hook='dog-action-fire']", label="fire", wait=300, capture=[
                 q("selected", "[role='tab'][aria-selected='true']", "texts"), q("headline", "[data-hook='fire-headline']")])])
-        self.assertEqual(out["captures"]["fire"]["selected"], ["Out back"])
+        self.assertEqual(out["captures"]["fire"]["selected"], ["Unleash"])
         self.assertEqual(out["captures"]["fire"]["headline"], "Nothing qualifies right now.")
         self.assertEqual([p["url"].split("/")[-2:] for p in out["posts"]], [["u-1", "fire"]])
 
@@ -464,11 +490,12 @@ class TheKennelsIndex(unittest.TestCase):
 class TheDogPageTabs(unittest.TestCase):
     HTML = read("hound.html")
 
-    def test_six_tabs_in_order_with_out_back_above_them(self):
+    def test_six_tabs_in_order_with_unleash_above_them(self):
         tabs = re.findall(r'role="tab" data-tab="([a-z]+)"', self.HTML)
         self.assertEqual(tabs, ["overview", "tickets", "backtest", "ask", "locker", "rules"])
         self.assertLess(self.HTML.index('data-hook="dog-fire-section"'), self.HTML.index('data-hook="hound-tabs"'))
-        self.assertIn(">Out back<", self.HTML)
+        self.assertIn(">Unleash<", self.HTML)
+        self.assertNotIn(">Out back<", self.HTML)
         self.assertNotIn("Fire now", self.HTML)
 
     def test_every_section_sits_in_the_panel_it_belongs_to(self):
@@ -576,7 +603,7 @@ class TheBuilderHasOneHookSet(unittest.TestCase):
 # ---------------------------------------------------------------------------------------------------
 
 class EveryAnimationIsInsideNoPreference(unittest.TestCase):
-    FILES = ("css/lh.css", "css/lhnav.css", "css/studio.css")
+    FILES = ("css/lh.css", "css/lhnav.css", "css/studio.css", "css/dog-kit.css")
 
     @staticmethod
     def outside_motion_blocks(css):

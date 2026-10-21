@@ -3,6 +3,10 @@
 An event is something that HAPPENED, read from what the site already records, never invented here:
 
   retired    a hound put down (the stats book's graveyard: its own retirement date and cause)
+  buried     a member took their dog out back (owner ruling 2026-10-20): from the dog's own ``buried`` event, with the
+             headstone's epitaph and its frozen record; the stats book's "retired" item for the same dog is skipped
+  trained    a member sent their dog to training: from the dog's own ``trained`` event, with the plain-words change
+             list; it says the new record starts now, never that the dog is better
   promoted   a challenger made the team (the learning loop's ``promotion`` event, with its version)
   cut        a challenger's tryout was cut (a ``decision`` event whose outcome is ``retired``)
   new        a new user hound entered (the app database's first version of a hound)
@@ -56,6 +60,8 @@ ENV_PUBLIC_BASE_URL = "PUBLIC_BASE_URL"
 DEFAULT_BASE_URL = "https://linehound.app"
 
 KIND_RETIRED = "retired"
+KIND_BURIED = "buried"
+KIND_TRAINED = "trained"
 KIND_PROMOTED = "promoted"
 KIND_CUT = "cut"
 KIND_NEW = "new"
@@ -116,14 +122,49 @@ def retired_events(book) -> list:
         if "@v" in hid or s.status != "retired" or s.retired is None or not s.retired.date:
             continue
         cause = rss.clean(s.retired.cause)
-        if cause.lower().startswith("superseded"):
-            continue           # replaced by its own next version: not put down
+        if cause.lower().startswith(("superseded", "buried")):
+            continue           # replaced by its own next version, or buried (announced from its burial event): not put down
         if s.kind == "user" and "moderator" in cause.lower():
             why = "A moderator retired it."
         else:
             why = "Why: " + cause.removeprefix("retired: ").removeprefix("Retired: ").strip()
         ev = _event(KIND_RETIRED, f"kennel:{KIND_RETIRED}:{hid}:{s.retired.date}", rss.parse_utc(s.retired.date),
                     hid, f"\U0001F480 {_name(s.name)} got put down", _sentence(why))
+        if ev:
+            out.append(ev)
+    return out
+
+
+def rite_events(rows: Iterable[Mapping]) -> list:
+    """The owner rites as news: one item per ``buried`` and per ``trained`` row of ``user_store.list_events``.
+
+    A burial reads the headstone the burial froze (its epitaph and final record); a training reads the change list the
+    training wrote. Both are recorded facts, so the item never changes after it is first posted, and neither one says
+    the dog is better, worse or going to win: the training item ends with the line that its new record starts now."""
+    out = []
+    for row in rows:
+        payload = row.get("payload") or {}
+        when = rss.parse_utc(row.get("created_at"))
+        kind = row.get("kind")
+        if kind == "buried":
+            name = _name(payload.get("name"))
+            epitaph = rss.clean(payload.get("epitaph")).replace("@", "")
+            why = _sentence(f"{epitaph} Its record is frozen and it is in the graveyard")
+            ev = _event(KIND_BURIED, f"kennel:{KIND_BURIED}:{row['hound_id']}", when, row["hound_id"],
+                        f"\U0001FAA6 {name} was taken out back", why)
+        elif kind == "trained":
+            name = _name(payload.get("name"))
+            changes = payload.get("changes") or []
+            made = "; ".join(f"{rss.clean(c.get('label'))} from {rss.clean(c.get('old_text'))} to {rss.clean(c.get('new_text'))}"
+                             for c in changes if isinstance(c, Mapping)).replace("@", "")
+            light = payload.get("mode") == "light"
+            title = (f"\U0001F3CB {name} went to training and came back as version {payload.get('to_version')}"
+                     + (" (a light adjustment)" if light else ""))
+            why = _sentence((f"Changed: {made}. " if made else "") + "Its old record is frozen and the new version's record starts now")
+            target = payload.get("new_hound_id") or row["hound_id"]
+            ev = _event(KIND_TRAINED, f"kennel:{KIND_TRAINED}:{target}", when, target, title, why)
+        else:
+            continue
         if ev:
             out.append(ev)
     return out
@@ -315,11 +356,11 @@ def fan_events(report: Optional[Mapping], *, base_url: Optional[str] = None) -> 
 # ---- the feed ---------------------------------------------------------------------------------------------
 
 def build_events(book, states: Mapping, user_rows: Iterable[Mapping], *, limit: int = MAX_ITEMS,
-                 coach: Optional[Mapping] = None) -> list:
+                 coach: Optional[Mapping] = None, rites: Iterable[Mapping] = ()) -> list:
     """Every event, newest first (ties broken by guid so two polls order the same), trimmed to ``limit``."""
     names = {hid: data.summary.name for hid, data in book.hounds.items()}
     events = (retired_events(book) + streak_events(book) + learning_events(states, names)
-              + new_hound_events(user_rows) + coach_events(coach) + fan_events(coach))
+              + new_hound_events(user_rows) + coach_events(coach) + fan_events(coach) + rite_events(rites))
     seen, unique = set(), []
     for ev in events:
         if ev["guid"] in seen:
@@ -344,7 +385,7 @@ def render_feed(events: Iterable[Mapping], *, base_url: Optional[str] = None,
 
 
 def collect(book, *, states: Optional[Mapping] = None, user_rows: Optional[Iterable[Mapping]] = None,
-            coach: Optional[Mapping] = None) -> list:
+            coach: Optional[Mapping] = None, rites: Optional[Iterable[Mapping]] = None) -> list:
     """The events from the live stores. ``states`` and ``user_rows`` default to the real ones (the two
     learning scopes' folded ledgers; the app database's hound rows) and are the tests' seams."""
     if states is None:
@@ -359,10 +400,19 @@ def collect(book, *, states: Optional[Mapping] = None, user_rows: Optional[Itera
                 user_rows = user_store.list_all()
             except Exception:  # noqa: BLE001 -- an unreadable app db means no "new dog" items, not a 500
                 user_rows = []
+    if rites is None:
+        rites = []
+        from src.hounds import user_defs
+        if user_defs.db_exists():
+            from src.hounds import user_store
+            try:
+                rites = user_store.list_events()
+            except Exception:  # noqa: BLE001 -- an unreadable app db means no burial or training items, not a 500
+                rites = []
     if coach is None:
         try:
             from src.hounds import coach_report
             coach = coach_report.build()
         except Exception:  # noqa: BLE001 -- an unreadable report ledger means no coach items, not a 500
             coach = None
-    return build_events(book, states, user_rows, coach=coach)
+    return build_events(book, states, user_rows, coach=coach, rites=rites)

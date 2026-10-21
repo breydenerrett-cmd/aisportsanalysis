@@ -1,8 +1,15 @@
-"""Interacting with a dog: fire it now, ask it, rate it, dress it, drill it, and the Training camp's own data.
+"""Interacting with a dog: unleash it, ask it, rate it, dress it, drill it, send it to training or take it out back,
+and the Training camp's own data.
 
     GET  /hounds/{id}/kit             what this visitor can do on this dog's page (token optional)
-    POST /hounds/{id}/fire            "What would you bet right now?": the rule over the latest stored boards,
-                                      READ ONLY; public, rate limited per address
+    POST /hounds/{id}/fire            "What would you bet right now?" (the pages call it UNLEASH; the route keeps its
+                                      name): the rule over the latest stored boards, READ ONLY; public, rate limited
+                                      per address
+    POST /hounds/{id}/out-back        the owner of a member dog, {"confirm": true}: the dog is BURIED, its record frozen
+                                      and public, a headstone in the graveyard (src/hounds/interact/outback.py)
+    POST /hounds/{id}/train           the owner of a member dog, {"confirm": true}: SEND TO TRAINING, the dog comes back
+                                      as a new version (src/hounds/interact/training.py)
+    GET  /hounds/{id}/headstone       a buried dog's headstone (public)
     GET  /hounds/{id}/ask             the dog's greeting and the questions worth asking it
     POST /hounds/{id}/ask             {"question": "..."}: an answer BUILT FROM THE DOG'S DATA (no model is called)
     GET  /hounds/{id}/manual          the owner's manual tickets, kept apart from the rule's record
@@ -21,8 +28,15 @@ PAID TOOLS ON MEMBER DOGS (owner decision 2026-10-20, api/entitlements.py). A fr
 three tools on a member (builder) dog are for paid accounts only: a LIVE SEND (``POST /hounds/{id}/fire`` with an
 ``event_id``), BACKTEST (``POST /hounds/drill``, except a drill of a house dog) and ASK (``POST /hounds/{id}/ask``).
 A free account gets a 402 ``upgrade_required`` naming the tool; a signed-out caller gets a 401. The house pack's
-public pages keep everything they had, and so does the plain "Take them out back" preview (``fire`` with no
+public pages keep everything they had, and so does the plain "Unleash" preview (``fire`` with no
 ``event_id``) on any dog, and the Ask greeting (``GET /hounds/{id}/ask``).
+
+THE TWO RITES (owner ruling 2026-10-20). ``out-back`` and ``train`` are for the OWNER of a MEMBER dog, free accounts
+included (a free account's one dog can be buried or trained). A house dog is refused (422 ``not_a_member_dog``), a
+member dog that is someone else's reads as not found, and both refuse while the dog has a ticket that has not settled
+(409 ``open_tickets``). ``out-back`` also refuses a dog already buried (409), and ``train`` refuses a dog that trained
+and has not yet settled 5 new bets on its current version (409 ``training_too_soon``). Both need ``{"confirm": true}``
+in the body, so a stray POST changes nothing.
 
 NOTHING HERE WRITES TO A DOG'S RULE RECORD. The fire route writes nothing. The manual pick goes to its own
 ledger (src/hounds/interact/manual.py). Feedback and looks are rows in two small tables. A drill replays in a
@@ -45,7 +59,7 @@ from src.appstate import ratelimit
 from src.appstate import users as users_store
 from src.hounds import user_spec
 from src.hounds.contract import envelope
-from src.hounds.interact import ask, ask_eval, camp, common, drill, fire, fire_event, look, manual, store
+from src.hounds.interact import ask, ask_eval, camp, common, drill, fire, fire_event, look, manual, outback, rites, store, training
 
 from api import auth as auth_mod
 from api import entitlements
@@ -84,6 +98,9 @@ _drill_limiter = ratelimit.FixedWindowLimiter(limit=DRILL_PER_USER_PER_HOUR, win
 _rl_drill = ratelimit.limiter_dependency(_drill_limiter, user_dependency=get_current_user)
 _manual_limiter = ratelimit.FixedWindowLimiter(limit=30, window_s=3600.0)
 _rl_manual = ratelimit.limiter_dependency(_manual_limiter, user_dependency=get_current_user)
+# A burial and a training each read the whole user ledger once; a person does either a handful of times, ever.
+_rites_limiter = ratelimit.FixedWindowLimiter(limit=20, window_s=3600.0)
+_rl_rites = ratelimit.limiter_dependency(_rites_limiter, user_dependency=get_current_user)
 
 
 # ---------------------------------------------------------------------------
@@ -242,6 +259,56 @@ def fire_now(hound_id: str, response: Response, body: Optional[FireRequest] = No
             entitlements.paid_dog_tool_for(authorization, request, entitlements.FEATURE_LIVE_SEND)
         return envelope(_event_payload(dog, body.event_id))
     return envelope(_fire_payload(dog, _viewer_id(authorization)))
+
+
+# ---------------------------------------------------------------------------
+# the two rites: out back (a burial) and training
+# ---------------------------------------------------------------------------
+
+class RiteRequest(BaseModel):
+    """The second tap's word. A POST without ``confirm: true`` is a 400 and the dog is untouched."""
+    confirm: bool = False
+
+
+def _rite_error(exc: rites.RiteError) -> HTTPException:
+    return _err(exc.status, exc.code, str(exc), **exc.extra)
+
+
+@router.post("/hounds/{hound_id}/out-back")
+def take_out_back(hound_id: str, response: Response, body: Optional[RiteRequest] = None,
+                  current_user: users_store.User = Depends(get_current_user),
+                  _rl: None = Depends(_rl_rites)) -> dict:
+    """Take the owner's dog out back: buried, record frozen, headstone in the graveyard. There is no taking it back."""
+    response.headers["Cache-Control"] = _NO_STORE
+    try:
+        out = outback.bury(common.resolve(hound_id), current_user.id, confirmed=bool(body and body.confirm))
+    except rites.RiteError as exc:
+        raise _rite_error(exc)
+    return envelope(out)
+
+
+@router.post("/hounds/{hound_id}/train")
+def send_to_training(hound_id: str, response: Response, body: Optional[RiteRequest] = None,
+                     current_user: users_store.User = Depends(get_current_user),
+                     _rl: None = Depends(_rl_rites)) -> dict:
+    """Send the owner's dog to training: it studies its own settled bets and comes back as the next version, with its
+    old record frozen and a new one starting now."""
+    response.headers["Cache-Control"] = _NO_STORE
+    try:
+        out = training.train(common.resolve(hound_id), current_user.id, confirmed=bool(body and body.confirm))
+    except rites.RiteError as exc:
+        raise _rite_error(exc)
+    return envelope(out)
+
+
+@router.get("/hounds/{hound_id}/headstone")
+def headstone(hound_id: str, response: Response, _rl: None = Depends(_rl_read)) -> dict:
+    """A buried dog's headstone: its frozen record, its epitaph and where it came from. 404 for a dog that is not buried."""
+    response.headers["Cache-Control"] = "public, max-age=60"
+    stone = outback.headstone_for(hound_id) if common.valid_id(hound_id) else None
+    if stone is None:
+        raise _err(404, "not_found", "no headstone for that dog")
+    return envelope({"headstone": stone})
 
 
 @router.get("/hounds/{hound_id}/manual")

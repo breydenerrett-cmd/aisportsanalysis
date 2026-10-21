@@ -377,7 +377,7 @@ class RemoveFromMyKennelInTheBuilder(unittest.TestCase):
         self.assertEqual(cap["names"], ["Dog Two"])
         self.assertIn("Dog One was removed from your kennel", cap["msg"])
         self.assertIn("tickets and record stay on the ledger", cap["msg"])
-        self.assertEqual(cap["limit"], "1 of 5 dogs running.")
+        self.assertEqual(cap["limit"], "1 of 5 hounds running.")
 
     def test_saying_no_removes_nothing(self):
         routes, _ = self.routes()
@@ -403,8 +403,8 @@ class RemoveFromMyKennelInTheBuilder(unittest.TestCase):
             dict(do="click", sel="[data-hook='edit-dog']", index=0, wait=200),
             dict(do="click", sel="[data-hook='remove-dog']", index=0, wait=250)],
             queries=[q("title", "[data-hook='build-title']"), q("btn", "[data-hook='build-submit']"), q("msg", "[data-hook='build-message']")])
-        self.assertEqual(out["final"]["title"], "Build your dog")
-        self.assertEqual(out["final"]["btn"], "Send my dog in")
+        self.assertEqual(out["final"]["title"], "Build your hound")
+        self.assertTrue(out["final"]["btn"].startswith("Keep "))
         self.assertIn("was removed from your kennel", out["final"]["msg"])
 
     def test_every_dog_row_has_both_buttons(self):

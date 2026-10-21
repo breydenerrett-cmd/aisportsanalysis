@@ -26,6 +26,24 @@ register as above (no cartoons, no jokes, no emoji). Copy no longer says beta, e
 guaranteed wins, ROI or "beat the books"; "complete" means the product works, not that it wins; 21+, 1-800-GAMBLER
 and "bet at your own risk" stay; Bet Check is never linked or advertised.
 
+**Amendment, owner ruling 2026-10-20 (two rites: out back and training).** Brey: *"make those two separate actions,
+either take it out back or send in for training, like Pokémon games."* What a person reads:
+
+- **Unleash** is the run-it-now preview (it was "Fire now", then for one day "Take them out back"). Button **Unleash** /
+  **Unleash again**, tab **Unleash**, "Unleashing <name>..." while it loads, "<name>'s picks right now" as the
+  result heading. The route (`POST /hounds/{id}/fire`) and the `data-hook`s keep the old word; only what a person
+  reads changed. Nothing labels the preview "Take them out back" any more.
+- **Take them out back** is the burial and only the burial. The dog is buried, its record is frozen and public, and it has a
+  headstone in the **Graveyard** (`graveyard.html`). It always asks twice: "This is permanent. Your hound is buried and its
+  record is frozen." and then "<name> will be buried." It is styled as the destructive action it is.
+- **Send to training** is the other path. The dog studies its own settled bets and comes back as the next version, with a
+  "what changed and why" card and a **Trained ×N** badge. The card never says the new version is better; it says
+  **"Its new record starts now."** A first training with under 5 settled bets is labelled **a light adjustment**.
+- The words **graveyard**, **headstone**, **buried** and **epitaph** are back for this one use (a dog its owner took out
+  back). The older words stay out: no "put down", "tombstone", "R.I.P." or jokes. A model retired by the pre-set rule still
+  says **Retired**, not buried. An epitaph is one short plain line written by code from the dog's rule and final record
+  ("Chased steam into a wall. 7-12."): no emoji, no exclamation mark, no claim about money.
+
 ## How it sounds
 
 - **Short and plain.** One idea per line. No jokes, no slang for effect, no exclamation marks.
@@ -84,7 +102,7 @@ point of the column.
 | --- | --- |
 | the kennel, the dogs, the pack | the leaderboard, the models |
 | hound / dog (public pages) | model (the code and URLs keep `hound`) |
-| graveyard, tombstones, put down | Retired models (name, final record, units, reason, date) |
+| graveyard, tombstones, put down (2026-10-19) | Retired models (name, final record, units, reason, date). Superseded 2026-10-20 for one case: a dog its owner took out back is **buried** and has a **headstone** in the **Graveyard**. |
 | doghouse, "who gets put down next" poll | not shown |
 | Houndmaster roasts and brags | not shown |
 | SHARP / COIN FLIP / FEEDING THE BOOK / ROOKIE | Beating the close / Market / Paying the vig / Not enough bets (n/150) |
@@ -93,7 +111,7 @@ point of the column.
 | benched | Idle (no ticket in 7+ days) |
 | closing-line value | CLV, or "beat the close" |
 | Tail it / Fade it | not shown (Copy rule, Build one like this) |
-| Fire now, Fire again, "firing" (2026-10-19, owner) | **Take them out back** (the button, also "Take them out back again"), **Out back** (the tab), "Taking <name> out back..." (while it loads), "<name>'s picks right now" (the result heading). The route (`/fire`) and the `data-hook`s keep the old word; only what a person reads changed. |
+| Fire now, Fire again, "firing" (2026-10-19, owner), then Take them out back (the preview, 2026-10-19) | **Unleash** (the button, also **Unleash again**), **Unleash** (the tab), "Unleashing <name>..." (while it loads), "<name>'s picks right now" (the result heading). The route (`/fire`) and the `data-hook`s keep the old word; only what a person reads changed. **Take them out back** now means the burial (see the amendment above). |
 | Drill, Run drill, Hindsight drill (2026-10-19, owner) | **Backtest**, **Run backtest**, **Backtest (hindsight, not counted in the record)**. 7 / 14 / 30 days and Season 2, on every dog page, in the studio and in the Training camp. Hook and route keep `drill`. |
 | the handle "Handler 3F2A" | the member's kennel name once they set one ("Name your kennel", 2 to 30 characters); the handle is the default until then |
 

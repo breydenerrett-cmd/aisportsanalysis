@@ -75,7 +75,10 @@ export function applyCheckoutCopy(state) {
     node.textContent = ctaLabel(state);
   });
   const note = document.querySelector("[data-hook='hero-cta-note']");
-  if (note) note.textContent = heroNote(state);
+  if (note) {
+    note.textContent = heroNote(state);
+    note.hidden = !note.textContent;
+  }
   const badge = document.querySelector("[data-hook='pricing-trial-badge']");
   if (badge) {
     const phrase = trialPhrase(state);

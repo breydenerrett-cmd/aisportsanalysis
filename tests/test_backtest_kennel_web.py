@@ -1,8 +1,9 @@
 """The owner's 2026-10-19 asks, run for real under node against the pages' own HTML:
 
-  * COPY: "Fire now" is "Take them out back" (button), "Out back" (tab), "Taking <name> out back..." (loading) and
+  * COPY: "Fire now" is "Unleash" (button, tab and "Unleash again"), "Unleashing <name>..." (loading) and
     "<name>'s picks right now" (result heading); "Drill" is "Backtest". Only what a person reads changed: the routes
-    and every data-hook keep the old words.
+    and every data-hook keep the old words. ("Take them out back" was the preview's name for one day, 2026-10-19; since
+    2026-10-20 it is the burial, tests/test_hounds_rites_web.py.)
   * BACKTEST: a tab on every dog page and in the studio (and the camp's section) with 7 / 14 / 30 days and Season 2,
     labelled "Backtest (hindsight, not counted in the record)", W-L, paper dollars, return, best and worst picks and
     the tickets; signed-out visitors get a sign-in prompt; a busy replay says "Another backtest is running, try
@@ -147,10 +148,10 @@ class TheCopyOnTheDogPage(unittest.TestCase):
         routes = dog_routes()
         out = page(routes, captureInitial=[q("btn", hook("fire-btn")), q("section", "#fire-h")], actions=[
             dict(do="click", sel=hook("fire-btn"), wait=150, capture=[q("btn", hook("fire-btn")), q("title", hook("fire-title"))])])
-        self.assertEqual(out["captures"]["initial"]["btn"], "Take them out back")
-        self.assertEqual(out["captures"]["initial"]["section"], "Out back")
+        self.assertEqual(out["captures"]["initial"]["btn"], "Unleash")
+        self.assertEqual(out["captures"]["initial"]["section"], "Unleash")
         c = out["captures"]["0"]
-        self.assertEqual(c["btn"], "Take them out back again")
+        self.assertEqual(c["btn"], "Unleash again")
         self.assertEqual(c["title"], "Closer's picks right now")
 
     def test_the_loading_text_names_the_dog(self):
@@ -158,8 +159,8 @@ class TheCopyOnTheDogPage(unittest.TestCase):
         it; the source of both places that say it is pinned instead."""
         fire = (WEB / "js" / "dog-fire.js").read_text(encoding="utf-8")
         camp = (WEB / "js" / "dog-camp.js").read_text(encoding="utf-8")
-        self.assertIn('`Taking ${name || "this dog"} out back...`', fire)
-        self.assertIn('`Taking ${d.name} out back...`', camp)
+        self.assertIn('`Unleashing ${name || "this dog"}...`', fire)
+        self.assertIn('`Unleashing ${d.name}...`', camp)
 
     def test_the_hooks_and_the_route_keep_the_old_word(self):
         out = page(dog_routes(), actions=[dict(do="click", sel=hook("fire-btn"), wait=150)], queries=[q("sec", hook("dog-fire-section"), "count")])
@@ -175,8 +176,8 @@ class TheCopyInTheKennel(unittest.TestCase):
             dict(do="click", sel="[data-hook='dog-action-fire']", label="out", wait=300, capture=[
                 q("selected", "[role='tab'][aria-selected='true']", "texts"), q("btn", "[data-hook='fire-btn']"),
                 q("title", "[data-hook='fire-title']")])])
-        self.assertEqual(out["final"]["btn"], ["Take them out back"])
-        self.assertEqual(out["captures"]["out"]["selected"], ["Out back"])
+        self.assertEqual(out["final"]["btn"], ["Unleash"])
+        self.assertEqual(out["captures"]["out"]["selected"], ["Unleash"])
         self.assertEqual(out["captures"]["out"]["title"], "Underdog Gus's picks right now")
 
     def test_the_studio_backtest_tab_runs_a_backtest_for_that_dog(self):
@@ -380,11 +381,11 @@ class NoFireNowLeftInTheWords(unittest.TestCase):
                 self.assertEqual(bad, [], path.name)
 
     def test_the_words_a_person_reads_are_the_new_ones(self):
-        self.assertIn("Take them out back", (WEB / "js" / "dog-fire.js").read_text(encoding="utf-8"))
-        self.assertIn("Out back", (WEB / "hound.html").read_text(encoding="utf-8"))
+        self.assertIn('text: "Unleash"', (WEB / "js" / "dog-fire.js").read_text(encoding="utf-8"))
+        self.assertIn(">Unleash<", (WEB / "hound.html").read_text(encoding="utf-8"))
         self.assertIn("Backtest", (WEB / "learning.html").read_text(encoding="utf-8"))
         voice = (WEB.parent / "docs" / "VOICE.md").read_text(encoding="utf-8")
-        self.assertIn("Take them out back", voice)
+        self.assertIn("Unleash", voice)
         self.assertIn("Backtest", voice)
 
     def test_the_hooks_and_routes_keep_the_old_words(self):

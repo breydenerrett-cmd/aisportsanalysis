@@ -33,10 +33,17 @@ def kit(dog: common.Dog, viewer_id: Optional[int], *, now: Optional[datetime] = 
     now = now or common.now_utc()
     owner = dog.kind == common.KIND_USER and viewer_id is not None and dog.owner_user_id == viewer_id
     fb = _counts(dog)
+    alive = dog.status in ("running", "benched")
     out = {
         "dog_id": dog.id, "kind": dog.kind, "name": dog.name, "status": dog.status,
         "is_owner": owner, "signed_in": viewer_id is not None,
-        "can_fire": dog.kind in (common.KIND_USER, common.KIND_HOUSE),
+        # a buried dog has nothing to unleash: it is gone from the pack (a retired one still shows what its rule would pick)
+        "can_fire": dog.kind in (common.KIND_USER, common.KIND_HOUSE) and dog.status != "buried",
+        # the two rites (src/hounds/interact/outback.py, training.py): the owner of a live member dog. The server
+        # checks again on the write and says why when it refuses (an open ticket, too few new bets).
+        "can_train": bool(owner and alive), "can_out_back": bool(owner and alive),
+        "trained_times": _trained_times(dog), "coached_from": _coached_from(dog),
+        "buried": dog.status == "buried",
         "can_record_manual": bool(owner and dog.status == "running"),
         "can_customize": owner, "can_suggest": dog.kind == common.KIND_USER and not owner,
         "look": look_of(dog), "feedback": fb,
@@ -53,6 +60,20 @@ def kit(dog: common.Dog, viewer_id: Optional[int], *, now: Optional[datetime] = 
     return out
 
 
+def _trained_times(dog: common.Dog) -> int:
+    """How many times this dog's lineage has been sent to training ("Trained xN"); 0 for a house dog."""
+    if dog.kind != common.KIND_USER:
+        return 0
+    try:
+        return user_store.trained_count(dog.root_id)
+    except Exception:  # noqa: BLE001 -- a badge never takes the kit down
+        return 0
+
+
+def _coached_from(dog: common.Dog) -> Optional[str]:
+    return (dog.hound or {}).get("coached_from") if dog.kind == common.KIND_USER else None
+
+
 def _counts(dog: common.Dog) -> dict:
     try:
         return store.counts(dog.root_id)
@@ -63,7 +84,7 @@ def _counts(dog: common.Dog) -> dict:
 def mine(user_id: int, *, now: Optional[datetime] = None) -> dict:
     """The caller's dogs for the Training camp, running ones first."""
     now = now or common.now_utc()
-    rows = user_store.list_for_owner(user_id)
+    rows = [r for r in user_store.list_for_owner(user_id) if r["status"] != user_store.STATUS_BURIED]   # buried dogs are in the graveyard
     order = {"running": 0, "benched": 1, "retired": 2}
     rows.sort(key=lambda h: (order.get(h["status"], 3), h["created_at"]))
     dogs = []
@@ -83,7 +104,7 @@ def mine(user_id: int, *, now: Optional[datetime] = None) -> dict:
         mt = manual.tickets(dog.id, now=now)
         dogs.append({
             "id": dog.id, "name": dog.name, "tagline": dog.tagline, "status": dog.status,
-            "version_no": row["version_no"], "look": look_of(dog),
+            "version_no": row["version_no"], "trained_times": _trained_times(dog), "look": look_of(dog),
             "record": rec, "verdict": (summary or {}).get("verdict"), "open_bets": (summary or {}).get("open_bets"),
             "last_tickets": tickets, "feedback": {k: fb[k] for k in ("good", "bad", "notes", "suggestions")},
             "feedback_notes": notes, "suggestions": suggestions,

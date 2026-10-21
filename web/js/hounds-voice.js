@@ -73,6 +73,7 @@ export function causeText(cause) {
   if (/down more than 25 units/i.test(text)) return "Went more than 25 units under.";
   if (/paying the vig/i.test(text)) return "300 bets paying the vig.";
   if (/retired by the owner/i.test(text)) return "Retired by the owner.";
+  if (/^buried/i.test(text)) return "Buried by the owner. Its record is frozen.";
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 

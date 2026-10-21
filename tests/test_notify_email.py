@@ -867,6 +867,42 @@ class TheRoutes(Base):
             free_signup._send_keep_email(owner, {"a": 1})
             hook.assert_not_called()
 
+    def test_saving_the_first_hound_sends_the_keep_email_and_a_later_one_does_not(self):
+        """The quiz and builder Keep form makes the account FIRST and saves the hound SECOND, so the signup hook (which needs
+        a hound the new account already owns) never fires for it. POST /hounds is the one place that knows both: its hook
+        sends the Keep email for the account's first hound, and only that one."""
+        from api import hounds_create
+        owner = self.user()
+        first = self.dog(owner, "Rex")
+        with mock.patch("src.notify.email_jobs.send_keep_confirmation_async") as hook:
+            hounds_create._send_keep_email(owner, first)
+            hook.assert_called_once_with(owner, first)
+            hook.reset_mock()
+            second = self.dog(owner, "Milo")
+            hounds_create._send_keep_email(owner, second)               # a second hound is not a "keep"
+            hook.assert_not_called()
+
+    def test_a_failing_keep_email_never_fails_the_save(self):
+        from api import hounds_create
+        owner = self.user()
+        dog = self.dog(owner, "Rex")
+        with mock.patch("src.notify.email_jobs.send_keep_confirmation_async", side_effect=RuntimeError("resend down")):
+            hounds_create._send_keep_email(owner, dog)                  # must not raise
+
+    def test_post_hounds_calls_the_keep_email_hook_once_the_hound_is_saved(self):
+        """Walk it from the real entry point: the route function itself, not the helper, so a hook nothing calls fails here.
+        hound_summary is stubbed because it starts the 'hounds-book-build' background thread, which holds the temp database
+        open and makes the Windows temp-dir cleanup of a LATER test fail (found the hard way while merging this)."""
+        from api import hounds_create
+        owner = self.user()
+        body = hounds_create.CreateHoundRequest(spec=spec_dict(name="Rex"))
+        with mock.patch.object(hounds_create, "_send_keep_email") as hook,                 mock.patch.object(hounds_create, "hound_summary", lambda h: {"id": h["id"]}),                 mock.patch.object(hounds_create.auth_mod, "is_free_member", lambda u: True):
+            out = hounds_create.create_hound(body, current_user=owner, _rl=None)
+        hook.assert_called_once()
+        called_user, called_dog = hook.call_args.args
+        self.assertEqual(called_user.id, owner.id)
+        self.assertEqual(called_dog["id"], out["hound"]["id"])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -88,9 +88,9 @@ class TheStaticPageNoLongerSellsPicks(unittest.TestCase):
         self.assertIn("Analysis, not advice", text)
         self.assertIn("every game", text)
         self.assertIn("public record", text)
-        # unchanged offer facts
-        self.assertIn("the first 20 testers get 7 days free, no card", text)
-        self.assertIn("Not on sale yet; planned price $19.99 a month", text)
+        # 2026-10-20: the invite-round sentence is off the first screen
+        self.assertNotIn("Invite round", text)
+        self.assertNotIn("Not on sale yet", text)
 
     def test_the_coverage_line_replaces_the_pause_line_on_the_first_screen(self):
         # owner ruling 2026-10-20, complete-product positioning: the pause line (and its link to the pause

@@ -42,6 +42,7 @@ SIGNUP_REPEAT = {"code": 200, "body": {"ok": True, "message": "If that email can
 FILL = """
 hook("create-email").value = "  New@Example.com ";
 hook("create-password").value = "river-bank-lantern-42";
+hook("create-age").checked = true;
 """
 
 
@@ -172,8 +173,10 @@ out.disabled = hook("create-submit").disabled;
 """, routes={"POST /auth/signup": SIGNUP_OK})
         posts = [c for c in out["calls"] if c["url"] == "/auth/signup"]
         self.assertEqual(len(posts), 1)
-        self.assertEqual(posts[0]["body"], {"email": "New@Example.com", "password": "river-bank-lantern-42",
-                                            "website": "", "kennel_name": "Back Forty"})
+        body = dict(posts[0]["body"])
+        self.assertIsInstance(body.pop("attribution", {}), (dict, type(None)))
+        self.assertEqual(body, {"email": "New@Example.com", "password": "river-bank-lantern-42",
+                                "age_confirmed": True, "website": "", "kennel_name": "Back Forty"})
         self.assertIsNone(posts[0]["auth"], "a signup carries no token")
         self.assertEqual(out["storage"][TOKEN_KEY], "FREE-TOKEN")
         self.assertEqual(out["storage"][HAD_KEY], "1")
@@ -181,6 +184,16 @@ out.disabled = hook("create-submit").disabled;
         self.assertEqual(out["passwordLeft"], "", "the password field is emptied once it is sent")
         self.assertIn("You're in", out["status"])
         self.assertNotIn("river-bank-lantern-42", json.dumps(out["storage"]))
+
+    def test_without_the_21_plus_box_nothing_is_sent_and_the_sentence_says_why(self):
+        out = self.run_page("""
+hook("create-email").value = "new@example.com";
+hook("create-password").value = "river-bank-lantern-42";
+await submit("create-form"); await settle();
+out.status = say("create-status");
+""", routes={"POST /auth/signup": SIGNUP_OK})
+        self.assertEqual([c for c in out["calls"] if c["url"] == "/auth/signup"], [])
+        self.assertIn("21 or older", out["status"])
 
     def test_the_kennel_name_is_left_out_when_the_box_is_empty(self):
         out = self.run_page(FILL + """await submit("create-form"); await settle();""",

@@ -44,7 +44,7 @@ class TheLiveDog(unittest.TestCase):
     def test_a_name_without_a_breed_draws_a_retriever_and_says_the_breed_comes_with_the_dog(self):
         f = build(actions=[CLICK_BLANK, typed("Jsmooth")], queries=PREVIEW)["final"]
         self.assertEqual(f["breed"], ["retriever"])
-        self.assertIn("The breed comes with the dog", f["note"])
+        self.assertIn("The breed comes with the hound", f["note"])
 
     def test_the_coat_follows_the_name(self):
         coats = {build(actions=[CLICK_BLANK, typed(n)], queries=PREVIEW)["final"]["coat"][0] for n in ("Ace", "Bo", "Cleo", "Dash", "Echo", "Fig", "Gus", "Hank")}

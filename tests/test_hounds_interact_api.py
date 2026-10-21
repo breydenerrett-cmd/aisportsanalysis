@@ -27,6 +27,10 @@ from src.hounds.interact import ask_eval, common, drill, fire, manual
 from src.hounds.user_facts import FactBook
 from tests._hounds_user_fixtures import DATE, EVENT, spec_dict, standard_rows, utc
 
+# Dogs exist before the fixture day's locks; created at the real clock they were born after them once
+# the wall clock passed 2026-10-20 and the engine (rightly) recorded nothing.
+CREATED = utc("2026-10-19T12:00:00Z")
+
 REPO = Path(__file__).resolve().parent.parent
 NOW = utc("2026-10-20T21:30:00Z")
 
@@ -61,7 +65,7 @@ class ApiCase(unittest.TestCase):
         self.owner_token = users_store.issue_invite_token(self.owner.id, db=self.db)
         self.other = users_store.create_user("other@example.com", status="active", db=self.db)
         self.other_token = users_store.issue_invite_token(self.other.id, db=self.db)
-        self.dog = user_store.create_hound(self.owner.id, spec_dict(name="Dog Days"))
+        self.dog = user_store.create_hound(self.owner.id, spec_dict(name="Dog Days"), now=CREATED)
         self.id = self.dog["id"]
 
     def bearer(self, token):
@@ -361,7 +365,7 @@ class Ask(ApiCase):
 
     def test_a_dog_built_from_english_rules_can_be_fired_by_the_button_and_asked(self):
         spec = user_spec.validate_spec({**user_spec.upgrade_v1(spec_dict(name="Rule Dog")), "name": "Rule Dog"})
-        made = user_store.create_hound(self.owner.id, spec)
+        made = user_store.create_hound(self.owner.id, spec, now=CREATED)
         ask_eval.clear_cache()
         with mock.patch.object(ask_eval, "default_slate", self.fixture_slate()):
             fired = self.api.fire_now(made["id"], Response(), authorization=None, _rl=None)
