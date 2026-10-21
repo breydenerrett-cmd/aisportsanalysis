@@ -857,3 +857,11 @@
 {"call_kind": "inplay", "credits": 1, "events": 5, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-21T09:57:08.411099Z", "regions": ["us"], "rows": 4, "sport_key": "basketball_nbl", "stored": 1}
 {"call_kind": "inplay", "credits": 1, "events": 1, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-21T09:57:08.411099Z", "regions": ["au"], "rows": 5, "sport_key": "cricket_test_match", "stored": 4}
 {"call_kind": "inplay", "credits": 1, "events": 7, "events_live": 1, "kind": "call", "markets": ["h2h"], "observed_utc": "2026-10-21T09:57:08.411099Z", "regions": ["us"], "rows": 47, "sport_key": "tennis_wta_ningbo_open", "stored": 47}
+{"events": 9, "kind": "peek", "next_check_utc": "2026-10-21T16:00:00Z", "observed_utc": "2026-10-21T10:10:57.783389Z", "sport_key": "handball_germany_bundesliga"}
+{"events": 12, "kind": "peek", "next_check_utc": "2026-10-21T16:10:57.783389Z", "observed_utc": "2026-10-21T10:10:57.783389Z", "sport_key": "soccer_efl_champ"}
+{"events": 12, "kind": "peek", "next_check_utc": "2026-10-21T16:10:57.783389Z", "observed_utc": "2026-10-21T10:10:57.783389Z", "sport_key": "soccer_england_league2"}
+{"events": 1, "kind": "peek", "next_check_utc": "2026-10-21T16:10:57.783389Z", "observed_utc": "2026-10-21T10:10:57.783389Z", "sport_key": "soccer_germany_bundesliga_women"}
+{"commence_utc": "2026-10-21T10:30:00Z", "event_id": "087a49eb2bb1d5d9fd9d0af4b2c0cbe3", "kind": "phase", "observed_utc": "2026-10-21T10:10:57.783389Z", "phase": "t30m", "rows": 13, "sport_key": "soccer_japan_j_league"}
+{"call_kind": "pregame", "credits": 2, "events": 20, "kind": "call", "markets": ["h2h", "totals"], "observed_utc": "2026-10-21T10:10:57.783389Z", "regions": ["us"], "rows": 132, "sport_key": "soccer_japan_j_league", "stored": 112}
+{"commence_utc": "2026-10-21T16:00:00Z", "event_id": "9c5306a57d7bb542a9a1392fbeea109f", "kind": "phase", "observed_utc": "2026-10-21T10:10:57.783389Z", "phase": "t6h", "rows": 30, "sport_key": "basketball_euroleague"}
+{"call_kind": "pregame", "credits": 3, "events": 18, "kind": "call", "markets": ["h2h", "spreads", "totals"], "observed_utc": "2026-10-21T10:10:57.783389Z", "regions": ["us"], "rows": 195, "sport_key": "basketball_euroleague", "stored": 118}
