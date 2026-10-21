@@ -20,14 +20,14 @@ export const UPGRADE_LABEL = "See the member plan";
 
 /** Which tool was refused, for the heading. Unknown or missing falls back to a plain heading. */
 const FEATURE_TITLES = {
-  live_send: "Sending a dog at a live game is a member tool",
+  live_send: "Sending a hound at a live game is a member tool",
   backtest: "Backtest is a member tool",
   ask: "Ask is a member tool",
-  more_dogs: "A free account keeps one dog",
+  more_dogs: "A free account keeps one hound",
 };
 
 export const FALLBACK_MESSAGE =
-  "A free account keeps one dog. Members run up to five, in every sport, with Live, Backtest and Ask.";
+  "A free account keeps one hound. Members run up to five, in every sport, with Live, Backtest and Ask.";
 export const FINE_PRINT = "Paper bets only. This is analysis, not advice. 21+.";
 
 /** True for the server's "this needs the member plan" refusal. */

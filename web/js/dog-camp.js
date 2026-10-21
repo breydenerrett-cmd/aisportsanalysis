@@ -173,7 +173,7 @@ async function bootDrills(dogs) {
   run.addEventListener("click", () => runBacktest({ dogId: select.value, win, status, out,
     busy: (on) => { if (on) run.setAttribute("disabled", ""); else run.removeAttribute("disabled"); } }));
   box.appendChild(h("div", { class: "dk-drill-controls" }, [
-    h("label", { for: "dk-drill-dog", text: "Dog" }), select, segs, h("div", { class: "dk-actions" }, [run, status])]));
+    h("label", { for: "dk-drill-dog", text: "Hound" }), select, segs, h("div", { class: "dk-actions" }, [run, status])]));
   box.appendChild(out);
   const params = new URLSearchParams(window.location.search || "");
   const want = params.get("drill");

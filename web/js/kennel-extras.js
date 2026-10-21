@@ -85,7 +85,7 @@ function activityRow(t, dogs) {
 }
 
 /** The strip: the latest `n` tickets whose dog is one of `dogs`. Nothing matching returns null (the caller draws the quiet state). */
-export function activityStrip(items, dogs, n = 5, title = "Latest tickets from member dogs") {
+export function activityStrip(items, dogs, n = 5, title = "Latest tickets from member hounds") {
   const ids = new Set((dogs || []).map((d) => d.id));
   const mine = onlyTickets(items).filter((t) => ids.has(t.hound_id)).slice(0, n);
   if (!mine.length) return null;
@@ -95,7 +95,7 @@ export function activityStrip(items, dogs, n = 5, title = "Latest tickets from m
 }
 
 /** The empty state: a dog that is thinking, and one sentence. */
-export function quietKennel(text, { href = "build-a-hound.html", cta = "Build a dog" } = {}) {
+export function quietKennel(text, { href = "build-a-hound.html", cta = "Create a hound" } = {}) {
   return h("div", { class: "kn-quiet", "data-hook": "kennel-quiet" }, [
     h("span", { class: "kn-quiet__dog", "aria-hidden": "true" }, [dogBadge(DEFAULT_LOOK, { size: 96, mood: "thinking", id: "quiet-kennel" })]),
     h("p", { class: "kn-quiet__text", text }),

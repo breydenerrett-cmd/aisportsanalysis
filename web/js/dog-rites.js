@@ -314,7 +314,7 @@ export function mountRites(section, { id, name, kit, unleash }) {
     unleash, canTrain: !!kit.can_train, canOutBack: !!kit.can_out_back,
     onTrained: (result) => { try { window.location.href = (result.new && result.new.page_href) || `hound.html?id=${encodeURIComponent(id)}`; } catch (err) { here(); } },
     onBuried: () => { try { window.location.href = `hound.html?id=${encodeURIComponent(id)}`; } catch (err) { here(); } }}));
-  body.appendChild(h("p", { class: "hd-fine", text: "Unleash shows what the rule would pick right now. Send to training makes a new version from what the dog got wrong. Take them out back buries it for good." }));
+  body.appendChild(h("p", { class: "hd-fine", text: "Unleash shows what the rule would pick right now. Send to training makes a new version from what the hound got wrong. Take them out back buries it for good." }));
   section.removeAttribute("hidden");
   return dog;
 }

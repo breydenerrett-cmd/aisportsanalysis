@@ -51,7 +51,7 @@ MISS_TITLE = {
 MISS_TIER = {"outside_price_band": 1, "too_few_books": 2, "rule_has_no_side": 3, "price_cap": 4,
              "rule_not_met": 5, "not_eligible": 6, "board_too_old": 7, "no_board_at_lock": 8}
 
-PREVIEW_NOTE = ("A preview on the newest stored boards. The dog's real ticket is written at its usual "
+PREVIEW_NOTE = ("A preview on the newest stored boards. The hound's real ticket is written at its usual "
                 "placing time with the board then, so it can differ. Paper only, not advice.")
 
 
@@ -535,7 +535,7 @@ def fire_user(dog: common.Dog, *, now: Optional[datetime] = None, games: Optiona
             seen[pick["slate_date"]] = used + 1
     notes = []
     if dog.status != "running":
-        notes.append(f"This dog is {dog.status}; the live engine is not placing its tickets.")
+        notes.append(f"This hound is {dog.status}; the live engine is not placing its tickets.")
     if any(p["stale"] for p in picks):
         notes.append(f"A board older than {user_engine.MAX_BOARD_AGE_MINUTES} minutes is flagged: its prices may "
                      "have moved, and the live engine skips a game with no newer board at placing time.")
@@ -571,7 +571,7 @@ def _payload(dog: common.Dog, now: datetime, picks: list, misses: list, tickets:
     if picks:
         headline = (f"{len(picks)} {'pick qualifies' if len(picks) == 1 else 'picks qualify'} on the latest stored boards.")
     elif looked == 0 and not tickets:
-        headline = "No upcoming game on the stored boards for this dog's sports."
+        headline = "No upcoming game on the stored boards for this hound's sports."
     elif tickets and not misses:
         headline = "Nothing new qualifies right now. The tickets below are already on the record."
     else:
