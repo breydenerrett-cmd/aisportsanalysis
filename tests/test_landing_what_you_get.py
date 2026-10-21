@@ -37,7 +37,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 WEB = ROOT / "web"
 JS = WEB / "js"
-HTML = (WEB / "landing.html").read_text(encoding="utf-8")
+HTML = (WEB / "desk.html").read_text(encoding="utf-8")
 LANDING_JS = (JS / "landing.js").read_text(encoding="utf-8")
 APP_PY = (ROOT / "api" / "app.py").read_text(encoding="utf-8")
 

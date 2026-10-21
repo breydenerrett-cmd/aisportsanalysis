@@ -64,7 +64,7 @@ class TheSkinIsWired(unittest.TestCase):
                 self.fail(f"unscoped selector would restyle other pages: {part!r}")
 
     def test_other_pages_do_not_load_the_skin(self):
-        for name in ("landing.html", "hounds.html", "hound.html", "learning.html", "build-a-hound.html", "postseason.html", "sample.html"):
+        for name in ("landing.html", "desk.html", "hounds.html", "hound.html", "learning.html", "build-a-hound.html", "postseason.html", "sample.html"):
             html = (WEB / name).read_text(encoding="utf-8")
             self.assertNotIn("member.css", html, name)
             self.assertNotIn("member-screens.css", html, name)

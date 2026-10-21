@@ -317,7 +317,7 @@ class LandingRendersThePostseasonLineOnlyWhenPresent(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.js = (REPO / "web" / "js" / "landing.js").read_text(encoding="utf-8")
-        cls.html = (REPO / "web" / "landing.html").read_text(encoding="utf-8")
+        cls.html = (REPO / "web" / "desk.html").read_text(encoding="utf-8")
 
     def _fill_rule_block_body(self):
         body = self.js.split("function fillRuleBlock(")[1]

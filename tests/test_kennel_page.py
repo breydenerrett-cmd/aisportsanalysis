@@ -25,10 +25,12 @@ from tests.hounds_web_runner import HAS_NODE, WEB, run_js, run_page
 
 TOKEN_KEY = "aisportsanalysis.invite_token"
 SIGNED = dict(stored={TOKEN_KEY: "tok"})
-PAGES = ("kennels.html", "live.html", "hounds.html", "hound.html", "build-a-hound.html", "learning.html", "kennel.html", "landing.html", "why-we-paused.html",
-         "postseason.html", "sample.html", "index.html", "graveyard.html")
-LINKS = [("hounds.html", "Leaderboard"), ("kennels.html", "Kennels"), ("live.html", "Live"), ("quiz.html", "Build"),
-         ("learning.html", "Training camp")]
+PAGES = ("kennels.html", "live.html", "hounds.html", "hound.html", "build-a-hound.html", "learning.html", "kennel.html", "landing.html", "desk.html", "why-we-paused.html",
+         "postseason.html", "sample.html", "index.html", "graveyard.html", "quiz.html")
+# owner ruling 2026-10-20 kennel-first: the static (signed-out) nav is Leaderboard, Live, Sign in and one primary "Find your hound" button;
+# a member's five places (My Kennel, Create, Live, Leaderboard, Account) are built by nav.js
+LINKS = [("hounds.html", "Leaderboard"), ("live.html", "Live")]
+MEMBER_LINKS = [("kennel.html", "My Kennel"), ("quiz.html", "Create"), ("live.html", "Live"), ("hounds.html", "Leaderboard")]
 
 
 def q(name, sel, mode="text", **kw):
@@ -85,7 +87,7 @@ class EveryPageHasTheOneNavigation(unittest.TestCase):
                 self.assertIn('<script type="module" src="js/nav.js"></script>', html)
                 self.assertNotIn('class="site-nav', html.split("<main")[0].split("<body")[1], "the old per-page nav is gone")
 
-    def test_each_page_names_the_same_five_places_in_the_same_order(self):
+    def test_each_page_names_the_same_public_places_in_the_same_order(self):
         for name in PAGES:
             html = read(name)
             bar = re.search(r'<nav class="lh-nav__links".*?</nav>', html, re.S)
@@ -108,20 +110,32 @@ class EveryPageHasTheOneNavigation(unittest.TestCase):
         self.assertIn('data-hook="kennels-index"', html)
         self.assertIn('<script type="module" src="js/kennels-index.js"></script>', html)
         self.assertNotIn("hounds-page.js", html)                     # no leaderboard on it
-        self.assertIn('data-nav="kennels" aria-current="page"', html)
+        self.assertIn('data-nav="leaderboard" aria-current="page"', html)      # # owner ruling 2026-10-20 kennel-first: Kennels is the Leaderboard's second view
         self.assertIn('href="kennel.html" data-hook="kennels-mine"', html)
 
-    def test_the_landing_page_has_a_big_kennels_card(self):
+    def test_the_landing_page_is_the_quiz_button_and_the_kennel_pages_are_one_footer_link_away(self):
+        # kennel-first rebuild 2026-10-20: the kennels band is gone from the landing page; the footer links the kennel pages
         html = read("landing.html")
-        # round 2 (2026-10-19): the band is "build your dog" with a primary build button; the kennels are one ghost button away
-        self.assertRegex(html, r'<a class="btn btn--primary" href="build-a-hound.html" data-hook="kennels-card-build">Build a hound</a>')   # owner ruling 2026-10-20, complete-product positioning
-        self.assertRegex(html, r'<a class="btn btn--ghost" href="kennels.html" data-hook="kennels-card-browse">Browse the kennels</a>')
-        self.assertRegex(html, r'href="kennel.html" data-hook="kennels-card-mine">Your kennel</a>')
+        self.assertNotIn('data-hook="kennels-card"', html)
+        self.assertRegex(html, r'<a class="btn btn--primary btn--lg" href="quiz.html\?start=1" data-hook="cta-kennel-quiz">Find your hound</a>')
+        footer = html.split('data-hook="landing-footer"')[1]
+        for href in ("kennels.html", "hounds.html", "live.html", "learning.html", "desk.html"):
+            self.assertIn(f'href="{href}"', footer)
 
-    def test_the_landing_page_keeps_its_early_access_button_in_the_bar(self):
+    def test_the_landing_page_keeps_its_own_find_your_hound_button_in_the_bar(self):
         html = read("landing.html")
-        self.assertRegex(html, r'<a class="btn btn--primary"[^>]*data-hook="cta-primary"[^>]*data-nav-extra[^>]*>Create free account</a>')
-        self.assertIn('href="index.html#/signin?create=1" data-hook="cta-primary"', html)
+        # # owner ruling 2026-10-20 kennel-first: the bar's one primary button is "Find your hound" (the quiz); landing keeps its own node and funnel hook
+        self.assertRegex(html, r'<a class="lh-btn lh-btn--solid" href="quiz.html" data-hook="cta-primary" data-nav-extra>Find your hound</a>')
+
+    def test_the_quiz_and_the_builder_carry_no_button_in_their_bar(self):
+        for name in ("quiz.html", "build-a-hound.html"):
+            self.assertNotIn('data-hook="nav-cta"', read(name), name)
+
+    def test_every_page_carries_the_canonical_nav_block(self):
+        """scripts/apply_kennel_nav_block.py --check: the static nav of every page is the kennel-first shape."""
+        import subprocess, sys
+        proc = subprocess.run([sys.executable, str(WEB.parent / "scripts" / "apply_kennel_nav_block.py"), "--check"], capture_output=True, text=True)
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
 
 
 # ---------------------------------------------------------------------------------------------------
@@ -132,7 +146,8 @@ class EveryPageHasTheOneNavigation(unittest.TestCase):
 class TheNavigationRuns(unittest.TestCase):
     QS = [q("links", ".lh-nav__links a", "texts"), q("hrefs", ".lh-nav__links a", "attrs", attr="href"),
           q("current", ".lh-nav__links a[aria-current='page']", "texts"), q("signin", "[data-hook='nav-signin']", "count"),
-          q("mykennel", "[data-hook='nav-mykennel']", "count"), q("account", "[data-hook='nav-account']", "count"),
+          q("cta", "[data-hook='nav-cta']", "count"), q("cta_href", "[data-hook='nav-cta']", "attr", attr="href"),
+          q("account", "[data-hook='nav-account']", "count"), q("account_href", "[data-hook='nav-account']", "attr", attr="href"),
           q("tabs", "[data-hook='site-tabbar'] .lh-tab", "texts"), q("tabhrefs", "[data-hook='site-tabbar'] .lh-tab", "attrs", attr="href"),
           q("bars", ".lh-nav", "count"), q("area", "[data-hook='nav-account-area']", "attr", attr="data-signed-in")]
 
@@ -141,58 +156,78 @@ class TheNavigationRuns(unittest.TestCase):
         kw.setdefault("queries", self.QS)
         return run_page("nav", **kw)
 
-    def test_signed_out_shows_sign_in_and_no_account_menu(self):
+    def test_signed_out_is_leaderboard_live_sign_in_and_one_find_your_hound_button(self):
         f = self.run_nav()["final"]
         self.assertEqual(f["links"], [t for _, t in LINKS])
         self.assertEqual(f["hrefs"], [h for h, _ in LINKS])
-        self.assertEqual((f["signin"], f["mykennel"], f["account"], f["bars"], f["area"]), (1, 0, 0, 1, "false"))
-        self.assertEqual(f["tabs"], ["Board", "Kennels", "Live", "Build", "Camp", "Sign in"])
-        self.assertEqual(f["tabhrefs"][-1], "index.html#/signin")
+        self.assertEqual((f["signin"], f["cta"], f["cta_href"], f["account"], f["bars"], f["area"]), (1, 1, "quiz.html", 0, 1, "false"))
+        self.assertEqual(f["tabs"], ["Leaderboard", "Live", "Sign in", "Find your hound"])
+        self.assertEqual(f["tabhrefs"][-2:], ["index.html#/signin", "quiz.html"])
 
-    def test_signed_in_shows_my_kennel_and_the_account_menu(self):
-        out = self.run_nav(**SIGNED, queries=self.QS + [
-            q("menu_hidden", "[data-hook='nav-menu']", "hidden"), q("menu", "[data-hook='nav-menu'] [role='menuitem']", "texts"),
-            q("menu_hrefs", "[data-hook='nav-menu'] a", "attrs", attr="href"), q("expanded", "[data-hook='nav-account']", "attr", attr="aria-expanded")])
-        f = out["final"]
-        self.assertEqual((f["signin"], f["mykennel"], f["account"], f["area"]), (0, 1, 1, "true"))
-        self.assertEqual(f["menu"], ["My kennel", "Change password", "Sign out"])
-        self.assertEqual(f["menu_hrefs"], ["kennel.html", "index.html#/signin?password=1"])
-        self.assertEqual((f["menu_hidden"], f["expanded"]), (True, "false"))
-        self.assertEqual(f["tabs"], ["Board", "Kennels", "Live", "Build", "Camp", "Mine"])
-        self.assertEqual(f["tabhrefs"][-1], "kennel.html")
+    def test_signed_in_is_the_five_places_my_kennel_create_live_leaderboard_account(self):
+        f = self.run_nav(**SIGNED)["final"]
+        self.assertEqual((f["signin"], f["cta"], f["account"], f["area"]), (0, 0, 1, "true"))
+        self.assertEqual(f["links"], [t for _, t in MEMBER_LINKS])
+        self.assertEqual(f["hrefs"], [h for h, _ in MEMBER_LINKS])
+        self.assertEqual(f["account_href"], "index.html#/account")
+        self.assertEqual(f["tabs"], ["My Kennel", "Create", "Live", "Leaderboard", "Account"])        # the phone tab bar is the same five
+        self.assertEqual(f["tabhrefs"], ["kennel.html", "quiz.html", "live.html", "hounds.html", "index.html#/account"])
 
-    def test_the_account_button_opens_the_menu_and_sign_out_posts_and_forgets_the_token(self):
-        out = run_page("nav", page_html="hounds.html", **SIGNED, routes={"POST /auth/logout": [200, {"ok": True}]}, actions=[
-            dict(do="click", sel="[data-hook='nav-account']", label="open", capture=[
-                q("hidden", "[data-hook='nav-menu']", "hidden"), q("expanded", "[data-hook='nav-account']", "attr", attr="aria-expanded")]),
-            dict(do="click", sel="[data-hook='menu-signout']", label="out", wait=80)])
-        self.assertEqual(out["captures"]["open"], {"hidden": False, "expanded": "true"})
-        self.assertEqual([p["url"].split("/")[-2:] for p in out["posts"]], [["auth", "logout"]])
-        self.assertNotIn(TOKEN_KEY, out["storedAfter"])
+    def test_the_bar_is_never_more_than_five_places(self):
+        for kw in ({}, SIGNED):
+            f = self.run_nav(**kw)["final"]
+            self.assertLessEqual(len(f["links"]) + f["account"], 5)
+            self.assertLessEqual(len(f["tabs"]), 5)
+
+    def test_the_wordmark_goes_home_to_my_kennel_for_a_member_and_to_the_landing_page_for_a_visitor(self):
+        qs = [q("home", ".lh-nav__brand", "attr", attr="href")]
+        self.assertEqual(self.run_nav(queries=qs)["final"]["home"], "landing.html")
+        self.assertEqual(self.run_nav(queries=qs, **SIGNED)["final"]["home"], "kennel.html")
 
     def test_the_current_place_follows_the_page_and_the_kennel_page_follows_its_query(self):
-        cases = [("hounds.html", "/web/hounds.html", "", ["Leaderboard"]), ("kennels.html", "/web/kennels.html", "", ["Kennels"]),
-                 ("hound.html", "/web/hound.html", "?id=closer", ["Leaderboard"]), ("build-a-hound.html", "/web/build-a-hound.html", "", ["Build"]),
-                 ("learning.html", "/web/learning.html", "", ["Training camp"]), ("live.html", "/web/live.html", "", ["Live"]), ("kennel.html", "/web/kennel.html", "?u=handler-1", ["Kennels"])]
+        # a member's bar names all four links; the visitor's has only Leaderboard and Live
+        cases = [("hounds.html", "/web/hounds.html", "", ["Leaderboard"]), ("kennels.html", "/web/kennels.html", "", ["Leaderboard"]),
+                 ("hound.html", "/web/hound.html", "?id=closer", ["Leaderboard"]), ("graveyard.html", "/web/graveyard.html", "", ["Leaderboard"]),
+                 ("build-a-hound.html", "/web/build-a-hound.html", "", ["Create"]), ("quiz.html", "/web/quiz.html", "", ["Create"]),
+                 ("learning.html", "/web/learning.html", "", ["My Kennel"]),          # the Training camp is part of My Kennel
+                 ("live.html", "/web/live.html", "", ["Live"]), ("kennel.html", "/web/kennel.html", "?u=handler-1", ["Leaderboard"]),
+                 ("kennel.html", "/web/kennel.html", "", ["My Kennel"])]
         for page, path, search, want in cases:
             with self.subTest(path=path, search=search):
-                got = self.run_nav(page_html=page, pathname=path, search=search)["final"]["current"]
+                got = self.run_nav(page_html=page, pathname=path, search=search, **SIGNED)["final"]["current"]
                 self.assertEqual(got, want)
 
-    def test_my_kennel_is_current_on_the_kennel_page_without_a_handle(self):
-        f = self.run_nav(page_html="kennel.html", pathname="/web/kennel.html", **SIGNED, queries=self.QS + [
-            q("mk", "[data-hook='nav-mykennel']", "attr", attr="aria-current")])["final"]
-        self.assertEqual(f["mk"], "page")
+    def test_the_old_data_current_keys_still_name_the_right_place(self):
+        out = run_js('import { normalizePlace } from "./nav.js";\nconsole.log(JSON.stringify(["build", "camp", "kennels", "mykennel", "live"].map(normalizePlace)));')
+        self.assertEqual(out, ["create", "mykennel", "leaderboard", "mykennel", "live"])
 
     def test_the_member_app_gets_no_bottom_bar(self):
         f = run_page("nav", page_html="index.html", queries=[q("tabs", "[data-hook='site-tabbar']", "count"),
                                                               q("bars", ".lh-nav", "count")])["final"]
         self.assertEqual((f["tabs"], f["bars"]), (0, 1))
 
-    def test_the_landing_cta_stays_in_the_bar_for_a_visitor_and_leaves_for_a_member(self):
-        visitor = run_page("nav", page_html="landing.html", queries=[q("cta", ".lh-nav [data-hook='cta-primary']", "count")])["final"]
+    def test_the_landing_button_stays_in_the_bar_for_a_visitor_and_leaves_for_a_member(self):
+        visitor = run_page("nav", page_html="landing.html", queries=[q("cta", ".lh-nav [data-hook='cta-primary']", "count"),
+                                                                      q("default", ".lh-nav [data-hook='nav-cta']", "count")])["final"]
         member = run_page("nav", page_html="landing.html", **SIGNED, queries=[q("cta", ".lh-nav [data-hook='cta-primary']", "count")])["final"]
-        self.assertEqual((visitor["cta"], member["cta"]), (1, 0))
+        self.assertEqual((visitor["cta"], visitor["default"], member["cta"]), (1, 0, 0))
+
+    def test_a_member_who_opens_the_landing_page_is_sent_to_my_kennel(self):
+        out = run_page("nav", page_html="landing.html", pathname="/web/landing.html", **SIGNED, queries=[q("bars", ".lh-nav", "count")])
+        self.assertEqual(out["navigations"], ["kennel.html"])
+        stay = run_page("nav", page_html="landing.html", pathname="/web/landing.html", search="?stay=1", **SIGNED, queries=[q("bars", ".lh-nav", "count")])
+        self.assertEqual(stay["navigations"], [])
+        visitor = run_page("nav", page_html="landing.html", pathname="/web/landing.html", queries=[q("bars", ".lh-nav", "count")])
+        self.assertEqual(visitor["navigations"], [])
+
+    def test_the_home_rule_sends_a_member_from_the_empty_app_shell_and_never_from_an_explicit_route(self):
+        out = run_js(
+            'import { memberHomeTarget as go } from "./home-route.js";\n'
+            'const w = (signedIn, pathname, hash = "", search = "") => ({ signedIn, pathname, hash, search });\n'
+            'console.log(JSON.stringify([go(w(true, "/web/index.html")), go(w(true, "/web/index.html", "#/")), go(w(true, "/web/index.html", "#/today")),\n'
+            '  go(w(true, "/web/index.html", "#/record-card")), go(w(false, "/web/index.html")), go(w(true, "/web/landing.html")),\n'
+            '  go(w(true, "/web/landing.html", "", "?stay=1")), go(w(true, "/web/hounds.html"))]));')
+        self.assertEqual(out, ["kennel.html", "kennel.html", None, None, None, "kennel.html", None, None])
 
 
 # ---------------------------------------------------------------------------------------------------
@@ -206,16 +241,16 @@ class MyKennel(unittest.TestCase):
     def page(self, routes, **kw):
         return run_page("kennel", routes=routes, **kw)
 
-    def test_signed_out_is_asked_to_sign_in_or_to_browse_kennels(self):
+    def test_signed_out_is_asked_to_sign_in_or_to_see_the_leaderboard(self):
         out = self.page({}, queries=[q("gate", "[data-hook='kennel-signin']"), q("cards", self.CARDS, "count"),
                                       q("signin", "[data-hook='kennel-signin-link']", "attr", attr="href"),
                                       q("browse", "[data-hook='kennel-browse']", "attr", attr="href")])
         f = out["final"]
-        self.assertIn("Sign in to see your dogs", f["gate"])
-        self.assertEqual((f["cards"], f["signin"], f["browse"]), (0, "index.html#/signin", "kennels.html"))
+        self.assertIn("Sign in to see your hounds", f["gate"])      # # owner ruling 2026-10-20 kennel-first
+        self.assertEqual((f["cards"], f["signin"], f["browse"]), (0, "index.html#/signin", "hounds.html"))
         self.assertEqual(out["gets"], [], "a visitor never asks for someone's kennel")
 
-    def test_each_dog_is_a_card_with_its_numbers_status_and_four_one_tap_actions(self):
+    def test_each_hound_is_a_card_with_its_numbers_status_and_the_one_tap_actions(self):
         dogs = [dog("u-1", "Underdog Gus", wins=3, losses=1, bets=4, units=1.8, last={"selection": "Red Sox ML", "result": "won"}),
                 dog("u-2", "Totals Tina"), dog("u-3", "Slumpy", wins=0, losses=2, bets=2, units=-2.0, last={"selection": "Over 8", "result": "lost"})]
         out = self.page({"/hounds/kennels/mine": mine(dogs)}, **SIGNED, queries=[
@@ -225,8 +260,9 @@ class MyKennel(unittest.TestCase):
             q("last", "[data-hook='dog-last']", "texts"), q("moods", self.CARDS, "attrs", attr="data-mood"),
             q("avatars", f"{self.CARDS} svg.dk-badge", "count"), q("avatar_moods", f"{self.CARDS} svg.dk-badge", "attrs", attr="data-mood"),
             q("fire", "[data-hook='dog-action-fire']", "count"), q("ask", "[data-hook='dog-action-ask']", "count"),
-            q("edit", "[data-hook='dog-action-edit']", "count"), q("open", "[data-hook='dog-action-open']", "attrs", attr="href"),
-            q("build_card", "[data-hook='kennel-build-card']", "count"), q("title", "[data-hook='kennel-title']"),
+            q("edit", "[data-hook='dog-action-edit']", "count"), q("open", "[data-hook='dog-name']", "attrs", attr="href"),
+            q("build_card", "[data-hook='kennel-build-card']", "count"), q("create", "[data-hook='kennel-build']", "attr", attr="href"),
+            q("title", "[data-hook='kennel-title']"), q("sub", "[data-hook='kennel-sub']"), q("today", "[data-hook='dog-today']", "texts"),
             q("count_attr", "[data-hook='dog-bankroll']", "attrs", attr="data-count"),
             q("small", "[data-hook='dog-bankroll']", "attrs", attr="title")])
         f = out["final"]
@@ -240,9 +276,11 @@ class MyKennel(unittest.TestCase):
         self.assertIn("No picks yet", f["last"][1])
         self.assertEqual(f["moods"], ["happy", "idle", "slump"])                    # a win wiggles, a loss slumps
         self.assertEqual((f["avatars"], f["avatar_moods"]), (3, ["happy", "idle", "slump"]))
-        self.assertEqual((f["fire"], f["ask"], f["edit"], f["build_card"]), (3, 3, 3, 1))
+        # # owner ruling 2026-10-20 kennel-first: the card offers Unleash, Send to training, Edit and Take them out back, nothing else; Create a hound is one quiet button
+        self.assertEqual((f["fire"], f["ask"], f["edit"], f["build_card"], f["create"]), (3, 0, 3, 0, "quiz.html"))
         self.assertEqual(f["open"], ["hound.html?id=u-1", "hound.html?id=u-2", "hound.html?id=u-3"])
-        self.assertEqual(f["title"], "My kennel")
+        self.assertEqual((f["title"], f["sub"]), ("My Kennel", "3 hounds"))
+        self.assertEqual(f["today"], ["Nothing open right now", "Waiting on its first game", "Nothing open right now"])
         self.assertEqual(f["count_attr"], ["1", "1", "1"])                            # the figures count up when they enter view
         self.assertEqual(out["gets"][0].split("?")[0], "/hounds/kennels/mine")
 
@@ -257,24 +295,25 @@ class MyKennel(unittest.TestCase):
                         queries=[q("status", "[data-hook='dog-status']"), q("dot", "[data-hook='dog-status'] .lh-live", "count")])
         self.assertEqual(out["final"], {"status": "2 open", "dot": 1})
 
-    def test_no_dogs_is_an_empty_state_that_sends_you_to_the_builder(self):
+    def test_no_hounds_is_an_empty_state_with_one_button_to_create_the_first(self):
         out = self.page({"/hounds/kennels/mine": mine([])}, **SIGNED, queries=[
             q("empty", "[data-hook='kennel-empty']"), q("cta", "[data-hook='kennel-empty-build']"), q("cards", self.CARDS, "count"),
-            q("build_card", "[data-hook='kennel-build-card']", "count")])
+            q("cta_href", "[data-hook='kennel-empty-build']", "attr", attr="href"), q("links", "[data-hook='kennel-grid'] .lh-btn", "count"), q("buttons", "[data-hook='kennel-grid'] button", "count"),
+            q("build_card", "[data-hook='kennel-build-card']", "count"), q("tonight", "[data-hook='kennel-tonight']", "count"),
+            q("camp", "[data-hook='kennel-camp']", "count"), q("make", "[data-hook='kennel-build']", "count")])
         f = out["final"]
-        self.assertIn("No dogs yet", f["empty"])
-        self.assertEqual(f["cta"], "Build your first dog")
-        self.assertEqual((f["cards"], f["build_card"]), (0, 0))
+        self.assertIn("No hounds yet", f["empty"])
+        self.assertEqual(f["cta"], "Create your first hound")           # # owner ruling 2026-10-20 kennel-first
+        self.assertEqual((f["cta_href"], f["links"], f["buttons"]), ("quiz.html", 1, 0), "one button, and it opens the quiz")
+        self.assertEqual((f["cards"], f["build_card"], f["tonight"], f["camp"], f["make"]), (0, 0, 0, 0, 0))
 
-    def test_the_empty_state_button_opens_the_studio_on_the_rules_tab(self):
-        out = self.page({"/hounds/kennels/mine": mine([])}, **SIGNED, actions=[
-            dict(do="click", sel="[data-hook='kennel-empty-build']", label="open", wait=120, capture=[
-                q("hidden", "[data-hook='studio']", "hidden"), q("title", "[data-hook='studio-title']"),
-                q("hidden_tabs", "[data-hook='studio-tabs'] [role='tab']", "attrs", attr="hidden")])])
-        cap = out["captures"]["open"]
-        self.assertEqual((cap["hidden"], cap["title"]), (False, "New dog"))
-        # Look, Rules, Unleash, Backtest, Ask, Record: a new dog has only the Rules tab, so the other five hide
-        self.assertEqual(cap["hidden_tabs"], ["", None, "", "", "", ""])
+    def test_a_new_member_with_no_hound_gets_the_welcome_and_the_same_one_button(self):
+        out = self.page({"/hounds/kennels/mine": mine([])}, **SIGNED, search="?welcome=1", queries=[
+            q("welcome", "[data-hook='kennel-welcome']"), q("cta", "[data-hook='kennel-welcome-build']"),
+            q("cta_href", "[data-hook='kennel-welcome-build']", "attr", attr="href"), q("studio", "[data-hook='studio']", "hidden")])
+        f = out["final"]
+        self.assertIn("Welcome to your kennel", f["welcome"])
+        self.assertEqual((f["cta"], f["cta_href"], f["studio"]), ("Create your first hound", "quiz.html", True))
 
     def test_a_retired_dog_is_set_apart_and_offers_a_copy_not_an_edit(self):
         dogs = [dog("u-1", "Live"), dog("u-2", "Old Timer", status="retired", retired=True)]
@@ -299,6 +338,72 @@ class MyKennel(unittest.TestCase):
 
 
 @unittest.skipUnless(HAS_NODE, "node not installed")
+class MyKennelIsTheHome(unittest.TestCase):
+    """Owner ruling 2026-10-20 kennel-first: Tonight, today's status, the upgrade card only when earned, the camp and the graveyard."""
+    OPEN_URL = "/hounds/u-1/bets?page=1&page_size=8&segment=forward&status=open"
+
+    @staticmethod
+    def tickets():
+        return [200, {"items": [
+            {"hound_id": "u-1", "game": "Mariners at Astros", "market": "total", "selection": "Over 8.5", "price": 105, "start_utc": "2099-01-01T23:10:00Z", "result": None},
+            {"hound_id": "u-1", "game": "Yankees at Red Sox", "market": "moneyline", "selection": "Red Sox to win", "price": 135, "start_utc": "2099-01-01T19:05:00Z", "result": None}]}]
+
+    def go(self, dogs, extra=None, **kw):
+        routes = {"/hounds/kennels/mine": mine(dogs)}
+        routes.update(extra or {})
+        return run_page("kennel", routes=routes, **SIGNED, tz="UTC", **kw)
+
+    def test_tonight_lists_the_open_tickets_soonest_lock_first_and_names_the_next_lock(self):
+        out = self.go([dog("u-1", wins=1, bets=2, units=0.5, open_bets=2, new=False)], {self.OPEN_URL: self.tickets()}, settleMs=300, queries=[
+            q("rows", "[data-hook='tonight-ticket']", "count"), q("picks", ".kn-tix__pick", "texts"), q("locks", ".kn-tix__lock", "texts"),
+            q("next", "[data-hook='tonight-next']"), q("today", "[data-hook='dog-today']")])
+        f = out["final"]
+        self.assertEqual(f["rows"], 2)
+        self.assertEqual([p.split(" ")[0] for p in f["picks"]], ["Red", "Over"])                     # 19:05 before 23:10
+        self.assertRegex(f["next"], r"^Next lock 7:05 PM")
+        self.assertRegex(f["today"], r"^2 open · next lock 7:05 PM")
+        self.assertTrue(all(l.startswith("Locks ") for l in f["locks"]), f["locks"])
+
+    def test_with_nothing_open_tonight_is_one_quiet_line_and_asks_for_no_tickets(self):
+        out = self.go([dog("u-1")], queries=[q("quiet", "[data-hook='tonight-empty']"), q("rows", "[data-hook='tonight-ticket']", "count")])
+        self.assertIn("Nothing open", out["final"]["quiet"])
+        self.assertEqual(out["final"]["rows"], 0)
+        self.assertFalse([g for g in out["gets"] if "status=open" in g], "no request for a hound with no open ticket")
+
+    def test_tickets_that_cannot_be_read_leave_the_payloads_own_count(self):
+        out = self.go([dog("u-1", wins=1, bets=2, units=0.5, open_bets=2, new=False)], settleMs=300, queries=[
+            q("quiet", "[data-hook='tonight-empty']"), q("today", "[data-hook='dog-today']")])
+        self.assertEqual((out["final"]["quiet"], out["final"]["today"]), ("2 open across your hounds.", "2 open"))
+
+    def test_the_upgrade_card_shows_only_for_a_free_account_at_its_one_hound_with_the_real_founding_count(self):
+        offer = [200, {"founding": {"price_cents": 1499, "cap": 50, "taken": 31, "left": 19, "reserved": 0, "available": True}, "standard": {"price_cents": 1999}}]
+        free = {"/hounds/mine": [200, {"hounds": [], "plan": "free", "limit_running": 1}], "/billing/offer": offer}
+        out = self.go([dog("u-1")], free, settleMs=300, queries=[q("card", "[data-hook='kennel-upgrade']", "count"), q("offer", "[data-hook='upgrade-offer']"),
+                                                                    q("link", "[data-hook='upgrade-link']", "attr", attr="href")])
+        self.assertEqual(out["final"]["card"], 1)
+        self.assertEqual(out["final"]["offer"], "Founding member: $14.99/mo for life · 19 of 50 left")
+        self.assertEqual(out["final"]["link"], "index.html#/billing")
+        sold_out = dict(free, **{"/billing/offer": [200, {"founding": {"price_cents": 1499, "cap": 50, "taken": 50, "left": 0, "reserved": 0, "available": False},
+                                                          "standard": {"price_cents": 1999}}]})
+        out = self.go([dog("u-1")], sold_out, settleMs=300, queries=[q("offer", "[data-hook='upgrade-offer']")])
+        self.assertEqual(out["final"]["offer"], "Member plan: $19.99/mo", "no scarcity wording once the seats are gone")
+
+    def test_no_upgrade_card_for_a_member_for_an_empty_kennel_or_when_the_plan_is_unknown(self):
+        paid = {"/hounds/mine": [200, {"hounds": [], "plan": "paid", "limit_running": 5}]}
+        free = {"/hounds/mine": [200, {"hounds": [], "plan": "free", "limit_running": 1}]}
+        count = [q("card", "[data-hook='kennel-upgrade']", "count")]
+        for label, dogs, extra in (("paid", [dog("u-1")], paid), ("free, no hound", [], free), ("plan unknown", [dog("u-1")], {})):
+            with self.subTest(case=label):
+                self.assertEqual(self.go(dogs, extra, settleMs=300, queries=count)["final"]["card"], 0)
+
+    def test_the_camp_and_the_graveyard_are_one_tap_from_my_kennel(self):
+        out = self.go([dog("u-1")], queries=[q("camp", "[data-hook='kennel-camp-link']", "attr", attr="href"),
+                                             q("grave", "[data-hook='kennel-graveyard-link']", "attr", attr="href"),
+                                             q("public", "[data-hook='kennel-public-link']", "attr", attr="href")])
+        self.assertEqual(out["final"], {"camp": "learning.html", "grave": "graveyard.html", "public": "kennel.html?u=handler-21e8"})
+
+
+@unittest.skipUnless(HAS_NODE, "node not installed")
 class APublicKennel(unittest.TestCase):
     CARDS = "[data-hook='kennel-dog']"
 
@@ -317,7 +422,7 @@ class APublicKennel(unittest.TestCase):
         self.assertEqual((f["edit"], f["fire"], f["build_card"], f["build"]), (0, 0, 0, 0))     # nothing to change on someone else's dogs
         self.assertEqual(f["open"], ["hound.html?id=u-1", "hound.html?id=u-2"])
         self.assertEqual(f["ask"], ["hound.html?id=u-1&tab=ask", "hound.html?id=u-2&tab=ask"])
-        self.assertIn("2 dogs", f["sub"])
+        self.assertIn("2 hounds", f["sub"])      # # owner ruling 2026-10-20 kennel-first
         self.assertEqual(out["document_title"] if "document_title" in out else out["title"], "Handler 21E8's kennel — LINEHOUND")
         self.assertEqual(out["gets"][0].split("?")[0], "/hounds/kennels/handler-21e8")
 
@@ -428,9 +533,11 @@ class TheStudio(unittest.TestCase):
         self.assertEqual(out["captures"]["fire"]["headline"], "Nothing qualifies right now.")
         self.assertEqual([p["url"].split("/")[-2:] for p in out["posts"]], [["u-1", "fire"]])
 
-    def test_ask_opens_the_ask_tab_with_the_dogs_greeting(self):
+    def test_ask_opens_the_ask_tab_with_the_hounds_greeting(self):
+        # # owner ruling 2026-10-20 kennel-first: Ask is a studio tab now, not a card button
         out = run_page("kennel", routes=self.routes([dog("u-1")]), **SIGNED, actions=[
-            dict(do="click", sel="[data-hook='dog-action-ask']", label="ask", wait=300, capture=[
+            dict(do="click", sel="[data-hook='dog-avatar']", label="open", wait=120),
+            dict(do="click", sel="[role='tab'][data-tab='ask']", label="ask", wait=300, capture=[
                 q("selected", "[role='tab'][aria-selected='true']", "texts"), q("thread", "[data-hook='ask-thread']"),
                 q("chips", "[data-hook='ask-chip']", "texts")])])
         cap = out["captures"]["ask"]
@@ -469,7 +576,7 @@ class TheKennelsIndex(unittest.TestCase):
         f = out["final"]
         self.assertEqual(f["hrefs"], ["kennel.html?u=handler-21e8", "kennel.html?u=handler-0001"])
         self.assertEqual(f["names"], ["Handler 21E8's kennel", "Handler 0001's kennel"])
-        self.assertEqual(f["meta"], ["2 dogs · New: no bets yet", "1 dog · Best: Rex, 5-2"])
+        self.assertEqual(f["meta"], ["2 hounds · New: no bets yet", "1 hound · Best: Rex, 5-2"])   # owner ruling 2026-10-20 kennel-first: hound, not dog
         self.assertEqual((f["faces"], f["count"]), (3, "2 kennels"))
 
     def test_no_kennels_is_an_empty_state_with_a_build_link(self):
@@ -490,9 +597,10 @@ class TheKennelsIndex(unittest.TestCase):
 class TheDogPageTabs(unittest.TestCase):
     HTML = read("hound.html")
 
-    def test_six_tabs_in_order_with_unleash_above_them(self):
+    def test_four_tabs_in_order_with_unleash_above_them(self):
+        # owner ruling 2026-10-20 kennel-first: Overview, Tickets, Ask, Locker (Backtest moved under Ask, the rule into Overview)
         tabs = re.findall(r'role="tab" data-tab="([a-z]+)"', self.HTML)
-        self.assertEqual(tabs, ["overview", "tickets", "backtest", "ask", "locker", "rules"])
+        self.assertEqual(tabs, ["overview", "tickets", "ask", "locker"])
         self.assertLess(self.HTML.index('data-hook="dog-fire-section"'), self.HTML.index('data-hook="hound-tabs"'))
         self.assertIn(">Unleash<", self.HTML)
         self.assertNotIn(">Out back<", self.HTML)
@@ -502,21 +610,20 @@ class TheDogPageTabs(unittest.TestCase):
         def panel(name):
             m = re.search(rf'<div class="lh-tabpanel" data-tabpanel="{name}".*?(?=<div class="lh-tabpanel"|</main>)', self.HTML, re.S)
             return m.group(0)
-        self.assertIn('data-hook="hound-scoreboard-section"', panel("overview"))
+        self.assertIn('data-hook="hound-scoreboard-section"', panel("overview"))      # behind "How it's graded"
         self.assertIn('data-hook="hound-chart-section"', panel("overview"))
         self.assertIn('data-hook="hound-verdict-section"', panel("overview"))
         self.assertIn('data-hook="hound-today-section"', panel("tickets"))
         self.assertIn('data-hook="hound-bets-section"', panel("tickets"))
         self.assertIn('data-hook="dog-manual-section"', panel("tickets"))
-        self.assertIn('data-hook="dog-backtest-section"', panel("backtest"))
+        self.assertIn('data-hook="dog-backtest-section"', panel("ask"))
         self.assertIn('data-hook="dog-ask-section"', panel("ask"))
         self.assertIn('data-hook="dog-locker-section"', panel("locker"))
-        self.assertIn('data-hook="hound-rule-section"', panel("rules"))
-        self.assertIn('data-hook="hound-lineage-section"', panel("rules"))
+        self.assertIn('data-hook="hound-rule-section"', panel("overview"))
+        self.assertIn('data-hook="hound-lineage-section"', panel("overview"))
 
     def test_only_overview_is_visible_in_the_markup_and_the_owner_tabs_are_optional(self):
-        self.assertEqual(len(re.findall(r'data-tabpanel="[a-z]+"[^>]* hidden>', self.HTML)), 5)
-        self.assertRegex(self.HTML, r'data-tab="backtest" aria-selected="false" data-optional')
+        self.assertEqual(len(re.findall(r'data-tabpanel="[a-z]+"[^>]* hidden>', self.HTML)), 3)
         self.assertRegex(self.HTML, r'data-tab="ask" aria-selected="false" data-optional')
         self.assertRegex(self.HTML, r'data-tab="locker" aria-selected="false" data-optional')
 
@@ -526,7 +633,7 @@ class TheDogPageTabs(unittest.TestCase):
 
 @unittest.skipUnless(HAS_NODE, "node not installed")
 class TabsRun(unittest.TestCase):
-    PANELS = ["overview", "tickets", "backtest", "ask", "locker", "rules"]
+    PANELS = ["overview", "tickets", "ask", "locker"]            # owner ruling 2026-10-20 kennel-first: four tabs
 
     def panels_hidden(self):
         return [q(f"{p}", f"[data-tabpanel='{p}']", "hidden") for p in self.PANELS]
@@ -535,40 +642,43 @@ class TabsRun(unittest.TestCase):
         out = run_page("tabs", captureInitial=self.panels_hidden() + [q("selected", "[role='tab'][aria-selected='true']", "texts")], actions=[
             dict(do="click", sel="[data-tab='tickets']", label="tickets", capture=self.panels_hidden() + [q("selected", "[role='tab'][aria-selected='true']", "texts")])])
         first = out["captures"]["initial"]
-        self.assertEqual([first[p] for p in self.PANELS], [False, True, True, True, True, True])
+        self.assertEqual([first[p] for p in self.PANELS], [False, True, True, True])
         self.assertEqual(first["selected"], ["Overview"])
         cap = out["captures"]["tickets"]
-        self.assertEqual([cap[p] for p in self.PANELS], [True, False, True, True, True, True])
+        self.assertEqual([cap[p] for p in self.PANELS], [True, False, True, True])
         self.assertEqual(cap["selected"], ["Tickets"])
 
     def test_a_tab_query_opens_that_tab(self):
-        out = run_page("tabs", search="?id=closer&tab=rules", queries=self.panels_hidden())
-        self.assertEqual([out["final"][p] for p in self.PANELS], [True, True, True, True, True, False])
+        out = run_page("tabs", search="?id=closer&tab=tickets", queries=self.panels_hidden())
+        self.assertEqual([out["final"][p] for p in self.PANELS], [True, False, True, True])
 
     def test_arrow_keys_move_between_the_shown_tabs(self):
         out = run_page("tabs", actions=[dict(do="key", sel="[data-tab='overview']", key="ArrowRight", label="right", capture=[
             q("selected", "[role='tab'][aria-selected='true']", "texts")]),
             dict(do="key", sel="[data-tab='tickets']", key="End", label="end", capture=[q("selected", "[role='tab'][aria-selected='true']", "texts")])])
         self.assertEqual(out["captures"]["right"]["selected"], ["Tickets"])
-        self.assertEqual(out["captures"]["end"]["selected"], ["Rules"])
+        self.assertEqual(out["captures"]["end"]["selected"], ["Tickets"])      # Ask and Locker stay hidden until the kit has something
 
     def test_the_owner_only_tabs_hide_until_their_panel_has_something(self):
         # the markup keeps every Ask / Locker room section hidden until the dog kit shows one; the tab follows it
         out = run_page("tabs", queries=[q("ask", "[data-tab='ask']", "hidden"), q("locker", "[data-tab='locker']", "hidden"),
-                                         q("rules", "[data-tab='rules']", "hidden")])
-        self.assertEqual((out["final"]["ask"], out["final"]["locker"], out["final"]["rules"]), (True, True, False))
+                                         q("tickets", "[data-tab='tickets']", "hidden")])
+        self.assertEqual((out["final"]["ask"], out["final"]["locker"], out["final"]["tickets"]), (True, True, False))
 
-    def test_the_leaderboard_has_a_models_tab_and_a_kennels_tab(self):
-        out = run_page("tabs", page_html="hounds.html", captureInitial=[q("tabs", "[role='tab']", "texts"), q("kennels", "[data-tabpanel='kennels']", "hidden"),
-                                                                         q("models", "[data-tabpanel='models']", "hidden")],
-                       actions=[dict(do="click", sel="[data-tab='kennels']", label="k", capture=[
-                           q("kennels", "[data-tabpanel='kennels']", "hidden"), q("models", "[data-tabpanel='models']", "hidden")])])
+    def test_the_hound_page_has_four_tabs_and_the_leaderboard_has_none(self):
+        # owner ruling 2026-10-20 kennel-first: the leaderboard's Models/Kennels tabs are gone (Kennels is its own page);
+        # the hound page's tabs are Overview, Tickets, Ask and Locker.
+        out = run_page("tabs", page_html="hound.html", captureInitial=[q("tabs", "[role='tab']", "texts"), q("tickets", "[data-tabpanel='tickets']", "hidden"),
+                                                                       q("overview", "[data-tabpanel='overview']", "hidden")],
+                       actions=[dict(do="click", sel="[data-tab='tickets']", label="t", capture=[
+                           q("tickets", "[data-tabpanel='tickets']", "hidden"), q("overview", "[data-tabpanel='overview']", "hidden")])])
         first = out["captures"]["initial"]
-        self.assertEqual(first["tabs"], ["Models", "Kennels"])
-        self.assertEqual((first["models"], first["kennels"]), (False, True))
-        self.assertEqual(out["captures"]["k"], {"kennels": False, "models": True})
-        out = run_page("tabs", page_html="hounds.html", search="?tab=kennels", queries=[q("kennels", "[data-tabpanel='kennels']", "hidden")])
-        self.assertFalse(out["final"]["kennels"])
+        self.assertEqual(first["tabs"], ["Overview", "Tickets", "Ask", "Locker"])
+        self.assertEqual((first["overview"], first["tickets"]), (False, True))
+        self.assertEqual(out["captures"]["t"], {"tickets": False, "overview": True})
+        board = read("hounds.html")
+        self.assertNotIn("data-autotabs", board)
+        self.assertNotIn("data-tabpanel", board)
 
 
 # ---------------------------------------------------------------------------------------------------
@@ -596,6 +706,35 @@ class TheBuilderHasOneHookSet(unittest.TestCase):
     def test_the_skeleton_collapses_the_advanced_cards_too(self):
         self.assertIn('hook("rules-advanced"', self.SKELETON)
         self.assertNotRegex(self.SKELETON, r'rules-advanced"[^)]*open')
+
+
+# ---------------------------------------------------------------------------------------------------
+# the visual system the other pages inherit (owner ruling 2026-10-20 kennel-first)
+# ---------------------------------------------------------------------------------------------------
+
+class TheVisualSystemIsOneScaleAndOneAccent(unittest.TestCase):
+    TOKENS = read("css/tokens.css")
+
+    def test_every_spacing_step_sits_on_the_4_8_ladder(self):
+        steps = [int(v) for v in re.findall(r"--sp-\d+:\s*(\d+)px;", self.TOKENS)]
+        self.assertEqual(len(steps), 17, "the names are stable: --sp-1 to --sp-17")
+        self.assertLessEqual(set(steps), {4, 8, 12, 16, 24, 32, 48, 64, 96}, sorted(set(steps)))
+
+    def test_the_type_scale_is_the_hub_scale(self):
+        sizes = {k: v for k, v in re.findall(r"--fs-(meta|small|body|lead|h3|h2|h1):\s*(\d+)px;", self.TOKENS)}
+        self.assertEqual(sizes, {"meta": "13", "small": "15", "body": "17", "lead": "17", "h3": "22", "h2": "30", "h1": "48"})
+
+    def test_the_primary_action_is_the_one_accent_and_its_text_is_dark_ink(self):
+        self.assertIn("--accent: #2FD07A;", self.TOKENS)
+        self.assertIn("--primary: var(--accent);", self.TOKENS)
+        self.assertIn("--accent-ink:", self.TOKENS)
+        components = read("css/components.css")
+        primary = re.search(r"\.btn--primary \{.*?\}", components, re.S).group(0)
+        self.assertIn("var(--accent-ink)", primary)
+        self.assertIn("clip-path: none", primary)
+
+    def test_the_nav_reads_the_accent_token_not_its_own_colour(self):
+        self.assertIn("var(--accent, #2FD07A)", read("css/lhnav.css"))
 
 
 # ---------------------------------------------------------------------------------------------------

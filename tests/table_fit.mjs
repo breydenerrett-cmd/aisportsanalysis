@@ -36,6 +36,8 @@ for (const w of widths.map(Number)) {
   await send("Emulation.setDeviceMetricsOverride", { width: w, height: 900, deviceScaleFactor: 1, mobile: false });
   await send("Page.navigate", { url: base + page });
   await sleep(2600);
+  // CLICK=<selector>: press a button first (the leaderboard's "All stats" view toggle)
+  if (process.env.CLICK) { await ev(`(()=>{const b=document.querySelector(${JSON.stringify(process.env.CLICK)});if(b)b.click();})()`); await sleep(400); }
   out.push(Object.assign({ width: w }, await ev(`(()=>{
     const wraps = [...document.querySelectorAll(".hd-tablewrap")].map((wrap) => {
       const table = wrap.querySelector("table");

@@ -39,7 +39,7 @@ from src.appstate import testers
 ROOT = Path(__file__).resolve().parent.parent
 WEB = ROOT / "web"
 JS = WEB / "js"
-HTML = (WEB / "landing.html").read_text(encoding="utf-8")
+HTML = (WEB / "desk.html").read_text(encoding="utf-8")
 
 # Said by the owner, verbatim (2026-10-02). Any change here is a change to what
 # the public is told and belongs to him.
@@ -145,7 +145,8 @@ class TheWordsAgreeWithWhatIsEnforced(unittest.TestCase):
         self.assertEqual(re.findall(r"<a[^>]*data-checkout-cta[^>]*>", HTML), [])
         labels = [m.strip() for m in re.findall(
             r'<a[^>]*data-hook="cta-(?:primary|signup-hero|signup|signup-bottom)"[^>]*>(.*?)</a>', HTML, re.S)]
-        self.assertEqual(labels, ["Create free account"] * 4)
+        # # owner ruling 2026-10-20 kennel-first: the bar's primary button (cta-primary) is "Find your hound"; the hero, pricing and closing buttons stay the free account
+        self.assertEqual(labels, ["Find your hound"] + ["Create free account"] * 3)
 
 
 class TheLandingPageStaysHonestWithJavaScriptOff(unittest.TestCase):

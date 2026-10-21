@@ -198,7 +198,7 @@ out.expanded = hook("show-access-code").attrs["aria-expanded"];
 
     # ---- logging in -----------------------------------------------------------
 
-    def test_a_good_login_stores_the_token_and_opens_the_board(self):
+    def test_a_good_login_stores_the_token_and_opens_my_kennel(self):      # owner ruling 2026-10-20 kennel-first
         out = self.run_page("""
 hook("login-email").value = "  Member@Example.com ";
 hook("login-password").value = "correct horse battery";
@@ -211,7 +211,7 @@ out.status = say("login-status");
         self.assertEqual(len(login), 1)
         self.assertEqual(login[0]["body"], {"email": "Member@Example.com", "password": "correct horse battery"})
         self.assertEqual(out["storage"][TOKEN_KEY], "SESSION-TOKEN")
-        self.assertEqual(out["hash"], "#/today")
+        self.assertEqual(out["assigned"], ["kennel.html"])
         self.assertEqual(out["passwordLeft"], "", "the password field is emptied once it is sent")
         self.assertIn("Signed in", out["status"])
         # The next authed call carries the new token.

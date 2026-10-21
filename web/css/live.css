@@ -109,3 +109,23 @@
 @media (max-width: 760px) {
   .lv-page .hd-wrap h1 { margin-top: 4px; }
 }
+
+/* ===== KENNEL-FIRST (owner ruling 2026-10-20): a title, one line, the chips, and "Send a hound" as the one action on a row ===== */
+.hounds-page.lv-page .hd-wrap h1 { font-size: clamp(40px, 7vw, 64px); margin: var(--lh-s2) 0 var(--lh-s1); }
+.hounds-page.lv-page .lv-head { margin: var(--lh-s2) 0 var(--lh-s2); }
+.hounds-page.lv-page .lv-head .hd-lede { margin: 0; }
+.hounds-page.lv-page .lv-paper { margin: 0 0 var(--lh-s4); font-size: var(--lh-fs-xs); color: var(--lh-mute); }
+.hounds-page.lv-page .lv-refresh { background: none; color: var(--lh-ink2); font-size: var(--lh-fs-sm); font-weight: 500; }
+.hounds-page.lv-page .lv-refresh:hover { background: var(--lh-soft); color: var(--lh-ink); }
+.hounds-page.lv-page .lv-chip { border: 0; background: var(--lh-soft); color: var(--lh-ink2); }
+.hounds-page.lv-page .lv-chip[aria-pressed="true"] { background: var(--lh-ink); color: var(--lh-bg); }
+.hounds-page.lv-page .lv-chip[aria-pressed="true"] .lv-chip__n { color: var(--lh-bg); }
+.hounds-page.lv-page .lv-row { background: var(--lh-soft); border: 0; border-radius: var(--lh-r-md); padding: var(--lh-s3) var(--lh-s4); }
+.hounds-page.lv-page .lv-row[data-live="true"] { box-shadow: inset 3px 0 0 var(--lh-accent); }
+.hounds-page.lv-page .lv-pill { border: 0; border-radius: var(--lh-r-pill); background: var(--lh-soft-2); }
+.hounds-page.lv-page .lv-pill--live { background: var(--lh-accent-soft); }
+.hounds-page.lv-page .lv-send { border: 0; border-radius: var(--lh-r-sm); background: var(--lh-accent-soft); color: var(--lh-accent); font-weight: 600; }
+.hounds-page.lv-page .lv-send:hover { background: var(--lh-accent); color: var(--lh-accent-ink); }
+.hounds-page.lv-page .lv-send[aria-expanded="true"] { background: var(--lh-accent); color: var(--lh-accent-ink); }
+.hounds-page.lv-page .lv-tray { border-top: 1px solid var(--lh-line); }
+.hounds-page.lv-page .lv-dog, .hounds-page.lv-page .lv-result__line { border: 0; background: var(--lh-soft-2); }

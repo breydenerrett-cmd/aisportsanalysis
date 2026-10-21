@@ -50,7 +50,7 @@ DAYS_CHOICES = (7, 14, 30)
 LABEL = "Backtest (hindsight, not counted in the record)"
 BACKTEST_LABEL = LABEL
 MAX_SEASON_DAYS = 30
-DISCLOSURE = ("This replays the dog's current rule over boards that were already captured. The rule was not live "
+DISCLOSURE = ("This replays the hound's current rule over boards that were already captured. The rule was not live "
               "then, and you can see how those games ended, so this is a rehearsal and not evidence. It is "
               "never added to a record, a ranking or a verdict.")
 SMALL_N = 30
@@ -400,7 +400,7 @@ def drill(*, days: int = 14, dog: Optional[common.Dog] = None, spec: Optional[di
     if dog is not None:
         if getattr(dog, "forward_only", False):
             from src.hounds import ai_defs
-            raise DrillError("ai_forward_only", ai_defs.FORWARD_ONLY_MESSAGE, 422)
+            raise DrillError("ai_forward_only", ai_defs.forward_only_message(dog.id), 422)
         if dog.kind == common.KIND_USER:
             hound = {"id": dog.id, "spec": dog.spec}
             ident = {"id": dog.id, "name": dog.name, "kind": "user"}

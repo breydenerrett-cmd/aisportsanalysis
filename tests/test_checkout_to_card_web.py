@@ -242,7 +242,7 @@ class AttributionIsCapturedAndSent(unittest.TestCase):
 
 class LandingFaqDoesNotPromiseForever(unittest.TestCase):
     def setUp(self):
-        self.html = (WEB / "landing.html").read_text(encoding="utf-8")
+        self.html = (WEB / "desk.html").read_text(encoding="utf-8")
 
     def test_no_annual_plan_is_gone_and_the_statement_stays_true(self):
         self.assertNotIn("No annual plan", self.html)

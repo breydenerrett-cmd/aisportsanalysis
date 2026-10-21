@@ -287,7 +287,7 @@ class CheckoutCopyInEveryState(unittest.TestCase):
         self.assertEqual(out["cta"], "Start your subscription")
 
     def test_the_static_landing_defaults_equal_the_helpers_not_on_wording(self):
-        html = (WEB / "landing.html").read_text(encoding="utf-8")
+        html = (WEB / "desk.html").read_text(encoding="utf-8")
         out = self.run_scenario(kind="helpers", meta=OFF)
         for cta in re.findall(r"<a[^>]*data-checkout-cta[^>]*>(.*?)</a>", html, flags=re.S):
             self.assertEqual(cta.strip(), out["notOn"]["cta"])
@@ -415,7 +415,7 @@ class CheckoutCopyInEveryState(unittest.TestCase):
     # ---- the landing page (A5), driven against the REAL html ------------------
 
     def _landing_nodes(self):
-        html = (WEB / "landing.html").read_text(encoding="utf-8")
+        html = (WEB / "desk.html").read_text(encoding="utf-8")
         nodes = []
 
         def attrs_of(raw):
@@ -471,7 +471,7 @@ class CheckoutCopyInEveryState(unittest.TestCase):
         self.assertNotIn("trial", by["pricing-host"]["text"].lower())
 
     def test_the_landing_html_itself_carries_no_trial_promise_before_js_runs(self):
-        html = (WEB / "landing.html").read_text(encoding="utf-8")
+        html = (WEB / "desk.html").read_text(encoding="utf-8")
         visible = re.sub(r"<(script|style)[\s\S]*?</\1>", "", html)
         # The only trial wording allowed in the static page is inside elements the
         # script reveals and that start hidden.
@@ -486,12 +486,12 @@ class CheckoutCopyInEveryState(unittest.TestCase):
 
     def test_the_static_pricing_block_is_the_off_wording(self):
         """No script, no /meta: the pricing card already says what is true."""
-        html = (WEB / "landing.html").read_text(encoding="utf-8")
+        html = (WEB / "desk.html").read_text(encoding="utf-8")
         host = re.search(r'<div data-hook="pricing-host">(.*?)</div>', html, flags=re.S).group(1)
         self.assertEqual(re.sub(r"<[^>]+>", "", host).strip(), PRICING_OFF_BLOCK)
 
     def test_the_meta_description_makes_no_trial_promise(self):
-        html = (WEB / "landing.html").read_text(encoding="utf-8")
+        html = (WEB / "desk.html").read_text(encoding="utf-8")
         desc = re.search(r'<meta name="description" content="([^"]*)"', html).group(1)
         self.assertIsNone(re.search(r"trial", desc, re.I))
         # owner ruling 2026-10-20, complete-product positioning: the link preview sells the product and states

@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- REDESIGN, 2026-09-22. Owner, verbatim: "can you please change this
+     homepage and make it actually look good? ... 'try three bet checks
+     free' needs to be removed completely. That's not something we do at
+     all ... not advertising that that's what we do, because it's not."
+     He also objected to the hero featuring a heavy favourite (Cubs at
+     -203) as an advertising pick.
+
+     WHAT CHANGED
+     - Every "Bet Check" offer/CTA/nav item/pricing card/FAQ line is gone
+       from marketing, and (2026-10-19) so is the last footer link to it: this page,
+       the sign-in page and the signup page do not link to Bet Check at all. The
+       route itself stays; a signed-in member still finds it in the shared footer
+       (web/js/meta.js shows that link only while a token is stored).
+     - The page is rebuilt around one hook (the record), a 3-step
+       explanation, a proof section, sports covered, one pricing card and
+       a short FAQ. The clutter (demo-matchup scanner walls of text, the
+       evidence ladder, the "quick/advanced" panel, "paper trail") is cut.
+     - The hero's live pick module (web/js/landing-live.js) now gates on
+       price: a card pick at -200 or worse is never shown there (see that
+       file's `priceQualifies`) -- the record line in the claim block is
+       the fallback, never a fabricated pick.
+
+     WHAT DID NOT CHANGE: every honesty rule. No edge is claimed, no win
+     probability is stated, nothing is guaranteed, and the fact that
+     nothing has cleared our own bar stays on the page in the same size
+     type as everything else. tests/test_web_structure.py enforces that
+     mechanically. -->
+<title>LINEHOUND — The house pack and the AI desk</title>
+<meta name="description" content="The house pack: our own AI hounds, betting every sport we cover in public. The AI desk reads every game and writes a brief, graded in public. Pricing and answers. Paper bets only, not advice. 21+.">
+<!-- LINK PREVIEW (2026-10-01). Every first contact is this address pasted
+     into a Discord DM, an X reply or a forum thread, and without these the
+     preview was a bare URL or whatever the app guessed. Same claims as the
+     page: build a hound, every sport, a public graded record. COMPLETE-PRODUCT
+     COPY (owner ruling 2026-10-20, complete-product positioning): no hedging,
+     and still no result, no price promise, no edge. -->
+<meta property="og:site_name" content="LineHound">
+<meta property="og:url" content="https://linehound.app/web/desk.html">
+<link rel="canonical" href="https://linehound.app/web/desk.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="LineHound: the house pack and the AI desk">
+<meta property="og:description" content="Our own hounds bet every sport we cover, in public. The AI desk writes a brief for every game. Paper bets only.">
+<meta name="twitter:card" content="summary">
+<meta name="theme-color" content="#0B0C0E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,500;0,600;0,700;1,600;1,700;1,800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/nav.css">
+<link rel="stylesheet" href="css/lhnav.css">
+<!-- app.css, on the MARKETING page, deliberately -- web/js/meta.js's
+     renderDisclaimerFooter is shared between this page and the app shell,
+     and its .sitefoot__* rules live here. Linked BEFORE landing.css so
+     this page's own rules still win any conflict
+     (tests/test_shared_footer.py). -->
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/landing.css">
+<link rel="stylesheet" href="css/kennel.css">
+<link rel="stylesheet" href="css/lh.css">
+<link rel="stylesheet" href="css/landing-v2.css">
+</head>
+<body class="landing">
+
+<header class="lh-nav" aria-label="primary" data-hook="landing-header" data-current="">
+  <div class="lh-nav__bar">
+    <a class="lh-nav__brand ps-page__home" href="landing.html" aria-label="LINEHOUND home">
+      <span class="wordmark" data-hook="brand-mark">
+        <span class="wordmark__mark"><span></span></span>
+        <span class="wordmark__text" data-hook="product-name">LINEHOUND</span>
+      </span>
+    </a>
+    <nav class="lh-nav__links" aria-label="Sections" data-hook="nav-links">
+      <a href="hounds.html" data-nav="leaderboard">Leaderboard</a>
+      <a href="live.html" data-nav="live">Live</a>
+    </nav>
+    <div class="lh-nav__account" data-hook="nav-account-area" data-signed-in="false">
+      <a class="lh-btn lh-btn--soft" href="index.html#/signin" data-hook="nav-signin">Sign in</a>
+      <a class="lh-btn lh-btn--solid" href="quiz.html" data-hook="cta-primary" data-nav-extra>Find your hound</a>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<!-- THIS PAGE (2026-10-20, kennel-first rebuild, docs/design/KENNEL_FIRST_BRIEF.md). It is the old landing page, moved here whole when
+     web/landing.html became the one-screen "Create your own AI betting hound" page: the house pack's board and race, the AI desk, what
+     is free and what is for subscribers, the last graded card, pricing, the sports covered and the questions. The footer of the
+     landing page links here. The build-your-own band and the three-step explainer moved to the landing page itself.
+
+     THE FIRST SCREEN (professional pass, 2026-10-19). Owner, verbatim: "why is our linehound app and website
+     look like a kids playground not a professional gambling AI website ... it says [the same thing] over and
+     over". So the first thing a visitor meets is a sportsbook-style product: a plain headline, one sentence
+     on how it works, a live mini leaderboard (the top five models by units, with record, return per bet and bet count) and the
+     latest five tickets (web/js/landing-board.js fills them from the public GET /hounds and GET /hounds/stream;
+     with no answer a panel says so and names no figure), and two ways in: look, or build. The one disclosure
+     on this page is the shared footer's. The AI desk brief this page used to lead with is the second section,
+     below. docs/VOICE.md. -->
+<section class="lbhero" aria-label="model leaderboard" data-hook="lb-hero">
+  <div class="lbhero__inner">
+  <div class="lbhero__copy">
+    <p class="lbhero__eyebrow"><i class="lh-live" aria-hidden="true"></i>The house pack &middot; the AI desk</p>
+    <h1 class="lbhero__title" data-hook="lb-title">The house pack and the AI desk.</h1>
+    <p class="lbhero__sub" data-hook="lb-sub">Our own hounds bet every sport we cover, in public. The AI desk reads every game and writes a brief. Every pick and every call is on the record before the game and graded after.</p>
+    <div class="lbhero__cta">
+      <a class="btn btn--primary btn--lg" href="hounds.html" data-hook="cta-kennel-enter">Open the leaderboard</a>
+      <a class="btn btn--ghost btn--lg" href="quiz.html?start=1" data-hook="cta-kennel-quiz">Find your hound</a>
+    </div>
+    <p class="lbhero__straight" data-hook="kennel-straight">Tennis, cricket, soccer, NBA, NHL, college, MLB, NFL, MMA and more. Every pick is a paper bet, on the record before the game; wins and losses both stay on the board.</p>
+  </div>
+  <!-- THE RACE (design system v2, 2026-10-19): the top five models on their real paper bankroll, filled by web/js/landing-race.js from
+       the same GET /hounds payload as the board below. With no script this is the one line of text. -->
+  <div class="lbhero__race" data-hook="lb-race" data-layout="wide">
+    <div class="lbrace__head">
+      <span class="lbrace__title"><i class="lh-live" aria-hidden="true"></i>Bankroll race</span>
+      <button type="button" class="lbrace__replay" data-hook="lb-race-replay" hidden>Replay</button>
+    </div>
+    <p class="lbrace__sub" data-hook="lb-race-sub">Paper bankroll by model. The race draws once the leaderboard loads.</p>
+    <div class="lbrace__chart" data-hook="lb-race-chart"></div>
+    <ol class="lbrace__legend" data-hook="lb-race-legend"></ol>
+    <p class="lbrace__note" data-hook="lb-race-note"></p>
+  </div>
+  </div>
+  <div class="lbhero__panels">
+    <section class="lbpanel" aria-label="the house pack" data-hook="lb-board-panel">
+      <div class="lbpanel__head">
+        <h2 class="lbpanel__title">The house pack: top hounds by bankroll<span class="lbpanel__season" data-hook="lb-season"></span></h2>
+        <span class="lbpanel__asof" data-hook="lb-asof"></span>
+      </div>
+      <p class="lbpanel__note" data-hook="lb-bankroll-note">Our own hounds, championed, trained, bred and culled in public. Every hound starts with the same $1,000 paper bankroll. 1 unit = $10.</p>
+      <table class="lbtable" data-hook="lb-board-table">
+        <caption class="lbsr">Top five hounds by paper bankroll, every hound starting from $1,000</caption>
+        <thead><tr><th scope="col" class="lbnum">#</th><th scope="col">Hound</th><th scope="col" class="lbnum">Record</th><th scope="col" class="lbnum">Bankroll</th><th scope="col" class="lbnum">Return</th><th scope="col" class="lbnum">Bets</th></tr></thead>
+        <tbody data-hook="lb-board"><tr><td colspan="6" class="lbempty">Checking the leaderboard...</td></tr></tbody>
+      </table>
+      <p class="lbpanel__note" data-hook="lb-season-note" hidden></p>
+      <a class="lbpanel__more" href="hounds.html" data-hook="lb-more">Full leaderboard &rarr;</a>
+    </section>
+    <section class="lbpanel" aria-label="latest tickets" data-hook="lb-tickets-panel">
+      <div class="lbpanel__head"><h2 class="lbpanel__title">Latest tickets</h2></div>
+      <ol class="lbtickets" data-hook="lb-tickets"><li class="lbempty">Checking the feed...</li></ol>
+    </section>
+  </div>
+</section>
+
+<!-- HERO -->
+<section class="hero lv-desk" id="desk" aria-label="hero" data-hook="hero" data-landing-section="desk">
+  <div class="hero__side hero__side--a" data-parallax=".07"></div>
+  <div class="hero__side hero__side--b" data-parallax=".07"></div>
+  <div class="hero__glow" aria-hidden="true"></div>
+  <div class="hero__seam" aria-hidden="true"></div>
+  <div class="hero__seam-sweep" aria-hidden="true"><span></span></div>
+
+  <!-- THE HOOK. The record line carries the card-record hook (must appear
+       exactly once -- tests/test_landing_record_from_ledger.py). Filled
+       from the ledger by landing.js's fillCardRecord(); the fallback below
+       names no figure on purpose, so a slow or failed fetch never leaves a
+       stale number on the page. -->
+  <div class="hero__top">
+  <div class="hero__claim" data-rise data-delay="40" data-hook="hero-claim">
+    <span class="eyebrow eyebrow--money">The AI desk · every game · public record</span>
+    <!-- THE PRODUCT, THEN THE METHOD (2026-10-02, docs/CONVERSION_REVIEW_2026-10-02.md
+         change 1). The headline says what is offered; the lede says what a
+         card holds and that it is graded in public, wins and losses. No
+         result is promised and no edge is claimed. The grading schedule
+         (MLB/NFL next morning, UFC by hand) is no longer here; it is on the
+         page in the FAQ ("Which sports do you cover?") and in the sport tiles. -->
+    <h2 class="hero__claim-title">Our AI desk reads every game.</h2>
+    <p class="hero__claim-body">An AI analyst reads each matchup, calls every market take or pass, gives the strongest case against any bet it takes, and says what it could not know. Every call is graded in public. Analysis, not advice.</p>
+    <div class="hero__cta-group" data-rise data-delay="160">
+      <a class="btn btn--primary" href="index.html#/signin?create=1" data-hook="cta-signup-hero">Create free account</a>
+      <!-- As written here the second button is the plain record link, which
+           works with no script and before anything has loaded. Once the free
+           sample below has rendered, landing.js (pointSampleButton) turns it
+           into "See last night's card, graded" and points it at that section;
+           the sample is hidden until then, so the markup must not link to it.
+           The full record is also linked, as text, right below. -->
+      <a class="btn btn--ghost" href="index.html#/record-card" data-hook="cta-record-secondary">Open the graded record</a>
+      <p class="hero__cta-note" data-hook="hero-cta-note" hidden></p>
+      <a class="hero__record-link" href="index.html#/record-card" data-hook="hero-record-link">Open the full record, every pick &rarr;</a>
+      <a class="hero__record-link" href="sample.html" data-hook="hero-sample-link">Read a sample brief, free &rarr;</a>
+      <a class="hero__record-link" href="hounds.html" data-hook="hero-hounds-link">Watch the house pack &rarr;</a>
+      <!-- WHICH SPORTS ARE LIVE TODAY: one sentence, filled from web/js/dom.js's
+           SPORTS_LIVE_TODAY by landing.js. The text here is the same sentence, so a
+           visitor with no script reads it too; tests/test_live_sports_sentence.py
+           fails if the two differ. -->
+      <p class="hero__cta-note" data-hook="sports-live-today">Live now: tennis, cricket, soccer, NBA, NHL, college, MLB, NFL, MMA and more.</p>
+    </div>
+
+    <!-- WHAT YOU GET, IN FOUR LINES (change 3). Directly under the buttons and
+         above the record panel. The longer "What you get" section below
+         carries the detail. Bet Check is not mentioned (owner ruling,
+         2026-09-22). No figure is typed here. -->
+    <details class="lv-acc lv-acc--inline" data-hook="hero-wyg-acc">
+    <summary class="lv-acc__sum"><span class="lv-acc__title">Free, and for subscribers</span></summary>
+    <div class="hero__wyg" data-hook="hero-wyg" data-rise data-delay="200">
+      <div class="hero__wyg-col" data-hook="hero-wyg-free">
+        <p class="hero__wyg-head">Free now</p>
+        <ul class="hero__wyg-list">
+          <li><a href="index.html#/record-card">The full graded record</a></li>
+          <li><a href="postseason.html">MLB postseason odds</a></li>
+        </ul>
+      </div>
+      <div class="hero__wyg-col" data-hook="hero-wyg-subscribers">
+        <p class="hero__wyg-head">For subscribers</p>
+        <ul class="hero__wyg-list">
+          <li>A brief for every game we cover, before it starts</li>
+          <li>Matchups, odds and props</li>
+        </ul>
+      </div>
+    </div>
+    </details>
+  </div>
+
+  <!-- THE PROOF PANEL (2026-09-22 redesign). Fills the hero's right side with
+       the live ledger record from GET /meta (landing.js fillProofPanel). The
+       dashes are the honest no-JS / failed-fetch state: no figure is ever
+       typed into this markup (see api/meta.py _card_record). -->
+  <!-- CURRENT AND PREVIOUS, THE SAME COMPONENT AT THE SAME SIZE (owner
+       review, 2026-09-25: "the current rule gets three large tiles and
+       the previous rule gets one small grey sentence" -- neither rule may
+       gain prominence for being profitable). Both blocks are
+       `.hero__rule-block`s carrying an identical `.hero__proof-grid` of
+       three `.hero__stat` cells, in a FIXED order (current, then
+       previous) that never depends on which one is winning. Filled by
+       landing.js's fillProofPanel, which reads the exact same
+       `meta.effective_record.sports.mlb` object and the exact same
+       fillRuleBlock() the MLB sport tile below uses -- one renderer, one
+       data source, so the hero and the tile cannot disagree by
+       construction. -->
+  <div class="hero__proof-col">
+  <aside class="hero__proof" data-rise data-delay="120" data-hook="hero-proof" aria-label="The record so far">
+    <span class="eyebrow eyebrow--money">The record so far</span>
+
+    <div class="hero__rule-block" data-hook="hero-current-block">
+      <p class="eyebrow eyebrow--muted" data-hook="hero-current-label">Current method</p>
+      <div class="hero__proof-grid">
+        <div class="hero__stat">
+          <span class="hero__stat-value" data-hook="hero-current-wl">&mdash;</span>
+          <span class="hero__stat-label">Won&ndash;lost</span>
+        </div>
+        <div class="hero__stat">
+          <span class="hero__stat-value" data-hook="hero-current-units">&mdash;</span>
+          <span class="hero__stat-label">Units</span>
+        </div>
+        <div class="hero__stat">
+          <span class="hero__stat-value" data-hook="hero-current-days">&mdash;</span>
+          <span class="hero__stat-label">Nights graded</span>
+        </div>
+      </div>
+      <p class="hero__proof-sub" data-hook="hero-current-state">Every graded night is posted on the record page, losses included.</p>
+      <div class="hero__postseason" data-hook="hero-current-postseason" hidden></div>
+    </div>
+
+    <div class="hero__rule-block" data-hook="hero-previous-block" hidden>
+      <p class="eyebrow eyebrow--muted" data-hook="hero-previous-label">Earlier method (retired)</p>
+      <div class="hero__proof-grid">
+        <div class="hero__stat">
+          <span class="hero__stat-value" data-hook="hero-previous-wl">&mdash;</span>
+          <span class="hero__stat-label">Won&ndash;lost</span>
+        </div>
+        <div class="hero__stat">
+          <span class="hero__stat-value" data-hook="hero-previous-units">&mdash;</span>
+          <span class="hero__stat-label">Units</span>
+        </div>
+        <div class="hero__stat">
+          <span class="hero__stat-value" data-hook="hero-previous-days">&mdash;</span>
+          <span class="hero__stat-label">Nights graded</span>
+        </div>
+      </div>
+      <p class="hero__proof-sub" data-hook="hero-previous-state">Counted separately.</p>
+      <div class="hero__postseason" data-hook="hero-previous-postseason" hidden></div>
+    </div>
+
+    <p class="hero__proof-note" data-hook="hero-previous-pointer">An earlier, retired method is kept as a separate shadow record. It is not a public record and not evidence for the current one; its figures are on the record page and in the MLB panel below.</p>
+    <p class="hero__proof-note" data-hook="hero-claim-record"><span data-hook="card-record">Every graded night is posted on the record page, losses included.</span></p>
+    <a class="hero__proof-link" href="index.html#/record-card">See every pick &rarr;</a>
+  </aside>
+  </div>
+  </div>
+
+  <!-- THE DESK-ONLY MODULE (2026-10-16, reworded 2026-10-20, owner ruling 2026-10-20,
+       complete-product positioning). web/js/landing-live.js reveals this when GET /card
+       answers `paused: true`: a fixed line about the AI desk and the sample brief, in place
+       of any pick. It no longer prints the server's reason. It starts hidden, so a slow or
+       failed fetch shows nothing. Never an empty card, never a pick. -->
+  <div class="hero__paused panel chamfer" data-hook="hero-paused" hidden>
+    <span class="eyebrow eyebrow--money">The AI desk · today's slate</span>
+    <p class="hero__proof-note" data-hook="hero-paused-reason">The AI desk reads every game on the slate and writes a brief before it starts. Every call is graded on the public record, wins and losses, and the price board shows each book's number.</p>
+    <p class="hero__proof-note">
+      <a class="hero__proof-link" href="sample.html" data-hook="hero-paused-sample">Read a sample brief &rarr;</a>
+      <a class="hero__proof-link" href="index.html#/record-card" data-hook="hero-paused-record">View the record &rarr;</a>
+      <a class="hero__proof-link" href="index.html#/odds" data-hook="hero-paused-board">Open the price board &rarr;</a>
+    </p>
+  </div>
+
+  <!-- THE FEATURED PICK MODULE. web/js/landing-live.js replaces this with
+       tonight's real card pick, and hides the whole module (never just the
+       price line) when that pick prices at -200 or worse -- a heavy
+       favourite is not an advertising pick. It is never shown while the MLB
+       picks are paused. The markup below is a labelled SAMPLE, never
+       presented as tonight's real game unless the live fetch succeeds and
+       the price qualifies. -->
+  <div class="hero__feature" data-hook="hero-feature" hidden>
+    <div class="hero__scanner" data-rise data-delay="120">
+      <span class="hero__scanner-bracket" aria-hidden="true"></span>
+      <span class="hero__scanner-text" data-hook="hero-scanner-text">Example slate · 15 games · 11 books scanned</span>
+      <span class="badge badge--outline chamfer chamfer--chip" data-hook="sample-slate-badge">Sample slate · demo data</span>
+    </div>
+
+    <div class="hero__matchup" data-rise data-delay="200" data-hook="hero-matchup">
+      <div class="hero__team hero__team--away">
+        <div class="hero__team-name" data-hook="hero-away-name">Pirates</div>
+        <div class="hero__team-rule" data-hook="hero-away-rule" style="background:linear-gradient(90deg, var(--team-pit), transparent)"></div>
+        <div class="hero__team-meta">
+          <span class="hero__team-record" data-hook="hero-away-record">68-66</span>
+          <span class="hero__team-pitcher" data-hook="hero-away-pitcher">Skenes RHP</span>
+        </div>
+      </div>
+      <div class="hero__vs">
+        <span class="hero__vs-text">vs</span>
+        <span class="hero__vs-time" data-hook="hero-vs-time">Time TBD</span>
+      </div>
+      <div class="hero__team hero__team--home">
+        <div class="hero__team-name" data-hook="hero-home-name">Brewers</div>
+        <div class="hero__team-rule" data-hook="hero-home-rule" style="background:linear-gradient(270deg, var(--team-mil), transparent)"></div>
+        <div class="hero__team-meta">
+          <span class="hero__team-pitcher" data-hook="hero-home-pitcher">Peralta RHP</span>
+          <span class="hero__team-record" data-hook="hero-home-record">82-52</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero__spacer"></div>
+    <div class="hero__scrim" aria-hidden="true"></div>
+
+    <div class="hero__footer">
+      <div class="hero__price chamfer" data-price data-delay="340" data-hook="hero-price-block">
+        <div class="hero__price-sheen" aria-hidden="true"></div>
+        <div class="hero__price-eyebrow">
+          <span class="hero__price-dot"></span>
+          <span class="hero__price-label" data-hook="hero-price-label">Pirates to win · the market makes it 58%</span>
+        </div>
+        <div class="hero__price-row">
+          <span class="price-figure price-figure--hero" data-beat data-hook="hero-price-figure">-125</span>
+          <div data-hook="hero-price-needs-wrap">
+            <div class="price-was-label" data-hook="hero-price-needs">Needs 56% to break even · we make it 57%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WHAT YOU GET (2026-10-01). Directly under the hero's record block, so a
+     stranger sees what is free and what is for subscribers before anything
+     else. Every line below names something the code really serves, checked
+     against api/app.py (the `_authed_paid` group versus the public routers)
+     and the primary navigation in web/js/main.js and web/js/sport.js. Bet
+     Check is deliberately not mentioned (owner ruling, 2026-09-22). No
+     figure is typed here. -->
+<section class="section section--tight lv-acc-section" id="what-you-get" aria-label="what you get" data-hook="what-you-get">
+  <div class="section__head" data-rise>
+    <span class="eyebrow eyebrow--money">What you get, in detail</span>
+  </div>
+  <details class="lv-acc" data-hook="wyg-acc">
+  <summary class="lv-acc__sum"><h2 class="section__title">What is free, and what is for subscribers.</h2><span class="lv-acc__hint">The record and postseason odds are free. Briefs, matchups, odds and props are for subscribers.</span></summary>
+  <div class="lv-acc__body">
+  <div class="story-grid wyg-grid">
+    <div class="story-card panel chamfer" data-rise data-delay="80" data-hook="wyg-free">
+      <div class="story-card__kicker">Free, no account</div>
+      <ul class="pricing-card__list wyg-list">
+        <li data-hook="wyg-free-record"><span class="wyg-name">The full graded record.</span> Every past MLB, NFL and UFC card, night by night, wins and losses, with a check that the ledger has not been edited. <a class="wyg-link" href="index.html#/record-card">Open the record</a></li>
+        <li data-hook="wyg-free-postseason"><span class="wyg-name">MLB postseason odds.</span> The chances of each series and each club's chance to win the World Series, as model estimates. <a class="wyg-link" href="postseason.html">Open the odds</a></li>
+      </ul>
+    </div>
+    <div class="story-card panel chamfer" data-rise data-delay="120" data-hook="wyg-subscribers">
+      <div class="story-card__kicker">Subscribers</div>
+      <ul class="pricing-card__list wyg-list">
+        <li data-hook="wyg-sub-card"><span class="wyg-name">A brief for every game we cover, and the NFL card.</span> The brief calls each market take or pass, with the strongest case against any bet it takes, written before it starts. The NFL card, with its prices, is written to the public ledger before the game and sits on its own page.</li>
+        <li data-hook="wyg-sub-matchups"><span class="wyg-name">Matchups.</span> Every game on the slate, in depth.</li>
+        <li data-hook="wyg-sub-odds"><span class="wyg-name">Odds.</span> Each tracked book's price for a game, side by side.</li>
+        <li data-hook="wyg-sub-props"><span class="wyg-name">Props.</span> Player props priced for the night, ordered by how likely each one is.</li>
+        <li data-hook="wyg-sub-tennis"><span class="wyg-name">Tennis board.</span> An ATP and WTA match board, with prices and form for every match.</li>
+      </ul>
+      <p class="story-card__body wyg-note">After the game, the NFL card joins the free record.</p>
+    </div>
+  </div>
+  </div>
+</details>
+</section>
+
+<!-- FREE SAMPLE: THE MOST RECENT FULLY GRADED CARD (2026-10-01). HIDDEN
+     BY DEFAULT and unhidden by landing.js (fillLastCard) only when the public
+     GET /card/history?limit=1 answers with a settled day. A failed fetch or
+     an empty answer leaves this whole section hidden: no empty frame, no
+     placeholder figure. -->
+<section class="section section--tight lv-acc-section" id="free-sample" aria-label="last night's card" data-hook="last-card" hidden>
+  <div class="section__head">
+    <span class="eyebrow eyebrow--money">A free sample</span>
+  </div>
+  <details class="lv-acc" data-hook="last-card-acc">
+  <summary class="lv-acc__sum"><h2 class="section__title" data-hook="last-card-title">Last night's card, as published, with what happened</h2><span class="lv-acc__hint">The latest graded card: every pick or fill, with how it ended.</span></summary>
+  <div class="lv-acc__body">
+  <p class="section__lede" data-hook="last-card-date"></p>
+  <div data-hook="last-card-body"></div>
+  </div>
+</details>
+</section>
+
+<!-- PRICING -->
+<section class="section lv-acc-section" id="pricing" aria-label="pricing" data-view="pricing" data-hook="pricing">
+  <div class="section__head" data-rise>
+    <span class="eyebrow eyebrow--money">Pricing</span>
+  </div>
+  <details class="lv-acc" data-hook="pricing-acc">
+  <summary class="lv-acc__sum"><h2 class="section__title">One plan. No tiers to compare.</h2><span class="lv-acc__hint">Free to build and follow. Paid plans are not open yet.</span></summary>
+  <div class="lv-acc__body">
+  <div class="pricing-grid" style="margin-top:28px;grid-template-columns:minmax(0,1fr);max-width:460px">
+    <div class="pricing-card pricing-card--founding panel chamfer" data-rise data-delay="80">
+      <span class="badge badge--money chamfer chamfer--chip pricing-card__badge" data-hook="pricing-trial-badge" hidden></span>
+      <div data-hook="pricing-host"><p class="pricing-tier" data-hook="pricing-tier"><span data-hook="pricing-tier-note">Not on sale yet. Planned price $19.99 a month. The first 20 testers get 7 days free, no card.</span></p></div>
+      <ul class="pricing-card__list">
+        <li data-hook="pricing-cancel-line" hidden>Cancel anytime, no retention flow — access runs through what you've paid for</li>
+        <li>One monthly plan today, no countdown, no percent-off badge</li>
+        <li data-hook="pricing-includes">A brief for every game we cover and the NFL card before the game, plus Matchups, Odds, Props and the Tennis research board. The graded record stays free</li>
+      </ul>
+      <a class="btn btn--primary" href="index.html#/signin?create=1" data-hook="cta-signup">Create free account</a>
+      <!-- The free account opens the hounds (build, fire, ask, kennels). The daily picks board is by invite,
+           and that door is the old signup page (index.html#/signup). -->
+      <p class="pricing-card__early" data-hook="early-access-note" style="margin-top:12px;font-size:13.5px;color:var(--text-3)">The daily picks board is by invite:
+        <a href="index.html#/signup" data-hook="cta-early-access">request an invite to daily picks</a>.</p>
+    </div>
+  </div>
+  </div>
+</details>
+</section>
+
+<!-- SPORTS COVERED -- per-sport record tiles (task B1/B2, 2026-09-24).
+     REPLACES four static "Live"/"Research" cards that claimed all three
+     live sports were graded in public with no figures behind any of
+     them except MLB's hero panel above. Each tile below is filled from
+     GET /meta's `effective_record` (landing.js's fillSportTiles) with
+     the CURRENT rule's own record, the rule right before it shown
+     adjacent and labelled historical, and a market breakdown -- reusing
+     the same .hero__proof/.hero__stat markup and is-up/is-down rule the
+     hero panel above already uses, so no sport or version reads as more
+     prominent than another by anything other than its own real number.
+     The no-JS fallback text below names no figure, matching every other
+     record surface on this page. -->
+<section class="section section--tight lv-acc-section" aria-label="sports covered" data-hook="sports-covered">
+  <div class="section__head" data-rise>
+    <span class="eyebrow">Sports covered</span>
+  </div>
+  <details class="lv-acc" data-hook="sports-acc">
+  <summary class="lv-acc__sum"><h2 class="section__title">Every sport, one public record.</h2><span class="lv-acc__hint">Tennis, cricket, soccer, NBA, NHL, college, MLB, NFL, MMA and more, each graded win or lose.</span></summary>
+  <div class="lv-acc__body">
+  <p class="hero__proof-note" data-rise data-delay="80" style="margin-top:14px"><a class="hero__proof-link" href="postseason.html" data-hook="postseason-link">MLB postseason odds, free &rarr;</a></p>
+  <div class="story-grid" style="margin-top:28px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))" data-hook="sport-record-tiles">
+
+    <div class="hero__proof" style="margin-top:0" data-rise data-delay="60" data-hook="sport-tile-mlb" aria-label="MLB record">
+      <span class="eyebrow eyebrow--money">MLB</span>
+
+      <div class="hero__rule-block" data-hook="sport-tile-mlb-current-block">
+        <p class="eyebrow eyebrow--muted" data-hook="sport-tile-mlb-current-label">Current method</p>
+        <div class="hero__proof-grid">
+          <div class="hero__stat">
+            <span class="hero__stat-value" data-hook="sport-tile-mlb-current-wl">&mdash;</span>
+            <span class="hero__stat-label">Won&ndash;lost</span>
+          </div>
+          <div class="hero__stat">
+            <span class="hero__stat-value" data-hook="sport-tile-mlb-current-units">&mdash;</span>
+            <span class="hero__stat-label">Units</span>
+          </div>
+          <div class="hero__stat">
+            <span class="hero__stat-value" data-hook="sport-tile-mlb-current-days">&mdash;</span>
+            <span class="hero__stat-label">Nights graded</span>
+          </div>
+        </div>
+        <p class="hero__proof-sub" data-hook="sport-tile-mlb-current-state">Every graded night stays on the record, wins and losses.</p>
+        <div class="hero__postseason" data-hook="sport-tile-mlb-current-postseason" hidden></div>
+      </div>
+
+      <div class="hero__rule-block" data-hook="sport-tile-mlb-previous-block">
+        <p class="eyebrow eyebrow--muted" data-hook="sport-tile-mlb-previous-label">Earlier method (retired)</p>
+        <div class="hero__proof-grid">
+          <div class="hero__stat">
+            <span class="hero__stat-value" data-hook="sport-tile-mlb-previous-wl">&mdash;</span>
+            <span class="hero__stat-label">Won&ndash;lost</span>
+          </div>
+          <div class="hero__stat">
+            <span class="hero__stat-value" data-hook="sport-tile-mlb-previous-units">&mdash;</span>
+            <span class="hero__stat-label">Units</span>
+          </div>
+          <div class="hero__stat">
+            <span class="hero__stat-value" data-hook="sport-tile-mlb-previous-days">&mdash;</span>
+            <span class="hero__stat-label">Nights graded</span>
+          </div>
+        </div>
+        <p class="hero__proof-sub" data-hook="sport-tile-mlb-previous-state">Counted separately.</p>
+        <div class="hero__postseason" data-hook="sport-tile-mlb-previous-postseason" hidden></div>
+      </div>
+
+      <p class="hero__proof-note" data-hook="sport-tile-mlb-markets" hidden></p>
+      <a class="hero__proof-link" href="index.html#/record-card" data-hook="sport-tile-mlb-link">See every MLB pick, graded &rarr;</a>
+    </div>
+
+    <div class="hero__proof" style="margin-top:0" data-rise data-delay="100" data-hook="sport-tile-nfl" aria-label="NFL record">
+      <span class="eyebrow eyebrow--money">NFL</span>
+
+      <div class="hero__rule-block" data-hook="sport-tile-nfl-current-block">
+        <p class="eyebrow eyebrow--muted" data-hook="sport-tile-nfl-current-label">Current method</p>
+        <div class="hero__proof-grid">
+          <div class="hero__stat">
+            <span class="hero__stat-value" data-hook="sport-tile-nfl-current-wl">&mdash;</span>
+            <span class="hero__stat-label">Won&ndash;lost</span>
+          </div>
+          <div class="hero__stat">
+            <span class="hero__stat-value" data-hook="sport-tile-nfl-current-units">&mdash;</span>
+            <span class="hero__stat-label">Units</span>
+          </div>
+          <div class="hero__stat">
+            <span class="hero__stat-value" data-hook="sport-tile-nfl-current-days">&mdash;</span>
+            <span class="hero__stat-label">Nights graded</span>
+          </div>
+        </div>
+        <p class="hero__proof-sub" data-hook="sport-tile-nfl-current-state">Picks published and graded each week, on the same record.</p>
+        <div class="hero__postseason" data-hook="sport-tile-nfl-current-postseason" hidden></div>
+      </div>
+
+      <div class="hero__rule-block" data-hook="sport-tile-nfl-previous-block">
+        <p class="eyebrow eyebrow--muted" data-hook="sport-tile-nfl-previous-label">Earlier method (retired)</p>
+        <div class="hero__proof-grid">
+          <div class="hero__stat">
+            <span class="hero__stat-value" data-hook="sport-tile-nfl-previous-wl">&mdash;</span>
+            <span class="hero__stat-label">Won&ndash;lost</span>
+          </div>
+          <div class="hero__stat">
+            <span class="hero__stat-value" data-hook="sport-tile-nfl-previous-units">&mdash;</span>
+            <span class="hero__stat-label">Units</span>
+          </div>
+          <div class="hero__stat">
+            <span class="hero__stat-value" data-hook="sport-tile-nfl-previous-days">&mdash;</span>
+            <span class="hero__stat-label">Nights graded</span>
+          </div>
+        </div>
+        <p class="hero__proof-sub" data-hook="sport-tile-nfl-previous-state">Counted separately.</p>
+        <div class="hero__postseason" data-hook="sport-tile-nfl-previous-postseason" hidden></div>
+      </div>
+
+      <p class="hero__proof-note" data-hook="sport-tile-nfl-markets" hidden></p>
+      <a class="hero__proof-link" href="index.html#/nfl/record" data-hook="sport-tile-nfl-link">See every NFL pick, graded &rarr;</a>
+    </div>
+
+    <div class="hero__proof" style="margin-top:0" data-rise data-delay="140" data-hook="sport-tile-ufc" aria-label="UFC record">
+      <span class="eyebrow eyebrow--money">UFC</span>
+
+      <div class="hero__rule-block" data-hook="sport-tile-ufc-current-block">
+        <p class="eyebrow eyebrow--muted" data-hook="sport-tile-ufc-current-label">Current method</p>
+        <div class="hero__proof-grid">
+          <div class="hero__stat">
+            <span class="hero__stat-value" data-hook="sport-tile-ufc-current-wl">&mdash;</span>
+            <span class="hero__stat-label">Won&ndash;lost</span>
+          </div>
+          <div class="hero__stat">
+            <span class="hero__stat-value" data-hook="sport-tile-ufc-current-units">&mdash;</span>
+            <span class="hero__stat-label">Units</span>
+          </div>
+          <div class="hero__stat">
+            <span class="hero__stat-value" data-hook="sport-tile-ufc-current-days">&mdash;</span>
+            <span class="hero__stat-label">Nights graded</span>
+          </div>
+        </div>
+        <p class="hero__proof-sub" data-hook="sport-tile-ufc-current-state">Graded after each event, results entered by hand.</p>
+        <div class="hero__postseason" data-hook="sport-tile-ufc-current-postseason" hidden></div>
+      </div>
+
+      <!-- HIDDEN BY DEFAULT: UFC has never had a previous rule
+           (UFC_CARD_V1 is its only rule -- src.report.effective_record.
+           mma_snapshot's own "previous": None). Rendering this block
+           dash-filled would imply a retired rule that never existed;
+           landing.js's fillRuleSet un-hides it only if a sport's
+           `previous` is ever a real (non-null) cohort object -- never
+           for UFC as this product exists today. -->
+      <div class="hero__rule-block" data-hook="sport-tile-ufc-previous-block" hidden>
+        <p class="eyebrow eyebrow--muted" data-hook="sport-tile-ufc-previous-label">Earlier method (retired)</p>
+        <div class="hero__proof-grid">
+          <div class="hero__stat">
+            <span class="hero__stat-value" data-hook="sport-tile-ufc-previous-wl">&mdash;</span>
+            <span class="hero__stat-label">Won&ndash;lost</span>
+          </div>
+          <div class="hero__stat">
+            <span class="hero__stat-value" data-hook="sport-tile-ufc-previous-units">&mdash;</span>
+            <span class="hero__stat-label">Units</span>
+          </div>
+          <div class="hero__stat">
+            <span class="hero__stat-value" data-hook="sport-tile-ufc-previous-days">&mdash;</span>
+            <span class="hero__stat-label">Nights graded</span>
+          </div>
+        </div>
+        <p class="hero__proof-sub" data-hook="sport-tile-ufc-previous-state">No earlier method yet.</p>
+        <div class="hero__postseason" data-hook="sport-tile-ufc-previous-postseason" hidden></div>
+      </div>
+
+      <p class="hero__proof-note" data-hook="sport-tile-ufc-markets" hidden></p>
+      <a class="hero__proof-link" href="index.html#/ufc/record" data-hook="sport-tile-ufc-link">See every UFC pick &rarr;</a>
+    </div>
+
+    <div class="story-card panel chamfer" data-rise data-delay="180">
+      <div class="story-card__kicker">Also covered</div>
+      <div class="story-card__title">Tennis</div>
+      <p class="story-card__body">An ATP and WTA match board with prices and form, and hounds betting the tour.</p>
+    </div>
+    <div class="story-card panel chamfer" data-rise data-delay="220" data-hook="sport-tile-more">
+      <div class="story-card__kicker">And more</div>
+      <div class="story-card__title">Cricket, soccer, NBA, NHL, college</div>
+      <p class="story-card__body">Hounds bet every sport we cover. Each pick goes on the record before the game and is graded win or lose.</p>
+    </div>
+  </div>
+  </div>
+</details>
+</section>
+
+<!-- FAQ -->
+<section class="section section--tight lv-acc-section" id="faq" aria-label="frequently asked questions" data-view="faq" data-hook="faq">
+  <div class="section__head" data-rise>
+    <span class="eyebrow">Quick answers</span>
+  </div>
+  <h2 class="section__title" data-rise data-delay="60">Questions people ask.</h2>
+  <div class="faq-list" style="margin-top:24px">
+    <details class="faq-item panel chamfer" data-hook="faq-kennel">
+      <summary>What is a hound?</summary>
+      <p class="faq-item__body">A hound is an AI sports bettor that follows a written rule. You build one from plain English or rules; our own house pack runs alongside yours. Each hound records one-unit paper bets before the game and is graded win or lose. Some are built on stats, some on the market, some are deliberately naive baselines to beat. The best are championed and bred from; a hound that falls 25 units under zero is retired and stays on the record. Wins and losses are all on the leaderboard.</p>
+    </details>
+    <details class="faq-item panel chamfer" data-hook="faq-no-guarantee">
+      <summary>Do the hounds win?</summary>
+      <p class="faq-item__body">Some stretches they cash and some they don't, and nothing here promises a win for any hound or any bet. That is why every hound's losses sit next to its wins, and every record shows its bet count.</p>
+    </details>
+    <!-- EARLY ACCESS (owner decision, 2026-10-02). Static text, correct with
+         JavaScript off. The numbers are the enforced ones (src/appstate/
+         testers.py; tests/test_tester_access.py pins that they agree) and the
+         five facts are the same ones web/js/checkout.js carries wherever the
+         offer is described. No promise of profit, an edge or winning picks. -->
+    <details class="faq-item panel chamfer" data-hook="faq-early-access">
+      <summary>How do I get the daily picks board?</summary>
+      <p class="faq-item__body">Before checkout opens, the first 20 testers get 7 days of access, no card. Brey chooses
+        who is invited and sends each access link himself. The analysis is informational, not advice. Every result
+        stays on the public record, losses included, and nothing is removed or rewritten. Invited access lasts
+        7 days, and it is extended only when a tester's feedback is useful.</p>
+    </details>
+    <details class="faq-item panel chamfer" data-hook="faq-founding-price">
+      <summary>What is the founding member price?</summary>
+      <p class="faq-item__body">The first 50 members get a founding price that is lower than the standard $19.99 a month,
+        and the exact amount and the number of seats left are shown when you sign up. Membership is $19.99 a month
+        once the 50 founding seats are taken. The founding price stays the same for as long
+        as you stay subscribed; if you cancel and come back later, the price then on offer applies. The
+        number of seats left comes from live subscriptions at checkout. It is not tied to results and it is
+        not a countdown.</p>
+    </details>
+    <details class="faq-item panel chamfer" data-hook="faq-sports-covered">
+      <summary>Which sports do you cover?</summary>
+      <p class="faq-item__body">Every sport we cover: tennis, cricket, soccer, NBA, NHL, college, MLB, NFL, MMA and more. Hounds bet them all, and every pick is published before the game and graded win or lose on the public record. The AI desk writes a brief for every game we cover. NFL picks are graded automatically the next morning; UFC picks are graded once results are entered by hand. Every pick made stays on the record.</p>
+    </details>
+    <details class="faq-item panel chamfer" data-hook="faq-cancel">
+      <summary>Can I cancel anytime?</summary>
+      <p class="faq-item__body">Yes — cancel your renewal anytime, with no retention flow. You keep access through the
+        period you've already paid for.</p>
+    </details>
+  </div>
+  </section>
+
+<!-- CLOSING CTA -->
+<section class="closing-band" aria-label="call to action" data-view="cta" data-hook="cta-bottom">
+  <div class="closing-band__title" data-hook="closing-cta-title">Build your hound.<br>Every pick on the record before the game.</div>
+  <div class="closing-band__cta">
+    <a class="btn btn--primary btn--lg" href="index.html#/signin?create=1" data-hook="cta-signup-bottom">Create free account</a>
+  </div>
+</section>
+
+</main>
+
+<!-- ONE FOOTER (2026-10-02, change 7). This was a <footer> wrapping another
+     <footer> (the shared disclaimer, mounted by landing.js), two stacked blocks
+     that each began with the LINEHOUND mark. Now one <footer>: the page links,
+     the data note, the shared legal block (it carries the brand mark, the 21+
+     / play responsibly line, the helpline and the disclaimer, and mounts as a
+     group inside this footer). Every link and every sentence that was in either
+     block is still here. -->
+<footer class="site-footer" aria-label="footer" data-hook="landing-footer">
+  <div class="site-footer__top">
+    <div class="site-nav__links" style="display:flex">
+      <a href="hounds.html">Leaderboard</a>
+      <a href="#desk">AI desk</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#faq">FAQ</a>
+    </div>
+  </div>
+  <div class="site-footer__data-note">
+    <h3>About the data on this page</h3>
+    <p>The hound rankings are live results from our public ledger, one unit a bet.
+      The brief and the record come from the same ledger, and every pick made stays on it.
+      Once you sign in, the app shows the daily brief, the price board and the NFL card.</p>
+  </div>
+  <div data-hook="disclaimer-host" aria-label="disclaimer"></div>
+  <!-- No Bet Check link here. Owner, 2026-09-22: "not advertising that that's what
+       we do, because it's not." The route (#/betcheck) stays for people already
+       inside the app; a signed-out page does not point at it. -->
+</footer>
+
+<script type="module" src="js/landing.js"></script>
+<script type="module" src="js/fx.js"></script>
+<script type="module" src="js/nav.js"></script>
+</body>
+</html>

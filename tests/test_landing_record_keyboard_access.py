@@ -26,7 +26,7 @@ import unittest
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
-HTML = (REPO / "web" / "landing.html").read_text(encoding="utf-8")
+HTML = (REPO / "web" / "desk.html").read_text(encoding="utf-8")
 
 TILE_PREFIXES = ("sport-tile-mlb", "sport-tile-nfl", "sport-tile-ufc")
 

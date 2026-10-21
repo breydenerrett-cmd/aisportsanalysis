@@ -1,0 +1,15 @@
+pick_id,claim_text,type,subject,cipher,claimed_value,our_value,status,note
+F001,FedExForum = 45 RR,cipher,FedExForum,RR,45,45,ARITHMETIC_OK,"'RR' read as Reverse Full Reduction (RFR), the only reverse reduction the engine has; as with the earlier RR claims this is an interpretation of the poster's cipher name"
+F002,"Chicago, Illinois = 82 FR",cipher,"Chicago, Illinois",FR,82,82,ARITHMETIC_OK,
+F002,Kobe Bean Bryant = 81 RR,cipher,Kobe Bean Bryant,RR,81,81,ARITHMETIC_OK,"'RR' read as Reverse Full Reduction (RFR), the only reverse reduction the engine has; as with the earlier RR claims this is an interpretation of the poster's cipher name"
+F003,Heat = 16 FR,cipher,Heat,FR,16,16,ARITHMETIC_OK,
+F003,Timberwolves = 55 FR,cipher,Timberwolves,FR,55,55,ARITHMETIC_OK,
+F003,Minneapolis = 55 FR,cipher,Minneapolis,FR,55,55,ARITHMETIC_OK,
+F003,Target = 26 FR,cipher,Target,FR,26,26,ARITHMETIC_OK,
+F003,"Milwaukee, Wisconsin = 81 FR",cipher,"Milwaukee, Wisconsin",FR,81,81,ARITHMETIC_OK,
+F001,Utah 45th state,state_order,Utah,,45,45,ARITHMETIC_OK,https://en.wikipedia.org/wiki/List_of_U.S._states_by_date_of_admission_to_the_Union
+F001,Tennessee 16th state,state_order,Tennessee,,16,16,ARITHMETIC_OK,https://en.wikipedia.org/wiki/List_of_U.S._states_by_date_of_admission_to_the_Union
+F001,53 = 16th prime,prime_index,53,,16,16,ARITHMETIC_OK,
+F001,Jazz get 45th Wednesday win against the Southwest / 45th road loss against Grizzlies since Memphis,history,,,,,UNVERIFIED_HISTORY,our NBA store holds this season only; a franchise or player record is not in it
+F002,82nd week since Bulls last beat Raptors; 81 Wednesdays since Raptors last lost to Bulls; Splitter's 82nd game,history,,,,,UNVERIFIED_HISTORY,our NBA store holds this season only; a franchise or player record is not in it
+F003,Giannis' 16th win against the Wolves; 160th day since Wolves last played; teams last met 1/6; 26th franchise,history,,,,,UNVERIFIED_HISTORY,our NBA store holds this season only; a franchise or player record is not in it

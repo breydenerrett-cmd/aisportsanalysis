@@ -1,47 +1,64 @@
 /**
  * THE ONE NAVIGATION (web/js/nav.js + web/css/lhnav.css), the same component on every page.
  *
- *   top bar     wordmark, Leaderboard, Kennels, Live, Build, Training camp; on the right "Sign in" for a visitor, or
- *               "My kennel" and an account menu (My kennel, Change password, Sign out) for a member
- *   phone       a compact top bar (wordmark and the account button) and a bottom tab bar with the same six places
+ * KENNEL-FIRST (owner ruling 2026-10-20, docs/design/KENNEL_FIRST_BRIEF.md): five places, never more.
+ *
+ *   signed in    My Kennel  Create  Live  Leaderboard  Account        (desktop bar and the phone tab bar are the same five)
+ *   signed out   Leaderboard  Live  Sign in  and one primary button, "Find your hound" (the quiz)
+ *
+ * Where the old places went: Kennels (everyone's kennels) is the Leaderboard's second view; the Graveyard is linked from the
+ * Leaderboard and from each kennel; the Training camp is part of My Kennel (learning.html keeps working and counts as My
+ * Kennel here); the daily picks card and research pages are reached from the house kennel and the footer.
  *
  * SIGNED IN means a token is stored (api.js getToken), the same test every other page uses; the server still checks
- * every request, so this is a convenience, never the gate. The menu follows a sign-in or sign-out without a reload
+ * every request, so this is a convenience, never the gate. The bar follows a sign-in or sign-out without a reload
  * (api.js announces both), and a token changed in another tab (the storage event).
  *
- * THE PAGE OWNS ONLY A HOST: `<header class="lh-nav" data-hook="site-nav">` with the signed-out links already in it,
- * so the links are on the page with scripts off. `mountNav` rebuilds the host's children, so running it twice is the
- * same as running it once. `data-current="leaderboard|kennels|live|mykennel|build|camp"` on the host names the page;
- * without it the place is read from the address. `data-bottom="off"` leaves the phone tab bar out (the member app has
- * its own).
+ * THE PAGE OWNS ONLY A HOST: `<header class="lh-nav" data-hook="site-nav">` with the signed-out links already in it, so the
+ * links are on the page with scripts off. `mountNav` rebuilds the host's children, so running it twice is the same as
+ * running it once. `data-current="mykennel|create|live|leaderboard|account"` on the host names the page (the old keys
+ * build, camp and kennels still work: see ALIASES); without it the place is read from the address. `data-bottom="off"`
+ * leaves the phone tab bar out (the member app has its own). `data-cta="off"` leaves the "Find your hound" button out
+ * (the quiz and the builder are where it leads). A `[data-nav-extra]` node in the static host replaces the default
+ * button for a visitor (the landing page keeps its own, with its own funnel hook); the SAME node goes back in on a re-mount.
+ *
+ * A signed-in member who opens the landing page is sent to My Kennel (home-route.js), unless the address says ?stay=1.
  *
  * Written against attributes only (no classList, no dataset, no matchMedia): it must run in a small fake DOM too.
  */
 
-import { getToken, clearToken, apiPost, TOKEN_CHANGED_EVENT } from "./api.js";
+import { getToken, TOKEN_CHANGED_EVENT } from "./api.js";
 import { h, clearNode } from "./hounds-core.js";
+import { redirectMemberHome, MY_KENNEL_HREF } from "./home-route.js";
 
 export const SIGNIN_HREF = "index.html#/signin";
 export const PASSWORD_HREF = "index.html#/signin?password=1";
+export const ACCOUNT_HREF = "index.html#/account";
+export const CREATE_HREF = "quiz.html";
+export const CTA_LABEL = "Find your hound";
 
-/** The places, in order. `key` is what `data-current` names; the tab bar shows `tab` when it has one. */
+/** The member's five places, in order. `key` is what `data-current` names; the tab bar uses the same words. */
 export const PLACES = [
-  { key: "leaderboard", label: "Leaderboard", tab: "Board", href: "hounds.html" },
-  { key: "kennels", label: "Kennels", tab: "Kennels", href: "kennels.html" },
-  { key: "live", label: "Live", tab: "Live", href: "live.html" },
-  { key: "build", label: "Build", tab: "Build", href: "quiz.html" },
-  { key: "camp", label: "Training camp", tab: "Camp", href: "learning.html" },
+  { key: "mykennel", label: "My Kennel", href: MY_KENNEL_HREF },
+  { key: "create", label: "Create", href: CREATE_HREF },
+  { key: "live", label: "Live", href: "live.html" },
+  { key: "leaderboard", label: "Leaderboard", href: "hounds.html" },
+  { key: "account", label: "Account", href: ACCOUNT_HREF },
 ];
 
-const MY_KENNEL = { key: "mykennel", label: "My kennel", tab: "Mine", href: "kennel.html" };
+/** A visitor's places: the two public ones (Sign in and the button sit on the right). */
+export const PUBLIC_PLACES = [PLACES[3], PLACES[2]];
+
+/** The keys the old six-place bar used, and where they live now. */
+export const ALIASES = { build: "create", camp: "mykennel", kennels: "leaderboard", signin: "account" };
 
 const ICONS = {
-  leaderboard: "M4 19V9m6 10V5m6 14v-7m6 7H2",
-  kennels: "M3 11l9-7 9 7v9H3zM9 20v-6h6v6",
+  mykennel: "M3 11l9-7 9 7v9H3zM9 20v-6h6v6",
+  create: "M12 5v14M5 12h14",
   live: "M12 12m-2 0a2 2 0 1 0 4 0a2 2 0 1 0-4 0M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M4.9 4.9a10 10 0 0 0 0 14.2M19.1 4.9a10 10 0 0 1 0 14.2",
-  build: "M12 5v14M5 12h14",
-  camp: "M4 6h16M4 12h16M4 18h10",
-  mykennel: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c0-4 3.6-6 8-6s8 2 8 6",
+  leaderboard: "M4 19V9m6 10V5m6 14v-7m6 7H2",
+  account: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c0-4 3.6-6 8-6s8 2 8 6",
+  signin: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c0-4 3.6-6 8-6s8 2 8 6",
 };
 
 function icon(key) {
@@ -65,21 +82,28 @@ function icon(key) {
 
 export const signedIn = () => !!getToken();
 
-/** Which place the address means. The kennel page is "My kennel" without ?u= and a public kennel (Kennels) with it. */
+/** An old or new key, as one of the five (or ""). */
+export function normalizePlace(key) {
+  const k = String(key || "");
+  return ALIASES[k] || k;
+}
+
+/** Which place the address means. The kennel page is My Kennel without ?u= and someone's public kennel (Leaderboard) with it. */
 export function placeFromAddress(loc = (typeof window !== "undefined" ? window.location : null)) {
   const path = String((loc && loc.pathname) || "").split("/").pop() || "";
   const params = new URLSearchParams((loc && loc.search) || "");
-  if (path === "kennels.html") return "kennels";
+  const hash = String((loc && loc.hash) || "");
   if (path === "live.html") return "live";
-  if (path === "hounds.html" || path === "hound.html" || path === "") return params.get("tab") === "kennels" ? "kennels" : "leaderboard";
-  if (path === "kennel.html") return params.get("u") ? "kennels" : "mykennel";
-  if (path === "build-a-hound.html" || path === "quiz.html") return "build";
-  if (path === "learning.html") return "camp";
+  if (path === "kennel.html") return params.get("u") ? "leaderboard" : "mykennel";
+  if (path === "learning.html") return "mykennel";                       // the training camp is part of My Kennel
+  if (path === "build-a-hound.html" || path === "quiz.html") return "create";
+  if (path === "hounds.html" || path === "hound.html" || path === "kennels.html" || path === "graveyard.html" || path === "") return "leaderboard";
+  if (path === "index.html") return /^#\/(signin|account|billing)/.test(hash) ? "account" : "";
   return "";
 }
 
-function wordmark() {
-  return h("a", { class: "lh-nav__brand ps-page__home", href: "landing.html", "aria-label": "LINEHOUND home" }, [
+function wordmark(home) {
+  return h("a", { class: "lh-nav__brand ps-page__home", href: home, "aria-label": "LINEHOUND home" }, [
     h("span", { class: "wordmark", "data-hook": "brand-mark" }, [
       h("span", { class: "wordmark__mark" }, [h("span")]),
       h("span", { class: "wordmark__text", "data-hook": "product-name", text: "LINEHOUND" })])]);
@@ -90,76 +114,54 @@ function placeLink(place, current, extra = {}) {
     "aria-current": place.key === current ? "page" : undefined }, extra));
 }
 
-async function signOut() {
-  try { await apiPost("/auth/logout", {}); } catch (err) { /* already gone */ }
-  clearToken();
-}
-
-function accountMenu(state, close) {
-  const item = (text, attrs, on) => h("a", Object.assign({ role: "menuitem", class: "lh-menu__item", text }, attrs, on ? { on } : {}));
-  const menu = h("div", { class: "lh-menu", role: "menu", "data-hook": "nav-menu", hidden: true }, [
-    item("My kennel", { href: MY_KENNEL.href, "data-hook": "menu-mykennel" }),
-    item("Change password", { href: PASSWORD_HREF, "data-hook": "menu-password" }),
-    h("button", { type: "button", role: "menuitem", class: "lh-menu__item lh-menu__item--button", "data-hook": "menu-signout", text: "Sign out",
-      on: { click: async () => { close(); await signOut(); } } }),
-  ]);
-  state.menu = menu;
-  return menu;
-}
-
-/** The right-hand side: Sign in, or My kennel and the account button with its menu. */
-function accountArea(state, current) {
+/** The right-hand side. A visitor: Sign in, then the one primary button. A member: the Account place. */
+function accountArea(current, host) {
   if (!signedIn()) {
-    return h("div", { class: "lh-nav__account", "data-hook": "nav-account-area", "data-signed-in": "false" }, [
-      h("a", { class: extras && extras.length ? "lh-btn lh-btn--soft" : "lh-btn lh-btn--solid", href: SIGNIN_HREF,
-        "data-hook": "nav-signin", text: "Sign in" }),
-      ...(extras || [])]);
+    const parts = [h("a", { class: "lh-btn lh-btn--soft", href: SIGNIN_HREF, "data-hook": "nav-signin", text: "Sign in" })];
+    const hideCta = host.getAttribute("data-cta") === "off" || current === "create";
+    if (!hideCta) parts.push(...(extras && extras.length ? extras
+      : [h("a", { class: "lh-btn lh-btn--solid", href: CREATE_HREF, "data-hook": "nav-cta", text: CTA_LABEL })]));
+    return h("div", { class: "lh-nav__account", "data-hook": "nav-account-area", "data-signed-in": "false" }, parts);
   }
-  const close = () => setMenu(state, false);
-  const button = h("button", { type: "button", class: "lh-avatar", "data-hook": "nav-account", "aria-haspopup": "menu",
-    "aria-expanded": "false", "aria-label": "Account menu", on: { click: () => setMenu(state, state.menu.hidden) } }, [
-    h("span", { class: "lh-avatar__dot", "aria-hidden": "true" }),
-    h("span", { class: "lh-avatar__text", text: "Account" })]);
-  state.button = button;
+  const account = PLACES[4];
   return h("div", { class: "lh-nav__account", "data-hook": "nav-account-area", "data-signed-in": "true" }, [
-    placeLink(MY_KENNEL, current, { class: "lh-btn lh-btn--soft", "data-hook": "nav-mykennel" }),
-    h("div", { class: "lh-nav__menuwrap" }, [button, accountMenu(state, close)])]);
+    placeLink(account, current, { class: "lh-avatar", "data-hook": "nav-account" }),
+  ]);
 }
 
-function setMenu(state, open) {
-  if (!state.menu || !state.button) return;
-  state.menu.hidden = !open;
-  state.button.setAttribute("aria-expanded", open ? "true" : "false");
+/** The phone tab bar. A member: the same five places. A visitor: Leaderboard, Live, Sign in and the primary button. */
+function tabBar(current, hideCta = false) {
+  const tab = (p) => h("a", { class: "lh-tab", href: p.href, "data-nav": p.key, "aria-current": p.key === current ? "page" : undefined }, [
+    icon(p.key), h("span", { class: "lh-tab__label", text: p.label })]);
+  if (signedIn()) {
+    return h("nav", { class: "lh-tabbar", "aria-label": "Sections", "data-hook": "site-tabbar", "data-count": "5" }, PLACES.map(tab));
+  }
+  // On the quiz and the builder (where the button leads) the bar drops it, as the desktop bar does: one primary per screen.
+  const visitor = PUBLIC_PLACES.map(tab).concat([tab({ key: "signin", label: "Sign in", href: SIGNIN_HREF })]);
+  if (!hideCta) visitor.push(h("a", { class: "lh-tab lh-tab--cta", href: CREATE_HREF, "data-hook": "tab-cta", "data-nav": "create" }, [
+    h("span", { class: "lh-tab__label", text: CTA_LABEL })]));
+  return h("nav", { class: "lh-tabbar", "aria-label": "Sections", "data-hook": "site-tabbar", "data-count": String(visitor.length) }, visitor);
 }
 
-function tabBar(current) {
-  const places = PLACES.concat([signedIn() ? MY_KENNEL : { key: "signin", label: "Sign in", tab: "Sign in", href: SIGNIN_HREF }]);
-  return h("nav", { class: "lh-tabbar", "aria-label": "Sections", "data-hook": "site-tabbar" }, places.map((p) =>
-    h("a", { class: "lh-tab", href: p.href, "data-nav": p.key, "aria-current": p.key === current ? "page" : undefined }, [
-      icon(p.key === "signin" ? "mykennel" : p.key), h("span", { class: "lh-tab__label", text: p.tab || p.label })])));
-}
-
-let active = null;
 let extras = null;
 
 export function mountNav(host = document.querySelector(".lh-nav")) {
   if (!host) return null;
-  const state = { menu: null, button: null };
-  const current = host.getAttribute("data-current") || placeFromAddress();
-  // an extra a page keeps in the bar for a visitor (the landing page's "Request an invite"): the SAME node goes back in,
-  // so a listener another script put on it survives a re-mount
+  const current = normalizePlace(host.getAttribute("data-current") || placeFromAddress());
+  // an extra a page keeps in the bar for a visitor (the landing page's own button): the SAME node goes back in, so a
+  // listener another script put on it survives a re-mount
   if (extras === null) extras = Array.from(host.querySelectorAll ? host.querySelectorAll("[data-nav-extra]") : []);
   clearNode(host);
   host.setAttribute("data-signed-in", signedIn() ? "true" : "false");
+  const links = signedIn() ? PLACES.slice(0, 4) : PUBLIC_PLACES;
   host.appendChild(h("div", { class: "lh-nav__bar" }, [
-    wordmark(),
-    h("nav", { class: "lh-nav__links", "aria-label": "primary", "data-hook": "nav-links" }, PLACES.map((p) => placeLink(p, current))),
-    accountArea(state, current)]));
+    wordmark(signedIn() ? MY_KENNEL_HREF : "landing.html"),
+    h("nav", { class: "lh-nav__links", "aria-label": "primary", "data-hook": "nav-links" }, links.map((p) => placeLink(p, current))),
+    accountArea(current, host)]));
   // the phone tab bar lives on the body, once
   const old = document.querySelector("[data-hook='site-tabbar']");
   if (old && old.parentNode) old.parentNode.removeChild(old);
-  if (host.getAttribute("data-bottom") !== "off") document.body.appendChild(tabBar(current));
-  active = state;
+  if (host.getAttribute("data-bottom") !== "off") document.body.appendChild(tabBar(current, host.getAttribute("data-cta") === "off" || current === "create"));
   return { current, signedIn: signedIn() };
 }
 
@@ -168,14 +170,11 @@ let followed = false;
 export function bootNav() {
   const host = typeof document !== "undefined" ? document.querySelector(".lh-nav") : null;
   if (!host) return null;
+  // a member on the landing page goes home (My Kennel) before anything else is drawn
+  if (typeof window !== "undefined" && redirectMemberHome(window, signedIn())) return null;
   const out = mountNav(host);
   if (!followed && typeof window !== "undefined" && typeof window.addEventListener === "function") {
     followed = true;
-    document.addEventListener("keydown", (evt) => { if (evt && evt.key === "Escape" && active) setMenu(active, false); });
-    document.addEventListener("click", (evt) => {
-      const wrap = evt && evt.target && evt.target.closest ? evt.target.closest(".lh-nav__menuwrap") : null;
-      if (!wrap && active) setMenu(active, false);
-    });
     const again = () => { mountNav(document.querySelector(".lh-nav")); };
     window.addEventListener(TOKEN_CHANGED_EVENT, again);
     window.addEventListener("storage", again);

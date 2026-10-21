@@ -486,9 +486,11 @@ class TheKennelRemoveAndEdit(unittest.TestCase):
         r.update(over)
         return r
 
-    def test_a_remove_button_on_every_card_asks_retires_and_redraws_the_kennel(self):
+    def test_remove_in_the_studio_asks_retires_and_redraws_the_kennel(self):
+        # # owner ruling 2026-10-20 kennel-first: the card no longer carries Remove; it lives in the studio (tap the card's art)
         out = run_page("kennel", routes=self.routes(), **SIGNED, switchAfter={"/hounds/kennels/mine": [1, self.kennel(self.dogs("u-2"))]}, actions=[
-            dict(do="click", sel="[data-hook='dog-action-remove']", index=0, wait=300, label="gone", capture=[
+            dict(do="click", sel="[data-hook='dog-avatar']", index=0, wait=250, label="open"),
+            dict(do="click", sel="[data-hook='studio-remove']", wait=300, label="gone", capture=[
                 q("names", f"{self.CARDS} [data-hook='dog-name']", "texts"), q("status", "[data-hook='kennel-status']")])],
             queries=[q("buttons", "[data-hook='dog-action-remove']", "count")])
         self.assertEqual(len(out["confirms"]), 1)
@@ -497,18 +499,20 @@ class TheKennelRemoveAndEdit(unittest.TestCase):
         cap = out["captures"]["gone"]
         self.assertEqual(cap["names"], ["Totals Tina"])
         self.assertIn("Underdog Gus was removed from your kennel", cap["status"])
-        self.assertEqual(out["final"]["buttons"], 1)
+        self.assertEqual(out["final"]["buttons"], 0, "no Remove button on any card")
 
     def test_cancelling_leaves_the_kennel_alone(self):
         out = run_page("kennel", routes=self.routes(), **SIGNED, confirm=False, actions=[
-            dict(do="click", sel="[data-hook='dog-action-remove']", index=0, wait=200)],
+            dict(do="click", sel="[data-hook='dog-avatar']", index=0, wait=250),
+            dict(do="click", sel="[data-hook='studio-remove']", wait=200)],
             queries=[q("names", f"{self.CARDS} [data-hook='dog-name']", "texts"), q("status", "[data-hook='kennel-status']")])
         self.assertEqual(posts_to_url(out, "/hounds/u-1/retire"), 0)
         self.assertEqual(out["final"], {"names": ["Underdog Gus", "Totals Tina"], "status": ""})
 
     def test_a_failed_removal_is_said_and_the_card_stays(self):
         routes = self.routes(**{"POST /hounds/u-1/retire": [500, {"detail": "boom"}]})
-        out = run_page("kennel", routes=routes, **SIGNED, actions=[dict(do="click", sel="[data-hook='dog-action-remove']", index=0, wait=200)],
+        out = run_page("kennel", routes=routes, **SIGNED, actions=[dict(do="click", sel="[data-hook='dog-avatar']", index=0, wait=250),
+                                                                    dict(do="click", sel="[data-hook='studio-remove']", wait=200)],
                        queries=[q("names", f"{self.CARDS} [data-hook='dog-name']", "texts"), q("status", "[data-hook='kennel-status']"),
                                 q("kind", "[data-hook='kennel-status']", "attr", attr="data-kind")])
         self.assertEqual(out["final"]["names"], ["Underdog Gus", "Totals Tina"])

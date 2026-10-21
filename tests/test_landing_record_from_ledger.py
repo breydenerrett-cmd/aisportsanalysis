@@ -29,7 +29,7 @@ except ImportError:
 
 class TheLandingFallbackNamesNoFigure(unittest.TestCase):
     def setUp(self):
-        self.html = (WEB / "landing.html").read_text(encoding="utf-8")
+        self.html = (WEB / "desk.html").read_text(encoding="utf-8")
 
     def test_the_hook_exists_once(self):
         self.assertEqual(self.html.count('data-hook="card-record"'), 1)

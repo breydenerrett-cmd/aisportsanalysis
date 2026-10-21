@@ -78,7 +78,7 @@ class TheKennelsIndex(unittest.TestCase):
     def test_it_shows_the_featured_dog_with_its_reason_and_a_small_sample_warning(self):
         f = self.page()["final"]
         self.assertEqual((f["feat"], f["name"]), (1, "Rex"))
-        self.assertEqual(f["kicker"], "Featured dog · Highest paper bankroll")
+        self.assertEqual(f["kicker"], "Featured hound · Highest paper bankroll")
         self.assertEqual(f["note"], "7 settled bets. Ranked in full at 20.")   # owner ruling 2026-10-20, complete-product positioning
         self.assertEqual(f["bigdog"], ["132"])
 
@@ -98,7 +98,7 @@ class TheKennelsIndex(unittest.TestCase):
         f = self.page(stream=False)["final"]
         self.assertEqual((f["feat"], f["acts"], f["cards"]), (1, 0, 2))
 
-    def test_no_kennels_is_a_thinking_dog_and_a_build_link_not_a_blank_page(self):
+    def test_no_kennels_is_a_thinking_dog_and_no_second_button_not_a_blank_page(self):   # owner ruling 2026-10-20 kennel-first: one primary button per page
         out = run_page("kennels_index", routes={"/hounds/kennels": [200, {"kennels": [], "count": 0}]}, queries=[
             q("empty", "[data-hook='kennels-empty']"), q("quiet", "[data-hook='kennel-quiet'] svg.dk-badge", "attrs", attr="data-pose"), q("feat", "[data-hook='kennels-featured']", "count")])
         self.assertIn("No kennels yet", out["final"]["empty"])
@@ -148,7 +148,7 @@ class MyKennelOnAPhone(unittest.TestCase):
 
     def test_the_mine_card_still_has_the_four_actions_in_order(self):
         src = (ROOT / "web" / "js" / "kennel.js").read_text(encoding="utf-8")
-        order = [src.index(h) for h in ('"dog-action-fire"', '"dog-action-ask"', '"dog-action-edit"', '"dog-action-open"')]
+        order = [src.index(h) for h in ('"dog-action-fire"', '"dog-action-train"', '"dog-action-edit"', '"dog-action-outback"')]      # owner ruling 2026-10-20 kennel-first
         self.assertEqual(order, sorted(order))
 
 

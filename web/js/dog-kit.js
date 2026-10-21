@@ -34,7 +34,9 @@ const q = (hook) => document.querySelector(`[data-hook='${hook}']`);
 export function applyHeaderBadge(look, name, muted = false, dog = {}) {
   const old = document.querySelector(".hd-modelhead .hd-mono") || document.querySelector(".hd-modelhead .dk-badge");
   if (!old || !look) return false;
-  const badge = dogBadge(look, { size: 84, id: dog.id, name: name || dog.name, vibe: dog.vibe, mood: muted ? "sad" : (dog.pose || "idle") });
+  // keep the size the header drew the first face at (the hero's big art), 84 when it did not say
+  const drawn = Number(old.getAttribute ? old.getAttribute("width") : 0);
+  const badge = dogBadge(look, { size: drawn > 0 ? drawn : 84, id: dog.id, name: name || dog.name, vibe: dog.vibe, mood: muted ? "sad" : (dog.pose || "idle") });
   badge.setAttribute("data-hook", "header-badge");
   if (muted) badge.setAttribute("style", "opacity:.55");
   const parent = old.parentNode;

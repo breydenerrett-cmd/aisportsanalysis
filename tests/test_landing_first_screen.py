@@ -44,7 +44,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 WEB = ROOT / "web"
 JS = WEB / "js"
-HTML = (WEB / "landing.html").read_text(encoding="utf-8")
+HTML = (WEB / "desk.html").read_text(encoding="utf-8")      # the old landing page, moved whole on 2026-10-20 (web/landing.html is the kennel-first page)
 LANDING_JS = (JS / "landing.js").read_text(encoding="utf-8")
 
 
@@ -165,6 +165,8 @@ class TheEarlyAccessLabelIsOneDecision(unittest.TestCase):
             m = re.search(r'<a[^>]*href="([^"]+)"[^>]*data-hook="%s"[^>]*>(.*?)</a>' % hook, MARKUP, re.S)
             self.assertIsNotNone(m, hook)
             labels[hook] = (m.group(1), m.group(2).strip())
+        # # owner ruling 2026-10-20 kennel-first: the bar's primary button (cta-primary) opens the quiz; the other three are still the free account
+        self.assertEqual(labels.pop("cta-primary"), ("quiz.html", "Find your hound"))
         self.assertEqual(set(labels.values()), {("index.html#/signin?create=1", "Create free account")})
         self.assertNotIn("Get notified when checkout opens", MARKUP)
 
@@ -215,11 +217,11 @@ class TheLeaderboardIsTheFirstScreen(unittest.TestCase):
     """Owner, 2026-10-19: the site "looks like a kids playground, not a professional gambling AI website". The first
     screen is a plain headline, one sentence on how it works, a live mini leaderboard and the latest tickets."""
 
-    # Owner ruling 2026-10-20, complete-product positioning: the hero sells building your own hound, not a
-    # "tracked in public" leaderboard with hedging around it.
-    TITLE = "Build your own AI sports bettor."
-    SUB = ("Answer eight picks, or describe a strategy in one sentence. Your hound bets every sport we cover, and every "
-           "pick is published before the game and graded win or lose on a public record.")
+    # Kennel-first rebuild, 2026-10-20: the landing page sells creating a hound (tests/test_landing_kennel_first.py). This page is
+    # the house pack and the AI desk, and says so.
+    TITLE = "The house pack and the AI desk."
+    SUB = ("Our own hounds bet every sport we cover, in public. The AI desk reads every game and writes a brief. Every pick and "
+           "every call is on the record before the game and graded after.")
 
     def test_the_one_h1_is_the_headline_verbatim_and_the_subline_follows_it(self):
         h1 = re.search(r'<h1 class="lbhero__title" data-hook="lb-title">(.*?)</h1>', MARKUP, re.S)
@@ -231,27 +233,22 @@ class TheLeaderboardIsTheFirstScreen(unittest.TestCase):
 
     def test_the_hero_comes_first_then_buttons_then_the_leaderboard_then_the_ai_desk(self):
         order = [("hero", 'data-hook="lb-hero"'), ("headline", 'data-hook="lb-title"'), ("subline", 'data-hook="lb-sub"'),
-                 ("build", 'data-hook="cta-kennel-build"'), ("enter", 'data-hook="cta-kennel-enter"'),
+                 ("enter", 'data-hook="cta-kennel-enter"'), ("quiz", 'data-hook="cta-kennel-quiz"'),
                  ("straight", 'data-hook="kennel-straight"'), ("board", 'data-hook="lb-board"'),
                  ("tickets", 'data-hook="lb-tickets"'), ("ai desk", 'data-hook="hero"')]
         positions = [_at(needle) for _label, needle in order]
         self.assertEqual(positions, sorted(positions), [label for label, _ in order])
         self.assertLess(_at('data-hook="landing-header"'), _at('data-hook="lb-hero"'))
 
-    def test_the_two_calls_to_action_are_build_your_hound_and_watch_the_house_pack(self):
-        # owner ruling 2026-10-20, complete-product positioning: build first, the house pack second
+    def test_the_two_calls_to_action_are_the_leaderboard_and_find_your_hound(self):
         enter = re.search(r'<a\b[^>]*data-hook="cta-kennel-enter"[^>]*>(.*?)</a>', MARKUP, re.S)
-        build = re.search(r'<a\b[^>]*data-hook="cta-kennel-build"[^>]*>(.*?)</a>', MARKUP, re.S)
-        self.assertEqual(enter.group(1).strip(), "Watch the house pack")
-        self.assertIn('href="hounds.html"', enter.group(0))
-        # quiz first (growth playbook item 13): "Find your hound" is the primary, the sentence builder the secondary
         quiz = re.search(r'<a\b[^>]*data-hook="cta-kennel-quiz"[^>]*>(.*?)</a>', MARKUP, re.S)
+        self.assertEqual(enter.group(1).strip(), "Open the leaderboard")
+        self.assertIn('href="hounds.html"', enter.group(0))
+        self.assertIn("btn--primary", enter.group(0))
         self.assertEqual(quiz.group(1).strip(), "Find your hound")
-        self.assertIn('href="quiz.html"', quiz.group(0))
-        self.assertIn("btn--primary", quiz.group(0))
-        self.assertEqual(build.group(1).strip(), "Build from a sentence")
-        self.assertIn('href="build-a-hound.html"', build.group(0))
-        self.assertNotIn("btn--primary", build.group(0))
+        self.assertIn('href="quiz.html?start=1"', quiz.group(0))
+        self.assertNotIn("btn--primary", quiz.group(0))
         # data-hook starts with "cta", so landing.js's delegated listener counts both clicks
         self.assertIn("closest(\"[data-hook^='cta']\")", LANDING_JS)
 
@@ -280,7 +277,7 @@ class TheLeaderboardIsTheFirstScreen(unittest.TestCase):
         self.assertNotIn("landing-kennel", LANDING_JS)
 
     def test_the_first_screen_has_no_toy_voice_no_emoji_and_no_cartoon(self):
-        hero = re.search(r'<section class="lbhero".*?</section>\s*(?=<section class="(?:kncard|hero)")', MARKUP, re.S).group(0)
+        hero = re.search(r'<section class="lbhero".*?</section>\s*(?=<section class="hero )', MARKUP, re.S).group(0)
         text = _visible(hero).lower()
         for word in ("kennel", "dog", "bark", "put down", "doghouse", "houndmaster", "fighting it out"):
             self.assertNotIn(word, text, word)

@@ -29,8 +29,8 @@ class TheLiveSportsSentenceHasOneSource(unittest.TestCase):
         for sport in ("tennis", "cricket", "soccer", "NBA", "NHL", "college", "MLB", "NFL", "MMA"):
             self.assertIn(sport, text)
 
-    def test_the_landing_markup_fallback_equals_the_constant(self):
-        html = (WEB / "landing.html").read_text(encoding="utf-8")
+    def test_the_desk_markup_fallback_equals_the_constant(self):
+        html = (WEB / "desk.html").read_text(encoding="utf-8")
         nodes = re.findall(r'data-hook="sports-live-today">([^<]*)<', html)
         self.assertEqual(nodes, [_constant()])
 
@@ -44,7 +44,7 @@ class TheLiveSportsSentenceHasOneSource(unittest.TestCase):
             self.assertNotIn("tennis, cricket, soccer", (JS / name).read_text(encoding="utf-8"), name)
 
     def test_no_page_still_says_the_daily_brief_or_names_the_postseason_in_a_promise(self):
-        for path in (WEB / "landing.html", WEB / "sample.html", JS / "sample.js", JS / "landing.js"):
+        for path in (WEB / "landing.html", WEB / "desk.html", WEB / "sample.html", JS / "sample.js", JS / "landing.js"):
             text = path.read_text(encoding="utf-8").replace(_constant(), "")
             self.assertNotRegex(text, r"(?i)daily MLB brief", path.name)
             self.assertNotIn("MLB postseason briefs", text, path.name)

@@ -27,6 +27,7 @@ def q(name, sel, mode="text", **kw):
 
 
 LABEL = "Every model starts with the same $1,000 paper bankroll. 1 unit = $10."
+HOUND_LINE = "Every hound starts with the same $1,000 paper bankroll. Paper money, not advice."   # owner ruling 2026-10-20 kennel-first: one short line next to the money
 
 
 @unittest.skipUnless(HAS_NODE, "node not installed")
@@ -90,12 +91,12 @@ class TheLeaderboard(unittest.TestCase):
 
     def test_it_says_every_model_starts_with_the_same_thousand_dollars(self):
         out = run_page("hounds", routes=routes(), queries=[q("line", "[data-hook='bankroll-line']"), q("cap", "[data-hook='leaderboard-table'] caption")])
-        self.assertEqual(out["final"]["line"], LABEL)
+        self.assertEqual(out["final"]["line"], HOUND_LINE)  # owner ruling 2026-10-20 kennel-first
         self.assertIn("$1,000", out["final"]["cap"])
 
     def test_the_static_page_already_carries_the_line_for_a_visitor_with_scripts_off(self):
         html = (F.Path(__file__).resolve().parent.parent / "web" / "hounds.html").read_text(encoding="utf-8")
-        self.assertIn(LABEL, html)
+        self.assertIn(HOUND_LINE, html)
 
     def test_a_thin_sample_is_greyed_with_the_reason_in_its_tooltip(self):
         def edit(data):
@@ -203,6 +204,17 @@ class TheModelPage(unittest.TestCase):
         out = self.page(queries=[q("bank", ".hd-kpi[data-slot='bankroll']"), q("note", "[data-hook='chart-basis']")])
         self.assertIn("at the average price across books", out["final"]["bank"])
         self.assertNotIn("missing for more than 10%", out["final"]["note"])
+
+    def test_a_hound_with_no_settled_bet_never_claims_its_average_price_board_is_missing(self):
+        # The server answers "recorded_price" for a brand-new hound (no priced bet, so no average-price coverage); the page
+        # said "missing for more than 10% of its bets" on every new member hound, with 0 bets (rebuild QA, 2026-10-20).
+        d = json.loads(json.dumps(F.detail("closer")))
+        d["bankroll"]["basis"] = "recorded_price"
+        d["record"].update({"bets": 0, "wins": 0, "losses": 0, "pushes": 0, "voids": 0})
+        out = self.page(routes={"/hounds/closer?season=s2": [200, d], "/hounds/closer": [200, d]},
+                        queries=[q("note", "[data-hook='chart-basis']")])
+        self.assertNotIn("missing for more than 10%", out["final"]["note"])
+        self.assertIn("at the average price across books", out["final"]["note"])
 
 
 @unittest.skipUnless(HAS_NODE, "node not installed")

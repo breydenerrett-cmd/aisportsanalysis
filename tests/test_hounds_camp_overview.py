@@ -24,7 +24,7 @@ class CollapsedSections(unittest.TestCase):
         self.assertEqual(strip.count('class="cp-stat"'), 4)
         for hook in ("camp-stat-tips", "camp-stat-helped", "camp-stat-next", "camp-stat-dogs"):
             self.assertIn(f'data-hook="{hook}"', strip)
-        for label in ("Coach tips graded", "Helped / hurt", "Next breeding cycle", "Your dogs in training"):
+        for label in ("Coach tips graded", "Helped / hurt", "Next breeding cycle", "Your hounds in training"):
             self.assertIn(label, strip)
 
     def test_every_section_is_a_closed_details_with_a_headline_and_one_number(self):
@@ -76,7 +76,7 @@ class TheFigures(unittest.TestCase):
           mine: { dogs: [{}, {}] } }''')
         self.assertEqual(got["strip"], {"tips": "12", "helpedHurt": "5 / 3", "nextCycle": "in 1d 6h", "dogs": "2"})
         self.assertEqual(got["nums"]["coach"], "12 graded")
-        self.assertEqual(got["nums"]["dogs"], "2 dogs")
+        self.assertEqual(got["nums"]["dogs"], "2 hounds")
         self.assertEqual(got["nums"]["cuts"], "4 trying out")
         self.assertEqual(got["nums"]["coin"], "+0.41 pts")
         self.assertEqual(got["nums"]["hold"], "4 of 6")

@@ -450,7 +450,7 @@
 .hounds-page .bd-side .hd-panel { position: relative; padding: var(--lh-s5); border-radius: 22px; box-shadow: inset 0 0 0 1px var(--lh-line), var(--lh-e1); min-height: 148px; }
 .bd-side__dog { position: absolute; top: var(--lh-s4); right: var(--lh-s4); line-height: 0; border-radius: 18px; }
 .bd-side__dog svg { width: 60px; height: 60px; }
-.hounds-page .bd-side .hd-panel h2 { padding-right: 72px; }
+.hounds-page .bd-side .hd-panel h2 { padding-right: 72px; min-height: 56px; }  /* the 60px badge sits beside the heading only: the line under it wrapped beneath the badge at 390px */
 
 /* the seventh tile of the secondary row spans the line on a phone instead of sitting alone */
 @media (max-width: 760px) { .hd-kpirow .hd-kpi:last-child:nth-child(odd) { grid-column: 1 / -1; } }
@@ -458,3 +458,111 @@
 /* "Take them out back" on a kennel card: the burial. Outlined in the bad colour, never the loudest thing on the card, and the sheet asks twice. */
 .kn-act--danger { background: transparent; color: #FF8A96; box-shadow: inset 0 0 0 1px rgba(255, 107, 122, .55); }
 .kn-act--danger:hover { background: rgba(255, 107, 122, .16); color: #fff; }
+
+/* ======================================================================================================================
+ * KENNEL-FIRST (owner ruling 2026-10-20, docs/design/KENNEL_FIRST_BRIEF.md): My Kennel is the home. Big quiet cards, one accent
+ * (the green Unleash), no card borders, space instead of boxes, a "Tonight" strip, an upgrade card only when it is earned.
+ * Loaded last on the kennel page so it sits on top of the older card rules above; the class names are unchanged.
+ * ==================================================================================================================== */
+.kn-main { max-width: 1120px; }
+.kn-head { align-items: center; margin: var(--lh-s2) 0 var(--lh-s5); }
+.kn-eyebrow:empty { display: none; }
+.hounds-page .kn-main .kn-head h1 { margin: 0; font-family: var(--lh-font-display); font-size: var(--lh-fs-2xl); font-weight: 700; letter-spacing: var(--lh-track-display); line-height: 1; }
+.kn-sub { margin: var(--lh-s3) 0 0; font-size: var(--lh-fs-base); color: var(--lh-mute); }
+.kn-sub:empty { display: none; }
+.kn-money-line { margin: var(--lh-s2) 0 var(--lh-s5); }
+.kn-status { min-height: 0; margin: 0; }
+.kn-status:empty { display: none; }
+
+/* ---- Tonight ----------------------------------------------------------------------------------------------- */
+.kn-tonight { margin: 0 0 var(--lh-s5); padding: var(--lh-s4) var(--lh-s5); border-radius: var(--lh-r-lg); background: var(--lh-soft); }
+.kn-tonight--quiet { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--lh-s1) var(--lh-s4); padding: var(--lh-s3) var(--lh-s5); }
+.kn-tonight__head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--lh-s1) var(--lh-s4); }
+.hounds-page .kn-main .kn-tonight__title, .hounds-page .kn-main .kn-camp__title, .hounds-page .kn-main .kn-graveyard__title {
+  margin: 0; font: 600 var(--lh-fs-xs)/1.2 var(--lh-font-text); letter-spacing: .08em; text-transform: uppercase; color: var(--lh-mute);
+}
+.kn-tonight__next { margin: 0; font-size: var(--lh-fs-base); font-weight: 600; color: var(--lh-accent); font-variant-numeric: tabular-nums; }
+.kn-tonight__line { margin: 0; font-size: var(--lh-fs-base); color: var(--lh-ink2); }
+.kn-tonight__list { list-style: none; margin: var(--lh-s2) 0 0; padding: 0; display: grid; }
+.kn-tix { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--lh-s3); align-items: center; padding: var(--lh-s3) 0; }
+.kn-tix__dog { line-height: 0; border-radius: 10px; }
+.kn-tix__main { display: grid; gap: 2px; min-width: 0; }
+.kn-tix__pick { font-size: var(--lh-fs-base); color: var(--lh-ink2); overflow-wrap: anywhere; }
+.kn-tix__pick strong { color: var(--lh-ink); font-weight: 600; }
+.kn-tix__game { font-size: var(--lh-fs-sm); color: var(--lh-mute); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kn-tix__lock { font-size: var(--lh-fs-sm); font-weight: 600; color: var(--lh-ink2); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.kn-tix[data-ahead="false"] .kn-tix__lock { color: var(--lh-mute); font-weight: 500; }
+.kn-tonight__more { margin: var(--lh-s1) 0 0; }
+@media (max-width: 520px) { .kn-tix { grid-template-columns: auto minmax(0, 1fr); } .kn-tix__lock { grid-column: 2; } }
+
+/* ---- the hound cards --------------------------------------------------------------------------------------- */
+.kn-grid { grid-template-columns: repeat(auto-fill, minmax(min(480px, 100%), 1fr)); gap: var(--lh-s4); margin: 0 0 var(--lh-s5); }
+.kn-card {
+  flex-direction: column; gap: var(--lh-s4); padding: var(--lh-s5); border-radius: 22px; background: rgba(255, 255, 255, .04); box-shadow: none;
+}
+.kn-card:hover { background: rgba(255, 255, 255, .055); transform: none; }
+.kn-card__head { display: flex; align-items: center; gap: var(--lh-s4); min-width: 0; }
+.kn-card__avatar { width: 104px; height: 104px; border-radius: 26px; }
+.kn-card__avatar svg { width: 104px; height: 104px; }
+.kn-card:hover .kn-card__avatar { transform: none; }
+.kn-card__id { flex: 1; min-width: 0; }
+.kn-card__name { font-family: var(--lh-font-display); font-size: 30px; font-weight: 700; letter-spacing: var(--lh-track-display); line-height: 1.05; }
+.hounds-page .kn-main .kn-card__name { margin: 0; font-size: 30px; }
+.kn-card__tag { margin: var(--lh-s1) 0 0; font-size: var(--lh-fs-base); }
+.kn-card__badges { display: flex; flex-wrap: wrap; align-items: center; gap: var(--lh-s2); margin-top: var(--lh-s3); }
+.kn-card__main { display: grid; gap: var(--lh-s3); min-width: 0; }
+.kn-card__today { margin: 0; font-size: var(--lh-fs-base); font-weight: 500; color: var(--lh-ink); }
+.kn-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--lh-s3); margin: 0; }
+.kn-stat dt { font-size: var(--lh-fs-xs); letter-spacing: .04em; color: var(--lh-mute); }
+.kn-stat dd { margin: var(--lh-s1) 0 0; font-size: 28px; white-space: nowrap; }
+.kn-card__last { margin: 0; font-size: var(--lh-fs-sm); white-space: normal; }
+.kn-card__actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--lh-s2); margin-top: var(--lh-s1); }
+.kn-act { justify-content: center; height: 44px; padding: 0 var(--lh-s3); border-radius: var(--lh-r-md); font-size: var(--lh-fs-base); font-weight: 600; white-space: nowrap; }
+.kn-act--edit { background: rgba(255, 255, 255, .07); }
+/* the burial is a different kind of act: a quiet red word, no fill and no border until it is hovered or focused */
+.kn-act--danger { background: transparent; box-shadow: none; color: var(--lh-loss); }
+.kn-act--danger:hover, .kn-act--danger:focus-visible { background: var(--lh-loss-soft); color: #FFD7DB; }
+.kn-act:focus-visible { outline: 2px solid var(--lh-accent); outline-offset: 2px; }
+.kn-pill { height: 26px; padding: 0 var(--lh-s3); font-size: var(--lh-fs-sm); }
+@media (max-width: 760px) {
+  .kn-card { padding: var(--lh-s4); gap: var(--lh-s3); border-radius: 20px; }
+  .kn-card__avatar, .kn-card__avatar svg { width: 84px; height: 84px; }
+  .hounds-page .kn-main .kn-card__name { font-size: 26px; }
+  .kn-stat dd { font-size: 22px; }
+  .kn-stats { gap: var(--lh-s2); }
+}
+
+/* ---- the empty state and the gate: one button -------------------------------------------------------------- */
+.kn-empty { padding: var(--lh-s8) var(--lh-s4); gap: var(--lh-s2); }
+.hounds-page .hd-wrap .kn-empty h2 { margin: var(--lh-s4) 0 0; font-family: var(--lh-font-display); font-size: var(--lh-fs-xl); font-weight: 700; }
+.kn-empty .hd-lede { margin: 0 0 var(--lh-s4); font-size: var(--lh-fs-md); color: var(--lh-mute); }
+.kn-empty__cta { height: 52px; padding: 0 var(--lh-s6); border-radius: var(--lh-r-md); font-size: var(--lh-fs-md); }
+
+/* ---- the quiet cards below the grid ------------------------------------------------------------------------ */
+.kn-upgrade, .kn-camp { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--lh-s3) var(--lh-s5); margin: 0 0 var(--lh-s4); padding: var(--lh-s5); border-radius: var(--lh-r-lg); background: var(--lh-soft); }
+.kn-upgrade { background: linear-gradient(135deg, var(--lh-accent-soft), rgba(255, 255, 255, .03) 70%); }
+.kn-upgrade__text, .kn-camp__text { flex: 1 1 280px; min-width: 0; }
+.hounds-page .kn-main .kn-upgrade__title { margin: 0 0 var(--lh-s1); font-family: var(--lh-font-display); font-size: var(--lh-fs-lg); font-weight: 700; }
+.kn-upgrade__sub, .kn-camp__sub { margin: var(--lh-s1) 0 0; font-size: var(--lh-fs-base); color: var(--lh-ink2); }
+.kn-upgrade__offer { margin: var(--lh-s2) 0 0; font-size: var(--lh-fs-base); font-weight: 600; color: var(--lh-accent); }
+.kn-upgrade__fine { margin: var(--lh-s1) 0 0; max-width: 44em; }
+.kn-more { display: flex; flex-wrap: wrap; gap: var(--lh-s1) var(--lh-s5); margin: var(--lh-s4) 0 0; }
+.kn-more:empty { display: none; }
+.kn-link { display: inline-flex; align-items: center; min-height: 36px; padding: 0; border: 0; background: none; color: var(--lh-mute); font: 500 var(--lh-fs-base)/1 var(--lh-font-text); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.kn-link:hover { color: var(--lh-ink); }
+.kn-link:focus-visible { outline: 2px solid var(--lh-accent); outline-offset: 2px; }
+.kn-graveyard { margin: var(--lh-s5) 0 var(--lh-s4); }
+.kn-graveyard .hd-muted { margin: var(--lh-s2) 0 var(--lh-s1); }
+.kn-page .hd-foot { border-top-color: var(--lh-line); }
+.kn-legal { margin: 0; font-size: var(--lh-fs-sm); color: var(--lh-mute); }
+.kn-activity { margin: var(--lh-s5) 0 var(--lh-s4); }
+.kn-name.hd-panel, .kn-profile.hd-panel { border: 0; border-radius: var(--lh-r-lg); background: var(--lh-soft); }
+/* The name prompt is a filled card: lh.css zeroes .hd-panel padding for the flat panels, so this one sets its own, and its
+   field gets the same height and inset as every other input (it was 20px tall and flush against the card edge). */
+.hounds-page .kn-name.hd-panel, .hounds-page .kn-profile.hd-panel { padding: var(--lh-s5); }
+.hounds-page .kn-nameform input.lh-input { min-height: 44px; padding: 0 var(--lh-s3); background: var(--lh-bg); border: 1px solid var(--lh-line); font: inherit; }
+
+.kn-main[data-empty="true"] .kn-money-line, .kn-main[data-empty="true"] .kn-more { display: none; }
+/* A member with no hound is asked to create one, not to name an empty kennel first: the name prompt (two buttons, one of
+   them solid green) sat above "Create your first hound" (rebuild QA 2026-10-21). It comes back with the first hound. */
+.kn-main[data-empty="true"] [data-hook="kennel-name-slot"] { display: none; }

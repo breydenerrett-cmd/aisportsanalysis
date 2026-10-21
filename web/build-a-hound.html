@@ -43,13 +43,10 @@
     </a>
     <nav class="lh-nav__links" aria-label="Sections" data-hook="nav-links">
       <a href="hounds.html" data-nav="leaderboard">Leaderboard</a>
-      <a href="kennels.html" data-nav="kennels">Kennels</a>
       <a href="live.html" data-nav="live">Live</a>
-      <a href="quiz.html" data-nav="build" aria-current="page">Build</a>
-      <a href="learning.html" data-nav="camp">Training camp</a>
     </nav>
     <div class="lh-nav__account" data-hook="nav-account-area" data-signed-in="false">
-      <a class="lh-btn lh-btn--solid" href="index.html#/signin" data-hook="nav-signin">Sign in</a>
+      <a class="lh-btn lh-btn--soft" href="index.html#/signin" data-hook="nav-signin">Sign in</a>
     </div>
   </div>
 </header>
@@ -59,8 +56,8 @@
 <header class="bd-head">
   <p class="hd-back"><a href="kennel.html">&larr; My kennel</a></p>
   <h1 data-hook="build-title">Build your hound</h1>
-  <p class="hd-lede">Say the strategy the way you would say it. Your hound turns it into rules and races them on paper money.</p>
-  <p class="bd-quizcta" data-hook="build-quiz"><span>Not sure where to start?</span> <a class="btn btn--ghost" href="quiz.html" data-hook="build-quiz-cta">Take the quiz</a></p>
+  <p class="hd-lede">Say it, check the rules, name it. Your hound bets paper money.</p>
+  <p class="bd-quizcta" data-hook="build-quiz"><span>Not sure where to start?</span> <a class="bd-textlink" href="quiz.html" data-hook="build-quiz-cta">Take the quiz</a></p>
 </header>
 
 <p class="hd-notice" role="note" data-hook="paper-notice">Paper bets only. Your hound never takes a price of -200 or worse. Not advice. 21+.</p>
@@ -72,7 +69,7 @@
 <div class="bd-main">
 
 <section class="hd-panel bd-step" aria-labelledby="s1-h" data-hook="step-describe">
-  <p class="bd-step__no">Step 1</p>
+  <p class="bd-step__no"><span class="bd-sr">Step </span>1</p>
   <h2 id="s1-h">Say it</h2>
   <label class="bd-sr" for="english-input">Your strategy in plain English</label>
   <textarea id="english-input" class="bd-english" rows="4" data-hook="english-input" aria-describedby="english-count-note"
@@ -82,7 +79,7 @@
   <div class="bd-chips" data-hook="example-chips" role="group" aria-label="Examples to start from"></div>
   <div class="bd-actions">
     <button type="button" class="btn btn--primary" data-hook="english-go">Read my strategy</button>
-    <button type="button" class="btn btn--ghost" data-hook="blank-rule">Start from a blank rule</button>
+    <button type="button" class="bd-textbtn" data-hook="blank-rule">Start from a blank rule</button>
     <span class="hd-fine" data-hook="english-status" role="status" aria-live="polite"></span>
   </div>
   <div class="bd-read" data-hook="english-read" hidden>
@@ -102,7 +99,7 @@
 </section>
 
 <section class="hd-panel bd-step" aria-labelledby="s2-h" data-hook="step-rules">
-  <p class="bd-step__no">Step 2</p>
+  <p class="bd-step__no"><span class="bd-sr">Step </span>2</p>
   <h2 id="s2-h">Check it</h2>
   <div class="bd-empty" data-hook="rules-empty">
     <p>Describe a strategy above, or start from a blank rule.</p>
@@ -124,7 +121,7 @@
 </section>
 
 <section class="hd-panel bd-step" aria-labelledby="s3-h" data-hook="step-identity">
-  <p class="bd-step__no">Step 3</p>
+  <p class="bd-step__no"><span class="bd-sr">Step </span>3</p>
   <h2 id="s3-h">Name it</h2>
   <div class="bd-identity">
     <div class="bd-identity__fields">

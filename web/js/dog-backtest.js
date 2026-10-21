@@ -75,7 +75,7 @@ export function renderBacktest(box, data) {
   const seasonNote = data.season && data.season.clipped
     ? ` (the last ${data.days} of ${data.season.days_in_season} days of ${data.season.label})` : data.season ? ` (${data.season.label})` : "";
   box.appendChild(h("dl", { class: "dk-camp-dog__facts", "data-hook": "backtest-facts" }, [
-    h("div", {}, [h("dt", { text: "Dog" }), h("dd", { text: (data.dog && data.dog.name) || "" })]),
+    h("div", {}, [h("dt", { text: "Hound" }), h("dd", { text: (data.dog && data.dog.name) || "" })]),
     h("div", {}, [h("dt", { text: "Window" }), h("dd", { "data-hook": "backtest-window-text", text: data.window ? `${data.window.first} to ${data.window.last}, ${data.days} days${seasonNote}` : "" })]),
     h("div", {}, [h("dt", { text: "Bets" }), h("dd", { "data-hook": "drill-bets", text: `${rec.bets || 0} (${graded} graded${rec.pending ? `, ${rec.pending} pending` : ""})` })]),
     h("div", {}, [h("dt", { text: "Record (W-L)" }), h("dd", { "data-hook": "drill-record", text: graded ? record(rec) : "no graded bets" })]),
@@ -138,11 +138,11 @@ export function mountBacktest(section, { id, name }) {
   if (!body) return;
   clearNode(body);
   body.appendChild(h("p", { class: "dk-hindsight-title", "data-hook": "backtest-title" }, [h("span", { class: "dk-chip dk-chip--hind", text: TITLE })]));
-  body.appendChild(h("p", { class: "hd-muted", text: `Replay ${name || "this dog"}'s current rule over boards already stored and see what it would have done on the $1,000 paper bankroll. You can see how those games ended, so this is a rehearsal and never counts toward its record.` }));
+  body.appendChild(h("p", { class: "hd-muted", text: `Replay ${name || "this hound"}'s current rule over boards already stored and see what it would have done on the $1,000 paper bankroll. You can see how those games ended, so this is a rehearsal and never counts toward its record.` }));
   const status = statusLine("backtest-status");
   const out = h("div", { class: "dk-result", "data-hook": "backtest-result", "aria-live": "polite" });
   if (!signedIn()) {
-    body.appendChild(h("div", { "data-hook": "backtest-signin" }, [signInPrompt("Sign in to run a backtest on this dog.")]));
+    body.appendChild(h("div", { "data-hook": "backtest-signin" }, [signInPrompt("Sign in to run a backtest on this hound.")]));
     section.removeAttribute("hidden");
     return;
   }

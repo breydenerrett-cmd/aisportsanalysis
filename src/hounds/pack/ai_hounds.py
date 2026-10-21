@@ -332,7 +332,9 @@ def build_hounds(runtime: AIRuntime, config_path=None) -> tuple:
     entries = ai_defs.entries(config_path)
     cfg = ai_defs.load_config(config_path)
     runtime.min_council_members = int((cfg.get("council") or {}).get("min_members", runtime.min_council_members))
-    models = [AIHound(e, runtime) for e in entries if e.get("family") != "council"]
+    # The Gematria Hound shares this config file (and the ledger, the sports gate and the runner) but asks no model: it is
+    # built by ``gematria_hound`` in the same pass, not here.
+    models = [AIHound(e, runtime) for e in entries if e.get("family") not in ("council", "gematria")]
     councils = [CouncilHound(e, runtime) for e in entries if e.get("family") == "council"]
     runtime.members = [h.id for h in models]
     return tuple(models + councils)

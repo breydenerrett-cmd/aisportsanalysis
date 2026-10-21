@@ -167,7 +167,7 @@ class TheRecordHeadlineCannotBeMisread(unittest.TestCase):
             shutil.copy(path, cls._tmp.name)
         Path(cls._tmp.name, "package.json").write_text('{"type": "module"}', encoding="utf-8")
         Path(cls._tmp.name, "harness.mjs").write_text(HARNESS, encoding="utf-8")
-        html = (WEB / "landing.html").read_text(encoding="utf-8")
+        html = (WEB / "desk.html").read_text(encoding="utf-8")
         cls.hero = _hooks(_slice(html, 'data-hook="hero-proof"', "</aside>"))
         cls.tile = _hooks(_slice(html, 'data-hook="sport-tile-mlb"', 'data-hook="sport-tile-mlb-link"'))
 
@@ -240,7 +240,7 @@ class TheRecordHeadlineCannotBeMisread(unittest.TestCase):
     def test_the_retired_method_is_off_the_first_screen(self):
         out = self.run_scenario(_meta())["hero"]
         self.assertTrue(out["hero-previous-block"]["hidden"])
-        html = (WEB / "landing.html").read_text(encoding="utf-8")
+        html = (WEB / "desk.html").read_text(encoding="utf-8")
         pointer = re.search(r'data-hook="hero-previous-pointer">([^<]*)<', html).group(1)
         self.assertIn("separate shadow record", pointer)
         self.assertIn("not evidence for the current one", pointer)

@@ -1,0 +1,63 @@
+key,date,league,away,home,final_away,final_home,went_overtime,selection,selection_result,detail,source_url
+2026-10-04_MLB_Braves@Dodgers_BravesML,2026-10-04,MLB,Braves,Dodgers,3,2,N,Braves ML,WIN,NLDS Game 2 at Dodger Stadium,https://www.espn.com/mlb/scoreboard/_/date/20261004
+2026-10-05_NFL_Falcons@Saints_FalconsML,2026-10-05,NFL,Falcons,Saints,45,24,N,Falcons ML,WIN,MNF,https://www.espn.com/nfl/game/_/gameId/401872979
+2026-10-05_NFL_Falcons@Saints_JahanDotsonTD(Falcons),2026-10-05,NFL,Falcons,Saints,45,24,N,Jahan Dotson TD (Falcons),WIN,"1 TD (31-yd pass from Penix, Q4)",https://www.espn.com/nfl/game/_/gameId/401872979
+2026-10-05_MLB_WhiteSox@Guardians_GuardiansML,2026-10-05,MLB,White Sox,Guardians,4,3,N,Guardians ML,LOSS,ALDS Game 2 (CHW led series 2-0),https://www.espn.com/mlb/scoreboard/_/date/20261005
+2026-10-05_MLB_Yankees@Rays_YankeesML,2026-10-05,MLB,Yankees,Rays,2,5,N,Yankees ML,LOSS,ALDS Game 2 (TB led 2-0),https://www.espn.com/mlb/scoreboard/_/date/20261005
+2026-10-05_MLB_WhiteSox@Guardians_JoseRamirezHR,2026-10-05,MLB,White Sox,Guardians,4,3,N,Jose Ramirez HR,LOSS,"0-for-3, BB, 2 K, 0 HR; no HR in game",https://www.espn.com/mlb/boxscore/_/gameId/401907991
+2026-10-06_MLB_Dodgers@Braves_BravesML,2026-10-06,MLB,Dodgers,Braves,3,1,N,Braves ML,LOSS,NLDS Game 3 at Atlanta,https://www.espn.com/mlb/scoreboard/_/date/20261006
+2026-10-06_MLB_Dodgers@Braves_DrakeBaldwinHR,2026-10-06,MLB,Dodgers,Braves,3,1,N,Drake Baldwin HR,LOSS,"Played: 0-for-4, 1 RBI, 0 HR",https://www.espn.com/mlb/boxscore/_/gameId/401908015
+2026-10-06_MLB_Brewers@Padres_PadresML,2026-10-06,MLB,Brewers,Padres,3,4,N,Padres ML,WIN,NLDS Game 3 at San Diego,https://www.espn.com/mlb/scoreboard/_/date/20261006
+2026-10-06_MLB_Brewers@Padres_JakeBauersHR,2026-10-06,MLB,Brewers,Padres,3,4,N,Jake Bauers HR,LOSS,"Played (MIL): 0-for-4, BB, 4 K, 0 HR",https://www.espn.com/mlb/boxscore/_/gameId/401908004
+2026-10-06_MLB_Brewers@Padres_TyFranceHR,2026-10-06,MLB,Brewers,Padres,3,4,N,Ty France HR,LOSS,"Played (SD): 0-for-4, 0 HR",https://www.espn.com/mlb/boxscore/_/gameId/401908004
+2026-10-08_NFL_Buccaneers@Cowboys_CowboysML,2026-10-08,NFL,Buccaneers,Cowboys,24,16,N,Cowboys ML,LOSS,Cowboys lost 16-24,https://www.espn.com/nfl/boxscore/_/gameId/401872980
+2026-10-08_NFL_Buccaneers@Cowboys_CeeDeeLambTD,2026-10-08,NFL,Buccaneers,Cowboys,24,16,N,CeeDee Lamb TD,LOSS,"0 TD, 2 rec 9 yds",https://www.espn.com/nfl/boxscore/_/gameId/401872980
+2026-10-08_NFL_Buccaneers@Cowboys_CadeOttonTD,2026-10-08,NFL,Buccaneers,Cowboys,24,16,N,Cade Otton TD,LOSS,"0 TD, 3 rec 25 yds",https://www.espn.com/nfl/boxscore/_/gameId/401872980
+2026-10-08_NFL_Buccaneers@Cowboys_GeorgePickensTD,2026-10-08,NFL,Buccaneers,Cowboys,24,16,N,George Pickens TD,WIN,"1 TD, 9 rec 130 yds",https://www.espn.com/nfl/boxscore/_/gameId/401872980
+2026-10-11_NFL_Bengals@Dolphins_BengalsML,2026-10-11,NFL,Bengals,Dolphins,31,24,N,Bengals ML,WIN,ESPN Week 5 scoreboard,https://www.espn.com/nfl/scoreboard/_/week/5/year/2026/seasontype/2
+2026-10-11_NFL_Texans@Titans_TitansML,2026-10-11,NFL,Texans,Titans,26,3,N,Titans ML,LOSS,ESPN Week 5 scoreboard,https://www.espn.com/nfl/scoreboard/_/week/5/year/2026/seasontype/2
+2026-10-11_NFL_Vikings@Saints_SaintsML,2026-10-11,NFL,Vikings,Saints,23,13,N,Saints ML,LOSS,ESPN Week 5 scoreboard,https://www.espn.com/nfl/scoreboard/_/week/5/year/2026/seasontype/2
+2026-10-11_NFL_Bears@Packers_BearsML,2026-10-11,NFL,Bears,Packers,7,31,N,Bears ML,LOSS,ESPN Week 5 scoreboard,https://www.espn.com/nfl/scoreboard/_/week/5/year/2026/seasontype/2
+2026-10-11_NFL_Broncos@Chargers_ChargersML,2026-10-11,NFL,Broncos,Chargers,23,17,N,Chargers ML,LOSS,ESPN Week 5 scoreboard,https://www.espn.com/nfl/scoreboard/_/week/5/year/2026/seasontype/2
+2026-10-11_NFL_Ravens@Falcons_RavensML,2026-10-11,NFL,Ravens,Falcons,30,23,Y,Ravens ML,WIN,ESPN Week 5 scoreboard,https://www.espn.com/nfl/scoreboard/_/week/5/year/2026/seasontype/2
+2026-10-11_NFL_Bengals@Dolphins_MikeGesickiTD(Bengals),2026-10-11,NFL,Bengals,Dolphins,31,24,N,Mike Gesicki TD (Bengals),WIN,"1 rec 4 yds, 1 TD",https://www.espn.com/nfl/boxscore/_/gameId/401872982
+2026-10-12_NFL_Bills@Rams_RamsML,2026-10-12,NFL,Bills,Rams,37,34,Y,Rams ML,LOSS,Bills won 37-34 OT,https://www.espn.com/nfl/game/_/gameId/401872994
+2026-10-12_NFL_Bills@Rams_DJMoorefirstTD,2026-10-12,NFL,Bills,Rams,37,34,Y,DJ Moore first TD,VOID,"Inactive (shoulder), did not play; first TD was Davante Adams (LAR)",https://www.espn.com/nfl/game/_/gameId/401872994
+2026-10-12_NFL_Bills@Rams_DJMooreanytimeTD,2026-10-12,NFL,Bills,Rams,37,34,Y,DJ Moore anytime TD,VOID,"Inactive (shoulder), did not play; Bills TDs: Cook x2, Coleman, Allen",https://www.espn.com/nfl/game/_/gameId/401872994
+2026-10-12_NFL_Bills@Rams_PukaNacuaTD,2026-10-12,NFL,Bills,Rams,37,34,Y,Puka Nacua TD,WIN,17 rec 138 yds 1 TD,https://www.espn.com/nfl/game/_/gameId/401872994
+2026-10-12_NFL_Bills@Rams_ColbyParkinsonTD,2026-10-12,NFL,Bills,Rams,37,34,Y,Colby Parkinson TD,LOSS,1 rec 3 yds 0 TD,https://www.espn.com/nfl/game/_/gameId/401872994
+2026-10-13_MLB_Guardians@Rays_RaysML,2026-10-13,MLB,Guardians,Rays,1,3,N,Rays ML,WIN,ALCS Game 2,https://www.espn.com/mlb/boxscore/_/gameId/401908024
+2026-10-13_MLB_Guardians@Rays_JuniorCamineroHR,2026-10-13,MLB,Guardians,Rays,1,3,N,Junior Caminero HR,LOSS,"1-for-3 (2B), BB, 0 HR",https://www.espn.com/mlb/boxscore/_/gameId/401908024
+2026-10-14_MLB_Brewers@Dodgers_DodgersML,2026-10-14,MLB,Brewers,Dodgers,6,2,N,Dodgers ML,LOSS,NLCS Game 3 (MIL up 3-0),https://www.espn.com/mlb/scoreboard/_/date/20261014
+"2026-10-15_MLB_Brewers@Dodgers_BrewersML(gameafter10/14pick,NLCSG4)",2026-10-15,MLB,Brewers,Dodgers,6,4,N,"Brewers ML (game after 10/14 pick, NLCS G4)",WIN,"NLCS Game 4, Brewers swept",https://www.espn.com/mlb/scoreboard/_/date/20261015
+2026-10-15_MLB_Brewers@Dodgers_DodgersML,2026-10-15,MLB,Brewers,Dodgers,6,4,N,Dodgers ML,LOSS,NLCS Game 4,https://www.espn.com/mlb/scoreboard/_/date/20261015
+2026-10-15_MLB_Brewers@Dodgers_ShoheiOhtaniHR,2026-10-15,MLB,Brewers,Dodgers,6,4,N,Shohei Ohtani HR,WIN,"1 HR (3-run, 2nd inn), 1-for-4, 3 RBI",https://www.espn.com/mlb/boxscore/_/gameId/401908033
+2026-10-15_MLB_Brewers@Dodgers_FreddieFreemanHR,2026-10-15,MLB,Brewers,Dodgers,6,4,N,Freddie Freeman HR,LOSS,"0-for-3, BB, 0 HR",https://www.espn.com/mlb/boxscore/_/gameId/401908033
+2026-10-15_NFL_Seahawks@Broncos_BroncosML,2026-10-15,NFL,Seahawks,Broncos,14,17,Y,Broncos ML,WIN,"TNF, Broncos won in OT",https://www.espn.com/nfl/scoreboard/_/week/6/year/2026/seasontype/2
+2026-10-16_MLB_Rays@Guardians_GuardiansML,2026-10-16,MLB,Rays,Guardians,,,N,Guardians ML,VOID,"ALCS Game 4 rained out 10/16, played 10/17 (Rays 7-3). ALCS Game 3 was 10/15 (Guardians 3-2)",https://www.espn.com/mlb/scoreboard/_/date/20261016
+2026-10-16_CFB_Washington@Purdue_WashingtonML,2026-10-16,CFB,Washington,Purdue,38,26,N,Washington ML,WIN,,https://www.espn.com/college-football/scoreboard/_/week/7/year/2026/seasontype/2/group/80
+2026-10-16_CFB_AppalachianState@CoastalCarolina_CoastalCarolinaML,2026-10-16,CFB,Appalachian State,Coastal Carolina,35,32,N,Coastal Carolina ML,LOSS,,https://www.espn.com/college-football/scoreboard/_/week/7/year/2026/seasontype/2/group/80
+2026-10-17_WNBA_Dream@Valkyries_ValkyriesML,2026-10-17,WNBA,Dream,Valkyries,64,68,N,Valkyries ML,WIN,Finals Game 1,https://www.espn.com/wnba/scoreboard/_/date/20261017
+2026-10-17_CFB_OhioState@Indiana_OhioStateML,2026-10-17,CFB,Ohio State,Indiana,19,15,N,Ohio State ML,WIN,,https://www.espn.com/college-football/scoreboard/_/week/7/year/2026/seasontype/2/group/80
+2026-10-17_CFB_MississippiState@LSU_MississippiStateML,2026-10-17,CFB,Mississippi State,LSU,0,31,N,Mississippi State ML,LOSS,,https://www.espn.com/college-football/scoreboard/_/week/7/year/2026/seasontype/2/group/80
+2026-10-17_CFB_Cincinnati@WestVirginia_CincinnatiML,2026-10-17,CFB,Cincinnati,West Virginia,42,45,N,Cincinnati ML,LOSS,,https://www.espn.com/college-football/scoreboard/_/week/7/year/2026/seasontype/2/group/80
+2026-10-17_CFB_Wisconsin@UCLA_UCLAML,2026-10-17,CFB,Wisconsin,UCLA,7,17,N,UCLA ML,WIN,,https://www.espn.com/college-football/scoreboard/_/week/7/year/2026/seasontype/2/group/80
+2026-10-18_NFL_Texans@Jaguars_JaguarsML,2026-10-18,NFL,Texans,Jaguars,34,31,N,Jaguars ML,LOSS,London game,https://www.espn.com/nfl/scoreboard/_/week/6/year/2026/seasontype/2
+2026-10-18_NFL_Ravens@Browns_RavensML,2026-10-18,NFL,Ravens,Browns,10,13,N,Ravens ML,LOSS,at Browns,https://www.espn.com/nfl/scoreboard/_/week/6/year/2026/seasontype/2
+2026-10-18_NFL_Panthers@Eagles_PanthersML,2026-10-18,NFL,Panthers,Eagles,25,14,N,Panthers ML,WIN,,https://www.espn.com/nfl/scoreboard/_/week/6/year/2026/seasontype/2
+2026-10-18_NFL_Bears@Falcons_BearsML,2026-10-18,NFL,Bears,Falcons,31,23,N,Bears ML,WIN,Madrid game,https://www.espn.com/nfl/scoreboard/_/week/6/year/2026/seasontype/2
+2026-10-18_NFL_Jets@Patriots_PatriotsML,2026-10-18,NFL,Jets,Patriots,19,26,N,Patriots ML,WIN,,https://www.espn.com/nfl/scoreboard/_/week/6/year/2026/seasontype/2
+2026-10-18_NFL_Chargers@Chiefs_ChargersML,2026-10-18,NFL,Chargers,Chiefs,6,22,N,Chargers ML,LOSS,,https://www.espn.com/nfl/scoreboard/_/week/6/year/2026/seasontype/2
+2026-10-18_NFL_Cowboys@Packers_PackersML,2026-10-18,NFL,Cowboys,Packers,13,23,N,Packers ML,WIN,,https://www.espn.com/nfl/scoreboard/_/week/6/year/2026/seasontype/2
+2026-10-18_NFL_Jets@Patriots_TreVeyonHendersonTD(Patriots),2026-10-18,NFL,Jets,Patriots,19,26,N,TreVeyon Henderson TD (Patriots),LOSS,"0 TD: NE TDs were Doubs, Douglas, Henry; his stat line not shown",https://www.espn.com/nfl/game/_/gameId/401873001
+2026-10-19_NFL_Commanders@49ers_CommandersML,2026-10-19,NFL,Commanders,49ers,17,23,N,Commanders ML,LOSS,MNF,https://www.espn.com/nfl/game/_/gameId/401873008
+2026-10-19_NFL_Commanders@49ers_49ersML,2026-10-19,NFL,Commanders,49ers,17,23,N,49ers ML,WIN,MNF,https://www.espn.com/nfl/game/_/gameId/401873008
+2026-10-19_NFL_Commanders@49ers_ChigOkonkwoTD,2026-10-19,NFL,Commanders,49ers,17,23,N,Chig Okonkwo TD,LOSS,"0 TD, 7 rec 69 yds",https://www.espn.com/nfl/game/_/gameId/401873008
+2026-10-19_NFL_Commanders@49ers_GeorgeKittleTD,2026-10-19,NFL,Commanders,49ers,17,23,N,George Kittle TD,WIN,1 TD (11-yd pass from Purdy),https://www.espn.com/nfl/game/_/gameId/401873008
+2026-10-19_WNBA_Dream@Valkyries_DreamML,2026-10-19,WNBA,Dream,Valkyries,79,65,N,Dream ML,WIN,Finals Game 2,https://www.espn.com/wnba/scoreboard/_/date/20261019
+2026-10-20_CFB_SouthAlabama@Marshall_MarshallML,2026-10-20,CFB,South Alabama,Marshall,13,20,N,Marshall ML,WIN,,https://www.espn.com/college-football/scoreboard/_/date/20261020/group/80
+2026-10-20_NBA_Celtics@Pistons_CelticsML,2026-10-20,NBA,Celtics,Pistons,113,121,N,Celtics ML,LOSS,,https://www.espn.com/nba/scoreboard/_/date/20261020
+2026-10-20_NBA_Thunder@Spurs_ThunderML,2026-10-20,NBA,Thunder,Spurs,116,104,N,Thunder ML,WIN,,https://www.espn.com/nba/scoreboard/_/date/20261020
+2026-09-24_NFL_Falcons@Packers_FalconsML,2026-09-24,NFL,Falcons,Packers,35,14,N,Falcons ML,WIN,TNF Week 3,https://www.espn.com/nfl/scoreboard/_/week/3/year/2026/seasontype/2
+2026-10-01_NFL_Steelers@Browns_BrownsML,2026-10-01,NFL,Steelers,Browns,24,27,N,Browns ML,WIN,TNF Week 4,https://www.espn.com/nfl/scoreboard/_/week/4/year/2026/seasontype/2
+2026-09-13_NFL_Cowboys@Giants_GiantsML,2026-09-13,NFL,Cowboys,Giants,20,28,N,Giants ML,WIN,Week 1 at Giants,https://www.espn.com/nfl/scoreboard/_/week/1/year/2026/seasontype/2

@@ -107,7 +107,8 @@ class NothingLabelsThePreviewTakeThemOutBack(unittest.TestCase):
                 self.assertEqual([t for t in self.scan.literals(path) if self.OUT_BACK.search(t)], [], name)
 
     def test_the_pages_that_hold_the_preview_do_not_say_out_back(self):
-        for name in ("hound.html", "learning.html", "live.html", "hounds.html", "kennels.html", "landing.html", "build-a-hound.html"):
+        # (not landing.html: its "Train it or take it out back" step describes the product, it does not label the preview)
+        for name in ("hound.html", "learning.html", "live.html", "hounds.html", "kennels.html", "desk.html", "build-a-hound.html"):
             with self.subTest(page=name):
                 self.assertEqual(self.OUT_BACK.findall(self.scan.visible_html(name)), [], name)
 
@@ -149,7 +150,7 @@ class TheNewPagesCarryTheHardLines(unittest.TestCase):
                 self.assertIn("21+", html)
                 self.assertIn("1-800-GAMBLER", html)
                 self.assertIn('href="tel:1-800-426-2537"', html)
-                self.assertIn("Paper bets only", html)
+                self.assertIn("Paper bets", html)      # # owner ruling 2026-10-20 kennel-first: "21+ · Paper bets only, not advice · Bet at your own risk" in the footer
 
     def test_no_bet_check_and_no_banned_word_on_the_new_surface(self):
         banned = re.compile(r"bet ?check|\block\b|guarantee|sure thing|can'?t lose|free money|\bprofit|\bedge\b", re.I)
@@ -164,7 +165,7 @@ class TheNewPagesCarryTheHardLines(unittest.TestCase):
         self.assertEqual(html.count('class="lh-nav"'), 1)
         self.assertIn('<script type="module" src="js/nav.js"></script>', html)
         self.assertIn('<script type="module" src="js/fx.js"></script>', html)
-        self.assertIn('data-nav="kennels" aria-current="page"', html)
+        self.assertIn('data-nav="leaderboard" aria-current="page"', html)      # # owner ruling 2026-10-20 kennel-first: the Graveyard hangs off the Leaderboard
 
     def test_every_new_animation_is_inside_the_no_preference_block(self):
         css = re.sub(r"/\*.*?\*/", "", (WEB / "css" / "dog-kit.css").read_text(encoding="utf-8"), flags=re.S)
@@ -186,8 +187,8 @@ class TheKennelCardOffersTheThreeTogether(unittest.TestCase):
             q("danger", ".kn-act--danger", "texts"), q("danger_hook", ".kn-act--danger", "attr", attr="data-hook"),
             q("primary", ".kn-act--primary", "texts"), q("aria", "[data-hook='dog-action-outback']", "attr", attr="aria-label")])
         f = out["final"]
-        self.assertEqual(f["actions"][:3], ["Unleash", "Send to training", "Take them out back"])
-        self.assertEqual(f["actions"][3:], ["Ask", "Edit", "Open", "Remove"])
+        # # owner ruling 2026-10-20 kennel-first: the card offers the three rites and Edit (Ask, Open and Remove moved into the studio and the name link)
+        self.assertEqual(f["actions"], ["Unleash", "Send to training", "Edit", "Take them out back"])
         self.assertEqual((f["danger"], f["danger_hook"], f["primary"]), (["Take them out back"], "dog-action-outback", ["Unleash"]))
         self.assertEqual(f["aria"], "Take Underdog Gus out back")
 
@@ -346,6 +347,16 @@ class SendToTrainingShowsTheMontageThenTheCard(unittest.TestCase):
         cap = out["captures"]["b"]
         self.assertEqual(cap["trefused"], "Underdog Gus needs 5 new settled bets on version 2 before it can train again. It has 2.")
         self.assertEqual((cap["card"], cap["buttons"]), (0, ["Close"]))
+
+    def test_a_refused_training_does_not_say_the_hound_is_in_training(self):
+        # rebuild QA 2026-10-20: the refusal sheet kept the montage's title, "<name> is in training", above "needs 5 new settled bets"
+        refusal = [409, {"detail": {"error": "training_too_soon", "message": "Underdog Gus needs 5 new settled bets on version 2 before it can train again. It has 2."}}]
+        out = self.run_flow(kennel_routes([dog("u-1")], **{"POST /hounds/u-1/train": refusal}), [
+            click(self.OPEN, "a"), click(hook("training-go"), "b", wait=400, capture=sheet_caps())])
+        cap = out["captures"]["b"]
+        self.assertNotIn("is in training", cap["title"])
+        self.assertTrue(cap["title"].endswith("stays as it is"), cap["title"])
+        self.assertEqual(cap["kind"], "training-refused-sheet")
 
     def test_with_reduced_motion_the_card_is_there_at_once_and_the_sheet_says_so(self):
         out = self.run_flow(kennel_routes([dog("u-1")]), [click(self.OPEN, "a", capture=[q("motion", ".rt-sheet", "attr", attr="data-motion")]),
@@ -514,8 +525,8 @@ class TheGraveyardPage(unittest.TestCase):
         out = run_page("graveyard", routes={}, down=["/hounds/graveyard"], queries=[q("state", hook("section-state"))])
         self.assertTrue(out["final"]["state"])
 
-    def test_the_paper_notice_and_the_helpline_are_on_the_page(self):
-        out = self.go([], queries=[q("notice", hook("paper-only-notice")), q("help", hook("responsible-gambling-help"), "attr", attr="href")])
+    def test_the_paper_notice_and_the_helpline_are_on_the_page(self):          # in the footer, said once (owner ruling 2026-10-20 kennel-first)
+        out = self.go([], queries=[q("notice", hook("footer-legal")), q("help", hook("responsible-gambling-help"), "attr", attr="href")])
         self.assertIn("21+", out["final"]["notice"])
         self.assertEqual(out["final"]["help"], "tel:1-800-426-2537")
 

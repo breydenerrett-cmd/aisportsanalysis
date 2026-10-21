@@ -36,10 +36,10 @@ LIVE_CODES = {
     "no_live_price": "No live price is on file for this game: the newest stored price is from before the start.",
     "live_price_too_old": f"The newest live price is more than {LIVE_FRESH_MINUTES} minutes old, too old to use.",
     "game_over": "This game is past its live window, so there is no live price to read.",
-    "not_eligible": "This dog does not bet that sport.",
-    "unknown_event": "That game is not on the stored boards for this dog's sports.",
-    "too_far_ahead": "That game is further ahead than this dog looks.",
-    "not_firable_live": "Only builder dogs are evaluated on a live price.",
+    "not_eligible": "This hound does not bet that sport.",
+    "unknown_event": "That game is not on the stored boards for this hound's sports.",
+    "too_far_ahead": "That game is further ahead than this hound looks.",
+    "not_firable_live": "Only hounds built by members are evaluated on a live price.",
 }
 V2_ORDER = ("outside_price_band", "conditions_not_met", "outside_line_range", "too_few_books", "price_cap",
             "board_too_old", "no_board_at_lock")
@@ -80,7 +80,7 @@ def _from_payload(payload: dict, event_id: str, out: dict) -> Optional[dict]:
     for ticket in payload.get("recorded") or []:
         if ticket["event_id"] == event_id:
             out.update({"picked": True, "recorded": True, "pick": ticket, "picks": [ticket], "code": "recorded",
-                        "reason": "Already on this dog's record.", "game": ticket.get("game")})
+                        "reason": "Already on this hound's record.", "game": ticket.get("game")})
             return out
     for game in payload.get("games") or []:
         if game["event_id"] == event_id:

@@ -50,7 +50,7 @@ export function campFigures({ coach, learning, breeding, mine, signedInNow = fal
   return {
     strip: { tips, helpedHurt, nextCycle: next, dogs },
     nums: {
-      dogs: !signedInNow ? "Sign in" : dogCount === null ? DASH : plural(dogCount, "dog", "dogs"),
+      dogs: !signedInNow ? "Sign in" : dogCount === null ? DASH : plural(dogCount, "hound", "hounds"),
       coach: sum && isNum(sum.graded_forward) ? `${sum.graded_forward} graded` : "not graded yet",
       drills: "7, 14 or 30 days",
       cuts: learning && isNum(learning.live_challengers) ? `${learning.live_challengers} trying out` : DASH,

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Training camp — LINEHOUND</title>
-<meta name="description" content="Rookie dogs try out for the starting job. A rookie makes the team only if the numbers say it beat the starter, a fixed rulebook does the cutting, and camp shuts itself down if it can't show it helps. Paper bets only, not advice.">
+<meta name="description" content="Rookie hounds try out for the starting job. A rookie makes the team only if the numbers say it beat the starter, a fixed rulebook does the cutting, and camp shuts itself down if it can't show it helps. Paper bets only, not advice.">
 <meta property="og:title" content="Training camp — LINEHOUND">
 <meta property="og:description" content="Rookies, tryouts, cuts, and a scorecard that says whether any of it helps. Paper bets only. Not advice.">
 <meta property="og:type" content="website">
@@ -45,23 +45,23 @@
     </a>
     <nav class="lh-nav__links" aria-label="Sections" data-hook="nav-links">
       <a href="hounds.html" data-nav="leaderboard">Leaderboard</a>
-      <a href="kennels.html" data-nav="kennels">Kennels</a>
       <a href="live.html" data-nav="live">Live</a>
-      <a href="quiz.html" data-nav="build">Build</a>
-      <a href="learning.html" data-nav="camp" aria-current="page">Training camp</a>
     </nav>
     <div class="lh-nav__account" data-hook="nav-account-area" data-signed-in="false">
-      <a class="lh-btn lh-btn--solid" href="index.html#/signin" data-hook="nav-signin">Sign in</a>
+      <a class="lh-btn lh-btn--soft" href="index.html#/signin" data-hook="nav-signin">Sign in</a>
+      <a class="lh-btn lh-btn--solid" href="quiz.html" data-hook="nav-cta">Find your hound</a>
     </div>
   </div>
 </header>
 
 <main class="hd-wrap" id="main-content" aria-label="Training camp" data-hook="learning-app">
 
+<div class="hd-back"><a href="kennel.html" data-hook="camp-back">&larr; My Kennel</a></div>
+
 <header class="hd-hero">
   <h1 data-hook="learning-title">Training camp</h1>
-  <p class="hd-lede">Where dogs get better: unleash them, send them to training, ask them, rate their calls, backtest their rules.</p>
-  <details class="lh-how"><summary>How this works</summary><p class="hd-muted">Where dogs get better. Unleash a dog on the latest boards, ask it why it did what it did, rate its calls, and backtest its rule over past days. Dogs don't get edited: rookies try out for the starting job, a rookie makes the team only when the numbers say it beat the starter on the same games, and a fixed rulebook does the cutting, never an AI's hunch. If camp can't show it's helping, it shuts itself down.</p></details>
+  <p class="hd-lede">Where hounds get better: unleash them, send them to training, ask them, rate their calls, backtest their rules.</p>
+  <details class="lh-how"><summary>How this works</summary><p class="hd-muted">Where hounds get better. Unleash a hound on the latest boards, ask it why it did what it did, rate its calls, and backtest its rule over past days. Hounds don't get edited: rookies try out for the starting job, a rookie makes the team only when the numbers say it beat the starter on the same games, and a fixed rulebook does the cutting, never an AI's hunch. If camp can't show it's helping, it shuts itself down.</p></details>
   <p class="hd-paper" data-hook="paper-only-notice" role="note">Paper bets only. Not advice. 21+.</p>
 </header>
 
@@ -72,18 +72,18 @@
   <li class="cp-stat"><span class="cp-stat__n" data-hook="camp-stat-tips">&mdash;</span><span class="cp-stat__l">Coach tips graded</span></li>
   <li class="cp-stat"><span class="cp-stat__n" data-hook="camp-stat-helped">&mdash;</span><span class="cp-stat__l">Helped / hurt</span></li>
   <li class="cp-stat"><span class="cp-stat__n" data-hook="camp-stat-next">&mdash;</span><span class="cp-stat__l">Next breeding cycle</span></li>
-  <li class="cp-stat"><span class="cp-stat__n" data-hook="camp-stat-dogs">&mdash;</span><span class="cp-stat__l">Your dogs in training</span></li>
+  <li class="cp-stat"><span class="cp-stat__n" data-hook="camp-stat-dogs">&mdash;</span><span class="cp-stat__l">Your hounds in training</span></li>
 </ul>
 
 <div class="hd-state hd-state--down" data-hook="learning-paused" role="status" hidden></div>
 
 <section class="hd-panel" id="dogs" aria-labelledby="dogs-h" data-hook="camp-dogs-section">
   <details class="cp-sec" data-hook="camp-sec-dogs">
-  <summary class="cp-sec__sum"><h2 id="dogs-h">Your dogs in training</h2><span class="cp-sec__num" data-hook="camp-num-dogs">&mdash;</span></summary>
+  <summary class="cp-sec__sum"><h2 id="dogs-h">Your hounds in training</h2><span class="cp-sec__num" data-hook="camp-num-dogs">&mdash;</span></summary>
   <div class="cp-sec__body">
-  <p class="hd-muted">The dogs you built: record, last tickets, what people think.</p>
-  <details class="lh-how"><summary>How this works</summary><p class="hd-muted">The dogs you built: this season's record, the last five tickets, what people think of each one and what they suggested. Unleash a dog on the latest boards, ask it why it did something, or backtest its rule on old boards.</p></details>
-  <div data-hook="camp-dogs"><p class="hd-muted">Loading your dogs...</p></div>
+  <p class="hd-muted">The hounds you built: record, last tickets, what people think.</p>
+  <details class="lh-how"><summary>How this works</summary><p class="hd-muted">The hounds you built: this season's record, the last five tickets, what people think of each one and what they suggested. Unleash a hound on the latest boards, ask it why it did something, or backtest its rule on old boards.</p></details>
+  <div data-hook="camp-dogs"><p class="hd-muted">Loading your hounds...</p></div>
   </div>
   </details>
 </section>
@@ -93,9 +93,9 @@
   <summary class="cp-sec__sum"><h2 id="coach-h">Coach report card: is the coach any good?</h2><span class="cp-sec__num" data-hook="camp-num-coach">&mdash;</span></summary>
   <div class="cp-sec__body">
   <p class="hd-muted">Once a week the coach suggests one dial tweak. Code grades every tip. A verdict needs 20 settled bets.</p>
-  <details class="lh-how"><summary>How this works</summary><p class="hd-muted">Once a week the coach tells a dog to tweak one of its dials. We don't take its word for it. Code grades every tip two ways. <strong>Hindsight</strong> replays the 30 days before the tip with the old dial and the new one. The coach could see that stretch, so it's a rehearsal. <strong>Live</strong> is the honest one: from the minute the tip lands, both dials run side by side on new games. A verdict needs 20 settled bets. Until then it's TOO EARLY.</p></details>
+  <details class="lh-how"><summary>How this works</summary><p class="hd-muted">Once a week the coach tells a hound to tweak one of its dials. We don't take its word for it. Code grades every tip two ways. <strong>Hindsight</strong> replays the 30 days before the tip with the old dial and the new one. The coach could see that stretch, so it's a rehearsal. <strong>Live</strong> is the honest one: from the minute the tip lands, both dials run side by side on new games. A verdict needs 20 settled bets. Until then it's TOO EARLY.</p></details>
   <div data-hook="coach-body"><p class="hd-muted">Loading the report card...</p></div>
-  <p class="hd-fine">Graded by code, never by the coach. A tip never changes a dog; only the rookie rulebook below can do that. Paper bets only, not advice.</p>
+  <p class="hd-fine">Graded by code, never by the coach. A tip never changes a hound; only the rookie rulebook below can do that. Paper bets only, not advice.</p>
   </div>
   </details>
 </section>
@@ -104,8 +104,8 @@
   <details class="cp-sec" data-hook="camp-sec-drills">
   <summary class="cp-sec__sum"><h2 id="drills-h">Backtest</h2><span class="cp-sec__num" data-hook="camp-num-drills">&mdash;</span></summary>
   <div class="cp-sec__body">
-  <p class="hd-muted">Replay a dog's rule over the last 7, 14 or 30 days, or Season 2, in paper dollars. Hindsight: never counted in the record.</p>
-  <details class="lh-how"><summary>How this works</summary><p class="hd-muted">Replay a dog's current rule over the last 7, 14 or 30 days (or Season 2 so far, at most the last 30 days) of stored boards and see what it would have done on the $1,000 paper bankroll. It is a rehearsal: you can see how those games ended, so a backtest is never added to a record, a ranking or a verdict. A month can take up to a minute.</p></details>
+  <p class="hd-muted">Replay a hound's rule over the last 7, 14 or 30 days, or Season 2, in paper dollars. Hindsight: never counted in the record.</p>
+  <details class="lh-how"><summary>How this works</summary><p class="hd-muted">Replay a hound's current rule over the last 7, 14 or 30 days (or Season 2 so far, at most the last 30 days) of stored boards and see what it would have done on the $1,000 paper bankroll. It is a rehearsal: you can see how those games ended, so a backtest is never added to a record, a ranking or a verdict. A month can take up to a minute.</p></details>
   <div data-hook="camp-drill"><p class="hd-muted">Loading the backtest...</p></div>
   </div>
   </details>
@@ -124,10 +124,10 @@
 
 <section class="hd-panel" aria-labelledby="chance-h" data-hook="learning-chance-section">
   <details class="cp-sec" data-hook="camp-sec-coin">
-  <summary class="cp-sec__sum"><h2 id="chance-h">Are the dogs smarter than a coin?</h2><span class="cp-sec__num" data-hook="camp-num-coin">&mdash;</span></summary>
+  <summary class="cp-sec__sum"><h2 id="chance-h">Are the hounds smarter than a coin?</h2><span class="cp-sec__num" data-hook="camp-num-coin">&mdash;</span></summary>
   <div class="cp-sec__body">
-  <p class="hd-muted">Two control dogs pick by coin flip and dart. Every dog pays the book's cut.</p>
-  <details class="lh-how"><summary>How this works</summary><p class="hd-muted">The only question that matters. Two control dogs pick with a seeded coin flip and a seeded dart throw. Every dog pays the book's cut, so a dog with no brains sits right at the controls. The line below compares the two on the same games only.</p></details>
+  <p class="hd-muted">Two control hounds pick by coin flip and dart. Every hound pays the book's cut.</p>
+  <details class="lh-how"><summary>How this works</summary><p class="hd-muted">The only question that matters. Two control hounds pick with a seeded coin flip and a seeded dart throw. Every hound pays the book's cut, so a hound with no brains sits right at the controls. The line below compares the two on the same games only.</p></details>
   <div data-hook="learning-chance"><p class="hd-muted">Loading the scorecard...</p></div>
   <div data-hook="learning-chance-chart"></div>
   </div>
@@ -138,8 +138,8 @@
   <details class="cp-sec" data-hook="camp-sec-hold">
   <summary class="cp-sec__sum"><h2 id="hold-h">Does making the team stick?</h2><span class="cp-sec__num" data-hook="camp-num-hold">&mdash;</span></summary>
   <div class="cp-sec__body">
-  <p class="hd-muted">Do promoted rookies keep pricing as well as the dog they replaced?</p>
-  <details class="lh-how"><summary>How this works</summary><p class="hd-muted">Of the rookies who made the team and have since made 100 measurable bets as the starter, how many priced at least as well as the dog they replaced. It stays empty until a promotion has had 100 bets.</p></details>
+  <p class="hd-muted">Do promoted rookies keep pricing as well as the hound they replaced?</p>
+  <details class="lh-how"><summary>How this works</summary><p class="hd-muted">Of the rookies who made the team and have since made 100 measurable bets as the starter, how many priced at least as well as the hound they replaced. It stays empty until a promotion has had 100 bets.</p></details>
   <div data-hook="learning-hold"></div>
   </div>
   </details>
@@ -181,7 +181,7 @@
   <details class="cp-sec" data-hook="camp-sec-breeding">
   <summary class="cp-sec__sum"><h2 id="breeding-h">Breeding program</h2><span class="cp-sec__num" data-hook="camp-num-breeding">&mdash;</span></summary>
   <div class="cp-sec__body">
-  <p class="hd-muted">Every three days the best dogs are crossed into new rookies.</p>
+  <p class="hd-muted">Every three days the best hounds are crossed into new rookies.</p>
   <details class="lh-how"><summary>How this works</summary><p class="hd-muted">Every three days the best models with 25+ real bets are crossed into new rookies, and the worst with 40+ bets are cut or replaced. Babies start at 0-0 and race on new games; only the referee promotes. Rules: <code>docs/PREREG_BREEDING.md</code>.</p></details>
   <div data-hook="learning-breeding"><p class="hd-muted">Loading the family tree...</p></div>
   </div>

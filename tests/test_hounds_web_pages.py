@@ -71,19 +71,21 @@ class EveryPageSaysPaperOnlyNotAdviceAndIs21Plus(unittest.TestCase):
                 self.assertIn("Gamble responsibly.", text)
                 self.assertIn("1-800-GAMBLER", text)
 
-    def test_the_leaderboard_and_the_model_page_say_it_once_in_one_disclosure_bar(self):
+    def test_the_leaderboard_and_the_model_page_say_it_once_in_the_footer_plus_one_short_line_by_the_money(self):
+        # owner ruling 2026-10-20 kennel-first: compliance appears once in the footer (the old top disclosure bar is gone), plus one short
+        # line next to the picks and the money: the leaderboard's bankroll line, the hound page's hero line (drawn by its script)
         for name in ("hounds.html", "hound.html"):
             html = HTML[name]
             text = visible(html)
             with self.subTest(page=name):
-                self.assertEqual(len(re.findall(r'data-hook="paper-only-notice"', html)), 1)
+                self.assertEqual(len(re.findall(r'data-hook="footer-legal"', html)), 1)
                 self.assertEqual(len(re.findall(r"(?i)paper bets only", text)), 1, text)
                 self.assertEqual(len(re.findall(r"21\+", text)), 1, text)
-                self.assertEqual(len(re.findall(r"(?i)not betting advice", text)), 1, text)
                 self.assertEqual(len(re.findall(r"Gamble responsibly\.", text)), 1)
-                # the bar is near the top: before the first section of the page
-                self.assertLess(html.index('data-hook="paper-only-notice"'), html.index("<section"))
+                self.assertNotIn("hd-disclosure", html)
                 self.assertNotIn('data-hook="not-advice"', html)
+        self.assertIn("Paper money, not advice.", HTML["hounds.html"])
+        self.assertIn("Paper money, not advice.", (WEB / "js" / "hounds-detail.js").read_text(encoding="utf-8"))
 
     def test_the_minus_200_cap_notice_is_static_on_the_build_page(self):
         text = visible(HTML["build-a-hound.html"])
@@ -128,13 +130,17 @@ class EveryPageSaysPaperOnlyNotAdviceAndIs21Plus(unittest.TestCase):
         # artifacts/demo_latest.html is owned elsewhere; nothing in this lane writes it
         self.assertFalse(any("demo_latest" in (WEB / n).read_text(encoding="utf-8") for n in HTML))
 
-    def test_the_landing_page_links_to_the_leaderboard_in_its_first_screen(self):
+    def test_the_landing_page_links_to_the_leaderboard_and_the_quiz_in_its_first_screens(self):
+        # kennel-first rebuild 2026-10-20: the landing page is the quiz button, the sentence link and a strip that links the leaderboard
         landing = (WEB / "landing.html").read_text(encoding="utf-8")
-        first = landing[landing.index('data-hook="lb-hero"'):landing.index('data-hook="hero"')]
-        # owner ruling 2026-10-20, complete-product positioning: build first, the house pack second
-        self.assertRegex(first, r'<a [^>]*href="hounds.html"[^>]*>Watch the house pack')
-        self.assertRegex(first, r'<a [^>]*href="quiz.html"[^>]*>Find your hound')
+        first = landing[landing.index('data-hook="kennel-hero"'):landing.index('data-hook="landing-steps"')]
+        self.assertRegex(first, r'<a [^>]*href="quiz.html\?start=1"[^>]*>Find your hound')
         self.assertRegex(first, r'<a [^>]*href="build-a-hound.html"[^>]*>Build from a sentence')
+        self.assertRegex(first, r'<a [^>]*href="hounds.html"[^>]*>The leaderboard')
+        # the house pack's own page keeps the leaderboard as its first button
+        desk = (WEB / "desk.html").read_text(encoding="utf-8")
+        block = desk[desk.index('data-hook="lb-hero"'):desk.index('data-hook="hero"')]
+        self.assertRegex(block, r'<a [^>]*href="hounds.html"[^>]*>Open the leaderboard')
 
 
 class ThePagesAreServed(unittest.TestCase):

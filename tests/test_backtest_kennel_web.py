@@ -56,12 +56,12 @@ class TheBacktestTabOnADogPage(unittest.TestCase):
     def go(self, routes=None, **kw):
         return page(routes or self.routes(), **kw)
 
-    def test_the_tab_is_there_with_four_windows_and_the_label(self):
-        out = self.go(queries=[q("tab", "[role='tab'][data-tab='backtest']", "texts"),
+    def test_the_backtest_is_under_ask_with_four_windows_and_the_label(self):
+        out = self.go(queries=[q("in_ask", "[data-tabpanel='ask'] " + hook("dog-backtest-section"), "exists"),
                                 q("windows", hook("backtest-window"), "texts"), q("title", hook("backtest-title")),
                                 q("section_hidden", hook("dog-backtest-section"), "hidden")])
         f = out["final"]
-        self.assertEqual(f["tab"], ["Backtest"])
+        self.assertTrue(f["in_ask"])         # owner ruling 2026-10-20 kennel-first: four tabs, Backtest lives under Ask
         self.assertEqual(f["windows"], ["7 days", "14 days", "30 days", "Season 2"])
         self.assertEqual(f["title"], LABEL)
         self.assertFalse(f["section_hidden"])
@@ -345,7 +345,7 @@ class TheKennelsIndexAndHandles(unittest.TestCase):
 class NoFireNowLeftInTheWords(unittest.TestCase):
     """The scan the owner asked for: no "Fire now", "Fire again" or "Drill" in anything a person reads. Data-hooks,
     routes, ids and class names (one word, no spaces) are not words a person reads and keep the old name."""
-    FILES = ["hound.html", "kennel.html", "learning.html", "landing.html", "kennels.html", "hounds.html", "build-a-hound.html"]
+    FILES = ["hound.html", "kennel.html", "learning.html", "landing.html", "desk.html", "kennels.html", "hounds.html", "build-a-hound.html"]
     OLD = re.compile(r"fire now|fire again|firing|\bfire (?:it|them|a dog|your)\b|drill|hindsight drill", re.I)
 
     def visible_html(self, name):
