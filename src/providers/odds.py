@@ -654,6 +654,43 @@ def fetch_sport_odds_with_usage(sport_key_value, markets=("h2h",), regions=("us"
     return _get_json_with_usage(f"sports/{_discovered_key(sport_key_value)}/odds", params, timeout=timeout)
 
 
+_PROP_MARKET_RE = re.compile(r"^[a-z0-9_]{3,60}$")
+_EVENT_ID_RE = re.compile(r"^[A-Za-z0-9_-]{6,64}$")
+
+
+def valid_prop_market(market) -> bool:
+    """A player-prop market key's SHAPE (letters, digits, underscore). Which keys a sport serves is the vendor's
+    list, kept in config/sports_catalog.json; a wrong key is a 422 from the vendor, which bills nothing."""
+    return isinstance(market, str) and bool(_PROP_MARKET_RE.match(market))
+
+
+def fetch_sport_event_odds_with_usage(sport_key_value, event_id, markets, regions=("us",), *, env=None,
+                                      timeout: int = DEFAULT_TIMEOUT) -> tuple:
+    """Player-prop (or any per-event) odds for ONE event of any discovered sport key: (payload, usage).
+
+    The per-event endpoint, `sports/{key}/events/{id}/odds`, bills markets x regions PER EVENT; `usage["last"]` is
+    what the vendor says it billed (`x-requests-last`). Unlike `fetch_event_odds_with_usage` this takes a
+    discovered sport key (NBA, NHL, NCAAF ...) rather than the whitelisted MLB/NFL/MMA keys, validates every
+    path and query part by SHAPE, and writes NO raw L0 capture: a prop board is hundreds of KB a call and the
+    projection (`allsports_props.project`) keeps every price, point, player, side and book timestamp it carries."""
+    source = os.environ if env is None else env
+    key = api_key(source)
+    if key is None:
+        raise NotConfigured(SETUP_MESSAGE)
+    if not isinstance(event_id, str) or not _EVENT_ID_RE.match(event_id):
+        raise OddsProviderError(f"not a valid event id: {str(event_id)[:40]!r}")
+    markets = tuple(markets)
+    regions = tuple(regions)
+    if not markets or not all(valid_prop_market(m) for m in markets):
+        raise OddsProviderError("markets must be non-empty lower-case market keys")
+    if not regions or any(r not in ALLSPORTS_REGIONS for r in regions):
+        raise OddsProviderError(f"regions must be some of {ALLSPORTS_REGIONS}")
+    params = {"apiKey": key, "regions": ",".join(regions), "markets": ",".join(markets),
+              "oddsFormat": configured_odds_format(source)}
+    return _get_json_with_usage(f"sports/{_discovered_key(sport_key_value)}/events/{event_id}/odds", params,
+                                timeout=timeout)
+
+
 def fetch_sport_scores_with_usage(sport_key_value, days_from=None, *, env=None,
                                   timeout: int = DEFAULT_TIMEOUT) -> tuple:
     """Scores of any discovered sport key: (events, usage). 1 credit, or 2 with `days_from` (1-3)."""

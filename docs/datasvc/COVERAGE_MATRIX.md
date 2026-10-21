@@ -125,3 +125,6 @@ The Odds API, which we already know.
   disk: MLB starts on 2026-10-20, play-by-play is filled on demand (`pbp-fill`), the soccer odds archive needs the site's permission.
 * Three sources carry non-commercial terms we have not been given a waiver for: football-data.co.uk (fetch gated), MLBAM
   statsapi (layer built, internal use) and, from the repo review, Jolpica/Ergast (not built).
+* Player props (PP) for NBA, NFL, NHL and NCAAF: capture is built and fixture-tested (`src/pipeline/allsports_props.py`,
+  docs/ALLSPORTS_DOGS.md) but has **not been run against the live API**, so the PP cells above stay N until a first paid
+  run verifies the market keys. Licence status of every source: docs/datasvc/LICENSING.md.

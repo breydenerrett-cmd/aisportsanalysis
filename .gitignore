@@ -212,6 +212,12 @@ evidence/tmp*.tmp
 !data/processed/allsports_capture_done.jsonl
 !data/processed/allsports_sports.jsonl
 !data/processed/allsports_scores.jsonl
+# Player props for NBA, NFL, NHL and NCAAF (2026-10-20, src/pipeline/allsports_props.py). The done store is that
+# capture's memory (phases bought or missed, one marker per billed call); left ignored, every fresh runner would
+# start empty and re-buy every window. The rows are forward data that cannot be bought back; the rotated segments
+# land under data/processed/archive/allsports_props/, already un-ignored above.
+!data/processed/allsports_props_done.jsonl
+!data/processed/allsports_props.jsonl
 # Added with packet W6 (InformationEvent free-environment layer,
 # src/board/events.py): a projected event is a deterministic re-derivation
 # of rows already tracked above, but the ids/dedup state it accumulates are

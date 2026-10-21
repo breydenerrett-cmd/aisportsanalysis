@@ -48,8 +48,19 @@ real runs, 2026-10-20: `teams` 30 rows; today's schedule 0 games (an off day); w
 store, 2026-10-19 gave 1 game, 2 team lines and 36 player lines in 4 requests.
 
 ```
-python -m src.cli datasvc mlbbox refresh --min-age-minutes 180 --max-requests 120   # not scheduled; add to the slot when wanted
+python -m src.cli datasvc mlbbox refresh --min-age-minutes 180 --max-requests 120   # in scripts/capture_slot.sh, but only where data/datasvc/mlb/MANIFEST.json exists (see below)
 python -m src.cli datasvc mlbbox schedule --date 2026-10-20
 python -m src.cli datasvc mlbbox averages --team TB --split home
 python -m src.cli datasvc mlbbox check
 ```
+
+## Scheduling (2026-10-20)
+
+`scripts/capture_slot.sh` runs this refresh (240 s cap, `|| true`) and `datasvc all pbp-fill --limit 40 --max-requests 120`
+after the ESPN refresh, **only where the local cache already exists** (`data/datasvc/mlb/MANIFEST.json`, or a
+`pbp_*.index.jsonl` file), or when `DATASVC_LOCAL_CACHE=1`; `DATASVC_LOCAL_CACHE=0` stops them. Reason: this store and the
+play-by-play cache are git-ignored on purpose and no workflow caches them, and a GitHub-hosted slot starts from a fresh
+checkout, so run there they would refetch the same games every 15 minutes and discard them (and the box-score notice above
+allows only non-bulk use). To make them run in CI the owner must choose: track the files (a licensing decision,
+docs/datasvc/LICENSING.md) or add an Actions cache for `data/datasvc/mlb` and `data/datasvc/espn/*/pbp_*` (a workflow edit).
+Start the cache once on a machine that keeps its checkout with the refresh command above.

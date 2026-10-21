@@ -623,6 +623,16 @@ timeout 300 python3 -m src.cli allsports capture 2>&1 | sed 's/^/  /' || true
 echo "== allsports scores =="
 timeout 300 python3 -m src.cli allsports scores 2>&1 | sed 's/^/  /' || true
 
+# PLAYER PROPS (2026-10-20, src/pipeline/allsports_props.py): NBA, NFL, NHL and NCAAF player props from the per-event
+# odds endpoint, one call per game per window before the start (t6h, t2h, t30m), under their OWN daily cap
+# (config/sports_catalog.json capture.props_daily_cap_credits, default 1,200) in the `allsports_props` credit band,
+# every call logged with the vendor's x-requests-last. The absolute 5,000-credit floor applies first and fails closed.
+# Rows append to data/processed/allsports_props.jsonl (a rotatable store, kept out of the web image); the done store is
+# data/processed/allsports_props_done.jsonl. Kill switch: ALLSPORTS_PROPS=0 (ALLSPORTS_CAPTURE=0 stops it too). A 300 s
+# cap and `|| true`: it can never cost the slot.
+echo "== allsports props =="
+timeout 300 python3 -m src.cli allsports props 2>&1 | sed 's/^/  /' || true
+
 # FREE DATA SERVICE REFRESH (2026-10-20; src/datasvc/espn, docs/datasvc/ESPN_SCHEMA.md): teams, schedules,
 # scores, box scores, standings and injuries for NBA, NHL, NCAAF, NCAAB and the EPL from ESPN's public JSON.
 # No credits, no key. Self-gated: the command skips a league refreshed in the last 180 minutes (its manifest
@@ -632,6 +642,35 @@ timeout 300 python3 -m src.cli allsports scores 2>&1 | sed 's/^/  /' || true
 echo "== datasvc espn refresh =="
 timeout 240 python3 -m src.cli datasvc all refresh --min-age-minutes 180 --max-requests 400 2>&1 \
     | grep -E '"(league|requests|skipped|stopped|games|box_scores)"|error' | sed 's/^/  /' || true
+
+# FORWARD-ONLY LOCAL CACHES (2026-10-20, docs/datasvc/MLB_STATSAPI.md and ESPN_SCHEMA.md): MLB statsapi box scores and
+# player lines, and ESPN/NHL play-by-play. Both are GIT-IGNORED and kept out of the web image on purpose (MLBAM's notice
+# allows only individual, non-commercial use; play-by-play is ~45 MB a season), and nothing here stages them. A
+# GitHub-hosted slot starts from a fresh checkout, so run there they would refetch the same games every 15 minutes
+# and throw them away. They therefore run only where the cache already exists (start it once by hand with the same
+# command, on a machine that keeps its checkout), or with DATASVC_LOCAL_CACHE=1 to force; DATASVC_LOCAL_CACHE=0 stops
+# them. A 240 s cap and `|| true` on each: they can never cost the slot, and both are resumable.
+_datasvc_local_cache() {  # $1 = a glob that matches only once this cache has been started on this machine
+    case "${DATASVC_LOCAL_CACHE:-auto}" in
+        0|false|off|no) return 1 ;;
+        1|true|on|yes) return 0 ;;
+        *) compgen -G "$1" > /dev/null ;;
+    esac
+}
+if _datasvc_local_cache "data/datasvc/mlb/MANIFEST.json"; then
+    echo "== datasvc mlbbox refresh =="
+    timeout 240 python3 -m src.cli datasvc mlbbox refresh --min-age-minutes 180 --max-requests 120 2>&1 \
+        | grep -E '"(requests|skipped|stopped|games|box_scores|skipped_before_floor)"|error' | sed 's/^/  /' || true
+else
+    echo "== datasvc mlbbox refresh: skipped (no local cache on this machine; DATASVC_LOCAL_CACHE=1 forces it) =="
+fi
+if _datasvc_local_cache "data/datasvc/espn/*/pbp_*.index.jsonl"; then
+    echo "== datasvc pbp-fill =="
+    timeout 240 python3 -m src.cli datasvc all pbp-fill --limit 40 --max-requests 120 2>&1 \
+        | grep -E '"(league|requests|skipped|stopped|pbp_games|pbp_events|pbp_missing)"|error' | sed 's/^/  /' || true
+else
+    echo "== datasvc pbp-fill: skipped (no local cache on this machine; DATASVC_LOCAL_CACHE=1 forces it) =="
+fi
 
 echo "== nfl card publish ($SLATE_DATE) =="
 NFL_DATE="$SLATE_DATE"
