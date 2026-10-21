@@ -768,7 +768,7 @@ class FreeAccountsGetTheUpgradePrompt(Db):
         with self.assertRaises(user_store.StoreError) as ctx:
             SV.start(self.free.id, free=True, now=NOW, db=self.db)
         self.assertEqual(ctx.exception.code, "upgrade_required")
-        self.assertIn("one dog", str(ctx.exception))
+        self.assertIn("one hound", str(ctx.exception))
 
     def test_a_free_account_below_the_limit_may_interview(self):
         self.assertEqual(SV.start(self.free.id, free=True, now=NOW, db=self.db)["step"]["kind"], "topic")

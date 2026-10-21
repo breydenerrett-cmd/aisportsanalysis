@@ -247,7 +247,7 @@ class InterviewPage(Db):
         f = out["final"]
         self.assertEqual(f["prompt"], 1)
         self.assertEqual(f["feature"], "more_dogs")
-        self.assertEqual(f["title"], "A free account keeps one dog")
+        self.assertEqual(f["title"], "A free account keeps one hound")
         self.assertIn("remove your current dog", f["body"])
         self.assertEqual(f["link"], "index.html#/billing")
         self.assertFalse(f["gate_hidden"])
