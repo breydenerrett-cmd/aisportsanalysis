@@ -9,12 +9,12 @@
  * TAKE THEM OUT BACK ASKS TWICE. Tap, then a sheet ("This is permanent. Your hound is buried and its record is frozen."),
  * then a second sheet, and only that second button sends the request, with {"confirm": true} (the server refuses
  * without it). Cancel is the default focus of both sheets. SEND TO TRAINING asks once (nothing is lost: the old
- * version keeps its record), then plays a short montage while the server works and shows the "what changed and why" card.
- * The card never says the new version is better: it says its new record starts now.
+ * version keeps its record), then plays the evolution (dog-evolve.js: charge, flash, the new version, the upgrade card) while the
+ * server works. The card never says the new version is better: it says its new record starts now.
  *
- * MOTION. The montage and the burial reveal move only when the person has not asked for reduced motion
- * (`reducedMotion()`, and every keyframe is inside prefers-reduced-motion: no-preference in css/dog-kit.css). With reduced
- * motion the finished card appears at once and nothing waits on a timer.
+ * MOTION. The evolution and the burial reveal move only when the person has not asked for reduced motion
+ * (`reducedMotion()`, and every keyframe is inside prefers-reduced-motion: no-preference in css/evolve.css and css/dog-kit.css).
+ * With reduced motion a static before-and-after card appears when the server answers and nothing waits on a timer.
  *
  * This file draws what the server answered and works out nothing; every refusal is the server's own sentence
  * (an open ticket, too few new bets), shown in the sheet with a Close button.
@@ -23,10 +23,9 @@
 import { h, clearNode, isNum } from "./hounds-core.js";
 import { post, errorText, errorCode, nextId } from "./dog-common.js";
 import { headstoneCard, recordText, trainedBadge, FROZEN_NOTE } from "./dog-headstone.js";
+import { runEvolution } from "./dog-evolve.js";
 
 const SLOW = 90000;
-export const MONTAGE_STEP_MS = 650;
-export const MONTAGE_STEPS = ["Reading its settled tickets", "Finding where it loses", "Drawing up the changes"];
 
 export const OUTBACK_WARNING = "This is permanent. Your hound is buried and its record is frozen.";
 export const OUTBACK_SECOND = "This is the last step. There is no undoing it.";
@@ -38,8 +37,6 @@ export function reducedMotion() {
       && !!window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   } catch (err) { return false; }
 }
-
-const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // ---- the sheet --------------------------------------------------------------------------------------------------
 
@@ -214,16 +211,13 @@ export function trainingCard(result) {
     r.next_training ? h("p", { class: "hd-fine", "data-hook": "training-next", text: r.next_training }) : null]);
 }
 
-function montage() {
-  return h("ol", { class: "rt-montage", "data-hook": "training-montage", "aria-label": "Training" }, MONTAGE_STEPS.map((text, i) => h("li", {
-    class: "rt-montage__step", "data-step": String(i), style: `--i:${i}`, text })));
-}
-
 /**
- * One confirmation, then the montage while the server works, then the "what changed and why" card. `onTrained(result)` runs
- * when the person leaves the card. Resolves with the result, or null when the person backed out or the server refused.
+ * One confirmation, then the evolution (dog-evolve.js) while the server works, then the upgrade card. `dog` is { id, name } plus,
+ * when the page knows them, version_no, root_id and look (the evolution draws the hound at its real version). `onTrained(result)`
+ * runs when the person leaves the card with "Back to My Kennel" (unless `backHref` sends them there as a link). Resolves with the
+ * result, or null when the person backed out or the server refused.
  */
-export function startTraining(dog, { opener = null, onTrained = null } = {}) {
+export function startTraining(dog, { opener = null, onTrained = null, backHref = null } = {}) {
   return new Promise((resolve) => {
     let done = false;
     const finish = (value) => { if (!done) { done = true; resolve(value); } };
@@ -244,18 +238,23 @@ export function startTraining(dog, { opener = null, onTrained = null } = {}) {
       sheet.el.setAttribute("data-hook", "training-running");
       const titleEl = sheet.el.querySelector("[data-hook='rites-title']");
       if (titleEl) titleEl.textContent = `${dog.name} is in training`;
-      clearNode(sheet.body);
-      const reduced = reducedMotion();
-      const stage = montage();
-      sheet.body.appendChild(stage);
-      sheet.body.appendChild(h("p", { class: "hd-fine rt-status", role: "status", "aria-live": "polite", "data-hook": "training-status", text: "Training..." }));
+      const layer = sheet.el.parentNode;
+      if (layer && layer.setAttribute) layer.setAttribute("data-evolve", "1");
+      // The evolution is the show, not the work: the request is the caller's, runs beside it, and nothing is drawn as an upgrade
+      // until the server has answered. A refusal ends the show at once (no charge, no new hound).
       const request = post(`/hounds/${encodeURIComponent(dog.id)}/train`, { confirm: true }, SLOW).then((r) => ({ ok: true, r }), (e) => ({ ok: false, e }));
-      // The montage is the show, not the work: the request runs beside it, and the card waits for both. With reduced
-      // motion nothing waits on a timer.
-      const minimum = reduced ? 0 : MONTAGE_STEP_MS * MONTAGE_STEPS.length;
-      const [outcome] = await Promise.all([request, wait(minimum)]);
+      // "Back to My Kennel": on the kennel page it closes the sheet and the page redraws; elsewhere (the hound page) it goes to `backHref`
+      const leave = (result) => () => {
+        finish(result); sheet.close();
+        if (backHref) { try { window.location.href = backHref; } catch (err) { /* a fake window */ } } else if (onTrained) onTrained(result);
+      };
+      let result = null;
+      const outcome = await runEvolution({
+        body: sheet.body, dog, request, reduced: reducedMotion(), layer,
+        onBack: () => { if (result) leave(result)(); }, renderWhy: trainingCard });
       sheet.setBusy(false);
       if (!outcome.ok) {
+        if (layer && layer.removeAttribute) { layer.removeAttribute("data-evolve"); layer.removeAttribute("data-phase"); }
         // refused (too few new bets, an open ticket): the title stops saying it is in training
         sheet.el.setAttribute("data-hook", "training-refused-sheet");
         if (titleEl) titleEl.textContent = `${dog.name} stays as it is`;
@@ -266,16 +265,10 @@ export function startTraining(dog, { opener = null, onTrained = null } = {}) {
         focusIn(sheet.body, "rites-close");
         return;
       }
-      const result = outcome.r;
+      result = outcome.result;
       sheet.el.setAttribute("data-hook", "training-reveal");
       if (titleEl) titleEl.textContent = result.light_adjustment ? "A light adjustment" : `${dog.name} is back`;
-      clearNode(sheet.body);
-      sheet.body.appendChild(trainingCard(result));
-      const leave = () => { finish(result); sheet.close(); if (onTrained) onTrained(result); };
-      sheet.body.appendChild(actionsRow([
-        h("a", { class: "btn btn--ghost", href: (result.new && result.new.page_href) || "#", "data-hook": "training-open-new", text: `Open version ${result.new && result.new.version_no}` }),
-        button("Done", "training-done", "primary", leave)]));
-      focusIn(sheet.body, "training-done");
+      focusIn(sheet.body, "training-open-new");
     };
 
     ask();
@@ -289,11 +282,11 @@ export function startTraining(dog, { opener = null, onTrained = null } = {}) {
  * dog page scrolls to its Unleash panel and runs it; the kennel card opens the studio on it). Take them out back is styled as
  * the destructive action it is. Only the owner of a live member dog gets this (the kit says so; the server checks again).
  */
-export function ritesMenu(dog, { unleash = null, onTrained = null, onBuried = null, canTrain = true, canOutBack = true } = {}) {
+export function ritesMenu(dog, { unleash = null, onTrained = null, onBuried = null, canTrain = true, canOutBack = true, backHref = null } = {}) {
   const menu = h("div", { class: "dk-menu", role: "group", "aria-label": `${dog.name}: actions`, "data-hook": "dog-menu" });
   if (unleash) menu.appendChild(button("Unleash", "menu-unleash", "primary", () => unleash(), { "aria-label": `Unleash ${dog.name}` }));
   if (canTrain) {
-    const train = button("Send to training", "menu-train", "quiet", () => startTraining(dog, { opener: train, onTrained }), { "aria-label": `Send ${dog.name} to training` });
+    const train = button("Send to training", "menu-train", "quiet", () => startTraining(dog, { opener: train, onTrained, backHref }), { "aria-label": `Send ${dog.name} to training` });
     menu.appendChild(train);
   }
   if (canOutBack) {
@@ -308,10 +301,11 @@ export function mountRites(section, { id, name, kit, unleash }) {
   const body = section.querySelector("[data-hook='dog-rites']");
   if (!body || !kit || !kit.is_owner || !(kit.can_train || kit.can_out_back)) return null;
   clearNode(body);
-  const dog = { id, name };
+  // what the evolution draws the hound from: its real version, lineage and look (the kit says them)
+  const dog = { id, name, version_no: kit.version_no, root_id: kit.root_id, look: kit.look || null };
   const here = () => { try { window.location.reload(); } catch (err) { /* a fake window */ } };
   body.appendChild(ritesMenu(dog, {
-    unleash, canTrain: !!kit.can_train, canOutBack: !!kit.can_out_back,
+    unleash, canTrain: !!kit.can_train, canOutBack: !!kit.can_out_back, backHref: "kennel.html",
     onTrained: (result) => { try { window.location.href = (result.new && result.new.page_href) || `hound.html?id=${encodeURIComponent(id)}`; } catch (err) { here(); } },
     onBuried: () => { try { window.location.href = `hound.html?id=${encodeURIComponent(id)}`; } catch (err) { here(); } }}));
   body.appendChild(h("p", { class: "hd-fine", text: "Unleash shows what the rule would pick right now. Send to training makes a new version from what the hound got wrong. Take them out back buries it for good." }));

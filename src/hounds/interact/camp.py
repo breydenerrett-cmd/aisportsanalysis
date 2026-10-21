@@ -43,6 +43,9 @@ def kit(dog: common.Dog, viewer_id: Optional[int], *, now: Optional[datetime] = 
         # checks again on the write and says why when it refuses (an open ticket, too few new bets).
         "can_train": bool(owner and alive), "can_out_back": bool(owner and alive),
         "trained_times": _trained_times(dog), "coached_from": _coached_from(dog),
+        # the version the hound's art wears (web/js/dog-tiers.js); a house hound has none
+        "version_no": (dog.hound or {}).get("version_no") if dog.kind == common.KIND_USER else None,
+        "root_id": dog.root_id,
         "buried": dog.status == "buried",
         "can_record_manual": bool(owner and dog.status == "running"),
         "can_customize": owner, "can_suggest": dog.kind == common.KIND_USER and not owner,
@@ -104,7 +107,7 @@ def mine(user_id: int, *, now: Optional[datetime] = None) -> dict:
         mt = manual.tickets(dog.id, now=now)
         dogs.append({
             "id": dog.id, "name": dog.name, "tagline": dog.tagline, "status": dog.status,
-            "version_no": row["version_no"], "trained_times": _trained_times(dog), "look": look_of(dog),
+            "version_no": row["version_no"], "root_id": dog.root_id, "trained_times": _trained_times(dog), "look": look_of(dog),
             # the sports this dog bets (lower case, as GET /hounds/kennels/mine says them): Live offers a game only the dogs that bet its sport
             "sports": [str(x).lower() for x in ((row.get("spec") or {}).get("sports") or [])],
             "record": rec, "verdict": (summary or {}).get("verdict"), "open_bets": (summary or {}).get("open_bets"),

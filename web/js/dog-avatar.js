@@ -15,17 +15,19 @@
 
 import { apiGet } from "./api.js";
 import { COATS, EYES, BACKGROUNDS, HEAD, FACE, NECK, BODY, DEFAULT_LOOK, cleanLook, lookFor, randomLook, STYLES, BREED_CHOICES } from "./dog-look.js";
-import { dogSvg, renderDog, setPose, flashPose, breedFor, breedLabel, breedOfName, BREED_LABELS, poseOfPick, POSES, BREEDS, STYLE_LABELS, EXPRESSIONS, expressionOf, anchorsFor } from "./dog-rig.js";
+import { dogSvg, renderDog, setPose, flashPose, breedFor, breedLabel, breedOfName, BREED_LABELS, poseOfPick, POSES, BREEDS, STYLE_LABELS, EXPRESSIONS, expressionOf, anchorsFor, versionTier, cleanVersion, tierOf, newParts } from "./dog-rig.js";
 
 export { COATS, EYES, BACKGROUNDS, HEAD, FACE, NECK, BODY, DEFAULT_LOOK, cleanLook, lookFor, randomLook, STYLES, BREED_CHOICES };
+export { versionTier, cleanVersion, tierOf, newParts };
 export { renderDog, setPose, flashPose, breedFor, breedLabel, breedOfName, BREED_LABELS, poseOfPick, POSES, BREEDS, STYLE_LABELS, EXPRESSIONS, expressionOf, anchorsFor };
 
 /**
  * The badge as an SVG element. `size` is the pixel width and height; `mood` is the pose (idle, happy, sad or the old word
- * slump, thinking, celebrate); `id` / `vibe` / `breed` choose the silhouette (see breedFor in dog-rig.js).
+ * slump, thinking, celebrate); `id` / `vibe` / `breed` choose the silhouette (see breedFor in dog-rig.js); `version` is the hound's
+ * version number (v2 and later wear their tier: dog-tiers.js).
  */
-export function dogBadge(rawLook, { size = 56, label = "", decorative = true, mood = "idle", id, vibe, breed, name } = {}) {
-  return dogSvg(rawLook, { size, label, decorative, mood, pose: mood, id, vibe, breed, name });
+export function dogBadge(rawLook, { size = 56, label = "", decorative = true, mood = "idle", id, vibe, breed, name, version } = {}) {
+  return dogSvg(rawLook, { size, label, decorative, mood, pose: mood, id, vibe, breed, name, version });
 }
 
 /**
@@ -44,7 +46,9 @@ export function poseOfHound(dog) {
 export function dogFace(dog, { size = 32, pose = "idle", label = "", decorative = true } = {}) {
   const d = dog || {};
   const vibe = d.persona && d.persona.vibe ? d.persona.vibe : d.vibe;
-  return dogSvg(d.look || lookFor(d.id || d.name), { size, pose, mood: pose, id: d.id, name: d.name, vibe, label, decorative });
+  // a hound's version is real data (version_no on a kennel row, a leaderboard row and the kit): v2 and later wear their tier. The breed is
+  // the lineage's, not the version's: a new version has a new id, and a trained hound must stay the breed it was (root_id; a v1's is its id).
+  return dogSvg(d.look || lookFor(d.root_id || d.id || d.name), { size, pose, mood: pose, id: d.root_id || d.id, name: d.name, vibe, label, decorative, version: d.version_no });
 }
 
 // ---- looks for lists of dogs -----------------------------------------------------------------------

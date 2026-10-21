@@ -36,7 +36,7 @@ export function applyHeaderBadge(look, name, muted = false, dog = {}) {
   if (!old || !look) return false;
   // keep the size the header drew the first face at (the hero's big art), 84 when it did not say
   const drawn = Number(old.getAttribute ? old.getAttribute("width") : 0);
-  const badge = dogBadge(look, { size: drawn > 0 ? drawn : 84, id: dog.id, name: name || dog.name, vibe: dog.vibe, mood: muted ? "sad" : (dog.pose || "idle") });
+  const badge = dogBadge(look, { size: drawn > 0 ? drawn : 84, id: dog.root_id || dog.id, name: name || dog.name, vibe: dog.vibe, version: dog.version_no, mood: muted ? "sad" : (dog.pose || "idle") });
   badge.setAttribute("data-hook", "header-badge");
   if (muted) badge.setAttribute("style", "opacity:.55");
   const parent = old.parentNode;
@@ -85,7 +85,7 @@ export async function bootDogKit(hound) {
   const name = hound.name || kit.name || "this model";
   // a builder dog always wears a dog (its saved look, else the default one); the house models keep their initials
   const vibe = hound.persona && hound.persona.vibe;
-  if (kit.look || hound.kind === "user") applyHeaderBadge(kit.look || lookFor(id), name, hound.status === "retired", { id, vibe, pose: poseOfHound(hound) });
+  if (kit.look || hound.kind === "user") applyHeaderBadge(kit.look || lookFor(kit.root_id || id), name, hound.status === "retired", { id, root_id: kit.root_id, vibe, version_no: kit.version_no, pose: poseOfHound(hound) });
   if (kit.trained_times) applyTrainedBadge(kit.trained_times);
   let manual = null;
   const jobs = [];
@@ -109,7 +109,7 @@ export async function bootDogKit(hound) {
   jobs.push(bootAsk(sections.ask, { id, name }));
   jobs.push(mountFans(sections.fans, { id, name, kit, hound }));
   if (kit.can_customize && sections.locker) {
-    mountLocker(sections.locker, { id, name, kit, vibe, onSaved: (look) => applyHeaderBadge(look, name, false, { id, vibe, pose: poseOfHound(hound) }) });
+    mountLocker(sections.locker, { id, name, kit, vibe, onSaved: (look) => applyHeaderBadge(look, name, false, { id, root_id: kit.root_id, vibe, version_no: kit.version_no, pose: poseOfHound(hound) }) });
   }
   await Promise.all(jobs.map((p) => Promise.resolve(p).catch(() => null)));
   return kit;

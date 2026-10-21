@@ -256,6 +256,8 @@ globalThis.fetch = async (url, init = {}) => {
   if ((scenario.down || []).some((p) => path === p || (p.endsWith("*") && path.startsWith(p.slice(0, -1))))) {
     throw new TypeError("fetch failed");
   }
+  // delay: {path: ms}: the server is slow to answer (the training evolution holds its first beat for it)
+  if ((scenario.delay || {})[path]) await new Promise((r) => setTimeout(r, scenario.delay[path]));
   const counts = (globalThis.__counts ||= {});
   counts[path] = (counts[path] || 0) + 1;
   const after = (scenario.failAfter || {})[path];

@@ -4,6 +4,7 @@
  * panels, the same type. Phone first: one column, 16px gutters, every tap target at least 44px, nothing makes the
  * page scroll sideways. Colour never carries meaning alone: a chip, a result or a check always says it in words.
  */
+@import url("evolve.css");   /* Send to training as an evolution (web/js/dog-evolve.js) */
 
 /* ---- layout ------------------------------------------------------------------------------------------------ */
 .dk-top { display: grid; gap: 18px; grid-template-columns: minmax(0, 1fr); margin: 0 0 18px; }
@@ -170,7 +171,7 @@
 .hounds-page .rt-sheet .btn--danger[data-hook="outback-bury"]:hover { background: #DD4558; border-color: #DD4558; }
 .dk-chip--trained { color: var(--hd-accent); border-color: rgba(47, 208, 122, .5); background: rgba(47, 208, 122, .08); }
 
-/* the confirm sheet, the training montage and the two reveals: a bottom sheet on a phone, a centred card from 640px */
+/* the confirm sheet, the training evolution (css/evolve.css) and the two reveals: a bottom sheet on a phone, a centred card from 640px */
 /* z-index above the phone tab bar (70): the sheet is the only thing the person should reach while it is open */
 .rt-layer { position: fixed; inset: 0; z-index: 200; display: flex; align-items: flex-end; justify-content: center; }
 .rt-scrim { position: absolute; inset: 0; background: rgba(5, 7, 10, .78); }
@@ -188,11 +189,6 @@
 .rt-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; margin-top: 16px; }
 .rt-actions .btn { flex: 1 1 140px; white-space: normal; text-align: center; }
 .rt-status { min-height: 1.2em; margin: 8px 0 0; }
-
-.rt-montage { list-style: none; margin: 4px 0 6px; padding: 0; display: grid; gap: 8px; }
-.rt-montage__step { padding: 10px 12px; border: 1px solid var(--hd-line); border-radius: 4px; background: var(--hd-card-2); color: var(--hd-text); font-size: 15px; }
-.rt-montage__step::before { content: counter(rt-step) ". "; counter-increment: rt-step; color: var(--hd-mute); }
-.rt-montage { counter-reset: rt-step; }
 
 .rt-card { display: grid; gap: 10px; }
 .rt-card__kicker { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
@@ -234,7 +230,6 @@
 @media (prefers-reduced-motion: no-preference) {
   .rt-scrim { animation: rt-fade .18s ease both; }
   .rt-sheet { animation: rt-rise .24s cubic-bezier(.2, .8, .2, 1) both; }
-  .rt-montage__step { opacity: .35; animation: rt-step .35s ease both; animation-delay: calc(var(--i, 0) * 650ms); }
   .rt-reveal--burial .rt-reveal__line:first-child { animation: rt-fade .9s ease both; }
   .rt-reveal--burial .rt-reveal__stone { animation: rt-lower 1.1s cubic-bezier(.2, .8, .2, 1) .5s both; }
   .rt-reveal--burial .rt-reveal__line:last-child { animation: rt-fade .9s ease 1.4s both; }
@@ -243,5 +238,4 @@
   @keyframes rt-fade { from { opacity: 0; } to { opacity: 1; } }
   @keyframes rt-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
   @keyframes rt-lower { from { opacity: 0; transform: translateY(-18px); } to { opacity: 1; transform: none; } }
-  @keyframes rt-step { from { opacity: .35; transform: translateX(-6px); } to { opacity: 1; transform: none; } }
 }

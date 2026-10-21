@@ -111,7 +111,7 @@ def dog_entry(row: dict, view, look: Optional[dict], trained: int = 0) -> dict:
             break
     return {
         "id": row["id"], "name": row["name"], "tagline": row.get("tagline") or "", "status": row["status"],
-        "version_no": row["version_no"], "look": look, "trained_times": trained,
+        "version_no": row["version_no"], "root_id": row.get("root_id") or row["id"], "look": look, "trained_times": trained,
         "coached_from": row.get("coached_from"),
         "sports": [str(s).lower() for s in (row["spec"].get("sports") or [])],
         "record": {"bets": int(rec.get("bets") or 0), "wins": wins, "losses": losses, "pushes": pushes,
