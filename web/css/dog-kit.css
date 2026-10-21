@@ -239,3 +239,34 @@
   @keyframes rt-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
   @keyframes rt-lower { from { opacity: 0; transform: translateY(-18px); } to { opacity: 1; transform: none; } }
 }
+
+/* ---- Unleash today (web/js/dog-fire.js, owner request 2026-10-21) ------------------------------------------------------
+   The hound sniffs a board while the request runs; the answer ticks the steps off and the cards rise in. The loop lasts as long as the
+   request does and the reveal is under a second (7 stagger steps x 70ms + .32s); reduced motion gets the same list and no movement. */
+.ul-stage { display: grid; gap: 12px; padding: 14px; border: 1px solid var(--hd-line); border-radius: 8px; background: var(--hd-card-2); }
+.ul-stage__art { display: flex; align-items: center; gap: 12px; min-height: 96px; overflow: hidden; }
+.ul-dog { flex: 0 0 auto; line-height: 0; transform-origin: 50% 90%; }
+.ul-board { flex: 1 1 0; min-width: 0; display: grid; gap: 7px; }
+.ul-board__row { display: block; height: 9px; border-radius: 5px; background-color: rgba(255, 255, 255, .08); width: calc(100% - var(--r, 0) * 11%); }
+.ul-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; }
+.ul-steps--done { margin: 0 0 10px; padding: 10px 12px; border: 1px solid var(--hd-line); border-radius: 8px; background: var(--hd-card-2); }
+.ul-step { display: flex; align-items: center; gap: 10px; font-size: 15px; color: var(--hd-mute); }
+.ul-step::before { content: ""; flex: 0 0 auto; width: 10px; height: 10px; box-sizing: border-box; border-radius: 50%; border: 2px solid var(--hd-line); }
+.ul-step[data-state="active"] { color: #fff; }
+.ul-step[data-state="active"]::before { border-color: var(--hd-accent); }
+.ul-step[data-state="done"] { color: var(--hd-text); }
+.ul-step[data-state="done"]::before { background: var(--hd-accent); border-color: var(--hd-accent); }
+.ul-card--before { border-left: 3px solid var(--hd-warn); }
+.ul-card .dk-chip, .ul-card--before .dk-chip { vertical-align: middle; margin-left: 6px; }
+.ul-before .dk-chip--hind { margin-left: 0; white-space: normal; }
+@media (prefers-reduced-motion: no-preference) {
+  .ul-dog { animation: ul-sniff 1.1s ease-in-out infinite; }
+  .ul-board__row { background-image: linear-gradient(90deg, transparent, rgba(47, 208, 122, .6), transparent); background-size: 40% 100%; background-repeat: no-repeat;
+    animation: ul-scan 1.3s linear infinite; animation-delay: calc(var(--r, 0) * 150ms); }
+  .ul-step[data-state="active"]::before { animation: ul-pulse 1s ease-in-out infinite; }
+  .ul-in { animation: ul-rise .32s cubic-bezier(.2, .7, .2, 1) both; animation-delay: calc(var(--i, 0) * 70ms); }
+}
+@keyframes ul-sniff { 0%, 100% { transform: translateX(0) rotate(0deg); } 25% { transform: translateX(5px) rotate(-4deg); } 40% { transform: translateX(1px) rotate(0deg); } 60% { transform: translateX(6px) rotate(-5deg); } 80% { transform: translateX(2px) rotate(0deg); } }
+@keyframes ul-scan { from { background-position: -60% 0; } to { background-position: 160% 0; } }
+@keyframes ul-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+@keyframes ul-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }

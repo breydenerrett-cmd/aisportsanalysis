@@ -262,6 +262,9 @@ globalThis.fetch = async (url, init = {}) => {
   counts[path] = (counts[path] || 0) + 1;
   const after = (scenario.failAfter || {})[path];
   if (after !== undefined && counts[path] > after) return { ok: false, status: 503, text: async () => "{}" };
+  // delay: {"POST /path": ms}: hold that answer back, so a test can look at the page WHILE the request is in flight
+  const held = (scenario.delay || {})[method !== "GET" ? method + " " + path : path];
+  if (held) await new Promise((r) => setTimeout(r, held));
   const key = method !== "GET" ? method + " " + path : path;
   // a route may be keyed by the FULL url (path and query) to answer one page of a paged list; else by path
   let hit = (scenario.routes || {})[(method !== "GET" ? method + " " : "") + url] || (scenario.routes || {})[key];

@@ -175,10 +175,10 @@ class TheCopyInTheKennel(unittest.TestCase):
         out = run_page("kennel", routes=routes, **SIGNED, queries=[q("btn", "[data-hook='dog-action-fire']", "texts")], actions=[
             dict(do="click", sel="[data-hook='dog-action-fire']", label="out", wait=300, capture=[
                 q("selected", "[role='tab'][aria-selected='true']", "texts"), q("btn", "[data-hook='fire-btn']"),
-                q("title", "[data-hook='fire-title']")])])
+                q("title", "[data-hook='unleash-title']")])])
         self.assertEqual(out["final"]["btn"], ["Unleash"])
         self.assertEqual(out["captures"]["out"]["selected"], ["Unleash"])
-        self.assertEqual(out["captures"]["out"]["title"], "Underdog Gus's picks right now")
+        self.assertEqual(out["captures"]["out"]["title"], "Underdog Gus's day")      # the owner's Unleash starts the dog (2026-10-21)
 
     def test_the_studio_backtest_tab_runs_a_backtest_for_that_dog(self):
         routes = TheStudio().routes([dog("u-1")])
