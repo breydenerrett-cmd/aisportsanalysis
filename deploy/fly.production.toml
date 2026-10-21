@@ -47,6 +47,12 @@ primary_region = "iad"
   # interpreter; the 2026-10-01 incident was whole-store reads, which this pass does not do). "off" (or
   # removing the line) stops every user dog from betting; their records stay.
   HOUNDS_ENGINE = "on"
+  # THE WATCHDOG (2026-10-20). Every ten minutes the app checks, from inside production, whether a deploy is stuck,
+  # the tests are red, production is behind the branch, capture has stopped, the app's own health is degraded or
+  # the paid AI is near its cap, and writes any incident into /feeds/alerts.rss (the owner's email Zap). Reads
+  # GitHub's public API (optional GITHUB_TOKEN secret raises its limit), writes one small file on the volume,
+  # changes nothing anywhere. "off" (or removing the line) stops it; docs/owner/WATCHDOG.md.
+  WATCHDOG = "on"
 
   # BOUNDARY 5, and the one that costs a customer money if it is wrong.
   #

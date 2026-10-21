@@ -133,10 +133,27 @@ def get_health_digest(_admin: None = Depends(_require_admin)) -> dict:
      not_checked: [...]}"""
     from api import health as api_health
     from src.appstate import alert_feed
+    from src.ops import watchdog
     now = datetime.now(timezone.utc)
     health, error, pauses = alert_feed.gather(now)
     return alert_feed.digest(health, pauses, now=now, health_error=error,
-                             started_utc=api_health.process_started_utc())
+                             started_utc=api_health.process_started_utc(),
+                             extra=watchdog.feed_alerts(now, include_resolved=False))
+
+
+@router.get("/admin/watchdog")
+def get_watchdog(_admin: None = Depends(_require_admin)) -> dict:
+    """The watchdog's last check, each check's state, and the open incidents (src/ops/watchdog.py): is a deploy
+    stuck, are the tests red, is production behind the branch, has capture stopped, is the app's health degraded,
+    is the paid AI near its cap. Read-only and admin-token gated like the rest of /admin (404 when
+    APP_ADMIN_TOKEN is unset, 401 on a wrong token). Carries no token, header or log text; `github.token_present`
+    is a yes/no.
+
+    {enabled, switch, last_check_utc, checks: {name: {state, summary, checked_utc}}, open_incidents: [...],
+     recently_resolved: [...], production_commit: {sha, source}, github: {...budget...}, limits: {...}}"""
+    from api import health as api_health
+    from src.ops import watchdog
+    return watchdog.status(started_utc=api_health.process_started_utc())
 
 
 DIRECT_SOURCE = "(direct)"

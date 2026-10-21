@@ -29,9 +29,12 @@ another; a finished audit read red on one and nothing on the other.)
 
 Every item says what happened AND what to do: its description is "<what>. Fix: <one line>".
 
-NOT KNOWABLE FROM THE SERVER, SO NOT HERE: whether CI on the working branch is red. That is a GitHub API call
-with a token the app does not hold (and a network call in a feed that must answer from memory). A red CI shows
-up indirectly as ``deploy_stale``. The admin digest says so in its "not checked" list.
+NOT HERE, BECAUSE A FEED MUST ANSWER FROM MEMORY: whether CI on the working branch is red, whether a deploy is
+stuck, whether capture has stopped. Those are GitHub calls, so the watchdog (src/ops/watchdog.py, every ten minutes,
+in its own daemon thread) makes them, keeps its incidents in a small state file, and hands the feed the finished
+items through ``collect(extra=...)``. They carry a guid per INCIDENT (not per UTC day) plus a "Resolved" item when
+one clears. Without the watchdog a red CI shows up only as ``deploy_stale``; the digest's "not checked" list says
+so.
 
 NOT HERE, ON PURPOSE: "the house pack recorded zero bets for today's slate by 21:00 UTC". Whether a day
 HAS games is not known without loading the hounds' stores (``pack.base.load_stores``: the whole multi-book
@@ -171,10 +174,13 @@ def _pause_alerts(pauses: Iterable[Mapping], day_start: datetime) -> list:
 
 
 def collect(health: Optional[Mapping], pauses: Iterable[Mapping], *, now: datetime,
-            health_error: Optional[str] = None, started_utc=None) -> list:
+            health_error: Optional[str] = None, started_utc=None, extra: Optional[Iterable[Mapping]] = None) -> list:
     """Every alert standing right now, as ``{kind, guid, title, what, fix, description, pub}``, newest first.
 
-    ``started_utc`` is when the running process started (a deploy or restart); None skips the deploy check."""
+    ``started_utc`` is when the running process started (a deploy or restart); None skips the deploy check.
+    ``extra`` are finished alerts from the watchdog (src/ops/watchdog.py: stuck deploy, red tests, ...), each with
+    its own ``guid`` (one per incident, not one per UTC day), ``description`` and optional ``link``; they are merged
+    and de-duplicated by guid like every other item."""
     now = now.astimezone(timezone.utc)
     day = now.strftime("%Y-%m-%d")
     day_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -190,10 +196,11 @@ def collect(health: Optional[Mapping], pauses: Iterable[Mapping], *, now: dateti
         alerts += _freshness_alerts(health, day_start, now)
     alerts += _deploy_alerts(started_utc, now)
     alerts += _pause_alerts(pauses, day_start)
+    alerts += [dict(a) for a in extra or ()]
 
     seen, unique = set(), []
     for a in alerts:
-        a["guid"] = f"alert:{a['kind']}:{day}"
+        a.setdefault("guid", f"alert:{a['kind']}:{day}")
         if a["guid"] in seen:
             continue
         seen.add(a["guid"])
@@ -206,7 +213,7 @@ def collect(health: Optional[Mapping], pauses: Iterable[Mapping], *, now: dateti
 def render_feed(alerts: Iterable[Mapping], *, base_url: Optional[str] = None,
                 self_url: Optional[str] = None) -> str:
     base = (base_url or site_base_url()).rstrip("/")
-    items = [{"title": a["title"], "link": f"{base}/health", "guid": a["guid"], "pub": a["pub"],
+    items = [{"title": a["title"], "link": a.get("link") or f"{base}/health", "guid": a["guid"], "pub": a["pub"],
               "description": a["description"]} for a in alerts]
     return rss.render(title="LINEHOUND operator alerts", link=f"{base}/health",
                       description="Empty while the site is healthy. One item per problem per UTC day.",
@@ -214,20 +221,21 @@ def render_feed(alerts: Iterable[Mapping], *, base_url: Optional[str] = None,
 
 
 # What the server cannot check, said out loud so an empty digest is not read as "CI is green".
-NOT_CHECKED = ("CI on the working branch (a GitHub call the app cannot make; a red build shows up here as "
+NOT_CHECKED = ("CI on the working branch from this page (the watchdog, src/ops/watchdog.py, checks it and the deploys "
+               "every 10 minutes when WATCHDOG=on and raises its own alerts; without it a red build shows up here only as "
                "'Production has not redeployed')",
                "Whether the house pack placed bets today (needs the schedule and the ledger, not a health check)")
 
 
 def digest(health: Optional[Mapping], pauses: Iterable[Mapping], *, now: datetime,
-           health_error: Optional[str] = None, started_utc=None) -> dict:
+           health_error: Optional[str] = None, started_utc=None, extra: Optional[Iterable[Mapping]] = None) -> dict:
     """The owner's "what needs doing today": the same alerts the feed raises, as plain sentences, plus what is
     only worth watching and what is deliberately quiet. The admin Overview reads this.
 
     ``items`` are the alerts (title, what happened, the one-line fix, since when); ``watch`` are stores past
     their fresh limit but not yet stale; ``not_expected`` are the grey ones with their reasons."""
     now = now.astimezone(timezone.utc)
-    alerts = collect(health, pauses, now=now, health_error=health_error, started_utc=started_utc)
+    alerts = collect(health, pauses, now=now, health_error=health_error, started_utc=started_utc, extra=extra)
     fresh = (health or {}).get("freshness")
     if health is not None and (not isinstance(fresh, Mapping) or "stores" not in fresh):
         fresh = freshness_policy.summarize(health)

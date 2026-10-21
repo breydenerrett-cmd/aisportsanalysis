@@ -1,7 +1,8 @@
 """Feeds and briefs a Zapier Zap reads (docs/ZAPS.md). Public, read-only, no auth.
 
     GET /feeds/kennel.rss     kennel news as RSS 2.0, newest first, at most 30 items (src/hounds/kennel_feed.py)
-    GET /feeds/alerts.rss     operator alerts as RSS 2.0; EMPTY while the site is healthy (src/appstate/alert_feed.py)
+    GET /feeds/alerts.rss     operator alerts as RSS 2.0; EMPTY while the site is healthy (src/appstate/alert_feed.py),
+                              plus the watchdog's one-item-per-incident alerts and their all-clears (src/ops/watchdog.py)
     GET /hounds/coach-brief   JSON for the weekly coach Zap: the tunable hounds a proposal could reach today,
                               plus the fixed instructions (src/hounds/learning/coach_brief.py)
 
@@ -28,6 +29,7 @@ from src.appstate import alert_feed, ratelimit
 from src.hounds import kennel_feed, stats
 from src.hounds.learning import coach_brief
 from src.hounds import rss
+from src.ops import watchdog
 
 router = APIRouter()
 
@@ -66,8 +68,11 @@ def alerts_rss(_rl=Depends(_rate_limit)):
     from api import health as api_health
     now = datetime.now(timezone.utc)
     health, error, pauses = alert_feed.gather(now)
+    # The watchdog's items (stuck deploy, red tests, ...) come from its state file, never the network; [] while
+    # WATCHDOG is not "on" (src/ops/watchdog.py).
     alerts = alert_feed.collect(health, pauses, now=now, health_error=error,
-                                started_utc=api_health.process_started_utc())
+                                started_utc=api_health.process_started_utc(),
+                                extra=watchdog.feed_alerts(now))
     return _xml(alert_feed.render_feed(alerts))
 
 
