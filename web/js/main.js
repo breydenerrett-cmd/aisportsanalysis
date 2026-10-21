@@ -70,7 +70,8 @@
  *                                             postseason.html)
  *   #/live[?sport=]                          LIVE (internal testing,
  *                                             reachable by URL only)
- *   #/signin                                 SIGN IN (interim -- see signin.js)
+ *   #/signin, #/account                      SIGN IN / ACCOUNT (the same view: the account box once signed in)
+ *   (no route)                               a signed-in member is sent to My Kennel (kennel.html); a visitor sees GAMEDAY
  *   #/support                                SUPPORT
  *   #/signup                                 SIGNUP (public CTA target from
  *                                             web/landing.html)
@@ -107,6 +108,7 @@ import { renderCardRecord } from "./cardrecord.js";
 import { renderLive } from "./live.js";
 import { renderPostseason } from "./postseason.js";
 import { maybeGotcha } from "./gotcha.js";
+import { redirectMemberHome } from "./home-route.js";
 import { watchTables } from "./tablelabels.js";
 import { publicPageName, trackPublicPageView, rememberFirstTouch } from "./pageview.js";
 
@@ -135,6 +137,8 @@ const ROUTE_ALIASES = {
   gameday: "today",
   matchups: "games",
   results: "record-card",
+  // the nav's Account place: the sign-in route shows a member's account box (kennel-first, owner ruling 2026-10-20)
+  account: "signin",
 };
 
 // Sports with no real board yet (D6): every route under one of these goes
@@ -468,6 +472,10 @@ function boot() {
   // docstring for why the trigger is narrow on purpose and how to delete
   // the whole thing.
   if (maybeGotcha()) return;
+
+  // KENNEL-FIRST (owner ruling 2026-10-20): a signed-in member who opens the shell with no route goes to My Kennel, never to the old
+  // picks card. An explicit route (#/today, a shared #/record-card link, the footer's links) is left alone.
+  if (redirectMemberHome(window, !!getToken())) return;
 
   // WHERE THIS VISITOR CAME FROM, whichever page the link opened. Only the
   // landing page used to store the first touch, but outreach links point at

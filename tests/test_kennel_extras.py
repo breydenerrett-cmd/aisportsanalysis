@@ -148,7 +148,7 @@ class MyKennelOnAPhone(unittest.TestCase):
 
     def test_the_mine_card_still_has_the_four_actions_in_order(self):
         src = (ROOT / "web" / "js" / "kennel.js").read_text(encoding="utf-8")
-        order = [src.index(h) for h in ('"dog-action-fire"', '"dog-action-ask"', '"dog-action-edit"', '"dog-action-open"')]
+        order = [src.index(h) for h in ('"dog-action-fire"', '"dog-action-train"', '"dog-action-edit"', '"dog-action-outback"')]      # owner ruling 2026-10-20 kennel-first
         self.assertEqual(order, sorted(order))
 
 

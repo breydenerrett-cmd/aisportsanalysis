@@ -50,6 +50,9 @@ for (const p of paths) {
       if (bar && bar.contains(el)) continue;
       const cs = getComputedStyle(el);
       if (cs.position === "fixed" || cs.display === "none" || cs.visibility === "hidden") continue;
+      // content inside a CLOSED <details> is laid out but never painted (a hidden box can hang below the footer): it is not "the last thing on the page"
+      const det = el.closest("details");
+      if (det && !det.open && !el.closest("summary")) continue;
       const r = el.getBoundingClientRect();
       if (r.width > 0 && r.height > 0) lastBottom = Math.max(lastBottom, r.bottom + window.scrollY);
     }

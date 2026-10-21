@@ -660,8 +660,9 @@ export async function renderSignin(container, query = {}) {
         // identifies them to the upgrade door, so show the ended state.
         loginStatus.textContent = "Signed in.";
         await showExpiredTester();
-      } else if (out.kind === "free" && !(typeof query.next === "string" && query.next)) {
-        // A free account has no daily board to open: its home is My kennel.
+      } else if (!(typeof query.next === "string" && query.next)) {
+        // Kennel-first (owner ruling 2026-10-20): every member's home is My Kennel, free or paid. Only a sign-in that was
+        // sent here from a specific page (?next=#/...) goes back to that page.
         loginStatus.textContent = "Signed in. Opening your kennel...";
         window.location.assign("kennel.html");
       } else {

@@ -87,7 +87,7 @@ class TheLivePageIsPartOfTheSite(unittest.TestCase):
             with self.subTest(page=path.name):
                 self.assertRegex(html, r'<a href="live.html" data-nav="live"[^>]*>Live</a>')
         nav_js = (WEB / "js" / "nav.js").read_text(encoding="utf-8")
-        self.assertIn('{ key: "live", label: "Live", tab: "Live", href: "live.html" }', nav_js)
+        self.assertIn('{ key: "live", label: "Live", href: "live.html" }', nav_js)      # owner ruling 2026-10-20 kennel-first
 
     def test_the_page_marks_itself_current_and_loads_the_navigation(self):
         self.assertIn('data-current="live"', HTML)
@@ -95,9 +95,10 @@ class TheLivePageIsPartOfTheSite(unittest.TestCase):
         self.assertIn('<script type="module" src="js/nav.js"></script>', HTML)
         self.assertIn('href="css/lhnav.css"', HTML)
 
-    def test_the_phone_tab_bar_has_room_for_six(self):
+    def test_the_phone_tab_bar_has_room_for_five(self):
+        # # owner ruling 2026-10-20 kennel-first: My Kennel, Create, Live, Leaderboard, Account
         css = (WEB / "css" / "lhnav.css").read_text(encoding="utf-8")
-        self.assertIn("grid-template-columns: repeat(6, 1fr)", css)
+        self.assertIn("grid-template-columns: repeat(5, 1fr)", css)
 
     def test_the_footer_keeps_21_plus_the_helpline_and_paper_only(self):
         foot = re.search(r"<footer[^>]*>(.*?)</footer>", HTML, re.S)

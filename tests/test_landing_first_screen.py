@@ -165,6 +165,8 @@ class TheEarlyAccessLabelIsOneDecision(unittest.TestCase):
             m = re.search(r'<a[^>]*href="([^"]+)"[^>]*data-hook="%s"[^>]*>(.*?)</a>' % hook, MARKUP, re.S)
             self.assertIsNotNone(m, hook)
             labels[hook] = (m.group(1), m.group(2).strip())
+        # # owner ruling 2026-10-20 kennel-first: the bar's primary button (cta-primary) opens the quiz; the other three are still the free account
+        self.assertEqual(labels.pop("cta-primary"), ("quiz.html", "Find your hound"))
         self.assertEqual(set(labels.values()), {("index.html#/signin?create=1", "Create free account")})
         self.assertNotIn("Get notified when checkout opens", MARKUP)
 
