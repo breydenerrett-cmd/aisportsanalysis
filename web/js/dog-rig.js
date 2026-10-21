@@ -38,7 +38,7 @@ import { makeKit, n, path, grp, ell, f } from "./dog-art.js";
 import { noseShapes, mouthShapes, eyeShapes, EXPRESSIONS, EXPRESSION_OF } from "./dog-face.js";
 import { bodyShapes, neckPieces, headPiece, sunglasses, roundGlasses } from "./dog-accessories.js";
 import { defsNode, ensureSharedDefs, SPARKLE } from "./dog-defs.js";
-import { tierShapes, versionTier, cleanVersion, tierOf, newParts, TIERS, MAX_TIER } from "./dog-tiers.js";
+import { tierShapes, tierStyle, versionTier, cleanVersion, tierOf, newParts, TIERS, MAX_TIER } from "./dog-tiers.js";
 
 export const POSES = ["idle", "happy", "sad", "thinking", "celebrate"];
 export { versionTier, cleanVersion, tierOf, newParts, TIERS, MAX_TIER };
@@ -199,28 +199,28 @@ export function dogSvg(rawLook, opts = {}) {
   const st = styleSpec(look.style);
   const size = opts.size || 56;
   const lod = size <= SMALL_PX ? "s" : "l";
-  const K = makeKit({ style: st, coat: coat0, lod });
+  const K = makeKit({ style: tierStyle(version, st), coat: coat0, lod });
   const built = buildBreed(breedName, coat0, K);
   const coat = built.coat || coat0;
   const geo = built.geo, a = built.anchors;
   const shared = ensureSharedDefs();
   const eyeColor = EYES[look.eyes];
 
-  const tier = tierShapes(version, a, K, st);
+  const tier = tierShapes(version, a, K, st, geo);
   const mouths = mouthShapes(geo, K), eyes = eyeShapes(geo, K, coat, eyeColor);
   const face = [
     ...noseShapes(geo, K, coat),
     ...Object.entries(mouths).map(([name, shapes]) => grp(`dk-p dk-p--mouth dk-p--${name}`, shapes.filter(Boolean))),
     ...built.front,
     eyes.sockets,
-    grp("dk-eyes", eyes.groups),
+    grp("dk-eyes", [...tier.eyes, ...eyes.groups]),
   ];
   if (look.face === "sunglasses") face.push(sunglasses(a, K, st));
   else if (traitsFor(opts).glasses) face.push(roundGlasses(a, K));
   const hat = headPiece(look, a, K, st);
   if (hat) face.push(hat);
   // the star a v3 or later hound wears between the eyes sits under the cap and over the markings
-  face.push(...tier.mark);
+  face.push(...tier.mark, ...tier.brow);
 
   const bodyBits = bodyShapes(look, coat, a, K, st, geo);
   const neck = neckPieces(look, a, K, st, coat, version);
@@ -236,9 +236,10 @@ export function dogSvg(rawLook, opts = {}) {
         ...tier.back,
         grp("dk-clip", [
           ell(60, 119, 46, 6, "#000000", { class: "dk-shadow", opacity: ".25" }),
-          grp("dk-body", [...bodyBits.body, ...neck.behind]),
+          grp("dk-body", [...tier.cape, ...bodyBits.body, ...neck.behind, ...(built.ruff ? [] : tier.gear)]),
           pawShapes(coat, K),
-          grp("dk-head", [...built.back, ...built.head, ...face]),
+          // a breed whose ruff is drawn with the head (the Collie) has what it wears drawn over the ruff, under the face
+          grp("dk-head", [...built.back, ...(built.ruff ? tier.gear : []), ...built.head, ...face]),
           ...neck.front,
           bodyBits.number,
         ]),

@@ -1,0 +1,46 @@
+<!doctype html>
+<!-- Dev page for the version-tier art: one hound at v1 to v5 and v12, large and as 44px and 32px badges. Not served by the product.
+     tests/evolve_sheet.html?style=elite&breed=doberman&coat=black   (served from the repo root, e.g. python -m http.server) -->
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Version tiers</title>
+<link rel="stylesheet" href="../web/css/tokens.css"><link rel="stylesheet" href="../web/css/lh.css">
+<style>
+  body { margin: 0; padding: 16px; background: #0a0c0e; color: #cfd5de; font: 600 13px/1.2 "Instrument Sans", Arial, sans-serif; width: 358px; }
+  h2 { margin: 18px 0 10px; font-size: 12px; letter-spacing: .2em; text-transform: uppercase; color: #8a919e; }
+  .grid { display: grid; grid-template-columns: repeat(var(--cols, 3), 1fr); gap: 14px 10px; }
+  .cell { text-align: center; } .cell svg { width: 100%; height: auto; }
+  /* the same silhouette as css/evolve.css draws on the charge: white fills, ink lines, the backdrop and the tile's own decoration taken away */
+  [data-sil] .dk-badge [fill]:not([fill="none"]) { fill: #fff; }
+  [data-sil] .dk-badge [stroke]:not([stroke="none"]) { stroke: #0B0D12; }
+  [data-sil] .dk-badge .dk-tile, [data-sil] .dk-badge .dk-glow, [data-sil] .dk-badge .dk-burst, [data-sil] .dk-badge .dk-grit, [data-sil] .dk-badge .dk-spray, [data-sil] .dk-badge .dk-shadow, [data-sil] .dk-badge .dk-ring, [data-sil] .dk-badge .dk-p,
+  [data-sil] .dk-badge .dk-tier--frame, [data-sil] .dk-badge .dk-tier--plate, [data-sil] .dk-badge .dk-tier--chevrons, [data-sil] .dk-badge .dk-tier--halo, [data-sil] .dk-badge .dk-tier--aura, [data-sil] .dk-badge .dk-tier--twinkle, [data-sil] .dk-badge .dk-tier--mark { display: none; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+</style></head><body>
+<h2 id="h">Version tiers (same hound)</h2><div class="grid" id="big"></div>
+<h2>Small badges 44 and 32</h2><div class="row" id="small"></div>
+<script type="module">
+import { dogBadge, lookFor } from "../web/js/dog-avatar.js";
+const q = new URLSearchParams(location.search);
+const hid = q.get("lookfor");   // ?lookfor=u-1 draws the hound the product draws for that id (its default look and breed)
+const look = hid ? lookFor(hid) : { coat: q.get("coat") || "golden", style: q.get("style") || "mascot", breed: q.get("breed") || "retriever", eyes: q.get("eyes") || undefined };
+const pose = q.get("pose") || "idle";
+const allBreeds = q.get("allbreeds");   // ?allbreeds=4 draws every breed at that version
+const size = Number(q.get("size")) || 110, only = (q.get("v") || "1,2,3,4,5,12").split(",").map(Number);
+const big = document.getElementById("big"), small = document.getElementById("small");
+big.style.setProperty("--cols", q.get("cols") || "3");
+if (q.get("sil")) document.documentElement.setAttribute("data-sil", "1");
+if (allBreeds) {
+  const { BREEDS } = await import("../web/js/dog-rig.js");
+  for (const b of BREEDS) {
+    const cell = document.createElement("div"); cell.className = "cell";
+    cell.appendChild(dogBadge({ ...look, breed: b }, { size, version: Number(allBreeds), id: "sheet", mood: pose }));
+    const t = document.createElement("div"); t.textContent = b; t.style.marginTop = "4px"; t.style.fontSize = "10px"; cell.appendChild(t); big.appendChild(cell);
+  }
+}
+for (const v of allBreeds ? [] : only) {
+  const cell = document.createElement("div"); cell.className = "cell";
+  cell.appendChild(dogBadge(look, { size, version: v, id: hid || "sheet", name: q.get("name") || undefined, mood: pose }));
+  const t = document.createElement("div"); t.textContent = "v" + v; t.style.marginTop = "6px"; cell.appendChild(t); big.appendChild(cell);
+}
+for (const size of [44, 32]) for (const v of [1, 2, 3, 4, 5]) small.appendChild(dogBadge(look, { size, version: v, id: hid || "sheet" }));
+document.title = "ready";
+</script></body></html>

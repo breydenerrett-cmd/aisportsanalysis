@@ -5,8 +5,9 @@
  *
  *   1 BEFORE   the hound as it is, with its version badge ("v1"); one line says what training changed
  *   2 CHARGE   the screen dims, the hound goes white, light streaks pull in, and the old and new silhouettes alternate,
- *              faster and faster
- *   3 BURST    a white flash, then the NEW hound: its version's frame, rank plate, chevrons and collar (dog-tiers.js)
+ *              faster and faster. Both are the real hound at its real version, drawn white with its ink lines, so the new one
+ *              carries the new tier's own outline (bandana, vest, shoulder plates, mantle: dog-gear.js) and the morph reads
+ *   3 BURST    a white flash, then the NEW hound: what it wears, and its version's frame, rank plate and chevrons (dog-tiers.js)
  *   4 CARD     "{Name} became {Name} v2!" and the changes, each old value struck through and replaced by the new one
  *   5 CTA      See v2 / Back to My Kennel
  *
@@ -221,7 +222,13 @@ export function runEvolution({ body, dog, request, reduced = false, layer = null
     const parts = h("ul", { class: "ev-parts", "data-hook": "evolve-parts", "aria-label": "What the new version wears" });
     const caption = h("div", { class: "ev-caption" }, [badge, line, parts]);
     const skip = h("button", { type: "button", class: "ev-skip", "data-hook": "evolve-skip", hidden: "", text: "Skip" });
-    const soundBtn = sound.supported ? h("button", { type: "button", class: "ev-sound", "data-hook": "evolve-sound", "aria-pressed": "false", text: "Sound off" }) : null;
+    // the sound toggle is an icon button in the sheet's corner (never over the title): a speaker with a cross when off, with waves when on
+    const soundIcon = () => svg("svg", { viewBox: "0 0 24 24", "aria-hidden": "true", focusable: "false", fill: "none", stroke: "currentColor", "stroke-width": 1.8, "stroke-linecap": "round", "stroke-linejoin": "round" }, [
+      svg("path", { d: "M4 9.5v5h3.5L12 18.5v-13L7.5 9.5H4z" }),
+      svg("path", { class: "ev-sound__mute", d: "M15.5 9.5l5 5M20.5 9.5l-5 5" }),
+      svg("path", { class: "ev-sound__wave", d: "M15.5 9a4 4 0 0 1 0 6M18.2 6.5a8 8 0 0 1 0 11" })]);
+    const soundBtn = sound.supported
+      ? h("button", { type: "button", class: "ev-sound", "data-hook": "evolve-sound", "aria-pressed": "false", "aria-label": "Sound off", title: "Sound off" }, [soundIcon()]) : null;
     const top = h("div", { class: "ev-top" }, [soundBtn]);
     const root = h("div", { class: "ev", "data-hook": "evolve", "data-phase": "before", "data-motion": reduced ? "reduced" : "full" },
       [top, stage, caption, skip, flash]);
@@ -237,7 +244,8 @@ export function runEvolution({ body, dog, request, reduced = false, layer = null
         if (evt && evt.stopPropagation) evt.stopPropagation();
         const next = sound.set(!sound.on);
         soundBtn.setAttribute("aria-pressed", next ? "true" : "false");
-        soundBtn.textContent = next ? "Sound on" : "Sound off";
+        soundBtn.setAttribute("aria-label", next ? "Sound on" : "Sound off");
+        soundBtn.setAttribute("title", next ? "Sound on" : "Sound off");
       });
     }
 
@@ -338,10 +346,7 @@ export function runEvolution({ body, dog, request, reduced = false, layer = null
         oldBox.removeAttribute("data-sil");
         newBox.removeAttribute("data-sil");
         stage.setAttribute("style", "--ev-charge:0");
-        badge.textContent = `v${newV}`;
-        badge.removeAttribute("data-charging");
-        badge.setAttribute("data-tier", String(versionTier(newV).tier));
-        badge.setAttribute("data-popped", "1");
+        badge.removeAttribute("data-charging");   // from here the version is read off the art's own tab and the card's one chip
       });
       later(TIMING.burst, reveal);
     }
@@ -351,8 +356,11 @@ export function runEvolution({ body, dog, request, reduced = false, layer = null
       setPhase("reveal");
       sound.chime();
       clearNode(parts);
-      for (const [i, p] of newParts(oldV, newV).entries()) parts.appendChild(h("li", { class: "ev-part", "data-hook": "evolve-part", style: `--i:${i}`, text: p }));
-      line.textContent = `${dog.name} v${newV} · ${tierWord(newV)} tier`;
+      // what the new version wears, hound first; the rank plate is the art's own tab, so it is only listed when it is the one thing that is new
+      const gained = newParts(oldV, newV);
+      const shown = gained.filter((p) => !/^Rank plate/.test(p));
+      for (const [i, p] of (shown.length ? shown : gained).entries()) parts.appendChild(h("li", { class: "ev-part", "data-hook": "evolve-part", style: `--i:${i}`, text: p }));
+      line.textContent = `${dog.name} · ${tierWord(newV)} tier`;
       later(TIMING.hold, () => showCard(false));
     }
 

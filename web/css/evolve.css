@@ -20,17 +20,24 @@
   padding: 10px 16px calc(20px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; overflow-x: hidden; overflow-y: auto;
 }
 .rt-layer[data-evolve] .rt-sheet__title {
-  margin: 6px 0 0; text-align: center; font: 600 12px/1.2 var(--font-body, 'Instrument Sans', sans-serif); letter-spacing: .2em;
+  text-align: center; font: 600 12px/1.2 var(--font-body, 'Instrument Sans', sans-serif); letter-spacing: .2em;
   text-transform: uppercase; color: var(--text-mute, #8A919E);
 }
 .rt-layer[data-evolve] .rt-sheet__body { flex: 1 1 auto; display: flex; flex-direction: column; min-width: 0; }
 
-.ev { position: relative; flex: 1 1 auto; display: flex; flex-direction: column; align-items: center; min-width: 0; overflow-x: clip; text-align: center; color: var(--text-hi, #F6F7FA); }
-.ev-top { align-self: flex-end; min-height: 36px; display: flex; align-items: center; }
+.ev { flex: 1 1 auto; display: flex; flex-direction: column; align-items: center; min-width: 0; overflow-x: clip; text-align: center; color: var(--text-hi, #F6F7FA); }
+/* the sound toggle is an icon in the sheet's top-right corner, on the same row as the title (never over it) */
+.rt-layer[data-evolve] .rt-sheet { position: relative; }
+.rt-layer[data-evolve] .rt-sheet__title { min-height: 40px; margin: 0; padding: 0 52px; display: flex; align-items: center; justify-content: center; }
+.ev-top { position: absolute; top: 10px; right: 12px; z-index: 2; }
 .ev-sound {
-  min-height: 36px; padding: 0 12px; background: transparent; color: var(--text-mute, #8A919E); border: 1px solid rgba(255, 255, 255, .16);
-  font: 600 12px/1 var(--font-body, 'Instrument Sans', sans-serif); letter-spacing: .1em; text-transform: uppercase; cursor: pointer;
+  width: 40px; height: 40px; padding: 0; display: grid; place-items: center; background: transparent; color: var(--text-mute, #8A919E);
+  border: 1px solid rgba(255, 255, 255, .16); cursor: pointer;
 }
+.ev-sound svg { width: 20px; height: 20px; display: block; }
+.ev-sound .ev-sound__wave { display: none; }
+.ev-sound[aria-pressed="true"] .ev-sound__wave { display: inline; }
+.ev-sound[aria-pressed="true"] .ev-sound__mute { display: none; }
 .ev-sound[aria-pressed="true"] { color: var(--live-lit, #A8F4FF); border-color: var(--live, #00E0FF); }
 .ev-sound:focus-visible, .ev-skip:focus-visible { outline: 2px solid var(--live, #00E0FF); outline-offset: 2px; }
 
@@ -44,10 +51,16 @@
 .ev-stage[data-flip="new"] .ev-hound--new, .ev-stage[data-flip="reveal"] .ev-hound--new { opacity: 1; }
 .ev-stage[data-flip="new"] .ev-hound--old, .ev-stage[data-flip="reveal"] .ev-hound--old { opacity: 0; }
 
-/* the silhouette: the hound alone, white, with the tile and every backdrop piece taken away */
-.ev-hound[data-sil] svg { filter: brightness(0) invert(1) drop-shadow(0 0 calc(8px + 26px * var(--ev-charge, 0)) rgba(255, 255, 255, calc(.55 + .45 * var(--ev-charge, 0)))); }
+/* the silhouette: the hound alone, white fills with its ink lines, so what it wears reads (the new version's bandana, vest, plates and
+   mantle are drawn in it; the old one's are not). The tile, every backdrop piece and the tile's own decoration (frame, plate, chevrons,
+   halo, aura) are taken away. */
+.ev-hound[data-sil] svg { filter: drop-shadow(0 0 calc(8px + 26px * var(--ev-charge, 0)) rgba(255, 255, 255, calc(.55 + .45 * var(--ev-charge, 0)))); }
+.ev-hound[data-sil] svg [fill]:not([fill="none"]) { fill: #FFFFFF; }
+.ev-hound[data-sil] svg [stroke]:not([stroke="none"]) { stroke: #0B0D12; }
 .ev-hound[data-sil] svg .dk-tile, .ev-hound[data-sil] svg .dk-glow, .ev-hound[data-sil] svg .dk-burst, .ev-hound[data-sil] svg .dk-grit,
-.ev-hound[data-sil] svg .dk-spray, .ev-hound[data-sil] svg .dk-shadow, .ev-hound[data-sil] svg .dk-ring, .ev-hound[data-sil] svg .dk-p { display: none; }
+.ev-hound[data-sil] svg .dk-spray, .ev-hound[data-sil] svg .dk-shadow, .ev-hound[data-sil] svg .dk-ring, .ev-hound[data-sil] svg .dk-p,
+.ev-hound[data-sil] svg .dk-tier--frame, .ev-hound[data-sil] svg .dk-tier--plate, .ev-hound[data-sil] svg .dk-tier--chevrons,
+.ev-hound[data-sil] svg .dk-tier--halo, .ev-hound[data-sil] svg .dk-tier--aura, .ev-hound[data-sil] svg .dk-tier--twinkle, .ev-hound[data-sil] svg .dk-tier--mark { display: none; }
 
 .ev-rays { position: absolute; left: 50%; top: 50%; width: 230%; height: 230%; transform: translate(-50%, -50%); pointer-events: none; opacity: 0; }
 .ev-rays line { stroke: #FFFFFF; fill: none; stroke-linecap: round; stroke-dasharray: .14 1.3; stroke-dashoffset: .14; }
@@ -80,7 +93,9 @@
 .ev[data-phase="card"] .ev-stage { width: min(34vw, 132px); margin-top: 4px; }
 .ev[data-phase="card"] .ev-caption, .ev[data-phase="static"] .ev-caption { min-height: 0; margin: 8px 0 0; }
 .ev[data-phase="card"] .ev-line, .ev[data-phase="card"] .ev-parts, .ev[data-phase="static"] .ev-line, .ev[data-phase="static"] .ev-parts,
-.ev[data-phase="static"] .ev-badge, .ev[data-phase="card"] .ev-skip { display: none; }
+.ev[data-phase="static"] .ev-badge, .ev[data-phase="card"] .ev-badge, .ev[data-phase="card"] .ev-skip { display: none; }
+/* the version is shown once on the hound (the art's own tab) and once on the card (the chip): the big numeral is for the hound before it evolves */
+.ev:is([data-phase="burst"], [data-phase="reveal"]) .ev-badge { visibility: hidden; }
 .ev[data-phase="static"] .ev-stage { width: auto; aspect-ratio: auto; margin-top: 4px; }
 .ev[data-phase="static"] .ev-stage::before { display: none; }
 .ev-pair { display: flex; align-items: center; justify-content: center; gap: 12px; }
@@ -136,7 +151,6 @@
   .ev[data-phase="burst"] .ev-flash { animation: ev-flash .9s cubic-bezier(.2, .7, .2, 1) both; }
   .ev[data-phase="burst"] .ev-shock { animation: ev-shock .9s cubic-bezier(.1, .6, .2, 1) .14s both; }
   .ev[data-phase="burst"] .ev-stage { animation: ev-kick .35s ease-out .14s both; }
-  .ev-badge[data-popped] { animation: ev-pop .6s cubic-bezier(.34, 1.4, .5, 1) both; }
 
   /* what the new version wears arrives piece by piece (dog-tiers.js draws the pieces; the classes are theirs) */
   .ev:is([data-phase="burst"], [data-phase="reveal"]) .ev-hound--new .dk-tier__edge { animation: ev-fade .6s ease .25s both; }
@@ -147,6 +161,16 @@
   .ev:is([data-phase="burst"], [data-phase="reveal"]) .ev-hound--new .dk-tier--halo { animation: ev-fade 1.2s ease .3s both; }
   .ev:is([data-phase="burst"], [data-phase="reveal"]) .ev-hound--new .dk-tier--mark { transform-box: fill-box; transform-origin: center; animation: ev-pop .55s cubic-bezier(.34, 1.4, .5, 1) 1.3s both; }
   .ev:is([data-phase="burst"], [data-phase="reveal"]) .ev-hound--new .dk-collar { animation: ev-fade .6s ease .9s both; }
+  /* ... and what the hound itself wears (dog-gear.js): the mantle unfurls, the vest and the plates drop on, the bandana ties, the eyes light, the aura swells */
+  .ev:is([data-phase="burst"], [data-phase="reveal"]) .ev-hound--new :is(.dk-tier--mantle, .dk-tier--vest, .dk-tier--pads, .dk-tier--bandana, .dk-tier--brow, .dk-tier--eyeglow, .dk-tier--aura) { transform-box: fill-box; transform-origin: 50% 40%; }
+  .ev:is([data-phase="burst"], [data-phase="reveal"]) .ev-hound--new .dk-tier--mantle { animation: ev-unfurl .7s cubic-bezier(.22, .72, .2, 1) .3s both; }
+  .ev:is([data-phase="burst"], [data-phase="reveal"]) .ev-hound--new .dk-tier--vest { animation: ev-plate .55s cubic-bezier(.34, 1.4, .5, 1) .45s both; }
+  .ev:is([data-phase="burst"], [data-phase="reveal"]) .ev-hound--new .dk-tier--pads { animation: ev-plate .5s cubic-bezier(.34, 1.4, .5, 1) .7s both; }
+  .ev:is([data-phase="burst"], [data-phase="reveal"]) .ev-hound--new .dk-tier--bandana { animation: ev-pop .5s cubic-bezier(.34, 1.4, .5, 1) .35s both; }
+  .ev:is([data-phase="burst"], [data-phase="reveal"]) .ev-hound--new .dk-tier--brow { animation: ev-fade .5s ease 1s both; }
+  .ev:is([data-phase="burst"], [data-phase="reveal"]) .ev-hound--new .dk-tier--eyeglow { animation: ev-fade .9s ease 1.3s both; }
+  .ev:is([data-phase="burst"], [data-phase="reveal"]) .ev-hound--new .dk-tier--aura { animation: ev-fade 1.3s ease .4s both; }
+  .ev-hound--new .dk-tier--aura { animation: ev-aura 3.6s ease-in-out 2s infinite; }
   .ev[data-phase="reveal"] .ev-part { animation: ev-rise .45s cubic-bezier(.16, .84, .3, 1) both; animation-delay: calc(.2s + var(--i, 0) * .18s); }
   .ev[data-phase="reveal"] .ev-line { animation: ev-rise .5s cubic-bezier(.16, .84, .3, 1) both; }
 
@@ -160,6 +184,8 @@
   .ev[data-skipped] .ev-card, .ev[data-skipped] .ev-stat, .ev[data-skipped] .ev-stat__from, .ev[data-skipped] .ev-stat__from::after, .ev[data-skipped] .ev-stat__to,
   .ev[data-skipped] .ev-card__fresh, .ev[data-skipped] .ev-why, .ev[data-skipped] .ev-actions { animation: none; }
 
+  @keyframes ev-unfurl { from { opacity: 0; transform: scale(.7, .5); } to { opacity: 1; transform: none; } }
+  @keyframes ev-aura { 0%, 100% { opacity: .75; } 50% { opacity: 1; } }
   @keyframes ev-idle { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
   @keyframes ev-rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
   @keyframes ev-fade { from { opacity: 0; } to { opacity: 1; } }
